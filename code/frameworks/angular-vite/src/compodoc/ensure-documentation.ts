@@ -1,44 +1,17 @@
 /**
- * On-demand Compodoc: makes `documentation.json` current, or explains why it could not.
+ * On-demand Compodoc: brings `documentation.json` up to date, or explains why it could not.
  *
- * This is a plain async function over plain data. It needs no dev server, no Vite config and no
- * Angular builder context, so the docgen worker thread, the framework preset and a bare Node script
- * can all call it, and they all serialise against each other through one lock file.
- *
- * ## What regenerates, and what does not
- *
- * A run happens when `documentation.json` is missing, empty, or older than the newest `.ts` file
- * under the directory Compodoc scans - checked once, when the caller starts. In practice that means
- * once per `storybook dev`, once per `storybook build`, once per Vitest process, and never again in
- * that process's lifetime.
- *
- * Editing a component while the dev server is running does **not** regenerate it. `argTypes`,
- * descriptions and JSDoc tags stay as they were at startup until Storybook is restarted - that is
- * what "stale until restart" means here. Compodoc has no watch mode that helps: `compodoc -e json
- * -w` exits immediately without watching, and the only watching entry point it has requires its HTTP
- * documentation server to hold a port for the whole session.
- *
- * ## Limits of the staleness check
- *
- * - Only the sources Compodoc reads count: `.ts` and `.tsx` under the tsconfig's directory, minus
- *   `.d.ts` and `.spec.ts`. Changing a `templateUrl` HTML file or a `styleUrls` SCSS file changes
- *   `documentation.json`, and that reaches stories through the raw `compodoc` passthrough, but it
- *   cannot change `argTypes`, `description` or `jsDocTags`.
- * - The tsconfig's own `include`/`exclude` are not applied, so a file Compodoc would have skipped can
- *   still trigger a regeneration. Deliberate: regenerating once too often is cheap, and serving
- *   metadata that never refreshes is not.
- * - Only mtime counts. A file rewritten with identical contents looks changed; a file restored with
- *   an older timestamp looks unchanged, as does a component moved with its timestamp preserved.
- * - Directories reachable only through a symlink are not walked.
- * - The lock relies on `O_EXCL` and mtime behaving normally. On a network filesystem where they do
- *   not, two processes can both decide they hold it.
+ * A plain async function over plain data, so the docgen worker thread, the framework preset and a
+ * bare Node script can all call it and serialise against each other through one lock file. Freshness
+ * is checked once per caller, so a component edited while the dev server runs stays stale until
+ * restart. The user-facing consequences of that live in the Angular Vite docs page.
  */
 import { logger } from 'storybook/internal/node-logger';
 
+import { readdirSync, statSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import { DOCUMENTATION_JSON } from '../compodoc-config.ts';
-import { findCompodocScanRoot, isDocumentationFresh } from './documentation-freshness.ts';
 import { withFileLock } from './file-lock.ts';
 import { generateDocumentation } from './generate-documentation.ts';
 
@@ -46,92 +19,148 @@ import { generateDocumentation } from './generate-documentation.ts';
 export const COMPODOC_LOCK = '.compodoc.lock';
 
 /**
- * addon-vitest aborts its child after 30 seconds of boot, and the framework preset that calls this
- * runs inside that window. A waiter there gives up rather than failing the boot: the docgen reader
- * resolves `documentation.json` per request, so a file that lands afterwards is still picked up -
- * at the cost of an early story rendering without argTypes under a very slow cold run.
+ * Directories no Compodoc run reads, skipped so the freshness walk stays cheap on a real workspace.
+ * Build output matters most: it is regenerated constantly and would report a change on every start.
  */
-const VITEST_WAIT_BUDGET_MS = 20_000;
+const SKIPPED_DIRECTORY_NAMES = new Set([
+  'node_modules',
+  '.git',
+  '.nx',
+  '.angular',
+  'dist',
+  'out-tsc',
+  'coverage',
+  'storybook-static',
+]);
 
-/** Elsewhere the thing being waited on is a whole-project run, so the budget is a run's ceiling. */
-const DEFAULT_WAIT_BUDGET_MS = 10 * 60 * 1000;
+/** Mirrors Compodoc's own `INCLUDE_PATTERNS` / `EXCLUDE_PATTERNS`. */
+const isScannedSource = (fileName: string): boolean =>
+  (fileName.endsWith('.ts') || fileName.endsWith('.tsx')) &&
+  !fileName.endsWith('.d.ts') &&
+  !fileName.endsWith('.spec.ts');
 
-export type EnsureDocumentationOutcome =
-  /** Already up to date; nothing ran. */
-  | 'fresh'
-  /** We held the lock and ran Compodoc. */
-  | 'generated'
-  /** Another process ran it while we waited, and the result is now on disk. */
-  | 'generated-elsewhere'
-  /** Another process held the lock past our budget; carry on without the file. */
-  | 'timed-out'
-  /** The run failed. Reported, not thrown: docgen degrades, it does not break. */
-  | 'failed';
+const statOrUndefined = (path: string) => {
+  try {
+    return statSync(path);
+  } catch {
+    return undefined;
+  }
+};
+
+/**
+ * Newest mtime among the sources Compodoc would read under `workspaceRoot`, or `undefined` when there
+ * are none.
+ *
+ * Scanning from `workspaceRoot` rather than from the tsconfig's directory is deliberate: Compodoc
+ * runs there, and a tsconfig's `include` relocates the scan rather than narrowing it. Storybook's own
+ * Angular template ships `.storybook/tsconfig.json` with `include: ["../src/**\/*.ts"]`, so anything
+ * derived from the tsconfig's own directory would miss every component. Over-approximating costs one
+ * extra scan; under-approximating serves stale metadata forever.
+ *
+ * Symlinked directories are not followed, so a source tree reachable only through one is invisible.
+ */
+export const newestSourceMtimeMs = (workspaceRoot: string): number | undefined => {
+  let newest: number | undefined;
+
+  const walk = (directory: string) => {
+    let entries;
+    try {
+      entries = readdirSync(directory, { withFileTypes: true });
+    } catch {
+      // An unreadable directory contributes nothing; it is not evidence of a change.
+      return;
+    }
+
+    for (const entry of entries) {
+      if (entry.isDirectory()) {
+        if (!SKIPPED_DIRECTORY_NAMES.has(entry.name)) {
+          walk(join(directory, entry.name));
+        }
+      } else if (entry.isFile() && isScannedSource(entry.name)) {
+        const stats = statOrUndefined(join(directory, entry.name));
+        if (stats && (newest === undefined || stats.mtimeMs > newest)) {
+          newest = stats.mtimeMs;
+        }
+      }
+    }
+  };
+
+  walk(resolve(workspaceRoot));
+  return newest;
+};
+
+/**
+ * Whether `documentation.json` can be served as it stands.
+ *
+ * A zero-length file counts as stale, since that is what Compodoc's own non-atomic write looks like
+ * when caught mid-flight. A source sharing the file's exact timestamp counts as stale too: coarse
+ * filesystem timestamps report an edit made moments later as the same instant.
+ */
+export const isDocumentationFresh = (
+  documentationJsonPath: string,
+  newestSourceMs: number | undefined
+): boolean => {
+  const stats = statOrUndefined(documentationJsonPath);
+  if (!stats?.isFile() || stats.size === 0) {
+    return false;
+  }
+  return newestSourceMs === undefined || stats.mtimeMs > newestSourceMs;
+};
 
 export interface EnsureDocumentationOptions {
   compodocArgs: string[];
   tsconfig: string;
   workspaceRoot: string;
   outputDir: string;
+  /**
+   * How long to wait on another process's run. Kept short by default because `viteFinal` runs inside
+   * addon-vitest's child, which aborts after 30 seconds of boot. Giving up beats failing the boot:
+   * the docgen reader re-resolves `documentation.json` per request, so a late file is still picked up.
+   */
   waitBudgetMs?: number;
-  timeoutMs?: number;
 }
 
+/**
+ * Makes `documentation.json` current if it is not already. Failures are logged, never thrown: docgen
+ * degrades to "no metadata", it does not break the build.
+ */
 export const ensureCompodocDocumentation = async ({
   compodocArgs,
   tsconfig,
   workspaceRoot,
   outputDir,
-  waitBudgetMs = process.env.VITEST ? VITEST_WAIT_BUDGET_MS : DEFAULT_WAIT_BUDGET_MS,
-  timeoutMs,
-}: EnsureDocumentationOptions): Promise<EnsureDocumentationOutcome> => {
+  waitBudgetMs,
+}: EnsureDocumentationOptions): Promise<void> => {
   const documentationJson = join(outputDir, DOCUMENTATION_JSON);
-  const scanRoot = findCompodocScanRoot(resolve(workspaceRoot, tsconfig));
-  // Compodoc's own output is excluded from the scan: it lands inside the tree often enough, and it
-  // is always newer than the sources it was built from, which would make it permanently stale.
-  const isFresh = () => isDocumentationFresh(documentationJson, scanRoot, [outputDir]);
+  // Walked once. Only `documentation.json`'s own mtime can change while we wait for the lock, and a
+  // source edited during the wait regenerates on the next start, which is the documented contract.
+  const newestSourceMs = newestSourceMtimeMs(workspaceRoot);
 
-  if (isFresh()) {
-    return 'fresh';
+  if (isDocumentationFresh(documentationJson, newestSourceMs)) {
+    return;
   }
-
-  // Bounding the wait only protects processes that lose the race. The one that wins still has to run
-  // the scan, and under Vitest that has to fit in the same boot budget, so it inherits what is left
-  // of it rather than the standalone ceiling.
-  const deadline = Date.now() + waitBudgetMs;
-  const runTimeoutMs = () =>
-    timeoutMs ?? (process.env.VITEST ? Math.max(1_000, deadline - Date.now()) : undefined);
 
   try {
     const outcome = await withFileLock(
       join(outputDir, COMPODOC_LOCK),
-      {
-        // Re-checked under the lock, so a waiter that queued behind the winner takes the winner's
-        // output instead of running the same scan again.
-        shouldRun: () => !isFresh(),
-        run: () =>
-          generateDocumentation({
-            compodocArgs,
-            tsconfig,
-            workspaceRoot,
-            outputDir,
-            timeoutMs: runTimeoutMs(),
-          }),
+      async () => {
+        // Re-checked under the lock, so a waiter takes the winner's output instead of rescanning.
+        if (isDocumentationFresh(documentationJson, newestSourceMs)) {
+          return;
+        }
+        await generateDocumentation({ compodocArgs, tsconfig, workspaceRoot, outputDir });
       },
       { waitBudgetMs }
     );
 
-    if (outcome.status === 'timed-out') {
+    if (outcome === 'busy') {
       logger.debug(
         `[storybook-angular-vite] another process is still generating ${DOCUMENTATION_JSON}; continuing without it`
       );
-      return 'timed-out';
     }
-    return outcome.status === 'ran' ? 'generated' : 'generated-elsewhere';
   } catch (error) {
     logger.warn(
       `[storybook-angular-vite] Compodoc generation failed: ${error instanceof Error ? error.message : String(error)}`
     );
-    return 'failed';
   }
 };

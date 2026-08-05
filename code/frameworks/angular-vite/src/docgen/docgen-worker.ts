@@ -41,20 +41,17 @@ const createDocumentationJsonReader = () => {
 
 /**
  * Builds the Angular docgen middleware, running Compodoc first if `documentation.json` is missing or
- * stale.
- *
- * The run happens here, at construction, rather than per request. Core awaits this before the worker
- * answers anything and before it arms its per-extract timeout, so a whole-project scan neither
- * counts against that clock nor repeats once per component - and in a static build it completes
- * before any docgen snapshot is written.
+ * stale. The run sits in construction rather than per request: core awaits this before arming its
+ * per-extract timeout, so a whole-project scan neither counts against that clock nor repeats once
+ * per component.
  */
 export const createDocgenProvider = async (
   options: AngularDocgenOptions
 ): Promise<DocgenMiddleware> => {
   await ensureCompodocDocumentation({
     compodocArgs: options.compodocArgs,
-    tsconfig: options.tsconfig ?? 'tsconfig.json',
-    workspaceRoot: options.workspaceRoot ?? process.cwd(),
+    tsconfig: options.tsconfig,
+    workspaceRoot: options.workspaceRoot,
     outputDir: options.outputDir,
   });
 

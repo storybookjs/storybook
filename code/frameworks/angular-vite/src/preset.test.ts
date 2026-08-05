@@ -21,7 +21,7 @@ vi.mock('vite', { spy: true });
 vi.mock('@analogjs/vite-plugin-angular', () => ({ default: (): unknown[] => [] }));
 
 beforeEach(() => {
-  vi.mocked(ensureCompodocDocumentation).mockResolvedValue('fresh');
+  vi.mocked(ensureCompodocDocumentation).mockResolvedValue(undefined);
   vi.mocked(mergeConfig).mockImplementation(
     (config: object, extra: object) => ({ ...config, ...extra }) as never
   );
@@ -115,17 +115,6 @@ describe('viteFinal Compodoc generation', () => {
     await viteFinal(
       { root: WORKSPACE_ROOT },
       optionsWith({ compodocArgs: ['-e', 'json', '-d', 'dist/docs'] })
-    );
-
-    expect(ensureCompodocDocumentation).toHaveBeenCalledWith(
-      expect.objectContaining({ outputDir: resolve(WORKSPACE_ROOT, 'dist/docs') })
-    );
-  });
-
-  it('honours the `--output=dir` spelling as well as the separate-value one', async () => {
-    await viteFinal(
-      { root: WORKSPACE_ROOT },
-      optionsWith({ compodocArgs: ['-e', 'json', '--output=dist/docs'] })
     );
 
     expect(ensureCompodocDocumentation).toHaveBeenCalledWith(

@@ -116,10 +116,8 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   // @ts-expect-error options is possibly undefined here, but presets.apply is guarded at runtime
   const framework = await options.presets.apply('framework');
 
-  // Generate compodoc's documentation.json on cold start when no builder path has produced it yet
-  // (e.g. addon-vitest child, ng run without the Angular CLI builder). This path is what users with
-  // `experimentalDocgenServer` off depend on for the browser `setCompodocJson` route, and it shares
-  // the docgen worker's lock so the two triggers cannot both run a scan.
+  // Cold-start trigger for users with `experimentalDocgenServer` off, whose browser
+  // `setCompodocJson` route has no other. Shares the docgen worker's lock, so only one scan runs.
   const compodocConfig = await resolveCompodocConfig(options, { viteRoot: config?.root });
   if (compodocConfig.enabled) {
     await ensureCompodocDocumentation({

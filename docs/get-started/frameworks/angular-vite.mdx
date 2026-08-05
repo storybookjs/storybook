@@ -142,11 +142,9 @@ export default config;
 
 When enabled, Storybook generates `documentation.json` itself at startup if it is missing, or if any source file is newer than it. Compodoc scans the whole project in one pass, so this is all-or-nothing: there is no per-component regeneration.
 
-A few consequences worth knowing:
-
-- **Editing a component while Storybook is running does not update its metadata.** Controls, descriptions and JSDoc tags are read from the documentation generated at startup and stay that way until you restart. Compodoc has no watch mode that can help here: exporting JSON with `-w` exits immediately without watching, and its only watching mode requires running its HTML documentation server for the whole session.
-- **Only `.ts` and `.tsx` sources are checked** for staleness (excluding `.d.ts` and `.spec.ts`, which Compodoc ignores). Editing only a component's HTML template or SCSS file does not trigger regeneration, though it also cannot change controls or descriptions.
-- **Several Storybook processes can start at once** - a dev server and the Vitest addon's test run, for example. They coordinate through a lock file next to the output, so exactly one Compodoc run happens and the others use its result.
+- **Editing a component while Storybook is running does not update its metadata.** Controls, descriptions and JSDoc tags come from the documentation generated at startup. Restart Storybook to pick up your changes.
+- **Only `.ts` and `.tsx` sources count as changes**, excluding `.d.ts` and `.spec.ts`, which Compodoc ignores. Editing just a component's HTML template or SCSS file will not trigger a regeneration, but it also cannot change controls or descriptions.
+- **A `.compodoc.lock` file appears next to the output while a run is in progress.** It lets several Storybook processes, such as a dev server and the Vitest addon's test run, share a single Compodoc run instead of each starting their own. It is removed afterwards and is safe to add to your `.gitignore`.
 - **Only `documentation.json` is published** into the output directory. If your `compodocArgs` also produce Compodoc's browsable HTML site, generate that with a separate `compodoc` invocation.
 
 #### Supported invocation paths

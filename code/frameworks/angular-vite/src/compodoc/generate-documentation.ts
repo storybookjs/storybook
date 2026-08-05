@@ -1,15 +1,10 @@
 /**
  * Runs Compodoc as a child process and publishes its `documentation.json` atomically.
  *
- * Compodoc's programmatic API is not an option for repeated on-demand runs: `generate()` hands back
- * a module-scoped singleton promise created at import, it installs `process.exit` handlers on the
- * host process, and it mutates a global configuration object. The CLI is the only re-entrant entry
- * point it has.
- *
- * Compodoc's own write is not atomic either - fs-extra `outputFile` with the default `'w'` flag, so
- * the file exists at length 0 and grows - and a reader that parses it mid-write gets a syntax error.
- * Excluding concurrent writers does not fix that, so the run is pointed at a scratch directory
- * beside the real one and the finished file is renamed into place.
+ * Compodoc's programmatic API is not re-entrant: `generate()` returns a module-scoped singleton
+ * promise, installs `process.exit` handlers on the host process and mutates global config. Its own
+ * write is not atomic either, so the run is pointed at a scratch directory beside the real one and
+ * the finished file is renamed into place.
  */
 import { logger } from 'storybook/internal/node-logger';
 
@@ -18,25 +13,27 @@ import {
   existsSync,
   mkdirSync,
   mkdtempSync,
+  readFileSync,
   readdirSync,
   renameSync,
   rmSync,
+  statSync,
   utimesSync,
 } from 'node:fs';
-import { isAbsolute, join, relative } from 'node:path';
+import { createRequire } from 'node:module';
+import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { StringDecoder } from 'node:string_decoder';
 
 import { DOCUMENTATION_JSON } from '../compodoc-config.ts';
-import { resolveCompodocCli } from './compodoc-cli.ts';
 
-/**
- * Compodoc has no timeout of its own, and the docgen worker awaits this during provider
- * construction, which core does not clock either. Without this a hung run hangs docgen forever.
- */
-export const COMPODOC_TIMEOUT_MS = 10 * 60 * 1000;
+/** Compodoc has no timeout of its own, and nothing above clocks the docgen worker either. */
+const COMPODOC_TIMEOUT_MS = 10 * 60 * 1000;
 
 /** Enough of the child's output to explain a failure without dumping a whole scan log. */
 const OUTPUT_TAIL_BYTES = 4000;
+
+const SCRATCH_PREFIX = '.compodoc-';
 
 export interface GenerateDocumentationOptions {
   compodocArgs: string[];
@@ -48,12 +45,34 @@ export interface GenerateDocumentationOptions {
   timeoutMs?: number;
 }
 
+/**
+ * Locates Compodoc's CLI entry point so it can be run as `node <cli>`. The project is searched before
+ * this package, so a workspace pinning its own Compodoc gets that one.
+ */
+export const resolveCompodocCli = (workspaceRoot: string): string | undefined => {
+  const searchFrom = [pathToFileURL(join(resolve(workspaceRoot), 'noop.js')).href, import.meta.url];
+
+  for (const from of searchFrom) {
+    try {
+      const packageJsonPath = createRequire(from).resolve('@compodoc/compodoc/package.json');
+      const { bin } = JSON.parse(readFileSync(packageJsonPath, 'utf8')) as {
+        bin?: string | Record<string, string>;
+      };
+      const entry = typeof bin === 'string' ? bin : bin?.compodoc;
+      if (entry) {
+        return join(dirname(packageJsonPath), entry);
+      }
+    } catch {
+      // Not resolvable from here; try the next root.
+    }
+  }
+
+  return undefined;
+};
+
 const hasTsconfigArg = (args: string[]) => args.includes('-p');
 
-/**
- * Compodoc mishandles absolute tsconfig paths on Windows, so the path is passed relative to the
- * directory the child runs in.
- */
+/** Compodoc mishandles absolute tsconfig paths on Windows, so pass it relative to the child's cwd. */
 const toChildRelativePath = (path: string, cwd: string) =>
   isAbsolute(path) ? relative(cwd, path) : path;
 
@@ -100,18 +119,24 @@ const runCli = (cli: string, args: string[], cwd: string, timeoutMs: number): Pr
     });
   });
 
-const SCRATCH_PREFIX = '.compodoc-';
-
-/** Clears scratch directories a signalled run could not clean up itself. */
-const removeAbandonedScratchDirs = (outputDir: string) => {
-  try {
-    for (const entry of readdirSync(outputDir, { withFileTypes: true })) {
-      if (entry.isDirectory() && entry.name.startsWith(SCRATCH_PREFIX)) {
-        rmSync(join(outputDir, entry.name), { recursive: true, force: true });
-      }
+/**
+ * Clears scratch directories a signalled run could not clean up itself. Only ones older than a run's
+ * ceiling, so a scan still in flight behind a wrongly-broken lock is left alone.
+ */
+const removeAbandonedScratchDirs = (outputDir: string, olderThanMs: number) => {
+  const cutoff = Date.now() - olderThanMs;
+  for (const entry of readdirSync(outputDir, { withFileTypes: true })) {
+    if (!entry.isDirectory() || !entry.name.startsWith(SCRATCH_PREFIX)) {
+      continue;
     }
-  } catch {
-    // Best-effort tidying; never a reason to fail the run that is about to start.
+    const path = join(outputDir, entry.name);
+    try {
+      if (statSync(path).mtimeMs < cutoff) {
+        rmSync(path, { recursive: true, force: true });
+      }
+    } catch {
+      // Best-effort tidying; one unreadable leftover is no reason to fail the run about to start.
+    }
   }
 };
 
@@ -131,15 +156,11 @@ export const generateDocumentation = async ({
   }
 
   mkdirSync(outputDir, { recursive: true });
-  // A run killed by a signal never reaches the cleanup below, so sweep anything an earlier one left
-  // behind rather than letting scratch directories pile up in the user's project.
-  removeAbandonedScratchDirs(outputDir);
+  removeAbandonedScratchDirs(outputDir, timeoutMs);
   // Scratch directory inside the output directory, so publishing below is a same-filesystem rename.
-  const scratchDir = mkdtempSync(join(outputDir, '.compodoc-'));
+  const scratchDir = mkdtempSync(join(outputDir, SCRATCH_PREFIX));
   const startedAt = Date.now();
 
-  // A whole-project scan takes seconds to minutes with nothing else on screen, and it blocks both
-  // the dev server's cold start and the docgen worker's first answer.
   logger.info('[storybook-angular-vite] Generating Angular documentation with Compodoc...');
 
   try {
@@ -168,9 +189,8 @@ export const generateDocumentation = async ({
 
     const published = join(outputDir, DOCUMENTATION_JSON);
     renameSync(produced, published);
-    // Stamped with the moment the scan started, not the moment it finished. Compodoc read the
-    // sources at the start, so a file edited while the scan was running is genuinely newer than this
-    // output - and dating the output later would hide that edit until something else changed.
+    // Stamped with the scan's start, not its end: Compodoc read the sources at the start, so dating
+    // the output later would hide an edit made while it ran.
     const scanStart = new Date(startedAt);
     utimesSync(published, scanStart, scanStart);
     logger.debug(

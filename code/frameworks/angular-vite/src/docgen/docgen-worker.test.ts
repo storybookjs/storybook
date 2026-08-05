@@ -15,8 +15,7 @@ import { createDocgenProvider } from './docgen-worker.ts';
 vi.mock('node:fs', { spy: true });
 // Spy-only: the real builder runs unless a test overrides it to exercise the provider's own wiring.
 vi.mock('./build-docgen.ts', { spy: true });
-// Compodoc generation is its own seam, tested next to the lock. Here it only has to happen, and to
-// happen before anything is served.
+// Generation is covered next to the lock; here it only has to happen before anything is served.
 vi.mock('../compodoc/ensure-documentation.ts', { spy: true });
 
 beforeEach(async () => {
@@ -24,7 +23,7 @@ beforeEach(async () => {
   vi.mocked(existsSync).mockImplementation(memfs.fs.existsSync as typeof existsSync);
   vi.mocked(statSync).mockImplementation(memfs.fs.statSync as typeof statSync);
   vi.mocked(readFileSync).mockImplementation(memfs.fs.readFileSync as typeof readFileSync);
-  vi.mocked(ensureCompodocDocumentation).mockResolvedValue('fresh');
+  vi.mocked(ensureCompodocDocumentation).mockResolvedValue(undefined);
 });
 
 afterEach(() => {
@@ -80,7 +79,12 @@ const givenWorkspace = ({ withDocumentationJson = true } = {}) => {
 
 const passthrough: DocgenProvider = async () => undefined;
 
-const providerOptions = { outputDir: OUTPUT_DIR, compodocArgs: ['-e', 'json', '-d', OUTPUT_DIR] };
+const providerOptions = {
+  outputDir: OUTPUT_DIR,
+  compodocArgs: ['-e', 'json', '-d', OUTPUT_DIR],
+  workspaceRoot: process.cwd(),
+  tsconfig: 'tsconfig.json',
+};
 
 const createProvider = async (next: DocgenProvider = passthrough) =>
   (await createDocgenProvider(providerOptions))(next);
@@ -109,17 +113,19 @@ describe('createDocgenProvider', () => {
     expect(payload?.argTypes?.label).toBeDefined();
   });
 
-  it('triggers Compodoc and awaits it before serving anything', async () => {
+  it('triggers Compodoc once per worker and awaits it before serving anything', async () => {
     givenWorkspace({ withDocumentationJson: false });
     // Whatever the trigger produces has to be on disk by the time the first request is answered,
     // which is only true because the run is awaited during construction rather than per request.
     vi.mocked(ensureCompodocDocumentation).mockImplementation(async () => {
       vol.writeFileSync(DOCUMENTATION_JSON, documentationJson('label'));
-      return 'generated';
     });
+    const provider = await createProvider();
 
-    const payload = await run();
+    const payload = await provider({ entry });
+    await provider({ entry });
 
+    expect(ensureCompodocDocumentation).toHaveBeenCalledOnce();
     expect(ensureCompodocDocumentation).toHaveBeenCalledWith(
       expect.objectContaining({
         outputDir: OUTPUT_DIR,
@@ -127,16 +133,6 @@ describe('createDocgenProvider', () => {
       })
     );
     expect(payload?.argTypes?.label).toBeDefined();
-  });
-
-  it('runs Compodoc once per worker, not once per component', async () => {
-    givenWorkspace();
-    const provider = await createProvider();
-
-    await provider({ entry });
-    await provider({ entry });
-
-    expect(ensureCompodocDocumentation).toHaveBeenCalledOnce();
   });
 
   it('falls through for a file that is not a story', async () => {

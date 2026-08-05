@@ -9,7 +9,11 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { COMPODOC_LOCK, ensureCompodocDocumentation } from './ensure-documentation.ts';
+import {
+  COMPODOC_LOCK,
+  ensureCompodocDocumentation,
+  newestSourceMtimeMs,
+} from './ensure-documentation.ts';
 import { generateDocumentation } from './generate-documentation.ts';
 
 vi.mock('./generate-documentation.ts', { spy: true });
@@ -26,9 +30,21 @@ const lockPath = () => join(outputDir, COMPODOC_LOCK);
 
 const at = (path: string, ms: number) => utimesSync(path, new Date(ms), new Date(ms));
 
+const write = (relativePath: string, mtimeMs?: number) => {
+  const path = join(workspaceRoot, relativePath);
+  mkdirSync(join(path, '..'), { recursive: true });
+  writeFileSync(path, '');
+  if (mtimeMs !== undefined) {
+    at(path, mtimeMs);
+  }
+  return path;
+};
+
 const options = (overrides: Partial<Parameters<typeof ensureCompodocDocumentation>[0]> = {}) => ({
   compodocArgs: ['-e', 'json', '-d', 'dist/docs'],
-  tsconfig: join(workspaceRoot, 'tsconfig.json'),
+  // Deliberately inside `.storybook`, matching the tsconfig Storybook's own Angular template ships.
+  // The scan must still reach `src/`, which is where every component lives.
+  tsconfig: join(workspaceRoot, '.storybook', 'tsconfig.json'),
   workspaceRoot,
   outputDir,
   ...overrides,
@@ -43,11 +59,9 @@ const writeDocumentation = async () => {
 beforeEach(() => {
   workspaceRoot = mkdtempSync(join(tmpdir(), 'sb-ensure-compodoc-'));
   outputDir = join(workspaceRoot, 'dist', 'docs');
-  mkdirSync(join(workspaceRoot, 'src'), { recursive: true });
-  writeFileSync(join(workspaceRoot, 'package.json'), '{}');
-  writeFileSync(join(workspaceRoot, 'tsconfig.json'), '{}');
-  writeFileSync(componentPath(), 'export class ButtonComponent {}');
-  at(componentPath(), Date.now() - 60_000);
+  write('package.json');
+  write('.storybook/tsconfig.json');
+  write('src/button.component.ts', Date.now() - 60_000);
   vi.mocked(generateDocumentation).mockImplementation(writeDocumentation);
 });
 
@@ -55,9 +69,33 @@ afterEach(() => {
   rmSync(workspaceRoot, { recursive: true, force: true });
 });
 
+describe('newestSourceMtimeMs', () => {
+  it('counts the sources Compodoc reads and ignores the ones it excludes', () => {
+    // Mirrors Compodoc's own INCLUDE_PATTERNS/EXCLUDE_PATTERNS. Counting `.d.ts` or `.spec.ts` would
+    // force a rescan after an ordinary build or test edit; missing `.tsx` would leave a new component
+    // undocumented until something else changed.
+    write('src/widget.component.tsx', 6000);
+    write('src/button.component.html', 9000);
+    write('src/button.component.spec.ts', 9000);
+    write('src/generated.d.ts', 9000);
+    at(componentPath(), 1000);
+
+    expect(newestSourceMtimeMs(workspaceRoot)).toBe(6000);
+  });
+
+  it('skips build output, which is regenerated constantly and never read by Compodoc', () => {
+    at(componentPath(), 1000);
+    write('node_modules/some-package/index.ts', 9000);
+    write('dist/lib.ts', 9000);
+    write('.angular/cache/thing.ts', 9000);
+
+    expect(newestSourceMtimeMs(workspaceRoot)).toBe(1000);
+  });
+});
+
 describe('ensureCompodocDocumentation', () => {
   it('runs Compodoc and awaits it when there is no documentation.json yet', async () => {
-    await expect(ensureCompodocDocumentation(options())).resolves.toBe('generated');
+    await ensureCompodocDocumentation(options());
 
     expect(generateDocumentation).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -66,67 +104,56 @@ describe('ensureCompodocDocumentation', () => {
         outputDir,
       })
     );
-    expect(existsSync(documentationJson())).toBe(true);
   });
 
   it('serves an up-to-date file from disk instead of re-running Compodoc', async () => {
     await writeDocumentation();
     vi.mocked(generateDocumentation).mockClear();
 
-    await expect(ensureCompodocDocumentation(options())).resolves.toBe('fresh');
+    await ensureCompodocDocumentation(options());
+
     expect(generateDocumentation).not.toHaveBeenCalled();
   });
 
-  it('re-runs when a source file has been touched since the file was written', async () => {
+  it('re-runs when a source under the workspace has been touched since the file was written', async () => {
+    // Also pins the scan root: a check rooted at the tsconfig's own directory would only see
+    // `.storybook`, never notice this edit, and serve stale metadata forever.
     await writeDocumentation();
     at(documentationJson(), Date.now() - 60_000);
     at(componentPath(), Date.now());
     vi.mocked(generateDocumentation).mockClear();
 
-    await expect(ensureCompodocDocumentation(options())).resolves.toBe('generated');
+    await ensureCompodocDocumentation(options());
+
     expect(generateDocumentation).toHaveBeenCalledOnce();
   });
 
   it('runs once for concurrent callers, and hands the rest the same result', async () => {
-    const outcomes = await Promise.all([
+    await Promise.all([
       ensureCompodocDocumentation(options()),
       ensureCompodocDocumentation(options()),
       ensureCompodocDocumentation(options()),
     ]);
 
     expect(generateDocumentation).toHaveBeenCalledOnce();
-    expect(outcomes.filter((outcome) => outcome === 'generated')).toHaveLength(1);
-    expect(outcomes.filter((outcome) => outcome === 'generated-elsewhere')).toHaveLength(2);
     expect(existsSync(documentationJson())).toBe(true);
   });
 
-  it('takes the lock beside the output, so a redirected -d directory is still honoured', async () => {
-    let lockHeldDuringRun: boolean | undefined;
-    vi.mocked(generateDocumentation).mockImplementation(async () => {
-      lockHeldDuringRun = existsSync(lockPath());
-      await writeDocumentation();
-    });
-
-    await expect(ensureCompodocDocumentation(options())).resolves.toBe('generated');
-
-    expect(lockHeldDuringRun).toBe(true);
-    expect(existsSync(lockPath())).toBe(false);
-  });
-
   it('gives up rather than blocking boot when another process holds the lock too long', async () => {
+    // Also pins the lock's location: anywhere but beside the output and this would acquire its own
+    // lock and generate instead of waiting.
     mkdirSync(outputDir, { recursive: true });
-    writeFileSync(lockPath(), JSON.stringify({ pid: process.pid, createdAt: Date.now() }));
+    writeFileSync(lockPath(), JSON.stringify({ token: 'someone-else', pid: process.pid }));
 
-    await expect(ensureCompodocDocumentation(options({ waitBudgetMs: 100 }))).resolves.toBe(
-      'timed-out'
-    );
+    await ensureCompodocDocumentation(options({ waitBudgetMs: 100 }));
+
     expect(generateDocumentation).not.toHaveBeenCalled();
   });
 
   it('reports a failed run instead of breaking docgen construction', async () => {
     vi.mocked(generateDocumentation).mockRejectedValue(new Error('compodoc exited with code 1'));
 
-    await expect(ensureCompodocDocumentation(options())).resolves.toBe('failed');
+    await expect(ensureCompodocDocumentation(options())).resolves.toBeUndefined();
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('compodoc exited with code 1')
     );

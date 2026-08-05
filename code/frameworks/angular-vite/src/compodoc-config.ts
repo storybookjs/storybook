@@ -67,10 +67,8 @@ export const resolveCompodocConfig = async (
   const workspaceRoot =
     options?.angularBuilderContext?.workspaceRoot ??
     extra.viteRoot ??
-    // builder-vite sets Vite's root to the parent of `configDir`, and only `viteFinal` can pass that
-    // root along. Deriving the same value here keeps the writer and the docgen reader on one
-    // directory by construction instead of dropping the reader onto cwd, which differs as soon as
-    // Storybook is started from anywhere but the project directory.
+    // Mirrors what builder-vite does with Vite's root, which only `viteFinal` can pass along. Without
+    // it the docgen reader falls back to cwd and looks in a different directory than the writer.
     (options?.configDir ? resolve(options.configDir, '..') : undefined) ??
     process.cwd();
   const compodocArgs = frameworkOptions.compodocArgs ?? DEFAULT_COMPODOC_ARGS;

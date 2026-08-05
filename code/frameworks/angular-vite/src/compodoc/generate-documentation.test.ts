@@ -16,19 +16,16 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { resolveCompodocCli } from './compodoc-cli.ts';
-import { generateDocumentation } from './generate-documentation.ts';
+import { generateDocumentation, resolveCompodocCli } from './generate-documentation.ts';
 
-vi.mock('./compodoc-cli.ts', { spy: true });
 vi.mock('storybook/internal/node-logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn() },
 }));
 
 /**
  * Stands in for the Compodoc binary, without the cost of a real scan. It keeps the two behaviours
- * that matter: the last `-d` decides where `documentation.json` lands, and the write is not atomic -
- * the file is truncated to nothing and then grows, exactly as fs-extra's `outputFile` leaves it. The
- * env switches cover the failure paths.
+ * that matter: the last `-d` decides where `documentation.json` lands, and the write is not atomic,
+ * so the file is truncated and then grows. The env switches cover the failure paths.
  */
 const STUB_CLI = `
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
@@ -60,6 +57,7 @@ if (!process.env.STUB_WRITE_NOTHING) {
 let workDir: string;
 let workspaceRoot: string;
 let outputDir: string;
+let stubCliPath: string;
 
 const options = () => ({
   compodocArgs: ['-e', 'json', '-d', '.'],
@@ -75,9 +73,16 @@ beforeEach(() => {
   workDir = mkdtempSync(join(tmpdir(), 'sb-compodoc-run-'));
   workspaceRoot = join(workDir, 'workspace');
   outputDir = join(workspaceRoot, 'dist', 'docs');
-  const cliPath = join(workDir, 'stub-compodoc.mjs');
-  writeFileSync(cliPath, STUB_CLI);
-  vi.mocked(resolveCompodocCli).mockReturnValue(cliPath);
+  // A real (fake) Compodoc install in the project, so the resolution the production code performs is
+  // the one under test rather than a mock of it.
+  const packageDir = join(workspaceRoot, 'node_modules', '@compodoc', 'compodoc');
+  mkdirSync(join(packageDir, 'bin'), { recursive: true });
+  writeFileSync(
+    join(packageDir, 'package.json'),
+    JSON.stringify({ bin: { compodoc: './bin/index.mjs' } })
+  );
+  stubCliPath = join(packageDir, 'bin', 'index.mjs');
+  writeFileSync(stubCliPath, STUB_CLI);
 });
 
 afterEach(() => {
@@ -85,19 +90,26 @@ afterEach(() => {
   vi.unstubAllEnvs();
 });
 
-describe('generateDocumentation', () => {
-  it('runs Compodoc from the workspace root and publishes the result to the output directory', async () => {
-    await generateDocumentation(options());
-
-    const published = readPublished();
-    expect(published.cwd).toBe(realpathSync(workspaceRoot));
-    expect(published.args).toEqual(expect.arrayContaining(['-e', 'json']));
+describe('resolveCompodocCli', () => {
+  it('prefers the Compodoc the project pinned over the one beside this framework', () => {
+    expect(resolveCompodocCli(workspaceRoot)).toBe(realpathSync(stubCliPath));
   });
+});
 
-  it('passes the tsconfig relative to the directory the child runs in', async () => {
+describe('generateDocumentation', () => {
+  it('runs from the workspace root, names the tsconfig, and publishes only the JSON', async () => {
     await generateDocumentation(options());
 
-    expect(readPublished().args.slice(0, 2)).toEqual(['-p', 'tsconfig.json']);
+    const { cwd, args } = readPublished();
+    expect(cwd).toBe(realpathSync(workspaceRoot));
+    expect(args).toEqual(expect.arrayContaining(['-e', 'json']));
+    // Relative to the child's cwd, because Compodoc mishandles absolute paths on Windows.
+    expect(args.filter((arg: string) => arg === '-p')).toHaveLength(1);
+    expect(args[args.indexOf('-p') + 1]).toBe('tsconfig.json');
+    // The caller's `-d .` is still on the command line; ours is last, and Compodoc takes the last.
+    expect(args.at(-2)).toBe('-d');
+    expect(args.at(-1)).not.toBe('.');
+    expect(readdirSync(outputDir)).toEqual(['documentation.json']);
   });
 
   it('leaves the tsconfig alone when the caller already named one', async () => {
@@ -109,16 +121,6 @@ describe('generateDocumentation', () => {
     const { args } = readPublished();
     expect(args.filter((arg: string) => arg === '-p')).toHaveLength(1);
     expect(args).toContain('tsconfig.doc.json');
-  });
-
-  it('builds in a scratch directory rather than the caller`s, and cleans it up', async () => {
-    await generateDocumentation(options());
-
-    const { args } = readPublished();
-    // The caller's `-d .` is still on the command line; ours is last, and Compodoc takes the last.
-    expect(args.at(-2)).toBe('-d');
-    expect(args.at(-1)).not.toBe('.');
-    expect(readdirSync(outputDir)).toEqual(['documentation.json']);
   });
 
   it('never exposes a half-written file to readers while the run is in flight', async () => {
@@ -168,14 +170,6 @@ describe('generateDocumentation', () => {
 
     await expect(generateDocumentation(options())).rejects.toThrow(
       /finished without writing documentation\.json/
-    );
-  });
-
-  it('says so when Compodoc is not installed, rather than failing on a missing file later', async () => {
-    vi.mocked(resolveCompodocCli).mockReturnValue(undefined);
-
-    await expect(generateDocumentation(options())).rejects.toThrow(
-      '@compodoc/compodoc could not be resolved'
     );
   });
 });

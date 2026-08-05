@@ -1,62 +1,41 @@
 /**
  * Cross-process advisory lock, built on `O_EXCL` file creation.
  *
- * The work this guards is a whole-project Compodoc run, and the callers that collide over it live in
- * different OS processes: `storybook dev` and the Vitest addon's child both reach the "no
- * documentation.json yet" branch at cold start, and a standalone `vitest` run is a third. Even
- * inside one process the docgen worker is a separate thread with its own module registry, so a
- * promise memo in module scope is not shared with the preset on the main thread. Nothing short of a
- * filesystem lock excludes all of them.
- *
- * A holder keeps the lock's mtime fresh while it works, so "stale" means "the holder stopped
- * reporting", not "the work is taking a while". Without that a long scan breaks its own lock and two
- * runs proceed at once, which is the failure the lock exists to prevent.
+ * The work it guards is a whole-project Compodoc run, and the callers that collide over it live in
+ * different OS processes: `storybook dev`, the Vitest addon's child and a standalone `vitest` run all
+ * reach the "no documentation.json yet" branch at cold start. Even inside one process the docgen
+ * worker is a separate thread with its own module registry, so a module-scoped promise excludes
+ * nothing. A holder keeps the lock's mtime fresh while it works, so "stale" means the holder stopped
+ * reporting rather than that the work is slow.
  */
 import { logger } from 'storybook/internal/node-logger';
 
 import { randomUUID } from 'node:crypto';
-import { rmSync } from 'node:fs';
+import { readFileSync, rmSync } from 'node:fs';
 import { mkdir, open, readFile, rm, stat, utimes } from 'node:fs/promises';
 import { dirname } from 'node:path';
 
-/**
- * Lock-file payload. `token` identifies one acquisition, so a holder only ever removes the lock it
- * still owns; `pid` drives liveness detection and `createdAt` is there for anyone debugging a stuck
- * lock.
- */
+/** `token` identifies one acquisition, so a holder only ever removes the lock it still owns. */
 interface LockPayload {
   token: string;
   pid: number;
-  createdAt: number;
 }
 
 export interface FileLockOptions {
-  /** How long a caller waits for the current holder before giving up and returning `timed-out`. */
+  /** How long to wait for the current holder before giving up. */
   waitBudgetMs?: number;
-  /**
-   * How long a lock may go without a heartbeat before it is treated as abandoned. Because a live
-   * holder refreshes it continuously, reaching this means the holder died without cleaning up.
-   */
+  /** How long a lock may go without a heartbeat before it is treated as abandoned. */
   staleAfterMs?: number;
-  pollIntervalMs?: number;
 }
 
-export type FileLockOutcome<T> =
-  /** We held the lock and ran the work. */
-  | { status: 'ran'; result: T }
-  /** We held the lock, but `shouldRun` said the work was already done. */
-  | { status: 'skipped' }
-  /** Someone else held the lock for longer than the wait budget allowed. */
-  | { status: 'timed-out' };
-
-const DEFAULT_POLL_INTERVAL_MS = 50;
-/** Three missed heartbeats. Short, because a live holder keeps its lock fresh no matter how long it runs. */
+const POLL_INTERVAL_MS = 50;
+/** Three missed heartbeats. */
 const DEFAULT_STALE_AFTER_MS = 30_000;
-const DEFAULT_WAIT_BUDGET_MS = 10 * 60 * 1000;
+const DEFAULT_WAIT_BUDGET_MS = 20_000;
 /**
  * How long a lock carrying no readable payload is tolerated. A crash between creating the file and
- * writing it leaves one behind with no pid to check, and the only other reader of an empty lock is a
- * caller that raced the write by microseconds - hence a grace window rather than an instant break.
+ * writing it leaves one behind with no pid to check, but so does reading it microseconds after a
+ * healthy caller created it.
  */
 const MALFORMED_LOCK_GRACE_MS = 5_000;
 
@@ -79,16 +58,13 @@ const isProcessAlive = (pid: number): boolean => {
 
 const readPayload = async (lockPath: string): Promise<Partial<LockPayload> | undefined> => {
   try {
-    return JSON.parse(await readFile(lockPath, 'utf8')) as LockPayload;
+    return JSON.parse(await readFile(lockPath, 'utf8')) as Partial<LockPayload>;
   } catch {
     return undefined;
   }
 };
 
-/**
- * Creates the lock file exclusively. Returns the acquisition's token, or `undefined` when someone
- * else got there first.
- */
+/** Creates the lock file exclusively. Returns the acquisition's token, or `undefined` if someone else won. */
 const tryAcquire = async (lockPath: string): Promise<string | undefined> => {
   await mkdir(dirname(lockPath), { recursive: true });
 
@@ -102,12 +78,12 @@ const tryAcquire = async (lockPath: string): Promise<string | undefined> => {
     throw error;
   }
 
-  const payload: LockPayload = { token: randomUUID(), pid: process.pid, createdAt: Date.now() };
+  const payload: LockPayload = { token: randomUUID(), pid: process.pid };
   try {
     await handle.writeFile(JSON.stringify(payload));
   } catch (error) {
-    // A lock with no payload cannot be attributed to anyone, so every later caller would have to
-    // wait out the stale window instead of seeing that nobody holds it. Take it back down.
+    // A lock with no payload cannot be attributed to anyone, so every later caller would have to wait
+    // out the grace window instead of seeing that nobody holds it. Take it back down.
     await handle.close();
     await rm(lockPath, { force: true }).catch((): undefined => undefined);
     throw error;
@@ -117,10 +93,9 @@ const tryAcquire = async (lockPath: string): Promise<string | undefined> => {
 };
 
 /**
- * Clears a lock whose holder can no longer finish, and reports whether acquisition is worth
- * retrying immediately. A holder killed with `SIGKILL` leaves the file behind with no chance to run
- * cleanup, so the recorded pid's liveness is the primary signal; the heartbeat age covers a pid the
- * OS has since handed to something else, and the grace window covers a lock that was never written.
+ * Clears a lock whose holder can no longer finish, and reports whether acquiring is worth retrying
+ * immediately. A `SIGKILL`ed holder never runs cleanup, so the recorded pid's liveness is the primary
+ * signal and the heartbeat age covers a pid the OS has since recycled.
  */
 const breakStaleLock = async (lockPath: string, staleAfterMs: number): Promise<boolean> => {
   let stats;
@@ -138,8 +113,7 @@ const breakStaleLock = async (lockPath: string, staleAfterMs: number): Promise<b
   const abandoned =
     holderPid !== undefined
       ? !isProcessAlive(holderPid) || age > staleAfterMs
-      : // No readable payload: the writer crashed mid-create, or we caught it between the two calls.
-        age > MALFORMED_LOCK_GRACE_MS;
+      : age > MALFORMED_LOCK_GRACE_MS;
 
   if (!abandoned) {
     return false;
@@ -159,19 +133,27 @@ const breakStaleLock = async (lockPath: string, staleAfterMs: number): Promise<b
   return true;
 };
 
+/** Removes the lock, but only while it still carries our token. */
+const releaseIfOurs = (lockPath: string, token: string) => {
+  try {
+    const payload = JSON.parse(readFileSync(lockPath, 'utf8')) as Partial<LockPayload>;
+    if (payload?.token === token) {
+      rmSync(lockPath, { force: true });
+    }
+  } catch {
+    // Already gone, or unreadable and therefore not ours to remove.
+  }
+};
+
 /**
  * Keeps the lock's mtime current while the work runs, and removes it on release.
  *
- * Release is conditional on the payload still carrying our token, so a holder whose lock was broken
- * for it - it overran the stale window, or its pid was misread as dead - cannot delete the successor's
- * lock on the way out.
- *
- * The `exit` listener only covers a clean exit. Node does not run `exit` listeners when the process
- * is terminated by a signal, so a `SIGINT` or `SIGKILL` leaves the file behind and the stale-break
+ * The `exit` listener is a backstop for a clean exit only. Node does not run `exit` listeners when
+ * the process is terminated by a signal, so a `SIGINT` leaves the file behind and the stale-break
  * above is what recovers it.
  */
 const holdLock = (lockPath: string, token: string, staleAfterMs: number) => {
-  const removeSync = () => rmSync(lockPath, { force: true });
+  const removeSync = () => releaseIfOurs(lockPath, token);
   process.once('exit', removeSync);
 
   // Three beats inside the stale window, so a single missed tick never looks like a dead holder.
@@ -184,41 +166,28 @@ const holdLock = (lockPath: string, token: string, staleAfterMs: number) => {
   );
   heartbeat.unref?.();
 
-  return async () => {
+  return () => {
     clearInterval(heartbeat);
     process.off('exit', removeSync);
-    const current = await readPayload(lockPath);
-    if (current?.token === token) {
-      await rm(lockPath, { force: true });
-    }
+    removeSync();
   };
 };
 
 /**
  * Runs `run` under the lock at `lockPath`, at most once across every process that shares it.
  *
- * `shouldRun` is evaluated *after* the lock is held, which is what lets every waiter end up with the
- * winner's output instead of repeating the work: the winner sees work to do and does it, and each
- * waiter acquires afterwards, sees it already done, and returns `skipped`. A caller that cannot
- * acquire within `waitBudgetMs` gets `timed-out` and is expected to carry on without the result
- * rather than block indefinitely.
+ * Returns `'busy'` when someone else held the lock for longer than the wait budget allowed, which
+ * callers are expected to carry on from rather than treat as a failure. `run` decides for itself
+ * whether there is still anything to do, since the winner may already have done it.
  */
-export const withFileLock = async <T>(
+export const withFileLock = async (
   lockPath: string,
+  run: () => Promise<void>,
   {
-    shouldRun,
-    run,
-  }: {
-    shouldRun: () => boolean | Promise<boolean>;
-    run: () => Promise<T>;
-  },
-  options: FileLockOptions = {}
-): Promise<FileLockOutcome<T>> => {
-  const {
     waitBudgetMs = DEFAULT_WAIT_BUDGET_MS,
     staleAfterMs = DEFAULT_STALE_AFTER_MS,
-    pollIntervalMs = DEFAULT_POLL_INTERVAL_MS,
-  } = options;
+  }: FileLockOptions = {}
+): Promise<'ran' | 'busy'> => {
   const deadline = Date.now() + waitBudgetMs;
 
   for (;;) {
@@ -226,21 +195,19 @@ export const withFileLock = async <T>(
     if (token !== undefined) {
       const release = holdLock(lockPath, token, staleAfterMs);
       try {
-        if (!(await shouldRun())) {
-          return { status: 'skipped' };
-        }
-        return { status: 'ran', result: await run() };
+        await run();
+        return 'ran';
       } finally {
-        await release();
+        release();
       }
     }
 
     const retryImmediately = await breakStaleLock(lockPath, staleAfterMs);
     if (Date.now() >= deadline) {
-      return { status: 'timed-out' };
+      return 'busy';
     }
     if (!retryImmediately) {
-      await delay(pollIntervalMs);
+      await delay(POLL_INTERVAL_MS);
     }
   }
 };

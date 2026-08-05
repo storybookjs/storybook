@@ -232,13 +232,15 @@ export function angularOptionsPlugin(
   options: StandaloneOptions,
   { normalizePath, zoneless }: any
 ): Plugin {
-  let resolvedConfig: UserConfig;
+  let workspaceRoot: string;
   let resolvedPreviewPath: string | undefined;
   return {
     name: 'storybook-angular-vite-options-plugin',
     config(userConfig: UserConfig) {
-      resolvedConfig = userConfig;
       resolvedPreviewPath = findConfigFile('preview', options.configDir) ?? undefined;
+      // No builder context when running via Vitest instead of the Angular builders.
+      workspaceRoot =
+        options.angularBuilderContext?.workspaceRoot ?? userConfig?.root ?? process.cwd();
       const stylePreprocessorOptions =
         options?.angularBuilderOptions?.stylePreprocessorOptions ?? {};
       // Angular's builder schema (and this framework's builder schema) names the
@@ -250,8 +252,6 @@ export function angularOptionsPlugin(
       const sassOptions = stylePreprocessorOptions.sass;
 
       if (Array.isArray(loadPaths)) {
-        const workspaceRoot =
-          options.angularBuilderContext?.workspaceRoot ?? userConfig?.root ?? process.cwd();
         return {
           css: {
             preprocessorOptions: {
@@ -268,37 +268,21 @@ export function angularOptionsPlugin(
     },
     async transform(code, id) {
       if (resolvedPreviewPath && normalizePath(id).endsWith(normalizePath(resolvedPreviewPath))) {
-        const imports = [];
         const styles = options?.angularBuilderOptions?.styles;
-
-        if (Array.isArray(styles)) {
-          styles.forEach((style) => {
-            imports.push(style);
-          });
-        }
+        const imports = (Array.isArray(styles) ? styles : [])
+          .map((style) => (typeof style === 'string' ? { input: style } : style))
+          // `inject: false` entries are emitted as standalone bundles, not preview styles.
+          .filter((style) => typeof style?.input === 'string' && style.inject !== false)
+          // Normalize to forward slashes so the specifier is valid on Windows.
+          .map(({ input }) => `import '${normalizePath(resolve(workspaceRoot, input))}';`);
 
         if (!zoneless) {
-          imports.push('zone.js');
+          imports.push(`import 'zone.js';`);
         }
-
-        // Use vite config root when angularBuilderContext is not available
-        // (e.g., when running via Vitest instead of Angular builders)
-        const projectRoot = resolvedConfig?.root ?? process.cwd();
 
         return {
           code: `
-            ${imports
-              .map((extraImport) => {
-                if (extraImport.startsWith('.') || extraImport.startsWith('src')) {
-                  // relative to root — normalize to forward slashes so the
-                  // generated import specifier is valid on Windows.
-                  return `import '${normalizePath(resolve(projectRoot, extraImport))}';`;
-                }
-
-                // absolute import
-                return `import '${extraImport}';`;
-              })
-              .join('\n')}
+            ${imports.join('\n')}
             ${code}
           `,
         };

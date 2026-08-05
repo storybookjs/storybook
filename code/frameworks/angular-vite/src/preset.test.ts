@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { findConfigFile } from 'storybook/internal/common';
+
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
@@ -12,10 +14,7 @@ import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 
 // The plugin's `config` hook looks up the preview file on disk before reading
 // style options; stub just that lookup so the test stays hermetic.
-vi.mock(import('storybook/internal/common'), async (importOriginal) => ({
-  ...(await importOriginal()),
-  findConfigFile: () => undefined,
-}));
+vi.mock('storybook/internal/common', { spy: true });
 vi.mock('node:fs', { spy: true });
 vi.mock('./builders/utils/run-compodoc.ts', { spy: true });
 vi.mock('vite', { spy: true });
@@ -26,6 +25,7 @@ vi.mock('@analogjs/vite-plugin-angular', () => ({ default: (): unknown[] => [] }
 beforeEach(async () => {
   vol.reset();
   const memfs = await vi.importActual<typeof import('memfs')>('memfs');
+  vi.mocked(findConfigFile).mockReturnValue(null);
   vi.mocked(existsSync).mockImplementation(memfs.fs.existsSync as typeof existsSync);
   vi.mocked(runCompodoc).mockResolvedValue(undefined);
   vi.mocked(mergeConfig).mockImplementation(
@@ -40,6 +40,8 @@ afterEach(() => {
 });
 
 const WORKSPACE_ROOT = resolve('/workspace');
+const VITE_ROOT = resolve('/workspace/projects/lib');
+const PREVIEW_PATH = resolve('/workspace/.storybook/preview.ts');
 
 function runConfig(stylePreprocessorOptions: Record<string, unknown> | undefined) {
   const options = {
@@ -144,5 +146,96 @@ describe('viteFinal Compodoc generation', () => {
     await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({ compodoc: false }));
 
     expect(runCompodoc).not.toHaveBeenCalled();
+  });
+});
+
+async function runTransform(
+  styles: unknown,
+  { zoneless = true, withBuilderContext = true } = {}
+): Promise<string> {
+  vi.mocked(findConfigFile).mockReturnValue(PREVIEW_PATH);
+
+  const options = {
+    configDir: resolve(WORKSPACE_ROOT, '.storybook'),
+    angularBuilderContext: withBuilderContext ? ({ workspaceRoot: WORKSPACE_ROOT } as any) : null,
+    angularBuilderOptions: { styles },
+  } as unknown as StandaloneOptions;
+
+  const plugin = angularOptionsPlugin(options, { normalizePath, zoneless });
+  (plugin.config as (userConfig: unknown) => unknown)({ root: VITE_ROOT });
+
+  const result = await (
+    plugin.transform as (code: string, id: string) => Promise<{ code: string } | undefined>
+  )('export const parameters = {};', PREVIEW_PATH);
+
+  return result?.code ?? '';
+}
+
+const styleImport = (root: string, input: string) =>
+  `import '${normalizePath(resolve(root, input))}';`;
+
+describe('angularOptionsPlugin global styles', () => {
+  it('resolves workspace-root-relative style paths against the workspace root', async () => {
+    const code = await runTransform([
+      'projects/theme/global.scss',
+      'node_modules/@example/theme/index.css',
+    ]);
+
+    expect(code).toContain(styleImport(WORKSPACE_ROOT, 'projects/theme/global.scss'));
+    expect(code).toContain(styleImport(WORKSPACE_ROOT, 'node_modules/@example/theme/index.css'));
+  });
+
+  it('resolves `src`-prefixed and dot-relative paths against the workspace root', async () => {
+    const code = await runTransform(['src/styles.css', './.storybook/preview.css']);
+
+    expect(code).toContain(styleImport(WORKSPACE_ROOT, 'src/styles.css'));
+    expect(code).toContain(styleImport(WORKSPACE_ROOT, './.storybook/preview.css'));
+  });
+
+  it('accepts the expanded `{ input }` form from the builder schema', async () => {
+    const code = await runTransform([{ input: 'src/styles.scss', bundleName: 'theme' }]);
+
+    expect(code).toContain(styleImport(WORKSPACE_ROOT, 'src/styles.scss'));
+  });
+
+  it('skips entries marked `inject: false`, which are emitted as standalone bundles', async () => {
+    const code = await runTransform([
+      'src/injected.css',
+      { input: 'src/standalone.css', inject: false },
+    ]);
+
+    expect(code).toContain(styleImport(WORKSPACE_ROOT, 'src/injected.css'));
+    expect(code).not.toContain('standalone.css');
+  });
+
+  it('falls back to the Vite root when there is no Angular builder context', async () => {
+    const code = await runTransform(['src/styles.css'], { withBuilderContext: false });
+
+    expect(code).toContain(styleImport(VITE_ROOT, 'src/styles.css'));
+  });
+
+  it('appends zone.js as a bare import only when not zoneless', async () => {
+    await expect(runTransform(['src/styles.css'], { zoneless: false })).resolves.toContain(
+      `import 'zone.js';`
+    );
+    await expect(runTransform(['src/styles.css'])).resolves.not.toContain(`import 'zone.js';`);
+  });
+
+  it('leaves modules other than the preview untouched', async () => {
+    vi.mocked(findConfigFile).mockReturnValue(PREVIEW_PATH);
+    const options = {
+      configDir: resolve(WORKSPACE_ROOT, '.storybook'),
+      angularBuilderContext: { workspaceRoot: WORKSPACE_ROOT } as any,
+      angularBuilderOptions: { styles: ['src/styles.css'] },
+    } as unknown as StandaloneOptions;
+
+    const plugin = angularOptionsPlugin(options, { normalizePath, zoneless: true });
+    (plugin.config as (userConfig: unknown) => unknown)({ root: VITE_ROOT });
+
+    const result = await (
+      plugin.transform as (code: string, id: string) => Promise<{ code: string } | undefined>
+    )('export const x = 1;', resolve(WORKSPACE_ROOT, 'src/some-other-file.ts'));
+
+    expect(result).toBeUndefined();
   });
 });

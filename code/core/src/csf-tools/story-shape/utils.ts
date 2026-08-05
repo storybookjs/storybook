@@ -1,0 +1,76 @@
+import { type NodePath, types as t } from 'storybook/internal/babel';
+
+/** Static key of an object property, or `null` when computed/non-literal. */
+export const keyOf = (p: t.ObjectProperty): string | null =>
+  t.isIdentifier(p.key) ? p.key.name : t.isStringLiteral(p.key) ? p.key.value : null;
+
+/** Resolve a local story helper used by `Template.bind({})` or `render: Template`. */
+export function resolveIdentifierInit(
+  storyPath: NodePath<t.Node>,
+  identifier: NodePath<t.Identifier>
+): NodePath<t.FunctionDeclaration> | NodePath<t.Expression> | null {
+  const programPath = storyPath.findParent((p) => p.isProgram()) as NodePath<t.Program> | null;
+
+  if (!programPath) {
+    return null;
+  }
+
+  for (const stmt of programPath.get('body')) {
+    if (stmt.isFunctionDeclaration() && stmt.node.id?.name === identifier.node.name) {
+      return stmt;
+    }
+    if (stmt.isExportNamedDeclaration()) {
+      const decl = stmt.get('declaration');
+      if (decl.isFunctionDeclaration() && decl.node.id?.name === identifier.node.name) {
+        return decl;
+      }
+    }
+  }
+
+  const declarators = programPath.get('body').flatMap((stmt) => {
+    if (stmt.isVariableDeclaration()) {
+      return stmt.get('declarations');
+    }
+    if (stmt.isExportNamedDeclaration()) {
+      const decl = stmt.get('declaration');
+
+      if (decl && decl.isVariableDeclaration()) {
+        return decl.get('declarations');
+      }
+    }
+    return [];
+  });
+
+  const match = declarators.find((d) => {
+    const id = d.get('id');
+    return id.isIdentifier() && id.node.name === identifier.node.name;
+  });
+
+  if (!match) {
+    return null;
+  }
+  const init = match.get('init');
+  return init && init.isExpression() ? init : null;
+}
+
+/** NodePath for a known node inside a program, e.g. the CSF meta object. */
+export function pathForNode<T extends t.Node>(
+  program: NodePath<t.Program>,
+  target: T | undefined
+): NodePath<T> | undefined {
+  if (!target) {
+    return undefined;
+  }
+  let found: NodePath<T> | undefined;
+
+  program.traverse({
+    enter(p) {
+      if (p.node && p.node === target) {
+        found = p as NodePath<T>;
+        p.stop();
+      }
+    },
+  });
+
+  return found;
+}

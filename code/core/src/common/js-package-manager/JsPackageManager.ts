@@ -368,8 +368,7 @@ export abstract class JsPackageManager {
 
       for (const dep of dependencies) {
         const [packageName, packageVersion] = getPackageDetails(dep);
-        const latestVersion = await this.getVersion(packageName);
-        dependenciesMap[packageName] = packageVersion ?? latestVersion;
+        dependenciesMap[packageName] = packageVersion ?? 'latest';
       }
 
       const targetDeps = packageJson[options.type] as Record<string, string>;

@@ -96,6 +96,7 @@ export const formatPropInTemplate = (propertyName: string): string =>
  */
 const firstSelector = (selector: string): string => {
   let inAttribute = false;
+  let parenDepth = 0;
   let quote: string | undefined;
 
   for (let index = 0; index < selector.length; index++) {
@@ -112,7 +113,12 @@ const firstSelector = (selector: string): string => {
       inAttribute = true;
     } else if (char === ']') {
       inAttribute = false;
-    } else if (char === ',' && !inAttribute) {
+    } else if (char === '(') {
+      parenDepth++;
+    } else if (char === ')') {
+      parenDepth = Math.max(0, parenDepth - 1);
+    } else if (char === ',' && !inAttribute && parenDepth === 0) {
+      // A comma inside `:not(.a, .b)` separates that pseudo's arguments, not two selectors.
       return selector.slice(0, index);
     }
   }
@@ -257,9 +263,16 @@ export const parseSelector = (selector: string): HostElement => {
 const escapeAttributeValue = (value: string): string =>
   value.replace(/&/g, '&amp;').replace(/"/g, '&quot;');
 
-/** An arg's value AST node as a single-line Angular template expression. */
+/**
+ * An arg's value AST node as a single-line Angular template expression.
+ *
+ * `concise` does not collapse newlines inside a template literal, and a real newline in an
+ * attribute value stops the snippet being single-line markup.
+ */
 export const templateExpression = (node: t.Node): string =>
-  escapeAttributeValue(generate(node, { concise: true, comments: false }).code);
+  escapeAttributeValue(
+    generate(node, { concise: true, comments: false }).code.replace(/\s*\n\s*/g, ' ')
+  );
 
 /** Builds the static Angular template snippet for one story. */
 export const generateAngularSnippet = ({
@@ -268,13 +281,18 @@ export const generateAngularSnippet = ({
   unresolvedArgs = [],
 }: AngularSnippetInput): string => {
   if (!component.selector) {
-    return `<ng-container *ngComponentOutlet="${component.name}"></ng-container>`;
+    return withUnresolvedNote(
+      `<ng-container *ngComponentOutlet="${component.name}"></ng-container>`,
+      unresolvedArgs
+    );
   }
 
   const host = parseSelector(component.selector);
 
   const inputBindings = component.inputs
-    .filter((name) => name in args)
+    // `hasOwn` rather than `in`: an input named after an `Object.prototype` member would otherwise
+    // read the inherited function and hand a non-node to the generator.
+    .filter((name) => Object.hasOwn(args, name))
     .map((name) => `[${name}]="${templateExpression(args[name])}"`);
 
   // Every output gets a handler, whether or not the story declared one: Storybook's actions
@@ -284,10 +302,13 @@ export const generateAngularSnippet = ({
     (name) => `(${name})="${formatPropInTemplate(name)}($event)"`
   );
 
+  // An attribute directive's own selector attribute is often an input too (`[appHighlight]` with
+  // an `@Input() appHighlight`). Emitting both would name it twice on the same element.
+  const boundNames = new Set(component.inputs.filter((name) => Object.hasOwn(args, name)));
   const hostAttributes = [
     ...(host.id ? [`id="${host.id}"`] : []),
     ...(host.classes.length > 0 ? [`class="${host.classes.join(' ')}"`] : []),
-    ...host.attributes,
+    ...host.attributes.filter((attribute) => !boundNames.has(attribute.split('=')[0])),
   ];
 
   const attributes = [...hostAttributes, ...inputBindings, ...outputBindings];
@@ -296,10 +317,12 @@ export const generateAngularSnippet = ({
     ? `<${host.tag}${attributeText} />`
     : `<${host.tag}${attributeText}></${host.tag}>`;
 
-  if (unresolvedArgs.length === 0) {
-    return element;
-  }
-  // A spread's contents are only known at runtime. Saying so beats emitting a snippet that looks
-  // complete while silently missing bindings.
-  return `<!-- unresolved args: ${unresolvedArgs.join(', ')} -->\n${element}`;
+  return withUnresolvedNote(element, unresolvedArgs);
 };
+
+/**
+ * Prefixes a note naming what could not be resolved statically. Saying so beats emitting a snippet
+ * that looks complete while silently missing bindings.
+ */
+const withUnresolvedNote = (element: string, unresolved: readonly string[]): string =>
+  unresolved.length === 0 ? element : `<!-- unresolved: ${unresolved.join(', ')} -->\n${element}`;

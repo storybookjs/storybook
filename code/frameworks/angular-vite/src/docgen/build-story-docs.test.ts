@@ -33,6 +33,7 @@ const build = (
   buildStoryDocsPayload(
     { entry: entry(importPath, title) },
     {
+      storyRoot: FIXTURES,
       workspaceRoot: FIXTURES,
       outputDir: FIXTURES,
       readDocumentationJson: documentationJson,
@@ -88,8 +89,27 @@ describe('buildStoryDocsPayload', () => {
 
   it('reports args a spread hid rather than shipping a snippet that looks complete', () => {
     expect(snippetOf(build('./story-docs.stories.ts'), 'Spread Args')).toBe(
-      `<!-- unresolved args: ...sharedArgs -->\n<sb-button [label]="'meta'" [count]="1" (clicked)="clicked($event)"></sb-button>`
+      `<!-- unresolved: ...sharedArgs -->\n<sb-button [label]="'meta'" [count]="1" (clicked)="clicked($event)"></sb-button>`
     );
+  });
+
+  it('reports a spread at the config level, not only one inside args', () => {
+    expect(snippetOf(build('./story-docs.stories.ts'), 'Config Spread')).toBe(
+      `<!-- unresolved: ...Basic -->\n<sb-button [label]="'meta'" [count]="5" (clicked)="clicked($event)"></sb-button>`
+    );
+  });
+
+  it.each([
+    // Emitting the identifier's source text would put JavaScript in the Source block where the
+    // user expects markup, so the template is reported as unresolvable instead.
+    ['Hoisted Template', 'HOISTED_TEMPLATE'],
+    // A `render` that is not an inline function returning an object literal may still produce
+    // markup; generating an element from args would silently replace it.
+    ['Render Identifier', 'render: renderFn'],
+  ])('reports the %s story rather than printing its JavaScript', (storyName, expected) => {
+    const snippet = snippetOf(build('./story-docs.stories.ts'), storyName);
+    expect(snippet).toContain(`<!-- unresolved: ${expected}`);
+    expect(snippet).toContain('<sb-button');
   });
 
   it('isolates a story it cannot read and still ships the rest of the file', () => {
@@ -130,6 +150,7 @@ describe('buildStoryDocsPayload', () => {
           entry: { id: 'x', name: 'x', title: 'x', type: 'docs', storiesImports: [] } as IndexEntry,
         },
         {
+          storyRoot: FIXTURES,
           workspaceRoot: FIXTURES,
           outputDir: FIXTURES,
           readDocumentationJson: documentationJson,

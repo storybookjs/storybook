@@ -34,7 +34,7 @@ const snippet = (
     unresolvedArgs,
   });
 
-describe('parseSelector', () => {
+describe('selector to host element', () => {
   it.each([
     ['sb-button', '<sb-button></sb-button>'],
     // Compound selector: the directive belongs on its host element, not on an invented one.
@@ -50,6 +50,9 @@ describe('parseSelector', () => {
     // A pseudo-selector narrows when a directive applies; it is not part of the host element.
     ['sb-button:not([disabled])', '<sb-button></sb-button>'],
     ['[myDir]:not(.excluded)', '<div myDir></div>'],
+    // A comma inside a pseudo's parentheses separates its arguments, not two selectors, so
+    // everything written after it still belongs to the host element.
+    ['sb-button:not(.a, .b).cls', '<sb-button class="cls"></sb-button>'],
     ['sb-button[type=submit]', '<sb-button type="submit"></sb-button>'],
   ])('%s renders as %s', (selector, expected) => {
     expect(snippet({}, { selector, inputs: [], outputs: [] })).toBe(expected);
@@ -142,7 +145,34 @@ describe('generateAngularSnippet', () => {
 
   it('reports args it could not resolve instead of dropping them silently', () => {
     expect(snippet({ label: `'Save'` }, undefined, ['...sharedArgs'])).toBe(
-      `<!-- unresolved args: ...sharedArgs -->\n<sb-button [label]="'Save'" (clicked)="clicked($event)"></sb-button>`
+      `<!-- unresolved: ...sharedArgs -->\n<sb-button [label]="'Save'" (clicked)="clicked($event)"></sb-button>`
+    );
+  });
+
+  it('still reports unresolved args on the no-selector fallback', () => {
+    expect(snippet({}, { selector: undefined }, ['...sharedArgs'])).toBe(
+      `<!-- unresolved: ...sharedArgs -->\n<ng-container *ngComponentOutlet="ButtonComponent"></ng-container>`
+    );
+  });
+
+  it('keeps a multi-line arg value on one line', () => {
+    expect(snippet({ label: '`line1\nline2`' })).toBe(
+      '<sb-button [label]="`line1 line2`" (clicked)="clicked($event)"></sb-button>'
+    );
+  });
+
+  it('does not name a directive selector attribute twice when it is also a bound input', () => {
+    expect(
+      snippet(
+        { appHighlight: `'yellow'` },
+        { selector: '[appHighlight]', inputs: ['appHighlight'], outputs: [] }
+      )
+    ).toBe(`<div [appHighlight]="'yellow'"></div>`);
+  });
+
+  it('ignores an input named after an inherited Object member rather than throwing', () => {
+    expect(snippet({ label: `'Save'` }, { inputs: ['label', 'toString'], outputs: [] })).toBe(
+      `<sb-button [label]="'Save'"></sb-button>`
     );
   });
 });

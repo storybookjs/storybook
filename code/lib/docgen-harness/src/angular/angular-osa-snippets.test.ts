@@ -51,6 +51,7 @@ describe('angular OSA snippet baselines', () => {
         } as IndexEntry,
       },
       {
+        storyRoot: testDir,
         workspaceRoot: testDir,
         outputDir: testDir,
         readDocumentationJson: () => compodocJson,

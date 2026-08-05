@@ -29,7 +29,13 @@ import type { AngularComponentTemplate } from './template-snippet.ts';
 import { generateAngularSnippet } from './template-snippet.ts';
 
 export interface BuildStoryDocsContext {
-  /** Directory story `importPath`s and Compodoc's relative `file` paths resolve against. */
+  /**
+   * Directory a story index `importPath` resolves against. This is the index generator's own
+   * working directory, which is the Storybook process cwd - deliberately not Compodoc's
+   * `workspaceRoot`, which the Angular builder can report as a different directory entirely.
+   */
+  storyRoot: string;
+  /** Directory Compodoc's relative `file` paths resolve against. */
   workspaceRoot: string;
   /** Directory Compodoc writes {@link DOCUMENTATION_JSON} into. */
   outputDir: string;
@@ -49,11 +55,17 @@ const argsObjectNode = (config?: t.ObjectExpression): t.ObjectExpression | undef
   return property && t.isObjectExpression(property.value) ? property.value : undefined;
 };
 
-/** Source text of every spread in an `args` object; those values cannot be resolved statically. */
-const spreadSources = (args?: t.ObjectExpression): string[] =>
-  (args?.properties ?? [])
-    .filter((property): property is t.SpreadElement => t.isSpreadElement(property))
-    .map((property) => generate(property, { concise: true, comments: false }).code);
+const sourceOf = (node: t.Node): string => generate(node, { concise: true, comments: false }).code;
+
+/**
+ * Source text of everything in an object literal that a static pass cannot read: spreads, computed
+ * keys and methods. Applied both to an `args` object and to the config object around it, since a
+ * spread at the config level carries args just as invisibly as one inside `args`.
+ */
+const unresolvableProperties = (object?: t.ObjectExpression): string[] =>
+  (object?.properties ?? [])
+    .filter((property) => !t.isObjectProperty(property) || keyOf(property) === undefined)
+    .map(sourceOf);
 
 /** Value of a config object's own property, if it has one. */
 const propertyValue = (config: t.ObjectExpression | undefined, name: string): t.Node | undefined =>
@@ -82,11 +94,22 @@ const returnedObject = (fn: t.Node | undefined): t.ObjectExpression | undefined 
   return t.isObjectExpression(returned) ? returned : undefined;
 };
 
+/** What a `template` property turned out to be. */
+type TemplateResult =
+  /** Read as markup, so the story is passed through as written. */
+  | { kind: 'literal'; markup: string }
+  /** A `template` or `render` exists but its markup is not knowable without running the story. */
+  | { kind: 'unresolvable'; source: string };
+
 /**
  * The template markup a `template` property holds. `null` and `undefined` do not count, matching
  * the preview's rule that an empty string is still a user-defined template.
+ *
+ * Anything that is not a literal - a hoisted `const`, an interpolated template literal, a call -
+ * is reported rather than printed: emitting its JavaScript source would put an identifier in the
+ * Source block where the user expects markup.
  */
-const templateFrom = (node: t.Node | undefined): string | undefined => {
+const templateFrom = (node: t.Node | undefined): TemplateResult | undefined => {
   if (
     node === undefined ||
     t.isNullLiteral(node) ||
@@ -95,23 +118,35 @@ const templateFrom = (node: t.Node | undefined): string | undefined => {
     return undefined;
   }
   if (t.isStringLiteral(node)) {
-    return node.value;
+    return { kind: 'literal', markup: node.value };
   }
   if (t.isTemplateLiteral(node) && node.expressions.length === 0) {
-    return node.quasis[0]?.value.cooked ?? '';
+    return { kind: 'literal', markup: node.quasis[0]?.value.cooked ?? '' };
   }
-  return generate(node, { concise: true, comments: false }).code;
+  return { kind: 'unresolvable', source: sourceOf(node) };
 };
 
 /**
  * The template a story or meta supplies itself, including the `render: () => ({ template })` form
  * Angular stories use.
+ *
+ * A `render` that is not an inline function returning an object literal is itself unresolvable: it
+ * may well produce markup, and generating an element from args would silently replace it.
  */
-const userTemplate = (config: t.ObjectExpression | undefined): string | undefined =>
-  templateFrom(
-    propertyValue(config, 'template') ??
-      propertyValue(returnedObject(propertyValue(config, 'render')), 'template')
-  );
+const userTemplate = (config: t.ObjectExpression | undefined): TemplateResult | undefined => {
+  const own = templateFrom(propertyValue(config, 'template'));
+  if (own) {
+    return own;
+  }
+  const render = propertyValue(config, 'render');
+  if (!render) {
+    return undefined;
+  }
+  const returned = returnedObject(render);
+  return returned
+    ? templateFrom(propertyValue(returned, 'template'))
+    : { kind: 'unresolvable', source: `render: ${sourceOf(render)}` };
+};
 
 /** Story's own `args` object, as a path so the shared CSF helper can read it. */
 const storyArgsPath = (
@@ -200,7 +235,7 @@ export const buildStoryDocsPayload = (
     return undefined;
   }
 
-  const storyPath = resolve(context.workspaceRoot, storyImportPath);
+  const storyPath = resolve(context.storyRoot, storyImportPath);
   let csf: CsfFile;
   try {
     csf = loadCsf(readFileSync(storyPath, 'utf8'), { makeTitle: () => input.entry.title }).parse();
@@ -219,7 +254,10 @@ export const buildStoryDocsPayload = (
   const metaNode = csf._metaNode;
   const metaArgs = metaArgsRecord(metaNode);
   const metaTemplate = userTemplate(metaNode);
-  const metaSpreads = spreadSources(argsObjectNode(metaNode));
+  const metaUnresolved = [
+    ...unresolvableProperties(metaNode),
+    ...unresolvableProperties(argsObjectNode(metaNode)),
+  ];
 
   const stories: StoryDocsById = {};
   for (const [exportName, story] of Object.entries(csf._stories)) {
@@ -235,7 +273,7 @@ export const buildStoryDocsPayload = (
           component,
           metaArgs,
           metaTemplate,
-          metaSpreads,
+          metaUnresolved,
         }),
       };
     } catch (error) {
@@ -265,8 +303,8 @@ const buildSnippet = (
   file: {
     component: AngularComponentTemplate;
     metaArgs: Record<string, t.Node>;
-    metaTemplate: string | undefined;
-    metaSpreads: string[];
+    metaTemplate: TemplateResult | undefined;
+    metaUnresolved: string[];
   }
 ): string => {
   const declaration = csf._storyDeclarationPath[exportName];
@@ -281,14 +319,19 @@ const buildSnippet = (
       : undefined;
 
   const template = userTemplate(config?.node) ?? storyFnTemplate ?? file.metaTemplate;
-  if (template !== undefined) {
-    return template;
+  if (template?.kind === 'literal') {
+    return template.markup;
   }
 
   const argsPath = storyArgsPath(config);
   return generateAngularSnippet({
     component: file.component,
     args: mergeArgsRecords(file.metaArgs, argsRecordFromObjectPath(argsPath)),
-    unresolvedArgs: [...file.metaSpreads, ...spreadSources(argsPath?.node)],
+    unresolvedArgs: [
+      ...(template ? [template.source] : []),
+      ...file.metaUnresolved,
+      ...unresolvableProperties(config?.node),
+      ...unresolvableProperties(argsPath?.node),
+    ],
   });
 };

@@ -1,10 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // The flag is read once at module evaluation, so each case needs a fresh module registry.
-const loadDecorators = async () => {
+const loadConfig = async () => {
   vi.resetModules();
-  return (await import('./config.ts')).decorators;
+  return import('./config.ts');
 };
+
+const loadDecorators = async () => (await loadConfig()).decorators;
 
 describe('angular docs decorators', () => {
   beforeEach(() => {
@@ -26,5 +28,19 @@ describe('angular docs decorators', () => {
     vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
 
     await expect(loadDecorators()).resolves.toEqual([]);
+  });
+
+  // `dynamic` makes the Source block render the snippet unconditionally. With no decorator
+  // guaranteeing one, that shows an empty code block for every story the server provider does not
+  // cover; `auto` is what lets the block fall back to the story's own source.
+  it.each([
+    [undefined, 'dynamic'],
+    [{ experimentalDocgenServer: true }, 'auto'],
+  ])('uses the %s source type', async (features, expected) => {
+    if (features) {
+      vi.stubGlobal('FEATURES', features);
+    }
+
+    await expect((await loadConfig()).parameters.docs.source.type).toBe(expected);
   });
 });

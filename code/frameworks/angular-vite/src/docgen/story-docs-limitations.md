@@ -40,8 +40,12 @@ Two related consequences:
 
 ## Stories that supply their own template are untouched
 
-A story with a `template` (directly, or returned from `render`) is shown as written, including an empty one.
+A story with a `template` (directly, or returned from an inline `render`) is shown as written, including an empty one.
 That matches what the browser generator does today.
+
+The markup has to be readable from the source, though.
+A template held in a variable, one built by interpolation, or a `render` that is a reference to a function declared elsewhere cannot be read without running the story.
+In those cases the snippet falls back to the generated bindings and says what it could not resolve, rather than printing the variable name as if it were markup.
 
 ## Compodoc has to have run
 

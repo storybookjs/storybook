@@ -3,6 +3,8 @@
 import { ButtonComponent } from './button.component';
 
 const sharedArgs = { label: 'shared' };
+const HOISTED_TEMPLATE = '<sb-button hoisted></sb-button>';
+const renderFn = () => ({ template: '<sb-button via-fn></sb-button>' });
 const notAStoryConfig = (...parts: unknown[]) => ({ parts });
 
 export default {
@@ -33,3 +35,9 @@ export const SpreadArgs = { args: { ...sharedArgs, count: 1 } };
 export const Csf2Function = () => ({ template: '<sb-button csf2></sb-button>' });
 
 export const Unclassifiable = notAStoryConfig(1, 2);
+
+export const HoistedTemplate = { template: HOISTED_TEMPLATE };
+
+export const RenderIdentifier = { render: renderFn, args: { count: 4 } };
+
+export const ConfigSpread = { ...Basic, args: { count: 5 } };

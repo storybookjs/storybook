@@ -34,6 +34,9 @@ export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (
   }
 
   const context = {
+    // Story `importPath`s come from the index, which is generated against the Storybook process
+    // cwd. Compodoc's `workspaceRoot` is a different directory under the Angular builder.
+    storyRoot: process.cwd(),
     workspaceRoot: compodoc.workspaceRoot,
     outputDir: compodoc.outputDir,
     readDocumentationJson: createDocumentationJsonReader(),

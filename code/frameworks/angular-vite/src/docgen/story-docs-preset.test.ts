@@ -8,11 +8,22 @@ import type {
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { experimental_storyDocsProvider } from './story-docs-preset.ts';
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
+
+// A story index `importPath` is written relative to the Storybook process cwd, so that - and not
+// Compodoc's `workspaceRoot`, which the Angular builder reports separately - is what the provider
+// resolves story files against. The two differ here on purpose.
+beforeEach(() => {
+  vi.spyOn(process, 'cwd').mockReturnValue(FIXTURES);
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 /** Minimal `Options` stand-in: no dev server, no Vite, no builder context beyond the root. */
 const options = (frameworkOptions: Record<string, unknown> = {}): Options =>
@@ -79,6 +90,13 @@ describe('experimental_storyDocsProvider', () => {
     const payload = await provider({ entry: storyEntry });
 
     expect(payload).toMatchObject({ id: 'storydocs', name: 'ButtonComponent', import: 'IMPORT' });
+  });
+
+  it('falls through when the story path resolves against cwd but Compodoc lives elsewhere', async () => {
+    vi.mocked(process.cwd).mockReturnValue(join(FIXTURES, 'aliased'));
+    const provider = await experimental_storyDocsProvider(noDownstream, options());
+
+    expect(await provider({ entry: storyEntry })).toBeUndefined();
   });
 
   it('does not register at all when the user opted out of Compodoc', async () => {

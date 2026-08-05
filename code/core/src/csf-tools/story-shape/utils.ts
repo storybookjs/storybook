@@ -1,5 +1,7 @@
 import { type NodePath, types as t } from 'storybook/internal/babel';
 
+import type { CsfFile } from '../CsfFile.ts';
+
 /** Static key of an object property, or `null` when computed/non-literal. */
 export const keyOf = (p: t.ObjectProperty): string | null =>
   t.isIdentifier(p.key) ? p.key.name : t.isStringLiteral(p.key) ? p.key.value : null;
@@ -53,8 +55,8 @@ export function resolveIdentifierInit(
   return init && init.isExpression() ? init : null;
 }
 
-/** NodePath for a known node inside a program, e.g. the CSF meta object. */
-export function pathForNode<T extends t.Node>(
+/** NodePath for a known node inside a program. */
+function pathForNode<T extends t.Node>(
   program: NodePath<t.Program>,
   target: T | undefined
 ): NodePath<T> | undefined {
@@ -73,4 +75,11 @@ export function pathForNode<T extends t.Node>(
   });
 
   return found;
+}
+
+/** ObjectExpression path for the parsed CSF default meta, when available. */
+export function metaObjectPath(csf: CsfFile): NodePath<t.ObjectExpression> | undefined {
+  const metaPath = pathForNode(csf._file.path, csf._metaNode);
+
+  return metaPath?.isObjectExpression() ? metaPath : undefined;
 }

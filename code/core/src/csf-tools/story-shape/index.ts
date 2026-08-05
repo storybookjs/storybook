@@ -6,5 +6,5 @@ export {
   isTypeSpecifier,
 } from './imports.ts';
 export { extractStoryJSDocInfo } from './jsdoc.ts';
-export { normalizeStoryDeclaration } from './normalize-story.ts';
-export { keyOf, pathForNode, resolveIdentifierInit } from './utils.ts';
+export { type NormalizedStoryDeclaration, normalizeStoryDeclaration } from './normalize-story.ts';
+export { keyOf, metaObjectPath, resolveIdentifierInit } from './utils.ts';

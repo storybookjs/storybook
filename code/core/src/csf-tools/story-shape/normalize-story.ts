@@ -2,22 +2,30 @@ import { type NodePath, types as t } from 'storybook/internal/babel';
 
 import { resolveIdentifierInit } from './utils.ts';
 
+export type NormalizedStoryDeclaration =
+  | { type: 'config'; path: NodePath<t.ObjectExpression> }
+  | {
+      type: 'fn';
+      path: NodePath<t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration>;
+    }
+  | { type: 'emptyConfig'; path: NodePath<t.Expression> };
+
 /**
- * Resolve a story export's declaration to the expression that carries its config.
+ * Resolve a story export's declaration to its snippet-ready story shape.
  *
  * @example
  *
  * ```ts
- * export const A: Story = { args: {} }; //            → the object expression
- * export const B = {} satisfies Story; //             → the object expression
- * export const C = meta.story({ args: {} }); //       → the object expression
- * export const D = meta.story(); //                   → the call expression (empty config)
- * export const E = Template.bind({}); //              → Template's initializer
+ * export const A: Story = { args: {} }; //            → { type: 'config', path }
+ * export const B = {} satisfies Story; //             → { type: 'config', path }
+ * export const C = meta.story({ args: {} }); //       → { type: 'config', path }
+ * export const D = meta.story(); //                   → { type: 'emptyConfig', path }
+ * export const E = Template.bind({}); //              → Template's classified initializer
  * ```
  */
 export function normalizeStoryDeclaration(
   storyDeclaration: NodePath<t.Node>
-): NodePath<t.FunctionDeclaration | t.Expression> {
+): NormalizedStoryDeclaration {
   let storyPath: NodePath<t.FunctionDeclaration | t.Expression>;
   if (storyDeclaration.isFunctionDeclaration()) {
     storyPath = storyDeclaration;
@@ -75,9 +83,33 @@ export function normalizeStoryDeclaration(
     }
   }
 
-  return normalizedPath.isTSSatisfiesExpression()
+  const unwrappedPath = normalizedPath.isTSSatisfiesExpression()
     ? normalizedPath.get('expression')
     : normalizedPath.isTSAsExpression()
       ? normalizedPath.get('expression')
       : normalizedPath;
+
+  if (unwrappedPath.isObjectExpression()) {
+    return { type: 'config', path: unwrappedPath };
+  }
+
+  if (
+    unwrappedPath.isArrowFunctionExpression() ||
+    unwrappedPath.isFunctionExpression() ||
+    unwrappedPath.isFunctionDeclaration()
+  ) {
+    return { type: 'fn', path: unwrappedPath };
+  }
+
+  if (
+    unwrappedPath.isCallExpression() &&
+    Array.isArray(unwrappedPath.node.arguments) &&
+    unwrappedPath.node.arguments.length === 0
+  ) {
+    return { type: 'emptyConfig', path: unwrappedPath };
+  }
+
+  throw unwrappedPath.buildCodeFrameError(
+    'Expected story to be csf factory, function or an object expression'
+  );
 }

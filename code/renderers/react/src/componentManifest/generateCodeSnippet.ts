@@ -3,10 +3,10 @@ import {
   type CsfFile,
   argsRecordFromObjectPath,
   keyOf,
+  metaObjectPath,
   mergeArgsRecords,
   metaArgsRecord,
   normalizeStoryDeclaration,
-  pathForNode,
   resolveIdentifierInit,
 } from 'storybook/internal/csf-tools';
 
@@ -25,42 +25,24 @@ export function getCodeSnippet(
     throw csf._storyPaths[storyName]?.buildCodeFrameError(message) ?? message;
   }
 
-  const normalizedPath = normalizeStoryDeclaration(storyDeclaration);
+  const normalizedStory = normalizeStoryDeclaration(storyDeclaration);
 
   // Find a function (explicit story fn or render())
   let storyFn:
     | NodePath<t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration>
     | undefined;
 
-  if (
-    normalizedPath.isArrowFunctionExpression() ||
-    normalizedPath.isFunctionExpression() ||
-    normalizedPath.isFunctionDeclaration()
-  ) {
-    storyFn = normalizedPath;
-  } else if (!normalizedPath.isObjectExpression()) {
-    // Allow CSF4 meta.story() without arguments, which is equivalent to an empty object story config
-    if (
-      normalizedPath.isCallExpression() &&
-      Array.isArray(normalizedPath.node.arguments) &&
-      normalizedPath.node.arguments.length === 0
-    ) {
-      // No-op: treat as an object story with no properties
-    } else {
-      throw normalizedPath.buildCodeFrameError(
-        'Expected story to be csf factory, function or an object expression'
-      );
-    }
+  if (normalizedStory.type === 'fn') {
+    storyFn = normalizedStory.path;
   }
 
-  const storyProps = normalizedPath.isObjectExpression()
-    ? normalizedPath.get('properties').filter((p) => p.isObjectProperty())
-    : [];
+  const storyProps =
+    normalizedStory.type === 'config'
+      ? normalizedStory.path.get('properties').filter((p) => p.isObjectProperty())
+      : [];
 
-  const metaPath = pathForNode(csf._file.path, metaObj);
-  const metaProps = metaPath?.isObjectExpression()
-    ? metaPath.get('properties').filter((p) => p.isObjectProperty())
-    : [];
+  const metaPath = metaObjectPath(csf);
+  const metaProps = metaPath?.get('properties').filter((p) => p.isObjectProperty()) ?? [];
 
   // Tri-state render resolution: distinguishes "no render property" from
   // "render exists but couldn't be resolved" so that an unresolvable story-level

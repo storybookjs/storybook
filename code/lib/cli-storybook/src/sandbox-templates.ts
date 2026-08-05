@@ -420,6 +420,10 @@ export const baseTemplates = {
      * see https://react.dev/blog/2024/04/25/react-19-upgrade-guide#installing
      */
     script: 'npm create vite --yes {{beforeDir}} -- --template react-ts',
+    // Beta React is applied after scaffold (extraDependencies / resolutions). The allowlist
+    // still has to live on before-storybook so later installs under the 7-day gate can
+    // resolve those packages. `scheduler` ships in lockstep with React releases.
+    minAgeGateExemptions: ['react', 'react-dom', 'types-react', 'types-react-dom', 'scheduler'],
     expected: {
       framework: '@storybook/react-vite',
       renderer: '@storybook/react',
@@ -496,6 +500,11 @@ export const baseTemplates = {
      */
     script:
       'npx create-webpack5-react {{beforeDir}} --version-react="beta" --version-react-dom="beta"',
+    // create-webpack5-react pins react@beta at scaffold time, so refresh must allow the
+    // React beta family or the 7-day gate quarantines them. `types-react*` are the
+    // packages behind the `@types/react@npm:types-react@beta` aliases; `scheduler`
+    // ships in lockstep with React releases.
+    minAgeGateExemptions: ['react', 'react-dom', 'types-react', 'types-react-dom', 'scheduler'],
     expected: {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',

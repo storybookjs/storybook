@@ -1,6 +1,20 @@
 <base target="_parent" />
 
 <style>
+  /* Paints the story canvas. It lives on `body` so that it still propagates to the document canvas
+     and fills the viewport for a short story — a background on `html` would break that propagation
+     and leave anything a story paints on `body` covering only its own box. `:where()` drops the
+     specificity to zero, so any story rule wins without needing `!important`.
+
+     Kept out of the manager's <iframe> element because that element is also what the browser paints
+     in the overscroll gutter, and the gutter is meant to follow the surrounding chrome instead. The
+     manager sets --sb-preview-background from the `appPreviewBg` theme variable; standing alone
+     (opening iframe.html directly) it is unset and `Canvas` keeps the browser's own
+     color-scheme-aware default. */
+  :where(body) {
+    background-color: var(--sb-preview-background, Canvas);
+  }
+
   /* While we aren't showing the main block yet, but still preparing, we want everything the user has rendered, which may or may not be in #storybook-root, to be display none */
   .sb-show-preparing-story:not(.sb-show-main) > :not(.sb-preparing-story) {
     display: none;

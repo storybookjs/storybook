@@ -278,7 +278,12 @@ export const baseTemplates = {
     // The point of this template is the canary line, and canaries are published
     // daily. `@next/*` covers the platform binaries, and `eslint-config-next`
     // is pinned to the same canary version by create-next-app.
-    minAgeGateExemptions: ['next', '@next/*', 'eslint-config-next'],
+    //
+    // `@tailwindcss/turbopack` is not part of that line — `--tailwind` pulls it in,
+    // and it is new enough that `^4` has only ever matched one release. Until it has
+    // a second one, every release it makes is the sole candidate and the gate blocks
+    // the whole template. Drop this entry once 4.x has some history.
+    minAgeGateExemptions: ['next', '@next/*', 'eslint-config-next', '@tailwindcss/turbopack'],
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',

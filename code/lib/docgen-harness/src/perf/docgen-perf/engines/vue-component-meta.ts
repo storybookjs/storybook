@@ -16,6 +16,7 @@ import type { MetaCheckerOptions } from 'vue-component-meta';
 import { z } from 'zod';
 
 import { parseHarnessOptions } from '../../docgen-shared/args.ts';
+import { PIN_OPTION, importPinned } from '../../docgen-shared/pin.ts';
 import { type SeriesEngine, harnessMain, runSeriesHarness } from '../../docgen-shared/series.ts';
 import {
   VUE_OPTIONS,
@@ -28,7 +29,8 @@ import {
   vueToInput,
 } from './vue-scenario.ts';
 
-/** Both pins are the same package, so the current one's types describe either install. */
+/** The canonical install. A pin is an alias of the same package, so these types describe either. */
+const PACKAGE = 'vue-component-meta';
 type CheckerModule = typeof import('vue-component-meta');
 type Checker = ReturnType<CheckerModule['createCheckerByJson']>;
 
@@ -39,39 +41,21 @@ const CHECKER_OPTIONS: MetaCheckerOptions = {
   printer: { newLine: 1 },
 };
 
-const PINS = ['current', 'next'] as const;
-type Pin = (typeof PINS)[number];
-
-/** Each pin is a separate install, so each gets its own scratch directory. */
-const PIN_DIR: Record<Pin, string> = {
-  current: 'vue-component-meta',
-  next: 'vue-component-meta-next',
-};
+const SCHEMA = VUE_SCHEMA.extend({ pin: z.string().default(PACKAGE) });
 
 /**
- * `--pin` is this harness's only flag of its own, so it extends the shared Vue table rather than
- * being read out of argv beforehand: it is validated by the same strict parser as every other flag,
- * accepts `--pin=next` like they do, and lands in the options the result JSON records.
+ * `--pin` extends the shared Vue table rather than being read out of argv beforehand, so it reaches
+ * the same strict parser as every other flag and lands in the options the result JSON records. Each
+ * install gets its own scratch directory, so the two runs never share a generated project.
  */
-const SCHEMA = VUE_SCHEMA.extend({ pin: z.enum(PINS).default('current') });
-
-function parseOptions(argv: string[]): VueHarnessOptions & { pin: Pin } {
-  const parsed = parseHarnessOptions<VueOptionsInput & { pin: Pin }>(
+function parseOptions(argv: string[]): VueHarnessOptions & { pin: string } {
+  const parsed = parseHarnessOptions<VueOptionsInput & { pin: string }>(
     argv,
-    { ...VUE_OPTIONS, pin: { type: 'string' } },
+    { ...VUE_OPTIONS, ...PIN_OPTION },
     SCHEMA,
     vueToInput
   );
-  return { ...parsed, outDir: parsed.outDir ?? vueOutDir(PIN_DIR[parsed.pin]) };
-}
-
-/**
- * Only the pin being measured is loaded. Importing both copies would leave the other one's module
- * graph on the heap of every run, including the runs that feed the standing vue pair, which would
- * shift a memory number that has nothing to do with this comparison.
- */
-function loadCheckers(pin: Pin): Promise<CheckerModule> {
-  return pin === 'next' ? import('vue-component-meta-next') : import('vue-component-meta');
+  return { ...parsed, outDir: parsed.outDir ?? vueOutDir(parsed.pin) };
 }
 
 /**
@@ -95,9 +79,9 @@ function extractOne(checker: Checker, sfcPath: string): number {
   return meta.props.length + meta.events.length + meta.slots.length + meta.exposed.length;
 }
 
-async function createEngine(options: VueHarnessOptions, pin: Pin): Promise<SeriesEngine> {
+async function createEngine(options: VueHarnessOptions, pin: string): Promise<SeriesEngine> {
   const scenario = setUpVueScenario(options);
-  const fns = await loadCheckers(pin);
+  const fns = await importPinned<CheckerModule>(pin, PACKAGE);
   let checker: Checker | undefined;
   let measuredPath = scenario.targetPaths[0];
 

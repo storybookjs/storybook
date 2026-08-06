@@ -176,19 +176,73 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 `src/perf/` measures how fast the docgen engines are and how much memory they hold, which is the other half of the "docgen beyond React" question the snapshot comparator above answers for correctness.
 It is a set of CLIs rather than part of this package's exported API, so nothing in `src/perf/` is re-exported from `src/index.ts`.
 
-Both commands run from `code/lib/docgen-harness`:
+All commands run from `code/lib/docgen-harness`:
 
 ```bash
-yarn bench:docgen-perf            # per-engine cold/warm latency and memory, full profile
+yarn bench:docgen-perf            # per-engine cold/warm latency and memory, full profile (~1 min)
 yarn bench:docgen-perf --quick    # smoke profile; its numbers are marked non-comparable
-yarn bench:docgen-memory          # the docgen-server memory regression gate CI runs daily
+yarn bench:docgen-perf-gate       # the same suite, plus budget assertions - what the CI gate runs
+yarn bench:docgen-memory          # the docgen-server memory regression gate
 ```
 
 `bench:docgen-perf` generates synthetic projects under the shared sandbox directory, runs each engine in its own child process, and writes a results JSON next to them.
+The generated trees are left on disk so you can open what was measured, and each engine/scenario owns one directory that the generator wipes before it writes.
+That makes two bench runs at once clobber each other - one wipes a tree the other is mid-way through reading - so run them one at a time.
 `bench:docgen-memory` asserts both that re-extraction is leak-free and that the program-recycle fix still flips a tight-heap run from OOM to survival.
 
+### Running one engine, or one that is out of the default run
+
+```bash
+yarn bench:docgen-perf --engine react-osa                       # one engine
+yarn bench:docgen-perf --engine react-legacy --engine react-osa # a control pair, one invocation
+yarn bench:docgen-perf --json /tmp/results.json                 # where the results land
+```
+
+The default run is `react-legacy`, `react-osa`, `vue-docgen-api`, `vue-component-meta` and `compodoc`.
+Two ids sit outside it and only measure when named: `react-legacy-rdt` (the `react-docgen-typescript` parser) and `vue-component-meta-next` (the version-pair alias).
+A ratio only appears when both sides of a control pair measured in the same invocation, so naming one side gives you a table row and no comparison.
+
+Compodoc is skipped with a message when its CLI does not resolve; every other engine reads from the workspace, so a missing one is a failure rather than a skip.
+
+### The two React shapes
+
+The React engines run every scenario twice, because Storybook documents components in two shapes that cost very different things:
+
+- `whole-index` - one batch over every component, what the manifest generator does.
+- `first-story` - the single component a request asks for, what the docgen server does. This is the number a developer waits for before Controls populate.
+
+The cold ratio between the React engines is 0.73 over the index and 0.08 over the first story; reading only one of them gives a misleading picture of the engine's cost.
+
+### Comparing two releases of one engine
+
+`vue-component-meta-next` is an alias in this package's `package.json`, pinned to an exact version.
+Point it at the version you want to test, `yarn install`, then run both sides in one invocation:
+
+```bash
+yarn bench:docgen-perf --engine vue-component-meta --engine vue-component-meta-next
+```
+
+Pin the candidate exactly rather than with a range - two caret ranges can resolve to one install, and then the run compares an engine against itself.
+The suite prints both resolved versions beside every ratio and calls out two equal ones as not being a comparison at all.
+
+The mechanism is not Vue-specific: an engine entry declares which install it measures, the child imports that specifier instead of a hard-coded package, and a pair is two entries differing only in that field.
+`PERF-METHODOLOGY.md` has the steps for setting one up on another engine, and the one case it does not cover.
+`PERF-METHODOLOGY.md` walks through reading those guard lines, and through adding a pair for another engine.
+
+### The gate and its budgets
+
+Both gates run on CircleCI's daily tier, which is triggered on demand by the `ci:daily` label on a pull request - nothing schedules it, so this is not nightly protection.
+
+`bench:docgen-perf-gate` runs the suite at the pinned profile, asserts the budgets in `src/perf/docgen-shared/budgets.ts`, and then proves its own failure detection by running a deliberately failing engine and requiring that run to come back non-zero.
+It writes into the sandbox directory by default; CI passes `--out ./perf-results` so the results can be stored as a build artifact.
+
+It refuses to report a green gate on a `--quick` run, on an empty budget table, or when a budgeted engine skipped or failed - each of those would look like protection while asserting nothing.
+
+Budgets are ratios and absolute megabytes, never raw milliseconds, because wall clock on a shared CI executor is far too noisy to gate on.
+Change one only against numbers measured on CI, and record where they came from in `PERF-METHODOLOGY.md`.
+
 Read `src/perf/PERF-METHODOLOGY.md` before changing a metric, a budget, or a version pair.
-It is the contract the numbers are only meaningful under.
+It is the contract these numbers are only meaningful under.
 
 The bench also carries unit tests for its own aggregation, reporting and generator logic, so `yarn test code/lib/docgen-harness` runs those alongside the fixture comparisons.
 

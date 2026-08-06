@@ -55,9 +55,12 @@ const PARSERS = ['react-docgen', 'react-docgen-typescript'] as const;
  *   changed - re-extract only the component whose file changed.
  */
 const SCOPES = ['all', 'changed'] as const;
+/** The two shapes the OSA harness runs, so the legacy engine can be compared on either. */
+const SHAPES = ['whole-index', 'first-story'] as const;
 
 const OPTIONS = {
   parser: { type: 'string' },
+  shape: { type: 'string' },
   components: { type: 'string' },
   variants: { type: 'string' },
   props: { type: 'string' },
@@ -74,6 +77,7 @@ const SCHEMA = z.object({
   props: countOption(10),
   saves: countOption(20),
   scope: z.enum(SCOPES).default('changed'),
+  shape: z.enum(SHAPES).default('whole-index'),
   outDir: z
     .string()
     .default(path.join(SANDBOX_DIRECTORY, 'docgen-perf', 'react-legacy', 'project')),
@@ -135,6 +139,11 @@ async function loadParser(options: HarnessOptions, project: GeneratedProject): P
 }
 
 async function createEngine(options: HarnessOptions): Promise<SeriesEngine> {
+  // Re-extracting everything after a save is the other shape wearing this one's name.
+  if (options.shape === 'first-story' && options.scope === 'all') {
+    throw new Error('--shape first-story requires --scope changed');
+  }
+
   const genStart = Date.now();
   const project = generateProject({
     outDir: options.outDir,
@@ -158,11 +167,17 @@ async function createEngine(options: HarnessOptions): Promise<SeriesEngine> {
 
   // Track how many extra props each component currently has, so each save grows its type.
   const extraByComponent = new Array<number>(options.components).fill(options.props);
-  const changedIndex = (save: number) => (save - 1) % options.components;
+  const firstStory = options.shape === 'first-story';
+  // Fixed at the component the cold pass documented; round-robin would keep documenting new ones.
+  const changedIndex = (save: number) => (firstStory ? 0 : (save - 1) % options.components);
 
   return {
     async cold() {
-      await extractAll();
+      if (firstStory) {
+        await extractOne(0);
+      } else {
+        await extractAll();
+      }
       return undefined;
     },
     async applySave(save) {
@@ -194,9 +209,13 @@ harnessMain(async () => {
       props: options.props,
       saves: options.saves,
       scope: options.scope,
+      shape: options.shape,
     },
     saves: options.saves,
-    coldLabel: `${options.components} components`,
+    coldLabel:
+      options.shape === 'first-story'
+        ? `1 of ${options.components} components`
+        : `${options.components} components`,
     jsonOut: options.jsonOut,
     setup: () => createEngine(options),
   });

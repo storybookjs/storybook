@@ -1,18 +1,17 @@
-import React, { type ComponentType } from 'react';
 import type { Decorator } from '@storybook/react-vite';
+import type { AnyRootRoute, AnyRoute, Router } from '@tanstack/react-router';
 import {
   createMemoryHistory,
   createRootRoute,
   createRoute,
   createRouter,
-  type Route,
+  defaultStringifySearch,
+  interpolatePath,
   RouterProvider,
   type RootRoute,
-  interpolatePath,
-  defaultStringifySearch,
+  type Route,
 } from '@tanstack/react-router';
-import type { Router, AnyRootRoute, AnyRoute } from '@tanstack/react-router';
-import type { RouterParameters } from './types.ts';
+import React, { type ComponentType } from 'react';
 import {
   duplicateRouteTree,
   findRootRoute,
@@ -21,8 +20,9 @@ import {
   resolveStoryLeaf,
   type DuplicatedTree,
 } from './duplicate-tree.ts';
-import { isRoute } from './utils.ts';
 import { normalizeFileRoutePath } from './path-utils.ts';
+import type { RouterParameters } from './types.ts';
+import { isRoute } from './utils.ts';
 
 interface TanStackRouterStoryProps {
   Story: ComponentType;
@@ -42,7 +42,7 @@ interface ResolvedTree {
 
 const StoryContext = React.createContext<{ Story: ComponentType }>({ Story: () => null });
 
-const StoryFromContext: ComponentType = () => {
+export const StoryFromContext: ComponentType = () => {
   const { Story } = React.useContext(StoryContext);
   return <Story />;
 };
@@ -52,14 +52,16 @@ export const tanstackRouteDecorator: Decorator = (Story, context) => {
 };
 
 function TanStackRouterStory({ Story, context }: TanStackRouterStoryProps) {
+  const preloadedRouter = context.tanstackRouter as Router<AnyRootRoute> | undefined;
+
   const routerContext = context.parameters.tanstack?.router?.useRouterContext?.({
     storyContext: context,
   });
 
   const router = React.useMemo(
-    () => createStoryRouter({ Story: StoryFromContext, context, routerContext }),
+    () => preloadedRouter ?? createStoryRouter({ Story: StoryFromContext, context, routerContext }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [context.id]
+    [context.id, preloadedRouter]
   );
 
   const providerContext = React.useMemo(

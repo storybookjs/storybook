@@ -11,7 +11,7 @@ import { execFile } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 import { promisify } from 'node:util';
 
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
@@ -24,7 +24,10 @@ const CRITICAL_SECTION_MS = 150;
 // would turn scheduler noise into a failing test.
 const TEST_TIMEOUT_MS = 60_000;
 
-const lockModule = join(dirname(fileURLToPath(import.meta.url)), 'file-lock.ts');
+// A file:// URL, not a path: Node's ESM resolver rejects a Windows absolute path as a specifier.
+const lockModule = pathToFileURL(
+  join(dirname(fileURLToPath(import.meta.url)), 'file-lock.ts')
+).href;
 
 /**
  * One process doing work that must happen at most once: take the lock, do it only if this run has

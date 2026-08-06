@@ -17,9 +17,7 @@ import {
 import { generateDocumentation } from './generate-documentation.ts';
 
 vi.mock('./generate-documentation.ts', { spy: true });
-vi.mock('storybook/internal/node-logger', () => ({
-  logger: { info: vi.fn(), warn: vi.fn(), debug: vi.fn() },
-}));
+vi.mock('storybook/internal/node-logger', { spy: true });
 
 let workspaceRoot: string;
 let outputDir: string;

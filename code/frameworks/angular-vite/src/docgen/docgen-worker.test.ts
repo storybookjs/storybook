@@ -18,12 +18,20 @@ vi.mock('./build-docgen.ts', { spy: true });
 // Generation is covered next to the lock; here it only has to happen before anything is served.
 vi.mock('../compodoc/ensure-documentation.ts', { spy: true });
 
+/** Whether the mocked generation should publish a documentation.json, set per test. */
+let generationWrites = false;
+
 beforeEach(async () => {
   const memfs = await vi.importActual<typeof import('memfs')>('memfs');
   vi.mocked(existsSync).mockImplementation(memfs.fs.existsSync as typeof existsSync);
   vi.mocked(statSync).mockImplementation(memfs.fs.statSync as typeof statSync);
   vi.mocked(readFileSync).mockImplementation(memfs.fs.readFileSync as typeof readFileSync);
-  vi.mocked(ensureCompodocDocumentation).mockResolvedValue(undefined);
+  generationWrites = false;
+  vi.mocked(ensureCompodocDocumentation).mockImplementation(async () => {
+    if (generationWrites) {
+      vol.writeFileSync(DOCUMENTATION_JSON, documentationJson('label'));
+    }
+  });
 });
 
 afterEach(() => {
@@ -117,9 +125,7 @@ describe('createDocgenProvider', () => {
     givenWorkspace({ withDocumentationJson: false });
     // Whatever the trigger produces has to be on disk by the time the first request is answered,
     // which is only true because the run is awaited during construction rather than per request.
-    vi.mocked(ensureCompodocDocumentation).mockImplementation(async () => {
-      vol.writeFileSync(DOCUMENTATION_JSON, documentationJson('label'));
-    });
+    generationWrites = true;
     const provider = await createProvider();
 
     const payload = await provider({ entry });

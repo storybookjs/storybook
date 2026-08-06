@@ -45,7 +45,9 @@ describe('resolveCompodocConfig', () => {
   // read has no access to it. Deriving the same directory from `configDir` is what keeps the two
   // pointed at one place when Storybook is started from anywhere but the project directory.
   it('agrees with builder-vite`s root when only `configDir` is known', async () => {
-    const configDir = resolve('/projects/lib/.storybook');
+    // Rooted under the working directory so the last assertion is definitionally meaningful: the
+    // derived root is a child of cwd, and so can never coincidentally equal it.
+    const configDir = resolve(process.cwd(), 'a-library-project/.storybook');
     const viteRoot = resolve(configDir, '..');
 
     const [fromWriter, fromReader] = await Promise.all([

@@ -1,8 +1,10 @@
 /**
  * Runs Compodoc as a child process and publishes its `documentation.json` atomically.
  *
- * Compodoc's programmatic API is not re-entrant: `generate()` returns a module-scoped singleton
+ * Compodoc's programmatic API is not re-entrant, and its own write is not atomic, so the CLI runs
+ * against a scratch directory and the finished file is renamed into place.
  */
+import { executeNodeCommand } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import {

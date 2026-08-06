@@ -128,9 +128,7 @@ const breakStaleLock = async (lockPath: string, staleAfterMs: number): Promise<b
   }
 
   await rm(lockPath, { force: true });
-  logger.debug(
-    `[storybook-angular-vite] cleared an abandoned lock at ${lockPath} (holder pid ${holderPid ?? 'unknown'})`
-  );
+  logger.debug(`Cleared an abandoned lock at ${lockPath} (holder pid ${holderPid ?? 'unknown'})`);
   return true;
 };
 

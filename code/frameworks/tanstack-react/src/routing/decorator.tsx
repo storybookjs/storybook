@@ -52,17 +52,17 @@ export const tanstackRouteDecorator: Decorator = (Story, context) => {
 };
 
 function TanStackRouterStory({ Story, context }: TanStackRouterStoryProps) {
-  const preloadedRouter = context.tanstackRouter as Router<AnyRootRoute> | undefined;
+  const router = context.tanstackRouter as Router<AnyRootRoute> | undefined;
 
   const routerContext = context.parameters.tanstack?.router?.useRouterContext?.({
     storyContext: context,
   });
 
-  const router = React.useMemo(
-    () => preloadedRouter ?? createStoryRouter({ Story: StoryFromContext, context, routerContext }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [context.id, preloadedRouter]
-  );
+  if (!router) {
+    throw new Error(
+      'No story router found on the story context: the `routerBeforeEach` hook of @storybook/tanstack-react did not run before rendering. Note that portable stories are not supported by this framework.'
+    );
+  }
 
   const providerContext = React.useMemo(
     () => ({

@@ -178,12 +178,14 @@ const format = process.env.FORMAT === 'slack' ? 'slack' : 'markdown';
 if (format === 'slack') {
   const evalOutcome = process.env.EVAL_OUTCOME || 'unknown';
   const allPassed = evals.length > 0 && passedEvals.length === evals.length;
+  const isWeekly = process.env.GITHUB_EVENT_NAME === 'schedule';
+  const subject = isWeekly ? 'Weekly agent eval on `next`' : 'Agent eval on `next`';
   const headline =
     evalOutcome === 'success' && allPassed
-      ? ':white_check_mark: Weekly agent eval on `next` passed'
+      ? `:white_check_mark: ${subject} passed`
       : evalOutcome === 'success'
-        ? ':warning: Weekly agent eval on `next` finished with failures'
-        : ':x: Weekly agent eval on `next` failed';
+        ? `:warning: ${subject} finished with failures`
+        : `:x: ${subject} failed`;
 
   const stats =
     evals.length > 0

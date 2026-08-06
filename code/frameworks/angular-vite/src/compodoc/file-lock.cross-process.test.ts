@@ -29,18 +29,21 @@ const lockModule = join(dirname(fileURLToPath(import.meta.url)), 'file-lock.ts')
 /** One "Storybook process", shaped like `ensureCompodocDocumentation`: take the lock, generate only
  * if the output is still missing, and journal each actual run so the parent can count them. */
 const childSource = `
-import { appendFileSync, existsSync, writeFileSync } from 'node:fs';
+import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { withFileLock } from ${JSON.stringify(lockModule)};
 
-const [lockPath, outputPath, journalPath] = process.argv.slice(2);
+const [lockPath, outputPath, markerPath, journalPath] = process.argv.slice(2);
+const RUN_ID = process.env.RUN_ID;
+const markerRunId = () => { try { return readFileSync(markerPath, 'utf8').trim(); } catch { return undefined; } };
 
 const outcome = await withFileLock(lockPath, async () => {
-  if (existsSync(outputPath)) {
+  if (markerRunId() === RUN_ID) {
     return;
   }
   appendFileSync(journalPath, \`run \${process.pid}\\n\`);
   await new Promise((resolve) => setTimeout(resolve, ${CRITICAL_SECTION_MS}));
   writeFileSync(outputPath, JSON.stringify({ writtenBy: process.pid }));
+  writeFileSync(markerPath, RUN_ID);
 });
 
 appendFileSync(journalPath, \`outcome \${process.pid} \${outcome}\\n\`);
@@ -57,19 +60,35 @@ afterEach(() => {
 });
 
 describe('cross-process Compodoc lock', () => {
-  it(
-    'runs the work in exactly one process and gives every other process the result',
-    async () => {
+  it.each([
+    ['from a cold start', false],
+    ['when an earlier run already left a documentation.json', true],
+  ])(
+    'runs the work in exactly one process %s',
+    async (_label, seedOutput) => {
       const childPath = join(workDir, 'child.mts');
       const lockPath = join(workDir, '.compodoc.lock');
       const outputPath = join(workDir, 'documentation.json');
+      const markerPath = join(workDir, '.compodoc.run');
       const journalPath = join(workDir, 'journal.log');
       writeFileSync(childPath, childSource);
       writeFileSync(journalPath, '');
+      if (seedOutput) {
+        // The common case once a project has been built before: a documentation.json from an earlier
+        // run is present, and must not stop this run from scanning exactly once.
+        writeFileSync(outputPath, JSON.stringify({ writtenBy: 'an earlier run' }));
+        writeFileSync(markerPath, 'an-earlier-run');
+      }
 
       await Promise.all(
         Array.from({ length: CHILD_COUNT }, () =>
-          execFileAsync(process.execPath, [childPath, lockPath, outputPath, journalPath])
+          execFileAsync(
+            process.execPath,
+            [childPath, lockPath, outputPath, markerPath, journalPath],
+            {
+              env: { ...process.env, RUN_ID: 'the-run-under-test' },
+            }
+          )
         )
       );
 

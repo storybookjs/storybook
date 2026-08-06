@@ -3,7 +3,7 @@
  *
  * The work it guards is a whole-project Compodoc run, and the callers that collide over it live in
  * different OS processes: `storybook dev`, the Vitest addon's child and a standalone `vitest` run all
- * reach the "no documentation.json yet" branch at cold start. Even inside one process the docgen
+ * reach the Compodoc trigger at start-up. Even inside one process the docgen
  * worker is a separate thread with its own module registry, so a module-scoped promise excludes
  * nothing. A holder keeps the lock's mtime fresh while it works, so "stale" means the holder stopped
  * reporting rather than that the work is slow.

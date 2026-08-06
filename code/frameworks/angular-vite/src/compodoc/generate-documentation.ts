@@ -18,7 +18,6 @@ import {
   renameSync,
   rmSync,
   statSync,
-  utimesSync,
 } from 'node:fs';
 import { createRequire } from 'node:module';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
@@ -183,12 +182,7 @@ export const generateDocumentation = async ({
       );
     }
 
-    const published = join(outputDir, DOCUMENTATION_JSON);
-    renameSync(produced, published);
-    // Stamped with the scan's start, not its end: Compodoc read the sources at the start, so dating
-    // the output later would hide an edit made while it ran.
-    const scanStart = new Date(startedAt);
-    utimesSync(published, scanStart, scanStart);
+    renameSync(produced, join(outputDir, DOCUMENTATION_JSON));
     logger.debug(
       `[storybook-angular-vite] generated ${DOCUMENTATION_JSON} in ${Date.now() - startedAt}ms`
     );

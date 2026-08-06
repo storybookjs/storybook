@@ -116,8 +116,10 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   // @ts-expect-error options is possibly undefined here, but presets.apply is guarded at runtime
   const framework = await options.presets.apply('framework');
 
-  // Cold-start trigger for users with `experimentalDocgenServer` off, whose browser
-  // `setCompodocJson` route has no other. Shares the docgen worker's lock, so only one scan runs.
+  // `storybook init` writes a static `import docJson from '../documentation.json'` into the Angular
+  // preview, so the file has to exist before Vite resolves it - in every process that builds a
+  // preview, whatever the docgen feature flag says. Generation is marked per run, so the docgen
+  // worker's own trigger costs one file read rather than a second scan.
   const compodocConfig = await resolveCompodocConfig(options, { viteRoot: config?.root });
   if (compodocConfig.enabled) {
     await ensureCompodocDocumentation({

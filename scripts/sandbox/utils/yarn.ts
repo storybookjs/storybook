@@ -136,6 +136,11 @@ export async function refreshBeforeStorybookLockfile({
     YARN_ENABLE_IMMUTABLE_INSTALLS: 'false',
     COREPACK_ENABLE_DOWNLOAD_PROMPT: '0',
     CI: 'true',
+    // Yarn colourises and hyperlinks its output whenever `CI` is set, which splits both
+    // `YN0016:` and the `name@npm:range` descriptor that `narrowQuarantinedRanges` reads
+    // back out of a failed install. Keep the output plain so it stays parseable.
+    YARN_ENABLE_COLORS: 'false',
+    YARN_ENABLE_HYPERLINKS: 'false',
   };
 
   await runCommand(`yarn config set nodeLinker node-modules`, { cwd, env }, debug);
@@ -164,6 +169,9 @@ export async function refreshBeforeStorybookLockfile({
 
 /** `YN0016: @angular/build@npm:^22.1.3: All versions satisfying "^22.1.3" are quarantined` */
 const QUARANTINED_RANGE = /YN0016:.*?(\S+)@npm:.*?are quarantined/g;
+
+/** Present whenever the gate rejected something, whatever the surrounding formatting. */
+const QUARANTINE_REPORTED = /are quarantined/;
 
 function parseQuarantinedPackages(output: string): string[] {
   return [...output.matchAll(QUARANTINED_RANGE)].map(([, name]) => name);
@@ -258,7 +266,19 @@ async function narrowQuarantinedRanges({
         );
       }
 
-      const fresh = parseQuarantinedPackages(output).filter((name) => !quarantined.includes(name));
+      const reported = parseQuarantinedPackages(output);
+
+      // Yarn rejected a range but we could not read a package out of it, so the output
+      // shape has moved (it already did once, when colour escapes split the descriptor).
+      // Say that plainly instead of reporting it as an unrelated resolution failure.
+      if (!reported.length && QUARANTINE_REPORTED.test(output)) {
+        throw new Error(
+          `Could not read the quarantined package out of Yarn's output. The age-gate workaround cannot run until this parser is updated.`,
+          { cause: error }
+        );
+      }
+
+      const fresh = reported.filter((name) => !quarantined.includes(name));
 
       // Either not an age-gate failure at all, or a package still quarantined across its
       // whole major. Widening further would leave the major, so let a human decide.

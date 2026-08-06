@@ -193,6 +193,7 @@ Key points:
 - NX handles task dependencies via `nx.json`
 - NX target commands use Nx project names (from `project.json` / Nx graph), not `package.json` names
 - Example: `yarn nx compile core` (project `core` is published as package `storybook`)
+- NX Cloud remote-cache auth failures (e.g. HTTP 401 "insufficient access") degrade to the local cache, so they are expected on local runs where `NX_CLOUD_ACCESS_TOKEN` is unset. CI always sets that token, so a 401 there means an invalid or expired token and should be investigated rather than ignored. A read-only token enables cache reads but cannot store artifacts, so the "wasn't able to store" warning is still expected with one
 
 ## Sandbox Notes
 
@@ -248,6 +249,7 @@ Common templates:
 
 - Use `yarn storybook:vitest` to run Storybook story tests (the primary test path for components)
 - Use `yarn test` for unit tests of utilities, hooks, and non-React modules
+- Prefer focused unit-test runs during iteration — the full suite is large: `yarn test <pattern>` (e.g. `yarn test csf-tools`)
 - Use Storybook UI or Chromatic for visual validation
 - Use `yarn task e2e-tests --start-from auto` or `yarn task e2e-tests-dev --start-from auto` for E2E coverage
 - Use `yarn task test-runner --start-from auto` or `yarn task test-runner-dev --start-from auto` for test-runner scenarios
@@ -336,6 +338,7 @@ Avoid `console.log`, `console.warn`, and `console.error` unless the file is isol
 | `STORYBOOK_TELEMETRY_DEBUG`   | Log telemetry events                            |
 | `DEBUG`                       | Enable debug logging                            |
 | `FIX_ON_COMMIT`               | Force autofix for fmt & lint in pre-commit hook |
+| `NX_CLOUD_ACCESS_TOKEN`       | Authenticate the NX Cloud remote cache          |
 
 ## Commands To Avoid
 

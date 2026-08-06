@@ -166,7 +166,7 @@
     "verdaccio": "^5.33.0",
     "verdaccio-auth-memory": "^10.3.1"
   },
-  "packageManager": "yarn@4.10.3",
+  "packageManager": "yarn@4.18.0",
   "nx": {
     "includedScripts": []
   }

@@ -6,24 +6,15 @@ import type { EngineId } from '../docgen-shared/engine-ids.ts';
 
 export type { EngineId };
 
-/** A latency metric: median of repeated samples (fresh process each, for cold/scan). */
-export interface LatencyMetric {
-  status: 'measured';
-  samples: number[];
-  median: number;
-}
-
-/** A memory metric aggregated as the mean of a per-save (or per-run) series. */
-export interface SeriesMeanMetric {
-  status: 'measured';
-  samples: number[];
-  mean: number;
-}
-
-/** A single-valued metric read from one run's series (retained growth, retained slope). */
-export interface ValueMetric {
+/**
+ * A measured number. Which statistic it is belongs to the field that holds it - a median across
+ * repetitions for latency, a mean of a series for peak memory - and every reader wants the number.
+ */
+export interface MeasuredMetric {
   status: 'measured';
   value: number;
+  /** What it was aggregated from; absent for a figure read straight off one run's series. */
+  samples?: number[];
 }
 
 /** The explicit marker for a metric that does not apply to an engine; never a faked equivalent. */
@@ -33,13 +24,15 @@ export interface NotApplicable {
 
 export const NOT_APPLICABLE: NotApplicable = { status: 'n/a' };
 
+export type Metric = MeasuredMetric | NotApplicable;
+
 export interface EngineMetrics {
-  coldExtractionMs: LatencyMetric | NotApplicable;
-  warmExtractionMs: LatencyMetric | NotApplicable;
-  wholeProjectScanMs: LatencyMetric | NotApplicable;
-  peakTransientMb: SeriesMeanMetric | NotApplicable;
-  retainedGrowthMb: ValueMetric | NotApplicable;
-  retainedSlopeMbPerSave: ValueMetric | NotApplicable;
+  coldExtractionMs: Metric;
+  warmExtractionMs: Metric;
+  wholeProjectScanMs: Metric;
+  peakTransientMb: Metric;
+  retainedGrowthMb: Metric;
+  retainedSlopeMbPerSave: Metric;
 }
 
 /**
@@ -100,6 +93,10 @@ export type Comparability =
  * document the same members cold and different ones on the save it was timed on.
  */
 export interface RatioEntry {
+  /** Numerator of the ratio. */
+  legacyEngine: EngineId;
+  /** Denominator of the ratio - the engine a budget would protect. */
+  nextEngine: EngineId;
   cold?: number;
   warm?: number;
   legacyColdMembers?: number;

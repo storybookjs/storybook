@@ -91,9 +91,17 @@ export type DocgenMiddleware = (nextDocgen: DocgenProvider) => DocgenProvider;
  * `moduleSpecifier` pointing at a module that satisfies {@link DocgenWorkerModule}. Core collects
  * these descriptors (preserving preset order) and the worker imports and composes them.
  */
-export interface DocgenProviderDescriptor {
+export interface DocgenProviderDescriptor<TOptions = unknown> {
   /** Absolute path to a module that exports {@link DocgenWorkerModule.createDocgenProvider}. */
   moduleSpecifier: string;
+  /**
+   * Configuration handed to the module's `createDocgenProvider`, for values the worker cannot
+   * derive on its own (a workspace root, a tsconfig path, a framework option).
+   *
+   * The value is structured-cloned onto the worker thread, so it must be plain JSON-ish data.
+   * Functions, closures and class instances are not permitted: they throw at `postMessage` time.
+   */
+  options?: TOptions;
 }
 
 /**
@@ -101,6 +109,6 @@ export interface DocgenProviderDescriptor {
  * `moduleSpecifier` and calls `createDocgenProvider()` once to build the middleware it folds into
  * the provider chain. Integrations implement only this factory — they never touch threading.
  */
-export interface DocgenWorkerModule {
-  createDocgenProvider: () => DocgenMiddleware | Promise<DocgenMiddleware>;
+export interface DocgenWorkerModule<TOptions = unknown> {
+  createDocgenProvider: (options?: TOptions) => DocgenMiddleware | Promise<DocgenMiddleware>;
 }

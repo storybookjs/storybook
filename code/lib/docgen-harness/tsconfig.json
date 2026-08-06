@@ -9,9 +9,13 @@
     "../../renderers/vue3/src/typings.d.ts",
     "../../frameworks/angular-vite/src/typings.d.ts"
   ],
-  // These two import angular-vite client runtime source, which is authored under
-  // `strict: false` and cannot join this strict program; vitest is their check.
-  "exclude": ["src/angular/angular-baselines.test.ts", "src/angular/angular-render.test.ts"],
+  // These import angular-vite source (client runtime and preset), which is authored
+  // under `strict: false` and cannot join this strict program; vitest is their check.
+  "exclude": [
+    "src/angular/angular-baselines.test.ts",
+    "src/angular/angular-provider-seam.test.ts",
+    "src/angular/angular-render.test.ts"
+  ],
   "vueCompilerOptions": {
     "target": 3
   }

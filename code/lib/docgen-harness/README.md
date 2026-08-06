@@ -17,6 +17,9 @@ Each framework has three test files:
 - `*-legacy-gaps.test.ts` pins known legacy defects as `test.fails` red markers. They turn into hard requirements once `baseline-path.ts` flips from `'legacy'` to `'osa'`.
 - `*-render.test.ts` smoke-mounts the fixtures.
 
+vue3 has a second recorder, `vue3-component-meta-baselines.test.ts`, because Vue ships two production docgen engines.
+It drives the opt-in `vue-component-meta` path (`docgen: 'vue-component-meta'` in vue3-vite) over the same fixtures and writes `cm-`-prefixed snapshots.
+
 ## Layout
 
 ```text
@@ -34,9 +37,11 @@ src/
 │   └── types.ts
 ├── vue3/
 │   ├── vue3-baselines.test.ts
+│   ├── vue3-component-meta-baselines.test.ts
 │   ├── vue3-legacy-gaps.test.ts
 │   ├── vue3-render.test.ts
-│   └── __testfixtures__/<case>/  # SFC, input.stories.ts, argtypes.snapshot, snippet-<story>.snapshot
+│   └── __testfixtures__/<case>/  # SFC, input.stories.ts, argtypes.snapshot, snippet-<story>.snapshot,
+│                                 # cm-argtypes.snapshot, cm-snippet-<story>.snapshot
 ├── angular/
 │   ├── angular-baselines.test.ts
 │   ├── angular-legacy-gaps.test.ts
@@ -45,7 +50,12 @@ src/
 │   └── __testfixtures__/<case>/  # component, stories, compodoc-input.json, aot-cmp.ts (signal cases),
 │                                 # argtypes.snapshot, argtypes-filtered.snapshot, snippet-<story>.snapshot
 ├── svelte/                       # planned
-└── web-components/               # planned
+├── web-components/               # planned
+└── perf/                         # the performance bench, see below
+    ├── PERF-METHODOLOGY.md       # the measurement contract
+    ├── docgen-perf/              # per-engine latency and memory suite, plus its engines/ and generators/
+    ├── docgen-memory/            # the docgen-server memory regression gate
+    └── docgen-shared/            # sampling, stats, budgets and paths shared by both
 ```
 
 ## The comparator
@@ -68,6 +78,18 @@ src/
 - The committed `argtypes*.snapshot` files are pretty-format text, not JSON.
   `parseArgTypesSnapshot` reads them back and verifies itself by re-serializing every parse byte-for-byte; anything outside that grammar throws.
 - Adding a framework: extend the `Framework` union and compilation fails at the switch in `snippets.ts` until the new matcher exists.
+
+## The vue-component-meta recorder (vue3)
+
+`vue3-component-meta-baselines.test.ts` replicates the vue3-vite vite plugin's meta processing exactly - checker options, empty-meta skip, nested-schema pruning, exposed de-duplication, and the vue-docgen-api event-description backfill - so the `cm-` snapshots show what a `vue-component-meta` user actually gets today.
+Keeping that copy in step with `frameworks/vue3-vite/src/plugins/vue-component-meta.ts` is manual; nothing detects drift.
+
+- The `cm-` prefix keeps each recorder's stale-snippet guard scoped to its own files.
+- `sourceFiles` records `<sfc>` because production stores the absolute module id and snapshots must stay path-free; nothing downstream reads it.
+- Like the legacy recorder, it self-compares every committed baseline through the comparator, so a checker or plugin change that loses extraction quality fails with named violations instead of landing as an unremarkable diff.
+  Whether the OSA Vue engine is also held to these baselines - rather than only to the legacy ones - is a separate, later decision.
+- Plugin and checker changes land here as reviewed snapshot diffs instead of silent drift - #35565 (`schema: true`) moved 17 of the 25 `cm-argtypes.snapshot` files and left every `cm-snippet-*` byte-identical.
+  The recorded state is whatever the lockfile resolves `vue-component-meta` to (3.3.9 today), so a dependency bump is a reviewed baseline change too.
 
 ## Adding a fixture
 
@@ -104,6 +126,7 @@ Nothing detects drift between a fixture's sources and its committed capture, so 
 - Reactive-props-destructure defaults are invisible; only `withDefaults()` is extracted.
 - `defineModel('name')` named models are invisible; snippets render a bare attribute instead of `v-model:name`.
 - Scoped-slot binding types are never extracted, only their names.
+- `defineExpose` members record no type at all - name and description only, where `vue-component-meta` resolves the same members to `number` and `() => void`.
 - Bigints beyond `Number.MAX_SAFE_INTEGER` lose precision in snippets.
 - Thin baselines by design: `Pick`-composed props record `{}`, recursive types a name-only stub, runtime array props `type: undefined`.
 - `defineProps<ReturnType<typeof useComposable>>()` does not build in the legacy toolchain; a statement-block event expression crashes `parse()` outright (#23851). No baselines can exist for either.
@@ -120,6 +143,9 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - #20593 -> `runtime-proptype-cast/`: literal unions behind `PropType` casts must keep their options.
 - #24270 (partial) -> `define-slots-literal-bindings/`: `defineSlots` literal binding types must be extracted; the issue's own snippet repro is not covered here.
 - #26465 (partial) -> `slots/`: scoped-slot binding types must be extracted; the marker covers only this symptom, not the issue's `vue-component-meta` repro.
+- #26465 (not reproduced) -> `define-slots-with-props/`: the issue's own repro - documented `withDefaults` props plus `defineSlots` losing all prop meta under `vue-component-meta` - does not occur at 3.3.9.
+  `cm-argtypes.snapshot` records descriptions, defaults, and slot docs fully intact; a regression baseline, no marker.
+  The issue's secondary HMR symptom is dev-server behavior outside this harness's reach.
 - #29354 -> `cross-file-union-alias/`: imported literal-union aliases must unfold to their options.
 - #30045 -> `type-intersection-whole/`: an intersection as the whole `defineProps<>` argument must resolve its props.
 
@@ -145,7 +171,81 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - #29697 (not reproduced) -> `signal-io/`: aliased signal inputs record under their alias at 2.0.0; regression baseline, no marker.
 - #22007 -> `properties-methods-noise/`: the filter flag's origin case, and the fixture where both flag states meaningfully differ.
 
+## The performance bench
+
+`src/perf/` measures how fast the docgen engines are and how much memory they hold, which is the other half of the "docgen beyond React" question the snapshot comparator above answers for correctness.
+It is a set of CLIs rather than part of this package's exported API, so nothing in `src/perf/` is re-exported from `src/index.ts`.
+
+All commands run from `code/lib/docgen-harness`:
+
+```bash
+yarn bench:docgen-perf            # per-engine cold/warm latency and memory, full profile (~1 min)
+yarn bench:docgen-perf --quick    # smoke profile; its numbers are marked non-comparable
+yarn bench:docgen-perf-gate       # the same suite, plus budget assertions - what the CI gate runs
+yarn bench:docgen-memory          # the docgen-server memory regression gate
+```
+
+`bench:docgen-perf` generates synthetic projects under the shared sandbox directory, runs each engine in its own child process, and writes a results JSON next to them.
+The generated trees are left on disk so you can open what was measured, and each engine/scenario owns one directory that the generator wipes before it writes.
+That makes two bench runs at once clobber each other - one wipes a tree the other is mid-way through reading - so run them one at a time.
+`bench:docgen-memory` asserts both that re-extraction is leak-free and that the program-recycle fix still flips a tight-heap run from OOM to survival.
+
+### Running one engine, or one that is out of the default run
+
+```bash
+yarn bench:docgen-perf --engine react-osa                       # one engine
+yarn bench:docgen-perf --engine react-legacy --engine react-osa # a control pair, one invocation
+yarn bench:docgen-perf --json /tmp/results.json                 # where the results land
+```
+
+The default run is `react-legacy`, `react-osa`, `vue-docgen-api`, `vue-component-meta` and `compodoc`.
+Two ids sit outside it and only measure when named: `react-legacy-rdt` (the `react-docgen-typescript` parser) and `vue-component-meta-next` (the version-pair alias).
+A ratio only appears when both sides of a control pair measured in the same invocation, so naming one side gives you a table row and no comparison.
+
+Compodoc is skipped with a message when its CLI does not resolve; every other engine reads from the workspace, so a missing one is a failure rather than a skip.
+
+### The two React shapes
+
+The React engines run every scenario twice, because Storybook documents components in two shapes that cost very different things:
+
+- `whole-index` - one batch over every component, what the manifest generator does.
+- `first-story` - the single component a request asks for, what the docgen server does. This is the number a developer waits for before Controls populate.
+
+The cold ratio between the React engines is 0.73 over the index and 0.08 over the first story; reading only one of them gives a misleading picture of the engine's cost.
+
+### Comparing two releases of one engine
+
+`vue-component-meta-next` is an alias in this package's `package.json`, pinned to an exact version.
+Point it at the version you want to test, `yarn install`, then run both sides in one invocation:
+
+```bash
+yarn bench:docgen-perf --engine vue-component-meta --engine vue-component-meta-next
+```
+
+Pin the candidate exactly rather than with a range - two caret ranges can resolve to one install, and then the run compares an engine against itself.
+The suite prints both resolved versions beside every ratio and calls out two equal ones as not being a comparison at all.
+
+The mechanism is not Vue-specific: an engine entry declares which install it measures, the child imports that specifier instead of a hard-coded package, and a pair is two entries differing only in that field.
+`PERF-METHODOLOGY.md` has the steps for setting one up on another engine, and the one case it does not cover.
+`PERF-METHODOLOGY.md` walks through reading those guard lines, and through adding a pair for another engine.
+
+### The gate and its budgets
+
+Both gates run on CircleCI's daily tier, which is triggered on demand by the `ci:daily` label on a pull request - nothing schedules it, so this is not nightly protection.
+
+`bench:docgen-perf-gate` runs the suite at the pinned profile, asserts the budgets in `src/perf/docgen-shared/budgets.ts`, and then proves its own failure detection by running a deliberately failing engine and requiring that run to come back non-zero.
+It writes into the sandbox directory by default; CI passes `--out ./perf-results` so the results can be stored as a build artifact.
+
+It refuses to report a green gate on a `--quick` run, on an empty budget table, or when a budgeted engine skipped or failed - each of those would look like protection while asserting nothing.
+
+Budgets are ratios and absolute megabytes, never raw milliseconds, because wall clock on a shared CI executor is far too noisy to gate on.
+Change one only against numbers measured on CI, and record where they came from in `PERF-METHODOLOGY.md`.
+
+Read `src/perf/PERF-METHODOLOGY.md` before changing a metric, a budget, or a version pair.
+It is the contract these numbers are only meaningful under.
+
+The bench also carries unit tests for its own aggregation, reporting and generator logic, so `yarn test code/lib/docgen-harness` runs those alongside the fixture comparisons.
+
 ## What does not live here
 
-- The performance harness stays under `scripts/`.
 - Framework provider code lives in each framework's own package.

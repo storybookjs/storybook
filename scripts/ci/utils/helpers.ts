@@ -382,12 +382,9 @@ export const workflow = {
   },
 };
 
-// v8: v7 caches carry a stale nested alien-signals copy under
-// @vue/language-core that crashes vue-tsc; incremental installs never remove
-// unknown nested directories, so only an epoch bump evicts the debris.
 export const CACHE_KEYS = (platform = 'linux') =>
   [
-    `v8-${platform}-node_modules`,
+    `v9-${platform}-node_modules`,
     '{{ checksum ".nvmrc" }}',
     '{{ checksum ".yarnrc.yml" }}',
     '{{ checksum "yarn.lock" }}',

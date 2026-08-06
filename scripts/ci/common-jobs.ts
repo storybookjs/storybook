@@ -52,6 +52,9 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
         `${WORKING_DIR}/node_modules`,
         `${WORKING_DIR}/code/node_modules`,
         `${WORKING_DIR}/scripts/node_modules`,
+        // agent-eval nests all its dependencies (installConfig.hoistingLimits),
+        // so downstream checks need its node_modules packed explicitly.
+        `${WORKING_DIR}/agent-eval/node_modules`,
       ],
       packageDirs.map((p) => `${WORKING_DIR}/code/${p.replace('src', 'node_modules')}`)
     ),
@@ -338,7 +341,7 @@ export const testsUnit_linux = defineJob(
         run: {
           name: 'Run tests',
           command: [
-            'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
+            'TEST_FILES=$(circleci tests glob "code/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "scripts/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" "agent-eval/**/*.{test,spec}.{ts,tsx,js,jsx,cjs}" | sed "/e2e-sandbox\\//d" | sed "/e2e-internal\\//d" | sed "/node_modules\\//d")',
             'echo "$TEST_FILES" | circleci tests run --command="xargs yarn test --reporter=junit --reporter=default --outputFile=./test-results/junit.xml" --verbose',
           ].join('\n'),
         },
@@ -430,6 +433,9 @@ export const defineCircleciCompletion = (requires: JobOrNoOpJob[]) =>
     requires
   );
 
+const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';
+const DOCGEN_PERF_RESULTS_DIR = 'perf-results';
+
 export const docgenMemoryGate = defineJob(
   'Docgen memory gate',
   () => ({
@@ -442,10 +448,37 @@ export const docgenMemoryGate = defineJob(
       {
         run: {
           name: 'Docgen-server re-extraction memory gate',
-          working_directory: 'scripts',
+          working_directory: DOCGEN_HARNESS_DIR,
           command: 'yarn bench:docgen-memory',
         },
       },
+    ],
+  }),
+  [commonJobsNoOpJob]
+);
+
+export const docgenPerfGate = defineJob(
+  'Docgen perf gate',
+  () => ({
+    executor: {
+      name: 'sb_node_22_classic',
+      class: 'medium+',
+    },
+    steps: [
+      ...workflow.restoreLinux(),
+      {
+        run: {
+          name: 'Per-engine docgen perf budgets',
+          working_directory: DOCGEN_HARNESS_DIR,
+          command: `yarn bench:docgen-perf-gate --out ./${DOCGEN_PERF_RESULTS_DIR}`,
+          // A full run is ~5 minutes; the ceiling covers a hung compodoc child's ten-minute kill.
+          no_output_timeout: '30m',
+        },
+      },
+      artifact.persist(
+        join(LINUX_ROOT_DIR, WORKING_DIR, DOCGEN_HARNESS_DIR, DOCGEN_PERF_RESULTS_DIR),
+        'docgen-perf-results'
+      ),
     ],
   }),
   [commonJobsNoOpJob]

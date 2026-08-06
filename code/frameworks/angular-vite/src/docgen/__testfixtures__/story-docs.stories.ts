@@ -41,3 +41,14 @@ export const HoistedTemplate = { template: HOISTED_TEMPLATE };
 export const RenderIdentifier = { render: renderFn, args: { count: 4 } };
 
 export const ConfigSpread = { ...Basic, args: { count: 5 } };
+
+// `export { X }` registers a story without a declaration path, so it exercises the other branch of
+// the CSF parser. Its own args must still win over the meta's.
+const ReExported = { args: { label: 'reexported', count: 9 } };
+export { ReExported };
+
+const RenamedSource = { ...sharedArgs, args: { count: 10 } };
+export { RenamedSource as RenamedStory };
+
+const ReExportedTemplate = { template: '<sb-button reexported></sb-button>' };
+export { ReExportedTemplate };

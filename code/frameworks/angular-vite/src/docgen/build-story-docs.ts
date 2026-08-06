@@ -1,9 +1,8 @@
-import { type NodePath, generate, types as t } from 'storybook/internal/babel';
+import { generate, types as t } from 'storybook/internal/babel';
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import type { CsfFile } from 'storybook/internal/csf-tools';
 import {
-  argsRecordFromObjectPath,
   extractStoryJSDocInfo,
   keyOf,
   loadCsf,
@@ -138,17 +137,6 @@ const userTemplate = (config: t.ObjectExpression | undefined): TemplateResult | 
     ? templateFrom(propertyValue(returned, 'template'))
     : { kind: 'unresolvable', source: `render: ${sourceOf(render)}` };
 };
-
-/** Story's own `args` object, as a path so the shared CSF helper can read it. */
-const storyArgsPath = (
-  config: NodePath<t.ObjectExpression> | undefined
-): NodePath<t.ObjectExpression> | undefined =>
-  config
-    ?.get('properties')
-    .filter((property) => property.isObjectProperty())
-    .filter((property) => keyOf(property.node) === 'args')
-    .map((property) => property.get('value'))
-    .find((value) => value.isObjectExpression());
 
 /**
  * The component's selector and binding names, from its Compodoc entry. `extractArgTypesFromData`
@@ -290,30 +278,50 @@ const buildSnippet = (
     metaUnresolved: string[];
   }
 ): string => {
-  const declaration = csf._storyDeclarationPath[exportName];
-  const normalized = declaration ? normalizeStoryDeclaration(declaration) : undefined;
-  const config = normalized?.type === 'config' ? normalized.path : undefined;
+  const config = storyConfig(csf, exportName);
 
-  // A CSF2 story is the render function itself, and Angular's idiom is to return `{ template }`
-  // from it. Ignoring that would replace the user's markup with a fabricated element.
-  const storyFnTemplate =
-    normalized?.type === 'fn'
-      ? templateFrom(propertyValue(returnedObject(normalized.path.node), 'template'))
-      : undefined;
-
-  const template = userTemplate(config?.node) ?? storyFnTemplate ?? file.metaTemplate;
+  const template = userTemplate(config.object) ?? config.fnTemplate ?? file.metaTemplate;
   if (template?.kind === 'literal') {
     return template.markup;
   }
 
-  const argsPath = storyArgsPath(config);
   return generateAngularSnippet({
     component: file.component,
-    args: mergeArgsRecords(file.metaArgs, argsRecordFromObjectPath(argsPath)),
+    // Not meta-specific: the helper reads the `args` property of any CSF config object.
+    args: mergeArgsRecords(file.metaArgs, metaArgsRecord(config.object)),
     unresolvedArgs: [
       ...(template ? [template.source] : []),
       ...file.metaUnresolved,
-      ...unresolvableProperties(config?.node),
+      ...unresolvableProperties(config.object),
     ],
   });
+};
+
+/**
+ * A story's own config object, plus the template a CSF2 story returns from its function body.
+ *
+ * `export { A }` registers a story without a declaration path, because the parser resolves the
+ * re-exported binding instead. Its initializer is still recorded, so the config object is reachable
+ * either way and a re-exported story keeps its own args rather than silently inheriting the meta's.
+ */
+const storyConfig = (
+  csf: CsfFile,
+  exportName: string
+): { object?: t.ObjectExpression; fnTemplate?: TemplateResult } => {
+  const declaration = csf._storyDeclarationPath[exportName];
+  const normalized = declaration ? normalizeStoryDeclaration(declaration) : undefined;
+
+  if (normalized?.type === 'config') {
+    return { object: normalized.path.node };
+  }
+  if (normalized?.type === 'fn') {
+    // Angular's CSF2 idiom is to return `{ template }`; ignoring it would replace the user's
+    // markup with a fabricated element.
+    return {
+      fnTemplate: templateFrom(propertyValue(returnedObject(normalized.path.node), 'template')),
+    };
+  }
+
+  const reExported = csf._storyStatements[exportName];
+  return { object: t.isObjectExpression(reExported) ? reExported : undefined };
 };

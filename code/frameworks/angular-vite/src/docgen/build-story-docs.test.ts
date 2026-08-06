@@ -112,6 +112,22 @@ describe('buildStoryDocsPayload', () => {
     expect(snippet).toContain('<sb-button');
   });
 
+  // `export { X }` is registered by a different branch of the CSF parser, which records no
+  // declaration path. Reading only that path silently fell back to the meta's args.
+  it.each([
+    [
+      'ReExported',
+      `<sb-button [label]="'reexported'" [count]="9" (clicked)="clicked($event)"></sb-button>`,
+    ],
+    [
+      'RenamedStory',
+      `<!-- unresolved: ...sharedArgs -->\n<sb-button [label]="'meta'" [count]="10" (clicked)="clicked($event)"></sb-button>`,
+    ],
+    ['ReExportedTemplate', '<sb-button reexported></sb-button>'],
+  ])('reads the re-exported %s story from its own config', (storyName, expected) => {
+    expect(snippetOf(build('./story-docs.stories.ts'), storyName)).toBe(expected);
+  });
+
   it('isolates a story it cannot read and still ships the rest of the file', () => {
     const payload = build('./story-docs.stories.ts');
 

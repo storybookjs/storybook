@@ -531,7 +531,7 @@
 
 ### Experimental Playwright CT integration removed
 
-Storybook's experimental `@storybook/*/experimental-playwright` API (`createTest`) has been removed.
+Storybook's experimental `@storybook/*/experimental-playwright` API (`createPlaywrightTest`) has been removed.
 
 This integration was built on Playwright's former `@playwright/experimental-ct-*` packages. Playwright has replaced that approach with [component testing in `@playwright/test`](https://playwright.dev/docs/test-components) — a story-gallery model where tests run against pages served by your own dev server, without a separate CT bundler or JSX-in-test marshalling.
 

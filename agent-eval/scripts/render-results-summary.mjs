@@ -178,12 +178,13 @@ const format = process.env.FORMAT === 'slack' ? 'slack' : 'markdown';
 if (format === 'slack') {
   const evalOutcome = process.env.EVAL_OUTCOME || 'unknown';
   const allPassed = evals.length > 0 && passedEvals.length === evals.length;
+  const branch = process.env.GITHUB_REF_NAME || 'next';
   const headline =
     evalOutcome === 'success' && allPassed
-      ? ':white_check_mark: Agent eval on `next` passed'
+      ? `:white_check_mark: Agent eval on \`${branch}\` passed`
       : evalOutcome === 'success'
-        ? ':warning: Agent eval on `next` finished with failures'
-        : ':x: Agent eval on `next` failed';
+        ? `:warning: Agent eval on \`${branch}\` finished with failures`
+        : `:x: Agent eval on \`${branch}\` failed`;
 
   const stats =
     evals.length > 0

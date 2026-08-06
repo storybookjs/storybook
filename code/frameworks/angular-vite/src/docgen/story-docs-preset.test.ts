@@ -14,9 +14,7 @@ import { experimental_storyDocsProvider } from './story-docs-preset.ts';
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 
-// A story index `importPath` is written relative to the Storybook process cwd, so that - and not
-// Compodoc's `workspaceRoot`, which the Angular builder reports separately - is what the provider
-// resolves story files against. The two differ here on purpose.
+// `storyRoot` and `workspaceRoot` differ here on purpose.
 beforeEach(() => {
   vi.spyOn(process, 'cwd').mockReturnValue(FIXTURES);
 });

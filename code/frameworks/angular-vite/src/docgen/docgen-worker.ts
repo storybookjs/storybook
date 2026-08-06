@@ -6,19 +6,12 @@
  * only reads Compodoc's `documentation.json` from disk; generating it is not this module's job.
  */
 import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware, DocgenProvider } from 'storybook/internal/types';
 
-import type { CompodocParsingLogger } from '@storybook/angular-compodoc';
 import type { AngularDocgenOptions } from './build-docgen.ts';
 import { buildDocgenPayload } from './build-docgen.ts';
 import { createDocumentationJsonReader } from './documentation-json.ts';
-
-/** Worker-side logger, prefixed so a line from a worker thread is attributable. */
-const workerLogger: CompodocParsingLogger = {
-  warn: (message) => logger.warn(`[storybook-angular-vite] ${message}`),
-  debug: (message) => logger.debug(`[storybook-angular-vite] ${message}`),
-};
+import { compodocLogger } from './logger.ts';
 
 /** Builds the Angular docgen middleware. */
 export const createDocgenProvider = (options: AngularDocgenOptions): DocgenMiddleware => {
@@ -34,7 +27,7 @@ export const createDocgenProvider = (options: AngularDocgenOptions): DocgenMiddl
       const ours = buildDocgenPayload(input, {
         options,
         readDocumentationJson,
-        logger: workerLogger,
+        logger: compodocLogger,
       });
 
       if (!ours) {

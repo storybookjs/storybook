@@ -35,7 +35,7 @@ For example `args: { kind: ButtonKind.Secondary }` is shown as `[kind]="ButtonKi
 
 Two related consequences:
 
-- Args merged in with a spread (`args: { ...shared, count: 1 }`) cannot be resolved. The snippet keeps what it can and prefixes an `<!-- unresolved args: ... -->` comment rather than silently shipping an incomplete example.
+- Args merged in with a spread (`args: { ...shared, count: 1 }`) cannot be resolved. The snippet keeps what it can and prefixes an `<!-- unresolved: ... -->` comment rather than silently shipping an incomplete example.
 - Args assigned in the older CSF2 style (`MyStory.args = { ... }`) are not read. Declare them on the story object or on the meta instead.
 
 ## Stories that supply their own template are untouched

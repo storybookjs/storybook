@@ -12,6 +12,7 @@ import { join, resolve } from 'node:path';
 
 import type {
   CompodocEntry,
+  Directive,
   CompodocJson,
   CompodocParsingLogger,
   JsDocTag,
@@ -91,11 +92,11 @@ export const findCompodocEntry = (
   json: CompodocJson,
   component: Pick<ResolvedMetaComponent, 'exportName' | 'path'>,
   workspaceRoot: string
-): CompodocEntry | undefined => {
+): Directive | undefined => {
   const { exportName, path } = component;
   const entries = [...(json.components ?? []), ...(json.directives ?? [])].filter(
     Boolean
-  ) as WithFile<CompodocEntry>[];
+  ) as WithFile<Directive>[];
 
   if (path) {
     const wanted = comparablePath(path);
@@ -128,11 +129,11 @@ export const findCompodocEntry = (
 };
 
 /** Whether every entry describes the same class, so picking the first is not a guess. */
-const namesAgree = (entries: WithFile<CompodocEntry>[]): boolean =>
+const namesAgree = (entries: WithFile<Directive>[]): boolean =>
   entries.length > 0 && entries.every((entry) => entry.name === entries[0].name);
 
 /** Whether same-named entries are all the same physical file, rather than genuine namesakes. */
-const sameComponent = (entries: WithFile<CompodocEntry>[], workspaceRoot: string): boolean => {
+const sameComponent = (entries: WithFile<Directive>[], workspaceRoot: string): boolean => {
   if (entries.length === 0) {
     return false;
   }

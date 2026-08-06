@@ -43,29 +43,25 @@ export interface BuildStoryDocsContext {
   logger: CompodocParsingLogger;
 }
 
-/** Compodoc records a component's selector, but its published types omit the field. */
-type WithSelector<T> = T & { selector?: string };
-
 /** `args` object of a CSF config object expression. */
 const argsObjectNode = (config?: t.ObjectExpression): t.ObjectExpression | undefined => {
-  const property = config?.properties.find(
-    (candidate): candidate is t.ObjectProperty =>
-      t.isObjectProperty(candidate) && keyOf(candidate) === 'args'
-  );
-  return property && t.isObjectExpression(property.value) ? property.value : undefined;
+  const value = propertyValue(config, 'args');
+  return t.isObjectExpression(value) ? value : undefined;
 };
 
 const sourceOf = (node: t.Node): string => generate(node, { concise: true, comments: false }).code;
 
 /**
- * Source text of everything in an object literal that a static pass cannot read: spreads, computed
- * keys and methods. Applied both to an `args` object and to the config object around it, since a
- * spread at the config level carries args just as invisibly as one inside `args`.
+ * Source text of everything a static pass cannot read - spreads, computed keys, methods - in a
+ * story or meta config and in its `args`. A spread at the config level carries args just as
+ * invisibly as one inside `args`.
  */
-const unresolvableProperties = (object?: t.ObjectExpression): string[] =>
-  (object?.properties ?? [])
-    .filter((property) => !t.isObjectProperty(property) || keyOf(property) === undefined)
-    .map(sourceOf);
+const unresolvableProperties = (config?: t.ObjectExpression): string[] =>
+  [config, argsObjectNode(config)].flatMap((object) =>
+    (object?.properties ?? [])
+      .filter((property) => !t.isObjectProperty(property) || keyOf(property) === null)
+      .map(sourceOf)
+  );
 
 /** Value of a config object's own property, if it has one. */
 const propertyValue = (config: t.ObjectExpression | undefined, name: string): t.Node | undefined =>
@@ -102,12 +98,9 @@ type TemplateResult =
   | { kind: 'unresolvable'; source: string };
 
 /**
- * The template markup a `template` property holds. `null` and `undefined` do not count, matching
- * the preview's rule that an empty string is still a user-defined template.
- *
- * Anything that is not a literal - a hoisted `const`, an interpolated template literal, a call -
- * is reported rather than printed: emitting its JavaScript source would put an identifier in the
- * Source block where the user expects markup.
+ * Markup a `template` property holds. `null` and `undefined` are not templates, but an empty string
+ * is, matching the preview's own rule. A non-literal is reported rather than printed, so JavaScript
+ * source never lands in the Source block where markup is expected.
  */
 const templateFrom = (node: t.Node | undefined): TemplateResult | undefined => {
   if (
@@ -128,10 +121,8 @@ const templateFrom = (node: t.Node | undefined): TemplateResult | undefined => {
 
 /**
  * The template a story or meta supplies itself, including the `render: () => ({ template })` form
- * Angular stories use.
- *
- * A `render` that is not an inline function returning an object literal is itself unresolvable: it
- * may well produce markup, and generating an element from args would silently replace it.
+ * Angular stories use. A `render` this cannot read into an object literal may still produce markup,
+ * so it counts as unresolvable rather than being replaced by generated bindings.
  */
 const userTemplate = (config: t.ObjectExpression | undefined): TemplateResult | undefined => {
   const own = templateFrom(propertyValue(config, 'template'));
@@ -160,11 +151,8 @@ const storyArgsPath = (
     .find((value) => value.isObjectExpression());
 
 /**
- * The component's selector and binding names, from its Compodoc entry.
- *
- * `extractArgTypesFromData` is what already knows how to read Compodoc's members - including that a
- * name appearing in both `inputsClass` and `outputsClass` is an Angular `model()` whose output is
- * `${name}Change` - so the discrimination is shared rather than reimplemented here.
+ * The component's selector and binding names, from its Compodoc entry. `extractArgTypesFromData`
+ * already resolves a `model()` into an input plus a `${name}Change` output.
  */
 const resolveComponentTemplate = (
   csf: CsfFile,
@@ -198,8 +186,7 @@ const resolveComponentTemplate = (
 
   const argTypes = extractArgTypesFromData(entry, {
     compodocJson,
-    // Snippets bind inputs and outputs, which this flag never removes; it only hides the
-    // properties and methods a snippet has no use for.
+    // Snippets bind inputs and outputs, which this flag never filters.
     filterNonInputControls: false,
     logger: context.logger,
     unwrapHtml: htmlToText,
@@ -212,19 +199,18 @@ const resolveComponentTemplate = (
 
   return {
     name: entry.name ?? resolved.component.exportName,
-    selector: (entry as WithSelector<typeof entry>).selector,
+    selector: entry.selector,
     inputs: named('inputs'),
     outputs: named('outputs'),
   };
 };
 
 /**
- * Builds a {@link StoryDocsPayload} of static Angular template snippets for one CSF story file.
+ * Static Angular template snippets for one CSF story file.
  *
- * Returns `undefined` when the file is unusable - not a story file, unparseable, no
- * `meta.component`, or no Compodoc entry for that component - which is the contract's "not mine,
- * fall through". A story whose snippet cannot be generated instead carries an `error` while the
- * rest of the file still ships; the two levels are different and must not be collapsed.
+ * `undefined` means the file is not ours to handle - unparseable, no `meta.component`, or no
+ * Compodoc entry. A story whose snippet fails instead carries an `error` while the rest of the file
+ * still ships; the two levels are deliberately distinct.
  */
 export const buildStoryDocsPayload = (
   input: StoryDocsProviderInput,
@@ -254,10 +240,7 @@ export const buildStoryDocsPayload = (
   const metaNode = csf._metaNode;
   const metaArgs = metaArgsRecord(metaNode);
   const metaTemplate = userTemplate(metaNode);
-  const metaUnresolved = [
-    ...unresolvableProperties(metaNode),
-    ...unresolvableProperties(argsObjectNode(metaNode)),
-  ];
+  const metaUnresolved = unresolvableProperties(metaNode);
 
   const stories: StoryDocsById = {};
   for (const [exportName, story] of Object.entries(csf._stories)) {
@@ -331,7 +314,6 @@ const buildSnippet = (
       ...(template ? [template.source] : []),
       ...file.metaUnresolved,
       ...unresolvableProperties(config?.node),
-      ...unresolvableProperties(argsPath?.node),
     ],
   });
 };

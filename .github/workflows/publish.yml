@@ -113,16 +113,15 @@ jobs:
 
       # Bookkeeping for DX deployment tracking, not part of publishing itself, so it runs
       # continue-on-error to avoid aborting an already-published release. Failure is alerted below.
-      - name: Register stable release in DX
+      - name: Register release in DX
         id: register-dx-release
-        if: |
-          steps.publish-needed.outputs.published == 'false' &&
-          steps.is-prerelease.outputs.prerelease == 'false'
+        if: steps.publish-needed.outputs.published == 'false'
         continue-on-error: true
         env:
           DX_DATACLOUD_API_KEY: ${{ secrets.DX_DATACLOUD_API_KEY }}
           DX_DATACLOUD_URL: ${{ vars.DX_DATACLOUD_URL }}
           CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
+          NPM_DIST_TAG: ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next' || 'latest' }}
           REPOSITORY: ${{ github.repository }}
           RUN_ID: ${{ github.run_id }}
         run: |
@@ -140,6 +139,7 @@ jobs:
             --arg commitSha "$COMMIT_SHA" \
             --arg sourceUrl "$SOURCE_URL" \
             --arg version "$CURRENT_VERSION" \
+            --arg npmDistTag "$NPM_DIST_TAG" \
             '{
               reference_id: $referenceId,
               deployed_at: $deployedAt,
@@ -150,7 +150,7 @@ jobs:
               source_name: "GitHub Actions",
               metadata: {
                 version: $version,
-                npm_dist_tag: "latest"
+                npm_dist_tag: $npmDistTag
               },
               success: true
             }')
@@ -167,7 +167,7 @@ jobs:
             "${DX_DATACLOUD_URL%/}/api/deployments.create")
 
           if [[ "$HTTP_STATUS" != "200" ]] || [[ "$(jq -r '.ok // false' "$RESPONSE_FILE")" != "true" ]]; then
-            echo "Failed to register stable release in DX (HTTP $HTTP_STATUS)"
+            echo "Failed to register release in DX (HTTP $HTTP_STATUS)"
             jq . "$RESPONSE_FILE" || true
             exit 1
           fi
@@ -180,7 +180,7 @@ jobs:
           DISCORD_WEBHOOK: ${{ secrets.DISCORD_MONITORING_URL }}
         uses: Ilshidur/action-discord@d2594079a10f1d6739ee50a2471f0ca57418b554 # v0.4.0
         with:
-          args: 'Publishing v${{ steps.version.outputs.current-version }} succeeded, but registering the stable release in DX failed. See run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
+          args: 'Publishing v${{ steps.version.outputs.current-version }} succeeded, but registering the release in DX failed. See run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
 
       - name: Get target branch
         id: target

@@ -6,14 +6,18 @@ import {
   getAutomockCode,
   getRealPath,
 } from 'storybook/internal/mocking-utils';
+import { logger } from 'storybook/internal/node-logger';
 import type { PresetProperty } from 'storybook/internal/types';
 
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { DOCUMENTATION_JSON, resolveCompodocConfig } from './compodoc-config.ts';
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 import type { UserConfig, Plugin } from 'vite';
+
+export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
 
 export const addons: PresetProperty<'addons'> = [];
 
@@ -114,26 +118,23 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
 
   // Generate compodoc's documentation.json on cold start when no builder
   // path has produced it yet (e.g. addon-vitest child, ng run without the
-  // Angular CLI builder). Skipped when the file already exists or when the
-  // user opts out via framework.options.compodoc === false.
-  if (framework.options?.compodoc !== false) {
+  // Angular CLI builder). The probe uses the same resolution the docgen
+  // provider reads with, so a project that redirects the output with `-d` is
+  // not regenerated on every cold start.
+  const compodocConfig = await resolveCompodocConfig(options, { viteRoot: config?.root });
+  if (compodocConfig.enabled) {
     const { existsSync } = await import('node:fs');
     const path = await import('node:path');
-    const workspaceRoot =
-      (options as any)?.angularBuilderContext?.workspaceRoot ?? config?.root ?? process.cwd();
-    const documentationJsonPath = path.resolve(workspaceRoot, 'documentation.json');
-    if (!existsSync(documentationJsonPath)) {
+    if (!existsSync(path.resolve(compodocConfig.outputDir, DOCUMENTATION_JSON))) {
       const { runCompodoc } = await import('./builders/utils/run-compodoc.ts');
-      const tsconfig =
-        framework.options?.tsconfig ??
-        (options as any)?.tsConfig ??
-        (options as any)?.angularBuilderOptions?.tsConfig ??
-        path.resolve(workspaceRoot, 'tsconfig.json');
-      const compodocArgs = framework.options?.compodocArgs ?? ['-e', 'json', '-d', '.'];
       try {
-        await runCompodoc({ compodocArgs, tsconfig, workspaceRoot });
+        await runCompodoc({
+          compodocArgs: compodocConfig.compodocArgs,
+          tsconfig: compodocConfig.tsconfig,
+          workspaceRoot: compodocConfig.workspaceRoot,
+        });
       } catch (err) {
-        console.warn('[storybook-angular-vite] compodoc generation failed:', err);
+        logger.warn(`[storybook-angular-vite] compodoc generation failed: ${String(err)}`);
       }
     }
   }

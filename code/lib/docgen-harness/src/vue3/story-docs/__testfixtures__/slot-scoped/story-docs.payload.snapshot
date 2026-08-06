@@ -8,6 +8,9 @@
       "description": undefined,
       "id": "forms-slot-scoped--primary",
       "name": "Primary",
+      "snippet": "<template>
+  <ScopedList label="Alpha" />
+</template>",
       "summary": undefined,
     },
   },

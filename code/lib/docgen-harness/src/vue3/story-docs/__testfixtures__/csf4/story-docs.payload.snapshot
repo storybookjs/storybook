@@ -8,12 +8,18 @@
       "description": "Empty CSF4 story description.",
       "id": "forms-csf4--empty",
       "name": "Empty",
+      "snippet": "<template>
+  <CsfFourButton />
+</template>",
       "summary": undefined,
     },
     "forms-csf4--primary": {
       "description": "CSF4 button description.",
       "id": "forms-csf4--primary",
       "name": "Primary",
+      "snippet": "<template>
+  <CsfFourButton label="Save" />
+</template>",
       "summary": "CSF4 button summary.",
     },
   },

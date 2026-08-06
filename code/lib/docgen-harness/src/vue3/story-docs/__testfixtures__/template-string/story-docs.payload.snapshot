@@ -8,6 +8,9 @@
       "description": undefined,
       "id": "forms-template-string--primary",
       "name": "Primary",
+      "snippet": "<template>
+  <TemplateStringButton label="Template" />
+</template>",
       "summary": undefined,
     },
   },

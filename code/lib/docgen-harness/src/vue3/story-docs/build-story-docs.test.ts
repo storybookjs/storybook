@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import type { IndexEntry } from 'storybook/internal/types';
+import type { DocgenPayload } from 'storybook/open-service';
 
 import { buildStoryDocsPayload } from '../../../../../renderers/vue3/src/story-docs/build-story-docs.ts';
 
@@ -16,6 +17,7 @@ type FixtureCase = {
   label: string;
   name: string;
   testDir: string;
+  tree: 'story-docs' | 'docgen';
 };
 
 function fixtureCases(fixturesDir: string): string[] {
@@ -25,26 +27,58 @@ function fixtureCases(fixturesDir: string): string[] {
     .sort();
 }
 
-function makeFixtureCase(fixturesDir: string, name: string, label = name): FixtureCase {
-  return {
-    label,
-    name,
-    testDir: resolve(fixturesDir, name),
-  };
-}
-
 function storyDocsFixtureCases(): FixtureCase[] {
-  return fixtureCases(FIXTURES_DIR).map((fixtureCase) =>
-    makeFixtureCase(FIXTURES_DIR, fixtureCase)
-  );
+  return fixtureCases(FIXTURES_DIR).map((name) => ({
+    label: name,
+    name,
+    testDir: resolve(FIXTURES_DIR, name),
+    tree: 'story-docs' as const,
+  }));
 }
 
 function docgenFixtureCases(): FixtureCase[] {
   return fixtureCases(DOCGEN_FIXTURES_DIR)
-    .filter((fixtureCase) => existsSync(join(DOCGEN_FIXTURES_DIR, fixtureCase, STORIES_FILE)))
-    .map((fixtureCase) =>
-      makeFixtureCase(DOCGEN_FIXTURES_DIR, fixtureCase, `docgen/${fixtureCase}`)
-    );
+    .filter((name) => existsSync(join(DOCGEN_FIXTURES_DIR, name, STORIES_FILE)))
+    .map((name) => ({
+      label: `docgen/${name}`,
+      name,
+      testDir: resolve(DOCGEN_FIXTURES_DIR, name),
+      tree: 'docgen' as const,
+    }));
+}
+
+function docgenForFixture(
+  fixtureCase: string,
+  id: string,
+  path: string
+): DocgenPayload | undefined {
+  if (fixtureCase === 'docgen-unavailable' || fixtureCase === 'no-component') {
+    return undefined;
+  }
+
+  const details: Record<string, { events?: string[]; slots?: string[] }> = {
+    'function-slot': { slots: ['default'] },
+    slots: { slots: ['default', 'header'] },
+    'v-model': { events: ['update:modelValue', 'update:checked'] },
+  };
+
+  return {
+    id,
+    name: componentNameFromFixture(fixtureCase),
+    path,
+    jsDocTags: {},
+    vueComponentMeta: {
+      events: (details[fixtureCase]?.events ?? []).map((name) => ({ name })),
+      slots: (details[fixtureCase]?.slots ?? []).map((name) => ({ name })),
+    },
+  };
+}
+
+function componentNameFromFixture(fixtureCase: string): string {
+  return fixtureCase
+    .split('-')
+    .map((segment) => `${segment.charAt(0).toUpperCase()}${segment.slice(1)}`)
+    .join('');
 }
 
 function makeStoryIndexEntry(importPath: string, title: string): IndexEntry {
@@ -59,11 +93,18 @@ function makeStoryIndexEntry(importPath: string, title: string): IndexEntry {
   };
 }
 
-async function expectPayloadSnapshot({ name, testDir }: FixtureCase): Promise<void> {
+async function expectPayloadSnapshot({ name, testDir, tree }: FixtureCase): Promise<void> {
   const importPath = resolve(testDir, STORIES_FILE);
-  const payload = await buildStoryDocsPayload({
-    entry: makeStoryIndexEntry(importPath, `Forms/${name}`),
-  });
+  const payload = await buildStoryDocsPayload(
+    {
+      entry: makeStoryIndexEntry(importPath, `Forms/${name}`),
+    },
+    {
+      // Docgen-tree baselines stay metadata-only until real argTypes snapshots are wired in.
+      readDocgen: async (id) =>
+        tree === 'story-docs' ? docgenForFixture(name, id, importPath) : undefined,
+    }
+  );
 
   await expect(payload ? { ...payload, path: '__PATH__' } : payload).toMatchFileSnapshot(
     join(testDir, 'story-docs.payload.snapshot')

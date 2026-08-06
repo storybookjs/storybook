@@ -6,12 +6,20 @@
   "stories": {
     "forms-unsupported-args--identifier-arg": {
       "description": undefined,
+      "error": {
+        "message": "Arg "label" references "SOME_CONST", which cannot be statically inlined yet.",
+        "name": "Unsupported story args",
+      },
       "id": "forms-unsupported-args--identifier-arg",
       "name": "Identifier Arg",
       "summary": undefined,
     },
     "forms-unsupported-args--spread-object-arg": {
       "description": undefined,
+      "error": {
+        "message": "Arg "options" contains a spread value, which cannot be statically inlined yet.",
+        "name": "Unsupported story args",
+      },
       "id": "forms-unsupported-args--spread-object-arg",
       "name": "Spread Object Arg",
       "summary": undefined,

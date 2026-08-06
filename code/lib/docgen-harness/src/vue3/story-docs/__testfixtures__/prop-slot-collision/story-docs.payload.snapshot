@@ -8,6 +8,9 @@
       "description": undefined,
       "id": "forms-prop-slot-collision--primary",
       "name": "Primary",
+      "snippet": "<template>
+  <PropSlotCollision default="fallback text" icon="pi pi-check" />
+</template>",
       "summary": undefined,
     },
   },

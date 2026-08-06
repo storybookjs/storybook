@@ -47,18 +47,6 @@ const statOrUndefined = (path: string) => {
   }
 };
 
-/**
- * Newest mtime among the sources Compodoc would read under `workspaceRoot`, or `undefined` when there
- * are none.
- *
- * Scanning from `workspaceRoot` rather than from the tsconfig's directory is deliberate: Compodoc
- * runs there, and a tsconfig's `include` relocates the scan rather than narrowing it. Storybook's own
- * Angular template ships `.storybook/tsconfig.json` with `include: ["../src/**\/*.ts"]`, so anything
- * derived from the tsconfig's own directory would miss every component. Over-approximating costs one
- * extra scan; under-approximating serves stale metadata forever.
- *
- * Symlinked directories are not followed, so a source tree reachable only through one is invisible.
- */
 export const newestSourceMtimeMs = (workspaceRoot: string): number | undefined => {
   let newest: number | undefined;
 
@@ -91,10 +79,6 @@ export const newestSourceMtimeMs = (workspaceRoot: string): number | undefined =
 
 /**
  * Whether `documentation.json` can be served as it stands.
- *
- * A zero-length file counts as stale, since that is what Compodoc's own non-atomic write looks like
- * when caught mid-flight. A source sharing the file's exact timestamp counts as stale too: coarse
- * filesystem timestamps report an edit made moments later as the same instant.
  */
 export const isDocumentationFresh = (
   documentationJsonPath: string,
@@ -113,9 +97,7 @@ export interface EnsureDocumentationOptions {
   workspaceRoot: string;
   outputDir: string;
   /**
-   * How long to wait on another process's run. Kept short by default because `viteFinal` runs inside
-   * addon-vitest's child, which aborts after 30 seconds of boot. Giving up beats failing the boot:
-   * the docgen reader re-resolves `documentation.json` per request, so a late file is still picked up.
+   * How long to wait on another process's run.
    */
   waitBudgetMs?: number;
 }

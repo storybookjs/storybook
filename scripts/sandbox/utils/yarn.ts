@@ -162,6 +162,14 @@ export async function refreshBeforeStorybookLockfile({
   await narrowQuarantinedRanges({ cwd, env, debug });
 }
 
+/**
+ * Yarn colourises its output and hyperlinks the error code whenever `CI` is set. Both
+ * kinds of escape land inside the text we match on: the scope, the name and the `@` of
+ * a descriptor each get their own colour span, and an OSC-8 link splits `YN0016` from
+ * its colon. Neither `YN0016:` nor `@npm:` survives as a literal until these are gone.
+ */
+const ANSI_ESCAPE = /\u001B\][^\u0007]*(?:\u0007|\u001B\\)|\u001B\[[0-9;]*m/g;
+
 /** `YN0016: @angular/build@npm:^22.1.3: All versions satisfying "^22.1.3" are quarantined` */
 const QUARANTINED_RANGE = /YN0016:.*?(\S+)@npm:.*?are quarantined/g;
 
@@ -249,7 +257,7 @@ async function narrowQuarantinedRanges({
     } catch (error) {
       const output = `${(error as { stdout?: string }).stdout ?? ''}\n${
         (error as { stderr?: string }).stderr ?? ''
-      }`;
+      }`.replace(ANSI_ESCAPE, '');
 
       if (NOT_A_DIRECT_DEPENDENCY.test(output)) {
         throw new Error(

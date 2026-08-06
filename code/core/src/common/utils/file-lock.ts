@@ -5,9 +5,6 @@
  * a dev server, the Vitest addon's child and a standalone `vitest` all start independently and can
  * reach the same work at the same moment. An in-process promise memo does not cover that, and it does
  * not even cover one process, since a worker thread has its own module registry.
- *
- * A holder keeps the lock's mtime fresh while it works, so "stale" means the holder stopped reporting
- * rather than that the work is slow.
  */
 import { logger } from 'storybook/internal/node-logger';
 
@@ -93,11 +90,6 @@ const tryAcquire = async (lockPath: string): Promise<string | undefined> => {
   return payload.token;
 };
 
-/**
- * Clears a lock whose holder can no longer finish, and reports whether acquiring is worth retrying
- * immediately. A `SIGKILL`ed holder never runs cleanup, so the recorded pid's liveness is the primary
- * signal and the heartbeat age covers a pid the OS has since recycled.
- */
 const breakStaleLock = async (lockPath: string, staleAfterMs: number): Promise<boolean> => {
   let stats;
   try {
@@ -144,13 +136,6 @@ const releaseIfOurs = (lockPath: string, token: string) => {
   }
 };
 
-/**
- * Keeps the lock's mtime current while the work runs, and removes it on release.
- *
- * The `exit` listener is a backstop for a clean exit only. Node does not run `exit` listeners when
- * the process is terminated by a signal, so a `SIGINT` leaves the file behind and the stale-break
- * above is what recovers it.
- */
 const holdLock = (lockPath: string, token: string, staleAfterMs: number) => {
   const removeSync = () => releaseIfOurs(lockPath, token);
   process.once('exit', removeSync);

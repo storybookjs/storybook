@@ -24,6 +24,13 @@ export type BuildEntries = {
    */
   entries: BuildEntriesByPlatform;
   /**
+   * Override the d.ts bundler for this package (defaults to the --dts-bundler
+   * CLI flag). Use 'rolldown' to emit declarations with the TypeScript 6 JS
+   * API instead of the TypeScript 7 native compiler for packages where the
+   * native emit misbehaves.
+   */
+  dtsBundler?: 'rolldown-tsgo' | 'rolldown' | 'rollup';
+  /**
    * The map of extra outputs to be added to the package.json's exports
    *
    * This can be useful to expose non-compiled/non-js files such as Svelte components,

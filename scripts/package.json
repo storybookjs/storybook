@@ -7,7 +7,7 @@
     "bench-packages": "jiti ./bench/bench-packages.ts",
     "bench:docgen-memory": "node --import jiti/register ./bench/docgen-memory/gate.ts",
     "build-package": "jiti ./build-package.ts",
-    "check": "jiti ./check/check-package.ts",
+    "check": "node ./check/check-package.ts",
     "check-package": "jiti ./check-package.ts",
     "docs:check": "jiti ./docs/check-docs.ts",
     "docs:codemod": "jiti ./snippets/codemod.ts",
@@ -146,6 +146,8 @@
     "react-dom": "^18.3.1",
     "recast": "^0.23.9",
     "rimraf": "^6.1.2",
+    "rolldown": "^1.1.4",
+    "rolldown-plugin-dts": "^0.26.0",
     "rollup": "^4.21.0",
     "rollup-plugin-dts": "^6.1.1",
     "semver": "^7.7.3",
@@ -160,6 +162,7 @@
     "ts-dedent": "^2.2.0",
     "type-fest": "^5.6.0",
     "typescript": "^6.0.3",
+    "typescript-native": "npm:typescript@^7.0.2",
     "uuid": "^9.0.1",
     "vitest": "^4.1.5",
     "wait-on": "^8.0.3",
@@ -175,7 +178,7 @@
     "verdaccio": "^5.33.0",
     "verdaccio-auth-memory": "^10.3.1"
   },
-  "packageManager": "yarn@4.10.3",
+  "packageManager": "yarn@4.18.0",
   "nx": {
     "includedScripts": []
   }

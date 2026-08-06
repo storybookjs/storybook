@@ -50,16 +50,17 @@ const authorAssociation = danger.github.pr.author_association;
 
 /**
  * `ci:eval` means this PR requires agent evals. `evals:ok` is set by the
- * Agent eval workflow when a labeled run succeeds. New commits clear
+ * Agent eval workflow when a labeled PR run or a workflow_dispatch tied to
+ * that PR succeeds and the evaluated head still matches. New commits clear
  * `evals:ok` without re-running, so merge stays blocked until evals are
- * re-triggered (remove+re-add `ci:eval`, or workflow_dispatch).
+ * re-triggered (remove+re-add `ci:eval`, or workflow_dispatch on the PR branch).
  *
  * @param {string[]} labels
  */
 const checkEvalLabels = (labels) => {
   if (labels.includes('ci:eval') && !labels.includes('evals:ok')) {
     fail(
-      'This PR has the `ci:eval` label but not `evals:ok`. Wait for a successful Agent eval run (or remove `ci:eval` if evals are not required). Re-run by removing and re-adding `ci:eval`, or via workflow_dispatch.'
+      'This PR has the `ci:eval` label but not `evals:ok`. Wait for a successful Agent eval run (or remove `ci:eval` if evals are not required). Re-run by removing and re-adding `ci:eval`, or via workflow_dispatch on the PR branch.'
     );
   }
 };

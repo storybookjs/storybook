@@ -114,7 +114,7 @@ Run a single experiment:
 yarn workspace agent-eval exec agent-eval cc-mcp-opus-high
 ```
 
-Pull requests with the `ci:eval` label run experiments in CI (on label apply, not on every later push). The `ci:eval` / `ci:extra-*` / `ci:storybook-latest` / `ci:review` labels are applied by **humans only**. Labeled runs are expensive, so an AI agent must never add them (nor start `workflow_dispatch` eval runs). A successful run adds `evals:ok`; new commits clear that proof so Danger can block merge while `ci:eval` is set without `evals:ok`. Re-run by removing and re-adding `ci:eval`, or via workflow_dispatch. Agents validate locally instead: only the specific evals affected by the change (or the eval being fixed), one experiment at a time, via `EVAL_ONLY`: never a full line, never multiple experiments in parallel.
+Pull requests with the `ci:eval` label run experiments in CI (on label apply, not on every later push). The `ci:eval` / `ci:extra-*` / `ci:storybook-latest` / `ci:review` labels are applied by **humans only**. Labeled runs are expensive, so an AI agent must never add them (nor start `workflow_dispatch` eval runs). A successful PR or `workflow_dispatch` run adds `evals:ok` only if the PR head SHA still matches what was evaluated; new commits clear that proof so Danger can block merge while `ci:eval` is set without `evals:ok`. Re-run by removing and re-adding `ci:eval`, or via `workflow_dispatch` on the PR branch (optional `pr_number` input; otherwise inferred from the branch). Agents validate locally instead: only the specific evals affected by the change (or the eval being fixed), one experiment at a time, via `EVAL_ONLY`: never a full line, never multiple experiments in parallel.
 
 A scheduled weekly run (Monday 08:00 UTC) always executes the full 8xx/82x line on `next` with default-model experiments, deploys the playground to the Vercel production target, and posts a summary to Slack `#team-storybook`. It does not enable `EVAL_EXTRA_MODELS`, `EVAL_STORYBOOK_LATEST`, or `EVAL_REVIEW` (use `workflow_dispatch` for those). Manual `workflow_dispatch` runs on `next` also notify Slack.
 
@@ -158,7 +158,7 @@ In CI, opt-in labels compose with `ci:eval` (same flags exist on `workflow_dispa
 | `ci:storybook-latest` / `storybook_latest` | Pin npm `latest` (incl. published MCP packages) instead of `next` + local builds |
 | `ci:review` / `review`                     | Force `experimentalReview` on and assert the review workflow for MCP cells too   |
 
-`eval_only` (dispatch only) targets specific eval names. All of these are human-triggered spend decisions; agents never apply the labels or dispatch the workflow.
+`eval_only` (dispatch only) targets specific eval names. `pr_number` (dispatch only) selects which PR gets `evals:ok` when the branch inference is ambiguous. All of these are human-triggered spend decisions; agents never apply the labels or dispatch the workflow.
 
 CI uses Vercel Sandbox through access-token credentials (`VERCEL_PROJECT_ID`, `VERCEL_TEAM_ID`, and `VERCEL_TOKEN`). Do not store a static `VERCEL_OIDC_TOKEN` in GitHub secrets; development OIDC tokens expire and Vercel-issued OIDC is only refreshed automatically inside Vercel-managed runtime/build contexts.
 

@@ -12,6 +12,10 @@ on:
       - labeled
   workflow_dispatch:
     inputs:
+      pr_number:
+        description: 'PR number to clear/set evals:ok on (optional; inferred from the branch if omitted)'
+        type: string
+        default: ''
       eval_only:
         description: 'Comma-separated eval names to run (overrides extra_evals), e.g. 803-edit-component'
         type: string
@@ -90,11 +94,30 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Clear prior evals:ok
-        if: ${{ github.event_name == 'pull_request' }}
+      - name: Resolve PR for evals:ok
+        id: evals_ok_pr
+        if: ${{ github.event_name == 'pull_request' || github.event_name == 'workflow_dispatch' }}
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER_INPUT: ${{ github.event.pull_request.number || inputs.pr_number || '' }}
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          pr="$PR_NUMBER_INPUT"
+          if [[ -z "$pr" && "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            pr="$(gh pr list --repo "$GITHUB_REPOSITORY" --state open --head "$GITHUB_REF_NAME" --json number --jq '.[0].number // empty')"
+          fi
+          if [[ -z "$pr" ]]; then
+            echo "pr_number=" >> "$GITHUB_OUTPUT"
+            echo "No PR for evals:ok labeling (ok for next/schedule-style runs)."
+            exit 0
+          fi
+          echo "pr_number=$pr" >> "$GITHUB_OUTPUT"
+
+      - name: Clear prior evals:ok
+        if: ${{ steps.evals_ok_pr.outputs.pr_number != '' }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ steps.evals_ok_pr.outputs.pr_number }}
         run: |
           if gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/labels" --jq '.[].name' | grep -Fxq 'evals:ok'; then
             gh pr edit "$PR_NUMBER" --remove-label 'evals:ok'
@@ -287,12 +310,23 @@ jobs:
       # Sticky `ci:eval` = evals required. `evals:ok` = this head's eval run passed.
       # Danger blocks merge when `ci:eval` is present without `evals:ok`.
       # Tied to the eval step, not playground deploy (deploy can fail independently).
+      # PR runs and workflow_dispatch (with a resolvable PR) may set the label.
+      # Only label when the PR head is still the SHA this run evaluated (avoids a
+      # late finish stamping evals:ok onto a newer commit).
       - name: Mark evals:ok
-        if: ${{ github.event_name == 'pull_request' && steps.run_evals.outcome == 'success' }}
+        if: ${{ steps.run_evals.outcome == 'success' && steps.evals_ok_pr.outputs.pr_number != '' }}
         env:
           GH_TOKEN: ${{ github.token }}
-          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_NUMBER: ${{ steps.evals_ok_pr.outputs.pr_number }}
+          # pull_request: PR head (checkout may be the merge commit). dispatch: github.sha.
+          EVALUATED_HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
+          current_head="$(gh api "repos/$GITHUB_REPOSITORY/pulls/$PR_NUMBER" --jq .head.sha)"
+          if [[ "$current_head" != "$EVALUATED_HEAD_SHA" ]]; then
+            echo "::warning title=Stale eval head::Evaluated $EVALUATED_HEAD_SHA but PR head is now $current_head; not adding evals:ok."
+            exit 0
+          fi
+
           gh label create 'evals:ok' \
             --color '0E8A16' \
             --description 'Agent eval run passed for the current PR head' \

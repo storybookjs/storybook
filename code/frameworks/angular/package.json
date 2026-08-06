@@ -79,6 +79,7 @@
     "@angular/forms": "^19.1.1",
     "@angular/platform-browser": "^19.1.1",
     "@angular/platform-browser-dynamic": "^19.1.1",
+    "@storybook/angular-compodoc": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
     "@types/node": "^22.19.1",
     "empathic": "^2.0.0",

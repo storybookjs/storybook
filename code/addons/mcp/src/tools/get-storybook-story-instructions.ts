@@ -1,10 +1,10 @@
-import type { McpServer } from 'tmcp';
-import type { Options } from 'storybook/internal/types';
 import { resolveSkillInputs } from 'storybook/internal/core-server';
 import { buildStoryInstructions } from 'storybook/internal/skills';
+import type { Options } from 'storybook/internal/types';
+import type { McpServer } from 'tmcp';
 import { collectTelemetry } from '../telemetry.ts';
-import { errorToMCPContent } from '../utils/errors.ts';
 import type { AddonContext } from '../types.ts';
+import { errorToMCPContent } from '../utils/errors.ts';
 import { GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME } from './tool-names.ts';
 
 type BuildStorybookStoryInstructionsOptions = {
@@ -135,18 +135,18 @@ export function getStorybookStoryInstructionsToolMetadata(options: {
 /**
  * Thin adapter over the shared `buildStoryInstructions` content builder: resolves this
  * Storybook's framework/renderer and availability probes through `resolveSkillInputs` (the same
- * path the skills CLI uses), then renders the MCP-flavored prose. Per-request overrides
- * (`reviewEnabled`, the toolset gates, `addonVitestAvailable`, `docsAvailable`) take priority over
- * the resolved defaults so the live MCP server and the `storybook ai` metadata preset can each
- * apply their own channel-specific gating.
+ * path the skills CLI uses), then renders the MCP-flavored prose. Optional overrides
+ * (`reviewEnabled`, toolset gates, `addonVitestAvailable`, `docsAvailable`, `a11yEnabled`) take
+ * priority when provided; omitted fields fall back to the probe so callers cannot silently get
+ * the wrong prose by leaving a field off.
  */
 export async function buildStorybookStoryInstructions(
   options: Options,
   {
     toolsets,
-    a11yEnabled = false,
+    a11yEnabled,
     addonVitestAvailable,
-    docsAvailable = false,
+    docsAvailable,
     reviewEnabled: reviewEnabledOverride,
   }: BuildStorybookStoryInstructionsOptions = {}
 ): Promise<string> {
@@ -160,7 +160,7 @@ export async function buildStorybookStoryInstructions(
     reviewEnabled: reviewEnabledOverride ?? inputs.reviewEnabled,
     testToolsetAvailable:
       (toolsets?.test ?? true) && (addonVitestAvailable ?? inputs.testSupported),
-    a11yEnabled,
-    docsAvailable: (toolsets?.docs ?? true) && docsAvailable,
+    a11yEnabled: a11yEnabled ?? inputs.a11yEnabled,
+    docsAvailable: (toolsets?.docs ?? true) && (docsAvailable ?? inputs.docsEnabled),
   });
 }

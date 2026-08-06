@@ -183,6 +183,32 @@ describe('refreshBeforeStorybookLockfile', () => {
     );
   });
 
+  it('keeps Yarn output plain so the descriptor stays parseable', async () => {
+    await refreshBeforeStorybookLockfile({ cwd: SANDBOX });
+
+    // Yarn colourises and hyperlinks when CI is set, which splits `YN0016:` and
+    // `name@npm:range` across escapes and leaves nothing for the parser to match.
+    const [, options] = vi.mocked(runCommand).mock.calls[0];
+    expect(options?.env).toMatchObject({
+      YARN_ENABLE_COLORS: 'false',
+      YARN_ENABLE_HYPERLINKS: 'false',
+    });
+  });
+
+  it('says so when it cannot read a package out of a quarantine report', async () => {
+    // Yarn's colourised form, captured from a real run. If output ever looks like this
+    // again the parser must fail loudly rather than blame resolution.
+    const unparseable = Object.assign(new Error('yarn failed'), {
+      stdout:
+        '\u001B[91m\u27A4\u001B[39m \u001B]8;;https://yarnpkg.com/advanced/error-codes#yn0016---remote_not_found\u0007YN0016\u001B]8;;\u0007: \u2502 \u001B[91m@tailwindcss/\u001B[39m\u001B[91mturbopack\u001B[39m\u001B[36m@\u001B[39m\u001B[36mnpm:^4.3.3\u001B[39m: All versions satisfying "^4.3.3" are quarantined',
+    });
+    failResolveSteps(unparseable);
+
+    await expect(refreshBeforeStorybookLockfile({ cwd: SANDBOX })).rejects.toThrow(
+      /Could not read the quarantined package/
+    );
+  });
+
   it('surfaces a failure that is not the age gate instead of upgrading blindly', async () => {
     const offline = Object.assign(new Error('yarn failed'), { stdout: 'ENOTFOUND registry' });
     failResolveSteps(offline);

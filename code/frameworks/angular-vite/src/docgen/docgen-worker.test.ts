@@ -31,8 +31,6 @@ afterEach(() => {
 });
 
 const OUTPUT_DIR = '/workspace/docs';
-// Joined rather than interpolated: the provider spells this path with `path.join`, and the
-// read-count assertions below compare the argument it passed by string equality.
 const DOCUMENTATION_JSON = join(OUTPUT_DIR, 'documentation.json');
 const STORY_PATH = resolve(process.cwd(), 'button.stories.ts');
 

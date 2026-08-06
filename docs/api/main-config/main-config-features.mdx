@@ -50,6 +50,7 @@ Type:
   changeDetection?: boolean;
   controls?: boolean;
   developmentModeForBuild?: boolean;
+  experimentalDocgenServer?: boolean;
   highlight?: boolean;
   interactions?: boolean;
   legacyDecoratorFileOrder?: boolean;
@@ -199,6 +200,10 @@ Unlike the current implementation, this method reads the actual stories source f
 
 <CodeSnippets path="main-config-features-experimental-code-examples.md" />
 
+</If>
+
+<If renderer={['react', 'angular', 'vue']}>
+
 ## `experimentalDocgenServer`
 
 (⚠️ **Experimental**)
@@ -207,15 +212,19 @@ Type: `boolean`
 
 Default: `false`
 
-Enable server-side docgen for React projects. Storybook extracts component metadata on the dev server using the TypeScript Language Service (via React Component Meta) instead of injecting docgen into the preview bundle. This provides faster startup, more accurate [Controls](../../essentials/controls.mdx) and ArgTypes tables in [autodocs](../../writing-docs/autodocs.mdx), and improved static code snippets in docs and the Code panel. [Manifests](../../ai/manifests.mdx) and the [MCP server](../../ai/mcp/overview.mdx) use an optimized, ref-based format that loads faster for AI agents.
+Enable server-side docgen. Storybook extracts component metadata on the dev server instead of injecting docgen into the preview bundle. This provides faster startup, more accurate [Controls](../../essentials/controls.mdx) and ArgTypes tables in [autodocs](../../writing-docs/autodocs.mdx), and improved static code snippets in docs and the Code panel. [Manifests](../../ai/manifests.mdx) and the [MCP server](../../ai/mcp/overview.mdx) use an optimized, ref-based format that loads faster for AI agents.
 
-When enabled, you do not need [`experimentalCodeExamples`](#experimentalcodeexamples) because snippet generation is handled by the server-side story-docs service.
+Each framework extracts metadata with its own tooling: React projects use the TypeScript Language Service (via React Component Meta), Angular projects use [Compodoc](../../get-started/frameworks/angular-vite.mdx#compodoc), and Vue projects use `vue-component-meta`.
 
 Snippets are static: they won't update if you change values in the Controls table.
 
-This feature is currently only supported for React projects. We [welcome feedback](https://github.com/storybookjs/storybook/discussions/35333) on the RFC.
+This feature is currently supported by the React-based frameworks, by `@storybook/angular-vite` (not the Webpack-based `@storybook/angular`), and by `@storybook/vue3-vite` when its [`docgen`](../../get-started/frameworks/vue3-vite.mdx#docgen) option is set to `'vue-component-meta'`. We [welcome feedback](https://github.com/storybookjs/storybook/discussions/35333) on the RFC.
 
 <CodeSnippets path="main-config-features-experimental-docgen-server.md" />
+
+</If>
+
+<If renderer="react">
 
 ## `experimentalReview`
 

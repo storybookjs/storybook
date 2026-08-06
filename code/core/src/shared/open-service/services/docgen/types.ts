@@ -11,6 +11,11 @@ import type { IndexEntry } from '../../../../types/modules/indexer.ts';
  */
 export interface DocgenProviderInput {
   entry: IndexEntry;
+  /**
+   * Monotonic provider generation supplied by completion-driven integrations. Providers may use
+   * it to invalidate reader caches when filesystem metadata cannot distinguish two snapshots.
+   */
+  generation?: number;
 }
 
 /** Free-form error attached to a payload or subcomponent. */

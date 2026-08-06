@@ -25,13 +25,18 @@ const workerLogger: CompodocParsingLogger = {
  * Reads `documentation.json`, memoized on the file's mtime and size: the burst of one request per
  * component would otherwise reparse a real app's multi-megabyte file, while keying on the file's
  * identity still picks up a Compodoc run the user starts mid-session.
+ *
+ * Callers that know a write just completed pass a `generation`, which joins the key. Filesystem
+ * metadata alone cannot always separate two snapshots (mtime resolution can collapse quick
+ * successive writes, and a re-render can produce the same size), so the generation is what
+ * guarantees a watch cycle's output is reparsed rather than served from the previous cycle.
  */
 const createDocumentationJsonReader = () => {
   let cached: { key: string; json: CompodocJson } | undefined;
 
-  return (path: string): CompodocJson => {
+  return (path: string, generation?: number): CompodocJson => {
     const stats = statSync(path);
-    const key = `${path}:${stats.mtimeMs}:${stats.size}`;
+    const key = `${path}:${stats.mtimeMs}:${stats.size}:${generation ?? 'filesystem'}`;
     if (cached?.key !== key) {
       cached = { key, json: JSON.parse(readFileSync(path, 'utf8')) as CompodocJson };
     }

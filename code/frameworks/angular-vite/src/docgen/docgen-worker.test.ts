@@ -168,6 +168,25 @@ describe('createDocgenProvider', () => {
     expect(updated?.argTypes?.label).toBeUndefined();
   });
 
+  it('uses the completion generation when size and filesystem timestamp are unchanged', async () => {
+    givenWorkspace();
+    const provider = createDocgenProvider({ outputDir: OUTPUT_DIR })(passthrough);
+    const originalStats = vol.statSync(DOCUMENTATION_JSON);
+
+    expect((await provider({ entry }))?.argTypes?.label).toBeDefined();
+    const replacement = documentationJson('title');
+    expect(Buffer.byteLength(replacement)).toBe(Buffer.byteLength(documentationJson('label')));
+    vol.writeFileSync(DOCUMENTATION_JSON, replacement);
+    vol.utimesSync(DOCUMENTATION_JSON, originalStats.atime, originalStats.mtime);
+
+    // The ordinary filesystem key cannot distinguish this deliberately adversarial rewrite.
+    expect((await provider({ entry }))?.argTypes?.label).toBeDefined();
+
+    const refreshed = await provider({ entry, generation: 2 });
+    expect(refreshed?.argTypes?.title).toBeDefined();
+    expect(refreshed?.argTypes?.label).toBeUndefined();
+  });
+
   it('reports a documentation.json created after the first miss', async () => {
     givenWorkspace({ withDocumentationJson: false });
     const provider = createDocgenProvider({ outputDir: OUTPUT_DIR })(passthrough);

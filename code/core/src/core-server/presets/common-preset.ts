@@ -405,7 +405,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     if (docgenWorker) {
       registerDocgenService({
         getIndex: () => storyIndexGenerator.getIndex(),
-        docgenProvider: (input) => docgenWorker.extract(input.entry),
+        docgenProvider: (input) => docgenWorker.extract(input.entry, input.generation),
         workingDir: process.cwd(),
       });
     }

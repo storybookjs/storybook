@@ -140,9 +140,19 @@ export default config;
 
 `compodoc` defaults to `true` and `compodocArgs` defaults to `['-e', 'json', '-d', '.']`. When enabled, the framework preset generates `documentation.json` on cold start if the file does not already exist.
 
+#### Watch mode during development
+
+When the experimental [`experimentalDocgenServer`](../../api/main-config/main-config-features.mdx#experimentaldocgenserver) feature is enabled, `storybook dev` keeps a single Compodoc process running in watch mode instead of generating `documentation.json` once at cold start.
+Each completed run refreshes the documentation of the components you edited, so updated JSDoc comments, inputs, and outputs appear without restarting the dev server.
+Static builds, manager-only runs, and Vitest child processes keep using the one-shot cold-start generation described above.
+
+Live refresh requires a Compodoc release that reports its watch cycles back to Storybook, which is not published yet.
+With a compatible build, Storybook waits for the initial completed cycle before rendering the preview so the first extraction uses current metadata.
+Until a compatible release is available, Storybook detects within seconds that the installed Compodoc does not report its watch cycles, falls back to the same one-shot generation used everywhere else, and component docs only change when you restart the dev server.
+
 #### Supported invocation paths
 
-- **`ng run app:storybook`**: Uses `angular.json` for Angular build settings. The framework preset runs Compodoc at cold start so `documentation.json` is generated before stories render.
+- **`ng run app:storybook`**: Uses `angular.json` for Angular build settings. The framework preset runs Compodoc so `documentation.json` is generated before stories render, in watch mode when the conditions above apply and at cold start otherwise.
 - **Vitest addon panel** (inside a running `storybook dev`): The addon-vitest child process inherits builder options from the parent process automatically; no extra configuration is needed.
 - **Standalone `yarn vitest`** (without a parent `storybook dev`): Supported via `storybookAngularVitest` from `@storybook/angular-vite/vitest`. Add it to the same `plugins` array as `storybookTest` in your `vitest.config.ts`; it forwards your Angular build options (styles, stylePreprocessorOptions, assets, zoneless) into the channel the framework already reads. If the env var is already set (e.g. a parent `storybook dev` is running), the existing value wins and a warning is logged so you know which options are active.
 
@@ -423,7 +433,7 @@ Type: `boolean`
 
 Default: `true`
 
-Whether to run [Compodoc](https://compodoc.app/) on cold start to generate `documentation.json`. When `true`, the framework preset invokes Compodoc once if `documentation.json` does not already exist. Set to `false` to skip generation entirely (e.g. when you manage Compodoc outside of Storybook).
+Whether to let the framework preset run [Compodoc](https://compodoc.app/) to generate `documentation.json`, either once at cold start or in watch mode during development (see [Compodoc](#compodoc)). Set to `false` to skip generation entirely (e.g. when you manage Compodoc outside of Storybook).
 
 #### `compodocArgs`
 

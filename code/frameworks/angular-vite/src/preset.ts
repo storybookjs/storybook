@@ -1,4 +1,4 @@
-import { findConfigFile } from 'storybook/internal/common';
+import { findConfigFile, optionalEnvToBoolean } from 'storybook/internal/common';
 import {
   babelParser,
   extractMockCalls,
@@ -14,6 +14,8 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { DOCUMENTATION_JSON, resolveCompodocConfig } from './compodoc-config.ts';
+
+export const COMPODOC_WATCH_OWNER_ENV = 'STORYBOOK_ANGULAR_COMPODOC_WATCH_OWNER';
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 import type { UserConfig, Plugin } from 'vite';
 
@@ -115,14 +117,38 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
 
   // @ts-expect-error options is possibly undefined here, but presets.apply is guarded at runtime
   const framework = await options.presets.apply('framework');
+  // @ts-expect-error options is possibly undefined here, but presets.apply is guarded at runtime
+  const features = await options?.presets?.apply('features', {});
 
-  // Generate compodoc's documentation.json on cold start when no builder
-  // path has produced it yet (e.g. addon-vitest child, ng run without the
-  // Angular CLI builder). The probe uses the same resolution the docgen
-  // provider reads with, so a project that redirects the output with `-d` is
-  // not regenerated on every cold start.
+  // Exactly one of two Compodoc paths runs per process. A dev server that owns docgen keeps
+  // Compodoc in watch mode so edits refresh component docs; every other entry point (static build,
+  // manager-only run, addon-vitest child, ng run without the Angular CLI builder) falls back to a
+  // one-shot run that only fires when no documentation.json exists yet. Both locate that file with
+  // the same resolution the docgen provider reads with, so a project that redirects the output with
+  // `-d` is not regenerated on every one-shot cold start. A watcher that cannot start falls back to
+  // the same one-shot generation from inside the plugin.
   const compodocConfig = await resolveCompodocConfig(options, { viteRoot: config?.root });
-  if (compodocConfig.enabled) {
+  const isVitestChild = optionalEnvToBoolean(process.env.VITEST_CHILD_PROCESS);
+  const inheritedCompodocOwner = optionalEnvToBoolean(process.env[COMPODOC_WATCH_OWNER_ENV]);
+  const ownsCompodocWatch =
+    compodocConfig.enabled &&
+    features?.experimentalDocgenServer === true &&
+    options?.configType === 'DEVELOPMENT' &&
+    !options?.ignorePreview &&
+    !isVitestChild;
+  let compodocWatcher: Plugin | undefined;
+  if (ownsCompodocWatch) {
+    // Addon-Vitest processes inherit this marker. While the parent owns the cold generation and
+    // live watcher, a child must not start a second writer just because JSON is not visible yet.
+    process.env[COMPODOC_WATCH_OWNER_ENV] = 'true';
+    const { compodocWatchPlugin } = await import('./docgen/compodoc-watch-plugin.ts');
+    compodocWatcher = compodocWatchPlugin({
+      compodocArgs: compodocConfig.compodocArgs,
+      tsconfig: compodocConfig.tsconfig,
+      workspaceRoot: compodocConfig.workspaceRoot,
+      outputDir: compodocConfig.outputDir,
+    });
+  } else if (compodocConfig.enabled && !(isVitestChild && inheritedCompodocOwner)) {
     const { existsSync } = await import('node:fs');
     const path = await import('node:path');
     if (!existsSync(path.resolve(compodocConfig.outputDir, DOCUMENTATION_JSON))) {
@@ -219,6 +245,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
       angularViteRedirectReapplyPlugin(options),
       angularOptionsPlugin(options, { normalizePath, zoneless }),
       storybookOxcPlugin(),
+      ...(compodocWatcher ? [compodocWatcher] : []),
     ],
     define: {
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({

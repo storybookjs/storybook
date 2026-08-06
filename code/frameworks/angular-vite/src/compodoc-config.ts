@@ -1,16 +1,18 @@
 /**
  * Single source of truth for "where does Compodoc write, and against which tsconfig".
  *
- * Three code paths need that answer and must agree: `viteFinal` generates `documentation.json`, the
- * docgen preset tells the worker where to read it, and `runCompodoc` builds the command line. When
- * each derived it separately they drifted, and a redirected output directory regenerated on every
- * cold start.
+ * Every code path needs that answer and must agree: `viteFinal` generates `documentation.json`
+ * (one-shot, or through the Compodoc watch plugin during development), the docgen preset tells the
+ * worker where to read it, and `buildCompodocCommandArgs` builds the command line. When each
+ * derived it separately they drifted, and a redirected output directory regenerated on every cold
+ * start.
  */
 import type { Preset } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
 
 import { findTsconfigUp } from './find-tsconfig.ts';
+import { COMPODOC_OUTPUT_OPTION, readCompodocOption } from './compodoc-args.ts';
 
 /** Compodoc invocation Storybook uses when `framework.options.compodocArgs` is unset. */
 export const DEFAULT_COMPODOC_ARGS = ['-e', 'json', '-d', '.'];
@@ -23,21 +25,8 @@ export const DOCUMENTATION_JSON = 'documentation.json';
  * `--output=dir` spelling Commander accepts. Scanned backwards, because a later `-d` wins on the
  * command line; a malformed occurrence is skipped so an earlier one still counts.
  */
-export const readCompodocOutputDir = (compodocArgs: string[]): string | undefined => {
-  for (let index = compodocArgs.length - 1; index >= 0; index--) {
-    const arg = compodocArgs[index];
-    if (arg.startsWith('--output=')) {
-      return arg.slice('--output='.length) || undefined;
-    }
-    if (arg === '-d' || arg === '--output') {
-      const value = compodocArgs[index + 1];
-      if (typeof value === 'string' && !value.startsWith('-')) {
-        return value;
-      }
-    }
-  }
-  return undefined;
-};
+export const readCompodocOutputDir = (compodocArgs: string[]): string | undefined =>
+  readCompodocOption(compodocArgs, COMPODOC_OUTPUT_OPTION);
 
 /**
  * Resolves the Compodoc run every path in this framework has to agree on.

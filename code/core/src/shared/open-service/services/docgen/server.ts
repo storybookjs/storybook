@@ -31,5 +31,6 @@ export function registerDocgenService(options: RegisterDocgenServiceOptions) {
     queryName: 'docgen',
     extractCommand: 'extractDocgen',
     extractAllCommand: 'extractAllDocgen',
+    refreshFilesCommand: '_refreshDocgenForFiles',
   });
 }

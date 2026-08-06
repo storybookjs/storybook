@@ -6,6 +6,7 @@ import {
 } from '../../../common/utils/select-component-entry.ts';
 import { OpenServiceDocgenMissingComponentError } from '../../../server-errors.ts';
 import type { IndexEntry, StoryIndex } from '../../../types/modules/indexer.ts';
+import { logger } from 'storybook/internal/node-logger';
 import { getService, registerService } from '../server.ts';
 import type {
   CommandCtx,
@@ -27,7 +28,16 @@ type ExtractionServiceState = { components: Record<string, unknown> };
  */
 type ComponentPayloadQuery = { get(input: { id: string }): unknown };
 
-type ExtractionProvider<TPayload> = (input: { entry: IndexEntry }) => Promise<TPayload | undefined>;
+type ExtractionProvider<TPayload> = (input: {
+  entry: IndexEntry;
+  generation?: number;
+}) => Promise<TPayload | undefined>;
+
+type FileRefreshInput = {
+  files: string[];
+  generation: number;
+  invalidation: 'files' | 'global';
+};
 
 /** The `{ name, message }` shape both extraction payloads carry under `error`. */
 export type ExtractionError = { name: string; message: string };
@@ -58,6 +68,8 @@ export type RegisterExtractionServiceOptions<TPayload, TQueries, TCommands> = {
   extractCommand: keyof TCommands & string;
   /** Command that extracts every component in the story index. Keyed against the service's commands. */
   extractAllCommand: keyof TCommands & string;
+  /** Optional internal command used by completion-driven providers to refresh cached components. */
+  refreshFilesCommand?: keyof TCommands & string;
 };
 
 /**
@@ -74,9 +86,15 @@ function subscribeExtractionServiceRefresh(
     workingDir: string;
     getIndex: () => Promise<StoryIndex>;
     query: ComponentPayloadQuery;
+    getTrackedComponentIds: () => Iterable<string>;
     refreshComponent: (componentId: string) => Promise<unknown>;
   }
 ) {
+  const refreshComponents = async (componentIds: Iterable<string>) => {
+    await Promise.all(
+      Array.from(componentIds, (id) => options.refreshComponent(id).catch(() => undefined))
+    );
+  };
   const refreshExtracted = async (componentIds: Iterable<string>) => {
     const idsToRefresh = Array.from(componentIds).filter(
       (id) => options.query.get({ id }) !== undefined
@@ -84,9 +102,7 @@ function subscribeExtractionServiceRefresh(
     if (idsToRefresh.length === 0) {
       return;
     }
-    await Promise.all(
-      idsToRefresh.map((id) => options.refreshComponent(id).catch(() => undefined))
-    );
+    await refreshComponents(idsToRefresh);
   };
 
   moduleGraph.queries.latestStoryChanges.subscribe(undefined, async ({ data }) => {
@@ -99,6 +115,10 @@ function subscribeExtractionServiceRefresh(
     const componentEntries = selectComponentEntriesByComponentId(
       Object.values((await options.getIndex()).entries)
     );
+    const removedComponentIds = Array.from(options.getTrackedComponentIds()).filter(
+      (id) => !componentEntries.has(id)
+    );
+    await refreshComponents(removedComponentIds);
 
     if (storyFiles.length === 0) {
       await refreshExtracted(componentEntries.keys());
@@ -143,6 +163,11 @@ function subscribeExtractionServiceRefresh(
  * `staticInputs` enumeration both use {@link selectComponentEntriesByComponentId} so a component id
  * always resolves to the same index entry.
  *
+ * A service may additionally name a `refreshFilesCommand`. That is the entry point for providers
+ * whose data is produced by an external tool: instead of reacting to the module graph as the edit
+ * happens, the integration calls it once its own generation has finished, so the refresh reads
+ * output that is already on disk. Those calls are serialized and older generations are dropped.
+ *
  * Requires the `core/module-graph` service to be registered (it always is in the dev server).
  */
 export function registerExtractionService<
@@ -161,6 +186,7 @@ export function registerExtractionService<
     queryName,
     extractCommand,
     extractAllCommand,
+    refreshFilesCommand,
   } = options;
 
   // The registration object below is built with computed keys and cast to `ServiceRegistrationOptions`,
@@ -170,6 +196,12 @@ export function registerExtractionService<
     queryName in definition.queries,
     `Extraction service "${definition.id}" has no query named "${queryName}".`
   );
+  if (refreshFilesCommand) {
+    invariant(
+      refreshFilesCommand in definition.commands,
+      `Extraction service "${definition.id}" has no command named "${refreshFilesCommand}".`
+    );
+  }
   invariant(
     extractCommand in definition.commands && extractAllCommand in definition.commands,
     `Extraction service "${definition.id}" is missing command "${extractCommand}" or "${extractAllCommand}".`
@@ -178,29 +210,287 @@ export function registerExtractionService<
   const resolveComponentEntries = async () =>
     selectComponentEntriesByComponentId(Object.values((await getIndex()).entries));
 
+  type SuccessfulExtraction = { generation: number; operation: number };
+  type ExtractionOutcome =
+    | { status: 'success'; payload: TState['components'][string] | undefined }
+    | { status: 'failure'; error: unknown };
+  type ExtractionOperation = SuccessfulExtraction & {
+    settlement: Promise<ExtractionOutcome>;
+    settle: (outcome: ExtractionOutcome) => void;
+  };
+  const latestSuccessfulExtraction = new Map<string, SuccessfulExtraction>();
+  const latestExtraction = new Map<string, ExtractionOperation>();
+  const activeExtractions = new Map<string, Set<ExtractionOperation>>();
+  const inFlightExtractions = new Map<string, number>();
+  const lastGoodComponentIds = new Set<string>();
+  const storedComponentIds = new Set<string>();
+  const evictedBeforeOperation = new Map<string, number>();
+  let extractionSequence = 0;
+  const outranks = (left: SuccessfulExtraction, right: SuccessfulExtraction) =>
+    left.generation > right.generation ||
+    (left.generation === right.generation && left.operation > right.operation);
+  // Completion-driven generations are provider-wide invalidation watermarks. Every later
+  // extraction, including components that were not cached when the completion arrived, must carry
+  // the watermark so long-lived providers cannot reuse a pre-completion snapshot.
+  let latestRefreshGeneration = 0;
+  const getTrackedComponentIds = () =>
+    new Set([
+      ...storedComponentIds,
+      ...latestSuccessfulExtraction.keys(),
+      ...latestExtraction.keys(),
+      ...inFlightExtractions.keys(),
+      ...lastGoodComponentIds,
+    ]);
+  const evictComponents = (
+    ctx: CommandCtx<TState>,
+    componentIds: Iterable<string>,
+    evictionOperation = extractionSequence
+  ) => {
+    const ids = Array.from(new Set(componentIds)).filter((id) => {
+      const latest = latestExtraction.get(id);
+      return !latest || latest.operation <= evictionOperation;
+    });
+    if (ids.length === 0) {
+      return;
+    }
+    ctx.self.setState((state) => {
+      for (const id of ids) {
+        delete state.components[id];
+      }
+    });
+    for (const id of ids) {
+      latestSuccessfulExtraction.delete(id);
+      latestExtraction.delete(id);
+      lastGoodComponentIds.delete(id);
+      storedComponentIds.delete(id);
+      evictedBeforeOperation.set(
+        id,
+        Math.max(evictedBeforeOperation.get(id) ?? 0, evictionOperation)
+      );
+    }
+  };
   const extractComponent = async (
     ctx: CommandCtx<TState>,
-    id: string
+    id: string,
+    generation?: number,
+    storeError = false
   ): Promise<TState['components'][string] | undefined> => {
-    const entry = (await resolveComponentEntries()).get(id);
-
-    if (!entry) {
-      throw new OpenServiceDocgenMissingComponentError({ id });
-    }
-
-    const payload = await provider({ entry });
-
-    if (!payload) {
-      ctx.self.setState((state) => {
-        delete state.components[id];
-      });
-      return undefined;
-    }
-
-    ctx.self.setState((state) => {
-      state.components[id] = payload;
+    const operation = ++extractionSequence;
+    const effectiveGeneration = (generation ?? latestRefreshGeneration) || undefined;
+    const rank = { generation: effectiveGeneration ?? 0, operation };
+    let settle: (outcome: ExtractionOutcome) => void = () => undefined;
+    const settlement = new Promise<ExtractionOutcome>((resolvePromise) => {
+      settle = resolvePromise;
     });
-    return payload;
+    const extraction: ExtractionOperation = { ...rank, settlement, settle };
+    const activeForComponent = activeExtractions.get(id) ?? new Set<ExtractionOperation>();
+    activeForComponent.add(extraction);
+    activeExtractions.set(id, activeForComponent);
+    const throwIfEvicted = () => {
+      const evictionOperation = evictedBeforeOperation.get(id);
+      if (evictionOperation !== undefined && operation <= evictionOperation) {
+        throw new OpenServiceDocgenMissingComponentError({ id });
+      }
+    };
+    const previousLatest = latestExtraction.get(id);
+    if (!previousLatest || outranks(extraction, previousLatest)) {
+      latestExtraction.set(id, extraction);
+    }
+    inFlightExtractions.set(id, (inFlightExtractions.get(id) ?? 0) + 1);
+    let entry: IndexEntry | undefined;
+    let outcome: ExtractionOutcome;
+    try {
+      entry = (await resolveComponentEntries()).get(id);
+
+      if (!entry) {
+        evictComponents(ctx, [id], operation);
+        throw new OpenServiceDocgenMissingComponentError({ id });
+      }
+
+      const payload = await provider(
+        effectiveGeneration === undefined ? { entry } : { entry, generation: effectiveGeneration }
+      );
+      outcome = { status: 'success', payload };
+    } catch (error) {
+      outcome = { status: 'failure', error };
+    }
+
+    const evictionOperation = evictedBeforeOperation.get(id);
+    if (evictionOperation !== undefined && operation <= evictionOperation) {
+      entry = undefined;
+      outcome = {
+        status: 'failure',
+        error: new OpenServiceDocgenMissingComponentError({ id }),
+      };
+    }
+
+    extraction.settle(outcome);
+    try {
+      throwIfEvicted();
+      const observedDominant = new Set<ExtractionOperation>();
+      let dominantFailure: Extract<ExtractionOutcome, { status: 'failure' }> | undefined;
+      const nextDominant = () => {
+        const latest = latestExtraction.get(id);
+        return Array.from(
+          new Set([...Array.from(activeExtractions.get(id) ?? []), ...(latest ? [latest] : [])])
+        )
+          .filter(
+            (candidate) =>
+              candidate !== extraction &&
+              !observedDominant.has(candidate) &&
+              outranks(candidate, extraction)
+          )
+          .sort((left, right) => (outranks(left, right) ? -1 : outranks(right, left) ? 1 : 0))[0];
+      };
+      let dominant = nextDominant();
+      while (dominant) {
+        observedDominant.add(dominant);
+        const dominantOutcome = await dominant.settlement;
+        // Eviction can happen while this operation waits for a newer extraction. Re-check the
+        // tombstone before returning or publishing either operation's payload.
+        throwIfEvicted();
+        if (dominantOutcome.status === 'success') {
+          return dominantOutcome.payload;
+        }
+        dominantFailure ??= dominantOutcome;
+        dominant = nextDominant();
+      }
+
+      // A stale success may still establish the first last-good value when every newer refresh
+      // failed. Looking through every active newer rank first prevents an older caller from
+      // returning before an intermediate newer success.
+      if (dominantFailure && outcome.status === 'success' && outcome.payload !== undefined) {
+        const payload = outcome.payload;
+        const latestSuccess = latestSuccessfulExtraction.get(id);
+        if (latestSuccess && outranks(latestSuccess, rank)) {
+          return ctx.self.state.components[id] as TState['components'][string] | undefined;
+        }
+        latestSuccessfulExtraction.set(id, rank);
+        lastGoodComponentIds.add(id);
+        storedComponentIds.add(id);
+        evictedBeforeOperation.delete(id);
+        ctx.self.setState((state) => {
+          state.components[id] = payload;
+        });
+        return payload;
+      }
+      if (dominantFailure && outcome.status === 'failure') {
+        outcome = dominantFailure;
+      }
+
+      if (outcome.status === 'failure') {
+        const latestSuccess = latestSuccessfulExtraction.get(id);
+        if (latestSuccess && outranks(latestSuccess, rank)) {
+          return ctx.self.state.components[id] as TState['components'][string] | undefined;
+        }
+        // extractAll reports a component-local error only when there is no last-good payload. A
+        // transient failure must not replace usable documentation already held by the service.
+        if (storeError && entry && !lastGoodComponentIds.has(id)) {
+          const payload = buildErrorPayload({ id, entry, error: toExtractionError(outcome.error) });
+          ctx.self.setState((state) => {
+            state.components[id] = payload;
+          });
+          storedComponentIds.add(id);
+          return payload;
+        }
+        if (storeError && lastGoodComponentIds.has(id)) {
+          return ctx.self.state.components[id] as TState['components'][string] | undefined;
+        }
+        throw outcome.error;
+      }
+
+      const latestSuccess = latestSuccessfulExtraction.get(id);
+      if (latestSuccess && outranks(latestSuccess, rank)) {
+        return ctx.self.state.components[id] as TState['components'][string] | undefined;
+      }
+      latestSuccessfulExtraction.set(id, rank);
+      if (outcome.payload === undefined) {
+        lastGoodComponentIds.delete(id);
+        storedComponentIds.delete(id);
+        ctx.self.setState((state) => {
+          delete state.components[id];
+        });
+        return undefined;
+      }
+      lastGoodComponentIds.add(id);
+      storedComponentIds.add(id);
+      evictedBeforeOperation.delete(id);
+      const payload = outcome.payload;
+      ctx.self.setState((state) => {
+        state.components[id] = payload;
+      });
+      return payload;
+    } finally {
+      const active = activeExtractions.get(id);
+      active?.delete(extraction);
+      if (active?.size === 0) {
+        activeExtractions.delete(id);
+      }
+      const remaining = (inFlightExtractions.get(id) ?? 1) - 1;
+      if (remaining > 0) {
+        inFlightExtractions.set(id, remaining);
+      } else {
+        inFlightExtractions.delete(id);
+      }
+    }
+  };
+
+  const moduleGraph = getService('core/module-graph', { internal: true });
+  let refreshQueue: Promise<void> = Promise.resolve();
+  let reportedFallbackStatus: string | undefined;
+
+  const refreshForFiles = async (input: FileRefreshInput, ctx: CommandCtx<TState>) => {
+    await moduleGraph.queries.status.loaded(undefined);
+    const status = moduleGraph.queries.status.get(undefined);
+    const componentEntries = await resolveComponentEntries();
+    const trackedIds = getTrackedComponentIds();
+    const removedIds = Array.from(trackedIds).filter((id) => !componentEntries.has(id));
+    evictComponents(ctx, removedIds);
+    const knownIds = new Set(Array.from(trackedIds).filter((id) => componentEntries.has(id)));
+    let componentIds: Set<string>;
+
+    if (input.invalidation === 'global') {
+      reportedFallbackStatus = undefined;
+      componentIds = knownIds;
+    } else if (status.value === 'ready') {
+      reportedFallbackStatus = undefined;
+      const affectedStoryFiles = new Set(
+        moduleGraph.queries.storiesForFiles
+          .get({ files: input.files })
+          .flatMap((matches) => matches.map(({ storyFile }) => storyFile))
+      );
+      componentIds = new Set<string>();
+      for (const [id, entry] of componentEntries) {
+        const storyFilePath = getStoryImportPathFromEntry(entry);
+        if (
+          knownIds.has(id) &&
+          storyFilePath &&
+          affectedStoryFiles.has(toStoryIndexPath(storyFilePath, workingDir))
+        ) {
+          componentIds.add(id);
+        }
+      }
+    } else {
+      // One line per status transition: a persistently unavailable graph refreshes on every save.
+      if (reportedFallbackStatus !== status.value) {
+        reportedFallbackStatus = status.value;
+        logger.warn(
+          `Extraction refresh for "${definition.id}" is using cached-component fallback because the module graph is ${status.value}.`
+        );
+      }
+      componentIds = knownIds;
+    }
+
+    const results = await Promise.allSettled(
+      Array.from(componentIds, (id) => extractComponent(ctx, id, input.generation))
+    );
+    const failures = results.filter((result) => result.status === 'rejected');
+    if (failures.length > 0) {
+      throw new AggregateError(
+        failures.map((failure) => failure.reason),
+        `Failed to refresh ${failures.length} ${definition.id} component(s)`
+      );
+    }
   };
 
   const runtime = registerService(definition, {
@@ -221,28 +511,38 @@ export function registerExtractionService<
         handler: async (_input: undefined, ctx: CommandCtx<TState>) => {
           const componentEntries = await resolveComponentEntries();
           await Promise.all(
-            Array.from(componentEntries, ([id, entry]) =>
-              // A provider is not required to be total: `Promise.all` rejects on the first
-              // rejection, so an unguarded fan-out lets one component's failure discard every other
-              // component's payload.
-              extractComponent(ctx, id).catch((error: unknown) => {
-                const payload = buildErrorPayload({ id, entry, error: toExtractionError(error) });
-                ctx.self.setState((state) => {
-                  state.components[id] = payload;
-                });
-              })
+            Array.from(componentEntries, ([id]) =>
+              // Each provider failure is stored independently so one bad component cannot discard
+              // every other component's payload.
+              extractComponent(ctx, id, undefined, true)
             )
           );
         },
       },
+      ...(refreshFilesCommand
+        ? {
+            [refreshFilesCommand]: {
+              handler: (input: FileRefreshInput, ctx: CommandCtx<TState>) => {
+                if (input.generation <= latestRefreshGeneration) {
+                  return refreshQueue;
+                }
+                latestRefreshGeneration = input.generation;
+                refreshQueue = refreshQueue
+                  .catch(() => undefined)
+                  .then(() => refreshForFiles(input, ctx));
+                return refreshQueue;
+              },
+            },
+          }
+        : {}),
     },
   } as unknown as ServiceRegistrationOptions<TState, TQueries, TCommands>);
 
-  const moduleGraph = getService('core/module-graph', { internal: true });
   subscribeExtractionServiceRefresh(moduleGraph, {
     workingDir,
     getIndex,
     query: runtime.queries[queryName],
+    getTrackedComponentIds,
     refreshComponent: (id) =>
       (runtime.commands as Record<string, (input: { id: string }) => Promise<unknown>>)[
         extractCommand

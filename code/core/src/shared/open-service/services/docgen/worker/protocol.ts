@@ -17,11 +17,15 @@ export interface DocgenWorkerInitRequest {
   descriptors: DocgenProviderDescriptor[];
 }
 
-/** Sent per component to extract its docgen payload. `id` correlates the response. */
+/**
+ * Sent per component to extract its docgen payload. `id` correlates the response. Once supplied,
+ * `generation` is a worker-wide invalidation watermark carried into every later extraction.
+ */
 export interface DocgenWorkerExtractRequest {
   type: 'extract';
   id: number;
   entry: IndexEntry;
+  generation?: number;
 }
 
 export type DocgenWorkerRequest = DocgenWorkerInitRequest | DocgenWorkerExtractRequest;

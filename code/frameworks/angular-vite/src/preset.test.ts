@@ -7,7 +7,7 @@ import { vol } from 'memfs';
 import { mergeConfig, normalizePath } from 'vite';
 
 import { runCompodoc } from './builders/utils/run-compodoc.ts';
-import { angularOptionsPlugin, viteFinal } from './preset.ts';
+import { COMPODOC_WATCH_OWNER_ENV, angularOptionsPlugin, viteFinal } from './preset.ts';
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 
 // The plugin's `config` hook looks up the preview file on disk before reading
@@ -24,6 +24,7 @@ vi.mock('vite', { spy: true });
 vi.mock('@analogjs/vite-plugin-angular', () => ({ default: (): unknown[] => [] }));
 
 beforeEach(async () => {
+  vi.stubEnv(COMPODOC_WATCH_OWNER_ENV, '');
   vol.reset();
   const memfs = await vi.importActual<typeof import('memfs')>('memfs');
   vi.mocked(existsSync).mockImplementation(memfs.fs.existsSync as typeof existsSync);
@@ -37,6 +38,7 @@ beforeEach(async () => {
 
 afterEach(() => {
   vi.mocked(runCompodoc).mockClear();
+  vi.unstubAllEnvs();
 });
 
 const WORKSPACE_ROOT = resolve('/workspace');
@@ -96,15 +98,31 @@ describe('angularOptionsPlugin style preprocessor paths', () => {
 });
 
 describe('viteFinal Compodoc generation', () => {
-  const optionsWith = (frameworkOptions: Record<string, unknown>) =>
+  const optionsWith = (
+    frameworkOptions: Record<string, unknown>,
+    extra: {
+      features?: Record<string, unknown>;
+      configType?: 'DEVELOPMENT' | 'PRODUCTION';
+      ignorePreview?: boolean;
+    } = {}
+  ) =>
     ({
       configDir: resolve(WORKSPACE_ROOT, '.storybook'),
       angularBuilderContext: { workspaceRoot: WORKSPACE_ROOT },
+      configType: extra.configType,
+      ignorePreview: extra.ignorePreview,
       presets: {
         apply: async (key: string, fallback?: unknown) =>
-          key === 'framework' ? { options: frameworkOptions } : fallback,
+          key === 'framework'
+            ? { options: frameworkOptions }
+            : key === 'features'
+              ? (extra.features ?? fallback)
+              : fallback,
       },
     }) as unknown as StandaloneOptions;
+
+  const pluginNames = (config: any) =>
+    (config.plugins ?? []).flat().map((plugin: { name?: string }) => plugin?.name);
 
   it('generates against the resolved workspace root and tsconfig', async () => {
     await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({}));
@@ -144,5 +162,62 @@ describe('viteFinal Compodoc generation', () => {
     await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({ compodoc: false }));
 
     expect(runCompodoc).not.toHaveBeenCalled();
+  });
+
+  it('owns one watcher in experimental development and suppresses the one-shot generation', async () => {
+    const config = await viteFinal(
+      { root: WORKSPACE_ROOT },
+      optionsWith({}, { features: { experimentalDocgenServer: true }, configType: 'DEVELOPMENT' })
+    );
+
+    expect(pluginNames(config)).toContain('storybook:angular-vite-compodoc-watch');
+    expect(runCompodoc).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['production', { configType: 'PRODUCTION' as const }],
+    ['manager-only', { configType: 'DEVELOPMENT' as const, ignorePreview: true }],
+  ])('does not own a watcher for %s builds', async (_name, extra) => {
+    const config = await viteFinal(
+      { root: WORKSPACE_ROOT },
+      optionsWith({}, { ...extra, features: { experimentalDocgenServer: true } })
+    );
+
+    expect(pluginNames(config)).not.toContain('storybook:angular-vite-compodoc-watch');
+    expect(runCompodoc).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not own a watcher in the addon-Vitest child', async () => {
+    vi.stubEnv('VITEST_CHILD_PROCESS', 'true');
+    const config = await viteFinal(
+      { root: WORKSPACE_ROOT },
+      optionsWith({}, { features: { experimentalDocgenServer: true }, configType: 'DEVELOPMENT' })
+    );
+
+    expect(pluginNames(config)).not.toContain('storybook:angular-vite-compodoc-watch');
+    expect(runCompodoc).toHaveBeenCalledTimes(1);
+  });
+
+  it('suppresses every Compodoc writer in a Vitest child owned by the parent watcher', async () => {
+    vi.stubEnv('VITEST_CHILD_PROCESS', 'true');
+    vi.stubEnv(COMPODOC_WATCH_OWNER_ENV, 'true');
+
+    const config = await viteFinal(
+      { root: WORKSPACE_ROOT },
+      optionsWith({}, { features: { experimentalDocgenServer: true }, configType: 'DEVELOPMENT' })
+    );
+
+    expect(pluginNames(config)).not.toContain('storybook:angular-vite-compodoc-watch');
+    expect(runCompodoc).not.toHaveBeenCalled();
+  });
+
+  it('keeps one-shot behavior when the experimental feature is disabled', async () => {
+    const config = await viteFinal(
+      { root: WORKSPACE_ROOT },
+      optionsWith({}, { features: { experimentalDocgenServer: false }, configType: 'DEVELOPMENT' })
+    );
+
+    expect(pluginNames(config)).not.toContain('storybook:angular-vite-compodoc-watch');
+    expect(runCompodoc).toHaveBeenCalledTimes(1);
   });
 });

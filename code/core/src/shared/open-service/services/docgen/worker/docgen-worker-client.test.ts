@@ -116,7 +116,7 @@ describe('DocgenWorkerClient.extract', () => {
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
 
     const entry = { id: 'button--primary', importPath: './button.stories.tsx' } as any;
-    const promise = client.extract(entry);
+    const promise = client.extract(entry, 42);
     const worker = fakeWorkers[0];
 
     // Nothing is dispatched until init is acked.
@@ -125,7 +125,7 @@ describe('DocgenWorkerClient.extract', () => {
     await Promise.resolve();
 
     const extractMsg = worker.posted.find((m) => m.type === 'extract');
-    expect(extractMsg).toMatchObject({ type: 'extract', entry });
+    expect(extractMsg).toMatchObject({ type: 'extract', entry, generation: 42 });
 
     worker.emit('message', {
       type: 'extract',
@@ -134,6 +134,32 @@ describe('DocgenWorkerClient.extract', () => {
     } satisfies DocgenWorkerResponse);
 
     await expect(promise).resolves.toMatchObject({ id: 'button', name: 'Button' });
+  });
+
+  it('carries the latest generation watermark into later untagged extracts', async () => {
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+    const first = client.extract({ id: 'button--primary' } as any, 12);
+    const worker = fakeWorkers[0];
+    ackInit(worker);
+    await Promise.resolve();
+
+    const firstMessage = worker.posted.find((message) => message.type === 'extract') as {
+      type: 'extract';
+      id: number;
+    };
+    worker.emit('message', { type: 'extract', id: firstMessage.id } satisfies DocgenWorkerResponse);
+    await first;
+
+    const second = client.extract({ id: 'card--primary' } as any);
+    await Promise.resolve();
+    const extractMessages = worker.posted.filter((message) => message.type === 'extract');
+    expect(extractMessages[1]).toMatchObject({ generation: 12 });
+    worker.emit('message', {
+      type: 'extract',
+      id: (extractMessages[1] as { id: number }).id,
+    } satisfies DocgenWorkerResponse);
+    await second;
   });
 
   it('rejects extract calls when init fails', async () => {

@@ -108,6 +108,12 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
 - The docs toolset's Markdown is a verbatim port of the `@storybook/mcp` manifest formatter
   (`toolsets/docs/manifest-formatter/`); the two copies must not drift until Milestone 4 deletes the
   original. MCP consumer + Markdown is the parity-tested cell.
+- Angular Vite development with `experimentalDocgenServer` owns one Compodoc IPC watcher in its
+  Vite plugin lifecycle. Successful direct-file completions refresh affected cached `core/docgen`
+  entries with a generation token; selection-changing tsconfig or public-API completions refresh
+  every cached or in-flight entry. Refresh also evicts component IDs that are no longer present in
+  the current story index, including their last-good and in-flight bookkeeping. Static builds,
+  manager-only runs, and addon-Vitest child processes do not own that watcher.
 - The toolset surface remains experimental. Production MCP migration is Milestone 4. CLI generation
   and production `storybook tools` wiring are Milestone 5. MCP tools remain hand-authored in
   `addon-mcp` until Milestone 4.

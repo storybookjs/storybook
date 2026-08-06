@@ -35,7 +35,7 @@ interface Pending {
 
 export interface DocgenWorkerClient {
   /** Extracts docgen for one component entry off the main thread. */
-  extract(entry: IndexEntry): Promise<DocgenPayload | undefined>;
+  extract(entry: IndexEntry, generation?: number): Promise<DocgenPayload | undefined>;
 }
 
 /** Rebuild an Error from a worker {@link ErrorLike} so the original name/message/stack survive. */
@@ -58,6 +58,7 @@ class DocgenWorker implements DocgenWorkerClient {
   // `ready` if the worker dies before sending `init`. No-op default keeps TS definite-assignment happy.
   private rejectReady: (error: unknown) => void = () => undefined;
   private nextId = 0;
+  private latestGeneration = 0;
   private dead = false;
 
   constructor(
@@ -97,10 +98,14 @@ class DocgenWorker implements DocgenWorkerClient {
     this.post({ type: 'init', descriptors });
   }
 
-  async extract(entry: IndexEntry): Promise<DocgenPayload | undefined> {
+  async extract(entry: IndexEntry, generation?: number): Promise<DocgenPayload | undefined> {
     if (this.dead) {
       throw new Error('docgen worker is no longer running');
     }
+    if (generation !== undefined) {
+      this.latestGeneration = Math.max(this.latestGeneration, generation);
+    }
+    const effectiveGeneration = this.latestGeneration || undefined;
     await this.ready;
     return new Promise<DocgenPayload | undefined>((resolve, reject) => {
       const id = this.nextId++;
@@ -113,7 +118,7 @@ class DocgenWorker implements DocgenWorkerClient {
         pending.timer.unref?.();
       }
       this.pending.set(id, pending);
-      this.post({ type: 'extract', id, entry });
+      this.post({ type: 'extract', id, entry, generation: effectiveGeneration });
     });
   }
 
@@ -198,9 +203,9 @@ export function createDocgenWorkerClient(
   let worker: DocgenWorker | undefined;
 
   return {
-    async extract(entry) {
+    async extract(entry, generation) {
       worker ??= new DocgenWorker(scriptPath, descriptors);
-      return worker.extract(entry);
+      return worker.extract(entry, generation);
     },
   };
 }

@@ -8,6 +8,11 @@ import type { DocgenPayload } from './types.ts';
 import { docgenQueryStaticPath } from './paths.ts';
 
 const docgenInputSchema = v.object({ id: v.string() });
+const docgenFileRefreshInputSchema = v.object({
+  files: v.array(v.string()),
+  generation: v.pipe(v.number(), v.integer(), v.minValue(1)),
+  invalidation: v.picklist(['files', 'global']),
+});
 // Typed as `StrictArgTypes` (a static Storybook construct) but validated loosely: spelling out the
 // full recursive valibot shape is deferred, so this only checks "is a plain object" at runtime
 // while keeping the payload's `argTypes` typed for consumers.
@@ -125,6 +130,14 @@ export const docgenServiceDef = defineService({
       input: v.undefined(),
       output: v.void(),
       // Handler is supplied at registration time so it can close over the story index.
+    },
+    _refreshDocgenForFiles: {
+      internal: true,
+      description:
+        'Refreshes already-cached component docgen affected by source files after a provider generation completes.',
+      input: docgenFileRefreshInputSchema,
+      output: v.void(),
+      // Handler is supplied at registration time so it can share extraction ordering and mapping.
     },
   },
 });

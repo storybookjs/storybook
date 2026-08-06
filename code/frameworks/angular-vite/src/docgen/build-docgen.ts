@@ -51,7 +51,7 @@ export type AngularDocgenPayload = DocgenPayload & {
 
 export interface BuildDocgenContext {
   options: AngularDocgenOptions;
-  readDocumentationJson: (path: string) => CompodocJson;
+  readDocumentationJson: (path: string, generation?: number) => CompodocJson;
   logger: CompodocParsingLogger;
   /** Same hook the React and Vue builders expose, defaulting to the same resolution against cwd. */
   resolvePath?: (importPath: string) => string;
@@ -226,7 +226,7 @@ export const buildDocgenPayload = (
 
   let compodocJson: CompodocJson;
   try {
-    compodocJson = context.readDocumentationJson(documentationJson);
+    compodocJson = context.readDocumentationJson(documentationJson, input.generation);
   } catch (error) {
     return errorPayload(
       base,

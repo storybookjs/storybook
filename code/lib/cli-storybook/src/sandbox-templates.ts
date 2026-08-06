@@ -1191,10 +1191,9 @@ export const merged: TemplateKey[] = [
 export const daily: TemplateKey[] = [
   ...merged,
   'angular-vite/21-ts',
-  // Daily rather than every run while server docgen is experimental: it doubles the Angular sandbox
-  // cost and the configuration it guards is not yet the shipping one.
-  // TODO(11.0): promote to `normal` and drop `angular-vite/default-ts` to a less frequent cadence,
-  // so the every-run sandbox tracks the shipping configuration.
+  // TODO(11.0): remove this template. The standard sandboxes ship the new docgen approach by
+  // default from then on, so `angular-vite/default-ts` carries the baselines and this one is
+  // redundant.
   'angular-vite/docgen-server-ts',
   // TODO: Add this back once we resolve the React 19 issues
   // 'cra/default-js',
@@ -1246,7 +1245,7 @@ const mainConfigFeatures = (template: Template): Record<string, unknown> | undef
 };
 
 /** Whether a template's sandbox runs with server-side docgen, and so carries docgen baselines. */
-export const enablesDocgenServer = (template: Template): boolean => {
+const enablesDocgenServer = (template: Template): boolean => {
   const features = mainConfigFeatures(template);
   return DOCGEN_SERVER_FEATURES.every((feature) => features?.[feature] === true);
 };

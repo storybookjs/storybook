@@ -1,17 +1,17 @@
-import { getDocsToolsetInstructions } from '../../../shared/open-service/toolsets/docs/instructions.ts';
 import { getRef } from '../../../shared/open-service/toolset-names.ts';
+import { getDocsToolsetInstructions } from '../../../shared/open-service/toolsets/docs/instructions.ts';
 import devInstructions from './instructions/dev-instructions.md';
 import legacyDevInstructions from './instructions/legacy-dev-instructions.md';
 import legacyTestInstructions from './instructions/legacy-test-instructions.md';
 import reviewDocsInstructions from './instructions/review-docs-instructions.md';
 import testInstructions from './instructions/test-instructions.md';
-import { getSkillRef } from './skill-refs.ts';
 import type { SkillConsumer } from './skill-refs.ts';
+import { getSkillRef } from './skill-refs.ts';
 
 export type ServerInstructionsInputs = {
   consumer: SkillConsumer;
   devEnabled: boolean;
-  testEnabled: boolean;
+  testSupported: boolean;
   docsEnabled: boolean;
   changeDetectionEnabled?: boolean;
   /**
@@ -115,7 +115,7 @@ export function buildServerInstructions({
   // and the shared docs-toolset Documentation Workflow. With review on, the whole instruction set
   // must fit under the 2,048-char client truncation limit alongside the review workflow, so
   // slimmed variants (same rules, terser wording) are used instead.
-  if (options.testEnabled) {
+  if (options.testSupported) {
     sections.push(
       (reviewEnabled ? testInstructions : legacyTestInstructions)
         .replaceAll('{{RUN_STORY_TESTS}}', ref('test.run'))

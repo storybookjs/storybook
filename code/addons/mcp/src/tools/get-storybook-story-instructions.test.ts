@@ -220,7 +220,7 @@ describe('getUIBuildingInstructionsTool', () => {
     };
 
     const instructions = await buildStorybookStoryInstructions(mockOptions as any, {
-      docsAvailable: true,
+      docsEnabled: true,
     });
 
     expect(instructions).toContain('## Using library components');
@@ -242,7 +242,7 @@ describe('getUIBuildingInstructionsTool', () => {
     };
 
     const instructions = await buildStorybookStoryInstructions(mockOptions as any, {
-      docsAvailable: true,
+      docsEnabled: true,
       toolsets: { dev: true, docs: false, test: true },
     });
 
@@ -574,14 +574,14 @@ describe('getUIBuildingInstructionsTool', () => {
       },
     } as any;
 
-    const withDocs = await buildStorybookStoryInstructions(mockOptions, { docsAvailable: true });
+    const withDocs = await buildStorybookStoryInstructions(mockOptions, { docsEnabled: true });
     expect(withDocs).toContain('## Using library components');
     expect(withDocs).toContain('list-all-documentation');
 
     // Without the docs manifest the tools are not registered, so the
     // instructions must not tell agents to call them.
     const withoutDocs = await buildStorybookStoryInstructions(mockOptions, {
-      docsAvailable: false,
+      docsEnabled: false,
     });
     expect(withoutDocs).not.toContain('## Using library components');
     expect(withoutDocs).not.toContain('list-all-documentation');

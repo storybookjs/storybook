@@ -55,7 +55,7 @@ const instructions = (reviewEnabled: boolean) =>
   buildServerInstructions({
     consumer: 'mcp',
     devEnabled: true,
-    testEnabled: true,
+    testSupported: true,
     docsEnabled: true,
     changeDetectionEnabled: true,
     moduleGraphSupported: true,

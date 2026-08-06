@@ -6,9 +6,9 @@ const baseInputs = {
   framework: '@storybook/react-vite',
   changeDetectionEnabled: true,
   reviewEnabled: true,
-  testToolsetAvailable: true,
+  testSupported: true,
   a11yEnabled: false,
-  docsAvailable: false,
+  docsEnabled: false,
 } as const;
 
 describe('buildStoryInstructions consumer refs', () => {
@@ -61,7 +61,7 @@ describe('buildStoryInstructions placeholder resolution', () => {
     const instructions = buildStoryInstructions({
       ...baseInputs,
       consumer: 'mcp',
-      docsAvailable: true,
+      docsEnabled: true,
     });
 
     expect(instructions).toContain('## Using library components');
@@ -75,7 +75,7 @@ describe('buildStoryInstructions placeholder resolution', () => {
     const instructions = buildStoryInstructions({
       ...baseInputs,
       consumer: 'mcp',
-      docsAvailable: false,
+      docsEnabled: false,
     });
 
     expect(instructions).not.toContain('## Using library components');
@@ -149,7 +149,7 @@ describe('buildStoryInstructions test toolset and a11y', () => {
     const instructions = buildStoryInstructions({
       ...baseInputs,
       consumer: 'mcp',
-      testToolsetAvailable: true,
+      testSupported: true,
       a11yEnabled: true,
     });
 
@@ -163,7 +163,7 @@ describe('buildStoryInstructions test toolset and a11y', () => {
     const instructions = buildStoryInstructions({
       ...baseInputs,
       consumer: 'mcp',
-      testToolsetAvailable: false,
+      testSupported: false,
       a11yEnabled: true,
     });
 
@@ -175,7 +175,7 @@ describe('buildStoryInstructions test toolset and a11y', () => {
     const instructions = buildStoryInstructions({
       ...baseInputs,
       consumer: 'mcp',
-      testToolsetAvailable: true,
+      testSupported: true,
       a11yEnabled: false,
     });
 

@@ -4,9 +4,9 @@ import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
 import { buildServerInstructions } from './content/build-server-instructions.ts';
 import { buildStoryInstructions } from './content/build-story-instructions.ts';
 import type { getAiSetupMarkdownOutput } from './content/setup-prompts/index.ts';
-import { isSkillId, SKILL_IDS, SKILLS, type SkillId } from './content/skills.ts';
-import type { resolveSkillInputs, SkillInputs } from './inputs.ts';
-import type { getProjectInfo, ProjectInfoResult } from './project-info.ts';
+import { SKILLS, SKILL_IDS, isSkillId, type SkillId } from './content/skills.ts';
+import type { SkillInputs, resolveSkillInputs } from './inputs.ts';
+import type { ProjectInfoResult, getProjectInfo } from './project-info.ts';
 
 export type SkillsRunInput = {
   subcommand: 'list' | 'get' | undefined;
@@ -104,7 +104,7 @@ function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
     return buildServerInstructions({
       consumer: 'cli',
       devEnabled: true,
-      testEnabled: inputs.testSupported,
+      testSupported: inputs.testSupported,
       docsEnabled: inputs.docsEnabled,
       changeDetectionEnabled: inputs.changeDetectionEnabled,
       moduleGraphSupported: inputs.moduleGraphSupported,
@@ -117,8 +117,8 @@ function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
     renderer: inputs.renderer,
     changeDetectionEnabled: inputs.changeDetectionEnabled,
     reviewEnabled,
-    testToolsetAvailable: inputs.testSupported,
+    testSupported: inputs.testSupported,
     a11yEnabled: inputs.a11yEnabled,
-    docsAvailable: inputs.docsEnabled,
+    docsEnabled: inputs.docsEnabled,
   });
 }

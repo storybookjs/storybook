@@ -50,7 +50,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
       return buildServerInstructions({
         consumer: 'mcp',
         devEnabled: server?.ctx.custom?.toolsets?.dev ?? true,
-        testEnabled: (server?.ctx.custom?.toolsets?.test ?? true) && availability.testSupported,
+        testSupported: (server?.ctx.custom?.toolsets?.test ?? true) && availability.testSupported,
         docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && availability.docsEnabled,
         changeDetectionEnabled: availability.changeDetectionEnabled,
         moduleGraphSupported: availability.moduleGraphSupported,

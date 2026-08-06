@@ -1,4 +1,4 @@
-import { describe, it, expect } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { buildServerInstructions } from './build-server-instructions.ts';
 
 // Claude Code hard-truncates MCP server instructions at 2,048 characters:
@@ -14,7 +14,7 @@ describe('buildServerInstructions', () => {
   it('stays under the MCP client truncation limit in every configuration', () => {
     const bools = [true, false] as const;
     for (const devEnabled of bools)
-      for (const testEnabled of bools)
+      for (const testSupported of bools)
         for (const docsEnabled of bools)
           for (const changeDetectionEnabled of bools)
             for (const moduleGraphSupported of bools)
@@ -22,7 +22,7 @@ describe('buildServerInstructions', () => {
                 const options = {
                   consumer: 'mcp' as const,
                   devEnabled,
-                  testEnabled,
+                  testSupported,
                   docsEnabled,
                   changeDetectionEnabled,
                   moduleGraphSupported,
@@ -39,7 +39,7 @@ describe('buildServerInstructions', () => {
     const instructions = buildServerInstructions({
       consumer: 'mcp',
       devEnabled: true,
-      testEnabled: true,
+      testSupported: true,
       docsEnabled: true,
       changeDetectionEnabled: true,
       reviewEnabled: true,
@@ -76,7 +76,7 @@ describe('buildServerInstructions', () => {
     const instructions = buildServerInstructions({
       consumer: 'mcp',
       devEnabled: true,
-      testEnabled: false,
+      testSupported: false,
       docsEnabled: false,
       changeDetectionEnabled: true,
       reviewEnabled: true,
@@ -99,7 +99,7 @@ describe('buildServerInstructions', () => {
     const instructions = buildServerInstructions({
       consumer: 'mcp',
       devEnabled: true,
-      testEnabled: false,
+      testSupported: false,
       docsEnabled: false,
       changeDetectionEnabled: true,
     });
@@ -125,7 +125,7 @@ describe('buildServerInstructions', () => {
     const legacy = buildServerInstructions({
       consumer: 'mcp',
       devEnabled: true,
-      testEnabled: false,
+      testSupported: false,
       docsEnabled: false,
     });
 
@@ -138,7 +138,7 @@ describe('buildServerInstructions', () => {
         buildServerInstructions({
           consumer: 'mcp',
           devEnabled: true,
-          testEnabled: false,
+          testSupported: false,
           docsEnabled: false,
           reviewEnabled: false,
           ...flags,
@@ -151,7 +151,7 @@ describe('buildServerInstructions', () => {
     const instructions = buildServerInstructions({
       consumer: 'mcp',
       devEnabled: true,
-      testEnabled: false,
+      testSupported: false,
       docsEnabled: false,
       changeDetectionEnabled: false,
       moduleGraphSupported: true,
@@ -171,7 +171,7 @@ describe('buildServerInstructions', () => {
     const instructions = buildServerInstructions({
       consumer: 'mcp',
       devEnabled: true,
-      testEnabled: false,
+      testSupported: false,
       docsEnabled: false,
       changeDetectionEnabled: false,
       moduleGraphSupported: false,
@@ -188,7 +188,7 @@ describe('buildServerInstructions', () => {
     const instructions = buildServerInstructions({
       consumer: 'mcp',
       devEnabled: true,
-      testEnabled: true,
+      testSupported: true,
       docsEnabled: true,
       changeDetectionEnabled: true,
       reviewEnabled: false,
@@ -203,7 +203,7 @@ describe('buildServerInstructions', () => {
     const instructions = buildServerInstructions({
       consumer: 'mcp',
       devEnabled: true,
-      testEnabled: true,
+      testSupported: true,
       docsEnabled: false,
       changeDetectionEnabled: true,
       reviewEnabled: false,
@@ -217,7 +217,7 @@ describe('buildServerInstructions', () => {
     const instructions = buildServerInstructions({
       consumer: 'mcp',
       devEnabled: false,
-      testEnabled: false,
+      testSupported: false,
       docsEnabled: true,
     });
 
@@ -244,7 +244,7 @@ describe('buildServerInstructions', () => {
     const instructions = buildServerInstructions({
       consumer: 'mcp',
       devEnabled: false,
-      testEnabled: true,
+      testSupported: true,
       docsEnabled: false,
     });
 
@@ -263,7 +263,7 @@ describe('buildServerInstructions', () => {
     const instructions = buildServerInstructions({
       consumer: 'mcp',
       devEnabled: false,
-      testEnabled: false,
+      testSupported: false,
       docsEnabled: false,
     });
 
@@ -275,7 +275,7 @@ describe('buildServerInstructions', () => {
       const instructions = buildServerInstructions({
         consumer: 'cli',
         devEnabled: true,
-        testEnabled: false,
+        testSupported: false,
         docsEnabled: false,
         changeDetectionEnabled: true,
         reviewEnabled: true,
@@ -289,7 +289,7 @@ describe('buildServerInstructions', () => {
       const instructions = buildServerInstructions({
         consumer: 'cli',
         devEnabled: true,
-        testEnabled: false,
+        testSupported: false,
         docsEnabled: false,
       });
 
@@ -301,7 +301,7 @@ describe('buildServerInstructions', () => {
       const instructions = buildServerInstructions({
         consumer: 'cli',
         devEnabled: true,
-        testEnabled: false,
+        testSupported: false,
         docsEnabled: false,
         changeDetectionEnabled: false,
         moduleGraphSupported: true,
@@ -320,7 +320,7 @@ describe('buildServerInstructions', () => {
       const instructions = buildServerInstructions({
         consumer: 'cli',
         devEnabled: false,
-        testEnabled: false,
+        testSupported: false,
         docsEnabled: true,
         reviewEnabled: true,
       });

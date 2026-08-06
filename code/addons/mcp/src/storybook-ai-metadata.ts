@@ -61,7 +61,7 @@ export async function buildStorybookAiMetadata(
     ...rawAvailability,
     reviewEnabled: rawAvailability.reviewEnabledForCli,
   };
-  const testEnabled = (toolsets?.test ?? true) && availability.testSupported;
+  const testSupported = (toolsets?.test ?? true) && availability.testSupported;
   const docsToolsetEnabled = toolsets?.docs ?? true;
   const multiSource = docsToolsetEnabled
     ? (await resolveServerlessCompositionSources(options)).multiSource
@@ -81,7 +81,7 @@ export async function buildStorybookAiMetadata(
       buildServerInstructions({
         consumer: 'mcp',
         devEnabled,
-        testEnabled,
+        testSupported,
         docsEnabled,
         changeDetectionEnabled: availability.changeDetectionEnabled,
         moduleGraphSupported: availability.moduleGraphSupported,

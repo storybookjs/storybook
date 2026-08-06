@@ -12,7 +12,7 @@ type BuildStorybookStoryInstructionsOptions = {
   a11yEnabled?: boolean;
   addonVitestAvailable?: boolean;
   /** Whether the documentation tools (list-all-documentation etc.) are registered. */
-  docsAvailable?: boolean;
+  docsEnabled?: boolean;
   /**
    * Per-channel review gate override (per-request context on the MCP path, the
    * CLI default on the metadata path). Defaults to the explicit feature-flag gate.
@@ -25,21 +25,20 @@ export async function addGetUIBuildingInstructionsTool(
   enabled: Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'] = () =>
     server.ctx.custom?.toolsets?.dev ?? true,
   {
-    docsAvailable = false,
+    docsEnabled = false,
     addonVitestAvailable = false,
-  }: { docsAvailable?: boolean; addonVitestAvailable?: boolean } = {}
+  }: { docsEnabled?: boolean; addonVitestAvailable?: boolean } = {}
 ) {
   server.tool(
     {
       name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
       title: 'Storybook Story Development Instructions',
       get description() {
-        const testToolsetAvailable =
-          (server.ctx.custom?.toolsets?.test ?? true) && addonVitestAvailable;
-        const a11yAvailable = testToolsetAvailable && (server.ctx.custom?.a11yEnabled ?? false);
+        const testSupported = (server.ctx.custom?.toolsets?.test ?? true) && addonVitestAvailable;
+        const a11yAvailable = testSupported && (server.ctx.custom?.a11yEnabled ?? false);
 
         return getStorybookStoryInstructionsDescription({
-          testToolsetAvailable,
+          testSupported,
           a11yAvailable,
         });
       },
@@ -64,7 +63,7 @@ export async function addGetUIBuildingInstructionsTool(
           toolsets: server.ctx.custom?.toolsets,
           a11yEnabled: server.ctx.custom?.a11yEnabled,
           addonVitestAvailable,
-          docsAvailable,
+          docsEnabled,
           reviewEnabled: server.ctx.custom?.reviewEnabled,
         });
 
@@ -79,13 +78,13 @@ export async function addGetUIBuildingInstructionsTool(
 }
 
 export function getStorybookStoryInstructionsDescription({
-  testToolsetAvailable,
+  testSupported,
   a11yAvailable,
 }: {
-  testToolsetAvailable: boolean;
+  testSupported: boolean;
   a11yAvailable: boolean;
 }) {
-  const criticalTestBullets = testToolsetAvailable
+  const criticalTestBullets = testSupported
     ? `
 - Running story tests or fixing test failures`
     : '';
@@ -94,7 +93,7 @@ export function getStorybookStoryInstructionsDescription({
 - Handling accessibility (a11y) violations in stories (fix semantic issues directly; ask before visual/design changes)`
     : '';
 
-  const testAndA11yGuidance = testToolsetAvailable
+  const testAndA11yGuidance = testSupported
     ? `
 - How to handle test failures${a11yAvailable ? ' and accessibility violations' : ''}`
     : '';
@@ -122,7 +121,7 @@ Even if you're familiar with Storybook, call this tool to ensure you're followin
 }
 
 export function getStorybookStoryInstructionsToolMetadata(options: {
-  testToolsetAvailable: boolean;
+  testSupported: boolean;
   a11yAvailable: boolean;
 }) {
   return {
@@ -136,7 +135,7 @@ export function getStorybookStoryInstructionsToolMetadata(options: {
  * Thin adapter over the shared `buildStoryInstructions` content builder: resolves this
  * Storybook's framework/renderer and availability probes through `resolveSkillInputs` (the same
  * path the skills CLI uses), then renders the MCP-flavored prose. Optional overrides
- * (`reviewEnabled`, toolset gates, `addonVitestAvailable`, `docsAvailable`, `a11yEnabled`) take
+ * (`reviewEnabled`, toolset gates, `addonVitestAvailable`, `docsEnabled`, `a11yEnabled`) take
  * priority when provided; omitted fields fall back to the probe so callers cannot silently get
  * the wrong prose by leaving a field off.
  */
@@ -146,7 +145,7 @@ export async function buildStorybookStoryInstructions(
     toolsets,
     a11yEnabled,
     addonVitestAvailable,
-    docsAvailable,
+    docsEnabled,
     reviewEnabled: reviewEnabledOverride,
   }: BuildStorybookStoryInstructionsOptions = {}
 ): Promise<string> {
@@ -158,9 +157,8 @@ export async function buildStorybookStoryInstructions(
     renderer: inputs.renderer,
     changeDetectionEnabled: inputs.changeDetectionEnabled,
     reviewEnabled: reviewEnabledOverride ?? inputs.reviewEnabled,
-    testToolsetAvailable:
-      (toolsets?.test ?? true) && (addonVitestAvailable ?? inputs.testSupported),
+    testSupported: (toolsets?.test ?? true) && (addonVitestAvailable ?? inputs.testSupported),
     a11yEnabled: a11yEnabled ?? inputs.a11yEnabled,
-    docsAvailable: (toolsets?.docs ?? true) && (docsAvailable ?? inputs.docsEnabled),
+    docsEnabled: (toolsets?.docs ?? true) && (docsEnabled ?? inputs.docsEnabled),
   });
 }

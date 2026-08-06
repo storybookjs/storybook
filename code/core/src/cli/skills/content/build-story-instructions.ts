@@ -3,8 +3,8 @@ import { getRef } from '../../../shared/open-service/toolset-names.ts';
 import { getFinalLinksGuidance } from './build-server-instructions.ts';
 import { frameworkToRendererMap } from './framework-renderer.ts';
 import a11yInstructionsTemplate from './instructions/a11y-instructions.md';
-import storyInstructionsTemplate from './instructions/storybook-story-instructions.md';
 import storyTestingInstructionsTemplate from './instructions/story-testing-instructions.md';
+import storyInstructionsTemplate from './instructions/storybook-story-instructions.md';
 import type { SkillConsumer } from './skill-refs.ts';
 
 export type StoryInstructionsInputs = {
@@ -14,9 +14,9 @@ export type StoryInstructionsInputs = {
   renderer?: string;
   changeDetectionEnabled: boolean;
   reviewEnabled: boolean;
-  testToolsetAvailable: boolean;
+  testSupported: boolean;
   a11yEnabled: boolean;
-  docsAvailable: boolean;
+  docsEnabled: boolean;
 };
 
 export function buildStoryInstructions({
@@ -25,9 +25,9 @@ export function buildStoryInstructions({
   renderer,
   changeDetectionEnabled,
   reviewEnabled,
-  testToolsetAvailable,
+  testSupported,
   a11yEnabled,
-  docsAvailable,
+  docsEnabled,
 }: StoryInstructionsInputs): string {
   const ref = getRef({ consumer });
   const resolvedRenderer = renderer ?? frameworkToRendererMap[framework] ?? framework;
@@ -66,13 +66,13 @@ This Storybook exposes component documentation tools. Before creating or changin
   let uiInstructions = storyInstructionsTemplate
     .replace('{{FRAMEWORK}}', framework)
     .replace('{{RENDERER}}', resolvedRenderer)
-    .replace('\n{{DOCS_WORKFLOW_GUIDANCE}}', docsAvailable ? docsWorkflowGuidance : '')
+    .replace('\n{{DOCS_WORKFLOW_GUIDANCE}}', docsEnabled ? docsWorkflowGuidance : '')
     .replace('{{STORY_LINKING_WORKFLOW}}', storyLinkingWorkflow)
     .replace('{{FINAL_LINKS_GUIDANCE}}', getFinalLinksGuidance(consumer, reviewEnabled))
     .replace('{{PREVIEW_STORIES}}', ref('stories.preview'))
     .replace('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}', changedStoryFallbackLinkGuidance);
 
-  if (testToolsetAvailable) {
+  if (testSupported) {
     const a11yFixSuffix = a11yEnabled ? ' (see a11y guidelines below)' : '';
 
     const storyTestingInstructions = storyTestingInstructionsTemplate

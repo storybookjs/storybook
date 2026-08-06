@@ -6,9 +6,9 @@
  * write is not atomic either, so the run is pointed at a scratch directory beside the real one and
  * the finished file is renamed into place.
  */
+import { executeNodeCommand } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { spawn } from 'node:child_process';
 import {
   existsSync,
   mkdirSync,
@@ -23,7 +23,6 @@ import {
 import { createRequire } from 'node:module';
 import { dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
-import { StringDecoder } from 'node:string_decoder';
 
 import { DOCUMENTATION_JSON } from '../compodoc-config.ts';
 
@@ -76,48 +75,45 @@ const hasTsconfigArg = (args: string[]) => args.includes('-p');
 const toChildRelativePath = (path: string, cwd: string) =>
   isAbsolute(path) ? relative(cwd, path) : path;
 
-const runCli = (cli: string, args: string[], cwd: string, timeoutMs: number): Promise<void> =>
-  new Promise((resolvePromise, reject) => {
-    const child = spawn(process.execPath, [cli, ...args], {
+const runCli = async (
+  cli: string,
+  args: string[],
+  cwd: string,
+  timeoutMs: number
+): Promise<void> => {
+  const result = await executeNodeCommand({
+    scriptPath: cli,
+    args,
+    options: {
       cwd,
-      stdio: ['ignore', 'pipe', 'pipe'],
-    });
-
-    let output = '';
-    // One decoder per stream, so a multi-byte character split across two chunks is not turned into
-    // replacement characters in the failure message.
-    const collectFrom = (decoder: StringDecoder) => (chunk: Buffer) => {
-      output = `${output}${decoder.write(chunk)}`.slice(-OUTPUT_TAIL_BYTES);
-    };
-    child.stdout?.on('data', collectFrom(new StringDecoder('utf8')));
-    child.stderr?.on('data', collectFrom(new StringDecoder('utf8')));
-
-    let timedOut = false;
-    const timer = setTimeout(() => {
-      timedOut = true;
-      child.kill('SIGKILL');
-    }, timeoutMs);
-
-    child.on('error', (error) => {
-      clearTimeout(timer);
-      reject(error);
-    });
-
-    child.on('close', (code) => {
-      clearTimeout(timer);
-      // Checked before the exit code: a killed child closes with a null code, which would otherwise
-      // read as an ordinary failure and hide why the run really ended.
-      if (timedOut) {
-        reject(new Error(`Compodoc did not finish within ${timeoutMs}ms.\n${output.trim()}`));
-        return;
-      }
-      if (code !== 0) {
-        reject(new Error(`Compodoc exited with code ${code}.\n${output.trim()}`));
-        return;
-      }
-      resolvePromise();
-    });
+      // Interleaved into one stream, so the failure message reads in the order Compodoc printed it.
+      all: true,
+      encoding: 'utf8',
+      // Failures come back as a result rather than a throw, so a timeout and a non-zero exit are
+      // told apart by inspecting one object.
+      reject: false,
+      timeout: timeoutMs,
+      // Compodoc does not shut down promptly on SIGTERM, and a hung scan would otherwise keep the
+      // docgen worker waiting for it.
+      killSignal: 'SIGKILL',
+    },
   });
+
+  if (!result.failed) {
+    return;
+  }
+
+  const output = String(result.all ?? '')
+    .trim()
+    .slice(-OUTPUT_TAIL_BYTES);
+  // Checked before the exit code: a killed run reports one too, which would otherwise read as an
+  // ordinary failure and hide why the run really ended.
+  throw new Error(
+    result.timedOut
+      ? `Compodoc did not finish within ${timeoutMs}ms.\n${output}`
+      : `Compodoc exited with code ${result.exitCode}.\n${output}`
+  );
+};
 
 /**
  * Clears scratch directories a signalled run could not clean up itself. Only ones older than a run's

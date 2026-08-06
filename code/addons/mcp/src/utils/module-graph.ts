@@ -10,20 +10,11 @@
  * module-graph-specific data shapes below (`ModuleGraphStatus`, `ModuleGraphStoryHit`, etc.) are
  * baked into the service's runtime definition and aren't part of core's public type surface, so we
  * mirror them here; keep them in sync with `core/module-graph` if it changes.
- *
- * The two support probes (`isModuleGraphSupported`, `isModuleGraphSupportedByBuilder`) live in
- * core alongside the rest of the shared availability probing (`storybook/internal/core-server`)
- * and are re-exported here so existing addon call sites don't need to know they moved.
  */
 
 import type { Query } from 'storybook/internal/core-server';
 
 const MODULE_GRAPH_SERVICE_ID = 'core/module-graph';
-
-export {
-  isModuleGraphSupported,
-  isModuleGraphSupportedByBuilder,
-} from 'storybook/internal/core-server';
 
 /** Serializable error shape carried by the module-graph status (mirrors the service's `ErrorLike`). */
 export interface ModuleGraphErrorLike {

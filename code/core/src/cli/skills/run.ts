@@ -3,7 +3,7 @@ import type { Options } from '../../types/index.ts';
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
 import { buildServerInstructions } from './content/build-server-instructions.ts';
 import { buildStoryInstructions } from './content/build-story-instructions.ts';
-import type { getAiSetupMarkdownOutput } from './content/setup-prompts/index.ts';
+import type { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
 import { SKILLS, SKILL_IDS, isSkillId, type SkillId } from './content/skills.ts';
 import type { SkillInputs, resolveSkillInputs } from './inputs.ts';
 import type { ProjectInfoResult, getProjectInfo } from './project-info.ts';
@@ -31,7 +31,7 @@ export type SkillsRunDeps = {
   loadStorybook: (args: { configDir: string }) => Promise<Options>;
   resolveSkillInputs: typeof resolveSkillInputs;
   getProjectInfo: typeof getProjectInfo;
-  getSetupMarkdown: typeof getAiSetupMarkdownOutput;
+  getSetupMarkdown: typeof getSetupMarkdownOutput;
 };
 
 export async function runSkillsCommand(

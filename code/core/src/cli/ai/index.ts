@@ -6,7 +6,7 @@ import { cache } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 
-import { getAiSetupMarkdownOutput } from '../skills/content/setup-prompts/index.ts';
+import { getSetupMarkdownOutput } from '../skills/content/setup-prompts/index.ts';
 import { getProjectInfo } from '../skills/project-info.ts';
 import type { AiSetupOptions } from './types.ts';
 
@@ -49,7 +49,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
     return;
   }
 
-  const { markdown: markdownOutput, prompt } = await getAiSetupMarkdownOutput(projectInfo);
+  const { markdown: markdownOutput, prompt } = await getSetupMarkdownOutput(projectInfo);
 
   // Persist the fact that `storybook ai setup` ran in this project, scoped to
   // the resolved configDir. The dev server reads this together with the story

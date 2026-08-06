@@ -4,11 +4,11 @@ import type { CLIOptions } from 'storybook/internal/types';
 
 import type { Command } from 'commander';
 
-import type { CommandFailureHandler } from '../tools/register.ts';
 import { resolveStorybookConfigDir } from '../tools/config-dir.ts';
-import { getAiSetupMarkdownOutput } from './content/setup-prompts/index.ts';
-import { getProjectInfo } from './project-info.ts';
+import type { CommandFailureHandler } from '../tools/register.ts';
+import { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
 import { resolveSkillInputs } from './inputs.ts';
+import { getProjectInfo } from './project-info.ts';
 import { runSkillsCommand, type SkillsRunDeps, type SkillsRunResult } from './run.ts';
 
 type SkillsGetOptions = {
@@ -78,7 +78,7 @@ function defaultDeps(): SkillsRunDeps {
     loadStorybook: experimental_loadStorybook,
     resolveSkillInputs,
     getProjectInfo,
-    getSetupMarkdown: getAiSetupMarkdownOutput,
+    getSetupMarkdown: getSetupMarkdownOutput,
   };
 }
 

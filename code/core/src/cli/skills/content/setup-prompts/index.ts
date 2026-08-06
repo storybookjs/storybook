@@ -60,7 +60,7 @@ function resolvePromptName(): PromptName {
   return DEFAULT_PROMPT_NAME;
 }
 
-export async function getAiSetupPrompt(
+export async function getSetupPrompt(
   projectInfo: ProjectInfo
 ): Promise<{ content: string; name: PromptName }> {
   const name = resolvePromptName();
@@ -69,11 +69,11 @@ export async function getAiSetupPrompt(
   return { content: builder(projectInfo), name };
 }
 
-export async function getAiSetupMarkdownOutput(projectInfo: ProjectInfo): Promise<{
+export async function getSetupMarkdownOutput(projectInfo: ProjectInfo): Promise<{
   markdown: string;
   prompt: PromptName;
 }> {
-  const { content, name } = await getAiSetupPrompt(projectInfo);
+  const { content, name } = await getSetupPrompt(projectInfo);
 
   return {
     markdown: dedent`

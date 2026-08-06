@@ -51,11 +51,11 @@ export function registerSkillsCommand(
       const cliOptions: CLIOptions = {
         disableTelemetry: merged.disableTelemetry,
         logfile: merged.logfile,
-        configDir: resolveStorybookConfigDir({ cwd: options.cwd, configDir: options.configDir }),
+        configDir: resolveStorybookConfigDir({ cwd: merged.cwd, configDir: merged.configDir }),
       };
       await withTelemetry('skills-get', { cliOptions, fallbackTelemetryState: true }, async () => {
         const result = await runSkillsCommand(
-          { subcommand: 'get', id, target: { cwd: options.cwd, configDir: options.configDir } },
+          { subcommand: 'get', id, target: { cwd: merged.cwd, configDir: merged.configDir } },
           defaultDeps()
         );
         await printResult(result);

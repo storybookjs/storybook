@@ -76,6 +76,21 @@ export const isMethod = (methodOrProp: Method | Property): methodOrProp is Metho
   return (methodOrProp as Method).args !== undefined;
 };
 
+/**
+ * Whether a member must be bound, from the two flags Compodoc emits about it.
+ *
+ * `required` is the flag that matches what Angular means, but it is only trustworthy in one
+ * direction: Compodoc derives it from the presence of the `required` key in an `@Input({...})`
+ * argument rather than from its value, so `@Input({ required: false })` reports `required: true`
+ * alongside `optional: true`. Requiring both to agree keeps that case correct.
+ *
+ * `required` is absent altogether for a plain `@Input()`, which falls back to `optional` - and
+ * Compodoc omits that too (compodoc#863), so those inputs still read as required. That is the
+ * upstream gap; the moment a fixed Compodoc emits `optional`, this returns the right answer with
+ * no change here.
+ */
+const isRequired = (item: Property): boolean => (item.required ?? true) && !item.optional;
+
 export const checkValidComponentOrDirective = (component: Component | Directive) => {
   if (!component.name) {
     throw new Error(`Invalid component ${JSON.stringify(component)}`);
@@ -371,7 +386,7 @@ export const extractArgTypesFromData = (
           category: section,
           type: {
             summary: isMethod(item) ? displaySignature(item) : item.type,
-            required: isMethod(item) ? false : !item.optional,
+            required: isMethod(item) ? false : isRequired(item as Property),
           },
           defaultValue: { summary: defaultValue },
         },
@@ -400,7 +415,10 @@ export const extractArgTypesFromData = (
         category: 'outputs',
         type: {
           summary: `(e: ${item.type}) => void`,
-          required: !item.optional,
+          // An output is never required to bind, and a real output says so via Compodoc's own
+          // flag. This one is synthesized, so it has to say so itself rather than inheriting the
+          // requiredness of the model input it derives from.
+          required: false,
         },
       },
     };

@@ -1,6 +1,6 @@
 // Real temp directories, not memfs: this module is about filesystem semantics memfs does not model
 // (`O_EXCL` creation, mtime), and the lock exists to exclude other OS processes, which a per-process
-// virtual filesystem cannot represent at all.
+// virtual filesystem cannot represent at all. Cross-process behaviour is in the sibling test.
 import { existsSync, mkdtempSync, readFileSync, rmSync, utimesSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -14,7 +14,7 @@ let lockPath: string;
 
 beforeEach(() => {
   workDir = mkdtempSync(join(tmpdir(), 'sb-file-lock-'));
-  lockPath = join(workDir, '.compodoc.lock');
+  lockPath = join(workDir, '.work.lock');
 });
 
 afterEach(() => {
@@ -40,7 +40,7 @@ describe('withFileLock', () => {
   });
 
   it('creates the lock directory, so the very first caller does not have to', async () => {
-    const nested = join(workDir, 'dist', 'docs', '.compodoc.lock');
+    const nested = join(workDir, 'dist', 'docs', '.work.lock');
 
     await expect(withFileLock(nested, noop)).resolves.toBe('ran');
   });
@@ -48,9 +48,9 @@ describe('withFileLock', () => {
   it('releases the lock when the work throws, instead of wedging every later caller', async () => {
     await expect(
       withFileLock(lockPath, async () => {
-        throw new Error('compodoc exploded');
+        throw new Error('the work exploded');
       })
-    ).rejects.toThrow('compodoc exploded');
+    ).rejects.toThrow('the work exploded');
 
     expect(existsSync(lockPath)).toBe(false);
   });
@@ -94,7 +94,7 @@ describe('withFileLock', () => {
 
   it('does not break a live holder`s lock just because the work outlasts the stale window', async () => {
     // The lock's mtime is refreshed while the work runs, so "stale" means the holder stopped
-    // reporting, not that the scan is slow. Without the heartbeat a long Compodoc run breaks its own
+    // reporting, not that the scan is slow. Without the heartbeat a long run breaks its own
     // lock and a second one starts alongside it, which is the whole failure this lock prevents.
     let concurrent = 0;
     let maxConcurrent = 0;

@@ -1,12 +1,13 @@
 /**
  * Cross-process advisory lock, built on `O_EXCL` file creation.
  *
- * The work it guards is a whole-project Compodoc run, and the callers that collide over it live in
- * different OS processes: `storybook dev`, the Vitest addon's child and a standalone `vitest` run all
- * reach the Compodoc trigger at start-up. Even inside one process the docgen
- * worker is a separate thread with its own module registry, so a module-scoped promise excludes
- * nothing. A holder keeps the lock's mtime fresh while it works, so "stale" means the holder stopped
- * reporting rather than that the work is slow.
+ * Use it when expensive work has to happen at most once across processes that cannot see each other:
+ * a dev server, the Vitest addon's child and a standalone `vitest` all start independently and can
+ * reach the same work at the same moment. An in-process promise memo does not cover that, and it does
+ * not even cover one process, since a worker thread has its own module registry.
+ *
+ * A holder keeps the lock's mtime fresh while it works, so "stale" means the holder stopped reporting
+ * rather than that the work is slow.
  */
 import { logger } from 'storybook/internal/node-logger';
 

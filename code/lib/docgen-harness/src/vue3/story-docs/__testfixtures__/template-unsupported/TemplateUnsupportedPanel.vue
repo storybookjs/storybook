@@ -1,9 +1,10 @@
 <script setup lang="ts">
 defineProps<{
+  hidden?: boolean;
   label?: string;
 }>();
 </script>
 
 <template>
-  <button type="button">{{ label }}</button>
+  <section>{{ label }}</section>
 </template>

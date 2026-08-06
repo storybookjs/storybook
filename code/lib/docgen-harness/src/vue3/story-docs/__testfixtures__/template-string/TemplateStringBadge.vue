@@ -1,9 +1,9 @@
 <script setup lang="ts">
 defineProps<{
-  label?: string;
+  text?: string;
 }>();
 </script>
 
 <template>
-  <button type="button">{{ label }}</button>
+  <strong>{{ text }}</strong>
 </template>

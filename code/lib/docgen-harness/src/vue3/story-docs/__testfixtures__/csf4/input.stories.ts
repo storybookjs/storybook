@@ -1,6 +1,5 @@
-import preview from '#.storybook/preview';
-
 import CsfFourButton from './CsfFourButton.vue';
+import preview from './preview.ts';
 
 const meta = preview.meta({
   component: CsfFourButton,

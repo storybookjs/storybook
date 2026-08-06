@@ -295,7 +295,7 @@ The harness hands steps (1) and (2) to the trial agent as its task. Eval starts 
 
 ### How variant selection works
 
-Prompt variants live in [`code/core/src/cli/skills/content/setup-prompts/`](../../code/core/src/cli/skills/content/setup-prompts/). Each variant is a self-contained `.ts` file that exports an `instructions(projectInfo)` function. The registry in `prompts/index.ts` lists every variant.
+Prompt variants live in [`code/core/src/cli/skills/content/setup-prompts/`](../../code/core/src/cli/skills/content/setup-prompts/). Each variant is a self-contained `.ts` file that exports an `instructions(projectInfo)` function. The registry in `setup-prompts/index.ts` lists every variant.
 
 The eval selects a variant by injecting the `EVAL_SETUP_PROMPT` env var into the agent's spawn environment. When the agent later runs `npx storybook ai setup`, the CLI reads that env var and returns the matching variant. Real users never set this env var, so they always get the default (`pattern-copy-play`).
 

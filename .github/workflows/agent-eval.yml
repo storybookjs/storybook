@@ -355,4 +355,5 @@ jobs:
 
           text="$(FORMAT=slack node agent-eval/scripts/render-results-summary.mjs)"
           payload="$(jq -n --arg text "$text" '{text: $text}')"
-          curl -sS -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL"
+          curl --fail --silent --show-error --connect-timeout 10 --max-time 30 \
+            -X POST -H 'Content-type: application/json' --data "$payload" "$SLACK_WEBHOOK_URL"

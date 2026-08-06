@@ -85,7 +85,9 @@ function defaultDeps(): SkillsRunDeps {
 /** Print to stdout/stderr, awaiting the flush before the caller exits. */
 async function printResult(result: SkillsRunResult): Promise<void> {
   if (result.errorOutput) {
-    process.stderr.write(`${result.errorOutput}\n`);
+    await new Promise<void>((done) =>
+      process.stderr.write(`${result.errorOutput}\n`, () => done())
+    );
   }
   if (result.output) {
     await new Promise<void>((done) => process.stdout.write(`${result.output}\n`, () => done()));

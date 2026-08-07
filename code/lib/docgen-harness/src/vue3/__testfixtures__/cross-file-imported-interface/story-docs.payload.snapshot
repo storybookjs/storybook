@@ -1,0 +1,14 @@
+{
+  "id": "cross-file-imported-interface",
+  "import": "import ImportedInterfaceProps from './ImportedInterfaceProps.vue';",
+  "name": "ImportedInterfaceProps",
+  "path": "__PATH__",
+  "stories": {
+    "forms-cross-file-imported-interface--props-as-written": {
+      "description": undefined,
+      "id": "forms-cross-file-imported-interface--props-as-written",
+      "name": "Props As Written",
+      "summary": undefined,
+    },
+  },
+}

@@ -38,6 +38,11 @@ export interface Property {
    */
   required?: boolean;
   defaultValue?: string;
+  /**
+   * 1-based line the member is declared on. Compodoc emits it for every member, but a hand-written
+   * or truncated capture may not.
+   */
+  line?: number;
   description?: Html;
   rawdescription?: string;
   jsdoctags?: JsDocTag[];
@@ -46,6 +51,11 @@ export interface Property {
 export interface Class {
   name: string;
   type: 'class';
+  /**
+   * Source file the entry was declared in. Compodoc records it on every entry even though its own
+   * published types omit it, and it is what disambiguates same-named declarations.
+   */
+  file?: string;
   properties: Property[];
   methods: Method[];
   description?: Html;
@@ -55,6 +65,11 @@ export interface Class {
 export interface Injectable {
   name: string;
   type: 'injectable';
+  /**
+   * Source file the entry was declared in. Compodoc records it on every entry even though its own
+   * published types omit it, and it is what disambiguates same-named declarations.
+   */
+  file?: string;
   properties: Property[];
   methods: Method[];
   description?: Html;
@@ -66,6 +81,11 @@ export interface Pipe {
   /** The pipe's Angular name, which is what templates use rather than the class name. */
   ngname: string;
   type: 'pipe';
+  /**
+   * Source file the entry was declared in. Compodoc records it on every entry even though its own
+   * published types omit it, and it is what disambiguates same-named declarations.
+   */
+  file?: string;
   properties: Property[];
   methods: Method[];
   description?: Html;
@@ -75,6 +95,11 @@ export interface Pipe {
 export interface Directive {
   name: string;
   type: 'directive' | 'component';
+  /**
+   * Source file the entry was declared in. Compodoc records it on every entry even though its own
+   * published types omit it, and it is what disambiguates same-named declarations.
+   */
+  file?: string;
   propertiesClass: Property[];
   inputsClass: Property[];
   outputsClass: Property[];

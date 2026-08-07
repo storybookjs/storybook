@@ -71,6 +71,111 @@ describe('extractArgTypesFromData', () => {
   it('does not throw for an enumeration entry with no `childs`', () => {
     expect(() => extract('Status', { enumerations: [{ name: 'Status' }] as never })).not.toThrow();
   });
+
+  describe('same-named declarations in different files', () => {
+    // Compodoc emits the same entries in a different order from run to run, and a name like `Size`
+    // is routinely declared once per component folder. Resolving by array order therefore let a
+    // control's type change with no source change at all.
+    const inOwnFile = {
+      name: 'Size',
+      file: 'src/status/status.component.ts',
+      rawtype: '"sm" | "lg"',
+    };
+    const elsewhere = {
+      name: 'Size',
+      file: 'src/other/other.component.ts',
+      rawtype: '"wide" | "narrow"',
+    };
+
+    const extractFrom = (typealiases: unknown[]) =>
+      extractArgTypesFromData(
+        {
+          name: 'StatusComponent',
+          type: 'component',
+          file: 'src/status/status.component.ts',
+          inputsClass: [{ name: 'status', type: 'Size', optional: false }],
+          outputsClass: [],
+          propertiesClass: [],
+          methodsClass: [],
+        } as never,
+        {
+          compodocJson: jsonWith({ typealiases: typealiases as never }),
+          filterNonInputControls: false,
+          logger,
+          unwrapHtml: htmlToText,
+        }
+      ).status.type;
+
+    it('prefers the declaration in the component`s own file', () => {
+      expect(extractFrom([elsewhere, inOwnFile])).toEqual({
+        name: 'enum',
+        value: ['sm', 'lg'],
+      });
+    });
+
+    it('resolves the same way whatever order Compodoc listed them in', () => {
+      expect(extractFrom([inOwnFile, elsewhere])).toEqual(extractFrom([elsewhere, inOwnFile]));
+    });
+
+    it('is stable across runs even when the component`s own file declares none of them', () => {
+      const a = { name: 'Size', file: 'src/a/a.component.ts', rawtype: '"one" | "two"' };
+      const b = { name: 'Size', file: 'src/b/b.component.ts', rawtype: '"three" | "four"' };
+
+      expect(extractFrom([a, b])).toEqual(extractFrom([b, a]));
+    });
+  });
+});
+
+describe('model() two-way bindings', () => {
+  const extractFrom = (members: {
+    inputsClass: Record<string, unknown>[];
+    outputsClass: Record<string, unknown>[];
+  }) =>
+    extractArgTypesFromData(
+      {
+        name: 'PickerComponent',
+        type: 'component',
+        propertiesClass: [],
+        methodsClass: [],
+        ...members,
+      } as never,
+      {
+        compodocJson: jsonWith({} as never),
+        filterNonInputControls: false,
+        logger,
+        unwrapHtml: htmlToText,
+      }
+    );
+
+  it('records a model() once, as an input plus the synthesized change output', () => {
+    // Compodoc pushes one `model()` into both arrays from a single source object, so both entries
+    // describe the same declaration on the same line.
+    const value = { name: 'value', type: 'string', optional: false, line: 9 };
+
+    const argTypes = extractFrom({ inputsClass: [value], outputsClass: [{ ...value }] });
+
+    expect(Object.keys(argTypes)).toEqual(['value', 'valueChange']);
+    expect(argTypes.value.table?.category).toBe('inputs');
+    // Compodoc's bare-name output duplicate is suppressed, so the input is not turned into one.
+    expect(argTypes.value.action).toBeUndefined();
+    expect(argTypes.valueChange).toMatchObject({
+      action: 'valueChange',
+      table: { category: 'outputs' },
+    });
+  });
+
+  it('keeps the real output for an alias collision instead of reading it as a model()', () => {
+    // `@Input('shared')` next to `@Output('shared')` puts one name in both arrays with no `model()`
+    // anywhere. argTypes is keyed by binding name, so only one of the pair can have a row: the
+    // output the component really declares, rather than a synthesized `sharedChange` it does not.
+    const argTypes = extractFrom({
+      inputsClass: [{ name: 'shared', type: 'string', optional: false, line: 9 }],
+      outputsClass: [{ name: 'shared', type: 'EventEmitter<string>', optional: false, line: 11 }],
+    });
+
+    expect(Object.keys(argTypes)).toEqual(['shared']);
+    expect(argTypes.shared).toMatchObject({ action: 'shared', table: { category: 'outputs' } });
+  });
 });
 
 describe('required', () => {

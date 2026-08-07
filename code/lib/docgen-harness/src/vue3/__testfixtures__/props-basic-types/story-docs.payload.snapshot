@@ -1,0 +1,20 @@
+{
+  "id": "props-basic-types",
+  "import": "import PropsBasicTypes from './PropsBasicTypes.vue';",
+  "name": "PropsBasicTypes",
+  "path": "__PATH__",
+  "stories": {
+    "forms-props-basic-types--props-as-written": {
+      "description": undefined,
+      "id": "forms-props-basic-types--props-as-written",
+      "name": "Props As Written",
+      "summary": undefined,
+    },
+    "forms-props-basic-types--unrepresentable-args": {
+      "description": undefined,
+      "id": "forms-props-basic-types--unrepresentable-args",
+      "name": "Unrepresentable Args",
+      "summary": undefined,
+    },
+  },
+}

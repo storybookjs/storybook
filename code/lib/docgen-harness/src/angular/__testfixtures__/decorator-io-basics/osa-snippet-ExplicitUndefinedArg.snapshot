@@ -1,0 +1,1 @@
+<sb-decorator-io-basics [count]="1" [label]="undefined" (clicked)="clicked($event)"></sb-decorator-io-basics>

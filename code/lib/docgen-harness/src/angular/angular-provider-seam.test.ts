@@ -5,7 +5,10 @@ import { isAbsolute } from 'node:path';
 
 import { expect, test } from 'vitest';
 
-import { experimental_docgenProvider } from '../../../../frameworks/angular-vite/src/preset.ts';
+import {
+  experimental_docgenProvider,
+  experimental_storyDocsProvider,
+} from '../../../../frameworks/angular-vite/src/preset.ts';
 
 // Requiring a real on-disk worker module is what keeps this honest: a stub export (empty array or a
 // dangling descriptor) must not satisfy it.
@@ -25,4 +28,10 @@ test('angular-vite registers a docgen provider pointing at a worker module that 
         isAbsolute(descriptor.moduleSpecifier) && existsSync(descriptor.moduleSpecifier)
     )
   ).toHaveLength(1);
+});
+
+// Story-docs providers are in-process middleware, so there is no module on disk to require: the
+// preset key being an exported function is the whole registration.
+test('angular-vite registers a story-docs provider', () => {
+  expect(typeof experimental_storyDocsProvider).toBe('function');
 });

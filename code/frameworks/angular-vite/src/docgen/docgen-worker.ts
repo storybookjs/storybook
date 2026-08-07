@@ -5,39 +5,13 @@
  * middleware it folds into the provider chain. Everything here runs inside that worker thread.
  */
 import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/internal/common';
-import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware, DocgenProvider } from 'storybook/internal/types';
 
-import { readFileSync, statSync } from 'node:fs';
-
-import type { CompodocJson, CompodocParsingLogger } from '@storybook/angular-compodoc';
 import { ensureCompodocDocumentation } from '../compodoc/ensure-documentation.ts';
 import type { AngularDocgenOptions } from './build-docgen.ts';
 import { buildDocgenPayload } from './build-docgen.ts';
-
-/** Worker-side logger, prefixed so a line from a worker thread is attributable. */
-const workerLogger: CompodocParsingLogger = {
-  warn: (message) => logger.warn(`[storybook-angular-vite] ${message}`),
-  debug: (message) => logger.debug(`[storybook-angular-vite] ${message}`),
-};
-
-/**
- * Reads `documentation.json`, memoized on the file's mtime and size: the burst of one request per
- * component would otherwise reparse a real app's multi-megabyte file, while keying on the file's
- * identity still picks up a Compodoc run the user starts mid-session.
- */
-const createDocumentationJsonReader = () => {
-  let cached: { key: string; json: CompodocJson } | undefined;
-
-  return (path: string): CompodocJson => {
-    const stats = statSync(path);
-    const key = `${path}:${stats.mtimeMs}:${stats.size}`;
-    if (cached?.key !== key) {
-      cached = { key, json: JSON.parse(readFileSync(path, 'utf8')) as CompodocJson };
-    }
-    return cached.json;
-  };
-};
+import { createDocumentationJsonReader } from './documentation-json.ts';
+import { compodocLogger } from './logger.ts';
 
 /**
  * Builds the Angular docgen middleware, running Compodoc first if `documentation.json` is missing or
@@ -67,7 +41,7 @@ export const createDocgenProvider = async (
       const ours = buildDocgenPayload(input, {
         options,
         readDocumentationJson,
-        logger: workerLogger,
+        logger: compodocLogger,
       });
 
       if (!ours) {

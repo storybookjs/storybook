@@ -106,6 +106,8 @@ export interface Directive {
   methodsClass: Method[];
   description?: Html;
   rawdescription?: string;
+  /** CSS selector the directive or component matches on. */
+  selector?: string;
 }
 
 export type Component = Directive;

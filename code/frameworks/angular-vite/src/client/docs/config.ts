@@ -12,4 +12,8 @@ export const parameters: Parameters = {
   },
 };
 
-export const decorators: DecoratorFunction[] = [sourceDecorator];
+// Two generators would otherwise call `emitTransformCode` for the same story with nothing
+// coordinating them: `story-docs` covers snippets when the server-side docs path is on.
+const useStaticServiceSnippets = globalThis.FEATURES?.experimentalDocgenServer;
+
+export const decorators: DecoratorFunction[] = useStaticServiceSnippets ? [] : [sourceDecorator];

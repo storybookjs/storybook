@@ -18,7 +18,8 @@ const normalize = (code: string, exportName = 'A') => {
 const printedShape = (code: string) => {
   const normalized = normalize(code);
   return {
-    code: recast.print(normalized.path.node).code,
+    // Recast may emit CRLF on Windows; keep assertions LF-stable across OSes.
+    code: recast.print(normalized.path.node).code.replace(/\r\n/g, '\n'),
     type: normalized.type,
   };
 };

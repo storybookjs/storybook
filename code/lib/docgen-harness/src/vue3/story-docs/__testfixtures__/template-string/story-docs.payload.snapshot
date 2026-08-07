@@ -1,0 +1,14 @@
+{
+  "id": "template-string",
+  "import": "import TemplateStringButton from './TemplateStringButton.vue';",
+  "name": "TemplateStringButton",
+  "path": "__PATH__",
+  "stories": {
+    "forms-template-string--primary": {
+      "description": undefined,
+      "id": "forms-template-string--primary",
+      "name": "Primary",
+      "summary": undefined,
+    },
+  },
+}

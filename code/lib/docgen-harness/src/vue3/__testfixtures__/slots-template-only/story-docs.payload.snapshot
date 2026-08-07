@@ -1,0 +1,20 @@
+{
+  "id": "slots-template-only",
+  "import": "import TemplateOnlySlots from './TemplateOnlySlots.vue';",
+  "name": "TemplateOnlySlots",
+  "path": "__PATH__",
+  "stories": {
+    "forms-slots-template-only--scoped-bindings": {
+      "description": undefined,
+      "id": "forms-slots-template-only--scoped-bindings",
+      "name": "Scoped Bindings",
+      "summary": undefined,
+    },
+    "forms-slots-template-only--string-child": {
+      "description": undefined,
+      "id": "forms-slots-template-only--string-child",
+      "name": "String Child",
+      "summary": undefined,
+    },
+  },
+}

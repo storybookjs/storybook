@@ -1,0 +1,14 @@
+{
+  "id": "prop-slot-collision",
+  "import": "import PropSlotCollision from './PropSlotCollision.vue';",
+  "name": "PropSlotCollision",
+  "path": "__PATH__",
+  "stories": {
+    "forms-prop-slot-collision--primary": {
+      "description": undefined,
+      "id": "forms-prop-slot-collision--primary",
+      "name": "Primary",
+      "summary": undefined,
+    },
+  },
+}

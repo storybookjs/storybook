@@ -372,7 +372,9 @@ parameters: {
 
 <Callout variant="info">
   Because this is a hook, it runs during rendering — after the router's initial load has already
-  completed. Its values reach rendered components, but not the initial [`loader`](https://tanstack.com/router/latest/docs/api/router/RouteOptionsType#loader-method) or [`beforeLoad`](https://tanstack.com/router/latest/docs/api/router/RouteOptionsType#beforeload-method). When a route loader reads a
-  value from router context, supply it through the [`context`](#context) factory instead, which runs
-  before the initial load.
+  completed. Its values reach rendered components, but not the initial
+  [`loader`](https://tanstack.com/router/latest/docs/api/router/RouteOptionsType#loader-method) or
+  [`beforeLoad`](https://tanstack.com/router/latest/docs/api/router/RouteOptionsType#beforeload-method).
+  When a route loader reads a value from router context, supply it through the [`context`](#context)
+  factory instead, which runs before the initial load.
 </Callout>

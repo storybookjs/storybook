@@ -73,6 +73,58 @@ describe('extractArgTypesFromData', () => {
   });
 });
 
+describe('model() two-way bindings', () => {
+  const extractFrom = (members: {
+    inputsClass: Record<string, unknown>[];
+    outputsClass: Record<string, unknown>[];
+  }) =>
+    extractArgTypesFromData(
+      {
+        name: 'PickerComponent',
+        type: 'component',
+        propertiesClass: [],
+        methodsClass: [],
+        ...members,
+      } as never,
+      {
+        compodocJson: jsonWith({} as never),
+        filterNonInputControls: false,
+        logger,
+        unwrapHtml: htmlToText,
+      }
+    );
+
+  it('records a model() once, as an input plus the synthesized change output', () => {
+    // Compodoc pushes one `model()` into both arrays from a single source object, so both entries
+    // describe the same declaration on the same line.
+    const value = { name: 'value', type: 'string', optional: false, line: 9 };
+
+    const argTypes = extractFrom({ inputsClass: [value], outputsClass: [{ ...value }] });
+
+    expect(Object.keys(argTypes)).toEqual(['value', 'valueChange']);
+    expect(argTypes.value.table?.category).toBe('inputs');
+    // Compodoc's bare-name output duplicate is suppressed, so the input is not turned into one.
+    expect(argTypes.value.action).toBeUndefined();
+    expect(argTypes.valueChange).toMatchObject({
+      action: 'valueChange',
+      table: { category: 'outputs' },
+    });
+  });
+
+  it('keeps the real output for an alias collision instead of reading it as a model()', () => {
+    // `@Input('shared')` next to `@Output('shared')` puts one name in both arrays with no `model()`
+    // anywhere. argTypes is keyed by binding name, so only one of the pair can have a row: the
+    // output the component really declares, rather than a synthesized `sharedChange` it does not.
+    const argTypes = extractFrom({
+      inputsClass: [{ name: 'shared', type: 'string', optional: false, line: 9 }],
+      outputsClass: [{ name: 'shared', type: 'EventEmitter<string>', optional: false, line: 11 }],
+    });
+
+    expect(Object.keys(argTypes)).toEqual(['shared']);
+    expect(argTypes.shared).toMatchObject({ action: 'shared', table: { category: 'outputs' } });
+  });
+});
+
 describe('required', () => {
   /** Extracts a single input declared with the given pair of Compodoc flags. */
   const requiredOf = (flags: { optional?: boolean; required?: boolean }) => {

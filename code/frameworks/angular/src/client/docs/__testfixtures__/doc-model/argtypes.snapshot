@@ -8,7 +8,7 @@
         "summary": "#345F92",
       },
       "type": {
-        "required": true,
+        "required": false,
         "summary": "string",
       },
     },
@@ -23,7 +23,7 @@
     "table": {
       "category": "outputs",
       "type": {
-        "required": true,
+        "required": false,
         "summary": "(e: string) => void",
       },
     },
@@ -56,7 +56,7 @@
     "table": {
       "category": "outputs",
       "type": {
-        "required": true,
+        "required": false,
         "summary": "(e: boolean) => void",
       },
     },

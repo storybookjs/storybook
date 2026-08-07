@@ -15,9 +15,9 @@ const meta = {
   parameters: {
     tanstack: {
       router: {
-        context: ({ storyContext }) => {
+        context: () => {
           loaderCalls.length = 0;
-          return { injected: storyContext.args.injected };
+          return { injected: 'from-factory' };
         },
         route: {
           loader: ({ context }: { context: unknown }) => {

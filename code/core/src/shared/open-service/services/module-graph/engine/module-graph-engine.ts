@@ -9,6 +9,7 @@ import type { Presets } from 'storybook/internal/types';
 import type { StoryIndex } from '../../../../../types/modules/indexer.ts';
 import { ModuleGraphFailureError } from '../errors.ts';
 import { getStoryIdsByAbsolutePath } from '../story-files.ts';
+import type { StoriesByFileRecord } from '../types.ts';
 import { reverseIndexToStoriesByFile, toStoryIndexPath } from '../types.ts';
 import type { ChangeDetectionAdapter, FileChangeEvent } from './adapters/types.ts';
 import { DependencyGraphBuilder } from './dependency-graph/dependency-graph-builder.ts';
@@ -71,6 +72,12 @@ export class ModuleGraphEngine {
    */
   private patchQueue: Promise<void> = Promise.resolve();
 
+  /**
+   * Last serialized reverse index, reused by {@link mirrorUpdate} when a file change left the graph
+   * untouched.
+   */
+  private lastStoriesByFile: StoriesByFileRecord | undefined;
+
   constructor(private readonly options: ModuleGraphEngineOptions) {
     this.workingDir = options.workingDir ?? process.cwd();
   }
@@ -89,9 +96,11 @@ export class ModuleGraphEngine {
     if (!this.reverseIndex) {
       return;
     }
-    this.options.onSnapshot?.(
-      reverseIndexToStoriesByFile(this.reverseIndex.asMap(), this.workingDir)
+    this.lastStoriesByFile = reverseIndexToStoriesByFile(
+      this.reverseIndex.asMap(),
+      this.workingDir
     );
+    this.options.onSnapshot?.(this.lastStoriesByFile);
   }
 
   private collectBumpedStoryFiles(changedFile: string): Set<string> {
@@ -109,7 +118,11 @@ export class ModuleGraphEngine {
     return bumpedStoryFiles;
   }
 
-  private mirrorUpdate(changedFile: string, prePatchBumped: Set<string> = new Set()): void {
+  private mirrorUpdate(
+    changedFile: string,
+    prePatchBumped: Set<string> = new Set(),
+    indexChanged = true
+  ): void {
     if (!this.reverseIndex) {
       return;
     }
@@ -121,8 +134,14 @@ export class ModuleGraphEngine {
     if (this.storyFiles.has(normalized)) {
       bumpedStoryFiles.add(normalized);
     }
+    if (indexChanged || this.lastStoriesByFile === undefined) {
+      this.lastStoriesByFile = reverseIndexToStoriesByFile(
+        this.reverseIndex.asMap(),
+        this.workingDir
+      );
+    }
     this.options.onUpdate?.({
-      storiesByFile: reverseIndexToStoriesByFile(this.reverseIndex.asMap(), this.workingDir),
+      storiesByFile: this.lastStoriesByFile,
       bumpedStoryFiles: Array.from(bumpedStoryFiles, (storyFile) =>
         toStoryIndexPath(storyFile, this.workingDir)
       ),
@@ -382,13 +401,15 @@ export class ModuleGraphEngine {
       return;
     }
     const prePatchBumped = this.collectBumpedStoryFiles(event.path);
+    // On failure, assume the index moved to avoid staleness.
+    let indexChanged = true;
     try {
-      await this.incrementalPatcher.patch(event);
+      indexChanged = await this.incrementalPatcher.patch(event);
     } catch (error) {
       logger.warn(
         `Change detection: failed to apply ${event.kind} for ${event.path}: ${error instanceof Error ? error.message : String(error)}`
       );
     }
-    this.mirrorUpdate(event.path, prePatchBumped);
+    this.mirrorUpdate(event.path, prePatchBumped, indexChanged);
   }
 }

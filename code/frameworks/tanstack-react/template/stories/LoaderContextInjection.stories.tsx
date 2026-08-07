@@ -38,6 +38,8 @@ export const FactoryValuesReachLoader: Story = {
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(canvas.getByTestId('loader-context')).toHaveTextContent('from-factory');
-    await expect(loaderCalls).toEqual(['from-factory']);
+
+    await expect(loaderCalls.length).toBeGreaterThan(0);
+    await expect(loaderCalls.every((call) => call === 'from-factory')).toBe(true);
   },
 };

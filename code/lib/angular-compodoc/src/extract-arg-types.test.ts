@@ -71,6 +71,59 @@ describe('extractArgTypesFromData', () => {
   it('does not throw for an enumeration entry with no `childs`', () => {
     expect(() => extract('Status', { enumerations: [{ name: 'Status' }] as never })).not.toThrow();
   });
+
+  describe('same-named declarations in different files', () => {
+    // Compodoc emits the same entries in a different order from run to run, and a name like `Size`
+    // is routinely declared once per component folder. Resolving by array order therefore let a
+    // control's type change with no source change at all.
+    const inOwnFile = {
+      name: 'Size',
+      file: 'src/status/status.component.ts',
+      rawtype: '"sm" | "lg"',
+    };
+    const elsewhere = {
+      name: 'Size',
+      file: 'src/other/other.component.ts',
+      rawtype: '"wide" | "narrow"',
+    };
+
+    const extractFrom = (typealiases: unknown[]) =>
+      extractArgTypesFromData(
+        {
+          name: 'StatusComponent',
+          type: 'component',
+          file: 'src/status/status.component.ts',
+          inputsClass: [{ name: 'status', type: 'Size', optional: false }],
+          outputsClass: [],
+          propertiesClass: [],
+          methodsClass: [],
+        } as never,
+        {
+          compodocJson: jsonWith({ typealiases: typealiases as never }),
+          filterNonInputControls: false,
+          logger,
+          unwrapHtml: htmlToText,
+        }
+      ).status.type;
+
+    it('prefers the declaration in the component`s own file', () => {
+      expect(extractFrom([elsewhere, inOwnFile])).toEqual({
+        name: 'enum',
+        value: ['sm', 'lg'],
+      });
+    });
+
+    it('resolves the same way whatever order Compodoc listed them in', () => {
+      expect(extractFrom([inOwnFile, elsewhere])).toEqual(extractFrom([elsewhere, inOwnFile]));
+    });
+
+    it('is stable across runs even when the component`s own file declares none of them', () => {
+      const a = { name: 'Size', file: 'src/a/a.component.ts', rawtype: '"one" | "two"' };
+      const b = { name: 'Size', file: 'src/b/b.component.ts', rawtype: '"three" | "four"' };
+
+      expect(extractFrom([a, b])).toEqual(extractFrom([b, a]));
+    });
+  });
 });
 
 describe('model() two-way bindings', () => {

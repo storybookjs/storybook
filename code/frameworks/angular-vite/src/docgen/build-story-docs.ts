@@ -23,13 +23,6 @@ import { resolveMetaComponent } from './resolve-component.ts';
 import type { AngularComponentTemplate } from './template-snippet.ts';
 import { generateAngularSnippet } from './template-snippet.ts';
 
-/**
- * The selector and binding names a snippet is built from, for one component.
- *
- * Which engine produced them is deliberately not expressed here. Compodoc is one source; an
- * in-process Angular component meta service is another, and swapping between them must not reach
- * into snippet generation.
- */
 export type AngularComponentResolver = (
   component: ResolvedMetaComponent
 ) => AngularComponentTemplate | undefined;

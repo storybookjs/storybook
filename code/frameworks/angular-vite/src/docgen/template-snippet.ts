@@ -1,11 +1,6 @@
 /**
  * Static Angular template snippets, built from a component's resolved selector and binding names
  * plus a story's declared args. Which docgen engine reported those names is not its concern.
- *
- * Deliberately not shared with the browser generator
- * (`client/renderer/ComputesTemplateFromComponent.ts`): that one reads a loaded component class
- * through Angular's reflection APIs, which need `ɵcmp` and therefore the compiler. See
- * `story-docs-limitations.md` for what the static path cannot do.
  */
 import type { types as t } from 'storybook/internal/babel';
 import { generate } from 'storybook/internal/babel';

@@ -9,11 +9,6 @@ import { createCompodocComponentResolver } from './compodoc-component-resolver.t
 import { createDocumentationJsonReader } from './documentation-json.ts';
 import { compodocLogger } from './logger.ts';
 
-/**
- * Angular story-docs provider: static template snippets for the Source block and the Code panel.
- * Runs in-process on the dev-server main thread, so unlike the docgen provider there is no worker
- * entry and no structured-clone boundary.
- */
 export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (
   nextStoryDocs,
   options

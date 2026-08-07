@@ -1,11 +1,3 @@
-/**
- * Compodoc's answer to "what does this component declare".
- *
- * Snippet generation consumes {@link AngularComponentResolver} and never reaches for a metadata
- * source itself, so a different one - an in-process Angular component meta service, say - is a
- * sibling of this file rather than a change to any of the generators. Where Compodoc's metadata is
- * read from stays with the caller that wires this up.
- */
 import type { ResolvedMetaComponent } from 'storybook/internal/common';
 
 import type { CompodocJson, CompodocParsingLogger } from '@storybook/angular-compodoc';

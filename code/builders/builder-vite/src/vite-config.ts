@@ -73,6 +73,7 @@ export async function commonConfig(
     ...(options.cacheKey
       ? { cacheDir: resolvePathInStorybookCache('sb-vite', options.cacheKey) }
       : {}),
+    publicDir: false,
     // Pass build.target option from user's vite config
     build: {
       target: buildProperty?.target,

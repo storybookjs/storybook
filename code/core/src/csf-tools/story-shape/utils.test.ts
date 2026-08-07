@@ -11,7 +11,8 @@ const parse = (code: string) => {
   return loadCsf(code, { makeTitle: (title) => title ?? 'title' }).parse();
 };
 
-const printed = (node: t.Node) => recast.print(node).code;
+// Recast may emit CRLF on Windows; keep assertions LF-stable across OSes.
+const printed = (node: t.Node) => recast.print(node).code.replace(/\r\n/g, '\n');
 
 const storyBindIdentifier = (code: string) => {
   const storyPath = parse(code)._storyDeclarationPath['A'];

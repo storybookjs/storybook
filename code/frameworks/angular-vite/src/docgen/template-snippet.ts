@@ -1,6 +1,6 @@
 /**
- * Static Angular template snippets, built from a component's Compodoc metadata and a story's
- * declared args.
+ * Static Angular template snippets, built from a component's resolved selector and binding names
+ * plus a story's declared args. Which docgen engine reported those names is not its concern.
  *
  * Deliberately not shared with the browser generator
  * (`client/renderer/ComputesTemplateFromComponent.ts`): that one reads a loaded component class

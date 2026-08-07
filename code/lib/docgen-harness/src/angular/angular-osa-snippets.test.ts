@@ -9,6 +9,7 @@ import { fileURLToPath } from 'node:url';
 import { describe, expect, it } from 'vitest';
 
 import { buildStoryDocsPayload } from '../../../../frameworks/angular-vite/src/docgen/build-story-docs.ts';
+import { createCompodocComponentResolver } from '../../../../frameworks/angular-vite/src/docgen/compodoc-component-resolver.ts';
 import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 
@@ -52,9 +53,12 @@ describe('angular OSA snippet baselines', () => {
       },
       {
         storyRoot: testDir,
-        workspaceRoot: testDir,
-        outputDir: testDir,
-        readDocumentationJson: () => compodocJson,
+        resolveComponent: createCompodocComponentResolver({
+          workspaceRoot: testDir,
+          outputDir: testDir,
+          readDocumentationJson: () => compodocJson,
+          logger: silentLogger,
+        }),
         logger: silentLogger,
       }
     );

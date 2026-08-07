@@ -91,7 +91,10 @@ The markup has to be readable from the source, though.
 A template held in a variable, one built by interpolation, or a `render` that is a reference to a function declared elsewhere cannot be read without running the story.
 In those cases the snippet falls back to the generated bindings and the story carries a `warning` naming what it could not resolve, rather than printing the variable name as if it were markup.
 
-## Compodoc has to have run
+## The component's metadata has to be available
 
-The snippet needs the component's selector and its input and output names, which come from Compodoc's `documentation.json`.
-When Compodoc is disabled or has not run, no snippet is generated and Storybook falls back to showing the story's own source.
+The snippet needs the component's selector and its input and output names.
+Today those come from Compodoc's `documentation.json`, so when Compodoc is disabled or has not run, no snippet is generated and Storybook falls back to showing the story's own source.
+
+Which engine supplies that metadata is not something snippet generation knows about; it consumes a resolver.
+Replacing Compodoc with another source changes the resolver, not the snippets.

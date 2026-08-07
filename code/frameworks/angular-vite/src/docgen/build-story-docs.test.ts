@@ -9,6 +9,8 @@ import { describe, expect, it, vi } from 'vitest';
 import type { CompodocJson } from '@storybook/angular-compodoc';
 import type { BuildStoryDocsContext } from './build-story-docs.ts';
 import { buildStoryDocsPayload } from './build-story-docs.ts';
+import type { CompodocComponentResolverOptions } from './compodoc-component-resolver.ts';
+import { createCompodocComponentResolver } from './compodoc-component-resolver.ts';
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 
@@ -25,6 +27,15 @@ const entry = (importPath: string, title = 'StoryDocs'): IndexEntry => ({
   importPath,
 });
 
+const compodocResolver = (overrides: Partial<CompodocComponentResolverOptions> = {}) =>
+  createCompodocComponentResolver({
+    workspaceRoot: FIXTURES,
+    outputDir: FIXTURES,
+    readDocumentationJson: documentationJson,
+    logger: { warn: vi.fn(), debug: vi.fn() },
+    ...overrides,
+  });
+
 const build = (
   importPath: string,
   overrides: Partial<BuildStoryDocsContext> = {},
@@ -34,10 +45,8 @@ const build = (
     { entry: entry(importPath, title) },
     {
       storyRoot: FIXTURES,
-      workspaceRoot: FIXTURES,
-      outputDir: FIXTURES,
-      readDocumentationJson: documentationJson,
-      logger: { warn: vi.fn(), debug: vi.fn() },
+      resolveComponent: compodocResolver(),
+      logger: { debug: vi.fn() },
       ...overrides,
     }
   );
@@ -156,17 +165,28 @@ describe('buildStoryDocsPayload', () => {
     ['a story file that does not exist', './missing.stories.ts', {}],
     ['a story file with no meta.component', './no-component.stories.ts', {}],
     [
+      'a component the docgen engine has nothing for',
+      './story-docs.stories.ts',
+      { resolveComponent: (): undefined => undefined },
+    ],
+    [
       'a component Compodoc never documented',
       './story-docs.stories.ts',
-      { readDocumentationJson: (): CompodocJson => ({ components: [] }) },
+      {
+        resolveComponent: compodocResolver({
+          readDocumentationJson: (): CompodocJson => ({ components: [] }),
+        }),
+      },
     ],
     [
       'an unreadable documentation.json',
       './story-docs.stories.ts',
       {
-        readDocumentationJson: () => {
-          throw new Error('ENOENT');
-        },
+        resolveComponent: compodocResolver({
+          readDocumentationJson: () => {
+            throw new Error('ENOENT');
+          },
+        }),
       },
     ],
   ])('falls through for %s', (_case, importPath, overrides) => {
@@ -181,13 +201,28 @@ describe('buildStoryDocsPayload', () => {
         },
         {
           storyRoot: FIXTURES,
-          workspaceRoot: FIXTURES,
-          outputDir: FIXTURES,
-          readDocumentationJson: documentationJson,
-          logger: { warn: vi.fn(), debug: vi.fn() },
+          resolveComponent: compodocResolver(),
+          logger: { debug: vi.fn() },
         }
       )
     ).toBeUndefined();
+  });
+
+  // Compodoc is one source of a component's selector and binding names; an in-process Angular
+  // component meta service is meant to be another. Snippet generation must not care which.
+  it('builds from a resolver that has never heard of Compodoc', () => {
+    const payload = build('./story-docs.stories.ts', {
+      resolveComponent: () => ({
+        name: 'ButtonComponent',
+        selector: 'my-button',
+        inputs: ['label'],
+        outputs: ['pressed'],
+      }),
+    });
+
+    expect(snippetOf(payload, 'Basic')).toBe(
+      `<my-button [label]="'Save'" (pressed)="pressed($event)"></my-button>`
+    );
   });
 });
 

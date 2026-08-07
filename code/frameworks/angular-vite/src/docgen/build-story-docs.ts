@@ -18,12 +18,8 @@ import type {
 } from 'storybook/internal/types';
 
 import { readFileSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { resolve } from 'node:path';
 
-import type { CompodocJson, CompodocParsingLogger } from '@storybook/angular-compodoc';
-import { DOCUMENTATION_JSON } from '../compodoc-config.ts';
-import { extractArgTypesFromData, htmlToText } from '@storybook/angular-compodoc';
-import { findCompodocEntry } from './build-docgen.ts';
 import type { AngularHostContext } from './component-snippet.ts';
 import { angularHostComponent, angularHostImports } from './component-snippet.ts';
 import { resolveMetaComponent } from './resolve-component.ts';
@@ -34,19 +30,30 @@ import type { SnippetFormat } from '../types.ts';
 /** Preserves what the browser generator produces, so `component` stays an opt-in. */
 export const DEFAULT_SNIPPET_FORMAT: SnippetFormat = 'template';
 
+/**
+ * The selector and binding names a snippet is built from, for one component.
+ *
+ * Which engine produced them is deliberately not expressed here. Compodoc is one source; an
+ * in-process Angular component meta service is another, and swapping between them must not reach
+ * into snippet generation.
+ */
+export type AngularComponentResolver = (
+  component: ResolvedMetaComponent
+) => AngularComponentTemplate | undefined;
+
+/** The slice of the logger this module uses. */
+export interface StoryDocsLogger {
+  debug: (message: string) => void;
+}
+
 export interface BuildStoryDocsContext {
   /**
    * Directory a story index `importPath` resolves against. This is the index generator's own
-   * working directory, which is the Storybook process cwd - deliberately not Compodoc's
-   * `workspaceRoot`, which the Angular builder can report as a different directory entirely.
+   * working directory, which is the Storybook process cwd.
    */
   storyRoot: string;
-  /** Directory Compodoc's relative `file` paths resolve against. */
-  workspaceRoot: string;
-  /** Directory Compodoc writes {@link DOCUMENTATION_JSON} into. */
-  outputDir: string;
-  readDocumentationJson: (path: string) => CompodocJson;
-  logger: CompodocParsingLogger;
+  resolveComponent: AngularComponentResolver;
+  logger: StoryDocsLogger;
   /** Shape of the emitted snippet. Defaults to {@link DEFAULT_SNIPPET_FORMAT}. */
   snippetFormat?: SnippetFormat;
 }
@@ -148,63 +155,6 @@ const userTemplate = (config: t.ObjectExpression | undefined): TemplateResult | 
 };
 
 /**
- * The component's selector and binding names, from its Compodoc entry. `extractArgTypesFromData`
- * already resolves a `model()` into an input plus a `${name}Change` output.
- */
-const resolveComponentTemplate = (
-  csf: CsfFile,
-  storyPath: string,
-  context: BuildStoryDocsContext
-): { component: AngularComponentTemplate; host: AngularHostContext } | undefined => {
-  const resolved = resolveMetaComponent(csf, storyPath);
-  if ('reason' in resolved) {
-    context.logger.debug(`No Angular component resolved from ${storyPath}: ${resolved.reason}.`);
-    return undefined;
-  }
-
-  const documentationJson = join(context.outputDir, DOCUMENTATION_JSON);
-  let compodocJson: CompodocJson;
-  try {
-    compodocJson = context.readDocumentationJson(documentationJson);
-  } catch (error) {
-    context.logger.debug(
-      `Could not read ${documentationJson}: ${error instanceof Error ? error.message : String(error)}.`
-    );
-    return undefined;
-  }
-
-  const entry = findCompodocEntry(compodocJson, resolved.component, context.workspaceRoot);
-  if (!entry) {
-    context.logger.debug(
-      `Compodoc has no entry for "${resolved.component.exportName}" (${storyPath}).`
-    );
-    return undefined;
-  }
-
-  const argTypes = extractArgTypesFromData(entry, {
-    compodocJson,
-    // Snippets bind inputs and outputs, which this flag never filters.
-    filterNonInputControls: false,
-    logger: context.logger,
-    unwrapHtml: htmlToText,
-  });
-
-  const named = (category: string) =>
-    Object.entries(argTypes ?? {})
-      .filter(([, argType]) => argType?.table?.category === category)
-      .map(([name]) => name);
-
-  const component = {
-    name: entry.name ?? resolved.component.exportName,
-    selector: entry.selector,
-    inputs: named('inputs'),
-    outputs: named('outputs'),
-  };
-
-  return { component, host: hostContext(resolved.component, component) };
-};
-
-/**
  * How the host wrapper names and imports the component. A default import has no export name worth
  * printing, so the story file's own local name is the only one available.
  */
@@ -221,9 +171,9 @@ const hostContext = (
 /**
  * Static Angular template snippets for one CSF story file.
  *
- * `undefined` means the file is not ours to handle - unparseable, no `meta.component`, or no
- * Compodoc entry. A story whose snippet fails instead carries an `error` while the rest of the file
- * still ships; the two levels are deliberately distinct.
+ * `undefined` means the file is not ours to handle - unparseable, no `meta.component`, or a
+ * component the docgen engine has nothing for. A story whose snippet fails instead carries an
+ * `error` while the rest of the file still ships; the two levels are deliberately distinct.
  */
 export const buildStoryDocsPayload = (
   input: StoryDocsProviderInput,
@@ -245,11 +195,17 @@ export const buildStoryDocsPayload = (
     return undefined;
   }
 
-  const resolved = resolveComponentTemplate(csf, storyPath, context);
-  if (!resolved) {
+  const ref = resolveMetaComponent(csf, storyPath);
+  if ('reason' in ref) {
+    context.logger.debug(`No Angular component resolved from ${storyPath}: ${ref.reason}.`);
     return undefined;
   }
-  const { component, host } = resolved;
+
+  const component = context.resolveComponent(ref.component);
+  if (!component) {
+    return undefined;
+  }
+  const host = hostContext(ref.component, component);
   const format = context.snippetFormat ?? DEFAULT_SNIPPET_FORMAT;
 
   const metaNode = csf._metaNode;

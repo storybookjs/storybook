@@ -1,0 +1,14 @@
+{
+  "id": "v-model",
+  "import": "import ModelToggle from './ModelToggle.vue';",
+  "name": "ModelToggle",
+  "path": "__PATH__",
+  "stories": {
+    "forms-v-model--primary": {
+      "description": undefined,
+      "id": "forms-v-model--primary",
+      "name": "Primary",
+      "summary": undefined,
+    },
+  },
+}

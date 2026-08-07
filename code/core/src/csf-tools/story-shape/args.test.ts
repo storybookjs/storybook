@@ -21,7 +21,11 @@ const parse = (code: string) => {
 
 const printRecord = (record: Record<string, t.Node>) => {
   return Object.fromEntries(
-    Object.entries(record).map(([key, value]) => [key, recast.print(value).code])
+    Object.entries(record).map(([key, value]) => [
+      key,
+      // Recast may emit CRLF on Windows; keep assertions LF-stable across OSes.
+      recast.print(value).code.replace(/\r\n/g, '\n'),
+    ])
   );
 };
 

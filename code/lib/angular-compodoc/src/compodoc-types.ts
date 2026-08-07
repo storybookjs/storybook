@@ -26,7 +26,17 @@ export interface Property {
   decorators?: Decorator[];
   /** Omitted by Compodoc for members it cannot type, e.g. `@HostBinding`. */
   type?: string;
-  optional: boolean;
+  /**
+   * Whether the member is TS-optional. Compodoc omits it entirely for `@Input()`-decorated
+   * properties while emitting it for signal inputs and plain class properties (compodoc#863, still
+   * open at 2.0.0), so it is absent far more often than the old non-optional declaration implied.
+   */
+  optional?: boolean;
+  /**
+   * Compodoc's own requiredness flag, which is what Angular actually means by a required input.
+   * Present for signal inputs and for `@Input({ required })`; absent for a plain `@Input()`.
+   */
+  required?: boolean;
   defaultValue?: string;
   description?: Html;
   rawdescription?: string;

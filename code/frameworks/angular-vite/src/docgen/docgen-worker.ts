@@ -2,8 +2,7 @@
  * Worker-target docgen module for `@storybook/angular-vite`.
  *
  * Core's docgen worker imports this module and calls {@link createDocgenProvider} once to build the
- * middleware it folds into the provider chain. Everything here runs inside that worker thread and
- * only reads Compodoc's `documentation.json` from disk; generating it is not this module's job.
+ * middleware it folds into the provider chain. Everything here runs inside that worker thread.
  */
 import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -12,6 +11,7 @@ import type { DocgenMiddleware, DocgenProvider } from 'storybook/internal/types'
 import { readFileSync, statSync } from 'node:fs';
 
 import type { CompodocJson, CompodocParsingLogger } from '@storybook/angular-compodoc';
+import { ensureCompodocDocumentation } from '../compodoc/ensure-documentation.ts';
 import type { AngularDocgenOptions } from './build-docgen.ts';
 import { buildDocgenPayload } from './build-docgen.ts';
 
@@ -39,8 +39,22 @@ const createDocumentationJsonReader = () => {
   };
 };
 
-/** Builds the Angular docgen middleware. */
-export const createDocgenProvider = (options: AngularDocgenOptions): DocgenMiddleware => {
+/**
+ * Builds the Angular docgen middleware, running Compodoc first if `documentation.json` is missing or
+ * stale. The run sits in construction rather than per request: core awaits this before arming its
+ * per-extract timeout, so a whole-project scan neither counts against that clock nor repeats once
+ * per component.
+ */
+export const createDocgenProvider = async (
+  options: AngularDocgenOptions
+): Promise<DocgenMiddleware> => {
+  await ensureCompodocDocumentation({
+    compodocArgs: options.compodocArgs,
+    tsconfig: options.tsconfig,
+    workspaceRoot: options.workspaceRoot,
+    outputDir: options.outputDir,
+  });
+
   const readDocumentationJson = createDocumentationJsonReader();
 
   return (nextDocgen: DocgenProvider): DocgenProvider =>

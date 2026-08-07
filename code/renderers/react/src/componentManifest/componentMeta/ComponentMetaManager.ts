@@ -46,6 +46,21 @@ function createReactProjectFactory(typescript: typeof ts): {
   // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L83
   const fsFileSnapshots: FsFileSnapshots = new Map();
 
+  /**
+   * Shared across every project so they reuse parsed+bound SourceFiles instead of each holding a
+   * private copy of lib.d.ts, React's types and node_modules.
+   *
+   * Needs no cleanup of its own: disposing a LanguageService releases every SourceFile it holds, and
+   * the registry drops an entry once its last reference goes, so a heap-pressure recycle empties it
+   * as a side effect of disposing the projects.
+   *
+   * `useCaseSensitiveFileNames` defaults to `false`, which would lowercase the registry's path keys
+   * on case-sensitive filesystems, so pass the host's value explicitly.
+   */
+  const documentRegistry = typescript.createDocumentRegistry(
+    typescript.sys.useCaseSensitiveFileNames
+  );
+
   return {
     fsFileSnapshots,
     factory: {
@@ -57,7 +72,8 @@ function createReactProjectFactory(typescript: typeof ts): {
           commandLine,
           tsconfig,
           fsFileSnapshots,
-          getCommandLine
+          getCommandLine,
+          documentRegistry
         ),
       createInferredProject: () =>
         new ComponentMetaProject(
@@ -74,7 +90,9 @@ function createReactProjectFactory(typescript: typeof ts): {
             errors: [],
           },
           undefined,
-          fsFileSnapshots
+          fsFileSnapshots,
+          undefined,
+          documentRegistry
         ),
       dispose: () => fsFileSnapshots.clear(),
     },

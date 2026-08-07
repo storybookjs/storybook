@@ -13053,6 +13053,7 @@ __metadata:
     "@testing-library/vue": "npm:^8.0.0"
     "@vitejs/plugin-vue": "npm:^4.6.2"
     "@vue/language-core": "npm:^3.2.7"
+    knitwork: "npm:^1.1.0"
     type-fest: "npm:^5.6.0"
     typescript: "npm:^6.0.3"
     vue: "npm:^3.2.47"

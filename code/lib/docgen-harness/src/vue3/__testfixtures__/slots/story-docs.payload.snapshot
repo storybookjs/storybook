@@ -14,6 +14,9 @@
       "description": undefined,
       "id": "forms-slots--string-child",
       "name": "String Child",
+      "snippet": "<template>
+  <SlotsShowcase heading="Plain"> Plain text content </SlotsShowcase>
+</template>",
       "summary": undefined,
     },
     "forms-slots--v-node-child": {

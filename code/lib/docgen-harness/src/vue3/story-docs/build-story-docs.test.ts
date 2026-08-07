@@ -1,4 +1,4 @@
-import { existsSync, readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -8,6 +8,7 @@ import type { IndexEntry } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
 import { buildStoryDocsPayload } from '../../../../../renderers/vue3/src/story-docs/build-story-docs.ts';
+import { parseArgTypesSnapshot } from '../../compare/parse-snapshot.ts';
 
 const FIXTURES_DIR = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 const DOCGEN_FIXTURES_DIR = join(dirname(fileURLToPath(import.meta.url)), '..', '__testfixtures__');
@@ -74,6 +75,27 @@ function docgenForFixture(
   };
 }
 
+/** Feed the real extracted argTypes so docgen-tree baselines exercise snippet synthesis. */
+function docgenFromArgTypesSnapshot(
+  testDir: string,
+  id: string,
+  path: string
+): DocgenPayload | undefined {
+  const argTypesPath = join(testDir, 'cm-argtypes.snapshot');
+  if (!existsSync(argTypesPath)) {
+    return undefined;
+  }
+
+  const sfcFile = readdirSync(testDir).find((file) => file.endsWith('.vue'));
+  return {
+    id,
+    name: sfcFile ? sfcFile.replace(/\.vue$/, '') : id,
+    path,
+    jsDocTags: {},
+    argTypes: parseArgTypesSnapshot(readFileSync(argTypesPath, 'utf8'), argTypesPath),
+  };
+}
+
 function componentNameFromFixture(fixtureCase: string): string {
   return fixtureCase
     .split('-')
@@ -100,9 +122,10 @@ async function expectPayloadSnapshot({ name, testDir, tree }: FixtureCase): Prom
       entry: makeStoryIndexEntry(importPath, `Forms/${name}`),
     },
     {
-      // Docgen-tree baselines stay metadata-only until real argTypes snapshots are wired in.
       readDocgen: async (id) =>
-        tree === 'story-docs' ? docgenForFixture(name, id, importPath) : undefined,
+        tree === 'story-docs'
+          ? docgenForFixture(name, id, importPath)
+          : docgenFromArgTypesSnapshot(testDir, id, importPath),
     }
   );
 

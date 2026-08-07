@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest';
 
 import { storyNameFromExport } from 'storybook/internal/csf';
 import { loadCsf } from 'storybook/internal/csf-tools';
-import type { IndexEntry } from 'storybook/internal/types';
+import type { IndexEntry, StoryDocsPayload } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
 import { buildStoryDocsPayload } from '../../../../../renderers/vue3/src/story-docs/build-story-docs.ts';
@@ -15,6 +15,24 @@ import { parseArgTypesSnapshot } from '../../compare/parse-snapshot.ts';
 
 const FIXTURES_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../__testfixtures__');
 const STORIES_FILE = 'input.stories.ts';
+
+/**
+ * Stories that intentionally emit no static snippet (runtime source fallback stays authoritative).
+ * Shrink this set as slot support lands; an entry that starts emitting must be removed.
+ */
+const EXPECTED_SNIPPETLESS = new Set([
+  'define-slots-literal-bindings/ScopedIconBinding',
+  'slots/ScopedBindings',
+  'slots/VNodeChild',
+  'slots-template-only/ScopedBindings',
+]);
+
+type BaselineComparison = {
+  fixtureCase: string;
+  exportName: string;
+  baseline: string;
+  candidate: string | undefined;
+};
 
 function fixtureCases(): string[] {
   return readdirSync(FIXTURES_DIR, { withFileTypes: true })
@@ -74,47 +92,94 @@ function titleForStoryFile(storyFile: string): string {
   return csf._meta?.title ?? 'Unknown';
 }
 
-describe('vue3 story-docs static snippet parity', () => {
-  it.each(fixtureCases())('%s', async (fixtureCase): Promise<void> => {
-    const testDir = resolve(FIXTURES_DIR, fixtureCase);
-    const importPath = resolve(testDir, STORIES_FILE);
-    const payload = await buildStoryDocsPayload(
-      {
-        entry: makeStoryIndexEntry(importPath, titleForStoryFile(importPath)),
-      },
-      {
-        readDocgen: async (id) => docgenForFixture(fixtureCase, id, importPath),
-      }
-    );
+async function buildPayloadForFixture(fixtureCase: string): Promise<StoryDocsPayload | undefined> {
+  const importPath = resolve(FIXTURES_DIR, fixtureCase, STORIES_FILE);
+  return buildStoryDocsPayload(
+    {
+      entry: makeStoryIndexEntry(importPath, titleForStoryFile(importPath)),
+    },
+    {
+      readDocgen: async (id) => docgenForFixture(fixtureCase, id, importPath),
+    }
+  );
+}
 
-    expect(payload, fixtureCase).toBeDefined();
-
-    for (const snapshotFile of readdirSync(testDir)
-      .filter((file) => file.startsWith('snippet-') && file.endsWith('.snapshot'))
-      .sort()) {
+function baselineComparisons(fixtureCase: string, payload: StoryDocsPayload): BaselineComparison[] {
+  const testDir = resolve(FIXTURES_DIR, fixtureCase);
+  return readdirSync(testDir)
+    .filter((file) => file.startsWith('snippet-') && file.endsWith('.snapshot'))
+    .sort()
+    .map((snapshotFile) => {
       const exportName = snapshotFile.replace(/^snippet-/, '').replace(/\.snapshot$/, '');
       const storyName = storyNameFromExport(exportName);
-      const candidate = Object.values(payload!.stories).find(
-        (story) => story.name === storyName
-      )?.snippet;
+      return {
+        fixtureCase,
+        exportName,
+        baseline: readFileSync(resolve(testDir, snapshotFile), 'utf8'),
+        candidate: Object.values(payload.stories).find((story) => story.name === storyName)
+          ?.snippet,
+      };
+    });
+}
+
+describe('vue3 story-docs static snippet parity', () => {
+  it.each(fixtureCases())('%s', async (fixtureCase): Promise<void> => {
+    const payload = await buildPayloadForFixture(fixtureCase);
+    expect(payload, fixtureCase).toBeDefined();
+
+    for (const { exportName, baseline, candidate } of baselineComparisons(fixtureCase, payload!)) {
+      const storyKey = `${fixtureCase}/${exportName}`;
 
       if (!candidate) {
+        expect(EXPECTED_SNIPPETLESS.has(storyKey), `${storyKey} stopped emitting a snippet`).toBe(
+          true
+        );
         continue;
       }
+
+      expect(
+        EXPECTED_SNIPPETLESS.has(storyKey),
+        `${storyKey} now emits a snippet — remove it from EXPECTED_SNIPPETLESS`
+      ).toBe(false);
 
       expectCurrentOrBetter({
         kind: 'snippet',
         framework: 'vue3',
-        baseline: readFileSync(resolve(testDir, snapshotFile), 'utf8'),
+        baseline,
         candidate,
       });
     }
+  });
 
-    const emittedSnippet = Object.values(payload!.stories).some((story) => story.snippet);
-    const hasBaseline = readdirSync(testDir).some(
-      (file) =>
-        file.startsWith('snippet-') && file.endsWith('.snapshot') && existsSync(join(testDir, file))
-    );
-    expect(emittedSnippet || hasBaseline, fixtureCase).toBe(true);
+  it('summarizes parity against the legacy source decorator', async () => {
+    const rows: string[] = [];
+
+    for (const fixtureCase of fixtureCases()) {
+      const payload = await buildPayloadForFixture(fixtureCase);
+      for (const { exportName, baseline, candidate } of baselineComparisons(
+        fixtureCase,
+        payload!
+      )) {
+        const status = !candidate
+          ? '⏳ no snippet (runtime fallback)'
+          : candidate.trim() === baseline.trim()
+            ? '✅ identical'
+            : '✨ improved';
+        rows.push(`| ${fixtureCase} | ${exportName} | ${status} |`);
+      }
+    }
+
+    const report = [
+      '# Vue static snippets vs legacy source decorator',
+      '',
+      'Generated by `snippet-parity.test.ts` — regenerate with `vitest -u`.',
+      '',
+      '| Fixture | Story | Status |',
+      '| --- | --- | --- |',
+      ...rows,
+      '',
+    ].join('\n');
+
+    await expect(report).toMatchFileSnapshot(join(FIXTURES_DIR, 'snippet-parity-summary.md'));
   });
 });

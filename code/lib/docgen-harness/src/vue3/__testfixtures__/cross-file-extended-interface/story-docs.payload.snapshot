@@ -8,6 +8,9 @@
       "description": undefined,
       "id": "forms-cross-file-extended-interface--props-as-written",
       "name": "Props As Written",
+      "snippet": "<template>
+  <ExtendedInterfaceProps extra :id="7" name="Chained" />
+</template>",
       "summary": undefined,
     },
   },

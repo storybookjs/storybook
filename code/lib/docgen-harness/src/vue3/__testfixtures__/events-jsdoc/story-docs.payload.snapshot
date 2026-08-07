@@ -8,6 +8,9 @@
       "description": undefined,
       "id": "forms-events-jsdoc--with-handlers",
       "name": "With Handlers",
+      "snippet": "<template>
+  <EventsJsdoc label="Save" />
+</template>",
       "summary": undefined,
     },
   },

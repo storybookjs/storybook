@@ -8,6 +8,9 @@
       "description": undefined,
       "id": "forms-define-props-runtime-array--props-as-written",
       "name": "Props As Written",
+      "snippet": "<template>
+  <RuntimeArrayProps appearance="primary" label="Go" />
+</template>",
       "summary": undefined,
     },
   },

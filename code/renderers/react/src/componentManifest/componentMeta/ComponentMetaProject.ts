@@ -7,10 +7,8 @@
  * - https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProjectLs.ts#L44-L233
  * - https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/typescript/lib/protocol/createProject.ts#L30-L120
  * - CreateLanguage + createLanguageServiceHost from @volar/typescript
- * - FsFileSnapshots with mtime-based caching (shared across projects)
- * - TypeScriptProjectHost contract (projectVersion, shouldCheckRootFiles, checkRootFilesUpdate)
- * - Selective projectVersion bump on file events (Kit checker pattern)
- * - EnsureFiles for dynamic file inclusion (LS pattern)
+ * - Invalidation state (snapshot cache, projectVersion, root-set re-checks, ensureFresh) delegated
+ *   to core's ProjectFileTracker, shared with the Angular component-meta project
  *
  * Props extraction works probe-free:
  *
@@ -18,6 +16,13 @@
  * - Path 2 (fallback): Direct type inspection for args-only stories (component-meta approach)
  * - SerializeComponentDoc() serializes the resolved props type into ComponentDoc format
  */
+import {
+  type FileChange,
+  type FileSnapshotCache,
+  ProjectFileTracker,
+  filterSourceFilePaths,
+} from 'storybook/internal/component-meta';
+
 import { FileMap, createLanguage } from '@volar/language-core';
 import {
   type TypeScriptProjectHost,
@@ -39,8 +44,8 @@ import {
 
 export class ComponentMetaProject {
   private ls: ts.LanguageService;
-  private projectVersion = 0;
-  private shouldCheckRootFiles = false;
+  /** Invalidation state machine shared with the Angular component-meta project. */
+  private readonly files: ProjectFileTracker<ts.IScriptSnapshot>;
   private warmupTimer?: ReturnType<typeof setTimeout>;
   /** Entries to extract — set by the generator, replayed during warmup for targeted type resolution. */
   private entries: StoryRef[] = [];
@@ -49,17 +54,9 @@ export class ComponentMetaProject {
     private typescript: typeof ts,
     private commandLine: ts.ParsedCommandLine,
     public readonly configFileName: string | undefined,
-    /**
-     * Shared snapshot cache owned by ComponentMetaManager.
-     *
-     * Adapted from:
-     * https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L83
-     */
-    private fsFileSnapshots: Map<
-      string,
-      [number | undefined, ts.IScriptSnapshot | undefined]
-    > = new Map(),
-    private getCommandLineFn?: () => ts.ParsedCommandLine,
+    /** Shared snapshot cache owned by ComponentMetaManager. */
+    fsFileSnapshots: FileSnapshotCache<ts.IScriptSnapshot> = new Map(),
+    getCommandLineFn?: () => ts.ParsedCommandLine,
     /**
      * Shared by ComponentMetaManager so projects with matching compiler options reuse parsed+bound
      * SourceFiles. The snapshot cache above dedupes the file *reads*, not the ASTs: without a shared
@@ -67,6 +64,14 @@ export class ComponentMetaProject {
      */
     private documentRegistry?: ts.DocumentRegistry
   ) {
+    this.files = new ProjectFileTracker(
+      typescript,
+      commandLine,
+      fsFileSnapshots,
+      (text) => typescript.ScriptSnapshot.fromString(text),
+      getCommandLineFn
+    );
+
     // Adapted from:
     // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L110-L141
     const language = createLanguage<string>(
@@ -76,19 +81,7 @@ export class ComponentMetaProject {
         if (!includeFsFiles) {
           return;
         }
-        const cache = fsFileSnapshots.get(fileName);
-        const modifiedTime = typescript.sys.getModifiedTime?.(fileName)?.valueOf();
-        if (!cache || cache[0] !== modifiedTime) {
-          if (typescript.sys.fileExists(fileName)) {
-            const text = typescript.sys.readFile(fileName);
-            const snapshot =
-              text !== undefined ? typescript.ScriptSnapshot.fromString(text) : undefined;
-            fsFileSnapshots.set(fileName, [modifiedTime, snapshot]);
-          } else {
-            fsFileSnapshots.set(fileName, [modifiedTime, undefined]);
-          }
-        }
-        const snapshot = fsFileSnapshots.get(fileName)?.[1];
+        const snapshot = this.files.getSnapshot(fileName);
         if (snapshot) {
           language.scripts.set(fileName, snapshot);
         } else {
@@ -110,14 +103,10 @@ export class ComponentMetaProject {
       getProjectReferences: () => {
         return this.commandLine.projectReferences;
       },
-      getProjectVersion: () => {
-        this.checkRootFilesUpdate();
-        return this.projectVersion.toString();
-      },
-      getScriptFileNames: () => {
-        this.checkRootFilesUpdate();
-        return this.commandLine.fileNames;
-      },
+      // getProjectVersion gates the language service's host re-sync; the tracker funnels every
+      // invalidation into it.
+      getProjectVersion: () => this.files.getProjectVersion(),
+      getScriptFileNames: () => this.files.getScriptFileNames(),
     };
 
     // Adapted from:
@@ -151,36 +140,7 @@ export class ComponentMetaProject {
    * repeated program rebuilds.
    */
   ensureFiles(fileNames: string[]): void {
-    let added = false;
-    for (const fileName of fileNames) {
-      if (!this.commandLine.fileNames.includes(fileName)) {
-        this.commandLine.fileNames.push(fileName);
-        added = true;
-      }
-    }
-    if (added) {
-      this.projectVersion++;
-    }
-  }
-
-  /**
-   * Adapted from:
-   * https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L436-L447
-   */
-  private checkRootFilesUpdate(): void {
-    if (!this.shouldCheckRootFiles) {
-      return;
-    }
-    this.shouldCheckRootFiles = false;
-
-    if (!this.getCommandLineFn) {
-      return;
-    }
-    const newCommandLine = this.getCommandLineFn();
-    if (!arrayItemsEqual(newCommandLine.fileNames, this.commandLine.fileNames)) {
-      this.commandLine.fileNames = newCommandLine.fileNames;
-      this.projectVersion++;
-    }
+    this.files.ensureFiles(fileNames);
   }
 
   getSourceFile(fileName: string): ts.SourceFile | undefined {
@@ -200,53 +160,23 @@ export class ComponentMetaProject {
     if (!program) {
       return [];
     }
-    return program
-      .getSourceFiles()
-      .map((sf) => sf.fileName.replace(/\\/g, '/'))
-      .filter((f) => !f.includes('node_modules'));
+    return filterSourceFilePaths(program.getSourceFiles().map((sf) => sf.fileName));
   }
 
-  /**
-   * Adapted from:
-   * https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L409-L432
-   *
-   * Created events only set shouldCheckRootFiles (version bump happens in checkRootFilesUpdate if
-   * the file list actually changed). Deleted/created break early since they trigger a full config
-   * reparse — processing remaining changes is unnecessary.
-   */
-  onFilesChanged(
-    changes: Array<{ filePath: string; type: 'changed' | 'created' | 'deleted' }>
-  ): void {
-    // Eagerly invalidate snapshot cache for ALL changes before processing.
-    // Deleting from fsFileSnapshots ensures the sync callback re-reads the file.
-    for (const { filePath } of changes) {
-      this.fsFileSnapshots.delete(filePath);
-    }
-
-    const oldVersion = this.projectVersion;
+  onFilesChanged(changes: FileChange[]): void {
+    // Membership probe against the pre-event program; captured once so the batch cannot rebuild
+    // the program mid-loop.
     const program = this.ls.getProgram();
-    for (const { filePath, type } of changes) {
-      if (type === 'changed') {
-        if (program?.getSourceFile(filePath)) {
-          this.projectVersion++;
-        }
-      } else if (type === 'deleted') {
-        if (program?.getSourceFile(filePath)) {
-          this.projectVersion++;
-        }
-        this.shouldCheckRootFiles = true;
-        break;
-      } else if (type === 'created') {
-        this.shouldCheckRootFiles = true;
-        break;
-      }
-    }
+    const versionMoved = this.files.onFilesChanged(
+      changes,
+      (fileName) => !!program?.getSourceFile(fileName)
+    );
 
     // Targeted warmup: re-extract in the background so the next request is instant.
     // Only resolves the specific types we need (story JSX → getResolvedSignature),
     // not the entire program. TypeScript caches resolved types on AST nodes —
     // the real extraction then hits cached results.
-    if (this.projectVersion !== oldVersion && this.entries.length > 0) {
+    if (versionMoved && this.entries.length > 0) {
       clearTimeout(this.warmupTimer);
       this.warmupTimer = setTimeout(() => {
         try {
@@ -269,8 +199,8 @@ export class ComponentMetaProject {
     const allFiles = entries.flatMap((entry) =>
       entry.component?.path ? [entry.storyPath, entry.component.path] : [entry.storyPath]
     );
-    this.ensureFiles(allFiles);
-    this.ensureFresh(allFiles);
+    this.files.ensureFiles(allFiles);
+    this.files.ensureFresh(allFiles);
 
     const program = this.ls.getProgram();
     if (!program) {
@@ -383,32 +313,6 @@ export class ComponentMetaProject {
     }
   }
 
-  /**
-   * Check mtime for specific files and bump projectVersion if any changed.
-   *
-   * This bypasses the sync() gate in createLanguageServiceHost — sync() only runs when
-   * projectVersion changes, so mtime-based cache alone can't detect stale files. We do a targeted
-   * mtime check for the files we're about to extract from, ensuring freshness even when the
-   * fs.watch event hasn't arrived yet (race with HMR) or was missed entirely.
-   */
-  private ensureFresh(fileNames: string[]): void {
-    let stale = false;
-    for (const fileName of fileNames) {
-      const cache = this.fsFileSnapshots.get(fileName);
-      if (!cache) {
-        continue;
-      }
-      const currentMtime = this.typescript.sys.getModifiedTime?.(fileName)?.valueOf();
-      if (cache[0] !== currentMtime) {
-        this.fsFileSnapshots.delete(fileName);
-        stale = true;
-      }
-    }
-    if (stale) {
-      this.projectVersion++;
-    }
-  }
-
   // ---------------------------------------------------------------------------
   // Internal helpers
   // ---------------------------------------------------------------------------
@@ -487,19 +391,4 @@ export class ComponentMetaProject {
       symbol: selectedSymbol,
     };
   }
-}
-
-// Adapted from:
-// https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L450-L461
-function arrayItemsEqual(a: string[], b: string[]) {
-  if (a.length !== b.length) {
-    return false;
-  }
-  const set = new Set(a);
-  for (const file of b) {
-    if (!set.has(file)) {
-      return false;
-    }
-  }
-  return true;
 }

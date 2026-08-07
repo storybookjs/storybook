@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CompodocJson } from './compodoc-types.ts';
-import { extractArgTypesFromData } from './extract-arg-types.ts';
+import type { CompodocJson, Property } from './compodoc-types.ts';
+import { extractArgTypesFromData, unwrapPlainText } from './extract-arg-types.ts';
 import { htmlToText } from './html-to-text.ts';
 
 const logger = { warn: () => {}, debug: () => {} };
@@ -176,6 +176,31 @@ describe('model() two-way bindings', () => {
     expect(Object.keys(argTypes)).toEqual(['shared']);
     expect(argTypes.shared).toMatchObject({ action: 'shared', table: { category: 'outputs' } });
   });
+
+  it('ignores the decorator IO arrays on an entry that is not a component or directive', () => {
+    // The analyzer splits signal and decorator IO onto plain classes too, so a base class holding a
+    // `model()` carries both arrays. A plain class is read through `properties`/`methods`, so
+    // reading them anyway invented a `valueChange` output on an entry with no inputs at all.
+    const value = { name: 'value', type: 'string', optional: false, line: 9 };
+    const argTypes = extractArgTypesFromData(
+      {
+        name: 'PlainHolder',
+        type: 'class',
+        properties: [{ name: 'other', type: 'number', optional: false, line: 3 }],
+        methods: [],
+        inputsClass: [value],
+        outputsClass: [{ ...value }],
+      } as never,
+      {
+        compodocJson: jsonWith({} as never),
+        filterNonInputControls: false,
+        logger,
+        unwrapHtml: htmlToText,
+      }
+    );
+
+    expect(Object.keys(argTypes)).toEqual(['other']);
+  });
 });
 
 describe('required', () => {
@@ -231,5 +256,183 @@ describe('required', () => {
     // The remaining upstream gap: with nothing to read, every plain decorator input reads as
     // required. Fixing it upstream makes `optional` appear, and this case corrects itself.
     expect(requiredOf({})).toBe(true);
+  });
+});
+
+describe('modern', () => {
+  /** Extracts a single member with the given Compodoc property fields, flag on or off. */
+  const extractMember = (member: Partial<Property>, { modern = true } = {}) => {
+    const componentData = {
+      name: 'StatusComponent',
+      type: 'component',
+      inputsClass: [{ name: 'value', ...member }],
+      outputsClass: [],
+      propertiesClass: [],
+      methodsClass: [],
+    } as never;
+    const argTypes = extractArgTypesFromData(componentData, {
+      compodocJson: jsonWith({}),
+      filterNonInputControls: false,
+      logger,
+      unwrapHtml: unwrapPlainText,
+      modern,
+    });
+    return argTypes.value;
+  };
+
+  const summaryOf = (member: Partial<Property>, options?: { modern: boolean }) =>
+    (extractMember(member, options).table?.defaultValue as { summary?: unknown } | undefined)
+      ?.summary;
+
+  describe('no invented defaults', () => {
+    it('records no default for a number input without one, where legacy invents NaN', () => {
+      expect(summaryOf({ type: 'number' })).toBeUndefined();
+      expect(summaryOf({ type: 'number' }, { modern: false })).toBeNaN();
+    });
+
+    it('records no default for a boolean input without one, where legacy invents false', () => {
+      expect(summaryOf({ type: 'boolean' })).toBeUndefined();
+      expect(summaryOf({ type: 'boolean' }, { modern: false })).toBe(false);
+    });
+
+    it('keeps the raw source text of an expression default that is not the declared primitive', () => {
+      expect(summaryOf({ type: 'number', defaultValue: '5 * 60 * 1000' })).toBe('5 * 60 * 1000');
+      expect(summaryOf({ type: 'number', defaultValue: 'Math.max(1, 3)' })).toBe('Math.max(1, 3)');
+      expect(summaryOf({ type: 'boolean', defaultValue: '!flag' })).toBe('!flag');
+    });
+
+    it('still casts literal defaults to their primitive', () => {
+      expect(summaryOf({ type: 'number', defaultValue: '42' })).toBe(42);
+      expect(summaryOf({ type: 'number', defaultValue: 'NaN' })).toBeNaN();
+      expect(summaryOf({ type: 'boolean', defaultValue: 'true' })).toBe(true);
+      expect(summaryOf({ type: 'boolean', defaultValue: 'false' })).toBe(false);
+      expect(summaryOf({ type: 'string', defaultValue: "''" })).toBe('');
+      expect(summaryOf({ type: 'EventEmitter', defaultValue: 'new EventEmitter()' })).toBe(
+        undefined
+      );
+      expect(summaryOf({ type: 'User | null', defaultValue: 'null' })).toBe(null);
+    });
+  });
+
+  describe('@default tags', () => {
+    const defaultTag = (comment?: string) => ({
+      tagName: { escapedText: 'default' },
+      ...(comment === undefined ? {} : { comment }),
+    });
+
+    it('extracts the value clean: trimmed, surrounding quotes stripped', () => {
+      expect(summaryOf({ type: 'string', jsdoctags: [defaultTag("'steelblue'\n")] })).toBe(
+        'steelblue'
+      );
+      expect(summaryOf({ type: 'string', jsdoctags: [defaultTag('"quoted"')] })).toBe('quoted');
+    });
+
+    it('keeps plain text intact instead of HTML-stripping it', () => {
+      expect(summaryOf({ type: 'string', jsdoctags: [defaultTag('[] as Array<string>')] })).toBe(
+        '[] as Array<string>'
+      );
+    });
+
+    it('ignores a bare @default with no comment, where legacy records "undefined"', () => {
+      expect(summaryOf({ type: 'string', jsdoctags: [defaultTag()] })).toBeUndefined();
+    });
+
+    it('reaches the tag for a boolean member, where the legacy invented false shadowed it', () => {
+      expect(summaryOf({ type: 'boolean', jsdoctags: [defaultTag('true')] })).toBe('true');
+    });
+  });
+
+  describe('function sbTypes', () => {
+    it('maps the bare function type and arrow signatures to { name: "function" }', () => {
+      expect(extractMember({ type: 'function' }).type).toEqual({ name: 'function' });
+      expect(extractMember({ type: '(value: number) => string' }).type).toEqual({
+        name: 'function',
+      });
+    });
+
+    it('leaves them on the other/empty-enum catch-all with the flag off', () => {
+      expect(extractMember({ type: 'function' }, { modern: false }).type).toEqual({
+        name: 'other',
+        value: 'empty-enum',
+      });
+    });
+  });
+
+  describe('literal-union enum sbTypes', () => {
+    const design = '"Default" | "Positive" | "Negative" | undefined';
+
+    it('drops undefined/null members and yields a real enum control', () => {
+      expect(extractMember({ type: design }).type).toEqual({
+        name: 'enum',
+        value: ['Default', 'Positive', 'Negative'],
+      });
+      expect(extractMember({ type: '"a" | null' }).type).toEqual({ name: 'enum', value: ['a'] });
+    });
+
+    it('keeps the empty-enum catch-all for such unions with the flag off', () => {
+      expect(extractMember({ type: design }, { modern: false }).type).toEqual({
+        name: 'other',
+        value: 'empty-enum',
+      });
+    });
+
+    it('still falls through for unions with non-literal members', () => {
+      expect(extractMember({ type: 'boolean | MyThing' }).type).toEqual({
+        name: 'other',
+        value: 'empty-enum',
+      });
+    });
+
+    it('maps optional primitives to the primitive control, not empty-enum', () => {
+      expect(extractMember({ type: 'string | undefined' }).type).toEqual({ name: 'string' });
+      expect(extractMember({ type: 'boolean | null' }).type).toEqual({ name: 'boolean' });
+      expect(extractMember({ type: 'number | null | undefined' }).type).toEqual({
+        name: 'number',
+      });
+      expect(extractMember({ type: 'string | undefined' }, { modern: false }).type).toEqual({
+        name: 'other',
+        value: 'empty-enum',
+      });
+    });
+  });
+
+  describe('table.jsDocTags', () => {
+    const tag = (name: string, comment?: string) => ({
+      tagName: { escapedText: name },
+      ...(comment === undefined ? {} : { comment }),
+    });
+
+    it('surfaces @deprecated and @returns in the shape the docs UI consumes', () => {
+      const { table } = extractMember({
+        type: 'string',
+        jsdoctags: [
+          tag('deprecated', 'Use `label` instead.'),
+          tag('returns', 'The formatted text.'),
+          // Tags without a docs-UI representation are dropped, like the React path drops them.
+          tag('see', 'https://example.com'),
+          tag('sbCategory', 'presentation'),
+        ],
+      });
+      expect(table?.jsDocTags).toEqual({
+        deprecated: 'Use `label` instead.',
+        returns: { description: 'The formatted text.' },
+      });
+    });
+
+    it('marks a bare @deprecated with an empty comment', () => {
+      expect(
+        extractMember({ type: 'string', jsdoctags: [tag('deprecated')] }).table?.jsDocTags
+      ).toEqual({ deprecated: '' });
+    });
+
+    it('omits the key entirely when no displayable tag exists', () => {
+      expect(extractMember({ type: 'string' }).table).not.toHaveProperty('jsDocTags');
+      expect(
+        extractMember({ type: 'string', jsdoctags: [tag('see', 'x')] }).table
+      ).not.toHaveProperty('jsDocTags');
+      expect(extractMember({ type: 'string' }, { modern: false }).table).not.toHaveProperty(
+        'jsDocTags'
+      );
+    });
   });
 });

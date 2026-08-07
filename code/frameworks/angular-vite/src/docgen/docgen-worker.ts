@@ -2,16 +2,16 @@
  * Worker-target docgen module for `@storybook/angular-vite`.
  *
  * Core's docgen worker imports this module and calls {@link createDocgenProvider} once to build the
- * middleware it folds into the provider chain. Everything here runs inside that worker thread.
+ * middleware it folds into the provider chain. Everything here runs inside that worker thread, so
+ * the synchronous TypeScript analysis stays off the main event loop and cannot starve the dev
+ * server.
  */
 import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware, DocgenProvider } from 'storybook/internal/types';
 
-import { readFileSync, statSync } from 'node:fs';
-
-import type { CompodocJson, CompodocParsingLogger } from '@storybook/angular-compodoc';
-import { ensureCompodocDocumentation } from '../compodoc/ensure-documentation.ts';
+import type { CompodocParsingLogger } from '@storybook/angular-compodoc';
+import { AngularComponentMetaManager } from '@storybook/angular-cm';
 import type { AngularDocgenOptions } from './build-docgen.ts';
 import { buildDocgenPayload } from './build-docgen.ts';
 
@@ -21,41 +21,37 @@ const workerLogger: CompodocParsingLogger = {
   debug: (message) => logger.debug(`[storybook-angular-vite] ${message}`),
 };
 
-/**
- * Reads `documentation.json`, memoized on the file's mtime and size: the burst of one request per
- * component would otherwise reparse a real app's multi-megabyte file, while keying on the file's
- * identity still picks up a Compodoc run the user starts mid-session.
- */
-const createDocumentationJsonReader = () => {
-  let cached: { key: string; json: CompodocJson } | undefined;
-
-  return (path: string): CompodocJson => {
-    const stats = statSync(path);
-    const key = `${path}:${stats.mtimeMs}:${stats.size}`;
-    if (cached?.key !== key) {
-      cached = { key, json: JSON.parse(readFileSync(path, 'utf8')) as CompodocJson };
-    }
-    return cached.json;
-  };
+const createManager = async (): Promise<AngularComponentMetaManager | undefined> => {
+  try {
+    // The project's own compiler, imported at first use: the analyzer must see the TypeScript
+    // version the project builds with, and this package deliberately does not ship one.
+    const typescript = await import('typescript');
+    const manager = new AngularComponentMetaManager(typescript.default ?? typescript);
+    manager.startWatching();
+    return manager;
+  } catch (error) {
+    logger.warn(
+      `Angular docgen is unavailable: the component meta analyzer could not be created. ${
+        error instanceof Error ? error.message : String(error)
+      }`
+    );
+    return undefined;
+  }
 };
 
 /**
- * Builds the Angular docgen middleware, running Compodoc first if `documentation.json` is missing or
- * stale. The run sits in construction rather than per request: core awaits this before arming its
- * per-extract timeout, so a whole-project scan neither counts against that clock nor repeats once
- * per component.
+ * Builds the Angular docgen middleware. Owns one {@link AngularComponentMetaManager} for the
+ * worker's lifetime: one TypeScript language service per matched tsconfig, kept warm across
+ * components and kept fresh by the manager's file watching. The manager is created lazily on the
+ * first eligible request and memoized; when it cannot be created the middleware passes through to
+ * the rest of the chain.
+ *
+ * Not built on `createLazyDocgenMiddleware`: that util spreads this provider's payload over
+ * downstream unconditionally, and an error payload here must not override what another provider
+ * produced.
  */
-export const createDocgenProvider = async (
-  options: AngularDocgenOptions
-): Promise<DocgenMiddleware> => {
-  await ensureCompodocDocumentation({
-    compodocArgs: options.compodocArgs,
-    tsconfig: options.tsconfig,
-    workspaceRoot: options.workspaceRoot,
-    outputDir: options.outputDir,
-  });
-
-  const readDocumentationJson = createDocumentationJsonReader();
+export const createDocgenProvider = (options: AngularDocgenOptions = {}): DocgenMiddleware => {
+  let managerPromise: Promise<AngularComponentMetaManager | undefined> | undefined;
 
   return (nextDocgen: DocgenProvider): DocgenProvider =>
     async (input) => {
@@ -64,12 +60,17 @@ export const createDocgenProvider = async (
         return nextDocgen(input);
       }
 
-      const ours = buildDocgenPayload(input, {
-        options,
-        readDocumentationJson,
-        logger: workerLogger,
-      });
+      const manager = await (managerPromise ??= createManager());
+      if (!manager) {
+        return nextDocgen(input);
+      }
 
+      const ours = buildDocgenPayload(input, { manager, options, logger: workerLogger });
+      // The language services hold large type caches; check heap pressure after each extraction
+      // since there is no batch surface to hang this on.
+      manager.recycleIfHeapPressured();
+
+      // `undefined` uniformly means "no Angular component here": delegate downstream.
       if (!ours) {
         return nextDocgen(input);
       }

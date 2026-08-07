@@ -3,7 +3,7 @@
  *
  * Owns a single worker (docgen extraction serializes on one warm TypeScript program, so a pool
  * would only duplicate multi-second program builds and memory). Spawned once per process when the
- * compiled worker script is present; when it is missing — e.g. running from source without a build —
+ * compiled worker script is present; when it is missing - e.g. running from source without a build -
  * {@link createDocgenWorkerClient} returns `undefined` and the caller skips docgen registration
  * rather than silently extracting on the main thread.
  */
@@ -92,10 +92,11 @@ class DocgenWorker implements DocgenWorkerClient {
     // Surface late init rejections instead of leaving an unhandled rejection.
     this.ready.catch(() => undefined);
 
-    // Never let an idle worker keep the process alive. This has to run after every `on('message')`
-    // above: attaching a message listener re-references the port, so unreferencing first leaves the
-    // worker holding the event loop open and a static build never exits.
-    this.worker.unref();
+    // The worker stays referenced through init (it is spawned lazily, so work is always imminent),
+    // then {@link refWhileBusy} keeps it referenced exactly while extractions are in flight. An
+    // idle worker must not keep the process alive - but an all-unref'd client let a static build
+    // exit zero before slow extractions finished, silently dropping every docgen snapshot.
+    this.ready.finally(() => this.refWhileBusy()).catch(() => undefined);
 
     this.post({ type: 'init', descriptors });
   }
@@ -111,13 +112,29 @@ class DocgenWorker implements DocgenWorkerClient {
       if (this.taskTimeoutMs > 0) {
         pending.timer = setTimeout(() => {
           this.pending.delete(id);
+          this.refWhileBusy();
           reject(new Error(`docgen worker extract ${id} timed out after ${this.taskTimeoutMs}ms`));
         }, this.taskTimeoutMs);
         pending.timer.unref?.();
       }
       this.pending.set(id, pending);
+      this.refWhileBusy();
       this.post({ type: 'extract', id, entry });
     });
+  }
+
+  /**
+   * Keep the process alive exactly while extractions are in flight. Idle, the worker stays
+   * unref'd so it never blocks exit - but with everything unref'd a static build whose main work
+   * finishes before a slow extraction would drain the event loop and exit zero WITHOUT writing
+   * the docgen service snapshots. Referencing while `pending` is non-empty closes that hole.
+   */
+  private refWhileBusy(): void {
+    if (this.pending.size > 0) {
+      this.worker.ref();
+    } else {
+      this.worker.unref();
+    }
   }
 
   private post(msg: DocgenWorkerRequest): void {
@@ -136,6 +153,7 @@ class DocgenWorker implements DocgenWorkerClient {
       clearTimeout(pending.timer);
     }
     this.pending.delete(msg.id);
+    this.refWhileBusy();
     if (msg.error) {
       pending.reject(errorLikeToError(msg.error));
     } else {
@@ -165,6 +183,7 @@ class DocgenWorker implements DocgenWorkerClient {
       pending.reject(error);
     }
     this.pending.clear();
+    this.worker.unref();
   }
 }
 
@@ -179,12 +198,12 @@ function resolveWorkerScriptPath(): string | undefined {
 
 /**
  * Creates the docgen worker client for `descriptors`. Returns `undefined` when the compiled worker
- * script is unavailable (no fallback — the caller skips docgen registration). The worker lives for the
+ * script is unavailable (no fallback - the caller skips docgen registration). The worker lives for the
  * process lifetime and is torn down with it, so there is nothing to dispose explicitly.
  *
  * The worker thread is spawned lazily on the first {@link DocgenWorkerClient.extract}, not here:
  * spawning the thread and importing the provider module graph is CPU work, and extraction is gated
- * until a story renders, so there is nothing to keep warm at dev-server boot — spawning eagerly would
+ * until a story renders, so there is nothing to keep warm at dev-server boot - spawning eagerly would
  * only contend with Vite's cold start.
  */
 export function createDocgenWorkerClient(

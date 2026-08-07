@@ -54,10 +54,15 @@ export function createMetaComponentResolver(options: MetaComponentResolverOption
   });
 
   return function resolveMetaComponent(csf: CsfFile, storyPath: string): MetaComponentResolution {
-    const localName = csf._meta?.component;
-    if (!localName) {
+    // Read the parsed node rather than `_meta.component`, which is printed source text: only a bare
+    // identifier names a binding we can follow, and `Comp<Props>` is that identifier plus type-level
+    // arguments. Any other expression (a member access, a call) is not something to resolve.
+    const node = csf._metaAnnotations.component;
+    const identifier = node && t.isTSInstantiationExpression(node) ? node.expression : node;
+    if (!identifier || !t.isIdentifier(identifier)) {
       return { reason: 'no-meta-component' };
     }
+    const localName = identifier.name;
 
     const binding = findImport(csf, localName);
     if (binding.kind === 'unsupported') {

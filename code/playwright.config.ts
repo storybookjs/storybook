@@ -8,7 +8,7 @@ import { defineConfig, devices } from '@playwright/test';
 // process.env.STORYBOOK_TEMPLATE_NAME = 'react-vite/default-ts';
 
 /** Specs that mutate sandbox files; they must not run alongside other specs. */
-const MUTATING_SPECS = /change-detection\.spec\.ts/;
+const MUTATING_SPECS = /(change-detection|docgen-hot-update)\.spec\.ts/;
 
 /** See https://playwright.dev/docs/test-configuration. */
 export default defineConfig({

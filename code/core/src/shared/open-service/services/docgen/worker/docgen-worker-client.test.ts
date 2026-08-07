@@ -11,6 +11,7 @@ interface FakeWorker {
   postMessage: ReturnType<typeof vi.fn>;
   terminate: ReturnType<typeof vi.fn>;
   unref: ReturnType<typeof vi.fn>;
+  ref: ReturnType<typeof vi.fn>;
   /** `message` listeners registered at the moment `unref()` ran; see the ordering test below. */
   messageListenersAtUnref: number;
   emit: (event: string, ...args: unknown[]) => boolean;
@@ -35,6 +36,7 @@ vi.mock('node:worker_threads', async () => {
     unref = vi.fn(() => {
       this.messageListenersAtUnref = this.listenerCount('message');
     });
+    ref = vi.fn();
   }
 
   return { Worker: FakeWorkerImpl };
@@ -100,24 +102,34 @@ describe('createDocgenWorkerClient', () => {
 
     expect(fakeWorkers).toHaveLength(1);
     expect(worker.posted[0]).toEqual({ type: 'init', descriptors: DESCRIPTORS });
-    expect(worker.unref).toHaveBeenCalled();
-
-    // Attaching a `message` listener re-references the worker's port, so unreferencing before the
-    // listeners are on leaves the worker holding the event loop open and `build-storybook` never
-    // exits. Asserting the order here because a unit test cannot observe the process failing to
-    // exit; the ordering is what makes the difference.
-    expect(worker.messageListenersAtUnref).toBeGreaterThan(0);
+    // The worker stays referenced through init: an all-unref'd client let a static build drain
+    // the event loop and exit zero before a slow extraction finished, dropping every snapshot.
+    expect(worker.unref).not.toHaveBeenCalled();
 
     // Drive the extract to completion so dispose isn't racing a not-yet-queued request.
     ackInit(worker);
     await Promise.resolve();
     const extractMsg = worker.posted.find((m) => m.type === 'extract') as { id: number };
+    // Referenced while the extraction is in flight (a transient unref may precede it when the
+    // ready-settled rebalance runs before the extract continuation - microtasks cannot drain the
+    // event loop, so only the final order matters).
+    expect(worker.ref).toHaveBeenCalled();
     worker.emit('message', {
       type: 'extract',
       id: extractMsg.id,
       payload: { id: 'button', name: 'Button', path: './button.stories.tsx', jsDocTags: {} },
     } satisfies DocgenWorkerResponse);
     await expect(promise).resolves.toMatchObject({ id: 'button' });
+    // ...and released once nothing is pending, so an idle worker never blocks process exit: the
+    // LAST lifecycle call must be an unref, after every ref.
+    const lastRef = Math.max(...worker.ref.mock.invocationCallOrder);
+    const lastUnref = Math.max(...worker.unref.mock.invocationCallOrder);
+    expect(lastUnref).toBeGreaterThan(lastRef);
+
+    // Attaching a `message` listener re-references the worker's port, so an unref that ran before
+    // the listeners were on would leave the worker holding the event loop open forever. Asserting
+    // the order because a unit test cannot observe the process failing to exit.
+    expect(worker.messageListenersAtUnref).toBeGreaterThan(0);
   });
 });
 
@@ -164,7 +176,7 @@ describe('DocgenWorkerClient.extract', () => {
 
     const promise = client.extract({ id: 'x' } as any);
     const worker = fakeWorkers[0];
-    // Worker dies during boot, before its `init` ack — `ready` must reject so the awaiting extract
+    // Worker dies during boot, before its `init` ack - `ready` must reject so the awaiting extract
     // fails fast instead of hanging forever.
     worker.emit('exit', 1);
 

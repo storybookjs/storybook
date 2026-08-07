@@ -7,6 +7,7 @@ import type {
   Component,
   Decorator,
   Directive,
+  EnumTypeChild,
   Injectable,
   JsDocTag,
   Method,
@@ -24,7 +25,8 @@ import type {
  *
  * Its known gaps (invented `NaN`/`false` defaults, the `other`/`empty-enum` catch-all, dropped
  * JSDoc tags, quoted `@default` values) are deliberate: the committed baselines record them, so
- * changing any of them is a behaviour change, not a fix.
+ * changing any of them is a behaviour change, not a fix. The `modern` option fixes them for the
+ * Angular Component Meta path, whose own baselines record the corrected output.
  */
 
 /** Minimal logging surface, so the module never reaches for a host-specific logger. */
@@ -56,10 +58,36 @@ export interface ExtractArgTypesOptions extends CompodocLookupOptions {
   /**
    * Unwraps an HTML fragment to plain text. Compodoc renders `@default` tag comments through
    * Markdown, so they arrive as HTML. Required: the browser has a real HTML parser and keeps using
-   * it, while a Node host has to supply the DOM-free replacement.
+   * it, while a Node host has to supply the DOM-free replacement. Hosts whose comments are already
+   * plain text (the Angular Component Meta analyzer) must pass {@link unwrapPlainText} instead - an
+   * HTML unwrapper would mangle plain text like `Array<string>`.
    */
   unwrapHtml: (html: unknown) => string;
+  /**
+   * Opt into the Angular Component Meta path's corrected behaviour, which becomes the default once
+   * the legacy Compodoc baselines flip. Only when set:
+   *
+   * - No invented defaults: a property without a literal default and without a usable `@default`
+   *   tag records no default value (legacy invents `NaN` via `Number(undefined)` and `false` via
+   *   `undefined === 'true'`), and an expression default that does not parse as the declared
+   *   primitive keeps its raw source text instead of collapsing to `NaN`/`false`.
+   * - `@default` tag values are recorded clean: trimmed, surrounding quotes stripped, and a bare
+   *   tag with no comment is ignored instead of recording the string `"undefined"`.
+   * - `function`-typed members get the structured `{ name: 'function' }` sbType instead of the
+   *   `other`/`empty-enum` catch-all.
+   * - A property's own JSDoc tags surface as `table.jsDocTags` in the shape the docs UI consumes.
+   *
+   * Off by default: the committed legacy baselines pin the old quirks byte-for-byte.
+   */
+  modern?: boolean;
 }
+
+/**
+ * `unwrapHtml` for hosts whose doc comments are already plain text. Running plain text through an
+ * HTML unwrapper instead would corrupt it: `Array<string>` loses `<string>`, because a
+ * letter-opened angle bracket reads as a tag.
+ */
+export const unwrapPlainText = (text: unknown): string => String(text);
 
 /** Anything `findComponentByName` can return, i.e. any Compodoc entry with extractable members. */
 export type CompodocEntry = Class | Directive | Injectable | Pipe;
@@ -71,6 +99,18 @@ type CompodocMemberKey =
   | 'methodsClass'
   | 'inputsClass'
   | 'outputsClass';
+
+/** Emission order of the props table's categories. */
+const SECTIONS = [
+  'properties',
+  'inputs',
+  'outputs',
+  'methods',
+  'view child',
+  'view children',
+  'content child',
+  'content children',
+];
 
 export const isMethod = (methodOrProp: Method | Property): methodOrProp is Method => {
   return (methodOrProp as Method).args !== undefined;
@@ -212,10 +252,25 @@ const pickDeclaration = <T extends { file?: string }>(
   );
 };
 
+/**
+ * A union's members minus the ones that only express optionality: `undefined` and `null` are not
+ * options a control can offer.
+ */
+const selectableUnionMembers = (type: string): string[] =>
+  type
+    .split('|')
+    .map((member) => member.trim())
+    .filter((member) => member !== 'undefined' && member !== 'null');
+
+/** An enum member Compodoc recorded a usable value for. */
+const hasEnumValue = (child: EnumTypeChild): child is EnumTypeChild & { value: string | number } =>
+  Boolean(child.value);
+
 const extractEnumValues = (
   compodocType: unknown,
   compodocJson: CompodocJson | undefined,
-  componentFile?: string
+  componentFile?: string,
+  modern = false
 ): SBEnumType['value'] | null => {
   const enumType = pickDeclaration(
     compodocJson?.miscellaneous?.enumerations?.filter((x) => x.name === compodocType) ?? [],
@@ -224,16 +279,25 @@ const extractEnumValues = (
 
   // `childs` is guarded like the sibling lookups: an enumeration entry without it must not throw a
   // `TypeError` out of the whole extraction.
-  if (Array.isArray(enumType?.childs) && enumType.childs.every((x) => x.value)) {
-    return enumType.childs.map((x) => x.value as string);
+  const childs = enumType?.childs;
+  if (Array.isArray(childs) && childs.every(hasEnumValue)) {
+    return childs.map((child) => child.value);
   }
 
   if (typeof compodocType !== 'string' || compodocType.indexOf('|') === -1) {
     return null;
   }
 
+  // Legacy keeps `undefined`/`null` members so `"A" | undefined` stays the `empty-enum` catch-all
+  // byte-for-byte.
+  const selectable = modern
+    ? selectableUnionMembers(compodocType)
+    : compodocType.split('|').map((value) => value.trim());
+  if (selectable.length === 0) {
+    return null;
+  }
   try {
-    return compodocType.split('|').map((value) => JSON.parse(value));
+    return selectable.map((value) => JSON.parse(value));
   } catch (e) {
     return null;
   }
@@ -265,12 +329,17 @@ const resolveTypealias = (
   return resolveTypealias(typeAlias.rawtype, compodocJson, componentFile, seen);
 };
 
+/** Compodoc's bare `function` type string, or a trivially function-shaped signature. */
+const isFunctionTypeString = (compodocType: string): boolean =>
+  compodocType === 'function' || /^\(.*\)\s*=>/.test(compodocType);
+
 export const extractType = (
   property: Property,
   defaultValue: any,
   compodocJson: CompodocJson | undefined,
   /** Source file of the component being extracted, used to disambiguate same-named declarations. */
-  componentFile?: string
+  componentFile?: string,
+  modern = false
 ): SBType => {
   const compodocType = property.type || extractTypeFromValue(defaultValue);
   switch (compodocType) {
@@ -281,8 +350,19 @@ export const extractType = (
     case null:
       return { name: 'other', value: 'void' };
     default: {
+      if (modern && typeof compodocType === 'string' && isFunctionTypeString(compodocType)) {
+        return { name: 'function' };
+      }
       const resolvedType = resolveTypealias(compodocType, compodocJson, componentFile);
-      const enumValues = extractEnumValues(resolvedType, compodocJson, componentFile);
+      // An optional primitive (`string | undefined`, e.g. `@Input() color? = '#757575'`) is a
+      // primitive control; treating it as an enum candidate loses the control entirely.
+      if (modern && typeof resolvedType === 'string' && resolvedType.indexOf('|') !== -1) {
+        const members = [...new Set(selectableUnionMembers(resolvedType))];
+        if (members.length === 1 && ['string', 'boolean', 'number'].includes(members[0])) {
+          return { name: members[0] as 'string' | 'boolean' | 'number' };
+        }
+      }
+      const enumValues = extractEnumValues(resolvedType, compodocJson, componentFile, modern);
       return enumValues
         ? { name: 'enum', value: enumValues }
         : { name: 'other', value: 'empty-enum' };
@@ -321,10 +401,40 @@ const castDefaultValue = (property: Property, defaultValue: any) => {
   }
 };
 
+/**
+ * The `modern` replacement for {@link castDefaultValue}: never invents a value. A missing default
+ * stays missing instead of casting `undefined` into `NaN` or `false`, and an expression default
+ * that does not parse as the declared primitive (`Math.max(1, 3)`, `5 * 60 * 1000`) keeps its raw
+ * source text as the summary.
+ */
+const castDefaultValueModern = (property: Property, defaultValue: any) => {
+  if (defaultValue === undefined) {
+    return undefined;
+  }
+  switch (property.type) {
+    case 'boolean':
+      if (defaultValue === 'true' || defaultValue === 'false') {
+        return defaultValue === 'true';
+      }
+      return defaultValue;
+    case 'number': {
+      const parsed = Number(defaultValue);
+      return Number.isNaN(parsed) && defaultValue !== 'NaN' ? defaultValue : parsed;
+    }
+    case 'EventEmitter':
+      return undefined;
+    case 'string':
+      return defaultValue;
+    default:
+      return castDefaultValue(property, defaultValue);
+  }
+};
+
 const extractDefaultValueFromComments = (
   property: Property,
   value: any,
-  unwrapHtml: (html: unknown) => string
+  unwrapHtml: (html: unknown) => string,
+  modern: boolean
 ) => {
   let commentValue = value;
   // `jsdoctags` is only read after the caller has established it is non-empty.
@@ -333,6 +443,14 @@ const extractDefaultValueFromComments = (
     // throws into `extractDefaultValue`'s catch, which drops the property's default entirely.
     const tagName = (tag.tagName as { escapedText?: string }).escapedText;
     if (tagName === 'default' || tagName === 'defaultvalue') {
+      if (modern) {
+        // A bare `@default` with no comment is not a usable default (legacy records the string
+        // "undefined"), and the value is recorded clean rather than quoted-with-trailing-newline.
+        if (tag.comment !== undefined) {
+          commentValue = unquote(unwrapHtml(tag.comment).trim());
+        }
+        return;
+      }
       // Last tag wins when a property carries several `@default`s.
       commentValue = unwrapHtml(tag.comment);
     }
@@ -340,17 +458,22 @@ const extractDefaultValueFromComments = (
   return commentValue;
 };
 
+/** Strips one pair of symmetric surrounding quotes, like the `defaultValue` treatment. */
+const unquote = (value: string): string =>
+  value.replace(/^'(.*)'$/, '$1').replace(/^"(.*)"$/, '$1');
+
 const extractDefaultValue = (
   property: Property,
   logger: CompodocParsingLogger,
-  unwrapHtml: (html: unknown) => string
+  unwrapHtml: (html: unknown) => string,
+  modern: boolean
 ) => {
   try {
     let value: any = property.defaultValue?.replace(/^'(.*)'$/, '$1');
-    value = castDefaultValue(property, value);
+    value = modern ? castDefaultValueModern(property, value) : castDefaultValue(property, value);
 
     if (value == null && (property.jsdoctags?.length ?? 0) > 0) {
-      value = extractDefaultValueFromComments(property, value, unwrapHtml);
+      value = extractDefaultValueFromComments(property, value, unwrapHtml, modern);
     }
 
     return value;
@@ -360,10 +483,48 @@ const extractDefaultValue = (
   }
 };
 
+/**
+ * A member's JSDoc tags in the shape the docs UI reads from `table.jsDocTags` (the same shape the
+ * React path records there): `@deprecated` and `@returns` comments. `@param` names are not part of
+ * the Compodoc tag shape, so param tags are not surfaced.
+ */
+const extractMemberJsDocTags = (
+  member: Method | Property,
+  unwrapHtml: (html: unknown) => string
+): { deprecated?: string; returns?: { description: string } } | undefined => {
+  let deprecated: string | undefined;
+  let returns: { description: string } | undefined;
+  for (const tag of member.jsdoctags ?? []) {
+    const tagName = tag.tagName?.escapedText;
+    if (tagName === 'deprecated') {
+      // A bare `@deprecated` still marks the member deprecated, so it lands as an empty comment.
+      deprecated = tag.comment === undefined ? '' : unwrapHtml(tag.comment).trim();
+    } else if ((tagName === 'returns' || tagName === 'return') && tag.comment !== undefined) {
+      returns = { description: unwrapHtml(tag.comment).trim() };
+    }
+  }
+  if (deprecated === undefined && returns === undefined) {
+    return undefined;
+  }
+  return {
+    ...(deprecated !== undefined ? { deprecated } : {}),
+    ...(returns !== undefined ? { returns } : {}),
+  };
+};
+
 const readMembers = (componentData: CompodocEntry, key: string): (Method | Property)[] =>
   ((componentData as unknown as Record<string, unknown>)[key] as
     | (Method | Property)[]
     | undefined) || [];
+
+/**
+ * Only a component or directive has the `*Class` member arrays. Everything else is read through
+ * `properties`/`methods`, and must not be inspected for decorator IO: the Angular Component Meta
+ * analyzer splits signal and decorator IO onto plain classes too, so a base class holding a
+ * `model()` would otherwise contribute a `${name}Change` output to an entry that has no inputs.
+ */
+const isDirectiveEntry = (componentData: CompodocEntry): componentData is Directive =>
+  componentData.type === 'component' || componentData.type === 'directive';
 
 /**
  * The `model()` members of a Compodoc entry: an output whose same-named input is declared on the
@@ -371,10 +532,11 @@ const readMembers = (componentData: CompodocEntry, key: string): (Method | Prope
  * collision shares the name but not the line. The package README has the quirk in full.
  */
 const getModelProperties = (componentData: CompodocEntry): Property[] => {
-  const inputsByName = new Map(
-    (readMembers(componentData, 'inputsClass') as Property[]).map((item) => [item.name, item])
-  );
-  return (readMembers(componentData, 'outputsClass') as Property[]).filter((item) => {
+  if (!isDirectiveEntry(componentData)) {
+    return [];
+  }
+  const inputsByName = new Map(componentData.inputsClass.map((item) => [item.name, item]));
+  return componentData.outputsClass.filter((item) => {
     const input = inputsByName.get(item.name);
     return input?.line !== undefined && input.line === item.line;
   });
@@ -382,15 +544,19 @@ const getModelProperties = (componentData: CompodocEntry): Property[] => {
 
 export const extractArgTypesFromData = (
   componentData: CompodocEntry,
-  { compodocJson, filterNonInputControls, logger = NOOP_LOGGER, unwrapHtml }: ExtractArgTypesOptions
+  {
+    compodocJson,
+    filterNonInputControls,
+    logger = NOOP_LOGGER,
+    unwrapHtml,
+    modern = false,
+  }: ExtractArgTypesOptions
 ) => {
   const sectionToItems: Record<string, InputType[]> = {};
   const componentClasses: CompodocMemberKey[] = filterNonInputControls
     ? ['inputsClass']
     : ['propertiesClass', 'methodsClass', 'inputsClass', 'outputsClass'];
-  const compodocClasses: CompodocMemberKey[] = ['component', 'directive'].includes(
-    componentData.type
-  )
+  const compodocClasses: CompodocMemberKey[] = isDirectiveEntry(componentData)
     ? componentClasses
     : ['properties', 'methods'];
 
@@ -400,6 +566,11 @@ export const extractArgTypesFromData = (
   compodocClasses.forEach((key: CompodocMemberKey) => {
     const data = readMembers(componentData, key);
     data.forEach((item: Method | Property) => {
+      // ES-private `#member`s are inaccessible outside the class; a props-table row for one is
+      // noise. Compodoc records them, so the legacy path keeps showing them unchanged.
+      if (modern && item.name.startsWith('#')) {
+        return;
+      }
       const section = mapItemToSection(key, item);
 
       // Suppress compodoc's spurious bare-name `outputsClass` duplicate of a
@@ -411,13 +582,17 @@ export const extractArgTypesFromData = (
 
       const defaultValue = isMethod(item)
         ? undefined
-        : extractDefaultValue(item as Property, logger, unwrapHtml);
+        : extractDefaultValue(item, logger, unwrapHtml, modern);
 
       const type: SBType =
         isMethod(item) || (section !== 'inputs' && section !== 'properties')
           ? { name: 'other', value: 'void' }
-          : extractType(item as Property, defaultValue, compodocJson, componentData.file);
+          : extractType(item, defaultValue, compodocJson, componentData.file, modern);
       const action = section === 'outputs' ? { action: item.name } : {};
+
+      // Methods deserve their tags too: a `@deprecated` on a method would otherwise vanish
+      // entirely, since methods never carry a description-based fallback.
+      const jsDocTags = modern ? extractMemberJsDocTags(item, unwrapHtml) : undefined;
 
       const argType = {
         name: item.name,
@@ -426,9 +601,10 @@ export const extractArgTypesFromData = (
         ...action,
         table: {
           category: section,
+          ...(jsDocTags !== undefined ? { jsDocTags } : {}),
           type: {
             summary: isMethod(item) ? displaySignature(item) : item.type,
-            required: isMethod(item) ? false : isRequired(item as Property),
+            required: isMethod(item) ? false : isRequired(item),
           },
           defaultValue: { summary: defaultValue },
         },
@@ -471,16 +647,6 @@ export const extractArgTypesFromData = (
     sectionToItems.outputs.push(argType);
   });
 
-  const SECTIONS = [
-    'properties',
-    'inputs',
-    'outputs',
-    'methods',
-    'view child',
-    'view children',
-    'content child',
-    'content children',
-  ];
   const argTypes: ArgTypes = {};
   SECTIONS.forEach((section) => {
     const items = sectionToItems[section];

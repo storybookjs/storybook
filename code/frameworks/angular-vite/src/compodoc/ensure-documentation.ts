@@ -23,8 +23,9 @@ export const COMPODOC_RUN_MARKER = '.compodoc.run';
 const RUN_ID_ENV = 'STORYBOOK_COMPODOC_RUN_ID';
 
 /**
- * Identifies one Storybook run. Held in the environment so worker threads and the Vitest addon's
- * child, which inherit it, agree with the process that started the run instead of each scanning.
+ * Identifies one Storybook run. Held in the environment so child processes that build their own
+ * preview, such as the Vitest addon's, agree with the process that started the run instead of each
+ * scanning.
  */
 const currentRunId = (): string => (process.env[RUN_ID_ENV] ??= randomUUID());
 

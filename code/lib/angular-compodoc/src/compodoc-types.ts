@@ -12,6 +12,8 @@ export interface Method {
   decorators?: Decorator[];
   description?: Html;
   rawdescription?: string;
+  /** Methods carry `@deprecated`/`@returns` too, and the argTypes extractor reads them. */
+  jsdoctags?: JsDocTag[];
 }
 
 export interface JsDocTag {
@@ -143,7 +145,12 @@ export interface EnumType {
 
 export interface EnumTypeChild {
   name: string;
-  value?: string;
+  /**
+   * Numeric for an enum member with a numeric initializer, which is what keeps a `0` member falsy
+   * and correctly out of the extractor's enum path. Absent when the member has no literal
+   * initializer at all.
+   */
+  value?: string | number;
 }
 
 /**

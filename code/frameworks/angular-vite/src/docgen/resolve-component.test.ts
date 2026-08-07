@@ -44,6 +44,19 @@ describe('resolveMetaComponent', () => {
       },
     ],
     [
+      // `component: ListFilterComponent<Entity>` - a TS instantiation expression, seen on
+      // Aam-Digital/ndb-core; the type arguments are type-level only.
+      'a generic instantiation expression',
+      `import { ButtonComponent } from './button.component';
+       export default { component: ButtonComponent<SomeEntity> };`,
+      {
+        localName: 'ButtonComponent',
+        importId: './button.component',
+        exportName: 'ButtonComponent',
+        path: join(fixtures, 'button.component.ts'),
+      },
+    ],
+    [
       'a default import, whose class name the story file never mentions',
       `import Button from './default-button.component';
        export default { component: Button };`,
@@ -109,6 +122,21 @@ describe('resolveMetaComponent', () => {
       `import * as ButtonComponent from './button.component';
        export default { component: ButtonComponent };`,
       'no-component-import',
+    ],
+    [
+      // Only a bare identifier names a binding to follow. Reporting a miss beats reporting a
+      // story-local component called `Buttons.ButtonComponent`, which is what reading the printed
+      // source text used to produce.
+      'a member expression, which names no binding to follow',
+      `import * as Buttons from './button.component';
+       export default { component: Buttons.ButtonComponent };`,
+      'no-meta-component',
+    ],
+    [
+      'a call expression, which static analysis cannot follow to a class',
+      `import { makeButton } from './button.component';
+       export default { component: makeButton() };`,
+      'no-meta-component',
     ],
   ];
 

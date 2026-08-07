@@ -240,6 +240,66 @@ describe('multi-project management', () => {
     });
   });
 
+  it(
+    're-extracts a rewrite whose mtime is unchanged after onFilesChanged',
+    { timeout: 30_000 },
+    () => {
+      tempDir = createTempDir();
+
+      const files = writeFiles(tempDir, {
+        'tsconfig.json': tsconfigJSON(),
+        'Tag.tsx': dedent`
+          import React from 'react';
+          export const Tag = (_props: { text: string }) => <span />;
+        `,
+        'Tag.stories.tsx': dedent`
+          import { Tag } from './Tag';
+          export default { component: Tag };
+        `,
+      });
+
+      manager = new ComponentMetaManager(ts);
+      const tagPath = files['Tag.tsx'];
+
+      // Pin a whole-second mtime so both writes land on the identical timestamp, reproducing a
+      // second write within one mtime tick (scripted codegen, coarse-mtime filesystems).
+      const pinned = new Date(Math.floor(Date.now() / 1000) * 1000);
+      fs.utimesSync(tagPath, pinned, pinned);
+
+      const project = manager.getProjectForFile(tagPath);
+      const before: StoryRef[] = [
+        {
+          storyPath: files['Tag.stories.tsx'],
+          component: { componentName: 'Tag', importName: 'Tag', path: tagPath, isPackage: false },
+        },
+      ];
+      project.extractPropsFromStories(before);
+      expect(before[0].component?.reactComponentMeta?.props?.text).toBeDefined();
+      expect(before[0].component?.reactComponentMeta?.props?.color).toBeUndefined();
+
+      fs.writeFileSync(
+        tagPath,
+        dedent`
+          import React from 'react';
+          export const Tag = (_props: { text: string; color?: string }) => <span />;
+        `
+      );
+      fs.utimesSync(tagPath, pinned, pinned);
+      expect(fs.statSync(tagPath).mtime.valueOf()).toBe(pinned.valueOf());
+
+      manager.onFilesChanged([{ filePath: tagPath, type: 'changed' }]);
+
+      const after: StoryRef[] = [
+        {
+          storyPath: files['Tag.stories.tsx'],
+          component: { componentName: 'Tag', importName: 'Tag', path: tagPath, isPackage: false },
+        },
+      ];
+      project.extractPropsFromStories(after);
+      expect(after[0].component?.reactComponentMeta?.props?.color).toBeDefined();
+    }
+  );
+
   it('handles config change: deleted tsconfig disposes project', () => {
     tempDir = createTempDir();
 

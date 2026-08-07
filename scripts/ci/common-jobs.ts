@@ -433,6 +433,9 @@ export const defineCircleciCompletion = (requires: JobOrNoOpJob[]) =>
     requires
   );
 
+const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';
+const DOCGEN_PERF_RESULTS_DIR = 'perf-results';
+
 export const docgenMemoryGate = defineJob(
   'Docgen memory gate',
   () => ({
@@ -445,10 +448,37 @@ export const docgenMemoryGate = defineJob(
       {
         run: {
           name: 'Docgen-server re-extraction memory gate',
-          working_directory: 'code/lib/docgen-harness',
+          working_directory: DOCGEN_HARNESS_DIR,
           command: 'yarn bench:docgen-memory',
         },
       },
+    ],
+  }),
+  [commonJobsNoOpJob]
+);
+
+export const docgenPerfGate = defineJob(
+  'Docgen perf gate',
+  () => ({
+    executor: {
+      name: 'sb_node_22_classic',
+      class: 'medium+',
+    },
+    steps: [
+      ...workflow.restoreLinux(),
+      {
+        run: {
+          name: 'Per-engine docgen perf budgets',
+          working_directory: DOCGEN_HARNESS_DIR,
+          command: `yarn bench:docgen-perf-gate --out ./${DOCGEN_PERF_RESULTS_DIR}`,
+          // A full run is ~5 minutes; the ceiling covers a hung compodoc child's ten-minute kill.
+          no_output_timeout: '30m',
+        },
+      },
+      artifact.persist(
+        join(LINUX_ROOT_DIR, WORKING_DIR, DOCGEN_HARNESS_DIR, DOCGEN_PERF_RESULTS_DIR),
+        'docgen-perf-results'
+      ),
     ],
   }),
   [commonJobsNoOpJob]

@@ -278,7 +278,12 @@ export const baseTemplates = {
     // The point of this template is the canary line, and canaries are published
     // daily. `@next/*` covers the platform binaries, and `eslint-config-next`
     // is pinned to the same canary version by create-next-app.
-    minAgeGateExemptions: ['next', '@next/*', 'eslint-config-next'],
+    //
+    // `@tailwindcss/turbopack` is not part of that line — `--tailwind` pulls it in,
+    // and it is new enough that `^4` has only ever matched one release. Until it has
+    // a second one, every release it makes is the sole candidate and the gate blocks
+    // the whole template. Drop this entry once 4.x has some history.
+    minAgeGateExemptions: ['next', '@next/*', 'eslint-config-next', '@tailwindcss/turbopack'],
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -603,10 +608,8 @@ export const baseTemplates = {
   'vue3-vite/default-js': {
     name: 'Vue v3 (Vite | JavaScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template vue',
-    // @storybook/vue3-vite depends on vue-component-meta@^3.3.9; that release is
-    // still inside the 7-day age gate and contains a fix we need. Written onto
-    // before-storybook and inherited by the after-storybook install.
-    minAgeGateExemptions: ['vue-component-meta'],
+    // vue-component-meta@^3.3.9 pins @vue/language-core; both are inside the age gate.
+    minAgeGateExemptions: ['vue-component-meta', '@vue/language-core'],
     expected: {
       framework: '@storybook/vue3-vite',
       renderer: '@storybook/vue3',
@@ -620,8 +623,7 @@ export const baseTemplates = {
   'vue3-vite/default-ts': {
     name: 'Vue v3 (Vite | TypeScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template vue-ts',
-    // See vue3-vite/default-js — same @storybook/vue3-vite dependency constraint.
-    minAgeGateExemptions: ['vue-component-meta'],
+    minAgeGateExemptions: ['vue-component-meta', '@vue/language-core'],
     expected: {
       framework: '@storybook/vue3-vite',
       renderer: '@storybook/vue3',

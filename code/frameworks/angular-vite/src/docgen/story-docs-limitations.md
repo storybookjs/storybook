@@ -39,7 +39,7 @@ Declare them on the story object or on the meta instead.
 ## The component's metadata has to be available
 
 The snippet needs the component's selector and its input and output names.
-Today those come from Compodoc's `documentation.json`, so when Compodoc is disabled or has not run, no snippet is generated and Storybook falls back to showing the story's own source.
+Under `features.experimentalDocgenServer` those come from the in-process analyzer in `@storybook/angular-cm`, which reads the component's TypeScript source directly.
+When it cannot resolve the component, no snippet is generated and Storybook falls back to showing the story's own source.
 
-Which engine supplies that metadata is not something snippet generation knows about; it consumes a resolver.
-Replacing Compodoc with another source changes the resolver, not the snippets.
+The generator only consumes a selector plus binding names, so swapping the metadata source changes the resolver, not the snippets.

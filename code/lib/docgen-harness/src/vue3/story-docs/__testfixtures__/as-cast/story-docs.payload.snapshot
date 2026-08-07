@@ -1,0 +1,14 @@
+{
+  "id": "as-cast",
+  "import": "import AsCastButton from './AsCastButton.vue';",
+  "name": "AsCastButton",
+  "path": "__PATH__",
+  "stories": {
+    "forms-as-cast--primary": {
+      "description": "Cast story description.",
+      "id": "forms-as-cast--primary",
+      "name": "Primary",
+      "summary": undefined,
+    },
+  },
+}

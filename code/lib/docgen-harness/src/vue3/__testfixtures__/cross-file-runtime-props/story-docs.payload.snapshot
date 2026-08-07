@@ -1,0 +1,14 @@
+{
+  "id": "cross-file-runtime-props",
+  "import": "import CrossFileRuntimeProps from './CrossFileRuntimeProps.vue';",
+  "name": "CrossFileRuntimeProps",
+  "path": "__PATH__",
+  "stories": {
+    "forms-cross-file-runtime-props--props-as-written": {
+      "description": undefined,
+      "id": "forms-cross-file-runtime-props--props-as-written",
+      "name": "Props As Written",
+      "summary": undefined,
+    },
+  },
+}

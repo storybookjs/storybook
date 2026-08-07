@@ -35,6 +35,19 @@ export interface ComponentMetaFileSystem {
 }
 
 /**
+ * The fs probes {@link ../ProjectFileTracker} needs for snapshot reads and freshness checks.
+ * `typeof ts` satisfies this via `ts.sys`, so callers pass their own `typescript` module (see
+ * {@link ComponentMetaFileSystem} for why the contract is structural).
+ */
+export interface ProjectFileSystem {
+  sys: {
+    fileExists(path: string): boolean;
+    readFile(path: string): string | undefined;
+    getModifiedTime?(path: string): Date | undefined;
+  };
+}
+
+/**
  * Contract a per-tsconfig project must satisfy for {@link ../ComponentMetaManager} to manage it.
  *
  * The manager only needs enough surface to match files to tsconfigs (parsed command lines,

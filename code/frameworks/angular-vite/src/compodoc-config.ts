@@ -6,11 +6,10 @@
  * each derived it separately they drifted, and a redirected output directory regenerated on every
  * cold start.
  */
-import type { Preset } from 'storybook/internal/types';
-
 import { resolve } from 'node:path';
 
 import { findTsconfigUp } from './find-tsconfig.ts';
+import { readFrameworkOptions } from './framework-options.ts';
 
 /** Compodoc invocation Storybook uses when `framework.options.compodocArgs` is unset. */
 export const DEFAULT_COMPODOC_ARGS = ['-e', 'json', '-d', '.'];
@@ -56,13 +55,7 @@ export const resolveCompodocConfig = async (
   },
   extra: { viteRoot?: string } = {}
 ) => {
-  // `framework` is either the framework's package name or `{ name, options }`; only the latter
-  // carries the Compodoc settings.
-  // `presets.apply` is untyped here, so the shape is asserted once at the boundary rather than at
-  // each use.
-  const framework = (await options?.presets?.apply('framework')) as Preset | undefined;
-  const frameworkOptions: { compodoc?: boolean; compodocArgs?: string[]; tsconfig?: string } =
-    typeof framework === 'string' ? {} : (framework?.options ?? {});
+  const frameworkOptions = await readFrameworkOptions(options);
 
   const workspaceRoot =
     options?.angularBuilderContext?.workspaceRoot ?? extra.viteRoot ?? process.cwd();

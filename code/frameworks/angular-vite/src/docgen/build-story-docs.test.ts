@@ -49,6 +49,9 @@ const snippetOf = (payload: StoryDocsPayload | undefined, storyName: string) =>
 const storyOf = (payload: StoryDocsPayload | undefined, storyName: string) =>
   Object.values(payload?.stories ?? {}).find((story) => story.name === storyName);
 
+const warningOf = (payload: StoryDocsPayload | undefined, storyName: string) =>
+  storyOf(payload, storyName)?.warning;
+
 describe('buildStoryDocsPayload', () => {
   it('builds a payload for a real Angular story file', () => {
     const payload = build('./story-docs.stories.ts');
@@ -61,6 +64,9 @@ describe('buildStoryDocsPayload', () => {
     expect(snippetOf(payload, 'Basic')).toBe(
       `<sb-button [label]="'Save'" [count]="3" (clicked)="clicked($event)"></sb-button>`
     );
+    expect(storyOf(payload, 'Basic')?.warning).toBeUndefined();
+    // The bare template carries no imports of its own.
+    expect(payload?.import).toBeUndefined();
   });
 
   it('merges meta args under story args', () => {
@@ -88,14 +94,21 @@ describe('buildStoryDocsPayload', () => {
   });
 
   it('reports args a spread hid rather than shipping a snippet that looks complete', () => {
-    expect(snippetOf(build('./story-docs.stories.ts'), 'Spread Args')).toBe(
-      `<!-- unresolved: ...sharedArgs -->\n<sb-button [label]="'meta'" [count]="1" (clicked)="clicked($event)"></sb-button>`
+    const story = storyOf(build('./story-docs.stories.ts'), 'Spread Args');
+
+    // The note is data on the story, not a comment inside the markup, so a consumer that renders
+    // the snippet is not left with a stray comment and one that reads it can act on it.
+    expect(story?.snippet).toBe(
+      `<sb-button [label]="'meta'" [count]="1" (clicked)="clicked($event)"></sb-button>`
+    );
+    expect(story?.warning).toBe(
+      'Incomplete snippet: `...sharedArgs` could not be resolved statically.'
     );
   });
 
   it('reports a spread at the config level, not only one inside args', () => {
-    expect(snippetOf(build('./story-docs.stories.ts'), 'Config Spread')).toBe(
-      `<!-- unresolved: ...Basic -->\n<sb-button [label]="'meta'" [count]="5" (clicked)="clicked($event)"></sb-button>`
+    expect(warningOf(build('./story-docs.stories.ts'), 'Config Spread')).toBe(
+      'Incomplete snippet: `...Basic` could not be resolved statically.'
     );
   });
 
@@ -107,9 +120,10 @@ describe('buildStoryDocsPayload', () => {
     // markup; generating an element from args would silently replace it.
     ['Render Identifier', 'render: renderFn'],
   ])('reports the %s story rather than printing its JavaScript', (storyName, expected) => {
-    const snippet = snippetOf(build('./story-docs.stories.ts'), storyName);
-    expect(snippet).toContain(`<!-- unresolved: ${expected}`);
-    expect(snippet).toContain('<sb-button');
+    const story = storyOf(build('./story-docs.stories.ts'), storyName);
+    expect(story?.warning).toContain(`\`${expected}\``);
+    expect(story?.snippet).toContain('<sb-button');
+    expect(story?.snippet).not.toContain(expected);
   });
 
   // `export { X }` is registered by a different branch of the CSF parser, which records no
@@ -121,7 +135,7 @@ describe('buildStoryDocsPayload', () => {
     ],
     [
       'RenamedStory',
-      `<!-- unresolved: ...sharedArgs -->\n<sb-button [label]="'meta'" [count]="10" (clicked)="clicked($event)"></sb-button>`,
+      `<sb-button [label]="'meta'" [count]="10" (clicked)="clicked($event)"></sb-button>`,
     ],
     ['ReExportedTemplate', '<sb-button reexported></sb-button>'],
   ])('reads the re-exported %s story from its own config', (storyName, expected) => {
@@ -174,5 +188,51 @@ describe('buildStoryDocsPayload', () => {
         }
       )
     ).toBeUndefined();
+  });
+});
+
+describe('buildStoryDocsPayload in component format', () => {
+  const componentPayload = () =>
+    build('./story-docs.stories.ts', { snippetFormat: 'component' as const });
+
+  it('wraps the generated bindings in a host component that declares their handlers', () => {
+    expect(snippetOf(componentPayload(), 'Basic')).toBe(
+      `@Component({
+  selector: 'app-root',
+  template: \`<sb-button [label]="'Save'" [count]="3" (clicked)="clicked($event)"></sb-button>\`,
+  imports: [ButtonComponent],
+})
+export class App {
+  clicked(event: unknown) {}
+}`
+    );
+  });
+
+  it('carries the import block once for the whole component', () => {
+    expect(componentPayload()?.import).toBe(
+      `import { Component } from '@angular/core';\nimport { ButtonComponent } from './button.component';`
+    );
+  });
+
+  it('declares no handlers for a story that supplied its own template', () => {
+    // Which outputs the user's markup binds is unknowable, so inventing methods for all of them
+    // would put members on the host that its template never references.
+    expect(snippetOf(componentPayload(), 'Own Template')).toBe(
+      `@Component({
+  selector: 'app-root',
+  template: \`<sb-button emphasis>hi</sb-button>\`,
+  imports: [ButtonComponent],
+})
+export class App {}`
+    );
+  });
+
+  it('reports an unresolved arg on the story, not inside the component it emits', () => {
+    const story = storyOf(componentPayload(), 'Spread Args');
+
+    expect(story?.warning).toBe(
+      'Incomplete snippet: `...sharedArgs` could not be resolved statically.'
+    );
+    expect(story?.snippet).not.toContain('sharedArgs');
   });
 });

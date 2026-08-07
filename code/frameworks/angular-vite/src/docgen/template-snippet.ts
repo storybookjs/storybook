@@ -25,8 +25,6 @@ export interface AngularSnippetInput {
   component: AngularComponentTemplate;
   /** Declared args (meta merged with story), as the value AST nodes they were written as. */
   args: Record<string, t.Node>;
-  /** Source text of anything a static pass could not read, reported rather than dropped silently. */
-  unresolvedArgs?: readonly string[];
 }
 
 /** Elements HTML forbids a closing tag on. */
@@ -58,7 +56,8 @@ export interface HostElement {
   attributes: string[];
 }
 
-const IDENTIFIER = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
+/** A name that can be written as-is rather than through bracket notation. */
+export const IDENTIFIER = /^[a-zA-Z_$][a-zA-Z0-9_$]*$/;
 
 /**
  * Property name as it can be referenced from a template: dot notation when the name is a valid
@@ -137,16 +136,9 @@ export const templateExpression = (node: t.Node): string =>
   );
 
 /** Builds the static Angular template snippet for one story. */
-export const generateAngularSnippet = ({
-  component,
-  args,
-  unresolvedArgs = [],
-}: AngularSnippetInput): string => {
+export const generateAngularSnippet = ({ component, args }: AngularSnippetInput): string => {
   if (!component.selector) {
-    return withUnresolvedNote(
-      `<ng-container *ngComponentOutlet="${component.name}"></ng-container>`,
-      unresolvedArgs
-    );
+    return `<ng-container *ngComponentOutlet="${component.name}"></ng-container>`;
   }
 
   const host = parseSelector(component.selector);
@@ -173,13 +165,7 @@ export const generateAngularSnippet = ({
 
   const attributes = [...hostAttributes, ...inputBindings, ...outputBindings];
   const attributeText = attributes.length > 0 ? ` ${attributes.join(' ')}` : '';
-  const element = VOID_ELEMENTS.has(host.tag)
+  return VOID_ELEMENTS.has(host.tag)
     ? `<${host.tag}${attributeText} />`
     : `<${host.tag}${attributeText}></${host.tag}>`;
-
-  return withUnresolvedNote(element, unresolvedArgs);
 };
-
-/** Prefixes a note naming what could not be resolved statically. */
-const withUnresolvedNote = (element: string, unresolved: readonly string[]): string =>
-  unresolved.length === 0 ? element : `<!-- unresolved: ${unresolved.join(', ')} -->\n${element}`;

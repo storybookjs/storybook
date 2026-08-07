@@ -1,4 +1,5 @@
 import { generate, types as t } from 'storybook/internal/babel';
+import type { ResolvedMetaComponent } from 'storybook/internal/common';
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import type { CsfFile } from 'storybook/internal/csf-tools';
@@ -20,12 +21,18 @@ import { readFileSync } from 'node:fs';
 import { join, resolve } from 'node:path';
 
 import type { CompodocJson, CompodocParsingLogger } from '@storybook/angular-compodoc';
-import { extractArgTypesFromData, htmlToText } from '@storybook/angular-compodoc';
 import { DOCUMENTATION_JSON } from '../compodoc-config.ts';
+import { extractArgTypesFromData, htmlToText } from '@storybook/angular-compodoc';
 import { findCompodocEntry } from './build-docgen.ts';
+import type { AngularHostContext } from './component-snippet.ts';
+import { angularHostComponent, angularHostImports } from './component-snippet.ts';
 import { resolveMetaComponent } from './resolve-component.ts';
 import type { AngularComponentTemplate } from './template-snippet.ts';
 import { generateAngularSnippet } from './template-snippet.ts';
+import type { SnippetFormat } from '../types.ts';
+
+/** Preserves what the browser generator produces, so `component` stays an opt-in. */
+export const DEFAULT_SNIPPET_FORMAT: SnippetFormat = 'template';
 
 export interface BuildStoryDocsContext {
   /**
@@ -40,6 +47,8 @@ export interface BuildStoryDocsContext {
   outputDir: string;
   readDocumentationJson: (path: string) => CompodocJson;
   logger: CompodocParsingLogger;
+  /** Shape of the emitted snippet. Defaults to {@link DEFAULT_SNIPPET_FORMAT}. */
+  snippetFormat?: SnippetFormat;
 }
 
 /** `args` object of a CSF config object expression. */
@@ -146,7 +155,7 @@ const resolveComponentTemplate = (
   csf: CsfFile,
   storyPath: string,
   context: BuildStoryDocsContext
-): AngularComponentTemplate | undefined => {
+): { component: AngularComponentTemplate; host: AngularHostContext } | undefined => {
   const resolved = resolveMetaComponent(csf, storyPath);
   if ('reason' in resolved) {
     context.logger.debug(`No Angular component resolved from ${storyPath}: ${resolved.reason}.`);
@@ -185,13 +194,29 @@ const resolveComponentTemplate = (
       .filter(([, argType]) => argType?.table?.category === category)
       .map(([name]) => name);
 
-  return {
+  const component = {
     name: entry.name ?? resolved.component.exportName,
     selector: entry.selector,
     inputs: named('inputs'),
     outputs: named('outputs'),
   };
+
+  return { component, host: hostContext(resolved.component, component) };
 };
+
+/**
+ * How the host wrapper names and imports the component. A default import has no export name worth
+ * printing, so the story file's own local name is the only one available.
+ */
+const hostContext = (
+  ref: ResolvedMetaComponent,
+  component: AngularComponentTemplate
+): AngularHostContext => ({
+  componentName: ref.exportName === 'default' ? ref.localName : ref.exportName,
+  importId: ref.importId,
+  defaultImport: ref.exportName === 'default',
+  outlet: !component.selector,
+});
 
 /**
  * Static Angular template snippets for one CSF story file.
@@ -220,10 +245,12 @@ export const buildStoryDocsPayload = (
     return undefined;
   }
 
-  const component = resolveComponentTemplate(csf, storyPath, context);
-  if (!component) {
+  const resolved = resolveComponentTemplate(csf, storyPath, context);
+  if (!resolved) {
     return undefined;
   }
+  const { component, host } = resolved;
+  const format = context.snippetFormat ?? DEFAULT_SNIPPET_FORMAT;
 
   const metaNode = csf._metaNode;
   const metaArgs = metaArgsRecord(metaNode);
@@ -235,17 +262,19 @@ export const buildStoryDocsPayload = (
     const name = story.name ?? storyNameFromExport(exportName);
     try {
       const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[exportName]);
+      const { snippet, warning, handlers } = buildSnippet(csf, exportName, {
+        component,
+        metaArgs,
+        metaTemplate,
+        metaUnresolved,
+      });
       stories[story.id] = {
         id: story.id,
         name,
         description,
         summary,
-        snippet: buildSnippet(csf, exportName, {
-          component,
-          metaArgs,
-          metaTemplate,
-          metaUnresolved,
-        }),
+        snippet: format === 'component' ? angularHostComponent(snippet, handlers, host) : snippet,
+        warning,
       };
     } catch (error) {
       stories[story.id] = {
@@ -263,9 +292,19 @@ export const buildStoryDocsPayload = (
     id: getComponentIdFromEntry(input.entry),
     name: component.name,
     path: storyImportPath,
+    ...(format === 'component' ? { import: angularHostImports(host) } : {}),
     stories,
   };
 };
+
+/** What a story's snippet turned out to be, plus what the host component needs to render it. */
+interface SnippetResult {
+  snippet: string;
+  /** Set when the snippet is an incomplete example. */
+  warning?: string;
+  /** Output names the snippet binds, which the host class has to declare methods for. */
+  handlers: readonly string[];
+}
 
 /** Snippet for one story: the template it supplies itself, or one built from its declared args. */
 const buildSnippet = (
@@ -277,25 +316,36 @@ const buildSnippet = (
     metaTemplate: TemplateResult | undefined;
     metaUnresolved: string[];
   }
-): string => {
+): SnippetResult => {
   const config = storyConfig(csf, exportName);
 
   const template = userTemplate(config.object) ?? config.fnTemplate ?? file.metaTemplate;
   if (template?.kind === 'literal') {
-    return template.markup;
+    // Which outputs the story's own markup binds is not knowable, so the host declares none.
+    return { snippet: template.markup, handlers: [] };
   }
 
-  return generateAngularSnippet({
-    component: file.component,
-    // Not meta-specific: the helper reads the `args` property of any CSF config object.
-    args: mergeArgsRecords(file.metaArgs, metaArgsRecord(config.object)),
-    unresolvedArgs: [
-      ...(template ? [template.source] : []),
-      ...file.metaUnresolved,
-      ...unresolvableProperties(config.object),
-    ],
-  });
+  const unresolved = [
+    ...(template ? [template.source] : []),
+    ...file.metaUnresolved,
+    ...unresolvableProperties(config.object),
+  ];
+
+  return {
+    snippet: generateAngularSnippet({
+      component: file.component,
+      // Not meta-specific: the helper reads the `args` property of any CSF config object.
+      args: mergeArgsRecords(file.metaArgs, metaArgsRecord(config.object)),
+    }),
+    warning: unresolved.length > 0 ? unresolvedWarning(unresolved) : undefined,
+    // A component with no selector renders through `*ngComponentOutlet`, which binds nothing.
+    handlers: file.component.selector ? file.component.outputs : [],
+  };
 };
+
+/** Says which source text a static pass could not read, so a reader can see what is missing. */
+const unresolvedWarning = (unresolved: readonly string[]): string =>
+  `Incomplete snippet: ${unresolved.map((source) => `\`${source}\``).join(', ')} could not be resolved statically.`;
 
 /**
  * A story's own config object, plus the template a CSF2 story returns from its function body.

@@ -23,15 +23,10 @@ const component = (
   ...overrides,
 });
 
-const snippet = (
-  args: Record<string, string>,
-  overrides?: Partial<AngularComponentTemplate>,
-  unresolvedArgs?: string[]
-) =>
+const snippet = (args: Record<string, string>, overrides?: Partial<AngularComponentTemplate>) =>
   generateAngularSnippet({
     component: component(overrides),
     args: Object.fromEntries(Object.entries(args).map(([key, src]) => [key, expression(src)])),
-    unresolvedArgs,
   });
 
 describe('selector to host element', () => {
@@ -140,18 +135,6 @@ describe('generateAngularSnippet', () => {
   it('references an output whose name is not an identifier through bracket notation', () => {
     expect(snippet({}, { inputs: [], outputs: ['data-changed'] })).toBe(
       `<sb-button (data-changed)="this['data-changed']($event)"></sb-button>`
-    );
-  });
-
-  it('reports args it could not resolve instead of dropping them silently', () => {
-    expect(snippet({ label: `'Save'` }, undefined, ['...sharedArgs'])).toBe(
-      `<!-- unresolved: ...sharedArgs -->\n<sb-button [label]="'Save'" (clicked)="clicked($event)"></sb-button>`
-    );
-  });
-
-  it('still reports unresolved args on the no-selector fallback', () => {
-    expect(snippet({}, { selector: undefined }, ['...sharedArgs'])).toBe(
-      `<!-- unresolved: ...sharedArgs -->\n<ng-container *ngComponentOutlet="ButtonComponent"></ng-container>`
     );
   });
 

@@ -1,10 +1,11 @@
-import { types as t } from 'storybook/internal/babel';
+import { type NodePath, types as t } from 'storybook/internal/babel';
 import {
   createMetaComponentResolver,
   getComponentIdFromEntry,
   getStoryImportPathFromEntry,
 } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
+import type { CsfFile } from 'storybook/internal/csf-tools';
 import { extractDescription, extractJSDocInfo, loadCsf } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
@@ -15,7 +16,9 @@ import type { EnumType, Property } from '@storybook/angular-compodoc';
 import type { AngularComponentMetaResult } from '@storybook/angular-cm';
 import type { AngularComponentMetaSource } from './build-docgen.ts';
 import {
+  type BindingFilter,
   RawArgExpression,
+  bindingAttributes,
   renderComponentOutletSnippet,
   renderComponentSnippet,
   type SnippetInputBinding,
@@ -35,9 +38,10 @@ export interface BuildStoryDocsContext {
  *
  * Snippets render the component's selector with `[input]` bindings for the args present in the
  * story (meta args merged under story args) and `(output)` bindings for every output - mirroring
- * the runtime source decorator, where addon-actions injects a handler arg for each output. Stories
- * that declare their own `render` are skipped for snippets: their template is a runtime value the
- * static analysis cannot see, and the component-derived template would misrepresent it.
+ * the runtime source decorator, where addon-actions injects a handler arg for each output. A story
+ * that supplies its own markup, through `template` or through a `render` that returns one, is shown
+ * as written instead; only markup that cannot be read without running the story falls back to the
+ * component-derived bindings.
  *
  * Returns `undefined` when the entry has no story file or the file cannot be parsed (fall through
  * to the next provider). A resolvable file whose component cannot be analyzed still yields a
@@ -85,7 +89,6 @@ export const buildStoryDocsPayload = (
   const titleName = input.entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 
   const metaArgs = objectPropertiesOf(csf._metaAnnotations.args);
-  const metaHasRender = csf._metaAnnotations.render !== undefined;
 
   const stories: Record<string, StoryDoc> = {};
   for (const [exportName, story] of Object.entries(csf._stories)) {
@@ -97,10 +100,10 @@ export const buildStoryDocsPayload = (
       const summary = tags?.summary?.[0];
 
       const annotations = csf._storyAnnotations[exportName] ?? {};
-      const hasRender = metaHasRender || annotations.render !== undefined;
       const args = new Map([...metaArgs, ...objectPropertiesOf(annotations.args)]);
-      const snippet =
-        snippetContext && !hasRender ? renderStorySnippet(snippetContext, args, source) : undefined;
+      const snippet = snippetContext
+        ? renderStorySnippet(snippetContext, { csf, exportName, annotations, args, source })
+        : undefined;
 
       stories[story.id] = {
         id: story.id,
@@ -159,25 +162,220 @@ const createSnippetContext = (meta: AngularComponentMetaResult): SnippetContext 
   };
 };
 
-const renderStorySnippet = (
-  snippetContext: SnippetContext,
-  args: Map<string, t.Node>,
-  source: string
-): string => {
+/** One story, as much of it as reading the markup it supplies needs. */
+interface StoryShape {
+  csf: CsfFile;
+  exportName: string;
+  annotations: Record<string, t.Node>;
+  /** Meta args merged under story args, keyed by arg name. */
+  args: Map<string, t.Node>;
+  source: string;
+}
+
+const renderStorySnippet = (snippetContext: SnippetContext, story: StoryShape): string => {
   if (!snippetContext.selector) {
     return renderComponentOutletSnippet(snippetContext.componentName);
   }
+
   const inputs: SnippetInputBinding[] = [];
-  for (const [argName, node] of args) {
+  for (const [argName, node] of story.args) {
     if (snippetContext.inputNames.has(argName)) {
-      inputs.push({ name: argName, value: evaluateArgValue(node, source, snippetContext.enums) });
+      inputs.push({
+        name: argName,
+        value: evaluateArgValue(node, story.source, snippetContext.enums),
+      });
     }
   }
-  return renderComponentSnippet({
-    selector: snippetContext.selector,
-    inputs,
-    outputs: snippetContext.outputs,
-  });
+  const bindings = { inputs, outputs: snippetContext.outputs };
+
+  const template = userTemplate(story, bindings);
+  return template?.kind === 'literal'
+    ? template.markup
+    : renderComponentSnippet({ selector: snippetContext.selector, ...bindings });
+};
+
+/** What a `template` turned out to hold. */
+type TemplateResult =
+  /** Read as markup, so the story is shown as written. */
+  | { kind: 'literal'; markup: string }
+  /** A `template` or `render` exists, but its markup needs the story to run. */
+  | { kind: 'unresolvable' };
+
+/** Bindings the generated snippet would carry, which is also what `argsToTemplate` expands to. */
+type Bindings = { inputs: SnippetInputBinding[]; outputs: string[] };
+
+/**
+ * Markup the story supplies itself, falling back to the meta's.
+ *
+ * Returns `undefined` when neither declares one, which is the plain `{ args }` story the generated
+ * bindings are built for.
+ */
+const userTemplate = (story: StoryShape, bindings: Bindings): TemplateResult | undefined =>
+  templateOf(story.annotations, story, bindings) ??
+  // CSF2: the story is the function, and Angular's idiom is to return `{ template }`.
+  templateFrom(propertyOf(csf2Return(story), 'template'), story, bindings) ??
+  templateOf(story.csf._metaAnnotations, story, bindings);
+
+/** The template a config declares directly, or through a `render` that returns one. */
+const templateOf = (
+  annotations: Record<string, t.Node>,
+  story: StoryShape,
+  bindings: Bindings
+): TemplateResult | undefined => {
+  const own = templateFrom(declaredValue(story, annotations.template), story, bindings);
+  if (own) {
+    return own;
+  }
+  if (annotations.render === undefined) {
+    return undefined;
+  }
+
+  // A story whose `render` exists but cannot be read must not inherit the meta's markup, which is
+  // for code the story never runs.
+  const returned = returnedObject(declaredValue(story, annotations.render));
+  return returned
+    ? templateFrom(propertyOf(returned, 'template'), story, bindings)
+    : { kind: 'unresolvable' };
+};
+
+const templateFrom = (
+  node: t.Node | undefined,
+  story: StoryShape,
+  bindings: Bindings
+): TemplateResult | undefined => {
+  if (
+    node === undefined ||
+    t.isNullLiteral(node) ||
+    (t.isIdentifier(node) && node.name === 'undefined')
+  ) {
+    return undefined;
+  }
+  if (t.isStringLiteral(node)) {
+    return { kind: 'literal', markup: node.value };
+  }
+  if (t.isTemplateLiteral(node)) {
+    const markup = interpolate(node, story, bindings);
+    return markup === undefined ? { kind: 'unresolvable' } : { kind: 'literal', markup };
+  }
+  return { kind: 'unresolvable' };
+};
+
+/** Markup a template literal holds once every `${…}` in it has been substituted. */
+const interpolate = (
+  node: t.TemplateLiteral,
+  story: StoryShape,
+  bindings: Bindings
+): string | undefined => {
+  let markup = node.quasis[0]?.value.cooked ?? '';
+
+  for (const [index, expression] of node.expressions.entries()) {
+    const substituted = substituteExpression(expression, story, bindings);
+    if (substituted === undefined) {
+      return undefined;
+    }
+    markup += substituted + (node.quasis[index + 1]?.value.cooked ?? '');
+  }
+
+  return markup;
+};
+
+/**
+ * Text a `${…}` inside a template contributes, or `undefined` when it needs the story to run.
+ *
+ * `argsToTemplate(args)` is the idiom every Angular docs example uses, and it expands to exactly
+ * the bindings this generator already emits - so a template built around it is fully readable
+ * rather than opaque. Values are inlined instead of referenced by name, which drops the story's
+ * `props: args` requirement and leaves the snippet standing on its own.
+ */
+const substituteExpression = (
+  expression: t.Node,
+  story: StoryShape,
+  bindings: Bindings
+): string | undefined => {
+  if (
+    t.isCallExpression(expression) &&
+    t.isIdentifier(expression.callee) &&
+    expression.callee.name === 'argsToTemplate'
+  ) {
+    const options = expression.arguments[1];
+    const filter: BindingFilter = {
+      include: stringArray(propertyOf(options, 'include')),
+      exclude: stringArray(propertyOf(options, 'exclude')),
+    };
+    return bindingAttributes(bindings, filter).join(' ');
+  }
+
+  // `render: ({ footer, ...args }) => …` destructures an arg and interpolates it as slot content.
+  return t.isIdentifier(expression) ? literalText(story.args.get(expression.name)) : undefined;
+};
+
+/** Named property of an object literal, if it has one. */
+const propertyOf = (node: t.Node | undefined, name: string): t.Node | undefined =>
+  objectPropertiesOf(node).get(name);
+
+/** String array literal, for `argsToTemplate`'s `include` / `exclude` options. */
+const stringArray = (node: t.Node | undefined): string[] | undefined =>
+  t.isArrayExpression(node)
+    ? node.elements.filter((element) => t.isStringLiteral(element)).map((element) => element.value)
+    : undefined;
+
+/** Text an interpolated arg contributes, for slot content like `<span>${footer}</span>`. */
+const literalText = (node: t.Node | undefined): string | undefined => {
+  const unwrapped = node && unwrapExpression(node);
+  if (t.isStringLiteral(unwrapped)) {
+    return unwrapped.value;
+  }
+  return t.isNumericLiteral(unwrapped) || t.isBooleanLiteral(unwrapped)
+    ? String(unwrapped.value)
+    : undefined;
+};
+
+/** Object literal a story or `render` function returns, when it returns one directly. */
+const returnedObject = (fn: t.Node | undefined): t.ObjectExpression | undefined => {
+  if (
+    !t.isArrowFunctionExpression(fn) &&
+    !t.isFunctionExpression(fn) &&
+    !t.isFunctionDeclaration(fn)
+  ) {
+    return undefined;
+  }
+  const returned = t.isBlockStatement(fn.body)
+    ? fn.body.body.find((statement) => t.isReturnStatement(statement))?.argument
+    : fn.body;
+  const unwrapped = returned && unwrapExpression(returned);
+  return t.isObjectExpression(unwrapped) ? unwrapped : undefined;
+};
+
+/** The object a CSF2 function story returns, for `export const S = () => ({ template })`. */
+const csf2Return = (story: StoryShape): t.ObjectExpression | undefined => {
+  const declared = story.csf._storyExports[story.exportName];
+  if (t.isVariableDeclarator(declared)) {
+    return returnedObject(declared.init ?? undefined);
+  }
+  if (t.isFunctionDeclaration(declared)) {
+    return returnedObject(declared);
+  }
+  // `export { S }` records no declarator; the statement is the initializer it resolved to.
+  return returnedObject(story.csf._storyStatements[story.exportName]);
+};
+
+/**
+ * An annotation value, following a bare name back to what it was declared as in this file.
+ *
+ * `template: HOISTED_TEMPLATE` is markup the story really did write, so refusing to look through
+ * the name would replace it with a fabricated element. An imported name has no initializer here,
+ * so it stays an identifier and the snippet falls back to the generated bindings.
+ */
+const declaredValue = (story: StoryShape, node: t.Node | undefined): t.Node | undefined => {
+  if (!t.isIdentifier(node)) {
+    return node;
+  }
+  const program: NodePath<t.Program> = story.csf._file.path;
+  const declaration = program.scope.getBinding(node.name)?.path.node;
+  if (t.isVariableDeclarator(declaration)) {
+    return declaration.init ?? node;
+  }
+  return t.isFunctionDeclaration(declaration) ? declaration : node;
 };
 
 /** Peels TS assertion/satisfies wrappers and parentheses off an annotation value node. */

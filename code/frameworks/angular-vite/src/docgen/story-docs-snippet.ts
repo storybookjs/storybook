@@ -70,20 +70,47 @@ const formatInputValue = (value: unknown): string => {
 export const renderComponentOutletSnippet = (componentName: string): string =>
   `<ng-container *ngComponentOutlet="${componentName}"></ng-container>`;
 
+/** Which arg names a binding list covers, mirroring `argsToTemplate`'s own options. */
+export interface BindingFilter {
+  include?: readonly string[];
+  exclude?: readonly string[];
+}
+
+const inputBindings = (inputs: SnippetInputBinding[], allowed: (name: string) => boolean) =>
+  inputs
+    .filter(({ name }) => allowed(name))
+    .map(({ name, value }) => `[${name}]="${formatInputValue(value)}"`);
+
+const outputBindings = (outputs: string[], allowed: (name: string) => boolean) =>
+  outputs.filter(allowed).map((name) => `(${name})="${formatPropInTemplate(name)}($event)"`);
+
+const anyName = () => true;
+
+/**
+ * The property and event bindings on their own, without the surrounding element.
+ *
+ * This is what `argsToTemplate(args)` expands to at runtime, except that values are inlined rather
+ * than referenced by name, so the result stands alone without the story's `props: args`.
+ */
+export const bindingAttributes = (
+  { inputs, outputs }: Omit<RenderComponentSnippetInput, 'selector'>,
+  filter: BindingFilter = {}
+): string[] => {
+  const allowed = (name: string) =>
+    filter.include ? filter.include.includes(name) : !filter.exclude?.includes(name);
+  return [...inputBindings(inputs, allowed), ...outputBindings(outputs, allowed)];
+};
+
 /** One story's template snippet: `<selector [input]="value" (output)="output($event)">…`. */
 export const renderComponentSnippet = ({
   selector,
   inputs,
   outputs,
 }: RenderComponentSnippetInput): string => {
-  const templateInputs =
-    inputs.length > 0
-      ? ` ${inputs.map(({ name, value }) => `[${name}]="${formatInputValue(value)}"`).join(' ')}`
-      : '';
-  const templateOutputs =
-    outputs.length > 0
-      ? ` ${outputs.map((name) => `(${name})="${formatPropInTemplate(name)}($event)"`).join(' ')}`
-      : '';
+  const boundInputs = inputBindings(inputs, anyName);
+  const boundOutputs = outputBindings(outputs, anyName);
+  const templateInputs = boundInputs.length > 0 ? ` ${boundInputs.join(' ')}` : '';
+  const templateOutputs = boundOutputs.length > 0 ? ` ${boundOutputs.join(' ')}` : '';
   return buildTemplate(selector, templateInputs, templateOutputs);
 };
 

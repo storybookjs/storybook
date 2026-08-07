@@ -84,6 +84,84 @@ const soleSnippet = (manager: AngularComponentMetaSource, storyFile = DEFAULT_ST
   return stories[0];
 };
 
+/**
+ * The story shapes the provider has to tell apart, in one file so they share a meta.
+ *
+ * Written against {@link componentEntry}: `label` and `count` are inputs, `clicked` is an output,
+ * and `footer` is an arg the component does not accept.
+ */
+const STORY_SHAPES_FILE = [
+  `import { argsToTemplate } from '@storybook/angular-vite';`,
+  `import { ButtonComponent } from './button.component';`,
+  `import { IMPORTED_TEMPLATE } from './templates';`,
+  `declare function buildSlot(args: unknown): string;`,
+  `const HOISTED_TEMPLATE = '<sb-button hoisted></sb-button>';`,
+  `const renderFn = () => ({ template: '<sb-button via-fn></sb-button>' });`,
+  `export default {`,
+  `  title: 'Example/Button',`,
+  `  component: ButtonComponent,`,
+  `  args: { label: 'meta' },`,
+  `};`,
+  `export const OwnTemplate = { template: '<sb-button emphasis>hi</sb-button>' };`,
+  `export const EmptyTemplate = { template: '' };`,
+  `export const NullTemplate = { template: null, args: { count: 2 } };`,
+  `export const RenderTemplate = {`,
+  `  render: () => ({ template: '<sb-button rendered></sb-button>' }),`,
+  `};`,
+  `export const Csf2Function = () => ({ template: '<sb-button csf2></sb-button>' });`,
+  `export const HoistedTemplate = { template: HOISTED_TEMPLATE };`,
+  `export const RenderIdentifier = { render: renderFn, args: { count: 4 } };`,
+  `export const ImportedTemplate = { template: IMPORTED_TEMPLATE, args: { count: 5 } };`,
+  // `export { X }` registers a story without a declarator, so it exercises the other branch of the
+  // CSF parser. Its own args must still win over the meta's.
+  `const ReExported = { args: { label: 'reexported', count: 9 } };`,
+  `export { ReExported };`,
+  `const RenamedSource = { args: { count: 10 } };`,
+  `export { RenamedSource as RenamedStory };`,
+  `const ReExportedTemplate = { template: '<sb-button reexported></sb-button>' };`,
+  `export { ReExportedTemplate };`,
+  // The idiom every Angular docs example uses: wrapper markup the user wrote, with the bindings
+  // filled in by `argsToTemplate`.
+  `export const ArgsToTemplate = {`,
+  `  args: { label: 'Save', count: 7 },`,
+  `  render: (args) => ({`,
+  '    props: args,',
+  '    template: `<div class="wrap"><sb-button ${argsToTemplate(args)}></sb-button></div>`,',
+  `  }),`,
+  `};`,
+  `export const ArgsToTemplateExclude = {`,
+  `  args: { label: 'Save', count: 7 },`,
+  `  render: (args) => ({`,
+  '    props: args,',
+  "    template: `<sb-button ${argsToTemplate(args, { exclude: ['count'] })}></sb-button>`,",
+  `  }),`,
+  `};`,
+  `export const SlotInterpolation = {`,
+  `  args: { label: 'Save', footer: 'Bye' },`,
+  `  render: ({ footer, ...args }) => ({`,
+  '    props: args,',
+  '    template: `<sb-button ${argsToTemplate(args)}><span>${footer}</span></sb-button>`,',
+  `  }),`,
+  `};`,
+  `export const UnreadableInterpolation = {`,
+  `  args: { label: 'Save' },`,
+  '  render: (args) => ({ props: args, template: `<sb-button>${buildSlot(args)}</sb-button>` }),',
+  `};`,
+  // CSF2 assigns args after the declaration, out of reach of the story's own initializer.
+  `export const Csf2AssignedArgs = () => ({ props: {} });`,
+  `Csf2AssignedArgs.args = { label: 'assigned', count: 11 };`,
+].join('\n');
+
+/** Snippet per story name, for a file that declares more than one story. */
+const snippetsOf = (storyFile: string) => {
+  givenStoryFile(storyFile);
+  const payload = buildStoryDocsPayload(
+    { entry },
+    { manager: managerReturning(metaFor(componentEntry())) }
+  );
+  return new Map(Object.values(payload?.stories ?? {}).map((story) => [story.name, story.snippet]));
+};
+
 describe('buildStoryDocsPayload', () => {
   it('returns undefined for entries without a story file or with an unparsable one', () => {
     const docsEntry: IndexEntry = {
@@ -243,7 +321,7 @@ describe('buildStoryDocsPayload', () => {
     );
   });
 
-  it('skips snippets for stories with a custom render, keeping their descriptions', () => {
+  it('shows the template a custom render returns, keeping the description', () => {
     const manager = managerReturning(metaFor(componentEntry()));
     const story = soleSnippet(
       manager,
@@ -257,8 +335,90 @@ describe('buildStoryDocsPayload', () => {
         };
       `
     );
-    expect(story.snippet).toBeUndefined();
+    expect(story.snippet).toBe('<sb-button></sb-button>');
     expect(story.description).toBe('Renders a hand-written template.');
+  });
+
+  describe('stories that supply their own markup', () => {
+    it.each([
+      ['Own Template', '<sb-button emphasis>hi</sb-button>'],
+      // An empty string is a user-defined template, matching the preview's own rule.
+      ['Empty Template', ''],
+      ['Render Template', '<sb-button rendered></sb-button>'],
+      // CSF2: the story is the render function, and Angular's idiom is to return `{ template }`.
+      ['Csf 2 Function', '<sb-button csf2></sb-button>'],
+    ])('leaves the %s story alone', (storyName, expected) => {
+      expect(snippetsOf(STORY_SHAPES_FILE).get(storyName)).toBe(expected);
+    });
+
+    it('treats a null template as no template rather than as markup', () => {
+      expect(snippetsOf(STORY_SHAPES_FILE).get('Null Template')).toBe(
+        `<sb-button [label]="'meta'" [count]="2" (clicked)="clicked($event)"></sb-button>`
+      );
+    });
+
+    // A local helper is markup the story really did write, so following the name back to its
+    // declaration beats replacing it with a fabricated element.
+    it.each([
+      ['Hoisted Template', '<sb-button hoisted></sb-button>'],
+      ['Render Identifier', '<sb-button via-fn></sb-button>'],
+    ])('follows the %s story identifier to its declaration', (storyName, expected) => {
+      expect(snippetsOf(STORY_SHAPES_FILE).get(storyName)).toBe(expected);
+    });
+
+    it('falls back to generated bindings for an imported template it cannot follow', () => {
+      expect(snippetsOf(STORY_SHAPES_FILE).get('Imported Template')).toBe(
+        `<sb-button [label]="'meta'" [count]="5" (clicked)="clicked($event)"></sb-button>`
+      );
+    });
+
+    it('reads args CSF2 assigned after the declaration', () => {
+      expect(snippetsOf(STORY_SHAPES_FILE).get('Csf 2 Assigned Args')).toBe(
+        `<sb-button [label]="'assigned'" [count]="11" (clicked)="clicked($event)"></sb-button>`
+      );
+    });
+
+    // `export { X }` is registered by a different branch of the CSF parser, which keeps the export
+    // name verbatim rather than deriving a display name from it.
+    it.each([
+      [
+        'ReExported',
+        `<sb-button [label]="'reexported'" [count]="9" (clicked)="clicked($event)"></sb-button>`,
+      ],
+      [
+        'RenamedStory',
+        `<sb-button [label]="'meta'" [count]="10" (clicked)="clicked($event)"></sb-button>`,
+      ],
+      ['ReExportedTemplate', '<sb-button reexported></sb-button>'],
+    ])('reads the re-exported %s story from its own config', (storyName, expected) => {
+      expect(snippetsOf(STORY_SHAPES_FILE).get(storyName)).toBe(expected);
+    });
+
+    // `argsToTemplate(args)` expands to exactly the bindings this generator emits, so a template
+    // built around it is fully readable and the user's wrapper markup survives.
+    it('expands argsToTemplate inside the markup the story wrote', () => {
+      expect(snippetsOf(STORY_SHAPES_FILE).get('Args To Template')).toBe(
+        `<div class="wrap"><sb-button [label]="'Save'" [count]="7" (clicked)="clicked($event)"></sb-button></div>`
+      );
+    });
+
+    it('honours argsToTemplate exclude options', () => {
+      expect(snippetsOf(STORY_SHAPES_FILE).get('Args To Template Exclude')).toBe(
+        `<sb-button [label]="'Save'" (clicked)="clicked($event)"></sb-button>`
+      );
+    });
+
+    it('substitutes an interpolated arg used as slot content', () => {
+      expect(snippetsOf(STORY_SHAPES_FILE).get('Slot Interpolation')).toBe(
+        `<sb-button [label]="'Save'" (clicked)="clicked($event)"><span>Bye</span></sb-button>`
+      );
+    });
+
+    it('falls back when an interpolation needs the story to run', () => {
+      expect(snippetsOf(STORY_SHAPES_FILE).get('Unreadable Interpolation')).toBe(
+        `<sb-button [label]="'Save'" (clicked)="clicked($event)"></sb-button>`
+      );
+    });
   });
 
   it('extracts story descriptions and @summary tags like the React provider', () => {

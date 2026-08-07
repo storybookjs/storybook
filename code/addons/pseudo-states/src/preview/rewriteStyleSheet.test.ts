@@ -183,6 +183,19 @@ describe('rewriteStyleSheet', () => {
     expect(sheet.cssRules[0].getSelectors()).toContain('div.pseudo-hover::-webkit-scrollbar-thumb');
   });
 
+  it('only skips direct replacements that belong to an excluded pseudo-element', () => {
+    const sheet = new Sheet(
+      '::-webkit-scrollbar-thumb:hover .button:focus { border-color: transparent; }'
+    );
+    rewriteStyleSheet(sheet as any);
+    const selectors = sheet.cssRules[0].getSelectors();
+    expect(selectors).toContain('::-webkit-scrollbar-thumb:hover .button.pseudo-focus');
+    expect(selectors).not.toContain('::-webkit-scrollbar-thumb.pseudo-hover .button.pseudo-focus');
+    expect(selectors).toContain(
+      '.pseudo-hover-all.pseudo-focus-all ::-webkit-scrollbar-thumb .button'
+    );
+  });
+
   it('does not add invalid selector where .pseudo-<class> would be appended to ::part()', () => {
     const sheet = new Sheet('::part(foo bar):hover { border-color: transparent; }');
     rewriteStyleSheet(sheet as any);
@@ -468,6 +481,18 @@ describe('rewriteStyleSheet', () => {
     expect(sheet.cssRules[0].cssText).toEqual(
       '.foo\\:hover\\:red:hover, .foo\\:hover\\:red.pseudo-hover, .pseudo-hover-all .foo\\:hover\\:red { color: red }'
     );
+  });
+
+  it('skips pseudo-selectors preceded by any odd number of backslashes', () => {
+    const sheet = new Sheet(String.raw`.btn\\\:hover { color: red }`);
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].cssText).toEqual(String.raw`.btn\\\:hover { color: red }`);
+  });
+
+  it('rewrites pseudo-selectors preceded by any even number of backslashes', () => {
+    const sheet = new Sheet(String.raw`.btn\\\\:hover { color: red }`);
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].getSelectors()).toContain(String.raw`.btn\\\\.pseudo-hover`);
   });
 
   it('keeps rewritten selector lists within browser limits', () => {

@@ -1,16 +1,81 @@
-import {
-  EXCLUDED_PSEUDO_ELEMENT_PATTERNS,
-  EXCLUDED_PSEUDO_ESCAPE_SEQUENCE,
-  PSEUDO_STATES,
-} from '../constants.ts';
+import { EXCLUDED_PSEUDO_ELEMENT_PATTERNS, PSEUDO_STATES } from '../constants.ts';
 import { splitSelectors } from './splitSelectors.ts';
 
 const pseudoStates = Object.values(PSEUDO_STATES);
-const pseudoStatesPattern = `${EXCLUDED_PSEUDO_ESCAPE_SEQUENCE}:(${pseudoStates.join('|')})`;
 // Pseudoclass parameters opening parenthesis plus combinators and separators from https://developer.mozilla.org/en-US/docs/Web/CSS/Guides/Selectors#combinators_and_separators
-const selectorStartPattern = String.raw`[|>+~,\s(]`;
-const matchOne = new RegExp(pseudoStatesPattern);
-const matchAll = new RegExp(pseudoStatesPattern, 'g');
+const selectorStartPattern = /[|>+~,\s(]/;
+// WebKit is especially slow at evaluating the previous variable-length lookbehinds across large
+// stylesheets. Match candidates once, then validate escapes and pseudo-element context by index.
+const pseudoStatePattern = new RegExp(`:(${pseudoStates.join('|')})`, 'g');
+const excludedPseudoElementPattern = new RegExp(
+  `(?:${EXCLUDED_PSEUDO_ELEMENT_PATTERNS.join('|')})\\S*`,
+  'g'
+);
+
+type PseudoStateMatch = {
+  index: number;
+  state: string;
+  text: string;
+};
+
+type IndexRange = {
+  start: number;
+  end: number;
+};
+
+const isEscaped = (selector: string, index: number) => {
+  let precedingBackslashes = 0;
+  for (let cursor = index - 1; cursor >= 0 && selector[cursor] === '\\'; cursor--) {
+    precedingBackslashes++;
+  }
+  return precedingBackslashes % 2 === 1;
+};
+
+const findPseudoStates = (selector: string) => {
+  const matches: PseudoStateMatch[] = [];
+  pseudoStatePattern.lastIndex = 0;
+
+  let match = pseudoStatePattern.exec(selector);
+  while (match) {
+    const index = match.index;
+    if (!isEscaped(selector, index)) {
+      matches.push({ index, state: match[1], text: match[0] });
+    }
+    match = pseudoStatePattern.exec(selector);
+  }
+
+  return matches;
+};
+
+const findExcludedPseudoElementRanges = (selector: string) => {
+  const ranges: IndexRange[] = [];
+  excludedPseudoElementPattern.lastIndex = 0;
+
+  let match = excludedPseudoElementPattern.exec(selector);
+  while (match) {
+    ranges.push({ start: match.index, end: match.index + match[0].length });
+    match = excludedPseudoElementPattern.exec(selector);
+  }
+
+  return ranges;
+};
+
+const replacePseudoStateMatches = (
+  selector: string,
+  matches: PseudoStateMatch[],
+  replacement: (state: string) => string
+) => {
+  let result = '';
+  let cursor = 0;
+
+  matches.forEach((match) => {
+    result += selector.slice(cursor, match.index);
+    result += replacement(match.state);
+    cursor = match.index + match.text.length;
+  });
+
+  return result + selector.slice(cursor);
+};
 
 // WebKit limits a style rule to 4096 selectors. Keep some headroom so rewritten rules remain
 // valid even after pseudo-state selectors are expanded.
@@ -26,15 +91,20 @@ const warnOnce = (message: string) => {
   warnings.add(message);
 };
 
-const replacePseudoStates = (selector: string, allClass?: boolean) => {
-  const negativeLookbehind = `(?<!(?:${EXCLUDED_PSEUDO_ELEMENT_PATTERNS.join('|')})\\S*)`;
-  return pseudoStates.reduce(
-    (acc, state) =>
-      acc.replace(
-        new RegExp(`${negativeLookbehind}${EXCLUDED_PSEUDO_ESCAPE_SEQUENCE}:${state}`, 'g'),
-        `.pseudo-${state}${allClass ? '-all' : ''}`
-      ),
-    selector
+const replacePseudoStates = (
+  selector: string,
+  allClass?: boolean,
+  pseudoStateMatches = findPseudoStates(selector)
+) => {
+  const excludedRanges = findExcludedPseudoElementRanges(selector);
+  const matches = pseudoStateMatches.filter(
+    ({ index }) => !excludedRanges.some(({ start, end }) => index >= start && index < end)
+  );
+
+  return replacePseudoStateMatches(
+    selector,
+    matches,
+    (state) => `.pseudo-${state}${allClass ? '-all' : ''}`
   );
 };
 
@@ -58,25 +128,30 @@ const replacePseudoStatesWithAncestorSelector = (
   // If there is a :host-context() selector, we don't need to introduce a :host() selector.
   // We can just append the pseudo-state classes to the :host-context() selector.
   return withoutPseudoStates.startsWith(':host-context(')
-    ? withoutPseudoStates.replace(/(?<=:host-context\(\S+)\)/, `)${selectors}`)
+    ? withoutPseudoStates.replace(/^(:host-context\(\S+\))/, `$1${selectors}`)
     : forShadowDOM
       ? `:host(${selectors}) ${withoutPseudoStates}`
       : `${selectors} ${withoutPseudoStates}`;
 };
 
 const extractPseudoStates = (selector: string) => {
-  const states = new Set();
-  const withoutPseudoStates =
-    selector
-      // If there's no selector for pseudostate pseudo-class, add '*' to the selector.
+  const states = new Set<string>();
+  const matches = findPseudoStates(selector);
+  let withoutPseudoStates = '';
+  let cursor = 0;
 
-      .replaceAll(new RegExp(`(${selectorStartPattern})(${pseudoStatesPattern})`, 'g'), '$1*$2')
-      .replaceAll(matchAll, (_, state) => {
-        states.add(state);
-        return '';
-      })
-      // If a selector list was left with blank items (e.g. ", foo, , bar, "), remove the extra commas/spaces.
-      .replaceAll(/(?<=[\s(]),\s+|(,\s+)+(?=\))/g, '') || '*';
+  matches.forEach((match) => {
+    withoutPseudoStates += selector.slice(cursor, match.index);
+    if (match.index > 0 && selectorStartPattern.test(selector[match.index - 1])) {
+      withoutPseudoStates += '*';
+    }
+    states.add(match.state);
+    cursor = match.index + match.text.length;
+  });
+  withoutPseudoStates += selector.slice(cursor);
+
+  // If a selector list was left with blank items (e.g. ", foo, , bar, "), remove the extra commas/spaces.
+  withoutPseudoStates = withoutPseudoStates.replaceAll(/([\s(]),\s+|(,\s+)+(?=\))/g, '$1') || '*';
 
   return {
     states: Array.from(states),
@@ -108,16 +183,19 @@ const rewriteNotSelector = (negatedSelectorList: string, forShadowDOM: boolean) 
 };
 
 const rewriteRules = ({ cssText, selectorText }: CSSStyleRule, forShadowDOM: boolean) => {
+  let didRewrite = false;
   const rewrittenSelectors = splitSelectors(selectorText).flatMap((selector) => {
     if (selector.includes('.pseudo-')) {
       return [];
     }
     const replacementSelectors = [selector];
-    if (!matchOne.test(selector)) {
+    const pseudoStateMatches = findPseudoStates(selector);
+    if (pseudoStateMatches.length === 0) {
       return replacementSelectors;
     }
+    didRewrite = true;
 
-    const classSelector = replacePseudoStates(selector);
+    const classSelector = replacePseudoStates(selector, false, pseudoStateMatches);
     if (classSelector !== selector) {
       replacementSelectors.push(classSelector);
     }
@@ -126,7 +204,7 @@ const rewriteRules = ({ cssText, selectorText }: CSSStyleRule, forShadowDOM: boo
 
     if (selector.startsWith(':host(')) {
       const matches = selector.match(/^:host\((\S+)\)\s+(.+)$/);
-      if (matches && matchOne.test(matches[2])) {
+      if (matches && findPseudoStates(matches[2]).length > 0) {
         // Simple replacement won't work on pseudo-state selectors outside of :host().
         // E.g. :host(.foo) .bar:hover -> :host(.foo.pseudo-hover-all) .bar
         // E.g. :host(.foo:focus) .bar:hover -> :host(.foo.pseudo-focus-all.pseudo-hover-all) .bar
@@ -156,6 +234,10 @@ const rewriteRules = ({ cssText, selectorText }: CSSStyleRule, forShadowDOM: boo
 
     return replacementSelectors;
   });
+
+  if (!didRewrite) {
+    return [];
+  }
 
   const rewrittenRules: string[] = [];
   for (let index = 0; index < rewrittenSelectors.length; index += maximumSelectorsPerRule) {
@@ -235,12 +317,10 @@ const rewriteRuleContainer = (
 
       // Modify the rule, if it contains a pseudo state
       if ('selectorText' in styleRules[0]) {
-        if (matchOne.test(styleRules[0].selectorText)) {
-          const newRules = rewriteRules(styleRules[0], forShadowDOM);
-          if (newRules.length > 0) {
-            styleRules = replaceRule(ruleContainer, index, newRules);
-            numRewritten = 1;
-          }
+        const newRules = rewriteRules(styleRules[0], forShadowDOM);
+        if (newRules.length > 0) {
+          styleRules = replaceRule(ruleContainer, index, newRules);
+          numRewritten = 1;
         }
       }
 

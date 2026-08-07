@@ -3,8 +3,8 @@ import { colors } from 'storybook/internal/node-logger';
 import type { VersionCheck } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import semver from 'semver';
 import { dedent } from 'ts-dedent';
+import { isLess, isPrerelease } from 'verkit';
 
 const { STORYBOOK_VERSION_BASE = 'https://storybook.js.org', CI } = process.env;
 
@@ -37,10 +37,10 @@ export function createUpdateMessage(updateInfo: VersionCheck, version: string): 
   let updateMessage;
 
   try {
-    const isPrerelease = semver.prerelease(updateInfo.data.latest.version);
-    const upgradeCommand = `npx storybook@${isPrerelease ? 'next' : 'latest'} upgrade`;
+    const isPre = isPrerelease(updateInfo.data.latest.version);
+    const upgradeCommand = `npx storybook@${isPre ? 'next' : 'latest'} upgrade`;
     updateMessage =
-      updateInfo.success && semver.lt(version, updateInfo.data.latest.version)
+      updateInfo.success && isLess(version, updateInfo.data.latest.version)
         ? dedent`
           ${colors.orange(
             `A new version (${picocolors.bold(updateInfo.data.latest.version)}) is available!`

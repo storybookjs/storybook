@@ -1,6 +1,6 @@
 import type { PackageJson } from 'storybook/internal/types';
 
-import semver from 'semver';
+import { coerce } from 'verkit';
 
 import {
   DATA_FETCHING_PACKAGES,
@@ -62,7 +62,7 @@ export function getSafeVersionSpecifier(version?: string): string | null {
 
   try {
     const operator = version.trim().match(/^[~^]/)?.[0] ?? '';
-    const coerced = semver.coerce(version);
+    const coerced = coerce(version);
     return coerced ? `${operator}${coerced.version}` : null;
   } catch {
     return 'could-not-be-parsed-by-semver';

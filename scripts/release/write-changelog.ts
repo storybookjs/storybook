@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 import { program } from 'commander';
 import picocolors from 'picocolors';
-import semver from 'semver';
+import { isPrerelease, isValid } from 'verkit';
 import { z } from 'zod';
 
 import { esMain } from '../utils/esmain.ts';
@@ -45,7 +45,7 @@ type Options = {
 
 const validateOptions = (args: unknown[], options: { [key: string]: any }): options is Options => {
   optionsSchema.parse(options);
-  if (args.length !== 1 || !semver.valid(args[0] as string)) {
+  if (args.length !== 1 || !isValid(args[0] as string)) {
     console.error(
       `🚨 Invalid arguments, expected a single argument with the version to generate changelog for, eg. ${picocolors.green(
         '7.1.0-beta.8'
@@ -65,8 +65,7 @@ const writeToChangelogFile = async ({
   version: string;
   verbose?: boolean;
 }) => {
-  const isPrerelease = semver.prerelease(version) !== null;
-  const changelogFilename = isPrerelease ? 'CHANGELOG.prerelease.md' : 'CHANGELOG.md';
+  const changelogFilename = isPrerelease(version) ? 'CHANGELOG.prerelease.md' : 'CHANGELOG.md';
   const changelogPath = join(__dirname, '..', '..', changelogFilename);
 
   if (verbose) {

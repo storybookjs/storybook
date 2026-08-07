@@ -2,7 +2,7 @@ import { frameworkPackages, versions as storybookCorePackages } from 'storybook/
 import type { InstallationMetadata } from 'storybook/internal/common';
 
 import picocolors from 'picocolors';
-import semver from 'semver';
+import { isEqual, isLess } from 'verkit';
 
 function getPrimaryVersion(name: string | undefined, installationMetadata?: InstallationMetadata) {
   if (!name) {
@@ -33,7 +33,7 @@ export function getMismatchingVersionsWarnings(
     const cliVersion = getPrimaryVersion('storybook', installationMetadata);
     const frameworkVersion = getPrimaryVersion(frameworkPackageName, installationMetadata);
 
-    if (!cliVersion || !frameworkVersion || semver.eq(cliVersion, frameworkVersion)) {
+    if (!cliVersion || !frameworkVersion || isEqual(cliVersion, frameworkVersion)) {
       return undefined;
     }
 
@@ -45,7 +45,7 @@ export function getMismatchingVersionsWarnings(
 
     let versionToCompare: string;
     let packageToDisplay: string;
-    if (semver.lt(cliVersion, frameworkVersion)) {
+    if (isLess(cliVersion, frameworkVersion)) {
       versionToCompare = frameworkVersion;
       packageToDisplay = frameworkPackageName as string;
     } else {

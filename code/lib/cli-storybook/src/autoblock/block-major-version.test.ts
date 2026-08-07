@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 // Import mocked modules
-import * as semver from 'semver';
+import * as verkit from 'verkit';
 
 import { blocker, validateVersionTransition } from './block-major-version.ts';
 
@@ -19,12 +19,12 @@ vi.mock('picocolors', () => ({
   },
 }));
 
-vi.mock('semver', () => ({
+vi.mock('verkit', () => ({
   coerce: vi.fn(),
-  gt: vi.fn(),
-  major: vi.fn(),
-  parse: vi.fn(),
-  prerelease: vi.fn(),
+  getMajor: vi.fn(),
+  isGreater: vi.fn(),
+  isPrerelease: vi.fn(),
+  tryParse: vi.fn(),
 }));
 
 vi.mock('ts-dedent', () => ({
@@ -42,7 +42,7 @@ vi.mock('./types', () => ({
   createBlocker: vi.fn((blocker) => blocker),
 }));
 
-const mockedSemver = vi.mocked(semver);
+const mockedSemver = vi.mocked(verkit);
 
 describe('validateVersionTransition', () => {
   beforeEach(() => {

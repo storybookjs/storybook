@@ -24,8 +24,8 @@ import { SupportedFramework } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
 import { dirname, relative, resolve } from 'pathe';
-import { satisfies } from 'semver';
 import { dedent } from 'ts-dedent';
+import { satisfies } from 'verkit';
 
 import { type PostinstallOptions } from '../../../lib/cli-storybook/src/add.ts';
 import {

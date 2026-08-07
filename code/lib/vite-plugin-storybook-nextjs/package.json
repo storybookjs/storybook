@@ -75,15 +75,14 @@
     "module-alias": "^2.2.3",
     "pathe": "^2.0.3",
     "probe-image-size": "^7.3.0",
-    "semver": "^7.7.3",
     "ts-dedent": "^2.2.0",
+    "verkit": "^0.3.2",
     "vite-tsconfig-paths": "^5.1.4"
   },
   "devDependencies": {
     "@types/node": "^22.19.1",
     "@types/probe-image-size": "^7.2.5",
     "@types/react": "^18.0.37",
-    "@types/semver": "^7.7.1",
     "next": "^15.2.3",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

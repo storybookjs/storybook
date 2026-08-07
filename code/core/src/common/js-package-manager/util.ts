@@ -1,4 +1,4 @@
-import { gt, prerelease, valid } from 'semver';
+import { isGreater, isStable } from 'verkit';
 
 import type { JsPackageManager } from './JsPackageManager.ts';
 import { PackageManagerName } from './JsPackageManager.ts';
@@ -96,7 +96,7 @@ export const getLatestStableVersionAdheringToMinimumAgeGate = (
   let latestStableVersion: string | null = null;
 
   for (const [version, releaseTime] of Object.entries(timeMap)) {
-    if (!valid(version) || prerelease(version)) {
+    if (!isStable(version)) {
       continue;
     }
 
@@ -105,7 +105,7 @@ export const getLatestStableVersionAdheringToMinimumAgeGate = (
       continue;
     }
 
-    if (!latestStableVersion || gt(version, latestStableVersion)) {
+    if (!latestStableVersion || isGreater(version, latestStableVersion)) {
       latestStableVersion = version;
     }
   }

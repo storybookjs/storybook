@@ -105,7 +105,6 @@
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/preset-react-webpack": "workspace:*",
     "@storybook/react": "workspace:*",
-    "@types/semver": "^7.7.1",
     "babel-loader": "^9.1.3",
     "css-loader": "^6.7.3",
     "loader-utils": "^3.2.1",
@@ -116,11 +115,11 @@
     "react-refresh": "^0.14.0",
     "resolve-url-loader": "^5.0.0",
     "sass-loader": "^16.0.5",
-    "semver": "^7.7.3",
     "style-loader": "^3.3.1",
     "styled-jsx": "^5.1.6",
     "tsconfig-paths": "^4.0.0",
-    "tsconfig-paths-webpack-plugin": "^4.0.1"
+    "tsconfig-paths-webpack-plugin": "^4.0.1",
+    "verkit": "^0.3.2"
   },
   "devDependencies": {
     "@babel/types": "^7.28.5",

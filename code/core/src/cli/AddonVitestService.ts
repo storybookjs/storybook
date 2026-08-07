@@ -9,8 +9,8 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import { ErrorCollector } from 'storybook/internal/telemetry';
 
 import * as find from 'empathic/find';
-import { coerce, minVersion, satisfies, validRange } from 'semver';
 import { dedent } from 'ts-dedent';
+import { coerce, findMinimumForRange, normalizeRange, satisfies } from 'verkit';
 
 import { SupportedBuilder, type SupportedFramework } from '../types/index.ts';
 import { SUPPORTED_FRAMEWORKS } from './AddonVitestService.constants.ts';
@@ -49,8 +49,8 @@ export class AddonVitestService {
     if (!specifier) {
       return undefined;
     }
-    const range = validRange(specifier);
-    return coerce(range ? minVersion(range)?.version : specifier)?.version;
+    const range = normalizeRange(specifier);
+    return coerce(range ? findMinimumForRange(range)?.version : specifier)?.version;
   }
 
   /**

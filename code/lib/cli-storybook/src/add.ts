@@ -3,8 +3,8 @@ import { readConfig } from 'storybook/internal/csf-tools';
 import { logger as nodeLogger, prompt } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
-import SemVer from 'semver';
 import { dedent } from 'ts-dedent';
+import { isValid } from 'verkit';
 
 import { getStorybookData } from './automigrate/helpers/mainConfigFile.ts';
 import { postinstallAddon } from './postinstallAddon.ts';
@@ -193,5 +193,5 @@ export async function add(
   }
 }
 function isValidVersion(version: string) {
-  return SemVer.valid(version) || version.match(/^\d+$/);
+  return isValid(version) || version.match(/^\d+$/);
 }

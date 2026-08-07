@@ -1,4 +1,4 @@
-import semver from 'semver';
+import { rangesIntersect } from 'verkit';
 import type { Configuration as WebpackConfig } from 'webpack';
 
 import { addScopedAlias, getNextjsVersion, setAlias } from '../utils.ts';
@@ -16,7 +16,7 @@ export const getCompatibilityAliases = () => {
   const result: Record<string, string> = {};
 
   Object.keys(mapping).forEach((key) => {
-    if (semver.intersects(version, key)) {
+    if (rangesIntersect(version, key)) {
       Object.assign(result, mapping[key]);
     }
   });

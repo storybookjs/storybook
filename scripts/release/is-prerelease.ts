@@ -1,7 +1,7 @@
 import { setOutput } from '@actions/core';
 import { program } from 'commander';
 import picocolors from 'picocolors';
-import semver from 'semver';
+import { isPrerelease as isPrereleaseVersion } from 'verkit';
 
 import { esMain } from '../utils/esmain.ts';
 import { getCurrentVersion } from './get-current-version.ts';
@@ -25,7 +25,7 @@ export const isPrerelease = async (args: { version?: string; verbose?: boolean }
     }
   }
   const version = args.version || (await getCurrentVersion());
-  const result = semver.prerelease(version) !== null;
+  const result = !!isPrereleaseVersion(version);
 
   if (process.env.GITHUB_ACTIONS === 'true') {
     setOutput('prerelease', result);

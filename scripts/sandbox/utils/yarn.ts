@@ -2,7 +2,14 @@ import { readFile, rename, rm, writeFile } from 'node:fs/promises';
 
 import { join } from 'path';
 
-import semver from 'semver';
+import type { SemVer } from 'verkit';
+import {
+  findMinimumForRange,
+  isGreaterOrEqual,
+  isPrerelease,
+  tryParse,
+  tryParseRange,
+} from 'verkit';
 
 import { BEFORE_SANDBOX_NPM_MIN_VERSION, ROOT_DIRECTORY } from '../../utils/constants.ts';
 
@@ -72,7 +79,7 @@ export const BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS = 7;
 export async function ensureNpmSupportsMinReleaseAge() {
   const { stdout } = await runCommand('npm --version', { cwd: process.cwd() });
   const version = String(stdout).trim();
-  if (!semver.gte(version, BEFORE_SANDBOX_NPM_MIN_VERSION)) {
+  if (!isGreaterOrEqual(version, BEFORE_SANDBOX_NPM_MIN_VERSION)) {
     throw new Error(
       `Sandbox generation requires npm >= ${BEFORE_SANDBOX_NPM_MIN_VERSION} so NPM_CONFIG_MIN_RELEASE_AGE and min-release-age-exclude are honored (found ${version}). Upgrade with: npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}`
     );
@@ -210,6 +217,12 @@ function parseQuarantinedPackages(output: string): string[] {
 /** Yarn's wording when `yarn up` is handed a package the manifest does not declare. */
 const NOT_A_DIRECT_DEPENDENCY = /doesn't match any packages referenced by any workspace/;
 
+function tryFindMinimumForRange(range: string): SemVer | null {
+  const parsed = tryParseRange(range);
+  const floor = parsed ? findMinimumForRange(parsed) : null;
+  return floor ? tryParse(floor) : null;
+}
+
 /**
  * The `yarn up` descriptor that moves a quarantined package onto its newest installable
  * release without leaving the major the template asked for.
@@ -220,14 +233,14 @@ const NOT_A_DIRECT_DEPENDENCY = /doesn't match any packages referenced by any wo
  * carry no major to preserve, so they fall back to the bare name.
  */
 function narrowingDescriptor(name: string, range: string | undefined): string {
-  const floor = range && semver.validRange(range) ? semver.minVersion(range) : null;
+  const floor = range ? tryFindMinimumForRange(range) : null;
   if (!floor) {
     return name;
   }
 
   // Every stable release in the major sorts above a prerelease, so no range can admit
   // newer canaries without also admitting stable.
-  if (semver.prerelease(floor)) {
+  if (isPrerelease(floor)) {
     throw new Error(
       `${name}@${range} is quarantined by the ${BEFORE_SANDBOX_MIN_AGE_MINUTES}min age gate, and narrowing a prerelease range would resolve it to a stable release. Add ${name} to the template's minAgeGateExemptions.`
     );

@@ -2,8 +2,7 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { getVitePlusVersions } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 
-import picocolors from 'picocolors';
-import { lt } from 'semver';
+import { isLess } from 'verkit';
 
 import { shortenPath } from '../util.ts';
 import type { AutoblockerResult } from './types.ts';
@@ -55,7 +54,7 @@ export async function findOutdatedPackage<M extends Record<string, string>>(
       if (acc) {
         return acc;
       }
-      if (packageName && installedVersion && lt(installedVersion, minimumVersion)) {
+      if (packageName && installedVersion && isLess(installedVersion, minimumVersion)) {
         return {
           installedVersion,
           packageName,

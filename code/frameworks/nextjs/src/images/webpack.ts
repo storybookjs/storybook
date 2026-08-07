@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 
 import type { NextConfig } from 'next';
-import semver from 'semver';
+import { satisfies } from 'verkit';
 import type { RuleSetRule, Configuration as WebpackConfig } from 'webpack';
 
 import { getNextjsVersion } from '../utils.ts';
@@ -22,7 +22,7 @@ const configureImageDefaults = (baseConfig: WebpackConfig): void => {
     'next/image': fileURLToPath(import.meta.resolve('@storybook/nextjs/images/next-image')),
   };
 
-  if (semver.satisfies(version, '>=13.0.0')) {
+  if (satisfies(version, '>=13.0.0')) {
     resolve.alias = {
       ...resolve.alias,
       'sb-original/next/legacy/image': fileURLToPath(import.meta.resolve('next/legacy/image')),

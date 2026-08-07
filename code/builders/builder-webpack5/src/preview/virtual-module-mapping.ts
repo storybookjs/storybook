@@ -11,9 +11,9 @@ import type { Options, PreviewAnnotation } from 'storybook/internal/types';
 
 import { toImportFn } from '@storybook/core-webpack';
 
-import semver from 'semver';
 // eslint-disable-next-line depend/ban-dependencies
 import slash from 'slash';
+import { coerce, isLess } from 'verkit';
 import webpackModule from 'webpack';
 
 import type { BuilderOptions } from '../types.ts';
@@ -55,12 +55,12 @@ export const getVirtualModules = async (options: Options) => {
   // We only enable it for lazy compilation in dev mode on older webpack versions.
   // If the webpack version cannot be parsed, we conservatively disable the pipeline since
   // the bug is fixed in newer versions and we prefer to avoid unnecessary performance overhead.
-  const webpackVersion = webpackModule.version ? semver.coerce(webpackModule.version) : null;
+  const webpackVersion = webpackModule.version ? coerce(webpackModule.version) : null;
   const needPipelinedImport =
     !!builderOptions.lazyCompilation &&
     !isProd &&
     !!webpackVersion &&
-    semver.lt(webpackVersion, '5.101.3');
+    isLess(webpackVersion, '5.101.3');
   virtualModules[storiesPath] = toImportFn(stories, { needPipelinedImport });
   const configEntryPath = resolve(join(workingDir, 'storybook-config-entry.js'));
   virtualModules[configEntryPath] = (

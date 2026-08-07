@@ -9,7 +9,7 @@ import { WebpackDefinePlugin } from '@storybook/builder-webpack5';
 import type { NextConfig } from 'next';
 import { PHASE_DEVELOPMENT_SERVER } from 'next/constants.js';
 import nextJsLoadConfigModule from 'next/dist/server/config.js';
-import semver from 'semver';
+import { coerce, isGreaterOrEqual } from 'verkit';
 import type { Configuration as WebpackConfig } from 'webpack';
 
 import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
@@ -27,8 +27,8 @@ export const getNextjsVersion = (): string =>
 
 export const isNextVersionGte = (version: string): boolean => {
   const currentVersion = getNextjsVersion();
-  const coercedVersion = semver.coerce(currentVersion);
-  return coercedVersion ? semver.gte(coercedVersion, version) : false;
+  const coercedVersion = coerce(currentVersion);
+  return coercedVersion ? isGreaterOrEqual(coercedVersion, version) : false;
 };
 
 export const resolveNextConfig = async ({

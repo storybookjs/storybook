@@ -4,7 +4,7 @@ import { pathToFileURL } from 'node:url';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import semver from 'semver';
+import { isGreaterThanRange } from 'verkit';
 
 const appDirectory = realpathSync(process.cwd());
 
@@ -58,7 +58,7 @@ export async function isReactScriptsInstalled(minimumVersion = '2.0.0') {
         with: { type: 'json' },
       }
     );
-    return !semver.gtr(minimumVersion, reactScriptsJson.version);
+    return !isGreaterThanRange(minimumVersion, reactScriptsJson.version);
   } catch (e) {
     return false;
   }

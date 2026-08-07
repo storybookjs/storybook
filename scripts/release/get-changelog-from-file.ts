@@ -4,8 +4,8 @@ import { join } from 'node:path';
 import { setOutput } from '@actions/core';
 import { program } from 'commander';
 import picocolors from 'picocolors';
-import semver from 'semver';
 import { dedent } from 'ts-dedent';
+import { isPrerelease } from 'verkit';
 
 import { esMain } from '../utils/esmain.ts';
 import { getCurrentVersion } from './get-current-version.ts';
@@ -25,8 +25,7 @@ export const getChangelogFromFile = async (args: {
   verbose?: boolean;
 }) => {
   const version = args.version || (await getCurrentVersion());
-  const isPrerelease = semver.prerelease(version) !== null;
-  const changelogFilename = isPrerelease ? 'CHANGELOG.prerelease.md' : 'CHANGELOG.md';
+  const changelogFilename = isPrerelease(version) ? 'CHANGELOG.prerelease.md' : 'CHANGELOG.md';
   const changelogPath = join(__dirname, '..', '..', changelogFilename);
 
   console.log(`📝 Getting changelog from ${picocolors.blue(changelogPath)}`);

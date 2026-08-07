@@ -30,7 +30,13 @@ export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (
       return nextStoryDocs(input);
     }
 
-    const ours = await buildStoryDocsPayload(input);
+    let ours;
+    try {
+      ours = await buildStoryDocsPayload(input);
+    } catch {
+      return nextStoryDocs(input);
+    }
+
     if (!ours) {
       return nextStoryDocs(input);
     }

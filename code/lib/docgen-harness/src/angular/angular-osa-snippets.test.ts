@@ -55,8 +55,7 @@ describe('angular OSA snippet baselines', () => {
         storyRoot: testDir,
         resolveComponent: createCompodocComponentResolver({
           workspaceRoot: testDir,
-          outputDir: testDir,
-          readDocumentationJson: () => compodocJson,
+          readMetadata: () => compodocJson,
           logger: silentLogger,
         }),
         logger: silentLogger,

@@ -1,7 +1,9 @@
 import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import type { StoryDocsProviderPreset } from 'storybook/internal/types';
 
-import { resolveCompodocConfig } from '../compodoc-config.ts';
+import { join } from 'node:path';
+
+import { DOCUMENTATION_JSON, resolveCompodocConfig } from '../compodoc-config.ts';
 import { readFrameworkOptions } from '../framework-options.ts';
 import { buildStoryDocsPayload } from './build-story-docs.ts';
 import { createCompodocComponentResolver } from './compodoc-component-resolver.ts';
@@ -25,12 +27,14 @@ export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (
     return nextStoryDocs;
   }
 
+  const readDocumentationJson = createDocumentationJsonReader();
+  const documentationJson = join(compodoc.outputDir, DOCUMENTATION_JSON);
+
   const context = {
     storyRoot: process.cwd(),
     resolveComponent: createCompodocComponentResolver({
       workspaceRoot: compodoc.workspaceRoot,
-      outputDir: compodoc.outputDir,
-      readDocumentationJson: createDocumentationJsonReader(),
+      readMetadata: () => readDocumentationJson(documentationJson),
       logger: compodocLogger,
     }),
     logger: compodocLogger,

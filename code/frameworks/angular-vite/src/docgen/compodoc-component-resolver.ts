@@ -1,27 +1,26 @@
 /**
  * Compodoc's answer to "what does this component declare".
  *
- * This is the only place in the snippet path that knows `documentation.json` exists. Snippet
- * generation consumes {@link AngularComponentResolver}, so a different metadata source - an
- * in-process Angular component meta service, say - is a second implementation of this file rather
- * than a change to any of the generators.
+ * Snippet generation consumes {@link AngularComponentResolver} and never reaches for a metadata
+ * source itself, so a different one - an in-process Angular component meta service, say - is a
+ * sibling of this file rather than a change to any of the generators. Where Compodoc's metadata is
+ * read from stays with the caller that wires this up.
  */
 import type { ResolvedMetaComponent } from 'storybook/internal/common';
 
-import { join } from 'node:path';
-
 import type { CompodocJson, CompodocParsingLogger } from '@storybook/angular-compodoc';
 import { extractArgTypesFromData, htmlToText } from '@storybook/angular-compodoc';
-import { DOCUMENTATION_JSON } from '../compodoc-config.ts';
 import { findCompodocEntry } from './build-docgen.ts';
 import type { AngularComponentResolver } from './build-story-docs.ts';
 
 export interface CompodocComponentResolverOptions {
   /** Directory Compodoc's relative `file` paths resolve against. */
   workspaceRoot: string;
-  /** Directory Compodoc writes {@link DOCUMENTATION_JSON} into. */
-  outputDir: string;
-  readDocumentationJson: (path: string) => CompodocJson;
+  /**
+   * Compodoc's metadata. Called per resolve rather than captured once, so a Compodoc run that
+   * finishes mid-session is picked up; where it comes from is the caller's business.
+   */
+  readMetadata: () => CompodocJson;
   logger: CompodocParsingLogger;
 }
 
@@ -32,13 +31,12 @@ export interface CompodocComponentResolverOptions {
 export const createCompodocComponentResolver =
   (options: CompodocComponentResolverOptions): AngularComponentResolver =>
   (component: ResolvedMetaComponent) => {
-    const documentationJson = join(options.outputDir, DOCUMENTATION_JSON);
     let compodocJson: CompodocJson;
     try {
-      compodocJson = options.readDocumentationJson(documentationJson);
+      compodocJson = options.readMetadata();
     } catch (error) {
       options.logger.debug(
-        `Could not read ${documentationJson}: ${error instanceof Error ? error.message : String(error)}.`
+        `Could not read Compodoc metadata: ${error instanceof Error ? error.message : String(error)}.`
       );
       return undefined;
     }

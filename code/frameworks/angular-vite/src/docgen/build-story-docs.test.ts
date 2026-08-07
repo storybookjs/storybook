@@ -30,8 +30,7 @@ const entry = (importPath: string, title = 'StoryDocs'): IndexEntry => ({
 const compodocResolver = (overrides: Partial<CompodocComponentResolverOptions> = {}) =>
   createCompodocComponentResolver({
     workspaceRoot: FIXTURES,
-    outputDir: FIXTURES,
-    readDocumentationJson: documentationJson,
+    readMetadata: documentationJson,
     logger: { warn: vi.fn(), debug: vi.fn() },
     ...overrides,
   });
@@ -174,16 +173,16 @@ describe('buildStoryDocsPayload', () => {
       './story-docs.stories.ts',
       {
         resolveComponent: compodocResolver({
-          readDocumentationJson: (): CompodocJson => ({ components: [] }),
+          readMetadata: (): CompodocJson => ({ components: [] }),
         }),
       },
     ],
     [
-      'an unreadable documentation.json',
+      'unreadable Compodoc metadata',
       './story-docs.stories.ts',
       {
         resolveComponent: compodocResolver({
-          readDocumentationJson: () => {
+          readMetadata: () => {
             throw new Error('ENOENT');
           },
         }),

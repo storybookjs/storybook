@@ -1,4 +1,4 @@
-import { angularRepresentedNames } from './snippets-angular.ts';
+import { compareAngularSnippet } from './snippets-angular.ts';
 import { vueRepresentedNames } from './snippets-vue3.ts';
 import type { Framework, Violation } from './types.ts';
 
@@ -13,10 +13,15 @@ export interface CompareSnippetInput {
  * insensitive to attribute order, whitespace, quote style, and hoisted-vs-inline values by
  * construction. A name represented in the baseline but not the candidate is a violation; a
  * candidate-only representation is an improvement; a declared arg absent from both sides is an
- * accepted delta the committed baseline encodes (e.g. Vue drops function args). Value fidelity is
- * reviewed through the snapshot diff, not compared here.
+ * accepted delta the committed baseline encodes (e.g. Vue drops function args). The Angular
+ * comparison additionally gates root-element identity (tag name and bare attributes), because an
+ * Angular snippet's root IS the component selector. Value fidelity is reviewed through the
+ * snapshot diff, not compared here.
  */
 export function compareSnippet(input: CompareSnippetInput): Violation[] {
+  if (input.framework === 'angular') {
+    return compareAngularSnippet(input.baseline, input.candidate);
+  }
   const baselineNames = representedNames(input.framework, input.baseline);
   if (baselineNames === undefined) {
     // eslint-disable-next-line local-rules/no-uncategorized-errors
@@ -50,12 +55,10 @@ export function compareSnippet(input: CompareSnippetInput): Violation[] {
 }
 
 /** Every framework brings its own snippet grammar; the matchers live in snippets-<framework>.ts. */
-function representedNames(framework: Framework, snippet: string): Set<string> | undefined {
+function representedNames(framework: Exclude<Framework, 'angular'>, snippet: string) {
   switch (framework) {
     case 'vue3':
       return vueRepresentedNames(snippet);
-    case 'angular':
-      return angularRepresentedNames(snippet);
     default: {
       // Adding a member to the Framework union fails compilation here until the new
       // framework's represented-names matcher exists.

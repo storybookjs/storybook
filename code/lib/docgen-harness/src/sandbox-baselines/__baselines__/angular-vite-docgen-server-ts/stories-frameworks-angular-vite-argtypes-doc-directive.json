@@ -1,7 +1,7 @@
 {
   "argTypes": {
     "hasGrayBackground": {
-      "description": "\nWill apply gray background color if set to true.",
+      "description": "Will apply gray background color if set to true.",
       "name": "hasGrayBackground",
       "table": {
         "category": "inputs",
@@ -18,7 +18,6 @@
       }
     },
     "ngAfterViewInit": {
-      "description": "\n",
       "name": "ngAfterViewInit",
       "table": {
         "category": "methods",

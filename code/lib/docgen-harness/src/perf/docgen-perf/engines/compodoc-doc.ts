@@ -9,11 +9,17 @@
 import * as fs from 'node:fs';
 
 interface MemberEntry {
+  name?: string;
   type?: string;
   subProperties?: unknown[];
 }
 
-interface MemberHolder {
+/**
+ * The compodoc-shaped record both Angular engines count members from. Exported so the
+ * angular-component-meta engine counts its per-component entries through {@link countMembers} too;
+ * the pair's like-for-like verdict rests on both sides being counted by one rule.
+ */
+export interface MemberHolder {
   inputsClass?: MemberEntry[];
   outputsClass?: MemberEntry[];
   propertiesClass?: MemberEntry[];
@@ -32,10 +38,8 @@ const MEMBER_ARRAYS = ['inputsClass', 'outputsClass', 'propertiesClass', 'method
  * own arrays, so a base class documented under `classes` would be counted a second time. This also
  * matches what Storybook reads, which is a component's own four arrays.
  */
-function documentedMembers(doc: Documentation): MemberEntry[] {
-  return [...(doc.components ?? []), ...(doc.directives ?? [])].flatMap((holder) =>
-    MEMBER_ARRAYS.flatMap((key) => holder[key] ?? [])
-  );
+function documentedHolders(doc: Documentation): MemberHolder[] {
+  return [...(doc.components ?? []), ...(doc.directives ?? [])];
 }
 
 /**
@@ -84,8 +88,12 @@ export interface DocumentationCounts {
   opaqueTypes: number;
 }
 
+export function countMembers(holders: MemberHolder[]): DocumentationCounts {
+  const members = holders.flatMap((holder) => MEMBER_ARRAYS.flatMap((key) => holder[key] ?? []));
+  return { members: members.length, opaqueTypes: members.filter(isOpaque).length };
+}
+
 export function countDocumentation(documentationJsonPath: string): DocumentationCounts {
   const doc = JSON.parse(fs.readFileSync(documentationJsonPath, 'utf8')) as Documentation;
-  const members = documentedMembers(doc);
-  return { members: members.length, opaqueTypes: members.filter(isOpaque).length };
+  return countMembers(documentedHolders(doc));
 }

@@ -5,8 +5,13 @@ export type ViolationKind =
   | 'lost-description'
   | 'lost-default'
   | 'lost-type'
+  | 'lost-summary'
+  | 'changed-summary'
+  | 'lost-required'
   | 'type-fidelity'
   | 'lost-representation'
+  | 'changed-root'
+  | 'lost-attribute'
   | 'unparsable-candidate';
 
 export interface Violation {

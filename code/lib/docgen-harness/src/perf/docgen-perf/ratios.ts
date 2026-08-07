@@ -25,6 +25,7 @@ interface ControlPair {
 export const CONTROL_PAIRS: ControlPair[] = [
   { name: 'react', legacy: 'react-legacy', next: 'react-osa' },
   { name: 'vue', legacy: 'vue-docgen-api', next: 'vue-component-meta' },
+  { name: 'angular', legacy: 'compodoc', next: 'angular-component-meta' },
   {
     name: 'vue-component-meta-version',
     legacy: 'vue-component-meta',

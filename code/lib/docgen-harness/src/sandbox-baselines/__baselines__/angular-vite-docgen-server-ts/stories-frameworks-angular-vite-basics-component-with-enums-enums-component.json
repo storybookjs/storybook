@@ -1,13 +1,13 @@
 {
   "argTypes": {
     "aliasedUnionType": {
-      "description": "\nUnion Type assigned as a Type Alias",
+      "description": "Union Type assigned as a Type Alias",
       "name": "aliasedUnionType",
       "table": {
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "TypeAlias"
         }
       },
@@ -17,13 +17,13 @@
       }
     },
     "enumAlias": {
-      "description": "\nType Aliased Enum Type",
+      "description": "Type Aliased Enum Type",
       "name": "enumAlias",
       "table": {
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "EnumAlias"
         }
       },
@@ -33,13 +33,13 @@
       }
     },
     "enumNumeric": {
-      "description": "\nBase Enum Type with no assigned values",
+      "description": "Base Enum Type with no assigned values",
       "name": "enumNumeric",
       "table": {
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "EnumNumeric"
         }
       },
@@ -49,13 +49,13 @@
       }
     },
     "enumNumericInitial": {
-      "description": "\nEnum with initial numeric value and auto-incrementing subsequent values",
+      "description": "Enum with initial numeric value and auto-incrementing subsequent values",
       "name": "enumNumericInitial",
       "table": {
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "EnumNumericInitial"
         }
       },
@@ -65,13 +65,13 @@
       }
     },
     "enumStrings": {
-      "description": "\nEnum with string values",
+      "description": "Enum with string values",
       "name": "enumStrings",
       "table": {
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "EnumStringValues"
         }
       },
@@ -81,13 +81,13 @@
       }
     },
     "unionType": {
-      "description": "\nUnion Type of string literals",
+      "description": "Union Type of string literals",
       "name": "unionType",
       "table": {
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "\"Union A\" | \"Union B\" | \"Union C\""
         }
       },

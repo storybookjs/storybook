@@ -1,13 +1,13 @@
 {
   "argTypes": {
     "backgroundColor": {
-      "description": "\nWhat background color to use",
+      "description": "What background color to use",
       "name": "backgroundColor",
       "table": {
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },
@@ -15,8 +15,23 @@
         "name": "string"
       }
     },
+    "classes": {
+      "name": "classes",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "string[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
     "label": {
-      "description": "\n\nButton contents\n\n",
+      "description": "Button contents",
       "name": "label",
       "table": {
         "category": "inputs",
@@ -34,7 +49,7 @@
     },
     "onClick": {
       "action": "onClick",
-      "description": "\nOptional click handler",
+      "description": "Optional click handler",
       "name": "onClick",
       "table": {
         "category": "outputs",
@@ -50,7 +65,7 @@
       }
     },
     "primary": {
-      "description": "\nIs this the principal call to action on the page?",
+      "description": "Is this the principal call to action on the page?",
       "name": "primary",
       "table": {
         "category": "inputs",
@@ -67,7 +82,7 @@
       }
     },
     "size": {
-      "description": "\nHow large should the button be?",
+      "description": "How large should the button be?",
       "name": "size",
       "table": {
         "category": "inputs",

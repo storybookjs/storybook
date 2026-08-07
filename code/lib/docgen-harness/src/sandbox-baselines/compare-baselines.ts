@@ -1,13 +1,13 @@
-import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
-import { compareArgTypes } from '../compare/argtypes.ts';
 import type { SandboxBaseline, SandboxBaselines } from './read-static-docgen.ts';
 
 /**
  * What changed about one component between the committed baseline and a fresh sandbox build.
  *
- * `regression` findings say docgen got worse and must not be re-recorded without a reason.
- * `change` findings are neutral or better and are accepted by re-recording. Both fail the gate:
- * the split tells a reviewer which kind of failure they are looking at.
+ * The gate is exact-match: every difference is a finding and fails the run. `severity` only says
+ * which kind of failure a reviewer is looking at. `regression` means docgen demonstrably got worse
+ * (a component or arg disappeared, a component stopped being documented, a recorded default is
+ * gone) and wants a fix rather than a re-record; `change` is everything else and is adopted with
+ * `--update` once the diff has been read.
  */
 export interface BaselineFinding {
   component: string;
@@ -82,19 +82,6 @@ function compareComponent(
     explained.add('argTypes').add('error');
   }
 
-  for (const violation of compareArgTypes(
-    (baseline.argTypes ?? {}) as StrictArgTypes,
-    (candidate.argTypes ?? {}) as StrictArgTypes
-  )) {
-    findings.push({
-      component,
-      severity: 'regression',
-      kind: 'argtypes',
-      message: `${violation.arg}: [${violation.kind}] ${violation.message}`,
-    });
-    explained.add('argTypes');
-  }
-
   // Anything the rules above did not already explain, reported once per field so a re-record is a
   // reviewable diff rather than an opaque "something moved".
   const fields = new Set([...Object.keys(baseline), ...Object.keys(candidate)]);
@@ -102,6 +89,19 @@ function compareComponent(
     const before = baseline[field as keyof SandboxBaseline];
     const after = candidate[field as keyof SandboxBaseline];
     if (equal(before, after) || explained.has(field)) {
+      continue;
+    }
+    if (field === 'argTypes') {
+      const losses = argTypeLosses(before, after);
+      findings.push({
+        component,
+        severity: losses.length > 0 ? 'regression' : 'change',
+        kind: 'argtypes',
+        message:
+          losses.length > 0
+            ? `argTypes lost content (${losses.join('; ')}); full diff: ${diffArgTypes(before, after)}`
+            : `argTypes differs: ${diffArgTypes(before, after)}`,
+      });
       continue;
     }
     findings.push({
@@ -113,6 +113,63 @@ function compareComponent(
   }
 
   return findings;
+}
+
+/** Whether an arg records a default value; a raw `false` or `null` summary is a genuine one here. */
+const hasDefault = (entry: Record<string, unknown> | undefined): boolean =>
+  entry?.defaultValue !== undefined ||
+  (entry?.table as { defaultValue?: { summary?: unknown } } | undefined)?.defaultValue?.summary !==
+    undefined;
+
+/**
+ * The losses that make an argTypes difference a regression rather than neutral drift: an arg the
+ * build no longer produces, or one that no longer records a default. Everything else (added args,
+ * reworded prose, a type that resolved differently) is drift a reviewer accepts by re-recording.
+ */
+function argTypeLosses(before: unknown, after: unknown): string[] {
+  const beforeArgs = (before ?? {}) as Record<string, Record<string, unknown>>;
+  const afterArgs = (after ?? {}) as Record<string, Record<string, unknown>>;
+  const losses: string[] = [];
+  for (const arg of Object.keys(beforeArgs).sort()) {
+    const afterEntry = afterArgs[arg];
+    if (afterEntry === undefined) {
+      losses.push(`${arg} removed`);
+    } else if (hasDefault(beforeArgs[arg]) && !hasDefault(afterEntry)) {
+      losses.push(`${arg} lost its default`);
+    }
+  }
+  return losses;
+}
+
+/**
+ * Names the affected arg(s) and sub-field(s) of an argTypes difference; the two sides usually share
+ * the same arg names, so key lists alone say nothing.
+ */
+function diffArgTypes(before: unknown, after: unknown): string {
+  const beforeArgs = (before ?? {}) as Record<string, Record<string, unknown>>;
+  const afterArgs = (after ?? {}) as Record<string, Record<string, unknown>>;
+  const args = new Set([...Object.keys(beforeArgs), ...Object.keys(afterArgs)]);
+  const parts: string[] = [];
+  for (const arg of [...args].sort()) {
+    const beforeEntry = beforeArgs[arg];
+    const afterEntry = afterArgs[arg];
+    if (beforeEntry === undefined) {
+      parts.push(`${arg} (added)`);
+      continue;
+    }
+    if (afterEntry === undefined) {
+      parts.push(`${arg} (removed)`);
+      continue;
+    }
+    const subFields = new Set([...Object.keys(beforeEntry), ...Object.keys(afterEntry)]);
+    const changed = [...subFields]
+      .sort()
+      .filter((subField) => !equal(beforeEntry[subField], afterEntry[subField]));
+    if (changed.length > 0) {
+      parts.push(`${arg} (${changed.join(', ')})`);
+    }
+  }
+  return parts.join('; ');
 }
 
 /** Keeps a finding readable when the field is a whole argTypes table or a multi-line message. */

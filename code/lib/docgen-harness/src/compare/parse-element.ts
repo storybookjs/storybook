@@ -8,9 +8,15 @@ const OPEN_TAG = /<([A-Za-z][\w-]*)((?:[^>"']|"[^"]*"|'[^']*')*)>/;
 // value; quoted values are skipped whole, so their content can never read as attribute names.
 const ATTRIBUTE = /([^\s=]+)(?:\s*=\s*("[^"]*"|'[^']*'|\S+))?/g;
 
+export interface ParsedAttribute {
+  name: string;
+  /** True for a valueless attribute like `sb-harness-action` (a mangled attribute selector). */
+  bare: boolean;
+}
+
 export function parseRootElement(
   block: string
-): { attrText: string; childContent: string | undefined } | undefined {
+): { tag: string; attrText: string; childContent: string | undefined } | undefined {
   const match = OPEN_TAG.exec(block);
   if (match === null) {
     return undefined;
@@ -19,15 +25,22 @@ export function parseRootElement(
   const selfClosing = rawAttrText.endsWith('/');
   const attrText = selfClosing ? rawAttrText.slice(0, -1) : rawAttrText;
   if (selfClosing) {
-    return { attrText, childContent: undefined };
+    return { tag: name, attrText, childContent: undefined };
   }
   const openEnd = match.index + tag.length;
   const closeIndex = block.lastIndexOf(`</${name}>`);
   return {
+    tag: name,
     attrText,
     childContent: closeIndex >= openEnd ? block.slice(openEnd, closeIndex) : undefined,
   };
 }
 
+export const parseAttributes = (attrText: string): ParsedAttribute[] =>
+  [...attrText.matchAll(ATTRIBUTE)].map((match) => ({
+    name: match[1],
+    bare: match[2] === undefined,
+  }));
+
 export const parseAttributeNames = (attrText: string): string[] =>
-  [...attrText.matchAll(ATTRIBUTE)].map((match) => match[1]);
+  parseAttributes(attrText).map((attribute) => attribute.name);

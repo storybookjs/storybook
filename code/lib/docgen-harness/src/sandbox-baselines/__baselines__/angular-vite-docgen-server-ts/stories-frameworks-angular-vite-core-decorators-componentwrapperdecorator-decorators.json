@@ -1,7 +1,6 @@
 {
   "argTypes": {
     "childPrivateText": {
-      "description": "\n",
       "name": "childPrivateText",
       "table": {
         "category": "properties",
@@ -18,7 +17,6 @@
       }
     },
     "childText": {
-      "description": "\n",
       "name": "childText",
       "table": {
         "category": "inputs",

@@ -18,9 +18,18 @@
  * Requires a built sandbox:
  *   yarn task build --template <template> --start-from auto
  */
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from 'node:fs';
+import {
+  existsSync,
+  mkdirSync,
+  readFileSync,
+  readdirSync,
+  renameSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { parseArgs } from 'node:util';
 
 import { docgenServerTemplates } from '../../../cli-storybook/src/sandbox-templates.ts';
 import { SANDBOX_DIRECTORY } from '../perf/docgen-shared/paths.ts';
@@ -36,17 +45,22 @@ interface Options {
   update: boolean;
 }
 
-function parseArgs(argv: string[]): Options {
-  const valueOf = (flag: string): string | undefined => {
-    const index = argv.indexOf(flag);
-    return index === -1 ? undefined : argv[index + 1];
-  };
+/** Strict parsing, so `--template` with no value errors instead of silently running all of them. */
+function readOptions(argv: string[]): Options {
+  const { values } = parseArgs({
+    args: argv,
+    strict: true,
+    options: {
+      template: { type: 'string' },
+      sandbox: { type: 'string' },
+      update: { type: 'boolean', short: 'u', default: false },
+    },
+  });
 
-  const template = valueOf('--template');
   return {
-    templates: template ? [template] : docgenServerTemplates(),
-    sandboxDir: valueOf('--sandbox'),
-    update: argv.includes('--update') || argv.includes('-u'),
+    templates: values.template ? [values.template] : docgenServerTemplates(),
+    sandboxDir: values.sandbox,
+    update: values.update,
   };
 }
 
@@ -69,11 +83,22 @@ function readCommitted(baselineDir: string): SandboxBaselines {
   return committed;
 }
 
+/**
+ * Replaces the recorded set for a template. Written into a sibling directory and swapped in, so a
+ * throw mid-write leaves the committed baselines untouched rather than half-deleted.
+ */
 function write(baselineDir: string, baselines: SandboxBaselines): void {
-  rmSync(baselineDir, { recursive: true, force: true });
-  mkdirSync(baselineDir, { recursive: true });
-  for (const [component, payload] of Object.entries(baselines)) {
-    writeFileSync(join(baselineDir, `${component}.json`), `${stableStringify(payload)}\n`);
+  const stagingDir = `${baselineDir}.staging`;
+  rmSync(stagingDir, { recursive: true, force: true });
+  mkdirSync(stagingDir, { recursive: true });
+  try {
+    for (const [component, payload] of Object.entries(baselines)) {
+      writeFileSync(join(stagingDir, `${component}.json`), `${stableStringify(payload)}\n`);
+    }
+    rmSync(baselineDir, { recursive: true, force: true });
+    renameSync(stagingDir, baselineDir);
+  } finally {
+    rmSync(stagingDir, { recursive: true, force: true });
   }
 }
 
@@ -117,7 +142,7 @@ function runTemplate(template: string, sandboxDirOverride: string | undefined, u
 }
 
 function main(): void {
-  const { templates, sandboxDir, update } = parseArgs(process.argv.slice(2));
+  const { templates, sandboxDir, update } = readOptions(process.argv.slice(2));
 
   if (templates.length === 0) {
     // Silence here would read as "everything passed" while nothing had been checked.

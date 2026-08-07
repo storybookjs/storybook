@@ -1,0 +1,140 @@
+// Shared machinery for the two Angular baseline recorders: angular-baselines.test.ts (legacy
+// compodoc client path) and angular-component-meta-baselines.test.ts (ACM engine, `acm-` prefixed
+// snapshots). Everything here feeds committed snapshot files, so changes must keep recordings
+// byte-identical for both recorders.
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { expect } from 'vitest';
+
+import type { ArgTypes } from 'storybook/internal/types';
+import { computesTemplateSourceFromComponent } from '../../../../frameworks/angular-vite/src/client/renderer/ComputesTemplateFromComponent.ts';
+import { getComponentInputsOutputs } from '../../../../frameworks/angular-vite/src/client/renderer/utils/NgComponentAnalyzer.ts';
+import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
+
+export const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
+
+export const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
+  .filter((entry) => entry.isDirectory())
+  .map((entry) => entry.name)
+  .sort();
+
+export const readCommitted = (path: string): string | undefined =>
+  existsSync(path) ? readFileSync(path, 'utf8') : undefined;
+
+type AotCmp = {
+  inputs: Record<string, [string, number, null]>;
+  outputs: Record<string, string>;
+};
+
+type SnippetComponent = Parameters<typeof computesTemplateSourceFromComponent>[0];
+
+/**
+ * Signal fixtures cannot mount under JIT: bare JIT leaves ɵcmp.inputs/outputs empty, which would
+ * record `<tag></tag>` harness artifacts instead of real member bindings. Replace ɵcmp wholesale
+ * with the fixture's committed AOT-shaped fragment (defineProperty, because the JIT decorator
+ * installs a getter), then assert the production reader sees its members so a broken attach fails
+ * loudly instead of recording silently. No-op for fixtures without an aot-cmp.ts.
+ */
+export async function attachAotCmp(
+  component: SnippetComponent,
+  fixtureCase: string
+): Promise<void> {
+  if (!existsSync(join(fixturesDir, fixtureCase, 'aot-cmp.ts'))) {
+    return;
+  }
+  const { aotCmp } = (await import(`./__testfixtures__/${fixtureCase}/aot-cmp.ts`)) as {
+    aotCmp: AotCmp;
+  };
+  Object.defineProperty(component, 'ɵcmp', { value: aotCmp, configurable: true });
+
+  const { inputs, outputs } = getComponentInputsOutputs(component);
+  for (const [templateName, [propName]] of Object.entries(aotCmp.inputs)) {
+    expect(inputs).toContainEqual({ propName, templateName });
+  }
+  for (const [templateName, propName] of Object.entries(aotCmp.outputs)) {
+    expect(outputs).toContainEqual({ propName, templateName });
+  }
+}
+
+/**
+ * Records one snippet snapshot per story export (story args merged over meta args, a noop handler
+ * synthesized for every action argType), ratcheting each against its committed recording. Finally
+ * fails on stale on-disk snapshots: toMatchFileSnapshot files sit outside vitest's
+ * obsolete-snapshot detection, so a renamed or removed story export would silently leave its old
+ * snapshot behind.
+ */
+export async function recordSnippets({
+  fixtureCase,
+  component,
+  meta,
+  stories,
+  argTypes,
+  prefix,
+  legacyParity = false,
+}: {
+  fixtureCase: string;
+  component: SnippetComponent;
+  meta: { args?: Record<string, unknown> };
+  stories: Record<string, { args?: Record<string, unknown> }>;
+  argTypes: ArgTypes | undefined;
+  /** Snapshot file prefix: `snippet-` for the legacy recorder, `acm-snippet-` for the ACM one. */
+  prefix: 'snippet-' | 'acm-snippet-';
+  /** Additionally gate every snippet against the legacy recorder's committed `snippet-` file. */
+  legacyParity?: boolean;
+}): Promise<void> {
+  const testDir = join(fixturesDir, fixtureCase);
+  expect(Object.keys(stories).length).toBeGreaterThan(0);
+
+  const actionArgNames = Object.entries(argTypes ?? {})
+    .filter(([, argType]) => argType.action)
+    .map(([name]) => name);
+
+  for (const [exportName, story] of Object.entries(stories)) {
+    const props: Record<string, unknown> = { ...meta.args, ...story.args };
+    for (const name of actionArgNames) {
+      if (!(name in props)) {
+        props[name] = () => {};
+      }
+    }
+    const snippetPath = join(testDir, `${prefix}${exportName}.snapshot`);
+    const committedSnippet = readCommitted(snippetPath);
+    const snippet = computesTemplateSourceFromComponent(component, props, argTypes);
+    // null only when the component has no decorator metadata - impossible for these fixtures.
+    expect(snippet).not.toBeNull();
+    // Both gates run BEFORE the snapshot call: under `-u` that call queues the rewrite, so a
+    // gate placed after it would turn the run red while still persisting the regressed recording.
+    if (committedSnippet !== undefined) {
+      expectCurrentOrBetter({
+        kind: 'snippet',
+        framework: 'angular',
+        baseline: committedSnippet,
+        candidate: snippet!,
+      });
+    }
+    if (legacyParity) {
+      // Asserted to exist so deleting the legacy files can never silently disarm this gate.
+      const committedLegacySnippet = readCommitted(join(testDir, `snippet-${exportName}.snapshot`));
+      expect(
+        committedLegacySnippet,
+        `missing legacy ${fixtureCase}/snippet-${exportName}.snapshot`
+      ).toBeDefined();
+      expectCurrentOrBetter({
+        kind: 'snippet',
+        framework: 'angular',
+        baseline: committedLegacySnippet!,
+        candidate: snippet!,
+      });
+    }
+    await expect(snippet).toMatchFileSnapshot(snippetPath);
+  }
+
+  const snippetFilesOnDisk = readdirSync(testDir)
+    .filter((file) => file.startsWith(prefix) && file.endsWith('.snapshot'))
+    .sort();
+  const expectedSnippetFiles = Object.keys(stories)
+    .map((exportName) => `${prefix}${exportName}.snapshot`)
+    .sort();
+  expect(snippetFilesOnDisk).toEqual(expectedSnippetFiles);
+}

@@ -2,9 +2,40 @@ import type { SBType } from '../../../../core/src/csf/SBType.ts';
 import type { StrictArgTypes, StrictInputType } from '../../../../core/src/csf/story.ts';
 import type { Violation } from './types.ts';
 
-export function compareArgTypes(baseline: StrictArgTypes, candidate: StrictArgTypes): Violation[] {
+export interface CompareArgTypesOptions {
+  /**
+   * The baseline is a legacy compodoc recording, whose invented defaults (raw `false`, `NaN`, and
+   * `NaN`'s JSON round-trip `null`) must not be ratcheted. Only for legs whose baseline files the
+   * legacy Angular pipeline recorded; every other comparison treats those values as real defaults.
+   */
+  legacyBaseline?: boolean;
+  /**
+   * Additionally flag `table.type.summary` text changes and `table.type.required` true->false
+   * flips. Only for legs whose baseline the same engine recorded (the ACM self-ratchet), where the
+   * recorded table values are trustworthy rather than legacy fabrications (#28706).
+   */
+  strictTable?: boolean;
+}
+
+/**
+ * Deliberate pass-list: the comparator never flags description or default CONTENT changes,
+ * `table.category`, `control`, `action`, per-arg `jsDocTags`, candidate-only (added) args, or enum
+ * supersets. `required` and `table.type.summary` text changes pass except under `strictTable`.
+ * Everything on that list is either engine-specific vocabulary or a recorded legacy lie (#28706);
+ * changes to it are reviewed through the byte-exact snapshot diffs, not machine-gated here.
+ */
+export function compareArgTypes(
+  baseline: StrictArgTypes,
+  candidate: StrictArgTypes,
+  options: CompareArgTypesOptions = {}
+): Violation[] {
   const violations: Violation[] = [];
   for (const [arg, baseEntry] of Object.entries(baseline)) {
+    // ES-private `#member`s are inaccessible outside their class; legacy Compodoc records them
+    // anyway, and the modern extractor deliberately drops them. Their loss never gates.
+    if (arg.startsWith('#')) {
+      continue;
+    }
     const candidateEntry = candidate[arg] as StrictInputType | undefined;
     if (candidateEntry === undefined) {
       violations.push({
@@ -24,13 +55,20 @@ export function compareArgTypes(baseline: StrictArgTypes, candidate: StrictArgTy
         message: 'the baseline records a description but the candidate has none',
       });
     }
-    if (hasDefaultValue(baseEntry) && !hasDefaultValue(candidateEntry)) {
+    if (
+      hasDefaultValue(baseEntry, options.legacyBaseline === true) &&
+      // The invented-default waiver describes the LEGACY side only: a modern candidate records
+      // `false`/`null` deliberately, so treating those as absent here manufactured lost-default
+      // findings for genuinely-defaulted args (18 of bitwarden's 54 findings).
+      !hasDefaultValue(candidateEntry, false)
+    ) {
       violations.push({
         arg,
         kind: 'lost-default',
         message: `the baseline records a default value (${describeDefault(baseEntry)}) but the candidate has none`,
       });
     }
+    violations.push(...compareTypeSummary(arg, baseEntry, candidateEntry, options));
     const baseType = baseEntry.type;
     const candidateType = candidateEntry.type;
     if (baseType != null) {
@@ -60,8 +98,88 @@ const normalizeDescription = (description: unknown): string | undefined => {
   return trimmed === '' ? undefined : trimmed;
 };
 
-const hasDefaultValue = (entry: StrictInputType): boolean =>
-  entry.defaultValue !== undefined || entry.table?.defaultValue?.summary !== undefined;
+const hasDefaultValue = (entry: StrictInputType, legacyBaseline: boolean): boolean =>
+  entry.defaultValue !== undefined ||
+  isRecordedSummary(entry.table?.defaultValue?.summary, legacyBaseline);
+
+/**
+ * Whether a `table.defaultValue.summary` records a real default. The legacy Angular extractor
+ * invents defaults for members that have none - `NaN` from `Number(undefined)` / `Number('expr')`
+ * and boolean `false` from `undefined === 'true'` - which the no-invented-NaN gap marker
+ * (angular-legacy-gaps.test.ts) pins as fabrications, and a JSON round-trip (the sandbox
+ * baselines) writes that `NaN` as `null`. In a legacy compodoc baseline those raw values are
+ * indistinguishable from their invented counterpart, so `legacyBaseline` waives them there: a
+ * candidate that stops inventing them loses nothing. Everywhere else the recording engine writes
+ * raw `false` / `null` only for genuine defaults, so only `undefined` counts as absent.
+ */
+const isRecordedSummary = (summary: unknown, legacyBaseline: boolean): boolean => {
+  if (summary === undefined) {
+    return false;
+  }
+  if (!legacyBaseline) {
+    return true;
+  }
+  return (
+    summary !== null && summary !== false && !(typeof summary === 'number' && Number.isNaN(summary))
+  );
+};
+
+/**
+ * `table.type.summary` drops are violations in every mode; text changes only under `strictTable`,
+ * alongside `table.type.required` true->false flips. `table.type` is loosely typed upstream
+ * (`required` is a corpus field the csf type does not declare), hence the unknown-safe reads.
+ */
+function compareTypeSummary(
+  arg: string,
+  baseEntry: StrictInputType,
+  candidateEntry: StrictInputType,
+  options: CompareArgTypesOptions
+): Violation[] {
+  const violations: Violation[] = [];
+  const baseTableType = (baseEntry.table?.type ?? {}) as Record<string, unknown>;
+  const candidateTableType = (candidateEntry.table?.type ?? {}) as Record<string, unknown>;
+  const baseSummary = recordedTypeSummary(baseTableType.summary);
+  const candidateSummary = recordedTypeSummary(candidateTableType.summary);
+  if (baseSummary !== undefined && candidateSummary === undefined) {
+    violations.push({
+      arg,
+      kind: 'lost-summary',
+      message: `the baseline records table.type.summary ${JSON.stringify(baseSummary)} but the candidate has none`,
+    });
+  } else if (
+    options.strictTable === true &&
+    baseSummary !== undefined &&
+    candidateSummary !== undefined &&
+    baseSummary !== candidateSummary
+  ) {
+    violations.push({
+      arg,
+      kind: 'changed-summary',
+      message: `table.type.summary changed: baseline ${JSON.stringify(baseSummary)}, candidate ${JSON.stringify(candidateSummary)}`,
+    });
+  }
+  if (
+    options.strictTable === true &&
+    baseTableType.required === true &&
+    candidateTableType.required !== true
+  ) {
+    violations.push({
+      arg,
+      kind: 'lost-required',
+      message: 'the baseline records table.type.required true but the candidate does not',
+    });
+  }
+  return violations;
+}
+
+/** A summary counts as recorded when it stringifies to non-whitespace text. */
+const recordedTypeSummary = (summary: unknown): string | undefined => {
+  if (summary === undefined || summary === null) {
+    return undefined;
+  }
+  const text = String(summary);
+  return text.trim() === '' ? undefined : text;
+};
 
 // Quoted so a recorded default carrying a newline stays on one violation line.
 const describeDefault = (entry: StrictInputType): string =>
@@ -128,28 +246,41 @@ function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
 /** The corpus markers for "the engine extracted nothing"; any candidate improves on them. */
 const UNRESOLVED_STUBS = new Set(['', 'undefined', 'empty-enum']);
 
-const STRUCTURED_NAMES = new Set([
-  'array',
-  'enum',
-  'intersection',
-  'literal',
-  'object',
-  'tuple',
-  'union',
-]);
-
 /**
  * Legacy engines park whatever they cannot resolve in `other`, so its value is free text naming a
- * real type rather than a shape. A candidate improves on it by adding structure or by resolving it
- * to the scalar it already named; an unrelated scalar is a lateral change. Reading more out of the
- * text would mean guessing at each engine's spelling, so a resolution the rule cannot recognize
- * fails and is accepted through a reviewed re-record - the harness's normal acceptance path.
+ * real type rather than a shape. A candidate improves on it by adding populated structure or by
+ * resolving it to the scalar or single literal it already named; an unrelated scalar, an unrelated
+ * literal, or an EMPTY structure (enum/union/intersection/tuple with no members, object with no
+ * keys) is a lateral change. Reading more out of the text would mean guessing at each engine's
+ * spelling, so a resolution the rule cannot recognize fails and is accepted through a reviewed
+ * re-record - the harness's normal acceptance path.
  */
 const resolvesStub = (stub: string, candidate: SBType): boolean => {
   const text = stub.trim();
-  return (
-    UNRESOLVED_STUBS.has(text) || STRUCTURED_NAMES.has(candidate.name) || text === candidate.name
-  );
+  if (UNRESOLVED_STUBS.has(text)) {
+    return true;
+  }
+  if (candidate.name === 'literal') {
+    return normalizeLiteral(candidate.value) === normalizeLiteral(text);
+  }
+  return isPopulatedStructure(candidate) || text === candidate.name;
+};
+
+const isPopulatedStructure = (candidate: SBType): boolean => {
+  switch (candidate.name) {
+    case 'enum':
+    case 'union':
+    case 'intersection':
+    case 'tuple':
+      return candidate.value.length > 0;
+    case 'object':
+      return Object.keys(candidate.value).length > 0;
+    case 'array':
+      // An array always carries an element type, so it is never an empty shell.
+      return true;
+    default:
+      return false;
+  }
 };
 
 /** Ignores `required` and `raw` at every level and normalizes literal-ish values. */

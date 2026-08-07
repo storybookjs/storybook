@@ -136,7 +136,7 @@ function runCompodocOnce(
  */
 export async function runCompodocRepetition(
   cli: string,
-  scenario: AngularScenarioConfig,
+  scenario: Pick<AngularScenarioConfig, 'components' | 'props'>,
   workDir: string,
   pollIntervalMs: number
 ): Promise<OneShotRepetition> {
@@ -196,9 +196,11 @@ export class CompodocEngine extends BenchEngine<OneShotRepetition> {
   scenarios(profile: SuiteProfile): ScenarioSpec[] {
     // The poll interval rides in params because it qualifies the peak this engine reports: the
     // sample misses spikes shorter than the gap between polls, so the recorded peak is a floor and
-    // reading it later means knowing how wide that gap was.
+    // reading it later means knowing how wide that gap was. The profile's `saves` stays out: this
+    // engine has no save loop, and recording one would misdescribe the run.
+    const { components, props } = profile.angular;
     return [
-      { name: 'default', params: { ...profile.angular, rssPollIntervalMs: RSS_POLL_INTERVAL_MS } },
+      { name: 'default', params: { components, props, rssPollIntervalMs: RSS_POLL_INTERVAL_MS } },
     ];
   }
 

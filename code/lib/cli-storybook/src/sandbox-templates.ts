@@ -1268,27 +1268,28 @@ export const templatesByCadence = { normal, merged, daily };
  */
 const DOCGEN_SERVER_FEATURES = ['experimentalDocgenServer', 'componentsManifest'] as const;
 
-const mainConfigFeatures = (template: Template): Record<string, unknown> | undefined => {
-  const { mainConfig } = template.modifications ?? {};
-  if (!mainConfig) {
-    return undefined;
-  }
-  if (typeof mainConfig !== 'function') {
-    return mainConfig.features;
-  }
-  // Templates that rewrite the generated config read from the `ConfigFile` they are handed; the
-  // ones that only declare features ignore it. Reading features out of the latter is worth a stub;
-  // the former are expected to throw here and simply do not declare these flags.
-  try {
-    return mainConfig({ getFieldValue: () => undefined } as never)?.features;
-  } catch {
-    return undefined;
-  }
-};
+/**
+ * Templates whose `mainConfig` is a function of the generated `ConfigFile`, so its features cannot
+ * be read without running the sandbox generator. They are excluded from docgen baseline coverage by
+ * name: a new function-form template throws below instead of silently dropping out of coverage.
+ */
+const UNREADABLE_MAIN_CONFIG_TEMPLATES = new Set<string>(['cra/default-js']);
 
 /** Whether a template's sandbox runs with server-side docgen, and so carries docgen baselines. */
-const enablesDocgenServer = (template: Template): boolean => {
-  const features = mainConfigFeatures(template);
+const enablesDocgenServer = (key: string, template: Template): boolean => {
+  const { mainConfig } = template.modifications ?? {};
+  if (typeof mainConfig === 'function') {
+    if (!UNREADABLE_MAIN_CONFIG_TEMPLATES.has(key)) {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
+      throw new Error(
+        `Template "${key}" declares mainConfig as a function, whose features cannot be read here. ` +
+          `Move ${DOCGEN_SERVER_FEATURES.join(' and ')} into the object form to opt into docgen ` +
+          `baseline coverage, or add the key to UNREADABLE_MAIN_CONFIG_TEMPLATES to stay out of it.`
+      );
+    }
+    return false;
+  }
+  const features = mainConfig?.features;
   return DOCGEN_SERVER_FEATURES.every((feature) => features?.[feature] === true);
 };
 
@@ -1296,10 +1297,10 @@ const enablesDocgenServer = (template: Template): boolean => {
  * Templates whose sandbox runs with server-side docgen enabled.
  *
  * Derived from the flags rather than kept as a second list, so turning them on for a template is all
- * it takes to bring it into docgen baseline coverage — both the recorder and the CI step that
+ * it takes to bring it into docgen baseline coverage - both the recorder and the CI step that
  * verifies it read this.
  */
 export const docgenServerTemplates = (): TemplateKey[] =>
   (Object.entries(allTemplates) as [TemplateKey, Template][])
-    .filter(([, template]) => enablesDocgenServer(template))
+    .filter(([key, template]) => enablesDocgenServer(key, template))
     .map(([key]) => key);

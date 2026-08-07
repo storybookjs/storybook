@@ -49,7 +49,6 @@
       }
     },
     "user": {
-      "description": "\n",
       "name": "user",
       "table": {
         "category": "inputs",

@@ -36,10 +36,13 @@ CI runs the verify form after building each covered sandbox.
 
 ## Reading a failure
 
-Findings come in two severities, and both fail the run.
+The gate is exact-match: any difference from the committed baseline fails the run, including an unambiguous improvement.
+There is no "current or better" allowance here, because a sandbox baseline is a recording of what the whole provider chain produces and every move in it is worth a reviewer's eye.
 
-`regression` means docgen got worse: a component stopped being documented, an arg disappeared, a type lost fidelity, or a recorded component is gone from the build.
+Severity says which kind of failure you are looking at, not whether it blocks.
+
+`regression` means docgen demonstrably got worse: a component or an arg disappeared, a component stopped being documented, or a recorded default is gone.
 These want a fix rather than a re-record.
 
-`change` means the output moved without getting worse: a new component, a newly documented one, an added arg, reworded prose.
+`change` is everything else: a new component, a newly documented one, an added arg, a type that resolved differently, reworded prose.
 These are adopted with `--update` once the diff has been read.

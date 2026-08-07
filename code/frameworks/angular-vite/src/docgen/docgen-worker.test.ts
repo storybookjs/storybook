@@ -2,7 +2,7 @@ import { getComponentIdFromEntry } from 'storybook/internal/common';
 import type { DocgenPayload, DocgenProvider, IndexEntry } from 'storybook/internal/types';
 
 import { existsSync, readFileSync, statSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { join, resolve } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -31,7 +31,7 @@ afterEach(() => {
 });
 
 const OUTPUT_DIR = '/workspace/docs';
-const DOCUMENTATION_JSON = `${OUTPUT_DIR}/documentation.json`;
+const DOCUMENTATION_JSON = join(OUTPUT_DIR, 'documentation.json');
 const STORY_PATH = resolve(process.cwd(), 'button.stories.ts');
 
 const entry: IndexEntry = {

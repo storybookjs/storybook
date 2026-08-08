@@ -8,12 +8,12 @@ import type { AddonContext } from '../types.ts';
 import * as getStoryIndexModule from '../utils/get-story-index.ts';
 import type { StoryIndex } from 'storybook/internal/types';
 
-function makeIndex(ids: string[]): StoryIndex {
+function makeIndex(ids: string[], docsIds: string[] = []): StoryIndex {
   const entries: StoryIndex['entries'] = {};
-  for (const id of ids) {
+  for (const id of [...ids, ...docsIds]) {
     entries[id] = {
       id,
-      type: 'story',
+      type: docsIds.includes(id) ? 'docs' : 'story',
       title: 'X',
       name: id,
       importPath: './x.stories.ts',
@@ -262,6 +262,29 @@ describe('displayReviewTool', () => {
   });
 
   describe('story ID validation', () => {
+    it('rejects docs entries, which the review service cannot use as slots', async () => {
+      vi.spyOn(getStoryIndexModule, 'getStoryIndex').mockResolvedValue(
+        makeIndex(['button--primary'], ['button--docs'])
+      );
+      const reviewWithDocs: ReviewState = {
+        ...sampleReview,
+        collections: [
+          {
+            title: 'Button',
+            rationale: 'A docs entry slipped in alongside a real story.',
+            storyIds: ['button--primary', 'button--docs'],
+          },
+        ],
+      };
+
+      const result = getResult(await callTool(reviewWithDocs, makeContext()));
+
+      expect(result?.isError).toBe(true);
+      expect(result?.content?.[0]?.text).toContain('button--docs');
+      expect(result?.content?.[0]?.text).not.toContain('- `button--primary`');
+      expect(emitted).toEqual([]);
+    });
+
     it('rejects the whole review when any story ID is not in the live index', async () => {
       // Two real IDs, two fabricated ones — the agent invented the
       // "--default" exports based on naming conventions.

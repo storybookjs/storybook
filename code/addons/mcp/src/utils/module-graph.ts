@@ -52,7 +52,7 @@ export interface ModuleGraphService {
   };
 }
 
-type GetServiceFn = (serviceId: string) => unknown;
+type GetServiceFn = (serviceId: string, options?: { internal?: boolean }) => unknown;
 
 let probed: GetServiceFn | null | undefined;
 
@@ -106,7 +106,10 @@ export async function getModuleGraphService(): Promise<ModuleGraphService | unde
   const getService = await probe();
   if (!getService) return undefined;
   try {
-    return getService(MODULE_GRAPH_SERVICE_ID) as ModuleGraphService | undefined;
+    // Deliberate internal-OSA dependency until the toolset registry replaces it in Milestone 4.
+    return getService(MODULE_GRAPH_SERVICE_ID, { internal: true }) as
+      | ModuleGraphService
+      | undefined;
   } catch {
     // `getService` throws when the service isn't registered in this process.
     return undefined;

@@ -1,0 +1,14 @@
+{
+  "id": "recursive-type",
+  "import": "import RecursiveTree from './RecursiveTree.vue';",
+  "name": "RecursiveTree",
+  "path": "__PATH__",
+  "stories": {
+    "forms-recursive-type--props-as-written": {
+      "description": undefined,
+      "id": "forms-recursive-type--props-as-written",
+      "name": "Props As Written",
+      "summary": undefined,
+    },
+  },
+}

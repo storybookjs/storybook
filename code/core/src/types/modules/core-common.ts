@@ -418,7 +418,15 @@ export type TagsOptions = Record<Tag, Partial<TagOptions>>;
 
 export type ComponentSubcomponentManifest = Pick<
   ComponentManifest,
-  'name' | 'path' | 'description' | 'import' | 'summary' | 'jsDocTags' | 'error'
+  | 'name'
+  | 'path'
+  | 'description'
+  | 'import'
+  | 'summary'
+  | 'jsDocTags'
+  | 'error'
+  | 'apiDescription'
+  | 'renderer'
 >;
 
 export interface ComponentManifest {
@@ -428,6 +436,12 @@ export interface ComponentManifest {
   description?: string | undefined;
   import?: string | undefined;
   summary?: string | undefined;
+  /**
+   * API documentation in Markdown format.
+   * Prefer ## level headings for sections (Props, Events, Slots, etc.) and TS types for structured data.
+   */
+  apiDescription?: string | undefined;
+  renderer?: string | undefined;
   stories: {
     id: string;
     name: string;
@@ -445,7 +459,12 @@ export interface ComponentsManifest {
   v: number;
   components: Record<string, ComponentManifest>;
   meta?: {
-    docgen: 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
+    docgen:
+      | 'react-docgen'
+      | 'react-docgen-typescript'
+      | 'react-component-meta'
+      | 'vue-component-meta'
+      | 'compodoc';
     durationMs: number;
   };
 }

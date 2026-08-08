@@ -34,11 +34,6 @@ export interface ComponentMetaFileSystem {
   };
 }
 
-/**
- * The fs probes {@link ../ProjectFileTracker} needs for snapshot reads and freshness checks.
- * `typeof ts` satisfies this via `ts.sys`, so callers pass their own `typescript` module (see
- * {@link ComponentMetaFileSystem} for why the contract is structural).
- */
 export interface ProjectFileSystem {
   sys: {
     fileExists(path: string): boolean;

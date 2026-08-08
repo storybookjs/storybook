@@ -2,13 +2,6 @@ import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
 import { compareArgTypes } from '../compare/argtypes.ts';
 import type { SandboxBaseline, SandboxBaselines } from './read-static-docgen.ts';
 
-/**
- * What changed about one component between the committed baseline and a fresh sandbox build.
- *
- * `regression` findings say docgen got worse and must not be re-recorded without a reason.
- * `change` findings are neutral or better and are accepted by re-recording. Both fail the gate:
- * the split tells a reviewer which kind of failure they are looking at.
- */
 export interface BaselineFinding {
   component: string;
   severity: 'regression' | 'change';

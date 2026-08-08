@@ -1,15 +1,6 @@
 /**
  * Records or verifies per-component docgen baselines captured from a built sandbox.
  *
- * A sandbox is temporary and machine-specific, but `build-storybook` under
- * `features.experimentalDocgenServer` writes one docgen snapshot per component to
- * `storybook-static/services/core/docgen/`. This reads that directory, strips the machine-specific
- * and engine-specific parts, and keeps the result in the repository so a provider change shows up
- * as a reviewable diff instead of being noticed by hand.
- *
- * Which templates are covered is derived from the sandbox templates that enable server docgen, so
- * there is no list here to keep in sync: turning the flags on for a template brings it in.
- *
  * Run from code/lib/docgen-harness:
  *   yarn baselines:sandbox                              # verify every server-docgen template
  *   yarn baselines:sandbox --update                     # re-record after reviewing the diff

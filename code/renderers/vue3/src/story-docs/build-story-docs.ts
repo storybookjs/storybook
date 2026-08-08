@@ -99,6 +99,12 @@ function fallbackTitle(title: string): string {
   return title.split('/').at(-1)!.replace(/\s+/g, '');
 }
 
+/**
+ * Name of the identifier assigned to the meta `component` property, used as payload name,
+ * import-binding lookup key, and snippet tag so all three stay coherent.
+ *
+ * @example `component: MyButton` → `'MyButton'`; `component: UI.Button` → `undefined`
+ */
 function resolveMetaComponentIdentifier(csf: ParsedCsf): string | undefined {
   const metaPath = metaObjectPath(csf);
   const componentProperty = metaPath
@@ -113,6 +119,9 @@ function resolveMetaComponentIdentifier(csf: ParsedCsf): string | undefined {
   return value.isIdentifier() ? value.node.name : undefined;
 }
 
+/**
+ * Reconstructs the component's import statement from the story file's import bindings.
+ */
 function createImportStatement(csf: ParsedCsf): string | undefined {
   const componentName = resolveMetaComponentIdentifier(csf);
   if (!componentName) {
@@ -139,6 +148,9 @@ async function readDocgenFromService(id: string): Promise<DocgenPayload | undefi
   return docgen.commands.extractDocgen({ id });
 }
 
+/**
+ * Collects the slot and event names known to docgen, which drive arg classification.
+ */
 function vueDocgenArgInfo(payload: DocgenPayload): VueDocgenArgInfo {
   const slots = new Set<string>();
   const events = new Set<string>();
@@ -184,6 +196,11 @@ function metaArgsObjectPath(csf: ParsedCsf): ArgsObjectPath {
   return argsObjectPathFromObjectPath(metaObjectPath(csf));
 }
 
+/**
+ * AST path of the `args` property when its value is an object literal.
+ *
+ * @example `{ args: { label: 'Hi' } }` → path of `{ label: 'Hi' }`; `{ args: shared }` → undefined
+ */
 function argsObjectPathFromObjectPath(path?: NodePath<t.ObjectExpression>): ArgsObjectPath {
   const property = path
     ?.get('properties')
@@ -201,6 +218,9 @@ function argsObjectHasSpread(path: ArgsObjectPath): boolean {
   return path?.node.properties.some((property) => property.type === 'SpreadElement') ?? false;
 }
 
+/**
+ * Maps every CSF story export to its StoryDoc, enriched with a snippet or error where possible.
+ */
 function extractStories(
   csf: ParsedCsf,
   options: {
@@ -226,6 +246,9 @@ function extractStories(
   );
 }
 
+/**
+ * Attaches a synthesized snippet (or an "unsupported args" error) to a story doc.
+ */
 function enrichStoryDoc(
   csf: ParsedCsf,
   storyExport: string,
@@ -289,6 +312,11 @@ function enrichStoryDoc(
   };
 }
 
+/**
+ * Error for an `args` value that is not an object literal and so cannot be statically inlined.
+ *
+ * @example `{ args: sharedArgs }` → "Unsupported story args"; `{ args: { a: 1 } }` → undefined
+ */
 function argsContainerError(path?: NodePath<t.ObjectExpression>): StoryDoc['error'] | undefined {
   const property = path
     ?.get('properties')

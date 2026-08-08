@@ -38,7 +38,7 @@ const { analyzer } = vi.hoisted(() => {
 vi.mock('@storybook/angular-cm', () => ({
   AngularComponentMetaManager: analyzer.FakeAngularComponentMetaManager,
 }));
-// Replaced wholesale: these tests are about the middleware chain, not payload building.
+// These tests cover the middleware chain, not payload building.
 vi.mock('./build-docgen.ts', () => ({ buildDocgenPayload: vi.fn() }));
 vi.mock(import('storybook/internal/node-logger'), { spy: true });
 

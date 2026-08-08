@@ -102,8 +102,8 @@ describe('createDocgenWorkerClient', () => {
 
     expect(fakeWorkers).toHaveLength(1);
     expect(worker.posted[0]).toEqual({ type: 'init', descriptors: DESCRIPTORS });
-    // The worker stays referenced through init: an all-unref'd client let a static build drain
-    // the event loop and exit zero before a slow extraction finished, dropping every snapshot.
+    // The worker stays referenced through init, so a static build cannot exit before a slow
+    // extraction finishes.
     expect(worker.unref).not.toHaveBeenCalled();
 
     // Drive the extract to completion so dispose isn't racing a not-yet-queued request.

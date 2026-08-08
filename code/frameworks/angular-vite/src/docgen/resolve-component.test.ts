@@ -124,9 +124,9 @@ describe('resolveMetaComponent', () => {
       'no-component-import',
     ],
     [
-      // Only a bare identifier names a binding to follow. Reporting a miss beats reporting a
-      // story-local component called `Buttons.ButtonComponent`, which is what reading the printed
-      // source text used to produce.
+      // Only a bare identifier names a binding to follow. Reporting a miss beats resolving to a
+      // story-local `Buttons.ButtonComponent`, which is what matching the printed source text
+      // yields.
       'a member expression, which names no binding to follow',
       `import * as Buttons from './button.component';
        export default { component: Buttons.ButtonComponent };`,

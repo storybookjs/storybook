@@ -247,10 +247,10 @@ const visitConstructorProperties = (
 ): void => {
   const { ts } = ctx;
   for (const parameter of constructor.parameters) {
-    // Compodoc surfaces only parameter properties declared with an explicit `public`; private,
-    // protected, and bare-`readonly` injections never reach its propertiesClass (probed against
-    // compodoc 2.x). Real projects inject services as `private readonly`, so following suit also
-    // keeps DI internals out of the props table.
+    // Compodoc 2.x surfaces only parameter properties declared with an explicit `public`; private,
+    // protected, and bare-`readonly` injections never reach its propertiesClass. Real projects
+    // inject services as `private readonly`, so following suit also keeps DI internals out of the
+    // props table.
     const isPublicParameterProperty = (ts.getModifiers(parameter) ?? []).some(
       (modifier) => modifier.kind === ts.SyntaxKind.PublicKeyword
     );

@@ -92,10 +92,8 @@ class DocgenWorker implements DocgenWorkerClient {
     // Surface late init rejections instead of leaving an unhandled rejection.
     this.ready.catch(() => undefined);
 
-    // The worker stays referenced through init (it is spawned lazily, so work is always imminent),
-    // then {@link refWhileBusy} keeps it referenced exactly while extractions are in flight. An
-    // idle worker must not keep the process alive - but an all-unref'd client let a static build
-    // exit zero before slow extractions finished, silently dropping every docgen snapshot.
+    // Referenced through init, since the worker is spawned lazily and work is always imminent;
+    // {@link refWhileBusy} takes over from there.
     this.ready.finally(() => this.refWhileBusy()).catch(() => undefined);
 
     this.post({ type: 'init', descriptors });
@@ -124,10 +122,9 @@ class DocgenWorker implements DocgenWorkerClient {
   }
 
   /**
-   * Keep the process alive exactly while extractions are in flight. Idle, the worker stays
-   * unref'd so it never blocks exit - but with everything unref'd a static build whose main work
-   * finishes before a slow extraction would drain the event loop and exit zero WITHOUT writing
-   * the docgen service snapshots. Referencing while `pending` is non-empty closes that hole.
+   * Keeps the process alive exactly while extractions are in flight. An unref'd worker never
+   * blocks exit, but it would also let a static build finish its main work and exit before a slow
+   * extraction has written its docgen snapshots.
    */
   private refWhileBusy(): void {
     if (this.pending.size > 0) {

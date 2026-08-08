@@ -67,6 +67,9 @@ function createRes() {
     setHeader(name: string, value: string) {
       res.headers[name.toLowerCase()] = value;
     },
+    getHeader(name: string) {
+      return res.headers[name.toLowerCase()];
+    },
     end(body?: unknown) {
       res.body = body;
     },
@@ -76,9 +79,14 @@ function createRes() {
   return res;
 }
 
-async function run(middleware: Connect.NextHandleFunction, url: string) {
+async function run(
+  middleware: Connect.NextHandleFunction,
+  url: string,
+  presetHeaders: Record<string, string> = {}
+) {
   const req = { url } as Connect.IncomingMessage;
   const res = createRes();
+  Object.assign(res.headers, presetHeaders);
   const next = vi.fn();
   await middleware(req, res as never, next);
   return { req, res, next };
@@ -117,6 +125,24 @@ describe('storybook dispatch middleware', () => {
 
     expect(res.statusCode).toBe(200);
     expect(JSON.parse(res.body as string)).toEqual({ v: 5, entries: {} });
+  });
+
+  it('opens index.json to cross-origin composition, like the CLI dev server does', async () => {
+    const middleware = createMiddleware('/__storybook/');
+    const { res } = await run(middleware, '/__storybook/index.json');
+
+    expect(res.headers['access-control-allow-origin']).toBe('*');
+  });
+
+  it('leaves a host-provided CORS policy on index.json untouched', async () => {
+    const middleware = createMiddleware('/__storybook/');
+    const { res } = await run(middleware, '/__storybook/index.json', {
+      'access-control-allow-origin': 'http://localhost:6006',
+      'access-control-allow-credentials': 'true',
+    });
+
+    expect(res.headers['access-control-allow-origin']).toBe('http://localhost:6006');
+    expect(res.headers['access-control-allow-credentials']).toBe('true');
   });
 
   it('ignores URLs outside the base path', async () => {

@@ -1,6 +1,6 @@
 import { access, readFile } from 'fs/promises';
 
-import type { StoryIndexGenerator } from 'storybook/internal/core-server';
+import { setIndexJsonCorsHeaders, type StoryIndexGenerator } from 'storybook/internal/core-server';
 import type { Options } from 'storybook/internal/types';
 
 import { join } from 'pathe';
@@ -118,6 +118,7 @@ function createStorybookMiddleware(
       if (pathname === '/index.json') {
         const index = await storyIndexGenerator.getIndex();
         res.setHeader('Content-Type', 'application/json');
+        setIndexJsonCorsHeaders(res);
         res.statusCode = 200;
         res.end(JSON.stringify(index));
         return;

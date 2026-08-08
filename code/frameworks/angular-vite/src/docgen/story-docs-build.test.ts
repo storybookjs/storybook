@@ -93,10 +93,11 @@ const soleSnippet = (manager: AngularComponentMetaSource, storyFile = DEFAULT_ST
 const STORY_SHAPES_FILE = [
   `import { argsToTemplate } from '@storybook/angular-vite';`,
   `import { ButtonComponent } from './button.component';`,
-  `import { IMPORTED_TEMPLATE } from './templates';`,
+  `import { IMPORTED_TEMPLATE, importedRender } from './templates';`,
   `declare function buildSlot(args: unknown): string;`,
   `const HOISTED_TEMPLATE = '<sb-button hoisted></sb-button>';`,
   `const renderFn = () => ({ template: '<sb-button via-fn></sb-button>' });`,
+  `const sharedArgs = { label: 'shared' };`,
   `export default {`,
   `  title: 'Example/Button',`,
   `  component: ButtonComponent,`,
@@ -112,6 +113,10 @@ const STORY_SHAPES_FILE = [
   `export const HoistedTemplate = { template: HOISTED_TEMPLATE };`,
   `export const RenderIdentifier = { render: renderFn, args: { count: 4 } };`,
   `export const ImportedTemplate = { template: IMPORTED_TEMPLATE, args: { count: 5 } };`,
+  `export const ImportedRender = { render: importedRender, args: { count: 6 } };`,
+  // Args merged in with a spread, and a whole config merged in with one.
+  `export const SpreadArgs = { args: { ...sharedArgs, count: 1 } };`,
+  `export const ConfigSpread = { ...SpreadArgs, args: { count: 12 } };`,
   // `export { X }` registers a story without a declarator, so it exercises the other branch of the
   // CSF parser. Its own args must still win over the meta's.
   `const ReExported = { args: { label: 'reexported', count: 9 } };`,
@@ -152,15 +157,21 @@ const STORY_SHAPES_FILE = [
   `Csf2AssignedArgs.args = { label: 'assigned', count: 11 };`,
 ].join('\n');
 
-/** Snippet per story name, for a file that declares more than one story. */
-const snippetsOf = (storyFile: string) => {
+/** Story per name, for a file that declares more than one. */
+const storiesOf = (storyFile: string) => {
   givenStoryFile(storyFile);
   const payload = buildStoryDocsPayload(
     { entry },
     { manager: managerReturning(metaFor(componentEntry())) }
   );
-  return new Map(Object.values(payload?.stories ?? {}).map((story) => [story.name, story.snippet]));
+  return new Map(Object.values(payload?.stories ?? {}).map((story) => [story.name, story]));
 };
+
+const snippetsOf = (storyFile: string) =>
+  new Map([...storiesOf(storyFile)].map(([name, story]) => [name, story.snippet]));
+
+const warningsOf = (storyFile: string) =>
+  new Map([...storiesOf(storyFile)].map(([name, story]) => [name, story.warning]));
 
 describe('buildStoryDocsPayload', () => {
   it('returns undefined for entries without a story file or with an unparsable one', () => {
@@ -417,6 +428,63 @@ describe('buildStoryDocsPayload', () => {
     it('falls back when an interpolation needs the story to run', () => {
       expect(snippetsOf(STORY_SHAPES_FILE).get('Unreadable Interpolation')).toBe(
         `<sb-button [label]="'Save'" (clicked)="clicked($event)"></sb-button>`
+      );
+    });
+  });
+
+  describe('what a snippet could not resolve', () => {
+    // A snippet that fell back is still useful, so it ships - but silently shipping it leaves a
+    // consumer no way to know its example is partial.
+    it.each([
+      ['Imported Template', 'IMPORTED_TEMPLATE'],
+      ['Imported Render', 'render: importedRender'],
+      ['Unreadable Interpolation', 'buildSlot(args)'],
+    ])('names the markup the %s story fell back from', (storyName, expected) => {
+      const story = storiesOf(STORY_SHAPES_FILE).get(storyName);
+      expect(story?.warning).toContain(expected);
+      // The note is data on the story, not a comment in the markup, so a consumer that renders the
+      // snippet is not left with a stray comment and one that reads it can act on it.
+      expect(story?.snippet).toContain('<sb-button');
+      expect(story?.snippet).not.toContain(expected);
+    });
+
+    it('reports args a spread hid rather than shipping a snippet that looks complete', () => {
+      const story = storiesOf(STORY_SHAPES_FILE).get('Spread Args');
+      expect(story?.snippet).toBe(
+        `<sb-button [label]="'meta'" [count]="1" (clicked)="clicked($event)"></sb-button>`
+      );
+      expect(story?.warning).toBe(
+        'Incomplete snippet: `...sharedArgs` could not be resolved statically.'
+      );
+    });
+
+    it('reports a spread at the config level, not only one inside args', () => {
+      expect(warningsOf(STORY_SHAPES_FILE).get('Config Spread')).toBe(
+        'Incomplete snippet: `...SpreadArgs` could not be resolved statically.'
+      );
+    });
+
+    it('leaves a story it could read entirely alone', () => {
+      expect(warningsOf(STORY_SHAPES_FILE).get('Null Template')).toBeUndefined();
+    });
+
+    // A spread in the meta hides args from every story that falls back to generated bindings.
+    it('reports a spread in the meta on the stories it leaves incomplete', () => {
+      const story = soleSnippet(
+        managerReturning(metaFor(componentEntry())),
+        `
+          import { ButtonComponent } from './button.component';
+          const shared = { label: 'shared' };
+          export default {
+            title: 'Example/Button',
+            component: ButtonComponent,
+            args: { ...shared },
+          };
+          export const Default = { args: { count: 3 } };
+        `
+      );
+      expect(story.warning).toBe(
+        'Incomplete snippet: `...shared` could not be resolved statically.'
       );
     });
   });

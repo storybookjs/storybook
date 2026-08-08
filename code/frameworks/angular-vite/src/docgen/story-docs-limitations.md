@@ -35,6 +35,22 @@ Literals, arrays, objects and enum members are resolved to the value the browser
 
 Args assigned in the older CSF2 style (`MyStory.args = { ... }`) are read, even though the assignment sits outside the story's own initializer.
 
+## An incomplete snippet says so in `warning`, not in the markup
+
+When a static pass cannot read part of a story, the affected story carries a `warning` alongside its `snippet` rather than a comment inside the snippet:
+
+```json
+{
+  "id": "example-button--spread-args",
+  "name": "Spread Args",
+  "snippet": "<sb-button [label]=\"'meta'\" [count]=\"1\" (clicked)=\"clicked($event)\"></sb-button>",
+  "warning": "Incomplete snippet: `...sharedArgs` could not be resolved statically."
+}
+```
+
+Args merged in with a spread (`args: { ...sharedArgs, count: 1 }`) are the common case, along with a whole config merged in with one, a computed key, and a template or `render` that could not be read.
+A `warning` always comes with a snippet; an `error` means there is no snippet at all.
+
 ## Stories that supply their own template are untouched
 
 A story with a `template` (directly, or returned from an inline `render`) is shown as written, including an empty one.
@@ -42,7 +58,7 @@ That matches what the browser generator does today.
 
 A name declared in the same file is followed to what it holds, so `template: HOISTED_TEMPLATE` and `render: renderFn` are read rather than replaced by a fabricated element.
 An imported one cannot be followed, and neither can a template built from an expression that needs the story to run.
-In those cases the snippet falls back to the generated bindings rather than printing the variable name as if it were markup.
+In those cases the snippet falls back to the generated bindings rather than printing the variable name as if it were markup, and the story's `warning` names the expression it fell back from.
 
 ## `argsToTemplate` is expanded, not given up on
 

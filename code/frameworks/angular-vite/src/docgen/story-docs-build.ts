@@ -1,4 +1,4 @@
-import { type NodePath, types as t } from 'storybook/internal/babel';
+import { generate, type NodePath, types as t } from 'storybook/internal/babel';
 import {
   createMetaComponentResolver,
   getComponentIdFromEntry,
@@ -41,7 +41,8 @@ export interface BuildStoryDocsContext {
  * the runtime source decorator, where addon-actions injects a handler arg for each output. A story
  * that supplies its own markup, through `template` or through a `render` that returns one, is shown
  * as written instead; only markup that cannot be read without running the story falls back to the
- * component-derived bindings.
+ * component-derived bindings. A story left incomplete that way, or one whose args a spread hides,
+ * carries a `warning` naming what could not be read.
  *
  * Returns `undefined` when the entry has no story file or the file cannot be parsed (fall through
  * to the next provider). A resolvable file whose component cannot be analyzed still yields a
@@ -101,14 +102,15 @@ export const buildStoryDocsPayload = (
 
       const annotations = csf._storyAnnotations[exportName] ?? {};
       const args = new Map([...metaArgs, ...objectPropertiesOf(annotations.args)]);
-      const snippet = snippetContext
+      const rendered = snippetContext
         ? renderStorySnippet(snippetContext, { csf, exportName, annotations, args, source })
         : undefined;
 
       stories[story.id] = {
         id: story.id,
         name,
-        ...(snippet === undefined ? {} : { snippet }),
+        ...(rendered === undefined ? {} : { snippet: rendered.snippet }),
+        ...(rendered?.warning === undefined ? {} : { warning: rendered.warning }),
         ...(finalDescription ? { description: finalDescription } : {}),
         ...(summary === undefined ? {} : { summary }),
       };
@@ -172,9 +174,17 @@ interface StoryShape {
   source: string;
 }
 
-const renderStorySnippet = (snippetContext: SnippetContext, story: StoryShape): string => {
+/** A story's snippet, plus what a static pass could not read to build it. */
+interface RenderedSnippet {
+  snippet: string;
+  warning?: string;
+}
+
+const renderStorySnippet = (snippetContext: SnippetContext, story: StoryShape): RenderedSnippet => {
   if (!snippetContext.selector) {
-    return renderComponentOutletSnippet(snippetContext.componentName);
+    // The outlet form shows no args at all, so naming the args that could not be read would say
+    // nothing about what is missing from it.
+    return { snippet: renderComponentOutletSnippet(snippetContext.componentName) };
   }
 
   const inputs: SnippetInputBinding[] = [];
@@ -189,17 +199,50 @@ const renderStorySnippet = (snippetContext: SnippetContext, story: StoryShape): 
   const bindings = { inputs, outputs: snippetContext.outputs };
 
   const template = userTemplate(story, bindings);
-  return template?.kind === 'literal'
-    ? template.markup
-    : renderComponentSnippet({ selector: snippetContext.selector, ...bindings });
+  if (template?.kind === 'literal') {
+    // The story is shown exactly as it was written, so nothing about it is missing.
+    return { snippet: template.markup };
+  }
+
+  const unresolved = [
+    ...(template ? [template.source] : []),
+    ...unresolvableProperties(story.csf._metaNode),
+    ...unresolvableProperties(storyConfig(story)),
+  ];
+  return {
+    snippet: renderComponentSnippet({ selector: snippetContext.selector, ...bindings }),
+    ...(unresolved.length > 0 ? { warning: unresolvedWarning(unresolved) } : {}),
+  };
 };
+
+/** Source text of a node, for naming an expression this pass could not read. */
+const sourceOf = (node: t.Node): string => generate(node, { concise: true, comments: false }).code;
+
+/** Says which source text a static pass could not read, so a reader can see what is missing. */
+const unresolvedWarning = (unresolved: readonly string[]): string =>
+  `Incomplete snippet: ${unresolved.map((source) => `\`${source}\``).join(', ')} could not be resolved statically.`;
+
+/**
+ * Source text of everything in a config object a static pass cannot read - spreads, computed keys,
+ * methods - at the config level and inside its `args`. A spread at the config level carries args
+ * just as invisibly as one inside `args`, so both are reported.
+ */
+const unresolvableProperties = (config: t.ObjectExpression | undefined): string[] =>
+  [config, objectExpressionOf(propertyOf(config, 'args'))].flatMap((object) =>
+    (object?.properties ?? [])
+      .filter((property) => !t.isObjectProperty(property) || keyOf(property) === undefined)
+      .map(sourceOf)
+  );
 
 /** What a `template` turned out to hold. */
 type TemplateResult =
   /** Read as markup, so the story is shown as written. */
   | { kind: 'literal'; markup: string }
-  /** A `template` or `render` exists, but its markup needs the story to run. */
-  | { kind: 'unresolvable' };
+  /**
+   * A `template` or `render` exists, but its markup needs the story to run. `source` is that
+   * expression as written, so the story can say which one it fell back from.
+   */
+  | { kind: 'unresolvable'; source: string };
 
 /** Bindings the generated snippet would carry, which is also what `argsToTemplate` expands to. */
 type Bindings = { inputs: SnippetInputBinding[]; outputs: string[] };
@@ -235,7 +278,7 @@ const templateOf = (
   const returned = returnedObject(declaredValue(story, annotations.render));
   return returned
     ? templateFrom(propertyOf(returned, 'template'), story, bindings)
-    : { kind: 'unresolvable' };
+    : { kind: 'unresolvable', source: `render: ${sourceOf(annotations.render)}` };
 };
 
 const templateFrom = (
@@ -255,9 +298,11 @@ const templateFrom = (
   }
   if (t.isTemplateLiteral(node)) {
     const markup = interpolate(node, story, bindings);
-    return markup === undefined ? { kind: 'unresolvable' } : { kind: 'literal', markup };
+    return markup === undefined
+      ? { kind: 'unresolvable', source: sourceOf(node) }
+      : { kind: 'literal', markup };
   }
-  return { kind: 'unresolvable' };
+  return { kind: 'unresolvable', source: sourceOf(node) };
 };
 
 /** Markup a template literal holds once every `${…}` in it has been substituted. */
@@ -346,18 +391,31 @@ const returnedObject = (fn: t.Node | undefined): t.ObjectExpression | undefined 
   return t.isObjectExpression(unwrapped) ? unwrapped : undefined;
 };
 
-/** The object a CSF2 function story returns, for `export const S = () => ({ template })`. */
-const csf2Return = (story: StoryShape): t.ObjectExpression | undefined => {
+/** What a story export was declared as, whichever branch of the CSF parser registered it. */
+const storyInitializer = (story: StoryShape): t.Node | undefined => {
   const declared = story.csf._storyExports[story.exportName];
   if (t.isVariableDeclarator(declared)) {
-    return returnedObject(declared.init ?? undefined);
+    return declared.init ?? undefined;
   }
   if (t.isFunctionDeclaration(declared)) {
-    return returnedObject(declared);
+    return declared;
   }
   // `export { S }` records no declarator; the statement is the initializer it resolved to.
-  return returnedObject(story.csf._storyStatements[story.exportName]);
+  return story.csf._storyStatements[story.exportName];
 };
+
+/** The object a CSF2 function story returns, for `export const S = () => ({ template })`. */
+const csf2Return = (story: StoryShape): t.ObjectExpression | undefined =>
+  returnedObject(storyInitializer(story));
+
+/**
+ * A story's own config object.
+ *
+ * `_storyAnnotations` only records the properties that have a static name, so the object itself is
+ * what a spread or a computed key has to be read off.
+ */
+const storyConfig = (story: StoryShape): t.ObjectExpression | undefined =>
+  objectExpressionOf(storyInitializer(story));
 
 /**
  * An annotation value, following a bare name back to what it was declared as in this file.
@@ -392,22 +450,31 @@ const unwrapExpression = (node: t.Node): t.Node => {
   return node;
 };
 
+/** The object literal a node holds, peeling TS wrappers off it first. */
+const objectExpressionOf = (node: t.Node | undefined): t.ObjectExpression | undefined => {
+  const unwrapped = node && unwrapExpression(node);
+  return t.isObjectExpression(unwrapped) ? unwrapped : undefined;
+};
+
+/** Static name of an object property, or `undefined` when reading it needs the file to run. */
+const keyOf = (property: t.ObjectProperty): string | undefined => {
+  if (property.computed) {
+    return undefined;
+  }
+  if (t.isIdentifier(property.key)) {
+    return property.key.name;
+  }
+  return t.isStringLiteral(property.key) ? property.key.value : undefined;
+};
+
 /** Named properties of an `args` object literal, in source order. */
 const objectPropertiesOf = (node: t.Node | undefined): Map<string, t.Node> => {
   const properties = new Map<string, t.Node>();
-  const unwrapped = node && unwrapExpression(node);
-  if (!unwrapped || !t.isObjectExpression(unwrapped)) {
-    return properties;
-  }
-  for (const property of unwrapped.properties) {
-    if (!t.isObjectProperty(property) || property.computed) {
+  for (const property of objectExpressionOf(node)?.properties ?? []) {
+    if (!t.isObjectProperty(property)) {
       continue;
     }
-    const key = t.isIdentifier(property.key)
-      ? property.key.name
-      : t.isStringLiteral(property.key)
-        ? property.key.value
-        : undefined;
+    const key = keyOf(property);
     if (key !== undefined) {
       properties.set(key, property.value);
     }
@@ -477,14 +544,10 @@ const evaluateNode = (node: t.Node, enums: EnumType[]): unknown => {
   if (t.isObjectExpression(unwrapped)) {
     const value: Record<string, unknown> = {};
     for (const property of unwrapped.properties) {
-      if (!t.isObjectProperty(property) || property.computed) {
+      if (!t.isObjectProperty(property)) {
         return EVAL_FAILED;
       }
-      const key = t.isIdentifier(property.key)
-        ? property.key.name
-        : t.isStringLiteral(property.key)
-          ? property.key.value
-          : undefined;
+      const key = keyOf(property);
       if (key === undefined) {
         return EVAL_FAILED;
       }

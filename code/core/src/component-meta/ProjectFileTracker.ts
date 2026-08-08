@@ -146,8 +146,7 @@ export class ProjectFileTracker<Snapshot> {
   }
 }
 
-// Adapted from:
-// https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L450-L461
+// Adapted from the root-file-set comparison in @volar/kit's createChecker.
 function arrayItemsEqual(a: string[], b: string[]) {
   if (a.length !== b.length) {
     return false;

@@ -2,6 +2,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 
+import { installNoopChannel } from '../../../../channels/channel-slot.ts';
+import { createTestChannel, installTestChannel } from '../../../../channels/test-channel.ts';
+import { SERVICE_PATCHES } from '../../service-channel.ts';
 import { clearRegistry } from '../../server.ts';
 import {
   buildReverseIndex,
@@ -283,6 +286,53 @@ describe('module-graph open service', () => {
         revision: 0,
         storyFiles: [],
       });
+    });
+
+    it('keeps the stored index when an update omits storiesByFile', async () => {
+      const runtime = registerBareModuleGraph();
+      await runtime.commands._applyGraphSnapshot({
+        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
+      });
+
+      // A comment-only edit re-walks nothing, so the engine sends the bump without the index.
+      await runtime.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./src/Button.stories.tsx'],
+      });
+
+      expect(runtime.queries.storiesForFiles.get({ files: ['./src/Button.tsx'] })).toEqual([
+        [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
+      ]);
+      expect(runtime.queries.graphRevision.get(undefined)).toBe(1);
+      expect(runtime.queries.latestStoryChanges.get(undefined)).toEqual({
+        revision: 1,
+        storyFiles: ['./src/Button.stories.tsx'],
+      });
+    });
+
+    it('keeps the reverse index off the channel while still broadcasting revisions', async () => {
+      const channel = createTestChannel();
+      installTestChannel(channel);
+      const runtime = registerBareModuleGraph();
+
+      await runtime.commands._applyGraphUpdate({
+        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
+        bumpedStoryFiles: ['./src/Button.stories.tsx'],
+      });
+
+      const [, payload] = channel.emit.mock.calls.findLast(
+        ([event]) => event === SERVICE_PATCHES
+      ) as [string, { state: Record<string, unknown> }];
+      // The index is server-only: no browser runtime registers this service, and on a large project
+      // it is the difference between a few kilobytes and a hundred megabytes per file save.
+      expect(payload.state).not.toHaveProperty('storiesByFile');
+      expect(payload.state).toMatchObject({ graphRevision: 1 });
+      // ...and it is still queryable in the process that owns it.
+      expect(runtime.queries.storiesForFiles.get({ files: ['./src/Button.tsx'] })).toEqual([
+        [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
+      ]);
+
+      // Restore the in-process channel the rest of the suite registers against.
+      installNoopChannel();
     });
   });
 

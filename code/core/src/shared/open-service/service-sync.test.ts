@@ -62,4 +62,44 @@ describe('applyStatePatch', () => {
 
     expect(target).toEqual({ entries: { alpha: 'updated' } });
   });
+
+  it('keeps a local key that a full peer snapshot omits', () => {
+    const target = { graphRevision: 1, storiesByFile: { './a.ts': { './a.stories.ts': 1 } } };
+    // Local keys are stripped before broadcast, so a peer snapshot never carries them back.
+    const source = { graphRevision: 2 };
+
+    applyStatePatch(target as Record<string, unknown>, source as Record<string, unknown>, {
+      preserveMissingKeys: false,
+      localStateKeys: ['storiesByFile'],
+    });
+
+    expect(target).toEqual({
+      graphRevision: 2,
+      storiesByFile: { './a.ts': { './a.stories.ts': 1 } },
+    });
+  });
+
+  it('ignores a local key a peer sends anyway', () => {
+    const target = { storiesByFile: { './a.ts': { './a.stories.ts': 1 } } };
+    const source = { storiesByFile: { './b.ts': { './b.stories.ts': 1 } } };
+
+    applyStatePatch(target as Record<string, unknown>, source as Record<string, unknown>, {
+      preserveMissingKeys: false,
+      localStateKeys: ['storiesByFile'],
+    });
+
+    expect(target).toEqual({ storiesByFile: { './a.ts': { './a.stories.ts': 1 } } });
+  });
+
+  it('does not treat a nested key as local just because it shares a name', () => {
+    const target = { outer: { storiesByFile: 'nested', other: 'gone' }, storiesByFile: 'local' };
+    const source = { outer: { storiesByFile: 'replaced' } };
+
+    applyStatePatch(target as Record<string, unknown>, source as Record<string, unknown>, {
+      preserveMissingKeys: false,
+      localStateKeys: ['storiesByFile'],
+    });
+
+    expect(target).toEqual({ outer: { storiesByFile: 'replaced' }, storiesByFile: 'local' });
+  });
 });

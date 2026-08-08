@@ -590,6 +590,23 @@ Incoming state (from sync-start-reply or patches) is applied via `serviceRuntime
 
 Rather than replacing the entire state object on each patch (which would invalidate all signal subscriptions), `applyStatePatch` (in [service-sync.ts](./service-sync.ts)) recursively merges plain-object values in place: arrays and primitives are replaced directly, `__proto__`/`constructor`/`prototype` are skipped to block prototype pollution, and `preserveMissingKeys` controls whether missing keys are deleted. Cross-peer sync passes `false` so deletions propagate from full snapshots; static JSON loading passes `true` because each static file is a partial snapshot. This keeps fine-grained subscriptions on unaffected nested fields from firing spuriously.
 
+### `localStateKeys`
+
+A definition can name top-level state keys that never leave the runtime owning them:
+
+```ts
+defineService({
+  id: 'core/module-graph',
+  initialState: { graphRevision: 0, storiesByFile: {} },
+  localStateKeys: ['storiesByFile'],
+  // ...
+});
+```
+
+Listed keys are dropped from every snapshot before it is cloned for the channel, and `applyStatePatch` neither deletes nor overwrites them when a peer snapshot arrives, so each runtime keeps its own copy. Everything else syncs normally.
+
+Reach for this when a service holds large derived data that only the owning runtime queries. `core/module-graph` is the motivating case: it is registered on the server alone, and its reverse index runs to millions of `(file, story)` pairs on a large project — syncing it meant a full clone plus a telejson serialization on every command, for a payload no peer ever read. Anything a peer does need must stay off the list.
+
 ### State sync sequence
 
 ```text

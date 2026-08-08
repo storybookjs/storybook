@@ -88,12 +88,18 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
 export function applyStatePatch(
   target: Record<string, unknown>,
   source: Record<string, unknown>,
-  options: { preserveMissingKeys: boolean }
+  options: { preserveMissingKeys: boolean; localStateKeys?: readonly string[] }
 ): void {
   if (!options.preserveMissingKeys) {
     // Remove keys the source no longer carries (deletion propagation).
     for (const key of Object.keys(target)) {
       if (FORBIDDEN_KEYS.has(key)) {
+        continue;
+      }
+
+      // Local keys are stripped from every outgoing snapshot, so their absence here says nothing
+      // about the peer's intent — deleting them would discard this runtime's own data.
+      if (options.localStateKeys?.includes(key)) {
         continue;
       }
 
@@ -109,11 +115,19 @@ export function applyStatePatch(
       continue;
     }
 
+    // A peer has no authority over a local key, even if one somehow reaches us.
+    if (options.localStateKeys?.includes(key)) {
+      continue;
+    }
+
     const sourceValue = source[key];
     const tarvalue = target[key];
 
     if (isPlainObject(sourceValue) && isPlainObject(tarvalue)) {
-      applyStatePatch(tarvalue, sourceValue, options);
+      // `localStateKeys` names top-level keys only, so it must not follow the recursion down.
+      applyStatePatch(tarvalue, sourceValue, {
+        preserveMissingKeys: options.preserveMissingKeys,
+      });
     } else if (tarvalue !== sourceValue) {
       target[key] = sourceValue;
     }
@@ -157,8 +171,10 @@ export type SnapshotReconciler = {
 export function createSnapshotReconciler(options: {
   setState: (mutate: StateMutator) => void;
   initialStamp: SyncStamp;
+  /** Top-level state keys this runtime owns exclusively; never adopted from or deleted by a peer. */
+  localStateKeys?: readonly string[];
 }): SnapshotReconciler {
-  const { setState, initialStamp } = options;
+  const { setState, initialStamp, localStateKeys } = options;
   let localStamp = initialStamp;
 
   return {
@@ -177,7 +193,9 @@ export function createSnapshotReconciler(options: {
       }
 
       localStamp = { version: incoming.version, clientId: incoming.clientId };
-      setState((current) => applyStatePatch(current, state, { preserveMissingKeys: false }));
+      setState((current) =>
+        applyStatePatch(current, state, { preserveMissingKeys: false, localStateKeys })
+      );
 
       return true;
     },

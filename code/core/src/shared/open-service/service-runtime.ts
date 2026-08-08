@@ -106,8 +106,12 @@ export type ServiceRuntime<
   TQueries extends Queries<TState>,
   TCommands extends Commands<TState>,
 > = {
-  /** Returns a plain, detached snapshot of the current state for serialization. */
-  getStateSnapshot(): TState;
+  /**
+   * Returns a plain, detached snapshot of the current state for serialization. `omitKeys` leaves
+   * the named top-level keys out without cloning them, which is how a definition's
+   * `localStateKeys` stay off the channel.
+   */
+  getStateSnapshot(omitKeys?: readonly string[]): TState;
   commandSelf: CommandSelf<TState>;
   queryCtx: QueryCtx<TState>;
   loadCtxForStatic: LoadCtx<TState>;
@@ -301,7 +305,20 @@ export function createServiceRuntime<
   // The deep reactive proxy is the single source of truth that query computations track, at
   // per-field granularity.
   const state = deepSignal(rawState as object) as TState;
-  const getStateSnapshot = (): TState => structuredClone(rawState);
+  const getStateSnapshot = (omitKeys?: readonly string[]): TState => {
+    if (!omitKeys?.length) {
+      return structuredClone(rawState);
+    }
+    // Drop the omitted keys before cloning rather than after — cloning them is the cost being
+    // avoided, and for a large derived index it dominates the whole snapshot.
+    const kept: Record<string, unknown> = {};
+    for (const [key, value] of Object.entries(rawState as Record<string, unknown>)) {
+      if (!omitKeys.includes(key)) {
+        kept[key] = value;
+      }
+    }
+    return structuredClone(kept) as TState;
+  };
   const commandSelf = createCommandSelf(state);
   const { registryApi, staticLoader } = runtimeOptions;
   const createCommandCtx = (): CommandCtx<TState> => ({

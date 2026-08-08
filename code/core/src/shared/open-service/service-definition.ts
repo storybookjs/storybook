@@ -108,6 +108,7 @@ export const defineService = <
   description?: string;
   internal?: boolean;
   initialState: ServiceState<TState>;
+  localStateKeys?: readonly (keyof TState & string)[];
   queries: DefinedQueries<
     TState,
     TQueryInputSchemas,

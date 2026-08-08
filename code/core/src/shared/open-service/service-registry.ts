@@ -258,14 +258,19 @@ export function registerService<
   // Owns the per-service last-write-wins stamp and the adopt/advance logic. Adopting a peer snapshot
   // goes through `commandSelf.setState` — not the wrapped commands below — which is how the broadcast
   // loop is prevented.
+  // State this runtime owns exclusively: kept out of every snapshot that goes on the channel, and
+  // never clobbered by one arriving from a peer.
+  const { localStateKeys } = resolvedDefinition;
+
   const reconciler = createSnapshotReconciler({
     setState: (mutate) =>
       runtime.commandSelf.setState((state) => mutate(state as Record<string, unknown>)),
     initialStamp: { version: 0, clientId: ownClientId },
+    localStateKeys,
   });
 
   const getSnapshot = (): Record<string, unknown> =>
-    runtime.getStateSnapshot() as Record<string, unknown>;
+    runtime.getStateSnapshot(localStateKeys) as Record<string, unknown>;
 
   const descriptor = describeDefinition(resolvedDefinition as AnyServiceDefinition);
 

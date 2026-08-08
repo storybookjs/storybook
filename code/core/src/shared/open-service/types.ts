@@ -465,6 +465,19 @@ export type ServiceDefinition<
    * type stays `TState` so already-constructed definitions flow through the registry unchanged.
    */
   initialState: TState;
+  /**
+   * State keys that never leave the runtime that owns them. They are stripped from every snapshot
+   * put on the channel and are preserved when a peer snapshot is adopted, so each runtime keeps its
+   * own copy.
+   *
+   * Use this for large derived data that only the owning runtime queries. Syncing it would cost a
+   * clone plus a full serialization on every command, for a payload no peer reads. Anything a peer
+   * does need — revisions, status, small summaries — must stay out of this list.
+   *
+   * Keys are constrained to `TState` at the authoring boundary (`defineService`); the runtime type
+   * stays `string[]` so already-constructed definitions flow through the registry unchanged.
+   */
+  localStateKeys?: readonly string[];
   queries: TQueries;
   commands: TCommands;
 };

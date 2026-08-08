@@ -4,6 +4,7 @@ import type { StoryDocsProviderPreset } from 'storybook/internal/types';
 
 import { AngularComponentMetaManager } from '@storybook/angular-cm';
 import { buildStoryDocsPayload } from './story-docs-build.ts';
+import type { FrameworkOptions } from '../types.ts';
 
 const createManager = async (): Promise<AngularComponentMetaManager | undefined> => {
   try {
@@ -36,10 +37,16 @@ const createManager = async (): Promise<AngularComponentMetaManager | undefined>
  * No `startWatching()`: `extract` stats its cached snapshots per call, which keeps the story-file
  * driven re-extractions the module-graph subscription issues fresh without main-process watchers.
  */
-export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (nextStoryDocs) => {
+export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (
+  nextStoryDocs,
+  options
+) => {
   // Scoped to the composed chain rather than the module, so the manager has exactly one owner and
   // one lifetime. Created lazily on the first eligible entry.
   let managerPromise: Promise<AngularComponentMetaManager | undefined> | undefined;
+
+  const { snippetFormat } =
+    (await options.presets.apply<FrameworkOptions | null>('frameworkOptions')) ?? {};
 
   return async (input) => {
     const storyImportPath = getStoryImportPathFromEntry(input.entry);
@@ -48,7 +55,10 @@ export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (ne
     }
 
     const manager = await (managerPromise ??= createManager());
-    const ours = buildStoryDocsPayload(input, { manager });
+    const ours = buildStoryDocsPayload(input, {
+      manager,
+      ...(snippetFormat === undefined ? {} : { snippetFormat }),
+    });
     // The language service holds large type caches; check heap pressure after each extraction.
     manager?.recycleIfHeapPressured();
 

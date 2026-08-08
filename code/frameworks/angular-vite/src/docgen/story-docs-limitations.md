@@ -3,6 +3,36 @@
 Source material for the user-facing setup and known-limitations page.
 Behaviour described here applies to `@storybook/angular-vite` with the `experimentalDocgenServer` feature flag on, where the Source block and the Code panel show a snippet generated on the server from the component's declared metadata instead of one generated in the browser from the loaded component class.
 
+## Two snippet formats
+
+`framework.options.snippetFormat` picks the shape of the emitted snippet.
+
+`'template'` is the default and emits the bare markup, which is what the browser generator has always produced:
+
+```html
+<sb-button [label]="'Save'" [count]="3" (clicked)="clicked($event)"></sb-button>
+```
+
+`'component'` wraps that markup in the standalone host component it needs in order to compile, and the payload carries the matching import block:
+
+```ts
+import { Component } from '@angular/core';
+import { ButtonComponent } from './button.component';
+
+@Component({
+  selector: 'app-root',
+  template: `<sb-button [label]="'Save'" [count]="3" (clicked)="clicked($event)"></sb-button>`,
+  imports: [ButtonComponent],
+})
+export class App {
+  clicked(event: unknown) {}
+}
+```
+
+The host declares a no-op method per bound output because Angular's template type checking resolves `(clicked)="clicked($event)"` against the host class, so a snippet without it would not compile.
+Only the outputs the markup actually binds get a method, so a story that wrote its own markup around `argsToTemplate(args, { exclude: ['count'] })` gets exactly the handlers that survived the filter.
+The host `selector` and class name are fixed, and the component is imported through the specifier the story file itself used.
+
 ## Snippets no longer update as you change Controls
 
 This is the one accepted regression of the server-side docs path.

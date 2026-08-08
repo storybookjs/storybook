@@ -25,7 +25,7 @@ export interface RenderComponentSnippetInput {
   outputs: string[];
 }
 
-const isValidIdentifier = (name: string): boolean => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name);
+export const isValidIdentifier = (name: string): boolean => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name);
 
 const formatPropInTemplate = (propertyName: string) =>
   isValidIdentifier(propertyName) ? propertyName : `this['${propertyName}']`;

@@ -3,6 +3,7 @@ import {
   createMetaComponentResolver,
   getComponentIdFromEntry,
   getStoryImportPathFromEntry,
+  type ResolvedMetaComponent,
 } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import type { CsfFile } from 'storybook/internal/csf-tools';
@@ -15,6 +16,8 @@ import { resolve } from 'node:path';
 import type { EnumType, Property } from '@storybook/angular-compodoc';
 import type { AngularComponentMetaResult } from '@storybook/angular-cm';
 import type { AngularComponentMetaSource } from './build-docgen.ts';
+import type { AngularHostContext } from './story-docs-host.ts';
+import { angularHostComponent, angularHostImports } from './story-docs-host.ts';
 import {
   type BindingFilter,
   RawArgExpression,
@@ -23,15 +26,47 @@ import {
   renderComponentSnippet,
   type SnippetInputBinding,
 } from './story-docs-snippet.ts';
+import type { SnippetFormat } from '../types.ts';
 
 const resolveMetaComponent = createMetaComponentResolver();
+
+/** Preserves what the browser generator produces, so `component` stays an opt-in. */
+export const DEFAULT_SNIPPET_FORMAT: SnippetFormat = 'template';
 
 export interface BuildStoryDocsContext {
   /** `undefined` when the analyzer could not be created; descriptions still extract without it. */
   manager: AngularComponentMetaSource | undefined;
   /** Same hook the docgen builder exposes, defaulting to the same resolution against cwd. */
   resolvePath?: (importPath: string) => string;
+  /** Shape of the emitted snippet. Defaults to {@link DEFAULT_SNIPPET_FORMAT}. */
+  snippetFormat?: SnippetFormat;
 }
+
+/**
+ * How the host wrapper names and imports the component.
+ *
+ * The name is the class's own, which is already what the outlet form renders as a template
+ * expression; the import aliases the story file's export name back to it when the two differ.
+ */
+const hostContext = (
+  ref: ResolvedMetaComponent,
+  snippetContext: SnippetContext
+): AngularHostContext => ({
+  componentName: snippetContext.componentName,
+  exportName: ref.exportName,
+  ...(ref.importId === undefined ? {} : { importId: ref.importId }),
+  outlet: !snippetContext.selector,
+});
+
+/**
+ * Output names the markup binds, which the host has to declare methods for.
+ *
+ * Matched against the binding this generator emits rather than assumed to be every output: a story
+ * that wrote its own markup around `argsToTemplate(args, { exclude })` binds only some of them, and
+ * one that wrote plain markup binds none.
+ */
+const boundOutputs = (markup: string, outputs: readonly string[]): string[] =>
+  outputs.filter((name) => markup.includes(bindingAttributes({ inputs: [], outputs: [name] })[0]));
 
 /**
  * Builds a {@link StoryDocsPayload} for the stories in one CSF story file.
@@ -84,6 +119,13 @@ export const buildStoryDocsPayload = (
     }
   }
   const snippetContext = meta ? createSnippetContext(meta) : undefined;
+  // Set only for the `component` format, and only when there is something to wrap: a payload that
+  // carries no snippets would otherwise advertise an import block for markup it never emits.
+  const host =
+    (context.snippetFormat ?? DEFAULT_SNIPPET_FORMAT) === 'component' && snippetContext && component
+      ? hostContext(component, snippetContext)
+      : undefined;
+  const outputs = snippetContext?.outputs ?? [];
 
   const displayName =
     component && (component.exportName === 'default' ? component.localName : component.exportName);
@@ -105,11 +147,15 @@ export const buildStoryDocsPayload = (
       const rendered = snippetContext
         ? renderStorySnippet(snippetContext, { csf, exportName, annotations, args, source })
         : undefined;
+      const snippet =
+        rendered && host
+          ? angularHostComponent(rendered.snippet, boundOutputs(rendered.snippet, outputs), host)
+          : rendered?.snippet;
 
       stories[story.id] = {
         id: story.id,
         name,
-        ...(rendered === undefined ? {} : { snippet: rendered.snippet }),
+        ...(snippet === undefined ? {} : { snippet }),
         ...(rendered?.warning === undefined ? {} : { warning: rendered.warning }),
         ...(finalDescription ? { description: finalDescription } : {}),
         ...(summary === undefined ? {} : { summary }),
@@ -129,6 +175,7 @@ export const buildStoryDocsPayload = (
     // The analyzer knows the class name even when the story file imported it as a default export.
     name: meta?.entry.name ?? displayName ?? titleName,
     path: storyImportPath,
+    ...(host ? { import: angularHostImports(host) } : {}),
     stories,
   };
 };

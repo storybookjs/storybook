@@ -10,6 +10,7 @@ import { vol } from 'memfs';
 
 import type { AngularClassMeta, AngularComponentMetaResult } from '@storybook/angular-cm';
 import type { AngularComponentMetaSource } from './build-docgen.ts';
+import type { BuildStoryDocsContext } from './story-docs-build.ts';
 import { buildStoryDocsPayload } from './story-docs-build.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -157,15 +158,19 @@ const STORY_SHAPES_FILE = [
   `Csf2AssignedArgs.args = { label: 'assigned', count: 11 };`,
 ].join('\n');
 
-/** Story per name, for a file that declares more than one. */
-const storiesOf = (storyFile: string) => {
+const payloadOf = (storyFile: string, context: Partial<BuildStoryDocsContext> = {}) => {
   givenStoryFile(storyFile);
-  const payload = buildStoryDocsPayload(
+  return buildStoryDocsPayload(
     { entry },
-    { manager: managerReturning(metaFor(componentEntry())) }
+    { manager: managerReturning(metaFor(componentEntry())), ...context }
   );
-  return new Map(Object.values(payload?.stories ?? {}).map((story) => [story.name, story]));
 };
+
+/** Story per name, for a file that declares more than one. */
+const storiesOf = (storyFile: string, context: Partial<BuildStoryDocsContext> = {}) =>
+  new Map(
+    Object.values(payloadOf(storyFile, context)?.stories ?? {}).map((story) => [story.name, story])
+  );
 
 const snippetsOf = (storyFile: string) =>
   new Map([...storiesOf(storyFile)].map(([name, story]) => [name, story.snippet]));
@@ -529,5 +534,115 @@ describe('buildStoryDocsPayload', () => {
     const story = soleSnippet(throwingManager);
     expect(story.snippet).toBeUndefined();
     expect(story.error).toBeUndefined();
+  });
+
+  it('carries no import block in the default template format', () => {
+    expect(payloadOf(DEFAULT_STORY_FILE)?.import).toBeUndefined();
+  });
+});
+
+describe('buildStoryDocsPayload in component format', () => {
+  const componentFormat = { snippetFormat: 'component' } as const;
+
+  it('wraps the generated bindings in a host component that declares their handlers', () => {
+    expect(storiesOf(DEFAULT_STORY_FILE, componentFormat).get('Default')?.snippet).toBe(
+      `@Component({
+  selector: 'app-root',
+  template: \`<sb-button [label]="'Save'" [count]="3" (clicked)="clicked($event)"></sb-button>\`,
+  imports: [ButtonComponent],
+})
+export class App {
+  clicked(event: unknown) {}
+}`
+    );
+  });
+
+  it('carries the import block once for the whole component', () => {
+    expect(payloadOf(DEFAULT_STORY_FILE, componentFormat)?.import).toBe(
+      `import { Component } from '@angular/core';\nimport { ButtonComponent } from './button.component';`
+    );
+  });
+
+  it('declares no handlers for a story whose own markup binds no outputs', () => {
+    expect(storiesOf(STORY_SHAPES_FILE, componentFormat).get('Own Template')?.snippet).toBe(
+      `@Component({
+  selector: 'app-root',
+  template: \`<sb-button emphasis>hi</sb-button>\`,
+  imports: [ButtonComponent],
+})
+export class App {}`
+    );
+  });
+
+  // `argsToTemplate` expands into the same output bindings this generator emits, so the markup a
+  // story wrote around it does need handlers - and only for the outputs that survived the filter.
+  it('declares handlers only for the outputs the story kept', () => {
+    const stories = storiesOf(
+      [
+        `import { argsToTemplate } from '@storybook/angular-vite';`,
+        `import { ButtonComponent } from './button.component';`,
+        `export default { title: 'Example/Button', component: ButtonComponent };`,
+        `export const Kept = {`,
+        `  args: { label: 'Save' },`,
+        '  render: (args) => ({ props: args, template: `<sb-button ${argsToTemplate(args)}></sb-button>` }),',
+        `};`,
+        `export const Dropped = {`,
+        `  args: { label: 'Save' },`,
+        "  render: (args) => ({ props: args, template: `<sb-button ${argsToTemplate(args, { exclude: ['clicked'] })}></sb-button>` }),",
+        `};`,
+      ].join('\n'),
+      componentFormat
+    );
+
+    expect(stories.get('Kept')?.snippet).toContain('clicked(event: unknown) {}');
+    expect(stories.get('Dropped')?.snippet).toContain('export class App {}');
+  });
+
+  it('exposes the class the outlet template reads as a value', () => {
+    givenStoryFile(DEFAULT_STORY_FILE);
+    const payload = buildStoryDocsPayload(
+      { entry },
+      {
+        manager: managerReturning(metaFor(componentEntry({ selector: undefined }))),
+        ...componentFormat,
+      }
+    );
+
+    expect(Object.values(payload!.stories)[0].snippet).toBe(
+      `@Component({
+  selector: 'app-root',
+  template: \`<ng-container *ngComponentOutlet="ButtonComponent"></ng-container>\`,
+  imports: [NgComponentOutlet],
+})
+export class App {
+  readonly ButtonComponent = ButtonComponent;
+}`
+    );
+    expect(payload?.import).toContain(`import { NgComponentOutlet } from '@angular/common';`);
+  });
+
+  it('reports an unresolved arg on the story, not inside the component it emits', () => {
+    const story = storiesOf(STORY_SHAPES_FILE, componentFormat).get('Spread Args');
+
+    expect(story?.warning).toBe(
+      'Incomplete snippet: `...sharedArgs` could not be resolved statically.'
+    );
+    expect(story?.snippet).toContain('export class App {');
+    expect(story?.snippet).not.toContain('sharedArgs');
+  });
+
+  // A payload with nothing to wrap must not advertise an import block for markup it never emits.
+  it('emits neither a wrapper nor an import block when there is no component to host', () => {
+    givenStoryFile(`
+      export default { title: 'Example/Button' };
+      /** Documented without a component. */
+      export const Default = {};
+    `);
+    const payload = buildStoryDocsPayload({ entry }, { manager: undefined, ...componentFormat });
+    const stories = Object.values(payload!.stories);
+
+    expect(payload?.import).toBeUndefined();
+    expect(stories[0].snippet).toBeUndefined();
+    expect(stories[0].description).toBe('Documented without a component.');
   });
 });

@@ -1,21 +1,13 @@
 /**
- * ComponentMetaProject — one TS LanguageService per tsconfig.
+ * One TypeScript LanguageService per tsconfig, built on the checker and project-host patterns from
+ * `@volar/typescript`. Freshness is not decided here: the snapshot cache, projectVersion gate and
+ * root-set re-checks all live in core's `ProjectFileTracker`, which the Angular analyzer shares.
  *
- * Mirrors Volar-style checker/project-host patterns:
- *
- * - https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L83-L461
- * - https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProjectLs.ts#L44-L233
- * - https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/typescript/lib/protocol/createProject.ts#L30-L120
- * - CreateLanguage + createLanguageServiceHost from @volar/typescript
- * - Invalidation state (snapshot cache, projectVersion, root-set re-checks, ensureFresh) delegated
- *   to core's ProjectFileTracker
-*
-* Props extraction works probe-free:
-*
-* - Path 1 (primary): Find JSX in story files → getResolvedSignature() → props type
-* - Path 2 (fallback): Direct type inspection for args-only stories (component-meta approach)
-* - SerializeComponentDoc() serializes the resolved props type into ComponentDoc format
-*/
+ * Props are read from the story rather than the component, so a component is only ever described
+ * the way a story actually uses it. The JSX in the story gives a resolved call signature; an
+ * args-only story has no JSX to resolve, so those fall back to inspecting the component type
+ * directly.
+ */
 import {
   type FileChange,
   type FileSnapshotCache,
@@ -47,7 +39,7 @@ export class ComponentMetaProject {
   /** Invalidation state machine shared with the Angular component-meta project. */
   private readonly files: ProjectFileTracker<ts.IScriptSnapshot>;
   private warmupTimer?: ReturnType<typeof setTimeout>;
-  /** Entries to extract — set by the generator, replayed during warmup for targeted type resolution. */
+  /** Entries to extract - set by the generator, replayed during warmup for targeted type resolution. */
   private entries: StoryRef[] = [];
 
   constructor(
@@ -72,8 +64,7 @@ export class ComponentMetaProject {
       getCommandLineFn
     );
 
-    // Adapted from:
-    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L110-L141
+    // Adapted from the language construction in @volar/kit's createChecker.
     const language = createLanguage<string>(
       [{ getLanguageId: (fileName: string) => resolveFileLanguageId(fileName) }],
       new FileMap(typescript.sys.useCaseSensitiveFileNames),
@@ -90,8 +81,7 @@ export class ComponentMetaProject {
       }
     );
 
-    // Adapted from:
-    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/kit/lib/createChecker.ts#L359-L383
+    // Adapted from the project host in @volar/kit's createChecker.
     const projectHost: TypeScriptProjectHost = {
       getCurrentDirectory: () =>
         configFileName
@@ -109,13 +99,12 @@ export class ComponentMetaProject {
       getScriptFileNames: () => this.files.getScriptFileNames(),
     };
 
-    // Adapted from:
-    // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/typescript/lib/protocol/createProject.ts#L30-L120
+    // Adapted from @volar/typescript's createProject.
     const { languageServiceHost } = createLanguageServiceHost(
       typescript,
       typescript.sys,
       language,
-      (s) => s, // asScriptId — identity for React (no URI mapping needed)
+      (s) => s, // asScriptId - identity for React (no URI mapping needed)
       projectHost
     );
 
@@ -172,17 +161,16 @@ export class ComponentMetaProject {
       (fileName) => !!program?.getSourceFile(fileName)
     );
 
-    // Targeted warmup: re-extract in the background so the next request is instant.
-    // Only resolves the specific types we need (story JSX → getResolvedSignature),
-    // not the entire program. TypeScript caches resolved types on AST nodes —
-    // the real extraction then hits cached results.
+    // Targeted warmup: re-extract in the background so the next request is instant. Only the types
+    // the stories actually need get resolved, and TypeScript caches those on the AST nodes, so the
+    // real extraction that follows hits cached results.
     if (versionMoved && this.entries.length > 0) {
       clearTimeout(this.warmupTimer);
       this.warmupTimer = setTimeout(() => {
         try {
           this.extractPropsFromStories(this.entries);
         } catch {
-          // Warmup failure is non-fatal — extraction will still work on demand.
+          // Warmup failure is non-fatal - extraction will still work on demand.
         }
       }, 100);
       this.warmupTimer?.unref?.();
@@ -190,7 +178,7 @@ export class ComponentMetaProject {
   }
 
   // ---------------------------------------------------------------------------
-  // Primary extraction method — probe-free
+  // Primary extraction method - probe-free
   // ---------------------------------------------------------------------------
 
   extractPropsFromStories(entries: StoryRef[]): void {
@@ -255,7 +243,7 @@ export class ComponentMetaProject {
           );
         }
 
-        // Path 2: Fallback — resolve from meta.component in the story file.
+        // Path 2: Fallback - resolve from meta.component in the story file.
         // Only fires when the user explicitly set `component:` in the meta object.
         // Only applies to the meta component itself, not declared subcomponents.
         if (!resolvedComponent) {
@@ -319,7 +307,7 @@ export class ComponentMetaProject {
 
   /**
    * Path 2 fallback: resolve the component type from the story file's `meta.component` property.
-   * Only works when the user explicitly set `component:` in the meta — no node means no
+   * Only works when the user explicitly set `component:` in the meta - no node means no
    * extraction.
    */
   private resolveFromMetaComponent(

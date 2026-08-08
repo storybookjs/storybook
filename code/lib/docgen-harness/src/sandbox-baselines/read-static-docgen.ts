@@ -3,24 +3,15 @@ import { join } from 'node:path';
 
 import type { DocgenPayload } from '../../../../core/src/shared/open-service/services/docgen/types.ts';
 
-/** Where `build-storybook` writes one docgen snapshot per component under the static output dir. */
 export const DOCGEN_SNAPSHOT_DIR = join('services', 'core', 'docgen');
 
 /**
  * Token standing in for the sandbox directory inside recorded strings.
- *
- * Sandboxes live at an absolute path that differs per machine and per CI run, and provider errors
- * quote it (`... Source: /Users/me/sandboxes/x/documentation.json`). Recording the raw path would
- * make every baseline machine-specific.
  */
 export const SANDBOX_TOKEN = '<sandbox>';
 
 /**
  * The portable {@link DocgenPayload} fields, which are the ones worth recording.
- *
- * `DocgenPayload` carries an index signature so providers can attach engine-specific data, and the
- * Angular provider uses it for the raw Compodoc entry: 117KB of mostly `sourceCode` across a stock
- * sandbox, none of it part of the contract this baseline guards.
  */
 const PORTABLE_FIELDS = [
   'id',
@@ -86,10 +77,6 @@ const isGloballyReferenced = (payload: SandboxBaseline): boolean =>
 
 /**
  * Reads every per-component docgen snapshot from a static Storybook build.
- *
- * Each file holds a whole service state snapshot (`{ components: { <id>: payload } }`) built from
- * one query input, so a file contributes exactly one component. Globally-referenced components are
- * skipped; see {@link isGloballyReferenced}.
  */
 export function readStaticDocgen({
   staticDir,

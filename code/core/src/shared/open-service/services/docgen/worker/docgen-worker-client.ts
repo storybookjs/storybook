@@ -92,9 +92,6 @@ class DocgenWorker implements DocgenWorkerClient {
     // Surface late init rejections instead of leaving an unhandled rejection.
     this.ready.catch(() => undefined);
 
-    // Never let an idle worker keep the process alive. This has to run after every `on('message')`
-    // above: attaching a message listener re-references the port, so unreferencing first leaves the
-    // worker holding the event loop open and a static build never exits.
     this.worker.unref();
 
     this.post({ type: 'init', descriptors });

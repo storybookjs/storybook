@@ -16,11 +16,20 @@ export type FileSnapshotCache<Snapshot> = Map<string, [number | undefined, Snaps
 
 const normalize = (fileName: string) => fileName.replace(/\\/g, '/');
 
+/** Matches a whole `node_modules` path segment, so `src/node_modules-tools/Tag.tsx` is kept. */
+const NODE_MODULES_SEGMENT = /(?:^|\/)node_modules(?:\/|$)/;
+
 /** Normalize program file paths and drop node_modules, for the manager's directory watching. */
 export function filterSourceFilePaths(fileNames: readonly string[]): string[] {
-  return fileNames.map(normalize).filter((fileName) => !fileName.includes('node_modules'));
+  return fileNames.map(normalize).filter((fileName) => !NODE_MODULES_SEGMENT.test(fileName));
 }
 
+/**
+ * Every public entry point normalizes its path argument to forward slashes, so `snapshots`,
+ * `fileVersions` and the fs probes are all keyed the same way. Watcher events and the story and
+ * component paths Storybook hands down can carry Windows backslashes, while TypeScript always uses
+ * forward slashes, and the two meet in this cache.
+ */
 export class ProjectFileTracker<Snapshot> {
   private projectVersion = 0;
   private shouldCheckRootFiles = false;
@@ -36,7 +45,8 @@ export class ProjectFileTracker<Snapshot> {
     private readonly fs: ProjectFileSystem,
     /**
      * The project's parsed command line, held by reference: root-set updates assign
-     * `commandLine.fileNames` in place so the owning project observes them without copies.
+     * `commandLine.fileNames` in place so the owning project observes them without copies. Its names
+     * arrive already normalized, from `parseTsconfigCommandLine`.
      */
     private readonly commandLine: { fileNames: string[] },
     private readonly snapshots: FileSnapshotCache<Snapshot>,
@@ -60,28 +70,32 @@ export class ProjectFileTracker<Snapshot> {
   }
 
   getScriptVersion(fileName: string): string {
-    const edits = this.fileVersions.get(fileName) ?? 0;
-    const cached = this.snapshots.get(fileName);
+    const normalized = normalize(fileName);
+    const edits = this.fileVersions.get(normalized) ?? 0;
+    const cached = this.snapshots.get(normalized);
     if (cached) {
       // Mtime of the cached snapshot; deliberately no stat here. Freshness is driven by the watch
       // layer and ensureFresh deleting entries, keeping program syncs free of per-file fs churn.
       return `${edits}:${cached[0] ?? 0}`;
     }
-    return `${edits}:${this.fs.sys.getModifiedTime?.(fileName)?.valueOf() ?? 0}`;
+    return `${edits}:${this.fs.sys.getModifiedTime?.(normalized)?.valueOf() ?? 0}`;
   }
 
   /** Mtime-checked read-through: re-reads the file only when its mtime moved or was evicted. */
   getSnapshot(fileName: string): Snapshot | undefined {
-    const modifiedTime = this.fs.sys.getModifiedTime?.(fileName)?.valueOf();
-    const cache = this.snapshots.get(fileName);
+    const normalized = normalize(fileName);
+    const modifiedTime = this.fs.sys.getModifiedTime?.(normalized)?.valueOf();
+    const cache = this.snapshots.get(normalized);
     if (!cache || cache[0] !== modifiedTime) {
-      const text = this.fs.sys.fileExists(fileName) ? this.fs.sys.readFile(fileName) : undefined;
-      this.snapshots.set(fileName, [
+      const text = this.fs.sys.fileExists(normalized)
+        ? this.fs.sys.readFile(normalized)
+        : undefined;
+      this.snapshots.set(normalized, [
         modifiedTime,
         text !== undefined ? this.createSnapshot(text) : undefined,
       ]);
     }
-    return this.snapshots.get(fileName)?.[1];
+    return this.snapshots.get(normalized)?.[1];
   }
 
   /**

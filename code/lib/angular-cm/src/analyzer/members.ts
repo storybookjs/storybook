@@ -128,6 +128,10 @@ const visitProperty = (
 
 // --- decorator inputs/outputs ---------------------------------------------------------------
 
+// Decorator IO keeps the raw initializer source rather than going through `initializerText`.
+// Compodoc collapses an arrow default to `() => {...}` only in its plain-property visitor; its
+// `@Input`/`@Output` visitors emit the unmodified source text, and both producers have to agree.
+
 const buildDecoratorInput = (
   ctx: AnalyzerContext,
   member: ts.PropertyDeclaration,

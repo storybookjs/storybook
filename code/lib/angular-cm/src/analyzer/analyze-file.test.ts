@@ -40,8 +40,12 @@ const COMPILER_OPTIONS: ts.CompilerOptions = {
   allowImportingTsExtensions: true,
 };
 
+// TypeScript spells `sourceFile.fileName` with forward slashes on every platform, so paths
+// compared against it have to be spelled the same way.
+const normalize = (fileName: string) => fileName.replace(/\\/g, '/');
+
 const componentFile = (caseName: string) =>
-  join(HARNESS_FIXTURES, caseName, `${caseName}.component.ts`);
+  normalize(join(HARNESS_FIXTURES, caseName, `${caseName}.component.ts`));
 
 const program = ts.createProgram(CASES.map(componentFile), COMPILER_OPTIONS);
 const checker = program.getTypeChecker();

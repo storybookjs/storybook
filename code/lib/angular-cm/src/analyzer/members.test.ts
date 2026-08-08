@@ -296,10 +296,16 @@ describe('misc collection and member noise rules', () => {
     expect(component.methodsClass.map((method) => method.name)).toEqual(['ngOnInit']);
   });
 
-  it('collapses arrow defaults and reads accessor pairs as properties', () => {
+  it('collapses arrow defaults on plain properties only, and reads accessor pairs as properties', () => {
     const component = meta().components[0] as Directive;
     expect(byName(component.propertiesClass, 'formatter')).toMatchObject({
       defaultValue: '() => {...}',
+      type: '(value: number) => string',
+    });
+    // Compodoc collapses an arrow default only in its plain-property visitor; the same field
+    // behind an `@Input()` keeps its raw source there, so it has to keep it here too.
+    expect(byName(component.inputsClass, 'decoratedFormatter')).toMatchObject({
+      defaultValue: '(value: number) => `${value}`',
       type: '(value: number) => string',
     });
     expect(byName(component.propertiesClass, 'zoom')).toMatchObject({
@@ -328,8 +334,7 @@ describe('checker-inferred types and member edge cases', () => {
   const argTypes = () =>
     extractArgTypesFromData(component(), {
       compodocJson: meta() as unknown as CompodocJson,
-      filterNonInputControls: false,
-      unwrapHtml: (html) => String(html),
+      ...ANALYZER_EXTRACT_OPTIONS,
     });
 
   it('feeds checker-inferred enum and signal alias types into miscellaneous', () => {

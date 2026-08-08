@@ -8,14 +8,14 @@
  * - https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/typescript/lib/protocol/createProject.ts#L30-L120
  * - CreateLanguage + createLanguageServiceHost from @volar/typescript
  * - Invalidation state (snapshot cache, projectVersion, root-set re-checks, ensureFresh) delegated
- *   to core's ProjectFileTracker, shared with the Angular component-meta project
- *
- * Props extraction works probe-free:
- *
- * - Path 1 (primary): Find JSX in story files → getResolvedSignature() → props type
- * - Path 2 (fallback): Direct type inspection for args-only stories (component-meta approach)
- * - SerializeComponentDoc() serializes the resolved props type into ComponentDoc format
- */
+ *   to core's ProjectFileTracker
+*
+* Props extraction works probe-free:
+*
+* - Path 1 (primary): Find JSX in story files → getResolvedSignature() → props type
+* - Path 2 (fallback): Direct type inspection for args-only stories (component-meta approach)
+* - SerializeComponentDoc() serializes the resolved props type into ComponentDoc format
+*/
 import {
   type FileChange,
   type FileSnapshotCache,

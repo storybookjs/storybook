@@ -809,9 +809,6 @@ export const baseTemplates = {
   },
   'angular-vite/docgen-server-ts': {
     name: 'Angular CLI Server Docgen Latest (Vite | TypeScript)',
-    // Identical to `angular-vite/default-ts` apart from the two feature flags below. Kept as its own
-    // template so the stable Angular sandbox keeps guarding today's browser docgen while the server
-    // path is proven separately, rather than both riding on one configuration.
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
@@ -834,11 +831,6 @@ export const baseTemplates = {
       renderer: '@storybook/angular-vite',
       builder: '@storybook/builder-vite',
     },
-    // This sandbox exists to guard the docgen baselines, and it differs from
-    // `angular-vite/default-ts` only by two feature flags. Rendering, visual output and story
-    // execution are already covered there on every run, so repeating them here would double the
-    // Angular cost for no extra signal. `test-runner` goes with `chromatic`: skipping only the
-    // latter swaps in a test-runner job rather than dropping one.
     skipTasks: ['bench', 'chromatic', 'test-runner'],
     initOptions: { builder: SupportedBuilder.VITE },
   },

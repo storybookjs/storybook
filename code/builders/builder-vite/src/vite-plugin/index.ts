@@ -21,7 +21,7 @@ import {
 
 import { AsyncLocalStorage } from 'node:async_hooks';
 import EventEmitter from 'node:events';
-import { pluginConfig } from '../vite-config.ts';
+import { commonConfig, type PluginConfigType } from '../vite-config.ts';
 import { buildStaticStorybook } from './build.ts';
 import { createServerChannel } from './middlewares/channel.ts';
 import { registerStorybookMiddleware } from './middlewares/dispatch.ts';
@@ -33,6 +33,13 @@ import type { UserOptions } from './types.ts';
 
 // use to guard against duplicate plugin activation
 const ViteAsyncLocalStorage = new AsyncLocalStorage<true>();
+const PLUGIN_NAME = 'storybook-env';
+
+/**
+ * The app config was already merged before `viteFinal`; reloading it would re-add app plugins after
+ * framework presets had filtered them.
+ */
+const APP_CONFIG_ALREADY_LOADED = { configFile: false } as const;
 
 export function experimental_vitePlugin(options?: UserOptions): PluginOption {
   // prevent nested activation and deactivate self when ran through CLI
@@ -57,6 +64,8 @@ function main(options?: UserOptions): PluginOption {
     outputDir: options?.outputDir ?? './storybook-static',
   };
 
+  const projectRoot = resolve(finalOptions.configDir, '..');
+
   let storybookPromise:
     | Promise<{
         sb: Awaited<ReturnType<typeof experimental_loadStorybook>>;
@@ -65,19 +74,20 @@ function main(options?: UserOptions): PluginOption {
     | undefined;
 
   // load and cache config
-  const loadStorybook = () =>
+  const loadStorybook = (command: 'serve' | 'build' = 'serve') =>
     (storybookPromise ??= ViteAsyncLocalStorage.run(true, async () => {
       const sb = await experimental_loadStorybook({
         configDir: finalOptions.configDir,
         packageJson: {},
       });
 
-      const sbPlugins = await pluginConfig(sb);
-      const finalConfig = (await sb.presets.apply('viteFinal', {
-        plugins: sbPlugins,
-      })) as InlineConfig;
+      sb.configType = command === 'build' ? 'PRODUCTION' : 'DEVELOPMENT';
 
-      finalConfig.plugins = await withoutFrameworkDevtools(finalConfig.plugins ?? []);
+      const configType: PluginConfigType = command === 'build' ? 'build' : 'development';
+      const mergedConfig = await commonConfig(sb, configType);
+      const finalConfig = (await sb.presets.apply('viteFinal', mergedConfig)) as InlineConfig;
+
+      finalConfig.plugins = await withoutInternalPlugins(finalConfig.plugins ?? []);
 
       return { sb, finalConfig };
     }));
@@ -101,16 +111,15 @@ function main(options?: UserOptions): PluginOption {
   };
 
   return {
-    name: 'storybook-env',
+    name: PLUGIN_NAME,
     apply: applyToStorybookOnly,
 
     async config(config, { command, mode }) {
-      const { sb } = await loadStorybook().catch(async (error) => {
+      const { sb } = await loadStorybook(command).catch(async (error) => {
         await reportTelemetryError(error, command === 'build' ? 'build' : 'dev');
         throw error;
       });
 
-      sb.configType = command === 'build' ? 'PRODUCTION' : 'DEVELOPMENT';
       if (mode === 'storybook') {
         basePath = '/';
       }
@@ -151,11 +160,14 @@ function main(options?: UserOptions): PluginOption {
       return {
         build: {
           async createEnvironment() {
-            const { finalConfig } = await loadStorybook();
+            const { finalConfig } = await loadStorybook('build');
             const sbConfig = await resolveConfig(
               {
                 ...finalConfig,
+                ...APP_CONFIG_ALREADY_LOADED,
+                root: finalConfig.root ?? projectRoot,
                 cacheDir: 'node_modules/.cache/storybook-vite-deps',
+                base: basePath,
                 build: {
                   ...finalConfig.build,
                   outDir: finalOptions.outputDir,
@@ -172,11 +184,13 @@ function main(options?: UserOptions): PluginOption {
         },
         dev: {
           async createEnvironment(name, config, context) {
-            const { finalConfig } = await loadStorybook();
+            const { finalConfig } = await loadStorybook('serve');
 
             const sbConfig = await resolveConfig(
               {
                 ...finalConfig,
+                ...APP_CONFIG_ALREADY_LOADED,
+                root: finalConfig.root ?? projectRoot,
                 plugins: [
                   ...(finalConfig.plugins ?? []),
                   {
@@ -343,13 +357,13 @@ function main(options?: UserOptions): PluginOption {
   };
 }
 
-async function withoutFrameworkDevtools(plugins: PluginOption[]): Promise<PluginOption[]> {
+async function withoutInternalPlugins(plugins: PluginOption[]): Promise<PluginOption[]> {
   const resolved = await Promise.all(plugins);
   const result: PluginOption[] = [];
   for (const plugin of resolved) {
     if (Array.isArray(plugin)) {
-      result.push(await withoutFrameworkDevtools(plugin));
-    } else if (!plugin || !/devtools/i.test(plugin.name)) {
+      result.push(await withoutInternalPlugins(plugin));
+    } else if (!plugin || (plugin.name !== PLUGIN_NAME && !/devtools/i.test(plugin.name))) {
       result.push(plugin);
     }
   }

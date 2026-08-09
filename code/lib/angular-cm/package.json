@@ -40,7 +40,6 @@
     "!src/**/*"
   ],
   "devDependencies": {
-    "@storybook/angular-compodoc": "workspace:*",
     "typescript": "^6.0.3"
   },
   "peerDependencies": {

@@ -2,7 +2,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import type * as ts from 'typescript';
 
-import type { Argument, Method, Property } from '@storybook/angular-compodoc';
+import type { Argument, Method, Property } from '../compodoc-types.ts';
 import type { AnalyzerContext } from './context.ts';
 import type { DecoratorInfo } from './decorators.ts';
 import {

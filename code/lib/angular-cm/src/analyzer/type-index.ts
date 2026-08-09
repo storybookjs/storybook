@@ -1,6 +1,6 @@
 import type * as tsModule from 'typescript';
 
-import type { EnumType, EnumTypeChild, TypeAlias } from '@storybook/angular-compodoc';
+import type { EnumType, EnumTypeChild, TypeAlias } from '../compodoc-types.ts';
 import type { AngularFileMeta } from '../types.ts';
 import { memberName } from './node-text.ts';
 

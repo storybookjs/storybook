@@ -1,6 +1,6 @@
 import type * as ts from 'typescript';
 
-import type { Property } from '@storybook/angular-compodoc';
+import type { Property } from '../compodoc-types.ts';
 import type { AnalyzerContext } from './context.ts';
 import { stringOption } from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField } from './jsdoc.ts';

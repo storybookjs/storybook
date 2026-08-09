@@ -8,7 +8,7 @@ import type {
   Pipe,
   Property,
   TypeAlias,
-} from '@storybook/angular-compodoc';
+} from './compodoc-types.ts';
 
 /** What the analyzer adds to every record it produces. */
 interface AnalyzerFields {

@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
-import type { Directive, Method, Property } from '@storybook/angular-compodoc';
+import type { Directive, Method, Property } from '../compodoc-types.ts';
 import type { AngularClassMeta, AngularFileMeta } from '../types.ts';
 import { analyzeSourceFile } from './analyze-file.ts';
 

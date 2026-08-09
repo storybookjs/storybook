@@ -5,10 +5,10 @@ import { logger } from 'storybook/internal/node-logger';
 import ts from 'typescript';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { Directive, Method, Property } from '@storybook/angular-compodoc';
-import { extractArgTypesFromData, unwrapPlainText } from '@storybook/angular-compodoc';
+import type { Directive, Method, Property } from '../compodoc-types.ts';
 import type { AngularClassMeta, AngularFileMeta } from '../types.ts';
 import { analyzeSourceFile } from './analyze-file.ts';
+import { extractArgTypesFromData, unwrapPlainText } from './__testutils__/extract-arg-types.ts';
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 

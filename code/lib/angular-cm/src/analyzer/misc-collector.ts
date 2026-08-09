@@ -13,11 +13,16 @@ export class MiscCollector {
   private readonly enumerations = new Map<string, EnumType>();
   private readonly aliasCycleGuard = new Set<string>();
 
-  addFromSymbol(ctx: AnalyzerContext, symbol: ts.Symbol): void {
+  /**
+   * `referencedAs` is the spelling the rendered type text uses, which an import rename makes
+   * differ from the declaration's own name. The extractor resolves `type` strings against these
+   * entries by name, so the entry has to answer to the spelling the props table shows.
+   */
+  addFromSymbol(ctx: AnalyzerContext, symbol: ts.Symbol, referencedAs?: string): void {
     const target =
       symbol.flags & ctx.ts.SymbolFlags.Alias ? ctx.checker.getAliasedSymbol(symbol) : symbol;
     for (const declaration of target.declarations ?? []) {
-      this.addDeclaration(ctx, declaration);
+      this.addDeclaration(ctx, declaration, referencedAs);
     }
   }
 
@@ -38,15 +43,15 @@ export class MiscCollector {
     }
   }
 
-  addDeclaration(ctx: AnalyzerContext, declaration: ts.Declaration): void {
+  addDeclaration(ctx: AnalyzerContext, declaration: ts.Declaration, referencedAs?: string): void {
     // Skipping declaration files keeps lib and `node_modules` helper aliases out of the tables.
     if (declaration.getSourceFile().isDeclarationFile) {
       return;
     }
     if (ctx.ts.isEnumDeclaration(declaration)) {
-      this.addEnum(ctx, declaration);
+      this.addEnum(ctx, declaration, referencedAs ?? declaration.name.text);
     } else if (ctx.ts.isTypeAliasDeclaration(declaration)) {
-      this.addTypeAlias(ctx, declaration);
+      this.addTypeAlias(ctx, declaration, referencedAs ?? declaration.name.text);
     }
   }
 
@@ -58,8 +63,7 @@ export class MiscCollector {
     };
   }
 
-  private addEnum(ctx: AnalyzerContext, declaration: ts.EnumDeclaration): void {
-    const name = declaration.name.text;
+  private addEnum(ctx: AnalyzerContext, declaration: ts.EnumDeclaration, name: string): void {
     if (this.enumerations.has(name)) {
       return;
     }
@@ -79,8 +83,11 @@ export class MiscCollector {
     });
   }
 
-  private addTypeAlias(ctx: AnalyzerContext, declaration: ts.TypeAliasDeclaration): void {
-    const name = declaration.name.text;
+  private addTypeAlias(
+    ctx: AnalyzerContext,
+    declaration: ts.TypeAliasDeclaration,
+    name: string
+  ): void {
     if (this.typealiases.has(name) || this.aliasCycleGuard.has(name)) {
       return;
     }

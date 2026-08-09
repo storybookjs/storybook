@@ -11,7 +11,7 @@ import { analyzeSourceFile } from './analyze-file.ts';
 
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 
-const FIXTURE_FILES = [
+const FIXTURE_NAMES = [
   'alias-required.component.ts',
   'kitchen.ts',
   'signal-fallback.component.ts',
@@ -24,7 +24,12 @@ const FIXTURE_FILES = [
   'selector-indirect.component.ts',
   'clarity-edges.component.ts',
   'metadata-io.component.ts',
-].map((file) => join(FIXTURES, file));
+  'renamed-type-import.component.ts',
+  'inherit-metadata.component.ts',
+  'member-identity.component.ts',
+];
+
+const FIXTURE_FILES = FIXTURE_NAMES.map((file) => join(FIXTURES, file));
 
 const program = ts.createProgram(FIXTURE_FILES, {
   target: ts.ScriptTarget.Latest,
@@ -87,9 +92,13 @@ describe('decorator inputs and outputs', () => {
       ],
     });
 
-    const buttonLabel = byName(inputs, 'buttonLabel');
-    expect(buttonLabel).toMatchObject({ optional: false, defaultValue: "''", type: 'string' });
-    expect(buttonLabel.required).toBeUndefined();
+    // A plain `@Input()` is not required, and says so rather than leaving the consumer to assume.
+    expect(byName(inputs, 'buttonLabel')).toMatchObject({
+      optional: false,
+      required: false,
+      defaultValue: "''",
+      type: 'string',
+    });
 
     expect(byName(inputs, 'tone')).toMatchObject({
       required: true,
@@ -384,15 +393,40 @@ describe('selector extraction', () => {
 });
 
 describe('inheritance', () => {
-  it('blocks base members the child re-declares in a different bucket', () => {
+  it('keeps an inherited input the child re-declares as a plain property', () => {
     const meta = analyze('override-input.component.ts');
     const component = meta.components[0] as Directive;
-    // The fixture's base declares `disabled` as an input defaulting to `true`, which must not
-    // shadow the child's plain-property re-declaration.
-    expect(component.inputsClass.map((input) => input.name)).not.toContain('disabled');
-    expect(byName(component.propertiesClass, 'disabled')).toMatchObject({
-      defaultValue: 'false',
-    });
+    // Dropping the decorator on an override does not un-input the field in Angular, so the base
+    // decides the bucket while the child's own initializer decides the default.
+    expect(byName(component.inputsClass, 'disabled')).toMatchObject({ defaultValue: 'false' });
+    expect(component.propertiesClass.map((property) => property.name)).not.toContain('disabled');
+  });
+
+  it('inherits a base directive’s metadata-declared inputs and outputs', () => {
+    const meta = analyze('inherit-metadata.component.ts');
+    const child = byName(meta.components, 'MetadataChildComponent') as Directive;
+
+    expect(child.inputsClass.map((input) => input.name)).toEqual(['color', 'tone']);
+    expect(child.outputsClass.map((output) => output.name)).toEqual(['tapped']);
+    expect(child.propertiesClass.map((property) => property.name)).toEqual(['shade']);
+  });
+
+  it('reclassifies an inherited field named by the child’s own metadata', () => {
+    const meta = analyze('inherit-metadata.component.ts');
+    const child = byName(meta.components, 'MetadataOfInheritedComponent') as Directive;
+
+    expect(child.inputsClass.map((input) => input.name)).toEqual(['density']);
+    expect(child.propertiesClass).toEqual([]);
+  });
+
+  it('drops the base alias when the child re-declares the same field as an input', () => {
+    const meta = analyze('inherit-metadata.component.ts');
+    const child = byName(meta.components, 'AliasedChildComponent') as Directive;
+
+    // `label` is the base's binding name for the same field, so emitting it too would offer a
+    // control that binds to nothing.
+    expect(child.inputsClass.map((input) => input.name)).toEqual(['text']);
+    expect(byName(child.inputsClass, 'text')).toMatchObject({ defaultValue: "'child'" });
   });
 
   it('merges multi-level bases, child wins, d.ts bases contribute plain members', () => {
@@ -520,5 +554,87 @@ describe('function-typed members keep their signature', () => {
     expect(argTypes.nullableCallback?.table?.type?.summary).toBe(
       '((value: string) => void) | null'
     );
+  });
+});
+
+// Sorting happens once, last: anything that reclassifies a member afterwards appends past the
+// sorted block, which this catches.
+it('invariant: every emitted member array is sorted by name', () => {
+  for (const fixture of FIXTURE_NAMES) {
+    const meta = analyze(fixture);
+    const records = [
+      ...meta.components,
+      ...meta.directives,
+      ...meta.pipes,
+      ...meta.injectables,
+      ...meta.classes,
+    ] as (AngularClassMeta &
+      Partial<Directive> & { properties?: Property[]; methods?: Method[] })[];
+    for (const record of records) {
+      for (const list of [
+        record.inputsClass,
+        record.outputsClass,
+        record.propertiesClass,
+        record.properties,
+        record.methodsClass,
+        record.methods,
+      ]) {
+        const names = (list ?? []).map((item) => item.name);
+        expect(names, `${fixture} ${record.name}`).toEqual(
+          [...names].sort((a, b) => a.localeCompare(b))
+        );
+      }
+    }
+  }
+});
+
+describe('type entries answer to the spelling the props table shows', () => {
+  it('indexes a renamed type import under its local name', () => {
+    const meta = analyze('renamed-type-import.component.ts');
+    const component = meta.components[0] as Directive;
+
+    expect(byName(component.inputsClass, 'choice').type).toBe('ButtonChoice');
+    expect(byName(component.inputsClass, 'level').type).toBe('ButtonLevel');
+    expect(meta.miscellaneous.typealiases.map((alias) => alias.name)).toContain('ButtonChoice');
+    expect(meta.miscellaneous.enumerations.map((entry) => entry.name)).toContain('ButtonLevel');
+
+    const argTypes = extractArgTypesFromData(component, {
+      compodocJson: meta as unknown as CompodocJson,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    }) as Record<string, { type?: { name?: string; value?: unknown } }>;
+
+    expect(argTypes.choice?.type).toEqual({ name: 'enum', value: ['x', 'y'] });
+    expect(argTypes.level?.type).toEqual({ name: 'enum', value: ['low', 'high'] });
+  });
+});
+
+describe('member identity is the declared field, not the emitted name', () => {
+  const component = () => analyze('member-identity.component.ts').components[0] as Directive;
+
+  it('keeps decorators on accessor-declared properties, as on property-declared ones', () => {
+    const properties = component().propertiesClass;
+    expect(byName(properties, 'asProperty').decorators).toEqual([{ name: 'ViewChild' }]);
+    expect(byName(properties, 'asSetter').decorators).toEqual([{ name: 'ViewChild' }]);
+    expect(byName(properties, 'asGetter').decorators).toEqual([{ name: 'ContentChild' }]);
+  });
+
+  it('emits publicly visible parameter properties, including bare readonly, with their tags', () => {
+    const names = component().propertiesClass.map((property) => property.name);
+    expect(names).toContain('pageSize');
+    expect(names).toContain('pageIndex');
+    expect(names).not.toContain('hidden');
+    expect(byName(component().propertiesClass, 'legacySize').jsdoctags).toMatchObject([
+      { tagName: { text: 'deprecated' } },
+    ]);
+  });
+
+  it('does not let a static member stand in for the instance member of the same name', () => {
+    const returnTypes = component()
+      .methodsClass.filter((method) => method.name === 'create')
+      .map((method) => method.returnType);
+    expect(returnTypes).toEqual(['string', 'number']);
+
+    const modes = component().propertiesClass.filter((property) => property.name === 'mode');
+    expect(modes.map((property) => property.type)).toEqual(['string', 'number']);
   });
 });

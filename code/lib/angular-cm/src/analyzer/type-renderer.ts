@@ -59,11 +59,11 @@ export function renderTypeNode(ctx: AnalyzerContext, typeNode: ts.TypeNode): str
     return `${renderTypeNode(ctx, typeNode.objectType)}[${renderTypeNode(ctx, typeNode.indexType)}]`;
   }
   if (ts.isTypeReferenceNode(typeNode)) {
+    const name = typeNode.typeName.getText();
     const symbol = ctx.checker.getSymbolAtLocation(typeNode.typeName);
     if (symbol) {
-      ctx.misc.addFromSymbol(ctx, symbol);
+      ctx.misc.addFromSymbol(ctx, symbol, name);
     }
-    const name = typeNode.typeName.getText();
     const args = typeNode.typeArguments?.length
       ? `<${typeNode.typeArguments.map((arg) => renderTypeNode(ctx, arg)).join(', ')}>`
       : '';

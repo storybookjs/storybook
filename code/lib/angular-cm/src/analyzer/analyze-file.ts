@@ -6,7 +6,12 @@ import type { AnalyzerContext } from './context.ts';
 import { decoratorObjectArg, getDecorators, objectProperty, stringOption } from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
 import { mergeInheritedMembers } from './inheritance.ts';
-import { applyMetadataInputsOutputs, sortMembers, visitClassMembers } from './members.ts';
+import {
+  applyMetadataInputsOutputs,
+  emitMembers,
+  sortMembers,
+  visitClassMembers,
+} from './members.ts';
 import { MiscCollector } from './misc-collector.ts';
 
 export function analyzeSourceFile(
@@ -42,12 +47,11 @@ export function analyzeSourceFile(
     }
     const name = statement.name.text;
     const file = sourceFile.fileName;
-    const members = visitClassMembers(ctx, statement);
-    mergeInheritedMembers(ctx, statement, members);
-    if (kind === 'component' || kind === 'directive') {
-      applyMetadataInputsOutputs(ctx, statement, kind, members);
-    }
-    sortMembers(members);
+    const collected = visitClassMembers(ctx, statement);
+    mergeInheritedMembers(ctx, statement, collected);
+    applyMetadataInputsOutputs(ctx, statement, collected);
+    sortMembers(collected);
+    const members = emitMembers(collected);
     const common = {
       file,
       ...getJsDocDescription(ts, statement),

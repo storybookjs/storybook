@@ -91,8 +91,8 @@ describe('analyzeSourceFile - docgen-harness fixture parity', () => {
     expect(byName(component.inputsClass, 'count')).toMatchObject({
       type: 'number',
       optional: true,
+      required: false,
     });
-    expect(byName(component.inputsClass, 'count').required).toBeUndefined();
     expect(byName(component.inputsClass, 'count').defaultValue).toBeUndefined();
     expect(byName(component.inputsClass, 'data').type).toBe('any');
     // The signature, not compodoc's bare `function`.

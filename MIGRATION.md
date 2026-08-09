@@ -3,6 +3,7 @@
 - [From version 10.4.0 to 10.5.0](#from-version-1040-to-1050)
   - [ExternalDocs and ExternalDocsContainer are deprecated](#externaldocs-and-externaldocscontainer-are-deprecated)
 - [From version 10.3.0 to 10.4.0](#from-version-1030-to-1040)
+  - [Addons now declare `react` and `react-dom` as peer dependencies](#addons-now-declare-react-and-react-dom-as-peer-dependencies)
   - [React Native: on-device addons moved to `deviceAddons`](#react-native-on-device-addons-moved-to-deviceaddons)
   - [TanStack Router projects: migrate from `@storybook/react-vite` to `@storybook/tanstack-react`](#tanstack-router-projects-migrate-from-storybookreact-vite-to-storybooktanstack-react)
 - [From version 10.0.0 to 10.1.0](#from-version-1000-to-1010)
@@ -534,6 +535,25 @@ The `ExternalDocs` and `ExternalDocsContainer` components from `@storybook/addon
 If you are currently using `ExternalDocs` or `ExternalDocsContainer`, please open an issue describing your use case so the team can consider alternative solutions.
 
 ## From version 10.3.0 to 10.4.0
+
+### Addons now declare `react` and `react-dom` as peer dependencies
+
+The first-party Storybook addons listed below now declare `react` and `react-dom` as peer dependencies (range `^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0`), to correctly propagate the peer requirements of [`@storybook/icons`](https://github.com/storybookjs/icons):
+
+- `@storybook/addon-a11y`
+- `@storybook/addon-docs`
+- `@storybook/addon-onboarding`
+- `@storybook/addon-themes`
+- `@storybook/addon-vitest`
+- `storybook-addon-pseudo-states`
+
+Most projects already have `react` and `react-dom` installed via their framework (e.g. `@storybook/react-vite`) or application dependencies, so no action is required. However, in strict package managers (Yarn 4 / Yarn PnP, pnpm with `strict-peer-dependencies`), you may now see warnings if `react` or `react-dom` are not present in your project. To fix this, install them:
+
+```sh
+npm install --save-dev react react-dom
+```
+
+In addition, `@storybook/addon-docs` no longer ships `react` and `react-dom` as direct `dependencies` — they have moved to `peerDependencies`, ensuring a single React copy is used in your project. If you previously relied on the addon to install React for you, install it explicitly as shown above.
 
 ### React Native: on-device addons moved to `deviceAddons`
 

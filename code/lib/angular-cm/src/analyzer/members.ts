@@ -181,9 +181,7 @@ const buildDecoratorInput = (
     name: config.alias ?? memberName(ctx.ts, member.name),
     ...(type === undefined ? {} : { type }),
     optional: config.required !== undefined ? !config.required : !!member.questionToken,
-    // Always emitted, so a decorator input and the equivalent signal input agree: the consumer
-    // reads a missing `required` as true, which would badge `@Input() label = 'x'` as required.
-    required: config.required ?? false,
+    ...(config.required === undefined ? {} : { required: config.required }),
     ...(member.initializer ? { defaultValue: member.initializer.getText() } : {}),
     ...getJsDocDescription(ctx.ts, member),
     ...getJsDocTagsField(ctx.ts, member),
@@ -378,7 +376,7 @@ const visitAccessorPair = (
         name: config.alias ?? name,
         ...(type === undefined ? {} : { type }),
         optional: config.required !== undefined ? !config.required : false,
-        required: config.required ?? false,
+        ...(config.required === undefined ? {} : { required: config.required }),
         ...description,
         ...tags,
       })

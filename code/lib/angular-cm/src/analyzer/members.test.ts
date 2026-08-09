@@ -97,13 +97,9 @@ describe('decorator inputs and outputs', () => {
       ],
     });
 
-    // A plain `@Input()` is not required, and says so rather than leaving the consumer to assume.
-    expect(byName(inputs, 'buttonLabel')).toMatchObject({
-      optional: false,
-      required: false,
-      defaultValue: "''",
-      type: 'string',
-    });
+    const buttonLabel = byName(inputs, 'buttonLabel');
+    expect(buttonLabel).toMatchObject({ optional: false, defaultValue: "''", type: 'string' });
+    expect(buttonLabel.required).toBeUndefined();
 
     expect(byName(inputs, 'tone')).toMatchObject({
       required: true,

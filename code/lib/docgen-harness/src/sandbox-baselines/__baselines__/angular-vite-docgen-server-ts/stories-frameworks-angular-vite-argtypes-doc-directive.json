@@ -9,7 +9,7 @@
           "summary": false
         },
         "type": {
-          "required": false,
+          "required": true,
           "summary": "boolean"
         }
       },

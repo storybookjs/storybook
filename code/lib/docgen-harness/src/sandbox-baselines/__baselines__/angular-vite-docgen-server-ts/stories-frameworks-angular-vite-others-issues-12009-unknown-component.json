@@ -24,7 +24,7 @@
           "summary": ""
         },
         "type": {
-          "required": false,
+          "required": true,
           "summary": "string"
         }
       },

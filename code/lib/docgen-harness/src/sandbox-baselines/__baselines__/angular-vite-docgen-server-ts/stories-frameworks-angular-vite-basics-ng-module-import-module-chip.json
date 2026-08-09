@@ -1,7 +1,6 @@
 {
   "argTypes": {
     "backgroundColor": {
-      "description": "\n",
       "name": "backgroundColor",
       "table": {
         "category": "properties",
@@ -16,13 +15,12 @@
       }
     },
     "displayText": {
-      "description": "\n",
       "name": "displayText",
       "table": {
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },

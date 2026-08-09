@@ -1,7 +1,6 @@
 {
   "argTypes": {
     "color": {
-      "description": "\n",
       "name": "color",
       "table": {
         "category": "inputs",
@@ -9,7 +8,7 @@
           "summary": "#5eadf5"
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },

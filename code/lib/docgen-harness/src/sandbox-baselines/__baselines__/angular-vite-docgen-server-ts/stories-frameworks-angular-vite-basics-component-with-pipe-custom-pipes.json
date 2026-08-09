@@ -1,13 +1,12 @@
 {
   "argTypes": {
     "field": {
-      "description": "\n",
       "name": "field",
       "table": {
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "any"
         }
       },

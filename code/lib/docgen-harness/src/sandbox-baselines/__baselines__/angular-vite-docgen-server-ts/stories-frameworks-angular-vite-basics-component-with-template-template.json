@@ -17,7 +17,6 @@
       }
     },
     "inc": {
-      "description": "\n",
       "name": "inc",
       "table": {
         "category": "methods",
@@ -33,7 +32,6 @@
       }
     },
     "label": {
-      "description": "\n",
       "name": "label",
       "table": {
         "category": "inputs",
@@ -41,7 +39,7 @@
           "summary": "default label"
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },
@@ -50,7 +48,6 @@
       }
     },
     "label2": {
-      "description": "\n",
       "name": "label2",
       "table": {
         "category": "inputs",
@@ -58,7 +55,7 @@
           "summary": "default label2"
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },

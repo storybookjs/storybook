@@ -5,7 +5,7 @@ import { logger } from 'storybook/internal/node-logger';
 import ts from 'typescript';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { CompodocJson, Directive, Method, Property } from '@storybook/angular-compodoc';
+import type { Directive, Method, Property } from '@storybook/angular-compodoc';
 import { extractArgTypesFromData, unwrapPlainText } from '@storybook/angular-compodoc';
 import type { AngularClassMeta, AngularFileMeta } from '../types.ts';
 import { analyzeSourceFile } from './analyze-file.ts';
@@ -276,7 +276,7 @@ describe('misc collection and member noise rules', () => {
     expect(byName(typealiases, 'LoopB').rawtype).toBe('LoopA');
   });
 
-  it('collects enums with compodoc value semantics', () => {
+  it('collects enums, keeping numeric initializers numeric', () => {
     const enumerations = meta().miscellaneous.enumerations;
     expect(enumerations.map((enumeration) => enumeration.name)).toEqual(['Numeric', 'Weird']);
     expect(byName(enumerations, 'Numeric').childs).toEqual([
@@ -333,7 +333,7 @@ describe('checker-inferred types and member edge cases', () => {
   const component = () => meta().components[0] as Directive;
   const argTypes = () =>
     extractArgTypesFromData(component(), {
-      compodocJson: meta() as unknown as CompodocJson,
+      compodocJson: meta(),
       ...ANALYZER_EXTRACT_OPTIONS,
     });
 
@@ -374,7 +374,7 @@ describe('checker-inferred types and member edge cases', () => {
     });
   });
 
-  it('keeps @HostListener methods in methodsClass, matching legacy compodoc', () => {
+  it('keeps @HostListener methods in methodsClass', () => {
     expect(component().methodsClass.map((method) => method.name)).toContain('onResize');
   });
 });
@@ -474,7 +474,7 @@ describe('clarity-edges: real-world JSDoc, visibility, and type-text edge cases'
     expect(tagNames).toContain('deprecated');
 
     const argTypes = extractArgTypesFromData(component(), {
-      compodocJson: undefined as unknown as CompodocJson,
+      compodocJson: undefined,
       ...ANALYZER_EXTRACT_OPTIONS,
     });
     expect(
@@ -546,7 +546,7 @@ describe('function-typed members keep their signature', () => {
 
   it('keeps the function control for a signature, but not for a union containing one', () => {
     const argTypes = extractArgTypesFromData(component(), {
-      compodocJson: undefined as unknown as CompodocJson,
+      compodocJson: undefined,
       ...ANALYZER_EXTRACT_OPTIONS,
     }) as Record<string, { type?: { name?: string }; table?: { type?: { summary?: string } } }>;
 
@@ -600,7 +600,7 @@ describe('type entries answer to the spelling the props table shows', () => {
     expect(meta.miscellaneous.enumerations.map((entry) => entry.name)).toContain('ButtonLevel');
 
     const argTypes = extractArgTypesFromData(component, {
-      compodocJson: meta as unknown as CompodocJson,
+      compodocJson: meta,
       ...ANALYZER_EXTRACT_OPTIONS,
     }) as Record<string, { type?: { name?: string; value?: unknown } }>;
 

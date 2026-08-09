@@ -31,7 +31,7 @@ export class TypeIndex {
   /**
    * Render a type node to the spelling the props table shows.
    *
-   * Syntactic on purpose, to match the legacy Compodoc spellings the extractor depends on: string
+   * Syntactic on purpose, to match the spellings the argTypes extractor depends on: string
    * literals double-quoted, unions joined with ` | `.
    */
   render(typeNode: tsModule.TypeNode): string {
@@ -60,8 +60,8 @@ export class TypeIndex {
       return `(${this.render(typeNode.type)})`;
     }
     if (ts.isFunctionTypeNode(typeNode) || ts.isConstructorTypeNode(typeNode)) {
-      // A real signature rather than the bare `function` compodoc emits; `isFunctionTypeString`
-      // still matches an arrow signature, so the function control survives.
+      // A real signature rather than a bare `function`; `isFunctionTypeString` still matches an
+      // arrow signature, so the function control survives.
       const parameters = typeNode.parameters
         .map((parameter) => {
           const name = parameter.name.getText();
@@ -201,8 +201,8 @@ export class TypeIndex {
     });
   }
 
-  // Compodoc parity: numeric initializers stay numbers, so a `0` member is falsy and correctly
-  // disables the extractor's enum path.
+  // Numeric initializers stay numbers, so a `0` member is falsy and correctly disables the
+  // extractor's enum path.
   private enumMemberValue(
     initializer: tsModule.Expression | undefined
   ): string | number | undefined {

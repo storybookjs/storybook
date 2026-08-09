@@ -58,7 +58,7 @@ function createAngularProjectFactory(
 }
 
 /**
- * Extract compodoc-shaped metadata for Angular components straight from their TypeScript sources.
+ * Extract argTypes-ready metadata for Angular components straight from their TypeScript sources.
  *
  * Keeps one warm LanguageService per matched tsconfig, so bracket the manager's lifetime with
  * `startWatching()`/`dispose()`.
@@ -72,8 +72,8 @@ export class AngularComponentMetaManager extends ComponentMetaManager<
   }
 
   /**
-   * Extract the compodoc-shaped meta for one component, or `undefined` when neither the file nor
-   * its re-export target declares a class matching `names`.
+   * Extract the metadata for one component, or `undefined` when neither the file nor its
+   * re-export target declares a class matching `names`.
    */
   extractComponentMeta(
     componentPath: string,

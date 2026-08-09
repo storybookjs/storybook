@@ -1,21 +1,7 @@
-import type * as ts from 'typescript';
+import type * as tsModule from 'typescript';
 
-import type { AnalyzerContext } from './context.ts';
+export const memberName = (ts: typeof tsModule, name: tsModule.PropertyName): string =>
+  ts.isComputedPropertyName(name) ? name.getText() : name.text;
 
-/**
- * Node-to-string helpers that both the member visitors and the signal readers need. They live apart
- * from either so the two modules stay a one-way dependency.
- */
-
-/** Declared name of a member; a computed name keeps its bracketed source spelling. */
-export const memberName = (ctx: AnalyzerContext, name: ts.PropertyName): string => {
-  const { ts } = ctx;
-  if (ts.isComputedPropertyName(name)) {
-    return name.getText();
-  }
-  return name.text;
-};
-
-/** Raw initializer text, with arrow functions collapsed to the legacy `() => {...}` marker. */
-export const initializerText = (ctx: AnalyzerContext, initializer: ts.Expression): string =>
-  ctx.ts.isArrowFunction(initializer) ? '() => {...}' : initializer.getText();
+export const initializerText = (ts: typeof tsModule, initializer: tsModule.Expression): string =>
+  ts.isArrowFunction(initializer) ? '() => {...}' : initializer.getText();

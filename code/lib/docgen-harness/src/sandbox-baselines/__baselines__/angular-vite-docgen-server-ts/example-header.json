@@ -56,7 +56,7 @@
           "summary": null
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "User | null"
         }
       },

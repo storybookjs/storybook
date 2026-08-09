@@ -58,7 +58,7 @@
           "summary": "ButtonAccent.Normal"
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "ButtonAccent"
         }
       },
@@ -76,7 +76,7 @@
           "summary": "Another default value"
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },
@@ -93,7 +93,7 @@
           "summary": null
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string | null"
         }
       },
@@ -110,7 +110,7 @@
           "summary": 123
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "number"
         }
       },
@@ -125,7 +125,7 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "undefined"
         }
       },
@@ -143,7 +143,7 @@
           "summary": "secondary"
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "\"primary\" | \"secondary\""
         }
       },
@@ -206,7 +206,7 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },
@@ -240,7 +240,7 @@
           "summary": false
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "boolean"
         }
       },
@@ -254,7 +254,7 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "T[]"
         }
       },
@@ -270,7 +270,7 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },
@@ -379,7 +379,7 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "keyof T"
         }
       },
@@ -413,7 +413,7 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "ISomeInterface"
         }
       },
@@ -434,7 +434,7 @@
           "deprecated": ""
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "boolean"
         }
       },
@@ -451,7 +451,7 @@
           "summary": "Default value in component"
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },

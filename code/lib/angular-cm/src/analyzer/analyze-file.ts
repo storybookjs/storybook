@@ -1,29 +1,22 @@
+import { logger } from 'storybook/internal/node-logger';
+
 import type * as tsModule from 'typescript';
 
 import type { Class, Directive, Injectable, Pipe, Property } from '@storybook/angular-compodoc';
 import type { AngularFileMeta } from '../types.ts';
 import type { AnalyzerContext } from './context.ts';
+import { collectClassMembers } from './class-members.ts';
 import { decoratorObjectArg, getDecorators, objectProperty, stringOption } from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
-import { mergeInheritedMembers } from './inheritance.ts';
-import { applyMetadataInputsOutputs, sortMembers, visitClassMembers } from './members.ts';
-import { MiscCollector } from './misc-collector.ts';
+import { TypeIndex } from './type-index.ts';
 
-/**
- * Analyzes one source file into the Compodoc-JSON subset `extract-arg-types.ts` consumes.
- *
- * Dispatch is by decorator name: `@Component`/`@Directive`/`@Pipe`/`@Injectable` classes land in
- * their own buckets, `@NgModule` classes are skipped, everything else (and undecorated classes)
- * lands in `classes`. Enums and type aliases declared in the file or referenced from member types
- * (also cross-file) land in `miscellaneous`.
- */
 export function analyzeSourceFile(
   ts: typeof tsModule,
   sourceFile: tsModule.SourceFile,
   checker: tsModule.TypeChecker
 ): AngularFileMeta {
-  const misc = new MiscCollector();
-  const ctx: AnalyzerContext = { ts, checker, misc };
+  const types = new TypeIndex(ts, checker);
+  const ctx: AnalyzerContext = { ts, checker, types };
   const meta: AngularFileMeta = {
     components: [],
     directives: [],
@@ -35,27 +28,24 @@ export function analyzeSourceFile(
 
   for (const statement of sourceFile.statements) {
     if (ts.isEnumDeclaration(statement) || ts.isTypeAliasDeclaration(statement)) {
-      misc.addDeclaration(ctx, statement);
+      types.addDeclaration(statement);
       continue;
     }
     if (!ts.isClassDeclaration(statement) || !statement.name) {
       continue;
     }
     if (hasJsDocTag(ts, statement, 'ignore')) {
+      logger.debug(`[angular-cm] ${statement.name.text} left out of docgen: tagged @ignore`);
       continue;
     }
     const kind = classify(ctx, statement);
     if (kind === 'ngmodule') {
+      logger.debug(`[angular-cm] ${statement.name.text} left out of docgen: an @NgModule`);
       continue;
     }
     const name = statement.name.text;
     const file = sourceFile.fileName;
-    const members = visitClassMembers(ctx, statement);
-    mergeInheritedMembers(ctx, statement, members);
-    if (kind === 'component' || kind === 'directive') {
-      applyMetadataInputsOutputs(ctx, statement, kind, members);
-    }
-    sortMembers(members);
+    const members = collectClassMembers(ctx, statement);
     const common = {
       file,
       ...getJsDocDescription(ts, statement),
@@ -95,8 +85,7 @@ export function analyzeSourceFile(
       };
       meta.injectables.push(record);
     } else {
-      // Signal/decorator IO splitting applies to plain classes too; the extra arrays are
-      // harmless for the extractor (it reads `properties`/`methods` on non-directive entries).
+      // A plain class keeps its IO split out too; the extractor ignores the extra arrays.
       const record: Class &
         typeof common & { inputsClass?: Property[]; outputsClass?: Property[] } = {
         name,
@@ -111,7 +100,7 @@ export function analyzeSourceFile(
     }
   }
 
-  meta.miscellaneous = misc.toMiscellaneous();
+  meta.miscellaneous = types.toMiscellaneous();
   return meta;
 }
 
@@ -135,11 +124,6 @@ const classify = (ctx: AnalyzerContext, node: tsModule.ClassDeclaration): ClassK
   return 'class';
 };
 
-/**
- * The `selector` string from the `@Component`/`@Directive` object literal. String literals are read
- * directly; an identifier is followed to a string-literal variable initializer. Anything else is
- * not statically known and is omitted.
- */
 const decoratorSelector = (
   ctx: AnalyzerContext,
   node: tsModule.ClassDeclaration,
@@ -176,7 +160,6 @@ const selectorText = (
   return undefined;
 };
 
-/** The template-facing pipe name from `@Pipe({ name: '…' })`. */
 const pipeName = (ctx: AnalyzerContext, node: tsModule.ClassDeclaration): string | undefined => {
   const metadata = decoratorObjectArg(ctx, node, 'Pipe');
   return metadata && stringOption(ctx, metadata, 'name');

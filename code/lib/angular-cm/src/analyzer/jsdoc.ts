@@ -2,11 +2,8 @@ import type * as tsModule from 'typescript';
 
 import type { JsDocTag } from '@storybook/angular-compodoc';
 
-/**
- * Plain-text JSDoc extraction. Unlike Compodoc, which renders comments through Markdown to HTML,
- * both `description` and `rawdescription` carry the same plain comment text: the consumer prefers
- * `rawdescription` and its `unwrapHtml` passes plain text through unchanged.
- */
+// Compodoc renders comments to HTML; here `description` and `rawdescription` both carry the same
+// plain text, which the consumer's `unwrapHtml` passes through unchanged.
 export function getJsDocDescription(
   ts: typeof tsModule,
   node: tsModule.Node
@@ -18,8 +15,8 @@ export function getJsDocDescription(
   let text = comment === undefined ? undefined : ts.getTextOfJSDocComment(comment);
   // `/*****`-style openers leak pure-asterisk lines into the comment text.
   text = text?.replace(/^(?:[ \t]*\*+[ \t]*\n)+/, '').replace(/^[ \t]*\*+[ \t]*$/, '');
-  // An explicit `@description` tag is the description (the compodoc convention); the text before
-  // the tags in such comments is usually a `property foo` header, not prose.
+  // An explicit `@description` tag wins, as in compodoc: the text before it is usually a
+  // `property foo` header, not prose.
   const descriptionTag = ts
     .getJSDocTags(node)
     .find((tag) => tag.tagName.text === 'description' && tag.comment !== undefined);
@@ -41,7 +38,7 @@ function getJsDocTags(ts: typeof tsModule, node: tsModule.Node): JsDocTag[] | un
   return tags.map((tag) => {
     const name = tag.tagName.text;
     let comment = tag.comment === undefined ? undefined : ts.getTextOfJSDocComment(tag.comment);
-    // TS parses `@see https://…` into a name (`https`) plus a comment (`://…`); rejoin them.
+    // TS parses `@see https://…` into a name (`https`) plus a comment (`://…`).
     if (ts.isJSDocSeeTag(tag) && tag.name) {
       comment = `${tag.name.getText()}${comment ?? ''}`;
     }
@@ -51,7 +48,6 @@ function getJsDocTags(ts: typeof tsModule, node: tsModule.Node): JsDocTag[] | un
   });
 }
 
-/** The optional `jsdoctags` field, spread into a class or member record. */
 export function getJsDocTagsField(
   ts: typeof tsModule,
   node: tsModule.Node

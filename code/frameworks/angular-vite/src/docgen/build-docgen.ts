@@ -13,30 +13,17 @@ import { extractArgTypesFromData, unwrapPlainText } from '@storybook/angular-com
 import type { AngularClassMeta, AngularComponentMetaResult } from '@storybook/angular-cm';
 import { resolveStoryComponent } from './resolve-component.ts';
 
-/**
- * Configuration the `angular-vite` preset hands to the docgen worker.
- *
- * The descriptor's `options` object is structured-cloned onto the worker thread, so every field
- * here must be plain JSON data. The analyzer derives everything else (tsconfig, project layout)
- * from the component files themselves.
- */
+// Structured-cloned onto the worker thread, so every field must be plain JSON data.
 export interface AngularDocgenOptions {
-  /**
-   * `features.angularFilterNonInputControls`, threaded through because the worker cannot read
-   * features itself.
-   */
   angularFilterNonInputControls?: boolean;
 }
 
 export type AngularDocgenPayload = DocgenPayload & {
-  /** The analyzer's record for the component class, unfiltered. */
+  // The analyzer's record for the class, not filtered by `angularFilterNonInputControls`.
   angularComponentMeta?: AngularClassMeta;
 };
 
-/**
- * The slice of `AngularComponentMetaManager` this builder reads, structural so tests can hand in a
- * stub instead of a real TypeScript-backed analyzer.
- */
+// Structural on purpose: tests hand in a stub instead of a real TypeScript-backed analyzer.
 export interface AngularComponentMetaSource {
   extractComponentMeta(
     componentPath: string,
@@ -48,23 +35,14 @@ export interface BuildDocgenContext {
   manager: AngularComponentMetaSource;
   options: AngularDocgenOptions;
   logger: CompodocParsingLogger;
-  /** Same hook the React and Vue builders expose, defaulting to the same resolution against cwd. */
   resolvePath?: (importPath: string) => string;
 }
 
-/**
- * How this provider runs the shared compodoc-shaped extraction: the analyzer emits plain-text
- * comments (an HTML unwrapper would mangle text like `Array<string>`), and `modern` drops the
- * legacy quirks the compodoc pipeline is pinned to. The docgen-harness recorder spreads the same
- * object so its `acm-` baselines represent exactly what this worker produces.
- */
+// Plain text keeps `Array<string>` intact; `modern` drops the quirks legacy compodoc is pinned to.
 export const ACM_EXTRACT_OPTIONS = { unwrapHtml: unwrapPlainText, modern: true } as const;
 
-/**
- * The analyzer's JSDoc tag nodes, reshaped as the payload's `Record<name, values>`. The description
- * is deliberately not parsed for tags: an `@Input()` inside a documentation code block would become
- * a fabricated tag.
- */
+// The description is deliberately not parsed for tags: an `@Input()` inside a documentation code
+// block would become a fabricated tag.
 const extractJsDocTags = (entry: AngularClassMeta): DocgenJsDocTags => {
   const tags: DocgenJsDocTags = {};
   for (const tag of entry.jsdoctags ?? []) {
@@ -72,8 +50,6 @@ const extractJsDocTags = (entry: AngularClassMeta): DocgenJsDocTags => {
     if (!name) {
       continue;
     }
-    // A tag may legitimately carry no comment. The analyzer's comments are plain text, kept
-    // verbatim rather than run through an HTML unwrapper.
     const value = tag.comment === undefined ? '' : unwrapPlainText(tag.comment).trim();
     (tags[name] ??= []).push(value);
   }
@@ -86,14 +62,8 @@ const errorPayload = (
   message: string
 ): AngularDocgenPayload => ({ ...base, jsDocTags: {}, error: { name, message } });
 
-/**
- * Builds an Angular {@link DocgenPayload} for one story entry from the in-process Angular Component
- * Meta analyzer.
- *
- * Returns `undefined` for "not an Angular component here" (no story import path, no `meta.component`
- * - fall through to the next provider), and a payload carrying `error` for "mine, but extraction
- * failed". The two are different and callers must not collapse them.
- */
+// `undefined` means "no Angular component here", so callers fall through to the next provider,
+// while a payload carrying `error` means "mine, but extraction failed".
 export const buildDocgenPayload = (
   input: DocgenProviderInput,
   context: BuildDocgenContext
@@ -104,21 +74,18 @@ export const buildDocgenPayload = (
     return undefined;
   }
 
-  // The index writes `importPath` relative to the Storybook working directory, which is the
-  // worker's cwd.
+  // The index writes `importPath` relative to the Storybook working directory, the worker's cwd.
   const resolvePath =
     context.resolvePath ?? ((importPath: string) => resolve(process.cwd(), importPath));
   const storyFilePath = resolvePath(storyImportPath);
   const resolved = resolveStoryComponent(storyFilePath, input.entry.title);
   if ('reason' in resolved) {
-    // Passing through is correct - it means "no Angular component here" - but leave a trace.
     logger.debug(`No Angular component resolved from ${storyFilePath}: ${resolved.reason}.`);
     return undefined;
   }
 
   const { component } = resolved;
-  // `default` is an export name, not a class name; the local binding is the only thing left to
-  // call the component before its metadata is extracted.
+  // `default` is an export name, not a class name, so the local binding is the best name so far.
   const displayName =
     component.exportName === 'default' ? component.localName : component.exportName;
 
@@ -128,9 +95,8 @@ export const buildDocgenPayload = (
     path: storyImportPath,
   };
 
-  // A component declared inside the story file resolves to the story file itself, which the
-  // analyzer handles like any other TypeScript source. No path at all means the import statement
-  // did not resolve, so there is no file to analyze.
+  // A component declared in the story file resolves to the story file itself, so no path at all can
+  // only mean the import specifier did not resolve.
   if (!component.path) {
     return errorPayload(
       base,
@@ -140,8 +106,7 @@ export const buildDocgenPayload = (
     );
   }
 
-  // A language-service throw (e.g. a ts Debug Failure on one pathological file) is "mine, but
-  // failed", not a reason to reject the whole request and veto downstream providers.
+  // The language service can throw a TS Debug Failure on a single pathological file.
   let meta: AngularComponentMetaResult | undefined;
   try {
     meta = manager.extractComponentMeta(component.path, {
@@ -173,7 +138,7 @@ export const buildDocgenPayload = (
   }) as StrictArgTypes;
 
   const jsDocTags = extractJsDocTags(meta.entry);
-  // The analyzer emits plain text into both fields, with tags excluded from `rawdescription`.
+  // Tags are excluded from `rawdescription`, which is why it wins over `description`.
   const description =
     meta.entry.rawdescription?.trim() || (meta.entry.description ?? '').trim() || undefined;
 
@@ -182,12 +147,9 @@ export const buildDocgenPayload = (
     // The analyzer knows the class name even when the story file imported it as a default export.
     name: meta.entry.name,
     description,
-    // Same meaning as on React, which also sources `summary` from a `@summary` tag.
     summary: jsDocTags.summary?.[0],
     jsDocTags,
     argTypes,
-    // `subcomponents` stays unset: inherited members are merged into the component's own
-    // inputs/outputs, and Angular has no second construct the field would describe.
     angularComponentMeta: meta.entry,
   };
 };

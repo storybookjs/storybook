@@ -1,6 +1,5 @@
-// Ground-truth parity tests against the docgen-harness Angular fixtures (read-only): for every
-// behavior the expected field spellings mirror each fixture's committed `compodoc-input.json`,
-// except where the checker-based analyzer is deliberately better (noted inline).
+// Expected spellings mirror each docgen-harness fixture's committed `compodoc-input.json`, except
+// where the checker-based analyzer deliberately differs (noted inline).
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -40,8 +39,11 @@ const COMPILER_OPTIONS: ts.CompilerOptions = {
   allowImportingTsExtensions: true,
 };
 
+// TS spells `sourceFile.fileName` with forward slashes on every platform, so paths must match.
+const normalize = (fileName: string) => fileName.replace(/\\/g, '/');
+
 const componentFile = (caseName: string) =>
-  join(HARNESS_FIXTURES, caseName, `${caseName}.component.ts`);
+  normalize(join(HARNESS_FIXTURES, caseName, `${caseName}.component.ts`));
 
 const program = ts.createProgram(CASES.map(componentFile), COMPILER_OPTIONS);
 const checker = program.getTypeChecker();
@@ -89,12 +91,11 @@ describe('analyzeSourceFile - docgen-harness fixture parity', () => {
     expect(byName(component.inputsClass, 'count')).toMatchObject({
       type: 'number',
       optional: true,
+      required: false,
     });
-    expect(byName(component.inputsClass, 'count').required).toBeUndefined();
     expect(byName(component.inputsClass, 'count').defaultValue).toBeUndefined();
     expect(byName(component.inputsClass, 'data').type).toBe('any');
-    // The signature, not compodoc's bare `function`: the summary is the only place a reader learns
-    // the parameter and return types. `isFunctionTypeString` still gives it a function control.
+    // The signature, not compodoc's bare `function`.
     expect(byName(component.inputsClass, 'formatter').type).toBe('(value: number) => string');
     expect(byName(component.inputsClass, 'label')).toMatchObject({
       type: 'string',
@@ -154,7 +155,6 @@ describe('analyzeSourceFile - docgen-harness fixture parity', () => {
       { name: 'Primary', value: 'primary' },
       { name: 'Secondary', value: 'secondary' },
     ]);
-    // The extractor's enum path only fires when every child value is truthy.
     for (const child of buttonKind.childs) {
       expect(typeof child.value).toBe('string');
       expect(child.value).toBeTruthy();
@@ -175,8 +175,7 @@ describe('analyzeSourceFile - docgen-harness fixture parity', () => {
 
   it('expression-defaults: raw initializer text with checker-inferred types', () => {
     const component = soleComponent(analyzeCase('expression-defaults'));
-    // compodoc emitted `any` here (it types without a resolved program); a real checker infers
-    // `number`.
+    // compodoc emitted `any` here, having no resolved program; a real checker infers `number`.
     expect(byName(component.inputsClass, 'rows')).toMatchObject({
       type: 'number',
       defaultValue: 'Math.max(1, 3)',
@@ -220,7 +219,7 @@ describe('analyzeSourceFile - docgen-harness fixture parity', () => {
     const accent = byName(component.inputsClass, 'accent');
     expect(accent).toMatchObject({ type: 'string', optional: true });
     expect(accent.defaultValue).toBeUndefined();
-    // The `@default` comment stays plain text with its quotes; the extractor unwraps and uses it.
+    // The `@default` comment keeps the quotes the fixture wrote; the extractor unwraps them later.
     expect(accent.jsdoctags).toEqual([
       { tagName: { text: 'default', escapedText: 'default' }, comment: "'steelblue'" },
     ]);
@@ -306,7 +305,6 @@ describe('analyzeSourceFile - docgen-harness fixture parity', () => {
     // The base class lives in another file, so this file's meta has no class records.
     expect(meta.classes).toEqual([]);
 
-    // Analyzing the base file itself yields a plain-class record with its own IO split.
     const baseFile = program.getSourceFile(
       join(HARNESS_FIXTURES, 'cross-file-inheritance', 'base.component.ts')
     );
@@ -369,7 +367,6 @@ describe('analyzeSourceFile - docgen-harness fixture parity', () => {
     expect(soleComponent(analyzeCase('complex-selector')).selector).toBe(
       'button[sb-harness-action], a[sb-harness-action]'
     );
-    // Undecorated classes have no selector.
     const baseFile = program.getSourceFile(
       join(HARNESS_FIXTURES, 'cross-file-inheritance', 'base.component.ts')
     );
@@ -377,8 +374,6 @@ describe('analyzeSourceFile - docgen-harness fixture parity', () => {
     expect(baseMeta.classes[0].selector).toBeUndefined();
   });
 
-  // Sortedness is the one runtime contract here (analyze-file must call sortMembers after the
-  // inheritance merge); the member shapes themselves are enforced by the compodoc types.
   it('invariants: members sorted by name within each array', () => {
     for (const caseName of CASES) {
       const meta = analyzeCase(caseName);

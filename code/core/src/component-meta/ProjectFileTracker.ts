@@ -2,7 +2,10 @@ import type { FileChange, ProjectFileSystem } from './types.ts';
 
 export type FileSnapshotCache<Snapshot> = Map<string, [number | undefined, Snapshot | undefined]>;
 
-const normalize = (fileName: string) => fileName.replace(/\\/g, '/');
+/** Program and event paths arrive with either separator; every cache here keys on one shape. */
+export const normalizePath = (fileName: string) => fileName.replace(/\\/g, '/');
+
+const normalize = normalizePath;
 
 /** Matches a whole `node_modules` path segment, so `src/node_modules-tools/Tag.tsx` is kept. */
 const NODE_MODULES_SEGMENT = /(?:^|\/)node_modules(?:\/|$)/;

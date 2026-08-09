@@ -330,11 +330,7 @@ export class ComponentMetaProject extends ProgramBackedProject<ts.IScriptSnapsho
     }
 
     let componentType = checker.getTypeOfSymbol(componentProp);
-    let selectedSymbol =
-      componentProp.valueDeclaration &&
-      this.typescript.isPropertyAssignment(componentProp.valueDeclaration)
-        ? checker.getSymbolAtLocation(componentProp.valueDeclaration.initializer)
-        : componentType.getSymbol?.();
+    let selectedSymbol = checker.getSymbolAtLocation(metaComponentInitializer);
 
     if (memberAccess) {
       const prop = componentType.getProperty(memberAccess);

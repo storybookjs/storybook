@@ -1,8 +1,8 @@
 # Angular Component Meta
 
-In-process Angular docgen: reads component metadata straight from TypeScript sources with a warm `LanguageService`, instead of shelling out to [Compodoc](https://compodoc.app/).
+In-process Angular docgen: reads component metadata straight from TypeScript sources with a warm `LanguageService`.
 
-`AngularComponentMetaManager` keeps one project per matched tsconfig and emits the same Compodoc-JSON subset that `@storybook/angular-compodoc` converts into argTypes, so both producers feed a single conversion.
+`AngularComponentMetaManager` keeps one project per matched tsconfig and emits the record shape the argTypes extractor consumes, so the props table is built from the same conversion no matter which provider produced the metadata.
 
 This package is Node-only and internal: it is bundled into `@storybook/angular-vite` rather than published.
 

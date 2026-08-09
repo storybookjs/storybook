@@ -85,7 +85,7 @@ const booleanOption = (
 
 interface InputDecoratorConfig {
   alias?: string;
-  // Actual boolean value of `@Input({ required })`, unlike compodoc's presence-based flag.
+  // The actual boolean value of `@Input({ required })`, not merely whether the key is present.
   required?: boolean;
 }
 

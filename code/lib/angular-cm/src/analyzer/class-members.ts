@@ -37,7 +37,7 @@ function sortMembers(members: ClassMembers): void {
   members.methods.sort(byName);
 }
 
-/** Drop the collection-only identity, leaving the arrays the compodoc record carries. */
+/** Drop the collection-only identity, leaving the arrays the emitted record carries. */
 function emitMembers(members: ClassMembers): EmittedMembers {
   const values = <T>(entries: MemberEntry<T>[]) => entries.map((entry) => entry.value);
   return {

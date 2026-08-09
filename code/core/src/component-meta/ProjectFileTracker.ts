@@ -7,9 +7,19 @@ const normalize = (fileName: string) => fileName.replace(/\\/g, '/');
 /** Matches a whole `node_modules` path segment, so `src/node_modules-tools/Tag.tsx` is kept. */
 const NODE_MODULES_SEGMENT = /(?:^|\/)node_modules(?:\/|$)/;
 
+/**
+ * Whether a path lies inside an installed dependency.
+ *
+ * Exported because every caller that walks program files needs this exact boundary, and the
+ * obvious `includes('node_modules')` silently drops a source directory merely named after it.
+ */
+export function isInNodeModules(fileName: string): boolean {
+  return NODE_MODULES_SEGMENT.test(normalize(fileName));
+}
+
 /** Normalize program file paths and drop node_modules, for the manager's directory watching. */
 export function filterSourceFilePaths(fileNames: readonly string[]): string[] {
-  return fileNames.map(normalize).filter((fileName) => !NODE_MODULES_SEGMENT.test(fileName));
+  return fileNames.map(normalize).filter((fileName) => !isInNodeModules(fileName));
 }
 
 export class ProjectFileTracker<Snapshot> {

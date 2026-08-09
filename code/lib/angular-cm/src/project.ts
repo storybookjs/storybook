@@ -1,10 +1,9 @@
 import {
-  type ComponentMetaProjectBase,
-  type FileChange,
   type FileSnapshotCache,
+  ProgramBackedProject,
   ProjectFileTracker,
-  filterSourceFilePaths,
   isInNodeModules,
+  normalizePath,
 } from 'storybook/internal/component-meta';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -17,13 +16,11 @@ import type { AngularClassMeta, AngularComponentMetaResult, AngularFileMeta } fr
 
 export type FsFileSnapshots = FileSnapshotCache<ts.IScriptSnapshot>;
 
-const normalize = (fileName: string) => fileName.replace(/\\/g, '/');
-
 // The host is hand-written instead of Volar's because Angular components are plain TS files,
 // needing no language plugins or script-id mapping.
-export class AngularComponentMetaProject implements ComponentMetaProjectBase {
-  private readonly ls: ts.LanguageService;
-  private readonly files: ProjectFileTracker<ts.IScriptSnapshot>;
+export class AngularComponentMetaProject extends ProgramBackedProject<ts.IScriptSnapshot> {
+  protected readonly service: ts.LanguageService;
+  protected readonly files: ProjectFileTracker<ts.IScriptSnapshot>;
 
   constructor(
     private typescript: typeof ts,
@@ -33,6 +30,7 @@ export class AngularComponentMetaProject implements ComponentMetaProjectBase {
     getCommandLineFn?: () => ts.ParsedCommandLine,
     private documentRegistry?: ts.DocumentRegistry
   ) {
+    super();
     this.files = new ProjectFileTracker(
       typescript,
       commandLine,
@@ -64,54 +62,28 @@ export class AngularComponentMetaProject implements ComponentMetaProjectBase {
       readDirectory: (dirName, extensions, exclude, include, depth) =>
         sys.readDirectory(dirName, extensions, exclude, include, depth),
     };
-    this.ls = typescript.createLanguageService(host, this.documentRegistry);
+    this.service = typescript.createLanguageService(host, this.documentRegistry);
   }
 
   getCommandLine(): ts.ParsedCommandLine {
     return this.commandLine;
   }
 
-  dispose(): void {
-    this.ls.dispose();
-  }
-
-  ensureFiles(fileNames: string[]): void {
-    this.files.ensureFiles(fileNames);
-  }
-
-  hasSourceFile(fileName: string): boolean {
-    return !!this.ls.getProgram()?.getSourceFile(normalize(fileName));
-  }
-
-  getSourceFilePaths(): string[] {
-    const program = this.ls.getProgram();
-    if (!program) {
-      return [];
-    }
-    return filterSourceFilePaths(program.getSourceFiles().map((sourceFile) => sourceFile.fileName));
-  }
-
-  onFilesChanged(changes: FileChange[]): void {
-    // Captured once so the batch cannot rebuild the program mid-probe.
-    const program = this.ls.getProgram();
-    this.files.onFilesChanged(changes, (fileName) => !!program?.getSourceFile(fileName));
-  }
-
   extract(
     componentPath: string,
     names: { exportName: string; localName?: string }
   ): AngularComponentMetaResult | undefined {
-    const fileName = normalize(componentPath);
+    const fileName = normalizePath(componentPath);
 
     // Extractions can land inside the watcher's debounce window, or with no watcher at all.
     this.files.ensureFresh([fileName]);
 
-    let program = this.ls.getProgram();
+    let program = this.service.getProgram();
     let sourceFile = program?.getSourceFile(fileName);
     if (!sourceFile) {
       // Not in the root set: an inferred project, or a component outside the tsconfig's include.
       this.ensureFiles([fileName]);
-      program = this.ls.getProgram();
+      program = this.service.getProgram();
       sourceFile = program?.getSourceFile(fileName);
     }
     if (!program || !sourceFile) {
@@ -121,7 +93,7 @@ export class AngularComponentMetaProject implements ComponentMetaProjectBase {
 
     // Sweeping every cached snapshot instead costs one stat per project file per component.
     if (this.files.ensureFresh(importClosure(this.typescript, program, sourceFile))) {
-      program = this.ls.getProgram();
+      program = this.service.getProgram();
       sourceFile = program?.getSourceFile(fileName);
       if (!program || !sourceFile) {
         this.debug(`${fileName} left the program while being refreshed`);

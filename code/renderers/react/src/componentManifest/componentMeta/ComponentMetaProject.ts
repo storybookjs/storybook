@@ -9,11 +9,10 @@
  * directly.
  */
 import {
-  type ComponentMetaProjectBase,
   type FileChange,
   type FileSnapshotCache,
+  ProgramBackedProject,
   ProjectFileTracker,
-  filterSourceFilePaths,
 } from 'storybook/internal/component-meta';
 
 import { FileMap, createLanguage } from '@volar/language-core';
@@ -35,10 +34,10 @@ import {
   serializeComponentDoc,
 } from './componentMetaExtractor.ts';
 
-export class ComponentMetaProject implements ComponentMetaProjectBase {
-  private ls: ts.LanguageService;
+export class ComponentMetaProject extends ProgramBackedProject<ts.IScriptSnapshot> {
+  protected readonly service: ts.LanguageService;
   /** Invalidation state machine shared with the Angular component-meta project. */
-  private readonly files: ProjectFileTracker<ts.IScriptSnapshot>;
+  protected readonly files: ProjectFileTracker<ts.IScriptSnapshot>;
   private warmupTimer?: ReturnType<typeof setTimeout>;
   /** Entries to extract - set by the generator, replayed during warmup for targeted type resolution. */
   private entries: StoryRef[] = [];
@@ -57,6 +56,7 @@ export class ComponentMetaProject implements ComponentMetaProjectBase {
      */
     private documentRegistry?: ts.DocumentRegistry
   ) {
+    super();
     this.files = new ProjectFileTracker(
       typescript,
       commandLine,
@@ -109,54 +109,31 @@ export class ComponentMetaProject implements ComponentMetaProjectBase {
       projectHost
     );
 
-    this.ls = typescript.createLanguageService(languageServiceHost, this.documentRegistry);
+    this.service = typescript.createLanguageService(languageServiceHost, this.documentRegistry);
   }
 
   getCommandLine(): ts.ParsedCommandLine {
     return this.commandLine;
   }
 
-  dispose() {
-    clearTimeout(this.warmupTimer);
-    this.ls.dispose();
-  }
-
   // ---------------------------------------------------------------------------
   // Project management
   // ---------------------------------------------------------------------------
 
-  /**
-   * Batch-add multiple files to the project in one go. Only bumps projectVersion once, avoiding
-   * repeated program rebuilds.
-   */
-  ensureFiles(fileNames: string[]): void {
-    this.files.ensureFiles(fileNames);
+  /** Cancels the warmup the base does not know about. */
+  override dispose(): void {
+    clearTimeout(this.warmupTimer);
+    super.dispose();
   }
 
   getSourceFile(fileName: string): ts.SourceFile | undefined {
-    return this.ls.getProgram()?.getSourceFile(fileName);
+    return this.service.getProgram()?.getSourceFile(fileName);
   }
 
-  hasSourceFile(fileName: string): boolean {
-    return !!this.getSourceFile(fileName);
-  }
-
-  /**
-   * Get all non-node_modules source file paths from the TS program. Used by ComponentMetaManager to
-   * watch directories for file changes.
-   */
-  getSourceFilePaths(): string[] {
-    const program = this.ls.getProgram();
-    if (!program) {
-      return [];
-    }
-    return filterSourceFilePaths(program.getSourceFiles().map((sf) => sf.fileName));
-  }
-
-  onFilesChanged(changes: FileChange[]): void {
+  override onFilesChanged(changes: FileChange[]): void {
     // Membership probe against the pre-event program; captured once so the batch cannot rebuild
     // the program mid-loop.
-    const program = this.ls.getProgram();
+    const program = this.service.getProgram();
     const versionMoved = this.files.onFilesChanged(
       changes,
       (fileName) => !!program?.getSourceFile(fileName)
@@ -191,7 +168,7 @@ export class ComponentMetaProject implements ComponentMetaProjectBase {
     this.files.ensureFiles(allFiles);
     this.files.ensureFresh(allFiles);
 
-    const program = this.ls.getProgram();
+    const program = this.service.getProgram();
     if (!program) {
       return;
     }

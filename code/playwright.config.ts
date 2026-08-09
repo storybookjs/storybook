@@ -85,6 +85,10 @@ export default defineConfig({
       testMatch: MUTATING_SPECS,
       dependencies: ['chromium'],
       fullyParallel: false,
+      // `fullyParallel: false` only orders the tests inside one file; without a per-project
+      // worker cap the two mutating spec files still land on separate workers and write to the
+      // same sandbox at once. This limit applies to this project alone.
+      workers: 1,
       use: {
         ...devices['Desktop Chrome'],
         permissions: ['clipboard-read', 'clipboard-write'],

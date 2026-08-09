@@ -5,49 +5,31 @@ import {
   ProjectFileTracker,
   filterSourceFilePaths,
 } from 'storybook/internal/component-meta';
+import { logger } from 'storybook/internal/node-logger';
 
 import * as path from 'node:path';
 
 import type * as ts from 'typescript';
 
-import type { CompodocJson } from '@storybook/angular-compodoc';
 import { analyzeSourceFile } from './analyzer/analyze-file.ts';
 import type { AngularClassMeta, AngularComponentMetaResult, AngularFileMeta } from './types.ts';
 
-/**
- * Mtime-keyed snapshot cache shared across every project of one manager (Volar Kit checker
- * pattern); owned by the manager's factory.
- */
 export type FsFileSnapshots = FileSnapshotCache<ts.IScriptSnapshot>;
 
 const normalize = (fileName: string) => fileName.replace(/\\/g, '/');
 
-/**
- * One TS LanguageService per tsconfig, with a hand-written `ts.LanguageServiceHost` instead of
- * `@volar/typescript`: Angular components are plain TS files, so no language plugins or script-id
- * mapping are needed. All invalidation state (snapshot cache, per-file edit counters,
- * projectVersion, root-set re-checks) lives in core's ProjectFileTracker, shared with React's
- * ComponentMetaProject. The `typescript` module is constructor-injected; this package depends on
- * it only as a type.
- */
+// The host is hand-written instead of Volar's because Angular components are plain TS files,
+// needing no language plugins or script-id mapping.
 export class AngularComponentMetaProject implements ComponentMetaProjectBase {
   private readonly ls: ts.LanguageService;
-  /** Invalidation state machine; the host hooks below delegate to it. */
   private readonly files: ProjectFileTracker<ts.IScriptSnapshot>;
 
   constructor(
     private typescript: typeof ts,
     private commandLine: ts.ParsedCommandLine,
     public readonly configFileName: string | undefined,
-    /** Shared snapshot cache owned by AngularComponentMetaManager; all reads go via the tracker. */
     fsFileSnapshots: FsFileSnapshots = new Map(),
     getCommandLineFn?: () => ts.ParsedCommandLine,
-    /**
-     * Shared by AngularComponentMetaManager so projects with matching compiler options reuse
-     * parsed+bound SourceFiles. The snapshot cache above dedupes the file *reads*, not the ASTs:
-     * without a shared registry each LanguageService re-parses lib.d.ts, Angular's types and
-     * node_modules from scratch.
-     */
     private documentRegistry?: ts.DocumentRegistry
   ) {
     this.files = new ProjectFileTracker(
@@ -58,16 +40,10 @@ export class AngularComponentMetaProject implements ComponentMetaProjectBase {
       getCommandLineFn
     );
     const { sys } = typescript;
+    // No `getProjectReferences`: honoring it drops a referenced project's files from this program.
     const host: ts.LanguageServiceHost = {
-      // Project references are deliberately NOT surfaced (matching React's host): honoring them
-      // makes TS drop files owned by a referenced project from this program, so hybrid tsconfigs
-      // (include + references, e.g. a root config referencing tsconfig.lib/storybook configs)
-      // lose exactly the component files the reference owns - even after ensureFiles. Docgen
-      // wants the flat view: include matches + ensured files + whatever their imports reach.
       getCompilationSettings: () => this.commandLine.options,
-      // getProjectVersion gates the language service's host re-sync: script names, versions, and
-      // snapshots are only re-read when this string moves, so every invalidation funnels through
-      // the tracker into a projectVersion bump.
+      // TS only re-reads script names, versions and snapshots when this string moves.
       getProjectVersion: () => this.files.getProjectVersion(),
       getScriptFileNames: () => this.files.getScriptFileNames(),
       getScriptVersion: (fileName) => this.files.getScriptVersion(fileName),
@@ -80,8 +56,7 @@ export class AngularComponentMetaProject implements ComponentMetaProjectBase {
       useCaseSensitiveFileNames: () => sys.useCaseSensitiveFileNames,
       fileExists: (fileName) => sys.fileExists(fileName),
       readFile: (fileName, encoding) => sys.readFile(fileName, encoding),
-      // Without realpath TS cannot dedupe symlinked packages (pnpm/Nx workspaces), splitting type
-      // identities across the symlink and real paths.
+      // Without realpath TS cannot dedupe symlinked packages, splitting type identities.
       realpath: sys.realpath?.bind(sys),
       directoryExists: (directoryName) => sys.directoryExists(directoryName),
       getDirectories: (directoryName) => sys.getDirectories(directoryName),
@@ -99,14 +74,6 @@ export class AngularComponentMetaProject implements ComponentMetaProjectBase {
     this.ls.dispose();
   }
 
-  // ---------------------------------------------------------------------------
-  // Project management
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Batch-add files to the project's root set (inferred projects and on-demand inclusion). Bumps
-   * projectVersion once for the whole batch to avoid repeated program rebuilds.
-   */
   ensureFiles(fileNames: string[]): void {
     this.files.ensureFiles(fileNames);
   }
@@ -115,10 +82,6 @@ export class AngularComponentMetaProject implements ComponentMetaProjectBase {
     return !!this.ls.getProgram()?.getSourceFile(normalize(fileName));
   }
 
-  /**
-   * Non-node_modules source file paths of the current program, for the manager's directory
-   * watching.
-   */
   getSourceFilePaths(): string[] {
     const program = this.ls.getProgram();
     if (!program) {
@@ -128,54 +91,39 @@ export class AngularComponentMetaProject implements ComponentMetaProjectBase {
   }
 
   onFilesChanged(changes: FileChange[]): void {
-    // Membership probe against the pre-event program; captured once so the batch cannot rebuild
-    // the program mid-loop.
+    // Captured once so the batch cannot rebuild the program mid-probe.
     const program = this.ls.getProgram();
     this.files.onFilesChanged(changes, (fileName) => !!program?.getSourceFile(fileName));
   }
 
-  // ---------------------------------------------------------------------------
-  // Extraction
-  // ---------------------------------------------------------------------------
-
-  /**
-   * Analyze `componentPath` and pick the class record the story's import names point at:
-   * `exportName` match first, then the default-exported class when `exportName` is `'default'`,
-   * then `localName`, then the module's export symbols (which follows barrel re-exports to the
-   * defining file). The returned `json` carries every record of the analyzed file plus referenced
-   * enums/typealiases, so the arg-types extractor's by-name lookups work.
-   */
   extract(
     componentPath: string,
     names: { exportName: string; localName?: string }
   ): AngularComponentMetaResult | undefined {
     const fileName = normalize(componentPath);
 
-    // Freshness guard: an extraction can land inside the watcher's debounce window, and the
-    // story-docs provider runs with no watcher at all, so the component's own mtime is checked
-    // before anything reads it.
+    // Extractions can land inside the watcher's debounce window, or with no watcher at all.
     this.files.ensureFresh([fileName]);
 
     let program = this.ls.getProgram();
     let sourceFile = program?.getSourceFile(fileName);
     if (!sourceFile) {
-      // The file may not be in the root set yet (inferred project, or a component outside the
-      // tsconfig's include). Add it and rebuild before giving up.
+      // Not in the root set: an inferred project, or a component outside the tsconfig's include.
       this.ensureFiles([fileName]);
       program = this.ls.getProgram();
       sourceFile = program?.getSourceFile(fileName);
     }
     if (!program || !sourceFile) {
+      this.debug(`${fileName} is in no TypeScript program, so nothing was extracted from it`);
       return undefined;
     }
 
-    // Base classes and referenced enums/aliases sit in the files the component imports, so those
-    // get the same check - and nothing else. A sweep over every cached snapshot instead costs one
-    // stat per project file on every single component, which dominates a whole-project docgen run.
+    // Sweeping every cached snapshot instead costs one stat per project file per component.
     if (this.files.ensureFresh(importClosure(this.typescript, program, sourceFile))) {
       program = this.ls.getProgram();
       sourceFile = program?.getSourceFile(fileName);
       if (!program || !sourceFile) {
+        this.debug(`${fileName} left the program while being refreshed`);
         return undefined;
       }
     }
@@ -184,9 +132,27 @@ export class AngularComponentMetaProject implements ComponentMetaProjectBase {
     const fileMeta = analyzeSourceFile(this.typescript, sourceFile, checker);
     const entry = this.pickEntry(fileMeta, sourceFile, names);
     if (entry) {
-      return { entry, json: toCompodocJson(fileMeta) };
+      this.debug(`${describe(entry)} from ${fileName}`);
+      return { entry, json: fileMeta };
     }
-    return this.extractViaModuleExports(checker, sourceFile, fileMeta, names);
+    const viaExports = this.extractViaModuleExports(checker, sourceFile, fileMeta, names);
+    if (viaExports) {
+      this.debug(`${describe(viaExports.entry)} from ${fileName}, reached through its exports`);
+      return viaExports;
+    }
+    // Listing what the file does declare turns a name mismatch from a silent miss into an obvious
+    // one, which is the usual reason a component's props table comes back empty.
+    this.debug(
+      `no class named ${[names.exportName, names.localName].filter(Boolean).join(' or ')} in ` +
+        `${fileName}; it declares ${declaredNames(fileMeta).join(', ') || 'no classes'}`
+    );
+    return undefined;
+  }
+
+  private debug(message: string): void {
+    logger.debug(
+      `[angular-cm] ${message}${this.configFileName ? ` (${this.configFileName})` : ''}`
+    );
   }
 
   private pickEntry(
@@ -210,13 +176,6 @@ export class AngularComponentMetaProject implements ComponentMetaProjectBase {
     return findRecord(fileMeta, localName);
   }
 
-  /**
-   * Resolves the requested name through the module's export symbols when no local class record
-   * matches: barrels (`export * from './x'`, `export { X } from './x'`, aliased spellings) and
-   * `export { X as default }`. `getAliasedSymbol` resolves the whole re-export chain in one step,
-   * so cyclic re-exports cannot loop. When the class is defined in another file, that file's
-   * analysis becomes the result (entry and `json` alike).
-   */
   private extractViaModuleExports(
     checker: ts.TypeChecker,
     sourceFile: ts.SourceFile,
@@ -249,22 +208,14 @@ export class AngularComponentMetaProject implements ComponentMetaProjectBase {
           : analyzeSourceFile(this.typescript, declarationFile, checker);
       const entry = findRecord(targetMeta, declaration.name.text);
       if (entry) {
-        return { entry, json: toCompodocJson(targetMeta) };
+        return { entry, json: targetMeta };
       }
     }
     return undefined;
   }
 }
 
-/**
- * The project files an extraction of `entry` can read: the file itself plus everything its imports
- * and re-exports reach, transitively. `node_modules` is the boundary - a dependency's sources do
- * not change under a running dev server, and walking in would pull in the whole dependency graph.
- *
- * Only static top-level `import`/`export ... from` is followed, which is what Angular sources use
- * to reach a base class or a referenced enum. A `require`-style import or a lazy `import()` inside
- * a function body is not part of the closure.
- */
+// `node_modules` is the boundary: a dependency's sources do not change under a running dev server.
 const importClosure = (
   typescript: typeof ts,
   program: ts.Program,
@@ -297,34 +248,38 @@ const importClosure = (
   return [...closure];
 };
 
+const allRecords = (fileMeta: AngularFileMeta): AngularClassMeta[] => [
+  ...fileMeta.components,
+  ...fileMeta.directives,
+  ...fileMeta.pipes,
+  ...fileMeta.injectables,
+  ...fileMeta.classes,
+];
+
+const declaredNames = (fileMeta: AngularFileMeta): string[] =>
+  allRecords(fileMeta).map((record) => `${record.name} (${record.type})`);
+
+/** Enough of a record's shape to tell "found nothing" apart from "found it, and it was empty". */
+const describe = (entry: AngularClassMeta): string => {
+  const counts =
+    'inputsClass' in entry
+      ? `${entry.inputsClass?.length ?? 0} input(s), ${entry.outputsClass?.length ?? 0} output(s), ` +
+        `${'propertiesClass' in entry ? (entry.propertiesClass?.length ?? 0) : 0} propertie(s)`
+      : `${entry.properties.length} propertie(s), ${entry.methods.length} method(s)`;
+  return `extracted ${entry.type} ${entry.name} with ${counts}`;
+};
+
 const findRecord = (
   fileMeta: AngularFileMeta,
   name: string | undefined
 ): AngularClassMeta | undefined =>
-  name
-    ? [
-        ...fileMeta.components,
-        ...fileMeta.directives,
-        ...fileMeta.pipes,
-        ...fileMeta.injectables,
-        ...fileMeta.classes,
-      ].find((record) => record.name === name)
-    : undefined;
-
-/**
- * Each AngularFileMeta array holds the record kind its name says (the analyzer dispatches by
- * decorator), but AngularClassMeta is a union across all kinds, so narrowing to CompodocJson's
- * per-kind arrays needs this cast.
- */
-const toCompodocJson = (fileMeta: AngularFileMeta): CompodocJson =>
-  fileMeta as unknown as CompodocJson;
+  name ? allRecords(fileMeta).find((record) => record.name === name) : undefined;
 
 function findDefaultExportedClassName(
   typescript: typeof ts,
   sourceFile: ts.SourceFile
 ): string | undefined {
   for (const statement of sourceFile.statements) {
-    // `export default class Foo {}`
     if (
       typescript.isClassDeclaration(statement) &&
       statement.name &&
@@ -334,7 +289,6 @@ function findDefaultExportedClassName(
     ) {
       return statement.name.text;
     }
-    // `class Foo {} export default Foo;`
     if (
       typescript.isExportAssignment(statement) &&
       !statement.isExportEquals &&

@@ -1,15 +1,12 @@
 import type * as ts from 'typescript';
 
-import type { MiscCollector } from './misc-collector.ts';
+import type { TypeIndex } from './type-index.ts';
 
-/**
- * Shared state for one `analyzeSourceFile` run. The `ts` module is always passed in by the caller:
- * this package keeps `typescript` as a devDependency only, so the runtime module arrives from the
- * consumer (the docgen worker dynamically imports the user project's TypeScript).
- */
+// `ts` is carried rather than imported because the runtime module is the user project's own
+// TypeScript.
 export interface AnalyzerContext {
   ts: typeof ts;
   checker: ts.TypeChecker;
-  /** Collector for referenced enums/typealiases (deduped by name). */
-  misc: MiscCollector;
+  /** Rendering a type through this also files it under `miscellaneous`. */
+  types: TypeIndex;
 }

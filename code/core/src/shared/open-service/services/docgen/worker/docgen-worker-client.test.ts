@@ -1,18 +1,14 @@
-// Unit tests for the docgen worker client's dispatch / readiness / failure plumbing. A real worker is
-// replaced with an EventEmitter stand-in so the tests stay hermetic.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { DocgenProviderDescriptor } from '../types.ts';
 import type { DocgenWorkerRequest, DocgenWorkerResponse } from './protocol.ts';
 
-/** Only the surface the tests touch; the runtime instance is a real Node EventEmitter subclass. */
 interface FakeWorker {
   posted: DocgenWorkerRequest[];
   postMessage: ReturnType<typeof vi.fn>;
   terminate: ReturnType<typeof vi.fn>;
   unref: ReturnType<typeof vi.fn>;
   ref: ReturnType<typeof vi.fn>;
-  /** `message` listeners registered at the moment `unref()` ran; see the ordering test below. */
   messageListenersAtUnref: number;
   emit: (event: string, ...args: unknown[]) => boolean;
 }
@@ -45,8 +41,7 @@ vi.mock('node:worker_threads', async () => {
 vi.mock('node:fs', () => ({ existsSync: vi.fn(() => true) }));
 
 vi.mock('../../../../utils/module.ts', () => ({
-  // Include a drive letter so `fileURLToPath()` accepts it on Windows too (a driveless file URL
-  // throws ERR_INVALID_FILE_URL_PATH there, which would make the client resolve to undefined).
+  // Drive letter included so `fileURLToPath()` accepts this URL on Windows too.
   importMetaResolve: vi.fn(() => 'file:///C:/fake/storybook/docgen-worker.js'),
 }));
 
@@ -58,7 +53,6 @@ const DESCRIPTORS: DocgenProviderDescriptor[] = [
   { moduleSpecifier: '/fake/react/docgen-worker.js' },
 ];
 
-/** Resolve the worker's `init` ack so awaiting `extract` calls can proceed. */
 function ackInit(worker: FakeWorker, error?: { name: string; message: string }) {
   worker.emit(
     'message',
@@ -102,17 +96,12 @@ describe('createDocgenWorkerClient', () => {
 
     expect(fakeWorkers).toHaveLength(1);
     expect(worker.posted[0]).toEqual({ type: 'init', descriptors: DESCRIPTORS });
-    // The worker stays referenced through init: an all-unref'd client let a static build drain
-    // the event loop and exit zero before a slow extraction finished, dropping every snapshot.
     expect(worker.unref).not.toHaveBeenCalled();
 
-    // Drive the extract to completion so dispose isn't racing a not-yet-queued request.
     ackInit(worker);
     await Promise.resolve();
     const extractMsg = worker.posted.find((m) => m.type === 'extract') as { id: number };
-    // Referenced while the extraction is in flight (a transient unref may precede it when the
-    // ready-settled rebalance runs before the extract continuation - microtasks cannot drain the
-    // event loop, so only the final order matters).
+    // Loose on purpose: a transient unref can land before the extract continuation runs.
     expect(worker.ref).toHaveBeenCalled();
     worker.emit('message', {
       type: 'extract',
@@ -120,15 +109,11 @@ describe('createDocgenWorkerClient', () => {
       payload: { id: 'button', name: 'Button', path: './button.stories.tsx', jsDocTags: {} },
     } satisfies DocgenWorkerResponse);
     await expect(promise).resolves.toMatchObject({ id: 'button' });
-    // ...and released once nothing is pending, so an idle worker never blocks process exit: the
-    // LAST lifecycle call must be an unref, after every ref.
     const lastRef = Math.max(...worker.ref.mock.invocationCallOrder);
     const lastUnref = Math.max(...worker.unref.mock.invocationCallOrder);
     expect(lastUnref).toBeGreaterThan(lastRef);
 
-    // Attaching a `message` listener re-references the worker's port, so an unref that ran before
-    // the listeners were on would leave the worker holding the event loop open forever. Asserting
-    // the order because a unit test cannot observe the process failing to exit.
+    // Attaching a `message` listener re-refs the port, so unref before that holds the loop open.
     expect(worker.messageListenersAtUnref).toBeGreaterThan(0);
   });
 });
@@ -142,7 +127,6 @@ describe('DocgenWorkerClient.extract', () => {
     const promise = client.extract(entry);
     const worker = fakeWorkers[0];
 
-    // Nothing is dispatched until init is acked.
     expect(worker.posted.filter((m) => m.type === 'extract')).toHaveLength(0);
     ackInit(worker);
     await Promise.resolve();
@@ -176,8 +160,6 @@ describe('DocgenWorkerClient.extract', () => {
 
     const promise = client.extract({ id: 'x' } as any);
     const worker = fakeWorkers[0];
-    // Worker dies during boot, before its `init` ack - `ready` must reject so the awaiting extract
-    // fails fast instead of hanging forever.
     worker.emit('exit', 1);
 
     await expect(promise).rejects.toThrow(/exited unexpectedly/);

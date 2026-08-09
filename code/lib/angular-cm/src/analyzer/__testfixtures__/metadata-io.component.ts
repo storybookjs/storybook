@@ -1,6 +1,6 @@
 // Metadata-declared IO in the generated-wrapper style of SAP/ui5-webcomponents-ngx: fields carry
 // no member-level decorator; the @Component metadata arrays declare them instead.
-import { Component, EventEmitter } from '@angular/core';
+import { Component, EventEmitter, Input } from '@angular/core';
 
 @Component({
   selector: 'sb-metadata-io',

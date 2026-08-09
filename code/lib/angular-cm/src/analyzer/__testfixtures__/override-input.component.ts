@@ -1,5 +1,7 @@
-import { Component, Input } from '@angular/core';
+import { Component, Directive, Input } from '@angular/core';
 
+// Selector-less base directive: Angular only inherits input metadata from a decorated base.
+@Directive()
 export class OverrideBase {
   /** Whether the control is disabled. */
   @Input() disabled = true;

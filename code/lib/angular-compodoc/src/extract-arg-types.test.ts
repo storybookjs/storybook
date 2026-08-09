@@ -74,8 +74,7 @@ describe('extractArgTypesFromData', () => {
 
   describe('same-named declarations in different files', () => {
     // Compodoc emits the same entries in a different order from run to run, and a name like `Size`
-    // is routinely declared once per component folder. Resolving by array order therefore let a
-    // control's type change with no source change at all.
+    // is routinely declared once per component folder.
     const inOwnFile = {
       name: 'Size',
       file: 'src/status/status.component.ts',
@@ -156,7 +155,6 @@ describe('model() two-way bindings', () => {
 
     expect(Object.keys(argTypes)).toEqual(['value', 'valueChange']);
     expect(argTypes.value.table?.category).toBe('inputs');
-    // Compodoc's bare-name output duplicate is suppressed, so the input is not turned into one.
     expect(argTypes.value.action).toBeUndefined();
     expect(argTypes.valueChange).toMatchObject({
       action: 'valueChange',
@@ -166,8 +164,7 @@ describe('model() two-way bindings', () => {
 
   it('keeps the real output for an alias collision instead of reading it as a model()', () => {
     // `@Input('shared')` next to `@Output('shared')` puts one name in both arrays with no `model()`
-    // anywhere. argTypes is keyed by binding name, so only one of the pair can have a row: the
-    // output the component really declares, rather than a synthesized `sharedChange` it does not.
+    // anywhere.
     const argTypes = extractFrom({
       inputsClass: [{ name: 'shared', type: 'string', optional: false, line: 9 }],
       outputsClass: [{ name: 'shared', type: 'EventEmitter<string>', optional: false, line: 11 }],
@@ -178,9 +175,8 @@ describe('model() two-way bindings', () => {
   });
 
   it('ignores the decorator IO arrays on an entry that is not a component or directive', () => {
-    // The analyzer splits signal and decorator IO onto plain classes too, so a base class holding a
-    // `model()` carries both arrays. A plain class is read through `properties`/`methods`, so
-    // reading them anyway invented a `valueChange` output on an entry with no inputs at all.
+    // The analyzer splits decorator IO onto plain classes too, so this fixture carries the `*Class`
+    // arrays of a `model()` alongside its `properties`.
     const value = { name: 'value', type: 'string', optional: false, line: 9 };
     const argTypes = extractArgTypesFromData(
       {
@@ -204,7 +200,6 @@ describe('model() two-way bindings', () => {
 });
 
 describe('required', () => {
-  /** Extracts a single input declared with the given pair of Compodoc flags. */
   const requiredOf = (flags: { optional?: boolean; required?: boolean }) => {
     const componentData = {
       name: 'StatusComponent',
@@ -222,13 +217,11 @@ describe('required', () => {
       unwrapHtml: (html: unknown) => String(html),
     });
 
-    // `required` has always been written into `table.type`, which the public ArgTypes type
-    // declares as summary/detail only, so reading it back needs an assertion.
+    // The public ArgTypes type declares `table.type` as summary/detail only, so reading `required`
+    // back needs an assertion.
     return (argTypes.value.table?.type as { required?: boolean } | undefined)?.required;
   };
 
-  // One case per shape Compodoc can emit. Which declaration produces which pair is recorded here
-  // because the pairs are not self-explanatory, and one of them is self-contradictory.
   it('is false for a signal input with a default: `input("")`', () => {
     expect(requiredOf({ optional: false, required: false })).toBe(false);
   });
@@ -242,8 +235,6 @@ describe('required', () => {
   });
 
   it('is false for `@Input({ required: false })`, which Compodoc reports as required and optional at once', () => {
-    // Compodoc derives `required` from the presence of the key rather than its value, so this
-    // declaration contradicts itself. Trusting `required` alone would call it required.
     expect(requiredOf({ optional: true, required: true })).toBe(false);
   });
 
@@ -253,14 +244,11 @@ describe('required', () => {
   });
 
   it('is true for a plain `@Input()`, for which Compodoc emits neither flag (compodoc#863)', () => {
-    // The remaining upstream gap: with nothing to read, every plain decorator input reads as
-    // required. Fixing it upstream makes `optional` appear, and this case corrects itself.
     expect(requiredOf({})).toBe(true);
   });
 });
 
 describe('modern', () => {
-  /** Extracts a single member with the given Compodoc property fields, flag on or off. */
   const extractMember = (member: Partial<Property>, { modern = true } = {}) => {
     const componentData = {
       name: 'StatusComponent',
@@ -408,7 +396,6 @@ describe('modern', () => {
         jsdoctags: [
           tag('deprecated', 'Use `label` instead.'),
           tag('returns', 'The formatted text.'),
-          // Tags without a docs-UI representation are dropped, like the React path drops them.
           tag('see', 'https://example.com'),
           tag('sbCategory', 'presentation'),
         ],

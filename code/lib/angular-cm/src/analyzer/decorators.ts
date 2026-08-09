@@ -2,13 +2,6 @@ import type * as ts from 'typescript';
 
 import type { AnalyzerContext } from './context.ts';
 
-/**
- * Readers for Angular decorators and their configuration objects. Everything here is a pure read of
- * syntax: class-level metadata (`@Component`, `@Directive`, `@Pipe`) and member-level `@Input` /
- * `@Output` share the same "find the decorator, take its first argument, pull a named property"
- * shape, so they share one implementation of it.
- */
-
 export interface DecoratorInfo {
   name: string;
   call?: ts.CallExpression;
@@ -40,7 +33,6 @@ const objectArgOf = (
   return arg && ctx.ts.isObjectLiteralExpression(arg) ? arg : undefined;
 };
 
-/** The configuration object of `@Name({ ... })` on `node`, for the first `@Name` that carries one. */
 export const decoratorObjectArg = (
   ctx: AnalyzerContext,
   node: ts.Node,
@@ -48,7 +40,6 @@ export const decoratorObjectArg = (
 ): ts.ObjectLiteralExpression | undefined =>
   objectArgOf(ctx, getDecorators(ctx, node).find((decorator) => decorator.name === name)?.call);
 
-/** The lone string argument of the aliasing decorator forms, `@Input('x')` and `@Output('x')`. */
 export const decoratorStringArg = (
   ctx: AnalyzerContext,
   decorator: DecoratorInfo
@@ -57,7 +48,6 @@ export const decoratorStringArg = (
   return arg && ctx.ts.isStringLiteralLike(arg) ? arg.text : undefined;
 };
 
-/** Initializer of a named property; shorthand and spread entries are not statically named here. */
 export const objectProperty = (
   ctx: AnalyzerContext,
   object: ts.ObjectLiteralExpression,
@@ -84,7 +74,6 @@ export const stringOption = (
   return initializer && ctx.ts.isStringLiteralLike(initializer) ? initializer.text : undefined;
 };
 
-/** Only a literal `true` reads as enabled; anything else is not statically known to be. */
 const booleanOption = (
   ctx: AnalyzerContext,
   object: ts.ObjectLiteralExpression,
@@ -96,11 +85,10 @@ const booleanOption = (
 
 interface InputDecoratorConfig {
   alias?: string;
-  /** Actual boolean value of `@Input({ required })`, unlike compodoc's presence-based flag. */
+  // Actual boolean value of `@Input({ required })`, unlike compodoc's presence-based flag.
   required?: boolean;
 }
 
-/** Collapses the three `@Input` spellings - bare, `('alias')` and `({ alias, required })`. */
 export const parseInputDecoratorConfig = (
   ctx: AnalyzerContext,
   decorator: DecoratorInfo
@@ -128,12 +116,8 @@ interface MetadataIOEntry {
   required?: boolean;
 }
 
-/**
- * The `inputs`/`outputs` arrays of `@Component`/`@Directive` metadata - the wrapper-library style
- * where fields carry no member-level decorator (e.g. generated UI5 web-component wrappers). Angular
- * accepts `'prop'` and `'prop: publicName'` in both arrays, and `{ name, alias, required }` objects
- * in `inputs` only.
- */
+// Angular accepts `'prop'` and `'prop: publicName'` in both arrays, but `{ name, alias, required }`
+// objects in `inputs` only.
 export const readMetadataInputsOutputs = (
   ctx: AnalyzerContext,
   classNode: ts.ClassLikeDeclaration,

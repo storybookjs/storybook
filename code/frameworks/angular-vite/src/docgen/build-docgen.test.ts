@@ -40,7 +40,7 @@ const entry: IndexEntry = {
   importPath: relative(process.cwd(), STORY_PATH),
 };
 
-/** A logger, because the shared parsing module warns and `vitest-setup.ts` fails on console.warn. */
+// The shared parsing module warns, and `vitest-setup.ts` fails the run on console.warn.
 const logger = { warn: vi.fn(), debug: vi.fn() };
 
 const givenStoryFile = (
@@ -53,7 +53,6 @@ const givenStoryFile = (
   vol.fromNestedJSON({ [STORY_PATH]: source });
 };
 
-/** An analyzer class record shaped like the pinned `AngularClassMeta` contract. */
 const componentEntry = (overrides: Record<string, unknown> = {}): AngularClassMeta =>
   ({
     name: 'ButtonComponent',
@@ -71,7 +70,6 @@ const componentEntry = (overrides: Record<string, unknown> = {}): AngularClassMe
 const metaFor = (classMeta: AngularClassMeta): AngularComponentMetaResult =>
   ({ entry: classMeta, json: { components: [classMeta] } }) as AngularComponentMetaResult;
 
-/** A structural manager stub: the context type deliberately needs no real analyzer. */
 const managerReturning = (meta: AngularComponentMetaResult | undefined) => ({
   extractComponentMeta: vi.fn<AngularComponentMetaSource['extractComponentMeta']>(() => meta),
 });
@@ -104,7 +102,6 @@ describe('buildDocgenPayload', () => {
       name: 'label',
       table: { category: 'inputs', defaultValue: { summary: 'Click me' } },
     });
-    // Unfiltered: the same object the analyzer produced, not a curated subset.
     expect(payload?.angularComponentMeta).toBe(classMeta);
     expect(payload?.compodoc).toBeUndefined();
     expect(payload?.subcomponents).toBeUndefined();
@@ -141,10 +138,8 @@ describe('buildDocgenPayload', () => {
           componentEntry({
             jsdoctags: [
               tag('summary', 'A clickable button'),
-              // Repeats accumulate under one name.
               tag('see', 'a'),
               tag('see', 'b'),
-              // A tag may carry no comment, and a malformed one is skipped rather than published.
               tag('internal'),
               { comment: 'orphan' },
               {},
@@ -166,8 +161,8 @@ describe('buildDocgenPayload', () => {
 
   describe('modern extraction on the analyzer path', () => {
     it('keeps plain-text comments intact where an HTML unwrapper would mangle them', () => {
-      // The analyzer emits plain text; `Array<string>` run through htmlToText would lose
-      // `<string>`, because a letter-opened angle bracket reads as an HTML tag.
+      // `Array<string>` run through htmlToText loses `<string>`: a letter-opened angle bracket
+      // reads as an HTML tag.
       givenStoryFile();
       const classMeta = componentEntry({
         jsdoctags: [{ tagName: { escapedText: 'remarks' }, comment: 'Accepts Array<string>.' }],
@@ -208,7 +203,6 @@ describe('buildDocgenPayload', () => {
 
       const payload = buildDocgenPayload({ entry }, context(managerReturning(metaFor(classMeta))));
 
-      // Legacy invents NaN via Number(undefined); the ACM path records no default at all.
       expect(payload?.argTypes?.count?.table?.defaultValue).toEqual({ summary: undefined });
       expect(payload?.argTypes?.formatter?.type).toEqual({ name: 'function' });
       expect(payload?.argTypes?.legend?.table?.jsDocTags).toEqual({
@@ -254,7 +248,6 @@ describe('buildDocgenPayload', () => {
         join(FIXTURES, 'default-button.component.ts'),
         { exportName: 'default', localName: 'Button' }
       );
-      // The analyzer knows the class name even though the story file never mentions it.
       expect(payload?.name).toBe('DefaultExportedButtonComponent');
     });
 

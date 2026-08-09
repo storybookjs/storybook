@@ -5,12 +5,6 @@ import type { AnalyzerContext } from './context.ts';
 import { stringOption } from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField } from './jsdoc.ts';
 import { initializerText, memberName } from './node-text.ts';
-import { renderTypeNode } from './type-renderer.ts';
-
-/**
- * Signal-based IO: `input()`, `output()`, `model()` and their `.required` variants. These are plain
- * initializer calls rather than decorators, so they need their own recognition and typing rules.
- */
 
 const SIGNAL_INPUT_NAMES = new Set(['input', 'model']);
 const SIGNAL_NAMES = new Set(['input', 'output', 'model']);
@@ -62,12 +56,8 @@ export const parseSignalCall = (
   return { kind: base.text as SignalCall['kind'], required, call: initializer };
 };
 
-/**
- * The signal functions must come from `@angular/core`, checked on the alias-resolved declaration's
- * file path so re-exports through project barrels still count. When the symbol does not resolve at
- * all (e.g. the project's `@angular/core` types are unreachable), fall back to bare-name matching
- * so signal extraction still works; a resolved symbol from anywhere else is a plain function call.
- */
+// Unresolvable symbols fall back to bare-name matching rather than losing signal extraction in
+// projects whose `@angular/core` types are unreachable.
 const isAngularCoreOrUnresolved = (ctx: AnalyzerContext, identifier: ts.Identifier): boolean => {
   const { checker, ts } = ctx;
   const symbol = checker.getSymbolAtLocation(identifier);
@@ -101,26 +91,23 @@ export const buildSignalEntry = (
       ? stringOption(ctx, optionsArgument, 'alias')
       : undefined;
   const type =
-    (call.typeArguments?.[0] ? renderTypeNode(ctx, call.typeArguments[0]) : undefined) ??
+    (call.typeArguments?.[0] ? ctx.types.render(call.typeArguments[0]) : undefined) ??
     signalValueTypeFromChecker(ctx, member) ??
     (valueArgument ? literalTypeName(ctx, valueArgument) : undefined);
   return {
-    name: alias ?? memberName(ctx, member.name),
+    name: alias ?? memberName(ctx.ts, member.name),
     ...(type === undefined ? {} : { type }),
     optional: false,
     required: signal.required,
-    // A `model()` is recognised downstream by the same name appearing in both the input and the
-    // output array on the same declaration line, which is what tells it apart from an
-    // `@Input('x')`/`@Output('x')` alias collision. Decorator members never need the line: they are
-    // always two separate declarations, so a collision between them is never two-way.
+    // Downstream tells a `model()` apart from an `@Input('x')`/`@Output('x')` alias collision by
+    // the same name appearing in both arrays on the same declaration line.
     line: ts.getLineAndCharacterOfPosition(member.getSourceFile(), member.getStart()).line + 1,
-    ...(valueArgument ? { defaultValue: initializerText(ctx, valueArgument) } : {}),
+    ...(valueArgument ? { defaultValue: initializerText(ctx.ts, valueArgument) } : {}),
     ...getJsDocDescription(ts, member),
     ...getJsDocTagsField(ts, member),
   };
 };
 
-/** Unwraps `InputSignal<T>`/`ModelSignal<T>`/`OutputEmitterRef<T>` to a widened `T` string. */
 const signalValueTypeFromChecker = (
   ctx: AnalyzerContext,
   member: ts.PropertyDeclaration
@@ -144,12 +131,10 @@ const signalValueTypeFromChecker = (
   // Widen a lone literal (`model('x' as const)` → string) but keep literal unions: their quoted
   // spelling (`"left" | "right"`) is what feeds the extractor's enum path.
   const widened = valueType.isUnion() ? valueType : checker.getBaseTypeOfLiteralType(valueType);
-  // The stringified name may be an alias or enum; register it so by-name lookups resolve.
-  ctx.misc.addFromType(ctx, widened);
+  ctx.types.addFromType(widened);
   return checker.typeToString(widened, member, ts.TypeFormatFlags.NoTruncation);
 };
 
-/** Literal-based inference for when the checker cannot resolve the signal call's type. */
 const literalTypeName = (ctx: AnalyzerContext, expression: ts.Expression): string | undefined => {
   const { ts } = ctx;
   if (ts.isStringLiteralLike(expression)) {

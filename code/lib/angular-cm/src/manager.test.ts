@@ -14,8 +14,7 @@ const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixture
 const normalize = (fileName: string) => fileName.replace(/\\/g, '/');
 const togglePath = normalize(join(fixturesDir, 'toggle.component.ts'));
 
-// One manager across the suite - program construction is the expensive part, and sharing it is
-// exactly the production shape (one manager per worker lifetime).
+// One manager for the whole suite: building programs is expensive, and it matches production.
 const manager = new AngularComponentMetaManager(ts);
 
 const scratchDirs: string[] = [];
@@ -33,11 +32,8 @@ function inputsOf(result: AngularComponentMetaResult | undefined) {
   return entry.inputsClass;
 }
 
-/**
- * Rewrite one occurrence in a file and push its mtime forward. The explicit mtime bump makes the
- * edit unambiguous to the mtime-keyed snapshot cache even when the write lands within the same
- * millisecond as the previous read.
- */
+// The explicit mtime bump makes the edit unambiguous to the mtime-keyed snapshot cache even when
+// the write lands within the same millisecond as the previous read.
 async function editFile(filePath: string, search: string, replacement: string) {
   const text = await readFile(filePath, 'utf8');
   if (!text.includes(search)) {
@@ -48,7 +44,7 @@ async function editFile(filePath: string, search: string, replacement: string) {
   await utimes(filePath, future, future);
 }
 
-/** Copy the fixture project into a scratch dir so edits never touch the committed fixture. */
+// Copies into a scratch dir so edits never touch the committed fixture.
 async function makeScratchCopy(prefix: string) {
   const scratch = await mkdtemp(join(tmpdir(), prefix));
   scratchDirs.push(scratch);
@@ -62,8 +58,6 @@ describe('AngularComponentMetaManager', () => {
     const project = manager.getProjectForFile(togglePath);
 
     expect(project.configFileName).toBe(normalize(join(fixturesDir, 'tsconfig.json')));
-    // Pin the direct-include mechanism: the component must appear in the parsed fileNames, so
-    // matching is by config contents - not the slower fallback probing built programs.
     expect(project.getCommandLine().fileNames).toContain(togglePath);
   });
 
@@ -127,7 +121,6 @@ describe('AngularComponentMetaManager', () => {
 
     expect(result?.entry.name).toBe('ToggleComponent');
     expect(result?.entry.file).toBe(togglePath);
-    // The json is the defining file's analysis, so by-name lookups still work.
     expect(inputsOf(result).map((input) => input.name)).toContain('label');
   });
 
@@ -191,8 +184,8 @@ describe('AngularComponentMetaManager', () => {
   it('re-extracts a rewrite whose mtime is unchanged after onFilesChanged', async () => {
     const componentPath = await makeScratchCopy('sb-acm-mtime-');
 
-    // Pin a whole-second mtime so both writes land on the identical timestamp, reproducing a
-    // second write within one mtime tick (scripted codegen, coarse-mtime filesystems).
+    // The mtime is pinned to a whole second so both writes land on the identical timestamp,
+    // reproducing a second write within one mtime tick on a coarse-mtime filesystem.
     const pinned = new Date(Math.floor(Date.now() / 1000) * 1000);
     await utimes(componentPath, pinned, pinned);
 
@@ -251,7 +244,6 @@ describe('AngularComponentMetaManager', () => {
     );
     manager.onFilesChanged([{ filePath: extraPath, type: 'created' }]);
 
-    // The reparse alone (no explicit ensureFiles) must pull the new file into the program.
     expect(project.getSourceFilePaths()).toContain(extraPath);
     const result = manager.extractComponentMeta(extraPath, { exportName: 'ExtraComponent' });
     expect(inputsOf(result).map((input) => input.name)).toContain('extra');
@@ -266,7 +258,6 @@ describe('AngularComponentMetaManager', () => {
     );
 
     await editFile(componentPath, "label = 'Toggle'", "label = 'Switched'");
-    // No onFilesChanged here - extractComponentMeta's freshness sweep must catch it alone.
 
     const after = manager.extractComponentMeta(componentPath, { exportName: 'ToggleComponent' });
     expect(inputsOf(after).find((input) => input.name === 'label')?.defaultValue).toContain(
@@ -282,7 +273,6 @@ describe('AngularComponentMetaManager', () => {
     expect(inputsOf(before).map((input) => input.name)).toContain('disabled');
 
     await editFile(basePath, '@Input() disabled', '@Input() muted');
-    // No onFilesChanged here - the sweep over cached snapshots must catch the cross-file edit.
 
     const after = manager.extractComponentMeta(componentPath, { exportName: 'ToggleComponent' });
     const names = inputsOf(after).map((input) => input.name);

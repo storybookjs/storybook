@@ -23,11 +23,7 @@ export interface ClassMembers {
   methods: Method[];
 }
 
-/**
- * Extracts one class's members into the four Compodoc buckets. Mirrors the legacy inclusion rules:
- * private/protected/static/`#` members and lifecycle hooks are kept, `@ignore`d members are
- * dropped, and the constructor is skipped (only its parameter properties surface as properties).
- */
+// Compodoc parity: private, protected, static and `#` members and lifecycle hooks all stay in.
 export function visitClassMembers(
   ctx: AnalyzerContext,
   classNode: ts.ClassLikeDeclaration
@@ -55,11 +51,7 @@ export function visitClassMembers(
   return members;
 }
 
-/**
- * Moves plain properties named by the decorator metadata `inputs`/`outputs` arrays into the IO
- * buckets. Runs after inheritance merging so metadata naming inherited fields also reclassifies
- * them.
- */
+// Must run after the inheritance merge, so metadata naming an inherited field reclassifies it too.
 export function applyMetadataInputsOutputs(
   ctx: AnalyzerContext,
   classNode: ts.ClassLikeDeclaration,
@@ -126,12 +118,8 @@ const visitProperty = (
   members.properties.push(buildPlainProperty(ctx, member, decorators));
 };
 
-// --- decorator inputs/outputs ---------------------------------------------------------------
-
-// Decorator IO keeps the raw initializer source rather than going through `initializerText`.
-// Compodoc collapses an arrow default to `() => {...}` only in its plain-property visitor; its
-// `@Input`/`@Output` visitors emit the unmodified source text, and both producers have to agree.
-
+// Compodoc collapses an arrow default to `() => {...}` only in its plain-property visitor, so
+// decorator IO keeps the raw initializer source instead of going through `initializerText`.
 const buildDecoratorInput = (
   ctx: AnalyzerContext,
   member: ts.PropertyDeclaration,
@@ -142,7 +130,6 @@ const buildDecoratorInput = (
   return {
     name: config.alias ?? memberName(ctx, member.name),
     ...(type === undefined ? {} : { type }),
-    // A required-ness declared on the decorator overrides TS optionality either way.
     optional: config.required !== undefined ? !config.required : !!member.questionToken,
     ...(config.required === undefined ? {} : { required: config.required }),
     ...(member.initializer ? { defaultValue: member.initializer.getText() } : {}),
@@ -166,8 +153,6 @@ const buildDecoratorOutput = (
   };
 };
 
-// --- plain properties, methods, accessors, constructor --------------------------------------
-
 const buildPlainProperty = (
   ctx: AnalyzerContext,
   member: ts.PropertyDeclaration,
@@ -186,10 +171,8 @@ const buildPlainProperty = (
   };
 };
 
-/**
- * Overloads produce several same-named MethodDeclarations; emit one entry per name, preferring the
- * implementation signature (the only one with a body).
- */
+// Overloads produce several same-named MethodDeclarations, of which only the implementation
+// signature (the one with a body) is emitted.
 const isPreferredMethodDeclaration = (
   ctx: AnalyzerContext,
   classNode: ts.ClassLikeDeclaration,
@@ -222,7 +205,6 @@ const visitMethod = (ctx: AnalyzerContext, member: ts.MethodDeclaration): Method
     args,
     returnType,
     ...getJsDocDescription(ts, member),
-    // Methods carry tags like `@deprecated` too; without them the extractor has nothing to keep.
     ...getJsDocTagsField(ts, member),
   };
 };
@@ -247,10 +229,8 @@ const visitConstructorProperties = (
 ): void => {
   const { ts } = ctx;
   for (const parameter of constructor.parameters) {
-    // Compodoc 2.x surfaces only parameter properties declared with an explicit `public`; private,
-    // protected, and bare-`readonly` injections never reach its propertiesClass. Real projects
-    // inject services as `private readonly`, so following suit also keeps DI internals out of the
-    // props table.
+    // Compodoc 2.x surfaces only parameter properties declared with an explicit `public`, which
+    // also keeps the `private readonly` service injections of real projects out of the props table.
     const isPublicParameterProperty = (ts.getModifiers(parameter) ?? []).some(
       (modifier) => modifier.kind === ts.SyntaxKind.PublicKeyword
     );
@@ -318,7 +298,6 @@ const visitAccessorPair = (
     });
     return;
   }
-  // `@Output() get x() { ... }` - an output exposed through a getter (e.g. merged observables).
   const outputDecorator = decorators.find((decorator) => decorator.name === 'Output');
   if (outputDecorator) {
     members.outputs.push({
@@ -330,7 +309,7 @@ const visitAccessorPair = (
     return;
   }
   // Undecorated non-public accessors are implementation detail (host-binding getters, CVA
-  // plumbing); a props-table row for them is noise. Decorated inputs/outputs above stay regardless.
+  // plumbing); a props-table row for them is noise.
   const nonPublic = [getter, setter].some((accessor) =>
     (accessor ? (ts.getModifiers(accessor) ?? []) : []).some(
       (modifier) =>
@@ -350,7 +329,6 @@ const visitAccessorPair = (
   });
 };
 
-/** Annotation first, `new X()` initializer's class name second, checker inference last. */
 const typeOfPropertyish = (
   ctx: AnalyzerContext,
   member: ts.PropertyDeclaration

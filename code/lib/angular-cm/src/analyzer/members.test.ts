@@ -1,6 +1,3 @@
-// Behavior coverage the docgen-harness fixtures do not exercise: decorator alias/required
-// matrices, pipes/injectables/plain classes, the bare-name signal fallback, misc collection edge
-// cases (numeric enums, alias cycles) and multi-level inheritance including a d.ts base.
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -60,7 +57,7 @@ const byName = <T extends { name: string }>(items: T[] | undefined, name: string
   return item;
 };
 
-/** What the docgen worker passes for analyzer-produced records: plain-text comments, modern rules. */
+// Mirrors what the docgen worker passes for analyzer-produced records.
 const ANALYZER_EXTRACT_OPTIONS = {
   filterNonInputControls: undefined,
   unwrapHtml: unwrapPlainText,
@@ -94,14 +91,12 @@ describe('decorator inputs and outputs', () => {
     expect(buttonLabel).toMatchObject({ optional: false, defaultValue: "''", type: 'string' });
     expect(buttonLabel.required).toBeUndefined();
 
-    // `@Input({ required: true })` also overrides TS optionality.
     expect(byName(inputs, 'tone')).toMatchObject({
       required: true,
       optional: false,
       type: 'string',
     });
 
-    // Unlike compodoc, the analyzer reads the flag's value, not its presence.
     expect(byName(inputs, 'hint')).toMatchObject({
       required: false,
       optional: true,
@@ -204,12 +199,10 @@ describe('signal detection', () => {
       type: 'boolean',
       required: false,
     });
-    // model() again lands in both arrays.
     for (const list of [component.inputsClass, component.outputsClass]) {
       expect(byName(list, 'value')).toMatchObject({ type: 'number', defaultValue: '1' });
     }
 
-    // An unknown call stays a plain property.
     expect(byName(component.propertiesClass, 'notSignal')).toMatchObject({
       defaultValue: "compute('x')",
     });
@@ -276,7 +269,6 @@ describe('misc collection and member noise rules', () => {
   it('collects enums with compodoc value semantics', () => {
     const enumerations = meta().miscellaneous.enumerations;
     expect(enumerations.map((enumeration) => enumeration.name)).toEqual(['Numeric', 'Weird']);
-    // No initializer and non-literal initializers carry no value; numeric literals stay numbers.
     expect(byName(enumerations, 'Numeric').childs).toEqual([
       { name: 'Zero' },
       { name: 'One', value: 1 },
@@ -302,8 +294,6 @@ describe('misc collection and member noise rules', () => {
       defaultValue: '() => {...}',
       type: '(value: number) => string',
     });
-    // Compodoc collapses an arrow default only in its plain-property visitor; the same field
-    // behind an `@Input()` keeps its raw source there, so it has to keep it here too.
     expect(byName(component.inputsClass, 'decoratedFormatter')).toMatchObject({
       defaultValue: '(value: number) => `${value}`',
       type: '(value: number) => string',
@@ -375,8 +365,6 @@ describe('checker-inferred types and member edge cases', () => {
   });
 
   it('keeps @HostListener methods in methodsClass, matching legacy compodoc', () => {
-    // Legacy compodoc pushed every MethodDeclaration into methodsClass; @HostListener ones
-    // additionally landed in the separate hostListeners bucket Storybook ignores.
     expect(component().methodsClass.map((method) => method.name)).toContain('onResize');
   });
 });
@@ -399,8 +387,8 @@ describe('inheritance', () => {
   it('blocks base members the child re-declares in a different bucket', () => {
     const meta = analyze('override-input.component.ts');
     const component = meta.components[0] as Directive;
-    // The child re-declares the inherited `disabled` input as a plain property, so the base's
-    // input entry (defaultValue 'true') must not shadow the child's runtime default.
+    // The fixture's base declares `disabled` as an input defaulting to `true`, which must not
+    // shadow the child's plain-property re-declaration.
     expect(component.inputsClass.map((input) => input.name)).not.toContain('disabled');
     expect(byName(component.propertiesClass, 'disabled')).toMatchObject({
       defaultValue: 'false',
@@ -421,14 +409,12 @@ describe('inheritance', () => {
     expect(component.propertiesClass.map((property) => property.name)).toEqual(['hint']);
     expect(byName(component.propertiesClass, 'hint')).toMatchObject({ defaultValue: "'mid'" });
 
-    // The child's own midHelper wins; helper comes best-effort from the declaration file.
     expect(component.methodsClass.map((method) => method.name)).toEqual(['helper', 'midHelper']);
     expect(byName(component.methodsClass, 'helper')).toMatchObject({
       args: [{ name: 'entry', type: 'string', optional: false }],
       returnType: 'number',
     });
 
-    // MidBase itself is a plain-class record with its decorator IO split out.
     const midBase = byName(meta.classes, 'MidBase') as AngularClassMeta & {
       inputsClass?: Property[];
       methods: { name: string }[];
@@ -523,7 +509,7 @@ describe('function-typed members keep their signature', () => {
     expect(byName(inputs(), 'factory').type).toBe('new (value: number) => Date');
   });
 
-  it('keeps the function control the signature spelling would otherwise lose', () => {
+  it('keeps the function control for a signature, but not for a union containing one', () => {
     const argTypes = extractArgTypesFromData(component(), {
       compodocJson: undefined as unknown as CompodocJson,
       ...ANALYZER_EXTRACT_OPTIONS,
@@ -531,7 +517,6 @@ describe('function-typed members keep their signature', () => {
 
     expect(argTypes.format?.type).toEqual({ name: 'function' });
     expect(argTypes.format?.table?.type?.summary).toBe('(value: number, unit?: string) => string');
-    // A union with a function member is not itself a function signature; it must not claim to be.
     expect(argTypes.nullableCallback?.table?.type?.summary).toBe(
       '((value: string) => void) | null'
     );

@@ -44,8 +44,7 @@ describe('resolveMetaComponent', () => {
       },
     ],
     [
-      // `component: ListFilterComponent<Entity>` - a TS instantiation expression, seen on
-      // Aam-Digital/ndb-core; the type arguments are type-level only.
+      // A real-world shape from Aam-Digital/ndb-core; the type arguments are type-level only.
       'a generic instantiation expression',
       `import { ButtonComponent } from './button.component';
        export default { component: ButtonComponent<SomeEntity> };`,
@@ -124,9 +123,7 @@ describe('resolveMetaComponent', () => {
       'no-component-import',
     ],
     [
-      // Only a bare identifier names a binding to follow. Reporting a miss beats resolving to a
-      // story-local `Buttons.ButtonComponent`, which is what matching the printed source text
-      // yields.
+      // Matching the printed source text instead would resolve to a story-local `ButtonComponent`.
       'a member expression, which names no binding to follow',
       `import * as Buttons from './button.component';
        export default { component: Buttons.ButtonComponent };`,

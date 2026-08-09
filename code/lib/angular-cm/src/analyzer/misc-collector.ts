@@ -6,16 +6,12 @@ import type { AnalyzerContext } from './context.ts';
 import { memberName } from './members.ts';
 import { renderTypeNode } from './type-renderer.ts';
 
-/**
- * Collects the enums and type aliases the analyzed types refer to, deduped by name - the argTypes
- * extractor resolves `type` strings against `miscellaneous` by name only. Declaration files are
- * skipped so lib/`node_modules` helper aliases (`Partial`, …) do not pollute the lookup tables.
- */
+// Entries are deduped by name because the argTypes extractor resolves `type` strings against
+// `miscellaneous` by name only.
 export class MiscCollector {
   private readonly typealiases = new Map<string, TypeAlias>();
   private readonly enumerations = new Map<string, EnumType>();
-  /** Guards alias cycles (`type A = B; type B = A`): rendering A's target re-enters for A. */
-  private readonly inProgress = new Set<string>();
+  private readonly aliasCycleGuard = new Set<string>();
 
   addFromSymbol(ctx: AnalyzerContext, symbol: ts.Symbol): void {
     const target =
@@ -25,11 +21,8 @@ export class MiscCollector {
     }
   }
 
-  /**
-   * Feed for checker-derived types, which have no TypeNode to walk: the type's alias or enum
-   * symbol, and each union constituent's, so the names the type string mentions resolve by name in
-   * `miscellaneous`.
-   */
+  // Checker-derived types have no TypeNode to walk, so the type's own symbol and each union
+  // constituent's are fed in directly.
   addFromType(ctx: AnalyzerContext, type: ts.Type): void {
     const feed = (candidate: ts.Type) => {
       const symbol = candidate.aliasSymbol ?? candidate.getSymbol();
@@ -46,6 +39,7 @@ export class MiscCollector {
   }
 
   addDeclaration(ctx: AnalyzerContext, declaration: ts.Declaration): void {
+    // Skipping declaration files keeps lib and `node_modules` helper aliases out of the tables.
     if (declaration.getSourceFile().isDeclarationFile) {
       return;
     }
@@ -87,13 +81,12 @@ export class MiscCollector {
 
   private addTypeAlias(ctx: AnalyzerContext, declaration: ts.TypeAliasDeclaration): void {
     const name = declaration.name.text;
-    if (this.typealiases.has(name) || this.inProgress.has(name)) {
+    if (this.typealiases.has(name) || this.aliasCycleGuard.has(name)) {
       return;
     }
-    this.inProgress.add(name);
-    // Rendering the target recurses back into this collector for every type reference in it.
+    this.aliasCycleGuard.add(name);
     const rawtype = renderTypeNode(ctx, declaration.type);
-    this.inProgress.delete(name);
+    this.aliasCycleGuard.delete(name);
     this.typealiases.set(name, {
       name,
       ctype: 'miscellaneous',
@@ -105,10 +98,8 @@ export class MiscCollector {
   }
 }
 
-/**
- * Compodoc parity: literal initializers only, with numeric ones kept as numbers so a `0` member
- * stays falsy and correctly disables the extractor's enum path.
- */
+// Compodoc parity: numeric initializers stay numbers, so a `0` member is falsy and correctly
+// disables the extractor's enum path.
 const enumMemberValue = (
   ctx: AnalyzerContext,
   initializer: ts.Expression | undefined

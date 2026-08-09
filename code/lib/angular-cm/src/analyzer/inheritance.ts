@@ -4,15 +4,8 @@ import type { AnalyzerContext } from './context.ts';
 import type { ClassMembers } from './members.ts';
 import { visitClassMembers } from './members.ts';
 
-/**
- * Appends base-class members the child does not already declare. A name declared by the child (or
- * a nearer base) in ANY bucket blocks that name in EVERY bucket: Angular inherits input metadata,
- * so a child re-declaring an inherited `@Input()` as a plain property must not also surface the
- * base's input entry (whose defaultValue would shadow the child's). Bases are resolved through the
- * checker, so cross-file and even `node_modules` ancestors work - the latter contribute
- * best-effort plain properties/methods only, since a declaration file carries no decorator or
- * signal information.
- */
+// A name claimed in any bucket blocks it in every bucket, so a child re-declaring an inherited
+// `@Input()` as a plain property does not also surface the base's input entry.
 export function mergeInheritedMembers(
   ctx: AnalyzerContext,
   classNode: ts.ClassLikeDeclaration,

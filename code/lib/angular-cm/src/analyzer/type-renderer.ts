@@ -4,15 +4,8 @@ import type { AnalyzerContext } from './context.ts';
 
 const collapseWhitespace = (text: string): string => text.replace(/\s+/g, ' ').trim();
 
-/**
- * Syntactic TypeNode-to-string rendering, matching the legacy Compodoc spellings the argTypes
- * extractor depends on: string literals double-quoted (`"a" | "b"` feeds the enum fallback's
- * `JSON.parse`), unions joined with ` | `. Function types are the one deliberate divergence -
- * compodoc writes a bare `function`, which loses the signature the props table should show.
- *
- * Rendering a type reference also feeds its target to the misc collector, so enums and type
- * aliases referenced from other files land in `miscellaneous` for the extractor's lookups.
- */
+// Rendering is syntactic to match the legacy Compodoc spellings the argTypes extractor depends on:
+// string literals double-quoted, unions joined with ` | `.
 export function renderTypeNode(ctx: AnalyzerContext, typeNode: ts.TypeNode): string {
   const { ts } = ctx;
   if (ts.isLiteralTypeNode(typeNode)) {
@@ -39,9 +32,8 @@ export function renderTypeNode(ctx: AnalyzerContext, typeNode: ts.TypeNode): str
     return `(${renderTypeNode(ctx, typeNode.type)})`;
   }
   if (ts.isFunctionTypeNode(typeNode) || ts.isConstructorTypeNode(typeNode)) {
-    // Rendered as a real signature rather than the bare `function` compodoc emits: the summary is
-    // the only place a reader learns the parameter and return types. The `function` sbType survives
-    // because `isFunctionTypeString` matches an arrow signature too.
+    // A real signature rather than the bare `function` compodoc emits; `isFunctionTypeString` still
+    // matches an arrow signature, so the function control survives.
     const parameters = typeNode.parameters
       .map((parameter) => {
         const name = parameter.name.getText();
@@ -77,15 +69,10 @@ export function renderTypeNode(ctx: AnalyzerContext, typeNode: ts.TypeNode): str
       : '';
     return `${name}${args}`;
   }
-  // Keyword types, type queries, type literals, template literal types, …: the source text is
-  // already the right spelling, modulo formatting whitespace.
   return collapseWhitespace(typeNode.getText());
 }
 
-/**
- * Checker-based type string for a named declaration without a type annotation. Literal types are
- * widened (`'v1'` → `string`, `false` → `boolean`) to match what the legacy pipeline inferred.
- */
+// Literal types are widened (`'v1'` to `string`) to match what the legacy pipeline inferred.
 export function inferTypeString(
   ctx: AnalyzerContext,
   node: ts.NamedDeclaration
@@ -99,15 +86,11 @@ export function inferTypeString(
     return undefined;
   }
   const type = checker.getBaseTypeOfLiteralType(checker.getTypeOfSymbolAtLocation(symbol, node));
-  // The stringified name may be an alias or enum; register it so by-name lookups resolve.
   ctx.misc.addFromType(ctx, type);
   return stripImportQualifiers(checker.typeToString(type, node, ts.TypeFormatFlags.NoTruncation));
 }
 
-/**
- * The checker qualifies out-of-scope symbols as `import("@angular/core").Signal<...>`; the props
- * table wants the bare name. Applies to every checker-printed type text, including method return
- * types nested inside signatures.
- */
+// The checker qualifies out-of-scope symbols as `import("@angular/core").Signal<...>`; the props
+// table wants the bare name.
 export const stripImportQualifiers = (text: string): string =>
   text.replace(/import\("[^"]*"\)\./g, '');

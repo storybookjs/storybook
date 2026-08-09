@@ -9,14 +9,6 @@ import { mergeInheritedMembers } from './inheritance.ts';
 import { applyMetadataInputsOutputs, sortMembers, visitClassMembers } from './members.ts';
 import { MiscCollector } from './misc-collector.ts';
 
-/**
- * Analyzes one source file into the Compodoc-JSON subset `extract-arg-types.ts` consumes.
- *
- * Dispatch is by decorator name: `@Component`/`@Directive`/`@Pipe`/`@Injectable` classes land in
- * their own buckets, `@NgModule` classes are skipped, everything else (and undecorated classes)
- * lands in `classes`. Enums and type aliases declared in the file or referenced from member types
- * (also cross-file) land in `miscellaneous`.
- */
 export function analyzeSourceFile(
   ts: typeof tsModule,
   sourceFile: tsModule.SourceFile,
@@ -95,8 +87,7 @@ export function analyzeSourceFile(
       };
       meta.injectables.push(record);
     } else {
-      // Signal/decorator IO splitting applies to plain classes too; the extra arrays are
-      // harmless for the extractor (it reads `properties`/`methods` on non-directive entries).
+      // A plain class keeps its IO split out too; the extractor ignores the extra arrays.
       const record: Class &
         typeof common & { inputsClass?: Property[]; outputsClass?: Property[] } = {
         name,
@@ -135,11 +126,6 @@ const classify = (ctx: AnalyzerContext, node: tsModule.ClassDeclaration): ClassK
   return 'class';
 };
 
-/**
- * The `selector` string from the `@Component`/`@Directive` object literal. String literals are read
- * directly; an identifier is followed to a string-literal variable initializer. Anything else is
- * not statically known and is omitted.
- */
 const decoratorSelector = (
   ctx: AnalyzerContext,
   node: tsModule.ClassDeclaration,
@@ -176,7 +162,6 @@ const selectorText = (
   return undefined;
 };
 
-/** The template-facing pipe name from `@Pipe({ name: '…' })`. */
 const pipeName = (ctx: AnalyzerContext, node: tsModule.ClassDeclaration): string | undefined => {
   const metadata = decoratorObjectArg(ctx, node, 'Pipe');
   return metadata && stringOption(ctx, metadata, 'name');

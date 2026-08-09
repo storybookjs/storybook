@@ -5,6 +5,7 @@ import {
   ProjectFileTracker,
   filterSourceFilePaths,
 } from 'storybook/internal/component-meta';
+import { logger } from 'storybook/internal/node-logger';
 
 import * as path from 'node:path';
 
@@ -113,6 +114,7 @@ export class AngularComponentMetaProject implements ComponentMetaProjectBase {
       sourceFile = program?.getSourceFile(fileName);
     }
     if (!program || !sourceFile) {
+      this.debug(`${fileName} is in no TypeScript program, so nothing was extracted from it`);
       return undefined;
     }
 
@@ -121,6 +123,7 @@ export class AngularComponentMetaProject implements ComponentMetaProjectBase {
       program = this.ls.getProgram();
       sourceFile = program?.getSourceFile(fileName);
       if (!program || !sourceFile) {
+        this.debug(`${fileName} left the program while being refreshed`);
         return undefined;
       }
     }
@@ -129,9 +132,27 @@ export class AngularComponentMetaProject implements ComponentMetaProjectBase {
     const fileMeta = analyzeSourceFile(this.typescript, sourceFile, checker);
     const entry = this.pickEntry(fileMeta, sourceFile, names);
     if (entry) {
+      this.debug(`${describe(entry)} from ${fileName}`);
       return { entry, json: fileMeta };
     }
-    return this.extractViaModuleExports(checker, sourceFile, fileMeta, names);
+    const viaExports = this.extractViaModuleExports(checker, sourceFile, fileMeta, names);
+    if (viaExports) {
+      this.debug(`${describe(viaExports.entry)} from ${fileName}, reached through its exports`);
+      return viaExports;
+    }
+    // Listing what the file does declare turns a name mismatch from a silent miss into an obvious
+    // one, which is the usual reason a component's props table comes back empty.
+    this.debug(
+      `no class named ${[names.exportName, names.localName].filter(Boolean).join(' or ')} in ` +
+        `${fileName}; it declares ${declaredNames(fileMeta).join(', ') || 'no classes'}`
+    );
+    return undefined;
+  }
+
+  private debug(message: string): void {
+    logger.debug(
+      `[angular-cm] ${message}${this.configFileName ? ` (${this.configFileName})` : ''}`
+    );
   }
 
   private pickEntry(
@@ -227,19 +248,32 @@ const importClosure = (
   return [...closure];
 };
 
+const allRecords = (fileMeta: AngularFileMeta): AngularClassMeta[] => [
+  ...fileMeta.components,
+  ...fileMeta.directives,
+  ...fileMeta.pipes,
+  ...fileMeta.injectables,
+  ...fileMeta.classes,
+];
+
+const declaredNames = (fileMeta: AngularFileMeta): string[] =>
+  allRecords(fileMeta).map((record) => `${record.name} (${record.type})`);
+
+/** Enough of a record's shape to tell "found nothing" apart from "found it, and it was empty". */
+const describe = (entry: AngularClassMeta): string => {
+  const counts =
+    'inputsClass' in entry
+      ? `${entry.inputsClass?.length ?? 0} input(s), ${entry.outputsClass?.length ?? 0} output(s), ` +
+        `${'propertiesClass' in entry ? (entry.propertiesClass?.length ?? 0) : 0} propertie(s)`
+      : `${entry.properties.length} propertie(s), ${entry.methods.length} method(s)`;
+  return `extracted ${entry.type} ${entry.name} with ${counts}`;
+};
+
 const findRecord = (
   fileMeta: AngularFileMeta,
   name: string | undefined
 ): AngularClassMeta | undefined =>
-  name
-    ? [
-        ...fileMeta.components,
-        ...fileMeta.directives,
-        ...fileMeta.pipes,
-        ...fileMeta.injectables,
-        ...fileMeta.classes,
-      ].find((record) => record.name === name)
-    : undefined;
+  name ? allRecords(fileMeta).find((record) => record.name === name) : undefined;
 
 function findDefaultExportedClassName(
   typescript: typeof ts,

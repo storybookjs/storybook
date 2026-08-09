@@ -1,3 +1,5 @@
+import { logger } from 'storybook/internal/node-logger';
+
 import type * as tsModule from 'typescript';
 
 import type { Class, Directive, Injectable, Pipe, Property } from '@storybook/angular-compodoc';
@@ -33,10 +35,12 @@ export function analyzeSourceFile(
       continue;
     }
     if (hasJsDocTag(ts, statement, 'ignore')) {
+      logger.debug(`[angular-cm] ${statement.name.text} left out of docgen: tagged @ignore`);
       continue;
     }
     const kind = classify(ctx, statement);
     if (kind === 'ngmodule') {
+      logger.debug(`[angular-cm] ${statement.name.text} left out of docgen: an @NgModule`);
       continue;
     }
     const name = statement.name.text;

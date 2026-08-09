@@ -1,8 +1,9 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { logger } from 'storybook/internal/node-logger';
 import ts from 'typescript';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { CompodocJson, Directive, Method, Property } from '@storybook/angular-compodoc';
 import { extractArgTypesFromData, unwrapPlainText } from '@storybook/angular-compodoc';
@@ -51,6 +52,10 @@ const analyze = (file: string): AngularFileMeta => {
   }
   return analyzeSourceFile(ts, sourceFile, checker);
 };
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 const byName = <T extends { name: string }>(items: T[] | undefined, name: string): T => {
   const item = items?.find((candidate) => candidate.name === name);
@@ -626,6 +631,15 @@ describe('member identity is the declared field, not the emitted name', () => {
     expect(byName(component().propertiesClass, 'legacySize').jsdoctags).toMatchObject([
       { tagName: { text: 'deprecated' } },
     ]);
+  });
+
+  it('says why a member it left out is missing', () => {
+    const debug = vi.spyOn(logger, 'debug').mockImplementation(() => {});
+    analyze('member-identity.component.ts');
+
+    expect(debug.mock.calls.map(([message]) => message)).toContain(
+      '[angular-cm] MemberIdentityComponent.hidden left out of docgen: a private or protected parameter property'
+    );
   });
 
   it('does not let a static member stand in for the instance member of the same name', () => {

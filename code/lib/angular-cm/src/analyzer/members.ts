@@ -1,3 +1,5 @@
+import { logger } from 'storybook/internal/node-logger';
+
 import type * as ts from 'typescript';
 
 import type { Argument, Method, Property } from '@storybook/angular-compodoc';
@@ -37,6 +39,24 @@ export interface ClassMembers {
 export const memberKey = (entry: MemberEntry<unknown>): string =>
   entry.isStatic ? `static:${entry.declName}` : entry.declName;
 
+const owningClassName = (node: ts.Node): string => {
+  let candidate: ts.Node | undefined = node.parent;
+  while (candidate && !('members' in candidate)) {
+    candidate = candidate.parent;
+  }
+  return (candidate as ts.ClassLikeDeclaration | undefined)?.name?.text ?? 'an anonymous class';
+};
+
+/**
+ * Record a member the analyzer deliberately leaves out.
+ *
+ * "Why is this prop missing from the table" is the question this package gets asked, and every
+ * other answer to it requires reading the source.
+ */
+const dropped = (node: ts.Node, name: string, reason: string): void => {
+  logger.debug(`[angular-cm] ${owningClassName(node)}.${name} left out of docgen: ${reason}`);
+};
+
 // Compodoc parity: private, protected, static and `#` members and lifecycle hooks all stay in.
 export function visitClassMembers(
   ctx: AnalyzerContext,
@@ -48,6 +68,7 @@ export function visitClassMembers(
 
   for (const member of classNode.members) {
     if (hasJsDocTag(ts, member, 'ignore')) {
+      dropped(member, member.name ? memberName(ts, member.name) : '<unnamed>', 'tagged @ignore');
       continue;
     }
     if (ts.isConstructorDeclaration(member)) {
@@ -287,6 +308,9 @@ const visitConstructorProperties = (
       (kind) => kind === ts.SyntaxKind.PrivateKeyword || kind === ts.SyntaxKind.ProtectedKeyword
     );
     if (!declaresField || isHidden) {
+      if (isHidden) {
+        dropped(constructor, parameter.name.getText(), 'a private or protected parameter property');
+      }
       continue;
     }
     const type = parameter.type ? ctx.types.render(parameter.type) : ctx.types.infer(parameter);
@@ -383,6 +407,7 @@ const visitAccessorPair = (
     )
   );
   if (nonPublic) {
+    dropped(member, name, 'an undecorated private or protected accessor');
     return;
   }
   members.properties.push(

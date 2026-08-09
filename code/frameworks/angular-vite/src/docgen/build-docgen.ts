@@ -8,9 +8,12 @@ import type {
 
 import { resolve } from 'node:path';
 
-import type { CompodocParsingLogger } from '@storybook/angular-compodoc';
-import { extractArgTypesFromData, unwrapPlainText } from '@storybook/angular-compodoc';
-import type { AngularClassMeta, AngularComponentMetaResult } from '@storybook/angular-cm';
+import type {
+  AngularClassMeta,
+  AngularComponentMetaResult,
+  ParsingLogger,
+} from '@storybook/angular-cm';
+import { extractArgTypesFromData, unwrapPlainText } from '@storybook/angular-cm';
 import { resolveStoryComponent } from './resolve-component.ts';
 
 // Structured-cloned onto the worker thread, so every field must be plain JSON data.
@@ -34,7 +37,7 @@ export interface AngularComponentMetaSource {
 export interface BuildDocgenContext {
   manager: AngularComponentMetaSource;
   options: AngularDocgenOptions;
-  logger: CompodocParsingLogger;
+  logger: ParsingLogger;
   resolvePath?: (importPath: string) => string;
 }
 

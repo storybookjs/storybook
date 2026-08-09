@@ -1,5 +1,5 @@
-// Expected spellings mirror each docgen-harness fixture's committed `compodoc-input.json`, except
-// where the checker-based analyzer deliberately differs (noted inline).
+// Expected spellings mirror the docgen-harness fixtures' recorded input, except where having a
+// real type checker lets the analyzer do better (noted inline).
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -95,7 +95,7 @@ describe('analyzeSourceFile - docgen-harness fixture parity', () => {
     expect(byName(component.inputsClass, 'count').required).toBeUndefined();
     expect(byName(component.inputsClass, 'count').defaultValue).toBeUndefined();
     expect(byName(component.inputsClass, 'data').type).toBe('any');
-    // The signature, not compodoc's bare `function`.
+    // The real signature, not a bare `function`.
     expect(byName(component.inputsClass, 'formatter').type).toBe('(value: number) => string');
     expect(byName(component.inputsClass, 'label')).toMatchObject({
       type: 'string',
@@ -175,7 +175,7 @@ describe('analyzeSourceFile - docgen-harness fixture parity', () => {
 
   it('expression-defaults: raw initializer text with checker-inferred types', () => {
     const component = soleComponent(analyzeCase('expression-defaults'));
-    // compodoc emitted `any` here, having no resolved program; a real checker infers `number`.
+    // A resolved program types this; without one it degrades to `any`.
     expect(byName(component.inputsClass, 'rows')).toMatchObject({
       type: 'number',
       defaultValue: 'Math.max(1, 3)',
@@ -322,7 +322,7 @@ describe('analyzeSourceFile - docgen-harness fixture parity', () => {
   it('properties-methods-noise: query/host decorators surface on plain properties', () => {
     const component = soleComponent(analyzeCase('properties-methods-noise'));
     expect(component.inputsClass.map((input) => input.name)).toEqual(['title']);
-    // `#secret` stays in the analyzer output for Compodoc parity; the modern extractor drops it.
+    // `#secret` stays in the analyzer output; dropping it is the extractor's decision.
     expect(component.propertiesClass.map((property) => property.name)).toEqual([
       '#secret',
       'currentPage',
@@ -333,7 +333,7 @@ describe('analyzeSourceFile - docgen-harness fixture parity', () => {
     const currentPage = byName(component.propertiesClass, 'currentPage');
     expect(currentPage).toMatchObject({ type: 'number', defaultValue: '1' });
     expect(currentPage.decorators).toBeUndefined();
-    // compodoc emitted `unknown` for the decorated host binding; the real checker knows better.
+    // The checker types a decorated host binding that a syntax-only pass leaves `unknown`.
     expect(byName(component.propertiesClass, 'isActive')).toMatchObject({
       type: 'boolean',
       defaultValue: 'false',

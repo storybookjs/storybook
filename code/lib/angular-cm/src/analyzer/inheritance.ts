@@ -1,36 +1,30 @@
 import type * as ts from 'typescript';
 
+import type { Property } from '@storybook/angular-compodoc';
 import type { AnalyzerContext } from './context.ts';
-import type { ClassMembers } from './members.ts';
-import { visitClassMembers } from './members.ts';
+import type { ClassMembers, MemberEntry } from './members.ts';
+import { applyMetadataInputsOutputs, memberKey, visitClassMembers } from './members.ts';
+
+type IOBucket = 'inputs' | 'outputs';
 
 /**
- * Appends base-class members the child does not already declare. A name declared by the child (or
- * a nearer base) in ANY bucket blocks that name in EVERY bucket: Angular inherits input metadata,
- * so a child re-declaring an inherited `@Input()` as a plain property must not also surface the
- * base's input entry (whose defaultValue would shadow the child's). Bases are resolved through the
- * checker, so cross-file and even `node_modules` ancestors work - the latter contribute
- * best-effort plain properties/methods only, since a declaration file carries no decorator or
- * signal information.
+ * Fold every base class's members into `members`.
+ *
+ * Angular merges a base definition into a subclass by class field, so identity here is the declared
+ * field rather than the public name an alias may have replaced.
  */
 export function mergeInheritedMembers(
   ctx: AnalyzerContext,
   classNode: ts.ClassLikeDeclaration,
   members: ClassMembers
 ): void {
-  const claimed = new Set(
-    [...members.inputs, ...members.outputs, ...members.properties, ...members.methods].map(
-      (member) => member.name
-    )
-  );
-  walkBases(ctx, classNode, members, claimed, new Set([classNode]));
+  walkBases(ctx, classNode, members, new Set([classNode]));
 }
 
 function walkBases(
   ctx: AnalyzerContext,
   classNode: ts.ClassLikeDeclaration,
   members: ClassMembers,
-  claimed: Set<string>,
   visited: Set<ts.Node>
 ): void {
   if (!classNode.name) {
@@ -52,28 +46,73 @@ function walkBases(
     }
     visited.add(declaration);
     const baseMembers = visitClassMembers(ctx, declaration);
-    // Names are claimed only after the whole base is merged, so a model()'s paired input and
-    // output entries (same name, same class) both survive.
-    const appended = new Set<string>();
-    const merge = <T extends { name: string }>(target: T[], source: T[]) => {
-      for (const entry of source) {
-        if (!claimed.has(entry.name)) {
-          target.push(entry);
-          appended.add(entry.name);
-        }
-      }
-    };
+    // A base carries its own `@Directive({ inputs })`, and nothing downstream would reclassify
+    // those fields once they have been merged in as plain properties.
+    applyMetadataInputsOutputs(ctx, declaration, baseMembers);
     // A declaration file records no decorators or signal calls, so a base from one has nothing to
     // contribute to the IO buckets.
     if (!declaration.getSourceFile().isDeclarationFile) {
-      merge(members.inputs, baseMembers.inputs);
-      merge(members.outputs, baseMembers.outputs);
+      mergeBucket(members, baseMembers, 'inputs');
+      mergeBucket(members, baseMembers, 'outputs');
     }
-    merge(members.properties, baseMembers.properties);
-    merge(members.methods, baseMembers.methods);
-    for (const name of appended) {
-      claimed.add(name);
+    mergeInto(members.properties, baseMembers.properties, members);
+    mergeInto(members.methods, baseMembers.methods, members);
+    walkBases(ctx, declaration, members, visited);
+  }
+}
+
+/**
+ * Merge one IO bucket, promoting a child's plain re-declaration into it.
+ *
+ * Re-declaring an inherited `@Input()` without repeating the decorator does not un-input it in
+ * Angular, so the child's own shape wins while the base decides the bucket.
+ */
+function mergeBucket(members: ClassMembers, baseMembers: ClassMembers, bucket: IOBucket): void {
+  for (const inherited of baseMembers[bucket]) {
+    const key = memberKey(inherited);
+    // The opposite IO bucket is deliberately not consulted: a base's `model()` is one entry in
+    // both, and each half has to survive independently.
+    const owned = [members[bucket], members.methods].some((entries) =>
+      entries.some((entry) => memberKey(entry) === key)
+    );
+    if (owned) {
+      continue;
     }
-    walkBases(ctx, declaration, members, claimed, visited);
+    const index = members.properties.findIndex((entry) => memberKey(entry) === key);
+    if (index < 0) {
+      members[bucket].push(inherited);
+      continue;
+    }
+    const [own] = members.properties.splice(index, 1);
+    members[bucket].push(promote(own, inherited));
+  }
+}
+
+/**
+ * Keep the child's own metadata but adopt the base's public name, which is what a template binds
+ * when the child does not re-alias the field.
+ */
+const promote = (
+  own: MemberEntry<Property>,
+  inherited: MemberEntry<Property>
+): MemberEntry<Property> => ({
+  ...own,
+  value: { ...own.value, name: inherited.value.name },
+});
+
+const claimedElsewhere = (members: ClassMembers, key: string): boolean =>
+  [members.inputs, members.outputs, members.properties, members.methods].some((bucket) =>
+    bucket.some((entry) => memberKey(entry) === key)
+  );
+
+function mergeInto<T>(
+  target: MemberEntry<T>[],
+  source: MemberEntry<T>[],
+  members: ClassMembers
+): void {
+  for (const inherited of source) {
+    if (!claimedElsewhere(members, memberKey(inherited))) {
+      target.push(inherited);
+    }
   }
 }

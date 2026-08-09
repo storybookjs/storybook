@@ -29,6 +29,8 @@ export class MiscComponent {
 
   formatter = (value: number) => `${value}`;
 
+  @Input() decoratedFormatter = (value: number) => `${value}`;
+
   /** @ignore */
   secret = 'hidden';
 

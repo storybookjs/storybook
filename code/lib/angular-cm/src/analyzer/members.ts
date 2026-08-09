@@ -57,7 +57,8 @@ const dropped = (node: ts.Node, name: string, reason: string): void => {
   logger.debug(`[angular-cm] ${owningClassName(node)}.${name} left out of docgen: ${reason}`);
 };
 
-// Compodoc parity: private, protected, static and `#` members and lifecycle hooks all stay in.
+// Private, protected, static and `#` members and lifecycle hooks all stay in; filtering them is
+// the extractor's decision, not this visitor's.
 export function visitClassMembers(
   ctx: AnalyzerContext,
   classNode: ts.ClassLikeDeclaration
@@ -168,8 +169,8 @@ const visitProperty = (
   members.properties.push(entryFor(ctx, member, buildPlainProperty(ctx, member, decorators)));
 };
 
-// Compodoc collapses an arrow default to `() => {...}` only in its plain-property visitor, so
-// decorator IO keeps the raw initializer source instead of going through `initializerText`.
+// An arrow default collapses to `() => {...}` for plain properties only, so decorator IO keeps the
+// raw initializer source instead of going through `initializerText`.
 const buildDecoratorInput = (
   ctx: AnalyzerContext,
   member: ts.PropertyDeclaration,

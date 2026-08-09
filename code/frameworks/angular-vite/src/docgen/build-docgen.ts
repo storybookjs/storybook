@@ -134,7 +134,7 @@ export const buildDocgenPayload = (
   }
 
   const argTypes = extractArgTypesFromData(meta.entry, {
-    compodocJson: meta.json,
+    metadataJson: meta.json,
     filterNonInputControls: options.angularFilterNonInputControls,
     logger,
     ...ACM_EXTRACT_OPTIONS,

@@ -1,6 +1,6 @@
 import type * as tsModule from 'typescript';
 
-import type { JsDocTag } from '../compodoc-types.ts';
+import type { JsDocTag } from '../types.ts';
 
 // `description` and `rawdescription` both carry the same plain text, which the consumer's
 // `unwrapHtml` passes through unchanged rather than parsing as HTML.

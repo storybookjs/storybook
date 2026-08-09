@@ -1,15 +1,15 @@
 /**
  * Turns one analyzer-produced class record into argTypes.
  *
- * The analyzer emits Compodoc-shaped records on purpose (see `compodoc-types.ts`), which is what
- * lets this extractor stay a straight structural read with no Compodoc dependency of its own.
+ * The analyzer emits Compodoc-shaped records on purpose (see `types.ts`), which is what lets this
+ * extractor stay a straight structural read with no Compodoc dependency of its own.
  */
 import type { ArgTypes, InputType, SBEnumType, SBType } from 'storybook/internal/types';
 
 import type {
   Argument,
   Class,
-  CompodocJson,
+  MetadataJson,
   Decorator,
   Directive,
   EnumTypeChild,
@@ -18,7 +18,7 @@ import type {
   Method,
   Pipe,
   Property,
-} from './compodoc-types.ts';
+} from './types.ts';
 
 export interface ParsingLogger {
   warn(message: string): void;
@@ -31,7 +31,7 @@ const NOOP_LOGGER: ParsingLogger = {
 };
 
 export interface ExtractArgTypesOptions {
-  compodocJson: CompodocJson | undefined;
+  metadataJson: MetadataJson | undefined;
   /** The `angularFilterNonInputControls` flag, required so no host inherits a silent default. */
   filterNonInputControls: boolean | undefined;
   logger?: ParsingLogger;
@@ -156,12 +156,12 @@ const hasEnumValue = (child: EnumTypeChild): child is EnumTypeChild & { value: s
 
 const extractEnumValues = (
   compodocType: unknown,
-  compodocJson: CompodocJson | undefined,
+  metadataJson: MetadataJson | undefined,
   componentFile?: string,
   modern = false
 ): SBEnumType['value'] | null => {
   const enumType = pickDeclaration(
-    compodocJson?.miscellaneous?.enumerations?.filter((x) => x.name === compodocType) ?? [],
+    metadataJson?.miscellaneous?.enumerations?.filter((x) => x.name === compodocType) ?? [],
     componentFile
   );
 
@@ -195,7 +195,7 @@ const extractEnumValues = (
 // synchronous docgen worker down rather than one component.
 const resolveTypealias = (
   compodocType: string,
-  compodocJson: CompodocJson | undefined,
+  metadataJson: MetadataJson | undefined,
   componentFile?: string,
   seen: Set<string> = new Set()
 ): string => {
@@ -203,14 +203,14 @@ const resolveTypealias = (
     return compodocType;
   }
   const typeAlias = pickDeclaration(
-    compodocJson?.miscellaneous?.typealiases?.filter((x) => x.name === compodocType) ?? [],
+    metadataJson?.miscellaneous?.typealiases?.filter((x) => x.name === compodocType) ?? [],
     componentFile
   );
   if (!typeAlias) {
     return compodocType;
   }
   seen.add(compodocType);
-  return resolveTypealias(typeAlias.rawtype, compodocJson, componentFile, seen);
+  return resolveTypealias(typeAlias.rawtype, metadataJson, componentFile, seen);
 };
 
 const isFunctionTypeString = (compodocType: string): boolean =>
@@ -219,7 +219,7 @@ const isFunctionTypeString = (compodocType: string): boolean =>
 const extractType = (
   property: Property,
   defaultValue: any,
-  compodocJson: CompodocJson | undefined,
+  metadataJson: MetadataJson | undefined,
   componentFile?: string,
   modern = false
 ): SBType => {
@@ -235,7 +235,7 @@ const extractType = (
       if (modern && typeof compodocType === 'string' && isFunctionTypeString(compodocType)) {
         return { name: 'function' };
       }
-      const resolvedType = resolveTypealias(compodocType, compodocJson, componentFile);
+      const resolvedType = resolveTypealias(compodocType, metadataJson, componentFile);
       // An optional primitive like `string | undefined` is a primitive control; treating it as an
       // enum candidate loses the control entirely.
       if (modern && typeof resolvedType === 'string' && resolvedType.indexOf('|') !== -1) {
@@ -244,7 +244,7 @@ const extractType = (
           return { name: members[0] as 'string' | 'boolean' | 'number' };
         }
       }
-      const enumValues = extractEnumValues(resolvedType, compodocJson, componentFile, modern);
+      const enumValues = extractEnumValues(resolvedType, metadataJson, componentFile, modern);
       return enumValues
         ? { name: 'enum', value: enumValues }
         : { name: 'other', value: 'empty-enum' };
@@ -410,7 +410,7 @@ const getModelProperties = (componentData: Entry): Property[] => {
 export const extractArgTypesFromData = (
   componentData: Entry,
   {
-    compodocJson,
+    metadataJson,
     filterNonInputControls,
     logger = NOOP_LOGGER,
     unwrapHtml,
@@ -451,7 +451,7 @@ export const extractArgTypesFromData = (
       const type: SBType =
         isMethod(item) || (section !== 'inputs' && section !== 'properties')
           ? { name: 'other', value: 'void' }
-          : extractType(item, defaultValue, compodocJson, componentData.file, modern);
+          : extractType(item, defaultValue, metadataJson, componentData.file, modern);
       const action = section === 'outputs' ? { action: item.name } : {};
 
       const jsDocTags = modern ? extractMemberJsDocTags(item, unwrapHtml) : undefined;

@@ -5,7 +5,7 @@ import { logger } from 'storybook/internal/node-logger';
 import ts from 'typescript';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { Directive, Method, Property } from '../compodoc-types.ts';
+import type { Directive, Method, Property } from '../types.ts';
 import { extractArgTypesFromData, passThroughText } from '../extract-arg-types.ts';
 import type { AngularClassMeta, AngularFileMeta } from '../types.ts';
 import { analyzeSourceFile } from './analyze-file.ts';
@@ -333,7 +333,7 @@ describe('checker-inferred types and member edge cases', () => {
   const component = () => meta().components[0] as Directive;
   const argTypes = () =>
     extractArgTypesFromData(component(), {
-      compodocJson: meta(),
+      metadataJson: meta(),
       ...ANALYZER_EXTRACT_OPTIONS,
     });
 
@@ -474,7 +474,7 @@ describe('clarity-edges: real-world JSDoc, visibility, and type-text edge cases'
     expect(tagNames).toContain('deprecated');
 
     const argTypes = extractArgTypesFromData(component(), {
-      compodocJson: undefined,
+      metadataJson: undefined,
       ...ANALYZER_EXTRACT_OPTIONS,
     });
     expect(
@@ -546,7 +546,7 @@ describe('function-typed members keep their signature', () => {
 
   it('keeps the function control for a signature, but not for a union containing one', () => {
     const argTypes = extractArgTypesFromData(component(), {
-      compodocJson: undefined,
+      metadataJson: undefined,
       ...ANALYZER_EXTRACT_OPTIONS,
     }) as Record<string, { type?: { name?: string }; table?: { type?: { summary?: string } } }>;
 
@@ -600,7 +600,7 @@ describe('type entries answer to the spelling the props table shows', () => {
     expect(meta.miscellaneous.enumerations.map((entry) => entry.name)).toContain('ButtonLevel');
 
     const argTypes = extractArgTypesFromData(component, {
-      compodocJson: meta,
+      metadataJson: meta,
       ...ANALYZER_EXTRACT_OPTIONS,
     }) as Record<string, { type?: { name?: string; value?: unknown } }>;
 

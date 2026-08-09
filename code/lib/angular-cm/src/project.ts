@@ -4,6 +4,7 @@ import {
   type FileSnapshotCache,
   ProjectFileTracker,
   filterSourceFilePaths,
+  isInNodeModules,
 } from 'storybook/internal/component-meta';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -226,7 +227,7 @@ const importClosure = (
   const queue: ts.SourceFile[] = [entry];
   while (queue.length > 0) {
     const file = queue.pop()!;
-    if (closure.has(file.fileName) || file.fileName.includes('node_modules')) {
+    if (closure.has(file.fileName) || isInNodeModules(file.fileName)) {
       continue;
     }
     closure.add(file.fileName);

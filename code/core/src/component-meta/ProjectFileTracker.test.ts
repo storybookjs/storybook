@@ -4,7 +4,17 @@ import {
   type FileSnapshotCache,
   ProjectFileTracker,
   filterSourceFilePaths,
+  isInNodeModules,
 } from './ProjectFileTracker.ts';
+
+describe('isInNodeModules', () => {
+  it('matches a whole path segment, not a substring', () => {
+    expect(isInNodeModules('/app/node_modules/vue/index.d.ts')).toBe(true);
+    expect(isInNodeModules('/app/src/node_modules-tools/Tag.tsx')).toBe(false);
+    expect(isInNodeModules('/app/src/my_node_modules/x.ts')).toBe(false);
+    expect(isInNodeModules('C:\\app\\node_modules\\vue\\index.d.ts')).toBe(true);
+  });
+});
 
 describe('filterSourceFilePaths', () => {
   it('drops files under a node_modules directory', () => {

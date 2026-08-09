@@ -47,7 +47,7 @@ const Panel: FC<any> = (props) => {
   const panels = useMemo(() => {
     const allPanels = api.getElements(Addon_TypesEnum.PANEL);
 
-    if (!allPanels || type !== 'story') {
+    if (!allPanels) {
       return allPanels;
     }
 

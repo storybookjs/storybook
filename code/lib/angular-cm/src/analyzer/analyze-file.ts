@@ -3,24 +3,18 @@ import type * as tsModule from 'typescript';
 import type { Class, Directive, Injectable, Pipe, Property } from '@storybook/angular-compodoc';
 import type { AngularFileMeta } from '../types.ts';
 import type { AnalyzerContext } from './context.ts';
+import { collectClassMembers } from './class-members.ts';
 import { decoratorObjectArg, getDecorators, objectProperty, stringOption } from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
-import { mergeInheritedMembers } from './inheritance.ts';
-import {
-  applyMetadataInputsOutputs,
-  emitMembers,
-  sortMembers,
-  visitClassMembers,
-} from './members.ts';
-import { MiscCollector } from './misc-collector.ts';
+import { TypeIndex } from './type-index.ts';
 
 export function analyzeSourceFile(
   ts: typeof tsModule,
   sourceFile: tsModule.SourceFile,
   checker: tsModule.TypeChecker
 ): AngularFileMeta {
-  const misc = new MiscCollector();
-  const ctx: AnalyzerContext = { ts, checker, misc };
+  const types = new TypeIndex(ts, checker);
+  const ctx: AnalyzerContext = { ts, checker, types };
   const meta: AngularFileMeta = {
     components: [],
     directives: [],
@@ -32,7 +26,7 @@ export function analyzeSourceFile(
 
   for (const statement of sourceFile.statements) {
     if (ts.isEnumDeclaration(statement) || ts.isTypeAliasDeclaration(statement)) {
-      misc.addDeclaration(ctx, statement);
+      types.addDeclaration(statement);
       continue;
     }
     if (!ts.isClassDeclaration(statement) || !statement.name) {
@@ -47,11 +41,7 @@ export function analyzeSourceFile(
     }
     const name = statement.name.text;
     const file = sourceFile.fileName;
-    const collected = visitClassMembers(ctx, statement);
-    mergeInheritedMembers(ctx, statement, collected);
-    applyMetadataInputsOutputs(ctx, statement, collected);
-    sortMembers(collected);
-    const members = emitMembers(collected);
+    const members = collectClassMembers(ctx, statement);
     const common = {
       file,
       ...getJsDocDescription(ts, statement),
@@ -106,7 +96,7 @@ export function analyzeSourceFile(
     }
   }
 
-  meta.miscellaneous = misc.toMiscellaneous();
+  meta.miscellaneous = types.toMiscellaneous();
   return meta;
 }
 

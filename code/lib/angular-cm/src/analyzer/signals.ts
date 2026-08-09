@@ -5,7 +5,6 @@ import type { AnalyzerContext } from './context.ts';
 import { stringOption } from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField } from './jsdoc.ts';
 import { initializerText, memberName } from './node-text.ts';
-import { renderTypeNode } from './type-renderer.ts';
 
 const SIGNAL_INPUT_NAMES = new Set(['input', 'model']);
 const SIGNAL_NAMES = new Set(['input', 'output', 'model']);
@@ -92,18 +91,18 @@ export const buildSignalEntry = (
       ? stringOption(ctx, optionsArgument, 'alias')
       : undefined;
   const type =
-    (call.typeArguments?.[0] ? renderTypeNode(ctx, call.typeArguments[0]) : undefined) ??
+    (call.typeArguments?.[0] ? ctx.types.render(call.typeArguments[0]) : undefined) ??
     signalValueTypeFromChecker(ctx, member) ??
     (valueArgument ? literalTypeName(ctx, valueArgument) : undefined);
   return {
-    name: alias ?? memberName(ctx, member.name),
+    name: alias ?? memberName(ctx.ts, member.name),
     ...(type === undefined ? {} : { type }),
     optional: false,
     required: signal.required,
     // Downstream tells a `model()` apart from an `@Input('x')`/`@Output('x')` alias collision by
     // the same name appearing in both arrays on the same declaration line.
     line: ts.getLineAndCharacterOfPosition(member.getSourceFile(), member.getStart()).line + 1,
-    ...(valueArgument ? { defaultValue: initializerText(ctx, valueArgument) } : {}),
+    ...(valueArgument ? { defaultValue: initializerText(ctx.ts, valueArgument) } : {}),
     ...getJsDocDescription(ts, member),
     ...getJsDocTagsField(ts, member),
   };
@@ -132,7 +131,7 @@ const signalValueTypeFromChecker = (
   // Widen a lone literal (`model('x' as const)` → string) but keep literal unions: their quoted
   // spelling (`"left" | "right"`) is what feeds the extractor's enum path.
   const widened = valueType.isUnion() ? valueType : checker.getBaseTypeOfLiteralType(valueType);
-  ctx.misc.addFromType(ctx, widened);
+  ctx.types.addFromType(widened);
   return checker.typeToString(widened, member, ts.TypeFormatFlags.NoTruncation);
 };
 

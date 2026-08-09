@@ -1,14 +1,7 @@
-import type * as ts from 'typescript';
+import type * as tsModule from 'typescript';
 
-import type { AnalyzerContext } from './context.ts';
+export const memberName = (ts: typeof tsModule, name: tsModule.PropertyName): string =>
+  ts.isComputedPropertyName(name) ? name.getText() : name.text;
 
-export const memberName = (ctx: AnalyzerContext, name: ts.PropertyName): string => {
-  const { ts } = ctx;
-  if (ts.isComputedPropertyName(name)) {
-    return name.getText();
-  }
-  return name.text;
-};
-
-export const initializerText = (ctx: AnalyzerContext, initializer: ts.Expression): string =>
-  ctx.ts.isArrowFunction(initializer) ? '() => {...}' : initializer.getText();
+export const initializerText = (ts: typeof tsModule, initializer: tsModule.Expression): string =>
+  ts.isArrowFunction(initializer) ? '() => {...}' : initializer.getText();

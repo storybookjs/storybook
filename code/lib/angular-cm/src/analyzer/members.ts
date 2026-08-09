@@ -12,9 +12,7 @@ import {
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
 import { initializerText, memberName } from './node-text.ts';
 import { buildSignalEntry, parseSignalCall } from './signals.ts';
-import { inferTypeString, renderTypeNode, stripImportQualifiers } from './type-renderer.ts';
-
-export { memberName };
+import { stripImportQualifiers } from './type-index.ts';
 
 /**
  * A collected member, paired with the identity Angular itself merges on.
@@ -36,23 +34,8 @@ export interface ClassMembers {
   methods: MemberEntry<Method>[];
 }
 
-export type EmittedMembers = {
-  [K in keyof ClassMembers]: ClassMembers[K][number]['value'][];
-};
-
 export const memberKey = (entry: MemberEntry<unknown>): string =>
   entry.isStatic ? `static:${entry.declName}` : entry.declName;
-
-/** Drop the collection-only identity, leaving the arrays the compodoc record carries. */
-export function emitMembers(members: ClassMembers): EmittedMembers {
-  const values = <T>(entries: MemberEntry<T>[]) => entries.map((entry) => entry.value);
-  return {
-    inputs: values(members.inputs),
-    outputs: values(members.outputs),
-    properties: values(members.properties),
-    methods: values(members.methods),
-  };
-}
 
 // Compodoc parity: private, protected, static and `#` members and lifecycle hooks all stay in.
 export function visitClassMembers(
@@ -123,21 +106,12 @@ export function applyMetadataInputsOutputs(
   }
 }
 
-export function sortMembers(members: ClassMembers): void {
-  const byName = (a: MemberEntry<{ name: string }>, b: MemberEntry<{ name: string }>) =>
-    a.value.name.localeCompare(b.value.name);
-  members.inputs.sort(byName);
-  members.outputs.sort(byName);
-  members.properties.sort(byName);
-  members.methods.sort(byName);
-}
-
 const entryFor = <T>(
   ctx: AnalyzerContext,
   member: ts.ClassElement & { name: ts.PropertyName },
   value: T
 ): MemberEntry<T> => ({
-  declName: memberName(ctx, member.name),
+  declName: memberName(ctx.ts, member.name),
   isStatic: isStatic(ctx, member),
   value,
 });
@@ -183,7 +157,7 @@ const buildDecoratorInput = (
   const config = parseInputDecoratorConfig(ctx, decorator);
   const type = typeOfPropertyish(ctx, member);
   return {
-    name: config.alias ?? memberName(ctx, member.name),
+    name: config.alias ?? memberName(ctx.ts, member.name),
     ...(type === undefined ? {} : { type }),
     optional: config.required !== undefined ? !config.required : !!member.questionToken,
     // Always emitted, so a decorator input and the equivalent signal input agree: the consumer
@@ -202,7 +176,7 @@ const buildDecoratorOutput = (
 ): Property => {
   const type = typeOfPropertyish(ctx, member);
   return {
-    name: decoratorStringArg(ctx, decorator) ?? memberName(ctx, member.name),
+    name: decoratorStringArg(ctx, decorator) ?? memberName(ctx.ts, member.name),
     ...(type === undefined ? {} : { type }),
     ...(member.initializer ? { defaultValue: member.initializer.getText() } : {}),
     ...getJsDocDescription(ctx.ts, member),
@@ -218,10 +192,10 @@ const buildPlainProperty = (
   const type = typeOfPropertyish(ctx, member);
   const names = decorators.map((decorator) => decorator.name);
   return {
-    name: memberName(ctx, member.name),
+    name: memberName(ctx.ts, member.name),
     ...(type === undefined ? {} : { type }),
     optional: !!member.questionToken,
-    ...(member.initializer ? { defaultValue: initializerText(ctx, member.initializer) } : {}),
+    ...(member.initializer ? { defaultValue: initializerText(ctx.ts, member.initializer) } : {}),
     ...getJsDocDescription(ctx.ts, member),
     ...getJsDocTagsField(ctx.ts, member),
     ...(names.length ? { decorators: names.map((name) => ({ name })) } : {}),
@@ -240,7 +214,7 @@ const isSameMember = (
   b: ts.ClassElement & { name: ts.PropertyName }
 ): a is ts.ClassElement & { name: ts.PropertyName } =>
   !!a.name &&
-  memberName(ctx, a.name as ts.PropertyName) === memberName(ctx, b.name) &&
+  memberName(ctx.ts, a.name as ts.PropertyName) === memberName(ctx.ts, b.name) &&
   isStatic(ctx, a) === isStatic(ctx, b);
 
 // Overloads produce several same-named MethodDeclarations, of which only the implementation
@@ -265,14 +239,13 @@ const visitMethod = (ctx: AnalyzerContext, member: ts.MethodDeclaration): Method
     .map((parameter) => ({
       name: parameter.name.getText(),
       type:
-        (parameter.type ? renderTypeNode(ctx, parameter.type) : inferTypeString(ctx, parameter)) ??
-        'any',
+        (parameter.type ? ctx.types.render(parameter.type) : ctx.types.infer(parameter)) ?? 'any',
       optional: !!parameter.questionToken,
     }));
   const returnType =
-    (member.type ? renderTypeNode(ctx, member.type) : inferReturnType(ctx, member)) ?? 'void';
+    (member.type ? ctx.types.render(member.type) : inferReturnType(ctx, member)) ?? 'void';
   return {
-    name: memberName(ctx, member.name),
+    name: memberName(ctx.ts, member.name),
     args,
     returnType,
     ...getJsDocDescription(ts, member),
@@ -316,9 +289,7 @@ const visitConstructorProperties = (
     if (!declaresField || isHidden) {
       continue;
     }
-    const type = parameter.type
-      ? renderTypeNode(ctx, parameter.type)
-      : inferTypeString(ctx, parameter);
+    const type = parameter.type ? ctx.types.render(parameter.type) : ctx.types.infer(parameter);
     members.properties.push({
       declName: parameter.name.getText(),
       isStatic: false,
@@ -327,7 +298,7 @@ const visitConstructorProperties = (
         ...(type === undefined ? {} : { type }),
         optional: !!parameter.questionToken,
         ...(parameter.initializer
-          ? { defaultValue: initializerText(ctx, parameter.initializer) }
+          ? { defaultValue: initializerText(ctx.ts, parameter.initializer) }
           : {}),
         ...getJsDocDescription(ts, parameter),
         ...getJsDocTagsField(ts, parameter),
@@ -344,7 +315,7 @@ const visitAccessorPair = (
   visited: Set<string>
 ): void => {
   const { ts } = ctx;
-  const name = memberName(ctx, member.name);
+  const name = memberName(ctx.ts, member.name);
   const visitKey = isStatic(ctx, member) ? `static:${name}` : name;
   if (visited.has(visitKey)) {
     return;
@@ -359,7 +330,7 @@ const visitAccessorPair = (
       ts.isSetAccessor(candidate) && isSameMember(ctx, candidate, member)
   );
   const typeNode = getter?.type ?? setter?.parameters[0]?.type;
-  const type = typeNode ? renderTypeNode(ctx, typeNode) : inferTypeString(ctx, (getter ?? setter)!);
+  const type = typeNode ? ctx.types.render(typeNode) : ctx.types.infer((getter ?? setter)!);
   // The doc comment (and its tags, e.g. `@default`) may sit on either accessor; the getter wins
   // when both carry one.
   const getterDescription = getter ? getJsDocDescription(ts, getter) : {};
@@ -435,10 +406,10 @@ const typeOfPropertyish = (
   member: ts.PropertyDeclaration
 ): string | undefined => {
   if (member.type) {
-    return renderTypeNode(ctx, member.type);
+    return ctx.types.render(member.type);
   }
   if (member.initializer && ctx.ts.isNewExpression(member.initializer)) {
     return member.initializer.expression.getText();
   }
-  return inferTypeString(ctx, member);
+  return ctx.types.infer(member);
 };

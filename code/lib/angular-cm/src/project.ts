@@ -10,7 +10,6 @@ import * as path from 'node:path';
 
 import type * as ts from 'typescript';
 
-import type { CompodocJson } from '@storybook/angular-compodoc';
 import { analyzeSourceFile } from './analyzer/analyze-file.ts';
 import type { AngularClassMeta, AngularComponentMetaResult, AngularFileMeta } from './types.ts';
 
@@ -130,7 +129,7 @@ export class AngularComponentMetaProject implements ComponentMetaProjectBase {
     const fileMeta = analyzeSourceFile(this.typescript, sourceFile, checker);
     const entry = this.pickEntry(fileMeta, sourceFile, names);
     if (entry) {
-      return { entry, json: toCompodocJson(fileMeta) };
+      return { entry, json: fileMeta };
     }
     return this.extractViaModuleExports(checker, sourceFile, fileMeta, names);
   }
@@ -188,7 +187,7 @@ export class AngularComponentMetaProject implements ComponentMetaProjectBase {
           : analyzeSourceFile(this.typescript, declarationFile, checker);
       const entry = findRecord(targetMeta, declaration.name.text);
       if (entry) {
-        return { entry, json: toCompodocJson(targetMeta) };
+        return { entry, json: targetMeta };
       }
     }
     return undefined;
@@ -241,10 +240,6 @@ const findRecord = (
         ...fileMeta.classes,
       ].find((record) => record.name === name)
     : undefined;
-
-// The cast is sound because the analyzer dispatches by decorator, so no array mixes record kinds.
-const toCompodocJson = (fileMeta: AngularFileMeta): CompodocJson =>
-  fileMeta as unknown as CompodocJson;
 
 function findDefaultExportedClassName(
   typescript: typeof ts,

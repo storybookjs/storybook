@@ -3,10 +3,13 @@
  * `@volar/typescript`. Freshness is not decided here: the snapshot cache, projectVersion gate and
  * root-set re-checks all live in core's `ProjectFileTracker`, which the Angular analyzer shares.
  *
- * Props are read from the story rather than the component, so a component is only ever described
- * the way a story actually uses it. The JSX in the story gives a resolved call signature; an
- * args-only story has no JSX to resolve, so those fall back to inspecting the component type
- * directly.
+ * A generic component's props are not resolvable from its own file: the first parameter stays
+ * `Props<T>` until a call site instantiates it. The story's JSX gives a resolved call signature, so
+ * it is tried first, and a story with no JSX falls back to the component's own export. Nothing else
+ * needs the use site - forwardRef, memo, styled() and HOC wrappers all resolve the same either way.
+ *
+ * The first matching JSX element wins, so for a component rendered with different type arguments
+ * across stories, the documented type is the one the earliest story pins.
  */
 import {
   type FileChange,

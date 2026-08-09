@@ -9,6 +9,7 @@
  * directly.
  */
 import {
+  type ComponentMetaProjectBase,
   type FileChange,
   type FileSnapshotCache,
   ProjectFileTracker,
@@ -34,7 +35,7 @@ import {
   serializeComponentDoc,
 } from './componentMetaExtractor.ts';
 
-export class ComponentMetaProject {
+export class ComponentMetaProject implements ComponentMetaProjectBase {
   private ls: ts.LanguageService;
   /** Invalidation state machine shared with the Angular component-meta project. */
   private readonly files: ProjectFileTracker<ts.IScriptSnapshot>;

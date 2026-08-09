@@ -39,7 +39,7 @@
           "summary": "Button"
         },
         "type": {
-          "required": false,
+          "required": true,
           "summary": "string"
         }
       },
@@ -73,7 +73,7 @@
           "summary": false
         },
         "type": {
-          "required": false,
+          "required": true,
           "summary": "boolean"
         }
       },
@@ -90,7 +90,7 @@
           "summary": "medium"
         },
         "type": {
-          "required": false,
+          "required": true,
           "summary": "\"small\" | \"medium\" | \"large\""
         }
       },

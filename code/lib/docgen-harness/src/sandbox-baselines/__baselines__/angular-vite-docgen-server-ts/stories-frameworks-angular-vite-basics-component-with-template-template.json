@@ -39,7 +39,7 @@
           "summary": "default label"
         },
         "type": {
-          "required": false,
+          "required": true,
           "summary": "string"
         }
       },
@@ -55,7 +55,7 @@
           "summary": "default label2"
         },
         "type": {
-          "required": false,
+          "required": true,
           "summary": "string"
         }
       },

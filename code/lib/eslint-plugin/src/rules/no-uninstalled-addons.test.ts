@@ -1,8 +1,3 @@
-/**
- * @file This rule identifies storybook addons that are invalid because they are either not
- *   installed or contain a typo in their name.
- * @author Andre "andrelas1" Santos
- */
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------

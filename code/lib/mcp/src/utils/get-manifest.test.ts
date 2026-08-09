@@ -12,18 +12,12 @@ import {
 import type { ComponentManifest, ComponentManifestV1, Doc, DocV1 } from '../types.ts';
 import type { ComponentManifestMap, DocsManifestMap, Source } from '../types.ts';
 
-/**
- * Helper function to create a mock Request object
- */
 function createMockRequest(url: string): Request {
   return new Request(url, {
     method: 'POST',
   });
 }
 
-/**
- * Helper to create a successful JSON fetch response
- */
 function createJsonResponse(data: unknown) {
   return {
     ok: true,
@@ -34,9 +28,6 @@ function createJsonResponse(data: unknown) {
   };
 }
 
-/**
- * Helper to create a 404 response
- */
 function create404Response() {
   return {
     ok: false,
@@ -45,9 +36,6 @@ function create404Response() {
   };
 }
 
-/**
- * Helper to create a fetch mock that returns different responses based on URL
- */
 function createFetchMock(responses: { components?: unknown; docs?: unknown }) {
   return vi.fn().mockImplementation((url: string) => {
     if (url.includes('components.json')) {
@@ -72,9 +60,6 @@ function createFetchMock(responses: { components?: unknown; docs?: unknown }) {
   });
 }
 
-/**
- * Helper to create a manifestProvider mock that returns different responses based on path
- */
 function createManifestProviderMock(responses: {
   components?: string | Error;
   docs?: string | Error;

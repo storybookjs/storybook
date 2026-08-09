@@ -21,7 +21,6 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-/** Bare service registration (no engine), for exercising the query/command contract directly. */
 function registerBareModuleGraph(workingDir = '/repo') {
   return registerTestModuleGraphService(workingDir);
 }

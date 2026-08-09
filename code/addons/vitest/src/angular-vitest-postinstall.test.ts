@@ -12,7 +12,6 @@ import {
   isAngularVitestAlreadyWired,
 } from './angular-vitest-postinstall.ts';
 
-/** Returns the names of the elements (call callees / spread) inside the plugins array, in order. */
 function pluginCalleesInSameArray(code: string, locatorName = 'storybookTest'): string[] | null {
   const ast = babelParse(code);
   let elements: string[] | null = null;

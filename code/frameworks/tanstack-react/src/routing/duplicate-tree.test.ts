@@ -19,7 +19,6 @@ async function matchedRouteIds(routeTree: any, path: string): Promise<Array<stri
   return router.state.matches.map((match) => match.routeId);
 }
 
-/** Builds root -> `/_authed` (pathless layout) -> `/_authed/dashboard`. */
 function buildAuthedTree(layoutOptions: Record<string, unknown> = {}) {
   const root = createRootRoute();
   const layout = createFileRoute('/_authed')({

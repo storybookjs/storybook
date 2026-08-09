@@ -34,7 +34,6 @@ const options = (overrides: Partial<Parameters<typeof ensureCompodocDocumentatio
   ...overrides,
 });
 
-/** Writes the file a real run would have written, so waiters see the winner's output. */
 const writeDocumentation = async () => {
   mkdirSync(outputDir, { recursive: true });
   writeFileSync(documentationJson(), '{"components":[]}');

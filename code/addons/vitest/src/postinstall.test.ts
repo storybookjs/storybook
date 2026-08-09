@@ -15,10 +15,6 @@ vi.mock('storybook/internal/node-logger', () => ({
   logger: { info: vi.fn(), warn: vi.fn(), error: vi.fn() },
 }));
 
-/**
- * Returns the callee names of the plugins array that holds the (possibly aliased) storybookTest
- * call, in source order. Asserts co-location: the Angular bridge must sit in the SAME array.
- */
 function pluginCalleesInSameArray(code: string, locatorName = 'storybookTest'): string[] | null {
   const ast = babelParse(code);
   let elements: string[] | null = null;

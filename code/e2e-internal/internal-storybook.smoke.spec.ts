@@ -3,18 +3,12 @@ import process from 'process';
 
 import { PREVIEW_STORY_TIMEOUT, waitForPreviewReady } from './helpers.ts';
 
-/**
- * Smoke tests for the internal Storybook UI (`code/.storybook`), not sandbox templates.
- *
- * Run locally (from repo root) with internal Storybook on port 6006:
- *   cd code && yarn storybook:ui
- *   yarn task e2e-tests-internal --no-link -s e2e-tests-internal
- *   # or: yarn playwright test -c e2e-internal/playwright.config.ts
- */
+// Targets the internal Storybook UI (`code/.storybook`), not a sandbox template: run
+// `cd code && yarn storybook:ui` on port 6006, then `yarn task e2e-tests-internal --no-link -s
+// e2e-tests-internal` from the repo root.
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
 
-/** Stable core template story shipped with the internal UI. */
 const STORY_PATH = '/story/core-basics--basic';
 
 test.describe('internal Storybook UI', () => {

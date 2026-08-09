@@ -6,10 +6,6 @@ import type { StorybookContext } from './types.ts';
 import smallManifestFixture from '../fixtures/small-manifest.fixture.json' with { type: 'json' };
 import smallDocsManifestFixture from '../fixtures/small-docs-manifest.fixture.json' with { type: 'json' };
 
-/**
- * Creates a manifestProvider mock that returns component manifest for components.json
- * and throws an error for docs.json (simulating no docs manifest available)
- */
 function createManifestProviderMock() {
   return vi.fn().mockImplementation((_request: Request, path: string) => {
     if (path.includes('components.json')) {
@@ -20,9 +16,6 @@ function createManifestProviderMock() {
   });
 }
 
-/**
- * Creates a manifestProvider mock that returns both component and docs manifests
- */
 function createManifestProviderMockWithDocs() {
   return vi.fn().mockImplementation((_request: Request, path: string) => {
     if (path.includes('components.json')) {
@@ -40,9 +33,6 @@ describe('createStorybookMcpHandler', () => {
   let transport: StreamableHTTPClientTransport;
   let fetchMock: ReturnType<typeof vi.fn>;
 
-  /**
-   * Helper to setup client with a mock fetch that routes to our handler
-   */
   async function setupClient(
     handler: Awaited<ReturnType<typeof createStorybookMcpHandler>>,
     context?: StorybookContext

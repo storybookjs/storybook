@@ -24,7 +24,6 @@ beforeEach(async () => {
   vol.mkdirSync(SANDBOX, { recursive: true });
 });
 
-/** A sandbox as downloaded from the published repository. */
 const publishedSandbox = (config: Record<string, unknown> = {}) => {
   vol.writeFileSync(
     `${SANDBOX}/yarn.lock`,

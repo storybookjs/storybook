@@ -21,14 +21,8 @@ afterEach(() => {
   clearRegistry();
 });
 
-/**
- * Records the `data` of each emitted {@link QueryState}, deduping consecutive equal values.
- *
- * Subscriptions now emit a `QueryState`, and a load-backed query emits extra status-only transitions
- * (e.g. `loading` → `idle`) that repeat the same `data`. These tests assert the *data* sequence, so
- * collapsing consecutive equal data keeps them focused on value changes; lifecycle transitions are
- * asserted explicitly in the dedicated 'query state lifecycle' suite.
- */
+// A load-backed query emits status-only transitions that repeat the same data, so consecutive equal
+// values are collapsed to leave a pure value-change sequence.
 function collectData<T>(target: T[]): (state: QueryState<T>) => void {
   return (state) => {
     if (target.length === 0 || !isEqual(target[target.length - 1], state.data)) {
@@ -1174,18 +1168,6 @@ describe('service runtime', () => {
     });
   });
 
-  /**
-   * `buildStaticFiles()` drives each snapshot through `runLoadOnce`. Load bodies normally pull
-   * dependencies via `ctx.self.queries.*`; those reads run `triggerLoad` during the synchronous
-   * prefix (before the first `await`). The root `runLoadOnce` load must therefore appear in the
-   * process-global in-flight map before the body starts, same as dev-server `.loaded()` does via
-   * `triggerLoad`. Otherwise a read that resolves to the same load key — including a deliberate
-   * same-query re-read or a short cycle back to the running query — starts a second `runLoadBody`
-   * and can double-apply command side effects in static output.
-   *
-   * The test below uses a same-query re-read as the smallest repro; reading other queries in the
-   * sync prefix is common too, but only same-key (or cyclic) paths hit this duplicate.
-   */
   describe('runLoadOnce (static snapshot loads)', () => {
     it('registers the root load so a synchronous self.queries re-read does not refire the load body', async () => {
       const queryName = 'value';

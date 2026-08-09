@@ -27,10 +27,6 @@ vi.mock('storybook/internal/core-server', () => ({
   getService: (...args: unknown[]) => mockGetService(...args),
 }));
 
-/**
- * Builds a `core/module-graph` runtime stub. `storiesForFiles` maps the batched input files to
- * positional hit lists — an empty list marks a file as unreachable from every story.
- */
 function moduleGraphStub(storiesForFiles: (files: string[]) => Array<Array<unknown>>) {
   return {
     queries: {

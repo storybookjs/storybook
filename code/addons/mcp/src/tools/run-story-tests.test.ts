@@ -63,9 +63,6 @@ describe('runStoryTestsTool', () => {
     };
   };
 
-  /**
-   * Sets up the mock channel to respond with the given response when a test run is triggered.
-   */
   const setupChannelResponse = (response: ChannelResponse) => {
     mockChannel.emit.mockImplementation((event, payload: any) => {
       if (event === 'storybook/test/trigger-test-run-request') {
@@ -84,10 +81,6 @@ describe('runStoryTestsTool', () => {
     });
   };
 
-  /**
-   * Calls the run-story-tests tool with optional focused stories.
-   * Uses relative paths from 'src/' to avoid absolute path issues in snapshots.
-   */
   const callTool = async (
     stories: Array<{ exportName: string; relativePath: string }> | undefined,
     context: AddonContext,

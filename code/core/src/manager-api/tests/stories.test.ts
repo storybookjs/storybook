@@ -2143,14 +2143,6 @@ describe('stories API', () => {
       expect(navigate).toHaveBeenCalledWith('/story/a--2', undefined);
     });
 
-    /**
-     * Whilst the two of the built-in filters (status and tag) have easy ways to determine
-     * whether or not they are active, no other filters do - in particular, user-provided filters
-     * from experimental_setFilter.
-     *
-     * As such, the filtered index is now used if it is present, regardless of the heuristics that
-     * could be used to determine if the status/tag filters are active.
-     */
     it('uses filteredIndex when status filters are not active', () => {
       const moduleArgs = createMockModuleArgs({
         initialState: {

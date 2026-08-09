@@ -16,7 +16,6 @@ const codePanelStoryPath = join(
   'addons/docs/template/stories/codePanel/index.stories.tsx'
 );
 
-/** Story id for the Default export in the Code Panel demo (see internal Storybook index). */
 const storyPath = '/story/addons-docs-codepanel--default';
 const docsPath = '/docs/addons-docs-codepanel--docs';
 const defaultStoryBlockId = 'story--addons-docs-codepanel--default';

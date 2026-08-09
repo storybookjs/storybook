@@ -11,7 +11,6 @@ const sandboxDir = process.env.STORYBOOK_SANDBOX_DIR!;
 
 const MCP_ENDPOINT = `${storybookUrl}/mcp`;
 
-/** Helper to make MCP requests and parse SSE response */
 async function mcpRequest(
   request: APIRequestContext,
   method: string,

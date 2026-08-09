@@ -134,14 +134,6 @@ describe('generateModernIframeScriptCodeFromPreviews', () => {
   });
 });
 
-/**
- * Extract bare package import specifiers from a block of generated JavaScript/TypeScript code.
- * Captures both `import ... from 'pkg'` and `import 'pkg'` forms, excluding:
- *
- * - Relative paths (start with `.`)
- * - Virtual module IDs (start with `virtual:`)
- * - Absolute paths (start with `/`)
- */
 function extractPackageImports(code: string): string[] {
   const importRegex = /import\s+(?:[^'"]*\s+from\s+)?['"]([^'"]+)['"]/g;
   const specifiers = new Set<string>();

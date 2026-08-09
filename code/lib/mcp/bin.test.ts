@@ -1,19 +1,9 @@
-/**
- * Integration tests for the stdio MCP server in bin.ts
- *
- * These tests spawn the bin.ts process as a child process and communicate
- * with it via stdin/stdout, simulating how an MCP client would interact
- * with the server in production.
- */
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { x } from 'tinyexec';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { ChildProcess } from 'node:child_process';
 
-/**
- * Helper to send a JSON-RPC request and wait for the response
- */
 async function sendRequest(
   child: ChildProcess,
   stdoutData: string[],

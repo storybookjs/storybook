@@ -20,11 +20,8 @@ import { generateDocumentation, resolveCompodocCli } from './generate-documentat
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 
-/**
- * Stands in for the Compodoc binary, without the cost of a real scan. It keeps the two behaviours
- * that matter: the last `-d` decides where `documentation.json` lands, and the write is not atomic,
- * so the file is truncated and then grows. The env switches cover the failure paths.
- */
+// Stands in for the Compodoc binary, keeping the two behaviours that matter: the last `-d` decides
+// where `documentation.json` lands, and the write is not atomic, so the file is truncated then grows.
 const STUB_CLI = `
 import { appendFileSync, mkdirSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';

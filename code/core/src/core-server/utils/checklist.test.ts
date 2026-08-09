@@ -69,15 +69,10 @@ vi.mock('../../telemetry/event-cache.ts', () => ({
 
 const AI_IDLE_DELAY_MS = 4 * 60 * 1000;
 
-/** Mock getEventCacheEntry to return specific entries by event type. */
 function mockEventCache(events: Record<string, CacheEntry | undefined>) {
   return async (eventType: string) => events[eventType];
 }
 
-/**
- * Build a fake StoryIndexGenerator-promise getter that yields a story index
- * containing zero or more entries with the `ai-generated` tag.
- */
 function fakeStoryIndexGenerator(aiGeneratedStoryCount: number) {
   const entries: Record<string, { type: 'story'; tags: string[] }> = {};
   for (let i = 0; i < aiGeneratedStoryCount; i++) {
@@ -92,7 +87,6 @@ function fakeStoryIndexGenerator(aiGeneratedStoryCount: number) {
 const noStoriesGenerator = fakeStoryIndexGenerator(0);
 const oneAiGeneratedStoryGenerator = fakeStoryIndexGenerator(1);
 
-/** Helper to control the AI flag mocks per-test. */
 async function setAiFlags({
   optedIn = false,
   setupRan = false,
@@ -285,7 +279,6 @@ describe('initializeChecklist', () => {
       };
     }
 
-    /** Common setup: opted in via fs cache, ai-setup ran. */
     async function setupCompletedAgentRun() {
       await setAiFlags({ optedIn: true, setupRan: true });
     }

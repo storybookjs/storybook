@@ -4,7 +4,8 @@
   "jsPlugins": [
     "eslint-plugin-depend",
     "eslint-plugin-eslint-comments",
-    { "name": "react-classic", "specifier": "eslint-plugin-react" }
+    { "name": "react-classic", "specifier": "eslint-plugin-react" },
+    { "name": "comments", "specifier": "./.agents/oxlint-rules/comments.js" }
   ],
   "categories": {
     "correctness": "off"
@@ -43,6 +44,7 @@
       }
     ],
     "eslint-comments/disable-enable-pair": ["error", { "allowWholeFile": true }],
+    "comments/no-jsdoc-in-tests": "error",
     "eslint-comments/no-aggregating-enable": "error",
     "eslint-comments/no-duplicate-disable": "error",
     "eslint-comments/no-unused-enable": "error",

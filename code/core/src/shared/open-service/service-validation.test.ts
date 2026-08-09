@@ -13,13 +13,7 @@ import {
   mutableRecordLookupServiceDef,
 } from './fixtures.ts';
 
-/**
- * Asserts the exact validation text we document for callers.
- *
- * `vi.defineHelper()` keeps failure stacks anchored at the individual test callsite. The helper
- * accepts both sync and async producers so it can target sync queries and async commands with the
- * same assertion shape.
- */
+// `vi.defineHelper()` keeps failure stacks anchored at the individual test callsite rather than here.
 const expectValidationMessage = vi.defineHelper(
   async (run: () => unknown, expectedMessage: string): Promise<void> => {
     await expect(async () => {

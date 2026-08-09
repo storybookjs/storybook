@@ -8,10 +8,6 @@ const TIMEOUT = HEARTBEAT_INTERVAL + HEARTBEAT_MAX_LATENCY;
 
 const socketRef = { current: undefined as unknown as MockWebSocket };
 
-/**
- * Minimal WebSocket stub that keeps outgoing `send` calls separate from incoming messages, so tests
- * can assert heartbeat behavior without a pong echoing straight back into the message handler.
- */
 class MockWebSocket {
   static OPEN = 1;
 

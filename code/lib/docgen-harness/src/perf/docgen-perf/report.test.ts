@@ -3,14 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { renderRatios, renderResults } from './report.ts';
 import { type EngineMetrics, type EngineResult, NOT_APPLICABLE, type Ratios } from './types.ts';
 
-/**
- * The report is read as a block of terminal output, not as an array of strings, so the snapshots
- * below join it back into one. Column alignment and the notes that travel beside a ratio are the
- * whole point of this module, and neither survives a per-line assertion.
- */
 const block = (lines: string[]) => lines.join('\n');
 
-/** A series engine: per-component, so it has no whole-project scan. */
+// A series engine measures per component, so it never runs a whole-project scan.
 const seriesMetrics: EngineMetrics = {
   coldExtractionMs: { status: 'measured', samples: [1204, 1180, 1191], value: 1191 },
   warmExtractionMs: { status: 'measured', samples: [42.4, 39.8, 41.1], value: 41.1 },
@@ -20,7 +15,7 @@ const seriesMetrics: EngineMetrics = {
   retainedSlopeMbPerSave: { status: 'measured', value: 0.62 },
 };
 
-/** A one-shot CLI engine: a fresh process per run, so no retained series to report. */
+// A one-shot CLI engine runs a fresh process each time, so it retains nothing between saves.
 const oneShotMetrics: EngineMetrics = {
   coldExtractionMs: { status: 'measured', samples: [8420, 8110, 8300], value: 8300 },
   warmExtractionMs: { status: 'measured', samples: [8290, 8050, 8180], value: 8180 },

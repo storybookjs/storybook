@@ -136,7 +136,7 @@ describe('isValidHost', () => {
     networkAddress: 'http://192.168.1.100:6006',
   } as any;
 
-  /** When allowedHosts is set to [], only local/network hosts are allowed (no default allow-all). */
+  // An empty allowedHosts is not the same as an absent one: it disables the default allow-all.
   const strictOptions = { ...options, allowedHosts: [] } as any;
 
   it('returns true for exact local address match', () => {

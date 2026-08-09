@@ -9,7 +9,6 @@ import { CONTROL_PAIRS } from './ratios.ts';
 import { ALL_ENGINE_IDS, DEFAULT_ENGINE_IDS, ENGINES, engineById } from './registry.ts';
 import type { EngineId } from './types.ts';
 
-/** Captures what an engine would have spawned, without spawning it. */
 function captureSpawn() {
   const calls: Array<{ spec: Parameters<MeasureContext['runSeriesChild']>[0]; jsonPath: string }> =
     [];
@@ -29,7 +28,6 @@ async function specFor(id: EngineId, scenario: ScenarioSpec, rep = 1) {
   return calls[0];
 }
 
-/** Everything that describes the generated project, which is what a flag comparison is about. */
 function withoutPin(args: string[]): string[] {
   const pin = args.indexOf('--pin');
   return pin === -1 ? args : [...args.slice(0, pin), ...args.slice(pin + 2)];

@@ -93,7 +93,7 @@ describe('refreshBeforeStorybookLockfile', () => {
     devDependencies: { typescript: '~6.0.2' },
   };
 
-  /** Yarn's age-gate rejection, verbatim, as it reaches us on the failed command's stdout. */
+  // Verbatim YN0016 text as yarn emits it on the failed command's stdout.
   const quarantined = (descriptor: string) =>
     Object.assign(new Error('yarn failed'), {
       stdout: `➤ YN0016: │ ${descriptor}: All versions satisfying "x" are quarantined`,
@@ -101,14 +101,12 @@ describe('refreshBeforeStorybookLockfile', () => {
 
   const isResolveStep = (script: string) => /^yarn (install|up)\b/.test(script);
 
-  /** The resolve steps, ignoring the `yarn config set` preamble. */
   const yarnCommands = () =>
     vi
       .mocked(runCommand)
       .mock.calls.map(([script]) => script)
       .filter(isResolveStep);
 
-  /** Fail the first N resolve steps, letting the `yarn config set` preamble through. */
   const failResolveSteps = (...errors: Error[]) => {
     const queue = [...errors];
     vi.mocked(runCommand).mockImplementation((async (script: string) => {

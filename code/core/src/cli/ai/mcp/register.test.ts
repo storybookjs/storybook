@@ -33,11 +33,8 @@ describe('isAiCliFeatureEnabled', () => {
   });
 });
 
-/**
- * Replicate the `ai` command tree from `bin/run.ts`: a `setup` subcommand plus a help action. The
- * `--disable-telemetry` and `--logfile` options mirror the shared options that the `command()`
- * factory in `bin/run.ts` registers on every command, including the env-var default.
- */
+// Mirrors the `ai` command tree from `bin/run.ts`, down to the shared `--disable-telemetry` and
+// `--logfile` options its `command()` factory adds to every command.
 function buildProgram({ withPassthrough }: { withPassthrough: boolean }) {
   const program = new Command();
   program.exitOverride();
@@ -85,7 +82,6 @@ function stdoutText(): string {
     .join('');
 }
 
-/** The payloads of all `ai-command` events fired through the mocked telemetry module. */
 function aiCommandPayloads(): unknown[] {
   return vi
     .mocked(telemetry)

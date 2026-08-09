@@ -27,10 +27,8 @@ const sseResponse = (body: string, status = 200, headers: Record<string, string>
     headers: { 'Content-Type': 'text/event-stream', ...headers },
   });
 
-/**
- * Every JSON-RPC request is preceded by a best-effort `initialize` handshake POST, so the actual
- * request under test is always the last fetch call.
- */
+// Every JSON-RPC request is preceded by a best-effort `initialize` handshake POST, so the request
+// under test is always the last fetch call.
 const lastCall = (fetchImpl: typeof fetch) => vi.mocked(fetchImpl).mock.calls.at(-1)!;
 
 describe('callMcpTool', () => {

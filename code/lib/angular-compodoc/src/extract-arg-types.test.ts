@@ -179,7 +179,6 @@ describe('model() two-way bindings', () => {
 });
 
 describe('required', () => {
-  /** Extracts a single input declared with the given pair of Compodoc flags. */
   const requiredOf = (flags: { optional?: boolean; required?: boolean }) => {
     const componentData = {
       name: 'StatusComponent',

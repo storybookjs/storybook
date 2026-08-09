@@ -4,21 +4,8 @@ import * as path from 'node:path';
 
 import { SbPage } from './util.ts';
 
-/**
- * Change Detection E2E tests.
- *
- * Prerequisites:
- *   1. STORYBOOK_URL — URL of a running Storybook dev server
- *   2. STORYBOOK_SANDBOX_DIR — path to the sandbox root
- *      (e.g. ../storybook-sandboxes/react-vite-default-ts)
- *   3. The sandbox's .storybook/main.ts must have: features: { changeDetection: true }
- *   4. STORYBOOK_TEMPLATE_NAME must be one of the supported templates (or be unset for local runs)
- *   5. The sandbox must already have a git repo with an initial commit — this is handled
- *      automatically by the sandbox generation task (scripts/tasks/sandbox.ts).
- *
- * Supported templates: react-vite/default-ts, nextjs-vite/default-ts,
- *                      react-webpack/default-ts, nextjs/default-ts
- */
+// The sandbox must set `features: { changeDetection: true }` in its .storybook/main.ts and already
+// be a git repo with an initial commit, both of which the sandbox generation task handles.
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:8001';
 const sandboxDir = process.env.STORYBOOK_SANDBOX_DIR || '';

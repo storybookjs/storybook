@@ -559,10 +559,7 @@ describe('CLASS: JsPackageManagerFactory', () => {
   });
 
   describe('getYarnVersionFromPackageJson walks upward', () => {
-    /**
-     * Helper: set up yarn.lock detection and a yarn --version that reports 1.x
-     * so getYarnVersion falls through to getYarnVersionFromPackageJson first.
-     */
+    // A yarn.lock plus a 1.x `yarn --version` is what makes getYarnVersion consult package.json.
     function setupYarnScenario() {
       executeCommandSyncMock.mockImplementation((options) => {
         if (options.command === 'yarn' && options.args?.[0] === '--version') {

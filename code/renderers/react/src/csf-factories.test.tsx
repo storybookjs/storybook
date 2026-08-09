@@ -379,17 +379,12 @@ describe('Composed getters', () => {
 
 it('meta.input also contains play', () => {
   const meta = preview.meta({
-    /** Title, component, etc... */
-    play: async ({ canvas }) => {
-      /** Do some common interactions */
-    },
+    play: async ({ canvas }) => {},
   });
 
   const ExtendedInteractionsStory = meta.story({
     play: async ({ canvas, ...rest }) => {
       await meta.input.play?.({ canvas, ...rest });
-
-      /** Do some extra interactions */
     },
   });
 });

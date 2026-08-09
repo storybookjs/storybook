@@ -1,10 +1,3 @@
-/**
- * Channel sync tests for the default leaf registration path (`relay: false`).
- *
- * Hub (dev-server) behavior lives in {@link ./service-registration-sync.test.ts}.
- * Runtime queries, subscriptions, and registry metadata live in
- * {@link ./service-runtime.test.ts} and {@link ./service-registration.test.ts}.
- */
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { mutableRecordLookupServiceDef } from './fixtures.ts';

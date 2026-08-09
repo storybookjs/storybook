@@ -1,10 +1,5 @@
-/**
- * Integration tests for ChangeDetectionResolverFactory alias and tsconfig path resolution.
- *
- * These tests use real file system access and the real oxc-resolver binary so that we catch
- * oxc-resolver behavioural differences (e.g. trailing-slash alias keys not working, tsconfig
- * path resolution) rather than just testing our own normalisation logic.
- */
+// Real files and the real oxc-resolver binary, so oxc-resolver behaviour changes (such as
+// trailing-slash alias keys) fail here instead of only our own normalisation being covered.
 import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -177,17 +172,6 @@ describe('ChangeDetectionResolverFactory', () => {
     });
   });
 
-  /**
-   * Yarn-workspace cross-package resolution
-   *
-   * In a monorepo the root `tsconfig.json` typically maps workspace package names to their
-   * source directories (e.g. "@mantinex/*" -> ["./packages/@mantinex/ * /src"]).  Per-package
-   * tsconfigs often do NOT extend the root, so `tsconfig: 'auto'` only sees the nearest
-   * (package-level) tsconfig and misses these workspace paths -> NotFound("@mantinex/demo").
-   *
-   * The fix in ResolverFactory uses the root tsconfig explicitly when it exists, so that
-   * workspace-level path mappings are always consulted.
-   */
   describe('yarn workspace cross-package resolution', () => {
     it('resolves workspace sibling via root tsconfig paths when package-level tsconfig has no mapping', async () => {
       // Reproduces: @mantinex/demo unresolved from packages/@docs/demos/src/.../YearPicker/

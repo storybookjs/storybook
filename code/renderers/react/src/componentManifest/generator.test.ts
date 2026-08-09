@@ -19,9 +19,9 @@ vi.mock('storybook/internal/common', { spy: true });
 vi.mock('empathic/find', { spy: true });
 vi.mock('tsconfig-paths', { spy: true });
 
-/** Call manifests with only the fields tests need (presets/watch are optional-chained at runtime). */
 type ManifestOptions = Parameters<typeof manifests>[1];
 type ManifestEntries = ManifestOptions['manifestEntries'];
+// manifests() optional-chains presets, so the cast below is safe with only these fields set.
 const createManifestOptions = (
   manifestEntries: ManifestEntries,
   options: Partial<ManifestOptions> = {}

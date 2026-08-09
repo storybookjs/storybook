@@ -1,12 +1,5 @@
-/**
- * Regression test for the race this lock exists to prevent: several OS processes reaching the same
- * expensive work at the same instant, as a dev server, the Vitest addon's child and a standalone
- * `vitest` run do at start-up. Without a lock all of them do it.
- *
- * Real temp directories and real child processes rather than memfs: memfs is per-process, so each
- * child would get its own empty filesystem and exclusion would be vacuously true. The work itself is
- * a stand-in, so the test stays fast.
- */
+// Real temp directories and real child processes rather than memfs: memfs is per-process, so every
+// child would get its own empty filesystem and mutual exclusion would hold vacuously.
 import { execFile } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -29,10 +22,6 @@ const lockModule = pathToFileURL(
   join(dirname(fileURLToPath(import.meta.url)), 'file-lock.ts')
 ).href;
 
-/**
- * One process doing work that must happen at most once: take the lock, do it only if this run has
- * not already, and journal each time it actually runs so the parent can count.
- */
 const childSource = `
 import { appendFileSync, readFileSync, writeFileSync } from 'node:fs';
 import { withFileLock } from ${JSON.stringify(lockModule)};

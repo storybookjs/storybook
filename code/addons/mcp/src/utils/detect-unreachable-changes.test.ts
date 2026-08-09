@@ -101,7 +101,6 @@ describe('detectUnreachableChanges', () => {
 
   function mockService(opts: {
     status?: ModuleGraphStatus;
-    /** Maps the batched input files to positional hit lists. */
     storiesForFiles: (files: string[]) => ModuleGraphStoryHit[][];
   }) {
     const status = opts.status ?? { value: 'ready' };

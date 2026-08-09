@@ -38,15 +38,8 @@ describe('runCodemod', () => {
     rmSync(tempDir, { recursive: true, force: true });
   });
 
-  /**
-   * https://github.com/storybookjs/storybook/issues/33639
-   *
-   * Reproduces the bug where csf-2-to-3 silently fails because filenames are incorrectly quoted
-   * when passed to spawnSync.
-   *
-   * Test file from:
-   * https://github.com/seb-oss/green/blob/b634df24d2dae157300f73b711e569d1755eb138/libs/react-charts/src/lib/chart.stories.tsx
-   */
+  // Regression for issue #33639: csf-2-to-3 silently failed because filenames were incorrectly
+  // quoted when passed to spawnSync.
   it('should transform CSF2 Template.bind({}) files with csf-2-to-3', async () => {
     const storyFile = join(tempDir, 'chart.stories.tsx');
     writeFileSync(storyFile, csf2Source);

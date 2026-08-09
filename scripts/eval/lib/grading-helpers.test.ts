@@ -11,12 +11,6 @@ import {
   filterStorybookFiles,
   parseChangedFiles,
 } from './grade.ts';
-/**
- * Helper-level test: compose grading helpers on a fake project directory.
- * This exercises candidate discovery, git-output parsing,
- * and quality-score calculation without pretending to cover the full grade() flow.
- */
-
 let TMP: string;
 
 beforeEach(() => {

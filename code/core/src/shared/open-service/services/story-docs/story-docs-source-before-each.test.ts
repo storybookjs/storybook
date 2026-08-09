@@ -34,7 +34,6 @@ const payload: StoryDocsPayload = {
 };
 const serviceSnippet = 'import { Button } from \'./Button\';\n\n<Button label="hi" />';
 
-/** Builds a minimal `core/story-docs` service mock whose `storyDocs.loaded` returns `loaded`. */
 function mockStoryDocsService(loaded: () => Promise<StoryDocsPayload>) {
   mockedGetService.mockReturnValue({
     queries: {

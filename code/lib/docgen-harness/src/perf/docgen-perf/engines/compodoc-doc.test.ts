@@ -4,7 +4,6 @@ import { describe, expect, it } from 'vitest';
 
 import { countDocumentation } from './compodoc-doc.ts';
 
-/** Real compodoc output, committed as the Angular docgen baselines. */
 const fixture = (name: string) =>
   countDocumentation(
     path.join(import.meta.dirname, '../../../angular/__testfixtures__', name, 'compodoc-input.json')

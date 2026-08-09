@@ -101,10 +101,8 @@ beforeEach(() => {
   vi.mocked(WebView.prototype).prepareForStory.mockReturnValue('story-element' as any);
 });
 
-/**
- * Skipping this test, because it causes a cyclical dependency error, where core depends on docs &
- * blocks This was done to avoid a conflict in the CPC work, we should revisit this.
- */
+// Skipped because importing addons/docs from here makes core depend on docs and blocks, which is a
+// cyclical dependency.
 describe('PreviewWeb', { skip: true }, () => {
   describe('initial render', () => {
     it('renders story mode through the stack', async () => {

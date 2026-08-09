@@ -9,7 +9,6 @@ function sample(save: number, durMs: number, heapUsedMb = 20, retainedHeapMb = 1
   return { save, durMs, rssMb: 100, heapUsedMb, retainedHeapMb };
 }
 
-/** Built through summarizeSeries, so the fixture cannot claim figures a real run would not produce. */
 function repOf(coldMs: number, samples: SaveSample[], baseline: MemorySample): SeriesResult {
   return { coldMs, baseline, samples, ...summarizeSeries(samples, baseline) };
 }

@@ -19,15 +19,9 @@ const FAKE_WORKING_DIR = path.resolve('/repo');
 const BADGE_ABS = path.join(FAKE_WORKING_DIR, 'src/components/Badge/Badge.tsx');
 const BADGE_BARREL = path.join(FAKE_WORKING_DIR, 'src/components/Badge/index.ts');
 
-/** The forward-slashed form the resolver queries the module graph with. */
 const asGraphPath = (p: string) => path.normalize(p).replaceAll('\\', '/');
 const storyFileAbs = (rel: string) => path.join(FAKE_WORKING_DIR, rel);
 
-/**
- * Mocks the `core/module-graph` open service via `getService`. `storiesByFile` keys are the
- * forward-slashed absolute input paths the resolver looks up; values are the relative story-file
- * hits the module graph returns for them.
- */
 function setupService(opts: {
   status?: ModuleGraphStatus;
   storiesByFile?: Record<string, ModuleGraphStoryHit[]>;

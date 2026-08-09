@@ -21,7 +21,6 @@ const mocks = vi.hoisted(() => {
     addonsNode,
     configFile,
     updateMainConfig,
-    /** When set, `existsSync` in the automigrate fix uses this instead of the real fs (ESM-safe). */
     existsSyncOverride: null as null | ((p: string) => boolean),
   };
 });

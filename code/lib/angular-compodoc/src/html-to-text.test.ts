@@ -8,10 +8,8 @@ import { htmlToText } from './html-to-text.ts';
 const viaDomParser = (input: unknown): string =>
   new DOMParser().parseFromString(input as string, 'text/html').body.textContent ?? '';
 
-/**
- * `DOMParser` outputs this helper must reproduce exactly. Compodoc's fixture corpus contains one
- * `@default` tag in total, so fixture replay cannot cover any of this.
- */
+// Compodoc's fixture corpus contains a single `@default` tag, so fixture replay cannot reach any of
+// these `DOMParser` behaviours.
 const DOM_PARSER_CASES: [name: string, input: unknown, expected: string][] = [
   [
     'unwraps a paragraph and decodes numeric entities',

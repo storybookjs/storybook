@@ -1,10 +1,3 @@
-/**
- * Tests for remote command execution: a runtime without a local handler requests execution from a
- * peer, and a runtime that has one responds. The protocol (`service-transport.ts`) is documented on
- * {@link connectCommandTransport}.
- *
- * Peers are simulated with the test channel's `emitExternal`, the same approach the sync tests use.
- */
 import * as v from 'valibot';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
@@ -61,7 +54,6 @@ const throwingCommandServiceDef = defineService({
   },
 });
 
-/** Query `load` invokes a command that has no handler in this runtime (peer-only). */
 const loadInvokesRemoteCommandServiceDef = defineService({
   id: 'internal-fixture/load-invokes-remote-command',
   description: 'Query load calls a command declared without a local handler.',

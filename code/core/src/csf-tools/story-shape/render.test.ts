@@ -9,7 +9,6 @@ import { loadCsf } from '../CsfFile.ts';
 import { resolveRenderFunction } from './render.ts';
 import { normalizeStoryDeclaration } from './normalize-story.ts';
 
-/** Resolves `render` on story `A`, the way a snippet generator would. */
 const resolveStoryRender = (code: string) => {
   const source = `export default { title: 'T' };\n${dedent(code)}`;
   const csf = loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();

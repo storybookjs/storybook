@@ -35,7 +35,6 @@ async function readServiceId(serviceDirectory: string): Promise<string> {
   );
 }
 
-/** Ids of the services whose directory contains the given runtime registrar file (e.g. `server.ts`). */
 async function registeredServiceIds(registrarFile: string): Promise<string[]> {
   const entries = await readdir(SERVICES_DIR, { withFileTypes: true });
   const ids = await Promise.all(

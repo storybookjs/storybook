@@ -101,7 +101,6 @@ describe('angular-to-angular-vite', () => {
     mockExistsSync.mockReturnValue(false);
   });
 
-  /** Wire the sync `node:fs` mocks so `AngularJSON` reads `/project/angular.json` as `content`. */
   const mockAngularJson = (content: string) => {
     mockExistsSync.mockImplementation((p: any) => String(p).endsWith('angular.json'));
     mockReadFileSync.mockImplementation((p: any) => {

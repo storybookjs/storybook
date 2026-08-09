@@ -23,7 +23,6 @@ afterEach(() => {
 
 const noop = async () => {};
 
-/** Ages a lock file so the stale-break paths are reachable without waiting out a real window. */
 const backdate = (path: string, byMs: number) => {
   const when = new Date(Date.now() - byMs);
   utimesSync(path, when, when);

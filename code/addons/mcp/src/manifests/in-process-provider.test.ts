@@ -14,7 +14,6 @@ import { getDocgenService, getMdxService, getStoryDocsService } from './service-
 
 const options = {} as Options;
 
-/** Story index with one manifest component (`button`) and one unattached doc (`intro--docs`). */
 const index: StoryIndex = {
   v: 5,
   entries: {

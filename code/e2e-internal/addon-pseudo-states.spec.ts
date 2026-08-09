@@ -3,16 +3,12 @@ import process from 'process';
 
 import { PREVIEW_STORY_TIMEOUT, waitForPreviewReady } from './helpers.ts';
 
-/**
- * E2E regression for issue #32221: the pseudo-states decorator used to wipe globals
- * during the parameter->globals sync whenever a story did not declare its own
- * `parameters.pseudo`, dropping any selection set via URL or toolbar as soon as
- * the user navigated to such a story.
- */
+// Regression for issue #32221: the decorator wiped globals during the parameter->globals sync for
+// stories without their own `parameters.pseudo`.
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
 
-/** A story that does not declare `parameters.pseudo` itself. */
+// This story deliberately does not declare `parameters.pseudo` itself.
 const STORY_A_PATH = '/story/button-component--base';
 
 test.describe('pseudo-states addon', () => {

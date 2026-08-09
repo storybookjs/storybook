@@ -1,10 +1,3 @@
-/**
- * NOTE: These tests use the VersionService from the refactored implementation. The promptNewUser
- * and promptInstallType functions are tested in:
- *
- * - Services/VersionService.test.ts (for version detection)
- * - Commands/UserPreferencesCommand.test.ts (for user prompts)
- */
 import { describe, expect, it, vi } from 'vitest';
 
 import { VersionService } from './services/VersionService.ts';

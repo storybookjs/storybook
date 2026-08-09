@@ -3,14 +3,9 @@ import process from 'process';
 
 import { PREVIEW_STORY_TIMEOUT, waitForPreviewReady } from './helpers.ts';
 
-/**
- * E2E regression for the open-service sync demos (`code/core/src/shared/open-service/sync-test`).
- *
- * Validates local command execution, remote command execution, static JSON loading, unhandled remote
- * commands in static builds, manager/preview sync, dev-server reload bootstrap, and cross-tab relay.
- */
+// Drives the open-service sync demos in `code/core/src/shared/open-service/sync-test`.
 
-/** Internal Storybook UI (`code/.storybook`) — not a sandbox template. */
+// Points at the internal Storybook UI (`code/.storybook`), not a sandbox template.
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
 
 const runsAgainstDevServer = !['build', 'static'].includes(process.env.STORYBOOK_TYPE || 'dev');

@@ -45,7 +45,6 @@ function results(overrides: Partial<SuiteResults> = {}): SuiteResults {
   };
 }
 
-/** One measured scenario with some of its metrics replaced, which is what most cases here vary. */
 function withMetrics(patch: Partial<EngineMetrics>): SuiteResults {
   const base = results();
   const measured = base.engines['vue-component-meta'];

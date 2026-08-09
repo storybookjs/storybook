@@ -43,7 +43,6 @@ const entry: IndexEntry = {
   importPath: './src/button.stories.ts',
 };
 
-/** Package root, which the fixtures stand in for a Compodoc workspace root. */
 const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
 const FIXTURES = join(PACKAGE_ROOT, 'src/docgen/__testfixtures__');
 const FIXTURE_STORY_PATH = join(FIXTURES, 'button.stories.ts');
@@ -52,7 +51,7 @@ const fixtureEntry: IndexEntry = {
   importPath: relative(process.cwd(), FIXTURE_STORY_PATH),
 };
 
-/** A logger, because the shared parsing module warns and `vitest-setup.ts` fails on console.warn. */
+// The shared parsing module warns, and `vitest-setup.ts` fails the run on console.warn.
 const logger = { warn: vi.fn(), debug: vi.fn() };
 
 const buttonComponent: Record<string, unknown> = {
@@ -66,7 +65,6 @@ const buttonComponent: Record<string, unknown> = {
   inputsClass: [{ name: 'label', type: 'string', optional: false, defaultValue: "'Click me'" }],
 };
 
-/** The `ButtonComponent` the fixture story imports: two inputs, in its own file. */
 const fixtureButton: Record<string, unknown> = {
   ...buttonComponent,
   file: 'src/docgen/__testfixtures__/button.component.ts',
@@ -76,7 +74,6 @@ const fixtureButton: Record<string, unknown> = {
   ],
 };
 
-/** A different `ButtonComponent`, in a different file, with a single different input. */
 const unrelatedButton: Record<string, unknown> = {
   ...buttonComponent,
   file: 'src/stories/frameworks/angular-vite/button.component.ts',
@@ -91,7 +88,6 @@ const emptyJson: CompodocJson = {
   classes: [],
 };
 
-/** Writes the story file, and `documentation.json` unless the test is about it being absent. */
 const givenWorkspace = ({ withDocumentationJson = true } = {}) => {
   vol.fromNestedJSON({
     [STORY_PATH]: `

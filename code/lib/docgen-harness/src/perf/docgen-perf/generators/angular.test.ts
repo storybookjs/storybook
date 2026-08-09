@@ -2,13 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import { angularProjectFiles } from './angular.ts';
 
-/**
- * These snapshots are the generator's documentation. Compodoc reads a directory, not an API, so
- * what matters is the shape of the tree and how a component reaches the decorators it is annotated
- * with - neither of which is visible from the generator's source without running it.
- *
- * The project is asserted as data rather than generated to disk, so nothing here writes a file.
- */
 const tree = (files: Record<string, string>) => Object.keys(files).join('\n');
 
 describe('angularProjectFiles', () => {

@@ -2,18 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { vueProjectFiles } from './vue.ts';
 
-/**
- * These snapshots are the generator's documentation. What makes this project hard for
- * vue-component-meta is not any one file but how they reference each other: an SFC reaches its
- * package's props, which extends the package below it through a `paths` alias, down to a shared
- * base type. That chain is the measured work, and it is invisible in the generator's source.
- *
- * The project is asserted as data rather than generated to disk, so nothing here writes a file or
- * copies the Vue runtime.
- */
 const tree = (files: Record<string, string>) => Object.keys(files).sort().join('\n');
 
-/** The smallest workspace that still has a package extending another one. */
 const workspace = {
   packages: 2,
   componentsPerPackage: 1,

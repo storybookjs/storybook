@@ -1,12 +1,6 @@
-/**
- * Contract test guarding the vendored manifest-assembly helpers against drift.
- *
- * `core-manifest.fixture.json` is trimmed verbatim from a real Storybook core
- * build (`storybook-static`). If core changes the `$ref` scheme or the on-disk
- * `services/` layout, these assertions fail — signalling that `vendored.ts` (and
- * `in-process-provider.ts`) must be re-synced with core.
- */
 import { describe, it, expect } from 'vitest';
+// Trimmed verbatim from a real `storybook-static` build, so a failure here means core changed its
+// `$ref` scheme or `services/` layout and the vendored helpers must be re-synced with it.
 import fixture from './__fixtures__/core-manifest.fixture.json' with { type: 'json' };
 import {
   DOCGEN_SERVICE_ID,

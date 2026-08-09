@@ -18,12 +18,10 @@ import { buildStoryDocsPayload } from './build-story-docs.ts';
 // imports, tsconfig lookups), which reads from the actual filesystem and cannot run against an
 // in-memory volume.
 
-/**
- * Overwrite a file and push its mtime forward so the mtime-aware story-file cache is guaranteed to
- * miss, regardless of the host clock resolution. Mirrors a developer saving an edited story file.
- */
 function rewriteStoryFile(filePath: string, content: string): void {
   writeFileSync(filePath, content);
+  // Push the mtime a second forward so the mtime-aware story-file cache misses even on hosts whose
+  // clock resolution is too coarse to distinguish two writes.
   const future = new Date(Date.now() + 1000);
   utimesSync(filePath, future, future);
 }

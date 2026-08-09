@@ -338,22 +338,17 @@ it('Signal components can be used', () => {
     `,
   })
   class SignalButtonComponent {
-    /** Is this the principal call to action on the page? */
     primary = input(false);
 
-    /** What background color to use */
     @Input()
     backgroundColor?: string;
 
-    /** How large should the button be? */
     size = input('medium', {
       transform: (val: 'small' | 'medium') => val,
     });
 
-    /** Button contents */
     label = input.required<string>();
 
-    /** Optional click handler */
     onClick = output<Event>();
 
     public get classes(): string[] {

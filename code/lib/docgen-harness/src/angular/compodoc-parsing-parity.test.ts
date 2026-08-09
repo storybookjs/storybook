@@ -23,7 +23,7 @@ const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
   .map((entry) => entry.name)
   .sort();
 
-/** The shared module is environment-agnostic, so a Node host injects what the browser reads off globals. */
+// The shared module is environment-agnostic, so a Node host injects what the browser reads off globals.
 const nodeExtract = (name: string, compodocJson: CompodocJson, filterNonInputControls: boolean) => {
   const logger = { warn: () => {}, debug: () => {} };
   const componentData = getComponentData({ name } as never, { compodocJson, logger });
@@ -38,12 +38,8 @@ const nodeExtract = (name: string, compodocJson: CompodocJson, filterNonInputCon
   );
 };
 
-/**
- * The oracle is the committed legacy baseline, recorded through the browser path with a real
- * `DOMParser`. Asserting a Node host against those files - rather than against another call into
- * the same shared functions - is what lets this test fail when the shared parsing module or its
- * Node-side `DOMParser` replacement changes behaviour.
- */
+// The committed legacy baselines were recorded through the browser path with a real `DOMParser`,
+// which is what makes them an oracle rather than a second call into the same shared functions.
 describe('a Node host reproduces the committed legacy baselines', () => {
   it.each(fixtureCases)('%s', (fixtureCase) => {
     const compodocJson = JSON.parse(

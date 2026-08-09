@@ -16,19 +16,11 @@ vi.mock('node:fs/promises', { spy: true });
 vi.mock('storybook/internal/node-logger', { spy: true });
 
 interface FakeWorld {
-  /** Source files that exist (path -> content). Content is irrelevant — parser is stubbed. */
   files: Set<string>;
-  /** Per-file outgoing edges, keyed by absolute path. */
   edges: Map<string, ImportEdge[]>;
-  /** Per-(from, specifier) resolutions; absent → resolver returns null. */
   resolutions: Map<string, string | null>;
 }
 
-/**
- * Builds a real ParserRegistry with a single test parser that claims the full set of
- * walkable JS/TS/MDX extensions. The parser returns per-file precomputed edges from the
- * FakeWorld, standing in for oxc/mdx parsing in these unit tests.
- */
 function makeFakeRegistry(world: FakeWorld): ParserRegistry {
   const testParser: ImportParser = {
     extensions: ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.mdx'],

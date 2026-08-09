@@ -18,7 +18,6 @@ vi.mock('./build-docgen.ts', { spy: true });
 // Generation is covered next to the lock; here it only has to happen before anything is served.
 vi.mock('../compodoc/ensure-documentation.ts', { spy: true });
 
-/** Whether the mocked generation should publish a documentation.json, set per test. */
 let generationWrites = false;
 
 beforeEach(async () => {

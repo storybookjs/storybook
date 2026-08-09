@@ -33,14 +33,8 @@ function measured(scenarios: Record<string, ScenarioResult>): EngineResult {
 describe('engineOrderForRep', () => {
   const engines: EngineId[] = ['react-legacy', 'react-osa', 'vue-docgen-api', 'vue-component-meta'];
 
-  /**
-   * Every engine named by a control pair. The two properties below are asserted against this rather
-   * than a fixed list, so they keep holding as pairs are added - including a pair that shares an
-   * engine with another, which a pairwise swap cannot alternate.
-   */
   const paired = [...new Set(CONTROL_PAIRS.flatMap((pair) => [pair.legacy, pair.next]))];
 
-  /** Which of the two runs first, which is the bias the alternation exists to cancel. */
   const runsFirst = (order: EngineId[], pair: { legacy: EngineId; next: EngineId }) => {
     const legacy = order.indexOf(pair.legacy);
     const next = order.indexOf(pair.next);

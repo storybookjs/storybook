@@ -25,11 +25,6 @@ interface TestRegistry {
   parseSpy: ReturnType<typeof vi.fn>;
 }
 
-/**
- * Build a real ParserRegistry with a single test parser that reads precomputed edges out
- * of the PatcherWorld. Exposes the parse spy so tests can assert how many times a path
- * was dispatched to the parser.
- */
 function makeRegistry(world: PatcherWorld): TestRegistry {
   const parseSpy = vi.fn(async ({ filePath }: { filePath: string }) => {
     return world.edges.get(filePath) ?? [];

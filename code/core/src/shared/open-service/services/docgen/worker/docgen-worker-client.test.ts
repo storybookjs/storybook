@@ -5,7 +5,6 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import type { DocgenProviderDescriptor } from '../types.ts';
 import type { DocgenWorkerRequest, DocgenWorkerResponse } from './protocol.ts';
 
-/** Only the surface the tests touch; the runtime instance is a real Node EventEmitter subclass. */
 interface FakeWorker {
   posted: DocgenWorkerRequest[];
   postMessage: ReturnType<typeof vi.fn>;
@@ -51,7 +50,6 @@ const DESCRIPTORS: DocgenProviderDescriptor[] = [
   { moduleSpecifier: '/fake/react/docgen-worker.js' },
 ];
 
-/** Resolve the worker's `init` ack so awaiting `extract` calls can proceed. */
 function ackInit(worker: FakeWorker, error?: { name: string; message: string }) {
   worker.emit(
     'message',

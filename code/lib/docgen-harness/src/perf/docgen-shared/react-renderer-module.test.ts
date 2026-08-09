@@ -2,11 +2,6 @@ import { describe, expect, it } from 'vitest';
 
 import { loadReactRendererModule, rendererModuleError } from './react-renderer-module.ts';
 
-/**
- * The message below is the reason this module exists rather than a hardcoded path: without the
- * redirect, a missing `code/core` build surfaces as a resolution failure naming a file no harness
- * ever mentions, and the reader has no way to get from it to `yarn nx compile core`.
- */
 const missingCoreBuild = new Error(
   "Cannot find module '/repo/node_modules/storybook/dist/common/index.js' imported from " +
     '/repo/code/renderers/react/src/componentManifest/utils.ts'

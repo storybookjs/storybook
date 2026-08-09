@@ -599,7 +599,6 @@ function resultDocTemplate(file: 'transcript.tsx' | 'transcript.types.ts') {
   return baselineTemplate(`eval-support/${file}`);
 }
 
-/** Create a bare remote repo with initial file content (no local clone). */
 function setupBareRemoteWithContent(opts: { remoteRoot: string; files: Record<string, string> }) {
   const staging = mkdtempSync(join(tmpdir(), 'eval-sync-staging-'));
   execFileSync('git', ['init', '--bare', '--initial-branch=main', opts.remoteRoot]);

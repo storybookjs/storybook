@@ -1,7 +1,3 @@
-/**
- * @file Do not import renderer packages directly in stories
- * @author Norbert De Langen
- */
 //------------------------------------------------------------------------------
 // Requirements
 //------------------------------------------------------------------------------

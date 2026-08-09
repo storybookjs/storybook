@@ -11,21 +11,15 @@ import { fileURLToPath } from 'node:url';
 
 import type { AngularDocgenOptions } from './build-docgen.ts';
 
-/**
- * Contributes a {@link DocgenProviderDescriptor} pointing at {@link ./docgen-worker.ts}, which
- * core's docgen worker imports and runs off the main thread. The in-process analyzer derives
- * everything from the component files themselves, so the descriptor's `options` carry only the
- * Controls filtering flag; see {@link AngularDocgenOptions}.
- */
+/** Contribute the descriptor for the worker module core imports and runs off the main thread. */
 export const experimental_docgenProvider = async (
   existing: DocgenProviderDescriptor[] = [],
   options?: Options
 ): Promise<DocgenProviderDescriptor[]> => {
   const features = await options?.presets?.apply('features', {});
 
-  // Core only applies this preset when the flag is on, so this is a second gate rather than the
-  // only one. `framework.options.compodoc` deliberately does not gate this provider: it governs
-  // only the legacy compodoc pipeline, while the analyzer here is compodoc-free.
+  // `framework.options.compodoc` deliberately does not gate this: that option governs only the
+  // legacy compodoc pipeline, which this provider does not use.
   if (!features?.experimentalDocgenServer) {
     return existing;
   }
@@ -34,7 +28,6 @@ export const experimental_docgenProvider = async (
     moduleSpecifier: fileURLToPath(
       import.meta.resolve('@storybook/angular-vite/internal/docgen-worker')
     ),
-    // Structured-cloned onto the worker thread: plain JSON only, no closures or class instances.
     options: {
       angularFilterNonInputControls: features?.angularFilterNonInputControls,
     },

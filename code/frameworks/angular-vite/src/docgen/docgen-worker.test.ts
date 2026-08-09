@@ -6,9 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { buildDocgenPayload } from './build-docgen.ts';
 import { createDocgenProvider } from './docgen-worker.ts';
 
-// The analyzer ships from `@storybook/angular-cm`; the worker only relies on the pinned
-// constructor shape, so a structural fake keeps these tests runnable without a real
-// TypeScript-backed analyzer.
+// A structural fake keeps these tests runnable without a real TypeScript-backed analyzer.
 const { analyzer } = vi.hoisted(() => {
   class FakeAngularComponentMetaManager {
     startWatching = vi.fn();
@@ -38,7 +36,7 @@ const { analyzer } = vi.hoisted(() => {
 vi.mock('@storybook/angular-cm', () => ({
   AngularComponentMetaManager: analyzer.FakeAngularComponentMetaManager,
 }));
-// Replaced wholesale: these tests are about the middleware chain, not payload building.
+// These tests cover the middleware chain, not payload building.
 vi.mock('./build-docgen.ts', () => ({ buildDocgenPayload: vi.fn() }));
 vi.mock(import('storybook/internal/node-logger'), { spy: true });
 
@@ -155,14 +153,12 @@ describe('createDocgenProvider', () => {
     const [manager] = analyzer.instances;
     expect(manager.startWatching).toHaveBeenCalledOnce();
     expect(manager.recycleIfHeapPressured).toHaveBeenCalledTimes(2);
-    // The manager receives the project's actual TypeScript module, imported lazily.
     expect((manager.typescript as { version?: unknown }).version).toBeTypeOf('string');
   });
 
   it('threads a structured-cloneable options bag and the manager into the payload builder', async () => {
     vi.mocked(buildDocgenPayload).mockReturnValue(ours);
 
-    // Exactly what crosses the worker boundary: plain JSON options, no Storybook `Options`.
     await createDocgenProvider(structuredClone({ angularFilterNonInputControls: true }))(
       passthrough
     )({ entry });
@@ -189,7 +185,6 @@ describe('createDocgenProvider', () => {
     await expect(provider({ entry })).resolves.toEqual(downstream);
     await expect(provider({ entry })).resolves.toEqual(downstream);
 
-    // The failed creation is memoized, not retried per request.
     expect(analyzer.constructions).toBe(1);
     expect(next).toHaveBeenCalledTimes(2);
     expect(buildDocgenPayload).not.toHaveBeenCalled();

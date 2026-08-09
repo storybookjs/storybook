@@ -1,4 +1,4 @@
-import type { ProjectFileTracker} from './ProjectFileTracker.ts';
+import type { ProjectFileTracker } from './ProjectFileTracker.ts';
 import { filterSourceFilePaths, normalizePath } from './ProjectFileTracker.ts';
 import type { ComponentMetaProjectBase, FileChange, ProjectCommandLine } from './types.ts';
 

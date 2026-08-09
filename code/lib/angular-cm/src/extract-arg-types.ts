@@ -35,14 +35,15 @@ export interface ExtractArgTypesOptions {
   /** The `angularFilterNonInputControls` flag, required so no host inherits a silent default. */
   filterNonInputControls: boolean | undefined;
   logger?: ParsingLogger;
-  /** Unwraps Compodoc-shaped, Markdown-rendered HTML; DOM-less hosts pass {@link unwrapPlainText}. */
-  unwrapHtml: (html: unknown) => string;
+  /** Renders a comment field to the string that lands in argTypes; the analyzer's own comments are
+   *  already plain text, so {@link passThroughText} is the only implementation this package needs. */
+  unwrapHtml: (comment: unknown) => string;
   /** Drops the legacy Compodoc quirks, off by default while the committed baselines pin them. */
   modern?: boolean;
 }
 
-/** `unwrapHtml` for plain-text hosts; a real unwrapper eats the `<string>` in `Array<string>`. */
-export const unwrapPlainText = (text: unknown): string => String(text);
+/** The analyzer's `description`/`jsdoctags` comments are plain text already, never HTML. */
+export const passThroughText = (comment: unknown): string => String(comment);
 
 type Entry = Class | Directive | Injectable | Pipe;
 

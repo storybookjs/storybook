@@ -13,7 +13,7 @@ import type {
   AngularComponentMetaResult,
   ParsingLogger,
 } from '@storybook/angular-cm';
-import { extractArgTypesFromData, unwrapPlainText } from '@storybook/angular-cm';
+import { extractArgTypesFromData, passThroughText } from '@storybook/angular-cm';
 import { resolveStoryComponent } from './resolve-component.ts';
 
 // Structured-cloned onto the worker thread, so every field must be plain JSON data.
@@ -41,8 +41,8 @@ export interface BuildDocgenContext {
   resolvePath?: (importPath: string) => string;
 }
 
-// Plain text keeps `Array<string>` intact; `modern` drops the quirks legacy compodoc is pinned to.
-export const ACM_EXTRACT_OPTIONS = { unwrapHtml: unwrapPlainText, modern: true } as const;
+// `modern` drops the quirks legacy compodoc-based docgen is pinned to.
+export const ACM_EXTRACT_OPTIONS = { unwrapHtml: passThroughText, modern: true } as const;
 
 // The description is deliberately not parsed for tags: an `@Input()` inside a documentation code
 // block would become a fabricated tag.
@@ -53,7 +53,7 @@ const extractJsDocTags = (entry: AngularClassMeta): DocgenJsDocTags => {
     if (!name) {
       continue;
     }
-    const value = tag.comment === undefined ? '' : unwrapPlainText(tag.comment).trim();
+    const value = tag.comment === undefined ? '' : passThroughText(tag.comment).trim();
     (tags[name] ??= []).push(value);
   }
   return tags;

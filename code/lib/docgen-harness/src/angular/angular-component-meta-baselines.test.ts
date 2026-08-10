@@ -15,9 +15,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import ts from 'typescript';
 
-import { extractArgTypesFromData } from '@storybook/angular-compodoc';
-import { AngularComponentMetaManager } from '@storybook/angular-cm';
-import { ACM_EXTRACT_OPTIONS } from '../../../../frameworks/angular-vite/src/docgen/build-docgen.ts';
+import { AngularComponentMetaManager, extractArgTypesFromData } from '@storybook/angular-cm';
 import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
 import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
 import { isSnapshotUpdateRun } from '../compare/is-snapshot-update-run.ts';
@@ -75,12 +73,11 @@ describe('angular component-meta baselines', () => {
         const acmPath = join(testDir, `acm-${prefix}.snapshot`);
         const acmLabel = `${fixtureCase}/acm-${prefix}.snapshot`;
         const committedAcm = readCommitted(acmPath);
-        // Spread the worker's own options so the recorded baselines represent production output:
-        // plain-text unwrapping and the `modern` extraction the ACM path runs with.
+        // The same call the docgen worker makes, so the recorded baselines represent production
+        // output.
         const extracted = extractArgTypesFromData(entry, {
-          compodocJson: json,
+          metadataJson: json,
           filterNonInputControls,
-          ...ACM_EXTRACT_OPTIONS,
         }) as StrictArgTypes;
 
         // Both gates run BEFORE the snapshot call: under `-u` that call queues the rewrite, so a

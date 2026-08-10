@@ -14,10 +14,13 @@ import type {
 } from './types.ts';
 
 interface ControlPair {
-  /** Key under which this pair's ratios appear in the results. */
+  // Key under which this pair's ratios appear in the results.
   name: string;
   legacy: EngineId;
   next: EngineId;
+  // The two sides count different things on a save, so their warm member counts say nothing about
+  // whether the ratio is like-for-like and are left out rather than compared.
+  warmScopeDiffers?: true;
 }
 
 // A pair whose engines are not both registered yields no ratio, so a pair may be listed before the
@@ -25,7 +28,14 @@ interface ControlPair {
 export const CONTROL_PAIRS: ControlPair[] = [
   { name: 'react', legacy: 'react-legacy', next: 'react-osa' },
   { name: 'vue', legacy: 'vue-docgen-api', next: 'vue-component-meta' },
-  { name: 'angular', legacy: 'compodoc', next: 'angular-component-meta' },
+  // compodoc's warm pass re-documents the whole project; the analyzer re-extracts the one component
+  // that changed.
+  {
+    name: 'angular',
+    legacy: 'compodoc',
+    next: 'angular-component-meta',
+    warmScopeDiffers: true,
+  },
   {
     name: 'vue-component-meta-version',
     legacy: 'vue-component-meta',
@@ -99,8 +109,9 @@ function ratioFor(
     warm: medianRatio(legacy.metrics.warmExtractionMs, next.metrics.warmExtractionMs),
     legacyColdMembers: legacy.coldMembers,
     nextColdMembers: next.coldMembers,
-    legacyWarmMembers: legacy.warmMembers,
-    nextWarmMembers: next.warmMembers,
+    ...(pair.warmScopeDiffers
+      ? {}
+      : { legacyWarmMembers: legacy.warmMembers, nextWarmMembers: next.warmMembers }),
     coldComparability: comparability(
       legacy.coldMembers,
       next.coldMembers,
@@ -108,7 +119,9 @@ function ratioFor(
       next.coldOpaqueTypes
     ),
     // No engine reports opaque types for the re-extracted member, so warm is judged on counts alone.
-    warmComparability: comparability(legacy.warmMembers, next.warmMembers),
+    warmComparability: pair.warmScopeDiffers
+      ? 'unknown'
+      : comparability(legacy.warmMembers, next.warmMembers),
     ...versions,
   };
 }

@@ -12,6 +12,7 @@ import type { ArgTypes } from 'storybook/internal/types';
 import { computesTemplateSourceFromComponent } from '../../../../frameworks/angular-vite/src/client/renderer/ComputesTemplateFromComponent.ts';
 import { getComponentInputsOutputs } from '../../../../frameworks/angular-vite/src/client/renderer/utils/NgComponentAnalyzer.ts';
 import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
+import { assertGatableAngularSnippet } from '../compare/snippets-angular.ts';
 
 export const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 
@@ -105,6 +106,7 @@ export async function recordSnippets({
     expect(snippet).not.toBeNull();
     // Both gates run BEFORE the snapshot call: under `-u` that call queues the rewrite, so a
     // gate placed after it would turn the run red while still persisting the regressed recording.
+    assertGatableAngularSnippet(snippet!, 'candidate');
     if (committedSnippet !== undefined) {
       expectCurrentOrBetter({
         kind: 'snippet',

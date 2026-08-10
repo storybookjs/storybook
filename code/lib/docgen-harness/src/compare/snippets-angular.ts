@@ -21,7 +21,7 @@ interface ParsedAngularSnippet {
 }
 
 // A binding-shaped attribute: `[...]`, `(...)`, or `[(...)]` followed by `=`. Used to break the
-// corpus loudly when a baseline's child content carries bindings the root-only grammar would skip.
+// corpus loudly when child content carries bindings the root-only grammar would skip.
 const CHILD_BINDING_SHAPE = /[[(][^\s=>]*[\])]\s*=/;
 
 function parseAngularSnippet(snippet: string): ParsedAngularSnippet | undefined {
@@ -53,11 +53,33 @@ function parseAngularSnippet(snippet: string): ParsedAngularSnippet | undefined 
   return { tag: root.tag, names, bareAttributes, attributeNames, childContent: root.childContent };
 }
 
-/**
- * The grammar only reads the ROOT element, so baseline bindings on child elements would be
- * invisible and silently weaken the gate. All committed baselines are single-element today; the
- * first multi-element baseline must break the corpus loudly instead.
- */
+function assertGatableChildContent(
+  parsed: ParsedAngularSnippet,
+  side: 'baseline' | 'candidate'
+): void {
+  if (parsed.childContent === undefined || !CHILD_BINDING_SHAPE.test(parsed.childContent)) {
+    return;
+  }
+  // eslint-disable-next-line local-rules/no-uncategorized-errors
+  throw new Error(
+    `The ${side} snippet has binding-shaped attributes in its child content, which the root-only ` +
+      'grammar cannot gate; extend the Angular snippet comparison before committing multi-element ' +
+      'snippets'
+  );
+}
+
+// The recorder skips comparison entirely for a first-time snapshot, so the candidate has to be
+// checked there too or an ungatable snippet gets committed and only throws on the run after.
+export function assertGatableAngularSnippet(snippet: string, side: 'baseline' | 'candidate'): void {
+  const parsed = parseAngularSnippet(snippet);
+  if (parsed !== undefined) {
+    assertGatableChildContent(parsed, side);
+  }
+}
+
+// The grammar only reads the ROOT element, so bindings on child elements would be invisible and
+// silently weaken the gate. Every snippet on both sides is single-element today; the first
+// multi-element one must break the corpus loudly instead.
 export function compareAngularSnippet(baseline: string, candidate: string): Violation[] {
   const parsedBaseline = parseAngularSnippet(baseline);
   if (parsedBaseline === undefined) {
@@ -66,17 +88,7 @@ export function compareAngularSnippet(baseline: string, candidate: string): Viol
       'The baseline snippet has no parsable root element; every committed baseline has one'
     );
   }
-  if (
-    parsedBaseline.childContent !== undefined &&
-    CHILD_BINDING_SHAPE.test(parsedBaseline.childContent)
-  ) {
-    // eslint-disable-next-line local-rules/no-uncategorized-errors
-    throw new Error(
-      'The baseline snippet has binding-shaped attributes in its child content, which the ' +
-        'root-only grammar cannot gate; extend the Angular snippet comparison before committing ' +
-        'multi-element baselines'
-    );
-  }
+  assertGatableChildContent(parsedBaseline, 'baseline');
   const parsedCandidate = parseAngularSnippet(candidate);
   if (parsedCandidate === undefined) {
     // Listing every baseline name as lost would read as a pile of dropped bindings rather than
@@ -89,6 +101,7 @@ export function compareAngularSnippet(baseline: string, candidate: string): Viol
       },
     ];
   }
+  assertGatableChildContent(parsedCandidate, 'candidate');
   const violations: Violation[] = [];
   if (parsedBaseline.tag !== parsedCandidate.tag) {
     violations.push({

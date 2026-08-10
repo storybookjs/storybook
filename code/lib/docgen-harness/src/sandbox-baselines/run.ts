@@ -83,22 +83,34 @@ function readCommitted(baselineDir: string): SandboxBaselines {
   return committed;
 }
 
-/**
- * Replaces the recorded set for a template. Written into a sibling directory and swapped in, so a
- * throw mid-write leaves the committed baselines untouched rather than half-deleted.
- */
+// Replaces the recorded set for a template without ever having the committed baselines only
+// half-present: the new set is built in a sibling directory, the old one is moved aside rather than
+// deleted, and it is put back if the swap itself fails.
 function write(baselineDir: string, baselines: SandboxBaselines): void {
   const stagingDir = `${baselineDir}.staging`;
+  const backupDir = `${baselineDir}.backup`;
   rmSync(stagingDir, { recursive: true, force: true });
+  rmSync(backupDir, { recursive: true, force: true });
   mkdirSync(stagingDir, { recursive: true });
   try {
     for (const [component, payload] of Object.entries(baselines)) {
       writeFileSync(join(stagingDir, `${component}.json`), `${stableStringify(payload)}\n`);
     }
-    rmSync(baselineDir, { recursive: true, force: true });
-    renameSync(stagingDir, baselineDir);
+    const committedExists = existsSync(baselineDir);
+    if (committedExists) {
+      renameSync(baselineDir, backupDir);
+    }
+    try {
+      renameSync(stagingDir, baselineDir);
+    } catch (error) {
+      if (committedExists) {
+        renameSync(backupDir, baselineDir);
+      }
+      throw error;
+    }
   } finally {
     rmSync(stagingDir, { recursive: true, force: true });
+    rmSync(backupDir, { recursive: true, force: true });
   }
 }
 

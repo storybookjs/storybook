@@ -1,4 +1,9 @@
-export { argsRecordFromObjectPath, mergeArgsRecords, metaArgsRecord } from './args.ts';
+export {
+  argsRecordFromObjectNode,
+  argsRecordFromObjectPath,
+  mergeArgsRecords,
+  metaArgsRecord,
+} from './args.ts';
 export {
   type ImportBinding,
   collectImportBindings,

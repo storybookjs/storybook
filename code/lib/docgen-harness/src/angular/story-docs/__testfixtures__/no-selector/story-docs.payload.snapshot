@@ -1,0 +1,12 @@
+{
+  "id": "no-selector",
+  "name": "NoSelectorComponent",
+  "path": "__PATH__",
+  "stories": {
+    "storydocs-no-selector--primary": {
+      "id": "storydocs-no-selector--primary",
+      "name": "Primary",
+      "snippet": "<ng-container *ngComponentOutlet="NoSelectorComponent"></ng-container>",
+    },
+  },
+}

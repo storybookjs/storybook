@@ -20,25 +20,16 @@ const createManager = async (): Promise<AngularComponentMetaManager | undefined>
 };
 
 /**
- * Angular story-docs provider: per-story template snippets plus story JSDoc descriptions for the
- * Code panel, docs Source/Description blocks, and static story-docs snapshots. Runs in the main
- * process (CSF parsing is cheap; selector/IO extraction reuses one warm analyzer). Merged with
- * downstream via the documented `{ ...downstream, ...ours }` spread idiom.
+ * Angular story-docs provider: per-story template snippets and story JSDoc, built in the main
+ * process from the component meta analyzer.
  *
- * Known cost: the analyzer below is a second TypeScript program in the dev-server process, on top
- * of the one the docgen worker owns in its own thread, and TypeScript programs are the largest
- * objects in the system. Reading the docgen service's payload instead would remove it, but not yet:
- * a snippet needs the component selector and its input/output names, which the payload carries
- * under `angularComponentMeta`, plus the values of the enums a story's args reference, which it
- * does not - without them `Kind.Secondary` inlines verbatim instead of resolving to `'secondary'`.
- * Delete this manager once those enums ride along on the docgen payload.
- *
- * No `startWatching()`: `extract` stats its cached snapshots per call, which keeps the story-file
- * driven re-extractions the module-graph subscription issues fresh without main-process watchers.
+ * The analyzer is a second TypeScript program alongside the docgen worker's, needed only because a
+ * snippet resolves the enum members a story's args reference and the docgen payload does not carry
+ * enum values.
  */
 export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (nextStoryDocs) => {
-  // Scoped to the composed chain rather than the module, so the manager has exactly one owner and
-  // one lifetime. Created lazily on the first eligible entry.
+  // Scoped to the composed chain rather than the module, so the manager has one owner and one
+  // lifetime.
   let managerPromise: Promise<AngularComponentMetaManager | undefined> | undefined;
 
   return async (input) => {

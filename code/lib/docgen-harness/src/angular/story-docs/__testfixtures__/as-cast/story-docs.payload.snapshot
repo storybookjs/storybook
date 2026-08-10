@@ -1,0 +1,18 @@
+{
+  "id": "as-cast",
+  "name": "AsCastComponent",
+  "path": "__PATH__",
+  "stories": {
+    "storydocs-as-cast--casted": {
+      "description": "Args behind an `as const` assertion.",
+      "id": "storydocs-as-cast--casted",
+      "name": "Casted",
+      "snippet": "<sb-as-cast [label]="'Cast'" [tone]="'warn'"></sb-as-cast>",
+    },
+    "storydocs-as-cast--satisfied": {
+      "id": "storydocs-as-cast--satisfied",
+      "name": "Satisfied",
+      "snippet": "<sb-as-cast [label]="'Satisfies'"></sb-as-cast>",
+    },
+  },
+}

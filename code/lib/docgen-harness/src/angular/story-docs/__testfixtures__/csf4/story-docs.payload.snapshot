@@ -1,0 +1,20 @@
+{
+  "id": "csf4",
+  "name": "CsfFourComponent",
+  "path": "__PATH__",
+  "stories": {
+    "storydocs-csf4--empty": {
+      "description": "A factory story with no config at all.",
+      "id": "storydocs-csf4--empty",
+      "name": "Empty",
+      "snippet": "<sb-csf4 [label]="'Base'" (saved)="saved($event)"></sb-csf4>",
+    },
+    "storydocs-csf4--primary": {
+      "description": "A CSF4 factory story.",
+      "id": "storydocs-csf4--primary",
+      "name": "Primary",
+      "snippet": "<sb-csf4 [label]="'Save'" (saved)="saved($event)"></sb-csf4>",
+      "summary": "Factory summary",
+    },
+  },
+}

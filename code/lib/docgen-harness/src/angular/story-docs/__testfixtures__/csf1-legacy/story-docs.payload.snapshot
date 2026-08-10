@@ -1,0 +1,13 @@
+{
+  "id": "csf1-legacy",
+  "name": "CsfOneLegacyComponent",
+  "path": "__PATH__",
+  "stories": {
+    "storydocs-csf1-legacy--bound": {
+      "description": "Bound from a shared template.",
+      "id": "storydocs-csf1-legacy--bound",
+      "name": "Bound",
+      "snippet": "<sb-csf1-legacy [label]="'Bound'" [count]="2"></sb-csf1-legacy>",
+    },
+  },
+}

@@ -1,0 +1,12 @@
+{
+  "id": "import-alias",
+  "name": "ImportAliasComponent",
+  "path": "__PATH__",
+  "stories": {
+    "storydocs-import-alias--primary": {
+      "id": "storydocs-import-alias--primary",
+      "name": "Primary",
+      "snippet": "<sb-import-alias [heading]="'Aliased'"></sb-import-alias>",
+    },
+  },
+}

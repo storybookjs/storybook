@@ -1,0 +1,17 @@
+{
+  "id": "render-function",
+  "name": "RenderFunctionComponent",
+  "path": "__PATH__",
+  "stories": {
+    "storydocs-render-function--custom-render": {
+      "description": "Renders a hand-written template.",
+      "id": "storydocs-render-function--custom-render",
+      "name": "Custom Render",
+    },
+    "storydocs-render-function--no-render": {
+      "id": "storydocs-render-function--no-render",
+      "name": "No Render",
+      "snippet": "<sb-render-function [label]="'Plain'"></sb-render-function>",
+    },
+  },
+}

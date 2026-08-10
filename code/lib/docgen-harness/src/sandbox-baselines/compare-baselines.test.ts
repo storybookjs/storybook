@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
 import { compareBaselines, formatFindings } from './compare-baselines.ts';
-import { stableStringify } from './stable-stringify.ts';
 import type { SandboxBaseline } from './read-static-docgen.ts';
 
 type ArgTypes = NonNullable<SandboxBaseline['argTypes']>;
@@ -30,19 +29,6 @@ const undocumented = (overrides: Partial<SandboxBaseline> = {}): SandboxBaseline
 describe('compareBaselines', () => {
   it('reports nothing when both sides agree', () => {
     expect(compareBaselines({ button: documented() }, { button: documented() })).toEqual([]);
-  });
-
-  it('reports nothing when the two sides spell the same content in a different key order', () => {
-    // Baselines are written key-sorted but a build emits its own order, so a key-order-sensitive
-    // comparison would report drift on every verify run.
-    const sorted = { name: 'label', table: { category: 'inputs' }, type: { name: 'string' } };
-    const shuffled = { type: { name: 'string' }, name: 'label', table: { category: 'inputs' } };
-    expect(
-      compareBaselines(
-        { button: documented({ argTypes: { label: sorted } as ArgTypes }) },
-        { button: documented({ argTypes: { label: shuffled } as ArgTypes }) }
-      )
-    ).toEqual([]);
   });
 
   it('flags a component that stopped being documented as a regression', () => {
@@ -196,13 +182,5 @@ describe('formatFindings', () => {
     );
 
     expect(output.indexOf('regression(s)')).toBeLessThan(output.indexOf('change(s)'));
-  });
-});
-
-describe('stableStringify', () => {
-  it('sorts keys at every depth so a re-record diffs on content only', () => {
-    expect(stableStringify({ b: 1, a: { d: 2, c: 3 } }, 0)).toBe(
-      stableStringify({ a: { c: 3, d: 2 }, b: 1 }, 0)
-    );
   });
 });

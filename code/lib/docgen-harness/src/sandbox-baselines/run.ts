@@ -18,41 +18,16 @@ import {
 } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { parseArgs } from 'node:util';
 
 import { docgenServerTemplates } from '../../../cli-storybook/src/sandbox-templates.ts';
 import { SANDBOX_DIRECTORY } from '../perf/docgen-shared/paths.ts';
 import { compareBaselines, formatFindings } from './compare-baselines.ts';
+import { parseBaselineRunOptions } from './options.ts';
 import type { SandboxBaselines } from './read-static-docgen.ts';
 import { readStaticDocgen } from './read-static-docgen.ts';
 import { stableStringify } from './stable-stringify.ts';
 
 const BASELINES_ROOT = join(dirname(fileURLToPath(import.meta.url)), '__baselines__');
-
-interface Options {
-  templates: string[];
-  sandboxDir?: string;
-  update: boolean;
-}
-
-// Strict parsing, so `--template` with no value errors instead of silently running all of them.
-function readOptions(argv: string[]): Options {
-  const { values } = parseArgs({
-    args: argv,
-    strict: true,
-    options: {
-      template: { type: 'string' },
-      sandbox: { type: 'string' },
-      update: { type: 'boolean', short: 'u', default: false },
-    },
-  });
-
-  return {
-    templates: values.template ? [values.template] : docgenServerTemplates(),
-    sandboxDir: values.sandbox,
-    update: values.update,
-  };
-}
 
 const sandboxDirFor = (template: string, override?: string): string =>
   override ?? join(SANDBOX_DIRECTORY, template.replace('/', '-'));
@@ -144,7 +119,8 @@ function runTemplate(template: string, sandboxDirOverride: string | undefined, u
 }
 
 function main(): void {
-  const { templates, sandboxDir, update } = readOptions(process.argv.slice(2));
+  const { template, sandboxDir, update } = parseBaselineRunOptions(process.argv.slice(2));
+  const templates = template ? [template] : docgenServerTemplates();
 
   if (templates.length === 0) {
     // Silence here would read as "everything passed" while nothing had been checked.

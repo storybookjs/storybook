@@ -284,6 +284,27 @@ describe('module-graph open service', () => {
         storyFiles: [],
       });
     });
+
+    it('keeps the stored index when an update omits storiesByFile', async () => {
+      const runtime = registerBareModuleGraph();
+      await runtime.commands._applyGraphSnapshot({
+        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
+      });
+
+      // A comment-only edit re-walks nothing, so the engine sends the bump without the index.
+      await runtime.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./src/Button.stories.tsx'],
+      });
+
+      expect(runtime.queries.storiesForFiles.get({ files: ['./src/Button.tsx'] })).toEqual([
+        [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
+      ]);
+      expect(runtime.queries.graphRevision.get(undefined)).toBe(1);
+      expect(runtime.queries.latestStoryChanges.get(undefined)).toEqual({
+        revision: 1,
+        storyFiles: ['./src/Button.stories.tsx'],
+      });
+    });
   });
 
   describe('latestStoryChanges query', () => {

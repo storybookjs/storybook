@@ -259,10 +259,12 @@ export const moduleGraphServiceDef = defineService({
       description:
         'Replaces the reverse index after an incremental patch and bumps versions for affected story files. Called by the graph engine, not by external consumers.',
       input: v.object({
-        storiesByFile: v.pipe(
-          storiesByFileSchema,
-          v.description(
-            'Complete relative reverse index keyed by story-index-style source file paths. Values map affected story-index-style story file paths to breadth-first-search depths.'
+        storiesByFile: v.optional(
+          v.pipe(
+            storiesByFileSchema,
+            v.description(
+              'Complete relative reverse index keyed by story-index-style source file paths. Values map affected story-index-style story file paths to breadth-first-search depths. Omitted when the patch left the reverse index unchanged, in which case the stored index is kept as-is.'
+            )
           )
         ),
         bumpedStoryFiles: v.pipe(
@@ -275,9 +277,11 @@ export const moduleGraphServiceDef = defineService({
       output: v.void(),
       handler: async (input, ctx) => {
         ctx.self.setState((state) => {
-          state.storiesByFile = input.storiesByFile;
-          // An out-of-graph file change recomputes the (unchanged) reverse index but bumps no
-          // stories; it must not advance the revision, so watch-all and scoped subscribers stay put.
+          if (input.storiesByFile !== undefined) {
+            state.storiesByFile = input.storiesByFile;
+          }
+          // A change that bumps no stories must not advance the revision, so watch-all and scoped
+          // subscribers stay put.
           if (input.bumpedStoryFiles.length === 0) {
             return;
           }

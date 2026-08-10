@@ -174,6 +174,50 @@ describe('ModuleGraphEngine', () => {
     expect(callbacks.onUpdate).toHaveBeenCalledTimes(2);
   });
 
+  it('skips the update entirely when a patch leaves the index untouched and bumps no story', async () => {
+    const { patchSpy } = installDependencyGraphMocks(buildReverseIndex([]));
+    const { service, adapter, emitFileChange, callbacks } = setup({
+      storyIndex: createStoryIndex([
+        { storyId: 'b--default', importPath: './src/B.stories.tsx', title: 'B' },
+      ]),
+    });
+    patchSpy.mockResolvedValue(false);
+
+    service.start(adapter);
+    await vi.runAllTimersAsync();
+
+    // A file the graph has never seen: nothing to re-serialize and nothing to notify about.
+    emitFileChange({ kind: 'change', path: '/repo/unrelated.log' });
+    await vi.runAllTimersAsync();
+
+    expect(patchSpy).toHaveBeenCalledTimes(1);
+    expect(callbacks.onUpdate).not.toHaveBeenCalled();
+  });
+
+  it('omits storiesByFile when a patch bumps stories without moving the index', async () => {
+    const story = '/repo/src/B.stories.tsx';
+    const { patchSpy } = installDependencyGraphMocks(buildReverseIndex([[story, story, 0]]));
+    const { service, adapter, emitFileChange, callbacks } = setup({
+      storyIndex: createStoryIndex([
+        { storyId: 'b--default', importPath: './src/B.stories.tsx', title: 'B' },
+      ]),
+    });
+    patchSpy.mockResolvedValue(false);
+
+    service.start(adapter);
+    await vi.runAllTimersAsync();
+
+    // A comment-only edit to a story file: its dependency set is unchanged, so the index still
+    // holds, but the story itself must still be reported as bumped.
+    emitFileChange({ kind: 'change', path: story });
+    await vi.runAllTimersAsync();
+
+    expect(callbacks.onUpdate).toHaveBeenCalledTimes(1);
+    expect(callbacks.onUpdate).toHaveBeenCalledWith({
+      bumpedStoryFiles: ['./src/B.stories.tsx'],
+    });
+  });
+
   it('buffers file events emitted during the build and applies them in order after build resolves', async () => {
     const reverseIndex = buildReverseIndex([]);
     const buildDeferred = createDeferred<void>();

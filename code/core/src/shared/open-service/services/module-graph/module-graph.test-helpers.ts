@@ -103,7 +103,7 @@ export function installDependencyGraphMocks(reverseIndex: ReverseIndexImpl): {
   patchSpy: ReturnType<typeof vi.fn>;
   buildSpy: ReturnType<typeof vi.fn>;
 } {
-  const patchSpy = vi.fn(async () => undefined);
+  const patchSpy = vi.fn(async () => true);
   const buildSpy = vi.fn(async () => ({ reverseIndex, graph: new Map() }));
 
   vi.mocked(ChangeDetectionResolverFactory).mockImplementation(function () {

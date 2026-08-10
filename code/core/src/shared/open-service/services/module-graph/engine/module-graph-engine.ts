@@ -32,9 +32,13 @@ export interface ModuleGraphEngineOptions {
   onUnavailable?: (reason: string, error?: Error) => void;
   /** Mirrors the built reverse index into the `core/module-graph` open service. */
   onSnapshot?: (storiesByFile: ReturnType<typeof reverseIndexToStoriesByFile>) => void;
-  /** Mirrors state after each settled patch; includes story files whose graph may have changed. */
+  /**
+   * Mirrors state after each settled patch; includes story files whose graph may have changed.
+   * `storiesByFile` is omitted when the patch left the reverse index untouched, so a consumer keeps
+   * the index it already holds instead of receiving an identical copy of it.
+   */
   onUpdate?: (payload: {
-    storiesByFile: ReturnType<typeof reverseIndexToStoriesByFile>;
+    storiesByFile?: ReturnType<typeof reverseIndexToStoriesByFile>;
     bumpedStoryFiles: string[];
   }) => void;
 }
@@ -109,7 +113,11 @@ export class ModuleGraphEngine {
     return bumpedStoryFiles;
   }
 
-  private mirrorUpdate(changedFile: string, prePatchBumped: Set<string> = new Set()): void {
+  private mirrorUpdate(
+    changedFile: string,
+    prePatchBumped: Set<string> = new Set(),
+    indexChanged = true
+  ): void {
     if (!this.reverseIndex) {
       return;
     }
@@ -121,8 +129,19 @@ export class ModuleGraphEngine {
     if (this.storyFiles.has(normalized)) {
       bumpedStoryFiles.add(normalized);
     }
+
+    // The index is where it was and no story is affected — a write to a file outside the graph.
+    // Mirroring it would produce an identical state, so skip the whole update rather than pay to
+    // re-serialize, re-validate and re-broadcast an index nothing has changed.
+    if (!indexChanged && bumpedStoryFiles.size === 0) {
+      return;
+    }
+
     this.options.onUpdate?.({
-      storiesByFile: reverseIndexToStoriesByFile(this.reverseIndex.asMap(), this.workingDir),
+      // Serializing the index is O(files x stories reaching them); only pay it when it moved.
+      ...(indexChanged
+        ? { storiesByFile: reverseIndexToStoriesByFile(this.reverseIndex.asMap(), this.workingDir) }
+        : {}),
       bumpedStoryFiles: Array.from(bumpedStoryFiles, (storyFile) =>
         toStoryIndexPath(storyFile, this.workingDir)
       ),
@@ -382,13 +401,15 @@ export class ModuleGraphEngine {
       return;
     }
     const prePatchBumped = this.collectBumpedStoryFiles(event.path);
+    // A patch that threw may have left the index partly mutated, so assume it moved and re-mirror.
+    let indexChanged = true;
     try {
-      await this.incrementalPatcher.patch(event);
+      indexChanged = await this.incrementalPatcher.patch(event);
     } catch (error) {
       logger.warn(
         `Change detection: failed to apply ${event.kind} for ${event.path}: ${error instanceof Error ? error.message : String(error)}`
       );
     }
-    this.mirrorUpdate(event.path, prePatchBumped);
+    this.mirrorUpdate(event.path, prePatchBumped, indexChanged);
   }
 }

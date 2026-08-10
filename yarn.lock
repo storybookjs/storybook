@@ -11921,7 +11921,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/angular-cm@workspace:code/lib/angular-cm"
   dependencies:
-    "@storybook/angular-compodoc": "workspace:*"
     typescript: "npm:^6.0.3"
   peerDependencies:
     storybook: "workspace:^"

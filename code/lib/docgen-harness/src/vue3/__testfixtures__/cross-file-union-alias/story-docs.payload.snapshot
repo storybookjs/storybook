@@ -1,0 +1,14 @@
+{
+  "id": "cross-file-union-alias",
+  "import": "import CrossFileUnionAlias from './CrossFileUnionAlias.vue';",
+  "name": "CrossFileUnionAlias",
+  "path": "__PATH__",
+  "stories": {
+    "forms-cross-file-union-alias--props-as-written": {
+      "description": undefined,
+      "id": "forms-cross-file-union-alias--props-as-written",
+      "name": "Props As Written",
+      "summary": undefined,
+    },
+  },
+}

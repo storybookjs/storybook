@@ -30,18 +30,20 @@ import { resolveStoryComponent } from './resolve-component.ts';
 export interface AngularDocgenOptions {
   /** Absolute directory Compodoc writes {@link DOCUMENTATION_JSON} into. */
   outputDir: string;
+  /** Compodoc's own argument list. */
+  compodocArgs: string[];
   /**
    * Directory Compodoc ran in, which is the base its entries' relative `file` paths are written
-   * against. Defaults to the worker's cwd.
+   * against.
    */
-  workspaceRoot?: string;
+  workspaceRoot: string;
   /**
    * `features.angularFilterNonInputControls`. Threaded rather than defaulted: hardcoding it would
    * silently give half of all users the opposite of their configured Controls behaviour.
    */
   angularFilterNonInputControls?: boolean;
   /** tsconfig Compodoc scans against. Reported in the "component missing from the scan" message. */
-  tsconfig?: string;
+  tsconfig: string;
 }
 
 export type AngularDocgenPayload = DocgenPayload & {
@@ -53,8 +55,6 @@ export interface BuildDocgenContext {
   options: AngularDocgenOptions;
   readDocumentationJson: (path: string) => CompodocJson;
   logger: CompodocParsingLogger;
-  /** Same hook the React and Vue builders expose, defaulting to the same resolution against cwd. */
-  resolvePath?: (importPath: string) => string;
 }
 
 /** Compodoc attaches the raw TypeScript JSDoc tag nodes, which its published types omit. */
@@ -190,9 +190,7 @@ export const buildDocgenPayload = (
 
   // The index writes `importPath` relative to the Storybook working directory, which is the
   // worker's cwd.
-  const resolvePath =
-    context.resolvePath ?? ((importPath: string) => resolve(process.cwd(), importPath));
-  const storyFilePath = resolvePath(storyImportPath);
+  const storyFilePath = resolve(process.cwd(), storyImportPath);
   const resolved = resolveStoryComponent(storyFilePath, input.entry.title);
   if ('reason' in resolved) {
     // Passing through is correct - it means "no Angular component here" - but leave a trace.
@@ -214,7 +212,7 @@ export const buildDocgenPayload = (
   const documentationJson = join(options.outputDir, DOCUMENTATION_JSON);
   const enableCompodoc =
     `Enable Compodoc so Storybook can extract Angular metadata: make sure framework.options.compodoc is not false, ` +
-    `or generate it yourself with "compodoc -p ${options.tsconfig ?? 'tsconfig.json'} -e json -d ${options.outputDir}".`;
+    `or generate it yourself with "compodoc -p ${options.tsconfig} -e json -d ${options.outputDir}".`;
 
   if (!existsSync(documentationJson)) {
     return errorPayload(
@@ -235,7 +233,7 @@ export const buildDocgenPayload = (
     );
   }
 
-  const entry = findCompodocEntry(compodocJson, component, options.workspaceRoot ?? process.cwd());
+  const entry = findCompodocEntry(compodocJson, component, options.workspaceRoot);
   if (!entry) {
     const declaredInStoryFile =
       component.path !== undefined &&
@@ -247,7 +245,7 @@ export const buildDocgenPayload = (
       declaredInStoryFile
         ? `Compodoc does not document components declared inside story files, so "${displayName}" has no metadata.\nMove it into its own file to have it documented. Source: ${documentationJson}`
         : `Compodoc documented this project but not the component "${displayName}".\nCheck that the component's file is covered by the tsconfig Compodoc runs against (${
-            options.tsconfig ?? 'tsconfig.json'
+            options.tsconfig
           }) and re-run Compodoc. Source: ${documentationJson}`
     );
   }

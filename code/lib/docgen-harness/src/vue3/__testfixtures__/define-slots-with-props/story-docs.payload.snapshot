@@ -1,0 +1,14 @@
+{
+  "id": "define-slots-with-props",
+  "import": "import DefineSlotsWithProps from './DefineSlotsWithProps.vue';",
+  "name": "DefineSlotsWithProps",
+  "path": "__PATH__",
+  "stories": {
+    "forms-define-slots-with-props--props-as-written": {
+      "description": undefined,
+      "id": "forms-define-slots-with-props--props-as-written",
+      "name": "Props As Written",
+      "summary": undefined,
+    },
+  },
+}

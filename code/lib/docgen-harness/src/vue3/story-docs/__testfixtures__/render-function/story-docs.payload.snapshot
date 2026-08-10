@@ -1,0 +1,14 @@
+{
+  "id": "render-function",
+  "import": "import RenderFunctionButton from './RenderFunctionButton.vue';",
+  "name": "RenderFunctionButton",
+  "path": "__PATH__",
+  "stories": {
+    "forms-render-function--primary": {
+      "description": undefined,
+      "id": "forms-render-function--primary",
+      "name": "Primary",
+      "summary": undefined,
+    },
+  },
+}

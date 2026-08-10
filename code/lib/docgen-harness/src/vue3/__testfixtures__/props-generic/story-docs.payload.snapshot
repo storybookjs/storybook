@@ -1,0 +1,14 @@
+{
+  "id": "props-generic",
+  "import": "import PropsGeneric from './PropsGeneric.vue';",
+  "name": "PropsGeneric",
+  "path": "__PATH__",
+  "stories": {
+    "forms-props-generic--props-as-written": {
+      "description": undefined,
+      "id": "forms-props-generic--props-as-written",
+      "name": "Props As Written",
+      "summary": undefined,
+    },
+  },
+}

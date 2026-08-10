@@ -7,7 +7,8 @@ import {
   mergeArgsRecords,
   metaArgsRecord,
   normalizeStoryDeclaration,
-  resolveIdentifierInit,
+  resolveRenderFunction,
+  storyAssignedArgsPath,
 } from 'storybook/internal/csf-tools';
 
 import { invariant } from './utils.ts';
@@ -44,50 +45,8 @@ export function getCodeSnippet(
   const metaPath = metaObjectPath(csf);
   const metaProps = metaPath?.get('properties').filter((p) => p.isObjectProperty()) ?? [];
 
-  // Tri-state render resolution: distinguishes "no render property" from
-  // "render exists but couldn't be resolved" so that an unresolvable story-level
-  // render (e.g. `render: ImportedTemplate`) doesn't incorrectly fall back to meta's render.
-  type RenderResolution =
-    | { kind: 'missing' }
-    | {
-        kind: 'resolved';
-        path: NodePath<t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration>;
-      }
-    | { kind: 'unresolved' };
-
-  const getRenderPath = (object: NodePath<t.ObjectProperty>[]): RenderResolution => {
-    const renderPath = object.find((p) => keyOf(p.node) === 'render')?.get('value');
-
-    if (!renderPath) {
-      return { kind: 'missing' };
-    }
-
-    // If render is an identifier (e.g. `render: Template`), try to resolve it
-    if (renderPath.isIdentifier()) {
-      const resolved = resolveIdentifierInit(storyDeclaration, renderPath);
-      if (
-        resolved &&
-        (resolved.isArrowFunctionExpression() ||
-          resolved.isFunctionExpression() ||
-          resolved.isFunctionDeclaration())
-      ) {
-        return { kind: 'resolved', path: resolved };
-      }
-      // Render property exists but couldn't be resolved — don't fall back to meta's render
-      return { kind: 'unresolved' };
-    }
-
-    if (!(renderPath.isArrowFunctionExpression() || renderPath.isFunctionExpression())) {
-      throw renderPath.buildCodeFrameError(
-        'Expected render to be an arrow function or function expression'
-      );
-    }
-
-    return { kind: 'resolved', path: renderPath };
-  };
-
-  const metaRender = getRenderPath(metaProps);
-  const storyRender = getRenderPath(storyProps);
+  const metaRender = resolveRenderFunction(metaProps, storyDeclaration);
+  const storyRender = resolveRenderFunction(storyProps, storyDeclaration);
 
   // Story render takes precedence. Only fall back to meta render when the story
   // has no render property at all — NOT when it has one that couldn't be resolved.
@@ -107,8 +66,8 @@ export function getCodeSnippet(
     .map((p) => p.get('value'))
     .find((v) => v.isObjectExpression());
   const storyArgs = argsRecordFromObjectPath(storyArgsPath);
-  const storyAssignedArgsPath = storyArgsAssignmentPath(csf._file.path, storyName);
-  const storyAssignedArgs = argsRecordFromObjectPath(storyAssignedArgsPath);
+  const assignedArgsPath = storyAssignedArgsPath(csf._file.path, storyName);
+  const storyAssignedArgs = argsRecordFromObjectPath(assignedArgsPath);
   const merged: Record<string, t.Node> = {
     ...mergeArgsRecords(metaArgs, storyArgs),
     ...storyAssignedArgs,
@@ -217,32 +176,6 @@ function buildInvalidSpread(entries: ReadonlyArray<[string, t.Node]>): t.JSXSpre
 }
 
 const isValidJsxAttrName = (n: string) => /^[A-Za-z_][A-Za-z0-9_:-]*$/.test(n);
-
-/** Find `StoryName.args = { ... }` assignment and return the right-hand ObjectExpression if present. */
-function storyArgsAssignmentPath(
-  program: NodePath<t.Program>,
-  storyName: string
-): NodePath<t.ObjectExpression> | null {
-  let found: NodePath<t.ObjectExpression> | null = null;
-  program.traverse({
-    AssignmentExpression(p) {
-      const left = p.get('left');
-      const right = p.get('right');
-      if (left.isMemberExpression()) {
-        const obj = left.get('object');
-        const prop = left.get('property');
-        const isStoryIdent = obj.isIdentifier() && obj.node.name === storyName;
-        const isArgsProp =
-          (prop.isIdentifier() && prop.node.name === 'args' && !left.node.computed) ||
-          (t.isStringLiteral(prop.node) && left.node.computed && prop.node.value === 'args');
-        if (isStoryIdent && isArgsProp && right.isObjectExpression()) {
-          found = right as NodePath<t.ObjectExpression>;
-        }
-      }
-    },
-  });
-  return found;
-}
 
 const toAttr = (key: string, value: t.Node) => {
   if (t.isBooleanLiteral(value)) {

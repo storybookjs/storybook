@@ -558,7 +558,6 @@ describe('stories API', () => {
           'component-a',
           'component-a--page',
           'component-a--story-2',
-          'component-b',
           'component-b--docs',
           'component-c',
           'component-c--story-4',
@@ -578,7 +577,7 @@ describe('stories API', () => {
           const { store } = moduleArgs;
           api.setIndex({ v: 5, entries: docsEntries });
           const { index } = store.getState();
-          expect(Object.keys(index!)).toEqual(['component-b', 'component-b--docs']);
+          expect(Object.keys(index!)).toEqual(['component-b--docs']);
         });
       });
     });

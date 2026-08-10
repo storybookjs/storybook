@@ -99,6 +99,24 @@ function createReactProjectFactory(typescript: typeof ts): {
   };
 }
 
+/**
+ * `import('typescript')` can resolve to a namespace that carries only version info: TypeScript 7's
+ * `typescript` package ships `lib/version.cjs` as its sole entry point, so `ts.sys` (and the
+ * factories the manager builds on) are `undefined`. Without this check, extraction crashes deep in
+ * project setup with a cryptic "Cannot read properties of undefined"; fail fast so callers can fall
+ * back to their no-TypeScript path.
+ */
+function assertTypeScriptCompilerApi(typescript: typeof ts): void {
+  if (typeof typescript?.sys?.fileExists !== 'function') {
+    throw new Error(
+      'The resolved `typescript` package does not expose the compiler API (`ts.sys` is undefined). ' +
+        'This happens when `typescript` resolves to a build without the full API, such as the ' +
+        'TypeScript 7 native-preview package. Component metadata extraction requires a standard ' +
+        'TypeScript installation.'
+    );
+  }
+}
+
 export class ComponentMetaManager extends BaseComponentMetaManager<
   ComponentMetaProject,
   ts.ParsedCommandLine
@@ -112,6 +130,7 @@ export class ComponentMetaManager extends BaseComponentMetaManager<
    *   to disable recycling and assert the OOM still happens without the fix.
    */
   constructor(typescript: typeof ts, recycleHeapPressureRatio?: number) {
+    assertTypeScriptCompilerApi(typescript);
     const { factory, fsFileSnapshots } = createReactProjectFactory(typescript);
     super(typescript, factory, recycleHeapPressureRatio);
     this.fsFileSnapshots = fsFileSnapshots;

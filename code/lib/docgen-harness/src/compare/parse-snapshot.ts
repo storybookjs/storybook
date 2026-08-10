@@ -178,7 +178,7 @@ export function parseArgTypesSnapshot(
     return fail('unexpected trailing content');
   }
 
-const source = text.endsWith('\n') ? text.slice(0, -1) : text;
+  const source = text.endsWith('\n') ? text.slice(0, -1) : text;
   const reserialized = reserialize(result, '');
   if (reserialized !== source) {
     let index = 0;

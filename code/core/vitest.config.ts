@@ -11,6 +11,10 @@ export default mergeConfig(
     resolve: {
       conditions: ['node'],
       mainFields: ['main'],
+      // Nested @polka/url@0.5.0 is CJS and breaks polka's named `parse` import.
+      alias: {
+        '@polka/url': '@polka/url/build.mjs',
+      },
     },
     ssr: {
       external: ['oxc-parser', 'oxc-resolver'],

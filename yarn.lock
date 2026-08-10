@@ -7343,17 +7343,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@polka/url@npm:1.0.0-next.29, @polka/url@npm:^1.0.0-next.24":
+  version: 1.0.0-next.29
+  resolution: "@polka/url@npm:1.0.0-next.29"
+  checksum: 10c0/0d58e081844095cb029d3c19a659bfefd09d5d51a2f791bc61eba7ea826f13d6ee204a8a448c2f5a855c17df07b37517373ff916dd05801063c0568ae9937684
+  languageName: node
+  linkType: hard
+
 "@polka/url@npm:^0.5.0":
   version: 0.5.0
   resolution: "@polka/url@npm:0.5.0"
   checksum: 10c0/76324126e1608f4cdc5c6b11b618ca67612c37d45401f3fbcce4967294093761b7568cc6ae74ade8afbe744547e72e9d50bc38f690ddea0904a1d66a6b8a0093
-  languageName: node
-  linkType: hard
-
-"@polka/url@npm:^1.0.0-next.21, @polka/url@npm:^1.0.0-next.24":
-  version: 1.0.0-next.29
-  resolution: "@polka/url@npm:1.0.0-next.29"
-  checksum: 10c0/0d58e081844095cb029d3c19a659bfefd09d5d51a2f791bc61eba7ea826f13d6ee204a8a448c2f5a855c17df07b37517373ff916dd05801063c0568ae9937684
   languageName: node
   linkType: hard
 

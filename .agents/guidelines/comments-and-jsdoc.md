@@ -21,7 +21,7 @@ Delete the comment, reread the code, and write down the question you can no long
 Public API means what a consumer can import from the package entry point, not what a file happens to `export`. Everything else is a `//` comment. The syntax tells a reviewer who the audience is without reading a word of it.
 
 **2. A comment may never be longer than the code it describes.**
-If the block is longer than the body, delete the block or shrink the code. No exception, and no arbitrary line limit needed: the rule scales itself.
+If the block is longer than the body, delete the block or shrink the code.
 
 **3. On a `private` or `protected` member, a docblock has to earn its place.**
 It is allowed, and a subtle algorithm or a non-obvious invariant is a good reason for one. But nothing outside the class can reach the member, so renaming or splitting it is always available to you, and one of those is often the better fix. Apply the deletion test before writing one.

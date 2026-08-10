@@ -32,7 +32,7 @@ export const moduleGraphIndexServiceDef = defineService({
     storiesByFile: {},
   } as ModuleGraphIndexServiceState,
   queries: {
-    storiesForFiles: {
+    _storiesForFiles: {
       internal: true,
       description:
         'Internal lookup used by `core/module-graph.storiesForFiles`. Prefer the hot service query from consumers.',

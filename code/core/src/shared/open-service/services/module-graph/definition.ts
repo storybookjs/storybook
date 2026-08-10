@@ -113,7 +113,7 @@ export const moduleGraphServiceDef = defineService({
       handler: (input, ctx) =>
         ctx
           .getService<ModuleGraphIndexService>('core/module-graph-index', { internal: true })
-          .queries.storiesForFiles.get(input),
+          .queries._storiesForFiles.get(input),
     },
     status: {
       description:

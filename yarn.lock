@@ -13034,6 +13034,7 @@ __metadata:
     "@vue/language-core": "npm:^3.2.7"
     type-fest: "npm:^5.6.0"
     typescript: "npm:^6.0.3"
+    ultrahtml: "npm:^1.6.0"
     vue: "npm:^3.2.47"
     vue-component-meta: "npm:^3.2.7"
     vue-component-type-helpers: "npm:^3.2.9"
@@ -38431,6 +38432,13 @@ __metadata:
   version: 1.0.0
   resolution: "uid-promise@npm:1.0.0"
   checksum: 10c0/3300c98b59144f3cf4d497b8ff1cd6bcf8d74f8451533b9b4772b2919cd7d003aa08c36ed38b61528bbc71e8a9ee953e845b4b44fb113d9848ce4bf84bb8e228
+  languageName: node
+  linkType: hard
+
+"ultrahtml@npm:^1.6.0":
+  version: 1.6.0
+  resolution: "ultrahtml@npm:1.6.0"
+  checksum: 10c0/1140be819fdde198d83ad61b0186cb1fdb9d3a5d77ff416a752ae735089851a182d2100a1654f6b70dbb4f67881fcac1afba9323e261c8a95846a63f668b4c2a
   languageName: node
   linkType: hard
 

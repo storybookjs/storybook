@@ -6,12 +6,6 @@ import type { ModuleGraphIndexService } from '../module-graph-index/definition.t
 import type { ModuleGraphServiceState } from './types.ts';
 import { toStoryIndexPath } from './types.ts';
 
-const MODULE_GRAPH_INDEX_ID = 'core/module-graph-index' as const;
-
-function getModuleGraphIndex(getService: (id: string, options: { internal: true }) => unknown) {
-  return getService(MODULE_GRAPH_INDEX_ID, { internal: true }) as ModuleGraphIndexService;
-}
-
 const errorLikeSchema: v.GenericSchema = v.object({
   message: v.pipe(v.string(), v.description('Human-readable error message.')),
   name: v.optional(v.pipe(v.string(), v.description('Error class/name, when available.'))),
@@ -117,7 +111,9 @@ export const moduleGraphServiceDef = defineService({
         )
       ),
       handler: (input, ctx) =>
-        getModuleGraphIndex(ctx.getService).queries.storiesForFiles.get(input),
+        ctx
+          .getService<ModuleGraphIndexService>('core/module-graph-index', { internal: true })
+          .queries.storiesForFiles.get(input),
     },
     status: {
       description:
@@ -233,9 +229,11 @@ export const moduleGraphServiceDef = defineService({
       }),
       output: v.void(),
       handler: async (input, ctx) => {
-        await getModuleGraphIndex(ctx.getService).commands._applyIndex({
-          storiesByFile: input.storiesByFile,
-        });
+        await ctx
+          .getService<ModuleGraphIndexService>('core/module-graph-index', { internal: true })
+          .commands._applyIndex({
+            storiesByFile: input.storiesByFile,
+          });
         ctx.self.setState((state) => {
           state.status = { value: 'ready' };
           // The snapshot is the baseline, not a change, so it does not advance the revision. Seed
@@ -274,9 +272,11 @@ export const moduleGraphServiceDef = defineService({
       output: v.void(),
       handler: async (input, ctx) => {
         if (input.storiesByFile !== undefined) {
-          await getModuleGraphIndex(ctx.getService).commands._applyIndex({
-            storiesByFile: input.storiesByFile,
-          });
+          await ctx
+            .getService<ModuleGraphIndexService>('core/module-graph-index', { internal: true })
+            .commands._applyIndex({
+              storiesByFile: input.storiesByFile,
+            });
         }
         // A change that bumps no stories must not advance the revision, so watch-all and scoped
         // subscribers stay put.

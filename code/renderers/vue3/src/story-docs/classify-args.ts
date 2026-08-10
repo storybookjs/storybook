@@ -99,15 +99,47 @@ function unsupportedArgReason(name: string, value: t.Node): string | undefined {
     return undefined;
   }
 
-  const unwrapped = unwrapValue(value);
-  if (unwrapped.type === 'Identifier') {
-    return `Arg "${name}" references "${unwrapped.name}", which cannot be statically inlined yet.`;
+  const identifier = findIdentifierValue(value);
+  if (identifier) {
+    return `Arg "${name}" references "${identifier.name}", which cannot be statically inlined yet.`;
   }
 
   // TODO: check for other non-serializable values like `new Date()`, `new Map()`
   // TODO: check how spread values can be supported, e.g. `args: { ...defaultArgs, foo: 'bar' }` or `args: { foo: 'bar', ...extraArgs }`
-  if (hasSpreadValue(unwrapped)) {
+  if (hasSpreadValue(value)) {
     return `Arg "${name}" contains a spread value, which cannot be statically inlined yet.`;
+  }
+
+  return undefined;
+}
+
+function findIdentifierValue(node: t.Node): t.Identifier | undefined {
+  const unwrapped = unwrapValue(node);
+
+  if (unwrapped.type === 'Identifier') {
+    return unwrapped;
+  }
+
+  if (unwrapped.type === 'ObjectExpression') {
+    for (const property of unwrapped.properties) {
+      if (property.type === 'ObjectProperty') {
+        const identifier = findIdentifierValue(property.value);
+        if (identifier) {
+          return identifier;
+        }
+      }
+    }
+  }
+
+  if (unwrapped.type === 'ArrayExpression') {
+    for (const element of unwrapped.elements) {
+      if (element && element.type !== 'SpreadElement') {
+        const identifier = findIdentifierValue(element);
+        if (identifier) {
+          return identifier;
+        }
+      }
+    }
   }
 
   return undefined;

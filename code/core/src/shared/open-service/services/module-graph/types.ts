@@ -20,12 +20,12 @@ export type ModuleGraphStatus =
   | { value: 'error'; error: ErrorLike }
   | { value: 'unavailable'; reason: string; error?: ErrorLike };
 
+/** Hot half: status + revision counters. Synced on every in-graph bump. */
 export type ModuleGraphServiceState = {
   /** Project root used to normalize absolute file paths in query inputs. */
   workingDir: string;
   status: ModuleGraphStatus;
   graphRevision: number;
-  storiesByFile: StoriesByFileRecord;
   /**
    * Per-story revision stamps keyed by story-index-style relative path. Each entry holds the
    * {@link graphRevision} at which that story's subgraph last changed. Seeded to `0` for every
@@ -33,6 +33,12 @@ export type ModuleGraphServiceState = {
    */
   storyChangeRevisions: Record<string, number>;
   latestChangedStoryFiles: string[];
+};
+
+/** Cold half: fat reverse index. Synced only when the index structure moves. */
+export type ModuleGraphIndexServiceState = {
+  workingDir: string;
+  storiesByFile: StoriesByFileRecord;
 };
 
 export function errorToErrorLike(error: unknown): ErrorLike {

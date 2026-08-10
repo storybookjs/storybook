@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 
+import { createTestChannel, installTestChannel } from '../../../../channels/test-channel.ts';
+import { SERVICE_PATCHES } from '../../service-channel.ts';
 import { clearRegistry } from '../../server.ts';
 import {
   buildReverseIndex,
@@ -586,6 +588,47 @@ describe('module-graph open service', () => {
           storyFiles: ['./src/Card.stories.tsx'],
         });
       });
+    });
+  });
+
+  describe('hot/cold split sync (spike)', () => {
+    afterEach(() => {
+      installTestChannel(null);
+    });
+
+    it('broadcasts only the slim hot snapshot on a bump-only update', async () => {
+      const channel = createTestChannel();
+      installTestChannel(channel);
+
+      // Many edges, few stories: cold index is large; hot revisions stay small.
+      const storyFiles = Array.from({ length: 20 }, (_, j) => `./src/story-${j}.stories.ts`);
+      const fatIndex = Object.fromEntries(
+        Array.from({ length: 400 }, (_, i) => [
+          `./src/file-${i}.ts`,
+          Object.fromEntries(storyFiles.map((storyFile) => [storyFile, 1])),
+        ])
+      );
+      const fatIndexBytes = JSON.stringify(fatIndex).length;
+
+      const runtime = registerBareModuleGraph();
+      await runtime.commands._applyGraphSnapshot({ storiesByFile: fatIndex });
+      channel.emit.mockClear();
+
+      await runtime.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./src/story-0.stories.ts'],
+      });
+
+      const patches = channel.emit.mock.calls
+        .filter(([event]) => event === SERVICE_PATCHES)
+        .map(([, payload]) => payload as { serviceId: string; state: Record<string, unknown> });
+
+      expect(patches.map((p) => p.serviceId)).toEqual(['core/module-graph']);
+      expect(patches[0].state).not.toHaveProperty('storiesByFile');
+      expect(JSON.stringify(patches[0].state).length).toBeLessThan(fatIndexBytes / 20);
+      expect(runtime.queries.graphRevision.get(undefined)).toBe(1);
+      expect(runtime.queries.storiesForFiles.get({ files: ['./src/file-0.ts'] })).toEqual([
+        storyFiles.map((storyFile) => ({ storyFile, depth: 1 })),
+      ]);
     });
   });
 });

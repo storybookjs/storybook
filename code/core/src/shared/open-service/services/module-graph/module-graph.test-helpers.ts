@@ -9,6 +9,7 @@ import { DependencyGraphBuilder } from './engine/dependency-graph/dependency-gra
 import { IncrementalPatcher } from './engine/dependency-graph/incremental-patcher.ts';
 import { ChangeDetectionResolverFactory } from './engine/dependency-graph/resolver-factory.ts';
 import { ReverseIndexImpl } from './engine/dependency-graph/reverse-index.ts';
+import { moduleGraphIndexServiceDef } from './index-definition.ts';
 
 export function createDeferred<T>() {
   let resolve!: (value: T) => void;
@@ -121,8 +122,16 @@ export function installDependencyGraphMocks(reverseIndex: ReverseIndexImpl): {
   return { patchSpy, buildSpy };
 }
 
-/** Registers module-graph for unit tests without a live engine (no-op settlement command). */
+/** Registers cold index + hot module-graph for unit tests without a live engine. */
 export function registerTestModuleGraphService(workingDir = process.cwd()) {
+  registerService({
+    ...moduleGraphIndexServiceDef,
+    initialState: {
+      ...moduleGraphIndexServiceDef.initialState,
+      workingDir,
+    },
+  });
+
   return registerService(
     {
       ...moduleGraphServiceDef,

@@ -2,9 +2,9 @@ import { type NodePath, types as t } from 'storybook/internal/babel';
 
 import type { CsfFile } from '../CsfFile.ts';
 
-/** Static key of an object property, or `null` when computed/non-literal. */
-export const keyOf = (p: t.ObjectProperty): string | null =>
-  p.computed
+/** Static key of an object member, or `null` when computed/non-literal. */
+export const keyOf = (p: t.ObjectMethod | t.ObjectProperty | t.SpreadElement): string | null =>
+  t.isSpreadElement(p) || p.computed
     ? null
     : t.isIdentifier(p.key)
       ? p.key.name

@@ -22,13 +22,19 @@ import {
   normalizeStoryDeclaration,
   resolveComponentImport,
   propertyValue,
+  resolveRenderFunction,
+  returnedObjectExpression,
   storyAssignedArgsPath,
+  type ImportBinding,
+  type RenderResolution,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 
+import { importStatementForBinding } from './ast-utils.ts';
 import { classifyArgs, type VueDocgenArgInfo } from './classify-args.ts';
 import { renderSfcSnippet } from './render-sfc.ts';
+import { readTemplateRenderConfig, transformTemplate } from './transform-template.ts';
 
 export interface BuildStoryDocsContext {
   /** Resolve a CSF import path to an absolute file path. Defaults to `process.cwd()` join. */
@@ -45,6 +51,7 @@ interface StorySnippetContext {
 interface StoryDocsContext {
   /** Present only when the component identifier and docgen data can synthesize snippets. */
   snippet: StorySnippetContext | undefined;
+  importBindings: Map<string, ImportBinding>;
   metaPath: NodePath<t.ObjectExpression> | undefined;
   metaArgsError: StoryDoc['error'] | undefined;
   metaArgsPath: ArgsObjectPath | undefined;
@@ -52,6 +59,11 @@ interface StoryDocsContext {
 
 type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
 type ArgsObjectPath = NodePath<t.ObjectExpression>;
+type StoryDocResult = { doc: StoryDoc; imports: string[] };
+type ExtractStoriesResult = { stories: Record<string, StoryDoc>; imports: string[] };
+type StaticStoryArgs =
+  | { kind: 'error'; error: NonNullable<StoryDoc['error']> }
+  | { kind: 'classified'; classified: ReturnType<typeof classifyArgs> };
 
 const ARGS_PROPERTY = 'args';
 
@@ -96,22 +108,28 @@ export async function buildStoryDocsPayload(
     // Docgen is optional here: without it the payload is still built, just without snippets.
   }
   const componentName = resolveMetaComponentIdentifier(metaPath);
-  const importStatement = createImportStatement(csf, componentName);
+  const importBindings = collectImportBindings(csf._file.path);
+  const importStatement = createImportStatement(componentName, importBindings);
   const docgenArgInfo =
     docgenPayload && !docgenPayload.error ? vueDocgenArgInfo(docgenPayload) : undefined;
   const snippet = componentName && docgenArgInfo ? { componentName, docgenArgInfo } : undefined;
+  const extracted = extractStories(csf, {
+    snippet,
+    importBindings,
+    metaPath,
+    metaArgsError: argsContainerError(metaPath),
+    metaArgsPath: argsObjectPathFromObjectPath(metaPath),
+  });
+  const importCode = Array.from(
+    new Set([importStatement, ...extracted.imports].filter((line): line is string => Boolean(line)))
+  ).join('\n');
 
   return {
     id,
     name: componentName ?? docgenPayload?.name ?? fallbackTitle(input.entry.title),
     path: storyFilePath,
-    ...(importStatement ? { import: importStatement } : {}),
-    stories: extractStories(csf, {
-      snippet,
-      metaPath,
-      metaArgsError: argsContainerError(metaPath),
-      metaArgsPath: argsObjectPathFromObjectPath(metaPath),
-    }),
+    ...(importCode ? { import: importCode } : {}),
+    stories: extracted.stories,
   };
 }
 
@@ -136,12 +154,15 @@ function resolveMetaComponentIdentifier(
 /**
  * Reconstructs the component's import statement from the story file's import bindings.
  */
-function createImportStatement(csf: ParsedCsf, componentName?: string): string | undefined {
+function createImportStatement(
+  componentName: string | undefined,
+  importBindings: Map<string, ImportBinding>
+): string | undefined {
   if (!componentName) {
     return undefined;
   }
 
-  const ref = resolveComponentImport(componentName, collectImportBindings(csf._file.path));
+  const ref = resolveComponentImport(componentName, importBindings);
   return buildImportStatements({ refs: [ref] }).join('\n') || undefined;
 }
 
@@ -202,10 +223,10 @@ function argsObjectHasSpread(object: t.ObjectExpression | undefined): boolean {
 /**
  * Maps every CSF story export to its StoryDoc, enriched with a snippet or error where possible.
  */
-function extractStories(csf: ParsedCsf, options: StoryDocsContext): Record<string, StoryDoc> {
+function extractStories(csf: ParsedCsf, options: StoryDocsContext): ExtractStoriesResult {
   const metaArgs = metaArgsRecord(options.metaPath?.node);
-
-  return Object.fromEntries(
+  const imports = new Set<string>();
+  const stories = Object.fromEntries(
     Object.entries(csf._stories).map(([storyExport, story]): [string, StoryDoc] => {
       const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[storyExport]);
       const storyDoc: StoryDoc = {
@@ -214,9 +235,15 @@ function extractStories(csf: ParsedCsf, options: StoryDocsContext): Record<strin
         description,
         summary,
       };
-      return [story.id, enrichStoryDoc(csf, storyExport, storyDoc, metaArgs, options)];
+      const enriched = enrichStoryDoc(csf, storyExport, storyDoc, metaArgs, options);
+      for (const importStatement of enriched.imports) {
+        imports.add(importStatement);
+      }
+      return [story.id, enriched.doc];
     })
   );
+
+  return { imports: Array.from(imports), stories };
 }
 
 /**
@@ -228,9 +255,9 @@ function enrichStoryDoc(
   storyDoc: StoryDoc,
   metaArgs: Record<string, t.Node>,
   options: StoryDocsContext
-): StoryDoc {
+): StoryDocResult {
   if (!options.snippet) {
-    return storyDoc;
+    return { doc: storyDoc, imports: [] };
   }
   const { componentName, docgenArgInfo } = options.snippet;
 
@@ -238,32 +265,147 @@ function enrichStoryDoc(
   try {
     normalized = normalizeStoryDeclaration(csf._storyDeclarationPath[storyExport]);
   } catch {
-    return storyDoc;
+    return { doc: storyDoc, imports: [] };
   }
 
   if (normalized.type === 'fn') {
-    return storyDoc;
+    return { doc: storyDoc, imports: [] };
   }
 
-  const storyConfig = normalized.type === 'config' ? normalized.path.node : undefined;
-  if (hasEffectiveRender(storyConfig, options.metaPath?.node)) {
-    return storyDoc;
+  const storyConfigPath = normalized.type === 'config' ? normalized.path : undefined;
+  const effectiveRender = resolveEffectiveRender(
+    storyConfigPath,
+    options.metaPath,
+    csf._storyDeclarationPath[storyExport]
+  );
+  if (effectiveRender.kind === 'resolved') {
+    return enrichStoryDocFromTemplateRender(
+      csf,
+      storyExport,
+      storyDoc,
+      effectiveRender.path,
+      metaArgs,
+      storyConfigPath,
+      docgenArgInfo,
+      options
+    );
+  }
+  if (effectiveRender.kind === 'unresolved') {
+    return { doc: storyDoc, imports: [] };
   }
 
-  const storyArgsError =
-    normalized.type === 'config' ? argsContainerError(normalized.path) : undefined;
-  if (options.metaArgsError || storyArgsError) {
-    return { ...storyDoc, error: options.metaArgsError ?? storyArgsError };
+  const resolved = resolveStaticStoryArgs({
+    csf,
+    storyExport,
+    docgenArgInfo,
+    metaArgs,
+    metaArgsError: options.metaArgsError,
+    metaArgsPath: options.metaArgsPath,
+    storyConfigPath,
+  });
+  if (resolved.kind === 'error') {
+    return { doc: { ...storyDoc, error: resolved.error }, imports: [] };
+  }
+
+  const classified = resolved.classified;
+  if (classified.defer) {
+    return { doc: storyDoc, imports: [] };
+  }
+
+  return {
+    doc: {
+      ...storyDoc,
+      snippet: renderSfcSnippet({
+        componentName,
+        args: classified.args,
+      }),
+      ...(classified.warning ? { warning: classified.warning } : {}),
+    },
+    imports: [],
+  };
+}
+
+function enrichStoryDocFromTemplateRender(
+  csf: ParsedCsf,
+  storyExport: string,
+  storyDoc: StoryDoc,
+  renderFunction: NodePath<
+    t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration
+  >,
+  metaArgs: Record<string, t.Node>,
+  storyConfigPath: NodePath<t.ObjectExpression> | undefined,
+  docgenArgInfo: VueDocgenArgInfo,
+  options: StoryDocsContext
+): StoryDocResult {
+  const renderObject = returnedObjectExpression(renderFunction.node);
+  const templateConfig = renderObject
+    ? readTemplateRenderConfig(renderObject, options.importBindings)
+    : undefined;
+  if (!templateConfig) {
+    return { doc: storyDoc, imports: [] };
+  }
+
+  const resolved = resolveStaticStoryArgs({
+    csf,
+    storyExport,
+    docgenArgInfo,
+    metaArgs,
+    metaArgsError: options.metaArgsError,
+    metaArgsPath: options.metaArgsPath,
+    storyConfigPath,
+  });
+  if (resolved.kind === 'error') {
+    return { doc: storyDoc, imports: [] };
+  }
+
+  const classified = resolved.classified;
+  if (classified.defer) {
+    return { doc: storyDoc, imports: [] };
+  }
+
+  const transformed = transformTemplate({
+    args: classified.args,
+    componentImports: templateConfig.componentImports,
+    template: templateConfig.template,
+  });
+  if (!transformed) {
+    return { doc: storyDoc, imports: [] };
+  }
+
+  return {
+    doc: {
+      ...storyDoc,
+      snippet: transformed.snippet,
+      ...(classified.warning ? { warning: classified.warning } : {}),
+    },
+    imports: transformed.imports,
+  };
+}
+
+function resolveStaticStoryArgs(input: {
+  csf: ParsedCsf;
+  storyExport: string;
+  docgenArgInfo: VueDocgenArgInfo;
+  metaArgs: Record<string, t.Node>;
+  metaArgsError: StoryDoc['error'] | undefined;
+  metaArgsPath: ArgsObjectPath | undefined;
+  storyConfigPath: NodePath<t.ObjectExpression> | undefined;
+}): StaticStoryArgs {
+  const storyArgsError = input.storyConfigPath
+    ? argsContainerError(input.storyConfigPath)
+    : undefined;
+  if (input.metaArgsError || storyArgsError) {
+    return { kind: 'error', error: input.metaArgsError ?? storyArgsError! };
   }
 
   // `Primary.args = { … }` runs after the declaration and replaces its args object outright, so an
   // assignment wins over inline args rather than merging with them.
   const storyArgsPath =
-    storyAssignedArgsPath(csf._file.path, storyExport) ??
-    (normalized.type === 'config' ? argsObjectPathFromObjectPath(normalized.path) : undefined);
-  if (argsObjectHasSpread(options.metaArgsPath?.node) || argsObjectHasSpread(storyArgsPath?.node)) {
+    storyAssignedArgsPath(input.csf._file.path, input.storyExport) ??
+    (input.storyConfigPath ? argsObjectPathFromObjectPath(input.storyConfigPath) : undefined);
+  if (argsObjectHasSpread(input.metaArgsPath?.node) || argsObjectHasSpread(storyArgsPath?.node)) {
     return {
-      ...storyDoc,
+      kind: 'error',
       error: {
         name: 'Unsupported story args',
         message: 'Story args contain a spread value, which cannot be statically inlined yet.',
@@ -272,29 +414,50 @@ function enrichStoryDoc(
   }
 
   const storyArgs = argsRecordFromObjectPath(storyArgsPath);
-  const classified = classifyArgs(mergeArgsRecords(metaArgs, storyArgs), docgenArgInfo);
-  if (classified.defer) {
-    return storyDoc;
-  }
-
   return {
-    ...storyDoc,
-    snippet: renderSfcSnippet({
-      componentName,
-      args: classified.args,
-    }),
-    ...(classified.warning ? { warning: classified.warning } : {}),
+    kind: 'classified',
+    classified: classifyArgs(mergeArgsRecords(input.metaArgs, storyArgs), input.docgenArgInfo),
   };
 }
 
-/**
- * Effective render presence means runtime source stays authoritative.
- */
-function hasEffectiveRender(
-  storyConfig: t.ObjectExpression | undefined,
-  metaConfig: t.ObjectExpression | undefined
-): boolean {
-  return Boolean(propertyValue(storyConfig, 'render') || propertyValue(metaConfig, 'render'));
+function resolveEffectiveRender(
+  storyConfigPath: NodePath<t.ObjectExpression> | undefined,
+  metaPath: NodePath<t.ObjectExpression> | undefined,
+  storyDeclaration: NodePath<t.Node>
+): RenderResolution {
+  const storyRender = storyConfigPath
+    ? resolveRenderFromObjectPath(storyConfigPath, storyDeclaration)
+    : { kind: 'missing' as const };
+  if (storyRender.kind !== 'missing') {
+    return storyRender;
+  }
+
+  const metaRender = metaPath
+    ? resolveRenderFromObjectPath(metaPath, storyDeclaration)
+    : { kind: 'missing' as const };
+  return metaRender;
+}
+
+function resolveRenderFromObjectPath(
+  path: NodePath<t.ObjectExpression>,
+  storyDeclaration: NodePath<t.Node>
+): RenderResolution {
+  try {
+    const properties = objectPropertyPaths(path);
+    const resolved = resolveRenderFunction(properties, storyDeclaration);
+    return resolved.kind === 'missing' &&
+      path.node.properties.some((property) => t.isSpreadElement(property))
+      ? { kind: 'unresolved' }
+      : resolved;
+  } catch {
+    return { kind: 'unresolved' };
+  }
+}
+
+function objectPropertyPaths(path: NodePath<t.ObjectExpression>): NodePath<t.ObjectProperty>[] {
+  return path
+    .get('properties')
+    .filter((property): property is NodePath<t.ObjectProperty> => property.isObjectProperty());
 }
 
 /**

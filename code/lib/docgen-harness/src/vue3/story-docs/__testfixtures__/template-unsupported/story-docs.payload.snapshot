@@ -8,9 +8,6 @@
       "description": undefined,
       "id": "forms-template-unsupported--primary",
       "name": "Primary",
-      "snippet": "<template>
-  <TemplateUnsupportedPanel hidden label="Hidden panel" />
-</template>",
       "summary": undefined,
     },
   },

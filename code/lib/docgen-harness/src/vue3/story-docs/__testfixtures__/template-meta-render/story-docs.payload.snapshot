@@ -8,18 +8,12 @@
       "description": undefined,
       "id": "forms-template-meta-render--primary",
       "name": "Primary",
-      "snippet": "<template>
-  <MetaRenderButton label="Primary" variant="primary" />
-</template>",
       "summary": undefined,
     },
     "forms-template-meta-render--secondary": {
       "description": undefined,
       "id": "forms-template-meta-render--secondary",
       "name": "Secondary",
-      "snippet": "<template>
-  <MetaRenderButton label="Secondary" variant="secondary" />
-</template>",
       "summary": undefined,
     },
   },

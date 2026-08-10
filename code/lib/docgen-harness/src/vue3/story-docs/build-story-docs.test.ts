@@ -20,6 +20,7 @@ type FixtureCase = {
   testDir: string;
   tree: 'story-docs' | 'docgen';
 };
+type FixtureArgTypes = NonNullable<DocgenPayload['argTypes']>;
 
 /** A directory is a fixture only if it holds a story file, so stray tooling dirs stay out. */
 function fixtureCases(fixturesDir: string): string[] {
@@ -57,10 +58,25 @@ function docgenForFixture(
     return undefined;
   }
 
-  const details: Record<string, { events?: string[]; slots?: string[] }> = {
-    'function-slot': { slots: ['default'] },
-    slots: { slots: ['default', 'header'] },
-    'v-model': { events: ['update:modelValue', 'update:checked'] },
+  const argTypesByFixture: Record<string, FixtureArgTypes> = {
+    'function-slot': {
+      default: argType('default', 'slots'),
+    },
+    'prop-slot-collision': {
+      default: argType('default', 'props'),
+      icon: argType('icon', 'props'),
+    },
+    'slot-scoped': {
+      item: argType('item', 'slots'),
+    },
+    slots: {
+      default: argType('default', 'slots'),
+      header: argType('header', 'slots'),
+    },
+    'v-model': {
+      'update:checked': argType('update:checked', 'events'),
+      'update:modelValue': argType('update:modelValue', 'events'),
+    },
   };
 
   return {
@@ -68,9 +84,19 @@ function docgenForFixture(
     name: componentNameFromFixture(fixtureCase),
     path,
     jsDocTags: {},
-    vueComponentMeta: {
-      events: (details[fixtureCase]?.events ?? []).map((name) => ({ name })),
-      slots: (details[fixtureCase]?.slots ?? []).map((name) => ({ name })),
+    argTypes: argTypesByFixture[fixtureCase] ?? {},
+  };
+}
+
+function argType(name: string, category: string): FixtureArgTypes[string] {
+  return {
+    name,
+    table: {
+      category,
+    },
+    type: {
+      name: 'other',
+      value: 'unknown',
     },
   };
 }

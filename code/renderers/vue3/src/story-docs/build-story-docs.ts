@@ -88,6 +88,7 @@ export async function buildStoryDocsPayload(
     stories: extractStories(csf, {
       componentName,
       docgenArgInfo,
+      metaPath: metaObjectPath(csf),
       metaArgsError: argsContainerError(metaObjectPath(csf)),
       metaArgsPath: metaArgsObjectPath(csf),
     }),
@@ -140,25 +141,11 @@ async function readDocgenFromService(id: string): Promise<DocgenPayload | undefi
 }
 
 /**
- * Collects the slot and event names known to docgen, which drive arg classification.
+ * Collects the slot and event names from renderer-converted argTypes.
  */
 function vueDocgenArgInfo(payload: DocgenPayload): VueDocgenArgInfo {
   const slots = new Set<string>();
   const events = new Set<string>();
-  const vueComponentMeta = payload.vueComponentMeta;
-
-  if (isVueComponentMeta(vueComponentMeta)) {
-    for (const slot of vueComponentMeta.slots) {
-      if (typeof slot.name === 'string') {
-        slots.add(slot.name);
-      }
-    }
-    for (const event of vueComponentMeta.events) {
-      if (typeof event.name === 'string') {
-        events.add(event.name);
-      }
-    }
-  }
 
   for (const [name, argType] of Object.entries(payload.argTypes ?? {})) {
     const category = argType.table?.category;
@@ -170,17 +157,6 @@ function vueDocgenArgInfo(payload: DocgenPayload): VueDocgenArgInfo {
   }
 
   return { slots, events };
-}
-
-function isVueComponentMeta(
-  value: unknown
-): value is { slots: Array<{ name?: unknown }>; events: Array<{ name?: unknown }> } {
-  return (
-    typeof value === 'object' &&
-    value !== null &&
-    Array.isArray((value as { slots?: unknown }).slots) &&
-    Array.isArray((value as { events?: unknown }).events)
-  );
 }
 
 function metaArgsObjectPath(csf: ParsedCsf): ArgsObjectPath {
@@ -217,11 +193,13 @@ function extractStories(
   options: {
     componentName?: string;
     docgenArgInfo?: VueDocgenArgInfo;
+    metaPath?: NodePath<t.ObjectExpression>;
     metaArgsError?: StoryDoc['error'];
     metaArgsPath: ArgsObjectPath;
   }
 ): Record<string, StoryDoc> {
-  const metaArgs = metaArgsRecord(metaObjectPath(csf)?.node);
+  const metaPath = options.metaPath ?? metaObjectPath(csf);
+  const metaArgs = metaArgsRecord(metaPath?.node);
 
   return Object.fromEntries(
     Object.entries(csf._stories).map(([storyExport, story]): [string, StoryDoc] => {
@@ -248,6 +226,7 @@ function enrichStoryDoc(
   options: {
     componentName?: string;
     docgenArgInfo?: VueDocgenArgInfo;
+    metaPath?: NodePath<t.ObjectExpression>;
     metaArgsError?: StoryDoc['error'];
     metaArgsPath: ArgsObjectPath;
   }
@@ -264,6 +243,11 @@ function enrichStoryDoc(
   }
 
   if (normalized.type === 'fn') {
+    return storyDoc;
+  }
+
+  const storyConfig = normalized.type === 'config' ? normalized.path.node : undefined;
+  if (hasEffectiveRender(storyConfig, options.metaPath?.node)) {
     return storyDoc;
   }
 
@@ -301,6 +285,16 @@ function enrichStoryDoc(
       args: classified.args,
     }),
   };
+}
+
+/**
+ * Effective render presence means runtime source stays authoritative.
+ */
+function hasEffectiveRender(
+  storyConfig: t.ObjectExpression | undefined,
+  metaConfig: t.ObjectExpression | undefined
+): boolean {
+  return Boolean(propertyValue(storyConfig, 'render') || propertyValue(metaConfig, 'render'));
 }
 
 /**

@@ -8,9 +8,6 @@
       "description": undefined,
       "id": "forms-render-function--primary",
       "name": "Primary",
-      "snippet": "<template>
-  <RenderFunctionButton label="Render" />
-</template>",
       "summary": undefined,
     },
   },

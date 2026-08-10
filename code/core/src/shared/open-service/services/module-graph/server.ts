@@ -3,10 +3,10 @@ import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 import type { Presets } from 'storybook/internal/types';
 
 import { registerService } from '../../server.ts';
+import { registerModuleGraphIndexService } from '../module-graph-index/server.ts';
 import { moduleGraphServiceDef } from './definition.ts';
 import type { ChangeDetectionAdapter } from './engine/adapters/types.ts';
 import { ModuleGraphEngine, type ModuleGraphEngineOptions } from './engine/module-graph-engine.ts';
-import { moduleGraphIndexServiceDef } from './index-definition.ts';
 import { errorToErrorLike } from './types.ts';
 
 export type RegisterModuleGraphServiceOptions = {
@@ -39,10 +39,9 @@ export function resolveChangeDetectionAdapter(
 }
 
 /**
- * Registers `core/module-graph-index` (cold reverse index) and `core/module-graph` (hot revisions),
- * constructs the graph engine, wires state mirroring into the service commands, and listens for
- * story-index invalidation on the server channel. The engine starts once
- * {@link resolveChangeDetectionAdapter} provides the builder adapter.
+ * Registers `core/module-graph-index` then `core/module-graph`, constructs the graph engine, wires
+ * state mirroring into the service commands, and listens for story-index invalidation on the server
+ * channel. The engine starts once {@link resolveChangeDetectionAdapter} provides the builder adapter.
  *
  * The engine lives for the entire dev-server process, so there is no teardown path: the OS reclaims
  * everything when the process exits.
@@ -51,13 +50,7 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
   const workingDir = options.workingDir ?? process.cwd();
   let engine: ModuleGraphEngine | undefined = undefined;
 
-  registerService({
-    ...moduleGraphIndexServiceDef,
-    initialState: {
-      ...moduleGraphIndexServiceDef.initialState,
-      workingDir,
-    },
-  });
+  registerModuleGraphIndexService(workingDir);
 
   const runtime = registerService(
     {

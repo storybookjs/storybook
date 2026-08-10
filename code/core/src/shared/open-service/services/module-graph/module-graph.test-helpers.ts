@@ -3,13 +3,13 @@ import { vi } from 'vitest';
 import type { StoryIndex } from 'storybook/internal/types';
 
 import { registerService } from '../../server.ts';
+import { registerModuleGraphIndexService } from '../module-graph-index/server.ts';
 import { moduleGraphServiceDef } from './definition.ts';
 import type { ChangeDetectionAdapter, FileChangeEvent } from './engine/adapters/types.ts';
 import { DependencyGraphBuilder } from './engine/dependency-graph/dependency-graph-builder.ts';
 import { IncrementalPatcher } from './engine/dependency-graph/incremental-patcher.ts';
 import { ChangeDetectionResolverFactory } from './engine/dependency-graph/resolver-factory.ts';
 import { ReverseIndexImpl } from './engine/dependency-graph/reverse-index.ts';
-import { moduleGraphIndexServiceDef } from './index-definition.ts';
 
 export function createDeferred<T>() {
   let resolve!: (value: T) => void;
@@ -122,15 +122,9 @@ export function installDependencyGraphMocks(reverseIndex: ReverseIndexImpl): {
   return { patchSpy, buildSpy };
 }
 
-/** Registers cold index + hot module-graph for unit tests without a live engine. */
+// Registers cold index + hot module-graph for unit tests without a live engine.
 export function registerTestModuleGraphService(workingDir = process.cwd()) {
-  registerService({
-    ...moduleGraphIndexServiceDef,
-    initialState: {
-      ...moduleGraphIndexServiceDef.initialState,
-      workingDir,
-    },
-  });
+  registerModuleGraphIndexService(workingDir);
 
   return registerService(
     {

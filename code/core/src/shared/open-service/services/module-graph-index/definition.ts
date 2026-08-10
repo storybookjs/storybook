@@ -2,13 +2,9 @@ import * as v from 'valibot';
 
 import { defineService } from '../../service-definition.ts';
 import type { ServiceInstanceOf } from '../../types.ts';
-import type { ModuleGraphIndexServiceState, StoriesByFileRecord } from './types.ts';
-import { toStoryIndexPath } from './types.ts';
+import type { ModuleGraphIndexServiceState, StoriesByFileRecord } from '../module-graph/types.ts';
+import { toStoryIndexPath } from '../module-graph/types.ts';
 
-/**
- * Reverse index shape `sourceFile -> storyFile -> breadth-first-search depth`. The depth is the
- * shortest number of import edges between the source file and the affected story file.
- */
 const storyIndexPathSchema = v.pipe(
   v.string(),
   v.description('A story-index-style relative path such as `./src/Button.stories.tsx`.')
@@ -24,24 +20,22 @@ const storiesByFileSchema = v.record(
   v.record(storyIndexPathSchema, storyDependencyDepthSchema)
 );
 
-/**
- * Cold half of the module graph: the fat reverse index. Updated only when the index structure
- * moves (initial build or an import-set change). Bump-only saves never touch this service, so its
- * snapshot is not re-broadcast on every keystroke.
- */
+export type { ModuleGraphIndexServiceState } from '../module-graph/types.ts';
+
 export const moduleGraphIndexServiceDef = defineService({
   id: 'core/module-graph-index',
   internal: true,
   description:
-    'Reverse index from source files to story files. Paired with `core/module-graph` (revisions/status); not updated on bump-only patches.',
+    'Reverse index from source files to story files. Paired with `core/module-graph` (revisions/status); updated only when the index structure moves, not on bump-only patches.',
   initialState: {
     workingDir: process.cwd(),
     storiesByFile: {},
   } as ModuleGraphIndexServiceState,
   queries: {
     storiesForFiles: {
+      internal: true,
       description:
-        'Returns, for each input file (same order), story-index-relative story files that depend on it and their breadth-first-search depth: the shortest number of import edges between the input file and the story file.',
+        'Internal lookup used by `core/module-graph.storiesForFiles`. Prefer the hot service query from consumers.',
       input: v.object({
         files: v.pipe(
           v.array(

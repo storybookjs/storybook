@@ -2,7 +2,7 @@ import * as v from 'valibot';
 
 import { defineService } from '../../service-definition.ts';
 import type { ServiceInstanceOf } from '../../types.ts';
-import type { ModuleGraphIndexService } from './index-definition.ts';
+import type { ModuleGraphIndexService } from '../module-graph-index/definition.ts';
 import type { ModuleGraphServiceState } from './types.ts';
 import { toStoryIndexPath } from './types.ts';
 

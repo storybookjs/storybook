@@ -823,13 +823,10 @@ export class StoryIndexGenerator {
     if (cacheEntry && cacheEntry.type === 'stories') {
       const { dependents } = cacheEntry;
 
-      const invalidated = new Set();
       // the dependent can be in ANY cache, so we loop over all of them
       this.specifierToCache.forEach((otherCache) => {
         dependents.forEach((dep) => {
           if (otherCache[dep]) {
-            invalidated.add(dep);
-
             otherCache[dep] = false;
           }
         });

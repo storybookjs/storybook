@@ -1,5 +1,6 @@
 import type { SBType } from '../../../../core/src/csf/SBType.ts';
 import type { StrictArgTypes, StrictInputType } from '../../../../core/src/csf/story.ts';
+import { deepEqual } from './deep-equal.ts';
 import type { Violation } from './types.ts';
 
 export interface CompareArgTypesOptions {
@@ -233,6 +234,9 @@ const UNRESOLVED_STUBS = new Set(['', 'undefined', 'empty-enum']);
 // Legacy engines park what they cannot resolve in `other`, so its value is free text naming a real
 // type rather than a shape. Reading more than a scalar or single literal out of that text would mean
 // guessing at each engine's spelling, so anything else falls through to a reviewed re-record.
+//
+// Not the perf engine's `isOpaque`, which counts real type names an engine never looked through:
+// `undefined` is an extraction-failure marker here and a resolved type name there.
 const resolvesStub = (stub: string, candidate: SBType): boolean => {
   const text = stub.trim();
   if (UNRESOLVED_STUBS.has(text)) {
@@ -337,32 +341,3 @@ const isSingleToken = (value: string): boolean =>
 
 const isQuotedToken = (value: unknown): boolean =>
   typeof value === 'string' && (/^"[^"]*"$/.test(value) || /^'[^']*'$/.test(value));
-
-function deepEqual(a: unknown, b: unknown): boolean {
-  if (Object.is(a, b)) {
-    return true;
-  }
-  if (Array.isArray(a) && Array.isArray(b)) {
-    return a.length === b.length && a.every((item, index) => deepEqual(item, b[index]));
-  }
-  if (
-    a !== null &&
-    b !== null &&
-    typeof a === 'object' &&
-    typeof b === 'object' &&
-    !Array.isArray(a) &&
-    !Array.isArray(b)
-  ) {
-    const aKeys = Object.keys(a);
-    const bKeys = Object.keys(b);
-    return (
-      aKeys.length === bKeys.length &&
-      aKeys.every(
-        (key) =>
-          Object.prototype.hasOwnProperty.call(b, key) &&
-          deepEqual((a as Record<string, unknown>)[key], (b as Record<string, unknown>)[key])
-      )
-    );
-  }
-  return false;
-}

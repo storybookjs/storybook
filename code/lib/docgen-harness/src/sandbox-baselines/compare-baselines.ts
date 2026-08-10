@@ -1,5 +1,6 @@
 import type { StrictArgTypes, StrictInputType } from '../../../../core/src/csf/story.ts';
 import { compareArgTypes } from '../compare/argtypes.ts';
+import { deepEqual } from '../compare/deep-equal.ts';
 import type { ViolationKind } from '../compare/types.ts';
 import type { SandboxBaseline, SandboxBaselines } from './read-static-docgen.ts';
 
@@ -15,26 +16,6 @@ export interface BaselineFinding {
     | 'field-changed';
   message: string;
 }
-
-// Key-sorted JSON so a diff reflects content, never the order a producer happened to emit.
-export function stableStringify(value: unknown, indent = 2): string {
-  const sortKeys = (input: unknown): unknown => {
-    if (Array.isArray(input)) {
-      return input.map(sortKeys);
-    }
-    if (input !== null && typeof input === 'object') {
-      return Object.fromEntries(
-        Object.entries(input)
-          .sort(([a], [b]) => a.localeCompare(b))
-          .map(([key, item]) => [key, sortKeys(item)])
-      );
-    }
-    return input;
-  };
-  return JSON.stringify(sortKeys(value), null, indent);
-}
-
-const equal = (a: unknown, b: unknown): boolean => stableStringify(a) === stableStringify(b);
 
 const isDocumented = (entry: SandboxBaseline): boolean =>
   entry.error === undefined && entry.argTypes !== undefined;
@@ -81,7 +62,7 @@ function compareComponent(
   for (const field of [...fields].sort()) {
     const before = baseline[field as keyof SandboxBaseline];
     const after = candidate[field as keyof SandboxBaseline];
-    if (equal(before, after) || explained.has(field)) {
+    if (deepEqual(before, after) || explained.has(field)) {
       continue;
     }
     if (field === 'argTypes') {
@@ -157,7 +138,7 @@ function summarizeArgTypeDiff(before: unknown, after: unknown): string {
       .sort()
       .filter(
         (subField) =>
-          !equal(
+          !deepEqual(
             beforeEntry[subField as keyof StrictInputType],
             afterEntry[subField as keyof StrictInputType]
           )

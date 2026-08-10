@@ -33,6 +33,9 @@ function documentedHolders(doc: Documentation): MemberHolder[] {
 
 // Names that describe themselves, so recording one is not a resolution an engine skipped. Both
 // spellings of a keyword are listed because they reach the same member field.
+//
+// A different question from the gate's `resolvesStub`, which asks whether a baseline recorded
+// anything at all: `undefined` is a resolved type name here and an extraction-failure marker there.
 const RESOLVED_TYPES = new Set([
   'string',
   'number',

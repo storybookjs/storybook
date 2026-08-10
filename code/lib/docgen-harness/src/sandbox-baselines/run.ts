@@ -22,9 +22,10 @@ import { parseArgs } from 'node:util';
 
 import { docgenServerTemplates } from '../../../cli-storybook/src/sandbox-templates.ts';
 import { SANDBOX_DIRECTORY } from '../perf/docgen-shared/paths.ts';
-import { compareBaselines, formatFindings, stableStringify } from './compare-baselines.ts';
+import { compareBaselines, formatFindings } from './compare-baselines.ts';
 import type { SandboxBaselines } from './read-static-docgen.ts';
 import { readStaticDocgen } from './read-static-docgen.ts';
+import { stableStringify } from './stable-stringify.ts';
 
 const BASELINES_ROOT = join(dirname(fileURLToPath(import.meta.url)), '__baselines__');
 
@@ -59,7 +60,7 @@ const sandboxDirFor = (template: string, override?: string): string =>
 const baselineDirFor = (template: string): string =>
   join(BASELINES_ROOT, template.replace('/', '-'));
 
-function readCommitted(baselineDir: string): SandboxBaselines {
+function readCommittedBaselines(baselineDir: string): SandboxBaselines {
   if (!existsSync(baselineDir)) {
     return {};
   }
@@ -121,7 +122,7 @@ function runTemplate(template: string, sandboxDirOverride: string | undefined, u
     return true;
   }
 
-  const committed = readCommitted(baselineDir);
+  const committed = readCommittedBaselines(baselineDir);
   if (Object.keys(committed).length === 0) {
     console.error(
       `No baselines committed for ${template}. Record them with:\n  yarn baselines:sandbox --template ${template} --update`

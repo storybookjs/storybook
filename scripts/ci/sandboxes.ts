@@ -21,11 +21,7 @@ const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';
 
 /**
  * Verifies the committed docgen baselines against the sandbox that was just built.
- *
- * Gated on the template enabling server docgen rather than on a baseline directory existing, so a
- * newly-flagged template with nothing recorded yet fails loudly instead of silently skipping.
- * Requires the static build, hence its placement after the build step.
- */
+*/
 function getDocgenBaselineSteps(templateKey: string) {
   if (!sandboxTemplates.docgenServerTemplates().includes(templateKey as TemplateKey)) {
     return [];

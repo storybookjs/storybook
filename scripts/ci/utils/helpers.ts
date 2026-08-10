@@ -383,16 +383,6 @@ export const workflow = {
   },
 };
 
-/**
- * Restore keys for the install cache, longest first.
- *
- * The shorter keys drop a checksum each, so a lockfile change falls back to a `node_modules` built
- * for a different lockfile. `yarn install` reconciles versions it knows about, but a package the
- * older tree hoisted to a directory the new one does not use is not in its state file and stays.
- * The bare `v10-linux-node_modules` key makes that reachable from any branch, so one bad tree
- * spreads. Bumping the version is what abandons a poisoned lineage; v7 and v9 were both retired
- * this way.
- */
 export const CACHE_KEYS = (platform = 'linux') =>
   [
     `v10-${platform}-node_modules`,

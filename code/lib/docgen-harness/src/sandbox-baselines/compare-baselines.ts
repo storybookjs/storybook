@@ -1,5 +1,6 @@
-import type { StrictInputType } from '../../../../core/src/csf/story.ts';
-import { hasDefaultValue } from '../compare/argtypes.ts';
+import type { StrictArgTypes, StrictInputType } from '../../../../core/src/csf/story.ts';
+import { compareArgTypes } from '../compare/argtypes.ts';
+import type { ViolationKind } from '../compare/types.ts';
 import type { SandboxBaseline, SandboxBaselines } from './read-static-docgen.ts';
 
 export interface BaselineFinding {
@@ -84,7 +85,8 @@ function compareComponent(
       continue;
     }
     if (field === 'argTypes') {
-      const { losses, summary } = diffArgTypes(before, after);
+      const losses = argTypeLosses(before, after);
+      const summary = summarizeArgTypeDiff(before, after);
       findings.push({
         component,
         severity: losses.length > 0 ? 'regression' : 'change',
@@ -108,18 +110,36 @@ function compareComponent(
 }
 
 /**
- * One pass over both argTypes tables, yielding the regression list and the readable summary.
+ * The violation kinds that make an argTypes difference a regression, and how a baseline finding says
+ * them.
  *
- * A loss is an arg the build no longer produces or one that no longer records a default; everything
- * else - added args, reworded prose, a type that resolved differently - is drift accepted by
- * re-recording. The summary names the affected args and sub-fields, because the two sides usually
- * share the same arg names and a key list alone says nothing.
+ * `compareArgTypes` owns what counts as a loss, so this table is only wording plus the severity
+ * split: a finding reads as one line per component, not one per violation. Every other kind it
+ * reports - a lost description, a laterally-changed type - stays neutral drift here, adopted by
+ * re-recording.
  */
-function diffArgTypes(before: unknown, after: unknown): { losses: string[]; summary: string } {
+const LOSS_WORDING: Partial<Record<ViolationKind, string>> = {
+  'lost-arg': 'removed',
+  'lost-default': 'lost its default',
+};
+
+function argTypeLosses(before: unknown, after: unknown): string[] {
+  const violations = compareArgTypes(
+    (before ?? {}) as StrictArgTypes,
+    (after ?? {}) as StrictArgTypes
+  );
+  return violations.flatMap((violation) => {
+    const wording = LOSS_WORDING[violation.kind];
+    return wording === undefined ? [] : [`${violation.arg} ${wording}`];
+  });
+}
+
+// Names the affected args and sub-fields: the two sides usually share the same arg names, so a key
+// list alone says nothing.
+function summarizeArgTypeDiff(before: unknown, after: unknown): string {
   const beforeArgs = (before ?? {}) as Record<string, StrictInputType>;
   const afterArgs = (after ?? {}) as Record<string, StrictInputType>;
   const args = new Set([...Object.keys(beforeArgs), ...Object.keys(afterArgs)]);
-  const losses: string[] = [];
   const parts: string[] = [];
   for (const arg of [...args].sort()) {
     const beforeEntry = beforeArgs[arg];
@@ -129,12 +149,8 @@ function diffArgTypes(before: unknown, after: unknown): { losses: string[]; summ
       continue;
     }
     if (afterEntry === undefined) {
-      losses.push(`${arg} removed`);
       parts.push(`${arg} (removed)`);
       continue;
-    }
-    if (hasDefaultValue(beforeEntry) && !hasDefaultValue(afterEntry)) {
-      losses.push(`${arg} lost its default`);
     }
     const subFields = new Set([...Object.keys(beforeEntry), ...Object.keys(afterEntry)]);
     const changed = [...subFields]
@@ -150,7 +166,7 @@ function diffArgTypes(before: unknown, after: unknown): { losses: string[]; summ
       parts.push(`${arg} (${changed.join(', ')})`);
     }
   }
-  return { losses, summary: parts.join('; ') };
+  return parts.join('; ');
 }
 
 // Keeps a finding readable when the field is a whole argTypes table or a multi-line message.

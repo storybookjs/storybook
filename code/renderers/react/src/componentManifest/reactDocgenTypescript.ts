@@ -1,4 +1,4 @@
-import { dirname } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import {
   type ComponentDoc,
@@ -163,79 +163,198 @@ function getExportNameMap(
 }
 
 /**
- * Manages the TS program and react-docgen-typescript parser. On `invalidateParser()` the program is
+ * Manages TS programs and react-docgen-typescript parsers. On `invalidateParser()` programs are
  * rebuilt incrementally — TypeScript reuses source files that haven't changed on disk, so only
  * modified files are re-parsed. This keeps prop extraction correct across HMR cycles without the
  * cost of a full program rebuild.
  */
-let cachedCompilerOptions: ts.CompilerOptions | undefined;
-let cachedFileNames: string[] | undefined;
-let previousProgram: ts.Program | undefined;
-let parser: { program: ts.Program; fileParser: FileParser } | undefined;
-let cachedParserOptionsKey: string | undefined;
+type ParsedTsconfig = {
+  configPath: string;
+  fileNames: Set<string>;
+  parsed: ts.ParsedCommandLine;
+};
+
+type CachedParser = {
+  program: ts.Program;
+  fileParser: FileParser;
+};
+
+const previousPrograms = new Map<string, ts.Program>();
+let parsers = new Map<string, CachedParser>();
+let parsedTsconfigs = new Map<string, ParsedTsconfig | undefined>();
+let tsconfigByFile = new Map<string, ParsedTsconfig>();
 
 /** Rebuild the TS program incrementally so that file changes are picked up on the next parse. */
 export function invalidateParser() {
-  parser = undefined;
-  cachedCompilerOptions = undefined;
-  cachedFileNames = undefined;
-  cachedParserOptionsKey = undefined;
+  parsers = new Map();
+  parsedTsconfigs = new Map();
+  tsconfigByFile = new Map();
 }
 
-async function getParser(userOptions?: ParserOptions) {
+const normalizePath = (filePath: string) => filePath.replace(/\\/g, '/');
+
+const getCanonicalFileName = (typescript: TypeScriptRuntime, filePath: string) =>
+  normalizePath(typescript.sys.useCaseSensitiveFileNames ? filePath : filePath.toLowerCase());
+
+function getProjectReferenceConfigPath(
+  typescript: TypeScriptRuntime,
+  referencePath: string
+): string | undefined {
+  if (typescript.sys.fileExists(referencePath)) {
+    return referencePath;
+  }
+
+  if (typescript.sys.directoryExists(referencePath)) {
+    const tsconfigPath = join(referencePath, 'tsconfig.json');
+    if (typescript.sys.fileExists(tsconfigPath)) {
+      return tsconfigPath;
+    }
+  }
+
+  const jsonPath = `${referencePath}.json`;
+  return typescript.sys.fileExists(jsonPath) ? jsonPath : undefined;
+}
+
+function parseTsconfig(
+  typescript: TypeScriptRuntime,
+  configPath: string
+): ParsedTsconfig | undefined {
+  const cached = parsedTsconfigs.get(configPath);
+  if (cached || parsedTsconfigs.has(configPath)) {
+    return cached;
+  }
+
+  const { config, error } = typescript.readConfigFile(configPath, typescript.sys.readFile);
+  if (error) {
+    parsedTsconfigs.set(configPath, undefined);
+    return undefined;
+  }
+
+  const parsed = typescript.parseJsonConfigFileContent(
+    config,
+    typescript.sys,
+    dirname(configPath),
+    undefined,
+    configPath
+  );
+  const fileNames = new Set(
+    parsed.fileNames.map((fileName) => getCanonicalFileName(typescript, fileName))
+  );
+  const result = { configPath, fileNames, parsed };
+  for (const fileName of fileNames) {
+    tsconfigByFile.set(fileName, result);
+  }
+  parsedTsconfigs.set(configPath, result);
+  return result;
+}
+
+function findReferencedTsconfigForFile(
+  typescript: TypeScriptRuntime,
+  config: ParsedTsconfig,
+  filePath: string,
+  seen = new Set<string>()
+): ParsedTsconfig | undefined {
+  if (seen.has(config.configPath)) {
+    return undefined;
+  }
+  seen.add(config.configPath);
+
+  for (const reference of config.parsed.projectReferences ?? []) {
+    const referenceConfigPath = getProjectReferenceConfigPath(typescript, reference.path);
+    if (!referenceConfigPath) {
+      continue;
+    }
+
+    const referenceConfig = parseTsconfig(typescript, referenceConfigPath);
+    if (!referenceConfig) {
+      continue;
+    }
+
+    if (referenceConfig.fileNames.has(filePath)) {
+      return referenceConfig;
+    }
+
+    const nestedConfig = findReferencedTsconfigForFile(typescript, referenceConfig, filePath, seen);
+    if (nestedConfig) {
+      return nestedConfig;
+    }
+  }
+
+  return undefined;
+}
+
+function findTsconfigForFile(
+  typescript: TypeScriptRuntime,
+  filePath: string
+): ParsedTsconfig | undefined {
+  const canonicalFilePath = getCanonicalFileName(typescript, filePath);
+  const cachedConfig = tsconfigByFile.get(canonicalFilePath);
+  if (cachedConfig) {
+    return cachedConfig;
+  }
+
+  const configPath = findTsconfigPath(process.cwd());
+  if (!configPath) {
+    return undefined;
+  }
+
+  const rootConfig = parseTsconfig(typescript, configPath);
+  if (!rootConfig) {
+    return undefined;
+  }
+
+  if (rootConfig.fileNames.has(canonicalFilePath)) {
+    return rootConfig;
+  }
+
+  return findReferencedTsconfigForFile(typescript, rootConfig, canonicalFilePath) ?? rootConfig;
+}
+
+async function getParser(filePath: string, userOptions?: ParserOptions) {
   const [typescript, reactDocgenTypescript] = await Promise.all([
     loadTypeScript(),
     loadReactDocgenTypescript(),
   ]);
-  // Rebuild parser if options changed
-  const optionsKey = JSON.stringify(userOptions ?? {});
-  if (parser && cachedParserOptionsKey !== optionsKey) {
-    parser = undefined;
-  }
 
-  if (!parser) {
-    const configPath = findTsconfigPath(process.cwd());
-    cachedCompilerOptions = { noErrorTruncation: true, strict: true };
-
-    if (configPath) {
-      const { config } = typescript.readConfigFile(configPath, typescript.sys.readFile);
-      const parsed = typescript.parseJsonConfigFileContent(
-        config,
-        typescript.sys,
-        dirname(configPath)
-      );
-      cachedCompilerOptions = { ...parsed.options, noErrorTruncation: true };
-      cachedFileNames = parsed.fileNames;
-    } else {
-      logger.warn(
-        'No tsconfig.json (or tsconfig.base.json / tsconfig.app.json) found. ' +
-          'TypeScript component props will not be documented by react-docgen-typescript. ' +
-          'Create a tsconfig.json in your project root to enable automatic controls.'
-      );
-    }
-
-    const program = typescript.createProgram(
-      cachedFileNames ?? [],
-      cachedCompilerOptions,
-      undefined,
-      previousProgram
+  const config = findTsconfigForFile(typescript, filePath);
+  if (!config) {
+    logger.warn(
+      'No tsconfig.json (or tsconfig.base.json / tsconfig.app.json) found. ' +
+        'TypeScript component props will not be documented by react-docgen-typescript. ' +
+        'Create a tsconfig.json in your project root to enable automatic controls.'
     );
-    previousProgram = program;
-
-    const parserOptions: ParserOptions = {
-      shouldExtractLiteralValuesFromEnum: true,
-      shouldRemoveUndefinedFromOptional: true,
-      ...userOptions,
-      // Always force savePropValueAsString so default values are in a consistent format
-      savePropValueAsString: true,
-    };
-
-    parser = {
-      program,
-      fileParser: reactDocgenTypescript.withCompilerOptions(cachedCompilerOptions, parserOptions),
-    };
-    cachedParserOptionsKey = optionsKey;
   }
+
+  const parserOptionsKey = JSON.stringify(userOptions ?? {});
+  const parserKey = JSON.stringify([config?.configPath ?? '<no-tsconfig>', parserOptionsKey]);
+  const existingParser = parsers.get(parserKey);
+  if (existingParser) {
+    return { ...existingParser, typescript };
+  }
+
+  const compilerOptions = { ...(config?.parsed.options ?? {}), noErrorTruncation: true };
+  const previousProgram = previousPrograms.get(parserKey);
+  const program = typescript.createProgram(
+    config?.parsed.fileNames ?? [],
+    compilerOptions,
+    undefined,
+    previousProgram
+  );
+  previousPrograms.set(parserKey, program);
+
+  const parserOptions: ParserOptions = {
+    shouldExtractLiteralValuesFromEnum: true,
+    shouldRemoveUndefinedFromOptional: true,
+    ...userOptions,
+    // Always force savePropValueAsString so default values are in a consistent format
+    savePropValueAsString: true,
+  };
+
+  const parser = {
+    program,
+    fileParser: reactDocgenTypescript.withCompilerOptions(compilerOptions, parserOptions),
+  };
+  parsers.set(parserKey, parser);
   return { ...parser, typescript };
 }
 
@@ -295,11 +414,11 @@ export function getReactDocgenTypescriptError(
 
 /**
  * Parse a component file with react-docgen-typescript. Per-file results are cached via
- * `invalidateCache()`. The underlying TS program is a long-lived singleton.
+ * `invalidateCache()`. TS programs are cached by the selected tsconfig and parser options.
  */
 export const parseWithReactDocgenTypescript = asyncCache(
   async (filePath: string, userOptions?: ParserOptions): Promise<ComponentDocWithExportName[]> => {
-    const { program, fileParser, typescript } = await getParser(userOptions);
+    const { program, fileParser, typescript } = await getParser(filePath, userOptions);
     const checker = program.getTypeChecker();
     const sourceFile = program.getSourceFile(filePath);
 

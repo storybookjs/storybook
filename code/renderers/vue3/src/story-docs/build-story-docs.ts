@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
-import { type NodePath, type types as t } from 'storybook/internal/babel';
+import { type NodePath, types as t } from 'storybook/internal/babel';
 import {
   STORY_FILE_TEST_REGEXP,
   getComponentIdFromEntry,
@@ -21,6 +21,7 @@ import {
   metaObjectPath,
   normalizeStoryDeclaration,
   resolveComponentImport,
+  propertyValue,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
@@ -38,7 +39,6 @@ export interface BuildStoryDocsContext {
 type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
 type ArgsObjectPath = NodePath<t.ObjectExpression> | undefined;
 
-const COMPONENT_PROPERTY = 'component';
 const ARGS_PROPERTY = 'args';
 
 /**
@@ -106,17 +106,8 @@ function fallbackTitle(title: string): string {
  * @example `component: MyButton` → `'MyButton'`; `component: UI.Button` → `undefined`
  */
 function resolveMetaComponentIdentifier(csf: ParsedCsf): string | undefined {
-  const metaPath = metaObjectPath(csf);
-  const componentProperty = metaPath
-    ?.get('properties')
-    .find((property) => property.isObjectProperty() && keyOf(property.node) === COMPONENT_PROPERTY);
-
-  if (!componentProperty?.isObjectProperty()) {
-    return undefined;
-  }
-
-  const value = componentProperty.get('value');
-  return value.isIdentifier() ? value.node.name : undefined;
+  const value = propertyValue(metaObjectPath(csf)?.node, 'component');
+  return t.isIdentifier(value) ? value.name : undefined;
 }
 
 /**
@@ -214,8 +205,8 @@ function argsObjectPathFromObjectPath(path?: NodePath<t.ObjectExpression>): Args
   return value.isObjectExpression() ? value : undefined;
 }
 
-function argsObjectHasSpread(path: ArgsObjectPath): boolean {
-  return path?.node.properties.some((property) => property.type === 'SpreadElement') ?? false;
+function argsObjectHasSpread(object: t.ObjectExpression | undefined): boolean {
+  return object?.properties.some((property) => property.type === 'SpreadElement') ?? false;
 }
 
 /**
@@ -284,7 +275,7 @@ function enrichStoryDoc(
 
   const storyArgsPath =
     normalized.type === 'config' ? argsObjectPathFromObjectPath(normalized.path) : undefined;
-  if (argsObjectHasSpread(options.metaArgsPath) || argsObjectHasSpread(storyArgsPath)) {
+  if (argsObjectHasSpread(options.metaArgsPath?.node) || argsObjectHasSpread(storyArgsPath?.node)) {
     return {
       ...storyDoc,
       error: {
@@ -318,23 +309,19 @@ function enrichStoryDoc(
  * @example `{ args: sharedArgs }` → "Unsupported story args"; `{ args: { a: 1 } }` → undefined
  */
 function argsContainerError(path?: NodePath<t.ObjectExpression>): StoryDoc['error'] | undefined {
-  const property = path
-    ?.get('properties')
-    .find((prop) => prop.isObjectProperty() && keyOf(prop.node) === ARGS_PROPERTY);
-
-  if (!property?.isObjectProperty()) {
+  const value = propertyValue(path?.node, ARGS_PROPERTY);
+  if (!value) {
     return undefined;
   }
 
-  const value = property.get('value');
-  if (value.isObjectExpression()) {
+  if (t.isObjectExpression(value)) {
     return undefined;
   }
 
-  if (value.isIdentifier()) {
+  if (t.isIdentifier(value)) {
     return {
       name: 'Unsupported story args',
-      message: `Arg "args" references "${value.node.name}", which cannot be statically inlined yet.`,
+      message: `Arg "args" references "${value.name}", which cannot be statically inlined yet.`,
     };
   }
 

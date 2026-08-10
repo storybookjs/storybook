@@ -14,6 +14,7 @@ type Story = StoryObj<typeof meta>;
 export const Primary: Story = {
   args: {
     label: 'Formatted',
+    quotationLabel: 'She said "hi" and it\'s fine',
     emptyLabel: '',
     enabled: true,
     disabled: false,

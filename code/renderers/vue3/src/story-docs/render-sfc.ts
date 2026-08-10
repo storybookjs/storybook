@@ -62,7 +62,14 @@ function renderPropArg(arg: PropArg, ctx: RenderContext): RenderedProp | undefin
       if (value.value === '') {
         return undefined;
       }
-      return { name: arg.name, attribute: `${arg.name}=${quoteAttributeValue(value.value)}` };
+      {
+        const quoted = quoteAttributeValue(value.value);
+        if (quoted === undefined) {
+          ctx.variables[arg.name] = printValue(value);
+          return { name: arg.name, attribute: `:${arg.name}="${arg.name}"` };
+        }
+        return { name: arg.name, attribute: `${arg.name}=${quoted}` };
+      }
     case 'BooleanLiteral':
       return {
         name: arg.name,
@@ -152,14 +159,15 @@ ${importsCode ? `${importsCode}\n\n${variablesCode}` : variablesCode}
 </script>`;
 }
 
-function quoteAttributeValue(value: string): string {
+/** Quoted attribute value, or `undefined` when both quote styles occur and it must be hoisted. */
+function quoteAttributeValue(value: string): string | undefined {
   if (!value.includes('"')) {
     return `"${value}"`;
   }
   if (!value.includes("'")) {
     return `'${value}'`;
   }
-  return `"${value.replaceAll('"', '&quot;')}"`;
+  return undefined;
 }
 
 function printValue(node: t.Node): string {

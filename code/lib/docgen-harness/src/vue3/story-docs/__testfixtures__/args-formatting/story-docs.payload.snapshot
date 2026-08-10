@@ -9,13 +9,15 @@
       "id": "forms-args-formatting--primary",
       "name": "Primary",
       "snippet": "<script lang="ts" setup>
+const quotationLabel = 'She said "hi" and it\'s fine';
+
 const options = { tone: 'neutral', compact: true };
 
 const items = ['one', 'two'];
 </script>
 
 <template>
-  <ArgsFormattingButton :count="3" :disabled="false" enabled :items="items" label="Formatted" :options="options" />
+  <ArgsFormattingButton :count="3" :disabled="false" enabled :items="items" label="Formatted" :options="options" :quotationLabel="quotationLabel" />
 </template>",
       "summary": undefined,
     },

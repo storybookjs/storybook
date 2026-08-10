@@ -21,10 +21,12 @@ type FixtureCase = {
   tree: 'story-docs' | 'docgen';
 };
 
+/** A directory is a fixture only if it holds a story file, so stray tooling dirs stay out. */
 function fixtureCases(fixturesDir: string): string[] {
   return readdirSync(fixturesDir, { withFileTypes: true })
     .filter((entry) => entry.isDirectory())
     .map((entry) => entry.name)
+    .filter((name) => existsSync(join(fixturesDir, name, STORIES_FILE)))
     .sort();
 }
 
@@ -38,14 +40,12 @@ function storyDocsFixtureCases(): FixtureCase[] {
 }
 
 function docgenFixtureCases(): FixtureCase[] {
-  return fixtureCases(DOCGEN_FIXTURES_DIR)
-    .filter((name) => existsSync(join(DOCGEN_FIXTURES_DIR, name, STORIES_FILE)))
-    .map((name) => ({
-      label: `docgen/${name}`,
-      name,
-      testDir: resolve(DOCGEN_FIXTURES_DIR, name),
-      tree: 'docgen' as const,
-    }));
+  return fixtureCases(DOCGEN_FIXTURES_DIR).map((name) => ({
+    label: `docgen/${name}`,
+    name,
+    testDir: resolve(DOCGEN_FIXTURES_DIR, name),
+    tree: 'docgen' as const,
+  }));
 }
 
 function docgenForFixture(

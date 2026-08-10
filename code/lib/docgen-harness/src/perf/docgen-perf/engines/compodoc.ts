@@ -17,18 +17,16 @@ import { angularComponentSource, generateAngularProject } from '../generators/an
 import type { EngineId, EngineMetrics, MemberCounts } from '../types.ts';
 
 interface ResolvedCompodoc {
-  /** The CLI entry point, run as `node <cli>` so no shell shim or exec bit is involved. */
+  // The CLI entry point, run as `node <cli>` so no shell shim or exec bit is involved.
   cli: string;
   version: string;
 }
 
-/** The canonical install. A pin names an alias of it - see docgen-shared/pin.ts. */
+// The canonical install. A pin names an alias of it - see docgen-shared/pin.ts.
 const COMPODOC_PACKAGE = '@compodoc/compodoc';
 
-/**
- * An alias keeps the aliased package's own name, so the name check is what stops a pin naming some
- * other package from being measured as compodoc.
- */
+// An alias keeps the aliased package's own name, so the name check is what stops a pin naming some
+// other package from being measured as compodoc.
 function resolveCompodoc(specifier: string): ResolvedCompodoc | undefined {
   const found = resolvePin(specifier);
   if (found?.name !== COMPODOC_PACKAGE || !found.bin?.compodoc) {
@@ -39,11 +37,8 @@ function resolveCompodoc(specifier: string): ResolvedCompodoc | undefined {
 
 interface CompodocRun extends DocumentationCounts {
   durMs: number;
-  /**
-   * Undefined when no poll ever read the child's RSS - `ps` is POSIX-only, and a run shorter than
-   * one interval is never sampled. Reporting the initial 0 instead would put a fabricated peak in
-   * the results, which is the one thing a floor may not become.
-   */
+  // Undefined when no poll ever read the child's RSS: `ps` is POSIX-only, and a run shorter than one
+  // interval is never sampled. Reporting the initial 0 would put a fabricated peak in the results.
   peakRssMb: number | undefined;
 }
 
@@ -130,13 +125,10 @@ function runCompodocOnce(
   });
 }
 
-/**
- * One repetition: fresh project, cold full run, touch one component, warm full run. Both runs are
- * fresh compodoc processes, matching the one-sample-per-fresh-process topology.
- */
+// Both runs are fresh compodoc processes, matching the one-sample-per-fresh-process topology.
 export async function runCompodocRepetition(
   cli: string,
-  scenario: AngularScenarioConfig,
+  scenario: Pick<AngularScenarioConfig, 'components' | 'props'>,
   workDir: string,
   pollIntervalMs: number
 ): Promise<OneShotRepetition> {
@@ -169,10 +161,7 @@ export async function runCompodocRepetition(
   };
 }
 
-/**
- * Compodoc is a spawned CLI rather than an imported module, so its pin selects which CLI to run.
- * A version pair is two entries differing only in `pin`, as it is for the series engines.
- */
+// Compodoc is a spawned CLI rather than an imported module, so its pin selects which CLI to run.
 export interface CompodocConfig {
   id: EngineId;
   pin: string;
@@ -196,9 +185,11 @@ export class CompodocEngine extends BenchEngine<OneShotRepetition> {
   scenarios(profile: SuiteProfile): ScenarioSpec[] {
     // The poll interval rides in params because it qualifies the peak this engine reports: the
     // sample misses spikes shorter than the gap between polls, so the recorded peak is a floor and
-    // reading it later means knowing how wide that gap was.
+    // reading it later means knowing how wide that gap was. The profile's `saves` stays out: this
+    // engine has no save loop, and recording one would misdescribe the run.
+    const { components, props } = profile.angular;
     return [
-      { name: 'default', params: { ...profile.angular, rssPollIntervalMs: RSS_POLL_INTERVAL_MS } },
+      { name: 'default', params: { components, props, rssPollIntervalMs: RSS_POLL_INTERVAL_MS } },
     ];
   }
 

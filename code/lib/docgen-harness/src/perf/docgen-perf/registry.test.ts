@@ -9,7 +9,7 @@ import { CONTROL_PAIRS } from './ratios.ts';
 import { ALL_ENGINE_IDS, DEFAULT_ENGINE_IDS, ENGINES, engineById } from './registry.ts';
 import type { EngineId } from './types.ts';
 
-/** Captures what an engine would have spawned, without spawning it. */
+// Captures what an engine would have spawned, without spawning it.
 function captureSpawn() {
   const calls: Array<{ spec: Parameters<MeasureContext['runSeriesChild']>[0]; jsonPath: string }> =
     [];
@@ -29,7 +29,8 @@ async function specFor(id: EngineId, scenario: ScenarioSpec, rep = 1) {
   return calls[0];
 }
 
-/** Everything that describes the generated project, which is what a flag comparison is about. */
+// The pin selects a version rather than describing the generated project, so a flag comparison
+// drops it.
 function withoutPin(args: string[]): string[] {
   const pin = args.indexOf('--pin');
   return pin === -1 ? args : [...args.slice(0, pin), ...args.slice(pin + 2)];
@@ -39,6 +40,7 @@ const reactScenario = engineById('react-legacy').scenarios(QUICK_PROFILE)[0];
 const vueFlatScenario = engineById('vue-component-meta')
   .scenarios(QUICK_PROFILE)
   .find((s) => s.name === 'flat')!;
+const angularScenario = engineById('angular-component-meta').scenarios(QUICK_PROFILE)[0];
 
 describe('the engine table', () => {
   it('registers each id exactly once', () => {
@@ -48,6 +50,11 @@ describe('the engine table', () => {
   it('keeps the unbudgeted react-docgen-typescript engine out of the default run', () => {
     expect(DEFAULT_ENGINE_IDS).not.toContain('react-legacy-rdt');
     expect(ALL_ENGINE_IDS).toContain('react-legacy-rdt');
+  });
+
+  it('keeps the unbudgeted angular-component-meta engine out of the default run', () => {
+    expect(DEFAULT_ENGINE_IDS).not.toContain('angular-component-meta');
+    expect(ALL_ENGINE_IDS).toContain('angular-component-meta');
   });
 
   it('names an engine that is not registered', () => {
@@ -102,6 +109,7 @@ describe('what the series engines spawn', () => {
     expect((await specFor('react-osa', reactScenario)).spec.jiti).toBe(true);
     expect((await specFor('react-legacy', reactScenario)).spec.jiti).toBeFalsy();
     expect((await specFor('react-legacy-rdt', reactScenario)).spec.jiti).toBeFalsy();
+    expect((await specFor('angular-component-meta', angularScenario)).spec.jiti).toBeFalsy();
   });
 
   it('sends the two React legacy engines to one child with different parsers', async () => {
@@ -162,6 +170,25 @@ describe('what the series engines spawn', () => {
       expect(withoutPin(meta.spec.args), scenario.name).toEqual(withoutPin(legacy.spec.args));
       expect(meta.spec.childPath).not.toBe(legacy.spec.childPath);
     }
+  });
+
+  it('measures both Angular engines on the same scenario name, so the pair produces a ratio', () => {
+    const compodocNames = engineById('compodoc')
+      .scenarios(QUICK_PROFILE)
+      .map((s) => s.name);
+    const metaNames = engineById('angular-component-meta')
+      .scenarios(QUICK_PROFILE)
+      .map((s) => s.name);
+    expect(metaNames).toEqual(compodocNames);
+  });
+
+  it('generates the same Angular project for both engines, so the ratio compares engines not corpora', async () => {
+    const compodoc = engineById('compodoc').scenarios(QUICK_PROFILE)[0];
+    const { spec } = await specFor('angular-component-meta', angularScenario);
+    const flag = (name: string) => spec.args[spec.args.indexOf(name) + 1];
+    expect(flag('--components')).toBe(String(compodoc.params.components));
+    expect(flag('--props')).toBe(String(compodoc.params.props));
+    expect(flag('--saves')).toBe(String(QUICK_PROFILE.angular.saves));
   });
 
   it('writes each repetition to its own result file', async () => {

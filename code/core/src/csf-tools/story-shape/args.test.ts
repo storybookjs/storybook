@@ -11,6 +11,7 @@ import {
   argsRecordFromObjectPath,
   mergeArgsRecords,
   metaArgsRecord,
+  storyAssignedArgsPath,
 } from './args.ts';
 import { normalizeStoryDeclaration } from './normalize-story.ts';
 import { keyOf, metaObjectPath } from './utils.ts';
@@ -177,5 +178,54 @@ describe('mergeArgsRecords', () => {
         "size": "'medium'",
       }
     `);
+  });
+});
+
+describe('storyAssignedArgsPath', () => {
+  const assignedArgs = (code: string) => {
+    const source = `export default { title: 'T' };\n${dedent(code)}`;
+    const csf = loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();
+    return argsRecordFromObjectPath(storyAssignedArgsPath(csf._file.path, 'A'));
+  };
+
+  it('reads the CSF2 assignment form', () => {
+    expect(
+      Object.keys(
+        assignedArgs(`
+          export const A = () => 1;
+          A.args = { label: 'Save' };
+        `)
+      )
+    ).toEqual(['label']);
+  });
+
+  it('reads the computed spelling too', () => {
+    expect(
+      Object.keys(
+        assignedArgs(`
+          export const A = () => 1;
+          A['args'] = { label: 'Save' };
+        `)
+      )
+    ).toEqual(['label']);
+  });
+
+  it('ignores an assignment to a different story', () => {
+    expect(
+      assignedArgs(`
+        export const A = () => 1;
+        export const B = () => 1;
+        B.args = { label: 'Save' };
+      `)
+    ).toEqual({});
+  });
+
+  it('ignores a non-args property', () => {
+    expect(
+      assignedArgs(`
+        export const A = () => 1;
+        A.parameters = { docs: {} };
+      `)
+    ).toEqual({});
   });
 });

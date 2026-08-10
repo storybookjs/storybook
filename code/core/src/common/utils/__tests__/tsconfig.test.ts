@@ -111,6 +111,75 @@ describe('findTsconfigPathForFile', () => {
       join(dir, 'tsconfig.app.json')
     );
   });
+
+  it('uses include globs inherited via extends from a nested autogen config', () => {
+    const dir = createTempProject({
+      'tsconfig.json': JSON.stringify({
+        extends: './generated/autogen.tsconfig.json',
+      }),
+      'generated/autogen.tsconfig.json': JSON.stringify({
+        include: ['../**/*.tsx'],
+      }),
+      'src/Button.tsx': 'export const Button = () => null;',
+    });
+
+    expect(findTsconfigPathForFile(dir, join(dir, 'src/Button.tsx'))).toBe(
+      join(dir, 'tsconfig.json')
+    );
+  });
+
+  it('does not treat a referenced project as owning files outside its extended include', () => {
+    const dir = createTempProject({
+      'tsconfig.json': JSON.stringify({
+        files: [],
+        references: [{ path: './tsconfig.app.json' }],
+      }),
+      'tsconfig.app.json': JSON.stringify({
+        extends: './generated/autogen.tsconfig.json',
+        compilerOptions: {
+          baseUrl: '.',
+        },
+      }),
+      'generated/autogen.tsconfig.json': JSON.stringify({
+        include: ['../src/components/**/*.tsx'],
+      }),
+      'src/components/Button.tsx': 'export const Button = () => null;',
+      'src/utils/helper.ts': 'export const helper = () => null;',
+    });
+
+    expect(findTsconfigPathForFile(dir, join(dir, 'src/components/Button.tsx'))).toBe(
+      join(dir, 'tsconfig.app.json')
+    );
+    // Without extends resolution, the app config would default to **/* and incorrectly own helper.ts.
+    expect(findTsconfigPathForFile(dir, join(dir, 'src/utils/helper.ts'))).toBe(
+      join(dir, 'tsconfig.json')
+    );
+  });
+
+  it('lets a leaf include override an extended include', () => {
+    const dir = createTempProject({
+      'tsconfig.json': JSON.stringify({
+        files: [],
+        references: [{ path: './tsconfig.app.json' }],
+      }),
+      'tsconfig.app.json': JSON.stringify({
+        extends: './tsconfig.base.json',
+        include: ['src/components'],
+      }),
+      'tsconfig.base.json': JSON.stringify({
+        include: ['src'],
+      }),
+      'src/components/Button.tsx': 'export const Button = () => null;',
+      'src/utils/helper.ts': 'export const helper = () => null;',
+    });
+
+    expect(findTsconfigPathForFile(dir, join(dir, 'src/components/Button.tsx'))).toBe(
+      join(dir, 'tsconfig.app.json')
+    );
+    expect(findTsconfigPathForFile(dir, join(dir, 'src/utils/helper.ts'))).toBe(
+      join(dir, 'tsconfig.json')
+    );
+  });
 });
 
 describe('findTsconfigPathForPath', () => {

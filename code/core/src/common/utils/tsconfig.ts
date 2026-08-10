@@ -13,6 +13,7 @@ const DEFAULT_EXCLUDE_PATTERNS = ['node_modules', 'bower_components', 'jspm_pack
 type TsconfigReference = { path?: unknown };
 type TsconfigConfig = {
   exclude?: unknown;
+  extends?: unknown;
   files?: unknown;
   include?: unknown;
   references?: unknown;
@@ -21,6 +22,13 @@ type TsconfigConfig = {
 type TsconfigEntry = {
   config: TsconfigConfig;
   path: string;
+};
+
+/** Ownership globs/paths, always expressed relative to a leaf tsconfig directory. */
+type OwnershipSpec = {
+  exclude?: string[];
+  files?: string[];
+  include?: string[];
 };
 
 export const findTsconfigPath = (cwd: string): string | undefined => {
@@ -40,10 +48,9 @@ export const findTsconfigPath = (cwd: string): string | undefined => {
  * Pick the tsconfig that actually applies to a given file, following project references when the
  * nearest root config is just a references shell (for example Vite's `files: []` root tsconfig).
  *
- * This intentionally follows the same idea as the Volar-inspired selection logic used by
- * `ComponentMetaManager`: prefer the config that really owns the file instead of stopping at the
- * first config filename we discover. It extends the simpler fallback-chain fix from #34353 so
- * docgen-style callers can handle project references too.
+ * Prefer the config that really owns the file instead of stopping at the first config filename we
+ * discover. Ownership also resolves `extends` so inherited `include` / `exclude` / `files` participate
+ * (patterns from a base config stay relative to that base, matching `tsc`).
  */
 export const findTsconfigPathForFile = (cwd: string, filePath: string): string | undefined => {
   const rootTsconfigPath = findTsconfigPath(cwd);
@@ -134,22 +141,29 @@ function tsconfigIncludesFile(entry: TsconfigEntry, filePath: string) {
     return false;
   }
 
-  const files = asStringArray(entry.config.files);
-  if (files.length > 0) {
+  // Solution-style roots own nothing themselves; callers should match referenced projects instead.
+  if (isReferencesShell(entry.config)) {
+    return false;
+  }
+
+  const ownership = resolveOwnershipSpec(entry.path, entry.config, new Set());
+
+  if (ownership.files && ownership.files.length > 0) {
     const normalizedFilePath = normalizePath(filePath);
-    return files.some(
+    return ownership.files.some(
       (candidatePath) => normalizePath(resolve(configDir, candidatePath)) === normalizedFilePath
     );
   }
 
-  const includePatterns = getIncludePatterns(entry.config);
+  const includePatterns = getIncludePatterns(ownership, entry.config);
   if (includePatterns.length === 0) {
     return false;
   }
 
-  const excludePatterns = [...DEFAULT_EXCLUDE_PATTERNS, ...asStringArray(entry.config.exclude)].map(
-    normalizeTsconfigPattern
-  );
+  const excludePatterns = [
+    ...DEFAULT_EXCLUDE_PATTERNS,
+    ...(ownership.exclude ?? []).map(normalizeTsconfigPattern),
+  ];
 
   if (matchesPatterns(relativeFilePath, excludePatterns)) {
     return false;
@@ -158,18 +172,129 @@ function tsconfigIncludesFile(entry: TsconfigEntry, filePath: string) {
   return matchesPatterns(relativeFilePath, includePatterns);
 }
 
-function getIncludePatterns(config: TsconfigConfig) {
-  const includes = asStringArray(config.include);
-  if (includes.length > 0) {
-    return includes.map(normalizeTsconfigPattern);
+/**
+ * Merge `extends` into an ownership spec for the leaf config.
+ * Extended `include` / `exclude` / `files` are rebased from the base config directory onto the leaf
+ * directory so picomatch runs against paths relative to the leaf (same effective result as `tsc`).
+ */
+function resolveOwnershipSpec(
+  configPath: string,
+  config: TsconfigConfig,
+  seen: Set<string>
+): OwnershipSpec {
+  const normalizedConfigPath = resolve(configPath);
+  if (seen.has(normalizedConfigPath)) {
+    return {};
+  }
+  seen.add(normalizedConfigPath);
+
+  let ownership: OwnershipSpec = {};
+
+  for (const extendsPath of getExtendsPaths(normalizedConfigPath, config)) {
+    const baseConfig = readTsconfigConfig(extendsPath);
+    if (!baseConfig) {
+      continue;
+    }
+
+    const baseOwnership = resolveOwnershipSpec(extendsPath, baseConfig, seen);
+    ownership = mergeOwnershipSpec(
+      ownership,
+      rebaseOwnershipSpec(baseOwnership, dirname(extendsPath), dirname(normalizedConfigPath))
+    );
   }
 
-  const files = asStringArray(config.files);
-  if (files.length > 0) {
-    return files.map(normalizePath);
+  return mergeOwnershipSpec(ownership, ownOwnershipSpec(config));
+}
+
+function getExtendsPaths(configPath: string, config: TsconfigConfig) {
+  const rawExtends =
+    typeof config.extends === 'string'
+      ? [config.extends]
+      : Array.isArray(config.extends)
+        ? config.extends.filter((value): value is string => typeof value === 'string')
+        : [];
+
+  return rawExtends.map((extendsPath) => resolveExtendsPath(configPath, extendsPath));
+}
+
+function resolveExtendsPath(configPath: string, extendsPath: string) {
+  const resolved = resolve(dirname(configPath), extendsPath);
+  if (existsSync(resolved)) {
+    return resolved;
   }
 
-  if (Array.isArray(config.references) && files.length === 0) {
+  if (!resolved.endsWith('.json')) {
+    const withJson = `${resolved}.json`;
+    if (existsSync(withJson)) {
+      return withJson;
+    }
+  }
+
+  return resolved;
+}
+
+function ownOwnershipSpec(config: TsconfigConfig): OwnershipSpec {
+  const ownership: OwnershipSpec = {};
+
+  if (config.files !== undefined) {
+    ownership.files = asStringArray(config.files).map(normalizePath);
+  }
+  if (config.include !== undefined) {
+    ownership.include = asStringArray(config.include).map(normalizePath);
+  }
+  if (config.exclude !== undefined) {
+    ownership.exclude = asStringArray(config.exclude).map(normalizePath);
+  }
+
+  return ownership;
+}
+
+function mergeOwnershipSpec(base: OwnershipSpec, overlay: OwnershipSpec): OwnershipSpec {
+  return {
+    files: overlay.files !== undefined ? overlay.files : base.files,
+    include: overlay.include !== undefined ? overlay.include : base.include,
+    exclude: overlay.exclude !== undefined ? overlay.exclude : base.exclude,
+  };
+}
+
+function rebaseOwnershipSpec(
+  ownership: OwnershipSpec,
+  fromDir: string,
+  toDir: string
+): OwnershipSpec {
+  return {
+    files: ownership.files?.map((pattern) => rebasePattern(pattern, fromDir, toDir)),
+    include: ownership.include?.map((pattern) => rebasePattern(pattern, fromDir, toDir)),
+    exclude: ownership.exclude?.map((pattern) => rebasePattern(pattern, fromDir, toDir)),
+  };
+}
+
+function rebasePattern(pattern: string, fromDir: string, toDir: string) {
+  return normalizePath(relative(toDir, resolve(fromDir, pattern)));
+}
+
+function isReferencesShell(config: TsconfigConfig) {
+  if (!Array.isArray(config.references)) {
+    return false;
+  }
+
+  const hasOwnFiles = Array.isArray(config.files) && config.files.length > 0;
+  const hasOwnInclude = Array.isArray(config.include) && config.include.length > 0;
+  return !hasOwnFiles && !hasOwnInclude;
+}
+
+function getIncludePatterns(ownership: OwnershipSpec, leafConfig: TsconfigConfig) {
+  if (ownership.include && ownership.include.length > 0) {
+    return ownership.include.map(normalizeTsconfigPattern);
+  }
+
+  if (ownership.files && ownership.files.length > 0) {
+    return ownership.files.map(normalizePath);
+  }
+
+  // Empty `files` on a references shell is handled earlier; remaining empty-files configs own nothing
+  // via include defaults unless include was inherited (already handled above).
+  if (Array.isArray(leafConfig.files) && leafConfig.files.length === 0 && !ownership.include) {
     return [];
   }
 

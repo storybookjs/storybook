@@ -10,12 +10,6 @@ const normalize = normalizePath;
 /** Matches a whole `node_modules` path segment, so `src/node_modules-tools/Tag.tsx` is kept. */
 const NODE_MODULES_SEGMENT = /(?:^|\/)node_modules(?:\/|$)/;
 
-/**
- * Whether a path lies inside an installed dependency.
- *
- * Exported because every caller that walks program files needs this exact boundary, and the
- * obvious `includes('node_modules')` silently drops a source directory merely named after it.
- */
 export function isInNodeModules(fileName: string): boolean {
   return NODE_MODULES_SEGMENT.test(normalize(fileName));
 }

@@ -252,10 +252,11 @@ export const npm = {
         'app-dir': appDir,
         'pkg-manager': pkgManager,
         'cache-only-lockfile': true,
-        // v3: the orb's v2 node_modules cache carries the same poisoned tree
-        // as the v7 CACHE_KEYS entries (see above); its restore overlays
-        // node_modules on top of the primary cache without overwriting.
-        'cache-version': 'v3',
+        // The orb restores its node_modules on top of the one CACHE_KEYS already
+        // restored, skipping paths that exist rather than replacing them, so a
+        // package hoisted differently in the older tree survives the merge. Both
+        // caches are versioned together: v4 pairs with v10 below.
+        'cache-version': 'v4',
       },
     };
   },
@@ -382,9 +383,19 @@ export const workflow = {
   },
 };
 
+/**
+ * Restore keys for the install cache, longest first.
+ *
+ * The shorter keys drop a checksum each, so a lockfile change falls back to a `node_modules` built
+ * for a different lockfile. `yarn install` reconciles versions it knows about, but a package the
+ * older tree hoisted to a directory the new one does not use is not in its state file and stays.
+ * The bare `v10-linux-node_modules` key makes that reachable from any branch, so one bad tree
+ * spreads. Bumping the version is what abandons a poisoned lineage; v7 and v9 were both retired
+ * this way.
+ */
 export const CACHE_KEYS = (platform = 'linux') =>
   [
-    `v9-${platform}-node_modules`,
+    `v10-${platform}-node_modules`,
     '{{ checksum ".nvmrc" }}',
     '{{ checksum ".yarnrc.yml" }}',
     '{{ checksum "yarn.lock" }}',

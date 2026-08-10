@@ -45,7 +45,7 @@ export async function loadClosestPackageJson(dir: string, attempts = 1) {
     throw new Error("Can't resolve main package.json file");
   }
 
-  const mainPath = attempts === 1 ? ['.'] : new Array(attempts).fill('..');
+  const mainPath = attempts === 1 ? ['.'] : new Array(attempts - 1).fill('..');
 
   try {
     const file = await fs.promises.readFile(join(dir, ...mainPath, 'package.json'), 'utf8');

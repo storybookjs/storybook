@@ -59,6 +59,23 @@ describe('nextjs.ts', () => {
       readFileMock.mockRestore();
     });
 
+    it('should load package.json from the parent directory on the second attempt', async () => {
+      const readFileMock = vi
+        .spyOn(fs.promises, 'readFile')
+        .mockRejectedValueOnce(new Error('File not found'))
+        .mockResolvedValueOnce('{"name": "parent"}');
+
+      const result = await loadClosestPackageJson('/path/to/dir');
+
+      expect(readFileMock).toHaveBeenNthCalledWith(
+        2,
+        path.join('/path/to', 'package.json'),
+        'utf8'
+      );
+      expect(result).toEqual({ name: 'parent' });
+      readFileMock.mockRestore();
+    });
+
     it('should throw an error after 5 attempts', async () => {
       const readFileMock = vi
         .spyOn(fs.promises, 'readFile')

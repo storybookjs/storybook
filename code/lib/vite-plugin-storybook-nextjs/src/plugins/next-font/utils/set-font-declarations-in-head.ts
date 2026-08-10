@@ -26,7 +26,7 @@ export function setFontDeclarationsInHead({ id, fontFaceCSS, classNamesCSS }: Pr
 
   return dedent`
   const fontPaths = [${fontPathsImportUrls.map((fontPath) => `{id: '${fontPath.id}', path: ${fontPath.path}}`).join(', ')}];
-  if (!document.getElementById('id-${id}')) {
+  if (!document.getElementById('font-face-${id}')) {
     let fontDeclarations = \`${fontFaceCSS}\`;
     fontPaths.forEach((fontPath, i) => {
       fontDeclarations = fontDeclarations.replace('__%%import.meta.ROLLUP_FILE_URL_' + fontPath.id + '%%__', fontPath.path.toString());

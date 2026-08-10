@@ -58,7 +58,7 @@ export function vitePluginNextImage(
   let hasVitePluginSvgr = false;
   const postfixRE = /[?#].*$/s;
   const filter = createFilter(
-    [
+    options.includeFiles ?? [
       '**/*.{png,jpg,jpeg,gif,webp,avif,ico,bmp,svg}',
       '**/*.{png,jpg,jpeg,gif,webp,avif,ico,bmp,svg}?*',
       '**/*.{png,jpg,jpeg,gif,webp,avif,ico,bmp,svg}#*',

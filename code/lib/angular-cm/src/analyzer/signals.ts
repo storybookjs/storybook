@@ -2,9 +2,10 @@ import type * as ts from 'typescript';
 
 import type { Property } from '../types.ts';
 import type { AnalyzerContext } from './context.ts';
-import { stringOption } from './decorators.ts';
+import { isAngularCoreOrUnresolved, stringOption } from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField } from './jsdoc.ts';
 import { initializerText, memberName } from './node-text.ts';
+import { stripImportQualifiers } from './type-index.ts';
 
 const SIGNAL_INPUT_NAMES = new Set(['input', 'model']);
 const SIGNAL_NAMES = new Set(['input', 'output', 'model']);
@@ -54,24 +55,6 @@ export const parseSignalCall = (
     return undefined;
   }
   return { kind: base.text as SignalCall['kind'], required, call: initializer };
-};
-
-// Unresolvable symbols fall back to bare-name matching rather than losing signal extraction in
-// projects whose `@angular/core` types are unreachable.
-const isAngularCoreOrUnresolved = (ctx: AnalyzerContext, identifier: ts.Identifier): boolean => {
-  const { checker, ts } = ctx;
-  const symbol = checker.getSymbolAtLocation(identifier);
-  if (!symbol) {
-    return true;
-  }
-  const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
-  const declarations = target.declarations;
-  if (!declarations?.length) {
-    return true;
-  }
-  return declarations.some((declaration) =>
-    declaration.getSourceFile().fileName.includes('@angular/core')
-  );
 };
 
 export const buildSignalEntry = (
@@ -132,7 +115,11 @@ const signalValueTypeFromChecker = (
   // spelling (`"left" | "right"`) is what feeds the extractor's enum path.
   const widened = valueType.isUnion() ? valueType : checker.getBaseTypeOfLiteralType(valueType);
   ctx.types.addFromType(widened);
-  return checker.typeToString(widened, member, ts.TypeFormatFlags.NoTruncation);
+  // Stripped because `addFromType` files the alias under its bare name, and the extractor matches
+  // `miscellaneous` entries by exact string equality.
+  return stripImportQualifiers(
+    checker.typeToString(widened, member, ts.TypeFormatFlags.NoTruncation)
+  );
 };
 
 const literalTypeName = (ctx: AnalyzerContext, expression: ts.Expression): string | undefined => {

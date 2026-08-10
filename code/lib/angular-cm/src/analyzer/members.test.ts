@@ -6,7 +6,7 @@ import ts from 'typescript';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import type { Directive, Method, Property } from '../types.ts';
-import { extractArgTypesFromData, passThroughText } from '../extract-arg-types.ts';
+import { extractArgTypesFromData } from '../extract-arg-types.ts';
 import type { AngularClassMeta, AngularFileMeta } from '../types.ts';
 import { analyzeSourceFile } from './analyze-file.ts';
 
@@ -28,6 +28,8 @@ const FIXTURE_NAMES = [
   'renamed-type-import.component.ts',
   'inherit-metadata.component.ts',
   'member-identity.component.ts',
+  'foreign-decorator.component.ts',
+  'signal-alias.component.ts',
 ];
 
 const FIXTURE_FILES = FIXTURE_NAMES.map((file) => join(FIXTURES, file));
@@ -70,8 +72,6 @@ const byName = <T extends { name: string }>(items: T[] | undefined, name: string
 // Mirrors what the docgen worker passes for analyzer-produced records.
 const ANALYZER_EXTRACT_OPTIONS = {
   filterNonInputControls: undefined,
-  unwrapHtml: passThroughText,
-  modern: true,
 } as const;
 
 describe('decorator inputs and outputs', () => {
@@ -420,6 +420,24 @@ describe('inheritance', () => {
     expect(child.propertiesClass).toEqual([]);
   });
 
+  it('ignores a decorator that only shares Angular’s spelling', () => {
+    const meta = analyze('foreign-decorator.component.ts');
+    const component = byName(meta.components, 'ForeignDecoratorComponent') as Directive;
+
+    expect(component.inputsClass).toEqual([]);
+    expect(component.propertiesClass.map((property) => property.name)).toEqual(['tracked']);
+  });
+
+  it('reclassifies a grandparent’s field named by a middle class’s metadata', () => {
+    const meta = analyze('inherit-metadata.component.ts');
+    const leaf = byName(meta.components, 'SpacingLeafComponent') as Directive;
+
+    // Angular binds `[spacing]` on the leaf, so emitting it as a plain property would drop the
+    // control. The middle class's metadata can only see the field once its own base is merged first.
+    expect(leaf.inputsClass.map((input) => input.name)).toEqual(['spacing']);
+    expect(leaf.propertiesClass).toEqual([]);
+  });
+
   it('drops the base alias when the child re-declares the same field as an input', () => {
     const meta = analyze('inherit-metadata.component.ts');
     const child = byName(meta.components, 'AliasedChildComponent') as Directive;
@@ -646,5 +664,23 @@ describe('member identity is the declared field, not the emitted name', () => {
 
     const modes = component().propertiesClass.filter((property) => property.name === 'mode');
     expect(modes.map((property) => property.type)).toEqual(['string', 'number']);
+  });
+});
+
+describe('signal type rendering', () => {
+  it('strips the import qualifier so a signal input’s alias matches its indexed entry', () => {
+    const meta = analyze('signal-alias.component.ts');
+    const component = meta.components[0] as Directive;
+
+    // Rendered as `import("./signal-alias-types").Theme` unless stripped, which matches nothing in
+    // `miscellaneous` and costs the control.
+    expect(byName(component.inputsClass, 'theme').type).toBe('Theme');
+    expect(meta.miscellaneous.typealiases.map((alias) => alias.name)).toContain('Theme');
+
+    const argTypes = extractArgTypesFromData(component, {
+      metadataJson: meta,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    }) as Record<string, { type?: unknown }>;
+    expect(argTypes.theme?.type).toEqual({ name: 'enum', value: ['light', 'dark'] });
   });
 });

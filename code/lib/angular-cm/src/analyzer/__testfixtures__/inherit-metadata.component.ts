@@ -25,6 +25,19 @@ export class PlainBase {
 @Component({ selector: 'sb-metadata-of-inherited', template: '', inputs: ['density'] })
 export class MetadataOfInheritedComponent extends PlainBase {}
 
+@Directive({ selector: '[sbSpacingBase]' })
+export class SpacingBase {
+  spacing = 'compact';
+}
+
+// Metadata on a middle class naming a field its own base declares, which only resolves if that base
+// is merged into the middle class before the middle class's metadata runs.
+@Directive({ selector: '[sbSpacingMid]', inputs: ['spacing'] })
+export class SpacingMidBase extends SpacingBase {}
+
+@Component({ selector: 'sb-spacing-leaf', template: '' })
+export class SpacingLeafComponent extends SpacingMidBase {}
+
 @Directive({ selector: '[sbAliasedBase]' })
 export class AliasedBase {
   @Input('label') text = 'base';

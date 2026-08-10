@@ -1,6 +1,3 @@
-/**
- * The docgen engines under measurement.
- */
 export type EngineId =
   | 'react-legacy'
   | 'react-legacy-rdt'

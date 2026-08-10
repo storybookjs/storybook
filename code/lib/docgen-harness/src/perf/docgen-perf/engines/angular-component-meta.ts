@@ -1,19 +1,9 @@
-/**
- * Series harness for the angular-component-meta engine - the in-process Angular analyzer
- * (`AngularComponentMetaManager` from `@storybook/angular-cm`). It runs over the same
- * generated project as the compodoc engine, so the angular control pair compares the two engines
- * directly.
- *
- * The manager is constructed inside the cold pass because program build is part of
- * first-extraction cost, exactly as checker creation is for vue-component-meta. The bench never
- * starts the manager's file watcher, so every save reports its rewrite through `onFilesChanged` -
- * the deterministic counterpart of the watch event, and the only invalidation that cannot miss a
- * rewrite landing within one mtime tick.
- *
- * Run from code/lib/docgen-harness:
- *   node --expose-gc src/perf/docgen-perf/engines/angular-component-meta.ts \
- *     --components 100 --props 8 --saves 10 --json /tmp/result.json
- */
+// Series harness for the in-process Angular analyzer, over the same generated project as the
+// compodoc engine so the angular control pair compares the two engines directly.
+//
+// Run from code/lib/docgen-harness:
+//   node --expose-gc src/perf/docgen-perf/engines/angular-component-meta.ts \
+//     --components 100 --props 8 --saves 10 --json /tmp/result.json
 import * as fs from 'node:fs';
 import * as path from 'node:path';
 
@@ -33,11 +23,8 @@ import { countMembers } from './compodoc-doc.ts';
 type AnalyzerModule = typeof import('@storybook/angular-cm');
 type Manager = InstanceType<AnalyzerModule['AngularComponentMetaManager']>;
 
-/**
- * The analyzer resolves through built output twice over: the specifier lands on this package's
- * dist, whose imports land on storybook's. When either is missing, Node names a path the harness
- * never mentioned, so the message would leave out the one thing the reader needs - compile first.
- */
+// The analyzer resolves through built output twice over, so a missing dist makes Node name a path
+// the harness never mentioned - without this the message omits the one thing to do: compile first.
 async function loadAnalyzer(): Promise<AnalyzerModule> {
   try {
     return await import('@storybook/angular-cm');
@@ -82,10 +69,8 @@ function parseOptions(argv: string[]): Options {
   }));
 }
 
-/**
- * Counted through the same function as compodoc's `documentation.json`, so the pair's member
- * counts - what decides the like-for-like verdict on every ratio - come from one rule.
- */
+// Counted through the same function as compodoc's `documentation.json`, so both sides of the pair
+// count members by one rule.
 function extractOne(manager: Manager, project: GeneratedAngularProject, index: number): number {
   const componentPath = project.componentPaths[index];
   const result = manager.extractComponentMeta(componentPath, {

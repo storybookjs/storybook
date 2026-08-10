@@ -3,26 +3,18 @@ import type { StrictArgTypes, StrictInputType } from '../../../../core/src/csf/s
 import type { Violation } from './types.ts';
 
 export interface CompareArgTypesOptions {
-  /**
-   * The baseline is a legacy compodoc recording, whose invented defaults (raw `false`, `NaN`, and
-   * `NaN`'s JSON round-trip `null`) must not be ratcheted. Only for legs whose baseline files the
-   * legacy Angular pipeline recorded; every other comparison treats those values as real defaults.
-   */
+  /** Waive the legacy Angular pipeline's invented defaults, which must not be ratcheted. */
   legacyBaseline?: boolean;
-  /**
-   * Additionally flag `table.type.summary` text changes and `table.type.required` true->false
-   * flips. Only for legs whose baseline the same engine recorded (the ACM self-ratchet), where the
-   * recorded table values are trustworthy rather than legacy fabrications (#28706).
-   */
+  /** Also gate `table.type.summary` text and `table.type.required`, for a same-engine baseline. */
   strictTable?: boolean;
 }
 
 /**
- * Deliberate pass-list: the comparator never flags description or default CONTENT changes,
- * `table.category`, `control`, `action`, per-arg `jsDocTags`, candidate-only (added) args, or enum
- * supersets. `required` and `table.type.summary` text changes pass except under `strictTable`.
- * Everything on that list is either engine-specific vocabulary or a recorded legacy lie (#28706);
- * changes to it are reviewed through the byte-exact snapshot diffs, not machine-gated here.
+ * Report every way the candidate argTypes document less than the baseline.
+ *
+ * The comparator deliberately passes description and default CONTENT changes, `table.category`,
+ * `control`, `action`, per-arg `jsDocTags`, added args, and enum supersets: those are
+ * engine-specific vocabulary, reviewed through the byte-exact snapshot diffs instead.
  */
 export function compareArgTypes(
   baseline: StrictArgTypes,
@@ -57,9 +49,8 @@ export function compareArgTypes(
     }
     if (
       hasDefaultValue(baseEntry, options.legacyBaseline === true) &&
-      // The invented-default waiver describes the LEGACY side only: a modern candidate records
-      // `false`/`null` deliberately, so treating those as absent here manufactured lost-default
-      // findings for genuinely-defaulted args (18 of bitwarden's 54 findings).
+      // The waiver is one-sided: a modern candidate records `false`/`null` deliberately, so reading
+      // those as absent here would manufacture lost-default findings for genuinely-defaulted args.
       !hasDefaultValue(candidateEntry, false)
     ) {
       violations.push({
@@ -102,16 +93,9 @@ const hasDefaultValue = (entry: StrictInputType, legacyBaseline: boolean): boole
   entry.defaultValue !== undefined ||
   isRecordedSummary(entry.table?.defaultValue?.summary, legacyBaseline);
 
-/**
- * Whether a `table.defaultValue.summary` records a real default. The legacy Angular extractor
- * invents defaults for members that have none - `NaN` from `Number(undefined)` / `Number('expr')`
- * and boolean `false` from `undefined === 'true'` - which the no-invented-NaN gap marker
- * (angular-legacy-gaps.test.ts) pins as fabrications, and a JSON round-trip (the sandbox
- * baselines) writes that `NaN` as `null`. In a legacy compodoc baseline those raw values are
- * indistinguishable from their invented counterpart, so `legacyBaseline` waives them there: a
- * candidate that stops inventing them loses nothing. Everywhere else the recording engine writes
- * raw `false` / `null` only for genuine defaults, so only `undefined` counts as absent.
- */
+// The legacy Angular extractor invents `NaN` and `false` defaults for members that have none, and a
+// JSON round-trip writes that `NaN` as `null`. A legacy baseline cannot tell those apart from real
+// defaults, so it waives all three; a candidate that stops inventing them loses nothing.
 const isRecordedSummary = (summary: unknown, legacyBaseline: boolean): boolean => {
   if (summary === undefined) {
     return false;
@@ -124,11 +108,8 @@ const isRecordedSummary = (summary: unknown, legacyBaseline: boolean): boolean =
   );
 };
 
-/**
- * `table.type.summary` drops are violations in every mode; text changes only under `strictTable`,
- * alongside `table.type.required` true->false flips. `table.type` is loosely typed upstream
- * (`required` is a corpus field the csf type does not declare), hence the unknown-safe reads.
- */
+// `table.type` is loosely typed upstream - `required` is a corpus field the csf type does not
+// declare - hence the unknown-safe reads.
 function compareTypeSummary(
   arg: string,
   baseEntry: StrictInputType,
@@ -172,7 +153,6 @@ function compareTypeSummary(
   return violations;
 }
 
-/** A summary counts as recorded when it stringifies to non-whitespace text. */
 const recordedTypeSummary = (summary: unknown): string | undefined => {
   if (summary === undefined || summary === null) {
     return undefined;
@@ -189,10 +169,8 @@ const describeDefault = (entry: StrictInputType): string =>
 
 const printType = (type: SBType): string => JSON.stringify(canonicalType(type));
 
-/**
- * The type pass-list: deep equality after normalization, or an enumerated improvement. Everything
- * lateral fails and is accepted only through a reviewed baseline update.
- */
+// Deep equality after normalization, or an enumerated improvement. Everything lateral fails and is
+// accepted only through a reviewed baseline update.
 function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
   if (deepEqual(canonicalType(baseline), canonicalType(candidate))) {
     return true;
@@ -243,18 +221,12 @@ function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
   return false;
 }
 
-/** The corpus markers for "the engine extracted nothing"; any candidate improves on them. */
+// The corpus markers for "the engine extracted nothing"; any candidate improves on them.
 const UNRESOLVED_STUBS = new Set(['', 'undefined', 'empty-enum']);
 
-/**
- * Legacy engines park whatever they cannot resolve in `other`, so its value is free text naming a
- * real type rather than a shape. A candidate improves on it by adding populated structure or by
- * resolving it to the scalar or single literal it already named; an unrelated scalar, an unrelated
- * literal, or an EMPTY structure (enum/union/intersection/tuple with no members, object with no
- * keys) is a lateral change. Reading more out of the text would mean guessing at each engine's
- * spelling, so a resolution the rule cannot recognize fails and is accepted through a reviewed
- * re-record - the harness's normal acceptance path.
- */
+// Legacy engines park what they cannot resolve in `other`, so its value is free text naming a real
+// type rather than a shape. Reading more than a scalar or single literal out of that text would mean
+// guessing at each engine's spelling, so anything else falls through to a reviewed re-record.
 const resolvesStub = (stub: string, candidate: SBType): boolean => {
   const text = stub.trim();
   if (UNRESOLVED_STUBS.has(text)) {
@@ -283,7 +255,7 @@ const isPopulatedStructure = (candidate: SBType): boolean => {
   }
 };
 
-/** Ignores `required` and `raw` at every level and normalizes literal-ish values. */
+// Ignores `required` and `raw` at every level and normalizes literal-ish values.
 function canonicalType(type: SBType): unknown {
   switch (type.name) {
     case 'enum':
@@ -312,11 +284,8 @@ function canonicalType(type: SBType): unknown {
   }
 }
 
-/**
- * Literal-ish values compare as strings with symmetric surrounding quotes stripped: the corpus
- * records the same member as '"small"' (Vue other-typed union member), 'small' (Angular enum
- * value), or a literal member value.
- */
+// The corpus records the same member as '"small"', 'small', or a literal member value, so quotes are
+// stripped before comparing.
 const normalizeLiteral = (value: unknown): string => {
   if (typeof value === 'string') {
     const match = /^"([^"]*)"$/.exec(value) ?? /^'([^']*)'$/.exec(value);

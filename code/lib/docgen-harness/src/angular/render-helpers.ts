@@ -31,13 +31,9 @@ type AotCmp = {
 
 type SnippetComponent = Parameters<typeof computesTemplateSourceFromComponent>[0];
 
-/**
- * Signal fixtures cannot mount under JIT: bare JIT leaves ɵcmp.inputs/outputs empty, which would
- * record `<tag></tag>` harness artifacts instead of real member bindings. Replace ɵcmp wholesale
- * with the fixture's committed AOT-shaped fragment (defineProperty, because the JIT decorator
- * installs a getter), then assert the production reader sees its members so a broken attach fails
- * loudly instead of recording silently. No-op for fixtures without an aot-cmp.ts.
- */
+// Signal fixtures cannot mount under JIT: bare JIT leaves ɵcmp.inputs/outputs empty, which would
+// record `<tag></tag>` artifacts instead of real member bindings. The committed AOT-shaped fragment
+// goes on through defineProperty because the JIT decorator installs a getter.
 export async function attachAotCmp(
   component: SnippetComponent,
   fixtureCase: string
@@ -59,13 +55,9 @@ export async function attachAotCmp(
   }
 }
 
-/**
- * Records one snippet snapshot per story export (story args merged over meta args, a noop handler
- * synthesized for every action argType), ratcheting each against its committed recording. Finally
- * fails on stale on-disk snapshots: toMatchFileSnapshot files sit outside vitest's
- * obsolete-snapshot detection, so a renamed or removed story export would silently leave its old
- * snapshot behind.
- */
+// One snippet snapshot per story export, ratcheted against its committed recording. The stale-file
+// check at the end exists because toMatchFileSnapshot files sit outside vitest's obsolete-snapshot
+// detection, so a renamed or removed story export would silently leave its old snapshot behind.
 export async function recordSnippets({
   fixtureCase,
   component,
@@ -80,9 +72,8 @@ export async function recordSnippets({
   meta: { args?: Record<string, unknown> };
   stories: Record<string, { args?: Record<string, unknown> }>;
   argTypes: ArgTypes | undefined;
-  /** Snapshot file prefix: `snippet-` for the legacy recorder, `acm-snippet-` for the ACM one. */
   prefix: 'snippet-' | 'acm-snippet-';
-  /** Additionally gate every snippet against the legacy recorder's committed `snippet-` file. */
+  // Additionally gate every snippet against the legacy recorder's committed `snippet-` file.
   legacyParity?: boolean;
 }): Promise<void> {
   const testDir = join(fixturesDir, fixtureCase);

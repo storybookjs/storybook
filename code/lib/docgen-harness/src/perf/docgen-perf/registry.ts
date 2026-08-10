@@ -1,8 +1,5 @@
-/**
- * The engine table. Adding an engine means adding one entry here; the orchestrator has no
- * per-engine branches. Everything below is data: which child to spawn, with which flags, over
- * which scenarios.
- */
+// The engine table: adding an engine means adding one entry here, and the orchestrator has no
+// per-engine branches.
 import type { SuiteProfile } from './config.ts';
 import { type BenchEngine, type ScenarioSpec, SeriesChildEngine } from './engine.ts';
 import { CompodocEngine } from './engines/compodoc.ts';

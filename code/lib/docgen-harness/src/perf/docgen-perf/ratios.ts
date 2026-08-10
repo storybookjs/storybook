@@ -1,8 +1,5 @@
-/**
- * The calibration references: each framework's legacy-engine median divided by its new-engine
- * median, both measured in the same invocation. Ratios stand in for absolute milliseconds because
- * wall-clock on shared CI executors is too noisy to gate (PERF-METHODOLOGY.md, "Budget shape").
- */
+// Ratios stand in for absolute milliseconds because wall-clock on shared CI executors is too noisy
+// to gate. See PERF-METHODOLOGY.md, "Budget shape".
 import type {
   Comparability,
   EngineId,
@@ -43,25 +40,15 @@ export const CONTROL_PAIRS: ControlPair[] = [
   },
 ];
 
-/**
- * Even repetitions run the engines back to front, so cache warming and thermal drift do not
- * consistently favour whichever side of a pair is listed first.
- *
- * Reversing the whole list rather than swapping each pair in place is what makes that hold for
- * *every* pair at once. Pairs can share an engine - `vue-component-meta` is the new side of the vue
- * pair and the legacy side of the version pair - and swapping such a chain pairwise moves the shared
- * engine twice, which puts the first pair back in its original relative order.
- */
+// Even repetitions run the engines back to front, so cache warming and thermal drift do not
+// consistently favour whichever side of a pair is listed first. Reversing the whole list rather than
+// swapping each pair in place is what makes that hold for pairs that share an engine.
 export function engineOrderForRep(engines: EngineId[], rep: number): EngineId[] {
   return rep % 2 === 0 ? [...engines].reverse() : [...engines];
 }
 
-/**
- * Undefined unless both sides measured: dividing by a skipped or failed side is not a comparison.
- *
- * A zero denominator is treated the same way. It means the new engine's median landed below the
- * clock's resolution, and Infinity would then be rendered and stored as if it were a ratio.
- */
+// Undefined unless both sides measured, and for a zero denominator too: an Infinity would be
+// rendered and stored as if it were a ratio.
 function medianRatio(legacy: Metric, next: Metric) {
   if (legacy.status !== 'measured' || next.status !== 'measured') {
     return undefined;
@@ -70,14 +57,8 @@ function medianRatio(legacy: Metric, next: Metric) {
   return Number.isFinite(ratio) ? ratio : undefined;
 }
 
-/**
- * Member counts decide first, and any difference there settles it. Only once they agree does the
- * count of types an engine never looked through get a say, which is the case a member count on its
- * own cannot see.
- *
- * A missing count on either side yields `unknown` rather than a verdict. Treating it as agreement
- * would mark a pair like-for-like on the strength of a number nobody measured.
- */
+// Member counts settle it whenever they differ; the opaque-type counts only break a tie, because
+// documenting a type's name without looking through it is the case a member count cannot see.
 function comparability(
   legacyMembers: number | undefined,
   nextMembers: number | undefined,
@@ -131,14 +112,8 @@ interface PairVersions {
   nextVersion?: string;
 }
 
-/**
- * Ratios for every control pair whose two engines both measured in this invocation. A pair with one
- * failed or skipped side yields nothing: dividing a fresh median by a stale one is not a comparison.
- *
- * Resolved versions ride along because a pair can have both sides land on the same version - a
- * range on one side is enough - and a ratio of one taken against itself must not read as a clean
- * result.
- */
+// Resolved versions ride along because a range on one side can land both sides on the same version,
+// and a ratio taken against itself must not read as a clean result.
 export function computeRatios(
   results: Partial<Record<EngineId, EngineResult>>,
   engineVersions: Partial<Record<EngineId, string>> = {}

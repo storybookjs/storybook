@@ -1,27 +1,20 @@
 import { parseAttributes, parseRootElement } from './parse-element.ts';
 import type { Violation } from './types.ts';
 
-/**
- * Angular snippets are a single element; `[input]` and `(output)` attributes are the grammar.
- * Attributes are parsed structurally rather than regexed over the whole string, so binding-shaped
- * text inside an attribute VALUE can never count as representation, and quote style or spacing
- * around `=` cannot fail the comparison. Binding names run to the closing delimiter, because an
- * `@Input`/`@Output` alias is an arbitrary string: `[attr.xlink:href]`, `[@fadeIn]`,
- * `(@fadeIn.done)`, `[style.width.%]`, and non-ASCII names must all count.
- */
+// A binding name runs to its closing delimiter because an `@Input`/`@Output` alias is an arbitrary
+// string: `[attr.xlink:href]`, `[@fadeIn]`, `[style.width.%]` and non-ASCII names must all count.
 interface ParsedAngularSnippet {
   tag: string;
-  /** Represented binding names, with `[(x)]` expanded to `x` + `xChange`. */
+  // Represented binding names, with `[(x)]` expanded to `x` + `xChange`.
   names: Set<string>;
-  /** Valueless non-binding attributes, e.g. the mangled attribute-selector marker. */
+  // Valueless non-binding attributes, e.g. the mangled attribute-selector marker.
   bareAttributes: Set<string>;
-  /** Every attribute name on the root element, bindings and plain attributes alike. */
+  // Every attribute name on the root element, bindings and plain attributes alike.
   attributeNames: Set<string>;
   childContent: string | undefined;
 }
 
-// A binding-shaped attribute: `[...]`, `(...)`, or `[(...)]` followed by `=`. Used to break the
-// corpus loudly when child content carries bindings the root-only grammar would skip.
+// A binding-shaped attribute: `[...]`, `(...)`, or `[(...)]` followed by `=`.
 const CHILD_BINDING_SHAPE = /[[(][^\s=>]*[\])]\s*=/;
 
 function parseAngularSnippet(snippet: string): ParsedAngularSnippet | undefined {

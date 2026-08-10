@@ -13,7 +13,7 @@ export interface BaselineFinding {
   message: string;
 }
 
-/** Key-sorted JSON so a diff reflects content, never the order a producer happened to emit. */
+// Key-sorted JSON so a diff reflects content, never the order a producer happened to emit.
 export function stableStringify(value: unknown, indent = 2): string {
   const sortKeys = (input: unknown): unknown => {
     if (Array.isArray(input)) {
@@ -33,7 +33,6 @@ export function stableStringify(value: unknown, indent = 2): string {
 
 const equal = (a: unknown, b: unknown): boolean => stableStringify(a) === stableStringify(b);
 
-/** A component counts as documented when the provider produced props rather than an error. */
 const isDocumented = (entry: SandboxBaseline): boolean =>
   entry.error === undefined && entry.argTypes !== undefined;
 
@@ -106,17 +105,15 @@ function compareComponent(
   return findings;
 }
 
-/** Whether an arg records a default value; a raw `false` or `null` summary is a genuine one here. */
+// A raw `false` or `null` summary counts: these baselines are recorded by the modern engine, which
+// writes those only for a genuine default.
 const hasDefault = (entry: Record<string, unknown> | undefined): boolean =>
   entry?.defaultValue !== undefined ||
   (entry?.table as { defaultValue?: { summary?: unknown } } | undefined)?.defaultValue?.summary !==
     undefined;
 
-/**
- * The losses that make an argTypes difference a regression rather than neutral drift: an arg the
- * build no longer produces, or one that no longer records a default. Everything else (added args,
- * reworded prose, a type that resolved differently) is drift a reviewer accepts by re-recording.
- */
+// What makes an argTypes difference a regression rather than drift. Everything else - added args,
+// reworded prose, a type that resolved differently - is accepted by re-recording.
 function argTypeLosses(before: unknown, after: unknown): string[] {
   const beforeArgs = (before ?? {}) as Record<string, Record<string, unknown>>;
   const afterArgs = (after ?? {}) as Record<string, Record<string, unknown>>;
@@ -132,10 +129,8 @@ function argTypeLosses(before: unknown, after: unknown): string[] {
   return losses;
 }
 
-/**
- * Names the affected arg(s) and sub-field(s) of an argTypes difference; the two sides usually share
- * the same arg names, so key lists alone say nothing.
- */
+// Names the affected args and sub-fields: the two sides usually share the same arg names, so a key
+// list alone says nothing.
 function diffArgTypes(before: unknown, after: unknown): string {
   const beforeArgs = (before ?? {}) as Record<string, Record<string, unknown>>;
   const afterArgs = (after ?? {}) as Record<string, Record<string, unknown>>;
@@ -163,7 +158,7 @@ function diffArgTypes(before: unknown, after: unknown): string {
   return parts.join('; ');
 }
 
-/** Keeps a finding readable when the field is a whole argTypes table or a multi-line message. */
+// Keeps a finding readable when the field is a whole argTypes table or a multi-line message.
 const summarize = (value: unknown): unknown => {
   if (value === undefined) {
     return undefined;
@@ -178,7 +173,6 @@ const summarize = (value: unknown): unknown => {
   return value;
 };
 
-/** Compares a committed baseline set against a freshly-read one, component by component. */
 export function compareBaselines(
   baseline: SandboxBaselines,
   candidate: SandboxBaselines
@@ -216,7 +210,7 @@ export function compareBaselines(
   return findings;
 }
 
-/** Groups findings for the CLI report: regressions first, since they are the blocking kind. */
+// Regressions first, since they are the blocking kind.
 export function formatFindings(findings: BaselineFinding[]): string {
   const lines: string[] = [];
   for (const severity of ['regression', 'change'] as const) {

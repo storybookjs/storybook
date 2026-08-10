@@ -9,14 +9,12 @@ export interface CompareSnippetInput {
 }
 
 /**
- * Compares which names a snippet represents, never how it formats them: represented-name sets are
- * insensitive to attribute order, whitespace, quote style, and hoisted-vs-inline values by
- * construction. A name represented in the baseline but not the candidate is a violation; a
- * candidate-only representation is an improvement; a declared arg absent from both sides is an
- * accepted delta the committed baseline encodes (e.g. Vue drops function args). The Angular
- * comparison additionally gates root-element identity (tag name and bare attributes), because an
- * Angular snippet's root IS the component selector. Value fidelity is reviewed through the
- * snapshot diff, not compared here.
+ * Report every name the baseline snippet represents and the candidate does not.
+ *
+ * Only which names a snippet represents, never how it formats them: attribute order, whitespace,
+ * quote style, and hoisted-vs-inline values cannot fail the comparison. Value fidelity is reviewed
+ * through the snapshot diff instead. Angular additionally gates the root element, because there the
+ * root IS the component selector.
  */
 export function compareSnippet(input: CompareSnippetInput): Violation[] {
   if (input.framework === 'angular') {
@@ -54,7 +52,6 @@ export function compareSnippet(input: CompareSnippetInput): Violation[] {
   return violations;
 }
 
-/** Every framework brings its own snippet grammar; the matchers live in snippets-<framework>.ts. */
 function representedNames(framework: Exclude<Framework, 'angular'>, snippet: string) {
   switch (framework) {
     case 'vue3':

@@ -36,7 +36,7 @@ const checkerOptions: MetaCheckerOptions = {
 };
 const checker = createCheckerByJson(fixturesDir, { include: ['**/*'] }, checkerOptions);
 
-/** Copy of the production plugin's nested-schema pruning. */
+// Copy of the production plugin's nested-schema pruning.
 function removeNestedSchemas(schema: PropertyMetaSchema) {
   if (typeof schema !== 'object') {
     return;
@@ -53,11 +53,8 @@ function removeNestedSchemas(schema: PropertyMetaSchema) {
 
 const lowercaseFirstLetter = (s: string) => s.charAt(0).toLowerCase() + s.slice(1);
 
-/**
- * Replicates the production plugin's meta processing for the fixture SFC's default export:
- * empty-meta skip, event-description backfill via vue-docgen-api, nested-schema pruning, and the
- * exposed de-duplication filters. Returns undefined where production would attach no __docgenInfo.
- */
+// Replicates the production plugin's meta processing so a recording represents what a real build
+// attaches, the undefined case included.
 async function buildComponentMetaDocgen(sfcPath: string): Promise<object | undefined> {
   let meta: ComponentMeta;
   try {

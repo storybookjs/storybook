@@ -1,11 +1,6 @@
-/**
- * Reading compodoc's `documentation.json`.
- *
- * Compodoc records how much it documented and how much of it it actually resolved, which is what
- * makes its timings readable: it never expands a named type, so a chain of aliases costs it nothing
- * and it still reports every member. Counting members alone would let it look equal to an engine
- * that did far more work.
- */
+// Compodoc never expands a named type, so a chain of aliases costs it nothing while it still reports
+// every member. Counting members alone would let it look equal to an engine that did far more work,
+// which is why the opaque-type count is read alongside them.
 import * as fs from 'node:fs';
 
 interface MemberEntry {
@@ -14,11 +9,8 @@ interface MemberEntry {
   subProperties?: unknown[];
 }
 
-/**
- * The compodoc-shaped record both Angular engines count members from. Exported so the
- * angular-component-meta engine counts its per-component entries through {@link countMembers} too;
- * the pair's like-for-like verdict rests on both sides being counted by one rule.
- */
+// Exported so the angular-component-meta engine counts its entries through `countMembers` too: the
+// pair's like-for-like verdict rests on both sides being counted by one rule.
 export interface MemberHolder {
   inputsClass?: MemberEntry[];
   outputsClass?: MemberEntry[];
@@ -33,20 +25,14 @@ interface Documentation {
 
 const MEMBER_ARRAYS = ['inputsClass', 'outputsClass', 'propertiesClass', 'methodsClass'] as const;
 
-/**
- * `classes` is deliberately left out. Compodoc copies an ancestor's members into every descendant's
- * own arrays, so a base class documented under `classes` would be counted a second time. This also
- * matches what Storybook reads, which is a component's own four arrays.
- */
+// `classes` is deliberately left out: compodoc copies an ancestor's members into every descendant's
+// own arrays, so a base class documented there would be counted a second time.
 function documentedHolders(doc: Documentation): MemberHolder[] {
   return [...(doc.components ?? []), ...(doc.directives ?? [])];
 }
 
-/**
- * Names that describe themselves, so recording one is not a resolution an engine skipped. Keyword
- * spellings are lowercase as compodoc emits them (`function`, not `Function`); both are listed
- * because the two spellings reach the same member field.
- */
+// Names that describe themselves, so recording one is not a resolution an engine skipped. Both
+// spellings of a keyword are listed because they reach the same member field.
 const RESOLVED_TYPES = new Set([
   'string',
   'number',
@@ -67,14 +53,8 @@ const RESOLVED_TYPES = new Set([
   'Object',
 ]);
 
-/**
- * A member whose type is a bare name the engine never looked through - `Hop19Shape`, not
- * `{ x: string }`. Inline object literals, primitives and literal unions are all self-describing,
- * so only a lone identifier counts.
- *
- * This is a floor: wrapped forms such as `Partial<Shape>` are equally unresolved but do not match,
- * so the true share of unresolved types is at least what this reports.
- */
+// A member whose type is a bare name the engine never looked through. Only a lone identifier counts,
+// so wrapped forms like `Partial<Shape>` are missed and the reported share is a floor.
 function isOpaque(entry: MemberEntry): boolean {
   if (entry.subProperties?.length || !entry.type) {
     return false;

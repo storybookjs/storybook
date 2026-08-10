@@ -41,6 +41,3 @@ export const parseAttributes = (attrText: string): ParsedAttribute[] =>
     name: match[1],
     bare: match[2] === undefined,
   }));
-
-export const parseAttributeNames = (attrText: string): string[] =>
-  parseAttributes(attrText).map((attribute) => attribute.name);

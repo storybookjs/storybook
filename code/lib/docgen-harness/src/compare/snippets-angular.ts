@@ -63,10 +63,10 @@ function assertGatableChildContent(
 
 // The recorder skips comparison entirely for a first-time snapshot, so the candidate has to be
 // checked there too or an ungatable snippet gets committed and only throws on the run after.
-export function assertGatableAngularSnippet(snippet: string, side: 'baseline' | 'candidate'): void {
+export function assertGatableAngularSnippet(snippet: string): void {
   const parsed = parseAngularSnippet(snippet);
   if (parsed !== undefined) {
-    assertGatableChildContent(parsed, side);
+    assertGatableChildContent(parsed, 'candidate');
   }
 }
 

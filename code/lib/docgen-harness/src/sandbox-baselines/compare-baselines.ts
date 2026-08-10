@@ -1,3 +1,5 @@
+import type { StrictInputType } from '../../../../core/src/csf/story.ts';
+import { hasDefaultValue } from '../compare/argtypes.ts';
 import type { SandboxBaseline, SandboxBaselines } from './read-static-docgen.ts';
 
 export interface BaselineFinding {
@@ -82,15 +84,15 @@ function compareComponent(
       continue;
     }
     if (field === 'argTypes') {
-      const losses = argTypeLosses(before, after);
+      const { losses, summary } = diffArgTypes(before, after);
       findings.push({
         component,
         severity: losses.length > 0 ? 'regression' : 'change',
         kind: 'argtypes',
         message:
           losses.length > 0
-            ? `argTypes lost content (${losses.join('; ')}); full diff: ${diffArgTypes(before, after)}`
-            : `argTypes differs: ${diffArgTypes(before, after)}`,
+            ? `argTypes lost content (${losses.join('; ')}); full diff: ${summary}`
+            : `argTypes differs: ${summary}`,
       });
       continue;
     }
@@ -105,36 +107,19 @@ function compareComponent(
   return findings;
 }
 
-// A raw `false` or `null` summary counts: these baselines are recorded by the modern engine, which
-// writes those only for a genuine default.
-const hasDefault = (entry: Record<string, unknown> | undefined): boolean =>
-  entry?.defaultValue !== undefined ||
-  (entry?.table as { defaultValue?: { summary?: unknown } } | undefined)?.defaultValue?.summary !==
-    undefined;
-
-// What makes an argTypes difference a regression rather than drift. Everything else - added args,
-// reworded prose, a type that resolved differently - is accepted by re-recording.
-function argTypeLosses(before: unknown, after: unknown): string[] {
-  const beforeArgs = (before ?? {}) as Record<string, Record<string, unknown>>;
-  const afterArgs = (after ?? {}) as Record<string, Record<string, unknown>>;
-  const losses: string[] = [];
-  for (const arg of Object.keys(beforeArgs).sort()) {
-    const afterEntry = afterArgs[arg];
-    if (afterEntry === undefined) {
-      losses.push(`${arg} removed`);
-    } else if (hasDefault(beforeArgs[arg]) && !hasDefault(afterEntry)) {
-      losses.push(`${arg} lost its default`);
-    }
-  }
-  return losses;
-}
-
-// Names the affected args and sub-fields: the two sides usually share the same arg names, so a key
-// list alone says nothing.
-function diffArgTypes(before: unknown, after: unknown): string {
-  const beforeArgs = (before ?? {}) as Record<string, Record<string, unknown>>;
-  const afterArgs = (after ?? {}) as Record<string, Record<string, unknown>>;
+/**
+ * One pass over both argTypes tables, yielding the regression list and the readable summary.
+ *
+ * A loss is an arg the build no longer produces or one that no longer records a default; everything
+ * else - added args, reworded prose, a type that resolved differently - is drift accepted by
+ * re-recording. The summary names the affected args and sub-fields, because the two sides usually
+ * share the same arg names and a key list alone says nothing.
+ */
+function diffArgTypes(before: unknown, after: unknown): { losses: string[]; summary: string } {
+  const beforeArgs = (before ?? {}) as Record<string, StrictInputType>;
+  const afterArgs = (after ?? {}) as Record<string, StrictInputType>;
   const args = new Set([...Object.keys(beforeArgs), ...Object.keys(afterArgs)]);
+  const losses: string[] = [];
   const parts: string[] = [];
   for (const arg of [...args].sort()) {
     const beforeEntry = beforeArgs[arg];
@@ -144,18 +129,28 @@ function diffArgTypes(before: unknown, after: unknown): string {
       continue;
     }
     if (afterEntry === undefined) {
+      losses.push(`${arg} removed`);
       parts.push(`${arg} (removed)`);
       continue;
+    }
+    if (hasDefaultValue(beforeEntry) && !hasDefaultValue(afterEntry)) {
+      losses.push(`${arg} lost its default`);
     }
     const subFields = new Set([...Object.keys(beforeEntry), ...Object.keys(afterEntry)]);
     const changed = [...subFields]
       .sort()
-      .filter((subField) => !equal(beforeEntry[subField], afterEntry[subField]));
+      .filter(
+        (subField) =>
+          !equal(
+            beforeEntry[subField as keyof StrictInputType],
+            afterEntry[subField as keyof StrictInputType]
+          )
+      );
     if (changed.length > 0) {
       parts.push(`${arg} (${changed.join(', ')})`);
     }
   }
-  return parts.join('; ');
+  return { losses, summary: parts.join('; ') };
 }
 
 // Keeps a finding readable when the field is a whole argTypes table or a multi-line message.

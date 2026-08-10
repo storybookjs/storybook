@@ -10,10 +10,7 @@ import ts from 'typescript';
 
 import { AngularComponentMetaManager, extractArgTypesFromData } from '@storybook/angular-cm';
 import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
-import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
-import { isSnapshotUpdateRun } from '../compare/is-snapshot-update-run.ts';
-import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
-import { pendingRawSnapshotContent } from '../compare/pending-raw-snapshot.ts';
+import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 import {
   attachAotCmp,
@@ -61,9 +58,6 @@ describe('angular component-meta baselines', () => {
       const { entry, json } = result!;
 
       const recordArgTypes = async (filterNonInputControls: boolean, prefix: string) => {
-        const acmPath = join(testDir, `acm-${prefix}.snapshot`);
-        const acmLabel = `${fixtureCase}/acm-${prefix}.snapshot`;
-        const committedAcm = readCommitted(acmPath);
         // The same call the docgen worker makes, so the recorded baselines represent production
         // output.
         const extracted = extractArgTypesFromData(entry, {
@@ -71,43 +65,20 @@ describe('angular component-meta baselines', () => {
           filterNonInputControls,
         }) as StrictArgTypes;
 
-        // Both gates run BEFORE the snapshot call: under `-u` that call queues the rewrite, so a gate
-        // placed after it would persist the regressed recording and the rerun would go green.
-        const parsedAcm =
-          committedAcm !== undefined ? parseArgTypesSnapshot(committedAcm, acmLabel) : undefined;
-        if (parsedAcm !== undefined) {
-          // The one leg whose baseline the same engine recorded, so its table values are trustworthy
-          // enough to gate summary text and required flips too.
-          expectCurrentOrBetter({
-            kind: 'argTypes',
-            baseline: parsedAcm,
-            candidate: extracted,
-            strictTable: true,
-          });
-        }
-
+        const legacyLabel = `${fixtureCase}/${prefix}.snapshot`;
         // Asserted to exist so deleting the legacy files can never silently disarm the parity gate.
         const committedLegacy = readCommitted(join(testDir, `${prefix}.snapshot`));
-        expect(committedLegacy, `missing legacy ${fixtureCase}/${prefix}.snapshot`).toBeDefined();
-        expectCurrentOrBetter({
-          kind: 'argTypes',
-          baseline: parseArgTypesSnapshot(committedLegacy!, `${fixtureCase}/${prefix}.snapshot`),
+        expect(committedLegacy, `missing legacy ${legacyLabel}`).toBeDefined();
+
+        await recordArgTypesSnapshot({
+          path: join(testDir, `acm-${prefix}.snapshot`),
+          label: `${fixtureCase}/acm-${prefix}.snapshot`,
           candidate: extracted,
-          legacyBaseline: true,
+          // The self-ratchet leg's baseline was written by this same engine, so its table values are
+          // trustworthy enough to gate summary text and required flips too.
+          strictTable: true,
+          extraGates: [{ committed: committedLegacy!, label: legacyLabel, legacyBaseline: true }],
         });
-
-        await expect(extracted).toMatchFileSnapshot(acmPath);
-
-        if (isSnapshotUpdateRun()) {
-          // `-u` skips the round-trip proof below, so the bytes this run will flush are checked here
-          // instead; a recording whose unescaped write misparses can then never land green.
-          const finalText = pendingRawSnapshotContent(acmPath) ?? committedAcm;
-          expect(finalText, `no snapshot content recorded for ${acmLabel}`).toBeDefined();
-          expect(parseArgTypesSnapshot(finalText!, acmLabel)).toEqual(extracted);
-        } else if (parsedAcm !== undefined) {
-          // The tokenizer must reconstruct exactly what pretty-format wrote.
-          expect(parsedAcm).toEqual(extracted);
-        }
 
         return extracted;
       };
@@ -121,15 +92,7 @@ describe('angular component-meta baselines', () => {
 
       await attachAotCmp(component, fixtureCase);
 
-      await recordSnippets({
-        fixtureCase,
-        component,
-        meta,
-        stories,
-        argTypes,
-        prefix: 'acm-snippet-',
-        legacyParity: true,
-      });
+      await recordSnippets({ fixtureCase, component, meta, stories, argTypes, recorder: 'acm' });
     },
     // Each fixture's first extraction builds a cold TS LanguageService program (lib +
     // @angular/core types), which can outrun the 10s default on CI.

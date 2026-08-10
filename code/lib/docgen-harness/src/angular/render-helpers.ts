@@ -64,18 +64,16 @@ export async function recordSnippets({
   meta,
   stories,
   argTypes,
-  prefix,
-  legacyParity = false,
+  recorder,
 }: {
   fixtureCase: string;
   component: SnippetComponent;
   meta: { args?: Record<string, unknown> };
   stories: Record<string, { args?: Record<string, unknown> }>;
   argTypes: ArgTypes | undefined;
-  prefix: 'snippet-' | 'acm-snippet-';
-  // Additionally gate every snippet against the legacy recorder's committed `snippet-` file.
-  legacyParity?: boolean;
+  recorder: 'legacy' | 'acm';
 }): Promise<void> {
+  const prefix = recorder === 'acm' ? 'acm-snippet-' : 'snippet-';
   const testDir = join(fixturesDir, fixtureCase);
   expect(Object.keys(stories).length).toBeGreaterThan(0);
 
@@ -91,34 +89,29 @@ export async function recordSnippets({
       }
     }
     const snippetPath = join(testDir, `${prefix}${exportName}.snapshot`);
-    const committedSnippet = readCommitted(snippetPath);
+    const baselines = [readCommitted(snippetPath)];
+    if (recorder === 'acm') {
+      // Asserted to exist so deleting the legacy files can never silently disarm the parity gate.
+      const legacyLabel = `${fixtureCase}/snippet-${exportName}.snapshot`;
+      const committedLegacy = readCommitted(join(testDir, `snippet-${exportName}.snapshot`));
+      expect(committedLegacy, `missing legacy ${legacyLabel}`).toBeDefined();
+      baselines.push(committedLegacy);
+    }
     const snippet = computesTemplateSourceFromComponent(component, props, argTypes);
     // null only when the component has no decorator metadata - impossible for these fixtures.
     expect(snippet).not.toBeNull();
-    // Both gates run BEFORE the snapshot call: under `-u` that call queues the rewrite, so a
-    // gate placed after it would turn the run red while still persisting the regressed recording.
-    assertGatableAngularSnippet(snippet!, 'candidate');
-    if (committedSnippet !== undefined) {
-      expectCurrentOrBetter({
-        kind: 'snippet',
-        framework: 'angular',
-        baseline: committedSnippet,
-        candidate: snippet!,
-      });
-    }
-    if (legacyParity) {
-      // Asserted to exist so deleting the legacy files can never silently disarm this gate.
-      const committedLegacySnippet = readCommitted(join(testDir, `snippet-${exportName}.snapshot`));
-      expect(
-        committedLegacySnippet,
-        `missing legacy ${fixtureCase}/snippet-${exportName}.snapshot`
-      ).toBeDefined();
-      expectCurrentOrBetter({
-        kind: 'snippet',
-        framework: 'angular',
-        baseline: committedLegacySnippet!,
-        candidate: snippet!,
-      });
+    // Every gate runs BEFORE the snapshot call: under `-u` that call queues the rewrite, so a gate
+    // placed after it would turn the run red while still persisting the regressed recording.
+    assertGatableAngularSnippet(snippet!);
+    for (const baseline of baselines) {
+      if (baseline !== undefined) {
+        expectCurrentOrBetter({
+          kind: 'snippet',
+          framework: 'angular',
+          baseline,
+          candidate: snippet!,
+        });
+      }
     }
     await expect(snippet).toMatchFileSnapshot(snippetPath);
   }

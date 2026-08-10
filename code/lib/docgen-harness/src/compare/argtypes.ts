@@ -51,7 +51,7 @@ export function compareArgTypes(
       hasDefaultValue(baseEntry, options.legacyBaseline === true) &&
       // The waiver is one-sided: a modern candidate records `false`/`null` deliberately, so reading
       // those as absent here would manufacture lost-default findings for genuinely-defaulted args.
-      !hasDefaultValue(candidateEntry, false)
+      !hasDefaultValue(candidateEntry)
     ) {
       violations.push({
         arg,
@@ -89,7 +89,13 @@ const normalizeDescription = (description: unknown): string | undefined => {
   return trimmed === '' ? undefined : trimmed;
 };
 
-const hasDefaultValue = (entry: StrictInputType, legacyBaseline: boolean): boolean =>
+/**
+ * Whether an arg records a default value.
+ *
+ * `legacyBaseline` waives the defaults the legacy Angular extractor invents, so pass it only for an
+ * entry that pipeline recorded.
+ */
+export const hasDefaultValue = (entry: StrictInputType, legacyBaseline = false): boolean =>
   entry.defaultValue !== undefined ||
   isRecordedSummary(entry.table?.defaultValue?.summary, legacyBaseline);
 

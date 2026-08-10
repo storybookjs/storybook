@@ -68,6 +68,6 @@ describe('angular legacy baselines', () => {
     const argTypes = await recordArgTypes(false, 'argtypes.snapshot');
     await recordArgTypes(true, 'argtypes-filtered.snapshot');
 
-    await recordSnippets({ fixtureCase, component, meta, stories, argTypes, prefix: 'snippet-' });
+    await recordSnippets({ fixtureCase, component, meta, stories, argTypes, recorder: 'legacy' });
   });
 });

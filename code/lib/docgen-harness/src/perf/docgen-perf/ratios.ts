@@ -83,6 +83,11 @@ function ratioFor(
   next: ScenarioResult,
   versions: PairVersions
 ): RatioEntry {
+  const warmMembers: Pick<RatioEntry, 'legacyWarmMembers' | 'nextWarmMembers'> =
+    pair.warmScopeDiffers
+      ? {}
+      : { legacyWarmMembers: legacy.warmMembers, nextWarmMembers: next.warmMembers };
+
   return {
     legacyEngine: pair.legacy,
     nextEngine: pair.next,
@@ -90,9 +95,7 @@ function ratioFor(
     warm: medianRatio(legacy.metrics.warmExtractionMs, next.metrics.warmExtractionMs),
     legacyColdMembers: legacy.coldMembers,
     nextColdMembers: next.coldMembers,
-    ...(pair.warmScopeDiffers
-      ? {}
-      : { legacyWarmMembers: legacy.warmMembers, nextWarmMembers: next.warmMembers }),
+    ...warmMembers,
     coldComparability: comparability(
       legacy.coldMembers,
       next.coldMembers,
@@ -100,9 +103,8 @@ function ratioFor(
       next.coldOpaqueTypes
     ),
     // No engine reports opaque types for the re-extracted member, so warm is judged on counts alone.
-    warmComparability: pair.warmScopeDiffers
-      ? 'unknown'
-      : comparability(legacy.warmMembers, next.warmMembers),
+    // Omitted counts yield `unknown`, which is what a differing warm scope must report.
+    warmComparability: comparability(warmMembers.legacyWarmMembers, warmMembers.nextWarmMembers),
     ...versions,
   };
 }

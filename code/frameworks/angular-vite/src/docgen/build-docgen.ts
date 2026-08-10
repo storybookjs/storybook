@@ -8,9 +8,12 @@ import type {
 
 import { resolve } from 'node:path';
 
-import type { CompodocParsingLogger } from '@storybook/angular-compodoc';
-import { extractArgTypesFromData, unwrapPlainText } from '@storybook/angular-compodoc';
-import type { AngularClassMeta, AngularComponentMetaResult } from '@storybook/angular-cm';
+import type {
+  AngularClassMeta,
+  AngularComponentMetaResult,
+  ParsingLogger,
+} from '@storybook/angular-cm';
+import { extractArgTypesFromData } from '@storybook/angular-cm';
 import { resolveStoryComponent } from './resolve-component.ts';
 
 // Structured-cloned onto the worker thread, so every field must be plain JSON data.
@@ -34,12 +37,9 @@ export interface AngularComponentMetaSource {
 export interface BuildDocgenContext {
   manager: AngularComponentMetaSource;
   options: AngularDocgenOptions;
-  logger: CompodocParsingLogger;
+  logger: ParsingLogger;
   resolvePath?: (importPath: string) => string;
 }
-
-// Plain text keeps `Array<string>` intact; `modern` drops the quirks legacy compodoc is pinned to.
-export const ACM_EXTRACT_OPTIONS = { unwrapHtml: unwrapPlainText, modern: true } as const;
 
 // The description is deliberately not parsed for tags: an `@Input()` inside a documentation code
 // block would become a fabricated tag.
@@ -50,7 +50,8 @@ const extractJsDocTags = (entry: AngularClassMeta): DocgenJsDocTags => {
     if (!name) {
       continue;
     }
-    const value = tag.comment === undefined ? '' : unwrapPlainText(tag.comment).trim();
+    // The analyzer's comments are plain text, never the Markdown-rendered HTML Compodoc produced.
+    const value = tag.comment === undefined ? '' : String(tag.comment).trim();
     (tags[name] ??= []).push(value);
   }
   return tags;
@@ -131,10 +132,9 @@ export const buildDocgenPayload = (
   }
 
   const argTypes = extractArgTypesFromData(meta.entry, {
-    compodocJson: meta.json,
+    metadataJson: meta.json,
     filterNonInputControls: options.angularFilterNonInputControls,
     logger,
-    ...ACM_EXTRACT_OPTIONS,
   }) as StrictArgTypes;
 
   const jsDocTags = extractJsDocTags(meta.entry);

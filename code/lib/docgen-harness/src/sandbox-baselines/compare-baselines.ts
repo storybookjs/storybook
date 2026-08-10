@@ -1,14 +1,5 @@
 import type { SandboxBaseline, SandboxBaselines } from './read-static-docgen.ts';
 
-/**
- * What changed about one component between the committed baseline and a fresh sandbox build.
- *
- * The gate is exact-match: every difference is a finding and fails the run. `severity` only says
- * which kind of failure a reviewer is looking at. `regression` means docgen demonstrably got worse
- * (a component or arg disappeared, a component stopped being documented, a recorded default is
- * gone) and wants a fix rather than a re-record; `change` is everything else and is adopted with
- * `--update` once the diff has been read.
- */
 export interface BaselineFinding {
   component: string;
   severity: 'regression' | 'change';

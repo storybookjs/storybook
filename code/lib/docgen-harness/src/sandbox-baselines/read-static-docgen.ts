@@ -8,11 +8,6 @@ export const DOCGEN_SNAPSHOT_DIR = join('services', 'core', 'docgen');
 
 /**
  * Token standing in for the sandbox directory inside recorded strings.
- *
- * Sandboxes live at an absolute path that differs per machine and per CI run, and provider errors
- * quote it (`... Source: /Users/me/sandboxes/x/documentation.json`). Recording the raw path would
- * make every baseline machine-specific.
- */
 export const SANDBOX_TOKEN = '<sandbox>';
 
 /**
@@ -86,10 +81,6 @@ const isGloballyReferenced = (payload: SandboxBaseline): boolean =>
 
 /**
  * Reads every per-component docgen snapshot from a static Storybook build.
- *
- * Each file holds a whole service state snapshot (`{ components: { <id>: payload } }`) built from
- * one query input, so a file contributes exactly one component. Globally-referenced components are
- * skipped; see {@link isGloballyReferenced}.
  */
 export function readStaticDocgen({
   staticDir,

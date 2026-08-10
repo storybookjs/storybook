@@ -7,22 +7,51 @@ export interface DecoratorInfo {
   call?: ts.CallExpression;
 }
 
+/**
+ * Whether `node` resolves to a declaration in `@angular/core`.
+ *
+ * Unresolvable symbols fall back to bare-name matching rather than losing extraction entirely in
+ * projects whose `@angular/core` types are unreachable.
+ */
+export const isAngularCoreOrUnresolved = (ctx: AnalyzerContext, node: ts.Node): boolean => {
+  const { checker, ts } = ctx;
+  const symbol = checker.getSymbolAtLocation(node);
+  if (!symbol) {
+    return true;
+  }
+  const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+  const declarations = target.declarations;
+  if (!declarations?.length) {
+    return true;
+  }
+  return declarations.some((declaration) =>
+    declaration.getSourceFile().fileName.includes('@angular/core')
+  );
+};
+
 export const getDecorators = (ctx: AnalyzerContext, node: ts.Node): DecoratorInfo[] => {
   const { ts } = ctx;
   if (!ts.canHaveDecorators(node)) {
     return [];
   }
-  return (ts.getDecorators(node) ?? []).map((decorator) => {
+  const decorators: DecoratorInfo[] = [];
+  for (const decorator of ts.getDecorators(node) ?? []) {
     const expression = decorator.expression;
     const call = ts.isCallExpression(expression) ? expression : undefined;
     const target = call ? call.expression : expression;
+    // A same-named decorator from another package is not Angular's, so the spelling alone cannot
+    // decide this.
+    if (!isAngularCoreOrUnresolved(ctx, target)) {
+      continue;
+    }
     const name = ts.isIdentifier(target)
       ? target.text
       : ts.isPropertyAccessExpression(target)
         ? target.name.text
         : target.getText();
-    return { name, call };
-  });
+    decorators.push({ name, call });
+  }
+  return decorators;
 };
 
 const objectArgOf = (
@@ -80,7 +109,16 @@ const booleanOption = (
   key: string
 ): boolean | undefined => {
   const initializer = objectProperty(ctx, object, key);
-  return initializer === undefined ? undefined : initializer.kind === ctx.ts.SyntaxKind.TrueKeyword;
+  if (initializer?.kind === ctx.ts.SyntaxKind.TrueKeyword) {
+    return true;
+  }
+  if (initializer?.kind === ctx.ts.SyntaxKind.FalseKeyword) {
+    return false;
+  }
+  // An initializer this cannot evaluate - `required: SOME_CONST`, or the `{ required }` shorthand -
+  // is reported as unspecified rather than as `false`, so the caller's own default decides instead
+  // of the property being silently documented as optional.
+  return undefined;
 };
 
 interface InputDecoratorConfig {

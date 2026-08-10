@@ -159,7 +159,7 @@ describe('buildDocgenPayload', () => {
     });
   });
 
-  describe('modern extraction on the analyzer path', () => {
+  describe('extraction rules on the analyzer path', () => {
     it('keeps plain-text comments intact where an HTML unwrapper would mangle them', () => {
       // `Array<string>` run through htmlToText loses `<string>`: a letter-opened angle bracket
       // reads as an HTML tag.

@@ -2,7 +2,7 @@ import { logger } from 'storybook/internal/node-logger';
 
 import type * as tsModule from 'typescript';
 
-import type { Class, Directive, Injectable, Pipe, Property } from '@storybook/angular-compodoc';
+import type { Class, Directive, Injectable, Pipe, Property } from '../types.ts';
 import type { AngularFileMeta } from '../types.ts';
 import type { AnalyzerContext } from './context.ts';
 import { collectClassMembers } from './class-members.ts';

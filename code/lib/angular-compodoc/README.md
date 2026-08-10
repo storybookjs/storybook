@@ -2,12 +2,14 @@
 
 Shared parsing of [Compodoc](https://compodoc.app/)'s `documentation.json` into Storybook argTypes.
 
-`@storybook/angular` and `@storybook/angular-vite` both turn Compodoc metadata into controls, and the Vite framework does it a second time inside a Node docgen worker. This package holds that logic once so the three call sites cannot drift apart.
+`@storybook/angular` and `@storybook/angular-vite` both turn Compodoc metadata into controls. This package holds that logic once so those call sites cannot drift apart.
 
-- The root entry is environment-agnostic: it reads no globals and takes the Compodoc JSON, the feature flag, the logger and the HTML unwrapper as arguments, so it runs in a Node worker as well as in the preview.
+- The root entry is environment-agnostic: it reads no globals and takes the Compodoc JSON, the feature flag, the logger and the HTML unwrapper as arguments.
 - `./browser` is the preview-side adapter that supplies those four things from the browser globals.
 
-`@storybook/angular-cm` produces the same Compodoc-JSON subset without running Compodoc, and feeds this same conversion.
+This package is frozen and scheduled for deletion in Storybook 11, along with the Compodoc pipeline itself.
+It stays on the legacy behaviour its committed baselines pin, so bug fixes belong in its successor, `@storybook/angular-cm`, not here.
+`@storybook/angular-cm` carries a specialised fork of the conversion below: the two are deliberately not kept in sync.
 
 ## Compodoc quirk: `model()` is reported twice, under the wrong name
 

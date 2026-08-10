@@ -93,6 +93,11 @@
       "code": "./src/common/index.ts",
       "default": "./dist/common/index.js"
     },
+    "./internal/component-meta": {
+      "types": "./dist/component-meta/index.d.ts",
+      "code": "./src/component-meta/index.ts",
+      "default": "./dist/component-meta/index.js"
+    },
     "./internal/components": {
       "types": "./dist/components/index.d.ts",
       "code": "./src/components/index.ts",

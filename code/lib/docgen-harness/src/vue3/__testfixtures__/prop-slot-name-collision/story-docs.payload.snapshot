@@ -1,0 +1,14 @@
+{
+  "id": "prop-slot-name-collision",
+  "import": "import PropSlotNameCollision from './PropSlotNameCollision.vue';",
+  "name": "PropSlotNameCollision",
+  "path": "__PATH__",
+  "stories": {
+    "forms-prop-slot-name-collision--icon-prop-as-written": {
+      "description": undefined,
+      "id": "forms-prop-slot-name-collision--icon-prop-as-written",
+      "name": "Icon Prop As Written",
+      "summary": undefined,
+    },
+  },
+}

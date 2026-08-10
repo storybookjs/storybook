@@ -1,0 +1,26 @@
+{
+  "id": "slots",
+  "import": "import SlotsShowcase from './SlotsShowcase.vue';",
+  "name": "SlotsShowcase",
+  "path": "__PATH__",
+  "stories": {
+    "forms-slots--scoped-bindings": {
+      "description": undefined,
+      "id": "forms-slots--scoped-bindings",
+      "name": "Scoped Bindings",
+      "summary": undefined,
+    },
+    "forms-slots--string-child": {
+      "description": undefined,
+      "id": "forms-slots--string-child",
+      "name": "String Child",
+      "summary": undefined,
+    },
+    "forms-slots--v-node-child": {
+      "description": undefined,
+      "id": "forms-slots--v-node-child",
+      "name": "V Node Child",
+      "summary": undefined,
+    },
+  },
+}

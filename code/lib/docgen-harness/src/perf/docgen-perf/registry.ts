@@ -8,14 +8,15 @@ import { type BenchEngine, type ScenarioSpec, SeriesChildEngine } from './engine
 import { CompodocEngine } from './engines/compodoc.ts';
 import type { EngineId } from './types.ts';
 
-const reactScenarios = (profile: SuiteProfile): ScenarioSpec[] => [
-  { name: 'default', params: { ...profile.react } },
-];
+const reactScenarios = (profile: SuiteProfile): ScenarioSpec[] =>
+  profile.react.map((scenario) => ({ name: scenario.shape, params: { ...scenario } }));
 
 const vueScenarios = (profile: SuiteProfile): ScenarioSpec[] =>
   profile.vue.map((scenario) => ({ name: scenario.name, params: { ...scenario } }));
 
 const reactArgs = ({ params }: ScenarioSpec): string[] => [
+  '--shape',
+  String(params.shape),
   '--components',
   String(params.components),
   '--variants',
@@ -83,7 +84,7 @@ export const ENGINES: BenchEngine[] = [
     child: 'engines/vue-component-meta.ts',
     scenarios: vueScenarios,
     args: vueArgs,
-    versionPackage: 'vue-component-meta',
+    pin: 'vue-component-meta',
   }),
   // Same child, pinned to a second, explicitly-versioned copy of the package - a version-pair
   // control rather than an engine-vs-engine one. No budget row yet, so it stays out of the
@@ -93,10 +94,19 @@ export const ENGINES: BenchEngine[] = [
     child: 'engines/vue-component-meta.ts',
     scenarios: vueScenarios,
     inDefaultRun: false,
-    args: (scenario) => [...vueArgs(scenario), '--pin', 'next'],
-    versionPackage: 'vue-component-meta-next',
+    args: vueArgs,
+    pin: 'vue-component-meta-next',
   }),
   new CompodocEngine(),
+  // Always fails. The gate names it explicitly to prove the gate reports a failing engine as a
+  // failure; nothing else ever runs it.
+  new SeriesChildEngine({
+    id: 'crash-control',
+    child: 'engines/crash-control.ts',
+    scenarios: () => [{ name: 'default', params: {} }],
+    inDefaultRun: false,
+    args: () => [],
+  }),
 ];
 
 export const ALL_ENGINE_IDS: EngineId[] = ENGINES.map((engine) => engine.id);

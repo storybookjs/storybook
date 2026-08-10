@@ -1,0 +1,52 @@
+{
+  "name": "example",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "test": "vitest --project=next",
+    "test:storybook": "vitest --project=storybook --reporter=verbose",
+    "test:all": "vitest",
+    "storybook": "storybook dev -p 6006",
+    "build-storybook": "storybook build",
+    "inspect": "serve .storybook/.vite-inspect"
+  },
+  "dependencies": {
+    "next": "16.3.0-preview.5",
+    "react": "19.2.0",
+    "react-dom": "19.2.0",
+    "styled-jsx": "^5.1.6"
+  },
+  "devDependencies": {
+    "@chromatic-com/storybook": "^4.0.0-next.2",
+    "@storybook/addon-docs": "latest",
+    "@storybook/addon-vitest": "latest",
+    "@storybook/nextjs": "latest",
+    "@storybook/nextjs-vite": "latest",
+    "@storybook/react": "latest",
+    "@testing-library/dom": "^10.3.2",
+    "@testing-library/jest-dom": "^6.4.6",
+    "@testing-library/react": "^16.0.0",
+    "@types/node": "^20",
+    "@types/react": "19.2.2",
+    "@types/react-dom": "19.2.2",
+    "@vitest/browser": "^3.0.0",
+    "autoprefixer": "^10.4.19",
+    "bootstrap": "^5.3.3",
+    "chromatic": "^11.7.0",
+    "happy-dom": "^14.12.3",
+    "jsdom": "^24.1.1",
+    "playwright": "^1.45.3",
+    "postcss": "^8.4.38",
+    "serve": "^14.2.3",
+    "storybook": "latest",
+    "tailwindcss": "^3.4.4",
+    "typescript": "^5",
+    "vite-plugin-inspect": "^0.8.5",
+    "vite-plugin-svgr": "^4.5.0",
+    "vitest": "^3.0.0"
+  }
+}

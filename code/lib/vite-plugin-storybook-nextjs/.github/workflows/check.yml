@@ -1,0 +1,37 @@
+name: CI
+
+on: [push]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 10.28.2
+          run_install: true
+      - name: Build the plugin
+        run: pnpm build
+
+      - name: Check if Storybook builds successfully
+        run: pnpm build-storybook
+        working-directory: ./example
+
+      - name: Install Playwright
+        working-directory: ./example
+        run: pnpm exec playwright install
+
+      - name: Run all tests
+        run: pnpm test:all
+        working-directory: ./example
+
+      # - name: Run Portable stories tests
+      #   run: pnpm test:storybook
+      #   working-directory: ./example
+
+      - name: Biome checks
+        run: pnpm check

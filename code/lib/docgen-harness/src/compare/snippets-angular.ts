@@ -1,8 +1,12 @@
 import { parseAttributes, parseRootElement } from './parse-element.ts';
-import type { Violation } from './types.ts';
+import type { SnippetGrammar, Violation } from './types.ts';
 
 // A binding name runs to its closing delimiter because an `@Input`/`@Output` alias is an arbitrary
 // string: `[attr.xlink:href]`, `[@fadeIn]`, `[style.width.%]` and non-ASCII names must all count.
+//
+// Parsing reads the ROOT element only, so bindings on child elements would be invisible and silently
+// weaken the gate. Every snippet on both sides is single-element today; `assertGatableChildContent`
+// breaks the corpus loudly on the first one that is not.
 interface ParsedAngularSnippet {
   tag: string;
   // Represented binding names, with `[(x)]` expanded to `x` + `xChange`.
@@ -70,43 +74,24 @@ export function assertGatableAngularSnippet(snippet: string): void {
   }
 }
 
-// The grammar only reads the ROOT element, so bindings on child elements would be invisible and
-// silently weaken the gate. Every snippet on both sides is single-element today; the first
-// multi-element one must break the corpus loudly instead.
-export function compareAngularSnippet(baseline: string, candidate: string): Violation[] {
-  const parsedBaseline = parseAngularSnippet(baseline);
-  if (parsedBaseline === undefined) {
-    // eslint-disable-next-line local-rules/no-uncategorized-errors
-    throw new Error(
-      'The baseline snippet has no parsable root element; every committed baseline has one'
-    );
-  }
-  assertGatableChildContent(parsedBaseline, 'baseline');
-  const parsedCandidate = parseAngularSnippet(candidate);
-  if (parsedCandidate === undefined) {
-    // Listing every baseline name as lost would read as a pile of dropped bindings rather than
-    // one broken snippet, and send the reader hunting in the wrong place.
-    return [
-      {
-        arg: 'snippet',
-        kind: 'unparsable-candidate',
-        message: 'the candidate snippet has no parsable root element',
-      },
-    ];
-  }
-  assertGatableChildContent(parsedCandidate, 'candidate');
+// An Angular snippet's root element IS the component selector, so unlike the other frameworks its
+// comparison gates the root as well as the represented names.
+function compareRootElement(
+  baseline: ParsedAngularSnippet,
+  candidate: ParsedAngularSnippet
+): Violation[] {
   const violations: Violation[] = [];
-  if (parsedBaseline.tag !== parsedCandidate.tag) {
+  if (baseline.tag !== candidate.tag) {
     violations.push({
       arg: 'snippet',
       kind: 'changed-root',
-      message: `the baseline renders <${parsedBaseline.tag}> but the candidate renders <${parsedCandidate.tag}>`,
+      message: `the baseline renders <${baseline.tag}> but the candidate renders <${candidate.tag}>`,
     });
   }
   // Bare attributes carry the mangled attribute-selector part of the component's selector; a
   // candidate may add a value, but dropping the attribute changes which component is matched.
-  for (const bareAttribute of [...parsedBaseline.bareAttributes].sort()) {
-    if (!parsedCandidate.attributeNames.has(bareAttribute)) {
+  for (const bareAttribute of [...baseline.bareAttributes].sort()) {
+    if (!candidate.attributeNames.has(bareAttribute)) {
       violations.push({
         arg: bareAttribute,
         kind: 'lost-attribute',
@@ -114,14 +99,12 @@ export function compareAngularSnippet(baseline: string, candidate: string): Viol
       });
     }
   }
-  for (const name of [...parsedBaseline.names].sort()) {
-    if (!parsedCandidate.names.has(name)) {
-      violations.push({
-        arg: name,
-        kind: 'lost-representation',
-        message: 'represented in the baseline snippet but not in the candidate',
-      });
-    }
-  }
   return violations;
 }
+
+export const angularSnippetGrammar: SnippetGrammar<ParsedAngularSnippet> = {
+  parse: parseAngularSnippet,
+  representedNames: (parsed) => parsed.names,
+  assertGatable: assertGatableChildContent,
+  compareStructure: compareRootElement,
+};

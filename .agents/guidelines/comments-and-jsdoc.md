@@ -1,7 +1,5 @@
 # Comments and JSDoc
 
-Referenced from [`AGENTS.md`](../../AGENTS.md). Read this once per session, not once per file.
-
 Default to zero comments.
 Code that needs a comment to be understood usually needs to be rewritten instead: better names, a smaller function, an earlier return, a type that makes the invalid state unrepresentable.
 Reach for a comment only after that rewrite is impossible or clearly worse.

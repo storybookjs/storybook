@@ -9,12 +9,7 @@ import { expect } from 'vitest';
 import type { ArgTypes } from 'storybook/internal/types';
 import { computesTemplateSourceFromComponent } from '../../../../frameworks/angular-vite/src/client/renderer/ComputesTemplateFromComponent.ts';
 import { getComponentInputsOutputs } from '../../../../frameworks/angular-vite/src/client/renderer/utils/NgComponentAnalyzer.ts';
-import {
-  type SnippetPrefix,
-  expectNoStaleSnippets,
-  fixturesDir,
-  recordSnippet,
-} from './snippet-recorder.ts';
+import { expectNoStaleSnippets, fixturesDir, recordSnippet } from './snippet-recorder.ts';
 
 export { fixtureCases, fixturesDir, readCommitted } from './snippet-recorder.ts';
 
@@ -25,13 +20,9 @@ type AotCmp = {
 
 type SnippetComponent = Parameters<typeof computesTemplateSourceFromComponent>[0];
 
-/**
- * Signal fixtures cannot mount under JIT: bare JIT leaves ɵcmp.inputs/outputs empty, which would
- * record `<tag></tag>` harness artifacts instead of real member bindings. Replace ɵcmp wholesale
- * with the fixture's committed AOT-shaped fragment (defineProperty, because the JIT decorator
- * installs a getter), then assert the production reader sees its members so a broken attach fails
- * loudly instead of recording silently. No-op for fixtures without an aot-cmp.ts.
- */
+// Signal fixtures cannot mount under JIT: bare JIT leaves ɵcmp.inputs/outputs empty, which would
+// record `<tag></tag>` artifacts instead of real member bindings. The committed AOT-shaped fragment
+// goes on through defineProperty because the JIT decorator installs a getter.
 export async function attachAotCmp(
   component: SnippetComponent,
   fixtureCase: string
@@ -61,17 +52,16 @@ export async function recordSnippets({
   meta,
   stories,
   argTypes,
-  prefix,
-  legacyParity = false,
+  recorder,
 }: {
   fixtureCase: string;
   component: SnippetComponent;
   meta: { args?: Record<string, unknown> };
   stories: Record<string, { args?: Record<string, unknown> }>;
   argTypes: ArgTypes | undefined;
-  prefix: Extract<SnippetPrefix, 'snippet-' | 'acm-snippet-'>;
-  legacyParity?: boolean;
+  recorder: 'legacy' | 'acm';
 }): Promise<void> {
+  const prefix = recorder === 'acm' ? 'acm-snippet-' : 'snippet-';
   const testDir = join(fixturesDir, fixtureCase);
   expect(Object.keys(stories).length).toBeGreaterThan(0);
 
@@ -89,7 +79,13 @@ export async function recordSnippets({
     const snippet = computesTemplateSourceFromComponent(component, props, argTypes);
     // null only when the component has no decorator metadata - impossible for these fixtures.
     expect(snippet).not.toBeNull();
-    await recordSnippet({ testDir, prefix, exportName, snippet: snippet!, legacyParity });
+    await recordSnippet({
+      testDir,
+      prefix,
+      exportName,
+      snippet: snippet!,
+      legacyParity: recorder === 'acm',
+    });
   }
 
   expectNoStaleSnippets(testDir, prefix, Object.keys(stories));

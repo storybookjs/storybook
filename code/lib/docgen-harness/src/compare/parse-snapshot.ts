@@ -178,11 +178,6 @@ export function parseArgTypesSnapshot(
     return fail('unexpected trailing content');
   }
 
-  // The close-rule heuristics cannot fully disambiguate prose from structure. Re-serializing the
-  // parse and demanding byte identity catches misparses that change the bytes - but NOT a string
-  // whose unescaped write is byte-identical to real entry boundaries: that parses into fabricated
-  // sibling entries which reserialize to the same bytes. The boundary-mimic rejection above and
-  // the recorders' parsed-vs-live proofs are the guards for that case, not this check.
   const source = text.endsWith('\n') ? text.slice(0, -1) : text;
   const reserialized = reserialize(result, '');
   if (reserialized !== source) {

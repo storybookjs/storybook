@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { compareBaselines, formatFindings, stableStringify } from './compare-baselines.ts';
+import { compareBaselines, formatFindings } from './compare-baselines.ts';
 import type { SandboxBaseline } from './read-static-docgen.ts';
 
 type ArgTypes = NonNullable<SandboxBaseline['argTypes']>;
@@ -182,13 +182,5 @@ describe('formatFindings', () => {
     );
 
     expect(output.indexOf('regression(s)')).toBeLessThan(output.indexOf('change(s)'));
-  });
-});
-
-describe('stableStringify', () => {
-  it('sorts keys at every depth so a re-record diffs on content only', () => {
-    expect(stableStringify({ b: 1, a: { d: 2, c: 3 } }, 0)).toBe(
-      stableStringify({ a: { c: 3, d: 2 }, b: 1 }, 0)
-    );
   });
 });

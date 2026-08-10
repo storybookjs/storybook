@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { expect } from 'vitest';
 
 import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
+import { assertGatableAngularSnippet } from '../compare/snippets-angular.ts';
 
 export type SnippetPrefix = 'snippet-' | 'acm-snippet-' | 'server-snippet-';
 
@@ -40,8 +41,10 @@ export async function recordSnippet({
   const snippetPath = join(testDir, `${prefix}${exportName}.snapshot`);
   const committedSnippet = readCommitted(snippetPath);
 
-  // Both gates run BEFORE the snapshot call: under `-u` that call queues the rewrite, so a gate
+  // Every gate runs BEFORE the snapshot call: under `-u` that call queues the rewrite, so a gate
   // placed after it would turn the run red while still persisting the regressed recording.
+  assertGatableAngularSnippet(snippet);
+
   if (committedSnippet !== undefined) {
     expectCurrentOrBetter({
       kind: 'snippet',

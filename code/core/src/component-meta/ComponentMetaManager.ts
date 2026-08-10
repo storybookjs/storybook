@@ -124,6 +124,7 @@ export class ComponentMetaManager<
     this.inferredProject?.dispose();
     this.configProjects.clear();
     this.inferredProject = undefined;
+    this.factory.recycle?.();
   }
 
   // ---------------------------------------------------------------------------

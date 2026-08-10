@@ -9,6 +9,7 @@ import type {
 
 import { fileURLToPath } from 'node:url';
 
+import { resolveCompodocConfig } from '../compodoc-config.ts';
 import type { AngularDocgenOptions } from './build-docgen.ts';
 
 /** Contribute the descriptor for the worker module core imports and runs off the main thread. */
@@ -18,9 +19,12 @@ export const experimental_docgenProvider = async (
 ): Promise<DocgenProviderDescriptor[]> => {
   const features = await options?.presets?.apply('features', {});
 
-  // `framework.options.compodoc` deliberately does not gate this: that option governs only the
-  // legacy compodoc pipeline, which this provider does not use.
-  if (!features?.experimentalDocgenServer) {
+  // `framework.options.compodoc: false` reads as "no Angular docgen", not "no Compodoc binary":
+  // it is what `storybook init` and the angular-to-angular-vite automigration write on the user's
+  // behalf, so honouring it here is what keeps that opt-out meaning the same thing after the
+  // provider changes underneath it. Decided once, statically: no descriptor means no worker module
+  // to import and no per-component branch to evaluate.
+  if (!features?.experimentalDocgenServer || !(await resolveCompodocConfig(options)).enabled) {
     return existing;
   }
 

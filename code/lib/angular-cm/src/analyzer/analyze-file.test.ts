@@ -18,107 +18,17 @@
  * The same behaviours are additionally pinned against Compodoc's output over a shared fixture corpus
  * in `@storybook/docgen-harness`; this file is about the analyzer on its own terms.
  */
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-import ts from 'typescript';
 import { describe, expect, it } from 'vitest';
 
-import type { AngularClassMeta, AngularFileMeta, Directive, Method, Property } from '../types.ts';
-import { analyzeSourceFile } from './analyze-file.ts';
-
-const COMPILER_OPTIONS: ts.CompilerOptions = {
-  target: ts.ScriptTarget.Latest,
-  module: ts.ModuleKind.ESNext,
-  moduleResolution: ts.ModuleResolutionKind.Bundler,
-  strict: false,
-  experimentalDecorators: true,
-  allowJs: true,
-  skipLibCheck: true,
-  noEmit: true,
-  allowImportingTsExtensions: true,
-};
-
-// TS spells `fileName` with forward slashes on every platform, so the virtual paths must too.
-const normalize = (fileName: string) => fileName.replace(/\\/g, '/');
-
-// Inside the package so that `@angular/core` resolves up through the real `node_modules`; the
-// directory itself never exists on disk.
-const VIRTUAL_DIR = normalize(join(dirname(fileURLToPath(import.meta.url)), '__inline__'));
-const ENTRY = `${VIRTUAL_DIR}/component.ts`;
-
-// The analyzer falls back to bare-name matching when Angular's symbols do not resolve, so an
-// unresolvable `@angular/core` would quietly turn these into much weaker tests instead of failing.
-if (!ts.resolveModuleName('@angular/core', ENTRY, COMPILER_OPTIONS, ts.sys).resolvedModule) {
-  throw new Error(`@angular/core does not resolve from ${ENTRY}; run \`yarn\` first`);
-}
-
-// lib.d.ts and `@angular/core` are parsed once and shared, so a program per test stays cheap.
-const realSourceFiles = new Map<string, ts.SourceFile | undefined>();
-
-const programFor = (files: Record<string, string>): ts.Program => {
-  const virtual = new Map(
-    Object.entries(files).map(([name, text]) => [normalize(join(VIRTUAL_DIR, name)), text])
-  );
-  const host = ts.createCompilerHost(COMPILER_OPTIONS, true);
-  const readRealFile = host.readFile.bind(host);
-  const realFileExists = host.fileExists.bind(host);
-  const getRealSourceFile = host.getSourceFile.bind(host);
-  const realDirectoryExists = host.directoryExists?.bind(host);
-  const realpath = host.realpath?.bind(host);
-
-  host.readFile = (fileName) => virtual.get(normalize(fileName)) ?? readRealFile(fileName);
-  host.fileExists = (fileName) => virtual.has(normalize(fileName)) || realFileExists(fileName);
-  // Module resolution probes the containing directory before the file, and this one is not on disk.
-  host.directoryExists = (directoryName) =>
-    normalize(directoryName) === VIRTUAL_DIR || (realDirectoryExists?.(directoryName) ?? true);
-  host.realpath = (fileName) =>
-    virtual.has(normalize(fileName)) ? fileName : (realpath?.(fileName) ?? fileName);
-  host.getSourceFile = (fileName, languageVersion, onError, shouldCreate) => {
-    const text = virtual.get(normalize(fileName));
-    if (text !== undefined) {
-      return ts.createSourceFile(fileName, text, ts.ScriptTarget.Latest, true);
-    }
-    if (!realSourceFiles.has(fileName)) {
-      realSourceFiles.set(
-        fileName,
-        getRealSourceFile(fileName, languageVersion, onError, shouldCreate)
-      );
-    }
-    return realSourceFiles.get(fileName);
-  };
-
-  return ts.createProgram([...virtual.keys()], COMPILER_OPTIONS, host);
-};
-
-/** Analyze `source` as `component.ts`; `extraFiles` are siblings it can import. */
-const analyze = (source: string, extraFiles: Record<string, string> = {}): AngularFileMeta =>
-  analyzeFile('component.ts', { 'component.ts': source, ...extraFiles });
-
-const analyzeFile = (entry: string, files: Record<string, string>): AngularFileMeta => {
-  const program = programFor(files);
-  const sourceFile = program.getSourceFile(normalize(join(VIRTUAL_DIR, entry)));
-  if (!sourceFile) {
-    throw new Error(`${entry} missing from the program`);
-  }
-  return analyzeSourceFile(ts, sourceFile, program.getTypeChecker());
-};
-
-const componentIn = (source: string, extraFiles?: Record<string, string>) => {
-  const meta = analyze(source, extraFiles);
-  expect(meta.components).toHaveLength(1);
-  return meta.components[0] as AngularClassMeta & Directive;
-};
-
-const byName = <T extends { name: string }>(items: T[], name: string): T => {
-  const item = items.find((candidate) => candidate.name === name);
-  if (!item) {
-    throw new Error(`no member named ${name} in [${items.map((entry) => entry.name).join(', ')}]`);
-  }
-  return item;
-};
-
-const names = (items: { name: string }[] = []) => items.map((item) => item.name);
+import type { AngularClassMeta, Directive, Method, Property } from '../types.ts';
+import {
+  ENTRY,
+  analyzeFiles,
+  analyzeInline as analyze,
+  byName,
+  componentIn,
+  names,
+} from './__testutils__/inline-source.ts';
 
 describe('which classes a file yields', () => {
   it('buckets each class by its Angular decorator, and files an undecorated one under `classes`', () => {
@@ -630,7 +540,7 @@ describe('inheritance', () => {
   it('keeps a base class’s IO split out when that file is analyzed on its own', () => {
     // The base carries no Angular decorator, so it lands under `classes`; a consumer that asks for
     // it by name still gets its bindable surface rather than a bag of plain properties.
-    const meta = analyzeFile('base.ts', { 'base.ts': BASE });
+    const meta = analyzeFiles('base.ts', { 'base.ts': BASE });
     const base = meta.classes[0] as AngularClassMeta & {
       inputsClass?: Property[];
       outputsClass?: Property[];

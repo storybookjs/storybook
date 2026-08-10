@@ -1,5 +1,8 @@
-// The engine table: adding an engine means adding one entry here, and the orchestrator has no
-// per-engine branches.
+/**
+ * The engine table. Adding an engine means adding one entry here; the orchestrator has no
+ * per-engine branches. Everything below is data: which child to spawn, with which flags, over
+ * which scenarios.
+ */
 import type { SuiteProfile } from './config.ts';
 import { type BenchEngine, type ScenarioSpec, SeriesChildEngine } from './engine.ts';
 import { CompodocEngine } from './engines/compodoc.ts';
@@ -18,21 +21,6 @@ const reactArgs = ({ params }: ScenarioSpec): string[] => [
   String(params.components),
   '--variants',
   String(params.variants),
-  '--props',
-  String(params.props),
-  '--saves',
-  String(params.saves),
-];
-
-const angularScenarios = (profile: SuiteProfile): ScenarioSpec[] => [
-  // Named like compodoc's one scenario, because a control pair only produces a ratio for scenario
-  // names both sides measured.
-  { name: 'default', params: { ...profile.angular } },
-];
-
-const angularArgs = ({ params }: ScenarioSpec): string[] => [
-  '--components',
-  String(params.components),
   '--props',
   String(params.props),
   '--saves',
@@ -110,16 +98,6 @@ export const ENGINES: BenchEngine[] = [
     pin: 'vue-component-meta-next',
   }),
   new CompodocEngine(),
-  // The in-process Angular analyzer, over the same generated project as the compodoc engine above,
-  // so the angular control pair compares the two engines directly. It carries no budget row yet,
-  // so it stays out of the default run.
-  new SeriesChildEngine({
-    id: 'angular-component-meta',
-    child: 'engines/angular-component-meta.ts',
-    scenarios: angularScenarios,
-    inDefaultRun: false,
-    args: angularArgs,
-  }),
   // Always fails. The gate names it explicitly to prove the gate reports a failing engine as a
   // failure; nothing else ever runs it.
   new SeriesChildEngine({

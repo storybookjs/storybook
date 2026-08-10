@@ -1,20 +1,41 @@
-// Fresh-process spawns per cold/scan median, and it must stay even: the two sides of a control pair
-// alternate which runs first on odd and even repetitions, so an odd N gives one side the first slot
-// once more than the other and turns the ordering effect into a directional bias on the ratio.
+/**
+ * Fixed measurement parameters for the per-engine docgen performance suite.
+ *
+ * N is pinned here for every engine and recorded with the results; numbers taken at different N are
+ * not comparable. The --quick profile exists for smoke runs only and marks its results
+ * non-comparable.
+ */
+
+/**
+ * Fresh-process spawns per cold/scan median. One value for all engines.
+ *
+ * Must stay even. The two sides of a control pair alternate which one runs first on odd and even
+ * repetitions, so an odd N gives one side the first slot once more than the other, and the cold
+ * figure - a median - then lands on a repetition from the majority slot. That turns the ordering
+ * effect the alternation exists to cancel into a systematic, directional bias on the headline ratio.
+ */
 export const PINNED_N = 6;
 
-// Never comparable with PINNED_N results.
+/** Spawns for --quick smoke runs. Never comparable with PINNED_N results. */
 export const QUICK_N = 2;
 
+/** Sampling interval for the compodoc child's externally-polled peak RSS. */
 export const RSS_POLL_INTERVAL_MS = 100;
 
-// Compodoc can hang rather than exit on some inputs, and the orchestrator waits on the child's close
-// event, so without a kill a hang stalls the whole suite instead of failing the one engine.
+/**
+ * How long one compodoc run may take before it is killed. Compodoc can hang rather than exit on
+ * some inputs, and the orchestrator waits on the child's close event, so a hang without this would
+ * stall the whole suite indefinitely instead of failing the one engine.
+ */
 export const COMPODOC_TIMEOUT_MS = 10 * 60 * 1000;
 
-// How much of the project the cold pass documents - the two shapes Storybook actually runs.
-// `whole-index` is one batch over every component, what the manifest generator does; `first-story` is
-// the one component a request asked for, what the docgen server does.
+/**
+ * How much of the project the cold pass documents - the two shapes Storybook actually runs.
+ *
+ *   whole-index - one batch over every component, what the manifest generator does.
+ *   first-story - the one component a request asked for, what the docgen server does; saves then
+ *                 re-extract that same component.
+ */
 export type ReactScenarioShape = 'whole-index' | 'first-story';
 
 export interface ReactScenarioConfig {
@@ -38,8 +59,6 @@ export interface VueScenarioConfig {
 export interface AngularScenarioConfig {
   components: number;
   props: number;
-  // Save-series length for the in-process engine; compodoc has no save loop and ignores it.
-  saves: number;
 }
 
 export interface SuiteProfile {
@@ -87,7 +106,7 @@ export const DEFAULT_PROFILE: SuiteProfile = {
       saves: 10,
     },
   ],
-  angular: { components: 100, props: 8, saves: 10 },
+  angular: { components: 100, props: 8 },
 };
 
 export const QUICK_PROFILE: SuiteProfile = {
@@ -126,5 +145,5 @@ export const QUICK_PROFILE: SuiteProfile = {
       saves: 3,
     },
   ],
-  angular: { components: 10, props: 4, saves: 3 },
+  angular: { components: 10, props: 4 },
 };

@@ -1,5 +1,8 @@
-// Ratios stand in for absolute milliseconds because wall-clock on shared CI executors is too noisy
-// to gate. See PERF-METHODOLOGY.md, "Budget shape".
+/**
+ * The calibration references: each framework's legacy-engine median divided by its new-engine
+ * median, both measured in the same invocation. Ratios stand in for absolute milliseconds because
+ * wall-clock on shared CI executors is too noisy to gate (PERF-METHODOLOGY.md, "Budget shape").
+ */
 import type {
   Comparability,
   EngineId,
@@ -11,13 +14,10 @@ import type {
 } from './types.ts';
 
 interface ControlPair {
-  // Key under which this pair's ratios appear in the results.
+  /** Key under which this pair's ratios appear in the results. */
   name: string;
   legacy: EngineId;
   next: EngineId;
-  // The two sides count different things on a save, so their warm member counts say nothing about
-  // whether the ratio is like-for-like and are left out rather than compared.
-  warmScopeDiffers?: true;
 }
 
 // A pair whose engines are not both registered yields no ratio, so a pair may be listed before the
@@ -25,14 +25,6 @@ interface ControlPair {
 export const CONTROL_PAIRS: ControlPair[] = [
   { name: 'react', legacy: 'react-legacy', next: 'react-osa' },
   { name: 'vue', legacy: 'vue-docgen-api', next: 'vue-component-meta' },
-  // compodoc's warm pass re-documents the whole project; the analyzer re-extracts the one component
-  // that changed.
-  {
-    name: 'angular',
-    legacy: 'compodoc',
-    next: 'angular-component-meta',
-    warmScopeDiffers: true,
-  },
   {
     name: 'vue-component-meta-version',
     legacy: 'vue-component-meta',
@@ -40,15 +32,25 @@ export const CONTROL_PAIRS: ControlPair[] = [
   },
 ];
 
-// Even repetitions run the engines back to front, so cache warming and thermal drift do not
-// consistently favour whichever side of a pair is listed first. Reversing the whole list rather than
-// swapping each pair in place is what makes that hold for pairs that share an engine.
+/**
+ * Even repetitions run the engines back to front, so cache warming and thermal drift do not
+ * consistently favour whichever side of a pair is listed first.
+ *
+ * Reversing the whole list rather than swapping each pair in place is what makes that hold for
+ * *every* pair at once. Pairs can share an engine - `vue-component-meta` is the new side of the vue
+ * pair and the legacy side of the version pair - and swapping such a chain pairwise moves the shared
+ * engine twice, which puts the first pair back in its original relative order.
+ */
 export function engineOrderForRep(engines: EngineId[], rep: number): EngineId[] {
   return rep % 2 === 0 ? [...engines].reverse() : [...engines];
 }
 
-// Undefined unless both sides measured, and for a zero denominator too: an Infinity would be
-// rendered and stored as if it were a ratio.
+/**
+ * Undefined unless both sides measured: dividing by a skipped or failed side is not a comparison.
+ *
+ * A zero denominator is treated the same way. It means the new engine's median landed below the
+ * clock's resolution, and Infinity would then be rendered and stored as if it were a ratio.
+ */
 function medianRatio(legacy: Metric, next: Metric) {
   if (legacy.status !== 'measured' || next.status !== 'measured') {
     return undefined;
@@ -57,8 +59,14 @@ function medianRatio(legacy: Metric, next: Metric) {
   return Number.isFinite(ratio) ? ratio : undefined;
 }
 
-// Member counts settle it whenever they differ; the opaque-type counts only break a tie, because
-// documenting a type's name without looking through it is the case a member count cannot see.
+/**
+ * Member counts decide first, and any difference there settles it. Only once they agree does the
+ * count of types an engine never looked through get a say, which is the case a member count on its
+ * own cannot see.
+ *
+ * A missing count on either side yields `unknown` rather than a verdict. Treating it as agreement
+ * would mark a pair like-for-like on the strength of a number nobody measured.
+ */
 function comparability(
   legacyMembers: number | undefined,
   nextMembers: number | undefined,
@@ -83,11 +91,6 @@ function ratioFor(
   next: ScenarioResult,
   versions: PairVersions
 ): RatioEntry {
-  const warmMembers: Pick<RatioEntry, 'legacyWarmMembers' | 'nextWarmMembers'> =
-    pair.warmScopeDiffers
-      ? {}
-      : { legacyWarmMembers: legacy.warmMembers, nextWarmMembers: next.warmMembers };
-
   return {
     legacyEngine: pair.legacy,
     nextEngine: pair.next,
@@ -95,7 +98,8 @@ function ratioFor(
     warm: medianRatio(legacy.metrics.warmExtractionMs, next.metrics.warmExtractionMs),
     legacyColdMembers: legacy.coldMembers,
     nextColdMembers: next.coldMembers,
-    ...warmMembers,
+    legacyWarmMembers: legacy.warmMembers,
+    nextWarmMembers: next.warmMembers,
     coldComparability: comparability(
       legacy.coldMembers,
       next.coldMembers,
@@ -103,8 +107,7 @@ function ratioFor(
       next.coldOpaqueTypes
     ),
     // No engine reports opaque types for the re-extracted member, so warm is judged on counts alone.
-    // Omitted counts yield `unknown`, which is what a differing warm scope must report.
-    warmComparability: comparability(warmMembers.legacyWarmMembers, warmMembers.nextWarmMembers),
+    warmComparability: comparability(legacy.warmMembers, next.warmMembers),
     ...versions,
   };
 }
@@ -114,8 +117,14 @@ interface PairVersions {
   nextVersion?: string;
 }
 
-// Resolved versions ride along because a range on one side can land both sides on the same version,
-// and a ratio taken against itself must not read as a clean result.
+/**
+ * Ratios for every control pair whose two engines both measured in this invocation. A pair with one
+ * failed or skipped side yields nothing: dividing a fresh median by a stale one is not a comparison.
+ *
+ * Resolved versions ride along because a pair can have both sides land on the same version - a
+ * range on one side is enough - and a ratio of one taken against itself must not read as a clean
+ * result.
+ */
 export function computeRatios(
   results: Partial<Record<EngineId, EngineResult>>,
   engineVersions: Partial<Record<EngineId, string>> = {}

@@ -1,7 +1,7 @@
-import { validateLocalFontFunctionCall } from "next/dist/compiled/@next/font/dist/local/validate-local-font-function-call.js";
+import { validateLocalFontFunctionCall } from 'next/dist/compiled/@next/font/dist/local/validate-local-font-function-call.js';
 // @ts-expect-error no types
-import loaderUtils from "next/dist/compiled/loader-utils3/index.js";
-import { dedent } from "ts-dedent";
+import loaderUtils from 'next/dist/compiled/loader-utils3/index.js';
+import { dedent } from 'ts-dedent';
 
 type FontOrigin = { fontReferenceId?: string; fontPath: string };
 
@@ -51,30 +51,27 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
     style,
     variable,
     declarations = [],
-  } = validateLocalFontFunctionCall("", options.props);
+  } = validateLocalFontFunctionCall('', options.props);
 
   const id = `font-${loaderUtils.getHashDigest(
     Buffer.from(JSON.stringify(localFontSrc)),
-    "md5",
-    "hex",
-    6,
+    'md5',
+    'hex',
+    6
   )}`;
 
   const fontDeclarations = declarations
-    .map(
-      ({ prop, value }: { prop: string; value: string }) =>
-        `${prop}: ${value};`,
-    )
-    .join("\n");
+    .map(({ prop, value }: { prop: string; value: string }) => `${prop}: ${value};`)
+    .join('\n');
 
   const getFontFaceCSS = () => {
     if (localFontSrc) {
-      if ("fontReferenceId" in localFontSrc) {
+      if ('fontReferenceId' in localFontSrc) {
         return dedent`@font-face {
 					font-family: ${id};
 					src: url(${localFontSrc.fontReferenceId ? getPlaceholderFontUrl(localFontSrc.fontReferenceId) : `/@fs/${localFontSrc.fontPath}`});
-          ${weight ? `font-weight: ${weight};` : ""}
-          ${style ? `font-style: ${style};` : ""}
+          ${weight ? `font-weight: ${weight};` : ''}
+          ${style ? `font-style: ${style};` : ''}
 					${fontDeclarations}
 				}`;
       }
@@ -89,15 +86,15 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
           return dedent`@font-face {
 						font-family: ${id};
 						src: url(${font.path.fontReferenceId ? getPlaceholderFontUrl(font.path.fontReferenceId) : `/@fs/${font.path.fontPath}`});
-						${font.weight ? `font-weight: ${font.weight};` : ""}
-						${font.style ? `font-style: ${font.style};` : ""}
+						${font.weight ? `font-weight: ${font.weight};` : ''}
+						${font.style ? `font-style: ${font.style};` : ''}
 						${fontDeclarations}
 					}`;
         })
-        .join("");
+        .join('');
     }
 
-    return "";
+    return '';
   };
 
   return {

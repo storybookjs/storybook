@@ -1,20 +1,17 @@
-import type { NextComponentType, NextPageContext } from "next";
-import singletonRouter, * as originalRouter from "next/dist/client/router.js";
-import type {
-  ExcludeRouterProps,
-  WithRouterProps,
-} from "next/dist/client/with-router";
-import type { NextRouter, SingletonRouter } from "next/router.js";
-import type { ComponentType } from "react";
-import { NextjsRouterMocksNotAvailable } from "storybook/internal/preview-errors";
-import type { Mock } from "storybook/test";
-import { fn } from "storybook/test";
+import type { NextComponentType, NextPageContext } from 'next';
+import singletonRouter, * as originalRouter from 'next/dist/client/router.js';
+import type { ExcludeRouterProps, WithRouterProps } from 'next/dist/client/with-router';
+import type { NextRouter, SingletonRouter } from 'next/router.js';
+import type { ComponentType } from 'react';
+import { NextjsRouterMocksNotAvailable } from 'storybook/internal/preview-errors';
+import type { Mock } from 'storybook/test';
+import { fn } from 'storybook/test';
 
 const defaultRouterState = {
-  route: "/",
-  asPath: "/",
-  basePath: "/",
-  pathname: "/",
+  route: '/',
+  asPath: '/',
+  basePath: '/',
+  pathname: '/',
   query: {},
   isFallback: false,
   isLocaleDomain: false,
@@ -46,35 +43,25 @@ export const createRouter = (overrides: Partial<NextRouter>) => {
   const routerActions: Partial<NextRouter> = {
     push: fn((..._args: unknown[]) => {
       return Promise.resolve(true);
-    }).mockName("next/router::useRouter().push"),
+    }).mockName('next/router::useRouter().push'),
     replace: fn((..._args: unknown[]) => {
       return Promise.resolve(true);
-    }).mockName("next/router::useRouter().replace"),
-    reload: fn((..._args: unknown[]) => {}).mockName(
-      "next/router::useRouter().reload",
-    ),
-    back: fn((..._args: unknown[]) => {}).mockName(
-      "next/router::useRouter().back",
-    ),
-    forward: fn(() => {}).mockName("next/router::useRouter().forward"),
+    }).mockName('next/router::useRouter().replace'),
+    reload: fn((..._args: unknown[]) => {}).mockName('next/router::useRouter().reload'),
+    back: fn((..._args: unknown[]) => {}).mockName('next/router::useRouter().back'),
+    forward: fn(() => {}).mockName('next/router::useRouter().forward'),
     prefetch: fn((..._args: unknown[]) => {
       return Promise.resolve();
-    }).mockName("next/router::useRouter().prefetch"),
+    }).mockName('next/router::useRouter().prefetch'),
     beforePopState: fn((..._args: unknown[]) => {}).mockName(
-      "next/router::useRouter().beforePopState",
+      'next/router::useRouter().beforePopState'
     ),
   };
 
-  const routerEvents: NextRouter["events"] = {
-    on: fn((..._args: unknown[]) => {}).mockName(
-      "next/router::useRouter().events.on",
-    ),
-    off: fn((..._args: unknown[]) => {}).mockName(
-      "next/router::useRouter().events.off",
-    ),
-    emit: fn((..._args: unknown[]) => {}).mockName(
-      "next/router::useRouter().events.emit",
-    ),
+  const routerEvents: NextRouter['events'] = {
+    on: fn((..._args: unknown[]) => {}).mockName('next/router::useRouter().events.on'),
+    off: fn((..._args: unknown[]) => {}).mockName('next/router::useRouter().events.off'),
+    emit: fn((..._args: unknown[]) => {}).mockName('next/router::useRouter().events.emit'),
   };
 
   if (overrides) {
@@ -113,8 +100,7 @@ export const createRouter = (overrides: Partial<NextRouter>) => {
   // biome-ignore lint/suspicious/noExplicitAny: simply casting to any for convenience
   (singletonRouter as unknown as SingletonRouter).router = routerAPI as any;
 
-  for (const cb of (singletonRouter as unknown as SingletonRouter)
-    .readyCallbacks) {
+  for (const cb of (singletonRouter as unknown as SingletonRouter).readyCallbacks) {
     cb();
   }
 
@@ -126,7 +112,7 @@ export const createRouter = (overrides: Partial<NextRouter>) => {
 export const getRouter = () => {
   if (!routerAPI) {
     throw new NextjsRouterMocksNotAvailable({
-      importType: "next/router",
+      importType: 'next/router',
     });
   }
 
@@ -134,21 +120,21 @@ export const getRouter = () => {
 };
 
 // re-exports of the actual module
-export * from "next/dist/client/router";
+export * from 'next/dist/client/router';
 // Same root cause as the `next/navigation` mock: `export *` from CommonJS is invisible to
 // static ESM analysis (storybookjs/storybook#34688). Only `Router` is declared in Next.js'
 // own types, the remaining runtime members stay reachable via the namespace only.
-export { Router } from "next/dist/client/router";
+export { Router } from 'next/dist/client/router';
 export default singletonRouter;
 
 // mock utilities/overrides (as of Next v14.2.0)
 // passthrough mocks - keep original implementation but allow for spying
-export const useRouter: Mock<() => NextRouter> = fn(
-  originalRouter.useRouter,
-).mockName("next/router::useRouter");
+export const useRouter: Mock<() => NextRouter> = fn(originalRouter.useRouter).mockName(
+  'next/router::useRouter'
+);
 export const withRouter: Mock<
   (
     // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-    ComposedComponent: NextComponentType<NextPageContext, any, WithRouterProps>,
+    ComposedComponent: NextComponentType<NextPageContext, any, WithRouterProps>
   ) => ComponentType<ExcludeRouterProps<WithRouterProps>>
-> = fn(originalRouter.withRouter).mockName("next/router::withRouter");
+> = fn(originalRouter.withRouter).mockName('next/router::withRouter');

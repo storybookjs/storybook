@@ -1,5 +1,5 @@
-import { dedent } from "ts-dedent";
-import { getPlaceholderFontUrl } from "../local/get-font-face-declarations";
+import { dedent } from 'ts-dedent';
+import { getPlaceholderFontUrl } from '../local/get-font-face-declarations.ts';
 
 type Props = {
   id: string;
@@ -7,11 +7,7 @@ type Props = {
   classNamesCSS: string;
 };
 
-export function setFontDeclarationsInHead({
-  id,
-  fontFaceCSS,
-  classNamesCSS,
-}: Props) {
+export function setFontDeclarationsInHead({ id, fontFaceCSS, classNamesCSS }: Props) {
   // fontFaceCSS has placeholders for font path and fontReferenceId
   // I want to extract them
   const regex = new RegExp(getPlaceholderFontUrl.regexp);
@@ -23,13 +19,13 @@ export function setFontDeclarationsInHead({
     for (const match of fontFaceCSS.matchAll(regex)) {
       fontPathsImportUrls.push({
         id: match[1],
-        path: match[0].replaceAll(/__%%|%%__/g, ""),
+        path: match[0].replaceAll(/__%%|%%__/g, ''),
       });
     }
   }
 
   return dedent`
-  const fontPaths = [${fontPathsImportUrls.map((fontPath) => `{id: '${fontPath.id}', path: ${fontPath.path}}`).join(", ")}];
+  const fontPaths = [${fontPathsImportUrls.map((fontPath) => `{id: '${fontPath.id}', path: ${fontPath.path}}`).join(', ')}];
   if (!document.getElementById('id-${id}')) {
     let fontDeclarations = \`${fontFaceCSS}\`;
     fontPaths.forEach((fontPath, i) => {

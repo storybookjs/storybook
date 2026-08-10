@@ -1,16 +1,6 @@
 {
-  "include": ["src", "scripts"],
-  "compilerOptions": {
-    "outDir": "dist",
-    "target": "ES2020",
-    "lib": ["ESNext", "DOM"],
-    "module": "Preserve",
-    "jsx": "react",
-    "moduleResolution": "bundler",
-    "strict": true,
-    "declaration": true,
-    "sourceMap": true,
-    "noEmit": true,
-    "esModuleInterop": true
-  }
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {},
+  "include": ["src/**/*"],
+  "exclude": ["src/**/*.test.ts"]
 }

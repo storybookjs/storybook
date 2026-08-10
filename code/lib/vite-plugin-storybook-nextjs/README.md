@@ -1,17 +1,17 @@
 # vite-plugin-storybook-nextjs
 
-This is a Vite plugin that allows you to use Next.js features in Vite. It is the basis for `@storybook/experimental-nextjs-vite` and should be used when running portable stories in Vitest.
+This is a Vite plugin that allows you to use Next.js features in Vite. It is the basis for `@storybook/nextjs-vite` and should be used when running portable stories in Vitest.
 
 ## Features
 
 - **Next.js Integration**: Seamlessly integrate Next.js features into your Vite project.
-- **Storybook Compatibility**: Acts as the foundation for [the `@storybook/experimental-nextjs-vite` framework](https://storybook.js.org/docs/get-started/frameworks/nextjs#with-vite), enabling you to use Storybook with Next.js in a Vite environment.
+- **Storybook Compatibility**: Acts as the foundation for [the `@storybook/nextjs-vite` framework](https://storybook.js.org/docs/get-started/frameworks/nextjs#with-vite), enabling you to use Storybook with Next.js in a Vite environment.
 - **Portable Stories**: Ideal for running portable stories in Vitest, ensuring your components are tested in an environment that closely mirrors production.
 
 ## Requirements
 
 - Next.js v14.1.0 or higher
-- Storybook 9 or higher
+- Storybook 10 or higher
 
 ## Installation
 
@@ -45,12 +45,12 @@ export default defineConfig({
 });
 ```
 
-If you are using `@storybook/experimental-nextjs-vite` you don't have to install `vite-plugin-storybook-nextjs`, since `@storybook/experimental-nextjs-vite` already re-exports it.
+If you are using `@storybook/nextjs-vite` you don't have to install `vite-plugin-storybook-nextjs`, since `@storybook/nextjs-vite` already re-exports it.
 
 ```ts
 // vitest.config.ts
 import { defineConfig } from "vite";
-import { storybookNextJsPlugin } from "@storybook/experimental-nextjs-vite/vite-plugin";
+import { storybookNextJsPlugin } from "@storybook/nextjs-vite/vite-plugin";
 
 export default defineConfig({
   plugins: [storybookNextJsPlugin()],

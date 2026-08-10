@@ -1,13 +1,13 @@
-import nextLoadJsConfig from "next/dist/build/load-jsconfig.js";
-import { transform } from "next/dist/build/swc/index.js";
-import type { NextConfigComplete } from "next/dist/server/config-shared.js";
-import { resolve } from "pathe";
-import { type Plugin, createFilter } from "vite";
+import nextLoadJsConfig from 'next/dist/build/load-jsconfig.js';
+import { transform } from 'next/dist/build/swc/index.js';
+import type { NextConfigComplete } from 'next/dist/server/config-shared.js';
+import { resolve } from 'pathe';
+import { type Plugin, createFilter } from 'vite';
 
-import { isVitestEnv } from "../../utils";
-import * as NextUtils from "../../utils/nextjs";
-import { getVitestSWCTransformConfig } from "../../utils/swc/transform";
-import { isDefined } from "../../utils/typescript";
+import { isVitestEnv } from '../../utils.ts';
+import * as NextUtils from '../../utils/nextjs.ts';
+import { getVitestSWCTransformConfig } from '../../utils/swc/transform.ts';
+import { isDefined } from '../../utils/typescript.ts';
 
 /** Regular expression to exclude certain files from transformation */
 const excluded = /[\\/]((cache[\\/][^\\/]+\.zip[\\/])|virtual:)[\\/]/;
@@ -20,7 +20,7 @@ const loadJsConfig: typeof nextLoadJsConfig =
 
 export function vitePluginNextSwc(
   rootDir: string,
-  nextConfigResolver: PromiseWithResolvers<NextConfigComplete>,
+  nextConfigResolver: PromiseWithResolvers<NextConfigComplete>
 ) {
   let loadedJSConfig: Awaited<ReturnType<typeof loadJsConfig>>;
   let nextDirectories: ReturnType<typeof NextUtils.findNextDirectories>;
@@ -32,13 +32,13 @@ export function vitePluginNextSwc(
   const resolvedDir = resolve(rootDir);
 
   return {
-    name: "vite-plugin-storybook-nextjs-swc",
-    enforce: "pre" as const,
+    name: 'vite-plugin-storybook-nextjs-swc',
+    enforce: 'pre' as const,
     async config(config, env) {
       const nextConfig = await nextConfigResolver.promise;
       nextDirectories = NextUtils.findNextDirectories(resolvedDir);
       loadedJSConfig = await loadJsConfig(resolvedDir, nextConfig);
-      isDev = env.mode !== "production";
+      isDev = env.mode !== 'production';
       isEsmProject = true;
       // TODO: Setting isEsmProject to false errors. Need to investigate further.
       // isEsmProject = packageJson.type === "module";
@@ -56,8 +56,8 @@ export function vitePluginNextSwc(
       // when `config.test` is absent.
       if (isVitestEnv) {
         isServerEnvironment =
-          config.test?.environment === "node" ||
-          config.test?.environment === "edge-runtime" ||
+          config.test?.environment === 'node' ||
+          config.test?.environment === 'edge-runtime' ||
           config.test?.browser?.enabled !== true;
       }
 
@@ -69,17 +69,15 @@ export function vitePluginNextSwc(
         server: {
           watch: {
             ignored: [
-              ...(isServerWatchIgnoredArray
-                ? serverWatchIgnored
-                : [serverWatchIgnored]),
-              "/.next/",
+              ...(isServerWatchIgnoredArray ? serverWatchIgnored : [serverWatchIgnored]),
+              '/.next/',
             ].filter(isDefined),
           },
         },
       };
     },
     async transform(code, id) {
-      if (id.includes("/node_modules/") || !filter(id)) {
+      if (id.includes('/node_modules/') || !filter(id)) {
         return;
       }
 
@@ -97,7 +95,7 @@ export function vitePluginNextSwc(
           rootDir,
           isDev,
           isEsmProject,
-        }),
+        })
       );
 
       return output;

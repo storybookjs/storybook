@@ -1,14 +1,14 @@
-import fs from "node:fs/promises";
-import path from "pathe";
-import type { Plugin } from "vite";
+import fs from 'node:fs/promises';
+import path from 'pathe';
+import type { Plugin } from 'vite';
 
-import { getFontFaceDeclarations as getGoogleFontFaceDeclarations } from "./google/get-font-face-declarations";
+import { getFontFaceDeclarations as getGoogleFontFaceDeclarations } from './google/get-font-face-declarations.ts';
 import {
   type LoaderOptions,
   getFontFaceDeclarations as getLocalFontFaceDeclarations,
-} from "./local/get-font-face-declarations";
-import { getCSSMeta } from "./utils/get-css-meta";
-import { setFontDeclarationsInHead } from "./utils/set-font-declarations-in-head";
+} from './local/get-font-face-declarations.ts';
+import { getCSSMeta } from './utils/get-css-meta.ts';
+import { setFontDeclarationsInHead } from './utils/set-font-declarations-in-head.ts';
 
 type FontFaceDeclaration = {
   id: string;
@@ -30,16 +30,16 @@ type FontOptions = {
 
 const includePattern = /next(\\|\/|\\\\).*(\\|\/|\\\\)target\.css\?.*$/;
 
-const virtualModuleId = "virtual:next-font";
+const virtualModuleId = 'virtual:next-font';
 
 export function vitePluginNextFont() {
   let devMode = true;
 
   return {
-    name: "vite-plugin-storybook-nextjs-font",
-    enforce: "pre" as const,
+    name: 'vite-plugin-storybook-nextjs-font',
+    enforce: 'pre' as const,
     async config(config, env) {
-      devMode = env.mode !== "production";
+      devMode = env.mode !== 'production';
 
       return {};
     },
@@ -49,17 +49,17 @@ export function vitePluginNextFont() {
         return null;
       }
 
-      const [sourceWithoutQuery, rawQuery] = source.split("?");
+      const [sourceWithoutQuery, rawQuery] = source.split('?');
       const queryParams = JSON.parse(rawQuery);
 
       const fontOptions = {
-        filename: (queryParams.path as string) ?? "",
-        fontFamily: (queryParams.import as string) ?? "",
+        filename: (queryParams.path as string) ?? '',
+        fontFamily: (queryParams.import as string) ?? '',
         props: queryParams.arguments?.[0] ?? {},
         source: importer,
       } as FontOptions;
 
-      if (fontOptions.source.endsWith("html")) {
+      if (fontOptions.source.endsWith('html')) {
         // Workaround for HTML files because Vite extracts the css and places it in a separate file
         // to inject it in the head of the HTML file
         return null;
@@ -69,27 +69,16 @@ export function vitePluginNextFont() {
 
       const pathSep = path.sep;
 
-      if (
-        sourceWithoutQuery.endsWith(
-          ["next", "font", "google", "target.css"].join(pathSep),
-        )
-      ) {
+      if (sourceWithoutQuery.endsWith(['next', 'font', 'google', 'target.css'].join(pathSep))) {
         fontFaceDeclaration = await getGoogleFontFaceDeclarations(fontOptions);
       }
 
-      if (
-        sourceWithoutQuery.endsWith(
-          ["next", "font", "local", "target.css"].join(pathSep),
-        )
-      ) {
+      if (sourceWithoutQuery.endsWith(['next', 'font', 'local', 'target.css'].join(pathSep))) {
         const importerDirPath = path.dirname(fontOptions.filename);
 
         const emitFont = async (importerRelativeFontPath: string) => {
           const fontExtension = path.extname(importerRelativeFontPath);
-          const fontBaseName = path.basename(
-            importerRelativeFontPath,
-            fontExtension,
-          );
+          const fontBaseName = path.basename(importerRelativeFontPath, fontExtension);
 
           const fontPath = path.join(importerDirPath, importerRelativeFontPath);
 
@@ -105,7 +94,7 @@ export function vitePluginNextFont() {
 
             const fontReferenceId = this.emitFile({
               name: `${fontBaseName}${fontExtension}`,
-              type: "asset",
+              type: 'asset',
               source: fontData,
             });
 
@@ -121,7 +110,7 @@ export function vitePluginNextFont() {
         };
 
         if (loaderOptions) {
-          if (typeof fontOptions.props.src === "string") {
+          if (typeof fontOptions.props.src === 'string') {
             const font = await emitFont(fontOptions.props.src);
             loaderOptions.props.metaSrc = font;
           } else {
@@ -136,7 +125,7 @@ export function vitePluginNextFont() {
                     ...fontSrc,
                     path: font,
                   };
-                }),
+                })
               )
             ).filter((font) => font !== undefined);
           }
@@ -154,7 +143,7 @@ export function vitePluginNextFont() {
     },
     load(id) {
       // Check if the file matches the specific pattern
-      const [source] = id.split("?");
+      const [source] = id.split('?');
       if (source !== virtualModuleId) {
         return undefined;
       }
@@ -163,7 +152,7 @@ export function vitePluginNextFont() {
 
       const fontFaceDeclaration = moduleInfo?.meta?.fontFaceDeclaration;
 
-      if (typeof fontFaceDeclaration !== "undefined") {
+      if (typeof fontFaceDeclaration !== 'undefined') {
         const cssMeta = getCSSMeta(fontFaceDeclaration);
 
         return `
@@ -176,12 +165,12 @@ export function vitePluginNextFont() {
 				export default {
 				  className: "${cssMeta.className}", 
 				  style: ${JSON.stringify(cssMeta.style)}
-				  ${cssMeta.variableClassName ? `, variable: "${cssMeta.variableClassName}"` : ""}
+				  ${cssMeta.variableClassName ? `, variable: "${cssMeta.variableClassName}"` : ''}
 				}
 				`;
       }
 
-      return "export default {}";
+      return 'export default {}';
     },
   } satisfies Plugin;
 }

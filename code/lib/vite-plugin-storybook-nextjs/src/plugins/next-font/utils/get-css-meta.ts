@@ -14,19 +14,18 @@ export function getCSSMeta(options: Options) {
   const classNamesCSS = `
     .${className} {
       font-family: ${options.fontFamily};
-      ${isNextCSSPropertyValid(options.styles) ? `font-style: ${options.styles[0]};` : ""}
+      ${isNextCSSPropertyValid(options.styles) ? `font-style: ${options.styles[0]};` : ''}
       ${
-        isNextCSSPropertyValid(options.weights) &&
-        !options.weights[0]?.includes(" ")
+        isNextCSSPropertyValid(options.weights) && !options.weights[0]?.includes(' ')
           ? `font-weight: ${options.weights[0]};`
-          : ""
+          : ''
       }
     }
 
     ${
       options.variable
         ? `.${variableClassName} { ${options.variable}: '${options.fontFamily}'; }`
-        : ""
+        : ''
     }
   `;
 
@@ -42,13 +41,11 @@ export function getCSSMeta(options: Options) {
 }
 
 function getClassName({ styles, weights, fontFamily }: Options) {
-  const font = fontFamily.replaceAll(" ", "-").toLowerCase();
+  const font = fontFamily.replaceAll(' ', '-').toLowerCase();
   const style = isNextCSSPropertyValid(styles) ? styles[0] : null;
-  const weight = isNextCSSPropertyValid(weights)
-    ? weights[0]?.replaceAll(" ", "-")
-    : null;
+  const weight = isNextCSSPropertyValid(weights) ? weights[0]?.replaceAll(' ', '-') : null;
 
-  return `${font}${style ? `-${style}` : ""}${weight ? `-${weight}` : ""}`;
+  return `${font}${style ? `-${style}` : ''}${weight ? `-${weight}` : ''}`;
 }
 
 function getStylesObj({ styles, weights, fontFamily }: Options) {
@@ -60,7 +57,7 @@ function getStylesObj({ styles, weights, fontFamily }: Options) {
 }
 
 function isNextCSSPropertyValid(prop: string[]) {
-  return prop.length === 1 && prop[0] !== "variable";
+  return prop.length === 1 && prop[0] !== 'variable';
 }
 
 /**
@@ -69,5 +66,5 @@ function isNextCSSPropertyValid(prop: string[]) {
  * is not loaded in time.
  */
 function changeFontDisplayToSwap(css: string) {
-  return css.replaceAll("font-display: optional;", "font-display: block;");
+  return css.replaceAll('font-display: optional;', 'font-display: block;');
 }

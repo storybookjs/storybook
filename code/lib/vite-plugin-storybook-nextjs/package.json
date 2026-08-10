@@ -1,120 +1,100 @@
 {
   "name": "vite-plugin-storybook-nextjs",
-  "version": "3.3.2",
-  "bugs": {
-    "url": "https://github.com/storybookjs/vite-plugin-storybook-nextjs/issues"
-  },
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/storybookjs/vite-plugin-storybook-nextjs.git"
-  },
-  "description": "",
+  "version": "10.6.0-alpha.5",
+  "description": "Vite plugin that enables Next.js features in Vite and Storybook",
   "keywords": [
     "vite-plugin",
     "nextjs",
     "storybook",
     "vitest"
   ],
-  "author": "Storybook Bot <storybookbot@gmail.com>",
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/vite-plugin-storybook-nextjs",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/lib/vite-plugin-storybook-nextjs"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
   "license": "MIT",
+  "author": "Storybook Bot <storybookbot@gmail.com>",
   "sideEffects": [
     "./src/polyfills/promise-with-resolvers.ts"
   ],
-  "files": [
-    "dist"
-  ],
   "type": "module",
-  "types": "./dist/index.d.ts",
   "exports": {
     ".": {
-      "import": {
-        "types": "./dist/index.d.ts",
-        "default": "./dist/index.js"
-      },
-      "require": {
-        "types": "./dist/index.d.cts",
-        "default": "./dist/index.cjs"
-      }
+      "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
+      "default": "./dist/index.js"
     },
-    "./browser/mocks/safe-stable-stringify": "./dist/plugins/next-mocks/alias/safe-stable-stringify/index.js",
     "./browser/mocks/cache": "./dist/plugins/next-mocks/alias/cache/index.js",
-    "./browser/mocks/navigation": "./dist/plugins/next-mocks/alias/navigation/index.js",
-    "./browser/mocks/headers": "./dist/plugins/next-mocks/alias/headers/index.js",
-    "./browser/mocks/router": "./dist/plugins/next-mocks/alias/router/index.js",
-    "./browser/mocks/link": "./dist/plugins/next-mocks/alias/link/index.js",
-    "./browser/mocks/server-only": "./dist/plugins/next-mocks/alias/rsc/server-only.js",
-    "./browser/mocks/dynamic": "./dist/plugins/next-mocks/alias/dynamic/index.js",
-    "./browser/mocks/image": "./dist/plugins/next-image/alias/next-image.js",
-    "./browser/mocks/legacy-image": "./dist/plugins/next-image/alias/next-legacy-image.js",
-    "./browser/mocks/image-default-loader": "./dist/plugins/next-image/alias/image-default-loader.js",
-    "./browser/mocks/image-context": "./dist/plugins/next-image/alias/image-context.js",
     "./browser/mocks/draft-mode.compat": "./dist/plugins/next-mocks/compatibility/draft-mode.compat.js",
-    "./node/mocks/cache": "./dist/plugins/next-mocks/alias/cache/index.cjs",
-    "./node/mocks/navigation": "./dist/plugins/next-mocks/alias/navigation/index.cjs",
-    "./node/mocks/headers": "./dist/plugins/next-mocks/alias/headers/index.cjs",
-    "./node/mocks/router": "./dist/plugins/next-mocks/alias/router/index.cjs",
-    "./node/mocks/link": "./dist/plugins/next-mocks/alias/link/index.cjs",
-    "./node/mocks/server-only": "./dist/plugins/next-mocks/alias/rsc/server-only.cjs",
-    "./node/mocks/dynamic": "./dist/plugins/next-mocks/alias/dynamic/index.cjs",
-    "./node/mocks/image": "./dist/plugins/next-image/alias/next-image.cjs",
-    "./node/mocks/legacy-image": "./dist/plugins/next-image/alias/next-legacy-image.cjs",
-    "./node/mocks/image-default-loader": "./dist/plugins/next-image/alias/image-default-loader.cjs",
-    "./node/mocks/image-context": "./dist/plugins/next-image/alias/image-context.cjs",
-    "./node/mocks/draft-mode.compat": "./dist/plugins/next-mocks/compatibility/draft-mode.compat.cjs",
-    "./node/mocks/safe-stable-stringify": "./dist/plugins/next-mocks/alias/safe-stable-stringify/index.cjs"
+    "./browser/mocks/dynamic": "./dist/plugins/next-mocks/alias/dynamic/index.js",
+    "./browser/mocks/headers": "./dist/plugins/next-mocks/alias/headers/index.js",
+    "./browser/mocks/image": "./dist/plugins/next-image/alias/next-image.js",
+    "./browser/mocks/image-context": "./dist/plugins/next-image/alias/image-context.js",
+    "./browser/mocks/image-default-loader": "./dist/plugins/next-image/alias/image-default-loader.js",
+    "./browser/mocks/legacy-image": "./dist/plugins/next-image/alias/next-legacy-image.js",
+    "./browser/mocks/link": "./dist/plugins/next-mocks/alias/link/index.js",
+    "./browser/mocks/navigation": "./dist/plugins/next-mocks/alias/navigation/index.js",
+    "./browser/mocks/router": "./dist/plugins/next-mocks/alias/router/index.js",
+    "./browser/mocks/safe-stable-stringify": "./dist/plugins/next-mocks/alias/safe-stable-stringify/index.js",
+    "./browser/mocks/server-only": "./dist/plugins/next-mocks/alias/rsc/server-only.js",
+    "./node/mocks/cache": "./dist/plugins/next-mocks/alias/cache/index.js",
+    "./node/mocks/draft-mode.compat": "./dist/plugins/next-mocks/compatibility/draft-mode.compat.js",
+    "./node/mocks/dynamic": "./dist/plugins/next-mocks/alias/dynamic/index.js",
+    "./node/mocks/headers": "./dist/plugins/next-mocks/alias/headers/index.js",
+    "./node/mocks/image": "./dist/plugins/next-image/alias/next-image.js",
+    "./node/mocks/image-context": "./dist/plugins/next-image/alias/image-context.js",
+    "./node/mocks/image-default-loader": "./dist/plugins/next-image/alias/image-default-loader.js",
+    "./node/mocks/legacy-image": "./dist/plugins/next-image/alias/next-legacy-image.js",
+    "./node/mocks/link": "./dist/plugins/next-mocks/alias/link/index.js",
+    "./node/mocks/navigation": "./dist/plugins/next-mocks/alias/navigation/index.js",
+    "./node/mocks/router": "./dist/plugins/next-mocks/alias/router/index.js",
+    "./node/mocks/safe-stable-stringify": "./dist/plugins/next-mocks/alias/safe-stable-stringify/index.js",
+    "./node/mocks/server-only": "./dist/plugins/next-mocks/alias/rsc/server-only.js",
+    "./package.json": "./package.json"
   },
-  "scripts": {
-    "prepublishOnly": "pnpm build",
-    "build": "tsup",
-    "dev": "pnpm build --watch",
-    "check": "biome check",
-    "check:write": "biome check --write",
-    "changeset": "changeset",
-    "release": "pnpm build && changeset publish"
-  },
-  "peerDependencies": {
-    "next": "^14.1.0 || ^15.0.0 || ^16.0.0",
-    "storybook": "^0.0.0-0 || ^9.0.0 || ^10.0.0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 || ^10.5.0-0 || ^10.6.0-0",
-    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
-  },
-  "devDependencies": {
-    "@biomejs/biome": "1.8.1",
-    "@changesets/changelog-github": "^0.5.2",
-    "@changesets/cli": "^2.29.8",
-    "@rollup/pluginutils": "^5.3.0",
-    "@types/node": "^18",
-    "@types/react": "^18",
-    "@types/semver": "^7.5.8",
-    "lefthook": "^1.6.16",
-    "next": "16.3.0-preview.5",
-    "pathe": "^2.0.3",
-    "pkg-pr-new": "^0.0.63",
-    "react": "19.2.0",
-    "rollup": "^4.18.0",
-    "semver": "^7.6.3",
-    "storybook": "^9.0.0",
-    "tsup": "^8.1.0",
-    "typescript": "^5.0.0",
-    "vite": "^5.0.0",
-    "vitest": "^3.0.0"
-  },
-  "packageManager": "pnpm@10.28.2",
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
   "dependencies": {
-    "@next/env": "16.3.0-preview.5",
-    "image-size": "^2.0.0",
+    "@next/env": "^15.0.0 || ^16.0.0",
+    "@rollup/pluginutils": "^5.0.2",
+    "image-size": "^2.0.2",
     "magic-string": "^0.30.11",
     "module-alias": "^2.2.3",
+    "pathe": "^2.0.3",
+    "semver": "^7.7.3",
     "ts-dedent": "^2.2.0",
     "vite-tsconfig-paths": "^5.1.4"
   },
-  "publishConfig": {
-    "access": "public",
-    "provenance": true
+  "devDependencies": {
+    "@types/node": "^22.19.1",
+    "@types/react": "^18.0.37",
+    "@types/semver": "^7.7.1",
+    "next": "^15.2.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "typescript": "^6.0.3",
+    "vite": "^7.0.4"
   },
-  "pnpm": {
-    "overrides": {
-      "vite-plugin-storybook-nextjs": "workspace:*",
-      "next": "16.3.0-preview.5"
-    }
+  "peerDependencies": {
+    "next": "^14.1.0 || ^15.0.0 || ^16.0.0",
+    "storybook": "workspace:^",
+    "vite": "^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

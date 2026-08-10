@@ -1,51 +1,49 @@
-import type { Env } from "@next/env";
-import type { NextConfigComplete } from "next/dist/server/config-shared.js";
-import { resolve } from "pathe";
-import type { Plugin } from "vite";
+import type { Env } from '@next/env';
+import type { NextConfigComplete } from 'next/dist/server/config-shared.js';
+import { resolve } from 'pathe';
+import type { Plugin } from 'vite';
 
-import type { DefineEnvOptions } from "next/dist/build/define-env";
-import * as NextUtils from "../../utils/nextjs";
+import type { DefineEnvOptions } from 'next/dist/build/define-env';
+import * as NextUtils from '../../utils/nextjs.ts';
 
 export async function vitePluginNextEnv(
   rootDir: string,
-  nextConfigResolver: PromiseWithResolvers<NextConfigComplete>,
+  nextConfigResolver: PromiseWithResolvers<NextConfigComplete>
 ) {
   let envConfig: Env;
   let isDev: boolean;
 
   const resolvedDir = resolve(rootDir);
 
-  let getDefineEnv: typeof import("next/dist/build/define-env.js").getDefineEnv;
+  let getDefineEnv: typeof import('next/dist/build/define-env.js').getDefineEnv;
   let isNext1540 = false;
 
   try {
     // Next.js >= 15.4.0
-    getDefineEnv = (await import("next/dist/build/define-env.js")).getDefineEnv;
+    getDefineEnv = (await import('next/dist/build/define-env.js')).getDefineEnv;
     isNext1540 = true;
   } catch (error) {
     // Next.js < 15.4.0
     getDefineEnv =
       // @ts-expect-error - TODO: Ignoring because types are for >= 15.4.0
-      (await import("next/dist/build/webpack/plugins/define-env-plugin.js"))
-        .getDefineEnv;
+      (await import('next/dist/build/webpack/plugins/define-env-plugin.js')).getDefineEnv;
   }
 
   return {
-    name: "vite-plugin-storybook-nextjs-env",
-    enforce: "pre" as const,
+    name: 'vite-plugin-storybook-nextjs-env',
+    enforce: 'pre' as const,
     async config(config, env) {
-      isDev = env.mode !== "production";
-      envConfig = (await NextUtils.loadEnvironmentConfig(resolvedDir, isDev))
-        .combinedEnv;
+      isDev = env.mode !== 'production';
+      envConfig = (await NextUtils.loadEnvironmentConfig(resolvedDir, isDev)).combinedEnv;
 
       const nextConfig = await nextConfigResolver.promise;
 
       const publicNextEnvMap = Object.fromEntries(
         Object.entries(envConfig)
-          .filter(([key]) => key.startsWith("NEXT_PUBLIC_"))
+          .filter(([key]) => key.startsWith('NEXT_PUBLIC_'))
           .map(([key, value]) => {
             return [`process.env.${key}`, JSON.stringify(value)];
-          }),
+          })
       );
 
       const finalConfig = {
@@ -78,7 +76,7 @@ export async function vitePluginNextEnv(
       // biome-ignore lint/performance/noDelete: <explanation>
       delete process.env.__NEXT_IMAGE_OPTS;
       // biome-ignore lint/performance/noDelete: <explanation>
-      delete finalConfig["process.env.__NEXT_IMAGE_OPTS"];
+      delete finalConfig['process.env.__NEXT_IMAGE_OPTS'];
 
       return {
         define: finalConfig,
@@ -86,7 +84,7 @@ export async function vitePluginNextEnv(
           deps: {
             optimizer: {
               ssr: {
-                include: ["next"],
+                include: ['next'],
               },
             },
           },

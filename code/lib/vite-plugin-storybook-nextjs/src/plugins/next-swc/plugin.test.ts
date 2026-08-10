@@ -1,23 +1,23 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type loadJsConfig from "next/dist/build/load-jsconfig.js";
-import type { NextConfigComplete } from "next/dist/server/config-shared.js";
+import type loadJsConfig from 'next/dist/build/load-jsconfig.js';
+import type { NextConfigComplete } from 'next/dist/server/config-shared.js';
 
-vi.mock("next/dist/build/load-jsconfig.js", () => ({
+vi.mock('next/dist/build/load-jsconfig.js', () => ({
   default: vi.fn(),
 }));
 
-vi.mock("next/dist/build/swc/index.js", () => ({
+vi.mock('next/dist/build/swc/index.js', () => ({
   transform: vi.fn(),
 }));
 
-vi.mock("../../utils/nextjs", () => ({
+vi.mock('../../utils/nextjs', () => ({
   findNextDirectories: vi.fn(),
   loadClosestPackageJson: vi.fn(),
   loadSWCBindingsEagerly: vi.fn(),
 }));
 
-vi.mock("../../utils/swc/transform", () => ({
+vi.mock('../../utils/swc/transform', () => ({
   getVitestSWCTransformConfig: vi.fn(),
 }));
 
@@ -39,101 +39,97 @@ const nextConfig: NextConfigComplete = {
   },
   modularizeImports: undefined,
   compiler: undefined,
-  distDir: ".next",
+  distDir: '.next',
   // biome-ignore lint/suspicious/noExplicitAny: we only need a partial shape for this test
 } as any;
 
-describe("vitePluginNextSwc env detection", () => {
+describe('vitePluginNextSwc env detection', () => {
   const setupMocks = async () => {
-    const loadJsConfigModule = await import("next/dist/build/load-jsconfig.js");
+    const loadJsConfigModule = await import('next/dist/build/load-jsconfig.js');
     vi.mocked(loadJsConfigModule.default).mockResolvedValue({
       useTypeScript: true,
       jsConfig: { compilerOptions: {} },
       resolvedBaseUrl: undefined,
     } as unknown as Awaited<ReturnType<typeof loadJsConfig>>);
 
-    const NextUtils = await import("../../utils/nextjs");
+    const NextUtils = await import('../../utils/nextjs.ts');
     vi.mocked(NextUtils.findNextDirectories).mockReturnValue({
-      pagesDir: "/pages",
-      appDir: "/app",
+      pagesDir: '/pages',
+      appDir: '/app',
     });
     vi.mocked(NextUtils.loadClosestPackageJson).mockResolvedValue({
-      type: "module",
+      type: 'module',
     });
     vi.mocked(NextUtils.loadSWCBindingsEagerly).mockResolvedValue(undefined);
 
-    const swc = await import("next/dist/build/swc/index.js");
+    const swc = await import('next/dist/build/swc/index.js');
     vi.mocked(swc.transform).mockResolvedValue({
-      code: "export {}",
+      code: 'export {}',
       map: null,
     });
 
-    const swcTransform = await import("../../utils/swc/transform");
+    const swcTransform = await import('../../utils/swc/transform.ts');
     vi.mocked(swcTransform.getVitestSWCTransformConfig).mockResolvedValue(
       // biome-ignore lint/suspicious/noExplicitAny: <explanation>
-      {} as any,
+      {} as any
     );
   };
 
-  it("treats Storybook-like Vite config (no `test` field) as browser, not server", async () => {
+  it('treats Storybook-like Vite config (no `test` field) as browser, not server', async () => {
     // In Storybook, VITEST is not set; in our unit test runner it is, so we explicitly simulate Storybook.
-    process.env.VITEST = "false";
+    process.env.VITEST = 'false';
     vi.resetModules();
     await setupMocks();
 
-    const { vitePluginNextSwc } = await import("./plugin");
+    const { vitePluginNextSwc } = await import('./plugin.ts');
 
     const nextConfigResolver = createPromiseWithResolvers<NextConfigComplete>();
     nextConfigResolver.resolve(nextConfig);
 
-    const plugin = vitePluginNextSwc("/root", nextConfigResolver);
+    const plugin = vitePluginNextSwc('/root', nextConfigResolver);
 
-    await plugin.config?.({}, { mode: "development" } as never);
+    await plugin.config?.({}, { mode: 'development' } as never);
 
     await plugin.transform?.call(
       { getCombinedSourcemap: () => null } as unknown as ThisParameterType<
         NonNullable<typeof plugin.transform>
       >,
-      "export const x = typeof window;",
-      "/src/example.ts",
+      'export const x = typeof window;',
+      '/src/example.ts'
     );
 
-    const swcTransform = await import("../../utils/swc/transform");
-    const lastCallArg = vi
-      .mocked(swcTransform.getVitestSWCTransformConfig)
-      .mock.calls.at(-1)?.[0];
+    const swcTransform = await import('../../utils/swc/transform.ts');
+    const lastCallArg = vi.mocked(swcTransform.getVitestSWCTransformConfig).mock.calls.at(-1)?.[0];
 
     expect(lastCallArg?.isServerEnvironment).toBe(false);
   });
 
-  it("treats Vitest node environment as server", async () => {
-    process.env.VITEST = "true";
+  it('treats Vitest node environment as server', async () => {
+    process.env.VITEST = 'true';
     vi.resetModules();
     await setupMocks();
 
-    const { vitePluginNextSwc } = await import("./plugin");
+    const { vitePluginNextSwc } = await import('./plugin.ts');
 
     const nextConfigResolver = createPromiseWithResolvers<NextConfigComplete>();
     nextConfigResolver.resolve(nextConfig);
 
-    const plugin = vitePluginNextSwc("/root", nextConfigResolver);
+    const plugin = vitePluginNextSwc('/root', nextConfigResolver);
 
-    await plugin.config?.({ test: { environment: "node" } }, {
-      mode: "development",
+    await plugin.config?.({ test: { environment: 'node' } }, {
+      mode: 'development',
     } as never);
 
     await plugin.transform?.call(
       { getCombinedSourcemap: () => null } as unknown as ThisParameterType<
         NonNullable<typeof plugin.transform>
       >,
-      "export const x = typeof window;",
-      "/src/example.ts",
+      'export const x = typeof window;',
+      '/src/example.ts'
     );
 
-    const swcTransform = await import("../../utils/swc/transform");
-    const lastCallArg = vi
-      .mocked(swcTransform.getVitestSWCTransformConfig)
-      .mock.calls.at(-1)?.[0];
+    const swcTransform = await import('../../utils/swc/transform.ts');
+    const lastCallArg = vi.mocked(swcTransform.getVitestSWCTransformConfig).mock.calls.at(-1)?.[0];
 
     expect(lastCallArg?.isServerEnvironment).toBe(true);
   });

@@ -1,20 +1,16 @@
-import fs from "node:fs";
-import * as nextEnv from "@next/env";
-import Log from "next/dist/build/output/log.js";
-import {
-  loadBindings,
-  lockfilePatchPromise,
-} from "next/dist/build/swc/index.js";
-import { findPagesDir } from "next/dist/lib/find-pages-dir.js";
-import type { NextConfigComplete } from "next/dist/server/config-shared.js";
-import path, { join } from "pathe";
+import fs from 'node:fs';
+import * as nextEnv from '@next/env';
+import Log from 'next/dist/build/output/log.js';
+import { loadBindings, lockfilePatchPromise } from 'next/dist/build/swc/index.js';
+import { findPagesDir } from 'next/dist/lib/find-pages-dir.js';
+import type { NextConfigComplete } from 'next/dist/server/config-shared.js';
+import path, { join } from 'pathe';
 
 const nextDistPath =
   /(next[\\/]dist[\\/]shared[\\/]lib)|(next[\\/]dist[\\/]client)|(next[\\/]dist[\\/]pages)/;
 
 // biome-ignore lint/suspicious/noExplicitAny: Support for CJS
-const { loadEnvConfig } = ((nextEnv as any).default ||
-  nextEnv) as typeof nextEnv;
+const { loadEnvConfig } = ((nextEnv as any).default || nextEnv) as typeof nextEnv;
 
 /**
  * Set up the environment variables for the Next.js project
@@ -38,7 +34,7 @@ export async function loadSWCBindingsEagerly(nextConfig?: NextConfigComplete) {
  * Check if the file should be output as CommonJS
  */
 export function shouldOutputCommonJs(filename: string) {
-  return filename.endsWith(".cjs") || nextDistPath.test(filename);
+  return filename.endsWith('.cjs') || nextDistPath.test(filename);
 }
 
 /**
@@ -49,28 +45,23 @@ export async function loadClosestPackageJson(dir: string, attempts = 1) {
     throw new Error("Can't resolve main package.json file");
   }
 
-  const mainPath = attempts === 1 ? ["."] : new Array(attempts).fill("..");
+  const mainPath = attempts === 1 ? ['.'] : new Array(attempts).fill('..');
 
   try {
-    const file = await fs.promises.readFile(
-      join(dir, ...mainPath, "package.json"),
-      "utf8",
-    );
+    const file = await fs.promises.readFile(join(dir, ...mainPath, 'package.json'), 'utf8');
     return JSON.parse(file);
   } catch (e) {
     return loadClosestPackageJson(dir, attempts + 1);
   }
 }
 
-export function findNextDirectories(
-  dir: string,
-): ReturnType<typeof findPagesDir> {
+export function findNextDirectories(dir: string): ReturnType<typeof findPagesDir> {
   try {
     return findPagesDir(dir);
   } catch (e) {
     return {
-      appDir: path.join(dir, "app"),
-      pagesDir: path.join(dir, "pages"),
+      appDir: path.join(dir, 'app'),
+      pagesDir: path.join(dir, 'pages'),
     };
   }
 }

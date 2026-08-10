@@ -9,22 +9,17 @@
 
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import type { NextConfig } from "next";
-import type {
-  JsConfig,
-  ResolvedBaseUrl,
-} from "next/dist/build/load-jsconfig.js";
-import { getParserOptions } from "next/dist/build/swc/options.js";
-import type { ExperimentalConfig } from "next/dist/server/config-shared.js";
+import type { NextConfig } from 'next';
+import type { JsConfig, ResolvedBaseUrl } from 'next/dist/build/load-jsconfig.js';
+import { getParserOptions } from 'next/dist/build/swc/options.js';
+import type { ExperimentalConfig } from 'next/dist/server/config-shared.js';
 
-import { createRequire } from "node:module";
-import { getEmotionOptions, getStyledComponentsOptions } from "./styles";
+import { createRequire } from 'node:module';
+import { getEmotionOptions, getStyledComponentsOptions } from './styles.ts';
 
 const require = createRequire(import.meta.url);
 
-const regeneratorRuntimePath = require.resolve(
-  "next/dist/compiled/regenerator-runtime",
-);
+const regeneratorRuntimePath = require.resolve('next/dist/compiled/regenerator-runtime');
 
 export function getBaseSWCOptions({
   filename,
@@ -43,23 +38,17 @@ export function getBaseSWCOptions({
   hasReactRefresh: boolean;
   globalWindow: boolean;
   esm: boolean;
-  compiler: NextConfig["compiler"];
-  swcPlugins: ExperimentalConfig["swcPlugins"];
+  compiler: NextConfig['compiler'];
+  swcPlugins: ExperimentalConfig['swcPlugins'];
   resolvedBaseUrl?: ResolvedBaseUrl;
   jsConfig: JsConfig;
   swcCacheDir?: string;
 }) {
   const parserConfig = getParserOptions({ filename, jsConfig });
   const paths = jsConfig?.compilerOptions?.paths;
-  const enableDecorators = Boolean(
-    jsConfig?.compilerOptions?.experimentalDecorators,
-  );
-  const emitDecoratorMetadata = Boolean(
-    jsConfig?.compilerOptions?.emitDecoratorMetadata,
-  );
-  const useDefineForClassFields = Boolean(
-    jsConfig?.compilerOptions?.useDefineForClassFields,
-  );
+  const enableDecorators = Boolean(jsConfig?.compilerOptions?.experimentalDecorators);
+  const emitDecoratorMetadata = Boolean(jsConfig?.compilerOptions?.emitDecoratorMetadata);
+  const useDefineForClassFields = Boolean(jsConfig?.compilerOptions?.useDefineForClassFields);
   const plugins = (swcPlugins ?? [])
     .filter(Array.isArray)
     .map(([name, options]) => [require.resolve(name), options]);
@@ -87,9 +76,9 @@ export function getBaseSWCOptions({
         react: {
           importSource:
             jsConfig?.compilerOptions?.jsxImportSource ??
-            (compiler?.emotion ? "@emotion/react" : "react"),
-          runtime: "automatic",
-          pragmaFrag: "React.Fragment",
+            (compiler?.emotion ? '@emotion/react' : 'react'),
+          runtime: 'automatic',
+          pragmaFrag: 'React.Fragment',
           throwIfNamespace: true,
           development: !!development,
           useBuiltins: true,
@@ -100,7 +89,7 @@ export function getBaseSWCOptions({
           // TODO: Figuring out for what globals are exactly used for
           globals: {
             typeofs: {
-              window: globalWindow ? "object" : "undefined",
+              window: globalWindow ? 'object' : 'undefined',
             },
             envs: {
               NODE_ENV: development ? '"development"' : '"production"',
@@ -120,11 +109,7 @@ export function getBaseSWCOptions({
     styledJsx: {},
     // Disable css-in-js libs (without client-only integration) transform on server layer for server components
     emotion: getEmotionOptions(compiler?.emotion, development),
-    // eslint-disable-next-line @typescript-eslint/no-use-before-define
-    styledComponents: getStyledComponentsOptions(
-      compiler?.styledComponents,
-      development,
-    ),
+    styledComponents: getStyledComponentsOptions(compiler?.styledComponents, development),
     serverComponents: undefined,
     serverActions: undefined,
     // For app router we prefer to bundle ESM,

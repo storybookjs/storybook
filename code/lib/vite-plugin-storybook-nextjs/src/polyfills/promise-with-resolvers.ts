@@ -1,4 +1,4 @@
-if (typeof Promise.withResolvers === "undefined") {
+if (typeof Promise.withResolvers === 'undefined') {
   Promise.withResolvers = <T>(): {
     promise: Promise<T>;
     resolve: (value: T | PromiseLike<T>) => void;
@@ -13,7 +13,7 @@ if (typeof Promise.withResolvers === "undefined") {
       reject = rej;
     });
 
-    // @ts-ignore
+    // @ts-expect-error resolve/reject are assigned inside the Promise executor
     return { promise, resolve, reject };
   };
 }

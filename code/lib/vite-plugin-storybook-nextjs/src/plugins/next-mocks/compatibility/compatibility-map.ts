@@ -1,25 +1,20 @@
-import { createRequire } from "node:module";
-import semver from "semver";
+import { createRequire } from 'node:module';
+import semver from 'semver';
 
-import { VITEST_PLUGIN_NAME, getNextjsVersion } from "../../../utils";
+import { VITEST_PLUGIN_NAME, getNextjsVersion } from '../../../utils.ts';
 
 const require = createRequire(import.meta.url);
 
-type Env = "browser" | "node";
+type Env = 'browser' | 'node';
 
 const getEntryPoint = (subPath: string, env: Env) =>
   require.resolve(`${VITEST_PLUGIN_NAME}/${env}/mocks/${subPath}`);
 
-const mapping = (
-  env: Env,
-): Record<string, Record<string, string | boolean>> => ({
-  "<15.0.0": {
-    "next/dist/server/request/headers": "next/dist/client/components/headers",
+const mapping = (env: Env): Record<string, Record<string, string | boolean>> => ({
+  '<15.0.0': {
+    'next/dist/server/request/headers': 'next/dist/client/components/headers',
     // this path only exists from Next 15 onwards
-    "next/dist/server/request/draft-mode": getEntryPoint(
-      "draft-mode.compat",
-      env,
-    ),
+    'next/dist/server/request/draft-mode': getEntryPoint('draft-mode.compat', env),
   },
 });
 

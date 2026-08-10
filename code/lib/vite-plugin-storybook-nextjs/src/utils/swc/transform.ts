@@ -1,10 +1,10 @@
-import type loadJsConfig from "next/dist/build/load-jsconfig.js";
-import type { findPagesDir } from "next/dist/lib/find-pages-dir.js";
-import type { NextConfigComplete } from "next/dist/server/config-shared.js";
-import path from "pathe";
-import type { SourceMap } from "rollup";
-import { shouldOutputCommonJs } from "../nextjs";
-import { getBaseSWCOptions } from "./options";
+import type loadJsConfig from 'next/dist/build/load-jsconfig.js';
+import type { findPagesDir } from 'next/dist/lib/find-pages-dir.js';
+import type { NextConfigComplete } from 'next/dist/server/config-shared.js';
+import path from 'pathe';
+import type { SourceMap } from 'rollup';
+import { shouldOutputCommonJs } from '../nextjs.ts';
+import { getBaseSWCOptions } from './options.ts';
 
 type VitestSWCTransformConfigParams = {
   filename: string;
@@ -49,12 +49,7 @@ export const getVitestSWCTransformConfig = async ({
     swcPlugins: nextConfig.experimental.swcPlugins,
     compiler: nextConfig?.compiler,
     esm: isEsmProject,
-    swcCacheDir: path.join(
-      rootDir,
-      nextConfig.distDir ?? ".next",
-      "cache",
-      "swc",
-    ),
+    swcCacheDir: path.join(rootDir, nextConfig.distDir ?? '.next', 'cache', 'swc'),
   });
   const useCjsModules = shouldOutputCommonJs(filename);
   const isPageFile = nextDirectories.pagesDir
@@ -64,19 +59,18 @@ export const getVitestSWCTransformConfig = async ({
   return {
     ...baseOptions,
     fontLoaders: {
-      fontLoaders: ["next/font/local", "next/font/google"],
+      fontLoaders: ['next/font/local', 'next/font/google'],
       relativeFilePathFromRoot: path.relative(rootDir, filename),
     },
     cjsRequireOptimizer: {
       packages: {
-        "next/server": {
+        'next/server': {
           transforms: {
-            NextRequest: "next/dist/server/web/spec-extension/request",
-            NextResponse: "next/dist/server/web/spec-extension/response",
-            ImageResponse: "next/dist/server/web/spec-extension/image-response",
-            userAgentFromString:
-              "next/dist/server/web/spec-extension/user-agent",
-            userAgent: "next/dist/server/web/spec-extension/user-agent",
+            NextRequest: 'next/dist/server/web/spec-extension/request',
+            NextResponse: 'next/dist/server/web/spec-extension/response',
+            ImageResponse: 'next/dist/server/web/spec-extension/image-response',
+            userAgentFromString: 'next/dist/server/web/spec-extension/user-agent',
+            userAgent: 'next/dist/server/web/spec-extension/user-agent',
           },
         },
       },
@@ -97,7 +91,7 @@ export const getVitestSWCTransformConfig = async ({
           },
         }),
     module: {
-      type: isEsmProject && !useCjsModules ? "es6" : "commonjs",
+      type: isEsmProject && !useCjsModules ? 'es6' : 'commonjs',
     },
     disableNextSsg: !isPageFile,
     isPageFile,
@@ -106,7 +100,7 @@ export const getVitestSWCTransformConfig = async ({
     isDevelopment: isDev,
     isServerCompiler: isServerEnvironment,
     inputSourceMap:
-      inputSourceMap && typeof inputSourceMap === "object"
+      inputSourceMap && typeof inputSourceMap === 'object'
         ? JSON.stringify(inputSourceMap)
         : undefined,
     sourceFileName: filename,
@@ -114,24 +108,18 @@ export const getVitestSWCTransformConfig = async ({
   };
 };
 
-async function getSupportedBrowsers(
-  projectRoot: string,
-  isDevelopment: boolean,
-) {
+async function getSupportedBrowsers(projectRoot: string, isDevelopment: boolean) {
   try {
     const getSupportedBrowserModule = await import(
       // @ts-expect-error - Correct import since Next.js v16.2
-      "next/dist/build/get-supported-browsers.js"
+      'next/dist/build/get-supported-browsers.js'
     );
-    return getSupportedBrowserModule.getSupportedBrowsers(
-      projectRoot,
-      isDevelopment,
-    );
+    return getSupportedBrowserModule.getSupportedBrowsers(projectRoot, isDevelopment);
   } catch (e) {
     // TODO: Remove as soon as we don't have to support Next.js < 16.2 anymore
-    return (await import("next/dist/build/utils.js")).getSupportedBrowsers(
+    return (await import('next/dist/build/utils.js')).getSupportedBrowsers(
       projectRoot,
-      isDevelopment,
+      isDevelopment
     );
   }
 }

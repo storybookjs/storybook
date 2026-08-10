@@ -1,106 +1,101 @@
-import fs from "node:fs";
-import { findPagesDir } from "next/dist/lib/find-pages-dir.js";
-import path from "pathe";
-import { describe, expect, it, vi } from "vitest";
+import fs from 'node:fs';
+
+import { findPagesDir } from 'next/dist/lib/find-pages-dir.js';
+import path from 'pathe';
+import { describe, expect, it, vi } from 'vitest';
+
 import {
   findNextDirectories,
   loadClosestPackageJson,
   loadSWCBindingsEagerly,
   shouldOutputCommonJs,
-} from "./nextjs";
+} from './nextjs.ts';
 
-// Mocking the necessary modules and functions
-vi.mock("node:fs");
-vi.mock("pathe");
-vi.mock("next/dist/build/output/log.js");
-vi.mock("@next/env");
-vi.mock("next/dist/build/swc/index.js", () => ({
+vi.mock('node:fs', { spy: true });
+vi.mock('next/dist/build/output/log.js');
+vi.mock('@next/env');
+vi.mock('next/dist/build/swc/index.js', () => ({
   loadBindings: vi.fn(),
   lockfilePatchPromise: { cur: Promise.resolve() },
 }));
-vi.mock("next/dist/lib/find-pages-dir.js");
+vi.mock('next/dist/lib/find-pages-dir.js', { spy: true });
 
-describe("nextjs.ts", () => {
-  describe("loadSWCBindingsEagerly", () => {
-    it("should call loadBindings and lockfilePatchPromise.cur", async () => {
-      const { loadBindings, lockfilePatchPromise } = await import(
-        "next/dist/build/swc/index.js"
-      );
+describe('nextjs.ts', () => {
+  describe('loadSWCBindingsEagerly', () => {
+    it('should call loadBindings and lockfilePatchPromise.cur', async () => {
+      const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+      const { loadBindings, lockfilePatchPromise } = await import('next/dist/build/swc/index.js');
 
       await loadSWCBindingsEagerly();
 
       expect(loadBindings).toHaveBeenCalled();
-      expect(lockfilePatchPromise.cur).resolves.toBeUndefined();
+      await expect(lockfilePatchPromise.cur).resolves.toBeUndefined();
+      warn.mockRestore();
     });
   });
 
-  describe("shouldOutputCommonJs", () => {
-    it("should return true for .cjs files", () => {
-      expect(shouldOutputCommonJs("file.cjs")).toBe(true);
+  describe('shouldOutputCommonJs', () => {
+    it('should return true for .cjs files', () => {
+      expect(shouldOutputCommonJs('file.cjs')).toBe(true);
     });
 
-    it("should return true for next/dist paths", () => {
-      expect(shouldOutputCommonJs("next/dist/shared/lib/somefile.js")).toBe(
-        true,
-      );
+    it('should return true for next/dist paths', () => {
+      expect(shouldOutputCommonJs('next/dist/shared/lib/somefile.js')).toBe(true);
     });
 
-    it("should return false for other files", () => {
-      expect(shouldOutputCommonJs("file.js")).toBe(false);
+    it('should return false for other files', () => {
+      expect(shouldOutputCommonJs('file.js')).toBe(false);
     });
   });
 
-  describe("loadClosestPackageJson", () => {
-    it("should load the closest package.json file", async () => {
-      const readFileMock = vi.fn().mockResolvedValue('{"name": "test"}');
-      fs.promises.readFile = readFileMock;
+  describe('loadClosestPackageJson', () => {
+    it('should load the closest package.json file', async () => {
+      const readFileMock = vi.spyOn(fs.promises, 'readFile').mockResolvedValue('{"name": "test"}');
 
-      const result = await loadClosestPackageJson("/path/to/dir");
+      const result = await loadClosestPackageJson('/path/to/dir');
 
-      expect(readFileMock).toHaveBeenCalledWith(
-        path.join("/path/to/dir", "package.json"),
-        "utf8",
-      );
-      expect(result).toEqual({ name: "test" });
+      expect(readFileMock).toHaveBeenCalledWith(path.join('/path/to/dir', 'package.json'), 'utf8');
+      expect(result).toEqual({ name: 'test' });
+      readFileMock.mockRestore();
     });
 
-    it("should throw an error after 5 attempts", async () => {
+    it('should throw an error after 5 attempts', async () => {
       const readFileMock = vi
-        .fn()
-        .mockRejectedValue(new Error("File not found"));
-      fs.promises.readFile = readFileMock;
+        .spyOn(fs.promises, 'readFile')
+        .mockRejectedValue(new Error('File not found'));
 
-      await expect(loadClosestPackageJson("/path/to/dir")).rejects.toThrow(
-        "Can't resolve main package.json file",
+      await expect(loadClosestPackageJson('/path/to/dir')).rejects.toThrow(
+        "Can't resolve main package.json file"
       );
+      readFileMock.mockRestore();
     });
   });
 
-  describe("findNextDirectories", () => {
-    it("should return directories from findPagesDir", () => {
+  describe('findNextDirectories', () => {
+    it('should return directories from findPagesDir', () => {
       vi.mocked(findPagesDir).mockReturnValue({
-        appDir: "/path/to/app",
-        pagesDir: "/path/to/pages",
+        appDir: '/path/to/app',
+        pagesDir: '/path/to/pages',
       });
 
-      const result = findNextDirectories("/path/to/dir");
+      const result = findNextDirectories('/path/to/dir');
 
       expect(result).toEqual({
-        appDir: "/path/to/app",
-        pagesDir: "/path/to/pages",
+        appDir: '/path/to/app',
+        pagesDir: '/path/to/pages',
       });
     });
 
-    it("should return default directories if findPagesDir throws an error", () => {
+    it('should return default directories if findPagesDir throws an error', () => {
       vi.mocked(findPagesDir).mockImplementation(() => {
-        throw new Error("Not found");
+        throw new Error('Not found');
       });
 
-      const result = findNextDirectories("/path/to/dir");
+      const result = findNextDirectories('/path/to/dir');
 
       expect(result).toEqual({
-        appDir: path.join("/path/to/dir", "app"),
-        pagesDir: path.join("/path/to/dir", "pages"),
+        appDir: path.join('/path/to/dir', 'app'),
+        pagesDir: path.join('/path/to/dir', 'pages'),
       });
     });
   });

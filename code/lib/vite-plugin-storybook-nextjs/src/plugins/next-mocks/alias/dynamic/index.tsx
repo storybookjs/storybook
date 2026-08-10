@@ -9,10 +9,10 @@
 
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-import Loadable from "next/dist/shared/lib/loadable.shared-runtime.js";
+import Loadable from 'next/dist/shared/lib/loadable.shared-runtime.js';
 // biome-ignore lint/style/useImportType: <explanation>
-import React from "react";
-import type { JSX } from "react";
+import React from 'react';
+import type { JSX } from 'react';
 
 type ComponentModule<P = Record<string, unknown>> = {
   default: React.ComponentType<P>;
@@ -22,9 +22,7 @@ export declare type LoaderComponent<P = Record<string, unknown>> = Promise<
   React.ComponentType<P> | ComponentModule<P>
 >;
 
-declare type Loader<P = Record<string, unknown>> =
-  | (() => LoaderComponent<P>)
-  | LoaderComponent<P>;
+declare type Loader<P = Record<string, unknown>> = (() => LoaderComponent<P>) | LoaderComponent<P>;
 
 type LoaderMap = { [module: string]: () => Loader<unknown> };
 
@@ -57,12 +55,10 @@ type DynamicOptions<P = Record<string, unknown>> = LoadableGeneratedOptions & {
 
 type LoadableOptions<P = Record<string, unknown>> = DynamicOptions<P>;
 
-type LoadableFn<P = Record<string, unknown>> = (
-  opts: LoadableOptions<P>,
-) => React.ComponentType<P>;
+type LoadableFn<P = Record<string, unknown>> = (opts: LoadableOptions<P>) => React.ComponentType<P>;
 
 export function noSSR<P = Record<string, unknown>>(): React.ComponentType<P> {
-  throw new Error("noSSR is not implemented in Storybook");
+  throw new Error('noSSR is not implemented in Storybook');
 }
 
 /**
@@ -73,7 +69,7 @@ export function noSSR<P = Record<string, unknown>>(): React.ComponentType<P> {
  */
 export default function dynamic<P = Record<string, unknown>>(
   dynamicOptions: DynamicOptions<P> | Loader<P>,
-  options?: DynamicOptions<P>,
+  options?: DynamicOptions<P>
 ): React.ComponentType<P> {
   // biome-ignore lint/suspicious/noExplicitAny: <explanation>
   const loadableFn = ((Loadable as any)?.default ?? Loadable) as LoadableFn<P>;
@@ -82,7 +78,7 @@ export default function dynamic<P = Record<string, unknown>>(
     // A loading component is not required, so we default it
     loading: ({ error, isLoading, pastDelay }) => {
       if (!pastDelay) return null;
-      if (process.env.NODE_ENV !== "production") {
+      if (process.env.NODE_ENV !== 'production') {
         if (isLoading) {
           return null;
         }
@@ -107,10 +103,10 @@ export default function dynamic<P = Record<string, unknown>>(
   if (dynamicOptions instanceof Promise) {
     loadableOptions.loader = () => dynamicOptions;
     // Support for having import as a function, eg: dynamic(() => import('../hello-world'))
-  } else if (typeof dynamicOptions === "function") {
+  } else if (typeof dynamicOptions === 'function') {
     loadableOptions.loader = dynamicOptions;
     // Support for having first argument being options, eg: dynamic({loader: import('../hello-world')})
-  } else if (typeof dynamicOptions === "object") {
+  } else if (typeof dynamicOptions === 'object') {
     loadableOptions = { ...loadableOptions, ...dynamicOptions };
   }
 
@@ -119,9 +115,7 @@ export default function dynamic<P = Record<string, unknown>>(
 
   const loaderFn = loadableOptions.loader as () => LoaderComponent<P>;
   const loader = () =>
-    loaderFn != null
-      ? loaderFn().then(convertModule)
-      : Promise.resolve(convertModule(() => null));
+    loaderFn != null ? loaderFn().then(convertModule) : Promise.resolve(convertModule(() => null));
 
   // coming from build/babel/plugins/react-loadable-plugin.js
   if (loadableOptions.loadableGenerated) {
@@ -136,7 +130,7 @@ export default function dynamic<P = Record<string, unknown>>(
   // support for disabling server side rendering, eg: dynamic(() => import('../hello-world'), {ssr: false}).
   // In browser environments (Storybook/Vitest), we simply remove webpack and modules options
   // and proceed with the loadable component since we're always on the client-side.
-  if (typeof loadableOptions.ssr === "boolean" && !loadableOptions.ssr) {
+  if (typeof loadableOptions.ssr === 'boolean' && !loadableOptions.ssr) {
     // biome-ignore lint/performance/noDelete: <explanation>
     delete loadableOptions.ssr;
     // biome-ignore lint/performance/noDelete: <explanation>

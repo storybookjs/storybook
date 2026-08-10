@@ -1,9 +1,9 @@
-import { fetchCSSFromGoogleFonts } from "next/dist/compiled/@next/font/dist/google/fetch-css-from-google-fonts.js";
-import { getFontAxes } from "next/dist/compiled/@next/font/dist/google/get-font-axes.js";
-import { getGoogleFontsUrl } from "next/dist/compiled/@next/font/dist/google/get-google-fonts-url.js";
-import { validateGoogleFontFunctionCall } from "next/dist/compiled/@next/font/dist/google/validate-google-font-function-call.js";
+import { fetchCSSFromGoogleFonts } from 'next/dist/compiled/@next/font/dist/google/fetch-css-from-google-fonts.js';
+import { getFontAxes } from 'next/dist/compiled/@next/font/dist/google/get-font-axes.js';
+import { getGoogleFontsUrl } from 'next/dist/compiled/@next/font/dist/google/get-google-fonts-url.js';
+import { validateGoogleFontFunctionCall } from 'next/dist/compiled/@next/font/dist/google/validate-google-font-function-call.js';
 // @ts-expect-error no types
-import loaderUtils from "next/dist/compiled/loader-utils3/index.js";
+import loaderUtils from 'next/dist/compiled/loader-utils3/index.js';
 
 const cssCache = new Map<string, string>();
 
@@ -35,21 +35,10 @@ export type LoaderOptions = {
 };
 
 export async function getFontFaceDeclarations(options: LoaderOptions) {
-  const {
-    fontFamily,
-    weights,
-    styles,
-    selectedVariableAxes,
-    display,
-    variable,
-  } = validateGoogleFontFunctionCall(options.fontFamily, options.props);
+  const { fontFamily, weights, styles, selectedVariableAxes, display, variable } =
+    validateGoogleFontFunctionCall(options.fontFamily, options.props);
 
-  const fontAxes = getFontAxes(
-    fontFamily,
-    weights,
-    styles,
-    selectedVariableAxes,
-  );
+  const fontAxes = getFontAxes(fontFamily, weights, styles, selectedVariableAxes);
   const url = getGoogleFontsUrl(fontFamily, fontAxes, display);
 
   try {
@@ -63,13 +52,11 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
       cssCache.delete(url);
     }
     if (fontFaceCSS === null) {
-      throw new Error(
-        `Failed to fetch \`${fontFamily}\` from Google Fonts with URL: \`${url}\``,
-      );
+      throw new Error(`Failed to fetch \`${fontFamily}\` from Google Fonts with URL: \`${url}\``);
     }
 
     return {
-      id: loaderUtils.getHashDigest(url, "md5", "hex", 6),
+      id: loaderUtils.getHashDigest(url, 'md5', 'hex', 6),
       fontFamily,
       fontFaceCSS,
       weights,
@@ -77,8 +64,6 @@ export async function getFontFaceDeclarations(options: LoaderOptions) {
       variable,
     };
   } catch (error) {
-    throw new Error(
-      `Failed to fetch \`${fontFamily}\` from Google Fonts with URL: \`${url}\``,
-    );
+    throw new Error(`Failed to fetch \`${fontFamily}\` from Google Fonts with URL: \`${url}\``);
   }
 }

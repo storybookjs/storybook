@@ -1,13 +1,13 @@
-import fs from "node:fs";
-import { createRequire } from "node:module";
-import { type FilterPattern, createFilter } from "@rollup/pluginutils";
-import { imageSize } from "image-size";
-import type { NextConfigComplete } from "next/dist/server/config-shared.js";
-import path from "pathe";
-import { dedent } from "ts-dedent";
-import type { Plugin } from "vite";
-import { VITEST_PLUGIN_NAME, isVitestEnv } from "../../utils";
-import { getAlias } from "./alias";
+import fs from 'node:fs';
+import { createRequire } from 'node:module';
+import { type FilterPattern, createFilter } from '@rollup/pluginutils';
+import { imageSize } from 'image-size';
+import type { NextConfigComplete } from 'next/dist/server/config-shared.js';
+import path from 'pathe';
+import { dedent } from 'ts-dedent';
+import type { Plugin } from 'vite';
+import { VITEST_PLUGIN_NAME, isVitestEnv } from '../../utils.ts';
+import { getAlias } from './alias/index.tsx';
 
 const warnedMessages = new Set<string>();
 const warnOnce = (message: string) => {
@@ -23,24 +23,24 @@ const excludeImporterPattern = /\.(css|scss|sass)$/;
 // Use null byte prefix for virtual module IDs
 // Use URL-safe base64 to encode the image path to avoid issues with special characters
 // like square brackets that are decoded by decodeURI
-const virtualImagePrefix = "\0virtual:next-image:";
-const virtualImage = "virtual:next-image";
-const virtualNextImage = "virtual:next/image";
-const virtualNextLegacyImage = "virtual:next/legacy/image";
+const virtualImagePrefix = '\0virtual:next-image:';
+const virtualImage = 'virtual:next-image';
+const virtualNextImage = 'virtual:next/image';
+const virtualNextLegacyImage = 'virtual:next/legacy/image';
 
 // URL-safe base64 encoding/decoding functions
 function encodeBase64Url(str: string): string {
-  const base64 = Buffer.from(str).toString("base64");
-  return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
+  const base64 = Buffer.from(str).toString('base64');
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
 }
 
 function decodeBase64Url(str: string): string {
   // Add back padding if needed
   const padding = (4 - (str.length % 4)) % 4;
-  const withPadding = str + "=".repeat(padding);
+  const withPadding = str + '='.repeat(padding);
   // Convert URL-safe base64 back to standard base64
-  const base64 = withPadding.replace(/-/g, "+").replace(/_/g, "/");
-  return Buffer.from(base64, "base64").toString();
+  const base64 = withPadding.replace(/-/g, '+').replace(/_/g, '/');
+  return Buffer.from(base64, 'base64').toString();
 }
 
 const require = createRequire(import.meta.url);
@@ -52,31 +52,31 @@ export type NextImagePluginOptions = {
 
 export function vitePluginNextImage(
   nextConfigResolver: PromiseWithResolvers<NextConfigComplete>,
-  options: NextImagePluginOptions = {},
+  options: NextImagePluginOptions = {}
 ) {
   let isBrowser = !isVitestEnv;
   let hasVitePluginSvgr = false;
   const postfixRE = /[?#].*$/s;
   const filter = createFilter(
     [
-      "**/*.{png,jpg,jpeg,gif,webp,avif,ico,bmp,svg}",
-      "**/*.{png,jpg,jpeg,gif,webp,avif,ico,bmp,svg}?*",
-      "**/*.{png,jpg,jpeg,gif,webp,avif,ico,bmp,svg}#*",
+      '**/*.{png,jpg,jpeg,gif,webp,avif,ico,bmp,svg}',
+      '**/*.{png,jpg,jpeg,gif,webp,avif,ico,bmp,svg}?*',
+      '**/*.{png,jpg,jpeg,gif,webp,avif,ico,bmp,svg}#*',
     ],
-    options.excludeFiles,
+    options.excludeFiles
   );
 
   return {
-    name: "vite-plugin-storybook-nextjs-image",
-    enforce: "pre" as const,
+    name: 'vite-plugin-storybook-nextjs-image',
+    enforce: 'pre' as const,
     async configResolved(config) {
       // Auto-detect SVGR plugin
       hasVitePluginSvgr = !!config.plugins?.some(
         (plugin) =>
           plugin &&
-          typeof plugin === "object" &&
-          "name" in plugin &&
-          (plugin.name === "vite-plugin-svgr" || plugin.name.includes("svgr")),
+          typeof plugin === 'object' &&
+          'name' in plugin &&
+          (plugin.name === 'vite-plugin-svgr' || plugin.name.includes('svgr'))
       );
     },
     async config(config, env) {
@@ -86,20 +86,20 @@ export function vitePluginNextImage(
 
       return {
         resolve: {
-          alias: getAlias(isBrowser ? "browser" : "node"),
+          alias: getAlias(isBrowser ? 'browser' : 'node'),
         },
       };
     },
     async resolveId(id, importer) {
-      const [source, queryA] = id.split("?");
+      const [source, queryA] = id.split('?');
 
-      if (queryA === "ignore") {
+      if (queryA === 'ignore') {
         return null;
       }
 
       // For SVG files, only process if they don't have ?react parameter and SVG processing is enabled
       const isSvg = /\.svg$/.test(source);
-      if (isSvg && hasVitePluginSvgr && queryA === "react") {
+      if (isSvg && hasVitePluginSvgr && queryA === 'react') {
         return null;
       }
 
@@ -115,21 +115,21 @@ export function vitePluginNextImage(
         warnOnce(
           dedent`Detected vite-plugin-svgr but you are not passing image include or exclude patterns to the nextjs-vite plugin. This may cause a conflict between the two plugins and issues with SVG files.
           
-          For more info and recommended configuration, see: https://github.com/storybookjs/vite-plugin-storybook-nextjs/blob/main/README.md#faq-includingexcluding-images`,
+          For more info and recommended configuration, see: https://github.com/storybookjs/storybook/blob/next/code/lib/vite-plugin-storybook-nextjs/README.md#faq-includingexcluding-images`
         );
       }
 
       if (
         includePattern.test(source) &&
-        !excludeImporterPattern.test(importer ?? "") &&
+        !excludeImporterPattern.test(importer ?? '') &&
         !importer?.startsWith(virtualImagePrefix)
       ) {
         const isAbsolute = path.isAbsolute(source);
-        const importerPath = importer?.split("?")[0];
+        const importerPath = importer?.split('?')[0];
         let imagePath = source;
 
         if (importerPath && !isAbsolute) {
-          if (source.startsWith(".")) {
+          if (source.startsWith('.')) {
             imagePath = path.join(path.dirname(importerPath), source);
           } else {
             const resolvedByVite = await this.resolve(source, importer, {
@@ -137,7 +137,7 @@ export function vitePluginNextImage(
             });
 
             if (resolvedByVite?.id) {
-              imagePath = resolvedByVite.id.split("?")[0];
+              imagePath = resolvedByVite.id.split('?')[0];
             } else {
               try {
                 imagePath = require.resolve(source, {
@@ -150,7 +150,7 @@ export function vitePluginNextImage(
           }
         }
 
-        const pathForFilter = imagePath.replace(postfixRE, "");
+        const pathForFilter = imagePath.replace(postfixRE, '');
 
         if (!filter(pathForFilter)) {
           return null;
@@ -162,11 +162,11 @@ export function vitePluginNextImage(
         return `${virtualImagePrefix}${encodeBase64Url(imagePath)}`;
       }
 
-      if (id === "next/image" && importer !== virtualNextImage) {
+      if (id === 'next/image' && importer !== virtualNextImage) {
         return virtualNextImage;
       }
 
-      if (id === "next/legacy/image" && importer !== virtualNextLegacyImage) {
+      if (id === 'next/legacy/image' && importer !== virtualNextLegacyImage) {
         return virtualNextLegacyImage;
       }
 
@@ -174,23 +174,21 @@ export function vitePluginNextImage(
     },
 
     async load(id) {
-      const aliasEnv = isBrowser ? "browser" : "node";
+      const aliasEnv = isBrowser ? 'browser' : 'node';
       if (virtualNextImage === id) {
         return (
           await fs.promises.readFile(
-            require.resolve(`${VITEST_PLUGIN_NAME}/${aliasEnv}/mocks/image`),
+            require.resolve(`${VITEST_PLUGIN_NAME}/${aliasEnv}/mocks/image`)
           )
-        ).toString("utf-8");
+        ).toString('utf-8');
       }
 
       if (virtualNextLegacyImage === id) {
         return (
           await fs.promises.readFile(
-            require.resolve(
-              `${VITEST_PLUGIN_NAME}/${aliasEnv}/mocks/legacy-image`,
-            ),
+            require.resolve(`${VITEST_PLUGIN_NAME}/${aliasEnv}/mocks/legacy-image`)
           )
-        ).toString("utf-8");
+        ).toString('utf-8');
       }
 
       // Handle virtual image modules with null byte prefix

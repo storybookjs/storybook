@@ -1,5 +1,5 @@
-import MagicString from "magic-string";
-import type { Plugin } from "vite";
+import MagicString from 'magic-string';
+import type { Plugin } from 'vite';
 
 /**
  * A Vite plugin to transform dynamic imports using `require.resolveWeak` into standard dynamic imports.
@@ -23,7 +23,7 @@ import type { Plugin } from "vite";
  */
 export const vitePluginNextDynamic = () =>
   ({
-    name: "vite-plugin-storybook-nextjs-dynamic",
+    name: 'vite-plugin-storybook-nextjs-dynamic',
     transform(code, id) {
       // Regex to match the dynamic import pattern
       const dynamicImportRegex =

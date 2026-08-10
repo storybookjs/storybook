@@ -1,28 +1,28 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const loadConfigMock = vi.hoisted(() => vi.fn());
 const normalizeConfigMock = vi.hoisted(() => vi.fn());
 
-vi.mock("next/dist/server/config.js", () => ({
+vi.mock('next/dist/server/config.js', () => ({
   default: loadConfigMock,
 }));
 
-vi.mock("next/dist/server/config-shared.js", () => ({
+vi.mock('next/dist/server/config-shared.js', () => ({
   normalizeConfig: normalizeConfigMock,
 }));
 
-import { loadNextConfig } from "./next-config";
+import { loadNextConfig } from './next-config.ts';
 
-const phase = "phase-production-build";
-const dir = "/project";
+const phase = 'phase-production-build';
+const dir = '/project';
 
-describe("loadNextConfig", () => {
+describe('loadNextConfig', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it("uses Next.js config loading unchanged by default", async () => {
-    const config = { distDir: ".next" };
+  it('uses Next.js config loading unchanged by default', async () => {
+    const config = { distDir: '.next' };
     loadConfigMock.mockResolvedValue(config);
 
     await expect(loadNextConfig(phase, dir)).resolves.toBe(config);
@@ -31,8 +31,8 @@ describe("loadNextConfig", () => {
     expect(normalizeConfigMock).not.toHaveBeenCalled();
   });
 
-  it("preserves unrelated Next.js config errors", async () => {
-    const error = new Error("Invalid next.config.mjs");
+  it('preserves unrelated Next.js config errors', async () => {
+    const error = new Error('Invalid next.config.mjs');
     loadConfigMock.mockRejectedValue(error);
 
     await expect(loadNextConfig(phase, dir)).rejects.toBe(error);
@@ -40,9 +40,9 @@ describe("loadNextConfig", () => {
     expect(normalizeConfigMock).not.toHaveBeenCalled();
   });
 
-  it("omits the Turbopack-only Rust React Compiler flag for Vite", async () => {
+  it('omits the Turbopack-only Rust React Compiler flag for Vite', async () => {
     const error = new Error(
-      "`experimental.turbopackRustReactCompiler` is only supported with Turbopack. Please remove the option.",
+      '`experimental.turbopackRustReactCompiler` is only supported with Turbopack. Please remove the option.'
     );
     const rawConfigModule = { default: vi.fn() };
     const normalizedConfig = {
@@ -68,10 +68,7 @@ describe("loadNextConfig", () => {
     expect(loadConfigMock).toHaveBeenNthCalledWith(2, phase, dir, {
       rawConfig: true,
     });
-    expect(normalizeConfigMock).toHaveBeenCalledWith(
-      phase,
-      rawConfigModule.default,
-    );
+    expect(normalizeConfigMock).toHaveBeenCalledWith(phase, rawConfigModule.default);
     expect(loadConfigMock).toHaveBeenNthCalledWith(3, phase, dir, {
       customConfig: {
         reactCompiler: true,

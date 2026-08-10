@@ -6,8 +6,7 @@ import type { DocgenPayload } from '../../../../core/src/shared/open-service/ser
 /** Where `build-storybook` writes one docgen snapshot per component under the static output dir. */
 export const DOCGEN_SNAPSHOT_DIR = join('services', 'core', 'docgen');
 
-/**
- * Token standing in for the sandbox directory inside recorded strings.
+/** Token standing in for the sandbox directory inside recorded strings. */
 export const SANDBOX_TOKEN = '<sandbox>';
 
 /**

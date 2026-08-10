@@ -66,37 +66,39 @@ export interface BuildTemplateInput {
   innerTemplate?: string;
 }
 
+// A selector that names no element, `.card` or `[appHighlight]`, matches a `div` in the snippet.
+const LEADING_CLASS = /^\..+/;
+const LEADING_ATTRIBUTE = /^\[.+?]/;
+
+const ID = /#([\w-]+)/;
+// One run of adjacent classes, `.a.b`, becomes a single class attribute.
+const CLASS_RUN = /(\.[\w-]+)+/;
+const ATTRIBUTE = /\[(.+?)]/g;
+// The leading non-space run is the element name; whatever follows are its attributes.
+const ELEMENT_AND_ATTRIBUTES = /(\S+)(.*)/;
+
 // Expands a component selector into the element a story renders, carrying its bindings.
 export const buildTemplate = (
   selector: string,
   { inputs, outputs, innerTemplate = '' }: BuildTemplateInput
 ) => {
   const firstSelector = selector.split(',')[0];
-  const templateReplacers: [
-    string | RegExp,
-    string | ((substring: string, ...args: any[]) => string),
-  ][] = [
-    [/(^.*?)(?=[,])/, '$1'],
-    [/(^\..+)/, 'div$1'],
-    [/(^\[.+?])/, 'div$1'],
-    [/([\w[\]]+)(\s*,[\w\s-[\],]+)+/, `$1`],
-    [/#([\w-]+)/, ` id="$1"`],
-    [/((\.[\w-]+)+)/, (_, c) => ` class="${c.split`.`.join` `.trim()}"`],
-    [/(\[.+?])/g, (_, a) => ` ${a.slice(1, -1)}`],
-    [
-      /([\S]+)(.*)/,
-      (template, elementSelector) => {
-        return voidElements.some((element) => elementSelector === element)
-          ? template.replace(/([\S]+)(.*)/, `<$1$2${inputs}${outputs} />`)
-          : template.replace(/([\S]+)(.*)/, `<$1$2${inputs}${outputs}>${innerTemplate}</$1>`);
-      },
-    ],
-  ];
+  const withElement =
+    LEADING_CLASS.test(firstSelector) || LEADING_ATTRIBUTE.test(firstSelector)
+      ? `div${firstSelector}`
+      : firstSelector;
 
-  return templateReplacers.reduce(
-    (prevSelector, [searchValue, replacer]) => prevSelector.replace(searchValue, replacer as any),
-    firstSelector
-  );
+  const asAttributes = withElement
+    .replace(ID, ' id="$1"')
+    .replace(CLASS_RUN, (classes) => ` class="${classes.split('.').join(' ').trim()}"`)
+    .replace(ATTRIBUTE, ' $1');
+
+  return asAttributes.replace(ELEMENT_AND_ATTRIBUTES, (_, element: string, attributes: string) => {
+    const openingTag = `<${element}${attributes}${inputs}${outputs}`;
+    return voidElements.includes(element)
+      ? `${openingTag} />`
+      : `${openingTag}>${innerTemplate}</${element}>`;
+  });
 };
 
 // Fallback element for a component whose decorator declares no selector.

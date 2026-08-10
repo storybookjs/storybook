@@ -81,7 +81,7 @@ const isGloballyReferenced = (payload: SandboxBaseline): boolean =>
 
 /**
  * Reads every per-component docgen snapshot from a static Storybook build.
-*/
+ */
 export function readStaticDocgen({
   staticDir,
   sandboxDir,

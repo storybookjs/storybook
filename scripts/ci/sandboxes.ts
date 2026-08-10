@@ -21,7 +21,7 @@ const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';
 
 /**
  * Verifies the committed docgen baselines against the sandbox that was just built.
-*/
+ */
 function getDocgenBaselineSteps(templateKey: string) {
   if (!sandboxTemplates.docgenServerTemplates().includes(templateKey as TemplateKey)) {
     return [];

@@ -1,0 +1,74 @@
+{
+  "argTypes": {
+    "doCreateAccount": {
+      "description": "\n",
+      "name": "doCreateAccount",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "required": false,
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "doLogin": {
+      "description": "\n",
+      "name": "doLogin",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "required": false,
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "doLogout": {
+      "description": "\n",
+      "name": "doLogout",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "required": false,
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "user": {
+      "description": "\n",
+      "name": "user",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": null
+        },
+        "type": {
+          "required": true,
+          "summary": "User | null"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    }
+  },
+  "id": "example-page",
+  "jsDocTags": {},
+  "name": "PageComponent",
+  "path": "./src/stories/page.stories.ts"
+}

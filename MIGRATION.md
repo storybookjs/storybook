@@ -1,5 +1,7 @@
 <h1>Migration</h1>
 
+- [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
+  - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
 - [From version 10.4.0 to 10.5.0](#from-version-1040-to-1050)
   - [ExternalDocs and ExternalDocsContainer are deprecated](#externaldocs-and-externaldocscontainer-are-deprecated)
 - [From version 10.3.0 to 10.4.0](#from-version-1030-to-1040)
@@ -524,6 +526,20 @@
   - [Webpack upgrade](#webpack-upgrade)
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
+
+## From version 10.5.x to 10.6.0
+
+### Experimental Playwright CT integration removed
+
+Storybook's experimental `@storybook/*/experimental-playwright` API (`createPlaywrightTest`) has been removed.
+
+This integration was built on Playwright's former `@playwright/experimental-ct-*` packages. Playwright has replaced that approach with [component testing in `@playwright/test`](https://playwright.dev/docs/test-components) — a story-gallery model where tests run against pages served by your own dev server, without a separate CT bundler or JSX-in-test marshalling.
+
+If you were using Storybook's Playwright CT bridge, migrate along Playwright's guide above. Storybook is a natural fit as that dev server — we're exploring that direction, but there's no documented integration yet; watch release notes for updates.
+
+The portable stories core (`composeStories`, `setProjectAnnotations`) remains available for the [Vitest addon](https://storybook.js.org/docs/writing-tests/integrations/vitest-addon) and other supported testing paths.
+
+If needed, you can still view the [documentation for an older version](https://storybook.js.org/docs/9/api/portable-stories/portable-stories-playwright).
 
 ## From version 10.4.0 to 10.5.0
 

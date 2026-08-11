@@ -17,6 +17,27 @@ import {
 import type { JobOrNoOpJob, Workflow } from './utils/types.ts';
 import { defineJob, defineNoOpJob, isWorkflowOrAbove } from './utils/types.ts';
 
+const DOCGEN_HARNESS_DIR = 'code/lib/docgen-harness';
+
+/**
+ * Verifies the committed docgen baselines against the sandbox that was just built.
+ */
+function getDocgenBaselineSteps(templateKey: string) {
+  if (!sandboxTemplates.docgenServerTemplates().includes(templateKey as TemplateKey)) {
+    return [];
+  }
+
+  return [
+    {
+      run: {
+        name: 'Verify docgen baselines',
+        working_directory: DOCGEN_HARNESS_DIR,
+        command: `yarn baselines:sandbox --template ${templateKey}`,
+      },
+    },
+  ];
+}
+
 function getSandboxSetupSteps(template: string) {
   const extraSteps = [];
   const templateData = sandboxTemplates.allTemplates[template as TemplateKey];
@@ -213,6 +234,7 @@ export function defineSandboxFlow<Key extends string>(key: Key) {
             command: `yarn task build --template ${key} --no-link -s build`,
           },
         },
+        ...getDocgenBaselineSteps(key),
         artifact.persist(`${LINUX_ROOT_DIR}/${SANDBOX_DIR}/${id}/debug-storybook.log`, 'logs'),
         workspace.packSandbox(id),
         workspace.persist([sandboxArchive(id)]),

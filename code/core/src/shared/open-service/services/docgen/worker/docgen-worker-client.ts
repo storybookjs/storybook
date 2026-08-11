@@ -66,8 +66,6 @@ class DocgenWorker implements DocgenWorkerClient {
     private readonly taskTimeoutMs = DEFAULT_TASK_TIMEOUT_MS
   ) {
     this.worker = new Worker(scriptPath);
-    // Never let an idle worker keep the process alive.
-    this.worker.unref();
     this.worker.on('message', (msg: DocgenWorkerResponse) => this.handleMessage(msg));
     this.worker.on('error', (error) => this.fail(error));
     this.worker.on('exit', (code) => {
@@ -93,6 +91,8 @@ class DocgenWorker implements DocgenWorkerClient {
     });
     // Surface late init rejections instead of leaving an unhandled rejection.
     this.ready.catch(() => undefined);
+
+    this.worker.unref();
 
     this.post({ type: 'init', descriptors });
   }

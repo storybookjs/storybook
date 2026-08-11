@@ -87,7 +87,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   // don't need to demote `storybook:mock-loader` here.
   config.plugins = (config.plugins ?? [])
     .flat()
-    .filter((plugin: any) => !plugin.name.includes('analogjs'));
+    .filter((plugin: any) => !plugin?.name?.includes('analogjs'));
 
   // Merge custom configuration into the default config
   const { mergeConfig, normalizePath } = await import('vite');

@@ -564,7 +564,7 @@ export default {
 };
 ```
 
-If you imported `@storybook/csf-plugin` directly in a custom builder or Vite/Webpack config, move that integration into `@storybook/addon-docs` (or copy the enrichment approach from its `csf-plugin` implementation). There is no public replacement package.
+Direct imports of `@storybook/csf-plugin` in custom builders or standalone Vite/Webpack configs are no longer supported. There is no public replacement package — CSF enrichment is only registered through `@storybook/addon-docs` as shown above.
 
 ## From version 10.4.0 to 10.5.0
 

@@ -102,7 +102,7 @@ function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
   const reviewEnabled = inputs.reviewEnabledForCli;
   if (id === 'stories') {
     return buildServerInstructions({
-      consumer: 'cli',
+      transport: 'cli',
       devEnabled: true,
       testSupported: inputs.testSupported,
       docsEnabled: inputs.docsEnabled,
@@ -112,7 +112,7 @@ function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
     });
   }
   return buildStoryInstructions({
-    consumer: 'cli',
+    transport: 'cli',
     framework: inputs.framework,
     renderer: inputs.renderer,
     changeDetectionEnabled: inputs.changeDetectionEnabled,

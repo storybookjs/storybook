@@ -2,7 +2,7 @@ import type { ToolsetCtx } from '../../../shared/open-service/toolset-definition
 
 import type { SkillId } from './skills.ts';
 
-export type SkillConsumer = ToolsetCtx['consumer'];
+export type SkillTransport = ToolsetCtx['transport'];
 
 /**
  * The MCP tool that serves a skill's content, for skills that have one. Frozen contract: the name
@@ -13,10 +13,10 @@ const MCP_SKILL_TOOL_NAMES: Partial<Record<SkillId, string>> = {
 };
 
 /**
- * Renders a cross-reference to a skill in the consumer's own vocabulary, mirroring `getRef` for
+ * Renders a cross-reference to a skill in the transport's own vocabulary, mirroring `getToolName` for
  * toolset methods: the MCP tool name where one exists, the `skills get` command otherwise.
  */
-export function getSkillRef(consumer: SkillConsumer) {
+export function getSkillRef(transport: SkillTransport) {
   return (id: SkillId): string =>
-    (consumer === 'mcp' && MCP_SKILL_TOOL_NAMES[id]) || `npx storybook skills get ${id}`;
+    (transport === 'mcp' && MCP_SKILL_TOOL_NAMES[id]) || `npx storybook skills get ${id}`;
 }

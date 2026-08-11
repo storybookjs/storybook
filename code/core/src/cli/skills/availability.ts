@@ -8,16 +8,16 @@ import { getManifestStatus, type ManifestFeatures } from './manifest-status.ts';
 import { getReviewStatus } from './review-status.ts';
 
 export interface ToolAvailability {
-  /** The `core/module-graph` open service is registered/resolvable. Gates `get-stories-by-component`. */
+  /** The `core/module-graph` open service is registered/resolvable. Gates `stories-find-by-component`. */
   moduleGraphSupported: boolean;
-  /** The `changeDetection` feature flag is enabled. Gates `get-changed-stories`. */
+  /** The `changeDetection` feature flag is enabled. Gates `stories-changed`. */
   changeDetectionEnabled: boolean;
-  /** The `experimentalReview` AND `changeDetection` feature flags are enabled. Gates `display-review` for direct MCP clients. */
+  /** The `experimentalReview` AND `changeDetection` feature flags are enabled. Gates `review-create` for direct MCP clients. */
   reviewEnabled: boolean;
   /**
    * Same gate for the `storybook ai` CLI channel (the Claude/Codex plugins),
    * where review is on by default: `changeDetection` on and `experimentalReview`
-   * not explicitly `false`. Gates `display-review` for CLI-marked requests and
+   * not explicitly `false`. Gates `review-create` for CLI-marked requests and
    * everything derived from the storybook-ai metadata preset.
    */
   reviewEnabledForCli: boolean;
@@ -29,10 +29,10 @@ export interface ToolAvailability {
   docsFeatureEnabled: boolean;
   /**
    * `@storybook/addon-vitest` is enabled (not merely installed), matching the condition under
-   * which it registers the `test` toolset. Gates the `test` toolset (`run-story-tests`).
+   * which it registers the `test` toolset. Gates the `test` toolset (`test-run`).
    */
   testSupported: boolean;
-  /** `@storybook/addon-a11y` is enabled. Gates the accessibility sub-feature of `run-story-tests`. */
+  /** `@storybook/addon-a11y` is enabled. Gates the accessibility sub-feature of `test-run`. */
   a11yEnabled: boolean;
   /** `experimentalDocgenServer` mode: read manifest data in-process from the open services. */
   docgenServer: boolean;

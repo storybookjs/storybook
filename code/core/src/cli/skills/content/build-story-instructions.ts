@@ -1,14 +1,14 @@
-import { getRef } from '../../../shared/open-service/toolset-names.ts';
+import { getToolName } from '../../../shared/open-service/toolset-names.ts';
 
 import { getFinalLinksGuidance } from './build-server-instructions.ts';
 import { frameworkToRendererMap } from './framework-renderer.ts';
 import a11yInstructionsTemplate from './instructions/a11y-instructions.md';
 import storyTestingInstructionsTemplate from './instructions/story-testing-instructions.md';
 import storyInstructionsTemplate from './instructions/storybook-story-instructions.md';
-import type { SkillConsumer } from './skill-refs.ts';
+import type { SkillTransport } from './skill-refs.ts';
 
 export type StoryInstructionsInputs = {
-  consumer: SkillConsumer;
+  transport: SkillTransport;
   framework: string;
   /** Renderer package name; defaults to `framework` when unmapped (today's behavior). */
   renderer?: string;
@@ -20,7 +20,7 @@ export type StoryInstructionsInputs = {
 };
 
 export function buildStoryInstructions({
-  consumer,
+  transport,
   framework,
   renderer,
   changeDetectionEnabled,
@@ -29,7 +29,7 @@ export function buildStoryInstructions({
   a11yEnabled,
   docsEnabled,
 }: StoryInstructionsInputs): string {
-  const ref = getRef({ consumer });
+  const ref = getToolName({ transport });
   const resolvedRenderer = renderer ?? frameworkToRendererMap[framework] ?? framework;
 
   // Mirrors the review-aware rewrite in build-server-instructions.ts:
@@ -68,7 +68,7 @@ This Storybook exposes component documentation tools. Before creating or changin
     .replace('{{RENDERER}}', resolvedRenderer)
     .replace('\n{{DOCS_WORKFLOW_GUIDANCE}}', docsEnabled ? docsWorkflowGuidance : '')
     .replace('{{STORY_LINKING_WORKFLOW}}', storyLinkingWorkflow)
-    .replace('{{FINAL_LINKS_GUIDANCE}}', getFinalLinksGuidance(consumer, reviewEnabled))
+    .replace('{{FINAL_LINKS_GUIDANCE}}', getFinalLinksGuidance(transport, reviewEnabled))
     .replace('{{PREVIEW_STORIES}}', ref('stories.preview'))
     .replace('{{CHANGED_STORY_FALLBACK_LINK_GUIDANCE}}', changedStoryFallbackLinkGuidance);
 

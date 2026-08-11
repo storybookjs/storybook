@@ -11,39 +11,39 @@ const baseInputs = {
   docsEnabled: false,
 } as const;
 
-describe('buildStoryInstructions consumer refs', () => {
-  it('MCP consumer names MCP tools', () => {
-    const text = buildStoryInstructions({ ...baseInputs, consumer: 'mcp' });
-    expect(text).toContain('get-changed-stories');
-    expect(text).toContain('run-story-tests');
+describe('buildStoryInstructions transport refs', () => {
+  it('MCP transport names MCP tools', () => {
+    const text = buildStoryInstructions({ ...baseInputs, transport: 'mcp' });
+    expect(text).toContain('stories-changed');
+    expect(text).toContain('test-run');
     expect(text).not.toContain('npx storybook tools');
   });
 
-  it('CLI consumer names tools CLI commands', () => {
-    const text = buildStoryInstructions({ ...baseInputs, consumer: 'cli' });
+  it('CLI transport names tools CLI commands', () => {
+    const text = buildStoryInstructions({ ...baseInputs, transport: 'cli' });
     expect(text).toContain('npx storybook tools stories changed');
     expect(text).toContain('npx storybook tools test run');
-    expect(text).not.toContain('get-changed-stories');
+    expect(text).not.toContain('stories-changed');
   });
 
   it('maps framework to renderer, falling back to the framework name', () => {
-    expect(buildStoryInstructions({ ...baseInputs, consumer: 'mcp' })).toContain(
+    expect(buildStoryInstructions({ ...baseInputs, transport: 'mcp' })).toContain(
       '@storybook/react'
     );
     expect(
-      buildStoryInstructions({ ...baseInputs, consumer: 'mcp', framework: '@storybook/who-knows' })
+      buildStoryInstructions({ ...baseInputs, transport: 'mcp', framework: '@storybook/who-knows' })
     ).toContain('@storybook/who-knows');
   });
 });
 
 describe('buildStoryInstructions placeholder resolution', () => {
   it('replaces framework and renderer placeholders with no leftovers', () => {
-    const instructions = buildStoryInstructions({ ...baseInputs, consumer: 'mcp' });
+    const instructions = buildStoryInstructions({ ...baseInputs, transport: 'mcp' });
 
     expect(instructions).toContain('@storybook/react-vite');
     expect(instructions).toContain('@storybook/react');
-    expect(instructions).toContain('preview-stories');
-    expect(instructions).toContain('get-changed-stories');
+    expect(instructions).toContain('stories-preview');
+    expect(instructions).toContain('stories-changed');
 
     expect(instructions).not.toContain('{{FRAMEWORK}}');
     expect(instructions).not.toContain('{{RENDERER}}');
@@ -60,13 +60,13 @@ describe('buildStoryInstructions placeholder resolution', () => {
   it('includes the docs workflow guidance when docs are available', () => {
     const instructions = buildStoryInstructions({
       ...baseInputs,
-      consumer: 'mcp',
+      transport: 'mcp',
       docsEnabled: true,
     });
 
     expect(instructions).toContain('## Using library components');
-    expect(instructions).toContain('**list-all-documentation**');
-    expect(instructions).toContain('**get-documentation**');
+    expect(instructions).toContain('**docs-list**');
+    expect(instructions).toContain('**docs-show**');
     expect(instructions).toContain('`storybookId`');
     expect(instructions).not.toContain('{{DOCS_WORKFLOW_GUIDANCE}}');
   });
@@ -74,7 +74,7 @@ describe('buildStoryInstructions placeholder resolution', () => {
   it('omits the docs workflow guidance when docs are unavailable', () => {
     const instructions = buildStoryInstructions({
       ...baseInputs,
-      consumer: 'mcp',
+      transport: 'mcp',
       docsEnabled: false,
     });
 
@@ -89,7 +89,7 @@ describe('buildStoryInstructions review-aware link guidance', () => {
   // list the review page AND the preview URLs together, contradicting the
   // "show one set of links — never both" server rule.
   it('tells the agent to show only the review section when review is enabled', () => {
-    const instructions = buildStoryInstructions({ ...baseInputs, consumer: 'mcp' });
+    const instructions = buildStoryInstructions({ ...baseInputs, transport: 'mcp' });
 
     expect(instructions).toContain('show one set of links — never both');
     expect(instructions).toContain('## 👀 Review your changes');
@@ -102,14 +102,14 @@ describe('buildStoryInstructions review-aware link guidance', () => {
     // the server instructions that `storybook ai --help` also embeds.
     expect(instructions).toContain('Story IDs must come from that call');
     expect(instructions).toContain('never construct them from file names');
-    expect(instructions).toContain('Feed the discovered IDs into **display-review**');
-    expect(instructions).not.toContain('first, then use `preview-stories`');
+    expect(instructions).toContain('Feed the discovered IDs into **review-create**');
+    expect(instructions).not.toContain('first, then use `stories-preview`');
   });
 
   it('tells the agent to include preview URLs when review is disabled', () => {
     const instructions = buildStoryInstructions({
       ...baseInputs,
-      consumer: 'mcp',
+      transport: 'mcp',
       reviewEnabled: false,
     });
 
@@ -121,13 +121,13 @@ describe('buildStoryInstructions review-aware link guidance', () => {
   it('should not mention changed stories workflow when change detection is disabled', () => {
     const instructions = buildStoryInstructions({
       ...baseInputs,
-      consumer: 'mcp',
+      transport: 'mcp',
       changeDetectionEnabled: false,
       reviewEnabled: false,
     });
 
-    expect(instructions).toContain('preview-stories');
-    expect(instructions).not.toContain('get-changed-stories');
+    expect(instructions).toContain('stories-preview');
+    expect(instructions).not.toContain('stories-changed');
   });
 });
 
@@ -135,7 +135,7 @@ describe('buildStoryInstructions framework handling', () => {
   it('should handle Vue framework', () => {
     const instructions = buildStoryInstructions({
       ...baseInputs,
-      consumer: 'mcp',
+      transport: 'mcp',
       framework: '@storybook/vue3-vite',
     });
 
@@ -148,13 +148,13 @@ describe('buildStoryInstructions test toolset and a11y', () => {
   it('should include testing instructions and a11y guidance when both are enabled', () => {
     const instructions = buildStoryInstructions({
       ...baseInputs,
-      consumer: 'mcp',
+      transport: 'mcp',
       testSupported: true,
       a11yEnabled: true,
     });
 
     expect(instructions).toContain('Story Testing Requirements');
-    expect(instructions).toContain('run-story-tests');
+    expect(instructions).toContain('test-run');
     expect(instructions).toContain('(see a11y guidelines below)');
     expect(instructions).toContain('### Accessibility Violations');
   });
@@ -162,7 +162,7 @@ describe('buildStoryInstructions test toolset and a11y', () => {
   it('should exclude testing and a11y instructions when the test toolset is unavailable', () => {
     const instructions = buildStoryInstructions({
       ...baseInputs,
-      consumer: 'mcp',
+      transport: 'mcp',
       testSupported: false,
       a11yEnabled: true,
     });
@@ -174,7 +174,7 @@ describe('buildStoryInstructions test toolset and a11y', () => {
   it('should include testing but exclude a11y guidance when a11y is disabled', () => {
     const instructions = buildStoryInstructions({
       ...baseInputs,
-      consumer: 'mcp',
+      transport: 'mcp',
       testSupported: true,
       a11yEnabled: false,
     });

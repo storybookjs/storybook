@@ -1,5 +1,3 @@
-import type { ArgTypes } from 'storybook/internal/types';
-
 import type { Type } from '@angular/core';
 
 import {
@@ -18,33 +16,16 @@ import {
 const separateInputsOutputsAttributes = (
   ngComponentInputsOutputs: ComponentInputsOutputs,
   props: ICollection = {}
-) => {
-  const inputs = ngComponentInputsOutputs.inputs
+) => ({
+  inputs: ngComponentInputsOutputs.inputs
     .filter((i) => i.templateName in props)
-    .map((i) => i.templateName);
-  const outputs = ngComponentInputsOutputs.outputs
+    .map((i) => i.templateName),
+  outputs: ngComponentInputsOutputs.outputs
     .filter((o) => o.templateName in props)
-    .map((o) => o.templateName);
+    .map((o) => o.templateName),
+});
 
-  return {
-    inputs,
-    outputs,
-    otherProps: Object.keys(props).filter((k) => ![...inputs, ...outputs].includes(k)),
-  };
-};
-
-const renderOutputBindings = (outputs: string[]) =>
-  outputs.length > 0
-    ? ` ${outputs.map((i) => `(${i})="${formatPropInTemplate(i)}($event)"`).join(' ')}`
-    : '';
-
-/**
- * Converts a component into a template with inputs/outputs present in initial props
- *
- * @param component
- * @param initialProps
- * @param innerTemplate
- */
+/** Converts a component into a template with inputs/outputs present in initial props. */
 export const computesTemplateFromComponent = (
   component: Type<unknown>,
   initialProps?: ICollection,
@@ -58,34 +39,22 @@ export const computesTemplateFromComponent = (
     return `<ng-container *ngComponentOutlet="storyComponent"></ng-container>`;
   }
 
-  const { inputs: initialInputs, outputs: initialOutputs } = separateInputsOutputsAttributes(
+  const { inputs, outputs } = separateInputsOutputsAttributes(
     ngComponentInputsOutputs,
     initialProps
   );
 
-  const templateInputs =
-    initialInputs.length > 0
-      ? ` ${initialInputs.map((i) => `[${i}]="${formatPropInTemplate(i)}"`).join(' ')}`
-      : '';
-
   return buildTemplate(ngComponentMetadata.selector, {
-    inputs: templateInputs,
-    outputs: renderOutputBindings(initialOutputs),
+    inputs: inputs.map((name) => ({ name, expression: formatPropInTemplate(name) })),
+    outputs,
     innerTemplate,
   });
 };
 
-/**
- * Converts a component into a template with inputs/outputs present in initial props
- *
- * @param component
- * @param initialProps
- * @param innerTemplate
- */
+/** Renders a component's story source snippet with arg values bound inline. */
 export const computesTemplateSourceFromComponent = (
   component: Type<unknown>,
-  initialProps?: ICollection,
-  argTypes?: ArgTypes
+  initialProps?: ICollection
 ) => {
   const ngComponentMetadata = getComponentDecoratorMetadata(component);
   if (!ngComponentMetadata) {
@@ -98,22 +67,13 @@ export const computesTemplateSourceFromComponent = (
   }
 
   const ngComponentInputsOutputs = getComponentInputsOutputs(component);
-  const { inputs: initialInputs, outputs: initialOutputs } = separateInputsOutputsAttributes(
+  const { inputs, outputs } = separateInputsOutputsAttributes(
     ngComponentInputsOutputs,
     initialProps
   );
 
-  const templateInputs =
-    initialInputs.length > 0
-      ? ` ${initialInputs
-          .map(
-            (propertyName) => `[${propertyName}]="${formatInputValue(initialProps[propertyName])}"`
-          )
-          .join(' ')}`
-      : '';
-
   return buildTemplate(ngComponentMetadata.selector, {
-    inputs: templateInputs,
-    outputs: renderOutputBindings(initialOutputs),
+    inputs: inputs.map((name) => ({ name, expression: formatInputValue(initialProps?.[name]) })),
+    outputs,
   });
 };

@@ -23,11 +23,6 @@ export function parseStoryFile(storyFilePath: string, title: string): ParsedStor
   }
 }
 
-// The component a parsed story file documents.
-export function resolveComponentOf(csf: CsfFile, storyFilePath: string): MetaComponentResolution {
-  return resolveMetaComponent(csf, storyFilePath);
-}
-
 /**
  * Story file → the component it documents.
  *
@@ -43,5 +38,5 @@ export function resolveStoryComponent(
     return { reason: 'no-meta-component' };
   }
 
-  return resolveComponentOf(parsed.csf, storyFilePath);
+  return resolveMetaComponent(parsed.csf, storyFilePath);
 }

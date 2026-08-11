@@ -80,7 +80,7 @@ const context = (
 ): BuildDocgenContext => ({ manager, options, logger });
 
 describe('buildDocgenPayload', () => {
-  it('extracts argTypes from the analyzer and attaches the raw class record unfiltered', () => {
+  it('extracts argTypes from the analyzer and derives the snippet meta', () => {
     givenStoryFile();
     const classMeta = componentEntry();
     const manager = managerReturning(metaFor(classMeta));
@@ -102,7 +102,13 @@ describe('buildDocgenPayload', () => {
       name: 'label',
       table: { category: 'inputs', defaultValue: { summary: 'Click me' } },
     });
-    expect(payload?.angularComponentMeta?.entry).toBe(classMeta);
+    expect(payload?.angularComponentMeta).toEqual({
+      name: 'ButtonComponent',
+      selector: undefined,
+      inputs: ['label'],
+      outputs: [],
+      enums: [],
+    });
     expect(payload?.compodoc).toBeUndefined();
     expect(payload?.subcomponents).toBeUndefined();
     expect(payload?.error).toBeUndefined();

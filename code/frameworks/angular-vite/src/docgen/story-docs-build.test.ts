@@ -1,8 +1,7 @@
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { readFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -23,10 +22,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// The story file sits in the fixtures directory next to the component module it imports, because
-// module resolution reads the real filesystem; only the story file's contents come from memfs.
-const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
-const STORY_PATH = join(FIXTURES, 'button.stories.ts');
+const STORY_PATH = join(process.cwd(), 'button.stories.ts');
 
 const entry: IndexEntry = {
   id: 'button--default',
@@ -34,12 +30,14 @@ const entry: IndexEntry = {
   title: 'Example/Button',
   type: 'story',
   subtype: 'story',
-  importPath: relative(process.cwd(), STORY_PATH),
+  importPath: 'button.stories.ts',
 };
 
 const givenStoryFile = (source: string) => {
   vol.fromNestedJSON({ [STORY_PATH]: source });
 };
+
+const noDocgen = async (): Promise<undefined> => undefined;
 
 describe('buildStoryDocsPayload', () => {
   it('returns undefined for entries without a story file or with an unparsable one', async () => {
@@ -53,11 +51,11 @@ describe('buildStoryDocsPayload', () => {
       tags: [],
     };
     expect(
-      await buildStoryDocsPayload({ entry: docsEntry }, { getDocgenPayload: undefined })
+      await buildStoryDocsPayload({ entry: docsEntry }, { getDocgenPayload: noDocgen })
     ).toBeUndefined();
 
     givenStoryFile('export default { title: "Broken" ');
-    expect(await buildStoryDocsPayload({ entry }, { getDocgenPayload: undefined })).toBeUndefined();
+    expect(await buildStoryDocsPayload({ entry }, { getDocgenPayload: noDocgen })).toBeUndefined();
   });
 
   it('still emits description-only stories when core/docgen is unavailable', async () => {
@@ -67,7 +65,7 @@ describe('buildStoryDocsPayload', () => {
       export const Default = {};
     `);
 
-    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: undefined });
+    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: noDocgen });
 
     expect(payload?.name).toBe('Button');
     expect(Object.values(payload!.stories)[0]).toEqual({
@@ -77,28 +75,25 @@ describe('buildStoryDocsPayload', () => {
     });
   });
 
-  it('builds a snippet from the raw analyzer fields core/docgen carries alongside argTypes', async () => {
+  it('builds a snippet from the snippet meta core/docgen carries alongside argTypes', async () => {
     givenStoryFile(`
       import { ButtonComponent } from './button.component';
       export default { title: 'Example/Button', component: ButtonComponent };
       export const Default = { args: { label: 'Save' } };
     `);
-    const getDocgenPayload = async (): Promise<AngularDocgenPayload> =>
-      ({
-        id: 'example-button',
+    const getDocgenPayload = async (): Promise<AngularDocgenPayload> => ({
+      id: 'example-button',
+      name: 'ButtonComponent',
+      path: STORY_PATH,
+      jsDocTags: {},
+      angularComponentMeta: {
         name: 'ButtonComponent',
-        path: STORY_PATH,
-        jsDocTags: {},
-        angularComponentMeta: {
-          entry: {
-            name: 'ButtonComponent',
-            selector: 'sb-button',
-            inputsClass: [{ name: 'label' }],
-            outputsClass: [],
-          },
-          enums: [],
-        },
-      }) as AngularDocgenPayload;
+        selector: 'sb-button',
+        inputs: ['label'],
+        outputs: [],
+        enums: [],
+      },
+    });
 
     const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload });
 
@@ -107,18 +102,16 @@ describe('buildStoryDocsPayload', () => {
     expect(story.snippet).toContain(`[label]="'Save'"`);
   });
 
-  it('drops the snippet without erroring when querying core/docgen throws', async () => {
+  it('names the payload after the story file component when core/docgen has no payload', async () => {
     givenStoryFile(`
       import { ButtonComponent } from './button.component';
       export default { title: 'Example/Button', component: ButtonComponent };
       export const Default = { args: { label: 'Save' } };
     `);
-    const getDocgenPayload = async (): Promise<AngularDocgenPayload | undefined> => {
-      throw new Error('core/docgen query failed');
-    };
 
-    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload });
+    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: noDocgen });
 
+    expect(payload?.name).toBe('ButtonComponent');
     const story = Object.values(payload!.stories)[0];
     expect(story.snippet).toBeUndefined();
     expect(story.error).toBeUndefined();

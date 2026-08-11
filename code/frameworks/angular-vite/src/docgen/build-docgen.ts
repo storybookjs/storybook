@@ -8,7 +8,6 @@ import type {
 
 import { resolve } from 'node:path';
 
-import type { EnumType } from '@storybook/angular-compodoc';
 import type {
   AngularClassMeta,
   AngularComponentMetaResult,
@@ -22,9 +21,19 @@ export interface AngularDocgenOptions {
   angularFilterNonInputControls?: boolean;
 }
 
+export interface SnippetEnum {
+  name: string;
+  members: { name: string; value?: string | number }[];
+}
+
+/** Everything the story-docs provider needs to render a component snippet. */
 export interface AngularComponentSnippetMeta {
-  entry: AngularClassMeta;
-  enums: EnumType[];
+  name: string;
+  selector: string | undefined;
+  inputs: string[];
+  // Output binding names in `outputsClass` order, `model()` outputs `Change`-suffixed.
+  outputs: string[];
+  enums: SnippetEnum[];
 }
 
 export type AngularDocgenPayload = DocgenPayload & {
@@ -45,6 +54,38 @@ export interface BuildDocgenContext {
   logger: ParsingLogger;
   resolvePath?: (importPath: string) => string;
 }
+
+const inputsOf = (entry: AngularClassMeta) =>
+  'inputsClass' in entry ? (entry.inputsClass ?? []) : [];
+
+const outputsOf = (entry: AngularClassMeta) =>
+  'outputsClass' in entry ? (entry.outputsClass ?? []) : [];
+
+export const metaToSnippetMeta = (
+  meta: AngularComponentMetaResult
+): AngularComponentSnippetMeta => {
+  const { entry } = meta;
+  const inputs = inputsOf(entry).map((input) => input.name);
+  const inputNames = new Set(inputs);
+  const outputs: string[] = [];
+  for (const output of outputsOf(entry)) {
+    // model() lands under the same bare name in both arrays; its output binds as `${name}Change`.
+    const bindingName = inputNames.has(output.name) ? `${output.name}Change` : output.name;
+    if (!outputs.includes(bindingName)) {
+      outputs.push(bindingName);
+    }
+  }
+  return {
+    name: entry.name,
+    selector: entry.selector,
+    inputs,
+    outputs,
+    enums: (meta.json.miscellaneous?.enumerations ?? []).map((enumeration) => ({
+      name: enumeration.name,
+      members: enumeration.childs.map((child) => ({ name: child.name, value: child.value })),
+    })),
+  };
+};
 
 // The description is deliberately not parsed for tags: an `@Input()` inside a documentation code
 // block would become a fabricated tag.
@@ -155,6 +196,6 @@ export const buildDocgenPayload = (
     summary: jsDocTags.summary?.[0],
     jsDocTags,
     argTypes,
-    angularComponentMeta: { entry: meta.entry, enums: meta.json.miscellaneous?.enumerations ?? [] },
+    angularComponentMeta: metaToSnippetMeta(meta),
   };
 };

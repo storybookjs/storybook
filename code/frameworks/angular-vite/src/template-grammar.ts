@@ -59,10 +59,16 @@ const voidElements = [
   'wbr',
 ];
 
+export interface TemplateInputBinding {
+  name: string;
+  // The template expression the `[input]` binding is given, e.g. from `formatInputValue`.
+  expression: string;
+}
+
 export interface BuildTemplateInput {
-  // Rendered bindings, each already prefixed with a space.
-  inputs: string;
-  outputs: string;
+  inputs: TemplateInputBinding[];
+  // Output binding names; each renders as `(name)="name($event)"`.
+  outputs: string[];
   innerTemplate?: string;
 }
 
@@ -82,6 +88,11 @@ export const buildTemplate = (
   selector: string,
   { inputs, outputs, innerTemplate = '' }: BuildTemplateInput
 ) => {
+  const inputBindings = inputs.map(({ name, expression }) => ` [${name}]="${expression}"`).join('');
+  const outputBindings = outputs
+    .map((name) => ` (${name})="${formatPropInTemplate(name)}($event)"`)
+    .join('');
+
   const firstSelector = selector.split(',')[0];
   const withElement =
     LEADING_CLASS.test(firstSelector) || LEADING_ATTRIBUTE.test(firstSelector)
@@ -94,7 +105,7 @@ export const buildTemplate = (
     .replace(ATTRIBUTE, ' $1');
 
   return asAttributes.replace(ELEMENT_AND_ATTRIBUTES, (_, element: string, attributes: string) => {
-    const openingTag = `<${element}${attributes}${inputs}${outputs}`;
+    const openingTag = `<${element}${attributes}${inputBindings}${outputBindings}`;
     return voidElements.includes(element)
       ? `${openingTag} />`
       : `${openingTag}>${innerTemplate}</${element}>`;

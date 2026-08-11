@@ -11,8 +11,6 @@ import { computesTemplateSourceFromComponent } from '../../../../frameworks/angu
 import { getComponentInputsOutputs } from '../../../../frameworks/angular-vite/src/client/renderer/utils/NgComponentAnalyzer.ts';
 import { expectNoStaleSnippets, fixturesDir, recordSnippet } from './snippet-recorder.ts';
 
-export { fixtureCases, fixturesDir, readCommitted } from './snippet-recorder.ts';
-
 type AotCmp = {
   inputs: Record<string, [string, number, null]>;
   outputs: Record<string, string>;
@@ -76,7 +74,7 @@ export async function recordSnippets({
         props[name] = () => {};
       }
     }
-    const snippet = computesTemplateSourceFromComponent(component, props, argTypes);
+    const snippet = computesTemplateSourceFromComponent(component, props);
     // null only when the component has no decorator metadata - impossible for these fixtures.
     expect(snippet).not.toBeNull();
     await recordSnippet({

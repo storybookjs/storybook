@@ -32,11 +32,6 @@
     },
     "./entry-preview": "./dist/entry-preview.js",
     "./entry-preview-docs": "./dist/entry-preview-docs.js",
-    "./experimental-playwright": {
-      "types": "./dist/playwright.d.ts",
-      "code": "./src/playwright.ts",
-      "default": "./dist/playwright.js"
-    },
     "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./package.json": "./package.json",
     "./preset": {

@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Compodoc does not document components declared inside story files, so \"MergeWithDefaultModuleMetadata\" has no metadata.\nMove it into its own file to have it documented. Source: <sandbox>/documentation.json",
+    "name": "ComponentNotDocumented"
+  },
+  "id": "stories-frameworks-angular-vite-core-modulemetadata-merge-default-and-story",
+  "jsDocTags": {},
+  "name": "MergeWithDefaultModuleMetadata",
+  "path": "./src/stories/frameworks/angular-vite/core/moduleMetadata/merge-default-and-story.stories.ts"
+}

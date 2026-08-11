@@ -807,6 +807,33 @@ export const baseTemplates = {
     skipTasks: ['bench'],
     initOptions: { builder: SupportedBuilder.VITE },
   },
+  'angular-vite/docgen-server-ts': {
+    name: 'Angular CLI Server Docgen Latest (Vite | TypeScript)',
+    script:
+      'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    modifications: {
+      extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
+      useCsfFactory: true,
+      // These two flags are what brings a template into docgen baseline coverage; see
+      // `docgenServerTemplates`.
+      mainConfig: {
+        features: {
+          experimentalDocgenServer: true,
+          componentsManifest: true,
+        },
+      },
+    },
+    extraCiSteps: {
+      ensureMinNodeVersion: true,
+    },
+    expected: {
+      framework: '@storybook/angular-vite',
+      renderer: '@storybook/angular-vite',
+      builder: '@storybook/builder-vite',
+    },
+    skipTasks: ['bench', 'chromatic', 'test-runner'],
+    initOptions: { builder: SupportedBuilder.VITE },
+  },
   'lit-vite/default-js': {
     name: 'Lit Latest (Vite | JavaScript)',
     script:
@@ -1198,6 +1225,10 @@ export const merged: TemplateKey[] = [
 export const daily: TemplateKey[] = [
   ...merged,
   'angular-vite/21-ts',
+  // TODO(11.0): remove this template. The standard sandboxes ship the new docgen approach by
+  // default from then on, so `angular-vite/default-ts` carries the baselines and this one is
+  // redundant.
+  'angular-vite/docgen-server-ts',
   // TODO: Add this back once we resolve the React 19 issues
   // 'cra/default-js',
   'react-vite/default-js',
@@ -1221,3 +1252,30 @@ export const daily: TemplateKey[] = [
 ];
 
 export const templatesByCadence = { normal, merged, daily };
+
+const DOCGEN_SERVER_FEATURES = ['experimentalDocgenServer', 'componentsManifest'] as const;
+
+const mainConfigFeatures = (template: Template): Record<string, unknown> | undefined => {
+  const { mainConfig } = template.modifications ?? {};
+  if (!mainConfig) {
+    return undefined;
+  }
+  if (typeof mainConfig !== 'function') {
+    return mainConfig.features;
+  }
+  try {
+    return mainConfig({ getFieldValue: () => undefined } as never)?.features;
+  } catch {
+    return undefined;
+  }
+};
+
+const enablesDocgenServer = (template: Template): boolean => {
+  const features = mainConfigFeatures(template);
+  return DOCGEN_SERVER_FEATURES.every((feature) => features?.[feature] === true);
+};
+
+export const docgenServerTemplates = (): TemplateKey[] =>
+  (Object.entries(allTemplates) as [TemplateKey, Template][])
+    .filter(([, template]) => enablesDocgenServer(template))
+    .map(([key]) => key);

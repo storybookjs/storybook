@@ -25,7 +25,6 @@ export type ModuleGraphServiceState = {
   workingDir: string;
   status: ModuleGraphStatus;
   graphRevision: number;
-  storiesByFile: StoriesByFileRecord;
   /**
    * Per-story revision stamps keyed by story-index-style relative path. Each entry holds the
    * {@link graphRevision} at which that story's subgraph last changed. Seeded to `0` for every
@@ -33,6 +32,11 @@ export type ModuleGraphServiceState = {
    */
   storyChangeRevisions: Record<string, number>;
   latestChangedStoryFiles: string[];
+};
+
+export type ModuleGraphIndexServiceState = {
+  workingDir: string;
+  storiesByFile: StoriesByFileRecord;
 };
 
 export function errorToErrorLike(error: unknown): ErrorLike {

@@ -3,6 +3,7 @@ import { vi } from 'vitest';
 import type { StoryIndex } from 'storybook/internal/types';
 
 import { registerService } from '../../server.ts';
+import { registerModuleGraphIndexService } from '../module-graph-index/server.ts';
 import { moduleGraphServiceDef } from './definition.ts';
 import type { ChangeDetectionAdapter, FileChangeEvent } from './engine/adapters/types.ts';
 import { DependencyGraphBuilder } from './engine/dependency-graph/dependency-graph-builder.ts';
@@ -121,8 +122,10 @@ export function installDependencyGraphMocks(reverseIndex: ReverseIndexImpl): {
   return { patchSpy, buildSpy };
 }
 
-/** Registers module-graph for unit tests without a live engine (no-op settlement command). */
+// Registers cold index + hot module-graph for unit tests without a live engine.
 export function registerTestModuleGraphService(workingDir = process.cwd()) {
+  registerModuleGraphIndexService(workingDir);
+
   return registerService(
     {
       ...moduleGraphServiceDef,

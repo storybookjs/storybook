@@ -23,12 +23,6 @@ import {
 } from './story-docs-snippet.ts';
 
 export interface BuildStoryDocsContext {
-  /**
-   * Resolves the already-registered `core/docgen` service's payload for one component id, so this
-   * provider reuses the analyzer run that already backs argTypes instead of re-analyzing the file.
-   * `undefined` when `core/docgen` never registered (e.g. the compiled docgen worker script is
-   * unavailable); descriptions still extract without it.
-   */
   getDocgenPayload:
     | ((componentId: string) => Promise<AngularDocgenPayload | undefined>)
     | undefined;

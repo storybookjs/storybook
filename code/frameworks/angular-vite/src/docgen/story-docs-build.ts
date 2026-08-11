@@ -12,7 +12,7 @@ import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybo
 import { resolve } from 'node:path';
 
 import type { EnumType, Property } from '@storybook/angular-compodoc';
-import type { AngularClassMeta, AngularComponentMetaResult } from '@storybook/angular-cm';
+import type { AngularClassMeta } from '@storybook/angular-cm';
 import type { AngularDocgenPayload } from './build-docgen.ts';
 import { parseStoryFile, resolveComponentOf } from './resolve-component.ts';
 import { buildComponentOutletTemplate } from '../template-grammar.ts';
@@ -58,21 +58,18 @@ export const buildStoryDocsPayload = async (
   const resolution = resolveComponentOf(csf, storyPath);
   const component = 'reason' in resolution ? undefined : resolution.component;
 
-  let meta: AngularComponentMetaResult | undefined;
+  let entry: AngularClassMeta | undefined;
+  let enums: EnumType[] = [];
   if (component?.path && context.getDocgenPayload) {
     try {
       const docgenPayload = await context.getDocgenPayload(getComponentIdFromEntry(input.entry));
-      if (docgenPayload?.angularComponentMeta && docgenPayload.angularComponentMetaJson) {
-        meta = {
-          entry: docgenPayload.angularComponentMeta,
-          json: docgenPayload.angularComponentMetaJson,
-        };
-      }
+      entry = docgenPayload?.angularComponentMeta;
+      enums = docgenPayload?.angularComponentEnums ?? [];
     } catch {
-      meta = undefined;
+      entry = undefined;
     }
   }
-  const snippetContext = meta ? createSnippetContext(meta) : undefined;
+  const snippetContext = entry ? createSnippetContext(entry, enums) : undefined;
 
   const displayName =
     component && (component.exportName === 'default' ? component.localName : component.exportName);
@@ -113,7 +110,7 @@ export const buildStoryDocsPayload = async (
   return {
     id: getComponentIdFromEntry(input.entry),
     // The analyzer knows the class name even when the story file imported it as a default export.
-    name: meta?.entry.name ?? displayName ?? titleName,
+    name: entry?.name ?? displayName ?? titleName,
     path: storyImportPath,
     stories,
   };
@@ -134,10 +131,10 @@ const inputsOf = (entry: AngularClassMeta): Property[] =>
 const outputsOf = (entry: AngularClassMeta): Property[] =>
   'outputsClass' in entry ? (entry.outputsClass ?? []) : [];
 
-const createSnippetContext = (meta: AngularComponentMetaResult): SnippetContext => {
-  const inputNames = new Set(inputsOf(meta.entry).map((input) => input.name));
+const createSnippetContext = (entry: AngularClassMeta, enums: EnumType[]): SnippetContext => {
+  const inputNames = new Set(inputsOf(entry).map((input) => input.name));
   const outputs: string[] = [];
-  for (const output of outputsOf(meta.entry)) {
+  for (const output of outputsOf(entry)) {
     // model() lands under the same bare name in both arrays; its output binds as `${name}Change`.
     const bindingName = inputNames.has(output.name) ? `${output.name}Change` : output.name;
     if (!outputs.includes(bindingName)) {
@@ -145,11 +142,11 @@ const createSnippetContext = (meta: AngularComponentMetaResult): SnippetContext 
     }
   }
   return {
-    selector: meta.entry.selector,
-    componentName: meta.entry.name,
+    selector: entry.selector,
+    componentName: entry.name,
     inputNames,
     outputs,
-    enums: meta.json.miscellaneous?.enumerations ?? [],
+    enums,
   };
 };
 

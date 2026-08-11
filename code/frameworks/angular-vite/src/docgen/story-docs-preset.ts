@@ -14,9 +14,7 @@ let warnedMissingDocgenService = false;
 const getDocgenPayload = async (componentId: string): Promise<AngularDocgenPayload | undefined> => {
   try {
     const docgenService = getService('core/docgen', { internal: true });
-    return (await docgenService.queries.docgen.loaded({ id: componentId })) as
-      | AngularDocgenPayload
-      | undefined;
+    return await docgenService.queries.docgen.loaded({ id: componentId });
   } catch (error) {
     if (!warnedMissingDocgenService) {
       warnedMissingDocgenService = true;

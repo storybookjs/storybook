@@ -95,7 +95,7 @@ describe('buildStoryDocsPayload', () => {
           inputsClass: [{ name: 'label' }],
           outputsClass: [],
         },
-        angularComponentMetaJson: { miscellaneous: { typealiases: [], enumerations: [] } },
+        angularComponentEnums: [],
       }) as AngularDocgenPayload;
 
     const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload });

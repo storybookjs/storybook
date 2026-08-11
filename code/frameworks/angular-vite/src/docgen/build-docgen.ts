@@ -8,10 +8,10 @@ import type {
 
 import { resolve } from 'node:path';
 
+import type { EnumType } from '@storybook/angular-compodoc';
 import type {
   AngularClassMeta,
   AngularComponentMetaResult,
-  MetadataJson,
   ParsingLogger,
 } from '@storybook/angular-cm';
 import { extractArgTypesFromData } from '@storybook/angular-cm';
@@ -25,11 +25,12 @@ export interface AngularDocgenOptions {
 export type AngularDocgenPayload = DocgenPayload & {
   // The analyzer's record for the class, not filtered by `angularFilterNonInputControls`.
   angularComponentMeta?: AngularClassMeta;
-  // The analyzer's record for the whole file, so a second in-process consumer (`core/story-docs`)
-  // can resolve enum member values without re-running the analyzer itself. Stored on the docgen
-  // payload rather than a separate service so both consumers share the one extraction this
-  // provider already ran.
-  angularComponentMetaJson?: MetadataJson;
+  // The file's enum declarations (not part of `angularComponentMeta`: enums aren't a class
+  // property, the analyzer collects them once per file). Lets a second in-process consumer
+  // (`core/story-docs`) resolve `Enum.Member` args without re-running the analyzer itself. Only
+  // this slice of the analyzer's file-level output is carried, not the whole `MetadataJson` (which
+  // also lists every other component/directive/pipe in the file) — story-docs never touches that.
+  angularComponentEnums?: EnumType[];
 };
 
 // Structural on purpose: tests hand in a stub instead of a real TypeScript-backed analyzer.
@@ -157,6 +158,6 @@ export const buildDocgenPayload = (
     jsDocTags,
     argTypes,
     angularComponentMeta: meta.entry,
-    angularComponentMetaJson: meta.json,
+    angularComponentEnums: meta.json.miscellaneous?.enumerations ?? [],
   };
 };

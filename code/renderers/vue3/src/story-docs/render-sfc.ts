@@ -1,6 +1,12 @@
 import { types as t } from 'storybook/internal/babel';
 
-import type { ClassifiedArg } from './classify-args.ts';
+import { indent, slotSortKey, wrapSlotContent } from './ast-utils.ts';
+import type {
+  ClassifiedArg,
+  ClassifiedPropLikeArg,
+  ClassifiedSlotArg,
+  RenderableValuePlan,
+} from './classify-args.ts';
 import { printValue, unwrapValue } from './classify-value.ts';
 
 export interface RenderSfcInput {
@@ -8,6 +14,8 @@ export interface RenderSfcInput {
   componentName: string;
   /** Classified args to render into the SFC snippet. */
   args: ClassifiedArg[];
+  /** Optional renderer for function-valued slot args. */
+  renderFunctionSlot?: FunctionSlotRenderer;
 }
 
 export interface RenderSfcMarkupInput {
@@ -26,12 +34,17 @@ export interface RenderContext {
   variables: Map<string, string>;
 }
 
-interface RenderedProp {
+export interface RenderedProp {
   /** Vue template attribute. */
   attrName: string;
   /** Vue template attribute value, or undefined for a bare attribute. */
   value?: string;
 }
+
+export type FunctionSlotRenderer = (
+  value: t.ArrowFunctionExpression | t.FunctionExpression,
+  ctx: RenderContext
+) => string | undefined;
 
 const VUE_PACKAGE = 'vue';
 
@@ -39,12 +52,22 @@ const VUE_PACKAGE = 'vue';
 const UNSAFE_SLOT_TEXT_REGEXP = /^\s|\s$|[<&]|{{/;
 
 /** Render classified CSF args into the same SFC block shape as Vue's runtime source decorator. */
-export function renderSfcSnippet(input: RenderSfcInput): string {
+export function renderSfcSnippet(input: RenderSfcInput): string | undefined {
   const ctx = createRenderContext();
   const partitioned = partitionArgsByRole(input.args);
   const props = partitioned.props.map((arg) => formatRenderedProp(renderPropLikeArg(arg, ctx)));
   const events = partitioned.events.map((arg) => formatRenderedProp(renderEventArg(arg, ctx)));
-  const slotSourceCode = partitioned.slots.map((arg) => renderSlotArg(arg, ctx)).join('\n');
+  const slotSource: string[] = [];
+  for (const arg of partitioned.slots) {
+    const rendered = renderSlotArg(arg, ctx, input.renderFunctionSlot);
+    // Only function-slot plans fail to render; without their content the snippet would misrepresent
+    // the story, so bail and leave it to runtime source.
+    if (rendered === undefined) {
+      return undefined;
+    }
+    slotSource.push(rendered);
+  }
+  const slotSourceCode = slotSource.join('\n');
   const openTag = [input.componentName, ...props, ...events].join(' ');
   const templateCode = slotSourceCode
     ? `<${openTag}>\n${indent(slotSourceCode)}\n</${input.componentName}>`
@@ -107,7 +130,7 @@ export function renderArgsBindingAttributes(
 /** Attribute text for one `:prop="args.x"` binding rewritten to the arg's static value. */
 export function renderBoundArgAttribute(
   attributeName: string,
-  arg: ClassifiedArg,
+  arg: ClassifiedPropLikeArg,
   ctx: RenderContext
 ): string {
   return formatRenderedProp(
@@ -148,19 +171,25 @@ export function renderInlinePrimitiveValue(node: t.Node): string | undefined {
   }
 }
 
-// Split by role, each group sorted so hoisted consts are declared in attribute order.
-function partitionArgsByRole(args: ClassifiedArg[]): {
-  props: ClassifiedArg[];
-  events: ClassifiedArg[];
-  slots: ClassifiedArg[];
+/**
+ * Split classified args by role, each group sorted in stable attribute order.
+ *
+ * Sorted before rendering, so hoisted consts are declared in the order their attributes appear.
+ */
+export function partitionArgsByRole(args: ClassifiedArg[]): {
+  props: ClassifiedPropLikeArg[];
+  events: ClassifiedPropLikeArg[];
+  slots: ClassifiedSlotArg[];
 } {
   return {
     props: args
-      .filter((arg) => arg.role === 'model' || arg.role === 'prop')
+      .filter((arg): arg is ClassifiedPropLikeArg => arg.role === 'model' || arg.role === 'prop')
       .sort((a, b) => a.name.localeCompare(b.name)),
-    events: args.filter((arg) => arg.role === 'event').sort((a, b) => a.name.localeCompare(b.name)),
+    events: args
+      .filter((arg): arg is ClassifiedPropLikeArg => arg.role === 'event')
+      .sort((a, b) => a.name.localeCompare(b.name)),
     slots: args
-      .filter((arg) => arg.role === 'slot')
+      .filter((arg): arg is ClassifiedSlotArg => arg.role === 'slot')
       .sort((a, b) => slotSortKey(a.name).localeCompare(slotSortKey(b.name))),
   };
 }
@@ -169,14 +198,15 @@ interface RenderPropValueInput {
   attributeName: string;
   variableName: string;
   value: t.Node;
-  plan: ClassifiedArg['plan'];
+  plan: RenderableValuePlan;
 }
 
-function renderPropLikeArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
+/** Render a classified prop or model arg into a Vue template attribute. */
+export function renderPropLikeArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): RenderedProp {
   return arg.role === 'model' ? renderModelArg(arg, ctx) : renderPropArg(arg, ctx);
 }
 
-function renderPropArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
+function renderPropArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): RenderedProp {
   return renderPropValue(
     { attributeName: arg.name, variableName: arg.name, value: arg.value, plan: arg.plan },
     ctx
@@ -216,24 +246,42 @@ function hoistedProp(
   return { attrName: `:${input.attributeName}`, value: bindingName };
 }
 
-function renderModelArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
+function renderModelArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): RenderedProp {
   const bindingName = hoistModelRef(arg.name, arg.value, ctx);
   const directive = arg.name === 'modelValue' ? 'v-model' : `v-model:${arg.name}`;
   return { attrName: directive, value: bindingName };
 }
 
-// Listeners hoist their handler, because inline handlers would bloat the tag.
-function renderEventArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
+/** Listeners hoist their handler, because inline handlers would bloat the tag. */
+export function renderEventArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): RenderedProp {
   const bindingName = allocateBindingName(arg.name, ctx);
   ctx.variables.set(bindingName, printValue(unwrapValue(arg.value)));
   return { attrName: `@${arg.eventName ?? arg.name}`, value: bindingName };
 }
 
-function renderSlotArg(arg: ClassifiedArg, ctx: RenderContext): string {
-  const content = renderSlotContent(arg, ctx);
-  return arg.name === 'default'
-    ? content
-    : `<template #${arg.name}>\n${indent(content)}\n</template>`;
+function renderSlotArg(
+  arg: ClassifiedSlotArg,
+  ctx: RenderContext,
+  renderFunctionSlot?: FunctionSlotRenderer
+): string | undefined {
+  const content = renderSlotArgContent(arg, ctx, renderFunctionSlot);
+  return content === undefined ? undefined : wrapSlotContent(arg.name, content);
+}
+
+/** Slot children for one classified slot arg, or undefined when a function slot cannot render. */
+export function renderSlotArgContent(
+  arg: ClassifiedSlotArg,
+  ctx: RenderContext,
+  renderFunctionSlot?: FunctionSlotRenderer
+): string | undefined {
+  if (arg.plan.kind === 'function-slot') {
+    const value = unwrapValue(arg.value);
+    return renderFunctionSlot && isFunctionValue(value)
+      ? renderFunctionSlot(value, ctx)
+      : undefined;
+  }
+
+  return renderSlotContent(arg, arg.plan, ctx);
 }
 
 /**
@@ -242,10 +290,14 @@ function renderSlotArg(arg: ClassifiedArg, ctx: RenderContext): string {
  * Safe text becomes raw slot content; hoisted values and text the template parser would alter are
  * interpolated, since that is the only way slot content can reach a `<script setup>` binding.
  */
-function renderSlotContent(arg: ClassifiedArg, ctx: RenderContext): string {
+function renderSlotContent(
+  arg: ClassifiedSlotArg,
+  plan: RenderableValuePlan,
+  ctx: RenderContext
+): string {
   const value = unwrapValue(arg.value);
 
-  if (arg.plan.kind === 'inline') {
+  if (plan.kind === 'inline') {
     const text = renderInlinePrimitiveValue(value);
     if (text === undefined) {
       return `{{ ${printValue(value)} }}`;
@@ -258,6 +310,10 @@ function renderSlotContent(arg: ClassifiedArg, ctx: RenderContext): string {
   const bindingName = allocateBindingName(arg.name, ctx);
   ctx.variables.set(bindingName, printValue(value));
   return `{{ ${bindingName} }}`;
+}
+
+function isFunctionValue(node: t.Node): node is t.ArrowFunctionExpression | t.FunctionExpression {
+  return node.type === 'ArrowFunctionExpression' || node.type === 'FunctionExpression';
 }
 
 function renderScript(ctx: RenderContext): string | undefined {
@@ -310,7 +366,8 @@ function quoteAttributeValue(value: string): string | undefined {
   return undefined;
 }
 
-function formatRenderedProp(prop: RenderedProp): string {
+/** Format one structured attribute at the SFC print boundary. */
+export function formatRenderedProp(prop: RenderedProp): string {
   if (prop.value === undefined) {
     return prop.attrName;
   }
@@ -321,15 +378,4 @@ function formatRenderedProp(prop: RenderedProp): string {
   }
 
   return `${prop.attrName}="${prop.value}"`;
-}
-
-function slotSortKey(name: string): string {
-  return name === 'default' ? '' : name;
-}
-
-function indent(source: string): string {
-  return source
-    .split('\n')
-    .map((line) => `  ${line}`)
-    .join('\n');
 }

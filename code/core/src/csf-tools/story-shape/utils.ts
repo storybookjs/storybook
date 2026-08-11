@@ -1,6 +1,9 @@
 import { type NodePath, types as t } from 'storybook/internal/babel';
 
 import type { CsfFile } from '../CsfFile.ts';
+import type { RenderFunctionPath } from './render.ts';
+
+type RenderFunctionNode = RenderFunctionPath['node'];
 
 /** Peels TS assertion/satisfies wrappers and parentheses off an expression node. */
 export const unwrapExpression = (node: t.Node): t.Node =>
@@ -21,6 +24,23 @@ export const keyOf = (p: t.ObjectMethod | t.ObjectProperty): string | null =>
       : t.isStringLiteral(p.key)
         ? p.key.value
         : null;
+
+/** Peel TypeScript-only expression wrappers before reading runtime values. */
+export function unwrapValue(node: t.Node): t.Node;
+export function unwrapValue(node: t.Node | undefined | null): t.Node | undefined;
+export function unwrapValue(node: t.Node | undefined | null): t.Node | undefined {
+  if (
+    node &&
+    (node.type === 'TSAsExpression' ||
+      node.type === 'TSSatisfiesExpression' ||
+      node.type === 'TSNonNullExpression' ||
+      node.type === 'TSTypeAssertion')
+  ) {
+    return unwrapValue(node.expression);
+  }
+
+  return node ?? undefined;
+}
 
 /** Value of an object expression's own property, when it has one. */
 export const propertyValue = (
@@ -59,6 +79,52 @@ export const returnedObjectExpression = (
     : undefined;
   return t.isObjectExpression(returned) ? returned : undefined;
 };
+
+/** Expression returned directly by render-function shapes that static snippets can follow. */
+export function returnedExpressionPath(
+  renderFunction: RenderFunctionPath
+): NodePath<t.Expression> | undefined;
+export function returnedExpressionPath(
+  renderFunction: RenderFunctionNode
+): t.Expression | undefined;
+export function returnedExpressionPath(
+  renderFunction: RenderFunctionPath | RenderFunctionNode
+): NodePath<t.Expression> | t.Expression | undefined {
+  if (isRenderFunctionPath(renderFunction)) {
+    const body = renderFunction.get('body');
+    if (body.isExpression()) {
+      return body;
+    }
+    if (!body.isBlockStatement()) {
+      return undefined;
+    }
+
+    const statements = body.get('body');
+    if (statements.length !== 1) {
+      return undefined;
+    }
+
+    const [statement] = statements;
+    if (!statement.isReturnStatement()) {
+      return undefined;
+    }
+
+    const argument = statement.get('argument');
+    return argument && !Array.isArray(argument) && argument.isExpression() ? argument : undefined;
+  }
+
+  if (t.isExpression(renderFunction.body)) {
+    return renderFunction.body;
+  }
+  if (renderFunction.body.body.length !== 1) {
+    return undefined;
+  }
+
+  const [statement] = renderFunction.body.body;
+  return t.isReturnStatement(statement) && statement.argument && t.isExpression(statement.argument)
+    ? statement.argument
+    : undefined;
+}
 
 /** Resolve a local story helper used by `Template.bind({})` or `render: Template`. */
 export function resolveIdentifierInit(
@@ -136,4 +202,11 @@ export function metaObjectPath(csf: CsfFile): NodePath<t.ObjectExpression> | und
   const metaPath = pathForNode(csf._file.path, csf._metaNode);
 
   return metaPath?.isObjectExpression() ? metaPath : undefined;
+}
+
+function isRenderFunctionPath(
+  value: RenderFunctionPath | RenderFunctionNode
+): value is RenderFunctionPath {
+  // TS 6 cannot narrow the mixed path/node overload with an inline property check.
+  return 'node' in value && typeof (value as RenderFunctionPath).get === 'function';
 }

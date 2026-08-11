@@ -118,7 +118,7 @@ const onSubmit = () => null;
 });
 
 function render(args: ClassifiedArg[], componentName = 'C'): string {
-  return renderSfcSnippet({ componentName, args }).replaceAll('\r\n', '\n');
+  return renderSfcSnippet({ componentName, args })!.replaceAll('\r\n', '\n');
 }
 
 function prop(name: string, code: string, kind: 'hoist' | 'inline' = 'inline'): ClassifiedArg {

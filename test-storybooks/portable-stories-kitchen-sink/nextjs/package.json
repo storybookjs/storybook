@@ -9,7 +9,6 @@
     "jest": "echo 'No jest setup yet'",
     "jest-": "node node_modules/jest/bin/jest.js",
     "lint": "next lint",
-    "playwright-ct": "echo 'No playwright setup yet'",
     "start": "next start",
     "storybook": "storybook dev -p 6006",
     "vitest": "echo 'Vitest is not supported in Next.js testing'"

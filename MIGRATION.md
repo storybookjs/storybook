@@ -2,6 +2,7 @@
 
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
+  - [`@storybook/csf-plugin` removed](#storybookcsf-plugin-removed)
 - [From version 10.4.0 to 10.5.0](#from-version-1040-to-1050)
   - [ExternalDocs and ExternalDocsContainer are deprecated](#externaldocs-and-externaldocscontainer-are-deprecated)
 - [From version 10.3.0 to 10.4.0](#from-version-1030-to-1040)
@@ -540,6 +541,30 @@ If you were using Storybook's Playwright CT bridge, migrate along Playwright's g
 The portable stories core (`composeStories`, `setProjectAnnotations`) remains available for the [Vitest addon](https://storybook.js.org/docs/writing-tests/integrations/vitest-addon) and other supported testing paths.
 
 If needed, you can still view the [documentation for an older version](https://storybook.js.org/docs/9/api/portable-stories/portable-stories-playwright).
+
+### `@storybook/csf-plugin` removed
+
+The standalone `@storybook/csf-plugin` package has been removed. CSF source enrichment now lives inside `@storybook/addon-docs` and is registered from that addon's presets for Vite and Webpack.
+
+If you depended on `@storybook/csf-plugin` only through Storybook (the usual case), remove it from your `package.json` and keep configuring enrichment via addon-docs:
+
+```js
+// .storybook/main.js
+export default {
+  addons: [
+    {
+      name: '@storybook/addon-docs',
+      options: {
+        csfPluginOptions: {
+          /* EnrichCsfOptions */
+        },
+      },
+    },
+  ],
+};
+```
+
+Direct imports of `@storybook/csf-plugin` in custom builders or standalone Vite/Webpack configs are no longer supported. There is no public replacement package — CSF enrichment is only registered through `@storybook/addon-docs` as shown above.
 
 ## From version 10.4.0 to 10.5.0
 

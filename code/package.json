@@ -64,7 +64,6 @@
     "@storybook/builder-webpack5": "workspace:*",
     "@storybook/codemod": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
-    "@storybook/csf-plugin": "workspace:*",
     "@storybook/ember": "workspace:*",
     "@storybook/global": "^5.0.0",
     "@storybook/html": "workspace:*",

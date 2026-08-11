@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises';
 
 import type { EnrichCsfOptions } from 'storybook/internal/csf-tools';
 import { enrichCsf, formatCsf, loadCsf } from 'storybook/internal/csf-tools';
+import { logger } from 'storybook/internal/node-logger';
 
 interface LoaderContext {
   async: () => (err: Error | null, result?: string, map?: any) => void;
@@ -32,11 +33,10 @@ async function loader(this: LoaderContext, content: string, map: any) {
     }
 
     callback(null, formattedCsf.code, formattedCsf.map);
-  } catch (err: any) {
-    // This can be called on legacy storiesOf files, so just ignore
-    // those errors. But warn about other errors.
-    if (!err.message?.startsWith('CSF:')) {
-      console.warn(err.message);
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : String(err);
+    if (!message.startsWith('CSF:')) {
+      logger.warn(message);
     }
     callback(null, content, map);
   }

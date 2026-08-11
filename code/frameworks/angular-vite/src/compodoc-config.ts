@@ -1,11 +1,4 @@
-/**
- * Single source of truth for "where does Compodoc write, and against which tsconfig".
- *
- * Three code paths need that answer and must agree: `viteFinal` generates `documentation.json`, the
- * docgen preset tells the worker where to read it, and the Compodoc run builds the command line
- * from it. When each derived it separately they drifted, and a redirected output directory
- * regenerated on every cold start.
- */
+// `viteFinal` and the Compodoc run must agree here, or a redirected output regenerates every start.
 import type { Preset } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';

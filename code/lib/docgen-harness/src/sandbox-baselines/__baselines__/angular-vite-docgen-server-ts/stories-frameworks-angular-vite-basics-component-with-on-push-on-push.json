@@ -1,13 +1,12 @@
 {
   "argTypes": {
     "bgColor": {
-      "description": "\n",
       "name": "bgColor",
       "table": {
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },
@@ -16,13 +15,12 @@
       }
     },
     "word": {
-      "description": "\n",
       "name": "word",
       "table": {
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },

@@ -1,7 +1,6 @@
 {
   "argTypes": {
     "interval": {
-      "description": "\n",
       "name": "interval",
       "table": {
         "category": "properties",
@@ -17,7 +16,6 @@
       }
     },
     "ngOnDestroy": {
-      "description": "\n",
       "name": "ngOnDestroy",
       "table": {
         "category": "methods",
@@ -33,7 +31,6 @@
       }
     },
     "ngOnInit": {
-      "description": "\n",
       "name": "ngOnInit",
       "table": {
         "category": "methods",
@@ -49,7 +46,6 @@
       }
     },
     "time": {
-      "description": "\n",
       "name": "time",
       "table": {
         "category": "properties",

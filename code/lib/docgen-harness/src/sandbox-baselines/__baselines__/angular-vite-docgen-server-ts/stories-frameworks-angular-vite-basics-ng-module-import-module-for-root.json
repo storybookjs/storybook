@@ -1,14 +1,13 @@
 {
   "argTypes": {
     "chips": {
-      "description": "\n",
       "name": "chips",
       "table": {
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
-          "summary": "{ id: number; text: string }[]"
+          "required": false,
+          "summary": "{ id: number; text: string; }[]"
         }
       },
       "type": {

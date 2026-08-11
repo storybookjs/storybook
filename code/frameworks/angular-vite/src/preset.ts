@@ -97,9 +97,8 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   const framework = await options.presets.apply('framework');
 
   // `storybook init` writes a static `import docJson from '../documentation.json'` into the Angular
-  // preview, so the file has to exist before Vite resolves it - in every process that builds a
-  // preview, whatever the docgen feature flag says. Generation is marked per run, so the docgen
-  // worker's own trigger costs one file read rather than a second scan.
+  // preview, so the file has to exist before Vite resolves it, in every process that builds a
+  // preview and whatever the docgen feature flag says.
   const compodocConfig = await resolveCompodocConfig(options, { viteRoot: config?.root });
   if (compodocConfig.enabled) {
     await ensureCompodocDocumentation({

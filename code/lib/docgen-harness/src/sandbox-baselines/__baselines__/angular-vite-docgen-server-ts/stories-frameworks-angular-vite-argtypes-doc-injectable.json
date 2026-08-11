@@ -1,8 +1,39 @@
 {
-  "error": {
-    "message": "Compodoc documented this project but not the component \"DocInjectableService\".\nCheck that the component's file is covered by the tsconfig Compodoc runs against (<sandbox>/.storybook/tsconfig.json) and re-run Compodoc. Source: <sandbox>/documentation.json",
-    "name": "ComponentNotDocumented"
+  "argTypes": {
+    "auth": {
+      "description": "Auth headers to use.",
+      "name": "auth",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "any"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "getPosts": {
+      "description": "Get posts from Backend.",
+      "name": "getPosts",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "required": false,
+          "summary": "() => unknown[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    }
   },
+  "description": "This is an Angular Injectable example that has a Prop Table.",
   "id": "stories-frameworks-angular-vite-argtypes-doc-injectable",
   "jsDocTags": {},
   "name": "DocInjectableService",

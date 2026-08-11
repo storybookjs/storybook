@@ -1,13 +1,12 @@
 {
   "argTypes": {
     "label": {
-      "description": "\n",
       "name": "label",
       "table": {
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },

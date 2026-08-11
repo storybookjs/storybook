@@ -809,6 +809,9 @@ export const baseTemplates = {
   },
   'angular-vite/docgen-server-ts': {
     name: 'Angular CLI Server Docgen Latest (Vite | TypeScript)',
+    // Identical to `angular-vite/default-ts` apart from the two feature flags below. Kept as its own
+    // template so the stable Angular sandbox keeps guarding today's browser docgen while the server
+    // path is proven separately, rather than both riding on one configuration.
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
@@ -831,6 +834,11 @@ export const baseTemplates = {
       renderer: '@storybook/angular-vite',
       builder: '@storybook/builder-vite',
     },
+    // This sandbox exists to guard the docgen baselines, and it differs from
+    // `angular-vite/default-ts` only by two feature flags. Rendering, visual output and story
+    // execution are already covered there on every run, so repeating them here would double the
+    // Angular cost for no extra signal. `test-runner` goes with `chromatic`: skipping only the
+    // latter swaps in a test-runner job rather than dropping one.
     skipTasks: ['bench', 'chromatic', 'test-runner'],
     initOptions: { builder: SupportedBuilder.VITE },
   },
@@ -1253,6 +1261,11 @@ export const daily: TemplateKey[] = [
 
 export const templatesByCadence = { normal, merged, daily };
 
+/**
+ * Features a sandbox must enable for the docgen service to write the per-component static snapshots
+ * that the recorded docgen baselines are read from. Both are required: without
+ * `componentsManifest`, `experimentalDocgenServer` writes nothing to disk.
+ */
 const DOCGEN_SERVER_FEATURES = ['experimentalDocgenServer', 'componentsManifest'] as const;
 
 const mainConfigFeatures = (template: Template): Record<string, unknown> | undefined => {
@@ -1263,6 +1276,9 @@ const mainConfigFeatures = (template: Template): Record<string, unknown> | undef
   if (typeof mainConfig !== 'function') {
     return mainConfig.features;
   }
+  // Templates that rewrite the generated config read from the `ConfigFile` they are handed; the
+  // ones that only declare features ignore it. Reading features out of the latter is worth a stub;
+  // the former are expected to throw here and simply do not declare these flags.
   try {
     return mainConfig({ getFieldValue: () => undefined } as never)?.features;
   } catch {
@@ -1270,11 +1286,19 @@ const mainConfigFeatures = (template: Template): Record<string, unknown> | undef
   }
 };
 
+/** Whether a template's sandbox runs with server-side docgen, and so carries docgen baselines. */
 const enablesDocgenServer = (template: Template): boolean => {
   const features = mainConfigFeatures(template);
   return DOCGEN_SERVER_FEATURES.every((feature) => features?.[feature] === true);
 };
 
+/**
+ * Templates whose sandbox runs with server-side docgen enabled.
+ *
+ * Derived from the flags rather than kept as a second list, so turning them on for a template is all
+ * it takes to bring it into docgen baseline coverage — both the recorder and the CI step that
+ * verifies it read this.
+ */
 export const docgenServerTemplates = (): TemplateKey[] =>
   (Object.entries(allTemplates) as [TemplateKey, Template][])
     .filter(([, template]) => enablesDocgenServer(template))

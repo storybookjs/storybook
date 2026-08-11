@@ -11,6 +11,7 @@ import { resolve } from 'node:path';
 import type {
   AngularClassMeta,
   AngularComponentMetaResult,
+  MetadataJson,
   ParsingLogger,
 } from '@storybook/angular-cm';
 import { extractArgTypesFromData } from '@storybook/angular-cm';
@@ -24,6 +25,11 @@ export interface AngularDocgenOptions {
 export type AngularDocgenPayload = DocgenPayload & {
   // The analyzer's record for the class, not filtered by `angularFilterNonInputControls`.
   angularComponentMeta?: AngularClassMeta;
+  // The analyzer's record for the whole file, so a second in-process consumer (`core/story-docs`)
+  // can resolve enum member values without re-running the analyzer itself. Stored on the docgen
+  // payload rather than a separate service so both consumers share the one extraction this
+  // provider already ran.
+  angularComponentMetaJson?: MetadataJson;
 };
 
 // Structural on purpose: tests hand in a stub instead of a real TypeScript-backed analyzer.
@@ -151,5 +157,6 @@ export const buildDocgenPayload = (
     jsDocTags,
     argTypes,
     angularComponentMeta: meta.entry,
+    angularComponentMetaJson: meta.json,
   };
 };

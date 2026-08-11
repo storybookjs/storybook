@@ -13,7 +13,7 @@ import { resolve } from 'node:path';
 
 import type { EnumType, Property } from '@storybook/angular-compodoc';
 import type { AngularClassMeta, AngularComponentMetaResult } from '@storybook/angular-cm';
-import type { AngularComponentMetaSource } from './build-docgen.ts';
+import type { AngularDocgenPayload } from './build-docgen.ts';
 import { parseStoryFile, resolveComponentOf } from './resolve-component.ts';
 import { buildComponentOutletTemplate } from '../template-grammar.ts';
 import {
@@ -23,17 +23,24 @@ import {
 } from './story-docs-snippet.ts';
 
 export interface BuildStoryDocsContext {
-  // `undefined` when the analyzer could not be created; descriptions still extract without it.
-  manager: AngularComponentMetaSource | undefined;
+  /**
+   * Resolves the already-registered `core/docgen` service's payload for one component id, so this
+   * provider reuses the analyzer run that already backs argTypes instead of re-analyzing the file.
+   * `undefined` when `core/docgen` never registered (e.g. the compiled docgen worker script is
+   * unavailable); descriptions still extract without it.
+   */
+  getDocgenPayload:
+    | ((componentId: string) => Promise<AngularDocgenPayload | undefined>)
+    | undefined;
   resolvePath?: (importPath: string) => string;
 }
 
 // Stories that declare their own `render` get no snippet: their template is a runtime value static
 // analysis cannot see, and a component-derived one would misrepresent it.
-export const buildStoryDocsPayload = (
+export const buildStoryDocsPayload = async (
   input: StoryDocsProviderInput,
   context: BuildStoryDocsContext
-): StoryDocsPayload | undefined => {
+): Promise<StoryDocsPayload | undefined> => {
   const storyImportPath = getStoryImportPathFromEntry(input.entry);
   if (!storyImportPath) {
     return undefined;
@@ -52,12 +59,15 @@ export const buildStoryDocsPayload = (
   const component = 'reason' in resolution ? undefined : resolution.component;
 
   let meta: AngularComponentMetaResult | undefined;
-  if (component?.path && context.manager) {
+  if (component?.path && context.getDocgenPayload) {
     try {
-      meta = context.manager.extractComponentMeta(component.path, {
-        exportName: component.exportName,
-        localName: component.localName,
-      });
+      const docgenPayload = await context.getDocgenPayload(getComponentIdFromEntry(input.entry));
+      if (docgenPayload?.angularComponentMeta && docgenPayload.angularComponentMetaJson) {
+        meta = {
+          entry: docgenPayload.angularComponentMeta,
+          json: docgenPayload.angularComponentMetaJson,
+        };
+      }
     } catch {
       meta = undefined;
     }

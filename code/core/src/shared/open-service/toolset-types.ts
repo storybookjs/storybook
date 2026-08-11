@@ -1,7 +1,6 @@
 import type { DocsToolset } from './toolsets/docs/definition.ts';
 import type { ReviewToolset } from './toolsets/review/definition.ts';
 import type { StoriesToolset } from './toolsets/stories/definition.ts';
-import type { TestToolset } from './toolsets/test/definition.ts';
 
 /**
  * The public toolsets core can register, keyed by id.
@@ -13,6 +12,5 @@ import type { TestToolset } from './toolsets/test/definition.ts';
 export type KnownToolsets = {
   docs: DocsToolset;
   stories: StoriesToolset;
-  test: TestToolset;
   review: ReviewToolset;
 };

@@ -1,7 +1,12 @@
 import * as v from 'valibot';
 
-import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
-import { getRef } from '../../toolset-names.ts';
+import {
+  defineToolset,
+  reportToolsetTelemetry,
+  type ToolsetCtx,
+  type ToolsetOutcome,
+} from '../../toolset-definition.ts';
+import { getToolName, type ToolsetMethodId } from '../../toolset-names.ts';
 import type { DocsAccess, ResolvedDocsEntry } from './access.ts';
 import {
   formatComponentManifest,
@@ -15,6 +20,18 @@ import type { AllManifests } from './manifest-formatter/manifest-types.ts';
 import { listSources, type DocsSource } from './multi-source.ts';
 import type { SourceListing } from './sources.ts';
 import { estimateTokens } from '../estimate-tokens.ts';
+
+const DOCS_TOOLSET_ID = 'docs';
+const DOCS_METHOD_NAMES = {
+  list: 'list',
+  show: 'show',
+  showStory: 'showStory',
+} as const;
+const DOCS_METHOD_REFS = {
+  list: `${DOCS_TOOLSET_ID}.${DOCS_METHOD_NAMES.list}`,
+  show: `${DOCS_TOOLSET_ID}.${DOCS_METHOD_NAMES.show}`,
+  showStory: `${DOCS_TOOLSET_ID}.${DOCS_METHOD_NAMES.showStory}`,
+} as const satisfies Record<'list' | 'show' | 'showStory', ToolsetMethodId>;
 
 /**
  * Which Storybooks these tools serve — exactly one of the two.
@@ -134,14 +151,13 @@ export function isDocsShowStoryError(output: DocsShowStoryOutput): boolean {
 }
 
 function describeList(ctx: ToolsetCtx): string {
-  const ref = getRef(ctx);
-  return `List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with ${ref('docs.show')}, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their \`storybookId\` input. Pass \`withStoryIds: true\` when you need story IDs for other tools.`;
+  return `List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with ${getToolName(ctx)(DOCS_METHOD_REFS.show)}, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their \`storybookId\` input. Pass \`withStoryIds: true\` when you need story IDs for other tools.`;
 }
 
 function describeShow(ctx: ToolsetCtx): string {
   return `Get documentation for a UI component or docs entry.
 
-Returns the first ${MAX_STORIES_TO_SHOW} stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations, and to answer any question about a component's props, API, or usage — reading or grepping the component source is not a substitute. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the ${getRef(ctx)('docs.showStory')} tool to fetch the story documentation for the specific story variant you need.
+Returns the first ${MAX_STORIES_TO_SHOW} stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations, and to answer any question about a component's props, API, or usage — reading or grepping the component source is not a substitute. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the ${getToolName(ctx)(DOCS_METHOD_REFS.showStory)} tool to fetch the story documentation for the specific story variant you need.
 
 Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.`;
 }
@@ -149,9 +165,7 @@ Example: id="button" returns Primary, Secondary, Large stories with code like <B
 /** Not-found message for an unknown component or docs id. */
 function formatEntryNotFound(id: string, storybookId: string | undefined, ctx: ToolsetCtx): string {
   const suffix = storybookId ? ` in source "${storybookId}"` : '';
-  return ctx.consumer === 'mcp'
-    ? `Component or Docs Entry not found: "${id}"${suffix}. Use the ${getRef(ctx)('docs.list')} tool to see available components and documentation entries.`
-    : `Component or Docs Entry not found: "${id}"${suffix}.`;
+  return `Component or Docs Entry not found: "${id}"${suffix}. Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool to see available components and documentation entries.`;
 }
 
 /** Pure renderer for `show`; the handler attaches it to both outcome branches. */
@@ -180,9 +194,7 @@ function renderShowStory(data: DocsShowStoryOutput, ctx: ToolsetCtx): string {
     case 'source-error':
       return resolution.message;
     case 'component-missing':
-      return ctx.consumer === 'mcp'
-        ? `Component not found: "${data.componentId}". Use the ${getRef(ctx)('docs.list')} tool to see available components.`
-        : `Component not found: "${data.componentId}".`;
+      return `Component not found: "${data.componentId}". Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool to see available components.`;
     case 'story-missing': {
       const availableStories = resolution.component.stories?.map((story) => story.name).join(', ');
       return `Story "${data.storyName}" not found for component "${data.componentId}". Available stories: ${availableStories || 'none'}`;
@@ -219,7 +231,7 @@ function selectSource(
   }
 
   const available = sources.map(({ source }) => source.id).join(', ');
-  const listRef = `Use the ${getRef(ctx)('docs.list')} tool to see available sources.`;
+  const listRef = `Use the ${getToolName(ctx)(DOCS_METHOD_REFS.list)} tool to see available sources.`;
 
   if (!storybookId) {
     return { sourceError: `storybookId is required. Available sources: ${available}. ${listRef}` };
@@ -271,12 +283,11 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
     multiSource ? selectSource(sources, storybookId, ctx) : { access: docsAccess };
 
   return defineToolset({
-    id: 'docs',
+    id: DOCS_TOOLSET_ID,
     description: 'Storybook component and docs documentation.',
-    telemetryGroup: 'docs',
     methods: {
-      list: {
-        schema: v.object({
+      [DOCS_METHOD_NAMES.list]: {
+        input: v.object({
           withStoryIds: v.optional(
             v.pipe(
               v.boolean(),
@@ -302,7 +313,8 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
           // A listing of nothing but errors is not a usage signal, so nothing is counted then.
           const counted = selectReportedManifests(data);
           if (counted) {
-            await ctx.telemetry?.('tool:listAllDocumentation', {
+            await reportToolsetTelemetry(ctx, 'tool:listAllDocumentation', {
+              toolset: 'docs',
               componentCount: Object.keys(counted.componentManifest.components).length,
               docsCount: Object.keys(counted.docsManifest?.docs ?? {}).length,
               resultTokenCount: estimateTokens(markdown),
@@ -313,8 +325,8 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
           return { ok: true, data, markdown };
         },
       },
-      show: {
-        schema: showSchema,
+      [DOCS_METHOD_NAMES.show]: {
+        input: showSchema,
         title: 'Get Documentation',
         description: describeShow,
         handler: async (input, ctx): Promise<ToolsetOutcome<DocsShowOutput>> => {
@@ -326,7 +338,8 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
 
           const markdown = renderShow(data, ctx);
 
-          await ctx.telemetry?.('tool:getDocumentation', {
+          await reportToolsetTelemetry(ctx, 'tool:getDocumentation', {
+            toolset: 'docs',
             componentId: id,
             found: data.entry !== undefined,
             resultTokenCount: estimateTokens(markdown),
@@ -337,8 +350,8 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
             : { ok: true, data, markdown };
         },
       },
-      showStory: {
-        schema: showStorySchema,
+      [DOCS_METHOD_NAMES.showStory]: {
+        input: showStorySchema,
         title: 'Get Documentation for Story',
         description:
           'Get detailed documentation for a specific story variant of a UI component. Use this when you need to see more usage examples of a component, via the stories written for it.',

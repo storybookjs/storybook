@@ -8,11 +8,14 @@
 export { defineService } from './service-definition.ts';
 export { seedQueryState } from './query-state.ts';
 
-export { defineToolset, resolveToolsetDescription } from './toolset-definition.ts';
+export {
+  defineToolset,
+  reportToolsetTelemetry,
+  resolveToolsetDescription,
+} from './toolset-definition.ts';
 export type {
   AnyToolsetDefinition,
   AnyToolsetOutcome,
-  ToolsetConsumer,
   ToolsetCtx,
   ToolsetDefinition,
   ToolsetGetService,
@@ -20,10 +23,10 @@ export type {
   ToolsetMethodDescription,
   ToolsetOutcome,
   ToolsetTelemetry,
-  ToolsetTelemetryGroup,
+  ToolsetTransport,
 } from './toolset-definition.ts';
-export { getRef, MCP_TOOL_NAMES } from './toolset-names.ts';
-export type { ToolsetMethodRef } from './toolset-names.ts';
+export { getToolName, toMcpToolName } from './toolset-names.ts';
+export type { ToolsetMethodId } from './toolset-names.ts';
 export {
   clearToolsetRegistry,
   getRegisteredToolsets,

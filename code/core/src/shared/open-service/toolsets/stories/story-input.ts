@@ -1,14 +1,14 @@
 import * as v from 'valibot';
 
-import { MCP_TOOL_NAMES } from '../../toolset-names.ts';
+import { toMcpToolName } from '../../toolset-names.ts';
 
 /**
  * Per-shape props/globals selectors, shared by both story selector variants.
  *
  * The prose predates the toolsets and is eval-tuned, so it is kept verbatim. It names sibling
- * capabilities by their MCP tool names rather than through `getRef`, because valibot descriptions
+ * capabilities by their MCP tool names rather than through `getToolName`, because valibot descriptions
  * are static strings with no per-consumer rendering. One of them, `get-storybook-story-instructions`,
- * is an `@storybook/addon-mcp` tool with no toolset method and so no entry in {@link MCP_TOOL_NAMES};
+ * is an `@storybook/addon-mcp` tool with no toolset method;
  * a CLI consumer would need this sentence rewritten rather than re-rendered.
  */
 const storyInputProps = {
@@ -61,7 +61,7 @@ Otherwise don't set this.`
       v.description(
         `The full Storybook story ID (for example "button--primary").
 Prefer this shape whenever you are not already working in a specific story file.
-Use IDs discovered from ${MCP_TOOL_NAMES['docs.list']} (withStoryIds=true) or ${MCP_TOOL_NAMES['docs.show']}.`
+Use IDs discovered from ${toMcpToolName('docs.list')} (withStoryIds=true) or ${toMcpToolName('docs.show')}.`
       )
     ),
     ...storyInputProps,

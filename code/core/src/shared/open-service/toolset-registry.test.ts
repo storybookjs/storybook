@@ -18,12 +18,11 @@ const makeToolset = (id: string, description = `${id} toolset`) =>
   defineToolset({
     id,
     description,
-    telemetryGroup: 'dev',
     methods: {
       noop: {
         title: 'No-op',
         description: 'No-op method.',
-        schema: v.object({}),
+        input: v.object({}),
         handler: () => ({ ok: true, data: undefined, markdown: '' }) as const,
       },
     },

@@ -1,16 +1,16 @@
-import { getRef } from '../../toolset-names.ts';
+import { getToolName } from '../../toolset-names.ts';
 import type { ToolsetCtx } from '../../toolset-definition.ts';
 
 /**
- * Server-level guidance for the docs tools, rendered per consumer.
+ * Server-level guidance for the docs tools, rendered per transport.
  *
  * This is the workflow an agent should follow across the three tools, which no single tool
  * description can state: discover ids first, then fetch, and never invent a prop. It lives with the
- * toolset so both MCP surfaces serve the same text, and names its tools through {@link getRef} so the
+ * toolset so both MCP surfaces serve the same text, and names its tools through {@link getToolName} so the
  * prose cannot drift from what is registered.
  */
-export function getDocsToolsetInstructions(consumer: ToolsetCtx['consumer']): string {
-  const ref = getRef({ consumer });
+export function getDocsToolsetInstructions(transport: ToolsetCtx['transport']): string {
+  const ref = getToolName({ transport });
   return `## Documentation Workflow
 
 **CRITICAL: Never hallucinate component properties!** Before using ANY property on a component (even common-sounding ones like \`shadow\`), you MUST verify it is documented via these tools. If it is not documented, it does not exist — never assume props from naming conventions or other libraries; report it to the user instead.

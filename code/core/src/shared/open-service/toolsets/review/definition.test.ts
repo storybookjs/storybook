@@ -29,11 +29,11 @@ let mcpCtx: ToolsetCtx;
 let serviceError: Error | undefined;
 
 function createReview(
-  overrides: Partial<v.InferInput<typeof reviewToolset.methods.create.schema>> = {},
+  overrides: Partial<v.InferInput<typeof reviewToolset.methods.create.input>> = {},
   ctx: ToolsetCtx = cliCtx
 ) {
   return reviewToolset.methods.create.handler(
-    v.parse(reviewToolset.methods.create.schema, { ...input, ...overrides }),
+    v.parse(reviewToolset.methods.create.input, { ...input, ...overrides }),
     ctx
   );
 }
@@ -47,11 +47,11 @@ beforeEach(() => {
     }
   });
   cliCtx = {
-    consumer: 'cli',
+    transport: 'cli',
     origin: 'http://localhost:6006',
     getService: vi.fn(() => ({ commands: { setReview } })) as ToolsetCtx['getService'],
   };
-  mcpCtx = { ...cliCtx, consumer: 'mcp' };
+  mcpCtx = { ...cliCtx, transport: 'mcp' };
 });
 
 describe('review.create', () => {
@@ -85,9 +85,9 @@ describe('review.create', () => {
     expect(outcome.data).toMatchObject({ reviewUrl });
   });
 
-  it('prefers the request-derived uiRoot over the origin for the review link', async () => {
+  it('includes the deployment subpath from the toolset origin in the review link', async () => {
     // A sub-path-hosted Storybook answers MCP under its root; the review page lives there too.
-    const outcome = await createReview({}, { ...cliCtx, uiRoot: 'http://localhost:6006/nested' });
+    const outcome = await createReview({}, { ...cliCtx, origin: 'http://localhost:6006/nested' });
 
     expect(outcome.data).toMatchObject({
       reviewUrl: 'http://localhost:6006/nested/?path=/review/',
@@ -123,10 +123,10 @@ describe('review.create', () => {
 - \`button--ghost\`
 - \`card--imagined\`
 
-This usually means the IDs were inferred from file paths or naming conventions rather than returned by a tool. Resolve real IDs by calling \`get-stories-by-component\` (for components you've edited or want covered) or \`list-all-documentation\` (to browse the index), then retry \`display-review\` with the verified IDs. Do not invent IDs to satisfy this check.`);
+This usually means the IDs were inferred from file paths or naming conventions rather than returned by a tool. Resolve real IDs by calling \`stories-find-by-component\` (for components you've edited or want covered) or \`docs-list\` (to browse the index), then retry \`review-create\` with the verified IDs. Do not invent IDs to satisfy this check.`);
     });
 
-    it('names the CLI commands for the CLI consumer', async () => {
+    it('names the CLI commands for the CLI transport', async () => {
       const error = await createReview().catch((reason: unknown) => reason);
 
       expect((error as Error).message).toContain(
@@ -171,7 +171,13 @@ This usually means the IDs were inferred from file paths or naming conventions r
     it('tells MCP to reuse the request-derived UI root, not the bare origin', async () => {
       // A sub-path-hosted Storybook serves its UI under the request root; "already running at"
       // must name the address the agent can actually reach, like the review link does.
-      const outcome = await createReview({}, { ...mcpCtx, uiRoot: 'http://localhost:6006/nested' });
+      const outcome = await createReview(
+        {},
+        {
+          ...mcpCtx,
+          origin: 'http://localhost:6006/nested',
+        }
+      );
 
       expect(outcome.markdown).toContain(
         'Storybook is already running at http://localhost:6006/nested — reuse it.'
@@ -197,8 +203,8 @@ Two things you must do now, both of them:
         mcpCtx
       );
 
-      expect(description).toContain('Start from `get-changed-stories`');
-      expect(description).toContain('fall back to `get-stories-by-component`');
+      expect(description).toContain('Start from `stories-changed`');
+      expect(description).toContain('fall back to `stories-find-by-component`');
     });
 
     it('names the discovery tools as CLI commands', () => {

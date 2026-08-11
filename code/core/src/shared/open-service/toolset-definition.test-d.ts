@@ -11,12 +11,11 @@ import {
 const exampleToolset = defineToolset({
   id: 'example',
   description: 'Example API',
-  telemetryGroup: 'dev',
   methods: {
     greet: {
       title: 'Greet',
       description: 'Greets a person.',
-      schema: v.object({ name: v.string() }),
+      input: v.object({ name: v.string() }),
       handler: async ({ name }): Promise<ToolsetOutcome<{ greeting: string }, never>> => ({
         ok: true,
         data: { greeting: `Hello ${name}` },
@@ -29,13 +28,12 @@ const exampleToolset = defineToolset({
 const reviewToolset = defineToolset({
   id: 'review',
   description: 'Create a review',
-  telemetryGroup: 'dev',
   methods: {
     create: {
       title: 'Create review',
-      description: (ctx) => `Create a review (${ctx.consumer})`,
-      schema: v.object({ title: v.string() }),
-      outputSchema: v.object({ title: v.string() }),
+      description: (ctx) => `Create a review (${ctx.transport})`,
+      input: v.object({ title: v.string() }),
+      output: v.object({ title: v.string() }),
       handler: async (
         input,
         ctx
@@ -77,7 +75,7 @@ describe('defineToolset types', () => {
   it('narrows both branches of an outcome on its tag', async () => {
     const outcome = await reviewToolset.methods.create.handler(
       { title: 'x' },
-      { consumer: 'cli', getService: () => ({}) as never }
+      { transport: 'cli', getService: () => ({}) as never }
     );
 
     if (outcome.ok) {
@@ -108,12 +106,11 @@ describe('method titles', () => {
     defineToolset({
       id: 'untitled',
       description: 'Rejected',
-      telemetryGroup: 'dev',
       methods: {
         // @ts-expect-error — every method must declare its display `title`
         create: {
           description: 'Has no title.',
-          schema: v.object({}),
+          input: v.object({}),
           handler: async (): Promise<ToolsetOutcome<{ done: boolean }, never>> => ({
             ok: true,
             data: { done: true },
@@ -133,13 +130,12 @@ describe('schema-bound outcomes', () => {
     defineToolset({
       id: 'renamed-field',
       description: 'Rejected',
-      telemetryGroup: 'dev',
       methods: {
         create: {
           title: 'Create',
           description: 'Renames title to heading.',
-          schema: v.object({}),
-          outputSchema: v.object({ title: v.string() }),
+          input: v.object({}),
+          output: v.object({ title: v.string() }),
           // @ts-expect-error — `data` lacks the schema-declared `title` field
           handler: async (): Promise<ToolsetOutcome<{ heading: string }, never>> => ({
             ok: true,
@@ -155,13 +151,12 @@ describe('schema-bound outcomes', () => {
     defineToolset({
       id: 'dropped-field',
       description: 'Rejected',
-      telemetryGroup: 'dev',
       methods: {
         create: {
           title: 'Create',
           description: 'Publishes title but returns nothing.',
-          schema: v.object({}),
-          outputSchema: v.object({ title: v.string() }),
+          input: v.object({}),
+          output: v.object({ title: v.string() }),
           // @ts-expect-error — `data` is missing the schema-declared `title` field
           handler: async (): Promise<ToolsetOutcome<Record<string, never>, never>> => ({
             ok: true,
@@ -177,13 +172,12 @@ describe('schema-bound outcomes', () => {
     defineToolset({
       id: 'mistyped-field',
       description: 'Rejected',
-      telemetryGroup: 'dev',
       methods: {
         create: {
           title: 'Create',
           description: 'Returns a number where the schema declares a string.',
-          schema: v.object({}),
-          outputSchema: v.object({ title: v.string() }),
+          input: v.object({}),
+          output: v.object({ title: v.string() }),
           // @ts-expect-error — `title` is a number where the schema declares a string
           handler: async (): Promise<ToolsetOutcome<{ title: number }, never>> => ({
             ok: true,
@@ -199,13 +193,12 @@ describe('schema-bound outcomes', () => {
     defineToolset({
       id: 'unbound-failure',
       description: 'Rejected',
-      telemetryGroup: 'dev',
       methods: {
         create: {
           title: 'Create',
           description: 'Failure data skips the published contract.',
-          schema: v.object({}),
-          outputSchema: v.object({ title: v.string() }),
+          input: v.object({}),
+          output: v.object({ title: v.string() }),
           // @ts-expect-error — failure `data` lacks the schema-declared `title` field
           handler: async (): Promise<ToolsetOutcome<{ title: string }, { reason: string }>> => ({
             ok: false,

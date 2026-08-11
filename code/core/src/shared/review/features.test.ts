@@ -43,7 +43,7 @@ describe('isReviewFeatureEnabled', () => {
 
 describe('isReviewExplicitlyEnabled', () => {
   // The flag-unset default is where the two gates differ, and prose gated on the wrong one
-  // advertises `display-review` to MCP clients that cannot see it: the infrastructure gate is on
+  // advertises `review-create` to MCP clients that cannot see it: the infrastructure gate is on
   // by default, the direct-client gate only on explicit opt-in.
   it('stays off when the flag is unset, unlike the infrastructure gate', () => {
     const defaults = { changeDetection: true };

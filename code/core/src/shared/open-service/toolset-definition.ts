@@ -4,7 +4,7 @@ import type { GetServiceOptions } from './types.ts';
 
 type AnySchema = StandardSchemaV1<unknown, unknown>;
 
-export type ToolsetConsumer = 'cli' | 'mcp';
+export type ToolsetTransport = 'cli' | 'mcp';
 
 /**
  * Service lookup for toolset handlers. Intentionally not keyed to ServerCoreServices:
@@ -19,31 +19,27 @@ export type ToolsetGetService = {
  *
  * Adapters supply the sink so surface-specific fields (MCP session id, client info) stay with the
  * adapter while the event name and payload — the part that describes the capability — stay in the
- * method. Absent when the consumer has telemetry disabled.
+ * method. Absent when the transport has telemetry disabled.
  */
 export type ToolsetTelemetry = (event: string, payload: Record<string, unknown>) => Promise<void>;
 
 export type ToolsetCtx = {
-  consumer: ToolsetConsumer;
-  /** Storybook server origin. Absent when running from a CLI without a live Storybook. */
-  origin?: string;
+  transport: ToolsetTransport;
   /**
-   * Where this consumer's Storybook UI is reachable, when that differs from `origin` — a
-   * sub-path-hosted dev server answers MCP at `<root><endpoint>` while its UI lives at `<root>`.
-   * Methods that link into the UI prefer this over `origin`; the adapter derives it from the
-   * request it is serving.
+   * Storybook UI base URL, including any deployment subpath. Absent when running from a CLI
+   * without a live Storybook.
    */
-  uiRoot?: string;
+  origin?: string;
   getService: ToolsetGetService;
   telemetry?: ToolsetTelemetry;
 };
 
 /**
- * A method description, resolved per consumer.
+ * A method description, resolved per transport.
  *
  * The function form exists because descriptions cross-reference sibling methods, and each surface
- * spells those differently (`get-changed-stories` on MCP, `npx storybook tools stories changed` on
- * the CLI). Use `getRef(ctx)` to render a reference rather than hardcoding either spelling.
+ * spells those differently (`stories-changed` on MCP, `npx storybook tools stories changed` on
+ * the CLI). Use `getToolName(ctx)` to render a reference rather than hardcoding either spelling.
  */
 export type ToolsetMethodDescription = string | ((context: ToolsetCtx) => string);
 
@@ -60,12 +56,20 @@ export type ToolsetMethodDescription = string | ((context: ToolsetCtx) => string
  * TypeScript narrows both branches. Return plain object literals: contextual typing against this
  * union does the narrowing, no factory helpers needed.
  *
- * `markdown` may be multiple strings: MCP renders each as its own text block (preview-stories
+ * `markdown` may be multiple strings: MCP renders each as its own text block (`stories-preview`
  * renders one block per URL), the CLI joins them with newlines.
  */
 export type ToolsetOutcome<TSuccess, TFailure = TSuccess> =
-  | { readonly ok: true; readonly data: TSuccess; readonly markdown: string | string[] }
-  | { readonly ok: false; readonly data: TFailure; readonly markdown: string | string[] };
+  | {
+      readonly ok: true;
+      readonly data: TSuccess;
+      readonly markdown: string | string[];
+    }
+  | {
+      readonly ok: false;
+      readonly data: TFailure;
+      readonly markdown: string | string[];
+    };
 
 // `any` permits heterogeneous outcome maps. Each individual method remains typed by `defineToolset`.
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -86,13 +90,13 @@ export type ToolsetMethod<
 > = {
   /**
    * Short display label shown by client UIs (e.g. an MCP client's tool list). Editable prose like
-   * `description`, not a frozen contract — the invokable tool name lives in `MCP_TOOL_NAMES`.
+   * `description`, not an invokable tool name.
    */
   title: string;
   description: ToolsetMethodDescription;
-  schema: TSchema;
+  input: TSchema;
   /** Published as the MCP tool's `outputSchema`. Declare it only where the JSON is contractual. */
-  outputSchema?: AnySchema;
+  output?: AnySchema;
   /**
    * Marks a method that can only do its job against a running Storybook dev server — because it
    * needs a live origin for its URLs or reads state only the dev server owns. Consumers that run
@@ -113,41 +117,33 @@ export type AnyToolsetMethod = ToolsetMethod<any, AnyToolsetOutcome>;
 
 type ToolsetMethods = Record<string, AnyToolsetMethod>;
 
-/**
- * Which surface group a toolset's telemetry reports under. Part of the definition — not adapter
- * wiring — so the grouping cannot drift between consumers. Stories and review report under `dev`.
- */
-export type ToolsetTelemetryGroup = 'dev' | 'test' | 'docs';
-
 export type ToolsetDefinition<
   TId extends string = string,
   TMethods extends ToolsetMethods = ToolsetMethods,
 > = {
   id: TId;
   description: string;
-  telemetryGroup: ToolsetTelemetryGroup;
   methods: TMethods;
 };
 
 export type AnyToolsetDefinition = ToolsetDefinition;
 
 /**
- * What a handler may return when its method publishes an `outputSchema`: outcomes whose `data` —
+ * What a handler may return when its method publishes an `output`: outcomes whose `data` —
  * on both branches, since adapters validate failure data into `structuredContent` too — carries at
- * least the schema's declared shape. The open record keeps the data-superset pattern legal: the
- * rendered Markdown may use fields the public contract does not ship. The schema's *input* type is
- * the right side of the contract, because that is what the adapters' runtime validation accepts.
+ * least the schema's declared shape. The schema's input type is the right side of the contract,
+ * because that is what the adapters' runtime validation accepts. It may be any JSON value rather
+ * than only an object, matching MCP structured content.
  */
-type SchemaBoundData<TSchema extends AnySchema> = StandardSchemaV1.InferInput<TSchema> &
-  Record<string, unknown>;
+type SchemaBoundData<TSchema extends AnySchema> = StandardSchemaV1.InferInput<TSchema>;
 
-type MethodOutcomeContract<TMethod> = TMethod extends { outputSchema: infer TOut extends AnySchema }
+type MethodOutcomeContract<TMethod> = TMethod extends { output: infer TOut extends AnySchema }
   ? ToolsetOutcome<SchemaBoundData<TOut>> | Promise<ToolsetOutcome<SchemaBoundData<TOut>>>
   : unknown;
 
 /**
  * Second contextual-typing pass for the methods literal: `handler` input comes from that method's
- * own `schema`, and its outcome data from the method's `outputSchema` where one is declared — so
+ * own `input`, and its outcome data from the method's `output` where one is declared — so
  * renaming or removing a published field is a compile error at the definition site. Intersecting
  * this with the inferred map is what makes the flow work on both the stable and the native
  * TypeScript compiler — inferring a separate record does not.
@@ -155,7 +151,7 @@ type MethodOutcomeContract<TMethod> = TMethod extends { outputSchema: infer TOut
 type MethodContracts<TMethods extends ToolsetMethods> = {
   [TKey in keyof TMethods]: {
     handler: (
-      input: StandardSchemaV1.InferOutput<TMethods[TKey]['schema']>,
+      input: StandardSchemaV1.InferOutput<TMethods[TKey]['input']>,
       context: ToolsetCtx
     ) => MethodOutcomeContract<TMethods[TKey]>;
   };
@@ -167,16 +163,35 @@ export function defineToolset<
 >(definition: {
   id: TId;
   description: string;
-  telemetryGroup: ToolsetTelemetryGroup;
   methods: TMethods & MethodContracts<TMethods>;
 }): ToolsetDefinition<TId, TMethods> {
   return definition;
 }
 
-/** Resolves a method description for one consumer. */
+/** Resolves a method description for one transport. */
 export function resolveToolsetDescription(
   description: ToolsetMethodDescription,
   context: ToolsetCtx
 ): string {
   return typeof description === 'function' ? description(context) : description;
+}
+
+/**
+ * Reports best-effort telemetry without allowing analytics failures to fail the tool call.
+ *
+ * Analytics event names (`tool:previewStories`, …) and payload classifiers (`toolset: 'dev' |
+ * 'docs' | 'test'`) are a frozen cross-version contract. Keep them aligned with older Storybook
+ * releases even when MCP wire tool names or toolset ids change. The channel field is `transport`
+ * (`'cli' | 'mcp'`), matching the toolset API.
+ */
+export async function reportToolsetTelemetry(
+  context: ToolsetCtx,
+  event: string,
+  payload: Record<string, unknown>
+): Promise<void> {
+  try {
+    await context.telemetry?.(event, payload);
+  } catch {
+    // Telemetry is never part of the tool's result contract.
+  }
 }

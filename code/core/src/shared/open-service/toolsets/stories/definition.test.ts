@@ -81,11 +81,11 @@ function runPreview(
   ctx: ToolsetCtx = cliCtx,
   target: StoriesToolset = toolset
 ) {
-  return target.methods.preview.handler(v.parse(target.methods.preview.schema, { stories }), ctx);
+  return target.methods.preview.handler(v.parse(target.methods.preview.input, { stories }), ctx);
 }
 
 function runChanged(ctx: ToolsetCtx = cliCtx, target: StoriesToolset = toolset) {
-  return target.methods.changed.handler(v.parse(target.methods.changed.schema, {}), ctx);
+  return target.methods.changed.handler(v.parse(target.methods.changed.input, {}), ctx);
 }
 
 function runFindByComponent(
@@ -94,7 +94,7 @@ function runFindByComponent(
   target: StoriesToolset = toolset
 ) {
   return target.methods.findByComponent.handler(
-    v.parse(target.methods.findByComponent.schema, input),
+    v.parse(target.methods.findByComponent.input, input),
     ctx
   );
 }
@@ -122,12 +122,12 @@ beforeEach(() => {
   statusesFixture = {};
   graphMatchesByFile = new Map([[componentPath, [buttonStoryHit]]]);
   cliCtx = {
-    consumer: 'cli',
+    transport: 'cli',
     origin: 'http://localhost:6006',
     getService: vi.fn(() => moduleGraph) as ToolsetCtx['getService'],
     telemetry,
   };
-  mcpCtx = { ...cliCtx, consumer: 'mcp' };
+  mcpCtx = { ...cliCtx, transport: 'mcp' };
   getIndex.mockResolvedValue(index);
   getChangedFiles.mockResolvedValue({
     changed: new Set([changedComponentFile]),
@@ -182,6 +182,7 @@ describe('stories.preview', () => {
     await runPreview([{ storyId: 'button--primary' }, { storyId: 'gone--story' }]);
 
     expect(telemetry).toHaveBeenCalledWith('tool:previewStories', {
+      toolset: 'dev',
       inputStoryCount: 2,
       outputStoryCount: 2,
     });
@@ -208,7 +209,7 @@ describe('stories.preview', () => {
 
       expect(outcome.markdown).toEqual([
         previewUrl,
-        'These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The display-review tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **display-review** and link that instead.',
+        'These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The review-create tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **review-create** and link that instead.',
       ]);
     });
 
@@ -268,6 +269,7 @@ describe('stories.changed', () => {
     await runChanged();
 
     expect(telemetry).toHaveBeenCalledWith('tool:getChangedStories', {
+      toolset: 'dev',
       storyCount: 1,
       newStoryCount: 1,
       modifiedStoryCount: 0,
@@ -314,7 +316,7 @@ New stories:
       expect(outcome.markdown).toBe(
         `Detected 1 changed story (1 new, 0 modified, 0 related).
 
-Next: if the change is visually observable, publish the review now — call **display-review** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.
+Next: if the change is visually observable, publish the review now — call **review-create** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.
 
 New stories:
 - \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)`
@@ -336,7 +338,7 @@ New stories:
 Coverage sanity check: the working tree also contains modified file(s) that aren't reachable from any story above (no static import path connects them — typically theme tokens, decorators, or other preview-runtime files):
 - ${changedThemeFile}
 
-The list above is real but may be stale w.r.t. these files — they're often left over from an earlier sub-change in the same diff. Before composing a review, grep the codebase for their exports and call \`get-stories-by-component\` with the runtime consumers' file paths. Do not assume the list above already covers them, and never invent story IDs to fill the gap.`
+The list above is real but may be stale w.r.t. these files — they're often left over from an earlier sub-change in the same diff. Before composing a review, grep the codebase for their exports and call \`stories-find-by-component\` with the runtime consumers' file paths. Do not assume the list above already covers them, and never invent story IDs to fill the gap.`
       );
     });
 
@@ -349,7 +351,7 @@ The list above is real but may be stale w.r.t. these files — they're often lef
 The following working-tree file(s) are modified but unreachable from any story (no static import path connects them — they are likely theme tokens, decorators, or other Storybook-preview-runtime files):
 - ${changedThemeFile}
 
-For these, grep the codebase for their exports (e.g. specific tokens or symbols) to find runtime consumers, then call \`get-stories-by-component\` with those consumer file paths.`
+For these, grep the codebase for their exports (e.g. specific tokens or symbols) to find runtime consumers, then call \`stories-find-by-component\` with those consumer file paths.`
       );
     });
   });
@@ -409,6 +411,7 @@ describe('stories.findByComponent', () => {
     await runFindByComponent({ componentPaths: [componentPath, orphanPath] });
 
     expect(telemetry).toHaveBeenCalledWith('tool:getStoriesByComponent', {
+      toolset: 'dev',
       componentCount: 2,
       matchedComponentCount: 1,
       totalMatchCount: 1,
@@ -454,7 +457,7 @@ distance 1:
 describe('descriptions', () => {
   it('names sibling tools the way an MCP client calls them', () => {
     expect(resolveToolsetDescription(toolset.methods.changed.description, mcpCtx)).toContain(
-      'get-stories-by-component'
+      'stories-find-by-component'
     );
   });
 
@@ -476,7 +479,7 @@ Include each returned preview URL in your final user-facing response so users ca
 
     expect(resolveToolsetDescription(withReviews.methods.preview.description, mcpCtx))
       .toBe(`Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
-Do not end visual work or browse requests with these links — publish a curated review with display-review instead (passing changedFiles: [] when no code changed) and link that.`);
+Do not end visual work or browse requests with these links — publish a curated review with review-create instead (passing changedFiles: [] when no code changed) and link that.`);
 
     expect(resolveToolsetDescription(withReviews.methods.preview.description, cliCtx))
       .toBe(`Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
@@ -488,9 +491,9 @@ Do not end visual work or browse requests with these links — publish a curated
 
     expect(
       resolveToolsetDescription(withReviews.methods.findByComponent.description, mcpCtx)
-    ).toContain('hand these to preview-stories or display-review');
+    ).toContain('hand these to stories-preview or review-create');
     expect(
       resolveToolsetDescription(toolset.methods.findByComponent.description, mcpCtx)
-    ).toContain('hand these to preview-stories instead of guessing');
+    ).toContain('hand these to stories-preview instead of guessing');
   });
 });

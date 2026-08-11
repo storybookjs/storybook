@@ -6,8 +6,8 @@
  * must stay free of Node-only and server-only imports.
  */
 
-export { MCP_TOOL_NAMES, getRef } from '../../toolset-names.ts';
-export type { ToolsetMethodRef } from '../../toolset-names.ts';
+export { getToolName, toMcpToolName } from '../../toolset-names.ts';
+export type { ToolsetMethodId } from '../../toolset-names.ts';
 export { resolveToolsetDescription } from '../../toolset-definition.ts';
 export type { ToolsetCtx, ToolsetOutcome } from '../../toolset-definition.ts';
 export { DOCS_TOOLSET_INSTRUCTIONS } from './instructions.ts';

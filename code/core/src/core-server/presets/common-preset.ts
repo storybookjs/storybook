@@ -384,7 +384,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       },
       // The explicit opt-in gate, not `isReviewFeatureEnabled`: with the flag unset the review
       // infrastructure below still registers (the `storybook ai` CLI channel enables the tool per
-      // request), but direct MCP clients never see `display-review`, so the stories prose must
+      // request), but direct MCP clients never see `review-create`, so the stories prose must
       // not point at it.
       reviewEnabled: isReviewExplicitlyEnabled(features),
     })

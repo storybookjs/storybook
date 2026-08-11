@@ -539,6 +539,8 @@ If you were using Storybook's Playwright CT bridge, migrate along Playwright's g
 
 The portable stories core (`composeStories`, `setProjectAnnotations`) remains available for the [Vitest addon](https://storybook.js.org/docs/writing-tests/integrations/vitest-addon) and other supported testing paths.
 
+If needed, you can still view the [documentation for an older version](https://storybook.js.org/docs/9/api/portable-stories/portable-stories-playwright).
+
 ## From version 10.4.0 to 10.5.0
 
 ### ExternalDocs and ExternalDocsContainer are deprecated

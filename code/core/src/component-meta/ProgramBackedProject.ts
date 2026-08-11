@@ -1,5 +1,6 @@
+import { slash } from '../shared/utils/paths.ts';
 import type { ProjectFileTracker } from './ProjectFileTracker.ts';
-import { filterSourceFilePaths, normalizePath } from './ProjectFileTracker.ts';
+import { filterSourceFilePaths } from './ProjectFileTracker.ts';
 import type { ComponentMetaProjectBase, FileChange, ProjectCommandLine } from './types.ts';
 
 /**
@@ -54,7 +55,7 @@ export abstract class ProgramBackedProject<
   }
 
   hasSourceFile(fileName: string): boolean {
-    return !!this.service.getProgram()?.getSourceFile(normalizePath(fileName));
+    return !!this.service.getProgram()?.getSourceFile(slash(fileName));
   }
 
   getSourceFilePaths(): string[] {

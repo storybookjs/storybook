@@ -1,7 +1,7 @@
 import { execSync } from 'node:child_process';
+import { slash } from 'storybook/internal/common';
 import path from 'node:path';
 import { getModuleGraphService } from './module-graph.ts';
-import { slash } from './slash.ts';
 
 const SOURCE_EXT_RE = /\.(?:tsx?|jsx?|mjs|cjs)$/i;
 

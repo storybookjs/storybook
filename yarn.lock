@@ -11917,13 +11917,22 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@storybook/angular-cm@workspace:*, @storybook/angular-cm@workspace:code/lib/angular-cm":
+  version: 0.0.0-use.local
+  resolution: "@storybook/angular-cm@workspace:code/lib/angular-cm"
+  dependencies:
+    typescript: "npm:^6.0.3"
+  peerDependencies:
+    storybook: "workspace:^"
+  languageName: unknown
+  linkType: soft
+
 "@storybook/angular-compodoc@workspace:*, @storybook/angular-compodoc@workspace:code/lib/angular-compodoc":
   version: 0.0.0-use.local
   resolution: "@storybook/angular-compodoc@workspace:code/lib/angular-compodoc"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     entities: "npm:^4.5.0"
-    typescript: "npm:^6.0.3"
   peerDependencies:
     storybook: "workspace:^"
   languageName: unknown
@@ -11946,6 +11955,7 @@ __metadata:
     "@angular/platform-browser": "npm:^21.2.14"
     "@angular/platform-browser-dynamic": "npm:^21.2.14"
     "@babel/types": "npm:^7.28.5"
+    "@storybook/angular-cm": "workspace:*"
     "@storybook/angular-compodoc": "workspace:*"
     "@storybook/builder-vite": "workspace:*"
     "@storybook/global": "npm:^5.0.0"

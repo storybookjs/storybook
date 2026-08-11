@@ -3,15 +3,18 @@ import { join } from 'node:path';
 
 import type { DocgenPayload } from '../../../../core/src/shared/open-service/services/docgen/types.ts';
 
+/** Where `build-storybook` writes one docgen snapshot per component under the static output dir. */
 export const DOCGEN_SNAPSHOT_DIR = join('services', 'core', 'docgen');
 
-/**
- * Token standing in for the sandbox directory inside recorded strings.
- */
+/** Token standing in for the sandbox directory inside recorded strings. */
 export const SANDBOX_TOKEN = '<sandbox>';
 
 /**
  * The portable {@link DocgenPayload} fields, which are the ones worth recording.
+ *
+ * `DocgenPayload` carries an index signature so providers can attach engine-specific data, and the
+ * Angular provider uses it for the raw Compodoc entry: 117KB of mostly `sourceCode` across a stock
+ * sandbox, none of it part of the contract this baseline guards.
  */
 const PORTABLE_FIELDS = [
   'id',

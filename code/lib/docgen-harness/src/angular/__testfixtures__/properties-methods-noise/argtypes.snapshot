@@ -1,4 +1,22 @@
 {
+  "#secret": {
+    "description": "
+",
+    "name": "#secret",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "hidden",
+      },
+      "type": {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
   "currentPage": {
     "description": "
 ",
@@ -25,6 +43,25 @@
       "category": "properties",
       "defaultValue": {
         "summary": false,
+      },
+      "type": {
+        "required": true,
+        "summary": "unknown",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "empty-enum",
+    },
+  },
+  "loading": {
+    "description": "
+",
+    "name": "loading",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "signal(false)",
       },
       "type": {
         "required": true,

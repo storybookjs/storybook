@@ -1,7 +1,6 @@
 {
   "argTypes": {
     "_anotherDefaultValue": {
-      "description": "\n",
       "name": "_anotherDefaultValue",
       "table": {
         "category": "properties",
@@ -18,7 +17,6 @@
       }
     },
     "_inputValue": {
-      "description": "\n",
       "name": "_inputValue",
       "table": {
         "category": "properties",
@@ -35,7 +33,7 @@
       }
     },
     "_value": {
-      "description": "\nPrivate value.",
+      "description": "Private value.",
       "name": "_value",
       "table": {
         "category": "properties",
@@ -52,7 +50,7 @@
       }
     },
     "accent": {
-      "description": "\nSpecify the accent-type of the button",
+      "description": "Specify the accent-type of the button",
       "name": "accent",
       "table": {
         "category": "inputs",
@@ -70,12 +68,12 @@
       }
     },
     "anotherDefaultValue": {
-      "description": "\n\nSetting default value here because compodoc won't get the default value for accessors\n\nAnother default value\n",
+      "description": "Setting default value here because compodoc won't get the default value for accessors",
       "name": "anotherDefaultValue",
       "table": {
         "category": "inputs",
         "defaultValue": {
-          "summary": "Another default value\n"
+          "summary": "Another default value"
         },
         "type": {
           "required": true,
@@ -87,7 +85,7 @@
       }
     },
     "aNullValue": {
-      "description": "\nTest null default value.",
+      "description": "Test null default value.",
       "name": "aNullValue",
       "table": {
         "category": "inputs",
@@ -100,12 +98,11 @@
         }
       },
       "type": {
-        "name": "other",
-        "value": "empty-enum"
+        "name": "string"
       }
     },
     "aNumericValue": {
-      "description": "\nTest numeric default value.",
+      "description": "Test numeric default value.",
       "name": "aNumericValue",
       "table": {
         "category": "inputs",
@@ -122,7 +119,7 @@
       }
     },
     "anUndefinedValue": {
-      "description": "\nTest null default value.",
+      "description": "Test null default value.",
       "name": "anUndefinedValue",
       "table": {
         "category": "inputs",
@@ -138,7 +135,7 @@
       }
     },
     "appearance": {
-      "description": "\nAppearance style of the button.",
+      "description": "Appearance style of the button.",
       "name": "appearance",
       "table": {
         "category": "inputs",
@@ -156,7 +153,6 @@
       }
     },
     "buttonRef": {
-      "description": "\n",
       "name": "buttonRef",
       "table": {
         "category": "view child",
@@ -172,7 +168,7 @@
       }
     },
     "calc": {
-      "description": "\n\nAn internal calculation method which adds `x` and `y` together.\n\n  calculation.\n",
+      "description": "An internal calculation method which adds `x` and `y` together.",
       "name": "calc",
       "table": {
         "category": "methods",
@@ -188,7 +184,6 @@
       }
     },
     "focus": {
-      "description": "\n",
       "name": "focus",
       "table": {
         "category": "properties",
@@ -197,16 +192,15 @@
         },
         "type": {
           "required": true,
-          "summary": "unknown"
+          "summary": "boolean"
         }
       },
       "type": {
-        "name": "other",
-        "value": "empty-enum"
+        "name": "boolean"
       }
     },
     "inputValue": {
-      "description": "\nSetter for `inputValue` that is also an `@Input`.",
+      "description": "Getter for `inputValue`.",
       "name": "inputValue",
       "table": {
         "category": "inputs",
@@ -221,7 +215,7 @@
       }
     },
     "internalProperty": {
-      "description": "\nPublic value.",
+      "description": "Public value.",
       "name": "internalProperty",
       "table": {
         "category": "properties",
@@ -238,7 +232,7 @@
       }
     },
     "isDisabled": {
-      "description": "\nSets the button to a disabled state.",
+      "description": "Sets the button to a disabled state.",
       "name": "isDisabled",
       "table": {
         "category": "inputs",
@@ -255,7 +249,6 @@
       }
     },
     "item": {
-      "description": "\n",
       "name": "item",
       "table": {
         "category": "inputs",
@@ -271,7 +264,7 @@
       }
     },
     "label": {
-      "description": "\n\nThe inner text of the button.\n\n",
+      "description": "The inner text of the button.",
       "name": "label",
       "table": {
         "category": "inputs",
@@ -287,7 +280,7 @@
     },
     "onClick": {
       "action": "onClick",
-      "description": "\n\nHandler to be called when the button is clicked by a user.\n\nWill also block the emission of the event if `isDisabled` is true.\n",
+      "description": "Handler to be called when the button is clicked by a user.\n\nWill also block the emission of the event if `isDisabled` is true.",
       "name": "onClick",
       "table": {
         "category": "outputs",
@@ -303,7 +296,6 @@
       }
     },
     "onClickListener": {
-      "description": "\n",
       "name": "onClickListener",
       "table": {
         "category": "methods",
@@ -319,7 +311,7 @@
       }
     },
     "privateMethod": {
-      "description": "\n\nA private method.\n\n",
+      "description": "A private method.",
       "name": "privateMethod",
       "table": {
         "category": "methods",
@@ -335,7 +327,6 @@
       }
     },
     "processedItem": {
-      "description": "\n",
       "name": "processedItem",
       "table": {
         "category": "properties",
@@ -351,7 +342,7 @@
       }
     },
     "protectedMethod": {
-      "description": "\n\nA protected method.\n\n",
+      "description": "A protected method.",
       "name": "protectedMethod",
       "table": {
         "category": "methods",
@@ -367,7 +358,7 @@
       }
     },
     "publicMethod": {
-      "description": "\nA public method using an interface.",
+      "description": "A public method using an interface.",
       "name": "publicMethod",
       "table": {
         "category": "methods",
@@ -383,7 +374,6 @@
       }
     },
     "showKeyAlias": {
-      "description": "\n",
       "name": "showKeyAlias",
       "table": {
         "category": "inputs",
@@ -399,7 +389,7 @@
       }
     },
     "size": {
-      "description": "\nSize of the button.",
+      "description": "Size of the button.",
       "name": "size",
       "table": {
         "category": "inputs",
@@ -407,7 +397,7 @@
           "summary": "medium"
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "ButtonSize"
         }
       },
@@ -417,7 +407,7 @@
       }
     },
     "someDataObject": {
-      "description": "\n\nSpecifies some arbitrary object. This comment is to test certain chars like apostrophes - it's\nworking\n",
+      "description": "Specifies some arbitrary object. This comment is to test certain chars like apostrophes - it's\nworking",
       "name": "someDataObject",
       "table": {
         "category": "inputs",
@@ -433,12 +423,15 @@
       }
     },
     "somethingYouShouldNotUse": {
-      "description": "\n\nSome input you shouldn't use.\n\n",
+      "description": "Some input you shouldn't use.",
       "name": "somethingYouShouldNotUse",
       "table": {
         "category": "inputs",
         "defaultValue": {
           "summary": false
+        },
+        "jsDocTags": {
+          "deprecated": ""
         },
         "type": {
           "required": true,
@@ -450,7 +443,7 @@
       }
     },
     "theDefaultValue": {
-      "description": "\nTest default value.",
+      "description": "Test default value.",
       "name": "theDefaultValue",
       "table": {
         "category": "inputs",
@@ -465,14 +458,30 @@
       "type": {
         "name": "string"
       }
+    },
+    "value": {
+      "description": "Get the private value.",
+      "name": "value",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "string | number"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
     }
   },
-  "description": "This is a simple button that demonstrates various JSDoc handling in Storybook Docs for Angular.\nIt supports markdown, so you can embed formatted text,\nlike bold, italic, and inline code.> How you like dem apples?! It's never been easier to\ndocument all your components.\nHello world\nExample\nThingThing\naaa",
+  "description": "This is a simple button that demonstrates various JSDoc handling in Storybook Docs for Angular.\n\nIt supports [markdown](https://en.wikipedia.org/wiki/Markdown), so you can embed formatted text,\nlike **bold**, _italic_, and `inline code`.> How you like dem apples?! It's never been easier to\ndocument all your components.",
   "id": "stories-frameworks-angular-vite-argtypes-doc-button",
   "jsDocTags": {
-    "code": ["ThingThing"],
-    "html": ["aaa"],
-    "link": ["Example"],
+    "code": ["`ThingThing`"],
+    "html": ["<span class=\"badge\">aaa</span>"],
+    "link": ["[Example](http://example.com)"],
     "string": ["Hello world"]
   },
   "name": "DocButtonComponent",

@@ -80,6 +80,12 @@ export interface ComponentMetaProjectFactory<
   createConfiguredProject(commandLine: CL, tsconfig: string, getCommandLine: () => CL): P;
   /** Project for files no discovered tsconfig covers; owns its own default compiler options. */
   createInferredProject(): P;
+  /**
+   * Called when heap pressure recycles the projects. A factory-owned cache that outlives individual
+   * projects has to be dropped here too, or the memory floor survives the mechanism meant to lower
+   * it.
+   */
+  recycle?(): void;
   /** Called from the manager's `dispose()` so factory-owned caches die with the manager. */
   dispose?(): void;
 }

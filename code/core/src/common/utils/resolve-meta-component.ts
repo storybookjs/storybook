@@ -8,18 +8,11 @@ import { createModuleResolver } from './module-resolver.ts';
 export interface ResolvedMetaComponent {
   /** Local identifier `meta.component` refers to in the story file. */
   localName: string;
-  /** Specifier the component is imported from, or `undefined` when it is declared in the story file. */
+  /** Specifier the component is imported from, or `undefined` when it is declared in the file. */
   importId?: string;
-  /**
-   * Absolute path of the module declaring the component, or `undefined` when the specifier does not
-   * resolve on disk. Set to the story file itself for a component declared there.
-   */
+  /** Declaring module, or the story file itself; `undefined` when the import does not resolve. */
   path?: string;
-  /**
-   * Export name inside that module: `default` for a default import, the imported name for a named
-   * one (so an alias resolves to what the module actually exports), and the local name for a
-   * component declared in the story file.
-   */
+  /** Export name in the declaring module, so an import alias resolves to the real export. */
   exportName: string;
 }
 
@@ -38,13 +31,8 @@ export interface MetaComponentResolverOptions {
 /**
  * Builds a resolver that locates the component behind `meta.component` in a parsed CSF file.
  *
- * Server-side docgen never loads the story module, so it cannot read a class or component object's
- * runtime name the way a preview can. It has only the source, where `meta.component` is a local
- * binding whose name may not match what the module exports. Recovering the exported name, and the
- * file it comes from, is what lets a docgen engine find the right entry when several share a name.
- *
- * The resolver is created once per host because it caches; `tsconfig: 'auto'` honours `paths` and
- * `baseUrl`, which projects routinely alias their own sources through.
+ * Server-side docgen never loads the story module, so the exported name and declaring file have to
+ * be recovered from source; the resolver caches, so create one per host rather than per call.
  */
 export function createMetaComponentResolver(options: MetaComponentResolverOptions = {}) {
   const resolver = createModuleResolver({
@@ -54,18 +42,22 @@ export function createMetaComponentResolver(options: MetaComponentResolverOption
   });
 
   return function resolveMetaComponent(csf: CsfFile, storyPath: string): MetaComponentResolution {
-    const localName = csf._meta?.component;
-    if (!localName) {
+    // `_meta.component` is printed source text, so only the parsed node shows whether the value is
+    // a followable identifier, possibly wrapped in type arguments as in `Comp<Props>`.
+    const node = csf._metaAnnotations.component;
+    const identifier = node && t.isTSInstantiationExpression(node) ? node.expression : node;
+    if (!identifier || !t.isIdentifier(identifier)) {
       return { reason: 'no-meta-component' };
     }
+    const localName = identifier.name;
 
     const binding = findImport(csf, localName);
     if (binding.kind === 'unsupported') {
       return { reason: 'no-component-import' };
     }
 
-    // Nothing imports the name, so the component is declared in the story file itself. That is a
-    // real location, and reporting it lets a caller explain why its engine has no entry for it.
+    // A component declared in the story file is a real location, so reporting it lets a caller
+    // explain why its docgen engine has no entry for it.
     if (binding.kind === 'local') {
       return { component: { localName, exportName: localName, path: storyPath } };
     }
@@ -87,7 +79,6 @@ type ImportBinding =
   | { kind: 'local' }
   | { kind: 'unsupported' };
 
-/** Finds the import declaration that binds `localName`, and the export name it pulls in. */
 function findImport(csf: CsfFile, localName: string): ImportBinding {
   for (const statement of csf._file.path.get('body')) {
     if (!statement.isImportDeclaration()) {
@@ -99,8 +90,8 @@ function findImport(csf: CsfFile, localName: string): ImportBinding {
         continue;
       }
 
-      // A type-only import or `import * as ns` binds nothing a docgen engine could have documented,
-      // but it does mean the name is imported rather than declared here.
+      // A type-only or namespace import binds nothing documentable, but the name is still imported
+      // rather than declared here.
       if (statement.node.importKind === 'type' || t.isImportNamespaceSpecifier(specifier)) {
         return { kind: 'unsupported' };
       }

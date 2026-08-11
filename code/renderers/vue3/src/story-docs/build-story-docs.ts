@@ -37,8 +37,21 @@ export interface BuildStoryDocsContext {
   readDocgen?: (id: string) => Promise<DocgenPayload | undefined>;
 }
 
+interface StorySnippetContext {
+  componentName: string;
+  docgenArgInfo: VueDocgenArgInfo;
+}
+
+interface StoryDocsContext {
+  /** Present only when the component identifier and docgen data can synthesize snippets. */
+  snippet: StorySnippetContext | undefined;
+  metaPath: NodePath<t.ObjectExpression> | undefined;
+  metaArgsError: StoryDoc['error'] | undefined;
+  metaArgsPath: ArgsObjectPath | undefined;
+}
+
 type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
-type ArgsObjectPath = NodePath<t.ObjectExpression> | undefined;
+type ArgsObjectPath = NodePath<t.ObjectExpression>;
 
 const ARGS_PROPERTY = 'args';
 
@@ -86,6 +99,7 @@ export async function buildStoryDocsPayload(
   const importStatement = createImportStatement(csf, componentName);
   const docgenArgInfo =
     docgenPayload && !docgenPayload.error ? vueDocgenArgInfo(docgenPayload) : undefined;
+  const snippet = componentName && docgenArgInfo ? { componentName, docgenArgInfo } : undefined;
 
   return {
     id,
@@ -93,8 +107,7 @@ export async function buildStoryDocsPayload(
     path: storyFilePath,
     ...(importStatement ? { import: importStatement } : {}),
     stories: extractStories(csf, {
-      componentName,
-      docgenArgInfo,
+      snippet,
       metaPath,
       metaArgsError: argsContainerError(metaPath),
       metaArgsPath: argsObjectPathFromObjectPath(metaPath),
@@ -167,7 +180,9 @@ function vueDocgenArgInfo(payload: DocgenPayload): VueDocgenArgInfo {
  *
  * @example `{ args: { label: 'Hi' } }` → path of `{ label: 'Hi' }`; `{ args: shared }` → undefined
  */
-function argsObjectPathFromObjectPath(path?: NodePath<t.ObjectExpression>): ArgsObjectPath {
+function argsObjectPathFromObjectPath(
+  path?: NodePath<t.ObjectExpression>
+): ArgsObjectPath | undefined {
   const property = path
     ?.get('properties')
     .find((prop) => prop.isObjectProperty() && keyOf(prop.node) === ARGS_PROPERTY);
@@ -187,16 +202,7 @@ function argsObjectHasSpread(object: t.ObjectExpression | undefined): boolean {
 /**
  * Maps every CSF story export to its StoryDoc, enriched with a snippet or error where possible.
  */
-function extractStories(
-  csf: ParsedCsf,
-  options: {
-    componentName?: string;
-    docgenArgInfo?: VueDocgenArgInfo;
-    metaPath: NodePath<t.ObjectExpression> | undefined;
-    metaArgsError?: StoryDoc['error'];
-    metaArgsPath: ArgsObjectPath;
-  }
-): Record<string, StoryDoc> {
+function extractStories(csf: ParsedCsf, options: StoryDocsContext): Record<string, StoryDoc> {
   const metaArgs = metaArgsRecord(options.metaPath?.node);
 
   return Object.fromEntries(
@@ -221,17 +227,12 @@ function enrichStoryDoc(
   storyExport: string,
   storyDoc: StoryDoc,
   metaArgs: Record<string, t.Node>,
-  options: {
-    componentName?: string;
-    docgenArgInfo?: VueDocgenArgInfo;
-    metaPath: NodePath<t.ObjectExpression> | undefined;
-    metaArgsError?: StoryDoc['error'];
-    metaArgsPath: ArgsObjectPath;
-  }
+  options: StoryDocsContext
 ): StoryDoc {
-  if (!options.componentName || !options.docgenArgInfo) {
+  if (!options.snippet) {
     return storyDoc;
   }
+  const { componentName, docgenArgInfo } = options.snippet;
 
   let normalized;
   try {
@@ -271,7 +272,7 @@ function enrichStoryDoc(
   }
 
   const storyArgs = argsRecordFromObjectPath(storyArgsPath);
-  const classified = classifyArgs(mergeArgsRecords(metaArgs, storyArgs), options.docgenArgInfo);
+  const classified = classifyArgs(mergeArgsRecords(metaArgs, storyArgs), docgenArgInfo);
   if (classified.defer) {
     return storyDoc;
   }
@@ -279,7 +280,7 @@ function enrichStoryDoc(
   return {
     ...storyDoc,
     snippet: renderSfcSnippet({
-      componentName: options.componentName,
+      componentName,
       args: classified.args,
     }),
     ...(classified.warning ? { warning: classified.warning } : {}),

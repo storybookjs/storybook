@@ -1,9 +1,8 @@
+import { isInNodeModules, slash } from 'storybook/internal/common';
 import {
   type FileSnapshotCache,
   ProgramBackedProject,
   ProjectFileTracker,
-  isInNodeModules,
-  normalizePath,
 } from 'storybook/internal/component-meta';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -76,7 +75,7 @@ export class AngularComponentMetaProject extends ProgramBackedProject<
     componentPath: string,
     names: { exportName: string; localName?: string }
   ): AngularComponentMetaResult | undefined {
-    const fileName = normalizePath(componentPath);
+    const fileName = slash(componentPath);
 
     // Extractions can land inside the watcher's debounce window, or with no watcher at all.
     this.files.ensureFresh([fileName]);

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { babelParse, types as t } from 'storybook/internal/babel';
 
-import { classifyValue } from './classify-value.ts';
+import { classifyValue, isSelfContainedFunction } from './classify-value.ts';
 
 /** Parses an expression the way a CSF arg value appears in a story file. */
 function expression(code: string): t.Node {
@@ -68,5 +68,33 @@ describe('classifyValue', () => {
 
   it('treats an unhandled expression shape as unrepresentable', () => {
     expect(classifyValue(expression('a ? b : c')).kind).toBe('unrepresentable');
+  });
+});
+
+describe('isSelfContainedFunction', () => {
+  it.each([
+    // Every referenced binding is a parameter, a local, or a JavaScript global.
+    { code: '() => 1', selfContained: true },
+    { code: '(value) => value.toUpperCase()', selfContained: true },
+    { code: '(payload) => console.log(payload)', selfContained: true },
+    { code: '({ value }) => value', selfContained: true },
+    { code: '(a, ...rest) => rest.concat(a)', selfContained: true },
+    { code: `(mode = 'auto') => mode`, selfContained: true },
+    { code: '() => { const x = 1; return x + 1; }', selfContained: true },
+    { code: 'function (n) { return Math.max(n, 0); }', selfContained: true },
+
+    // Captures a binding the snippet cannot declare.
+    { code: '(value) => formatHelper(value)', selfContained: false },
+    { code: '() => SOME_CONST', selfContained: false },
+    { code: `(value = DEFAULT_MODE) => value`, selfContained: false },
+    { code: '() => { emit(1); }', selfContained: false },
+    { code: '() => { const x = SOME_CONST; return x; }', selfContained: false },
+    { code: '(value) => ({ ...BASE, value })', selfContained: false },
+
+    // Not a function at all.
+    { code: `'text'`, selfContained: false },
+    { code: 'makeHandler()', selfContained: false },
+  ])('reports $code as $selfContained', ({ code, selfContained }) => {
+    expect(isSelfContainedFunction(expression(code))).toBe(selfContained);
   });
 });

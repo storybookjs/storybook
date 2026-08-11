@@ -38,10 +38,10 @@ export function expectCurrentOrBetter(input: ExpectCurrentOrBetterInput): void {
 
   const declaredOmissions = input.declaredOmissions ?? [];
   const violations = compareSnippet(input);
-  const omitted = new Set(
-    violations.filter((v) => v.kind === 'lost-representation').map((v) => v.arg)
-  );
+  // An unparsable candidate leaves nothing omitted
+  throwOnViolations(violations.filter((v) => v.kind !== 'lost-representation'));
 
+  const omitted = new Set(violations.map((v) => v.arg));
   const stale = declaredOmissions.filter((arg) => !omitted.has(arg));
   if (stale.length > 0) {
     // eslint-disable-next-line local-rules/no-uncategorized-errors
@@ -50,11 +50,7 @@ export function expectCurrentOrBetter(input: ExpectCurrentOrBetterInput): void {
     );
   }
 
-  throwOnViolations(
-    violations.filter(
-      (v) => !(v.kind === 'lost-representation' && declaredOmissions.includes(v.arg))
-    )
-  );
+  throwOnViolations(violations.filter((v) => !declaredOmissions.includes(v.arg)));
 }
 
 function throwOnViolations(violations: Violation[]): void {

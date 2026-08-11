@@ -45,6 +45,7 @@ const RESOLVABLE_GLOBALS = new Set([
   'URLSearchParams',
   'WeakMap',
   'WeakSet',
+  'console',
   'decodeURI',
   'decodeURIComponent',
   'encodeURI',
@@ -57,6 +58,8 @@ const RESOLVABLE_GLOBALS = new Set([
 ]);
 
 const UNDEFINED_IDENTIFIER = 'undefined';
+
+const NO_LOCALS: ReadonlySet<string> = new Set();
 
 /** Classifies one CSF arg value into the single plan both the classifier and the renderer act on. */
 export function classifyValue(node: t.Node): ValuePlan {
@@ -104,6 +107,77 @@ export function isUndefinedIdentifier(node: t.Node): boolean {
   return unwrapped.type === 'Identifier' && unwrapped.name === UNDEFINED_IDENTIFIER;
 }
 
+/**
+ * Whether a function arg can be hoisted without dangling references: every binding its body uses is
+ * a parameter, a local declaration, or a JavaScript global.
+ *
+ * @example `(value) => value.toUpperCase()` → true; `(value) => formatHelper(value)` → false
+ */
+export function isSelfContainedFunction(node: t.Node): boolean {
+  const fn = unwrapValue(node);
+  if (fn.type !== 'ArrowFunctionExpression' && fn.type !== 'FunctionExpression') {
+    return false;
+  }
+
+  const locals = new Set<string>();
+  if (!fn.params.every((param) => collectPatternNames(param, locals))) {
+    return false;
+  }
+
+  if (fn.body.type !== 'BlockStatement') {
+    return isResolvable(fn.body, locals);
+  }
+  return fn.body.body.every((statement) => statementIsResolvable(statement, locals));
+}
+
+/**
+ * Statement forms a hoisted function body may contain; anything else reports `false` so the arg
+ * falls back to the omit-with-warning path.
+ */
+function statementIsResolvable(statement: t.Statement, locals: Set<string>): boolean {
+  switch (statement.type) {
+    case 'VariableDeclaration':
+      return statement.declarations.every(
+        (declaration) =>
+          (!declaration.init || isResolvable(declaration.init, locals)) &&
+          collectPatternNames(declaration.id, locals)
+      );
+    case 'ReturnStatement':
+      return !statement.argument || isResolvable(statement.argument, locals);
+    case 'ExpressionStatement':
+      return isResolvable(statement.expression, locals);
+    default:
+      return false;
+  }
+}
+
+/**
+ * Records every name a binding pattern introduces; default values must themselves resolve.
+ *
+ * @example `({ a, b = 1 }, ...rest)` → adds `a`, `b`, `rest`
+ */
+function collectPatternNames(pattern: t.Node, into: Set<string>): boolean {
+  switch (pattern.type) {
+    case 'Identifier':
+      into.add(pattern.name);
+      return true;
+    case 'AssignmentPattern':
+      return isResolvable(pattern.right, into) && collectPatternNames(pattern.left, into);
+    case 'RestElement':
+      return collectPatternNames(pattern.argument, into);
+    case 'ObjectPattern':
+      return pattern.properties.every((property) =>
+        property.type === 'RestElement'
+          ? collectPatternNames(property.argument, into)
+          : collectPatternNames(property.value, into)
+      );
+    case 'ArrayPattern':
+      return pattern.elements.every((element) => !element || collectPatternNames(element, into));
+    default:
+      return false;
+  }
+}
+
 function isEmptyString(node: t.Node): boolean {
   const value = unwrapValue(node);
   return value.type === 'StringLiteral' && value.value === '';
@@ -135,8 +209,9 @@ function isInlineLiteral(node: t.Node): boolean {
  *
  * @example `new Date('2020-01-01')` → true (`Date` is global); `Sizes.LARGE` → false (`Sizes` is not)
  */
-function isResolvable(node: t.Node): boolean {
+function isResolvable(node: t.Node, locals: ReadonlySet<string> = NO_LOCALS): boolean {
   const value = unwrapValue(node);
+  const resolves = (child: t.Node): boolean => isResolvable(child, locals);
 
   switch (value.type) {
     case 'StringLiteral':
@@ -148,13 +223,13 @@ function isResolvable(node: t.Node): boolean {
       return true;
 
     case 'Identifier':
-      return RESOLVABLE_GLOBALS.has(value.name);
+      return locals.has(value.name) || RESOLVABLE_GLOBALS.has(value.name);
 
     case 'TemplateLiteral':
-      return value.expressions.every(isResolvable);
+      return value.expressions.every(resolves);
 
     case 'ArrayExpression':
-      return value.elements.every((element) => !element || isResolvable(element));
+      return value.elements.every((element) => !element || resolves(element));
 
     case 'ObjectExpression':
       return value.properties.every((property) => {
@@ -162,21 +237,21 @@ function isResolvable(node: t.Node): boolean {
           // SpreadElement hides its contents; ObjectMethod bodies can reference anything.
           return false;
         }
-        return (!property.computed || isResolvable(property.key)) && isResolvable(property.value);
+        return (!property.computed || resolves(property.key)) && resolves(property.value);
       });
 
     case 'CallExpression':
     case 'NewExpression':
-      return isResolvable(value.callee) && value.arguments.every(isResolvable);
+      return resolves(value.callee) && value.arguments.every(resolves);
 
     case 'MemberExpression':
-      return isResolvable(value.object) && (!value.computed || isResolvable(value.property));
+      return resolves(value.object) && (!value.computed || resolves(value.property));
 
     case 'UnaryExpression':
-      return isResolvable(value.argument);
+      return resolves(value.argument);
 
     case 'BinaryExpression':
-      return isResolvable(value.left) && isResolvable(value.right);
+      return resolves(value.left) && resolves(value.right);
 
     default:
       return false;

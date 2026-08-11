@@ -185,6 +185,39 @@ describe('classifyArgs', () => {
     expect(result.warning).toBe('Omitted args that cannot be resolved statically: onSubmit: fn()');
   });
 
+  it('omits a listener that captures a story-local binding, and names it', () => {
+    const label = t.stringLiteral('ok');
+    const result = classifyArgs(
+      {
+        label,
+        onSubmit: t.arrowFunctionExpression(
+          [t.identifier('value')],
+          t.callExpression(t.identifier('formatHelper'), [t.identifier('value')])
+        ),
+      },
+      { props: new Set<string>(), slots: new Set(), events: new Set(['submit']) }
+    );
+
+    expect(result.args.map((arg) => arg.name)).toEqual(['label']);
+    expect(result.warning).toBe(
+      'Omitted args that cannot be resolved statically: onSubmit: value => formatHelper(value)'
+    );
+  });
+
+  it('omits a declared function prop that captures a story-local binding', () => {
+    const label = t.stringLiteral('ok');
+    const result = classifyArgs(
+      {
+        label,
+        formatter: t.arrowFunctionExpression([], t.identifier('SOME_CONST')),
+      },
+      { props: new Set(['formatter']), slots: new Set(), events: new Set() }
+    );
+
+    expect(result.args.map((arg) => arg.name)).toEqual(['label']);
+    expect(result.warning).toContain('formatter');
+  });
+
   it('classifies a declared function prop as a hoisted prop', () => {
     const value = t.arrowFunctionExpression([], t.nullLiteral());
 

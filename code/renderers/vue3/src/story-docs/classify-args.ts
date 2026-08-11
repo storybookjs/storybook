@@ -3,6 +3,7 @@ import { type types as t } from 'storybook/internal/babel';
 import {
   classifyValue,
   isFunctionExpression,
+  isSelfContainedFunction,
   printValue,
   unwrapValue,
   type ValuePlan,
@@ -96,13 +97,21 @@ export function classifyArgs(
 
     const eventName = declaredEventName(name, docgen.events);
     if (eventName !== undefined && isFunctionExpression(value)) {
-      classified.push({ name, value, role: 'event', eventName, plan: { kind: 'hoist' } });
+      if (isSelfContainedFunction(value)) {
+        classified.push({ name, value, role: 'event', eventName, plan: { kind: 'hoist' } });
+      } else {
+        omitted.push(`${name}: ${printValue(value)}`);
+      }
       continue;
     }
 
     if (isFunctionExpression(value)) {
       if (docgen.props.has(name)) {
-        classified.push({ name, value, role: 'prop', plan: { kind: 'hoist' } });
+        if (isSelfContainedFunction(value)) {
+          classified.push({ name, value, role: 'prop', plan: { kind: 'hoist' } });
+        } else {
+          omitted.push(`${name}: ${printValue(value)}`);
+        }
       }
       continue;
     }

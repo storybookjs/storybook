@@ -70,6 +70,18 @@ describe('expectCurrentOrBetter', () => {
     ).toThrow(/changed-summary/);
   });
 
+  it('reports an unparsable candidate instead of calling declared omissions stale', () => {
+    expect(() =>
+      expectCurrentOrBetter({
+        kind: 'snippet',
+        framework: 'vue3',
+        baseline: '<template>\n  <C :severity="severity" />\n</template>',
+        candidate: 'not a snippet',
+        declaredOmissions: ['severity'],
+      })
+    ).toThrow(/unparsable-candidate/);
+  });
+
   it('routes snippet input to the snippet comparator', () => {
     const baseline = '<sb-cmp [count]="3"></sb-cmp>';
     expect(() =>

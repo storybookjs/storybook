@@ -138,9 +138,9 @@ export class ProjectFileTracker<Snapshot> {
     if (!this.getCommandLineFn) {
       return;
     }
-    const newCommandLine = this.getCommandLineFn();
-    if (!arrayItemsEqual(newCommandLine.fileNames, this.commandLine.fileNames)) {
-      this.commandLine.fileNames = newCommandLine.fileNames;
+    const newFileNames = this.getCommandLineFn().fileNames.map(normalize);
+    if (!arrayItemsEqual(newFileNames, this.commandLine.fileNames)) {
+      this.commandLine.fileNames = newFileNames;
       this.projectVersion++;
     }
   }

@@ -30,14 +30,29 @@ export type ArgRole = 'event' | 'model' | 'prop' | 'slot';
  */
 export type RenderableValuePlan = Extract<ValuePlan, { kind: 'hoist' | 'inline' }>;
 
-export interface ClassifiedArg {
+/** A function-valued slot arg that only a render-tree-aware renderer can realize. */
+export interface FunctionSlotPlan {
+  kind: 'function-slot';
+}
+
+export interface ClassifiedPropLikeArg {
   name: string;
   value: t.Node;
-  role: ArgRole;
+  role: Exclude<ArgRole, 'slot'>;
   /** Vue event name bound in the template, present when role is 'event'. */
   eventName?: string;
   plan: RenderableValuePlan;
 }
+
+export interface ClassifiedSlotArg {
+  name: string;
+  value: t.Node;
+  role: 'slot';
+  plan: RenderableValuePlan | FunctionSlotPlan;
+}
+
+/** Split by role so `arg.role` checks narrow the plans a renderer has to handle. */
+export type ClassifiedArg = ClassifiedPropLikeArg | ClassifiedSlotArg;
 
 export interface ClassifyArgsResult {
   /** Args that can be rendered into a static Vue snippet. */
@@ -57,9 +72,10 @@ export interface ClassifyArgsResult {
  *   (functions passed as undeclared args, args explicitly set to `undefined`, empty strings)
  * - dropped with a `warning` — the value references something the snippet cannot declare, so the
  *   rest of the story still renders and the omission is named
- * - `defer` — a static snippet would be a worse example than the runtime one: a slot receives
- *   function content the snippet cannot reproduce, or nothing the story sets survived
- *   classification
+ * - `defer` — nothing the story sets survived classification, so a static snippet would be a
+ *   worse example than the runtime one
+ * - forwarded as a `function-slot` plan — a slot receives function content only a
+ *   render-tree-aware renderer can realize; rendering bails back to runtime source otherwise
  * - no result at all — the args container itself is unreadable, which the caller reports as an
  *   `error` (see `argsContainerError`)
  *
@@ -90,9 +106,10 @@ export function classifyArgs(
         }
       }
 
-      // A function slot carries content no static template can reproduce; the runtime source
-      // decorator renders it properly, so leave the whole story to it.
-      return { args: [], defer: true };
+      // No static template can reproduce this content, but an `h()` tree renderer may still
+      // realize the function itself, so forward it instead of deferring outright.
+      classified.push({ name, value, role: 'slot', plan: { kind: 'function-slot' } });
+      continue;
     }
 
     if (isFunctionExpression(value)) {
@@ -124,8 +141,16 @@ export function classifyArgs(
       continue;
     }
 
-    const role: ArgRole = isSlot ? 'slot' : docgen.events.has(`update:${name}`) ? 'model' : 'prop';
-    classified.push({ name, value, role, plan });
+    if (isSlot) {
+      classified.push({ name, value, role: 'slot', plan });
+    } else {
+      classified.push({
+        name,
+        value,
+        role: docgen.events.has(`update:${name}`) ? 'model' : 'prop',
+        plan,
+      });
+    }
   }
 
   // A snippet showing none of the args the story actually sets is a worse example than the one the

@@ -21,7 +21,9 @@ import {
   normalizeStoryDeclaration,
   propertyValue,
   resolveComponentImport,
+  resolveIdentifierInit,
   resolveRenderFunction,
+  returnedExpressionPath,
   returnedObjectExpression,
   storyAssignedArgsPath,
   type ImportBinding,
@@ -31,8 +33,14 @@ import {
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 
-import { classifyArgs, type ClassifiedArg, type VueDocgenArgInfo } from './classify-args.ts';
-import { renderSfcSnippet } from './render-sfc.ts';
+import {
+  classifyArgs,
+  type ClassifiedArg,
+  type ClassifyArgsResult,
+  type VueDocgenArgInfo,
+} from './classify-args.ts';
+import { type FunctionSlotRenderer, renderSfcSnippet } from './render-sfc.ts';
+import { renderHSlotFunction, transformH } from './transform-h.ts';
 import {
   readTemplateRenderConfig,
   transformTemplate,
@@ -63,6 +71,7 @@ type ArgsObjectPath = NodePath<t.ObjectExpression>;
 type StoryDocResult = { doc: StoryDoc; imports: string[] };
 type ExtractStoriesResult = { stories: Record<string, StoryDoc>; imports: string[] };
 type StaticStoryRenderer =
+  | { kind: 'h'; argsParam?: string; expression: t.Expression }
   | { kind: 'sfc' }
   | {
       kind: 'template';
@@ -72,7 +81,7 @@ type StaticStoryRenderer =
 type StorySnippetResult = { snippet: string; imports: string[] };
 type StaticStoryArgs =
   | { kind: 'error'; error: NonNullable<StoryDoc['error']> }
-  | { kind: 'classified'; classified: ReturnType<typeof classifyArgs> };
+  | { kind: 'classified'; classified: ClassifyArgsResult };
 
 const ARGS_PROPERTY = 'args';
 
@@ -118,7 +127,7 @@ export async function buildStoryDocsPayload(
   }
   const componentName = resolveMetaComponentIdentifier(metaPath);
   const importBindings = collectImportBindings(csf._file.path);
-  const importStatement = createImportStatement(componentName, importBindings);
+  const importStatement = createImportStatement(componentName, importBindings, docgenPayload);
   const docgenArgInfo =
     docgenPayload && !docgenPayload.error ? vueDocgenArgInfo(docgenPayload) : undefined;
   const snippet = componentName && docgenArgInfo ? { componentName, docgenArgInfo } : undefined;
@@ -155,18 +164,26 @@ function resolveMetaComponentIdentifier(
 }
 
 /**
- * Reconstructs the component's import statement from the story file's import bindings.
+ * Reconstructs the component's import statement from the story file's import bindings, redirected
+ * to the source an `@import` docgen tag declares when the component has one.
+ *
+ * @example `@import import { Button } from 'my-ds'` on `MyButton` →
+ * `import { Button as MyButton } from 'my-ds';`
  */
 function createImportStatement(
   componentName: string | undefined,
-  importBindings: Map<string, ImportBinding>
+  importBindings: Map<string, ImportBinding>,
+  docgenPayload: DocgenPayload | undefined
 ): string | undefined {
   if (!componentName) {
     return undefined;
   }
 
+  // The override supplies the source and specifier kind, but the local name has to stay the one the
+  // snippet renders, so the statement and the snippet keep referring to the same identifier.
   const ref = resolveComponentImport(componentName, importBindings);
-  return buildImportStatements({ refs: [ref] }).join('\n') || undefined;
+  const importOverride = docgenPayload?.jsDocTags.import?.[0];
+  return buildImportStatements({ refs: [{ ...ref, importOverride }] }).join('\n') || undefined;
 }
 
 /**
@@ -310,7 +327,7 @@ function enrichStoryDoc(
     return plain;
   }
 
-  const rendered = renderStaticStorySnippet(renderer, classified.args, componentName);
+  const rendered = renderStaticStorySnippet(renderer, classified.args, componentName, options);
   if (!rendered) {
     return plain;
   }
@@ -329,27 +346,22 @@ function staticRendererForRenderFunction(
   renderFunction: RenderFunctionPath,
   options: StoryDocsContext
 ): StaticStoryRenderer | undefined {
-  const renderObject = returnedObjectExpression(renderFunction.node);
+  const renderObject = returnedRenderObjectExpression(renderFunction);
   const templateConfig = renderObject
     ? readTemplateRenderConfig(renderObject, options.importBindings)
     : undefined;
-  return templateConfig ? { kind: 'template', ...templateConfig } : undefined;
-}
-
-function renderStaticStorySnippet(
-  renderer: StaticStoryRenderer,
-  args: ClassifiedArg[],
-  componentName: string
-): StorySnippetResult | undefined {
-  if (renderer.kind === 'sfc') {
-    return { imports: [], snippet: renderSfcSnippet({ args, componentName }) };
+  if (templateConfig) {
+    return { kind: 'template', ...templateConfig };
   }
 
-  return transformTemplate({
-    args,
-    componentImports: renderer.componentImports,
-    template: renderer.template,
-  });
+  const hExpression = returnedExpressionPath(renderFunction)?.node;
+  return hExpression
+    ? {
+        argsParam: argsParameterName(renderFunction.node),
+        expression: hExpression,
+        kind: 'h',
+      }
+    : undefined;
 }
 
 function resolveStaticStoryArgs(
@@ -390,6 +402,83 @@ function resolveStaticStoryArgs(
       docgenArgInfo
     ),
   };
+}
+
+function renderStaticStorySnippet(
+  renderer: StaticStoryRenderer,
+  args: ClassifiedArg[],
+  componentName: string,
+  options: StoryDocsContext
+): StorySnippetResult | undefined {
+  // Slot imports collect per attempt so a story that ultimately bails contributes none.
+  const slotImports = new Set<string>();
+  const renderFunctionSlot = createFunctionSlotRenderer(options.importBindings, slotImports);
+
+  const rendered = ((): StorySnippetResult | undefined => {
+    if (renderer.kind === 'sfc') {
+      const snippet = renderSfcSnippet({
+        args,
+        componentName,
+        renderFunctionSlot,
+      });
+      return snippet ? { imports: [], snippet } : undefined;
+    }
+
+    if (renderer.kind === 'template') {
+      return transformTemplate({
+        args,
+        componentImports: renderer.componentImports,
+        template: renderer.template,
+      });
+    }
+
+    return transformH({
+      args,
+      argsParam: renderer.argsParam,
+      importBindings: options.importBindings,
+      node: renderer.expression,
+    });
+  })();
+
+  return rendered ? { ...rendered, imports: [...rendered.imports, ...slotImports] } : undefined;
+}
+
+function createFunctionSlotRenderer(
+  importBindings: Map<string, ImportBinding>,
+  slotImports: Set<string>
+): FunctionSlotRenderer {
+  return (value, ctx): string | undefined => {
+    const rendered = renderHSlotFunction({ node: value, ctx, importBindings });
+    if (!rendered) {
+      return undefined;
+    }
+    for (const importStatement of rendered.imports) {
+      slotImports.add(importStatement);
+    }
+    return rendered.content;
+  };
+}
+
+function returnedRenderObjectExpression(
+  renderFunction: RenderFunctionPath
+): t.ObjectExpression | undefined {
+  const renderObject = returnedObjectExpression(renderFunction.node);
+  if (renderObject) {
+    return renderObject;
+  }
+
+  const returned = returnedExpressionPath(renderFunction);
+  if (!returned?.isIdentifier()) {
+    return undefined;
+  }
+
+  const resolved = resolveIdentifierInit(renderFunction, returned);
+  return resolved?.isObjectExpression() ? resolved.node : undefined;
+}
+
+function argsParameterName(renderFunction: RenderFunctionPath['node']): string | undefined {
+  const [parameter] = renderFunction.params;
+  return t.isIdentifier(parameter) ? parameter.name : undefined;
 }
 
 function resolveEffectiveRender(

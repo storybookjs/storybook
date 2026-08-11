@@ -68,6 +68,10 @@ function docgenForFixture(
     'function-slot': {
       default: argType('default', 'slots'),
     },
+    'function-slot-bail': {
+      default: argType('default', 'slots'),
+      footer: argType('footer', 'slots'),
+    },
     'prop-slot-collision': {
       default: argType('default', 'props'),
       icon: argType('icon', 'props'),
@@ -84,12 +88,17 @@ function docgenForFixture(
       'update:modelValue': argType('update:modelValue', 'events'),
     },
   };
+  const jsDocTagsByFixture: Record<string, DocgenPayload['jsDocTags']> = {
+    'import-override': {
+      import: ["import { ImportOverride } from 'my-design-system';"],
+    },
+  };
 
   return {
     id,
     name: componentNameFromFixture(fixtureCase),
     path,
-    jsDocTags: {},
+    jsDocTags: jsDocTagsByFixture[fixtureCase] ?? {},
     argTypes: argTypesByFixture[fixtureCase] ?? {},
   };
 }

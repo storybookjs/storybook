@@ -1261,6 +1261,7 @@ function extractPropItem(
   const isOptional = !!(prop.flags & typescript.SymbolFlags.Optional);
   const isRequired = !isOptional;
 
+  // Union props keep one member's metadata but need the merged type.
   const propType = typeOverride ?? checker.getTypeOfSymbolAtLocation(prop, contextNode);
   const type = serializeType(typescript, checker, propType, isRequired);
 

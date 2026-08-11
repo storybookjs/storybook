@@ -1,3 +1,22 @@
+## 10.6.0-alpha.5
+
+- Angular-Vite: Run Compodoc on demand - [#35776](https://github.com/storybookjs/storybook/pull/35776), thanks @valentinpalkovic!
+- Angular: Derive required inputs from Compodoc's own flag - [#35758](https://github.com/storybookjs/storybook/pull/35758), thanks @valentinpalkovic!
+- Angular: Extract Compodoc parsing into its own package - [#35749](https://github.com/storybookjs/storybook/pull/35749), thanks @valentinpalkovic!
+- Angular: Extract docgen on the server via Compodoc - [#35733](https://github.com/storybookjs/storybook/pull/35733), thanks @valentinpalkovic!
+- Angular: Stop treating input/output alias collisions as two-way bindings - [#35777](https://github.com/storybookjs/storybook/pull/35777), thanks @valentinpalkovic!
+- CLI: Allow esbuild builds for Storybook-owned pnpm dlx - [#35742](https://github.com/storybookjs/storybook/pull/35742), thanks @ndelangen!
+- CLI: Categorize Execa failures for init telemetry - [#35720](https://github.com/storybookjs/storybook/pull/35720), thanks @ndelangen!
+- Core: Extract ComponentMetaManager to Core - [#35657](https://github.com/storybookjs/storybook/pull/35657), thanks @huang-julien!
+- Core: Share the CSF story-shape helpers snippet generators need - [#35803](https://github.com/storybookjs/storybook/pull/35803), thanks @valentinpalkovic!
+- Manifests: Add a warning field to story entries - [#35794](https://github.com/storybookjs/storybook/pull/35794), thanks @valentinpalkovic!
+- React: Share a TypeScript DocumentRegistry across component-meta projects - [#35468](https://github.com/storybookjs/storybook/pull/35468), thanks @connorshea!
+- Refactor: Update getVersionedPackages method to handle non-Storybook packages correctly - [#35769](https://github.com/storybookjs/storybook/pull/35769), thanks @valentinpalkovic!
+- TanStack: Keep the layout id when cloning a standalone index file route - [#35660](https://github.com/storybookjs/storybook/pull/35660), thanks @Insik-Han!
+- Tanstack: Wait for router to load before rendering - [#35784](https://github.com/storybookjs/storybook/pull/35784), thanks @huang-julien!
+- Vue: Add story-docs provider skeleton - [#35786](https://github.com/storybookjs/storybook/pull/35786), thanks @huang-julien!
+- Vue: Move vue-component-meta in vue renderer and implement docgen payload builder - [#35665](https://github.com/storybookjs/storybook/pull/35665), thanks @huang-julien!
+
 ## 10.6.0-alpha.4
 
 - Addon-Pseudo-States: Fix pseudo-states rewriting for nested functional selectors - [#34318](https://github.com/storybookjs/storybook/pull/34318), thanks @filipw01!

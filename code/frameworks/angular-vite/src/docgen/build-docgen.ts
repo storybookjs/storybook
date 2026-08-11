@@ -22,16 +22,6 @@ export interface AngularDocgenOptions {
   angularFilterNonInputControls?: boolean;
 }
 
-/**
- * The analyzer's record for the class (not filtered by `angularFilterNonInputControls`), plus the
- * file's enum declarations it references. `enums` isn't part of the analyzer's own class record —
- * enums are a file-level declaration, not a class property, so the analyzer collects them once per
- * file rather than per class — but it always accompanies `entry` here since a second in-process
- * consumer (`core/story-docs`) needs both to resolve `Enum.Member` args without re-running the
- * analyzer itself. Only this slice of the analyzer's file-level output is carried, not the whole
- * `MetadataJson` (which also lists every other component/directive/pipe in the file) — story-docs
- * never touches that.
- */
 export interface AngularComponentSnippetMeta {
   entry: AngularClassMeta;
   enums: EnumType[];

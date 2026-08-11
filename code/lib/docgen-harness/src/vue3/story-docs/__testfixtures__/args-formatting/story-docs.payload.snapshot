@@ -9,11 +9,11 @@
       "id": "forms-args-formatting--primary",
       "name": "Primary",
       "snippet": "<script lang="ts" setup>
-const quotationLabel = 'She said "hi" and it\'s fine';
+const items = ['one', 'two'];
 
 const options = { tone: 'neutral', compact: true };
 
-const items = ['one', 'two'];
+const quotationLabel = 'She said "hi" and it\'s fine';
 </script>
 
 <template>

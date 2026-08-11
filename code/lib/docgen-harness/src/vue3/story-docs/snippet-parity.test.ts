@@ -27,6 +27,15 @@ const EXPECTED_SNIPPETLESS = new Set([
   'slots-template-only/ScopedBindings',
 ]);
 
+/**
+ * Args the static snippet leaves out although the runtime baseline resolves them, because their
+ * source references a story-local binding a snippet cannot declare. Each is named in the story's
+ * `StoryDoc.warning`, and the runtime snippet remains available for the resolved value.
+ */
+const EXPECTED_OMITTED_ARGS = new Map<string, readonly string[]>([
+  ['props-ts-enum/PropsAsWritten', ['severity']],
+]);
+
 type BaselineComparison = {
   fixtureCase: string;
   exportName: string;
@@ -147,6 +156,7 @@ describe('vue3 story-docs static snippet parity', () => {
         framework: 'vue3',
         baseline,
         candidate,
+        declaredOmissions: EXPECTED_OMITTED_ARGS.get(storyKey),
       });
     }
   });

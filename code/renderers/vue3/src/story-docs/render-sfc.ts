@@ -1,6 +1,7 @@
-import { recast, types as t } from 'storybook/internal/babel';
+import { types as t } from 'storybook/internal/babel';
 
-import type { ClassifiedArg, ModelArg, PropArg, SlotArg } from './classify-args.ts';
+import type { ClassifiedArg } from './classify-args.ts';
+import { printValue, unwrapValue } from './classify-value.ts';
 
 export interface RenderSfcInput {
   /** Component identifier from CSF meta.component. */
@@ -28,17 +29,15 @@ const VUE_PACKAGE = 'vue';
 /** Render classified CSF args into the same SFC block shape as Vue's runtime source decorator. */
 export function renderSfcSnippet(input: RenderSfcInput): string {
   const ctx = createRenderContext(input.args);
+  // Sorted before rendering, so hoisted consts are declared in the order their attributes appear.
   const props = input.args
-    .filter((arg): arg is ModelArg | PropArg => arg.type === 'model' || arg.type === 'prop')
-    .map((arg) => renderPropLikeArg(arg, ctx))
-    .filter((prop): prop is RenderedProp => prop !== undefined)
+    .filter((arg) => arg.role === 'model' || arg.role === 'prop')
     .sort((a, b) => a.name.localeCompare(b.name))
-    .map((prop) => prop.attribute);
+    .map((arg) => renderPropLikeArg(arg, ctx).attribute);
   const slotSourceCode = input.args
-    .filter((arg): arg is SlotArg => arg.type === 'slot')
+    .filter((arg) => arg.role === 'slot')
     .sort((a, b) => slotSortKey(a.name).localeCompare(slotSortKey(b.name)))
-    .map((arg) => renderSlotArg(arg))
-    .filter((slot): slot is string => slot !== undefined)
+    .map((arg) => renderSlotArg(arg, ctx))
     .join('\n\n');
   const openTag = [input.componentName, ...props].join(' ');
   const templateCode = slotSourceCode
@@ -50,96 +49,75 @@ export function renderSfcSnippet(input: RenderSfcInput): string {
   return script ? `${script}\n\n${template}` : template;
 }
 
-function renderPropLikeArg(arg: ModelArg | PropArg, ctx: RenderContext): RenderedProp | undefined {
-  return arg.type === 'model' ? renderModelArg(arg, ctx) : renderPropArg(arg, ctx);
+function renderPropLikeArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
+  return arg.role === 'model' ? renderModelArg(arg, ctx) : renderPropArg(arg, ctx);
 }
 
-function renderPropArg(arg: PropArg, ctx: RenderContext): RenderedProp | undefined {
+function renderPropArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
   const value = unwrapValue(arg.value);
 
-  switch (value.type) {
-    case 'StringLiteral':
-      if (value.value === '') {
-        return undefined;
-      }
-      {
-        const quoted = quoteAttributeValue(value.value);
-        if (quoted === undefined) {
-          const bindingName = allocateBindingName(arg.name, ctx);
-          ctx.variables.set(bindingName, printValue(value));
-          return { name: arg.name, attribute: `:${arg.name}="${bindingName}"` };
-        }
-        return { name: arg.name, attribute: `${arg.name}=${quoted}` };
-      }
-    case 'BooleanLiteral':
-      return {
-        name: arg.name,
-        attribute: value.value ? arg.name : `:${arg.name}="false"`,
-      };
-    case 'NumericLiteral':
-    case 'BigIntLiteral':
-    case 'NullLiteral':
-    case 'CallExpression':
-    case 'UnaryExpression':
-      return { name: arg.name, attribute: `:${arg.name}="${printValue(value)}"` };
-    case 'ObjectExpression':
-    case 'ArrayExpression': {
-      const bindingName = allocateBindingName(arg.name, ctx);
-      ctx.variables.set(bindingName, printValue(value));
-      return { name: arg.name, attribute: `:${arg.name}="${bindingName}"` };
-    }
-    case 'ArrowFunctionExpression':
-    case 'FunctionExpression':
-      return undefined;
-    default:
-      return { name: arg.name, attribute: `:${arg.name}="${printValue(value)}"` };
+  if (arg.plan.kind === 'hoist') {
+    return hoistedProp(arg, ctx, printValue(value));
   }
+
+  if (value.type === 'BooleanLiteral') {
+    return { name: arg.name, attribute: value.value ? arg.name : `:${arg.name}="false"` };
+  }
+
+  if (value.type === 'StringLiteral') {
+    const quoted = quoteAttributeValue(value.value);
+    // Both quote styles occur, so no attribute delimiter can carry the value verbatim.
+    return quoted === undefined
+      ? hoistedProp(arg, ctx, printValue(value))
+      : { name: arg.name, attribute: `${arg.name}=${quoted}` };
+  }
+
+  return { name: arg.name, attribute: `:${arg.name}="${printValue(value)}"` };
 }
 
-function renderModelArg(arg: ModelArg, ctx: RenderContext): RenderedProp | undefined {
-  const value = unwrapValue(arg.value);
-  if (value.type === 'ArrowFunctionExpression' || value.type === 'FunctionExpression') {
-    return undefined;
-  }
-
+function hoistedProp(arg: ClassifiedArg, ctx: RenderContext, source: string): RenderedProp {
   const bindingName = allocateBindingName(arg.name, ctx);
-  ctx.variables.set(bindingName, `ref(${printValue(value)})`);
+  ctx.variables.set(bindingName, source);
+  return { name: arg.name, attribute: `:${arg.name}="${bindingName}"` };
+}
+
+function renderModelArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
+  const bindingName = allocateBindingName(arg.name, ctx);
+  ctx.variables.set(bindingName, `ref(${printValue(unwrapValue(arg.value))})`);
 
   const directive = arg.name === 'modelValue' ? 'v-model' : `v-model:${arg.name}`;
   return { name: arg.name, attribute: `${directive}="${bindingName}"` };
 }
 
-function renderSlotArg(arg: SlotArg): string | undefined {
-  const content = renderSlotContent(arg.value);
-  if (!content) {
-    return undefined;
-  }
-
-  if (arg.name === 'default') {
-    return content;
-  }
-
-  return `<template #${arg.name}>${content}</template>`;
+function renderSlotArg(arg: ClassifiedArg, ctx: RenderContext): string {
+  const content = renderSlotContent(arg, ctx);
+  return arg.name === 'default' ? content : `<template #${arg.name}>${content}</template>`;
 }
 
-function renderSlotContent(node: t.Node): string | undefined {
-  const value = unwrapValue(node);
+/**
+ * Slot children for one classified slot arg.
+ *
+ * Text-shaped literals become text directly; everything else is interpolated, since a hoisted
+ * `<script setup>` binding cannot reach slot content any other way.
+ */
+function renderSlotContent(arg: ClassifiedArg, ctx: RenderContext): string {
+  const value = unwrapValue(arg.value);
 
-  switch (value.type) {
-    case 'StringLiteral':
-      return value.value;
-    case 'NumericLiteral':
-    case 'BooleanLiteral':
-      return String(value.value);
-    case 'BigIntLiteral':
-      return `{{ ${printValue(value)} }}`;
-    case 'NullLiteral':
-    case 'ArrowFunctionExpression':
-    case 'FunctionExpression':
-      return undefined;
-    default:
-      return undefined;
+  if (arg.plan.kind === 'inline') {
+    switch (value.type) {
+      case 'StringLiteral':
+        return value.value;
+      case 'NumericLiteral':
+      case 'BooleanLiteral':
+        return String(value.value);
+      default:
+        return `{{ ${printValue(value)} }}`;
+    }
   }
+
+  const bindingName = allocateBindingName(arg.name, ctx);
+  ctx.variables.set(bindingName, printValue(value));
+  return `{{ ${bindingName} }}`;
 }
 
 function renderScript(ctx: RenderContext): string | undefined {
@@ -165,15 +143,7 @@ function createRenderContext(args: ClassifiedArg[]): RenderContext {
   const imports: RenderContext['imports'] = {};
   const bindings = new Set<string>();
 
-  if (
-    args.some((arg) => {
-      if (arg.type !== 'model') {
-        return false;
-      }
-      const value = unwrapValue(arg.value);
-      return value.type !== 'ArrowFunctionExpression' && value.type !== 'FunctionExpression';
-    })
-  ) {
+  if (args.some((arg) => arg.role === 'model')) {
     imports[VUE_PACKAGE] = new Set(['ref']);
     bindings.add('ref');
   }
@@ -206,23 +176,6 @@ function quoteAttributeValue(value: string): string | undefined {
   return undefined;
 }
 
-function printValue(node: t.Node): string {
-  return recast.print(node).code;
-}
-
 function slotSortKey(name: string): string {
   return name === 'default' ? '' : name;
-}
-
-function unwrapValue(node: t.Node): t.Node {
-  if (
-    node.type === 'TSAsExpression' ||
-    node.type === 'TSSatisfiesExpression' ||
-    node.type === 'TSNonNullExpression' ||
-    node.type === 'TSTypeAssertion'
-  ) {
-    return unwrapValue(node.expression);
-  }
-
-  return node;
 }

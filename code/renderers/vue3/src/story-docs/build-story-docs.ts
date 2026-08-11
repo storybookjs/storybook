@@ -272,11 +272,8 @@ function enrichStoryDoc(
 
   const storyArgs = argsRecordFromObjectPath(storyArgsPath);
   const classified = classifyArgs(mergeArgsRecords(metaArgs, storyArgs), options.docgenArgInfo);
-  if (classified.skipSnippet) {
+  if (classified.defer) {
     return storyDoc;
-  }
-  if (classified.error) {
-    return { ...storyDoc, error: classified.error };
   }
 
   return {
@@ -285,6 +282,7 @@ function enrichStoryDoc(
       componentName: options.componentName,
       args: classified.args,
     }),
+    ...(classified.warning ? { warning: classified.warning } : {}),
   };
 }
 

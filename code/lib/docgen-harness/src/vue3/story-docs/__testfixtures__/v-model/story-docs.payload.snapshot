@@ -11,9 +11,9 @@
       "snippet": "<script lang="ts" setup>
 import { ref } from "vue";
 
-const modelValue = ref('Accepted');
-
 const checked = ref(true);
+
+const modelValue = ref('Accepted');
 </script>
 
 <template>

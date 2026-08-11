@@ -1,5 +1,11 @@
 import { type types as t } from 'storybook/internal/babel';
-import type { StoryDocsError } from 'storybook/internal/types';
+
+import {
+  classifyValue,
+  isFunctionExpression,
+  printValue,
+  type ValuePlan,
+} from './classify-value.ts';
 
 /** Docgen-derived names that decide whether args become props, slots, or v-models. */
 export interface VueDocgenArgInfo {
@@ -9,199 +15,88 @@ export interface VueDocgenArgInfo {
   events: Set<string>;
 }
 
-/** A prop binding synthesized from a CSF arg. */
-export interface PropArg {
-  /** Arg name used as the Vue prop name. */
-  name: string;
-  /** CSF arg value expression. */
-  value: t.Node;
-  /** Classification for renderer dispatch. */
-  type: 'prop';
-}
+/** Where one CSF arg lands in the generated SFC. */
+export type ArgRole = 'model' | 'prop' | 'slot';
 
-/** A v-model binding synthesized from a CSF arg and matching update event. */
-export interface ModelArg {
-  /** Arg name used as the v-model model name. */
-  name: string;
-  /** CSF arg value expression. */
-  value: t.Node;
-  /** Classification for renderer dispatch. */
-  type: 'model';
-}
+/**
+ * The plans that produce snippet source.
+ *
+ * `omit` and `unrepresentable` args never become a {@link ClassifiedArg}, so the renderer has no
+ * fallback branch to get wrong.
+ */
+export type RenderableValuePlan = Extract<ValuePlan, { kind: 'hoist' | 'inline' }>;
 
-/** Slot content synthesized from a CSF arg and matching slot name. */
-export interface SlotArg {
-  /** Arg name used as the Vue slot name. */
+export interface ClassifiedArg {
   name: string;
-  /** CSF arg value expression. */
   value: t.Node;
-  /** Classification for renderer dispatch. */
-  type: 'slot';
+  role: ArgRole;
+  plan: RenderableValuePlan;
 }
-
-export type ClassifiedArg = ModelArg | PropArg | SlotArg;
 
 export interface ClassifyArgsResult {
   /** Args that can be rendered into a static Vue snippet. */
   args: ClassifiedArg[];
-  /** Story should fall back silently because it needs a deferred renderer. */
-  skipSnippet?: boolean;
-  /** Story-local fallback reason for deferred dynamic arg shapes. */
-  error?: StoryDocsError;
+  /** Story needs a real renderer, so runtime source stays authoritative and no snippet is emitted. */
+  defer?: boolean;
+  /** Args left out of the snippet because their values do not resolve statically. */
+  warning?: string;
 }
 
-const UNSUPPORTED_ARG_ERROR_NAME = 'Unsupported story args';
-const UNDEFINED_IDENTIFIER = 'undefined';
-
-/** Classify merged CSF args by Vue docgen precedence: slot, v-model, function skip, prop. */
+/**
+ * Classifies merged CSF args by Vue docgen precedence: slot, v-model, then prop.
+ *
+ * Four outcomes, one per reason an arg can fail to render:
+ *
+ * - dropped silently — no static form exists and the runtime source decorator drops it too
+ *   (functions passed as props, args explicitly set to `undefined`)
+ * - dropped with a `warning` — the value references something the snippet cannot declare, so the
+ *   rest of the story still renders and the omission is named
+ * - `defer` — a static snippet would be a worse example than the runtime one: a slot receives a
+ *   function, or nothing the story sets survived classification
+ * - no result at all — the args container itself is unreadable, which the caller reports as an
+ *   `error` (see `argsContainerError`)
+ */
 export function classifyArgs(
   args: Record<string, t.Node>,
   docgen: VueDocgenArgInfo
 ): ClassifyArgsResult {
   const classified: ClassifiedArg[] = [];
+  const omitted: string[] = [];
 
   for (const [name, value] of Object.entries(args)) {
-    const unsupported = unsupportedArgReason(name, value);
-    if (unsupported) {
-      return {
-        args: [],
-        error: {
-          name: UNSUPPORTED_ARG_ERROR_NAME,
-          message: unsupported,
-        },
-      };
+    const isSlot = docgen.slots.has(name);
+
+    // A function slot carries content no static template can reproduce; the runtime source
+    // decorator renders it properly, so leave the whole story to it.
+    if (isSlot && isFunctionExpression(value)) {
+      return { args: [], defer: true };
     }
 
-    // `args: { a: undefined }` unsets an inherited meta arg, so it renders nothing.
-    if (isUndefinedIdentifier(value)) {
+    const plan = classifyValue(value);
+
+    if (plan.kind === 'omit') {
       continue;
     }
 
-    if (docgen.slots.has(name)) {
-      if (isFunctionExpression(value)) {
-        return { args: [], skipSnippet: true };
-      }
-      classified.push({ type: 'slot', name, value });
+    if (plan.kind === 'unrepresentable') {
+      omitted.push(`${name}: ${printValue(value)}`);
       continue;
     }
 
-    if (docgen.events.has(`update:${name}`)) {
-      classified.push({ type: 'model', name, value });
-      continue;
-    }
-
-    if (isFunctionExpression(value)) {
-      continue;
-    }
-
-    classified.push({ type: 'prop', name, value });
+    const role: ArgRole = isSlot ? 'slot' : docgen.events.has(`update:${name}`) ? 'model' : 'prop';
+    classified.push({ name, value, role, plan });
   }
 
-  return { args: classified };
-}
-
-function unsupportedArgReason(name: string, value: t.Node): string | undefined {
-  if (isFunctionExpression(value)) {
-    return undefined;
+  // A snippet showing none of the args the story actually sets is a worse example than the one the
+  // runtime source decorator builds from real values, so leave it to that instead.
+  if (omitted.length > 0 && classified.length === 0) {
+    return { args: [], defer: true };
   }
 
-  const identifier = findIdentifierValue(value);
-  if (identifier) {
-    return `Arg "${name}" references "${identifier.name}", which cannot be statically inlined yet.`;
-  }
-
-  // TODO: check for other non-serializable values like `new Date()`, `new Map()`
-  // TODO: check how spread values can be supported, e.g. `args: { ...defaultArgs, foo: 'bar' }` or `args: { foo: 'bar', ...extraArgs }`
-  if (hasSpreadValue(value)) {
-    return `Arg "${name}" contains a spread value, which cannot be statically inlined yet.`;
-  }
-
-  return undefined;
-}
-
-function findIdentifierValue(node: t.Node): t.Identifier | undefined {
-  const unwrapped = unwrapValue(node);
-
-  if (unwrapped.type === 'Identifier') {
-    return unwrapped.name === UNDEFINED_IDENTIFIER ? undefined : unwrapped;
-  }
-
-  if (unwrapped.type === 'ObjectExpression') {
-    for (const property of unwrapped.properties) {
-      if (property.type === 'ObjectProperty') {
-        const identifier = findIdentifierValue(property.value);
-        if (identifier) {
-          return identifier;
-        }
-      }
-    }
-  }
-
-  if (unwrapped.type === 'ArrayExpression') {
-    for (const element of unwrapped.elements) {
-      if (element && element.type !== 'SpreadElement') {
-        const identifier = findIdentifierValue(element);
-        if (identifier) {
-          return identifier;
-        }
-      }
-    }
-  }
-
-  return undefined;
-}
-
-function hasSpreadValue(node: t.Node): boolean {
-  const unwrapped = unwrapValue(node);
-
-  if (unwrapped.type === 'ObjectExpression') {
-    return unwrapped.properties.some((property) => {
-      if (property.type === 'SpreadElement') {
-        return true;
-      }
-      if (property.type === 'ObjectProperty') {
-        return hasSpreadValue(property.value);
-      }
-      return false;
-    });
-  }
-
-  if (unwrapped.type === 'ArrayExpression') {
-    return unwrapped.elements.some((element) => {
-      if (!element) {
-        return false;
-      }
-      if (element.type === 'SpreadElement') {
-        return true;
-      }
-      return hasSpreadValue(element);
-    });
-  }
-
-  return false;
-}
-
-function isUndefinedIdentifier(node: t.Node): boolean {
-  const unwrapped = unwrapValue(node);
-  return unwrapped.type === 'Identifier' && unwrapped.name === UNDEFINED_IDENTIFIER;
-}
-
-function isFunctionExpression<T extends t.Node>(
-  node: T
-): node is T & (t.ArrowFunctionExpression | t.FunctionExpression) {
-  const unwrapped = unwrapValue(node);
-  return unwrapped.type === 'ArrowFunctionExpression' || unwrapped.type === 'FunctionExpression';
-}
-
-function unwrapValue(node: t.Node): t.Node {
-  if (
-    node.type === 'TSAsExpression' ||
-    node.type === 'TSSatisfiesExpression' ||
-    node.type === 'TSNonNullExpression' ||
-    node.type === 'TSTypeAssertion'
-  ) {
-    return unwrapValue(node.expression);
-  }
-
-  return node;
+  return {
+    args: classified,
+    ...(omitted.length > 0
+      ? { warning: `Omitted args that cannot be resolved statically: ${omitted.join(', ')}` }
+      : {}),
+  };
 }

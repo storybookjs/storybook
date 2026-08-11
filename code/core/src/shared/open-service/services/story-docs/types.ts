@@ -63,13 +63,6 @@ export type StoryDocsProvider = (
   input: StoryDocsProviderInput
 ) => Promise<StoryDocsPayload | undefined>;
 
-/**
- * `Options` plus the shared docgen worker, when `experimentalDocgenServer` registered one (core
- * resolves `experimental_docgenProvider` before composing this preset and passes the client through
- * `presets.apply`'s `args`). A framework provider that needs raw analyzer metadata no
- * `DocgenPayload` field carries — a selector, a resolved enum table — queries it here instead of
- * building a second, unwatched analyzer instance of its own.
- */
 export interface StoryDocsProviderOptions extends Options {
   docgenWorker?: DocgenWorkerClient;
 }

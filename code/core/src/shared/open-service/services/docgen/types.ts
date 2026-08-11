@@ -127,9 +127,7 @@ export interface DocgenWorkerModule<TOptions = unknown> {
   /**
    * Resolve one component's raw analyzer metadata against the same analyzer instance
    * `createDocgenProvider` warms, so a second consumer (e.g. `core/story-docs`) can reuse it instead
-   * of building its own. Optional: modules with nothing to expose beyond `DocgenPayload` omit it.
-   * The result is opaque to core and crosses the worker boundary as-is — the caller casts it back to
-   * its own framework-specific shape.
+   * of building its own.
    */
   queryComponentMeta?: (query: DocgenComponentMetaQuery) => unknown | Promise<unknown>;
 }

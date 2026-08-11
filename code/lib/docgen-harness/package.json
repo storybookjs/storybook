@@ -1,6 +1,6 @@
 {
   "name": "@storybook/docgen-harness",
-  "version": "10.6.0-alpha.4",
+  "version": "10.6.0-alpha.5",
   "private": true,
   "description": "Test harness for docgen/snippet baselines across frameworks (internal, not published)",
   "keywords": [
@@ -26,6 +26,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
+    "baselines:sandbox": "node --import jiti/register ./src/sandbox-baselines/run.ts",
     "bench:docgen-memory": "node --import jiti/register ./src/perf/docgen-memory/gate.ts",
     "bench:docgen-perf": "node ./src/perf/docgen-perf/run.ts",
     "bench:docgen-perf-gate": "node ./src/perf/docgen-perf/gate.ts"

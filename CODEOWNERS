@@ -44,7 +44,6 @@
 # /code/lib/cli-storybook/  @yannbf @valentinpalkovic @ndelangen
 # /code/lib/codemod/        @kasperpeulen @ndelangen
 # /code/lib/core-webpack/   @valentinpalkovic @ndelangen
-# /code/lib/csf-plugin/     @ndelangen @valentinpalkovic
 # /code/lib/node-logger/    @yannbf @ndelangen
 # /code/lib/react-dom-shim/ @ndelangen @valentinpalkovic @tmeasday
 # /code/lib/telemetry/      @shilman @yannbf @ndelangen

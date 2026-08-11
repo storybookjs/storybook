@@ -1,0 +1,14 @@
+{
+  "id": "define-props-destructured",
+  "import": "import DestructuredProps from './DestructuredProps.vue';",
+  "name": "DestructuredProps",
+  "path": "__PATH__",
+  "stories": {
+    "forms-define-props-destructured--props-as-written": {
+      "description": undefined,
+      "id": "forms-define-props-destructured--props-as-written",
+      "name": "Props As Written",
+      "summary": undefined,
+    },
+  },
+}

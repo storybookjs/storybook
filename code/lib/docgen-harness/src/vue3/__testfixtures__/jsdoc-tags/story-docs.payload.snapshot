@@ -1,0 +1,14 @@
+{
+  "id": "jsdoc-tags",
+  "import": "import JsdocTags from './JsdocTags.vue';",
+  "name": "JsdocTags",
+  "path": "__PATH__",
+  "stories": {
+    "forms-jsdoc-tags--props-as-written": {
+      "description": undefined,
+      "id": "forms-jsdoc-tags--props-as-written",
+      "name": "Props As Written",
+      "summary": undefined,
+    },
+  },
+}

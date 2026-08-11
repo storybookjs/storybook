@@ -18,7 +18,7 @@
 import { readFileSync, statSync } from 'node:fs';
 import { dirname } from 'node:path';
 
-import { getProjectRoot } from 'storybook/internal/common';
+import { getProjectRoot, slash } from 'storybook/internal/common';
 import {
   ComponentMetaManager,
   type ComponentMetaProjectBase,
@@ -46,8 +46,6 @@ const INFERRED_COMPILER_OPTIONS = {
   moduleResolution: 'bundler',
   jsx: 'preserve',
 };
-
-const normalize = (fileName: string) => fileName.replace(/\\/g, '/');
 
 /** One `vue-component-meta` checker per matched tsconfig. */
 export class VueComponentMetaProject implements ComponentMetaProjectBase {
@@ -98,13 +96,13 @@ export class VueComponentMetaProject implements ComponentMetaProjectBase {
   }
 
   hasSourceFile(fileName: string): boolean {
-    return !!this.checker.getProgram()?.getSourceFile(normalize(fileName));
+    return !!this.checker.getProgram()?.getSourceFile(slash(fileName));
   }
 
   /** Push files the program does not know yet into the checker (inferred-project inclusion). */
   ensureFiles(fileNames: string[]): void {
     for (const fileName of fileNames) {
-      const normalized = normalize(fileName);
+      const normalized = slash(fileName);
       if (this.hasSourceFile(normalized)) {
         continue;
       }
@@ -122,7 +120,7 @@ export class VueComponentMetaProject implements ComponentMetaProjectBase {
    */
   ensureFresh(fileNames: string[]): void {
     for (const fileName of fileNames) {
-      const normalized = normalize(fileName);
+      const normalized = slash(fileName);
       const mtime = statMtime(normalized);
       if (mtime === undefined) {
         continue;
@@ -149,7 +147,7 @@ export class VueComponentMetaProject implements ComponentMetaProjectBase {
 
   onFilesChanged(changes: FileChange[]): void {
     for (const { filePath, type } of changes) {
-      const fileName = normalize(filePath);
+      const fileName = slash(filePath);
 
       if (type === 'deleted') {
         this.pendingCreatedFiles.delete(fileName);
@@ -187,7 +185,7 @@ export class VueComponentMetaProject implements ComponentMetaProjectBase {
     }
     return program
       .getSourceFiles()
-      .map((sourceFile) => normalize(sourceFile.fileName))
+      .map((sourceFile) => slash(sourceFile.fileName))
       .filter((fileName) => !fileName.includes('node_modules'));
   }
 
@@ -236,7 +234,7 @@ function createVueProjectFactory(
         // fix https://github.com/johnsoncodehk/volar/issues/1786
         // https://github.com/microsoft/TypeScript/issues/30457
         options: { ...commandLine.options, outDir: undefined },
-        fileNames: fileNames.map(normalize),
+        fileNames: fileNames.map(slash),
       };
     },
     createConfiguredProject: (commandLine, tsconfig, getCommandLine) =>

@@ -19,14 +19,6 @@ const createManager = async (): Promise<AngularComponentMetaManager | undefined>
   }
 };
 
-/**
- * Angular story-docs provider: per-story template snippets and story JSDoc, built in the main
- * process from the component meta analyzer.
- *
- * The analyzer is a second TypeScript program alongside the docgen worker's, needed only because a
- * snippet resolves the enum members a story's args reference and the docgen payload does not carry
- * enum values.
- */
 export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (nextStoryDocs) => {
   // Scoped to the composed chain rather than the module, so the manager has one owner and one
   // lifetime.

@@ -35,7 +35,7 @@ async function loader(this: LoaderContext, content: string, map: any) {
     callback(null, formattedCsf.code, formattedCsf.map);
   } catch (err: any) {
     if (!err.message?.startsWith('CSF:')) {
-      logger.warn(err.message);
+      logger.warn(err.message ?? String(err));
     }
     callback(null, content, map);
   }

@@ -7,7 +7,7 @@ import type { UnpluginFactory } from 'unplugin';
 import { createUnplugin } from 'unplugin';
 
 import { STORIES_REGEX } from './constants.ts';
-import { rollupBasedPlugin } from './rollup-based-plugin.ts';
+import { rollupBasedPlugin, transformCsf } from './rollup-based-plugin.ts';
 
 export type CsfPluginOptions = EnrichCsfOptions;
 
@@ -22,8 +22,17 @@ const unpluginFactory: UnpluginFactory<EnrichCsfOptions> = (options) => ({
     ...rollupBasedPlugin(options),
   },
   vite: {
+    // Stay in the `pre` bucket with framework compilers (e.g. AnalogJS), but run
+    // after their default-order transforms so enrichment is not discarded when a
+    // plugin re-emits from its own source instead of transforming `code`.
     enforce: 'pre',
-    ...(rollupBasedPlugin(options) as any),
+    name: 'plugin-csf',
+    transform: {
+      order: 'post',
+      async handler(code, id) {
+        return transformCsf.call(this, code, id, options);
+      },
+    },
   },
   webpack(compiler) {
     compiler.options.module.rules.unshift({

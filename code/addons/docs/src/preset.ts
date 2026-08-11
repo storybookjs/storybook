@@ -2,7 +2,6 @@ import { isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import type { StoryIndexGenerator } from 'storybook/internal/core-server';
-import { extractFrameworkPackageName, getFrameworkName } from 'storybook/internal/common';
 import type { EnrichCsfOptions } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import type { Options, PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
@@ -185,24 +184,12 @@ export const viteFinal = async (config: any, options: DocsOptions) => {
   };
 
   if (csfPluginOptions) {
-    const csfPlugin = csfPluginVite({
-      ...csfPluginOptions,
-      enrichCsf,
-    });
-    const frameworkName = extractFrameworkPackageName(await getFrameworkName(options));
-    const csfPlugins = Array.isArray(csfPlugin) ? csfPlugin : [csfPlugin];
-
-    // AnalogJS emits JavaScript from the source file instead of transforming the code passed to it.
-    // Run CSF enrichment afterwards so AnalogJS cannot discard the generated docs metadata.
-    if (frameworkName === '@storybook/angular-vite') {
-      for (const plugin of csfPlugins) {
-        if (plugin.enforce === 'pre') {
-          plugin.enforce = undefined;
-        }
-      }
-    }
-
-    plugins.unshift(...csfPlugins);
+    plugins.unshift(
+      csfPluginVite({
+        ...csfPluginOptions,
+        enrichCsf,
+      })
+    );
   }
 
   // add alias plugin early to ensure any other plugins that also add the aliases will override this

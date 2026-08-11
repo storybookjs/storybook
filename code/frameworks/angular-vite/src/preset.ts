@@ -129,9 +129,10 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   // so it transforms `.ts` sources before storybook's automock plugin
   // (`storybook:mock-loader`) runs. analogjs's transform re-emits files
   // from its own internal Angular file emitter and discards the incoming
-  // `code`, so anything mock-loader or csf-plugin did upstream is wiped
-  // unless those plugins run *after* analogjs (see csf-plugin demote
-  // above and `angularViteRedirectReapplyPlugin`).
+  // `code`, so anything mock-loader did upstream is wiped unless those
+  // plugins run *after* analogjs (`angularViteRedirectReapplyPlugin`).
+  // addon-docs' CSF plugin stays in the same `pre` bucket but uses
+  // `transform.order: 'post'` so enrichment lands on analogjs output.
   const pluginsToInject = (Array.isArray(angularPlugins) ? angularPlugins : [angularPlugins])
     .filter(Boolean)
     .map((plugin: any) => {

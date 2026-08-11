@@ -30,10 +30,11 @@ export async function transformCsf(
     await enrichCsf(csf, csfSource, options);
     const inputSourceMap = this.getCombinedSourcemap();
     return formatCsf(csf, { sourceMaps: true, inputSourceMap }, code);
-  } catch (err: any) {
+  } catch (err: unknown) {
     // This can be called on legacy storiesOf files, so ignore CSF parse errors.
-    if (!err.message?.startsWith('CSF:')) {
-      logger.warn(err.message ?? String(err));
+    const message = err instanceof Error ? err.message : String(err);
+    if (!message.startsWith('CSF:')) {
+      logger.warn(message);
     }
     return code;
   }

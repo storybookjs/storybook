@@ -18,7 +18,10 @@ export type FsFileSnapshots = FileSnapshotCache<ts.IScriptSnapshot>;
 
 // The host is hand-written instead of Volar's because Angular components are plain TS files,
 // needing no language plugins or script-id mapping.
-export class AngularComponentMetaProject extends ProgramBackedProject<ts.IScriptSnapshot> {
+export class AngularComponentMetaProject extends ProgramBackedProject<
+  ts.IScriptSnapshot,
+  ts.SourceFile | undefined
+> {
   protected readonly service: ts.LanguageService;
   protected readonly files: ProjectFileTracker<ts.IScriptSnapshot>;
 

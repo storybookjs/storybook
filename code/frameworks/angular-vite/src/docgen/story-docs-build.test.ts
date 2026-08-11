@@ -90,12 +90,14 @@ describe('buildStoryDocsPayload', () => {
         path: STORY_PATH,
         jsDocTags: {},
         angularComponentMeta: {
-          name: 'ButtonComponent',
-          selector: 'sb-button',
-          inputsClass: [{ name: 'label' }],
-          outputsClass: [],
+          entry: {
+            name: 'ButtonComponent',
+            selector: 'sb-button',
+            inputsClass: [{ name: 'label' }],
+            outputsClass: [],
+          },
+          enums: [],
         },
-        angularComponentEnums: [],
       }) as AngularDocgenPayload;
 
     const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload });

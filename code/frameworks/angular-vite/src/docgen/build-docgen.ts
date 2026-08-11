@@ -22,15 +22,23 @@ export interface AngularDocgenOptions {
   angularFilterNonInputControls?: boolean;
 }
 
+/**
+ * The analyzer's record for the class (not filtered by `angularFilterNonInputControls`), plus the
+ * file's enum declarations it references. `enums` isn't part of the analyzer's own class record —
+ * enums are a file-level declaration, not a class property, so the analyzer collects them once per
+ * file rather than per class — but it always accompanies `entry` here since a second in-process
+ * consumer (`core/story-docs`) needs both to resolve `Enum.Member` args without re-running the
+ * analyzer itself. Only this slice of the analyzer's file-level output is carried, not the whole
+ * `MetadataJson` (which also lists every other component/directive/pipe in the file) — story-docs
+ * never touches that.
+ */
+export interface AngularComponentSnippetMeta {
+  entry: AngularClassMeta;
+  enums: EnumType[];
+}
+
 export type AngularDocgenPayload = DocgenPayload & {
-  // The analyzer's record for the class, not filtered by `angularFilterNonInputControls`.
-  angularComponentMeta?: AngularClassMeta;
-  // The file's enum declarations (not part of `angularComponentMeta`: enums aren't a class
-  // property, the analyzer collects them once per file). Lets a second in-process consumer
-  // (`core/story-docs`) resolve `Enum.Member` args without re-running the analyzer itself. Only
-  // this slice of the analyzer's file-level output is carried, not the whole `MetadataJson` (which
-  // also lists every other component/directive/pipe in the file) — story-docs never touches that.
-  angularComponentEnums?: EnumType[];
+  angularComponentMeta?: AngularComponentSnippetMeta;
 };
 
 // Structural on purpose: tests hand in a stub instead of a real TypeScript-backed analyzer.
@@ -157,7 +165,6 @@ export const buildDocgenPayload = (
     summary: jsDocTags.summary?.[0],
     jsDocTags,
     argTypes,
-    angularComponentMeta: meta.entry,
-    angularComponentEnums: meta.json.miscellaneous?.enumerations ?? [],
+    angularComponentMeta: { entry: meta.entry, enums: meta.json.miscellaneous?.enumerations ?? [] },
   };
 };

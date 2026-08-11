@@ -57,8 +57,10 @@ const buildGetDocgenPayload =
       name: meta.entry.name,
       path: storyPath,
       jsDocTags: {},
-      angularComponentMeta: meta.entry,
-      angularComponentEnums: meta.json.miscellaneous?.enumerations ?? [],
+      angularComponentMeta: {
+        entry: meta.entry,
+        enums: meta.json.miscellaneous?.enumerations ?? [],
+      },
     };
   };
 

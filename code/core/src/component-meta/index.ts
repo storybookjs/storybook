@@ -1,12 +1,7 @@
 export { ComponentMetaManager, isFileInDir, sortTSConfigs } from './ComponentMetaManager.ts';
 export { parseTsconfigCommandLine } from './parse-tsconfig.ts';
 export type { FileExtensionInfo, TsconfigParserModule } from './parse-tsconfig.ts';
-export {
-  ProjectFileTracker,
-  filterSourceFilePaths,
-  isInNodeModules,
-  normalizePath,
-} from './ProjectFileTracker.ts';
+export { ProjectFileTracker, filterSourceFilePaths } from './ProjectFileTracker.ts';
 export { ProgramBackedProject } from './ProgramBackedProject.ts';
 export type { ProgramLike, ProgramProvider } from './ProgramBackedProject.ts';
 export type { FileSnapshotCache } from './ProjectFileTracker.ts';

@@ -12,7 +12,12 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { AngularComponentMetaManager } from '@storybook/angular-cm';
+import type { AngularDocgenPayload } from '../../../../frameworks/angular-vite/src/docgen/build-docgen.ts';
 import { buildStoryDocsPayload } from '../../../../frameworks/angular-vite/src/docgen/story-docs-build.ts';
+import {
+  parseStoryFile,
+  resolveComponentOf,
+} from '../../../../frameworks/angular-vite/src/docgen/resolve-component.ts';
 import {
   expectNoStaleSnippets,
   fixtureCases,
@@ -23,6 +28,41 @@ import {
 // One manager for the whole suite: each fixture directory carries its own tsconfig.json, so every
 // component file resolves to its own per-fixture project.
 const manager = new AngularComponentMetaManager(ts);
+
+// In production `getDocgenPayload` queries the already-registered `core/docgen` service, which is
+// keyed by component id and resolves the story's component internally. There is no service here,
+// so this stands in for it: resolve the same component `buildStoryDocsPayload` would (the fixture
+// carries exactly one), then extract straight off the manager, matching what `buildDocgenPayload`
+// stores on `AngularDocgenPayload` in production.
+const buildGetDocgenPayload =
+  (storyPath: string, title: string) => async (): Promise<AngularDocgenPayload | undefined> => {
+    const parsed = parseStoryFile(storyPath, title);
+    if (!parsed) {
+      return undefined;
+    }
+    const resolution = resolveComponentOf(parsed.csf, storyPath);
+    const component = 'reason' in resolution ? undefined : resolution.component;
+    if (!component?.path) {
+      return undefined;
+    }
+    const meta = manager.extractComponentMeta(component.path, {
+      exportName: component.exportName,
+      localName: component.localName,
+    });
+    if (!meta) {
+      return undefined;
+    }
+    return {
+      id: 'fixture',
+      name: meta.entry.name,
+      path: storyPath,
+      jsDocTags: {},
+      angularComponentMeta: {
+        entry: meta.entry,
+        enums: meta.json.miscellaneous?.enumerations ?? [],
+      },
+    };
+  };
 
 afterAll(() => {
   manager.dispose();
@@ -47,7 +87,10 @@ describe('angular story-docs server snippets', () => {
       subtype: 'story',
       importPath: storyPath,
     };
-    const payload = buildStoryDocsPayload({ entry }, { manager, resolvePath: (path) => path });
+    const payload = await buildStoryDocsPayload(
+      { entry },
+      { getDocgenPayload: buildGetDocgenPayload(storyPath, title), resolvePath: (path) => path }
+    );
     expect(payload).toBeDefined();
 
     for (const [exportName, story] of storyExports) {

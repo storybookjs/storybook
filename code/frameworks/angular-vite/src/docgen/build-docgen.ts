@@ -8,6 +8,7 @@ import type {
 
 import { resolve } from 'node:path';
 
+import type { EnumType } from '@storybook/angular-compodoc';
 import type {
   AngularClassMeta,
   AngularComponentMetaResult,
@@ -21,9 +22,13 @@ export interface AngularDocgenOptions {
   angularFilterNonInputControls?: boolean;
 }
 
+export interface AngularComponentSnippetMeta {
+  entry: AngularClassMeta;
+  enums: EnumType[];
+}
+
 export type AngularDocgenPayload = DocgenPayload & {
-  // The analyzer's record for the class, not filtered by `angularFilterNonInputControls`.
-  angularComponentMeta?: AngularClassMeta;
+  angularComponentMeta?: AngularComponentSnippetMeta;
 };
 
 // Structural on purpose: tests hand in a stub instead of a real TypeScript-backed analyzer.
@@ -150,6 +155,6 @@ export const buildDocgenPayload = (
     summary: jsDocTags.summary?.[0],
     jsDocTags,
     argTypes,
-    angularComponentMeta: meta.entry,
+    angularComponentMeta: { entry: meta.entry, enums: meta.json.miscellaneous?.enumerations ?? [] },
   };
 };

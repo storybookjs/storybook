@@ -12,8 +12,8 @@ import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybo
 import { resolve } from 'node:path';
 
 import type { EnumType, Property } from '@storybook/angular-compodoc';
-import type { AngularClassMeta, AngularComponentMetaResult } from '@storybook/angular-cm';
-import type { AngularComponentMetaSource } from './build-docgen.ts';
+import type { AngularClassMeta } from '@storybook/angular-cm';
+import type { AngularComponentSnippetMeta, AngularDocgenPayload } from './build-docgen.ts';
 import { parseStoryFile, resolveComponentOf } from './resolve-component.ts';
 import { buildComponentOutletTemplate } from '../template-grammar.ts';
 import {
@@ -23,17 +23,18 @@ import {
 } from './story-docs-snippet.ts';
 
 export interface BuildStoryDocsContext {
-  // `undefined` when the analyzer could not be created; descriptions still extract without it.
-  manager: AngularComponentMetaSource | undefined;
+  getDocgenPayload:
+    | ((componentId: string) => Promise<AngularDocgenPayload | undefined>)
+    | undefined;
   resolvePath?: (importPath: string) => string;
 }
 
 // Stories that declare their own `render` get no snippet: their template is a runtime value static
 // analysis cannot see, and a component-derived one would misrepresent it.
-export const buildStoryDocsPayload = (
+export const buildStoryDocsPayload = async (
   input: StoryDocsProviderInput,
   context: BuildStoryDocsContext
-): StoryDocsPayload | undefined => {
+): Promise<StoryDocsPayload | undefined> => {
   const storyImportPath = getStoryImportPathFromEntry(input.entry);
   if (!storyImportPath) {
     return undefined;
@@ -51,18 +52,16 @@ export const buildStoryDocsPayload = (
   const resolution = resolveComponentOf(csf, storyPath);
   const component = 'reason' in resolution ? undefined : resolution.component;
 
-  let meta: AngularComponentMetaResult | undefined;
-  if (component?.path && context.manager) {
+  let snippetMeta: AngularComponentSnippetMeta | undefined;
+  if (component?.path && context.getDocgenPayload) {
     try {
-      meta = context.manager.extractComponentMeta(component.path, {
-        exportName: component.exportName,
-        localName: component.localName,
-      });
+      const docgenPayload = await context.getDocgenPayload(getComponentIdFromEntry(input.entry));
+      snippetMeta = docgenPayload?.angularComponentMeta;
     } catch {
-      meta = undefined;
+      snippetMeta = undefined;
     }
   }
-  const snippetContext = meta ? createSnippetContext(meta) : undefined;
+  const snippetContext = snippetMeta ? createSnippetContext(snippetMeta) : undefined;
 
   const displayName =
     component && (component.exportName === 'default' ? component.localName : component.exportName);
@@ -103,7 +102,7 @@ export const buildStoryDocsPayload = (
   return {
     id: getComponentIdFromEntry(input.entry),
     // The analyzer knows the class name even when the story file imported it as a default export.
-    name: meta?.entry.name ?? displayName ?? titleName,
+    name: snippetMeta?.entry.name ?? displayName ?? titleName,
     path: storyImportPath,
     stories,
   };
@@ -124,10 +123,10 @@ const inputsOf = (entry: AngularClassMeta): Property[] =>
 const outputsOf = (entry: AngularClassMeta): Property[] =>
   'outputsClass' in entry ? (entry.outputsClass ?? []) : [];
 
-const createSnippetContext = (meta: AngularComponentMetaResult): SnippetContext => {
-  const inputNames = new Set(inputsOf(meta.entry).map((input) => input.name));
+const createSnippetContext = ({ entry, enums }: AngularComponentSnippetMeta): SnippetContext => {
+  const inputNames = new Set(inputsOf(entry).map((input) => input.name));
   const outputs: string[] = [];
-  for (const output of outputsOf(meta.entry)) {
+  for (const output of outputsOf(entry)) {
     // model() lands under the same bare name in both arrays; its output binds as `${name}Change`.
     const bindingName = inputNames.has(output.name) ? `${output.name}Change` : output.name;
     if (!outputs.includes(bindingName)) {
@@ -135,11 +134,11 @@ const createSnippetContext = (meta: AngularComponentMetaResult): SnippetContext 
     }
   }
   return {
-    selector: meta.entry.selector,
-    componentName: meta.entry.name,
+    selector: entry.selector,
+    componentName: entry.name,
     inputNames,
     outputs,
-    enums: meta.json.miscellaneous?.enumerations ?? [],
+    enums,
   };
 };
 

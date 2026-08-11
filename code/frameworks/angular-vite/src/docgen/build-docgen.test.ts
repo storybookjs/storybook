@@ -102,7 +102,7 @@ describe('buildDocgenPayload', () => {
       name: 'label',
       table: { category: 'inputs', defaultValue: { summary: 'Click me' } },
     });
-    expect(payload?.angularComponentMeta).toBe(classMeta);
+    expect(payload?.angularComponentMeta?.entry).toBe(classMeta);
     expect(payload?.compodoc).toBeUndefined();
     expect(payload?.subcomponents).toBeUndefined();
     expect(payload?.error).toBeUndefined();

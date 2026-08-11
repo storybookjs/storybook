@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { vol } from 'memfs';
 
-import type { AngularComponentMetaSource } from './build-docgen.ts';
+import type { AngularDocgenPayload } from './build-docgen.ts';
 import { buildStoryDocsPayload } from './story-docs-build.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -42,7 +42,7 @@ const givenStoryFile = (source: string) => {
 };
 
 describe('buildStoryDocsPayload', () => {
-  it('returns undefined for entries without a story file or with an unparsable one', () => {
+  it('returns undefined for entries without a story file or with an unparsable one', async () => {
     const docsEntry: IndexEntry = {
       id: 'docs--page',
       name: 'Page',
@@ -52,20 +52,22 @@ describe('buildStoryDocsPayload', () => {
       storiesImports: [],
       tags: [],
     };
-    expect(buildStoryDocsPayload({ entry: docsEntry }, { manager: undefined })).toBeUndefined();
+    expect(
+      await buildStoryDocsPayload({ entry: docsEntry }, { getDocgenPayload: undefined })
+    ).toBeUndefined();
 
     givenStoryFile('export default { title: "Broken" ');
-    expect(buildStoryDocsPayload({ entry }, { manager: undefined })).toBeUndefined();
+    expect(await buildStoryDocsPayload({ entry }, { getDocgenPayload: undefined })).toBeUndefined();
   });
 
-  it('still emits description-only stories when the analyzer is unavailable', () => {
+  it('still emits description-only stories when core/docgen is unavailable', async () => {
     givenStoryFile(`
       export default { title: 'Example/Button' };
       /** Documented without a component. */
       export const Default = {};
     `);
 
-    const payload = buildStoryDocsPayload({ entry }, { manager: undefined });
+    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: undefined });
 
     expect(payload?.name).toBe('Button');
     expect(Object.values(payload!.stories)[0]).toEqual({
@@ -75,19 +77,47 @@ describe('buildStoryDocsPayload', () => {
     });
   });
 
-  it('drops the snippet without erroring when the analyzer throws', () => {
+  it('builds a snippet from the raw analyzer fields core/docgen carries alongside argTypes', async () => {
     givenStoryFile(`
       import { ButtonComponent } from './button.component';
       export default { title: 'Example/Button', component: ButtonComponent };
       export const Default = { args: { label: 'Save' } };
     `);
-    const manager: AngularComponentMetaSource = {
-      extractComponentMeta: () => {
-        throw new Error('ts blew up');
-      },
+    const getDocgenPayload = async (): Promise<AngularDocgenPayload> =>
+      ({
+        id: 'example-button',
+        name: 'ButtonComponent',
+        path: STORY_PATH,
+        jsDocTags: {},
+        angularComponentMeta: {
+          entry: {
+            name: 'ButtonComponent',
+            selector: 'sb-button',
+            inputsClass: [{ name: 'label' }],
+            outputsClass: [],
+          },
+          enums: [],
+        },
+      }) as AngularDocgenPayload;
+
+    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload });
+
+    const story = Object.values(payload!.stories)[0];
+    expect(story.snippet).toContain('sb-button');
+    expect(story.snippet).toContain(`[label]="'Save'"`);
+  });
+
+  it('drops the snippet without erroring when querying core/docgen throws', async () => {
+    givenStoryFile(`
+      import { ButtonComponent } from './button.component';
+      export default { title: 'Example/Button', component: ButtonComponent };
+      export const Default = { args: { label: 'Save' } };
+    `);
+    const getDocgenPayload = async (): Promise<AngularDocgenPayload | undefined> => {
+      throw new Error('core/docgen query failed');
     };
 
-    const payload = buildStoryDocsPayload({ entry }, { manager });
+    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload });
 
     const story = Object.values(payload!.stories)[0];
     expect(story.snippet).toBeUndefined();

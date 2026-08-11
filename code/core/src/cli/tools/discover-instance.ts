@@ -15,7 +15,7 @@ export type ToolsTarget = {
 
 export type InstanceDiscovery = {
   /** The running instance serving the targeted project, if any. */
-  record: StorybookInstanceRecord | undefined;
+  currentRecord: StorybookInstanceRecord | undefined;
   /** All live records, so callers can point at Storybooks running for other projects. */
   records: StorybookInstanceRecord[];
 };
@@ -45,6 +45,6 @@ export async function discoverRunningInstance(
 
   // `resolveInstance` dispatches on the record's MCP status; a status intercept still carries the
   // matched records (most recent first), which is all this consumer needs.
-  const record = resolution.kind === 'instance' ? resolution.record : resolution.matches[0];
-  return { record, records };
+  const currentRecord = resolution.kind === 'instance' ? resolution.record : resolution.matches[0];
+  return { currentRecord, records };
 }

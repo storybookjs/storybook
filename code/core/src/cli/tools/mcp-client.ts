@@ -57,7 +57,7 @@ const STORYBOOK_MCP_PROXY_HEADER_VALUE = 'true';
 
 /**
  * Upper bound on a single request so a hung server cannot stall the CLI forever. Generous because
- * `run-story-tests` on a full suite legitimately runs for minutes.
+ * `test-run` on a full suite legitimately runs for minutes.
  */
 const REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
 

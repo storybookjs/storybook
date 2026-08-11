@@ -24,14 +24,17 @@ describe('bootstrapToolsRuntime', () => {
     // prepared with. A second channel on either side silently severs that path and a test run
     // would hang forever, so the object identity is the contract.
     const channel = { isPreparedChannel: true } as unknown as Channel;
+    const options = {};
+    const hostModuleGraph = vi.fn(async () => ({ status: 'ready' as const }));
     vi.mocked(prepareHeadlessUniversalStores).mockReturnValue(channel);
-    vi.mocked(experimental_loadStorybook).mockResolvedValue({} as never);
+    vi.mocked(experimental_loadStorybook).mockResolvedValue(options as never);
 
     await bootstrapToolsRuntime(
       { cwd: process.cwd(), configDir: '.storybook' },
-      { hostModuleGraph: false }
+      { hostModuleGraph }
     );
 
     expect(experimental_loadStorybook).toHaveBeenCalledWith(expect.objectContaining({ channel }));
+    expect(hostModuleGraph).toHaveBeenCalledWith(options);
   });
 });

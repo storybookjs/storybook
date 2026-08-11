@@ -29,8 +29,6 @@ export type ToolsRuntime = {
   configDir: string;
   toolsets: AnyToolsetDefinition[];
   getService: ToolsetGetService;
-  /** Present only when the module graph was hosted for this invocation. */
-  moduleGraphReadiness?: Experimental_ChangeDetectionReadiness;
 };
 
 /**
@@ -40,14 +38,18 @@ export type ToolsRuntime = {
  * every open service and toolset — including any an addon contributes — as a consequence of normal
  * configuration loading, not via CLI-specific machinery.
  *
- * The module-graph engine registered by that pass waits on a deferred builder adapter. That
- * deferred must always settle, or any graph query would hang forever: when this invocation hosts
- * the graph, it repeats the dev server's bootstrap sequence; otherwise it resolves the adapter to
- * `undefined`, so a stray graph query reports `unavailable` instead of hanging.
+ * The module-graph engine registered by that pass waits on a deferred builder adapter. This
+ * invocation always repeats the dev server's bootstrap sequence so toolsets contributed by addons
+ * can use the graph without being named in a core-owned allowlist. A missing adapter settles the
+ * graph as unavailable instead of making unrelated tools fail.
+ *
+ * This changes `process.cwd()` to the targeted Storybook project for the rest of the one-shot CLI
+ * process. Callers embedding this runtime must capture their launch directory before bootstrapping
+ * if they still need it.
  */
 export async function bootstrapToolsRuntime(
   target: ToolsTarget,
-  { hostModuleGraph }: { hostModuleGraph: boolean }
+  deps: { hostModuleGraph?: typeof hostModuleGraphInProcess } = {}
 ): Promise<ToolsRuntime> {
   const cwd = resolve(target.cwd ?? process.cwd());
   // Everything the `services` hooks register keys its file mapping off `process.cwd()` — the
@@ -69,18 +71,12 @@ export async function bootstrapToolsRuntime(
 
   const options = await experimental_loadStorybook({ configDir, channel });
 
-  let moduleGraphReadiness: Experimental_ChangeDetectionReadiness | undefined;
-  if (hostModuleGraph) {
-    moduleGraphReadiness = await hostModuleGraphInProcess(options);
-  } else {
-    resolveChangeDetectionAdapter(undefined);
-  }
+  await (deps.hostModuleGraph ?? hostModuleGraphInProcess)(options);
 
   return {
     configDir,
     toolsets: getRegisteredToolsets(),
     getService: (serviceId, serviceOptions) => getService(serviceId as never, serviceOptions),
-    moduleGraphReadiness,
   };
 }
 

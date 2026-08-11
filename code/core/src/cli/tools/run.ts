@@ -1,4 +1,3 @@
-import { OpenServiceModuleGraphUnavailableError } from '../../server-errors.ts';
 import type {
   AnyToolsetDefinition,
   AnyToolsetMethod,
@@ -6,9 +5,9 @@ import type {
   ToolsetTelemetry,
 } from '../../shared/open-service/toolset-definition.ts';
 import {
-  MCP_TOOL_NAMES,
   toCliMethodName,
-  type ToolsetMethodRef,
+  toMcpToolName,
+  type ToolsetMethodId,
 } from '../../shared/open-service/toolset-names.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import { callMcpTool } from './mcp-client.ts';
@@ -73,14 +72,6 @@ export type ToolsRunDeps = {
 };
 
 /**
- * Methods that consume the module-graph open service, requiring this invocation to host the graph
- * (settled engine + populated change-detection statuses) before their handler runs. A CLI
- * implementation detail: everything else resolves the graph adapter to "absent" so no query can
- * ever hang.
- */
-const MODULE_GRAPH_METHODS = new Set(['stories.changed', 'stories.findByComponent']);
-
-/**
  * The `requiresDevServer` methods that only need a live origin, which instance discovery can
  * provide without attaching to the dev server's state. The remaining trait-marked methods are
  * state-bound and cannot run from this CLI until connect mode (Milestone 5b) exists. The
@@ -96,11 +87,11 @@ const ORIGIN_ONLY_METHODS = new Set(['stories.preview']);
  * at which point these methods run through the normal handler path and this set, its dispatch
  * branch and the `mcpToolCall` dependency get deleted. `mcp-client.ts` goes with them once
  * `storybook ai` — its other consumer — is removed. Only methods `@storybook/addon-mcp` exposes
- * under {@link MCP_TOOL_NAMES} can be listed here.
+ * through the standard derived MCP name can be listed here.
  */
 const PROXY_VIA_MCP_METHODS: ReadonlySet<string> = new Set([
   'review.create',
-] satisfies ToolsetMethodRef[]);
+] satisfies ToolsetMethodId[]);
 
 /** `find-by-component` -> `findByComponent`, accepting an already-camelCase spelling unchanged. */
 function toMethodKey(cliName: string): string {
@@ -140,13 +131,9 @@ export async function runToolsCommand(
     outputPath: parsed.output,
   });
 
-  const methodRef = toolsetName && toolName ? `${toolsetName}.${toMethodKey(toolName)}` : undefined;
-  const hostModuleGraph =
-    !parsed.help && methodRef !== undefined && MODULE_GRAPH_METHODS.has(methodRef);
-
   let runtime: ToolsRuntime;
   try {
-    runtime = await (deps.bootstrap ?? bootstrapToolsRuntime)(target, { hostModuleGraph });
+    runtime = await (deps.bootstrap ?? bootstrapToolsRuntime)(target);
   } catch (error) {
     return result({
       exitCode: 1,
@@ -157,7 +144,7 @@ export async function runToolsCommand(
     });
   }
 
-  const ctx = buildContext(runtime, deps, undefined, undefined);
+  const ctx = buildContext(runtime, deps, undefined);
 
   if (!toolsetName) {
     return result({
@@ -211,7 +198,7 @@ export async function runToolsCommand(
   let proxyTarget: StorybookInstanceRecord | undefined;
   if (method.requiresDevServer) {
     const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(target);
-    if (!discovery.record) {
+    if (!discovery.currentRecord) {
       return result({
         exitCode: 1,
         output: formatRequiresDevServer(commandPath, discovery),
@@ -219,38 +206,27 @@ export async function runToolsCommand(
       });
     }
     if (PROXY_VIA_MCP_METHODS.has(resolvedRef)) {
-      if (!discovery.record.mcp.endpoint) {
+      if (!discovery.currentRecord.mcp.endpoint) {
         return result({
           exitCode: 1,
-          output: formatProxyEndpointMissing(commandPath, discovery.record),
+          output: formatProxyEndpointMissing(commandPath, discovery.currentRecord),
           outcome: { kind: 'intercept', reason: 'attach-unavailable' },
         });
       }
-      proxyTarget = discovery.record;
+      proxyTarget = discovery.currentRecord;
       // No core method reaches this arm today — it guards trait-marked methods from toolsets
       // outside core's own set, which have no MCP tool name to proxy to.
     } else if (!ORIGIN_ONLY_METHODS.has(resolvedRef)) {
       return result({
         exitCode: 1,
-        output: formatAttachUnavailable(commandPath, discovery.record),
+        output: formatAttachUnavailable(commandPath, discovery.currentRecord),
         outcome: { kind: 'intercept', reason: 'attach-unavailable' },
       });
     }
-    origin = discovery.record.url;
+    origin = discovery.currentRecord.url;
   }
 
-  if (
-    hostModuleGraph &&
-    runtime.moduleGraphReadiness &&
-    runtime.moduleGraphReadiness.status !== 'ready'
-  ) {
-    const error = new OpenServiceModuleGraphUnavailableError({
-      reason: describeUnreadyModuleGraph(runtime.moduleGraphReadiness),
-    });
-    return result({ exitCode: 1, output: error.message, outcome: { kind: 'failure' } });
-  }
-
-  const validation = await method.schema['~standard'].validate(parsed.args);
+  const validation = await method.input['~standard'].validate(parsed.args);
   if (validation.issues) {
     return result({
       exitCode: 1,
@@ -264,11 +240,13 @@ export async function runToolsCommand(
       // The dev server runs the handler, so its telemetry and side effects stay in the process
       // that owns them; this side only unwraps the reply the same way the MCP adapter wrapped it.
       const reply = await (deps.mcpToolCall ?? callMcpTool)(proxyTarget, {
-        name: MCP_TOOL_NAMES[resolvedRef as ToolsetMethodRef],
+        name: toMcpToolName(resolvedRef as ToolsetMethodId),
         arguments: validation.value as Record<string, unknown>,
       });
       const text = (reply.content ?? [])
-        .flatMap((item) => (item.type === 'text' && item.text ? [item.text] : []))
+        .map((item) =>
+          item.type === 'text' && item.text ? item.text : JSON.stringify(item, null, 2)
+        )
         .join('\n\n');
       return result({
         exitCode: reply.isError ? 1 : 0,
@@ -283,10 +261,7 @@ export async function runToolsCommand(
       });
     }
 
-    const outcome = await method.handler(
-      validation.value,
-      buildContext(runtime, deps, origin, toolset)
-    );
+    const outcome = await method.handler(validation.value, buildContext(runtime, deps, origin));
     const output = parsed.json
       ? JSON.stringify(outcome.data, null, 2)
       : joinMarkdown(outcome.markdown);
@@ -312,23 +287,14 @@ export async function runToolsCommand(
 function buildContext(
   runtime: ToolsRuntime,
   deps: ToolsRunDeps,
-  origin: string | undefined,
-  toolset: AnyToolsetDefinition | undefined
+  origin: string | undefined
 ): ToolsetCtx {
   const { methodTelemetry } = deps;
   return {
-    consumer: 'cli',
+    transport: 'cli',
     ...(origin ? { origin } : {}),
     getService: runtime.getService,
-    ...(methodTelemetry && toolset
-      ? {
-          telemetry: ((event, payload) =>
-            methodTelemetry(event, {
-              toolset: toolset.telemetryGroup,
-              ...payload,
-            })) satisfies ToolsetTelemetry,
-        }
-      : {}),
+    ...(methodTelemetry ? { telemetry: methodTelemetry } : {}),
   };
 }
 
@@ -379,20 +345,6 @@ function formatAttachUnavailable(commandPath: string, record: StorybookInstanceR
 
 function formatProxyEndpointMissing(commandPath: string, record: StorybookInstanceRecord): string {
   return `Found your Storybook running at ${record.url}, but \`${commandPath}\` runs inside that Storybook and it is not serving the endpoint this command needs. Add \`@storybook/addon-mcp\` to the \`addons\` array in your Storybook configuration, restart the dev server, then re-run this command.`;
-}
-
-function describeUnreadyModuleGraph(
-  readiness: NonNullable<ToolsRuntime['moduleGraphReadiness']>
-): string {
-  if (readiness.status === 'unavailable') {
-    return readiness.reason === 'disabled'
-      ? 'Change detection is disabled in this project (`features.changeDetection` is false).'
-      : readiness.reason;
-  }
-  if (readiness.status === 'error') {
-    return `Change detection failed: ${readiness.error.message}`;
-  }
-  return 'The module graph did not become ready.';
 }
 
 type ValidationIssues = ReadonlyArray<{

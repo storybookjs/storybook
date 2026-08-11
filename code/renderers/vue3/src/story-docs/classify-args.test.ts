@@ -1,235 +1,212 @@
 import { describe, expect, it } from 'vitest';
 
-import { types as t } from 'storybook/internal/babel';
+import { babelParse, types as t } from 'storybook/internal/babel';
 
-import { classifyArgs } from './classify-args.ts';
+import { classifyArgs, type ClassifiedArg, type ClassifyArgsResult } from './classify-args.ts';
+import { printValue } from './classify-value.ts';
 
-const NO_DOCGEN = { props: new Set<string>(), slots: new Set<string>(), events: new Set<string>() };
+interface DocgenFixture {
+  props?: string[];
+  slots?: string[];
+  events?: string[];
+}
+
+interface ReadableClassifyArgsResult extends Omit<ClassifyArgsResult, 'args'> {
+  args: string[];
+}
 
 describe('classifyArgs', () => {
   it('assigns roles from docgen slot and event names', () => {
-    const result = classifyArgs(
-      {
-        content: t.stringLiteral('Hi'),
-        checked: t.booleanLiteral(true),
-        label: t.stringLiteral('Go'),
-      },
-      {
-        props: new Set(['label']),
-        slots: new Set(['content']),
-        events: new Set(['update:checked']),
-      }
-    );
-
-    expect(result.args.map((arg) => [arg.name, arg.role])).toEqual([
-      ['content', 'slot'],
-      ['checked', 'model'],
-      ['label', 'prop'],
-    ]);
+    expect(
+      classify(
+        `{
+          content: 'Hi',
+          checked: true,
+          label: 'Go',
+        }`,
+        {
+          props: ['label'],
+          slots: ['content'],
+          events: ['update:checked'],
+        }
+      )
+    ).toEqual({
+      args: [
+        `content: 'Hi' -> slot (inline)`,
+        'checked: true -> model (inline)',
+        `label: 'Go' -> prop (inline)`,
+      ],
+    });
   });
 
   it.each([
-    { label: 'undefined', value: t.identifier('undefined') },
-    { label: 'a function', value: t.arrowFunctionExpression([], t.nullLiteral()) },
-    { label: 'an empty string', value: t.stringLiteral('') },
+    { label: 'undefined', value: 'undefined' },
+    { label: 'a function', value: '() => null' },
+    { label: 'an empty string', value: `''` },
   ])('drops an arg set to $label without warning', ({ value }) => {
-    const label = t.stringLiteral('ok');
-
-    expect(classifyArgs({ a: value, label }, NO_DOCGEN)).toEqual({
-      args: [{ name: 'label', value: label, role: 'prop', plan: { kind: 'inline' } }],
+    expect(classify(`{ a: ${value}, label: 'ok' }`)).toEqual({
+      args: [`label: 'ok' -> prop (inline)`],
     });
   });
 
   it('omits an unresolvable arg, keeps the rest, and names the omission', () => {
-    const label = t.stringLiteral('ok');
-    const result = classifyArgs(
-      { label, size: t.memberExpression(t.identifier('Sizes'), t.identifier('LARGE')) },
-      NO_DOCGEN
-    );
-
-    expect(result.args.map((arg) => arg.name)).toEqual(['label']);
-    expect(result.warning).toBe(
-      'Omitted args that cannot be resolved statically: size: Sizes.LARGE'
-    );
+    expect(classify(`{ label: 'ok', size: Sizes.LARGE }`)).toEqual({
+      args: [`label: 'ok' -> prop (inline)`],
+      warning: 'Omitted args that cannot be resolved statically: size: Sizes.LARGE',
+    });
   });
 
   it('names every omitted arg in the warning', () => {
-    const result = classifyArgs(
-      {
-        label: t.stringLiteral('ok'),
-        size: t.identifier('SOME_CONST'),
-        items: t.callExpression(t.identifier('makeItems'), [t.numericLiteral(3)]),
-      },
-      NO_DOCGEN
-    );
-
-    expect(result.args.map((arg) => arg.name)).toEqual(['label']);
-    expect(result.warning).toBe(
-      'Omitted args that cannot be resolved statically: size: SOME_CONST, items: makeItems(3)'
-    );
+    expect(classify(`{ label: 'ok', size: SOME_CONST, items: makeItems(3) }`)).toEqual({
+      args: [`label: 'ok' -> prop (inline)`],
+      warning:
+        'Omitted args that cannot be resolved statically: size: SOME_CONST, items: makeItems(3)',
+    });
   });
 
   it('omits a spread value rather than failing the story', () => {
-    const result = classifyArgs(
-      {
-        label: t.stringLiteral('ok'),
-        options: t.objectExpression([t.spreadElement(t.identifier('BASE_OPTIONS'))]),
-      },
-      NO_DOCGEN
-    );
+    const result = classify(`{ label: 'ok', options: { ...BASE_OPTIONS } }`);
 
-    expect(result.args.map((arg) => arg.name)).toEqual(['label']);
+    expect(result.args).toEqual([`label: 'ok' -> prop (inline)`]);
     expect(result.warning).toContain('BASE_OPTIONS');
   });
 
   it('defers when nothing the story sets can be rendered', () => {
-    expect(classifyArgs({ label: t.identifier('SOME_CONST') }, NO_DOCGEN)).toEqual({
-      args: [],
-      defer: true,
-    });
+    expect(classify(`{ label: SOME_CONST }`)).toEqual({ args: [], defer: true });
   });
 
   it('still renders a story whose only args are dropped silently', () => {
-    expect(
-      classifyArgs({ onClick: t.arrowFunctionExpression([], t.nullLiteral()) }, NO_DOCGEN)
-    ).toEqual({ args: [] });
+    expect(classify(`{ onClick: () => null }`)).toEqual({ args: [] });
   });
 
   it('defers the whole story when a slot receives a function', () => {
     expect(
-      classifyArgs(
-        {
-          default: t.arrowFunctionExpression(
-            [],
-            t.callExpression(t.identifier('h'), [t.identifier('Child')])
-          ),
-          label: t.stringLiteral('ok'),
-        },
-        { props: new Set<string>(), slots: new Set(['default']), events: new Set() }
+      classify(
+        `{
+          default: () => h(Child),
+          label: 'ok',
+        }`,
+        { slots: ['default'] }
       )
     ).toEqual({ args: [], defer: true });
   });
 
   it('renders a slot function that returns a string literal', () => {
-    const returned = t.stringLiteral('hi');
-    const result = classifyArgs(
-      { default: t.arrowFunctionExpression([], returned) },
-      { props: new Set<string>(), slots: new Set(['default']), events: new Set() }
-    );
-
-    expect(result.args).toEqual([
-      { name: 'default', value: returned, role: 'slot', plan: { kind: 'inline' } },
-    ]);
-    expect(result.args[0].value.type).toBe('StringLiteral');
+    expect(classify(`{ default: () => 'hi' }`, { slots: ['default'] })).toEqual({
+      args: [`default: 'hi' -> slot (inline)`],
+    });
   });
 
   it('renders a slot function block that returns a string literal', () => {
-    const returned = t.stringLiteral('hi');
-    const result = classifyArgs(
-      {
-        default: t.arrowFunctionExpression([], t.blockStatement([t.returnStatement(returned)])),
-      },
-      { props: new Set<string>(), slots: new Set(['default']), events: new Set() }
-    );
-
-    expect(result.args).toEqual([
-      { name: 'default', value: returned, role: 'slot', plan: { kind: 'inline' } },
-    ]);
-    expect(result.args[0].value.type).toBe('StringLiteral');
+    expect(classify(`{ default: () => { return 'hi' } }`, { slots: ['default'] })).toEqual({
+      args: [`default: 'hi' -> slot (inline)`],
+    });
   });
 
   it('defers the whole story when a slot function has a multi-statement body', () => {
     expect(
-      classifyArgs(
-        {
-          default: t.arrowFunctionExpression(
-            [],
-            t.blockStatement([
-              t.expressionStatement(t.stringLiteral('side effect')),
-              t.returnStatement(t.stringLiteral('hi')),
-            ])
-          ),
-          label: t.stringLiteral('ok'),
-        },
-        { props: new Set<string>(), slots: new Set(['default']), events: new Set() }
+      classify(
+        `{
+          default: () => {
+            sideEffect();
+            return 'hi';
+          },
+          label: 'ok',
+        }`,
+        { slots: ['default'] }
       )
     ).toEqual({ args: [], defer: true });
   });
 
   it('classifies a function arg matching a declared event as a listener', () => {
-    const value = t.arrowFunctionExpression([], t.nullLiteral());
-
-    expect(
-      classifyArgs(
-        { onSubmit: value },
-        { props: new Set<string>(), slots: new Set(), events: new Set(['submit']) }
-      ).args
-    ).toEqual([
-      { name: 'onSubmit', value, role: 'event', eventName: 'submit', plan: { kind: 'hoist' } },
-    ]);
+    expect(classify(`{ onSubmit: () => null }`, { events: ['submit'] })).toEqual({
+      args: ['onSubmit: () => null -> event:submit (hoist)'],
+    });
   });
 
   it('warns when a declared event arg value is not a function expression', () => {
-    const label = t.stringLiteral('ok');
-    const result = classifyArgs(
-      {
-        label,
-        onSubmit: t.callExpression(t.identifier('fn'), []),
-      },
-      { props: new Set<string>(), slots: new Set(), events: new Set(['submit']) }
-    );
-
-    expect(result.args).toEqual([
-      { name: 'label', value: label, role: 'prop', plan: { kind: 'inline' } },
-    ]);
-    expect(result.warning).toBe('Omitted args that cannot be resolved statically: onSubmit: fn()');
+    expect(classify(`{ label: 'ok', onSubmit: fn() }`, { events: ['submit'] })).toEqual({
+      args: [`label: 'ok' -> prop (inline)`],
+      warning: 'Omitted args that cannot be resolved statically: onSubmit: fn()',
+    });
   });
 
   it('omits a listener that captures a story-local binding, and names it', () => {
-    const label = t.stringLiteral('ok');
-    const result = classifyArgs(
-      {
-        label,
-        onSubmit: t.arrowFunctionExpression(
-          [t.identifier('value')],
-          t.callExpression(t.identifier('formatHelper'), [t.identifier('value')])
-        ),
-      },
-      { props: new Set<string>(), slots: new Set(), events: new Set(['submit']) }
-    );
-
-    expect(result.args.map((arg) => arg.name)).toEqual(['label']);
-    expect(result.warning).toBe(
-      'Omitted args that cannot be resolved statically: onSubmit: value => formatHelper(value)'
-    );
+    expect(
+      classify(`{ label: 'ok', onSubmit: value => formatHelper(value) }`, {
+        events: ['submit'],
+      })
+    ).toEqual({
+      args: [`label: 'ok' -> prop (inline)`],
+      warning:
+        'Omitted args that cannot be resolved statically: onSubmit: value => formatHelper(value)',
+    });
   });
 
   it('omits a declared function prop that captures a story-local binding', () => {
-    const label = t.stringLiteral('ok');
-    const result = classifyArgs(
-      {
-        label,
-        formatter: t.arrowFunctionExpression([], t.identifier('SOME_CONST')),
-      },
-      { props: new Set(['formatter']), slots: new Set(), events: new Set() }
-    );
-
-    expect(result.args.map((arg) => arg.name)).toEqual(['label']);
-    expect(result.warning).toContain('formatter');
+    expect(
+      classify(`{ label: 'ok', formatter: () => SOME_CONST }`, { props: ['formatter'] })
+    ).toEqual({
+      args: [`label: 'ok' -> prop (inline)`],
+      warning: 'Omitted args that cannot be resolved statically: formatter: () => SOME_CONST',
+    });
   });
 
   it('classifies a declared function prop as a hoisted prop', () => {
-    const value = t.arrowFunctionExpression([], t.nullLiteral());
-
-    expect(
-      classifyArgs(
-        { formatter: value },
-        { props: new Set(['formatter']), slots: new Set(), events: new Set() }
-      ).args
-    ).toEqual([{ name: 'formatter', value, role: 'prop', plan: { kind: 'hoist' } }]);
+    expect(classify(`{ formatter: () => null }`, { props: ['formatter'] })).toEqual({
+      args: ['formatter: () => null -> prop (hoist)'],
+    });
   });
 
   it('reports no warning when every arg renders', () => {
-    expect(classifyArgs({ label: t.stringLiteral('ok') }, NO_DOCGEN).warning).toBeUndefined();
+    expect(classify(`{ label: 'ok' }`)).toEqual({
+      args: [`label: 'ok' -> prop (inline)`],
+    });
   });
 });
+
+function classify(
+  code: string,
+  { props = [], slots = [], events = [] }: DocgenFixture = {}
+): ReadableClassifyArgsResult {
+  const result = classifyArgs(parseArgs(code), {
+    props: new Set(props),
+    slots: new Set(slots),
+    events: new Set(events),
+  });
+
+  return {
+    ...result,
+    args: result.args.map(formatArg),
+  };
+}
+
+function parseArgs(code: string): Record<string, t.Node> {
+  const file = babelParse(`(${code})`);
+  const statement = file.program.body[0];
+  if (!t.isExpressionStatement(statement) || !t.isObjectExpression(statement.expression)) {
+    throw new Error(`Not an args object: ${code}`);
+  }
+
+  return Object.fromEntries(
+    statement.expression.properties.map((property) => {
+      if (!t.isObjectProperty(property) || property.computed) {
+        throw new Error(`Not a plain arg: ${printValue(property)}`);
+      }
+
+      if (t.isIdentifier(property.key)) {
+        return [property.key.name, property.value];
+      }
+      if (t.isStringLiteral(property.key)) {
+        return [property.key.value, property.value];
+      }
+
+      throw new Error(`Unsupported arg name: ${printValue(property.key)}`);
+    })
+  );
+}
+
+function formatArg({ name, value, role, eventName, plan }: ClassifiedArg): string {
+  const destination = eventName ? `${role}:${eventName}` : role;
+  return `${name}: ${printValue(value)} -> ${destination} (${plan.kind})`;
+}

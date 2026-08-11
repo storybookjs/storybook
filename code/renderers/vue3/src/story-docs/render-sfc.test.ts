@@ -1,38 +1,24 @@
 import { describe, expect, it } from 'vitest';
 
-import { types as t } from 'storybook/internal/babel';
+import { babelParse, types as t } from 'storybook/internal/babel';
 
 import type { ClassifiedArg } from './classify-args.ts';
 import { renderSfcSnippet } from './render-sfc.ts';
 
-function prop(name: string, value: t.Node, kind: 'hoist' | 'inline' = 'inline'): ClassifiedArg {
-  return { name, value, role: 'prop', plan: { kind } };
-}
-
 describe('renderSfcSnippet', () => {
-  it.each([
-    { label: 'a string', value: t.stringLiteral('Hello'), attribute: 'label="Hello"' },
-    {
-      label: 'a string containing a double quote',
-      value: t.stringLiteral('She said "hi"'),
-      attribute: `label='She said "hi"'`,
-    },
-    { label: 'a number', value: t.numericLiteral(3), attribute: ':label="3"' },
-    { label: 'true', value: t.booleanLiteral(true), attribute: 'label' },
-    { label: 'false', value: t.booleanLiteral(false), attribute: ':label="false"' },
-    { label: 'null', value: t.nullLiteral(), attribute: ':label="null"' },
-  ])('renders $label inline', ({ value, attribute }) => {
-    expect(renderSfcSnippet({ componentName: 'C', args: [prop('label', value)] })).toBe(
-      `<template>\n  <C ${attribute} />\n</template>`
-    );
+  it.each<[input: string, output: string]>([
+    [`'Hello'`, 'label="Hello"'],
+    [`'She said "hi"'`, `label='She said "hi"'`],
+    ['3', ':label="3"'],
+    ['true', 'label'],
+    ['false', ':label="false"'],
+    ['null', ':label="null"'],
+  ])('%s -> %s', (input, output) => {
+    expect(render([prop('label', input)])).toBe(`<template>\n  <C ${output} />\n</template>`);
   });
 
   it('hoists a value that needs script scope', () => {
-    const value = t.objectExpression([
-      t.objectProperty(t.identifier('tone'), t.stringLiteral('neutral')),
-    ]);
-
-    expect(renderSfcSnippet({ componentName: 'C', args: [prop('options', value, 'hoist')] }))
+    expect(render([prop('options', `{\n    tone: "neutral"\n}`, 'hoist')]))
       .toBe(`<script lang="ts" setup>
 const options = {
     tone: "neutral"
@@ -45,29 +31,20 @@ const options = {
   });
 
   it('hoists a string that both quote styles cannot delimit', () => {
-    const value = t.stringLiteral(`She said "hi" and it's fine`);
-
-    expect(renderSfcSnippet({ componentName: 'C', args: [prop('label', value)] })).toContain(
-      ':label="label"'
-    );
+    expect(render([prop('label', `'She said "hi" and it\\'s fine'`)])).toContain(':label="label"');
   });
 
   it('declares hoisted bindings in the order their attributes appear', () => {
-    const snippet = renderSfcSnippet({
-      componentName: 'MyComponent',
-      args: [
-        prop('aria-label', t.objectExpression([]), 'hoist'),
-        prop('ariaLabel', t.arrayExpression([]), 'hoist'),
-        prop('default', t.objectExpression([]), 'hoist'),
-        prop('ref', t.objectExpression([]), 'hoist'),
-        {
-          name: 'model-value',
-          value: t.stringLiteral('value'),
-          role: 'model',
-          plan: { kind: 'inline' },
-        },
+    const snippet = render(
+      [
+        prop('aria-label', '{}', 'hoist'),
+        prop('ariaLabel', '[]', 'hoist'),
+        prop('default', '{}', 'hoist'),
+        prop('ref', '{}', 'hoist'),
+        model('model-value', `"value"`),
       ],
-    });
+      'MyComponent'
+    );
 
     expect(snippet).toBe(`<script lang="ts" setup>
 import { ref } from "vue";
@@ -89,13 +66,7 @@ const ref2 = {};
   });
 
   it('renders slots as children and named slots as templates', () => {
-    const snippet = renderSfcSnippet({
-      componentName: 'C',
-      args: [
-        { name: 'header', value: t.stringLiteral('Title'), role: 'slot', plan: { kind: 'inline' } },
-        { name: 'default', value: t.stringLiteral('Body'), role: 'slot', plan: { kind: 'inline' } },
-      ],
-    });
+    const snippet = render([slot('header', `'Title'`), slot('default', `'Body'`)]);
 
     expect(snippet).toBe(
       `<template>\n  <C> Body\n\n<template #header>Title</template> </C>\n</template>`
@@ -103,34 +74,13 @@ const ref2 = {};
   });
 
   it('interpolates a hoisted slot value', () => {
-    const snippet = renderSfcSnippet({
-      componentName: 'C',
-      args: [
-        {
-          name: 'default',
-          value: t.arrayExpression([t.stringLiteral('a')]),
-          role: 'slot',
-          plan: { kind: 'hoist' },
-        },
-      ],
-    });
+    const snippet = render([slot('default', `['a']`, 'hoist')]);
 
     expect(snippet).toContain('{{ _default }}');
   });
 
   it('hoists a listener and renders it as a Vue event binding', () => {
-    const snippet = renderSfcSnippet({
-      componentName: 'C',
-      args: [
-        {
-          name: 'onSubmit',
-          eventName: 'submit',
-          value: t.arrowFunctionExpression([], t.nullLiteral()),
-          role: 'event',
-          plan: { kind: 'hoist' },
-        },
-      ],
-    });
+    const snippet = render([event('onSubmit', 'submit', '() => null')]);
 
     expect(snippet).toBe(`<script lang="ts" setup>
 const onSubmit = () => null;
@@ -142,20 +92,43 @@ const onSubmit = () => null;
   });
 
   it('sorts event attributes after prop attributes', () => {
-    const snippet = renderSfcSnippet({
-      componentName: 'C',
-      args: [
-        {
-          name: 'onSubmit',
-          eventName: 'submit',
-          value: t.arrowFunctionExpression([], t.nullLiteral()),
-          role: 'event',
-          plan: { kind: 'hoist' },
-        },
-        prop('label', t.stringLiteral('Send')),
-      ],
-    });
+    const snippet = render([event('onSubmit', 'submit', '() => null'), prop('label', `'Send'`)]);
 
     expect(snippet).toContain('<C label="Send" @submit="onSubmit" />');
   });
 });
+
+function render(args: ClassifiedArg[], componentName = 'C'): string {
+  return renderSfcSnippet({ componentName, args }).replaceAll('\r\n', '\n');
+}
+
+function prop(name: string, code: string, kind: 'hoist' | 'inline' = 'inline'): ClassifiedArg {
+  return { name, value: expression(code), role: 'prop', plan: { kind } };
+}
+
+function slot(name: string, code: string, kind: 'hoist' | 'inline' = 'inline'): ClassifiedArg {
+  return { name, value: expression(code), role: 'slot', plan: { kind } };
+}
+
+function model(name: string, code: string): ClassifiedArg {
+  return { name, value: expression(code), role: 'model', plan: { kind: 'inline' } };
+}
+
+function event(name: string, eventName: string, code: string): ClassifiedArg {
+  return {
+    name,
+    eventName,
+    value: expression(code),
+    role: 'event',
+    plan: { kind: 'hoist' },
+  };
+}
+
+function expression(code: string): t.Node {
+  const file = babelParse(`const value = ${code}`);
+  const statement = file.program.body[0];
+  if (!t.isVariableDeclaration(statement) || !statement.declarations[0]?.init) {
+    throw new Error(`Not an expression: ${code}`);
+  }
+  return t.removePropertiesDeep(t.cloneNode(statement.declarations[0].init, true, true));
+}

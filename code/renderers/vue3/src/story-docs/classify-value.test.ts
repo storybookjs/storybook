@@ -2,9 +2,86 @@ import { describe, expect, it } from 'vitest';
 
 import { babelParse, types as t } from 'storybook/internal/babel';
 
-import { classifyValue, isSelfContainedFunction } from './classify-value.ts';
+import { classifyValue, isSelfContainedFunction, type ValuePlan } from './classify-value.ts';
 
-/** Parses an expression the way a CSF arg value appears in a story file. */
+describe('classifyValue', () => {
+  it.each<[input: string, output: ValuePlan['kind']]>([
+    [`'hello'`, 'inline'],
+    ['42', 'inline'],
+    ['-1', 'inline'],
+    ['true', 'inline'],
+    ['false', 'inline'],
+    ['null', 'inline'],
+    ['123n', 'inline'],
+    [`'value' as const`, 'inline'],
+
+    [`{ theme: 'dark' }`, 'hoist'],
+    [`['a', 'b']`, 'hoist'],
+    [`{ nested: { deep: [1, 2] } }`, 'hoist'],
+    [`Symbol('fixture')`, 'hoist'],
+    [`BigInt('9007199254740993')`, 'hoist'],
+    [`new Date('2020-01-01')`, 'hoist'],
+    ['new Map()', 'hoist'],
+    ['/ab+c/i', 'hoist'],
+    ['Math.PI', 'hoist'],
+    ['Number.MAX_SAFE_INTEGER', 'hoist'],
+    ['`plain template`', 'hoist'],
+    ['2 + 3', 'hoist'],
+
+    ['undefined', 'omit'],
+    [`''`, 'omit'],
+    ['() => 1', 'omit'],
+    ['function () { return 1 }', 'omit'],
+
+    ['SOME_CONST', 'unrepresentable'],
+    ['Severity.Warning', 'unrepresentable'],
+    ['Sizes.LARGE', 'unrepresentable'],
+    ['makeItems(3)', 'unrepresentable'],
+    ['new CustomThing()', 'unrepresentable'],
+    [`{ color: sharedColor }`, 'unrepresentable'],
+    ['[Sizes.LARGE]', 'unrepresentable'],
+    [`{ ...BASE_OPTIONS, tone: 'neutral' }`, 'unrepresentable'],
+    [`['a', ...rest]`, 'unrepresentable'],
+    ['`prefix ${SOME_CONST}`', 'unrepresentable'],
+    ['Math.max(SOME_CONST, 1)', 'unrepresentable'],
+    [`{ nested: { deep: SOME_CONST } }`, 'unrepresentable'],
+    [`{ onClick() { return 1 } }`, 'unrepresentable'],
+    [`{ handler: () => SOME_CONST }`, 'unrepresentable'],
+    ['shared as Options', 'unrepresentable'],
+  ])('%s -> %s', (input, output) => {
+    expect(classifyValue(expression(input)).kind).toBe(output);
+  });
+
+  it('a ? b : c -> unrepresentable', () => {
+    expect(classifyValue(expression('a ? b : c')).kind).toBe('unrepresentable');
+  });
+});
+
+describe('isSelfContainedFunction', () => {
+  it.each<[input: string, output: boolean]>([
+    ['() => 1', true],
+    ['(value) => value.toUpperCase()', true],
+    ['(payload) => console.log(payload)', true],
+    ['({ value }) => value', true],
+    ['(a, ...rest) => rest.concat(a)', true],
+    [`(mode = 'auto') => mode`, true],
+    ['() => { const x = 1; return x + 1; }', true],
+    ['function (n) { return Math.max(n, 0); }', true],
+
+    ['(value) => formatHelper(value)', false],
+    ['() => SOME_CONST', false],
+    [`(value = DEFAULT_MODE) => value`, false],
+    ['() => { emit(1); }', false],
+    ['() => { const x = SOME_CONST; return x; }', false],
+    ['(value) => ({ ...BASE, value })', false],
+
+    [`'text'`, false],
+    ['makeHandler()', false],
+  ])('%s -> %s', (input, output) => {
+    expect(isSelfContainedFunction(expression(input))).toBe(output);
+  });
+});
+
 function expression(code: string): t.Node {
   const file = babelParse(`(${code})`);
   const statement = file.program.body[0];
@@ -13,88 +90,3 @@ function expression(code: string): t.Node {
   }
   return statement.expression;
 }
-
-describe('classifyValue', () => {
-  it.each([
-    // Literals carry no scope, so they can sit directly in a template expression.
-    { code: `'hello'`, kind: 'inline' },
-    { code: '42', kind: 'inline' },
-    { code: '-1', kind: 'inline' },
-    { code: 'true', kind: 'inline' },
-    { code: 'false', kind: 'inline' },
-    { code: 'null', kind: 'inline' },
-    { code: '123n', kind: 'inline' },
-    { code: `'value' as const`, kind: 'inline' },
-
-    // Self-contained expressions: every binding they reference is a JavaScript global.
-    { code: `{ theme: 'dark' }`, kind: 'hoist' },
-    { code: `['a', 'b']`, kind: 'hoist' },
-    { code: `{ nested: { deep: [1, 2] } }`, kind: 'hoist' },
-    { code: `Symbol('fixture')`, kind: 'hoist' },
-    { code: `BigInt('9007199254740993')`, kind: 'hoist' },
-    { code: `new Date('2020-01-01')`, kind: 'hoist' },
-    { code: 'new Map()', kind: 'hoist' },
-    { code: '/ab+c/i', kind: 'hoist' },
-    { code: 'Math.PI', kind: 'hoist' },
-    { code: 'Number.MAX_SAFE_INTEGER', kind: 'hoist' },
-    { code: '`plain template`', kind: 'hoist' },
-    { code: '2 + 3', kind: 'hoist' },
-
-    // Nothing to render, and the runtime source decorator drops these too.
-    { code: 'undefined', kind: 'omit' },
-    { code: `''`, kind: 'omit' },
-    { code: '() => 1', kind: 'omit' },
-    { code: 'function () { return 1 }', kind: 'omit' },
-
-    // References a binding the snippet cannot declare.
-    { code: 'SOME_CONST', kind: 'unrepresentable' },
-    { code: 'Severity.Warning', kind: 'unrepresentable' },
-    { code: 'Sizes.LARGE', kind: 'unrepresentable' },
-    { code: 'makeItems(3)', kind: 'unrepresentable' },
-    { code: 'new CustomThing()', kind: 'unrepresentable' },
-    { code: `{ color: sharedColor }`, kind: 'unrepresentable' },
-    { code: '[Sizes.LARGE]', kind: 'unrepresentable' },
-    { code: `{ ...BASE_OPTIONS, tone: 'neutral' }`, kind: 'unrepresentable' },
-    { code: `['a', ...rest]`, kind: 'unrepresentable' },
-    { code: '`prefix ${SOME_CONST}`', kind: 'unrepresentable' },
-    { code: 'Math.max(SOME_CONST, 1)', kind: 'unrepresentable' },
-    { code: `{ nested: { deep: SOME_CONST } }`, kind: 'unrepresentable' },
-    { code: `{ onClick() { return 1 } }`, kind: 'unrepresentable' },
-    { code: `{ handler: () => SOME_CONST }`, kind: 'unrepresentable' },
-    { code: 'shared as Options', kind: 'unrepresentable' },
-  ])('classifies $code as $kind', ({ code, kind }) => {
-    expect(classifyValue(expression(code)).kind).toBe(kind);
-  });
-
-  it('treats an unhandled expression shape as unrepresentable', () => {
-    expect(classifyValue(expression('a ? b : c')).kind).toBe('unrepresentable');
-  });
-});
-
-describe('isSelfContainedFunction', () => {
-  it.each([
-    // Every referenced binding is a parameter, a local, or a JavaScript global.
-    { code: '() => 1', selfContained: true },
-    { code: '(value) => value.toUpperCase()', selfContained: true },
-    { code: '(payload) => console.log(payload)', selfContained: true },
-    { code: '({ value }) => value', selfContained: true },
-    { code: '(a, ...rest) => rest.concat(a)', selfContained: true },
-    { code: `(mode = 'auto') => mode`, selfContained: true },
-    { code: '() => { const x = 1; return x + 1; }', selfContained: true },
-    { code: 'function (n) { return Math.max(n, 0); }', selfContained: true },
-
-    // Captures a binding the snippet cannot declare.
-    { code: '(value) => formatHelper(value)', selfContained: false },
-    { code: '() => SOME_CONST', selfContained: false },
-    { code: `(value = DEFAULT_MODE) => value`, selfContained: false },
-    { code: '() => { emit(1); }', selfContained: false },
-    { code: '() => { const x = SOME_CONST; return x; }', selfContained: false },
-    { code: '(value) => ({ ...BASE, value })', selfContained: false },
-
-    // Not a function at all.
-    { code: `'text'`, selfContained: false },
-    { code: 'makeHandler()', selfContained: false },
-  ])('reports $code as $selfContained', ({ code, selfContained }) => {
-    expect(isSelfContainedFunction(expression(code))).toBe(selfContained);
-  });
-});

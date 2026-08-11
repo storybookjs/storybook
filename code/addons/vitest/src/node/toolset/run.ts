@@ -1,17 +1,15 @@
 import type { ChannelLike } from 'storybook/internal/channels';
+import {
+  findStoryIds,
+  type FoundStory,
+  type NotFoundStory,
+  type StoryInput,
+} from 'storybook/internal/core-server';
+import { OpenServiceTestRunTimeoutError } from 'storybook/internal/server-errors';
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { OpenServiceTestRunTimeoutError } from '../../../../server-errors.ts';
-import { findStoryIds, type FoundStory, type NotFoundStory } from '../stories/find-story-ids.ts';
-import type { StoryInput } from '../stories/story-input.ts';
+import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from '../../constants.ts';
 import type { TestRunOutput, TestRunResult } from './definition.ts';
-
-/**
- * Channel events owned by addon-vitest. Duplicated here so the test API does not depend on the addon
- * package; keep in sync with `@storybook/addon-vitest` constants.
- */
-export const TRIGGER_TEST_RUN_REQUEST = 'storybook/test/trigger-test-run-request';
-export const TRIGGER_TEST_RUN_RESPONSE = 'storybook/test/trigger-test-run-response';
 
 /** Default wait for a matching channel response before failing the queued run. */
 export const DEFAULT_TEST_RUN_TIMEOUT_MS = 30 * 60 * 1000;

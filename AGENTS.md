@@ -89,136 +89,22 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
 
 ### Open services and toolsets
 
-- OSA hosts two sibling constructs behind the `storybook/open-service` entry: **services**
-  (`defineService`/`registerService`) own internal state, synchronization, queries, commands, and
-  loading; **toolsets** (`defineToolset`/`registerToolset`) are the public agent surface for CLI/MCP.
-  They live in mirrored trees: `open-service/services/` and `open-service/toolsets/`.
-- All core OSA services are `internal: true` and may change without a public semver bump. Resolve
-  internal services with `getService(id, { internal: true })`. A plain `getService(id)` throws when
-  the service is internal.
-- A toolset has an `id`, a description, a `telemetryGroup` (`'dev' | 'test' | 'docs'` — stories
-  and review report under `dev`), and methods with five fields: `title` (the display label client
-  UIs show — editable prose, not frozen), `description`, `schema` (input), optional `outputSchema`,
-  and one `handler`.
-- `handler(input, ctx)` returns a `ToolsetOutcome<TSuccess, TFailure = TSuccess>`: a discriminated
-  union of `{ ok: true, data, markdown }` and `{ ok: false, data, markdown }`, written as plain
-  object literals (no factory helpers). The one handler owns data, side effects, telemetry, and the
-  rendered Markdown, because one MCP reply carries `content` (text) and `structuredContent` (JSON
-  matching `outputSchema`) at once and both must come from a single run — re-running a method with
-  side effects would repeat them. Usage telemetry reports inline in the handler with the rendered
-  text in hand, so no consumer can forget it. Declare `TFailure = never` for infallible methods.
-- The failure model, one line each: could not do the job → **throw**; did the job and the answer is
-  bad news (a failed test run, a not-found lookup) → **return `{ ok: false, data, markdown }`**.
-  Adapters unwrap mechanically — text blocks from `markdown`, `structuredContent` from `data`, MCP
-  `isError` (and later CLI exit codes) from `ok` — and must not re-derive meaning from the data.
-  `markdown` may be `string[]`: `preview-stories` renders one text block per URL; the CLI joins
-  with newlines.
-- An error whose message speaks to the agent and names its own recovery declares
-  `agentFacing: true` (a `StorybookError` constructor prop). Adapters surface such errors verbatim
-  by reading that property — never by keeping a class list, which misclassifies across bundle
-  copies.
-- The entry whose function throws a public error also exports that error class; catchers import
-  both from the same specifier so plain `instanceof` is correct by construction (each core entry
-  bundles its own copy of a class, so a class imported from a different entry is a different
-  constructor). `storybook/open-service` exports the registry's own errors for exactly this reason.
-- `ctx` is `{ consumer: 'cli' | 'mcp', origin?, uiRoot?, getService, telemetry? }`. `uiRoot` is
-  where the consumer's Storybook UI is reachable when that differs from `origin` (sub-path-hosted
-  dev server); methods that link into the UI prefer it, and the adapter derives it from the request.
-  A method's `description` may be a function of `ctx`, so agent-facing prose lives with the
-  capability. Name sibling tools through `getRef(ctx)` rather than hardcoding either spelling — it
-  renders the frozen MCP tool name or the CLI command per consumer.
-- Boot-time facts that vary prose (review enabled, a11y enabled) are factory options on the toolset,
-  not ctx fields.
-- `MCP_TOOL_NAMES` (`open-service/toolset-names.ts`) is the frozen public MCP contract. Both MCP
-  packages register from it; changing an entry is a breaking change. Tool titles are not part of
-  that contract — they live on each method as editable display prose.
-- Toolsets register imperatively via `registerToolset`, called from the same place the paired
-  service registers (the `services` preset hook for core and addons; the mechanism itself does not
-  depend on the Node preset system). Feature gating is shared: a disabled feature registers neither
-  the service nor its toolset. `registerToolset` throws on a duplicate id, and `getToolset(id)`
-  throws when the id is unregistered — a missing toolset must fail loudly, never silently drop a
-  tool. Registration sites today: `docs`, `stories` and `review` in core's `services` hook, `test`
-  in addon-vitest's. Because a missing toolset fails loudly, register from `services` and not from a
-  hook that only some runs reach: consumers resolve toolsets for their descriptions and schemas
-  alone, including `storybook ai` metadata generation, which never starts a dev server. Whatever
-  gates registration must match the gate that decides whether the tool is offered.
-- The docs toolset is runtime-agnostic behind an injected `DocsAccess` (`list` + `resolve`), so one
-  definition serves every runtime. Three accesses implement it — there is deliberately no fourth:
-  `createServiceDocsAccess` (the open services), `createManifestDocsAccess` (the manifests core
-  builds, the default) and `createProviderDocsAccess` (manifest files over any provider — HTTP, a
-  static bundle, an authenticated proxy — following `$ref`s and validating on arrival). Which of
-  the first two serves the local Storybook is decided by *registration*, not the
-  `experimentalDocgenServer` flag: `createLocalDocsAccess` picks the services only when the docgen
-  service actually registered (the flag alone is not enough — manager-only builds and a missing
-  docgen worker skip that registration), and core's docs toolset and addon-mcp's composed local
-  source share that selector. A test asserts the toolset never reaches `core-server`; keep it that
-  way.
-- Composition is access *composition*, not a second implementation: `createCompositionDocsSources`
-  builds one access per source and `createDocsToolset({ sources })` adds the `storybookId` input,
-  groups the listing per source, and isolates a failing source — unless every source fails, which
-  is reported as one error instead of a page of them. Its `localAccess` option reads the source with
-  no `url` directly, which is how the dev server reads itself the same way composed as it does
-  alone; addon-mcp passes `createLocalDocsAccess` there in docgen-server mode rather than owning a
-  second engine.
-- `@storybook/mcp` and `@storybook/addon-mcp` both register their docs tools from that toolset
-  through the dependency-light `storybook/internal/toolsets-docs` entry. `@storybook/mcp` takes
-  `storybook` as a devDependency and bundles it, so its published dependencies must stay free of
-  `storybook`; `addon-mcp` no longer depends on `@storybook/mcp` at all. A composition builds its
-  toolset per request, because the provider and sources belong to the request.
-- `toolsets-docs` is a **portable** entry (`portable: { external: [...] }` in
-  `code/core/build-config.ts`): its d.ts is bundled in an isolated single-entry pass into one flat
-  self-contained file whose only imports are the entry's declared allowlist (today exactly
-  `valibot`), so consumers inline it through standard resolution with no custom resolver. A
-  producer-side test next to the entry source (`portable-dist.test.ts`) asserts flatness, the
-  allowlist, and a size budget — an edit that entangles the entry with react or another core
-  surface fails core's own build. Its closure must not import core by bare name
-  (`storybook/...`); import from the defining module instead of a barrel that does.
-- Toolset factories are exported from `storybook/internal/core-server`, not `storybook/open-service`:
-  they reach server-only code, and the latter entry is built for the browser.
-- The public `storybook tools` CLI (`code/core/src/cli/tools/`) is the toolsets' third consumer: it
-  loads the target Storybook configuration in its own process (which registers every service and
-  toolset via the `services` hook), derives its whole command surface from
-  `getRegisteredToolsets()` at runtime (`storybook tools <toolset> <kebab-method>`), and maps
-  `ToolsetOutcome` mechanically (markdown to stdout, `--json` prints `data`, `ok` drives the exit
-  code). It runs fully disconnected from any dev server: methods marked `requiresDevServer` on
-  their definition present one uniform "start the dev server first" contract, with `stories
-  preview` resolving its origin from the runtime instance registry. Graph-dependent methods host
-  the module graph in-process by repeating the dev server's change-detection bootstrap against
-  builder-vite's headless adapter. Story tests run locally too: addon-vitest wires the responder
-  answering `test run` requests in the same `services` hook that registers the `test` toolset
-  (lazy machinery, eagerly run by the dev server's channel hook for the manager UI), and
-  `experimental_loadStorybook` accepts a caller-supplied channel so the CLI can hand it the one its
-  UniversalStores were prepared on — the responder relays the vitest child's store events over that
-  channel, so a second channel on either side hangs the run. Connect mode (attaching to a running
-  dev server's OSA state) is Milestone 5b.
-- One method is the exception, and deliberately a temporary one: `review create` needs the dev
-  server's review state, so the CLI forwards it to that Storybook's `@storybook/addon-mcp`
-  endpoint (`PROXY_VIA_MCP_METHODS` in `cli/tools/run.ts`, over `cli/tools/mcp-client.ts`) and
-  unwraps the reply mechanically — text to stdout, `structuredContent` for `--json`, `isError` to
-  the exit code. The handler runs once, in the dev server, so its telemetry and side effects stay
-  there. Milestone 5b deletes the set, its dispatch branch and the injectable `mcpToolCall`
-  dependency; `mcp-client.ts` follows once `storybook ai` is removed. Keep the branch
-  self-contained: nothing outside it may learn that a method is proxied. One consequence to know
-  about: the handler executes with `consumer: 'mcp'`, so a proxied method's rendered prose is the
-  MCP variant even on the CLI (descriptions and `--help` are unaffected — those render locally).
-- `cli/tools/` also owns the modules `storybook ai` still uses (`instances/`, `mcp-client.ts`,
-  `config-dir.ts`, `schema-lines.ts`): the ai CLI is slated for removal, so the dependency runs
-  from it into the tools CLI and never the other way. Nothing under `cli/tools/` may import from
-  `cli/ai/` — `no-restricted-imports` in `code/.oxlintrc.json` enforces it.
-- `storybook skills` (`code/core/src/cli/skills/`) is a CLI construct, not an OSA toolset: `list`
-  and `get <id>` serve the three agent-facing skill documents (`stories`, `write-story`, `setup`)
-  as plain markdown, always on with no feature flag. The pure builders live in
-  `cli/skills/content/`, exported as `storybook/internal/skills`, and `@storybook/addon-mcp`
-  consumes the same builders with `consumer: 'mcp'` for byte-identical output; consumer-aware
-  cross-references go through `getSkillRef`/`getRef` instead of hardcoding either vocabulary.
-  Probing (`resolveSkillInputs`, `getToolAvailability`) lives in `cli/skills/` outside `content/`
-  and is exported via `storybook/internal/core-server`; `setup` uses the lighter `getProjectInfo`
-  probe instead, so it still works on a broken project. `cli/skills/**` may not import `cli/ai/**`,
-  and `cli/skills/content/**` may not import `core-server` either — both lint-enforced in
-  `code/.oxlintrc.json`, keeping the published `storybook/internal/skills` entry pure.
-- The `ai` MCP passthrough (`cli/ai/mcp/`) and the `experimental_storybookAi` preset deliberately
-  survive alongside the skills CLI for published-plugin compatibility; Milestone 7 deletes both
-  once plugins switch to a stub.
+- Open services own internal state, synchronization, queries, commands, and loading. Toolsets expose
+  capabilities to agents through MCP and the `storybook tools` CLI.
+- Definitions live under `code/core/src/shared/open-service/`; addons may own and register their own
+  toolsets, as addon-vitest does for `test`.
+- Register services and toolsets from the same `services` preset hook and behind the same feature
+  gate. Missing or duplicate registrations fail loudly.
+- Read `code/core/src/shared/open-service/README.md` before changing the contract, adapters,
+  registration, docs access, transport rendering, or tools CLI.
+
+### Agent-facing skills
+
+- `storybook skills` serves the `stories`, `write-story`, and `setup` documents as Markdown.
+- Pure content lives in `code/core/src/cli/skills/content/` and is exported through
+  `storybook/internal/skills`; addon-mcp consumes the same builders.
+- Keep `cli/skills/**` independent of `cli/ai/**`, and keep `cli/skills/content/**` independent of
+  `core-server`. Lint rules enforce both boundaries.
 
 ## Common Commands
 

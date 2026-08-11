@@ -2,10 +2,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 import type { StoryIndex } from 'storybook/internal/types';
 
+import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from '../../constants.ts';
 import type { TestRunResult } from './definition.ts';
 import {
-  TRIGGER_TEST_RUN_REQUEST,
-  TRIGGER_TEST_RUN_RESPONSE,
   createAsyncQueue,
   runStoryTests,
   type TestChannel,
@@ -92,6 +91,18 @@ describe('createAsyncQueue', () => {
 });
 
 describe('runStoryTests', () => {
+  it('rejects when the story index cannot be loaded', async () => {
+    await expect(
+      runStoryTests({
+        channel: createMockChannel(),
+        getIndex: async () => {
+          throw new Error('index unavailable');
+        },
+        stories: [{ storyId: 'button--primary' }],
+      })
+    ).rejects.toThrow('index unavailable');
+  });
+
   it('returns no-stories with the per-selector messages when nothing matched', async () => {
     const channel = createMockChannel();
     const emitSpy = vi.spyOn(channel, 'emit');

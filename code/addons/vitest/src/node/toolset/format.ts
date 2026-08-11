@@ -1,4 +1,5 @@
-import type { ToolsetCtx } from '../../toolset-definition.ts';
+import type { ToolsetCtx } from 'storybook/open-service';
+
 import type { TestRunData, TestRunResult } from './definition.ts';
 
 type ComponentTestStatus = TestRunResult['componentTestStatuses'][number];
@@ -239,7 +240,7 @@ function formatCompletedRun(
 }
 
 /**
- * Agent-facing rendering, kept identical to the `run-story-tests` MCP tool.
+ * Agent-facing rendering shared by the `test-run` MCP tool and other transports.
  *
  * Failed and cancelled runs read as `Error: …` because that tool surfaced them by throwing; the
  * `isError` flag that accompanied them belongs to the adapter, not to text.
@@ -299,5 +300,5 @@ function formatTestRunSummary(data: TestRunData): string {
 }
 
 export function formatTestRun(data: TestRunData, ctx: ToolsetCtx): string {
-  return ctx.consumer === 'mcp' ? formatTestRunForAgent(data, ctx) : formatTestRunSummary(data);
+  return ctx.transport === 'mcp' ? formatTestRunForAgent(data, ctx) : formatTestRunSummary(data);
 }

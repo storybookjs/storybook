@@ -59,17 +59,19 @@ export {
 } from '../shared/open-service/server.ts';
 
 /**
- * Toolset registration for addons that host a public toolset.
- *
- * Exposed from the Node entry rather than `storybook/open-service`: toolset factories reach
- * server-only code, and that entry is built for the browser.
+ * Toolset registration and server-side primitives for addons that host a public toolset.
  */
 export { registerToolset } from '../shared/open-service/toolset-registry.ts';
-export { createTestToolset } from '../shared/open-service/toolsets/test/definition.ts';
-export type {
-  CreateTestToolsetOptions,
-  TestToolset,
-} from '../shared/open-service/toolsets/test/definition.ts';
+export type { StoryIndexAccess } from '../shared/open-service/toolsets/stories/definition.ts';
+export {
+  findStoryIds,
+  type FoundStory,
+  type NotFoundStory,
+} from '../shared/open-service/toolsets/stories/find-story-ids.ts';
+export {
+  storyInputArraySchema,
+  type StoryInput,
+} from '../shared/open-service/toolsets/stories/story-input.ts';
 export { createDocsToolset } from '../shared/open-service/toolsets/docs/definition.ts';
 export { emptyManifests } from '../shared/open-service/toolsets/docs/access.ts';
 export type { DocsAccess, ResolvedDocsEntry } from '../shared/open-service/toolsets/docs/access.ts';

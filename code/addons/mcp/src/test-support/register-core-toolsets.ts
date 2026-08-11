@@ -5,6 +5,10 @@
  * server boots, so a test that exercises tool registration has to stand that step up too. The real
  * toolsets are used (with stub runtime dependencies) rather than fakes, so the adapter is tested
  * against the definitions it ships with.
+ *
+ * The `test` toolset is owned by `@storybook/addon-vitest` and is intentionally not registered
+ * here. Cover it in the addon's own unit tests; MCP tests that need a `test` toolset register a
+ * local stub in the test file.
  */
 
 import type { StoryIndex } from 'storybook/internal/types';
@@ -12,7 +16,6 @@ import { clearToolsetRegistry } from 'storybook/open-service';
 import {
   createDocsToolset,
   createStoriesToolset,
-  createTestToolset,
   emptyManifests,
   registerToolset,
   reviewToolset,
@@ -23,8 +26,7 @@ const EMPTY_INDEX: StoryIndex = { v: 5, entries: {} };
 export function registerCoreToolsetsForTest({
   index = EMPTY_INDEX,
   reviewEnabled = true,
-  testToolset = true,
-}: { index?: StoryIndex; reviewEnabled?: boolean; testToolset?: boolean } = {}) {
+}: { index?: StoryIndex; reviewEnabled?: boolean } = {}) {
   clearToolsetRegistry();
 
   const storyIndex = { getIndex: async () => index };
@@ -41,17 +43,6 @@ export function registerCoreToolsetsForTest({
     })
   );
   registerToolset(reviewToolset);
-  // `testToolset: false` mirrors addon-vitest being absent or not enabled, where its `services`
-  // hook never runs and the `test` toolset stays unregistered.
-  if (testToolset) {
-    registerToolset(
-      createTestToolset({
-        channel: { on: () => {}, off: () => {}, emit: () => {} } as never,
-        storyIndex,
-        a11yEnabled: false,
-      })
-    );
-  }
   registerToolset(
     createDocsToolset({
       docsAccess: { list: async () => emptyManifests(), resolve: async () => undefined },

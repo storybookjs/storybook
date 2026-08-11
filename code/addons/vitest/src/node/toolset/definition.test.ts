@@ -1,9 +1,9 @@
 import type { StoryIndex } from 'storybook/internal/types';
+import type { ToolsetCtx } from 'storybook/open-service';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as v from 'valibot';
 
-import type { ToolsetCtx } from '../../toolset-definition.ts';
 import type { TestRunOutput, TestRunResult } from './definition.ts';
 import { createTestToolset } from './definition.ts';
 import { runStoryTests } from './run.ts';
@@ -17,13 +17,13 @@ const telemetry = vi.fn();
 const channel = {} as never;
 
 const ctx = {
-  consumer: 'cli',
+  transport: 'cli',
   origin: 'http://localhost:6006',
   getService: vi.fn() as ToolsetCtx['getService'],
   telemetry,
 } satisfies ToolsetCtx;
 
-const mcpCtx = { ...ctx, consumer: 'mcp' } satisfies ToolsetCtx;
+const mcpCtx = { ...ctx, transport: 'mcp' } satisfies ToolsetCtx;
 
 const baseResult: TestRunResult = {
   config: { coverage: false, a11y: false },
@@ -72,14 +72,14 @@ beforeEach(() => {
 });
 
 function runTests(
-  input: v.InferInput<typeof toolset.methods.run.schema> = {},
+  input: v.InferInput<typeof toolset.methods.run.input> = {},
   runCtx: ToolsetCtx = ctx
 ) {
-  return toolset.methods.run.handler(v.parse(toolset.methods.run.schema, input), runCtx);
+  return toolset.methods.run.handler(v.parse(toolset.methods.run.input, input), runCtx);
 }
 
 /** Runs and renders the way the MCP adapter does: one handler call, markdown from the outcome. */
-async function runForMcp(input: v.InferInput<typeof toolset.methods.run.schema> = {}) {
+async function runForMcp(input: v.InferInput<typeof toolset.methods.run.input> = {}) {
   return runTests(input, mcpCtx);
 }
 
@@ -358,6 +358,7 @@ No story found for story ID "gone--story"`);
       await runTests({ stories: [{ storyId: 'button--primary' }] });
 
       expect(telemetry).toHaveBeenCalledWith('tool:runStoryTests', {
+        toolset: 'test',
         runA11y: true,
         inputStoryCount: 1,
         matchedStoryCount: 1,
@@ -377,6 +378,7 @@ No story found for story ID "gone--story"`);
       await runTests({ stories: [{ storyId: 'missing--story' }], a11y: false });
 
       expect(telemetry).toHaveBeenCalledWith('tool:runStoryTests', {
+        toolset: 'test',
         runA11y: false,
         inputStoryCount: 1,
         matchedStoryCount: 0,
@@ -393,6 +395,30 @@ No story found for story ID "gone--story"`);
       await runTests();
 
       expect(telemetry).not.toHaveBeenCalled();
+    });
+
+    it.each([
+      ['completed', completedRun],
+      [
+        'no-stories',
+        {
+          status: 'no-stories' as const,
+          notFoundMessages: ['No story found for story ID "missing--story"'],
+        },
+      ],
+    ])('does not fail a %s result when telemetry rejects', async (_status, result) => {
+      vi.mocked(runStoryTests).mockResolvedValue(result);
+      const rejectingCtx: ToolsetCtx = {
+        ...ctx,
+        telemetry: async () => {
+          throw new Error('telemetry unavailable');
+        },
+      };
+
+      const outcome = await runTests({}, rejectingCtx);
+
+      expect(outcome.ok).toBe(true);
+      expect(outcome.data.status).toBe(result.status);
     });
   });
 });

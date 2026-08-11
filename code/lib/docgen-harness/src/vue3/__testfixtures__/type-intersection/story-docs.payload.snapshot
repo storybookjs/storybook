@@ -1,0 +1,14 @@
+{
+  "id": "type-intersection",
+  "import": "import IntersectionProps from './IntersectionProps.vue';",
+  "name": "IntersectionProps",
+  "path": "__PATH__",
+  "stories": {
+    "forms-type-intersection--props-as-written": {
+      "description": undefined,
+      "id": "forms-type-intersection--props-as-written",
+      "name": "Props As Written",
+      "summary": undefined,
+    },
+  },
+}

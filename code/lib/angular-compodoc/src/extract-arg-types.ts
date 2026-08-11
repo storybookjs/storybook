@@ -76,6 +76,21 @@ export const isMethod = (methodOrProp: Method | Property): methodOrProp is Metho
   return (methodOrProp as Method).args !== undefined;
 };
 
+/**
+ * Whether a member must be bound, from the two flags Compodoc emits about it.
+ *
+ * `required` is the flag that matches what Angular means, but it is only trustworthy in one
+ * direction: Compodoc derives it from the presence of the `required` key in an `@Input({...})`
+ * argument rather than from its value, so `@Input({ required: false })` reports `required: true`
+ * alongside `optional: true`. Requiring both to agree keeps that case correct.
+ *
+ * `required` is absent altogether for a plain `@Input()`, which falls back to `optional` - and
+ * Compodoc omits that too (compodoc#863), so those inputs still read as required. That is the
+ * upstream gap; the moment a fixed Compodoc emits `optional`, this returns the right answer with
+ * no change here.
+ */
+const isRequired = (item: Property): boolean => (item.required ?? true) && !item.optional;
+
 export const checkValidComponentOrDirective = (component: Component | Directive) => {
   if (!component.name) {
     throw new Error(`Invalid component ${JSON.stringify(component)}`);
@@ -171,11 +186,41 @@ const extractTypeFromValue = (defaultValue: any) => {
     : null;
 };
 
+/**
+ * Picks one declaration out of several sharing a name.
+ *
+ * Compodoc's output is not stable: the same project produces the same entries in a different order
+ * from run to run, and a name like `Story` or `Size` is routinely declared once per component folder.
+ * Taking whatever the array happened to list first therefore let a control's type change with no
+ * source change at all. The component's own file wins, and any remaining tie is broken on the file
+ * path so the answer is at least the same every run.
+ */
+const pickDeclaration = <T extends { file?: string }>(
+  candidates: T[],
+  componentFile: string | undefined
+): T | undefined => {
+  if (candidates.length <= 1) {
+    return candidates[0];
+  }
+  const declaredAlongside = componentFile
+    ? candidates.find((candidate) => candidate.file === componentFile)
+    : undefined;
+
+  return (
+    declaredAlongside ??
+    [...candidates].sort((a, b) => (a.file ?? '').localeCompare(b.file ?? ''))[0]
+  );
+};
+
 const extractEnumValues = (
   compodocType: unknown,
-  compodocJson: CompodocJson | undefined
+  compodocJson: CompodocJson | undefined,
+  componentFile?: string
 ): SBEnumType['value'] | null => {
-  const enumType = compodocJson?.miscellaneous?.enumerations?.find((x) => x.name === compodocType);
+  const enumType = pickDeclaration(
+    compodocJson?.miscellaneous?.enumerations?.filter((x) => x.name === compodocType) ?? [],
+    componentFile
+  );
 
   // `childs` is guarded like the sibling lookups: an enumeration entry without it must not throw a
   // `TypeError` out of the whole extraction.
@@ -203,23 +248,29 @@ const extractEnumValues = (
 const resolveTypealias = (
   compodocType: string,
   compodocJson: CompodocJson | undefined,
+  componentFile?: string,
   seen: Set<string> = new Set()
 ): string => {
   if (seen.has(compodocType)) {
     return compodocType;
   }
-  const typeAlias = compodocJson?.miscellaneous?.typealiases?.find((x) => x.name === compodocType);
+  const typeAlias = pickDeclaration(
+    compodocJson?.miscellaneous?.typealiases?.filter((x) => x.name === compodocType) ?? [],
+    componentFile
+  );
   if (!typeAlias) {
     return compodocType;
   }
   seen.add(compodocType);
-  return resolveTypealias(typeAlias.rawtype, compodocJson, seen);
+  return resolveTypealias(typeAlias.rawtype, compodocJson, componentFile, seen);
 };
 
 export const extractType = (
   property: Property,
   defaultValue: any,
-  compodocJson: CompodocJson | undefined
+  compodocJson: CompodocJson | undefined,
+  /** Source file of the component being extracted, used to disambiguate same-named declarations. */
+  componentFile?: string
 ): SBType => {
   const compodocType = property.type || extractTypeFromValue(defaultValue);
   switch (compodocType) {
@@ -230,8 +281,8 @@ export const extractType = (
     case null:
       return { name: 'other', value: 'void' };
     default: {
-      const resolvedType = resolveTypealias(compodocType, compodocJson);
-      const enumValues = extractEnumValues(resolvedType, compodocJson);
+      const resolvedType = resolveTypealias(compodocType, compodocJson, componentFile);
+      const enumValues = extractEnumValues(resolvedType, compodocJson, componentFile);
       return enumValues
         ? { name: 'enum', value: enumValues }
         : { name: 'other', value: 'empty-enum' };
@@ -314,6 +365,21 @@ const readMembers = (componentData: CompodocEntry, key: string): (Method | Prope
     | (Method | Property)[]
     | undefined) || [];
 
+/**
+ * The `model()` members of a Compodoc entry: an output whose same-named input is declared on the
+ * same line. Compodoc marks a `model()` in no other way, and an `@Input('x')`/`@Output('x')` alias
+ * collision shares the name but not the line. The package README has the quirk in full.
+ */
+const getModelProperties = (componentData: CompodocEntry): Property[] => {
+  const inputsByName = new Map(
+    (readMembers(componentData, 'inputsClass') as Property[]).map((item) => [item.name, item])
+  );
+  return (readMembers(componentData, 'outputsClass') as Property[]).filter((item) => {
+    const input = inputsByName.get(item.name);
+    return input?.line !== undefined && input.line === item.line;
+  });
+};
+
 export const extractArgTypesFromData = (
   componentData: CompodocEntry,
   { compodocJson, filterNonInputControls, logger = NOOP_LOGGER, unwrapHtml }: ExtractArgTypesOptions
@@ -328,16 +394,7 @@ export const extractArgTypesFromData = (
     ? componentClasses
     : ['properties', 'methods'];
 
-  // Detect Angular `model()` signals. compodoc emits no `model()` marker: a
-  // `model()` lands under the same bare name in BOTH `inputsClass` and
-  // `outputsClass`, whereas plain inputs/outputs land in only one. A name in
-  // both arrays is the only version-tolerant discriminator.
-  const inputClassNames = new Set<string>(
-    readMembers(componentData, 'inputsClass').map((item) => item.name)
-  );
-  const modelProperties = readMembers(componentData, 'outputsClass').filter((item) =>
-    inputClassNames.has(item.name)
-  ) as Property[];
+  const modelProperties = getModelProperties(componentData);
   const modelPropertyNames = new Set<string>(modelProperties.map((item) => item.name));
 
   compodocClasses.forEach((key: CompodocMemberKey) => {
@@ -359,7 +416,7 @@ export const extractArgTypesFromData = (
       const type: SBType =
         isMethod(item) || (section !== 'inputs' && section !== 'properties')
           ? { name: 'other', value: 'void' }
-          : extractType(item as Property, defaultValue, compodocJson);
+          : extractType(item as Property, defaultValue, compodocJson, componentData.file);
       const action = section === 'outputs' ? { action: item.name } : {};
 
       const argType = {
@@ -371,7 +428,7 @@ export const extractArgTypesFromData = (
           category: section,
           type: {
             summary: isMethod(item) ? displaySignature(item) : item.type,
-            required: isMethod(item) ? false : !item.optional,
+            required: isMethod(item) ? false : isRequired(item as Property),
           },
           defaultValue: { summary: defaultValue },
         },
@@ -400,7 +457,10 @@ export const extractArgTypesFromData = (
         category: 'outputs',
         type: {
           summary: `(e: ${item.type}) => void`,
-          required: !item.optional,
+          // An output is never required to bind, and a real output says so via Compodoc's own
+          // flag. This one is synthesized, so it has to say so itself rather than inheriting the
+          // requiredness of the model input it derives from.
+          required: false,
         },
       },
     };

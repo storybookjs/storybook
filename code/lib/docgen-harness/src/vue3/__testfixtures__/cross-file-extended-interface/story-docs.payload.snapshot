@@ -1,0 +1,14 @@
+{
+  "id": "cross-file-extended-interface",
+  "import": "import ExtendedInterfaceProps from './ExtendedInterfaceProps.vue';",
+  "name": "ExtendedInterfaceProps",
+  "path": "__PATH__",
+  "stories": {
+    "forms-cross-file-extended-interface--props-as-written": {
+      "description": undefined,
+      "id": "forms-cross-file-extended-interface--props-as-written",
+      "name": "Props As Written",
+      "summary": undefined,
+    },
+  },
+}

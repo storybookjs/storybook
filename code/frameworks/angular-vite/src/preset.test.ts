@@ -1,12 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 
-import { vol } from 'memfs';
 import { mergeConfig, normalizePath } from 'vite';
 
-import { runCompodoc } from './builders/utils/run-compodoc.ts';
+import { ensureCompodocDocumentation } from './compodoc/ensure-documentation.ts';
 import { angularOptionsPlugin, viteFinal } from './preset.ts';
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 
@@ -16,18 +14,14 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => ({
   ...(await importOriginal()),
   findConfigFile: () => undefined,
 }));
-vi.mock('node:fs', { spy: true });
-vi.mock('./builders/utils/run-compodoc.ts', { spy: true });
+vi.mock('./compodoc/ensure-documentation.ts', { spy: true });
 vi.mock('vite', { spy: true });
 // The only mock that has to replace the module rather than spy on it: loading the real Angular
 // plugin drags a full Angular toolchain into the run, and none of these tests are about it.
 vi.mock('@analogjs/vite-plugin-angular', () => ({ default: (): unknown[] => [] }));
 
-beforeEach(async () => {
-  vol.reset();
-  const memfs = await vi.importActual<typeof import('memfs')>('memfs');
-  vi.mocked(existsSync).mockImplementation(memfs.fs.existsSync as typeof existsSync);
-  vi.mocked(runCompodoc).mockResolvedValue(undefined);
+beforeEach(() => {
+  vi.mocked(ensureCompodocDocumentation).mockResolvedValue(undefined);
   vi.mocked(mergeConfig).mockImplementation(
     (config: object, extra: object) => ({ ...config, ...extra }) as never
   );
@@ -36,7 +30,7 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
-  vi.mocked(runCompodoc).mockClear();
+  vi.mocked(ensureCompodocDocumentation).mockClear();
 });
 
 const WORKSPACE_ROOT = resolve('/workspace');
@@ -106,43 +100,31 @@ describe('viteFinal Compodoc generation', () => {
       },
     }) as unknown as StandaloneOptions;
 
-  it('generates against the resolved workspace root and tsconfig', async () => {
+  it('generates against the resolved workspace root, tsconfig and output directory', async () => {
     await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({}));
 
-    expect(runCompodoc).toHaveBeenCalledWith({
+    expect(ensureCompodocDocumentation).toHaveBeenCalledWith({
       compodocArgs: ['-e', 'json', '-d', '.'],
       tsconfig: resolve(WORKSPACE_ROOT, 'tsconfig.json'),
       workspaceRoot: WORKSPACE_ROOT,
+      outputDir: WORKSPACE_ROOT,
     });
   });
 
-  it('skips generation when documentation.json already sits in the configured `-d` directory', async () => {
-    // Reading honours `-d`, so probing the workspace root instead regenerates on every cold start
-    // for any project that redirects Compodoc's output.
-    vol.fromNestedJSON({ [resolve(WORKSPACE_ROOT, 'dist/docs/documentation.json')]: '{}' });
-
+  it('points the run at the configured `-d` directory, which is where the reader looks', async () => {
     await viteFinal(
       { root: WORKSPACE_ROOT },
       optionsWith({ compodocArgs: ['-e', 'json', '-d', 'dist/docs'] })
     );
 
-    expect(runCompodoc).not.toHaveBeenCalled();
-  });
-
-  it('honours the `--output=dir` spelling as well as the separate-value one', async () => {
-    vol.fromNestedJSON({ [resolve(WORKSPACE_ROOT, 'dist/docs/documentation.json')]: '{}' });
-
-    await viteFinal(
-      { root: WORKSPACE_ROOT },
-      optionsWith({ compodocArgs: ['-e', 'json', '--output=dist/docs'] })
+    expect(ensureCompodocDocumentation).toHaveBeenCalledWith(
+      expect.objectContaining({ outputDir: resolve(WORKSPACE_ROOT, 'dist/docs') })
     );
-
-    expect(runCompodoc).not.toHaveBeenCalled();
   });
 
   it('generates nothing when the user opted out of Compodoc', async () => {
     await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({ compodoc: false }));
 
-    expect(runCompodoc).not.toHaveBeenCalled();
+    expect(ensureCompodocDocumentation).not.toHaveBeenCalled();
   });
 });

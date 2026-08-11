@@ -45,7 +45,9 @@ src/
 ├── angular/
 │   ├── angular-baselines.test.ts
 │   ├── angular-legacy-gaps.test.ts
+│   ├── angular-provider-seam.test.ts
 │   ├── angular-render.test.ts
+│   ├── compodoc-parsing-parity.test.ts
 │   ├── csf-types.ts
 │   └── __testfixtures__/<case>/  # component, stories, compodoc-input.json, aot-cmp.ts (signal cases),
 │                                 # argtypes.snapshot, argtypes-filtered.snapshot, snippet-<story>.snapshot
@@ -160,7 +162,7 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - Literal unions, alias unions, and TS enums all resolve to enum sbTypes at compodoc 2.0.0 - the #33779 collapse does not reproduce at this version.
 - Cross-file inheritance is fully resolved (a regression baseline, not a gap).
 - With `angularFilterNonInputControls` off, `properties`/`methods`/`view child` sections surface as argTypes, including private fields (#22007); on restricts to inputs.
-- `model()` records one input plus a synthesized `${name}Change` output.
+- `model()` records one input plus a synthesized `${name}Change` output; the compodoc quirk behind that is written up in `code/lib/angular-compodoc/README.md`.
 - Snippets use only the first comma-separated selector; attribute selectors are mangled to bare attributes.
 
 ## Issue-linked cases (angular)

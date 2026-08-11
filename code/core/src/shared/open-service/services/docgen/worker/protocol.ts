@@ -9,7 +9,11 @@
  */
 import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
 import type { ErrorLike } from '../../module-graph/types.ts';
-import type { DocgenPayload, DocgenProviderDescriptor } from '../types.ts';
+import type {
+  DocgenComponentMetaQuery,
+  DocgenPayload,
+  DocgenProviderDescriptor,
+} from '../types.ts';
 
 /** Sent once, right after spawn, to compose the provider chain inside the worker. */
 export interface DocgenWorkerInitRequest {
@@ -24,7 +28,20 @@ export interface DocgenWorkerExtractRequest {
   entry: IndexEntry;
 }
 
-export type DocgenWorkerRequest = DocgenWorkerInitRequest | DocgenWorkerExtractRequest;
+/**
+ * Sent by a main-thread caller (e.g. a story-docs provider) that needs a component's raw analyzer
+ * metadata rather than a converted {@link DocgenPayload}. `id` correlates the response.
+ */
+export interface DocgenWorkerQueryRequest {
+  type: 'query';
+  id: number;
+  query: DocgenComponentMetaQuery;
+}
+
+export type DocgenWorkerRequest =
+  | DocgenWorkerInitRequest
+  | DocgenWorkerExtractRequest
+  | DocgenWorkerQueryRequest;
 
 /** Chain composition succeeded; the worker is ready for extract requests. */
 export interface DocgenWorkerInitSuccess {
@@ -57,4 +74,28 @@ export interface DocgenWorkerExtractFailure {
 
 export type DocgenWorkerExtractResponse = DocgenWorkerExtractSuccess | DocgenWorkerExtractFailure;
 
-export type DocgenWorkerResponse = DocgenWorkerInitResponse | DocgenWorkerExtractResponse;
+/**
+ * Query succeeded; `result` is whatever the composed module's `queryComponentMeta` returned
+ * (`undefined` when no registered module resolved the query). Opaque to core — the caller casts it
+ * back to its own framework-specific shape.
+ */
+export interface DocgenWorkerQuerySuccess {
+  type: 'query';
+  id: number;
+  result?: unknown;
+  error?: undefined;
+}
+
+/** Query threw; `error` describes the failure. */
+export interface DocgenWorkerQueryFailure {
+  type: 'query';
+  id: number;
+  error: ErrorLike;
+}
+
+export type DocgenWorkerQueryResponse = DocgenWorkerQuerySuccess | DocgenWorkerQueryFailure;
+
+export type DocgenWorkerResponse =
+  | DocgenWorkerInitResponse
+  | DocgenWorkerExtractResponse
+  | DocgenWorkerQueryResponse;

@@ -386,13 +386,10 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   // produce docgen files that wouldn't be served anywhere). Mirrors the !options.ignorePreview
   // gate around index.json and writeManifests in build-static.ts.
   if (features?.experimentalDocgenServer && !options.ignorePreview) {
-    const [docgenDescriptors, storyDocsProvider] = await Promise.all([
-      options.presets.apply<DocgenProviderDescriptor[]>('experimental_docgenProvider', []),
-      options.presets.apply<StoryDocsProvider>(
-        'experimental_storyDocsProvider',
-        async () => undefined
-      ),
-    ]);
+    const docgenDescriptors = await options.presets.apply<DocgenProviderDescriptor[]>(
+      'experimental_docgenProvider',
+      []
+    );
 
     // Docgen extraction runs in a long-lived worker so its CPU-bound TypeScript work never starves
     // the dev-server event loop. The worker composes the descriptor chain; here we forward one
@@ -409,6 +406,14 @@ export const services = async (_value: void, options: Options): Promise<void> =>
         workingDir: process.cwd(),
       });
     }
+
+    // Resolved after the docgen worker so a story-docs provider can query it (via `options.docgenWorker`)
+    // for raw analyzer metadata instead of building its own second, unwatched analyzer.
+    const storyDocsProvider = await options.presets.apply<StoryDocsProvider>(
+      'experimental_storyDocsProvider',
+      async () => undefined,
+      { docgenWorker }
+    );
 
     registerStoryDocsService({
       getIndex: () => storyIndexGenerator.getIndex(),

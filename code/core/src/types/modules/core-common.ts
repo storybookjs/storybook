@@ -18,6 +18,7 @@ import type { Indexer, StoriesEntry } from './indexer.ts';
 import type { SupportedRenderer } from './renderers.ts';
 
 export type {
+  DocgenComponentMetaQuery,
   DocgenError,
   DocgenJsDocTags,
   DocgenMiddleware,
@@ -28,6 +29,7 @@ export type {
   DocgenSubcomponent,
   DocgenWorkerModule,
 } from '../../shared/open-service/services/docgen/types.ts';
+export type { DocgenWorkerClient } from '../../shared/open-service/services/docgen/worker/docgen-worker-client.ts';
 export type {
   StoryDoc,
   StoryDocsById,
@@ -35,6 +37,7 @@ export type {
   StoryDocsPayload,
   StoryDocsProvider,
   StoryDocsProviderInput,
+  StoryDocsProviderOptions,
   StoryDocsProviderPreset,
 } from '../../shared/open-service/services/story-docs/types.ts';
 

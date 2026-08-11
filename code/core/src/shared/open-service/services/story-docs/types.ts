@@ -1,5 +1,6 @@
 import type { Options } from '../../../../types/modules/core-common.ts';
 import type { IndexEntry } from '../../../../types/modules/indexer.ts';
+import type { DocgenWorkerClient } from '../docgen/worker/docgen-worker-client.ts';
 
 /**
  * Caller-facing input to a story-docs provider middleware.
@@ -63,9 +64,20 @@ export type StoryDocsProvider = (
 ) => Promise<StoryDocsPayload | undefined>;
 
 /**
+ * `Options` plus the shared docgen worker, when `experimentalDocgenServer` registered one (core
+ * resolves `experimental_docgenProvider` before composing this preset and passes the client through
+ * `presets.apply`'s `args`). A framework provider that needs raw analyzer metadata no
+ * `DocgenPayload` field carries — a selector, a resolved enum table — queries it here instead of
+ * building a second, unwatched analyzer instance of its own.
+ */
+export interface StoryDocsProviderOptions extends Options {
+  docgenWorker?: DocgenWorkerClient;
+}
+
+/**
  * Preset signature for `experimental_storyDocsProvider`.
  */
 export type StoryDocsProviderPreset = (
   nextStoryDocs: StoryDocsProvider,
-  options: Options
+  options: StoryDocsProviderOptions
 ) => StoryDocsProvider | Promise<StoryDocsProvider>;

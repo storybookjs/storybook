@@ -4,9 +4,11 @@
  * Spawned once by {@link ./docgen-worker-client.ts} and kept alive for the dev server's lifetime so
  * the TypeScript program(s) each provider builds stay warm across requests. On `init` it imports
  * every {@link DocgenProviderDescriptor}'s module and folds them into a single provider chain; on
- * `extract` it runs that chain for one component and posts the resulting payload back. Running here
- * keeps the synchronous, CPU-bound TypeScript work off the main event loop so it never starves the
- * Vite dev server during first render.
+ * `extract` it runs that chain for one component and posts the resulting payload back. On `query` it
+ * forwards to whichever composed module exposed `queryComponentMeta`, so a second consumer (e.g.
+ * `core/story-docs`) can reuse the same warm analyzer instead of building its own. Running here keeps
+ * the synchronous, CPU-bound TypeScript work off the main event loop so it never starves the Vite dev
+ * server during first render.
  */
 import { parentPort } from 'node:worker_threads';
 import { pathToFileURL } from 'node:url';
@@ -14,6 +16,7 @@ import { pathToFileURL } from 'node:url';
 import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
 import { errorToErrorLike } from '../../module-graph/types.ts';
 import type {
+  DocgenComponentMetaQuery,
   DocgenMiddleware,
   DocgenProvider,
   DocgenProviderDescriptor,
@@ -32,11 +35,15 @@ const port = parentPort;
 /** Identity provider that seeds the chain; the bottom of the stack has no docgen to contribute. */
 const seedProvider: DocgenProvider = async () => undefined;
 
-/** Resolved once per worker on `init`; every `extract` awaits it. */
+/** Resolved once per worker on `init`; every `extract` and `query` awaits it. */
 let providerPromise: Promise<DocgenProvider> | undefined;
+
+/** One `queryComponentMeta` per composed module that exposed it, in registration order. */
+let queryFns: NonNullable<DocgenWorkerModule['queryComponentMeta']>[] = [];
 
 async function composeProvider(descriptors: DocgenProviderDescriptor[]): Promise<DocgenProvider> {
   let provider = seedProvider;
+  queryFns = [];
   for (const descriptor of descriptors) {
     const moduleUrl = pathToFileURL(descriptor.moduleSpecifier).href;
     const mod = (await import(moduleUrl)) as Partial<DocgenWorkerModule>;
@@ -47,6 +54,9 @@ async function composeProvider(descriptors: DocgenProviderDescriptor[]): Promise
     }
     const middleware: DocgenMiddleware = await mod.createDocgenProvider(descriptor.options);
     provider = middleware(provider);
+    if (typeof mod.queryComponentMeta === 'function') {
+      queryFns.push(mod.queryComponentMeta);
+    }
   }
   return provider;
 }
@@ -82,6 +92,29 @@ async function handleExtract(id: number, entry: IndexEntry): Promise<void> {
   }
 }
 
+async function handleQuery(id: number, query: DocgenComponentMetaQuery): Promise<void> {
+  try {
+    if (!providerPromise) {
+      throw new Error('docgen worker received a query request before init');
+    }
+    await providerPromise;
+    let result: unknown;
+    for (const queryFn of queryFns) {
+      result = await queryFn(query);
+      if (result !== undefined) {
+        break;
+      }
+    }
+    port.postMessage({ type: 'query', id, result } satisfies DocgenWorkerResponse);
+  } catch (error) {
+    port.postMessage({
+      type: 'query',
+      id,
+      error: errorToErrorLike(error),
+    } satisfies DocgenWorkerResponse);
+  }
+}
+
 port.on('message', (msg: DocgenWorkerRequest) => {
   switch (msg.type) {
     case 'init':
@@ -89,6 +122,9 @@ port.on('message', (msg: DocgenWorkerRequest) => {
       return;
     case 'extract':
       void handleExtract(msg.id, msg.entry);
+      return;
+    case 'query':
+      void handleQuery(msg.id, msg.query);
       return;
     default: {
       const _exhaustive: never = msg;

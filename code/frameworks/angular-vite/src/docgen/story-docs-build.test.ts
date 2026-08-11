@@ -8,7 +8,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { vol } from 'memfs';
 
-import type { AngularComponentMetaSource } from './build-docgen.ts';
+import type { AngularComponentMetaQuerySource } from './story-docs-build.ts';
 import { buildStoryDocsPayload } from './story-docs-build.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -42,7 +42,7 @@ const givenStoryFile = (source: string) => {
 };
 
 describe('buildStoryDocsPayload', () => {
-  it('returns undefined for entries without a story file or with an unparsable one', () => {
+  it('returns undefined for entries without a story file or with an unparsable one', async () => {
     const docsEntry: IndexEntry = {
       id: 'docs--page',
       name: 'Page',
@@ -52,20 +52,22 @@ describe('buildStoryDocsPayload', () => {
       storiesImports: [],
       tags: [],
     };
-    expect(buildStoryDocsPayload({ entry: docsEntry }, { manager: undefined })).toBeUndefined();
+    expect(
+      await buildStoryDocsPayload({ entry: docsEntry }, { manager: undefined })
+    ).toBeUndefined();
 
     givenStoryFile('export default { title: "Broken" ');
-    expect(buildStoryDocsPayload({ entry }, { manager: undefined })).toBeUndefined();
+    expect(await buildStoryDocsPayload({ entry }, { manager: undefined })).toBeUndefined();
   });
 
-  it('still emits description-only stories when the analyzer is unavailable', () => {
+  it('still emits description-only stories when the analyzer is unavailable', async () => {
     givenStoryFile(`
       export default { title: 'Example/Button' };
       /** Documented without a component. */
       export const Default = {};
     `);
 
-    const payload = buildStoryDocsPayload({ entry }, { manager: undefined });
+    const payload = await buildStoryDocsPayload({ entry }, { manager: undefined });
 
     expect(payload?.name).toBe('Button');
     expect(Object.values(payload!.stories)[0]).toEqual({
@@ -75,19 +77,19 @@ describe('buildStoryDocsPayload', () => {
     });
   });
 
-  it('drops the snippet without erroring when the analyzer throws', () => {
+  it('drops the snippet without erroring when the analyzer throws', async () => {
     givenStoryFile(`
       import { ButtonComponent } from './button.component';
       export default { title: 'Example/Button', component: ButtonComponent };
       export const Default = { args: { label: 'Save' } };
     `);
-    const manager: AngularComponentMetaSource = {
-      extractComponentMeta: () => {
+    const manager: AngularComponentMetaQuerySource = {
+      extractComponentMeta: async () => {
         throw new Error('ts blew up');
       },
     };
 
-    const payload = buildStoryDocsPayload({ entry }, { manager });
+    const payload = await buildStoryDocsPayload({ entry }, { manager });
 
     const story = Object.values(payload!.stories)[0];
     expect(story.snippet).toBeUndefined();

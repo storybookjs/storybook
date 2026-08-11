@@ -13,7 +13,6 @@ import { resolve } from 'node:path';
 
 import type { EnumType, Property } from '@storybook/angular-compodoc';
 import type { AngularClassMeta, AngularComponentMetaResult } from '@storybook/angular-cm';
-import type { AngularComponentMetaSource } from './build-docgen.ts';
 import { parseStoryFile, resolveComponentOf } from './resolve-component.ts';
 import { buildComponentOutletTemplate } from '../template-grammar.ts';
 import {
@@ -22,18 +21,30 @@ import {
   renderComponentSnippet,
 } from './story-docs-snippet.ts';
 
+/**
+ * A component-meta lookup reached through the shared docgen worker rather than an in-process
+ * analyzer, so `extractComponentMeta` is Promise-returning here (a real `AngularComponentMetaManager`
+ * resolves synchronously; `await`ing a non-Promise value is a no-op).
+ */
+export interface AngularComponentMetaQuerySource {
+  extractComponentMeta(
+    componentPath: string,
+    names: { exportName: string; localName?: string }
+  ): Promise<AngularComponentMetaResult | undefined>;
+}
+
 export interface BuildStoryDocsContext {
-  // `undefined` when the analyzer could not be created; descriptions still extract without it.
-  manager: AngularComponentMetaSource | undefined;
+  // `undefined` when the docgen worker is unavailable; descriptions still extract without it.
+  manager: AngularComponentMetaQuerySource | undefined;
   resolvePath?: (importPath: string) => string;
 }
 
 // Stories that declare their own `render` get no snippet: their template is a runtime value static
 // analysis cannot see, and a component-derived one would misrepresent it.
-export const buildStoryDocsPayload = (
+export const buildStoryDocsPayload = async (
   input: StoryDocsProviderInput,
   context: BuildStoryDocsContext
-): StoryDocsPayload | undefined => {
+): Promise<StoryDocsPayload | undefined> => {
   const storyImportPath = getStoryImportPathFromEntry(input.entry);
   if (!storyImportPath) {
     return undefined;
@@ -54,7 +65,7 @@ export const buildStoryDocsPayload = (
   let meta: AngularComponentMetaResult | undefined;
   if (component?.path && context.manager) {
     try {
-      meta = context.manager.extractComponentMeta(component.path, {
+      meta = await context.manager.extractComponentMeta(component.path, {
         exportName: component.exportName,
         localName: component.localName,
       });

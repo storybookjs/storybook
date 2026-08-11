@@ -4,7 +4,12 @@ import type { DocgenPayload, DocgenProvider, IndexEntry } from 'storybook/intern
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { buildDocgenPayload } from './build-docgen.ts';
-import { createDocgenProvider } from './docgen-worker.ts';
+
+// `docgen-worker.ts` now shares one module-scoped manager for the worker's lifetime (so
+// `queryComponentMeta` reuses the same analyzer `createDocgenProvider` warms). Each test needs its
+// own manager lifecycle, so the module is reset and re-imported fresh per test rather than sharing
+// one top-level import.
+const loadModule = async () => await import('./docgen-worker.ts');
 
 // A structural fake keeps these tests runnable without a real TypeScript-backed analyzer.
 const { analyzer } = vi.hoisted(() => {
@@ -44,6 +49,7 @@ beforeEach(() => {
   analyzer.instances = [];
   analyzer.constructions = 0;
   analyzer.failConstruction = false;
+  vi.resetModules();
 });
 
 afterEach(() => {
@@ -87,6 +93,7 @@ const passthrough: DocgenProvider = async () => undefined;
 
 describe('createDocgenProvider', () => {
   it('falls through for a file that is not a story, without creating the analyzer', async () => {
+    const { createDocgenProvider } = await loadModule();
     const next = vi.fn(passthrough);
 
     await expect(
@@ -99,6 +106,7 @@ describe('createDocgenProvider', () => {
   });
 
   it('merges over downstream output on success', async () => {
+    const { createDocgenProvider } = await loadModule();
     vi.mocked(buildDocgenPayload).mockReturnValue(ours);
 
     const payload = await createDocgenProvider()(async () => ({
@@ -112,6 +120,7 @@ describe('createDocgenProvider', () => {
   });
 
   it('keeps another provider`s payload when our own extraction fails', async () => {
+    const { createDocgenProvider } = await loadModule();
     vi.mocked(buildDocgenPayload).mockReturnValue(errored);
     const next = vi.fn<DocgenProvider>(async () => downstream);
 
@@ -120,12 +129,14 @@ describe('createDocgenProvider', () => {
   });
 
   it('reports its own error only when no other provider described the component', async () => {
+    const { createDocgenProvider } = await loadModule();
     vi.mocked(buildDocgenPayload).mockReturnValue(errored);
 
     await expect(createDocgenProvider()(passthrough)({ entry })).resolves.toEqual(errored);
   });
 
   it('delegates downstream when it has no payload for the component', async () => {
+    const { createDocgenProvider } = await loadModule();
     vi.mocked(buildDocgenPayload).mockReturnValue(undefined);
     const next = vi.fn<DocgenProvider>(async () => downstream);
 
@@ -134,6 +145,7 @@ describe('createDocgenProvider', () => {
   });
 
   it('lets an unexpected failure propagate, since core records it against this component', async () => {
+    const { createDocgenProvider } = await loadModule();
     const failure = new TypeError('unexpected');
     vi.mocked(buildDocgenPayload).mockImplementation(() => {
       throw failure;
@@ -143,6 +155,7 @@ describe('createDocgenProvider', () => {
   });
 
   it('owns one watching analyzer for its lifetime and recycles after each extraction', async () => {
+    const { createDocgenProvider } = await loadModule();
     vi.mocked(buildDocgenPayload).mockReturnValue(ours);
     const provider = createDocgenProvider()(passthrough);
 
@@ -157,6 +170,7 @@ describe('createDocgenProvider', () => {
   });
 
   it('threads a structured-cloneable options bag and the manager into the payload builder', async () => {
+    const { createDocgenProvider } = await loadModule();
     vi.mocked(buildDocgenPayload).mockReturnValue(ours);
 
     await createDocgenProvider(structuredClone({ angularFilterNonInputControls: true }))(
@@ -177,6 +191,7 @@ describe('createDocgenProvider', () => {
   });
 
   it('passes through permanently when the analyzer cannot be created', async () => {
+    const { createDocgenProvider } = await loadModule();
     analyzer.failConstruction = true;
     vi.mocked(logger.warn).mockImplementation(() => {});
     const next = vi.fn<DocgenProvider>(async () => downstream);
@@ -191,5 +206,15 @@ describe('createDocgenProvider', () => {
     expect(logger.warn).toHaveBeenCalledWith(
       expect.stringContaining('Angular docgen is unavailable')
     );
+  });
+
+  it('shares the same analyzer between the docgen middleware and queryComponentMeta', async () => {
+    const { createDocgenProvider, queryComponentMeta } = await loadModule();
+    vi.mocked(buildDocgenPayload).mockReturnValue(ours);
+
+    await createDocgenProvider()(passthrough)({ entry });
+    await queryComponentMeta({ componentPath: 'button.component.ts', exportName: 'default' });
+
+    expect(analyzer.constructions).toBe(1);
   });
 });

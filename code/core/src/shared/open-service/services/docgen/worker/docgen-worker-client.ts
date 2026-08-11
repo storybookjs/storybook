@@ -7,7 +7,11 @@ import { logger } from 'storybook/internal/node-logger';
 import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
 import { importMetaResolve } from '../../../../utils/module.ts';
 import type { ErrorLike } from '../../module-graph/types.ts';
-import type { DocgenPayload, DocgenProviderDescriptor } from '../types.ts';
+import type {
+  DocgenComponentMetaQuery,
+  DocgenPayload,
+  DocgenProviderDescriptor,
+} from '../types.ts';
 import type { DocgenWorkerRequest, DocgenWorkerResponse } from './protocol.ts';
 
 // Resolved via the export map, not a hard-coded dist path, so strict layouts like pnpm's work.
@@ -16,13 +20,20 @@ const WORKER_SPECIFIER = 'storybook/internal/docgen-worker';
 const DEFAULT_TASK_TIMEOUT_MS = 120_000;
 
 interface Pending {
-  resolve: (payload: DocgenPayload | undefined) => void;
+  resolve: (result: unknown) => void;
   reject: (error: unknown) => void;
   timer?: NodeJS.Timeout;
 }
 
 export interface DocgenWorkerClient {
   extract(entry: IndexEntry): Promise<DocgenPayload | undefined>;
+  /**
+   * Resolve one component's raw analyzer metadata against the same analyzer `extract` uses, for
+   * callers (e.g. a story-docs provider) that need fields no `DocgenPayload` carries. The result is
+   * whatever the composed module's `queryComponentMeta` returned — cast it back to the
+   * framework-specific shape you expect.
+   */
+  query(query: DocgenComponentMetaQuery): Promise<unknown>;
 }
 
 function errorLikeToError(errorLike: ErrorLike): Error {
@@ -85,24 +96,36 @@ class DocgenWorker implements DocgenWorkerClient {
   }
 
   async extract(entry: IndexEntry): Promise<DocgenPayload | undefined> {
+    const payload = await this.request('extract', (id) => ({ type: 'extract', id, entry }));
+    return payload as DocgenPayload | undefined;
+  }
+
+  async query(query: DocgenComponentMetaQuery): Promise<unknown> {
+    return this.request('query', (id) => ({ type: 'query', id, query }));
+  }
+
+  private async request(
+    kind: 'extract' | 'query',
+    buildMessage: (id: number) => DocgenWorkerRequest
+  ): Promise<unknown> {
     if (this.dead) {
       throw new Error('docgen worker is no longer running');
     }
     await this.ready;
-    return new Promise<DocgenPayload | undefined>((resolve, reject) => {
+    return new Promise<unknown>((resolve, reject) => {
       const id = this.nextId++;
       const pending: Pending = { resolve, reject };
       if (this.taskTimeoutMs > 0) {
         pending.timer = setTimeout(() => {
           this.pending.delete(id);
           this.keepProcessAliveWhileBusy();
-          reject(new Error(`docgen worker extract ${id} timed out after ${this.taskTimeoutMs}ms`));
+          reject(new Error(`docgen worker ${kind} ${id} timed out after ${this.taskTimeoutMs}ms`));
         }, this.taskTimeoutMs);
         pending.timer.unref?.();
       }
       this.pending.set(id, pending);
       this.keepProcessAliveWhileBusy();
-      this.post({ type: 'extract', id, entry });
+      this.post(buildMessage(id));
     });
   }
 
@@ -119,7 +142,7 @@ class DocgenWorker implements DocgenWorkerClient {
   }
 
   private handleMessage(msg: DocgenWorkerResponse): void {
-    if (msg.type !== 'extract') {
+    if (msg.type !== 'extract' && msg.type !== 'query') {
       return;
     }
     const pending = this.pending.get(msg.id);
@@ -134,7 +157,7 @@ class DocgenWorker implements DocgenWorkerClient {
     if (msg.error) {
       pending.reject(errorLikeToError(msg.error));
     } else {
-      pending.resolve(msg.payload);
+      pending.resolve(msg.type === 'extract' ? msg.payload : msg.result);
     }
   }
 
@@ -190,6 +213,10 @@ export function createDocgenWorkerClient(
     async extract(entry) {
       worker ??= new DocgenWorker(scriptPath, descriptors);
       return worker.extract(entry);
+    },
+    async query(query) {
+      worker ??= new DocgenWorker(scriptPath, descriptors);
+      return worker.query(query);
     },
   };
 }

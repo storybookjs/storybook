@@ -12,6 +12,7 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { AngularComponentMetaManager } from '@storybook/angular-cm';
+import type { AngularComponentMetaQuerySource } from '../../../../frameworks/angular-vite/src/docgen/story-docs-build.ts';
 import { buildStoryDocsPayload } from '../../../../frameworks/angular-vite/src/docgen/story-docs-build.ts';
 import {
   expectNoStaleSnippets,
@@ -23,6 +24,13 @@ import {
 // One manager for the whole suite: each fixture directory carries its own tsconfig.json, so every
 // component file resolves to its own per-fixture project.
 const manager = new AngularComponentMetaManager(ts);
+
+// `buildStoryDocsPayload` expects a Promise-returning source (it queries the shared docgen worker
+// in production); the real manager resolves synchronously, so wrap it to match the interface.
+const querySource: AngularComponentMetaQuerySource = {
+  extractComponentMeta: async (componentPath, names) =>
+    manager.extractComponentMeta(componentPath, names),
+};
 
 afterAll(() => {
   manager.dispose();
@@ -47,7 +55,10 @@ describe('angular story-docs server snippets', () => {
       subtype: 'story',
       importPath: storyPath,
     };
-    const payload = buildStoryDocsPayload({ entry }, { manager, resolvePath: (path) => path });
+    const payload = await buildStoryDocsPayload(
+      { entry },
+      { manager: querySource, resolvePath: (path) => path }
+    );
     expect(payload).toBeDefined();
 
     for (const [exportName, story] of storyExports) {

@@ -2,27 +2,37 @@ import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/i
 import { logger } from 'storybook/internal/node-logger';
 import type { StoryDocsProviderPreset } from 'storybook/internal/types';
 
-import { AngularComponentMetaManager } from '@storybook/angular-cm';
+import type { AngularComponentMetaResult } from '@storybook/angular-cm';
+import type { AngularComponentMetaQuerySource } from './story-docs-build.ts';
 import { buildStoryDocsPayload } from './story-docs-build.ts';
 
-const createManager = async (): Promise<AngularComponentMetaManager | undefined> => {
-  try {
-    const typescript = await import('typescript');
-    return new AngularComponentMetaManager(typescript.default ?? typescript);
-  } catch (error) {
-    logger.warn(
-      `Angular story snippets are unavailable: the component meta analyzer could not be created. ${
-        error instanceof Error ? error.message : String(error)
-      }`
-    );
-    return undefined;
-  }
-};
-
-export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (nextStoryDocs) => {
-  // Scoped to the composed chain rather than the module, so the manager has one owner and one
-  // lifetime.
-  let managerPromise: Promise<AngularComponentMetaManager | undefined> | undefined;
+export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (
+  nextStoryDocs,
+  options
+) => {
+  const docgenWorker = options.docgenWorker;
+  // Proxies component-meta lookups to the analyzer the docgen worker already warmed and watches,
+  // rather than constructing a second `AngularComponentMetaManager` here. `undefined` when the
+  // worker itself is unavailable (e.g. running from source without a build); descriptions still
+  // extract without it.
+  const manager: AngularComponentMetaQuerySource | undefined = docgenWorker && {
+    extractComponentMeta: async (componentPath, names) => {
+      try {
+        return (await docgenWorker.query({
+          componentPath,
+          exportName: names.exportName,
+          localName: names.localName,
+        })) as AngularComponentMetaResult | undefined;
+      } catch (error) {
+        logger.warn(
+          `Angular story snippets are unavailable for ${componentPath}: the docgen worker query failed. ${
+            error instanceof Error ? error.message : String(error)
+          }`
+        );
+        return undefined;
+      }
+    },
+  };
 
   return async (input) => {
     const storyImportPath = getStoryImportPathFromEntry(input.entry);
@@ -30,10 +40,7 @@ export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (ne
       return nextStoryDocs(input);
     }
 
-    const manager = await (managerPromise ??= createManager());
-    const ours = buildStoryDocsPayload(input, { manager });
-    // The language service holds large type caches; check heap pressure after each extraction.
-    manager?.recycleIfHeapPressured();
+    const ours = await buildStoryDocsPayload(input, { manager });
 
     if (!ours) {
       return nextStoryDocs(input);

@@ -105,10 +105,31 @@ export interface DocgenProviderDescriptor<TOptions = unknown> {
 }
 
 /**
+ * A single exported class to resolve against a worker module's analyzer, for callers that need raw
+ * analyzer metadata rather than a converted {@link DocgenPayload} (e.g. a story-docs provider
+ * recovering a component's selector or enum table). Generic across worker modules: any module whose
+ * analyzer resolves "one exported class in one file" can implement {@link DocgenWorkerModule.queryComponentMeta}
+ * against this shape.
+ */
+export interface DocgenComponentMetaQuery {
+  componentPath: string;
+  exportName: string;
+  localName?: string;
+}
+
+/**
  * Contract a worker-target docgen module must satisfy. The worker imports the descriptor's
  * `moduleSpecifier` and calls `createDocgenProvider()` once to build the middleware it folds into
  * the provider chain. Integrations implement only this factory — they never touch threading.
  */
 export interface DocgenWorkerModule<TOptions = unknown> {
   createDocgenProvider: (options?: TOptions) => DocgenMiddleware | Promise<DocgenMiddleware>;
+  /**
+   * Resolve one component's raw analyzer metadata against the same analyzer instance
+   * `createDocgenProvider` warms, so a second consumer (e.g. `core/story-docs`) can reuse it instead
+   * of building its own. Optional: modules with nothing to expose beyond `DocgenPayload` omit it.
+   * The result is opaque to core and crosses the worker boundary as-is — the caller casts it back to
+   * its own framework-specific shape.
+   */
+  queryComponentMeta?: (query: DocgenComponentMetaQuery) => unknown | Promise<unknown>;
 }

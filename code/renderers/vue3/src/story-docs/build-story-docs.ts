@@ -142,6 +142,7 @@ async function readStoredDocgen(id: string): Promise<DocgenPayload | undefined> 
  * Collects the slot and event names from renderer-converted argTypes.
  */
 function vueDocgenArgInfo(payload: DocgenPayload): VueDocgenArgInfo {
+  const props = new Set<string>();
   const slots = new Set<string>();
   const events = new Set<string>();
 
@@ -151,10 +152,12 @@ function vueDocgenArgInfo(payload: DocgenPayload): VueDocgenArgInfo {
       slots.add(name);
     } else if (category === 'events') {
       events.add(name);
+    } else {
+      props.add(name);
     }
   }
 
-  return { slots, events };
+  return { props, slots, events };
 }
 
 function metaArgsObjectPath(csf: ParsedCsf): ArgsObjectPath {

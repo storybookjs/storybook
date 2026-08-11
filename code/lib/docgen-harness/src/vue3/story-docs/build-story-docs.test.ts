@@ -59,6 +59,12 @@ function docgenForFixture(
   }
 
   const argTypesByFixture: Record<string, FixtureArgTypes> = {
+    'event-listener': {
+      default: argType('default', 'slots'),
+      formatter: argType('formatter', 'props'),
+      label: argType('label', 'props'),
+      submit: argType('submit', 'events'),
+    },
     'function-slot': {
       default: argType('default', 'slots'),
     },

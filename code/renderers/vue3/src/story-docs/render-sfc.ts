@@ -34,12 +34,16 @@ export function renderSfcSnippet(input: RenderSfcInput): string {
     .filter((arg) => arg.role === 'model' || arg.role === 'prop')
     .sort((a, b) => a.name.localeCompare(b.name))
     .map((arg) => renderPropLikeArg(arg, ctx).attribute);
+  const events = input.args
+    .filter((arg) => arg.role === 'event')
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .map((arg) => renderEventArg(arg, ctx).attribute);
   const slotSourceCode = input.args
     .filter((arg) => arg.role === 'slot')
     .sort((a, b) => slotSortKey(a.name).localeCompare(slotSortKey(b.name)))
     .map((arg) => renderSlotArg(arg, ctx))
     .join('\n\n');
-  const openTag = [input.componentName, ...props].join(' ');
+  const openTag = [input.componentName, ...props, ...events].join(' ');
   const templateCode = slotSourceCode
     ? `<${openTag}> ${slotSourceCode} </${input.componentName}>`
     : `<${openTag} />`;
@@ -87,6 +91,13 @@ function renderModelArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
 
   const directive = arg.name === 'modelValue' ? 'v-model' : `v-model:${arg.name}`;
   return { name: arg.name, attribute: `${directive}="${bindingName}"` };
+}
+
+/** Listeners hoist their handler, because inline handlers would bloat the tag. */
+function renderEventArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
+  const bindingName = allocateBindingName(arg.name, ctx);
+  ctx.variables.set(bindingName, printValue(unwrapValue(arg.value)));
+  return { name: arg.name, attribute: `@${arg.eventName ?? arg.name}="${bindingName}"` };
 }
 
 function renderSlotArg(arg: ClassifiedArg, ctx: RenderContext): string {

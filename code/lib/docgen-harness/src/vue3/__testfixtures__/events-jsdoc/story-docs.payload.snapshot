@@ -8,8 +8,14 @@
       "description": undefined,
       "id": "forms-events-jsdoc--with-handlers",
       "name": "With Handlers",
-      "snippet": "<template>
-  <EventsJsdoc label="Save" />
+      "snippet": "<script lang="ts" setup>
+const onCancel = () => {};
+
+const onSave = () => {};
+</script>
+
+<template>
+  <EventsJsdoc label="Save" @cancel="onCancel" @save="onSave" />
 </template>",
       "summary": undefined,
     },

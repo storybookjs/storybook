@@ -4,11 +4,14 @@ import {
   classifyValue,
   isFunctionExpression,
   printValue,
+  unwrapValue,
   type ValuePlan,
 } from './classify-value.ts';
 
-/** Docgen-derived names that decide whether args become props, slots, or v-models. */
+/** Docgen-derived names that decide whether args become props, slots, listeners, or v-models. */
 export interface VueDocgenArgInfo {
+  /** Prop names reported by Vue docgen. */
+  props: Set<string>;
   /** Slot names reported by Vue docgen. */
   slots: Set<string>;
   /** Event names reported by Vue docgen. */
@@ -16,7 +19,7 @@ export interface VueDocgenArgInfo {
 }
 
 /** Where one CSF arg lands in the generated SFC. */
-export type ArgRole = 'model' | 'prop' | 'slot';
+export type ArgRole = 'event' | 'model' | 'prop' | 'slot';
 
 /**
  * The plans that produce snippet source.
@@ -30,6 +33,8 @@ export interface ClassifiedArg {
   name: string;
   value: t.Node;
   role: ArgRole;
+  /** Vue event name bound in the template, present when role is 'event'. */
+  eventName?: string;
   plan: RenderableValuePlan;
 }
 
@@ -43,18 +48,21 @@ export interface ClassifyArgsResult {
 }
 
 /**
- * Classifies merged CSF args by Vue docgen precedence: slot, v-model, then prop.
+ * Classifies merged CSF args by Vue docgen precedence: slot, event, v-model, then prop.
  *
  * Four outcomes, one per reason an arg can fail to render:
  *
  * - dropped silently — no static form exists and the runtime source decorator drops it too
- *   (functions passed as props, args explicitly set to `undefined`)
+ *   (functions passed as undeclared args, args explicitly set to `undefined`, empty strings)
  * - dropped with a `warning` — the value references something the snippet cannot declare, so the
  *   rest of the story still renders and the omission is named
- * - `defer` — a static snippet would be a worse example than the runtime one: a slot receives a
- *   function, or nothing the story sets survived classification
+ * - `defer` — a static snippet would be a worse example than the runtime one: a slot receives
+ *   function content the snippet cannot reproduce, or nothing the story sets survived
+ *   classification
  * - no result at all — the args container itself is unreadable, which the caller reports as an
  *   `error` (see `argsContainerError`)
+ *
+ * Function args matching a declared event render as listeners, and declared function props hoist.
  */
 export function classifyArgs(
   args: Record<string, t.Node>,
@@ -66,10 +74,37 @@ export function classifyArgs(
   for (const [name, value] of Object.entries(args)) {
     const isSlot = docgen.slots.has(name);
 
-    // A function slot carries content no static template can reproduce; the runtime source
-    // decorator renders it properly, so leave the whole story to it.
     if (isSlot && isFunctionExpression(value)) {
+      const returned = returnedExpression(value);
+      if (returned) {
+        const plan = classifyValue(returned);
+
+        if (plan.kind === 'inline' || plan.kind === 'hoist') {
+          classified.push({ name, value: returned, role: 'slot', plan });
+          continue;
+        }
+
+        if (plan.kind === 'omit') {
+          continue;
+        }
+      }
+
+      // A function slot carries content no static template can reproduce; the runtime source
+      // decorator renders it properly, so leave the whole story to it.
       return { args: [], defer: true };
+    }
+
+    const eventName = declaredEventName(name, docgen.events);
+    if (eventName !== undefined && isFunctionExpression(value)) {
+      classified.push({ name, value, role: 'event', eventName, plan: { kind: 'hoist' } });
+      continue;
+    }
+
+    if (isFunctionExpression(value)) {
+      if (docgen.props.has(name)) {
+        classified.push({ name, value, role: 'prop', plan: { kind: 'hoist' } });
+      }
+      continue;
     }
 
     const plan = classifyValue(value);
@@ -99,4 +134,45 @@ export function classifyArgs(
       ? { warning: `Omitted args that cannot be resolved statically: ${omitted.join(', ')}` }
       : {}),
   };
+}
+
+/**
+ * Matches Storybook handler args to declared Vue events.
+ *
+ * @example `onItemClick` → `itemClick`; `onUpdate:checked` → `update:checked`
+ */
+function declaredEventName(name: string, events: Set<string>): string | undefined {
+  const match = /^on([A-Z].*)/.exec(name);
+  if (!match) {
+    return undefined;
+  }
+
+  const [, rawEventName] = match;
+  const eventName = `${rawEventName.charAt(0).toLowerCase()}${rawEventName.slice(1)}`;
+  return events.has(eventName) ? eventName : undefined;
+}
+
+/**
+ * Extracts the expression a function slot returns when it has a single static return path.
+ *
+ * @example `() => 'hi'` → `'hi'`
+ */
+function returnedExpression(node: t.Node): t.Node | undefined {
+  const value = unwrapValue(node);
+  if (value.type !== 'ArrowFunctionExpression' && value.type !== 'FunctionExpression') {
+    return undefined;
+  }
+
+  if (value.body.type !== 'BlockStatement') {
+    return value.body;
+  }
+
+  if (value.body.body.length !== 1) {
+    return undefined;
+  }
+
+  const statement = value.body.body[0];
+  return statement.type === 'ReturnStatement' && statement.argument
+    ? statement.argument
+    : undefined;
 }

@@ -4,7 +4,7 @@ import { types as t } from 'storybook/internal/babel';
 
 import { classifyArgs } from './classify-args.ts';
 
-const NO_DOCGEN = { slots: new Set<string>(), events: new Set<string>() };
+const NO_DOCGEN = { props: new Set<string>(), slots: new Set<string>(), events: new Set<string>() };
 
 describe('classifyArgs', () => {
   it('assigns roles from docgen slot and event names', () => {
@@ -14,7 +14,11 @@ describe('classifyArgs', () => {
         checked: t.booleanLiteral(true),
         label: t.stringLiteral('Go'),
       },
-      { slots: new Set(['content']), events: new Set(['update:checked']) }
+      {
+        props: new Set(['label']),
+        slots: new Set(['content']),
+        events: new Set(['update:checked']),
+      }
     );
 
     expect(result.args.map((arg) => [arg.name, arg.role])).toEqual([
@@ -95,12 +99,101 @@ describe('classifyArgs', () => {
     expect(
       classifyArgs(
         {
-          default: t.arrowFunctionExpression([], t.stringLiteral('hi')),
+          default: t.arrowFunctionExpression(
+            [],
+            t.callExpression(t.identifier('h'), [t.identifier('Child')])
+          ),
           label: t.stringLiteral('ok'),
         },
-        { slots: new Set(['default']), events: new Set() }
+        { props: new Set<string>(), slots: new Set(['default']), events: new Set() }
       )
     ).toEqual({ args: [], defer: true });
+  });
+
+  it('renders a slot function that returns a string literal', () => {
+    const returned = t.stringLiteral('hi');
+    const result = classifyArgs(
+      { default: t.arrowFunctionExpression([], returned) },
+      { props: new Set<string>(), slots: new Set(['default']), events: new Set() }
+    );
+
+    expect(result.args).toEqual([
+      { name: 'default', value: returned, role: 'slot', plan: { kind: 'inline' } },
+    ]);
+    expect(result.args[0].value.type).toBe('StringLiteral');
+  });
+
+  it('renders a slot function block that returns a string literal', () => {
+    const returned = t.stringLiteral('hi');
+    const result = classifyArgs(
+      {
+        default: t.arrowFunctionExpression([], t.blockStatement([t.returnStatement(returned)])),
+      },
+      { props: new Set<string>(), slots: new Set(['default']), events: new Set() }
+    );
+
+    expect(result.args).toEqual([
+      { name: 'default', value: returned, role: 'slot', plan: { kind: 'inline' } },
+    ]);
+    expect(result.args[0].value.type).toBe('StringLiteral');
+  });
+
+  it('defers the whole story when a slot function has a multi-statement body', () => {
+    expect(
+      classifyArgs(
+        {
+          default: t.arrowFunctionExpression(
+            [],
+            t.blockStatement([
+              t.expressionStatement(t.stringLiteral('side effect')),
+              t.returnStatement(t.stringLiteral('hi')),
+            ])
+          ),
+          label: t.stringLiteral('ok'),
+        },
+        { props: new Set<string>(), slots: new Set(['default']), events: new Set() }
+      )
+    ).toEqual({ args: [], defer: true });
+  });
+
+  it('classifies a function arg matching a declared event as a listener', () => {
+    const value = t.arrowFunctionExpression([], t.nullLiteral());
+
+    expect(
+      classifyArgs(
+        { onSubmit: value },
+        { props: new Set<string>(), slots: new Set(), events: new Set(['submit']) }
+      ).args
+    ).toEqual([
+      { name: 'onSubmit', value, role: 'event', eventName: 'submit', plan: { kind: 'hoist' } },
+    ]);
+  });
+
+  it('warns when a declared event arg value is not a function expression', () => {
+    const label = t.stringLiteral('ok');
+    const result = classifyArgs(
+      {
+        label,
+        onSubmit: t.callExpression(t.identifier('fn'), []),
+      },
+      { props: new Set<string>(), slots: new Set(), events: new Set(['submit']) }
+    );
+
+    expect(result.args).toEqual([
+      { name: 'label', value: label, role: 'prop', plan: { kind: 'inline' } },
+    ]);
+    expect(result.warning).toBe('Omitted args that cannot be resolved statically: onSubmit: fn()');
+  });
+
+  it('classifies a declared function prop as a hoisted prop', () => {
+    const value = t.arrowFunctionExpression([], t.nullLiteral());
+
+    expect(
+      classifyArgs(
+        { formatter: value },
+        { props: new Set(['formatter']), slots: new Set(), events: new Set() }
+      ).args
+    ).toEqual([{ name: 'formatter', value, role: 'prop', plan: { kind: 'hoist' } }]);
   });
 
   it('reports no warning when every arg renders', () => {

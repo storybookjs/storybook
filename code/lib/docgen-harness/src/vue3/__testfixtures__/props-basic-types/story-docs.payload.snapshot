@@ -22,13 +22,15 @@ const big = BigInt('9007199254740993');
 
 const config = { theme: 'dark', dense: true };
 
+const formatter = (value: number) => `#${value}`;
+
 const tags = ['alpha', 'beta'];
 
 const token = Symbol('fixture');
 </script>
 
 <template>
-  <PropsBasicTypes :big="big" :config="config" label="Formatted" :tags="tags" :token="token" />
+  <PropsBasicTypes :big="big" :config="config" :formatter="formatter" label="Formatted" :tags="tags" :token="token" />
 </template>",
       "summary": undefined,
     },

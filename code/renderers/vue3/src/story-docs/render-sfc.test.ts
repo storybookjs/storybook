@@ -117,4 +117,45 @@ const ref2 = {};
 
     expect(snippet).toContain('{{ _default }}');
   });
+
+  it('hoists a listener and renders it as a Vue event binding', () => {
+    const snippet = renderSfcSnippet({
+      componentName: 'C',
+      args: [
+        {
+          name: 'onSubmit',
+          eventName: 'submit',
+          value: t.arrowFunctionExpression([], t.nullLiteral()),
+          role: 'event',
+          plan: { kind: 'hoist' },
+        },
+      ],
+    });
+
+    expect(snippet).toBe(`<script lang="ts" setup>
+const onSubmit = () => null;
+</script>
+
+<template>
+  <C @submit="onSubmit" />
+</template>`);
+  });
+
+  it('sorts event attributes after prop attributes', () => {
+    const snippet = renderSfcSnippet({
+      componentName: 'C',
+      args: [
+        {
+          name: 'onSubmit',
+          eventName: 'submit',
+          value: t.arrowFunctionExpression([], t.nullLiteral()),
+          role: 'event',
+          plan: { kind: 'hoist' },
+        },
+        prop('label', t.stringLiteral('Send')),
+      ],
+    });
+
+    expect(snippet).toContain('<C label="Send" @submit="onSubmit" />');
+  });
 });

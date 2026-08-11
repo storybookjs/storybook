@@ -51,6 +51,7 @@ export interface ClassifyArgsResult {
 }
 
 const UNSUPPORTED_ARG_ERROR_NAME = 'Unsupported story args';
+const UNDEFINED_IDENTIFIER = 'undefined';
 
 /** Classify merged CSF args by Vue docgen precedence: slot, v-model, function skip, prop. */
 export function classifyArgs(
@@ -69,6 +70,11 @@ export function classifyArgs(
           message: unsupported,
         },
       };
+    }
+
+    // `args: { a: undefined }` unsets an inherited meta arg, so it renders nothing.
+    if (isUndefinedIdentifier(value)) {
+      continue;
     }
 
     if (docgen.slots.has(name)) {
@@ -117,7 +123,7 @@ function findIdentifierValue(node: t.Node): t.Identifier | undefined {
   const unwrapped = unwrapValue(node);
 
   if (unwrapped.type === 'Identifier') {
-    return unwrapped;
+    return unwrapped.name === UNDEFINED_IDENTIFIER ? undefined : unwrapped;
   }
 
   if (unwrapped.type === 'ObjectExpression') {
@@ -173,6 +179,11 @@ function hasSpreadValue(node: t.Node): boolean {
   }
 
   return false;
+}
+
+function isUndefinedIdentifier(node: t.Node): boolean {
+  const unwrapped = unwrapValue(node);
+  return unwrapped.type === 'Identifier' && unwrapped.name === UNDEFINED_IDENTIFIER;
 }
 
 function isFunctionExpression<T extends t.Node>(

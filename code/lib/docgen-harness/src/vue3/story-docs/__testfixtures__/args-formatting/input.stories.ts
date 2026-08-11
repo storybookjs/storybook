@@ -24,3 +24,10 @@ export const Primary: Story = {
     onSubmit: () => undefined,
   },
 };
+
+export const UnsetArg: Story = {
+  args: {
+    label: undefined,
+    count: 3,
+  },
+};

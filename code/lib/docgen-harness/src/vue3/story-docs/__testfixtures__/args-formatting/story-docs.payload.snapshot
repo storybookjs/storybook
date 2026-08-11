@@ -21,5 +21,14 @@ const items = ['one', 'two'];
 </template>",
       "summary": undefined,
     },
+    "forms-args-formatting--unset-arg": {
+      "description": undefined,
+      "id": "forms-args-formatting--unset-arg",
+      "name": "Unset Arg",
+      "snippet": "<template>
+  <ArgsFormattingButton :count="3" />
+</template>",
+      "summary": undefined,
+    },
   },
 }

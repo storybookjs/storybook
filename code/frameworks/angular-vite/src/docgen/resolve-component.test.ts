@@ -44,6 +44,18 @@ describe('resolveMetaComponent', () => {
       },
     ],
     [
+      // A real-world shape from Aam-Digital/ndb-core; the type arguments are type-level only.
+      'a generic instantiation expression',
+      `import { ButtonComponent } from './button.component';
+       export default { component: ButtonComponent<SomeEntity> };`,
+      {
+        localName: 'ButtonComponent',
+        importId: './button.component',
+        exportName: 'ButtonComponent',
+        path: join(fixtures, 'button.component.ts'),
+      },
+    ],
+    [
       'a default import, whose class name the story file never mentions',
       `import Button from './default-button.component';
        export default { component: Button };`,
@@ -109,6 +121,19 @@ describe('resolveMetaComponent', () => {
       `import * as ButtonComponent from './button.component';
        export default { component: ButtonComponent };`,
       'no-component-import',
+    ],
+    [
+      // Matching the printed source text instead would resolve to a story-local `ButtonComponent`.
+      'a member expression, which names no binding to follow',
+      `import * as Buttons from './button.component';
+       export default { component: Buttons.ButtonComponent };`,
+      'no-meta-component',
+    ],
+    [
+      'a call expression, which static analysis cannot follow to a class',
+      `import { makeButton } from './button.component';
+       export default { component: makeButton() };`,
+      'no-meta-component',
     ],
   ];
 

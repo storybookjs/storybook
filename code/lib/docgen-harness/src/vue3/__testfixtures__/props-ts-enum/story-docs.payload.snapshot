@@ -1,0 +1,14 @@
+{
+  "id": "props-ts-enum",
+  "import": "import TsEnumProps from './TsEnumProps.vue';",
+  "name": "TsEnumProps",
+  "path": "__PATH__",
+  "stories": {
+    "forms-props-ts-enum--props-as-written": {
+      "description": undefined,
+      "id": "forms-props-ts-enum--props-as-written",
+      "name": "Props As Written",
+      "summary": undefined,
+    },
+  },
+}

@@ -1,0 +1,14 @@
+{
+  "id": "events-jsdoc",
+  "import": "import EventsJsdoc from './EventsJsdoc.vue';",
+  "name": "EventsJsdoc",
+  "path": "__PATH__",
+  "stories": {
+    "forms-events-jsdoc--with-handlers": {
+      "description": undefined,
+      "id": "forms-events-jsdoc--with-handlers",
+      "name": "With Handlers",
+      "summary": undefined,
+    },
+  },
+}

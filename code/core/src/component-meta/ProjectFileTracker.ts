@@ -1,15 +1,11 @@
+import { isInNodeModules, slash } from '../shared/utils/paths.ts';
 import type { FileChange, ProjectFileSystem } from './types.ts';
 
 export type FileSnapshotCache<Snapshot> = Map<string, [number | undefined, Snapshot | undefined]>;
 
-const normalize = (fileName: string) => fileName.replace(/\\/g, '/');
-
-/** Matches a whole `node_modules` path segment, so `src/node_modules-tools/Tag.tsx` is kept. */
-const NODE_MODULES_SEGMENT = /(?:^|\/)node_modules(?:\/|$)/;
-
 /** Normalize program file paths and drop node_modules, for the manager's directory watching. */
 export function filterSourceFilePaths(fileNames: readonly string[]): string[] {
-  return fileNames.map(normalize).filter((fileName) => !NODE_MODULES_SEGMENT.test(fileName));
+  return fileNames.map(slash).filter((fileName) => !isInNodeModules(fileName));
 }
 
 export class ProjectFileTracker<Snapshot> {
@@ -36,7 +32,7 @@ export class ProjectFileTracker<Snapshot> {
   }
 
   getScriptVersion(fileName: string): string {
-    const normalized = normalize(fileName);
+    const normalized = slash(fileName);
     const edits = this.fileVersions.get(normalized) ?? 0;
     const cached = this.snapshots.get(normalized);
     if (cached) {
@@ -49,7 +45,7 @@ export class ProjectFileTracker<Snapshot> {
 
   /** Mtime-checked read-through: re-reads the file only when its mtime moved or was evicted. */
   getSnapshot(fileName: string): Snapshot | undefined {
-    const normalized = normalize(fileName);
+    const normalized = slash(fileName);
     const modifiedTime = this.fs.sys.getModifiedTime?.(normalized)?.valueOf();
     const cache = this.snapshots.get(normalized);
     if (!cache || cache[0] !== modifiedTime) {
@@ -71,7 +67,7 @@ export class ProjectFileTracker<Snapshot> {
   ensureFiles(fileNames: string[]): void {
     let added = false;
     for (const fileName of fileNames) {
-      const normalized = normalize(fileName);
+      const normalized = slash(fileName);
       if (!this.commandLine.fileNames.includes(normalized)) {
         this.commandLine.fileNames.push(normalized);
         added = true;
@@ -84,14 +80,14 @@ export class ProjectFileTracker<Snapshot> {
 
   onFilesChanged(changes: FileChange[], isTracked: (fileName: string) => boolean): boolean {
     for (const { filePath } of changes) {
-      const fileName = normalize(filePath);
+      const fileName = slash(filePath);
       this.snapshots.delete(fileName);
       this.bumpFileVersion(fileName);
     }
 
     const oldVersion = this.projectVersion;
     for (const { filePath, type } of changes) {
-      const fileName = normalize(filePath);
+      const fileName = slash(filePath);
       if (type === 'changed') {
         if (isTracked(fileName)) {
           this.projectVersion++;
@@ -107,7 +103,7 @@ export class ProjectFileTracker<Snapshot> {
   ensureFresh(fileNames: string[]): boolean {
     let stale = false;
     for (const fileName of fileNames) {
-      const normalized = normalize(fileName);
+      const normalized = slash(fileName);
       const cache = this.snapshots.get(normalized);
       if (!cache) {
         continue;
@@ -138,7 +134,7 @@ export class ProjectFileTracker<Snapshot> {
     if (!this.getCommandLineFn) {
       return;
     }
-    const newFileNames = this.getCommandLineFn().fileNames.map(normalize);
+    const newFileNames = this.getCommandLineFn().fileNames.map(slash);
     if (!arrayItemsEqual(newFileNames, this.commandLine.fileNames)) {
       this.commandLine.fileNames = newFileNames;
       this.projectVersion++;

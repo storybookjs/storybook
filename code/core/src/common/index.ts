@@ -53,6 +53,7 @@ export * from './js-package-manager/index.ts';
 export * from './utils/scan-and-transform-files.ts';
 export * from './utils/transform-imports.ts';
 export * from '../shared/utils/module.ts';
+export * from '../shared/utils/paths.ts';
 export * from './utils/get-addon-names.ts';
 export * from './utils/utils.ts';
 export * from './utils/command.ts';

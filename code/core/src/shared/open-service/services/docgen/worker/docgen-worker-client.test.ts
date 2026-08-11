@@ -106,7 +106,7 @@ describe('createDocgenWorkerClient', () => {
     // listeners are on leaves the worker holding the event loop open and `build-storybook` never
     // exits. Asserting the order here because a unit test cannot observe the process failing to
     // exit; the ordering is what makes the difference.
-    expect(worker.messageListenersAtUnref).toBeGreaterThan(0);
+    expect(worker.messageListenersAtUnref).toBe(2);
 
     // Drive the extract to completion so dispose isn't racing a not-yet-queued request.
     ackInit(worker);

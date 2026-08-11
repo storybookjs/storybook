@@ -34,6 +34,14 @@ export interface ComponentMetaFileSystem {
   };
 }
 
+export interface ProjectFileSystem {
+  sys: {
+    fileExists(path: string): boolean;
+    readFile(path: string): string | undefined;
+    getModifiedTime?(path: string): Date | undefined;
+  };
+}
+
 /**
  * Contract a per-tsconfig project must satisfy for {@link ../ComponentMetaManager} to manage it.
  *

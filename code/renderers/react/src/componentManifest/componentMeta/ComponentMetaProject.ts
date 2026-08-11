@@ -3,16 +3,19 @@
  * `@volar/typescript`. Freshness is not decided here: the snapshot cache, projectVersion gate and
  * root-set re-checks all live in core's `ProjectFileTracker`, which the Angular analyzer shares.
  *
- * Props are read from the story rather than the component, so a component is only ever described
- * the way a story actually uses it. The JSX in the story gives a resolved call signature; an
- * args-only story has no JSX to resolve, so those fall back to inspecting the component type
- * directly.
+ * A generic component's props are not resolvable from its own file: the first parameter stays
+ * `Props<T>` until a call site instantiates it. The story's JSX gives a resolved call signature, so
+ * it is tried first, and a story with no JSX falls back to the component's own export. Nothing else
+ * needs the use site - forwardRef, memo, styled() and HOC wrappers all resolve the same either way.
+ *
+ * The first matching JSX element wins, so for a component rendered with different type arguments
+ * across stories, the documented type is the one the earliest story pins.
  */
 import {
   type FileChange,
   type FileSnapshotCache,
+  ProgramBackedProject,
   ProjectFileTracker,
-  filterSourceFilePaths,
 } from 'storybook/internal/component-meta';
 
 import { FileMap, createLanguage } from '@volar/language-core';
@@ -34,10 +37,13 @@ import {
   serializeComponentDoc,
 } from './componentMetaExtractor.ts';
 
-export class ComponentMetaProject {
-  private ls: ts.LanguageService;
+export class ComponentMetaProject extends ProgramBackedProject<
+  ts.IScriptSnapshot,
+  ts.SourceFile | undefined
+> {
+  protected readonly service: ts.LanguageService;
   /** Invalidation state machine shared with the Angular component-meta project. */
-  private readonly files: ProjectFileTracker<ts.IScriptSnapshot>;
+  protected readonly files: ProjectFileTracker<ts.IScriptSnapshot>;
   private warmupTimer?: ReturnType<typeof setTimeout>;
   /** Entries to extract - set by the generator, replayed during warmup for targeted type resolution. */
   private entries: StoryRef[] = [];
@@ -56,6 +62,7 @@ export class ComponentMetaProject {
      */
     private documentRegistry?: ts.DocumentRegistry
   ) {
+    super();
     this.files = new ProjectFileTracker(
       typescript,
       commandLine,
@@ -108,54 +115,31 @@ export class ComponentMetaProject {
       projectHost
     );
 
-    this.ls = typescript.createLanguageService(languageServiceHost, this.documentRegistry);
+    this.service = typescript.createLanguageService(languageServiceHost, this.documentRegistry);
   }
 
   getCommandLine(): ts.ParsedCommandLine {
     return this.commandLine;
   }
 
-  dispose() {
-    clearTimeout(this.warmupTimer);
-    this.ls.dispose();
-  }
-
   // ---------------------------------------------------------------------------
   // Project management
   // ---------------------------------------------------------------------------
 
-  /**
-   * Batch-add multiple files to the project in one go. Only bumps projectVersion once, avoiding
-   * repeated program rebuilds.
-   */
-  ensureFiles(fileNames: string[]): void {
-    this.files.ensureFiles(fileNames);
+  /** Cancels the warmup the base does not know about. */
+  override dispose(): void {
+    clearTimeout(this.warmupTimer);
+    super.dispose();
   }
 
   getSourceFile(fileName: string): ts.SourceFile | undefined {
-    return this.ls.getProgram()?.getSourceFile(fileName);
+    return this.service.getProgram()?.getSourceFile(fileName);
   }
 
-  hasSourceFile(fileName: string): boolean {
-    return !!this.getSourceFile(fileName);
-  }
-
-  /**
-   * Get all non-node_modules source file paths from the TS program. Used by ComponentMetaManager to
-   * watch directories for file changes.
-   */
-  getSourceFilePaths(): string[] {
-    const program = this.ls.getProgram();
-    if (!program) {
-      return [];
-    }
-    return filterSourceFilePaths(program.getSourceFiles().map((sf) => sf.fileName));
-  }
-
-  onFilesChanged(changes: FileChange[]): void {
+  override onFilesChanged(changes: FileChange[]): void {
     // Membership probe against the pre-event program; captured once so the batch cannot rebuild
     // the program mid-loop.
-    const program = this.ls.getProgram();
+    const program = this.service.getProgram();
     const versionMoved = this.files.onFilesChanged(
       changes,
       (fileName) => !!program?.getSourceFile(fileName)
@@ -190,7 +174,7 @@ export class ComponentMetaProject {
     this.files.ensureFiles(allFiles);
     this.files.ensureFresh(allFiles);
 
-    const program = this.ls.getProgram();
+    const program = this.service.getProgram();
     if (!program) {
       return;
     }
@@ -352,11 +336,7 @@ export class ComponentMetaProject {
     }
 
     let componentType = checker.getTypeOfSymbol(componentProp);
-    let selectedSymbol =
-      componentProp.valueDeclaration &&
-      this.typescript.isPropertyAssignment(componentProp.valueDeclaration)
-        ? checker.getSymbolAtLocation(componentProp.valueDeclaration.initializer)
-        : componentType.getSymbol?.();
+    let selectedSymbol = checker.getSymbolAtLocation(metaComponentInitializer);
 
     if (memberAccess) {
       const prop = componentType.getProperty(memberAccess);

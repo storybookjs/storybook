@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "Compodoc does not document components declared inside story files, so \"Individual1\" has no metadata.\nMove it into its own file to have it documented. Source: <sandbox>/documentation.json",
+    "name": "ComponentNotDocumented"
+  },
+  "id": "stories-frameworks-angular-vite-core-modulemetadata-in-stories",
+  "jsDocTags": {},
+  "name": "Individual1",
+  "path": "./src/stories/frameworks/angular-vite/core/moduleMetadata/in-stories.stories.ts"
+}

@@ -74,6 +74,7 @@ export async function buildStoryDocsPayload(
     return undefined;
   }
 
+  const metaPath = metaObjectPath(csf);
   const id = getComponentIdFromEntry(input.entry);
   let docgenPayload: DocgenPayload | undefined;
   try {
@@ -81,8 +82,8 @@ export async function buildStoryDocsPayload(
   } catch {
     // Docgen is optional here: without it the payload is still built, just without snippets.
   }
-  const componentName = resolveMetaComponentIdentifier(csf);
-  const importStatement = createImportStatement(csf);
+  const componentName = resolveMetaComponentIdentifier(metaPath);
+  const importStatement = createImportStatement(csf, componentName);
   const docgenArgInfo =
     docgenPayload && !docgenPayload.error ? vueDocgenArgInfo(docgenPayload) : undefined;
 
@@ -94,9 +95,9 @@ export async function buildStoryDocsPayload(
     stories: extractStories(csf, {
       componentName,
       docgenArgInfo,
-      metaPath: metaObjectPath(csf),
-      metaArgsError: argsContainerError(metaObjectPath(csf)),
-      metaArgsPath: metaArgsObjectPath(csf),
+      metaPath,
+      metaArgsError: argsContainerError(metaPath),
+      metaArgsPath: argsObjectPathFromObjectPath(metaPath),
     }),
   };
 }
@@ -112,16 +113,17 @@ function fallbackTitle(title: string): string {
  *
  * @example `component: MyButton` → `'MyButton'`; `component: UI.Button` → `undefined`
  */
-function resolveMetaComponentIdentifier(csf: ParsedCsf): string | undefined {
-  const value = propertyValue(metaObjectPath(csf)?.node, 'component');
+function resolveMetaComponentIdentifier(
+  metaPath: NodePath<t.ObjectExpression> | undefined
+): string | undefined {
+  const value = propertyValue(metaPath?.node, 'component');
   return t.isIdentifier(value) ? value.name : undefined;
 }
 
 /**
  * Reconstructs the component's import statement from the story file's import bindings.
  */
-function createImportStatement(csf: ParsedCsf): string | undefined {
-  const componentName = resolveMetaComponentIdentifier(csf);
+function createImportStatement(csf: ParsedCsf, componentName?: string): string | undefined {
   if (!componentName) {
     return undefined;
   }
@@ -160,10 +162,6 @@ function vueDocgenArgInfo(payload: DocgenPayload): VueDocgenArgInfo {
   return { props, slots, events };
 }
 
-function metaArgsObjectPath(csf: ParsedCsf): ArgsObjectPath {
-  return argsObjectPathFromObjectPath(metaObjectPath(csf));
-}
-
 /**
  * AST path of the `args` property when its value is an object literal.
  *
@@ -194,13 +192,12 @@ function extractStories(
   options: {
     componentName?: string;
     docgenArgInfo?: VueDocgenArgInfo;
-    metaPath?: NodePath<t.ObjectExpression>;
+    metaPath: NodePath<t.ObjectExpression> | undefined;
     metaArgsError?: StoryDoc['error'];
     metaArgsPath: ArgsObjectPath;
   }
 ): Record<string, StoryDoc> {
-  const metaPath = options.metaPath ?? metaObjectPath(csf);
-  const metaArgs = metaArgsRecord(metaPath?.node);
+  const metaArgs = metaArgsRecord(options.metaPath?.node);
 
   return Object.fromEntries(
     Object.entries(csf._stories).map(([storyExport, story]): [string, StoryDoc] => {
@@ -227,7 +224,7 @@ function enrichStoryDoc(
   options: {
     componentName?: string;
     docgenArgInfo?: VueDocgenArgInfo;
-    metaPath?: NodePath<t.ObjectExpression>;
+    metaPath: NodePath<t.ObjectExpression> | undefined;
     metaArgsError?: StoryDoc['error'];
     metaArgsPath: ArgsObjectPath;
   }

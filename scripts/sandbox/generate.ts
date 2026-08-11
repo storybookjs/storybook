@@ -33,6 +33,7 @@ import { getStackblitzUrl, renderTemplate } from './utils/template.ts';
 import {
   BEFORE_SANDBOX_MIN_AGE_GATE,
   BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS,
+  ensureNpmSupportsMinReleaseAge,
   localizeYarnConfigFiles,
   preapproveLocallyPublishedPackages,
   refreshBeforeStorybookLockfile,
@@ -237,6 +238,8 @@ const runGenerators = async (
   localRegistry = true,
   debug = false
 ) => {
+  await ensureNpmSupportsMinReleaseAge();
+
   if (debug) {
     console.log('Debug mode enabled. Verbose logs will be printed to the console.');
   }

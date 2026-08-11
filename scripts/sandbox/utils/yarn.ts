@@ -67,6 +67,18 @@ export const BEFORE_SANDBOX_MIN_AGE_GATE = '7d';
 export const BEFORE_SANDBOX_MIN_AGE_MINUTES = 7 * 24 * 60;
 /** npm `min-release-age` is in days (npm 11.10+). */
 export const BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS = 7;
+/** npm below this version silently ignores `NPM_CONFIG_MIN_RELEASE_AGE`. */
+export const BEFORE_SANDBOX_NPM_MIN_VERSION = '11.10.0';
+
+export async function ensureNpmSupportsMinReleaseAge() {
+  const { stdout } = await runCommand('npm --version', { cwd: process.cwd() });
+  const version = String(stdout).trim();
+  if (!semver.gte(version, BEFORE_SANDBOX_NPM_MIN_VERSION)) {
+    throw new Error(
+      `Sandbox generation requires npm >= ${BEFORE_SANDBOX_NPM_MIN_VERSION} so NPM_CONFIG_MIN_RELEASE_AGE is honored (found ${version}). Upgrade with: npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}`
+    );
+  }
+}
 
 interface RefreshLockfileOptions {
   cwd: string;

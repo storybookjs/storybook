@@ -45,7 +45,15 @@ const replacePseudoStatesWithAncestorSelector = (
     return selector;
   }
 
-  const selectors = `${additionalHostSelectors ?? ''}${extracted.states.map((s) => `.pseudo-${s}-all`).join('')}`;
+  const toClasses = (states: string[]) => states.map((s) => `.pseudo-${s}-all`).join('');
+  const specificityFree = extracted.states.filter((s) => extracted.specificityFreeStates.has(s));
+  const specificityBearing = extracted.states.filter(
+    (s) => !extracted.specificityFreeStates.has(s)
+  );
+
+  const selectors = `${additionalHostSelectors ?? ''}${toClasses(specificityBearing)}${
+    specificityFree.length ? `:where(${toClasses(specificityFree)})` : ''
+  }`;
 
   // If there was a :host-context() containing only pseudo-states, we will later add a :host selector that replaces it.
   let { withoutPseudoStates } = extracted;
@@ -60,22 +68,58 @@ const replacePseudoStatesWithAncestorSelector = (
       : `${selectors} ${withoutPseudoStates}`;
 };
 
-const extractPseudoStates = (selector: string) => {
-  const states = new Set();
-  const withoutPseudoStates =
-    selector
-      // If there's no selector for pseudostate pseudo-class, add '*' to the selector.
+// Unlike :is(), :has() and :not(), :where() takes no specificity from its argument, so a state
+// found inside it must not be hoisted into a specificity-bearing ancestor class.
+const zeroSpecificityRanges = (selector: string) => {
+  const ranges: [number, number][] = [];
+  const openings = /:where\(/g;
+  let opening = openings.exec(selector);
+  while (opening !== null) {
+    const start = opening.index + opening[0].length;
+    let end = start;
+    let depth = 1;
+    while (end < selector.length && depth > 0) {
+      if (selector[end] === '(') {
+        depth++;
+      } else if (selector[end] === ')') {
+        depth--;
+      }
+      end++;
+    }
+    ranges.push([start, end - 1]);
+    opening = openings.exec(selector);
+  }
+  return ranges;
+};
 
-      .replaceAll(new RegExp(`(${selectorStartPattern})(${pseudoStatesPattern})`, 'g'), '$1*$2')
-      .replaceAll(matchAll, (_, state) => {
+const extractPseudoStates = (selector: string) => {
+  const states = new Set<string>();
+  const insideWhere = new Set<string>();
+  const outsideWhere = new Set<string>();
+
+  // If there's no selector for pseudostate pseudo-class, add '*' to the selector.
+  const withUniversals = selector.replaceAll(
+    new RegExp(`(${selectorStartPattern})(${pseudoStatesPattern})`, 'g'),
+    '$1*$2'
+  );
+  const ranges = zeroSpecificityRanges(withUniversals);
+
+  const withoutPseudoStates =
+    withUniversals
+      .replaceAll(matchAll, (_, state: string, offset: number) => {
         states.add(state);
+        const isZeroSpecificity = ranges.some(([start, end]) => offset >= start && offset < end);
+        (isZeroSpecificity ? insideWhere : outsideWhere).add(state);
         return '';
       })
+      .replaceAll(':where(*)', '')
       // If a selector list was left with blank items (e.g. ", foo, , bar, "), remove the extra commas/spaces.
-      .replaceAll(/(?<=[\s(]),\s+|(,\s+)+(?=\))/g, '') || '*';
+      .replaceAll(/(?<=[\s(]),\s+|(,\s+)+(?=\))/g, '')
+      .trim() || '*';
 
   return {
     states: Array.from(states),
+    specificityFreeStates: new Set([...insideWhere].filter((s) => !outsideWhere.has(s))),
     withoutPseudoStates,
   };
 };

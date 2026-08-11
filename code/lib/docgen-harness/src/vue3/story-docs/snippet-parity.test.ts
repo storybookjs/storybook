@@ -12,6 +12,7 @@ import type { DocgenPayload } from 'storybook/open-service';
 import { buildStoryDocsPayload } from '../../../../../renderers/vue3/src/story-docs/build-story-docs.ts';
 import { expectCurrentOrBetter } from '../../compare/expect-current-or-better.ts';
 import { parseArgTypesSnapshot } from '../../compare/parse-snapshot.ts';
+import { vueRepresentedNames } from '../../compare/snippets-vue3.ts';
 
 const FIXTURES_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '../__testfixtures__');
 const STORIES_FILE = 'input.stories.ts';
@@ -131,6 +132,32 @@ function baselineComparisons(fixtureCase: string, payload: StoryDocsPayload): Ba
     });
 }
 
+/**
+ * Status label backed only by what the represented-name comparison can verify: added or omitted
+ * arg names. Value fidelity is not compared, so other differences carry no quality claim.
+ */
+function snippetStatus(baseline: string, candidate: string | undefined): string {
+  if (!candidate) {
+    return '⏳ no snippet (runtime fallback)';
+  }
+  if (candidate.trim() === baseline.trim()) {
+    return '✅ identical';
+  }
+
+  const baselineNames = vueRepresentedNames(baseline) ?? new Set<string>();
+  const candidateNames = vueRepresentedNames(candidate) ?? new Set<string>();
+  const omitted = [...baselineNames].filter((name) => !candidateNames.has(name)).sort();
+  if (omitted.length > 0) {
+    return `⚠️ omits ${omitted.join(', ')}`;
+  }
+
+  const added = [...candidateNames].filter((name) => !baselineNames.has(name)).sort();
+  if (added.length > 0) {
+    return `✨ adds ${added.join(', ')}`;
+  }
+  return '🔁 differs (same args)';
+}
+
 describe('vue3 story-docs static snippet parity', () => {
   it.each(fixtureCases())('%s', async (fixtureCase): Promise<void> => {
     const payload = await buildPayloadForFixture(fixtureCase);
@@ -170,12 +197,7 @@ describe('vue3 story-docs static snippet parity', () => {
         fixtureCase,
         payload!
       )) {
-        const status = !candidate
-          ? '⏳ no snippet (runtime fallback)'
-          : candidate.trim() === baseline.trim()
-            ? '✅ identical'
-            : '✨ improved';
-        rows.push(`| ${fixtureCase} | ${exportName} | ${status} |`);
+        rows.push(`| ${fixtureCase} | ${exportName} | ${snippetStatus(baseline, candidate)} |`);
       }
     }
 

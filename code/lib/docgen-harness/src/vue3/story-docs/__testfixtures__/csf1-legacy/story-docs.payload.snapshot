@@ -4,6 +4,24 @@
   "name": "CsfOneButton",
   "path": "__PATH__",
   "stories": {
+    "forms-csf1-legacy--assigned-args": {
+      "description": undefined,
+      "id": "forms-csf1-legacy--assigned-args",
+      "name": "Assigned Args",
+      "snippet": "<template>
+  <CsfOneButton label="Assigned" />
+</template>",
+      "summary": undefined,
+    },
+    "forms-csf1-legacy--assigned-args-override-inline": {
+      "description": undefined,
+      "id": "forms-csf1-legacy--assigned-args-override-inline",
+      "name": "Assigned Args Override Inline",
+      "snippet": "<template>
+  <CsfOneButton label="Assigned wins" />
+</template>",
+      "summary": undefined,
+    },
     "forms-csf1-legacy--primary": {
       "description": undefined,
       "id": "forms-csf1-legacy--primary",

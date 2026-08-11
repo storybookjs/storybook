@@ -1,7 +1,7 @@
 import { readFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
-import { type NodePath, types as t } from 'storybook/internal/babel';
+import { types as t, type NodePath } from 'storybook/internal/babel';
 import {
   STORY_FILE_TEST_REGEXP,
   getComponentIdFromEntry,
@@ -22,6 +22,7 @@ import {
   normalizeStoryDeclaration,
   resolveComponentImport,
   propertyValue,
+  storyAssignedArgsPath,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
@@ -32,7 +33,7 @@ import { renderSfcSnippet } from './render-sfc.ts';
 export interface BuildStoryDocsContext {
   /** Resolve a CSF import path to an absolute file path. Defaults to `process.cwd()` join. */
   resolvePath?: (importPath: string) => string;
-  /** Reads fresh docgen for the component id. Defaults to the registered core/docgen service. */
+  /** Reads docgen for the component id. Defaults to the registered core/docgen service. */
   readDocgen?: (id: string) => Promise<DocgenPayload | undefined>;
 }
 
@@ -74,7 +75,12 @@ export async function buildStoryDocsPayload(
   }
 
   const id = getComponentIdFromEntry(input.entry);
-  const docgenPayload = await readFreshDocgen(id, context.readDocgen);
+  let docgenPayload: DocgenPayload | undefined;
+  try {
+    docgenPayload = await (context.readDocgen ?? readStoredDocgen)(id);
+  } catch {
+    // Docgen is optional here: without it the payload is still built, just without snippets.
+  }
   const componentName = resolveMetaComponentIdentifier(csf);
   const importStatement = createImportStatement(csf);
   const docgenArgInfo =
@@ -124,20 +130,12 @@ function createImportStatement(csf: ParsedCsf): string | undefined {
   return buildImportStatements({ refs: [ref] }).join('\n') || undefined;
 }
 
-async function readFreshDocgen(
-  id: string,
-  readDocgen = readDocgenFromService
-): Promise<DocgenPayload | undefined> {
-  try {
-    return await readDocgen(id);
-  } catch {
-    return undefined;
-  }
-}
-
-async function readDocgenFromService(id: string): Promise<DocgenPayload | undefined> {
+/**
+ * Stored docgen for the component, extracted on demand only when nothing is stored yet.
+ */
+async function readStoredDocgen(id: string): Promise<DocgenPayload | undefined> {
   const docgen = getService<DocgenService>('core/docgen', { internal: true });
-  return docgen.commands.extractDocgen({ id });
+  return docgen.queries.docgen.get({ id }) ?? docgen.queries.docgen.loaded({ id });
 }
 
 /**
@@ -257,8 +255,11 @@ function enrichStoryDoc(
     return { ...storyDoc, error: options.metaArgsError ?? storyArgsError };
   }
 
+  // `Primary.args = { … }` runs after the declaration and replaces its args object outright, so an
+  // assignment wins over inline args rather than merging with them.
   const storyArgsPath =
-    normalized.type === 'config' ? argsObjectPathFromObjectPath(normalized.path) : undefined;
+    storyAssignedArgsPath(csf._file.path, storyExport) ??
+    (normalized.type === 'config' ? argsObjectPathFromObjectPath(normalized.path) : undefined);
   if (argsObjectHasSpread(options.metaArgsPath?.node) || argsObjectHasSpread(storyArgsPath?.node)) {
     return {
       ...storyDoc,
@@ -269,7 +270,7 @@ function enrichStoryDoc(
     };
   }
 
-  const storyArgs = normalized.type === 'config' ? argsRecordFromObjectPath(storyArgsPath) : {};
+  const storyArgs = argsRecordFromObjectPath(storyArgsPath);
   const classified = classifyArgs(mergeArgsRecords(metaArgs, storyArgs), options.docgenArgInfo);
   if (classified.skipSnippet) {
     return storyDoc;

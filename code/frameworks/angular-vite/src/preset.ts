@@ -12,8 +12,12 @@ import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { resolveCompodocConfig } from './compodoc-config.ts';
+import { ensureCompodocDocumentation } from './compodoc/ensure-documentation.ts';
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 import type { UserConfig, Plugin } from 'vite';
+
+export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
 
 export const addons: PresetProperty<'addons'> = [];
 
@@ -112,30 +116,18 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   // @ts-expect-error options is possibly undefined here, but presets.apply is guarded at runtime
   const framework = await options.presets.apply('framework');
 
-  // Generate compodoc's documentation.json on cold start when no builder
-  // path has produced it yet (e.g. addon-vitest child, ng run without the
-  // Angular CLI builder). Skipped when the file already exists or when the
-  // user opts out via framework.options.compodoc === false.
-  if (framework.options?.compodoc !== false) {
-    const { existsSync } = await import('node:fs');
-    const path = await import('node:path');
-    const workspaceRoot =
-      (options as any)?.angularBuilderContext?.workspaceRoot ?? config?.root ?? process.cwd();
-    const documentationJsonPath = path.resolve(workspaceRoot, 'documentation.json');
-    if (!existsSync(documentationJsonPath)) {
-      const { runCompodoc } = await import('./builders/utils/run-compodoc.ts');
-      const tsconfig =
-        framework.options?.tsconfig ??
-        (options as any)?.tsConfig ??
-        (options as any)?.angularBuilderOptions?.tsConfig ??
-        path.resolve(workspaceRoot, 'tsconfig.json');
-      const compodocArgs = framework.options?.compodocArgs ?? ['-e', 'json', '-d', '.'];
-      try {
-        await runCompodoc({ compodocArgs, tsconfig, workspaceRoot });
-      } catch (err) {
-        console.warn('[storybook-angular-vite] compodoc generation failed:', err);
-      }
-    }
+  // `storybook init` writes a static `import docJson from '../documentation.json'` into the Angular
+  // preview, so the file has to exist before Vite resolves it - in every process that builds a
+  // preview, whatever the docgen feature flag says. Generation is marked per run, so the docgen
+  // worker's own trigger costs one file read rather than a second scan.
+  const compodocConfig = await resolveCompodocConfig(options, { viteRoot: config?.root });
+  if (compodocConfig.enabled) {
+    await ensureCompodocDocumentation({
+      compodocArgs: compodocConfig.compodocArgs,
+      tsconfig: compodocConfig.tsconfig,
+      workspaceRoot: compodocConfig.workspaceRoot,
+      outputDir: compodocConfig.outputDir,
+    });
   }
 
   const zoneless = resolveZoneless(options?.angularBuilderOptions);

@@ -52,14 +52,14 @@ describe('seriesMetrics', () => {
   it('medians cold across every repetition', () => {
     expect(seriesMetrics(reps, 3).coldExtractionMs).toMatchObject({
       samples: [300, 100, 200],
-      median: 200,
+      value: 200,
     });
   });
 
   it('reads warm from the designated repetition, not the first', () => {
     expect(seriesMetrics(reps, 3).warmExtractionMs).toMatchObject({
       samples: [4, 5, 6],
-      median: 5,
+      value: 5,
     });
   });
 
@@ -68,7 +68,7 @@ describe('seriesMetrics', () => {
   });
 
   it('derives transient memory from the same repetition warm came from', () => {
-    expect(seriesMetrics(reps, 3).peakTransientMb).toMatchObject({ mean: 10 });
+    expect(seriesMetrics(reps, 3).peakTransientMb).toMatchObject({ value: 10 });
   });
 
   it('rejects a repetition count below the pinned N', () => {

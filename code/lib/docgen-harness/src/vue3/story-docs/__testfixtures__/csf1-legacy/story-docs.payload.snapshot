@@ -1,0 +1,14 @@
+{
+  "id": "csf1-legacy",
+  "import": "import CsfOneButton from './CsfOneButton.vue';",
+  "name": "CsfOneButton",
+  "path": "__PATH__",
+  "stories": {
+    "forms-csf1-legacy--primary": {
+      "description": undefined,
+      "id": "forms-csf1-legacy--primary",
+      "name": "Primary",
+      "summary": undefined,
+    },
+  },
+}

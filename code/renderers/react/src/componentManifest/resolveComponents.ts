@@ -1,6 +1,6 @@
 import { recast } from 'storybook/internal/babel';
 import { storyNameFromExport } from 'storybook/internal/csf';
-import { extractDescription, extractJSDocInfo, loadCsf } from 'storybook/internal/csf-tools';
+import { extractStoryJSDocInfo, loadCsf } from 'storybook/internal/csf-tools';
 
 import { getCodeSnippet } from './generateCodeSnippet.ts';
 import {
@@ -153,16 +153,14 @@ export function extractStorySnippets(
     .map(([storyExport, story]): ResolvedStory => {
       const name = story.name ?? storyNameFromExport(storyExport);
       try {
-        const jsdocComment = extractDescription(csf._storyStatements[storyExport]);
-        const { tags = {}, description } = jsdocComment ? extractJSDocInfo(jsdocComment) : {};
-        const finalDescription = (tags?.describe?.[0] || tags?.desc?.[0]) ?? description;
+        const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[storyExport]);
 
         return {
           id: story.id,
           name,
           snippet: recast.print(getCodeSnippet(csf, storyExport, componentName)).code,
-          description: finalDescription?.trim(),
-          summary: tags.summary?.[0],
+          description,
+          summary,
         };
       } catch (e) {
         const err = e instanceof Error ? e : new Error(String(e));

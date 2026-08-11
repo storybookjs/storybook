@@ -1,0 +1,13 @@
+{
+  "id": "no-component",
+  "name": "no-component",
+  "path": "__PATH__",
+  "stories": {
+    "forms-no-component--primary": {
+      "description": "Field without an explicit component.",
+      "id": "forms-no-component--primary",
+      "name": "Primary",
+      "summary": undefined,
+    },
+  },
+}

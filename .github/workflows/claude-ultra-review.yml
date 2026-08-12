@@ -1,0 +1,125 @@
+name: Claude Ultra Review
+
+on:
+  issue_comment:
+    types: [created]
+
+jobs:
+  ultra-review:
+    # Triggered by an org OWNER or MEMBER commenting `/ultra-review` on a PR.
+    # Fork PRs are rejected in the first step below, because the issue_comment
+    # payload does not carry the PR's head repository.
+    if: |
+      github.event.issue.pull_request &&
+      contains(github.event.comment.body, '/ultra-review') &&
+      contains(fromJSON('["OWNER", "MEMBER"]'), github.event.comment.author_association)
+
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+      issues: read
+      id-token: write
+
+    steps:
+      - name: Resolve PR head and reject forks
+        id: pr
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PR_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          pr=$(gh api "repos/${GITHUB_REPOSITORY}/pulls/${PR_NUMBER}")
+          head_repo=$(jq -r '.head.repo.full_name' <<< "$pr")
+          if [ "$head_repo" != "$GITHUB_REPOSITORY" ]; then
+            echo "::error::PR #${PR_NUMBER} is from a fork (${head_repo}); /ultra-review only runs on non-fork PRs."
+            exit 1
+          fi
+          echo "head_sha=$(jq -r '.head.sha' <<< "$pr")" >> "$GITHUB_OUTPUT"
+
+      - name: Checkout PR head
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: ${{ steps.pr.outputs.head_sha }}
+          fetch-depth: 1
+          persist-credentials: false
+
+      - name: Run Claude Ultra Review
+        id: claude-ultra-review
+        uses: anthropics/claude-code-action@a92e7c70a4da9793dc164451d829089dc057a464 # v1.0.159
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            REPO: ${{ github.repository }}
+            PR NUMBER: ${{ github.event.issue.number }}
+
+            ultracode
+
+            Perform a thermo-nuclear code quality review of this pull request.
+            The PR branch is already checked out in the current working directory.
+
+            Perform a deep code quality audit of this PR's changes.
+            Rethink how to structure / implement the changes to meaningfully improve code quality without impacting behavior.
+            Work to improve abstractions, modularity, reduce spaghetti code, improve succinctness and legibility.
+            Be ambitious: if there is a clear path to improving the implementation that involves restructuring some of the codebase, go for it.
+            Be extremely thorough and rigorous. Measure twice, cut once.
+
+            Non-negotiable review standards:
+
+            0. Be ambitious about structural simplification. Do not stop at "this could be a bit cleaner".
+               Look for "code judo" moves: reframings that make whole branches, helpers, modes, conditionals,
+               or layers disappear entirely while preserving behavior. Prefer the solution that makes the
+               code feel inevitable in hindsight. If you see a path to delete complexity rather than
+               rearrange it, push hard for that path.
+            1. Do not let a PR push a file from under 1k lines to over 1k lines without a very strong reason.
+               Treat this as a strong code-quality smell by default and ask for decomposition first.
+            2. Do not allow random spaghetti growth in existing code. Be highly suspicious of new ad-hoc
+               conditionals, scattered special cases, or one-off branches inserted into unrelated flows.
+               Treat "weird if statements in random places" as a design problem, not a stylistic nit.
+            3. Bias toward cleaning the design, not just accepting working code. Do not rubber-stamp
+               "it works" implementations that leave the codebase messier. Strongly prefer simplifications
+               that remove moving pieces altogether over refactors that spread the same complexity around.
+            4. Prefer direct, boring, maintainable code over hacky or magical code. Flag thin abstractions,
+               identity wrappers, or pass-through helpers that add indirection without buying clarity.
+            5. Push hard on type and boundary cleanliness. Question unnecessary optionality, `unknown`,
+               `any`, or cast-heavy code when a clearer type boundary could exist. If a branch relies on
+               silent fallback to paper over an unclear invariant, ask for an explicit boundary instead.
+            6. Keep logic in the canonical layer and reuse existing helpers. Call out feature logic leaking
+               into shared paths and bespoke one-offs where a canonical utility already exists.
+            7. Treat unnecessary sequential orchestration and non-atomic updates as design smells when the
+               cleaner structure is obvious.
+
+            For every meaningful change, ask:
+            - Is there a code-judo move that would make this dramatically simpler?
+            - Can this change be reframed so fewer concepts, branches, or helper layers are needed?
+            - Does this improve or worsen the local architecture?
+            - Did a previously cohesive module become more coupled, more stateful, or harder to scan?
+            - Is this logic living in the right file and layer?
+            - Are there repeated conditionals that signal a missing model or missing helper?
+            - Is the abstraction actually earning its keep, or is it just a wrapper?
+            - Did the diff introduce casts, optionality, or ad-hoc object shapes that obscure the real invariant?
+
+            Prioritize findings in this order:
+            1. Structural code-quality regressions
+            2. Missed opportunities for dramatic simplification / code-judo restructuring
+            3. Spaghetti / branching complexity increases
+            4. Boundary / abstraction / type-contract problems
+            5. File-size and decomposition concerns
+            6. Modularity and abstraction issues
+            7. Legibility and maintainability concerns
+
+            Do not flood the review with low-value nits if there are larger structural issues.
+            Prefer a small number of high-conviction comments over a long list of cosmetic notes.
+            Be direct, serious, and demanding about quality. Do not be rude, but do not soften major
+            maintainability issues into mild suggestions.
+
+            Posting instructions:
+            - Use `mcp__github_inline_comment__create_inline_comment` (with `confirmed: true`) to post
+              every finding as an inline comment anchored to the relevant diff lines.
+            - Use `gh pr comment` once at the end for a short overall summary and verdict against the
+              approval bar (no structural regression, no missed obvious simplification, no unjustified
+              file-size explosion, no spaghetti growth, no boundary leak or helper duplication).
+            - Only post GitHub comments - do not submit review text as plain messages.
+
+          claude_args: |
+            --model claude-fable-5
+            --allowedTools "mcp__github_inline_comment__create_inline_comment,Bash(gh pr comment:*),Bash(gh pr diff:*),Bash(gh pr view:*),Bash(git status:*),Bash(git diff:*),Bash(git log:*),Bash(git show:*)"

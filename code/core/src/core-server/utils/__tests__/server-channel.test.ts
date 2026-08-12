@@ -461,4 +461,14 @@ describe('ServerChannelTransport', () => {
     ]);
     expect(response).toContain('HTTP/1.1 403 Forbidden');
   });
+
+  it('does not crash when a socket emits an error', () => {
+    const server = new EventEmitter() as any as Server;
+    const socket = new EventEmitter();
+    const transport = createTransport(server);
+
+    websocketServer(transport).emit('connection', socket);
+
+    expect(() => socket.emit('error', new Error('Max payload size exceeded'))).not.toThrow();
+  });
 });

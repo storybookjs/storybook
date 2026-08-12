@@ -81,6 +81,11 @@ export class ServerChannelTransport {
     });
 
     this.socket.on('connection', (wss) => {
+      wss.on('error', (error) => {
+        // Without a listener, Node crashes on 'error' (e.g. oversized frame). ws closes the socket itself.
+        logger.warn(`WebSocket error on server channel: ${error}`);
+      });
+
       wss.on('message', (raw) => {
         const data = raw.toString();
         const event = typeof data === 'string' && isJSON(data) ? parse(data, {}) : data;

@@ -18,7 +18,7 @@ export {
   importedName,
   isTypeSpecifier,
 } from './imports.ts';
-export { extractStoryJSDocInfo } from './jsdoc.ts';
+export { extractStoryJSDocInfo, jsDocTagsForPath } from './jsdoc.ts';
 export { type NormalizedStoryDeclaration, normalizeStoryDeclaration } from './normalize-story.ts';
 export { type RenderFunctionPath, type RenderResolution, resolveRenderFunction } from './render.ts';
 export {
@@ -26,6 +26,8 @@ export {
   metaObjectPath,
   propertyValue,
   resolveIdentifierInit,
+  resolveReturnedObjectExpression,
+  returnedExpression,
   returnedExpressionPath,
   returnedObjectExpression,
   unwrapExpression,

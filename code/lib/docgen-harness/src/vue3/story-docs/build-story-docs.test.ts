@@ -88,17 +88,13 @@ function docgenForFixture(
       'update:modelValue': argType('update:modelValue', 'events'),
     },
   };
-  const jsDocTagsByFixture: Record<string, DocgenPayload['jsDocTags']> = {
-    'import-override': {
-      import: ["import { ImportOverride } from 'my-design-system';"],
-    },
-  };
-
+  // Deliberately empty: vue-component-meta does not surface component-level tags, so the
+  // `import-override` fixture has to earn its snapshot from the `@import` tag on its CSF meta.
   return {
     id,
     name: componentNameFromFixture(fixtureCase),
     path,
-    jsDocTags: jsDocTagsByFixture[fixtureCase] ?? {},
+    jsDocTags: {},
     argTypes: argTypesByFixture[fixtureCase] ?? {},
   };
 }

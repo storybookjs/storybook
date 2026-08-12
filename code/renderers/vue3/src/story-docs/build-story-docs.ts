@@ -14,6 +14,7 @@ import {
   buildImportStatements,
   collectImportBindings,
   extractStoryJSDocInfo,
+  jsDocTagsForPath,
   keyOf,
   loadCsf,
   mergeArgsRecords,
@@ -21,13 +22,12 @@ import {
   normalizeStoryDeclaration,
   propertyValue,
   resolveComponentImport,
-  resolveIdentifierInit,
+  type RenderFunctionPath,
   resolveRenderFunction,
+  resolveReturnedObjectExpression,
   returnedExpressionPath,
-  returnedObjectExpression,
   storyAssignedArgsPath,
   type ImportBinding,
-  type RenderFunctionPath,
   type RenderResolution,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
@@ -40,7 +40,7 @@ import {
   type VueDocgenArgInfo,
 } from './classify-args.ts';
 import { renderSfcSnippet } from './render-sfc.ts';
-import { createHSlotRenderer, transformH } from './transform-h.ts';
+import { transformH } from './transform-h.ts';
 import {
   readTemplateRenderConfig,
   transformTemplate,
@@ -127,7 +127,12 @@ export async function buildStoryDocsPayload(
   }
   const componentName = resolveMetaComponentIdentifier(metaPath);
   const importBindings = collectImportBindings(csf._file.path);
-  const importStatement = createImportStatement(componentName, importBindings, docgenPayload);
+  const importStatement = createImportStatement(
+    componentName,
+    importBindings,
+    metaPath,
+    docgenPayload
+  );
   const docgenArgInfo =
     docgenPayload && !docgenPayload.error ? vueDocgenArgInfo(docgenPayload) : undefined;
   const snippet = componentName && docgenArgInfo ? { componentName, docgenArgInfo } : undefined;
@@ -165,14 +170,18 @@ function resolveMetaComponentIdentifier(
 
 /**
  * Reconstructs the component's import statement from the story file's import bindings, redirected
- * to the source an `@import` docgen tag declares when the component has one.
+ * to the source an `@import` tag declares when the story or the component carries one.
  *
- * @example `@import import { Button } from 'my-ds'` on `MyButton` →
+ * The CSF `meta` docblock is the supported place to write it, because component-level tags do not
+ * survive every docgen backend. A component tag still wins over nothing when one does come through.
+ *
+ * @example `@import import { Button } from 'my-ds'` above `const meta` for `MyButton` →
  * `import { Button as MyButton } from 'my-ds';`
  */
 function createImportStatement(
   componentName: string | undefined,
   importBindings: Map<string, ImportBinding>,
+  metaPath: NodePath<t.ObjectExpression> | undefined,
   docgenPayload: DocgenPayload | undefined
 ): string | undefined {
   if (!componentName) {
@@ -182,7 +191,8 @@ function createImportStatement(
   // The override supplies the source and specifier kind, but the local name has to stay the one the
   // snippet renders, so the statement and the snippet keep referring to the same identifier.
   const ref = resolveComponentImport(componentName, importBindings);
-  const importOverride = docgenPayload?.jsDocTags.import?.[0];
+  const importOverride =
+    jsDocTagsForPath(metaPath).import?.[0] ?? docgenPayload?.jsDocTags.import?.[0];
   return buildImportStatements({ refs: [{ ...ref, importOverride }] }).join('\n') || undefined;
 }
 
@@ -327,7 +337,13 @@ function enrichStoryDoc(
     return plain;
   }
 
-  const rendered = renderStaticStorySnippet(renderer, classified.args, componentName, options);
+  const rendered = renderStaticStorySnippet(
+    renderer,
+    classified.args,
+    componentName,
+    docgenArgInfo,
+    options
+  );
   if (!rendered) {
     return plain;
   }
@@ -346,7 +362,7 @@ function staticRendererForRenderFunction(
   renderFunction: RenderFunctionPath,
   options: StoryDocsContext
 ): StaticStoryRenderer | undefined {
-  const renderObject = returnedRenderObjectExpression(renderFunction);
+  const renderObject = resolveReturnedObjectExpression(renderFunction);
   const templateConfig = renderObject
     ? readTemplateRenderConfig(renderObject, options.importBindings)
     : undefined;
@@ -408,56 +424,29 @@ function renderStaticStorySnippet(
   renderer: StaticStoryRenderer,
   args: ClassifiedArg[],
   componentName: string,
+  docgenArgInfo: VueDocgenArgInfo,
   options: StoryDocsContext
 ): StorySnippetResult | undefined {
-  // Slot imports collect per attempt so a story that ultimately bails contributes none.
-  const slotImports = new Set<string>();
-  const renderFunctionSlot = createHSlotRenderer(options.importBindings, slotImports);
+  if (renderer.kind === 'sfc') {
+    return renderSfcSnippet({ args, componentName, importBindings: options.importBindings });
+  }
 
-  const rendered = ((): StorySnippetResult | undefined => {
-    if (renderer.kind === 'sfc') {
-      const snippet = renderSfcSnippet({
-        args,
-        componentName,
-        renderFunctionSlot,
-      });
-      return snippet ? { imports: [], snippet } : undefined;
-    }
-
-    if (renderer.kind === 'template') {
-      return transformTemplate({
-        args,
-        componentImports: renderer.componentImports,
-        template: renderer.template,
-      });
-    }
-
-    return transformH({
+  if (renderer.kind === 'template') {
+    return transformTemplate({
       args,
-      argsParam: renderer.argsParam,
+      componentImports: renderer.componentImports,
       importBindings: options.importBindings,
-      node: renderer.expression,
+      template: renderer.template,
     });
-  })();
-
-  return rendered ? { ...rendered, imports: [...rendered.imports, ...slotImports] } : undefined;
-}
-
-function returnedRenderObjectExpression(
-  renderFunction: RenderFunctionPath
-): t.ObjectExpression | undefined {
-  const renderObject = returnedObjectExpression(renderFunction.node);
-  if (renderObject) {
-    return renderObject;
   }
 
-  const returned = returnedExpressionPath(renderFunction);
-  if (!returned?.isIdentifier()) {
-    return undefined;
-  }
-
-  const resolved = resolveIdentifierInit(renderFunction, returned);
-  return resolved?.isObjectExpression() ? resolved.node : undefined;
+  return transformH({
+    args,
+    argsParam: renderer.argsParam,
+    docgen: docgenArgInfo,
+    importBindings: options.importBindings,
+    node: renderer.expression,
+  });
 }
 
 function argsParameterName(renderFunction: RenderFunctionPath['node']): string | undefined {

@@ -1,14 +1,14 @@
 import { types as t } from 'storybook/internal/babel';
 import {
   keyOf,
-  returnedExpressionPath,
+  returnedExpression,
   unwrapValue,
   type ImportBinding,
 } from 'storybook/internal/csf-tools';
 
-import { importStatementForBinding, wrapSlotContent } from './ast-utils.ts';
-import type { ClassifiedArg, ClassifiedPropLikeArg, ClassifiedSlotArg } from './classify-args.ts';
-import { classifyValue, isFunctionExpression } from './classify-value.ts';
+import { importStatementForBinding, indent, wrapSlotContent } from './ast-utils.ts';
+import { classifyArg, type ClassifiedArg, type VueDocgenArgInfo } from './classify-args.ts';
+import { isFunctionExpression } from './classify-value.ts';
 import {
   createRenderContext,
   formatRenderedProp,
@@ -20,7 +20,7 @@ import {
   renderSlotArgContent,
   type FunctionSlotRenderer,
   type RenderContext,
-} from './render-sfc.ts';
+} from './render-primitives.ts';
 
 export interface TransformHInput {
   /** Render-function expression to convert into Vue markup. */
@@ -29,6 +29,8 @@ export interface TransformHInput {
   args: ClassifiedArg[];
   /** Name of the render function's args parameter. */
   argsParam?: string;
+  /** Docgen roles used to classify values written directly into the render tree. */
+  docgen: VueDocgenArgInfo;
   /** Import bindings from the CSF module. */
   importBindings: Map<string, ImportBinding>;
 }
@@ -49,24 +51,19 @@ export interface RenderHSlotFunctionInput {
   importBindings: Map<string, ImportBinding>;
 }
 
-export interface RenderHSlotFunctionResult {
-  /** Rendered slot children markup. */
-  content: string;
-  /** Import statements for components used by the slot tree. */
-  imports: string[];
-}
-
 type HRenderOptions = {
   args: ClassifiedArg[];
   argsParam?: string;
   ctx: RenderContext;
+  docgen: VueDocgenArgInfo;
   importBindings: Map<string, ImportBinding>;
-  usedImports: Set<string>;
 };
 
 type HTag = {
   name: string;
   selfClosing: boolean;
+  /** Native void element, which cannot carry children or a closing tag. */
+  void: boolean;
 };
 
 type HArguments = {
@@ -76,76 +73,81 @@ type HArguments = {
 
 const H_FUNCTION = 'h';
 
+const NO_DOCGEN: VueDocgenArgInfo = { props: new Set(), events: new Set(), slots: new Set() };
+
+/** @see https://html.spec.whatwg.org/multipage/syntax.html#void-elements */
+const VOID_ELEMENTS = new Set([
+  'area',
+  'base',
+  'br',
+  'col',
+  'embed',
+  'hr',
+  'img',
+  'input',
+  'link',
+  'meta',
+  'source',
+  'track',
+  'wbr',
+]);
+
+const isVoidElement = (name: string): boolean => VOID_ELEMENTS.has(name);
+
+// Vue resolves a capitalized tag name as a component rather than a native element.
+const isComponentName = (name: string): boolean => /^[A-Z]/.test(name);
+
 /** Transform a statically decidable Vue `h()` tree into an SFC snippet. */
 export function transformH(input: TransformHInput): TransformHResult | undefined {
-  const ctx = createRenderContext();
-  const usedImports = new Set<string>();
+  const ctx = createRenderContext(createHSlotRenderer(input.importBindings));
   const templateCode = renderHNode(input.node, {
     args: input.args,
     argsParam: input.argsParam,
     ctx,
+    docgen: input.docgen,
     importBindings: input.importBindings,
-    usedImports,
   });
 
   return templateCode
     ? {
         snippet: renderPreparedSfcSnippet({ templateCode, ctx }),
-        imports: Array.from(usedImports),
+        imports: Array.from(ctx.componentImports),
       }
     : undefined;
 }
 
 /** Render a zero-argument slot function whose body is a static `h()` child tree. */
-export function renderHSlotFunction(
-  input: RenderHSlotFunctionInput
-): RenderHSlotFunctionResult | undefined {
+export function renderHSlotFunction(input: RenderHSlotFunctionInput): string | undefined {
   if (input.node.params.length > 0) {
     return undefined;
   }
 
-  const returned = returnedExpressionPath(input.node);
+  const returned = returnedExpression(input.node);
   if (!returned) {
     return undefined;
   }
 
-  const usedImports = new Set<string>();
-  const content = renderHNode(returned, {
+  return renderHNode(returned, {
     args: [],
     ctx: input.ctx,
+    // Slot content renders children of components the story does not describe, so nothing here can
+    // be resolved to a declared slot, event, or v-model.
+    docgen: NO_DOCGEN,
     importBindings: input.importBindings,
-    usedImports,
   });
-
-  return content ? { content, imports: Array.from(usedImports) } : undefined;
 }
 
-/**
- * Slot renderer realizing function slots as `h()` trees, funnelling their component imports into
- * `collectedImports`.
- *
- * Taken as a callback by the SFC and template renderers, so neither has to import this module.
- */
+/** Slot renderer realizing function slots as `h()` trees, for any snippet renderer to install. */
 export function createHSlotRenderer(
-  importBindings: Map<string, ImportBinding>,
-  collectedImports: Set<string>
+  importBindings: Map<string, ImportBinding>
 ): FunctionSlotRenderer {
-  return (value, ctx) => {
-    const rendered = renderHSlotFunction({ node: value, ctx, importBindings });
-    if (!rendered) {
-      return undefined;
-    }
-    for (const importStatement of rendered.imports) {
-      collectedImports.add(importStatement);
-    }
-    return rendered.content;
-  };
+  return (value, ctx) => renderHSlotFunction({ node: value, ctx, importBindings });
 }
 
 // h('div', { class: 'row' }, 'Hi') -> <div class="row">Hi</div>
 function renderHNode(node: t.Node, options: HRenderOptions): string | undefined {
   const value = unwrapValue(node);
-  if (!value || !t.isCallExpression(value) || !t.isIdentifier(value.callee, { name: H_FUNCTION })) {
+  if (!t.isCallExpression(value) || !t.isIdentifier(value.callee, { name: H_FUNCTION })) {
     return undefined;
   }
 
@@ -172,35 +174,60 @@ function renderHNode(node: t.Node, options: HRenderOptions): string | undefined 
     children.push(...props.slotChildren);
   }
 
+  // A void element has no closing tag to put children before, so a tree that gives it any is not
+  // representable as markup at all.
+  if (tag.void && children.length > 0) {
+    return undefined;
+  }
+
   const openTag = [tag.name, ...props.attributes].join(' ');
-  return children.length > 0
-    ? `<${openTag}>${children.join('')}</${tag.name}>`
-    : tag.selfClosing
-      ? `<${openTag} />`
-      : `<${openTag}></${tag.name}>`;
+  if (children.length === 0) {
+    return tag.selfClosing ? `<${openTag} />` : `<${openTag}></${tag.name}>`;
+  }
+
+  return `<${openTag}>${joinChildren(children)}</${tag.name}>`;
+}
+
+/**
+ * Children on their own indented lines once they are all markup, and inline otherwise.
+ *
+ * Text children stay inline because breaking them introduces whitespace that Vue would render.
+ */
+function joinChildren(children: string[]): string {
+  return children.every((child) => child.startsWith('<'))
+    ? `\n${indent(children.join('\n'))}\n`
+    : children.join('');
 }
 
 function renderTag(node: t.Node | undefined | null, options: HRenderOptions): HTag | undefined {
-  const tag = unwrapValue(node);
+  const tag = node ? unwrapValue(node) : undefined;
   if (!tag) {
     return undefined;
   }
 
   if (t.isStringLiteral(tag)) {
-    return { name: tag.value, selfClosing: /^[A-Z]/.test(tag.value) };
+    return isComponentName(tag.value)
+      ? componentTag(tag.value, options)
+      : { name: tag.value, selfClosing: isVoidElement(tag.value), void: isVoidElement(tag.value) };
   }
 
-  if (!t.isIdentifier(tag)) {
-    return undefined;
-  }
+  return t.isIdentifier(tag) ? componentTag(tag.name, options) : undefined;
+}
 
-  const importStatement = importStatementForBinding(tag.name, options.importBindings.get(tag.name));
+/**
+ * Component tag whose import the snippet can declare, or `undefined` when it cannot be named.
+ *
+ * Every component tag the snippet prints has to come with an import, otherwise the snippet does not
+ * compile where a reader pastes it.
+ */
+function componentTag(name: string, options: HRenderOptions): HTag | undefined {
+  const importStatement = importStatementForBinding(name, options.importBindings.get(name));
   if (!importStatement) {
     return undefined;
   }
 
-  options.usedImports.add(importStatement);
-  return { name: tag.name, selfClosing: true };
+  options.ctx.componentImports.add(importStatement);
+  return { name, selfClosing: true, void: false };
 }
 
 function splitHArguments(
@@ -227,10 +254,9 @@ function splitHArguments(
 function isChildrenArgument(node: t.Node): boolean {
   const value = unwrapValue(node);
   return (
-    Boolean(value) &&
-    (t.isStringLiteral(value) ||
-      t.isArrayExpression(value) ||
-      (t.isCallExpression(value) && t.isIdentifier(value.callee, { name: H_FUNCTION })))
+    t.isStringLiteral(value) ||
+    t.isArrayExpression(value) ||
+    (t.isCallExpression(value) && t.isIdentifier(value.callee, { name: H_FUNCTION }))
   );
 }
 
@@ -238,26 +264,20 @@ function renderProps(
   node: t.Node | undefined,
   options: HRenderOptions
 ): { attributes: string[]; slotChildren: string[] } | undefined {
-  const propsByName = new Map<string, ClassifiedPropLikeArg>();
-  const slotsByName = new Map<string, ClassifiedSlotArg>();
-
-  if (node) {
-    if (!collectProps(node, propsByName, slotsByName, options)) {
-      return undefined;
-    }
+  const args = node ? collectProps(node, options) : [];
+  if (!args) {
+    return undefined;
   }
 
-  // If the story sets a prop and a slot with the same name, the slot takes precedence in the rendered snippet.
-  const partitioned = partitionArgsByRole([...propsByName.values(), ...slotsByName.values()]);
   // Render the props and events as attributes, and the slots as children.
+  const partitioned = partitionArgsByRole(args);
   const attributes = [
     ...partitioned.props.map((arg) => formatRenderedProp(renderPropLikeArg(arg, options.ctx))),
     ...partitioned.events.map((arg) => formatRenderedProp(renderEventArg(arg, options.ctx))),
   ];
-  const renderSlot = createHSlotRenderer(options.importBindings, options.usedImports);
   const slotChildren: string[] = [];
   for (const slot of partitioned.slots) {
-    const content = renderSlotArgContent(slot, options.ctx, renderSlot);
+    const content = renderSlotArgContent(slot, options.ctx);
     // A function slot without renderable content would misrepresent the story, so bail.
     if (content === undefined) {
       return undefined;
@@ -268,105 +288,65 @@ function renderProps(
   return { attributes, slotChildren };
 }
 
+/**
+ * Classified args the props argument contributes, with later entries winning by name.
+ *
+ * Values written literally in the tree are classified by the same rules as the story's own args, so
+ * `h(C, { default: () => h(Child) })` and `args: { default: … }` land in the same role and plan.
+ */
 // h(tag, null), h(tag, args), h(tag, { ...args, label: 'Hi' })
-function collectProps(
-  node: t.Node,
-  propsByName: Map<string, ClassifiedPropLikeArg>,
-  slotsByName: Map<string, ClassifiedSlotArg>,
-  options: HRenderOptions
-): boolean {
+function collectProps(node: t.Node, options: HRenderOptions): ClassifiedArg[] | undefined {
   const value = unwrapValue(node);
-  if (!value) {
-    return false;
-  }
 
   if (t.isNullLiteral(value)) {
-    return true;
+    return [];
   }
 
   if (isArgsIdentifier(value, options.argsParam)) {
-    expandArgs(propsByName, slotsByName, options.args);
-    return true;
+    return [...options.args];
   }
 
   if (!t.isObjectExpression(value)) {
-    return false;
+    return undefined;
   }
 
+  const argsByName = new Map<string, ClassifiedArg>();
   for (const property of value.properties) {
     if (t.isSpreadElement(property)) {
       if (!isArgsIdentifier(property.argument, options.argsParam)) {
-        return false;
+        return undefined;
       }
-      expandArgs(propsByName, slotsByName, options.args);
+      for (const arg of options.args) {
+        argsByName.set(arg.name, arg);
+      }
       continue;
     }
 
     if (!t.isObjectProperty(property)) {
-      return false;
+      return undefined;
     }
 
     const name = keyOf(property);
-    if (!name) {
-      return false;
+    const argValue = name ? substituteArgsMember(property.value, options) : undefined;
+    if (!name || !argValue) {
+      return undefined;
     }
 
-    const arg = argForObjectProperty(name, property.value, options);
-    if (!arg) {
-      return false;
+    const classification = classifyArg(name, argValue, options.docgen);
+    // A value written into the tree that the snippet cannot represent would silently change the
+    // example, so bail rather than drop it the way story-level args do.
+    if (classification.kind === 'unrepresentable') {
+      return undefined;
     }
 
-    if (arg.role === 'slot') {
-      slotsByName.set(name, arg);
+    if (classification.kind === 'classified') {
+      argsByName.set(name, classification.arg);
     } else {
-      propsByName.set(name, arg);
+      argsByName.delete(name);
     }
   }
 
-  return true;
-}
-
-function expandArgs(
-  propsByName: Map<string, ClassifiedPropLikeArg>,
-  slotsByName: Map<string, ClassifiedSlotArg>,
-  args: ClassifiedArg[]
-): void {
-  for (const arg of args) {
-    if (arg.role === 'slot') {
-      slotsByName.set(arg.name, arg);
-    } else {
-      propsByName.set(arg.name, arg);
-    }
-  }
-}
-
-// label: args.label -> the classified arg holding the value the story supplied
-function argForObjectProperty(
-  name: string,
-  value: t.Node,
-  options: HRenderOptions
-): ClassifiedArg | undefined {
-  const argValue = substituteArgsMember(value, options);
-  if (!argValue) {
-    return undefined;
-  }
-
-  const plan = classifyValue(argValue);
-  if (plan.kind !== 'inline' && plan.kind !== 'hoist') {
-    return undefined;
-  }
-
-  const existing = options.args.find((arg) => arg.name === name);
-  if (existing?.role === 'slot') {
-    return { name, value: argValue, role: 'slot', plan };
-  }
-  return {
-    name,
-    value: argValue,
-    role: existing?.role ?? 'prop',
-    ...(existing?.role === 'event' && existing.eventName ? { eventName: existing.eventName } : {}),
-    plan,
-  };
+  return [...argsByName.values()];
 }
 
 // h(tag, { header: () => h('span') }) -> named slots; h(tag, 'Hi') -> one child
@@ -376,34 +356,26 @@ function renderChildren(node: t.Node | undefined, options: HRenderOptions): stri
   }
 
   const value = unwrapValue(node);
-  if (!value) {
-    return undefined;
-  }
-
-  if (t.isObjectExpression(value)) {
-    return renderSlotsObject(value, options);
-  }
-
-  const child = renderChildValue(value, options);
-  return child === undefined ? undefined : [child];
+  return t.isObjectExpression(value)
+    ? renderSlotsObject(value, options)
+    : renderChildValue(value, options);
 }
 
-// 'Hi', h('b', 'Hi'), or ['a', h('b', 'c')] -> markup
-function renderChildValue(node: t.Node, options: HRenderOptions): string | undefined {
+// 'Hi', h('b', 'Hi'), or ['a', h('b', 'c')] -> one markup child per rendered vnode
+function renderChildValue(node: t.Node, options: HRenderOptions): string[] | undefined {
   const value = substituteArgsMember(node, options);
   if (!value) {
     return undefined;
   }
 
   const unwrapped = unwrapValue(value);
-  if (!unwrapped) {
-    return undefined;
-  }
 
   if (t.isCallExpression(unwrapped)) {
-    return t.isIdentifier(unwrapped.callee, { name: H_FUNCTION })
-      ? renderHNode(unwrapped, options)
-      : undefined;
+    if (!t.isIdentifier(unwrapped.callee, { name: H_FUNCTION })) {
+      return undefined;
+    }
+    const child = renderHNode(unwrapped, options);
+    return child === undefined ? undefined : [child];
   }
 
   if (t.isArrayExpression(unwrapped)) {
@@ -412,16 +384,17 @@ function renderChildValue(node: t.Node, options: HRenderOptions): string | undef
       if (!element || t.isSpreadElement(element)) {
         return undefined;
       }
-      const child = renderChildValue(element, options);
-      if (child === undefined) {
+      const rendered = renderChildValue(element, options);
+      if (rendered === undefined) {
         return undefined;
       }
-      children.push(child);
+      children.push(...rendered);
     }
-    return children.join('');
+    return children;
   }
 
-  return renderInlinePrimitiveValue(unwrapped);
+  const text = renderInlinePrimitiveValue(unwrapped);
+  return text === undefined ? undefined : [text];
 }
 
 // { header: () => h('span', 'Hi') } -> <template #header><span>Hi</span></template>
@@ -429,7 +402,6 @@ function renderSlotsObject(
   value: t.ObjectExpression,
   options: HRenderOptions
 ): string[] | undefined {
-  const renderSlot = createHSlotRenderer(options.importBindings, options.usedImports);
   const slots: string[] = [];
 
   for (const property of value.properties) {
@@ -439,11 +411,11 @@ function renderSlotsObject(
 
     const name = keyOf(property);
     const slotFunction = unwrapValue(property.value);
-    if (!name || !slotFunction || !isFunctionExpression(slotFunction)) {
+    if (!name || !isFunctionExpression(slotFunction)) {
       return undefined;
     }
 
-    const content = renderSlot(slotFunction, options.ctx);
+    const content = options.ctx.renderFunctionSlot(slotFunction, options.ctx);
     if (content === undefined) {
       return undefined;
     }
@@ -465,8 +437,7 @@ function substituteArgsMember(node: t.Node, options: HRenderOptions): t.Node | u
     return value;
   }
 
-  const arg = options.args.find((candidate) => candidate.name === property.name);
-  return arg?.role === 'slot' ? undefined : arg?.value;
+  return options.args.find((candidate) => candidate.name === property.name)?.value;
 }
 
 function isArgsIdentifier(node: t.Node, argsParam: string | undefined): boolean {

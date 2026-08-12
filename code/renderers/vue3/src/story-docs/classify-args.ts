@@ -1,11 +1,11 @@
 import { type types as t } from 'storybook/internal/babel';
+import { returnedExpression, unwrapValue } from 'storybook/internal/csf-tools';
 
 import {
   classifyValue,
   isFunctionExpression,
   isSelfContainedFunction,
   printValue,
-  singleReturnedExpression,
   type ValuePlan,
 } from './classify-value.ts';
 
@@ -54,6 +54,17 @@ export interface ClassifiedSlotArg {
 /** Split by role so `arg.role` checks narrow the plans a renderer has to handle. */
 export type ClassifiedArg = ClassifiedPropLikeArg | ClassifiedSlotArg;
 
+/**
+ * Outcome of classifying one arg, before any story-level decision is taken.
+ *
+ * `omit` and `unrepresentable` stay distinct because the story-level aggregation treats them
+ * differently: the first is silent, the second is named in a warning.
+ */
+export type ArgClassification =
+  | { kind: 'classified'; arg: ClassifiedArg }
+  | { kind: 'omit' }
+  | { kind: 'unrepresentable' };
+
 export interface ClassifyArgsResult {
   /** Args that can be rendered into a static Vue snippet. */
   args: ClassifiedArg[];
@@ -89,67 +100,12 @@ export function classifyArgs(
   const omitted: string[] = [];
 
   for (const [name, value] of Object.entries(args)) {
-    const isSlot = docgen.slots.has(name);
+    const result = classifyArg(name, value, docgen);
 
-    if (isSlot && isFunctionExpression(value)) {
-      const returned = singleReturnedExpression(value);
-      if (returned) {
-        const plan = classifyValue(returned);
-
-        if (plan.kind === 'inline' || plan.kind === 'hoist') {
-          classified.push({ name, value: returned, role: 'slot', plan });
-          continue;
-        }
-
-        if (plan.kind === 'omit') {
-          continue;
-        }
-      }
-
-      // No static template can reproduce this content, but an `h()` tree renderer may still
-      // realize the function itself, so forward it instead of deferring outright.
-      classified.push({ name, value, role: 'slot', plan: { kind: 'function-slot' } });
-      continue;
-    }
-
-    if (isFunctionExpression(value)) {
-      const eventName = declaredEventName(name, docgen.events);
-      // Function args matching no declared event or prop drop silently, like the runtime does.
-      if (eventName === undefined && !docgen.props.has(name)) {
-        continue;
-      }
-      if (isSelfContainedFunction(value)) {
-        classified.push(
-          eventName === undefined
-            ? { name, value, role: 'prop', plan: { kind: 'hoist' } }
-            : { name, value, role: 'event', eventName, plan: { kind: 'hoist' } }
-        );
-      } else {
-        omitted.push(`${name}: ${printValue(value)}`);
-      }
-      continue;
-    }
-
-    const plan = classifyValue(value);
-
-    if (plan.kind === 'omit') {
-      continue;
-    }
-
-    if (plan.kind === 'unrepresentable') {
+    if (result.kind === 'classified') {
+      classified.push(result.arg);
+    } else if (result.kind === 'unrepresentable') {
       omitted.push(`${name}: ${printValue(value)}`);
-      continue;
-    }
-
-    if (isSlot) {
-      classified.push({ name, value, role: 'slot', plan });
-    } else {
-      classified.push({
-        name,
-        value,
-        role: docgen.events.has(`update:${name}`) ? 'model' : 'prop',
-        plan,
-      });
     }
   }
 
@@ -164,6 +120,82 @@ export function classifyArgs(
     ...(omitted.length > 0
       ? { warning: `Omitted args that cannot be resolved statically: ${omitted.join(', ')}` }
       : {}),
+  };
+}
+
+/**
+ * Classifies one arg by Vue docgen precedence: slot, event, v-model, then prop.
+ *
+ * Shared with the `h()` renderer, so a prop written directly in a render tree lands in the same
+ * role, with the same plan, as the identical value routed through the story's `args`.
+ */
+export function classifyArg(
+  name: string,
+  value: t.Node,
+  docgen: VueDocgenArgInfo
+): ArgClassification {
+  const isSlot = docgen.slots.has(name);
+
+  if (isSlot && isFunctionExpression(value)) {
+    const returned = returnedExpression(unwrapValue(value));
+    if (returned) {
+      const plan = classifyValue(returned);
+
+      if (plan.kind === 'inline' || plan.kind === 'hoist') {
+        return {
+          kind: 'classified',
+          arg: { name, value: returned, role: 'slot', plan },
+        };
+      }
+
+      if (plan.kind === 'omit') {
+        return { kind: 'omit' };
+      }
+    }
+
+    // No static template can reproduce this content, but an `h()` tree renderer may still realize
+    // the function itself, so forward it instead of deferring outright.
+    return {
+      kind: 'classified',
+      arg: { name, value, role: 'slot', plan: { kind: 'function-slot' } },
+    };
+  }
+
+  const eventName = declaredEventName(name, docgen.events);
+  if (eventName !== undefined && isFunctionExpression(value)) {
+    return isSelfContainedFunction(value)
+      ? {
+          kind: 'classified',
+          arg: { name, value, role: 'event', eventName, plan: { kind: 'hoist' } },
+        }
+      : { kind: 'unrepresentable' };
+  }
+
+  if (isFunctionExpression(value)) {
+    if (!docgen.props.has(name)) {
+      return { kind: 'omit' };
+    }
+    return isSelfContainedFunction(value)
+      ? { kind: 'classified', arg: { name, value, role: 'prop', plan: { kind: 'hoist' } } }
+      : { kind: 'unrepresentable' };
+  }
+
+  const plan = classifyValue(value);
+
+  if (plan.kind === 'omit' || plan.kind === 'unrepresentable') {
+    return { kind: plan.kind };
+  }
+
+  return {
+    kind: 'classified',
+    arg: isSlot
+      ? { name, value, role: 'slot', plan }
+      : {
+          name,
+          value,
+          role: docgen.events.has(`update:${name}`) ? 'model' : 'prop',
+          plan,
+        },
   };
 }
 

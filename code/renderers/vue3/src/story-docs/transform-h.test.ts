@@ -11,12 +11,12 @@ import {
   metaObjectPath,
   normalizeStoryDeclaration,
   resolveRenderFunction,
-  returnedExpressionPath,
+  returnedExpression,
 } from 'storybook/internal/csf-tools';
 
 import { classifyArgs, type ClassifiedArg, type VueDocgenArgInfo } from './classify-args.ts';
-import { createRenderContext } from './render-sfc.ts';
-import { renderHSlotFunction, transformH, type TransformHResult } from './transform-h.ts';
+import { createRenderContext } from './render-primitives.ts';
+import { createHSlotRenderer, transformH, type TransformHResult } from './transform-h.ts';
 
 const DEFAULT_DOCGEN: VueDocgenArgInfo = { props: new Set(), events: new Set(), slots: new Set() };
 
@@ -37,6 +37,7 @@ function renderStory(
     ? transformH({
         args: parsed.args,
         argsParam: parsed.argsParam,
+        docgen,
         importBindings: parsed.importBindings,
         node: parsed.expression,
       })
@@ -102,7 +103,7 @@ ${storySource}
   return {
     args: classified.args,
     argsParam: t.isIdentifier(parameter) ? parameter.name : undefined,
-    expression: returnedExpressionPath(renderResolution.path)?.node,
+    expression: returnedExpression(renderResolution.path.node),
     importBindings: collectImportBindings(csf._file.path),
   };
 }
@@ -191,9 +192,94 @@ export const Primary = {
 `)?.snippet
     ).toMatchInlineSnapshot(`
       "<template>
-        <MyButton><span>Body</span><template #footer>
-          <strong>Foot</strong>
-        </template></MyButton>
+        <MyButton>
+          <span>Body</span>
+          <template #footer>
+            <strong>Foot</strong>
+          </template>
+        </MyButton>
+      </template>"
+    `);
+  });
+
+  it('renders a slot function written directly into the props argument', () => {
+    expect(
+      renderStory(
+        `
+export const Primary = {
+  render: () => h(MyButton, { default: () => h(ChildButton, { label: 'Click me' }) }),
+};
+`,
+        { props: new Set(), events: new Set(), slots: new Set(['default']) },
+        "import ChildButton from './ChildButton.vue';\nimport MyButton from './MyButton.vue';"
+      )
+    ).toEqual({
+      imports: [
+        "import MyButton from './MyButton.vue';",
+        "import ChildButton from './ChildButton.vue';",
+      ],
+      snippet: `<template>
+  <MyButton>
+    <ChildButton label="Click me" />
+  </MyButton>
+</template>`,
+    });
+  });
+
+  it('renders a slot forwarded through an explicit args member read', () => {
+    expect(
+      renderStory(
+        `
+export const Primary = {
+  args: {
+    default: () => h(ChildButton, { label: 'Click me' }),
+  },
+  render: (args) => h(MyButton, { default: args.default }),
+};
+`,
+        { props: new Set(), events: new Set(), slots: new Set(['default']) },
+        "import ChildButton from './ChildButton.vue';\nimport MyButton from './MyButton.vue';"
+      )?.snippet
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <MyButton>
+          <ChildButton label="Click me" />
+        </MyButton>
+      </template>"
+    `);
+  });
+
+  // `<input …></input>` is not markup Vue will compile, so void elements have to close themselves.
+  it('self-closes void elements', () => {
+    expect(
+      renderStory(`export const Primary = { render: () => h('input', { type: 'text' }) };`)?.snippet
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <input type="text" />
+      </template>"
+    `);
+  });
+
+  it.each([
+    ['void elements given children', `export const Primary = { render: () => h('br', 'x') };`],
+    [
+      'component string tags with no import to declare',
+      `export const Primary = { render: () => h('Unknown', { label: 'x' }) };`,
+    ],
+  ])('does not print unrepresentable %s', (_name, storySource) => {
+    expect(renderStory(storySource)).toBeUndefined();
+  });
+
+  it('escapes text children so markup and interpolation cannot be injected', () => {
+    expect(
+      renderStory(`
+export const Primary = {
+  render: () => h('p', ['a < b && c > d', ' {{ notAnExpression }}']),
+};
+`)?.snippet
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <p>a &lt; b &amp;&amp; c &gt; d &#123;&#123; notAnExpression }}</p>
       </template>"
     `);
   });
@@ -211,21 +297,16 @@ export const Primary = {
       { props: new Set(), events: new Set(), slots: new Set(['default']) },
       "import ChildButton from './ChildButton.vue';\nimport MyButton from './MyButton.vue';"
     );
-    const slot = parsed.args.find((arg) => arg.role === 'slot');
-    const value = slot?.value;
-    const rendered =
+    const value = parsed.args.find((arg) => arg.role === 'slot')?.value;
+    const ctx = createRenderContext(createHSlotRenderer(parsed.importBindings));
+    const content =
       value && (t.isArrowFunctionExpression(value) || t.isFunctionExpression(value))
-        ? renderHSlotFunction({
-            node: value,
-            ctx: createRenderContext(),
-            importBindings: parsed.importBindings,
-          })
+        ? ctx.renderFunctionSlot(value, ctx)
         : undefined;
 
-    expect(rendered).toEqual({
-      content: '<ChildButton label="Click me" />',
-      imports: ["import ChildButton from './ChildButton.vue';"],
-    });
+    expect(content).toBe('<ChildButton label="Click me" />');
+    // The slot's own component import lands in the context the snippet is being assembled in.
+    expect([...ctx.componentImports]).toEqual(["import ChildButton from './ChildButton.vue';"]);
   });
 
   it.each([

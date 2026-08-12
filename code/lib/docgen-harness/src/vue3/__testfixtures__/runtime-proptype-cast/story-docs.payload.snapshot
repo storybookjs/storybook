@@ -1,0 +1,14 @@
+{
+  "id": "runtime-proptype-cast",
+  "import": "import RuntimePropTypeCast from './RuntimePropTypeCast.vue';",
+  "name": "RuntimePropTypeCast",
+  "path": "__PATH__",
+  "stories": {
+    "forms-runtime-proptype-cast--props-as-written": {
+      "description": undefined,
+      "id": "forms-runtime-proptype-cast--props-as-written",
+      "name": "Props As Written",
+      "summary": undefined,
+    },
+  },
+}

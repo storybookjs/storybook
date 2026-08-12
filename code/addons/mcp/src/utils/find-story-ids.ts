@@ -1,10 +1,9 @@
 import path from 'node:path';
-import { normalizeStoryPath } from 'storybook/internal/common';
+import { normalizeStoryPath, slash } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import { logger } from 'storybook/internal/node-logger';
 import type { StoryIndex } from 'storybook/internal/types';
 import type { StoryInput } from '../types.ts';
-import { slash } from './slash.ts';
 
 export interface FoundStory {
   id: string;

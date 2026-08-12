@@ -14,7 +14,7 @@ export const EXISTING_RESOLUTIONS = new Set([
   '@playwright/test',
   '@testing-library/jest-dom',
   '@testing-library/user-event@npm:^14.4.0',
-  '@testing-library/user-event@npm:^14.6.1',
+  '@testing-library/user-event@npm:^14.6.3',
   '@types/babel__traverse@npm:*',
   '@types/babel__traverse@npm:^7.18.0',
   '@types/node',

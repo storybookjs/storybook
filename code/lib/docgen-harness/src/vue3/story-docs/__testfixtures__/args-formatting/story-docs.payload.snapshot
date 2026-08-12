@@ -1,0 +1,14 @@
+{
+  "id": "args-formatting",
+  "import": "import ArgsFormattingButton from './ArgsFormattingButton.vue';",
+  "name": "ArgsFormattingButton",
+  "path": "__PATH__",
+  "stories": {
+    "forms-args-formatting--primary": {
+      "description": undefined,
+      "id": "forms-args-formatting--primary",
+      "name": "Primary",
+      "summary": undefined,
+    },
+  },
+}

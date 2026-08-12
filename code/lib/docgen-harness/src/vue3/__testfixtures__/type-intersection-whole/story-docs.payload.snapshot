@@ -1,0 +1,14 @@
+{
+  "id": "type-intersection-whole",
+  "import": "import TypeIntersectionWhole from './TypeIntersectionWhole.vue';",
+  "name": "TypeIntersectionWhole",
+  "path": "__PATH__",
+  "stories": {
+    "forms-type-intersection-whole--props-as-written": {
+      "description": undefined,
+      "id": "forms-type-intersection-whole--props-as-written",
+      "name": "Props As Written",
+      "summary": undefined,
+    },
+  },
+}

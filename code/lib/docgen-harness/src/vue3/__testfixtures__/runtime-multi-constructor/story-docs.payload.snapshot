@@ -1,0 +1,14 @@
+{
+  "id": "runtime-multi-constructor",
+  "import": "import RuntimeMultiConstructor from './RuntimeMultiConstructor.vue';",
+  "name": "RuntimeMultiConstructor",
+  "path": "__PATH__",
+  "stories": {
+    "forms-runtime-multi-constructor--props-as-written": {
+      "description": undefined,
+      "id": "forms-runtime-multi-constructor--props-as-written",
+      "name": "Props As Written",
+      "summary": undefined,
+    },
+  },
+}

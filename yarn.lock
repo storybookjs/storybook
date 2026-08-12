@@ -11769,7 +11769,6 @@ __metadata:
     "@mdx-js/mdx": "npm:^3.0.0"
     "@mdx-js/react": "npm:^3.0.0"
     "@rollup/pluginutils": "npm:^5.0.2"
-    "@storybook/csf-plugin": "workspace:*"
     "@storybook/icons": "npm:^2.0.2"
     "@storybook/react-dom-shim": "workspace:*"
     "@types/color-convert": "npm:^2.0.0"
@@ -11789,6 +11788,7 @@ __metadata:
     tocbot: "npm:^4.20.1"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^6.0.3"
+    unplugin: "npm:^2.3.5"
     vite: "npm:^7.0.4"
   peerDependencies:
     "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -11917,13 +11917,22 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@storybook/angular-cm@workspace:*, @storybook/angular-cm@workspace:code/lib/angular-cm":
+  version: 0.0.0-use.local
+  resolution: "@storybook/angular-cm@workspace:code/lib/angular-cm"
+  dependencies:
+    typescript: "npm:^6.0.3"
+  peerDependencies:
+    storybook: "workspace:^"
+  languageName: unknown
+  linkType: soft
+
 "@storybook/angular-compodoc@workspace:*, @storybook/angular-compodoc@workspace:code/lib/angular-compodoc":
   version: 0.0.0-use.local
   resolution: "@storybook/angular-compodoc@workspace:code/lib/angular-compodoc"
   dependencies:
     "@storybook/global": "npm:^5.0.0"
     entities: "npm:^4.5.0"
-    typescript: "npm:^6.0.3"
   peerDependencies:
     storybook: "workspace:^"
   languageName: unknown
@@ -11946,6 +11955,7 @@ __metadata:
     "@angular/platform-browser": "npm:^21.2.14"
     "@angular/platform-browser-dynamic": "npm:^21.2.14"
     "@babel/types": "npm:^7.28.5"
+    "@storybook/angular-cm": "workspace:*"
     "@storybook/angular-compodoc": "workspace:*"
     "@storybook/builder-vite": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
@@ -12042,7 +12052,6 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/builder-vite@workspace:code/builders/builder-vite"
   dependencies:
-    "@storybook/csf-plugin": "workspace:*"
     "@types/node": "npm:^22.19.1"
     empathic: "npm:^2.0.0"
     es-module-lexer: "npm:^1.5.0"
@@ -12074,6 +12083,7 @@ __metadata:
     fork-ts-checker-webpack-plugin: "npm:^9.1.0"
     html-webpack-plugin: "npm:^5.5.0"
     magic-string: "npm:^1.1.0"
+    memfs: "npm:^4.11.1"
     pretty-hrtime: "npm:^1.0.3"
     semver: "npm:^7.7.3"
     sirv: "npm:^2.0.4"
@@ -12155,7 +12165,6 @@ __metadata:
     "@storybook/builder-webpack5": "workspace:*"
     "@storybook/codemod": "workspace:*"
     "@storybook/core-webpack": "workspace:*"
-    "@storybook/csf-plugin": "workspace:*"
     "@storybook/ember": "workspace:*"
     "@storybook/global": "npm:^5.0.0"
     "@storybook/html": "workspace:*"
@@ -12179,7 +12188,7 @@ __metadata:
     "@testing-library/dom": "npm:^10.4.0"
     "@testing-library/jest-dom": "npm:6.9.1"
     "@testing-library/react": "npm:^16.2.0"
-    "@testing-library/user-event": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch"
+    "@testing-library/user-event": "patch:@testing-library/user-event@npm%3A14.6.3#~/.yarn/patches/@testing-library-user-event-npm-14.6.3-15ecebe390.patch"
     "@types/lodash-es": "npm:^4.17.12"
     "@types/mock-require": "npm:^2.0.3"
     "@types/node": "npm:^22.19.1"
@@ -12278,30 +12287,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/csf-plugin@workspace:*, @storybook/csf-plugin@workspace:code/lib/csf-plugin":
-  version: 0.0.0-use.local
-  resolution: "@storybook/csf-plugin@workspace:code/lib/csf-plugin"
-  dependencies:
-    typescript: "npm:^6.0.3"
-    unplugin: "npm:^2.3.5"
-  peerDependencies:
-    esbuild: "*"
-    rollup: "*"
-    storybook: "workspace:^"
-    vite: "*"
-    webpack: "*"
-  peerDependenciesMeta:
-    esbuild:
-      optional: true
-    rollup:
-      optional: true
-    vite:
-      optional: true
-    webpack:
-      optional: true
-  languageName: unknown
-  linkType: soft
-
 "@storybook/docgen-harness@workspace:code/lib/docgen-harness":
   version: 0.0.0-use.local
   resolution: "@storybook/docgen-harness@workspace:code/lib/docgen-harness"
@@ -12312,6 +12297,7 @@ __metadata:
     "@angular/platform-browser": "npm:^21.2.14"
     "@angular/platform-browser-dynamic": "npm:^21.2.14"
     "@compodoc/compodoc": "npm:2.0.0"
+    "@storybook/angular-cm": "workspace:*"
     "@storybook/angular-compodoc": "workspace:*"
     "@storybook/angular-vite": "workspace:*"
     "@storybook/react": "workspace:*"
@@ -12793,7 +12779,7 @@ __metadata:
     "@testing-library/dom": "npm:^10.4.0"
     "@testing-library/jest-dom": "npm:6.9.1"
     "@testing-library/react": "npm:^16.0.0"
-    "@testing-library/user-event": "npm:^14.5.2"
+    "@testing-library/user-event": "npm:^14.6.3"
     "@types/cross-spawn": "npm:^6.0.6"
     "@types/detect-port": "npm:^1.3.5"
     "@types/ejs": "npm:^3.1.5"
@@ -13053,7 +13039,6 @@ __metadata:
     "@testing-library/vue": "npm:^8.0.0"
     "@vitejs/plugin-vue": "npm:^4.6.2"
     "@vue/language-core": "npm:^3.2.7"
-    knitwork: "npm:^1.1.0"
     type-fest: "npm:^5.6.0"
     typescript: "npm:^6.0.3"
     vue: "npm:^3.2.47"
@@ -13869,21 +13854,21 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@testing-library/user-event@npm:14.6.1, @testing-library/user-event@npm:^14.5.2":
-  version: 14.6.1
-  resolution: "@testing-library/user-event@npm:14.6.1"
+"@testing-library/user-event@npm:14.6.3":
+  version: 14.6.3
+  resolution: "@testing-library/user-event@npm:14.6.3"
   peerDependencies:
     "@testing-library/dom": ">=7.21.4"
-  checksum: 10c0/75fea130a52bf320d35d46ed54f3eec77e71a56911b8b69a3fe29497b0b9947b2dc80d30f04054ad4ce7f577856ae3e5397ea7dff0ef14944d3909784c7a93fe
+  checksum: 10c0/60c401edcc1b39f98aefd0e236af69c1a0454e3a7b91b92d62e2d654b044c51d39abc4a7ee0f5675566e7246dc5fc5e91af872a49da7e30a5f0e9e52f5a83a82
   languageName: node
   linkType: hard
 
-"@testing-library/user-event@patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch":
-  version: 14.6.1
-  resolution: "@testing-library/user-event@patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch::version=14.6.1&hash=4faa83"
+"@testing-library/user-event@patch:@testing-library/user-event@npm%3A14.6.3#~/.yarn/patches/@testing-library-user-event-npm-14.6.3-15ecebe390.patch":
+  version: 14.6.3
+  resolution: "@testing-library/user-event@patch:@testing-library/user-event@npm%3A14.6.3#~/.yarn/patches/@testing-library-user-event-npm-14.6.3-15ecebe390.patch::version=14.6.3&hash=1d2311"
   peerDependencies:
     "@testing-library/dom": ">=7.21.4"
-  checksum: 10c0/b3d9c3351e7a3bb9169bd5262aaad7911647cf38d4f24d217561481a028fe3a5d0fbd9e6320017a264c4ef2bd52947079e3c665bd6a768ff85780da1012e3672
+  checksum: 10c0/97c5b5c20cccd42c6861e0529a1650a24fe8e472ba970f9ca3474a7047a9f93cf00ce48003b2170d94dcb41ac535b5e976bb394417842a0b9fc579719267c966
   languageName: node
   linkType: hard
 
@@ -36537,7 +36522,7 @@ __metadata:
     "@testing-library/dom": "npm:^10.4.1"
     "@testing-library/jest-dom": "npm:6.9.1"
     "@testing-library/react": "npm:^14.0.0"
-    "@testing-library/user-event": "npm:^14.6.1"
+    "@testing-library/user-event": "npm:^14.6.3"
     "@types/cross-spawn": "npm:^6.0.6"
     "@types/detect-port": "npm:^1.3.0"
     "@types/diff": "npm:^5.0.9"

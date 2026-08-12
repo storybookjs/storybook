@@ -22,7 +22,6 @@
     "@storybook/builder-webpack5": "portal:../../../code/builders/builder-webpack5",
     "@storybook/codemod": "portal:../../../code/lib/codemod",
     "@storybook/core-webpack": "portal:../../../code/lib/core-webpack",
-    "@storybook/csf-plugin": "portal:../../../code/lib/csf-plugin",
     "@storybook/ember": "portal:../../../code/frameworks/ember",
     "@storybook/html": "portal:../../../code/renderers/html",
     "@storybook/nextjs": "portal:../../../code/frameworks/nextjs",

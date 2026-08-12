@@ -464,6 +464,7 @@ export interface ComponentsManifest {
       | 'react-docgen-typescript'
       | 'react-component-meta'
       | 'vue-component-meta'
+      | 'angular-component-meta'
       | 'compodoc';
     durationMs: number;
   };

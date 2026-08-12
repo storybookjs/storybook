@@ -5,6 +5,12 @@ export {
   storyAssignedArgsPath,
 } from './args.ts';
 export {
+  type ComponentImportRef,
+  type ImportRef,
+  buildImportStatements,
+  resolveComponentImport,
+} from './import-statements.ts';
+export {
   type ImportBinding,
   collectImportBindings,
   importedName,

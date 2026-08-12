@@ -1,7 +1,6 @@
 {
   "argTypes": {
     "field": {
-      "description": "\n",
       "name": "field",
       "table": {
         "category": "inputs",

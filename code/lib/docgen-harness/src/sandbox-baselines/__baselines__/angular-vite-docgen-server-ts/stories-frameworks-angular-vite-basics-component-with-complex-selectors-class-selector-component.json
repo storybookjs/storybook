@@ -1,7 +1,6 @@
 {
   "argTypes": {
     "el": {
-      "description": "\n",
       "name": "el",
       "table": {
         "category": "properties",
@@ -17,7 +16,6 @@
       }
     },
     "generatedTemplate": {
-      "description": "\n",
       "name": "generatedTemplate",
       "table": {
         "category": "properties",
@@ -32,7 +30,6 @@
       }
     },
     "selectors": {
-      "description": "\n",
       "name": "selectors",
       "table": {
         "category": "properties",

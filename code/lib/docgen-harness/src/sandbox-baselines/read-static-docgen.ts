@@ -3,16 +3,14 @@ import { join } from 'node:path';
 
 import type { DocgenPayload } from '../../../../core/src/shared/open-service/services/docgen/types.ts';
 
+// Where `build-storybook` writes one docgen snapshot per component under the static output dir.
 export const DOCGEN_SNAPSHOT_DIR = join('services', 'core', 'docgen');
 
-/**
- * Token standing in for the sandbox directory inside recorded strings.
- */
 export const SANDBOX_TOKEN = '<sandbox>';
 
-/**
- * The portable {@link DocgenPayload} fields, which are the ones worth recording.
- */
+// An allow-list rather than an exclude-list because `DocgenPayload` carries an index signature: the
+// Angular provider hangs the raw Compodoc entry off it, over 100KB of mostly `sourceCode` per
+// sandbox, none of it part of the contract this baseline guards.
 const PORTABLE_FIELDS = [
   'id',
   'name',
@@ -27,13 +25,10 @@ const PORTABLE_FIELDS = [
 
 export type SandboxBaseline = Pick<DocgenPayload, (typeof PORTABLE_FIELDS)[number]>;
 
-/** Component id → recorded payload, key-sorted so a re-record produces a reviewable diff. */
+// Component id -> recorded payload, key-sorted so a re-record produces a reviewable diff.
 export type SandboxBaselines = Record<string, SandboxBaseline>;
 
-/**
- * Rewrites machine-specific absolute paths to {@link SANDBOX_TOKEN}, in both native and POSIX
- * spelling so a baseline recorded on one platform verifies on another.
- */
+// Both native and POSIX spelling, so a baseline recorded on one platform verifies on another.
 export const normalizePaths = (value: string, sandboxDir: string): string =>
   value
     .replaceAll(sandboxDir, SANDBOX_TOKEN)
@@ -54,7 +49,6 @@ const normalizeDeep = (value: unknown, sandboxDir: string): unknown => {
   return value;
 };
 
-/** Drops non-portable fields and normalizes paths, leaving keys in {@link PORTABLE_FIELDS} order. */
 export const toBaseline = (payload: DocgenPayload, sandboxDir: string): SandboxBaseline =>
   Object.fromEntries(
     PORTABLE_FIELDS.filter((field) => payload[field] !== undefined).map((field) => [
@@ -63,21 +57,12 @@ export const toBaseline = (payload: DocgenPayload, sandboxDir: string): SandboxB
     ])
   ) as SandboxBaseline;
 
-/**
- * Whether a component is only reachable through a global rather than an import.
- *
- * The monorepo's shared template stories reference their component as
- * `globalThis.__TEMPLATE_COMPONENTS__.Html`, so there is no import for the resolver to follow and no
- * file for Compodoc to have scanned. Every one of them is an error payload by construction, which
- * says something about the template-story harness rather than about docgen. Recording them would
- * bury the components that carry real signal.
- */
+// The monorepo's shared template stories reference their component through a global, so there is no
+// import for the resolver to follow and every one of them is an error payload by construction.
+// Recording them would say something about the template-story harness, not about docgen.
 const isGloballyReferenced = (payload: SandboxBaseline): boolean =>
   payload.name.startsWith('globalThis');
 
-/**
- * Reads every per-component docgen snapshot from a static Storybook build.
- */
 export function readStaticDocgen({
   staticDir,
   sandboxDir,

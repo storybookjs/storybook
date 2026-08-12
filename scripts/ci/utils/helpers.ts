@@ -399,7 +399,7 @@ export type CachePlatform = 'linux' | 'windows';
  */
 export const NODE_MODULES_CACHE_KEY = (platform: CachePlatform = 'linux') =>
   [
-    `v1-${platform}-node-modules`,
+    `v11-${platform}-node_modules`,
     '{{ checksum ".nvmrc" }}',
     '{{ checksum ".yarnrc.yml" }}',
     '{{ checksum "yarn.lock" }}',

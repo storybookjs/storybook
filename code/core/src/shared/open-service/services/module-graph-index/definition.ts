@@ -22,12 +22,18 @@ export const moduleGraphIndexServiceDef = defineService({
     storiesByFile: {},
   } as ModuleGraphIndexServiceState,
   queries: {
-    _storiesForFiles: {
-      internal: true,
+    storiesForFiles: {
       description:
-        'Internal lookup used by `core/module-graph.storiesForFiles`. Prefer the hot service query from consumers.',
+        'Returns, for each input file (same order), story-index-relative story files that depend on it and their breadth-first-search depth: the shortest number of import edges between the input file and the story file.',
       input: storiesForFilesInputSchema,
       output: storiesForFilesOutputSchema,
+      load: async (_input, ctx) => {
+        // Drain the hot engine's patch queue so lookups never observe a mid-patch empty index.
+        const moduleGraph = ctx.getService<{
+          commands: { _waitForSettledEngine: (input: undefined) => Promise<void> };
+        }>('core/module-graph', { internal: true });
+        await moduleGraph.commands._waitForSettledEngine(undefined);
+      },
       handler: (input, ctx) => {
         const { workingDir } = ctx.self.state;
         return input.files.map((file) => {
@@ -47,7 +53,7 @@ export const moduleGraphIndexServiceDef = defineService({
     _applyIndex: {
       internal: true,
       description:
-        'Replaces the reverse index. Called by `core/module-graph` snapshot/update commands when the index moved.',
+        'Replaces the reverse index. Called when the engine mirrors a new index (snapshot or index-moving patch).',
       input: v.object({
         storiesByFile: v.pipe(
           storiesByFileSchema,

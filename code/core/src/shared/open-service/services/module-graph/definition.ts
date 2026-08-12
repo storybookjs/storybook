@@ -3,12 +3,7 @@ import * as v from 'valibot';
 import { defineService } from '../../service-definition.ts';
 import type { ServiceInstanceOf } from '../../types.ts';
 import type { ModuleGraphIndexService } from '../module-graph-index/definition.ts';
-import {
-  storiesByFileSchema,
-  storiesForFilesInputSchema,
-  storiesForFilesOutputSchema,
-  storyIndexPathSchema,
-} from './schemas.ts';
+import { storiesByFileSchema, storyIndexPathSchema } from './schemas.ts';
 import type { ModuleGraphServiceState } from './types.ts';
 import { toStoryIndexPath } from './types.ts';
 
@@ -67,16 +62,6 @@ export const moduleGraphServiceDef = defineService({
     latestChangedStoryFiles: [],
   } as ModuleGraphServiceState,
   queries: {
-    storiesForFiles: {
-      description:
-        'Returns, for each input file (same order), story-index-relative story files that depend on it and their breadth-first-search depth: the shortest number of import edges between the input file and the story file.',
-      input: storiesForFilesInputSchema,
-      output: storiesForFilesOutputSchema,
-      handler: (input, ctx) =>
-        ctx
-          .getService<ModuleGraphIndexService>('core/module-graph-index', { internal: true })
-          .queries._storiesForFiles.get(input),
-    },
     status: {
       description:
         'Current module graph lifecycle status. `booting` means the graph is still expected to become ready; `ready` means query state is populated; `error` means an unexpected graph failure; `unavailable` means the current builder/runtime cannot provide module graph functionality.',
@@ -214,16 +199,8 @@ export const moduleGraphServiceDef = defineService({
     _applyGraphUpdate: {
       internal: true,
       description:
-        'Optionally replaces the reverse index after an incremental patch and bumps versions for affected story files. Called by the graph engine, not by external consumers.',
+        'Bumps versions for story files affected by an incremental patch. Called by the graph engine after any index apply for the same patch; does not write the reverse index.',
       input: v.object({
-        storiesByFile: v.optional(
-          v.pipe(
-            storiesByFileSchema,
-            v.description(
-              'Complete relative reverse index keyed by story-index-style source file paths. Values map affected story-index-style story file paths to breadth-first-search depths. Omitted when the patch left the reverse index unchanged, in which case the stored index is kept as-is.'
-            )
-          )
-        ),
         bumpedStoryFiles: v.pipe(
           v.array(storyIndexPathSchema),
           v.description(
@@ -233,13 +210,6 @@ export const moduleGraphServiceDef = defineService({
       }),
       output: v.void(),
       handler: async (input, ctx) => {
-        if (input.storiesByFile !== undefined) {
-          await ctx
-            .getService<ModuleGraphIndexService>('core/module-graph-index', { internal: true })
-            .commands._applyIndex({
-              storiesByFile: input.storiesByFile,
-            });
-        }
         // A change that bumps no stories must not advance the revision, so watch-all and scoped
         // subscribers stay put.
         if (input.bumpedStoryFiles.length === 0) {

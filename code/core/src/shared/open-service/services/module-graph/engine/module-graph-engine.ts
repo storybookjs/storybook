@@ -30,17 +30,12 @@ export interface ModuleGraphEngineOptions {
   onError?: (error: Error) => void;
   /** Fired when the builder adapter reports a startup failure. */
   onUnavailable?: (reason: string, error?: Error) => void;
-  /** Mirrors the built reverse index into the `core/module-graph` open service. */
+  /** Mirrors the built reverse index into the open services after the initial build. */
   onSnapshot?: (storiesByFile: ReturnType<typeof reverseIndexToStoriesByFile>) => void;
-  /**
-   * Mirrors state after each settled patch; includes story files whose graph may have changed.
-   * `storiesByFile` is omitted when the patch left the reverse index untouched, so a consumer keeps
-   * the index it already holds instead of receiving an identical copy of it.
-   */
-  onUpdate?: (payload: {
-    storiesByFile?: ReturnType<typeof reverseIndexToStoriesByFile>;
-    bumpedStoryFiles: string[];
-  }) => void;
+  /** Replaces `core/module-graph-index` when a patch moved the reverse index. */
+  onIndex?: (storiesByFile: ReturnType<typeof reverseIndexToStoriesByFile>) => void | Promise<void>;
+  /** Bumps `core/module-graph` revisions for story files affected by a settled patch. */
+  onBump?: (bumpedStoryFiles: string[]) => void | Promise<void>;
 }
 
 /**
@@ -113,11 +108,11 @@ export class ModuleGraphEngine {
     return bumpedStoryFiles;
   }
 
-  private mirrorUpdate(
+  private async mirrorUpdate(
     changedFile: string,
     prePatchBumped: Set<string>,
     indexChanged: boolean
-  ): void {
+  ): Promise<void> {
     if (!this.reverseIndex) {
       return;
     }
@@ -126,22 +121,18 @@ export class ModuleGraphEngine {
       ...this.collectBumpedStoryFiles(changedFile),
     ]);
 
-    // The index is where it was and no story is affected — a write to a file outside the graph.
-    // Mirroring it would produce an identical state, so skip the whole update rather than pay to
-    // re-serialize, re-validate and re-broadcast an index nothing has changed.
-    if (!indexChanged && bumpedStoryFiles.size === 0) {
-      return;
+    // Index before bump: subscribers must not observe a new revision against a stale reverse index.
+    // Serializing the index is O(files × stories); only pay it when the reverse index moved.
+    if (indexChanged) {
+      await this.options.onIndex?.(
+        reverseIndexToStoriesByFile(this.reverseIndex.asMap(), this.workingDir)
+      );
     }
-
-    this.options.onUpdate?.({
-      // Serializing the index is O(files x stories reaching them); only pay it when it moved.
-      ...(indexChanged
-        ? { storiesByFile: reverseIndexToStoriesByFile(this.reverseIndex.asMap(), this.workingDir) }
-        : {}),
-      bumpedStoryFiles: Array.from(bumpedStoryFiles, (storyFile) =>
-        toStoryIndexPath(storyFile, this.workingDir)
-      ),
-    });
+    if (bumpedStoryFiles.size > 0) {
+      await this.options.onBump?.(
+        Array.from(bumpedStoryFiles, (storyFile) => toStoryIndexPath(storyFile, this.workingDir))
+      );
+    }
   }
 
   /**
@@ -393,19 +384,24 @@ export class ModuleGraphEngine {
   }
 
   private async handleFileChange(event: FileChangeEvent): Promise<void> {
-    if (!this.incrementalPatcher) {
+    if (!this.incrementalPatcher || !this.reverseIndex) {
       return;
     }
     const prePatchBumped = this.collectBumpedStoryFiles(event.path);
-    // A patch that threw may have left the index partly mutated, so assume it moved and re-mirror.
-    let indexChanged = true;
+    const revisionBefore = this.reverseIndex.revision;
     try {
-      indexChanged = await this.incrementalPatcher.patch(event);
+      await this.incrementalPatcher.patch(event);
     } catch (error) {
       logger.warn(
         `Change detection: failed to apply ${event.kind} for ${event.path}: ${error instanceof Error ? error.message : String(error)}`
       );
     }
-    this.mirrorUpdate(event.path, prePatchBumped, indexChanged);
+    // Partial mutations still bump the reverse-index revision, so a thrown patch is mirrored when
+    // anything actually moved — without guessing from control flow.
+    await this.mirrorUpdate(
+      event.path,
+      prePatchBumped,
+      this.reverseIndex.revision !== revisionBefore
+    );
   }
 }

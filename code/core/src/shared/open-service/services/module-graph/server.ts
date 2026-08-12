@@ -50,7 +50,7 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
   const workingDir = options.workingDir ?? process.cwd();
   let engine: ModuleGraphEngine | undefined = undefined;
 
-  registerModuleGraphIndexService(workingDir);
+  const indexRuntime = registerModuleGraphIndexService(workingDir);
 
   const runtime = registerService(
     {
@@ -78,9 +78,8 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
     onSnapshot: (storiesByFile) => {
       void runtime.commands._applyGraphSnapshot({ storiesByFile });
     },
-    onUpdate: ({ storiesByFile, bumpedStoryFiles }) => {
-      void runtime.commands._applyGraphUpdate({ storiesByFile, bumpedStoryFiles });
-    },
+    onIndex: (storiesByFile) => indexRuntime.commands._applyIndex({ storiesByFile }),
+    onBump: (bumpedStoryFiles) => runtime.commands._applyGraphUpdate({ bumpedStoryFiles }),
     onError: (error) => {
       void runtime.commands._setStatus({ value: 'error', error: errorToErrorLike(error) });
     },

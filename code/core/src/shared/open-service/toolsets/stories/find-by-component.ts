@@ -4,7 +4,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import { isAbsolute, join } from 'pathe';
 
-import type { ModuleGraphService } from '../../services/module-graph/definition.ts';
+import type { ModuleGraphIndexService } from '../../services/module-graph-index/definition.ts';
 import type { FindByComponentOutput } from './definition.ts';
 
 /** Default import-graph distance ceiling (mirrors addon-mcp). */
@@ -28,7 +28,7 @@ export type FindStoriesByComponentParams = {
   /** Maximum import-graph distance to include. Defaults to {@link DEFAULT_MAX_DISTANCE}. */
   maxDistance?: number;
   index: StoryIndex;
-  moduleGraph: ModuleGraphService;
+  moduleGraphIndex: ModuleGraphIndexService;
 };
 
 export type ClippedByMaxDistance = {
@@ -67,11 +67,11 @@ function applyMaxDistance(
 export async function resolveComponentMatches({
   componentPaths,
   index,
-  moduleGraph,
+  moduleGraphIndex,
 }: {
   componentPaths: string[];
   index: StoryIndex;
-  moduleGraph: ModuleGraphService;
+  moduleGraphIndex: ModuleGraphIndexService;
 }): Promise<ResolveComponentMatchesResult[]> {
   // Exists-check first so missing paths skip the graph query cost when every path is missing.
   // Mixed present/missing still queries once for the batch (module-graph API is bulk).
@@ -89,7 +89,7 @@ export async function resolveComponentMatches({
 
   let storiesForFiles: Array<Array<{ storyFile: string; depth: number }>>;
   try {
-    storiesForFiles = await moduleGraph.queries.storiesForFiles.loaded({
+    storiesForFiles = await moduleGraphIndex.queries.storiesForFiles.loaded({
       files: componentPaths,
     });
   } catch {
@@ -145,9 +145,9 @@ export async function findStoriesByComponent({
   componentPaths,
   maxDistance = DEFAULT_MAX_DISTANCE,
   index,
-  moduleGraph,
+  moduleGraphIndex,
 }: FindStoriesByComponentParams): Promise<FindByComponentOutput> {
-  const resolved = await resolveComponentMatches({ componentPaths, index, moduleGraph });
+  const resolved = await resolveComponentMatches({ componentPaths, index, moduleGraphIndex });
 
   const results: FindByComponentOutput['results'] = resolved.map((entry) => {
     if (entry.pathNotFound) {

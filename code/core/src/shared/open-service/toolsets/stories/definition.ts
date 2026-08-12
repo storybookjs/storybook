@@ -5,6 +5,7 @@ import * as v from 'valibot';
 
 import { OpenServiceMissingOriginError } from '../../../../server-errors.ts';
 import type { ModuleGraphService } from '../../services/module-graph/definition.ts';
+import type { ModuleGraphIndexService } from '../../services/module-graph-index/definition.ts';
 import { defineToolset } from '../../toolset-definition.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
 import { getChangedStories } from './changed.ts';
@@ -166,7 +167,13 @@ export function createStoriesToolset({
           let unreachableFiles: string[] = [];
           const status = await moduleGraph.queries.status.loaded(undefined);
           if (status.value === 'ready') {
-            const storiesForFiles = await moduleGraph.queries.storiesForFiles.loaded({ files });
+            const moduleGraphIndex = ctx.getService<ModuleGraphIndexService>(
+              'core/module-graph-index',
+              { internal: true }
+            );
+            const storiesForFiles = await moduleGraphIndex.queries.storiesForFiles.loaded({
+              files,
+            });
             unreachableFiles = files.filter(
               (_file, fileIndex) => storiesForFiles[fileIndex]?.length === 0
             );
@@ -192,15 +199,16 @@ export function createStoriesToolset({
         }),
         description: 'Finds stories that import the given component paths via the module graph.',
         handler: async (input, ctx) => {
-          const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', {
-            internal: true,
-          });
+          const moduleGraphIndex = ctx.getService<ModuleGraphIndexService>(
+            'core/module-graph-index',
+            { internal: true }
+          );
           const index = await storyIndex.getIndex();
           const data = await findStoriesByComponent({
             componentPaths: input.componentPaths,
             maxDistance: input.maxDistance,
             index,
-            moduleGraph,
+            moduleGraphIndex,
           });
           return ctx.format === 'json' ? data : formatFindByComponent(data);
         },

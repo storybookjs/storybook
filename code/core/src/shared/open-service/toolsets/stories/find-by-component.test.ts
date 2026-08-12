@@ -5,7 +5,7 @@ import type { StoryIndex } from 'storybook/internal/types';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import { vol } from 'memfs';
 
-import type { ModuleGraphService } from '../../services/module-graph/definition.ts';
+import type { ModuleGraphIndexService } from '../../services/module-graph-index/definition.ts';
 import { findStoriesByComponent, resolveComponentMatches } from './find-by-component.ts';
 
 vi.mock('node:fs', { spy: true });
@@ -44,13 +44,13 @@ const index: StoryIndex = {
 };
 
 const storiesForFiles = vi.fn();
-const moduleGraph = {
+const moduleGraphIndex = {
   queries: {
     storiesForFiles: {
       loaded: storiesForFiles,
     },
   },
-} as unknown as ModuleGraphService;
+} as unknown as ModuleGraphIndexService;
 
 describe('findStoriesByComponent', () => {
   beforeEach(() => {
@@ -69,7 +69,7 @@ describe('findStoriesByComponent', () => {
     const result = await findStoriesByComponent({
       componentPaths: ['/repo/src/Button.tsx'],
       index,
-      moduleGraph,
+      moduleGraphIndex,
     });
 
     expect(result).toEqual({
@@ -103,7 +103,7 @@ describe('findStoriesByComponent', () => {
     const result = await findStoriesByComponent({
       componentPaths: ['/repo/src/Missing.tsx'],
       index,
-      moduleGraph,
+      moduleGraphIndex,
     });
 
     expect(result).toEqual({
@@ -130,7 +130,7 @@ describe('findStoriesByComponent', () => {
       componentPaths: ['/repo/src/Button.tsx'],
       maxDistance: 1,
       index,
-      moduleGraph,
+      moduleGraphIndex,
     });
 
     expect(result.results[0]?.matches).toHaveLength(2);
@@ -151,7 +151,7 @@ describe('findStoriesByComponent', () => {
     const result = await findStoriesByComponent({
       componentPaths: ['/repo/src/Button.tsx'],
       index,
-      moduleGraph,
+      moduleGraphIndex,
     });
 
     expect(result.results[0]?.matches.map((m) => m.storyId)).toEqual([
@@ -193,7 +193,7 @@ describe('resolveComponentMatches', () => {
     graphResults = [[{ storyFile: './src/Button.stories.tsx', depth: 1 }]];
 
     await expect(
-      resolveComponentMatches({ componentPaths: [existingPath], index, moduleGraph })
+      resolveComponentMatches({ componentPaths: [existingPath], index, moduleGraphIndex })
     ).resolves.toEqual([
       {
         componentPath: existingPath,
@@ -209,7 +209,7 @@ describe('resolveComponentMatches', () => {
     graphResults = [[]];
 
     await expect(
-      resolveComponentMatches({ componentPaths: [missingPath], index, moduleGraph })
+      resolveComponentMatches({ componentPaths: [missingPath], index, moduleGraphIndex })
     ).resolves.toEqual([
       {
         componentPath: missingPath,
@@ -230,7 +230,7 @@ describe('resolveComponentMatches', () => {
     const [result] = await resolveComponentMatches({
       componentPaths: [existingPath],
       index,
-      moduleGraph,
+      moduleGraphIndex,
     });
 
     expect(result.matches).toEqual([
@@ -243,7 +243,7 @@ describe('resolveComponentMatches', () => {
     graphError = new Error('graph failed');
 
     await expect(
-      resolveComponentMatches({ componentPaths: [existingPath], index, moduleGraph })
+      resolveComponentMatches({ componentPaths: [existingPath], index, moduleGraphIndex })
     ).resolves.toEqual([{ componentPath: existingPath, matches: [] }]);
   });
 });

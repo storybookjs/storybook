@@ -83,14 +83,13 @@ export class IncrementalPatcher {
   }
 
   /**
-   * Applies one file-system event to the graph and reverse index, and reports whether the reverse
-   * index actually moved.
+   * Applies one file-system event to the graph and reverse index.
    *
-   * Most events in a dev session leave it untouched: a comment-only edit keeps the same dependency
-   * set, and a write to a file the graph has never seen matches nothing at all. Callers use the
-   * return value to skip re-serializing and re-broadcasting an index that is still current.
+   * Most events in a dev session leave the reverse index untouched: a comment-only edit keeps the
+   * same dependency set, and a write to a file the graph has never seen matches nothing at all.
+   * Callers detect movement via {@link ReverseIndexImpl.revision} before/after this call.
    */
-  async patch(event: FileChangeEvent): Promise<boolean> {
+  async patch(event: FileChangeEvent): Promise<void> {
     const path = normalize(event.path);
     // File contents may have changed (or the file is gone); drop any stale cached
     // parse/resolve data before any read.
@@ -99,16 +98,14 @@ export class IncrementalPatcher {
     if (event.kind === 'add') {
       if (this.isStoryFile(path)) {
         await this.walkStory(path);
-        return true;
       }
       // Non-story add: the documented limitation says we don't recover unresolved deps.
-      return false;
+      return;
     }
 
     if (event.kind === 'unlink') {
       const dependentsSet = new Set(this.reverseIndex.lookup(path).keys());
-      // Every walked node gets a graph entry, so this doubles as "was this file known at all".
-      const wasKnown = this.graph.delete(path);
+      this.graph.delete(path);
       this.reverseIndex.removeStory(path); // always call — no-op for non-stories
       // Re-walk every dependent story so transitive deps reachable only through `path`
       // are pruned.
@@ -121,7 +118,7 @@ export class IncrementalPatcher {
         storiesToWalk.push(story);
       }
       await Promise.all(storiesToWalk.map((story) => this.walkStory(story)));
-      return wasKnown || storiesToWalk.length > 0;
+      return;
     }
 
     // 'change' on an existing file: re-walk every story that depends on this file
@@ -139,7 +136,7 @@ export class IncrementalPatcher {
     if (oldDeps !== undefined) {
       const newDeps = await this.cache.resolveOnce(path);
       if (setsEqual(oldDeps, newDeps)) {
-        return false;
+        return;
       }
     }
 
@@ -152,8 +149,6 @@ export class IncrementalPatcher {
       storiesToWalk.push(story);
     }
     await Promise.all(storiesToWalk.map((story) => this.walkStory(story)));
-    // A change to a file outside the graph re-walks nothing and leaves the index as it was.
-    return storiesToWalk.length > 0;
   }
 
   private walkStory(storyRoot: string): Promise<void> {

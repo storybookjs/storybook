@@ -155,7 +155,7 @@ describe('stories API', () => {
         '  ./src/Button.stories.tsx',
       ].join('\n')
     );
-    expect(ctx.getService).toHaveBeenCalledWith('core/module-graph', { internal: true });
+    expect(ctx.getService).toHaveBeenCalledWith('core/module-graph-index', { internal: true });
     expect(storiesForFiles).toHaveBeenCalledWith({ files: [componentPath] });
   });
 

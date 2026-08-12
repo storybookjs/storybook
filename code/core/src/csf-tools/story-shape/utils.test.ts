@@ -10,6 +10,7 @@ import {
   keyOf,
   metaObjectPath,
   resolveIdentifierInit,
+  returnedExpression,
   returnedExpressionPath,
   unwrapValue,
 } from './utils.ts';
@@ -140,13 +141,14 @@ describe('unwrapValue', () => {
     expect(unwrapValue(wrapped)).toBe(value);
   });
 
-  it('returns undefined for nullable values', () => {
-    expect(unwrapValue(null)).toBeUndefined();
-    expect(unwrapValue(undefined)).toBeUndefined();
+  it('returns other nodes untouched', () => {
+    const value = t.stringLiteral('Save');
+
+    expect(unwrapValue(value)).toBe(value);
   });
 });
 
-describe('returnedExpressionPath', () => {
+describe('returnedExpression', () => {
   const cases = [
     {
       code: dedent`
@@ -193,16 +195,29 @@ describe('returnedExpressionPath', () => {
     },
   ];
 
-  it.each(cases)('resolves $name in path mode', ({ code, expected }) => {
+  it.each(cases)('resolves $name', ({ code, expected }) => {
+    const returned = returnedExpression(renderFunctionPath(code).node);
+
+    expect(returned ? printed(returned) : undefined).toBe(expected);
+  });
+
+  it.each(cases)('resolves $name as a path', ({ code, expected }) => {
     const returned = returnedExpressionPath(renderFunctionPath(code));
 
     expect(returned ? printed(returned.node) : undefined).toBe(expected);
   });
 
-  it.each(cases)('resolves $name in node mode', ({ code, expected }) => {
-    const returned = returnedExpressionPath(renderFunctionPath(code).node);
+  it('resolves an object method body, which `setup()` uses', () => {
+    const [method] = t.objectExpression([
+      t.objectMethod(
+        'method',
+        t.identifier('setup'),
+        [],
+        t.blockStatement([t.returnStatement(t.stringLiteral('Save'))])
+      ),
+    ]).properties;
 
-    expect(returned ? printed(returned) : undefined).toBe(expected);
+    expect(printed(returnedExpression(method)!)).toBe(`"Save"`);
   });
 });
 

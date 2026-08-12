@@ -27,7 +27,8 @@ import {
   renderInlinePrimitiveValue,
   renderPreparedSfcSnippet,
   type RenderContext,
-} from './render-sfc.ts';
+} from './render-primitives.ts';
+import { createHSlotRenderer } from './transform-h.ts';
 
 export interface TemplateRenderConfig {
   /** Static Vue template string returned from the render function. */
@@ -43,6 +44,8 @@ export interface TransformTemplateInput {
   args: ClassifiedArg[];
   /** Component tag name to import statement from the render object's components map. */
   componentImports: Map<string, string>;
+  /** Import bindings from the CSF module, used to import components a slot renders. */
+  importBindings: Map<string, ImportBinding>;
 }
 
 export interface TransformTemplateResult {
@@ -118,7 +121,7 @@ export function transformTemplate(
 
   const state: TransformState = {
     argsByName: new Map(input.args.map((arg) => [arg.name, arg])),
-    ctx: createRenderContext(),
+    ctx: createRenderContext(createHSlotRenderer(input.importBindings)),
     edits: [],
     usedImports: new Set(),
     componentImports: input.componentImports,

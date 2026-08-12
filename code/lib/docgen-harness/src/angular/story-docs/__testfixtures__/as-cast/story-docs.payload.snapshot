@@ -1,6 +1,5 @@
 {
   "id": "as-cast",
-  "import": "import { AsCastComponent } from './as-cast.component.ts';",
   "name": "AsCastComponent",
   "path": "__PATH__",
   "stories": {
@@ -8,12 +7,28 @@
       "description": "Args behind an `as const` assertion.",
       "id": "storydocs-as-cast--casted",
       "name": "Casted",
-      "snippet": "<sb-as-cast [label]="'Cast'" [tone]="'warn'"></sb-as-cast>",
+      "snippet": "import { Component } from '@angular/core';
+import { AsCastComponent } from './as-cast.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [AsCastComponent],
+  template: `<sb-as-cast [label]="'Cast'" [tone]="'warn'"></sb-as-cast>`,
+})
+export class DemoComponent {}",
     },
     "storydocs-as-cast--satisfied": {
       "id": "storydocs-as-cast--satisfied",
       "name": "Satisfied",
-      "snippet": "<sb-as-cast [label]="'Satisfies'"></sb-as-cast>",
+      "snippet": "import { Component } from '@angular/core';
+import { AsCastComponent } from './as-cast.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [AsCastComponent],
+  template: `<sb-as-cast [label]="'Satisfies'"></sb-as-cast>`,
+})
+export class DemoComponent {}",
     },
   },
 }

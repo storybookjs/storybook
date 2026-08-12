@@ -22,6 +22,7 @@ import type {
   SnippetEnum,
 } from './build-docgen.ts';
 import { parseStoryFile } from './resolve-component.ts';
+import { buildHostComponentSnippet } from './story-docs-snippet.ts';
 import {
   buildComponentOutletTemplate,
   buildTemplate,
@@ -58,12 +59,18 @@ export const buildStoryDocsPayload = async (
     ? await context.getDocgenPayload(getComponentIdFromEntry(input.entry))
     : undefined;
 
+  const componentName = componentNameOf(componentNode);
   const deps: StoryDocDeps = {
     csf,
     source,
     metaArgs: argsRecordFromNode(csf._metaAnnotations.args),
     metaHasRender: csf._metaAnnotations.render !== undefined,
     snippetMeta: docgenPayload?.angularComponentMeta,
+    componentName,
+    componentImport:
+      componentName === undefined
+        ? undefined
+        : createImportStatement(componentName, csf, docgenPayload),
   };
 
   const stories: Record<string, StoryDoc> = {};
@@ -72,15 +79,11 @@ export const buildStoryDocsPayload = async (
   }
 
   const titleName = input.entry.title.split('/').at(-1)!.replace(/\s+/g, '');
-  const componentName = componentNameOf(componentNode);
-  const importStatement = componentName && createImportStatement(componentName, csf, docgenPayload);
-
   return {
     id: getComponentIdFromEntry(input.entry),
     // The docgen payload knows the class name even when the story file imported it under an alias.
     name: docgenPayload?.name ?? componentName ?? titleName,
     path: storyImportPath,
-    ...(importStatement ? { import: importStatement } : {}),
     stories,
   };
 };
@@ -115,6 +118,8 @@ interface StoryDocDeps {
   metaArgs: Record<string, t.Node>;
   metaHasRender: boolean;
   snippetMeta: AngularComponentSnippetMeta | undefined;
+  componentName: string | undefined;
+  componentImport: string | undefined;
 }
 
 // Stories that declare their own `render` get no snippet: their template is a runtime value static
@@ -122,7 +127,15 @@ interface StoryDocDeps {
 const buildStoryDoc = (
   exportName: string,
   story: CsfFile['_stories'][string],
-  { csf, source, metaArgs, metaHasRender, snippetMeta }: StoryDocDeps
+  {
+    csf,
+    source,
+    metaArgs,
+    metaHasRender,
+    snippetMeta,
+    componentName,
+    componentImport,
+  }: StoryDocDeps
 ): StoryDoc => {
   const name = story.name ?? storyNameFromExport(exportName);
   try {
@@ -131,7 +144,9 @@ const buildStoryDoc = (
     const hasRender = metaHasRender || annotations.render !== undefined;
     const args = mergeArgsRecords(metaArgs, argsRecordFromNode(annotations.args));
     const snippet =
-      snippetMeta && !hasRender ? renderStorySnippet(snippetMeta, args, source) : undefined;
+      snippetMeta && !hasRender
+        ? renderStorySnippet(snippetMeta, args, source, componentName, componentImport)
+        : undefined;
 
     return {
       id: story.id,
@@ -153,11 +168,32 @@ const buildStoryDoc = (
 const renderStorySnippet = (
   snippetMeta: AngularComponentSnippetMeta,
   args: Record<string, t.Node>,
+  source: string,
+  componentName: string | undefined,
+  componentImport: string | undefined
+): string => {
+  // The story file's local name is what the import binds, so an aliased import stays consistent
+  // between the import statement, the `imports` array and the template.
+  const localName = componentName ?? snippetMeta.name;
+  const viaComponentOutlet = !snippetMeta.selector;
+  const template = viaComponentOutlet
+    ? buildComponentOutletTemplate(localName)
+    : buildStoryTemplate(snippetMeta, args, source);
+
+  return buildHostComponentSnippet({
+    template,
+    componentName: localName,
+    componentImport,
+    viaComponentOutlet,
+    outputs: viaComponentOutlet ? [] : snippetMeta.outputs,
+  });
+};
+
+const buildStoryTemplate = (
+  snippetMeta: AngularComponentSnippetMeta,
+  args: Record<string, t.Node>,
   source: string
 ): string => {
-  if (!snippetMeta.selector) {
-    return buildComponentOutletTemplate(snippetMeta.name);
-  }
   const inputNames = new Set(snippetMeta.inputs);
   const inputs = Object.entries(args)
     .filter(([argName]) => inputNames.has(argName))
@@ -165,7 +201,7 @@ const renderStorySnippet = (
       name: argName,
       expression: evaluateArgExpression(node, source, snippetMeta.enums),
     }));
-  return buildTemplate(snippetMeta.selector, { inputs, outputs: snippetMeta.outputs });
+  return buildTemplate(snippetMeta.selector!, { inputs, outputs: snippetMeta.outputs });
 };
 
 const EVAL_FAILED = Symbol('story-docs-eval-failed');

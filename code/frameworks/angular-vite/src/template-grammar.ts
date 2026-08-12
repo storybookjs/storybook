@@ -1,7 +1,7 @@
 // Imported by the preview renderer and by the dev-server story-docs provider, so this module must
 // stay free of `@angular/core` and of any other runtime-only import.
 
-const isValidIdentifier = (name: string): boolean => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name);
+export const isValidIdentifier = (name: string): boolean => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name);
 
 export const formatPropInTemplate = (propertyName: string) =>
   isValidIdentifier(propertyName) ? propertyName : `this['${propertyName}']`;

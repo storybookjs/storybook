@@ -5,6 +5,8 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { dedent } from 'ts-dedent';
+
 import { vol } from 'memfs';
 
 import type { AngularDocgenPayload } from './build-docgen.ts';
@@ -38,6 +40,22 @@ const givenStoryFile = (source: string) => {
 };
 
 const noDocgen = async (): Promise<undefined> => undefined;
+
+const buttonDocgen =
+  (jsDocTags: AngularDocgenPayload['jsDocTags'] = {}) =>
+  async (): Promise<AngularDocgenPayload> => ({
+    id: 'example-button',
+    name: 'ButtonComponent',
+    path: STORY_PATH,
+    jsDocTags,
+    angularComponentMeta: {
+      name: 'ButtonComponent',
+      selector: 'sb-button',
+      inputs: ['label'],
+      outputs: ['pressed'],
+      enums: [],
+    },
+  });
 
 describe('buildStoryDocsPayload', () => {
   it('returns undefined for entries without a story file or with an unparsable one', async () => {
@@ -117,38 +135,44 @@ describe('buildStoryDocsPayload', () => {
     expect(story.error).toBeUndefined();
   });
 
-  it('emits the import statement the story file uses for its component', async () => {
+  it('inlines the story file import into the snippet instead of a payload-level field', async () => {
     givenStoryFile(`
       import { ButtonComponent } from './button.component';
       export default { title: 'Example/Button', component: ButtonComponent };
-      export const Default = {};
+      export const Default = { args: { label: 'Save' } };
     `);
 
-    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: noDocgen });
+    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() });
 
-    expect(payload?.import).toBe("import { ButtonComponent } from './button.component';");
+    expect(payload?.import).toBeUndefined();
+    expect(Object.values(payload!.stories)[0].snippet).toBe(dedent`
+      import { Component } from '@angular/core';
+      import { ButtonComponent } from './button.component';
+
+      @Component({
+        selector: 'app-demo',
+        imports: [ButtonComponent],
+        template: \`<sb-button [label]="'Save'" (pressed)="pressed($event)"></sb-button>\`,
+      })
+      export class DemoComponent {
+        pressed(event: unknown) {}
+      }
+    `);
   });
 
-  it('keeps the local name of an aliased import and of a default import', async () => {
+  it('refers to the component by the local name the story file imported it under', async () => {
     givenStoryFile(`
       import { ButtonComponent as Button } from './button.component';
       export default { title: 'Example/Button', component: Button };
       export const Default = {};
     `);
 
-    expect((await buildStoryDocsPayload({ entry }, { getDocgenPayload: noDocgen }))?.import).toBe(
-      "import { ButtonComponent as Button } from './button.component';"
-    );
+    const snippet = Object.values(
+      (await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() }))!.stories
+    )[0].snippet;
 
-    givenStoryFile(`
-      import DefaultButton from './default-button.component';
-      export default { title: 'Example/Button', component: DefaultButton };
-      export const Default = {};
-    `);
-
-    expect((await buildStoryDocsPayload({ entry }, { getDocgenPayload: noDocgen }))?.import).toBe(
-      "import DefaultButton from './default-button.component';"
-    );
+    expect(snippet).toContain("import { ButtonComponent as Button } from './button.component';");
+    expect(snippet).toContain('imports: [Button],');
   });
 
   it('lets an `@import` tag on the component class replace the derived import', async () => {
@@ -157,29 +181,33 @@ describe('buildStoryDocsPayload', () => {
       export default { title: 'Example/Button', component: ButtonComponent };
       export const Default = {};
     `);
-    const getDocgenPayload = async (): Promise<AngularDocgenPayload> => ({
-      id: 'example-button',
-      name: 'ButtonComponent',
-      path: STORY_PATH,
-      jsDocTags: { import: ["import { ButtonComponent } from '@design-system/components';"] },
+    const getDocgenPayload = buttonDocgen({
+      import: ["import { ButtonComponent } from '@design-system/components';"],
     });
 
-    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload });
+    const snippet = Object.values(
+      (await buildStoryDocsPayload({ entry }, { getDocgenPayload }))!.stories
+    )[0].snippet;
 
-    expect(payload?.import).toBe("import { ButtonComponent } from '@design-system/components';");
+    expect(snippet).toContain("import { ButtonComponent } from '@design-system/components';");
+    expect(snippet).not.toContain('./button.component');
   });
 
-  it('omits the import when the component is declared in the story file', async () => {
+  it('imports only Angular itself when the component is declared in the story file', async () => {
     givenStoryFile(`
       import { Component } from '@angular/core';
-      @Component({ selector: 'sb-local', template: '' })
-      class LocalComponent {}
-      export default { title: 'Example/Button', component: LocalComponent };
+      @Component({ selector: 'sb-button', template: '' })
+      class LocalButton {}
+      export default { title: 'Example/Button', component: LocalButton };
       export const Default = {};
     `);
 
-    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: noDocgen });
+    const snippet = Object.values(
+      (await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() }))!.stories
+    )[0].snippet;
 
-    expect(payload?.import).toBeUndefined();
+    expect(snippet).toContain("import { Component } from '@angular/core';");
+    expect(snippet).toContain('imports: [LocalButton],');
+    expect(snippet!.match(/^import /gm)).toHaveLength(1);
   });
 });

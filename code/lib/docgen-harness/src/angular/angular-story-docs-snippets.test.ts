@@ -10,6 +10,7 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { buildStoryDocsPayload } from '../../../../frameworks/angular-vite/src/docgen/story-docs-build.ts';
+import { extractHostComponentTemplate } from '../../../../frameworks/angular-vite/src/docgen/story-docs-snippet.ts';
 import { createFixtureDocgen } from './docgen-fixture.ts';
 import {
   expectNoStaleSnippets,
@@ -61,6 +62,9 @@ describe('angular story-docs server snippets', () => {
         prefix: 'server-snippet-',
         exportName,
         snippet: storyDoc!.snippet!,
+        // The server snippet wraps its template in a host component; the legacy recordings are the
+        // bare template, so both sides are compared as templates.
+        comparable: (text) => extractHostComponentTemplate(text) ?? text,
         legacyParity: true,
       });
     }

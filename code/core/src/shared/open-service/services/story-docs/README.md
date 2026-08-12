@@ -10,11 +10,15 @@ preserving `parameters.docs.source.transform` handling in preview.
 
 ## Import snippets
 
-Story-docs builds file-level `import` statements from CSF import analysis, shared across providers
-by `buildImportStatements` in `csf-tools`.
+Story-docs builds import statements from CSF import analysis, shared across providers by
+`buildImportStatements` in `csf-tools`.
+
+Where they end up differs by provider. React and Vue set the payload-level `import` field, which
+`selectSnippetForStory` prepends to the story snippet. Angular instead emits a self-contained
+snippet: its snippet is a host component that already carries its own imports, so prepending a
+second import block would produce source that does not parse. New providers should follow Angular
+and leave `import` unset; the field stays until React and Vue move over, and goes away with them.
 
 The component `@import` JSDoc override tag is honored only where a provider already reads the
-component source. The Angular provider owns an analyzer for its snippets, so it passes the tag
-through; React and Vue derive imports from resolved import paths and package name rewriting only,
-and will honor the tag once story-docs can read component-source JSDoc without coupling to the
-docgen service.
+component source. Angular reads it from the docgen payload's JSDoc tags; React and Vue derive
+imports from resolved import paths and package name rewriting only.

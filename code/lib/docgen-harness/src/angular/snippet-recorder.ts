@@ -29,12 +29,17 @@ export async function recordSnippet({
   prefix,
   exportName,
   snippet,
+  comparable = (text) => text,
   legacyParity = false,
 }: {
   testDir: string;
   prefix: SnippetPrefix;
   exportName: string;
   snippet: string;
+  // Reduces a recorded snippet to the part the comparison gates read, applied to the candidate and
+  // to both baselines alike. A snippet that embeds its template in a larger form records in full,
+  // so the wrapper stays reviewable, while every gate keeps measuring the template it always did.
+  comparable?: (text: string) => string;
   // Additionally gate the snippet against the legacy recorder's committed `snippet-` file.
   legacyParity?: boolean;
 }): Promise<void> {
@@ -43,14 +48,14 @@ export async function recordSnippet({
 
   // Every gate runs BEFORE the snapshot call: under `-u` that call queues the rewrite, so a gate
   // placed after it would turn the run red while still persisting the regressed recording.
-  assertGatableAngularSnippet(snippet);
+  assertGatableAngularSnippet(comparable(snippet));
 
   if (committedSnippet !== undefined) {
     expectCurrentOrBetter({
       kind: 'snippet',
       framework: 'angular',
-      baseline: committedSnippet,
-      candidate: snippet,
+      baseline: comparable(committedSnippet),
+      candidate: comparable(snippet),
     });
   }
 
@@ -64,8 +69,8 @@ export async function recordSnippet({
     expectCurrentOrBetter({
       kind: 'snippet',
       framework: 'angular',
-      baseline: committedLegacySnippet!,
-      candidate: snippet,
+      baseline: comparable(committedLegacySnippet!),
+      candidate: comparable(snippet),
     });
   }
 

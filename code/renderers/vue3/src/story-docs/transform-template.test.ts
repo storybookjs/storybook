@@ -177,6 +177,26 @@ export const Primary = {
     `);
   });
 
+  it('expect wrappers around the component to be preserved', () => {
+    expect(
+      renderStory(`
+export const Primary = {
+  args: {
+    label: 'Hi',
+  },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: '<div><MyButton v-bind="args" /></div>',
+  }),
+};
+`)?.snippet
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <div><MyButton active label="Hi" /></div>
+      </template>"
+    `);
+  });
+
   it('rewrites direct v-bind prop expressions with shared value formatting', () => {
     expect(
       renderStory(`

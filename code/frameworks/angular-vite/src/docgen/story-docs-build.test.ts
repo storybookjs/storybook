@@ -193,7 +193,7 @@ describe('buildStoryDocsPayload', () => {
     expect(snippet).not.toContain('./button.component');
   });
 
-  it('imports only Angular itself when the component is declared in the story file', async () => {
+  it('warns that a component declared in the story file is not imported by the snippet', async () => {
     givenStoryFile(`
       import { Component } from '@angular/core';
       @Component({ selector: 'sb-button', template: '' })
@@ -202,12 +202,29 @@ describe('buildStoryDocsPayload', () => {
       export const Default = {};
     `);
 
-    const snippet = Object.values(
+    const story = Object.values(
       (await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() }))!.stories
-    )[0].snippet;
+    )[0];
 
-    expect(snippet).toContain("import { Component } from '@angular/core';");
-    expect(snippet).toContain('imports: [LocalButton],');
-    expect(snippet!.match(/^import /gm)).toHaveLength(1);
+    expect(story.snippet).toContain("import { Component } from '@angular/core';");
+    expect(story.snippet).toContain('imports: [LocalButton],');
+    expect(story.snippet!.match(/^import /gm)).toHaveLength(1);
+    expect(story.warning).toBe(
+      'LocalButton is declared in the story file, so the snippet references it without importing it.'
+    );
+  });
+
+  it('leaves the warning off a snippet that imports its component', async () => {
+    givenStoryFile(`
+      import { ButtonComponent } from './button.component';
+      export default { title: 'Example/Button', component: ButtonComponent };
+      export const Default = {};
+    `);
+
+    const story = Object.values(
+      (await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() }))!.stories
+    )[0];
+
+    expect(story.warning).toBeUndefined();
   });
 });

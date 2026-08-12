@@ -147,11 +147,16 @@ const buildStoryDoc = (
       snippetMeta && !hasRender
         ? renderStorySnippet(snippetMeta, args, source, componentName, componentImport)
         : undefined;
+    const warning =
+      snippet === undefined
+        ? undefined
+        : incompleteSnippetReason(componentName ?? snippetMeta!.name, componentImport);
 
     return {
       id: story.id,
       name,
       ...(snippet === undefined ? {} : { snippet }),
+      ...(warning === undefined ? {} : { warning }),
       ...(description ? { description } : {}),
       ...(summary === undefined ? {} : { summary }),
     };
@@ -164,6 +169,21 @@ const buildStoryDoc = (
     };
   }
 };
+
+/**
+ * Why the host component in the snippet would not compile as written, or `undefined` when it would.
+ *
+ * A component the story file declares itself has no import to derive, so the snippet names it in
+ * `imports` without bringing it into scope. The snippet still shows the bindings the story sets,
+ * which is what a reader comes to a docs page for, so it is worth keeping with the caveat attached.
+ */
+const incompleteSnippetReason = (
+  localName: string,
+  componentImport: string | undefined
+): string | undefined =>
+  componentImport === undefined
+    ? `${localName} is declared in the story file, so the snippet references it without importing it.`
+    : undefined;
 
 const renderStorySnippet = (
   snippetMeta: AngularComponentSnippetMeta,

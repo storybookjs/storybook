@@ -32,7 +32,6 @@ export default {
   '@storybook/codemod': '10.6.0-alpha.5',
   '@storybook/core-webpack': '10.6.0-alpha.5',
   'create-storybook': '10.6.0-alpha.5',
-  '@storybook/csf-plugin': '10.6.0-alpha.5',
   'eslint-plugin-storybook': '10.6.0-alpha.5',
   '@storybook/mcp': '10.6.0-alpha.5',
   '@storybook/react-dom-shim': '10.6.0-alpha.5',

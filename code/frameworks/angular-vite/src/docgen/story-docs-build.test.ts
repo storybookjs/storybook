@@ -373,10 +373,10 @@ describe('buildStoryDocsPayload', () => {
       expect((await templatesOf(STORY_SHAPES_FILE)).get(storyName)).toBe(expected);
     });
 
-    it('falls back to generated bindings for an imported template it cannot follow', async () => {
-      expect((await templatesOf(STORY_SHAPES_FILE)).get('Imported Template')).toBe(
-        `<sb-button [label]="'meta'" [count]="5" (clicked)="clicked($event)"></sb-button>`
-      );
+    // Fabricated bindings would misrepresent the imported markup, so no snippet is emitted and
+    // the runtime source fallback stays authoritative.
+    it('emits no snippet for an imported template it cannot follow', async () => {
+      expect((await templatesOf(STORY_SHAPES_FILE)).get('Imported Template')).toBeUndefined();
     });
 
     it('reads args CSF2 assigned after the declaration', async () => {
@@ -421,10 +421,10 @@ describe('buildStoryDocsPayload', () => {
       );
     });
 
-    it('falls back when an interpolation needs the story to run', async () => {
-      expect((await templatesOf(STORY_SHAPES_FILE)).get('Unreadable Interpolation')).toBe(
-        `<sb-button [label]="'Save'" (clicked)="clicked($event)"></sb-button>`
-      );
+    it('emits no snippet when an interpolation needs the story to run', async () => {
+      expect(
+        (await templatesOf(STORY_SHAPES_FILE)).get('Unreadable Interpolation')
+      ).toBeUndefined();
     });
 
     it('declares handlers only for the outputs the markup binds', async () => {
@@ -436,6 +436,298 @@ describe('buildStoryDocsPayload', () => {
 
       expect(byName.get('Args To Template')).toContain('clicked(event: unknown) {}');
       expect(byName.get('Own Template')).not.toContain('clicked(event: unknown) {}');
+    });
+  });
+
+  describe('story shapes that cannot be read statically', () => {
+    it('reads the template a render method shorthand returns', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save' },
+          render(args) {
+            return { template: '<div class="only-in-render"><sb-button></sb-button></div>' };
+          },
+        };
+      `);
+      expect(extractHostComponentTemplate(story.snippet!)).toBe(
+        '<div class="only-in-render"><sb-button></sb-button></div>'
+      );
+    });
+
+    // At runtime, reading `render` invokes the getter; the accessor itself is not the function.
+    it('emits no snippet for a render accessor', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save' },
+          get render() {
+            return () => ({ template: '<sb-button from-getter></sb-button>' });
+          },
+        };
+      `);
+      expect(story.snippet).toBeUndefined();
+    });
+
+    // `{ render: fn, ...base }` runs base.render when the spread carries one, so the explicit
+    // property cannot be trusted.
+    it('emits no snippet when a later spread can shadow the render', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        const base = {};
+        export const Default = {
+          render: () => ({ template: '<sb-button from-story></sb-button>' }),
+          ...base,
+        };
+      `);
+      expect(story.snippet).toBeUndefined();
+    });
+
+    it('emits no snippet for a config that is only a spread', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        const base = { args: { label: 'From base' } };
+        export const Default = { ...base };
+      `);
+      expect(story.snippet).toBeUndefined();
+    });
+
+    it('reads a template written after a harmless earlier spread', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        const base = {};
+        export const Default = { ...base, template: '<sb-button explicit></sb-button>' };
+      `);
+      expect(extractHostComponentTemplate(story.snippet!)).toBe('<sb-button explicit></sb-button>');
+    });
+
+    it('emits no snippet when a spread makes the args unknowable', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        const extra = { count: 9 };
+        export const Default = { args: { label: 'Save', ...extra } };
+      `);
+      expect(story.snippet).toBeUndefined();
+    });
+
+    it('emits no snippet when a meta args spread makes the merge unknowable', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        const shared = { label: 'shared' };
+        export default { title: 'Example/Button', component: ButtonComponent, args: { ...shared } };
+        export const Default = { args: { label: 'Save' } };
+      `);
+      expect(story.snippet).toBeUndefined();
+    });
+
+    // Which branch runs depends on the story's args at runtime.
+    it('emits no snippet for a render with more than one exit', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save' },
+          render: (args) => {
+            if (args.label) {
+              return { template: '<sb-button first></sb-button>' };
+            }
+            return { template: '<sb-button second></sb-button>' };
+          },
+        };
+      `);
+      expect(story.snippet).toBeUndefined();
+    });
+
+    it('emits no snippet when argsToTemplate options need the story to run', async () => {
+      const story = await soleStory(`
+        import { argsToTemplate } from '@storybook/angular-vite';
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        const INCLUDES = ['label'];
+        export const Default = {
+          args: { label: 'Save' },
+          render: (args) => ({
+            props: args,
+            template: \`<sb-button \${argsToTemplate(args, { include: INCLUDES })}></sb-button>\`,
+          }),
+        };
+      `);
+      expect(story.snippet).toBeUndefined();
+    });
+
+    it('emits no snippet when argsToTemplate is given a derived object', async () => {
+      const story = await soleStory(`
+        import { argsToTemplate } from '@storybook/angular-vite';
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save' },
+          render: (args) => ({
+            props: args,
+            template: \`<sb-button \${argsToTemplate({ ...args, extra: 1 })}></sb-button>\`,
+          }),
+        };
+      `);
+      expect(story.snippet).toBeUndefined();
+    });
+  });
+
+  describe('config keys resolve with runtime object semantics', () => {
+    it('reads a member-assigned render, which runs after the declaration', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { label: 'Save' } };
+        Default.render = () => ({ template: '<div class="assigned"><sb-button></sb-button></div>' });
+      `);
+      expect(extractHostComponentTemplate(story.snippet!)).toBe(
+        '<div class="assigned"><sb-button></sb-button></div>'
+      );
+    });
+
+    it('resolves duplicate template keys to the last occurrence', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          template: '<sb-button first></sb-button>',
+          template: '<sb-button second></sb-button>',
+        };
+      `);
+      expect(extractHostComponentTemplate(story.snippet!)).toBe('<sb-button second></sb-button>');
+    });
+
+    it('reads a string-literal computed key the way the runtime does', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { ['template']: '<sb-button computed></sb-button>' };
+      `);
+      expect(extractHostComponentTemplate(story.snippet!)).toBe('<sb-button computed></sb-button>');
+    });
+
+    it('emits no snippet when a dynamic key could carry the template', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        const key = 'template';
+        export const Default = { args: { label: 'Save' }, [key]: '<sb-button dynamic></sb-button>' };
+      `);
+      expect(story.snippet).toBeUndefined();
+    });
+  });
+
+  describe('interpolated identifiers resolve by scope', () => {
+    it('substitutes a module-level constant the template interpolates', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        const HEADER = '<h1>Hi</h1>';
+        export const Default = {
+          args: { label: 'Save' },
+          render: (args) => ({ props: args, template: \`\${HEADER}<sb-button></sb-button>\` }),
+        };
+      `);
+      expect(extractHostComponentTemplate(story.snippet!)).toBe(
+        '<h1>Hi</h1><sb-button></sb-button>'
+      );
+    });
+
+    // The render does not destructure `footer`, so the runtime reads the module constant, not the
+    // same-named arg.
+    it('prefers the module constant over a same-named arg the render never binds', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        const footer = 'module value';
+        export const Default = {
+          args: { label: 'Save', footer: 'arg value' },
+          render: (args) => ({ props: args, template: \`<sb-button>\${footer}</sb-button>\` }),
+        };
+      `);
+      expect(extractHostComponentTemplate(story.snippet!)).toBe(
+        '<sb-button>module value</sb-button>'
+      );
+    });
+
+    // A reassigned binding's value at render time is not its initializer.
+    it('emits no snippet when the interpolated binding is reassigned', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        let footer = 'first';
+        footer = 'second';
+        export const Default = {
+          args: { label: 'Save' },
+          render: (args) => ({ props: args, template: \`<sb-button>\${footer}</sb-button>\` }),
+        };
+      `);
+      expect(story.snippet).toBeUndefined();
+    });
+
+    it('emits no snippet for a template identifier that is reassigned', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        let TEMPLATE = '<sb-button first></sb-button>';
+        TEMPLATE = '<sb-button second></sb-button>';
+        export const Default = { template: TEMPLATE };
+      `);
+      expect(story.snippet).toBeUndefined();
+    });
+
+    // The body-local declaration shadows the module constant the program scope would resolve.
+    it('emits no snippet when the render body declares the interpolated name', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        const footer = 'module value';
+        export const Default = {
+          args: { label: 'Save' },
+          render: (args) => {
+            const footer = 'local value';
+            return { props: args, template: \`<sb-button>\${footer}</sb-button>\` };
+          },
+        };
+      `);
+      expect(story.snippet).toBeUndefined();
+    });
+  });
+
+  describe('legacy CSF2 idioms', () => {
+    it('follows Template.bind({}) to the template the story renders', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        const Template = (args) => ({ props: args, template: '<div class="bound"><sb-button></sb-button></div>' });
+        export const Default = Template.bind({});
+        Default.args = { label: 'Save' };
+      `);
+      expect(extractHostComponentTemplate(story.snippet!)).toBe(
+        '<div class="bound"><sb-button></sb-button></div>'
+      );
+    });
+  });
+
+  describe('binding values survive the attribute position', () => {
+    it.each([
+      ["it's fine", "[label]=\"'it\\\\'s fine'\""],
+      ['say "hi"', '[label]="\'say &quot;hi&quot;\'"'],
+      ['Tom &amp; Jerry', '[label]="\'Tom &amp;amp; Jerry\'"'],
+      ['broken &#65 reference', '[label]="\'broken &amp;#65 reference\'"'],
+    ])('escapes %s losslessly', async (value, expected) => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { label: ${JSON.stringify(value)} } };
+      `);
+      expect(story.snippet).toContain(expected);
     });
   });
 });

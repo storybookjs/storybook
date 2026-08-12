@@ -1,12 +1,3 @@
-/**
- * Main-thread client for the long-lived docgen worker.
- *
- * Owns a single worker (docgen extraction serializes on one warm TypeScript program, so a pool
- * would only duplicate multi-second program builds and memory). Spawned once per process when the
- * compiled worker script is present; when it is missing — e.g. running from source without a build —
- * {@link createDocgenWorkerClient} returns `undefined` and the caller skips docgen registration
- * rather than silently extracting on the main thread.
- */
 import { existsSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { Worker } from 'node:worker_threads';
@@ -19,10 +10,7 @@ import type { ErrorLike } from '../../module-graph/types.ts';
 import type { DocgenPayload, DocgenProviderDescriptor } from '../types.ts';
 import type { DocgenWorkerRequest, DocgenWorkerResponse } from './protocol.ts';
 
-/**
- * Package-relative specifier for the compiled worker. Resolved via the package export map (not a
- * hard-coded dist path) so strict package managers like pnpm resolve it correctly.
- */
+// Resolved via the export map, not a hard-coded dist path, so strict layouts like pnpm's work.
 const WORKER_SPECIFIER = 'storybook/internal/docgen-worker';
 
 const DEFAULT_TASK_TIMEOUT_MS = 120_000;
@@ -34,11 +22,9 @@ interface Pending {
 }
 
 export interface DocgenWorkerClient {
-  /** Extracts docgen for one component entry off the main thread. */
   extract(entry: IndexEntry): Promise<DocgenPayload | undefined>;
 }
 
-/** Rebuild an Error from a worker {@link ErrorLike} so the original name/message/stack survive. */
 function errorLikeToError(errorLike: ErrorLike): Error {
   const error = new Error(errorLike.message);
   if (errorLike.name) {
@@ -50,12 +36,12 @@ function errorLikeToError(errorLike: ErrorLike): Error {
   return error;
 }
 
+// One worker, never a pool: extraction serializes on a single warm TypeScript program, so extra
+// threads would only duplicate multi-second program builds and their memory.
 class DocgenWorker implements DocgenWorkerClient {
   private readonly worker: Worker;
   private readonly pending = new Map<number, Pending>();
   private readonly ready: Promise<void>;
-  // Captured from the `ready` promise executor (which runs synchronously) so `fail()` can settle
-  // `ready` if the worker dies before sending `init`. No-op default keeps TS definite-assignment happy.
   private rejectReady: (error: unknown) => void = () => undefined;
   private nextId = 0;
   private dead = false;
@@ -66,8 +52,6 @@ class DocgenWorker implements DocgenWorkerClient {
     private readonly taskTimeoutMs = DEFAULT_TASK_TIMEOUT_MS
   ) {
     this.worker = new Worker(scriptPath);
-    // Never let an idle worker keep the process alive.
-    this.worker.unref();
     this.worker.on('message', (msg: DocgenWorkerResponse) => this.handleMessage(msg));
     this.worker.on('error', (error) => this.fail(error));
     this.worker.on('exit', (code) => {
@@ -91,8 +75,11 @@ class DocgenWorker implements DocgenWorkerClient {
       };
       this.worker.on('message', onMessage);
     });
-    // Surface late init rejections instead of leaving an unhandled rejection.
+    // Prevents an unhandled rejection; `extract` still awaits `ready` and surfaces the error.
     this.ready.catch(() => undefined);
+
+    // Spawn is lazy, so an extract is always imminent: stay referenced until `ready` settles.
+    this.ready.finally(() => this.keepProcessAliveWhileBusy()).catch(() => undefined);
 
     this.post({ type: 'init', descriptors });
   }
@@ -108,13 +95,23 @@ class DocgenWorker implements DocgenWorkerClient {
       if (this.taskTimeoutMs > 0) {
         pending.timer = setTimeout(() => {
           this.pending.delete(id);
+          this.keepProcessAliveWhileBusy();
           reject(new Error(`docgen worker extract ${id} timed out after ${this.taskTimeoutMs}ms`));
         }, this.taskTimeoutMs);
         pending.timer.unref?.();
       }
       this.pending.set(id, pending);
+      this.keepProcessAliveWhileBusy();
       this.post({ type: 'extract', id, entry });
     });
+  }
+
+  private keepProcessAliveWhileBusy(): void {
+    if (this.pending.size > 0) {
+      this.worker.ref();
+    } else {
+      this.worker.unref();
+    }
   }
 
   private post(msg: DocgenWorkerRequest): void {
@@ -133,6 +130,7 @@ class DocgenWorker implements DocgenWorkerClient {
       clearTimeout(pending.timer);
     }
     this.pending.delete(msg.id);
+    this.keepProcessAliveWhileBusy();
     if (msg.error) {
       pending.reject(errorLikeToError(msg.error));
     } else {
@@ -140,15 +138,13 @@ class DocgenWorker implements DocgenWorkerClient {
     }
   }
 
-  /** Reject everything in flight and tear the worker down; used on fatal worker failure. */
   private fail(error: Error): void {
     if (this.dead) {
       return;
     }
     logger.debug(`docgen worker failure: ${error.message}`);
     this.dead = true;
-    // If the worker dies before `init`, `ready` would otherwise never settle and an in-flight
-    // `extract` awaiting it would hang. Rejecting is a no-op once `ready` has already settled.
+    // Without this, an `extract` awaiting `ready` hangs when the worker dies before `init`.
     this.rejectReady(error);
     this.rejectAllPending(error);
     this.worker.terminate().catch(() => 0);
@@ -162,6 +158,7 @@ class DocgenWorker implements DocgenWorkerClient {
       pending.reject(error);
     }
     this.pending.clear();
+    this.worker.unref();
   }
 }
 
@@ -174,16 +171,8 @@ function resolveWorkerScriptPath(): string | undefined {
   }
 }
 
-/**
- * Creates the docgen worker client for `descriptors`. Returns `undefined` when the compiled worker
- * script is unavailable (no fallback — the caller skips docgen registration). The worker lives for the
- * process lifetime and is torn down with it, so there is nothing to dispose explicitly.
- *
- * The worker thread is spawned lazily on the first {@link DocgenWorkerClient.extract}, not here:
- * spawning the thread and importing the provider module graph is CPU work, and extraction is gated
- * until a story renders, so there is nothing to keep warm at dev-server boot — spawning eagerly would
- * only contend with Vite's cold start.
- */
+// The thread is spawned on the first extract, not here: nothing extracts until a story renders, so
+// an eager spawn would only contend with the dev server's cold start.
 export function createDocgenWorkerClient(
   descriptors: DocgenProviderDescriptor[]
 ): DocgenWorkerClient | undefined {

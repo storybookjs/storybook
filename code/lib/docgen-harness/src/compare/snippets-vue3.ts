@@ -1,4 +1,4 @@
-import { parseAttributeNames, parseRootElement } from './parse-element.ts';
+import { parseAttributes, parseRootElement } from './parse-element.ts';
 
 // A named slot is `<template #name>` or its `v-slot:name` long form.
 const NAMED_SLOT = /<template\s+(?:#|v-slot:)([\w$-]+)/g;
@@ -18,7 +18,7 @@ export function vueRepresentedNames(snippet: string): Set<string> | undefined {
     return undefined;
   }
   const names = new Set<string>();
-  for (const rawName of parseAttributeNames(root.attrText)) {
+  for (const { name: rawName } of parseAttributes(root.attrText)) {
     const mapped = mapVueAttribute(rawName);
     if (mapped !== undefined) {
       names.add(mapped);

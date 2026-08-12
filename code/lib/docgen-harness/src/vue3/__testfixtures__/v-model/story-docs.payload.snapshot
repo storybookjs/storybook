@@ -1,0 +1,14 @@
+{
+  "id": "v-model",
+  "import": "import VModelInput from './VModelInput.vue';",
+  "name": "VModelInput",
+  "path": "__PATH__",
+  "stories": {
+    "forms-v-model--v-model-binding": {
+      "description": undefined,
+      "id": "forms-v-model--v-model-binding",
+      "name": "V Model Binding",
+      "summary": undefined,
+    },
+  },
+}

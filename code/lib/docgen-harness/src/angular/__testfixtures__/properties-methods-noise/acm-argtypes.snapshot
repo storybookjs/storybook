@@ -1,0 +1,107 @@
+{
+  "currentPage": {
+    "description": undefined,
+    "name": "currentPage",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": 1,
+      },
+      "type": {
+        "required": true,
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+    },
+  },
+  "isActive": {
+    "description": undefined,
+    "name": "isActive",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": false,
+      },
+      "type": {
+        "required": true,
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
+  "loading": {
+    "description": undefined,
+    "name": "loading",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "signal(false)",
+      },
+      "type": {
+        "required": true,
+        "summary": "WritableSignal<boolean>",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "empty-enum",
+    },
+  },
+  "nextPage": {
+    "description": undefined,
+    "name": "nextPage",
+    "table": {
+      "category": "methods",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": false,
+        "summary": "() => void",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "panel": {
+    "description": undefined,
+    "name": "panel",
+    "table": {
+      "category": "view child",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": false,
+        "summary": "ElementRef<HTMLDivElement>",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "title": {
+    "description": undefined,
+    "name": "title",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "",
+      },
+      "type": {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

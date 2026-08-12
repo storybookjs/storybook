@@ -17,15 +17,15 @@ const config: BuildEntries = {
         entryPoint: './src/entry-preview-docs.ts',
         dts: false,
       },
-      {
-        exportEntries: ['./experimental-playwright'],
-        entryPoint: './src/playwright.ts',
-      },
     ],
     node: [
       {
         exportEntries: ['./preset'],
         entryPoint: './src/preset.ts',
+      },
+      {
+        exportEntries: ['./internal/docgen-worker'],
+        entryPoint: './src/docgen/docgen-worker.ts',
         dts: false,
       },
     ],

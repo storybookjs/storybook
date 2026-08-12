@@ -1,3 +1,14 @@
+## 10.5.7
+
+- Angular: Serve ancestor node_modules for addon-vitest in browser mode - [#35600](https://github.com/storybookjs/storybook/pull/35600), thanks @brandonroberts!
+- Refactor: Update getVersionedPackages method to handle non-Storybook packages correctly - [#35769](https://github.com/storybookjs/storybook/pull/35769), thanks @valentinpalkovic!
+
+## 10.5.6
+
+- Dependencies: Pin `@testing-library/jest-dom` to `6.9.1` - [#35614](https://github.com/storybookjs/storybook/pull/35614), thanks @ndelangen!
+- ESLint Plugin: Add plugin meta and document oxlint usage - [#35655](https://github.com/storybookjs/storybook/pull/35655), thanks @yannbf!
+- Vue: Skip docgen for module ids carrying a query - [#35598](https://github.com/storybookjs/storybook/pull/35598), thanks @seanogdev!
+
 ## 10.5.5
 
 - CLI: Update AI setup instructions to msw-storybook-addon v3 - [#35512](https://github.com/storybookjs/storybook/pull/35512), thanks @yannbf!

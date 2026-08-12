@@ -1,6 +1,6 @@
 import React from 'react';
 
-import { cacheLife, cacheTag } from 'next/cache';
+import { unstable_cacheLife as cacheLife, unstable_cacheTag as cacheTag } from 'next/cache';
 
 interface CacheComponentProps {
   profile?: 'default' | 'seconds' | 'minutes' | 'hours' | 'days' | 'weeks' | 'max';

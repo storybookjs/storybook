@@ -1,4 +1,5 @@
 import { recast, type types as t } from 'storybook/internal/babel';
+import { unwrapValue } from 'storybook/internal/csf-tools';
 
 /**
  * How one arg value reaches the generated SFC.
@@ -79,19 +80,6 @@ export function classifyValue(node: t.Node): ValuePlan {
 
 export function printValue(node: t.Node): string {
   return recast.print(node).code;
-}
-
-export function unwrapValue(node: t.Node): t.Node {
-  if (
-    node.type === 'TSAsExpression' ||
-    node.type === 'TSSatisfiesExpression' ||
-    node.type === 'TSNonNullExpression' ||
-    node.type === 'TSTypeAssertion'
-  ) {
-    return unwrapValue(node.expression);
-  }
-
-  return node;
 }
 
 export function isFunctionExpression<T extends t.Node>(

@@ -9,14 +9,15 @@ import {
 
 import { types as t } from 'storybook/internal/babel';
 import {
-  buildImportStatements,
   keyOf,
   propertyValue,
+  unwrapValue,
   type ImportBinding,
 } from 'storybook/internal/csf-tools';
 
+import { importStatementForBinding } from './ast-utils.ts';
 import type { ClassifiedArg } from './classify-args.ts';
-import { isFunctionExpression, singleReturnedExpression, unwrapValue } from './classify-value.ts';
+import { isFunctionExpression, singleReturnedExpression } from './classify-value.ts';
 import {
   createRenderContext,
   hoistArgValue,
@@ -412,23 +413,15 @@ function readComponentImports(
       return undefined;
     }
 
-    const binding = importBindings.get(component.name);
-    if (!binding || binding.importName === '*') {
+    const importStatement = importStatementForBinding(
+      component.name,
+      importBindings.get(component.name)
+    );
+    if (!importStatement) {
       return undefined;
     }
 
-    componentImports.set(
-      tagName,
-      buildImportStatements({
-        refs: [
-          {
-            importId: binding.importId,
-            importName: binding.importName,
-            localImportName: component.name,
-          },
-        ],
-      }).join('\n')
-    );
+    componentImports.set(tagName, importStatement);
   }
 
   return componentImports;

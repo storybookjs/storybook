@@ -1,4 +1,5 @@
 import { types as t } from 'storybook/internal/babel';
+import { unwrapValue } from 'storybook/internal/csf-tools';
 
 import { indent, slotSortKey, wrapSlotContent } from './ast-utils.ts';
 import type {
@@ -7,7 +8,7 @@ import type {
   ClassifiedSlotArg,
   RenderableValuePlan,
 } from './classify-args.ts';
-import { printValue, unwrapValue } from './classify-value.ts';
+import { isFunctionExpression, printValue } from './classify-value.ts';
 
 export interface RenderSfcInput {
   /** Component identifier from CSF meta.component. */
@@ -276,7 +277,7 @@ export function renderSlotArgContent(
 ): string | undefined {
   if (arg.plan.kind === 'function-slot') {
     const value = unwrapValue(arg.value);
-    return renderFunctionSlot && isFunctionValue(value)
+    return renderFunctionSlot && isFunctionExpression(value)
       ? renderFunctionSlot(value, ctx)
       : undefined;
   }
@@ -310,10 +311,6 @@ function renderSlotContent(
   const bindingName = allocateBindingName(arg.name, ctx);
   ctx.variables.set(bindingName, printValue(value));
   return `{{ ${bindingName} }}`;
-}
-
-function isFunctionValue(node: t.Node): node is t.ArrowFunctionExpression | t.FunctionExpression {
-  return node.type === 'ArrowFunctionExpression' || node.type === 'FunctionExpression';
 }
 
 function renderScript(ctx: RenderContext): string | undefined {

@@ -100,7 +100,9 @@ describe('keyOf', () => {
       `)
     );
 
-    const keys = meta?.node.properties.map((property) => keyOf(property));
+    const keys = meta?.node.properties.map((property) =>
+      t.isSpreadElement(property) ? null : keyOf(property)
+    );
 
     expect(keys).toEqual([
       'title',

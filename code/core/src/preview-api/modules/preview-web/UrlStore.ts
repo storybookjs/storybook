@@ -9,8 +9,15 @@ import { parseArgsParam } from './parseArgsParam.ts';
 
 const { history, document } = global;
 
-// The manager builds its hrefs as `?path=/<viewMode>/<storyId>`, so the prefix carries the view
-// mode and is the only mode signal that form has — `?viewMode=` is only ever set alongside `?id=`.
+/**
+ * TODO: Remove in SB11
+ *
+ * Preview selection should only use `?id=` / `?viewMode=`. Reading manager-style
+ * `?path=/<viewMode>/<storyId>` is legacy compatibility (`setPath` already writes id/viewMode).
+ *
+ * The manager builds its hrefs as `?path=/<viewMode>/<storyId>`, so the prefix carries the view
+ * mode and is the only mode signal that form has. `?viewMode=` is only ever set alongside `?id=`.
+ */
 const PATH_REGEX = /^\/(story|docs)\/(.+)/;
 
 export function pathToId(path: string) {

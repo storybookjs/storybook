@@ -9,6 +9,7 @@ export { defineService } from './service-definition.ts';
 export { seedQueryState } from './query-state.ts';
 
 export {
+  assertObjectCompatibleOutputSchema,
   defineToolset,
   reportToolsetTelemetry,
   resolveToolsetDescription,
@@ -21,11 +22,12 @@ export type {
   ToolsetGetService,
   ToolsetMethod,
   ToolsetMethodDescription,
+  ToolsetObjectOutputSchema,
   ToolsetOutcome,
   ToolsetTelemetry,
   ToolsetTransport,
 } from './toolset-definition.ts';
-export { getToolName, toMcpToolName } from './toolset-names.ts';
+export { getToolName, parseToolsetMethodId, toMcpToolName } from './toolset-names.ts';
 export type { ToolsetMethodId } from './toolset-names.ts';
 export {
   clearToolsetRegistry,
@@ -37,7 +39,10 @@ export {
 // each core entry bundles its own copy of a class, so an error class imported from another entry
 // is a different constructor and `instanceof` silently fails.
 export {
+  OpenServiceDuplicateToolNameError,
   OpenServiceDuplicateToolsetError,
+  OpenServiceInvalidToolsetMethodIdError,
+  OpenServiceInvalidToolsetOutputSchemaError,
   OpenServiceMissingToolsetError,
 } from '../../server-errors.ts';
 export type { KnownToolsets } from './toolset-types.ts';

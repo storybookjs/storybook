@@ -13,11 +13,12 @@ import {
   type ToolsetCtx,
   type ToolsetOutcome,
 } from '../../toolset-definition.ts';
-import { getToolName, toMcpToolName } from '../../toolset-names.ts';
+import { getToolName } from '../../toolset-names.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
 import { getChangedStories } from './changed.ts';
 import { DEFAULT_MAX_DISTANCE, findStoriesByComponent } from './find-by-component.ts';
 import type { ModuleGraphStatus } from './resolve-component-stories.ts';
+import { reasonForStatus } from './resolve-component-stories.ts';
 import { formatChangedStories, formatFindByComponent, formatPreviewStories } from './format.ts';
 import { previewStories } from './preview-stories.ts';
 import { storyInputArraySchema, storyInputSchema } from './story-input.ts';
@@ -29,9 +30,7 @@ const previewSuccessSchema = v.object({
   previewUrl: v.pipe(
     v.string(),
     v.description(
-      // An output schema is built once per toolset, with no context to resolve a sibling tool's
-      // transport-specific spelling, so this uses its derived MCP name.
-      `Direct URL to open the story preview. Include this URL in the final user-facing response so users can open it directly — unless a curated review page is being published via ${toMcpToolName('review.create')}, in which case link the review page instead of listing individual URLs.`
+      'Direct URL to open the story preview. Include this URL in the final user-facing response so users can open it directly.'
     )
   ),
 });
@@ -252,6 +251,17 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
           const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', {
             internal: true,
           });
+          // Same readiness gate as findByComponent: an empty status store is not "no changes", so
+          // fail before reading statuses when the graph has not settled.
+          const graphStatus = (await moduleGraph.queries.status.loaded(
+            undefined
+          )) as ModuleGraphStatus;
+          if (graphStatus.value !== 'ready') {
+            throw new OpenServiceModuleGraphUnavailableError({
+              reason: reasonForStatus(graphStatus),
+            });
+          }
+
           const [statuses, index] = await Promise.all([
             Promise.resolve(changeStatuses.getAll()),
             storyIndex.getIndex(),

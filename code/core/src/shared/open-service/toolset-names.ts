@@ -5,6 +5,34 @@ import type { ToolsetCtx } from './toolset-definition.ts';
 export type ToolsetMethodId = `${string}.${string}`;
 
 /**
+ * Split `toolsetId.methodName` into parts. Rejects empty segments and anything that is not exactly
+ * one separator (no truncation of `a.b.c`).
+ *
+ * Throws a plain `Error` so this module stays portable for `storybook/internal/toolsets-docs`.
+ * Registration adapters wrap with `OpenServiceInvalidToolsetMethodIdError` where appropriate.
+ */
+export function parseToolsetMethodId(methodId: string): {
+  toolsetId: string;
+  methodName: string;
+} {
+  const separator = methodId.indexOf('.');
+  if (
+    separator <= 0 ||
+    separator !== methodId.lastIndexOf('.') ||
+    separator === methodId.length - 1
+  ) {
+    // eslint-disable-next-line local-rules/no-uncategorized-errors -- portable toolsets-docs path
+    throw new Error(
+      `Invalid toolset method id "${methodId}". Expected exactly one separator: toolsetId.methodName.`
+    );
+  }
+  return {
+    toolsetId: methodId.slice(0, separator),
+    methodName: methodId.slice(separator + 1),
+  };
+}
+
+/**
  * `findByComponent` -> `find-by-component`.
  *
  * The one authority for how a method name is spelled on the CLI; the `storybook tools` command
@@ -17,14 +45,14 @@ export function toCliMethodName(methodName: string): string {
 
 /** `stories.findByComponent` -> `stories find-by-component`. */
 function toCliPath(method: ToolsetMethodId): string {
-  const [toolsetId, methodName] = method.split('.');
+  const { toolsetId, methodName } = parseToolsetMethodId(method);
   return `${toolsetId} ${toCliMethodName(methodName)}`;
 }
 
 /** `stories.findByComponent` -> `stories-find-by-component`. */
 export function toMcpToolName(method: ToolsetMethodId): string {
-  const [toolsetId, methodName] = method.split('.');
-  return `${kebabCase(toolsetId)}-${kebabCase(methodName)}`;
+  const { toolsetId, methodName } = parseToolsetMethodId(method);
+  return `${kebabCase(toolsetId)}-${toCliMethodName(methodName)}`;
 }
 
 /**

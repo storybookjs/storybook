@@ -76,6 +76,15 @@ export type ToolsetOutcome<TSuccess, TFailure = TSuccess> =
 export type AnyToolsetOutcome = ToolsetOutcome<any, any>;
 
 /**
+ * Published MCP output schemas must describe JSON objects. Used by adapters as a runtime guard
+ * when a third-party Standard Schema could bypass the static object-shape check.
+ */
+export type ToolsetObjectOutputSchema = StandardSchemaV1<
+  Record<string, unknown>,
+  Record<string, unknown>
+>;
+
+/**
  * One public method: description, input schema, optional output schema, and one handler.
  *
  * The handler produces the whole {@link ToolsetOutcome} — data, side effects, telemetry, and the
@@ -95,8 +104,8 @@ export type ToolsetMethod<
   title: string;
   description: ToolsetMethodDescription;
   input: TSchema;
-  /** Published as the MCP tool's `outputSchema`. Declare it only where the JSON is contractual. */
-  output?: AnySchema;
+  /** Published as the MCP tool's `outputSchema`. Must describe a JSON object. */
+  output?: ToolsetObjectOutputSchema;
   /**
    * Marks a method that can only do its job against a running Storybook dev server — because it
    * needs a live origin for its URLs or reads state only the dev server owns. Consumers that run
@@ -131,13 +140,46 @@ export type AnyToolsetDefinition = ToolsetDefinition;
 /**
  * What a handler may return when its method publishes an `output`: outcomes whose `data` —
  * on both branches, since adapters validate failure data into `structuredContent` too — carries at
- * least the schema's declared shape. The schema's input type is the right side of the contract,
- * because that is what the adapters' runtime validation accepts. It may be any JSON value rather
- * than only an object, matching MCP structured content.
+ * least the schema's declared shape. The open record keeps the data-superset pattern legal: the
+ * rendered Markdown may use fields the public contract does not ship. Intersecting with
+ * `Record<string, unknown>` forces a JSON object — MCP `outputSchema` / `structuredContent` reject
+ * scalars, arrays, and null.
  */
-type SchemaBoundData<TSchema extends AnySchema> = StandardSchemaV1.InferInput<TSchema>;
+type SchemaBoundData<TSchema extends AnySchema> = StandardSchemaV1.InferInput<TSchema> &
+  Record<string, unknown>;
 
-type MethodOutcomeContract<TMethod> = TMethod extends { output: infer TOut extends AnySchema }
+/**
+ * Rejects output schemas that accept non-object JSON values (MCP `structuredContent` requires an
+ * object). Probes common non-object values; a schema that accepts any of them is invalid.
+ */
+export function assertObjectCompatibleOutputSchema(
+  schema: StandardSchemaV1,
+  methodLabel: string
+): void {
+  const probes: unknown[] = [undefined, null, 'x', 1, true, []];
+  for (const probe of probes) {
+    const result = schema['~standard'].validate(probe);
+    if (result instanceof Promise) {
+      // Plain Error: this module is on the portable `toolsets-docs` path and cannot import
+      // `server-errors`. MCP adapters surface the message at registration time.
+      // eslint-disable-next-line local-rules/no-uncategorized-errors -- portable entry constraint
+      throw new Error(
+        `Invalid output schema for ${methodLabel}: output schema validation is async; MCP registration requires a sync object schema`
+      );
+    }
+    if (!result.issues) {
+      const probeLabel = probe === undefined ? 'undefined' : JSON.stringify(probe);
+      // eslint-disable-next-line local-rules/no-uncategorized-errors -- portable entry constraint
+      throw new Error(
+        `Invalid output schema for ${methodLabel}: output schema accepts ${probeLabel}; MCP structuredContent must be a JSON object`
+      );
+    }
+  }
+}
+
+type MethodOutcomeContract<TMethod> = TMethod extends {
+  output: infer TOut extends AnySchema;
+}
   ? ToolsetOutcome<SchemaBoundData<TOut>> | Promise<ToolsetOutcome<SchemaBoundData<TOut>>>
   : unknown;
 

@@ -76,6 +76,21 @@ export type ToolCallParams = {
   arguments?: Record<string, unknown>;
 };
 
+/**
+ * Join a Storybook instance base URL with an MCP endpoint pathname.
+ *
+ * Absolute pathnames like `/mcp` must keep any deployment subpath on `baseUrl`
+ * (`http://host/nested` + `/mcp` → `http://host/nested/mcp`). WHATWG `new URL('/mcp', base)`
+ * replaces the pathname instead, which drops the subpath.
+ */
+export function resolveMcpEndpointUrl(baseUrl: string, endpoint: string): string {
+  const base = new URL(baseUrl);
+  const basePath = base.pathname.replace(/\/+$/, '');
+  const endpointPath = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  base.pathname = `${basePath}${endpointPath}`.replace(/\/{2,}/g, '/') || '/';
+  return base.href;
+}
+
 /** A JSON-RPC level error returned by the Storybook MCP server (e.g. unknown tool). */
 export class McpJsonRpcError extends Error {
   constructor(
@@ -221,7 +236,7 @@ async function sendJsonRpcRequest<TResult>(
     throw new Error(`The Storybook instance at ${record.cwd} has no server endpoint registered`);
   }
 
-  const target = new URL(endpoint, record.url).href;
+  const target = resolveMcpEndpointUrl(record.url, endpoint);
 
   const sessionId = await initializeMcpSession(target, fetchImpl);
 

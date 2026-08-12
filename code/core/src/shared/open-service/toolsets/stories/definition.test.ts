@@ -2,6 +2,7 @@ import { existsSync, realpathSync } from 'node:fs';
 
 import type { StoryIndex } from 'storybook/internal/types';
 
+import { toJsonSchema } from '@valibot/to-json-schema';
 import { vol } from 'memfs';
 import { resolve } from 'pathe';
 import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -246,6 +247,21 @@ describe('stories.changed', () => {
     expect(cliCtx.getService).toHaveBeenCalledWith('core/module-graph', { internal: true });
   });
 
+  it('rejects with the graph reason rather than reporting zero changes', async () => {
+    graphStatus.mockResolvedValue({
+      value: 'unavailable',
+      reason: 'builder does not support change detection',
+    });
+
+    const error = await runChanged().catch((reason: unknown) => reason);
+
+    expect(error).toBeInstanceOf(OpenServiceModuleGraphUnavailableError);
+    expect((error as Error).message).toBe(
+      "Storybook's story dependency graph is unavailable: builder does not support change detection. Make sure the dev server is running with a builder that supports change detection."
+    );
+    expect(getStatuses).not.toHaveBeenCalled();
+  });
+
   it('degrades to "no changes detected" when git is unusable, as the pre-toolset tool did', async () => {
     getChangedFiles.mockRejectedValue(new Error('not a git repository'));
     getRepoRoot.mockRejectedValue(new Error('not a git repository'));
@@ -484,6 +500,19 @@ Do not end visual work or browse requests with these links — publish a curated
     expect(resolveToolsetDescription(withReviews.methods.preview.description, cliCtx))
       .toBe(`Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
 Do not end visual work or browse requests with these links — publish a curated review with npx storybook tools review create instead (passing changedFiles: [] when no code changed) and link that.`);
+  });
+
+  it('keeps review-create out of the static preview output schema in both review modes', () => {
+    const withoutReviews = createToolset({ reviewEnabled: false });
+    const withReviews = createToolset({ reviewEnabled: true });
+
+    for (const target of [withoutReviews, withReviews]) {
+      const serialized = JSON.stringify(
+        toJsonSchema(target.methods.preview.output as never, { errorMode: 'ignore' })
+      );
+      expect(serialized).not.toContain('review-create');
+      expect(serialized).toContain('Direct URL to open the story preview');
+    }
   });
 
   it('offers the review page as a hand-off target only when reviews are enabled', () => {

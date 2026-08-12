@@ -19,6 +19,7 @@ import {
   ManifestGetError,
   RequiresOwnMcpError,
   resolveToolsetDescription,
+  assertObjectCompatibleOutputSchema,
   toMcpToolName,
   type DocsListOutput,
   type DocsSource,
@@ -122,6 +123,10 @@ function toolMetadata(
   const [, methodName] = method.split('.') as [string, 'list' | 'show' | 'showStory'];
   const definition = metadataToolset(multiSource).methods[methodName];
   const outputSchema = outputSchemaOf(definition);
+
+  if (outputSchema) {
+    assertObjectCompatibleOutputSchema(outputSchema, toMcpToolName(method));
+  }
 
   return {
     name: toMcpToolName(method),

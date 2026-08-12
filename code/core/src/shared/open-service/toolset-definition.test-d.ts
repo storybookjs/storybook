@@ -209,4 +209,46 @@ describe('schema-bound outcomes', () => {
       },
     });
   });
+
+  it('rejects scalar output schemas', () => {
+    defineToolset({
+      id: 'scalar-output',
+      description: 'Rejected',
+      methods: {
+        create: {
+          title: 'Create',
+          description: 'Scalars are not MCP structuredContent.',
+          input: v.object({}),
+          // @ts-expect-error — output must describe a JSON object
+          output: v.string(),
+          handler: async (): Promise<ToolsetOutcome<{ title: string }, never>> => ({
+            ok: true,
+            data: { title: 'x' },
+            markdown: 'x',
+          }),
+        },
+      },
+    });
+  });
+
+  it('rejects array output schemas', () => {
+    defineToolset({
+      id: 'array-output',
+      description: 'Rejected',
+      methods: {
+        create: {
+          title: 'Create',
+          description: 'Arrays are not MCP structuredContent.',
+          input: v.object({}),
+          // @ts-expect-error — output must describe a JSON object
+          output: v.array(v.string()),
+          handler: async (): Promise<ToolsetOutcome<{ title: string }, never>> => ({
+            ok: true,
+            data: { title: 'x' },
+            markdown: 'x',
+          }),
+        },
+      },
+    });
+  });
 });

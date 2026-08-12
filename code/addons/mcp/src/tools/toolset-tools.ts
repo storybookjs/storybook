@@ -14,6 +14,7 @@ import {
   getToolset,
   resolveToolsetDescription,
   toMcpToolName,
+  assertObjectCompatibleOutputSchema,
   type AnyToolsetDefinition,
   type AnyToolsetOutcome,
   type ToolsetCtx,
@@ -156,6 +157,10 @@ export function getToolsetToolMetadata(options: ToolsetToolOptions) {
   // A zero-input method publishes no input schema, matching the hand-written tools it replaced.
   const entries = (method.input as { entries?: Record<string, unknown> }).entries;
   const hasInput = !entries || Object.keys(entries).length > 0;
+
+  if (method.output) {
+    assertObjectCompatibleOutputSchema(method.output, toMcpToolName(options.method));
+  }
 
   return {
     name: toMcpToolName(options.method),

@@ -2,7 +2,13 @@ import { versions } from 'storybook/internal/common';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { MCP_CLIENT_INFO, McpJsonRpcError, callMcpTool, listMcpTools } from './mcp-client.ts';
+import {
+  MCP_CLIENT_INFO,
+  McpJsonRpcError,
+  callMcpTool,
+  listMcpTools,
+  resolveMcpEndpointUrl,
+} from './mcp-client.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 
 const record: StorybookInstanceRecord = {
@@ -45,7 +51,7 @@ describe('callMcpTool', () => {
 
     const result = await callMcpTool(
       record,
-      { name: 'list-all-documentation', arguments: { withStoryIds: true } },
+      { name: 'docs-list', arguments: { withStoryIds: true } },
       fetchImpl
     );
 
@@ -63,7 +69,7 @@ describe('callMcpTool', () => {
       jsonrpc: '2.0',
       method: 'tools/call',
       params: {
-        name: 'list-all-documentation',
+        name: 'docs-list',
         arguments: { withStoryIds: true },
       },
     });
@@ -77,11 +83,47 @@ describe('callMcpTool', () => {
 
     await callMcpTool(
       { ...record, url: 'http://127.0.0.1:6007', mcp: { status: 'ready', endpoint: '/mcp' } },
-      { name: 'list-all-documentation' },
+      { name: 'docs-list' },
       fetchImpl
     );
 
     expect(lastCall(fetchImpl)[0]).toBe('http://127.0.0.1:6007/mcp');
+  });
+
+  it('preserves a deployment subpath when joining an absolute MCP endpoint', async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({ jsonrpc: '2.0', id: 'whatever', result: { content: [] } })
+    ) as unknown as typeof fetch;
+
+    await callMcpTool(
+      {
+        ...record,
+        url: 'http://localhost:6006/nested',
+        mcp: { status: 'ready', endpoint: '/mcp' },
+      },
+      { name: 'docs-list' },
+      fetchImpl
+    );
+
+    expect(lastCall(fetchImpl)[0]).toBe('http://localhost:6006/nested/mcp');
+  });
+
+  it('joins a custom endpoint under a trailing-slash subpath without duplicating segments', async () => {
+    const fetchImpl = vi.fn(async () =>
+      jsonResponse({ jsonrpc: '2.0', id: 'whatever', result: { content: [] } })
+    ) as unknown as typeof fetch;
+
+    await callMcpTool(
+      {
+        ...record,
+        url: 'http://localhost:6006/storybook/',
+        mcp: { status: 'ready', endpoint: '/custom/mcp' },
+      },
+      { name: 'docs-list' },
+      fetchImpl
+    );
+
+    expect(lastCall(fetchImpl)[0]).toBe('http://localhost:6006/storybook/custom/mcp');
   });
 
   it('parses a single-event SSE response (text/event-stream)', async () => {
@@ -91,7 +133,7 @@ describe('callMcpTool', () => {
       '\n';
     const fetchImpl = (async () => sseResponse(sseBody)) as typeof fetch;
 
-    const result = await callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl);
+    const result = await callMcpTool(record, { name: 'docs-list' }, fetchImpl);
     expect(result.content).toEqual([{ type: 'text', text: 'hi' }]);
   });
 
@@ -108,31 +150,31 @@ describe('callMcpTool', () => {
     const sseBody = `event: message\n${dataLines}\n\n`;
     const fetchImpl = (async () => sseResponse(sseBody)) as typeof fetch;
 
-    const result = await callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl);
+    const result = await callMcpTool(record, { name: 'docs-list' }, fetchImpl);
     expect(result.content?.[0]).toEqual({ type: 'text', text: 'line\nwith newline' });
   });
 
   it('throws on SSE responses that contain no data event', async () => {
     const fetchImpl = (async () => sseResponse('event: ping\n\n')) as typeof fetch;
-    await expect(
-      callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl)
-    ).rejects.toThrow(/SSE response with no data event/);
+    await expect(callMcpTool(record, { name: 'docs-list' }, fetchImpl)).rejects.toThrow(
+      /SSE response with no data event/
+    );
   });
 
   it('throws when the record has no mcp.endpoint', async () => {
     const noEndpoint: StorybookInstanceRecord = { ...record, mcp: { status: 'ready' } };
     const fetchImpl = vi.fn() as unknown as typeof fetch;
-    await expect(
-      callMcpTool(noEndpoint, { name: 'list-all-documentation' }, fetchImpl)
-    ).rejects.toThrow(/has no server endpoint registered/);
+    await expect(callMcpTool(noEndpoint, { name: 'docs-list' }, fetchImpl)).rejects.toThrow(
+      /has no server endpoint registered/
+    );
   });
 
   it('throws when the response is not ok', async () => {
     const fetchImpl = (async () =>
       new Response('boom', { status: 500, statusText: 'Server Error' })) as typeof fetch;
-    await expect(
-      callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl)
-    ).rejects.toThrow(/responded with 500/);
+    await expect(callMcpTool(record, { name: 'docs-list' }, fetchImpl)).rejects.toThrow(
+      /responded with 500/
+    );
   });
 
   it('throws when the response content-type is neither JSON nor SSE', async () => {
@@ -141,9 +183,9 @@ describe('callMcpTool', () => {
         status: 200,
         headers: { 'Content-Type': 'text/html' },
       })) as typeof fetch;
-    await expect(
-      callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl)
-    ).rejects.toThrow(/unsupported content-type "text\/html"/);
+    await expect(callMcpTool(record, { name: 'docs-list' }, fetchImpl)).rejects.toThrow(
+      /unsupported content-type "text\/html"/
+    );
   });
 
   it('throws an McpJsonRpcError when the JSON-RPC payload carries an error', async () => {
@@ -168,9 +210,9 @@ describe('callMcpTool', () => {
     ['a malformed error object', { jsonrpc: '2.0', id: 1, error: { code: 'x' } }],
   ])('rejects %s as an unexpected response shape', async (_label, body) => {
     const fetchImpl = (async () => jsonResponse(body)) as typeof fetch;
-    await expect(
-      callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl)
-    ).rejects.toThrow(/unexpected response shape/);
+    await expect(callMcpTool(record, { name: 'docs-list' }, fetchImpl)).rejects.toThrow(
+      /unexpected response shape/
+    );
   });
 
   it('passes through extra content fields and result keys (loose validation)', async () => {
@@ -191,8 +233,8 @@ describe('callMcpTool', () => {
 describe('listMcpTools', () => {
   it('POSTs a JSON-RPC tools/list request and returns the tool descriptors', async () => {
     const tools = [
-      { name: 'get-documentation', description: 'Docs', inputSchema: { properties: {} } },
-      { name: 'list-all-documentation' },
+      { name: 'docs-show', description: 'Docs', inputSchema: { properties: {} } },
+      { name: 'docs-list' },
     ];
     const fetchImpl = vi.fn(async () =>
       jsonResponse({ jsonrpc: '2.0', id: 'x', result: { tools } })
@@ -256,7 +298,7 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
       .mockResolvedValueOnce(initializeResponse('session-1'))
       .mockResolvedValueOnce(toolResult()) as unknown as typeof fetch;
 
-    await callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl);
+    await callMcpTool(record, { name: 'docs-list' }, fetchImpl);
 
     expect(fetchImpl).toHaveBeenCalledTimes(2);
     const [initTarget, initInit] = vi.mocked(fetchImpl).mock.calls[0];
@@ -280,7 +322,7 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
       .mockResolvedValueOnce(initializeResponse('session-42'))
       .mockResolvedValueOnce(toolResult()) as unknown as typeof fetch;
 
-    await callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl);
+    await callMcpTool(record, { name: 'docs-list' }, fetchImpl);
 
     const headers = (lastCall(fetchImpl)[1] as RequestInit).headers as Record<string, string>;
     expect(headers['Mcp-Session-Id']).toBe('session-42');
@@ -292,7 +334,7 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
       .mockResolvedValueOnce(initializeResponse(undefined))
       .mockResolvedValueOnce(toolResult()) as unknown as typeof fetch;
 
-    const result = await callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl);
+    const result = await callMcpTool(record, { name: 'docs-list' }, fetchImpl);
 
     expect(result.content).toEqual([{ type: 'text', text: 'hi' }]);
     const headers = (lastCall(fetchImpl)[1] as RequestInit).headers as Record<string, string>;
@@ -305,7 +347,7 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
       .mockRejectedValueOnce(new Error('connection refused'))
       .mockResolvedValueOnce(toolResult()) as unknown as typeof fetch;
 
-    const result = await callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl);
+    const result = await callMcpTool(record, { name: 'docs-list' }, fetchImpl);
 
     expect(result.content).toEqual([{ type: 'text', text: 'hi' }]);
     const headers = (lastCall(fetchImpl)[1] as RequestInit).headers as Record<string, string>;
@@ -326,7 +368,7 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
       )
       .mockResolvedValueOnce(toolResult()) as unknown as typeof fetch;
 
-    await callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl);
+    await callMcpTool(record, { name: 'docs-list' }, fetchImpl);
 
     const headers = (lastCall(fetchImpl)[1] as RequestInit).headers as Record<string, string>;
     expect(headers).not.toHaveProperty('Mcp-Session-Id');
@@ -357,7 +399,7 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
         return toolResult();
       }) as unknown as typeof fetch;
 
-    await callMcpTool(record, { name: 'list-all-documentation' }, fetchImpl);
+    await callMcpTool(record, { name: 'docs-list' }, fetchImpl);
     expect(drained).toBe(true);
   });
 
@@ -397,7 +439,7 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
     ],
     ['no result', () => jsonResponse({ jsonrpc: '2.0', id: 'init' })],
   ])('keeps tools/list working when initialize returns %s', async (_label, initResponse) => {
-    const tools = [{ name: 'get-documentation', description: 'Get docs' }];
+    const tools = [{ name: 'docs-show', description: 'Get docs' }];
     const fetchImpl = vi
       .fn()
       .mockResolvedValueOnce(initResponse())
@@ -407,7 +449,7 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
   });
 
   it('keeps listMcpTools returning only the tool descriptors', async () => {
-    const tools = [{ name: 'get-documentation', description: 'Get docs' }];
+    const tools = [{ name: 'docs-show', description: 'Get docs' }];
     const fetchImpl = vi
       .fn()
       .mockResolvedValueOnce(initializeResponse('session-1'))
@@ -416,5 +458,22 @@ describe('initialize handshake (clientInfo for telemetry segmentation)', () => {
       ) as unknown as typeof fetch;
 
     await expect(listMcpTools(record, fetchImpl)).resolves.toEqual(tools);
+  });
+});
+
+describe('resolveMcpEndpointUrl', () => {
+  it.each([
+    ['http://localhost:6006', '/mcp', 'http://localhost:6006/mcp'],
+    ['http://localhost:6006/', '/mcp', 'http://localhost:6006/mcp'],
+    ['http://localhost:6006/nested', '/mcp', 'http://localhost:6006/nested/mcp'],
+    ['http://localhost:6006/nested/', '/mcp', 'http://localhost:6006/nested/mcp'],
+    [
+      'http://localhost:6006/storybook',
+      '/custom/mcp',
+      'http://localhost:6006/storybook/custom/mcp',
+    ],
+    ['http://localhost:6006/nested', 'mcp', 'http://localhost:6006/nested/mcp'],
+  ])('%s + %s → %s', (base, endpoint, expected) => {
+    expect(resolveMcpEndpointUrl(base, endpoint)).toBe(expected);
   });
 });

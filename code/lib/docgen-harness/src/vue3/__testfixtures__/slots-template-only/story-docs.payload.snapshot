@@ -21,9 +21,12 @@ const header = 'Header text';
 </script>
 
 <template>
-  <TemplateOnlySlots> {{ _default }}
-
-<template #header>{{ header }}</template> </TemplateOnlySlots>
+  <TemplateOnlySlots>
+    {{ _default }}
+    <template #header>
+      {{ header }}
+    </template>
+  </TemplateOnlySlots>
 </template>",
       "summary": undefined,
     },

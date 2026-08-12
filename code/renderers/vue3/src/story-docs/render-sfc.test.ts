@@ -68,9 +68,14 @@ const ref2 = {};
   it('renders slots as children and named slots as templates', () => {
     const snippet = render([slot('header', `'Title'`), slot('default', `'Body'`)]);
 
-    expect(snippet).toBe(
-      `<template>\n  <C> Body\n\n<template #header>Title</template> </C>\n</template>`
-    );
+    expect(snippet).toBe(`<template>
+  <C>
+    Body
+    <template #header>
+      Title
+    </template>
+  </C>
+</template>`);
   });
 
   it('interpolates a hoisted slot value', () => {
@@ -83,7 +88,7 @@ const ref2 = {};
     const snippet = render([slot('default', `'<script>{{ evil }}</script>'`, 'hoist')]);
 
     expect(snippet).toContain('const _default = "<script>{{ evil }}</script>";');
-    expect(snippet).toContain('<C> {{ _default }} </C>');
+    expect(snippet).toContain('<C>\n    {{ _default }}\n  </C>');
   });
 
   it('hoists a listener and renders it as a Vue event binding', () => {

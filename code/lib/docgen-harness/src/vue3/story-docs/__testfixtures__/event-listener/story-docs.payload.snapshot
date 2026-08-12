@@ -17,7 +17,9 @@ const _default = 'Submit now';
 </script>
 
 <template>
-  <EventListenerForm :formatter="formatter" label="Send" @submit="onSubmit"> {{ _default }} </EventListenerForm>
+  <EventListenerForm :formatter="formatter" label="Send" @submit="onSubmit">
+    {{ _default }}
+  </EventListenerForm>
 </template>",
       "summary": undefined,
     },

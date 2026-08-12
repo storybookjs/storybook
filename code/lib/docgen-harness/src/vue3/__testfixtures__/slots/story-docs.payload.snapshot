@@ -19,7 +19,9 @@ const _default = 'Plain text content';
 </script>
 
 <template>
-  <SlotsShowcase heading="Plain"> {{ _default }} </SlotsShowcase>
+  <SlotsShowcase heading="Plain">
+    {{ _default }}
+  </SlotsShowcase>
 </template>",
       "summary": undefined,
     },

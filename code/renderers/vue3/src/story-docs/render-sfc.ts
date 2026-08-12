@@ -42,12 +42,12 @@ export function renderSfcSnippet(input: RenderSfcInput): string {
     .filter((arg) => arg.role === 'slot')
     .sort((a, b) => slotSortKey(a.name).localeCompare(slotSortKey(b.name)))
     .map((arg) => renderSlotArg(arg, ctx))
-    .join('\n\n');
+    .join('\n');
   const openTag = [input.componentName, ...props, ...events].join(' ');
   const templateCode = slotSourceCode
-    ? `<${openTag}> ${slotSourceCode} </${input.componentName}>`
+    ? `<${openTag}>\n${indent(slotSourceCode)}\n</${input.componentName}>`
     : `<${openTag} />`;
-  const template = `<template>\n  ${templateCode}\n</template>`;
+  const template = `<template>\n${indent(templateCode)}\n</template>`;
   const script = renderScript(ctx);
 
   return script ? `${script}\n\n${template}` : template;
@@ -102,7 +102,9 @@ function renderEventArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
 
 function renderSlotArg(arg: ClassifiedArg, ctx: RenderContext): string {
   const content = renderSlotContent(arg, ctx);
-  return arg.name === 'default' ? content : `<template #${arg.name}>${content}</template>`;
+  return arg.name === 'default'
+    ? content
+    : `<template #${arg.name}>\n${indent(content)}\n</template>`;
 }
 
 /**
@@ -189,4 +191,11 @@ function quoteAttributeValue(value: string): string | undefined {
 
 function slotSortKey(name: string): string {
   return name === 'default' ? '' : name;
+}
+
+function indent(source: string): string {
+  return source
+    .split('\n')
+    .map((line) => `  ${line}`)
+    .join('\n');
 }

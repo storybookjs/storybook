@@ -15,9 +15,12 @@ const header = 'Header copy';
 </script>
 
 <template>
-  <SlotsPanel :footer="42"> {{ _default }}
-
-<template #header>{{ header }}</template> </SlotsPanel>
+  <SlotsPanel :footer="42">
+    {{ _default }}
+    <template #header>
+      {{ header }}
+    </template>
+  </SlotsPanel>
 </template>",
       "summary": undefined,
     },

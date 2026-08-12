@@ -8,10 +8,16 @@
       "description": undefined,
       "id": "forms-slots--primary",
       "name": "Primary",
-      "snippet": "<template>
-  <SlotsPanel :footer="42"> Body copy
+      "snippet": "<script lang="ts" setup>
+const _default = 'Body copy';
 
-<template #header>Header copy</template> </SlotsPanel>
+const header = 'Header copy';
+</script>
+
+<template>
+  <SlotsPanel :footer="42"> {{ _default }}
+
+<template #header>{{ header }}</template> </SlotsPanel>
 </template>",
       "summary": undefined,
     },

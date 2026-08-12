@@ -79,6 +79,13 @@ const ref2 = {};
     expect(snippet).toContain('{{ _default }}');
   });
 
+  it('interpolates raw slot strings through a hoisted binding', () => {
+    const snippet = render([slot('default', `'<script>{{ evil }}</script>'`, 'hoist')]);
+
+    expect(snippet).toContain('const _default = "<script>{{ evil }}</script>";');
+    expect(snippet).toContain('<C> {{ _default }} </C>');
+  });
+
   it('hoists a listener and renders it as a Vue event binding', () => {
     const snippet = render([event('onSubmit', 'submit', '() => null')]);
 

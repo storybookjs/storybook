@@ -81,7 +81,12 @@ export function classifyArgs(
         const plan = classifyValue(returned);
 
         if (plan.kind === 'inline' || plan.kind === 'hoist') {
-          classified.push({ name, value: returned, role: 'slot', plan });
+          classified.push({
+            name,
+            value: returned,
+            role: 'slot',
+            plan: planSlotValue(returned, plan),
+          });
           continue;
         }
 
@@ -128,7 +133,12 @@ export function classifyArgs(
     }
 
     const role: ArgRole = isSlot ? 'slot' : docgen.events.has(`update:${name}`) ? 'model' : 'prop';
-    classified.push({ name, value, role, plan });
+    classified.push({
+      name,
+      value,
+      role,
+      plan: role === 'slot' ? planSlotValue(value, plan) : plan,
+    });
   }
 
   // A snippet showing none of the args the story actually sets is a worse example than the one the
@@ -143,6 +153,10 @@ export function classifyArgs(
       ? { warning: `Omitted args that cannot be resolved statically: ${omitted.join(', ')}` }
       : {}),
   };
+}
+
+function planSlotValue(value: t.Node, plan: RenderableValuePlan): RenderableValuePlan {
+  return unwrapValue(value).type === 'StringLiteral' ? { kind: 'hoist' } : plan;
 }
 
 /**

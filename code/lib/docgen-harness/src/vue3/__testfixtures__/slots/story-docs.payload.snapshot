@@ -14,8 +14,12 @@
       "description": undefined,
       "id": "forms-slots--string-child",
       "name": "String Child",
-      "snippet": "<template>
-  <SlotsShowcase heading="Plain"> Plain text content </SlotsShowcase>
+      "snippet": "<script lang="ts" setup>
+const _default = 'Plain text content';
+</script>
+
+<template>
+  <SlotsShowcase heading="Plain"> {{ _default }} </SlotsShowcase>
 </template>",
       "summary": undefined,
     },

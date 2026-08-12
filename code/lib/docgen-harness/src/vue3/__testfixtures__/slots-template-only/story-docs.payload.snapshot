@@ -14,10 +14,16 @@
       "description": undefined,
       "id": "forms-slots-template-only--string-child",
       "name": "String Child",
-      "snippet": "<template>
-  <TemplateOnlySlots> Plain text content
+      "snippet": "<script lang="ts" setup>
+const _default = 'Plain text content';
 
-<template #header>Header text</template> </TemplateOnlySlots>
+const header = 'Header text';
+</script>
+
+<template>
+  <TemplateOnlySlots> {{ _default }}
+
+<template #header>{{ header }}</template> </TemplateOnlySlots>
 </template>",
       "summary": undefined,
     },

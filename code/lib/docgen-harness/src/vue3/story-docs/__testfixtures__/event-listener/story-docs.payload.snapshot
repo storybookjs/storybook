@@ -12,10 +12,12 @@
 const formatter = (value: string) => value.toUpperCase();
 
 const onSubmit = (payload: { value: string }) => console.log(payload);
+
+const _default = 'Submit now';
 </script>
 
 <template>
-  <EventListenerForm :formatter="formatter" label="Send" @submit="onSubmit"> Submit now </EventListenerForm>
+  <EventListenerForm :formatter="formatter" label="Send" @submit="onSubmit"> {{ _default }} </EventListenerForm>
 </template>",
       "summary": undefined,
     },

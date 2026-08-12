@@ -1,5 +1,6 @@
 {
   "id": "basic",
+  "import": "import { BasicComponent } from './basic.component.ts';",
   "name": "BasicComponent",
   "path": "__PATH__",
   "stories": {

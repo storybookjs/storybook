@@ -1,5 +1,6 @@
 {
   "id": "import-alias",
+  "import": "import { ImportAliasComponent as Alias } from './aliased.component.ts';",
   "name": "ImportAliasComponent",
   "path": "__PATH__",
   "stories": {

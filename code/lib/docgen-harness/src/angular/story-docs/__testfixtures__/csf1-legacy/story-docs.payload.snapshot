@@ -1,5 +1,6 @@
 {
   "id": "csf1-legacy",
+  "import": "import { CsfOneLegacyComponent } from './csf1-legacy.component.ts';",
   "name": "CsfOneLegacyComponent",
   "path": "__PATH__",
   "stories": {

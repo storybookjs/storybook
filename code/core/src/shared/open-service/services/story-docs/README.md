@@ -10,8 +10,11 @@ preserving `parameters.docs.source.transform` handling in preview.
 
 ## Import snippets
 
-Story-docs builds file-level `import` statements from CSF import analysis (`getImports`). This
-does **not** currently honor the component `@import` JSDoc override tag that the legacy combined
-manifest applied after RCM extraction. Imports are derived from resolved import paths and package
-name rewriting only. Support for `@import` overrides will return when story-docs can read
-component-source JSDoc without coupling to the docgen service.
+Story-docs builds file-level `import` statements from CSF import analysis, shared across providers
+by `buildImportStatements` in `csf-tools`.
+
+The component `@import` JSDoc override tag is honored only where a provider already reads the
+component source. The Angular provider owns an analyzer for its snippets, so it passes the tag
+through; React and Vue derive imports from resolved import paths and package name rewriting only,
+and will honor the tag once story-docs can read component-source JSDoc without coupling to the
+docgen service.

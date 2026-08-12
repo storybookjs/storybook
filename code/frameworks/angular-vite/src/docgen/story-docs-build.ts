@@ -4,9 +4,12 @@ import { storyNameFromExport } from 'storybook/internal/csf';
 import type { CsfFile } from 'storybook/internal/csf-tools';
 import {
   argsRecordFromNode,
+  buildImportStatements,
+  collectImportBindings,
   extractStoryJSDocInfo,
   keyOf,
   mergeArgsRecords,
+  resolveComponentImport,
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
@@ -69,13 +72,34 @@ export const buildStoryDocsPayload = async (
   }
 
   const titleName = input.entry.title.split('/').at(-1)!.replace(/\s+/g, '');
+  const componentName = componentNameOf(componentNode);
+  const importStatement = componentName && createImportStatement(componentName, csf, docgenPayload);
+
   return {
     id: getComponentIdFromEntry(input.entry),
     // The docgen payload knows the class name even when the story file imported it under an alias.
-    name: docgenPayload?.name ?? componentNameOf(componentNode) ?? titleName,
+    name: docgenPayload?.name ?? componentName ?? titleName,
     path: storyImportPath,
+    ...(importStatement ? { import: importStatement } : {}),
     stories,
   };
+};
+
+/**
+ * The import statement a docs consumer needs to use the component, as the story file writes it.
+ *
+ * A component declared inside the story file binds to no import and so contributes no statement. An
+ * `@import` tag on the component class replaces the derived one, for components published under a
+ * different specifier than the story file resolves through.
+ */
+const createImportStatement = (
+  componentName: string,
+  csf: CsfFile,
+  docgenPayload: AngularDocgenPayload | undefined
+): string | undefined => {
+  const ref = resolveComponentImport(componentName, collectImportBindings(csf._file.path));
+  const importOverride = docgenPayload?.jsDocTags?.import?.[0]?.trim();
+  return buildImportStatements({ refs: [{ ...ref, importOverride }] }).join('\n') || undefined;
 };
 
 // Mirrors the resolver's reading of `meta.component`, keeping the payload named after the story

@@ -1,5 +1,6 @@
 {
   "id": "args-formatting",
+  "import": "import { ArgsFormattingComponent } from './args-formatting.component.ts';",
   "name": "ArgsFormattingComponent",
   "path": "__PATH__",
   "stories": {

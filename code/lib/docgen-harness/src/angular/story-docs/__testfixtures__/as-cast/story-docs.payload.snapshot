@@ -1,5 +1,6 @@
 {
   "id": "as-cast",
+  "import": "import { AsCastComponent } from './as-cast.component.ts';",
   "name": "AsCastComponent",
   "path": "__PATH__",
   "stories": {

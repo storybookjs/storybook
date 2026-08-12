@@ -1,0 +1,13 @@
+{
+  "id": "import-override",
+  "import": "import { OverrideComponent } from '@design-system/components';",
+  "name": "OverrideComponent",
+  "path": "__PATH__",
+  "stories": {
+    "storydocs-import-override--primary": {
+      "id": "storydocs-import-override--primary",
+      "name": "Primary",
+      "snippet": "<sb-import-override [heading]="'Overridden'"></sb-import-override>",
+    },
+  },
+}

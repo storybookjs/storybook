@@ -1,5 +1,6 @@
 {
   "id": "csf4",
+  "import": "import { CsfFourComponent } from './csf4.component.ts';",
   "name": "CsfFourComponent",
   "path": "__PATH__",
   "stories": {

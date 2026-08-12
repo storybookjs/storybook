@@ -40,9 +40,9 @@ export type StoryDocsById = Record<string, StoryDoc>;
 /**
  * Story-docs payload returned by `core/story-docs`'s `storyDocs` query.
  *
- * Carries per-story snippets and descriptions plus file-level import statements. Import snippets
- * do not currently honor the component `@import` JSDoc override tag — see the story-docs service
- * README for details.
+ * Carries per-story snippets and descriptions plus file-level import statements. Whether an import
+ * statement honors the component `@import` JSDoc override tag is up to the provider — see the
+ * story-docs service README for details.
  */
 export interface StoryDocsPayload {
   id: string;

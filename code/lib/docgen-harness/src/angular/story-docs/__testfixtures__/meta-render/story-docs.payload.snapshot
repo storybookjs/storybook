@@ -1,5 +1,6 @@
 {
   "id": "meta-render",
+  "import": "import { MetaRenderComponent } from './meta-render.component.ts';",
   "name": "MetaRenderComponent",
   "path": "__PATH__",
   "stories": {

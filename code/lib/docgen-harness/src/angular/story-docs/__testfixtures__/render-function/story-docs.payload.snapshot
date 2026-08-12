@@ -1,5 +1,6 @@
 {
   "id": "render-function",
+  "import": "import { RenderFunctionComponent } from './render-function.component.ts';",
   "name": "RenderFunctionComponent",
   "path": "__PATH__",
   "stories": {

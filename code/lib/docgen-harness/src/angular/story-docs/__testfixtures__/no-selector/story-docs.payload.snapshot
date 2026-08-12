@@ -1,5 +1,6 @@
 {
   "id": "no-selector",
+  "import": "import { NoSelectorComponent } from './no-selector.component.ts';",
   "name": "NoSelectorComponent",
   "path": "__PATH__",
   "stories": {

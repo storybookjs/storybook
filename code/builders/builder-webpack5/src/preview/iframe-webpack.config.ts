@@ -24,7 +24,10 @@ import type { Configuration } from 'webpack';
 import VirtualModulePlugin from 'webpack-virtual-modules';
 
 import type { TypescriptOptions } from '../types.ts';
-import { createPreviewFilename } from './preview-filename.ts';
+import {
+  developmentPreviewChunkFilename,
+  productionPreviewChunkFilename,
+} from './preview-filename.ts';
 import { getVirtualModules } from './virtual-module-mapping.ts';
 
 const { DefinePlugin, HotModuleReplacementPlugin, ProgressPlugin } = webpackModule;
@@ -120,7 +123,7 @@ export default async (
     output: {
       path: resolve(process.cwd(), outputDir),
       filename: isProd ? '[name].[contenthash:8].iframe.bundle.js' : '[name].iframe.bundle.js',
-      chunkFilename: createPreviewFilename(isProd),
+      chunkFilename: isProd ? productionPreviewChunkFilename : developmentPreviewChunkFilename,
       publicPath: '',
     },
     stats: {

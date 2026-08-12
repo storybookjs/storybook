@@ -4,13 +4,20 @@ import { createFsFromVolume, Volume } from 'memfs';
 import webpack from 'webpack';
 import type { PathData } from 'webpack';
 
-import { createPreviewFilename } from './preview-filename.ts';
+import {
+  developmentPreviewChunkFilename,
+  productionPreviewChunkFilename,
+} from './preview-filename.ts';
 
-const filenameFor = (name: string, isProd = false) =>
-  createPreviewFilename(isProd)({ chunk: { id: name, name, hash: '' } });
+const filenameFor = (name: string, isProd = false) => {
+  const pathData = { chunk: { id: name, name, hash: '' } };
+  return isProd
+    ? productionPreviewChunkFilename(pathData)
+    : developmentPreviewChunkFilename(pathData);
+};
 
 const filenameForChunk = (chunk: { id?: string | number; name?: string }) =>
-  createPreviewFilename(false)({
+  developmentPreviewChunkFilename({
     chunk: { ...chunk, hash: '' } as NonNullable<PathData['chunk']>,
   });
 
@@ -30,7 +37,7 @@ const compile = async (source: string, isProd: boolean) => {
     output: {
       path: '/dist',
       filename: isProd ? '[name].[contenthash:8].iframe.bundle.js' : '[name].iframe.bundle.js',
-      chunkFilename: createPreviewFilename(isProd),
+      chunkFilename: isProd ? productionPreviewChunkFilename : developmentPreviewChunkFilename,
     },
   });
   compiler.inputFileSystem = filesystem as typeof compiler.inputFileSystem;
@@ -56,7 +63,7 @@ const compile = async (source: string, isProd: boolean) => {
   return stats.toJson({ all: false, assets: true }).assets?.map(({ name }) => name) ?? [];
 };
 
-describe('createPreviewFilename', () => {
+describe('preview chunk filenames', () => {
   it('keeps normal development chunk names readable', () => {
     expect(filenameFor('src-components-button-stories')).toBe(
       'src-components-button-stories.iframe.bundle.js'
@@ -70,7 +77,7 @@ describe('createPreviewFilename', () => {
   it('uses a generic fallback when the chunk name and id are missing', () => {
     expect(filenameForChunk({ name: '' })).toBe('chunk.iframe.bundle.js');
     expect(filenameForChunk({})).toBe('chunk.iframe.bundle.js');
-    expect(createPreviewFilename(false)({})).toBe('chunk.iframe.bundle.js');
+    expect(developmentPreviewChunkFilename({})).toBe('chunk.iframe.bundle.js');
   });
 
   it('retains numeric chunk id zero', () => {

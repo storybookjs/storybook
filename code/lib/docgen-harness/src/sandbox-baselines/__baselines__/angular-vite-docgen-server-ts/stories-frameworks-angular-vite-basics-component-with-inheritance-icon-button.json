@@ -1,13 +1,12 @@
 {
   "argTypes": {
     "icon": {
-      "description": "\n",
       "name": "icon",
       "table": {
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },
@@ -16,13 +15,12 @@
       }
     },
     "label": {
-      "description": "\n",
       "name": "label",
       "table": {
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },

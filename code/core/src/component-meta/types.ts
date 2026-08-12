@@ -34,6 +34,14 @@ export interface ComponentMetaFileSystem {
   };
 }
 
+export interface ProjectFileSystem {
+  sys: {
+    fileExists(path: string): boolean;
+    readFile(path: string): string | undefined;
+    getModifiedTime?(path: string): Date | undefined;
+  };
+}
+
 /**
  * Contract a per-tsconfig project must satisfy for {@link ../ComponentMetaManager} to manage it.
  *
@@ -72,6 +80,12 @@ export interface ComponentMetaProjectFactory<
   createConfiguredProject(commandLine: CL, tsconfig: string, getCommandLine: () => CL): P;
   /** Project for files no discovered tsconfig covers; owns its own default compiler options. */
   createInferredProject(): P;
+  /**
+   * Called when heap pressure recycles the projects. A factory-owned cache that outlives individual
+   * projects has to be dropped here too, or the memory floor survives the mechanism meant to lower
+   * it.
+   */
+  recycle?(): void;
   /** Called from the manager's `dispose()` so factory-owned caches die with the manager. */
   dispose?(): void;
 }

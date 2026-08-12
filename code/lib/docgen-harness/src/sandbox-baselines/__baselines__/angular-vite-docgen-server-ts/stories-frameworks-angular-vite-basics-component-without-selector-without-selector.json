@@ -1,7 +1,6 @@
 {
   "argTypes": {
     "color": {
-      "description": "\n",
       "name": "color",
       "table": {
         "category": "properties",
@@ -18,7 +17,6 @@
       }
     },
     "name": {
-      "description": "\n",
       "name": "name",
       "table": {
         "category": "properties",

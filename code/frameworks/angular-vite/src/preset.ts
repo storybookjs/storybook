@@ -80,34 +80,14 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     }
   }
 
-  // Remove any loaded analogjs plugins from a vite.config.(m)ts file, and
-  // demote storybook's CSF plugin out of the "pre" bucket. csf-plugin and
-  // analogjs both declare `enforce: 'pre'`; within the same enforce bucket
-  // plugins run in registration order. builder-vite registers `plugin-csf`
-  // first, then this preset adds analogjs, so analogjs's transform — which
-  // discards the incoming `code` and re-emits from its own TS file emitter —
-  // silently overwrites the csf enrichment that adds
-  // `parameters.docs.description.story` / `parameters.docs.source
-  // .originalSource`. Demoting csf-plugin to the normal stage means it runs
-  // after analogjs has produced its compiled JS, so the enrichment lands in
-  // the bundle. csf-plugin reads the original source from disk (not the
-  // upstream `code`), so the JSDoc/source extraction is unaffected.
   // Drop any analogjs plugin loaded from the user's vite.config(.m)ts file —
-  // we register our own pinned-to-`enforce: 'pre'` instance below. Demote
-  // builder-vite's csf-plugin out of the `pre` bucket so analogjs (also
-  // `enforce: 'pre'`) doesn't overwrite csf-plugin's docs/story enrichment.
+  // we register our own pinned-to-`enforce: 'pre'` instance below.
   // The post-analogjs `angularViteRedirectReapplyPlugin` handles every mock
   // contract (redirects + automock) on top of analogjs's emitted JS, so we
   // don't need to demote `storybook:mock-loader` here.
   config.plugins = (config.plugins ?? [])
     .flat()
-    .filter((plugin: any) => !plugin.name.includes('analogjs'))
-    .map((plugin: any) => {
-      if (plugin?.name === 'plugin-csf' && plugin.enforce === 'pre') {
-        return { ...plugin, enforce: undefined };
-      }
-      return plugin;
-    });
+    .filter((plugin: any) => !plugin?.name?.includes('analogjs'));
 
   // Merge custom configuration into the default config
   const { mergeConfig, normalizePath } = await import('vite');
@@ -117,9 +97,8 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   const framework = await options.presets.apply('framework');
 
   // `storybook init` writes a static `import docJson from '../documentation.json'` into the Angular
-  // preview, so the file has to exist before Vite resolves it - in every process that builds a
-  // preview, whatever the docgen feature flag says. Generation is marked per run, so the docgen
-  // worker's own trigger costs one file read rather than a second scan.
+  // preview, so the file has to exist before Vite resolves it, in every process that builds a
+  // preview and whatever the docgen feature flag says.
   const compodocConfig = await resolveCompodocConfig(options, { viteRoot: config?.root });
   if (compodocConfig.enabled) {
     await ensureCompodocDocumentation({
@@ -149,9 +128,10 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   // so it transforms `.ts` sources before storybook's automock plugin
   // (`storybook:mock-loader`) runs. analogjs's transform re-emits files
   // from its own internal Angular file emitter and discards the incoming
-  // `code`, so anything mock-loader or csf-plugin did upstream is wiped
-  // unless those plugins run *after* analogjs (see csf-plugin demote
-  // above and `angularViteRedirectReapplyPlugin`).
+  // `code`, so anything mock-loader did upstream is wiped unless those
+  // plugins run *after* analogjs (`angularViteRedirectReapplyPlugin`).
+  // addon-docs' CSF plugin stays in the same `pre` bucket but uses
+  // `transform.order: 'post'` so enrichment lands on analogjs output.
   const pluginsToInject = (Array.isArray(angularPlugins) ? angularPlugins : [angularPlugins])
     .filter(Boolean)
     .map((plugin: any) => {

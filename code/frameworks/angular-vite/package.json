@@ -83,6 +83,7 @@
     "@angular/platform-browser": "^21.2.14",
     "@angular/platform-browser-dynamic": "^21.2.14",
     "@babel/types": "^7.28.5",
+    "@storybook/angular-cm": "workspace:*",
     "@storybook/angular-compodoc": "workspace:*",
     "@types/node": "^22.19.1",
     "empathic": "^2.0.0",

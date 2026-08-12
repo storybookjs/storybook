@@ -1,7 +1,6 @@
 {
   "argTypes": {
     "doCreateAccount": {
-      "description": "\n",
       "name": "doCreateAccount",
       "table": {
         "category": "methods",
@@ -17,7 +16,6 @@
       }
     },
     "doLogin": {
-      "description": "\n",
       "name": "doLogin",
       "table": {
         "category": "methods",
@@ -33,7 +31,6 @@
       }
     },
     "doLogout": {
-      "description": "\n",
       "name": "doLogout",
       "table": {
         "category": "methods",
@@ -49,7 +46,6 @@
       }
     },
     "user": {
-      "description": "\n",
       "name": "user",
       "table": {
         "category": "properties",

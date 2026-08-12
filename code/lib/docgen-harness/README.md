@@ -67,19 +67,30 @@ src/
 - argTypes: every baseline key, description, default value, and type must survive.
   A type may only change by normalized deep equality or a clear improvement - a catch-all becoming structured, a literal union gaining members.
   About half the corpus records `other`, where the legacy engine parked free text it could not resolve (`TreeNode`, `Array([object Object])`, `{ theme: string; dense: boolean }`).
-  Such a stub accepts a candidate that adds structure or resolves it to the scalar it already named; an unrelated scalar is a lateral change and fails.
+  Such a stub accepts a candidate that adds populated structure (an empty enum/union/object is not an improvement) or resolves it to the scalar or single literal it already named; an unrelated scalar or literal is a lateral change and fails.
   Only the three markers that record nothing at all accept any candidate: `empty-enum`, `undefined`, and the empty string - today's Angular and Vue spellings, so adding a framework means revisiting that list.
   A resolution the rule cannot recognize (legacy `TSFunctionType` becoming a `function` sbType, say) fails rather than guessing; re-record and review the diff.
-  `required`, `table.category`, `jsDocTags`, `control`/`action`, and description/default contents are deliberately not compared; each would lock in a recorded lie (#28706) or engine-specific vocabulary.
+  A recorded `table.type.summary` must survive (dropping it is a violation), but its text may change freely outside `strictTable`.
+  `required`, `table.category`, `jsDocTags`, `control`/`action`, and description/default contents are deliberately not compared (except `required` under `strictTable`); each would lock in a recorded lie (#28706) or engine-specific vocabulary.
 - Snippets: represented binding names are compared as sets, so formatting can never fail, but a lost binding does.
   Directive spelling is normalized, so `:x`/`v-bind:x`, `@x`/`v-on:x`, `#x`/`v-slot:x`, and any `.modifier` all read as the same name.
+  The Angular comparison additionally gates root-element identity: the tag name must match and bare (valueless) attributes - the mangled attribute-selector markers - must survive.
 - Acceptance: there is no allowlist file.
   The committed baseline is the allowlist - accept an intentional change by re-recording with `-u` and reviewing the diff.
-- The recorders read each committed file before its snapshot call, so a `-u` re-record still compares the fresh output against the last committed text.
+- The recorders read each committed file and run every gate BEFORE the snapshot call, so a `-u` run refuses to queue a regressed recording and stays red until the code is fixed.
   Regressions fail with named violations; improvements pass.
 - The committed `argtypes*.snapshot` files are pretty-format text, not JSON.
-  `parseArgTypesSnapshot` reads them back and verifies itself by re-serializing every parse byte-for-byte; anything outside that grammar throws.
+  `parseArgTypesSnapshot` reads them back, verifies itself by re-serializing every parse byte-for-byte, and rejects any parsed string carrying the writer-ambiguous entry-boundary shape.
+  A string whose unescaped write is byte-identical to real entry boundaries cannot be detected at parse time; the recorders' parsed-vs-live proofs guard that case on normal and CI runs, and on `-u` runs against the exact bytes queued for writing.
 - Adding a framework: extend the `Framework` union and compilation fails at the switch in `snippets.ts` until the new matcher exists.
+
+### Trust model
+
+The comparator machine-checks a deliberate subset: baseline arg names, description presence, default presence, `table.type.summary` presence, and type fidelity for argTypes; represented binding names, root-element identity, and bare-attribute survival for Angular snippets.
+Everything else - description/default/summary text, `table.category`, `control`/`action`, per-arg `jsDocTags`, added args - is caught only by the byte-exact snapshot diffs reviewed at `-u` time, or by the sandbox gate's `change` findings.
+Two flags scope trust to where the baseline earns it: `legacyBaseline` (only on legs whose baseline is a legacy compodoc recording) waives the raw `false`/`NaN`/`null` defaults that pipeline invents, and `strictTable` (only on the ACM self-ratchet, whose baseline the same engine recorded) additionally gates `table.type.summary` text changes and `table.type.required` true->false flips.
+The sandbox baseline gate runs in the daily CI tier, so a whole-project regression can merge green and surface up to a day later, detached from the offending PR.
+Known-accepted blind spots: enum members whose quoted and bare spellings collide normalize to the same member (`'"small"'` reads as `small`), and `\r`/`\r\n` in extracted strings are LF-normalized by vitest at write time, so a CR-bearing extraction can never record green (perma-loud, never silent).
 
 ## The vue-component-meta recorder (vue3)
 

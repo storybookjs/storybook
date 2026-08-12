@@ -1,7 +1,6 @@
 {
   "argTypes": {
     "elRefStr": {
-      "description": "\n",
       "name": "elRefStr",
       "table": {
         "category": "methods",
@@ -17,7 +16,6 @@
       }
     },
     "isAllDeps": {
-      "description": "\n",
       "name": "isAllDeps",
       "table": {
         "category": "methods",
@@ -33,13 +31,12 @@
       }
     },
     "title": {
-      "description": "\n",
       "name": "title",
       "table": {
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },

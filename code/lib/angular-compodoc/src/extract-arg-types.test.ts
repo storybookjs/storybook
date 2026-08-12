@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
-import type { CompodocJson } from './compodoc-types.ts';
-import { extractArgTypesFromData } from './extract-arg-types.ts';
+import type { CompodocJson, Property } from './compodoc-types.ts';
+import { extractArgTypesFromData, unwrapPlainText } from './extract-arg-types.ts';
 import { htmlToText } from './html-to-text.ts';
 
 const logger = { warn: () => {}, debug: () => {} };
@@ -74,8 +74,7 @@ describe('extractArgTypesFromData', () => {
 
   describe('same-named declarations in different files', () => {
     // Compodoc emits the same entries in a different order from run to run, and a name like `Size`
-    // is routinely declared once per component folder. Resolving by array order therefore let a
-    // control's type change with no source change at all.
+    // is routinely declared once per component folder.
     const inOwnFile = {
       name: 'Size',
       file: 'src/status/status.component.ts',
@@ -156,7 +155,6 @@ describe('model() two-way bindings', () => {
 
     expect(Object.keys(argTypes)).toEqual(['value', 'valueChange']);
     expect(argTypes.value.table?.category).toBe('inputs');
-    // Compodoc's bare-name output duplicate is suppressed, so the input is not turned into one.
     expect(argTypes.value.action).toBeUndefined();
     expect(argTypes.valueChange).toMatchObject({
       action: 'valueChange',
@@ -166,8 +164,7 @@ describe('model() two-way bindings', () => {
 
   it('keeps the real output for an alias collision instead of reading it as a model()', () => {
     // `@Input('shared')` next to `@Output('shared')` puts one name in both arrays with no `model()`
-    // anywhere. argTypes is keyed by binding name, so only one of the pair can have a row: the
-    // output the component really declares, rather than a synthesized `sharedChange` it does not.
+    // anywhere.
     const argTypes = extractFrom({
       inputsClass: [{ name: 'shared', type: 'string', optional: false, line: 9 }],
       outputsClass: [{ name: 'shared', type: 'EventEmitter<string>', optional: false, line: 11 }],
@@ -176,10 +173,33 @@ describe('model() two-way bindings', () => {
     expect(Object.keys(argTypes)).toEqual(['shared']);
     expect(argTypes.shared).toMatchObject({ action: 'shared', table: { category: 'outputs' } });
   });
+
+  it('ignores the decorator IO arrays on an entry that is not a component or directive', () => {
+    // The analyzer splits decorator IO onto plain classes too, so this fixture carries the `*Class`
+    // arrays of a `model()` alongside its `properties`.
+    const value = { name: 'value', type: 'string', optional: false, line: 9 };
+    const argTypes = extractArgTypesFromData(
+      {
+        name: 'PlainHolder',
+        type: 'class',
+        properties: [{ name: 'other', type: 'number', optional: false, line: 3 }],
+        methods: [],
+        inputsClass: [value],
+        outputsClass: [{ ...value }],
+      } as never,
+      {
+        compodocJson: jsonWith({} as never),
+        filterNonInputControls: false,
+        logger,
+        unwrapHtml: htmlToText,
+      }
+    );
+
+    expect(Object.keys(argTypes)).toEqual(['other']);
+  });
 });
 
 describe('required', () => {
-  /** Extracts a single input declared with the given pair of Compodoc flags. */
   const requiredOf = (flags: { optional?: boolean; required?: boolean }) => {
     const componentData = {
       name: 'StatusComponent',
@@ -197,13 +217,11 @@ describe('required', () => {
       unwrapHtml: (html: unknown) => String(html),
     });
 
-    // `required` has always been written into `table.type`, which the public ArgTypes type
-    // declares as summary/detail only, so reading it back needs an assertion.
+    // The public ArgTypes type declares `table.type` as summary/detail only, so reading `required`
+    // back needs an assertion.
     return (argTypes.value.table?.type as { required?: boolean } | undefined)?.required;
   };
 
-  // One case per shape Compodoc can emit. Which declaration produces which pair is recorded here
-  // because the pairs are not self-explanatory, and one of them is self-contradictory.
   it('is false for a signal input with a default: `input("")`', () => {
     expect(requiredOf({ optional: false, required: false })).toBe(false);
   });
@@ -217,8 +235,6 @@ describe('required', () => {
   });
 
   it('is false for `@Input({ required: false })`, which Compodoc reports as required and optional at once', () => {
-    // Compodoc derives `required` from the presence of the key rather than its value, so this
-    // declaration contradicts itself. Trusting `required` alone would call it required.
     expect(requiredOf({ optional: true, required: true })).toBe(false);
   });
 
@@ -228,8 +244,182 @@ describe('required', () => {
   });
 
   it('is true for a plain `@Input()`, for which Compodoc emits neither flag (compodoc#863)', () => {
-    // The remaining upstream gap: with nothing to read, every plain decorator input reads as
-    // required. Fixing it upstream makes `optional` appear, and this case corrects itself.
     expect(requiredOf({})).toBe(true);
+  });
+});
+
+describe('modern', () => {
+  const extractMember = (member: Partial<Property>, { modern = true } = {}) => {
+    const componentData = {
+      name: 'StatusComponent',
+      type: 'component',
+      inputsClass: [{ name: 'value', ...member }],
+      outputsClass: [],
+      propertiesClass: [],
+      methodsClass: [],
+    } as never;
+    const argTypes = extractArgTypesFromData(componentData, {
+      compodocJson: jsonWith({}),
+      filterNonInputControls: false,
+      logger,
+      unwrapHtml: unwrapPlainText,
+      modern,
+    });
+    return argTypes.value;
+  };
+
+  const summaryOf = (member: Partial<Property>, options?: { modern: boolean }) =>
+    (extractMember(member, options).table?.defaultValue as { summary?: unknown } | undefined)
+      ?.summary;
+
+  describe('no invented defaults', () => {
+    it('records no default for a number input without one, where legacy invents NaN', () => {
+      expect(summaryOf({ type: 'number' })).toBeUndefined();
+      expect(summaryOf({ type: 'number' }, { modern: false })).toBeNaN();
+    });
+
+    it('records no default for a boolean input without one, where legacy invents false', () => {
+      expect(summaryOf({ type: 'boolean' })).toBeUndefined();
+      expect(summaryOf({ type: 'boolean' }, { modern: false })).toBe(false);
+    });
+
+    it('keeps the raw source text of an expression default that is not the declared primitive', () => {
+      expect(summaryOf({ type: 'number', defaultValue: '5 * 60 * 1000' })).toBe('5 * 60 * 1000');
+      expect(summaryOf({ type: 'number', defaultValue: 'Math.max(1, 3)' })).toBe('Math.max(1, 3)');
+      expect(summaryOf({ type: 'boolean', defaultValue: '!flag' })).toBe('!flag');
+    });
+
+    it('still casts literal defaults to their primitive', () => {
+      expect(summaryOf({ type: 'number', defaultValue: '42' })).toBe(42);
+      expect(summaryOf({ type: 'number', defaultValue: 'NaN' })).toBeNaN();
+      expect(summaryOf({ type: 'boolean', defaultValue: 'true' })).toBe(true);
+      expect(summaryOf({ type: 'boolean', defaultValue: 'false' })).toBe(false);
+      expect(summaryOf({ type: 'string', defaultValue: "''" })).toBe('');
+      expect(summaryOf({ type: 'EventEmitter', defaultValue: 'new EventEmitter()' })).toBe(
+        undefined
+      );
+      expect(summaryOf({ type: 'User | null', defaultValue: 'null' })).toBe(null);
+    });
+  });
+
+  describe('@default tags', () => {
+    const defaultTag = (comment?: string) => ({
+      tagName: { escapedText: 'default' },
+      ...(comment === undefined ? {} : { comment }),
+    });
+
+    it('extracts the value clean: trimmed, surrounding quotes stripped', () => {
+      expect(summaryOf({ type: 'string', jsdoctags: [defaultTag("'steelblue'\n")] })).toBe(
+        'steelblue'
+      );
+      expect(summaryOf({ type: 'string', jsdoctags: [defaultTag('"quoted"')] })).toBe('quoted');
+    });
+
+    it('keeps plain text intact instead of HTML-stripping it', () => {
+      expect(summaryOf({ type: 'string', jsdoctags: [defaultTag('[] as Array<string>')] })).toBe(
+        '[] as Array<string>'
+      );
+    });
+
+    it('ignores a bare @default with no comment, where legacy records "undefined"', () => {
+      expect(summaryOf({ type: 'string', jsdoctags: [defaultTag()] })).toBeUndefined();
+    });
+
+    it('reaches the tag for a boolean member, where the legacy invented false shadowed it', () => {
+      expect(summaryOf({ type: 'boolean', jsdoctags: [defaultTag('true')] })).toBe('true');
+    });
+  });
+
+  describe('function sbTypes', () => {
+    it('maps the bare function type and arrow signatures to { name: "function" }', () => {
+      expect(extractMember({ type: 'function' }).type).toEqual({ name: 'function' });
+      expect(extractMember({ type: '(value: number) => string' }).type).toEqual({
+        name: 'function',
+      });
+    });
+
+    it('leaves them on the other/empty-enum catch-all with the flag off', () => {
+      expect(extractMember({ type: 'function' }, { modern: false }).type).toEqual({
+        name: 'other',
+        value: 'empty-enum',
+      });
+    });
+  });
+
+  describe('literal-union enum sbTypes', () => {
+    const design = '"Default" | "Positive" | "Negative" | undefined';
+
+    it('drops undefined/null members and yields a real enum control', () => {
+      expect(extractMember({ type: design }).type).toEqual({
+        name: 'enum',
+        value: ['Default', 'Positive', 'Negative'],
+      });
+      expect(extractMember({ type: '"a" | null' }).type).toEqual({ name: 'enum', value: ['a'] });
+    });
+
+    it('keeps the empty-enum catch-all for such unions with the flag off', () => {
+      expect(extractMember({ type: design }, { modern: false }).type).toEqual({
+        name: 'other',
+        value: 'empty-enum',
+      });
+    });
+
+    it('still falls through for unions with non-literal members', () => {
+      expect(extractMember({ type: 'boolean | MyThing' }).type).toEqual({
+        name: 'other',
+        value: 'empty-enum',
+      });
+    });
+
+    it('maps optional primitives to the primitive control, not empty-enum', () => {
+      expect(extractMember({ type: 'string | undefined' }).type).toEqual({ name: 'string' });
+      expect(extractMember({ type: 'boolean | null' }).type).toEqual({ name: 'boolean' });
+      expect(extractMember({ type: 'number | null | undefined' }).type).toEqual({
+        name: 'number',
+      });
+      expect(extractMember({ type: 'string | undefined' }, { modern: false }).type).toEqual({
+        name: 'other',
+        value: 'empty-enum',
+      });
+    });
+  });
+
+  describe('table.jsDocTags', () => {
+    const tag = (name: string, comment?: string) => ({
+      tagName: { escapedText: name },
+      ...(comment === undefined ? {} : { comment }),
+    });
+
+    it('surfaces @deprecated and @returns in the shape the docs UI consumes', () => {
+      const { table } = extractMember({
+        type: 'string',
+        jsdoctags: [
+          tag('deprecated', 'Use `label` instead.'),
+          tag('returns', 'The formatted text.'),
+          tag('see', 'https://example.com'),
+          tag('sbCategory', 'presentation'),
+        ],
+      });
+      expect(table?.jsDocTags).toEqual({
+        deprecated: 'Use `label` instead.',
+        returns: { description: 'The formatted text.' },
+      });
+    });
+
+    it('marks a bare @deprecated with an empty comment', () => {
+      expect(
+        extractMember({ type: 'string', jsdoctags: [tag('deprecated')] }).table?.jsDocTags
+      ).toEqual({ deprecated: '' });
+    });
+
+    it('omits the key entirely when no displayable tag exists', () => {
+      expect(extractMember({ type: 'string' }).table).not.toHaveProperty('jsDocTags');
+      expect(
+        extractMember({ type: 'string', jsdoctags: [tag('see', 'x')] }).table
+      ).not.toHaveProperty('jsDocTags');
+      expect(extractMember({ type: 'string' }, { modern: false }).table).not.toHaveProperty(
+        'jsDocTags'
+      );
+    });
   });
 });

@@ -1,13 +1,10 @@
 {
   "argTypes": {
     "disabled": {
-      "description": "\n",
       "name": "disabled",
       "table": {
         "category": "properties",
-        "defaultValue": {
-          "summary": false
-        },
+        "defaultValue": {},
         "type": {
           "required": false,
           "summary": "boolean"
@@ -18,7 +15,6 @@
       }
     },
     "internalValue": {
-      "description": "\n",
       "name": "internalValue",
       "table": {
         "category": "properties",
@@ -34,7 +30,6 @@
       }
     },
     "onChange": {
-      "description": "\n",
       "name": "onChange",
       "table": {
         "category": "properties",
@@ -43,16 +38,14 @@
         },
         "type": {
           "required": true,
-          "summary": "function"
+          "summary": "(value: any) => void"
         }
       },
       "type": {
-        "name": "other",
-        "value": "empty-enum"
+        "name": "function"
       }
     },
     "onTouch": {
-      "description": "\n",
       "name": "onTouch",
       "table": {
         "category": "properties",
@@ -61,16 +54,14 @@
         },
         "type": {
           "required": true,
-          "summary": "function"
+          "summary": "() => void"
         }
       },
       "type": {
-        "name": "other",
-        "value": "empty-enum"
+        "name": "function"
       }
     },
     "registerOnChange": {
-      "description": "\n",
       "name": "registerOnChange",
       "table": {
         "category": "methods",
@@ -86,7 +77,6 @@
       }
     },
     "registerOnTouched": {
-      "description": "\n",
       "name": "registerOnTouched",
       "table": {
         "category": "methods",
@@ -102,7 +92,6 @@
       }
     },
     "setDisabledState": {
-      "description": "\n",
       "name": "setDisabledState",
       "table": {
         "category": "methods",
@@ -117,8 +106,22 @@
         "value": "void"
       }
     },
+    "value": {
+      "name": "value",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "any"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
     "writeValue": {
-      "description": "\n",
       "name": "writeValue",
       "table": {
         "category": "methods",

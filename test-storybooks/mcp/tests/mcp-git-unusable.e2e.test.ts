@@ -27,9 +27,9 @@ describe('MCP endpoint when git is unusable', () => {
 		storybookProcess = null;
 	});
 
-	it('answers get-changed-stories with the no-changes sentence instead of an error', async () => {
+	it('answers stories-changed with the no-changes sentence instead of an error', async () => {
 		const response = await mcpRequest(MCP_ENDPOINT, 'tools/call', {
-			name: 'get-changed-stories',
+			name: 'stories-changed',
 			arguments: {},
 		});
 

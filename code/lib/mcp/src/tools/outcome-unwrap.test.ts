@@ -19,7 +19,7 @@ import { addListAllDocumentationTool, LIST_TOOL_NAME } from './register.ts';
 const smallManifestFixture = smallManifestFixtureRaw as unknown as ComponentManifestMap;
 
 const listMethod = vi.hoisted(() => ({
-  outputSchema: undefined as unknown,
+  output: undefined as unknown,
   handler: undefined as ((input: unknown, ctx: unknown) => unknown) | undefined,
 }));
 
@@ -29,9 +29,9 @@ vi.mock('storybook/internal/toolsets-docs', async (importOriginal) => {
     ...actual,
     createDocsToolset: (options: never) => {
       const toolset = actual.createDocsToolset(options);
-      const list = toolset.methods.list as { outputSchema?: unknown; handler: unknown };
-      if (listMethod.outputSchema) {
-        list.outputSchema = listMethod.outputSchema;
+      const list = toolset.methods.list as { output?: unknown; handler: unknown };
+      if (listMethod.output) {
+        list.output = listMethod.output;
       }
       if (listMethod.handler) {
         list.handler = listMethod.handler;
@@ -96,13 +96,13 @@ describe('hosted outcome unwrap', () => {
   let consoleError: ReturnType<typeof vi.spyOn>;
 
   beforeEach(() => {
-    listMethod.outputSchema = undefined;
+    listMethod.output = undefined;
     listMethod.handler = undefined;
     consoleError = vi.spyOn(console, 'error').mockImplementation(() => {});
   });
 
   it('publishes a method output schema as MCP tool metadata', async () => {
-    listMethod.outputSchema = v.object({ manifests: v.looseObject({}) });
+    listMethod.output = v.object({ manifests: v.looseObject({}) });
     const server = await createServer();
     await addListAllDocumentationTool(server);
 
@@ -121,7 +121,7 @@ describe('hosted outcome unwrap', () => {
 
   it('emits structuredContent narrowed to the published output schema', async () => {
     // A strict subset of the real outcome data: validation must strip everything undeclared.
-    listMethod.outputSchema = v.object({ manifests: v.looseObject({}) });
+    listMethod.output = v.object({ manifests: v.looseObject({}) });
     const server = await createServer();
     await addListAllDocumentationTool(server);
 
@@ -133,7 +133,7 @@ describe('hosted outcome unwrap', () => {
   });
 
   it('maps a failure outcome to isError and still emits its validated structuredContent', async () => {
-    listMethod.outputSchema = v.object({ reason: v.string() });
+    listMethod.output = v.object({ reason: v.string() });
     listMethod.handler = () => ({
       ok: false,
       data: { reason: 'nothing indexed', internal: 'not-published' },
@@ -155,7 +155,7 @@ describe('hosted outcome unwrap', () => {
   });
 
   it('reports and logs outcome data its published output schema rejects', async () => {
-    listMethod.outputSchema = v.object({ fieldTheDataDoesNotHave: v.string() });
+    listMethod.output = v.object({ fieldTheDataDoesNotHave: v.string() });
     const server = await createServer();
     await addListAllDocumentationTool(server);
 

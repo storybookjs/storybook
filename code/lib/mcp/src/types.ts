@@ -68,7 +68,7 @@ export type StorybookContext = {
    */
   sources?: Source[];
   /**
-   * Optional handler called when list-all-documentation tool is invoked.
+   * Optional handler called when the docs-list tool is invoked.
    * Receives the context and the component manifest.
    */
   onListAllDocumentation?: (params: {
@@ -79,7 +79,7 @@ export type StorybookContext = {
     sources?: SourceManifests[];
   }) => void | Promise<void>;
   /**
-   * Optional handler called when get-documentation tool is invoked.
+   * Optional handler called when the docs-show tool is invoked.
    * Receives the context, input parameters, and the found component (if any).
    */
   onGetDocumentation?: (
@@ -94,7 +94,7 @@ export type StorybookContext = {
   /**
    * Optional in-process resolver for a single component or docs entry, used in
    * Storybook's dev server when `experimentalDocgenServer` is enabled. When set,
-   * single-entry tools (`get-documentation`, `get-documentation-for-story`) call
+   * single-entry tools (`docs-show`, `docs-show-story`) call
    * this instead of fetching the (potentially all-component) manifest index, so a
    * single lookup never triggers docgen extraction for every component.
    *
@@ -234,7 +234,7 @@ export const StorybookIdField = {
   storybookId: v.pipe(
     v.string(),
     v.description(
-      'The Storybook source ID (e.g., "local", "tetra"). Required when multiple Storybooks are composed. See list-all-documentation for available sources.'
+      'The Storybook source ID (e.g., "local", "tetra"). Required when multiple Storybooks are composed. See docs-list for available sources.'
     )
   ),
 };

@@ -17,9 +17,9 @@ import {
   emptyManifests,
   selectReportedManifests,
   ManifestGetError,
-  MCP_TOOL_NAMES,
   RequiresOwnMcpError,
   resolveToolsetDescription,
+  toMcpToolName,
   type DocsListOutput,
   type DocsSource,
   type DocsToolset,
@@ -31,15 +31,15 @@ import type { StorybookContext } from '../types.ts';
 import { errorToMCPContent } from '../utils/error-to-mcp-content.ts';
 import { toSourceManifests } from '../utils/multi-source-manifests.ts';
 
-export const LIST_TOOL_NAME = MCP_TOOL_NAMES['docs.list'];
-export const GET_TOOL_NAME = MCP_TOOL_NAMES['docs.show'];
-export const GET_STORY_TOOL_NAME = MCP_TOOL_NAMES['docs.showStory'];
+export const LIST_TOOL_NAME = toMcpToolName('docs.list');
+export const GET_TOOL_NAME = toMcpToolName('docs.show');
+export const GET_STORY_TOOL_NAME = toMcpToolName('docs.showStory');
 
 type Server = McpServer<any, StorybookContext>;
 type ToolEnabled = Parameters<Server['tool']>[0]['enabled'];
 
 const ctx: ToolsetCtx = {
-  consumer: 'mcp',
+  transport: 'mcp',
   getService: () => {
     throw new Error('Open services are not available in a hosted Storybook.');
   },
@@ -124,10 +124,10 @@ function toolMetadata(
   const outputSchema = outputSchemaOf(definition);
 
   return {
-    name: MCP_TOOL_NAMES[method],
+    name: toMcpToolName(method),
     title: definition.title,
     description: resolveToolsetDescription(definition.description, ctx),
-    schema: definition.schema,
+    schema: definition.input,
     ...(outputSchema ? { outputSchema } : {}),
   };
 }
@@ -168,7 +168,7 @@ function registerTool(
  * property; reading it structurally lets a method that gains one publish it without edits here.
  */
 function outputSchemaOf(definition: unknown): GenericSchema | undefined {
-  return (definition as { outputSchema?: GenericSchema }).outputSchema;
+  return (definition as { output?: GenericSchema }).output;
 }
 
 /**
@@ -192,8 +192,8 @@ function isAgentFacingError(error: unknown): error is Error {
 async function toStructuredContent(
   outputSchema: GenericSchema | undefined,
   data: unknown
-): Promise<Record<string, unknown> | undefined> {
-  if (!outputSchema || data === undefined || data === null) {
+): Promise<unknown> {
+  if (!outputSchema || data === undefined) {
     return undefined;
   }
   const result = await outputSchema['~standard'].validate(data);
@@ -208,7 +208,7 @@ async function toStructuredContent(
     }
     throw new Error(`Toolset output did not match its published output schema: ${serialized}`);
   }
-  return result.value as Record<string, unknown>;
+  return result.value;
 }
 
 /**
@@ -237,7 +237,7 @@ async function call<TMethod extends 'list' | 'show' | 'showStory'>(
       data: outcome.data,
       result: {
         content: blocks.map((text) => ({ type: 'text' as const, text })),
-        ...(structuredContent ? { structuredContent } : {}),
+        ...(structuredContent !== undefined ? { structuredContent } : {}),
         ...(outcome.ok ? {} : { isError: true as const }),
       },
     };

@@ -20,7 +20,7 @@ export async function collectTelemetry({
       clientCapabilities: server.ctx.sessionInfo?.clientCapabilities,
       // Which channel drove the call: the `storybook ai` CLI marks its requests with the proxy
       // header; everything else is a direct MCP client.
-      consumer: server.ctx.custom?.cliClient ? 'cli' : 'mcp',
+      transport: server.ctx.custom?.cliClient ? 'cli' : 'mcp',
       ...payload,
     });
   } catch (error) {

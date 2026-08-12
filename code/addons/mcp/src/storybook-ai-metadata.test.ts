@@ -11,7 +11,7 @@ import {
 } from 'storybook/internal/core-server';
 import { buildStorybookAiMetadata } from './storybook-ai-metadata.ts';
 import type { AddonContext } from './types.ts';
-import { MCP_TOOL_NAMES } from 'storybook/internal/toolsets-docs';
+import { toMcpToolName } from 'storybook/internal/toolsets-docs';
 import {
   DISPLAY_REVIEW_TOOL_NAME,
   GET_STORIES_BY_COMPONENT_TOOL_NAME,
@@ -398,7 +398,7 @@ describe('buildStorybookAiMetadata', () => {
     const metadata = await buildStorybookAiMetadata(createOptions());
 
     expect(metadata.tools.map((tool) => tool.name)).toContain(DISPLAY_REVIEW_TOOL_NAME);
-    expect(metadata.instructions).toContain('display-review');
+    expect(metadata.instructions).toContain(DISPLAY_REVIEW_TOOL_NAME);
   });
 
   it('keeps review off everywhere when experimentalReview is explicitly false', async () => {
@@ -499,8 +499,8 @@ function createOptions({
  * and not just internal wiring. These pin the surface per combination; the descriptions and schemas
  * behind each name are snapshotted by the e2e suite against a live server.
  */
-const LIST_TOOL_NAME = MCP_TOOL_NAMES['docs.list'];
-const GET_TOOL_NAME = MCP_TOOL_NAMES['docs.show'];
+const LIST_TOOL_NAME = toMcpToolName('docs.list');
+const GET_TOOL_NAME = toMcpToolName('docs.show');
 
 describe('tool availability variants', () => {
   // This block runs outside the describe above, so it stands up the toolsets itself instead of

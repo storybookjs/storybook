@@ -510,9 +510,9 @@ describe('mcpServerHandler', () => {
 
     // Verify component manifest tools are included
     const toolNames = parsedResponse.result.tools.map((t: any) => t.name);
-    expect(toolNames).toContain('list-all-documentation');
-    expect(toolNames).toContain('get-documentation');
-    expect(toolNames).toContain('get-documentation-for-story');
+    expect(toolNames).toContain('docs-list');
+    expect(toolNames).toContain('docs-show');
+    expect(toolNames).toContain('docs-show-story');
   });
 
   it('registers docs tools for composed sources when local manifests are unavailable', async () => {
@@ -534,12 +534,12 @@ describe('mcpServerHandler', () => {
       ],
     });
 
-    expect(toolNames).toContain('list-all-documentation');
-    expect(toolNames).toContain('get-documentation');
-    expect(toolNames).toContain('get-documentation-for-story');
+    expect(toolNames).toContain('docs-list');
+    expect(toolNames).toContain('docs-show');
+    expect(toolNames).toContain('docs-show-story');
   });
 
-  it('registers get-changed-stories when the changeDetection feature flag is on', async () => {
+  it('registers stories-changed when the changeDetection feature flag is on', async () => {
     const mockOptions = createMockOptions({
       port: 6009,
       presets: {
@@ -552,10 +552,10 @@ describe('mcpServerHandler', () => {
     });
 
     const toolNames = await getRegisteredToolNames(mockOptions, 6009);
-    expect(toolNames).toContain('get-changed-stories');
+    expect(toolNames).toContain('stories-changed');
   });
 
-  it('registers display-review when the experimentalReview and changeDetection feature flags are on', async () => {
+  it('registers review-create when the experimentalReview and changeDetection feature flags are on', async () => {
     const mockOptions = createMockOptions({
       port: 6010,
       presets: {
@@ -568,10 +568,10 @@ describe('mcpServerHandler', () => {
     });
 
     const toolNames = await getRegisteredToolNames(mockOptions, 6010);
-    expect(toolNames).toContain('display-review');
+    expect(toolNames).toContain('review-create');
   });
 
-  it('does not list display-review for direct MCP clients when only the changeDetection feature flag is on', async () => {
+  it('does not list review-create for direct MCP clients when only the changeDetection feature flag is on', async () => {
     const mockOptions = createMockOptions({
       port: 6013,
       presets: {
@@ -584,11 +584,11 @@ describe('mcpServerHandler', () => {
     });
 
     const toolNames = await getRegisteredToolNames(mockOptions, 6013);
-    expect(toolNames).toContain('get-changed-stories');
-    expect(toolNames).not.toContain('display-review');
+    expect(toolNames).toContain('stories-changed');
+    expect(toolNames).not.toContain('review-create');
   });
 
-  it('lists display-review for storybook ai CLI requests when only the changeDetection feature flag is on', async () => {
+  it('lists review-create for storybook ai CLI requests when only the changeDetection feature flag is on', async () => {
     const mockOptions = createMockOptions({
       port: 6014,
       presets: {
@@ -603,10 +603,10 @@ describe('mcpServerHandler', () => {
     const toolNames = await getRegisteredToolNames(mockOptions, 6014, {
       headers: { 'x-storybook-mcp-proxy': 'true' },
     });
-    expect(toolNames).toContain('display-review');
+    expect(toolNames).toContain('review-create');
   });
 
-  it('does not list display-review for CLI requests when experimentalReview is explicitly false', async () => {
+  it('does not list review-create for CLI requests when experimentalReview is explicitly false', async () => {
     const mockOptions = createMockOptions({
       port: 6015,
       presets: {
@@ -621,7 +621,7 @@ describe('mcpServerHandler', () => {
     const toolNames = await getRegisteredToolNames(mockOptions, 6015, {
       headers: { 'x-storybook-mcp-proxy': 'true' },
     });
-    expect(toolNames).not.toContain('display-review');
+    expect(toolNames).not.toContain('review-create');
   });
 });
 

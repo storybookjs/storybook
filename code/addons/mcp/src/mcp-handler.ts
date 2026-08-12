@@ -48,7 +48,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
     adapter: new ValibotJsonSchemaAdapter(),
     get instructions() {
       return buildServerInstructions({
-        consumer: 'mcp',
+        transport: 'mcp',
         devEnabled: server?.ctx.custom?.toolsets?.dev ?? true,
         testSupported: (server?.ctx.custom?.toolsets?.test ?? true) && availability.testSupported,
         docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && availability.docsEnabled,
@@ -99,7 +99,7 @@ type McpServerHandlerParams = {
   /**
    * The MCP endpoint path (e.g. `/mcp` or a user-configured override).
    * Used to derive the Storybook root from the incoming request URL inside
-   * tools like `display-review`. Optional for backwards compatibility with
+   * tools like `review-create`. Optional for backwards compatibility with
    * external callers; defaults to {@link DEFAULT_MCP_ENDPOINT}.
    */
   endpoint?: string;

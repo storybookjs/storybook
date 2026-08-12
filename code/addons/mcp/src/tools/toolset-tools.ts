@@ -1,7 +1,7 @@
 /**
  * Adapter from core's public toolsets to MCP tools.
  *
- * Everything an MCP client can observe stays here — the frozen tool names, the transport, the
+ * Everything an MCP client can observe stays here — the derived tool names, the transport, the
  * session, and the app resource — while the data, prose and telemetry payloads come from the
  * toolset the method belongs to.
  */
@@ -11,21 +11,21 @@ import { getService } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import { OpenServiceToolsetOutputMismatchError } from 'storybook/internal/server-errors';
 import {
-  MCP_TOOL_NAMES,
   getToolset,
   resolveToolsetDescription,
+  toMcpToolName,
   type AnyToolsetDefinition,
   type AnyToolsetOutcome,
   type ToolsetCtx,
   type ToolsetMethod,
-  type ToolsetMethodRef,
+  type ToolsetMethodId,
 } from 'storybook/open-service';
 import type { McpServer } from 'tmcp';
 
 import { collectTelemetry } from '../telemetry.ts';
 import type { AddonContext } from '../types.ts';
 import { errorToMCPContent } from '../utils/errors.ts';
-import { resolveUiRoot } from './ui-root.ts';
+import { resolveToolsetOrigin } from './toolset-origin.ts';
 import type { StorybookAiToolCallResult } from './tool-registry.ts';
 
 type Server = McpServer<any, AddonContext>;
@@ -33,7 +33,7 @@ type ToolEnabled = Parameters<Server['tool']>[0]['enabled'];
 
 export type ToolsetToolOptions = {
   /** Which toolset method backs this MCP tool. */
-  method: ToolsetMethodRef;
+  method: ToolsetMethodId;
   /** Extra MCP-only tool metadata, e.g. the preview app resource. */
   extras?: Record<string, unknown>;
   /** Wraps the input schema before publishing it (used for friendlier validation errors). */
@@ -83,25 +83,23 @@ function isAgentFacingError(error: unknown): error is Error {
 async function toStructuredContent(
   outputSchema: StandardSchemaV1 | undefined,
   data: unknown
-): Promise<Record<string, unknown> | undefined> {
-  if (!outputSchema || data === undefined || data === null) {
+): Promise<unknown> {
+  if (!outputSchema || data === undefined) {
     return undefined;
   }
   const result = await outputSchema['~standard'].validate(data);
   if (result.issues) {
     throw new OpenServiceToolsetOutputMismatchError({ issues: result.issues });
   }
-  return result.value as Record<string, unknown>;
+  return result.value;
 }
 
-function buildContext(server: Server, toolset: AnyToolsetDefinition): ToolsetCtx {
+function buildContext(server: Server): ToolsetCtx {
   const custom = server.ctx.custom;
   return {
-    consumer: 'mcp',
-    origin: custom?.origin,
-    // Derived generically for every method: where this request's Storybook UI is reachable, which
-    // differs from the origin for a sub-path-hosted dev server.
-    uiRoot: resolveUiRoot(custom ?? {}),
+    transport: 'mcp',
+    // The toolset origin is the complete UI base URL, including any deployment subpath.
+    origin: resolveToolsetOrigin(custom ?? {}),
     getService: (serviceId, serviceOptions) => getService(serviceId as any, serviceOptions) as any,
     telemetry: custom?.disableTelemetry
       ? undefined
@@ -109,7 +107,6 @@ function buildContext(server: Server, toolset: AnyToolsetDefinition): ToolsetCtx
           await collectTelemetry({
             event,
             server,
-            toolset: toolset.telemetryGroup,
             ...payload,
           });
         },
@@ -124,16 +121,16 @@ export async function callToolsetMethod(
 ): Promise<StorybookAiToolCallResult> {
   const toolset = resolveToolset(options, server);
   const method = resolveMethod(toolset, options);
-  const ctx = buildContext(server, toolset);
+  const ctx = buildContext(server);
 
   try {
     const outcome = await method.handler(input as never, ctx);
-    const structuredContent = await toStructuredContent(method.outputSchema, outcome.data);
+    const structuredContent = await toStructuredContent(method.output, outcome.data);
     const blocks = Array.isArray(outcome.markdown) ? outcome.markdown : [outcome.markdown];
 
     return {
       content: blocks.map((text) => ({ type: 'text' as const, text })),
-      ...(structuredContent ? { structuredContent } : {}),
+      ...(structuredContent !== undefined ? { structuredContent } : {}),
       ...(outcome.ok ? {} : { isError: true }),
     };
   } catch (error) {
@@ -143,7 +140,7 @@ export async function callToolsetMethod(
     }
     // Everything else is a bug whose only other evidence would be the calling agent's transcript;
     // the terminal is the maintainer's channel.
-    logger.error(`MCP tool "${MCP_TOOL_NAMES[options.method]}" failed: ${error}`);
+    logger.error(`MCP tool "${toMcpToolName(options.method)}" failed: ${error}`);
     return errorToMCPContent(error);
   }
 }
@@ -152,22 +149,22 @@ export async function callToolsetMethod(
 export function getToolsetToolMetadata(options: ToolsetToolOptions) {
   const method = resolveMethod(resolveToolset(options), options);
   const descriptionCtx: ToolsetCtx = {
-    consumer: 'mcp',
+    transport: 'mcp',
     getService: (serviceId, serviceOptions) => getService(serviceId as any, serviceOptions) as any,
   };
 
   // A zero-input method publishes no input schema, matching the hand-written tools it replaced.
-  const entries = (method.schema as { entries?: Record<string, unknown> }).entries;
+  const entries = (method.input as { entries?: Record<string, unknown> }).entries;
   const hasInput = !entries || Object.keys(entries).length > 0;
 
   return {
-    name: MCP_TOOL_NAMES[options.method],
+    name: toMcpToolName(options.method),
     title: method.title,
     description: resolveToolsetDescription(method.description, descriptionCtx),
     ...(hasInput
-      ? { schema: options.wrapSchema ? options.wrapSchema(method.schema) : method.schema }
+      ? { schema: options.wrapSchema ? options.wrapSchema(method.input) : method.input }
       : {}),
-    ...(method.outputSchema ? { outputSchema: method.outputSchema } : {}),
+    ...(method.output ? { outputSchema: method.output } : {}),
     ...options.extras,
   };
 }

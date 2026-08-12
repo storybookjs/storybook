@@ -25,7 +25,7 @@ describe('loadStorybookAiMetadata', () => {
     const apply = vi.fn().mockResolvedValue({
       instructions: 'Follow the story workflow.',
       tools: [
-        { name: 'get-documentation', description: 'Get docs.' },
+        { name: 'docs-show', description: 'Get docs.' },
         {
           name: 'get-storybook-story-instructions',
           description: 'Get story guidance.',
@@ -46,7 +46,7 @@ describe('loadStorybookAiMetadata', () => {
     expect(metadata).toEqual({
       instructions: 'Follow the story workflow.',
       tools: [
-        { name: 'get-documentation', description: 'Get docs.' },
+        { name: 'docs-show', description: 'Get docs.' },
         {
           name: 'get-storybook-story-instructions',
           description: 'Get story guidance.',
@@ -74,11 +74,11 @@ describe('loadStorybookAiMetadata', () => {
     mockLoadedStorybook(
       vi.fn().mockResolvedValue({
         instructions: 123,
-        tools: [{ name: 'get-documentation' }],
+        tools: [{ name: 'docs-show' }],
         localTools: {
           invalid: {},
           notObject: true,
-          'get-documentation': { call },
+          'docs-show': { call },
         },
       })
     );
@@ -87,9 +87,9 @@ describe('loadStorybookAiMetadata', () => {
 
     expect(metadata).toEqual({
       instructions: undefined,
-      tools: [{ name: 'get-documentation' }],
+      tools: [{ name: 'docs-show' }],
       localTools: {
-        'get-documentation': { call },
+        'docs-show': { call },
       },
     });
   });

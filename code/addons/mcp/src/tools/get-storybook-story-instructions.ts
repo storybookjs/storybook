@@ -11,7 +11,7 @@ type BuildStorybookStoryInstructionsOptions = {
   toolsets?: AddonContext['toolsets'];
   a11yEnabled?: boolean;
   addonVitestAvailable?: boolean;
-  /** Whether the documentation tools (list-all-documentation etc.) are registered. */
+  /** Whether the documentation tools (`docs-list`, etc.) are registered. */
   docsEnabled?: boolean;
   /**
    * Per-channel review gate override (per-request context on the MCP path, the
@@ -152,7 +152,7 @@ export async function buildStorybookStoryInstructions(
   const inputs = await resolveSkillInputs(options);
 
   return buildStoryInstructions({
-    consumer: 'mcp',
+    transport: 'mcp',
     framework: inputs.framework,
     renderer: inputs.renderer,
     changeDetectionEnabled: inputs.changeDetectionEnabled,

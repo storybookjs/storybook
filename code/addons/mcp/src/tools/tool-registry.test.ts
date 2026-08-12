@@ -35,10 +35,9 @@ function registerTestToolsetThrowing(error: Error) {
     defineToolset({
       id: 'test',
       description: 'stub',
-      telemetryGroup: 'test',
       methods: {
         run: {
-          schema: v.object({}),
+          input: v.object({}),
           title: 'Storybook Tests',
           description: () => {
             throw error;
@@ -80,7 +79,7 @@ function makeServer() {
   return { server, tools };
 }
 
-describe('a broken tool row', () => {
+describe('a broken tool definition', () => {
   // The availability gate claims test support while the `test` toolset never registered — the
   // wiring bug behind the addon-vitest installed-but-not-enabled outage.
   const context: AddonToolRegistryContext = {
@@ -88,7 +87,7 @@ describe('a broken tool row', () => {
   };
 
   beforeEach(() => {
-    registerCoreToolsetsForTest({ testToolset: false });
+    registerCoreToolsetsForTest();
     loggerError.mockClear();
   });
 
@@ -97,20 +96,20 @@ describe('a broken tool row', () => {
 
     await expect(registerAddonMcpTools(server, context)).resolves.toBeUndefined();
 
-    expect([...tools.keys()]).not.toContain('run-story-tests');
+    expect([...tools.keys()]).not.toContain('test-run');
     expect([...tools.keys()]).toEqual(
-      expect.arrayContaining(['preview-stories', 'list-all-documentation', 'get-documentation'])
+      expect.arrayContaining(['stories-preview', 'docs-list', 'docs-show'])
     );
-    expect(loggerError).toHaveBeenCalledWith(expect.stringContaining('run-story-tests'));
+    expect(loggerError).toHaveBeenCalledWith(expect.stringContaining('test-run'));
   });
 
   it('is dropped from the storybook ai metadata instead of failing the build', () => {
     const metadata = getAddonToolMetadata(context);
     const names = metadata.map((tool) => tool.name);
 
-    expect(names).not.toContain('run-story-tests');
-    expect(names).toEqual(expect.arrayContaining(['preview-stories', 'list-all-documentation']));
-    expect(loggerError).toHaveBeenCalledWith(expect.stringContaining('run-story-tests'));
+    expect(names).not.toContain('test-run');
+    expect(names).toEqual(expect.arrayContaining(['stories-preview', 'docs-list']));
+    expect(loggerError).toHaveBeenCalledWith(expect.stringContaining('test-run'));
   });
 
   it('contains only the missing-toolset case: any other adapter failure still fails fast', () => {
@@ -145,8 +144,8 @@ describe('the preview app resource', () => {
   });
 });
 
-describe('run-story-tests over the registry', () => {
-  // Availability narrowed so only rows whose toolsets are registered here resolve.
+describe('test-run over the registry', () => {
+  // Availability narrowed so only tools whose toolsets are registered here resolve.
   const context: AddonToolRegistryContext = {
     availability: availabilityWith({ testSupported: true }),
   };
@@ -159,15 +158,14 @@ describe('run-story-tests over the registry', () => {
   // client flagged as an error with the report rendered. The per-status tag mapping lives on the
   // definition (`test/definition.test.ts`), the tag-to-isError unwrap in `toolset-tools.test.ts`.
   it('flags a crashed run as an error result end to end', async () => {
-    registerCoreToolsetsForTest({ testToolset: false });
+    registerCoreToolsetsForTest();
     registerToolset(
       defineToolset({
         id: 'test',
         description: 'stub',
-        telemetryGroup: 'test',
         methods: {
           run: {
-            schema: v.object({}),
+            input: v.object({}),
             title: 'Storybook Tests',
             description: 'run',
             handler: async () => ({
@@ -182,7 +180,7 @@ describe('run-story-tests over the registry', () => {
     const { server, tools } = makeServer();
     await registerAddonMcpTools(server, context);
 
-    const result = await tools.get('run-story-tests')!({});
+    const result = await tools.get('test-run')!({});
 
     expect(result.isError).toBe(true);
     expect(result.content).toEqual([{ type: 'text', text: 'Error: vitest died' }]);

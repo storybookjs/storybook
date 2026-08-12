@@ -143,16 +143,16 @@ describe('getComponentStoryDocumentationTool', () => {
     });
 
     expect(response.result).toMatchInlineSnapshot(`
-			{
-			  "content": [
-			    {
-			      "text": "Component not found: "nonexistent". Use the list-all-documentation tool to see available components.",
-			      "type": "text",
-			    },
-			  ],
-			  "isError": true,
-			}
-		`);
+      {
+        "content": [
+          {
+            "text": "Component not found: "nonexistent". Use the docs-list tool to see available components.",
+            "type": "text",
+          },
+        ],
+        "isError": true,
+      }
+    `);
   });
 
   it('should return an error when a story is not found', async () => {

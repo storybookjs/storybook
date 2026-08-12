@@ -18,7 +18,7 @@ import { addPreviewStoriesResource, PREVIEW_STORIES_RESOURCE_URI } from './previ
 // The error class must come from the same entry as `getToolset` (which throws it, via
 // `toolset-tools.ts`); a copy from another core entry is a different constructor and
 // `instanceof` would silently fail.
-import { MCP_TOOL_NAMES, OpenServiceMissingToolsetError } from 'storybook/open-service';
+import { OpenServiceMissingToolsetError, toMcpToolName } from 'storybook/open-service';
 import { GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME } from './tool-names.ts';
 import {
   getToolsetToolMetadata,
@@ -36,8 +36,8 @@ export type ToolMetadata = {
 };
 
 export type StorybookAiToolCallResult = {
-  content: Array<{ type: 'text'; text: string }>;
-  structuredContent?: Record<string, unknown>;
+  content: Array<{ type: string; [key: string]: unknown }>;
+  structuredContent?: unknown;
   isError?: boolean;
 };
 
@@ -109,9 +109,9 @@ function fromToolset(
     // Read from the constant, not the registry: this array is built at import time, while toolsets
     // register later from their preset hooks. Each availability gate is written to match the
     // condition under which its toolset registers; if they still disagree, resolution fails loudly
-    // (getToolset throws) and the registry drops that one row with an error log rather than taking
+    // (getToolset throws) and the registry drops that one tool with an error log rather than taking
     // down the whole server (see resolveDefinitionOrDrop).
-    name: MCP_TOOL_NAMES[options.method],
+    name: toMcpToolName(options.method),
     available: (context) => available?.(context) ?? true,
     getMetadata: () => getToolsetToolMetadata(options),
     register: async (server, context, enabled) => {
@@ -139,15 +139,17 @@ function compositionDocsToolset(server?: McpServer<any, AddonContext>): DocsTool
   });
 }
 
-/** The docs rows, in the two shapes the registry needs: registered toolset, or per-request one. */
-function docsRow(method: 'docs.list' | 'docs.show' | 'docs.showStory'): AddonToolDefinition {
+/** The docs tools, in the two shapes the registry needs: registered toolset, or per-request one. */
+function docsToolDefinition(
+  method: 'docs.list' | 'docs.show' | 'docs.showStory'
+): AddonToolDefinition {
   const forContext = (context: AddonToolRegistryContext): ToolsetToolOptions =>
     context.multiSource
       ? { method, resolveToolset: (server) => compositionDocsToolset(server) }
       : { method };
 
   return {
-    name: MCP_TOOL_NAMES[method],
+    name: toMcpToolName(method),
     toolset: 'docs',
     available: ({ availability }) => availability.docsEnabled,
     getMetadata: (context) => getToolsetToolMetadata(forContext(context)),
@@ -158,9 +160,9 @@ function docsRow(method: 'docs.list' | 'docs.show' | 'docs.showStory'): AddonToo
 }
 
 const docsToolDefinitions: AddonToolDefinition[] = [
-  docsRow('docs.list'),
-  docsRow('docs.show'),
-  docsRow('docs.showStory'),
+  docsToolDefinition('docs.list'),
+  docsToolDefinition('docs.show'),
+  docsToolDefinition('docs.showStory'),
 ];
 
 const addonToolDefinitions: AddonToolDefinition[] = [
@@ -236,7 +238,7 @@ const addonToolDefinitions: AddonToolDefinition[] = [
 ];
 
 /**
- * Logs and drops one tool row when its availability gate said yes but the backing toolset never
+ * Logs and drops one tool when its availability gate said yes but the backing toolset never
  * registered.
  *
  * That mismatch is a wiring bug (each gate is written to match its toolset's registration
@@ -244,7 +246,7 @@ const addonToolDefinitions: AddonToolDefinition[] = [
  * metadata build — the error log keeps it loud. Only this one error is contained: every other
  * failure rethrows, so a genuinely broken adapter still fails fast.
  */
-function dropRowIfToolsetMissing(name: string, error: unknown): undefined {
+function dropToolIfToolsetMissing(name: string, error: unknown): undefined {
   if (!(error instanceof OpenServiceMissingToolsetError)) {
     throw error;
   }
@@ -256,7 +258,7 @@ function resolveDefinitionOrDrop<T>(name: string, resolve: () => T): T | undefin
   try {
     return resolve();
   } catch (error) {
-    return dropRowIfToolsetMissing(name, error);
+    return dropToolIfToolsetMissing(name, error);
   }
 }
 
@@ -309,7 +311,7 @@ export async function registerAddonMcpTools(
           createToolsetEnabled(server, definition.toolset)
         );
       } catch (error) {
-        dropRowIfToolsetMissing(definition.name, error);
+        dropToolIfToolsetMissing(definition.name, error);
       }
     }
   }

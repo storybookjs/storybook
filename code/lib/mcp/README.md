@@ -80,9 +80,9 @@ A fetch-compatible request handler for your `/mcp` endpoint.
 ##### Behavior
 
 - Registers these MCP tools:
-  - [`list-all-documentation`](https://storybook.js.org/docs/next/ai/mcp/overview/#list-all-documentation)
-  - [`get-documentation`](https://storybook.js.org/docs/next/ai/mcp/overview/#get-documentation)
-  - [`get-documentation-for-story`](https://storybook.js.org/docs/next/ai/mcp/overview/#get-documentation-for-story)
+  - [`docs-list`](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-list)
+  - [`docs-show`](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-show)
+  - [`docs-show-story`](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-show-story)
 - Uses HTTP transport from [`@tmcp/transport-http`](https://github.com/paoloricciuti/tmcp/).
 - For each request, the handler always passes the current `Request` as `context.request`.
 - Per-request `context` overrides handler-level `options` for:
@@ -203,7 +203,7 @@ Type:
 }) => void | Promise<void>
 ```
 
-Optional callback after `list-all-documentation` resolves successfully.
+Optional callback after `docs-list` resolves successfully.
 
 ##### `onGetDocumentation`
 
@@ -225,7 +225,7 @@ Type:
 ) => void | Promise<void>
 ```
 
-Optional callback after `get-documentation` runs:
+Optional callback after `docs-show` runs:
 
 - When a component/docs entry is found, receives `foundDocumentation` and `resultText`.
 - When not found, receives only `context` and `input`.
@@ -331,7 +331,7 @@ Type:
 	Promise<void>;
 ```
 
-Registers the [list tool](https://storybook.js.org/docs/next/ai/mcp/overview/#list-all-documentation) that returns all component/docs IDs from manifests.
+Registers the [list tool](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-list) that returns all component/docs IDs from manifests.
 
 #### `addGetDocumentationTool`
 
@@ -345,7 +345,7 @@ Type:
 ) => Promise<void>;
 ```
 
-Registers [documentation lookup](https://storybook.js.org/docs/next/ai/mcp/overview/#get-documentation) by component/docs `id`.
+Registers [documentation lookup](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-show) by component/docs `id`.
 
 When `options.multiSource` is `true`, the tool schema requires `storybookId` input.
 
@@ -361,4 +361,4 @@ Type:
 ) => Promise<void>;
 ```
 
-Registers [story-level documentation lookup](https://storybook.js.org/docs/next/ai/mcp/overview/#get-documentation-for-story) for a specific story variant by `componentId` and `storyName`.
+Registers [story-level documentation lookup](https://storybook.js.org/docs/next/ai/mcp/overview/#docs-show-story) for a specific story variant by `componentId` and `storyName`.

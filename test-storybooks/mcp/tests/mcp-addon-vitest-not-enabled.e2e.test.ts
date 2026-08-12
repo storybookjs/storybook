@@ -6,7 +6,7 @@ import { mcpRequest, waitForMcpEndpoint, killPort, startStorybook, stopStorybook
  * The addon-vitest installed-but-not-enabled scenario (a hoisted monorepo dependency, or an addon
  * removed from `main.ts` without uninstalling): its `services` hook never runs, so the `test`
  * toolset never registers. The availability gate must agree — the endpoint serves everything
- * except `run-story-tests`, instead of failing every request because one tool's toolset is
+ * except `test-run`, instead of failing every request because one tool's toolset is
  * missing.
  */
 
@@ -28,19 +28,19 @@ describe('MCP endpoint with addon-vitest installed but not enabled', () => {
 		storybookProcess = null;
 	});
 
-	it('serves every tool except run-story-tests', async () => {
+	it('serves every tool except test-run', async () => {
 		const response = await mcpRequest(MCP_ENDPOINT, 'tools/list');
 
 		const names = response.result.tools.map((tool: { name: string }) => tool.name).sort();
 		expect(names).toEqual([
-			'display-review',
-			'get-changed-stories',
-			'get-documentation',
-			'get-documentation-for-story',
-			'get-stories-by-component',
+			'docs-list',
+			'docs-show',
+			'docs-show-story',
 			'get-storybook-story-instructions',
-			'list-all-documentation',
-			'preview-stories',
+			'review-create',
+			'stories-changed',
+			'stories-find-by-component',
+			'stories-preview',
 		]);
 	});
 

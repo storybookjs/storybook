@@ -1,5 +1,5 @@
 /**
- * Composition coverage for the docs rows, over a stubbed manifest provider.
+ * Composition coverage for the docs tools, over a stubbed manifest provider.
  *
  * The e2e composition suites reach three live Chromatic-hosted Storybooks, so they cannot prove
  * anything when those are unreachable. These tests exercise the same registry path in-process.
@@ -76,7 +76,7 @@ describe('docs tools in a composition', () => {
 
   it('takes a storybookId, since ids are only unique within a source', () => {
     const metadata = getAddonToolMetadata(context);
-    const show = metadata.find((tool) => tool.name === 'get-documentation');
+    const show = metadata.find((tool) => tool.name === 'docs-show');
 
     expect((show?.schema as any).entries).toHaveProperty('storybookId');
   });
@@ -85,7 +85,7 @@ describe('docs tools in a composition', () => {
     const { server, tools } = makeServer(['local', 'design-system']);
     await registerAddonMcpTools(server, context);
 
-    const result = await tools.get('list-all-documentation')!({});
+    const result = await tools.get('docs-list')!({});
 
     expect(result.content[0].text).toContain('# Local');
     expect(result.content[0].text).toContain('# Design System');
@@ -102,7 +102,7 @@ describe('docs tools in a composition', () => {
     const { server, tools } = makeServer(['design-system']);
     await registerAddonMcpTools(server, context);
 
-    const result = await tools.get('list-all-documentation')!({});
+    const result = await tools.get('docs-list')!({});
 
     expect(result.content[0].text).toContain('# Design System');
     expect(collectTelemetry).toHaveBeenCalledWith(
@@ -114,7 +114,7 @@ describe('docs tools in a composition', () => {
     const { server, tools } = makeServer([]);
     await registerAddonMcpTools(server, context);
 
-    const result = await tools.get('list-all-documentation')!({});
+    const result = await tools.get('docs-list')!({});
 
     expect(result.isError).toBe(true);
     expect(collectTelemetry).not.toHaveBeenCalledWith(
@@ -126,7 +126,7 @@ describe('docs tools in a composition', () => {
     const { server, tools } = makeServer(['local']);
     await registerAddonMcpTools(server, context);
 
-    const result = await tools.get('get-documentation')!({ id: 'button' });
+    const result = await tools.get('docs-show')!({ id: 'button' });
 
     expect(result.content[0].text).toContain('storybookId is required');
     expect(result.isError).toBe(true);

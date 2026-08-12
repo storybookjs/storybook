@@ -28,11 +28,10 @@ function storybookRootFromRequest(
 }
 
 /**
- * Where this request's Storybook UI is reachable — the `uiRoot` context fact. The HTTP request
- * parsing lives here in the adapter; which methods prefer it over `origin` is decided on the
- * method definitions.
+ * Derives the complete Storybook UI base URL for the toolset context, including any deployment
+ * subpath. The trusted origin remains separate in the transport context for security checks.
  */
-export function resolveUiRoot(context: {
+export function resolveToolsetOrigin(context: {
   origin?: string;
   request?: Request;
   endpoint?: string;

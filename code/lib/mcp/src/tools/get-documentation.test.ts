@@ -150,16 +150,16 @@ describe('getDocumentationTool', () => {
     });
 
     expect(response.result).toMatchInlineSnapshot(`
-			{
-			  "content": [
-			    {
-			      "text": "Component or Docs Entry not found: "nonexistent". Use the list-all-documentation tool to see available components and documentation entries.",
-			      "type": "text",
-			    },
-			  ],
-			  "isError": true,
-			}
-		`);
+      {
+        "content": [
+          {
+            "text": "Component or Docs Entry not found: "nonexistent". Use the docs-list tool to see available components and documentation entries.",
+            "type": "text",
+          },
+        ],
+        "isError": true,
+      }
+    `);
   });
 
   it('should handle fetch errors gracefully', async () => {

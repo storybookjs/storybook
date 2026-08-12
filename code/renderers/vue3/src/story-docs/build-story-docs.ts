@@ -426,21 +426,10 @@ function resolveRenderFromObjectPath(
   storyDeclaration: NodePath<t.Node>
 ): RenderResolution {
   try {
-    const properties = objectPropertyPaths(path);
-    const resolved = resolveRenderFunction(properties, storyDeclaration);
-    return resolved.kind === 'missing' &&
-      path.node.properties.some((property) => t.isSpreadElement(property))
-      ? { kind: 'unresolved' }
-      : resolved;
+    return resolveRenderFunction(path, storyDeclaration);
   } catch {
     return { kind: 'unresolved' };
   }
-}
-
-function objectPropertyPaths(path: NodePath<t.ObjectExpression>): NodePath<t.ObjectProperty>[] {
-  return path
-    .get('properties')
-    .filter((property): property is NodePath<t.ObjectProperty> => property.isObjectProperty());
 }
 
 /**

@@ -23,6 +23,7 @@ import { getData } from './utils/data.ts';
 import { readOrderedFiles } from './utils/files.ts';
 import { buildFrameworkGlobalsFromOptions } from './utils/framework.ts';
 import { wrapManagerEntries } from './utils/managerEntries.ts';
+import { getNodeCustomConditions } from './utils/nodeConditions.ts';
 import { getTemplatePath, renderHTML } from './utils/template.ts';
 
 export { BROWSER_TARGETS, NODE_TARGET } from '../shared/constants/environments-support.ts';
@@ -92,7 +93,7 @@ export const getConfig: ManagerBuilder['getConfig'] = async (options) => {
     // treeShaking: true,
 
     sourcemap: false,
-    conditions: ['browser', 'module', 'default'],
+    conditions: [...getNodeCustomConditions(), 'browser', 'module', 'default'],
 
     jsxFactory: 'React.createElement',
     jsxFragment: 'React.Fragment',

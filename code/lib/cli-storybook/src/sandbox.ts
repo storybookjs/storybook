@@ -201,7 +201,7 @@ export const sandbox = async ({
       const gitPath = `storybookjs/sandboxes/tree/${branch}/${templateId}/${downloadType}`;
       // create `templateDestination` first
       await mkdir(templateDestination, { recursive: true });
-      spawnSync('npx', ['gitpick@4.12.4', gitPath, templateDestination, '-o'], {
+      spawnSync('npx', ['-y', 'gitpick@4.12.4', gitPath, templateDestination, '-o'], {
         stdio: 'inherit',
       });
       // throw an error if templateDestination is an empty directory

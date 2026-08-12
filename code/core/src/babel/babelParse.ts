@@ -1,13 +1,17 @@
 import * as parser from '@babel/parser';
 import type { ParserOptions } from '@babel/parser';
 import type * as t from '@babel/types';
+import { parse as hermesParse } from 'hermes-parser';
 import * as recast from 'recast';
 
-function parseWithFlowOrTypescript(source: string, parserOptions: parser.ParserOptions) {
-  const flowCommentPattern = /^\s*\/\/\s*@flow/;
-  const useFlowPlugin = flowCommentPattern.test(source);
+const flowCommentPattern = /^\s*\/\/\s*@flow/;
 
-  const parserPlugins: parser.ParserOptions['plugins'] = useFlowPlugin ? ['flow'] : ['typescript'];
+function isFlow(source: string) {
+  return flowCommentPattern.test(source);
+}
+
+function parseWithFlowOrTypescript(source: string, parserOptions: parser.ParserOptions) {
+  const parserPlugins: parser.ParserOptions['plugins'] = isFlow(source) ? ['flow'] : ['typescript'];
 
   // Merge the provided parserOptions with the custom parser plugins
   const mergedParserOptions = {
@@ -26,6 +30,18 @@ export const parserOptions: ParserOptions = {
 };
 
 export const babelParse = (code: string): t.File => {
+  // @babel/parser's `flow` plugin predates modern Flow syntax (`as` casts, `readonly` variance,
+  // `component` syntax, ...), so Flow sources are parsed with hermes-parser instead. Its Babel-AST
+  // mode is recast-incompatible (recast mis-tokenises the output), so those files skip recast and
+  // lose format preservation in babelPrint.
+  if (isFlow(code)) {
+    return hermesParse(code, {
+      babel: true,
+      flow: 'all',
+      sourceType: parserOptions.sourceType === 'script' ? 'script' : 'module',
+      tokens: true,
+    });
+  }
   return recast.parse(code, {
     parser: {
       parse(source: string) {

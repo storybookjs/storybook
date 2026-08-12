@@ -42,6 +42,20 @@ declare var __STORYBOOK_VITEST_MOCKER__: any;
 
 declare module '@aw-web-design/x-default-browser';
 declare module 'ansi-to-html';
+// hermes-parser ships Flow types only. With `babel: true` it returns a @babel/types File.
+declare module 'hermes-parser' {
+  export function parse(
+    code: string,
+    options?: {
+      babel?: boolean;
+      flow?: 'all' | 'detect';
+      sourceType?: 'module' | 'script' | 'unambiguous';
+      tokens?: boolean;
+      allowReturnOutsideFunction?: boolean;
+      enableExperimentalComponentSyntax?: boolean;
+    }
+  ): import('@babel/types').File;
+}
 declare module 'lazy-universal-dotenv';
 declare module 'pnp-webpack-plugin';
 declare module 'react-inspector';

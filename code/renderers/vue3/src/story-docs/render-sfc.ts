@@ -84,7 +84,7 @@ export function partitionArgsByRole(args: ClassifiedArg[]): {
 }
 
 /** Create an isolated hoist context for one generated snippet. */
-export function createRenderContext(args: ClassifiedArg[] = []): RenderContext {
+export function createRenderContext(args: ClassifiedArg[]): RenderContext {
   const imports: RenderContext['imports'] = {};
   const bindings = new Set<string>();
 
@@ -125,10 +125,9 @@ export function renderPropValue(input: RenderPropValueInput, ctx: RenderContext)
   }
 
   if (value.type === 'BooleanLiteral') {
-    return {
-      attrName: value.value ? input.attributeName : `:${input.attributeName}`,
-      ...(value.value ? {} : { value: 'false' }),
-    };
+    return value.value
+      ? { attrName: input.attributeName }
+      : { attrName: `:${input.attributeName}`, value: 'false' };
   }
 
   if (value.type === 'StringLiteral') {
@@ -195,15 +194,7 @@ export function renderSlotContent(arg: ClassifiedArg, ctx: RenderContext): strin
   const value = unwrapValue(arg.value);
 
   if (arg.plan.kind === 'inline') {
-    switch (value.type) {
-      case 'StringLiteral':
-        return value.value;
-      case 'NumericLiteral':
-      case 'BooleanLiteral':
-        return String(value.value);
-      default:
-        return `{{ ${printValue(value)} }}`;
-    }
+    return renderInlinePrimitiveValue(value) ?? `{{ ${printValue(value)} }}`;
   }
 
   const bindingName = allocateBindingName(arg.name, ctx);

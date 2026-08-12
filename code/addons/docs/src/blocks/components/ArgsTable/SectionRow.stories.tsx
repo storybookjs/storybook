@@ -58,3 +58,10 @@ export const SectionRtl = {
   args: { ...Section.args },
   parameters: { direction: 'rtl' },
 };
+
+// The collapsed state renders the right-pointing chevron, which is mirrored under
+// RTL so it keeps pointing along the reading direction.
+export const CollapsedRtl = {
+  args: { ...Collapsed.args },
+  parameters: { direction: 'rtl' },
+};

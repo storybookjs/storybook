@@ -42,6 +42,12 @@ const ExpanderIconRight = styled(ChevronRightIcon)(({ theme }) => ({
       : transparentize(0.3, theme.color.defaultText),
   border: 'none',
   display: 'inline-block',
+  // Unlike the down chevron, this one points along the reading direction, so it
+  // has to be mirrored under RTL (#35481). Note this keys off the `dir` attribute,
+  // which is how the HTML spec expects RTL to be declared.
+  '&:dir(rtl)': {
+    transform: 'scaleX(-1)',
+  },
 }));
 
 const FlexWrapper = styled.span(({ theme }) => ({

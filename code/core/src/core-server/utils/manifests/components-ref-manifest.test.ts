@@ -159,6 +159,35 @@ describe('components-ref-manifest', () => {
     expect(Object.keys(merged.stories)).toEqual(['button--primary', 'button--secondary']);
   });
 
+  it('carries a story warning into the manifest alongside its snippet', () => {
+    const docgen: DocgenPayload = {
+      id: 'button',
+      name: 'Button',
+      path: './button.stories.tsx',
+      jsDocTags: {},
+    };
+    const storyDocs: StoryDocsPayload = {
+      id: 'button',
+      name: 'Button',
+      path: './button.stories.tsx',
+      stories: {
+        'button--primary': {
+          id: 'button--primary',
+          name: 'Primary',
+          snippet: '<Button />',
+          warning: 'Incomplete snippet: `...sharedArgs` could not be resolved statically.',
+        },
+      },
+    };
+
+    expect(mergeManifestPayloads(docgen, storyDocs).stories['button--primary']).toEqual({
+      id: 'button--primary',
+      name: 'Primary',
+      snippet: '<Button />',
+      warning: 'Incomplete snippet: `...sharedArgs` could not be resolved statically.',
+    });
+  });
+
   it('loads story-docs payloads from built snapshots on disk', async () => {
     const payload: StoryDocsPayload = {
       id: 'button',

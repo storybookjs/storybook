@@ -1,7 +1,12 @@
 import { dirname } from 'node:path';
 
 import { type NodePath, babelParse, recast, types as t } from 'storybook/internal/babel';
-import { type CsfFile } from 'storybook/internal/csf-tools';
+import {
+  type CsfFile,
+  collectImportBindings,
+  importedName,
+  isTypeSpecifier,
+} from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import type { TypescriptOptions as TypescriptOptionsBase } from 'storybook/internal/types';
 
@@ -34,13 +39,6 @@ export type StoryRef = {
 };
 
 const baseIdentifier = (component: string) => component.split('.')[0] ?? component;
-
-const isTypeSpecifier = (
-  s: t.ImportSpecifier | t.ImportDefaultSpecifier | t.ImportNamespaceSpecifier
-) => t.isImportSpecifier(s) && s.importKind === 'type';
-
-const importedName = (im: t.Identifier | t.StringLiteral) =>
-  t.isIdentifier(im) ? im.name : im.value;
 
 const addUniqueBy = <T>(arr: T[], item: T, eq: (a: T) => boolean) => {
   if (!arr.find(eq)) {
@@ -85,7 +83,7 @@ export const getComponents = async ({
   const componentSet = new Set<string>();
   /** Minimum JSX nesting depth per component name (1 = outermost JSX element). */
   const componentDepth = new Map<string, number>();
-  const localToImport = new Map<string, { importId: string; importName: string }>();
+  const localToImport = collectImportBindings(program);
 
   // Gather components from all JSX opening elements, tracking nesting depth incrementally.
   let jsxDepth = 0;
@@ -138,45 +136,6 @@ export const getComponents = async ({
   }
 
   const components = Array.from(componentSet).sort((a, b) => a.localeCompare(b));
-
-  const body = program.get('body');
-
-  // Collect import local bindings for component resolution (no package rewrite here)
-  for (const stmt of body) {
-    if (!stmt.isImportDeclaration()) {
-      continue;
-    }
-    const decl = stmt.node;
-
-    if (decl.importKind === 'type') {
-      continue;
-    }
-    const specifiers = decl.specifiers ?? [];
-
-    if (specifiers.length === 0) {
-      continue;
-    }
-
-    for (const s of specifiers) {
-      if (!('local' in s) || !s.local) {
-        continue;
-      }
-
-      if (isTypeSpecifier(s)) {
-        continue;
-      }
-
-      const importId = decl.source.value;
-      if (t.isImportDefaultSpecifier(s)) {
-        localToImport.set(s.local.name, { importId, importName: 'default' });
-      } else if (t.isImportNamespaceSpecifier(s)) {
-        localToImport.set(s.local.name, { importId, importName: '*' });
-      } else if (t.isImportSpecifier(s)) {
-        const imported = importedName(s.imported);
-        localToImport.set(s.local.name, { importId, importName: imported });
-      }
-    }
-  }
 
   // Filter out locally defined components (those whose base identifier has a local, non-import binding)
   const isLocallyDefinedWithoutImport = (base: string): boolean => {

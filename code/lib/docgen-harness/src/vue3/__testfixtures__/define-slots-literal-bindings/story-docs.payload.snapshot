@@ -1,0 +1,14 @@
+{
+  "id": "define-slots-literal-bindings",
+  "import": "import DefineSlotsLiteralBindings from './DefineSlotsLiteralBindings.vue';",
+  "name": "DefineSlotsLiteralBindings",
+  "path": "__PATH__",
+  "stories": {
+    "forms-define-slots-literal-bindings--scoped-icon-binding": {
+      "description": undefined,
+      "id": "forms-define-slots-literal-bindings--scoped-icon-binding",
+      "name": "Scoped Icon Binding",
+      "summary": undefined,
+    },
+  },
+}

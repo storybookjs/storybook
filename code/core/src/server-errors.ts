@@ -939,3 +939,188 @@ export class AutomigrateError extends StorybookError {
     });
   }
 }
+
+export type ExecaCommandErrorData = {
+  command: string;
+  args: string[];
+  exitCode?: number | string;
+  signal?: string;
+  logs: string;
+  packageManagerErrorCode?: string;
+};
+
+export function formatExecaCommand(data: Pick<ExecaCommandErrorData, 'command' | 'args'>) {
+  return [data.command, ...data.args].join(' ');
+}
+
+export function formatExecaFailureDetails(data: ExecaCommandErrorData) {
+  const trimmedLogs = data.logs.trim();
+
+  if (trimmedLogs) {
+    return trimmedLogs;
+  }
+
+  if (data.exitCode != null) {
+    return `Process exited with code ${data.exitCode}`;
+  }
+
+  if (data.signal) {
+    return `Process was killed with signal ${data.signal}`;
+  }
+
+  return 'No additional output was captured.';
+}
+
+function createExecaCommandFailedMessage(data: ExecaCommandErrorData) {
+  return dedent`
+    Command failed: ${formatExecaCommand(data)}
+
+    ${formatExecaFailureDetails(data)}`;
+}
+
+export class ExecaCommandFailedError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'ExecaCommandFailedError',
+      category: Category.CLI,
+      code: 3,
+      cause: data.cause,
+      message: createExecaCommandFailedMessage(data),
+    });
+  }
+}
+
+export class PackageInstallFailedError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PackageInstallFailedError',
+      category: Category.CLI_INIT,
+      code: 10,
+      cause: data.cause,
+      message: dedent`
+        Failed to install dependencies using ${data.command}.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PackageInstallDependencyConflictError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PackageInstallDependencyConflictError',
+      category: Category.CLI_INIT,
+      code: 11,
+      cause: data.cause,
+      message: dedent`
+        Dependency installation failed because of a version conflict.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PackageInstallMissingManifestError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PackageInstallMissingManifestError',
+      category: Category.CLI_INIT,
+      code: 12,
+      cause: data.cause,
+      message: dedent`
+        Dependency installation failed because no package.json was found in the current directory.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PnpmIgnoredBuildsError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PnpmIgnoredBuildsError',
+      category: Category.CLI_INIT,
+      code: 13,
+      cause: data.cause,
+      message: dedent`
+        pnpm blocked postinstall scripts for one or more packages.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PnpmNoTtyModulesDirError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PnpmNoTtyModulesDirError',
+      category: Category.CLI_INIT,
+      code: 14,
+      cause: data.cause,
+      message: dedent`
+        pnpm aborted while removing the modules directory because no TTY was available.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PackageManagerBinaryNotFoundError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PackageManagerBinaryNotFoundError',
+      category: Category.CLI_INIT,
+      code: 15,
+      cause: data.cause,
+      message: dedent`
+        Storybook could not find the "${data.command}" command on your PATH.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PlaywrightInstallFailedError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PlaywrightInstallFailedError',
+      category: Category.CLI_INIT,
+      code: 16,
+      cause: data.cause,
+      message: dedent`
+        Failed to install Playwright browser binaries.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class NuxtModuleAddFailedError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'NuxtModuleAddFailedError',
+      category: Category.CLI_INIT,
+      code: 17,
+      cause: data.cause,
+      message: dedent`
+        Failed to add @nuxtjs/storybook to the Nuxt project via nuxi.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class AutomigrateAddonA11yTestError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'AutomigrateAddonA11yTestError',
+      category: Category.CLI_AUTOMIGRATE,
+      code: 3,
+      cause: data.cause,
+      message: dedent`
+        Failed while running the addon-a11y-addon-test automigration.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}

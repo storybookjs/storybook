@@ -2,6 +2,7 @@ import versions from './versions.ts';
 
 /// <reference types="@types/compression" />
 
+export { jsTsSourceExtensions } from '../shared/constants/extensions.ts';
 export * from './presets.ts';
 export * from './utils/cache.ts';
 export * from './utils/cli.ts';
@@ -24,14 +25,17 @@ export * from './utils/load-main-config.ts';
 export * from './utils/load-manager-or-addons-file.ts';
 export * from './utils/load-preview-or-config-file.ts';
 export * from './utils/log-config.ts';
+export * from './utils/module-resolver.ts';
 export * from './utils/normalize-stories.ts';
 export * from './utils/paths.ts';
 export * from './utils/read-dependency-manifest.ts';
 export * from './utils/readTemplate.ts';
+export * from './utils/resolve-meta-component.ts';
 export * from './utils/remove.ts';
 export * from './utils/resolve-path-in-sb-cache.ts';
 export * from './utils/symlinks.ts';
 export * from './utils/template.ts';
+export * from './utils/tsconfig.ts';
 export * from './utils/validate-config.ts';
 export * from './utils/validate-configuration-files.ts';
 export * from './utils/satisfies.ts';
@@ -40,6 +44,7 @@ export * from './utils/formatter.ts';
 export * from './utils/get-story-id.ts';
 export * from './utils/component-id.ts';
 export * from './utils/select-component-entry.ts';
+export * from './utils/lazy-docgen-middleware.ts';
 export * from './utils/posix.ts';
 export * from './utils/sync-main-preview-addons.ts';
 export * from './utils/setup-addon-in-config.ts';
@@ -48,9 +53,11 @@ export * from './js-package-manager/index.ts';
 export * from './utils/scan-and-transform-files.ts';
 export * from './utils/transform-imports.ts';
 export * from '../shared/utils/module.ts';
+export * from '../shared/utils/paths.ts';
 export * from './utils/get-addon-names.ts';
 export * from './utils/utils.ts';
 export * from './utils/command.ts';
+export * from './utils/file-lock.ts';
 export * from './node-version.ts';
 
 export { versions };

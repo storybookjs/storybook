@@ -1,0 +1,14 @@
+{
+  "id": "props-union-enum",
+  "import": "import PropsUnionEnum from './PropsUnionEnum.vue';",
+  "name": "PropsUnionEnum",
+  "path": "__PATH__",
+  "stories": {
+    "forms-props-union-enum--props-as-written": {
+      "description": undefined,
+      "id": "forms-props-union-enum--props-as-written",
+      "name": "Props As Written",
+      "summary": undefined,
+    },
+  },
+}

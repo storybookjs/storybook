@@ -33,6 +33,43 @@ describe('expectCurrentOrBetter', () => {
     expect(caught!.message).toContain('lost-default');
   });
 
+  it('threads legacyBaseline and strictTable through to the argTypes comparator', () => {
+    const inventedDefault: StrictArgTypes = {
+      count: { name: 'count', table: { defaultValue: { summary: false as unknown as string } } },
+    };
+    const noDefault: StrictArgTypes = { count: { name: 'count' } };
+    expect(() =>
+      expectCurrentOrBetter({ kind: 'argTypes', baseline: inventedDefault, candidate: noDefault })
+    ).toThrow(/lost-default/);
+    expect(() =>
+      expectCurrentOrBetter({
+        kind: 'argTypes',
+        baseline: inventedDefault,
+        candidate: noDefault,
+        legacyBaseline: true,
+      })
+    ).not.toThrow();
+
+    const summary = (text: string): StrictArgTypes => ({
+      count: { name: 'count', table: { type: { summary: text } } },
+    });
+    expect(() =>
+      expectCurrentOrBetter({
+        kind: 'argTypes',
+        baseline: summary('number'),
+        candidate: summary('string'),
+      })
+    ).not.toThrow();
+    expect(() =>
+      expectCurrentOrBetter({
+        kind: 'argTypes',
+        baseline: summary('number'),
+        candidate: summary('string'),
+        strictTable: true,
+      })
+    ).toThrow(/changed-summary/);
+  });
+
   it('routes snippet input to the snippet comparator', () => {
     const baseline = '<sb-cmp [count]="3"></sb-cmp>';
     expect(() =>

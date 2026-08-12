@@ -9,8 +9,7 @@ import { parse } from 'vue-docgen-api';
 import { extractArgTypes } from '../../../../renderers/vue3/src/extractArgTypes.ts';
 import { generateSourceCode } from '../../../../renderers/vue3/src/docs/sourceDecorator.ts';
 import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
-import { isSnapshotUpdateRun } from '../compare/is-snapshot-update-run.ts';
-import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
+import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 
 if (BASELINE_PATH !== 'legacy') {
@@ -49,22 +48,12 @@ describe('vue3 legacy baselines', () => {
       JSON.parse(JSON.stringify(metaData))
     );
 
-    const argTypesPath = join(testDir, 'argtypes.snapshot');
-    const committedArgTypes = existsSync(argTypesPath)
-      ? readFileSync(argTypesPath, 'utf8')
-      : undefined;
-
     const argTypes = extractArgTypes(component);
-    await expect(argTypes).toMatchFileSnapshot(argTypesPath);
-
-    if (committedArgTypes !== undefined) {
-      const parsed = parseArgTypesSnapshot(committedArgTypes, `${fixtureCase}/argtypes.snapshot`);
-      if (!isSnapshotUpdateRun()) {
-        // Round-trip proof: the tokenizer must reconstruct exactly what pretty-format wrote.
-        expect(parsed).toEqual(argTypes);
-      }
-      expectCurrentOrBetter({ kind: 'argTypes', baseline: parsed, candidate: argTypes! });
-    }
+    await recordArgTypesSnapshot({
+      path: join(testDir, 'argtypes.snapshot'),
+      label: `${fixtureCase}/argtypes.snapshot`,
+      candidate: argTypes!,
+    });
 
     for (const [exportName, story] of Object.entries<{ args?: Record<string, unknown> }>(stories)) {
       const ctx = {
@@ -77,7 +66,6 @@ describe('vue3 legacy baselines', () => {
         ? readFileSync(snippetPath, 'utf8')
         : undefined;
       const snippet = generateSourceCode(ctx);
-      await expect(snippet).toMatchFileSnapshot(snippetPath);
       if (committedSnippet !== undefined) {
         expectCurrentOrBetter({
           kind: 'snippet',
@@ -86,6 +74,7 @@ describe('vue3 legacy baselines', () => {
           candidate: snippet,
         });
       }
+      await expect(snippet).toMatchFileSnapshot(snippetPath);
     }
 
     // toMatchFileSnapshot files sit outside vitest's obsolete-snapshot detection, so a

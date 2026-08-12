@@ -5,7 +5,7 @@ import { keyOf, resolveIdentifierInit } from './utils.ts';
 
 /** A function a story or meta supplies through `render`. */
 export type RenderFunctionPath = NodePath<
-  t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration
+  t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration | t.ObjectMethod
 >;
 
 /**
@@ -25,7 +25,12 @@ const isRenderFunction = (path: NodePath<t.Node>): path is RenderFunctionPath =>
 
 /**
  * Resolves the `render` property of a story or meta config, following a local identifier
- * (`render: Template`) to the function it names.
+ * (`render: Template`) to the function it names and accepting the `render(args) {}` method
+ * shorthand.
+ *
+ * Spread semantics follow the runtime: a spread written after `render` can shadow it, so the
+ * result is `unresolved`; a spread before it is harmless because the explicit property wins. When
+ * `render` is missing, any spread could still be supplying one, which is also `unresolved`.
  *
  * `storyDeclaration` anchors the identifier lookup to the module the story lives in, so a helper
  * declared beside the story resolves while an imported one reports `unresolved`.
@@ -34,14 +39,32 @@ const isRenderFunction = (path: NodePath<t.Node>): path is RenderFunctionPath =>
  * story-file mistake rather than something a static pass merely could not follow.
  */
 export function resolveRenderFunction(
-  properties: NodePath<t.ObjectProperty>[],
+  config: NodePath<t.ObjectExpression> | undefined,
   storyDeclaration: NodePath<t.Node>
 ): RenderResolution {
-  const renderPath = properties.find((property) => keyOf(property.node) === 'render')?.get('value');
+  const properties = config?.get('properties') ?? [];
+  const renderIndex = properties.findIndex(
+    (property) =>
+      (property.isObjectProperty() || property.isObjectMethod()) &&
+      keyOf(property.node) === 'render'
+  );
 
-  if (!renderPath) {
-    return { kind: 'missing' };
+  if (renderIndex === -1) {
+    return properties.some((property) => property.isSpreadElement())
+      ? { kind: 'unresolved' }
+      : { kind: 'missing' };
   }
+
+  if (properties.some((property, index) => index > renderIndex && property.isSpreadElement())) {
+    return { kind: 'unresolved' };
+  }
+
+  const renderProperty = properties[renderIndex];
+  if (renderProperty.isObjectMethod()) {
+    return { kind: 'resolved', path: renderProperty };
+  }
+
+  const renderPath = (renderProperty as NodePath<t.ObjectProperty>).get('value');
 
   if (renderPath.isIdentifier()) {
     const resolved = resolveIdentifierInit(storyDeclaration, renderPath);

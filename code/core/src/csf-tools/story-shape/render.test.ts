@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import type { types as t } from 'storybook/internal/babel';
-import { type NodePath, recast } from 'storybook/internal/babel';
+import { recast } from 'storybook/internal/babel';
 
 import { dedent } from 'ts-dedent';
 
@@ -15,12 +14,11 @@ const resolveStoryRender = (code: string) => {
   const csf = loadCsf(source, { makeTitle: (title) => title ?? 'title' }).parse();
   const declaration = csf._storyDeclarationPath['A'];
   const normalized = normalizeStoryDeclaration(declaration);
-  const properties: NodePath<t.ObjectProperty>[] =
-    normalized.type === 'config'
-      ? normalized.path.get('properties').filter((p) => p.isObjectProperty())
-      : [];
 
-  return resolveRenderFunction(properties, declaration);
+  return resolveRenderFunction(
+    normalized.type === 'config' ? normalized.path : undefined,
+    declaration
+  );
 };
 
 const printedBody = (resolution: ReturnType<typeof resolveStoryRender>) =>
@@ -35,6 +33,12 @@ describe('resolveRenderFunction', () => {
     expect(printedBody(resolveStoryRender(`export const A = { render: () => 1 };`))).toBe(
       '() => 1'
     );
+  });
+
+  it('resolves the render method shorthand', () => {
+    expect(
+      printedBody(resolveStoryRender(`export const A = { render(args) { return 1; } };`))
+    ).toBe('render(args) { return 1; }');
   });
 
   it('follows an identifier to a local arrow function', () => {
@@ -72,6 +76,37 @@ describe('resolveRenderFunction', () => {
       resolveStoryRender(`
         const Template = 'not a function';
         export const A = { render: Template };
+      `)
+    ).toEqual({ kind: 'unresolved' });
+  });
+
+  // At runtime `{ render: fn, ...base }` runs base.render when the spread carries one, so the
+  // explicit property cannot be trusted.
+  it('reports a render shadowed by a later spread as unresolved', () => {
+    expect(
+      resolveStoryRender(`
+        const base = {};
+        export const A = { render: () => 1, ...base };
+      `)
+    ).toEqual({ kind: 'unresolved' });
+  });
+
+  it('resolves a render preceded by a spread, which it overrides at runtime', () => {
+    expect(
+      printedBody(
+        resolveStoryRender(`
+          const base = {};
+          export const A = { ...base, render: () => 1 };
+        `)
+      )
+    ).toBe('() => 1');
+  });
+
+  it('reports a missing render as unresolved when a spread could be supplying one', () => {
+    expect(
+      resolveStoryRender(`
+        const base = {};
+        export const A = { ...base, args: {} };
       `)
     ).toEqual({ kind: 'unresolved' });
   });

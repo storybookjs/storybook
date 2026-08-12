@@ -1,127 +1,106 @@
-import { describe, expect, it } from 'vitest';
+import { readFile } from 'node:fs/promises';
 
-import type { types as t } from 'storybook/internal/babel';
-import { type NodePath } from 'storybook/internal/babel';
-import {
-  argsRecordFromObjectPath,
-  collectImportBindings,
-  keyOf,
-  loadCsf,
-  mergeArgsRecords,
-  metaArgsRecord,
-  metaObjectPath,
-  normalizeStoryDeclaration,
-  resolveRenderFunction,
-  returnedObjectExpression,
-} from 'storybook/internal/csf-tools';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { classifyArgs, type VueDocgenArgInfo } from './classify-args.ts';
-import {
-  readTemplateRenderConfig,
-  transformTemplate,
-  type TransformTemplateResult,
-} from './transform-template.ts';
+import { vol } from 'memfs';
 
-const DEFAULT_DOCGEN: VueDocgenArgInfo = { props: new Set(), events: new Set(), slots: new Set() };
+import type { IndexEntry } from 'storybook/internal/types';
+import type { DocgenPayload } from 'storybook/open-service';
 
-interface ParsedStory {
-  args: ReturnType<typeof classifyArgs>['args'];
-  imports: string[];
-  template?: string;
+import { buildStoryDocsPayload } from './build-story-docs.ts';
+
+vi.mock('node:fs/promises', { spy: true });
+
+const STORY_PATH = '/stories/MyButton.stories.ts';
+
+const DOCGEN_CATEGORIES: Record<string, string> = {
+  active: 'props',
+  count: 'props',
+  iconName: 'props',
+  label: 'props',
+  options: 'props',
+  ref: 'props',
+  click: 'events',
+  'update:modelValue': 'events',
+  default: 'slots',
+  header: 'slots',
+};
+
+function docgen(id: string): DocgenPayload {
+  return {
+    id,
+    name: 'MyButton',
+    path: STORY_PATH,
+    jsDocTags: {},
+    argTypes: Object.fromEntries(
+      Object.entries(DOCGEN_CATEGORIES).map(([name, category]) => [
+        name,
+        { name, table: { category }, type: { name: 'other', value: 'unknown' } },
+      ])
+    ),
+  };
 }
 
-function parseStory(
+const ENTRY: IndexEntry = {
+  id: 'mybutton--primary',
+  name: 'Primary',
+  title: 'Example/MyButton',
+  type: 'story',
+  subtype: 'story',
+  importPath: STORY_PATH,
+};
+
+async function buildPayload(
   storySource: string,
-  docgen: VueDocgenArgInfo = DEFAULT_DOCGEN,
   importSource = "import MyButton from './MyButton.vue';"
-): ParsedStory {
-  const csf = loadCsf(
-    `
+) {
+  vol.fromJSON({
+    [STORY_PATH]: `
 ${importSource}
 
 const meta = {
   component: MyButton,
   title: 'Example/MyButton',
-  args: {
-    active: true,
-  },
 };
 
 export default meta;
 
 ${storySource}
 `,
-    { makeTitle: () => 'Example/MyButton' }
-  ).parse();
-  const normalized = normalizeStoryDeclaration(csf._storyDeclarationPath.Primary);
+  });
 
-  if (normalized.type !== 'config') {
-    throw new Error('Expected a config story');
+  const payload = await buildStoryDocsPayload(
+    { entry: ENTRY },
+    { readDocgen: async (id) => docgen(id) }
+  );
+  if (!payload) {
+    throw new Error('Expected a story docs payload for the test story file');
   }
+  return payload;
+}
 
-  const storyArgsPath = normalized.path
-    .get('properties')
-    .find((property) => property.isObjectProperty() && keyOf(property.node) === 'args')
-    ?.get('value');
-  const storyArgsObjectPath =
-    storyArgsPath && !Array.isArray(storyArgsPath) && storyArgsPath.isObjectExpression()
-      ? storyArgsPath
-      : undefined;
-  const storyArgs = storyArgsObjectPath ? argsRecordFromObjectPath(storyArgsObjectPath) : {};
-  const classified = classifyArgs(
-    mergeArgsRecords(metaArgsRecord(metaObjectPath(csf)?.node), storyArgs),
-    docgen
+async function primarySnippet(storySource: string, importSource?: string) {
+  const payload = await buildPayload(storySource, importSource);
+  return payload.stories['example-mybutton--primary']?.snippet;
+}
+
+beforeEach(async () => {
+  vol.reset();
+  const memfs = await vi.importActual<typeof import('memfs')>('memfs');
+  vi.mocked(readFile).mockImplementation(
+    memfs.fs.promises.readFile as unknown as typeof import('node:fs/promises').readFile
   );
-  const renderResolution = resolveRenderFunction(
-    objectPropertyPaths(normalized.path),
-    csf._storyDeclarationPath.Primary
-  );
-  const renderObject =
-    renderResolution.kind === 'resolved'
-      ? returnedObjectExpression(renderResolution.path.node)
-      : undefined;
-  const config = renderObject
-    ? readTemplateRenderConfig(renderObject, collectImportBindings(csf._file.path))
-    : undefined;
-
-  return {
-    args: classified.args,
-    imports: config?.componentImports ? Array.from(config.componentImports.values()) : [],
-    template: config?.template,
-  };
-}
-
-function renderStory(
-  storySource: string,
-  docgen?: VueDocgenArgInfo
-): TransformTemplateResult | undefined {
-  const parsed = parseStory(storySource, docgen);
-  return parsed.template
-    ? transformTemplate({
-        args: parsed.args,
-        componentImports: new Map(parsed.imports.map((value) => ['MyButton', value])),
-        template: parsed.template,
-      })
-    : undefined;
-}
-
-function objectPropertyPaths(path: NodePath<t.ObjectExpression>): NodePath<t.ObjectProperty>[] {
-  return path
-    .get('properties')
-    .filter((property): property is NodePath<t.ObjectProperty> => property.isObjectProperty());
-}
+});
 
 describe('transformTemplate', () => {
-  it('expands v-bind args into props, v-model bindings, and slot children', () => {
+  it('expands v-bind args into props and event listeners', async () => {
     expect(
-      renderStory(
-        `
+      await primarySnippet(`
 export const Primary = {
   args: {
-    default: 'Body copy',
-    header: 'Top',
+    active: true,
     label: 'Hi',
-    modelValue: 'Typed text',
+    onClick: () => {},
   },
   render: (args) => ({
     components: { MyButton },
@@ -129,35 +108,100 @@ export const Primary = {
     template: '<MyButton v-bind="args" />',
   }),
 };
-`,
-        {
-          props: new Set(),
-          events: new Set(['update:modelValue']),
-          slots: new Set(['default', 'header']),
-        }
-      )?.snippet
+`)
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
-      import { ref } from "vue";
-
-      const modelValue = ref('Typed text');
-
-      const _default = 'Body copy';
-
-      const header = 'Top';
+      const onClick = () => {};
       </script>
 
       <template>
-        <MyButton active label="Hi" v-model="modelValue">{{ _default }}<template #header>
-          {{ header }}
-        </template></MyButton>
+        <MyButton active label="Hi" @click="onClick" />
       </template>"
     `);
   });
 
-  it('inlines primitive args in text interpolations', () => {
+  it('renders a v-bind model arg as the one-way prop binding the runtime performs', async () => {
     expect(
-      renderStory(`
+      await primarySnippet(`
+export const Primary = {
+  args: { modelValue: 'Typed text' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton v-bind="args" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <MyButton modelValue="Typed text" />
+      </template>"
+    `);
+  });
+
+  it('bails when v-bind args include slot content the runtime would never render', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: {
+    default: 'Body copy',
+    label: 'Hi',
+  },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton v-bind="args" />',
+  }),
+};
+`)
+    ).toBeUndefined();
+  });
+
+  it('preserves author markup around the component byte for byte', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<div class="wrap"><!-- keep --><MyButton disabled v-bind="args" data-x="a &amp; b" /></div>',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <div class="wrap"><!-- keep --><MyButton disabled label="Hi" data-x="a &amp; b" /></div>
+      </template>"
+    `);
+  });
+
+  it('accepts a template literal without expressions', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: \`<div>
+  <MyButton v-bind="args" />
+</div>\`,
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <div>
+          <MyButton label="Hi" />
+        </div>
+      </template>"
+    `);
+  });
+
+  it('inlines primitive args in text interpolations', async () => {
+    expect(
+      await primarySnippet(`
 export const Primary = {
   args: {
     active: false,
@@ -169,7 +213,7 @@ export const Primary = {
     template: '<p>{{ args.label }} {{ args.count }} {{ args.active }}</p>',
   }),
 };
-`)?.snippet
+`)
     ).toMatchInlineSnapshot(`
       "<template>
         <p>Hi 2 false</p>
@@ -177,29 +221,23 @@ export const Primary = {
     `);
   });
 
-  it('expect wrappers around the component to be preserved', () => {
+  it('bails on interpolated strings the template parser would read as markup', async () => {
     expect(
-      renderStory(`
+      await primarySnippet(`
 export const Primary = {
-  args: {
-    label: 'Hi',
-  },
+  args: { label: '<b>bold?</b> & 1 < 2' },
   render: (args) => ({
     setup: () => ({ args }),
-    template: '<div><MyButton v-bind="args" /></div>',
+    template: '<p>{{ args.label }}</p>',
   }),
 };
-`)?.snippet
-    ).toMatchInlineSnapshot(`
-      "<template>
-        <div><MyButton active label="Hi" /></div>
-      </template>"
-    `);
+`)
+    ).toBeUndefined();
   });
 
-  it('rewrites direct v-bind prop expressions with shared value formatting', () => {
+  it('rewrites direct v-bind prop expressions with shared value formatting', async () => {
     expect(
-      renderStory(`
+      await primarySnippet(`
 export const Primary = {
   args: {
     count: 2,
@@ -210,7 +248,7 @@ export const Primary = {
     template: '<MyButton :count="args.count" v-bind:options="args.options" />',
   }),
 };
-`)?.snippet
+`)
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
       const options = { density: 'compact' };
@@ -222,10 +260,95 @@ export const Primary = {
     `);
   });
 
-  it('reserves ref before hoisting template args with v-model', () => {
+  it('quotes rewritten string values that contain double quotes', async () => {
     expect(
-      renderStory(
-        `
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'say "hi"' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton v-bind="args" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <MyButton label='say "hi"' />
+      </template>"
+    `);
+  });
+
+  it('keeps author-written slot templates, including the shorthand, untouched', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton :label="args.label"><template #header>Static header</template></MyButton>',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <MyButton label="Hi"><template #header>Static header</template></MyButton>
+      </template>"
+    `);
+  });
+
+  it('hoists a handler for an event binding that references an args function', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { onClick: () => {} },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton @click="args.onClick" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      const onClick = () => {};
+      </script>
+
+      <template>
+        <MyButton @click="onClick" />
+      </template>"
+    `);
+  });
+
+  it('hoists a ref for an author-written v-model binding', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { modelValue: 'Typed text' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton v-model="args.modelValue" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import { ref } from "vue";
+
+      const modelValue = ref('Typed text');
+      </script>
+
+      <template>
+        <MyButton v-model="modelValue" />
+      </template>"
+    `);
+  });
+
+  it('reserves ref before hoisting template args alongside a v-model arg', async () => {
+    expect(
+      await primarySnippet(`
 export const Primary = {
   args: {
     modelValue: 'Typed text',
@@ -234,16 +357,10 @@ export const Primary = {
   render: (args) => ({
     components: { MyButton },
     setup: () => ({ args }),
-    template: '<MyButton v-bind="args" />',
+    template: '<MyButton v-model="args.modelValue" :ref="args.ref" />',
   }),
 };
-`,
-        {
-          props: new Set(['ref']),
-          events: new Set(['update:modelValue']),
-          slots: new Set(),
-        }
-      )?.snippet
+`)
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
       import { ref } from "vue";
@@ -254,14 +371,44 @@ export const Primary = {
       </script>
 
       <template>
-        <MyButton active v-model="modelValue" :ref="ref2" />
+        <MyButton v-model="modelValue" :ref="ref2" />
       </template>"
     `);
   });
 
-  it('bails when args are used in unsupported directive expressions', () => {
+  it('bails when an expanded arg collides with an attribute already on the element', async () => {
     expect(
-      renderStory(`
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'FromArgs' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton v-bind="args" label="static" />',
+  }),
+};
+`)
+    ).toBeUndefined();
+  });
+
+  it('bails when a rewritten binding collides with a static attribute', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton label="static" :label="args.label" />',
+  }),
+};
+`)
+    ).toBeUndefined();
+  });
+
+  it('bails when args are used in unsupported directive expressions', async () => {
+    expect(
+      await primarySnippet(`
 export const Primary = {
   args: { count: 2 },
   render: (args) => ({
@@ -273,9 +420,38 @@ export const Primary = {
     ).toBeUndefined();
   });
 
-  it('bails when setup returns anything except args', () => {
+  it('bails on templates Vue itself cannot parse', async () => {
     expect(
-      renderStory(`
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: '<div><span :label="args.label"></div>',
+  }),
+};
+`)
+    ).toBeUndefined();
+  });
+
+  it('bails on dynamic components, which a snippet cannot resolve', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<component :is="args.label" />',
+  }),
+};
+`)
+    ).toBeUndefined();
+  });
+
+  it('bails when setup returns anything except args', async () => {
+    expect(
+      await primarySnippet(`
 export const Primary = {
   args: { label: 'Hi' },
   render: (args) => ({
@@ -290,9 +466,9 @@ export const Primary = {
     ).toBeUndefined();
   });
 
-  it('bails when the returned render object has extra properties', () => {
+  it('bails when the returned render object has extra properties', async () => {
     expect(
-      renderStory(`
+      await primarySnippet(`
 export const Primary = {
   args: { label: 'Hi' },
   render: (args) => ({
@@ -305,69 +481,64 @@ export const Primary = {
     ).toBeUndefined();
   });
 
-  it('bails on non-string-literal templates', () => {
+  it('resolves the render method shorthand', async () => {
     expect(
-      renderStory(`
-const label = 'Hi';
-
+      await primarySnippet(`
 export const Primary = {
-  args: { label },
-  render: (args) => ({
-    setup: () => ({ args }),
-    template: \`<MyButton>\${label}</MyButton>\`,
-  }),
+  args: { label: 'Hi' },
+  render(args) {
+    return {
+      components: { MyButton },
+      setup: () => ({ args }),
+      template: '<section><MyButton v-bind="args" /></section>',
+    };
+  },
 };
 `)
-    ).toBeUndefined();
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <section><MyButton label="Hi" /></section>
+      </template>"
+    `);
   });
 
-  it('collects imports only for used components', () => {
-    const parsed = parseStory(
-      `
-const renderStory = (args) => ({
-  components: { MyButton, OtherButton },
-  setup: () => ({ args }),
-  template: '<OtherButton label="Saved" />',
-});
+  it('emits no snippet when a later spread can shadow the render', async () => {
+    const payload = await buildPayload(`
+const base = {};
 
 export const Primary = {
-  args: { label: 'Saved' },
-  render: renderStory,
-};
-`,
-      DEFAULT_DOCGEN,
-      "import MyButton from './MyButton.vue';\nimport OtherButton from './OtherButton.vue';"
-    );
-    const transformed = parsed.template
-      ? transformTemplate({
-          args: parsed.args,
-          componentImports: new Map([
-            ['MyButton', parsed.imports[0]],
-            ['OtherButton', parsed.imports[1]],
-          ]),
-          template: parsed.template,
-        })
-      : undefined;
-
-    expect(transformed?.imports).toEqual(["import OtherButton from './OtherButton.vue';"]);
-  });
-
-  it('bails when v-bind would add slot args to an element with children', () => {
-    expect(
-      renderStory(
-        `
-export const Primary = {
-  args: {
-    default: 'Replacement body',
-  },
+  args: { label: 'Hi' },
   render: (args) => ({
+    components: { MyButton },
     setup: () => ({ args }),
-    template: '<MyButton v-bind="args">Existing body</MyButton>',
+    template: '<MyButton v-bind="args" />',
+  }),
+  ...base,
+};
+`);
+    expect(payload.stories['example-mybutton--primary']?.snippet).toBeUndefined();
+  });
+
+  it('collects imports for used components, resolving kebab-case tags', async () => {
+    const payload = await buildPayload(
+      `
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton, OtherButton },
+    setup: () => ({ args }),
+    template: '<other-button label="Saved" />',
   }),
 };
 `,
-        { props: new Set(), events: new Set(), slots: new Set(['default']) }
-      )
-    ).toBeUndefined();
+      "import MyButton from './MyButton.vue';\nimport OtherButton from './OtherButton.vue';"
+    );
+
+    expect(payload?.import).toContain("import OtherButton from './OtherButton.vue';");
+    expect(payload.stories['example-mybutton--primary']?.snippet).toMatchInlineSnapshot(`
+      "<template>
+        <other-button label="Saved" />
+      </template>"
+    `);
   });
 });

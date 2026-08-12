@@ -1,31 +1,31 @@
 import {
-  ELEMENT_NODE,
-  TEXT_NODE,
+  NodeTypes,
   parse,
-  renderSync,
-  walkSync,
+  type AttributeNode,
+  type DirectiveNode,
   type ElementNode,
-  type Node as HtmlNode,
-  type TextNode,
-} from 'ultrahtml';
+  type TemplateChildNode,
+} from '@vue/compiler-dom';
 
 import { types as t } from 'storybook/internal/babel';
-import { keyOf, propertyValue, type ImportBinding } from 'storybook/internal/csf-tools';
+import {
+  buildImportStatements,
+  keyOf,
+  propertyValue,
+  type ImportBinding,
+} from 'storybook/internal/csf-tools';
 
-import { importStatementForBinding, indent, isVueExpressionAttribute } from './ast-utils.ts';
 import type { ClassifiedArg } from './classify-args.ts';
-import { unwrapValue } from './classify-value.ts';
+import { isFunctionExpression, unwrapValue } from './classify-value.ts';
 import {
   createRenderContext,
-  partitionArgsByRole,
-  type RenderContext,
-  renderEventArg,
+  hoistArgValue,
+  hoistModelRef,
+  renderArgsBindingAttributes,
+  renderBoundArgAttribute,
   renderInlinePrimitiveValue,
   renderPreparedSfcSnippet,
-  renderPropLikeArg,
-  renderPropValue,
-  renderSlotContent,
-  type RenderedProp,
+  type RenderContext,
 } from './render-sfc.ts';
 
 export interface TemplateRenderConfig {
@@ -51,18 +51,22 @@ export interface TransformTemplateResult {
   imports: string[];
 }
 
-type MutableElementNode = ElementNode & {
-  attributes: Record<string, string>;
-  children: HtmlNode[];
-};
+interface Edit {
+  start: number;
+  end: number;
+  text: string;
+}
+
+interface TransformState {
+  argsByName: Map<string, ClassifiedArg>;
+  ctx: RenderContext;
+  edits: Edit[];
+  usedImports: Set<string>;
+  componentImports: Map<string, string>;
+  template: string;
+}
 
 const ARGS_NAME = 'args';
-/**
- * This marker is used to indicate that an attribute was rendered without a value, so that it can be removed from the final SFC snippet
- * For example, `<Button disabled />` is rendered as `<Button disabled="__STORYBOOK_VUE_STORY_DOCS_BARE_ATTRIBUTE__" />` and then transformed into `<Button disabled />`
- * It's a limitation of ultrahtml
- */
-const BARE_ATTRIBUTE_MARKER = '__STORYBOOK_VUE_STORY_DOCS_BARE_ATTRIBUTE__';
 const ARGS_IDENTIFIER_REGEXP = /(^|[^\w$])args([^\w$]|$)/;
 const ARGS_MEMBER_REGEXP = /^args\.([A-Za-z_$][\w$]*)$/;
 const SETUP_PROPERTY = 'setup';
@@ -76,8 +80,8 @@ export function readTemplateRenderConfig(
     return undefined;
   }
 
-  const template = propertyValue(renderObject, 'template');
-  if (!t.isStringLiteral(template)) {
+  const template = staticTemplateSource(propertyValue(renderObject, 'template'));
+  if (template === undefined) {
     return undefined;
   }
 
@@ -90,70 +94,272 @@ export function readTemplateRenderConfig(
     propertyValue(renderObject, 'components'),
     importBindings
   );
-  return componentImports ? { template: template.value, componentImports } : undefined;
-}
-
-/** Transform supported template-render markup into a static SFC snippet. */
-export function transformTemplate(
-  input: TransformTemplateInput
-): TransformTemplateResult | undefined {
-  const ast = parse(input.template) as HtmlNode;
-  const ctx = createRenderContext(input.args);
-  const argsByName = new Map(input.args.map((arg) => [arg.name, arg]));
-  const usedImports = new Set<string>();
-  let unsupported = false;
-
-  walkSync(ast, (node) => {
-    if (unsupported) {
-      return;
-    }
-
-    if (isTextNode(node)) {
-      const replaced = replaceTextInterpolations(node.value, argsByName);
-      if (replaced === undefined) {
-        unsupported = true;
-        return;
-      }
-      node.value = replaced;
-      return;
-    }
-
-    if (!isElementNode(node)) {
-      return;
-    }
-
-    const componentImport = input.componentImports.get(node.name);
-    if (componentImport) {
-      usedImports.add(componentImport);
-    }
-
-    unsupported = !transformElementAttributes(node, argsByName, ctx);
-  });
-
-  if (unsupported) {
-    return undefined;
-  }
-
-  const templateCode = collapseChildlessComponents(
-    renderSync(ast).replaceAll(`="${BARE_ATTRIBUTE_MARKER}"`, '')
-  );
-  return {
-    snippet: renderPreparedSfcSnippet({ templateCode, ctx }),
-    imports: Array.from(usedImports),
-  };
+  return componentImports ? { template, componentImports } : undefined;
 }
 
 /**
- * Serialization expands every childless element into a tag pair, which rewrites the author's
- * markup. Only components collapse back, so native elements keep valid HTML.
+ * Transform supported template-render markup into a static SFC snippet.
  *
- * @example `<Button label="Hi"></Button>` → `<Button label="Hi" />`
+ * The template is parsed with Vue's own parser, and only the ranges this pass fully understands
+ * (`v-bind="args"`, `:prop="args.x"`, `@event="args.onX"`, `v-model="args.x"`, `{{ args.x }}`) are
+ * spliced in the original source, so every untouched author byte survives verbatim. Anything else
+ * that references args, and anything Vue itself refuses to parse, bails to the runtime source
+ * fallback.
  */
-function collapseChildlessComponents(markup: string): string {
-  return markup.replace(
-    /<([A-Z][\w.-]*)((?:"[^"]*"|'[^']*'|[^>"'])*)><\/\1>/g,
-    (_match, tag: string, attributes: string) => `<${tag}${attributes.trimEnd()} />`
-  );
+export function transformTemplate(
+  input: TransformTemplateInput
+): TransformTemplateResult | undefined {
+  let invalid = false;
+  const ast = parse(input.template, { onError: () => (invalid = true) });
+  if (invalid) {
+    return undefined;
+  }
+
+  const state: TransformState = {
+    argsByName: new Map(input.args.map((arg) => [arg.name, arg])),
+    ctx: createRenderContext(input.args),
+    edits: [],
+    usedImports: new Set(),
+    componentImports: input.componentImports,
+    template: input.template,
+  };
+
+  if (!ast.children.every((child) => transformNode(child, state))) {
+    return undefined;
+  }
+
+  return {
+    snippet: renderPreparedSfcSnippet({
+      templateCode: applyEdits(input.template, state.edits),
+      ctx: state.ctx,
+    }),
+    imports: Array.from(state.usedImports),
+  };
+}
+
+function transformNode(node: TemplateChildNode, state: TransformState): boolean {
+  if (node.type === NodeTypes.INTERPOLATION) {
+    return transformInterpolation(node, state);
+  }
+
+  if (node.type === NodeTypes.ELEMENT) {
+    return transformElement(node, state);
+  }
+
+  return true;
+}
+
+// <p>{{ args.label }}</p> -> <p>Hello</p>
+function transformInterpolation(
+  node: Extract<TemplateChildNode, { type: NodeTypes.INTERPOLATION }>,
+  state: TransformState
+): boolean {
+  const expression =
+    node.content.type === NodeTypes.SIMPLE_EXPRESSION ? node.content.content.trim() : '';
+  const argName = exactArgsMemberName(expression);
+
+  if (!argName) {
+    return !valueReferencesArgs(expression);
+  }
+
+  const arg = state.argsByName.get(argName);
+  const rendered = arg ? renderInlinePrimitiveValue(arg.value) : undefined;
+  // Runtime interpolation renders escaped text; a value the template parser would read as markup
+  // or as a new interpolation has no faithful inline form.
+  if (rendered === undefined || /[<&]|{{/.test(rendered)) {
+    return false;
+  }
+
+  state.edits.push({ start: node.loc.start.offset, end: node.loc.end.offset, text: rendered });
+  return true;
+}
+
+function transformElement(node: ElementNode, state: TransformState): boolean {
+  // A snippet cannot re-create the registration context a dynamic component resolves against.
+  if (node.tag === 'component') {
+    return false;
+  }
+
+  const importStatement = componentImportForTag(node.tag, state.componentImports);
+  if (importStatement) {
+    state.usedImports.add(importStatement);
+  }
+
+  const nameCounts = attributeNameCounts(node);
+  for (const prop of node.props) {
+    if (prop.type === NodeTypes.DIRECTIVE && !transformDirective(prop, nameCounts, state)) {
+      return false;
+    }
+  }
+
+  return node.children.every((child) => transformNode(child, state));
+}
+
+function transformDirective(
+  directive: DirectiveNode,
+  nameCounts: Map<string, number>,
+  state: TransformState
+): boolean {
+  const expression =
+    directive.exp?.type === NodeTypes.SIMPLE_EXPRESSION ? directive.exp.content.trim() : undefined;
+
+  // <MyButton v-bind="args" />
+  if (directive.name === 'bind' && !directive.arg && expression === ARGS_NAME) {
+    const rendered = renderArgsBindingAttributes(
+      Array.from(state.argsByName.values()),
+      new Set(nameCounts.keys()),
+      state.ctx
+    );
+    if (rendered === undefined) {
+      return false;
+    }
+    state.edits.push(replacementFor(directive, rendered, state.template));
+    return true;
+  }
+
+  const boundProp = staticDirectiveArg(directive);
+  const argName = expression === undefined ? undefined : exactArgsMemberName(expression);
+
+  // <MyButton :label="args.label" />
+  if (directive.name === 'bind' && boundProp && directive.modifiers.length === 0 && argName) {
+    const arg = state.argsByName.get(argName);
+    if (!arg || arg.role === 'slot' || (nameCounts.get(boundProp) ?? 0) > 1) {
+      return false;
+    }
+    state.edits.push({
+      start: directive.loc.start.offset,
+      end: directive.loc.end.offset,
+      text: renderBoundArgAttribute(boundProp, arg, state.ctx),
+    });
+    return true;
+  }
+
+  // <MyButton @click="args.onClick" />
+  if (directive.name === 'on' && boundProp && argName && directive.exp) {
+    const arg = state.argsByName.get(argName);
+    if (!arg || !isFunctionExpression(arg.value)) {
+      return false;
+    }
+    state.edits.push({
+      start: directive.exp.loc.start.offset,
+      end: directive.exp.loc.end.offset,
+      text: hoistArgValue(argName, arg.value, state.ctx),
+    });
+    return true;
+  }
+
+  // <MyButton v-model="args.modelValue" />
+  if (directive.name === 'model' && argName && directive.exp) {
+    const arg = state.argsByName.get(argName);
+    if (!arg || arg.role === 'slot' || arg.role === 'event') {
+      return false;
+    }
+    const bindingName = hoistModelRef(argName, arg.value, state.ctx);
+    if (bindingName === undefined) {
+      return false;
+    }
+    state.edits.push({
+      start: directive.exp.loc.start.offset,
+      end: directive.exp.loc.end.offset,
+      text: bindingName,
+    });
+    return true;
+  }
+
+  // Any other args usage is beyond what a static snippet can honestly represent.
+  return expression === undefined || !valueReferencesArgs(expression);
+}
+
+/**
+ * Removing a directive outright must also consume the whitespace that separated it from its
+ * neighbors, so `<MyButton v-bind="args" />` with nothing to expand stays `<MyButton />`.
+ */
+function replacementFor(directive: DirectiveNode, text: string, template: string): Edit {
+  let start = directive.loc.start.offset;
+  if (text === '') {
+    while (start > 0 && template[start - 1] === ' ') {
+      start -= 1;
+    }
+  }
+  return { start, end: directive.loc.end.offset, text };
+}
+
+function applyEdits(template: string, edits: Edit[]): string {
+  return edits
+    .sort((a, b) => b.start - a.start)
+    .reduce(
+      (source, edit) => source.slice(0, edit.start) + edit.text + source.slice(edit.end),
+      template
+    );
+}
+
+// ':label' or 'v-bind:label' -> 'label'; dynamic args ('[key]') have no static name
+function staticDirectiveArg(directive: DirectiveNode): string | undefined {
+  return directive.arg?.type === NodeTypes.SIMPLE_EXPRESSION && directive.arg.isStatic
+    ? directive.arg.content
+    : undefined;
+}
+
+/**
+ * How often each attribute name occurs on the element, counting a directive by the prop or event
+ * it binds. Vue resolves collisions by source order and merge rules a static rewrite cannot
+ * reproduce, so callers bail when a name is already taken.
+ */
+function attributeNameCounts(node: ElementNode): Map<string, number> {
+  const counts = new Map<string, number>();
+  const add = (name: string | undefined): void => {
+    if (name) {
+      counts.set(name, (counts.get(name) ?? 0) + 1);
+    }
+  };
+
+  for (const prop of node.props) {
+    if (prop.type === NodeTypes.ATTRIBUTE) {
+      add((prop as AttributeNode).name);
+    } else if (prop.name === 'model' && !prop.arg) {
+      add('modelValue');
+    } else {
+      add(staticDirectiveArg(prop));
+    }
+  }
+
+  return counts;
+}
+
+/**
+ * Import statement for a template tag, matched the way Vue resolves components: the literal tag
+ * first, then its PascalCase form (`<my-button>` -> `MyButton`).
+ */
+function componentImportForTag(
+  tag: string,
+  componentImports: Map<string, string>
+): string | undefined {
+  return componentImports.get(tag) ?? componentImports.get(pascalCase(tag));
+}
+
+function pascalCase(tag: string): string {
+  const camel = tag.replace(/-(\w)/g, (_match, char: string) => char.toUpperCase());
+  return camel.charAt(0).toUpperCase() + camel.slice(1);
+}
+
+// 'args.label' -> 'label'
+function exactArgsMemberName(value: string): string | undefined {
+  return ARGS_MEMBER_REGEXP.exec(value)?.[1];
+}
+
+function valueReferencesArgs(value: string): boolean {
+  return ARGS_IDENTIFIER_REGEXP.test(value);
+}
+
+// '<MyButton />' or `<MyButton />` without substitutions
+function staticTemplateSource(node: t.Node | undefined): string | undefined {
+  if (t.isStringLiteral(node)) {
+    return node.value;
+  }
+  if (t.isTemplateLiteral(node) && node.expressions.length === 0) {
+    return node.quasis[0]?.value.cooked;
+  }
+  return undefined;
 }
 
 // { components: { Button }, setup: () => ({ args }), template: '<Button />' }
@@ -198,7 +404,18 @@ function readComponentImports(
       return undefined;
     }
 
-    componentImports.set(tagName, importStatementForBinding(component.name, binding));
+    componentImports.set(
+      tagName,
+      buildImportStatements({
+        refs: [
+          {
+            importId: binding.importId,
+            importName: binding.importName,
+            localImportName: component.name,
+          },
+        ],
+      }).join('\n')
+    );
   }
 
   return componentImports;
@@ -266,201 +483,4 @@ function objectReturnedFromBlock(block: t.BlockStatement): t.ObjectExpression | 
   return t.isReturnStatement(statement) && t.isObjectExpression(statement.argument)
     ? statement.argument
     : undefined;
-}
-
-// <Button v-bind="args" :label="args.label" />
-function transformElementAttributes(
-  node: MutableElementNode,
-  argsByName: Map<string, ClassifiedArg>,
-  ctx: RenderContext
-): boolean {
-  const attributes = node.attributes;
-
-  for (const [name, value] of Object.entries({ ...attributes })) {
-    const attributeValue = typeof value === 'string' ? value.trim() : '';
-
-    // <Button v-bind="args" />
-    if (name === 'v-bind' && attributeValue === ARGS_NAME) {
-      delete attributes[name];
-      if (!expandArgsBinding(node, [...argsByName.values()], ctx)) {
-        return false;
-      }
-      continue;
-    }
-
-    const boundProp = boundPropName(name);
-    // <Button :label="args.label" />
-    if (boundProp && attributeValue) {
-      const argName = exactArgsMemberName(attributeValue);
-      if (argName) {
-        const arg = argsByName.get(argName);
-        if (!arg || arg.role === 'slot') {
-          return false;
-        }
-
-        delete attributes[name];
-        const rendered = renderPropValue(
-          { attributeName: boundProp, variableName: argName, value: arg.value, plan: arg.plan },
-          ctx
-        );
-        applyRenderedAttribute(attributes, rendered);
-        continue;
-      }
-    }
-
-    // <Button @click="args.onClick()" />
-    if (isVueExpressionAttribute(name) && valueReferencesArgs(attributeValue)) {
-      return false;
-    }
-  }
-
-  return true;
-}
-
-// <Button v-bind="args" /> -> <Button label="Hello">Default slot</Button>
-function expandArgsBinding(
-  node: MutableElementNode,
-  args: ClassifiedArg[],
-  ctx: RenderContext
-): boolean {
-  const partitioned = partitionArgsByRole(args);
-  const props = partitioned.props.map((arg) => renderPropLikeArg(arg, ctx));
-  const events = partitioned.events.map((arg) => renderEventArg(arg, ctx));
-
-  for (const prop of [...props, ...events]) {
-    applyRenderedAttribute(node.attributes, prop);
-  }
-
-  const slotNodes = partitioned.slots.flatMap((slot) => renderSlotNodes(slot, node, ctx));
-  if (slotNodes.length === 0) {
-    return true;
-  }
-
-  // <Button v-bind="args">Existing content</Button>
-  if (hasRenderedChildren(node)) {
-    return false;
-  }
-
-  node.children = slotNodes;
-  return true;
-}
-
-// <p>{{ args.label }}</p> -> <p>Hello</p>
-function replaceTextInterpolations(
-  value: string,
-  argsByName: Map<string, ClassifiedArg>
-): string | undefined {
-  let unsupported = false;
-  const replaced = value.replace(/{{([\s\S]*?)}}/g, (match, expression: string) => {
-    const trimmedExpression = expression.trim();
-    const argName = exactArgsMemberName(trimmedExpression);
-    if (!argName) {
-      if (valueReferencesArgs(trimmedExpression)) {
-        unsupported = true;
-      }
-      return match;
-    }
-
-    const arg = argsByName.get(argName);
-    const rendered = arg ? renderInlinePrimitiveValue(arg.value) : undefined;
-    if (rendered === undefined) {
-      unsupported = true;
-      return match;
-    }
-    return rendered;
-  });
-
-  return unsupported ? undefined : replaced;
-}
-
-// header: 'Hello' -> <template #header>Hello</template>
-function renderSlotNodes(
-  arg: ClassifiedArg,
-  parent: MutableElementNode,
-  ctx: RenderContext
-): HtmlNode[] {
-  const content = renderSlotContent(arg, ctx);
-
-  if (arg.name === 'default') {
-    return parseFragment(content, parent);
-  }
-
-  const node: MutableElementNode = {
-    attributes: { [`#${arg.name}`]: BARE_ATTRIBUTE_MARKER },
-    children: [],
-    loc: parent.loc,
-    name: 'template',
-    parent,
-    type: ELEMENT_NODE,
-  };
-  node.children = parseFragment(`\n${indent(content)}\n`, node);
-  return [node];
-}
-
-// '<strong>Hello</strong>' -> [ElementNode]
-function parseFragment(value: string, parent: MutableElementNode): HtmlNode[] {
-  const parsed = parse(value) as HtmlNode;
-  const children = 'children' in parsed && Array.isArray(parsed.children) ? parsed.children : [];
-  for (const child of children) {
-    assignParent(child, parent);
-  }
-  return children;
-}
-
-function assignParent(node: HtmlNode, parent: HtmlNode): void {
-  node.parent = parent;
-  if ('children' in node) {
-    for (const child of node.children) {
-      assignParent(child, node);
-    }
-  }
-}
-
-// 'disabled' -> { disabled: BARE_ATTRIBUTE_MARKER }
-function applyRenderedAttribute(attributes: Record<string, string>, prop: RenderedProp): void {
-  attributes[prop.attrName] = prop.value ?? BARE_ATTRIBUTE_MARKER;
-}
-
-// ':label' or 'v-bind:label' -> 'label'
-function boundPropName(name: string): string | undefined {
-  if (name.startsWith(':') && name.length > 1) {
-    return staticBoundPropName(name.slice(1));
-  }
-
-  if (name.startsWith('v-bind:') && name.length > 'v-bind:'.length) {
-    return staticBoundPropName(name.slice('v-bind:'.length));
-  }
-
-  return undefined;
-}
-
-// '[dynamic]' or 'label.trim' -> undefined
-function staticBoundPropName(name: string): string | undefined {
-  return name.startsWith('[') || name.includes('.') ? undefined : name;
-}
-
-// 'args.label' -> 'label'
-function exactArgsMemberName(value: string): string | undefined {
-  return ARGS_MEMBER_REGEXP.exec(value)?.[1];
-}
-
-function hasRenderedChildren(node: MutableElementNode): boolean {
-  return node.children.some((child) => {
-    if (isTextNode(child)) {
-      return child.value.trim() !== '';
-    }
-    return true;
-  });
-}
-
-function isElementNode(node: HtmlNode): node is MutableElementNode {
-  return node.type === ELEMENT_NODE;
-}
-
-function isTextNode(node: HtmlNode): node is TextNode {
-  return node.type === TEXT_NODE;
-}
-
-function valueReferencesArgs(value: string): boolean {
-  return ARGS_IDENTIFIER_REGEXP.test(value);
 }

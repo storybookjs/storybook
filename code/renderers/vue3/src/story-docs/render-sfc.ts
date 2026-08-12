@@ -1,7 +1,6 @@
 import { types as t } from 'storybook/internal/babel';
 
-import { indent, isVueExpressionAttribute, slotSortKey, wrapSlotContent } from './ast-utils.ts';
-import type { ClassifiedArg, RenderableValuePlan } from './classify-args.ts';
+import type { ClassifiedArg } from './classify-args.ts';
 import { printValue, unwrapValue } from './classify-value.ts';
 
 export interface RenderSfcInput {
@@ -27,18 +26,7 @@ export interface RenderContext {
   variables: Map<string, string>;
 }
 
-export interface RenderPropValueInput {
-  /** Vue template attribute name. */
-  attributeName: string;
-  /** JavaScript identifier referenced by hoisted values. */
-  variableName: string;
-  /** CSF arg value expression. */
-  value: t.Node;
-  /** Render plan the value was classified with. */
-  plan: RenderableValuePlan;
-}
-
-export interface RenderedProp {
+interface RenderedProp {
   /** Vue template attribute. */
   attrName: string;
   /** Vue template attribute value, or undefined for a bare attribute. */
@@ -62,12 +50,129 @@ export function renderSfcSnippet(input: RenderSfcInput): string {
   return renderPreparedSfcSnippet({ templateCode, ctx });
 }
 
+/** Create an isolated hoist context for one generated snippet. */
+export function createRenderContext(args: ClassifiedArg[]): RenderContext {
+  const bindings = new Set<string>();
+
+  // Reserve the identifier up front so no hoisted arg steals it before a ref is declared.
+  if (args.some((arg) => arg.role === 'model')) {
+    bindings.add('ref');
+  }
+
+  return { imports: {}, bindings, variables: new Map() };
+}
+
+// The `ref` import is added only when a ref is actually declared, and fails when a hoisted
+// binding already claimed the identifier.
+function ensureRefImport(ctx: RenderContext): boolean {
+  if (ctx.imports[VUE_PACKAGE]?.has('ref')) {
+    return true;
+  }
+  if (ctx.variables.has('ref')) {
+    return false;
+  }
+  (ctx.imports[VUE_PACKAGE] ??= new Set()).add('ref');
+  ctx.bindings.add('ref');
+  return true;
+}
+
+/** Wrap prepared template markup with the shared SFC block assembly. */
+export function renderPreparedSfcSnippet(input: RenderSfcMarkupInput): string {
+  const template = `<template>\n${indent(input.templateCode)}\n</template>`;
+  const script = renderScript(input.ctx);
+
+  return script ? `${script}\n\n${template}` : template;
+}
+
 /**
- * Split classified args by role, each group sorted in stable attribute order.
+ * Attribute text for a `v-bind="args"` expansion, or `undefined` when no faithful expansion
+ * exists.
  *
- * Sorted before rendering, so hoisted consts are declared in the order their attributes appear.
+ * At runtime `v-bind` spreads args one-way as props and listeners only: an arg named after a slot
+ * never fills that slot, and a `modelValue` arg carries no update binding. Slot args therefore
+ * bail, and model args render as plain prop bindings. A name colliding with an attribute already
+ * on the element bails too, since the winner depends on source order and merge behavior.
  */
-export function partitionArgsByRole(args: ClassifiedArg[]): {
+export function renderArgsBindingAttributes(
+  args: ClassifiedArg[],
+  existingAttributeNames: Set<string>,
+  ctx: RenderContext
+): string | undefined {
+  const partitioned = partitionArgsByRole(args);
+  if (partitioned.slots.length > 0) {
+    return undefined;
+  }
+
+  const collides = [
+    ...partitioned.props.map((arg) => arg.name),
+    ...partitioned.events.map((arg) => arg.eventName ?? arg.name),
+  ].some((name) => existingAttributeNames.has(name));
+  if (collides) {
+    return undefined;
+  }
+
+  const props = partitioned.props.map((arg) =>
+    renderPropValue(
+      { attributeName: arg.name, variableName: arg.name, value: arg.value, plan: arg.plan },
+      ctx
+    )
+  );
+  const events = partitioned.events.map((arg) => renderEventArg(arg, ctx));
+  return [...props, ...events].map(formatRenderedProp).join(' ');
+}
+
+/** Attribute text for one `:prop="args.x"` binding rewritten to the arg's static value. */
+export function renderBoundArgAttribute(
+  attributeName: string,
+  arg: ClassifiedArg,
+  ctx: RenderContext
+): string {
+  return formatRenderedProp(
+    renderPropValue(
+      { attributeName, variableName: arg.name, value: arg.value, plan: arg.plan },
+      ctx
+    )
+  );
+}
+
+/** Hoist an arg value into `<script setup>` and return the binding name that replaces it. */
+export function hoistArgValue(name: string, value: t.Node, ctx: RenderContext): string {
+  const bindingName = allocateBindingName(name, ctx);
+  ctx.variables.set(bindingName, printValue(unwrapValue(value)));
+  return bindingName;
+}
+
+/**
+ * Hoist an arg value as a `ref` for a `v-model` binding, or `undefined` when the `ref` import
+ * cannot be added because a hoisted binding already claimed the name.
+ */
+export function hoistModelRef(name: string, value: t.Node, ctx: RenderContext): string | undefined {
+  if (!ensureRefImport(ctx)) {
+    return undefined;
+  }
+
+  const bindingName = allocateBindingName(name, ctx);
+  ctx.variables.set(bindingName, `ref(${printValue(unwrapValue(value))})`);
+  return bindingName;
+}
+
+/** Inline primitive arg values that do not require script setup hoists. */
+export function renderInlinePrimitiveValue(node: t.Node): string | undefined {
+  const value = unwrapValue(node);
+
+  switch (value.type) {
+    case 'StringLiteral':
+      return value.value;
+    case 'NumericLiteral':
+    case 'BooleanLiteral':
+      return String(value.value);
+    default:
+      return undefined;
+  }
+}
+
+// Split by role, each group sorted so hoisted consts are declared in attribute order.
+function partitionArgsByRole(args: ClassifiedArg[]): {
   props: ClassifiedArg[];
   events: ClassifiedArg[];
   slots: ClassifiedArg[];
@@ -83,29 +188,14 @@ export function partitionArgsByRole(args: ClassifiedArg[]): {
   };
 }
 
-/** Create an isolated hoist context for one generated snippet. */
-export function createRenderContext(args: ClassifiedArg[]): RenderContext {
-  const imports: RenderContext['imports'] = {};
-  const bindings = new Set<string>();
-
-  if (args.some((arg) => arg.role === 'model')) {
-    imports[VUE_PACKAGE] = new Set(['ref']);
-    bindings.add('ref');
-  }
-
-  return { imports, bindings, variables: new Map() };
+interface RenderPropValueInput {
+  attributeName: string;
+  variableName: string;
+  value: t.Node;
+  plan: ClassifiedArg['plan'];
 }
 
-/** Wrap prepared template markup with the shared SFC block assembly. */
-export function renderPreparedSfcSnippet(input: RenderSfcMarkupInput): string {
-  const template = `<template>\n${indent(input.templateCode)}\n</template>`;
-  const script = renderScript(input.ctx);
-
-  return script ? `${script}\n\n${template}` : template;
-}
-
-/** Render a classified prop or model arg into a Vue template attribute. */
-export function renderPropLikeArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
+function renderPropLikeArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
   return arg.role === 'model' ? renderModelArg(arg, ctx) : renderPropArg(arg, ctx);
 }
 
@@ -116,8 +206,7 @@ function renderPropArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
   );
 }
 
-/** Render a classified arg value into a Vue template attribute under a chosen attribute name. */
-export function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): RenderedProp {
+function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): RenderedProp {
   const value = unwrapValue(input.value);
 
   if (input.plan.kind === 'hoist') {
@@ -151,6 +240,7 @@ function hoistedProp(
 }
 
 function renderModelArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
+  ensureRefImport(ctx);
   const bindingName = allocateBindingName(arg.name, ctx);
   ctx.variables.set(bindingName, `ref(${printValue(unwrapValue(arg.value))})`);
 
@@ -158,30 +248,18 @@ function renderModelArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
   return { attrName: directive, value: bindingName };
 }
 
-/** Listeners hoist their handler, because inline handlers would bloat the tag. */
-export function renderEventArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
+// Listeners hoist their handler, because inline handlers would bloat the tag.
+function renderEventArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
   const bindingName = allocateBindingName(arg.name, ctx);
   ctx.variables.set(bindingName, printValue(unwrapValue(arg.value)));
   return { attrName: `@${arg.eventName ?? arg.name}`, value: bindingName };
 }
 
 function renderSlotArg(arg: ClassifiedArg, ctx: RenderContext): string {
-  return wrapSlotContent(arg.name, renderSlotContent(arg, ctx));
-}
-
-/** Inline primitive arg values that do not require script setup hoists. */
-export function renderInlinePrimitiveValue(node: t.Node): string | undefined {
-  const value = unwrapValue(node);
-
-  switch (value.type) {
-    case 'StringLiteral':
-      return value.value;
-    case 'NumericLiteral':
-    case 'BooleanLiteral':
-      return String(value.value);
-    default:
-      return undefined;
-  }
+  const content = renderSlotContent(arg, ctx);
+  return arg.name === 'default'
+    ? content
+    : `<template #${arg.name}>\n${indent(content)}\n</template>`;
 }
 
 /**
@@ -190,7 +268,7 @@ export function renderInlinePrimitiveValue(node: t.Node): string | undefined {
  * Text-shaped literals become text directly; everything else is interpolated, since a hoisted
  * `<script setup>` binding cannot reach slot content any other way.
  */
-export function renderSlotContent(arg: ClassifiedArg, ctx: RenderContext): string {
+function renderSlotContent(arg: ClassifiedArg, ctx: RenderContext): string {
   const value = unwrapValue(arg.value);
 
   if (arg.plan.kind === 'inline') {
@@ -251,10 +329,21 @@ function formatRenderedProp(prop: RenderedProp): string {
     return prop.attrName;
   }
 
-  if (!isVueExpressionAttribute(prop.attrName)) {
+  if (!prop.attrName.startsWith(':') && !prop.attrName.startsWith('@')) {
     // renderPropValue hoists strings mixing both quote styles, so this value is always quotable.
     return `${prop.attrName}=${quoteAttributeValue(prop.value)!}`;
   }
 
   return `${prop.attrName}="${prop.value}"`;
+}
+
+function slotSortKey(name: string): string {
+  return name === 'default' ? '' : name;
+}
+
+function indent(source: string): string {
+  return source
+    .split('\n')
+    .map((line) => `  ${line}`)
+    .join('\n');
 }

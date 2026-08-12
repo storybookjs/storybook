@@ -1,0 +1,14 @@
+{
+  "id": "import-override",
+  "import": "import ImportOverrideButton from './ImportOverrideButton.vue';",
+  "name": "ImportOverrideButton",
+  "path": "__PATH__",
+  "stories": {
+    "forms-import-override--primary": {
+      "description": undefined,
+      "id": "forms-import-override--primary",
+      "name": "Primary",
+      "summary": undefined,
+    },
+  },
+}

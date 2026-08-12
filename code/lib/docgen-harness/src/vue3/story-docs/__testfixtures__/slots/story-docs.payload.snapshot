@@ -1,0 +1,14 @@
+{
+  "id": "slots",
+  "import": "import SlotsPanel from './SlotsPanel.vue';",
+  "name": "SlotsPanel",
+  "path": "__PATH__",
+  "stories": {
+    "forms-slots--primary": {
+      "description": undefined,
+      "id": "forms-slots--primary",
+      "name": "Primary",
+      "summary": undefined,
+    },
+  },
+}

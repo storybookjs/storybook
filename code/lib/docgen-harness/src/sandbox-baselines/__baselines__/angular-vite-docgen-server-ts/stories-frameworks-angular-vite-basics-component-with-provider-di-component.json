@@ -1,0 +1,52 @@
+{
+  "argTypes": {
+    "elRefStr": {
+      "name": "elRefStr",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "required": false,
+          "summary": "() => string"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "isAllDeps": {
+      "name": "isAllDeps",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "required": false,
+          "summary": "() => boolean"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "title": {
+      "name": "title",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "required": false,
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-basics-component-with-provider-di-component",
+  "jsDocTags": {},
+  "name": "DiComponent",
+  "path": "./src/stories/frameworks/angular-vite/basics/component-with-provider/di.component.stories.ts"
+}

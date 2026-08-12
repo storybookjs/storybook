@@ -1,12 +1,19 @@
-import type { DecoratorFunction, LoaderFunction, Renderer } from 'storybook/internal/types';
+import type {
+  BeforeEach,
+  DecoratorFunction,
+  LoaderFunction,
+  Renderer,
+} from 'storybook/internal/types';
 // @ts-expect-error untyped
 import { applyDecorators as reactApplyDecorators } from '@storybook/react/entry-preview-docs';
 
-import type { TanStackParameters } from './types.ts';
+import { routerBeforeEach } from './routing/before-each.ts';
 import { tanstackRouteDecorator } from './routing/decorator.tsx';
 import { routeComponentLoader } from './routing/loader.ts';
+import type { TanStackParameters } from './types.ts';
 
 export const loaders: LoaderFunction<Renderer>[] = [routeComponentLoader];
+export const beforeEach: BeforeEach<Renderer>[] = [routerBeforeEach];
 
 export const applyDecorators = (
   storyFn: Parameters<typeof reactApplyDecorators>[0],

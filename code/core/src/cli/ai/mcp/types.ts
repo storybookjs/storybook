@@ -1,15 +1,14 @@
 /**
- * Reader-side types for the `storybook ai <tool>` MCP passthrough, copied from
- * `@storybook/mcp-proxy` (storybookjs/mcp) per storybookjs/storybook#35124. The
- * writer side lives in `code/core/src/core-server/utils/runtime-instance-registry.ts`;
- * this reader is intentionally more lenient (extra statuses, optional fields) so it
- * also accepts records written by other Storybook versions and wrappers.
+ * Reader-side types for the `storybook ai <tool>` MCP passthrough. The writer side lives in
+ * `code/core/src/core-server/utils/runtime-instance-registry.ts`; this reader is intentionally more
+ * lenient (extra statuses, optional fields) so it also accepts records written by older Storybook
+ * versions and external wrappers.
  */
 import * as v from 'valibot';
 
 /**
- * The in-repo writer only emits `not-installed` and `ready`; `starting` and `error` are written by
- * external wrappers (e.g. the storybookjs/mcp launch script) and must keep being dispatched here.
+ * The in-repo writer only emits `not-installed` and `ready`; `starting` and `error` may appear on
+ * records from older writers / external wrappers and must keep being dispatched here.
  */
 export const McpStatusSchema = v.picklist(['not-installed', 'starting', 'ready', 'error']);
 export type McpStatus = v.InferOutput<typeof McpStatusSchema>;

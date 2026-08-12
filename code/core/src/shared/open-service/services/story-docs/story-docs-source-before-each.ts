@@ -22,7 +22,7 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
 
   const service = (() => {
     try {
-      return getService('core/story-docs');
+      return getService('core/story-docs', { internal: true });
     } catch {
       return undefined;
     }

@@ -1,0 +1,36 @@
+{
+  "argTypes": {
+    "icon": {
+      "name": "icon",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "required": false,
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "label": {
+      "name": "label",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "required": false,
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-basics-component-with-inheritance-icon-button",
+  "jsDocTags": {},
+  "name": "IconButtonComponent",
+  "path": "./src/stories/frameworks/angular-vite/basics/component-with-inheritance/icon-button.stories.ts"
+}

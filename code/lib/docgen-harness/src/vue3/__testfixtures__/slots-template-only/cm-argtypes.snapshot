@@ -1,0 +1,44 @@
+{
+  "default": {
+    "description": "",
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{}",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "{}",
+    },
+  },
+  "header": {
+    "description": "",
+    "name": "header",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{}",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "{}",
+    },
+  },
+  "item": {
+    "description": "",
+    "name": "item",
+    "table": {
+      "category": "slots",
+      "type": {
+        "summary": "{ entry: string; index: number; }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "{ entry: string; index: number; }",
+    },
+  },
+}

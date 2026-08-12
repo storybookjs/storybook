@@ -1,6 +1,19 @@
 import { buildImportStatements, type ImportBinding } from 'storybook/internal/csf-tools';
 
-export function importStatementForBinding(localName: string, binding: ImportBinding): string {
+/**
+ * Import statement binding a component tag, or `undefined` when no statement can name it.
+ *
+ * A namespace binding has no importable member to alias, so it yields no statement rather than an
+ * import the snippet could not compile against.
+ */
+export function importStatementForBinding(
+  localName: string,
+  binding: ImportBinding | undefined
+): string | undefined {
+  if (!binding || binding.importName === '*') {
+    return undefined;
+  }
+
   return buildImportStatements({
     refs: [
       {

@@ -39,8 +39,8 @@ import {
   type ClassifyArgsResult,
   type VueDocgenArgInfo,
 } from './classify-args.ts';
-import { type FunctionSlotRenderer, renderSfcSnippet } from './render-sfc.ts';
-import { renderHSlotFunction, transformH } from './transform-h.ts';
+import { renderSfcSnippet } from './render-sfc.ts';
+import { createHSlotRenderer, transformH } from './transform-h.ts';
 import {
   readTemplateRenderConfig,
   transformTemplate,
@@ -412,7 +412,7 @@ function renderStaticStorySnippet(
 ): StorySnippetResult | undefined {
   // Slot imports collect per attempt so a story that ultimately bails contributes none.
   const slotImports = new Set<string>();
-  const renderFunctionSlot = createFunctionSlotRenderer(options.importBindings, slotImports);
+  const renderFunctionSlot = createHSlotRenderer(options.importBindings, slotImports);
 
   const rendered = ((): StorySnippetResult | undefined => {
     if (renderer.kind === 'sfc') {
@@ -441,22 +441,6 @@ function renderStaticStorySnippet(
   })();
 
   return rendered ? { ...rendered, imports: [...rendered.imports, ...slotImports] } : undefined;
-}
-
-function createFunctionSlotRenderer(
-  importBindings: Map<string, ImportBinding>,
-  slotImports: Set<string>
-): FunctionSlotRenderer {
-  return (value, ctx): string | undefined => {
-    const rendered = renderHSlotFunction({ node: value, ctx, importBindings });
-    if (!rendered) {
-      return undefined;
-    }
-    for (const importStatement of rendered.imports) {
-      slotImports.add(importStatement);
-    }
-    return rendered.content;
-  };
 }
 
 function returnedRenderObjectExpression(

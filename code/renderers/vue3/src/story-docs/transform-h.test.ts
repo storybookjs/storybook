@@ -143,6 +143,28 @@ export const Primary = {
     `);
   });
 
+  it('hoists prop values that resolve against JavaScript globals', () => {
+    expect(
+      renderStory(`
+export const Primary = {
+  render: () => h(MyButton, { date: new Date('2020-01-01'), ratio: Math.PI, label: \`a\${1}b\` }),
+};
+`)?.snippet
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      const date = new Date('2020-01-01');
+
+      const label = \`a\${1}b\`;
+
+      const ratio = Math.PI;
+      </script>
+
+      <template>
+        <MyButton :date="date" :label="label" :ratio="ratio" />
+      </template>"
+    `);
+  });
+
   it('renders string tags, nested h children, and array children', () => {
     expect(
       renderStory(`

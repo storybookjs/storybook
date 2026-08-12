@@ -8,7 +8,7 @@ import {
 
 import { importStatementForBinding, wrapSlotContent } from './ast-utils.ts';
 import type { ClassifiedArg, ClassifiedPropLikeArg, ClassifiedSlotArg } from './classify-args.ts';
-import { classifyValue } from './classify-value.ts';
+import { classifyValue, isFunctionExpression } from './classify-value.ts';
 import {
   createRenderContext,
   formatRenderedProp,
@@ -120,6 +120,28 @@ export function renderHSlotFunction(
   return content ? { content, imports: Array.from(usedImports) } : undefined;
 }
 
+/**
+ * Slot renderer realizing function slots as `h()` trees, funnelling their component imports into
+ * `collectedImports`.
+ *
+ * Taken as a callback by the SFC and template renderers, so neither has to import this module.
+ */
+export function createHSlotRenderer(
+  importBindings: Map<string, ImportBinding>,
+  collectedImports: Set<string>
+): FunctionSlotRenderer {
+  return (value, ctx) => {
+    const rendered = renderHSlotFunction({ node: value, ctx, importBindings });
+    if (!rendered) {
+      return undefined;
+    }
+    for (const importStatement of rendered.imports) {
+      collectedImports.add(importStatement);
+    }
+    return rendered.content;
+  };
+}
+
 // h('div', { class: 'row' }, 'Hi') -> <div class="row">Hi</div>
 function renderHNode(node: t.Node, options: HRenderOptions): string | undefined {
   const value = unwrapValue(node);
@@ -172,12 +194,12 @@ function renderTag(node: t.Node | undefined | null, options: HRenderOptions): HT
     return undefined;
   }
 
-  const binding = options.importBindings.get(tag.name);
-  if (!binding || binding.importName === '*') {
+  const importStatement = importStatementForBinding(tag.name, options.importBindings.get(tag.name));
+  if (!importStatement) {
     return undefined;
   }
 
-  options.usedImports.add(importStatementForBinding(tag.name, binding));
+  options.usedImports.add(importStatement);
   return { name: tag.name, selfClosing: true };
 }
 
@@ -232,9 +254,10 @@ function renderProps(
     ...partitioned.props.map((arg) => formatRenderedProp(renderPropLikeArg(arg, options.ctx))),
     ...partitioned.events.map((arg) => formatRenderedProp(renderEventArg(arg, options.ctx))),
   ];
+  const renderSlot = createHSlotRenderer(options.importBindings, options.usedImports);
   const slotChildren: string[] = [];
   for (const slot of partitioned.slots) {
-    const content = renderSlotArgContent(slot, options.ctx, hFunctionSlotRenderer(options));
+    const content = renderSlotArgContent(slot, options.ctx, renderSlot);
     // A function slot without renderable content would misrepresent the story, so bail.
     if (content === undefined) {
       return undefined;
@@ -243,23 +266,6 @@ function renderProps(
   }
 
   return { attributes, slotChildren };
-}
-
-function hFunctionSlotRenderer(options: HRenderOptions): FunctionSlotRenderer {
-  return (value, ctx) => {
-    const rendered = renderHSlotFunction({
-      node: value,
-      ctx,
-      importBindings: options.importBindings,
-    });
-    if (!rendered) {
-      return undefined;
-    }
-    for (const importStatement of rendered.imports) {
-      options.usedImports.add(importStatement);
-    }
-    return rendered.content;
-  };
 }
 
 // h(tag, null), h(tag, args), h(tag, { ...args, label: 'Hi' })
@@ -341,7 +347,7 @@ function argForObjectProperty(
   options: HRenderOptions
 ): ClassifiedArg | undefined {
   const argValue = substituteArgsMember(value, options);
-  if (!argValue || !isStaticValue(argValue, options)) {
+  if (!argValue) {
     return undefined;
   }
 
@@ -423,6 +429,7 @@ function renderSlotsObject(
   value: t.ObjectExpression,
   options: HRenderOptions
 ): string[] | undefined {
+  const renderSlot = createHSlotRenderer(options.importBindings, options.usedImports);
   const slots: string[] = [];
 
   for (const property of value.properties) {
@@ -432,26 +439,15 @@ function renderSlotsObject(
 
     const name = keyOf(property);
     const slotFunction = unwrapValue(property.value);
-    if (
-      !name ||
-      !slotFunction ||
-      (!t.isArrowFunctionExpression(slotFunction) && !t.isFunctionExpression(slotFunction))
-    ) {
+    if (!name || !slotFunction || !isFunctionExpression(slotFunction)) {
       return undefined;
     }
 
-    const rendered = renderHSlotFunction({
-      node: slotFunction,
-      ctx: options.ctx,
-      importBindings: options.importBindings,
-    });
-    if (!rendered) {
+    const content = renderSlot(slotFunction, options.ctx);
+    if (content === undefined) {
       return undefined;
     }
-    for (const importStatement of rendered.imports) {
-      options.usedImports.add(importStatement);
-    }
-    slots.push(wrapSlotContent(name, rendered.content));
+    slots.push(wrapSlotContent(name, content));
   }
 
   return slots;
@@ -471,52 +467,6 @@ function substituteArgsMember(node: t.Node, options: HRenderOptions): t.Node | u
 
   const arg = options.args.find((candidate) => candidate.name === property.name);
   return arg?.role === 'slot' ? undefined : arg?.value;
-}
-
-function isStaticValue(node: t.Node, options: HRenderOptions): boolean {
-  const value = unwrapValue(node);
-  if (!value) {
-    return false;
-  }
-
-  if (isArgsIdentifier(value, options.argsParam)) {
-    return true;
-  }
-
-  if (
-    t.isStringLiteral(value) ||
-    t.isBooleanLiteral(value) ||
-    t.isNumericLiteral(value) ||
-    t.isBigIntLiteral(value) ||
-    t.isNullLiteral(value)
-  ) {
-    return true;
-  }
-
-  if (t.isObjectExpression(value)) {
-    return value.properties.every((property) => {
-      return (
-        t.isObjectProperty(property) &&
-        keyOf(property) !== null &&
-        isStaticValue(property.value, options)
-      );
-    });
-  }
-
-  if (t.isArrayExpression(value)) {
-    return value.elements.every((element) => {
-      if (!element || t.isSpreadElement(element)) {
-        return false;
-      }
-      return isStaticValue(element, options);
-    });
-  }
-
-  if (t.isUnaryExpression(value)) {
-    return t.isNumericLiteral(value.argument) || t.isBigIntLiteral(value.argument);
-  }
-
-  return false;
 }
 
 function isArgsIdentifier(node: t.Node, argsParam: string | undefined): boolean {

@@ -66,7 +66,7 @@ export interface ClassifyArgsResult {
 /**
  * Classifies merged CSF args by Vue docgen precedence: slot, event, v-model, then prop.
  *
- * Four outcomes, one per reason an arg can fail to render:
+ * Five outcomes, one per reason an arg can fail to render:
  *
  * - dropped silently — no static form exists and the runtime source decorator drops it too
  *   (functions passed as undeclared args, args explicitly set to `undefined`, empty strings)

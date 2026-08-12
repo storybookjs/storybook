@@ -1,9 +1,9 @@
 import type * as tsModule from 'typescript';
 
-import type { JsDocTag } from '@storybook/angular-compodoc';
+import type { JsDocTag } from '../types.ts';
 
-// `description` and `rawdescription` both carry the same plain text, which the consumer's
-// `unwrapHtml` passes through unchanged rather than parsing as HTML.
+// `description` and `rawdescription` both carry the same plain text; nothing downstream parses it
+// as HTML, unlike the Markdown-rendered comments Compodoc produced.
 export function getJsDocDescription(
   ts: typeof tsModule,
   node: tsModule.Node

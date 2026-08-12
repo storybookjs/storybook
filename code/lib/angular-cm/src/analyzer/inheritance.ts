@@ -1,6 +1,6 @@
 import type * as ts from 'typescript';
 
-import type { Property } from '@storybook/angular-compodoc';
+import type { Property } from '../types.ts';
 import type { AnalyzerContext } from './context.ts';
 import type { ClassMembers, MemberEntry } from './members.ts';
 import { applyMetadataInputsOutputs, memberKey, visitClassMembers } from './members.ts';
@@ -8,17 +8,24 @@ import { applyMetadataInputsOutputs, memberKey, visitClassMembers } from './memb
 type IOBucket = 'inputs' | 'outputs';
 
 /**
- * Fold every base class's members into `members`.
+ * Resolve one class's members, every base folded in.
  *
  * Angular merges a base definition into a subclass by class field, so identity here is the declared
  * field rather than the public name an alias may have replaced.
+ *
+ * The class's own `@Directive({ inputs })` runs last, once the bases are merged, because it can name
+ * a field an ancestor declared. Recursing through here rather than exporting the passes separately
+ * is what keeps that order from being something a caller has to remember.
  */
-export function mergeInheritedMembers(
+export function resolveClassMembers(
   ctx: AnalyzerContext,
   classNode: ts.ClassLikeDeclaration,
-  members: ClassMembers
-): void {
-  walkBases(ctx, classNode, members, new Set([classNode]));
+  visited: Set<ts.Node> = new Set([classNode])
+): ClassMembers {
+  const members = visitClassMembers(ctx, classNode);
+  walkBases(ctx, classNode, members, visited);
+  applyMetadataInputsOutputs(ctx, classNode, members);
+  return members;
 }
 
 function walkBases(
@@ -45,10 +52,7 @@ function walkBases(
       continue;
     }
     visited.add(declaration);
-    const baseMembers = visitClassMembers(ctx, declaration);
-    // A base carries its own `@Directive({ inputs })`, and nothing downstream would reclassify
-    // those fields once they have been merged in as plain properties.
-    applyMetadataInputsOutputs(ctx, declaration, baseMembers);
+    const baseMembers = resolveClassMembers(ctx, declaration, visited);
     // A declaration file records no decorators or signal calls, so a base from one has nothing to
     // contribute to the IO buckets.
     if (!declaration.getSourceFile().isDeclarationFile) {
@@ -57,7 +61,6 @@ function walkBases(
     }
     mergeInto(members.properties, baseMembers.properties, members);
     mergeInto(members.methods, baseMembers.methods, members);
-    walkBases(ctx, declaration, members, visited);
   }
 }
 

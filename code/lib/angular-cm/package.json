@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular-cm",
-  "version": "10.6.0-alpha.4",
+  "version": "10.6.0-alpha.5",
   "private": true,
   "description": "In-process Angular component metadata analyzer for Storybook docgen",
   "keywords": [
@@ -40,7 +40,6 @@
     "!src/**/*"
   ],
   "devDependencies": {
-    "@storybook/angular-compodoc": "workspace:*",
     "typescript": "^6.0.3"
   },
   "peerDependencies": {

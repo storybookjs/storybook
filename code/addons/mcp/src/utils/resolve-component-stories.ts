@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import { slash } from 'storybook/internal/common';
 import path from 'node:path';
 import type { StoryIndex } from 'storybook/internal/types';
 import {
@@ -6,7 +7,6 @@ import {
   type ModuleGraphStatus,
   type ModuleGraphStoryHit,
 } from './module-graph.ts';
-import { slash } from './slash.ts';
 
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs'] as const;
 const INDEX_BASENAMES = SOURCE_EXTENSIONS.map((ext) => `index${ext}`);

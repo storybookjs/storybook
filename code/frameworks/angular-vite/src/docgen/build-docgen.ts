@@ -8,9 +8,12 @@ import type {
 
 import { resolve } from 'node:path';
 
-import type { CompodocParsingLogger } from '@storybook/angular-compodoc';
-import { extractArgTypesFromData, unwrapPlainText } from '@storybook/angular-compodoc';
-import type { AngularClassMeta, AngularComponentMetaResult } from '@storybook/angular-cm';
+import type {
+  AngularClassMeta,
+  AngularComponentMetaResult,
+  ParsingLogger,
+} from '@storybook/angular-cm';
+import { extractArgTypesFromData } from '@storybook/angular-cm';
 import { resolveStoryComponent } from './resolve-component.ts';
 
 // Structured-cloned onto the worker thread, so every field must be plain JSON data.
@@ -18,9 +21,23 @@ export interface AngularDocgenOptions {
   angularFilterNonInputControls?: boolean;
 }
 
+export interface SnippetEnum {
+  name: string;
+  members: { name: string; value?: string | number }[];
+}
+
+/** Everything the story-docs provider needs to render a component snippet. */
+export interface AngularComponentSnippetMeta {
+  name: string;
+  selector: string | undefined;
+  inputs: string[];
+  // Output binding names in `outputsClass` order, `model()` outputs `Change`-suffixed.
+  outputs: string[];
+  enums: SnippetEnum[];
+}
+
 export type AngularDocgenPayload = DocgenPayload & {
-  // The analyzer's record for the class, not filtered by `angularFilterNonInputControls`.
-  angularComponentMeta?: AngularClassMeta;
+  angularComponentMeta?: AngularComponentSnippetMeta;
 };
 
 // Structural on purpose: tests hand in a stub instead of a real TypeScript-backed analyzer.
@@ -34,12 +51,41 @@ export interface AngularComponentMetaSource {
 export interface BuildDocgenContext {
   manager: AngularComponentMetaSource;
   options: AngularDocgenOptions;
-  logger: CompodocParsingLogger;
+  logger: ParsingLogger;
   resolvePath?: (importPath: string) => string;
 }
 
-// Plain text keeps `Array<string>` intact; `modern` drops the quirks legacy compodoc is pinned to.
-export const ACM_EXTRACT_OPTIONS = { unwrapHtml: unwrapPlainText, modern: true } as const;
+const inputsOf = (entry: AngularClassMeta) =>
+  'inputsClass' in entry ? (entry.inputsClass ?? []) : [];
+
+const outputsOf = (entry: AngularClassMeta) =>
+  'outputsClass' in entry ? (entry.outputsClass ?? []) : [];
+
+export const metaToSnippetMeta = (
+  meta: AngularComponentMetaResult
+): AngularComponentSnippetMeta => {
+  const { entry } = meta;
+  const inputs = inputsOf(entry).map((input) => input.name);
+  const inputNames = new Set(inputs);
+  const outputs: string[] = [];
+  for (const output of outputsOf(entry)) {
+    // model() lands under the same bare name in both arrays; its output binds as `${name}Change`.
+    const bindingName = inputNames.has(output.name) ? `${output.name}Change` : output.name;
+    if (!outputs.includes(bindingName)) {
+      outputs.push(bindingName);
+    }
+  }
+  return {
+    name: entry.name,
+    selector: entry.selector,
+    inputs,
+    outputs,
+    enums: (meta.json.miscellaneous?.enumerations ?? []).map((enumeration) => ({
+      name: enumeration.name,
+      members: enumeration.childs.map((child) => ({ name: child.name, value: child.value })),
+    })),
+  };
+};
 
 // The description is deliberately not parsed for tags: an `@Input()` inside a documentation code
 // block would become a fabricated tag.
@@ -50,7 +96,8 @@ const extractJsDocTags = (entry: AngularClassMeta): DocgenJsDocTags => {
     if (!name) {
       continue;
     }
-    const value = tag.comment === undefined ? '' : unwrapPlainText(tag.comment).trim();
+    // The analyzer's comments are plain text, never the Markdown-rendered HTML Compodoc produced.
+    const value = tag.comment === undefined ? '' : String(tag.comment).trim();
     (tags[name] ??= []).push(value);
   }
   return tags;
@@ -131,10 +178,9 @@ export const buildDocgenPayload = (
   }
 
   const argTypes = extractArgTypesFromData(meta.entry, {
-    compodocJson: meta.json,
+    metadataJson: meta.json,
     filterNonInputControls: options.angularFilterNonInputControls,
     logger,
-    ...ACM_EXTRACT_OPTIONS,
   }) as StrictArgTypes;
 
   const jsDocTags = extractJsDocTags(meta.entry);
@@ -150,6 +196,6 @@ export const buildDocgenPayload = (
     summary: jsDocTags.summary?.[0],
     jsDocTags,
     argTypes,
-    angularComponentMeta: meta.entry,
+    angularComponentMeta: metaToSnippetMeta(meta),
   };
 };

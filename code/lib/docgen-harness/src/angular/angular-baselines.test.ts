@@ -20,7 +20,8 @@ import {
 } from '../../../../frameworks/angular-vite/src/client/compodoc.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
-import { attachAotCmp, fixtureCases, fixturesDir, recordSnippets } from './render-helpers.ts';
+import { attachAotCmp, recordSnippets } from './render-helpers.ts';
+import { fixtureCases, fixturesDir } from './snippet-recorder.ts';
 
 if (BASELINE_PATH !== 'legacy') {
   throw new Error(
@@ -68,6 +69,6 @@ describe('angular legacy baselines', () => {
     const argTypes = await recordArgTypes(false, 'argtypes.snapshot');
     await recordArgTypes(true, 'argtypes-filtered.snapshot');
 
-    await recordSnippets({ fixtureCase, component, meta, stories, argTypes, prefix: 'snippet-' });
+    await recordSnippets({ fixtureCase, component, meta, stories, argTypes, recorder: 'legacy' });
   });
 });

@@ -1,16 +1,17 @@
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { readFileSync } from 'node:fs';
-import { dirname, join, relative } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { dedent } from 'ts-dedent';
+
 import { vol } from 'memfs';
 
-import type { AngularClassMeta, AngularComponentMetaResult } from '@storybook/angular-cm';
-import type { AngularComponentMetaSource } from './build-docgen.ts';
+import type { AngularDocgenPayload } from './build-docgen.ts';
 import { buildStoryDocsPayload } from './story-docs-build.ts';
+import { extractHostComponentTemplate } from './story-docs-snippet.ts';
 
 vi.mock('node:fs', { spy: true });
 
@@ -24,11 +25,7 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// The story files sit in the fixtures directory next to the component modules they import, because
-// module resolution reads the real filesystem; only the story files' contents come from memfs.
-const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
-const STORY_PATH = join(FIXTURES, 'button.stories.ts');
-const COMPONENT_PATH = join(FIXTURES, 'button.component.ts');
+const STORY_PATH = join(process.cwd(), 'button.stories.ts');
 
 const entry: IndexEntry = {
   id: 'button--default',
@@ -36,58 +33,50 @@ const entry: IndexEntry = {
   title: 'Example/Button',
   type: 'story',
   subtype: 'story',
-  importPath: relative(process.cwd(), STORY_PATH),
+  importPath: 'button.stories.ts',
 };
 
 const givenStoryFile = (source: string) => {
   vol.fromNestedJSON({ [STORY_PATH]: source });
 };
 
-const DEFAULT_STORY_FILE = `
-  import { ButtonComponent } from './button.component';
-  export default { title: 'Example/Button', component: ButtonComponent };
-  export const Default = { args: { label: 'Save', count: 3 } };
-`;
+const noDocgen = async (): Promise<undefined> => undefined;
 
-/** An analyzer class record shaped like the pinned `AngularClassMeta` contract. */
-const componentEntry = (overrides: Record<string, unknown> = {}): AngularClassMeta =>
-  ({
+const buttonDocgen =
+  (jsDocTags: AngularDocgenPayload['jsDocTags'] = {}) =>
+  async (): Promise<AngularDocgenPayload> => ({
+    id: 'example-button',
     name: 'ButtonComponent',
-    type: 'component',
-    file: COMPONENT_PATH,
+    path: STORY_PATH,
+    jsDocTags,
+    angularComponentMeta: {
+      name: 'ButtonComponent',
+      selector: 'sb-button',
+      inputs: ['label'],
+      outputs: ['pressed'],
+      enums: [],
+    },
+  });
+
+/** The docgen stub the story-shape file below is written against. */
+const shapesDocgen = async (): Promise<AngularDocgenPayload> => ({
+  id: 'example-button',
+  name: 'ButtonComponent',
+  path: STORY_PATH,
+  jsDocTags: {},
+  angularComponentMeta: {
+    name: 'ButtonComponent',
     selector: 'sb-button',
-    propertiesClass: [],
-    methodsClass: [],
-    outputsClass: [{ name: 'clicked', type: 'EventEmitter' }],
-    inputsClass: [
-      { name: 'label', type: 'string', optional: false },
-      { name: 'count', type: 'number', optional: true },
-    ],
-    ...overrides,
-  }) as unknown as AngularClassMeta;
-
-const metaFor = (
-  classMeta: AngularClassMeta,
-  json: Record<string, unknown> = {}
-): AngularComponentMetaResult =>
-  ({ entry: classMeta, json: { components: [classMeta], ...json } }) as AngularComponentMetaResult;
-
-const managerReturning = (meta: AngularComponentMetaResult | undefined) => ({
-  extractComponentMeta: vi.fn<AngularComponentMetaSource['extractComponentMeta']>(() => meta),
+    inputs: ['label', 'count'],
+    outputs: ['clicked'],
+    enums: [],
+  },
 });
-
-const soleSnippet = (manager: AngularComponentMetaSource, storyFile = DEFAULT_STORY_FILE) => {
-  givenStoryFile(storyFile);
-  const payload = buildStoryDocsPayload({ entry }, { manager });
-  const stories = Object.values(payload?.stories ?? {});
-  expect(stories).toHaveLength(1);
-  return stories[0];
-};
 
 /**
  * The story shapes the provider has to tell apart, in one file so they share a meta.
  *
- * Written against {@link componentEntry}: `label` and `count` are inputs, `clicked` is an output,
+ * Written against {@link shapesDocgen}: `label` and `count` are inputs, `clicked` is an output,
  * and `footer` is an arg the component does not accept.
  */
 const STORY_SHAPES_FILE = [
@@ -152,18 +141,28 @@ const STORY_SHAPES_FILE = [
   `Csf2AssignedArgs.args = { label: 'assigned', count: 11 };`,
 ].join('\n');
 
-/** Snippet per story name, for a file that declares more than one story. */
-const snippetsOf = (storyFile: string) => {
+/** Template inside the host-component snippet per story name, for a multi-story file. */
+const templatesOf = async (storyFile: string) => {
   givenStoryFile(storyFile);
-  const payload = buildStoryDocsPayload(
-    { entry },
-    { manager: managerReturning(metaFor(componentEntry())) }
+  const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: shapesDocgen });
+  return new Map(
+    Object.values(payload?.stories ?? {}).map((story) => [
+      story.name,
+      story.snippet === undefined ? undefined : extractHostComponentTemplate(story.snippet),
+    ])
   );
-  return new Map(Object.values(payload?.stories ?? {}).map((story) => [story.name, story.snippet]));
+};
+
+const soleStory = async (source: string, getDocgenPayload = buttonDocgen()) => {
+  givenStoryFile(source);
+  const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload });
+  const stories = Object.values(payload?.stories ?? {});
+  expect(stories).toHaveLength(1);
+  return stories[0];
 };
 
 describe('buildStoryDocsPayload', () => {
-  it('returns undefined for entries without a story file or with an unparsable one', () => {
+  it('returns undefined for entries without a story file or with an unparsable one', async () => {
     const docsEntry: IndexEntry = {
       id: 'docs--page',
       name: 'Page',
@@ -173,169 +172,177 @@ describe('buildStoryDocsPayload', () => {
       storiesImports: [],
       tags: [],
     };
-    expect(buildStoryDocsPayload({ entry: docsEntry }, { manager: undefined })).toBeUndefined();
+    expect(
+      await buildStoryDocsPayload({ entry: docsEntry }, { getDocgenPayload: noDocgen })
+    ).toBeUndefined();
 
     givenStoryFile('export default { title: "Broken" ');
-    expect(
-      buildStoryDocsPayload({ entry }, { manager: managerReturning(undefined) })
-    ).toBeUndefined();
+    expect(await buildStoryDocsPayload({ entry }, { getDocgenPayload: noDocgen })).toBeUndefined();
   });
 
-  it('renders inputs present in args and every output, in runtime grammar', () => {
-    const manager = managerReturning(metaFor(componentEntry()));
-    const story = soleSnippet(manager);
-    expect(story.snippet).toBe(
-      '<sb-button [label]="\'Save\'" [count]="3" (clicked)="clicked($event)"></sb-button>'
-    );
-    expect(manager.extractComponentMeta).toHaveBeenCalledWith(COMPONENT_PATH, {
-      exportName: 'ButtonComponent',
-      localName: 'ButtonComponent',
+  it('still emits description-only stories when core/docgen is unavailable', async () => {
+    givenStoryFile(`
+      export default { title: 'Example/Button' };
+      /** Documented without a component. */
+      export const Default = {};
+    `);
+
+    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: noDocgen });
+
+    expect(payload?.name).toBe('Button');
+    expect(Object.values(payload!.stories)[0]).toEqual({
+      id: 'example-button--default',
+      name: 'Default',
+      description: 'Documented without a component.',
     });
   });
 
-  it('merges meta args under story args and ignores args that are not inputs', () => {
-    const manager = managerReturning(metaFor(componentEntry()));
-    const story = soleSnippet(
-      manager,
-      `
-        import { ButtonComponent } from './button.component';
-        export default {
-          title: 'Example/Button',
-          component: ButtonComponent,
-          args: { label: 'Base', notAnInput: true },
-        };
-        export const Default = { args: { count: 2 } };
-      `
-    );
-    expect(story.snippet).toBe(
-      '<sb-button [label]="\'Base\'" [count]="2" (clicked)="clicked($event)"></sb-button>'
+  it('builds a snippet from the snippet meta core/docgen carries alongside argTypes', async () => {
+    givenStoryFile(`
+      import { ButtonComponent } from './button.component';
+      export default { title: 'Example/Button', component: ButtonComponent };
+      export const Default = { args: { label: 'Save' } };
+    `);
+    const getDocgenPayload = async (): Promise<AngularDocgenPayload> => ({
+      id: 'example-button',
+      name: 'ButtonComponent',
+      path: STORY_PATH,
+      jsDocTags: {},
+      angularComponentMeta: {
+        name: 'ButtonComponent',
+        selector: 'sb-button',
+        inputs: ['label'],
+        outputs: [],
+        enums: [],
+      },
+    });
+
+    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload });
+
+    const story = Object.values(payload!.stories)[0];
+    expect(story.snippet).toContain('sb-button');
+    expect(story.snippet).toContain(`[label]="'Save'"`);
+  });
+
+  it('names the payload after the story file component when core/docgen has no payload', async () => {
+    givenStoryFile(`
+      import { ButtonComponent } from './button.component';
+      export default { title: 'Example/Button', component: ButtonComponent };
+      export const Default = { args: { label: 'Save' } };
+    `);
+
+    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: noDocgen });
+
+    expect(payload?.name).toBe('ButtonComponent');
+    const story = Object.values(payload!.stories)[0];
+    expect(story.snippet).toBeUndefined();
+    expect(story.error).toBeUndefined();
+  });
+
+  it('inlines the story file import into the snippet instead of a payload-level field', async () => {
+    givenStoryFile(`
+      import { ButtonComponent } from './button.component';
+      export default { title: 'Example/Button', component: ButtonComponent };
+      export const Default = { args: { label: 'Save' } };
+    `);
+
+    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() });
+
+    expect(payload?.import).toBeUndefined();
+    expect(Object.values(payload!.stories)[0].snippet).toBe(dedent`
+      import { Component } from '@angular/core';
+      import { ButtonComponent } from './button.component';
+
+      @Component({
+        selector: 'app-demo',
+        imports: [ButtonComponent],
+        template: \`<sb-button [label]="'Save'" (pressed)="pressed($event)"></sb-button>\`,
+      })
+      export class DemoComponent {
+        pressed(event: unknown) {}
+      }
+    `);
+  });
+
+  it('refers to the component by the local name the story file imported it under', async () => {
+    givenStoryFile(`
+      import { ButtonComponent as Button } from './button.component';
+      export default { title: 'Example/Button', component: Button };
+      export const Default = {};
+    `);
+
+    const snippet = Object.values(
+      (await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() }))!.stories
+    )[0].snippet;
+
+    expect(snippet).toContain("import { ButtonComponent as Button } from './button.component';");
+    expect(snippet).toContain('imports: [Button],');
+  });
+
+  it('lets an `@import` tag on the component class replace the derived import', async () => {
+    givenStoryFile(`
+      import { ButtonComponent } from './button.component';
+      export default { title: 'Example/Button', component: ButtonComponent };
+      export const Default = {};
+    `);
+    const getDocgenPayload = buttonDocgen({
+      import: ["import { ButtonComponent } from '@design-system/components';"],
+    });
+
+    const snippet = Object.values(
+      (await buildStoryDocsPayload({ entry }, { getDocgenPayload }))!.stories
+    )[0].snippet;
+
+    expect(snippet).toContain("import { ButtonComponent } from '@design-system/components';");
+    expect(snippet).not.toContain('./button.component');
+  });
+
+  it('warns that a component declared in the story file is not imported by the snippet', async () => {
+    givenStoryFile(`
+      import { Component } from '@angular/core';
+      @Component({ selector: 'sb-button', template: '' })
+      class LocalButton {}
+      export default { title: 'Example/Button', component: LocalButton };
+      export const Default = {};
+    `);
+
+    const story = Object.values(
+      (await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() }))!.stories
+    )[0];
+
+    expect(story.snippet).toContain("import { Component } from '@angular/core';");
+    expect(story.snippet).toContain('imports: [LocalButton],');
+    expect(story.snippet!.match(/^import /gm)).toHaveLength(1);
+    expect(story.warning).toBe(
+      'LocalButton is declared in the story file, so the snippet references it without importing it.'
     );
   });
 
-  it('formats undefined, objects, and enum members the way the runtime generator does', () => {
-    const manager = managerReturning(
-      metaFor(
-        componentEntry({
-          inputsClass: [
-            { name: 'label', type: 'string' },
-            { name: 'data', type: 'any' },
-            { name: 'kind', type: 'ButtonKind' },
-          ],
-          outputsClass: [],
-        }),
-        {
-          miscellaneous: {
-            typealiases: [],
-            enumerations: [
-              { name: 'ButtonKind', childs: [{ name: 'Secondary', value: 'secondary' }] },
-            ],
-          },
-        }
-      )
-    );
-    const story = soleSnippet(
-      manager,
-      `
-        import { ButtonComponent } from './button.component';
-        import { ButtonKind } from './types';
-        export default { title: 'Example/Button', component: ButtonComponent };
-        export const Default = {
-          args: {
-            label: undefined,
-            data: { id: 7, tags: ['a', 'b'], nested: { deep: true } },
-            kind: ButtonKind.Secondary,
-          },
-        };
-      `
-    );
-    expect(story.snippet).toBe(
-      '<sb-button [label]="undefined" [data]="{id: 7, tags: [\'a\', \'b\'], nested: {deep: true}}" [kind]="\'secondary\'"></sb-button>'
-    );
+  it('leaves the warning off a snippet that imports its component', async () => {
+    givenStoryFile(`
+      import { ButtonComponent } from './button.component';
+      export default { title: 'Example/Button', component: ButtonComponent };
+      export const Default = {};
+    `);
+
+    const story = Object.values(
+      (await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() }))!.stories
+    )[0];
+
+    expect(story.warning).toBeUndefined();
   });
 
-  it('inlines the source text of arg values it cannot evaluate', () => {
-    const manager = managerReturning(
-      metaFor(componentEntry({ inputsClass: [{ name: 'formatter' }], outputsClass: [] }))
-    );
-    const story = soleSnippet(
-      manager,
-      `
-        import { ButtonComponent } from './button.component';
-        export default { title: 'Example/Button', component: ButtonComponent };
-        export const Default = { args: { formatter: (value) => value.toUpperCase() } };
-      `
-    );
-    expect(story.snippet).toBe(
-      '<sb-button [formatter]="(value) => value.toUpperCase()"></sb-button>'
-    );
-  });
-
-  it('binds a model() output under its Change-suffixed name', () => {
-    const manager = managerReturning(
-      metaFor(
-        componentEntry({
-          inputsClass: [{ name: 'value', type: 'string' }],
-          outputsClass: [{ name: 'value', type: 'string' }],
-        })
-      )
-    );
-    const story = soleSnippet(
-      manager,
-      `
-        import { ButtonComponent } from './button.component';
-        export default { title: 'Example/Button', component: ButtonComponent };
-        export const Default = { args: { value: 'hello' } };
-      `
-    );
-    expect(story.snippet).toBe(
-      '<sb-button [value]="\'hello\'" (valueChange)="valueChange($event)"></sb-button>'
-    );
-  });
-
-  it('renders attribute selectors as an element with plain attributes', () => {
-    const manager = managerReturning(
-      metaFor(
-        componentEntry({
-          selector: 'button[sb-action], a[sb-action]',
-          inputsClass: [{ name: 'emphasis', type: 'boolean' }],
-          outputsClass: [],
-        })
-      )
-    );
-    const story = soleSnippet(
-      manager,
-      `
-        import { ButtonComponent } from './button.component';
-        export default { title: 'Example/Button', component: ButtonComponent };
-        export const Default = { args: { emphasis: true } };
-      `
-    );
-    expect(story.snippet).toBe('<button sb-action [emphasis]="true"></button>');
-  });
-
-  it('falls back to ngComponentOutlet when the component has no selector', () => {
-    const manager = managerReturning(metaFor(componentEntry({ selector: undefined })));
-    const story = soleSnippet(manager);
-    expect(story.snippet).toBe(
-      '<ng-container *ngComponentOutlet="ButtonComponent"></ng-container>'
-    );
-  });
-
-  it('shows the template a custom render returns, keeping the description', () => {
-    const manager = managerReturning(metaFor(componentEntry()));
-    const story = soleSnippet(
-      manager,
-      `
-        import { ButtonComponent } from './button.component';
-        export default { title: 'Example/Button', component: ButtonComponent };
-        /** Renders a hand-written template. */
-        export const Default = {
-          args: { label: 'Save' },
-          render: (args) => ({ template: '<sb-button></sb-button>' }),
-        };
-      `
-    );
-    expect(story.snippet).toBe('<sb-button></sb-button>');
+  it('shows the template a custom render returns, keeping the description', async () => {
+    const story = await soleStory(`
+      import { ButtonComponent } from './button.component';
+      export default { title: 'Example/Button', component: ButtonComponent };
+      /** Renders a hand-written template. */
+      export const Default = {
+        args: { label: 'Save' },
+        render: (args) => ({ template: '<sb-button></sb-button>' }),
+      };
+    `);
+    expect(extractHostComponentTemplate(story.snippet!)).toBe('<sb-button></sb-button>');
     expect(story.description).toBe('Renders a hand-written template.');
   });
 
@@ -347,12 +354,12 @@ describe('buildStoryDocsPayload', () => {
       ['Render Template', '<sb-button rendered></sb-button>'],
       // CSF2: the story is the render function, and Angular's idiom is to return `{ template }`.
       ['Csf 2 Function', '<sb-button csf2></sb-button>'],
-    ])('leaves the %s story alone', (storyName, expected) => {
-      expect(snippetsOf(STORY_SHAPES_FILE).get(storyName)).toBe(expected);
+    ])('shows the %s story as written', async (storyName, expected) => {
+      expect((await templatesOf(STORY_SHAPES_FILE)).get(storyName)).toBe(expected);
     });
 
-    it('treats a null template as no template rather than as markup', () => {
-      expect(snippetsOf(STORY_SHAPES_FILE).get('Null Template')).toBe(
+    it('treats a null template as no template rather than as markup', async () => {
+      expect((await templatesOf(STORY_SHAPES_FILE)).get('Null Template')).toBe(
         `<sb-button [label]="'meta'" [count]="2" (clicked)="clicked($event)"></sb-button>`
       );
     });
@@ -362,18 +369,18 @@ describe('buildStoryDocsPayload', () => {
     it.each([
       ['Hoisted Template', '<sb-button hoisted></sb-button>'],
       ['Render Identifier', '<sb-button via-fn></sb-button>'],
-    ])('follows the %s story identifier to its declaration', (storyName, expected) => {
-      expect(snippetsOf(STORY_SHAPES_FILE).get(storyName)).toBe(expected);
+    ])('follows the %s story identifier to its declaration', async (storyName, expected) => {
+      expect((await templatesOf(STORY_SHAPES_FILE)).get(storyName)).toBe(expected);
     });
 
-    it('falls back to generated bindings for an imported template it cannot follow', () => {
-      expect(snippetsOf(STORY_SHAPES_FILE).get('Imported Template')).toBe(
+    it('falls back to generated bindings for an imported template it cannot follow', async () => {
+      expect((await templatesOf(STORY_SHAPES_FILE)).get('Imported Template')).toBe(
         `<sb-button [label]="'meta'" [count]="5" (clicked)="clicked($event)"></sb-button>`
       );
     });
 
-    it('reads args CSF2 assigned after the declaration', () => {
-      expect(snippetsOf(STORY_SHAPES_FILE).get('Csf 2 Assigned Args')).toBe(
+    it('reads args CSF2 assigned after the declaration', async () => {
+      expect((await templatesOf(STORY_SHAPES_FILE)).get('Csf 2 Assigned Args')).toBe(
         `<sb-button [label]="'assigned'" [count]="11" (clicked)="clicked($event)"></sb-button>`
       );
     });
@@ -390,76 +397,45 @@ describe('buildStoryDocsPayload', () => {
         `<sb-button [label]="'meta'" [count]="10" (clicked)="clicked($event)"></sb-button>`,
       ],
       ['ReExportedTemplate', '<sb-button reexported></sb-button>'],
-    ])('reads the re-exported %s story from its own config', (storyName, expected) => {
-      expect(snippetsOf(STORY_SHAPES_FILE).get(storyName)).toBe(expected);
+    ])('reads the re-exported %s story from its own config', async (storyName, expected) => {
+      expect((await templatesOf(STORY_SHAPES_FILE)).get(storyName)).toBe(expected);
     });
 
     // `argsToTemplate(args)` expands to exactly the bindings this generator emits, so a template
     // built around it is fully readable and the user's wrapper markup survives.
-    it('expands argsToTemplate inside the markup the story wrote', () => {
-      expect(snippetsOf(STORY_SHAPES_FILE).get('Args To Template')).toBe(
+    it('expands argsToTemplate inside the markup the story wrote', async () => {
+      expect((await templatesOf(STORY_SHAPES_FILE)).get('Args To Template')).toBe(
         `<div class="wrap"><sb-button [label]="'Save'" [count]="7" (clicked)="clicked($event)"></sb-button></div>`
       );
     });
 
-    it('honours argsToTemplate exclude options', () => {
-      expect(snippetsOf(STORY_SHAPES_FILE).get('Args To Template Exclude')).toBe(
+    it('honours argsToTemplate exclude options', async () => {
+      expect((await templatesOf(STORY_SHAPES_FILE)).get('Args To Template Exclude')).toBe(
         `<sb-button [label]="'Save'" (clicked)="clicked($event)"></sb-button>`
       );
     });
 
-    it('substitutes an interpolated arg used as slot content', () => {
-      expect(snippetsOf(STORY_SHAPES_FILE).get('Slot Interpolation')).toBe(
+    it('substitutes an interpolated arg used as slot content', async () => {
+      expect((await templatesOf(STORY_SHAPES_FILE)).get('Slot Interpolation')).toBe(
         `<sb-button [label]="'Save'" (clicked)="clicked($event)"><span>Bye</span></sb-button>`
       );
     });
 
-    it('falls back when an interpolation needs the story to run', () => {
-      expect(snippetsOf(STORY_SHAPES_FILE).get('Unreadable Interpolation')).toBe(
+    it('falls back when an interpolation needs the story to run', async () => {
+      expect((await templatesOf(STORY_SHAPES_FILE)).get('Unreadable Interpolation')).toBe(
         `<sb-button [label]="'Save'" (clicked)="clicked($event)"></sb-button>`
       );
     });
-  });
 
-  it('extracts story descriptions and @summary tags like the React provider', () => {
-    const manager = managerReturning(metaFor(componentEntry()));
-    const story = soleSnippet(
-      manager,
-      `
-        import { ButtonComponent } from './button.component';
-        export default { title: 'Example/Button', component: ButtonComponent };
-        /**
-         * The default state.
-         *
-         * @summary Primary look
-         */
-        export const Default = { args: { label: 'Save' } };
-      `
-    );
-    expect(story.description).toBe('The default state.');
-    expect(story.summary).toBe('Primary look');
-    expect(story.snippet).toContain('<sb-button');
-  });
+    it('declares handlers only for the outputs the markup binds', async () => {
+      givenStoryFile(STORY_SHAPES_FILE);
+      const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: shapesDocgen });
+      const byName = new Map(
+        Object.values(payload!.stories).map((story) => [story.name, story.snippet])
+      );
 
-  it('still emits description-only stories when there is no component or the analyzer fails', () => {
-    givenStoryFile(`
-      export default { title: 'Example/Button' };
-      /** Documented without a component. */
-      export const Default = {};
-    `);
-    const payload = buildStoryDocsPayload({ entry }, { manager: undefined });
-    expect(payload?.name).toBe('Button');
-    const stories = Object.values(payload!.stories);
-    expect(stories[0].snippet).toBeUndefined();
-    expect(stories[0].description).toBe('Documented without a component.');
-
-    const throwingManager: AngularComponentMetaSource = {
-      extractComponentMeta: () => {
-        throw new Error('ts blew up');
-      },
-    };
-    const story = soleSnippet(throwingManager);
-    expect(story.snippet).toBeUndefined();
-    expect(story.error).toBeUndefined();
+      expect(byName.get('Args To Template')).toContain('clicked(event: unknown) {}');
+      expect(byName.get('Own Template')).not.toContain('clicked(event: unknown) {}');
+    });
   });
 });

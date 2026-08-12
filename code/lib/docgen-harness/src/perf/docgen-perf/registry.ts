@@ -27,21 +27,6 @@ const reactArgs = ({ params }: ScenarioSpec): string[] => [
   String(params.saves),
 ];
 
-const angularScenarios = (profile: SuiteProfile): ScenarioSpec[] => [
-  // Named like compodoc's one scenario, because a control pair only produces a ratio for scenario
-  // names both sides measured.
-  { name: 'default', params: { ...profile.angular } },
-];
-
-const angularArgs = ({ params }: ScenarioSpec): string[] => [
-  '--components',
-  String(params.components),
-  '--props',
-  String(params.props),
-  '--saves',
-  String(params.saves),
-];
-
 const vueArgs = ({ params }: ScenarioSpec): string[] => [
   '--scenario',
   String(params.name),
@@ -113,16 +98,6 @@ export const ENGINES: BenchEngine[] = [
     pin: 'vue-component-meta-next',
   }),
   new CompodocEngine(),
-  // The in-process Angular analyzer, over the same generated project as the compodoc engine above,
-  // so the angular control pair compares the two engines directly. It carries no budget row yet,
-  // so it stays out of the default run.
-  new SeriesChildEngine({
-    id: 'angular-component-meta',
-    child: 'engines/angular-component-meta.ts',
-    scenarios: angularScenarios,
-    inDefaultRun: false,
-    args: angularArgs,
-  }),
   // Always fails. The gate names it explicitly to prove the gate reports a failing engine as a
   // failure; nothing else ever runs it.
   new SeriesChildEngine({

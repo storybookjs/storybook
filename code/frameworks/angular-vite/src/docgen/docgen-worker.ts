@@ -2,12 +2,12 @@ import { STORY_FILE_TEST_REGEXP, getStoryImportPathFromEntry } from 'storybook/i
 import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware, DocgenProvider } from 'storybook/internal/types';
 
-import type { CompodocParsingLogger } from '@storybook/angular-compodoc';
+import type { ParsingLogger } from '@storybook/angular-cm';
 import { AngularComponentMetaManager } from '@storybook/angular-cm';
 import type { AngularDocgenOptions } from './build-docgen.ts';
 import { buildDocgenPayload } from './build-docgen.ts';
 
-const workerLogger: CompodocParsingLogger = {
+const workerLogger: ParsingLogger = {
   warn: (message) => logger.warn(`[storybook-angular-vite] ${message}`),
   debug: (message) => logger.debug(`[storybook-angular-vite] ${message}`),
 };

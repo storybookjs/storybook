@@ -34,11 +34,6 @@ export type ModuleGraphServiceState = {
   latestChangedStoryFiles: string[];
 };
 
-export type ModuleGraphIndexServiceState = {
-  workingDir: string;
-  storiesByFile: StoriesByFileRecord;
-};
-
 export function errorToErrorLike(error: unknown): ErrorLike {
   if (!(error instanceof Error)) {
     return { message: String(error) };
@@ -113,8 +108,3 @@ export function reverseIndexToStoriesByFile(
   }
   return result;
 }
-
-export type GraphUpdatePayload = {
-  storiesByFile: StoriesByFileRecord;
-  bumpedStoryFiles: string[];
-};

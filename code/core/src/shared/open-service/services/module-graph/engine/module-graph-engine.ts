@@ -115,20 +115,16 @@ export class ModuleGraphEngine {
 
   private mirrorUpdate(
     changedFile: string,
-    prePatchBumped: Set<string> = new Set(),
-    indexChanged = true
+    prePatchBumped: Set<string>,
+    indexChanged: boolean
   ): void {
     if (!this.reverseIndex) {
       return;
     }
-    const normalized = normalize(changedFile);
-    const bumpedStoryFiles = new Set(prePatchBumped);
-    for (const [storyFile] of this.reverseIndex.lookup(normalized)) {
-      bumpedStoryFiles.add(storyFile);
-    }
-    if (this.storyFiles.has(normalized)) {
-      bumpedStoryFiles.add(normalized);
-    }
+    const bumpedStoryFiles = new Set([
+      ...prePatchBumped,
+      ...this.collectBumpedStoryFiles(changedFile),
+    ]);
 
     // The index is where it was and no story is affected — a write to a file outside the graph.
     // Mirroring it would produce an identical state, so skip the whole update rather than pay to

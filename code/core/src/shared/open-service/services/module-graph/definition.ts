@@ -3,6 +3,12 @@ import * as v from 'valibot';
 import { defineService } from '../../service-definition.ts';
 import type { ServiceInstanceOf } from '../../types.ts';
 import type { ModuleGraphIndexService } from '../module-graph-index/definition.ts';
+import {
+  storiesByFileSchema,
+  storiesForFilesInputSchema,
+  storiesForFilesOutputSchema,
+  storyIndexPathSchema,
+} from './schemas.ts';
 import type { ModuleGraphServiceState } from './types.ts';
 import { toStoryIndexPath } from './types.ts';
 
@@ -44,26 +50,6 @@ const moduleGraphStatusSchema = v.variant('value', [
   }),
 ]);
 
-/**
- * Reverse index shape `sourceFile -> storyFile -> breadth-first-search depth`. The depth is the
- * shortest number of import edges between the source file and the affected story file.
- */
-const storyIndexPathSchema = v.pipe(
-  v.string(),
-  v.description('A story-index-style relative path such as `./src/Button.stories.tsx`.')
-);
-const storyDependencyDepthSchema = v.pipe(
-  v.number(),
-  v.description(
-    'Breadth-first-search depth: the shortest number of import edges between the source file and this story file.'
-  )
-);
-const storiesByFileSchema = v.record(
-  storyIndexPathSchema,
-  v.record(storyIndexPathSchema, storyDependencyDepthSchema)
-);
-
-/** Queries with no caller input — only `undefined` is accepted. Reused across several queries. */
 const noInputSchema = v.undefined();
 
 export type { ModuleGraphServiceState } from './types.ts';
@@ -84,32 +70,8 @@ export const moduleGraphServiceDef = defineService({
     storiesForFiles: {
       description:
         'Returns, for each input file (same order), story-index-relative story files that depend on it and their breadth-first-search depth: the shortest number of import edges between the input file and the story file.',
-      input: v.object({
-        files: v.pipe(
-          v.array(
-            v.pipe(
-              v.string(),
-              v.description(
-                'Input source file path. Accepts absolute paths, story-index-style relative paths with `./`, or relative paths without `./`.'
-              )
-            )
-          ),
-          v.description('Source files to look up. Output arrays match this input order.')
-        ),
-      }),
-      output: v.array(
-        v.array(
-          v.object({
-            storyFile: v.pipe(
-              storyIndexPathSchema,
-              v.description(
-                'Affected story file, returned in the same `./`-prefixed relative import-path format used by the story index.'
-              )
-            ),
-            depth: storyDependencyDepthSchema,
-          })
-        )
-      ),
+      input: storiesForFilesInputSchema,
+      output: storiesForFilesOutputSchema,
       handler: (input, ctx) =>
         ctx
           .getService<ModuleGraphIndexService>('core/module-graph-index', { internal: true })

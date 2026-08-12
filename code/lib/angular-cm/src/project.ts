@@ -1,9 +1,8 @@
+import { isInNodeModules, slash } from 'storybook/internal/common';
 import {
   type FileSnapshotCache,
   ProgramBackedProject,
   ProjectFileTracker,
-  isInNodeModules,
-  normalizePath,
 } from 'storybook/internal/component-meta';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -18,7 +17,10 @@ export type FsFileSnapshots = FileSnapshotCache<ts.IScriptSnapshot>;
 
 // The host is hand-written instead of Volar's because Angular components are plain TS files,
 // needing no language plugins or script-id mapping.
-export class AngularComponentMetaProject extends ProgramBackedProject<ts.IScriptSnapshot> {
+export class AngularComponentMetaProject extends ProgramBackedProject<
+  ts.IScriptSnapshot,
+  ts.SourceFile | undefined
+> {
   protected readonly service: ts.LanguageService;
   protected readonly files: ProjectFileTracker<ts.IScriptSnapshot>;
 
@@ -73,7 +75,7 @@ export class AngularComponentMetaProject extends ProgramBackedProject<ts.IScript
     componentPath: string,
     names: { exportName: string; localName?: string }
   ): AngularComponentMetaResult | undefined {
-    const fileName = normalizePath(componentPath);
+    const fileName = slash(componentPath);
 
     // Extractions can land inside the watcher's debounce window, or with no watcher at all.
     this.files.ensureFresh([fileName]);

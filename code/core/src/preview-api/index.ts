@@ -68,7 +68,7 @@ export {
 } from './store.ts';
 
 /** CSF API */
-export { createPlaywrightTest, getCsfFactoryAnnotations } from './modules/store/csf/index.ts';
+export { getCsfFactoryAnnotations } from './modules/store/csf/index.ts';
 
 export type { PropDescriptor } from './store.ts';
 

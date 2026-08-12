@@ -9,6 +9,7 @@ interface FakeWorker {
   terminate: ReturnType<typeof vi.fn>;
   unref: ReturnType<typeof vi.fn>;
   ref: ReturnType<typeof vi.fn>;
+  /** `message` listeners registered at the moment `unref()` ran; see the ordering test below. */
   messageListenersAtUnref: number;
   emit: (event: string, ...args: unknown[]) => boolean;
 }

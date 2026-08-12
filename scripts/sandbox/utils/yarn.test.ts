@@ -9,7 +9,9 @@ import yml from 'yaml';
 import { ROOT_DIRECTORY } from '../../utils/constants.ts';
 import { runCommand } from '../generate.ts';
 import {
+  BEFORE_SANDBOX_NPM_MIN_VERSION,
   LOCALLY_PUBLISHED_PACKAGE_PATTERNS,
+  ensureNpmSupportsMinReleaseAge,
   preapproveLocallyPublishedPackages,
   refreshBeforeStorybookLockfile,
 } from './yarn.ts';
@@ -224,5 +226,28 @@ describe('refreshBeforeStorybookLockfile', () => {
     );
 
     await expect(refreshBeforeStorybookLockfile({ cwd: SANDBOX })).rejects.toThrow();
+  });
+});
+
+describe('ensureNpmSupportsMinReleaseAge', () => {
+  beforeEach(() => {
+    vi.mocked(runCommand).mockReset();
+  });
+
+  it(`accepts npm ${BEFORE_SANDBOX_NPM_MIN_VERSION} and newer`, async () => {
+    vi.mocked(runCommand).mockResolvedValue({ stdout: '11.10.0\n' } as never);
+
+    await expect(ensureNpmSupportsMinReleaseAge()).resolves.toBeUndefined();
+
+    vi.mocked(runCommand).mockResolvedValue({ stdout: '12.0.2\n' } as never);
+    await expect(ensureNpmSupportsMinReleaseAge()).resolves.toBeUndefined();
+  });
+
+  it('fails when npm is older than the min-release-age floor', async () => {
+    vi.mocked(runCommand).mockResolvedValue({ stdout: '10.9.8\n' } as never);
+
+    await expect(ensureNpmSupportsMinReleaseAge()).rejects.toThrow(
+      new RegExp(`npm >= ${BEFORE_SANDBOX_NPM_MIN_VERSION}.*found 10\\.9\\.8`)
+    );
   });
 });

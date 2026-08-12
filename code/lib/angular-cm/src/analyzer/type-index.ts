@@ -62,6 +62,9 @@ export class TypeIndex {
     if (ts.isFunctionTypeNode(typeNode) || ts.isConstructorTypeNode(typeNode)) {
       // A real signature rather than a bare `function`; `isFunctionTypeString` still matches an
       // arrow signature, so the function control survives.
+      const typeParameters = typeNode.typeParameters?.length
+        ? `<${typeNode.typeParameters.map((parameter) => parameter.getText()).join(', ')}>`
+        : '';
       const parameters = typeNode.parameters
         .map((parameter) => {
           const name = parameter.name.getText();
@@ -72,7 +75,7 @@ export class TypeIndex {
         })
         .join(', ');
       const prefix = ts.isConstructorTypeNode(typeNode) ? 'new ' : '';
-      return `${prefix}(${parameters}) => ${this.render(typeNode.type)}`;
+      return `${prefix}${typeParameters}(${parameters}) => ${this.render(typeNode.type)}`;
     }
     if (ts.isTypeOperatorNode(typeNode)) {
       const operator =

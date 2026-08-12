@@ -373,3 +373,11 @@ Before writing or editing any code file, read [`.agents/guidelines/comments-and-
 - Update `AGENTS.md` when architecture, commands, versions, release flows, or contributor guidance changes
 - Keep `CLAUDE.md` and other agent entrypoints as thin references to `AGENTS.md`
 - Do not reintroduce duplicated instruction files when a reference will do
+
+## Learned User Preferences
+
+- Prefer git worktrees for parallel or experimental work; keep the primary workspace clean and base feature branches on `origin/next`, not a dirty local `next`.
+- Prefer simplicity: avoid premature helpers and one-off abstractions; implement small logic inline when a shared helper is not clearly reused.
+- Keep e2e and long interaction tests as a readable continuous flow; do not force DRY with loops or heavy helpers when repetition is clearer.
+- For Storybook stories, put human-facing description in JSDoc above the `meta` const rather than a `description` parameter.
+- When renaming tools or APIs that emit telemetry, keep historical telemetry string names stable across Storybook versions unless the field is brand-new and has no existing data.

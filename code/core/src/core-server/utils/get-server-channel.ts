@@ -62,6 +62,14 @@ export class ServerChannelTransport {
     });
 
     this.socket.on('connection', (wss) => {
+      wss.on('error', (error) => {
+        // An 'error' event with no listener is fatal in Node.js and crashes the process. ws emits
+        // 'error' on a socket when a frame is malformed or exceeds the max payload size
+        // (WS_ERR_UNSUPPORTED_MESSAGE_LENGTH), so a single bad client would otherwise kill the
+        // whole `storybook dev` server. Log the error and let ws close the socket.
+        logger.warn(`WebSocket error on server channel: ${error}`);
+      });
+
       wss.on('message', (raw) => {
         const data = raw.toString();
         const event = typeof data === 'string' && isJSON(data) ? parse(data, {}) : data;

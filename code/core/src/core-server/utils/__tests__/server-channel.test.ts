@@ -364,4 +364,20 @@ describe('ServerChannelTransport', () => {
     expect(destroySpy).not.toHaveBeenCalled();
     expect(handleUpgradeSpy).toHaveBeenCalled();
   });
+
+  it('does not crash when a socket emits an error', () => {
+    const server = new EventEmitter() as any as Server;
+    const socket = new EventEmitter();
+    const transport = new ServerChannelTransport(server, options);
+    const handler = vi.fn();
+    transport.setHandler(handler);
+
+    // @ts-expect-error (an internal API)
+    transport.socket.emit('connection', socket);
+
+    // A frame that exceeds the ws default maxPayload (or any other transport error) makes ws emit
+    // an 'error' event on the socket. Without an 'error' listener, Node treats an emitted 'error'
+    // as an unhandled error and crashes the whole process, taking `storybook dev` down with it.
+    expect(() => socket.emit('error', new Error('Max payload size exceeded'))).not.toThrow();
+  });
 });

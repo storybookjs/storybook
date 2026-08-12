@@ -41,6 +41,24 @@ describe('resolveRenderFunction', () => {
     ).toBe('render(args) { return 1; }');
   });
 
+  it('reports a render getter as unresolved, since its value is what it returns', () => {
+    expect(resolveStoryRender(`export const A = { get render() { return () => 1; } };`)).toEqual({
+      kind: 'unresolved',
+    });
+  });
+
+  it('reports a render generator method as unresolved', () => {
+    expect(resolveStoryRender(`export const A = { *render() { yield 1; } };`)).toEqual({
+      kind: 'unresolved',
+    });
+  });
+
+  it('resolves duplicate render keys to the last occurrence, matching the runtime', () => {
+    expect(
+      printedBody(resolveStoryRender(`export const A = { render: () => 1, render: () => 2 };`))
+    ).toBe('() => 2');
+  });
+
   it('follows an identifier to a local arrow function', () => {
     expect(
       printedBody(
@@ -81,14 +99,18 @@ describe('resolveRenderFunction', () => {
   });
 
   // At runtime `{ render: fn, ...base }` runs base.render when the spread carries one, so the
-  // explicit property cannot be trusted.
-  it('reports a render shadowed by a later spread as unresolved', () => {
+  // explicit property cannot be trusted, but it stays available as the best static guess.
+  it('reports a render shadowed by a later spread as unresolved, carrying the shadowed function', () => {
+    const resolution = resolveStoryRender(`
+      const base = {};
+      export const A = { render: () => 1, ...base };
+    `);
+    expect(resolution.kind).toBe('unresolved');
     expect(
-      resolveStoryRender(`
-        const base = {};
-        export const A = { render: () => 1, ...base };
-      `)
-    ).toEqual({ kind: 'unresolved' });
+      resolution.kind === 'unresolved' && resolution.shadowedRender
+        ? recast.print(resolution.shadowedRender.node).code
+        : undefined
+    ).toBe('() => 1');
   });
 
   it('resolves a render preceded by a spread, which it overrides at runtime', () => {

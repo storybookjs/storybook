@@ -7,11 +7,19 @@ import {
   mergeArgsRecords,
   metaArgsRecord,
   normalizeStoryDeclaration,
+  type RenderResolution,
   resolveRenderFunction,
   storyAssignedArgsPath,
 } from 'storybook/internal/csf-tools';
 
 import { invariant } from './utils.ts';
+
+function renderFunctionOf(resolution: RenderResolution) {
+  if (resolution.kind === 'resolved') {
+    return resolution.path;
+  }
+  return resolution.kind === 'unresolved' ? resolution.shadowedRender : undefined;
+}
 
 export function getCodeSnippet(
   csf: CsfFile,
@@ -47,13 +55,12 @@ export function getCodeSnippet(
 
   // Story render takes precedence. Only fall back to meta render when the story
   // has no render property at all — NOT when it has one that couldn't be resolved.
+  // A render shadowed by a later spread is still the best static guess for this manifest,
+  // which degrades to synthesis rather than suppressing snippets.
   if (!storyFn) {
     storyFn =
-      storyRender.kind === 'resolved'
-        ? storyRender.path
-        : storyRender.kind === 'missing' && metaRender.kind === 'resolved'
-          ? metaRender.path
-          : undefined;
+      renderFunctionOf(storyRender) ??
+      (storyRender.kind === 'missing' ? renderFunctionOf(metaRender) : undefined);
   }
 
   // Collect args

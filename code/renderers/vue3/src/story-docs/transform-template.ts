@@ -170,13 +170,24 @@ function transformInterpolation(
     return false;
   }
 
-  state.edits.push({ start: node.loc.start.offset, end: node.loc.end.offset, text: rendered });
+  // A value edge touching an author '{' would concatenate into a new '{{'.
+  const start = node.loc.start.offset;
+  const end = node.loc.end.offset;
+  if (
+    (rendered.startsWith('{') && state.template[start - 1] === '{') ||
+    (rendered.endsWith('{') && state.template[end] === '{')
+  ) {
+    return false;
+  }
+
+  state.edits.push({ start, end, text: rendered });
   return true;
 }
 
 function transformElement(node: ElementNode, state: TransformState): boolean {
   // A snippet cannot re-create the registration context a dynamic component resolves against.
-  if (node.tag === 'component') {
+  // Vue's compiler accepts both spellings of the built-in tag.
+  if (node.tag === 'component' || node.tag === 'Component') {
     return false;
   }
 
@@ -200,6 +211,12 @@ function transformDirective(
   nameCounts: Map<string, number>,
   state: TransformState
 ): boolean {
+  // A dynamic argument (`:[args.key]`, `#[args.slotName]`) reads a binding the snippet's script
+  // never declares, so it would throw where the story renders.
+  if (directive.arg && !staticDirectiveArg(directive)) {
+    return false;
+  }
+
   const expression =
     directive.exp?.type === NodeTypes.SIMPLE_EXPRESSION ? directive.exp.content.trim() : undefined;
 

@@ -16,7 +16,6 @@ const STORY_PATH = '/stories/MyButton.stories.ts';
 const DOCGEN_CATEGORIES: Record<string, string> = {
   active: 'props',
   count: 'props',
-  iconName: 'props',
   label: 'props',
   options: 'props',
   ref: 'props',
@@ -434,7 +433,25 @@ export const Primary = {
     ).toBeUndefined();
   });
 
-  it('bails on dynamic components, which a snippet cannot resolve', async () => {
+  it.each(['component', 'Component'])(
+    'bails on dynamic <%s> tags, which a snippet cannot resolve',
+    async (tag) => {
+      expect(
+        await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<${tag} :is="args.label" />',
+  }),
+};
+`)
+      ).toBeUndefined();
+    }
+  );
+
+  it('bails on dynamic directive arguments, which read bindings the snippet never declares', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -442,7 +459,59 @@ export const Primary = {
   render: (args) => ({
     components: { MyButton },
     setup: () => ({ args }),
-    template: '<component :is="args.label" />',
+    template: '<MyButton :label="args.label" :[args.key]="1" />',
+  }),
+};
+`)
+    ).toBeUndefined();
+  });
+
+  it('bails on dynamic slot names', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton :label="args.label"><template #[args.slotName]>x</template></MyButton>',
+  }),
+};
+`)
+    ).toBeUndefined();
+  });
+
+  it('hoists string values containing character references, which attributes would decode', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Tom &amp; Jerry' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton v-bind="args" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      const label = 'Tom &amp; Jerry';
+      </script>
+
+      <template>
+        <MyButton :label="label" />
+      </template>"
+    `);
+  });
+
+  it('bails when an inlined interpolation would form a new mustache with adjacent text', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'x{' },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: '<p>{{ args.label }}{ok}</p>',
   }),
 };
 `)

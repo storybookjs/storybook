@@ -240,9 +240,8 @@ function hoistedProp(
 }
 
 function renderModelArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
-  ensureRefImport(ctx);
-  const bindingName = allocateBindingName(arg.name, ctx);
-  ctx.variables.set(bindingName, `ref(${printValue(unwrapValue(arg.value))})`);
+  // createRenderContext pre-reserved the `ref` identifier for model-role args, so this cannot fail.
+  const bindingName = hoistModelRef(arg.name, arg.value, ctx)!;
 
   const directive = arg.name === 'modelValue' ? 'v-model' : `v-model:${arg.name}`;
   return { attrName: directive, value: bindingName };
@@ -313,8 +312,14 @@ function allocateBindingName(name: string, ctx: RenderContext): string {
   return bindingName;
 }
 
-/** Quoted attribute value, or `undefined` when both quote styles occur and it must be hoisted. */
+/**
+ * Quoted attribute value, or `undefined` when it must be hoisted: both quote styles occur, or the
+ * value contains `&` and re-parsing the attribute could decode it into a different prop value.
+ */
 function quoteAttributeValue(value: string): string | undefined {
+  if (value.includes('&')) {
+    return undefined;
+  }
   if (!value.includes('"')) {
     return `"${value}"`;
   }
@@ -330,7 +335,7 @@ function formatRenderedProp(prop: RenderedProp): string {
   }
 
   if (!prop.attrName.startsWith(':') && !prop.attrName.startsWith('@')) {
-    // renderPropValue hoists strings mixing both quote styles, so this value is always quotable.
+    // renderPropValue hoists strings that cannot be quoted inline, so this is always quotable.
     return `${prop.attrName}=${quoteAttributeValue(prop.value)!}`;
   }
 

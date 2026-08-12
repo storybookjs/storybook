@@ -149,7 +149,7 @@ describe('MCP Composition Auth E2E Tests', () => {
 				Story ID: example-button--primary
 
 				\`\`\`
-				import { Button } from "@my-org/my-component-library";
+				import { Button } from '@my-org/my-component-library';
 
 				const Primary = () => <Button onClick={fn()} primary label="Button" />;
 				\`\`\`
@@ -159,7 +159,7 @@ describe('MCP Composition Auth E2E Tests', () => {
 				Story ID: example-button--secondary
 
 				\`\`\`
-				import { Button } from "@my-org/my-component-library";
+				import { Button } from '@my-org/my-component-library';
 
 				const Secondary = () => <Button onClick={fn()} label="Button" />;
 				\`\`\`
@@ -169,7 +169,7 @@ describe('MCP Composition Auth E2E Tests', () => {
 				Story ID: example-button--large
 
 				\`\`\`
-				import { Button } from "@my-org/my-component-library";
+				import { Button } from '@my-org/my-component-library';
 
 				const Large = () => <Button onClick={fn()} size="large" label="Button" />;
 				\`\`\`

@@ -6,7 +6,13 @@ import type { Class, Directive, Injectable, Pipe, Property } from '../types.ts';
 import type { AngularFileMeta } from '../types.ts';
 import type { AnalyzerContext } from './context.ts';
 import { collectClassMembers } from './class-members.ts';
-import { decoratorObjectArg, getDecorators, objectProperty, stringOption } from './decorators.ts';
+import {
+  booleanOption,
+  decoratorObjectArg,
+  getDecorators,
+  objectProperty,
+  stringOption,
+} from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
 import { TypeIndex } from './type-index.ts';
 
@@ -53,11 +59,18 @@ export function analyzeSourceFile(
     };
 
     if (kind === 'component' || kind === 'directive') {
-      const selector = decoratorSelector(ctx, statement, kind);
-      const record: Directive & typeof common & { selector?: string } = {
+      const metadata = decoratorObjectArg(
+        ctx,
+        statement,
+        kind === 'component' ? 'Component' : 'Directive'
+      );
+      const selector = metadata && decoratorSelector(ctx, metadata);
+      const standalone = metadata && booleanOption(ctx, metadata, 'standalone');
+      const record: Directive & typeof common & { selector?: string; standalone?: boolean } = {
         name,
         type: kind,
         ...(selector === undefined ? {} : { selector }),
+        ...(standalone === undefined ? {} : { standalone }),
         inputsClass: members.inputs,
         outputsClass: members.outputs,
         propertiesClass: members.properties,
@@ -126,11 +139,9 @@ const classify = (ctx: AnalyzerContext, node: tsModule.ClassDeclaration): ClassK
 
 const decoratorSelector = (
   ctx: AnalyzerContext,
-  node: tsModule.ClassDeclaration,
-  kind: 'component' | 'directive'
+  metadata: tsModule.ObjectLiteralExpression
 ): string | undefined => {
-  const metadata = decoratorObjectArg(ctx, node, kind === 'component' ? 'Component' : 'Directive');
-  const selector = metadata && objectProperty(ctx, metadata, 'selector');
+  const selector = objectProperty(ctx, metadata, 'selector');
   return selector && selectorText(ctx, selector);
 };
 

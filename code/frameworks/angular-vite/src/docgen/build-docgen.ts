@@ -30,6 +30,8 @@ export interface SnippetEnum {
 export interface AngularComponentSnippetMeta {
   name: string;
   selector: string | undefined;
+  // `false` only for an explicit `standalone: false`; anything else is the language default.
+  standalone: boolean;
   inputs: string[];
   // Output binding names in `outputsClass` order, `model()` outputs `Change`-suffixed.
   outputs: string[];
@@ -78,6 +80,7 @@ export const metaToSnippetMeta = (
   return {
     name: entry.name,
     selector: entry.selector,
+    standalone: entry.standalone !== false,
     inputs,
     outputs,
     enums: (meta.json.miscellaneous?.enumerations ?? []).map((enumeration) => ({

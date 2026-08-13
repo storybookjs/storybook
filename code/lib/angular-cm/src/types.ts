@@ -143,6 +143,8 @@ interface AnalyzerFields {
   jsdoctags?: JsDocTag[];
   /** The `@Component`/`@Directive` decorator's `selector`, when statically resolvable. */
   selector?: string;
+  /** The decorator's literal `standalone` value; absent when unspecified or not a boolean literal. */
+  standalone?: boolean;
 }
 
 export type AngularDirectiveMeta = Directive & AnalyzerFields;

@@ -22,6 +22,7 @@ import type {
   SnippetEnum,
 } from './build-docgen.ts';
 import { parseStoryFile } from './resolve-component.ts';
+import type { HostComponentSnippet, HostComponentSnippetInput } from './story-docs-snippet.ts';
 import { buildHostComponentSnippet } from './story-docs-snippet.ts';
 import {
   buildComponentOutletTemplate,
@@ -60,6 +61,7 @@ export const buildStoryDocsPayload = async (
     : undefined;
 
   const componentName = componentNameOf(componentNode);
+  const importBindings = collectImportBindings(csf._file.path);
   const deps: StoryDocDeps = {
     csf,
     source,
@@ -70,7 +72,9 @@ export const buildStoryDocsPayload = async (
     componentImport:
       componentName === undefined
         ? undefined
-        : createImportStatement(componentName, csf, docgenPayload),
+        : createImportStatement(componentName, importBindings, docgenPayload),
+    metaNgModules: ngModulesFromDecorators(csf._metaAnnotations.decorators, componentName),
+    importBindings,
   };
 
   const stories: Record<string, StoryDoc> = {};
@@ -97,10 +101,10 @@ export const buildStoryDocsPayload = async (
  */
 const createImportStatement = (
   componentName: string,
-  csf: CsfFile,
+  importBindings: ReturnType<typeof collectImportBindings>,
   docgenPayload: AngularDocgenPayload | undefined
 ): string | undefined => {
-  const ref = resolveComponentImport(componentName, collectImportBindings(csf._file.path));
+  const ref = resolveComponentImport(componentName, importBindings);
   const importOverride = docgenPayload?.jsDocTags?.import?.[0]?.trim();
   return buildImportStatements({ refs: [{ ...ref, importOverride }] }).join('\n') || undefined;
 };
@@ -120,43 +124,119 @@ interface StoryDocDeps {
   snippetMeta: AngularComponentSnippetMeta | undefined;
   componentName: string | undefined;
   componentImport: string | undefined;
+  metaNgModules: StoryNgModules;
+  importBindings: ReturnType<typeof collectImportBindings>;
 }
+
+interface StoryNgModules {
+  names: string[];
+  declaresComponent: boolean;
+}
+
+// The decorator is matched by its conventional local name: resolving the import binding would only
+// rule out a foreign function that happens to be called `moduleMetadata`, which does not arise.
+const ngModulesFromDecorators = (
+  decorators: t.Node | undefined,
+  componentName: string | undefined
+): StoryNgModules => {
+  const result: StoryNgModules = { names: [], declaresComponent: false };
+  const list = decorators === undefined ? undefined : unwrapExpression(decorators);
+  if (!list || !t.isArrayExpression(list)) {
+    return result;
+  }
+  for (const element of list.elements) {
+    if (!element || t.isSpreadElement(element)) {
+      continue;
+    }
+    const call = unwrapExpression(element);
+    if (!t.isCallExpression(call) || !t.isIdentifier(call.callee, { name: 'moduleMetadata' })) {
+      continue;
+    }
+    const [metadataArg] = call.arguments;
+    const metadata =
+      metadataArg && t.isExpression(metadataArg) ? unwrapExpression(metadataArg) : undefined;
+    if (!metadata || !t.isObjectExpression(metadata)) {
+      continue;
+    }
+    for (const property of metadata.properties) {
+      if (!t.isObjectProperty(property) || !t.isExpression(property.value)) {
+        continue;
+      }
+      const key = keyOf(property);
+      const value = unwrapExpression(property.value);
+      if ((key !== 'imports' && key !== 'declarations') || !t.isArrayExpression(value)) {
+        continue;
+      }
+      for (const item of value.elements) {
+        if (!item || t.isSpreadElement(item)) {
+          continue;
+        }
+        const entry = unwrapExpression(item);
+        if (!t.isIdentifier(entry)) {
+          continue;
+        }
+        if (key === 'imports') {
+          if (entry.name !== componentName && !result.names.includes(entry.name)) {
+            result.names.push(entry.name);
+          }
+        } else if (entry.name === componentName) {
+          result.declaresComponent = true;
+        }
+      }
+    }
+  }
+  return result;
+};
+
+// A story that declares the component itself wires it without a module the snippet could name, so
+// the builder's warning path stays the honest output.
+const storyNgModules = (
+  storyDecorators: t.Node | undefined,
+  { metaNgModules, componentName, importBindings }: StoryDocDeps
+): HostComponentSnippetInput['ngModules'] => {
+  const story = ngModulesFromDecorators(storyDecorators, componentName);
+  if (metaNgModules.declaresComponent || story.declaresComponent) {
+    return undefined;
+  }
+  const names = [...new Set([...metaNgModules.names, ...story.names])];
+  // A module bound to no import is glue local to the story file, which a reader cannot obtain, so
+  // it does not count as a module the snippet can claim.
+  const refs = names
+    .map((name) => resolveComponentImport(name, importBindings))
+    .filter((ref) => ref.importId);
+  if (refs.length === 0) {
+    return undefined;
+  }
+  return {
+    names: refs.map((ref) => ref.componentName),
+    importStatements: buildImportStatements({ refs }),
+  };
+};
 
 // Stories that declare their own `render` get no snippet: their template is a runtime value static
 // analysis cannot see, and a component-derived one would misrepresent it.
 const buildStoryDoc = (
   exportName: string,
   story: CsfFile['_stories'][string],
-  {
-    csf,
-    source,
-    metaArgs,
-    metaHasRender,
-    snippetMeta,
-    componentName,
-    componentImport,
-  }: StoryDocDeps
+  deps: StoryDocDeps
 ): StoryDoc => {
+  const { csf, metaArgs, metaHasRender, snippetMeta } = deps;
   const name = story.name ?? storyNameFromExport(exportName);
   try {
     const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[exportName]);
     const annotations = csf._storyAnnotations[exportName] ?? {};
     const hasRender = metaHasRender || annotations.render !== undefined;
     const args = mergeArgsRecords(metaArgs, argsRecordFromNode(annotations.args));
-    const snippet =
+    const rendered =
       snippetMeta && !hasRender
-        ? renderStorySnippet(snippetMeta, args, source, componentName, componentImport)
+        ? renderStorySnippet(snippetMeta, args, annotations.decorators, deps)
         : undefined;
-    const warning =
-      snippet === undefined
-        ? undefined
-        : incompleteSnippetReason(componentName ?? snippetMeta!.name, componentImport);
 
     return {
       id: story.id,
       name,
-      ...(snippet === undefined ? {} : { snippet }),
-      ...(warning === undefined ? {} : { warning }),
+      ...(rendered === undefined ? {} : { snippet: rendered.snippet }),
+      ...(rendered?.warning === undefined ? {} : { warning: rendered.warning }),
       ...(description ? { description } : {}),
       ...(summary === undefined ? {} : { summary }),
     };
@@ -170,28 +250,13 @@ const buildStoryDoc = (
   }
 };
 
-/**
- * Why the host component in the snippet would not compile as written, or `undefined` when it would.
- *
- * A component the story file declares itself has no import to derive, so the snippet names it in
- * `imports` without bringing it into scope. The snippet still shows the bindings the story sets,
- * which is what a reader comes to a docs page for, so it is worth keeping with the caveat attached.
- */
-const incompleteSnippetReason = (
-  localName: string,
-  componentImport: string | undefined
-): string | undefined =>
-  componentImport === undefined
-    ? `${localName} is declared in the story file, so the snippet references it without importing it.`
-    : undefined;
-
 const renderStorySnippet = (
   snippetMeta: AngularComponentSnippetMeta,
   args: Record<string, t.Node>,
-  source: string,
-  componentName: string | undefined,
-  componentImport: string | undefined
-): string => {
+  storyDecorators: t.Node | undefined,
+  deps: StoryDocDeps
+): HostComponentSnippet => {
+  const { source, componentName, componentImport } = deps;
   // The story file's local name is what the import binds, so an aliased import stays consistent
   // between the import statement, the `imports` array and the template.
   const localName = componentName ?? snippetMeta.name;
@@ -205,6 +270,8 @@ const renderStorySnippet = (
     componentName: localName,
     componentImport,
     viaComponentOutlet,
+    standalone: snippetMeta.standalone,
+    ngModules: snippetMeta.standalone ? undefined : storyNgModules(storyDecorators, deps),
     outputs: viaComponentOutlet ? [] : snippetMeta.outputs,
   });
 };

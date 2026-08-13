@@ -1,6 +1,12 @@
+import { createRequire } from 'node:module';
+import { dirname, join } from 'node:path';
+
 import { defineConfig, mergeConfig } from 'vitest/config';
 
 import { vitestCommonConfig } from '../vitest.shared.ts';
+
+const require = createRequire(import.meta.url);
+const polkaUrlEsm = join(dirname(require.resolve('@polka/url/package.json')), 'build.mjs');
 
 export default mergeConfig(
   vitestCommonConfig,
@@ -11,6 +17,11 @@ export default mergeConfig(
     resolve: {
       conditions: ['node'],
       mainFields: ['main'],
+      // Nested @polka/url@0.5.0 is CJS and breaks polka's named `parse` import.
+      // Absolute path: `@polka/url/build.mjs` is not in the package exports map.
+      alias: {
+        '@polka/url': polkaUrlEsm,
+      },
     },
     ssr: {
       external: ['oxc-parser', 'oxc-resolver'],
@@ -23,6 +34,8 @@ export default mergeConfig(
       },
       server: {
         deps: {
+          // Inline so the `@polka/url` alias applies to polka's own import graph.
+          inline: ['polka', '@polka/url'],
           external: ['oxc-parser', 'oxc-resolver'],
         },
       },

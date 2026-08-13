@@ -48,6 +48,7 @@
 # /code/lib/react-dom-shim/ @ndelangen @valentinpalkovic @tmeasday
 # /code/lib/telemetry/      @shilman @yannbf @ndelangen
 # /code/lib/types/          @kasperpeulen @ndelangen
+# /code/lib/vite-plugin-storybook-nextjs/ @valentinpalkovic @yannbf @ndelangen
 
 # Presets
 # /code/presets/create-react-app/ @valentinpalkovic @ndelangen

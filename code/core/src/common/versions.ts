@@ -35,6 +35,7 @@ export default {
   'eslint-plugin-storybook': '10.6.0-alpha.5',
   '@storybook/mcp': '10.6.0-alpha.5',
   '@storybook/react-dom-shim': '10.6.0-alpha.5',
+  'vite-plugin-storybook-nextjs': '10.6.0-alpha.5',
   '@storybook/preset-create-react-app': '10.6.0-alpha.5',
   '@storybook/preset-react-webpack': '10.6.0-alpha.5',
   '@storybook/preset-server-webpack': '10.6.0-alpha.5',

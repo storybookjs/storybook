@@ -154,13 +154,26 @@ describe('standalone', () => {
     expect(meta.directives[0].standalone).toBe(false);
   });
 
-  it('reports a value it cannot evaluate as unspecified rather than guessing', () => {
+  it('resolves a flag referenced through a constant, the way the selector resolves', () => {
     const component = componentIn(`
       import { Component } from '@angular/core';
 
       const IS_STANDALONE = false;
 
       @Component({ selector: 'sb-flag', standalone: IS_STANDALONE, template: '' })
+      export class FlagComponent {}
+    `);
+
+    expect(component.standalone).toBe(false);
+  });
+
+  it('reports a value it cannot evaluate as unspecified rather than guessing', () => {
+    const component = componentIn(`
+      import { Component } from '@angular/core';
+
+      const flags = { standalone: false };
+
+      @Component({ selector: 'sb-flag', standalone: flags.standalone, template: '' })
       export class FlagComponent {}
     `);
 

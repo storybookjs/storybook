@@ -6,13 +6,7 @@ import type { Class, Directive, Injectable, Pipe, Property } from '../types.ts';
 import type { AngularFileMeta } from '../types.ts';
 import type { AnalyzerContext } from './context.ts';
 import { collectClassMembers } from './class-members.ts';
-import {
-  booleanOption,
-  decoratorObjectArg,
-  getDecorators,
-  objectProperty,
-  stringOption,
-} from './decorators.ts';
+import { decoratorObjectArg, getDecorators, objectProperty, stringOption } from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
 import { TypeIndex } from './type-index.ts';
 
@@ -65,7 +59,7 @@ export function analyzeSourceFile(
         kind === 'component' ? 'Component' : 'Directive'
       );
       const selector = metadata && decoratorSelector(ctx, metadata);
-      const standalone = metadata && booleanOption(ctx, metadata, 'standalone');
+      const standalone = metadata && decoratorStandalone(ctx, metadata);
       const record: Directive & typeof common & { selector?: string; standalone?: boolean } = {
         name,
         type: kind,
@@ -142,33 +136,40 @@ const decoratorSelector = (
   metadata: tsModule.ObjectLiteralExpression
 ): string | undefined => {
   const selector = objectProperty(ctx, metadata, 'selector');
-  return selector && selectorText(ctx, selector);
+  const value = selector && resolveInitializer(ctx, selector);
+  return value && ctx.ts.isStringLiteralLike(value) ? value.text : undefined;
 };
 
-const selectorText = (
+const decoratorStandalone = (
+  ctx: AnalyzerContext,
+  metadata: tsModule.ObjectLiteralExpression
+): boolean | undefined => {
+  const standalone = objectProperty(ctx, metadata, 'standalone');
+  const value = standalone && resolveInitializer(ctx, standalone);
+  if (value?.kind === ctx.ts.SyntaxKind.TrueKeyword) {
+    return true;
+  }
+  if (value?.kind === ctx.ts.SyntaxKind.FalseKeyword) {
+    return false;
+  }
+  return undefined;
+};
+
+// A reference to a variable resolves to its initializer, a slice of what ngtsc's own partial
+// evaluator accepts in decorator metadata.
+const resolveInitializer = (
   ctx: AnalyzerContext,
   expression: tsModule.Expression
-): string | undefined => {
+): tsModule.Expression | undefined => {
   const { ts, checker } = ctx;
-  if (ts.isStringLiteralLike(expression)) {
-    return expression.text;
-  }
   if (!ts.isIdentifier(expression)) {
-    return undefined;
+    return expression;
   }
   const symbol = checker.getSymbolAtLocation(expression);
   const target =
     symbol && symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
   const declaration = target?.valueDeclaration;
-  if (
-    declaration &&
-    ts.isVariableDeclaration(declaration) &&
-    declaration.initializer &&
-    ts.isStringLiteralLike(declaration.initializer)
-  ) {
-    return declaration.initializer.text;
-  }
-  return undefined;
+  return declaration && ts.isVariableDeclaration(declaration) ? declaration.initializer : undefined;
 };
 
 const pipeName = (ctx: AnalyzerContext, node: tsModule.ClassDeclaration): string | undefined => {

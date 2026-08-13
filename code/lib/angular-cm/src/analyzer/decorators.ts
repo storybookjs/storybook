@@ -103,7 +103,7 @@ export const stringOption = (
   return initializer && ctx.ts.isStringLiteralLike(initializer) ? initializer.text : undefined;
 };
 
-export const booleanOption = (
+const booleanOption = (
   ctx: AnalyzerContext,
   object: ts.ObjectLiteralExpression,
   key: string

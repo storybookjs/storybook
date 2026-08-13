@@ -5,8 +5,13 @@ import {
   describeUnknownStoryIds,
   OpenServiceUnknownStoryIdsError,
 } from '../../../../server-errors.ts';
-import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
-import { getRef } from '../../toolset-names.ts';
+import {
+  defineToolset,
+  reportToolsetTelemetry,
+  type ToolsetCtx,
+  type ToolsetOutcome,
+} from '../../toolset-definition.ts';
+import { getToolName } from '../../toolset-names.ts';
 import type { ReviewService } from '../../services/review/definition.ts';
 
 /** Storybook manager route the review page is registered at. */
@@ -78,7 +83,7 @@ export type ReviewCreateOutput = {
 };
 
 function describeCreate(ctx: ToolsetCtx): string {
-  const ref = getRef(ctx);
+  const ref = getToolName(ctx);
   return `Publish a curated review to Storybook's review page for spot-checking **visual impact**. Each call replaces the single active review — call it again whenever the user iterates on the changes.
 
 ## When to call
@@ -108,7 +113,7 @@ Exactly what the user asked for — **no more, no less**. Group logically or fol
  * ids on this surface — is consumer-specific, so it is composed here rather than in the service.
  */
 function formatUnknownStoryIdsError(unknownIds: string[], ctx: ToolsetCtx): string {
-  const ref = getRef(ctx);
+  const ref = getToolName(ctx);
   const list = unknownIds.map((id) => `- \`${id}\``).join('\n');
   return `${describeUnknownStoryIds(unknownIds)}\n${list}\n\nThis usually means the IDs were inferred from file paths or naming conventions rather than returned by a tool. Resolve real IDs by calling \`${ref('stories.findByComponent')}\` (for components you've edited or want covered) or \`${ref('docs.list')}\` (to browse the index), then retry \`${ref('review.create')}\` with the verified IDs. Do not invent IDs to satisfy this check.`;
 }
@@ -121,7 +126,7 @@ function formatReviewApplied(
   const storyNoun = storyCount === 1 ? 'y' : 'ies';
   const summary = `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} stor${storyNoun}.`;
 
-  if (ctx.consumer !== 'mcp') {
+  if (ctx.transport !== 'mcp') {
     return `${summary} Open ${reviewUrl} to view it.`;
   }
 
@@ -129,7 +134,7 @@ function formatReviewApplied(
   // carry both follow-ups: open the page, and surface the link in the final response.
   // The running instance is named by the same UI root the review link is built from — for a
   // sub-path-hosted Storybook the bare origin is not an address the agent can reach.
-  return `${summary} Storybook is already running at ${ctx.uiRoot ?? ctx.origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
+  return `${summary} Storybook is already running at ${ctx.origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
 
 Two things you must do now, both of them:
 1. **Open ${reviewUrl} yourself in your preview browser.** If you have any browser-preview or navigate tool in this session (e.g. preview_eval or an equivalent), call it on this URL so the review opens in your preview window immediately. Don't merely print the link and stop — actually open it.
@@ -139,12 +144,11 @@ Two things you must do now, both of them:
 export const reviewToolset = defineToolset({
   id: 'review',
   description: 'Create a curated Storybook review.',
-  telemetryGroup: 'dev',
   methods: {
     create: {
-      schema: reviewCreateInputSchema,
-      outputSchema: reviewCreateOutputSchema,
-      title: 'Display Storybook review',
+      input: reviewCreateInputSchema,
+      output: reviewCreateOutputSchema,
+      title: 'Create Storybook review',
       // Reviews publish into the running Storybook's review service and link into its UI.
       requiresDevServer: true,
       description: describeCreate,
@@ -176,18 +180,15 @@ export const reviewToolset = defineToolset({
           0
         );
 
-        await ctx.telemetry?.('tool:displayReview', {
+        await reportToolsetTelemetry(ctx, 'tool:displayReview', {
+          toolset: 'dev',
           collectionCount,
           storyCount,
           changedFileCount: review.changedFiles.length,
         });
 
-        // The review page lives under the consumer's UI root, which differs from the origin for a
-        // sub-path-hosted Storybook. Preferring `uiRoot` here is the method's choice, not adapter
-        // wiring.
-        const uiRoot = ctx.uiRoot ?? ctx.origin;
         const data: ReviewCreateOutput = {
-          reviewUrl: `${uiRoot.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`,
+          reviewUrl: `${ctx.origin.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`,
           collectionCount,
           storyCount,
         };

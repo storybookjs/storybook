@@ -20,7 +20,6 @@ import { TOOLS_OPTION_SPECS } from './tool-tokens.ts';
 
 const LOCAL_BADGE = '[local]';
 const DEV_SERVER_BADGE = '[requires running Storybook]';
-const SUMMARY_LIMIT = 100;
 
 function optionLines(): string[] {
   const column = Math.max(...TOOLS_OPTION_SPECS.map((spec) => spec.flags.length)) + 2;
@@ -35,7 +34,7 @@ function commandLines(toolsets: AnyToolsetDefinition[], ctx: ToolsetCtx): string
   const commands = toolsets.flatMap((toolset) =>
     Object.entries(toolset.methods).map(([methodKey, method]) => ({
       path: cliPath(toolset, methodKey),
-      summary: summarize(resolveToolsetDescription(method.description, ctx)),
+      summary: method.title,
       badge: badge(method),
     }))
   );
@@ -43,21 +42,6 @@ function commandLines(toolsets: AnyToolsetDefinition[], ctx: ToolsetCtx): string
   return commands.map(
     (command) => `  ${command.path.padEnd(column)}${command.summary}  ${command.badge}`
   );
-}
-
-/**
- * Tool descriptions are multi-paragraph agent-facing prose; the listing wants one clean sentence.
- * Clipping loses nothing — the full description follows in the reference section below.
- */
-function summarize(description: string): string {
-  const line = (description.trim().split('\n', 1)[0] ?? '')
-    .replaceAll('**', '')
-    .replace(/^use this tool to\s+(\w)/i, (_, first: string) => first.toUpperCase());
-  const sentenceEnd = line.search(/\.\s/);
-  const sentence = sentenceEnd === -1 ? line : line.slice(0, sentenceEnd + 1);
-  return sentence.length > SUMMARY_LIMIT
-    ? `${sentence.slice(0, SUMMARY_LIMIT).replace(/\s+\S*$/, '')}…`
-    : sentence;
 }
 
 function indented(lines: string[], depth: number): string[] {
@@ -153,7 +137,7 @@ function badge(method: AnyToolsetMethod): string {
 function methodBodyLines(method: AnyToolsetMethod, ctx: ToolsetCtx): string[] {
   const lines = [resolveToolsetDescription(method.description, ctx).trim()];
 
-  const inputSchema = toJsonSchemaObject(method.schema);
+  const inputSchema = toJsonSchemaObject(method.input);
   const argumentLines = inputSchema ? propertyLines(inputSchema, { flagPrefix: true }) : undefined;
   if (argumentLines === undefined) {
     lines.push('', 'Arguments: (this schema could not be rendered)');
@@ -163,8 +147,8 @@ function methodBodyLines(method: AnyToolsetMethod, ctx: ToolsetCtx): string[] {
     lines.push('', 'Arguments:', ...argumentLines);
   }
 
-  if (method.outputSchema) {
-    const outputSchema = toJsonSchemaObject(method.outputSchema);
+  if (method.output) {
+    const outputSchema = toJsonSchemaObject(method.output);
     const outputLines = outputSchema ? propertyLines(outputSchema, { flagPrefix: false }) : [];
     if (outputLines.length > 0) {
       lines.push('', 'Output:', ...outputLines);

@@ -18,7 +18,7 @@ import { createManifestDocsAccess } from './access-manifest.ts';
 import { createServiceDocsAccess } from './access-service.ts';
 import { createDocsToolset } from './definition.ts';
 
-const ctx: ToolsetCtx = { consumer: 'mcp', getService: () => ({}) as never };
+const ctx: ToolsetCtx = { transport: 'mcp', getService: () => ({}) as never };
 
 const storyIndex = {
   v: 5,

@@ -155,6 +155,42 @@ describe('ModuleGraphEngine', () => {
     );
   });
 
+  it('whenSettled waits for the initial build, so a caller after start() observes a ready graph', async () => {
+    const reverseIndex = buildReverseIndex([
+      ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],
+    ]);
+    const buildDeferred = createDeferred<void>();
+    const { buildSpy } = installDependencyGraphMocks(reverseIndex);
+    buildSpy.mockImplementation(async () => {
+      await buildDeferred.promise;
+      return { reverseIndex, graph: new Map() };
+    });
+
+    const { service, adapter } = setup({
+      storyIndex: createStoryIndex([
+        { storyId: 'button--primary', importPath: './src/Button.stories.tsx', title: 'Button' },
+      ]),
+    });
+
+    service.start(adapter);
+
+    let settled = false;
+    void service.whenSettled().then(() => {
+      settled = true;
+    });
+    for (let i = 0; i < 10; i++) {
+      await Promise.resolve();
+    }
+    expect(settled).toBe(false);
+    expect(service.hasGraph()).toBe(false);
+
+    buildDeferred.resolve();
+    await vi.runAllTimersAsync();
+
+    expect(settled).toBe(true);
+    expect(service.hasGraph()).toBe(true);
+  });
+
   it('mirrors an update after each file-change patch settles, but not for the initial build', async () => {
     installDependencyGraphMocks(buildReverseIndex([]));
     const { service, adapter, emitFileChange, callbacks } = setup({

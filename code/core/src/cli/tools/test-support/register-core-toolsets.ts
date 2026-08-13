@@ -5,6 +5,10 @@
  * preset hooks, which register these before the CLI reads the registry. The real toolsets are used
  * (with stub runtime dependencies) rather than fakes, so the CLI is tested against the definitions
  * it ships with — the same approach as addon-mcp's scaffold.
+ *
+ * The `test` toolset is owned by `@storybook/addon-vitest` and is intentionally not registered
+ * here. Cover it in the addon's own unit tests; core/CLI tests that need "test absent" behavior
+ * already match this default.
  */
 
 import type { StoryIndex } from 'storybook/internal/types';
@@ -20,7 +24,6 @@ import {
 import { createDocsToolset } from '../../../shared/open-service/toolsets/docs/definition.ts';
 import { reviewToolset } from '../../../shared/open-service/toolsets/review/definition.ts';
 import { createStoriesToolset } from '../../../shared/open-service/toolsets/stories/definition.ts';
-import { createTestToolset } from '../../../shared/open-service/toolsets/test/definition.ts';
 
 const EMPTY_INDEX: StoryIndex = { v: 5, entries: {} };
 
@@ -32,12 +35,10 @@ const EMPTY_DOCS_ACCESS: DocsAccess = {
 export function registerCoreToolsetsForTest({
   index = EMPTY_INDEX,
   reviewEnabled = true,
-  testToolset = true,
   docsAccess = EMPTY_DOCS_ACCESS,
 }: {
   index?: StoryIndex;
   reviewEnabled?: boolean;
-  testToolset?: boolean;
   docsAccess?: DocsAccess;
 } = {}) {
   clearToolsetRegistry();
@@ -52,20 +53,10 @@ export function registerCoreToolsetsForTest({
         getChangedFiles: async () => ({ changed: new Set<string>(), new: new Set<string>() }),
       },
       changeStatuses: { getAll: () => ({}) },
+      getChangeDetectionReadiness: async () => ({ status: 'ready' as const }),
       reviewEnabled,
     })
   );
   registerToolset(reviewToolset);
-  // `testToolset: false` mirrors addon-vitest being absent or not enabled, where its `services`
-  // hook never runs and the `test` toolset stays unregistered.
-  if (testToolset) {
-    registerToolset(
-      createTestToolset({
-        channel: { on: () => {}, off: () => {}, emit: () => {} } as never,
-        storyIndex,
-        a11yEnabled: false,
-      })
-    );
-  }
   registerToolset(createDocsToolset({ docsAccess }));
 }

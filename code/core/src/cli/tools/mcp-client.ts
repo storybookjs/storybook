@@ -22,7 +22,7 @@ export type ToolResultContentItem = v.InferOutput<typeof ToolResultContentItemSc
 export const ToolCallResultSchema = v.looseObject({
   content: v.optional(v.array(ToolResultContentItemSchema)),
   /** The JSON matching the tool's published `outputSchema`, when it declares one. */
-  structuredContent: v.optional(v.unknown()),
+  structuredContent: v.optional(v.record(v.string(), v.unknown())),
   isError: v.optional(v.boolean()),
 });
 export type ToolCallResult = v.InferOutput<typeof ToolCallResultSchema>;
@@ -57,7 +57,7 @@ const STORYBOOK_MCP_PROXY_HEADER_VALUE = 'true';
 
 /**
  * Upper bound on a single request so a hung server cannot stall the CLI forever. Generous because
- * `run-story-tests` on a full suite legitimately runs for minutes.
+ * `test-run` on a full suite legitimately runs for minutes.
  */
 const REQUEST_TIMEOUT_MS = 10 * 60 * 1000;
 
@@ -75,6 +75,21 @@ export type ToolCallParams = {
   name: string;
   arguments?: Record<string, unknown>;
 };
+
+/**
+ * Join a Storybook instance base URL with an MCP endpoint pathname.
+ *
+ * Absolute pathnames like `/mcp` must keep any deployment subpath on `baseUrl`
+ * (`http://host/nested` + `/mcp` → `http://host/nested/mcp`). WHATWG `new URL('/mcp', base)`
+ * replaces the pathname instead, which drops the subpath.
+ */
+export function resolveMcpEndpointUrl(baseUrl: string, endpoint: string): string {
+  const base = new URL(baseUrl);
+  const basePath = base.pathname.replace(/\/+$/, '');
+  const endpointPath = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+  base.pathname = `${basePath}${endpointPath}`.replace(/\/{2,}/g, '/') || '/';
+  return base.href;
+}
 
 /** A JSON-RPC level error returned by the Storybook MCP server (e.g. unknown tool). */
 export class McpJsonRpcError extends Error {
@@ -221,7 +236,7 @@ async function sendJsonRpcRequest<TResult>(
     throw new Error(`The Storybook instance at ${record.cwd} has no server endpoint registered`);
   }
 
-  const target = new URL(endpoint, record.url).href;
+  const target = resolveMcpEndpointUrl(record.url, endpoint);
 
   const sessionId = await initializeMcpSession(target, fetchImpl);
 

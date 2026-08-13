@@ -431,6 +431,43 @@ export class OpenServiceToolsetOutputMismatchError extends StorybookError {
   }
 }
 
+/** A toolset method id is not exactly `toolsetId.methodName` with non-empty parts. */
+export class OpenServiceInvalidToolsetMethodIdError extends StorybookError {
+  constructor(public data: { methodId: string }) {
+    super({
+      name: 'OpenServiceInvalidToolsetMethodIdError',
+      category: Category.CORE_COMMON,
+      code: 28,
+      message: `Invalid toolset method id "${data.methodId}". Expected exactly one separator: toolsetId.methodName.`,
+    });
+  }
+}
+
+/**
+ * Two toolset methods derive the same MCP tool name (or two methods in one toolset derive the same
+ * CLI method name).
+ */
+export class OpenServiceDuplicateToolNameError extends StorybookError {
+  constructor(
+    public data: {
+      derivedName: string;
+      first: string;
+      second: string;
+      transport: 'mcp' | 'cli';
+    }
+  ) {
+    super({
+      name: 'OpenServiceDuplicateToolNameError',
+      category: Category.CORE_COMMON,
+      code: 29,
+      message:
+        data.transport === 'mcp'
+          ? `Derived MCP tool name "${data.derivedName}" collides between "${data.first}" and "${data.second}". Rename one toolset id or method key.`
+          : `Derived CLI method name "${data.derivedName}" collides between "${data.first}" and "${data.second}" in the same toolset. Rename one method key.`,
+    });
+  }
+}
+
 export class WebpackMissingStatsError extends StorybookError {
   constructor() {
     super({

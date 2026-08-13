@@ -1,8 +1,13 @@
 import * as v from 'valibot';
 
-import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
-import type { StoryIndexAccess } from '../stories/definition.ts';
-import { storyInputArraySchema } from '../stories/story-input.ts';
+import { storyInputArraySchema, type StoryIndexAccess } from 'storybook/internal/core-server';
+import {
+  defineToolset,
+  reportToolsetTelemetry,
+  type ToolsetCtx,
+  type ToolsetOutcome,
+} from 'storybook/open-service';
+
 import { formatTestRun, summarizeTestRun } from './format.ts';
 import { createAsyncQueue, runStoryTests, type TestChannel } from './run.ts';
 
@@ -157,7 +162,8 @@ async function reportRunTelemetry(data: TestRunData, input: RunInput, ctx: Tools
   const inputStoryCount = input.stories?.length ?? 0;
 
   if (data.status === 'no-stories') {
-    await ctx.telemetry?.('tool:runStoryTests', {
+    await reportToolsetTelemetry(ctx, 'tool:runStoryTests', {
+      toolset: 'test',
       runA11y: data.a11y,
       inputStoryCount,
       matchedStoryCount: 0,
@@ -173,7 +179,8 @@ async function reportRunTelemetry(data: TestRunData, input: RunInput, ctx: Tools
     return;
   }
 
-  await ctx.telemetry?.('tool:runStoryTests', {
+  await reportToolsetTelemetry(ctx, 'tool:runStoryTests', {
+    toolset: 'test',
     runA11y: data.a11y,
     inputStoryCount,
     // A partially resolved selector list never reaches a run, so every input matched by this point.
@@ -199,14 +206,10 @@ export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTe
   return defineToolset({
     id: 'test',
     description: 'Run Storybook story tests via addon-vitest.',
-    telemetryGroup: 'test',
     methods: {
       run: {
-        schema: runInputSchema,
-        title: 'Storybook Tests',
-        // No `requiresDevServer`: addon-vitest wires the responder answering these requests in the
-        // same `services` hook that registers this toolset, so any consumer that offers the tool
-        // can answer it in-process — the dev server and the `storybook tools` CLI alike.
+        input: runInputSchema,
+        title: 'Run Storybook tests',
         description: describeRun(a11yEnabled),
         handler: async (
           input,

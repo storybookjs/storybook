@@ -2,11 +2,7 @@ import { mkdir } from 'node:fs/promises';
 
 import type { Channel } from 'storybook/internal/channels';
 import { getFrameworkName, resolvePathInStorybookCache } from 'storybook/internal/common';
-import {
-  type StoryIndexGenerator,
-  createTestToolset,
-  registerToolset,
-} from 'storybook/internal/core-server';
+import { type StoryIndexGenerator, registerToolset } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import { cleanPaths, oneWayHash, sanitizeError, telemetry } from 'storybook/internal/telemetry';
 import type { Options, PresetPropertyFn, StoryId } from 'storybook/internal/types';
@@ -28,6 +24,7 @@ import {
   resolvePreviewBuilderName,
   wireTestRunResponder,
 } from './node/test-run-responder.ts';
+import { createTestToolset } from './node/toolset/definition.ts';
 import type { StoreState } from './types.ts';
 
 /**

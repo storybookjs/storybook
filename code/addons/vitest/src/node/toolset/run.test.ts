@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
+import * as v from 'valibot';
 
 import type { StoryIndex } from 'storybook/internal/types';
 
-import type { TestRunResult } from './definition.ts';
+import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from '../../constants.ts';
+import { createTestToolset, type TestRunResult } from './definition.ts';
 import {
-  TRIGGER_TEST_RUN_REQUEST,
-  TRIGGER_TEST_RUN_RESPONSE,
   createAsyncQueue,
   runStoryTests,
   type TestChannel,
@@ -92,6 +92,18 @@ describe('createAsyncQueue', () => {
 });
 
 describe('runStoryTests', () => {
+  it('rejects when the story index cannot be loaded', async () => {
+    await expect(
+      runStoryTests({
+        channel: createMockChannel(),
+        getIndex: async () => {
+          throw new Error('index unavailable');
+        },
+        stories: [{ storyId: 'button--primary' }],
+      })
+    ).rejects.toThrow('index unavailable');
+  });
+
   it('returns no-stories with the per-selector messages when nothing matched', async () => {
     const channel = createMockChannel();
     const emitSpy = vi.spyOn(channel, 'emit');
@@ -252,5 +264,44 @@ describe('runStoryTests', () => {
     expect(channel.handlers.get(TRIGGER_TEST_RUN_RESPONSE) ?? []).toHaveLength(0);
 
     vi.useRealTimers();
+  });
+});
+
+describe('createTestToolset channel identity', () => {
+  it('runs the request/response over the same channel object the toolset was created with', async () => {
+    const channel = createMockChannel();
+    channel.emit = (event, payload) => {
+      if (event === TRIGGER_TEST_RUN_REQUEST) {
+        const { requestId } = payload as { requestId: string };
+        queueMicrotask(() =>
+          respond(channel, {
+            requestId,
+            status: 'completed',
+            result: sampleResult,
+          })
+        );
+      }
+    };
+
+    const toolset = createTestToolset({
+      channel,
+      storyIndex: { getIndex: async () => index },
+      a11yEnabled: false,
+    });
+    const outcome = await toolset.methods.run.handler(
+      v.parse(toolset.methods.run.input, {
+        stories: [{ storyId: 'button--primary' }],
+        a11y: false,
+      }),
+      {
+        transport: 'cli',
+        getService: () => {
+          throw new Error('unused');
+        },
+      }
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect(outcome.data).toMatchObject({ status: 'completed', a11y: false });
   });
 });

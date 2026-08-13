@@ -1,25 +1,36 @@
+import { kebabCase } from 'es-toolkit/string';
+
 import type { ToolsetCtx } from './toolset-definition.ts';
 
-/**
- * Maps a toolset method to the MCP tool name that exposes it.
- *
- * These names are the public MCP contract of `@storybook/addon-mcp` and `@storybook/mcp`: clients
- * and downstream integrations call them by name, so they are frozen independently of the method
- * names they point at. Both adapters register from this map, and descriptions render
- * cross-references through {@link getRef}, so description prose and registration cannot disagree.
- */
-export const MCP_TOOL_NAMES = {
-  'stories.preview': 'preview-stories',
-  'stories.changed': 'get-changed-stories',
-  'stories.findByComponent': 'get-stories-by-component',
-  'test.run': 'run-story-tests',
-  'review.create': 'display-review',
-  'docs.list': 'list-all-documentation',
-  'docs.show': 'get-documentation',
-  'docs.showStory': 'get-documentation-for-story',
-} as const;
+export type ToolsetMethodId = `${string}.${string}`;
 
-export type ToolsetMethodRef = keyof typeof MCP_TOOL_NAMES;
+/**
+ * Split `toolsetId.methodName` into parts. Rejects empty segments and anything that is not exactly
+ * one separator (no truncation of `a.b.c`).
+ *
+ * Throws a plain `Error` so this module stays portable for `storybook/internal/toolsets-docs`.
+ * Registration adapters wrap with `OpenServiceInvalidToolsetMethodIdError` where appropriate.
+ */
+export function parseToolsetMethodId(methodId: string): {
+  toolsetId: string;
+  methodName: string;
+} {
+  const separator = methodId.indexOf('.');
+  if (
+    separator <= 0 ||
+    separator !== methodId.lastIndexOf('.') ||
+    separator === methodId.length - 1
+  ) {
+    // eslint-disable-next-line local-rules/no-uncategorized-errors -- portable toolsets-docs path
+    throw new Error(
+      `Invalid toolset method id "${methodId}". Expected exactly one separator: toolsetId.methodName.`
+    );
+  }
+  return {
+    toolsetId: methodId.slice(0, separator),
+    methodName: methodId.slice(separator + 1),
+  };
+}
 
 /**
  * `findByComponent` -> `find-by-component`.
@@ -29,24 +40,31 @@ export type ToolsetMethodRef = keyof typeof MCP_TOOL_NAMES;
  * disagree.
  */
 export function toCliMethodName(methodName: string): string {
-  return methodName.replace(/[A-Z]/g, (letter) => `-${letter.toLowerCase()}`);
+  return kebabCase(methodName);
 }
 
 /** `stories.findByComponent` -> `stories find-by-component`. */
-function toCliPath(method: ToolsetMethodRef): string {
-  const [toolsetId, methodName] = method.split('.');
+function toCliPath(method: ToolsetMethodId): string {
+  const { toolsetId, methodName } = parseToolsetMethodId(method);
   return `${toolsetId} ${toCliMethodName(methodName)}`;
 }
 
+/** `stories.findByComponent` -> `stories-find-by-component`. */
+export function toMcpToolName(method: ToolsetMethodId): string {
+  const { toolsetId, methodName } = parseToolsetMethodId(method);
+  return `${kebabCase(toolsetId)}-${toCliMethodName(methodName)}`;
+}
+
 /**
- * Renders a reference to a sibling method in the consumer's own vocabulary.
+ * Renders how a toolset method is spelled for the active transport.
  *
- * Descriptions that tell an agent to call another tool must name it the way that agent can call it,
- * so never hardcode a tool name or a command in description prose — use this instead.
+ * Not a composed-Storybook "ref" (`refs` in `main.js`) — the name is the invokable tool/command
+ * string agents see. Descriptions that tell an agent to call another tool must use this rather
+ * than hardcoding either spelling.
  */
-export function getRef(context: Pick<ToolsetCtx, 'consumer'>) {
-  return (method: ToolsetMethodRef): string =>
-    context.consumer === 'mcp'
-      ? MCP_TOOL_NAMES[method]
+export function getToolName(context: Pick<ToolsetCtx, 'transport'>) {
+  return (method: ToolsetMethodId): string =>
+    context.transport === 'mcp'
+      ? toMcpToolName(method)
       : `npx storybook tools ${toCliPath(method)}`;
 }

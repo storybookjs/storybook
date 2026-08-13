@@ -342,10 +342,10 @@ describe('experimental_devServer', () => {
 
     const html = mockRes.end.mock.calls[0][0] as string;
     for (const tool of [
-      'get-stories-by-component',
-      'get-changed-stories',
-      'display-review',
-      'get-documentation-for-story',
+      'stories-find-by-component',
+      'stories-changed',
+      'review-create',
+      'docs-show-story',
     ]) {
       expect(html).toContain(`<code>${tool}</code>`);
     }
@@ -354,7 +354,7 @@ describe('experimental_devServer', () => {
   });
 
   it('marks dev tools disabled on the landing page when the dev toolset is turned off', async () => {
-    // Module graph IS supported, so `get-stories-by-component` would otherwise badge
+    // Module graph IS supported, so `stories-find-by-component` would otherwise badge
     // as enabled — proving the badge now also honors the `dev` toolset being disabled.
     // Everything else here matches what `mockOptions`'s fixture (features: { componentsManifest:
     // false }, no other presets) would resolve for real; only `moduleGraphSupported` is forced.
@@ -393,7 +393,7 @@ describe('experimental_devServer', () => {
         new RegExp(`<code>${tool}</code>\\s*<span class="toolset-status (enabled|disabled)"`)
       )?.[1];
 
-    for (const tool of ['get-stories-by-component', 'get-changed-stories', 'display-review']) {
+    for (const tool of ['stories-find-by-component', 'stories-changed', 'review-create']) {
       expect(badgeFor(tool)).toBe('disabled');
     }
     expect(html).toContain('The <code>dev</code> toolset is disabled via addon options.');

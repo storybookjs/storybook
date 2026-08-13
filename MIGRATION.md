@@ -530,6 +530,23 @@
 
 ## From version 10.5.x to 10.6.0
 
+### MCP tool names follow toolset.method
+
+Storybook's MCP tools are now named from their toolset and method (`stories.preview` → `stories-preview`). Update agent prompts, skills, and hard-coded tool allowlists:
+
+| Previous name | New name |
+| --- | --- |
+| `preview-stories` | `stories-preview` |
+| `get-changed-stories` | `stories-changed` |
+| `get-stories-by-component` | `stories-find-by-component` |
+| `display-review` | `review-create` |
+| `run-story-tests` | `test-run` |
+| `list-all-documentation` | `docs-list` |
+| `get-documentation` | `docs-show` |
+| `get-documentation-for-story` | `docs-show-story` |
+
+`get-storybook-story-instructions` is unchanged (it is not backed by a toolset method).
+
 ### Experimental Playwright CT integration removed
 
 Storybook's experimental `@storybook/*/experimental-playwright` API (`createPlaywrightTest`) has been removed.

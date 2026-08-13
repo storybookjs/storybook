@@ -53,7 +53,7 @@ function toolMetadataFor(reviewEnabled: boolean): ToolMetadata[] {
 
 const instructions = (reviewEnabled: boolean) =>
   buildServerInstructions({
-    consumer: 'mcp',
+    transport: 'mcp',
     devEnabled: true,
     testSupported: true,
     docsEnabled: true,

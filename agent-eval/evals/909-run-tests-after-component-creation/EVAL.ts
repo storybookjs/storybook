@@ -6,6 +6,6 @@ function hasStoriesInput(call: StorybookWorkflowCall): boolean {
 }
 
 test('creates stories, runs focused story tests, and previews the stories', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions', 'run-story-tests', 'preview-stories']);
-  expect(getWorkflowCalls('run-story-tests').some(hasStoriesInput)).toBe(true);
+  expectWorkflowCalls(['get-storybook-story-instructions', 'test-run', 'stories-preview']);
+  expect(getWorkflowCalls('test-run').some(hasStoriesInput)).toBe(true);
 });

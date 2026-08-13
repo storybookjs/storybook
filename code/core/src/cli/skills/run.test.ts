@@ -36,15 +36,15 @@ describe('runSkillsCommand', () => {
     expect(d.loadStorybook).not.toHaveBeenCalled();
   });
 
-  it('get stories assembles CLI-consumer server instructions using the CLI review gate', async () => {
+  it('get stories assembles CLI-transport server instructions using the CLI review gate', async () => {
     const d = deps();
     const result = await runSkillsCommand({ subcommand: 'get', id: 'stories', target: {} }, d);
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('npx storybook tools');
-    expect(result.output).not.toContain('preview-stories** ');
+    expect(result.output).not.toContain('stories-preview** ');
   });
 
-  it('get write-story assembles CLI-consumer story instructions', async () => {
+  it('get write-story assembles CLI-transport story instructions', async () => {
     const d = deps();
     const result = await runSkillsCommand({ subcommand: 'get', id: 'write-story', target: {} }, d);
     expect(result.exitCode).toBe(0);

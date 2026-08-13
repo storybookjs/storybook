@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it } from 'vitest';
 import * as v from 'valibot';
 
 import {
+  OpenServiceDuplicateToolNameError,
   OpenServiceDuplicateToolsetError,
   OpenServiceMissingToolsetError,
 } from '../../server-errors.ts';
@@ -18,12 +19,11 @@ const makeToolset = (id: string, description = `${id} toolset`) =>
   defineToolset({
     id,
     description,
-    telemetryGroup: 'dev',
     methods: {
       noop: {
         title: 'No-op',
         description: 'No-op method.',
-        schema: v.object({}),
+        input: v.object({}),
         handler: () => ({ ok: true, data: undefined, markdown: '' }) as const,
       },
     },
@@ -50,6 +50,63 @@ describe('registerToolset', () => {
     expect(() => registerToolset(makeToolset('docs', 'second'))).toThrow(
       OpenServiceDuplicateToolsetError
     );
+  });
+
+  it('throws when two methods in one toolset collapse to the same CLI name', () => {
+    const colliding = defineToolset({
+      id: 'widgets',
+      description: 'Widgets',
+      methods: {
+        getHTTPFrame: {
+          title: 'HTTP',
+          description: 'a',
+          input: v.object({}),
+          handler: () => ({ ok: true, data: undefined, markdown: '' }) as const,
+        },
+        getHttpFrame: {
+          title: 'Http',
+          description: 'b',
+          input: v.object({}),
+          handler: () => ({ ok: true, data: undefined, markdown: '' }) as const,
+        },
+      },
+    });
+
+    expect(() => registerToolset(colliding)).toThrow(OpenServiceDuplicateToolNameError);
+  });
+
+  it('throws when two toolsets derive the same MCP tool name', () => {
+    registerToolset(
+      defineToolset({
+        id: 'fooBar',
+        description: 'a',
+        methods: {
+          baz: {
+            title: 'Baz',
+            description: 'a',
+            input: v.object({}),
+            handler: () => ({ ok: true, data: undefined, markdown: '' }) as const,
+          },
+        },
+      })
+    );
+
+    expect(() =>
+      registerToolset(
+        defineToolset({
+          id: 'foo',
+          description: 'b',
+          methods: {
+            barBaz: {
+              title: 'Bar baz',
+              description: 'b',
+              input: v.object({}),
+              handler: () => ({ ok: true, data: undefined, markdown: '' }) as const,
+            },
+          },
+        })
+      )
+    ).toThrow(OpenServiceDuplicateToolNameError);
   });
 
   it('returns an empty list before any registration', () => {

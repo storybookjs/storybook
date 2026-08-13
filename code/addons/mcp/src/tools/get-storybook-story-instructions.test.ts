@@ -224,8 +224,8 @@ describe('getUIBuildingInstructionsTool', () => {
     });
 
     expect(instructions).toContain('## Using library components');
-    expect(instructions).toContain('**list-all-documentation**');
-    expect(instructions).toContain('**get-documentation**');
+    expect(instructions).toContain('**docs-list**');
+    expect(instructions).toContain('**docs-show**');
     expect(instructions).toContain('`storybookId`');
     expect(instructions).not.toContain('{{DOCS_WORKFLOW_GUIDANCE}}');
   });
@@ -299,8 +299,8 @@ describe('getUIBuildingInstructionsTool', () => {
     // reviews with IDs derived from file names and no discovery call.
     expect(instructions).toContain('Story IDs must come from that call');
     expect(instructions).toContain('never construct them from file names');
-    expect(instructions).toContain('Feed the discovered IDs into **display-review**');
-    expect(instructions).not.toContain('first, then use `preview-stories`');
+    expect(instructions).toContain('Feed the discovered IDs into **review-create**');
+    expect(instructions).not.toContain('first, then use `stories-preview`');
   });
 
   // The per-request context override must win over the feature-flag gate:
@@ -339,7 +339,7 @@ describe('getUIBuildingInstructionsTool', () => {
     const instructions = response.result?.content[0].text as string;
 
     expect(instructions).toContain('## 👀 Review your changes');
-    expect(instructions).toContain('Feed the discovered IDs into **display-review**');
+    expect(instructions).toContain('Feed the discovered IDs into **review-create**');
   });
 
   it('tells the agent to include preview URLs when review is disabled', async () => {
@@ -576,7 +576,7 @@ describe('getUIBuildingInstructionsTool', () => {
 
     const withDocs = await buildStorybookStoryInstructions(mockOptions, { docsEnabled: true });
     expect(withDocs).toContain('## Using library components');
-    expect(withDocs).toContain('list-all-documentation');
+    expect(withDocs).toContain('docs-list');
 
     // Without the docs manifest the tools are not registered, so the
     // instructions must not tell agents to call them.
@@ -584,6 +584,6 @@ describe('getUIBuildingInstructionsTool', () => {
       docsEnabled: false,
     });
     expect(withoutDocs).not.toContain('## Using library components');
-    expect(withoutDocs).not.toContain('list-all-documentation');
+    expect(withoutDocs).not.toContain('docs-list');
   });
 });

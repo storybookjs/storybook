@@ -5,8 +5,8 @@ import { DOCS_TOOLSET_INSTRUCTIONS, getDocsToolsetInstructions } from './instruc
 describe('getDocsToolsetInstructions', () => {
   it('the MCP rendering is DOCS_TOOLSET_INSTRUCTIONS, byte for byte', () => {
     expect(getDocsToolsetInstructions('mcp')).toBe(DOCS_TOOLSET_INSTRUCTIONS);
-    expect(DOCS_TOOLSET_INSTRUCTIONS).toContain('**list-all-documentation**');
-    expect(DOCS_TOOLSET_INSTRUCTIONS).toContain('**get-documentation**');
+    expect(DOCS_TOOLSET_INSTRUCTIONS).toContain('**docs-list**');
+    expect(DOCS_TOOLSET_INSTRUCTIONS).toContain('**docs-show**');
   });
 
   it('the CLI rendering names the tools CLI commands', () => {
@@ -14,6 +14,6 @@ describe('getDocsToolsetInstructions', () => {
     expect(cli).toContain('**npx storybook tools docs list**');
     expect(cli).toContain('**npx storybook tools docs show**');
     expect(cli).toContain('**npx storybook tools docs show-story**');
-    expect(cli).not.toContain('list-all-documentation');
+    expect(cli).not.toContain('docs-list');
   });
 });

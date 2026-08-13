@@ -128,7 +128,7 @@ function buildStoryIdsByFile(storyIndex: StoryIndex): Map<string, Set<string>> {
 }
 
 /** Builds the unavailable reason for a non-`ready` module-graph status. */
-function reasonForStatus(status: ModuleGraphStatus): string {
+export function reasonForStatus(status: ModuleGraphStatus): string {
   switch (status.value) {
     case 'booting':
       return "Storybook's story module graph hasn't built yet — it is still being constructed. Retry shortly.";

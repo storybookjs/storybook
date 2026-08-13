@@ -22,7 +22,7 @@ export const isReviewFeatureEnabled = (features: StorybookFeatures | undefined):
  *
  * Contrast with {@link isReviewFeatureEnabled}: with the flag unset the review infrastructure
  * still mounts (the `storybook ai` CLI channel turns review on per request), but direct MCP
- * clients never see `display-review` — so tool descriptions and result prose must not advertise
+ * clients never see `review-create` — so tool descriptions and result prose must not advertise
  * it. Mirrors `getReviewStatus().available` in `@storybook/addon-mcp`.
  */
 export const isReviewExplicitlyEnabled = (features: StorybookFeatures | undefined): boolean =>

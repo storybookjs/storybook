@@ -44,8 +44,8 @@ const docsAccess: DocsAccess = {
 
 const toolset = createDocsToolset({ docsAccess });
 
-const mcpCtx: ToolsetCtx = { consumer: 'mcp', getService: () => ({}) as never };
-const cliCtx: ToolsetCtx = { consumer: 'cli', getService: () => ({}) as never };
+const mcpCtx: ToolsetCtx = { transport: 'mcp', getService: () => ({}) as never };
+const cliCtx: ToolsetCtx = { transport: 'cli', getService: () => ({}) as never };
 
 describe('docs.list', () => {
   it('returns the manifests from the access and renders the list Markdown', async () => {
@@ -64,12 +64,12 @@ describe('docs.list', () => {
     expect(outcome.markdown).toContain('button--primary');
   });
 
-  it('cross-references the show tool per consumer in its description', () => {
+  it('cross-references the show tool per transport in its description', () => {
     const describe_ = toolset.methods.list.description;
     const resolved = typeof describe_ === 'function' ? describe_(mcpCtx) : describe_;
     const resolvedCli = typeof describe_ === 'function' ? describe_(cliCtx) : describe_;
 
-    expect(resolved).toContain('get-documentation');
+    expect(resolved).toContain('docs-show');
     expect(resolvedCli).toContain('npx storybook tools docs show');
   });
 });
@@ -97,11 +97,13 @@ describe('docs.show', () => {
     expect(outcome.ok).toBe(false);
     expect(outcome.data.entry).toBeUndefined();
     expect(outcome.markdown).toBe(
-      'Component or Docs Entry not found: "nope". Use the list-all-documentation tool to see available components and documentation entries.'
+      'Component or Docs Entry not found: "nope". Use the docs-list tool to see available components and documentation entries.'
     );
 
     const cliOutcome = await toolset.methods.show.handler({ id: 'nope' }, cliCtx);
-    expect(cliOutcome.markdown).toBe('Component or Docs Entry not found: "nope".');
+    expect(cliOutcome.markdown).toContain(
+      'Use the npx storybook tools docs list tool to see available components'
+    );
   });
 });
 
@@ -134,7 +136,7 @@ describe('docs.showStory', () => {
     );
   });
 
-  it('answers unknown components with the miss message per consumer', async () => {
+  it('answers unknown components with the miss message per transport', async () => {
     const outcome = await toolset.methods.showStory.handler(
       {
         componentId: 'nope',
@@ -145,23 +147,25 @@ describe('docs.showStory', () => {
 
     expect(outcome.ok).toBe(false);
     expect(outcome.markdown).toBe(
-      'Component not found: "nope". Use the list-all-documentation tool to see available components.'
+      'Component not found: "nope". Use the docs-list tool to see available components.'
     );
 
     const cliOutcome = await toolset.methods.showStory.handler(
       { componentId: 'nope', storyName: 'Primary' },
       cliCtx
     );
-    expect(cliOutcome.markdown).toBe('Component not found: "nope".');
+    expect(cliOutcome.markdown).toContain(
+      'Use the npx storybook tools docs list tool to see available components'
+    );
   });
 });
 
 describe('usage reporting', () => {
-  /** Runs a method the way a consumer does; the handler reports usage inline. */
-  async function run(methodName: 'list' | 'show', input: unknown, consumer: 'cli' | 'mcp') {
+  /** Runs a method the way a transport does; the handler reports usage inline. */
+  async function run(methodName: 'list' | 'show', input: unknown, transport: 'cli' | 'mcp') {
     const events: Array<[string, Record<string, unknown>]> = [];
     const ctx: ToolsetCtx = {
-      consumer,
+      transport,
       getService: () => ({}) as never,
       telemetry: async (event, payload) => {
         events.push([event, payload]);
@@ -173,16 +177,16 @@ describe('usage reporting', () => {
     return events;
   }
 
-  it.each(['cli', 'mcp'] as const)('reports a listing on %s', async (consumer) => {
-    const [[event, payload] = []] = await run('list', { withStoryIds: false }, consumer);
+  it.each(['cli', 'mcp'] as const)('reports a listing on %s', async (transport) => {
+    const [[event, payload] = []] = await run('list', { withStoryIds: false }, transport);
 
     expect(event).toBe('tool:listAllDocumentation');
     expect(payload).toMatchObject({ componentCount: 1, docsCount: 1 });
     expect(payload!.resultTokenCount).toBeGreaterThan(0);
   });
 
-  it.each(['cli', 'mcp'] as const)('reports a lookup on %s', async (consumer) => {
-    const [[event, payload] = []] = await run('show', { id: 'button' }, consumer);
+  it.each(['cli', 'mcp'] as const)('reports a lookup on %s', async (transport) => {
+    const [[event, payload] = []] = await run('show', { id: 'button' }, transport);
 
     expect(event).toBe('tool:getDocumentation');
     expect(payload).toMatchObject({ componentId: 'button', found: true });

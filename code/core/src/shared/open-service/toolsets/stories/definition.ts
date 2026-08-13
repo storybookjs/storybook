@@ -7,12 +7,18 @@ import {
   OpenServiceModuleGraphUnavailableError,
 } from '../../../../server-errors.ts';
 import type { ModuleGraphService } from '../../services/module-graph/definition.ts';
-import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
-import { getRef, MCP_TOOL_NAMES } from '../../toolset-names.ts';
+import {
+  defineToolset,
+  reportToolsetTelemetry,
+  type ToolsetCtx,
+  type ToolsetOutcome,
+} from '../../toolset-definition.ts';
+import { getToolName } from '../../toolset-names.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
 import { getChangedStories } from './changed.ts';
 import { DEFAULT_MAX_DISTANCE, findStoriesByComponent } from './find-by-component.ts';
 import type { ModuleGraphStatus } from './resolve-component-stories.ts';
+import { reasonForStatus } from './resolve-component-stories.ts';
 import { formatChangedStories, formatFindByComponent, formatPreviewStories } from './format.ts';
 import { previewStories } from './preview-stories.ts';
 import { storyInputArraySchema, storyInputSchema } from './story-input.ts';
@@ -24,9 +30,7 @@ const previewSuccessSchema = v.object({
   previewUrl: v.pipe(
     v.string(),
     v.description(
-      // An `outputSchema` is built once per toolset, with no `ctx` to resolve a sibling tool's
-      // spelling against, so this names the frozen MCP tool rather than a hardcoded string.
-      `Direct URL to open the story preview. Include this URL in the final user-facing response so users can open it directly — unless a curated review page is being published via ${MCP_TOOL_NAMES['review.create']}, in which case link the review page instead of listing individual URLs.`
+      'Direct URL to open the story preview. Include this URL in the final user-facing response so users can open it directly.'
     )
   ),
 });
@@ -133,17 +137,55 @@ export type StoriesChangeStatusesAccess = {
   getAll: () => StatusesByStoryIdAndTypeId | Promise<StatusesByStoryIdAndTypeId>;
 };
 
+/**
+ * Change-detection status-store readiness, distinct from module-graph readiness. The graph can be
+ * `ready` while change detection is disabled or its initial scan has failed.
+ */
+export type ChangeDetectionReadinessAccess = () => Promise<
+  | { status: 'ready' }
+  | { status: 'unavailable'; reason: string }
+  | { status: 'error'; error: { message: string } }
+>;
+
 export type CreateStoriesToolsetOptions = {
   storyIndex: StoryIndexAccess;
   git: StoriesGitAccess;
   /** Change-detection status snapshot; wired by the server host, not imported from core-server. */
   changeStatuses: StoriesChangeStatusesAccess;
+  getChangeDetectionReadiness: ChangeDetectionReadinessAccess;
   /**
    * Whether curated reviews are available in this Storybook. Reviews are the intended end of visual
    * work, so when they exist several methods steer the agent there instead of at raw preview links.
    */
   reviewEnabled?: boolean;
 };
+
+const GIT_UNUSABLE_REASONS = new Set(['not a git repository', 'git is not available']);
+
+function emptyChangedStories(): ChangedStoriesOutput {
+  return {
+    stories: [],
+    counts: { new: 0, modified: 0, affected: 0 },
+    unreachableFiles: [],
+  };
+}
+
+function reasonForChangeDetectionReadiness(
+  readiness: Exclude<Awaited<ReturnType<ChangeDetectionReadinessAccess>>, { status: 'ready' }>
+): string {
+  if (readiness.status === 'unavailable') {
+    return readiness.reason === 'disabled'
+      ? 'Storybook change detection is disabled, so changed-story statuses are unavailable. Enable the changeDetection feature and retry.'
+      : `Storybook change detection is unavailable: ${readiness.reason}.`;
+  }
+  return `Storybook change detection failed: ${readiness.error.message}`;
+}
+
+function isGitUnusableReadiness(
+  readiness: Awaited<ReturnType<ChangeDetectionReadinessAccess>>
+): boolean {
+  return readiness.status === 'unavailable' && GIT_UNUSABLE_REASONS.has(readiness.reason);
+}
 
 function describePreview(ctx: ToolsetCtx, reviewEnabled: boolean): string {
   if (!reviewEnabled) {
@@ -157,17 +199,17 @@ Include each returned preview URL in your final user-facing response so users ca
   // about the review tool's availability (a hedged "when available" let an agent that wrongly
   // believed the tool was missing treat raw links as a sanctioned fallback).
   return `Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
-Do not end visual work or browse requests with these links — publish a curated review with ${getRef(ctx)('review.create')} instead (passing changedFiles: [] when no code changed) and link that.`;
+Do not end visual work or browse requests with these links — publish a curated review with ${getToolName(ctx)('review.create')} instead (passing changedFiles: [] when no code changed) and link that.`;
 }
 
 function describeChanged(ctx: ToolsetCtx): string {
   return `Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).
 
-The result reflects the cumulative working-tree diff, not just your latest edit — after multiple edits in one session, a non-empty result may cover an earlier sub-change and miss your most recent one. Check that every file you touched is represented; for any that isn't, find its consumer components and pass their paths to ${getRef(ctx)('stories.findByComponent')} instead. The response surfaces this gap with a "coverage sanity check" hint when it detects unreachable working-tree files.`;
+The result reflects the cumulative working-tree diff, not just your latest edit — after multiple edits in one session, a non-empty result may cover an earlier sub-change and miss your most recent one. Check that every file you touched is represented; for any that isn't, find its consumer components and pass their paths to ${getToolName(ctx)('stories.findByComponent')} instead. The response surfaces this gap with a "coverage sanity check" hint when it detects unreachable working-tree files.`;
 }
 
 function describeFindByComponent(ctx: ToolsetCtx, reviewEnabled: boolean): string {
-  const ref = getRef(ctx);
+  const ref = getToolName(ctx);
   const handOffTargets = reviewEnabled
     ? `${ref('stories.preview')} or ${ref('review.create')}`
     : ref('stories.preview');
@@ -194,15 +236,15 @@ export function createStoriesToolset({
   storyIndex,
   git,
   changeStatuses,
+  getChangeDetectionReadiness,
   reviewEnabled = false,
 }: CreateStoriesToolsetOptions) {
   return defineToolset({
     id: 'stories',
     description: 'Story discovery, change detection, and preview URL generation.',
-    telemetryGroup: 'dev',
     methods: {
       preview: {
-        schema: v.object({
+        input: v.object({
           stories: v.pipe(
             storyInputArraySchema,
             v.description(
@@ -213,7 +255,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             )
           ),
         }),
-        outputSchema: previewOutputSchema,
+        output: previewOutputSchema,
         title: 'Get story preview URLs',
         // Preview URLs only work when they point at a live origin.
         requiresDevServer: true,
@@ -231,7 +273,8 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             stories: input.stories,
           });
 
-          await ctx.telemetry?.('tool:previewStories', {
+          await reportToolsetTelemetry(ctx, 'tool:previewStories', {
+            toolset: 'dev',
             inputStoryCount: input.stories.length,
             outputStoryCount: data.stories.length,
           });
@@ -240,13 +283,46 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
         },
       },
       changed: {
-        schema: v.object({}),
+        input: v.object({}),
         title: 'Get changed stories metadata',
         description: describeChanged,
         handler: async (_input, ctx): Promise<ToolsetOutcome<ChangedStoriesOutput, never>> => {
           const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', {
             internal: true,
           });
+          // Same readiness gate as findByComponent: an empty status store is not "no changes", so
+          // fail before reading statuses when the graph has not settled.
+          const graphStatus = (await moduleGraph.queries.status.loaded(
+            undefined
+          )) as ModuleGraphStatus;
+          if (graphStatus.value !== 'ready') {
+            throw new OpenServiceModuleGraphUnavailableError({
+              reason: reasonForStatus(graphStatus),
+            });
+          }
+
+          const changeDetection = await getChangeDetectionReadiness();
+          if (changeDetection.status !== 'ready') {
+            if (isGitUnusableReadiness(changeDetection)) {
+              const data = emptyChangedStories();
+              await reportToolsetTelemetry(ctx, 'tool:getChangedStories', {
+                toolset: 'dev',
+                storyCount: 0,
+                newStoryCount: 0,
+                modifiedStoryCount: 0,
+                affectedStoryCount: 0,
+              });
+              return {
+                ok: true,
+                data,
+                markdown: formatChangedStories(data, ctx, { reviewEnabled }),
+              };
+            }
+            throw new OpenServiceModuleGraphUnavailableError({
+              reason: reasonForChangeDetectionReadiness(changeDetection),
+            });
+          }
+
           const [statuses, index] = await Promise.all([
             Promise.resolve(changeStatuses.getAll()),
             storyIndex.getIndex(),
@@ -259,7 +335,8 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             unreachableFiles: await detectUnreachableFiles({ git, moduleGraph }),
           };
 
-          await ctx.telemetry?.('tool:getChangedStories', {
+          await reportToolsetTelemetry(ctx, 'tool:getChangedStories', {
+            toolset: 'dev',
             storyCount: data.stories.length,
             newStoryCount: data.counts.new,
             modifiedStoryCount: data.counts.modified,
@@ -270,7 +347,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
         },
       },
       findByComponent: {
-        schema: v.object({
+        input: v.object({
           componentPaths: v.pipe(
             v.array(v.string()),
             v.minLength(1),
@@ -291,7 +368,7 @@ Defaults to ${DEFAULT_MAX_DISTANCE}; raise it to widen recall, lower it to tight
             )
           ),
         }),
-        outputSchema: findByComponentOutputSchema,
+        output: findByComponentOutputSchema,
         title: 'Get stories for component files',
         description: (ctx) => describeFindByComponent(ctx, reviewEnabled),
         handler: async (input, ctx): Promise<ToolsetOutcome<FindByComponentOutput, never>> => {
@@ -326,7 +403,8 @@ Defaults to ${DEFAULT_MAX_DISTANCE}; raise it to widen recall, lower it to tight
           const unmatchedCount = lookup.results.filter(
             (result) => !result.pathNotFound && result.matches.length === 0
           ).length;
-          await ctx.telemetry?.('tool:getStoriesByComponent', {
+          await reportToolsetTelemetry(ctx, 'tool:getStoriesByComponent', {
+            toolset: 'dev',
             componentCount: input.componentPaths.length,
             matchedComponentCount: input.componentPaths.length - unmatchedCount,
             totalMatchCount: lookup.results.reduce(

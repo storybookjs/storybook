@@ -47,11 +47,11 @@ describe('collectTelemetry', () => {
         roots: { listChanged: true },
       },
       customField: 'custom-value',
-      consumer: 'mcp',
+      transport: 'mcp',
     });
   });
 
-  it('reports the storybook ai CLI channel as the cli consumer', async () => {
+  it('reports the storybook ai CLI channel as the cli transport', async () => {
     vi.mocked(telemetry).mockResolvedValue(undefined);
 
     const cliServer = Object.assign(Object.create(mockServer), {
@@ -62,7 +62,7 @@ describe('collectTelemetry', () => {
 
     expect(telemetry).toHaveBeenCalledWith(
       'addon-mcp',
-      expect.objectContaining({ consumer: 'cli' })
+      expect.objectContaining({ transport: 'cli' })
     );
   });
 
@@ -72,7 +72,9 @@ describe('collectTelemetry', () => {
     await collectTelemetry({
       event: 'tool-called',
       server: mockServer,
-      toolName: 'list-all-documentation',
+      // Stable analytics string — keep the historical MCP tool spelling even when the wire name
+      // derived from the toolset method differs.
+      toolName: 'docs-list',
       duration: 123,
       success: true,
     });
@@ -82,10 +84,10 @@ describe('collectTelemetry', () => {
       mcpSessionId: 'test-session-123',
       clientInfo: expect.any(Object),
       clientCapabilities: expect.any(Object),
-      toolName: 'list-all-documentation',
+      toolName: 'docs-list',
       duration: 123,
       success: true,
-      consumer: 'mcp',
+      transport: 'mcp',
     });
   });
 
@@ -120,7 +122,7 @@ describe('collectTelemetry', () => {
       mcpSessionId: undefined,
       clientInfo: undefined,
       clientCapabilities: undefined,
-      consumer: 'mcp',
+      transport: 'mcp',
     });
   });
 });

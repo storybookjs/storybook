@@ -179,10 +179,10 @@ export const experimental_devServer: PresetPropertyFn<
       ? ' <span class="toolset-status enabled">+ accessibility</span>'
       : '';
 
-    // `get-stories-by-component`, `get-changed-stories`, and `display-review` are gated
-    // independently of the `dev` toolset — `get-stories-by-component` needs the dependency
-    // graph, `get-changed-stories` needs the `changeDetection` feature flag, and
-    // `display-review` additionally needs the opt-in `experimentalReview` feature flag —
+    // `stories-find-by-component`, `stories-changed`, and `review-create` are gated
+    // independently of the `dev` toolset — `stories-find-by-component` needs the dependency
+    // graph, `stories-changed` needs the `changeDetection` feature flag, and
+    // `review-create` additionally needs the opt-in `experimentalReview` feature flag —
     // so each shows its own badge.
     // When the whole `dev` toolset is turned off via addon options every dev tool is
     // disabled regardless of its own gate, so explain that instead of the per-tool reasons.
@@ -190,13 +190,13 @@ export const experimental_devServer: PresetPropertyFn<
       ? [`The <code>dev</code> toolset is disabled via addon options.`]
       : [
           !moduleGraphSupported &&
-            `<code>get-stories-by-component</code> requires a dev server with a builder that supports the module graph (e.g. Vite).`,
+            `<code>stories-find-by-component</code> requires a dev server with a builder that supports the module graph (e.g. Vite).`,
           !changeDetectionEnabled &&
-            `<code>get-changed-stories</code> requires enabling the <code>changeDetection</code> feature flag.`,
+            `<code>stories-changed</code> requires enabling the <code>changeDetection</code> feature flag.`,
           !reviewEnabled &&
             (reviewEnabledForCli
-              ? `<code>display-review</code> is enabled for <code>storybook ai</code> CLI clients (the Claude/Codex plugins); direct MCP clients need the <code>experimentalReview</code> feature flag.`
-              : `<code>display-review</code> requires the <code>changeDetection</code> feature flag and is off when <code>experimentalReview</code> is set to <code>false</code>.`),
+              ? `<code>review-create</code> is enabled for <code>storybook ai</code> CLI clients (the Claude/Codex plugins); direct MCP clients need the <code>experimentalReview</code> feature flag.`
+              : `<code>review-create</code> requires the <code>changeDetection</code> feature flag and is off when <code>experimentalReview</code> is set to <code>false</code>.`),
         ].filter(Boolean);
     const devNotice = devNoticeLines.length
       ? `<div class="toolset-notice">${devNoticeLines.join('<br>')}</div>`

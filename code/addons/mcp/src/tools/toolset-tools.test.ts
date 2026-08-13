@@ -25,17 +25,19 @@ function registerStubStoriesToolset(
     defineToolset({
       id: 'stories',
       description: 'stub',
-      telemetryGroup: 'dev',
       methods: {
         preview: {
-          schema: v.object({ id: v.string() }),
-          outputSchema: v.object({ stories: v.array(v.object({ previewUrl: v.string() })) }),
+          input: v.object({ id: v.string() }),
+          output: v.object({ stories: v.array(v.object({ previewUrl: v.string() })) }),
           title: 'Get story preview URLs',
-          description: (ctx) => `describes ${ctx.consumer}`,
+          description: (ctx) => `describes ${ctx.transport}`,
           handler:
             overrides.handler ??
             (async (input: { id: string }, ctx) => {
-              await ctx.telemetry?.('tool:previewStories', { inputStoryCount: 1 });
+              await ctx.telemetry?.('tool:previewStories', {
+                toolset: 'dev',
+                inputStoryCount: 1,
+              });
               const stories = [{ previewUrl: `${ctx.origin}/?path=/story/${input.id}` }];
               return {
                 ok: true,
@@ -70,12 +72,12 @@ describe('toolset-backed MCP tools', () => {
     clearToolsetRegistry();
   });
 
-  it('publishes the frozen tool name and title with the mcp-resolved description', () => {
+  it('publishes the derived tool name and title with the MCP-resolved description', () => {
     registerStubStoriesToolset();
 
     const metadata = getToolsetToolMetadata(previewOptions);
 
-    expect(metadata.name).toBe('preview-stories');
+    expect(metadata.name).toBe('stories-preview');
     expect(metadata.title).toBe('Get story preview URLs');
     expect(metadata.description).toBe('describes mcp');
   });
@@ -133,10 +135,9 @@ describe('toolset-backed MCP tools', () => {
       defineToolset({
         id: 'stories',
         description: 'stub',
-        telemetryGroup: 'dev',
         methods: {
           changed: {
-            schema: v.object({}),
+            input: v.object({}),
             title: 'Get changed stories metadata',
             description: 'changed',
             handler: async () => ({ ok: true, data: { stories: [] }, markdown: 'no changes' }),
@@ -242,9 +243,9 @@ describe('toolset-backed MCP tools', () => {
     expect(collectTelemetry).not.toHaveBeenCalled();
   });
 
-  it('derives the uiRoot fact from the request path for every method', async () => {
+  it('includes the request subpath in the toolset origin', async () => {
     registerStubStoriesToolset({
-      handler: async (_input, ctx) => ({ ok: true, data: { stories: [] }, markdown: ctx.uiRoot }),
+      handler: async (_input, ctx) => ({ ok: true, data: { stories: [] }, markdown: ctx.origin }),
     });
 
     const result = await callToolsetMethod(
@@ -256,6 +257,9 @@ describe('toolset-backed MCP tools', () => {
       { id: 'button--primary' }
     );
 
-    expect(result.content[0].text).toBe('http://localhost:6006/nested');
+    expect(result.content[0]).toEqual({
+      type: 'text',
+      text: 'http://localhost:6006/nested',
+    });
   });
 });

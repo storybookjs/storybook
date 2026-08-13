@@ -5,7 +5,6 @@
  * everything behind the commander wiring, without spawning processes.
  */
 
-import { Channel } from 'storybook/internal/channels';
 import type { StoryIndex } from 'storybook/internal/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
@@ -20,15 +19,6 @@ import {
   registerToolset,
 } from '../../shared/open-service/toolset-registry.ts';
 import type { DocsAccess } from '../../shared/open-service/toolsets/docs/access.ts';
-import {
-  createTestToolset,
-  type TestRunResult,
-} from '../../shared/open-service/toolsets/test/definition.ts';
-import {
-  TRIGGER_TEST_RUN_REQUEST,
-  TRIGGER_TEST_RUN_RESPONSE,
-  type TriggerTestRunResponse,
-} from '../../shared/open-service/toolsets/test/run.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import type { ToolsRuntime } from './bootstrap.ts';
 import { runToolsCommand, type ToolsRunDeps } from './run.ts';
@@ -104,7 +94,7 @@ function makeDeps(overrides: Partial<ToolsRunDeps> & { runtime?: Partial<ToolsRu
       ...runtimeOverrides,
     }));
   const discoverInstance =
-    deps.discoverInstance ?? vi.fn(async () => ({ record: undefined, records: [] }));
+    deps.discoverInstance ?? vi.fn(async () => ({ currentRecord: undefined, records: [] }));
   return { deps: { ...deps, bootstrap, discoverInstance }, bootstrap, discoverInstance };
 }
 
@@ -127,7 +117,7 @@ describe('local tools', () => {
     // itself lives in addon-mcp (core tests cannot reach it); its own suite asserts it renders
     // handler markdown verbatim as text blocks, so comparing against the handler's markdown under
     // an MCP context is the same contract expressed from this side of the package boundary.
-    const mcpCtx: ToolsetCtx = { consumer: 'mcp', getService: () => ({}) as never };
+    const mcpCtx: ToolsetCtx = { transport: 'mcp', getService: () => ({}) as never };
     const mcpOutcome = await getToolset('docs').methods.list.handler({}, mcpCtx);
     expect(result.exitCode).toBe(0);
     expect(result.outcome).toEqual({ kind: 'success' });
@@ -155,25 +145,32 @@ describe('local tools', () => {
     const { deps, bootstrap } = makeDeps({
       runtime: {
         getService: () => moduleGraph as never,
-        moduleGraphReadiness: { status: 'ready' },
       },
     });
 
     const result = await run(['stories', 'changed'], deps);
 
-    expect(bootstrap).toHaveBeenCalledWith({}, { hostModuleGraph: true });
+    expect(bootstrap).toHaveBeenCalledWith({});
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('# Changed stories');
     expect(result.output).toContain('New: 0, modified: 0, affected: 0');
   });
 
   it('fails graph tools with the typed unavailable error when the builder has no adapter', async () => {
+    const moduleGraph = {
+      queries: {
+        status: {
+          loaded: async () => ({
+            value: 'unavailable',
+            reason: 'builder does not support change detection',
+          }),
+        },
+        storiesForFiles: { loaded: async () => [] },
+      },
+    };
     const { deps, bootstrap } = makeDeps({
       runtime: {
-        moduleGraphReadiness: {
-          status: 'unavailable',
-          reason: 'builder does not support change detection',
-        },
+        getService: () => moduleGraph as never,
       },
     });
 
@@ -182,18 +179,52 @@ describe('local tools', () => {
       deps
     );
 
-    expect(bootstrap).toHaveBeenCalledWith({}, { hostModuleGraph: true });
+    expect(bootstrap).toHaveBeenCalledWith({});
     expect(result.exitCode).toBe(1);
     expect(result.outcome).toEqual({ kind: 'failure' });
-    expect(result.output).toBe('builder does not support change detection');
+    expect(result.output).toContain('builder does not support change detection');
   });
 
-  it('does not host the module graph for tools that do not need it', async () => {
+  it('lets addon toolsets use the hosted module graph without a core method allowlist', async () => {
+    const moduleGraph = {
+      queries: { status: { loaded: async () => ({ value: 'ready' }) } },
+    };
+    clearToolsetRegistry();
+    registerToolset(
+      defineToolset({
+        id: 'addon',
+        description: 'Addon tools.',
+        methods: {
+          graphStatus: {
+            title: 'Read graph status',
+            description: 'Read the module graph status.',
+            input: v.object({}),
+            handler: async (_input, ctx) => {
+              const service = ctx.getService<typeof moduleGraph>('core/module-graph', {
+                internal: true,
+              });
+              const data = await service.queries.status.loaded();
+              return { ok: true as const, data, markdown: data.value };
+            },
+          },
+        },
+      })
+    );
+    const { deps } = makeDeps({
+      runtime: { getService: () => moduleGraph as never },
+    });
+
+    const result = await run(['addon', 'graph-status'], deps);
+
+    expect(result).toMatchObject({ exitCode: 0, output: 'ready' });
+  });
+
+  it('bootstraps the shared runtime for tools that do not use the module graph', async () => {
     const { deps, bootstrap } = makeDeps();
 
     await run(['docs', 'list'], deps);
 
-    expect(bootstrap).toHaveBeenCalledWith({}, { hostModuleGraph: false });
+    expect(bootstrap).toHaveBeenCalledWith({});
   });
 });
 
@@ -213,7 +244,7 @@ describe('requires-dev-server contract', () => {
 
   it('lists running instances of other projects in the no-instance guidance', async () => {
     const { deps } = makeDeps({
-      discoverInstance: vi.fn(async () => ({ record: undefined, records: [RECORD] })),
+      discoverInstance: vi.fn(async () => ({ currentRecord: undefined, records: [RECORD] })),
     });
 
     const result = await run(
@@ -227,7 +258,7 @@ describe('requires-dev-server contract', () => {
 
   it('runs stories preview against a discovered instance, regardless of its MCP status', async () => {
     const { deps } = makeDeps({
-      discoverInstance: vi.fn(async () => ({ record: RECORD, records: [RECORD] })),
+      discoverInstance: vi.fn(async () => ({ currentRecord: RECORD, records: [RECORD] })),
     });
 
     const result = await run(
@@ -245,11 +276,10 @@ describe('requires-dev-server contract', () => {
       defineToolset({
         id: 'foreign',
         description: 'Toolset whose method needs dev-server state the CLI cannot reach.',
-        telemetryGroup: 'dev',
         methods: {
           attach: {
             title: 'Attach',
-            schema: v.object({}),
+            input: v.object({}),
             description: 'attach',
             requiresDevServer: true,
             handler: async () => ({ ok: true as const, data: {}, markdown: '' }),
@@ -258,7 +288,7 @@ describe('requires-dev-server contract', () => {
       })
     );
     const { deps } = makeDeps({
-      discoverInstance: vi.fn(async () => ({ record: RECORD, records: [RECORD] })),
+      discoverInstance: vi.fn(async () => ({ currentRecord: RECORD, records: [RECORD] })),
     });
 
     const result = await run(['foreign', 'attach'], deps);
@@ -287,13 +317,13 @@ describe('review create over the dev server MCP endpoint', () => {
   ) {
     const mcpToolCall = vi.fn(call);
     const { deps } = makeDeps({
-      discoverInstance: vi.fn(async () => ({ record, records: [record] })),
+      discoverInstance: vi.fn(async () => ({ currentRecord: record, records: [record] })),
       mcpToolCall,
     });
     return { deps, mcpToolCall };
   }
 
-  it('sends the validated input to the frozen display-review tool and prints its text', async () => {
+  it('sends the validated input to the derived review tool and prints its text', async () => {
     const { deps, mcpToolCall } = makeProxyDeps(async () => ({
       content: [{ type: 'text', text: 'Review ready: http://localhost:6006/review/' }],
     }));
@@ -301,7 +331,7 @@ describe('review create over the dev server MCP endpoint', () => {
     const result = await run(['review', 'create', '--input', JSON.stringify(REVIEW_INPUT)], deps);
 
     expect(mcpToolCall).toHaveBeenCalledWith(MCP_RECORD, {
-      name: 'display-review',
+      name: 'review-create',
       arguments: REVIEW_INPUT,
     });
     expect(result.exitCode).toBe(0);
@@ -359,111 +389,6 @@ describe('review create over the dev server MCP endpoint', () => {
   });
 });
 
-describe('local test runs', () => {
-  type TestRunRequestPayload = {
-    requestId: string;
-    storyIds?: string[];
-    config?: Record<string, unknown>;
-  };
-
-  const COMPLETED_RESULT: TestRunResult = {
-    config: { a11y: false, coverage: false },
-    componentTestStatuses: [],
-    a11yStatuses: [],
-    componentTestCount: { success: 1, error: 0 },
-    a11yCount: { success: 0, warning: 0, error: 0 },
-    a11yReports: {},
-    reports: {},
-    totalTestCount: 1,
-    storyIds: ['button--primary'],
-    unhandledErrors: [],
-  };
-
-  /**
-   * The responder half of the real protocol: addon-vitest answers requests over the same channel
-   * object the toolset emits on, which is what its `services` hook wires in production. The real
-   * toolset with a scripted responder exercises the whole local path — selector resolution,
-   * request/response correlation, outcome mapping — without booting vitest.
-   */
-  function registerTestToolsetWithResponder(
-    respond: (payload: TestRunRequestPayload) => Omit<TriggerTestRunResponse, 'requestId'>
-  ) {
-    const channel = new Channel({});
-    const requests: TestRunRequestPayload[] = [];
-    channel.on(TRIGGER_TEST_RUN_REQUEST, (payload: TestRunRequestPayload) => {
-      requests.push(payload);
-      channel.emit(TRIGGER_TEST_RUN_RESPONSE, {
-        requestId: payload.requestId,
-        ...respond(payload),
-      });
-    });
-    clearToolsetRegistry();
-    registerToolset(
-      createTestToolset({
-        channel,
-        storyIndex: { getIndex: async () => STORY_INDEX },
-        a11yEnabled: false,
-      })
-    );
-    return { requests };
-  }
-
-  it('runs story tests without a dev server and reports the completed run', async () => {
-    const { requests } = registerTestToolsetWithResponder(() => ({
-      status: 'completed',
-      result: COMPLETED_RESULT,
-    }));
-    const { deps, discoverInstance } = makeDeps();
-
-    const result = await run(['test', 'run', '--stories', '[{"storyId":"button--primary"}]'], deps);
-
-    expect(result.exitCode).toBe(0);
-    expect(result.outcome).toEqual({ kind: 'success' });
-    expect(result.output).toContain('# Test run completed');
-    expect(result.output).toContain('Component tests: 1 passed, 0 failed');
-    // The run went through selector resolution to the responder, not through instance discovery.
-    expect(requests).toEqual([expect.objectContaining({ storyIds: ['button--primary'] })]);
-    expect(discoverInstance).not.toHaveBeenCalled();
-  });
-
-  it('prints the structured run result with --json', async () => {
-    registerTestToolsetWithResponder(() => ({ status: 'completed', result: COMPLETED_RESULT }));
-    const { deps } = makeDeps();
-
-    const result = await run(['test', 'run', '--json'], deps);
-
-    expect(result.exitCode).toBe(0);
-    const data = JSON.parse(result.output);
-    expect(data.status).toBe('completed');
-    expect(data.result.componentTestCount).toEqual({ success: 1, error: 0 });
-  });
-
-  it('exits non-zero when the run errors, printing the report', async () => {
-    registerTestToolsetWithResponder(() => ({
-      status: 'error',
-      error: { message: 'vitest crashed' },
-    }));
-    const { deps } = makeDeps();
-
-    const result = await run(['test', 'run'], deps);
-
-    expect(result.exitCode).toBe(1);
-    expect(result.outcome).toEqual({ kind: 'failure' });
-    expect(result.output).toContain('vitest crashed');
-  });
-
-  it('exits non-zero when the run is cancelled', async () => {
-    registerTestToolsetWithResponder(() => ({ status: 'cancelled' }));
-    const { deps } = makeDeps();
-
-    const result = await run(['test', 'run'], deps);
-
-    expect(result.exitCode).toBe(1);
-    expect(result.outcome).toEqual({ kind: 'failure' });
-    expect(result.output).toContain('cancelled');
-  });
-});
-
 describe('dispatch', () => {
   it('rejects an unknown toolset with the list the project actually provides', async () => {
     const { deps } = makeDeps();
@@ -498,7 +423,8 @@ describe('dispatch', () => {
   });
 
   it('leaves the test toolset out when the project does not register it', async () => {
-    registerCoreToolsetsForTest({ testToolset: false });
+    // Core harness never registers addon-vitest's `test` toolset.
+    registerCoreToolsetsForTest();
     const { deps } = makeDeps();
 
     const result = await run(['test', 'run'], deps);
@@ -530,9 +456,8 @@ describe('help', () => {
     expect(result.output).toContain('Commands:');
     expect(result.output).toContain('stories preview  [requires running Storybook]');
     expect(result.output).toContain('docs list  [local]');
-    // Test runs are answered in-process by addon-vitest's responder, so discovery shows them as
-    // local rather than requiring a running Storybook.
-    expect(result.output).toContain('test run  [local]');
+    // `test` is owned by addon-vitest; the core harness does not register it.
+    expect(result.output).not.toContain('test run');
     expect(result.output).toContain('stories find-by-component');
     // Input schemas come from the valibot definitions.
     expect(result.output).toContain('`--componentPaths`');
@@ -576,11 +501,10 @@ describe('help', () => {
       defineToolset({
         id: 'foreign',
         description: 'Toolset with a non-valibot standard schema.',
-        telemetryGroup: 'dev',
         methods: {
           probe: {
             title: 'Probe',
-            schema: foreignSchema as never,
+            input: foreignSchema as never,
             description: 'probe',
             handler: async () => ({ ok: true, data: {}, markdown: '' }),
           },
@@ -601,7 +525,7 @@ describe('help', () => {
     const result = await runToolsCommand({ tokens: [], target: {} }, deps);
 
     expect(result.output).toContain('npx storybook tools stories changed');
-    expect(result.output).not.toContain('get-changed-stories');
+    expect(result.output).not.toContain('stories-changed');
   });
 });
 
@@ -612,23 +536,22 @@ describe('outcome mapping', () => {
       defineToolset({
         id: 'echo',
         description: 'Test toolset for outcome mapping.',
-        telemetryGroup: 'dev',
         methods: {
           ok: {
             title: 'ok',
-            schema: v.object({}),
+            input: v.object({}),
             description: 'ok',
             handler: async () => ({ ok: true, data: { a: 1 }, markdown: ['one', 'two'] }),
           },
           bad: {
             title: 'bad',
-            schema: v.object({}),
+            input: v.object({}),
             description: 'bad',
             handler: async () => ({ ok: false, data: { a: 0 }, markdown: 'bad news' }),
           },
           boom: {
             title: 'boom',
-            schema: v.object({}),
+            input: v.object({}),
             description: 'boom',
             handler: async () => {
               throw new Error('kapow');
@@ -636,7 +559,7 @@ describe('outcome mapping', () => {
           },
           guide: {
             title: 'guide',
-            schema: v.object({}),
+            input: v.object({}),
             description: 'guide',
             handler: async () => {
               const error = new Error('Start the dev server, then retry.');
@@ -646,7 +569,7 @@ describe('outcome mapping', () => {
           },
           input: {
             title: 'input',
-            schema: v.object({ a: v.optional(v.number()), b: v.optional(v.number()) }),
+            input: v.object({ a: v.optional(v.number()), b: v.optional(v.number()) }),
             description: 'input echo',
             handler: async (input: { a?: number; b?: number }) => ({
               ok: true,

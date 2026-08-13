@@ -79,7 +79,7 @@ export async function buildStorybookAiMetadata(
     instructions: joinInstructions(
       existingMetadata?.instructions,
       buildServerInstructions({
-        consumer: 'mcp',
+        transport: 'mcp',
         devEnabled,
         testSupported,
         docsEnabled,

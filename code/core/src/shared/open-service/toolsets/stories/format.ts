@@ -1,5 +1,5 @@
 import type { ToolsetCtx } from '../../toolset-definition.ts';
-import { getRef } from '../../toolset-names.ts';
+import { getToolName } from '../../toolset-names.ts';
 import type {
   ChangedStoriesOutput,
   FindByComponentOutput,
@@ -15,7 +15,7 @@ function pluralize(count: number, singular: string, plural = `${singular}s`): st
  * exactly this call, so the result itself has to contradict that while a step remains to recover in.
  */
 function previewReviewNudge(ctx: ToolsetCtx): string {
-  const reviewTool = getRef(ctx)('review.create');
+  const reviewTool = getToolName(ctx)('review.create');
   return `These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The ${reviewTool} tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **${reviewTool}** and link that instead.`;
 }
 
@@ -30,7 +30,7 @@ export function formatPreviewStoryBlocks(
   ctx: ToolsetCtx,
   { reviewEnabled = false }: { reviewEnabled?: boolean } = {}
 ): string[] {
-  if (ctx.consumer !== 'mcp') {
+  if (ctx.transport !== 'mcp') {
     return [
       '# Story previews',
       ...stories.map((story) =>
@@ -58,7 +58,7 @@ export function formatPreviewStories(
 ): string | string[] {
   const blocks = formatPreviewStoryBlocks(data, ctx, options);
   // MCP renders one text block per URL; the CLI list reads better as one joined document.
-  return ctx.consumer === 'mcp' ? blocks : blocks.join('\n');
+  return ctx.transport === 'mcp' ? blocks : blocks.join('\n');
 }
 
 const BANNER_INLINE_LIMIT = 3;
@@ -87,7 +87,7 @@ function formatUnreachableHint(unreachable: string[], ctx: ToolsetCtx): string {
     return '';
   }
   const lines = unreachable.map((file) => `- ${file}`).join('\n');
-  return `\n\nThe following working-tree file(s) are modified but unreachable from any story (no static import path connects them — they are likely theme tokens, decorators, or other Storybook-preview-runtime files):\n${lines}\n\nFor these, grep the codebase for their exports (e.g. specific tokens or symbols) to find runtime consumers, then call \`${getRef(ctx)('stories.findByComponent')}\` with those consumer file paths.`;
+  return `\n\nThe following working-tree file(s) are modified but unreachable from any story (no static import path connects them — they are likely theme tokens, decorators, or other Storybook-preview-runtime files):\n${lines}\n\nFor these, grep the codebase for their exports (e.g. specific tokens or symbols) to find runtime consumers, then call \`${getToolName(ctx)('stories.findByComponent')}\` with those consumer file paths.`;
 }
 
 /**
@@ -99,7 +99,7 @@ function formatPartialCoverageHint(unreachable: string[], ctx: ToolsetCtx): stri
     return '';
   }
   const lines = unreachable.map((file) => `- ${file}`).join('\n');
-  return `\n\nCoverage sanity check: the working tree also contains modified file(s) that aren't reachable from any story above (no static import path connects them — typically theme tokens, decorators, or other preview-runtime files):\n${lines}\n\nThe list above is real but may be stale w.r.t. these files — they're often left over from an earlier sub-change in the same diff. Before composing a review, grep the codebase for their exports and call \`${getRef(ctx)('stories.findByComponent')}\` with the runtime consumers' file paths. Do not assume the list above already covers them, and never invent story IDs to fill the gap.`;
+  return `\n\nCoverage sanity check: the working tree also contains modified file(s) that aren't reachable from any story above (no static import path connects them — typically theme tokens, decorators, or other preview-runtime files):\n${lines}\n\nThe list above is real but may be stale w.r.t. these files — they're often left over from an earlier sub-change in the same diff. Before composing a review, grep the codebase for their exports and call \`${getToolName(ctx)('stories.findByComponent')}\` with the runtime consumers' file paths. Do not assume the list above already covers them, and never invent story IDs to fill the gap.`;
 }
 
 export function formatChangedStories(
@@ -107,7 +107,7 @@ export function formatChangedStories(
   ctx: ToolsetCtx,
   { reviewEnabled = false }: { reviewEnabled?: boolean } = {}
 ): string {
-  if (ctx.consumer !== 'mcp') {
+  if (ctx.transport !== 'mcp') {
     const lines = [
       '# Changed stories',
       `New: ${counts.new}, modified: ${counts.modified}, affected: ${counts.affected}`,
@@ -137,7 +137,7 @@ export function formatChangedStories(
   // Front-loaded like the banner: host-side output caps can cut the tail of a long story list, and
   // this next step is what keeps agents from ending visual work at preview URLs.
   if (reviewEnabled) {
-    text += `\n\nNext: if the change is visually observable, publish the review now — call **${getRef(ctx)('review.create')}** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.`;
+    text += `\n\nNext: if the change is visually observable, publish the review now — call **${getToolName(ctx)('review.create')}** curating these story IDs. That review link is how you finish; do not substitute individual preview URLs for it.`;
   }
 
   const serializeStory = ({
@@ -225,7 +225,7 @@ export function formatFindByComponent(
   { results, maxDistance }: FindByComponentOutput,
   ctx: ToolsetCtx
 ): string {
-  if (ctx.consumer !== 'mcp') {
+  if (ctx.transport !== 'mcp') {
     const lines = ['# Stories by component'];
     for (const result of results) {
       lines.push(`## ${result.componentPath}`, serializeComponentSection(result, maxDistance));

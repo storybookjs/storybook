@@ -442,6 +442,7 @@ function renderStaticStorySnippet(
   return transformH({
     args,
     argsParam: renderer.argsParam,
+    componentName,
     docgen: docgenArgInfo,
     importBindings: options.importBindings,
     node: renderer.expression,

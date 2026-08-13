@@ -36,6 +36,8 @@ export interface TransformHInput {
   args: ClassifiedArg[];
   /** Name of the render function's args parameter. */
   argsParam?: string;
+  /** Story component tag the docgen roles describe. */
+  componentName: string;
   /** Docgen roles used to classify values written directly into the render tree. */
   docgen: VueDocgenArgInfo;
   /** Import bindings from the CSF module. */
@@ -52,6 +54,8 @@ export interface TransformHResult {
 type HRenderOptions = {
   args: ClassifiedArg[];
   argsParam?: string;
+  /** Story component tag the docgen roles apply to; absent in slot content. */
+  componentName?: string;
   ctx: RenderContext;
   docgen: VueDocgenArgInfo;
   importBindings: Map<string, ImportBinding>;
@@ -101,6 +105,7 @@ export function transformH(input: TransformHInput): TransformHResult | undefined
   const templateCode = renderHNode(input.node, {
     args: input.args,
     argsParam: input.argsParam,
+    componentName: input.componentName,
     ctx,
     docgen: input.docgen,
     importBindings: input.importBindings,
@@ -166,7 +171,7 @@ function renderHNode(node: t.Node, options: HRenderOptions): string | undefined 
     return undefined;
   }
 
-  const props = renderProps(hArguments.props, options);
+  const props = renderProps(hArguments.props, tag, options);
   if (props === undefined) {
     return undefined;
   }
@@ -271,9 +276,13 @@ function isChildrenArgument(node: t.Node): boolean {
 
 function renderProps(
   node: t.Node | undefined,
+  tag: HTag,
   options: HRenderOptions
 ): { attributes: string[]; slotChildren: string[] } | undefined {
-  const args = node ? collectProps(node, options) : [];
+  // Docgen roles describe the story component only, so props on any other tag classify without
+  // them rather than inheriting its slots, events, and models.
+  const docgen = tag.name === options.componentName ? options.docgen : NO_DOCGEN;
+  const args = node ? collectProps(node, { ...options, docgen }) : [];
   if (!args) {
     return undefined;
   }
@@ -343,8 +352,12 @@ function collectProps(node: t.Node, options: HRenderOptions): ClassifiedArg[] | 
 
     const classification = classifyArg(name, argValue, options.docgen);
     // A value written into the tree that the snippet cannot represent would silently change the
-    // example, so bail rather than drop it the way story-level args do.
-    if (classification.kind === 'unrepresentable') {
+    // example, so bail rather than drop it the way story-level args do. Functions land on the
+    // vnode at runtime even when no docgen role names them, so their omission bails too.
+    if (
+      classification.kind === 'unrepresentable' ||
+      (classification.kind === 'omit' && isFunctionExpression(argValue))
+    ) {
       return undefined;
     }
 

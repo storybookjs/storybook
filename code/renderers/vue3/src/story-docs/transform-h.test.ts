@@ -42,6 +42,7 @@ function renderStory(
     ? transformH({
         args: parsed.args,
         argsParam: parsed.argsParam,
+        componentName: 'MyButton',
         docgen,
         importBindings: parsed.importBindings,
         node: parsed.expression,
@@ -229,6 +230,43 @@ export const Primary = {
   </MyButton>
 </template>`,
     });
+  });
+
+  it('keeps story docgen roles off tags other than the story component', () => {
+    expect(
+      renderStory(
+        `
+export const Primary = {
+  render: () => h('section', null, [
+    h('div', { default: 'Body' }),
+    h(ChildButton, { default: 'Inner' }),
+  ]),
+};
+`,
+        { props: new Set(), events: new Set(), slots: new Set(['default']) },
+        "import ChildButton from './ChildButton.vue';\nimport MyButton from './MyButton.vue';"
+      )?.snippet
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <section>
+          <div default="Body"></div>
+          <ChildButton default="Inner" />
+        </section>
+      </template>"
+    `);
+  });
+
+  it('bails on a function prop the story docgen does not describe', () => {
+    expect(
+      renderStory(
+        `
+export const Primary = {
+  render: () => h('div', { onClick: () => null }),
+};
+`,
+        { props: new Set(), events: new Set(['click']), slots: new Set() }
+      )
+    ).toBeUndefined();
   });
 
   it('renders a slot forwarded through an explicit args member read', () => {

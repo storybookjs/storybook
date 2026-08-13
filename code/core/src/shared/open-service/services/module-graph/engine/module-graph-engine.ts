@@ -58,6 +58,11 @@ export class ModuleGraphEngine {
   private storyFiles: Set<string> = new Set();
   private refreshInFlight = false;
   /**
+   * Resolves once {@link startInternal} finishes (success or handled failure). The initial build
+   * does not go through {@link patchQueue}, so {@link whenSettled} awaits this first.
+   */
+  private startSettled: Promise<void> = Promise.resolve();
+  /**
    * Resolves once the in-flight story-index reconciliation has enqueued its add/unlink patches.
    * {@link whenSettled} awaits this before snapshotting {@link patchQueue}, so a barrier taken
    * while a reconciliation is still in `getIndex()` does not miss its patches (which would let a
@@ -78,7 +83,7 @@ export class ModuleGraphEngine {
   start(adapter: ChangeDetectionAdapter): void {
     this.adapter = adapter;
 
-    void this.startInternal().catch((error) => {
+    this.startSettled = this.startInternal().catch((error) => {
       const failure = error instanceof Error ? error : new ModuleGraphFailureError(String(error));
       logger.error(`Module graph failed to start: ${failure.message}`);
       this.options.onError?.(failure);
@@ -156,6 +161,7 @@ export class ModuleGraphEngine {
    * {@link lookup} immediately after this resolves with no intervening `await`.
    */
   async whenSettled(): Promise<void> {
+    await this.startSettled;
     // Phase 1: let any in-flight story-index reconciliation enqueue its add/unlink patches, so the
     // tail snapshot below includes them.
     await this.refreshSettled.catch(() => undefined);

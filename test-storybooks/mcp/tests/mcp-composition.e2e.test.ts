@@ -44,7 +44,7 @@ describe('MCP Composition E2E Tests', () => {
 	describe('Multi-Source Documentation', () => {
 		it('should list documentation from both local and remote sources', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'list-all-documentation',
+				name: 'docs-list',
 				arguments: {},
 			});
 
@@ -67,7 +67,7 @@ describe('MCP Composition E2E Tests', () => {
 
 		it('should fetch documentation for a local component', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'get-documentation',
+				name: 'docs-show',
 				arguments: {
 					id: 'example-button',
 					storybookId: 'local',
@@ -172,7 +172,7 @@ describe('MCP Composition E2E Tests', () => {
 		it('should fetch documentation for a component from remote source', async () => {
 			// Get documentation for a component that exists in the remote Storybook UI
 			const response = await mcpRequest('tools/call', {
-				name: 'get-documentation',
+				name: 'docs-show',
 				arguments: {
 					id: 'example-button',
 					storybookId: 'storybook-ui',
@@ -190,7 +190,7 @@ describe('MCP Composition E2E Tests', () => {
 
 		it('should silently exclude refs that have no manifest', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'list-all-documentation',
+				name: 'docs-list',
 				arguments: {},
 			});
 
@@ -203,7 +203,7 @@ describe('MCP Composition E2E Tests', () => {
 
 		it('should require storybookId in multi-source mode', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'get-documentation',
+				name: 'docs-show',
 				arguments: {
 					id: 'example-button',
 				},
@@ -213,7 +213,7 @@ describe('MCP Composition E2E Tests', () => {
 				{
 				  "content": [
 				    {
-				      "text": "Invalid arguments for tool get-documentation: [{"kind":"schema","type":"object","expected":"\\"storybookId\\"","received":"undefined","message":"Invalid key: Expected \\"storybookId\\" but received undefined","path":[{"type":"object","origin":"key","input":{"id":"example-button"},"key":"storybookId"}]}]",
+				      "text": "Invalid arguments for tool docs-show: [{"kind":"schema","type":"object","expected":"\\"storybookId\\"","received":"undefined","message":"Invalid key: Expected \\"storybookId\\" but received undefined","path":[{"type":"object","origin":"key","input":{"id":"example-button"},"key":"storybookId"}]}]",
 				      "type": "text",
 				    },
 				  ],
@@ -235,10 +235,10 @@ describe('MCP Composition E2E Tests', () => {
 	});
 
 	describe('Tools Schema', () => {
-		it('should include storybookId parameter in get-documentation schema', async () => {
+		it('should include storybookId parameter in docs-show schema', async () => {
 			const response = await mcpRequest('tools/list');
 
-			const getDocTool = response.result.tools.find((t: any) => t.name === 'get-documentation');
+			const getDocTool = response.result.tools.find((t: any) => t.name === 'docs-show');
 
 			expect(getDocTool).toBeDefined();
 			expect(getDocTool.inputSchema.properties).toHaveProperty('storybookId');

@@ -1,11 +1,12 @@
-// Ported verbatim from `@storybook/mcp`'s manifest-formatter tests
-// (`packages/mcp/src/utils/manifest-formatter/markdown.test.ts`): the parity suite binding the MCP
-// consumer's Markdown output to this port until Milestone 4 deletes the original. The
-// multi-source describe block is omitted along with its formatter.
+// The parity suite binding the Markdown every docs-tool consumer receives.
 import { describe, it, expect } from 'vitest';
 import type { AllManifests, ComponentManifest, ComponentManifestMap } from './manifest-types.ts';
 import fullManifestFixture from './full-manifest.fixture.json' with { type: 'json' };
-import { formatComponentManifest, formatManifestsToLists } from './markdown.ts';
+import {
+  formatComponentManifest,
+  formatManifestsToLists,
+  formatMultiSourceManifestsToLists,
+} from './markdown.ts';
 
 describe('MarkdownFormatter - formatComponentManifest', () => {
   it('formats all full fixtures', () => {
@@ -1483,5 +1484,30 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 				- Auto Summary Doc (auto-summary): This content will be extracted automatically."
 			`);
     });
+  });
+});
+
+describe('MarkdownFormatter - formatMultiSourceManifestsToLists', () => {
+  it('formats requires-own-mcp source notices without an error prefix', () => {
+    const result = formatMultiSourceManifestsToLists([
+      {
+        source: { id: 'tetra', title: 'Tetra Design System', url: 'https://tetra.chromatic.com' },
+        notice: {
+          kind: 'requires-own-mcp',
+          endpoint: 'https://tetra.chromatic.com/mcp',
+        },
+      },
+    ]);
+
+    expect(result).toMatchInlineSnapshot(`
+			"# Tetra Design System
+			id: tetra
+
+			This composed Storybook is private and cannot be read through the local Storybook MCP proxy.
+
+			Use this source's own MCP endpoint instead:
+			https://tetra.chromatic.com/mcp"
+		`);
+    expect(result).not.toContain('error:');
   });
 });

@@ -304,7 +304,7 @@ export const moduleGraphServiceDef = defineService({
     _waitForSettledEngine: {
       internal: true,
       description:
-        'Waits for the module graph engine to finish its current build or patch cycle. Handler is supplied at server registration.',
+        'Starts the engine if needed and waits until its current build or patch cycle has finished. Handler is supplied at server registration.',
       input: noInputSchema,
       output: v.void(),
     },

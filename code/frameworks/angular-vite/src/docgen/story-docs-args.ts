@@ -1,6 +1,6 @@
 // Resolves a story's args statically: named properties, spreads of other stories' args (in this
 // file or another), and the literal values the generated bindings inline.
-import { recast, types as t } from 'storybook/internal/babel';
+import { babelPrint, types as t } from 'storybook/internal/babel';
 import type { CsfFile } from 'storybook/internal/csf-tools';
 import { keyOf, unwrapExpression } from 'storybook/internal/csf-tools';
 
@@ -111,17 +111,17 @@ export const createSpreadArgsResolver =
       return undefined;
     }
     const targetPath = ctx.resolveImport(ctx.filePath, imported.importId);
-    const parsed = targetPath === undefined ? undefined : parseStoryFile(targetPath, 'StoryDocs');
-    if (!parsed) {
+    const target = targetPath === undefined ? undefined : parseStoryFile(targetPath, 'StoryDocs');
+    if (!target) {
       return undefined;
     }
-    const targetCtx: SpreadArgsContext = { ...ctx, csf: parsed.csf, filePath: targetPath! };
+    const targetCtx: SpreadArgsContext = { ...ctx, csf: target, filePath: targetPath! };
     const record = storyArgsAt(targetCtx, storyName, accessorOf(accessorPath), undefined, visited);
     if (record === undefined || !record.complete) {
       return undefined;
     }
-    // Nodes from another file carry that file's source offsets, so they must reduce to values that
-    // stand on their own before they may join this file's args record.
+    // A binding the snippet prints names nothing outside itself, so an arg copied from another
+    // file may only join this record once it reduces to a value that stands on its own.
     const properties: Record<string, t.Node> = {};
     for (const [key, node] of Object.entries(record.properties)) {
       const value = evaluateNode(node, ctx.enums);
@@ -385,24 +385,19 @@ const EVAL_FAILED = Symbol('story-docs-eval-failed');
 // An arg no static evaluation could reduce to a value falls back to its source text. Every
 // expression is escaped for the attribute position it lands in: the double-quote delimiter and
 // text Angular's lexer would decode as a character reference survive the round-trip unchanged.
-//
-// Printed rather than sliced out of the file: `babelParse` runs the source through recast, which
-// parses a copy with tabs expanded and CRLF collapsed, so node offsets do not address the bytes on
-// disk. recast reproduces an unmodified node verbatim, whatever the file's whitespace looks like.
 export const evaluateArgExpression = (node: t.Node, enums: SnippetEnum[]): string => {
   const unwrapped = unwrapExpression(node);
   const value = evaluateNode(unwrapped, enums);
-  if (value !== EVAL_FAILED) {
-    return escapeAttributeExpression(printExpressionValue(value, new Set()));
-  }
-  let text: string | undefined;
-  try {
-    text = recast.print(unwrapped).code;
-  } catch {
-    text = undefined;
-  }
-  return escapeAttributeExpression(text ?? 'undefined');
+  return escapeAttributeExpression(
+    value === EVAL_FAILED ? printArgSource(unwrapped) : printExpressionValue(value, new Set())
+  );
 };
+
+// recast parses a normalised copy of the file, so a node's offsets do not address the file itself;
+// printing the node is what keeps the text free of the file's tabs and line endings. Cloning costs
+// that verbatim reprint, so it buys only the one thing a binding cannot hold: comments.
+const printArgSource = (node: t.Node): string =>
+  babelPrint(node.leadingComments?.length ? t.cloneNode(node, true) : node);
 
 // Angular expression strings support backslash escapes, so quoting stays lossless.
 const quoteExpressionString = (value: string): string =>

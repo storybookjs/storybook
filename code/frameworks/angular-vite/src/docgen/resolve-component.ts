@@ -28,14 +28,10 @@ export function resolveStoryImport(fromFile: string, specifier: string): string 
   }
 }
 
-export interface ParsedStoryFile {
-  csf: CsfFile;
-}
-
-export function parseStoryFile(storyFilePath: string, title: string): ParsedStoryFile | undefined {
+export function parseStoryFile(storyFilePath: string, title: string): CsfFile | undefined {
   try {
     const source = readFileSync(storyFilePath, 'utf8');
-    return { csf: loadCsf(source, { makeTitle: () => title }).parse() };
+    return loadCsf(source, { makeTitle: () => title }).parse();
   } catch {
     return undefined;
   }
@@ -51,10 +47,10 @@ export function resolveStoryComponent(
   storyFilePath: string,
   title = 'Docgen'
 ): MetaComponentResolution {
-  const parsed = parseStoryFile(storyFilePath, title);
-  if (!parsed) {
+  const csf = parseStoryFile(storyFilePath, title);
+  if (!csf) {
     return { reason: 'no-meta-component' };
   }
 
-  return resolveMetaComponent(parsed.csf, storyFilePath);
+  return resolveMetaComponent(csf, storyFilePath);
 }

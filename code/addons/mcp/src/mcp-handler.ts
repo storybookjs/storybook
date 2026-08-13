@@ -1,27 +1,29 @@
-import { McpServer } from 'tmcp';
+import type { Source } from '@storybook/mcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { HttpTransport } from '@tmcp/transport-http';
-import pkgJson from '../package.json' with { type: 'json' };
-import type { Source } from '@storybook/mcp';
-import type { Options } from 'storybook/internal/types';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { buffer } from 'node:stream/consumers';
-import { collectTelemetry } from './telemetry.ts';
-import type { AddonContext, AddonOptionsOutput } from './types.ts';
 import { logger } from 'storybook/internal/node-logger';
+import type { Options } from 'storybook/internal/types';
+import { McpServer } from 'tmcp';
+import pkgJson from '../package.json' with { type: 'json' };
+import type { CompositionAuth } from './auth/index.ts';
+import { DEFAULT_MCP_ENDPOINT, STORYBOOK_MCP_PROXY_HEADER } from './constants.ts';
+import { buildServerInstructions } from './instructions/build-server-instructions.ts';
+import type { DocgenServerManifestAccess } from './manifests/in-process-provider.ts';
+import { collectTelemetry } from './telemetry.ts';
+import { registerAddonMcpTools } from './tools/tool-registry.ts';
+import type { AddonContext, AddonOptionsOutput } from './types.ts';
+import { resolveBaseUrl } from './utils/base-url.ts';
+import { estimateTokens } from './utils/estimate-tokens.ts';
 import {
   getEffectiveToolAvailability,
   getToolAvailability,
 } from './utils/get-tool-availability.ts';
-import { estimateTokens } from './utils/estimate-tokens.ts';
-import type { CompositionAuth } from './auth/index.ts';
-import { buildServerInstructions } from './instructions/build-server-instructions.ts';
-import { DEFAULT_MCP_ENDPOINT, STORYBOOK_MCP_PROXY_HEADER } from './constants.ts';
-import { registerAddonMcpTools } from './tools/tool-registry.ts';
-import type { DocgenServerManifestAccess } from './manifests/in-process-provider.ts';
 
 let transport: HttpTransport<AddonContext> | undefined;
 let origin: string | undefined;
+let basePath: string | undefined;
 // Promise that ensures single initialization, even with concurrent requests
 let initialize: Promise<McpServer<any, AddonContext>> | undefined;
 let disableTelemetry: boolean | undefined;
@@ -86,7 +88,8 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
   transport = new HttpTransport(server, { path: null });
 
   origin = `http://localhost:${options.port}`;
-  logger.debug(`MCP server origin: ${origin}`);
+  basePath = options.basePath;
+  logger.debug(`MCP server base URL: ${resolveBaseUrl({ origin, basePath })}`);
   return server;
 };
 
@@ -153,6 +156,7 @@ export const mcpServerHandler = async ({
     toolsets: getToolsets(webRequest, addonOptions),
     reviewEnabled: isReviewEnabledForRequest(webRequest, reviewGates!),
     origin: origin!,
+    basePath,
     disableTelemetry: disableTelemetry!,
     a11yEnabled,
     request: webRequest,
@@ -197,7 +201,9 @@ export const mcpServerHandler = async ({
           status: 401,
           headers: {
             'Content-Type': 'text/plain',
-            'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(origin!),
+            'WWW-Authenticate': compositionAuth.buildWwwAuthenticate(
+              resolveBaseUrl({ origin: origin!, basePath })
+            ),
           },
         })
       : new Response(body, { status: response.status, headers: response.headers });

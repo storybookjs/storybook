@@ -11,6 +11,7 @@ import { StoryInput, StoryInputArray } from '../types.ts';
 import appTemplate from './preview-stories/preview-stories-app-template.html';
 import fs from 'node:fs/promises';
 import { PREVIEW_STORIES_TOOL_NAME } from './tool-names.ts';
+import { resolveBaseUrl } from '../utils/base-url.ts';
 
 export const PREVIEW_STORIES_RESOURCE_URI = `ui://${PREVIEW_STORIES_TOOL_NAME}/preview.html`;
 
@@ -138,7 +139,7 @@ export async function addPreviewStoriesTool(
     },
     async (input) => {
       try {
-        const { origin, options, disableTelemetry } = server.ctx.custom ?? {};
+        const { origin, basePath, options, disableTelemetry } = server.ctx.custom ?? {};
 
         if (!origin) {
           throw new Error('Origin is required in addon context');
@@ -146,6 +147,8 @@ export async function addPreviewStoriesTool(
         if (!options) {
           throw new Error('Storybook options are required in addon context');
         }
+
+        const baseUrl = resolveBaseUrl({ origin, basePath });
 
         const index = await getStoryIndex(options);
         const resolvedStories = findStoryIds(index, input.stories);
@@ -173,7 +176,7 @@ export async function addPreviewStoriesTool(
             continue;
           }
 
-          let previewUrl = `${origin}/?path=/story/${story.id}`;
+          let previewUrl = `${baseUrl}/?path=/story/${story.id}`;
 
           // Add props as args query param if provided
           const argsParam = buildArgsParam(story.input.props ?? {});

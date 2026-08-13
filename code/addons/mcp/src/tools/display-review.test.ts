@@ -87,6 +87,22 @@ describe('buildReviewUrl', () => {
     ).toBe('http://localhost:6006/storybook/?path=/review/');
   });
 
+  it('includes the basePath Storybook is served from', () => {
+    expect(buildReviewUrl({ origin: 'http://localhost:5173', basePath: '/__storybook/' })).toBe(
+      'http://localhost:5173/__storybook/?path=/review/'
+    );
+  });
+
+  it('prefers the configured basePath over a request whose prefix was stripped by the proxy', () => {
+    expect(
+      buildReviewUrl({
+        origin: 'http://localhost:5173',
+        basePath: '/__storybook/',
+        request: new Request('http://127.0.0.1:41234/mcp'),
+      })
+    ).toBe('http://localhost:5173/__storybook/?path=/review/');
+  });
+
   it('strips a multi-segment endpoint with a trailing slash on the request', () => {
     expect(
       buildReviewUrl({
@@ -186,6 +202,22 @@ describe('displayReviewTool', () => {
     expect(result?.structuredContent?.reviewUrl).toBe('http://localhost:6006/?path=/review/');
     expect(result?.content?.[0]?.text).toContain('2 collections, 3 stories');
     expect(result?.content?.[0]?.text).toContain('http://localhost:6006/?path=/review/');
+  });
+
+  it('uses the same proxied root for the review URL and the running-at message', async () => {
+    const response = await callTool(
+      sampleReview,
+      makeContext({ request: new Request('https://example.com/storybook/mcp') })
+    );
+    const result = getResult(response);
+
+    expect(result?.isError).toBeFalsy();
+    expect(result?.structuredContent?.reviewUrl).toBe(
+      'http://localhost:6006/storybook/?path=/review/'
+    );
+    expect(result?.content?.[0]?.text).toContain(
+      'already running at http://localhost:6006/storybook'
+    );
   });
 
   it('uses singular nouns for a single collection and story', async () => {

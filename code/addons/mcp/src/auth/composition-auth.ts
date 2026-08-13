@@ -119,18 +119,18 @@ export class CompositionAuth {
   }
 
   /** Build .well-known/oauth-protected-resource response. */
-  buildWellKnown(origin: string): object | null {
+  buildWellKnown(baseUrl: string): object | null {
     if (!this.#authRequirement) return null;
     return {
-      resource: `${origin}/mcp`,
+      resource: `${baseUrl}/mcp`,
       authorization_servers: this.#authRequirement.resourceMetadata.authorization_servers,
       scopes_supported: this.#authRequirement.resourceMetadata.scopes_supported,
     };
   }
 
   /** Build WWW-Authenticate header for 401 responses */
-  buildWwwAuthenticate(origin: string): string {
-    return `Bearer error="unauthorized", error_description="Authorization needed for composed Storybooks", resource_metadata="${origin}/.well-known/oauth-protected-resource"`;
+  buildWwwAuthenticate(baseUrl: string): string {
+    return `Bearer error="unauthorized", error_description="Authorization needed for composed Storybooks", resource_metadata="${baseUrl}/.well-known/oauth-protected-resource"`;
   }
 
   /** Build sources configuration: local first, then refs that have manifests. */

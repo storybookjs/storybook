@@ -8,6 +8,7 @@ import type { Options } from 'storybook/internal/types';
 import { withFriendlyErrors } from '../utils/format-validation-issues.ts';
 import { DEFAULT_MCP_ENDPOINT, PUSH_REVIEW_EVENT, REVIEW_PAGE_PATH } from '../constants.ts';
 import { DISPLAY_REVIEW_TOOL_NAME } from './tool-names.ts';
+import { resolveBaseUrl } from '../utils/base-url.ts';
 
 export const DISPLAY_REVIEW_TOOL_DESCRIPTION = `Publish a curated review to Storybook's review page for spot-checking **visual impact**. Each call replaces the single active review — call it again whenever the user iterates on the changes.
 
@@ -116,8 +117,10 @@ function storybookRootFromRequest(
   }
 }
 
-export function buildReviewUrl(ctx: {
+/** The URL the local Storybook UI is reachable at, without a trailing slash. */
+export function resolveStorybookRoot(ctx: {
   origin: string;
+  basePath?: string;
   request?: Request;
   endpoint?: string;
 }): string {
@@ -125,11 +128,25 @@ export function buildReviewUrl(ctx: {
   if (!trustedOrigin) {
     throw new Error('Cannot resolve the Storybook URL: missing trusted origin in addon context.');
   }
-  const root = ctx.request
-    ? (storybookRootFromRequest(ctx.request, trustedOrigin, ctx.endpoint ?? DEFAULT_MCP_ENDPOINT) ??
-      trustedOrigin)
-    : trustedOrigin;
-  return `${root.replace(/\/$/, '')}/?path=${REVIEW_PAGE_PATH}`;
+  const basePath = ctx.basePath ?? '/';
+  // A configured basePath is authoritative. The request pathname is only mined for a root when
+  // there is none, because a proxy that mounts Storybook under a basePath strips the prefix
+  // before the request lands here — mining it then yields the bare origin.
+  const root =
+    basePath === '/'
+      ? (ctx.request &&
+          storybookRootFromRequest(
+            ctx.request,
+            trustedOrigin,
+            ctx.endpoint ?? DEFAULT_MCP_ENDPOINT
+          )) ||
+        trustedOrigin
+      : resolveBaseUrl({ origin: trustedOrigin, basePath });
+  return root.replace(/\/$/, '');
+}
+
+export function buildReviewUrl(ctx: Parameters<typeof resolveStorybookRoot>[0]): string {
+  return `${resolveStorybookRoot(ctx)}/?path=${REVIEW_PAGE_PATH}`;
 }
 
 export function getDisplayReviewToolMetadata() {
@@ -208,11 +225,13 @@ export async function addDisplayReviewTool(
           throw new Error(formatUnknownStoryIdsError(unknownIds));
         }
 
-        const reviewUrl = buildReviewUrl({
+        const storybookRoot = resolveStorybookRoot({
           origin: customContext.origin,
+          basePath: customContext.basePath,
           request: customContext.request,
           endpoint: customContext.endpoint,
         });
+        const reviewUrl = `${storybookRoot}/?path=${REVIEW_PAGE_PATH}`;
 
         // Hand the payload off to core-server's review channel
         server.ctx.custom?.options?.channel?.emit(PUSH_REVIEW_EVENT, input);
@@ -235,7 +254,7 @@ export async function addDisplayReviewTool(
           content: [
             {
               type: 'text' as const,
-              text: `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'}. Storybook is already running at ${customContext.origin} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
+              text: `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} stor${storyCount === 1 ? 'y' : 'ies'}. Storybook is already running at ${storybookRoot} — reuse it. Do NOT start another Storybook or change its port to view this review; the running instance already serves it.
 
 Two things you must do now, both of them:
 1. **Open ${reviewUrl} yourself in your preview browser.** If you have any browser-preview or navigate tool in this session (e.g. preview_eval or an equivalent), call it on this URL so the review opens in your preview window immediately. Don't merely print the link and stop — actually open it.

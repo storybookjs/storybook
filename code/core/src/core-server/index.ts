@@ -125,6 +125,27 @@ export { getComponentCandidates } from './utils/ghost-stories/get-candidates.ts'
 export { runStoryTests } from './utils/ghost-stories/run-story-tests.ts';
 export { getServerPort } from './utils/server-address.ts';
 
+/**
+ * Shared availability probing for skill-content assembly: the single source of truth for the
+ * runtime gates that decide whether a tool is registered/badged, consumed by the skills CLI and
+ * addon-mcp so the two channels cannot drift.
+ */
+export {
+  getEffectiveToolAvailability,
+  getToolAvailability,
+  isModuleGraphSupported,
+  isModuleGraphSupportedByBuilder,
+} from '../cli/skills/availability.ts';
+export type { GetToolAvailabilityOptions, ToolAvailability } from '../cli/skills/availability.ts';
+export { isAddonA11yEnabled } from '../cli/skills/addon-a11y.ts';
+export { isAddonVitestEnabled } from '../cli/skills/addon-vitest.ts';
+export { resolveSkillInputs } from '../cli/skills/inputs.ts';
+export type { SkillInputs } from '../cli/skills/inputs.ts';
+export { getManifestStatus } from '../cli/skills/manifest-status.ts';
+export type { ManifestFeatures, ManifestStatus } from '../cli/skills/manifest-status.ts';
+export { getReviewStatus } from '../cli/skills/review-status.ts';
+export type { GetReviewStatusOptions, ReviewStatus } from '../cli/skills/review-status.ts';
+
 export { analyzeTestResults } from '../shared/utils/analyze-test-results.ts';
 export type {
   StoryTestResult,

@@ -3,9 +3,11 @@ import type { PresetPropertyFn, StorybookConfigRaw } from 'storybook/internal/ty
 import { AddonOptions, type AddonOptionsInput } from './types.ts';
 import * as v from 'valibot';
 import {
+  createLocalDocsAccess,
   getEffectiveToolAvailability,
   getToolAvailability,
-} from './utils/get-tool-availability.ts';
+  loadManifests,
+} from 'storybook/internal/core-server';
 import htmlTemplate from './template.html';
 import path from 'node:path';
 import { extractBearerToken, type ManifestProvider } from './auth/index.ts';
@@ -14,7 +16,6 @@ import { logger } from 'storybook/internal/node-logger';
 import type { IncomingMessage, ServerResponse } from 'node:http';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
 import { buildStorybookAiMetadata, type StorybookAiMetadata } from './storybook-ai-metadata.ts';
-import { createLocalDocsAccess, loadManifests } from 'storybook/internal/core-server';
 import { getStoryIndex } from './utils/get-story-index.ts';
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (

@@ -16,6 +16,7 @@ import picocolors from 'picocolors';
 import { version } from '../../package.json';
 import { aiSetup } from '../cli/ai/index.ts';
 import { isAiCliFeatureEnabled, registerAiMcpPassthrough } from '../cli/ai/mcp/register.ts';
+import { registerSkillsCommand } from '../cli/skills/register.ts';
 import { registerToolsPassthrough } from '../cli/tools/register.ts';
 import { build } from '../cli/build.ts';
 import { buildIndex as index } from '../cli/buildIndex.ts';
@@ -241,7 +242,7 @@ const handleCliCommandFailure =
   };
 
 const aiCommand = command('ai')
-  .description('AI agent helpers for Storybook')
+  .description('AI agent helpers for Storybook (deprecated — see `storybook skills`)')
   .option(
     '-o, --output <path>',
     'Write the prompt output to a file instead of printing it to stdout'
@@ -249,7 +250,9 @@ const aiCommand = command('ai')
 
 aiCommand
   .command('setup')
-  .description('Generate setup instructions to write stories for real components')
+  .description(
+    'Generate setup instructions to write stories for real components (deprecated: use `storybook skills get setup`)'
+  )
   .addOption(
     new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
       Object.values(PackageManagerName)
@@ -282,6 +285,13 @@ const toolsCommand = command('tools').description(
   'Run the agent tools provided by the target Storybook configuration'
 );
 registerToolsPassthrough(program, toolsCommand, handleCliCommandFailure);
+
+// `storybook skills`: agent-facing instruction documents served by the target Storybook
+// configuration (storybookjs/storybook#35526, Milestone 6).
+const skillsCommand = command('skills').description(
+  'Agent skills served by the target Storybook configuration'
+);
+registerSkillsCommand(program, skillsCommand, handleCliCommandFailure);
 
 program.on('command:*', ([invalidCmd]) => {
   let errorMessage = ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`;

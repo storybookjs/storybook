@@ -10,12 +10,9 @@ import { collectTelemetry } from './telemetry.ts';
 import type { DocsAccess } from 'storybook/internal/toolsets-docs';
 import type { AddonContext, AddonOptionsOutput } from './types.ts';
 import { logger } from 'storybook/internal/node-logger';
-import {
-  getEffectiveToolAvailability,
-  getToolAvailability,
-} from './utils/get-tool-availability.ts';
+import { getEffectiveToolAvailability, getToolAvailability } from 'storybook/internal/core-server';
+import { buildServerInstructions } from 'storybook/internal/skills';
 import type { CompositionAuth } from './auth/index.ts';
-import { buildServerInstructions } from './instructions/build-server-instructions.ts';
 import { DEFAULT_MCP_ENDPOINT, STORYBOOK_MCP_PROXY_HEADER } from './constants.ts';
 import { registerAddonMcpTools } from './tools/tool-registry.ts';
 
@@ -33,7 +30,7 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
   disableTelemetry = core?.disableTelemetry ?? false;
 
   // Determine tool availability before creating server so instructions can be tailored.
-  // Shares one source of truth with the browser landing page (see get-tool-availability.ts)
+  // Shares one source of truth with the browser landing page (core's `getToolAvailability`)
   // so the registered tools and the page's enabled/disabled badges can't drift. Reuse the
   // already-resolved `features` so it doesn't re-apply the preset and risk a different snapshot.
   const rawAvailability = await getToolAvailability(options, { features });
@@ -51,8 +48,9 @@ const initializeMCPServer = async (options: Options, multiSource?: boolean) => {
     adapter: new ValibotJsonSchemaAdapter(),
     get instructions() {
       return buildServerInstructions({
+        consumer: 'mcp',
         devEnabled: server?.ctx.custom?.toolsets?.dev ?? true,
-        testEnabled: (server?.ctx.custom?.toolsets?.test ?? true) && availability.testSupported,
+        testSupported: (server?.ctx.custom?.toolsets?.test ?? true) && availability.testSupported,
         docsEnabled: (server?.ctx.custom?.toolsets?.docs ?? true) && availability.docsEnabled,
         changeDetectionEnabled: availability.changeDetectionEnabled,
         moduleGraphSupported: availability.moduleGraphSupported,

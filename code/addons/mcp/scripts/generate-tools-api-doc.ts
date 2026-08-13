@@ -15,10 +15,10 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
-import { buildServerInstructions } from '../src/instructions/build-server-instructions.ts';
+import { buildServerInstructions } from 'storybook/internal/skills';
+import type { ToolAvailability } from 'storybook/internal/core-server';
 import { registerCoreToolsetsForTest } from '../src/test-support/register-core-toolsets.ts';
 import { getAddonToolMetadata, type ToolMetadata } from '../src/tools/tool-registry.ts';
-import type { ToolAvailability } from '../src/utils/get-tool-availability.ts';
 
 const execFileAsync = promisify(execFile);
 
@@ -53,8 +53,9 @@ function toolMetadataFor(reviewEnabled: boolean): ToolMetadata[] {
 
 const instructions = (reviewEnabled: boolean) =>
   buildServerInstructions({
+    consumer: 'mcp',
     devEnabled: true,
-    testEnabled: true,
+    testSupported: true,
     docsEnabled: true,
     changeDetectionEnabled: true,
     moduleGraphSupported: true,

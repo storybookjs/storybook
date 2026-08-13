@@ -1,20 +1,20 @@
-import type { McpServer } from 'tmcp';
-import type { Options } from 'storybook/internal/types';
+import type { ToolAvailability } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import {
   createCompositionDocsSources,
   createDocsToolset,
   type DocsToolset,
 } from 'storybook/internal/toolsets-docs';
+import type { Options } from 'storybook/internal/types';
+import type { McpServer } from 'tmcp';
 import type { AddonContext } from '../types.ts';
-import type { ToolAvailability } from '../utils/get-tool-availability.ts';
 import { withFriendlyErrors } from '../utils/format-validation-issues.ts';
-import { PREVIEW_STORIES_RESOURCE_URI, addPreviewStoriesResource } from './preview-stories.ts';
 import {
+  addGetUIBuildingInstructionsTool,
   buildStorybookStoryInstructions,
   getStorybookStoryInstructionsToolMetadata,
-  addGetUIBuildingInstructionsTool,
 } from './get-storybook-story-instructions.ts';
+import { addPreviewStoriesResource, PREVIEW_STORIES_RESOURCE_URI } from './preview-stories.ts';
 // The error class must come from the same entry as `getToolset` (which throws it, via
 // `toolset-tools.ts`); a copy from another core entry is a different constructor and
 // `instanceof` would silently fail.
@@ -175,15 +175,15 @@ const addonToolDefinitions: AddonToolDefinition[] = [
     name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
     toolset: 'dev',
     getMetadata: ({ availability, toolsets }) => {
-      const testToolsetAvailable = isToolsetEnabled('test', toolsets) && availability.testSupported;
+      const testSupported = isToolsetEnabled('test', toolsets) && availability.testSupported;
       return getStorybookStoryInstructionsToolMetadata({
-        testToolsetAvailable,
-        a11yAvailable: testToolsetAvailable && availability.a11yEnabled,
+        testSupported,
+        a11yAvailable: testSupported && availability.a11yEnabled,
       });
     },
     register: (server, { availability, toolsets }, enabled) =>
       addGetUIBuildingInstructionsTool(server, enabled, {
-        docsAvailable: isToolsetEnabled('docs', toolsets) && availability.docsEnabled,
+        docsEnabled: isToolsetEnabled('docs', toolsets) && availability.docsEnabled,
         addonVitestAvailable: availability.testSupported,
       }),
     getLocalTool: ({ availability, toolsets, options }) => ({
@@ -192,7 +192,7 @@ const addonToolDefinitions: AddonToolDefinition[] = [
           toolsets,
           a11yEnabled: availability.a11yEnabled,
           addonVitestAvailable: availability.testSupported,
-          docsAvailable: isToolsetEnabled('docs', toolsets) && availability.docsEnabled,
+          docsEnabled: isToolsetEnabled('docs', toolsets) && availability.docsEnabled,
           reviewEnabled: availability.reviewEnabled,
         });
         return { content: [{ type: 'text', text }] };

@@ -1,10 +1,14 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Options } from 'storybook/internal/types';
+import { getToolAvailability } from 'storybook/internal/core-server';
 import { experimental_devServer } from './preset.ts';
 import * as mcpHandlerModule from './mcp-handler.ts';
-import * as runStoryTests from './utils/addon-vitest.ts';
-import * as moduleGraph from './utils/module-graph.ts';
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
+
+// `getToolAvailability` now lives in core (`storybook/internal/core-server`) and composes its own
+// sub-probes internally, so tests that need to force one gate (e.g. module-graph support) mock the
+// composed result at this seam rather than an addon-local probe.
+vi.mock('storybook/internal/core-server', { spy: true });
 
 describe('experimental_devServer', () => {
   let mockApp: any;
@@ -352,7 +356,20 @@ describe('experimental_devServer', () => {
   it('marks dev tools disabled on the landing page when the dev toolset is turned off', async () => {
     // Module graph IS supported, so `get-stories-by-component` would otherwise badge
     // as enabled — proving the badge now also honors the `dev` toolset being disabled.
-    vi.spyOn(moduleGraph, 'isModuleGraphSupported').mockResolvedValue(true);
+    // Everything else here matches what `mockOptions`'s fixture (features: { componentsManifest:
+    // false }, no other presets) would resolve for real; only `moduleGraphSupported` is forced.
+    vi.mocked(getToolAvailability).mockResolvedValueOnce({
+      moduleGraphSupported: true,
+      changeDetectionEnabled: false,
+      reviewEnabled: false,
+      reviewEnabledForCli: false,
+      docsEnabled: false,
+      docsHasManifests: false,
+      docsFeatureEnabled: false,
+      testSupported: false,
+      a11yEnabled: false,
+      docgenServer: false,
+    });
 
     let getHandler: any;
     mockApp.get = vi.fn((_path, handler) => {
@@ -419,7 +436,8 @@ describe('experimental_devServer', () => {
   });
 
   it('should show Storybook version requirement for addon-vitest and a manual manifest link', async () => {
-    vi.spyOn(runStoryTests, 'isAddonVitestEnabled').mockResolvedValue(false);
+    // No addon-vitest preset key is registered by this fixture's `apply` mock, so the real
+    // (now core-internal) `isAddonVitestEnabled` probe resolves falsy on its own — nothing to mock.
     const manifestEnabledOptions = {
       presets: {
         apply: vi.fn((key: string) => {

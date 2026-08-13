@@ -24,7 +24,7 @@ export async function loadNextConfig(
     return loadNormalizedNextConfig(phase, dir);
   }
 
-  if (!isMissingNextConfigDefaults(nextConfig)) {
+  if (isResolvedNextConfig(nextConfig)) {
     return nextConfig;
   }
 
@@ -51,8 +51,8 @@ async function loadNormalizedNextConfig(
   });
 }
 
-function isMissingNextConfigDefaults(config: NextConfigComplete): boolean {
-  return config.experimental === undefined;
+function isResolvedNextConfig(config: NextConfigComplete): boolean {
+  return typeof config.configFileName === 'string';
 }
 
 function isTurbopackRustReactCompilerError(error: unknown): boolean {

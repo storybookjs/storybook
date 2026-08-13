@@ -3,31 +3,34 @@ import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/
 import { storyNameFromExport } from 'storybook/internal/csf';
 import type { CsfFile } from 'storybook/internal/csf-tools';
 import {
-  argsRecordFromNode,
   buildImportStatements,
   collectImportBindings,
   extractStoryJSDocInfo,
-  keyOf,
-  mergeArgsRecords,
   resolveComponentImport,
-  unwrapExpression,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
 
-import type {
-  AngularComponentSnippetMeta,
-  AngularDocgenPayload,
-  SnippetEnum,
-} from './build-docgen.ts';
-import { parseStoryFile } from './resolve-component.ts';
-import type { HostComponentSnippet, HostComponentSnippetInput } from './story-docs-snippet.ts';
+import type { AngularComponentSnippetMeta, AngularDocgenPayload } from './build-docgen.ts';
+import { parseStoryFile, resolveStoryImport } from './resolve-component.ts';
+import type { ArgsRecord, SpreadArgsContext } from './story-docs-args.ts';
+import {
+  argsProperties,
+  createSpreadArgsResolver,
+  evaluateArgExpression,
+  hasAssignmentInto,
+} from './story-docs-args.ts';
+import type { Bindings, StoryShape } from './story-docs-markup.ts';
+import { userTemplate } from './story-docs-markup.ts';
+import type { StoryNgModules } from './story-docs-ng-modules.ts';
+import { ngModulesFromDecorators, storyNgModules } from './story-docs-ng-modules.ts';
+import type { HostComponentSnippet } from './story-docs-snippet.ts';
 import { buildHostComponentSnippet } from './story-docs-snippet.ts';
 import {
   buildComponentOutletTemplate,
   buildTemplate,
-  formatInputValue,
+  formatTemplateMarkup,
 } from '../template-grammar.ts';
 
 export interface BuildStoryDocsContext {
@@ -37,6 +40,8 @@ export interface BuildStoryDocsContext {
    */
   getDocgenPayload: (componentId: string) => Promise<AngularDocgenPayload | undefined>;
   resolvePath?: (importPath: string) => string;
+  /** Resolves an import specifier from a story file to a file path, `undefined` when it does not. */
+  resolveImport?: (fromFile: string, specifier: string) => string | undefined;
 }
 
 export const buildStoryDocsPayload = async (
@@ -49,7 +54,8 @@ export const buildStoryDocsPayload = async (
   }
   const resolvePath =
     context.resolvePath ?? ((importPath: string) => resolve(process.cwd(), importPath));
-  const parsed = parseStoryFile(resolvePath(storyImportPath), input.entry.title);
+  const storyFilePath = resolvePath(storyImportPath);
+  const parsed = parseStoryFile(storyFilePath, input.entry.title);
   if (!parsed) {
     return undefined;
   }
@@ -60,13 +66,22 @@ export const buildStoryDocsPayload = async (
     ? await context.getDocgenPayload(getComponentIdFromEntry(input.entry))
     : undefined;
 
+  const spreadContext: SpreadArgsContext = {
+    csf,
+    filePath: storyFilePath,
+    enums: docgenPayload?.angularComponentMeta?.enums ?? [],
+    resolveImport: context.resolveImport ?? resolveStoryImport,
+  };
+  const resolveArgs = (node: t.Node | undefined) =>
+    argsProperties(node, createSpreadArgsResolver(spreadContext));
+
   const componentName = componentNameOf(componentNode);
   const importBindings = collectImportBindings(csf._file.path);
   const deps: StoryDocDeps = {
     csf,
     source,
-    metaArgs: argsRecordFromNode(csf._metaAnnotations.args),
-    metaHasRender: csf._metaAnnotations.render !== undefined,
+    resolveArgs,
+    metaArgs: resolveArgs(csf._metaAnnotations.args),
     snippetMeta: docgenPayload?.angularComponentMeta,
     componentName,
     componentImport:
@@ -119,8 +134,8 @@ const componentNameOf = (node: t.Node | undefined): string | undefined => {
 interface StoryDocDeps {
   csf: CsfFile;
   source: string;
-  metaArgs: Record<string, t.Node>;
-  metaHasRender: boolean;
+  resolveArgs: (node: t.Node | undefined) => ArgsRecord;
+  metaArgs: ArgsRecord;
   snippetMeta: AngularComponentSnippetMeta | undefined;
   componentName: string | undefined;
   componentImport: string | undefined;
@@ -128,109 +143,31 @@ interface StoryDocDeps {
   importBindings: ReturnType<typeof collectImportBindings>;
 }
 
-interface StoryNgModules {
-  names: string[];
-  declaresComponent: boolean;
-}
-
-// The decorator is matched by its conventional local name: resolving the import binding would only
-// rule out a foreign function that happens to be called `moduleMetadata`, which does not arise.
-const ngModulesFromDecorators = (
-  decorators: t.Node | undefined,
-  componentName: string | undefined
-): StoryNgModules => {
-  const result: StoryNgModules = { names: [], declaresComponent: false };
-  const list = decorators === undefined ? undefined : unwrapExpression(decorators);
-  if (!list || !t.isArrayExpression(list)) {
-    return result;
-  }
-  for (const element of list.elements) {
-    if (!element || t.isSpreadElement(element)) {
-      continue;
-    }
-    const call = unwrapExpression(element);
-    if (!t.isCallExpression(call) || !t.isIdentifier(call.callee, { name: 'moduleMetadata' })) {
-      continue;
-    }
-    const [metadataArg] = call.arguments;
-    const metadata =
-      metadataArg && t.isExpression(metadataArg) ? unwrapExpression(metadataArg) : undefined;
-    if (!metadata || !t.isObjectExpression(metadata)) {
-      continue;
-    }
-    for (const property of metadata.properties) {
-      if (!t.isObjectProperty(property) || !t.isExpression(property.value)) {
-        continue;
-      }
-      const key = keyOf(property);
-      const value = unwrapExpression(property.value);
-      if ((key !== 'imports' && key !== 'declarations') || !t.isArrayExpression(value)) {
-        continue;
-      }
-      for (const item of value.elements) {
-        if (!item || t.isSpreadElement(item)) {
-          continue;
-        }
-        const entry = unwrapExpression(item);
-        if (!t.isIdentifier(entry)) {
-          continue;
-        }
-        if (key === 'imports') {
-          if (entry.name !== componentName && !result.names.includes(entry.name)) {
-            result.names.push(entry.name);
-          }
-        } else if (entry.name === componentName) {
-          result.declaresComponent = true;
-        }
-      }
-    }
-  }
-  return result;
-};
-
-// A story that declares the component itself wires it without a module the snippet could name, so
-// the builder's warning path stays the honest output.
-const storyNgModules = (
-  storyDecorators: t.Node | undefined,
-  { metaNgModules, componentName, importBindings }: StoryDocDeps
-): HostComponentSnippetInput['ngModules'] => {
-  const story = ngModulesFromDecorators(storyDecorators, componentName);
-  if (metaNgModules.declaresComponent || story.declaresComponent) {
-    return undefined;
-  }
-  const names = [...new Set([...metaNgModules.names, ...story.names])];
-  // A module bound to no import is glue local to the story file, which a reader cannot obtain, so
-  // it does not count as a module the snippet can claim.
-  const refs = names
-    .map((name) => resolveComponentImport(name, importBindings))
-    .filter((ref) => ref.importId);
-  if (refs.length === 0) {
-    return undefined;
-  }
-  return {
-    names: refs.map((ref) => ref.componentName),
-    importStatements: buildImportStatements({ refs }),
-  };
-};
-
-// Stories that declare their own `render` get no snippet: their template is a runtime value static
-// analysis cannot see, and a component-derived one would misrepresent it.
 const buildStoryDoc = (
   exportName: string,
   story: CsfFile['_stories'][string],
   deps: StoryDocDeps
 ): StoryDoc => {
-  const { csf, metaArgs, metaHasRender, snippetMeta } = deps;
+  const { csf, snippetMeta } = deps;
   const name = story.name ?? storyNameFromExport(exportName);
   try {
     const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[exportName]);
     const annotations = csf._storyAnnotations[exportName] ?? {};
-    const hasRender = metaHasRender || annotations.render !== undefined;
-    const args = mergeArgsRecords(metaArgs, argsRecordFromNode(annotations.args));
-    const rendered =
-      snippetMeta && !hasRender
-        ? renderStorySnippet(snippetMeta, args, annotations.decorators, deps)
-        : undefined;
+    const storyArgs = deps.resolveArgs(annotations.args);
+    const shape: StoryShape = {
+      csf,
+      exportName,
+      annotations,
+      args: { ...deps.metaArgs.properties, ...storyArgs.properties },
+      argsReadable:
+        deps.metaArgs.complete &&
+        storyArgs.complete &&
+        !hasAssignmentInto(csf, exportName, 2, undefined),
+      source: deps.source,
+    };
+    const rendered = snippetMeta
+      ? renderStorySnippet(snippetMeta, shape, annotations.decorators, deps)
+      : undefined;
 
     return {
       id: story.id,
@@ -250,136 +187,70 @@ const buildStoryDoc = (
   }
 };
 
+/**
+ * Snippets show the markup a story supplies itself - through `template`, a `render` that returns
+ * one, or the CSF2 function form - as written. Markup or args that cannot be read without running
+ * the story yield no snippet at all, so the runtime source fallback stays authoritative rather
+ * than a fabricated element misrepresenting what the story renders.
+ */
 const renderStorySnippet = (
   snippetMeta: AngularComponentSnippetMeta,
-  args: Record<string, t.Node>,
+  shape: StoryShape,
   storyDecorators: t.Node | undefined,
   deps: StoryDocDeps
-): HostComponentSnippet => {
-  const { source, componentName, componentImport } = deps;
+): HostComponentSnippet | undefined => {
+  const { componentImport } = deps;
   // The story file's local name is what the import binds, so an aliased import stays consistent
   // between the import statement, the `imports` array and the template.
-  const localName = componentName ?? snippetMeta.name;
-  const viaComponentOutlet = !snippetMeta.selector;
-  const template = viaComponentOutlet
-    ? buildComponentOutletTemplate(localName)
-    : buildStoryTemplate(snippetMeta, args, source);
+  const localName = componentNameOf(shape.csf._metaAnnotations.component) ?? snippetMeta.name;
+  const ngModules = snippetMeta.standalone ? undefined : storyNgModules(storyDecorators, deps);
+  const bindings = shape.argsReadable ? collectBindings(snippetMeta, shape) : undefined;
+  const userMarkup = userTemplate(shape, bindings);
+  if (userMarkup?.kind === 'unresolvable') {
+    return undefined;
+  }
+  if (userMarkup === undefined && !snippetMeta.selector) {
+    return buildHostComponentSnippet({
+      template: buildComponentOutletTemplate(localName),
+      componentName: localName,
+      componentImport,
+      viaComponentOutlet: true,
+      standalone: snippetMeta.standalone,
+      ngModules,
+      outputs: [],
+    });
+  }
+  if (userMarkup === undefined && bindings === undefined) {
+    return undefined;
+  }
+  const template =
+    userMarkup?.kind === 'literal'
+      ? formatTemplateMarkup(userMarkup.markup)
+      : buildTemplate(snippetMeta.selector!, {
+          inputs: bindings!.inputs,
+          outputs: bindings!.outputs,
+        });
+  // The host only needs handlers for the outputs the markup actually binds.
+  const boundOutputs = snippetMeta.outputs.filter((name) => template.includes(`(${name})=`));
 
   return buildHostComponentSnippet({
     template,
     componentName: localName,
     componentImport,
-    viaComponentOutlet,
+    viaComponentOutlet: false,
     standalone: snippetMeta.standalone,
-    ngModules: snippetMeta.standalone ? undefined : storyNgModules(storyDecorators, deps),
-    outputs: viaComponentOutlet ? [] : snippetMeta.outputs,
+    ngModules,
+    outputs: boundOutputs,
   });
 };
 
-const buildStoryTemplate = (
-  snippetMeta: AngularComponentSnippetMeta,
-  args: Record<string, t.Node>,
-  source: string
-): string => {
+const collectBindings = (snippetMeta: AngularComponentSnippetMeta, shape: StoryShape): Bindings => {
   const inputNames = new Set(snippetMeta.inputs);
-  const inputs = Object.entries(args)
+  const inputs = Object.entries(shape.args)
     .filter(([argName]) => inputNames.has(argName))
     .map(([argName, node]) => ({
       name: argName,
-      expression: evaluateArgExpression(node, source, snippetMeta.enums),
+      expression: evaluateArgExpression(node, shape.source, snippetMeta.enums),
     }));
-  return buildTemplate(snippetMeta.selector!, { inputs, outputs: snippetMeta.outputs });
-};
-
-const EVAL_FAILED = Symbol('story-docs-eval-failed');
-
-// An arg no static evaluation could reduce to a value falls back to its source text. Binding values
-// are delimited by double quotes, so a raw expression containing one would close its own attribute;
-// the entity survives the template parser and reads back as the original quote.
-const evaluateArgExpression = (node: t.Node, source: string, enums: SnippetEnum[]): string => {
-  const unwrapped = unwrapExpression(node);
-  const value = evaluateNode(unwrapped, enums);
-  if (value !== EVAL_FAILED) {
-    return formatInputValue(value);
-  }
-  const text =
-    unwrapped.start != null && unwrapped.end != null
-      ? source.slice(unwrapped.start, unwrapped.end)
-      : undefined;
-  return (text ?? 'undefined').replace(/"/g, '&quot;');
-};
-
-const evaluateNode = (node: t.Node, enums: SnippetEnum[]): unknown => {
-  const unwrapped = unwrapExpression(node);
-  if (
-    t.isStringLiteral(unwrapped) ||
-    t.isNumericLiteral(unwrapped) ||
-    t.isBooleanLiteral(unwrapped)
-  ) {
-    return unwrapped.value;
-  }
-  if (t.isNullLiteral(unwrapped)) {
-    return null;
-  }
-  if (t.isIdentifier(unwrapped) && unwrapped.name === 'undefined') {
-    return undefined;
-  }
-  if (
-    t.isUnaryExpression(unwrapped) &&
-    unwrapped.operator === '-' &&
-    t.isNumericLiteral(unwrapped.argument)
-  ) {
-    return -unwrapped.argument.value;
-  }
-  if (t.isTemplateLiteral(unwrapped) && unwrapped.expressions.length === 0) {
-    return unwrapped.quasis[0]?.value.cooked ?? EVAL_FAILED;
-  }
-  if (t.isArrayExpression(unwrapped)) {
-    const values: unknown[] = [];
-    for (const element of unwrapped.elements) {
-      if (element === null || t.isSpreadElement(element)) {
-        return EVAL_FAILED;
-      }
-      const value = evaluateNode(element, enums);
-      if (value === EVAL_FAILED) {
-        return EVAL_FAILED;
-      }
-      values.push(value);
-    }
-    return values;
-  }
-  if (t.isObjectExpression(unwrapped)) {
-    const value: Record<string, unknown> = {};
-    for (const property of unwrapped.properties) {
-      if (!t.isObjectProperty(property)) {
-        return EVAL_FAILED;
-      }
-      const key = keyOf(property);
-      if (key === null) {
-        return EVAL_FAILED;
-      }
-      const propertyValue = evaluateNode(property.value, enums);
-      if (propertyValue === EVAL_FAILED) {
-        return EVAL_FAILED;
-      }
-      value[key] = propertyValue;
-    }
-    return value;
-  }
-  // `Enum.Member`: the analyzer collects referenced enums, so the member's value - what the
-  // runtime generator would see - is recoverable statically.
-  if (
-    t.isMemberExpression(unwrapped) &&
-    !unwrapped.computed &&
-    t.isIdentifier(unwrapped.object) &&
-    t.isIdentifier(unwrapped.property)
-  ) {
-    const objectName = unwrapped.object.name;
-    const propertyName = unwrapped.property.name;
-    const member = enums
-      .find((enumeration) => enumeration.name === objectName)
-      ?.members.find((candidate) => candidate.name === propertyName);
-    return member?.value ?? EVAL_FAILED;
-  }
-  return EVAL_FAILED;
+  return { inputs, outputs: snippetMeta.outputs };
 };

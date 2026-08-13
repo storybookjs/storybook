@@ -3,6 +3,7 @@
 // never a fabricated element.
 import { ShapeButtonComponent } from './shape-button.component.ts';
 import { IMPORTED_TEMPLATE } from './templates.ts';
+import * as BaseStories from './base-args.stories.ts';
 
 // This file is only ever parsed, not executed; a declaration keeps the package's client tree out
 // of the harness type graph while the generator matches the call by name.
@@ -128,3 +129,7 @@ MemberAssignedRender.render = () => ({
 });
 
 export const ReassignedTemplate = { template: MUTABLE_TEMPLATE };
+
+export const SpreadStoryArgs = { args: { ...QuotedArgs.args, count: 9 } };
+
+export const SpreadCrossFileArgs = { args: { ...BaseStories.Base.args, label: 'overridden' } };

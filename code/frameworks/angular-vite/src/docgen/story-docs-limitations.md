@@ -36,6 +36,18 @@ Literals, arrays, objects and enum members are resolved to the value the browser
 Args assigned in the older CSF2 style (`MyStory.args = { ... }`) are read, even though the assignment sits outside the story's own initializer.
 The same goes for `MyStory.render` and `MyStory.template` assignments, and for the `Template.bind({})` idiom, which is followed to the function it copies.
 
+## Spreading another story's args is followed
+
+Args composition the way the docs teach it resolves to the merged values, with the same evaluation-order semantics the module has at runtime:
+
+- `{ args: { ...Primary.args, label: 'x' } }` copies the args `Primary` holds at the point the spread runs, so a `Primary.args = { ... }` assignment counts only when it appears above the spreading story
+- the CSF factory form `...Primary.input.args` reads the `meta.story({ ... })` input, and a story built with `.extend()` merges its parent chain the way the runtime does
+- a story imported from another file (`...HeaderStories.LoggedIn.args`, by namespace or named import) is followed across the file boundary, as long as every carried value reduces to a literal on its own
+- a bare `...shared` spread of a module-level constant object is read from its initializer
+
+Chained spreads (a story spreading a story that spreads a third) resolve recursively.
+Whatever cannot be pinned down this way - a cycle, a spread of a story declared later (a TDZ read at runtime), a target something mutates, a mismatched accessor like `.args` on a factory story - yields no snippet, per the rule above.
+
 String values are escaped for the attribute position they land in, so quotes and character-reference text (`&amp;`) survive a round-trip through Angular's template parser unchanged.
 
 ## What cannot be read yields no snippet at all
@@ -43,7 +55,8 @@ String values are escaped for the attribute position they land in, so quotes and
 The guiding rule is that a wrong snippet is worse than no snippet: whenever the story's markup or args cannot be read statically, no snippet is generated and Storybook falls back to showing the story's own source.
 That covers:
 
-- a spread or dynamically-keyed member in the story config or in an `args` object (`{ ...base }` may carry or shadow anything this pass would read)
+- a spread or dynamically-keyed member in the story config (`{ render: fn, ...base }` - `base.render` wins at runtime, so `fn` cannot be trusted)
+- an `args` spread this pass cannot pin to a value at the moment the spread runs: a call result, an imported object that is not another story's args, a spread target mutated or reassigned before the spread, or one declared after it
 - a `template` or `render` bound to an imported name, or to a binding that is reassigned after its declaration
 - a `render` written as a getter, a setter, or a generator (reading `render` invokes a getter; the accessor itself is not the function)
 - a `render` body with more than one exit, where the branch taken depends on the story's runtime args

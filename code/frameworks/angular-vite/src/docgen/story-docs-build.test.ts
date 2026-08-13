@@ -142,9 +142,16 @@ const STORY_SHAPES_FILE = [
 ].join('\n');
 
 /** Template inside the host-component snippet per story name, for a multi-story file. */
-const templatesOf = async (storyFile: string) => {
-  givenStoryFile(storyFile);
-  const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: shapesDocgen });
+const templatesOf = async (storyFile: string, extraFiles: Record<string, string> = {}) => {
+  vol.fromNestedJSON({ [STORY_PATH]: storyFile, ...extraFiles });
+  const payload = await buildStoryDocsPayload(
+    { entry },
+    {
+      getDocgenPayload: shapesDocgen,
+      // memfs has no module resolution, so specifiers resolve by appending the extension.
+      resolveImport: (fromFile, specifier) => join(fromFile, '..', `${specifier}.ts`),
+    }
+  );
   return new Map(
     Object.values(payload?.stories ?? {}).map((story) => [
       story.name,
@@ -506,22 +513,47 @@ describe('buildStoryDocsPayload', () => {
       expect(extractHostComponentTemplate(story.snippet!)).toBe('<sb-button explicit></sb-button>');
     });
 
-    it('emits no snippet when a spread makes the args unknowable', async () => {
+    it('reads a spread of a module-level constant object into the args', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
-        const extra = { count: 9 };
-        export const Default = { args: { label: 'Save', ...extra } };
+        const extra = { label: 'extra' };
+        export const Default = { args: { ...extra } };
       `);
-      expect(story.snippet).toBeUndefined();
+      expect(extractHostComponentTemplate(story.snippet!)).toBe(
+        `<sb-button [label]="'extra'" (pressed)="pressed($event)"></sb-button>`
+      );
     });
 
-    it('emits no snippet when a meta args spread makes the merge unknowable', async () => {
+    it('reads a meta args spread of a module-level constant, story keys winning', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         const shared = { label: 'shared' };
         export default { title: 'Example/Button', component: ButtonComponent, args: { ...shared } };
         export const Default = { args: { label: 'Save' } };
+      `);
+      expect(extractHostComponentTemplate(story.snippet!)).toBe(
+        `<sb-button [label]="'Save'" (pressed)="pressed($event)"></sb-button>`
+      );
+    });
+
+    it('emits no snippet when a spread only a running story could produce', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        const makeArgs = () => ({ label: 'computed' });
+        export const Default = { args: { label: 'Save', ...makeArgs() } };
+      `);
+      expect(story.snippet).toBeUndefined();
+    });
+
+    it('emits no snippet when the spread object is mutated before the spread runs', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        const extra = { label: 'extra' };
+        extra.label = 'mutated';
+        export const Default = { args: { ...extra } };
       `);
       expect(story.snippet).toBeUndefined();
     });
@@ -728,6 +760,185 @@ describe('buildStoryDocsPayload', () => {
         export const Default = { args: { label: ${JSON.stringify(value)} } };
       `);
       expect(story.snippet).toContain(expected);
+    });
+  });
+
+  describe("spreads of another story's args", () => {
+    const HEADER_STORY_PATH = join(process.cwd(), 'header.stories.ts');
+
+    it("merges `...Primary.args` with the spreading story's own keys winning", async () => {
+      const templates = await templatesOf(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Primary = { args: { label: 'Button', count: 1 } };
+        export const Secondary = { args: { ...Primary.args, label: 'Secondary' } };
+      `);
+      expect(templates.get('Secondary')).toBe(
+        `<sb-button [label]="'Secondary'" [count]="1" (clicked)="clicked($event)"></sb-button>`
+      );
+    });
+
+    it('follows a chain of spreads across stories', async () => {
+      const templates = await templatesOf(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Primary = { args: { label: 'Button' } };
+        export const Chained = { args: { ...Primary.args, count: 1 } };
+        export const TwoDeep = { args: { ...Chained.args, label: 'deep' } };
+      `);
+      expect(templates.get('Two Deep')).toBe(
+        `<sb-button [label]="'deep'" [count]="1" (clicked)="clicked($event)"></sb-button>`
+      );
+    });
+
+    it('reads `...Primary.input.args` on a factory story', async () => {
+      const templates = await templatesOf(`
+        import preview from '../.storybook/preview';
+        import { ButtonComponent } from './button.component';
+        const meta = preview.meta({ title: 'Example/Button', component: ButtonComponent });
+        export const Primary = meta.story({ args: { label: 'Button', count: 1 } });
+        export const Secondary = meta.story({ args: { ...Primary.input.args, label: 'Secondary' } });
+      `);
+      expect(templates.get('Secondary')).toBe(
+        `<sb-button [label]="'Secondary'" [count]="1" (clicked)="clicked($event)"></sb-button>`
+      );
+    });
+
+    it('merges the parent chain of a factory `extend` story the way the runtime does', async () => {
+      const templates = await templatesOf(`
+        import preview from '../.storybook/preview';
+        import { ButtonComponent } from './button.component';
+        const meta = preview.meta({ title: 'Example/Button', component: ButtonComponent });
+        export const Base = meta.story({ args: { label: 'base', count: 1 } });
+        export const Extended = Base.extend({ args: { count: 2 } });
+        export const Spread = meta.story({ args: { ...Extended.input.args, label: 'spread' } });
+      `);
+      expect(templates.get('Spread')).toBe(
+        `<sb-button [label]="'spread'" [count]="2" (clicked)="clicked($event)"></sb-button>`
+      );
+    });
+
+    it("follows a namespace import to the other file's story", async () => {
+      const templates = await templatesOf(
+        `
+          import { ButtonComponent } from './button.component';
+          import * as HeaderStories from './header.stories';
+          export default { title: 'Example/Button', component: ButtonComponent };
+          export const LoggedIn = { args: { ...HeaderStories.LoggedIn.args } };
+        `,
+        {
+          [HEADER_STORY_PATH]: `
+            import { HeaderComponent } from './header.component';
+            export default { title: 'Example/Header', component: HeaderComponent };
+            export const LoggedIn = { args: { label: 'from header', count: 3 } };
+          `,
+        }
+      );
+      expect(templates.get('Logged In')).toBe(
+        `<sb-button [label]="'from header'" [count]="3" (clicked)="clicked($event)"></sb-button>`
+      );
+    });
+
+    it("follows a named import to the other file's factory story", async () => {
+      const templates = await templatesOf(
+        `
+          import { ButtonComponent } from './button.component';
+          import { LoggedIn as HeaderLoggedIn } from './header.stories';
+          export default { title: 'Example/Button', component: ButtonComponent };
+          export const LoggedIn = { args: { ...HeaderLoggedIn.input.args } };
+        `,
+        {
+          [HEADER_STORY_PATH]: `
+            import preview from '../.storybook/preview';
+            import { HeaderComponent } from './header.component';
+            const meta = preview.meta({ title: 'Example/Header', component: HeaderComponent });
+            export const LoggedIn = meta.story({ args: { label: 'from header' } });
+          `,
+        }
+      );
+      expect(templates.get('Logged In')).toBe(
+        `<sb-button [label]="'from header'" (clicked)="clicked($event)"></sb-button>`
+      );
+    });
+
+    it('spreads the value visible where the spread runs, not the final one', async () => {
+      const templates = await templatesOf(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Primary = { args: { label: 'original' } };
+        export const SeesOriginal = { args: { ...Primary.args } };
+        Primary.args = { label: 'replaced' };
+        export const SeesReplaced = { args: { ...Primary.args } };
+      `);
+      expect(templates.get('Sees Original')).toBe(
+        `<sb-button [label]="'original'" (clicked)="clicked($event)"></sb-button>`
+      );
+      expect(templates.get('Sees Replaced')).toBe(
+        `<sb-button [label]="'replaced'" (clicked)="clicked($event)"></sb-button>`
+      );
+    });
+
+    it('emits no snippet when the spread target is declared later (a TDZ read at runtime)', async () => {
+      const templates = await templatesOf(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Early = { args: { ...Later.args } };
+        export const Later = { args: { label: 'later' } };
+      `);
+      expect(templates.get('Early')).toBeUndefined();
+      expect(templates.get('Later')).toBeDefined();
+    });
+
+    it("emits no snippet when stories spread each other's args in a cycle", async () => {
+      const templates = await templatesOf(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Self = { args: { ...Self.args, label: 'self' } };
+      `);
+      expect(templates.get('Self')).toBeUndefined();
+    });
+
+    it('emits no snippet when something mutates inside the args object', async () => {
+      const templates = await templatesOf(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Mutated = { args: { label: 'x' } };
+        Mutated.args.label = 'mutated';
+        export const Spreading = { args: { ...Mutated.args } };
+      `);
+      expect(templates.get('Mutated')).toBeUndefined();
+      expect(templates.get('Spreading')).toBeUndefined();
+    });
+
+    it("emits no snippet when the accessor does not match the story's form", async () => {
+      const templates = await templatesOf(`
+        import preview from '../.storybook/preview';
+        import { ButtonComponent } from './button.component';
+        const meta = preview.meta({ title: 'Example/Button', component: ButtonComponent });
+        export const Factory = meta.story({ args: { label: 'f' } });
+        export const Wrong = meta.story({ args: { ...Factory.args } });
+      `);
+      expect(templates.get('Wrong')).toBeUndefined();
+    });
+
+    it('emits no snippet when a cross-file arg value does not reduce to a literal', async () => {
+      const templates = await templatesOf(
+        `
+          import { ButtonComponent } from './button.component';
+          import * as HeaderStories from './header.stories';
+          export default { title: 'Example/Button', component: ButtonComponent };
+          export const LoggedIn = { args: { ...HeaderStories.LoggedIn.args } };
+        `,
+        {
+          [HEADER_STORY_PATH]: `
+            import { HeaderComponent } from './header.component';
+            import { REMOTE_LABEL } from './labels';
+            export default { title: 'Example/Header', component: HeaderComponent };
+            export const LoggedIn = { args: { label: REMOTE_LABEL } };
+          `,
+        }
+      );
+      expect(templates.get('Logged In')).toBeUndefined();
     });
   });
 });

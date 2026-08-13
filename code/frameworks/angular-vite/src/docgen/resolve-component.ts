@@ -16,7 +16,10 @@ export interface ParsedStoryFile {
 
 export function parseStoryFile(storyFilePath: string, title: string): ParsedStoryFile | undefined {
   try {
-    const source = readFileSync(storyFilePath, 'utf8');
+    // Windows checkouts may use CRLF. Recast records character offsets from the source it
+    // parsed; slicing a different line-ending view shifts unevaluable expressions (arrow
+    // functions, etc.) by one character per preceding newline.
+    const source = readFileSync(storyFilePath, 'utf8').replace(/\r\n/g, '\n');
     return { source, csf: loadCsf(source, { makeTitle: () => title }).parse() };
   } catch {
     return undefined;

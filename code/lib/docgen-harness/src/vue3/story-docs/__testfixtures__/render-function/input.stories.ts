@@ -45,3 +45,14 @@ export const ArgsMember: Story = {
   },
   render: (args) => h('div', [h(RenderFunctionButton, { label: args.label })]),
 };
+
+export const SlotChildren: Story = {
+  args: {
+    label: 'Confirm',
+  },
+  render: (args) =>
+    h(RenderFunctionButton, args, {
+      default: () => h('span', 'Extra'),
+      footer: () => h('strong', 'Note'),
+    }),
+};

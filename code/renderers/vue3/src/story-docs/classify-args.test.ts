@@ -32,7 +32,7 @@ describe('classifyArgs', () => {
       )
     ).toEqual({
       args: [
-        `content: 'Hi' -> slot (hoist)`,
+        `content: 'Hi' -> slot (inline)`,
         'checked: true -> model (inline)',
         `label: 'Go' -> prop (inline)`,
       ],
@@ -93,13 +93,13 @@ describe('classifyArgs', () => {
 
   it('renders a slot function that returns a string literal', () => {
     expect(classify(`{ default: () => 'hi' }`, { slots: ['default'] })).toEqual({
-      args: [`default: 'hi' -> slot (hoist)`],
+      args: [`default: 'hi' -> slot (inline)`],
     });
   });
 
   it('renders a slot function block that returns a string literal', () => {
     expect(classify(`{ default: () => { return 'hi' } }`, { slots: ['default'] })).toEqual({
-      args: [`default: 'hi' -> slot (hoist)`],
+      args: [`default: 'hi' -> slot (inline)`],
     });
   });
 

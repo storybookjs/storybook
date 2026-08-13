@@ -7,11 +7,19 @@ import {
   mergeArgsRecords,
   metaArgsRecord,
   normalizeStoryDeclaration,
+  type RenderResolution,
   resolveRenderFunction,
   storyAssignedArgsPath,
 } from 'storybook/internal/csf-tools';
 
 import { invariant } from './utils.ts';
+
+function renderFunctionOf(resolution: RenderResolution) {
+  if (resolution.kind === 'resolved') {
+    return resolution.path;
+  }
+  return resolution.kind === 'unresolved' ? resolution.shadowedRender : undefined;
+}
 
 export function getCodeSnippet(
   csf: CsfFile,
@@ -30,33 +38,29 @@ export function getCodeSnippet(
 
   // Find a function (explicit story fn or render())
   let storyFn:
-    | NodePath<t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration>
+    | NodePath<
+        t.ArrowFunctionExpression | t.FunctionExpression | t.FunctionDeclaration | t.ObjectMethod
+      >
     | undefined;
 
   if (normalizedStory.type === 'fn') {
     storyFn = normalizedStory.path;
   }
 
-  const storyProps =
-    normalizedStory.type === 'config'
-      ? normalizedStory.path.get('properties').filter((p) => p.isObjectProperty())
-      : [];
+  const storyConfigPath = normalizedStory.type === 'config' ? normalizedStory.path : undefined;
+  const storyProps = storyConfigPath?.get('properties').filter((p) => p.isObjectProperty()) ?? [];
 
-  const metaPath = metaObjectPath(csf);
-  const metaProps = metaPath?.get('properties').filter((p) => p.isObjectProperty()) ?? [];
-
-  const metaRender = resolveRenderFunction(metaProps, storyDeclaration);
-  const storyRender = resolveRenderFunction(storyProps, storyDeclaration);
+  const metaRender = resolveRenderFunction(metaObjectPath(csf), storyDeclaration);
+  const storyRender = resolveRenderFunction(storyConfigPath, storyDeclaration);
 
   // Story render takes precedence. Only fall back to meta render when the story
   // has no render property at all — NOT when it has one that couldn't be resolved.
+  // A render shadowed by a later spread is still the best static guess for this manifest,
+  // which degrades to synthesis rather than suppressing snippets.
   if (!storyFn) {
     storyFn =
-      storyRender.kind === 'resolved'
-        ? storyRender.path
-        : storyRender.kind === 'missing' && metaRender.kind === 'resolved'
-          ? metaRender.path
-          : undefined;
+      renderFunctionOf(storyRender) ??
+      (storyRender.kind === 'missing' ? renderFunctionOf(metaRender) : undefined);
   }
 
   // Collect args
@@ -94,13 +98,14 @@ export function getCodeSnippet(
       }
     }
 
-    const stmts = t.isFunctionDeclaration(fn)
-      ? fn.body.body
-      : t.isArrowFunctionExpression(fn) && t.isBlockStatement(fn.body)
+    const stmts =
+      t.isFunctionDeclaration(fn) || t.isObjectMethod(fn)
         ? fn.body.body
-        : t.isFunctionExpression(fn) && t.isBlockStatement(fn.body)
+        : t.isArrowFunctionExpression(fn) && t.isBlockStatement(fn.body)
           ? fn.body.body
-          : undefined;
+          : t.isFunctionExpression(fn) && t.isBlockStatement(fn.body)
+            ? fn.body.body
+            : undefined;
 
     if (stmts) {
       let changed = false;
@@ -140,7 +145,12 @@ export function getCodeSnippet(
 
     return t.isFunctionDeclaration(fn)
       ? t.functionDeclaration(t.identifier(storyName), fn.params, fn.body, fn.generator, fn.async)
-      : t.variableDeclaration('const', [t.variableDeclarator(t.identifier(storyName), fn)]);
+      : t.variableDeclaration('const', [
+          t.variableDeclarator(
+            t.identifier(storyName),
+            t.isObjectMethod(fn) ? t.arrowFunctionExpression(fn.params, fn.body, fn.async) : fn
+          ),
+        ]);
   }
 
   // No function: synthesize `<Component {...attrs}/>`

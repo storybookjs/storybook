@@ -43,7 +43,7 @@ const givenStoryFile = (source: string) => {
 const noDocgen = async (): Promise<undefined> => undefined;
 
 const buttonDocgen =
-  (jsDocTags: AngularDocgenPayload['jsDocTags'] = {}) =>
+  (jsDocTags: AngularDocgenPayload['jsDocTags'] = {}, standalone = true) =>
   async (): Promise<AngularDocgenPayload> => ({
     id: 'example-button',
     name: 'ButtonComponent',
@@ -52,6 +52,7 @@ const buttonDocgen =
     angularComponentMeta: {
       name: 'ButtonComponent',
       selector: 'sb-button',
+      standalone,
       inputs: ['label'],
       outputs: ['pressed'],
       enums: [],
@@ -67,6 +68,7 @@ const shapesDocgen = async (): Promise<AngularDocgenPayload> => ({
   angularComponentMeta: {
     name: 'ButtonComponent',
     selector: 'sb-button',
+    standalone: true,
     inputs: ['label', 'count'],
     outputs: ['clicked'],
     enums: [],
@@ -218,6 +220,7 @@ describe('buildStoryDocsPayload', () => {
       angularComponentMeta: {
         name: 'ButtonComponent',
         selector: 'sb-button',
+        standalone: true,
         inputs: ['label'],
         outputs: [],
         enums: [],
@@ -229,6 +232,172 @@ describe('buildStoryDocsPayload', () => {
     const story = Object.values(payload!.stories)[0];
     expect(story.snippet).toContain('sb-button');
     expect(story.snippet).toContain(`[label]="'Save'"`);
+    expect(story.warning).toBeUndefined();
+  });
+
+  it('attaches the snippet builder warning for a non-standalone component', async () => {
+    givenStoryFile(`
+      import { ButtonComponent } from './button.component';
+      export default { title: 'Example/Button', component: ButtonComponent };
+      export const Default = { args: { label: 'Save' } };
+    `);
+
+    const payload = await buildStoryDocsPayload(
+      { entry },
+      { getDocgenPayload: buttonDocgen({}, false) }
+    );
+
+    const story = Object.values(payload!.stories)[0];
+    expect(story.snippet).toContain('imports: [],');
+    expect(story.snippet).not.toContain('./button.component');
+    expect(story.warning).toContain('standalone: false');
+    expect(story.warning).toContain('NgModule');
+  });
+
+  it("mirrors the story's moduleMetadata modules for a non-standalone component", async () => {
+    givenStoryFile(`
+      import { moduleMetadata } from '@storybook/angular-vite';
+      import { ButtonComponent } from './button.component';
+      import { ButtonModule } from './button.module';
+      export default {
+        title: 'Example/Button',
+        component: ButtonComponent,
+        decorators: [moduleMetadata({ imports: [ButtonModule] })],
+      };
+      export const Default = { args: { label: 'Save' } };
+    `);
+
+    const payload = await buildStoryDocsPayload(
+      { entry },
+      { getDocgenPayload: buttonDocgen({}, false) }
+    );
+
+    const story = Object.values(payload!.stories)[0];
+    expect(story.snippet).toContain('imports: [ButtonModule],');
+    expect(story.snippet).toContain("import { ButtonModule } from './button.module';");
+    expect(story.snippet).not.toContain('./button.component');
+    expect(story.warning).toBeUndefined();
+  });
+
+  it('merges story-level moduleMetadata modules with the meta-level ones', async () => {
+    givenStoryFile(`
+      import { moduleMetadata } from '@storybook/angular-vite';
+      import { ButtonComponent } from './button.component';
+      import { ButtonModule } from './button.module';
+      import { IconModule } from './icon.module';
+      export default {
+        title: 'Example/Button',
+        component: ButtonComponent,
+        decorators: [moduleMetadata({ imports: [ButtonModule] })],
+      };
+      export const Default = {
+        decorators: [moduleMetadata({ imports: [IconModule, ButtonModule] })],
+      };
+    `);
+
+    const payload = await buildStoryDocsPayload(
+      { entry },
+      { getDocgenPayload: buttonDocgen({}, false) }
+    );
+
+    const story = Object.values(payload!.stories)[0];
+    expect(story.snippet).toContain('imports: [ButtonModule, IconModule],');
+    expect(story.snippet).toContain("import { ButtonModule } from './button.module';");
+    expect(story.snippet).toContain("import { IconModule } from './icon.module';");
+    expect(story.warning).toBeUndefined();
+  });
+
+  it('keeps the warning when moduleMetadata declares the component instead of importing a module', async () => {
+    givenStoryFile(`
+      import { moduleMetadata } from '@storybook/angular-vite';
+      import { ButtonComponent } from './button.component';
+      import { IconModule } from './icon.module';
+      export default {
+        title: 'Example/Button',
+        component: ButtonComponent,
+        decorators: [moduleMetadata({ declarations: [ButtonComponent], imports: [IconModule] })],
+      };
+      export const Default = {};
+    `);
+
+    const payload = await buildStoryDocsPayload(
+      { entry },
+      { getDocgenPayload: buttonDocgen({}, false) }
+    );
+
+    const story = Object.values(payload!.stories)[0];
+    expect(story.snippet).toContain('imports: [],');
+    expect(story.warning).toContain('NgModule');
+  });
+
+  it('keeps the warning when the only moduleMetadata module is declared in the story file', async () => {
+    givenStoryFile(`
+      import { NgModule } from '@angular/core';
+      import { moduleMetadata } from '@storybook/angular-vite';
+      import { ButtonComponent } from './button.component';
+      @NgModule({ declarations: [ButtonComponent], exports: [ButtonComponent] })
+      class StoryModule {}
+      export default {
+        title: 'Example/Button',
+        component: ButtonComponent,
+        decorators: [moduleMetadata({ imports: [StoryModule] })],
+      };
+      export const Default = {};
+    `);
+
+    const payload = await buildStoryDocsPayload(
+      { entry },
+      { getDocgenPayload: buttonDocgen({}, false) }
+    );
+
+    const story = Object.values(payload!.stories)[0];
+    expect(story.snippet).toContain('imports: [],');
+    expect(story.snippet).not.toContain('StoryModule');
+    expect(story.warning).toContain('NgModule');
+  });
+
+  it('ignores moduleMetadata entries a snippet cannot restate as an import', async () => {
+    givenStoryFile(`
+      import { moduleMetadata } from '@storybook/angular-vite';
+      import { RouterModule } from '@angular/router';
+      import { ButtonComponent } from './button.component';
+      export default {
+        title: 'Example/Button',
+        component: ButtonComponent,
+        decorators: [moduleMetadata({ imports: [RouterModule.forRoot([]), ButtonComponent] })],
+      };
+      export const Default = {};
+    `);
+
+    const payload = await buildStoryDocsPayload(
+      { entry },
+      { getDocgenPayload: buttonDocgen({}, false) }
+    );
+
+    const story = Object.values(payload!.stories)[0];
+    expect(story.snippet).toContain('imports: [],');
+    expect(story.warning).toContain('NgModule');
+  });
+
+  it('leaves a standalone component in `imports` even when moduleMetadata lists modules', async () => {
+    givenStoryFile(`
+      import { moduleMetadata } from '@storybook/angular-vite';
+      import { ButtonComponent } from './button.component';
+      import { IconModule } from './icon.module';
+      export default {
+        title: 'Example/Button',
+        component: ButtonComponent,
+        decorators: [moduleMetadata({ imports: [IconModule] })],
+      };
+      export const Default = {};
+    `);
+
+    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() });
+
+    const story = Object.values(payload!.stories)[0];
+    expect(story.snippet).toContain('imports: [ButtonComponent],');
+    expect(story.snippet).not.toContain('IconModule');
+    expect(story.warning).toBeUndefined();
   });
 
   it('names the payload after the story file component when core/docgen has no payload', async () => {

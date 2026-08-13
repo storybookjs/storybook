@@ -19,28 +19,49 @@ const stringifyCircular = (obj: unknown) => {
   });
 };
 
+// A string is serialized by JSON first so control characters stay escaped, then its delimiters are
+// converted: the expression sits in a double-quoted binding attribute, so it is single-quoted and a
+// literal double quote survives only as its entity.
+const singleQuoted = (text: string): string =>
+  `'${JSON.stringify(text)
+    .slice(1, -1)
+    .replace(/\\"/g, '"')
+    .replace(/'/g, "\\'")
+    .replace(/"/g, '&quot;')}'`;
+
+const formatJsonValue = (value: unknown): string => {
+  if (typeof value === 'string') {
+    return singleQuoted(value);
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map(formatJsonValue).join(', ')}]`;
+  }
+  if (value !== null && typeof value === 'object') {
+    const entries = Object.entries(value).map(
+      ([key, item]) =>
+        `${isValidIdentifier(key) ? key : singleQuoted(key)}: ${formatJsonValue(item)}`
+    );
+    return `{${entries.join(', ')}}`;
+  }
+  return String(value);
+};
+
 // Renders an arg value as the template expression an `[input]` binding is given.
 export const formatInputValue = (value: unknown): string => {
   switch (typeof value) {
     case 'string':
-      return `'${value}'`;
+      return singleQuoted(value);
     case 'object':
-      return stringifyCircular(value)
-        .replace(/'/g, '’')
-        .replace(/\\"/g, '”')
-        .replace(/"([^-"]+)":/g, '$1: ')
-        .replace(/"/g, "'")
-        .replace(/’/g, "\\'")
-        .replace(/”/g, "\\'")
-        .split(',')
-        .join(', ');
+      // The JSON round-trip applies `toJSON`, drops unserializable members and caps cycles, so the
+      // formatter only ever sees what the legacy generator serialized.
+      return formatJsonValue(JSON.parse(stringifyCircular(value)));
     default:
       return `${value}`;
   }
 };
 
 // https://www.w3.org/TR/2011/WD-html-markup-20110113/syntax.html#syntax-elements
-const voidElements = [
+const VOID_ELEMENTS = new Set([
   'area',
   'base',
   'br',
@@ -57,7 +78,7 @@ const voidElements = [
   'source',
   'track',
   'wbr',
-];
+]);
 
 export interface TemplateInputBinding {
   name: string;
@@ -106,7 +127,7 @@ export const buildTemplate = (
 
   return asAttributes.replace(ELEMENT_AND_ATTRIBUTES, (_, element: string, attributes: string) => {
     const openingTag = `<${element}${attributes}${inputBindings}${outputBindings}`;
-    return voidElements.includes(element)
+    return VOID_ELEMENTS.has(element)
       ? `${openingTag} />`
       : `${openingTag}>${innerTemplate}</${element}>`;
   });

@@ -15,8 +15,18 @@ export interface HostComponentSnippetInput {
   componentImport?: string;
   /** Whether the template reaches the component through `*ngComponentOutlet` rather than a tag. */
   viaComponentOutlet: boolean;
+  /** `false` for a `standalone: false` component, which only its declaring NgModule can provide. */
+  standalone: boolean;
+  /** NgModules the story's `moduleMetadata` lists, which stand in for a non-standalone component. */
+  ngModules?: { names: string[]; importStatements: string[] };
   /** Output binding names, each of which needs a handler for the template to compile. */
   outputs: string[];
+}
+
+export interface HostComponentSnippet {
+  snippet: string;
+  /** Why the snippet does not compile as written; see `StoryDoc.warning`. */
+  warning?: string;
 }
 
 // A template literal is the only quoting that survives a multi-line template carrying both quote
@@ -38,24 +48,36 @@ export const buildHostComponentSnippet = ({
   componentName,
   componentImport,
   viaComponentOutlet,
+  standalone,
+  ngModules,
   outputs,
-}: HostComponentSnippetInput): string => {
+}: HostComponentSnippetInput): HostComponentSnippet => {
+  // A `standalone: false` component is only reachable through its declaring NgModule, which static
+  // analysis cannot find reliably. The modules the story's own `moduleMetadata` lists are the next
+  // best claim; without them the tag path leaves `imports` empty and warns why instead.
+  const importable = viaComponentOutlet || standalone;
+  const moduleNames = importable ? [] : (ngModules?.names ?? []);
   const imports = [
     ...(viaComponentOutlet ? ["import { NgComponentOutlet } from '@angular/common';"] : []),
     "import { Component } from '@angular/core';",
-    ...(componentImport ? [componentImport] : []),
+    ...(componentImport && importable ? [componentImport] : []),
+    ...(moduleNames.length > 0 ? (ngModules?.importStatements ?? []) : []),
   ];
 
   // Under `*ngComponentOutlet` the component is referenced as a value, not matched as an element,
   // so the directive is what the host declares and the class has to be reachable from the template.
-  const declared = viaComponentOutlet ? 'NgComponentOutlet' : componentName;
+  const declared = viaComponentOutlet
+    ? 'NgComponentOutlet'
+    : standalone
+      ? componentName
+      : moduleNames.join(', ');
   const members = [
     ...(viaComponentOutlet ? [`  protected readonly ${componentName} = ${componentName};`] : []),
     ...outputs.map((name) => `  ${memberName(name)}(event: unknown) {}`),
   ];
   const body = members.length > 0 ? `{\n${members.join('\n')}\n}` : '{}';
 
-  return [
+  const snippet = [
     imports.join('\n'),
     '',
     '@Component({',
@@ -65,6 +87,19 @@ export const buildHostComponentSnippet = ({
     '})',
     `export class ${HOST_CLASS} ${body}`,
   ].join('\n');
+
+  // A story-file-local component has no import to derive, so the snippet names it without bringing
+  // it into scope; it still shows the bindings the story sets, so it stays with the caveat attached.
+  const warning =
+    !importable && moduleNames.length === 0
+      ? `${componentName} is declared with \`standalone: false\`, so it cannot be listed in the ` +
+        `host component's \`imports\`. Add the NgModule that declares and exports ` +
+        `${componentName} to \`imports\` to make this snippet compile.`
+      : importable && componentImport === undefined
+        ? `${componentName} is declared in the story file, so the snippet references it without importing it.`
+        : undefined;
+
+  return warning === undefined ? { snippet } : { snippet, warning };
 };
 
 const TEMPLATE_LITERAL = /^ {2}template: `([\s\S]*)`,$/m;

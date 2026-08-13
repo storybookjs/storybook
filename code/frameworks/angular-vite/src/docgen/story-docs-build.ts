@@ -20,6 +20,7 @@ import type {
   SnippetEnum,
 } from './build-docgen.ts';
 import { parseStoryFile, resolveStoryImport } from './resolve-component.ts';
+import type { HostComponentSnippet, HostComponentSnippetInput } from './story-docs-snippet.ts';
 import { buildHostComponentSnippet } from './story-docs-snippet.ts';
 import {
   buildComponentOutletTemplate,
@@ -71,6 +72,7 @@ export const buildStoryDocsPayload = async (
     argsProperties(node, createSpreadArgsResolver(spreadContext));
 
   const componentName = componentNameOf(componentNode);
+  const importBindings = collectImportBindings(csf._file.path);
   const deps: StoryDocDeps = {
     csf,
     source,
@@ -81,7 +83,9 @@ export const buildStoryDocsPayload = async (
     componentImport:
       componentName === undefined
         ? undefined
-        : createImportStatement(componentName, csf, docgenPayload),
+        : createImportStatement(componentName, importBindings, docgenPayload),
+    metaNgModules: ngModulesFromDecorators(csf._metaAnnotations.decorators, componentName),
+    importBindings,
   };
 
   const stories: Record<string, StoryDoc> = {};
@@ -108,10 +112,10 @@ export const buildStoryDocsPayload = async (
  */
 const createImportStatement = (
   componentName: string,
-  csf: CsfFile,
+  importBindings: ReturnType<typeof collectImportBindings>,
   docgenPayload: AngularDocgenPayload | undefined
 ): string | undefined => {
-  const ref = resolveComponentImport(componentName, collectImportBindings(csf._file.path));
+  const ref = resolveComponentImport(componentName, importBindings);
   const importOverride = docgenPayload?.jsDocTags?.import?.[0]?.trim();
   return buildImportStatements({ refs: [{ ...ref, importOverride }] }).join('\n') || undefined;
 };
@@ -131,14 +135,101 @@ interface StoryDocDeps {
   snippetMeta: AngularComponentSnippetMeta | undefined;
   componentName: string | undefined;
   componentImport: string | undefined;
+  metaNgModules: StoryNgModules;
+  importBindings: ReturnType<typeof collectImportBindings>;
 }
+
+interface StoryNgModules {
+  names: string[];
+  declaresComponent: boolean;
+}
+
+// The decorator is matched by its conventional local name: resolving the import binding would only
+// rule out a foreign function that happens to be called `moduleMetadata`, which does not arise.
+const ngModulesFromDecorators = (
+  decorators: t.Node | undefined,
+  componentName: string | undefined
+): StoryNgModules => {
+  const result: StoryNgModules = { names: [], declaresComponent: false };
+  const list = decorators === undefined ? undefined : unwrapExpression(decorators);
+  if (!list || !t.isArrayExpression(list)) {
+    return result;
+  }
+  for (const element of list.elements) {
+    if (!element || t.isSpreadElement(element)) {
+      continue;
+    }
+    const call = unwrapExpression(element);
+    if (!t.isCallExpression(call) || !t.isIdentifier(call.callee, { name: 'moduleMetadata' })) {
+      continue;
+    }
+    const [metadataArg] = call.arguments;
+    const metadata =
+      metadataArg && t.isExpression(metadataArg) ? unwrapExpression(metadataArg) : undefined;
+    if (!metadata || !t.isObjectExpression(metadata)) {
+      continue;
+    }
+    for (const property of metadata.properties) {
+      if (!t.isObjectProperty(property) || !t.isExpression(property.value)) {
+        continue;
+      }
+      const key = keyOf(property);
+      const value = unwrapExpression(property.value);
+      if ((key !== 'imports' && key !== 'declarations') || !t.isArrayExpression(value)) {
+        continue;
+      }
+      for (const item of value.elements) {
+        if (!item || t.isSpreadElement(item)) {
+          continue;
+        }
+        const entry = unwrapExpression(item);
+        if (!t.isIdentifier(entry)) {
+          continue;
+        }
+        if (key === 'imports') {
+          if (entry.name !== componentName && !result.names.includes(entry.name)) {
+            result.names.push(entry.name);
+          }
+        } else if (entry.name === componentName) {
+          result.declaresComponent = true;
+        }
+      }
+    }
+  }
+  return result;
+};
+
+// A story that declares the component itself wires it without a module the snippet could name, so
+// the builder's warning path stays the honest output.
+const storyNgModules = (
+  storyDecorators: t.Node | undefined,
+  { metaNgModules, componentName, importBindings }: StoryDocDeps
+): HostComponentSnippetInput['ngModules'] => {
+  const story = ngModulesFromDecorators(storyDecorators, componentName);
+  if (metaNgModules.declaresComponent || story.declaresComponent) {
+    return undefined;
+  }
+  const names = [...new Set([...metaNgModules.names, ...story.names])];
+  // A module bound to no import is glue local to the story file, which a reader cannot obtain, so
+  // it does not count as a module the snippet can claim.
+  const refs = names
+    .map((name) => resolveComponentImport(name, importBindings))
+    .filter((ref) => ref.importId);
+  if (refs.length === 0) {
+    return undefined;
+  }
+  return {
+    names: refs.map((ref) => ref.componentName),
+    importStatements: buildImportStatements({ refs }),
+  };
+};
 
 const buildStoryDoc = (
   exportName: string,
   story: CsfFile['_stories'][string],
   deps: StoryDocDeps
 ): StoryDoc => {
-  const { csf, snippetMeta, componentName, componentImport } = deps;
+  const { csf, snippetMeta } = deps;
   const name = story.name ?? storyNameFromExport(exportName);
   try {
     const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[exportName]);
@@ -155,19 +246,15 @@ const buildStoryDoc = (
         !hasAssignmentInto(csf, exportName, 2, undefined),
       source: deps.source,
     };
-    const snippet = snippetMeta
-      ? renderStorySnippet(snippetMeta, shape, componentImport)
+    const rendered = snippetMeta
+      ? renderStorySnippet(snippetMeta, shape, annotations.decorators, deps)
       : undefined;
-    const warning =
-      snippet === undefined
-        ? undefined
-        : incompleteSnippetReason(componentName ?? snippetMeta!.name, componentImport);
 
     return {
       id: story.id,
       name,
-      ...(snippet === undefined ? {} : { snippet }),
-      ...(warning === undefined ? {} : { warning }),
+      ...(rendered === undefined ? {} : { snippet: rendered.snippet }),
+      ...(rendered?.warning === undefined ? {} : { warning: rendered.warning }),
       ...(description ? { description } : {}),
       ...(summary === undefined ? {} : { summary }),
     };
@@ -180,21 +267,6 @@ const buildStoryDoc = (
     };
   }
 };
-
-/**
- * Why the host component in the snippet would not compile as written, or `undefined` when it would.
- *
- * A component the story file declares itself has no import to derive, so the snippet names it in
- * `imports` without bringing it into scope. The snippet still shows the bindings the story sets,
- * which is what a reader comes to a docs page for, so it is worth keeping with the caveat attached.
- */
-const incompleteSnippetReason = (
-  localName: string,
-  componentImport: string | undefined
-): string | undefined =>
-  componentImport === undefined
-    ? `${localName} is declared in the story file, so the snippet references it without importing it.`
-    : undefined;
 
 /** One story, as much of it as reading the markup it supplies needs. */
 interface StoryShape {
@@ -217,11 +289,14 @@ interface StoryShape {
 const renderStorySnippet = (
   snippetMeta: AngularComponentSnippetMeta,
   shape: StoryShape,
-  componentImport: string | undefined
-): string | undefined => {
+  storyDecorators: t.Node | undefined,
+  deps: StoryDocDeps
+): HostComponentSnippet | undefined => {
+  const { componentImport } = deps;
   // The story file's local name is what the import binds, so an aliased import stays consistent
   // between the import statement, the `imports` array and the template.
   const localName = componentNameOf(shape.csf._metaAnnotations.component) ?? snippetMeta.name;
+  const ngModules = snippetMeta.standalone ? undefined : storyNgModules(storyDecorators, deps);
   const bindings = shape.argsReadable ? collectBindings(snippetMeta, shape) : undefined;
   const userMarkup = userTemplate(shape, bindings);
   if (userMarkup?.kind === 'unresolvable') {
@@ -233,6 +308,8 @@ const renderStorySnippet = (
       componentName: localName,
       componentImport,
       viaComponentOutlet: true,
+      standalone: snippetMeta.standalone,
+      ngModules,
       outputs: [],
     });
   }
@@ -254,6 +331,8 @@ const renderStorySnippet = (
     componentName: localName,
     componentImport,
     viaComponentOutlet: false,
+    standalone: snippetMeta.standalone,
+    ngModules,
     outputs: boundOutputs,
   });
 };

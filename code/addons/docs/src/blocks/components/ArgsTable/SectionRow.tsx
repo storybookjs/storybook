@@ -42,9 +42,10 @@ const ExpanderIconRight = styled(ChevronRightIcon)(({ theme }) => ({
       : transparentize(0.3, theme.color.defaultText),
   border: 'none',
   display: 'inline-block',
-  // Unlike the down chevron, this one points along the reading direction, so it
-  // has to be mirrored under RTL (#35481). Note this keys off the `dir` attribute,
-  // which is how the HTML spec expects RTL to be declared.
+  // Unlike the down chevron, this one points along the reading direction, so it has
+  // to be mirrored under RTL (#35481). `:dir()` matches the element's resolved
+  // directionality, which an ancestor's `dir` attribute establishes; it does not
+  // react to the CSS `direction` property on its own.
   '&:dir(rtl)': {
     transform: 'scaleX(-1)',
   },

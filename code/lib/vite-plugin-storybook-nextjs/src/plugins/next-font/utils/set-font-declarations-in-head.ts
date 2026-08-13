@@ -8,8 +8,6 @@ type Props = {
 };
 
 export function setFontDeclarationsInHead({ id, fontFaceCSS, classNamesCSS }: Props) {
-  // fontFaceCSS has placeholders for font path and fontReferenceId
-  // I want to extract them
   const regex = new RegExp(getPlaceholderFontUrl.regexp);
   const fontPaths = fontFaceCSS.matchAll(regex);
 

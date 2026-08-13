@@ -349,7 +349,9 @@ export const init: Task['run'] = async (
       break;
     case '@storybook/nextjs':
     case '@storybook/nextjs-vite':
-      await prepareNextjsSandbox(cwd);
+      if (!dryRun) {
+        await prepareNextjsSandbox(cwd);
+      }
       break;
     default:
   }
@@ -1055,10 +1057,28 @@ async function prepareReactNativeWebSandbox(cwd: string) {
 
 // Env fixtures for nextjs template EnvironmentVariables stories.
 async function prepareNextjsSandbox(cwd: string) {
-  await writeFile(
-    join(cwd, '.env'),
-    ['NEXT_PUBLIC_EXAMPLE1=example1', 'EXAMPLE2=example2', ''].join('\n')
-  );
+  const envPath = join(cwd, '.env');
+  let envSource = '';
+  try {
+    envSource = await readFile(envPath, 'utf8');
+  } catch {
+    // create-next-app sandboxes typically have no .env yet
+  }
+
+  const upsertEnv = (source: string, key: string, value: string) => {
+    const line = `${key}=${value}`;
+    const pattern = new RegExp(`^${key}=.*$`, 'm');
+    if (pattern.test(source)) {
+      return source.replace(pattern, line);
+    }
+    return source.length === 0 || source.endsWith('\n')
+      ? `${source}${line}\n`
+      : `${source}\n${line}\n`;
+  };
+
+  envSource = upsertEnv(envSource, 'NEXT_PUBLIC_EXAMPLE1', 'example1');
+  envSource = upsertEnv(envSource, 'EXAMPLE2', 'example2');
+  await writeFile(envPath, envSource);
 
   const relativeConfigPath = await findFirstPath(
     ['next.config.ts', 'next.config.mjs', 'next.config.js'],
@@ -1071,6 +1091,10 @@ async function prepareNextjsSandbox(cwd: string) {
   const configPath = join(cwd, relativeConfigPath);
   const source = await readFile(configPath, 'utf8');
   if (source.includes('nextConfigEnv')) {
+    return;
+  }
+
+  if (/\benv\s*:/.test(source)) {
     return;
   }
 

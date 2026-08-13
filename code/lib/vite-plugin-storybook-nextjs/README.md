@@ -99,7 +99,7 @@ export default {
         // Default image glob patterns are already applied; this is optional
         // include: ['**/*.{png,jpg,jpeg,gif,webp,avif,ico,bmp,svg}'],
         // Ensure SVGR takes precedence for React components from SVGs
-        exclude: ['**/*.svg?icon'],
+        exclude: ['**/*.svg?react'],
       },
     }
   }

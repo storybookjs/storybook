@@ -16,5 +16,6 @@ export const Default: Story = {
   play: async ({ canvas }) => {
     await expect(canvas.getByTestId('nextConfigEnv')).toHaveTextContent('next-config-env');
     await expect(canvas.getByTestId('nextPrefixEnv')).toHaveTextContent('example1');
+    await expect(canvas.getByTestId('nonNextPrefixEnv')).toHaveTextContent('RESTRICTED_VALUE');
   },
 };

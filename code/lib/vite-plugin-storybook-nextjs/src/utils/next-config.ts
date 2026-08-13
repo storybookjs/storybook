@@ -21,21 +21,20 @@ export async function loadNextConfig(
       throw error;
     }
 
-    return loadConfigWithoutTurbopackRustReactCompiler(phase, dir);
+    return loadNormalizedNextConfig(phase, dir);
   }
 
-  // Next 16.3+ can reuse a rawConfig:true cache entry, which has no Next defaults.
-  if (nextConfig.experimental !== undefined) {
+  if (!isMissingNextConfigDefaults(nextConfig)) {
     return nextConfig;
   }
 
-  return loadConfigWithoutTurbopackRustReactCompiler(phase, dir, nextConfig);
+  return loadNormalizedNextConfig(phase, dir, nextConfig);
 }
 
-async function loadConfigWithoutTurbopackRustReactCompiler(
+async function loadNormalizedNextConfig(
   phase: Parameters<typeof loadConfig>[0],
   dir: string,
-  cachedRawConfigModule?: NextConfigComplete
+  cachedRawConfigModule?: unknown
 ): Promise<NextConfigComplete> {
   const rawConfigModule =
     cachedRawConfigModule ?? (await loadConfig(phase, dir, { rawConfig: true }));
@@ -52,10 +51,18 @@ async function loadConfigWithoutTurbopackRustReactCompiler(
   });
 }
 
+function isMissingNextConfigDefaults(config: NextConfigComplete): boolean {
+  return config.experimental === undefined;
+}
+
 function isTurbopackRustReactCompilerError(error: unknown): boolean {
   return error instanceof Error && error.message.startsWith(TURBOPACK_RUST_REACT_COMPILER_ERROR);
 }
 
-function interopDefault<T>(module: T | { default: T }): T {
-  return (module as { default?: T }).default ?? (module as T);
+function interopDefault(module: unknown): unknown {
+  if (typeof module === 'object' && module !== null && 'default' in module) {
+    return (module as { default: unknown }).default ?? module;
+  }
+
+  return module;
 }

@@ -147,8 +147,8 @@ describe('VitePlugin', () => {
     expect(config?.resolve).not.toHaveProperty('alias');
     expect(config?.test?.alias).toEqual(
       expect.objectContaining({
-        'next/dist/compiled/react': expect.any(String),
-        'next/dist/compiled/react-dom': expect.any(String),
+        'next/dist/compiled/react': '/resolved/next/dist/compiled',
+        'next/dist/compiled/react-dom': '/resolved/next/dist/compiled',
       })
     );
   });

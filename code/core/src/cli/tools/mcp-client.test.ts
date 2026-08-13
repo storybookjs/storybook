@@ -2,8 +2,8 @@ import { versions } from 'storybook/internal/common';
 
 import { describe, expect, it, vi } from 'vitest';
 
-import { MCP_CLIENT_INFO, McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
-import type { StorybookInstanceRecord } from './types.ts';
+import { MCP_CLIENT_INFO, McpJsonRpcError, callMcpTool, listMcpTools } from './mcp-client.ts';
+import type { StorybookInstanceRecord } from './instances/types.ts';
 
 const record: StorybookInstanceRecord = {
   schemaVersion: 1,

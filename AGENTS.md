@@ -175,7 +175,36 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
   (`storybook/...`); import from the defining module instead of a barrel that does.
 - Toolset factories are exported from `storybook/internal/core-server`, not `storybook/open-service`:
   they reach server-only code, and the latter entry is built for the browser.
-- Still open: CLI generation and `storybook tools` wiring (Milestone 5).
+- The public `storybook tools` CLI (`code/core/src/cli/tools/`) is the toolsets' third consumer: it
+  loads the target Storybook configuration in its own process (which registers every service and
+  toolset via the `services` hook), derives its whole command surface from
+  `getRegisteredToolsets()` at runtime (`storybook tools <toolset> <kebab-method>`), and maps
+  `ToolsetOutcome` mechanically (markdown to stdout, `--json` prints `data`, `ok` drives the exit
+  code). It runs fully disconnected from any dev server: methods marked `requiresDevServer` on
+  their definition present one uniform "start the dev server first" contract, with `stories
+  preview` resolving its origin from the runtime instance registry. Graph-dependent methods host
+  the module graph in-process by repeating the dev server's change-detection bootstrap against
+  builder-vite's headless adapter. Story tests run locally too: addon-vitest wires the responder
+  answering `test run` requests in the same `services` hook that registers the `test` toolset
+  (lazy machinery, eagerly run by the dev server's channel hook for the manager UI), and
+  `experimental_loadStorybook` accepts a caller-supplied channel so the CLI can hand it the one its
+  UniversalStores were prepared on — the responder relays the vitest child's store events over that
+  channel, so a second channel on either side hangs the run. Connect mode (attaching to a running
+  dev server's OSA state) is Milestone 5b.
+- One method is the exception, and deliberately a temporary one: `review create` needs the dev
+  server's review state, so the CLI forwards it to that Storybook's `@storybook/addon-mcp`
+  endpoint (`PROXY_VIA_MCP_METHODS` in `cli/tools/run.ts`, over `cli/tools/mcp-client.ts`) and
+  unwraps the reply mechanically — text to stdout, `structuredContent` for `--json`, `isError` to
+  the exit code. The handler runs once, in the dev server, so its telemetry and side effects stay
+  there. Milestone 5b deletes the set, its dispatch branch and the injectable `mcpToolCall`
+  dependency; `mcp-client.ts` follows once `storybook ai` is removed. Keep the branch
+  self-contained: nothing outside it may learn that a method is proxied. One consequence to know
+  about: the handler executes with `consumer: 'mcp'`, so a proxied method's rendered prose is the
+  MCP variant even on the CLI (descriptions and `--help` are unaffected — those render locally).
+- `cli/tools/` also owns the modules `storybook ai` still uses (`instances/`, `mcp-client.ts`,
+  `config-dir.ts`, `schema-lines.ts`): the ai CLI is slated for removal, so the dependency runs
+  from it into the tools CLI and never the other way. Nothing under `cli/tools/` may import from
+  `cli/ai/` — `no-restricted-imports` in `code/.oxlintrc.json` enforces it.
 
 ## Common Commands
 

@@ -204,6 +204,9 @@ export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTe
       run: {
         schema: runInputSchema,
         title: 'Storybook Tests',
+        // No `requiresDevServer`: addon-vitest wires the responder answering these requests in the
+        // same `services` hook that registers this toolset, so any consumer that offers the tool
+        // can answer it in-process — the dev server and the `storybook tools` CLI alike.
         description: describeRun(a11yEnabled),
         handler: async (
           input,

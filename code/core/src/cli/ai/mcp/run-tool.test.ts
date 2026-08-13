@@ -1,14 +1,14 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resolve } from 'node:path';
-import { McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
+import { McpJsonRpcError, callMcpTool, listMcpTools } from '../../tools/mcp-client.ts';
 import { loadStorybookAiMetadata, type StorybookAiMetadata } from './local-metadata.ts';
-import { readRegistry } from './registry.ts';
+import { readRegistry } from '../../tools/instances/registry.ts';
 import { buildStorybookCommandsHelp, runAiTool, runAiToolHelp } from './run-tool.ts';
-import type { StorybookInstanceRecord } from './types.ts';
+import type { StorybookInstanceRecord } from '../../tools/instances/types.ts';
 
-vi.mock('./registry.ts', { spy: true });
-vi.mock('./client.ts', { spy: true });
+vi.mock('../../tools/instances/registry.ts', { spy: true });
+vi.mock('../../tools/mcp-client.ts', { spy: true });
 vi.mock('./local-metadata.ts', { spy: true });
 
 const record: StorybookInstanceRecord = {

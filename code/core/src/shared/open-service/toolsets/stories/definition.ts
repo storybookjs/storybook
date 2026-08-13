@@ -215,6 +215,8 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
         }),
         outputSchema: previewOutputSchema,
         title: 'Get story preview URLs',
+        // Preview URLs only work when they point at a live origin.
+        requiresDevServer: true,
         description: (ctx) => describePreview(ctx, reviewEnabled),
         handler: async (input, ctx): Promise<ToolsetOutcome<PreviewStoriesOutput, never>> => {
           if (!ctx.origin) {

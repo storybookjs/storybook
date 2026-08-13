@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveInstance } from './resolve-instance.ts';
+import { resolveInstance } from './resolve.ts';
 import type { McpStatus, StorybookInstanceRecord } from './types.ts';
 
 let nextInstance = 0;

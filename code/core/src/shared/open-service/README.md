@@ -126,8 +126,8 @@ side effects would repeat them. Usage telemetry reports inline in the handler wi
 text in hand, so no consumer can forget it. Adapters unwrap outcomes mechanically — text blocks
 from `markdown`, `structuredContent` from `data`, MCP `isError` (and later CLI exit codes) from
 `ok` — and must not re-derive meaning from the data. `markdown` may be `string | string[]`:
-`preview-stories` renders one text block per URL; the CLI's `--json` (Milestone 5) becomes "return
-`data`, skip `markdown`".
+`preview-stories` renders one text block per URL; the `storybook tools` CLI joins the blocks with
+blank lines, and its `--json` flag means "print `data`, skip `markdown`".
 
 An error whose message speaks to the agent and names its own recovery declares `agentFacing: true`
 (a `StorybookError` constructor prop); adapters surface such errors verbatim by reading that
@@ -147,8 +147,8 @@ preset-independent so manager- or preview-realm toolsets can use it later). A to
 registered wherever a consumer resolves it, including consumers that only read its descriptions and
 schemas: `getToolset(id)` throws on an unregistered id rather than silently dropping a tool.
 Adapters resolve one toolset with `getToolset(id)` or take the whole set via
-`getRegisteredToolsets()`; `@storybook/addon-mcp` and `@storybook/mcp` consume them today, and the
-`storybook tools` CLI from Milestone 5.
+`getRegisteredToolsets()`; `@storybook/addon-mcp`, `@storybook/mcp`, and the `storybook tools` CLI
+consume them today.
 
 ### Query
 

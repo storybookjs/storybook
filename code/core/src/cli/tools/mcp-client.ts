@@ -1,14 +1,52 @@
+/**
+ * The CLI's minimal client for a running Storybook's MCP endpoint, plus the wire shapes it
+ * returns. Deliberately not a general MCP client — see {@link sendJsonRpcRequest}.
+ */
 import { versions } from 'storybook/internal/common';
 
 import * as v from 'valibot';
 
-import {
-  McpToolDescriptorSchema,
-  ToolCallResultSchema,
-  type McpToolDescriptor,
-  type StorybookInstanceRecord,
-  type ToolCallResult,
-} from './types.ts';
+import type { StorybookInstanceRecord } from './instances/types.ts';
+
+/**
+ * Result of an MCP `tools/call` request, as returned by `@storybook/addon-mcp`. Loose: servers may
+ * legally attach extra fields (`_meta`, image/audio content properties); we validate only what the
+ * callers render and pass the rest through.
+ */
+export const ToolResultContentItemSchema = v.looseObject({
+  type: v.string(),
+  text: v.optional(v.string()),
+});
+export type ToolResultContentItem = v.InferOutput<typeof ToolResultContentItemSchema>;
+
+export const ToolCallResultSchema = v.looseObject({
+  content: v.optional(v.array(ToolResultContentItemSchema)),
+  /** The JSON matching the tool's published `outputSchema`, when it declares one. */
+  structuredContent: v.optional(v.unknown()),
+  isError: v.optional(v.boolean()),
+});
+export type ToolCallResult = v.InferOutput<typeof ToolCallResultSchema>;
+
+/** A tool descriptor from an MCP `tools/list` response. */
+export const McpToolDescriptorSchema = v.looseObject({
+  name: v.string(),
+  description: v.optional(v.string()),
+  inputSchema: v.optional(
+    v.looseObject({
+      properties: v.optional(
+        v.record(
+          v.string(),
+          v.looseObject({
+            type: v.optional(v.string()),
+            description: v.optional(v.string()),
+          })
+        )
+      ),
+      required: v.optional(v.array(v.string())),
+    })
+  ),
+});
+export type McpToolDescriptor = v.InferOutput<typeof McpToolDescriptorSchema>;
 
 /**
  * Marks the request as coming from a trusted local Storybook client. `@storybook/addon-mcp` uses

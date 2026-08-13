@@ -15,19 +15,22 @@
  * all three — they never share a map at runtime.
  */
 
+import { getChannel } from '../../channels/channel-slot.ts';
 import {
+  OpenServiceInternalServiceError,
   OpenServiceMissingChannelError,
   OpenServiceMissingServiceError,
+  OpenServiceOperationNameCollisionError,
 } from '../../server-errors.ts';
-import { getChannel } from '../../channels/channel-slot.ts';
 import { generateClientId } from './service-channel.ts';
 import { createServiceRuntime } from './service-runtime.ts';
-import type { StaticLoader } from './static-fetch.ts';
 import { createSnapshotReconciler } from './service-sync.ts';
 import { connectServiceToChannel } from './service-transport.ts';
+import type { StaticLoader } from './static-fetch.ts';
 import type {
   AnyServiceDefinition,
   Commands,
+  GetServiceOptions,
   Queries,
   RuntimeService,
   ServiceDefinition,
@@ -66,6 +69,19 @@ function getRegistry(): Map<string, RegistryEntry> {
   registryGlobal[REGISTRY_SYMBOL] ??= new Map<string, RegistryEntry>();
 
   return registryGlobal[REGISTRY_SYMBOL];
+}
+
+function assertUniqueOperationNames(definition: AnyServiceDefinition): void {
+  const duplicateName = Object.keys(definition.queries).find((name) =>
+    Object.hasOwn(definition.commands, name)
+  );
+
+  if (duplicateName) {
+    throw new OpenServiceOperationNameCollisionError({
+      serviceId: definition.id,
+      operationName: duplicateName,
+    });
+  }
 }
 
 /**
@@ -213,6 +229,8 @@ export function registerService<
   registration?: ServiceRegistrationOptions<TState, TQueries, TCommands>,
   { relay = false, staticLoader }: ServiceRegisterOptions = {}
 ): ServiceInstance<TState, TQueries, TCommands> & ServiceRegistryApi {
+  assertUniqueOperationNames(definition as AnyServiceDefinition);
+
   const registry = getRegistry();
 
   // Registration is idempotent by id. Re-registering an already-registered service returns the
@@ -329,12 +347,23 @@ export async function describeService(serviceId: ServiceId): Promise<ServiceDesc
  *
  * Query and command contexts delegate cross-service calls through this lookup so one service can reuse
  * another's runtime contract. Synchronous because callers need it inside sync query handlers.
+ *
+ * Services with `internal: true` require `{ internal: true }` — otherwise this throws
+ * {@link OpenServiceInternalServiceError}. Do not depend on internal OSA from public adapters;
+ * prefer public toolsets (`defineToolset`) instead.
  */
-export function getService<TInstance = RuntimeService>(serviceId: ServiceId): TInstance {
+export function getService<TInstance = RuntimeService>(
+  serviceId: ServiceId,
+  options?: GetServiceOptions
+): TInstance {
   const entry = getRegistry().get(serviceId);
 
   if (!entry) {
     throw new OpenServiceMissingServiceError({ serviceId });
+  }
+
+  if (entry.definition.internal && !options?.internal) {
+    throw new OpenServiceInternalServiceError({ serviceId });
   }
 
   return entry.instance as unknown as TInstance;

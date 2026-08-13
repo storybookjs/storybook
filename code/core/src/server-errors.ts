@@ -1,11 +1,10 @@
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import type { Status } from './shared/status-store/index.ts';
-import type { StatusTypeId } from './shared/status-store/index.ts';
+import type { ValidationMeta } from './shared/open-service/errors.ts';
 import { formatIssues } from './shared/open-service/errors.ts';
 import type { ServiceId } from './shared/open-service/types.ts';
-import type { ValidationMeta } from './shared/open-service/errors.ts';
+import type { Status, StatusTypeId } from './shared/status-store/index.ts';
 import { StorybookError } from './storybook-error.ts';
 
 export { StorybookError } from './storybook-error.ts';
@@ -190,6 +189,17 @@ export class OpenServiceMissingServiceError extends StorybookError {
   }
 }
 
+export class OpenServiceInternalServiceError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId }) {
+    super({
+      name: 'OpenServiceInternalServiceError',
+      category: Category.CORE_COMMON,
+      code: 19,
+      message: `Service "${data.serviceId}" is internal. Pass { internal: true } to getService() only if you intentionally depend on an unstable OSA surface. Internal services may change without notice.`,
+    });
+  }
+}
+
 export class OpenServiceUnimplementedOperationError extends StorybookError {
   constructor(public data: { serviceId: ServiceId; name: string; kind: 'query' | 'command' }) {
     super({
@@ -283,6 +293,65 @@ export class OpenServiceRemoteCommandUnhandledError extends StorybookError {
       category: Category.CORE_COMMON,
       code: 15,
       message: `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
+    });
+  }
+}
+
+export class OpenServiceOperationNameCollisionError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; operationName: string }) {
+    super({
+      name: 'OpenServiceOperationNameCollisionError',
+      category: Category.CORE_COMMON,
+      code: 16,
+      message: `Service "${data.serviceId}" cannot register "${data.operationName}" as both a query and a command.`,
+    });
+  }
+}
+
+export class OpenServiceMissingOriginError extends StorybookError {
+  constructor(public data: { toolsetId: string; methodName: string }) {
+    super({
+      name: 'OpenServiceMissingOriginError',
+      category: Category.CORE_COMMON,
+      code: 17,
+      message: `Method "${data.toolsetId}.${data.methodName}" requires a Storybook server origin. Run it against a live Storybook so the adapter can provide ctx.origin.`,
+    });
+  }
+}
+
+export class OpenServiceUnknownStoryIdsError extends StorybookError {
+  constructor(public data: { unknownIds: string[] }) {
+    const list = data.unknownIds.map((id) => `- ${id}`).join('\n');
+    const plural = data.unknownIds.length === 1 ? 'ID is' : 'IDs are';
+    super({
+      name: 'OpenServiceUnknownStoryIdsError',
+      category: Category.CORE_COMMON,
+      code: 18,
+      message: `Refusing to publish review: ${data.unknownIds.length} story ${plural} not backed by a story entry in the live Storybook index (docs entries cannot be review slots):\n${list}`,
+    });
+  }
+}
+
+// CORE_COMMON error code 20 was retired with the stateless core/docs OSA facade.
+export class OpenServiceTestRunTimeoutError extends StorybookError {
+  constructor(public data: { timeoutMs: number; requestId: string }) {
+    super({
+      name: 'OpenServiceTestRunTimeoutError',
+      category: Category.CORE_COMMON,
+      code: 21,
+      message: `Timed out after ${data.timeoutMs}ms waiting for addon-vitest response to test run "${data.requestId}". Ensure @storybook/addon-vitest is installed and responding.`,
+    });
+  }
+}
+
+export class OpenServiceServicesAppliedTwiceError extends StorybookError {
+  constructor() {
+    super({
+      name: 'OpenServiceServicesAppliedTwiceError',
+      category: Category.CORE_COMMON,
+      code: 22,
+      message: dedent`The "services" preset property was applied twice, but should only be applied once.
+        Multiple code paths applying it will cause service and toolset registration to fail.`,
     });
   }
 }
@@ -867,6 +936,191 @@ export class AutomigrateError extends StorybookError {
       message: dedent`
         An error occurred while running the automigrate command.
       `,
+    });
+  }
+}
+
+export type ExecaCommandErrorData = {
+  command: string;
+  args: string[];
+  exitCode?: number | string;
+  signal?: string;
+  logs: string;
+  packageManagerErrorCode?: string;
+};
+
+export function formatExecaCommand(data: Pick<ExecaCommandErrorData, 'command' | 'args'>) {
+  return [data.command, ...data.args].join(' ');
+}
+
+export function formatExecaFailureDetails(data: ExecaCommandErrorData) {
+  const trimmedLogs = data.logs.trim();
+
+  if (trimmedLogs) {
+    return trimmedLogs;
+  }
+
+  if (data.exitCode != null) {
+    return `Process exited with code ${data.exitCode}`;
+  }
+
+  if (data.signal) {
+    return `Process was killed with signal ${data.signal}`;
+  }
+
+  return 'No additional output was captured.';
+}
+
+function createExecaCommandFailedMessage(data: ExecaCommandErrorData) {
+  return dedent`
+    Command failed: ${formatExecaCommand(data)}
+
+    ${formatExecaFailureDetails(data)}`;
+}
+
+export class ExecaCommandFailedError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'ExecaCommandFailedError',
+      category: Category.CLI,
+      code: 3,
+      cause: data.cause,
+      message: createExecaCommandFailedMessage(data),
+    });
+  }
+}
+
+export class PackageInstallFailedError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PackageInstallFailedError',
+      category: Category.CLI_INIT,
+      code: 10,
+      cause: data.cause,
+      message: dedent`
+        Failed to install dependencies using ${data.command}.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PackageInstallDependencyConflictError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PackageInstallDependencyConflictError',
+      category: Category.CLI_INIT,
+      code: 11,
+      cause: data.cause,
+      message: dedent`
+        Dependency installation failed because of a version conflict.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PackageInstallMissingManifestError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PackageInstallMissingManifestError',
+      category: Category.CLI_INIT,
+      code: 12,
+      cause: data.cause,
+      message: dedent`
+        Dependency installation failed because no package.json was found in the current directory.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PnpmIgnoredBuildsError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PnpmIgnoredBuildsError',
+      category: Category.CLI_INIT,
+      code: 13,
+      cause: data.cause,
+      message: dedent`
+        pnpm blocked postinstall scripts for one or more packages.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PnpmNoTtyModulesDirError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PnpmNoTtyModulesDirError',
+      category: Category.CLI_INIT,
+      code: 14,
+      cause: data.cause,
+      message: dedent`
+        pnpm aborted while removing the modules directory because no TTY was available.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PackageManagerBinaryNotFoundError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PackageManagerBinaryNotFoundError',
+      category: Category.CLI_INIT,
+      code: 15,
+      cause: data.cause,
+      message: dedent`
+        Storybook could not find the "${data.command}" command on your PATH.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class PlaywrightInstallFailedError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'PlaywrightInstallFailedError',
+      category: Category.CLI_INIT,
+      code: 16,
+      cause: data.cause,
+      message: dedent`
+        Failed to install Playwright browser binaries.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class NuxtModuleAddFailedError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'NuxtModuleAddFailedError',
+      category: Category.CLI_INIT,
+      code: 17,
+      cause: data.cause,
+      message: dedent`
+        Failed to add @nuxtjs/storybook to the Nuxt project via nuxi.
+
+        ${formatExecaFailureDetails(data)}`,
+    });
+  }
+}
+
+export class AutomigrateAddonA11yTestError extends StorybookError {
+  constructor(public data: ExecaCommandErrorData & { cause?: unknown }) {
+    super({
+      name: 'AutomigrateAddonA11yTestError',
+      category: Category.CLI_AUTOMIGRATE,
+      code: 3,
+      cause: data.cause,
+      message: dedent`
+        Failed while running the addon-a11y-addon-test automigration.
+
+        ${formatExecaFailureDetails(data)}`,
     });
   }
 }

@@ -1,27 +1,28 @@
-import React, { type ComponentType } from 'react';
 import type { Decorator } from '@storybook/react-vite';
+import type { AnyRootRoute, AnyRoute, Router } from '@tanstack/react-router';
 import {
   createMemoryHistory,
   createRootRoute,
   createRoute,
   createRouter,
-  type Route,
+  defaultStringifySearch,
+  interpolatePath,
   RouterProvider,
   type RootRoute,
-  interpolatePath,
-  defaultStringifySearch,
+  type Route,
 } from '@tanstack/react-router';
-import type { Router, AnyRootRoute, AnyRoute } from '@tanstack/react-router';
-import type { RouterParameters } from './types.ts';
+import React, { type ComponentType } from 'react';
 import {
   duplicateRouteTree,
   findRootRoute,
   mountPathFor,
+  originalRouteId,
   resolveStoryLeaf,
   type DuplicatedTree,
 } from './duplicate-tree.ts';
-import { isRoute } from './utils.ts';
 import { normalizeFileRoutePath } from './path-utils.ts';
+import type { RouterParameters } from './types.ts';
+import { isRoute } from './utils.ts';
 
 interface TanStackRouterStoryProps {
   Story: ComponentType;
@@ -41,7 +42,7 @@ interface ResolvedTree {
 
 const StoryContext = React.createContext<{ Story: ComponentType }>({ Story: () => null });
 
-const StoryFromContext: ComponentType = () => {
+export const StoryFromContext: ComponentType = () => {
   const { Story } = React.useContext(StoryContext);
   return <Story />;
 };
@@ -51,21 +52,20 @@ export const tanstackRouteDecorator: Decorator = (Story, context) => {
 };
 
 function TanStackRouterStory({ Story, context }: TanStackRouterStoryProps) {
+  const router = context.tanstackRouter as Router<AnyRootRoute> | undefined;
+
   const routerContext = context.parameters.tanstack?.router?.useRouterContext?.({
     storyContext: context,
   });
 
-  const router = React.useMemo(
-    () => createStoryRouter({ Story: StoryFromContext, context, routerContext }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [context.id]
-  );
+  if (!router) {
+    throw new Error(
+      'No story router found on the story context: the `routerBeforeEach` hook of @storybook/tanstack-react did not run before rendering. Note that portable stories are not supported by this framework.'
+    );
+  }
 
   const providerContext = React.useMemo(
-    () => ({
-      ...context.parameters.tanstack?.router?.context,
-      ...routerContext,
-    }),
+    () => routerContext,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [context.id, routerContext]
   );
@@ -211,9 +211,10 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
     const leaf = resolveStoryLeaf(tree, {
       path: routerParameters.path as string | undefined,
       boundRouteId: resolvedRoute && resolvedRoute !== rootRoute ? resolvedRoute.id : undefined,
+      params: routerParameters.params as Record<string, unknown> | undefined,
     });
 
-    injectStoryComponent(leaf, Story, routeOverrides, leaf.id);
+    injectStoryComponent(leaf, Story, routeOverrides, originalRouteId(tree, leaf) ?? leaf.id);
     const renderLeaf = ensureMatchableLeaf(tree, leaf);
     return { tree, leaf: renderLeaf };
   }
@@ -229,7 +230,7 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
     syntheticRoot.addChildren([routerParameterRoute]);
     const tree = duplicateRouteTree(syntheticRoot, { overrides: routeOverrides });
     const leaf = tree.byId.get(routerParameterRoute.id) ?? tree.root;
-    injectStoryComponent(leaf, Story, routeOverrides, leaf.id);
+    injectStoryComponent(leaf, Story, routeOverrides, routerParameterRoute.id);
     const renderLeaf = ensureMatchableLeaf(tree, leaf);
     return { tree, leaf: renderLeaf };
   }
@@ -247,16 +248,29 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
   const syntheticRoot = createRootRoute(
     (routeOverrides as Record<string, any> | undefined)?.__root__ ?? {}
   );
+  // The other branches apply overrides through `duplicateRouteTree`; this
+  // branch builds the child directly, so merge the leaf's override in here too
+  // (otherwise a story-supplied `component`/`loader` override is dropped).
+  const leafOverrideKey = syntheticRouteId ?? (plainRoutePath as string | undefined);
+  const leafOverride = leafOverrideKey
+    ? ((routeOverrides as Record<string, any> | undefined)?.[leafOverrideKey] ?? {})
+    : {};
   const syntheticChild = createRoute({
     component: () => <Story />,
     id: syntheticRouteId,
     path: plainRoutePath as string | undefined,
     ...plainRouteRest,
+    ...leafOverride,
     getParentRoute: () => syntheticRoot,
   } as any);
   syntheticRoot.addChildren([syntheticChild]);
 
-  injectStoryComponent(syntheticChild, Story, routeOverrides, syntheticChild.id);
+  injectStoryComponent(
+    syntheticChild,
+    Story,
+    routeOverrides,
+    syntheticRouteId ?? (plainRoutePath as string | undefined) ?? syntheticChild.id
+  );
   return {
     tree: { root: syntheticRoot, byId: new Map([[syntheticChild.id, syntheticChild]]) },
     leaf: syntheticChild,

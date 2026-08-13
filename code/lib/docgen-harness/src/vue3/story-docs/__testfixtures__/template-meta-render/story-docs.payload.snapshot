@@ -1,0 +1,20 @@
+{
+  "id": "template-meta-render",
+  "import": "import MetaRenderButton from './MetaRenderButton.vue';",
+  "name": "MetaRenderButton",
+  "path": "__PATH__",
+  "stories": {
+    "forms-template-meta-render--primary": {
+      "description": undefined,
+      "id": "forms-template-meta-render--primary",
+      "name": "Primary",
+      "summary": undefined,
+    },
+    "forms-template-meta-render--secondary": {
+      "description": undefined,
+      "id": "forms-template-meta-render--secondary",
+      "name": "Secondary",
+      "summary": undefined,
+    },
+  },
+}

@@ -429,6 +429,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             '@storybook/addon-vitest/internal/global-setup',
             '@storybook/addon-vitest/internal/test-utils',
             'storybook/preview-api',
+            // imported by the setup files; without pinning, its CJS-only deps (via
+            // @testing-library/dom) reach the browser raw on hoisted node_modules layouts
+            'storybook/test',
             ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
               ? ['react-dom/test-utils']
               : []),

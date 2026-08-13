@@ -37,6 +37,20 @@
 </template>",
       "summary": undefined,
     },
+    "forms-render-function--slot-children": {
+      "description": undefined,
+      "id": "forms-render-function--slot-children",
+      "name": "Slot Children",
+      "snippet": "<template>
+  <RenderFunctionButton label="Confirm">
+    <span>Extra</span>
+    <template #footer>
+      <strong>Note</strong>
+    </template>
+  </RenderFunctionButton>
+</template>",
+      "summary": undefined,
+    },
     "forms-render-function--spread-override": {
       "description": undefined,
       "id": "forms-render-function--spread-override",

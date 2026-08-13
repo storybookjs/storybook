@@ -26,6 +26,7 @@ import {
   buildComponentOutletTemplate,
   buildTemplate,
   formatPropInTemplate,
+  formatTemplateMarkup,
   isValidIdentifier,
 } from '../template-grammar.ts';
 
@@ -318,7 +319,7 @@ const renderStorySnippet = (
   }
   const template =
     userMarkup?.kind === 'literal'
-      ? userMarkup.markup
+      ? formatTemplateMarkup(userMarkup.markup)
       : buildTemplate(snippetMeta.selector!, {
           inputs: bindings!.inputs,
           outputs: bindings!.outputs,

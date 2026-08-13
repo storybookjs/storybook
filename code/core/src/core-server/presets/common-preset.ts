@@ -348,15 +348,15 @@ export const managerEntries = async (existing: any) => {
 };
 
 async function getHeadlessChangeDetectionAdapter(options: Options) {
-  const core = await options.presets.apply<CoreConfig>('core', {});
-  if (!core?.builder) {
-    return undefined;
-  }
-  const resolvedPreviewBuilder =
-    typeof core.builder === 'string' ? core.builder : core.builder.name;
-  const previewBuilder = await getPreviewBuilder(resolvedPreviewBuilder);
   try {
-    return previewBuilder.changeDetectionAdapter?.(options);
+    const core = await options.presets.apply<CoreConfig>('core', {});
+    if (!core?.builder) {
+      return undefined;
+    }
+    const resolvedPreviewBuilder =
+      typeof core.builder === 'string' ? core.builder : core.builder.name;
+    const previewBuilder = await getPreviewBuilder(resolvedPreviewBuilder);
+    return await previewBuilder.changeDetectionAdapter?.(options);
   } catch (error) {
     logger.warn('Change detection: adapter initialisation failed');
     logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));

@@ -602,6 +602,29 @@ describe('module-graph open service', () => {
       expect(runtime.queries.status.get(undefined)).toEqual({ value: 'ready' });
     });
 
+    it('settles the graph as unavailable when getAdapter rejects', async () => {
+      const getAdapter = vi.fn(async () => {
+        throw new Error('preview builder missing');
+      });
+
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getAdapter,
+      });
+
+      await expect(runtime.queries.status.loaded(undefined)).resolves.toEqual({
+        value: 'unavailable',
+        reason: 'builder does not support change detection',
+      });
+      await expect(runtime.queries.status.loaded(undefined)).resolves.toEqual({
+        value: 'unavailable',
+        reason: 'builder does not support change detection',
+      });
+      expect(getAdapter).toHaveBeenCalledTimes(1);
+    });
+
     it('builds the graph from the adapter and turns index invalidations into targeted updates', async () => {
       const reverseIndex = buildReverseIndex([
         ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],

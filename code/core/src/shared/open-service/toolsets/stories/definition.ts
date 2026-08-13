@@ -160,6 +160,16 @@ export type CreateStoriesToolsetOptions = {
   reviewEnabled?: boolean;
 };
 
+const GIT_UNUSABLE_REASONS = new Set(['not a git repository', 'git is not available']);
+
+function emptyChangedStories(): ChangedStoriesOutput {
+  return {
+    stories: [],
+    counts: { new: 0, modified: 0, affected: 0 },
+    unreachableFiles: [],
+  };
+}
+
 function reasonForChangeDetectionReadiness(
   readiness: Exclude<Awaited<ReturnType<ChangeDetectionReadinessAccess>>, { status: 'ready' }>
 ): string {
@@ -169,6 +179,12 @@ function reasonForChangeDetectionReadiness(
       : `Storybook change detection is unavailable: ${readiness.reason}.`;
   }
   return `Storybook change detection failed: ${readiness.error.message}`;
+}
+
+function isGitUnusableReadiness(
+  readiness: Awaited<ReturnType<ChangeDetectionReadinessAccess>>
+): boolean {
+  return readiness.status === 'unavailable' && GIT_UNUSABLE_REASONS.has(readiness.reason);
 }
 
 function describePreview(ctx: ToolsetCtx, reviewEnabled: boolean): string {
@@ -287,6 +303,21 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
 
           const changeDetection = await getChangeDetectionReadiness();
           if (changeDetection.status !== 'ready') {
+            if (isGitUnusableReadiness(changeDetection)) {
+              const data = emptyChangedStories();
+              await reportToolsetTelemetry(ctx, 'tool:getChangedStories', {
+                toolset: 'dev',
+                storyCount: 0,
+                newStoryCount: 0,
+                modifiedStoryCount: 0,
+                affectedStoryCount: 0,
+              });
+              return {
+                ok: true,
+                data,
+                markdown: formatChangedStories(data, ctx, { reviewEnabled }),
+              };
+            }
             throw new OpenServiceModuleGraphUnavailableError({
               reason: reasonForChangeDetectionReadiness(changeDetection),
             });

@@ -30,7 +30,9 @@ export function parseStorybookWorkflowShellCommands(commands: string[]): Storybo
   return commands.flatMap(parsePluginWorkflowCalls);
 }
 
-export function normalizeStorybookWorkflowName(name: string): string | undefined {
+export function normalizeStorybookWorkflowName(
+  name: string
+): (typeof STORYBOOK_WORKFLOW_TOOL_NAMES)[number] | undefined {
   return STORYBOOK_WORKFLOW_TOOL_NAMES.find(
     (toolName) =>
       name === toolName ||

@@ -291,6 +291,23 @@ describe('stories.changed', () => {
     expect(outcome.markdown).toBe('No new, modified, or related stories detected.');
   });
 
+  it.each(['not a git repository', 'git is not available'] as const)(
+    'degrades to "no changes detected" when change detection is unavailable because %s',
+    async (reason) => {
+      getChangeDetectionReadiness.mockResolvedValue({ status: 'unavailable', reason });
+
+      const outcome = await runChanged(mcpCtx);
+
+      expect(outcome.data).toEqual({
+        stories: [],
+        counts: { new: 0, modified: 0, affected: 0 },
+        unreachableFiles: [],
+      });
+      expect(outcome.markdown).toBe('No new, modified, or related stories detected.');
+      expect(getStatuses).not.toHaveBeenCalled();
+    }
+  );
+
   it('anchors Git-relative paths at the repository root, not the Storybook working directory', async () => {
     await runChanged();
 

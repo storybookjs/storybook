@@ -24,6 +24,21 @@ describe('change-detection readiness host', () => {
     expect(host).toHaveBeenCalledTimes(1);
   });
 
+  it('converts a rejecting host into an error readiness result', async () => {
+    setChangeDetectionHost(async () => {
+      throw new Error('status store unavailable');
+    });
+
+    await expect(getChangeDetectionReadiness()).resolves.toEqual({
+      status: 'error',
+      error: expect.objectContaining({ message: 'status store unavailable' }),
+    });
+    await expect(getChangeDetectionReadiness()).resolves.toEqual({
+      status: 'error',
+      error: expect.objectContaining({ message: 'status store unavailable' }),
+    });
+  });
+
   it('runs the host once when two readiness reads overlap', async () => {
     const host = vi.fn(async () => {
       setChangeDetectionReadiness({ status: 'ready' });

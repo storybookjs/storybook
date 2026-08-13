@@ -38,7 +38,14 @@ export function setChangeDetectionHost(next?: ChangeDetectionHost): void {
 
 export function getChangeDetectionReadiness(): Promise<ChangeDetectionReadiness> {
   if (host && !hostStarted) {
-    hostStarted = Promise.resolve().then(() => host?.());
+    hostStarted = Promise.resolve()
+      .then(() => host?.())
+      .catch((error) => {
+        setChangeDetectionReadiness({
+          status: 'error',
+          error: error instanceof Error ? error : new Error(String(error)),
+        });
+      });
   }
   const started = hostStarted ?? Promise.resolve();
   return started.then(() =>

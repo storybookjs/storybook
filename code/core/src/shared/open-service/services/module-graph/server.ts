@@ -135,13 +135,21 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
     if (adapterResolved) {
       return;
     }
-    if (!options.getAdapter) {
+    const getAdapter = options.getAdapter;
+    if (!getAdapter) {
       await adapterPromise;
       return;
     }
-    obtainAdapter ??= options.getAdapter().then((adapter) => {
-      resolveChangeDetectionAdapter(adapter);
-    });
+    obtainAdapter ??= Promise.resolve()
+      .then(() => getAdapter())
+      .then(
+        (adapter) => {
+          resolveChangeDetectionAdapter(adapter);
+        },
+        () => {
+          resolveChangeDetectionAdapter(undefined);
+        }
+      );
     await obtainAdapter;
   }
 

@@ -106,7 +106,8 @@ export async function getModuleGraphService(): Promise<ModuleGraphService | unde
   const getService = await probe();
   if (!getService) return undefined;
   try {
-    // Deliberate internal-OSA dependency until the toolset registry replaces it in Milestone 4.
+    // Deliberate internal-OSA dependency: this probes whether the *service* is available in this
+    // process, an availability question the toolset registry does not answer.
     return getService(MODULE_GRAPH_SERVICE_ID, { internal: true }) as
       | ModuleGraphService
       | undefined;

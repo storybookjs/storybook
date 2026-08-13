@@ -80,7 +80,7 @@ const context = (
 ): BuildDocgenContext => ({ manager, options, logger });
 
 describe('buildDocgenPayload', () => {
-  it('extracts argTypes from the analyzer and attaches the raw class record unfiltered', () => {
+  it('extracts argTypes from the analyzer and derives the snippet meta', () => {
     givenStoryFile();
     const classMeta = componentEntry();
     const manager = managerReturning(metaFor(classMeta));
@@ -102,10 +102,26 @@ describe('buildDocgenPayload', () => {
       name: 'label',
       table: { category: 'inputs', defaultValue: { summary: 'Click me' } },
     });
-    expect(payload?.angularComponentMeta).toBe(classMeta);
+    expect(payload?.angularComponentMeta).toEqual({
+      name: 'ButtonComponent',
+      selector: undefined,
+      standalone: true,
+      inputs: ['label'],
+      outputs: [],
+      enums: [],
+    });
     expect(payload?.compodoc).toBeUndefined();
     expect(payload?.subcomponents).toBeUndefined();
     expect(payload?.error).toBeUndefined();
+  });
+
+  it('marks the snippet meta non-standalone only for an explicit `standalone: false`', () => {
+    givenStoryFile();
+    const manager = managerReturning(metaFor(componentEntry({ standalone: false })));
+
+    const payload = buildDocgenPayload({ entry }, context(manager));
+
+    expect(payload?.angularComponentMeta?.standalone).toBe(false);
   });
 
   describe('description and JSDoc tags', () => {
@@ -159,7 +175,7 @@ describe('buildDocgenPayload', () => {
     });
   });
 
-  describe('modern extraction on the analyzer path', () => {
+  describe('extraction rules on the analyzer path', () => {
     it('keeps plain-text comments intact where an HTML unwrapper would mangle them', () => {
       // `Array<string>` run through htmlToText loses `<string>`: a letter-opened angle bracket
       // reads as an HTML tag.

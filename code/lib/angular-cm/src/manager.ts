@@ -53,6 +53,9 @@ function createAngularProjectFactory(
         undefined,
         documentRegistry
       ),
+    // The snapshots hold every file's source text and are shared across projects, so they outlive
+    // any single one and have to be dropped alongside them.
+    recycle: () => fsFileSnapshots.clear(),
     dispose: () => fsFileSnapshots.clear(),
   };
 }

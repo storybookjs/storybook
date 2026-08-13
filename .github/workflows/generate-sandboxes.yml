@@ -80,6 +80,13 @@ jobs:
         with:
           node-version-file: '.nvmrc'
 
+      # Node's bundled npm is older than 11.10.0 and silently ignores
+      # NPM_CONFIG_MIN_RELEASE_AGE during scaffold. Keep in sync with
+      # BEFORE_SANDBOX_NPM_MIN_VERSION in scripts/sandbox/utils/yarn.ts.
+      - name: Install npm with min-release-age support
+        working-directory: ${{ github.workspace }}
+        run: npm install -g npm@11.10.0
+
       - name: Setup git user
         run: |
           git config --global user.name "storybook-bot"

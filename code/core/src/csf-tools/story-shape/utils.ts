@@ -2,6 +2,16 @@ import { type NodePath, types as t } from 'storybook/internal/babel';
 
 import type { CsfFile } from '../CsfFile.ts';
 
+/** Peels TS assertion/satisfies wrappers and parentheses off an expression node. */
+export const unwrapExpression = (node: t.Node): t.Node =>
+  t.isTSAsExpression(node) ||
+  t.isTSSatisfiesExpression(node) ||
+  t.isTSNonNullExpression(node) ||
+  t.isTSTypeAssertion(node) ||
+  t.isParenthesizedExpression(node)
+    ? unwrapExpression(node.expression)
+    : node;
+
 /** Static key of an object property, or `null` when computed/non-literal. */
 export const keyOf = (p: t.ObjectProperty): string | null =>
   p.computed
@@ -11,6 +21,43 @@ export const keyOf = (p: t.ObjectProperty): string | null =>
       : t.isStringLiteral(p.key)
         ? p.key.value
         : null;
+
+/** Value of an object expression's own property, when it has one. */
+export const propertyValue = (
+  object: t.ObjectExpression | undefined | null,
+  name: string
+): t.Node | undefined =>
+  object?.properties.find(
+    (candidate): candidate is t.ObjectProperty =>
+      t.isObjectProperty(candidate) && keyOf(candidate) === name
+  )?.value;
+
+/**
+ * Object literal a function returns, when it returns one directly.
+ *
+ * Covers the concise body (`() => ({ … })`) and a block body whose `return` carries an object
+ * literal, which is the shape template-based renderers use for `render`.
+ */
+export const returnedObjectExpression = (
+  fn: t.Node | undefined
+): t.ObjectExpression | undefined => {
+  if (
+    !t.isArrowFunctionExpression(fn) &&
+    !t.isFunctionExpression(fn) &&
+    !t.isFunctionDeclaration(fn)
+  ) {
+    return undefined;
+  }
+  if (t.isObjectExpression(fn.body)) {
+    return fn.body;
+  }
+  const returned = t.isBlockStatement(fn.body)
+    ? fn.body.body.find((statement): statement is t.ReturnStatement =>
+        t.isReturnStatement(statement)
+      )?.argument
+    : undefined;
+  return t.isObjectExpression(returned) ? returned : undefined;
+};
 
 /** Resolve a local story helper used by `Template.bind({})` or `render: Template`. */
 export function resolveIdentifierInit(

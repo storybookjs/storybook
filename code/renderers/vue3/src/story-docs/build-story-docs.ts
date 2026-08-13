@@ -1,8 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
-import { genImport } from 'knitwork';
-
 import {
   STORY_FILE_TEST_REGEXP,
   getComponentIdFromEntry,
@@ -10,11 +8,13 @@ import {
 } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import {
+  buildImportStatements,
   collectImportBindings,
   extractStoryJSDocInfo,
   keyOf,
   loadCsf,
   metaObjectPath,
+  resolveComponentImport,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
@@ -96,17 +96,8 @@ function createImportStatement(csf: ParsedCsf): string | undefined {
     return undefined;
   }
 
-  const binding = collectImportBindings(csf._file.path).get(componentName);
-  // Namespace imports should never reach here
-  if (!binding || binding.importName === '*') {
-    return undefined;
-  }
-
-  const specifier =
-    binding.importName === 'default'
-      ? componentName
-      : [{ name: binding.importName, as: componentName }];
-  return genImport(binding.importId, specifier, { singleQuotes: true });
+  const ref = resolveComponentImport(componentName, collectImportBindings(csf._file.path));
+  return buildImportStatements({ refs: [ref] }).join('\n') || undefined;
 }
 
 function extractStories(csf: ParsedCsf): Record<string, StoryDoc> {

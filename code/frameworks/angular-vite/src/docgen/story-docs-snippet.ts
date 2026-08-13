@@ -1,164 +1,135 @@
-/**
- * Server-side renderer for Angular story snippets. The binding grammar and value formatting mirror
- * the runtime generator (`client/renderer/ComputesTemplateFromComponent.ts`) so static service
- * snippets read like what the preview's source decorator emits. The relevant pieces are duplicated
- * rather than imported: the runtime module reads decorator metadata through `@angular/core`, which
- * must not load in the dev-server process.
- */
+// Wraps a story's template in the host component a reader would have to write to run it, so the
+// snippet is copy-pasteable on its own. Server-side only: the preview renderer still emits the bare
+// template, which is what the legacy runtime generator produced.
+import { isValidIdentifier } from '../template-grammar.ts';
 
-/** An arg value that could not be evaluated statically; its source text is inlined verbatim. */
-export class RawArgExpression {
-  constructor(public readonly text: string) {}
-}
+const HOST_SELECTOR = 'app-demo';
+const HOST_CLASS = 'DemoComponent';
 
-export interface SnippetInputBinding {
-  /** Template (binding) name of the input. */
-  name: string;
-  /** Evaluated arg value, or a {@link RawArgExpression} carrying the arg's source text. */
-  value: unknown;
-}
-
-export interface RenderComponentSnippetInput {
-  selector: string;
-  inputs: SnippetInputBinding[];
-  /** Template (binding) names of the outputs to bind, `model()` outputs already `Change`-suffixed. */
+export interface HostComponentSnippetInput {
+  /** Template the story renders, as `buildTemplate` or `buildComponentOutletTemplate` produced it. */
+  template: string;
+  /** Local name the template and the `imports` array refer to the story's component by. */
+  componentName: string;
+  /** Import statement for the component; absent when it is declared in the story file itself. */
+  componentImport?: string;
+  /** Whether the template reaches the component through `*ngComponentOutlet` rather than a tag. */
+  viaComponentOutlet: boolean;
+  /** `false` for a `standalone: false` component, which only its declaring NgModule can provide. */
+  standalone: boolean;
+  /** NgModules the story's `moduleMetadata` lists, which stand in for a non-standalone component. */
+  ngModules?: { names: string[]; importStatements: string[] };
+  /** Output binding names, each of which needs a handler for the template to compile. */
   outputs: string[];
 }
 
-const isValidIdentifier = (name: string): boolean => /^[a-zA-Z_$][a-zA-Z0-9_$]*$/.test(name);
-
-const formatPropInTemplate = (propertyName: string) =>
-  isValidIdentifier(propertyName) ? propertyName : `this['${propertyName}']`;
-
-/** Stringify an object with a placeholder in the circular references. */
-const stringifyCircular = (obj: unknown) => {
-  const seen = new Set();
-  return JSON.stringify(obj, (key, value) => {
-    if (typeof value === 'object' && value !== null) {
-      if (seen.has(value)) {
-        return '[Circular]';
-      }
-      seen.add(value);
-    }
-    return value;
-  });
-};
-
-const formatInputValue = (value: unknown): string => {
-  if (value instanceof RawArgExpression) {
-    return value.text;
-  }
-  switch (typeof value) {
-    case 'string':
-      return `'${value}'`;
-    case 'object':
-      return stringifyCircular(value)
-        .replace(/'/g, '’')
-        .replace(/\\"/g, '”')
-        .replace(/"([^-"]+)":/g, '$1: ')
-        .replace(/"/g, "'")
-        .replace(/’/g, "\\'")
-        .replace(/”/g, "\\'")
-        .split(',')
-        .join(', ');
-    default:
-      return `${value}`;
-  }
-};
-
-/** Fallback for components without a selector, matching the runtime generator's output. */
-export const renderComponentOutletSnippet = (componentName: string): string =>
-  `<ng-container *ngComponentOutlet="${componentName}"></ng-container>`;
-
-/** Which arg names a binding list covers, mirroring `argsToTemplate`'s own options. */
-export interface BindingFilter {
-  include?: readonly string[];
-  exclude?: readonly string[];
+export interface HostComponentSnippet {
+  snippet: string;
+  /** Why the snippet does not compile as written; see `StoryDoc.warning`. */
+  warning?: string;
 }
 
-const inputBindings = (inputs: SnippetInputBinding[], allowed: (name: string) => boolean) =>
-  inputs
-    .filter(({ name }) => allowed(name))
-    .map(({ name, value }) => `[${name}]="${formatInputValue(value)}"`);
+// A template literal is the only quoting that survives a multi-line template carrying both quote
+// characters, so the three sequences that would end or escape it are neutralized.
+const escapeTemplateLiteral = (template: string): string =>
+  template.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
 
-const outputBindings = (outputs: string[], allowed: (name: string) => boolean) =>
-  outputs.filter(allowed).map((name) => `(${name})="${formatPropInTemplate(name)}($event)"`);
+const unescapeTemplateLiteral = (template: string): string =>
+  template
+    .replace(/\\\$\{/g, '${')
+    .replace(/\\`/g, '`')
+    .replace(/\\\\/g, '\\');
 
-const anyName = () => true;
+// Mirrors `formatPropInTemplate`, which reaches a non-identifier output through `this['name']`.
+const memberName = (name: string): string => (isValidIdentifier(name) ? name : `['${name}']`);
 
-/**
- * The property and event bindings on their own, without the surrounding element.
- *
- * This is what `argsToTemplate(args)` expands to at runtime, except that values are inlined rather
- * than referenced by name, so the result stands alone without the story's `props: args`.
- */
-export const bindingAttributes = (
-  { inputs, outputs }: Omit<RenderComponentSnippetInput, 'selector'>,
-  filter: BindingFilter = {}
-): string[] => {
-  const allowed = (name: string) =>
-    filter.include ? filter.include.includes(name) : !filter.exclude?.includes(name);
-  return [...inputBindings(inputs, allowed), ...outputBindings(outputs, allowed)];
-};
+// A template `buildTemplate` broke over lines moves onto its own lines inside the literal too.
+const embedTemplate = (template: string): string =>
+  template.includes('\n')
+    ? `\n${template
+        .split('\n')
+        .map((line) => (line === '' ? line : `    ${line}`))
+        .join('\n')}`
+    : template;
 
-/** One story's template snippet: `<selector [input]="value" (output)="output($event)">…`. */
-export const renderComponentSnippet = ({
-  selector,
-  inputs,
+export const buildHostComponentSnippet = ({
+  template,
+  componentName,
+  componentImport,
+  viaComponentOutlet,
+  standalone,
+  ngModules,
   outputs,
-}: RenderComponentSnippetInput): string => {
-  const boundInputs = inputBindings(inputs, anyName);
-  const boundOutputs = outputBindings(outputs, anyName);
-  const templateInputs = boundInputs.length > 0 ? ` ${boundInputs.join(' ')}` : '';
-  const templateOutputs = boundOutputs.length > 0 ? ` ${boundOutputs.join(' ')}` : '';
-  return buildTemplate(selector, templateInputs, templateOutputs);
-};
-
-// https://www.w3.org/TR/2011/WD-html-markup-20110113/syntax.html#syntax-elements
-const voidElements = [
-  'area',
-  'base',
-  'br',
-  'col',
-  'command',
-  'embed',
-  'hr',
-  'img',
-  'input',
-  'keygen',
-  'link',
-  'meta',
-  'param',
-  'source',
-  'track',
-  'wbr',
-];
-
-const buildTemplate = (selector: string, inputs: string, outputs: string) => {
-  const firstSelector = selector.split(',')[0];
-  const templateReplacers: [
-    string | RegExp,
-    string | ((substring: string, ...args: any[]) => string),
-  ][] = [
-    [/(^.*?)(?=[,])/, '$1'],
-    [/(^\..+)/, 'div$1'],
-    [/(^\[.+?])/, 'div$1'],
-    [/([\w[\]]+)(\s*,[\w\s-[\],]+)+/, `$1`],
-    [/#([\w-]+)/, ` id="$1"`],
-    [/((\.[\w-]+)+)/, (_, c) => ` class="${c.split`.`.join` `.trim()}"`],
-    [/(\[.+?])/g, (_, a) => ` ${a.slice(1, -1)}`],
-    [
-      /([\S]+)(.*)/,
-      (template, elementSelector) => {
-        return voidElements.some((element) => elementSelector === element)
-          ? template.replace(/([\S]+)(.*)/, `<$1$2${inputs}${outputs} />`)
-          : template.replace(/([\S]+)(.*)/, `<$1$2${inputs}${outputs}></$1>`);
-      },
-    ],
+}: HostComponentSnippetInput): HostComponentSnippet => {
+  // A `standalone: false` component is only reachable through its declaring NgModule, which static
+  // analysis cannot find reliably. The modules the story's own `moduleMetadata` lists are the next
+  // best claim; without them the tag path leaves `imports` empty and warns why instead.
+  const importable = viaComponentOutlet || standalone;
+  const moduleNames = importable ? [] : (ngModules?.names ?? []);
+  const imports = [
+    ...(viaComponentOutlet ? ["import { NgComponentOutlet } from '@angular/common';"] : []),
+    "import { Component } from '@angular/core';",
+    ...(componentImport && importable ? [componentImport] : []),
+    ...(moduleNames.length > 0 ? (ngModules?.importStatements ?? []) : []),
   ];
 
-  return templateReplacers.reduce(
-    (prevSelector, [searchValue, replacer]) => prevSelector.replace(searchValue, replacer as any),
-    firstSelector
-  );
+  // Under `*ngComponentOutlet` the component is referenced as a value, not matched as an element,
+  // so the directive is what the host declares and the class has to be reachable from the template.
+  const declared = viaComponentOutlet
+    ? 'NgComponentOutlet'
+    : standalone
+      ? componentName
+      : moduleNames.join(', ');
+  const members = [
+    ...(viaComponentOutlet ? [`  protected readonly ${componentName} = ${componentName};`] : []),
+    ...outputs.map((name) => `  ${memberName(name)}(event: unknown) {}`),
+  ];
+  const body = members.length > 0 ? `{\n${members.join('\n')}\n}` : '{}';
+
+  const snippet = [
+    imports.join('\n'),
+    '',
+    '@Component({',
+    `  selector: '${HOST_SELECTOR}',`,
+    `  imports: [${declared}],`,
+    `  template: \`${embedTemplate(escapeTemplateLiteral(template))}\`,`,
+    '})',
+    `export class ${HOST_CLASS} ${body}`,
+  ].join('\n');
+
+  // A story-file-local component has no import to derive, so the snippet names it without bringing
+  // it into scope; it still shows the bindings the story sets, so it stays with the caveat attached.
+  const warning =
+    !importable && moduleNames.length === 0
+      ? `${componentName} is declared with \`standalone: false\`, so it cannot be listed in the ` +
+        `host component's \`imports\`. Add the NgModule that declares and exports ` +
+        `${componentName} to \`imports\` to make this snippet compile.`
+      : importable && componentImport === undefined
+        ? `${componentName} is declared in the story file, so the snippet references it without importing it.`
+        : undefined;
+
+  return warning === undefined ? { snippet } : { snippet, warning };
 };
+
+const TEMPLATE_LITERAL = /^ {2}template: `([\s\S]*)`,$/m;
+
+/**
+ * Recovers the template from a snippet {@link buildHostComponentSnippet} produced.
+ *
+ * The comparison gates read the template, not the wrapper, so they keep measuring the same thing
+ * they measured when the snippet was the template alone.
+ */
+export const extractHostComponentTemplate = (snippet: string): string | undefined => {
+  const match = TEMPLATE_LITERAL.exec(snippet);
+  return match ? unescapeTemplateLiteral(unembedTemplate(match[1])) : undefined;
+};
+
+// Inverse of `embedTemplate`, so extraction returns what `buildTemplate` produced.
+const unembedTemplate = (template: string): string =>
+  template.startsWith('\n')
+    ? template
+        .slice(1)
+        .split('\n')
+        .map((line) => line.replace(/^ {4}/, ''))
+        .join('\n')
+    : template;

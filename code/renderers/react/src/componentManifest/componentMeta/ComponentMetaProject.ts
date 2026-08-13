@@ -37,7 +37,10 @@ import {
   serializeComponentDoc,
 } from './componentMetaExtractor.ts';
 
-export class ComponentMetaProject extends ProgramBackedProject<ts.IScriptSnapshot> {
+export class ComponentMetaProject extends ProgramBackedProject<
+  ts.IScriptSnapshot,
+  ts.SourceFile | undefined
+> {
   protected readonly service: ts.LanguageService;
   /** Invalidation state machine shared with the Angular component-meta project. */
   protected readonly files: ProjectFileTracker<ts.IScriptSnapshot>;

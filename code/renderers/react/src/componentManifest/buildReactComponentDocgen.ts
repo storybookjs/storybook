@@ -1,5 +1,9 @@
 import { getComponentIdFromEntry } from 'storybook/internal/common';
-import { extractComponentDescription, extractDescription } from 'storybook/internal/csf-tools';
+import {
+  buildImportStatements,
+  extractComponentDescription,
+  extractDescription,
+} from 'storybook/internal/csf-tools';
 import type {
   ComponentManifest,
   ComponentSubcomponentManifest,
@@ -10,7 +14,7 @@ import type {
 import path from 'pathe';
 
 import type { ComponentDoc, PropItem } from './componentMeta/componentMetaExtractor.ts';
-import { type ComponentRef, getImports } from './getComponentImports.ts';
+import type { ComponentRef } from './getComponentImports.ts';
 import { type DocObj } from './reactDocgen.ts';
 import { type ComponentDocWithExportName } from './reactDocgenTypescript.ts';
 import {
@@ -68,7 +72,11 @@ function getPackageInfo(componentPath: string | undefined, fallbackPath: string)
 
 function getFallbackImport(packageName: string | undefined, componentName: string | undefined) {
   const exportName = componentName?.split('.').at(-1);
-  return packageName && exportName ? `import { ${exportName} } from "${packageName}";` : '';
+  return packageName && exportName
+    ? buildImportStatements({
+        refs: [{ importId: packageName, importName: exportName, localImportName: exportName }],
+      }).join('\n')
+    : '';
 }
 
 /**
@@ -147,7 +155,7 @@ function createSubcomponentDocgen({
   storyFilePath: string;
 }): ReactSubcomponentManifest {
   const imports =
-    getImports({ components: component ? [component] : [], packageName })
+    buildImportStatements({ refs: component ? [component] : [], packageName })
       .join('\n')
       .trim() || getFallbackImport(packageName, component?.componentName);
   const {
@@ -215,7 +223,7 @@ export function buildStoryDocsFromResolved({
   const packageName = getPackageInfo(component?.path, storyPath);
   const fallbackImport = getFallbackImport(packageName, componentName);
   const imports =
-    getImports({ components: allComponents, packageName }).join('\n').trim() || fallbackImport;
+    buildImportStatements({ refs: allComponents, packageName }).join('\n').trim() || fallbackImport;
   const storyEntries = extractStorySnippets(csf, component?.componentName, filterStoryIds);
 
   return {

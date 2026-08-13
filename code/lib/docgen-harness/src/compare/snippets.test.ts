@@ -106,6 +106,12 @@ describe('compareSnippet (angular)', () => {
     expect(() => angular(baseline, baseline)).toThrow(/child content/);
   });
 
+  it('throws when only the candidate root has binding-shaped attributes in its child content', () => {
+    const baseline = '<sb-cmp [count]="3"></sb-cmp>';
+    const candidate = '<sb-cmp [count]="3"><inner (evt)="e($event)"></inner></sb-cmp>';
+    expect(() => angular(baseline, candidate)).toThrow(/candidate snippet.*child content/s);
+  });
+
   it('does not throw for plain text or binding-free elements in baseline child content', () => {
     const textChild = '<sb-cmp [count]="3">plain text</sb-cmp>';
     expect(angular(textChild, textChild)).toEqual([]);

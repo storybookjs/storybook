@@ -1,4 +1,4 @@
-/** Framework-neutral scanning for a snippet's root element and its attribute names. */
+// Framework-neutral scanning for a snippet's root element and its attribute names.
 
 // The open tag runs to the first `>` outside quotes; the quoted alternatives absorb `>`, `=`,
 // and whitespace so value content can never leak into structure.
@@ -10,7 +10,7 @@ const ATTRIBUTE = /([^\s=]+)(?:\s*=\s*("[^"]*"|'[^']*'|\S+))?/g;
 
 export interface ParsedAttribute {
   name: string;
-  /** True for a valueless attribute like `sb-harness-action` (a mangled attribute selector). */
+  // True for a valueless attribute like `sb-harness-action` (a mangled attribute selector).
   bare: boolean;
 }
 
@@ -41,6 +41,3 @@ export const parseAttributes = (attrText: string): ParsedAttribute[] =>
     name: match[1],
     bare: match[2] === undefined,
   }));
-
-export const parseAttributeNames = (attrText: string): string[] =>
-  parseAttributes(attrText).map((attribute) => attribute.name);

@@ -59,8 +59,6 @@ export interface VueScenarioConfig {
 export interface AngularScenarioConfig {
   components: number;
   props: number;
-  /** Save-series length for the in-process engine; compodoc has no save loop and ignores it. */
-  saves: number;
 }
 
 export interface SuiteProfile {
@@ -108,7 +106,7 @@ export const DEFAULT_PROFILE: SuiteProfile = {
       saves: 10,
     },
   ],
-  angular: { components: 100, props: 8, saves: 10 },
+  angular: { components: 100, props: 8 },
 };
 
 export const QUICK_PROFILE: SuiteProfile = {
@@ -147,5 +145,5 @@ export const QUICK_PROFILE: SuiteProfile = {
       saves: 3,
     },
   ],
-  angular: { components: 10, props: 4, saves: 3 },
+  angular: { components: 10, props: 4 },
 };

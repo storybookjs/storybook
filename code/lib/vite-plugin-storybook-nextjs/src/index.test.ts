@@ -145,5 +145,11 @@ describe('VitePlugin', () => {
       },
     });
     expect(config?.resolve).not.toHaveProperty('alias');
+    expect(config?.test?.alias).toEqual(
+      expect.objectContaining({
+        'next/dist/compiled/react': expect.any(String),
+        'next/dist/compiled/react-dom': expect.any(String),
+      })
+    );
   });
 });

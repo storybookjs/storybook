@@ -12,15 +12,33 @@ export async function loadNextConfig(
   phase: Parameters<typeof loadConfig>[0],
   dir: string
 ): Promise<NextConfigComplete> {
+  let nextConfig: NextConfigComplete;
+
   try {
-    return await loadConfig(phase, dir);
+    nextConfig = await loadConfig(phase, dir);
   } catch (error) {
     if (!isTurbopackRustReactCompilerError(error)) {
       throw error;
     }
+
+    return loadConfigWithoutTurbopackRustReactCompiler(phase, dir);
   }
 
-  const rawConfigModule = await loadConfig(phase, dir, { rawConfig: true });
+  // Next 16.3+ can reuse a rawConfig:true cache entry, which has no Next defaults.
+  if (nextConfig.experimental !== undefined) {
+    return nextConfig;
+  }
+
+  return loadConfigWithoutTurbopackRustReactCompiler(phase, dir, nextConfig);
+}
+
+async function loadConfigWithoutTurbopackRustReactCompiler(
+  phase: Parameters<typeof loadConfig>[0],
+  dir: string,
+  cachedRawConfigModule?: NextConfigComplete
+): Promise<NextConfigComplete> {
+  const rawConfigModule =
+    cachedRawConfigModule ?? (await loadConfig(phase, dir, { rawConfig: true }));
   const rawConfig = interopDefault(rawConfigModule);
   const normalizedConfig = await normalizeConfig(phase, rawConfig);
   const { turbopackRustReactCompiler: _turbopackRustReactCompiler, ...experimental } =

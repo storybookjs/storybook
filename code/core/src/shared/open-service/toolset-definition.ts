@@ -1,5 +1,4 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec';
-import { toJsonSchema } from '@valibot/to-json-schema';
 
 import type { GetServiceOptions } from './types.ts';
 
@@ -76,10 +75,7 @@ export type ToolsetOutcome<TSuccess, TFailure = TSuccess> =
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 export type AnyToolsetOutcome = ToolsetOutcome<any, any>;
 
-/**
- * Published MCP output schemas must describe JSON objects. Used by adapters as a runtime guard
- * when a third-party Standard Schema could bypass the static object-shape check.
- */
+/** Output schema for a published toolset method. Must describe a JSON object. */
 export type ToolsetObjectOutputSchema = StandardSchemaV1<
   Record<string, unknown>,
   Record<string, unknown>
@@ -143,81 +139,10 @@ export type AnyToolsetDefinition = ToolsetDefinition;
  * on both branches, since adapters validate failure data into `structuredContent` too — carries at
  * least the schema's declared shape. The open record keeps the data-superset pattern legal: the
  * rendered Markdown may use fields the public contract does not ship. Intersecting with
- * `Record<string, unknown>` forces a JSON object — MCP `outputSchema` / `structuredContent` reject
- * scalars, arrays, and null.
+ * `Record<string, unknown>` keeps handler `data` an object.
  */
 type SchemaBoundData<TSchema extends AnySchema> = StandardSchemaV1.InferInput<TSchema> &
   Record<string, unknown>;
-
-function invalidOutputSchema(methodLabel: string, reason: string): Error {
-  // Plain Error: this module is on the portable `toolsets-docs` path and cannot import
-  // `server-errors`. MCP adapters surface the message at registration time.
-  // eslint-disable-next-line local-rules/no-uncategorized-errors -- portable entry constraint
-  return new Error(`Invalid output schema for ${methodLabel}: ${reason}`);
-}
-
-function isObjectOnlyJsonSchema(schema: unknown): boolean {
-  if (typeof schema !== 'object' || schema === null || Array.isArray(schema)) {
-    return false;
-  }
-  const node = schema as Record<string, unknown>;
-  const alternatives = node.anyOf ?? node.oneOf ?? node.allOf;
-  if (Array.isArray(alternatives)) {
-    return alternatives.length > 0 && alternatives.every(isObjectOnlyJsonSchema);
-  }
-  if (node.type === 'object') {
-    return true;
-  }
-  if (Array.isArray(node.type)) {
-    return node.type.length === 1 && node.type[0] === 'object';
-  }
-  if ('const' in node) {
-    const value = node.const;
-    return typeof value === 'object' && value !== null && !Array.isArray(value);
-  }
-  return 'properties' in node || 'additionalProperties' in node || 'required' in node;
-}
-
-/**
- * Rejects output schemas that are not JSON objects (MCP `structuredContent` requires an object).
- * Uses the generated JSON Schema's top-level type, then probes non-object values so optional and
- * lossy conversions cannot slip through.
- */
-export function assertObjectCompatibleOutputSchema(
-  schema: StandardSchemaV1,
-  methodLabel: string
-): void {
-  let jsonSchema: unknown;
-  try {
-    jsonSchema = toJsonSchema(schema as never, { errorMode: 'ignore' });
-  } catch {
-    jsonSchema = undefined;
-  }
-  if (!isObjectOnlyJsonSchema(jsonSchema)) {
-    throw invalidOutputSchema(
-      methodLabel,
-      'output schema must describe a JSON object; MCP structuredContent rejects scalars, arrays, and null'
-    );
-  }
-
-  const probes: unknown[] = [undefined, null, 'x', 1, true, []];
-  for (const probe of probes) {
-    const result = schema['~standard'].validate(probe);
-    if (result instanceof Promise) {
-      throw invalidOutputSchema(
-        methodLabel,
-        'output schema validation is async; MCP registration requires a sync object schema'
-      );
-    }
-    if (!result.issues) {
-      const probeLabel = probe === undefined ? 'undefined' : JSON.stringify(probe);
-      throw invalidOutputSchema(
-        methodLabel,
-        `output schema accepts ${probeLabel}; MCP structuredContent must be a JSON object`
-      );
-    }
-  }
-}
 
 type MethodOutcomeContract<TMethod> = TMethod extends {
   output: infer TOut extends AnySchema;

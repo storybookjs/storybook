@@ -9,7 +9,6 @@ export { defineService } from './service-definition.ts';
 export { seedQueryState } from './query-state.ts';
 
 export {
-  assertObjectCompatibleOutputSchema,
   defineToolset,
   reportToolsetTelemetry,
   resolveToolsetDescription,

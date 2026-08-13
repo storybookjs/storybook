@@ -121,5 +121,15 @@ const TEMPLATE_LITERAL = /^ {2}template: `([\s\S]*)`,$/m;
  */
 export const extractHostComponentTemplate = (snippet: string): string | undefined => {
   const match = TEMPLATE_LITERAL.exec(snippet);
-  return match ? unescapeTemplateLiteral(match[1]) : undefined;
+  return match ? unescapeTemplateLiteral(unembedTemplate(match[1])) : undefined;
 };
+
+// Inverse of `embedTemplate`, so extraction returns what `buildTemplate` produced.
+const unembedTemplate = (template: string): string =>
+  template.startsWith('\n')
+    ? template
+        .slice(1)
+        .split('\n')
+        .map((line) => line.replace(/^ {4}/, ''))
+        .join('\n')
+    : template;

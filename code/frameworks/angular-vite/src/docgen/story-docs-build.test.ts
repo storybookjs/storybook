@@ -557,7 +557,13 @@ describe('buildStoryDocsPayload', () => {
 
     it('reads args CSF2 assigned after the declaration', async () => {
       expect((await templatesOf(STORY_SHAPES_FILE)).get('Csf 2 Assigned Args')).toBe(
-        `<sb-button [label]="'assigned'" [count]="11" (clicked)="clicked($event)"></sb-button>`
+        [
+          '<sb-button',
+          `    [label]="'assigned'"`,
+          '    [count]="11"',
+          '    (clicked)="clicked($event)">',
+          '</sb-button>',
+        ].join('\n')
       );
     });
 
@@ -566,11 +572,23 @@ describe('buildStoryDocsPayload', () => {
     it.each([
       [
         'ReExported',
-        `<sb-button [label]="'reexported'" [count]="9" (clicked)="clicked($event)"></sb-button>`,
+        [
+          '<sb-button',
+          `    [label]="'reexported'"`,
+          '    [count]="9"',
+          '    (clicked)="clicked($event)">',
+          '</sb-button>',
+        ].join('\n'),
       ],
       [
         'RenamedStory',
-        `<sb-button [label]="'meta'" [count]="10" (clicked)="clicked($event)"></sb-button>`,
+        [
+          '<sb-button',
+          `    [label]="'meta'"`,
+          '    [count]="10"',
+          '    (clicked)="clicked($event)">',
+          '</sb-button>',
+        ].join('\n'),
       ],
       ['ReExportedTemplate', '<sb-button reexported></sb-button>'],
     ])('reads the re-exported %s story from its own config', async (storyName, expected) => {
@@ -943,7 +961,13 @@ describe('buildStoryDocsPayload', () => {
         export const Secondary = { args: { ...Primary.args, label: 'Secondary' } };
       `);
       expect(templates.get('Secondary')).toBe(
-        `<sb-button [label]="'Secondary'" [count]="1" (clicked)="clicked($event)"></sb-button>`
+        [
+          '<sb-button',
+          `    [label]="'Secondary'"`,
+          '    [count]="1"',
+          '    (clicked)="clicked($event)">',
+          '</sb-button>',
+        ].join('\n')
       );
     });
 
@@ -969,7 +993,13 @@ describe('buildStoryDocsPayload', () => {
         export const Secondary = meta.story({ args: { ...Primary.input.args, label: 'Secondary' } });
       `);
       expect(templates.get('Secondary')).toBe(
-        `<sb-button [label]="'Secondary'" [count]="1" (clicked)="clicked($event)"></sb-button>`
+        [
+          '<sb-button',
+          `    [label]="'Secondary'"`,
+          '    [count]="1"',
+          '    (clicked)="clicked($event)">',
+          '</sb-button>',
+        ].join('\n')
       );
     });
 
@@ -983,7 +1013,13 @@ describe('buildStoryDocsPayload', () => {
         export const Spread = meta.story({ args: { ...Extended.input.args, label: 'spread' } });
       `);
       expect(templates.get('Spread')).toBe(
-        `<sb-button [label]="'spread'" [count]="2" (clicked)="clicked($event)"></sb-button>`
+        [
+          '<sb-button',
+          `    [label]="'spread'"`,
+          '    [count]="2"',
+          '    (clicked)="clicked($event)">',
+          '</sb-button>',
+        ].join('\n')
       );
     });
 
@@ -1004,7 +1040,13 @@ describe('buildStoryDocsPayload', () => {
         }
       );
       expect(templates.get('Logged In')).toBe(
-        `<sb-button [label]="'from header'" [count]="3" (clicked)="clicked($event)"></sb-button>`
+        [
+          '<sb-button',
+          `    [label]="'from header'"`,
+          '    [count]="3"',
+          '    (clicked)="clicked($event)">',
+          '</sb-button>',
+        ].join('\n')
       );
     });
 

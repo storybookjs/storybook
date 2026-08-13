@@ -35,6 +35,9 @@ interface RenderedProp {
 
 const VUE_PACKAGE = 'vue';
 
+// Raw slot text must survive Vue's parse and whitespace condensing unchanged.
+const UNSAFE_SLOT_TEXT_REGEXP = /^\s|\s$|[<&]|{{/;
+
 /** Render classified CSF args into the same SFC block shape as Vue's runtime source decorator. */
 export function renderSfcSnippet(input: RenderSfcInput): string {
   const ctx = createRenderContext();
@@ -236,14 +239,20 @@ function renderSlotArg(arg: ClassifiedArg, ctx: RenderContext): string {
 /**
  * Slot children for one classified slot arg.
  *
- * Text-shaped literals become text directly; everything else is interpolated, since a hoisted
- * `<script setup>` binding cannot reach slot content any other way.
+ * Safe text becomes raw slot content; hoisted values and text the template parser would alter are
+ * interpolated, since that is the only way slot content can reach a `<script setup>` binding.
  */
 function renderSlotContent(arg: ClassifiedArg, ctx: RenderContext): string {
   const value = unwrapValue(arg.value);
 
   if (arg.plan.kind === 'inline') {
-    return renderInlinePrimitiveValue(value) ?? `{{ ${printValue(value)} }}`;
+    const text = renderInlinePrimitiveValue(value);
+    if (text === undefined) {
+      return `{{ ${printValue(value)} }}`;
+    }
+    if (!UNSAFE_SLOT_TEXT_REGEXP.test(text)) {
+      return text;
+    }
   }
 
   const bindingName = allocateBindingName(arg.name, ctx);

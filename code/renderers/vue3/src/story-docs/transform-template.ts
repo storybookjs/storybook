@@ -16,7 +16,7 @@ import {
 } from 'storybook/internal/csf-tools';
 
 import type { ClassifiedArg } from './classify-args.ts';
-import { isFunctionExpression, unwrapValue } from './classify-value.ts';
+import { isFunctionExpression, singleReturnedExpression, unwrapValue } from './classify-value.ts';
 import {
   createRenderContext,
   hoistArgValue,
@@ -462,38 +462,10 @@ function isTrivialSetup(setup: t.ObjectMethod | t.ObjectProperty): boolean {
   return t.isIdentifier(value, { name: ARGS_NAME });
 }
 
-/**
- * Deliberately stricter than csf-tools' `returnedObjectExpression`: a block body must contain
- * exactly the return statement, since any extra statement could affect what the template renders.
- *
- * @example `setup() { return { args }; }` or `setup: () => ({ args })`
- */
+// setup() { return { args }; } or setup: () => ({ args })
 function setupReturnObject(
   setup: t.ObjectMethod | t.ObjectProperty
 ): t.ObjectExpression | undefined {
-  if (t.isObjectMethod(setup)) {
-    return objectReturnedFromBlock(setup.body);
-  }
-
-  const value = unwrapValue(setup.value);
-  if (!t.isArrowFunctionExpression(value) && !t.isFunctionExpression(value)) {
-    return undefined;
-  }
-
-  if (t.isObjectExpression(value.body)) {
-    return value.body;
-  }
-  return t.isBlockStatement(value.body) ? objectReturnedFromBlock(value.body) : undefined;
-}
-
-// () => { return { args }; }
-function objectReturnedFromBlock(block: t.BlockStatement): t.ObjectExpression | undefined {
-  if (block.body.length !== 1) {
-    return undefined;
-  }
-
-  const [statement] = block.body;
-  return t.isReturnStatement(statement) && t.isObjectExpression(statement.argument)
-    ? statement.argument
-    : undefined;
+  const returned = singleReturnedExpression(t.isObjectMethod(setup) ? setup : setup.value);
+  return t.isObjectExpression(returned) ? returned : undefined;
 }

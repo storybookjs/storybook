@@ -101,6 +101,38 @@ export function isFunctionExpression<T extends t.Node>(
   return unwrapped.type === 'ArrowFunctionExpression' || unwrapped.type === 'FunctionExpression';
 }
 
+/**
+ * Expression a function returns when its body is exactly one static return path.
+ *
+ * Deliberately stricter than csf-tools' `returnedObjectExpression`: a block body must contain
+ * exactly the return statement, since any extra statement could affect what the story renders.
+ *
+ * @example `() => 'hi'` → `'hi'`; `setup() { return { args }; }` → `{ args }`
+ */
+export function singleReturnedExpression(node: t.Node): t.Node | undefined {
+  const fn = unwrapValue(node);
+  if (
+    fn.type !== 'ArrowFunctionExpression' &&
+    fn.type !== 'FunctionExpression' &&
+    fn.type !== 'ObjectMethod'
+  ) {
+    return undefined;
+  }
+
+  if (fn.body.type !== 'BlockStatement') {
+    return fn.body;
+  }
+
+  if (fn.body.body.length !== 1) {
+    return undefined;
+  }
+
+  const [statement] = fn.body.body;
+  return statement.type === 'ReturnStatement' && statement.argument
+    ? statement.argument
+    : undefined;
+}
+
 /** `args: { a: undefined }` unsets an inherited meta arg, so it renders nothing. */
 export function isUndefinedIdentifier(node: t.Node): boolean {
   const unwrapped = unwrapValue(node);

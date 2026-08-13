@@ -297,6 +297,21 @@ export class OpenServiceRemoteCommandUnhandledError extends StorybookError {
   }
 }
 
+export class InvalidBasePathError extends StorybookError {
+  constructor(public data: { basePath: string }) {
+    super({
+      name: 'InvalidBasePathError',
+      category: Category.CORE_COMMON,
+      code: 16,
+      message: dedent`
+        Invalid Storybook base path: ${JSON.stringify(data.basePath)}.
+
+        The base path is the URL path prefix Storybook is served from, such as "/__storybook".
+        It cannot be a full URL, and cannot contain a query string or a fragment.`,
+    });
+  }
+}
+
 export class OpenServiceOperationNameCollisionError extends StorybookError {
   constructor(public data: { serviceId: ServiceId; operationName: string }) {
     super({

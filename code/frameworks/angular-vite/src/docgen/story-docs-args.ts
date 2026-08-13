@@ -11,12 +11,15 @@ import {
   isStoryFactoryCall,
   keyNameOf,
   resolvedProperty,
+  sourceOf,
 } from './story-docs-markup.ts';
 import { isValidIdentifier } from '../template-grammar.ts';
 
 export interface ArgsRecord {
   properties: Record<string, t.Node>;
   complete: boolean;
+  /** Source text of every member `properties` could not absorb; empty exactly when complete. */
+  unresolved: string[];
 }
 
 /** Named properties of an `args` object literal, and whether the record is statically complete. */
@@ -26,19 +29,19 @@ export const argsProperties = (
 ): ArgsRecord => {
   const properties: Record<string, t.Node> = {};
   if (node === undefined) {
-    return { properties, complete: true };
+    return { properties, complete: true, unresolved: [] };
   }
   const unwrapped = unwrapExpression(node);
   if (!t.isObjectExpression(unwrapped)) {
-    return { properties, complete: false };
+    return { properties, complete: false, unresolved: [`args: ${sourceOf(unwrapped)}`] };
   }
 
-  let complete = true;
+  const unresolved: string[] = [];
   for (const property of unwrapped.properties) {
     if (t.isSpreadElement(property)) {
       const spreadIn = resolveSpread?.(property);
       if (spreadIn === undefined || !spreadIn.complete) {
-        complete = false;
+        unresolved.push(sourceOf(property));
         continue;
       }
       Object.assign(properties, spreadIn.properties);
@@ -47,12 +50,12 @@ export const argsProperties = (
     const key = t.isObjectProperty(property) ? keyNameOf(property) : undefined;
     if (!t.isObjectProperty(property) || key === undefined) {
       // An accessor or dynamic key can add or override args this pass cannot see.
-      complete = false;
+      unresolved.push(sourceOf(property));
       continue;
     }
     properties[key] = property.value;
   }
-  return { properties, complete };
+  return { properties, complete: unresolved.length === 0, unresolved };
 };
 
 type SpreadResolver = (spread: t.SpreadElement) => ArgsRecord | undefined;
@@ -130,7 +133,7 @@ export const createSpreadArgsResolver =
       }
       properties[key] = t.valueToNode(value);
     }
-    return { properties, complete: true };
+    return { properties, complete: true, unresolved: [] };
   };
 
 /** A bare `...base` spread of a module-level constant object, read from its initializer. */
@@ -346,6 +349,7 @@ const unguardedStoryArgsAt = (
     return {
       properties: { ...parentRecord.properties, ...record.properties },
       complete: parentRecord.complete && record.complete,
+      unresolved: [...parentRecord.unresolved, ...record.unresolved],
     };
   }
   return record;
@@ -378,6 +382,27 @@ export const hasAssignmentInto = (
     }
   }
   return false;
+};
+
+// `Story.args = {...}` is read through the parser's annotations; only a deeper mutation like
+// `Story.args.label = ...` changes args this pass cannot see.
+export const deepAssignmentSources = (csf: CsfFile, name: string): string[] => {
+  const sources: string[] = [];
+  for (const statement of csf._file.path.node.body) {
+    if (!t.isExpressionStatement(statement) || !t.isAssignmentExpression(statement.expression)) {
+      continue;
+    }
+    let target: t.Node = statement.expression.left;
+    let depth = 0;
+    while (t.isMemberExpression(target)) {
+      depth += 1;
+      target = target.object;
+    }
+    if (depth >= 2 && t.isIdentifier(target) && target.name === name) {
+      sources.push(sourceOf(statement.expression));
+    }
+  }
+  return sources;
 };
 
 const EVAL_FAILED = Symbol('story-docs-eval-failed');

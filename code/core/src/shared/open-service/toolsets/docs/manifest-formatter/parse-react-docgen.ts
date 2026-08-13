@@ -1,8 +1,8 @@
 /**
- * Verbatim port of `@storybook/mcp`'s `packages/mcp/src/utils/parse-react-docgen.ts`. Both copies
- * must not drift until Milestone 4 deletes the original. Deviation: core does not depend on
- * `react-docgen` / `react-docgen-typescript`, so the type-only imports are replaced with the
- * structural subsets the parsers actually read.
+ * The single implementation of react-docgen prop parsing, shared by the dev server and the hosted
+ * `@storybook/mcp` package, which bundles this entry. Core does not depend on `react-docgen` /
+ * `react-docgen-typescript`, so the type-only imports are the structural subsets the parsers
+ * actually read rather than those packages' own types.
  */
 
 /** Structural subset of react-docgen's `tsType` / `type` prop descriptor field. */

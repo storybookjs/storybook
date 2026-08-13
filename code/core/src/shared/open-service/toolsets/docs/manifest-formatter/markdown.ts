@@ -1,11 +1,9 @@
 /**
- * Verbatim port of the `@storybook/mcp` manifest formatter
- * (`packages/mcp/src/utils/manifest-formatter/markdown.ts`). Milestone 4 swaps addon-mcp onto the
- * docs toolset with byte-identical output, so the two copies must not drift until it deletes the
- * original. Omitted: `formatMultiSourceManifestsToLists` (multi-source composition has no core
- * counterpart). `dedent` comes from `ts-dedent`, the package the source vendors verbatim.
+ * Markdown rendering for the docs toolset: the text every consumer of the docs tools receives.
  */
 import { dedent } from 'ts-dedent';
+
+import { formatRequiresOwnMcpNotice, type SourceListing } from '../sources.ts';
 
 import { extractDocsSummary, MAX_SUMMARY_LENGTH } from './extract-docs-summary.ts';
 import type {
@@ -359,6 +357,65 @@ export function formatManifestsToLists(
   parts.push('');
   for (const doc of Object.values(manifests.docsManifest.docs)) {
     parts.push(formatDocLine(doc));
+  }
+
+  return parts.join('\n').trim();
+}
+
+/**
+ * Formats one listing per composed source.
+ *
+ * Sources are grouped under their own heading rather than merged, because ids are only unique
+ * within a source and the follow-up tools take a `storybookId`. A source that failed or needs its
+ * own endpoint prints that in place of its listing, so the rest still reads.
+ */
+export function formatMultiSourceManifestsToLists(
+  sources: SourceListing[],
+  options: ListFormattingOptions = {}
+): string {
+  const parts: string[] = [];
+
+  for (const { source, manifests, error, notice } of sources) {
+    parts.push(`# ${source.title}`);
+    parts.push(`id: ${source.id}`);
+    parts.push('');
+
+    if (error) {
+      parts.push(`error: ${error}`);
+      parts.push('');
+      continue;
+    }
+
+    if (notice) {
+      parts.push(formatRequiresOwnMcpNotice(source, notice.endpoint, { includeHeader: false }));
+      parts.push('');
+      continue;
+    }
+
+    const components = Object.values(manifests?.componentManifest.components ?? {});
+    if (components.length > 0) {
+      parts.push('## Components');
+      parts.push('');
+      for (const component of components) {
+        parts.push(formatComponentLine(component));
+        if (options.withStoryIds && Array.isArray(component.stories)) {
+          for (const story of component.stories) {
+            parts.push(formatStorySubLine(story));
+          }
+        }
+      }
+      parts.push('');
+    }
+
+    const docs = Object.values(manifests?.docsManifest?.docs ?? {});
+    if (docs.length > 0) {
+      parts.push('## Docs');
+      parts.push('');
+      for (const doc of docs) {
+        parts.push(formatDocLine(doc));
+      }
+      parts.push('');
+    }
   }
 
   return parts.join('\n').trim();

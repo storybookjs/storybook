@@ -8,17 +8,36 @@
 export { defineService } from './service-definition.ts';
 export { seedQueryState } from './query-state.ts';
 
-export { defineToolset } from './toolset-definition.ts';
+export { defineToolset, resolveToolsetDescription } from './toolset-definition.ts';
 export type {
   AnyToolsetDefinition,
+  AnyToolsetOutcome,
   ToolsetConsumer,
   ToolsetCtx,
   ToolsetDefinition,
-  ToolsetFormat,
   ToolsetGetService,
   ToolsetMethod,
+  ToolsetMethodDescription,
+  ToolsetOutcome,
+  ToolsetTelemetry,
+  ToolsetTelemetryGroup,
 } from './toolset-definition.ts';
-export { getRegisteredToolsets, registerToolset } from './toolset-registry.ts';
+export { getRef, MCP_TOOL_NAMES } from './toolset-names.ts';
+export type { ToolsetMethodRef } from './toolset-names.ts';
+export {
+  clearToolsetRegistry,
+  getRegisteredToolsets,
+  getToolset,
+  registerToolset,
+} from './toolset-registry.ts';
+// The errors the registry functions above throw. Catchers must import them from this same entry:
+// each core entry bundles its own copy of a class, so an error class imported from another entry
+// is a different constructor and `instanceof` silently fails.
+export {
+  OpenServiceDuplicateToolsetError,
+  OpenServiceMissingToolsetError,
+} from '../../server-errors.ts';
+export type { KnownToolsets } from './toolset-types.ts';
 
 export type { DocgenService } from './services/docgen/definition.ts';
 export type { DocgenPayload } from './services/docgen/types.ts';

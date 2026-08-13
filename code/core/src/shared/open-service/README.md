@@ -31,8 +31,8 @@ client/server registration API.
 The environment-agnostic API consists of:
 
 - `defineService`
-- `defineToolset`, `registerToolset`, `getRegisteredToolsets` — the public toolset construct (see
-  [Toolset](#toolset))
+- `defineToolset`, `registerToolset`, `getToolset`, `getRegisteredToolsets` — the public toolset
+  construct (see [Toolset](#toolset))
 - the exported type aliases from [types.ts](./types.ts)
 
 The server-only API consists of:
@@ -64,7 +64,8 @@ Internal tests and implementation code may import from the individual modules di
 - [types.ts](./types.ts): core type model for definitions, contexts, runtime instances, and static build data
 - [service-definition.ts](./service-definition.ts): `defineService()` typing that preserves inline inference when declaring services
 - [toolset-definition.ts](./toolset-definition.ts): `defineToolset()` typing for public toolsets and their handler context
-- [toolset-registry.ts](./toolset-registry.ts): `registerToolset` / `getRegisteredToolsets` — the realm-global toolset inventory adapters read
+- [toolset-registry.ts](./toolset-registry.ts): `registerToolset` / `getToolset` / `getRegisteredToolsets` — the realm-global toolset inventory adapters read
+- [toolset-names.ts](./toolset-names.ts): `MCP_TOOL_NAMES` — the frozen public MCP tool names — and `getRef` for consumer-aware cross-references (display titles are editable prose on each method, not part of the frozen contract)
 - `services/`: core OSA service definitions and per-runtime registration helpers
 - `toolsets/`: public toolsets (docs, stories, test, review), mirroring the services tree
 - [service-validation.ts](./service-validation.ts): sync + async schema validation helpers and error wrapping
@@ -100,15 +101,53 @@ Use `defineService()` to preserve the concrete query and command map types.
 
 Services and toolsets are sibling constructs behind this one entry: **services** own internal state
 and synchronization; **toolsets** are the public agent surface for CLI and MCP adapters. A toolset
-(`defineToolset`) has an `id`, a description, and methods carrying only `schema`, `description`, and
-`handler`. Handlers receive `(input, ctx)` where `ctx` has `consumer` (`'cli' | 'mcp'`), an optional
-`origin`, a required `format` (`'markdown' | 'json'` — adapters own the mapping; methods never
-declare the format), and `getService` for calling OSA services (with `{ internal: true }`).
+(`defineToolset`) has an `id`, a description, a `telemetryGroup` (`'dev' | 'test' | 'docs'` —
+stories and review report under `dev`), and methods carrying five fields:
+
+- `title` — required short display label shown by client UIs; editable prose, not part of the
+  frozen wire contract (`MCP_TOOL_NAMES` owns the invokable tool name)
+- `description` — `string`, or a function of `ctx` when the prose differs per consumer
+- `schema` — the input schema
+- `outputSchema` — optional; published as the MCP `outputSchema`, and `structuredContent` is
+  narrowed to it. An outcome's `data` may carry more than this declares; only the declared shape
+  reaches the wire
+- `handler(input, ctx)` — the one execution: produces the data, renders the text, and owns side
+  effects and telemetry
+
+`handler` returns a `ToolsetOutcome<TSuccess, TFailure = TSuccess>` — a discriminated union of
+`{ ok: true, data, markdown }` and `{ ok: false, data, markdown }`, written as plain object
+literals (no factory helpers). The failure model is one line each: could not do the job →
+**throw**; did the job and the answer is bad news (a failed test run, a not-found lookup) →
+**return `{ ok: false, data, markdown }`**. Infallible methods declare `TFailure = never`.
+
+One handler owns data and rendering because one MCP reply carries `content` (text) and
+`structuredContent` (JSON) at once and both must come from a single run — re-running a method with
+side effects would repeat them. Usage telemetry reports inline in the handler with the rendered
+text in hand, so no consumer can forget it. Adapters unwrap outcomes mechanically — text blocks
+from `markdown`, `structuredContent` from `data`, MCP `isError` (and later CLI exit codes) from
+`ok` — and must not re-derive meaning from the data. `markdown` may be `string | string[]`:
+`preview-stories` renders one text block per URL; the CLI's `--json` (Milestone 5) becomes "return
+`data`, skip `markdown`".
+
+An error whose message speaks to the agent and names its own recovery declares `agentFacing: true`
+(a `StorybookError` constructor prop); adapters surface such errors verbatim by reading that
+property — never by keeping a class list, which misclassifies across bundle copies.
+
+`ctx` is `{ consumer: 'cli' | 'mcp', origin?, uiRoot?, getService, telemetry? }`. `uiRoot` is where
+the consumer's Storybook UI is reachable when that differs from `origin` (a sub-path-hosted dev
+server); methods that link into the UI prefer it, and the adapter derives it from the request.
+Descriptions that name a sibling tool must render it through `getRef(ctx)` rather than hardcoding
+either spelling, so the same sentence reads as the MCP tool name or the CLI command per consumer.
+Facts that are fixed at boot (whether review or a11y is enabled) are factory options on the
+toolset, not `ctx` fields.
 
 Toolsets register imperatively via `registerToolset`, called from the same place the paired service
 registers (for core and addons, the `services` preset hook — the mechanism itself is
-preset-independent so manager- or preview-realm toolsets can use it later). Adapters obtain the
-registered set via `getRegisteredToolsets()`; the MCP server consumes it from Milestone 4 and the
+preset-independent so manager- or preview-realm toolsets can use it later). A toolset must be
+registered wherever a consumer resolves it, including consumers that only read its descriptions and
+schemas: `getToolset(id)` throws on an unregistered id rather than silently dropping a tool.
+Adapters resolve one toolset with `getToolset(id)` or take the whole set via
+`getRegisteredToolsets()`; `@storybook/addon-mcp` and `@storybook/mcp` consume them today, and the
 `storybook tools` CLI from Milestone 5.
 
 ### Query

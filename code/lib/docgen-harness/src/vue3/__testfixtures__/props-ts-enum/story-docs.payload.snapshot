@@ -8,7 +8,11 @@
       "description": undefined,
       "id": "forms-props-ts-enum--props-as-written",
       "name": "Props As Written",
+      "snippet": "<template>
+  <TsEnumProps :level="1" />
+</template>",
       "summary": undefined,
+      "warning": "Omitted args that cannot be resolved statically: severity: Severity.Warning",
     },
   },
 }

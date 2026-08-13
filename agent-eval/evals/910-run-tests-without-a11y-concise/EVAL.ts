@@ -6,6 +6,6 @@ function disablesA11y(call: StorybookWorkflowCall): boolean {
 }
 
 test('runs Storybook story tests with a11y disabled', () => {
-  expectWorkflowCalls(['run-story-tests']);
-  expect(getWorkflowCalls('run-story-tests').some(disablesA11y)).toBe(true);
+  expectWorkflowCalls(['test-run']);
+  expect(getWorkflowCalls('test-run').some(disablesA11y)).toBe(true);
 });

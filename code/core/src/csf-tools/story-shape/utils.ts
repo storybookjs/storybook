@@ -2,6 +2,16 @@ import { type NodePath, types as t } from 'storybook/internal/babel';
 
 import type { CsfFile } from '../CsfFile.ts';
 
+/** Peels TS assertion/satisfies wrappers and parentheses off an expression node. */
+export const unwrapExpression = (node: t.Node): t.Node =>
+  t.isTSAsExpression(node) ||
+  t.isTSSatisfiesExpression(node) ||
+  t.isTSNonNullExpression(node) ||
+  t.isTSTypeAssertion(node) ||
+  t.isParenthesizedExpression(node)
+    ? unwrapExpression(node.expression)
+    : node;
+
 /** Static key of an object property, or `null` when computed/non-literal. */
 export const keyOf = (p: t.ObjectProperty): string | null =>
   p.computed

@@ -53,11 +53,18 @@ export function analyzeSourceFile(
     };
 
     if (kind === 'component' || kind === 'directive') {
-      const selector = decoratorSelector(ctx, statement, kind);
-      const record: Directive & typeof common & { selector?: string } = {
+      const metadata = decoratorObjectArg(
+        ctx,
+        statement,
+        kind === 'component' ? 'Component' : 'Directive'
+      );
+      const selector = metadata && decoratorSelector(ctx, metadata);
+      const standalone = metadata && decoratorStandalone(ctx, metadata);
+      const record: Directive & typeof common & { selector?: string; standalone?: boolean } = {
         name,
         type: kind,
         ...(selector === undefined ? {} : { selector }),
+        ...(standalone === undefined ? {} : { standalone }),
         inputsClass: members.inputs,
         outputsClass: members.outputs,
         propertiesClass: members.properties,
@@ -126,38 +133,43 @@ const classify = (ctx: AnalyzerContext, node: tsModule.ClassDeclaration): ClassK
 
 const decoratorSelector = (
   ctx: AnalyzerContext,
-  node: tsModule.ClassDeclaration,
-  kind: 'component' | 'directive'
+  metadata: tsModule.ObjectLiteralExpression
 ): string | undefined => {
-  const metadata = decoratorObjectArg(ctx, node, kind === 'component' ? 'Component' : 'Directive');
-  const selector = metadata && objectProperty(ctx, metadata, 'selector');
-  return selector && selectorText(ctx, selector);
+  const selector = objectProperty(ctx, metadata, 'selector');
+  const value = selector && resolveInitializer(ctx, selector);
+  return value && ctx.ts.isStringLiteralLike(value) ? value.text : undefined;
 };
 
-const selectorText = (
+const decoratorStandalone = (
+  ctx: AnalyzerContext,
+  metadata: tsModule.ObjectLiteralExpression
+): boolean | undefined => {
+  const standalone = objectProperty(ctx, metadata, 'standalone');
+  const value = standalone && resolveInitializer(ctx, standalone);
+  if (value?.kind === ctx.ts.SyntaxKind.TrueKeyword) {
+    return true;
+  }
+  if (value?.kind === ctx.ts.SyntaxKind.FalseKeyword) {
+    return false;
+  }
+  return undefined;
+};
+
+// A reference to a variable resolves to its initializer, a slice of what ngtsc's own partial
+// evaluator accepts in decorator metadata.
+const resolveInitializer = (
   ctx: AnalyzerContext,
   expression: tsModule.Expression
-): string | undefined => {
+): tsModule.Expression | undefined => {
   const { ts, checker } = ctx;
-  if (ts.isStringLiteralLike(expression)) {
-    return expression.text;
-  }
   if (!ts.isIdentifier(expression)) {
-    return undefined;
+    return expression;
   }
   const symbol = checker.getSymbolAtLocation(expression);
   const target =
     symbol && symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
   const declaration = target?.valueDeclaration;
-  if (
-    declaration &&
-    ts.isVariableDeclaration(declaration) &&
-    declaration.initializer &&
-    ts.isStringLiteralLike(declaration.initializer)
-  ) {
-    return declaration.initializer.text;
-  }
-  return undefined;
+  return declaration && ts.isVariableDeclaration(declaration) ? declaration.initializer : undefined;
 };
 
 const pipeName = (ctx: AnalyzerContext, node: tsModule.ClassDeclaration): string | undefined => {

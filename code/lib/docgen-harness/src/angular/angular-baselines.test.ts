@@ -20,7 +20,8 @@ import {
 } from '../../../../frameworks/angular-vite/src/client/compodoc.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
-import { attachAotCmp, fixtureCases, fixturesDir, recordSnippets } from './render-helpers.ts';
+import { attachAotCmp, recordSnippets } from './render-helpers.ts';
+import { fixtureCases, fixturesDir } from './snippet-recorder.ts';
 
 if (BASELINE_PATH !== 'legacy') {
   throw new Error(

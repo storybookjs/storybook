@@ -12,13 +12,8 @@ import { AngularComponentMetaManager, extractArgTypesFromData } from '@storybook
 import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
-import {
-  attachAotCmp,
-  fixtureCases,
-  fixturesDir,
-  readCommitted,
-  recordSnippets,
-} from './render-helpers.ts';
+import { attachAotCmp, recordSnippets } from './render-helpers.ts';
+import { fixtureCases, fixturesDir, readCommitted } from './snippet-recorder.ts';
 
 if (BASELINE_PATH !== 'legacy') {
   throw new Error(

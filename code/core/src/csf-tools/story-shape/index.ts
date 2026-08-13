@@ -1,4 +1,6 @@
 export {
+  argsRecordFromNode,
+  argsRecordFromObjectNode,
   argsRecordFromObjectPath,
   mergeArgsRecords,
   metaArgsRecord,
@@ -25,4 +27,5 @@ export {
   propertyValue,
   resolveIdentifierInit,
   returnedObjectExpression,
+  unwrapExpression,
 } from './utils.ts';

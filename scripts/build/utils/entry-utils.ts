@@ -11,6 +11,16 @@ export type BuildEntry = {
   entryPoint: `./src/${string}`; // the source file to bundle, e.g. "./src/manager-api/index.ts",
   external?: string[]; // the list of external dependencies to exclude from the bundle
   dts?: false; // default to generating d.ts files for all entries, except if set to false
+  /**
+   * Bundle this entry's d.ts in an isolated single-entry pass, producing one flat self-contained
+   * file instead of sharing type chunks with the package's other entries. For entries other
+   * packages bundle into their own dist, where a shared chunk would drag unrelated type surfaces
+   * along. `external` lists the only imports the flat file may keep — packages every consumer of
+   * the entry declares itself (it only affects this d.ts pass, never the JS bundle). A producer-side
+   * test guards each portable artifact: flatness, the import allowlist (kept there as a deliberate
+   * second copy, so widening it is a reviewer-visible edit), and a size budget.
+   */
+  portable?: { external: string[] };
 };
 export type BuildEntriesByPlatform = Partial<Record<EntryType, BuildEntry[]>>;
 

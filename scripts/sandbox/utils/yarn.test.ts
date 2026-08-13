@@ -83,7 +83,12 @@ describe('preapproveLocallyPublishedPackages', () => {
   it('covers the packages the local registry serves', async () => {
     // run-registry publishes these; they are seconds old at install time.
     expect(LOCALLY_PUBLISHED_PACKAGE_PATTERNS).toEqual(
-      expect.arrayContaining(['storybook', '@storybook/*', 'create-storybook'])
+      expect.arrayContaining([
+        'storybook',
+        '@storybook/*',
+        'create-storybook',
+        'vite-plugin-storybook-nextjs',
+      ])
     );
   });
 });

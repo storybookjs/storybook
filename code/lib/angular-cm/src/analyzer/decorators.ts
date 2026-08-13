@@ -116,8 +116,7 @@ const booleanOption = (
     return false;
   }
   // An initializer this cannot evaluate - `required: SOME_CONST`, or the `{ required }` shorthand -
-  // is reported as unspecified rather than as `false`, so the caller's own default decides instead
-  // of the property being silently documented as optional.
+  // is reported as unspecified rather than as `false`, so the caller's own default decides.
   return undefined;
 };
 

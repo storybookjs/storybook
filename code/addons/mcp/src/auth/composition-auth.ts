@@ -6,7 +6,11 @@
  * MCP clients like VS Code to handle the OAuth flow with Chromatic.
  */
 
-import { ComponentManifestMap, DocsManifestMap, type Source } from '@storybook/mcp';
+import {
+  ComponentManifestMap,
+  DocsManifestMap,
+  type Source,
+} from 'storybook/internal/toolsets-docs';
 import { logger } from 'storybook/internal/node-logger';
 import * as v from 'valibot';
 
@@ -148,27 +152,16 @@ export class CompositionAuth {
   /**
    * Create a manifest provider for multi-source mode.
    *
-   * Remote sources are always fetched over HTTP (with auth + caching). The local
-   * source normally fetches from `localOrigin`, but in `experimentalDocgenServer`
-   * mode core 404s `/manifests/*.json` (the data lives in the open services), so
-   * callers pass `localManifestProvider` to read the local source in-process
-   * instead. When omitted, the local source keeps its HTTP behavior.
+   * Remote sources are fetched over HTTP with auth and caching; the local source fetches from
+   * `localOrigin`. In `experimentalDocgenServer` mode core 404s the local `/manifests/*.json`, and
+   * the composition reads that source through its own access instead of this provider.
    */
-  createManifestProvider(
-    localOrigin: string,
-    localManifestProvider?: ManifestProvider
-  ): ManifestProvider {
+  createManifestProvider(localOrigin: string): ManifestProvider {
     return async (request, path, source) => {
       const token = extractBearerToken(request?.headers.get('Authorization'));
       const remoteSource: RemoteSource | undefined = source?.url
         ? { ...source, url: source.url }
         : undefined;
-
-      // Local source in docgen-server mode: there is nothing to fetch over
-      // loopback, so read it in-process.
-      if (!remoteSource && localManifestProvider) {
-        return localManifestProvider(request, path, source);
-      }
 
       const baseUrl = remoteSource?.url ?? localOrigin;
       const manifestUrl = `${baseUrl}${path.replace('./', '/')}`;

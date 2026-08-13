@@ -117,7 +117,7 @@ export function transformTemplate(
 
   const state: TransformState = {
     argsByName: new Map(input.args.map((arg) => [arg.name, arg])),
-    ctx: createRenderContext(input.args),
+    ctx: createRenderContext(),
     edits: [],
     usedImports: new Set(),
     componentImports: input.componentImports,
@@ -271,14 +271,10 @@ function transformDirective(
     if (!arg || arg.role === 'slot' || arg.role === 'event') {
       return false;
     }
-    const bindingName = hoistModelRef(argName, arg.value, state.ctx);
-    if (bindingName === undefined) {
-      return false;
-    }
     state.edits.push({
       start: directive.exp.loc.start.offset,
       end: directive.exp.loc.end.offset,
-      text: bindingName,
+      text: hoistModelRef(argName, arg.value, state.ctx),
     });
     return true;
   }

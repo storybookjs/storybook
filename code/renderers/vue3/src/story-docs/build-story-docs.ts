@@ -17,7 +17,6 @@ import {
   keyOf,
   loadCsf,
   mergeArgsRecords,
-  metaArgsRecord,
   metaObjectPath,
   normalizeStoryDeclaration,
   resolveComponentImport,
@@ -56,10 +55,7 @@ interface StoryDocsContext {
   /** Present only when the component identifier and docgen data can synthesize snippets. */
   snippet: StorySnippetContext | undefined;
   importBindings: Map<string, ImportBinding>;
-  metaArgs: Record<string, t.Node>;
   metaPath: NodePath<t.ObjectExpression> | undefined;
-  metaArgsError: StoryDoc['error'] | undefined;
-  metaArgsPath: ArgsObjectPath | undefined;
 }
 
 type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
@@ -126,14 +122,7 @@ export async function buildStoryDocsPayload(
   const docgenArgInfo =
     docgenPayload && !docgenPayload.error ? vueDocgenArgInfo(docgenPayload) : undefined;
   const snippet = componentName && docgenArgInfo ? { componentName, docgenArgInfo } : undefined;
-  const extracted = extractStories(csf, {
-    snippet,
-    importBindings,
-    metaArgs: metaArgsRecord(metaPath?.node),
-    metaPath,
-    metaArgsError: argsContainerError(metaPath),
-    metaArgsPath: argsObjectPathFromObjectPath(metaPath),
-  });
+  const extracted = extractStories(csf, { snippet, importBindings, metaPath });
   const importCode = Array.from(
     new Set([importStatement, ...extracted.imports].filter((line): line is string => Boolean(line)))
   ).join('\n');
@@ -302,15 +291,13 @@ function enrichStoryDoc(
     return plain;
   }
 
-  const resolved = resolveStaticStoryArgs({
+  const resolved = resolveStaticStoryArgs(
     csf,
     storyExport,
     docgenArgInfo,
-    metaArgs: options.metaArgs,
-    metaArgsError: options.metaArgsError,
-    metaArgsPath: options.metaArgsPath,
-    storyConfigPath,
-  });
+    options.metaPath,
+    storyConfigPath
+  );
   if (resolved.kind === 'error') {
     // Only the SFC path reports arg errors; render-function stories defer to runtime source.
     return renderer.kind === 'sfc'
@@ -365,28 +352,25 @@ function renderStaticStorySnippet(
   });
 }
 
-function resolveStaticStoryArgs(input: {
-  csf: ParsedCsf;
-  storyExport: string;
-  docgenArgInfo: VueDocgenArgInfo;
-  metaArgs: Record<string, t.Node>;
-  metaArgsError: StoryDoc['error'] | undefined;
-  metaArgsPath: ArgsObjectPath | undefined;
-  storyConfigPath: NodePath<t.ObjectExpression> | undefined;
-}): StaticStoryArgs {
-  const storyArgsError = input.storyConfigPath
-    ? argsContainerError(input.storyConfigPath)
-    : undefined;
-  if (input.metaArgsError || storyArgsError) {
-    return { kind: 'error', error: input.metaArgsError ?? storyArgsError! };
+function resolveStaticStoryArgs(
+  csf: ParsedCsf,
+  storyExport: string,
+  docgenArgInfo: VueDocgenArgInfo,
+  metaPath: NodePath<t.ObjectExpression> | undefined,
+  storyConfigPath: NodePath<t.ObjectExpression> | undefined
+): StaticStoryArgs {
+  const argsError = argsContainerError(metaPath) ?? argsContainerError(storyConfigPath);
+  if (argsError) {
+    return { kind: 'error', error: argsError };
   }
 
+  const metaArgsPath = argsObjectPathFromObjectPath(metaPath);
   // `Primary.args = { … }` runs after the declaration and replaces its args object outright, so an
   // assignment wins over inline args rather than merging with them.
   const storyArgsPath =
-    storyAssignedArgsPath(input.csf._file.path, input.storyExport) ??
-    (input.storyConfigPath ? argsObjectPathFromObjectPath(input.storyConfigPath) : undefined);
-  if (argsObjectHasSpread(input.metaArgsPath?.node) || argsObjectHasSpread(storyArgsPath?.node)) {
+    storyAssignedArgsPath(csf._file.path, storyExport) ??
+    argsObjectPathFromObjectPath(storyConfigPath);
+  if (argsObjectHasSpread(metaArgsPath?.node) || argsObjectHasSpread(storyArgsPath?.node)) {
     return {
       kind: 'error',
       error: {
@@ -396,10 +380,15 @@ function resolveStaticStoryArgs(input: {
     };
   }
 
-  const storyArgs = argsRecordFromObjectPath(storyArgsPath);
   return {
     kind: 'classified',
-    classified: classifyArgs(mergeArgsRecords(input.metaArgs, storyArgs), input.docgenArgInfo),
+    classified: classifyArgs(
+      mergeArgsRecords(
+        argsRecordFromObjectPath(metaArgsPath),
+        argsRecordFromObjectPath(storyArgsPath)
+      ),
+      docgenArgInfo
+    ),
   };
 }
 

@@ -102,16 +102,16 @@ describe('MCP Composition Auth E2E Tests', () => {
 			const response = await mcpRequest('tools/list', {}, 'dummy-token');
 			const data = await parseMCPResponse(response);
 
-			const getDocTool = data.result.tools.find((t: any) => t.name === 'get-documentation');
+			const getDocTool = data.result.tools.find((t: any) => t.name === 'docs-show');
 
 			expect(getDocTool).toBeDefined();
 			expect(getDocTool.inputSchema.properties).toHaveProperty('storybookId');
 		});
 
-		it('should return 401 with WWW-Authenticate for list-all-documentation with invalid token', async () => {
+		it('should return 401 with WWW-Authenticate for docs-list with invalid token', async () => {
 			const response = await mcpRequest(
 				'tools/call',
-				{ name: 'list-all-documentation', arguments: {} },
+				{ name: 'docs-list', arguments: {} },
 				'dummy-token',
 			);
 
@@ -125,7 +125,7 @@ describe('MCP Composition Auth E2E Tests', () => {
 			const response = await mcpRequest(
 				'tools/call',
 				{
-					name: 'get-documentation',
+					name: 'docs-show',
 					arguments: { id: 'example-button', storybookId: 'local' },
 				},
 				'dummy-token',
@@ -231,7 +231,7 @@ describe('MCP Composition Auth E2E Tests', () => {
 			const response = await mcpRequest(
 				'tools/call',
 				{
-					name: 'get-documentation',
+					name: 'docs-show',
 					arguments: { id: 'button', storybookId: 'test-private-sb' },
 				},
 				'dummy-token',
@@ -247,7 +247,7 @@ describe('MCP Composition Auth E2E Tests', () => {
 			const response = await mcpRequest(
 				'tools/call',
 				{
-					name: 'get-documentation',
+					name: 'docs-show',
 					arguments: { id: 'example-button' },
 				},
 				'dummy-token',
@@ -258,7 +258,7 @@ describe('MCP Composition Auth E2E Tests', () => {
 				{
 				  "content": [
 				    {
-				      "text": "Invalid arguments for tool get-documentation: [{"kind":"schema","type":"object","expected":"\\"storybookId\\"","received":"undefined","message":"Invalid key: Expected \\"storybookId\\" but received undefined","path":[{"type":"object","origin":"key","input":{"id":"example-button"},"key":"storybookId"}]}]",
+				      "text": "Invalid arguments for tool docs-show: [{"kind":"schema","type":"object","expected":"\\"storybookId\\"","received":"undefined","message":"Invalid key: Expected \\"storybookId\\" but received undefined","path":[{"type":"object","origin":"key","input":{"id":"example-button"},"key":"storybookId"}]}]",
 				      "type": "text",
 				    },
 				  ],

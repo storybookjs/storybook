@@ -7,6 +7,7 @@ import {
   type LoaderOptions,
   getFontFaceDeclarations as getLocalFontFaceDeclarations,
 } from './local/get-font-face-declarations.ts';
+import { encodeBase64Url } from '../../utils/base64-url.ts';
 import { getCSSMeta } from './utils/get-css-meta.ts';
 import { setFontDeclarationsInHead } from './utils/set-font-declarations-in-head.ts';
 
@@ -30,7 +31,7 @@ type FontOptions = {
 
 const includePattern = /next(\\|\/|\\\\).*(\\|\/|\\\\)target\.css\?.*$/;
 
-const virtualModuleId = 'virtual:next-font';
+const virtualFontPrefix = '\0virtual:next-font:';
 
 export function vitePluginNextFont() {
   let devMode = true;
@@ -135,16 +136,14 @@ export function vitePluginNextFont() {
       }
 
       return {
-        id: `${virtualModuleId}?${rawQuery}`,
+        id: `${virtualFontPrefix}${encodeBase64Url(rawQuery)}`,
         meta: {
           fontFaceDeclaration,
         },
       };
     },
     load(id) {
-      // Check if the file matches the specific pattern
-      const [source] = id.split('?');
-      if (source !== virtualModuleId) {
+      if (!id.startsWith(virtualFontPrefix)) {
         return undefined;
       }
 

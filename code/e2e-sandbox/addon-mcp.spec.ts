@@ -197,14 +197,14 @@ test.describe('addon-mcp', () => {
       });
     });
 
-    test.describe('Tool: preview-stories', () => {
+    test.describe('Tool: stories-preview', () => {
       test('should return story URLs for valid stories', async ({ request }) => {
         const storyName = 'Primary';
         const expectedPreviewUrl = `${storybookUrl}/?path=/story/example-button--primary`;
 
         // Use a path pattern that works regardless of sandbox location
         const response = await mcpRequest(request, 'tools/call', {
-          name: 'preview-stories',
+          name: 'stories-preview',
           arguments: {
             stories: [
               {
@@ -251,10 +251,10 @@ test.describe('addon-mcp', () => {
       });
     });
 
-    test.describe('Tool: list-all-documentation', () => {
+    test.describe('Tool: docs-list', () => {
       test('should list all documentation from manifest', async ({ request }) => {
         const response = await mcpRequest(request, 'tools/call', {
-          name: 'list-all-documentation',
+          name: 'docs-list',
           arguments: {},
         });
 
@@ -268,10 +268,10 @@ test.describe('addon-mcp', () => {
       });
     });
 
-    test.describe('Tool: get-documentation', () => {
+    test.describe('Tool: docs-show', () => {
       test('should return documentation for a specific component', async ({ request }) => {
         const response = await mcpRequest(request, 'tools/call', {
-          name: 'get-documentation',
+          name: 'docs-show',
           arguments: {
             id: 'example-button',
           },

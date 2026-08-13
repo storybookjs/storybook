@@ -36,10 +36,8 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "@storybook/mcp": "workspace:*",
     "@tmcp/adapter-valibot": "^0.1.5",
     "@tmcp/transport-http": "^0.8.5",
-    "picoquery": "^2.5.0",
     "tmcp": "^1.19.4",
     "valibot": "^1.4.0"
   },

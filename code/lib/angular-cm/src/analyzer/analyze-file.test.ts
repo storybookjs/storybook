@@ -128,6 +128,59 @@ describe('the selector', () => {
   });
 });
 
+describe('standalone', () => {
+  it('records the literal value and stays absent when the decorator leaves it unspecified', () => {
+    const meta = analyze(`
+      import { Component, Directive } from '@angular/core';
+
+      @Component({ selector: 'sb-legacy', standalone: false, template: '' })
+      export class LegacyComponent {}
+
+      @Component({ selector: 'sb-modern', standalone: true, template: '' })
+      export class ModernComponent {}
+
+      @Component({ selector: 'sb-default', template: '' })
+      export class DefaultComponent {}
+
+      @Directive({ selector: '[sbLegacy]', standalone: false })
+      export class LegacyDirective {}
+    `);
+
+    expect(meta.components.map((component) => component.standalone)).toEqual([
+      false,
+      true,
+      undefined,
+    ]);
+    expect(meta.directives[0].standalone).toBe(false);
+  });
+
+  it('resolves a flag referenced through a constant, the way the selector resolves', () => {
+    const component = componentIn(`
+      import { Component } from '@angular/core';
+
+      const IS_STANDALONE = false;
+
+      @Component({ selector: 'sb-flag', standalone: IS_STANDALONE, template: '' })
+      export class FlagComponent {}
+    `);
+
+    expect(component.standalone).toBe(false);
+  });
+
+  it('reports a value it cannot evaluate as unspecified rather than guessing', () => {
+    const component = componentIn(`
+      import { Component } from '@angular/core';
+
+      const flags = { standalone: false };
+
+      @Component({ selector: 'sb-flag', standalone: flags.standalone, template: '' })
+      export class FlagComponent {}
+    `);
+
+    expect(component.standalone).toBeUndefined();
+  });
+});
+
 describe('@Input and @Output', () => {
   it('splits the two into their own buckets, with the initializer text as the default', () => {
     const component = componentIn(`

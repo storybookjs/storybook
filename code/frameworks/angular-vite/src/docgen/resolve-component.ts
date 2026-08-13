@@ -1,12 +1,27 @@
 import type { MetaComponentResolution } from 'storybook/internal/common';
 import { createMetaComponentResolver } from 'storybook/internal/common';
+import type { CsfFile } from 'storybook/internal/csf-tools';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
 import { readFileSync } from 'node:fs';
 
 // Angular has no single-file-component format, so the JS/TS extensions the resolver already tries
-// are enough.
+// are enough. One instance per process: the resolver caches its module resolutions.
 const resolveMetaComponent = createMetaComponentResolver();
+
+export interface ParsedStoryFile {
+  source: string;
+  csf: CsfFile;
+}
+
+export function parseStoryFile(storyFilePath: string, title: string): ParsedStoryFile | undefined {
+  try {
+    const source = readFileSync(storyFilePath, 'utf8');
+    return { source, csf: loadCsf(source, { makeTitle: () => title }).parse() };
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * Story file → the component it documents.
@@ -18,12 +33,10 @@ export function resolveStoryComponent(
   storyFilePath: string,
   title = 'Docgen'
 ): MetaComponentResolution {
-  let csf;
-  try {
-    csf = loadCsf(readFileSync(storyFilePath, 'utf8'), { makeTitle: () => title }).parse();
-  } catch {
+  const parsed = parseStoryFile(storyFilePath, title);
+  if (!parsed) {
     return { reason: 'no-meta-component' };
   }
 
-  return resolveMetaComponent(csf, storyFilePath);
+  return resolveMetaComponent(parsed.csf, storyFilePath);
 }

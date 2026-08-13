@@ -623,10 +623,8 @@ describe('angular source decorator', () => {
       };
 
       const source = computesTemplateSourceFromComponent(component, props);
-      // Ideally we should stringify the object, but that could cause the story to break because of unescaped values in the JSON object.
-      // This will have to do for now
       expect(source).toEqual(
-        `<doc-button [isDisabled]="false" [label]="'Hello world'" [someDataObject]="{one: 'Hello world', two: true, three: ['a string literal with \\'double quotes\\'', 'a string literal with \\'single quotes\\'', 'a single quoted string with \\'double quotes\\'', 'a double quoted string with \\'single quotes\\'', 'a single quoted string with escaped \\'single quotes\\'', 'a double quoted string with escaped \\'double quotes\\'', 'a string literal with \\'escaped single quotes\\'', 'a string literal with \\'escaped double quotes\\'']}"></doc-button>`
+        `<doc-button [isDisabled]="false" [label]="'Hello world'" [someDataObject]="{one: 'Hello world', two: true, three: ['a string literal with &quot;double quotes&quot;', 'a string literal with \\'single quotes\\'', 'a single quoted string with &quot;double quotes&quot;', 'a double quoted string with \\'single quotes\\'', 'a single quoted string with escaped \\'single quotes\\'', 'a double quoted string with escaped &quot;double quotes&quot;', 'a string literal with \\'escaped single quotes\\'', 'a string literal with &quot;escaped double quotes&quot;']}"></doc-button>`
       );
     });
 
@@ -660,10 +658,8 @@ describe('angular source decorator', () => {
       };
 
       const source = computesTemplateSourceFromComponent(component, props);
-      // Ideally we should stringify the object, but that could cause the story to break because of unescaped values in the JSON object.
-      // This will have to do for now
       expect(source).toEqual(
-        `<doc-button [isDisabled]="false" [label]="'Hello world'" [someDataObject]="{one: 'Hello world', two: true, three: ['a string literal with \\'double quotes\\'', 'a string literal with \\'single quotes\\'', 'a single quoted string with \\'double quotes\\'', 'a double quoted string with \\'single quotes\\'', 'a single quoted string with escaped \\'single quotes\\'', 'a double quoted string with escaped \\'double quotes\\'', 'a string literal with \\'escaped single quotes\\'', 'a string literal with \\'escaped double quotes\\''], ref: '[Circular]'}"></doc-button>`
+        `<doc-button [isDisabled]="false" [label]="'Hello world'" [someDataObject]="{one: 'Hello world', two: true, three: ['a string literal with &quot;double quotes&quot;', 'a string literal with \\'single quotes\\'', 'a single quoted string with &quot;double quotes&quot;', 'a double quoted string with \\'single quotes\\'', 'a single quoted string with escaped \\'single quotes\\'', 'a double quoted string with escaped &quot;double quotes&quot;', 'a string literal with \\'escaped single quotes\\'', 'a string literal with &quot;escaped double quotes&quot;'], ref: '[Circular]'}"></doc-button>`
       );
     });
   });

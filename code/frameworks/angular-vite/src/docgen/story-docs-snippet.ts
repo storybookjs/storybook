@@ -43,6 +43,15 @@ const unescapeTemplateLiteral = (template: string): string =>
 // Mirrors `formatPropInTemplate`, which reaches a non-identifier output through `this['name']`.
 const memberName = (name: string): string => (isValidIdentifier(name) ? name : `['${name}']`);
 
+// A template `buildTemplate` broke over lines moves onto its own lines inside the literal too.
+const embedTemplate = (template: string): string =>
+  template.includes('\n')
+    ? `\n${template
+        .split('\n')
+        .map((line) => (line === '' ? line : `    ${line}`))
+        .join('\n')}`
+    : template;
+
 export const buildHostComponentSnippet = ({
   template,
   componentName,
@@ -83,7 +92,7 @@ export const buildHostComponentSnippet = ({
     '@Component({',
     `  selector: '${HOST_SELECTOR}',`,
     `  imports: [${declared}],`,
-    `  template: \`${escapeTemplateLiteral(template)}\`,`,
+    `  template: \`${embedTemplate(escapeTemplateLiteral(template))}\`,`,
     '})',
     `export class ${HOST_CLASS} ${body}`,
   ].join('\n');

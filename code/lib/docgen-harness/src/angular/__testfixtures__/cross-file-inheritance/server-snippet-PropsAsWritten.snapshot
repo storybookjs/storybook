@@ -4,7 +4,12 @@ import { CrossFileInheritanceComponent } from './cross-file-inheritance.componen
 @Component({
   selector: 'app-demo',
   imports: [CrossFileInheritanceComponent],
-  template: `<sb-cross-file-inheritance [heading]="'Storage almost full'" [dismissible]="true" (dismissed)="dismissed($event)"></sb-cross-file-inheritance>`,
+  template: `
+    <sb-cross-file-inheritance
+        [heading]="'Storage almost full'"
+        [dismissible]="true"
+        (dismissed)="dismissed($event)">
+    </sb-cross-file-inheritance>`,
 })
 export class DemoComponent {
   dismissed(event: unknown) {}

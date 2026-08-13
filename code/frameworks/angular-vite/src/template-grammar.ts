@@ -104,15 +104,18 @@ const ATTRIBUTE = /\[(.+?)]/g;
 // The leading non-space run is the element name; whatever follows are its attributes.
 const ELEMENT_AND_ATTRIBUTES = /(\S+)(.*)/;
 
+// Width past which the bindings go one per line, with the closing tag on its own.
+const MAX_SINGLE_LINE = 80;
+
 // Expands a component selector into the element a story renders, carrying its bindings.
 export const buildTemplate = (
   selector: string,
   { inputs, outputs, innerTemplate = '' }: BuildTemplateInput
 ) => {
-  const inputBindings = inputs.map(({ name, expression }) => ` [${name}]="${expression}"`).join('');
-  const outputBindings = outputs
-    .map((name) => ` (${name})="${formatPropInTemplate(name)}($event)"`)
-    .join('');
+  const bindings = [
+    ...inputs.map(({ name, expression }) => `[${name}]="${expression}"`),
+    ...outputs.map((name) => `(${name})="${formatPropInTemplate(name)}($event)"`),
+  ];
 
   const firstSelector = selector.split(',')[0];
   const withElement =
@@ -126,10 +129,20 @@ export const buildTemplate = (
     .replace(ATTRIBUTE, ' $1');
 
   return asAttributes.replace(ELEMENT_AND_ATTRIBUTES, (_, element: string, attributes: string) => {
-    const openingTag = `<${element}${attributes}${inputBindings}${outputBindings}`;
-    return VOID_ELEMENTS.has(element)
-      ? `${openingTag} />`
-      : `${openingTag}>${innerTemplate}</${element}>`;
+    const inlineTag = `<${element}${attributes}${bindings.map((binding) => ` ${binding}`).join('')}`;
+    const inline = VOID_ELEMENTS.has(element)
+      ? `${inlineTag} />`
+      : `${inlineTag}>${innerTemplate}</${element}>`;
+    if (inline.length <= MAX_SINGLE_LINE || bindings.length === 0) {
+      return inline;
+    }
+
+    const brokenTag = `<${element}${attributes}\n${bindings.map((binding) => `    ${binding}`).join('\n')}`;
+    if (VOID_ELEMENTS.has(element)) {
+      return `${brokenTag} />`;
+    }
+    const content = innerTemplate === '' ? '\n' : `\n${innerTemplate}\n`;
+    return `${brokenTag}>${content}</${element}>`;
   });
 };
 

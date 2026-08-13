@@ -4,6 +4,11 @@ import { DecoratorUnionEnumComponent } from './decorator-union-enum.component.ts
 @Component({
   selector: 'app-demo',
   imports: [DecoratorUnionEnumComponent],
-  template: `<sb-decorator-union-enum [size]="'large'" [tone]="'warn'" [kind]="'secondary'"></sb-decorator-union-enum>`,
+  template: `
+    <sb-decorator-union-enum
+        [size]="'large'"
+        [tone]="'warn'"
+        [kind]="'secondary'">
+    </sb-decorator-union-enum>`,
 })
 export class DemoComponent {}

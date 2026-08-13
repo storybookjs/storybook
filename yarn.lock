@@ -5116,13 +5116,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/env@npm:16.0.0":
-  version: 16.0.0
-  resolution: "@next/env@npm:16.0.0"
-  checksum: 10c0/bc6b85d48373a207f95373c5b350e0766774a8453982c8e045539393e165bc25ef3f6aaaf44036c8f2f4a98e857e0ccc7f84da6ea92116bd50f672e06f987750
-  languageName: node
-  linkType: hard
-
 "@next/env@npm:16.1.6":
   version: 16.1.6
   resolution: "@next/env@npm:16.1.6"
@@ -5130,7 +5123,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@next/env@npm:16.2.12":
+"@next/env@npm:16.2.12, @next/env@npm:^15.0.0 || ^16.0.0":
   version: 16.2.12
   resolution: "@next/env@npm:16.2.12"
   checksum: 10c0/08cab40af01303ff44ba835cd8761cc248e02d27d589d59fae3780566cd95fe8f053f40b44516fc8ff1984ab32981c0973bd1923977f255fdbb2376ac53ba783
@@ -7350,17 +7343,17 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@polka/url@npm:1.0.0-next.29, @polka/url@npm:^1.0.0-next.24":
+  version: 1.0.0-next.29
+  resolution: "@polka/url@npm:1.0.0-next.29"
+  checksum: 10c0/0d58e081844095cb029d3c19a659bfefd09d5d51a2f791bc61eba7ea826f13d6ee204a8a448c2f5a855c17df07b37517373ff916dd05801063c0568ae9937684
+  languageName: node
+  linkType: hard
+
 "@polka/url@npm:^0.5.0":
   version: 0.5.0
   resolution: "@polka/url@npm:0.5.0"
   checksum: 10c0/76324126e1608f4cdc5c6b11b618ca67612c37d45401f3fbcce4967294093761b7568cc6ae74ade8afbe744547e72e9d50bc38f690ddea0904a1d66a6b8a0093
-  languageName: node
-  linkType: hard
-
-"@polka/url@npm:^1.0.0-next.21, @polka/url@npm:^1.0.0-next.24":
-  version: 1.0.0-next.29
-  resolution: "@polka/url@npm:1.0.0-next.29"
-  checksum: 10c0/0d58e081844095cb029d3c19a659bfefd09d5d51a2f791bc61eba7ea826f13d6ee204a8a448c2f5a855c17df07b37517373ff916dd05801063c0568ae9937684
   languageName: node
   linkType: hard
 
@@ -12417,7 +12410,7 @@ __metadata:
     semver: "npm:^7.7.3"
     styled-jsx: "npm:5.1.6"
     typescript: "npm:^6.0.3"
-    vite-plugin-storybook-nextjs: "npm:^3.3.0"
+    vite-plugin-storybook-nextjs: "workspace:*"
   peerDependencies:
     "@types/react": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
     "@types/react-dom": ^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0
@@ -25663,7 +25656,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"image-size@npm:^2.0.0, image-size@npm:^2.0.2":
+"image-size@npm:^2.0.2":
   version: 2.0.2
   resolution: "image-size@npm:2.0.2"
   bin:
@@ -33421,7 +33414,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-dom@npm:^19.2.0":
+"react-dom@npm:^19.0.0, react-dom@npm:^19.2.0":
   version: 19.2.8
   resolution: "react-dom@npm:19.2.8"
   dependencies:
@@ -39297,23 +39290,33 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite-plugin-storybook-nextjs@npm:^3.3.0":
-  version: 3.3.0
-  resolution: "vite-plugin-storybook-nextjs@npm:3.3.0"
+"vite-plugin-storybook-nextjs@workspace:*, vite-plugin-storybook-nextjs@workspace:code/lib/vite-plugin-storybook-nextjs":
+  version: 0.0.0-use.local
+  resolution: "vite-plugin-storybook-nextjs@workspace:code/lib/vite-plugin-storybook-nextjs"
   dependencies:
-    "@next/env": "npm:16.0.0"
-    image-size: "npm:^2.0.0"
+    "@next/env": "npm:^15.0.0 || ^16.0.0"
+    "@rollup/pluginutils": "npm:^5.0.2"
+    "@types/node": "npm:^22.19.1"
+    "@types/react": "npm:^18.0.37"
+    "@types/semver": "npm:^7.7.1"
+    image-size: "npm:^2.0.2"
     magic-string: "npm:^0.30.11"
     module-alias: "npm:^2.2.3"
+    next: "npm:^15.2.3"
+    pathe: "npm:^2.0.3"
+    react: "npm:^19.0.0"
+    react-dom: "npm:^19.0.0"
+    semver: "npm:^7.7.3"
     ts-dedent: "npm:^2.2.0"
+    typescript: "npm:^6.0.3"
+    vite: "npm:^7.0.4"
     vite-tsconfig-paths: "npm:^5.1.4"
   peerDependencies:
     next: ^14.1.0 || ^15.0.0 || ^16.0.0
-    storybook: ^0.0.0-0 || ^9.0.0 || ^10.0.0 || ^10.0.0-0 || ^10.1.0-0 || ^10.2.0-0 || ^10.3.0-0 || ^10.4.0-0 || ^10.5.0-0 || ^10.6.0-0
+    storybook: "workspace:^"
     vite: ^5.0.0 || ^6.0.0 || ^7.0.0 || ^8.0.0
-  checksum: 10c0/4582deb9566f5ffa05b15ac3544e32ec9058aec63893569ecd5d7c64f5c400f5f4c03c7c7ecdb114fba9bcacd0ae83cdec6ff6d4e61069832667f8c5124ca2e6
-  languageName: node
-  linkType: hard
+  languageName: unknown
+  linkType: soft
 
 "vite-tsconfig-paths@npm:^5.1.4":
   version: 5.1.4

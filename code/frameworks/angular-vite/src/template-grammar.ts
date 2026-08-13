@@ -61,7 +61,7 @@ export const formatInputValue = (value: unknown): string => {
 };
 
 // https://www.w3.org/TR/2011/WD-html-markup-20110113/syntax.html#syntax-elements
-const voidElements = [
+const VOID_ELEMENTS = new Set([
   'area',
   'base',
   'br',
@@ -78,7 +78,7 @@ const voidElements = [
   'source',
   'track',
   'wbr',
-];
+]);
 
 export interface TemplateInputBinding {
   name: string;
@@ -127,7 +127,7 @@ export const buildTemplate = (
 
   return asAttributes.replace(ELEMENT_AND_ATTRIBUTES, (_, element: string, attributes: string) => {
     const openingTag = `<${element}${attributes}${inputBindings}${outputBindings}`;
-    return voidElements.includes(element)
+    return VOID_ELEMENTS.has(element)
       ? `${openingTag} />`
       : `${openingTag}>${innerTemplate}</${element}>`;
   });

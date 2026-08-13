@@ -1061,8 +1061,10 @@ async function prepareNextjsSandbox(cwd: string) {
   let envSource = '';
   try {
     envSource = await readFile(envPath, 'utf8');
-  } catch {
-    // create-next-app sandboxes typically have no .env yet
+  } catch (e: any) {
+    if (e?.code !== 'ENOENT') {
+      throw e;
+    }
   }
 
   const upsertEnv = (source: string, key: string, value: string) => {

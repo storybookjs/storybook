@@ -17,13 +17,8 @@ const refresh = fn().mockName('next/cache::refresh');
 const cacheLife = fn().mockName('next/cache::cacheLife');
 const cacheTag = fn().mockName('next/cache::cacheTag');
 
-// deprecated wrappers (as of Next v16.0.0)
-const unstable_cacheLife = fn()
-  .mockName('next/cache::unstable_cacheLife')
-  .mockImplementation((...args) => cacheLife(...args));
-const unstable_cacheTag = fn()
-  .mockName('next/cache::unstable_cacheTag')
-  .mockImplementation((...args) => cacheTag(...args));
+const unstable_cacheLife = cacheLife;
+const unstable_cacheTag = cacheTag;
 
 const cacheExports = {
   unstable_cache,

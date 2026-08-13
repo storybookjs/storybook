@@ -36,8 +36,8 @@ export type ToolMetadata = {
 };
 
 export type StorybookAiToolCallResult = {
-  content: Array<{ type: string; [key: string]: unknown }>;
-  structuredContent?: unknown;
+  content: Array<{ type: 'text'; text: string }>;
+  structuredContent?: Record<string, unknown>;
   isError?: boolean;
 };
 

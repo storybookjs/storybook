@@ -1,9 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
+import * as v from 'valibot';
 
 import type { StoryIndex } from 'storybook/internal/types';
 
 import { TRIGGER_TEST_RUN_REQUEST, TRIGGER_TEST_RUN_RESPONSE } from '../../constants.ts';
-import type { TestRunResult } from './definition.ts';
+import { createTestToolset, type TestRunResult } from './definition.ts';
 import {
   createAsyncQueue,
   runStoryTests,
@@ -263,5 +264,44 @@ describe('runStoryTests', () => {
     expect(channel.handlers.get(TRIGGER_TEST_RUN_RESPONSE) ?? []).toHaveLength(0);
 
     vi.useRealTimers();
+  });
+});
+
+describe('createTestToolset channel identity', () => {
+  it('runs the request/response over the same channel object the toolset was created with', async () => {
+    const channel = createMockChannel();
+    channel.emit = (event, payload) => {
+      if (event === TRIGGER_TEST_RUN_REQUEST) {
+        const { requestId } = payload as { requestId: string };
+        queueMicrotask(() =>
+          respond(channel, {
+            requestId,
+            status: 'completed',
+            result: sampleResult,
+          })
+        );
+      }
+    };
+
+    const toolset = createTestToolset({
+      channel,
+      storyIndex: { getIndex: async () => index },
+      a11yEnabled: false,
+    });
+    const outcome = await toolset.methods.run.handler(
+      v.parse(toolset.methods.run.input, {
+        stories: [{ storyId: 'button--primary' }],
+        a11y: false,
+      }),
+      {
+        transport: 'cli',
+        getService: () => {
+          throw new Error('unused');
+        },
+      }
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect(outcome.data).toMatchObject({ status: 'completed', a11y: false });
   });
 });

@@ -137,17 +137,39 @@ export type StoriesChangeStatusesAccess = {
   getAll: () => StatusesByStoryIdAndTypeId | Promise<StatusesByStoryIdAndTypeId>;
 };
 
+/**
+ * Change-detection status-store readiness, distinct from module-graph readiness. The graph can be
+ * `ready` while change detection is disabled or its initial scan has failed.
+ */
+export type ChangeDetectionReadinessAccess = () => Promise<
+  | { status: 'ready' }
+  | { status: 'unavailable'; reason: string }
+  | { status: 'error'; error: { message: string } }
+>;
+
 export type CreateStoriesToolsetOptions = {
   storyIndex: StoryIndexAccess;
   git: StoriesGitAccess;
   /** Change-detection status snapshot; wired by the server host, not imported from core-server. */
   changeStatuses: StoriesChangeStatusesAccess;
+  getChangeDetectionReadiness: ChangeDetectionReadinessAccess;
   /**
    * Whether curated reviews are available in this Storybook. Reviews are the intended end of visual
    * work, so when they exist several methods steer the agent there instead of at raw preview links.
    */
   reviewEnabled?: boolean;
 };
+
+function reasonForChangeDetectionReadiness(
+  readiness: Exclude<Awaited<ReturnType<ChangeDetectionReadinessAccess>>, { status: 'ready' }>
+): string {
+  if (readiness.status === 'unavailable') {
+    return readiness.reason === 'disabled'
+      ? 'Storybook change detection is disabled, so changed-story statuses are unavailable. Enable the changeDetection feature and retry.'
+      : `Storybook change detection is unavailable: ${readiness.reason}.`;
+  }
+  return `Storybook change detection failed: ${readiness.error.message}`;
+}
 
 function describePreview(ctx: ToolsetCtx, reviewEnabled: boolean): string {
   if (!reviewEnabled) {
@@ -198,6 +220,7 @@ export function createStoriesToolset({
   storyIndex,
   git,
   changeStatuses,
+  getChangeDetectionReadiness,
   reviewEnabled = false,
 }: CreateStoriesToolsetOptions) {
   return defineToolset({
@@ -259,6 +282,13 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
           if (graphStatus.value !== 'ready') {
             throw new OpenServiceModuleGraphUnavailableError({
               reason: reasonForStatus(graphStatus),
+            });
+          }
+
+          const changeDetection = await getChangeDetectionReadiness();
+          if (changeDetection.status !== 'ready') {
+            throw new OpenServiceModuleGraphUnavailableError({
+              reason: reasonForChangeDetectionReadiness(changeDetection),
             });
           }
 

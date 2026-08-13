@@ -431,21 +431,6 @@ export class OpenServiceToolsetOutputMismatchError extends StorybookError {
   }
 }
 
-/**
- * A toolset method published an `output` schema that accepts non-object JSON (MCP requires an
- * object for `outputSchema` / `structuredContent`).
- */
-export class OpenServiceInvalidToolsetOutputSchemaError extends StorybookError {
-  constructor(public data: { methodLabel: string; reason: string }) {
-    super({
-      name: 'OpenServiceInvalidToolsetOutputSchemaError',
-      category: Category.CORE_COMMON,
-      code: 27,
-      message: `Invalid output schema for ${data.methodLabel}: ${data.reason}`,
-    });
-  }
-}
-
 /** A toolset method id is not exactly `toolsetId.methodName` with non-empty parts. */
 export class OpenServiceInvalidToolsetMethodIdError extends StorybookError {
   constructor(public data: { methodId: string }) {

@@ -43,7 +43,9 @@ import { createDocsToolset } from '../../shared/open-service/toolsets/docs/defin
 import { reviewToolset } from '../../shared/open-service/toolsets/review/definition.ts';
 import { createStoriesToolset } from '../../shared/open-service/toolsets/stories/definition.ts';
 import { GitDiffProvider } from '../change-detection/GitDiffProvider.ts';
+import { getChangeDetectionReadiness } from '../change-detection/readiness.ts';
 import { getStatusStoreByTypeId } from '../stores/status.ts';
+import { getPreviewBuilder } from '../utils/get-builders.ts';
 import { loadManifests } from '../utils/manifests/manifests.ts';
 
 import * as pathe from 'pathe';
@@ -345,6 +347,23 @@ export const managerEntries = async (existing: any) => {
   ];
 };
 
+async function getHeadlessChangeDetectionAdapter(options: Options) {
+  const core = await options.presets.apply<CoreConfig>('core', {});
+  if (!core?.builder) {
+    return undefined;
+  }
+  const resolvedPreviewBuilder =
+    typeof core.builder === 'string' ? core.builder : core.builder.name;
+  const previewBuilder = await getPreviewBuilder(resolvedPreviewBuilder);
+  try {
+    return previewBuilder.changeDetectionAdapter?.(options);
+  } catch (error) {
+    logger.warn('Change detection: adapter initialisation failed');
+    logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
+    return undefined;
+  }
+}
+
 globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
 
 export const services = async (_value: void, options: Options): Promise<void> => {
@@ -363,6 +382,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     getIndex: () => storyIndexGenerator.getIndex(),
     workingDir: process.cwd(),
     presets: options.presets,
+    getAdapter: () => getHeadlessChangeDetectionAdapter(options),
   });
 
   const features = await options.presets.apply('features');
@@ -382,6 +402,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       changeStatuses: {
         getAll: () => getStatusStoreByTypeId(CHANGE_DETECTION_STATUS_TYPE_ID).getAll(),
       },
+      getChangeDetectionReadiness,
       // The explicit opt-in gate, not `isReviewFeatureEnabled`: with the flag unset the review
       // infrastructure below still registers (the `storybook ai` CLI channel enables the tool per
       // request), but direct MCP clients never see `review-create`, so the stories prose must

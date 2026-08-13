@@ -197,7 +197,7 @@ function isAgentFacingError(error: unknown): error is Error {
 async function toStructuredContent(
   outputSchema: GenericSchema | undefined,
   data: unknown
-): Promise<unknown> {
+): Promise<Record<string, unknown> | undefined> {
   if (!outputSchema || data === undefined) {
     return undefined;
   }
@@ -213,7 +213,7 @@ async function toStructuredContent(
     }
     throw new Error(`Toolset output did not match its published output schema: ${serialized}`);
   }
-  return result.value;
+  return result.value as Record<string, unknown>;
 }
 
 /**

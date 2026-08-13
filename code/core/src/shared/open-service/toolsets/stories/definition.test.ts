@@ -52,6 +52,7 @@ const getIndex = vi.fn();
 const getChangedFiles = vi.fn();
 const getRepoRoot = vi.fn();
 const getStatuses = vi.fn();
+const getChangeDetectionReadiness = vi.fn();
 const graphStatus = vi.fn();
 const storiesForFiles = vi.fn();
 const telemetry = vi.fn();
@@ -74,7 +75,13 @@ let mcpCtx: ToolsetCtx;
 let toolset: StoriesToolset;
 
 function createToolset({ reviewEnabled = false } = {}): StoriesToolset {
-  return createStoriesToolset({ storyIndex, git, changeStatuses, reviewEnabled });
+  return createStoriesToolset({
+    storyIndex,
+    git,
+    changeStatuses,
+    reviewEnabled,
+    getChangeDetectionReadiness,
+  });
 }
 
 function runPreview(
@@ -136,6 +143,7 @@ beforeEach(() => {
   });
   getRepoRoot.mockResolvedValue(repoRoot);
   getStatuses.mockImplementation(() => statusesFixture);
+  getChangeDetectionReadiness.mockResolvedValue({ status: 'ready' });
   graphStatus.mockResolvedValue({ value: 'ready' });
   storiesForFiles.mockImplementation(async ({ files }: { files: string[] }) =>
     files.map((file) => graphMatchesByFile.get(file) ?? [])
@@ -259,6 +267,16 @@ describe('stories.changed', () => {
     expect((error as Error).message).toBe(
       "Storybook's story dependency graph is unavailable: builder does not support change detection. Make sure the dev server is running with a builder that supports change detection."
     );
+    expect(getStatuses).not.toHaveBeenCalled();
+  });
+
+  it('rejects when change detection is not ready even if the graph is', async () => {
+    getChangeDetectionReadiness.mockResolvedValue({ status: 'unavailable', reason: 'disabled' });
+
+    const error = await runChanged().catch((reason: unknown) => reason);
+
+    expect(error).toBeInstanceOf(OpenServiceModuleGraphUnavailableError);
+    expect((error as Error).message).toContain('change detection is disabled');
     expect(getStatuses).not.toHaveBeenCalled();
   });
 

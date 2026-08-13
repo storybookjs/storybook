@@ -96,6 +96,7 @@ export {
 } from './change-detection/errors.ts';
 export {
   getChangeDetectionReadiness as experimental_getChangeDetectionReadiness,
+  setChangeDetectionHost as experimental_setChangeDetectionHost,
   type ChangeDetectionReadiness as Experimental_ChangeDetectionReadiness,
 } from './change-detection/readiness.ts';
 export type {

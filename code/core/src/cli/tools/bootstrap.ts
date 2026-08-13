@@ -2,20 +2,14 @@ import { resolve } from 'node:path';
 
 import {
   ChangeDetectionService,
-  experimental_getChangeDetectionReadiness,
   experimental_getStatusStore,
   experimental_loadStorybook,
-  getBuilders,
+  experimental_setChangeDetectionHost,
   getService,
   prepareHeadlessUniversalStores,
-  resolveChangeDetectionAdapter,
-  type ChangeDetectionAdapter,
-  type Experimental_ChangeDetectionReadiness,
   type StoryIndexGenerator,
 } from 'storybook/internal/core-server';
-import { logger } from 'storybook/internal/node-logger';
-import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
-import type { Options } from 'storybook/internal/types';
+import { CHANGE_DETECTION_STATUS_TYPE_ID, type Options } from 'storybook/internal/types';
 
 import type {
   AnyToolsetDefinition,
@@ -38,10 +32,10 @@ export type ToolsRuntime = {
  * every open service and toolset — including any an addon contributes — as a consequence of normal
  * configuration loading, not via CLI-specific machinery.
  *
- * The module-graph engine registered by that pass waits on a deferred builder adapter. This
- * invocation always repeats the dev server's bootstrap sequence so toolsets contributed by addons
- * can use the graph without being named in a core-owned allowlist. A missing adapter settles the
- * graph as unavailable instead of making unrelated tools fail.
+ * Graph hosting and change-detection scanning stay lazy: the module-graph engine starts from its
+ * `status` query `load` (via `_waitForSettledEngine`), and the status service starts from the first
+ * `getChangeDetectionReadiness` call. Help, docs, and test-run never touch either path. A missing
+ * adapter settles the graph as unavailable instead of making unrelated tools fail.
  *
  * This changes `process.cwd()` to the targeted Storybook project for the rest of the one-shot CLI
  * process. Callers embedding this runtime must capture their launch directory before bootstrapping
@@ -49,7 +43,7 @@ export type ToolsRuntime = {
  */
 export async function bootstrapToolsRuntime(
   target: ToolsTarget,
-  deps: { hostModuleGraph?: typeof hostModuleGraphInProcess } = {}
+  deps: { setChangeDetectionHost?: typeof experimental_setChangeDetectionHost } = {}
 ): Promise<ToolsRuntime> {
   const cwd = resolve(target.cwd ?? process.cwd());
   // Everything the `services` hooks register keys its file mapping off `process.cwd()` — the
@@ -71,7 +65,9 @@ export async function bootstrapToolsRuntime(
 
   const options = await experimental_loadStorybook({ configDir, channel });
 
-  await (deps.hostModuleGraph ?? hostModuleGraphInProcess)(options);
+  (deps.setChangeDetectionHost ?? experimental_setChangeDetectionHost)(() =>
+    startChangeDetectionInProcess(options)
+  );
 
   return {
     configDir,
@@ -80,38 +76,13 @@ export async function bootstrapToolsRuntime(
   };
 }
 
-/**
- * Repeat the dev server's change-detection bootstrap in this process: construct the status
- * service, obtain the builder adapter (undefined on absence or throw), resolve the module-graph
- * engine's deferred adapter, start the status service, and wait for the readiness signal so
- * graph-dependent handlers read a settled graph and a populated status store.
- *
- * The adapter comes from the builder's `changeDetectionAdapter` hook called with `options`, which
- * is the headless variant of the call the dev server makes after `start()`.
- */
-async function hostModuleGraphInProcess(
-  options: Options
-): Promise<Experimental_ChangeDetectionReadiness> {
+async function startChangeDetectionInProcess(options: Options): Promise<void> {
   const changeDetectionService = new ChangeDetectionService({
     storyIndexGeneratorPromise: options.presets.apply<StoryIndexGenerator>('storyIndexGenerator'),
     statusStore: experimental_getStatusStore(CHANGE_DETECTION_STATUS_TYPE_ID),
     workingDir: process.cwd(),
   });
 
-  const [previewBuilder] = await getBuilders(options);
-  let adapter: ChangeDetectionAdapter | undefined;
-  try {
-    adapter = previewBuilder.changeDetectionAdapter?.(options);
-  } catch (error) {
-    // Same visibility as the dev server: a misconfigured builder should not look identical to a
-    // builder that simply lacks change-detection support.
-    logger.warn('Change detection: adapter initialisation failed');
-    logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
-  }
-  resolveChangeDetectionAdapter(adapter);
-
   const features = await options.presets.apply('features');
   changeDetectionService.start(features?.changeDetection !== false);
-
-  return experimental_getChangeDetectionReadiness();
 }

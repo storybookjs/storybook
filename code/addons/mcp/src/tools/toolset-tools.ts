@@ -84,7 +84,7 @@ function isAgentFacingError(error: unknown): error is Error {
 async function toStructuredContent(
   outputSchema: StandardSchemaV1 | undefined,
   data: unknown
-): Promise<unknown> {
+): Promise<Record<string, unknown> | undefined> {
   if (!outputSchema || data === undefined) {
     return undefined;
   }
@@ -92,7 +92,7 @@ async function toStructuredContent(
   if (result.issues) {
     throw new OpenServiceToolsetOutputMismatchError({ issues: result.issues });
   }
-  return result.value;
+  return result.value as Record<string, unknown>;
 }
 
 function buildContext(server: Server): ToolsetCtx {

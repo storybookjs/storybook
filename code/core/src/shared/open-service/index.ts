@@ -42,7 +42,6 @@ export {
   OpenServiceDuplicateToolNameError,
   OpenServiceDuplicateToolsetError,
   OpenServiceInvalidToolsetMethodIdError,
-  OpenServiceInvalidToolsetOutputSchemaError,
   OpenServiceMissingToolsetError,
 } from '../../server-errors.ts';
 export type { KnownToolsets } from './toolset-types.ts';

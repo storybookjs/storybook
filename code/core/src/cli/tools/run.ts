@@ -244,9 +244,10 @@ export async function runToolsCommand(
         arguments: validation.value as Record<string, unknown>,
       });
       const text = (reply.content ?? [])
-        .map((item) =>
-          item.type === 'text' && item.text ? item.text : JSON.stringify(item, null, 2)
+        .filter(
+          (item): item is { type: 'text'; text: string } => item.type === 'text' && !!item.text
         )
+        .map((item) => item.text)
         .join('\n\n');
       return result({
         exitCode: reply.isError ? 1 : 0,

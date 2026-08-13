@@ -2,7 +2,6 @@ import type { Channel } from 'storybook/internal/channels';
 import {
   experimental_loadStorybook,
   prepareHeadlessUniversalStores,
-  resolveChangeDetectionAdapter,
 } from 'storybook/internal/core-server';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
@@ -14,7 +13,6 @@ vi.mock('storybook/internal/core-server', { spy: true });
 beforeEach(() => {
   vi.mocked(prepareHeadlessUniversalStores).mockReset();
   vi.mocked(experimental_loadStorybook).mockReset();
-  vi.mocked(resolveChangeDetectionAdapter).mockImplementation(() => {});
 });
 
 describe('bootstrapToolsRuntime', () => {
@@ -25,16 +23,17 @@ describe('bootstrapToolsRuntime', () => {
     // would hang forever, so the object identity is the contract.
     const channel = { isPreparedChannel: true } as unknown as Channel;
     const options = {};
-    const hostModuleGraph = vi.fn(async () => ({ status: 'ready' as const }));
+    const setChangeDetectionHost = vi.fn();
     vi.mocked(prepareHeadlessUniversalStores).mockReturnValue(channel);
     vi.mocked(experimental_loadStorybook).mockResolvedValue(options as never);
 
     await bootstrapToolsRuntime(
       { cwd: process.cwd(), configDir: '.storybook' },
-      { hostModuleGraph }
+      { setChangeDetectionHost }
     );
 
     expect(experimental_loadStorybook).toHaveBeenCalledWith(expect.objectContaining({ channel }));
-    expect(hostModuleGraph).toHaveBeenCalledWith(options);
+    expect(setChangeDetectionHost).toHaveBeenCalledOnce();
+    expect(setChangeDetectionHost).toHaveBeenCalledWith(expect.any(Function));
   });
 });

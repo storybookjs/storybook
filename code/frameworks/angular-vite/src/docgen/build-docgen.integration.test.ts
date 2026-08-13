@@ -43,7 +43,10 @@ it('builds a real payload through the TypeScript-backed analyzer', async () => {
       name: 'label',
       table: { category: 'inputs' },
     });
-    expect(payload?.angularComponentMeta?.name).toBe('ButtonComponent');
+    expect(payload?.angularComponentMeta).toMatchObject({
+      name: 'ButtonComponent',
+      inputs: ['label'],
+    });
   } finally {
     manager.dispose();
   }

@@ -53,6 +53,7 @@ export async function recordArgTypesSnapshot({
       candidate,
       legacyBaseline: gate.legacyBaseline,
       strictTable: gate.strictTable,
+      intentionallyDropped: gate.intentionallyDropped,
     });
   }
 

@@ -31,6 +31,7 @@ export function expectCurrentOrBetter(input: ExpectCurrentOrBetterInput): void {
       compareArgTypes(input.baseline, input.candidate, {
         legacyBaseline: input.legacyBaseline,
         strictTable: input.strictTable,
+        intentionallyDropped: input.intentionallyDropped,
       })
     );
     return;

@@ -156,7 +156,10 @@ const visitProperty = (
   }
   const signal = parseSignalCall(ctx, member);
   if (signal) {
-    const entry = entryFor(ctx, member, buildSignalEntry(ctx, member, signal));
+    const entry = entryFor(ctx, member, {
+      ...buildSignalEntry(ctx, member, signal),
+      ...memberApiFields(ctx, member),
+    });
     if (signal.kind !== 'output') {
       members.inputs.push(entry);
     }
@@ -184,6 +187,7 @@ const buildDecoratorInput = (
     optional: config.required !== undefined ? !config.required : !!member.questionToken,
     ...(config.required === undefined ? {} : { required: config.required }),
     ...(member.initializer ? { defaultValue: member.initializer.getText() } : {}),
+    ...memberApiFields(ctx, member),
     ...getJsDocDescription(ctx.ts, member),
     ...getJsDocTagsField(ctx.ts, member),
   };
@@ -199,6 +203,7 @@ const buildDecoratorOutput = (
     name: decoratorStringArg(ctx, decorator) ?? memberName(ctx.ts, member.name),
     ...(type === undefined ? {} : { type }),
     ...(member.initializer ? { defaultValue: member.initializer.getText() } : {}),
+    ...memberApiFields(ctx, member),
     ...getJsDocDescription(ctx.ts, member),
     ...getJsDocTagsField(ctx.ts, member),
   };
@@ -216,9 +221,38 @@ const buildPlainProperty = (
     ...(type === undefined ? {} : { type }),
     optional: !!member.questionToken,
     ...(member.initializer ? { defaultValue: initializerText(ctx.ts, member.initializer) } : {}),
+    ...memberApiFields(ctx, member),
     ...getJsDocDescription(ctx.ts, member),
     ...getJsDocTagsField(ctx.ts, member),
     ...(names.length ? { decorators: names.map((name) => ({ name })) } : {}),
+  };
+};
+
+const accessibilityOf = (
+  ctx: AnalyzerContext,
+  node: ts.Node
+): 'private' | 'protected' | undefined => {
+  for (const modifier of ctx.ts.getModifiers(node as ts.HasModifiers) ?? []) {
+    if (modifier.kind === ctx.ts.SyntaxKind.PrivateKeyword) {
+      return 'private';
+    }
+    if (modifier.kind === ctx.ts.SyntaxKind.ProtectedKeyword) {
+      return 'protected';
+    }
+  }
+  return undefined;
+};
+
+// Several declarations for an accessor pair, whose modifiers and doc comment may sit on either half.
+const memberApiFields = (
+  ctx: AnalyzerContext,
+  ...nodes: (ts.Node | undefined)[]
+): Pick<Property, 'visibility' | 'internal'> => {
+  const declared = nodes.filter((node): node is ts.Node => node !== undefined);
+  const visibility = declared.map((node) => accessibilityOf(ctx, node)).find(Boolean);
+  return {
+    ...(visibility === undefined ? {} : { visibility }),
+    ...(declared.some((node) => hasJsDocTag(ctx.ts, node, 'internal')) ? { internal: true } : {}),
   };
 };
 
@@ -268,6 +302,7 @@ const visitMethod = (ctx: AnalyzerContext, member: ts.MethodDeclaration): Method
     name: memberName(ctx.ts, member.name),
     args,
     returnType,
+    ...memberApiFields(ctx, member),
     ...getJsDocDescription(ts, member),
     ...getJsDocTagsField(ts, member),
   };
@@ -323,6 +358,7 @@ const visitConstructorProperties = (
         ...(parameter.initializer
           ? { defaultValue: initializerText(ctx.ts, parameter.initializer) }
           : {}),
+        ...memberApiFields(ctx, parameter),
         ...getJsDocDescription(ts, parameter),
         ...getJsDocTagsField(ts, parameter),
       },
@@ -364,6 +400,7 @@ const visitAccessorPair = (
     ...(getter ? getDecorators(ctx, getter) : []),
     ...(setter ? getDecorators(ctx, setter) : []),
   ];
+  const apiFields = memberApiFields(ctx, getter, setter);
   const accessorEntry = <T>(value: T): MemberEntry<T> => ({
     declName: name,
     isStatic: isStatic(ctx, member),
@@ -378,6 +415,7 @@ const visitAccessorPair = (
         ...(type === undefined ? {} : { type }),
         optional: config.required !== undefined ? !config.required : false,
         ...(config.required === undefined ? {} : { required: config.required }),
+        ...apiFields,
         ...description,
         ...tags,
       })
@@ -390,6 +428,7 @@ const visitAccessorPair = (
       accessorEntry({
         name: decoratorStringArg(ctx, outputDecorator) ?? name,
         ...(type === undefined ? {} : { type }),
+        ...apiFields,
         ...description,
         ...tags,
       })
@@ -414,6 +453,7 @@ const visitAccessorPair = (
       name,
       ...(type === undefined ? {} : { type }),
       optional: false,
+      ...apiFields,
       ...description,
       ...tags,
       // The props table routes the view-child and content-child sections off this field, so an

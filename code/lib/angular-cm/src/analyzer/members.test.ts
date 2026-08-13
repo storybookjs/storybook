@@ -27,8 +27,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// Mirrors what the docgen worker passes for analyzer-produced records.
-const ANALYZER_EXTRACT_OPTIONS = { filterNonInputControls: undefined } as const;
+// These tests are about what the analyzer records, so nothing here may be filtered on the way out.
+const ANALYZER_EXTRACT_OPTIONS = { propsTable: 'all' } as const;
 
 const soleComponent = (meta: ReturnType<typeof analyze>) => meta.components[0] as Directive;
 
@@ -1215,5 +1215,70 @@ describe('member identity is the declared field, not the emitted name', () => {
     expect(
       component.propertiesClass.filter((property) => property.name === 'mode').map((p) => p.type)
     ).toEqual(['string', 'number']);
+  });
+});
+
+describe('visibility and @internal are recorded, not acted on', () => {
+  const SOURCE = `
+    import { ChangeDetectorRef, Component, Input, inject } from '@angular/core';
+
+    @Component({ selector: 'sb-visibility', template: '' })
+    export class VisibilityComponent {
+      @Input() title = '';
+
+      private readonly cdr = inject(ChangeDetectorRef);
+
+      protected helperLabel = 'help';
+
+      publicNote = 'note';
+
+      /** @internal */
+      buildId = 'build-1';
+
+      private stash(): void {}
+
+      protected assist(): void {}
+
+      /** @internal */
+      reset(): void {}
+    }
+  `;
+
+  it('marks a private property and leaves a public one unmarked', () => {
+    const component = componentIn(SOURCE);
+
+    expect(byName(component.propertiesClass, 'cdr').visibility).toBe('private');
+    expect(byName(component.propertiesClass, 'publicNote').visibility).toBeUndefined();
+    expect(byName(component.inputsClass, 'title').visibility).toBeUndefined();
+  });
+
+  it('marks a protected property, which stays bindable from a template', () => {
+    expect(byName(componentIn(SOURCE).propertiesClass, 'helperLabel').visibility).toBe('protected');
+  });
+
+  it('marks private and protected methods', () => {
+    const component = componentIn(SOURCE);
+
+    expect(byName(component.methodsClass, 'stash').visibility).toBe('private');
+    expect(byName(component.methodsClass, 'assist').visibility).toBe('protected');
+  });
+
+  it('marks an @internal property and method regardless of their visibility', () => {
+    const component = componentIn(SOURCE);
+
+    expect(byName(component.propertiesClass, 'buildId').internal).toBe(true);
+    expect(byName(component.propertiesClass, 'buildId').visibility).toBeUndefined();
+    expect(byName(component.methodsClass, 'reset').internal).toBe(true);
+  });
+
+  it('keeps every one of them in the payload for the extractor to decide on', () => {
+    const component = componentIn(SOURCE);
+
+    expect(names(component.propertiesClass)).toEqual(
+      expect.arrayContaining(['cdr', 'helperLabel', 'publicNote', 'buildId'])
+    );
+    expect(names(component.methodsClass)).toEqual(
+      expect.arrayContaining(['stash', 'assist', 'reset'])
+    );
   });
 });

@@ -439,3 +439,48 @@ Type: `string[]`
 Default: `['-e', 'json', '-d', '.']`
 
 Arguments passed to the `@compodoc/compodoc` CLI when `compodoc` is `true`. The defaults produce a `documentation.json` file in the workspace root.
+
+#### `propsTable`
+
+Type: `'all' | 'api' | 'inputs'`
+
+Default: `'api'`
+
+Which of your component's members the props table renders.
+The three values are a ladder, each one a subset of the one above it:
+
+| Value      | Renders                                                                                |
+| ---------- | -------------------------------------------------------------------------------------- |
+| `'all'`    | Every member of every section: properties, inputs, outputs and methods.                |
+| `'api'`    | The same four sections, minus the members that cannot be part of your component's API. |
+| `'inputs'` | The inputs section only.                                                               |
+
+`'api'` drops three kinds of member: TypeScript `private` ones, ECMAScript private `#` ones, and anything tagged `@internal`.
+None of them can be bound from an Angular template, so a row for them documents your component's wiring rather than its API.
+Injected services are the common case:
+
+```ts
+@Component({ selector: 'my-button', template: '<button>{{ label }}</button>' })
+export class ButtonComponent {
+  @Input() label = '';
+
+  // Dropped by 'api': no template can bind it.
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  // Kept by 'api': Angular templates can bind protected members.
+  protected pressed = false;
+}
+```
+
+`protected` members are deliberately kept, because Angular templates can bind them and they are therefore part of what a reader needs to know.
+
+To drop a single member that `'api'` keeps, tag it `@ignore`:
+
+```ts
+/** @ignore */
+protected internalHelper = 0;
+```
+
+`'api'` needs the `experimentalDocgenServer` feature.
+Without it, Storybook reads your components through Compodoc, which does not report member visibility reliably, so only `'all'` and `'inputs'` apply.
+Asking for `'api'` then logs a warning rather than silently changing what you see.

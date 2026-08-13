@@ -14,6 +14,23 @@ describe('compareArgTypes', () => {
     expect(violations).toEqual([expect.objectContaining({ arg: 'size', kind: 'lost-arg' })]);
   });
 
+  it('waives a lost ES-private member, which no modern engine is expected to record', () => {
+    const baseline = argTypes({ '#secret': { name: '#secret', type: { name: 'string' } } });
+
+    expect(compareArgTypes(baseline, argTypes({}))).toEqual([]);
+  });
+
+  it('waives a lost arg the candidate engine drops on purpose', () => {
+    const baseline = argTypes({
+      cdr: { name: 'cdr', type: { name: 'other', value: 'ChangeDetectorRef' } },
+      size: { name: 'size', type: { name: 'string' } },
+    });
+
+    expect(
+      compareArgTypes(baseline, argTypes({}), { intentionallyDropped: new Set(['cdr']) })
+    ).toEqual([expect.objectContaining({ arg: 'size', kind: 'lost-arg' })]);
+  });
+
   it('passes when the candidate has keys the baseline lacks', () => {
     const candidate = argTypes({
       size: { name: 'size', type: { name: 'string' } },

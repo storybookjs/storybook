@@ -13,6 +13,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { resolveCompodocConfig } from './compodoc-config.ts';
+import { resolvePropsTable, warnAboutPropsTable } from './props-table.ts';
 import { ensureCompodocDocumentation } from './compodoc/ensure-documentation.ts';
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 import type { UserConfig, Plugin } from 'vite';
@@ -110,6 +111,16 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     });
   }
 
+  // The docgen preset is the natural home for these, but core skips it entirely when
+  // `experimentalDocgenServer` is off - which is the case one of the warnings is about.
+  const propsTable = resolvePropsTable(
+    // @ts-expect-error same as `framework` above: `options` is optional in the signature only
+    await options.presets.apply('frameworkOptions'),
+    // @ts-expect-error same as above
+    await options.presets.apply('features', {})
+  );
+  warnAboutPropsTable(propsTable);
+
   const zoneless = resolveZoneless(options?.angularBuilderOptions);
   const angularPlugins = angular({
     jit: typeof framework.options?.jit !== 'undefined' ? framework.options?.jit : true,
@@ -195,6 +206,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     define: {
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
         zoneless: !!zoneless,
+        propsTable: propsTable.mode,
       }),
     },
   });

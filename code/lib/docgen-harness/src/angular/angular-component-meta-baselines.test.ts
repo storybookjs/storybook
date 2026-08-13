@@ -8,6 +8,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 
 import ts from 'typescript';
 
+import type { PropsTableMode } from '@storybook/angular-cm';
 import { AngularComponentMetaManager, extractArgTypesFromData } from '@storybook/angular-cm';
 import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
@@ -52,14 +53,20 @@ describe('angular component-meta baselines', () => {
       expect(result, `extractComponentMeta found no '${componentExportName}'`).toBeDefined();
       const { entry, json } = result!;
 
-      const recordArgTypes = async (filterNonInputControls: boolean, prefix: string) => {
-        // The same call the docgen worker makes, so the recorded baselines represent production
-        // output.
-        const extracted = extractArgTypesFromData(entry, {
-          metadataJson: json,
-          filterNonInputControls,
-        }) as StrictArgTypes;
+      // The same calls the docgen worker makes, so the recorded baselines represent production
+      // output: `api` is the default and `inputs` is what the deprecated flag maps onto.
+      const extract = (propsTable: PropsTableMode) =>
+        extractArgTypesFromData(entry, { metadataJson: json, propsTable }) as StrictArgTypes;
 
+      // Members `api` suppresses by design. Both legs waive the same set: a member the visibility
+      // filter removed is equally absent from `inputs`, and a genuinely lost input is in neither.
+      const everyMember = extract('all');
+      const apiArgTypes = extract('api');
+      const intentionallyDropped = new Set(
+        Object.keys(everyMember).filter((name) => !(name in apiArgTypes))
+      );
+
+      const recordArgTypes = async (extracted: StrictArgTypes, prefix: string) => {
         const legacyLabel = `${fixtureCase}/${prefix}.snapshot`;
         // Asserted to exist so deleting the legacy files can never silently disarm the parity gate.
         const committedLegacy = readCommitted(join(testDir, `${prefix}.snapshot`));
@@ -72,14 +79,22 @@ describe('angular component-meta baselines', () => {
           // The self-ratchet leg's baseline was written by this same engine, so its table values are
           // trustworthy enough to gate summary text and required flips too.
           strictTable: true,
-          extraGates: [{ committed: committedLegacy!, label: legacyLabel, legacyBaseline: true }],
+          intentionallyDropped,
+          extraGates: [
+            {
+              committed: committedLegacy!,
+              label: legacyLabel,
+              legacyBaseline: true,
+              intentionallyDropped,
+            },
+          ],
         });
 
         return extracted;
       };
 
-      const argTypes = await recordArgTypes(false, 'argtypes');
-      await recordArgTypes(true, 'argtypes-filtered');
+      const argTypes = await recordArgTypes(apiArgTypes, 'argtypes');
+      await recordArgTypes(extract('inputs'), 'argtypes-filtered');
 
       const storiesModule = await import(`./__testfixtures__/${fixtureCase}/input.stories.ts`);
       const { default: meta, ...stories } = storiesModule;
@@ -93,4 +108,29 @@ describe('angular component-meta baselines', () => {
     // @angular/core types), which can outrun the 10s default on CI.
     30_000
   );
+
+  it('drops what no template can bind and keeps what one can', () => {
+    const testDir = join(fixturesDir, 'properties-methods-noise');
+    const result = manager.extractComponentMeta(
+      join(testDir, 'properties-methods-noise.component.ts'),
+      { exportName: 'PropertiesMethodsNoiseComponent' }
+    );
+    const argNames = (propsTable: PropsTableMode) =>
+      Object.keys(
+        extractArgTypesFromData(result!.entry, { metadataJson: result!.json, propsTable })
+      );
+
+    expect(argNames('all')).toEqual(expect.arrayContaining(['cdr', 'pageCount', 'markDirty']));
+
+    // `protected` is bindable from a template in every supported Angular version, so removing it
+    // would delete real API. This is the guard on that.
+    expect(argNames('api')).toEqual(expect.arrayContaining(['helperLabel', 'clampPage']));
+
+    expect(argNames('api')).not.toContain('cdr');
+    expect(argNames('api')).not.toContain('pageCount');
+    expect(argNames('api')).not.toContain('markDirty');
+    expect(argNames('api')).not.toContain('buildId');
+    expect(argNames('api')).not.toContain('resetPage');
+    expect(argNames('api')).toEqual(expect.arrayContaining(['title', 'currentPage', 'nextPage']));
+  }, 30_000);
 });

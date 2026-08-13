@@ -1,4 +1,22 @@
 {
+  "clampPage": {
+    "description": undefined,
+    "name": "clampPage",
+    "table": {
+      "category": "methods",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": false,
+        "summary": "() => void",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
   "currentPage": {
     "description": undefined,
     "name": "currentPage",
@@ -14,6 +32,23 @@
     },
     "type": {
       "name": "number",
+    },
+  },
+  "helperLabel": {
+    "description": undefined,
+    "name": "helperLabel",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "Next page",
+      },
+      "type": {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
     },
   },
   "isActive": {

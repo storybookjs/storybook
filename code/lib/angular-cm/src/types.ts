@@ -30,6 +30,10 @@ export interface Method {
   args: Argument[];
   returnType: string;
   decorators?: Decorator[];
+  /** TypeScript accessibility, omitted for a public member. */
+  visibility?: 'private' | 'protected';
+  /** Whether the member is tagged `@internal`. */
+  internal?: boolean;
   description?: Html;
   rawdescription?: string;
   jsdoctags?: JsDocTag[];
@@ -38,6 +42,10 @@ export interface Method {
 export interface Property {
   name: string;
   decorators?: Decorator[];
+  /** TypeScript accessibility, omitted for a public member. */
+  visibility?: 'private' | 'protected';
+  /** Whether the member is tagged `@internal`. */
+  internal?: boolean;
   /** Omitted for members the analyzer cannot type, e.g. `@HostBinding`. */
   type?: string;
   /** Omitted for `@Input()` properties, emitted for the rest. */

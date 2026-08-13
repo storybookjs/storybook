@@ -32,10 +32,18 @@ const NOOP_LOGGER: ParsingLogger = {
   debug: () => {},
 };
 
+/**
+ * Which members reach the props table, as a strict ladder: `all` ⊃ `api` ⊃ `inputs`.
+ *
+ * `all` is every member of every section, `api` drops what cannot be part of the component's
+ * public or template-facing API, and `inputs` narrows that to the inputs section alone.
+ */
+export type PropsTableMode = 'all' | 'api' | 'inputs';
+
 export interface ExtractArgTypesOptions {
   metadataJson: MetadataJson | undefined;
-  /** The `angularFilterNonInputControls` flag, required so no host inherits a silent default. */
-  filterNonInputControls: boolean | undefined;
+  /** Required so no host inherits a silent default. */
+  propsTable: PropsTableMode;
   logger?: ParsingLogger;
 }
 
@@ -344,6 +352,12 @@ const extractMemberJsDocTags = (
   };
 };
 
+// A `private` member cannot be bound from an Angular template at any compiler setting and an
+// `@internal` one is a declared non-API. `protected` is bindable in every supported Angular
+// version, so it is API and stays; ES-private `#member`s are unreachable in every mode.
+const isNotPartOfTheApi = (item: Method | Property): boolean =>
+  item.visibility === 'private' || item.internal === true;
+
 const readMembers = (componentData: Entry, key: string): (Method | Property)[] =>
   ((componentData as unknown as Record<string, unknown>)[key] as
     | (Method | Property)[]
@@ -369,12 +383,13 @@ const getModelProperties = (componentData: Entry): Property[] => {
 
 export const extractArgTypesFromData = (
   componentData: Entry,
-  { metadataJson, filterNonInputControls, logger = NOOP_LOGGER }: ExtractArgTypesOptions
+  { metadataJson, propsTable, logger = NOOP_LOGGER }: ExtractArgTypesOptions
 ) => {
   const sectionToItems: Record<string, InputType[]> = {};
-  const componentClasses: MemberKey[] = filterNonInputControls
-    ? ['inputsClass']
-    : ['propertiesClass', 'methodsClass', 'inputsClass', 'outputsClass'];
+  const componentClasses: MemberKey[] =
+    propsTable === 'inputs'
+      ? ['inputsClass']
+      : ['propertiesClass', 'methodsClass', 'inputsClass', 'outputsClass'];
   const memberKeys: MemberKey[] = isDirectiveEntry(componentData)
     ? componentClasses
     : ['properties', 'methods'];
@@ -385,9 +400,7 @@ export const extractArgTypesFromData = (
   memberKeys.forEach((key: MemberKey) => {
     const data = readMembers(componentData, key);
     data.forEach((item: Method | Property) => {
-      // ES-private `#member`s cannot be bound from outside the class, so their props-table row is
-      // noise.
-      if (item.name.startsWith('#')) {
+      if (item.name.startsWith('#') || (propsTable !== 'all' && isNotPartOfTheApi(item))) {
         return;
       }
       const section = mapItemToSection(key, item);
@@ -432,7 +445,7 @@ export const extractArgTypesFromData = (
   });
 
   // The `${name}Change` output this shape never carries directly, synthesized after the loop so
-  // `filterNonInputControls` cannot hide it.
+  // `propsTable` cannot hide it.
   modelProperties.forEach((item) => {
     const changeName = `${item.name}Change`;
 

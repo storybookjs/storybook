@@ -530,6 +530,26 @@
 
 ## From version 10.5.x to 10.6.0
 
+### Angular Vite defaults to server-side docgen
+
+`@storybook/angular-vite` now enables the `experimentalDocgenServer` feature by default. Angular metadata is extracted in process, so Compodoc no longer runs, `documentation.json` is no longer read, and Compodoc is no longer needed as a dependency.
+
+The `storybook automigrate` command removes the Compodoc setup that has no effect anymore: the `compodoc` and `compodocArgs` framework options, the `setCompodocJson` wiring in your preview config, the Compodoc options on the `angular.json` Storybook targets, and the `@compodoc/compodoc` dependency.
+
+To keep using Compodoc, opt out and skip that automigration:
+
+```js
+// .storybook/main.js
+export default {
+  framework: '@storybook/angular-vite',
+  features: { experimentalDocgenServer: false },
+};
+```
+
+The webpack-based `@storybook/angular` package is unaffected and keeps Compodoc as its only docgen path.
+
+The `compodoc` and `compodocArgs` options have also been removed from the `@storybook/angular-vite` `start-storybook` and `build-storybook` builder schemas. Those options were validated by the Angular CLI and never read; Compodoc is configured through `framework.options` in your main config.
+
 ### Experimental Playwright CT integration removed
 
 Storybook's experimental `@storybook/*/experimental-playwright` API (`createPlaywrightTest`) has been removed.

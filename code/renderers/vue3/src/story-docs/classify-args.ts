@@ -1,5 +1,5 @@
 import { type types as t } from 'storybook/internal/babel';
-import { returnedExpression, unwrapValue } from 'storybook/internal/csf-tools';
+import { returnedExpression, unwrapExpression } from 'storybook/internal/csf-tools';
 
 import {
   classifyValue,
@@ -137,7 +137,7 @@ export function classifyArg(
   const isSlot = docgen.slots.has(name);
 
   if (isSlot && isFunctionExpression(value)) {
-    const returned = returnedExpression(unwrapValue(value));
+    const returned = returnedExpression(unwrapExpression(value));
     if (returned) {
       const plan = classifyValue(returned);
 

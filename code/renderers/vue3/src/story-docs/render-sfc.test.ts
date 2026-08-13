@@ -99,6 +99,13 @@ const ref2 = {};
     expect(snippet).toContain('<C>\n    a &lt; b\n  </C>');
   });
 
+  it('hoists inline slot text whose whitespace raw template text would condense', () => {
+    const snippet = render([slot('default', `'  padded  '`)]);
+
+    expect(snippet).toContain('const _default = "  padded  ";');
+    expect(snippet).toContain('{{ _default }}');
+  });
+
   it('hoists a listener and renders it as a Vue event binding', () => {
     const snippet = render([event('onSubmit', 'submit', '() => null')]);
 

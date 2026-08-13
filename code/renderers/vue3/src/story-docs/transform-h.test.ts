@@ -14,9 +14,14 @@ import {
   returnedExpression,
 } from 'storybook/internal/csf-tools';
 
-import { classifyArgs, type ClassifiedArg, type VueDocgenArgInfo } from './classify-args.ts';
+import {
+  classifyArgs,
+  type ClassifiedArg,
+  type ClassifiedSlotArg,
+  type VueDocgenArgInfo,
+} from './classify-args.ts';
 import { createRenderContext } from './render-primitives.ts';
-import { createHSlotRenderer, transformH, type TransformHResult } from './transform-h.ts';
+import { renderSlotArgContent, transformH, type TransformHResult } from './transform-h.ts';
 
 const DEFAULT_DOCGEN: VueDocgenArgInfo = { props: new Set(), events: new Set(), slots: new Set() };
 
@@ -297,12 +302,11 @@ export const Primary = {
       { props: new Set(), events: new Set(), slots: new Set(['default']) },
       "import ChildButton from './ChildButton.vue';\nimport MyButton from './MyButton.vue';"
     );
-    const value = parsed.args.find((arg) => arg.role === 'slot')?.value;
-    const ctx = createRenderContext(createHSlotRenderer(parsed.importBindings));
-    const content =
-      value && (t.isArrowFunctionExpression(value) || t.isFunctionExpression(value))
-        ? ctx.renderFunctionSlot(value, ctx)
-        : undefined;
+    const arg = parsed.args.find(
+      (candidate): candidate is ClassifiedSlotArg => candidate.role === 'slot'
+    );
+    const ctx = createRenderContext();
+    const content = arg ? renderSlotArgContent(arg, ctx, parsed.importBindings) : undefined;
 
     expect(content).toBe('<ChildButton label="Click me" />');
     // The slot's own component import lands in the context the snippet is being assembled in.

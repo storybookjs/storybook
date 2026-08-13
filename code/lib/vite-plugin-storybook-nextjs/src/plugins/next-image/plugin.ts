@@ -1,9 +1,9 @@
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import { type FilterPattern, createFilter } from '@rollup/pluginutils';
-import { imageSize } from 'image-size';
 import type { NextConfigComplete } from 'next/dist/server/config-shared.js';
 import path from 'pathe';
+import probeSync from 'probe-image-size/sync.js';
 import { dedent } from 'ts-dedent';
 import type { Plugin } from 'vite';
 import { VITEST_PLUGIN_NAME, isVitestEnv } from '../../utils.ts';
@@ -208,7 +208,14 @@ export function vitePluginNextImage(
 
           const imageData = await fs.promises.readFile(imagePath);
 
-          const { width, height } = imageSize(imageData);
+          const size = probeSync(imageData);
+
+          // probe-image-size returns null instead of throwing on unrecognized data
+          if (!size) {
+            throw new Error('Unsupported or corrupt image file');
+          }
+
+          const { width, height } = size;
 
           return dedent`
 						import src from "${imagePath}?ignore";

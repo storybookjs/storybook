@@ -1,8 +1,9 @@
+import fs from 'node:fs';
 import path from 'node:path';
 
 import type { NextConfigComplete } from 'next/dist/server/config-shared.js';
 import type { PluginContext } from 'rollup';
-import { describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const requireResolveMock = vi.hoisted(() => vi.fn());
 
@@ -11,6 +12,8 @@ vi.mock('node:module', () => ({
     resolve: requireResolveMock,
   }),
 }));
+
+vi.mock('node:fs', { spy: true });
 
 import { vitePluginNextImage } from './plugin.ts';
 
@@ -81,5 +84,51 @@ describe('vitePluginNextImage resolveId', () => {
       paths: [path.dirname(importer.split('?')[0])],
     });
     expect(result).toBe(virtualImageId(resolvedPath));
+  });
+});
+
+describe('vitePluginNextImage load', () => {
+  const nextConfigResolver = {
+    promise: Promise.resolve({} as NextConfigComplete),
+    resolve: vi.fn(),
+    reject: vi.fn(),
+  } as PromiseWithResolvers<NextConfigComplete>;
+
+  // 1x1 red PNG
+  const pngFixture = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    'base64'
+  );
+
+  beforeEach(() => {
+    vi.mocked(fs.promises.readFile).mockReset();
+  });
+
+  it('reads dimensions from the image buffer', async () => {
+    const plugin = vitePluginNextImage(nextConfigResolver);
+    vi.mocked(fs.promises.readFile).mockResolvedValueOnce(pngFixture);
+
+    const result = await plugin.load!.call(
+      {} as PluginContext,
+      virtualImageId('/project/src/images/avatar.png')
+    );
+
+    expect(result).toContain('width: 1');
+    expect(result).toContain('height: 1');
+  });
+
+  it('does not hang on malformed image data', async () => {
+    const plugin = vitePluginNextImage(nextConfigResolver);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.mocked(fs.promises.readFile).mockResolvedValueOnce(Buffer.alloc(64));
+
+    const result = await plugin.load!.call(
+      {} as PluginContext,
+      virtualImageId('/project/src/images/broken.png')
+    );
+
+    expect(result).toBeUndefined();
+    expect(errorSpy).toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 });

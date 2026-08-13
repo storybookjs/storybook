@@ -62,7 +62,7 @@ export const buildStoryDocsPayload = async (
   const deps: StoryDocDeps = {
     csf,
     source,
-    metaArgs: argsProperties(csf._metaAnnotations.args),
+    metaArgs: argsProperties(csf, csf._metaAnnotations.args),
     snippetMeta: docgenPayload?.angularComponentMeta,
     componentName,
     componentImport:
@@ -129,7 +129,7 @@ const buildStoryDoc = (
   try {
     const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[exportName]);
     const annotations = csf._storyAnnotations[exportName] ?? {};
-    const storyArgs = argsProperties(annotations.args);
+    const storyArgs = argsProperties(csf, annotations.args);
     const shape: StoryShape = {
       csf,
       exportName,
@@ -317,7 +317,12 @@ const userTemplate = (
   shape: StoryShape,
   bindings: Bindings | undefined
 ): TemplateResult | undefined => {
-  const own = shapeTemplate(storyConfigObject(shape), shape.annotations, shape, bindings);
+  const own = shapeTemplate(
+    storyConfigObject(shape.csf, shape.exportName),
+    shape.annotations,
+    shape,
+    bindings
+  );
   if (own) {
     return own;
   }
@@ -355,7 +360,7 @@ const shapeTemplate = (
     return { kind: 'unresolvable' };
   }
   if (template.kind === 'value') {
-    const own = templateFrom(declaredValue(shape, template.node), shape, bindings, NO_SCOPE);
+    const own = templateFrom(declaredValue(shape.csf, template.node), shape, bindings, NO_SCOPE);
     if (own) {
       return own;
     }
@@ -371,7 +376,7 @@ const shapeTemplate = (
     return { kind: 'unresolvable' };
   }
 
-  const fn = declaredValue(shape, render.node);
+  const fn = declaredValue(shape.csf, render.node);
   const returned = returnedObject(fn);
   if (!returned) {
     return { kind: 'unresolvable' };
@@ -482,7 +487,7 @@ const substituteExpression = (
   if (scope.bodyDeclared.has(expression.name)) {
     return undefined;
   }
-  const declared = declaredValue(shape, expression);
+  const declared = declaredValue(shape.csf, expression);
   return declared === expression ? undefined : literalText(declared);
 };
 
@@ -606,11 +611,11 @@ const keyNameOf = (property: t.ObjectMethod | t.ObjectProperty): string | undefi
  * The story's own config object literal: the export's initializer, the statement a re-export
  * resolved to, or the argument of a `meta.story(...)` factory call.
  */
-const storyConfigObject = (shape: StoryShape): t.ObjectExpression | undefined => {
-  const declared = shape.csf._storyExports[shape.exportName];
+const storyConfigObject = (csf: CsfFile, exportName: string): t.ObjectExpression | undefined => {
+  const declared = csf._storyExports[exportName];
   const candidates = [
     t.isVariableDeclarator(declared) ? declared.init : declared,
-    shape.csf._storyStatements[shape.exportName],
+    csf._storyStatements[exportName],
   ];
   for (const candidate of candidates) {
     const unwrapped = candidate ? unwrapExpression(candidate) : undefined;
@@ -687,7 +692,7 @@ const csf2Shape = (shape: StoryShape): { fn: t.Node; returned: t.ObjectExpressio
     let fn = candidate ? unwrapExpression(candidate) : undefined;
     // `Template.bind({})` renders Template; the bound copy shares its body.
     if (fn && t.isCallExpression(fn) && isBindCall(fn)) {
-      fn = declaredValue(shape, unwrapExpression((fn.callee as t.MemberExpression).object));
+      fn = declaredValue(shape.csf, unwrapExpression((fn.callee as t.MemberExpression).object));
     }
     const returned = returnedObject(fn);
     if (fn && returned) {
@@ -792,11 +797,11 @@ const collectPatternNames = (pattern: t.Node, into: Set<string>): void => {
  * the name would replace it with a fabricated element. An imported name has no initializer here,
  * so it stays an identifier and no snippet is generated.
  */
-const declaredValue = (shape: StoryShape, node: t.Node | undefined): t.Node | undefined => {
+const declaredValue = (csf: CsfFile, node: t.Node | undefined): t.Node | undefined => {
   if (!t.isIdentifier(node)) {
     return node;
   }
-  const program: NodePath<t.Program> = shape.csf._file.path;
+  const program: NodePath<t.Program> = csf._file.path;
   const binding = program.scope.getBinding(node.name);
   // A reassigned binding's value at render time is not its initializer.
   if (!binding?.constant) {
@@ -814,28 +819,135 @@ interface ArgsRecord {
   complete: boolean;
 }
 
-/** Named properties of an `args` object literal, and whether the record is statically complete. */
-const argsProperties = (node: t.Node | undefined): ArgsRecord => {
+/**
+ * Named properties of an `args` object literal, and whether the record is statically complete.
+ *
+ * A spread whose source can be read in this file - `...Primary.args`, a factory story's
+ * `...Primary.input.args`, or a constant object - is merged in with runtime order semantics, so
+ * composed stories keep their snippet. A spread this pass cannot follow still marks the record
+ * incomplete, because it can add or override args invisibly.
+ */
+const argsProperties = (
+  csf: CsfFile,
+  node: t.Node | undefined,
+  expanding = new Set<t.Node>()
+): ArgsRecord => {
   const properties: Record<string, t.Node> = {};
   if (node === undefined) {
     return { properties, complete: true };
   }
   const unwrapped = unwrapExpression(node);
-  if (!t.isObjectExpression(unwrapped)) {
+  // An object already being expanded means the spreads cycle back into themselves.
+  if (!t.isObjectExpression(unwrapped) || expanding.has(unwrapped)) {
     return { properties, complete: false };
   }
 
+  expanding.add(unwrapped);
   let complete = true;
   for (const property of unwrapped.properties) {
+    if (t.isSpreadElement(property)) {
+      const spread = spreadArgsRecord(csf, property.argument, expanding);
+      complete &&= spread.complete;
+      Object.assign(properties, spread.properties);
+      continue;
+    }
     const key = t.isObjectProperty(property) ? keyNameOf(property) : undefined;
     if (!t.isObjectProperty(property) || key === undefined) {
-      // A spread, accessor, or dynamic key can add or override args this pass cannot see.
+      // An accessor or dynamic key can add or override args this pass cannot see.
       complete = false;
       continue;
     }
     properties[key] = property.value;
   }
+  expanding.delete(unwrapped);
   return { properties, complete };
+};
+
+const spreadArgsRecord = (csf: CsfFile, expression: t.Node, expanding: Set<t.Node>): ArgsRecord => {
+  const source = resolveSpreadSource(csf, expression, new Set());
+  if (source.kind === 'nothing') {
+    return { properties: {}, complete: true };
+  }
+  if (source.kind === 'unresolvable') {
+    return { properties: {}, complete: false };
+  }
+  return argsProperties(csf, source.node, expanding);
+};
+
+type SpreadSource =
+  | { kind: 'object'; node: t.ObjectExpression }
+  /** Spreading `undefined` - a story without `args` - contributes nothing at runtime. */
+  | { kind: 'nothing' }
+  | { kind: 'unresolvable' };
+
+/**
+ * The object a spread in an args record draws from, followed as far as this file reaches: a
+ * constant declared here, another story's `args` (with member-assigned CSF2 args honoured), or a
+ * factory story's `.input`, which is the config object the factory call received. An imported
+ * name, a call, or a computed member needs the story to run.
+ */
+const resolveSpreadSource = (csf: CsfFile, node: t.Node, followed: Set<t.Node>): SpreadSource => {
+  const unwrapped = unwrapExpression(node);
+  if (followed.has(unwrapped)) {
+    return { kind: 'unresolvable' };
+  }
+  followed.add(unwrapped);
+
+  if (t.isObjectExpression(unwrapped)) {
+    return { kind: 'object', node: unwrapped };
+  }
+  if (t.isIdentifier(unwrapped)) {
+    const declared = declaredValue(csf, unwrapped);
+    return declared === unwrapped || declared === undefined
+      ? { kind: 'unresolvable' }
+      : resolveSpreadSource(csf, declared, followed);
+  }
+  if (
+    !t.isMemberExpression(unwrapped) ||
+    unwrapped.computed ||
+    !t.isIdentifier(unwrapped.property)
+  ) {
+    return { kind: 'unresolvable' };
+  }
+
+  const key = unwrapped.property.name;
+  const storyName =
+    t.isIdentifier(unwrapped.object) && csf._storyAnnotations[unwrapped.object.name]
+      ? unwrapped.object.name
+      : undefined;
+  if (storyName !== undefined) {
+    const isFactory = csf._stories[storyName]?.__stats?.factory === true;
+    if (key === 'input' && isFactory) {
+      const config = storyConfigObject(csf, storyName);
+      return config ? { kind: 'object', node: config } : { kind: 'unresolvable' };
+    }
+    if (key === 'args' && !isFactory) {
+      const args = resolveAnnotation(
+        storyConfigObject(csf, storyName),
+        csf._storyAnnotations[storyName],
+        'args'
+      );
+      if (args.kind === 'missing') {
+        return { kind: 'nothing' };
+      }
+      return args.kind === 'value'
+        ? resolveSpreadSource(csf, args.node, followed)
+        : { kind: 'unresolvable' };
+    }
+    return { kind: 'unresolvable' };
+  }
+
+  const object = resolveSpreadSource(csf, unwrapped.object, followed);
+  if (object.kind !== 'object') {
+    return { kind: 'unresolvable' };
+  }
+  const property = resolvedProperty(object.node, key);
+  if (property.kind === 'missing') {
+    return { kind: 'nothing' };
+  }
+  return property.kind === 'value'
+    ? resolveSpreadSource(csf, property.node, followed)
+    : { kind: 'unresolvable' };
 };
 
 const EVAL_FAILED = Symbol('story-docs-eval-failed');

@@ -506,21 +506,21 @@ describe('buildStoryDocsPayload', () => {
       expect(extractHostComponentTemplate(story.snippet!)).toBe('<sb-button explicit></sb-button>');
     });
 
-    it('emits no snippet when a spread makes the args unknowable', async () => {
+    it('emits no snippet when a spread draws from an imported name', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
+        import { EXTRA_ARGS } from './extra-args';
         export default { title: 'Example/Button', component: ButtonComponent };
-        const extra = { count: 9 };
-        export const Default = { args: { label: 'Save', ...extra } };
+        export const Default = { args: { label: 'Save', ...EXTRA_ARGS } };
       `);
       expect(story.snippet).toBeUndefined();
     });
 
-    it('emits no snippet when a meta args spread makes the merge unknowable', async () => {
+    it('emits no snippet when a meta args spread needs the story to run', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
-        const shared = { label: 'shared' };
-        export default { title: 'Example/Button', component: ButtonComponent, args: { ...shared } };
+        const makeShared = () => ({ label: 'shared' });
+        export default { title: 'Example/Button', component: ButtonComponent, args: { ...makeShared() } };
         export const Default = { args: { label: 'Save' } };
       `);
       expect(story.snippet).toBeUndefined();
@@ -575,6 +575,75 @@ describe('buildStoryDocsPayload', () => {
         };
       `);
       expect(story.snippet).toBeUndefined();
+    });
+  });
+
+  describe('args spreads resolve within the file', () => {
+    const SPREAD_SHAPES_FILE = [
+      `import { ButtonComponent } from './button.component';`,
+      `const shared = { label: 'shared', count: 3 };`,
+      `const base = { label: 'Base', count: 2 };`,
+      `export default {`,
+      `  title: 'Example/Button',`,
+      `  component: ButtonComponent,`,
+      `  args: { ...shared },`,
+      `};`,
+      `export const Constant = { args: { label: 'Save', ...base } };`,
+      `export const Primary = { args: { ...base, label: 'Primary' } };`,
+      `export const Secondary = { args: { ...Primary.args, label: 'Secondary' } };`,
+      // Runtime order: a spread written after a named arg overrides it.
+      `export const Late = { args: { label: 'Early', ...Primary.args } };`,
+      `export const Composed = { args: { ...Secondary.args } };`,
+      `export const Plain = {};`,
+      `export const FromPlain = { args: { ...Plain.args, label: 'Own' } };`,
+      `export const Legacy = () => ({ props: {} });`,
+      `Legacy.args = { label: 'Legacy', count: 11 };`,
+      `export const FromLegacy = { args: { ...Legacy.args } };`,
+    ].join('\n');
+
+    it.each([
+      ['Constant', `[label]="'Base'" [count]="2"`],
+      ['Primary', `[label]="'Primary'" [count]="2"`],
+      ['Secondary', `[label]="'Secondary'" [count]="2"`],
+      ['Late', `[label]="'Primary'" [count]="2"`],
+      ['Composed', `[label]="'Secondary'" [count]="2"`],
+      // Spreading a story without args contributes nothing, and the meta's args still merge under.
+      ['From Plain', `[label]="'Own'" [count]="3"`],
+      ['From Legacy', `[label]="'Legacy'" [count]="11"`],
+    ])('resolves the %s story args', async (storyName, expectedBindings) => {
+      expect((await templatesOf(SPREAD_SHAPES_FILE)).get(storyName)).toBe(
+        `<sb-button ${expectedBindings} (clicked)="clicked($event)"></sb-button>`
+      );
+    });
+
+    it("follows a factory story's input args", async () => {
+      const templates = await templatesOf(
+        [
+          `import preview from './.storybook/preview';`,
+          `import { ButtonComponent } from './button.component';`,
+          `const meta = preview.meta({ component: ButtonComponent });`,
+          `export const Primary = meta.story({ args: { label: 'Primary', count: 1 } });`,
+          `export const Secondary = meta.story({`,
+          `  args: { ...Primary.input.args, label: 'Secondary' },`,
+          `});`,
+        ].join('\n')
+      );
+      expect(templates.get('Secondary')).toBe(
+        `<sb-button [label]="'Secondary'" [count]="1" (clicked)="clicked($event)"></sb-button>`
+      );
+    });
+
+    it('emits no snippet when story args spreads cycle', async () => {
+      const templates = await templatesOf(
+        [
+          `import { ButtonComponent } from './button.component';`,
+          `export default { title: 'Example/Button', component: ButtonComponent };`,
+          `export const Ping = { args: { ...Pong.args, label: 'Ping' } };`,
+          `export const Pong = { args: { ...Ping.args, label: 'Pong' } };`,
+        ].join('\n')
+      );
+      expect(templates.get('Ping')).toBeUndefined();
+      expect(templates.get('Pong')).toBeUndefined();
     });
   });
 

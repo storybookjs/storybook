@@ -2,7 +2,7 @@
 // whose markup or args cannot be read statically must yield NO snippet (recorded as a sentinel),
 // never a fabricated element.
 import { ShapeButtonComponent } from './shape-button.component.ts';
-import { IMPORTED_TEMPLATE } from './templates.ts';
+import { IMPORTED_ARGS, IMPORTED_TEMPLATE } from './templates.ts';
 
 // This file is only ever parsed, not executed; a declaration keeps the package's client tree out
 // of the harness type graph while the generator matches the call by name.
@@ -93,6 +93,10 @@ export const SpreadShadowedRender = {
 };
 
 export const SpreadArgs = { args: { label: 'Save', ...extraArgs } };
+
+export const SpreadStoryArgs = { args: { ...SpreadArgs.args, label: 'Composed' } };
+
+export const SpreadImportedArgs = { args: { label: 'Save', ...IMPORTED_ARGS } };
 
 export const AccessorRender = {
   args: { label: 'Save' },

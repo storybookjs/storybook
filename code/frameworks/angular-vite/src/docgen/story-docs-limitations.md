@@ -36,6 +36,11 @@ Literals, arrays, objects and enum members are resolved to the value the browser
 Args assigned in the older CSF2 style (`MyStory.args = { ... }`) are read, even though the assignment sits outside the story's own initializer.
 The same goes for `MyStory.render` and `MyStory.template` assignments, and for the `Template.bind({})` idiom, which is followed to the function it copies.
 
+A spread in an `args` object is followed when its source resolves within the story file.
+That covers the composition idioms the docs teach: a constant object declared in the file, another story's args (`...Primary.args`, including CSF2 member-assigned args), and a factory story's `...Primary.input.args`.
+Spreads merge with runtime ordering, so a spread or named arg written later overrides what came before it, and composition chains are followed transitively.
+A spread whose source lives outside the file, or whose args cycle back into themselves, still yields no snippet.
+
 String values are escaped for the attribute position they land in, so quotes and character-reference text (`&amp;`) survive a round-trip through Angular's template parser unchanged.
 
 ## What cannot be read yields no snippet at all
@@ -43,7 +48,8 @@ String values are escaped for the attribute position they land in, so quotes and
 The guiding rule is that a wrong snippet is worse than no snippet: whenever the story's markup or args cannot be read statically, no snippet is generated and Storybook falls back to showing the story's own source.
 That covers:
 
-- a spread or dynamically-keyed member in the story config or in an `args` object (`{ ...base }` may carry or shadow anything this pass would read)
+- a spread or dynamically-keyed member in the story config (`{ ...base }` may carry or shadow anything this pass would read, including the `render` itself)
+- a spread in an `args` object whose source does not resolve within the story file: an imported name, a call, or a computed member
 - a `template` or `render` bound to an imported name, or to a binding that is reassigned after its declaration
 - a `render` written as a getter, a setter, or a generator (reading `render` invokes a getter; the accessor itself is not the function)
 - a `render` body with more than one exit, where the branch taken depends on the story's runtime args

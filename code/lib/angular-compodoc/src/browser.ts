@@ -20,21 +20,17 @@ import {
 // (including tests) mutate this object between calls, and a missing `FEATURES` must keep throwing.
 const { FEATURES } = global;
 
-let propsTableMode: 'all' | 'api' | 'inputs' | undefined;
-
 /**
- * Adopt `@storybook/angular-vite`'s `propsTable` framework option, which supersedes the
- * `angularFilterNonInputControls` feature there.
+ * Who decides which members the props table renders.
  *
- * Fixes belong in `@storybook/angular-cm`, but that successor only runs behind
- * `experimentalDocgenServer`, and this adapter is the whole props table without it. So one option
- * lands in the frozen package rather than leaving angular-vite with two switches that disagree
- * depending on a feature flag. `api` cannot be honoured here - member visibility is absent from
- * Compodoc's JSON - and reads as `all`; angular-vite warns when a user asks for it.
+ * `@storybook/angular-vite` supersedes the `angularFilterNonInputControls` feature with a
+ * `propsTable` framework option, so it passes its own answer rather than letting this adapter read
+ * a flag that no longer owns the decision there. `@storybook/angular` passes nothing and keeps the
+ * feature.
  */
-export const setPropsTableMode = (mode: 'all' | 'api' | 'inputs' | undefined) => {
-  propsTableMode = mode;
-};
+export interface CompodocExtractOptions {
+  filterNonInputControls?: boolean;
+}
 
 export {
   checkValidCompodocJson,
@@ -57,23 +53,24 @@ const unwrapHtml = (html: unknown): string =>
   new global.DOMParser().parseFromString(html as string, 'text/html').body.textContent ?? '';
 
 export const extractArgTypesFromData = (
-  componentData: Parameters<typeof extractArgTypesFromDataShared>[0]
+  componentData: Parameters<typeof extractArgTypesFromDataShared>[0],
+  // Asserted rather than optional-chained: a preview without `FEATURES` is broken, and this has
+  // always thrown there rather than silently reading the flag as `false`.
+  { filterNonInputControls = FEATURES!.angularFilterNonInputControls }: CompodocExtractOptions = {}
 ) =>
   extractArgTypesFromDataShared(componentData, {
     compodocJson: getCompodocJson(),
-    // Asserted rather than optional-chained: a preview without `FEATURES` is broken, and this has
-    // always thrown there rather than silently reading the flag as `false`.
-    filterNonInputControls:
-      propsTableMode === undefined
-        ? FEATURES!.angularFilterNonInputControls
-        : propsTableMode === 'inputs',
+    filterNonInputControls,
     logger,
     unwrapHtml,
   });
 
-export const extractArgTypes = (component: Component | Directive) => {
+export const extractArgTypes = (
+  component: Component | Directive,
+  options?: CompodocExtractOptions
+) => {
   const componentData = getComponentData(component, { compodocJson: getCompodocJson(), logger });
-  return componentData && extractArgTypesFromData(componentData);
+  return componentData && extractArgTypesFromData(componentData, options);
 };
 
 export const extractComponentDescription = (component: Component | Directive) => {

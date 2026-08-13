@@ -11,6 +11,8 @@ import ts from 'typescript';
 import type { PropsTableMode } from '@storybook/angular-cm';
 import { AngularComponentMetaManager, extractArgTypesFromData } from '@storybook/angular-cm';
 import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
+import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
+import { parseArgTypesSnapshot } from '../compare/parse-snapshot.ts';
 import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 import { attachAotCmp, recordSnippets } from './render-helpers.ts';
@@ -58,20 +60,30 @@ describe('angular component-meta baselines', () => {
       const extract = (propsTable: PropsTableMode) =>
         extractArgTypesFromData(entry, { metadataJson: json, propsTable }) as StrictArgTypes;
 
-      // Members `api` suppresses by design. Both legs waive the same set: a member the visibility
-      // filter removed is equally absent from `inputs`, and a genuinely lost input is in neither.
-      const everyMember = extract('all');
-      const apiArgTypes = extract('api');
-      const intentionallyDropped = new Set(
-        Object.keys(everyMember).filter((name) => !(name in apiArgTypes))
-      );
-
-      const recordArgTypes = async (extracted: StrictArgTypes, prefix: string) => {
-        const legacyLabel = `${fixtureCase}/${prefix}.snapshot`;
+      const legacyGate = (prefix: string) => {
+        const label = `${fixtureCase}/${prefix}.snapshot`;
         // Asserted to exist so deleting the legacy files can never silently disarm the parity gate.
-        const committedLegacy = readCommitted(join(testDir, `${prefix}.snapshot`));
-        expect(committedLegacy, `missing legacy ${legacyLabel}`).toBeDefined();
+        const committed = readCommitted(join(testDir, `${prefix}.snapshot`));
+        expect(committed, `missing legacy ${label}`).toBeDefined();
+        return { committed: committed!, label, legacyBaseline: true as const };
+      };
 
+      // The committed Compodoc capture is unfiltered, so `all` is the mode that can be held to it.
+      // Holding `api` to it instead would need a list of the members `api` drops on purpose, and a
+      // list derived from the engine under test is how a real regression waives itself.
+      const unfiltered = legacyGate('argtypes');
+      expectCurrentOrBetter({
+        kind: 'argTypes',
+        baseline: parseArgTypesSnapshot(unfiltered.committed, unfiltered.label),
+        candidate: extract('all'),
+        legacyBaseline: true,
+      });
+
+      const recordArgTypes = async (
+        extracted: StrictArgTypes,
+        prefix: string,
+        extraGates: ReturnType<typeof legacyGate>[] = []
+      ) => {
         await recordArgTypesSnapshot({
           path: join(testDir, `acm-${prefix}.snapshot`),
           label: `${fixtureCase}/acm-${prefix}.snapshot`,
@@ -79,22 +91,18 @@ describe('angular component-meta baselines', () => {
           // The self-ratchet leg's baseline was written by this same engine, so its table values are
           // trustworthy enough to gate summary text and required flips too.
           strictTable: true,
-          intentionallyDropped,
-          extraGates: [
-            {
-              committed: committedLegacy!,
-              label: legacyLabel,
-              legacyBaseline: true,
-              intentionallyDropped,
-            },
-          ],
+          extraGates,
         });
 
         return extracted;
       };
 
-      const argTypes = await recordArgTypes(apiArgTypes, 'argtypes');
-      await recordArgTypes(extract('inputs'), 'argtypes-filtered');
+      const argTypes = await recordArgTypes(extract('api'), 'argtypes');
+      // The legacy inputs-only capture still holds `inputs`: beyond narrowing the sections it only
+      // drops `@internal` members, and no fixture declares an `@internal` input.
+      await recordArgTypes(extract('inputs'), 'argtypes-filtered', [
+        legacyGate('argtypes-filtered'),
+      ]);
 
       const storiesModule = await import(`./__testfixtures__/${fixtureCase}/input.stories.ts`);
       const { default: meta, ...stories } = storiesModule;
@@ -120,15 +128,29 @@ describe('angular component-meta baselines', () => {
         extractArgTypesFromData(result!.entry, { metadataJson: result!.json, propsTable })
       );
 
-    expect(argNames('all')).toEqual(expect.arrayContaining(['cdr', 'pageCount', 'markDirty']));
+    expect(argNames('all')).toEqual(
+      expect.arrayContaining(['cdr', 'pageCount', 'markDirty', 'secretLabel', '#secret'])
+    );
 
-    // `protected` is bindable from a template in every supported Angular version, so removing it
-    // would delete real API. This is the guard on that.
-    expect(argNames('api')).toEqual(expect.arrayContaining(['helperLabel', 'clampPage']));
+    // The component's own template reads `protected`, so removing it would delete real API. A
+    // declared input or output is API whatever its accessibility says, because Angular binds it
+    // from a parent template regardless.
+    expect(argNames('api')).toEqual(
+      expect.arrayContaining([
+        'helperLabel',
+        'clampPage',
+        'pageLabel',
+        'host',
+        'density',
+        'densityChange',
+      ])
+    );
 
     expect(argNames('api')).not.toContain('cdr');
     expect(argNames('api')).not.toContain('pageCount');
     expect(argNames('api')).not.toContain('markDirty');
+    expect(argNames('api')).not.toContain('secretLabel');
+    expect(argNames('api')).not.toContain('#secret');
     expect(argNames('api')).not.toContain('buildId');
     expect(argNames('api')).not.toContain('resetPage');
     expect(argNames('api')).toEqual(expect.arrayContaining(['title', 'currentPage', 'nextPage']));

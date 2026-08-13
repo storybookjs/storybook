@@ -144,9 +144,6 @@ describe('viteFinal props-table wiring', () => {
           if (key === 'framework') {
             return { options: frameworkOptions };
           }
-          if (key === 'frameworkOptions') {
-            return frameworkOptions;
-          }
           return key === 'features' ? featureFlags : fallback;
         },
       },

@@ -449,25 +449,29 @@ Default: `'api'`
 Which of your component's members the props table renders.
 The three values are a ladder, each one a subset of the one above it:
 
-| Value      | Renders                                                                                |
-| ---------- | -------------------------------------------------------------------------------------- |
-| `'all'`    | Every member of every section: properties, inputs, outputs and methods.                |
-| `'api'`    | The same four sections, minus the members that cannot be part of your component's API. |
-| `'inputs'` | The inputs section only.                                                               |
+| Value      | Renders                                                                   |
+| ---------- | ------------------------------------------------------------------------- |
+| `'all'`    | Every member of every section: properties, inputs, outputs and methods.   |
+| `'api'`    | The same four sections, narrowed to your component's template-facing API. |
+| `'inputs'` | The inputs section only.                                                  |
 
-`'api'` drops three kinds of member: TypeScript `private` ones, ECMAScript private `#` ones, and anything tagged `@internal`.
-None of them can be bound from an Angular template, so a row for them documents your component's wiring rather than its API.
+`'api'` keeps every declared input and output, whatever its TypeScript visibility.
+Angular only honors access modifiers on input bindings behind the opt-in `strictInputAccessModifiers` compiler flag, and never checks them on output bindings, so even a `private` input or output is API a parent template can bind.
+
+Everywhere else, `'api'` drops TypeScript `private` members, ECMAScript private `#` members, and anything tagged `@internal`.
+A `private` property or method cannot be reached from any template, and `@internal` declares a member non-API, so a row for them documents your component's wiring rather than its API.
 Injected services are the common case:
 
 ```ts
 @Component({ selector: 'my-button', template: '<button>{{ label }}</button>' })
 export class ButtonComponent {
-  @Input() label = '';
+  // Kept by 'api': a parent template can bind any declared input.
+  @Input() private label = '';
 
-  // Dropped by 'api': no template can bind it.
+  // Dropped by 'api': no template can reach it.
   private readonly cdr = inject(ChangeDetectorRef);
 
-  // Kept by 'api': Angular templates can bind protected members.
+  // Kept by 'api': the component's own template can read protected members.
   protected pressed = false;
 }
 ```
@@ -482,5 +486,5 @@ protected internalHelper = 0;
 ```
 
 `'api'` needs the `experimentalDocgenServer` feature.
-Without it, Storybook reads your components through Compodoc, which does not report member visibility reliably, so only `'all'` and `'inputs'` apply.
+Without it, Storybook reads your components through Compodoc, whose visibility data Storybook cannot interpret reliably, so only `'all'` and `'inputs'` apply.
 Asking for `'api'` then logs a warning rather than silently changing what you see.

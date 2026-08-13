@@ -1,31 +1,51 @@
-import type { ElementRef } from '@angular/core';
 import {
   ChangeDetectorRef,
   Component,
+  ElementRef,
+  EventEmitter,
   HostBinding,
+  Inject,
   Input,
+  Output,
   ViewChild,
-  inject,
   signal,
 } from '@angular/core';
 
 @Component({
   selector: 'sb-properties-methods-noise',
-  template: '<div #panel>{{ title }} {{ currentPage }} {{ helperLabel }}</div>',
+  template: '<div #panel>{{ title }} {{ currentPage }} {{ helperLabel }} {{ pageLabel }}</div>',
 })
 export class PropertiesMethodsNoiseComponent {
+  // The shape the ui5-webcomponents-ngx measurement is about: 149 components, one of these each.
+  // Explicit `@Inject` tokens because the JIT render smoke test has no param-type metadata.
+  constructor(
+    @Inject(ChangeDetectorRef) private readonly cdr: ChangeDetectorRef,
+    @Inject(ElementRef) protected readonly host: ElementRef
+  ) {}
+
   @Input() title = '';
+
+  // Bindable from a parent template: `strictInputAccessModifiers` is off by default, and output
+  // access modifiers are never checked at all.
+  @Input() private density = 'compact';
+
+  @Output() private densityChange = new EventEmitter<string>();
 
   currentPage = 1;
 
   #secret = 'hidden';
 
-  // The shape the ui5-webcomponents-ngx measurement is about: 149 components, one of these each.
-  private readonly cdr = inject(ChangeDetectorRef);
-
   private pageCount = 10;
 
   protected helperLabel = 'Next page';
+
+  protected get pageLabel(): string {
+    return `${this.currentPage}`;
+  }
+
+  private get secretLabel(): string {
+    return this.#secret;
+  }
 
   /** @internal */
   buildId = 'noise-1';

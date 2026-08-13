@@ -35,8 +35,11 @@ const NOOP_LOGGER: ParsingLogger = {
 /**
  * Which members reach the props table, as a strict ladder: `all` ⊃ `api` ⊃ `inputs`.
  *
- * `all` is every member of every section, `api` drops what cannot be part of the component's
- * public or template-facing API, and `inputs` narrows that to the inputs section alone.
+ * `all` is every member of every section. `api` keeps the component's template-facing surface:
+ * declared inputs and outputs whatever their TypeScript visibility, plus every property and method
+ * that is not TypeScript-`private`, ES-`#`, or tagged `@internal`. `inputs` narrows that to the
+ * inputs section, plus the `${name}Change` output a documented `model()` needs for its two-way
+ * binding to make sense.
  */
 export type PropsTableMode = 'all' | 'api' | 'inputs';
 
@@ -352,11 +355,23 @@ const extractMemberJsDocTags = (
   };
 };
 
-// A `private` member cannot be bound from an Angular template at any compiler setting and an
-// `@internal` one is a declared non-API. `protected` is bindable in every supported Angular
-// version, so it is API and stays; ES-private `#member`s are unreachable in every mode.
-const isNotPartOfTheApi = (item: Method | Property): boolean =>
-  item.visibility === 'private' || item.internal === true;
+// `@internal` declares a member non-API wherever it appears. TypeScript `private` and ES `#` only
+// bar access from code and the component's own template; a consuming template still binds an input
+// or output whatever its modifier says (Angular honours modifiers only behind the opt-in
+// `strictInputAccessModifiers`), so the inputs and outputs sections filter solely on `@internal`.
+const documentedInMode = (
+  item: Method | Property,
+  section: string,
+  propsTable: PropsTableMode
+): boolean => {
+  if (propsTable === 'all') {
+    return true;
+  }
+  if (item.internal === true || item.name.startsWith('#')) {
+    return false;
+  }
+  return section === 'inputs' || section === 'outputs' || item.visibility !== 'private';
+};
 
 const readMembers = (componentData: Entry, key: string): (Method | Property)[] =>
   ((componentData as unknown as Record<string, unknown>)[key] as
@@ -400,14 +415,18 @@ export const extractArgTypesFromData = (
   memberKeys.forEach((key: MemberKey) => {
     const data = readMembers(componentData, key);
     data.forEach((item: Method | Property) => {
-      if (item.name.startsWith('#') || (propsTable !== 'all' && isNotPartOfTheApi(item))) {
-        return;
-      }
       const section = mapItemToSection(key, item);
 
       // A `model()` surfaces as an input plus the `${name}Change` synthesized below, so the
       // bare-name output duplicate of it is dropped.
       if (key === 'outputsClass' && !isMethod(item) && modelPropertyNames.has(item.name)) {
+        return;
+      }
+
+      if (!documentedInMode(item, section, propsTable)) {
+        logger.debug(
+          `${componentData.name}.${item.name} left out of the props table: propsTable '${propsTable}'`
+        );
         return;
       }
 
@@ -444,32 +463,35 @@ export const extractArgTypesFromData = (
     });
   });
 
-  // The `${name}Change` output this shape never carries directly, synthesized after the loop so
-  // `propsTable` cannot hide it.
-  modelProperties.forEach((item) => {
-    const changeName = `${item.name}Change`;
+  // The `${name}Change` output this shape never carries directly. It follows its model's input
+  // row: synthesized even in `inputs` mode, which narrows sections but must not split a documented
+  // pair, and skipped when the mode hides the model itself.
+  modelProperties
+    .filter((item) => documentedInMode(item, 'inputs', propsTable))
+    .forEach((item) => {
+      const changeName = `${item.name}Change`;
 
-    // An output rather than the model input it derives from: no `defaultValue`, never required to
-    // bind, and typed as the emitted-payload handler signature.
-    const argType = {
-      name: changeName,
-      description: item.rawdescription || item.description,
-      type: { name: 'other', value: 'void' } as SBType,
-      action: changeName,
-      table: {
-        category: 'outputs',
-        type: {
-          summary: `(e: ${item.type}) => void`,
-          required: false,
+      // An output rather than the model input it derives from: no `defaultValue`, never required to
+      // bind, and typed as the emitted-payload handler signature.
+      const argType = {
+        name: changeName,
+        description: item.rawdescription || item.description,
+        type: { name: 'other', value: 'void' } as SBType,
+        action: changeName,
+        table: {
+          category: 'outputs',
+          type: {
+            summary: `(e: ${item.type}) => void`,
+            required: false,
+          },
         },
-      },
-    };
+      };
 
-    if (!sectionToItems.outputs) {
-      sectionToItems.outputs = [];
-    }
-    sectionToItems.outputs.push(argType);
-  });
+      if (!sectionToItems.outputs) {
+        sectionToItems.outputs = [];
+      }
+      sectionToItems.outputs.push(argType);
+    });
 
   const argTypes: ArgTypes = {};
   SECTION_ORDER.forEach((section) => {

@@ -113,13 +113,10 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
 
   // The docgen preset is the natural home for these, but core skips it entirely when
   // `experimentalDocgenServer` is off - which is the case one of the warnings is about.
-  const propsTable = resolvePropsTable(
-    // @ts-expect-error same as `framework` above: `options` is optional in the signature only
-    await options.presets.apply('frameworkOptions'),
-    // @ts-expect-error same as above
-    await options.presets.apply('features', {})
-  );
-  warnAboutPropsTable(propsTable);
+  // @ts-expect-error same as `framework` above: `options` is optional in the signature only
+  const features = await options.presets.apply('features', {});
+  const propsTable = resolvePropsTable(framework.options, features);
+  warnAboutPropsTable(framework.options, features);
 
   const zoneless = resolveZoneless(options?.angularBuilderOptions);
   const angularPlugins = angular({
@@ -206,7 +203,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     define: {
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
         zoneless: !!zoneless,
-        propsTable: propsTable.mode,
+        propsTable,
       }),
     },
   });

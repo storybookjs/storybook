@@ -8,13 +8,6 @@ export interface CompareArgTypesOptions {
   legacyBaseline?: boolean;
   /** Also gate `table.type.summary` text and `table.type.required`, for a same-engine baseline. */
   strictTable?: boolean;
-  /**
-   * Args the candidate engine suppresses by design, whose loss therefore documents nothing.
-   *
-   * Supplied by the caller rather than inferred, so widening it is a reviewed edit to a recorder
-   * rather than something a regression can talk the comparator into.
-   */
-  intentionallyDropped?: ReadonlySet<string>;
 }
 
 /**
@@ -32,8 +25,9 @@ export function compareArgTypes(
   const violations: Violation[] = [];
   for (const [arg, baseEntry] of Object.entries(baseline)) {
     // ES-private `#member`s are inaccessible outside their class; legacy Compodoc records them
-    // anyway, and the modern extractor deliberately drops them. Their loss never gates.
-    if (arg.startsWith('#') || options.intentionallyDropped?.has(arg)) {
+    // anyway, and the modern extractor only surfaces them under `propsTable: 'all'`. Their loss
+    // never gates.
+    if (arg.startsWith('#')) {
       continue;
     }
     const candidateEntry = candidate[arg] as StrictInputType | undefined;

@@ -1,55 +1,57 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
-import { logger } from 'storybook/internal/node-logger';
+import { deprecate, logger } from 'storybook/internal/node-logger';
 
 import { resolvePropsTable, warnAboutPropsTable } from './props-table.ts';
 
-afterEach(() => {
-  vi.restoreAllMocks();
-});
-
-const resolve = (
-  frameworkOptions: Record<string, unknown>,
-  features: Record<string, unknown> = {}
-) => resolvePropsTable(frameworkOptions, features);
+// The shared setup's node-logger mock keeps the real `deprecate`, which logs past the mocked
+// `logger`, so deprecations are only observable through a file-local mock.
+vi.mock('storybook/internal/node-logger', () => ({
+  logger: { warn: vi.fn() },
+  deprecate: vi.fn(),
+}));
 
 const warnings = (
   frameworkOptions: Record<string, unknown>,
-  features: Record<string, unknown> = {}
+  features: Record<string, boolean> = {}
 ) => {
-  const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
-  warnAboutPropsTable(resolve(frameworkOptions, features));
-  return warn.mock.calls.map(([message]) => String(message));
+  vi.mocked(logger.warn).mockClear();
+  vi.mocked(deprecate).mockClear();
+  warnAboutPropsTable(frameworkOptions, features);
+  return [...vi.mocked(logger.warn).mock.calls, ...vi.mocked(deprecate).mock.calls].map(
+    ([message]) => String(message)
+  );
 };
 
 describe('resolvePropsTable', () => {
   it('defaults to api', () => {
-    expect(resolve({})).toMatchObject({ mode: 'api', configured: false });
+    expect(resolvePropsTable({}, {})).toBe('api');
   });
 
   it('reads the framework option', () => {
-    expect(resolve({ propsTable: 'all' })).toMatchObject({ mode: 'all', configured: true });
+    expect(resolvePropsTable({ propsTable: 'all' }, {})).toBe('all');
   });
 
   it('maps the deprecated flag onto the ladder', () => {
-    expect(resolve({}, { angularFilterNonInputControls: true })).toMatchObject({
-      mode: 'inputs',
-      configured: false,
-    });
-    expect(resolve({}, { angularFilterNonInputControls: false })).toMatchObject({
-      mode: 'all',
-      configured: false,
-    });
+    expect(resolvePropsTable({}, { angularFilterNonInputControls: true })).toBe('inputs');
+    expect(resolvePropsTable({}, { angularFilterNonInputControls: false })).toBe('all');
   });
 
   it('lets an explicit propsTable win over the deprecated flag', () => {
-    expect(resolve({ propsTable: 'api' }, { angularFilterNonInputControls: true })).toMatchObject({
-      mode: 'api',
-    });
+    expect(resolvePropsTable({ propsTable: 'api' }, { angularFilterNonInputControls: true })).toBe(
+      'api'
+    );
   });
 
   it('defaults when core reports no framework options at all', () => {
-    expect(resolvePropsTable(null, {})).toMatchObject({ mode: 'api', configured: false });
+    expect(resolvePropsTable(null, {})).toBe('api');
+  });
+
+  it('falls back past a value that is not a mode', () => {
+    expect(resolvePropsTable({ propsTable: 'API' as never }, {})).toBe('api');
+    expect(
+      resolvePropsTable({ propsTable: 'input' as never }, { angularFilterNonInputControls: true })
+    ).toBe('inputs');
   });
 });
 
@@ -86,5 +88,13 @@ describe('warnAboutPropsTable', () => {
 
   it('does not warn about the api default, which nobody asked for', () => {
     expect(warnings({})).toEqual([]);
+  });
+
+  it('calls out a value that is not a mode instead of half-applying it', () => {
+    const messages = warnings({ propsTable: 'input' });
+
+    expect(messages).toHaveLength(1);
+    expect(messages[0]).toContain('"input"');
+    expect(messages[0]).toContain("'inputs'");
   });
 });

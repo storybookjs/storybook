@@ -328,23 +328,15 @@ const visitConstructorProperties = (
 ): void => {
   const { ts } = ctx;
   for (const parameter of constructor.parameters) {
-    // Only parameter properties declare a field, and only publicly visible ones belong in the props
-    // table: the `private readonly` service injections of real projects would otherwise fill it.
-    const modifiers = (ts.getModifiers(parameter) ?? []).map((modifier) => modifier.kind);
-    const declaresField = modifiers.some(
-      (kind) =>
-        kind === ts.SyntaxKind.PublicKeyword ||
-        kind === ts.SyntaxKind.PrivateKeyword ||
-        kind === ts.SyntaxKind.ProtectedKeyword ||
-        kind === ts.SyntaxKind.ReadonlyKeyword
+    // Only parameter properties declare a field; a plain parameter is no member at all.
+    const declaresField = (ts.getModifiers(parameter) ?? []).some(
+      (modifier) =>
+        modifier.kind === ts.SyntaxKind.PublicKeyword ||
+        modifier.kind === ts.SyntaxKind.PrivateKeyword ||
+        modifier.kind === ts.SyntaxKind.ProtectedKeyword ||
+        modifier.kind === ts.SyntaxKind.ReadonlyKeyword
     );
-    const isHidden = modifiers.some(
-      (kind) => kind === ts.SyntaxKind.PrivateKeyword || kind === ts.SyntaxKind.ProtectedKeyword
-    );
-    if (!declaresField || isHidden) {
-      if (isHidden) {
-        dropped(constructor, parameter.name.getText(), 'a private or protected parameter property');
-      }
+    if (!declaresField) {
       continue;
     }
     const type = parameter.type ? ctx.types.render(parameter.type) : ctx.types.infer(parameter);
@@ -433,19 +425,6 @@ const visitAccessorPair = (
         ...tags,
       })
     );
-    return;
-  }
-  // Undecorated non-public accessors are implementation detail (host-binding getters, CVA
-  // plumbing); a props-table row for them is noise.
-  const nonPublic = [getter, setter].some((accessor) =>
-    (accessor ? (ts.getModifiers(accessor) ?? []) : []).some(
-      (modifier) =>
-        modifier.kind === ts.SyntaxKind.PrivateKeyword ||
-        modifier.kind === ts.SyntaxKind.ProtectedKeyword
-    )
-  );
-  if (nonPublic) {
-    dropped(member, name, 'an undecorated private or protected accessor');
     return;
   }
   members.properties.push(

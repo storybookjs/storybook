@@ -34,8 +34,7 @@ export const experimental_docgenProvider = async (
       import.meta.resolve('@storybook/angular-vite/internal/docgen-worker')
     ),
     options: {
-      propsTable: resolvePropsTable(await options?.presets?.apply('frameworkOptions'), features)
-        .mode,
+      propsTable: resolvePropsTable(await options?.presets?.apply('frameworkOptions'), features),
     },
   };
 

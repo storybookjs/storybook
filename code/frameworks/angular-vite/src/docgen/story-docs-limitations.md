@@ -34,15 +34,28 @@ The snippet is built by reading the story file rather than by running it.
 Literals, arrays, objects and enum members are resolved to the value the browser generator would have shown, but an arg whose value needs the story to run - a call expression, or a constant imported from another file - is printed as the expression as written.
 
 Args assigned in the older CSF2 style (`MyStory.args = { ... }`) are read, even though the assignment sits outside the story's own initializer.
+The same goes for `MyStory.render` and `MyStory.template` assignments, and for the `Template.bind({})` idiom, which is followed to the function it copies.
+
+String values are escaped for the attribute position they land in, so quotes and character-reference text (`&amp;`) survive a round-trip through Angular's template parser unchanged.
+
+## What cannot be read yields no snippet at all
+
+The guiding rule is that a wrong snippet is worse than no snippet: whenever the story's markup or args cannot be read statically, no snippet is generated and Storybook falls back to showing the story's own source.
+That covers:
+
+- a spread or dynamically-keyed member in the story config or in an `args` object (`{ ...base }` may carry or shadow anything this pass would read)
+- a `template` or `render` bound to an imported name, or to a binding that is reassigned after its declaration
+- a `render` written as a getter, a setter, or a generator (reading `render` invokes a getter; the accessor itself is not the function)
+- a `render` body with more than one exit, where the branch taken depends on the story's runtime args
+- a `${…}` interpolation or `argsToTemplate` options that need the story to run
 
 ## Stories that supply their own template are untouched
 
-A story with a `template` (directly, or returned from an inline `render`) is shown as written, including an empty one.
+A story with a `template` (directly, or returned from an inline `render`, including the `render(args) { … }` method shorthand) is shown as written, including an empty one.
 That matches what the browser generator does today.
 
 A name declared in the same file is followed to what it holds, so `template: HOISTED_TEMPLATE` and `render: renderFn` are read rather than replaced by a fabricated element.
-An imported one cannot be followed, and neither can a template built from an expression that needs the story to run.
-In those cases the snippet falls back to the generated bindings rather than printing the variable name as if it were markup.
+The same scope rule applies to interpolated names: `${HEADER}` substitutes the module-level constant the runtime would read, and an interpolated name substitutes a story arg only when the render function actually binds it from its parameters.
 
 ## `argsToTemplate` is expanded, not given up on
 
@@ -66,7 +79,8 @@ Two differences from what runs in the browser, both deliberate:
 - `include` and `exclude` are honoured when written as array literals
 
 An interpolated arg used as slot content (`<span>${footer}</span>`) is substituted when its value is a string, number or boolean.
-Any other `${…}` needs the story to run, so the template is dropped and the generated bindings stand in.
+Any other `${…}` needs the story to run, so no snippet is generated and the story's own source stands in.
+`argsToTemplate` itself expands only when given the render's args parameter - whole, or as a rest binding, in which case the destructured names are excluded the way the runtime's rest object excludes them.
 
 ## The component's metadata has to be available
 

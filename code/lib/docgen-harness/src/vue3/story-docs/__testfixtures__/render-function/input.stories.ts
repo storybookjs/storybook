@@ -56,3 +56,10 @@ export const SlotChildren: Story = {
       footer: () => h('strong', 'Note'),
     }),
 };
+
+export const ArgsOnWrapperAndComponent: Story = {
+  args: {
+    label: 'Confirm',
+  },
+  render: (args) => h('section', { class: 'toolbar', ...args }, [h(RenderFunctionButton, args)]),
+};

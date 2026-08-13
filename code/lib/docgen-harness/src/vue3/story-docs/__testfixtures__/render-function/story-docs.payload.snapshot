@@ -15,6 +15,17 @@
 </template>",
       "summary": undefined,
     },
+    "forms-render-function--args-on-wrapper-and-component": {
+      "description": undefined,
+      "id": "forms-render-function--args-on-wrapper-and-component",
+      "name": "Args On Wrapper And Component",
+      "snippet": "<template>
+  <section class="toolbar" label="Confirm">
+    <RenderFunctionButton label="Confirm" />
+  </section>
+</template>",
+      "summary": undefined,
+    },
     "forms-render-function--nested": {
       "description": undefined,
       "id": "forms-render-function--nested",

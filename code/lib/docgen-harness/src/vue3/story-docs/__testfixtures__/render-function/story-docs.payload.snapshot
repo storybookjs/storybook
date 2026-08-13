@@ -4,12 +4,45 @@
   "name": "RenderFunctionButton",
   "path": "__PATH__",
   "stories": {
+    "forms-render-function--args-member": {
+      "description": undefined,
+      "id": "forms-render-function--args-member",
+      "name": "Args Member",
+      "snippet": "<template>
+  <div>
+    <RenderFunctionButton label="From args" />
+  </div>
+</template>",
+      "summary": undefined,
+    },
+    "forms-render-function--nested": {
+      "description": undefined,
+      "id": "forms-render-function--nested",
+      "name": "Nested",
+      "snippet": "<template>
+  <section class="toolbar">
+    <h2>Actions</h2>
+    <RenderFunctionButton label="Confirm" />
+    <RenderFunctionButton label="Cancel" />
+  </section>
+</template>",
+      "summary": undefined,
+    },
     "forms-render-function--primary": {
       "description": undefined,
       "id": "forms-render-function--primary",
       "name": "Primary",
       "snippet": "<template>
   <RenderFunctionButton label="Render" />
+</template>",
+      "summary": undefined,
+    },
+    "forms-render-function--spread-override": {
+      "description": undefined,
+      "id": "forms-render-function--spread-override",
+      "name": "Spread Override",
+      "snippet": "<template>
+  <RenderFunctionButton label="Overridden" />
 </template>",
       "summary": undefined,
     },

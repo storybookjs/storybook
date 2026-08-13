@@ -19,3 +19,29 @@ export const Primary: Story = {
   },
   render: (args) => h(RenderFunctionButton, args),
 };
+
+export const Nested: Story = {
+  args: {
+    label: 'Confirm',
+  },
+  render: (args) =>
+    h('section', { class: 'toolbar' }, [
+      h('h2', 'Actions'),
+      h(RenderFunctionButton, args),
+      h(RenderFunctionButton, { label: 'Cancel' }),
+    ]),
+};
+
+export const SpreadOverride: Story = {
+  args: {
+    label: 'Original',
+  },
+  render: (args) => h(RenderFunctionButton, { ...args, label: 'Overridden' }),
+};
+
+export const ArgsMember: Story = {
+  args: {
+    label: 'From args',
+  },
+  render: (args) => h('div', [h(RenderFunctionButton, { label: args.label })]),
+};

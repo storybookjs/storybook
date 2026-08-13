@@ -71,16 +71,17 @@
   "dependencies": {
     "@next/env": "^15.0.0 || ^16.0.0",
     "@rollup/pluginutils": "^5.0.2",
-    "image-size": "^2.0.2",
     "magic-string": "^0.30.11",
     "module-alias": "^2.2.3",
     "pathe": "^2.0.3",
+    "probe-image-size": "^7.3.0",
     "semver": "^7.7.3",
     "ts-dedent": "^2.2.0",
     "vite-tsconfig-paths": "^5.1.4"
   },
   "devDependencies": {
     "@types/node": "^22.19.1",
+    "@types/probe-image-size": "^7.2.5",
     "@types/react": "^18.0.37",
     "@types/semver": "^7.7.1",
     "next": "^15.2.3",

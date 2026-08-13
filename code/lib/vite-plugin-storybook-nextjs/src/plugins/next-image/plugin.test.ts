@@ -1,8 +1,10 @@
+import fs from 'node:fs';
 import path from 'node:path';
 
 import type { NextConfigComplete } from 'next/dist/server/config-shared.js';
 import type { PluginContext } from 'rollup';
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { vol } from 'memfs';
 
 const requireResolveMock = vi.hoisted(() => vi.fn());
 
@@ -11,6 +13,8 @@ vi.mock('node:module', () => ({
     resolve: requireResolveMock,
   }),
 }));
+
+vi.mock('node:fs', { spy: true });
 
 import { vitePluginNextImage } from './plugin.ts';
 
@@ -81,5 +85,59 @@ describe('vitePluginNextImage resolveId', () => {
       paths: [path.dirname(importer.split('?')[0])],
     });
     expect(result).toBe(virtualImageId(resolvedPath));
+  });
+});
+
+describe('vitePluginNextImage load', () => {
+  const nextConfigResolver = {
+    promise: Promise.resolve({} as NextConfigComplete),
+    resolve: vi.fn(),
+    reject: vi.fn(),
+  } as PromiseWithResolvers<NextConfigComplete>;
+
+  const avatarPath = '/project/src/images/avatar.png';
+  const brokenPath = '/project/src/images/broken.png';
+
+  // 1x1 red PNG
+  const pngFixture = Buffer.from(
+    'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8z8BQDwAEhQGAhKmMIQAAAABJRU5ErkJggg==',
+    'base64'
+  );
+
+  beforeEach(async () => {
+    vol.reset();
+    const memfs = await vi.importActual<typeof import('memfs')>('memfs');
+
+    vi.mocked(fs.promises.readFile).mockImplementation(
+      memfs.fs.promises.readFile as unknown as typeof fs.promises.readFile
+    );
+
+    await memfs.fs.promises.mkdir('/project/src/images', { recursive: true });
+    await memfs.fs.promises.writeFile(avatarPath, pngFixture);
+    await memfs.fs.promises.writeFile(brokenPath, Buffer.alloc(64));
+  });
+
+  afterEach(() => {
+    vol.reset();
+  });
+
+  it('reads dimensions from the image buffer', async () => {
+    const plugin = vitePluginNextImage(nextConfigResolver);
+
+    const result = await plugin.load!.call({} as PluginContext, virtualImageId(avatarPath));
+
+    expect(result).toContain('width: 1');
+    expect(result).toContain('height: 1');
+  });
+
+  it('does not hang on malformed image data', async () => {
+    const plugin = vitePluginNextImage(nextConfigResolver);
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    const result = await plugin.load!.call({} as PluginContext, virtualImageId(brokenPath));
+
+    expect(result).toBeUndefined();
+    expect(errorSpy).toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 });

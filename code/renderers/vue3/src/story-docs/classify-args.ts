@@ -5,7 +5,7 @@ import {
   isFunctionExpression,
   isSelfContainedFunction,
   printValue,
-  unwrapValue,
+  singleReturnedExpression,
   type ValuePlan,
 } from './classify-value.ts';
 
@@ -76,17 +76,12 @@ export function classifyArgs(
     const isSlot = docgen.slots.has(name);
 
     if (isSlot && isFunctionExpression(value)) {
-      const returned = returnedExpression(value);
+      const returned = singleReturnedExpression(value);
       if (returned) {
         const plan = classifyValue(returned);
 
         if (plan.kind === 'inline' || plan.kind === 'hoist') {
-          classified.push({
-            name,
-            value: returned,
-            role: 'slot',
-            plan: planSlotValue(returned, plan),
-          });
+          classified.push({ name, value: returned, role: 'slot', plan });
           continue;
         }
 
@@ -100,23 +95,20 @@ export function classifyArgs(
       return { args: [], defer: true };
     }
 
-    const eventName = declaredEventName(name, docgen.events);
-    if (eventName !== undefined && isFunctionExpression(value)) {
+    if (isFunctionExpression(value)) {
+      const eventName = declaredEventName(name, docgen.events);
+      // Function args matching no declared event or prop drop silently, like the runtime does.
+      if (eventName === undefined && !docgen.props.has(name)) {
+        continue;
+      }
       if (isSelfContainedFunction(value)) {
-        classified.push({ name, value, role: 'event', eventName, plan: { kind: 'hoist' } });
+        classified.push(
+          eventName === undefined
+            ? { name, value, role: 'prop', plan: { kind: 'hoist' } }
+            : { name, value, role: 'event', eventName, plan: { kind: 'hoist' } }
+        );
       } else {
         omitted.push(`${name}: ${printValue(value)}`);
-      }
-      continue;
-    }
-
-    if (isFunctionExpression(value)) {
-      if (docgen.props.has(name)) {
-        if (isSelfContainedFunction(value)) {
-          classified.push({ name, value, role: 'prop', plan: { kind: 'hoist' } });
-        } else {
-          omitted.push(`${name}: ${printValue(value)}`);
-        }
       }
       continue;
     }
@@ -133,12 +125,7 @@ export function classifyArgs(
     }
 
     const role: ArgRole = isSlot ? 'slot' : docgen.events.has(`update:${name}`) ? 'model' : 'prop';
-    classified.push({
-      name,
-      value,
-      role,
-      plan: role === 'slot' ? planSlotValue(value, plan) : plan,
-    });
+    classified.push({ name, value, role, plan });
   }
 
   // A snippet showing none of the args the story actually sets is a worse example than the one the
@@ -155,10 +142,6 @@ export function classifyArgs(
   };
 }
 
-function planSlotValue(value: t.Node, plan: RenderableValuePlan): RenderableValuePlan {
-  return unwrapValue(value).type === 'StringLiteral' ? { kind: 'hoist' } : plan;
-}
-
 /**
  * Matches Storybook handler args to declared Vue events.
  *
@@ -173,29 +156,4 @@ function declaredEventName(name: string, events: Set<string>): string | undefine
   const [, rawEventName] = match;
   const eventName = `${rawEventName.charAt(0).toLowerCase()}${rawEventName.slice(1)}`;
   return events.has(eventName) ? eventName : undefined;
-}
-
-/**
- * Extracts the expression a function slot returns when it has a single static return path.
- *
- * @example `() => 'hi'` → `'hi'`
- */
-function returnedExpression(node: t.Node): t.Node | undefined {
-  const value = unwrapValue(node);
-  if (value.type !== 'ArrowFunctionExpression' && value.type !== 'FunctionExpression') {
-    return undefined;
-  }
-
-  if (value.body.type !== 'BlockStatement') {
-    return value.body;
-  }
-
-  if (value.body.body.length !== 1) {
-    return undefined;
-  }
-
-  const statement = value.body.body[0];
-  return statement.type === 'ReturnStatement' && statement.argument
-    ? statement.argument
-    : undefined;
 }

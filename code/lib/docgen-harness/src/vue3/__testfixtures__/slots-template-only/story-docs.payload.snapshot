@@ -14,17 +14,11 @@
       "description": undefined,
       "id": "forms-slots-template-only--string-child",
       "name": "String Child",
-      "snippet": "<script lang="ts" setup>
-const _default = 'Plain text content';
-
-const header = 'Header text';
-</script>
-
-<template>
+      "snippet": "<template>
   <TemplateOnlySlots>
-    {{ _default }}
+    Plain text content
     <template #header>
-      {{ header }}
+      Header text
     </template>
   </TemplateOnlySlots>
 </template>",

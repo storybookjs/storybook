@@ -84,11 +84,18 @@ const ref2 = {};
     expect(snippet).toContain('{{ _default }}');
   });
 
-  it('interpolates raw slot strings through a hoisted binding', () => {
-    const snippet = render([slot('default', `'<script>{{ evil }}</script>'`, 'hoist')]);
+  it('hoists inline slot text the template parser would read as markup', () => {
+    const snippet = render([slot('default', `'<script>{{ evil }}</script>'`)]);
 
     expect(snippet).toContain('const _default = "<script>{{ evil }}</script>";');
     expect(snippet).toContain('<C>\n    {{ _default }}\n  </C>');
+  });
+
+  it('hoists inline slot text whose whitespace raw template text would condense', () => {
+    const snippet = render([slot('default', `'  padded  '`)]);
+
+    expect(snippet).toContain('const _default = "  padded  ";');
+    expect(snippet).toContain('{{ _default }}');
   });
 
   it('hoists a listener and renders it as a Vue event binding', () => {

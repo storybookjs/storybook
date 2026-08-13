@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import fs from 'node:fs';
 import { createRequire } from 'node:module';
 import { type FilterPattern, createFilter } from '@rollup/pluginutils';
@@ -20,28 +21,11 @@ const warnOnce = (message: string) => {
 const includePattern = /\.(png|jpg|jpeg|gif|webp|avif|ico|bmp|svg)$/;
 const excludeImporterPattern = /\.(css|scss|sass)$/;
 
-// Use null byte prefix for virtual module IDs
-// Use URL-safe base64 to encode the image path to avoid issues with special characters
-// like square brackets that are decoded by decodeURI
 const virtualImagePrefix = '\0virtual:next-image:';
 const virtualImage = 'virtual:next-image';
 const virtualNextImage = 'virtual:next/image';
 const virtualNextLegacyImage = 'virtual:next/legacy/image';
-
-// URL-safe base64 encoding/decoding functions
-function encodeBase64Url(str: string): string {
-  const base64 = Buffer.from(str).toString('base64');
-  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-}
-
-function decodeBase64Url(str: string): string {
-  // Add back padding if needed
-  const padding = (4 - (str.length % 4)) % 4;
-  const withPadding = str + '='.repeat(padding);
-  // Convert URL-safe base64 back to standard base64
-  const base64 = withPadding.replace(/-/g, '+').replace(/_/g, '/');
-  return Buffer.from(base64, 'base64').toString();
-}
+const SHORT_HASH_LEN = 8;
 
 const require = createRequire(import.meta.url);
 
@@ -65,6 +49,23 @@ export function vitePluginNextImage(
     ],
     options.excludeFiles
   );
+
+  const imagePathByHash = new Map<string, string>();
+
+  function registerImagePath(imagePath: string): string {
+    const full = createHash('sha256').update(imagePath).digest('hex');
+    const short = full.slice(0, SHORT_HASH_LEN);
+    const existing = imagePathByHash.get(short);
+    if (existing === imagePath) {
+      return short;
+    }
+    if (existing === undefined) {
+      imagePathByHash.set(short, imagePath);
+      return short;
+    }
+    imagePathByHash.set(full, imagePath);
+    return full;
+  }
 
   return {
     name: 'vite-plugin-storybook-nextjs-image',
@@ -156,10 +157,7 @@ export function vitePluginNextImage(
           return null;
         }
 
-        // Use null byte prefix to embed the image path in the virtual module ID
-        // Use URL-safe base64 encoding to avoid issues with special characters like
-        // square brackets that get decoded by Vite's decodeURI
-        return `${virtualImagePrefix}${encodeBase64Url(imagePath)}`;
+        return `${virtualImagePrefix}${registerImagePath(imagePath)}`;
       }
 
       if (id === 'next/image' && importer !== virtualNextImage) {
@@ -191,10 +189,11 @@ export function vitePluginNextImage(
         ).toString('utf-8');
       }
 
-      // Handle virtual image modules with null byte prefix
       if (id.startsWith(virtualImagePrefix)) {
-        // Decode the URL-safe base64 encoded image path
-        const imagePath = decodeBase64Url(id.slice(virtualImagePrefix.length));
+        const imagePath = imagePathByHash.get(id.slice(virtualImagePrefix.length));
+        if (imagePath === undefined) {
+          return null;
+        }
 
         const nextConfig = await nextConfigResolver.promise;
 

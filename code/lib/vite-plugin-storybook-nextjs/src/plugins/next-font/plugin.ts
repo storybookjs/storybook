@@ -7,6 +7,7 @@ import {
   type LoaderOptions,
   getFontFaceDeclarations as getLocalFontFaceDeclarations,
 } from './local/get-font-face-declarations.ts';
+import { encodeBase64Url } from '../../utils/base64-url.ts';
 import { getCSSMeta } from './utils/get-css-meta.ts';
 import { setFontDeclarationsInHead } from './utils/set-font-declarations-in-head.ts';
 
@@ -31,11 +32,6 @@ type FontOptions = {
 const includePattern = /next(\\|\/|\\\\).*(\\|\/|\\\\)target\.css\?.*$/;
 
 const virtualFontPrefix = '\0virtual:next-font:';
-
-function encodeBase64Url(str: string): string {
-  const base64 = Buffer.from(str).toString('base64');
-  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-}
 
 export function vitePluginNextFont() {
   let devMode = true;

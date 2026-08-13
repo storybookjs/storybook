@@ -6,6 +6,7 @@ import path from 'pathe';
 import probeSync from 'probe-image-size/sync.js';
 import { dedent } from 'ts-dedent';
 import type { Plugin } from 'vite';
+import { decodeBase64Url, encodeBase64Url } from '../../utils/base64-url.ts';
 import { VITEST_PLUGIN_NAME, isVitestEnv } from '../../utils.ts';
 import { getAlias } from './alias/index.tsx';
 
@@ -27,21 +28,6 @@ const virtualImagePrefix = '\0virtual:next-image:';
 const virtualImage = 'virtual:next-image';
 const virtualNextImage = 'virtual:next/image';
 const virtualNextLegacyImage = 'virtual:next/legacy/image';
-
-// URL-safe base64 encoding/decoding functions
-function encodeBase64Url(str: string): string {
-  const base64 = Buffer.from(str).toString('base64');
-  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-}
-
-function decodeBase64Url(str: string): string {
-  // Add back padding if needed
-  const padding = (4 - (str.length % 4)) % 4;
-  const withPadding = str + '='.repeat(padding);
-  // Convert URL-safe base64 back to standard base64
-  const base64 = withPadding.replace(/-/g, '+').replace(/_/g, '/');
-  return Buffer.from(base64, 'base64').toString();
-}
 
 const require = createRequire(import.meta.url);
 

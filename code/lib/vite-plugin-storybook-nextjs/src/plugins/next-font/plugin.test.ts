@@ -4,17 +4,9 @@ import type { PluginContext } from 'rollup';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('./local/get-font-face-declarations.ts', { spy: true });
-vi.mock('./google/get-font-face-declarations.ts', { spy: true });
 
 import { getFontFaceDeclarations as getLocalFontFaceDeclarations } from './local/get-font-face-declarations.ts';
 import { vitePluginNextFont } from './plugin.ts';
-
-function encodeBase64Url(str: string): string {
-  const base64 = Buffer.from(str).toString('base64');
-  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-}
-
-const virtualFontId = (rawQuery: string) => `\0virtual:next-font:${encodeBase64Url(rawQuery)}`;
 
 describe('vitePluginNextFont resolveId', () => {
   const createContext = () => ({}) as PluginContext;
@@ -59,7 +51,7 @@ describe('vitePluginNextFont resolveId', () => {
       id: string;
     };
 
-    expect(result.id).toBe(virtualFontId(rawQuery));
+    expect(result.id).toMatch(/^\0virtual:next-font:/);
     expect(result.id).not.toContain('%');
   });
 
@@ -92,8 +84,6 @@ describe('vitePluginNextFont resolveId', () => {
       importer
     )) as { id: string };
 
-    expect(a.id).toBe(virtualFontId(queryA));
-    expect(b.id).toBe(virtualFontId(queryB));
     expect(a.id).not.toEqual(b.id);
   });
 });

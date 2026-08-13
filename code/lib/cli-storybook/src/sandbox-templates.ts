@@ -771,7 +771,12 @@ export const baseTemplates = {
     modifications: {
       // Match the `^21.2.0` range `ng new` uses for the other @angular packages so every
       // @angular/* resolves to the same patch. An exact pin would leave forms a patch behind core.
-      extraDependencies: ['@angular/forms@^21.2.0', '@angular/animations@^21.2.0'],
+      // See `angular-vite/default-ts` for why Compodoc is listed here.
+      extraDependencies: [
+        '@angular/forms@^21.2.0',
+        '@angular/animations@^21.2.0',
+        '@compodoc/compodoc',
+      ],
       useCsfFactory: true,
     },
     extraCiSteps: {
@@ -793,7 +798,15 @@ export const baseTemplates = {
       // The latest CLI scaffolds Angular 22 but omits @angular/forms and @angular/animations. Match
       // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
       // Also, Angular 22 needs TypeScript 6 or more recent.
-      extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
+      // `@compodoc/compodoc` is no longer installed by `storybook init` for the Vite builder, but
+      // the sandbox harness prepends its own `docs:json` Compodoc pass to every Angular sandbox
+      // (see `sandbox-parts.ts`), so the sandboxes still have to carry the binary themselves.
+      extraDependencies: [
+        '@angular/forms@^22',
+        '@angular/animations@^22',
+        'typescript@^6',
+        '@compodoc/compodoc',
+      ],
       useCsfFactory: true,
       // `@storybook/angular-vite` turns the docgen server on by default, so guarding the browser
       // docgen path is now an explicit opt-out rather than the absence of a flag.
@@ -822,7 +835,13 @@ export const baseTemplates = {
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
+      // Compodoc is unused under the flag, but the sandbox harness runs it regardless.
+      extraDependencies: [
+        '@angular/forms@^22',
+        '@angular/animations@^22',
+        'typescript@^6',
+        '@compodoc/compodoc',
+      ],
       useCsfFactory: true,
       // These two flags are what brings a template into docgen baseline coverage; see
       // `docgenServerTemplates`.

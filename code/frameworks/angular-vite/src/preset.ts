@@ -111,9 +111,6 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     });
   }
 
-  // The docgen preset is the natural home for these, but core skips it entirely when
-  // `experimentalDocgenServer` is off - which is the case one of the warnings is about.
-  // @ts-expect-error same as `framework` above: `options` is optional in the signature only
   const features = await options.presets.apply('features', {});
   const propsTable = resolvePropsTable(framework.options, features);
   warnAboutPropsTable(framework.options, features);

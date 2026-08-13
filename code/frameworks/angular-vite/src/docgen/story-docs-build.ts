@@ -18,11 +18,16 @@ import type { ArgsRecord, SpreadArgsContext } from './story-docs-args.ts';
 import {
   argsProperties,
   createSpreadArgsResolver,
+  deepAssignmentSources,
   evaluateArgExpression,
-  hasAssignmentInto,
 } from './story-docs-args.ts';
 import type { Bindings, StoryShape } from './story-docs-markup.ts';
-import { userTemplate } from './story-docs-markup.ts';
+import {
+  metaConfigObject,
+  storyConfigObject,
+  unresolvableConfigMembers,
+  userTemplate,
+} from './story-docs-markup.ts';
 import type { StoryNgModules } from './story-docs-ng-modules.ts';
 import { ngModulesFromDecorators, storyNgModules } from './story-docs-ng-modules.ts';
 import type { HostComponentSnippet } from './story-docs-snippet.ts';
@@ -159,10 +164,13 @@ const buildStoryDoc = (
       exportName,
       annotations,
       args: { ...deps.metaArgs.properties, ...storyArgs.properties },
-      argsReadable:
-        deps.metaArgs.complete &&
-        storyArgs.complete &&
-        !hasAssignmentInto(csf, exportName, 2, undefined),
+      unresolvedArgs: [
+        ...deps.metaArgs.unresolved,
+        ...unresolvableConfigMembers(metaConfigObject(csf)),
+        ...storyArgs.unresolved,
+        ...unresolvableConfigMembers(storyConfigObject({ csf, exportName })),
+        ...deepAssignmentSources(csf, exportName),
+      ],
       source: deps.source,
     };
     const rendered = snippetMeta
@@ -190,58 +198,74 @@ const buildStoryDoc = (
 /**
  * Snippets show the markup a story supplies itself - through `template`, a `render` that returns
  * one, or the CSF2 function form - as written. Markup or args that cannot be read without running
- * the story yield no snippet at all, so the runtime source fallback stays authoritative rather
- * than a fabricated element misrepresenting what the story renders.
+ * the story fall back to the component-derived bindings: a snippet that fell back is still useful,
+ * but silently shipping it would leave a consumer no way to know its example is partial, so the
+ * story carries a `warning` naming the source text this pass could not read.
  */
 const renderStorySnippet = (
   snippetMeta: AngularComponentSnippetMeta,
   shape: StoryShape,
   storyDecorators: t.Node | undefined,
   deps: StoryDocDeps
-): HostComponentSnippet | undefined => {
+): HostComponentSnippet => {
   const { componentImport } = deps;
   // The story file's local name is what the import binds, so an aliased import stays consistent
   // between the import statement, the `imports` array and the template.
   const localName = componentNameOf(shape.csf._metaAnnotations.component) ?? snippetMeta.name;
   const ngModules = snippetMeta.standalone ? undefined : storyNgModules(storyDecorators, deps);
-  const bindings = shape.argsReadable ? collectBindings(snippetMeta, shape) : undefined;
-  const userMarkup = userTemplate(shape, bindings);
-  if (userMarkup?.kind === 'unresolvable') {
-    return undefined;
-  }
-  if (userMarkup === undefined && !snippetMeta.selector) {
-    return buildHostComponentSnippet({
-      template: buildComponentOutletTemplate(localName),
+  const bindings = collectBindings(snippetMeta, shape);
+  // Hidden args would expand `argsToTemplate` into markup that looks complete, so the markup is
+  // read without bindings then and falls back with a warning instead.
+  const userMarkup = userTemplate(shape, shape.unresolvedArgs.length === 0 ? bindings : undefined);
+
+  const host = (template: string, viaComponentOutlet: boolean, outputs: string[]) =>
+    buildHostComponentSnippet({
+      template,
       componentName: localName,
       componentImport,
-      viaComponentOutlet: true,
+      viaComponentOutlet,
       standalone: snippetMeta.standalone,
       ngModules,
-      outputs: [],
+      outputs,
     });
-  }
-  if (userMarkup === undefined && bindings === undefined) {
-    return undefined;
-  }
-  const template =
-    userMarkup?.kind === 'literal'
-      ? formatTemplateMarkup(userMarkup.markup)
-      : buildTemplate(snippetMeta.selector!, {
-          inputs: bindings!.inputs,
-          outputs: bindings!.outputs,
-        });
-  // The host only needs handlers for the outputs the markup actually binds.
-  const boundOutputs = snippetMeta.outputs.filter((name) => template.includes(`(${name})=`));
 
-  return buildHostComponentSnippet({
-    template,
-    componentName: localName,
-    componentImport,
-    viaComponentOutlet: false,
-    standalone: snippetMeta.standalone,
-    ngModules,
-    outputs: boundOutputs,
-  });
+  if (userMarkup?.kind === 'literal') {
+    // The story is shown exactly as it was written, so nothing about it is missing; the host only
+    // needs handlers for the outputs the markup actually binds.
+    const boundOutputs = snippetMeta.outputs.filter((name) =>
+      userMarkup.markup.includes(`(${name})=`)
+    );
+    return host(formatTemplateMarkup(userMarkup.markup), false, boundOutputs);
+  }
+
+  const markupSources = userMarkup?.source === undefined ? [] : [userMarkup.source];
+  // The outlet form shows no args at all, so naming the args that could not be read would say
+  // nothing about what is missing from it.
+  return snippetMeta.selector
+    ? withUnresolved(
+        host(buildTemplate(snippetMeta.selector, bindings), false, snippetMeta.outputs),
+        [...markupSources, ...shape.unresolvedArgs]
+      )
+    : withUnresolved(host(buildComponentOutletTemplate(localName), true, []), markupSources);
+};
+
+/** Says which source text a static pass could not read, so a reader can see what is missing. */
+const unresolvedWarning = (unresolved: readonly string[]): string =>
+  `Incomplete snippet: ${[...new Set(unresolved)]
+    .map((source) => `\`${source}\``)
+    .join(', ')} could not be resolved statically.`;
+
+const withUnresolved = (
+  rendered: HostComponentSnippet,
+  unresolved: readonly string[]
+): HostComponentSnippet => {
+  if (unresolved.length === 0) {
+    return rendered;
+  }
+  const warning = [rendered.warning, unresolvedWarning(unresolved)]
+    .filter((part) => part !== undefined)
+    .join('\n');
+  return { snippet: rendered.snippet, warning };
 };
 
 const collectBindings = (snippetMeta: AngularComponentSnippetMeta, shape: StoryShape): Bindings => {

@@ -2,8 +2,9 @@
 // live in their own tree (`__storyshapes__`): the `__testfixtures__` recorders JIT-mount their
 // stories and gate against legacy runtime recordings, neither of which exists for template-shaped
 // stories - the correct baseline here is the authored markup itself, so snapshots gate
-// byte-for-byte. A story whose markup cannot be read statically must yield NO snippet, recorded
-// as an explicit sentinel so a disappearing bail can never hide behind a missing file.
+// byte-for-byte. A story whose markup cannot be read statically falls back to component-derived
+// bindings and carries a `warning` naming what could not be read; the warning is recorded with the
+// snippet so a silently disappearing caveat can never hide behind an unchanged recording.
 import { existsSync, readdirSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -64,7 +65,11 @@ describe('angular story-docs snippets for stories that supply their own markup',
       const storyDoc = payload!.stories[story.id];
       expect(storyDoc, `${exportName} missing from payload`).toBeDefined();
       expect(storyDoc?.error, `${exportName} produced an error`).toBeUndefined();
-      await expect(storyDoc?.snippet ?? NO_SNIPPET_SENTINEL).toMatchFileSnapshot(
+      const recorded = [
+        storyDoc?.snippet ?? NO_SNIPPET_SENTINEL,
+        ...(storyDoc?.warning === undefined ? [] : [`warning: ${storyDoc.warning}`]),
+      ].join('\n\n');
+      await expect(recorded).toMatchFileSnapshot(
         join(testDir, `server-snippet-${exportName}.snapshot`)
       );
     }

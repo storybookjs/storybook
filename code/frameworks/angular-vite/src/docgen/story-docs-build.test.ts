@@ -84,10 +84,11 @@ const shapesDocgen = async (): Promise<AngularDocgenPayload> => ({
 const STORY_SHAPES_FILE = [
   `import { argsToTemplate } from '@storybook/angular-vite';`,
   `import { ButtonComponent } from './button.component';`,
-  `import { IMPORTED_TEMPLATE } from './templates';`,
+  `import { IMPORTED_TEMPLATE, importedRender } from './templates';`,
   `declare function buildSlot(args: unknown): string;`,
   `const HOISTED_TEMPLATE = '<sb-button hoisted></sb-button>';`,
   `const renderFn = () => ({ template: '<sb-button via-fn></sb-button>' });`,
+  `const sharedArgs = { label: 'shared' };`,
   `export default {`,
   `  title: 'Example/Button',`,
   `  component: ButtonComponent,`,
@@ -103,6 +104,10 @@ const STORY_SHAPES_FILE = [
   `export const HoistedTemplate = { template: HOISTED_TEMPLATE };`,
   `export const RenderIdentifier = { render: renderFn, args: { count: 4 } };`,
   `export const ImportedTemplate = { template: IMPORTED_TEMPLATE, args: { count: 5 } };`,
+  `export const ImportedRender = { render: importedRender, args: { count: 6 } };`,
+  // Args merged in with a spread, and a whole config merged in with one.
+  `export const SpreadArgs = { args: { ...sharedArgs, count: 1 } };`,
+  `export const ConfigSpread = { ...SpreadArgs, args: { count: 12 } };`,
   // `export { X }` registers a story without a declarator, so it exercises the other branch of the
   // CSF parser. Its own args must still win over the meta's.
   `const ReExported = { args: { label: 'reexported', count: 9 } };`,
@@ -143,8 +148,8 @@ const STORY_SHAPES_FILE = [
   `Csf2AssignedArgs.args = { label: 'assigned', count: 11 };`,
 ].join('\n');
 
-/** Template inside the host-component snippet per story name, for a multi-story file. */
-const templatesOf = async (storyFile: string, extraFiles: Record<string, string> = {}) => {
+/** Story doc per story name, for a file that declares more than one. */
+const storiesOf = async (storyFile: string, extraFiles: Record<string, string> = {}) => {
   vol.fromNestedJSON({ [STORY_PATH]: storyFile, ...extraFiles });
   const payload = await buildStoryDocsPayload(
     { entry },
@@ -154,13 +159,22 @@ const templatesOf = async (storyFile: string, extraFiles: Record<string, string>
       resolveImport: (fromFile, specifier) => join(fromFile, '..', `${specifier}.ts`),
     }
   );
-  return new Map(
-    Object.values(payload?.stories ?? {}).map((story) => [
-      story.name,
+  return new Map(Object.values(payload?.stories ?? {}).map((story) => [story.name, story]));
+};
+
+/** Template inside the host-component snippet per story name, for a multi-story file. */
+const templatesOf = async (storyFile: string, extraFiles: Record<string, string> = {}) =>
+  new Map(
+    [...(await storiesOf(storyFile, extraFiles))].map(([name, story]) => [
+      name,
       story.snippet === undefined ? undefined : extractHostComponentTemplate(story.snippet),
     ])
   );
-};
+
+const warningsOf = async (storyFile: string, extraFiles: Record<string, string> = {}) =>
+  new Map(
+    [...(await storiesOf(storyFile, extraFiles))].map(([name, story]) => [name, story.warning])
+  );
 
 const soleStory = async (source: string, getDocgenPayload = buttonDocgen()) => {
   givenStoryFile(source);
@@ -549,10 +563,19 @@ describe('buildStoryDocsPayload', () => {
       expect((await templatesOf(STORY_SHAPES_FILE)).get(storyName)).toBe(expected);
     });
 
-    // Fabricated bindings would misrepresent the imported markup, so no snippet is emitted and
-    // the runtime source fallback stays authoritative.
-    it('emits no snippet for an imported template it cannot follow', async () => {
-      expect((await templatesOf(STORY_SHAPES_FILE)).get('Imported Template')).toBeUndefined();
+    // A snippet that fell back is still useful, so it ships - but silently shipping it leaves a
+    // consumer no way to know its example is partial.
+    it.each([
+      ['Imported Template', 'IMPORTED_TEMPLATE'],
+      ['Imported Render', 'importedRender'],
+      ['Unreadable Interpolation', 'buildSlot(args)'],
+    ])('names the markup the %s story fell back from', async (storyName, expected) => {
+      const story = (await storiesOf(STORY_SHAPES_FILE)).get(storyName);
+      expect(story?.warning).toContain(expected);
+      // The note is data on the story, not a comment in the markup, so a consumer that renders the
+      // snippet is not left with a stray comment and one that reads it can act on it.
+      expect(story?.snippet).toContain('<sb-button');
+      expect(story?.snippet).not.toContain(expected);
     });
 
     it('reads args CSF2 assigned after the declaration', async () => {
@@ -627,10 +650,14 @@ describe('buildStoryDocsPayload', () => {
       );
     });
 
-    it('emits no snippet when an interpolation needs the story to run', async () => {
-      expect(
-        (await templatesOf(STORY_SHAPES_FILE)).get('Unreadable Interpolation')
-      ).toBeUndefined();
+    it('leaves a story it could read entirely alone', async () => {
+      expect((await warningsOf(STORY_SHAPES_FILE)).get('Null Template')).toBeUndefined();
+    });
+
+    it('reports a spread at the config level, not only one inside args', async () => {
+      expect((await warningsOf(STORY_SHAPES_FILE)).get('Config Spread')).toBe(
+        'Incomplete snippet: `...SpreadArgs` could not be resolved statically.'
+      );
     });
 
     it('declares handlers only for the outputs the markup binds', async () => {
@@ -663,7 +690,7 @@ describe('buildStoryDocsPayload', () => {
     });
 
     // At runtime, reading `render` invokes the getter; the accessor itself is not the function.
-    it('emits no snippet for a render accessor', async () => {
+    it('falls back with a warning for a render accessor', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
@@ -674,12 +701,15 @@ describe('buildStoryDocsPayload', () => {
           },
         };
       `);
-      expect(story.snippet).toBeUndefined();
+      expect(story.warning).toContain('get render()');
+      expect(extractHostComponentTemplate(story.snippet!)).toBe(
+        `<sb-button [label]="'Save'" (pressed)="pressed($event)"></sb-button>`
+      );
     });
 
     // `{ render: fn, ...base }` runs base.render when the spread carries one, so the explicit
     // property cannot be trusted.
-    it('emits no snippet when a later spread can shadow the render', async () => {
+    it('falls back with a warning when a later spread can shadow the render', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
@@ -689,17 +719,19 @@ describe('buildStoryDocsPayload', () => {
           ...base,
         };
       `);
-      expect(story.snippet).toBeUndefined();
+      expect(story.warning).toBe('Incomplete snippet: `...base` could not be resolved statically.');
+      expect(story.snippet).not.toContain('from-story');
     });
 
-    it('emits no snippet for a config that is only a spread', async () => {
+    it('falls back with a warning for a config that is only a spread', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
         const base = { args: { label: 'From base' } };
         export const Default = { ...base };
       `);
-      expect(story.snippet).toBeUndefined();
+      expect(story.warning).toBe('Incomplete snippet: `...base` could not be resolved statically.');
+      expect(story.snippet).not.toContain('From base');
     });
 
     it('reads a template written after a harmless earlier spread', async () => {
@@ -736,17 +768,20 @@ describe('buildStoryDocsPayload', () => {
       );
     });
 
-    it('emits no snippet when a spread only a running story could produce', async () => {
+    it('reports a spread only a running story could produce', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
         const makeArgs = () => ({ label: 'computed' });
         export const Default = { args: { label: 'Save', ...makeArgs() } };
       `);
-      expect(story.snippet).toBeUndefined();
+      expect(story.warning).toBe(
+        'Incomplete snippet: `...makeArgs()` could not be resolved statically.'
+      );
+      expect(story.snippet).toContain(`[label]="'Save'"`);
     });
 
-    it('emits no snippet when the spread object is mutated before the spread runs', async () => {
+    it('reports a spread of an object that is mutated before the spread runs', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
@@ -754,11 +789,14 @@ describe('buildStoryDocsPayload', () => {
         extra.label = 'mutated';
         export const Default = { args: { ...extra } };
       `);
-      expect(story.snippet).toBeUndefined();
+      expect(story.warning).toBe(
+        'Incomplete snippet: `...extra` could not be resolved statically.'
+      );
+      expect(story.snippet).not.toContain('extra');
     });
 
     // Which branch runs depends on the story's args at runtime.
-    it('emits no snippet for a render with more than one exit', async () => {
+    it('falls back with a warning for a render with more than one exit', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
@@ -772,10 +810,12 @@ describe('buildStoryDocsPayload', () => {
           },
         };
       `);
-      expect(story.snippet).toBeUndefined();
+      expect(story.warning).toContain('render:');
+      expect(story.snippet).not.toContain('first');
+      expect(story.snippet).toContain(`[label]="'Save'"`);
     });
 
-    it('emits no snippet when argsToTemplate options need the story to run', async () => {
+    it('falls back with a warning when argsToTemplate options need the story to run', async () => {
       const story = await soleStory(`
         import { argsToTemplate } from '@storybook/angular-vite';
         import { ButtonComponent } from './button.component';
@@ -789,10 +829,11 @@ describe('buildStoryDocsPayload', () => {
           }),
         };
       `);
-      expect(story.snippet).toBeUndefined();
+      expect(story.warning).toContain('argsToTemplate(args, { include: INCLUDES })');
+      expect(story.snippet).toContain(`[label]="'Save'"`);
     });
 
-    it('emits no snippet when argsToTemplate is given a derived object', async () => {
+    it('falls back with a warning when argsToTemplate is given a derived object', async () => {
       const story = await soleStory(`
         import { argsToTemplate } from '@storybook/angular-vite';
         import { ButtonComponent } from './button.component';
@@ -805,7 +846,8 @@ describe('buildStoryDocsPayload', () => {
           }),
         };
       `);
-      expect(story.snippet).toBeUndefined();
+      expect(story.warning).toContain('argsToTemplate({ ...args, extra: 1 })');
+      expect(story.snippet).toContain(`[label]="'Save'"`);
     });
   });
 
@@ -843,14 +885,16 @@ describe('buildStoryDocsPayload', () => {
       expect(extractHostComponentTemplate(story.snippet!)).toBe('<sb-button computed></sb-button>');
     });
 
-    it('emits no snippet when a dynamic key could carry the template', async () => {
+    it('falls back with a warning when a dynamic key could carry the template', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
         const key = 'template';
         export const Default = { args: { label: 'Save' }, [key]: '<sb-button dynamic></sb-button>' };
       `);
-      expect(story.snippet).toBeUndefined();
+      expect(story.warning).toContain('[key]');
+      expect(story.snippet).not.toContain('dynamic');
+      expect(story.snippet).toContain(`[label]="'Save'"`);
     });
   });
 
@@ -899,10 +943,11 @@ describe('buildStoryDocsPayload', () => {
           render: (args) => ({ props: args, template: \`<sb-button>\${footer}</sb-button>\` }),
         };
       `);
-      expect(story.snippet).toBeUndefined();
+      expect(story.warning).toContain('${footer}');
+      expect(story.snippet).toContain(`[label]="'Save'"`);
     });
 
-    it('emits no snippet for a template identifier that is reassigned', async () => {
+    it('falls back with a warning for a template identifier that is reassigned', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
@@ -910,11 +955,12 @@ describe('buildStoryDocsPayload', () => {
         TEMPLATE = '<sb-button second></sb-button>';
         export const Default = { template: TEMPLATE };
       `);
-      expect(story.snippet).toBeUndefined();
+      expect(story.warning).toContain('TEMPLATE');
+      expect(story.snippet).not.toContain('first');
     });
 
     // The body-local declaration shadows the module constant the program scope would resolve.
-    it('emits no snippet when the render body declares the interpolated name', async () => {
+    it('falls back with a warning when the render body declares the interpolated name', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
@@ -927,7 +973,9 @@ describe('buildStoryDocsPayload', () => {
           },
         };
       `);
-      expect(story.snippet).toBeUndefined();
+      expect(story.warning).toContain('${footer}');
+      expect(story.snippet).not.toContain('local value');
+      expect(story.snippet).toContain(`[label]="'Save'"`);
     });
   });
 
@@ -1101,51 +1149,57 @@ describe('buildStoryDocsPayload', () => {
       );
     });
 
-    it('emits no snippet when the spread target is declared later (a TDZ read at runtime)', async () => {
-      const templates = await templatesOf(`
+    it('reports a spread whose target is declared later (a TDZ read at runtime)', async () => {
+      const stories = await storiesOf(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
         export const Early = { args: { ...Later.args } };
         export const Later = { args: { label: 'later' } };
       `);
-      expect(templates.get('Early')).toBeUndefined();
-      expect(templates.get('Later')).toBeDefined();
+      expect(stories.get('Early')?.warning).toBe(
+        'Incomplete snippet: `...Later.args` could not be resolved statically.'
+      );
+      expect(stories.get('Later')?.warning).toBeUndefined();
     });
 
-    it("emits no snippet when stories spread each other's args in a cycle", async () => {
-      const templates = await templatesOf(`
+    it("reports a spread when stories spread each other's args in a cycle", async () => {
+      const stories = await storiesOf(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
         export const Self = { args: { ...Self.args, label: 'self' } };
       `);
-      expect(templates.get('Self')).toBeUndefined();
+      expect(stories.get('Self')?.warning).toBe(
+        'Incomplete snippet: `...Self.args` could not be resolved statically.'
+      );
     });
 
-    it('emits no snippet when something mutates inside the args object', async () => {
-      const templates = await templatesOf(`
+    it('reports the spread when something mutates inside the args object', async () => {
+      const stories = await storiesOf(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
         export const Mutated = { args: { label: 'x' } };
         Mutated.args.label = 'mutated';
         export const Spreading = { args: { ...Mutated.args } };
       `);
-      expect(templates.get('Mutated')).toBeUndefined();
-      expect(templates.get('Spreading')).toBeUndefined();
+      expect(stories.get('Mutated')?.warning).toContain('Mutated.args.label');
+      expect(stories.get('Spreading')?.warning).toContain('...Mutated.args');
     });
 
-    it("emits no snippet when the accessor does not match the story's form", async () => {
-      const templates = await templatesOf(`
+    it("reports a spread whose accessor does not match the story's form", async () => {
+      const stories = await storiesOf(`
         import preview from '../.storybook/preview';
         import { ButtonComponent } from './button.component';
         const meta = preview.meta({ title: 'Example/Button', component: ButtonComponent });
         export const Factory = meta.story({ args: { label: 'f' } });
         export const Wrong = meta.story({ args: { ...Factory.args } });
       `);
-      expect(templates.get('Wrong')).toBeUndefined();
+      expect(stories.get('Wrong')?.warning).toBe(
+        'Incomplete snippet: `...Factory.args` could not be resolved statically.'
+      );
     });
 
-    it('emits no snippet when a cross-file arg value does not reduce to a literal', async () => {
-      const templates = await templatesOf(
+    it('reports a cross-file spread whose arg value does not reduce to a literal', async () => {
+      const stories = await storiesOf(
         `
           import { ButtonComponent } from './button.component';
           import * as HeaderStories from './header.stories';
@@ -1161,7 +1215,9 @@ describe('buildStoryDocsPayload', () => {
           `,
         }
       );
-      expect(templates.get('Logged In')).toBeUndefined();
+      expect(stories.get('Logged In')?.warning).toBe(
+        'Incomplete snippet: `...HeaderStories.LoggedIn.args` could not be resolved statically.'
+      );
     });
   });
 });

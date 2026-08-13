@@ -1,6 +1,6 @@
 // Reads the markup a story supplies itself - `template`, a `render` that returns one, or the CSF2
 // function form - with runtime object semantics, so a snippet shows the story as written.
-import { type NodePath, types as t } from 'storybook/internal/babel';
+import { generate, type NodePath, types as t } from 'storybook/internal/babel';
 import type { CsfFile } from 'storybook/internal/csf-tools';
 import { unwrapExpression } from 'storybook/internal/csf-tools';
 
@@ -13,10 +13,18 @@ export interface StoryShape {
   annotations: Record<string, t.Node>;
   /** Meta args merged under story args, keyed by arg name. */
   args: Record<string, t.Node>;
-  /** `false` when a spread or computed key makes the merged args unknowable statically. */
-  argsReadable: boolean;
+  /** Source text of everything hiding args from this pass; empty when the merged args are known. */
+  unresolvedArgs: string[];
   source: string;
 }
+
+/** Source text of a node, for naming an expression this pass could not read. */
+export const sourceOf = (node: t.Node): string =>
+  generate(node, { concise: true, comments: false }).code;
+
+// A spread at the config level carries args as invisibly as one inside `args`.
+export const unresolvableConfigMembers = (config: t.ObjectExpression | undefined): string[] =>
+  (config?.properties ?? []).filter(isOpaqueMember).map(sourceOf);
 
 /** Bindings the generated snippet would carry, which is also what `argsToTemplate` expands to. */
 export interface Bindings {
@@ -51,8 +59,12 @@ const bindingAttributes = ({ inputs, outputs }: Bindings, filter: BindingFilter)
 export type TemplateResult =
   /** Read as markup, so the story is shown as written. */
   | { kind: 'literal'; markup: string }
-  /** A `template` or `render` exists, but its markup needs the story to run. */
-  | { kind: 'unresolvable' };
+  /**
+   * A `template` or `render` exists, but its markup needs the story to run. `source` is that
+   * expression as written, so the story can say which one it fell back from; it is absent when a
+   * config-level member already reported the same cause.
+   */
+  | { kind: 'unresolvable'; source?: string };
 
 /** What the function owning a template literal binds, deciding how `${name}` resolves. */
 interface FunctionScope {
@@ -93,7 +105,7 @@ export const userTemplate = (
   if (csf2) {
     const templateProperty = resolvedProperty(csf2.returned, 'template');
     if (templateProperty.kind === 'unresolvable') {
-      return { kind: 'unresolvable' };
+      return { kind: 'unresolvable', source: sourceOf(csf2.returned) };
     }
     const fromCsf2 = templateFrom(
       templateProperty.kind === 'value' ? templateProperty.node : undefined,
@@ -118,7 +130,7 @@ const shapeTemplate = (
 ): TemplateResult | undefined => {
   const template = resolveAnnotation(config, annotations, 'template');
   if (template.kind === 'unresolvable') {
-    return { kind: 'unresolvable' };
+    return { kind: 'unresolvable', ...(template.node ? { source: sourceOf(template.node) } : {}) };
   }
   if (template.kind === 'value') {
     const own = templateFrom(declaredValue(shape, template.node), shape, bindings, NO_SCOPE);
@@ -134,17 +146,17 @@ const shapeTemplate = (
   // A story whose `render` exists but cannot be read must not inherit the meta's markup, which is
   // for code the story never runs.
   if (render.kind === 'unresolvable') {
-    return { kind: 'unresolvable' };
+    return { kind: 'unresolvable', ...(render.node ? { source: sourceOf(render.node) } : {}) };
   }
 
   const fn = declaredValue(shape, render.node);
   const returned = returnedObject(fn);
   if (!returned) {
-    return { kind: 'unresolvable' };
+    return { kind: 'unresolvable', source: `render: ${sourceOf(render.node)}` };
   }
   const templateProperty = resolvedProperty(returned, 'template');
   return templateProperty.kind === 'unresolvable'
-    ? { kind: 'unresolvable' }
+    ? { kind: 'unresolvable', source: `render: ${sourceOf(render.node)}` }
     : templateFrom(
         templateProperty.kind === 'value' ? templateProperty.node : undefined,
         shape,
@@ -171,9 +183,11 @@ const templateFrom = (
   }
   if (t.isTemplateLiteral(node)) {
     const markup = interpolate(node, shape, bindings, scope);
-    return markup === undefined ? { kind: 'unresolvable' } : { kind: 'literal', markup };
+    return markup === undefined
+      ? { kind: 'unresolvable', source: sourceOf(node) }
+      : { kind: 'literal', markup };
   }
-  return { kind: 'unresolvable' };
+  return { kind: 'unresolvable', source: sourceOf(node) };
 };
 
 /** Markup a template literal holds once every `${…}` in it has been substituted. */
@@ -242,7 +256,7 @@ const substituteExpression = (
     return undefined;
   }
   if (scope.paramNames.has(expression.name)) {
-    return shape.argsReadable ? literalText(shape.args[expression.name]) : undefined;
+    return shape.unresolvedArgs.length === 0 ? literalText(shape.args[expression.name]) : undefined;
   }
   // A name the body declares has a render-time value this pass cannot know.
   if (scope.bodyDeclared.has(expression.name)) {
@@ -300,8 +314,11 @@ const literalText = (node: t.Node | undefined): string | undefined => {
 type AnnotationResolution =
   | { kind: 'value'; node: t.Node }
   | { kind: 'missing' }
-  /** A spread may shadow or supply the property, or it is an accessor; the value is unknowable. */
-  | { kind: 'unresolvable' };
+  /**
+   * A spread may shadow or supply the property, or it is an accessor; the value is unknowable.
+   * `node` is the accessor itself; a spread cause carries no node, the config-member scan names it.
+   */
+  | { kind: 'unresolvable'; node?: t.Node };
 
 /**
  * A named property of a config object, with runtime object semantics: the last occurrence wins, a
@@ -355,7 +372,7 @@ export const resolvedProperty = (object: t.ObjectExpression, key: string): Annot
   if (t.isObjectMethod(found.property)) {
     return found.property.kind === 'method' && !found.property.generator
       ? { kind: 'value', node: found.property }
-      : { kind: 'unresolvable' };
+      : { kind: 'unresolvable', node: found.property };
   }
   return { kind: 'value', node: found.property.value };
 };
@@ -372,7 +389,9 @@ export const keyNameOf = (property: t.ObjectMethod | t.ObjectProperty): string |
  * The story's own config object literal: the export's initializer, the statement a re-export
  * resolved to, or the argument of a `meta.story(...)` factory call.
  */
-const storyConfigObject = (shape: StoryShape): t.ObjectExpression | undefined => {
+export const storyConfigObject = (
+  shape: Pick<StoryShape, 'csf' | 'exportName'>
+): t.ObjectExpression | undefined => {
   const declared = shape.csf._storyExports[shape.exportName];
   const candidates = [
     t.isVariableDeclarator(declared) ? declared.init : declared,
@@ -399,7 +418,7 @@ export const isStoryFactoryCall = (call: t.CallExpression): boolean =>
   t.isIdentifier(call.callee.property) &&
   ['story', 'extend'].includes(call.callee.property.name);
 
-const metaConfigObject = (csf: CsfFile): t.ObjectExpression | undefined => {
+export const metaConfigObject = (csf: CsfFile): t.ObjectExpression | undefined => {
   const node = csf._metaNode;
   return node && t.isObjectExpression(node) ? node : undefined;
 };

@@ -1,3 +1,10 @@
+## 10.5.8
+
+- React: Fix RDT tsconfig selection for Vite project references - [#35743](https://github.com/storybookjs/storybook/pull/35743), thanks @ndelangen!
+- Tanstack React: Remove @cloudflare/vite-plugin from the inherited Vite config - [#35706](https://github.com/storybookjs/storybook/pull/35706), thanks @FrancoKaddour!
+- Tanstack: Wait for router to load before rendering - [#35784](https://github.com/storybookjs/storybook/pull/35784), thanks @huang-julien!
+- Test: Fix Illegal invocation when reading prototype.focus - [#35528](https://github.com/storybookjs/storybook/pull/35528), thanks @FrancoKaddour!
+
 ## 10.5.7
 
 - Angular: Serve ancestor node_modules for addon-vitest in browser mode - [#35600](https://github.com/storybookjs/storybook/pull/35600), thanks @brandonroberts!

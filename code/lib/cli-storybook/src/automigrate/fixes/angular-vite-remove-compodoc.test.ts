@@ -171,6 +171,62 @@ describe('run', () => {
     expect(preview).toContain('controls');
   });
 
+  // The shape `vmware-clarity/ng-clarity` ships: the call is wrapped in a helper that also
+  // pre-processes the JSON, so rewriting it automatically is not safe.
+  it('leaves a preview alone when setCompodocJson is not called at the top level', async () => {
+    const wrapped = dedent`
+      import { setCompodocJson } from "@storybook/addon-docs/angular";
+      import docs from "../documentation.json";
+
+      function addDocs(docs) {
+        removeProperties(docs);
+        setCompodocJson(docs);
+      }
+
+      addDocs(docs);
+    `;
+    vol.fromNestedJSON({ [PREVIEW]: wrapped });
+
+    await runWith(
+      {
+        hasFrameworkOptions: false,
+        hasPreviewWiring: true,
+        angularJsonPaths: [],
+        hasCompodocDependency: false,
+      },
+      packageManager(false)
+    );
+
+    expect(vol.readFileSync(PREVIEW, 'utf8')).toBe(wrapped);
+  });
+
+  it('keeps the documentation.json import when other code still reads it', async () => {
+    const alsoUsed = dedent`
+      import { setCompodocJson } from "@storybook/addon-docs/angular";
+      import docJson from "../documentation.json";
+
+      setCompodocJson(docJson);
+
+      export const componentCount = docJson.components.length;
+    `;
+    vol.fromNestedJSON({ [PREVIEW]: alsoUsed });
+
+    await runWith(
+      {
+        hasFrameworkOptions: false,
+        hasPreviewWiring: true,
+        angularJsonPaths: [],
+        hasCompodocDependency: false,
+      },
+      packageManager(false)
+    );
+
+    const preview = vol.readFileSync(PREVIEW, 'utf8') as string;
+    expect(preview).not.toContain('setCompodocJson');
+    expect(preview).toContain('documentation.json');
+    expect(preview).toContain('docJson.components.length');
+  });
+
   it('drops the Compodoc builder options and leaves the others alone', async () => {
     vol.fromNestedJSON({
       [ANGULAR_JSON]: angularJson({ compodoc: true, compodocArgs: ['-e', 'json'], port: 6006 }),

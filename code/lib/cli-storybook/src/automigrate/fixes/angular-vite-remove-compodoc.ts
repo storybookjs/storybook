@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 
-import { types as t } from 'storybook/internal/babel';
+import { traverse, types as t } from 'storybook/internal/babel';
 import { AngularJSON, isStorybookTarget } from 'storybook/internal/cli';
 import { formatFileContent } from 'storybook/internal/common';
 import { formatConfig, readConfig } from 'storybook/internal/csf-tools';
@@ -130,48 +130,79 @@ export const angularViteRemoveCompodoc: Fix<AngularViteRemoveCompodocOptions> = 
   },
 };
 
+const manualRemovalHint = (previewConfigPath: string, reason: string) =>
+  logger.warn(
+    `Left the ${SET_COMPODOC_JSON} wiring in ${previewConfigPath} alone: ${reason}. ` +
+      `It has no effect anymore, so delete the call and the documentation.json import when convenient.`
+  );
+
+/** Counts how often a binding is still read, so an import is only dropped once nothing needs it. */
+const countReferences = (program: t.Program, name: string): number => {
+  let references = 0;
+  traverse(t.file(program), {
+    Identifier(path) {
+      if (path.node.name !== name || path.parentPath?.isImportDefaultSpecifier()) {
+        return;
+      }
+      if (path.isReferencedIdentifier()) {
+        references += 1;
+      }
+    },
+  });
+  return references;
+};
+
 /**
- * Strips `setCompodocJson`, its `documentation.json` import and the call itself out of the preview.
+ * Strips the top-level `setCompodocJson` call and the imports that exist only to feed it.
  *
- * The `documentation.json` import is only dropped when nothing else in the file uses its binding,
- * so a preview that reads the Compodoc output for its own purposes keeps compiling.
+ * Real previews wrap the call in a helper or pre-process the JSON before handing it over
+ * (`vmware-clarity/ng-clarity` does both). Rewriting those safely is not worth the risk, so
+ * anything that is not a plain top-level call is reported and left untouched. Imports survive
+ * while any other code still reads them.
  */
 const removePreviewWiring = async (previewConfigPath: string, dryRun: boolean): Promise<void> => {
   try {
     const preview = await readConfig(previewConfigPath);
-    const { body } = preview._ast.program;
+    const program = preview._ast.program;
 
-    const callsToDrop = body.filter(
+    const callsToDrop = program.body.filter(
       (node) =>
         t.isExpressionStatement(node) &&
         t.isCallExpression(node.expression) &&
         t.isIdentifier(node.expression.callee, { name: SET_COMPODOC_JSON })
     );
+
     if (callsToDrop.length === 0) {
+      manualRemovalHint(previewConfigPath, `${SET_COMPODOC_JSON} is not called at the top level`);
       return;
     }
 
-    const docJsonNames = new Set(
+    const withoutCalls = t.program(program.body.filter((node) => !callsToDrop.includes(node)));
+    if (countReferences(withoutCalls, SET_COMPODOC_JSON) > 0) {
+      manualRemovalHint(previewConfigPath, `${SET_COMPODOC_JSON} is still used elsewhere`);
+      return;
+    }
+
+    const droppableImportNames = new Set(
       callsToDrop.flatMap((node) => {
         const [argument] = ((node as t.ExpressionStatement).expression as t.CallExpression)
           .arguments;
-        return t.isIdentifier(argument) ? [argument.name] : [];
+        return t.isIdentifier(argument) && countReferences(withoutCalls, argument.name) === 0
+          ? [argument.name]
+          : [];
       })
     );
 
-    const remaining = body.filter((node) => {
-      if (callsToDrop.includes(node)) {
-        return false;
-      }
+    const remaining = withoutCalls.body.filter((node) => {
       if (!t.isImportDeclaration(node)) {
         return true;
       }
       if (node.source.value === ADDON_DOCS_ANGULAR) {
-        return false;
+        return node.specifiers.length > 1;
       }
       return !node.specifiers.some(
         (specifier) =>
-          t.isImportDefaultSpecifier(specifier) && docJsonNames.has(specifier.local.name)
+          t.isImportDefaultSpecifier(specifier) && droppableImportNames.has(specifier.local.name)
       );
     });
 
@@ -179,17 +210,14 @@ const removePreviewWiring = async (previewConfigPath: string, dryRun: boolean): 
       return;
     }
 
-    preview._ast.program.body = remaining;
+    program.body = remaining;
     await writeFile(
       previewConfigPath,
       await formatFileContent(previewConfigPath, formatConfig(preview))
     );
     logger.step(`Removed the ${SET_COMPODOC_JSON} wiring from ${previewConfigPath}`);
   } catch (error) {
-    logger.warn(
-      `Could not remove the ${SET_COMPODOC_JSON} wiring from ${previewConfigPath} automatically: ${error}. ` +
-        `Delete the ${SET_COMPODOC_JSON} call and the documentation.json import yourself.`
-    );
+    manualRemovalHint(previewConfigPath, `it could not be rewritten automatically (${error})`);
   }
 };
 

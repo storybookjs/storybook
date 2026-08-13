@@ -12,7 +12,16 @@ import { ArgsFormattingComponent } from './args-formatting.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [ArgsFormattingComponent],
-  template: `<sb-args-formatting [label]="undefined" [kind]="'secondary'" [offset]="-4" [data]="{id: 7, nested: {deep: true}}" [tags]="['a', 'b']" [greeting]="'hello'" [formatter]="(value) => value.replace('&quot;', &quot;'&quot;)"></sb-args-formatting>`,
+  template: `
+    <sb-args-formatting
+        [label]="undefined"
+        [kind]="'secondary'"
+        [offset]="-4"
+        [data]="{id: 7, nested: {deep: true}}"
+        [tags]="['a', 'b']"
+        [greeting]="'hello'"
+        [formatter]="(value) => value.replace('&quot;', &quot;'&quot;)">
+    </sb-args-formatting>`,
 })
 export class DemoComponent {}",
     },

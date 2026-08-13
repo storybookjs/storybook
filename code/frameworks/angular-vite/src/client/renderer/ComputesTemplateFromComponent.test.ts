@@ -19,7 +19,15 @@ describe('angular template decorator', () => {
     };
     const source = computesTemplateFromComponent(component, props);
     expect(source).toEqual(
-      `<doc-button [counter]="counter" [accent]="accent" [isDisabled]="isDisabled" [label]="label" [aria-label]="this['aria-label']"></doc-button>`
+      [
+        '<doc-button',
+        '    [counter]="counter"',
+        '    [accent]="accent"',
+        '    [isDisabled]="isDisabled"',
+        '    [label]="label"',
+        `    [aria-label]="this['aria-label']">`,
+        '</doc-button>',
+      ].join('\n')
     );
   });
 
@@ -33,7 +41,14 @@ describe('angular template decorator', () => {
     };
     const source = computesTemplateFromComponent(component, props);
     expect(source).toEqual(
-      `<doc-button [isDisabled]="isDisabled" [label]="label" (onClick)="onClick($event)" (dash-out)="this['dash-out']($event)"></doc-button>`
+      [
+        '<doc-button',
+        '    [isDisabled]="isDisabled"',
+        '    [label]="label"',
+        '    (onClick)="onClick($event)"',
+        `    (dash-out)="this['dash-out']($event)">`,
+        '</doc-button>',
+      ].join('\n')
     );
   });
 
@@ -282,7 +297,14 @@ describe('angular template decorator', () => {
     };
     const source = computesTemplateFromComponent(component, props);
     expect(source).toEqual(
-      `<doc-button [counter]="counter" [accent]="accent" [isDisabled]="isDisabled" [label]="label"></doc-button>`
+      [
+        '<doc-button',
+        '    [counter]="counter"',
+        '    [accent]="accent"',
+        '    [isDisabled]="isDisabled"',
+        '    [label]="label">',
+        '</doc-button>',
+      ].join('\n')
     );
   });
 
@@ -295,7 +317,13 @@ describe('angular template decorator', () => {
     };
     const source = computesTemplateFromComponent(component, props);
     expect(source).toEqual(
-      `<doc-button [isDisabled]="isDisabled" [label]="label" (onClick)="onClick($event)"></doc-button>`
+      [
+        '<doc-button',
+        '    [isDisabled]="isDisabled"',
+        '    [label]="label"',
+        '    (onClick)="onClick($event)">',
+        '</doc-button>',
+      ].join('\n')
     );
   });
 
@@ -565,7 +593,15 @@ describe('angular source decorator', () => {
       };
       const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(
-        `<doc-button [counter]="4" [accent]="'High'" [isDisabled]="true" [label]="'Hello world'" [aria-label]="'Hello world'"></doc-button>`
+        [
+          '<doc-button',
+          '    [counter]="4"',
+          `    [accent]="'High'"`,
+          '    [isDisabled]="true"',
+          `    [label]="'Hello world'"`,
+          `    [aria-label]="'Hello world'">`,
+          '</doc-button>',
+        ].join('\n')
       );
     });
 
@@ -579,7 +615,14 @@ describe('angular source decorator', () => {
       };
       const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(
-        `<doc-button [isDisabled]="true" [label]="'Hello world'" (onClick)="onClick($event)" (dash-out)="this['dash-out']($event)"></doc-button>`
+        [
+          '<doc-button',
+          '    [isDisabled]="true"',
+          `    [label]="'Hello world'"`,
+          '    (onClick)="onClick($event)"',
+          `    (dash-out)="this['dash-out']($event)">`,
+          '</doc-button>',
+        ].join('\n')
       );
     });
 
@@ -624,7 +667,13 @@ describe('angular source decorator', () => {
 
       const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(
-        `<doc-button [isDisabled]="false" [label]="'Hello world'" [someDataObject]="{one: 'Hello world', two: true, three: ['a string literal with &quot;double quotes&quot;', 'a string literal with \\'single quotes\\'', 'a single quoted string with &quot;double quotes&quot;', 'a double quoted string with \\'single quotes\\'', 'a single quoted string with escaped \\'single quotes\\'', 'a double quoted string with escaped &quot;double quotes&quot;', 'a string literal with \\'escaped single quotes\\'', 'a string literal with &quot;escaped double quotes&quot;']}"></doc-button>`
+        [
+          '<doc-button',
+          '    [isDisabled]="false"',
+          `    [label]="'Hello world'"`,
+          `    [someDataObject]="{one: 'Hello world', two: true, three: ['a string literal with &quot;double quotes&quot;', 'a string literal with \\'single quotes\\'', 'a single quoted string with &quot;double quotes&quot;', 'a double quoted string with \\'single quotes\\'', 'a single quoted string with escaped \\'single quotes\\'', 'a double quoted string with escaped &quot;double quotes&quot;', 'a string literal with \\'escaped single quotes\\'', 'a string literal with &quot;escaped double quotes&quot;']}">`,
+          '</doc-button>',
+        ].join('\n')
       );
     });
 
@@ -659,7 +708,13 @@ describe('angular source decorator', () => {
 
       const source = computesTemplateSourceFromComponent(component, props);
       expect(source).toEqual(
-        `<doc-button [isDisabled]="false" [label]="'Hello world'" [someDataObject]="{one: 'Hello world', two: true, three: ['a string literal with &quot;double quotes&quot;', 'a string literal with \\'single quotes\\'', 'a single quoted string with &quot;double quotes&quot;', 'a double quoted string with \\'single quotes\\'', 'a single quoted string with escaped \\'single quotes\\'', 'a double quoted string with escaped &quot;double quotes&quot;', 'a string literal with \\'escaped single quotes\\'', 'a string literal with &quot;escaped double quotes&quot;'], ref: '[Circular]'}"></doc-button>`
+        [
+          '<doc-button',
+          '    [isDisabled]="false"',
+          `    [label]="'Hello world'"`,
+          `    [someDataObject]="{one: 'Hello world', two: true, three: ['a string literal with &quot;double quotes&quot;', 'a string literal with \\'single quotes\\'', 'a single quoted string with &quot;double quotes&quot;', 'a double quoted string with \\'single quotes\\'', 'a single quoted string with escaped \\'single quotes\\'', 'a double quoted string with escaped &quot;double quotes&quot;', 'a string literal with \\'escaped single quotes\\'', 'a string literal with &quot;escaped double quotes&quot;'], ref: '[Circular]'}">`,
+          '</doc-button>',
+        ].join('\n')
       );
     });
   });

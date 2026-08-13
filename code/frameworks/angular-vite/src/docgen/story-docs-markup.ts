@@ -15,7 +15,6 @@ export interface StoryShape {
   args: Record<string, t.Node>;
   /** `false` when a spread or computed key makes the merged args unknowable statically. */
   argsReadable: boolean;
-  source: string;
 }
 
 /** Bindings the generated snippet would carry, which is also what `argsToTemplate` expands to. */

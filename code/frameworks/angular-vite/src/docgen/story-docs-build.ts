@@ -59,7 +59,7 @@ export const buildStoryDocsPayload = async (
   if (!parsed) {
     return undefined;
   }
-  const { source, csf } = parsed;
+  const { csf } = parsed;
 
   const componentNode = csf._metaAnnotations.component;
   const docgenPayload = componentNode
@@ -79,7 +79,6 @@ export const buildStoryDocsPayload = async (
   const importBindings = collectImportBindings(csf._file.path);
   const deps: StoryDocDeps = {
     csf,
-    source,
     resolveArgs,
     metaArgs: resolveArgs(csf._metaAnnotations.args),
     snippetMeta: docgenPayload?.angularComponentMeta,
@@ -133,7 +132,6 @@ const componentNameOf = (node: t.Node | undefined): string | undefined => {
 
 interface StoryDocDeps {
   csf: CsfFile;
-  source: string;
   resolveArgs: (node: t.Node | undefined) => ArgsRecord;
   metaArgs: ArgsRecord;
   snippetMeta: AngularComponentSnippetMeta | undefined;
@@ -163,7 +161,6 @@ const buildStoryDoc = (
         deps.metaArgs.complete &&
         storyArgs.complete &&
         !hasAssignmentInto(csf, exportName, 2, undefined),
-      source: deps.source,
     };
     const rendered = snippetMeta
       ? renderStorySnippet(snippetMeta, shape, annotations.decorators, deps)
@@ -250,7 +247,7 @@ const collectBindings = (snippetMeta: AngularComponentSnippetMeta, shape: StoryS
     .filter(([argName]) => inputNames.has(argName))
     .map(([argName, node]) => ({
       name: argName,
-      expression: evaluateArgExpression(node, shape.source, snippetMeta.enums),
+      expression: evaluateArgExpression(node, snippetMeta.enums),
     }));
   return { inputs, outputs: snippetMeta.outputs };
 };

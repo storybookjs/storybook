@@ -171,6 +171,30 @@ const soleStory = async (source: string, getDocgenPayload = buttonDocgen()) => {
 };
 
 describe('buildStoryDocsPayload', () => {
+  // An arg that cannot be evaluated falls back to its source text. That text used to be sliced out
+  // of the file by AST offset, but `babelParse` runs the source through recast, which parses a copy
+  // with tabs expanded and CRLF collapsed - so the offsets addressed the wrong bytes and the
+  // snippet came out mangled on Windows checkouts and tab-indented files.
+  it.each([
+    ['LF', '\n', '  '],
+    ['CRLF', '\r\n', '  '],
+    ['tabs', '\n', '\t'],
+  ])('prints an unevaluable arg verbatim with %s whitespace', async (_name, eol, indent) => {
+    const story = await soleStory(
+      [
+        `import { ButtonComponent } from './button.component';`,
+        `export default { title: 'Example/Button', component: ButtonComponent };`,
+        `export const Default = {`,
+        `${indent}args: {`,
+        `${indent}${indent}label: (value) => value.replace('a', 'b'),`,
+        `${indent}},`,
+        `};`,
+      ].join(eol)
+    );
+
+    expect(story.snippet).toContain(`[label]="(value) => value.replace('a', 'b')"`);
+  });
+
   it('returns undefined for entries without a story file or with an unparsable one', async () => {
     const docsEntry: IndexEntry = {
       id: 'docs--page',

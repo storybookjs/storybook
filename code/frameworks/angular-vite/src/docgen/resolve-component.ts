@@ -29,14 +29,13 @@ export function resolveStoryImport(fromFile: string, specifier: string): string 
 }
 
 export interface ParsedStoryFile {
-  source: string;
   csf: CsfFile;
 }
 
 export function parseStoryFile(storyFilePath: string, title: string): ParsedStoryFile | undefined {
   try {
     const source = readFileSync(storyFilePath, 'utf8');
-    return { source, csf: loadCsf(source, { makeTitle: () => title }).parse() };
+    return { csf: loadCsf(source, { makeTitle: () => title }).parse() };
   } catch {
     return undefined;
   }

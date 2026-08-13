@@ -37,7 +37,7 @@ const VUE_PACKAGE = 'vue';
 
 /** Render classified CSF args into the same SFC block shape as Vue's runtime source decorator. */
 export function renderSfcSnippet(input: RenderSfcInput): string {
-  const ctx = createRenderContext(input.args);
+  const ctx = createRenderContext();
   const partitioned = partitionArgsByRole(input.args);
   const props = partitioned.props.map((arg) => formatRenderedProp(renderPropLikeArg(arg, ctx)));
   const events = partitioned.events.map((arg) => formatRenderedProp(renderEventArg(arg, ctx)));
@@ -51,29 +51,9 @@ export function renderSfcSnippet(input: RenderSfcInput): string {
 }
 
 /** Create an isolated hoist context for one generated snippet. */
-export function createRenderContext(args: ClassifiedArg[]): RenderContext {
-  const bindings = new Set<string>();
-
-  // Reserve the identifier up front so no hoisted arg steals it before a ref is declared.
-  if (args.some((arg) => arg.role === 'model')) {
-    bindings.add('ref');
-  }
-
-  return { imports: {}, bindings, variables: new Map() };
-}
-
-// The `ref` import is added only when a ref is actually declared, and fails when a hoisted
-// binding already claimed the identifier.
-function ensureRefImport(ctx: RenderContext): boolean {
-  if (ctx.imports[VUE_PACKAGE]?.has('ref')) {
-    return true;
-  }
-  if (ctx.variables.has('ref')) {
-    return false;
-  }
-  (ctx.imports[VUE_PACKAGE] ??= new Set()).add('ref');
-  ctx.bindings.add('ref');
-  return true;
+export function createRenderContext(): RenderContext {
+  // `ref` is reserved up front so no hoisted arg can shadow the Vue import a v-model may need.
+  return { imports: {}, bindings: new Set(['ref']), variables: new Map() };
 }
 
 /** Wrap prepared template markup with the shared SFC block assembly. */
@@ -142,15 +122,9 @@ export function hoistArgValue(name: string, value: t.Node, ctx: RenderContext): 
   return bindingName;
 }
 
-/**
- * Hoist an arg value as a `ref` for a `v-model` binding, or `undefined` when the `ref` import
- * cannot be added because a hoisted binding already claimed the name.
- */
-export function hoistModelRef(name: string, value: t.Node, ctx: RenderContext): string | undefined {
-  if (!ensureRefImport(ctx)) {
-    return undefined;
-  }
-
+/** Hoist an arg value as a `ref` for a `v-model` binding. */
+export function hoistModelRef(name: string, value: t.Node, ctx: RenderContext): string {
+  (ctx.imports[VUE_PACKAGE] ??= new Set()).add('ref');
   const bindingName = allocateBindingName(name, ctx);
   ctx.variables.set(bindingName, `ref(${printValue(unwrapValue(value))})`);
   return bindingName;
@@ -240,9 +214,7 @@ function hoistedProp(
 }
 
 function renderModelArg(arg: ClassifiedArg, ctx: RenderContext): RenderedProp {
-  // createRenderContext pre-reserved the `ref` identifier for model-role args, so this cannot fail.
-  const bindingName = hoistModelRef(arg.name, arg.value, ctx)!;
-
+  const bindingName = hoistModelRef(arg.name, arg.value, ctx);
   const directive = arg.name === 'modelValue' ? 'v-model' : `v-model:${arg.name}`;
   return { attrName: directive, value: bindingName };
 }

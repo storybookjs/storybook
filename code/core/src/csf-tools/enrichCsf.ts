@@ -9,11 +9,11 @@ export interface EnrichCsfOptions {
   enrichCsf?: CsfEnricher;
 }
 
-const isMetaStoryFactory = (storyExport: t.Node) =>
+const isMetaStoryFactory = (storyExport: t.Node, csfSource: CsfFile) =>
   t.isCallExpression(storyExport) &&
   t.isMemberExpression(storyExport.callee) &&
   t.isIdentifier(storyExport.callee.object) &&
-  storyExport.callee.object.name === 'meta';
+  storyExport.callee.object.name === csfSource._metaVariableName;
 
 // A base declared in this same file (e.g. `Primary` in `Primary.extend(...)`) is only
 // trusted as a CSF factory if `CsfFile` itself recognized it as one; bases we can't
@@ -37,7 +37,7 @@ export const enrichCsfStory = (
 ) => {
   const storyExport = csfSource.getStoryExport(key);
   const isCsfFactory =
-    isMetaStoryFactory(storyExport) || isStoryExtendFactory(storyExport, csfSource);
+    isMetaStoryFactory(storyExport, csfSource) || isStoryExtendFactory(storyExport, csfSource);
   const source = !options?.disableSource && extractSource(storyExport);
   const description =
     !options?.disableDescription && extractDescription(csfSource._storyStatements[key]);

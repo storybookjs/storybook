@@ -8,6 +8,9 @@
       "description": "Primary button description.",
       "id": "forms-basic--primary",
       "name": "Primary",
+      "snippet": "<template>
+  <BasicButton label="Submit" />
+</template>",
       "summary": "Primary button summary.",
     },
   },

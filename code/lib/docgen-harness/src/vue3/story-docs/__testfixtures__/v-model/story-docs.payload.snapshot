@@ -8,6 +8,17 @@
       "description": undefined,
       "id": "forms-v-model--primary",
       "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import { ref } from "vue";
+
+const checked = ref(true);
+
+const modelValue = ref('Accepted');
+</script>
+
+<template>
+  <ModelToggle v-model:checked="checked" v-model="modelValue" />
+</template>",
       "summary": undefined,
     },
   },

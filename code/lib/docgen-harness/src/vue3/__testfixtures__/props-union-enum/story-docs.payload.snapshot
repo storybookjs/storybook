@@ -8,6 +8,9 @@
       "description": undefined,
       "id": "forms-props-union-enum--props-as-written",
       "name": "Props As Written",
+      "snippet": "<template>
+  <PropsUnionEnum size="medium" status="ok" />
+</template>",
       "summary": undefined,
     },
   },

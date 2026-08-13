@@ -78,10 +78,20 @@ const zeroSpecificityRanges = (selector: string) => {
     const start = opening.index + opening[0].length;
     let end = start;
     let depth = 1;
+    let quote: string | null = null;
     while (end < selector.length && depth > 0) {
-      if (selector[end] === '(') {
+      const char = selector[end];
+      if (quote) {
+        if (char === '\\') {
+          end++;
+        } else if (char === quote) {
+          quote = null;
+        }
+      } else if (char === '"' || char === "'") {
+        quote = char;
+      } else if (char === '(') {
         depth++;
-      } else if (selector[end] === ')') {
+      } else if (char === ')') {
         depth--;
       }
       end++;
@@ -112,6 +122,8 @@ const extractPseudoStates = (selector: string) => {
         (isZeroSpecificity ? insideWhere : outsideWhere).add(state);
         return '';
       })
+      // :where(*) left as the sole content of :is() would make it invalid, so keep it valid as :is(*).
+      .replaceAll(':is(:where(*))', ':is(*)')
       .replaceAll(':where(*)', '')
       // If a selector list was left with blank items (e.g. ", foo, , bar, "), remove the extra commas/spaces.
       .replaceAll(/(?<=[\s(]),\s+|(,\s+)+(?=\))/g, '')

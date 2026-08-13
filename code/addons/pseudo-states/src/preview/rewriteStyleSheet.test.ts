@@ -409,7 +409,7 @@ describe('rewriteStyleSheet', () => {
   it('supports ":where" nested inside ":is"', () => {
     const sheet = new Sheet('.a:is(:where(:hover)) { color: red }');
     rewriteStyleSheet(sheet as any);
-    expect(sheet.cssRules[0].getSelectors()).toContain(':where(.pseudo-hover-all) .a:is()');
+    expect(sheet.cssRules[0].getSelectors()).toContain(':where(.pseudo-hover-all) .a:is(*)');
   });
 
   it('keeps pseudo-states outside ":where" specificity-bearing', () => {
@@ -430,6 +430,14 @@ describe('rewriteStyleSheet', () => {
     const sheet = new Sheet('.a:where(:hover) .b:hover { color: red }');
     rewriteStyleSheet(sheet as any);
     expect(sheet.cssRules[0].getSelectors()).toContain('.pseudo-hover-all .a .b');
+  });
+
+  it('does not let a quoted ")" inside ":where" end the range early', () => {
+    const sheet = new Sheet('.a:where([data-x=")"] :hover) { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].cssText).toEqual(
+      '.a:where([data-x=")"] :hover), .a:where([data-x=")"] .pseudo-hover), :where(.pseudo-hover-all) .a:where([data-x=")"] *) { color: red }'
+    );
   });
 
   it('keeps ":where" selector lists intact', () => {

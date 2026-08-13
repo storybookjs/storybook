@@ -8,6 +8,9 @@
       "description": undefined,
       "id": "forms-define-props-runtime-object--props-as-written",
       "name": "Props As Written",
+      "snippet": "<template>
+  <RuntimeObjectProps :count="3" label="Total" />
+</template>",
       "summary": undefined,
     },
   },

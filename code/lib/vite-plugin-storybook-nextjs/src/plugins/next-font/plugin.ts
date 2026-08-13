@@ -30,7 +30,12 @@ type FontOptions = {
 
 const includePattern = /next(\\|\/|\\\\).*(\\|\/|\\\\)target\.css\?.*$/;
 
-const virtualModuleId = 'virtual:next-font';
+const virtualFontPrefix = '\0virtual:next-font:';
+
+function encodeBase64Url(str: string): string {
+  const base64 = Buffer.from(str).toString('base64');
+  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
 
 export function vitePluginNextFont() {
   let devMode = true;
@@ -135,16 +140,14 @@ export function vitePluginNextFont() {
       }
 
       return {
-        id: `${virtualModuleId}?${rawQuery}`,
+        id: `${virtualFontPrefix}${encodeBase64Url(rawQuery)}`,
         meta: {
           fontFaceDeclaration,
         },
       };
     },
     load(id) {
-      // Check if the file matches the specific pattern
-      const [source] = id.split('?');
-      if (source !== virtualModuleId) {
+      if (!id.startsWith(virtualFontPrefix)) {
         return undefined;
       }
 

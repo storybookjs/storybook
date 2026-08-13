@@ -12,7 +12,7 @@ import {
   resolveIdentifierInit,
   returnedExpression,
   returnedExpressionPath,
-  unwrapValue,
+  unwrapExpression,
 } from './utils.ts';
 
 const parse = (code: string) => {
@@ -119,16 +119,17 @@ describe('keyOf', () => {
   });
 });
 
-describe('unwrapValue', () => {
+describe('unwrapExpression', () => {
   const typeAnnotation = t.tsTypeReference(t.identifier('Story'));
 
-  it('unwraps TypeScript expression wrappers', () => {
+  it('unwraps TypeScript expression wrappers and parentheses', () => {
     const value = t.objectExpression([]);
 
-    expect(unwrapValue(t.tsAsExpression(value, typeAnnotation))).toBe(value);
-    expect(unwrapValue(t.tsSatisfiesExpression(value, typeAnnotation))).toBe(value);
-    expect(unwrapValue(t.tsNonNullExpression(value))).toBe(value);
-    expect(unwrapValue(t.tsTypeAssertion(typeAnnotation, value))).toBe(value);
+    expect(unwrapExpression(t.tsAsExpression(value, typeAnnotation))).toBe(value);
+    expect(unwrapExpression(t.tsSatisfiesExpression(value, typeAnnotation))).toBe(value);
+    expect(unwrapExpression(t.tsNonNullExpression(value))).toBe(value);
+    expect(unwrapExpression(t.tsTypeAssertion(typeAnnotation, value))).toBe(value);
+    expect(unwrapExpression(t.parenthesizedExpression(value))).toBe(value);
   });
 
   it('unwraps nested TypeScript expression wrappers', () => {
@@ -138,13 +139,13 @@ describe('unwrapValue', () => {
       typeAnnotation
     );
 
-    expect(unwrapValue(wrapped)).toBe(value);
+    expect(unwrapExpression(wrapped)).toBe(value);
   });
 
   it('returns other nodes untouched', () => {
     const value = t.stringLiteral('Save');
 
-    expect(unwrapValue(value)).toBe(value);
+    expect(unwrapExpression(value)).toBe(value);
   });
 });
 

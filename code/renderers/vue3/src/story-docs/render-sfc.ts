@@ -1,18 +1,18 @@
 import type { ImportBinding } from 'storybook/internal/csf-tools';
 
-import { indent, wrapSlotContent } from './ast-utils.ts';
 import type { ClassifiedArg, ClassifiedSlotArg } from './classify-args.ts';
 import {
   createRenderContext,
   formatRenderedProp,
+  indent,
   partitionArgsByRole,
   renderEventArg,
   renderPreparedSfcSnippet,
   renderPropLikeArg,
-  renderSlotArgContent,
+  wrapSlotContent,
   type RenderContext,
 } from './render-primitives.ts';
-import { createHSlotRenderer } from './transform-h.ts';
+import { renderSlotArgContent } from './transform-h.ts';
 
 export interface RenderSfcInput {
   /** Component identifier from CSF meta.component. */
@@ -32,14 +32,14 @@ export interface RenderSfcResult {
 
 /** Render classified CSF args into the same SFC block shape as Vue's runtime source decorator. */
 export function renderSfcSnippet(input: RenderSfcInput): RenderSfcResult | undefined {
-  const ctx = createRenderContext(createHSlotRenderer(input.importBindings));
+  const ctx = createRenderContext();
   const partitioned = partitionArgsByRole(input.args);
   const props = partitioned.props.map((arg) => formatRenderedProp(renderPropLikeArg(arg, ctx)));
   const events = partitioned.events.map((arg) => formatRenderedProp(renderEventArg(arg, ctx)));
 
   const slotSource: string[] = [];
   for (const arg of partitioned.slots) {
-    const rendered = renderSlotArg(arg, ctx);
+    const rendered = renderSlotArg(arg, ctx, input.importBindings);
     // Only function-slot plans fail to render; without their content the snippet would misrepresent
     // the story, so bail and leave it to runtime source.
     if (rendered === undefined) {
@@ -60,7 +60,11 @@ export function renderSfcSnippet(input: RenderSfcInput): RenderSfcResult | undef
   };
 }
 
-function renderSlotArg(arg: ClassifiedSlotArg, ctx: RenderContext): string | undefined {
-  const content = renderSlotArgContent(arg, ctx);
+function renderSlotArg(
+  arg: ClassifiedSlotArg,
+  ctx: RenderContext,
+  importBindings: Map<string, ImportBinding>
+): string | undefined {
+  const content = renderSlotArgContent(arg, ctx, importBindings);
   return content === undefined ? undefined : wrapSlotContent(arg.name, content);
 }

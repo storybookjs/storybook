@@ -2,23 +2,30 @@ import { types as t } from 'storybook/internal/babel';
 import {
   keyOf,
   returnedExpression,
-  unwrapValue,
+  unwrapExpression,
   type ImportBinding,
 } from 'storybook/internal/csf-tools';
 
-import { importStatementForBinding, indent, wrapSlotContent } from './ast-utils.ts';
-import { classifyArg, type ClassifiedArg, type VueDocgenArgInfo } from './classify-args.ts';
+import {
+  classifyArg,
+  type ClassifiedArg,
+  type ClassifiedSlotArg,
+  type VueDocgenArgInfo,
+} from './classify-args.ts';
 import { isFunctionExpression } from './classify-value.ts';
 import {
   createRenderContext,
+  escapeTextContent,
   formatRenderedProp,
+  importStatementForBinding,
+  indent,
+  inlinePrimitiveSource,
   partitionArgsByRole,
   renderEventArg,
-  renderInlinePrimitiveValue,
   renderPreparedSfcSnippet,
   renderPropLikeArg,
-  renderSlotArgContent,
-  type FunctionSlotRenderer,
+  renderSlotContent,
+  wrapSlotContent,
   type RenderContext,
 } from './render-primitives.ts';
 
@@ -40,15 +47,6 @@ export interface TransformHResult {
   snippet: string;
   /** Import statements for components used by the h tree. */
   imports: string[];
-}
-
-export interface RenderHSlotFunctionInput {
-  /** Slot function expression from CSF args. */
-  node: t.ArrowFunctionExpression | t.FunctionExpression;
-  /** Imports and variables referenced by the prepared template markup. */
-  ctx: RenderContext;
-  /** Import bindings from the CSF module. */
-  importBindings: Map<string, ImportBinding>;
 }
 
 type HRenderOptions = {
@@ -99,7 +97,7 @@ const isComponentName = (name: string): boolean => /^[A-Z]/.test(name);
 
 /** Transform a statically decidable Vue `h()` tree into an SFC snippet. */
 export function transformH(input: TransformHInput): TransformHResult | undefined {
-  const ctx = createRenderContext(createHSlotRenderer(input.importBindings));
+  const ctx = createRenderContext();
   const templateCode = renderHNode(input.node, {
     args: input.args,
     argsParam: input.argsParam,
@@ -116,37 +114,48 @@ export function transformH(input: TransformHInput): TransformHResult | undefined
     : undefined;
 }
 
+/** Slot children for one classified slot arg, or undefined when a function slot cannot render. */
+export function renderSlotArgContent(
+  arg: ClassifiedSlotArg,
+  ctx: RenderContext,
+  importBindings: Map<string, ImportBinding>
+): string | undefined {
+  if (arg.plan.kind !== 'function-slot') {
+    return renderSlotContent(arg, arg.plan, ctx);
+  }
+
+  const value = unwrapExpression(arg.value);
+  return isFunctionExpression(value) ? renderHSlotFunction(value, ctx, importBindings) : undefined;
+}
+
 /** Render a zero-argument slot function whose body is a static `h()` child tree. */
-export function renderHSlotFunction(input: RenderHSlotFunctionInput): string | undefined {
-  if (input.node.params.length > 0) {
+function renderHSlotFunction(
+  node: t.ArrowFunctionExpression | t.FunctionExpression,
+  ctx: RenderContext,
+  importBindings: Map<string, ImportBinding>
+): string | undefined {
+  if (node.params.length > 0) {
     return undefined;
   }
 
-  const returned = returnedExpression(input.node);
+  const returned = returnedExpression(node);
   if (!returned) {
     return undefined;
   }
 
   return renderHNode(returned, {
     args: [],
-    ctx: input.ctx,
+    ctx,
     // Slot content renders children of components the story does not describe, so nothing here can
     // be resolved to a declared slot, event, or v-model.
     docgen: NO_DOCGEN,
-    importBindings: input.importBindings,
+    importBindings,
   });
-}
-
-/** Slot renderer realizing function slots as `h()` trees, for any snippet renderer to install. */
-export function createHSlotRenderer(
-  importBindings: Map<string, ImportBinding>
-): FunctionSlotRenderer {
-  return (value, ctx) => renderHSlotFunction({ node: value, ctx, importBindings });
 }
 
 // h('div', { class: 'row' }, 'Hi') -> <div class="row">Hi</div>
 function renderHNode(node: t.Node, options: HRenderOptions): string | undefined {
-  const value = unwrapValue(node);
+  const value = unwrapExpression(node);
   if (!t.isCallExpression(value) || !t.isIdentifier(value.callee, { name: H_FUNCTION })) {
     return undefined;
   }
@@ -200,7 +209,7 @@ function joinChildren(children: string[]): string {
 }
 
 function renderTag(node: t.Node | undefined | null, options: HRenderOptions): HTag | undefined {
-  const tag = node ? unwrapValue(node) : undefined;
+  const tag = node ? unwrapExpression(node) : undefined;
   if (!tag) {
     return undefined;
   }
@@ -252,7 +261,7 @@ function splitHArguments(
 
 // h(tag, 'Hi'), h(tag, ['Hi']), h(tag, h('b')) -> the argument is children, not props
 function isChildrenArgument(node: t.Node): boolean {
-  const value = unwrapValue(node);
+  const value = unwrapExpression(node);
   return (
     t.isStringLiteral(value) ||
     t.isArrayExpression(value) ||
@@ -277,7 +286,7 @@ function renderProps(
   ];
   const slotChildren: string[] = [];
   for (const slot of partitioned.slots) {
-    const content = renderSlotArgContent(slot, options.ctx);
+    const content = renderSlotArgContent(slot, options.ctx, options.importBindings);
     // A function slot without renderable content would misrepresent the story, so bail.
     if (content === undefined) {
       return undefined;
@@ -296,7 +305,7 @@ function renderProps(
  */
 // h(tag, null), h(tag, args), h(tag, { ...args, label: 'Hi' })
 function collectProps(node: t.Node, options: HRenderOptions): ClassifiedArg[] | undefined {
-  const value = unwrapValue(node);
+  const value = unwrapExpression(node);
 
   if (t.isNullLiteral(value)) {
     return [];
@@ -355,7 +364,7 @@ function renderChildren(node: t.Node | undefined, options: HRenderOptions): stri
     return [];
   }
 
-  const value = unwrapValue(node);
+  const value = unwrapExpression(node);
   return t.isObjectExpression(value)
     ? renderSlotsObject(value, options)
     : renderChildValue(value, options);
@@ -368,7 +377,7 @@ function renderChildValue(node: t.Node, options: HRenderOptions): string[] | und
     return undefined;
   }
 
-  const unwrapped = unwrapValue(value);
+  const unwrapped = unwrapExpression(value);
 
   if (t.isCallExpression(unwrapped)) {
     if (!t.isIdentifier(unwrapped.callee, { name: H_FUNCTION })) {
@@ -393,8 +402,8 @@ function renderChildValue(node: t.Node, options: HRenderOptions): string[] | und
     return children;
   }
 
-  const text = renderInlinePrimitiveValue(unwrapped);
-  return text === undefined ? undefined : [text];
+  const text = inlinePrimitiveSource(unwrapped);
+  return text === undefined ? undefined : [escapeTextContent(text)];
 }
 
 // { header: () => h('span', 'Hi') } -> <template #header><span>Hi</span></template>
@@ -410,12 +419,12 @@ function renderSlotsObject(
     }
 
     const name = keyOf(property);
-    const slotFunction = unwrapValue(property.value);
+    const slotFunction = unwrapExpression(property.value);
     if (!name || !isFunctionExpression(slotFunction)) {
       return undefined;
     }
 
-    const content = options.ctx.renderFunctionSlot(slotFunction, options.ctx);
+    const content = renderHSlotFunction(slotFunction, options.ctx, options.importBindings);
     if (content === undefined) {
       return undefined;
     }
@@ -427,7 +436,7 @@ function renderSlotsObject(
 
 // args.label -> the value node classified for 'label'
 function substituteArgsMember(node: t.Node, options: HRenderOptions): t.Node | undefined {
-  const value = unwrapValue(node);
+  const value = unwrapExpression(node);
   if (!options.argsParam || !t.isMemberExpression(value) || value.computed) {
     return value;
   }
@@ -441,6 +450,6 @@ function substituteArgsMember(node: t.Node, options: HRenderOptions): t.Node | u
 }
 
 function isArgsIdentifier(node: t.Node, argsParam: string | undefined): boolean {
-  const value = unwrapValue(node);
+  const value = unwrapExpression(node);
   return Boolean(argsParam && t.isIdentifier(value, { name: argsParam }));
 }

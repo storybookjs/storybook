@@ -11,24 +11,24 @@ import { types as t } from 'storybook/internal/babel';
 import {
   keyOf,
   propertyValue,
-  unwrapValue,
+  returnedExpression,
+  unwrapExpression,
   type ImportBinding,
 } from 'storybook/internal/csf-tools';
 
-import { importStatementForBinding } from './ast-utils.ts';
 import type { ClassifiedArg } from './classify-args.ts';
-import { isFunctionExpression, singleReturnedExpression } from './classify-value.ts';
+import { isFunctionExpression } from './classify-value.ts';
 import {
   createRenderContext,
   hoistArgValue,
   hoistModelRef,
+  importStatementForBinding,
+  inlinePrimitiveSource,
   renderArgsBindingAttributes,
   renderBoundArgAttribute,
-  renderInlinePrimitiveValue,
   renderPreparedSfcSnippet,
   type RenderContext,
 } from './render-primitives.ts';
-import { createHSlotRenderer } from './transform-h.ts';
 
 export interface TemplateRenderConfig {
   /** Static Vue template string returned from the render function. */
@@ -44,8 +44,6 @@ export interface TransformTemplateInput {
   args: ClassifiedArg[];
   /** Component tag name to import statement from the render object's components map. */
   componentImports: Map<string, string>;
-  /** Import bindings from the CSF module, used to import components a slot renders. */
-  importBindings: Map<string, ImportBinding>;
 }
 
 export interface TransformTemplateResult {
@@ -121,7 +119,7 @@ export function transformTemplate(
 
   const state: TransformState = {
     argsByName: new Map(input.args.map((arg) => [arg.name, arg])),
-    ctx: createRenderContext(createHSlotRenderer(input.importBindings)),
+    ctx: createRenderContext(),
     edits: [],
     usedImports: new Set(),
     componentImports: input.componentImports,
@@ -167,7 +165,7 @@ function transformInterpolation(
   }
 
   const arg = state.argsByName.get(argName);
-  const rendered = arg ? renderInlinePrimitiveValue(arg.value) : undefined;
+  const rendered = arg ? inlinePrimitiveSource(arg.value) : undefined;
   // Runtime interpolation renders escaped text; a value the template parser would read as markup
   // or as a new interpolation has no faithful inline form.
   if (rendered === undefined || /[<&]|{{/.test(rendered)) {
@@ -411,7 +409,7 @@ function readComponentImports(
     }
 
     const tagName = keyOf(property);
-    const component = unwrapValue(property.value);
+    const component = unwrapExpression(property.value);
     if (!tagName || !t.isIdentifier(component)) {
       return undefined;
     }
@@ -454,7 +452,7 @@ function isTrivialSetup(setup: t.ObjectMethod | t.ObjectProperty): boolean {
     return false;
   }
 
-  const value = unwrapValue(property.value);
+  const value = unwrapExpression(property.value);
   return t.isIdentifier(value, { name: ARGS_NAME });
 }
 
@@ -462,6 +460,7 @@ function isTrivialSetup(setup: t.ObjectMethod | t.ObjectProperty): boolean {
 function setupReturnObject(
   setup: t.ObjectMethod | t.ObjectProperty
 ): t.ObjectExpression | undefined {
-  const returned = singleReturnedExpression(t.isObjectMethod(setup) ? setup : setup.value);
+  const setupFunction = t.isObjectMethod(setup) ? setup : unwrapExpression(setup.value);
+  const returned = returnedExpression(setupFunction);
   return t.isObjectExpression(returned) ? returned : undefined;
 }

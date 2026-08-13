@@ -22,12 +22,12 @@ import {
   normalizeStoryDeclaration,
   propertyValue,
   resolveComponentImport,
-  type RenderFunctionPath,
   resolveRenderFunction,
   resolveReturnedObjectExpression,
   returnedExpressionPath,
   storyAssignedArgsPath,
   type ImportBinding,
+  type RenderFunctionPath,
   type RenderResolution,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
@@ -435,7 +435,6 @@ function renderStaticStorySnippet(
     return transformTemplate({
       args,
       componentImports: renderer.componentImports,
-      importBindings: options.importBindings,
       template: renderer.template,
     });
   }

@@ -23,20 +23,6 @@ export const keyOf = (p: t.ObjectMethod | t.ObjectProperty): string | null =>
         ? p.key.value
         : null;
 
-/** Peel TypeScript-only expression wrappers before reading runtime values. */
-export function unwrapValue(node: t.Node): t.Node {
-  if (
-    node.type === 'TSAsExpression' ||
-    node.type === 'TSSatisfiesExpression' ||
-    node.type === 'TSNonNullExpression' ||
-    node.type === 'TSTypeAssertion'
-  ) {
-    return unwrapValue(node.expression);
-  }
-
-  return node;
-}
-
 /** Value of an object expression's own property, when it has one. */
 export const propertyValue = (
   object: t.ObjectExpression | undefined | null,
@@ -86,14 +72,6 @@ export const returnedExpressionPath = (
   const [statement] = body.isBlockStatement() ? body.get('body') : [];
   const argument = statement?.isReturnStatement() ? statement.get('argument') : undefined;
   return argument?.isExpression() ? argument : undefined;
-};
-
-/** Object literal a function returns directly. */
-export const returnedObjectExpression = (
-  fn: t.Node | undefined
-): t.ObjectExpression | undefined => {
-  const returned = returnedExpression(fn);
-  return t.isObjectExpression(returned) ? returned : undefined;
 };
 
 /**

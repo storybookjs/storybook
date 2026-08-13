@@ -1,14 +1,17 @@
 import { types as t } from 'storybook/internal/babel';
-import { unwrapValue } from 'storybook/internal/csf-tools';
+import {
+  buildImportStatements,
+  unwrapExpression,
+  type ImportBinding,
+} from 'storybook/internal/csf-tools';
 
-import { indent, isVueExpressionAttribute, slotSortKey } from './ast-utils.ts';
 import type {
   ClassifiedArg,
   ClassifiedPropLikeArg,
   ClassifiedSlotArg,
   RenderableValuePlan,
 } from './classify-args.ts';
-import { isFunctionExpression, printValue } from './classify-value.ts';
+import { printValue } from './classify-value.ts';
 
 export interface RenderSfcMarkupInput {
   /** Rendered Vue template markup without the wrapping `<template>` block. */
@@ -32,8 +35,6 @@ export interface RenderContext {
   variables: Map<string, string>;
   /** Import statements for components the rendered markup references. */
   componentImports: Set<string>;
-  /** Realizes a function-valued slot arg as markup. */
-  renderFunctionSlot: FunctionSlotRenderer;
 }
 
 export interface RenderPropValueInput {
@@ -53,12 +54,6 @@ export interface RenderedProp {
   /** Vue template attribute value, or undefined for a bare attribute. */
   value?: string;
 }
-
-/** Renders a slot function into markup, collecting its imports into the context it is given. */
-export type FunctionSlotRenderer = (
-  value: t.ArrowFunctionExpression | t.FunctionExpression,
-  ctx: RenderContext
-) => string | undefined;
 
 const VUE_PACKAGE = 'vue';
 
@@ -86,14 +81,13 @@ export function partitionArgsByRole(args: ClassifiedArg[]): {
 }
 
 /** Create an isolated hoist context for one generated snippet. */
-export function createRenderContext(renderFunctionSlot: FunctionSlotRenderer): RenderContext {
+export function createRenderContext(): RenderContext {
   return {
     imports: {},
     // `ref` is reserved up front so no hoisted arg can shadow the Vue import a v-model may need.
     bindings: new Set(['ref']),
     variables: new Map(),
     componentImports: new Set(),
-    renderFunctionSlot,
   };
 }
 
@@ -119,7 +113,7 @@ function renderPropArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): Rendered
 
 /** Render a classified arg value into a Vue template attribute under a chosen attribute name. */
 export function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): RenderedProp {
-  const value = unwrapValue(input.value);
+  const value = unwrapExpression(input.value);
 
   if (input.plan.kind === 'hoist') {
     return hoistedProp(input, ctx, printValue(value));
@@ -160,30 +154,41 @@ function renderModelArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): Rendere
 /** Listeners hoist their handler, because inline handlers would bloat the tag. */
 export function renderEventArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): RenderedProp {
   const bindingName = allocateBindingName(arg.name, ctx);
-  ctx.variables.set(bindingName, printValue(unwrapValue(arg.value)));
+  ctx.variables.set(bindingName, printValue(unwrapExpression(arg.value)));
   return { attrName: `@${arg.eventName ?? arg.name}`, value: bindingName };
 }
 
-/** Slot children for one classified slot arg, or undefined when a function slot cannot render. */
-export function renderSlotArgContent(
+/** Slot children for one classified slot arg with a renderable plan. */
+export function renderSlotContent(
   arg: ClassifiedSlotArg,
+  plan: RenderableValuePlan,
   ctx: RenderContext
-): string | undefined {
-  if (arg.plan.kind === 'function-slot') {
-    const value = unwrapValue(arg.value);
-    return isFunctionExpression(value) ? ctx.renderFunctionSlot(value, ctx) : undefined;
+): string {
+  const value = unwrapExpression(arg.value);
+
+  if (plan.kind === 'inline') {
+    const source = inlinePrimitiveSource(value);
+    if (source === undefined) {
+      return `{{ ${printValue(value)} }}`;
+    }
+    // Vue's whitespace condensing would alter padded text, so it hoists to an interpolation.
+    if (!/^\s|\s$/.test(source)) {
+      return escapeTextContent(source);
+    }
   }
 
-  return renderSlotContent(arg, arg.plan, ctx);
+  const bindingName = allocateBindingName(arg.name, ctx);
+  ctx.variables.set(bindingName, printValue(value));
+  return `{{ ${bindingName} }}`;
 }
 
-/** Inline primitive arg values that do not require script setup hoists. */
-export function renderInlinePrimitiveValue(node: t.Node): string | undefined {
-  const value = unwrapValue(node);
+/** Source text of a primitive arg value that can appear directly in template text, unescaped. */
+export function inlinePrimitiveSource(node: t.Node): string | undefined {
+  const value = unwrapExpression(node);
 
   switch (value.type) {
     case 'StringLiteral':
-      return escapeTextContent(value.value);
+      return value.value;
     case 'NumericLiteral':
     case 'BooleanLiteral':
       return String(value.value);
@@ -198,34 +203,12 @@ export function renderInlinePrimitiveValue(node: t.Node): string | undefined {
  * Vue compiles the generated snippet, so an unescaped `<` opens a tag and `{{` opens an
  * interpolation, both of which would render something the story never produced.
  */
-function escapeTextContent(text: string): string {
+export function escapeTextContent(text: string): string {
   return text
     .replaceAll('&', '&amp;')
     .replaceAll('<', '&lt;')
     .replaceAll('>', '&gt;')
     .replaceAll('{{', '&#123;&#123;');
-}
-
-/**
- * Slot children for one classified slot arg.
- *
- * Text-shaped literals become text directly; everything else is interpolated, since a hoisted
- * `<script setup>` binding cannot reach slot content any other way.
- */
-function renderSlotContent(
-  arg: ClassifiedSlotArg,
-  plan: RenderableValuePlan,
-  ctx: RenderContext
-): string {
-  const value = unwrapValue(arg.value);
-
-  if (plan.kind === 'inline') {
-    return renderInlinePrimitiveValue(value) ?? `{{ ${printValue(value)} }}`;
-  }
-
-  const bindingName = allocateBindingName(arg.name, ctx);
-  ctx.variables.set(bindingName, printValue(value));
-  return `{{ ${bindingName} }}`;
 }
 
 function renderScript(ctx: RenderContext): string | undefined {
@@ -345,7 +328,7 @@ export function renderBoundArgAttribute(
 /** Hoist an arg value into `<script setup>` and return the binding name that replaces it. */
 export function hoistArgValue(name: string, value: t.Node, ctx: RenderContext): string {
   const bindingName = allocateBindingName(name, ctx);
-  ctx.variables.set(bindingName, printValue(unwrapValue(value)));
+  ctx.variables.set(bindingName, printValue(unwrapExpression(value)));
   return bindingName;
 }
 
@@ -353,6 +336,50 @@ export function hoistArgValue(name: string, value: t.Node, ctx: RenderContext): 
 export function hoistModelRef(name: string, value: t.Node, ctx: RenderContext): string {
   (ctx.imports[VUE_PACKAGE] ??= new Set()).add('ref');
   const bindingName = allocateBindingName(name, ctx);
-  ctx.variables.set(bindingName, `ref(${printValue(unwrapValue(value))})`);
+  ctx.variables.set(bindingName, `ref(${printValue(unwrapExpression(value))})`);
   return bindingName;
+}
+
+/**
+ * Import statement binding a component tag, or `undefined` when no statement can name it.
+ *
+ * A namespace binding has no importable member to alias, so it yields no statement rather than an
+ * import the snippet could not compile against.
+ */
+export function importStatementForBinding(
+  localName: string,
+  binding: ImportBinding | undefined
+): string | undefined {
+  if (!binding || binding.importName === '*') {
+    return undefined;
+  }
+
+  return buildImportStatements({
+    refs: [
+      {
+        importId: binding.importId,
+        importName: binding.importName,
+        localImportName: localName,
+      },
+    ],
+  }).join('\n');
+}
+
+export function wrapSlotContent(name: string, content: string): string {
+  return name === 'default' ? content : `<template #${name}>\n${indent(content)}\n</template>`;
+}
+
+export function indent(source: string): string {
+  return source
+    .split('\n')
+    .map((line) => `  ${line}`)
+    .join('\n');
+}
+
+function slotSortKey(name: string): string {
+  return name === 'default' ? '' : name;
+}
+
+function isVueExpressionAttribute(name: string): boolean {
+  return name.startsWith(':') || name.startsWith('@') || name.startsWith('v-');
 }

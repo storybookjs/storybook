@@ -1,12 +1,12 @@
 import { writeFile } from 'node:fs/promises';
 
 import { traverse, types as t } from 'storybook/internal/babel';
-import { AngularJSON, isStorybookTarget } from 'storybook/internal/cli';
+import { editJsonText, isStorybookTarget, type JSONEditPath } from 'storybook/internal/cli';
 import { formatFileContent } from 'storybook/internal/common';
 import { formatConfig, readConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
 import { dedent } from 'ts-dedent';
 
@@ -20,32 +20,55 @@ const ADDON_DOCS_ANGULAR = '@storybook/addon-docs/angular';
 interface AngularViteRemoveCompodocOptions {
   hasFrameworkOptions: boolean;
   hasPreviewWiring: boolean;
-  angularJsonPaths: string[];
+  workspaceJsonPaths: string[];
   hasCompodocDependency: boolean;
 }
 
-/** Storybook targets in `angular.json` that still carry the never-read Compodoc builder options. */
-const angularJsonPathsWithCompodoc = (packageJsonPaths: string[]): string[] =>
-  packageJsonPaths
-    .map((pkgJsonPath) => pkgJsonPath.replace(/[/\\]package\.json$/, '/angular.json'))
-    .filter((angularJsonPath) => {
-      if (!existsSync(angularJsonPath)) {
-        return false;
+const COMPODOC_OPTIONS = ['compodoc', 'compodocArgs'] as const;
+
+/**
+ * Every JSON path holding a Compodoc builder option, across both workspace layouts.
+ *
+ * `angular.json` nests targets under `projects.<name>.architect`; an Nx `project.json` is one
+ * project with its targets at the root. The option names and the Storybook target check are the
+ * same either way, so both shapes reduce to the same list of paths to delete.
+ */
+const compodocOptionPaths = (json: any): JSONEditPath[] => {
+  const groups: { prefix: JSONEditPath; targets: Record<string, unknown> }[] = [];
+  for (const [name, project] of Object.entries<any>(json?.projects ?? {})) {
+    for (const key of ['architect', 'targets'] as const) {
+      if (project?.[key] && typeof project[key] === 'object') {
+        groups.push({ prefix: ['projects', name, key], targets: project[key] });
       }
-      try {
-        const { projects } = JSON.parse(readFileSync(angularJsonPath, 'utf8')) ?? {};
-        return Object.values(projects ?? {}).some((project: any) =>
-          Object.values(project?.architect ?? project?.targets ?? {}).some(
-            (target: any) =>
-              isStorybookTarget(target) &&
-              target.options &&
-              ('compodoc' in target.options || 'compodocArgs' in target.options)
-          )
-        );
-      } catch {
-        return false;
-      }
-    });
+    }
+  }
+
+  if (json?.targets && typeof json.targets === 'object') {
+    groups.push({ prefix: ['targets'], targets: json.targets });
+  }
+
+  return groups.flatMap(({ prefix, targets }) =>
+    Object.entries(targets).flatMap(([targetName, target]: [string, any]) => {
+      const options = isStorybookTarget(target) ? target.options : undefined;
+      return options
+        ? COMPODOC_OPTIONS.filter((option) => option in options).map((option) => [
+            ...prefix,
+            targetName,
+            'options',
+            option,
+          ])
+        : [];
+    })
+  );
+};
+
+const hasCompodocOptions = (filePath: string): boolean => {
+  try {
+    return compodocOptionPaths(JSON.parse(readFileSync(filePath, 'utf8'))).length > 0;
+  } catch {
+    return false;
+  }
+};
 
 const previewCallsSetCompodocJson = (source: string): boolean => source.includes(SET_COMPODOC_JSON);
 
@@ -75,20 +98,22 @@ export const angularViteRemoveCompodoc: Fix<AngularViteRemoveCompodocOptions> = 
       existsSync(previewConfigPath) &&
       previewCallsSetCompodocJson(readFileSync(previewConfigPath, 'utf8'));
 
-    const angularJsonPaths = angularJsonPathsWithCompodoc(packageManager.packageJsonPaths);
+    const workspaceJsonPaths = (
+      await workspaceJsonCandidates(packageManager.packageJsonPaths)
+    ).filter(hasCompodocOptions);
 
     const hasCompodocDependency = !!(await packageManager.getDependencyVersion(COMPODOC_PACKAGE));
 
     if (
       !hasFrameworkOptions &&
       !hasPreviewWiring &&
-      angularJsonPaths.length === 0 &&
+      workspaceJsonPaths.length === 0 &&
       !hasCompodocDependency
     ) {
       return null;
     }
 
-    return { hasFrameworkOptions, hasPreviewWiring, angularJsonPaths, hasCompodocDependency };
+    return { hasFrameworkOptions, hasPreviewWiring, workspaceJsonPaths, hasCompodocDependency };
   },
 
   prompt: () =>
@@ -104,7 +129,7 @@ export const angularViteRemoveCompodoc: Fix<AngularViteRemoveCompodocOptions> = 
     previewConfigPath,
     packageManager,
   }: RunOptions<AngularViteRemoveCompodocOptions>) => {
-    const { hasFrameworkOptions, hasPreviewWiring, angularJsonPaths, hasCompodocDependency } =
+    const { hasFrameworkOptions, hasPreviewWiring, workspaceJsonPaths, hasCompodocDependency } =
       result;
 
     if (hasFrameworkOptions) {
@@ -119,8 +144,8 @@ export const angularViteRemoveCompodoc: Fix<AngularViteRemoveCompodocOptions> = 
       await removePreviewWiring(previewConfigPath, dryRun);
     }
 
-    for (const angularJsonPath of angularJsonPaths) {
-      removeAngularJsonCompodocOptions(angularJsonPath, dryRun);
+    for (const workspaceJsonPath of workspaceJsonPaths) {
+      removeCompodocOptions(workspaceJsonPath, dryRun);
     }
 
     if (hasCompodocDependency && !dryRun) {
@@ -221,37 +246,48 @@ const removePreviewWiring = async (previewConfigPath: string, dryRun: boolean): 
   }
 };
 
-/** Drops the `compodoc` and `compodocArgs` builder options, which angular-vite never read. */
-const removeAngularJsonCompodocOptions = (angularJsonPath: string, dryRun: boolean): void => {
-  try {
-    const angularJson = new AngularJSON(angularJsonPath);
-    let changed = false;
+/**
+ * `angular.json` beside each package.json, plus every Nx `project.json` in the workspace.
+ *
+ * Nx scatters `project.json` files (one per library) away from any package.json, so they have
+ * to be globbed rather than derived, the same way the angular-to-angular-vite migration finds them.
+ */
+const workspaceJsonCandidates = async (packageJsonPaths: string[]): Promise<string[]> => {
+  const angularJsonPaths = packageJsonPaths
+    .map((pkgJsonPath) => pkgJsonPath.replace(/[/\\]package\.json$/, '/angular.json'))
+    .filter((path) => existsSync(path));
 
-    for (const [projectName, project] of Object.entries(angularJson.projects ?? {})) {
-      const targets = (project as any)?.architect ?? (project as any)?.targets ?? {};
-      for (const [targetName, target] of Object.entries<any>(targets)) {
-        if (!isStorybookTarget(target) || !target.options) {
-          continue;
-        }
-        for (const option of ['compodoc', 'compodocArgs']) {
-          if (option in target.options) {
-            angularJson.edit(
-              ['projects', projectName, 'architect', targetName, 'options', option],
-              undefined
-            );
-            changed = true;
-          }
-        }
-      }
+  // eslint-disable-next-line depend/ban-dependencies
+  const { globby } = await import('globby');
+  const projectJsonPaths = await globby(['**/project.json'], {
+    ignore: ['**/node_modules/**', '**/dist/**'],
+    absolute: true,
+  });
+
+  return [...angularJsonPaths, ...projectJsonPaths];
+};
+
+/** Drops the `compodoc` and `compodocArgs` builder options, which angular-vite never read. */
+const removeCompodocOptions = (workspaceJsonPath: string, dryRun: boolean): void => {
+  try {
+    const original = readFileSync(workspaceJsonPath, 'utf8');
+    const paths = compodocOptionPaths(JSON.parse(original));
+    if (paths.length === 0) {
+      return;
     }
 
-    if (changed && !dryRun) {
-      angularJson.write();
-      logger.step(`Removed the Compodoc builder options from ${angularJsonPath}`);
+    const updated = paths.reduce(
+      (text, path) => editJsonText(text, path, undefined),
+      original as string
+    );
+
+    if (!dryRun && updated !== original) {
+      writeFileSync(workspaceJsonPath, updated);
+      logger.step(`Removed the Compodoc builder options from ${workspaceJsonPath}`);
     }
   } catch (error) {
     logger.warn(
-      `Could not remove the Compodoc builder options from ${angularJsonPath} automatically: ${error}.`
+      `Could not remove the Compodoc builder options from ${workspaceJsonPath} automatically: ${error}.`
     );
   }
 };

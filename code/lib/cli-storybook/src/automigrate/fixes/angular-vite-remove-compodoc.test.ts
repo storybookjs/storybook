@@ -18,9 +18,18 @@ import {
 vi.mock('node:fs', { spy: true });
 vi.mock('node:fs/promises', { spy: true });
 
+// globby walks the real disk, which memfs has replaced. Resolve `project.json` files out of the
+// virtual volume instead, so discovery is still what decides which files the fix sees.
+vi.mock('globby', () => ({
+  globby: vi.fn(async () =>
+    Object.keys(vol.toJSON()).filter((path) => path.endsWith('/project.json'))
+  ),
+}));
+
 const MAIN = '/project/.storybook/main.ts';
 const PREVIEW = '/project/.storybook/preview.ts';
 const ANGULAR_JSON = '/project/angular.json';
+const PROJECT_JSON = '/project/libs/ui/project.json';
 
 const PREVIEW_WITH_WIRING = dedent`
   import { setCompodocJson } from "@storybook/addon-docs/angular";
@@ -40,6 +49,15 @@ const angularJson = (options: Record<string, unknown>) =>
           storybook: { builder: '@storybook/angular-vite:start-storybook', options },
         },
       },
+    },
+  });
+
+// Nx: one project per file, targets at the root, `executor` rather than `builder`.
+const projectJson = (options: Record<string, unknown>) =>
+  JSON.stringify({
+    name: 'ui',
+    targets: {
+      storybook: { executor: '@storybook/angular-vite:start-storybook', options },
     },
   });
 
@@ -126,7 +144,15 @@ describe('check', () => {
 
     const result = await angularViteRemoveCompodoc.check(checkOptions({}));
 
-    expect(result?.angularJsonPaths).toEqual([ANGULAR_JSON]);
+    expect(result?.workspaceJsonPaths).toEqual([ANGULAR_JSON]);
+  });
+
+  it('detects the Compodoc options in an Nx project.json', async () => {
+    vol.fromNestedJSON({ [PROJECT_JSON]: projectJson({ compodoc: true }) });
+
+    const result = await angularViteRemoveCompodoc.check(checkOptions({}));
+
+    expect(result?.workspaceJsonPaths).toContain(PROJECT_JSON);
   });
 
   it('ignores an angular.json whose storybook target has no Compodoc options', async () => {
@@ -159,7 +185,7 @@ describe('run', () => {
       {
         hasFrameworkOptions: false,
         hasPreviewWiring: true,
-        angularJsonPaths: [],
+        workspaceJsonPaths: [],
         hasCompodocDependency: false,
       },
       packageManager(false)
@@ -191,7 +217,7 @@ describe('run', () => {
       {
         hasFrameworkOptions: false,
         hasPreviewWiring: true,
-        angularJsonPaths: [],
+        workspaceJsonPaths: [],
         hasCompodocDependency: false,
       },
       packageManager(false)
@@ -215,7 +241,7 @@ describe('run', () => {
       {
         hasFrameworkOptions: false,
         hasPreviewWiring: true,
-        angularJsonPaths: [],
+        workspaceJsonPaths: [],
         hasCompodocDependency: false,
       },
       packageManager(false)
@@ -236,7 +262,7 @@ describe('run', () => {
       {
         hasFrameworkOptions: false,
         hasPreviewWiring: false,
-        angularJsonPaths: [ANGULAR_JSON],
+        workspaceJsonPaths: [ANGULAR_JSON],
         hasCompodocDependency: false,
       },
       packageManager(false)
@@ -249,6 +275,28 @@ describe('run', () => {
     expect(options.port).toBe(6006);
   });
 
+  it('drops the Compodoc options from an Nx project.json too', async () => {
+    vol.fromNestedJSON({
+      [PROJECT_JSON]: projectJson({ compodoc: true, compodocArgs: ['-e', 'json'], port: 6006 }),
+    });
+
+    await runWith(
+      {
+        hasFrameworkOptions: false,
+        hasPreviewWiring: false,
+        workspaceJsonPaths: [PROJECT_JSON],
+        hasCompodocDependency: false,
+      },
+      packageManager(false)
+    );
+
+    const written = JSON.parse(vol.readFileSync(PROJECT_JSON, 'utf8') as string);
+    const { options } = written.targets.storybook;
+    expect(options).not.toHaveProperty('compodoc');
+    expect(options).not.toHaveProperty('compodocArgs');
+    expect(options.port).toBe(6006);
+  });
+
   it('removes the Compodoc dependency', async () => {
     const pm = packageManager(true);
 
@@ -256,7 +304,7 @@ describe('run', () => {
       {
         hasFrameworkOptions: false,
         hasPreviewWiring: false,
-        angularJsonPaths: [],
+        workspaceJsonPaths: [],
         hasCompodocDependency: true,
       },
       pm
@@ -273,7 +321,7 @@ describe('run', () => {
       result: {
         hasFrameworkOptions: false,
         hasPreviewWiring: true,
-        angularJsonPaths: [],
+        workspaceJsonPaths: [],
         hasCompodocDependency: true,
       },
       dryRun: true,

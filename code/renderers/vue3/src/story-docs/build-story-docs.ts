@@ -19,13 +19,13 @@ import {
   mergeArgsRecords,
   metaObjectPath,
   normalizeStoryDeclaration,
-  resolveComponentImport,
   propertyValue,
-  type RenderFunctionPath,
+  resolveComponentImport,
   resolveRenderFunction,
   returnedObjectExpression,
   storyAssignedArgsPath,
   type ImportBinding,
+  type RenderFunctionPath,
   type RenderResolution,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
@@ -35,8 +35,8 @@ import { classifyArgs, type ClassifiedArg, type VueDocgenArgInfo } from './class
 import { renderSfcSnippet } from './render-sfc.ts';
 import {
   readTemplateRenderConfig,
-  type TemplateRenderConfig,
   transformTemplate,
+  type TemplateRenderConfig,
 } from './transform-template.ts';
 
 export interface BuildStoryDocsContext {
@@ -397,21 +397,14 @@ function resolveEffectiveRender(
   metaPath: NodePath<t.ObjectExpression> | undefined,
   storyDeclaration: NodePath<t.Node>
 ): RenderResolution {
-  const storyRender = storyConfigPath
-    ? resolveRenderFromObjectPath(storyConfigPath, storyDeclaration)
-    : { kind: 'missing' as const };
-  if (storyRender.kind !== 'missing') {
-    return storyRender;
-  }
-
-  const metaRender = metaPath
-    ? resolveRenderFromObjectPath(metaPath, storyDeclaration)
-    : { kind: 'missing' as const };
-  return metaRender;
+  const storyRender = resolveRenderFromObjectPath(storyConfigPath, storyDeclaration);
+  return storyRender.kind !== 'missing'
+    ? storyRender
+    : resolveRenderFromObjectPath(metaPath, storyDeclaration);
 }
 
 function resolveRenderFromObjectPath(
-  path: NodePath<t.ObjectExpression>,
+  path: NodePath<t.ObjectExpression> | undefined,
   storyDeclaration: NodePath<t.Node>
 ): RenderResolution {
   try {

@@ -4,6 +4,9 @@ import { ShapeButtonComponent } from './shape-button.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [ShapeButtonComponent],
-  template: `<div class="assigned"><sb-shape-button></sb-shape-button></div>`,
+  template: `
+    <div class="assigned">
+        <sb-shape-button></sb-shape-button>
+    </div>`,
 })
 export class DemoComponent {}

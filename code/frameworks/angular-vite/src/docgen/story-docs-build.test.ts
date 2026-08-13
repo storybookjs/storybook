@@ -622,7 +622,15 @@ describe('buildStoryDocsPayload', () => {
     // built around it is fully readable and the user's wrapper markup survives.
     it('expands argsToTemplate inside the markup the story wrote', async () => {
       expect((await templatesOf(STORY_SHAPES_FILE)).get('Args To Template')).toBe(
-        `<div class="wrap"><sb-button [label]="'Save'" [count]="7" (clicked)="clicked($event)"></sb-button></div>`
+        [
+          '<div class="wrap">',
+          '    <sb-button',
+          `        [label]="'Save'"`,
+          '        [count]="7"',
+          '        (clicked)="clicked($event)">',
+          '    </sb-button>',
+          '</div>',
+        ].join('\n')
       );
     });
 
@@ -634,7 +642,11 @@ describe('buildStoryDocsPayload', () => {
 
     it('substitutes an interpolated arg used as slot content', async () => {
       expect((await templatesOf(STORY_SHAPES_FILE)).get('Slot Interpolation')).toBe(
-        `<sb-button [label]="'Save'" (clicked)="clicked($event)"><span>Bye</span></sb-button>`
+        [
+          `<sb-button [label]="'Save'" (clicked)="clicked($event)">`,
+          '    <span>Bye</span>',
+          '</sb-button>',
+        ].join('\n')
       );
     });
 
@@ -673,7 +685,7 @@ describe('buildStoryDocsPayload', () => {
         };
       `);
       expect(extractHostComponentTemplate(story.snippet!)).toBe(
-        '<div class="only-in-render"><sb-button></sb-button></div>'
+        ['<div class="only-in-render">', '    <sb-button></sb-button>', '</div>'].join('\n')
       );
     });
 
@@ -848,7 +860,7 @@ describe('buildStoryDocsPayload', () => {
         Default.render = () => ({ template: '<div class="assigned"><sb-button></sb-button></div>' });
       `);
       expect(extractHostComponentTemplate(story.snippet!)).toBe(
-        '<div class="assigned"><sb-button></sb-button></div>'
+        ['<div class="assigned">', '    <sb-button></sb-button>', '</div>'].join('\n')
       );
     });
 
@@ -898,7 +910,7 @@ describe('buildStoryDocsPayload', () => {
         };
       `);
       expect(extractHostComponentTemplate(story.snippet!)).toBe(
-        '<h1>Hi</h1><sb-button></sb-button>'
+        ['<h1>Hi</h1>', '<sb-button></sb-button>'].join('\n')
       );
     });
 
@@ -977,7 +989,7 @@ describe('buildStoryDocsPayload', () => {
         Default.args = { label: 'Save' };
       `);
       expect(extractHostComponentTemplate(story.snippet!)).toBe(
-        '<div class="bound"><sb-button></sb-button></div>'
+        ['<div class="bound">', '    <sb-button></sb-button>', '</div>'].join('\n')
       );
     });
   });

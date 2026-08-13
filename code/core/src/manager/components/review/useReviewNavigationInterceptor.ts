@@ -1,22 +1,12 @@
 import { useEffect } from 'react';
 
-import { useNavigate } from 'storybook/internal/router';
-import { useStorybookApi } from 'storybook/manager-api';
-
-import { PRE_REVIEW_RETURN_KEY } from './constants.ts';
-import {
-  navigateOutOfReview,
-  navigateToReviewEntry,
-  navigateToReviewSummary,
-} from './review-actions.ts';
+import { useReviewContext } from './review-context.ts';
 import {
   REVIEW_COLLECTION_QUERY_PARAM,
   REVIEW_SUMMARY_BACK_ATTR,
   buildReviewChangesSummaryHref,
   parseReviewStoryHref,
 } from './review-navigation.ts';
-import { sessionStore } from './session-store.ts';
-import { useReviewFiltersRef } from './useReviewFiltersRef.ts';
 
 const isReviewStoryHref = (href: string) =>
   href.startsWith('?path=/story/') && href.includes(`${REVIEW_COLLECTION_QUERY_PARAM}=`);
@@ -28,9 +18,7 @@ const isReviewSummaryHref = (href: string) => href === buildReviewChangesSummary
  * transitions. Real hrefs are preserved for middle-click and open-in-new-tab.
  */
 export const useReviewNavigationInterceptor = () => {
-  const navigate = useNavigate();
-  const api = useStorybookApi();
-  const filtersRef = useReviewFiltersRef();
+  const { openSummary, openEntry, leaveReview } = useReviewContext();
 
   useEffect(() => {
     const onClick = (event: MouseEvent) => {
@@ -53,7 +41,7 @@ export const useReviewNavigationInterceptor = () => {
 
       if (anchor?.hasAttribute(REVIEW_SUMMARY_BACK_ATTR)) {
         event.preventDefault();
-        void navigateOutOfReview(api, navigate, sessionStore.read(PRE_REVIEW_RETURN_KEY));
+        leaveReview();
         return;
       }
 
@@ -63,7 +51,7 @@ export const useReviewNavigationInterceptor = () => {
       event.preventDefault();
 
       if (isReviewSummaryHref(href)) {
-        navigateToReviewSummary(api, navigate, filtersRef.current);
+        openSummary();
         return;
       }
 
@@ -71,9 +59,9 @@ export const useReviewNavigationInterceptor = () => {
       if (!entry) {
         return;
       }
-      navigateToReviewEntry(api, navigate, entry, filtersRef.current);
+      openEntry(entry);
     };
     document.addEventListener('click', onClick);
     return () => document.removeEventListener('click', onClick);
-  }, [api, navigate, filtersRef]);
+  }, [openSummary, openEntry, leaveReview]);
 };

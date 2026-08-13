@@ -347,6 +347,12 @@ export const init: Task['run'] = async (
     case '@storybook/angular-vite':
       await prepareAngularSandbox(cwd, template.name);
       break;
+    case '@storybook/nextjs':
+    case '@storybook/nextjs-vite':
+      if (!dryRun) {
+        await prepareNextjsSandbox(cwd);
+      }
+      break;
     default:
   }
 
@@ -1047,6 +1053,64 @@ async function prepareReactNativeWebSandbox(cwd: string) {
   if (!(await pathExists(join(cwd, 'src')))) {
     await mkdir(join(cwd, 'src'));
   }
+}
+
+// Env fixtures for nextjs template EnvironmentVariables stories.
+async function prepareNextjsSandbox(cwd: string) {
+  const envPath = join(cwd, '.env');
+  let envSource = '';
+  try {
+    envSource = await readFile(envPath, 'utf8');
+  } catch (e: any) {
+    if (e?.code !== 'ENOENT') {
+      throw e;
+    }
+  }
+
+  const upsertEnv = (source: string, key: string, value: string) => {
+    const line = `${key}=${value}`;
+    const pattern = new RegExp(`^${key}=.*$`, 'm');
+    if (pattern.test(source)) {
+      return source.replace(pattern, line);
+    }
+    return source.length === 0 || source.endsWith('\n')
+      ? `${source}${line}\n`
+      : `${source}\n${line}\n`;
+  };
+
+  envSource = upsertEnv(envSource, 'NEXT_PUBLIC_EXAMPLE1', 'example1');
+  envSource = upsertEnv(envSource, 'EXAMPLE2', 'example2');
+  await writeFile(envPath, envSource);
+
+  const relativeConfigPath = await findFirstPath(
+    ['next.config.ts', 'next.config.mjs', 'next.config.js'],
+    { cwd }
+  );
+  if (!relativeConfigPath) {
+    return;
+  }
+
+  const configPath = join(cwd, relativeConfigPath);
+  const source = await readFile(configPath, 'utf8');
+  if (source.includes('nextConfigEnv')) {
+    return;
+  }
+
+  if (/\benv\s*:/.test(source)) {
+    return;
+  }
+
+  if (!/nextConfig\s*(?::\s*NextConfig\s*)?=\s*\{/.test(source)) {
+    return;
+  }
+
+  await writeFile(
+    configPath,
+    source.replace(
+      /(nextConfig\s*(?::\s*NextConfig\s*)?=\s*\{)/,
+      `$1\n  env: { nextConfigEnv: 'next-config-env' },`
+    )
+  );
 }
 
 async function getConfigFile(names: string[], cwd: string) {

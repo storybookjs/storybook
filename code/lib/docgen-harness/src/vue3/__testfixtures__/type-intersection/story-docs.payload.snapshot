@@ -1,0 +1,21 @@
+{
+  "id": "type-intersection",
+  "import": "import IntersectionProps from './IntersectionProps.vue';",
+  "name": "IntersectionProps",
+  "path": "__PATH__",
+  "stories": {
+    "forms-type-intersection--props-as-written": {
+      "description": undefined,
+      "id": "forms-type-intersection--props-as-written",
+      "name": "Props As Written",
+      "snippet": "<script lang="ts" setup>
+const mixed = { label: 'Intersected', count: 2, extra: true };
+</script>
+
+<template>
+  <IntersectionProps :mixed="mixed" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

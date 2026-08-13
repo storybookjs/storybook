@@ -57,6 +57,31 @@ const RE_DTS_IMPORTER = /\.d\.[cm]?ts(?:\?|$)/;
  * both `@types/*` fallback and `typesVersions`. Everything else falls through
  * to the plugin's fast Rust resolver.
  */
+const TEXT_ASSET_STUB_ID = '\0text-asset-stub.d.ts';
+
+/**
+ * The JS bundler inlines `.md`/`.html` imports as strings (see the esbuild
+ * `loader` option in generate-bundle), so in the type surface such imports
+ * collapse to `string`.
+ */
+function createTextAssetStubPlugin(): Plugin {
+  return {
+    name: 'text-asset-stub',
+    resolveId(source) {
+      if (source.endsWith('.md') || source.endsWith('.html')) {
+        return TEXT_ASSET_STUB_ID;
+      }
+      return null;
+    },
+    load(id) {
+      if (id === TEXT_ASSET_STUB_ID) {
+        return 'declare const content: string;\nexport default content;\n';
+      }
+      return null;
+    },
+  };
+}
+
 function createTypesFallbackResolverPlugin(isExternal: (id: string) => boolean): Plugin {
   const cache = new Map<string, string | null>();
   const compilerOptions: ts.CompilerOptions = {
@@ -241,10 +266,10 @@ export async function generateTypesFiles(
 ) {
   const DIR_REL = relative(DIR_CODE, cwd);
 
-  const dtsEntries = Object.values(data.entries)
+  const dtsBuildEntries = Object.values(data.entries)
     .flat()
-    .filter((entry) => entry.dts !== false)
-    .map((e) => e.entryPoint);
+    .filter((entry) => entry.dts !== false);
+  const dtsEntries = dtsBuildEntries.map((e) => e.entryPoint);
 
   if (dtsEntries.length === 0) {
     return;
@@ -260,13 +285,24 @@ export async function generateTypesFiles(
         id.includes(`${sep}node_modules${sep}${dep}${sep}`)
     );
 
+  // ./src/client-logger/index.ts -> client-logger/index
+  const entryName = (entryPoint: string) =>
+    entryPoint.replace(/^\.\/src\//, '').replace(/\.tsx?$/, '');
+
   // Build entry map: { 'client-logger/index': '/absolute/path/src/client-logger/index.ts', ... }
   const entryMap: Record<string, string> = {};
   for (const entry of dtsEntries) {
-    // ./src/client-logger/index.ts -> client-logger/index
-    const name = entry.replace(/^\.\/src\//, '').replace(/\.tsx?$/, '');
-    entryMap[name] = join(cwd, entry);
+    entryMap[entryName(entry)] = join(cwd, entry);
   }
+
+  // Portable entries leave the shared pass: bundled alone, everything outside the entry's own
+  // external allowlist inlines into one flat file instead of importing shared type chunks (see
+  // BuildEntry.portable).
+  const portableByName = new Map(
+    dtsBuildEntries
+      .filter((entry) => entry.portable)
+      .map((entry) => [entryName(entry.entryPoint), entry.portable!])
+  );
 
   // The dts plugin and tsgo derive rootDir from path.dirname(tsconfig).
   // When rootDir is the package dir, declarations for cross-package imports
@@ -279,6 +315,9 @@ export async function generateTypesFiles(
   const useTsgo = options?.tsgo ?? false;
   const resolver = options?.resolver ?? 'hybrid';
 
+  const include = [`${relative(DIR_ROOT, cwd)}/src/**/*`];
+  const exclude = DTS_EXCLUDES;
+
   // tsgo removed support for `baseUrl`, and ts.getParsedCommandLineOfConfigFile
   // needs concrete options anyway: resolve the tsconfig chain and write a flat
   // config.
@@ -288,8 +327,8 @@ export async function generateTypesFiles(
     wrapperTsconfig,
     JSON.stringify({
       compilerOptions,
-      include: [`${relative(DIR_ROOT, cwd)}/src/**/*`],
-      exclude: DTS_EXCLUDES,
+      include,
+      exclude,
     })
   );
 
@@ -307,8 +346,8 @@ export async function generateTypesFiles(
         emitTsconfig,
         JSON.stringify({
           compilerOptions: { ...compilerOptions, ...dtsEmitCompilerOptions(emitDir) },
-          include: [`${relative(DIR_ROOT, cwd)}/src/**/*`],
-          exclude: DTS_EXCLUDES,
+          include,
+          exclude,
         })
       );
       emitPackageDeclarationsNative(emitTsconfig, wrapperTsconfig, emitDir);
@@ -323,37 +362,72 @@ export async function generateTypesFiles(
       ])
     );
 
-    const out = await rolldown({
-      input,
-      external: externalFn,
-      plugins: [
-        ...(resolver === 'hybrid' ? [createTypesFallbackResolverPlugin(externalFn)] : []),
-        dts({
-          cwd,
-          tsconfig: wrapperTsconfig,
-          dtsInput: true,
-          emitDtsOnly: true,
-          resolver: resolver === 'tsc' ? 'tsc' : 'oxc',
-        }),
-      ],
-      logLevel: 'warn',
-    });
+    const sharedInput = Object.fromEntries(
+      Object.entries(input).filter(([name]) => !portableByName.has(name))
+    );
+    const portableInputs = Object.entries(input)
+      .filter(([name]) => portableByName.has(name))
+      .map(([name, emitted]) => ({
+        input: { [name]: emitted },
+        allowedExternal: portableByName.get(name)!.external,
+      }));
 
-    const { output } = await out.write({
-      dir: join(cwd, 'dist'),
-      format: 'es',
-      // Name shared chunks purely by content hash: the default `[name]-[hash]`
-      // inherits a base name from whichever module rolldown happens to pick,
-      // which varies across runs and would make the output non-deterministic.
-      chunkFileNames: 'chunk-[hash].js',
-    });
+    const bundleDts = async (
+      bundleInput: Record<string, string>,
+      isExternal: (id: string) => boolean
+    ) => {
+      const out = await rolldown({
+        input: bundleInput,
+        external: isExternal,
+        plugins: [
+          createTextAssetStubPlugin(),
+          ...(resolver === 'hybrid' ? [createTypesFallbackResolverPlugin(isExternal)] : []),
+          dts({
+            cwd,
+            tsconfig: wrapperTsconfig,
+            dtsInput: true,
+            emitDtsOnly: true,
+            resolver: resolver === 'tsc' ? 'tsc' : 'oxc',
+          }),
+        ],
+        logLevel: 'warn',
+      });
+
+      const { output } = await out.write({
+        dir: join(cwd, 'dist'),
+        format: 'es',
+        // Name shared chunks purely by content hash: the default `[name]-[hash]`
+        // inherits a base name from whichever module rolldown happens to pick,
+        // which varies across runs and would make the output non-deterministic.
+        chunkFileNames: 'chunk-[hash].js',
+      });
+      return output;
+    };
+
+    // A portable pass bundles with the package-wide externals plus the entry's allowlist: an
+    // external that nothing in the kept types references is tree-shaken from the output, so the
+    // flat file ends up importing only what its closure genuinely uses — which the entry's
+    // producer-side guard then asserts is exactly the allowlist.
+    const portableExternalFn = (allowed: string[]) => (id: string) =>
+      externalFn(id) || allowed.some((dep) => id === dep || id.startsWith(`${dep}/`));
+
+    const outputs = [
+      ...(Object.keys(sharedInput).length > 0 ? [await bundleDts(sharedInput, externalFn)] : []),
+      // One isolated pass per portable entry, so nothing is shared between it and the rest.
+      ...(await Promise.all(
+        portableInputs.map(({ input: portableInput, allowedExternal }) =>
+          bundleDts(portableInput, portableExternalFn(allowedExternal))
+        )
+      )),
+    ];
 
     // Everything meaningful in this build is a .d.ts file; rolldown still
     // emits its runtime helper chunk as plain JS, which nothing references.
     // Only touch our own chunk namespace: the JS bundle writes real entry
     // files into the same dist directory in parallel.
     await Promise.all(
-      output
+      outputs
+        .flat()
         .filter((chunk) => /^chunk-[^/]+\.js$/.test(chunk.fileName))
         .map((chunk) => rm(join(cwd, 'dist', chunk.fileName), { force: true }))
     );

@@ -1,0 +1,107 @@
+{
+  "argTypes": {
+    "backgroundColor": {
+      "description": "What background color to use",
+      "name": "backgroundColor",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "required": false,
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "classes": {
+      "name": "classes",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "string[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "label": {
+      "description": "Button contents",
+      "name": "label",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": "Button"
+        },
+        "type": {
+          "required": true,
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "onClick": {
+      "action": "onClick",
+      "description": "Optional click handler",
+      "name": "onClick",
+      "table": {
+        "category": "outputs",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "EventEmitter"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "primary": {
+      "description": "Is this the principal call to action on the page?",
+      "name": "primary",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": false
+        },
+        "type": {
+          "required": true,
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean"
+      }
+    },
+    "size": {
+      "description": "How large should the button be?",
+      "name": "size",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": "medium"
+        },
+        "type": {
+          "required": true,
+          "summary": "\"small\" | \"medium\" | \"large\""
+        }
+      },
+      "type": {
+        "name": "enum",
+        "value": ["small", "medium", "large"]
+      }
+    }
+  },
+  "id": "example-button",
+  "jsDocTags": {},
+  "name": "ButtonComponent",
+  "path": "./src/stories/button.stories.ts"
+}

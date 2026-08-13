@@ -1,0 +1,17 @@
+{
+  "id": "define-expose",
+  "import": "import DefineExpose from './DefineExpose.vue';",
+  "name": "DefineExpose",
+  "path": "__PATH__",
+  "stories": {
+    "forms-define-expose--props-as-written": {
+      "description": undefined,
+      "id": "forms-define-expose--props-as-written",
+      "name": "Props As Written",
+      "snippet": "<template>
+  <DefineExpose label="Increment" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

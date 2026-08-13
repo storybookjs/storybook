@@ -795,6 +795,13 @@ export const baseTemplates = {
       // Also, Angular 22 needs TypeScript 6 or more recent.
       extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
       useCsfFactory: true,
+      // `@storybook/angular-vite` turns the docgen server on by default, so guarding the browser
+      // docgen path is now an explicit opt-out rather than the absence of a flag.
+      mainConfig: {
+        features: {
+          experimentalDocgenServer: false,
+        },
+      },
     },
     extraCiSteps: {
       ensureMinNodeVersion: true,

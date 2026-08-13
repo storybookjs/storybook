@@ -635,6 +635,10 @@ export interface StorybookFeatures {
    * generates per-component docgen JSON snapshots during static builds. Renderer and addon
    * providers contribute through the `experimental_docgenProvider` preset.
    *
+   * `@storybook/angular-vite` is the one framework that defaults this to `true`: it is experimental
+   * itself and ships server-side extraction as its only docgen path. Set it to `false` there to go
+   * back to Compodoc.
+   *
    * @default false
    * @experimental This feature is in early development and may change significantly in future releases.
    */

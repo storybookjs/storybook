@@ -6,13 +6,13 @@ import {
   getAutomockCode,
   getRealPath,
 } from 'storybook/internal/mocking-utils';
-import type { PresetProperty } from 'storybook/internal/types';
+import type { PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
 
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { basename, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { resolveCompodocConfig } from './compodoc-config.ts';
+import { DOCUMENTATION_JSON, resolveCompodocConfig } from './compodoc-config.ts';
 import { ensureCompodocDocumentation } from './compodoc/ensure-documentation.ts';
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 import type { UserConfig, Plugin } from 'vite';
@@ -20,6 +20,14 @@ import type { UserConfig, Plugin } from 'vite';
 export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
 
 export const addons: PresetProperty<'addons'> = [];
+
+// `angular-vite` is itself experimental, so it ships one docgen path rather than two: server-side
+// extraction is the default here, while the stable webpack `@storybook/angular` keeps Compodoc.
+// A user's `main.ts` merges over this, so `features: { experimentalDocgenServer: false }` opts out.
+export const features: PresetProperty<'features'> = async (existing) => ({
+  ...existing,
+  experimentalDocgenServer: true,
+});
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   entries = [],
@@ -96,11 +104,17 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   // @ts-expect-error options is possibly undefined here, but presets.apply is guarded at runtime
   const framework = await options.presets.apply('framework');
 
-  // `storybook init` writes a static `import docJson from '../documentation.json'` into the Angular
-  // preview, so the file has to exist before Vite resolves it, in every process that builds a
-  // preview and whatever the docgen feature flag says.
+  // @ts-expect-error same as `framework` above: `options` is optional in the signature only
+  const resolvedFeatures: StorybookConfigRaw['features'] = await options.presets.apply(
+    'features',
+    {}
+  );
+  const docgenServer = !!resolvedFeatures?.experimentalDocgenServer;
+
+  // With the docgen server on, ACM extracts in-process and nothing reads `documentation.json`, so
+  // the whole-project scan (1.0 s to 35.6 s on real repositories) buys nothing.
   const compodocConfig = await resolveCompodocConfig(options, { viteRoot: config?.root });
-  if (compodocConfig.enabled) {
+  if (compodocConfig.enabled && !docgenServer) {
     await ensureCompodocDocumentation({
       compodocArgs: compodocConfig.compodocArgs,
       tsconfig: compodocConfig.tsconfig,
@@ -190,6 +204,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
       angularViteRedirectReapplyPlugin(options),
       angularOptionsPlugin(options, { normalizePath, zoneless }),
       storybookOxcPlugin(),
+      ...(docgenServer ? [compodocJsonStubPlugin()] : []),
     ],
     define: {
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
@@ -198,6 +213,29 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     },
   });
 };
+
+const COMPODOC_JSON_STUB_ID = '\0storybook-angular-vite/empty-compodoc-json';
+
+// `storybook init` writes a static `import docJson from '../documentation.json'` into the Angular
+// preview, and that file is normally gitignored Compodoc output. With the docgen server on nothing
+// generates it and nothing reads it, so resolve it to an empty object rather than failing the build
+// of a project that followed the documented setup.
+export function compodocJsonStubPlugin(): Plugin {
+  return {
+    name: 'storybook-angular-vite-compodoc-json-stub',
+    enforce: 'pre',
+    async resolveId(source, importer, resolveOptions) {
+      if (basename(source) !== DOCUMENTATION_JSON) {
+        return null;
+      }
+      const resolved = await this.resolve(source, importer, { ...resolveOptions, skipSelf: true });
+      return resolved ? null : COMPODOC_JSON_STUB_ID;
+    },
+    load(id) {
+      return id === COMPODOC_JSON_STUB_ID ? 'export default {};' : null;
+    },
+  };
+}
 
 export function angularOptionsPlugin(
   options: StandaloneOptions,

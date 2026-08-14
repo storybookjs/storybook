@@ -90,7 +90,7 @@ const ref2 = {};
     const snippet = render([slot('default', `'<script>{{ evil }}</script>'`)]);
 
     expect(snippet).toContain('<C>\n    &lt;script&gt;&#123;&#123; evil }}&lt;/script&gt;\n  </C>');
-    expect(snippet).not.toContain('<script setup>');
+    expect(snippet).not.toContain('<script lang="ts" setup>');
   });
 
   it('escapes an inlined slot string so it stays text', () => {

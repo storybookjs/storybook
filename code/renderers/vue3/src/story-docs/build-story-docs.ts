@@ -39,6 +39,7 @@ import {
   type ClassifyArgsResult,
   type VueDocgenArgInfo,
 } from './classify-args.ts';
+import { importStatementForBinding } from './render-primitives.ts';
 import { renderSfcSnippet } from './render-sfc.ts';
 import { transformH } from './transform-h.ts';
 import {
@@ -137,8 +138,14 @@ export async function buildStoryDocsPayload(
     docgenPayload && !docgenPayload.error ? vueDocgenArgInfo(docgenPayload) : undefined;
   const snippet = componentName && docgenArgInfo ? { componentName, docgenArgInfo } : undefined;
   const extracted = extractStories(csf, { snippet, importBindings, metaPath });
+  // meta statement already binds this name (an `@import` override may redirect it)
+  // drop the snippet-derived duplicate.
+  const componentBindingImport = componentName
+    ? importStatementForBinding(componentName, importBindings.get(componentName))
+    : undefined;
+  const snippetImports = extracted.imports.filter((line) => line !== componentBindingImport);
   const importCode = Array.from(
-    new Set([importStatement, ...extracted.imports].filter((line): line is string => Boolean(line)))
+    new Set([importStatement, ...snippetImports].filter((line): line is string => Boolean(line)))
   ).join('\n');
 
   return {

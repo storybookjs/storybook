@@ -17,6 +17,8 @@ import { renderSlotArgContent } from './transform-h.ts';
 export interface RenderSfcInput {
   /** Component identifier from CSF meta.component. */
   componentName: string;
+  /** Import statement for the rendered component tag. */
+  componentImportStatement: string;
   /** Classified args to render into the SFC snippet. */
   args: ClassifiedArg[];
   /** Import bindings from the CSF module, used to import components a slot renders. */
@@ -26,13 +28,12 @@ export interface RenderSfcInput {
 export interface RenderSfcResult {
   /** Vue SFC snippet for the docs payload. */
   snippet: string;
-  /** Import statements for components the snippet references. */
-  imports: string[];
 }
 
 /** Render classified CSF args into the same SFC block shape as Vue's runtime source decorator. */
 export function renderSfcSnippet(input: RenderSfcInput): RenderSfcResult | undefined {
   const ctx = createRenderContext();
+  ctx.componentImports.add(input.componentImportStatement);
   const partitioned = partitionArgsByRole(input.args);
   const props = partitioned.props.map((arg) => formatRenderedProp(renderPropLikeArg(arg, ctx)));
   const events = partitioned.events.map((arg) => formatRenderedProp(renderEventArg(arg, ctx)));
@@ -56,7 +57,6 @@ export function renderSfcSnippet(input: RenderSfcInput): RenderSfcResult | undef
 
   return {
     snippet: renderPreparedSfcSnippet({ templateCode, ctx }),
-    imports: Array.from(ctx.componentImports),
   };
 }
 

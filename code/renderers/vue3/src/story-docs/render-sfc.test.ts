@@ -14,12 +14,20 @@ describe('renderSfcSnippet', () => {
     ['false', ':label="false"'],
     ['null', ':label="null"'],
   ])('%s -> %s', (input, output) => {
-    expect(render([prop('label', input)])).toBe(`<template>\n  <C ${output} />\n</template>`);
+    expect(render([prop('label', input)])).toBe(`<script lang="ts" setup>
+import C from './C.vue';
+</script>
+
+<template>
+  <C ${output} />
+</template>`);
   });
 
   it('hoists a value that needs script scope', () => {
     expect(render([prop('options', `{\n    tone: "neutral"\n}`, 'hoist')]))
       .toBe(`<script lang="ts" setup>
+import C from './C.vue';
+
 const options = {
     tone: "neutral"
 };
@@ -48,6 +56,7 @@ const options = {
 
     expect(snippet).toBe(`<script lang="ts" setup>
 import { ref } from "vue";
+import MyComponent from './MyComponent.vue';
 
 const ariaLabel = {};
 
@@ -68,7 +77,11 @@ const ref2 = {};
   it('renders slots as children and named slots as templates', () => {
     const snippet = render([slot('header', `'Title'`), slot('default', `'Body'`)]);
 
-    expect(snippet).toBe(`<template>
+    expect(snippet).toBe(`<script lang="ts" setup>
+import C from './C.vue';
+</script>
+
+<template>
   <C>
     Body
     <template #header>
@@ -90,7 +103,7 @@ const ref2 = {};
     const snippet = render([slot('default', `'<script>{{ evil }}</script>'`)]);
 
     expect(snippet).toContain('<C>\n    &lt;script&gt;&#123;&#123; evil }}&lt;/script&gt;\n  </C>');
-    expect(snippet).not.toContain('<script lang="ts" setup>');
+    expect(snippet).toContain("import C from './C.vue';");
   });
 
   it('escapes an inlined slot string so it stays text', () => {
@@ -110,6 +123,8 @@ const ref2 = {};
     const snippet = render([event('onSubmit', 'submit', '() => null')]);
 
     expect(snippet).toBe(`<script lang="ts" setup>
+import C from './C.vue';
+
 const onSubmit = () => null;
 </script>
 
@@ -126,10 +141,12 @@ const onSubmit = () => null;
 });
 
 function render(args: ClassifiedArg[], componentName = 'C'): string {
-  return renderSfcSnippet({ componentName, args, importBindings: new Map() })!.snippet.replaceAll(
-    '\r\n',
-    '\n'
-  );
+  return renderSfcSnippet({
+    args,
+    componentImportStatement: `import ${componentName} from './${componentName}.vue';`,
+    componentName,
+    importBindings: new Map(),
+  })!.snippet.replaceAll('\r\n', '\n');
 }
 
 function prop(name: string, code: string, kind: 'hoist' | 'inline' = 'inline'): ClassifiedArg {

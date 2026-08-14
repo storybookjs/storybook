@@ -1,6 +1,5 @@
 {
   "id": "define-props-runtime-object",
-  "import": "import RuntimeObjectProps from './RuntimeObjectProps.vue';",
   "name": "RuntimeObjectProps",
   "path": "__PATH__",
   "stories": {
@@ -8,7 +7,11 @@
       "description": undefined,
       "id": "forms-define-props-runtime-object--props-as-written",
       "name": "Props As Written",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import RuntimeObjectProps from './RuntimeObjectProps.vue';
+</script>
+
+<template>
   <RuntimeObjectProps :count="3" label="Total" />
 </template>",
       "summary": undefined,

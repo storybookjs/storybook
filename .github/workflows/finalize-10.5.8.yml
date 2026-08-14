@@ -1,5 +1,6 @@
 # One-off: finish DX + Sentry for 10.5.8 after publish was skipped.
 # Remove this file after the run succeeds.
+# Trigger: push without [skip ci] so this workflow is not ignored.
 name: Finalize 10.5.8 bookkeeping
 run-name: Finalize 10.5.8 bookkeeping, triggered by ${{ github.triggering_actor }}
 

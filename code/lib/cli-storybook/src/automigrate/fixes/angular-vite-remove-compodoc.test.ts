@@ -6,6 +6,8 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 import * as fs from 'node:fs';
 import * as fsPromises from 'node:fs/promises';
 
+// eslint-disable-next-line depend/ban-dependencies
+import { globby } from 'globby';
 import { fs as memfs, vol } from 'memfs';
 import { dedent } from 'ts-dedent';
 
@@ -18,13 +20,7 @@ import {
 vi.mock('node:fs', { spy: true });
 vi.mock('node:fs/promises', { spy: true });
 
-// globby walks the real disk, which memfs has replaced. Resolve `project.json` files out of the
-// virtual volume instead, so discovery is still what decides which files the fix sees.
-vi.mock('globby', () => ({
-  globby: vi.fn(async () =>
-    Object.keys(vol.toJSON()).filter((path) => path.endsWith('/project.json'))
-  ),
-}));
+vi.mock('globby', { spy: true });
 
 const MAIN = '/project/.storybook/main.ts';
 const PREVIEW = '/project/.storybook/preview.ts';
@@ -87,6 +83,11 @@ beforeEach(() => {
   vi.mocked(fs.writeFileSync).mockImplementation(memfs.writeFileSync as never);
   vi.mocked(fsPromises.readFile).mockImplementation(memfs.promises.readFile as never);
   vi.mocked(fsPromises.writeFile).mockImplementation(memfs.promises.writeFile as never);
+  // globby walks the real disk, which memfs has replaced. Resolve `project.json` files out of the
+  // virtual volume instead, so discovery is still what decides which files the fix sees.
+  vi.mocked(globby).mockImplementation(
+    async () => Object.keys(vol.toJSON()).filter((path) => path.endsWith('/project.json')) as never
+  );
 });
 
 afterEach(() => {

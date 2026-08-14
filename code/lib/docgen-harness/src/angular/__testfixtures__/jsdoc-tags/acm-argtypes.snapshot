@@ -28,7 +28,7 @@
         "deprecated": "Use `label` on the parent panel instead.",
       },
       "type": {
-        "required": true,
+        "required": false,
         "summary": "string",
       },
     },

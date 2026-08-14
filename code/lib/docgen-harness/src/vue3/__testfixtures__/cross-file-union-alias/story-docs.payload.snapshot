@@ -8,6 +8,9 @@
       "description": undefined,
       "id": "forms-cross-file-union-alias--props-as-written",
       "name": "Props As Written",
+      "snippet": "<template>
+  <CrossFileUnionAlias size="small" variant="danger" />
+</template>",
       "summary": undefined,
     },
   },

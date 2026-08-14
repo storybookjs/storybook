@@ -8,6 +8,9 @@
       "description": undefined,
       "id": "forms-define-expose--props-as-written",
       "name": "Props As Written",
+      "snippet": "<template>
+  <DefineExpose label="Increment" />
+</template>",
       "summary": undefined,
     },
   },

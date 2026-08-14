@@ -807,6 +807,41 @@ export const baseTemplates = {
     skipTasks: ['bench'],
     initOptions: { builder: SupportedBuilder.VITE },
   },
+  'angular-vite/docgen-server-ts': {
+    name: 'Angular CLI Server Docgen Latest (Vite | TypeScript)',
+    // Identical to `angular-vite/default-ts` apart from the two feature flags below. Kept as its own
+    // template so the stable Angular sandbox keeps guarding today's browser docgen while the server
+    // path is proven separately, rather than both riding on one configuration.
+    script:
+      'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    modifications: {
+      extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
+      useCsfFactory: true,
+      // These two flags are what brings a template into docgen baseline coverage; see
+      // `docgenServerTemplates`.
+      mainConfig: {
+        features: {
+          experimentalDocgenServer: true,
+          componentsManifest: true,
+        },
+      },
+    },
+    extraCiSteps: {
+      ensureMinNodeVersion: true,
+    },
+    expected: {
+      framework: '@storybook/angular-vite',
+      renderer: '@storybook/angular-vite',
+      builder: '@storybook/builder-vite',
+    },
+    // This sandbox exists to guard the docgen baselines, and it differs from
+    // `angular-vite/default-ts` only by two feature flags. Rendering, visual output and story
+    // execution are already covered there on every run, so repeating them here would double the
+    // Angular cost for no extra signal. `test-runner` goes with `chromatic`: skipping only the
+    // latter swaps in a test-runner job rather than dropping one.
+    skipTasks: ['bench', 'chromatic', 'test-runner'],
+    initOptions: { builder: SupportedBuilder.VITE },
+  },
   'lit-vite/default-js': {
     name: 'Lit Latest (Vite | JavaScript)',
     script:
@@ -1198,6 +1233,10 @@ export const merged: TemplateKey[] = [
 export const daily: TemplateKey[] = [
   ...merged,
   'angular-vite/21-ts',
+  // TODO(11.0): remove this template. The standard sandboxes ship the new docgen approach by
+  // default from then on, so `angular-vite/default-ts` carries the baselines and this one is
+  // redundant.
+  'angular-vite/docgen-server-ts',
   // TODO: Add this back once we resolve the React 19 issues
   // 'cra/default-js',
   'react-vite/default-js',
@@ -1221,3 +1260,36 @@ export const daily: TemplateKey[] = [
 ];
 
 export const templatesByCadence = { normal, merged, daily };
+
+// Both are required: without `componentsManifest`, `experimentalDocgenServer` writes nothing to disk
+// for the recorded baselines to read.
+const DOCGEN_SERVER_FEATURES = ['experimentalDocgenServer', 'componentsManifest'] as const;
+
+// Templates whose `mainConfig` is a function of the generated `ConfigFile`, so its features cannot be
+// read without running the sandbox generator. Listed by name so a new function-form template throws
+// below instead of silently dropping out of docgen baseline coverage.
+const UNREADABLE_MAIN_CONFIG_TEMPLATES = new Set<string>(['cra/default-js']);
+
+const enablesDocgenServer = (key: string, template: Template): boolean => {
+  const { mainConfig } = template.modifications ?? {};
+  if (typeof mainConfig === 'function') {
+    if (!UNREADABLE_MAIN_CONFIG_TEMPLATES.has(key)) {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
+      throw new Error(
+        `Template "${key}" declares mainConfig as a function, whose features cannot be read here. ` +
+          `Move ${DOCGEN_SERVER_FEATURES.join(' and ')} into the object form to opt into docgen ` +
+          `baseline coverage, or add the key to UNREADABLE_MAIN_CONFIG_TEMPLATES to stay out of it.`
+      );
+    }
+    return false;
+  }
+  const features = mainConfig?.features;
+  return DOCGEN_SERVER_FEATURES.every((feature) => features?.[feature] === true);
+};
+
+// Derived from the flags rather than kept as a second list, so turning them on for a template is all
+// it takes to bring it into docgen baseline coverage.
+export const docgenServerTemplates = (): TemplateKey[] =>
+  (Object.entries(allTemplates) as [TemplateKey, Template][])
+    .filter(([key, template]) => enablesDocgenServer(key, template))
+    .map(([key]) => key);

@@ -8,6 +8,14 @@
       "description": undefined,
       "id": "forms-slots--primary",
       "name": "Primary",
+      "snippet": "<template>
+  <SlotsPanel :footer="42">
+    Body copy
+    <template #header>
+      Header copy
+    </template>
+  </SlotsPanel>
+</template>",
       "summary": undefined,
     },
   },

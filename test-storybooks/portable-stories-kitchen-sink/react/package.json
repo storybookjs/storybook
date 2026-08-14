@@ -9,7 +9,6 @@
     "dev": "vite",
     "jest": "node node_modules/jest/bin/jest.js",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "playwright-ct": "playwright test -c playwright-ct.config.ts",
     "playwright-e2e": "playwright test -c playwright-e2e.config.ts",
     "preview": "vite preview",
     "storybook": "NODE_OPTIONS=\"--preserve-symlinks --preserve-symlinks-main\" storybook dev -p 6006",
@@ -27,7 +26,6 @@
     "@storybook/builder-webpack5": "file:../../../code/builders/builder-webpack5",
     "@storybook/codemod": "file:../../../code/lib/codemod",
     "@storybook/core-webpack": "portal:../../../code/lib/core-webpack",
-    "@storybook/csf-plugin": "portal:../../../code/lib/csf-plugin",
     "@storybook/ember": "portal:../../../code/frameworks/ember",
     "@storybook/html": "file:../../../code/renderers/html",
     "@storybook/nextjs": "file:../../../code/frameworks/nextjs",
@@ -58,7 +56,6 @@
     "react-dom": "^18.0.0"
   },
   "devDependencies": {
-    "@playwright/experimental-ct-react": "1.58.2",
     "@playwright/test": "1.58.2",
     "@storybook/addon-a11y": "^10.0.0",
     "@storybook/addon-vitest": "^10.0.0",

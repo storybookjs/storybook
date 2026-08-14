@@ -90,6 +90,58 @@
       }
     },
     {
+      "files": ["core/src/cli/tools/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/cli/ai/**", "../ai/**"],
+                "message": "The `storybook ai` CLI is slated for removal, so it depends on `cli/tools`, never the other way around. Move what you need into `cli/tools/` instead."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["core/src/cli/skills/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/cli/ai/**", "../ai/**"],
+                "message": "The `storybook ai` CLI is slated for removal, so it depends on `cli/skills`, never the other way around. Move what you need into `cli/skills/` instead."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["core/src/cli/skills/content/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/cli/ai/**", "../ai/**"],
+                "message": "The `storybook ai` CLI is slated for removal, so it depends on `cli/skills`, never the other way around."
+              },
+              {
+                "group": ["**/core-server/**"],
+                "message": "`cli/skills/content` is the pure `storybook/internal/skills` entry; probing and anything server-side belongs in `cli/skills/` outside `content/`."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["**/*.compat.ts", "**/*.compat.tsx"],
       "rules": {
         "local-rules/no-uncategorized-errors": "off"

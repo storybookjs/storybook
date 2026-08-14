@@ -8,6 +8,9 @@
       "description": undefined,
       "id": "forms-prop-slot-name-collision--icon-prop-as-written",
       "name": "Icon Prop As Written",
+      "snippet": "<template>
+  <PropSlotNameCollision icon="pi pi-check" />
+</template>",
       "summary": undefined,
     },
   },

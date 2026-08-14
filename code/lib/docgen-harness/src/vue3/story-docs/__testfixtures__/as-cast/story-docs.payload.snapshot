@@ -8,6 +8,9 @@
       "description": "Cast story description.",
       "id": "forms-as-cast--primary",
       "name": "Primary",
+      "snippet": "<template>
+  <AsCastButton label="Cast" />
+</template>",
       "summary": undefined,
     },
   },

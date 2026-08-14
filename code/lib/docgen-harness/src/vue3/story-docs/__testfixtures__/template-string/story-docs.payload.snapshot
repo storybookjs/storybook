@@ -1,13 +1,26 @@
 {
   "id": "template-string",
-  "import": "import TemplateStringButton from './TemplateStringButton.vue';",
+  "import": "import TemplateStringButton from './TemplateStringButton.vue';
+import TemplateStringBadge from './TemplateStringBadge.vue';",
   "name": "TemplateStringButton",
   "path": "__PATH__",
   "stories": {
+    "forms-template-string--assigned-args": {
+      "description": undefined,
+      "id": "forms-template-string--assigned-args",
+      "name": "Assigned Args",
+      "snippet": "<template>
+  <TemplateStringButton label="Assigned template" />
+</template>",
+      "summary": undefined,
+    },
     "forms-template-string--primary": {
       "description": undefined,
       "id": "forms-template-string--primary",
       "name": "Primary",
+      "snippet": "<template>
+  <div class="wrap"><TemplateStringBadge text="New" /><TemplateStringButton label="Template" /></div>
+</template>",
       "summary": undefined,
     },
   },

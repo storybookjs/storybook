@@ -5,11 +5,7 @@ import type { ComponentManifest, Doc, Story } from './manifest-types.ts';
 
 /**
  * Adapts the `experimentalDocgenServer` open-service payloads into the manifest formatter's
- * {@link ComponentManifest}/{@link Doc} shapes. Verbatim port of `@storybook/mcp`'s
- * `packages/mcp/src/utils/adapt-core-manifest.ts` (which bridges the same formats for the addon's
- * in-process `resolveEntry` hook); the copies must not drift until Milestone 4 deletes the
- * original. Deviation: the source declares structural `Core*` stand-in types to avoid importing
- * Storybook core — here the real service payload types are used directly.
+ * {@link ComponentManifest}/{@link Doc} shapes.
  *
  * Only `argTypes` is dropped: prop types still come from `reactComponentMeta` and
  * the `react*` docgen-engine fields, which are passed through unchanged.

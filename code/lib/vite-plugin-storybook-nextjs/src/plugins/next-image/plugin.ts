@@ -142,10 +142,17 @@ export function vitePluginNextImage(
           return null;
         }
 
+        // Normalize Windows backslashes to forward slashes before embedding the
+        // path in the virtual module ID. The decoded path is later interpolated
+        // into a generated `import ... from "<path>"`, and Rollup mangles native
+        // backslashes (e.g. `git\voyages` -> `gitoyages`), breaking resolution.
+        // Forward slashes are accepted by both Rollup imports and fs on Windows.
+        const normalizedImagePath = imagePath.replace(/\\/g, '/');
+
         // Use null byte prefix to embed the image path in the virtual module ID
         // Use URL-safe base64 encoding to avoid issues with special characters like
         // square brackets that get decoded by Vite's decodeURI
-        return `${virtualImagePrefix}${encodeBase64Url(imagePath)}`;
+        return `${virtualImagePrefix}${encodeBase64Url(normalizedImagePath)}`;
       }
 
       if (id === 'next/image' && importer !== virtualNextImage) {

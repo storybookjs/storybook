@@ -16,10 +16,12 @@ vi.mock('node:module', () => ({
 
 vi.mock('node:fs', { spy: true });
 
-import { encodeBase64Url } from '../../utils/base64-url.ts';
+import { decodeBase64Url, encodeBase64Url } from '../../utils/base64-url.ts';
 import { vitePluginNextImage } from './plugin.ts';
 
-const virtualImageId = (imagePath: string) => `\0virtual:next-image:${encodeBase64Url(imagePath)}`;
+const virtualImagePrefix = '\0virtual:next-image:';
+const virtualImageId = (imagePath: string) => `${virtualImagePrefix}${encodeBase64Url(imagePath)}`;
+const decodeVirtualImageId = (id: string) => decodeBase64Url(id.slice(virtualImagePrefix.length));
 
 describe('vitePluginNextImage resolveId', () => {
   const nextConfigResolver = {
@@ -81,6 +83,26 @@ describe('vitePluginNextImage resolveId', () => {
       paths: [path.dirname(importer.split('?')[0])],
     });
     expect(result).toBe(virtualImageId(resolvedPath));
+  });
+
+  it('normalizes Windows backslashes in resolved image paths', async () => {
+    // On Windows, Vite's resolver returns native paths with backslashes. Those
+    // must be normalized before being embedded in the virtual id, otherwise the
+    // generated `import ... from "<path>"` keeps backslashes and Rollup mangles
+    // them (`git\voyages` -> `gitoyages`), breaking resolution. See #35872.
+    const plugin = vitePluginNextImage(nextConfigResolver);
+    const windowsPath = 'C:\\Users\\me\\git\\voyages\\src\\assets\\Foo.svg';
+    const resolve = vi.fn().mockResolvedValue({ id: windowsPath });
+
+    const result = await plugin.resolveId!.call(
+      createContext(resolve),
+      '@myorg/assets/Foo.svg',
+      'C:\\Users\\me\\git\\voyages\\src\\Component.tsx'
+    );
+
+    const decoded = decodeVirtualImageId(result as string);
+    expect(decoded).toBe('C:/Users/me/git/voyages/src/assets/Foo.svg');
+    expect(decoded).not.toContain('\\');
   });
 });
 

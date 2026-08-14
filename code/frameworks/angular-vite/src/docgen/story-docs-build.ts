@@ -264,17 +264,6 @@ const renderStorySnippet = (
 
 /**
  * Args the story's own markup binds by name, as host members holding the value the story gave them.
- *
- * Markup written by hand runs against the story's `props: args`, so `[label]="label"` reads an arg
- * rather than a member of the host the snippet builds. Declaring those args on the host restores
- * that scope without touching the markup, which keeps the example both runnable and byte-identical
- * to what the author wrote. Args an `argsToTemplate` expansion already inlined are skipped: their
- * values are in the markup, and only the attribute name is left to match on.
- *
- * The name has to occur in the markup for the arg to be declared, so an unrelated arg does not
- * become a dead member. A bare word match over-declares in the rare case where an arg is named
- * after an attribute the markup sets statically; that costs an unused member, where missing one
- * costs a snippet that does not compile.
  */
 const referencedArgFields = (
   markup: Extract<TemplateResult, { kind: 'literal' }>,

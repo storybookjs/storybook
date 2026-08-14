@@ -29,17 +29,13 @@ export function resolveStoryImport(fromFile: string, specifier: string): string 
 }
 
 export interface ParsedStoryFile {
-  source: string;
   csf: CsfFile;
 }
 
 export function parseStoryFile(storyFilePath: string, title: string): ParsedStoryFile | undefined {
   try {
-    // Recast parses a source stripped of carriage returns, so its node offsets only address a
-    // source without them. Snippets slice this text by those offsets, and a CRLF file would
-    // shift every slice by one character per preceding line.
-    const source = readFileSync(storyFilePath, 'utf8').replace(/\r\n/g, '\n');
-    return { source, csf: loadCsf(source, { makeTitle: () => title }).parse() };
+    const source = readFileSync(storyFilePath, 'utf8');
+    return { csf: loadCsf(source, { makeTitle: () => title }).parse() };
   } catch {
     return undefined;
   }

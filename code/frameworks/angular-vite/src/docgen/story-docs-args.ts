@@ -1,6 +1,6 @@
 // Resolves a story's args statically: named properties, spreads of other stories' args (in this
 // file or another), and the literal values the generated bindings inline.
-import { types as t } from 'storybook/internal/babel';
+import { recast, types as t } from 'storybook/internal/babel';
 import type { CsfFile } from 'storybook/internal/csf-tools';
 import { keyOf, unwrapExpression } from 'storybook/internal/csf-tools';
 
@@ -410,21 +410,16 @@ const EVAL_FAILED = Symbol('story-docs-eval-failed');
 // An arg no static evaluation could reduce to a value falls back to its source text. Every
 // expression is escaped for the attribute position it lands in: the double-quote delimiter and
 // text Angular's lexer would decode as a character reference survive the round-trip unchanged.
-export const evaluateArgExpression = (
-  node: t.Node,
-  source: string,
-  enums: SnippetEnum[]
-): string => {
+export const evaluateArgExpression = (node: t.Node, enums: SnippetEnum[]): string => {
   const unwrapped = unwrapExpression(node);
   const value = evaluateNode(unwrapped, enums);
   if (value !== EVAL_FAILED) {
     return escapeAttributeExpression(printExpressionValue(value, new Set()));
   }
-  const text =
-    unwrapped.start != null && unwrapped.end != null
-      ? source.slice(unwrapped.start, unwrapped.end)
-      : undefined;
-  return escapeAttributeExpression(text ?? 'undefined');
+  // Recast reprints an untouched node from the source it parsed, which is the only text whose
+  // offsets the node agrees with: recast rejoins the source with `os.EOL` before parsing it, so
+  // slicing the file text by `node.start` would read a shifted span on Windows.
+  return escapeAttributeExpression(recast.print(unwrapped, { lineTerminator: '\n' }).code);
 };
 
 // Angular expression strings support backslash escapes, so quoting stays lossless.

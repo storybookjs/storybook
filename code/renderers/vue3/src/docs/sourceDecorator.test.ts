@@ -3,8 +3,8 @@ import { afterEach, describe, expect, test, vi } from 'vitest';
 import { emitTransformCode, getService } from 'storybook/preview-api';
 import { h } from 'vue';
 
-import type { StoryContext } from '../public-types';
-import type { SourceCodeGeneratorContext } from './sourceDecorator';
+import type { StoryContext } from '../public-types.ts';
+import type { SourceCodeGeneratorContext } from './sourceDecorator.ts';
 import {
   generatePropsSourceCode,
   generateSlotSourceCode,
@@ -12,7 +12,7 @@ import {
   getFunctionParamNames,
   parseDocgenInfo,
   sourceDecorator,
-} from './sourceDecorator';
+} from './sourceDecorator.ts';
 
 vi.mock('storybook/preview-api', () => ({
   useEffect: (callback: () => void) => callback(),

@@ -35,9 +35,10 @@ interface ParsedRender {
 function renderStory(
   storySource: string,
   docgen: VueDocgenArgInfo = DEFAULT_DOCGEN,
-  importSource = "import MyButton from './MyButton.vue';"
+  importSource = "import MyButton from './MyButton.vue';",
+  metaRender?: string
 ): TransformHResult | undefined {
-  const parsed = parseRender(storySource, docgen, importSource);
+  const parsed = parseRender(storySource, docgen, importSource, metaRender);
   return parsed.expression
     ? transformH({
         args: parsed.args,
@@ -53,7 +54,8 @@ function renderStory(
 function parseRender(
   storySource: string,
   docgen: VueDocgenArgInfo = DEFAULT_DOCGEN,
-  importSource = "import MyButton from './MyButton.vue';"
+  importSource = "import MyButton from './MyButton.vue';",
+  metaRender?: string
 ): ParsedRender {
   const csf = loadCsf(
     `
@@ -65,7 +67,12 @@ const meta = {
   title: 'Example/MyButton',
   args: {
     active: true,
-  },
+  },${
+    metaRender
+      ? `
+  render: ${metaRender},`
+      : ''
+  }
 };
 
 export default meta;
@@ -89,14 +96,17 @@ ${storySource}
       ? storyArgsPath
       : undefined;
   const storyArgs = storyArgsObjectPath ? argsRecordFromObjectPath(storyArgsObjectPath) : {};
+  const metaPath = metaObjectPath(csf);
   const classified = classifyArgs(
-    mergeArgsRecords(metaArgsRecord(metaObjectPath(csf)?.node), storyArgs),
+    mergeArgsRecords(metaArgsRecord(metaPath?.node), storyArgs),
     docgen
   );
-  const renderResolution = resolveRenderFunction(
-    normalized.path,
-    csf._storyDeclarationPath.Primary
-  );
+  // Mirrors resolveEffectiveRender in build-story-docs: story render wins, meta is the fallback.
+  const storyRender = resolveRenderFunction(normalized.path, csf._storyDeclarationPath.Primary);
+  const renderResolution =
+    storyRender.kind !== 'missing'
+      ? storyRender
+      : resolveRenderFunction(metaPath, csf._storyDeclarationPath.Primary);
 
   if (renderResolution.kind !== 'resolved') {
     return {
@@ -146,6 +156,49 @@ export const Primary = {
     ).toMatchInlineSnapshot(`
       "<template>
         <MyButton active :count="2" label="Override" />
+      </template>"
+    `);
+  });
+
+  it('falls back to a render function defined on the meta', () => {
+    expect(
+      renderStory(
+        `
+export const Primary = {
+  args: {
+    label: 'Render',
+  },
+};
+`,
+        DEFAULT_DOCGEN,
+        "import MyButton from './MyButton.vue';",
+        `(args) => h(MyButton, args)`
+      )?.snippet
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <MyButton active label="Render" />
+      </template>"
+    `);
+  });
+
+  it('prefers the story render function over the meta render function', () => {
+    expect(
+      renderStory(
+        `
+export const Primary = {
+  args: {
+    label: 'Render',
+  },
+  render: (args) => h(MyButton, { ...args, label: 'Story' }),
+};
+`,
+        DEFAULT_DOCGEN,
+        "import MyButton from './MyButton.vue';",
+        `() => h('div', 'Meta')`
+      )?.snippet
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <MyButton active label="Story" />
       </template>"
     `);
   });

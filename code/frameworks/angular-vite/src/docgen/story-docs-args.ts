@@ -418,11 +418,10 @@ export const evaluateArgExpression = (node: t.Node, enums: SnippetEnum[]): strin
   );
 };
 
-// recast parses a normalised copy of the file, so a node's offsets do not address the file itself;
-// printing the node is what keeps the text free of the file's tabs and line endings. Cloning costs
-// that verbatim reprint, so it buys only the one thing a binding cannot hold: comments.
-const printArgSource = (node: t.Node): string =>
-  babelPrint(node.leadingComments?.length ? t.cloneNode(node, true) : node);
+// recast reprints a node it parsed straight from the file's own text, comments and indentation
+// included. A clone drops the bookkeeping that path relies on and is formatted from the AST
+// instead, which is what leaves a binding holding the expression and nothing else.
+const printArgSource = (node: t.Node): string => babelPrint(t.cloneNode(node, true));
 
 // Angular expression strings support backslash escapes, so quoting stays lossless.
 const quoteExpressionString = (value: string): string =>

@@ -1016,7 +1016,9 @@ describe('buildStoryDocsPayload', () => {
           `export default { title: 'Example/Button', component: ButtonComponent };`,
           `export const Default = {`,
           `${indent}args: {`,
-          `${indent}${indent}label: (value) => value.replace('a', 'b'),`,
+          `${indent}${indent}label: (value) => {`,
+          `${indent}${indent}${indent}return value.replace('a', 'b');`,
+          `${indent}${indent}},`,
           `${indent}},`,
           `};`,
         ].join(eol);
@@ -1025,14 +1027,18 @@ describe('buildStoryDocsPayload', () => {
       const crlf = await soleStory(storyFile('\r\n', '  '));
       const tabs = await soleStory(storyFile('\n', '\t'));
 
-      expect(lf.snippet).toContain(`[label]="(value) => value.replace('a', 'b')"`);
+      expect(lf.snippet).toContain(
+        `[label]="(value) => {\n      return value.replace('a', 'b');\n    }"`
+      );
       expect(crlf.snippet).toBe(lf.snippet);
       expect(tabs.snippet).toBe(lf.snippet);
     });
 
     it.each([
-      ['on its own line', `label:\n          // why\n          (value) => value.trim(),`],
-      ['inline', `label: /* why */ (value) => value.trim(),`],
+      ['above the arg', `label:\n          // why\n          (value) => value.trim(),`],
+      ['before the arg', `label: /* why */ (value) => value.trim(),`],
+      ['inside the arg', `label: (value) => /* why */ value.trim(),`],
+      ['inside the parameter list', `label: (/* why */ value) => value.trim(),`],
     ])('leaves a comment %s out of the binding', async (_name, property) => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';

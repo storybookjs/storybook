@@ -41,6 +41,19 @@
       "outputsClass": [],
       "propertiesClass": [
         {
+          "name": "#secret",
+          "coverageIgnore": false,
+          "defaultValue": "'hidden'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "string",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 13,
+          "rawdescription": "\n"
+        },
+        {
           "name": "currentPage",
           "coverageIgnore": false,
           "defaultValue": "1",
@@ -72,6 +85,19 @@
             }
           ],
           "modifierKind": [171]
+        },
+        {
+          "name": "loading",
+          "coverageIgnore": false,
+          "defaultValue": "signal(false)",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "unknown",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 15,
+          "rawdescription": "\n"
         },
         {
           "name": "panel",

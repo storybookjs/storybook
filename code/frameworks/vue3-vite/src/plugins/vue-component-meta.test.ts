@@ -27,7 +27,8 @@ function makeComponentMeta() {
 
 async function getTransformHandler() {
   const { vueComponentMeta } = await import('./vue-component-meta.ts');
-  const plugin = await vueComponentMeta();
+  const { experimental_vueDocgenEngine } = await import('@storybook/vue3/preset');
+  const plugin = await vueComponentMeta(await experimental_vueDocgenEngine());
 
   const handler =
     typeof plugin.transform === 'function'
@@ -213,6 +214,43 @@ describe('vue-component-meta plugin', () => {
       );
 
       expect(result?.code ?? '').not.toContain('__docgenInfo');
+    });
+  });
+
+  describe('ids carrying a query', () => {
+    it('should skip plugin-vue script sub-requests, whose id ends in ".ts" but is not a file', async () => {
+      const result = await transform(
+        `const _sfc_main = {};\nexport default _sfc_main;\n`,
+        '/project/src/components/Tab.vue?vue&type=script&setup=true&lang.ts'
+      );
+
+      expect(result).toBeUndefined();
+      expect(mockChecker.getExportNames).not.toHaveBeenCalled();
+    });
+
+    it('should skip plugin-vue script sub-requests ending in ".js"', async () => {
+      const result = await transform(
+        `const _sfc_main = {};\nexport default _sfc_main;\n`,
+        '/project/src/components/Tab.vue?vue&type=script&lang.js'
+      );
+
+      expect(result).toBeUndefined();
+      expect(mockChecker.getExportNames).not.toHaveBeenCalled();
+    });
+
+    it('should still process the bare .vue id that the sub-request derives from', async () => {
+      const src = [
+        `import _export_sfc from 'plugin-vue:export-helper';`,
+        `const _sfc_main = { name: 'Tab' };`,
+        `export default /*@__PURE__*/_export_sfc(_sfc_main, []);`,
+      ].join('\n');
+
+      mockChecker.getExportNames.mockReturnValue(['default']);
+
+      const result = await transform(src, '/project/src/components/Tab.vue');
+
+      expect(result!.code).toContain('_sfc_main.__docgenInfo');
+      expect(mockChecker.getExportNames).toHaveBeenCalledWith('/project/src/components/Tab.vue');
     });
   });
 });

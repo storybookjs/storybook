@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createRootRoute, createRoute } from '@tanstack/react-router';
 
+import { createFileRoute } from '../export-mocks/react-router.ts';
 import { createStoryRouter } from './decorator.tsx';
 
 // Regression coverage for mounting a story directly on a pathless layout
@@ -99,6 +100,20 @@ describe('createStoryRouter with a pathless layout that already has an index chi
   });
 });
 
+describe('createStoryRouter with a standalone index file route', () => {
+  it('mounts without colliding with the synthesized index child', async () => {
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(createFileRoute('/_app/')({}) as any),
+    });
+    await router.load();
+
+    const ids = router.state.matches.map((m: any) => m.routeId).join(',');
+    expect(ids).toContain('/_app');
+    expect(router.state.location.pathname).toBe('/');
+  });
+});
+
 // Overrides are keyed by the ORIGINAL route id; the cloned leaf's `id` getter
 // is init-backed and undefined at injection time, so the guard that respects
 // a user's component override must resolve the original id instead.
@@ -131,5 +146,74 @@ describe('createStoryRouter with routeOverrides', () => {
     await router.load();
 
     expect((router as any).routesById['/foo'].options.component).toBe(Marker);
+  });
+});
+
+describe('createStoryRouter leaf selection by path', () => {
+  it('selects the route matching an explicit path when only the routeTree is bound', async () => {
+    const root = createRootRoute();
+    const home = createRoute({ path: '/', getParentRoute: () => root });
+    const about = createRoute({ path: '/about', getParentRoute: () => root });
+    root.addChildren([home, about]);
+
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(root, { path: '/about' }),
+    });
+    await router.load();
+
+    expect(router.state.location.pathname).toBe('/about');
+    expect((router as any).routesById['/about'].options.component).toBeDefined();
+    expect((router as any).routesById['/'].options.component).toBeUndefined();
+  });
+
+  it('selects a param route by interpolating the provided params', async () => {
+    const root = createRootRoute();
+    const list = createRoute({ path: '/users', getParentRoute: () => root });
+    const detail = createRoute({ path: '/users/$userId', getParentRoute: () => root });
+    root.addChildren([list, detail]);
+
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(root, { path: '/users/42', params: { userId: '42' } }),
+    });
+    await router.load();
+
+    expect(router.state.location.pathname).toBe('/users/42');
+    expect((router as any).routesById['/users/$userId'].options.component).toBeDefined();
+    expect((router as any).routesById['/users'].options.component).toBeUndefined();
+  });
+
+  it('prefers the bound route when its mount path matches the explicit path', async () => {
+    const root = createRootRoute();
+    const post = createRoute({ path: '/posts/$postId', getParentRoute: () => root });
+    const postIndex = createRoute({ path: '/', getParentRoute: () => post });
+    post.addChildren([postIndex]);
+    root.addChildren([post]);
+
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(postIndex, { path: '/posts/$postId' }),
+    });
+    await router.load();
+
+    expect((router as any).routesById['/posts/$postId/'].options.component).toBeDefined();
+    expect((router as any).routesById['/posts/$postId'].options.component).toBeUndefined();
+  });
+
+  it('prefers an exact static route over a param route for the same concrete path', async () => {
+    const root = createRootRoute();
+    const me = createRoute({ path: '/users/me', getParentRoute: () => root });
+    const detail = createRoute({ path: '/users/$userId', getParentRoute: () => root });
+    root.addChildren([me, detail]);
+
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(root, { path: '/users/me', params: { userId: 'me' } }),
+    });
+    await router.load();
+
+    expect((router as any).routesById['/users/me'].options.component).toBeDefined();
+    expect((router as any).routesById['/users/$userId'].options.component).toBeUndefined();
   });
 });

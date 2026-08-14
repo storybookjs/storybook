@@ -1,0 +1,34 @@
+{
+  "label": {
+    "defaultValue": undefined,
+    "description": "@deprecated: Prefer `title`.<br>@since: 10.0<br><br>Visible label.",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+  "title": {
+    "defaultValue": undefined,
+    "description": "@default: "Untitled"<br><br>Preferred title text.",
+    "name": "title",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+}

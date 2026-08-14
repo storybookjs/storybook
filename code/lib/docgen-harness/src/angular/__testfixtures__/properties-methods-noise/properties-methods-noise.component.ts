@@ -1,5 +1,5 @@
 import type { ElementRef } from '@angular/core';
-import { Component, HostBinding, Input, ViewChild } from '@angular/core';
+import { Component, HostBinding, Input, ViewChild, signal } from '@angular/core';
 
 @Component({
   selector: 'sb-properties-methods-noise',
@@ -9,6 +9,10 @@ export class PropertiesMethodsNoiseComponent {
   @Input() title = '';
 
   currentPage = 1;
+
+  #secret = 'hidden';
+
+  readonly loading = signal(false);
 
   @ViewChild('panel') panel?: ElementRef<HTMLDivElement>;
 

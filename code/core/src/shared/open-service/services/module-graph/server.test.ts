@@ -5,12 +5,17 @@ import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 import { clearRegistry } from '../../server.ts';
 import {
   buildReverseIndex,
+  createDeferred,
   createMockAdapter,
   createStoryIndex,
   installDependencyGraphMocks,
   registerTestModuleGraphService,
 } from './module-graph.test-helpers.ts';
-import { registerModuleGraphService, resolveChangeDetectionAdapter } from './server.ts';
+import {
+  registerModuleGraphService,
+  resetChangeDetectionAdapterForTests,
+  resolveChangeDetectionAdapter,
+} from './server.ts';
 
 vi.mock('./engine/dependency-graph/resolver-factory.ts', { spy: true });
 vi.mock('./engine/dependency-graph/dependency-graph-builder.ts', { spy: true });
@@ -18,6 +23,7 @@ vi.mock('./engine/dependency-graph/incremental-patcher.ts', { spy: true });
 
 afterEach(() => {
   clearRegistry();
+  resetChangeDetectionAdapterForTests();
   vi.restoreAllMocks();
 });
 
@@ -499,7 +505,126 @@ describe('module-graph open service', () => {
       expect(runtime.queries.status.get(undefined)).toEqual({ value: 'booting' });
     });
 
-    // Must run last: it resolves the process-global adapter promise, which cannot be un-resolved.
+    it('starts the engine from getAdapter on the first status.loaded', async () => {
+      const reverseIndex = buildReverseIndex([
+        ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],
+      ]);
+      installDependencyGraphMocks(reverseIndex);
+      const { adapter } = createMockAdapter({ resolveConfig: { projectRoot: '/repo' } });
+      const getAdapter = vi.fn(async () => adapter);
+
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue(
+          createStoryIndex([
+            {
+              storyId: 'button--primary',
+              importPath: './src/Button.stories.tsx',
+              title: 'Button',
+            },
+          ])
+        ),
+        workingDir: '/repo',
+        getAdapter,
+      });
+
+      expect(getAdapter).not.toHaveBeenCalled();
+      expect(await runtime.queries.status.loaded(undefined)).toEqual({ value: 'ready' });
+      expect(getAdapter).toHaveBeenCalledTimes(1);
+      expect(runtime.queries.storiesForFiles.get({ files: ['/repo/src/Button.tsx'] })).toEqual([
+        [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
+      ]);
+    });
+
+    it('does not call getAdapter when the host already resolved the adapter', async () => {
+      const reverseIndex = buildReverseIndex([
+        ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],
+      ]);
+      installDependencyGraphMocks(reverseIndex);
+      const { adapter } = createMockAdapter({ resolveConfig: { projectRoot: '/repo' } });
+      const getAdapter = vi.fn(async () => adapter);
+
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue(
+          createStoryIndex([
+            {
+              storyId: 'button--primary',
+              importPath: './src/Button.stories.tsx',
+              title: 'Button',
+            },
+          ])
+        ),
+        workingDir: '/repo',
+        getAdapter,
+      });
+
+      resolveChangeDetectionAdapter(adapter);
+      await vi.waitFor(() => {
+        expect(runtime.queries.status.get(undefined)).toEqual({ value: 'ready' });
+      });
+      expect(getAdapter).not.toHaveBeenCalled();
+
+      await runtime.queries.status.loaded(undefined);
+      expect(getAdapter).not.toHaveBeenCalled();
+    });
+
+    it('calls getAdapter once when two settle waits overlap', async () => {
+      const reverseIndex = buildReverseIndex([
+        ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],
+      ]);
+      installDependencyGraphMocks(reverseIndex);
+      const { adapter } = createMockAdapter({ resolveConfig: { projectRoot: '/repo' } });
+      const adapterHandle = createDeferred<typeof adapter>();
+      const getAdapter = vi.fn(() => adapterHandle.promise);
+
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue(
+          createStoryIndex([
+            {
+              storyId: 'button--primary',
+              importPath: './src/Button.stories.tsx',
+              title: 'Button',
+            },
+          ])
+        ),
+        workingDir: '/repo',
+        getAdapter,
+      });
+
+      const first = runtime.commands._waitForSettledEngine(undefined);
+      const second = runtime.commands._waitForSettledEngine(undefined);
+      adapterHandle.resolve(adapter);
+      await Promise.all([first, second]);
+
+      expect(getAdapter).toHaveBeenCalledTimes(1);
+      expect(runtime.queries.status.get(undefined)).toEqual({ value: 'ready' });
+    });
+
+    it('settles the graph as unavailable when getAdapter rejects', async () => {
+      const getAdapter = vi.fn(async () => {
+        throw new Error('preview builder missing');
+      });
+
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getAdapter,
+      });
+
+      await expect(runtime.queries.status.loaded(undefined)).resolves.toEqual({
+        value: 'unavailable',
+        reason: 'builder does not support change detection',
+      });
+      await expect(runtime.queries.status.loaded(undefined)).resolves.toEqual({
+        value: 'unavailable',
+        reason: 'builder does not support change detection',
+      });
+      expect(getAdapter).toHaveBeenCalledTimes(1);
+    });
+
     it('builds the graph from the adapter and turns index invalidations into targeted updates', async () => {
       const reverseIndex = buildReverseIndex([
         ['/repo/src/Button.tsx', '/repo/src/Button.stories.tsx', 1],

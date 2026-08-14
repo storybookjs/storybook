@@ -200,7 +200,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
     isModifiedFilterActive,
   } = props;
   const theme = useTheme();
-  const { isDesktop, isMobile, setMobileMenuOpen } = useLayout();
+  const { isDesktop, isMobile } = useLayout();
 
   const statusLinks = useMemo<Link[]>(() => {
     if (item.type === 'story' || item.type === 'docs') {
@@ -282,7 +282,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
             onSelectStoryId(item.id);
 
             if (isMobile) {
-              setMobileMenuOpen(false);
+              api.setMobileNavigation(false);
             }
           }}
           {...(item.type === 'docs' && { docsMode })}
@@ -563,7 +563,7 @@ const Node = React.memo<NodeProps>(function Node(props) {
           onSelectStoryId(item.id);
 
           if (isMobile) {
-            setMobileMenuOpen(false);
+            api.setMobileNavigation(false);
           }
         }}
       >

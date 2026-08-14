@@ -415,11 +415,11 @@ export const evaluateArgExpression = (
   source: string,
   enums: SnippetEnum[]
 ): string => {
-  const unwrapped = unwrapExpression(node);
-  const value = evaluateNode(unwrapped, enums);
-  if (value !== EVAL_FAILED) {
-    return escapeAttributeExpression(printExpressionValue(value, new Set()));
+  const literal = evaluateArgLiteral(node, enums);
+  if (literal !== undefined) {
+    return escapeAttributeExpression(literal);
   }
+  const unwrapped = unwrapExpression(node);
   const text =
     unwrapped.start != null && unwrapped.end != null
       ? source.slice(unwrapped.start, unwrapped.end)
@@ -427,9 +427,26 @@ export const evaluateArgExpression = (
   return escapeAttributeExpression(text ?? 'undefined');
 };
 
-// Angular expression strings support backslash escapes, so quoting stays lossless.
+/**
+ * The arg's value as a standalone expression, or `undefined` when it needs the story to run.
+ *
+ * Unlike {@link evaluateArgExpression} this never falls back to source text, so a caller that has
+ * to produce code rather than an attribute can tell a real value from a name only the story file
+ * knows. The two positions share a printer, so a value reads the same wherever it lands.
+ */
+export const evaluateArgLiteral = (node: t.Node, enums: SnippetEnum[]): string | undefined => {
+  const value = evaluateNode(unwrapExpression(node), enums);
+  return value === EVAL_FAILED ? undefined : printExpressionValue(value, new Set());
+};
+
+// Angular expression strings support backslash escapes, so quoting stays lossless. Line terminators
+// are escaped rather than emitted raw, which would end the literal in a TypeScript position.
 const quoteExpressionString = (value: string): string =>
-  `'${value.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+  `'${value
+    .replace(/\\/g, '\\\\')
+    .replace(/'/g, "\\'")
+    .replace(/\n/g, '\\n')
+    .replace(/\r/g, '\\r')}'`;
 
 // Renders an evaluated arg as a template expression, in the same shape the runtime generator
 // prints, but losslessly for strings carrying quotes.

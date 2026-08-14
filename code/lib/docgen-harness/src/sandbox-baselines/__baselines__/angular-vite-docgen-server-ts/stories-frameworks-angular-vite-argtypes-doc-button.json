@@ -16,39 +16,6 @@
         "name": "string"
       }
     },
-    "_inputValue": {
-      "name": "_inputValue",
-      "table": {
-        "category": "properties",
-        "defaultValue": {
-          "summary": "some value"
-        },
-        "type": {
-          "required": true,
-          "summary": "string"
-        }
-      },
-      "type": {
-        "name": "string"
-      }
-    },
-    "_value": {
-      "description": "Private value.",
-      "name": "_value",
-      "table": {
-        "category": "properties",
-        "defaultValue": {
-          "summary": "Private hello"
-        },
-        "type": {
-          "required": true,
-          "summary": "string"
-        }
-      },
-      "type": {
-        "name": "string"
-      }
-    },
     "accent": {
       "description": "Specify the accent-type of the button",
       "name": "accent",
@@ -303,22 +270,6 @@
         "type": {
           "required": false,
           "summary": "(event: Event) => void"
-        }
-      },
-      "type": {
-        "name": "other",
-        "value": "void"
-      }
-    },
-    "privateMethod": {
-      "description": "A private method.",
-      "name": "privateMethod",
-      "table": {
-        "category": "methods",
-        "defaultValue": {},
-        "type": {
-          "required": false,
-          "summary": "(password: string) => void"
         }
       },
       "type": {

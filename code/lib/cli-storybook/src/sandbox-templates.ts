@@ -1204,6 +1204,13 @@ export const normal: TemplateKey[] = [
   'react-vite/default-ts',
   'angular-cli/default-ts',
   'angular-vite/default-ts',
+  // The only Angular sandbox on the docgen-server path, so it is the only one that can guard the
+  // docgen baselines and what agents read over MCP. Both regress silently, so they want per-PR
+  // signal rather than a daily run.
+  // TODO(11.0): remove this template. The standard sandboxes ship the new docgen approach by
+  // default from then on, so `angular-vite/default-ts` carries the baselines and this one is
+  // redundant.
+  'angular-vite/docgen-server-ts',
   'vue3-vite/default-ts',
   // 'nuxt-vite/default-ts', // temporarily disabled because it's broken
   'lit-vite/default-ts',
@@ -1237,10 +1244,6 @@ export const merged: TemplateKey[] = [
 export const daily: TemplateKey[] = [
   ...merged,
   'angular-vite/21-ts',
-  // TODO(11.0): remove this template. The standard sandboxes ship the new docgen approach by
-  // default from then on, so `angular-vite/default-ts` carries the baselines and this one is
-  // redundant.
-  'angular-vite/docgen-server-ts',
   // TODO: Add this back once we resolve the React 19 issues
   // 'cra/default-js',
   'react-vite/default-js',

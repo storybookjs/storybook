@@ -1,3 +1,4 @@
+import { spawn } from 'node:child_process';
 import path from 'node:path';
 
 import type { APIRequestContext } from '@playwright/test';
@@ -46,6 +47,90 @@ async function mcpRequest(
   }
   return JSON.parse(dataMatch[1]);
 }
+
+/**
+ * Drives `@storybook/mcp` over stdio against a served static build.
+ *
+ * This is the hosted path, and a different package from the dev server's `@storybook/addon-mcp`:
+ * it reads `manifests/components.json` over HTTP and follows the `$ref`s into `services/`. Pointing
+ * it at a URL rather than a directory is deliberate — that is the branch a deployed Storybook takes.
+ */
+async function hostedMcpCalls(manifestsUrl: string, toolCalls: { name: string; id: string }[]) {
+  // Playwright transpiles this spec to CJS, so `__dirname` is the portable way to reach the package.
+  const binPath = path.resolve(__dirname, '../lib/mcp/bin.ts');
+  const child = spawn('node', [binPath, '--manifestsDir', manifestsUrl], {
+    stdio: ['pipe', 'pipe', 'pipe'],
+  });
+
+  type Reply = { id: number; result: { content: { text: string }[] } };
+  const responses = new Map<number, Reply>();
+  let stdout = '';
+  let stderr = '';
+  child.stdout.on('data', (chunk) => {
+    stdout += chunk.toString();
+    const lines = stdout.split('\n');
+    stdout = lines.pop() ?? '';
+    for (const line of lines) {
+      try {
+        const message = JSON.parse(line);
+        if (message.id !== undefined) {
+          responses.set(message.id, message);
+        }
+      } catch {
+        // The server also writes non-JSON diagnostics; only replies matter here.
+      }
+    }
+  });
+  child.stderr.on('data', (chunk) => {
+    stderr += chunk.toString();
+  });
+
+  const send = (message: unknown) => child.stdin.write(`${JSON.stringify(message)}\n`);
+  const awaitReply = async (id: number) => {
+    const deadline = Date.now() + 30_000;
+    while (Date.now() < deadline) {
+      const reply = responses.get(id);
+      if (reply) {
+        return reply;
+      }
+      await new Promise((r) => setTimeout(r, 50));
+    }
+    throw new Error(`Timed out waiting for reply ${id}. stderr:\n${stderr}`);
+  };
+
+  try {
+    send({
+      jsonrpc: '2.0',
+      id: 1,
+      method: 'initialize',
+      params: {
+        protocolVersion: '2025-06-18',
+        capabilities: {},
+        clientInfo: { name: 'e2e-test-client', version: '1.0.0' },
+      },
+    });
+    await awaitReply(1);
+    send({ jsonrpc: '2.0', method: 'notifications/initialized' });
+
+    const texts: string[] = [];
+    for (const [index, call] of toolCalls.entries()) {
+      const id = index + 2;
+      send({
+        jsonrpc: '2.0',
+        id,
+        method: 'tools/call',
+        params: { name: call.name, arguments: call.id ? { id: call.id } : {} },
+      });
+      texts.push((await awaitReply(id)).result.content[0].text);
+    }
+    return texts;
+  } finally {
+    child.kill();
+  }
+}
+
+// Derived from the story file's path under the linked framework template stories.
+const COLOR_PICKER_ID = 'stories-frameworks-angular-vite-model-signal-color-picker';
 
 const isReactSandbox = templateName === 'react-vite/default-ts';
 const isAngularSandbox = templateName === 'angular-vite/docgen-server-ts';
@@ -306,12 +391,11 @@ test.describe('addon-mcp', () => {
         arguments: {},
       });
       const listing: string = list.result.content[0].text;
-      const id = listing.match(/\(([^()]*color-picker[^()]*)\)/)?.[1];
-      expect(id, `no color-picker component listed:\n${listing}`).toBeDefined();
+      expect(listing, `no color-picker component listed:\n${listing}`).toContain(COLOR_PICKER_ID);
 
       const response = await mcpRequest(request, 'tools/call', {
         name: 'docs-show',
-        arguments: { id },
+        arguments: { id: COLOR_PICKER_ID },
       });
       const text: string = response.result.content[0].text;
 
@@ -322,6 +406,27 @@ test.describe('addon-mcp', () => {
       const outputs = text.slice(text.indexOf('## Outputs')).split('\n## ')[0];
       expect(outputs.match(/\bcolorChange\b/g)).toHaveLength(1);
       expect(outputs).not.toMatch(/^\s+color[?:]/m);
+    });
+  });
+
+  test.describe('Hosted MCP (Angular, static build)', () => {
+    test.skip(type !== 'build', 'Reads the built output a hosted Storybook serves');
+    test.skip(!isAngularSandbox, 'Asserts on the Angular sandbox fixtures');
+
+    test('@storybook/mcp serves the same api sections as the dev server', async () => {
+      const [listing, documentation] = await hostedMcpCalls(`${storybookUrl}/manifests`, [
+        { name: 'docs-list', id: '' },
+        { name: 'docs-show', id: COLOR_PICKER_ID },
+      ]);
+
+      expect(listing).toContain(COLOR_PICKER_ID);
+
+      expect(documentation).toContain('## Inputs');
+      expect(documentation).toContain('export type ColorPickerComponentInputs = {');
+      expect(documentation).toContain('// two-way: [(color)]');
+      expect(documentation).toContain('## Outputs');
+      expect(documentation).toContain('colorChange');
+      expect(documentation.indexOf('## Inputs')).toBeLessThan(documentation.indexOf('## Stories'));
     });
   });
 });

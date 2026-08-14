@@ -217,9 +217,14 @@ function formatSubcomponentsSection(
       continue;
     }
 
-    const parsedDocgen = getParsedDocgen(subcomponent);
-    const typeName = `${(subcomponent.name || key).replace(/\W+/g, '')}Props`;
-    parts.push(...formatPropsSection(parsedDocgen, { title: '#### Props', typeName }));
+    if (subcomponent.apiDescription != null) {
+      parts.push(subcomponent.apiDescription);
+      parts.push('');
+    } else {
+      const parsedDocgen = getParsedDocgen(subcomponent);
+      const typeName = `${(subcomponent.name || key).replace(/\W+/g, '')}Props`;
+      parts.push(...formatPropsSection(parsedDocgen, { title: '#### Props', typeName }));
+    }
   }
 
   return parts;
@@ -245,8 +250,10 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
 
   parts.push(...formatSubcomponentsSection(componentManifest.subcomponents));
 
-  // Parse docgen data (from either engine)
-  const parsedDocgen = getParsedDocgen(componentManifest);
+  const hasApiDescription = Boolean(componentManifest.apiDescription);
+
+  // Parse docgen data (from either engine) — only for the legacy/fallback path.
+  const parsedDocgen = hasApiDescription ? undefined : getParsedDocgen(componentManifest);
 
   // Stories section
   const stories = Array.isArray(componentManifest.stories) ? componentManifest.stories : [];
@@ -256,13 +263,13 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
 
     const storiesWithSnippets = stories.filter((s) => s.snippet);
 
-    // Check if component has props - if not, show all stories fully
     const hasProps = parsedDocgen && Object.keys(parsedDocgen.props).length > 0;
+    const capStories = hasApiDescription || hasProps;
 
-    const storiesToShow = hasProps
+    const storiesToShow = capStories
       ? storiesWithSnippets.slice(0, MAX_STORIES_TO_SHOW)
       : storiesWithSnippets;
-    const remainingStories = hasProps ? storiesWithSnippets.slice(MAX_STORIES_TO_SHOW) : [];
+    const remainingStories = capStories ? storiesWithSnippets.slice(MAX_STORIES_TO_SHOW) : [];
 
     // Show first X stories in full detail (or all if no props)
     for (const story of storiesToShow) {
@@ -292,7 +299,12 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
     }
   }
 
-  parts.push(...formatPropsSection(parsedDocgen));
+  if (hasApiDescription) {
+    parts.push(componentManifest.apiDescription!);
+    parts.push('');
+  } else {
+    parts.push(...formatPropsSection(parsedDocgen));
+  }
 
   // Attached docs section
   if (componentManifest.docs && Object.keys(componentManifest.docs).length > 0) {

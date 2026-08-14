@@ -70,6 +70,12 @@ const BaseInlineComponentProperties = v.object({
   path: v.optional(v.string()),
   summary: v.optional(v.string()),
   import: v.optional(v.string()),
+  /**
+   * API documentation in Markdown format.
+   * Prefer ## level headings for sections (Props, Events, Slots, etc.) and TypeScript-like types for structured data.
+   */
+  apiDescription: v.optional(v.string()),
+  renderer: v.optional(v.string()),
   // Mirrors the docgen-engine payloads, which the parsers narrow structurally at runtime.
   reactDocgen: v.optional(v.any()),
   reactDocgenTypescript: v.optional(v.any()),

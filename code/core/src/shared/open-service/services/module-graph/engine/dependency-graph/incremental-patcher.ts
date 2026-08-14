@@ -5,8 +5,8 @@ import { logger as defaultLogger } from 'storybook/internal/node-logger';
 import type { FileChangeEvent } from '../adapters/types.ts';
 import type { ParserRegistry } from '../parser-registry/parser-registry.ts';
 import { ParseResolveCache } from './parse-resolve-cache.ts';
-import type { ReverseIndexImpl } from './reverse-index.ts';
 import type { ChangeDetectionResolverFactory } from './resolver-factory.ts';
+import type { ReverseIndexImpl } from './reverse-index.ts';
 import type { DependencyGraph } from './types.ts';
 import { walkFromStory } from './walk-from-story.ts';
 
@@ -82,7 +82,11 @@ export class IncrementalPatcher {
       });
   }
 
-  async patch(event: FileChangeEvent): Promise<void> {
+  /**
+   * Applies a file change to the graph and reverse index. Returns whether the reverse index
+   * actually changed.
+   */
+  async patch(event: FileChangeEvent): Promise<boolean> {
     const path = normalize(event.path);
     // File contents may have changed (or the file is gone); drop any stale cached
     // parse/resolve data before any read.
@@ -91,9 +95,10 @@ export class IncrementalPatcher {
     if (event.kind === 'add') {
       if (this.isStoryFile(path)) {
         await this.walkStory(path);
+        return true;
       }
       // Non-story add: the documented limitation says we don't recover unresolved deps.
-      return;
+      return false;
     }
 
     if (event.kind === 'unlink') {
@@ -111,7 +116,7 @@ export class IncrementalPatcher {
         storiesToWalk.push(story);
       }
       await Promise.all(storiesToWalk.map((story) => this.walkStory(story)));
-      return;
+      return true;
     }
 
     // 'change' on an existing file: re-walk every story that depends on this file
@@ -129,7 +134,7 @@ export class IncrementalPatcher {
     if (oldDeps !== undefined) {
       const newDeps = await this.cache.resolveOnce(path);
       if (setsEqual(oldDeps, newDeps)) {
-        return;
+        return false;
       }
     }
 
@@ -142,6 +147,9 @@ export class IncrementalPatcher {
       storiesToWalk.push(story);
     }
     await Promise.all(storiesToWalk.map((story) => this.walkStory(story)));
+
+    // If nothing was re-walked, the reverse index is untouched.
+    return storiesToWalk.length > 0;
   }
 
   private walkStory(storyRoot: string): Promise<void> {

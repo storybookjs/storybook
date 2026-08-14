@@ -69,12 +69,7 @@ function formatStoryIndexPath(path: string): string {
   return `./${normalized}`;
 }
 
-/**
- * Converts absolute or relative file paths into the same relative import-path format used by the
- * story index (`./src/Button.stories.tsx`). This is the storage format for module-graph service
- * state so static snapshots do not leak machine-specific filesystem roots.
- */
-export function toStoryIndexPath(path: string, workingDir: string): string {
+function computeStoryIndexPath(path: string, workingDir: string): string {
   if (isWindowsAbsolutePath(path)) {
     return formatStoryIndexPath(win32.relative(workingDir, path));
   }
@@ -85,6 +80,34 @@ export function toStoryIndexPath(path: string, workingDir: string): string {
   }
 
   return formatStoryIndexPath(slashPath);
+}
+
+/**
+ * Memoizes {@link toStoryIndexPath}, keyed by working directory then path. Nested rather than
+ * using a composite string key, since any separator character can legally occur in a path.
+ */
+const storyIndexPathCache = new Map<string, Map<string, string>>();
+
+/**
+ * Converts absolute or relative file paths into the same relative import-path format used by the
+ * story index (`./src/Button.stories.tsx`). This is the storage format for module-graph service
+ * state so static snapshots do not leak machine-specific filesystem roots.
+ */
+export function toStoryIndexPath(path: string, workingDir: string): string {
+  let cachedForWorkingDir = storyIndexPathCache.get(workingDir);
+  if (cachedForWorkingDir === undefined) {
+    cachedForWorkingDir = new Map();
+    storyIndexPathCache.set(workingDir, cachedForWorkingDir);
+  }
+
+  const cached = cachedForWorkingDir.get(path);
+  if (cached !== undefined) {
+    return cached;
+  }
+
+  const result = computeStoryIndexPath(path, workingDir);
+  cachedForWorkingDir.set(path, result);
+  return result;
 }
 
 export function storyIndexPathToAbsolutePath(path: string, workingDir: string): string {

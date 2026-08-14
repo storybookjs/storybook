@@ -14,6 +14,7 @@
   "exclude": [
     "src/angular/angular-baselines.test.ts",
     "src/angular/angular-component-meta-baselines.test.ts",
+    "src/angular/angular-props-table-render-path.test.ts",
     "src/angular/angular-provider-seam.test.ts",
     "src/angular/angular-render.test.ts",
     "src/angular/render-helpers.ts",

@@ -107,6 +107,11 @@ Type: `boolean`
 
 Filter non-input controls in Angular.
 
+On `@storybook/angular-vite` this feature is deprecated in favor of the [`propsTable` framework option](../../get-started/frameworks/angular-vite.mdx#propstable): `true` maps to `propsTable: 'inputs'` and `false` maps to `propsTable: 'all'`.
+The option's third value, `'api'`, needs the `experimentalDocgenServer` feature.
+Setting both leaves `propsTable` in charge.
+`@storybook/angular` still reads this feature and is unaffected.
+
 </If>
 
 ## `argTypeTargetsV7`

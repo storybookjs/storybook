@@ -14,12 +14,20 @@ describe('renderSfcSnippet', () => {
     ['false', ':label="false"'],
     ['null', ':label="null"'],
   ])('%s -> %s', (input, output) => {
-    expect(render([prop('label', input)])).toBe(`<template>\n  <C ${output} />\n</template>`);
+    expect(render([prop('label', input)])).toBe(`<script lang="ts" setup>
+import C from './C.vue';
+</script>
+
+<template>
+  <C ${output} />
+</template>`);
   });
 
   it('hoists a value that needs script scope', () => {
     expect(render([prop('options', `{\n    tone: "neutral"\n}`, 'hoist')]))
       .toBe(`<script lang="ts" setup>
+import C from './C.vue';
+
 const options = {
     tone: "neutral"
 };
@@ -48,6 +56,7 @@ const options = {
 
     expect(snippet).toBe(`<script lang="ts" setup>
 import { ref } from "vue";
+import MyComponent from './MyComponent.vue';
 
 const ariaLabel = {};
 
@@ -68,12 +77,35 @@ const ref2 = {};
   it('renders slots as children and named slots as templates', () => {
     const snippet = render([slot('header', `'Title'`), slot('default', `'Body'`)]);
 
-    expect(snippet).toBe(`<template>
+    expect(snippet).toBe(`<script lang="ts" setup>
+import C from './C.vue';
+</script>
+
+<template>
   <C>
     Body
     <template #header>
       Title
     </template>
+  </C>
+</template>`);
+  });
+
+  it('uses the overridden component import inside function slots', () => {
+    const result = renderSfcSnippet({
+      args: [slot('default', `() => h(C, { label: 'Nested' })`, 'function-slot')],
+      componentImportStatement: "import C from '@example/C.vue';",
+      componentName: 'C',
+      importBindings: new Map([['C', { importId: './C.vue', importName: 'default' }]]),
+    });
+
+    expect(result?.snippet).toBe(`<script lang="ts" setup>
+import C from '@example/C.vue';
+</script>
+
+<template>
+  <C>
+    <C label="Nested" />
   </C>
 </template>`);
   });
@@ -84,11 +116,19 @@ const ref2 = {};
     expect(snippet).toContain('{{ _default }}');
   });
 
-  it('hoists inline slot text the template parser would read as markup', () => {
+  // Entity-escaping the braces keeps them out of the parser's interpolation scan, so the text
+  // decodes back to the exact string the story set instead of evaluating as an expression.
+  it('escapes inline slot text the template parser would read as markup', () => {
     const snippet = render([slot('default', `'<script>{{ evil }}</script>'`)]);
 
-    expect(snippet).toContain('const _default = "<script>{{ evil }}</script>";');
-    expect(snippet).toContain('<C>\n    {{ _default }}\n  </C>');
+    expect(snippet).toContain('<C>\n    &lt;script&gt;&#123;&#123; evil }}&lt;/script&gt;\n  </C>');
+    expect(snippet).toContain("import C from './C.vue';");
+  });
+
+  it('escapes an inlined slot string so it stays text', () => {
+    const snippet = render([slot('default', `'a < b'`)]);
+
+    expect(snippet).toContain('<C>\n    a &lt; b\n  </C>');
   });
 
   it('hoists inline slot text whose whitespace raw template text would condense', () => {
@@ -102,6 +142,8 @@ const ref2 = {};
     const snippet = render([event('onSubmit', 'submit', '() => null')]);
 
     expect(snippet).toBe(`<script lang="ts" setup>
+import C from './C.vue';
+
 const onSubmit = () => null;
 </script>
 
@@ -118,14 +160,23 @@ const onSubmit = () => null;
 });
 
 function render(args: ClassifiedArg[], componentName = 'C'): string {
-  return renderSfcSnippet({ componentName, args }).replaceAll('\r\n', '\n');
+  return renderSfcSnippet({
+    args,
+    componentImportStatement: `import ${componentName} from './${componentName}.vue';`,
+    componentName,
+    importBindings: new Map(),
+  })!.snippet.replaceAll('\r\n', '\n');
 }
 
 function prop(name: string, code: string, kind: 'hoist' | 'inline' = 'inline'): ClassifiedArg {
   return { name, value: expression(code), role: 'prop', plan: { kind } };
 }
 
-function slot(name: string, code: string, kind: 'hoist' | 'inline' = 'inline'): ClassifiedArg {
+function slot(
+  name: string,
+  code: string,
+  kind: 'function-slot' | 'hoist' | 'inline' = 'inline'
+): ClassifiedArg {
   return { name, value: expression(code), role: 'slot', plan: { kind } };
 }
 

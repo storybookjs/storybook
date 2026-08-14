@@ -9,30 +9,39 @@ import {
 
 import { types as t } from 'storybook/internal/babel';
 import {
-  buildImportStatements,
   keyOf,
   propertyValue,
+  returnedExpression,
+  unwrapExpression,
   type ImportBinding,
 } from 'storybook/internal/csf-tools';
 
 import type { ClassifiedArg } from './classify-args.ts';
-import { isFunctionExpression, singleReturnedExpression, unwrapValue } from './classify-value.ts';
+import { isFunctionExpression } from './classify-value.ts';
 import {
   createRenderContext,
   hoistArgValue,
   hoistModelRef,
+  importStatementForBinding,
+  inlinePrimitiveSource,
   renderArgsBindingAttributes,
   renderBoundArgAttribute,
-  renderInlinePrimitiveValue,
   renderPreparedSfcSnippet,
   type RenderContext,
-} from './render-sfc.ts';
+} from './render-primitives.ts';
 
 export interface TemplateRenderConfig {
   /** Static Vue template string returned from the render function. */
   template: string;
   /** Component tag name to import statement. */
   componentImports: Map<string, string>;
+}
+
+export interface ReadTemplateRenderConfigOptions {
+  /** Meta component identifier from CSF meta.component. */
+  componentName?: string;
+  /** Import statement for the meta component, after any `@import` override. */
+  componentImportStatement?: string;
 }
 
 export interface TransformTemplateInput {
@@ -47,8 +56,6 @@ export interface TransformTemplateInput {
 export interface TransformTemplateResult {
   /** Vue SFC snippet for the docs payload. */
   snippet: string;
-  /** Import statements for components actually used by the transformed template. */
-  imports: string[];
 }
 
 interface Edit {
@@ -61,7 +68,6 @@ interface TransformState {
   argsByName: Map<string, ClassifiedArg>;
   ctx: RenderContext;
   edits: Edit[];
-  usedImports: Set<string>;
   componentImports: Map<string, string>;
   template: string;
 }
@@ -74,7 +80,8 @@ const SETUP_PROPERTY = 'setup';
 /** Read a transformable template-render object without resolving the render function itself. */
 export function readTemplateRenderConfig(
   renderObject: t.ObjectExpression,
-  importBindings: Map<string, ImportBinding>
+  importBindings: Map<string, ImportBinding>,
+  options: ReadTemplateRenderConfigOptions = {}
 ): TemplateRenderConfig | undefined {
   if (!hasOnlySupportedRenderProperties(renderObject)) {
     return undefined;
@@ -92,7 +99,8 @@ export function readTemplateRenderConfig(
 
   const componentImports = readComponentImports(
     propertyValue(renderObject, 'components'),
-    importBindings
+    importBindings,
+    options
   );
   return componentImports ? { template, componentImports } : undefined;
 }
@@ -119,7 +127,6 @@ export function transformTemplate(
     argsByName: new Map(input.args.map((arg) => [arg.name, arg])),
     ctx: createRenderContext(),
     edits: [],
-    usedImports: new Set(),
     componentImports: input.componentImports,
     template: input.template,
   };
@@ -133,7 +140,6 @@ export function transformTemplate(
       templateCode: applyEdits(input.template, state.edits),
       ctx: state.ctx,
     }),
-    imports: Array.from(state.usedImports),
   };
 }
 
@@ -163,7 +169,7 @@ function transformInterpolation(
   }
 
   const arg = state.argsByName.get(argName);
-  const rendered = arg ? renderInlinePrimitiveValue(arg.value) : undefined;
+  const rendered = arg ? inlinePrimitiveSource(arg.value) : undefined;
   // Runtime interpolation renders escaped text; a value the template parser would read as markup
   // or as a new interpolation has no faithful inline form.
   if (rendered === undefined || /[<&]|{{/.test(rendered)) {
@@ -193,7 +199,7 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
 
   const importStatement = componentImportForTag(node.tag, state.componentImports);
   if (importStatement) {
-    state.usedImports.add(importStatement);
+    state.ctx.componentImports.add(importStatement);
   }
 
   const nameCounts = attributeNameCounts(node);
@@ -391,9 +397,13 @@ function hasOnlySupportedRenderProperties(renderObject: t.ObjectExpression): boo
 // { Button, 'my-button': Button }
 function readComponentImports(
   value: t.Node | undefined,
-  importBindings: Map<string, ImportBinding>
+  importBindings: Map<string, ImportBinding>,
+  options: ReadTemplateRenderConfigOptions
 ): Map<string, string> | undefined {
   const componentImports = new Map<string, string>();
+  if (options.componentName && options.componentImportStatement) {
+    componentImports.set(options.componentName, options.componentImportStatement);
+  }
   if (!value) {
     return componentImports;
   }
@@ -407,28 +417,20 @@ function readComponentImports(
     }
 
     const tagName = keyOf(property);
-    const component = unwrapValue(property.value);
+    const component = unwrapExpression(property.value);
     if (!tagName || !t.isIdentifier(component)) {
       return undefined;
     }
 
-    const binding = importBindings.get(component.name);
-    if (!binding || binding.importName === '*') {
+    const importStatement =
+      component.name === options.componentName
+        ? options.componentImportStatement
+        : importStatementForBinding(component.name, importBindings.get(component.name));
+    if (!importStatement) {
       return undefined;
     }
 
-    componentImports.set(
-      tagName,
-      buildImportStatements({
-        refs: [
-          {
-            importId: binding.importId,
-            importName: binding.importName,
-            localImportName: component.name,
-          },
-        ],
-      }).join('\n')
-    );
+    componentImports.set(tagName, importStatement);
   }
 
   return componentImports;
@@ -458,7 +460,7 @@ function isTrivialSetup(setup: t.ObjectMethod | t.ObjectProperty): boolean {
     return false;
   }
 
-  const value = unwrapValue(property.value);
+  const value = unwrapExpression(property.value);
   return t.isIdentifier(value, { name: ARGS_NAME });
 }
 
@@ -466,6 +468,7 @@ function isTrivialSetup(setup: t.ObjectMethod | t.ObjectProperty): boolean {
 function setupReturnObject(
   setup: t.ObjectMethod | t.ObjectProperty
 ): t.ObjectExpression | undefined {
-  const returned = singleReturnedExpression(t.isObjectMethod(setup) ? setup : setup.value);
+  const setupFunction = t.isObjectMethod(setup) ? setup : unwrapExpression(setup.value);
+  const returned = returnedExpression(setupFunction);
   return t.isObjectExpression(returned) ? returned : undefined;
 }

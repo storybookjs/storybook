@@ -1,6 +1,5 @@
 {
   "id": "template-unsupported",
-  "import": "import TemplateUnsupportedPanel from './TemplateUnsupportedPanel.vue';",
   "name": "TemplateUnsupportedPanel",
   "path": "__PATH__",
   "stories": {

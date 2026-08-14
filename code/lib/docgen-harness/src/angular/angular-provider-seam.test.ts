@@ -25,9 +25,9 @@ test('angular-vite registers a docgen provider pointing at a worker module that 
   expect(descriptors).toHaveLength(1);
   expect(isAbsolute(descriptors[0].moduleSpecifier)).toBe(true);
   expect(existsSync(descriptors[0].moduleSpecifier)).toBe(true);
-  // The worker receives exactly the Controls filtering flag; the in-process analyzer derives
-  // everything else from the component files themselves.
-  expect(descriptors[0].options).toEqual({ angularFilterNonInputControls: true });
+  // The worker receives exactly the props-table mode; the in-process analyzer derives everything
+  // else from the component files themselves.
+  expect(descriptors[0].options).toEqual({ propsTable: 'inputs' });
 });
 
 test('contributes no descriptor when the docgen server feature is off', async () => {

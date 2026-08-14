@@ -530,6 +530,35 @@
 
 ## From version 10.5.x to 10.6.0
 
+### Angular Vite: a new `propsTable` framework option
+
+`@storybook/angular-vite` now lets you choose which members the props table documents, through a `propsTable` framework option. It defaults to `'api'`, which leaves out TypeScript `private` properties and methods, ECMAScript private `#` members, and anything tagged `@internal`. No template can reach a `private` property or method, and `@internal` declares a member non-API, so a row for them documents your component's wiring rather than its API. Injected services such as `private readonly cdr = inject(ChangeDetectorRef)` are the common case.
+
+Declared inputs and outputs are always documented, whatever their TypeScript visibility. Angular only honors access modifiers on input bindings behind the opt-in `strictInputAccessModifiers` compiler flag and never checks them on output bindings, so even a `private` input or output is API a parent template can bind.
+
+`protected` members are documented. Angular templates have been able to bind them since Angular 14, so they are real API.
+
+The default only changes what you see when `features.experimentalDocgenServer` is on. With the Compodoc pipeline, which is still the default, Storybook cannot interpret Compodoc's visibility data reliably and the props table is unchanged.
+
+Set the option to `'all'` to document every member:
+
+```ts
+// .storybook/main.ts
+framework: {
+  name: '@storybook/angular-vite',
+  options: {
+    // 'all' documents every member.
+    // 'api' (the default) leaves out private and `#` properties and methods, and @internal members.
+    // 'inputs' documents the inputs section only.
+    propsTable: 'all',
+  },
+},
+```
+
+To drop a single member the default keeps, tag it `@ignore`.
+
+`features.angularFilterNonInputControls` is deprecated on `@storybook/angular-vite` and will be removed in Storybook 11: `true` maps to `propsTable: 'inputs'` and `false` to `propsTable: 'all'`. Setting both leaves `propsTable` in charge. `@storybook/angular` (webpack) is unaffected and keeps reading the feature.
+
 ### MCP tool names follow toolset.method
 
 Storybook's MCP tools are now named from their toolset and method (`stories.preview` → `stories-preview`). Update agent prompts, skills, and hard-coded tool allowlists:

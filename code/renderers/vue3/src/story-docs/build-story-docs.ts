@@ -14,6 +14,7 @@ import {
   buildImportStatements,
   collectImportBindings,
   extractStoryJSDocInfo,
+  jsDocTagsForPath,
   keyOf,
   loadCsf,
   mergeArgsRecords,
@@ -22,7 +23,8 @@ import {
   propertyValue,
   resolveComponentImport,
   resolveRenderFunction,
-  returnedObjectExpression,
+  resolveReturnedObjectExpression,
+  returnedExpressionPath,
   storyAssignedArgsPath,
   type ImportBinding,
   type RenderFunctionPath,
@@ -31,8 +33,14 @@ import {
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 
-import { classifyArgs, type ClassifiedArg, type VueDocgenArgInfo } from './classify-args.ts';
+import {
+  classifyArgs,
+  type ClassifiedArg,
+  type ClassifyArgsResult,
+  type VueDocgenArgInfo,
+} from './classify-args.ts';
 import { renderSfcSnippet } from './render-sfc.ts';
+import { transformH } from './transform-h.ts';
 import {
   readTemplateRenderConfig,
   transformTemplate,
@@ -48,6 +56,7 @@ export interface BuildStoryDocsContext {
 
 interface StorySnippetContext {
   componentName: string;
+  componentImportStatement: string | undefined;
   docgenArgInfo: VueDocgenArgInfo;
 }
 
@@ -60,19 +69,19 @@ interface StoryDocsContext {
 
 type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
 type ArgsObjectPath = NodePath<t.ObjectExpression>;
-type StoryDocResult = { doc: StoryDoc; imports: string[] };
-type ExtractStoriesResult = { stories: Record<string, StoryDoc>; imports: string[] };
+type ExtractStoriesResult = { stories: Record<string, StoryDoc> };
 type StaticStoryRenderer =
+  | { kind: 'h'; argsParam?: string; expression: t.Expression }
   | { kind: 'sfc' }
   | {
       kind: 'template';
       componentImports: TemplateRenderConfig['componentImports'];
       template: string;
     };
-type StorySnippetResult = { snippet: string; imports: string[] };
+type StorySnippetResult = { snippet: string };
 type StaticStoryArgs =
   | { kind: 'error'; error: NonNullable<StoryDoc['error']> }
-  | { kind: 'classified'; classified: ReturnType<typeof classifyArgs> };
+  | { kind: 'classified'; classified: ClassifyArgsResult };
 
 const ARGS_PROPERTY = 'args';
 
@@ -118,20 +127,24 @@ export async function buildStoryDocsPayload(
   }
   const componentName = resolveMetaComponentIdentifier(metaPath);
   const importBindings = collectImportBindings(csf._file.path);
-  const importStatement = createImportStatement(componentName, importBindings);
+  const importStatement = createImportStatement(
+    componentName,
+    importBindings,
+    metaPath,
+    docgenPayload
+  );
   const docgenArgInfo =
     docgenPayload && !docgenPayload.error ? vueDocgenArgInfo(docgenPayload) : undefined;
-  const snippet = componentName && docgenArgInfo ? { componentName, docgenArgInfo } : undefined;
+  const snippet =
+    componentName && docgenArgInfo
+      ? { componentName, componentImportStatement: importStatement, docgenArgInfo }
+      : undefined;
   const extracted = extractStories(csf, { snippet, importBindings, metaPath });
-  const importCode = Array.from(
-    new Set([importStatement, ...extracted.imports].filter((line): line is string => Boolean(line)))
-  ).join('\n');
 
   return {
     id,
     name: componentName ?? docgenPayload?.name ?? fallbackTitle(input.entry.title),
     path: storyFilePath,
-    ...(importCode ? { import: importCode } : {}),
     stories: extracted.stories,
   };
 }
@@ -155,18 +168,31 @@ function resolveMetaComponentIdentifier(
 }
 
 /**
- * Reconstructs the component's import statement from the story file's import bindings.
+ * Reconstructs the component's import statement from the story file's import bindings, redirected
+ * to the source an `@import` tag declares when the story or the component carries one.
+ *
+ * The CSF `meta` docblock is the supported place to write it, because component-level tags do not
+ * survive every docgen backend. A component tag still wins over nothing when one does come through.
+ *
+ * @example `@import import { Button } from 'my-ds'` above `const meta` for `MyButton` →
+ * `import { Button as MyButton } from 'my-ds';`
  */
 function createImportStatement(
   componentName: string | undefined,
-  importBindings: Map<string, ImportBinding>
+  importBindings: Map<string, ImportBinding>,
+  metaPath: NodePath<t.ObjectExpression> | undefined,
+  docgenPayload: DocgenPayload | undefined
 ): string | undefined {
   if (!componentName) {
     return undefined;
   }
 
+  // The override supplies the source and specifier kind, but the local name has to stay the one the
+  // snippet renders, so the statement and the snippet keep referring to the same identifier.
   const ref = resolveComponentImport(componentName, importBindings);
-  return buildImportStatements({ refs: [ref] }).join('\n') || undefined;
+  const importOverride =
+    jsDocTagsForPath(metaPath).import?.[0] ?? docgenPayload?.jsDocTags.import?.[0];
+  return buildImportStatements({ refs: [{ ...ref, importOverride }] }).join('\n') || undefined;
 }
 
 /**
@@ -227,7 +253,6 @@ function argsObjectHasSpread(object: t.ObjectExpression | undefined): boolean {
  * Maps every CSF story export to its StoryDoc, enriched with a snippet or error where possible.
  */
 function extractStories(csf: ParsedCsf, options: StoryDocsContext): ExtractStoriesResult {
-  const imports = new Set<string>();
   const stories = Object.fromEntries(
     Object.entries(csf._stories).map(([storyExport, story]): [string, StoryDoc] => {
       const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[storyExport]);
@@ -238,14 +263,11 @@ function extractStories(csf: ParsedCsf, options: StoryDocsContext): ExtractStori
         summary,
       };
       const enriched = enrichStoryDoc(csf, storyExport, storyDoc, options);
-      for (const importStatement of enriched.imports) {
-        imports.add(importStatement);
-      }
-      return [story.id, enriched.doc];
+      return [story.id, enriched];
     })
   );
 
-  return { imports: Array.from(imports), stories };
+  return { stories };
 }
 
 /**
@@ -256,8 +278,8 @@ function enrichStoryDoc(
   storyExport: string,
   storyDoc: StoryDoc,
   options: StoryDocsContext
-): StoryDocResult {
-  const plain: StoryDocResult = { doc: storyDoc, imports: [] };
+): StoryDoc {
+  const plain = storyDoc;
 
   if (!options.snippet) {
     return plain;
@@ -300,9 +322,7 @@ function enrichStoryDoc(
   );
   if (resolved.kind === 'error') {
     // Only the SFC path reports arg errors; render-function stories defer to runtime source.
-    return renderer.kind === 'sfc'
-      ? { doc: { ...storyDoc, error: resolved.error }, imports: [] }
-      : plain;
+    return renderer.kind === 'sfc' ? { ...storyDoc, error: resolved.error } : plain;
   }
 
   const classified = resolved.classified;
@@ -310,18 +330,21 @@ function enrichStoryDoc(
     return plain;
   }
 
-  const rendered = renderStaticStorySnippet(renderer, classified.args, componentName);
+  const rendered = renderStaticStorySnippet(
+    renderer,
+    classified.args,
+    componentName,
+    docgenArgInfo,
+    options
+  );
   if (!rendered) {
     return plain;
   }
 
   return {
-    doc: {
-      ...storyDoc,
-      snippet: rendered.snippet,
-      ...(classified.warning ? { warning: classified.warning } : {}),
-    },
-    imports: rendered.imports,
+    ...storyDoc,
+    snippet: rendered.snippet,
+    ...(classified.warning ? { warning: classified.warning } : {}),
   };
 }
 
@@ -329,27 +352,25 @@ function staticRendererForRenderFunction(
   renderFunction: RenderFunctionPath,
   options: StoryDocsContext
 ): StaticStoryRenderer | undefined {
-  const renderObject = returnedObjectExpression(renderFunction.node);
+  const renderObject = resolveReturnedObjectExpression(renderFunction);
   const templateConfig = renderObject
-    ? readTemplateRenderConfig(renderObject, options.importBindings)
+    ? readTemplateRenderConfig(renderObject, options.importBindings, {
+        componentImportStatement: options.snippet?.componentImportStatement,
+        componentName: options.snippet?.componentName,
+      })
     : undefined;
-  return templateConfig ? { kind: 'template', ...templateConfig } : undefined;
-}
-
-function renderStaticStorySnippet(
-  renderer: StaticStoryRenderer,
-  args: ClassifiedArg[],
-  componentName: string
-): StorySnippetResult | undefined {
-  if (renderer.kind === 'sfc') {
-    return { imports: [], snippet: renderSfcSnippet({ args, componentName }) };
+  if (templateConfig) {
+    return { kind: 'template', ...templateConfig };
   }
 
-  return transformTemplate({
-    args,
-    componentImports: renderer.componentImports,
-    template: renderer.template,
-  });
+  const hExpression = returnedExpressionPath(renderFunction)?.node;
+  return hExpression
+    ? {
+        argsParam: argsParameterName(renderFunction.node),
+        expression: hExpression,
+        kind: 'h',
+      }
+    : undefined;
 }
 
 function resolveStaticStoryArgs(
@@ -390,6 +411,50 @@ function resolveStaticStoryArgs(
       docgenArgInfo
     ),
   };
+}
+
+function renderStaticStorySnippet(
+  renderer: StaticStoryRenderer,
+  args: ClassifiedArg[],
+  componentName: string,
+  docgenArgInfo: VueDocgenArgInfo,
+  options: StoryDocsContext
+): StorySnippetResult | undefined {
+  const componentImportStatement = options.snippet?.componentImportStatement;
+
+  if (renderer.kind === 'sfc') {
+    return componentImportStatement
+      ? renderSfcSnippet({
+          args,
+          componentImportStatement,
+          componentName,
+          importBindings: options.importBindings,
+        })
+      : undefined;
+  }
+
+  if (renderer.kind === 'template') {
+    return transformTemplate({
+      args,
+      componentImports: renderer.componentImports,
+      template: renderer.template,
+    });
+  }
+
+  return transformH({
+    args,
+    argsParam: renderer.argsParam,
+    componentImportStatement,
+    componentName,
+    docgen: docgenArgInfo,
+    importBindings: options.importBindings,
+    node: renderer.expression,
+  });
+}
+
+function argsParameterName(renderFunction: RenderFunctionPath['node']): string | undefined {
+  const [parameter] = renderFunction.params;
+  return t.isIdentifier(parameter) ? parameter.name : undefined;
 }
 
 function resolveEffectiveRender(

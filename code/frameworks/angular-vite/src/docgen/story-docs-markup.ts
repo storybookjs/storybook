@@ -15,7 +15,6 @@ export interface StoryShape {
   args: Record<string, t.Node>;
   /** Source text of everything hiding args from this pass; empty when the merged args are known. */
   unresolvedArgs: string[];
-  source: string;
 }
 
 /** Source text of a node, for naming an expression this pass could not read. */

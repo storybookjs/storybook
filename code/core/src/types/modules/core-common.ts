@@ -603,7 +603,12 @@ export interface StorybookFeatures {
    * Set NODE_ENV to development in built Storybooks for better testability and debuggability
    */
   developmentModeForBuild?: boolean;
-  /** Only show input controls in Angular */
+  /**
+   * Only show input controls in Angular.
+   *
+   * @deprecated On `@storybook/angular-vite`, use the `propsTable` framework option instead:
+   *   `'inputs'` for this flag on, `'all'` for it off. Still read by `@storybook/angular`.
+   */
   angularFilterNonInputControls?: boolean;
 
   /**

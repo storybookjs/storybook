@@ -12,13 +12,14 @@ import type {
   AngularClassMeta,
   AngularComponentMetaResult,
   ParsingLogger,
+  PropsTableMode,
 } from '@storybook/angular-cm';
 import { extractArgTypesFromData } from '@storybook/angular-cm';
 import { resolveStoryComponent } from './resolve-component.ts';
 
 // Structured-cloned onto the worker thread, so every field must be plain JSON data.
 export interface AngularDocgenOptions {
-  angularFilterNonInputControls?: boolean;
+  propsTable: PropsTableMode;
 }
 
 export interface SnippetEnum {
@@ -39,6 +40,7 @@ export interface AngularComponentSnippetMeta {
 }
 
 export type AngularDocgenPayload = DocgenPayload & {
+  // The analyzer's record for the class, never filtered by `propsTable`.
   angularComponentMeta?: AngularComponentSnippetMeta;
 };
 
@@ -182,7 +184,7 @@ export const buildDocgenPayload = (
 
   const argTypes = extractArgTypesFromData(meta.entry, {
     metadataJson: meta.json,
-    filterNonInputControls: options.angularFilterNonInputControls,
+    propsTable: options.propsTable,
     logger,
   }) as StrictArgTypes;
 

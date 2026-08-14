@@ -110,6 +110,8 @@ export const Primary = {
 `)
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
       const onClick = () => {};
       </script>
 
@@ -132,7 +134,11 @@ export const Primary = {
 };
 `)
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
         <MyButton modelValue="Typed text" />
       </template>"
     `);
@@ -169,7 +175,11 @@ export const Primary = {
 };
 `)
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
         <div class="wrap"><!-- keep --><MyButton disabled label="Hi" data-x="a &amp; b" /></div>
       </template>"
     `);
@@ -190,7 +200,11 @@ export const Primary = {
 };
 `)
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
         <div>
           <MyButton label="Hi" />
         </div>
@@ -250,6 +264,8 @@ export const Primary = {
 `)
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
       const options = { density: 'compact' };
       </script>
 
@@ -272,7 +288,11 @@ export const Primary = {
 };
 `)
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
         <MyButton label='say "hi"' />
       </template>"
     `);
@@ -291,7 +311,11 @@ export const Primary = {
 };
 `)
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
         <MyButton label="Hi"><template #header>Static header</template></MyButton>
       </template>"
     `);
@@ -311,6 +335,8 @@ export const Primary = {
 `)
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
       const onClick = () => {};
       </script>
 
@@ -335,6 +361,7 @@ export const Primary = {
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
       import { ref } from "vue";
+      import MyButton from './MyButton.vue';
 
       const modelValue = ref('Typed text');
       </script>
@@ -363,6 +390,7 @@ export const Primary = {
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
       import { ref } from "vue";
+      import MyButton from './MyButton.vue';
 
       const modelValue = ref('Typed text');
 
@@ -495,6 +523,8 @@ export const Primary = {
 `)
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
       const label = 'Tom &amp; Jerry';
       </script>
 
@@ -565,7 +595,11 @@ export const Primary = {
 };
 `)
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
         <section><MyButton label="Hi" /></section>
       </template>"
     `);
@@ -603,9 +637,13 @@ export const Primary = {
       "import MyButton from './MyButton.vue';\nimport OtherButton from './OtherButton.vue';"
     );
 
-    expect(payload?.import).toContain("import OtherButton from './OtherButton.vue';");
+    expect(payload.import).toBeUndefined();
     expect(payload.stories['example-mybutton--primary']?.snippet).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import OtherButton from './OtherButton.vue';
+      </script>
+
+      <template>
         <other-button label="Saved" />
       </template>"
     `);

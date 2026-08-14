@@ -27,6 +27,10 @@ export const parserOptions: ParserOptions = {
 
 export const babelParse = (code: string): t.File => {
   return recast.parse(code, {
+    // Recast rejoins the source with this terminator before handing it to the parser, and defaults
+    // it to `os.EOL`. Left alone, node offsets would count a carriage return per line on Windows
+    // and none anywhere else, so anything slicing source text by them would read the wrong span.
+    lineTerminator: '\n',
     parser: {
       parse(source: string) {
         return parseWithFlowOrTypescript(source, parserOptions);

@@ -47,13 +47,18 @@ async function mcpRequest(
   return JSON.parse(dataMatch[1]);
 }
 
+const isReactSandbox = templateName === 'react-vite/default-ts';
+const isAngularSandbox = templateName === 'angular-vite/docgen-server-ts';
+
 test.describe('addon-mcp', () => {
   test.skip(
-    templateName !== 'react-vite/default-ts',
+    !isReactSandbox && !isAngularSandbox,
     'Only run for sandboxes with addon-mcp configured'
   );
 
   test.describe('Manifests', () => {
+    test.skip(!isReactSandbox, 'Asserts on the React sandbox fixtures');
+
     test.describe('Component Manifest', () => {
       test('should have valid components.json structure', async ({ request }) => {
         const response = await request.get(`${storybookUrl}/manifests/components.json`);
@@ -128,6 +133,7 @@ test.describe('addon-mcp', () => {
 
   test.describe('MCP', () => {
     test.skip(type !== 'dev', 'MCP server only runs in dev mode');
+    test.skip(!isReactSandbox, 'Asserts on the React sandbox fixtures');
 
     test.describe('Info Page', () => {
       test('should show both toolsets as enabled', async ({ page }) => {
@@ -287,6 +293,35 @@ test.describe('addon-mcp', () => {
         // Should contain stories
         expect(text).toContain('Primary');
       });
+    });
+  });
+
+  test.describe('MCP (Angular)', () => {
+    test.skip(type !== 'dev', 'MCP server only runs in dev mode');
+    test.skip(!isAngularSandbox, 'Asserts on the Angular sandbox fixtures');
+
+    test('docs-show returns the inputs and outputs of a model() component', async ({ request }) => {
+      const list = await mcpRequest(request, 'tools/call', {
+        name: 'docs-list',
+        arguments: {},
+      });
+      const listing: string = list.result.content[0].text;
+      const id = listing.match(/\(([^()]*color-picker[^()]*)\)/)?.[1];
+      expect(id, `no color-picker component listed:\n${listing}`).toBeDefined();
+
+      const response = await mcpRequest(request, 'tools/call', {
+        name: 'docs-show',
+        arguments: { id },
+      });
+      const text: string = response.result.content[0].text;
+
+      expect(text).toContain('## Inputs');
+      expect(text).toContain('export type ColorPickerComponentInputs = {');
+      expect(text).toContain('// two-way: [(color)]');
+      expect(text).toContain('## Outputs');
+      const outputs = text.slice(text.indexOf('## Outputs')).split('\n## ')[0];
+      expect(outputs.match(/\bcolorChange\b/g)).toHaveLength(1);
+      expect(outputs).not.toMatch(/^\s+color[?:]/m);
     });
   });
 });

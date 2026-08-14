@@ -421,6 +421,89 @@ describe('getDocumentationTool', () => {
 		`);
   });
 
+  it('should render apiDescription for a framework that authors its own markdown', async () => {
+    served[''] = {
+      componentManifest: {
+        // v0: this manifest inlines docgen/subcomponents/import, which is the inline format.
+        // Labelling it v1 would strip them — a v1 row carries those behind `$ref`s instead.
+        v: 0,
+        components: {
+          'color-picker': {
+            id: 'color-picker',
+            name: 'ColorPickerComponent',
+            description: 'A colour picker',
+            renderer: 'angular',
+            apiDescription: [
+              '## Inputs',
+              '',
+              '```',
+              'export type ColorPickerComponentInputs = {',
+              '  color?: string = #345F92; // two-way: [(color)]',
+              '}',
+              '```',
+              '',
+              '## Outputs',
+              '',
+              '```',
+              'export type ColorPickerComponentOutputs = {',
+              '  colorChange: (e: string) => void;',
+              '}',
+              '```',
+            ].join('\n'),
+          },
+        },
+      },
+    };
+
+    const request = {
+      jsonrpc: '2.0' as const,
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: GET_TOOL_NAME,
+        arguments: {
+          id: 'color-picker',
+        },
+      },
+    };
+
+    const mockHttpRequest = new Request('https://example.com/mcp');
+    const response = await server.receive(request, {
+      custom: { request: mockHttpRequest, manifestProvider },
+    });
+
+    expect(response.result).toMatchInlineSnapshot(`
+      {
+        "content": [
+          {
+            "text": "# ColorPickerComponent
+
+      ID: color-picker
+
+      A colour picker
+
+      ## Inputs
+
+      \`\`\`
+      export type ColorPickerComponentInputs = {
+        color?: string = #345F92; // two-way: [(color)]
+      }
+      \`\`\`
+
+      ## Outputs
+
+      \`\`\`
+      export type ColorPickerComponentOutputs = {
+        colorChange: (e: string) => void;
+      }
+      \`\`\`",
+            "type": "text",
+          },
+        ],
+      }
+    `);
+  });
+
   it('should include subcomponents in get-documentation output', async () => {
     served[''] = {
       componentManifest: {

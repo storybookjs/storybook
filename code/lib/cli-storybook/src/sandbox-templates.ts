@@ -816,6 +816,10 @@ export const baseTemplates = {
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
       extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
+      // The only Angular sandbox on the docgen-server path, so it is the only one that can prove
+      // what an agent reads about an Angular component.
+      extraDevDependencies: ['@storybook/addon-mcp'],
+      editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
       useCsfFactory: true,
       // These two flags are what brings a template into docgen baseline coverage; see
       // `docgenServerTemplates`.

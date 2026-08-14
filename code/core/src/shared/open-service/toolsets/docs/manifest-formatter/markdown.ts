@@ -175,6 +175,24 @@ function formatPropsSection(
   return parts;
 }
 
+const FENCE_LINE = /^\s*(?:```|~~~)/;
+const HEADING_LINE = /^(#{1,4}) /;
+
+/** Nests a framework's own `##` sections under the `### <subcomponent>` heading they render inside. */
+function demoteHeadings(markdown: string): string {
+  let inFence = false;
+  return markdown
+    .split('\n')
+    .map((line) => {
+      if (FENCE_LINE.test(line)) {
+        inFence = !inFence;
+        return line;
+      }
+      return inFence ? line : line.replace(HEADING_LINE, '##$1 ');
+    })
+    .join('\n');
+}
+
 function formatSubcomponentsSection(
   subcomponents: Record<string, SubcomponentManifest> | undefined
 ): string[] {
@@ -213,6 +231,12 @@ function formatSubcomponentsSection(
       parts.push('```');
       parts.push(subcomponent.error.message);
       parts.push('```');
+      parts.push('');
+      continue;
+    }
+
+    if (subcomponent.apiDescription) {
+      parts.push(demoteHeadings(subcomponent.apiDescription));
       parts.push('');
       continue;
     }
@@ -257,7 +281,9 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
     const storiesWithSnippets = stories.filter((s) => s.snippet);
 
     // Check if component has props - if not, show all stories fully
-    const hasProps = parsedDocgen && Object.keys(parsedDocgen.props).length > 0;
+    const hasProps =
+      !!componentManifest.apiDescription ||
+      (parsedDocgen && Object.keys(parsedDocgen.props).length > 0);
 
     const storiesToShow = hasProps
       ? storiesWithSnippets.slice(0, MAX_STORIES_TO_SHOW)
@@ -292,7 +318,12 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
     }
   }
 
-  parts.push(...formatPropsSection(parsedDocgen));
+  if (componentManifest.apiDescription) {
+    parts.push(componentManifest.apiDescription);
+    parts.push('');
+  } else {
+    parts.push(...formatPropsSection(parsedDocgen));
+  }
 
   // Attached docs section
   if (componentManifest.docs && Object.keys(componentManifest.docs).length > 0) {

@@ -1,0 +1,94 @@
+# One-off: finish DX + Sentry for 10.5.8 after publish was skipped.
+# Remove this file after the run succeeds.
+name: Finalize 10.5.8 bookkeeping
+run-name: Finalize 10.5.8 bookkeeping, triggered by ${{ github.triggering_actor }}
+
+on:
+  push:
+    branches:
+      - latest-release
+    paths:
+      - '.github/workflows/finalize-10.5.8.yml'
+  workflow_dispatch:
+
+permissions: {}
+
+jobs:
+  finalize:
+    name: Register DX and Sentry for 10.5.8
+    runs-on: ubuntu-latest
+    if: github.repository_owner == 'storybookjs'
+    environment: Release
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout latest-release
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          ref: latest-release
+          fetch-depth: 1
+
+      - name: Register release in DX
+        env:
+          DX_DATACLOUD_API_KEY: ${{ secrets.DX_DATACLOUD_API_KEY }}
+          DX_DATACLOUD_URL: ${{ vars.DX_DATACLOUD_URL }}
+        run: |
+          CURRENT_VERSION="10.5.8"
+          COMMIT_SHA="6ef7d1ae816ebd5fb8bf84b8dec7d4a92410d73c"
+          DEPLOYED_AT="2026-08-13T13:59:06Z"
+          REPOSITORY="storybookjs/storybook"
+          SOURCE_URL="https://github.com/${REPOSITORY}/actions/runs/31706632257"
+          REFERENCE_ID="${REPOSITORY}:npm:${CURRENT_VERSION}"
+          RESPONSE_FILE=$(mktemp)
+          trap 'rm -f "$RESPONSE_FILE"' EXIT
+
+          PAYLOAD=$(jq -n \
+            --arg referenceId "$REFERENCE_ID" \
+            --arg deployedAt "$DEPLOYED_AT" \
+            --arg repository "$REPOSITORY" \
+            --arg commitSha "$COMMIT_SHA" \
+            --arg sourceUrl "$SOURCE_URL" \
+            --arg version "$CURRENT_VERSION" \
+            --arg npmDistTag "latest" \
+            '{
+              reference_id: $referenceId,
+              deployed_at: $deployedAt,
+              service: { identifier: "github:storybookjs:storybook" },
+              repository: $repository,
+              commit_sha: $commitSha,
+              source_url: $sourceUrl,
+              source_name: "GitHub Actions",
+              metadata: {
+                version: $version,
+                npm_dist_tag: $npmDistTag
+              },
+              success: true
+            }')
+
+          HTTP_STATUS=$(curl \
+            --silent \
+            --show-error \
+            --output "$RESPONSE_FILE" \
+            --write-out "%{http_code}" \
+            --request POST \
+            --header "Authorization: Bearer ${DX_DATACLOUD_API_KEY}" \
+            --header "Content-Type: application/json" \
+            --data "$PAYLOAD" \
+            "${DX_DATACLOUD_URL%/}/api/deployments.create")
+
+          if [[ "$HTTP_STATUS" != "200" ]] || [[ "$(jq -r '.ok // false' "$RESPONSE_FILE")" != "true" ]]; then
+            echo "Failed to register release in DX (HTTP $HTTP_STATUS)"
+            jq . "$RESPONSE_FILE" || true
+            exit 1
+          fi
+          echo "Registered 10.5.8 in DX"
+
+      - name: Create Sentry release
+        uses: getsentry/action-release@5657c9e888b4e2cc85f4d29143ea4131fde4a73a # v3.6.0
+        env:
+          SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
+          SENTRY_ORG: ${{ secrets.SENTRY_ORG }}
+          SENTRY_PROJECT: ${{ secrets.SENTRY_PROJECT }}
+        with:
+          release: '10.5.8'
+          environment: latest

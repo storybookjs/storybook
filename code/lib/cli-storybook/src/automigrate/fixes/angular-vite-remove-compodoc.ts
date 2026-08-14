@@ -218,18 +218,27 @@ const removePreviewWiring = async (previewConfigPath: string, dryRun: boolean): 
       })
     );
 
-    const remaining = withoutCalls.body.filter((node) => {
-      if (!t.isImportDeclaration(node)) {
-        return true;
+    const isDroppableSpecifier = (
+      declaration: t.ImportDeclaration,
+      specifier: t.ImportDeclaration['specifiers'][number]
+    ) =>
+      declaration.source.value === ADDON_DOCS_ANGULAR
+        ? specifier.local.name === SET_COMPODOC_JSON
+        : droppableImportNames.has(specifier.local.name);
+
+    const remaining: t.Statement[] = [];
+    for (const node of withoutCalls.body) {
+      // A declaration without specifiers is imported for its side effects, so it stays as it is.
+      if (t.isImportDeclaration(node) && node.specifiers.length > 0) {
+        node.specifiers = node.specifiers.filter(
+          (specifier) => !isDroppableSpecifier(node, specifier)
+        );
+        if (node.specifiers.length === 0) {
+          continue;
+        }
       }
-      if (node.source.value === ADDON_DOCS_ANGULAR) {
-        return node.specifiers.length > 1;
-      }
-      return !node.specifiers.some(
-        (specifier) =>
-          t.isImportDefaultSpecifier(specifier) && droppableImportNames.has(specifier.local.name)
-      );
-    });
+      remaining.push(node);
+    }
 
     if (dryRun) {
       return;

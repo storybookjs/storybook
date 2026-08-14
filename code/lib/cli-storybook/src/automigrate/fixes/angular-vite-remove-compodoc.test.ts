@@ -197,6 +197,34 @@ describe('run', () => {
     expect(preview).toContain('controls');
   });
 
+  it('removes only the specifiers that fed the call', async () => {
+    vol.fromNestedJSON({
+      [PREVIEW]: dedent`
+        import { setCompodocJson } from "@storybook/addon-docs/angular";
+        import docJson, { components } from "../documentation.json";
+
+        setCompodocJson(docJson);
+
+        export const componentCount = components.length;
+      `,
+    });
+
+    await runWith(
+      {
+        hasFrameworkOptions: false,
+        hasPreviewWiring: true,
+        workspaceJsonPaths: [],
+        hasCompodocDependency: false,
+      },
+      packageManager(false)
+    );
+
+    const preview = vol.readFileSync(PREVIEW, 'utf8') as string;
+    expect(preview).not.toContain('setCompodocJson');
+    expect(preview).not.toContain('docJson');
+    expect(preview).toContain('import { components } from "../documentation.json"');
+  });
+
   // The shape `vmware-clarity/ng-clarity` ships: the call is wrapped in a helper that also
   // pre-processes the JSON, so rewriting it automatically is not safe.
   it('leaves a preview alone when setCompodocJson is not called at the top level', async () => {

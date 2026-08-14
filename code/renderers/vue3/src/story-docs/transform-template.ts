@@ -9,24 +9,26 @@ import {
 
 import { types as t } from 'storybook/internal/babel';
 import {
-  buildImportStatements,
   keyOf,
   propertyValue,
+  returnedExpression,
+  unwrapExpression,
   type ImportBinding,
 } from 'storybook/internal/csf-tools';
 
 import type { ClassifiedArg } from './classify-args.ts';
-import { isFunctionExpression, singleReturnedExpression, unwrapValue } from './classify-value.ts';
+import { isFunctionExpression } from './classify-value.ts';
 import {
   createRenderContext,
   hoistArgValue,
   hoistModelRef,
+  importStatementForBinding,
+  inlinePrimitiveSource,
   renderArgsBindingAttributes,
   renderBoundArgAttribute,
-  renderInlinePrimitiveValue,
   renderPreparedSfcSnippet,
   type RenderContext,
-} from './render-sfc.ts';
+} from './render-primitives.ts';
 
 export interface TemplateRenderConfig {
   /** Static Vue template string returned from the render function. */
@@ -163,7 +165,7 @@ function transformInterpolation(
   }
 
   const arg = state.argsByName.get(argName);
-  const rendered = arg ? renderInlinePrimitiveValue(arg.value) : undefined;
+  const rendered = arg ? inlinePrimitiveSource(arg.value) : undefined;
   // Runtime interpolation renders escaped text; a value the template parser would read as markup
   // or as a new interpolation has no faithful inline form.
   if (rendered === undefined || /[<&]|{{/.test(rendered)) {
@@ -407,28 +409,20 @@ function readComponentImports(
     }
 
     const tagName = keyOf(property);
-    const component = unwrapValue(property.value);
+    const component = unwrapExpression(property.value);
     if (!tagName || !t.isIdentifier(component)) {
       return undefined;
     }
 
-    const binding = importBindings.get(component.name);
-    if (!binding || binding.importName === '*') {
+    const importStatement = importStatementForBinding(
+      component.name,
+      importBindings.get(component.name)
+    );
+    if (!importStatement) {
       return undefined;
     }
 
-    componentImports.set(
-      tagName,
-      buildImportStatements({
-        refs: [
-          {
-            importId: binding.importId,
-            importName: binding.importName,
-            localImportName: component.name,
-          },
-        ],
-      }).join('\n')
-    );
+    componentImports.set(tagName, importStatement);
   }
 
   return componentImports;
@@ -458,7 +452,7 @@ function isTrivialSetup(setup: t.ObjectMethod | t.ObjectProperty): boolean {
     return false;
   }
 
-  const value = unwrapValue(property.value);
+  const value = unwrapExpression(property.value);
   return t.isIdentifier(value, { name: ARGS_NAME });
 }
 
@@ -466,6 +460,7 @@ function isTrivialSetup(setup: t.ObjectMethod | t.ObjectProperty): boolean {
 function setupReturnObject(
   setup: t.ObjectMethod | t.ObjectProperty
 ): t.ObjectExpression | undefined {
-  const returned = singleReturnedExpression(t.isObjectMethod(setup) ? setup : setup.value);
+  const setupFunction = t.isObjectMethod(setup) ? setup : unwrapExpression(setup.value);
+  const returned = returnedExpression(setupFunction);
   return t.isObjectExpression(returned) ? returned : undefined;
 }

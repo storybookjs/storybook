@@ -1,6 +1,7 @@
 import { type NodePath, types as t } from 'storybook/internal/babel';
 
 import type { CsfFile } from '../CsfFile.ts';
+import type { RenderFunctionPath } from './render.ts';
 
 /** Peels TS assertion/satisfies wrappers and parentheses off an expression node. */
 export const unwrapExpression = (node: t.Node): t.Node =>
@@ -32,32 +33,67 @@ export const propertyValue = (
       t.isObjectProperty(candidate) && keyOf(candidate) === name
   )?.value;
 
+/** Expression a block body consists of, when it consists of exactly `return <expression>`. */
+const soleReturnedExpression = (body: t.BlockStatement): t.Expression | undefined => {
+  const [statement, ...rest] = body.body;
+  return rest.length === 0 && t.isReturnStatement(statement) && t.isExpression(statement.argument)
+    ? statement.argument
+    : undefined;
+};
+
 /**
- * Object literal a function returns, when it returns one directly.
+ * Expression a function returns directly, covering the concise body (`() => …`) and a block body
+ * that is only a `return`.
  *
- * Covers the concise body (`() => ({ … })`) and a block body whose `return` carries an object
- * literal, which is the shape template-based renderers use for `render`.
+ * A block body must hold nothing but that `return`, since any extra statement could change what the
+ * expression evaluates to and a static reader cannot follow it.
  */
-export const returnedObjectExpression = (
-  fn: t.Node | undefined
-): t.ObjectExpression | undefined => {
-  if (
-    !t.isArrowFunctionExpression(fn) &&
-    !t.isFunctionExpression(fn) &&
-    !t.isFunctionDeclaration(fn) &&
-    !t.isObjectMethod(fn)
-  ) {
+export const returnedExpression = (fn: t.Node | undefined): t.Expression | undefined => {
+  if (!t.isFunction(fn)) {
     return undefined;
   }
-  if (t.isObjectExpression(fn.body)) {
-    return fn.body;
+
+  return t.isExpression(fn.body) ? fn.body : soleReturnedExpression(fn.body);
+};
+
+/** {@link returnedExpression} as a path, for callers that resolve identifiers against scope. */
+export const returnedExpressionPath = (
+  renderFunction: RenderFunctionPath
+): NodePath<t.Expression> | undefined => {
+  if (!returnedExpression(renderFunction.node)) {
+    return undefined;
   }
-  const returned = t.isBlockStatement(fn.body)
-    ? fn.body.body.find((statement): statement is t.ReturnStatement =>
-        t.isReturnStatement(statement)
-      )?.argument
-    : undefined;
-  return t.isObjectExpression(returned) ? returned : undefined;
+
+  const body = renderFunction.get('body');
+  if (body.isExpression()) {
+    return body;
+  }
+
+  const [statement] = body.isBlockStatement() ? body.get('body') : [];
+  const argument = statement?.isReturnStatement() ? statement.get('argument') : undefined;
+  return argument?.isExpression() ? argument : undefined;
+};
+
+/**
+ * Object literal a render function resolves to, following a local identifier when it returns one.
+ *
+ * @example `() => ({ template })` and `() => config` with `const config = { template }` both →
+ * that object literal
+ */
+export const resolveReturnedObjectExpression = (
+  renderFunction: RenderFunctionPath
+): t.ObjectExpression | undefined => {
+  const returned = returnedExpressionPath(renderFunction);
+
+  if (returned?.isObjectExpression()) {
+    return returned.node;
+  }
+  if (!returned?.isIdentifier()) {
+    return undefined;
+  }
+
+  const resolved = resolveIdentifierInit(renderFunction, returned);
+  return resolved?.isObjectExpression() ? resolved.node : undefined;
 };
 
 /** Resolve a local story helper used by `Template.bind({})` or `render: Template`. */

@@ -102,7 +102,7 @@ function factoryArgumentExpression(
   return args[0];
 }
 
-/** Expression inside a TypeScript `satisfies` or `as` wrapper. */
+/** Path-level unwrap for story-legal TS wrappers only; declaration normalization preserves paths. */
 function unwrapTypeExpression(storyPath: StoryDeclarationExpression): StoryDeclarationExpression {
   if (storyPath.isTSSatisfiesExpression()) {
     return storyPath.get('expression');

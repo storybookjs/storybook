@@ -1,6 +1,6 @@
 {
   "id": "import-override",
-  "import": "import ImportOverrideButton from './ImportOverrideButton.vue';",
+  "import": "import { ImportOverride as ImportOverrideButton } from 'my-design-system';",
   "name": "ImportOverrideButton",
   "path": "__PATH__",
   "stories": {

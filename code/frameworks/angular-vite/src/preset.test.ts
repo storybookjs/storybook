@@ -1,5 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import { resolve } from 'node:path';
 
 import { mergeConfig, normalizePath } from 'vite';
@@ -126,5 +128,54 @@ describe('viteFinal Compodoc generation', () => {
     await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({ compodoc: false }));
 
     expect(ensureCompodocDocumentation).not.toHaveBeenCalled();
+  });
+});
+
+describe('viteFinal props-table wiring', () => {
+  const optionsWith = (
+    frameworkOptions: Record<string, unknown>,
+    featureFlags: Record<string, boolean> = {}
+  ) =>
+    ({
+      configDir: resolve(WORKSPACE_ROOT, '.storybook'),
+      angularBuilderContext: { workspaceRoot: WORKSPACE_ROOT },
+      presets: {
+        apply: async (key: string, fallback?: unknown) => {
+          if (key === 'framework') {
+            return { options: frameworkOptions };
+          }
+          return key === 'features' ? featureFlags : fallback;
+        },
+      },
+    }) as unknown as StandaloneOptions;
+
+  const definedMode = async (
+    frameworkOptions: Record<string, unknown>,
+    featureFlags: Record<string, boolean> = {}
+  ) => {
+    const result = (await viteFinal(
+      { root: WORKSPACE_ROOT },
+      optionsWith(frameworkOptions, featureFlags)
+    )) as any;
+    return JSON.parse(result.define.STORYBOOK_ANGULAR_OPTIONS).propsTable;
+  };
+
+  it('hands the preview the resolved mode, which is how the flag-off path reads it', async () => {
+    await expect(definedMode({})).resolves.toBe('api');
+    await expect(definedMode({ propsTable: 'all' })).resolves.toBe('all');
+    await expect(definedMode({}, { angularFilterNonInputControls: true })).resolves.toBe('inputs');
+  });
+
+  it('warns from here, because the docgen preset never runs with the feature off', async () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    try {
+      await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({ propsTable: 'api' }));
+
+      expect(warn.mock.calls.map(([message]) => String(message)).join('\n')).toContain(
+        'experimentalDocgenServer'
+      );
+    } finally {
+      warn.mockRestore();
+    }
   });
 });

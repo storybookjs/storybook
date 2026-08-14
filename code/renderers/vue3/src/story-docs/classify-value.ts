@@ -1,4 +1,5 @@
 import { recast, type types as t } from 'storybook/internal/babel';
+import { unwrapExpression } from 'storybook/internal/csf-tools';
 
 /**
  * How one arg value reaches the generated SFC.
@@ -63,7 +64,7 @@ const NO_LOCALS: ReadonlySet<string> = new Set();
 
 /** Classifies one CSF arg value into the single plan both the classifier and the renderer act on. */
 export function classifyValue(node: t.Node): ValuePlan {
-  const value = unwrapValue(node);
+  const value = unwrapExpression(node);
 
   // An empty string renders nothing, which is also what the runtime source decorator does with it.
   if (isFunctionExpression(value) || isUndefinedIdentifier(value) || isEmptyString(value)) {
@@ -81,61 +82,16 @@ export function printValue(node: t.Node): string {
   return recast.print(node).code;
 }
 
-export function unwrapValue(node: t.Node): t.Node {
-  if (
-    node.type === 'TSAsExpression' ||
-    node.type === 'TSSatisfiesExpression' ||
-    node.type === 'TSNonNullExpression' ||
-    node.type === 'TSTypeAssertion'
-  ) {
-    return unwrapValue(node.expression);
-  }
-
-  return node;
-}
-
 export function isFunctionExpression<T extends t.Node>(
   node: T
 ): node is T & (t.ArrowFunctionExpression | t.FunctionExpression) {
-  const unwrapped = unwrapValue(node);
+  const unwrapped = unwrapExpression(node);
   return unwrapped.type === 'ArrowFunctionExpression' || unwrapped.type === 'FunctionExpression';
-}
-
-/**
- * Expression a function returns when its body is exactly one static return path.
- *
- * Deliberately stricter than csf-tools' `returnedObjectExpression`: a block body must contain
- * exactly the return statement, since any extra statement could affect what the story renders.
- *
- * @example `() => 'hi'` → `'hi'`; `setup() { return { args }; }` → `{ args }`
- */
-export function singleReturnedExpression(node: t.Node): t.Node | undefined {
-  const fn = unwrapValue(node);
-  if (
-    fn.type !== 'ArrowFunctionExpression' &&
-    fn.type !== 'FunctionExpression' &&
-    fn.type !== 'ObjectMethod'
-  ) {
-    return undefined;
-  }
-
-  if (fn.body.type !== 'BlockStatement') {
-    return fn.body;
-  }
-
-  if (fn.body.body.length !== 1) {
-    return undefined;
-  }
-
-  const [statement] = fn.body.body;
-  return statement.type === 'ReturnStatement' && statement.argument
-    ? statement.argument
-    : undefined;
 }
 
 /** `args: { a: undefined }` unsets an inherited meta arg, so it renders nothing. */
 export function isUndefinedIdentifier(node: t.Node): boolean {
-  const unwrapped = unwrapValue(node);
+  const unwrapped = unwrapExpression(node);
   return unwrapped.type === 'Identifier' && unwrapped.name === UNDEFINED_IDENTIFIER;
 }
 
@@ -146,7 +102,7 @@ export function isUndefinedIdentifier(node: t.Node): boolean {
  * @example `(value) => value.toUpperCase()` → true; `(value) => formatHelper(value)` → false
  */
 export function isSelfContainedFunction(node: t.Node): boolean {
-  const fn = unwrapValue(node);
+  const fn = unwrapExpression(node);
   if (fn.type !== 'ArrowFunctionExpression' && fn.type !== 'FunctionExpression') {
     return false;
   }
@@ -211,13 +167,13 @@ function collectPatternNames(pattern: t.Node, into: Set<string>): boolean {
 }
 
 function isEmptyString(node: t.Node): boolean {
-  const value = unwrapValue(node);
+  const value = unwrapExpression(node);
   return value.type === 'StringLiteral' && value.value === '';
 }
 
 /** Values whose printed form is self-contained, so a template expression can carry them directly. */
 function isInlineLiteral(node: t.Node): boolean {
-  const value = unwrapValue(node);
+  const value = unwrapExpression(node);
 
   switch (value.type) {
     case 'StringLiteral':
@@ -242,7 +198,7 @@ function isInlineLiteral(node: t.Node): boolean {
  * @example `new Date('2020-01-01')` → true (`Date` is global); `Sizes.LARGE` → false (`Sizes` is not)
  */
 function isResolvable(node: t.Node, locals: ReadonlySet<string> = NO_LOCALS): boolean {
-  const value = unwrapValue(node);
+  const value = unwrapExpression(node);
   const resolves = (child: t.Node): boolean => isResolvable(child, locals);
 
   switch (value.type) {

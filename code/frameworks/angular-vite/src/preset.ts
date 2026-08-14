@@ -13,6 +13,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { resolveCompodocConfig } from './compodoc-config.ts';
+import { resolvePropsTable, warnAboutPropsTable } from './props-table.ts';
 import { ensureCompodocDocumentation } from './compodoc/ensure-documentation.ts';
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 import type { UserConfig, Plugin } from 'vite';
@@ -110,6 +111,11 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     });
   }
 
+  // @ts-expect-error same as `framework` above: `options` is optional in the signature only
+  const features = await options.presets.apply('features', {});
+  const propsTable = resolvePropsTable(framework.options, features);
+  warnAboutPropsTable(framework.options, features);
+
   const zoneless = resolveZoneless(options?.angularBuilderOptions);
   const angularPlugins = angular({
     jit: typeof framework.options?.jit !== 'undefined' ? framework.options?.jit : true,
@@ -195,6 +201,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     define: {
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
         zoneless: !!zoneless,
+        propsTable,
       }),
     },
   });

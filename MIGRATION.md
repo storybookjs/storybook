@@ -565,6 +565,18 @@ export default {
 };
 ```
 
+Opting out keeps the Compodoc setup an existing project already has.
+A project created after this change has none, because `storybook init` no longer sets Compodoc up for the Vite builder, so opting out there means installing `@compodoc/compodoc`, generating `documentation.json`, and handing it to Storybook yourself:
+
+```js
+// .storybook/preview.js
+import { setCompodocJson } from '@storybook/addon-docs/angular';
+
+import docJson from '../documentation.json';
+
+setCompodocJson(docJson);
+```
+
 The webpack-based `@storybook/angular` package is unaffected and keeps Compodoc as its only docgen path.
 
 The `compodoc` and `compodocArgs` options have also been removed from the `@storybook/angular-vite` `start-storybook` and `build-storybook` builder schemas. Those options were validated by the Angular CLI and never read; Compodoc is configured through `framework.options` in your main config.

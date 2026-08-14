@@ -439,3 +439,51 @@ Type: `string[]`
 Default: `['-e', 'json', '-d', '.']`
 
 Arguments passed to the `@compodoc/compodoc` CLI when `compodoc` is `true`. The defaults produce a `documentation.json` file in the workspace root.
+
+#### `propsTable`
+
+Type: `'all' | 'api' | 'inputs'`
+
+Default: `'api'`
+
+Which of your component's members the props table renders.
+The three values are a ladder, each one a subset of the one above it:
+
+| Value      | Renders                                                                   |
+| ---------- | ------------------------------------------------------------------------- |
+| `'all'`    | Every member of every section: properties, inputs, outputs and methods.   |
+| `'api'`    | The same four sections, narrowed to your component's template-facing API. |
+| `'inputs'` | The inputs section only.                                                  |
+
+`'api'` keeps every declared input and output, whatever its TypeScript visibility.
+
+Everywhere else, `'api'` drops TypeScript `private` members, ECMAScript private `#` members, and anything tagged `@internal`.
+A `private` property or method cannot be reached from any template, and `@internal` declares a member non-API, so a row for them documents your component's wiring rather than its API.
+Injected services are the common case:
+
+```ts
+@Component({ selector: 'my-button', template: '<button>{{ label }}</button>' })
+export class ButtonComponent {
+  // Kept by 'api': a parent template can bind any declared input.
+  @Input() private label = '';
+
+  // Dropped by 'api': no template can reach it.
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  // Kept by 'api': the component's own template can read protected members.
+  protected pressed = false;
+}
+```
+
+`protected` members are deliberately kept, because Angular templates can bind them and they are therefore part of what a reader needs to know.
+
+To drop a single member that `'api'` keeps, tag it `@ignore`:
+
+```ts
+/** @ignore */
+protected internalHelper = 0;
+```
+
+`'api'` needs the `experimentalDocgenServer` feature.
+Without it, Storybook reads your components through Compodoc, whose visibility data Storybook cannot interpret reliably, so only `'all'` and `'inputs'` apply.
+Asking for `'api'` then logs a warning rather than silently changing what you see.

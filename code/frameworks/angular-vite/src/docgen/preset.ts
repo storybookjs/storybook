@@ -10,6 +10,7 @@ import type {
 import { fileURLToPath } from 'node:url';
 
 import { resolveCompodocConfig } from '../compodoc-config.ts';
+import { resolvePropsTable } from '../props-table.ts';
 import type { AngularDocgenOptions } from './build-docgen.ts';
 
 /** Contribute the descriptor for the worker module core imports and runs off the main thread. */
@@ -33,7 +34,7 @@ export const experimental_docgenProvider = async (
       import.meta.resolve('@storybook/angular-vite/internal/docgen-worker')
     ),
     options: {
-      angularFilterNonInputControls: features?.angularFilterNonInputControls,
+      propsTable: resolvePropsTable(await options?.presets?.apply('frameworkOptions'), features),
     },
   };
 

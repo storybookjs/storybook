@@ -1,4 +1,22 @@
 {
+  "clampPage": {
+    "description": undefined,
+    "name": "clampPage",
+    "table": {
+      "category": "methods",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": false,
+        "summary": "() => void",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
   "currentPage": {
     "description": undefined,
     "name": "currentPage",
@@ -14,6 +32,77 @@
     },
     "type": {
       "name": "number",
+    },
+  },
+  "density": {
+    "description": undefined,
+    "name": "density",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "compact",
+      },
+      "type": {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "densityChange": {
+    "action": "densityChange",
+    "description": undefined,
+    "name": "densityChange",
+    "table": {
+      "category": "outputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": true,
+        "summary": "EventEmitter",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "helperLabel": {
+    "description": undefined,
+    "name": "helperLabel",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": "Next page",
+      },
+      "type": {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "host": {
+    "description": undefined,
+    "name": "host",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": true,
+        "summary": "ElementRef",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "empty-enum",
     },
   },
   "isActive": {
@@ -67,6 +156,23 @@
     "type": {
       "name": "other",
       "value": "void",
+    },
+  },
+  "pageLabel": {
+    "description": undefined,
+    "name": "pageLabel",
+    "table": {
+      "category": "properties",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": true,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
     },
   },
   "panel": {

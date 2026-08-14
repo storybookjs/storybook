@@ -31,7 +31,7 @@ it('builds a real payload through the TypeScript-backed analyzer', async () => {
       { entry },
       {
         manager,
-        options: {},
+        options: { propsTable: 'api' },
         logger: { warn: vi.fn(), debug: vi.fn() },
         resolvePath: () => STORY_PATH,
       }

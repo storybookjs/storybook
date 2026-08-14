@@ -25,7 +25,8 @@ export function compareArgTypes(
   const violations: Violation[] = [];
   for (const [arg, baseEntry] of Object.entries(baseline)) {
     // ES-private `#member`s are inaccessible outside their class; legacy Compodoc records them
-    // anyway, and the modern extractor deliberately drops them. Their loss never gates.
+    // anyway, and the modern extractor only surfaces them under `propsTable: 'all'`. Their loss
+    // never gates.
     if (arg.startsWith('#')) {
       continue;
     }

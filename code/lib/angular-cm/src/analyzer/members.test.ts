@@ -27,8 +27,8 @@ afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// Mirrors what the docgen worker passes for analyzer-produced records.
-const ANALYZER_EXTRACT_OPTIONS = { filterNonInputControls: undefined } as const;
+// These tests are about what the analyzer records, so nothing here may be filtered on the way out.
+const ANALYZER_EXTRACT_OPTIONS = { propsTable: 'all' } as const;
 
 const soleComponent = (meta: ReturnType<typeof analyze>) => meta.components[0] as Directive;
 
@@ -1109,12 +1109,15 @@ describe('real-world JSDoc, visibility and accessor edge cases', () => {
     });
   });
 
-  it('drops an undecorated private or protected accessor pair, but keeps a public one', () => {
-    const properties = names(componentIn(SOURCE).propertiesClass);
+  it('records an undecorated accessor pair with its visibility, whatever that visibility is', () => {
+    const properties = componentIn(SOURCE).propertiesClass;
 
-    expect(properties).toContain('publicPair');
-    expect(properties).not.toContain('internalState');
-    expect(properties).not.toContain('errorPresent');
+    expect(names(properties)).toEqual(
+      expect.arrayContaining(['publicPair', 'internalState', 'errorPresent'])
+    );
+    expect(byName(properties, 'publicPair').visibility).toBeUndefined();
+    expect(byName(properties, 'internalState').visibility).toBe('private');
+    expect(byName(properties, 'errorPresent').visibility).toBe('protected');
   });
 
   it('treats @Output() on a getter as an output, alias honoured', () => {
@@ -1185,12 +1188,13 @@ describe('member identity is the declared field, not the emitted name', () => {
     expect(byName(properties, 'asGetter').decorators).toEqual([{ name: 'ContentChild' }]);
   });
 
-  it('emits publicly visible parameter properties, bare `readonly` included, with their tags', () => {
+  it('emits parameter properties, bare `readonly` included, with their tags and visibility', () => {
     const component = componentIn(SOURCE);
 
     expect(names(component.propertiesClass)).toContain('pageSize');
     expect(names(component.propertiesClass)).toContain('pageIndex');
-    expect(names(component.propertiesClass)).not.toContain('hidden');
+    expect(byName(component.propertiesClass, 'hidden').visibility).toBe('private');
+    expect(byName(component.propertiesClass, 'pageSize').visibility).toBeUndefined();
     expect(byName(component.propertiesClass, 'legacySize').jsdoctags).toMatchObject([
       { tagName: { text: 'deprecated' } },
     ]);
@@ -1199,10 +1203,18 @@ describe('member identity is the declared field, not the emitted name', () => {
   it('says why a member it left out is missing', () => {
     const debug = vi.spyOn(logger, 'debug').mockImplementation(() => {});
 
-    analyze(SOURCE);
+    analyze(`
+      import { Component } from '@angular/core';
+
+      @Component({ selector: 'sb-ignored', template: '' })
+      export class IgnoredComponent {
+        /** @ignore */
+        hidden = 1;
+      }
+    `);
 
     expect(debug.mock.calls.map(([message]) => message)).toContain(
-      '[angular-cm] MemberIdentityComponent.hidden left out of docgen: a private or protected parameter property'
+      '[angular-cm] IgnoredComponent.hidden left out of docgen: tagged @ignore'
     );
   });
 
@@ -1215,5 +1227,181 @@ describe('member identity is the declared field, not the emitted name', () => {
     expect(
       component.propertiesClass.filter((property) => property.name === 'mode').map((p) => p.type)
     ).toEqual(['string', 'number']);
+  });
+});
+
+describe('visibility and @internal are recorded, not acted on', () => {
+  const SOURCE = `
+    import { ChangeDetectorRef, Component, Input, inject } from '@angular/core';
+
+    @Component({ selector: 'sb-visibility', template: '' })
+    export class VisibilityComponent {
+      @Input() title = '';
+
+      private readonly cdr = inject(ChangeDetectorRef);
+
+      protected helperLabel = 'help';
+
+      publicNote = 'note';
+
+      /** @internal */
+      buildId = 'build-1';
+
+      private stash(): void {}
+
+      protected assist(): void {}
+
+      /** @internal */
+      reset(): void {}
+    }
+  `;
+
+  it('marks a private property and leaves a public one unmarked', () => {
+    const component = componentIn(SOURCE);
+
+    expect(byName(component.propertiesClass, 'cdr').visibility).toBe('private');
+    expect(byName(component.propertiesClass, 'publicNote').visibility).toBeUndefined();
+    expect(byName(component.inputsClass, 'title').visibility).toBeUndefined();
+  });
+
+  it('marks a protected property, which stays bindable from a template', () => {
+    expect(byName(componentIn(SOURCE).propertiesClass, 'helperLabel').visibility).toBe('protected');
+  });
+
+  it('marks private and protected methods', () => {
+    const component = componentIn(SOURCE);
+
+    expect(byName(component.methodsClass, 'stash').visibility).toBe('private');
+    expect(byName(component.methodsClass, 'assist').visibility).toBe('protected');
+  });
+
+  it('marks an @internal property and method regardless of their visibility', () => {
+    const component = componentIn(SOURCE);
+
+    expect(byName(component.propertiesClass, 'buildId').internal).toBe(true);
+    expect(byName(component.propertiesClass, 'buildId').visibility).toBeUndefined();
+    expect(byName(component.methodsClass, 'reset').internal).toBe(true);
+  });
+
+  it('keeps every one of them in the payload for the extractor to decide on', () => {
+    const component = componentIn(SOURCE);
+
+    expect(names(component.propertiesClass)).toEqual(
+      expect.arrayContaining(['cdr', 'helperLabel', 'publicNote', 'buildId'])
+    );
+    expect(names(component.methodsClass)).toEqual(
+      expect.arrayContaining(['stash', 'assist', 'reset'])
+    );
+  });
+});
+
+describe('what `propsTable` does with the recorded visibility', () => {
+  const SOURCE = `
+    import { Component, EventEmitter, Input, Output, model } from '@angular/core';
+
+    @Component({ selector: 'sb-props-table', template: '' })
+    export class PropsTableComponent {
+      constructor(private readonly cdr: string, protected readonly host: string) {}
+
+      @Input() private density = 'compact';
+
+      @Output() private densityChange = new EventEmitter<string>();
+
+      /** @internal */
+      @Input() experimentalKnob = '';
+
+      /** @internal */
+      @Output() experimentalChanged = new EventEmitter<string>();
+
+      protected helperLabel = 'help';
+
+      private pageCount = 10;
+
+      #secret = 'hidden';
+
+      /** @internal */
+      buildId = 'build-1';
+
+      /** @internal */
+      draft = model('');
+
+      published = model('');
+    }
+  `;
+
+  const argNames = (propsTable: 'all' | 'api' | 'inputs') =>
+    Object.keys(
+      extractArgTypesFromData(componentIn(SOURCE), { metadataJson: undefined, propsTable })
+    );
+
+  it('documents every recorded member under `all`', () => {
+    expect(argNames('all')).toEqual(
+      expect.arrayContaining([
+        'cdr',
+        'host',
+        'density',
+        'densityChange',
+        'helperLabel',
+        'pageCount',
+        '#secret',
+        'buildId',
+        'draft',
+        'draftChange',
+      ])
+    );
+  });
+
+  it('keeps a private input and output under `api`, which a parent template can still bind', () => {
+    expect(argNames('api')).toEqual(expect.arrayContaining(['density', 'densityChange']));
+  });
+
+  it("keeps `protected` under `api`, which the component's own template reads", () => {
+    expect(argNames('api')).toEqual(expect.arrayContaining(['helperLabel', 'host']));
+  });
+
+  it('drops what nothing can reach under `api`', () => {
+    expect(argNames('api')).not.toContain('cdr');
+    expect(argNames('api')).not.toContain('pageCount');
+    expect(argNames('api')).not.toContain('#secret');
+  });
+
+  it('drops an @internal input and output in api and inputs, keeping them in all', () => {
+    expect(argNames('all')).toEqual(
+      expect.arrayContaining(['experimentalKnob', 'experimentalChanged'])
+    );
+    expect(argNames('api')).not.toContain('experimentalKnob');
+    expect(argNames('api')).not.toContain('experimentalChanged');
+    expect(argNames('inputs')).not.toContain('experimentalKnob');
+  });
+
+  it('says why a member is missing from the table', () => {
+    const debug = vi.fn();
+
+    extractArgTypesFromData(componentIn(SOURCE), {
+      metadataJson: undefined,
+      propsTable: 'api',
+      logger: { warn: vi.fn(), debug },
+    });
+
+    expect(debug.mock.calls.map(([message]) => message)).toContain(
+      "PropsTableComponent.cdr left out of the props table: propsTable 'api'"
+    );
+  });
+
+  it('takes an @internal `model()` and its synthesized change output together', () => {
+    expect(argNames('all')).toEqual(expect.arrayContaining(['draft', 'draftChange']));
+    expect(argNames('api')).not.toContain('draft');
+    expect(argNames('api')).not.toContain('draftChange');
+    expect(argNames('api')).toEqual(expect.arrayContaining(['published', 'publishedChange']));
+  });
+
+  it('narrows to the inputs section, keeping each documented model pair whole', () => {
+    const inputs = argNames('inputs');
+
+    expect(inputs).toEqual(expect.arrayContaining(['density', 'published', 'publishedChange']));
+    expect(inputs).not.toContain('helperLabel');
+    expect(inputs).not.toContain('densityChange');
+    expect(inputs).not.toContain('draft');
+    expect(inputs).not.toContain('draftChange');
   });
 });

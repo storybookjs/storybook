@@ -82,10 +82,10 @@ it('documents a real `model()` as one two-way input and one Change output', asyn
     \`\`\`
     export type ColorPickerComponentInputs = {
       /**
-        The currently selected colour
-
-        @default #345F92
-      */
+       * The currently selected colour
+       *
+       * @default #345F92
+       */
       color?: string; // two-way: [(color)]
     }
     \`\`\`
@@ -94,9 +94,7 @@ it('documents a real `model()` as one two-way input and one Change output', asyn
 
     \`\`\`
     export type ColorPickerComponentOutputs = {
-      /**
-        The currently selected colour
-      */
+      /** The currently selected colour */
       colorChange: (e: string) => void;
     }
     \`\`\`"

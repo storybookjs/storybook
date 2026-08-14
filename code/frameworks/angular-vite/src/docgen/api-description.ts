@@ -32,15 +32,22 @@ const readMember = (name: string, argType: StrictInputType): Member => {
 // inline, and re-quoting cannot tell a string literal from an identifier the source referenced.
 const docComment = (member: Member): string[] => {
   const description = member.description?.trim();
-  const defaultTag =
-    member.defaultValue === undefined ? undefined : `@default ${member.defaultValue}`;
+  const body = description ? description.split('\n').map((line) => line.trimEnd()) : [];
 
-  if (!description) {
-    return defaultTag ? [`  /** ${defaultTag} */`] : [];
+  if (member.defaultValue !== undefined) {
+    if (body.length > 0) {
+      body.push('');
+    }
+    body.push(`@default ${member.defaultValue}`);
   }
 
-  const body = description.split('\n').map((line) => (line.trim() ? `    ${line}` : ''));
-  return ['  /**', ...body, ...(defaultTag ? ['', `    ${defaultTag}`] : []), '  */'];
+  if (body.length === 0) {
+    return [];
+  }
+  if (body.length === 1) {
+    return [`  /** ${body[0]} */`];
+  }
+  return ['  /**', ...body.map((line) => (line ? `   * ${line}` : '   *')), '   */'];
 };
 
 const inputLine = (member: Member, isTwoWay: boolean): string => {

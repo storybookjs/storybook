@@ -76,10 +76,12 @@ type LoadedSession = {
  */
 export const inFlightLoads = new Map<string, Promise<unknown>>();
 
-/** Distinguishes runtimes that share a service id, so their in-flight loads never collide. */
+/**
+ * Monotonic instance id for {@link makeInFlightKey}. The load key already names the service;
+ * this token only has to be unique among live runtimes.
+ */
 let nextRuntimeSequence = 0;
-export const nextRuntimeId = (serviceId: ServiceId): string =>
-  `${serviceId}#${(nextRuntimeSequence += 1)}`;
+export const nextRuntimeId = (): string => String((nextRuntimeSequence += 1));
 
 /**
  * Active session for `.loaded()` while a sync handler is being re-run for dependency discovery.

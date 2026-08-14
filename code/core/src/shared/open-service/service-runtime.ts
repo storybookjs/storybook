@@ -381,7 +381,7 @@ export function createServiceRuntime<
     return routed as CommandSelf<TState>['commands'];
   };
 
-  const runtimeId = nextRuntimeId(def.id);
+  const runtimeId = nextRuntimeId();
 
   const refs: QueryRuntimeRefs<TState> = {
     serviceId: def.id,

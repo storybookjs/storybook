@@ -39,8 +39,10 @@ describe('buildApiDescription', () => {
       export type ButtonComponentInputs = {
         /**
           Text on the button.
+
+          @default 'Click me'
         */
-        label?: string = 'Click me';
+        label?: string;
         disabled: boolean;
       }
       \`\`\`
@@ -85,8 +87,10 @@ describe('buildApiDescription', () => {
       export type ColorPickerComponentInputs = {
         /**
           The currently selected colour
+
+          @default '#345F92'
         */
-        color?: string = '#345F92'; // two-way: [(color)]
+        color?: string; // two-way: [(color)]
       }
       \`\`\`
 
@@ -192,6 +196,33 @@ describe('buildApiDescription', () => {
           Supports **markdown**.
         */
         label: string;
+      }
+      \`\`\`"
+    `);
+  });
+
+  it('keeps a default-only doc comment on one line', () => {
+    const result = buildApiDescription(
+      argTypes({
+        size: {
+          name: 'size',
+          table: {
+            category: 'inputs',
+            type: { summary: 'number', required: false },
+            defaultValue: { summary: '42' },
+          },
+        },
+      }),
+      'ButtonComponent'
+    );
+
+    expect(result).toMatchInlineSnapshot(`
+      "## Inputs
+
+      \`\`\`
+      export type ButtonComponentInputs = {
+        /** @default 42 */
+        size?: number;
       }
       \`\`\`"
     `);

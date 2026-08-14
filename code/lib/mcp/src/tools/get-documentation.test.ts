@@ -438,7 +438,8 @@ describe('getDocumentationTool', () => {
               '',
               '```',
               'export type ColorPickerComponentInputs = {',
-              '  color?: string = #345F92; // two-way: [(color)]',
+              '  /** @default #345F92 */',
+              '  color?: string; // two-way: [(color)]',
               '}',
               '```',
               '',
@@ -486,7 +487,8 @@ describe('getDocumentationTool', () => {
 
       \`\`\`
       export type ColorPickerComponentInputs = {
-        color?: string = #345F92; // two-way: [(color)]
+        /** @default #345F92 */
+        color?: string; // two-way: [(color)]
       }
       \`\`\`
 

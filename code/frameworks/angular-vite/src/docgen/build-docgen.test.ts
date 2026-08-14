@@ -282,9 +282,11 @@ describe('buildDocgenPayload', () => {
         'export type ColorPickerComponentInputs = {',
         '  /**',
         '    The currently selected colour',
-        '  */',
+        '',
         // The analyzer unquotes string defaults for the props table, and this reads that value.
-        '  color?: string = #345F92; // two-way: [(color)]',
+        '    @default #345F92',
+        '  */',
+        '  color?: string; // two-way: [(color)]',
         '}',
         '```',
         '',

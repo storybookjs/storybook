@@ -27,18 +27,25 @@ const readMember = (name: string, argType: StrictInputType): Member => {
   };
 };
 
-const describeLines = (description: string | undefined): string[] => {
-  const text = description?.trim();
-  if (!text) {
-    return [];
+// The default belongs in the doc comment rather than after an `=`: the analyzer unquotes string
+// defaults for the props table, so `label: string = Click me` would be the only shape available
+// inline, and re-quoting cannot tell a string literal from an identifier the source referenced.
+const docComment = (member: Member): string[] => {
+  const description = member.description?.trim();
+  const defaultTag =
+    member.defaultValue === undefined ? undefined : `@default ${member.defaultValue}`;
+
+  if (!description) {
+    return defaultTag ? [`  /** ${defaultTag} */`] : [];
   }
-  return ['  /**', ...text.split('\n').map((line) => (line.trim() ? `    ${line}` : '')), '  */'];
+
+  const body = description.split('\n').map((line) => (line.trim() ? `    ${line}` : ''));
+  return ['  /**', ...body, ...(defaultTag ? ['', `    ${defaultTag}`] : []), '  */'];
 };
 
 const inputLine = (member: Member, isTwoWay: boolean): string => {
   const optional = member.required ? '' : '?';
-  const defaultValue = member.defaultValue === undefined ? '' : ` = ${member.defaultValue}`;
-  const line = `  ${member.name}${optional}: ${member.type ?? 'any'}${defaultValue};`;
+  const line = `  ${member.name}${optional}: ${member.type ?? 'any'};`;
   return isTwoWay ? `${line} // two-way: [(${member.name})]` : line;
 };
 
@@ -94,7 +101,7 @@ export function buildApiDescription(
         'Inputs',
         `${typePrefix}Inputs`,
         inputs.flatMap((input) => [
-          ...describeLines(input.description),
+          ...docComment(input),
           inputLine(input, outputNames.has(`${input.name}Change`)),
         ])
       )
@@ -106,7 +113,7 @@ export function buildApiDescription(
       ...section(
         'Outputs',
         `${typePrefix}Outputs`,
-        outputs.flatMap((output) => [...describeLines(output.description), outputLine(output)])
+        outputs.flatMap((output) => [...docComment(output), outputLine(output)])
       )
     );
   }

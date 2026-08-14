@@ -13,6 +13,7 @@ import { extractArgTypes } from '../extractArgTypes.ts';
 
 import type { ComponentMetaChecker } from 'vue-component-meta';
 
+import { buildApiDescription } from './api-description.ts';
 import { type MetaSource, collectComponentMetaSources } from './component-meta.ts';
 import { type UnresolvedComponentReason, resolveMetaComponent } from './resolve-component.ts';
 
@@ -143,5 +144,7 @@ export async function buildDocgenPayload(
     jsDocTags,
     vueComponentMeta: componentMeta,
     argTypes: extractArgTypes({ __docgenInfo: componentMeta }) ?? undefined,
+    apiDescription: buildApiDescription(componentMeta),
+    renderer: 'vue3',
   };
 }

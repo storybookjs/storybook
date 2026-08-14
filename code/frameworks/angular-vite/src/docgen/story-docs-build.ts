@@ -302,11 +302,31 @@ const evaluateArgExpression = (node: t.Node, source: string, enums: SnippetEnum[
   if (value !== EVAL_FAILED) {
     return formatInputValue(value);
   }
-  const text =
-    unwrapped.start != null && unwrapped.end != null
-      ? source.slice(unwrapped.start, unwrapped.end)
-      : undefined;
+  const text = sourceTextAtLoc(source, unwrapped.loc);
   return (text ?? 'undefined').replace(/"/g, '&quot;');
+};
+
+// Recast reparses with os.EOL, so `node.start`/`end` are not offsets into `source` on Windows.
+const sourceTextAtLoc = (source: string, loc: t.Node['loc']): string | undefined => {
+  if (!loc) {
+    return undefined;
+  }
+  const lines = source.split(/\r\n|\n|\r/);
+  const startLine = loc.start.line - 1;
+  const endLine = loc.end.line - 1;
+  const start = lines[startLine];
+  const end = lines[endLine];
+  if (start === undefined || end === undefined) {
+    return undefined;
+  }
+  if (startLine === endLine) {
+    return start.slice(loc.start.column, loc.end.column);
+  }
+  return [
+    start.slice(loc.start.column),
+    ...lines.slice(startLine + 1, endLine),
+    end.slice(0, loc.end.column),
+  ].join('\n');
 };
 
 const evaluateNode = (node: t.Node, enums: SnippetEnum[]): unknown => {

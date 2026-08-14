@@ -91,6 +91,25 @@ import C from './C.vue';
 </template>`);
   });
 
+  it('uses the overridden component import inside function slots', () => {
+    const result = renderSfcSnippet({
+      args: [slot('default', `() => h(C, { label: 'Nested' })`, 'function-slot')],
+      componentImportStatement: "import C from '@example/C.vue';",
+      componentName: 'C',
+      importBindings: new Map([['C', { importId: './C.vue', importName: 'default' }]]),
+    });
+
+    expect(result?.snippet).toBe(`<script lang="ts" setup>
+import C from '@example/C.vue';
+</script>
+
+<template>
+  <C>
+    <C label="Nested" />
+  </C>
+</template>`);
+  });
+
   it('interpolates a hoisted slot value', () => {
     const snippet = render([slot('default', `['a']`, 'hoist')]);
 
@@ -153,7 +172,11 @@ function prop(name: string, code: string, kind: 'hoist' | 'inline' = 'inline'): 
   return { name, value: expression(code), role: 'prop', plan: { kind } };
 }
 
-function slot(name: string, code: string, kind: 'hoist' | 'inline' = 'inline'): ClassifiedArg {
+function slot(
+  name: string,
+  code: string,
+  kind: 'function-slot' | 'hoist' | 'inline' = 'inline'
+): ClassifiedArg {
   return { name, value: expression(code), role: 'slot', plan: { kind } };
 }
 

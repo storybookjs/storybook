@@ -34,13 +34,16 @@ export interface RenderSfcResult {
 export function renderSfcSnippet(input: RenderSfcInput): RenderSfcResult | undefined {
   const ctx = createRenderContext();
   ctx.componentImports.add(input.componentImportStatement);
+  const componentImportStatements = new Map([
+    [input.componentName, input.componentImportStatement],
+  ]);
   const partitioned = partitionArgsByRole(input.args);
   const props = partitioned.props.map((arg) => formatRenderedProp(renderPropLikeArg(arg, ctx)));
   const events = partitioned.events.map((arg) => formatRenderedProp(renderEventArg(arg, ctx)));
 
   const slotSource: string[] = [];
   for (const arg of partitioned.slots) {
-    const rendered = renderSlotArg(arg, ctx, input.importBindings);
+    const rendered = renderSlotArg(arg, ctx, input.importBindings, componentImportStatements);
     // Only function-slot plans fail to render; without their content the snippet would misrepresent
     // the story, so bail and leave it to runtime source.
     if (rendered === undefined) {
@@ -63,8 +66,9 @@ export function renderSfcSnippet(input: RenderSfcInput): RenderSfcResult | undef
 function renderSlotArg(
   arg: ClassifiedSlotArg,
   ctx: RenderContext,
-  importBindings: Map<string, ImportBinding>
+  importBindings: Map<string, ImportBinding>,
+  componentImportStatements: Map<string, string>
 ): string | undefined {
-  const content = renderSlotArgContent(arg, ctx, importBindings);
+  const content = renderSlotArgContent(arg, ctx, importBindings, componentImportStatements);
   return content === undefined ? undefined : wrapSlotContent(arg.name, content);
 }

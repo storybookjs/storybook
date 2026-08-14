@@ -36,13 +36,15 @@ function renderStory(
   storySource: string,
   docgen: VueDocgenArgInfo = DEFAULT_DOCGEN,
   importSource = "import MyButton from './MyButton.vue';",
-  metaRender?: string
+  metaRender?: string,
+  componentImportStatement = "import MyButton from './MyButton.vue';"
 ): TransformHResult | undefined {
   const parsed = parseRender(storySource, docgen, importSource, metaRender);
   return parsed.expression
     ? transformH({
         args: parsed.args,
         argsParam: parsed.argsParam,
+        componentImportStatement,
         componentName: 'MyButton',
         docgen,
         importBindings: parsed.importBindings,

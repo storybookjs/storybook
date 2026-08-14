@@ -12,8 +12,8 @@ export const unwrapExpression = (node: t.Node): t.Node =>
     ? unwrapExpression(node.expression)
     : node;
 
-/** Static key of an object property, or `null` when computed/non-literal. */
-export const keyOf = (p: t.ObjectProperty): string | null =>
+/** Static key of an object member, or `null` when computed/non-literal. */
+export const keyOf = (p: t.ObjectMethod | t.ObjectProperty): string | null =>
   p.computed
     ? null
     : t.isIdentifier(p.key)
@@ -44,7 +44,8 @@ export const returnedObjectExpression = (
   if (
     !t.isArrowFunctionExpression(fn) &&
     !t.isFunctionExpression(fn) &&
-    !t.isFunctionDeclaration(fn)
+    !t.isFunctionDeclaration(fn) &&
+    !t.isObjectMethod(fn)
   ) {
     return undefined;
   }

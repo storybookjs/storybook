@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatInputValue } from './template-grammar.ts';
+import { formatInputValue, formatTemplateMarkup } from './template-grammar.ts';
 
 describe('formatInputValue', () => {
   it('renders primitives as their literal text and strings single-quoted', () => {
@@ -40,5 +40,57 @@ describe('formatInputValue', () => {
     const value: Record<string, unknown> = { name: 'loop' };
     value.self = value;
     expect(formatInputValue(value)).toBe("{name: 'loop', self: '[Circular]'}");
+  });
+});
+
+describe('formatTemplateMarkup', () => {
+  it('moves nested elements onto their own lines', () => {
+    expect(formatTemplateMarkup('<div class="bound"><sb-button></sb-button></div>')).toBe(
+      ['<div class="bound">', '    <sb-button></sb-button>', '</div>'].join('\n')
+    );
+  });
+
+  it('keeps a short element with only text content as written', () => {
+    expect(formatTemplateMarkup('<sb-button emphasis>hi</sb-button>')).toBe(
+      '<sb-button emphasis>hi</sb-button>'
+    );
+  });
+
+  it('breaks an over-long attribute run one binding per line, like the generated templates', () => {
+    expect(
+      formatTemplateMarkup(
+        `<div class="wrap"><sb-button [label]="'Save'" [count]="7" [kind]="'primary'" (clicked)="clicked($event)"></sb-button></div>`
+      )
+    ).toBe(
+      [
+        '<div class="wrap">',
+        '    <sb-button',
+        `        [label]="'Save'"`,
+        '        [count]="7"',
+        `        [kind]="'primary'"`,
+        '        (clicked)="clicked($event)">',
+        '    </sb-button>',
+        '</div>',
+      ].join('\n')
+    );
+  });
+
+  it('keeps a self-closing child on its own line', () => {
+    expect(formatTemplateMarkup('<div><sb-icon name="x" /></div>')).toBe(
+      ['<div>', '    <sb-icon name="x" />', '</div>'].join('\n')
+    );
+  });
+
+  it('places sibling text and elements on their own lines', () => {
+    expect(formatTemplateMarkup('<sb-button [label]="\'Save\'"><span>Bye</span></sb-button>')).toBe(
+      [`<sb-button [label]="'Save'">`, '    <span>Bye</span>', '</sb-button>'].join('\n')
+    );
+  });
+
+  it('returns markup it cannot follow exactly as written', () => {
+    expect(formatTemplateMarkup('<div><span></div>')).toBe('<div><span></div>');
+    expect(formatTemplateMarkup('plain interpolated {{ text }}')).toBe(
+      'plain interpolated {{ text }}'
+    );
   });
 });

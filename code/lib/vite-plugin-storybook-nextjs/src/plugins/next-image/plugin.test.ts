@@ -16,12 +16,8 @@ vi.mock('node:module', () => ({
 
 vi.mock('node:fs', { spy: true });
 
+import { encodeBase64Url } from '../../utils/base64-url.ts';
 import { vitePluginNextImage } from './plugin.ts';
-
-function encodeBase64Url(str: string): string {
-  const base64 = Buffer.from(str).toString('base64');
-  return base64.replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
-}
 
 const virtualImageId = (imagePath: string) => `\0virtual:next-image:${encodeBase64Url(imagePath)}`;
 

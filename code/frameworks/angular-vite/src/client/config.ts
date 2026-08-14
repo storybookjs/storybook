@@ -6,21 +6,18 @@ export { decorateStory as applyDecorators } from './decorateStory.ts';
 import { enhanceArgTypes } from 'storybook/internal/docs-tools';
 import type { ArgTypesEnhancer, Parameters } from 'storybook/internal/types';
 
-import { extractArgTypes, extractComponentDescription } from './compodoc.ts';
+import { global } from '@storybook/global';
 
-// With the docgen server on, ACM is the only engine: registering the Compodoc extractors as well
-// would make Controls render the union of both, so a one-input component shows every same-named
-// class's inputs too. Read at module scope because the preview's <head> assigns `FEATURES` from a
-// blocking script, before any preview module evaluates.
-const compodocExtraction = globalThis.FEATURES?.experimentalDocgenServer
-  ? {}
-  : { extractArgTypes, extractComponentDescription };
+import type { Component, Directive } from './compodoc-types.ts';
+import { extractArgTypes, extractComponentDescription } from './compodoc.ts';
 
 export const parameters: Parameters = {
   renderer: 'angular',
   docs: {
     story: { inline: true },
-    ...compodocExtraction,
+    extractArgTypes: (component: Component | Directive) =>
+      global.FEATURES?.experimentalDocgenServer === true ? {} : extractArgTypes(component),
+    extractComponentDescription,
   },
 };
 

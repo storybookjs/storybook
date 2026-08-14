@@ -13,6 +13,7 @@ import { basename, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { DOCUMENTATION_JSON, resolveCompodocConfig } from './compodoc-config.ts';
+import { resolvePropsTable, warnAboutPropsTable } from './props-table.ts';
 import { ensureCompodocDocumentation } from './compodoc/ensure-documentation.ts';
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 import type { UserConfig, Plugin } from 'vite';
@@ -124,6 +125,9 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     });
   }
 
+  const propsTable = resolvePropsTable(framework.options, resolvedFeatures);
+  warnAboutPropsTable(framework.options, resolvedFeatures);
+
   const zoneless = resolveZoneless(options?.angularBuilderOptions);
   const angularPlugins = angular({
     jit: typeof framework.options?.jit !== 'undefined' ? framework.options?.jit : true,
@@ -210,6 +214,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     define: {
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
         zoneless: !!zoneless,
+        propsTable,
       }),
     },
   });

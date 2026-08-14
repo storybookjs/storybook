@@ -32,10 +32,25 @@ const NOOP_LOGGER: ParsingLogger = {
   debug: () => {},
 };
 
+/**
+ * Which members reach the props table, as a strict ladder: `all` ⊃ `api` ⊃ `inputs`.
+ *
+ * - `all`: every member of every section.
+ * - `api`: the component's template-facing surface, meaning declared inputs and outputs whatever
+ *   their TypeScript visibility, plus every property and method that is not TypeScript-`private`,
+ *   ES-`#`, or carrying a JSDoc `internal` tag.
+ * - `inputs`: the inputs section, plus the `${name}Change` output a documented `model()` needs for
+ *   its two-way binding to make sense.
+ *
+ * The tag is written without its `@` because `stripInternal` deletes any declaration whose leading
+ * comment contains that literal.
+ */
+export type PropsTableMode = 'all' | 'api' | 'inputs';
+
 export interface ExtractArgTypesOptions {
   metadataJson: MetadataJson | undefined;
-  /** The `angularFilterNonInputControls` flag, required so no host inherits a silent default. */
-  filterNonInputControls: boolean | undefined;
+  /** Required so no host inherits a silent default. */
+  propsTable: PropsTableMode;
   logger?: ParsingLogger;
 }
 
@@ -344,6 +359,24 @@ const extractMemberJsDocTags = (
   };
 };
 
+// `@internal` declares a member non-API wherever it appears. TypeScript `private` and ES `#` only
+// bar access from code and the component's own template; a consuming template still binds an input
+// or output whatever its modifier says (Angular honours modifiers only behind the opt-in
+// `strictInputAccessModifiers`), so the inputs and outputs sections filter solely on `@internal`.
+const documentedInMode = (
+  item: Method | Property,
+  section: string,
+  propsTable: PropsTableMode
+): boolean => {
+  if (propsTable === 'all') {
+    return true;
+  }
+  if (item.internal === true || item.name.startsWith('#')) {
+    return false;
+  }
+  return section === 'inputs' || section === 'outputs' || item.visibility !== 'private';
+};
+
 const readMembers = (componentData: Entry, key: string): (Method | Property)[] =>
   ((componentData as unknown as Record<string, unknown>)[key] as
     | (Method | Property)[]
@@ -369,12 +402,13 @@ const getModelProperties = (componentData: Entry): Property[] => {
 
 export const extractArgTypesFromData = (
   componentData: Entry,
-  { metadataJson, filterNonInputControls, logger = NOOP_LOGGER }: ExtractArgTypesOptions
+  { metadataJson, propsTable, logger = NOOP_LOGGER }: ExtractArgTypesOptions
 ) => {
   const sectionToItems: Record<string, InputType[]> = {};
-  const componentClasses: MemberKey[] = filterNonInputControls
-    ? ['inputsClass']
-    : ['propertiesClass', 'methodsClass', 'inputsClass', 'outputsClass'];
+  const componentClasses: MemberKey[] =
+    propsTable === 'inputs'
+      ? ['inputsClass']
+      : ['propertiesClass', 'methodsClass', 'inputsClass', 'outputsClass'];
   const memberKeys: MemberKey[] = isDirectiveEntry(componentData)
     ? componentClasses
     : ['properties', 'methods'];
@@ -385,16 +419,18 @@ export const extractArgTypesFromData = (
   memberKeys.forEach((key: MemberKey) => {
     const data = readMembers(componentData, key);
     data.forEach((item: Method | Property) => {
-      // ES-private `#member`s cannot be bound from outside the class, so their props-table row is
-      // noise.
-      if (item.name.startsWith('#')) {
-        return;
-      }
       const section = mapItemToSection(key, item);
 
       // A `model()` surfaces as an input plus the `${name}Change` synthesized below, so the
       // bare-name output duplicate of it is dropped.
       if (key === 'outputsClass' && !isMethod(item) && modelPropertyNames.has(item.name)) {
+        return;
+      }
+
+      if (!documentedInMode(item, section, propsTable)) {
+        logger.debug(
+          `${componentData.name}.${item.name} left out of the props table: propsTable '${propsTable}'`
+        );
         return;
       }
 
@@ -431,32 +467,35 @@ export const extractArgTypesFromData = (
     });
   });
 
-  // The `${name}Change` output this shape never carries directly, synthesized after the loop so
-  // `filterNonInputControls` cannot hide it.
-  modelProperties.forEach((item) => {
-    const changeName = `${item.name}Change`;
+  // The `${name}Change` output this shape never carries directly. It follows its model's input
+  // row: synthesized even in `inputs` mode, which narrows sections but must not split a documented
+  // pair, and skipped when the mode hides the model itself.
+  modelProperties
+    .filter((item) => documentedInMode(item, 'inputs', propsTable))
+    .forEach((item) => {
+      const changeName = `${item.name}Change`;
 
-    // An output rather than the model input it derives from: no `defaultValue`, never required to
-    // bind, and typed as the emitted-payload handler signature.
-    const argType = {
-      name: changeName,
-      description: item.rawdescription || item.description,
-      type: { name: 'other', value: 'void' } as SBType,
-      action: changeName,
-      table: {
-        category: 'outputs',
-        type: {
-          summary: `(e: ${item.type}) => void`,
-          required: false,
+      // An output rather than the model input it derives from: no `defaultValue`, never required to
+      // bind, and typed as the emitted-payload handler signature.
+      const argType = {
+        name: changeName,
+        description: item.rawdescription || item.description,
+        type: { name: 'other', value: 'void' } as SBType,
+        action: changeName,
+        table: {
+          category: 'outputs',
+          type: {
+            summary: `(e: ${item.type}) => void`,
+            required: false,
+          },
         },
-      },
-    };
+      };
 
-    if (!sectionToItems.outputs) {
-      sectionToItems.outputs = [];
-    }
-    sectionToItems.outputs.push(argType);
-  });
+      if (!sectionToItems.outputs) {
+        sectionToItems.outputs = [];
+      }
+      sectionToItems.outputs.push(argType);
+    });
 
   const argTypes: ArgTypes = {};
   SECTION_ORDER.forEach((section) => {

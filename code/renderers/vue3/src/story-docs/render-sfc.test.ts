@@ -84,11 +84,19 @@ const ref2 = {};
     expect(snippet).toContain('{{ _default }}');
   });
 
-  it('hoists inline slot text the template parser would read as markup', () => {
+  // Entity-escaping the braces keeps them out of the parser's interpolation scan, so the text
+  // decodes back to the exact string the story set instead of evaluating as an expression.
+  it('escapes inline slot text the template parser would read as markup', () => {
     const snippet = render([slot('default', `'<script>{{ evil }}</script>'`)]);
 
-    expect(snippet).toContain('const _default = "<script>{{ evil }}</script>";');
-    expect(snippet).toContain('<C>\n    {{ _default }}\n  </C>');
+    expect(snippet).toContain('<C>\n    &lt;script&gt;&#123;&#123; evil }}&lt;/script&gt;\n  </C>');
+    expect(snippet).not.toContain('<script lang="ts" setup>');
+  });
+
+  it('escapes an inlined slot string so it stays text', () => {
+    const snippet = render([slot('default', `'a < b'`)]);
+
+    expect(snippet).toContain('<C>\n    a &lt; b\n  </C>');
   });
 
   it('hoists inline slot text whose whitespace raw template text would condense', () => {
@@ -118,7 +126,10 @@ const onSubmit = () => null;
 });
 
 function render(args: ClassifiedArg[], componentName = 'C'): string {
-  return renderSfcSnippet({ componentName, args }).replaceAll('\r\n', '\n');
+  return renderSfcSnippet({ componentName, args, importBindings: new Map() })!.snippet.replaceAll(
+    '\r\n',
+    '\n'
+  );
 }
 
 function prop(name: string, code: string, kind: 'hoist' | 'inline' = 'inline'): ClassifiedArg {

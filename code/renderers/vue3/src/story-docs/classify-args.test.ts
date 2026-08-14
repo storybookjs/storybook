@@ -79,7 +79,7 @@ describe('classifyArgs', () => {
     expect(classify(`{ onClick: () => null }`)).toEqual({ args: [] });
   });
 
-  it('defers the whole story when a slot receives a function', () => {
+  it('forwards a function slot whose content only a render-tree renderer can realize', () => {
     expect(
       classify(
         `{
@@ -88,7 +88,9 @@ describe('classifyArgs', () => {
         }`,
         { slots: ['default'] }
       )
-    ).toEqual({ args: [], defer: true });
+    ).toEqual({
+      args: [`default: () => h(Child) -> slot (function-slot)`, `label: 'ok' -> prop (inline)`],
+    });
   });
 
   it('renders a slot function that returns a string literal', () => {
@@ -103,19 +105,17 @@ describe('classifyArgs', () => {
     });
   });
 
-  it('defers the whole story when a slot function has a multi-statement body', () => {
+  it('forwards a multi-statement slot function instead of inlining its return', () => {
     expect(
-      classify(
-        `{
-          default: () => {
-            sideEffect();
-            return 'hi';
-          },
-          label: 'ok',
-        }`,
-        { slots: ['default'] }
-      )
-    ).toEqual({ args: [], defer: true });
+      classify(`{ default: () => { sideEffect(); return 'hi'; }, label: 'ok' }`, {
+        slots: ['default'],
+      })
+    ).toEqual({
+      args: [
+        `default: () => { sideEffect(); return 'hi'; } -> slot (function-slot)`,
+        `label: 'ok' -> prop (inline)`,
+      ],
+    });
   });
 
   it('classifies a function arg matching a declared event as a listener', () => {
@@ -206,7 +206,8 @@ function parseArgs(code: string): Record<string, t.Node> {
   );
 }
 
-function formatArg({ name, value, role, eventName, plan }: ClassifiedArg): string {
-  const destination = eventName ? `${role}:${eventName}` : role;
-  return `${name}: ${printValue(value)} -> ${destination} (${plan.kind})`;
+function formatArg(arg: ClassifiedArg): string {
+  const destination =
+    arg.role === 'event' && arg.eventName ? `${arg.role}:${arg.eventName}` : arg.role;
+  return `${arg.name}: ${printValue(arg.value)} -> ${destination} (${arg.plan.kind})`;
 }

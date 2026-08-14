@@ -60,11 +60,10 @@ export const buildStoryDocsPayload = async (
   const resolvePath =
     context.resolvePath ?? ((importPath: string) => resolve(process.cwd(), importPath));
   const storyFilePath = resolvePath(storyImportPath);
-  const parsed = parseStoryFile(storyFilePath, input.entry.title);
-  if (!parsed) {
+  const csf = parseStoryFile(storyFilePath, input.entry.title);
+  if (!csf) {
     return undefined;
   }
-  const { csf } = parsed;
 
   const componentNode = csf._metaAnnotations.component;
   const docgenPayload = componentNode

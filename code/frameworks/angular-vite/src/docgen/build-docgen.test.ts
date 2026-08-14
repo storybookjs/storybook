@@ -76,7 +76,7 @@ const managerReturning = (meta: AngularComponentMetaResult | undefined) => ({
 
 const context = (
   manager: AngularComponentMetaSource,
-  options: BuildDocgenContext['options'] = {}
+  options: BuildDocgenContext['options'] = { propsTable: 'all' }
 ): BuildDocgenContext => ({ manager, options, logger });
 
 describe('buildDocgenPayload', () => {
@@ -227,25 +227,23 @@ describe('buildDocgenPayload', () => {
     });
   });
 
-  it('honours `angularFilterNonInputControls`', () => {
+  it('hands `propsTable` to the conversion', () => {
     givenStoryFile();
     const classMeta = componentEntry({
-      propertiesClass: [{ name: 'internal', type: 'string', optional: false }],
+      propertiesClass: [
+        { name: 'note', type: 'string', optional: false },
+        { name: 'cdr', type: 'ChangeDetectorRef', optional: false, visibility: 'private' },
+      ],
     });
+    const argNames = (options: BuildDocgenContext['options']) =>
+      Object.keys(
+        buildDocgenPayload({ entry }, context(managerReturning(metaFor(classMeta)), options))
+          ?.argTypes ?? {}
+      );
 
-    expect(
-      Object.keys(
-        buildDocgenPayload({ entry }, context(managerReturning(metaFor(classMeta))))?.argTypes ?? {}
-      )
-    ).toEqual(['internal', 'label']);
-    expect(
-      Object.keys(
-        buildDocgenPayload(
-          { entry },
-          context(managerReturning(metaFor(classMeta)), { angularFilterNonInputControls: true })
-        )?.argTypes ?? {}
-      )
-    ).toEqual(['label']);
+    expect(argNames({ propsTable: 'all' })).toEqual(['note', 'cdr', 'label']);
+    expect(argNames({ propsTable: 'api' })).toEqual(['note', 'label']);
+    expect(argNames({ propsTable: 'inputs' })).toEqual(['label']);
   });
 
   describe('component resolution', () => {

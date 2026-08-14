@@ -68,6 +68,10 @@ function docgenForFixture(
     'function-slot': {
       default: argType('default', 'slots'),
     },
+    'function-slot-bail': {
+      default: argType('default', 'slots'),
+      footer: argType('footer', 'slots'),
+    },
     'prop-slot-collision': {
       default: argType('default', 'props'),
       icon: argType('icon', 'props'),
@@ -84,7 +88,8 @@ function docgenForFixture(
       'update:modelValue': argType('update:modelValue', 'events'),
     },
   };
-
+  // Deliberately empty: vue-component-meta does not surface component-level tags, so the
+  // `import-override` fixture has to earn its snapshot from the `@import` tag on its CSF meta.
   return {
     id,
     name: componentNameFromFixture(fixtureCase),

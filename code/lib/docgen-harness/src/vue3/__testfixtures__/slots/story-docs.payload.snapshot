@@ -25,6 +25,14 @@
       "description": undefined,
       "id": "forms-slots--v-node-child",
       "name": "V Node Child",
+      "snippet": "<template>
+  <SlotsShowcase heading="Structured">
+    <p class="body">Body content</p>
+    <template #header>
+      <strong>Header content</strong>
+    </template>
+  </SlotsShowcase>
+</template>",
       "summary": undefined,
     },
   },

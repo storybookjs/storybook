@@ -439,8 +439,6 @@ export const evaluateArgLiteral = (node: t.Node, enums: SnippetEnum[]): string |
   return value === EVAL_FAILED ? undefined : printExpressionValue(value, new Set());
 };
 
-// Angular expression strings support backslash escapes, so quoting stays lossless. Line terminators
-// are escaped rather than emitted raw, which would end the literal in a TypeScript position.
 const quoteExpressionString = (value: string): string =>
   `'${value
     .replace(/\\/g, '\\\\')

@@ -1,0 +1,44 @@
+diff --git a/dist/cjs/event/createEvent.js b/dist/cjs/event/createEvent.js
+index 8a40c1380670a6af37d6ab4416978f5d670267f9..5315e9978274daaafb1274d8fd0e6a88e3de9f3d 100644
+--- a/dist/cjs/event/createEvent.js
++++ b/dist/cjs/event/createEvent.js
+@@ -38,7 +38,16 @@ function createEvent(type, target, init) {
+     const window = getWindow.getWindow(target);
+     const { EventType, defaultInit } = eventMap.eventMap[type];
+     const event = new (getEventConstructors(window))[EventType](type, defaultInit);
+-    eventInitializer[EventType].forEach((f)=>f(event, init !== null && init !== void 0 ? init : {}));
++    var eventInit = {};
++    for (var key in init) {
++        if (Object.prototype.hasOwnProperty.call(init, key)) {
++            eventInit[key] = init[key];
++        }
++    }
++    eventInit.view = window;
++    eventInitializer[EventType].forEach(function(f) {
++        f(event, eventInit);
++    });
+     return event;
+ }
+ /* istanbul ignore next */ function getEventConstructors(window) {
+diff --git a/dist/esm/event/createEvent.js b/dist/esm/event/createEvent.js
+index fb5bcde83e4d8d7d72825d9edbaf82824a2aba97..623678d844a371e9a27ffd5ab6c61f043ec247c8 100644
+--- a/dist/esm/event/createEvent.js
++++ b/dist/esm/event/createEvent.js
+@@ -36,7 +36,16 @@ function createEvent(type, target, init) {
+     const window = getWindow(target);
+     const { EventType, defaultInit } = eventMap[type];
+     const event = new (getEventConstructors(window))[EventType](type, defaultInit);
+-    eventInitializer[EventType].forEach((f)=>f(event, init !== null && init !== void 0 ? init : {}));
++    var eventInit = {};
++    for (var key in init) {
++        if (Object.prototype.hasOwnProperty.call(init, key)) {
++            eventInit[key] = init[key];
++        }
++    }
++    eventInit.view = window;
++    eventInitializer[EventType].forEach(function(f) {
++        f(event, eventInit);
++    });
+     return event;
+ }
+ /* istanbul ignore next */ function getEventConstructors(window) {

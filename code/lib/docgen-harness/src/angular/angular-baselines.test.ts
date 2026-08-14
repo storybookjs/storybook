@@ -1,8 +1,7 @@
 // @vitest-environment happy-dom
 // happy-dom provides the DOMParser that compodoc.ts instantiates for @default JSDoc tags.
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+import { existsSync, readFileSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -19,9 +18,10 @@ import {
   extractArgTypes,
   setCompodocJson,
 } from '../../../../frameworks/angular-vite/src/client/compodoc.ts';
-import { computesTemplateSourceFromComponent } from '../../../../frameworks/angular-vite/src/client/renderer/ComputesTemplateFromComponent.ts';
-import { getComponentInputsOutputs } from '../../../../frameworks/angular-vite/src/client/renderer/utils/NgComponentAnalyzer.ts';
+import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
+import { attachAotCmp, recordSnippets } from './render-helpers.ts';
+import { fixtureCases, fixturesDir } from './snippet-recorder.ts';
 
 if (BASELINE_PATH !== 'legacy') {
   throw new Error(
@@ -33,23 +33,10 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
-const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
-
-const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
-  .filter((entry) => entry.isDirectory())
-  .map((entry) => entry.name)
-  .sort();
-
-type AotCmp = {
-  inputs: Record<string, [string, number, null]>;
-  outputs: Record<string, string>;
-};
-
 describe('angular legacy baselines', () => {
   it.each(fixtureCases)('%s', async (fixtureCase) => {
     const testDir = join(fixturesDir, fixtureCase);
-    const dirFiles = readdirSync(testDir);
-    expect(dirFiles.filter((file) => file === `${fixtureCase}.component.ts`)).toHaveLength(1);
+    expect(existsSync(join(testDir, `${fixtureCase}.component.ts`))).toBe(true);
 
     setCompodocJson(JSON.parse(readFileSync(join(testDir, 'compodoc-input.json'), 'utf8')));
 
@@ -57,25 +44,7 @@ describe('angular legacy baselines', () => {
     const { default: meta, ...stories } = storiesModule;
     const component = meta.component;
 
-    if (existsSync(join(testDir, 'aot-cmp.ts'))) {
-      // Signal fixture: bare JIT leaves ɵcmp.inputs/outputs empty, which would record
-      // `<tag></tag>` harness artifacts instead of legacy truth. Replace ɵcmp wholesale
-      // with the committed AOT-shaped fragment (defineProperty, because the JIT decorator
-      // installs a getter), then assert the production reader sees its members so a
-      // broken attach fails loudly instead of recording silently.
-      const { aotCmp } = (await import(`./__testfixtures__/${fixtureCase}/aot-cmp.ts`)) as {
-        aotCmp: AotCmp;
-      };
-      Object.defineProperty(component, 'ɵcmp', { value: aotCmp, configurable: true });
-
-      const { inputs, outputs } = getComponentInputsOutputs(component);
-      for (const [templateName, [propName]] of Object.entries(aotCmp.inputs)) {
-        expect(inputs).toContainEqual({ propName, templateName });
-      }
-      for (const [templateName, propName] of Object.entries(aotCmp.outputs)) {
-        expect(outputs).toContainEqual({ propName, templateName });
-      }
-    }
+    await attachAotCmp(component, fixtureCase);
 
     // extractArgTypes declares the compodoc-JSON-shaped Component | Directive parameter;
     // production passes the real class through an untyped parameters slot, so the
@@ -83,43 +52,23 @@ describe('angular legacy baselines', () => {
     // call (Type<unknown> accepts it structurally).
     const asCompodocRef = component as unknown as Parameters<typeof extractArgTypes>[0];
 
-    flags.angularFilterNonInputControls = false;
-    const argTypes = extractArgTypes(asCompodocRef);
-    await expect(argTypes).toMatchFileSnapshot(join(testDir, 'argtypes.snapshot'));
+    const recordArgTypes = async (filterNonInputControls: boolean, fileName: string) => {
+      flags.angularFilterNonInputControls = filterNonInputControls;
+      const extracted = extractArgTypes(asCompodocRef);
+      flags.angularFilterNonInputControls = false;
+      // The baseline is this pipeline's own compodoc recording, so its invented defaults are waived.
+      await recordArgTypesSnapshot({
+        path: join(testDir, fileName),
+        label: `${fixtureCase}/${fileName}`,
+        candidate: extracted!,
+        legacyBaseline: true,
+      });
+      return extracted;
+    };
 
-    flags.angularFilterNonInputControls = true;
-    await expect(extractArgTypes(asCompodocRef)).toMatchFileSnapshot(
-      join(testDir, 'argtypes-filtered.snapshot')
-    );
-    flags.angularFilterNonInputControls = false;
+    const argTypes = await recordArgTypes(false, 'argtypes.snapshot');
+    await recordArgTypes(true, 'argtypes-filtered.snapshot');
 
-    expect(Object.keys(stories).length).toBeGreaterThan(0);
-
-    for (const [exportName, story] of Object.entries<{ args?: Record<string, unknown> }>(stories)) {
-      // Production runs the actions addon's addActionsFromArgTypes args enhancer before
-      // the source decorator: every output argType carries `action`, so outputs a story
-      // does not set still receive an auto-injected handler arg and the legacy snippet
-      // binds every declared output. Only key presence reaches the snippet text, so a
-      // plain stub stands in for the injected action.
-      const props: Record<string, unknown> = { ...meta.args, ...story.args };
-      for (const [name, argType] of Object.entries(argTypes ?? {})) {
-        if (argType.action && !(name in props)) {
-          props[name] = () => {};
-        }
-      }
-      await expect(
-        computesTemplateSourceFromComponent(component, props, argTypes)
-      ).toMatchFileSnapshot(join(testDir, `snippet-${exportName}.snapshot`));
-    }
-
-    // toMatchFileSnapshot files sit outside vitest's obsolete-snapshot detection, so a
-    // renamed or removed story export would silently leave its old snapshot on disk.
-    const snippetFilesOnDisk = readdirSync(testDir)
-      .filter((file) => file.startsWith('snippet-') && file.endsWith('.snapshot'))
-      .sort();
-    const expectedSnippetFiles = Object.keys(stories)
-      .map((exportName) => `snippet-${exportName}.snapshot`)
-      .sort();
-    expect(snippetFilesOnDisk).toEqual(expectedSnippetFiles);
+    await recordSnippets({ fixtureCase, component, meta, stories, argTypes, recorder: 'legacy' });
   });
 });

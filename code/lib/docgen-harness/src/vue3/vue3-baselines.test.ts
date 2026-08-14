@@ -1,4 +1,4 @@
-import { readdirSync } from 'node:fs';
+import { existsSync, readFileSync, readdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -8,6 +8,8 @@ import { parse } from 'vue-docgen-api';
 
 import { extractArgTypes } from '../../../../renderers/vue3/src/extractArgTypes.ts';
 import { generateSourceCode } from '../../../../renderers/vue3/src/docs/sourceDecorator.ts';
+import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
+import { recordArgTypesSnapshot } from '../compare/record-argtypes-snapshot.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 
 if (BASELINE_PATH !== 'legacy') {
@@ -46,9 +48,12 @@ describe('vue3 legacy baselines', () => {
       JSON.parse(JSON.stringify(metaData))
     );
 
-    await expect(extractArgTypes(component)).toMatchFileSnapshot(
-      join(testDir, 'argtypes.snapshot')
-    );
+    const argTypes = extractArgTypes(component);
+    await recordArgTypesSnapshot({
+      path: join(testDir, 'argtypes.snapshot'),
+      label: `${fixtureCase}/argtypes.snapshot`,
+      candidate: argTypes!,
+    });
 
     for (const [exportName, story] of Object.entries<{ args?: Record<string, unknown> }>(stories)) {
       const ctx = {
@@ -56,9 +61,20 @@ describe('vue3 legacy baselines', () => {
         component,
         args: { ...meta.args, ...story.args },
       };
-      await expect(generateSourceCode(ctx)).toMatchFileSnapshot(
-        join(testDir, `snippet-${exportName}.snapshot`)
-      );
+      const snippetPath = join(testDir, `snippet-${exportName}.snapshot`);
+      const committedSnippet = existsSync(snippetPath)
+        ? readFileSync(snippetPath, 'utf8')
+        : undefined;
+      const snippet = generateSourceCode(ctx);
+      if (committedSnippet !== undefined) {
+        expectCurrentOrBetter({
+          kind: 'snippet',
+          framework: 'vue3',
+          baseline: committedSnippet,
+          candidate: snippet,
+        });
+      }
+      await expect(snippet).toMatchFileSnapshot(snippetPath);
     }
 
     // toMatchFileSnapshot files sit outside vitest's obsolete-snapshot detection, so a

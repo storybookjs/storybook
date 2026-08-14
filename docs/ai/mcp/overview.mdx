@@ -49,17 +49,17 @@ To guide your agent to use your MCP server, you should adjust your [`AGENTS.md`]
 When working on UI components, always use the `your-project-sb-mcp` MCP tools to access Storybook's component and documentation knowledge before answering or taking any action.
 
 - **CRITICAL: Never hallucinate component properties!** Before using ANY property on a component from a design system (including common-sounding ones like `shadow`, etc.), you MUST use the MCP tools to check if the property is actually documented for that component.
-- Query `list-all-documentation` to get a list of all components
-- Query `get-documentation` for that component to see all available properties and examples
+- Query `docs-list` to get a list of documented components
+- Query `docs-show` for that component to see all available properties and examples
 - Only use properties that are explicitly documented or shown in example stories
 - If a property isn't documented, do not assume properties based on naming conventions or common patterns from other libraries. Check back with the user in these cases.
 - Use the `get-storybook-story-instructions` tool to fetch the latest instructions for creating or updating stories. This will ensure you follow current conventions and recommendations.
-- Check your work by running `run-story-tests`.
+- Check your work by running `test-run`.
 
 Remember: A story name might not reflect the property name correctly, so always verify properties through documentation or example stories before using them.
 ```
 
-Finally, test your agent's access to the MCP server. First, make sure your Storybook is running, then run a prompt like "List all documented components". You should see a call to the [`list-all-documentation`](#list-all-documentation) tool with a response listing components from your Storybook.
+Finally, test your agent's access to the MCP server. First, make sure your Storybook is running, then run a prompt like "List all documented components". You should see a call to the [`docs-list`](#docs-list) tool with a response listing components from your Storybook.
 
 ## Usage
 
@@ -116,7 +116,7 @@ The development toolset provides tools for authoring well-considered stories (in
 
 The development toolset includes the following tools:
 
-#### `get-changed-stories`
+#### `stories-changed`
 
 Returns a list of stories that are changed or possibly affected by local file changes (requires [change detection](../../configure/user-interface/change-detection.mdx) to be enabled).
 
@@ -124,9 +124,17 @@ Returns a list of stories that are changed or possibly affected by local file ch
 
 Returns instructions on how to write useful stories, including which props to capture and how to write interaction tests for the story (if applicable).
 
-#### `preview-stories`
+#### `stories-preview`
 
 Returns story previews rendered in the agent's chat interface, if the agent supports [MCP Apps](https://modelcontextprotocol.io/extensions/apps/overview#client-support). Otherwise, it returns links to relevant stories in Storybook.
+
+#### `stories-find-by-component`
+
+Maps component source files to the stories that render them via Storybook's live reverse dependency graph.
+
+#### `review-create`
+
+Pushes a curated review of current changes and returns the review-page URL (requires the review feature to be enabled).
 
 ### Docs
 
@@ -134,15 +142,15 @@ The docs toolset provides tools that help the agent reuse components from your S
 
 The docs toolset includes the following tools:
 
-#### `get-documentation`
+#### `docs-show`
 
 Returns the detailed documentation for a specific component, including its props, the first three stories, an index of the remaining stories, and any additional documentation you've provided.
 
-#### `get-documentation-for-story`
+#### `docs-show-story`
 
-Returns the full story and associated documentation for a specific story. The agent calls this tool when `get-documentation` doesn't provide enough information for the agent to use a component effectively.
+Returns the full story and associated documentation for a specific story. The agent calls this tool when `docs-show` doesn't provide enough information for the agent to use a component effectively.
 
-#### `list-all-documentation`
+#### `docs-list`
 
 Returns an index containing components and unattached docs entries.
 
@@ -152,7 +160,7 @@ If you have [Storybook Test](../../writing-tests/index.mdx) set up in your Story
 
 The testing toolset includes the following tool:
 
-#### `run-story-tests`
+#### `test-run`
 
 Runs tests for specific stories and returns results, including any accessibility issues (if configured). Also instructs the agent to interpret the results and resolve any issues found.
 

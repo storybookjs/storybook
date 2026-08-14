@@ -1,0 +1,17 @@
+{
+  "id": "import-override",
+  "import": "import { ImportOverride as ImportOverrideButton } from 'my-design-system';",
+  "name": "ImportOverrideButton",
+  "path": "__PATH__",
+  "stories": {
+    "forms-import-override--primary": {
+      "description": undefined,
+      "id": "forms-import-override--primary",
+      "name": "Primary",
+      "snippet": "<template>
+  <ImportOverrideButton label="Override" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

@@ -1,0 +1,29 @@
+import { logger } from 'storybook/internal/node-logger';
+import { telemetry } from 'storybook/internal/telemetry';
+import type { McpServer } from 'tmcp';
+import type { AddonContext } from './types.ts';
+
+export async function collectTelemetry({
+  event,
+  server,
+  ...payload
+}: {
+  event: string;
+  server: McpServer<any, AddonContext>;
+  [key: string]: any;
+}) {
+  try {
+    return await telemetry('addon-mcp' as any, {
+      event,
+      mcpSessionId: server.ctx.sessionId,
+      clientInfo: server.ctx.sessionInfo?.clientInfo,
+      clientCapabilities: server.ctx.sessionInfo?.clientCapabilities,
+      // Which channel drove the call: the `storybook ai` CLI marks its requests with the proxy
+      // header; everything else is a direct MCP client.
+      transport: server.ctx.custom?.cliClient ? 'cli' : 'mcp',
+      ...payload,
+    });
+  } catch (error) {
+    logger.debug(`Error collecting telemetry: ${String(error)}`);
+  }
+}

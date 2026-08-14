@@ -208,6 +208,15 @@ describe('createRuntimeInstanceRecord', () => {
     });
   });
 
+  it('preserves a Storybook deployment subpath but drops UI query parameters', () => {
+    const record = createRuntimeInstanceRecord({
+      ...baseOptions,
+      address: 'http://localhost:6006/nested/?path=/docs/button--primary',
+    });
+
+    expect(record.url).toBe('http://localhost:6006/nested');
+  });
+
   it('stores the configDir resolved against the cwd when provided', () => {
     const record = createRuntimeInstanceRecord({
       ...baseOptions,

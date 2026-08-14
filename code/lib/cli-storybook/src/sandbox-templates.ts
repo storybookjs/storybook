@@ -1204,9 +1204,6 @@ export const normal: TemplateKey[] = [
   'react-vite/default-ts',
   'angular-cli/default-ts',
   'angular-vite/default-ts',
-  // The only Angular sandbox on the docgen-server path, so it is the only one that can guard the
-  // docgen baselines and what agents read over MCP. Both regress silently, so they want per-PR
-  // signal rather than a daily run.
   // TODO(11.0): remove this template. The standard sandboxes ship the new docgen approach by
   // default from then on, so `angular-vite/default-ts` carries the baselines and this one is
   // redundant.

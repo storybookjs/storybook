@@ -35,11 +35,15 @@ const NOOP_LOGGER: ParsingLogger = {
 /**
  * Which members reach the props table, as a strict ladder: `all` ⊃ `api` ⊃ `inputs`.
  *
- * `all` is every member of every section. `api` keeps the component's template-facing surface:
- * declared inputs and outputs whatever their TypeScript visibility, plus every property and method
- * that is not TypeScript-`private`, ES-`#`, or tagged `@internal`. `inputs` narrows that to the
- * inputs section, plus the `${name}Change` output a documented `model()` needs for its two-way
- * binding to make sense.
+ * - `all`: every member of every section.
+ * - `api`: the component's template-facing surface, meaning declared inputs and outputs whatever
+ *   their TypeScript visibility, plus every property and method that is not TypeScript-`private`,
+ *   ES-`#`, or carrying a JSDoc `internal` tag.
+ * - `inputs`: the inputs section, plus the `${name}Change` output a documented `model()` needs for
+ *   its two-way binding to make sense.
+ *
+ * The tag is written without its `@` because `stripInternal` deletes any declaration whose leading
+ * comment contains that literal.
  */
 export type PropsTableMode = 'all' | 'api' | 'inputs';
 

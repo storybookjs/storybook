@@ -17,11 +17,15 @@ export type FrameworkOptions = {
   compodoc?: boolean;
   compodocArgs?: string[];
   /**
-   * Which members the props table renders, as a ladder. `all` is every member. `api` keeps the
-   * component's template-facing surface: every declared input and output whatever its TypeScript
-   * visibility (Angular only honours access modifiers on bindings behind the opt-in
-   * `strictInputAccessModifiers`), plus the properties and methods that are not `private`, ES `#`,
-   * or tagged `@internal` (a declared non-API). `inputs` narrows that to the inputs section alone.
+   * Which members the props table renders, as a ladder:
+   *
+   * - `all`: every member.
+   * - `api`: the component's template-facing surface, meaning every declared input and output
+   *   whatever its TypeScript visibility (Angular only honours access modifiers on bindings behind
+   *   the opt-in `strictInputAccessModifiers`), plus the properties and methods that are not
+   *   `private`, ES `#`, or carrying a JSDoc `internal` tag (a declared non-API).
+   * - `inputs`: the inputs section alone.
+   *
    * Tag a member `@ignore` to drop it whatever this says.
    *
    * `api` needs `features.experimentalDocgenServer`; without it only `all` and `inputs` apply.

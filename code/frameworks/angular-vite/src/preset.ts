@@ -111,6 +111,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     });
   }
 
+  // @ts-expect-error same as `framework` above: `options` is optional in the signature only
   const features = await options.presets.apply('features', {});
   const propsTable = resolvePropsTable(framework.options, features);
   warnAboutPropsTable(framework.options, features);

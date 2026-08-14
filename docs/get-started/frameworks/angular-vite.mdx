@@ -456,7 +456,6 @@ The three values are a ladder, each one a subset of the one above it:
 | `'inputs'` | The inputs section only.                                                  |
 
 `'api'` keeps every declared input and output, whatever its TypeScript visibility.
-Angular only honors access modifiers on input bindings behind the opt-in `strictInputAccessModifiers` compiler flag, and never checks them on output bindings, so even a `private` input or output is API a parent template can bind.
 
 Everywhere else, `'api'` drops TypeScript `private` members, ECMAScript private `#` members, and anything tagged `@internal`.
 A `private` property or method cannot be reached from any template, and `@internal` declares a member non-API, so a row for them documents your component's wiring rather than its API.

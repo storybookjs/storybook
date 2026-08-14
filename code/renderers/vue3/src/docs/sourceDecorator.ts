@@ -1,6 +1,7 @@
 import { SourceType } from 'storybook/internal/docs-tools';
 
-import { emitTransformCode, useEffect, useRef } from 'storybook/preview-api';
+import type { StoryDocsService } from 'storybook/open-service';
+import { emitTransformCode, getService, useEffect } from 'storybook/preview-api';
 import type { VNode } from 'vue';
 import { isVNode } from 'vue';
 
@@ -44,16 +45,45 @@ export const sourceDecorator: Decorator = (storyFn, ctx) => {
   const story = storyFn();
 
   useEffect(() => {
-    const sourceCode = generateSourceCode(ctx);
-
     if (shouldSkipSourceCodeGeneration(ctx)) {
       return;
     }
 
-    emitTransformCode(sourceCode, ctx);
+    void emitGeneratedSourceCode(ctx);
   });
 
   return story;
+};
+
+/**
+ * Emits runtime-generated source unless the story-docs service holds a static snippet for the
+ * story, which the core story-docs `beforeEach` hook already emits to the Code panel.
+ */
+const emitGeneratedSourceCode = async (ctx: StoryContext): Promise<void> => {
+  if (await hasServiceSnippet(ctx.id)) {
+    return;
+  }
+
+  emitTransformCode(generateSourceCode(ctx), ctx);
+};
+
+const hasServiceSnippet = async (storyId: string): Promise<boolean> => {
+  if (!globalThis.FEATURES?.experimentalDocgenServer) {
+    return false;
+  }
+
+  try {
+    const service = getService<StoryDocsService>('core/story-docs', { internal: true });
+    const componentId = storyId.split('--')[0]!;
+
+    const payload =
+      service.queries.storyDocs.get({ id: componentId }) ??
+      (await service.queries.storyDocs.loaded({ id: componentId }));
+    return payload?.stories[storyId]?.snippet !== undefined;
+  } catch {
+    // Without a reachable story-docs service the runtime-generated source is all there is.
+    return false;
+  }
 };
 
 /**

@@ -1,7 +1,9 @@
-import { expect, test } from 'vitest';
+import { afterEach, describe, expect, test, vi } from 'vitest';
 
+import { emitTransformCode, getService } from 'storybook/preview-api';
 import { h } from 'vue';
 
+import type { StoryContext } from '../public-types';
 import type { SourceCodeGeneratorContext } from './sourceDecorator';
 import {
   generatePropsSourceCode,
@@ -9,7 +11,14 @@ import {
   generateSourceCode,
   getFunctionParamNames,
   parseDocgenInfo,
+  sourceDecorator,
 } from './sourceDecorator';
+
+vi.mock('storybook/preview-api', () => ({
+  useEffect: (callback: () => void) => callback(),
+  emitTransformCode: vi.fn(),
+  getService: vi.fn(),
+}));
 
 test('should generate source code for props', () => {
   const ctx: SourceCodeGeneratorContext = {
@@ -253,4 +262,109 @@ test.each<{ fn: (...args: any[]) => unknown; expectedNames: string[] }>([
 ])('should extract function parameter names', ({ fn, expectedNames }) => {
   const paramNames = getFunctionParamNames(fn);
   expect(paramNames).toStrictEqual(expectedNames);
+});
+
+describe('sourceDecorator', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.clearAllMocks();
+  });
+
+  const storyContext = () =>
+    ({
+      id: 'button--primary',
+      title: 'Example/Button',
+      args: { label: 'hi' },
+      component: undefined,
+      parameters: { __isArgsStory: true, docs: {} },
+    }) as unknown as StoryContext;
+
+  const mockServiceSnippet = (
+    snippet: string | undefined,
+    { inState = true }: { inState?: boolean } = {}
+  ) => {
+    const payload = {
+      id: 'button',
+      name: 'Button',
+      path: './Button.stories.ts',
+      stories: { 'button--primary': { id: 'button--primary', name: 'Primary', snippet } },
+    };
+    const loaded = vi.fn(() => Promise.resolve(payload));
+    vi.mocked(getService).mockReturnValue({
+      queries: {
+        storyDocs: { get: () => (inState ? payload : undefined), loaded },
+      },
+    } as unknown as ReturnType<typeof getService>);
+    return { loaded };
+  };
+
+  const flushEmit = async () => {
+    await Promise.resolve();
+    await Promise.resolve();
+  };
+
+  test('emits runtime-generated source without the docgen server feature', async () => {
+    const ctx = storyContext();
+    sourceDecorator(() => h('div'), ctx);
+    await flushEmit();
+
+    expect(getService).not.toHaveBeenCalled();
+    expect(emitTransformCode).toHaveBeenCalledWith(
+      '<template>\n  <Button label="hi" />\n</template>',
+      ctx
+    );
+  });
+
+  test('defers to a static service snippet when the story has one', async () => {
+    vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+    const { loaded } = mockServiceSnippet('<Button label="static" />');
+
+    sourceDecorator(() => h('div'), storyContext());
+    await flushEmit();
+
+    expect(emitTransformCode).not.toHaveBeenCalled();
+    // Synced state answers directly; loading again would re-run the whole extraction.
+    expect(loaded).not.toHaveBeenCalled();
+  });
+
+  test('loads the payload when the synced state has nothing for the component', async () => {
+    vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+    const { loaded } = mockServiceSnippet('<Button label="static" />', { inState: false });
+
+    sourceDecorator(() => h('div'), storyContext());
+    await flushEmit();
+
+    expect(loaded).toHaveBeenCalledWith({ id: 'button' });
+    expect(emitTransformCode).not.toHaveBeenCalled();
+  });
+
+  test('emits runtime-generated source when the service has no snippet for the story', async () => {
+    vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+    mockServiceSnippet(undefined);
+
+    const ctx = storyContext();
+    sourceDecorator(() => h('div'), ctx);
+    await flushEmit();
+
+    expect(emitTransformCode).toHaveBeenCalledWith(
+      '<template>\n  <Button label="hi" />\n</template>',
+      ctx
+    );
+  });
+
+  test('emits runtime-generated source when the story-docs service is unreachable', async () => {
+    vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+    vi.mocked(getService).mockImplementation(() => {
+      throw new Error('no such service');
+    });
+
+    const ctx = storyContext();
+    sourceDecorator(() => h('div'), ctx);
+    await flushEmit();
+
+    expect(emitTransformCode).toHaveBeenCalledWith(
+      '<template>\n  <Button label="hi" />\n</template>',
+      ctx
+    );
+  });
 });

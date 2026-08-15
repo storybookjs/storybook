@@ -89,7 +89,7 @@ describe('vitePluginNextImage resolveId', () => {
     // On Windows, Vite's resolver returns native paths with backslashes. Those
     // must be normalized before being embedded in the virtual id, otherwise the
     // generated `import ... from "<path>"` keeps backslashes and Rollup mangles
-    // them (`git\voyages` -> `gitoyages`), breaking resolution. See #35872.
+    // them (`git\voyages` -> `gitoyages`), breaking resolution.
     const plugin = vitePluginNextImage(nextConfigResolver);
     const windowsPath = 'C:\\Users\\me\\git\\voyages\\src\\assets\\Foo.svg';
     const resolve = vi.fn().mockResolvedValue({ id: windowsPath });

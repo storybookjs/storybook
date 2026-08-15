@@ -390,6 +390,62 @@ describe('rewriteStyleSheet', () => {
     );
   });
 
+  it('supports ":where"', () => {
+    const sheet = new Sheet('.textLink:where(:focus-visible) { text-decoration: none }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].cssText).toEqual(
+      '.textLink:where(:focus-visible), .textLink:where(.pseudo-focus-visible), :where(.pseudo-focus-visible-all) .textLink { text-decoration: none }'
+    );
+  });
+
+  it('supports ":where" as the whole selector', () => {
+    const sheet = new Sheet(':where(:hover) { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].cssText).toEqual(
+      ':where(:hover), :where(.pseudo-hover), :where(.pseudo-hover-all) * { color: red }'
+    );
+  });
+
+  it('supports ":where" nested inside ":is"', () => {
+    const sheet = new Sheet('.a:is(:where(:hover)) { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].getSelectors()).toContain(':where(.pseudo-hover-all) .a:is(*)');
+  });
+
+  it('keeps pseudo-states outside ":where" specificity-bearing', () => {
+    const sheet = new Sheet('.a:where(.b):hover { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].getSelectors()).toContain('.pseudo-hover-all .a:where(.b)');
+  });
+
+  it('combines specificity-free and specificity-bearing pseudo-states', () => {
+    const sheet = new Sheet('.a:where(:hover):focus { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].getSelectors()).toContain(
+      '.pseudo-focus-all:where(.pseudo-hover-all) .a'
+    );
+  });
+
+  it('treats a pseudo-state as specificity-bearing if it also occurs outside ":where"', () => {
+    const sheet = new Sheet('.a:where(:hover) .b:hover { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].getSelectors()).toContain('.pseudo-hover-all .a .b');
+  });
+
+  it('does not let a quoted ")" inside ":where" end the range early', () => {
+    const sheet = new Sheet('.a:where([data-x=")"] :hover) { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].cssText).toEqual(
+      '.a:where([data-x=")"] :hover), .a:where([data-x=")"] .pseudo-hover), :where(.pseudo-hover-all) .a:where([data-x=")"] *) { color: red }'
+    );
+  });
+
+  it('keeps ":where" selector lists intact', () => {
+    const sheet = new Sheet('.a:where(:hover, .b) { color: red }');
+    rewriteStyleSheet(sheet as any);
+    expect(sheet.cssRules[0].getSelectors()).toContain(':where(.pseudo-hover-all) .a:where(*, .b)');
+  });
+
   it('keeps child-combinator pseudo-state selectors valid', () => {
     const sheet = new Sheet('.ds-card > :focus-visible { outline: none }');
     rewriteStyleSheet(sheet as any);

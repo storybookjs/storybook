@@ -209,7 +209,7 @@ test.describe('addon-mcp', () => {
             stories: [
               {
                 exportName: storyName,
-                absoluteStoryPath: path.join(sandboxDir, 'src', 'stories', 'Button.stories.ts'),
+                absoluteStoryPath: path.join(sandboxDir, 'src', 'stories', 'Button.stories.tsx'),
               },
             ],
           },

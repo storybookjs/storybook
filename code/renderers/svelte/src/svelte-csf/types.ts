@@ -12,12 +12,19 @@ export type Cmp = Component<any>;
 export type ComponentAnnotations<
   TCmp extends Cmp,
   TArgs extends Record<string, any> = Record<string, any>,
-> = BaseComponentAnnotations<
-  // 👇 Renderer
-  SvelteRenderer<TCmp>,
-  // 👇 Args
-  TArgs
->;
+> = Omit<
+  BaseComponentAnnotations<
+    // 👇 Renderer
+    SvelteRenderer<TCmp>,
+    // 👇 Args
+    TArgs
+  >,
+  'subcomponents'
+> & {
+  // Subcomponents can use different props from the primary component. Keep
+  // them out of TCmp inference so they do not widen the story args type.
+  subcomponents?: Record<string, Cmp>;
+};
 
 export interface SvelteRenderer<TCmp extends Cmp> extends WebRenderer {
   component: TCmp;

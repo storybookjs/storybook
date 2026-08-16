@@ -20,6 +20,15 @@ const validateArgs = (key = '', value: unknown): boolean => {
     return false;
   }
 
+  // `__proto__` passes VALIDATION_REGEXP because underscores are allowed, but
+  // writing it back with `Object.assign` reaches the setter inherited from
+  // `Object.prototype`: the arg never becomes an entry and the object's own
+  // prototype is replaced instead. Reject it so it takes the same warning path
+  // as any other unsafe key.
+  if (key === '__proto__') {
+    return false;
+  }
+
   if (value === null || value === undefined) {
     return true;
   } // encoded as `!null` or `!undefined` // encoded as `!null` or `!undefined`

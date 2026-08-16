@@ -181,6 +181,14 @@ describe('parseArgsParam', () => {
       expect(parseArgsParam('obj.a!b:val')).toStrictEqual({});
     });
 
+    it('omits __proto__, which would otherwise replace the prototype', () => {
+      // `toStrictEqual` compares prototypes, so these also pin that the
+      // returned object is still a plain object.
+      expect(parseArgsParam('__proto__:val')).toStrictEqual({});
+      expect(parseArgsParam('__proto__[]:1;__proto__[]:2')).toStrictEqual({});
+      expect(parseArgsParam('__proto__:val;key:val')).toStrictEqual({ key: 'val' });
+    });
+
     it('completely omits an arg when a (deeply) nested key is invalid', () => {
       expect(parseArgsParam('obj.foo.a!b:val;obj.foo.bar:val;obj.baz:val')).toStrictEqual({});
       expect(parseArgsParam('obj.foo.a!b:val;key:val')).toStrictEqual({ key: 'val' });

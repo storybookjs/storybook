@@ -85,6 +85,20 @@ describe('Link mock', () => {
     expect(link.getAttribute('href')).toBe('/about');
   });
 
+  it('resolves render-prop children with link state', async () => {
+    await renderWithRouter(
+      <Link to="/" data-testid="home-link">
+        {({ isActive, isTransitioning }) => (
+          <span>
+            {isActive ? 'active' : 'inactive'}:{String(isTransitioning)}
+          </span>
+        )}
+      </Link>
+    );
+
+    expect(await screen.findByText('active:false')).toBeTruthy();
+  });
+
   it('serializes search params into the href', async () => {
     await renderWithRouter(
       <Link to="/posts" search={{ tag: 'news', page: 2 }} data-testid="search-link">

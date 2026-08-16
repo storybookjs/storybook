@@ -2,6 +2,7 @@ import { SourceType } from './shared.ts';
 
 export type StoryDocsCodePanelParameters = {
   __isArgsStory?: boolean;
+  __isPortableStory?: boolean;
   docs?: {
     source?: {
       code?: string;
@@ -13,12 +14,19 @@ export type StoryDocsCodePanelParameters = {
 /**
  * Whether the preview story-docs hook should skip emitting a snippet to the manager Code panel.
  *
- * Mirrors {@link skipJsxRender} in the React `jsxDecorator` so static service snippets replace
- * dynamic JSX rendering under the same conditions.
+ * The args/source shape logic mirrors {@link skipJsxRender} in the React `jsxDecorator`, so static
+ * service snippets replace dynamic JSX rendering under the same conditions. It additionally skips
+ * portable stories (vitest, playwright/jest portable): those have no manager Code panel and no OSA
+ * server peer, so the `extractStoryDocs` remote command has no handler and would reject after the
+ * ack timeout — there is nothing to emit to.
  */
 export function shouldSkipStoryDocsEmit(parameters?: StoryDocsCodePanelParameters): boolean {
   const sourceParams = parameters?.docs?.source;
   const isArgsStory = parameters?.__isArgsStory;
+
+  if (parameters?.__isPortableStory) {
+    return true;
+  }
 
   if (sourceParams?.type === SourceType.DYNAMIC) {
     return false;

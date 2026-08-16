@@ -31,6 +31,8 @@ client/server registration API.
 The environment-agnostic API consists of:
 
 - `defineService`
+- `defineToolset`, `registerToolset`, `getToolset`, `getRegisteredToolsets` — the public toolset
+  construct (see [Toolset](#toolset))
 - the exported type aliases from [types.ts](./types.ts)
 
 The server-only API consists of:
@@ -61,6 +63,11 @@ Internal tests and implementation code may import from the individual modules di
 - [preview.ts](./preview.ts): preview entrypoint (`relay: false`, leaf) re-exported via `storybook/preview-api`; registration only, no React hooks
 - [types.ts](./types.ts): core type model for definitions, contexts, runtime instances, and static build data
 - [service-definition.ts](./service-definition.ts): `defineService()` typing that preserves inline inference when declaring services
+- [toolset-definition.ts](./toolset-definition.ts): `defineToolset()` typing for public toolsets and their handler context
+- [toolset-registry.ts](./toolset-registry.ts): `registerToolset` / `getToolset` / `getRegisteredToolsets` — the realm-global toolset inventory adapters read
+- [toolset-names.ts](./toolset-names.ts): derived MCP/CLI method names and `getToolName` for transport-aware cross-references
+- `services/`: core OSA service definitions and per-runtime registration helpers
+- `toolsets/`: core-owned public toolsets (docs, stories, review), mirroring the services tree; addons may own additional toolsets
 - [service-validation.ts](./service-validation.ts): sync + async schema validation helpers and error wrapping
 - [errors.ts](./errors.ts): validation metadata formatting helpers
 - [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction (state, commands, static loader) that assembles one service instance
@@ -89,6 +96,83 @@ A service is a state container with:
 - optional descriptions on the service and each operation
 
 Use `defineService()` to preserve the concrete query and command map types.
+
+### Toolset
+
+Services and toolsets are sibling constructs behind this one entry: **services** own internal state
+and synchronization; **toolsets** are the public agent surface for CLI and MCP adapters. A toolset
+(`defineToolset`) has an `id`, a description, and methods carrying five fields:
+
+- `title` — required short display label used by client UIs and the tools CLI command list
+- `description` — `string`, or a function of `ctx` when the prose differs per transport
+- `input` — the input schema
+- `output` — optional; published as the MCP `outputSchema`, and `structuredContent` is
+  narrowed to it. An outcome's `data` may carry more than this declares; only the declared shape
+  reaches the wire
+- `handler(input, ctx)` — the one execution: produces the data, renders the text, and owns side
+  effects and telemetry
+
+`handler` returns a `ToolsetOutcome<TSuccess, TFailure = TSuccess>` — a discriminated union of
+`{ ok: true, data, markdown }` and `{ ok: false, data, markdown }`, written as plain object
+literals (no factory helpers). The failure model is one line each: could not do the job →
+**throw**; did the job and the answer is bad news (a failed test run, a not-found lookup) →
+**return `{ ok: false, data, markdown }`**. Infallible methods declare `TFailure = never`.
+
+One handler owns data and rendering because one MCP reply carries `content` (text) and
+`structuredContent` (JSON) at once and both must come from a single run — re-running a method with
+side effects would repeat them. Usage telemetry reports inline in the handler with the rendered
+text in hand, so no consumer can forget it. Adapters unwrap outcomes mechanically — text blocks
+from `markdown`, `structuredContent` from `data`, MCP `isError` (and later CLI exit codes) from
+`ok` — and must not re-derive meaning from the data. `markdown` may be `string | string[]`:
+the CLI joins the blocks with blank lines, and its `--json` flag means "print `data`, skip
+`markdown`".
+
+An error whose message speaks to the agent and names its own recovery declares `agentFacing: true`
+(a `StorybookError` constructor prop); adapters surface such errors verbatim by reading that
+property — never by keeping a class list, which misclassifies across bundle copies.
+
+`ctx` is `{ transport: 'cli' | 'mcp', origin?, getService, telemetry? }`. `origin` is the complete
+Storybook UI base URL, including a deployment subpath; the MCP adapter derives it from the request.
+Descriptions that name a sibling tool must render it through `getToolName(ctx)` rather than hardcoding
+either spelling, so the same sentence reads as the derived MCP tool name or the CLI command for the
+active transport. MCP names are derived from the toolset id and method key
+(`stories.findByComponent` → `stories-find-by-component`); they are not maintained in a separate
+compatibility map.
+Facts that are fixed at boot (whether review or a11y is enabled) are factory options on the
+toolset, not `ctx` fields.
+
+Toolsets register imperatively via `registerToolset`, called from the same place the paired service
+registers (for core and addons, the `services` preset hook — the mechanism itself is
+preset-independent so manager- or preview-realm toolsets can use it later). A toolset must be
+registered wherever a consumer resolves it, including consumers that only read its descriptions and
+schemas: `getToolset(id)` throws on an unregistered id rather than silently dropping a tool.
+Adapters resolve one toolset with `getToolset(id)` or take the whole set via
+`getRegisteredToolsets()`; `@storybook/addon-mcp`, `@storybook/mcp`, and the `storybook tools` CLI
+consume them today.
+
+Telemetry classification belongs in Storybook-owned telemetry calls, not on the generic toolset
+definition. Use `reportToolsetTelemetry` so a rejected analytics sink cannot fail a tool call.
+Third-party toolsets do not need to participate in Storybook's telemetry taxonomy.
+
+Core owns `docs`, `stories`, and `review`. Addon-vitest owns the complete `test` toolset—its schemas,
+channel protocol, formatting, telemetry, and tests—and registers it beside its responder from the
+same `services` hook. Core exports only the generic story-selector primitives the addon needs.
+
+The docs toolset is runtime-agnostic behind `DocsAccess` (`list` and `resolve`). Service, manifest,
+and provider accesses feed the same definition; composition combines accesses rather than owning a
+second engine. `storybook/internal/toolsets-docs` is a portable entry consumed by both MCP packages,
+so its bundled declaration must remain flat and import only its declared allowlist.
+
+The `storybook tools` CLI loads the target Storybook configuration in its own process and derives
+dispatch, help, validation, and output from the registered toolsets. Bootstrap always hosts the
+module graph so addon-owned toolsets can query it without appearing in a core allowlist; an
+unsupported builder settles the graph as unavailable without failing unrelated tools. Bootstrap
+also changes `process.cwd()` to the target project for the rest of the one-shot process. Embedders
+that need the launch directory must capture it first.
+
+Methods marked `requiresDevServer` use the runtime instance registry. `stories.preview` needs only
+the recorded origin. Until connect mode exists, `review.create` is the one temporary exception
+forwarded through the running Storybook's MCP endpoint; keep that proxy branch self-contained.
 
 ### Query
 
@@ -185,11 +269,17 @@ still throw `OpenServiceUnimplementedOperationError` when no handler exists.
 
 Services and operations can be hidden from discovery APIs without disabling them at runtime:
 
-- Set `internal: true` on a **service** to omit it from `listServices()`. `describeService(id)` and
-  `getService(id)` still work when the id is known.
+- Set `internal: true` on a **service** to omit it from `listServices()`. Callers must use
+  `getService(id, { internal: true })` to resolve it — a plain `getService(id)` throws
+  `OpenServiceInternalServiceError`. `describeService(id)` still works when the id is known.
 - Set `internal: true` on a **query or command** to omit it from `describeService()` output (and
   therefore from `queryNames` / `commandNames` in `listServices()` summaries). Runtime callers can
   still invoke the operation through a service handle, and TypeScript types remain available.
+  Operations may be marked internal even on a non-internal service.
+
+All core Storybook OSA services are currently `internal: true`. Treat them as unstable: Storybook
+may break their ids, state shapes, and operations without a public semver bump. Prefer public
+toolsets (`defineToolset`) for MCP/CLI surfaces.
 
 `internal` defaults to `false` when omitted. It is part of the definition contract only — it cannot
 be overridden at `registerService()` time. Static snapshot building is unaffected.

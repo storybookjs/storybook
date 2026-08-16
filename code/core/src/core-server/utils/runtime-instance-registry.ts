@@ -22,6 +22,12 @@ export type RuntimeInstanceRecord = {
   instanceId: string;
   pid: number;
   cwd: string;
+  /**
+   * Resolved config directory of the running Storybook. Lets `storybook ai` find this instance
+   * from a different cwd in a monorepo (storybookjs/storybook#35359). Optional because records
+   * written by older Storybooks lack it.
+   */
+  configDir?: string;
   url: string;
   port: number;
   agent?: string;
@@ -52,8 +58,9 @@ export function getDefaultRuntimeInstanceRegistryDir() {
   return join(homedir(), '.storybook', 'instances');
 }
 
-export function getOrigin(address: string) {
-  return new URL(address).origin;
+export function getStorybookBaseUrl(address: string) {
+  const url = new URL(address);
+  return `${url.origin}${url.pathname.replace(/\/$/, '')}`;
 }
 
 export function getMcpMetadataFromMainConfig(
@@ -87,6 +94,7 @@ function detectRuntimeInstanceAgent() {
 export function createRuntimeInstanceRecord({
   address,
   agent,
+  configDir,
   cwd = process.cwd(),
   instanceId = randomUUID(),
   mcp = { status: 'not-installed' },
@@ -97,6 +105,7 @@ export function createRuntimeInstanceRecord({
 }: {
   address: string;
   agent?: string;
+  configDir?: string;
   cwd?: string;
   instanceId?: string;
   mcp?: RuntimeInstanceRecord['mcp'];
@@ -105,7 +114,7 @@ export function createRuntimeInstanceRecord({
   port: number;
   storybookVersion: string;
 }): RuntimeInstanceRecord {
-  const origin = getOrigin(address);
+  const storybookBaseUrl = getStorybookBaseUrl(address);
   const timestamp = now.toISOString();
 
   return {
@@ -113,7 +122,8 @@ export function createRuntimeInstanceRecord({
     instanceId,
     pid,
     cwd: resolve(cwd),
-    url: origin,
+    ...(configDir ? { configDir: resolve(cwd, configDir) } : {}),
+    url: storybookBaseUrl,
     port,
     ...(agent ? { agent } : {}),
     storybookVersion,
@@ -319,6 +329,7 @@ function registerProcessCleanup(recordPath: string) {
 export async function writeStorybookRuntimeInstanceRecord({
   address,
   agent = detectRuntimeInstanceAgent(),
+  configDir,
   cwd,
   mcp,
   pid,
@@ -329,6 +340,7 @@ export async function writeStorybookRuntimeInstanceRecord({
 }: {
   address: string;
   agent?: string;
+  configDir?: string;
   cwd?: string;
   mcp?: RuntimeInstanceRecord['mcp'];
   pid?: number;
@@ -340,6 +352,7 @@ export async function writeStorybookRuntimeInstanceRecord({
   const record = createRuntimeInstanceRecord({
     address,
     agent,
+    configDir,
     cwd,
     mcp,
     pid,

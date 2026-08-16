@@ -1,4 +1,3 @@
-/* eslint-disable local-rules/no-uncategorized-errors */
 import path from 'node:path';
 
 import type { APIRequestContext } from '@playwright/test';
@@ -137,12 +136,12 @@ test.describe('addon-mcp', () => {
         // Check that dev toolset is listed with its tools
         const devToolset = page.locator('.toolset', { has: page.locator('text=dev') });
         await expect(devToolset).toBeVisible();
-        await expect(devToolset.locator('.toolset-status')).toHaveText('enabled');
+        await expect(devToolset.locator('.toolset-status').first()).toHaveText('enabled');
 
         // Check that docs toolset is listed with its tools
         const docsToolset = page.locator('.toolset', { has: page.locator('text=docs') });
         await expect(docsToolset).toBeVisible();
-        await expect(docsToolset.locator('.toolset-status')).toHaveText('enabled');
+        await expect(docsToolset.locator('.toolset-status').first()).toHaveText('enabled');
 
         // Check that test toolset is listed with its tools
         const testToolset = page.locator('.toolset', { has: page.locator('text=test') });
@@ -198,14 +197,14 @@ test.describe('addon-mcp', () => {
       });
     });
 
-    test.describe('Tool: preview-stories', () => {
+    test.describe('Tool: stories-preview', () => {
       test('should return story URLs for valid stories', async ({ request }) => {
         const storyName = 'Primary';
         const expectedPreviewUrl = `${storybookUrl}/?path=/story/example-button--primary`;
 
         // Use a path pattern that works regardless of sandbox location
         const response = await mcpRequest(request, 'tools/call', {
-          name: 'preview-stories',
+          name: 'stories-preview',
           arguments: {
             stories: [
               {
@@ -252,10 +251,10 @@ test.describe('addon-mcp', () => {
       });
     });
 
-    test.describe('Tool: list-all-documentation', () => {
+    test.describe('Tool: docs-list', () => {
       test('should list all documentation from manifest', async ({ request }) => {
         const response = await mcpRequest(request, 'tools/call', {
-          name: 'list-all-documentation',
+          name: 'docs-list',
           arguments: {},
         });
 
@@ -269,10 +268,10 @@ test.describe('addon-mcp', () => {
       });
     });
 
-    test.describe('Tool: get-documentation', () => {
+    test.describe('Tool: docs-show', () => {
       test('should return documentation for a specific component', async ({ request }) => {
         const response = await mcpRequest(request, 'tools/call', {
-          name: 'get-documentation',
+          name: 'docs-show',
           arguments: {
             id: 'example-button',
           },

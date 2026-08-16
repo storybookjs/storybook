@@ -6,6 +6,8 @@ import {
   CURRENT_STORY_WAS_SET,
   DOCS_PREPARED,
   RESET_STORY_ARGS,
+  SET_CONFIG,
+  SET_FILTER,
   SET_INDEX,
   SET_STORIES,
   STORY_ARGS_UPDATED,
@@ -15,7 +17,7 @@ import {
   STORY_SPECIFIED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
-import { type API_StoryEntry } from 'storybook/internal/types';
+import { type API_StoryEntry, type StoryIndex } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 
@@ -825,6 +827,8 @@ describe('stories API', () => {
       expect(fullAPI.updateRef).toHaveBeenCalledWith('refId', {
         filteredIndex: { 'a--1': { args: { foo: 'bar' } } },
         index: { 'a--1': { args: { foo: 'bar' } } },
+        // Runtime enrichment is also cached on the ref so it survives index rebuilds (#34553).
+        storyUpdates: { 'a--1': { args: { foo: 'bar' } } },
       });
     });
     it('updateStoryArgs emits UPDATE_STORY_ARGS to the local frame and does not change anything', () => {
@@ -1457,6 +1461,97 @@ describe('stories API', () => {
         },
         true
       );
+    });
+  });
+  describe('SET_CONFIG', () => {
+    it('applies config sidebar filters to an index that was already set', async () => {
+      const moduleArgs = createMockModuleArgs({
+        initialState: {
+          tagPresets: {},
+          includedTagFilters: [],
+          excludedTagFilters: [],
+          includedStatusFilters: [],
+          excludedStatusFilters: [],
+        } as Partial<State>,
+      });
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store, provider } = moduleArgs;
+
+      const entries: StoryIndex['entries'] = {
+        'a--1': {
+          type: 'story',
+          subtype: 'story',
+          id: 'a--1',
+          title: 'a',
+          name: '1',
+          tags: ['dev'],
+          importPath: './a.ts',
+        },
+        'b--1': {
+          type: 'story',
+          subtype: 'story',
+          id: 'b--1',
+          title: 'b',
+          name: '1',
+          tags: ['dev'],
+          importPath: './b.ts',
+        },
+      };
+
+      // The index arrives before the addon config (e.g. slow-loading manager entry)
+      await api.setIndex({ v: 5, entries });
+
+      expect(Object.keys(store.getState().filteredIndex!)).toContain('b--1');
+
+      // Now the addon config with sidebar filters lands
+      provider.getConfig.mockReturnValue({
+        sidebar: { filters: { pattern: (item: any) => item.id.startsWith('a') } },
+      });
+      provider.channel.emit(SET_CONFIG);
+      await new Promise((resolve) => setTimeout(resolve, 0));
+
+      const { filteredIndex } = store.getState();
+      expect(Object.keys(filteredIndex!)).toEqual(['a', 'a--1']);
+    });
+  });
+  describe('experimental_setFilters', () => {
+    it('applies multiple filters in a single call', async () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store } = moduleArgs;
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+      await api.experimental_setFilters({
+        one: (item: any) => !item.id.startsWith('b'),
+        two: (item: any) => !item.id.startsWith('custom'),
+      });
+
+      expect(store.getState().filters).toEqual(
+        expect.objectContaining({
+          one: expect.any(Function),
+          two: expect.any(Function),
+        })
+      );
+      expect(Object.keys(store.getState().filteredIndex!)).toEqual(['a', 'a--1', 'a--2']);
+    });
+
+    it('emits SET_FILTER for each filter once the index is set', async () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { provider } = moduleArgs;
+
+      const listener = vi.fn();
+      provider.channel.on(SET_FILTER, listener);
+
+      // Without an index, nothing is emitted (the filters only take effect later)
+      await api.experimental_setFilters({ one: () => true });
+      expect(listener).not.toHaveBeenCalled();
+
+      await api.setIndex({ v: 5, entries: navigationEntries });
+      await api.experimental_setFilters({ one: () => true, two: () => true });
+      expect(listener).toHaveBeenCalledTimes(2);
+      expect(listener).toHaveBeenCalledWith({ id: 'one' });
+      expect(listener).toHaveBeenCalledWith({ id: 'two' });
     });
   });
   describe('experimental_setFilter', () => {

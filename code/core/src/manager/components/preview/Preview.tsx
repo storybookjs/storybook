@@ -13,6 +13,7 @@ import { Helmet } from 'react-helmet-async';
 import { Consumer, addons, merge, types, type Combo } from 'storybook/manager-api';
 
 import { useLandmark } from '../../hooks/useLandmark.ts';
+import { isReviewFeatureEnabled } from '../../../shared/review/features.ts';
 import { isReviewCollectionStoryRoute } from '../../../shared/review/routes.ts';
 import { ReviewToolbarHeader } from '../review/components/ReviewToolbarHeader.tsx';
 import { FramesRenderer } from './FramesRenderer.tsx';
@@ -93,7 +94,8 @@ const Preview = React.memo<PreviewProps>(function Preview(props) {
   const shouldScale = viewMode === 'story';
   const { showToolbar } = options;
   const customisedShowToolbar = api.getShowToolbarWithCustomisations(showToolbar);
-  const isReviewCollectionStory = isReviewCollectionStoryRoute(path, queryParams);
+  const isReviewCollectionStory =
+    isReviewFeatureEnabled(global.FEATURES) && isReviewCollectionStoryRoute(path, queryParams);
 
   const previousStoryId = useRef(storyId);
 

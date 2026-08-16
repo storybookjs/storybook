@@ -208,6 +208,36 @@ describe('createRuntimeInstanceRecord', () => {
     });
   });
 
+  it('preserves a Storybook deployment subpath but drops UI query parameters', () => {
+    const record = createRuntimeInstanceRecord({
+      ...baseOptions,
+      address: 'http://localhost:6006/nested/?path=/docs/button--primary',
+    });
+
+    expect(record.url).toBe('http://localhost:6006/nested');
+  });
+
+  it('stores the configDir resolved against the cwd when provided', () => {
+    const record = createRuntimeInstanceRecord({
+      ...baseOptions,
+      cwd: '/repo',
+      configDir: 'packages/ui/.storybook',
+    });
+
+    expect(record.configDir).toBe(resolve('/repo/packages/ui/.storybook'));
+  });
+
+  it('keeps an absolute configDir as-is', () => {
+    const configDir = join(tmpdir(), 'repo', 'packages', 'ui', '.storybook');
+    const record = createRuntimeInstanceRecord({ ...baseOptions, cwd: '/elsewhere', configDir });
+
+    expect(record.configDir).toBe(resolve(configDir));
+  });
+
+  it('omits configDir when not provided', () => {
+    expect(createRuntimeInstanceRecord(baseOptions)).not.toHaveProperty('configDir');
+  });
+
   it('marks MCP as not-installed by default', () => {
     const record = createRuntimeInstanceRecord(baseOptions);
 

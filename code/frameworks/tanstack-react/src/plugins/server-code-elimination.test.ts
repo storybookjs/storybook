@@ -285,6 +285,62 @@ describe('serverCodeEliminationPlugin', () => {
       expect(result!.code).not.toContain('secret');
     });
 
+    it('keeps imports only referenced in JSX after stripping the server option', async () => {
+      const code = [
+        `import { createFileRoute } from '@tanstack/react-router';`,
+        `import { ImportedPanel } from '../components/ImportedPanel';`,
+        `export const Route = createFileRoute('/demo')({`,
+        `  component: RouteComponent,`,
+        `  server: { handlers: { default: async () => new Response('ok') } },`,
+        `});`,
+        `function RouteComponent() {`,
+        `  return <ImportedPanel />;`,
+        `}`,
+      ].join('\n');
+      const result = await transform(code, '/project/src/routes/demo.tsx');
+      expect(result).not.toBeNull();
+      expect(result!.code).not.toMatch(/\bserver:\s*\{/);
+      expect(result!.code).toMatch(/import\s*\{\s*ImportedPanel\s*\}\s*from/);
+    });
+
+    it('keeps same-file components referenced only from JSX', async () => {
+      const code = [
+        `import { createFileRoute } from '@tanstack/react-router';`,
+        `import { createMiddleware } from '@tanstack/react-start';`,
+        `const noopMiddleware = createMiddleware().server(async ({ next }) => next());`,
+        `export const Route = createFileRoute('/fails')({`,
+        `  component: Component,`,
+        `  server: { middleware: [noopMiddleware] },`,
+        `});`,
+        `function Component() {`,
+        `  return <NestedComponent />;`,
+        `}`,
+        `function NestedComponent() {`,
+        `  return <div>Nested Component</div>;`,
+        `}`,
+      ].join('\n');
+      const result = await transform(code, '/project/src/routes/fails.tsx');
+      expect(result).not.toBeNull();
+      expect(result!.code).toContain('function NestedComponent');
+    });
+
+    it('keeps imports referenced via a JSX member expression (Namespace.Child)', async () => {
+      const code = [
+        `import { createFileRoute } from '@tanstack/react-router';`,
+        `import { UI } from '../components/ui';`,
+        `export const Route = createFileRoute('/demo')({`,
+        `  component: RouteComponent,`,
+        `  server: { handler: async () => ({}) },`,
+        `});`,
+        `function RouteComponent() {`,
+        `  return <UI.Panel />;`,
+        `}`,
+      ].join('\n');
+      const result = await transform(code, '/project/src/routes/demo.tsx');
+      expect(result).not.toBeNull();
+      expect(result!.code).toMatch(/import\s*\{\s*UI\s*\}\s*from/);
+    });
+
     it('keeps still-referenced imports from a partially-used declaration', async () => {
       const code = [
         `import { createServerOnlyFn, useSomething } from '@tanstack/react-start';`,

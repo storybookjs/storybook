@@ -138,11 +138,18 @@ const config: StorybookConfig = {
 export default config;
 ```
 
-`compodoc` defaults to `true` and `compodocArgs` defaults to `['-e', 'json', '-d', '.']`. When enabled, the framework preset generates `documentation.json` on cold start if the file does not already exist.
+`compodoc` defaults to `true` and `compodocArgs` defaults to `['-e', 'json', '-d', '.']`.
+
+When enabled, Storybook generates `documentation.json` itself, once per run: every `storybook dev`, every `storybook build`, and every Vitest run. Compodoc scans the whole project in one pass, so this is all-or-nothing: there is no per-component regeneration.
+
+- **Editing a component while Storybook is running does not update its metadata.** Controls, descriptions and JSDoc tags come from the documentation generated at startup. Restart Storybook to pick up your changes.
+- **Running tests from a running Storybook reuses that Storybook's documentation** rather than scanning again, so the test run starts quickly. A Vitest run started on its own generates its own.
+- **Two files appear next to the output**: `.compodoc.lock` while a run is in progress, and `.compodoc.run` recording which run produced the current documentation. Together they let several Storybook processes share a single Compodoc run instead of each starting their own. Both are safe to add to your `.gitignore`.
+- **Only `documentation.json` is published** into the output directory. If your `compodocArgs` also produce Compodoc's browsable HTML site, generate that with a separate `compodoc` invocation.
 
 #### Supported invocation paths
 
-- **`ng run app:storybook`**: Uses `angular.json` for Angular build settings. The framework preset runs Compodoc at cold start so `documentation.json` is generated before stories render.
+- **`ng run app:storybook`**: Uses `angular.json` for Angular build settings. The framework runs Compodoc at start-up so `documentation.json` is generated before stories render.
 - **Vitest addon panel** (inside a running `storybook dev`): The addon-vitest child process inherits builder options from the parent process automatically; no extra configuration is needed.
 - **Standalone `yarn vitest`** (without a parent `storybook dev`): Supported via `storybookAngularVitest` from `@storybook/angular-vite/vitest`. Add it to the same `plugins` array as `storybookTest` in your `vitest.config.ts`; it forwards your Angular build options (styles, stylePreprocessorOptions, assets, zoneless) into the channel the framework already reads. If the env var is already set (e.g. a parent `storybook dev` is running), the existing value wins and a warning is logged so you know which options are active.
 
@@ -195,7 +202,54 @@ export default config;
 
 ### TypeScript paths
 
-Storybook reads your `tsconfig.json`'s `baseUrl` and `paths` settings and maps them into Vite's resolver, so TypeScript path aliases work without additional configuration.
+Unlike the Webpack-based `@storybook/angular`, this framework does not automatically map your `tsconfig.json` `paths` aliases into Vite's module resolver. Vite resolves modules on disk and does not read the `paths` compiler option, so imports such as `@app/shared` will fail unless you register them yourself.
+
+The simplest fix is the [`vite-tsconfig-paths`](https://github.com/aleclarson/vite-tsconfig-paths) plugin, which reads `baseUrl` and `paths` from your `tsconfig.json` and adds the matching aliases:
+
+```ts title=".storybook/main.ts"
+import type { StorybookConfig } from '@storybook/angular-vite';
+
+const config: StorybookConfig = {
+  framework: '@storybook/angular-vite',
+  async viteFinal(config) {
+    const { mergeConfig } = await import('vite');
+    const { default: tsconfigPaths } = await import('vite-tsconfig-paths');
+    return mergeConfig(config, {
+      plugins: [tsconfigPaths()],
+    });
+  },
+};
+
+export default config;
+```
+
+Install it as a dev dependency first: `npm install --save-dev vite-tsconfig-paths`. If you prefer not to add a plugin, you can instead declare the aliases explicitly under [`resolve.alias`](https://vite.dev/config/shared-options.html#resolve-alias) in the same `viteFinal` hook.
+
+### SCSS include paths
+
+Like `paths`, SCSS search paths from your application's `build` target in `angular.json` are not inherited. Configure them on the Storybook builder target instead, using `stylePreprocessorOptions`. Both the Angular-style `includePaths` and the dart-sass/Vite spelling `loadPaths` are accepted, and paths are resolved relative to the workspace root:
+
+```jsonc title="angular.json"
+"storybook": {
+  "builder": "@storybook/angular-vite:start-storybook",
+  "options": {
+    "stylePreprocessorOptions": {
+      "includePaths": ["src/styles"],
+    },
+  },
+},
+```
+
+When running through the Storybook CLI (`storybook dev` / `storybook build`) rather than the Angular builders, there is no `angular.json` builder context to read from. In that case set the search paths directly in `.storybook/main.ts`:
+
+```ts title=".storybook/main.ts"
+async viteFinal(config) {
+  const { mergeConfig } = await import('vite');
+  return mergeConfig(config, {
+    css: { preprocessorOptions: { scss: { loadPaths: ['src/styles'] } } },
+  });
+},
+```
 
 ## Migration from `@storybook/angular`
 
@@ -376,7 +430,7 @@ Type: `boolean`
 
 Default: `true`
 
-Whether to run [Compodoc](https://compodoc.app/) on cold start to generate `documentation.json`. When `true`, the framework preset invokes Compodoc once if `documentation.json` does not already exist. Set to `false` to skip generation entirely (e.g. when you manage Compodoc outside of Storybook).
+Whether to run [Compodoc](https://compodoc.app/) to generate `documentation.json`. When `true`, the framework runs Compodoc once per Storybook run, replacing the previous `documentation.json`. Set to `false` to skip generation entirely (e.g. when you manage Compodoc outside of Storybook).
 
 #### `compodocArgs`
 
@@ -385,3 +439,51 @@ Type: `string[]`
 Default: `['-e', 'json', '-d', '.']`
 
 Arguments passed to the `@compodoc/compodoc` CLI when `compodoc` is `true`. The defaults produce a `documentation.json` file in the workspace root.
+
+#### `propsTable`
+
+Type: `'all' | 'api' | 'inputs'`
+
+Default: `'api'`
+
+Which of your component's members the props table renders.
+The three values are a ladder, each one a subset of the one above it:
+
+| Value      | Renders                                                                   |
+| ---------- | ------------------------------------------------------------------------- |
+| `'all'`    | Every member of every section: properties, inputs, outputs and methods.   |
+| `'api'`    | The same four sections, narrowed to your component's template-facing API. |
+| `'inputs'` | The inputs section only.                                                  |
+
+`'api'` keeps every declared input and output, whatever its TypeScript visibility.
+
+Everywhere else, `'api'` drops TypeScript `private` members, ECMAScript private `#` members, and anything tagged `@internal`.
+A `private` property or method cannot be reached from any template, and `@internal` declares a member non-API, so a row for them documents your component's wiring rather than its API.
+Injected services are the common case:
+
+```ts
+@Component({ selector: 'my-button', template: '<button>{{ label }}</button>' })
+export class ButtonComponent {
+  // Kept by 'api': a parent template can bind any declared input.
+  @Input() private label = '';
+
+  // Dropped by 'api': no template can reach it.
+  private readonly cdr = inject(ChangeDetectorRef);
+
+  // Kept by 'api': the component's own template can read protected members.
+  protected pressed = false;
+}
+```
+
+`protected` members are deliberately kept, because Angular templates can bind them and they are therefore part of what a reader needs to know.
+
+To drop a single member that `'api'` keeps, tag it `@ignore`:
+
+```ts
+/** @ignore */
+protected internalHelper = 0;
+```
+
+`'api'` needs the `experimentalDocgenServer` feature.
+Without it, Storybook reads your components through Compodoc, whose visibility data Storybook cannot interpret reliably, so only `'all'` and `'inputs'` apply.
+Asking for `'api'` then logs a warning rather than silently changing what you see.

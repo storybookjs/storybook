@@ -10,6 +10,7 @@ import type {
   API_HashEntry,
   API_IndexHash,
   API_PreparedIndexEntry,
+  API_RefStoryRuntimeData,
 } from './api-stories.ts';
 import type { SetStoriesStory, SetStoriesStoryData } from './channelApi.ts';
 import type { DocsOptions } from './core-common.ts';
@@ -85,6 +86,12 @@ export interface API_Layout {
   showPanel: boolean;
   showTabs: boolean;
   showToolbar: boolean;
+  /**
+   * Whether the mobile navigation drawer is open. Below the mobile breakpoint the sidebar is a
+   * drawer owned by the manager UI rather than the desktop nav size, so this is its open/closed
+   * state. Ephemeral: it always starts as `false` and is never restored from a persisted session.
+   */
+  showMobileNavigation: boolean;
 }
 
 export interface API_LayoutCustomisations {
@@ -150,6 +157,12 @@ export interface API_LoadedRefData {
   filteredIndex?: API_IndexHash;
   indexError?: Error;
   previewInitialized: boolean;
+  /**
+   * Runtime story enrichment (args, argTypes, parameters, initialArgs, prepared) received from the
+   * ref preview via STORY_PREPARED / DOCS_PREPARED, cached so it survives ref index (re)builds. See
+   * `API_RefStoryRuntimeData`.
+   */
+  storyUpdates?: API_RefStoryRuntimeData;
 }
 
 export interface API_ComposedRef extends API_LoadedRefData {
@@ -181,6 +194,7 @@ export type API_ComposedRefUpdate = Partial<
     | 'previewInitialized'
     | 'sourceUrl'
     | 'internal_index'
+    | 'storyUpdates'
   >
 >;
 

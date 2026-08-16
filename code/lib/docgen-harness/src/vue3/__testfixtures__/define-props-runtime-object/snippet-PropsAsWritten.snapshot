@@ -1,0 +1,3 @@
+<template>
+  <RuntimeObjectProps :count="3" label="Total" />
+</template>

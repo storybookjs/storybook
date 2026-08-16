@@ -588,6 +588,10 @@ function createMockServerFnBuilder(): any {
     return createMockServerFnBuilder();
   };
 
+  builder.validator = () => {
+    return createMockServerFnBuilder();
+  };
+
   builder.handler = (handlerFn?: (...args: any[]) => any) => {
     const mock = fn().mockName('@tanstack/start-client-core::createServerFn.handler()');
 
@@ -629,6 +633,9 @@ export const Navigate = ({ to }: { to: string }) => {
 
   return null;
 };
+
+export const Hydrate = ({ children }: { children?: React.ReactNode; [key: string]: unknown }) =>
+  children ?? null;
 
 export const notFound = () => {
   throw new Error('Not found');

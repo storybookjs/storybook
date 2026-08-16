@@ -105,6 +105,17 @@ export type Template = {
     // Some sandboxes (e.g. Angular) rely on Node 22.22.3 as minimum supported version and threfore it needs enforcing, even if the CI image comes with a different node version.
     ensureMinNodeVersion?: boolean;
   };
+  /**
+   * Package names or glob patterns exempted from the sandbox `npmMinimalAgeGate`,
+   * for templates that deliberately track a prerelease line. The gate still
+   * applies to every other dependency, so only the packages named here can be
+   * installed fresh.
+   *
+   * The gate is enforced transitively, so this has to name the whole family of
+   * packages published in lockstep with the prerelease, not just the direct
+   * dependency. Stable templates should leave this unset.
+   */
+  minAgeGateExemptions?: string[];
   /** Additional options to pass to the initiate command when initializing Storybook. */
   initOptions?: {
     builder?: SupportedBuilder;
@@ -187,7 +198,7 @@ export const baseTemplates = {
   'nextjs/14-ts': {
     name: 'Next.js v14.2 (Webpack | TypeScript)',
     script:
-      'yarn create next-app {{beforeDir}} -e https://github.com/vercel/next.js/tree/v14.2.17/examples/hello-world && cd {{beforeDir}} && npm pkg set "dependencies.next"="^14.2.17" && yarn && git add . && git commit --amend --no-edit && cd ..',
+      'npx create-next-app {{beforeDir}} --skip-install -e https://github.com/vercel/next.js/tree/v14.2.17/examples/hello-world && cd {{beforeDir}} && npm pkg set "dependencies.next"="^14.2.17" && yarn && git add . && git commit --amend --no-edit && cd ..',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -212,7 +223,7 @@ export const baseTemplates = {
   'nextjs/15-ts': {
     name: 'Next.js v15 (Webpack | TypeScript)',
     script:
-      'npx create-next-app@^15.5 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@^15.5 {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -237,7 +248,7 @@ export const baseTemplates = {
   'nextjs/default-ts': {
     name: 'Next.js Latest (Webpack | TypeScript)',
     script:
-      'npx create-next-app {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -263,7 +274,16 @@ export const baseTemplates = {
   'nextjs/prerelease': {
     name: 'Next.js Prerelease (Webpack | TypeScript)',
     script:
-      'npx create-next-app@canary {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@canary {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
+    // The point of this template is the canary line, and canaries are published
+    // daily. `@next/*` covers the platform binaries, and `eslint-config-next`
+    // is pinned to the same canary version by create-next-app.
+    //
+    // `@tailwindcss/turbopack` is not part of that line — `--tailwind` pulls it in,
+    // and it is new enough that `^4` has only ever matched one release. Until it has
+    // a second one, every release it makes is the sole candidate and the gate blocks
+    // the whole template. Drop this entry once 4.x has some history.
+    minAgeGateExemptions: ['next', '@next/*', 'eslint-config-next', '@tailwindcss/turbopack'],
     expected: {
       framework: '@storybook/nextjs',
       renderer: '@storybook/react',
@@ -288,7 +308,7 @@ export const baseTemplates = {
   'nextjs-vite/14-ts': {
     name: 'Next.js v14 (Vite | TypeScript)',
     script:
-      'npx create-next-app@^14 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@^14 {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs-vite',
       renderer: '@storybook/react',
@@ -311,7 +331,7 @@ export const baseTemplates = {
   'nextjs-vite/15-ts': {
     name: 'Next.js v15 (Vite | TypeScript)',
     script:
-      'npx create-next-app@^15 {{beforeDir}} --eslint --tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app@^15 {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs-vite',
       renderer: '@storybook/react',
@@ -334,7 +354,7 @@ export const baseTemplates = {
   'nextjs-vite/default-ts': {
     name: 'Next.js Latest (Vite | TypeScript)',
     script:
-      'npx create-next-app {{beforeDir}} --eslint --no-tailwind --app --import-alias="@/*" --src-dir',
+      'npx create-next-app {{beforeDir}} --skip-install --eslint --no-tailwind --app --import-alias="@/*" --src-dir',
     expected: {
       framework: '@storybook/nextjs-vite',
       renderer: '@storybook/react',
@@ -405,6 +425,10 @@ export const baseTemplates = {
      * see https://react.dev/blog/2024/04/25/react-19-upgrade-guide#installing
      */
     script: 'npm create vite --yes {{beforeDir}} -- --template react-ts',
+    // Beta React is applied after scaffold (extraDependencies / resolutions). The allowlist
+    // still has to live on before-storybook so later installs under the 7-day gate can
+    // resolve those packages. `scheduler` ships in lockstep with React releases.
+    minAgeGateExemptions: ['react', 'react-dom', 'types-react', 'types-react-dom', 'scheduler'],
     expected: {
       framework: '@storybook/react-vite',
       renderer: '@storybook/react',
@@ -435,7 +459,7 @@ export const baseTemplates = {
   },
   'react-webpack/18-ts': {
     name: 'React Latest (Webpack | TypeScript)',
-    script: 'yarn create webpack5-react {{beforeDir}}',
+    script: 'npx create-webpack5-react {{beforeDir}}',
     expected: {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
@@ -455,8 +479,7 @@ export const baseTemplates = {
   },
   'react-webpack/17-ts': {
     name: 'React v17 (Webpack | TypeScript)',
-    script:
-      'yarn create webpack5-react {{beforeDir}} --version-react="17" --version-react-dom="17"',
+    script: 'npx create-webpack5-react {{beforeDir}} --version-react="17" --version-react-dom="17"',
     expected: {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
@@ -481,7 +504,12 @@ export const baseTemplates = {
      * See https://react.dev/blog/2024/04/25/react-19-upgrade-guide#installing
      */
     script:
-      'yarn create webpack5-react {{beforeDir}} --version-react="beta" --version-react-dom="beta"',
+      'npx create-webpack5-react {{beforeDir}} --version-react="beta" --version-react-dom="beta"',
+    // create-webpack5-react pins react@beta at scaffold time, so refresh must allow the
+    // React beta family or the 7-day gate quarantines them. `types-react*` are the
+    // packages behind the `@types/react@npm:types-react@beta` aliases; `scheduler`
+    // ships in lockstep with React releases.
+    minAgeGateExemptions: ['react', 'react-dom', 'types-react', 'types-react-dom', 'scheduler'],
     expected: {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
@@ -509,7 +537,7 @@ export const baseTemplates = {
   },
   'react-rsbuild/default-ts': {
     name: 'React Latest (RsBuild | TypeScript)',
-    script: 'yarn create rsbuild -d {{beforeDir}} -t react-ts --tools eslint',
+    script: 'npx create-rsbuild -d {{beforeDir}} -t react-ts --tools eslint',
     expected: {
       framework: 'storybook-react-rsbuild',
       renderer: '@storybook/react',
@@ -529,7 +557,7 @@ export const baseTemplates = {
   },
   'solid-vite/default-ts': {
     name: 'SolidJS Latest (Vite | TypeScript)',
-    script: 'yarn create solid {{beforeDir}} --vanilla --ts --template=with-vitest',
+    script: 'npx create-solid {{beforeDir}} --vanilla --ts --template=with-vitest',
     expected: {
       framework: 'storybook-solidjs-vite',
       renderer: 'storybook-solidjs-vite',
@@ -539,7 +567,7 @@ export const baseTemplates = {
   },
   'tanstack-react-router/default-ts': {
     name: 'TanStack React Router Latest (Vite | TypeScript)',
-    script: 'npx @tanstack/cli@latest create {{beforeDir}} --tailwind --router-only',
+    script: 'npx @tanstack/cli@latest create {{beforeDir}} --no-install --tailwind --router-only',
     expected: {
       framework: '@storybook/tanstack-react',
       renderer: '@storybook/react',
@@ -559,7 +587,7 @@ export const baseTemplates = {
   },
   'tanstack-react-start/default-ts': {
     name: 'TanStack React Start Latest (Vite | TypeScript)',
-    script: 'npx @tanstack/cli@latest create {{beforeDir}} --tailwind',
+    script: 'npx @tanstack/cli@latest create {{beforeDir}} --no-install --tailwind',
     expected: {
       framework: '@storybook/tanstack-react',
       renderer: '@storybook/react',
@@ -580,6 +608,8 @@ export const baseTemplates = {
   'vue3-vite/default-js': {
     name: 'Vue v3 (Vite | JavaScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template vue',
+    // vue-component-meta@^3.3.9 pins @vue/language-core; both are inside the age gate.
+    minAgeGateExemptions: ['vue-component-meta', '@vue/language-core'],
     expected: {
       framework: '@storybook/vue3-vite',
       renderer: '@storybook/vue3',
@@ -593,6 +623,7 @@ export const baseTemplates = {
   'vue3-vite/default-ts': {
     name: 'Vue v3 (Vite | TypeScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template vue-ts',
+    minAgeGateExemptions: ['vue-component-meta', '@vue/language-core'],
     expected: {
       framework: '@storybook/vue3-vite',
       renderer: '@storybook/vue3',
@@ -605,7 +636,7 @@ export const baseTemplates = {
   },
   'vue3-rsbuild/default-ts': {
     name: 'Vue Latest (RsBuild | TypeScript)',
-    script: 'yarn create rsbuild -d {{beforeDir}} -t vue-ts --tools eslint',
+    script: 'npx create-rsbuild -d {{beforeDir}} -t vue-ts --tools eslint',
     expected: {
       framework: 'storybook-vue3-rsbuild',
       renderer: '@storybook/vue3',
@@ -662,7 +693,7 @@ export const baseTemplates = {
   },
   'html-rsbuild/default-ts': {
     name: 'HTML Latest (RsBuild | TypeScript)',
-    script: 'yarn create rsbuild -d {{beforeDir}} -t vanilla-ts --tools eslint',
+    script: 'npx create-rsbuild -d {{beforeDir}} -t vanilla-ts --tools eslint',
     expected: {
       framework: 'storybook-html-rsbuild',
       renderer: '@storybook/html',
@@ -713,8 +744,10 @@ export const baseTemplates = {
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      // Move this to latest or 22 once ng new creates v22 projects
-      extraDependencies: ['@angular/forms@21.2.16', '@angular/animations@21.2.16'],
+      // The latest CLI scaffolds Angular 22 but omits @angular/forms and @angular/animations. Match
+      // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
+      // Also, Angular 22 needs TypeScript 6 or more recent.
+      extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
       resolutions: {
         webpack: '5.107.2',
       },
@@ -774,6 +807,41 @@ export const baseTemplates = {
     skipTasks: ['bench'],
     initOptions: { builder: SupportedBuilder.VITE },
   },
+  'angular-vite/docgen-server-ts': {
+    name: 'Angular CLI Server Docgen Latest (Vite | TypeScript)',
+    // Identical to `angular-vite/default-ts` apart from the two feature flags below. Kept as its own
+    // template so the stable Angular sandbox keeps guarding today's browser docgen while the server
+    // path is proven separately, rather than both riding on one configuration.
+    script:
+      'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    modifications: {
+      extraDependencies: ['@angular/forms@^22', '@angular/animations@^22', 'typescript@^6'],
+      useCsfFactory: true,
+      // These two flags are what brings a template into docgen baseline coverage; see
+      // `docgenServerTemplates`.
+      mainConfig: {
+        features: {
+          experimentalDocgenServer: true,
+          componentsManifest: true,
+        },
+      },
+    },
+    extraCiSteps: {
+      ensureMinNodeVersion: true,
+    },
+    expected: {
+      framework: '@storybook/angular-vite',
+      renderer: '@storybook/angular-vite',
+      builder: '@storybook/builder-vite',
+    },
+    // This sandbox exists to guard the docgen baselines, and it differs from
+    // `angular-vite/default-ts` only by two feature flags. Rendering, visual output and story
+    // execution are already covered there on every run, so repeating them here would double the
+    // Angular cost for no extra signal. `test-runner` goes with `chromatic`: skipping only the
+    // latter swaps in a test-runner job rather than dropping one.
+    skipTasks: ['bench', 'chromatic', 'test-runner'],
+    initOptions: { builder: SupportedBuilder.VITE },
+  },
   'lit-vite/default-js': {
     name: 'Lit Latest (Vite | JavaScript)',
     script:
@@ -806,7 +874,7 @@ export const baseTemplates = {
   },
   'lit-rsbuild/default-ts': {
     name: 'Web Components Latest (RsBuild | TypeScript)',
-    script: 'yarn create rsbuild -d {{beforeDir}} -t lit-ts --tools eslint',
+    script: 'npx create-rsbuild -d {{beforeDir}} -t lit-ts --tools eslint',
     expected: {
       framework: 'storybook-web-components-rsbuild',
       renderer: '@storybook/web-components',
@@ -859,7 +927,7 @@ export const baseTemplates = {
   // },
   'ember/3-js': {
     name: 'Ember v3 (Webpack | JavaScript)',
-    script: 'npx --package ember-cli@3.28.1 ember new {{beforeDir}}',
+    script: 'npx --package ember-cli@3.28.1 ember new {{beforeDir}} --skip-install',
     inDevelopment: true,
     expected: {
       framework: '@storybook/ember',
@@ -888,7 +956,18 @@ export const baseTemplates = {
     // Users & CI won't see this limitation because they are not using
     // yarn portals.
     name: 'React Native Expo Latest (Vite | TypeScript)',
-    script: 'npx create-expo-app -y {{beforeDir}}',
+    script: 'npx create-expo-app -y --no-install {{beforeDir}}',
+    // create-expo-app pins the current SDK, whose packages are released
+    // together and are routinely younger than the gate window.
+    // `babel-preset-expo` is part of that set despite not matching `expo-*`.
+    minAgeGateExemptions: [
+      'expo',
+      'expo-*',
+      '@expo/*',
+      'babel-preset-expo',
+      'react-native',
+      '@react-native/*',
+    ],
     expected: {
       framework: '@storybook/react-native-web-vite',
       renderer: '@storybook/react',
@@ -922,7 +1001,7 @@ export const baseTemplates = {
     // yarn portals.
     name: 'React Native CLI Latest (Vite | TypeScript)',
     script:
-      'npx @react-native-community/cli@latest init --install-pods=false --directory={{beforeDir}} rnapp',
+      'npx @react-native-community/cli@latest init --skip-install --install-pods=false --directory={{beforeDir}} rnapp',
     expected: {
       framework: '@storybook/react-native-web-vite',
       renderer: '@storybook/react',
@@ -949,7 +1028,7 @@ export const baseTemplates = {
 const internalTemplates = {
   'internal/react18-webpack-babel': {
     name: 'React with Babel Latest (Webpack | TypeScript)',
-    script: 'yarn create webpack5-react {{beforeDir}}',
+    script: 'npx create-webpack5-react {{beforeDir}}',
     expected: {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
@@ -982,7 +1061,7 @@ const internalTemplates = {
   'internal/react16-webpack': {
     name: 'React 16 (Webpack | TypeScript)',
     script:
-      'yarn create webpack5-react {{beforeDir}} --version-react=16 --version-react-dom=16 --version-@types/react=16 --version-@types/react-dom=16',
+      'npx create-webpack5-react {{beforeDir}} --version-react=16 --version-react-dom=16 --version-@types/react=16 --version-@types/react-dom=16',
     expected: {
       framework: '@storybook/react-webpack5',
       renderer: '@storybook/react',
@@ -1154,6 +1233,10 @@ export const merged: TemplateKey[] = [
 export const daily: TemplateKey[] = [
   ...merged,
   'angular-vite/21-ts',
+  // TODO(11.0): remove this template. The standard sandboxes ship the new docgen approach by
+  // default from then on, so `angular-vite/default-ts` carries the baselines and this one is
+  // redundant.
+  'angular-vite/docgen-server-ts',
   // TODO: Add this back once we resolve the React 19 issues
   // 'cra/default-js',
   'react-vite/default-js',
@@ -1177,3 +1260,36 @@ export const daily: TemplateKey[] = [
 ];
 
 export const templatesByCadence = { normal, merged, daily };
+
+// Both are required: without `componentsManifest`, `experimentalDocgenServer` writes nothing to disk
+// for the recorded baselines to read.
+const DOCGEN_SERVER_FEATURES = ['experimentalDocgenServer', 'componentsManifest'] as const;
+
+// Templates whose `mainConfig` is a function of the generated `ConfigFile`, so its features cannot be
+// read without running the sandbox generator. Listed by name so a new function-form template throws
+// below instead of silently dropping out of docgen baseline coverage.
+const UNREADABLE_MAIN_CONFIG_TEMPLATES = new Set<string>(['cra/default-js']);
+
+const enablesDocgenServer = (key: string, template: Template): boolean => {
+  const { mainConfig } = template.modifications ?? {};
+  if (typeof mainConfig === 'function') {
+    if (!UNREADABLE_MAIN_CONFIG_TEMPLATES.has(key)) {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
+      throw new Error(
+        `Template "${key}" declares mainConfig as a function, whose features cannot be read here. ` +
+          `Move ${DOCGEN_SERVER_FEATURES.join(' and ')} into the object form to opt into docgen ` +
+          `baseline coverage, or add the key to UNREADABLE_MAIN_CONFIG_TEMPLATES to stay out of it.`
+      );
+    }
+    return false;
+  }
+  const features = mainConfig?.features;
+  return DOCGEN_SERVER_FEATURES.every((feature) => features?.[feature] === true);
+};
+
+// Derived from the flags rather than kept as a second list, so turning them on for a template is all
+// it takes to bring it into docgen baseline coverage.
+export const docgenServerTemplates = (): TemplateKey[] =>
+  (Object.entries(allTemplates) as [TemplateKey, Template][])
+    .filter(([key, template]) => enablesDocgenServer(key, template))
+    .map(([key]) => key);

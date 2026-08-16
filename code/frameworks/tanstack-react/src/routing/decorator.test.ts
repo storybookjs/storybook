@@ -1,0 +1,219 @@
+import { describe, expect, it } from 'vitest';
+import { createRootRoute, createRoute } from '@tanstack/react-router';
+
+import { createFileRoute } from '../export-mocks/react-router.ts';
+import { createStoryRouter } from './decorator.tsx';
+
+// Regression coverage for mounting a story directly on a pathless layout
+// nested under a pathful ancestor. Cloned routes aren't `init()`ed until
+// `createRouter()` runs, so `leaf.fullPath` is unusable for path inference at
+// the point `createStoryRouter` needs it — the mount path must come from
+// walking the cloned parent chain's options instead (`mountPathFor`).
+
+function fakeContext(route: unknown, extraRouterParams: Record<string, unknown> = {}) {
+  return {
+    id: 'test--direct-pathless',
+    route: undefined,
+    parameters: { tanstack: { router: { route, ...extraRouterParams } } },
+  } as any;
+}
+
+describe('createStoryRouter with a pathless layout nested under a pathful ancestor', () => {
+  it('mounts at the pathful ancestor URL and matches the layout', async () => {
+    const root = createRootRoute();
+    const products = createRoute({ path: '/products', getParentRoute: () => root });
+    const layout = createRoute({ id: 'authed', getParentRoute: () => products });
+    const settings = createRoute({ path: '/settings', getParentRoute: () => layout });
+    layout.addChildren([settings]);
+    products.addChildren([layout]);
+    root.addChildren([products]);
+
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(layout),
+    });
+    await router.load();
+
+    const ids = router.state.matches.map((m: any) => m.routeId).join(',');
+    expect(ids).toContain('authed');
+    expect(router.state.location.pathname).toBe('/products');
+  });
+
+  it('mounts a pathless layout directly under root at "/"', async () => {
+    const root = createRootRoute();
+    const layout = createRoute({ id: 'authed', getParentRoute: () => root });
+    const settings = createRoute({ path: '/settings', getParentRoute: () => layout });
+    layout.addChildren([settings]);
+    root.addChildren([layout]);
+
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(layout),
+    });
+    await router.load();
+
+    const ids = router.state.matches.map((m: any) => m.routeId).join(',');
+    expect(ids).toContain('authed');
+    expect(router.state.location.pathname).toBe('/');
+  });
+});
+
+// A pathless layout that already has an index child (`path: '/'` — the common
+// `_authed/index.tsx` shape) must reuse that child instead of attaching a
+// synthetic sibling: both would derive the same generated id and
+// `createRouter` throws `Duplicate routes found`.
+describe('createStoryRouter with a pathless layout that already has an index child', () => {
+  function buildTree() {
+    const root = createRootRoute();
+    const products = createRoute({ path: '/products', getParentRoute: () => root });
+    const layout = createRoute({ id: 'authed', getParentRoute: () => products });
+    const index = createRoute({ path: '/', getParentRoute: () => layout });
+    const settings = createRoute({ path: '/settings', getParentRoute: () => layout });
+    layout.addChildren([index, settings]);
+    products.addChildren([layout]);
+    root.addChildren([products]);
+    return layout;
+  }
+
+  it('reuses the existing index child (no path param)', async () => {
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(buildTree()),
+    });
+    await router.load();
+
+    const ids = router.state.matches.map((m: any) => m.routeId).join(',');
+    expect(ids).toContain('authed');
+    expect(router.state.location.pathname).toBe('/products');
+  });
+
+  it('reuses the existing index child (explicit path param at the mount URL)', async () => {
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(buildTree(), { path: '/products' }),
+    });
+    await router.load();
+
+    const ids = router.state.matches.map((m: any) => m.routeId).join(',');
+    expect(ids).toContain('authed');
+    expect(router.state.location.pathname).toBe('/products');
+  });
+});
+
+describe('createStoryRouter with a standalone index file route', () => {
+  it('mounts without colliding with the synthesized index child', async () => {
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(createFileRoute('/_app/')({}) as any),
+    });
+    await router.load();
+
+    const ids = router.state.matches.map((m: any) => m.routeId).join(',');
+    expect(ids).toContain('/_app');
+    expect(router.state.location.pathname).toBe('/');
+  });
+});
+
+// Overrides are keyed by the ORIGINAL route id; the cloned leaf's `id` getter
+// is init-backed and undefined at injection time, so the guard that respects
+// a user's component override must resolve the original id instead.
+describe('createStoryRouter with routeOverrides', () => {
+  it('respects a component override on the story-bound route', async () => {
+    const root = createRootRoute();
+    const page = createRoute({ path: '/page', getParentRoute: () => root });
+    root.addChildren([page]);
+    const Marker = () => null;
+
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(page, {
+        routeOverrides: { '/page': { component: Marker } },
+      }),
+    });
+    await router.load();
+
+    const clonedPage = (router as any).routesById['/page'];
+    expect(clonedPage.options.component).toBe(Marker);
+  });
+
+  it('respects a component override for a plain-options route', async () => {
+    const Marker = () => null;
+
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext({ path: '/foo' }, { routeOverrides: { '/foo': { component: Marker } } }),
+    });
+    await router.load();
+
+    expect((router as any).routesById['/foo'].options.component).toBe(Marker);
+  });
+});
+
+describe('createStoryRouter leaf selection by path', () => {
+  it('selects the route matching an explicit path when only the routeTree is bound', async () => {
+    const root = createRootRoute();
+    const home = createRoute({ path: '/', getParentRoute: () => root });
+    const about = createRoute({ path: '/about', getParentRoute: () => root });
+    root.addChildren([home, about]);
+
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(root, { path: '/about' }),
+    });
+    await router.load();
+
+    expect(router.state.location.pathname).toBe('/about');
+    expect((router as any).routesById['/about'].options.component).toBeDefined();
+    expect((router as any).routesById['/'].options.component).toBeUndefined();
+  });
+
+  it('selects a param route by interpolating the provided params', async () => {
+    const root = createRootRoute();
+    const list = createRoute({ path: '/users', getParentRoute: () => root });
+    const detail = createRoute({ path: '/users/$userId', getParentRoute: () => root });
+    root.addChildren([list, detail]);
+
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(root, { path: '/users/42', params: { userId: '42' } }),
+    });
+    await router.load();
+
+    expect(router.state.location.pathname).toBe('/users/42');
+    expect((router as any).routesById['/users/$userId'].options.component).toBeDefined();
+    expect((router as any).routesById['/users'].options.component).toBeUndefined();
+  });
+
+  it('prefers the bound route when its mount path matches the explicit path', async () => {
+    const root = createRootRoute();
+    const post = createRoute({ path: '/posts/$postId', getParentRoute: () => root });
+    const postIndex = createRoute({ path: '/', getParentRoute: () => post });
+    post.addChildren([postIndex]);
+    root.addChildren([post]);
+
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(postIndex, { path: '/posts/$postId' }),
+    });
+    await router.load();
+
+    expect((router as any).routesById['/posts/$postId/'].options.component).toBeDefined();
+    expect((router as any).routesById['/posts/$postId'].options.component).toBeUndefined();
+  });
+
+  it('prefers an exact static route over a param route for the same concrete path', async () => {
+    const root = createRootRoute();
+    const me = createRoute({ path: '/users/me', getParentRoute: () => root });
+    const detail = createRoute({ path: '/users/$userId', getParentRoute: () => root });
+    root.addChildren([me, detail]);
+
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(root, { path: '/users/me', params: { userId: 'me' } }),
+    });
+    await router.load();
+
+    expect((router as any).routesById['/users/me'].options.component).toBeDefined();
+    expect((router as any).routesById['/users/$userId'].options.component).toBeUndefined();
+  });
+});

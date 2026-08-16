@@ -83,7 +83,11 @@ export class DependencyInstallationCommand {
     return { status: 'success' };
   }
 
-  /** Collect addon dependencies without installing them */
+  /**
+   * Collect addon dependencies (the caller adds them to package.json and installs them afterwards).
+   * For pnpm catalog workspaces this also registers the derived entries in pnpm-workspace.yaml so
+   * the subsequent install can resolve their `catalog:` specifiers.
+   */
   private async collectAddonDependencies(selectedFeatures: Set<Feature>): Promise<void> {
     try {
       if (selectedFeatures.has(Feature.TEST)) {

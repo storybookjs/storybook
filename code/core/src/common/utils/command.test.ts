@@ -5,6 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { execa, execaCommandSync } from 'execa';
 
 import { executeCommand, executeCommandSync } from './command.ts';
+import { ExecaCommandFailedError } from '../../server-errors.ts';
 
 vi.mock('storybook/internal/node-logger', () => ({
   logger: {
@@ -158,11 +159,12 @@ describe('command', () => {
       expect(mockedExeca).toHaveBeenCalledWith('pnpm.cmd', ['--version'], expect.anything());
     });
 
-    it('should propagate errors from the resolved command', async () => {
+    it('should propagate categorized errors from the resolved command', async () => {
       mockedExistsSync.mockReturnValue(false);
       mockedExeca.mockRejectedValueOnce({
         stderr: 'Some other error',
         message: 'Command failed with different error',
+        exitCode: 1,
       });
 
       await expect(
@@ -170,19 +172,34 @@ describe('command', () => {
           command: 'pnpm',
           args: ['--version'],
         })
-      ).rejects.toEqual({
-        stderr: 'Some other error',
-        message: 'Command failed with different error',
-      });
+      ).rejects.toBeInstanceOf(ExecaCommandFailedError);
 
       expect(mockedExeca).toHaveBeenCalledTimes(1);
     });
 
-    it('should propagate errors when resolved command is not found', async () => {
+    it('should preserve subprocess methods like on after attaching categorized errors', async () => {
+      const on = vi.fn();
+      mockedExeca.mockReturnValueOnce(
+        Object.assign(Promise.resolve({ stdout: 'success', stderr: '' }), { on }) as any
+      );
+
+      const process = executeCommand({
+        command: 'pnpm',
+        args: ['--version'],
+      });
+
+      process.on('exit', on);
+      await process;
+
+      expect(on).toHaveBeenCalledWith('exit', expect.any(Function));
+    });
+
+    it('should propagate categorized errors when resolved command is not found', async () => {
       mockedExistsSync.mockImplementation((p) => String(p).endsWith('pnpm.cmd'));
       const error = {
         stderr: "'pnpm.cmd' is not recognized as an internal or external command",
         message: 'Command failed',
+        exitCode: 1,
       };
       mockedExeca.mockRejectedValueOnce(error);
 
@@ -191,7 +208,9 @@ describe('command', () => {
           command: 'pnpm',
           args: ['--version'],
         })
-      ).rejects.toEqual(error);
+      ).rejects.toMatchObject({
+        name: expect.stringContaining('PackageManagerBinaryNotFoundError'),
+      });
 
       expect(mockedExeca).toHaveBeenCalledTimes(1);
     });
@@ -365,11 +384,12 @@ describe('command', () => {
       );
     });
 
-    it('should throw error immediately if first call fails with non-"not recognized" error', () => {
+    it('should throw categorized error immediately if first call fails with non-"not recognized" error', () => {
       mockedExecaCommandSync.mockImplementationOnce(() => {
         throw {
           stderr: 'Some other error',
           message: 'Command failed with different error',
+          exitCode: 1,
         };
       });
 
@@ -378,7 +398,7 @@ describe('command', () => {
           command: 'pnpm',
           args: ['--version'],
         })
-      ).toThrow();
+      ).toThrow(ExecaCommandFailedError);
 
       expect(mockedExecaCommandSync).toHaveBeenCalledTimes(1);
     });

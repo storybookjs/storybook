@@ -143,6 +143,31 @@ describe('prop extraction', () => {
         },
       });
     });
+
+    it('resolves (typeof constArray)[number] to a literal union', async () => {
+      const entry = await extract(
+        'Box',
+        dedent`
+          import React from 'react';
+          const SCALE = ['sm', 'md', 'lg'] as const;
+          type Size = (typeof SCALE)[number];
+          export function Box({ size = 'md' }: { size?: Size }) {
+            return <div data-size={size} />;
+          }
+        `
+      );
+
+      expect(entry.component?.reactComponentMeta).toMatchObject({
+        props: {
+          size: {
+            type: {
+              name: 'enum',
+              value: [{ value: '"sm"' }, { value: '"md"' }, { value: '"lg"' }],
+            },
+          },
+        },
+      });
+    });
   });
 
   describe('union types', () => {

@@ -52,7 +52,7 @@ export const getCompodocOutputDir = (compodocArgs: string[], workspaceRoot: stri
 };
 
 // relative is necessary to workaround a compodoc issue with
-// absolute paths on windows machines
+// absolute paths on Windows machines
 const toRelativePath = (pathToTsConfig: string) => {
   return isAbsolute(pathToTsConfig) ? relative('.', pathToTsConfig) : pathToTsConfig;
 };

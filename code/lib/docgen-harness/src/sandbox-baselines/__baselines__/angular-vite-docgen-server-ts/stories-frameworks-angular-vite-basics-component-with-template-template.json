@@ -7,7 +7,7 @@
         "category": "outputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "EventEmitter"
         }
       },
@@ -39,7 +39,7 @@
           "summary": "default label"
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },
@@ -55,7 +55,7 @@
           "summary": "default label2"
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },

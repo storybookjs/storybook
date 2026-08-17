@@ -272,6 +272,14 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
   // Parse docgen data (from either engine)
   const parsedDocgen = getParsedDocgen(componentManifest);
 
+  // A framework's own API markdown leads, because it is the component's contract and the stories
+  // below are examples of applying it. The `react*` props section keeps its historical position.
+  const { apiDescription } = componentManifest;
+  if (apiDescription) {
+    parts.push(apiDescription);
+    parts.push('');
+  }
+
   // Stories section
   const stories = Array.isArray(componentManifest.stories) ? componentManifest.stories : [];
   if (stories.length > 0) {
@@ -282,8 +290,7 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
 
     // Check if component has props - if not, show all stories fully
     const hasProps =
-      !!componentManifest.apiDescription ||
-      (parsedDocgen && Object.keys(parsedDocgen.props).length > 0);
+      !!apiDescription || (parsedDocgen && Object.keys(parsedDocgen.props).length > 0);
 
     const storiesToShow = hasProps
       ? storiesWithSnippets.slice(0, MAX_STORIES_TO_SHOW)
@@ -318,10 +325,7 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
     }
   }
 
-  if (componentManifest.apiDescription) {
-    parts.push(componentManifest.apiDescription);
-    parts.push('');
-  } else {
+  if (!apiDescription) {
     parts.push(...formatPropsSection(parsedDocgen));
   }
 

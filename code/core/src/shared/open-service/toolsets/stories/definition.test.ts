@@ -253,6 +253,7 @@ describe('stories.changed', () => {
     });
     expect(getStatuses).toHaveBeenCalledOnce();
     expect(cliCtx.getService).toHaveBeenCalledWith('core/module-graph', { internal: true });
+    expect(cliCtx.getService).toHaveBeenCalledWith('core/module-graph-index', { internal: true });
   });
 
   it('rejects with the graph reason rather than reporting zero changes', async () => {
@@ -431,6 +432,7 @@ describe('stories.findByComponent', () => {
       ],
     });
     expect(cliCtx.getService).toHaveBeenCalledWith('core/module-graph', { internal: true });
+    expect(cliCtx.getService).toHaveBeenCalledWith('core/module-graph-index', { internal: true });
     expect(storiesForFiles).toHaveBeenCalledWith({ files: [componentPath] });
   });
 

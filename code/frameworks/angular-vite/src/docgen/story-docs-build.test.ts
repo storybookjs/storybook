@@ -89,6 +89,7 @@ const STORY_SHAPES_FILE = [
   `const HOISTED_TEMPLATE = '<sb-button hoisted></sb-button>';`,
   `const renderFn = () => ({ template: '<sb-button via-fn></sb-button>' });`,
   `const sharedArgs = { label: 'shared' };`,
+  `const LOCAL_LABEL = 'Save';`,
   `export default {`,
   `  title: 'Example/Button',`,
   `  component: ButtonComponent,`,
@@ -138,6 +139,34 @@ const STORY_SHAPES_FILE = [
   '    props: args,',
   '    template: `<sb-button ${argsToTemplate(args)}><span>${footer}</span></sb-button>`,',
   `  }),`,
+  `};`,
+  // Markup written without `argsToTemplate` binds the args by name, which only resolves because
+  // the story hands them to the template through `props: args`.
+  `export const HandWrittenBindings = {`,
+  `  args: { label: 'Save', count: 3 },`,
+  `  render: (args) => ({`,
+  '    props: args,',
+  `    template: '<sb-button [label]="label" [count]="count"></sb-button>',`,
+  `  }),`,
+  `};`,
+  // The half-and-half shape `exclude` exists for: most bindings expanded, one written by hand.
+  `export const PartlyHandWritten = {`,
+  `  args: { label: 'Save', count: 7 },`,
+  `  render: (args) => ({`,
+  '    props: args,',
+  '    template: `<sb-button ${argsToTemplate(args, { exclude: [\'label\'] })} [label]="label.toUpperCase()"></sb-button>`,',
+  `  }),`,
+  `};`,
+  `export const OutputNamedArg = {`,
+  `  args: { clicked: 'not a handler' },`,
+  `  render: (args) => ({`,
+  '    props: args,',
+  `    template: '<sb-button (clicked)="clicked($event)"></sb-button>',`,
+  `  }),`,
+  `};`,
+  `export const IdentifierArgValue = {`,
+  `  args: { label: LOCAL_LABEL },`,
+  `  render: (args) => ({ props: args, template: '<sb-button [label]="label"></sb-button>' }),`,
   `};`,
   `export const UnreadableInterpolation = {`,
   `  args: { label: 'Save' },`,
@@ -220,6 +249,20 @@ describe('buildStoryDocsPayload', () => {
     });
   });
 
+  it('keeps unevaluable arg source when the story file uses CRLF', async () => {
+    givenStoryFile(
+      dedent`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { label: (value) => value } };
+      `.replace(/\n/g, '\r\n')
+    );
+
+    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() });
+
+    expect(Object.values(payload!.stories)[0].snippet).toContain(`[label]="(value) => value"`);
+  });
+
   it('builds a snippet from the snippet meta core/docgen carries alongside argTypes', async () => {
     givenStoryFile(`
       import { ButtonComponent } from './button.component';
@@ -247,6 +290,21 @@ describe('buildStoryDocsPayload', () => {
     expect(story.snippet).toContain('sb-button');
     expect(story.snippet).toContain(`[label]="'Save'"`);
     expect(story.warning).toBeUndefined();
+  });
+
+  it('slices an unevaluable arg out of a story file written with CRLF line endings', async () => {
+    givenStoryFile(
+      [
+        `import { ButtonComponent } from './button.component';`,
+        `export default { title: 'Example/Button', component: ButtonComponent };`,
+        `export const Default = { args: { label: (value) => value.trim() } };`,
+      ].join('\r\n')
+    );
+
+    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() });
+
+    const story = Object.values(payload!.stories)[0];
+    expect(story.snippet).toContain(`[label]="(value) => value.trim()"`);
   });
 
   it('attaches the snippet builder warning for a non-standalone component', async () => {
@@ -672,6 +730,60 @@ describe('buildStoryDocsPayload', () => {
     });
   });
 
+  // Hand-written markup runs against the story's `props: args`, which the host component the
+  // snippet ships does not have. The args it names have to come with it or the example is dead.
+  describe('args the markup binds by name', () => {
+    it('declares them on the host, leaving the markup as written', async () => {
+      expect((await storiesOf(STORY_SHAPES_FILE)).get('Hand Written Bindings')?.snippet).toBe(
+        [
+          `import { Component } from '@angular/core';`,
+          `import { ButtonComponent } from './button.component';`,
+          '',
+          '@Component({',
+          `  selector: 'app-demo',`,
+          '  imports: [ButtonComponent],',
+          '  template: `<sb-button [label]="label" [count]="count"></sb-button>`,',
+          '})',
+          'export class DemoComponent {',
+          `  label = 'Save';`,
+          '  count = 3;',
+          '}',
+        ].join('\n')
+      );
+    });
+
+    // An expanded binding carries its value in the markup, so only the attribute name is left to
+    // match on; declaring it would add a member nothing reads.
+    it('skips the args argsToTemplate already expanded', async () => {
+      const snippet = (await storiesOf(STORY_SHAPES_FILE)).get('Partly Hand Written')?.snippet;
+      expect(snippet).toContain(`[count]="7"`);
+      expect(snippet).toContain(`  label = 'Save';`);
+      expect(snippet).not.toContain('count = 7;');
+    });
+
+    it('leaves an output binding to its handler rather than declaring both', async () => {
+      const snippet = (await storiesOf(STORY_SHAPES_FILE)).get('Output Named Arg')?.snippet;
+      expect(snippet).toContain('  clicked(event: unknown) {}');
+      expect(snippet).not.toContain(`clicked = 'not a handler';`);
+    });
+
+    it('declares nothing for a story whose markup names no args', async () => {
+      expect((await storiesOf(STORY_SHAPES_FILE)).get('Own Template')?.snippet).toContain(
+        'export class DemoComponent {}'
+      );
+    });
+
+    // A value only the story file can resolve would not compile on the host either, so it is
+    // reported the same way any other unreadable source text is.
+    it('reports an arg whose value needs the story to run instead of declaring it', async () => {
+      const story = (await storiesOf(STORY_SHAPES_FILE)).get('Identifier Arg Value');
+      expect(story?.warning).toBe(
+        'Incomplete snippet: `LOCAL_LABEL` could not be resolved statically.'
+      );
+      expect(story?.snippet).not.toContain('label = LOCAL_LABEL;');
+    });
+  });
+
   describe('story shapes that cannot be read statically', () => {
     it('reads the template a render method shorthand returns', async () => {
       const story = await soleStory(`
@@ -1007,6 +1119,45 @@ describe('buildStoryDocsPayload', () => {
         export const Default = { args: { label: ${JSON.stringify(value)} } };
       `);
       expect(story.snippet).toContain(expected);
+    });
+
+    it('binds an unevaluable arg the same way whatever whitespace the file uses', async () => {
+      const storyFile = (eol: string, indent: string) =>
+        [
+          `import { ButtonComponent } from './button.component';`,
+          `export default { title: 'Example/Button', component: ButtonComponent };`,
+          `export const Default = {`,
+          `${indent}args: {`,
+          `${indent}${indent}label: (value) => {`,
+          `${indent}${indent}${indent}return value.replace('a', 'b');`,
+          `${indent}${indent}},`,
+          `${indent}},`,
+          `};`,
+        ].join(eol);
+
+      const lf = await soleStory(storyFile('\n', '  '));
+      const crlf = await soleStory(storyFile('\r\n', '  '));
+      const tabs = await soleStory(storyFile('\n', '\t'));
+
+      expect(lf.snippet).toContain(
+        `[label]="(value) => {\n      return value.replace('a', 'b');\n    }"`
+      );
+      expect(crlf.snippet).toBe(lf.snippet);
+      expect(tabs.snippet).toBe(lf.snippet);
+    });
+
+    it.each([
+      ['above the arg', `label:\n          // why\n          (value) => value.trim(),`],
+      ['before the arg', `label: /* why */ (value) => value.trim(),`],
+      ['inside the arg', `label: (value) => /* why */ value.trim(),`],
+      ['inside the parameter list', `label: (/* why */ value) => value.trim(),`],
+    ])('leaves a comment %s out of the binding', async (_name, property) => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { ${property} } };
+      `);
+      expect(story.snippet).toContain(`[label]="(value) => value.trim()"`);
     });
   });
 

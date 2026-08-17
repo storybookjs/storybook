@@ -6,12 +6,12 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
 import type { StoryDocsService } from './definition.ts';
-import type { StoryDocsPayload } from './types.ts';
 import { prependImportToSnippet, selectSnippetForStory } from './snippet.ts';
 import {
   shouldSkipStoryDocsEmit,
   storyDocsSourceBeforeEach,
 } from './story-docs-source-before-each.ts';
+import type { StoryDocsPayload } from './types.ts';
 
 vi.mock('storybook/preview-api', { spy: true });
 

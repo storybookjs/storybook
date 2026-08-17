@@ -38,10 +38,10 @@ describe('buildApiDescription', () => {
       \`\`\`
       export type ButtonComponentInputs = {
         /**
-          Text on the button.
-
-          @default 'Click me'
-        */
+         * Text on the button.
+         *
+         * @default 'Click me'
+         */
         label?: string;
         disabled: boolean;
       }
@@ -51,9 +51,7 @@ describe('buildApiDescription', () => {
 
       \`\`\`
       export type ButtonComponentOutputs = {
-        /**
-          Fires on every click.
-        */
+        /** Fires on every click. */
         clicked: EventEmitter<Event>;
       }
       \`\`\`"
@@ -86,10 +84,10 @@ describe('buildApiDescription', () => {
       \`\`\`
       export type ColorPickerComponentInputs = {
         /**
-          The currently selected colour
-
-          @default '#345F92'
-        */
+         * The currently selected colour
+         *
+         * @default '#345F92'
+         */
         color?: string; // two-way: [(color)]
       }
       \`\`\`
@@ -191,10 +189,10 @@ describe('buildApiDescription', () => {
       \`\`\`
       export type ButtonComponentInputs = {
         /**
-          Text on the button.
-
-          Supports **markdown**.
-        */
+         * Text on the button.
+         *
+         * Supports **markdown**.
+         */
         label: string;
       }
       \`\`\`"

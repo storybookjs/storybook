@@ -36,13 +36,15 @@ function renderStory(
   storySource: string,
   docgen: VueDocgenArgInfo = DEFAULT_DOCGEN,
   importSource = "import MyButton from './MyButton.vue';",
-  metaRender?: string
+  metaRender?: string,
+  componentImportStatement = "import MyButton from './MyButton.vue';"
 ): TransformHResult | undefined {
   const parsed = parseRender(storySource, docgen, importSource, metaRender);
   return parsed.expression
     ? transformH({
         args: parsed.args,
         argsParam: parsed.argsParam,
+        componentImportStatement,
         componentName: 'MyButton',
         docgen,
         importBindings: parsed.importBindings,
@@ -136,7 +138,11 @@ export const Primary = {
 };
 `)?.snippet
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
         <MyButton active label="Render" />
       </template>"
     `);
@@ -154,7 +160,11 @@ export const Primary = {
 };
 `)?.snippet
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
         <MyButton active :count="2" label="Override" />
       </template>"
     `);
@@ -175,7 +185,11 @@ export const Primary = {
         `(args) => h(MyButton, args)`
       )?.snippet
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
         <MyButton active label="Render" />
       </template>"
     `);
@@ -197,7 +211,11 @@ export const Primary = {
         `() => h('div', 'Meta')`
       )?.snippet
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
         <MyButton active label="Story" />
       </template>"
     `);
@@ -212,6 +230,8 @@ export const Primary = {
 `)?.snippet
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
       const date = new Date('2020-01-01');
 
       const label = \`a\${1}b\`;
@@ -250,7 +270,11 @@ export const Primary = {
 };
 `)?.snippet
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
         <MyButton>
           <span>Body</span>
           <template #footer>
@@ -273,11 +297,12 @@ export const Primary = {
         "import ChildButton from './ChildButton.vue';\nimport MyButton from './MyButton.vue';"
       )
     ).toEqual({
-      imports: [
-        "import MyButton from './MyButton.vue';",
-        "import ChildButton from './ChildButton.vue';",
-      ],
-      snippet: `<template>
+      snippet: `<script lang="ts" setup>
+import ChildButton from './ChildButton.vue';
+import MyButton from './MyButton.vue';
+</script>
+
+<template>
   <MyButton>
     <ChildButton label="Click me" />
   </MyButton>
@@ -300,7 +325,11 @@ export const Primary = {
         "import ChildButton from './ChildButton.vue';\nimport MyButton from './MyButton.vue';"
       )?.snippet
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import ChildButton from './ChildButton.vue';
+      </script>
+
+      <template>
         <section>
           <div default="Body"></div>
           <ChildButton default="Inner" />
@@ -337,7 +366,12 @@ export const Primary = {
         "import ChildButton from './ChildButton.vue';\nimport MyButton from './MyButton.vue';"
       )?.snippet
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import ChildButton from './ChildButton.vue';
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
         <MyButton>
           <ChildButton label="Click me" />
         </MyButton>

@@ -1072,10 +1072,10 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       '```',
       'export type ColorPickerComponentInputs = {',
       '  /**',
-      '    The currently selected colour',
-      '',
-      "    @default '#345F92'",
-      '  */',
+      '   * The currently selected colour',
+      '   *',
+      "   * @default '#345F92'",
+      '   */',
       '  color?: string; // two-way: [(color)]',
       '}',
       '```',
@@ -1107,10 +1107,10 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
         \`\`\`
         export type ColorPickerComponentInputs = {
           /**
-            The currently selected colour
-
-            @default '#345F92'
-          */
+           * The currently selected colour
+           *
+           * @default '#345F92'
+           */
           color?: string; // two-way: [(color)]
         }
         \`\`\`
@@ -1165,6 +1165,21 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       expect(result).toContain('- Blue: A blue picker');
     });
 
+    it('leads with the api sections, ahead of the stories that apply them', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        apiDescription: angularApiDescription,
+        stories: [{ name: 'Default', snippet: '<app-color-picker />' }],
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result.indexOf('## Inputs')).toBeLessThan(result.indexOf('## Stories'));
+      expect(result.indexOf('## Outputs')).toBeLessThan(result.indexOf('## Stories'));
+    });
+
     it('nests a subcomponent`s own sections under its heading', () => {
       const manifest: ComponentManifest = {
         id: 'color-picker',
@@ -1189,10 +1204,10 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
         \`\`\`
         export type ColorPickerComponentInputs = {
           /**
-            The currently selected colour
-
-            @default '#345F92'
-          */
+           * The currently selected colour
+           *
+           * @default '#345F92'
+           */
           color?: string; // two-way: [(color)]
         }
         \`\`\`

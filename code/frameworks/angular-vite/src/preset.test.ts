@@ -214,7 +214,15 @@ describe('compodocJsonStubPlugin', () => {
   // `documentation.json` is a real dependency and a missing one has to fail.
   it("leaves a documentation.json imported from the user's own code alone", async () => {
     expect(await runResolve('./documentation.json', null, '/workspace/src/app/docs.ts')).toBe(null);
-    expect(await runResolve('../documentation.json', null, undefined)).toBe(null);
+  });
+
+  it('leaves an import with no importer alone', async () => {
+    const plugin = compodocJsonStubPlugin(CONFIG_DIR);
+    const context = { resolve: vi.fn().mockResolvedValue(null) };
+
+    expect(
+      await (plugin.resolveId as any).call(context, '../documentation.json', undefined, {})
+    ).toBe(null);
   });
 });
 

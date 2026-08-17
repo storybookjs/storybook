@@ -249,6 +249,20 @@ describe('buildStoryDocsPayload', () => {
     });
   });
 
+  it('keeps unevaluable arg source when the story file uses CRLF', async () => {
+    givenStoryFile(
+      dedent`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { label: (value) => value } };
+      `.replace(/\n/g, '\r\n')
+    );
+
+    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() });
+
+    expect(Object.values(payload!.stories)[0].snippet).toContain(`[label]="(value) => value"`);
+  });
+
   it('builds a snippet from the snippet meta core/docgen carries alongside argTypes', async () => {
     givenStoryFile(`
       import { ButtonComponent } from './button.component';

@@ -8,40 +8,7 @@
           "summary": "Another default value"
         },
         "type": {
-          "required": true,
-          "summary": "string"
-        }
-      },
-      "type": {
-        "name": "string"
-      }
-    },
-    "_inputValue": {
-      "name": "_inputValue",
-      "table": {
-        "category": "properties",
-        "defaultValue": {
-          "summary": "some value"
-        },
-        "type": {
-          "required": true,
-          "summary": "string"
-        }
-      },
-      "type": {
-        "name": "string"
-      }
-    },
-    "_value": {
-      "description": "Private value.",
-      "name": "_value",
-      "table": {
-        "category": "properties",
-        "defaultValue": {
-          "summary": "Private hello"
-        },
-        "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },
@@ -58,7 +25,7 @@
           "summary": "ButtonAccent.Normal"
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "ButtonAccent"
         }
       },
@@ -93,7 +60,7 @@
           "summary": null
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string | null"
         }
       },
@@ -110,7 +77,7 @@
           "summary": 123
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "number"
         }
       },
@@ -143,7 +110,7 @@
           "summary": "secondary"
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "\"primary\" | \"secondary\""
         }
       },
@@ -191,7 +158,7 @@
           "summary": false
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "boolean"
         }
       },
@@ -223,7 +190,7 @@
           "summary": "Public hello"
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },
@@ -240,7 +207,7 @@
           "summary": false
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "boolean"
         }
       },
@@ -286,7 +253,7 @@
         "category": "outputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "EventEmitter"
         }
       },
@@ -303,22 +270,6 @@
         "type": {
           "required": false,
           "summary": "(event: Event) => void"
-        }
-      },
-      "type": {
-        "name": "other",
-        "value": "void"
-      }
-    },
-    "privateMethod": {
-      "description": "A private method.",
-      "name": "privateMethod",
-      "table": {
-        "category": "methods",
-        "defaultValue": {},
-        "type": {
-          "required": false,
-          "summary": "(password: string) => void"
         }
       },
       "type": {
@@ -434,7 +385,7 @@
           "deprecated": ""
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "boolean"
         }
       },
@@ -451,7 +402,7 @@
           "summary": "Default value in component"
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },

@@ -82,7 +82,14 @@ export default defineGeneratorModule({
     const isVite = context.builder === SupportedBuilder.VITE;
     const { root, projectType } = angularProject;
     const { projects } = angularJSON;
-    const useCompodoc = context.yes ? true : await promptForCompoDocs(context.telemetryService);
+    // `@storybook/angular-vite` turns `experimentalDocgenServer` on by default, and that path
+    // extracts Angular metadata in process. Compodoc has no role there, so init neither asks about
+    // it nor installs it. Turning the feature off is what brings the documented Compodoc setup back.
+    const useCompodoc = isVite
+      ? false
+      : context.yes
+        ? true
+        : await promptForCompoDocs(context.telemetryService);
     const storybookFolder = root ? `${root}/.storybook` : '.storybook';
 
     angularJSON.addStorybookEntries({
@@ -184,15 +191,6 @@ export default defineGeneratorModule({
       componentsDestinationPath: root ? `${root}/src/stories` : undefined,
       storybookConfigFolder: storybookFolder,
       storybookCommand: `ng run ${angularProjectName}:storybook`,
-      // For the Vite framework, Compodoc is owned by the framework Vite plugin,
-      // so it is configured via framework.options in main.ts rather than the
-      // angular.json builder. The Webpack framework keeps it in angular.json.
-      ...(isVite && {
-        frameworkOptions: {
-          compodoc: useCompodoc,
-          ...(useCompodoc && { compodocArgs: ['-e', 'json', '-d', root || '.'] }),
-        },
-      }),
       ...(useCompodoc && {
         frameworkPreviewParts: {
           prefix: dedent`

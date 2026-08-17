@@ -4,6 +4,10 @@ import type { FrameworkOptions, VueDocgenPlugin } from '../types.ts';
 
 export const VUE_COMPONENT_META = 'vue-component-meta' satisfies VueDocgenPlugin;
 
+export const VUE_DOCGEN_API_DEPRECATION =
+  `\`vue-docgen-api\` is deprecated and will be removed in Storybook 12. It is still the default docgen engine, so this also applies when you have not set the \`docgen\` framework option. ` +
+  `Switch to \`vue-component-meta\`, with \`framework: { name: '@storybook/vue3-vite', options: { docgen: 'vue-component-meta' } }\` in your \`.storybook/main.ts\`.`;
+
 export type ResolvedDocgenOptions = false | { plugin: VueDocgenPlugin; tsconfig?: string };
 
 export interface DocgenContext {

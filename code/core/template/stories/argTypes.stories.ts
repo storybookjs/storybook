@@ -44,9 +44,8 @@ export const ArgTypeInference = {
     e: ['a', 'b'],
   },
   play: async ({ canvasElement }: PlayFunctionContext<any>) => {
-    const argTypes = JSON.parse(within(canvasElement).getByTestId('pre').innerText);
-
-    // `prepareStory` skips `inferArgTypes` when `experimentalDocgenServer` is on; the manager
+const argTypes = JSON.parse(within(canvasElement).getByTestId('pre').innerText);
+// `prepareStory` skips `inferArgTypes` when `experimentalDocgenServer` is on; the manager
     // runs that second pass in `mergeServiceArgTypes`, so the preview canvas never sees types
     // inferred from args.
     if (globalThis.FEATURES?.experimentalDocgenServer) {

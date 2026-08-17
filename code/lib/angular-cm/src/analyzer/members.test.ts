@@ -77,6 +77,18 @@ describe('@Input and @Output aliases', () => {
     expect(byName(inputs, 'buttonLabel').required).toBeUndefined();
   });
 
+  it('does not mark an input required just because `@Input()` carries no `required` key', () => {
+    const argTypes = extractArgTypesFromData(componentIn(SOURCE), {
+      metadataJson: undefined,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    }) as Record<string, { table?: { type?: { required?: boolean } } }>;
+
+    // An initializer is what settles it: `buttonLabel` has one, so binding it is optional.
+    expect(argTypes.buttonLabel?.table?.type?.required).toBe(false);
+    expect(argTypes.tone?.table?.type?.required).toBe(true);
+    expect(argTypes.hint?.table?.type?.required).toBe(false);
+  });
+
   it('leaves an accessor input’s `@default` tag as its only default carrier', () => {
     // A getter has no initializer, so without the tag there would be nothing to show.
     expect(byName(componentIn(SOURCE).inputsClass, 'anotherDefaultValue')).toMatchObject({

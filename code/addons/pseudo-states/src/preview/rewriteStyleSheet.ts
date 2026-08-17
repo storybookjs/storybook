@@ -186,7 +186,7 @@ const rewriteRules = ({ cssText, selectorText }: CSSStyleRule, forShadowDOM: boo
   let didRewrite = false;
   const rewrittenSelectors = splitSelectors(selectorText).flatMap((selector) => {
     if (selector.includes('.pseudo-')) {
-      return [];
+      return [selector];
     }
     const replacementSelectors = [selector];
     const pseudoStateMatches = findPseudoStates(selector);

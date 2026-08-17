@@ -536,6 +536,15 @@ describe('rewriteStyleSheet', () => {
     expect(sheet.cssRules[0].cssText).toBe('.pseudo-hover:hover { color: red }');
   });
 
+  it('keeps existing .pseudo- selectors when rewriting a mixed list', () => {
+    const sheet = new Sheet('.pseudo-hover:hover, .foo:hover { color: red }');
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet);
+    const selectors = sheet.cssRules[0].getSelectors();
+    expect(selectors).toContain('.pseudo-hover:hover');
+    expect(selectors).toContain('.foo:hover');
+    expect(selectors).toContain('.foo.pseudo-hover');
+  });
+
   it('override correct rules with media query present', () => {
     const sheet = new Sheet(
       `@media (max-width: 790px) {

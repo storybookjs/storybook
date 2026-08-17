@@ -2,6 +2,7 @@ import * as v from 'valibot';
 
 import { defineService } from '../../service-definition.ts';
 import type { ServiceInstanceOf } from '../../types.ts';
+import type { ModuleGraphService } from '../module-graph/definition.ts';
 import {
   storiesByFileSchema,
   storiesForFilesInputSchema,
@@ -29,9 +30,9 @@ export const moduleGraphIndexServiceDef = defineService({
       output: storiesForFilesOutputSchema,
       load: async (_input, ctx) => {
         // Drain the hot engine's patch queue so lookups never observe a mid-patch empty index.
-        const moduleGraph = ctx.getService<{
-          commands: { _waitForSettledEngine: (input: undefined) => Promise<void> };
-        }>('core/module-graph', { internal: true });
+        const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', {
+          internal: true,
+        });
         await moduleGraph.commands._waitForSettledEngine(undefined);
       },
       handler: (input, ctx) => {

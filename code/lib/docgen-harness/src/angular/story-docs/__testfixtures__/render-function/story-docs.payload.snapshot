@@ -15,7 +15,9 @@ import { RenderFunctionComponent } from './render-function.component.ts';
   imports: [RenderFunctionComponent],
   template: `<sb-render-function [label]="label"></sb-render-function>`,
 })
-export class DemoComponent {}",
+export class DemoComponent {
+  label = 'Render';
+}",
     },
     "storydocs-render-function--no-render": {
       "id": "storydocs-render-function--no-render",

@@ -101,10 +101,12 @@ describe('IncrementalPatcher', () => {
     const { patcher, reverseIndex, graph, parseSpy } = buildPatcher({
       world: { edges: new Map(), resolutions: new Map() },
     });
+    const revisionBefore = reverseIndex.revision;
 
     await patcher.patch({ kind: 'change', path: '/repo/src/unknown.ts' });
 
     // No dependents in reverseIndex, not a story file — nothing to re-walk.
+    expect(reverseIndex.revision).toBe(revisionBefore);
     expect(reverseIndex.asMap().size).toBe(0);
     expect(parseSpy).not.toHaveBeenCalled();
     expect(graph.has('/repo/src/unknown.ts')).toBe(false);
@@ -127,9 +129,11 @@ describe('IncrementalPatcher', () => {
       reverseIndex: initialIndex,
       storyFiles: new Set([story]),
     });
+    const revisionBefore = reverseIndex.revision;
 
     await patcher.patch({ kind: 'change', path: story });
 
+    expect(reverseIndex.revision).toBeGreaterThan(revisionBefore);
     expect(reverseIndex.lookup(dep).get(story)).toBe(1);
   });
 
@@ -280,9 +284,11 @@ describe('IncrementalPatcher', () => {
       storyFiles: new Set([story]),
     });
 
+    const revisionBefore = reverseIndex.revision;
     await patcher.patch({ kind: 'change', path: dep });
 
     // story must NOT be re-walked — graph and index are still accurate
+    expect(reverseIndex.revision).toBe(revisionBefore);
     const storyCalls = parseSpy.mock.calls.filter((c) => c[0].filePath === story);
     expect(storyCalls.length).toBe(0);
     // reverse-index entries are preserved unchanged
@@ -297,11 +303,25 @@ describe('IncrementalPatcher', () => {
       world,
       storyFiles: new Set(),
     });
+    const revisionBefore = reverseIndex.revision;
 
     await patcher.patch({ kind: 'add', path: file });
 
+    expect(reverseIndex.revision).toBe(revisionBefore);
     expect(reverseIndex.asMap().size).toBe(0);
     expect(parseSpy).not.toHaveBeenCalled();
+  });
+
+  it('reports an unlink of a file the graph never saw as leaving the index unchanged', async () => {
+    const { patcher, reverseIndex } = buildPatcher({
+      world: { edges: new Map(), resolutions: new Map() },
+    });
+    const revisionBefore = reverseIndex.revision;
+
+    await patcher.patch({ kind: 'unlink', path: '/repo/notes.md' });
+
+    expect(reverseIndex.revision).toBe(revisionBefore);
+    expect(reverseIndex.asMap().size).toBe(0);
   });
 
   it('unlink prunes reverseIndex for a story path even when not in current storyFiles', async () => {

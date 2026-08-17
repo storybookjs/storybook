@@ -43,21 +43,29 @@ interface BindingFilter {
  * This is what `argsToTemplate(args)` expands to at runtime, except that values are inlined rather
  * than referenced by name, so the result stands alone without the story's `props: args`.
  */
-const bindingAttributes = ({ inputs, outputs }: Bindings, filter: BindingFilter): string[] => {
+const bindingAttributes = (
+  { inputs, outputs }: Bindings,
+  filter: BindingFilter,
+  expanded: Set<string>
+): string[] => {
   const allowed = (name: string) =>
     filter.include ? filter.include.includes(name) : !filter.exclude?.includes(name);
+  const expandedInputs = inputs.filter(({ name }) => allowed(name));
+  expandedInputs.forEach(({ name }) => expanded.add(name));
   return [
-    ...inputs
-      .filter(({ name }) => allowed(name))
-      .map(({ name, expression }) => `[${name}]="${expression}"`),
+    ...expandedInputs.map(({ name, expression }) => `[${name}]="${expression}"`),
     ...outputs.filter(allowed).map((name) => `(${name})="${formatPropInTemplate(name)}($event)"`),
   ];
 };
 
 /** What a `template` turned out to hold. */
 export type TemplateResult =
-  /** Read as markup, so the story is shown as written. */
-  | { kind: 'literal'; markup: string }
+  /**
+   * Read as markup, so the story is shown as written. `expandedArgs` names the args an
+   * `argsToTemplate` call already wrote into the markup as values, which is what tells a caller
+   * which of the remaining args the markup can only be referring to by name.
+   */
+  | { kind: 'literal'; markup: string; expandedArgs: readonly string[] }
   /**
    * A `template` or `render` exists, but its markup needs the story to run. `source` is that
    * expression as written, so the story can say which one it fell back from; it is absent when a
@@ -178,13 +186,14 @@ const templateFrom = (
     return undefined;
   }
   if (t.isStringLiteral(node)) {
-    return { kind: 'literal', markup: node.value };
+    return { kind: 'literal', markup: node.value, expandedArgs: [] };
   }
   if (t.isTemplateLiteral(node)) {
-    const markup = interpolate(node, shape, bindings, scope);
+    const expanded = new Set<string>();
+    const markup = interpolate(node, shape, bindings, scope, expanded);
     return markup === undefined
       ? { kind: 'unresolvable', source: sourceOf(node) }
-      : { kind: 'literal', markup };
+      : { kind: 'literal', markup, expandedArgs: [...expanded] };
   }
   return { kind: 'unresolvable', source: sourceOf(node) };
 };
@@ -194,12 +203,13 @@ const interpolate = (
   node: t.TemplateLiteral,
   shape: StoryShape,
   bindings: Bindings | undefined,
-  scope: FunctionScope
+  scope: FunctionScope,
+  expanded: Set<string>
 ): string | undefined => {
   let markup = node.quasis[0]?.value.cooked ?? '';
 
   for (const [index, expression] of node.expressions.entries()) {
-    const substituted = substituteExpression(expression, shape, bindings, scope);
+    const substituted = substituteExpression(expression, shape, bindings, scope, expanded);
     if (substituted === undefined) {
       return undefined;
     }
@@ -225,7 +235,8 @@ const substituteExpression = (
   expression: t.Node,
   shape: StoryShape,
   bindings: Bindings | undefined,
-  scope: FunctionScope
+  scope: FunctionScope,
+  expanded: Set<string>
 ): string | undefined => {
   if (
     t.isCallExpression(expression) &&
@@ -248,7 +259,7 @@ const substituteExpression = (
     const allowed = filter.include
       ? { ...withRest, include: filter.include.filter((name) => !excluded.includes(name)) }
       : withRest;
-    return bindingAttributes(bindings, allowed).join(' ');
+    return bindingAttributes(bindings, allowed, expanded).join(' ');
   }
 
   if (!t.isIdentifier(expression)) {

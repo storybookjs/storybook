@@ -1,6 +1,5 @@
 {
   "id": "import-override-render",
-  "import": "import { OverrideButton as ImportOverrideRenderButton } from 'my-design-system';",
   "name": "ImportOverrideRenderButton",
   "path": "__PATH__",
   "stories": {
@@ -8,7 +7,11 @@
       "description": undefined,
       "id": "forms-import-override-render--primary",
       "name": "Primary",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import { OverrideButton as ImportOverrideRenderButton } from 'my-design-system';
+</script>
+
+<template>
   <ImportOverrideRenderButton label="Override" />
 </template>",
       "summary": undefined,

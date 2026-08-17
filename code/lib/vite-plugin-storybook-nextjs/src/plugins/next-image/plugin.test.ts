@@ -1,5 +1,7 @@
 import fs from 'node:fs';
 
+import { dirname, join } from 'pathe';
+
 import type { NextConfigComplete } from 'next/dist/server/config-shared.js';
 import type { PluginContext } from 'rollup';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -41,7 +43,7 @@ describe('vitePluginNextImage resolveId', () => {
     );
 
     expect(resolve).not.toHaveBeenCalled();
-    expect(result).toBe(virtualImageId('/project/src/images/avatar.png'));
+    expect(result).toBe(virtualImageId(join(dirname(importer), './images/avatar.png')));
   });
 
   it('uses Vite resolver for package image imports', async () => {
@@ -77,7 +79,7 @@ describe('vitePluginNextImage resolveId', () => {
 
     expect(resolve).toHaveBeenCalled();
     expect(requireResolveMock).toHaveBeenCalledWith('@myorg/assets/images/avatar.png', {
-      paths: ['/project/src'],
+      paths: [dirname(importer.split('?')[0])],
     });
     expect(result).toBe(virtualImageId(resolvedPath));
   });

@@ -45,18 +45,18 @@ export const ArgTypeInference = {
   },
   play: async ({ canvasElement }: PlayFunctionContext<any>) => {
     const argTypes = JSON.parse(within(canvasElement).getByTestId('pre').innerText);
-
-    // Server docgen infers when the UI reads the argTypes, not when the story is prepared, so the
-    // preview keeps the annotated argTypes on their own.
+    // `prepareStory` skips `inferArgTypes` when `experimentalDocgenServer` is on; the manager
+    // runs that second pass in `mergeServiceArgTypes`, so the preview canvas never sees types
+    // inferred from args.
     if (globalThis.FEATURES?.experimentalDocgenServer) {
-      await expect(Object.keys(argTypes).sort()).toEqual([
-        'componentArg',
-        'composedArg',
-        'storyArg',
-      ]);
+      expect(argTypes.a).toBeUndefined();
+      await expect(argTypes).toMatchObject({
+        componentArg: { type: { name: 'string' } },
+        storyArg: { type: { name: 'string' } },
+        composedArg: { type: { name: 'string' } },
+      });
       return;
     }
-
     await expect(argTypes).toMatchObject({
       a: { type: { name: 'number' } },
       b: { type: { name: 'string' } },

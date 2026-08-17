@@ -95,7 +95,7 @@
         "summary": "v1",
       },
       "type": {
-        "required": true,
+        "required": false,
         "summary": "string",
       },
     },

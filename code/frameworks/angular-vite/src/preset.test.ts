@@ -176,10 +176,16 @@ describe('features', () => {
 });
 
 describe('compodocJsonStubPlugin', () => {
-  const runResolve = (source: string, resolvedByVite: unknown) => {
-    const plugin = compodocJsonStubPlugin();
+  const CONFIG_DIR = '/workspace/.storybook';
+
+  const runResolve = (
+    source: string,
+    resolvedByVite: unknown,
+    importer = `${CONFIG_DIR}/preview.ts`
+  ) => {
+    const plugin = compodocJsonStubPlugin(CONFIG_DIR);
     const context = { resolve: vi.fn().mockResolvedValue(resolvedByVite) };
-    return (plugin.resolveId as any).call(context, source, '/workspace/.storybook/preview.ts', {});
+    return (plugin.resolveId as any).call(context, source, importer, {});
   };
 
   it('stubs the documented preview import when Compodoc never wrote the file', async () => {
@@ -187,7 +193,10 @@ describe('compodocJsonStubPlugin', () => {
 
     expect(id).toBe('\0storybook-angular-vite/empty-compodoc-json');
 
-    const load = compodocJsonStubPlugin().load as (this: unknown, id: string) => string | null;
+    const load = compodocJsonStubPlugin(CONFIG_DIR).load as (
+      this: unknown,
+      id: string
+    ) => string | null;
     expect(load.call({}, id as string)).toBe('export default {};');
   });
 
@@ -199,6 +208,13 @@ describe('compodocJsonStubPlugin', () => {
 
   it('ignores imports of any other module', async () => {
     expect(await runResolve('./some-other.json', null)).toBe(null);
+  });
+
+  // Only the import `storybook init` wrote into the preview is stood in for; the project's own
+  // `documentation.json` is a real dependency and a missing one has to fail.
+  it("leaves a documentation.json imported from the user's own code alone", async () => {
+    expect(await runResolve('./documentation.json', null, '/workspace/src/app/docs.ts')).toBe(null);
+    expect(await runResolve('../documentation.json', null, undefined)).toBe(null);
   });
 });
 

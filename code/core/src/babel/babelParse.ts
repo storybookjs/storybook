@@ -46,9 +46,7 @@ export const babelPrint = (ast: ASTNode): string => {
     tabWidth: 2,
     wrapColumn: 80,
     arrowParensAlways: true,
-    // Recast joins the lines it prints with `os.EOL` unless told otherwise. Callers embed this text
-    // in snippets and import statements that are compared against recordings, so a multi-line
-    // expression must not come out carriage-returned on Windows and bare everywhere else.
+    // Recast defaults this to `os.EOL`, which would carriage-return printed snippets on Windows.
     lineTerminator: '\n',
   }).code;
 };

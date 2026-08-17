@@ -651,7 +651,7 @@ export interface StorybookFeatures {
    * itself and ships server-side extraction as its only docgen path. Set it to `false` there to go
    * back to Compodoc.
    *
-   * @default false
+   * @default false // `true` when the framework is `@storybook/angular-vite`
    * @experimental This feature is in early development and may change significantly in future releases.
    */
   experimentalDocgenServer?: boolean;

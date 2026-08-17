@@ -9,7 +9,7 @@ import {
 import type { PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
 
 import { readFileSync } from 'node:fs';
-import { basename, resolve } from 'node:path';
+import { basename, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { DOCUMENTATION_JSON, resolveCompodocConfig } from './compodoc-config.ts';
@@ -209,7 +209,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
       angularViteRedirectReapplyPlugin(options),
       angularOptionsPlugin(options, { normalizePath, zoneless }),
       storybookOxcPlugin(),
-      ...(docgenServer ? [compodocJsonStubPlugin()] : []),
+      ...(docgenServer && options?.configDir ? [compodocJsonStubPlugin(options.configDir)] : []),
     ],
     define: {
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
@@ -226,12 +226,23 @@ const COMPODOC_JSON_STUB_ID = '\0storybook-angular-vite/empty-compodoc-json';
 // preview, and that file is normally gitignored Compodoc output. With the docgen server on nothing
 // generates it and nothing reads it, so resolve it to an empty object rather than failing the build
 // of a project that followed the documented setup.
-export function compodocJsonStubPlugin(): Plugin {
+export function compodocJsonStubPlugin(configDir: string): Plugin {
+  // Only the import `storybook init` wrote into the Storybook config is stood in for. A
+  // `documentation.json` the project imports from anywhere else is the user's own file, and a
+  // missing one there has to fail the way any missing import does.
+  const importedFromStorybookConfig = (importer: string | undefined) => {
+    if (!importer) {
+      return false;
+    }
+    const fromConfigDir = relative(configDir, importer);
+    return fromConfigDir !== '' && !fromConfigDir.startsWith('..') && !isAbsolute(fromConfigDir);
+  };
+
   return {
     name: 'storybook-angular-vite-compodoc-json-stub',
     enforce: 'pre',
     async resolveId(source, importer, resolveOptions) {
-      if (basename(source) !== DOCUMENTATION_JSON) {
+      if (basename(source) !== DOCUMENTATION_JSON || !importedFromStorybookConfig(importer)) {
         return null;
       }
       const resolved = await this.resolve(source, importer, { ...resolveOptions, skipSelf: true });

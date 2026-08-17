@@ -2,10 +2,7 @@
 
 - Addon-Pseudo-States: Fix pseudo-states rewriting for nested functional selectors - [#34318](https://github.com/storybookjs/storybook/pull/34318), thanks @filipw01!
 - Core: Skip module-graph reverse-index mirror when a patch is a no-op - [#35825](https://github.com/storybookjs/storybook/pull/35825), thanks @ndelangen!
-<<<<<<< HEAD
-=======
 - Core: Split module-graph into hot revisions and cold index services - [#35831](https://github.com/storybookjs/storybook/pull/35831), thanks @ndelangen!
->>>>>>> c27bb4bda2f (Backport the module-graph hot/cold split and no-op index skip to 10.5.9.)
 - Preview: Fix crash when initialising UrlStore on a docs path - [#35521](https://github.com/storybookjs/storybook/pull/35521), thanks @TheSeydiCharyyev!
 - Pseudo-States: Make stylesheet rewrites WebKit-safe - [#35629](https://github.com/storybookjs/storybook/pull/35629), thanks @ethriel3695!
 - TanStack: Keep the layout id when cloning a standalone index file route - [#35660](https://github.com/storybookjs/storybook/pull/35660), thanks @Insik-Han!

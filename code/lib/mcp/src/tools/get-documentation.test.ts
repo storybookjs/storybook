@@ -421,36 +421,39 @@ describe('getDocumentationTool', () => {
 		`);
   });
 
-  it('should render apiDescription for a framework that authors its own markdown', async () => {
+  it('should render apiDescription ahead of the stories it is applied by', async () => {
     served[''] = {
       componentManifest: {
         // v0: this manifest inlines docgen/subcomponents/import, which is the inline format.
         // Labelling it v1 would strip them — a v1 row carries those behind `$ref`s instead.
         v: 0,
         components: {
-          'color-picker': {
-            id: 'color-picker',
-            name: 'ColorPickerComponent',
-            description: 'A colour picker',
-            renderer: 'angular',
+          widget: {
+            id: 'widget',
+            name: 'Widget',
+            description: 'A widget.',
             apiDescription: [
-              '## Inputs',
+              '## API',
               '',
               '```',
-              'export type ColorPickerComponentInputs = {',
-              '  /** @default #345F92 */',
-              '  color?: string; // two-way: [(color)]',
-              '}',
-              '```',
-              '',
-              '## Outputs',
-              '',
-              '```',
-              'export type ColorPickerComponentOutputs = {',
-              '  colorChange: (e: string) => void;',
+              'export type WidgetApi = {',
+              '  /** @default medium */',
+              '  size?: "small" | "medium";',
               '}',
               '```',
             ].join('\n'),
+            stories: [
+              {
+                id: 'widget--basic',
+                name: 'Basic',
+                snippet: '<Widget />',
+              },
+              {
+                id: 'widget--small',
+                name: 'Small',
+                snippet: '<Widget size="small" />',
+              },
+            ],
           },
         },
       },
@@ -463,7 +466,7 @@ describe('getDocumentationTool', () => {
       params: {
         name: GET_TOOL_NAME,
         arguments: {
-          id: 'color-picker',
+          id: 'widget',
         },
       },
     };
@@ -477,27 +480,37 @@ describe('getDocumentationTool', () => {
       {
         "content": [
           {
-            "text": "# ColorPickerComponent
+            "text": "# Widget
 
-      ID: color-picker
+      ID: widget
 
-      A colour picker
+      A widget.
 
-      ## Inputs
+      ## API
 
       \`\`\`
-      export type ColorPickerComponentInputs = {
-        /** @default #345F92 */
-        color?: string; // two-way: [(color)]
+      export type WidgetApi = {
+        /** @default medium */
+        size?: "small" | "medium";
       }
       \`\`\`
 
-      ## Outputs
+      ## Stories
+
+      ### Basic
+
+      Story ID: widget--basic
 
       \`\`\`
-      export type ColorPickerComponentOutputs = {
-        colorChange: (e: string) => void;
-      }
+      <Widget />
+      \`\`\`
+
+      ### Small
+
+      Story ID: widget--small
+
+      \`\`\`
+      <Widget size="small" />
       \`\`\`",
             "type": "text",
           },

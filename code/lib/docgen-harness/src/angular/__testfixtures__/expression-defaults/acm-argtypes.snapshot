@@ -8,7 +8,7 @@
         "summary": "Math.max(1, 3)",
       },
       "type": {
-        "required": true,
+        "required": false,
         "summary": "number",
       },
     },
@@ -26,7 +26,7 @@
         "summary": undefined,
       },
       "type": {
-        "required": true,
+        "required": false,
         "summary": "EventEmitter",
       },
     },
@@ -44,7 +44,7 @@
         "summary": "5 * 60 * 1000",
       },
       "type": {
-        "required": true,
+        "required": false,
         "summary": "number",
       },
     },

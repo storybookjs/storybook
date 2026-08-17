@@ -1,6 +1,5 @@
 {
   "id": "v-model",
-  "import": "import ModelToggle from './ModelToggle.vue';",
   "name": "ModelToggle",
   "path": "__PATH__",
   "stories": {
@@ -10,6 +9,7 @@
       "name": "Primary",
       "snippet": "<script lang="ts" setup>
 import { ref } from "vue";
+import ModelToggle from './ModelToggle.vue';
 
 const checked = ref(true);
 

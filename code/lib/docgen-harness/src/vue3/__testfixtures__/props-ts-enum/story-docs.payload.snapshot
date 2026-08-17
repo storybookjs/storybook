@@ -1,6 +1,5 @@
 {
   "id": "props-ts-enum",
-  "import": "import TsEnumProps from './TsEnumProps.vue';",
   "name": "TsEnumProps",
   "path": "__PATH__",
   "stories": {
@@ -8,7 +7,11 @@
       "description": undefined,
       "id": "forms-props-ts-enum--props-as-written",
       "name": "Props As Written",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import TsEnumProps from './TsEnumProps.vue';
+</script>
+
+<template>
   <TsEnumProps :level="1" />
 </template>",
       "summary": undefined,

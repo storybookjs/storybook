@@ -89,6 +89,7 @@ const STORY_SHAPES_FILE = [
   `const HOISTED_TEMPLATE = '<sb-button hoisted></sb-button>';`,
   `const renderFn = () => ({ template: '<sb-button via-fn></sb-button>' });`,
   `const sharedArgs = { label: 'shared' };`,
+  `const LOCAL_LABEL = 'Save';`,
   `export default {`,
   `  title: 'Example/Button',`,
   `  component: ButtonComponent,`,
@@ -138,6 +139,34 @@ const STORY_SHAPES_FILE = [
   '    props: args,',
   '    template: `<sb-button ${argsToTemplate(args)}><span>${footer}</span></sb-button>`,',
   `  }),`,
+  `};`,
+  // Markup written without `argsToTemplate` binds the args by name, which only resolves because
+  // the story hands them to the template through `props: args`.
+  `export const HandWrittenBindings = {`,
+  `  args: { label: 'Save', count: 3 },`,
+  `  render: (args) => ({`,
+  '    props: args,',
+  `    template: '<sb-button [label]="label" [count]="count"></sb-button>',`,
+  `  }),`,
+  `};`,
+  // The half-and-half shape `exclude` exists for: most bindings expanded, one written by hand.
+  `export const PartlyHandWritten = {`,
+  `  args: { label: 'Save', count: 7 },`,
+  `  render: (args) => ({`,
+  '    props: args,',
+  '    template: `<sb-button ${argsToTemplate(args, { exclude: [\'label\'] })} [label]="label.toUpperCase()"></sb-button>`,',
+  `  }),`,
+  `};`,
+  `export const OutputNamedArg = {`,
+  `  args: { clicked: 'not a handler' },`,
+  `  render: (args) => ({`,
+  '    props: args,',
+  `    template: '<sb-button (clicked)="clicked($event)"></sb-button>',`,
+  `  }),`,
+  `};`,
+  `export const IdentifierArgValue = {`,
+  `  args: { label: LOCAL_LABEL },`,
+  `  render: (args) => ({ props: args, template: '<sb-button [label]="label"></sb-button>' }),`,
   `};`,
   `export const UnreadableInterpolation = {`,
   `  args: { label: 'Save' },`,
@@ -218,6 +247,20 @@ describe('buildStoryDocsPayload', () => {
       name: 'Default',
       description: 'Documented without a component.',
     });
+  });
+
+  it('keeps unevaluable arg source when the story file uses CRLF', async () => {
+    givenStoryFile(
+      dedent`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { label: (value) => value } };
+      `.replace(/\n/g, '\r\n')
+    );
+
+    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() });
+
+    expect(Object.values(payload!.stories)[0].snippet).toContain(`[label]="(value) => value"`);
   });
 
   it('builds a snippet from the snippet meta core/docgen carries alongside argTypes', async () => {
@@ -669,6 +712,60 @@ describe('buildStoryDocsPayload', () => {
 
       expect(byName.get('Args To Template')).toContain('clicked(event: unknown) {}');
       expect(byName.get('Own Template')).not.toContain('clicked(event: unknown) {}');
+    });
+  });
+
+  // Hand-written markup runs against the story's `props: args`, which the host component the
+  // snippet ships does not have. The args it names have to come with it or the example is dead.
+  describe('args the markup binds by name', () => {
+    it('declares them on the host, leaving the markup as written', async () => {
+      expect((await storiesOf(STORY_SHAPES_FILE)).get('Hand Written Bindings')?.snippet).toBe(
+        [
+          `import { Component } from '@angular/core';`,
+          `import { ButtonComponent } from './button.component';`,
+          '',
+          '@Component({',
+          `  selector: 'app-demo',`,
+          '  imports: [ButtonComponent],',
+          '  template: `<sb-button [label]="label" [count]="count"></sb-button>`,',
+          '})',
+          'export class DemoComponent {',
+          `  label = 'Save';`,
+          '  count = 3;',
+          '}',
+        ].join('\n')
+      );
+    });
+
+    // An expanded binding carries its value in the markup, so only the attribute name is left to
+    // match on; declaring it would add a member nothing reads.
+    it('skips the args argsToTemplate already expanded', async () => {
+      const snippet = (await storiesOf(STORY_SHAPES_FILE)).get('Partly Hand Written')?.snippet;
+      expect(snippet).toContain(`[count]="7"`);
+      expect(snippet).toContain(`  label = 'Save';`);
+      expect(snippet).not.toContain('count = 7;');
+    });
+
+    it('leaves an output binding to its handler rather than declaring both', async () => {
+      const snippet = (await storiesOf(STORY_SHAPES_FILE)).get('Output Named Arg')?.snippet;
+      expect(snippet).toContain('  clicked(event: unknown) {}');
+      expect(snippet).not.toContain(`clicked = 'not a handler';`);
+    });
+
+    it('declares nothing for a story whose markup names no args', async () => {
+      expect((await storiesOf(STORY_SHAPES_FILE)).get('Own Template')?.snippet).toContain(
+        'export class DemoComponent {}'
+      );
+    });
+
+    // A value only the story file can resolve would not compile on the host either, so it is
+    // reported the same way any other unreadable source text is.
+    it('reports an arg whose value needs the story to run instead of declaring it', async () => {
+      const story = (await storiesOf(STORY_SHAPES_FILE)).get('Identifier Arg Value');
+      expect(story?.warning).toBe(
+        'Incomplete snippet: `LOCAL_LABEL` could not be resolved statically.'
+      );
+      expect(story?.snippet).not.toContain('label = LOCAL_LABEL;');
     });
   });
 

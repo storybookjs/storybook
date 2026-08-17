@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { once } from 'storybook/internal/client-logger';
+
 import { parseArgsParam } from './parseArgsParam.ts';
 
 vi.mock('storybook/internal/client-logger', () => ({
@@ -181,12 +183,26 @@ describe('parseArgsParam', () => {
       expect(parseArgsParam('obj.a!b:val')).toStrictEqual({});
     });
 
-    it('omits __proto__, which would otherwise replace the prototype', () => {
-      // `toStrictEqual` compares prototypes, so these also pin that the
-      // returned object is still a plain object.
+    it('omits __proto__ and warns, instead of replacing the prototype', () => {
+      const warn = vi.mocked(once.warn);
+
+      warn.mockClear();
       expect(parseArgsParam('__proto__:val')).toStrictEqual({});
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('Omitted potentially unsafe URL args.')
+      );
+
+      warn.mockClear();
       expect(parseArgsParam('__proto__[]:1;__proto__[]:2')).toStrictEqual({});
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('Omitted potentially unsafe URL args.')
+      );
+
+      warn.mockClear();
       expect(parseArgsParam('__proto__:val;key:val')).toStrictEqual({ key: 'val' });
+      expect(warn).toHaveBeenCalledWith(
+        expect.stringContaining('Omitted potentially unsafe URL args.')
+      );
     });
 
     it('completely omits an arg when a (deeply) nested key is invalid', () => {

@@ -11,7 +11,11 @@ import { z } from 'zod';
 
 import { esMain } from '../utils/esmain.ts';
 import { getCodeWorkspaces } from '../utils/workspace.ts';
-import { listUnpublishedPackages, waitForPackagesToBePublished } from './npm-registry.ts';
+import {
+  listUnpublishedPackages,
+  packagesAcceptedByRegistry,
+  waitForPackagesToBePublished,
+} from './npm-registry.ts';
 
 program
   .name('publish')
@@ -43,9 +47,9 @@ type Options = {
 const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
 const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
-const MAX_PUBLISH_ATTEMPTS = 5;
+const MAX_PUBLISH_ATTEMPTS = 3;
 const REGISTRY_POLL_INTERVAL_MS = 15_000;
-const REGISTRY_POLL_TIMEOUT_MS = 5 * 60 * 1000;
+const REGISTRY_POLL_TIMEOUT_MS = 15 * 60 * 1000;
 
 const validateOptions = (options: { [key: string]: any }): options is Options => {
   optionsSchema.parse(options);
@@ -72,8 +76,18 @@ const buildAllPackages = async () => {
   console.log(`🏗️ Packages successfully built`);
 };
 
-const publishCommand = (tag: string) =>
-  `yarn workspaces foreach --all --parallel --no-private --verbose npm publish --provenance --tolerate-republish --tag ${tag}`;
+export const publishCommand = (tag: string, packageNames: string[]) => {
+  const include = packageNames.map((name) => `--include=${name}`).join(' ');
+  return `yarn workspaces foreach --all --parallel --no-private ${include} --verbose npm publish --provenance --tolerate-republish --tag ${tag}`;
+};
+
+const execaOutput = (error: unknown) => {
+  if (!error || typeof error !== 'object') {
+    return '';
+  }
+  const { stdout, stderr, all } = error as { stdout?: string; stderr?: string; all?: string };
+  return [all, stdout, stderr].filter(Boolean).join('\n');
+};
 
 export const publishAllPackages = async ({
   tag,
@@ -89,38 +103,42 @@ export const publishAllPackages = async ({
   packageNames: string[];
 }) => {
   console.log(`📦 Publishing all packages...`);
-  const command = publishCommand(tag);
-  if (verbose) {
-    console.log(`📦 Executing: ${command}`);
-  }
   if (dryRun) {
     console.log(`📦 Dry run, skipping publish. Would have executed:
-    ${picocolors.blue(command)}`);
+    ${picocolors.blue(publishCommand(tag, packageNames))}`);
     return;
   }
 
-  /**
-   * Yarn `--tolerate-republish` only skips when the packument GET already lists this version. A
-   * version the registry has accepted but not yet put in the public packument looks unpublished, so
-   * a retry PUT gets HTTP 409 "previously staged version". After a failed foreach, reconcile from
-   * registry GET instead of immediately PUT-ing again.
-   */
+  // Staged versions are reserved but not in the packument yet; a retry PUT 409s.
+  let toPublish = [...packageNames];
   let unpublished = [...packageNames];
+  const accepted = new Set<string>();
   let lastError: unknown;
 
   for (let attempt = 1; attempt <= MAX_PUBLISH_ATTEMPTS; attempt += 1) {
+    const command = publishCommand(tag, toPublish);
+    if (verbose) {
+      console.log(`📦 Executing: ${command}`);
+    }
+
     try {
       await execaCommand(command, {
-        stdio: 'inherit',
         cleanup: true,
         cwd: CODE_DIR_PATH,
+        stdout: ['pipe', 'inherit'],
+        stderr: ['pipe', 'inherit'],
       });
       console.log(`📦 Packages successfully published`);
       return;
     } catch (error) {
       lastError = error;
+      for (const name of packagesAcceptedByRegistry(execaOutput(error))) {
+        accepted.add(name);
+      }
+      toPublish = toPublish.filter((name) => !accepted.has(name));
+
       unpublished = await listUnpublishedPackages({
-        packageNames: unpublished,
+        packageNames,
         version: currentVersion,
         verbose,
       });
@@ -153,13 +171,21 @@ export const publishAllPackages = async ({
         return;
       }
 
+      toPublish = unpublished.filter((name) => !accepted.has(name));
+      if (toPublish.length === 0) {
+        throw new Error(
+          `Failed to publish version ${currentVersion}. Still missing after staging wait: ${unpublished.join(', ')}`,
+          { cause: lastError }
+        );
+      }
+
       if (attempt === MAX_PUBLISH_ATTEMPTS) {
         break;
       }
 
       console.log(
         picocolors.yellow(
-          `❗ Still missing ${unpublished.join(', ')}. Retrying publish for remaining packages.`
+          `❗ Still missing ${toPublish.join(', ')}. Retrying publish for those packages only.`
         )
       );
     }
@@ -194,7 +220,13 @@ export const run = async (options: unknown) => {
   }
 
   await buildAllPackages();
-  await publishAllPackages({ tag, verbose, dryRun, currentVersion, packageNames });
+  await publishAllPackages({
+    tag,
+    verbose,
+    dryRun,
+    currentVersion,
+    packageNames: unpublished,
+  });
 
   console.log(
     `✅ Published all packages with version ${picocolors.green(currentVersion)}${

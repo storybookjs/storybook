@@ -3,6 +3,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   isPackageVersionPublished,
   listUnpublishedPackages,
+  packagesAcceptedByRegistry,
   waitForPackagesToBePublished,
 } from '../npm-registry.ts';
 
@@ -34,7 +35,10 @@ describe('isPackageVersionPublished', () => {
     await expect(
       isPackageVersionPublished({ packageName: 'storybook', version: '10.6.0-alpha.6' })
     ).resolves.toBe(false);
-    expect(fetchMock).toHaveBeenCalledWith('https://registry.npmjs.org/storybook/10.6.0-alpha.6');
+    expect(fetchMock).toHaveBeenCalledWith(
+      'https://registry.npmjs.org/storybook/10.6.0-alpha.6',
+      expect.objectContaining({ signal: expect.any(AbortSignal) })
+    );
   });
 
   it('returns true on 200 with a matching version', async () => {
@@ -45,12 +49,34 @@ describe('isPackageVersionPublished', () => {
     ).resolves.toBe(true);
   });
 
-  it('throws on unexpected status codes', async () => {
+  it('returns false on 429 and 5xx so polling can continue', async () => {
     fetchMock.mockImplementation(() => jsonResponse(500, { error: 'down' }));
 
     await expect(
       isPackageVersionPublished({ packageName: 'storybook', version: '10.6.0-alpha.6' })
-    ).rejects.toThrow('Unexpected status code when checking the current version on npm: 500');
+    ).resolves.toBe(false);
+
+    fetchMock.mockImplementation(() => jsonResponse(429, { error: 'slow down' }));
+
+    await expect(
+      isPackageVersionPublished({ packageName: 'storybook', version: '10.6.0-alpha.6' })
+    ).resolves.toBe(false);
+  });
+
+  it('returns false when the registry request fails or times out', async () => {
+    fetchMock.mockRejectedValue(new Error('The operation was aborted'));
+
+    await expect(
+      isPackageVersionPublished({ packageName: 'storybook', version: '10.6.0-alpha.6' })
+    ).resolves.toBe(false);
+  });
+
+  it('throws on unexpected status codes', async () => {
+    fetchMock.mockImplementation(() => jsonResponse(401, { error: 'unauthorized' }));
+
+    await expect(
+      isPackageVersionPublished({ packageName: 'storybook', version: '10.6.0-alpha.6' })
+    ).rejects.toThrow('Unexpected status code when checking the current version on npm: 401');
   });
 });
 
@@ -108,5 +134,19 @@ describe('waitForPackagesToBePublished', () => {
         },
       })
     ).resolves.toEqual(['storybook', '@storybook/react']);
+  });
+});
+
+describe('packagesAcceptedByRegistry', () => {
+  it('extracts workspaces npm already reserved or published', () => {
+    expect(
+      packagesAcceptedByRegistry(
+        [
+          '[storybook]: YN0035: Cannot publish over previously staged version',
+          '[@storybook/react]: Package archive published',
+          '[@storybook/vue3]: YN0033: network error',
+        ].join('\n')
+      )
+    ).toEqual(['storybook', '@storybook/react']);
   });
 });

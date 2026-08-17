@@ -1,6 +1,7 @@
 import picocolors from 'picocolors';
 
 const NPM_REGISTRY = 'https://registry.npmjs.org';
+const REGISTRY_FETCH_TIMEOUT_MS = 30_000;
 
 export const isPackageVersionPublished = async ({
   packageName,
@@ -18,9 +19,24 @@ export const isPackageVersionPublished = async ({
     console.log(`Fetching from npm: ${url}`);
   }
 
-  const response = await fetch(url);
-  if (response.status === 404) {
-    console.log(`🌤️ ${prettyPackage} is not published`);
+  let response: Response;
+  try {
+    response = await fetch(url, { signal: AbortSignal.timeout(REGISTRY_FETCH_TIMEOUT_MS) });
+  } catch (error) {
+    console.log(
+      `⚠️ Failed to reach npm for ${prettyPackage} (${error instanceof Error ? error.message : 'unknown error'}), treating as not yet visible`
+    );
+    return false;
+  }
+
+  if (response.status === 404 || response.status === 429 || response.status >= 500) {
+    if (response.status === 404) {
+      console.log(`🌤️ ${prettyPackage} is not published`);
+    } else {
+      console.log(
+        `⚠️ Transient status ${response.status} when checking ${prettyPackage}, treating as not yet visible`
+      );
+    }
     return false;
   }
   if (response.status !== 200) {
@@ -100,4 +116,23 @@ export const waitForPackagesToBePublished = async ({
   }
 
   return missing;
+};
+
+export const packagesAcceptedByRegistry = (output: string) => {
+  const accepted = new Set<string>();
+  for (const line of output.split('\n')) {
+    const prefix = line.match(/^\[([^\]]+)\]:/);
+    if (!prefix) {
+      continue;
+    }
+    if (
+      line.includes('Package archive published') ||
+      line.includes('Registry already knows about version') ||
+      line.includes('previously staged version') ||
+      line.includes('previously published versions')
+    ) {
+      accepted.add(prefix[1]);
+    }
+  }
+  return [...accepted];
 };

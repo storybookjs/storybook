@@ -1,9 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+// eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 
 import { listUnpublishedPackages, waitForPackagesToBePublished } from '../npm-registry.ts';
-import { publishAllPackages } from '../publish.ts';
+import { publishAllPackages, publishCommand } from '../publish.ts';
 
 vi.mock('execa', { spy: true });
 vi.mock('../npm-registry.ts', { spy: true });
@@ -33,6 +34,10 @@ describe('publishAllPackages', () => {
     await publishAllPackages(options);
 
     expect(execaCommand).toHaveBeenCalledTimes(1);
+    expect(execaCommand).toHaveBeenCalledWith(
+      publishCommand('next', ['storybook', '@storybook/react']),
+      expect.any(Object)
+    );
     expect(listUnpublishedPackages).not.toHaveBeenCalled();
   });
 
@@ -72,6 +77,32 @@ describe('publishAllPackages', () => {
     await publishAllPackages(options);
 
     expect(execaCommand).toHaveBeenCalledTimes(2);
+    expect(vi.mocked(execaCommand).mock.calls[0][0]).toBe(
+      publishCommand('next', ['storybook', '@storybook/react'])
+    );
+    expect(vi.mocked(execaCommand).mock.calls[1][0]).toBe(publishCommand('next', ['storybook']));
+    expect(vi.mocked(execaCommand).mock.calls[1][0]).not.toContain('--include=@storybook/react');
+  });
+
+  it('does not retry PUT for packages npm already accepted with a staged 409', async () => {
+    const staged = Object.assign(new Error('foreach exited 1'), {
+      stderr: [
+        '[storybook]: YN0035: Cannot publish over previously staged version',
+        '[@storybook/react]: YN0033: Publish failed',
+      ].join('\n'),
+    });
+    vi.mocked(execaCommand)
+      .mockRejectedValueOnce(staged)
+      .mockResolvedValueOnce({} as never);
+    vi.mocked(listUnpublishedPackages).mockResolvedValue(['storybook', '@storybook/react']);
+    vi.mocked(waitForPackagesToBePublished).mockResolvedValue(['storybook', '@storybook/react']);
+
+    await publishAllPackages(options);
+
+    expect(vi.mocked(execaCommand).mock.calls[1][0]).toBe(
+      publishCommand('next', ['@storybook/react'])
+    );
+    expect(vi.mocked(execaCommand).mock.calls[1][0]).not.toContain('--include=storybook');
   });
 
   it('fails with the missing package list after retries are exhausted', async () => {
@@ -82,6 +113,6 @@ describe('publishAllPackages', () => {
     await expect(publishAllPackages(options)).rejects.toThrow(
       'Failed to publish version 10.6.0-alpha.6. Still missing: storybook'
     );
-    expect(execaCommand).toHaveBeenCalledTimes(5);
+    expect(execaCommand).toHaveBeenCalledTimes(3);
   });
 });

@@ -21,7 +21,8 @@ export function buildApiDescription(meta: ApiDescriptionSource): string | undefi
   const modelNames = new Set(models.map((model) => model.name));
   const props = bindableProps.filter((prop) => !modelNames.has(prop.name));
   const events = meta.events.filter(
-    (event) => !(event.name.startsWith('update:') && modelNames.has(event.name.slice('update:'.length - 1)))
+    (event) =>
+      !(event.name.startsWith('update:') && modelNames.has(event.name.slice('update:'.length - 1)))
   );
 
   if (!models.length && !props.length && !events.length && !slots.length && !exposed.length) {
@@ -33,9 +34,9 @@ export function buildApiDescription(meta: ApiDescriptionSource): string | undefi
     ? sanitizedDisplayName
     : `Component${sanitizedDisplayName}`;
 
-function memberKey(name: string): string {
-  return IDENTIFIER.test(name) ? name : JSON.stringify(name);
-}
+  function memberKey(name: string): string {
+    return IDENTIFIER.test(name) ? name : JSON.stringify(name);
+  }
   const parts: string[] = [];
 
   if (models.length > 0) {

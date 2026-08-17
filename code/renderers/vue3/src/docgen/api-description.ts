@@ -28,7 +28,14 @@ export function buildApiDescription(meta: ApiDescriptionSource): string | undefi
     return undefined;
   }
 
-  const typePrefix = meta.displayName.replace(/\W+/g, '');
+  const sanitizedDisplayName = meta.displayName.replace(/\W+/g, '');
+  const typePrefix = /^[A-Za-z_$]/.test(sanitizedDisplayName)
+    ? sanitizedDisplayName
+    : `Component${sanitizedDisplayName}`;
+
+function memberKey(name: string): string {
+  return IDENTIFIER.test(name) ? name : JSON.stringify(name);
+}
   const parts: string[] = [];
 
   if (models.length > 0) {

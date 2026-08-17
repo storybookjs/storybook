@@ -1,15 +1,17 @@
 import { type NodePath, types as t } from 'storybook/internal/babel';
+import type { StoryReferenceResolver } from 'storybook/internal/common';
 import {
   type CsfFile,
-  argsRecordFromObjectPath,
-  keyOf,
+  type ImportRef,
   metaObjectPath,
-  mergeArgsRecords,
-  metaArgsRecord,
   normalizeStoryDeclaration,
+  type ReferenceContext,
   type RenderResolution,
+  resolveArgValue,
+  resolveArgsRecord,
+  resolveBindingMembers,
+  resolveObjectMembers,
   resolveRenderFunction,
-  storyAssignedArgsPath,
 } from 'storybook/internal/csf-tools';
 
 import { invariant } from './utils.ts';
@@ -21,13 +23,79 @@ function renderFunctionOf(resolution: RenderResolution) {
   return resolution.kind === 'unresolved' ? resolution.shadowedRender : undefined;
 }
 
+/** How arg resolution leaves the story file; omitted when only the story file itself is read. */
+export interface StoryReferences extends StoryReferenceResolver {
+  /** Absolute path of the story file, which every import specifier resolves against. */
+  filePath: string;
+}
+
+/** A story's snippet, and what showing it as a complete example still depends on. */
+export interface CodeSnippet {
+  node: t.VariableDeclaration | t.FunctionDeclaration;
+  /** Imports the snippet needs beyond the component, from arg values that kept a name. */
+  imports: ImportRef[];
+  /** What a static pass could not read, in the source text it was written as. */
+  unresolved: string[];
+}
+
 export function getCodeSnippet(
   csf: CsfFile,
   storyName: string,
-  componentName?: string
+  componentName?: string,
+  references?: StoryReferences
+): CodeSnippet {
+  const ctx: ReferenceContext = { program: csf._file.path, filePath: '', ...references };
+  const { merged, imports, unresolved } = collectArgs(csf, storyName, ctx);
+  return {
+    node: buildSnippetNode(csf, storyName, componentName, merged, ctx),
+    imports,
+    unresolved,
+  };
+}
+
+/**
+ * The story's args as the snippet prints them: spreads followed, and every value read through to
+ * something that means the same where the snippet lands.
+ */
+function collectArgs(
+  csf: CsfFile,
+  storyName: string,
+  ctx: ReferenceContext
+): { merged: Record<string, t.Node>; imports: ImportRef[]; unresolved: string[] } {
+  const metaObj = csf._metaNode;
+  const metaMembers = metaObj ? resolveObjectMembers(metaObj, ctx) : undefined;
+  const metaArgs = resolveArgsRecord(metaMembers?.properties.args, ctx);
+  // A re-export documents the story under a different name than the binding it reads.
+  const localName = csf._stories[storyName]?.localName ?? storyName;
+  const storyMembers = resolveBindingMembers(ctx, localName);
+  const storyArgs = resolveArgsRecord(storyMembers?.properties.args, ctx);
+
+  const merged: Record<string, t.Node> = {};
+  const imports: ImportRef[] = [];
+  const unresolved = [
+    ...metaArgs.unresolved,
+    ...(storyMembers?.unresolved ?? []),
+    ...storyArgs.unresolved,
+  ];
+
+  for (const [key, node] of Object.entries({ ...metaArgs.properties, ...storyArgs.properties })) {
+    const value = resolveArgValue(node, ctx);
+    merged[key] = value.node;
+    imports.push(...value.imports);
+    unresolved.push(...value.unresolved);
+  }
+
+  return { merged, imports, unresolved };
+}
+
+function buildSnippetNode(
+  csf: CsfFile,
+  storyName: string,
+  componentName: string | undefined,
+  merged: Record<string, t.Node>,
+  ctx: ReferenceContext
 ): t.VariableDeclaration | t.FunctionDeclaration {
   const storyDeclaration = csf._storyDeclarationPath[storyName];
-  const metaObj = csf._metaNode;
 
   if (!storyDeclaration) {
     const message = 'Expected story to be a function or variable declaration';
@@ -48,10 +116,9 @@ export function getCodeSnippet(
   }
 
   const storyConfigPath = normalizedStory.type === 'config' ? normalizedStory.path : undefined;
-  const storyProps = storyConfigPath?.get('properties').filter((p) => p.isObjectProperty()) ?? [];
 
-  const metaRender = resolveRenderFunction(metaObjectPath(csf), storyDeclaration);
-  const storyRender = resolveRenderFunction(storyConfigPath, storyDeclaration);
+  const metaRender = resolveRenderFunction(metaObjectPath(csf), storyDeclaration, ctx);
+  const storyRender = resolveRenderFunction(storyConfigPath, storyDeclaration, ctx);
 
   // Story render takes precedence. Only fall back to meta render when the story
   // has no render property at all — NOT when it has one that couldn't be resolved.
@@ -62,20 +129,6 @@ export function getCodeSnippet(
       renderFunctionOf(storyRender) ??
       (storyRender.kind === 'missing' ? renderFunctionOf(metaRender) : undefined);
   }
-
-  // Collect args
-  const metaArgs = metaArgsRecord(metaObj ?? null);
-  const storyArgsPath = storyProps
-    .filter((p) => keyOf(p.node) === 'args')
-    .map((p) => p.get('value'))
-    .find((v) => v.isObjectExpression());
-  const storyArgs = argsRecordFromObjectPath(storyArgsPath);
-  const assignedArgsPath = storyAssignedArgsPath(csf._file.path, storyName);
-  const storyAssignedArgs = argsRecordFromObjectPath(assignedArgsPath);
-  const merged: Record<string, t.Node> = {
-    ...mergeArgsRecords(metaArgs, storyArgs),
-    ...storyAssignedArgs,
-  };
 
   // For no-function fallback
   const entries = Object.entries(merged).filter(([k]) => k !== 'children');

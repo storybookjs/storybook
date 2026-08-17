@@ -1,8 +1,9 @@
 import { recast } from 'storybook/internal/babel';
 import { storyNameFromExport } from 'storybook/internal/csf';
+import type { ImportRef } from 'storybook/internal/csf-tools';
 import { extractStoryJSDocInfo, loadCsf } from 'storybook/internal/csf-tools';
 
-import { getCodeSnippet } from './generateCodeSnippet.ts';
+import { type StoryReferences, getCodeSnippet } from './generateCodeSnippet.ts';
 import {
   type ComponentRef,
   type DocgenEngine,
@@ -134,7 +135,22 @@ export interface ResolvedStory {
   snippet?: string;
   description?: string;
   summary?: string;
+  /** Why the snippet is an incomplete example; see `StoryDoc.warning`. */
+  warning?: string;
   error?: { name: string; message: string };
+}
+
+/** Every story's snippet, plus the imports they need beyond the components in the file. */
+export interface ExtractedStorySnippets {
+  stories: ResolvedStory[];
+  imports: ImportRef[];
+}
+
+/** Says which source text a static pass could not read, so a reader can see what is missing. */
+function unresolvedWarning(unresolved: readonly string[]): string {
+  return `Incomplete snippet: ${[...new Set(unresolved)]
+    .map((source) => `\`${source}\``)
+    .join(', ')} could not be resolved statically.`;
 }
 
 /**
@@ -142,29 +158,40 @@ export interface ResolvedStory {
  *
  * Pass `filterStoryIds` to limit the result to a subset (the manifest generator only emits stories
  * carrying the manifest tag); omit it to include every story in the file (the docgen provider).
+ * Pass `references` to let a story's args resolve names other modules own; without it only the story
+ * file itself is read, and anything it reaches for elsewhere is reported as unresolved.
  */
 export function extractStorySnippets(
   csf: ParsedCsf,
   componentName: string | undefined,
-  filterStoryIds?: ReadonlySet<string>
-): ResolvedStory[] {
-  return Object.entries(csf._stories)
+  filterStoryIds?: ReadonlySet<string>,
+  references?: StoryReferences
+): ExtractedStorySnippets {
+  const imports: ImportRef[] = [];
+  const stories = Object.entries(csf._stories)
     .filter(([, story]) => !filterStoryIds || filterStoryIds.has(story.id))
     .map(([storyExport, story]): ResolvedStory => {
       const name = story.name ?? storyNameFromExport(storyExport);
       try {
         const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[storyExport]);
+        const snippet = getCodeSnippet(csf, storyExport, componentName, references);
+        imports.push(...snippet.imports);
 
         return {
           id: story.id,
           name,
-          snippet: recast.print(getCodeSnippet(csf, storyExport, componentName)).code,
+          snippet: recast.print(snippet.node).code,
           description,
           summary,
+          ...(snippet.unresolved.length > 0
+            ? { warning: unresolvedWarning(snippet.unresolved) }
+            : {}),
         };
       } catch (e) {
         const err = e instanceof Error ? e : new Error(String(e));
         return { id: story.id, name, error: { name: err.name, message: err.message } };
       }
     });
+
+  return { stories, imports };
 }

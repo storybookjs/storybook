@@ -1,35 +1,36 @@
 import { types as t } from 'storybook/internal/babel';
-import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
+import {
+  createStoryReferenceResolver,
+  getComponentIdFromEntry,
+  getStoryImportPathFromEntry,
+  parseReferenceModule,
+} from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
-import type { CsfFile } from 'storybook/internal/csf-tools';
+import type { CsfFile, ReferenceContext, ResolvedMembers } from 'storybook/internal/csf-tools';
 import {
   buildImportStatements,
   collectImportBindings,
   extractStoryJSDocInfo,
+  isSelfContained,
+  resolveArgValue,
+  resolveArgsRecord,
+  resolveBindingMembers,
   resolveComponentImport,
+  resolveObjectMembers,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
 
 import type { AngularComponentSnippetMeta, AngularDocgenPayload } from './build-docgen.ts';
-import { parseStoryFile, resolveStoryImport } from './resolve-component.ts';
-import type { ArgsRecord, SpreadArgsContext } from './story-docs-args.ts';
+import { parseStoryFile } from './resolve-component.ts';
 import {
-  argsProperties,
-  createSpreadArgsResolver,
-  deepAssignmentSources,
+  createArgExternalizer,
   evaluateArgExpression,
   evaluateArgLiteral,
 } from './story-docs-args.ts';
 import type { Bindings, StoryShape, TemplateResult } from './story-docs-markup.ts';
-import {
-  metaConfigObject,
-  sourceOf,
-  storyConfigObject,
-  unresolvableConfigMembers,
-  userTemplate,
-} from './story-docs-markup.ts';
+import { sourceOf, userTemplate } from './story-docs-markup.ts';
 import type { StoryNgModules } from './story-docs-ng-modules.ts';
 import { ngModulesFromDecorators, storyNgModules } from './story-docs-ng-modules.ts';
 import type { HostComponentSnippet } from './story-docs-snippet.ts';
@@ -73,21 +74,31 @@ export const buildStoryDocsPayload = async (
     ? await context.getDocgenPayload(getComponentIdFromEntry(input.entry))
     : undefined;
 
-  const spreadContext: SpreadArgsContext = {
-    csf,
+  const enums = docgenPayload?.angularComponentMeta?.enums ?? [];
+  const references: ReferenceContext = {
+    program: csf._file.path,
     filePath: storyFilePath,
-    enums: docgenPayload?.angularComponentMeta?.enums ?? [],
-    resolveImport: context.resolveImport ?? resolveStoryImport,
+    externalize: createArgExternalizer(enums),
+    ...(context.resolveImport
+      ? {
+          resolveModule: (fromFile: string, specifier: string) => {
+            const target = context.resolveImport!(fromFile, specifier);
+            return target === undefined ? undefined : parseReferenceModule(target);
+          },
+        }
+      : { resolveModule: openStoryReferences().resolveModule }),
   };
-  const resolveArgs = (node: t.Node | undefined) =>
-    argsProperties(node, createSpreadArgsResolver(spreadContext));
 
   const componentName = componentNameOf(componentNode);
   const importBindings = collectImportBindings(csf._file.path);
+  const metaNode = csf._metaNode;
   const deps: StoryDocDeps = {
     csf,
-    resolveArgs,
-    metaArgs: resolveArgs(csf._metaAnnotations.args),
+    references,
+    metaMembers:
+      metaNode && t.isObjectExpression(metaNode)
+        ? resolveObjectMembers(metaNode, references)
+        : { properties: {}, unresolved: [] },
     snippetMeta: docgenPayload?.angularComponentMeta,
     componentName,
     componentImport:
@@ -139,14 +150,19 @@ const componentNameOf = (node: t.Node | undefined): string | undefined => {
 
 interface StoryDocDeps {
   csf: CsfFile;
-  resolveArgs: (node: t.Node | undefined) => ArgsRecord;
-  metaArgs: ArgsRecord;
+  /** How args follow a spread or a name, out of the story file when it has to. */
+  references: ReferenceContext;
+  /** The meta's config members, spreads and names followed. */
+  metaMembers: ResolvedMembers;
   snippetMeta: AngularComponentSnippetMeta | undefined;
   componentName: string | undefined;
   componentImport: string | undefined;
   metaNgModules: StoryNgModules;
   importBindings: ReturnType<typeof collectImportBindings>;
 }
+
+// One instance per process, so the module-resolution cache is shared; each build opens its own.
+const openStoryReferences = createStoryReferenceResolver();
 
 const buildStoryDoc = (
   exportName: string,
@@ -157,23 +173,9 @@ const buildStoryDoc = (
   const name = story.name ?? storyNameFromExport(exportName);
   try {
     const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[exportName]);
-    const annotations = csf._storyAnnotations[exportName] ?? {};
-    const storyArgs = deps.resolveArgs(annotations.args);
-    const shape: StoryShape = {
-      csf,
-      exportName,
-      annotations,
-      args: { ...deps.metaArgs.properties, ...storyArgs.properties },
-      unresolvedArgs: [
-        ...deps.metaArgs.unresolved,
-        ...unresolvableConfigMembers(metaConfigObject(csf)),
-        ...storyArgs.unresolved,
-        ...unresolvableConfigMembers(storyConfigObject({ csf, exportName })),
-        ...deepAssignmentSources(csf, exportName),
-      ],
-    };
+    const shape = storyShape(exportName, deps);
     const rendered = snippetMeta
-      ? renderStorySnippet(snippetMeta, shape, annotations.decorators, deps)
+      ? renderStorySnippet(snippetMeta, shape, shape.members.properties.decorators, deps)
       : undefined;
 
     return {
@@ -192,6 +194,51 @@ const buildStoryDoc = (
       error: { name: err?.name ?? 'Error', message: err?.message ?? String(e) },
     };
   }
+};
+
+/**
+ * Everything reading the story statically produced: its config members, its merged args, and the
+ * source text of whatever hid an arg from this pass.
+ *
+ * A story whose binding cannot be read at all - a re-export the parser resolved but scope does not
+ * bind - has no members, which reads as a story that declares nothing rather than as an error.
+ */
+const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
+  const { csf, references, metaMembers } = deps;
+  // A re-export documents the story under a different name than the binding it reads.
+  const localName = csf._stories[exportName]?.localName ?? exportName;
+  const members = resolveBindingMembers(references, localName) ?? {
+    properties: {},
+    unresolved: [sourceOf(csf._storyStatements[exportName] ?? t.identifier(exportName))],
+  };
+  const metaArgs = resolveArgsRecord(metaMembers.properties.args, references);
+  const storyArgs = resolveArgsRecord(members.properties.args, references);
+
+  const args: Record<string, t.Node> = {};
+  const unresolved = [
+    ...metaMembers.unresolved,
+    ...metaArgs.unresolved,
+    ...members.unresolved,
+    ...storyArgs.unresolved,
+  ];
+  const enums = deps.snippetMeta?.enums ?? [];
+  for (const [name, node] of Object.entries({
+    ...metaArgs.properties,
+    ...storyArgs.properties,
+  })) {
+    // A name the story file declares becomes the value it was declared with.
+    const value = resolveArgValue(node, references).node;
+    args[name] = value;
+    // A name that is left has to be reported: an Angular binding is evaluated against the host
+    // component the snippet ships, so a name that component does not have reads as `undefined`
+    // there rather than failing to compile. An enum member still resolves, and an expression that
+    // only names what it declares itself - a handler's own parameters - needs nothing from the host.
+    if (evaluateArgLiteral(value, enums) === undefined && !isSelfContained(value)) {
+      unresolved.push(sourceOf(value));
+    }
+  }
+
+  return { csf, exportName, members, metaMembers, args, unresolvedArgs: unresolved };
 };
 
 /**

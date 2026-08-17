@@ -213,9 +213,11 @@ export function escapeTextContent(text: string): string {
 
 function renderScript(ctx: RenderContext): string | undefined {
   const importsCode = Object.entries(ctx.imports)
+    .sort(([a], [b]) => a.localeCompare(b))
     .map(([packageName, imports]) => {
       return `import { ${Array.from(imports.values()).sort().join(', ')} } from "${packageName}";`;
     })
+    .concat(Array.from(ctx.componentImports).sort())
     .join('\n');
   const variablesCode = Array.from(ctx.variables.entries())
     .map(([name, value]) => `const ${name} = ${value};`)
@@ -225,8 +227,13 @@ function renderScript(ctx: RenderContext): string | undefined {
     return undefined;
   }
 
+  const scriptCode =
+    importsCode && variablesCode
+      ? `${importsCode}\n\n${variablesCode}`
+      : importsCode || variablesCode;
+
   return `<script lang="ts" setup>
-${importsCode ? `${importsCode}\n\n${variablesCode}` : variablesCode}
+${scriptCode}
 </script>`;
 }
 

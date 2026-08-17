@@ -1,7 +1,5 @@
 {
   "id": "function-slot",
-  "import": "import FunctionSlotPanel from './FunctionSlotPanel.vue';
-import ChildButton from './ChildButton.vue';",
   "name": "FunctionSlotPanel",
   "path": "__PATH__",
   "stories": {
@@ -9,7 +7,12 @@ import ChildButton from './ChildButton.vue';",
       "description": undefined,
       "id": "forms-function-slot--primary",
       "name": "Primary",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import ChildButton from './ChildButton.vue';
+import FunctionSlotPanel from './FunctionSlotPanel.vue';
+</script>
+
+<template>
   <FunctionSlotPanel>
     <ChildButton label="Click me" />
   </FunctionSlotPanel>

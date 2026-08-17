@@ -48,23 +48,10 @@ describe('viteFinal', () => {
     expect(await pluginNames(docgen)).toEqual(['template', expected]);
   });
 
-  // The service extracts the same metadata, so leaving the plugin on would compile every component
-  // twice and put a `__docgenInfo` in the preview bundle that nothing reads.
-  it('omits the vue-component-meta plugin when the docgen service is on', async () => {
-    expect(await pluginNames('vue-component-meta', { experimentalDocgenServer: true })).toEqual([
-      'template',
-    ]);
-  });
-
-  // vue-docgen-api has no worker-side extractor, so the feature flag must not strip its plugin —
-  // that would leave these projects with no docgen at all.
-  it.each(['vue-docgen-api' as const, undefined])(
-    'keeps the docgen plugin for docgen: %s even when the docgen service is on',
+  it.each(['vue-component-meta' as const, 'vue-docgen-api' as const, undefined, false as const])(
+    'omits the legacy docgen plugin for docgen: %s when the server is on',
     async (docgen) => {
-      expect(await pluginNames(docgen, { experimentalDocgenServer: true })).toEqual([
-        'template',
-        'vue-docgen-api',
-      ]);
+      expect(await pluginNames(docgen, { experimentalDocgenServer: true })).toEqual(['template']);
     }
   );
 

@@ -8,6 +8,9 @@
       "description": undefined,
       "id": "forms-define-slots-with-props--props-as-written",
       "name": "Props As Written",
+      "snippet": "<template>
+  <DefineSlotsWithProps disabled label="Save" />
+</template>",
       "summary": undefined,
     },
   },

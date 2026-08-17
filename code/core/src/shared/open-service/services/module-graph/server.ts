@@ -13,7 +13,23 @@ export type RegisterModuleGraphServiceOptions = {
   getIndex: ModuleGraphEngineOptions['getIndex'];
   workingDir?: string;
   presets?: Presets;
+  getAdapter?: () => Promise<ChangeDetectionAdapter | null | undefined>;
 };
+
+type AdapterDeferred = {
+  promise: Promise<ChangeDetectionAdapter | null | undefined>;
+  resolve: (adapter: ChangeDetectionAdapter | null | undefined) => void;
+};
+
+function createAdapterDeferred(): AdapterDeferred {
+  let resolve!: (adapter: ChangeDetectionAdapter | null | undefined) => void;
+  return {
+    promise: new Promise((fulfill) => {
+      resolve = fulfill;
+    }),
+    resolve,
+  };
+}
 
 /**
  * Deferred builder adapter. Open-service registration runs early in the dev-server boot, but the
@@ -23,31 +39,39 @@ export type RegisterModuleGraphServiceOptions = {
  * `resolveChangeDetectionAdapter` is exported directly (rather than wrapped in a helper) so the
  * dev-server can resolve the promise with one import.
  */
-let resolveAdapter!: (adapter: ChangeDetectionAdapter | null | undefined) => void;
-
-export const changeDetectionAdapterPromise = new Promise<ChangeDetectionAdapter | null | undefined>(
-  (resolve) => {
-    resolveAdapter = resolve;
-  }
-);
+let adapterDeferred = createAdapterDeferred();
+let adapterResolved = false;
 
 export function resolveChangeDetectionAdapter(
   adapter: ChangeDetectionAdapter | null | undefined
 ): void {
-  resolveAdapter(adapter);
+  if (adapterResolved) {
+    return;
+  }
+  adapterResolved = true;
+  adapterDeferred.resolve(adapter);
+}
+
+export function resetChangeDetectionAdapterForTests(): void {
+  adapterDeferred = createAdapterDeferred();
+  adapterResolved = false;
 }
 
 /**
  * Registers the `core/module-graph` open service, constructs the graph engine, wires state mirroring
  * into the service commands, and listens for story-index invalidation on the server channel. The
- * engine starts once {@link resolveChangeDetectionAdapter} provides the builder adapter.
+ * engine starts once {@link resolveChangeDetectionAdapter} provides the builder adapter, or once
+ * the first `_waitForSettledEngine` call obtains one through {@link RegisterModuleGraphServiceOptions.getAdapter}.
  *
  * The engine lives for the entire dev-server process, so there is no teardown path: the OS reclaims
  * everything when the process exits.
  */
 export function registerModuleGraphService(options: RegisterModuleGraphServiceOptions) {
   const workingDir = options.workingDir ?? process.cwd();
+  const adapterPromise = adapterDeferred.promise;
   let engine: ModuleGraphEngine | undefined = undefined;
+  let engineStarted = false;
+  let obtainAdapter: Promise<void> | undefined;
 
   const runtime = registerService(
     {
@@ -61,6 +85,8 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
       commands: {
         _waitForSettledEngine: {
           handler: async () => {
+            await ensureAdapter();
+            applyAdapter(await adapterPromise);
             await engine!.whenSettled();
           },
         },
@@ -90,11 +116,11 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
     },
   });
 
-  options.channel.on(STORY_INDEX_INVALIDATED, () => {
-    engine!.onStoryIndexInvalidated();
-  });
-
-  void changeDetectionAdapterPromise.then((adapter) => {
+  function applyAdapter(adapter: ChangeDetectionAdapter | null | undefined) {
+    if (engineStarted) {
+      return;
+    }
+    engineStarted = true;
     if (!adapter) {
       void runtime.commands._setStatus({
         value: 'unavailable',
@@ -103,7 +129,35 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
       return;
     }
     engine!.start(adapter);
+  }
+
+  async function ensureAdapter() {
+    if (adapterResolved) {
+      return;
+    }
+    const getAdapter = options.getAdapter;
+    if (!getAdapter) {
+      await adapterPromise;
+      return;
+    }
+    obtainAdapter ??= Promise.resolve()
+      .then(() => getAdapter())
+      .then(
+        (adapter) => {
+          resolveChangeDetectionAdapter(adapter);
+        },
+        () => {
+          resolveChangeDetectionAdapter(undefined);
+        }
+      );
+    await obtainAdapter;
+  }
+
+  options.channel.on(STORY_INDEX_INVALIDATED, () => {
+    engine!.onStoryIndexInvalidated();
   });
+
+  void adapterPromise.then(applyAdapter);
 
   return runtime;
 }

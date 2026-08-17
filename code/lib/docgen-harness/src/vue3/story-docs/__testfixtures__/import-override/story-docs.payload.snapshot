@@ -8,6 +8,9 @@
       "description": undefined,
       "id": "forms-import-override--primary",
       "name": "Primary",
+      "snippet": "<template>
+  <ImportOverrideButton label="Override" />
+</template>",
       "summary": undefined,
     },
   },

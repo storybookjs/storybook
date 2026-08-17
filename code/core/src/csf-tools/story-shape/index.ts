@@ -1,9 +1,17 @@
 export {
+  argsRecordFromNode,
+  argsRecordFromObjectNode,
   argsRecordFromObjectPath,
   mergeArgsRecords,
   metaArgsRecord,
   storyAssignedArgsPath,
 } from './args.ts';
+export {
+  type ComponentImportRef,
+  type ImportRef,
+  buildImportStatements,
+  resolveComponentImport,
+} from './import-statements.ts';
 export {
   type ImportBinding,
   collectImportBindings,
@@ -19,4 +27,5 @@ export {
   propertyValue,
   resolveIdentifierInit,
   returnedObjectExpression,
+  unwrapExpression,
 } from './utils.ts';

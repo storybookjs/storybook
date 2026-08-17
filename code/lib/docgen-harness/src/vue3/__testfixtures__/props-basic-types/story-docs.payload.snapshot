@@ -8,12 +8,30 @@
       "description": undefined,
       "id": "forms-props-basic-types--props-as-written",
       "name": "Props As Written",
+      "snippet": "<template>
+  <PropsBasicTypes :count="2" enabled label="Hello" />
+</template>",
       "summary": undefined,
     },
     "forms-props-basic-types--unrepresentable-args": {
       "description": undefined,
       "id": "forms-props-basic-types--unrepresentable-args",
       "name": "Unrepresentable Args",
+      "snippet": "<script lang="ts" setup>
+const big = BigInt('9007199254740993');
+
+const config = { theme: 'dark', dense: true };
+
+const formatter = (value: number) => `#${value}`;
+
+const tags = ['alpha', 'beta'];
+
+const token = Symbol('fixture');
+</script>
+
+<template>
+  <PropsBasicTypes :big="big" :config="config" :formatter="formatter" label="Formatted" :tags="tags" :token="token" />
+</template>",
       "summary": undefined,
     },
   },

@@ -1,31 +1,59 @@
 import { readFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
-import { genImport } from 'knitwork';
-
+import { types as t, type NodePath } from 'storybook/internal/babel';
 import {
   STORY_FILE_TEST_REGEXP,
   getComponentIdFromEntry,
   getStoryImportPathFromEntry,
 } from 'storybook/internal/common';
+import { getService } from 'storybook/internal/core-server';
 import { storyNameFromExport } from 'storybook/internal/csf';
 import {
+  argsRecordFromObjectPath,
+  buildImportStatements,
   collectImportBindings,
   extractStoryJSDocInfo,
   keyOf,
   loadCsf,
+  mergeArgsRecords,
+  metaArgsRecord,
   metaObjectPath,
+  normalizeStoryDeclaration,
+  resolveComponentImport,
+  propertyValue,
+  storyAssignedArgsPath,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
+import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 
-interface BuildStoryDocsContext {
+import { classifyArgs, type VueDocgenArgInfo } from './classify-args.ts';
+import { renderSfcSnippet } from './render-sfc.ts';
+
+export interface BuildStoryDocsContext {
   /** Resolve a CSF import path to an absolute file path. Defaults to `process.cwd()` join. */
   resolvePath?: (importPath: string) => string;
+  /** Reads docgen for the component id. Defaults to the registered core/docgen service. */
+  readDocgen?: (id: string) => Promise<DocgenPayload | undefined>;
+}
+
+interface StorySnippetContext {
+  componentName: string;
+  docgenArgInfo: VueDocgenArgInfo;
+}
+
+interface StoryDocsContext {
+  /** Present only when the component identifier and docgen data can synthesize snippets. */
+  snippet: StorySnippetContext | undefined;
+  metaPath: NodePath<t.ObjectExpression> | undefined;
+  metaArgsError: StoryDoc['error'] | undefined;
+  metaArgsPath: ArgsObjectPath | undefined;
 }
 
 type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
+type ArgsObjectPath = NodePath<t.ObjectExpression>;
 
-const COMPONENT_PROPERTY = 'component';
+const ARGS_PROPERTY = 'args';
 
 /**
  * Builds Vue story-docs metadata without snippets so runtime source fallback remains authoritative.
@@ -59,15 +87,31 @@ export async function buildStoryDocsPayload(
     return undefined;
   }
 
-  const componentName = csf._meta?.component;
-  const importStatement = createImportStatement(csf);
+  const metaPath = metaObjectPath(csf);
+  const id = getComponentIdFromEntry(input.entry);
+  let docgenPayload: DocgenPayload | undefined;
+  try {
+    docgenPayload = await (context.readDocgen ?? readStoredDocgen)(id);
+  } catch {
+    // Docgen is optional here: without it the payload is still built, just without snippets.
+  }
+  const componentName = resolveMetaComponentIdentifier(metaPath);
+  const importStatement = createImportStatement(csf, componentName);
+  const docgenArgInfo =
+    docgenPayload && !docgenPayload.error ? vueDocgenArgInfo(docgenPayload) : undefined;
+  const snippet = componentName && docgenArgInfo ? { componentName, docgenArgInfo } : undefined;
 
   return {
-    id: getComponentIdFromEntry(input.entry),
-    name: componentName ?? fallbackTitle(input.entry.title),
+    id,
+    name: componentName ?? docgenPayload?.name ?? fallbackTitle(input.entry.title),
     path: storyFilePath,
     ...(importStatement ? { import: importStatement } : {}),
-    stories: extractStories(csf),
+    stories: extractStories(csf, {
+      snippet,
+      metaPath,
+      metaArgsError: argsContainerError(metaPath),
+      metaArgsPath: argsObjectPathFromObjectPath(metaPath),
+    }),
   };
 }
 
@@ -76,52 +120,207 @@ function fallbackTitle(title: string): string {
   return title.split('/').at(-1)!.replace(/\s+/g, '');
 }
 
-function resolveMetaComponentIdentifier(csf: ParsedCsf): string | undefined {
-  const metaPath = metaObjectPath(csf);
-  const componentProperty = metaPath
-    ?.get('properties')
-    .find((property) => property.isObjectProperty() && keyOf(property.node) === COMPONENT_PROPERTY);
-
-  if (!componentProperty?.isObjectProperty()) {
-    return undefined;
-  }
-
-  const value = componentProperty.get('value');
-  return value.isIdentifier() ? value.node.name : undefined;
+/**
+ * Name of the identifier assigned to the meta `component` property, used as payload name,
+ * import-binding lookup key, and snippet tag so all three stay coherent.
+ *
+ * @example `component: MyButton` → `'MyButton'`; `component: UI.Button` → `undefined`
+ */
+function resolveMetaComponentIdentifier(
+  metaPath: NodePath<t.ObjectExpression> | undefined
+): string | undefined {
+  const value = propertyValue(metaPath?.node, 'component');
+  return t.isIdentifier(value) ? value.name : undefined;
 }
 
-function createImportStatement(csf: ParsedCsf): string | undefined {
-  const componentName = resolveMetaComponentIdentifier(csf);
+/**
+ * Reconstructs the component's import statement from the story file's import bindings.
+ */
+function createImportStatement(csf: ParsedCsf, componentName?: string): string | undefined {
   if (!componentName) {
     return undefined;
   }
 
-  const binding = collectImportBindings(csf._file.path).get(componentName);
-  // Namespace imports should never reach here
-  if (!binding || binding.importName === '*') {
+  const ref = resolveComponentImport(componentName, collectImportBindings(csf._file.path));
+  return buildImportStatements({ refs: [ref] }).join('\n') || undefined;
+}
+
+/**
+ * Stored docgen for the component, extracted on demand only when nothing is stored yet.
+ */
+async function readStoredDocgen(id: string): Promise<DocgenPayload | undefined> {
+  const docgen = getService<DocgenService>('core/docgen', { internal: true });
+  return docgen.queries.docgen.get({ id }) ?? docgen.queries.docgen.loaded({ id });
+}
+
+/**
+ * Collects the slot and event names from renderer-converted argTypes.
+ */
+function vueDocgenArgInfo(payload: DocgenPayload): VueDocgenArgInfo {
+  const props = new Set<string>();
+  const slots = new Set<string>();
+  const events = new Set<string>();
+
+  for (const [name, argType] of Object.entries(payload.argTypes ?? {})) {
+    const category = argType.table?.category;
+    if (category === 'slots') {
+      slots.add(name);
+    } else if (category === 'events') {
+      events.add(name);
+    } else {
+      props.add(name);
+    }
+  }
+
+  return { props, slots, events };
+}
+
+/**
+ * AST path of the `args` property when its value is an object literal.
+ *
+ * @example `{ args: { label: 'Hi' } }` → path of `{ label: 'Hi' }`; `{ args: shared }` → undefined
+ */
+function argsObjectPathFromObjectPath(
+  path?: NodePath<t.ObjectExpression>
+): ArgsObjectPath | undefined {
+  const property = path
+    ?.get('properties')
+    .find((prop) => prop.isObjectProperty() && keyOf(prop.node) === ARGS_PROPERTY);
+
+  if (!property?.isObjectProperty()) {
     return undefined;
   }
 
-  const specifier =
-    binding.importName === 'default'
-      ? componentName
-      : [{ name: binding.importName, as: componentName }];
-  return genImport(binding.importId, specifier, { singleQuotes: true });
+  const value = property.get('value');
+  return value.isObjectExpression() ? value : undefined;
 }
 
-function extractStories(csf: ParsedCsf): Record<string, StoryDoc> {
+function argsObjectHasSpread(object: t.ObjectExpression | undefined): boolean {
+  return object?.properties.some((property) => property.type === 'SpreadElement') ?? false;
+}
+
+/**
+ * Maps every CSF story export to its StoryDoc, enriched with a snippet or error where possible.
+ */
+function extractStories(csf: ParsedCsf, options: StoryDocsContext): Record<string, StoryDoc> {
+  const metaArgs = metaArgsRecord(options.metaPath?.node);
+
   return Object.fromEntries(
     Object.entries(csf._stories).map(([storyExport, story]): [string, StoryDoc] => {
       const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[storyExport]);
-      return [
-        story.id,
-        {
-          id: story.id,
-          name: story.name ?? storyNameFromExport(storyExport),
-          description,
-          summary,
-        },
-      ];
+      const storyDoc: StoryDoc = {
+        id: story.id,
+        name: story.name ?? storyNameFromExport(storyExport),
+        description,
+        summary,
+      };
+      return [story.id, enrichStoryDoc(csf, storyExport, storyDoc, metaArgs, options)];
     })
   );
+}
+
+/**
+ * Attaches a synthesized snippet (or an "unsupported args" error) to a story doc.
+ */
+function enrichStoryDoc(
+  csf: ParsedCsf,
+  storyExport: string,
+  storyDoc: StoryDoc,
+  metaArgs: Record<string, t.Node>,
+  options: StoryDocsContext
+): StoryDoc {
+  if (!options.snippet) {
+    return storyDoc;
+  }
+  const { componentName, docgenArgInfo } = options.snippet;
+
+  let normalized;
+  try {
+    normalized = normalizeStoryDeclaration(csf._storyDeclarationPath[storyExport]);
+  } catch {
+    return storyDoc;
+  }
+
+  if (normalized.type === 'fn') {
+    return storyDoc;
+  }
+
+  const storyConfig = normalized.type === 'config' ? normalized.path.node : undefined;
+  if (hasEffectiveRender(storyConfig, options.metaPath?.node)) {
+    return storyDoc;
+  }
+
+  const storyArgsError =
+    normalized.type === 'config' ? argsContainerError(normalized.path) : undefined;
+  if (options.metaArgsError || storyArgsError) {
+    return { ...storyDoc, error: options.metaArgsError ?? storyArgsError };
+  }
+
+  // `Primary.args = { … }` runs after the declaration and replaces its args object outright, so an
+  // assignment wins over inline args rather than merging with them.
+  const storyArgsPath =
+    storyAssignedArgsPath(csf._file.path, storyExport) ??
+    (normalized.type === 'config' ? argsObjectPathFromObjectPath(normalized.path) : undefined);
+  if (argsObjectHasSpread(options.metaArgsPath?.node) || argsObjectHasSpread(storyArgsPath?.node)) {
+    return {
+      ...storyDoc,
+      error: {
+        name: 'Unsupported story args',
+        message: 'Story args contain a spread value, which cannot be statically inlined yet.',
+      },
+    };
+  }
+
+  const storyArgs = argsRecordFromObjectPath(storyArgsPath);
+  const classified = classifyArgs(mergeArgsRecords(metaArgs, storyArgs), docgenArgInfo);
+  if (classified.defer) {
+    return storyDoc;
+  }
+
+  return {
+    ...storyDoc,
+    snippet: renderSfcSnippet({
+      componentName,
+      args: classified.args,
+    }),
+    ...(classified.warning ? { warning: classified.warning } : {}),
+  };
+}
+
+/**
+ * Effective render presence means runtime source stays authoritative.
+ */
+function hasEffectiveRender(
+  storyConfig: t.ObjectExpression | undefined,
+  metaConfig: t.ObjectExpression | undefined
+): boolean {
+  return Boolean(propertyValue(storyConfig, 'render') || propertyValue(metaConfig, 'render'));
+}
+
+/**
+ * Error for an `args` value that is not an object literal and so cannot be statically inlined.
+ *
+ * @example `{ args: sharedArgs }` → "Unsupported story args"; `{ args: { a: 1 } }` → undefined
+ */
+function argsContainerError(path?: NodePath<t.ObjectExpression>): StoryDoc['error'] | undefined {
+  const value = propertyValue(path?.node, ARGS_PROPERTY);
+  if (!value) {
+    return undefined;
+  }
+
+  if (t.isObjectExpression(value)) {
+    return undefined;
+  }
+
+  if (t.isIdentifier(value)) {
+    return {
+      name: 'Unsupported story args',
+      message: `Arg "args" references "${value.name}", which cannot be statically inlined yet.`,
+    };
+  }
+
+  return {
+    name: 'Unsupported story args',
+    message: 'Story args must be an object literal to be statically inlined.',
+  };
 }

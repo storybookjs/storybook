@@ -1242,6 +1242,13 @@ export const normal: TemplateKey[] = [
   'react-rsbuild/default-ts',
   'tanstack-react-router/default-ts',
   'tanstack-react-start/default-ts',
+  // The only sandbox that records docgen baselines. Running it daily meant a change to the
+  // extraction could merge without ever touching them, which is how the props-table visibility
+  // rules landed on a stale recording.
+  // TODO(11.0): remove this template. The standard sandboxes ship the new docgen approach by
+  // default from then on, so `angular-vite/default-ts` carries the baselines and this one is
+  // redundant.
+  'angular-vite/docgen-server-ts',
 ];
 
 export const merged: TemplateKey[] = [
@@ -1259,10 +1266,6 @@ export const merged: TemplateKey[] = [
 export const daily: TemplateKey[] = [
   ...merged,
   'angular-vite/21-ts',
-  // TODO(11.0): remove this template. The standard sandboxes ship the new docgen approach by
-  // default from then on, so `angular-vite/default-ts` carries the baselines and this one is
-  // redundant.
-  'angular-vite/docgen-server-ts',
   // TODO: Add this back once we resolve the React 19 issues
   // 'cra/default-js',
   'react-vite/default-js',

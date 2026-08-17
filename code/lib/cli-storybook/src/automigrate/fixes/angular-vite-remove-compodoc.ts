@@ -2,9 +2,10 @@ import { writeFile } from 'node:fs/promises';
 
 import { traverse, types as t } from 'storybook/internal/babel';
 import { editJsonText, isStorybookTarget, type JSONEditPath } from 'storybook/internal/cli';
-import { formatFileContent } from 'storybook/internal/common';
+import { formatFileContent, type JsPackageManager } from 'storybook/internal/common';
 import { formatConfig, readConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 
@@ -17,7 +18,7 @@ export const COMPODOC_PACKAGE = '@compodoc/compodoc';
 const SET_COMPODOC_JSON = 'setCompodocJson';
 const ADDON_DOCS_ANGULAR = '@storybook/addon-docs/angular';
 
-interface AngularViteRemoveCompodocOptions {
+export interface AngularViteRemoveCompodocOptions {
   hasFrameworkOptions: boolean;
   hasPreviewWiring: boolean;
   workspaceJsonPaths: string[];
@@ -86,34 +87,7 @@ export const angularViteRemoveCompodoc: Fix<AngularViteRemoveCompodocOptions> = 
       return null;
     }
 
-    const frameworkOptions =
-      typeof mainConfig.framework === 'string' ? undefined : mainConfig.framework?.options;
-    const hasFrameworkOptions = !!(
-      frameworkOptions &&
-      ('compodoc' in frameworkOptions || 'compodocArgs' in frameworkOptions)
-    );
-
-    const hasPreviewWiring =
-      !!previewConfigPath &&
-      existsSync(previewConfigPath) &&
-      previewCallsSetCompodocJson(readFileSync(previewConfigPath, 'utf8'));
-
-    const workspaceJsonPaths = (
-      await workspaceJsonCandidates(packageManager.packageJsonPaths)
-    ).filter(hasCompodocOptions);
-
-    const hasCompodocDependency = !!(await packageManager.getDependencyVersion(COMPODOC_PACKAGE));
-
-    if (
-      !hasFrameworkOptions &&
-      !hasPreviewWiring &&
-      workspaceJsonPaths.length === 0 &&
-      !hasCompodocDependency
-    ) {
-      return null;
-    }
-
-    return { hasFrameworkOptions, hasPreviewWiring, workspaceJsonPaths, hasCompodocDependency };
+    return findCompodocSetup({ mainConfig, previewConfigPath, packageManager });
   },
 
   prompt: () =>
@@ -128,31 +102,93 @@ export const angularViteRemoveCompodoc: Fix<AngularViteRemoveCompodocOptions> = 
     mainConfigPath,
     previewConfigPath,
     packageManager,
-  }: RunOptions<AngularViteRemoveCompodocOptions>) => {
-    const { hasFrameworkOptions, hasPreviewWiring, workspaceJsonPaths, hasCompodocDependency } =
-      result;
+  }: RunOptions<AngularViteRemoveCompodocOptions>) =>
+    removeCompodocSetup({ result, dryRun, mainConfigPath, previewConfigPath, packageManager }),
+};
 
-    if (hasFrameworkOptions) {
-      await updateMainConfig({ mainConfigPath, dryRun }, (main) => {
-        main.removeField(['framework', 'options', 'compodoc']);
-        main.removeField(['framework', 'options', 'compodocArgs']);
-      });
-      logger.step(`Removed the Compodoc framework options from ${mainConfigPath}`);
-    }
+/**
+ * Every trace of the Compodoc setup, or `null` when the project carries none.
+ *
+ * Split from the fix so the angular-to-angular-vite migration can reach it: that migration switches
+ * the framework mid-run, which no later fix can see, since every fix is checked against the main
+ * config as it was when the run started.
+ */
+export const findCompodocSetup = async ({
+  mainConfig,
+  previewConfigPath,
+  packageManager,
+}: {
+  mainConfig: StorybookConfigRaw;
+  previewConfigPath?: string;
+  packageManager: JsPackageManager;
+}): Promise<AngularViteRemoveCompodocOptions | null> => {
+  const frameworkOptions =
+    typeof mainConfig.framework === 'string' ? undefined : mainConfig.framework?.options;
+  const hasFrameworkOptions = !!(
+    frameworkOptions &&
+    ('compodoc' in frameworkOptions || 'compodocArgs' in frameworkOptions)
+  );
 
-    if (hasPreviewWiring && previewConfigPath) {
-      await removePreviewWiring(previewConfigPath, dryRun);
-    }
+  const hasPreviewWiring =
+    !!previewConfigPath &&
+    existsSync(previewConfigPath) &&
+    previewCallsSetCompodocJson(readFileSync(previewConfigPath, 'utf8'));
 
-    for (const workspaceJsonPath of workspaceJsonPaths) {
-      removeCompodocOptions(workspaceJsonPath, dryRun);
-    }
+  const workspaceJsonPaths = (
+    await workspaceJsonCandidates(packageManager.packageJsonPaths)
+  ).filter(hasCompodocOptions);
 
-    if (hasCompodocDependency && !dryRun) {
-      await packageManager.removeDependencies([COMPODOC_PACKAGE]);
-      logger.step(`Removed ${COMPODOC_PACKAGE}`);
-    }
-  },
+  const hasCompodocDependency = !!(await packageManager.getDependencyVersion(COMPODOC_PACKAGE));
+
+  if (
+    !hasFrameworkOptions &&
+    !hasPreviewWiring &&
+    workspaceJsonPaths.length === 0 &&
+    !hasCompodocDependency
+  ) {
+    return null;
+  }
+
+  return { hasFrameworkOptions, hasPreviewWiring, workspaceJsonPaths, hasCompodocDependency };
+};
+
+/** Deletes what {@link findCompodocSetup} reported, wherever it lives. */
+export const removeCompodocSetup = async ({
+  result,
+  dryRun,
+  mainConfigPath,
+  previewConfigPath,
+  packageManager,
+}: {
+  result: AngularViteRemoveCompodocOptions;
+  dryRun: boolean;
+  mainConfigPath: string;
+  previewConfigPath?: string;
+  packageManager: JsPackageManager;
+}): Promise<void> => {
+  const { hasFrameworkOptions, hasPreviewWiring, workspaceJsonPaths, hasCompodocDependency } =
+    result;
+
+  if (hasFrameworkOptions) {
+    await updateMainConfig({ mainConfigPath, dryRun }, (main) => {
+      main.removeField(['framework', 'options', 'compodoc']);
+      main.removeField(['framework', 'options', 'compodocArgs']);
+    });
+    logger.step(`Removed the Compodoc framework options from ${mainConfigPath}`);
+  }
+
+  if (hasPreviewWiring && previewConfigPath) {
+    await removePreviewWiring(previewConfigPath, dryRun);
+  }
+
+  for (const workspaceJsonPath of workspaceJsonPaths) {
+    removeCompodocOptions(workspaceJsonPath, dryRun);
+  }
+
+  if (hasCompodocDependency && !dryRun) {
+    await packageManager.removeDependencies([COMPODOC_PACKAGE]);
+    logger.step(`Removed ${COMPODOC_PACKAGE}`);
+  }
 };
 
 const manualRemovalHint = (previewConfigPath: string, reason: string) =>

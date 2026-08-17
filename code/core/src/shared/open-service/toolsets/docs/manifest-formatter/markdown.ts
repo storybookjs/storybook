@@ -28,9 +28,16 @@ import {
  */
 export const MAX_STORIES_TO_SHOW = 3;
 
+/** Tags rendered above the description: they gate whether to use the component at all. */
+const TOP_JSDOC_TAG_NAMES = new Set(['deprecated']);
+const EXAMPLE_JSDOC_TAG_NAME = 'example';
+const HIDDEN_JSDOC_TAG_NAMES = new Set(['ignore', 'desc', 'description', 'describe']);
+
 type ListFormattingOptions = {
   withStoryIds?: boolean;
 };
+
+type JsDocTags = Record<string, string[]>;
 
 function formatComponentLine(component: ComponentManifestEntry): string {
   const summary =
@@ -98,6 +105,70 @@ function getParsedDocgen(
     return parseReactComponentMeta(componentManifest.reactComponentMeta);
   }
   return undefined;
+}
+
+function getNonEmptyJsDocTags(jsDocTags: JsDocTags | undefined): JsDocTags | undefined {
+  return jsDocTags && Object.keys(jsDocTags).length > 0 ? jsDocTags : undefined;
+}
+
+function getComponentTags(
+  componentManifest: Pick<ComponentManifest | SubcomponentManifest, 'jsDocTags'>,
+  parsedDocgen: ParsedDocgen | undefined
+): JsDocTags | undefined {
+  return getNonEmptyJsDocTags(componentManifest.jsDocTags) ?? parsedDocgen?.tags;
+}
+
+function formatTagName(tagName: string): string {
+  return tagName.charAt(0).toUpperCase() + tagName.slice(1);
+}
+
+function formatJsDocTagBlockquote(tagName: string, values: string[]): string[] {
+  return values.map((value) => {
+    const trimmedValue = value.trim();
+    const label = formatTagName(tagName);
+    return trimmedValue ? `> **${label}:** ${trimmedValue}` : `> **${label}**`;
+  });
+}
+
+function isTopJsDocTag(tagName: string): boolean {
+  return TOP_JSDOC_TAG_NAMES.has(tagName);
+}
+
+function isGenericJsDocTag(tagName: string): boolean {
+  return (
+    !TOP_JSDOC_TAG_NAMES.has(tagName) &&
+    tagName !== EXAMPLE_JSDOC_TAG_NAME &&
+    !HIDDEN_JSDOC_TAG_NAMES.has(tagName)
+  );
+}
+
+function formatJsDocTags(
+  jsDocTags: JsDocTags | undefined,
+  includeTag: (tagName: string) => boolean
+): string[] {
+  const parts: string[] = [];
+
+  for (const [tagName, values] of Object.entries(jsDocTags ?? {})) {
+    if (includeTag(tagName)) {
+      parts.push(...formatJsDocTagBlockquote(tagName, values));
+    }
+  }
+
+  if (parts.length > 0) {
+    parts.push('');
+  }
+
+  return parts;
+}
+
+function formatExampleJsDocTags(jsDocTags: JsDocTags | undefined): string[] {
+  const examples = jsDocTags?.[EXAMPLE_JSDOC_TAG_NAME];
+
+  if (!examples || examples.length === 0) {
+    return [];
+  }
+
+  return examples.flatMap((example) => ['**Example:**', '```', example, '```', '']);
 }
 
 /**
@@ -205,8 +276,12 @@ function formatSubcomponentsSection(
   parts.push('');
 
   for (const [key, subcomponent] of Object.entries(subcomponents)) {
+    const parsedDocgen = getParsedDocgen(subcomponent);
+    const jsDocTags = getComponentTags(subcomponent, parsedDocgen);
+
     parts.push(`### ${subcomponent.name || key}`);
     parts.push('');
+    parts.push(...formatJsDocTags(jsDocTags, isTopJsDocTag));
 
     if (subcomponent.summary) {
       parts.push(subcomponent.summary);
@@ -217,6 +292,9 @@ function formatSubcomponentsSection(
       parts.push(subcomponent.description);
       parts.push('');
     }
+
+    parts.push(...formatJsDocTags(jsDocTags, isGenericJsDocTag));
+    parts.push(...formatExampleJsDocTags(jsDocTags));
 
     if (subcomponent.import) {
       parts.push('```');
@@ -241,7 +319,6 @@ function formatSubcomponentsSection(
       continue;
     }
 
-    const parsedDocgen = getParsedDocgen(subcomponent);
     const typeName = `${(subcomponent.name || key).replace(/\W+/g, '')}Props`;
     parts.push(...formatPropsSection(parsedDocgen, { title: '#### Props', typeName }));
   }
@@ -254,12 +331,15 @@ function formatSubcomponentsSection(
  */
 export function formatComponentManifest(componentManifest: ComponentManifest): string {
   const parts: string[] = [];
+  const parsedDocgen = getParsedDocgen(componentManifest);
+  const jsDocTags = getComponentTags(componentManifest, parsedDocgen);
 
   // Component header
   parts.push(`# ${componentManifest.name}`);
   parts.push('');
   parts.push(`ID: ${componentManifest.id}`);
   parts.push('');
+  parts.push(...formatJsDocTags(jsDocTags, isTopJsDocTag));
 
   // Description section
   if (componentManifest.description) {
@@ -267,10 +347,10 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
     parts.push('');
   }
 
-  parts.push(...formatSubcomponentsSection(componentManifest.subcomponents));
+  parts.push(...formatJsDocTags(jsDocTags, isGenericJsDocTag));
+  parts.push(...formatExampleJsDocTags(jsDocTags));
 
-  // Parse docgen data (from either engine)
-  const parsedDocgen = getParsedDocgen(componentManifest);
+  parts.push(...formatSubcomponentsSection(componentManifest.subcomponents));
 
   // A framework's own API markdown leads, because it is the component's contract and the stories
   // below are examples of applying it. The `react*` props section keeps its historical position.

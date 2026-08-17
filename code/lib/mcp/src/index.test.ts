@@ -84,15 +84,15 @@ describe('createStorybookMcpHandler', () => {
     expect(tools.tools).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
-          name: 'list-all-documentation',
+          name: 'docs-list',
           title: 'List All Documentation',
         }),
         expect.objectContaining({
-          name: 'get-documentation',
+          name: 'docs-show',
           title: 'Get Documentation',
         }),
         expect.objectContaining({
-          name: 'get-documentation-for-story',
+          name: 'docs-show-story',
           title: 'Get Documentation for Story',
         }),
       ])
@@ -106,21 +106,21 @@ describe('createStorybookMcpHandler', () => {
     const instructions = client.getInstructions();
     expect(instructions).toBeDefined();
     expect(instructions).toMatchInlineSnapshot(`
-			"## Documentation Workflow
+      "## Documentation Workflow
 
-			**CRITICAL: Never hallucinate component properties!** Before using ANY property on a component (even common-sounding ones like \`shadow\`), you MUST verify it is documented via these tools. If it is not documented, it does not exist — never assume props from naming conventions or other libraries; report it to the user instead.
+      **CRITICAL: Never hallucinate component properties!** Before using ANY property on a component (even common-sounding ones like \`shadow\`), you MUST verify it is documented via these tools. If it is not documented, it does not exist — never assume props from naming conventions or other libraries; report it to the user instead.
 
-			1. Call **list-all-documentation** once at the start of the task to discover available component and docs IDs.
-			2. Call **get-documentation** with an \`id\` from that list to retrieve full component docs, props, usage examples, and stories.
-			3. Call **get-documentation-for-story** for extra docs on a story variant not covered by the component docs.
+      1. Call **docs-list** once at the start of the task to discover available component and docs IDs.
+      2. Call **docs-show** with an \`id\` from that list to retrieve full component docs, props, usage examples, and stories.
+      3. Call **docs-show-story** for extra docs on a story variant not covered by the component docs.
 
-			Only use properties explicitly documented or shown in example stories. Only reference IDs returned by these tools; never guess IDs.
+      Only use properties explicitly documented or shown in example stories. Only reference IDs returned by these tools; never guess IDs.
 
-			## Multi-Source Requests
+      ## Multi-Source Requests
 
-			- With multiple sources configured, **list-all-documentation** returns entries from every source; pass \`storybookId\` to **get-documentation** to scope one.
-			"
-		`);
+      - With multiple sources configured, **docs-list** returns entries from every source; pass \`storybookId\` to **docs-show** to scope one.
+      "
+    `);
   });
 
   it('should call onSessionInitialize handler when provided', async () => {
@@ -142,7 +142,7 @@ describe('createStorybookMcpHandler', () => {
     );
   });
 
-  it('should use manifestProvider when calling list-all-documentation', async () => {
+  it('should use manifestProvider when calling docs-list', async () => {
     const manifestProvider = createManifestProviderMock();
 
     const handler = await createStorybookMcpHandler({
@@ -151,7 +151,7 @@ describe('createStorybookMcpHandler', () => {
     await setupClient(handler);
 
     const result = await client.callTool({
-      name: 'list-all-documentation',
+      name: 'docs-list',
       arguments: {},
     });
 
@@ -181,7 +181,7 @@ describe('createStorybookMcpHandler', () => {
     await setupClient(handler);
 
     await client.callTool({
-      name: 'list-all-documentation',
+      name: 'docs-list',
       arguments: {},
     });
 
@@ -225,7 +225,7 @@ describe('createStorybookMcpHandler', () => {
     });
 
     await client.callTool({
-      name: 'list-all-documentation',
+      name: 'docs-list',
       arguments: {},
     });
 
@@ -257,7 +257,7 @@ describe('createStorybookMcpHandler', () => {
     await setupClient(handler);
 
     await client.callTool({
-      name: 'list-all-documentation',
+      name: 'docs-list',
       arguments: {},
     });
 
@@ -282,7 +282,7 @@ describe('createStorybookMcpHandler', () => {
     await setupClient(handler);
 
     const result = await client.callTool({
-      name: 'get-documentation',
+      name: 'docs-show',
       arguments: {
         id: 'button',
       },
@@ -313,7 +313,7 @@ describe('createStorybookMcpHandler', () => {
     await setupClient(handler);
 
     const result = await client.callTool({
-      name: 'list-all-documentation',
+      name: 'docs-list',
       arguments: {},
     });
 
@@ -324,7 +324,7 @@ describe('createStorybookMcpHandler', () => {
     });
   });
 
-  it('should handle non-existent component ID in get-documentation', async () => {
+  it('should handle a non-existent component ID in docs-show', async () => {
     const onGetDocumentation = vi.fn();
     const manifestProvider = createManifestProviderMock();
 
@@ -335,7 +335,7 @@ describe('createStorybookMcpHandler', () => {
     await setupClient(handler);
 
     const result = await client.callTool({
-      name: 'get-documentation',
+      name: 'docs-show',
       arguments: {
         id: 'non-existent',
       },
@@ -358,7 +358,7 @@ describe('createStorybookMcpHandler', () => {
   });
 
   describe('with docs manifest', () => {
-    it('should return docs entries in list-all-documentation when docs manifest is available', async () => {
+    it('should return docs entries in docs-list when docs manifest is available', async () => {
       const manifestProvider = createManifestProviderMockWithDocs();
 
       const handler = await createStorybookMcpHandler({
@@ -367,7 +367,7 @@ describe('createStorybookMcpHandler', () => {
       await setupClient(handler);
 
       const result = await client.callTool({
-        name: 'list-all-documentation',
+        name: 'docs-list',
         arguments: {},
       });
 
@@ -400,7 +400,7 @@ describe('createStorybookMcpHandler', () => {
       await setupClient(handler);
 
       await client.callTool({
-        name: 'list-all-documentation',
+        name: 'docs-list',
         arguments: {},
       });
 
@@ -428,7 +428,7 @@ describe('createStorybookMcpHandler', () => {
       await setupClient(handler);
 
       const result = await client.callTool({
-        name: 'get-documentation',
+        name: 'docs-show',
         arguments: {
           id: 'getting-started',
         },

@@ -1,6 +1,6 @@
 import { type NodePath, types as t } from 'storybook/internal/babel';
 
-import { keyOf } from './utils.ts';
+import { keyOf, unwrapExpression } from './utils.ts';
 
 /** Args object expression → record of arg name to its value AST node. */
 export const argsRecordFromObjectPath = (
@@ -25,6 +25,12 @@ export const argsRecordFromObjectNode = (
   }
 
   return result;
+};
+
+/** Args record from any annotation value node, unwrapping TS assertion wrappers first. */
+export const argsRecordFromNode = (node?: t.Node): Record<string, t.Node> => {
+  const unwrapped = node && unwrapExpression(node);
+  return unwrapped && t.isObjectExpression(unwrapped) ? argsRecordFromObjectNode(unwrapped) : {};
 };
 
 /** `args` record of a CSF meta object expression. */

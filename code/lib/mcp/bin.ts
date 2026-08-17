@@ -16,20 +16,16 @@ import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { StdioTransport } from '@tmcp/transport-stdio';
 import pkgJson from './package.json' with { type: 'json' };
-import { addListAllDocumentationTool } from './src/tools/list-all-documentation.ts';
-import { addGetStoryDocumentationTool } from './src/tools/get-documentation-for-story.ts';
-import { addGetDocumentationTool } from './src/tools/get-documentation.ts';
+import {
+  addGetDocumentationTool,
+  addGetStoryDocumentationTool,
+  addListAllDocumentationTool,
+} from './src/tools/register.ts';
+import { DOCS_TOOLSET_INSTRUCTIONS as serverInstructions } from 'storybook/internal/toolsets-docs';
 import type { StorybookContext } from './src/types.ts';
 import { parseArgs } from 'node:util';
 import * as fs from 'node:fs/promises';
-import { readFileSync } from 'node:fs';
 import { resolve, dirname, sep } from 'node:path';
-import { fileURLToPath } from 'node:url';
-
-const serverInstructions = readFileSync(
-  resolve(dirname(fileURLToPath(import.meta.url)), './src/instructions.md'),
-  'utf-8'
-);
 
 function resolveManifestFile(base: string, rel: string): string {
   const resolvedBase = resolve(base);

@@ -20,7 +20,7 @@ const review = isReviewEnabled();
 // Building with the external Reshaped components requires the docs tools —
 // props must not be guessed or read out of node_modules.
 // Known failure on the codex+mcp cell: GPT-5.5 intermittently builds the
-// component from prior knowledge without calling get-documentation (CI run
+// component from prior knowledge without calling docs-show (CI run
 // 28673251562 plus local runs, 2026-07-03; roughly one run in four), despite
 // the tool descriptions and server instructions demanding the lookup.
 // Codex-plugin runs pass consistently. Re-enable when Codex MCP runs
@@ -28,12 +28,12 @@ const review = isReviewEnabled();
 test.skipIf(getEvalContext().agent === 'codex' && getEvalContext().integration === 'mcp')(
   'uses the documentation tooling',
   () => {
-    expectWorkflowCalls(['get-documentation']);
+    expectWorkflowCalls(['docs-show']);
   }
 );
 
 test.runIf(review)('uses Storybook story instructions and publishes a display review', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
+  expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
   expectDisplayReviewForVisualChange();
 });
 
@@ -57,7 +57,7 @@ test.runIf(review)('every new story appears in the display review', () => {
   expectAllStoryExportsInDisplayReview();
 });
 
-// TODO: Re-enable once the display-review workflow guidance teaches the agent
+// TODO: Re-enable once the review-create workflow guidance teaches the agent
 // to group stories into 2-5 meaningful collections (e.g. visual states vs
 // interaction behavior). The judge currently fails runs because the agent
 // publishes one collection containing every story (score 0.15 < 0.5 in the

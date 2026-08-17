@@ -1,11 +1,12 @@
-// Ported verbatim from `@storybook/mcp`'s manifest-formatter tests
-// (`packages/mcp/src/utils/manifest-formatter/markdown.test.ts`): the parity suite binding the MCP
-// consumer's Markdown output to this port until Milestone 4 deletes the original. The
-// multi-source describe block is omitted along with its formatter.
+// The parity suite binding the Markdown every docs-tool consumer receives.
 import { describe, it, expect } from 'vitest';
 import type { AllManifests, ComponentManifest, ComponentManifestMap } from './manifest-types.ts';
 import fullManifestFixture from './full-manifest.fixture.json' with { type: 'json' };
-import { formatComponentManifest, formatManifestsToLists } from './markdown.ts';
+import {
+  formatComponentManifest,
+  formatManifestsToLists,
+  formatMultiSourceManifestsToLists,
+} from './markdown.ts';
 
 describe('MarkdownFormatter - formatComponentManifest', () => {
   it('formats all full fixtures', () => {
@@ -1063,6 +1064,164 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 			\`\`\`"
 		`);
   });
+
+  describe('apiDescription section', () => {
+    const angularApiDescription = [
+      '## Inputs',
+      '',
+      '```',
+      'export type ColorPickerComponentInputs = {',
+      '  /**',
+      '   * The currently selected colour',
+      '   *',
+      "   * @default '#345F92'",
+      '   */',
+      '  color?: string; // two-way: [(color)]',
+      '}',
+      '```',
+      '',
+      '## Outputs',
+      '',
+      '```',
+      'export type ColorPickerComponentOutputs = {',
+      '  colorChange: (e: string) => void;',
+      '}',
+      '```',
+    ].join('\n');
+
+    it('renders the framework-authored markdown in place of the props section', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        apiDescription: angularApiDescription,
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# ColorPickerComponent
+
+        ID: color-picker
+
+        ## Inputs
+
+        \`\`\`
+        export type ColorPickerComponentInputs = {
+          /**
+           * The currently selected colour
+           *
+           * @default '#345F92'
+           */
+          color?: string; // two-way: [(color)]
+        }
+        \`\`\`
+
+        ## Outputs
+
+        \`\`\`
+        export type ColorPickerComponentOutputs = {
+          colorChange: (e: string) => void;
+        }
+        \`\`\`"
+      `);
+    });
+
+    it('wins over the react docgen fields, which then do not also render', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        apiDescription: angularApiDescription,
+        reactDocgen: {
+          props: {
+            label: { type: { name: 'string' }, description: 'From react-docgen' },
+          },
+        },
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toContain('## Inputs');
+      expect(result).not.toContain('## Props');
+      expect(result).not.toContain('From react-docgen');
+    });
+
+    it('limits the stories shown in full, as a react props table does', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        apiDescription: angularApiDescription,
+        stories: [
+          { name: 'Default', snippet: '<app-color-picker />' },
+          { name: 'Red', snippet: '<app-color-picker color="#f00" />' },
+          { name: 'Green', snippet: '<app-color-picker color="#0f0" />' },
+          { name: 'Blue', summary: 'A blue picker', snippet: '<app-color-picker color="#00f" />' },
+        ],
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toContain('### Other Stories');
+      expect(result).toContain('- Blue: A blue picker');
+    });
+
+    it('leads with the api sections, ahead of the stories that apply them', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        apiDescription: angularApiDescription,
+        stories: [{ name: 'Default', snippet: '<app-color-picker />' }],
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result.indexOf('## Inputs')).toBeLessThan(result.indexOf('## Stories'));
+      expect(result.indexOf('## Outputs')).toBeLessThan(result.indexOf('## Stories'));
+    });
+
+    it('nests a subcomponent`s own sections under its heading', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        subcomponents: {
+          swatch: { name: 'SwatchComponent', apiDescription: angularApiDescription },
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# ColorPickerComponent
+
+        ID: color-picker
+
+        ## Subcomponents
+
+        ### SwatchComponent
+
+        #### Inputs
+
+        \`\`\`
+        export type ColorPickerComponentInputs = {
+          /**
+           * The currently selected colour
+           *
+           * @default '#345F92'
+           */
+          color?: string; // two-way: [(color)]
+        }
+        \`\`\`
+
+        #### Outputs
+
+        \`\`\`
+        export type ColorPickerComponentOutputs = {
+          colorChange: (e: string) => void;
+        }
+        \`\`\`"
+      `);
+    });
+  });
 });
 
 describe('MarkdownFormatter - formatManifestsToLists', () => {
@@ -1483,5 +1642,30 @@ describe('MarkdownFormatter - formatManifestsToLists', () => {
 				- Auto Summary Doc (auto-summary): This content will be extracted automatically."
 			`);
     });
+  });
+});
+
+describe('MarkdownFormatter - formatMultiSourceManifestsToLists', () => {
+  it('formats requires-own-mcp source notices without an error prefix', () => {
+    const result = formatMultiSourceManifestsToLists([
+      {
+        source: { id: 'tetra', title: 'Tetra Design System', url: 'https://tetra.chromatic.com' },
+        notice: {
+          kind: 'requires-own-mcp',
+          endpoint: 'https://tetra.chromatic.com/mcp',
+        },
+      },
+    ]);
+
+    expect(result).toMatchInlineSnapshot(`
+			"# Tetra Design System
+			id: tetra
+
+			This composed Storybook is private and cannot be read through the local Storybook MCP proxy.
+
+			Use this source's own MCP endpoint instead:
+			https://tetra.chromatic.com/mcp"
+		`);
+    expect(result).not.toContain('error:');
   });
 });

@@ -1,6 +1,5 @@
 {
   "id": "unsupported-args",
-  "import": "import UnsupportedArgsButton from './UnsupportedArgsButton.vue';",
   "name": "UnsupportedArgsButton",
   "path": "__PATH__",
   "stories": {

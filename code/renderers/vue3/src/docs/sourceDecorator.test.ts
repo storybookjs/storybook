@@ -2,14 +2,14 @@ import { expect, test } from 'vitest';
 
 import { h } from 'vue';
 
-import type { SourceCodeGeneratorContext } from './sourceDecorator';
+import type { SourceCodeGeneratorContext } from './sourceDecorator.ts';
 import {
   generatePropsSourceCode,
   generateSlotSourceCode,
   generateSourceCode,
   getFunctionParamNames,
   parseDocgenInfo,
-} from './sourceDecorator';
+} from './sourceDecorator.ts';
 
 test('should generate source code for props', () => {
   const ctx: SourceCodeGeneratorContext = {

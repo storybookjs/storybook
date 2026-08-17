@@ -6,8 +6,7 @@ import { componentWrapperDecorator } from './decorators.ts';
 import decorateStory from './decorateStory.ts';
 import type { AngularRenderer } from './types.ts';
 
-// TODO: Fix. Test is infinitely running.
-describe.skip('decorateStory', () => {
+describe('decorateStory', () => {
   describe('angular behavior', () => {
     it('should use componentWrapperDecorator with args', () => {
       const decorators: DecoratorFunction<AngularRenderer>[] = [
@@ -37,8 +36,11 @@ describe.skip('decorateStory', () => {
           grandparentInput: 'grandparent input',
           parentOutput: expect.any(Function),
         },
-        template:
-          '<great-grandparent><grandparent [grandparentInput]="grandparentInput"><parent [parentInput]="parentInput" (parentOutput)="parentOutput($event)"></child></parent></grandparent></great-grandparent>',
+        template: `<great-grandparent><grandparent [grandparentInput]="grandparentInput"><parent
+    [parentInput]="parentInput"
+    (parentOutput)="parentOutput($event)">
+</child>
+</parent></grandparent></great-grandparent>`,
         userDefinedTemplate: true,
       });
     });
@@ -76,8 +78,11 @@ describe.skip('decorateStory', () => {
           grandparentInput: 'Grandparent input',
           sameInput: 'Story input',
         },
-        template:
-          '<great-grandparent><grandparent [grandparentInput]="grandparentInput"><parent [parentInput]="parentInput" (parentOutput)="parentOutput($event)"></child></parent></grandparent></great-grandparent>',
+        template: `<great-grandparent><grandparent [grandparentInput]="grandparentInput"><parent
+    [parentInput]="parentInput"
+    (parentOutput)="parentOutput($event)">
+</child>
+</parent></grandparent></great-grandparent>`,
         userDefinedTemplate: true,
       });
     });
@@ -207,7 +212,7 @@ describe.skip('decorateStory', () => {
       });
     });
 
-    it('should only keeps args with a control or an action in argTypes', () => {
+    it('passes every arg to the story, including ones carrying no control', () => {
       const decorated = decorateStory(
         (context: StoryContext) => ({
           template: `Args available in the story : ${Object.keys(context.args).join()}`,
@@ -222,17 +227,17 @@ describe.skip('decorateStory', () => {
             argTypes: {
               withControl: { control: { type: 'object' }, name: 'withControl' },
               withAction: { action: 'onClick', name: 'withAction' },
-              toRemove: { name: 'toRemove' },
+              plain: { name: 'plain' },
             },
             args: {
               withControl: 'withControl',
               withAction: () => ({}),
-              toRemove: 'toRemove',
+              plain: 'plain',
             },
           })
         )
       ).toEqual({
-        template: 'Args available in the story : withControl,withAction',
+        template: 'Args available in the story : withControl,withAction,plain',
         userDefinedTemplate: true,
       });
     });

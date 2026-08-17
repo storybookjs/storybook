@@ -6,20 +6,30 @@ import {
   getAutomockCode,
   getRealPath,
 } from 'storybook/internal/mocking-utils';
-import type { PresetProperty } from 'storybook/internal/types';
+import type { PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
 
 import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { basename, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { resolveCompodocConfig } from './compodoc-config.ts';
+import { DOCUMENTATION_JSON, resolveCompodocConfig } from './compodoc-config.ts';
+import { resolvePropsTable, warnAboutPropsTable } from './props-table.ts';
 import { ensureCompodocDocumentation } from './compodoc/ensure-documentation.ts';
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 import type { UserConfig, Plugin } from 'vite';
 
 export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
+export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
 
 export const addons: PresetProperty<'addons'> = [];
+
+// `angular-vite` is itself experimental, so it ships one docgen path rather than two: server-side
+// extraction is the default here, while the stable webpack `@storybook/angular` keeps Compodoc.
+// A user's `main.ts` merges over this, so `features: { experimentalDocgenServer: false }` opts out.
+export const features: PresetProperty<'features'> = async (existing) => ({
+  ...existing,
+  experimentalDocgenServer: true,
+});
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   entries = [],
@@ -80,34 +90,14 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     }
   }
 
-  // Remove any loaded analogjs plugins from a vite.config.(m)ts file, and
-  // demote storybook's CSF plugin out of the "pre" bucket. csf-plugin and
-  // analogjs both declare `enforce: 'pre'`; within the same enforce bucket
-  // plugins run in registration order. builder-vite registers `plugin-csf`
-  // first, then this preset adds analogjs, so analogjs's transform — which
-  // discards the incoming `code` and re-emits from its own TS file emitter —
-  // silently overwrites the csf enrichment that adds
-  // `parameters.docs.description.story` / `parameters.docs.source
-  // .originalSource`. Demoting csf-plugin to the normal stage means it runs
-  // after analogjs has produced its compiled JS, so the enrichment lands in
-  // the bundle. csf-plugin reads the original source from disk (not the
-  // upstream `code`), so the JSDoc/source extraction is unaffected.
   // Drop any analogjs plugin loaded from the user's vite.config(.m)ts file —
-  // we register our own pinned-to-`enforce: 'pre'` instance below. Demote
-  // builder-vite's csf-plugin out of the `pre` bucket so analogjs (also
-  // `enforce: 'pre'`) doesn't overwrite csf-plugin's docs/story enrichment.
+  // we register our own pinned-to-`enforce: 'pre'` instance below.
   // The post-analogjs `angularViteRedirectReapplyPlugin` handles every mock
   // contract (redirects + automock) on top of analogjs's emitted JS, so we
   // don't need to demote `storybook:mock-loader` here.
   config.plugins = (config.plugins ?? [])
     .flat()
-    .filter((plugin: any) => !plugin.name.includes('analogjs'))
-    .map((plugin: any) => {
-      if (plugin?.name === 'plugin-csf' && plugin.enforce === 'pre') {
-        return { ...plugin, enforce: undefined };
-      }
-      return plugin;
-    });
+    .filter((plugin: any) => !plugin?.name?.includes('analogjs'));
 
   // Merge custom configuration into the default config
   const { mergeConfig, normalizePath } = await import('vite');
@@ -116,12 +106,17 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   // @ts-expect-error options is possibly undefined here, but presets.apply is guarded at runtime
   const framework = await options.presets.apply('framework');
 
-  // `storybook init` writes a static `import docJson from '../documentation.json'` into the Angular
-  // preview, so the file has to exist before Vite resolves it - in every process that builds a
-  // preview, whatever the docgen feature flag says. Generation is marked per run, so the docgen
-  // worker's own trigger costs one file read rather than a second scan.
+  // @ts-expect-error same as `framework` above: `options` is optional in the signature only
+  const resolvedFeatures: StorybookConfigRaw['features'] = await options.presets.apply(
+    'features',
+    {}
+  );
+  const docgenServer = !!resolvedFeatures?.experimentalDocgenServer;
+
+  // With the docgen server on, ACM extracts in-process and nothing reads `documentation.json`, so
+  // the whole-project scan (1.0 s to 35.6 s on real repositories) buys nothing.
   const compodocConfig = await resolveCompodocConfig(options, { viteRoot: config?.root });
-  if (compodocConfig.enabled) {
+  if (compodocConfig.enabled && !docgenServer) {
     await ensureCompodocDocumentation({
       compodocArgs: compodocConfig.compodocArgs,
       tsconfig: compodocConfig.tsconfig,
@@ -129,6 +124,9 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
       outputDir: compodocConfig.outputDir,
     });
   }
+
+  const propsTable = resolvePropsTable(framework.options, resolvedFeatures);
+  warnAboutPropsTable(framework.options, resolvedFeatures);
 
   const zoneless = resolveZoneless(options?.angularBuilderOptions);
   const angularPlugins = angular({
@@ -149,9 +147,10 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   // so it transforms `.ts` sources before storybook's automock plugin
   // (`storybook:mock-loader`) runs. analogjs's transform re-emits files
   // from its own internal Angular file emitter and discards the incoming
-  // `code`, so anything mock-loader or csf-plugin did upstream is wiped
-  // unless those plugins run *after* analogjs (see csf-plugin demote
-  // above and `angularViteRedirectReapplyPlugin`).
+  // `code`, so anything mock-loader did upstream is wiped unless those
+  // plugins run *after* analogjs (`angularViteRedirectReapplyPlugin`).
+  // addon-docs' CSF plugin stays in the same `pre` bucket but uses
+  // `transform.order: 'post'` so enrichment lands on analogjs output.
   const pluginsToInject = (Array.isArray(angularPlugins) ? angularPlugins : [angularPlugins])
     .filter(Boolean)
     .map((plugin: any) => {
@@ -210,14 +209,50 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
       angularViteRedirectReapplyPlugin(options),
       angularOptionsPlugin(options, { normalizePath, zoneless }),
       storybookOxcPlugin(),
+      ...(docgenServer && options?.configDir ? [compodocJsonStubPlugin(options.configDir)] : []),
     ],
     define: {
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
         zoneless: !!zoneless,
+        propsTable,
       }),
     },
   });
 };
+
+const COMPODOC_JSON_STUB_ID = '\0storybook-angular-vite/empty-compodoc-json';
+
+// `storybook init` writes a static `import docJson from '../documentation.json'` into the Angular
+// preview, and that file is normally gitignored Compodoc output. With the docgen server on nothing
+// generates it and nothing reads it, so resolve it to an empty object rather than failing the build
+// of a project that followed the documented setup.
+export function compodocJsonStubPlugin(configDir: string): Plugin {
+  // Only the import `storybook init` wrote into the Storybook config is stood in for. A
+  // `documentation.json` the project imports from anywhere else is the user's own file, and a
+  // missing one there has to fail the way any missing import does.
+  const importedFromStorybookConfig = (importer: string | undefined) => {
+    if (!importer) {
+      return false;
+    }
+    const fromConfigDir = relative(configDir, importer);
+    return fromConfigDir !== '' && !fromConfigDir.startsWith('..') && !isAbsolute(fromConfigDir);
+  };
+
+  return {
+    name: 'storybook-angular-vite-compodoc-json-stub',
+    enforce: 'pre',
+    async resolveId(source, importer, resolveOptions) {
+      if (basename(source) !== DOCUMENTATION_JSON || !importedFromStorybookConfig(importer)) {
+        return null;
+      }
+      const resolved = await this.resolve(source, importer, { ...resolveOptions, skipSelf: true });
+      return resolved ? null : COMPODOC_JSON_STUB_ID;
+    },
+    load(id) {
+      return id === COMPODOC_JSON_STUB_ID ? 'export default {};' : null;
+    },
+  };
+}
 
 export function angularOptionsPlugin(
   options: StandaloneOptions,

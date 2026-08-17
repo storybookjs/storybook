@@ -8,7 +8,7 @@ import { useLandmark } from '../../../hooks/useLandmark.ts';
 import { CopyButton } from './CopyButton.tsx';
 
 const STALE_REFRESH_PROMPT =
-  'Generate a fresh review including my latest changes using the display-review tool.';
+  'Generate a fresh review including my latest changes using the review-create tool.';
 
 // Landmark wrapper so keyboard/screen-reader users can jump to the review notification via F6.
 const Region = styled.div({

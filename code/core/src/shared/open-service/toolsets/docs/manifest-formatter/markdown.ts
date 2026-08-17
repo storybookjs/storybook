@@ -1,11 +1,9 @@
 /**
- * Verbatim port of the `@storybook/mcp` manifest formatter
- * (`packages/mcp/src/utils/manifest-formatter/markdown.ts`). Milestone 4 swaps addon-mcp onto the
- * docs toolset with byte-identical output, so the two copies must not drift until it deletes the
- * original. Omitted: `formatMultiSourceManifestsToLists` (multi-source composition has no core
- * counterpart). `dedent` comes from `ts-dedent`, the package the source vendors verbatim.
+ * Markdown rendering for the docs toolset: the text every consumer of the docs tools receives.
  */
 import { dedent } from 'ts-dedent';
+
+import { formatRequiresOwnMcpNotice, type SourceListing } from '../sources.ts';
 
 import { extractDocsSummary, MAX_SUMMARY_LENGTH } from './extract-docs-summary.ts';
 import type {
@@ -177,6 +175,24 @@ function formatPropsSection(
   return parts;
 }
 
+const FENCE_LINE = /^\s*(?:```|~~~)/;
+const HEADING_LINE = /^(#{1,4}) /;
+
+/** Nests a framework's own `##` sections under the `### <subcomponent>` heading they render inside. */
+function demoteHeadings(markdown: string): string {
+  let inFence = false;
+  return markdown
+    .split('\n')
+    .map((line) => {
+      if (FENCE_LINE.test(line)) {
+        inFence = !inFence;
+        return line;
+      }
+      return inFence ? line : line.replace(HEADING_LINE, '##$1 ');
+    })
+    .join('\n');
+}
+
 function formatSubcomponentsSection(
   subcomponents: Record<string, SubcomponentManifest> | undefined
 ): string[] {
@@ -219,6 +235,12 @@ function formatSubcomponentsSection(
       continue;
     }
 
+    if (subcomponent.apiDescription) {
+      parts.push(demoteHeadings(subcomponent.apiDescription));
+      parts.push('');
+      continue;
+    }
+
     const parsedDocgen = getParsedDocgen(subcomponent);
     const typeName = `${(subcomponent.name || key).replace(/\W+/g, '')}Props`;
     parts.push(...formatPropsSection(parsedDocgen, { title: '#### Props', typeName }));
@@ -250,6 +272,14 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
   // Parse docgen data (from either engine)
   const parsedDocgen = getParsedDocgen(componentManifest);
 
+  // A framework's own API markdown leads, because it is the component's contract and the stories
+  // below are examples of applying it. The `react*` props section keeps its historical position.
+  const { apiDescription } = componentManifest;
+  if (apiDescription) {
+    parts.push(apiDescription);
+    parts.push('');
+  }
+
   // Stories section
   const stories = Array.isArray(componentManifest.stories) ? componentManifest.stories : [];
   if (stories.length > 0) {
@@ -259,7 +289,8 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
     const storiesWithSnippets = stories.filter((s) => s.snippet);
 
     // Check if component has props - if not, show all stories fully
-    const hasProps = parsedDocgen && Object.keys(parsedDocgen.props).length > 0;
+    const hasProps =
+      !!apiDescription || (parsedDocgen && Object.keys(parsedDocgen.props).length > 0);
 
     const storiesToShow = hasProps
       ? storiesWithSnippets.slice(0, MAX_STORIES_TO_SHOW)
@@ -294,7 +325,9 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
     }
   }
 
-  parts.push(...formatPropsSection(parsedDocgen));
+  if (!apiDescription) {
+    parts.push(...formatPropsSection(parsedDocgen));
+  }
 
   // Attached docs section
   if (componentManifest.docs && Object.keys(componentManifest.docs).length > 0) {
@@ -359,6 +392,65 @@ export function formatManifestsToLists(
   parts.push('');
   for (const doc of Object.values(manifests.docsManifest.docs)) {
     parts.push(formatDocLine(doc));
+  }
+
+  return parts.join('\n').trim();
+}
+
+/**
+ * Formats one listing per composed source.
+ *
+ * Sources are grouped under their own heading rather than merged, because ids are only unique
+ * within a source and the follow-up tools take a `storybookId`. A source that failed or needs its
+ * own endpoint prints that in place of its listing, so the rest still reads.
+ */
+export function formatMultiSourceManifestsToLists(
+  sources: SourceListing[],
+  options: ListFormattingOptions = {}
+): string {
+  const parts: string[] = [];
+
+  for (const { source, manifests, error, notice } of sources) {
+    parts.push(`# ${source.title}`);
+    parts.push(`id: ${source.id}`);
+    parts.push('');
+
+    if (error) {
+      parts.push(`error: ${error}`);
+      parts.push('');
+      continue;
+    }
+
+    if (notice) {
+      parts.push(formatRequiresOwnMcpNotice(source, notice.endpoint, { includeHeader: false }));
+      parts.push('');
+      continue;
+    }
+
+    const components = Object.values(manifests?.componentManifest.components ?? {});
+    if (components.length > 0) {
+      parts.push('## Components');
+      parts.push('');
+      for (const component of components) {
+        parts.push(formatComponentLine(component));
+        if (options.withStoryIds && Array.isArray(component.stories)) {
+          for (const story of component.stories) {
+            parts.push(formatStorySubLine(story));
+          }
+        }
+      }
+      parts.push('');
+    }
+
+    const docs = Object.values(manifests?.docsManifest?.docs ?? {});
+    if (docs.length > 0) {
+      parts.push('## Docs');
+      parts.push('');
+      for (const doc of docs) {
+        parts.push(formatDocLine(doc));
+      }
+      parts.push('');
+    }
   }
 
   return parts.join('\n').trim();

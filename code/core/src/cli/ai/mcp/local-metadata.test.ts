@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { experimental_loadStorybook as loadStorybook } from 'storybook/internal/core-server';
 
-import { loadStorybookAiMetadata, resolveStorybookConfigDir } from './local-metadata.ts';
+import { loadStorybookAiMetadata } from './local-metadata.ts';
 
 vi.mock('storybook/internal/core-server', { spy: true });
 
@@ -25,7 +25,7 @@ describe('loadStorybookAiMetadata', () => {
     const apply = vi.fn().mockResolvedValue({
       instructions: 'Follow the story workflow.',
       tools: [
-        { name: 'get-documentation', description: 'Get docs.' },
+        { name: 'docs-show', description: 'Get docs.' },
         {
           name: 'get-storybook-story-instructions',
           description: 'Get story guidance.',
@@ -46,7 +46,7 @@ describe('loadStorybookAiMetadata', () => {
     expect(metadata).toEqual({
       instructions: 'Follow the story workflow.',
       tools: [
-        { name: 'get-documentation', description: 'Get docs.' },
+        { name: 'docs-show', description: 'Get docs.' },
         {
           name: 'get-storybook-story-instructions',
           description: 'Get story guidance.',
@@ -74,11 +74,11 @@ describe('loadStorybookAiMetadata', () => {
     mockLoadedStorybook(
       vi.fn().mockResolvedValue({
         instructions: 123,
-        tools: [{ name: 'get-documentation' }],
+        tools: [{ name: 'docs-show' }],
         localTools: {
           invalid: {},
           notObject: true,
-          'get-documentation': { call },
+          'docs-show': { call },
         },
       })
     );
@@ -87,9 +87,9 @@ describe('loadStorybookAiMetadata', () => {
 
     expect(metadata).toEqual({
       instructions: undefined,
-      tools: [{ name: 'get-documentation' }],
+      tools: [{ name: 'docs-show' }],
       localTools: {
-        'get-documentation': { call },
+        'docs-show': { call },
       },
     });
   });
@@ -123,23 +123,5 @@ describe('loadStorybookAiMetadata', () => {
     mockLoadedStorybook(vi.fn().mockResolvedValue(undefined));
 
     await expect(loadStorybookAiMetadata({ cwd: '/repo' })).resolves.toBeUndefined();
-  });
-});
-
-describe('resolveStorybookConfigDir', () => {
-  it('defaults to .storybook under the target cwd', () => {
-    expect(resolveStorybookConfigDir({ cwd: '/repo' })).toBe(resolve('/repo/.storybook'));
-  });
-
-  it('resolves relative config dirs from the target cwd', () => {
-    expect(resolveStorybookConfigDir({ cwd: '/repo', configDir: 'config/storybook' })).toBe(
-      resolve('/repo/config/storybook')
-    );
-  });
-
-  it('keeps absolute config dirs unchanged', () => {
-    expect(resolveStorybookConfigDir({ cwd: '/repo', configDir: '/custom/.storybook' })).toBe(
-      '/custom/.storybook'
-    );
   });
 });

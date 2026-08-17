@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "No metadata was extracted for the \"Story1\" export of <sandbox>/src/stories/frameworks/angular-vite/core/moduleMetadata/in-export-default.stories.ts.\nCheck that the file exports the component class and is covered by a tsconfig.json in or above its directory.",
+    "name": "AngularComponentMetaNotFound"
+  },
+  "id": "stories-frameworks-angular-vite-core-modulemetadata-in-export-default",
+  "jsDocTags": {},
+  "name": "Story1",
+  "path": "./src/stories/frameworks/angular-vite/core/moduleMetadata/in-export-default.stories.ts"
+}

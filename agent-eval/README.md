@@ -102,10 +102,10 @@ EVAL_STORYBOOK_LATEST=1 yarn workspace agent-eval run eval
 ```
 
 Review mode follows the integration. The plugin experiments always run — and
-assert — the review workflow (display-review published, review section in the
+assert — the review workflow (review-create published, review section in the
 final response), because review is on by default for the `storybook ai` CLI
 channel the plugins use. The MCP experiments run review-off by default
-(preview-stories links, no display-review), matching direct MCP clients where
+(stories-preview links, no review-create), matching direct MCP clients where
 the `experimentalReview` feature flag is opt-in. Set `EVAL_REVIEW=1` to enable
 the flag in every sandbox Storybook and flip the MCP assertions to the review
 workflow too:

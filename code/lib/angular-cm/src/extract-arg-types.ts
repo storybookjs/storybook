@@ -223,8 +223,10 @@ const resolveTypealias = (
   return resolveTypealias(typeAlias.rawtype, metadataJson, componentFile, seen);
 };
 
+// `TypeIndex.render` leads a constructor type with `new ` and a generic signature with its type
+// parameters, so accepting only a leading `(` dropped both onto the `empty-enum` catch-all.
 const isFunctionTypeString = (type: string): boolean =>
-  type === 'function' || /^\(.*\)\s*=>/.test(type);
+  type === 'function' || /^(new\s+)?(<.*>\s*)?\(.*\)\s*=>/.test(type);
 
 const extractType = (
   property: Property,

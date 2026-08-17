@@ -10,7 +10,7 @@ Storybook for Angular with Vite is a [framework](../../contribute/framework.mdx)
 
 <Callout variant="info" icon="🧪">
 
-`@storybook/angular-vite` is currently in [preview](../../releases/features.mdx#preview). The framework is feature-complete for the documented use cases, but APIs and defaults may change based on feedback before it is marked stable. Please report issues and share feedback on [GitHub](https://github.com/storybookjs/storybook/issues).
+`@storybook/angular-vite` is currently in [preview](../../releases/features.mdx#preview) and is planned to be marked [stable](../../releases/features.mdx#stable) in Storybook 11. The framework is feature-complete for the documented use cases, but APIs and defaults may change based on feedback before then. Please report issues and share feedback on [GitHub](https://github.com/storybookjs/storybook/issues).
 
 </Callout>
 
@@ -119,6 +119,8 @@ Two engines can read them, and which one you get depends on a single feature fla
 
 `@storybook/angular-vite` turns the flag on from its own configuration, so server-side extraction is what you get unless you turn it off. The Webpack-based [`@storybook/angular`](./angular.mdx) is unaffected and always uses Compodoc.
 
+The flag-off column is temporary. It exists so that a project upgrading to 10.6 can keep the setup it already has while it migrates, and it is planned to be [deprecated](../../releases/features.mdx#deprecated) in Storybook 11 and removed in Storybook 12. From then on `@storybook/angular-vite` reads your components from source and nothing else. Plan on the default path rather than opting out.
+
 #### Server-side extraction (default)
 
 Nothing to set up. `npx storybook@latest init` neither installs Compodoc nor writes any Compodoc wiring for this framework, and there is no `documentation.json` to generate or keep current.
@@ -128,6 +130,12 @@ Because your sources are read directly, editing a component updates its controls
 See [Known limitations](#known-limitations) for what this path does not yet do.
 
 #### Using Compodoc instead
+
+<Callout variant="warning" icon="⚠️">
+
+This path is a migration aid, not a supported long-term configuration. Turning `experimentalDocgenServer` off on `@storybook/angular-vite` is planned to be deprecated in Storybook 11 and removed in Storybook 12, along with the `compodoc` and `compodocArgs` framework options and the `setCompodocJson` wiring. Use it to keep an existing project working while you migrate, and plan on the default path.
+
+</Callout>
 
 Turn the feature off in your `.storybook/main.ts`:
 
@@ -491,6 +499,8 @@ This option only takes effect with [`experimentalDocgenServer: false`](#using-co
 
 It controls the Compodoc run and nothing else. Setting it to `false` does not turn off component documentation: on the default path your components are still read from their TypeScript sources.
 
+Planned to be deprecated in Storybook 11 and removed in Storybook 12, together with the opt-out it depends on.
+
 #### `compodocArgs`
 
 Type: `string[]`
@@ -499,7 +509,7 @@ Default: `['-e', 'json', '-d', '.']`
 
 Arguments passed to the `@compodoc/compodoc` CLI when `compodoc` is `true`. The defaults produce a `documentation.json` file in the workspace root.
 
-Like `compodoc`, this is only read when [`experimentalDocgenServer` is off](#using-compodoc-instead).
+Like `compodoc`, this is only read when [`experimentalDocgenServer` is off](#using-compodoc-instead), and is planned for removal on the same schedule.
 
 #### `propsTable`
 

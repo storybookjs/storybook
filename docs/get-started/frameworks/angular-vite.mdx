@@ -290,28 +290,6 @@ These apply to the default server-side extraction path, which is what you get un
 
 The snippets shown in autodocs and the Code panel are generated from your story's source, so they show the story as you wrote it. Changing a value in the controls table updates the rendered component but not the snippet next to it.
 
-### Members declared only in a `.d.ts` are not recognised as inputs
-
-Storybook reads your components from their TypeScript sources, and a declaration file records no decorators. Anything Storybook can only see through a `.d.ts` therefore contributes plain properties and methods, never inputs or outputs.
-
-The common case is a component that extends a base class imported from a built package:
-
-```ts
-// Declared in node_modules/@acme/ui/base.d.ts
-export declare class AcmeBase {
-  fromPackage: string;
-}
-
-@Component({ selector: 'my-widget', template: '' })
-export class WidgetComponent extends AcmeBase {
-  @Input() own = '';
-}
-```
-
-`own` lands under **Inputs**, while `fromPackage` lands under **Properties** even if the package declares it as an `@Input()`. The row is still there, so nothing disappears from the docs, but the member is not presented as something you can bind.
-
-Components inside your own workspace, including other projects in the same Angular workspace, are read from source and are unaffected.
-
 ### An input typed `T | undefined` falls back to an object control
 
 An input whose type explicitly includes `undefined` is not narrowed to its members, so the controls table offers an object editor rather than the radio buttons or select you would expect:

@@ -241,12 +241,8 @@ const rewriteRules = ({ cssText, selectorText }: CSSStyleRule, forShadowDOM: boo
 
   const rewrittenRules: string[] = [];
   for (let index = 0; index < rewrittenSelectors.length; index += maximumSelectorsPerRule) {
-    rewrittenRules.push(
-      cssText.replace(
-        selectorText,
-        rewrittenSelectors.slice(index, index + maximumSelectorsPerRule).join(', ')
-      )
-    );
+    const chunk = rewrittenSelectors.slice(index, index + maximumSelectorsPerRule).join(', ');
+    rewrittenRules.push(cssText.replace(selectorText, () => chunk));
   }
 
   return rewrittenRules;

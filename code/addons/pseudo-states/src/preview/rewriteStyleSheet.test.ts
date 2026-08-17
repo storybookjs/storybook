@@ -545,6 +545,14 @@ describe('rewriteStyleSheet', () => {
     expect(selectors).toContain('.foo.pseudo-hover');
   });
 
+  it('does not interpret $& in rewritten selector text', () => {
+    const sheet = new Sheet('[data-label="$&"]:hover { color: red }');
+    rewriteStyleSheet(sheet as unknown as CSSStyleSheet);
+    const selectors = sheet.cssRules[0].getSelectors();
+    expect(selectors).toContain('[data-label="$&"]:hover');
+    expect(selectors).toContain('[data-label="$&"].pseudo-hover');
+  });
+
   it('override correct rules with media query present', () => {
     const sheet = new Sheet(
       `@media (max-width: 790px) {

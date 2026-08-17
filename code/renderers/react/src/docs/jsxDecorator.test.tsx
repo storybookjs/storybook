@@ -379,6 +379,40 @@ describe('jsxDecorator', () => {
     expect(result).toEqual(<div>Test Story</div>);
   });
 
+  it('does not re-invoke the story function when JSX rendering is skipped', () => {
+    const originalStoryFn = vi.fn().mockReturnValue(<div>Test Story</div>);
+    const context = {
+      ...mockContext,
+      parameters: {
+        docs: { source: { type: 'code' } },
+      },
+      originalStoryFn,
+    };
+
+    jsxDecorator(mockStoryFn, context);
+
+    // Source extraction is skipped, so the story function must not be invoked
+    // a second time just to capture JSX for a snippet nobody consumes.
+    expect(originalStoryFn).not.toHaveBeenCalled();
+    expect(mockedEmitTransformCode).not.toHaveBeenCalled();
+  });
+
+  it('re-invokes the story function once to extract source when not skipped', () => {
+    const originalStoryFn = vi.fn().mockReturnValue(<div>Test Story</div>);
+    const context = {
+      ...mockContext,
+      parameters: {
+        __isArgsStory: true,
+      },
+      originalStoryFn,
+    };
+
+    jsxDecorator(mockStoryFn, context as any);
+
+    expect(originalStoryFn).toHaveBeenCalledTimes(1);
+    expect(mockedEmitTransformCode).toHaveBeenCalled();
+  });
+
   it('should skip JSX rendering when source code is provided', () => {
     const context = {
       ...mockContext,

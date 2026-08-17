@@ -44,6 +44,25 @@ const storyIndex = {
   },
 } as unknown as StoryIndex;
 
+// Angular-shaped: the framework authors its own Markdown rather than shipping a `react*` payload.
+const apiDescription = [
+  '## Inputs',
+  '',
+  '```',
+  'export type ButtonInputs = {',
+  '  variant?: string;',
+  '}',
+  '```',
+  '',
+  '## Outputs',
+  '',
+  '```',
+  'export type ButtonOutputs = {',
+  '  clicked: (e: Event) => void;',
+  '}',
+  '```',
+].join('\n');
+
 const docgenPayload = {
   id: 'button',
   name: 'Button',
@@ -51,6 +70,8 @@ const docgenPayload = {
   description: 'A button',
   summary: 'Clickable',
   props: [{ name: 'variant', type: 'string', required: false, description: 'Visual style' }],
+  apiDescription,
+  renderer: 'angular',
 };
 
 const storyDocsPayload = {
@@ -123,6 +144,8 @@ function manifestToolset() {
               description: 'A button',
               summary: 'Clickable',
               props: docgenPayload.props,
+              apiDescription,
+              renderer: 'angular',
               import: storyDocsPayload.import,
               stories: [{ id: 'button--primary', name: 'Primary', snippet: '<Button />' }],
             },
@@ -161,6 +184,14 @@ describe('docs tools render the same text in both docgen modes', () => {
 
   it.each(['button', 'guide--docs', 'unknown-id'])('show %s', async (id) => {
     expect(await renderShow(serviceToolset(), id)).toBe(await renderShow(manifestToolset(), id));
+  });
+
+  it('show button carries the framework-authored api sections in both modes', async () => {
+    for (const toolset of [serviceToolset(), manifestToolset()]) {
+      const markdown = await renderShow(toolset, 'button');
+      expect(markdown).toContain('## Inputs');
+      expect(markdown).toContain('## Outputs');
+    }
   });
 
   it('showStory', async () => {

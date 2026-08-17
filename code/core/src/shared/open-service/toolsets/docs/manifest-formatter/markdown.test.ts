@@ -1064,6 +1064,164 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 			\`\`\`"
 		`);
   });
+
+  describe('apiDescription section', () => {
+    const angularApiDescription = [
+      '## Inputs',
+      '',
+      '```',
+      'export type ColorPickerComponentInputs = {',
+      '  /**',
+      '   * The currently selected colour',
+      '   *',
+      "   * @default '#345F92'",
+      '   */',
+      '  color?: string; // two-way: [(color)]',
+      '}',
+      '```',
+      '',
+      '## Outputs',
+      '',
+      '```',
+      'export type ColorPickerComponentOutputs = {',
+      '  colorChange: (e: string) => void;',
+      '}',
+      '```',
+    ].join('\n');
+
+    it('renders the framework-authored markdown in place of the props section', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        apiDescription: angularApiDescription,
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# ColorPickerComponent
+
+        ID: color-picker
+
+        ## Inputs
+
+        \`\`\`
+        export type ColorPickerComponentInputs = {
+          /**
+           * The currently selected colour
+           *
+           * @default '#345F92'
+           */
+          color?: string; // two-way: [(color)]
+        }
+        \`\`\`
+
+        ## Outputs
+
+        \`\`\`
+        export type ColorPickerComponentOutputs = {
+          colorChange: (e: string) => void;
+        }
+        \`\`\`"
+      `);
+    });
+
+    it('wins over the react docgen fields, which then do not also render', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        apiDescription: angularApiDescription,
+        reactDocgen: {
+          props: {
+            label: { type: { name: 'string' }, description: 'From react-docgen' },
+          },
+        },
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toContain('## Inputs');
+      expect(result).not.toContain('## Props');
+      expect(result).not.toContain('From react-docgen');
+    });
+
+    it('limits the stories shown in full, as a react props table does', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        apiDescription: angularApiDescription,
+        stories: [
+          { name: 'Default', snippet: '<app-color-picker />' },
+          { name: 'Red', snippet: '<app-color-picker color="#f00" />' },
+          { name: 'Green', snippet: '<app-color-picker color="#0f0" />' },
+          { name: 'Blue', summary: 'A blue picker', snippet: '<app-color-picker color="#00f" />' },
+        ],
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toContain('### Other Stories');
+      expect(result).toContain('- Blue: A blue picker');
+    });
+
+    it('leads with the api sections, ahead of the stories that apply them', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        apiDescription: angularApiDescription,
+        stories: [{ name: 'Default', snippet: '<app-color-picker />' }],
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result.indexOf('## Inputs')).toBeLessThan(result.indexOf('## Stories'));
+      expect(result.indexOf('## Outputs')).toBeLessThan(result.indexOf('## Stories'));
+    });
+
+    it('nests a subcomponent`s own sections under its heading', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        subcomponents: {
+          swatch: { name: 'SwatchComponent', apiDescription: angularApiDescription },
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# ColorPickerComponent
+
+        ID: color-picker
+
+        ## Subcomponents
+
+        ### SwatchComponent
+
+        #### Inputs
+
+        \`\`\`
+        export type ColorPickerComponentInputs = {
+          /**
+           * The currently selected colour
+           *
+           * @default '#345F92'
+           */
+          color?: string; // two-way: [(color)]
+        }
+        \`\`\`
+
+        #### Outputs
+
+        \`\`\`
+        export type ColorPickerComponentOutputs = {
+          colorChange: (e: string) => void;
+        }
+        \`\`\`"
+      `);
+    });
+  });
 });
 
 describe('MarkdownFormatter - formatManifestsToLists', () => {

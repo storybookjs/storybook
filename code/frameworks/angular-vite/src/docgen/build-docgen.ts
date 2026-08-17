@@ -15,6 +15,7 @@ import type {
   PropsTableMode,
 } from '@storybook/angular-cm';
 import { extractArgTypesFromData } from '@storybook/angular-cm';
+import { buildApiDescription } from './api-description.ts';
 import { resolveStoryComponent } from './resolve-component.ts';
 
 // Structured-cloned onto the worker thread, so every field must be plain JSON data.
@@ -188,6 +189,17 @@ export const buildDocgenPayload = (
     logger,
   }) as StrictArgTypes;
 
+  // Agent documentation is pinned to `api` whatever the user chose for their props table: `all`
+  // would hand an agent private wiring it cannot bind, and `inputs` would empty the Outputs section.
+  const apiArgTypes =
+    options.propsTable === 'api'
+      ? argTypes
+      : (extractArgTypesFromData(meta.entry, {
+          metadataJson: meta.json,
+          propsTable: 'api',
+          logger,
+        }) as StrictArgTypes);
+
   const jsDocTags = extractJsDocTags(meta.entry);
   // Tags are excluded from `rawdescription`, which is why it wins over `description`.
   const description =
@@ -201,6 +213,8 @@ export const buildDocgenPayload = (
     summary: jsDocTags.summary?.[0],
     jsDocTags,
     argTypes,
+    apiDescription: buildApiDescription(apiArgTypes, meta.entry.name),
+    renderer: 'angular',
     angularComponentMeta: metaToSnippetMeta(meta),
   };
 };

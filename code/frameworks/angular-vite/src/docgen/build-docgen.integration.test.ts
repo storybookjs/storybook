@@ -12,22 +12,33 @@ import { buildDocgenPayload } from './build-docgen.ts';
 // filesystem.
 const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 const STORY_PATH = join(FIXTURES, 'button.stories.ts');
+const COLOR_PICKER_STORY_PATH = join(FIXTURES, 'color-picker.stories.ts');
 
-const entry: IndexEntry = {
-  id: 'button--default',
+const entryFor = (storyPath: string, id: string, title: string): IndexEntry => ({
+  id: `${id}--default`,
   name: 'Default',
-  title: 'Button',
+  title,
   type: 'story',
   subtype: 'story',
-  importPath: relative(process.cwd(), STORY_PATH),
+  importPath: relative(process.cwd(), storyPath),
+});
+
+const entry = entryFor(STORY_PATH, 'button', 'Button');
+
+const withRealAnalyzer = async <T>(run: (manager: AngularComponentMetaManager) => T) => {
+  const typescript = await import('typescript');
+  const manager = new AngularComponentMetaManager(typescript.default ?? typescript);
+  try {
+    return run(manager);
+  } finally {
+    manager.dispose();
+  }
 };
 
 // A cold TS program (lib + @angular/core types) can outrun the 10s default timeout on CI.
 it('builds a real payload through the TypeScript-backed analyzer', async () => {
-  const typescript = await import('typescript');
-  const manager = new AngularComponentMetaManager(typescript.default ?? typescript);
-  try {
-    const payload = buildDocgenPayload(
+  const payload = await withRealAnalyzer((manager) =>
+    buildDocgenPayload(
       { entry },
       {
         manager,
@@ -35,19 +46,57 @@ it('builds a real payload through the TypeScript-backed analyzer', async () => {
         logger: { warn: vi.fn(), debug: vi.fn() },
         resolvePath: () => STORY_PATH,
       }
-    );
+    )
+  );
 
-    expect(payload?.error).toBeUndefined();
-    expect(payload?.name).toBe('ButtonComponent');
-    expect(payload?.argTypes?.label).toMatchObject({
-      name: 'label',
-      table: { category: 'inputs' },
-    });
-    expect(payload?.angularComponentMeta).toMatchObject({
-      name: 'ButtonComponent',
-      inputs: ['label'],
-    });
-  } finally {
-    manager.dispose();
-  }
+  expect(payload?.error).toBeUndefined();
+  expect(payload?.name).toBe('ButtonComponent');
+  expect(payload?.argTypes?.label).toMatchObject({
+    name: 'label',
+    table: { category: 'inputs' },
+  });
+  expect(payload?.angularComponentMeta).toMatchObject({
+    name: 'ButtonComponent',
+    inputs: ['label'],
+  });
+}, 30_000);
+
+it('documents a real `model()` as one two-way input and one Change output', async () => {
+  const payload = await withRealAnalyzer((manager) =>
+    buildDocgenPayload(
+      { entry: entryFor(COLOR_PICKER_STORY_PATH, 'color-picker', 'ColorPicker') },
+      {
+        manager,
+        options: { propsTable: 'api' },
+        logger: { warn: vi.fn(), debug: vi.fn() },
+        resolvePath: () => COLOR_PICKER_STORY_PATH,
+      }
+    )
+  );
+
+  expect(payload?.error).toBeUndefined();
+  expect(payload?.renderer).toBe('angular');
+  expect(payload?.apiDescription).toMatchInlineSnapshot(`
+    "## Inputs
+
+    \`\`\`
+    export type ColorPickerComponentInputs = {
+      /**
+       * The currently selected colour
+       *
+       * @default #345F92
+       */
+      color?: string; // two-way: [(color)]
+    }
+    \`\`\`
+
+    ## Outputs
+
+    \`\`\`
+    export type ColorPickerComponentOutputs = {
+      /** The currently selected colour */
+      colorChange: (e: string) => void;
+    }
+    \`\`\`"
+  `);
 }, 30_000);

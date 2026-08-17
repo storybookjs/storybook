@@ -97,6 +97,8 @@ describe('buildDocgenPayload', () => {
       path: entry.importPath,
       description: 'Renders a button.',
       jsDocTags: {},
+      renderer: 'angular',
+      apiDescription: expect.stringContaining('export type ButtonComponentInputs = {'),
     });
     expect(payload?.argTypes?.label).toMatchObject({
       name: 'label',
@@ -244,6 +246,89 @@ describe('buildDocgenPayload', () => {
     expect(argNames({ propsTable: 'all' })).toEqual(['note', 'cdr', 'label']);
     expect(argNames({ propsTable: 'api' })).toEqual(['note', 'label']);
     expect(argNames({ propsTable: 'inputs' })).toEqual(['label']);
+  });
+
+  describe('apiDescription', () => {
+    // `line` is what marks the input/output pair as one `model()`, not two aliased members.
+    const colorPicker = componentEntry({
+      name: 'ColorPickerComponent',
+      inputsClass: [
+        {
+          name: 'color',
+          type: 'string',
+          optional: true,
+          line: 12,
+          defaultValue: "'#345F92'",
+          rawdescription: 'The currently selected colour',
+        },
+      ],
+      outputsClass: [{ name: 'color', type: 'string', line: 12 }],
+      propertiesClass: [
+        { name: 'cdr', type: 'ChangeDetectorRef', optional: false, visibility: 'private' },
+      ],
+    });
+
+    it('documents the two-way binding and tags the payload with its renderer', () => {
+      givenStoryFile();
+      const manager = managerReturning(metaFor(colorPicker));
+
+      const payload = buildDocgenPayload({ entry }, context(manager, { propsTable: 'api' }));
+
+      expect(payload?.renderer).toBe('angular');
+      expect(payload?.apiDescription?.split('\n')).toEqual([
+        '## Inputs',
+        '',
+        '```',
+        'export type ColorPickerComponentInputs = {',
+        '  /**',
+        '   * The currently selected colour',
+        '   *',
+        // The analyzer unquotes string defaults for the props table, and this reads that value.
+        '   * @default #345F92',
+        '   */',
+        '  color?: string; // two-way: [(color)]',
+        '}',
+        '```',
+        '',
+        '## Outputs',
+        '',
+        '```',
+        'export type ColorPickerComponentOutputs = {',
+        '  colorChange: (e: string) => void;',
+        '}',
+        '```',
+      ]);
+    });
+
+    it.each(['all', 'inputs'] as const)(
+      'documents the same api surface when the props table is `%s`',
+      (propsTable) => {
+        givenStoryFile();
+        const manager = managerReturning(metaFor(colorPicker));
+        const apiPayload = buildDocgenPayload(
+          { entry },
+          context(managerReturning(metaFor(colorPicker)), { propsTable: 'api' })
+        );
+
+        const payload = buildDocgenPayload({ entry }, context(manager, { propsTable }));
+
+        expect(payload?.apiDescription).toBe(apiPayload?.apiDescription);
+        expect(payload?.apiDescription).toContain('## Outputs');
+        expect(payload?.apiDescription).not.toContain('cdr');
+      }
+    );
+
+    it('is omitted for a component that binds nothing', () => {
+      givenStoryFile();
+      const manager = managerReturning(
+        metaFor(componentEntry({ inputsClass: [], outputsClass: [] }))
+      );
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.apiDescription).toBeUndefined();
+      expect(payload?.renderer).toBe('angular');
+    });
   });
 
   describe('component resolution', () => {

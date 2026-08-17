@@ -842,6 +842,10 @@ export const baseTemplates = {
         'typescript@^6',
         '@compodoc/compodoc',
       ],
+      // The only Angular sandbox on the docgen-server path, so it is the only one that can prove
+      // what an agent reads about an Angular component.
+      extraDevDependencies: ['@storybook/addon-mcp'],
+      editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
       useCsfFactory: true,
       // These two flags are what brings a template into docgen baseline coverage; see
       // `docgenServerTemplates`.

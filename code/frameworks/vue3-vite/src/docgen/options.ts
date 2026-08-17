@@ -1,4 +1,4 @@
-import type { Options, StorybookConfigRaw } from 'storybook/internal/types';
+import type { Options } from 'storybook/internal/types';
 
 import type { FrameworkOptions, VueDocgenPlugin } from '../types.ts';
 
@@ -8,10 +8,7 @@ export type ResolvedDocgenOptions = false | { plugin: VueDocgenPlugin; tsconfig?
 
 export interface DocgenContext {
   docgen: ResolvedDocgenOptions;
-  features: StorybookConfigRaw['features'];
-  /**
-   * Only true if the docgen server is active and the `vue-component-meta` plugin is selected.
-   */
+  /** Whether server-side docgen is active. */
   docgenServerActive: boolean;
 }
 
@@ -24,11 +21,7 @@ export async function resolveDocgenContext(options: Options): Promise<DocgenCont
 
   return {
     docgen,
-    features,
-    docgenServerActive:
-      features?.experimentalDocgenServer === true &&
-      docgen !== false &&
-      docgen.plugin === VUE_COMPONENT_META,
+    docgenServerActive: features?.experimentalDocgenServer === true,
   };
 }
 

@@ -61,7 +61,11 @@ const cleanArgsDecorator: DecoratorFunction<AngularRenderer> = (storyFn, context
   // lookup fails) we have no signal to distinguish "real" component inputs
   // from other args. Pass them through unchanged rather than stripping every
   // arg the user explicitly set.
-  if (Object.keys(context.argTypes).length === 0) {
+  //
+  // Server docgen leaves the same gap: it holds the component metadata and
+  // infers controls where the UI reads them, so nothing here carries a control
+  // and a public property that is not an @Input would lose the value its story set.
+  if (Object.keys(context.argTypes).length === 0 || globalThis.FEATURES?.experimentalDocgenServer) {
     return storyFn();
   }
 

@@ -15,7 +15,6 @@ import {
   ANGULAR_PACKAGE,
   ANGULAR_VITE_PACKAGE,
   angularToAngularVite,
-  setFrameworkCompodocFalse,
 } from './angular-to-angular-vite.ts';
 
 // Mock dependencies
@@ -523,55 +522,27 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       );
     });
 
-    it('carries a builder compodoc:false into framework.options without dropping the name', async () => {
+    // Compodoc no longer runs once the framework switches, and the dedicated
+    // `angular-vite-remove-compodoc` fix is checked against the pre-migration main config, so it
+    // never sees an angular-vite project to clean up.
+    it('removes the Compodoc setup the framework switch makes dead', async () => {
       mockPromptConfirm.mockResolvedValue(false);
-
-      // eslint-disable-next-line depend/ban-dependencies
-      const { globby } = await import('globby');
-      vi.mocked(globby).mockResolvedValueOnce(['/project/libs/soba/project.json']);
-
-      const projectJsonContent = JSON.stringify({
-        name: 'soba',
-        targets: {
-          storybook: {
-            executor: '@storybook/angular:start-storybook',
-            options: { compodoc: false },
-          },
-        },
-      });
-
-      mockReadFile.mockImplementation((filePath: any) => {
-        const p = String(filePath);
-        if (p.endsWith('project.json')) {
-          return Promise.resolve(projectJsonContent) as any;
-        }
-        return Promise.resolve(`export default { framework: '${ANGULAR_PACKAGE}' };`) as any;
-      });
-
-      // Drive the callback with a real ConfigFile (matching what updateMainConfig provides) so the
-      // assertion reflects the actual AST transform, not a mocked field-setter.
-      let printed: string | undefined;
-      mockUpdateMainConfig.mockImplementation((async (_opts: any, cb: any) => {
-        const main = loadConfig(
-          `export default { framework: getAbsolutePath('${ANGULAR_VITE_PACKAGE}') };`
-        ).parse();
-        await cb(main);
-        printed = printConfig(main).code;
-      }) as any);
+      vi.mocked(mockPackageManager.getDependencyVersion).mockImplementation((pkg: string) =>
+        pkg === '@compodoc/compodoc' ? '^1.1.0' : '^21.2.0'
+      );
 
       await angularToAngularVite.run!({
         result: baseResult,
         dryRun: false,
         packageManager: mockPackageManager,
+        mainConfig: { framework: ANGULAR_PACKAGE },
         mainConfigPath: '/project/.storybook/main.ts',
         storiesPaths: [],
         configDir: '.storybook',
         storybookVersion: '9.0.0',
       } as any);
 
-      expect(mockUpdateMainConfig).toHaveBeenCalled();
-      expect(printed).toContain('compodoc: false');
-      expect(printed).toContain(`getAbsolutePath('${ANGULAR_VITE_PACKAGE}')`);
+      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith(['@compodoc/compodoc']);
     });
 
     it('does not touch framework.options when compodoc is not disabled', async () => {
@@ -1197,41 +1168,5 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         expect(written.projects.appB.architect.storybook.options).toEqual({});
       });
     });
-  });
-});
-
-describe('setFrameworkCompodocFalse', () => {
-  const apply = (code: string) => {
-    const main = loadConfig(code).parse();
-    setFrameworkCompodocFalse(main);
-    return printConfig(main).code;
-  };
-
-  it('wraps a bare string framework into object form, preserving the name', () => {
-    const result = apply(`export default { framework: '${ANGULAR_VITE_PACKAGE}' };`);
-
-    expect(result).toContain(`name: '${ANGULAR_VITE_PACKAGE}'`);
-    expect(result).toContain('compodoc: false');
-  });
-
-  it('preserves a getAbsolutePath()-wrapped framework name', () => {
-    const result = apply(
-      `export default { framework: getAbsolutePath('${ANGULAR_VITE_PACKAGE}') };`
-    );
-
-    // Regression: the call expression must survive as `name`, not be replaced by
-    // `{ options: { compodoc: false } }`.
-    expect(result).toContain(`name: getAbsolutePath('${ANGULAR_VITE_PACKAGE}')`);
-    expect(result).toContain('compodoc: false');
-  });
-
-  it('keeps existing name and options on an object-form framework', () => {
-    const result = apply(
-      `export default { framework: { name: getAbsolutePath('${ANGULAR_VITE_PACKAGE}'), options: { foo: true } } };`
-    );
-
-    expect(result).toContain(`name: getAbsolutePath('${ANGULAR_VITE_PACKAGE}')`);
-    expect(result).toContain('foo: true');
-    expect(result).toContain('compodoc: false');
   });
 });

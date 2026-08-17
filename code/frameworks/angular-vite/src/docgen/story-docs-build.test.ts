@@ -292,6 +292,21 @@ describe('buildStoryDocsPayload', () => {
     expect(story.warning).toBeUndefined();
   });
 
+  it('slices an unevaluable arg out of a story file written with CRLF line endings', async () => {
+    givenStoryFile(
+      [
+        `import { ButtonComponent } from './button.component';`,
+        `export default { title: 'Example/Button', component: ButtonComponent };`,
+        `export const Default = { args: { label: (value) => value.trim() } };`,
+      ].join('\r\n')
+    );
+
+    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() });
+
+    const story = Object.values(payload!.stories)[0];
+    expect(story.snippet).toContain(`[label]="(value) => value.trim()"`);
+  });
+
   it('attaches the snippet builder warning for a non-standalone component', async () => {
     givenStoryFile(`
       import { ButtonComponent } from './button.component';

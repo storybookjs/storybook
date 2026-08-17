@@ -701,3 +701,31 @@ test('allow top level export functions', async () => {
     }"
   `);
 });
+
+test('render method shorthand resolves like a render function', () => {
+  const input = withCSF3(dedent`
+    export const Default: Story = {
+      render(args) {
+        return <Button {...args}>method body</Button>;
+      }
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Default = () => {
+        return <Button>method body</Button>;
+    };"
+  `);
+});
+
+test('a render shadowed by a later spread stays the snippet, not the synthesized fallback', () => {
+  const input = withCSF3(dedent`
+    const base = {};
+    export const Default: Story = {
+      render: (args) => <Button {...args}>custom body</Button>,
+      ...base,
+    };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(
+    `"const Default = () => <Button>custom body</Button>;"`
+  );
+});

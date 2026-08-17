@@ -153,6 +153,10 @@ export class ChangeDetectionService {
     return getService('core/module-graph', { internal: true });
   }
 
+  private getModuleGraphIndex() {
+    return getService('core/module-graph-index', { internal: true });
+  }
+
   /** True while the service is live and change-detection status publishing is enabled. */
   private isActive(): boolean {
     return !this.disposed && this.changeDetectionEnabled;
@@ -406,8 +410,8 @@ export class ChangeDetectionService {
     const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
     const statuses = new Map<string, Status>();
     const scannedFilesArray = [...scannedFiles];
-    const moduleGraph = this.getModuleGraph();
-    const lookupResults = await moduleGraph.queries.storiesForFiles.loaded({
+    const moduleGraphIndex = this.getModuleGraphIndex();
+    const lookupResults = await moduleGraphIndex.queries.storiesForFiles.loaded({
       files: scannedFilesArray,
     });
 

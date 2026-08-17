@@ -530,6 +530,35 @@
 
 ## From version 10.5.x to 10.6.0
 
+### Angular Vite: a new `propsTable` framework option
+
+`@storybook/angular-vite` now lets you choose which members the props table documents, through a `propsTable` framework option. It defaults to `'api'`, which leaves out TypeScript `private` properties and methods, ECMAScript private `#` members, and anything tagged `@internal`. No template can reach a `private` property or method, and `@internal` declares a member non-API, so a row for them documents your component's wiring rather than its API. Injected services such as `private readonly cdr = inject(ChangeDetectorRef)` are the common case.
+
+Declared inputs and outputs are always documented, whatever their TypeScript visibility. Angular only honors access modifiers on input bindings behind the opt-in `strictInputAccessModifiers` compiler flag and never checks them on output bindings, so even a `private` input or output is API a parent template can bind.
+
+`protected` members are documented. Angular templates have been able to bind them since Angular 14, so they are real API.
+
+The default only changes what you see when `features.experimentalDocgenServer` is on. With the Compodoc pipeline, which is still the default, Storybook cannot interpret Compodoc's visibility data reliably and the props table is unchanged.
+
+Set the option to `'all'` to document every member:
+
+```ts
+// .storybook/main.ts
+framework: {
+  name: '@storybook/angular-vite',
+  options: {
+    // 'all' documents every member.
+    // 'api' (the default) leaves out private and `#` properties and methods, and @internal members.
+    // 'inputs' documents the inputs section only.
+    propsTable: 'all',
+  },
+},
+```
+
+To drop a single member the default keeps, tag it `@ignore`.
+
+`features.angularFilterNonInputControls` is deprecated on `@storybook/angular-vite` and will be removed in Storybook 11: `true` maps to `propsTable: 'inputs'` and `false` to `propsTable: 'all'`. Setting both leaves `propsTable` in charge. `@storybook/angular` (webpack) is unaffected and keeps reading the feature.
+
 ### MCP tool names follow toolset.method
 
 Storybook's MCP tools are now named from their toolset and method (`stories.preview` → `stories-preview`). Update agent prompts, skills, and hard-coded tool allowlists:
@@ -546,6 +575,40 @@ Storybook's MCP tools are now named from their toolset and method (`stories.prev
 | `get-documentation-for-story` | `docs-show-story` |
 
 `get-storybook-story-instructions` is unchanged (it is not backed by a toolset method).
+
+### Angular Vite defaults to server-side docgen
+
+`experimentalDocgenServer` moves component analysis out of the browser and onto the Storybook server, where each component is read from its TypeScript source once and the resulting inputs, outputs and descriptions are served to the Controls table, the Docs pages and the component manifest that AI agents read.
+
+`@storybook/angular-vite` now enables that feature by default. Angular metadata is extracted in process, so Compodoc no longer runs, `documentation.json` is no longer read, and Compodoc is no longer needed as a dependency.
+
+The `storybook automigrate` command removes the Compodoc setup that has no effect anymore: the `compodoc` and `compodocArgs` framework options, the `setCompodocJson` wiring in your preview config, the Compodoc options on the `angular.json` Storybook targets, and the `@compodoc/compodoc` dependency.
+
+To keep using Compodoc, opt out and skip that automigration:
+
+```js
+// .storybook/main.js
+export default {
+  framework: '@storybook/angular-vite',
+  features: { experimentalDocgenServer: false },
+};
+```
+
+Opting out keeps the Compodoc setup an existing project already has.
+A project created after this change has none, because `storybook init` no longer sets Compodoc up for the Vite builder, so opting out there means installing `@compodoc/compodoc`, generating `documentation.json`, and handing it to Storybook yourself:
+
+```js
+// .storybook/preview.js
+import { setCompodocJson } from '@storybook/addon-docs/angular';
+
+import docJson from '../documentation.json';
+
+setCompodocJson(docJson);
+```
+
+The webpack-based `@storybook/angular` package is unaffected and keeps Compodoc as its only docgen path.
+
+The `compodoc` and `compodocArgs` options have also been removed from the `@storybook/angular-vite` `start-storybook` and `build-storybook` builder schemas. Those options were validated by the Angular CLI and never read; Compodoc is configured through `framework.options` in your main config.
 
 ### Experimental Playwright CT integration removed
 

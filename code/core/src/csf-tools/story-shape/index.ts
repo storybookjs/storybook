@@ -7,25 +7,27 @@ export {
   storyAssignedArgsPath,
 } from './args.ts';
 export {
-  type ComponentImportRef,
-  type ImportRef,
   buildImportStatements,
   resolveComponentImport,
+  type ComponentImportRef,
+  type ImportRef,
 } from './import-statements.ts';
 export {
-  type ImportBinding,
   collectImportBindings,
   importedName,
   isTypeSpecifier,
+  type ImportBinding,
 } from './imports.ts';
-export { extractStoryJSDocInfo } from './jsdoc.ts';
-export { type NormalizedStoryDeclaration, normalizeStoryDeclaration } from './normalize-story.ts';
-export { type RenderFunctionPath, type RenderResolution, resolveRenderFunction } from './render.ts';
+export { extractStoryJSDocInfo, jsDocTagsForPath } from './jsdoc.ts';
+export { normalizeStoryDeclaration, type NormalizedStoryDeclaration } from './normalize-story.ts';
+export { resolveRenderFunction, type RenderFunctionPath, type RenderResolution } from './render.ts';
 export {
   keyOf,
   metaObjectPath,
   propertyValue,
   resolveIdentifierInit,
-  returnedObjectExpression,
+  resolveReturnedObjectExpression,
+  returnedExpression,
+  returnedExpressionPath,
   unwrapExpression,
 } from './utils.ts';

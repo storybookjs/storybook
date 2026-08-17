@@ -1,6 +1,5 @@
 {
   "id": "slots-template-only",
-  "import": "import TemplateOnlySlots from './TemplateOnlySlots.vue';",
   "name": "TemplateOnlySlots",
   "path": "__PATH__",
   "stories": {
@@ -15,16 +14,14 @@
       "id": "forms-slots-template-only--string-child",
       "name": "String Child",
       "snippet": "<script lang="ts" setup>
-const _default = 'Plain text content';
-
-const header = 'Header text';
+import TemplateOnlySlots from './TemplateOnlySlots.vue';
 </script>
 
 <template>
   <TemplateOnlySlots>
-    {{ _default }}
+    Plain text content
     <template #header>
-      {{ header }}
+      Header text
     </template>
   </TemplateOnlySlots>
 </template>",

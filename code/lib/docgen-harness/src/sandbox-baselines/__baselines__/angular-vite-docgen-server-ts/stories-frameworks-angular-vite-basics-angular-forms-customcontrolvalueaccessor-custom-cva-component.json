@@ -37,7 +37,7 @@
           "summary": "NOOP"
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "(value: any) => void"
         }
       },
@@ -53,7 +53,7 @@
           "summary": "NOOP"
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "() => void"
         }
       },

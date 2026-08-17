@@ -1,6 +1,5 @@
 {
   "id": "define-slots-literal-bindings",
-  "import": "import DefineSlotsLiteralBindings from './DefineSlotsLiteralBindings.vue';",
   "name": "DefineSlotsLiteralBindings",
   "path": "__PATH__",
   "stories": {

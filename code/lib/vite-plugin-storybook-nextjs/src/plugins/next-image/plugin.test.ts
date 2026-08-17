@@ -1,5 +1,6 @@
 import fs from 'node:fs';
-import path from 'node:path';
+
+import { dirname, join } from 'pathe';
 
 import type { NextConfigComplete } from 'next/dist/server/config-shared.js';
 import type { PluginContext } from 'rollup';
@@ -35,7 +36,7 @@ describe('vitePluginNextImage resolveId', () => {
     const plugin = vitePluginNextImage(passthroughConfig);
     const resolve = vi.fn();
     const importer = '/project/src/Component.tsx';
-    const expectedPath = path.join(path.dirname(importer), './images/avatar.png');
+    const expectedPath = join(dirname(importer), './images/avatar.png');
 
     const id = await plugin.resolveId!.call(
       createContext(resolve),
@@ -83,7 +84,7 @@ describe('vitePluginNextImage resolveId', () => {
 
     expect(resolve).toHaveBeenCalled();
     expect(requireResolveMock).toHaveBeenCalledWith('@myorg/assets/images/avatar.png', {
-      paths: [path.dirname(importer.split('?')[0])],
+      paths: [dirname(importer.split('?')[0])],
     });
     expect(loaded).toContain(resolvedPath);
   });
@@ -104,7 +105,7 @@ describe('vitePluginNextImage resolveId', () => {
   it('keeps the ID safe for paths with characters Vite decodeURI would mangle', async () => {
     const plugin = vitePluginNextImage(passthroughConfig);
     const importer = '/project/src/[locale]/[slug]/Component.tsx';
-    const expectedPath = path.join(path.dirname(importer), './images/avatar.png');
+    const expectedPath = join(dirname(importer), './images/avatar.png');
 
     const id = await plugin.resolveId!.call(createContext(), './images/avatar.png', importer);
     const loaded = await plugin.load!.call({} as PluginContext, id as string);

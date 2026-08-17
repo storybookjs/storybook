@@ -1,6 +1,5 @@
 {
   "id": "runtime-proptype-cast",
-  "import": "import RuntimePropTypeCast from './RuntimePropTypeCast.vue';",
   "name": "RuntimePropTypeCast",
   "path": "__PATH__",
   "stories": {
@@ -8,7 +7,11 @@
       "description": undefined,
       "id": "forms-runtime-proptype-cast--props-as-written",
       "name": "Props As Written",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import RuntimePropTypeCast from './RuntimePropTypeCast.vue';
+</script>
+
+<template>
   <RuntimePropTypeCast kind="secondary" :measure="42" />
 </template>",
       "summary": undefined,

@@ -7,6 +7,7 @@ import {
   OpenServiceModuleGraphUnavailableError,
 } from '../../../../server-errors.ts';
 import type { ModuleGraphService } from '../../services/module-graph/definition.ts';
+import type { ModuleGraphIndexService } from '../../services/module-graph-index/definition.ts';
 import {
   defineToolset,
   reportToolsetTelemetry,
@@ -17,7 +18,7 @@ import { getToolName } from '../../toolset-names.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
 import { getChangedStories } from './changed.ts';
 import { DEFAULT_MAX_DISTANCE, findStoriesByComponent } from './find-by-component.ts';
-import type { ModuleGraphStatus } from './resolve-component-stories.ts';
+import type { ModuleGraphAccess, ModuleGraphStatus } from './resolve-component-stories.ts';
 import { reasonForStatus } from './resolve-component-stories.ts';
 import { formatChangedStories, formatFindByComponent, formatPreviewStories } from './format.ts';
 import { previewStories } from './preview-stories.ts';
@@ -231,6 +232,24 @@ Never invent IDs from file names, feature names, or memory; title strings can be
 Backed by Storybook's live reverse dependency graph, available only when the dev server runs a builder that supports change detection (e.g. Vite) — otherwise returns a typed error.`;
 }
 
+// Hot status + cold reverse-index queries, composed for ModuleGraphAccess consumers.
+function moduleGraphAccessFromCtx(ctx: ToolsetCtx): ModuleGraphAccess {
+  const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', { internal: true });
+  const moduleGraphIndex = ctx.getService<ModuleGraphIndexService>('core/module-graph-index', {
+    internal: true,
+  });
+  return {
+    queries: {
+      status: {
+        loaded: () => moduleGraph.queries.status.loaded(undefined) as Promise<ModuleGraphStatus>,
+      },
+      storiesForFiles: {
+        loaded: (files) => moduleGraphIndex.queries.storiesForFiles.loaded(files),
+      },
+    },
+  };
+}
+
 /** Creates the public stories API with request-local access to Storybook runtime dependencies. */
 export function createStoriesToolset({
   storyIndex,
@@ -287,14 +306,10 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
         title: 'Get changed stories metadata',
         description: describeChanged,
         handler: async (_input, ctx): Promise<ToolsetOutcome<ChangedStoriesOutput, never>> => {
-          const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', {
-            internal: true,
-          });
+          const moduleGraph = moduleGraphAccessFromCtx(ctx);
           // Same readiness gate as findByComponent: an empty status store is not "no changes", so
           // fail before reading statuses when the graph has not settled.
-          const graphStatus = (await moduleGraph.queries.status.loaded(
-            undefined
-          )) as ModuleGraphStatus;
+          const graphStatus = await moduleGraph.queries.status.loaded(undefined);
           if (graphStatus.value !== 'ready') {
             throw new OpenServiceModuleGraphUnavailableError({
               reason: reasonForStatus(graphStatus),
@@ -372,28 +387,12 @@ Defaults to ${DEFAULT_MAX_DISTANCE}; raise it to widen recall, lower it to tight
         title: 'Get stories for component files',
         description: (ctx) => describeFindByComponent(ctx, reviewEnabled),
         handler: async (input, ctx): Promise<ToolsetOutcome<FindByComponentOutput, never>> => {
-          const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', {
-            internal: true,
-          });
           const maxDistance = input.maxDistance ?? DEFAULT_MAX_DISTANCE;
           const lookup = await findStoriesByComponent({
             componentPaths: input.componentPaths,
             maxDistance,
             index: await storyIndex.getIndex(),
-            // The service handle carries commands and a looser status payload than the lookup
-            // needs; this narrows it to the two queries the reverse-index walk actually calls.
-            moduleGraph: {
-              queries: {
-                status: {
-                  loaded: () =>
-                    moduleGraph.queries.status.loaded(undefined) as Promise<ModuleGraphStatus>,
-                },
-                storiesForFiles: {
-                  loaded: (files: { files: string[] }) =>
-                    moduleGraph.queries.storiesForFiles.loaded(files),
-                },
-              },
-            },
+            moduleGraph: moduleGraphAccessFromCtx(ctx),
           });
 
           if (!lookup.available) {

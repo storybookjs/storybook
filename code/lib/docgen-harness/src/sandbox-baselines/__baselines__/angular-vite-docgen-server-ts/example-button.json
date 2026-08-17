@@ -39,7 +39,7 @@
           "summary": "Button"
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "string"
         }
       },
@@ -55,7 +55,7 @@
         "category": "outputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "EventEmitter"
         }
       },
@@ -73,7 +73,7 @@
           "summary": false
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "boolean"
         }
       },
@@ -90,7 +90,7 @@
           "summary": "medium"
         },
         "type": {
-          "required": true,
+          "required": false,
           "summary": "\"small\" | \"medium\" | \"large\""
         }
       },

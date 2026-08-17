@@ -25,3 +25,17 @@ export const Primary: Story = {
       '<div class="wrap"><TemplateStringBadge text="New" /><TemplateStringButton v-bind="args" /></div>',
   }),
 };
+
+export const AssignedArgs: Story = {
+  render: (args) => ({
+    components: { TemplateStringButton },
+    setup() {
+      return { args };
+    },
+    template: '<TemplateStringButton v-bind="args" />',
+  }),
+};
+
+AssignedArgs.args = {
+  label: 'Assigned template',
+};

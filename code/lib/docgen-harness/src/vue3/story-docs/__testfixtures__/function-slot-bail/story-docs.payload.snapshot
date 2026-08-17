@@ -1,6 +1,5 @@
 {
   "id": "function-slot-bail",
-  "import": "import FunctionSlotBailPanel from './FunctionSlotBailPanel.vue';",
   "name": "FunctionSlotBailPanel",
   "path": "__PATH__",
   "stories": {

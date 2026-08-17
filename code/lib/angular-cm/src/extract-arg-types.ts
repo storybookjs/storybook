@@ -82,8 +82,10 @@ const SECTION_ORDER = [
 const isMethod = (methodOrProp: Method | Property): methodOrProp is Method =>
   (methodOrProp as Method).args !== undefined;
 
-// Compodoc's `required` tracks the `@Input({...})` key's presence, so `optional` must agree.
-const isRequired = (item: Property): boolean => (item.required ?? true) && !item.optional;
+// Compodoc's `required` tracks the `@Input({...})` key's presence, so `optional` must agree. With
+// the key absent an initializer settles it: a defaulted input is never mandatory to bind.
+const isRequired = (item: Property): boolean =>
+  (item.required ?? item.defaultValue === undefined) && !item.optional;
 
 const hasDecorator = (item: Property, decoratorName: string) =>
   item.decorators && item.decorators.find((x: Decorator) => x.name === decoratorName);

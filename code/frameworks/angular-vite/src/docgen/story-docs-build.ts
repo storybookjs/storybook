@@ -20,10 +20,12 @@ import {
   createSpreadArgsResolver,
   deepAssignmentSources,
   evaluateArgExpression,
+  evaluateArgLiteral,
 } from './story-docs-args.ts';
-import type { Bindings, StoryShape } from './story-docs-markup.ts';
+import type { Bindings, StoryShape, TemplateResult } from './story-docs-markup.ts';
 import {
   metaConfigObject,
+  sourceOf,
   storyConfigObject,
   unresolvableConfigMembers,
   userTemplate,
@@ -36,6 +38,7 @@ import {
   buildComponentOutletTemplate,
   buildTemplate,
   formatTemplateMarkup,
+  isValidIdentifier,
 } from '../template-grammar.ts';
 
 export interface BuildStoryDocsContext {
@@ -214,7 +217,12 @@ const renderStorySnippet = (
   // read without bindings then and falls back with a warning instead.
   const userMarkup = userTemplate(shape, shape.unresolvedArgs.length === 0 ? bindings : undefined);
 
-  const host = (template: string, viaComponentOutlet: boolean, outputs: string[]) =>
+  const host = (
+    template: string,
+    viaComponentOutlet: boolean,
+    outputs: string[],
+    fields?: { name: string; value: string }[]
+  ) =>
     buildHostComponentSnippet({
       template,
       componentName: localName,
@@ -223,15 +231,20 @@ const renderStorySnippet = (
       standalone: snippetMeta.standalone,
       ngModules,
       outputs,
+      fields,
     });
 
   if (userMarkup?.kind === 'literal') {
-    // The story is shown exactly as it was written, so nothing about it is missing; the host only
-    // needs handlers for the outputs the markup actually binds.
+    // The markup is shown exactly as it was written, so the host has to supply what the story
+    // supplied: handlers for the outputs it binds, and the args it reaches for by name.
     const boundOutputs = snippetMeta.outputs.filter((name) =>
       userMarkup.markup.includes(`(${name})=`)
     );
-    return host(formatTemplateMarkup(userMarkup.markup), false, boundOutputs);
+    const hostArgs = referencedArgFields(userMarkup, shape, boundOutputs, snippetMeta.enums);
+    return withUnresolved(
+      host(formatTemplateMarkup(userMarkup.markup), false, boundOutputs, hostArgs.fields),
+      hostArgs.unresolved
+    );
   }
 
   const markupSources = userMarkup?.source === undefined ? [] : [userMarkup.source];
@@ -243,6 +256,38 @@ const renderStorySnippet = (
         [...markupSources, ...shape.unresolvedArgs]
       )
     : withUnresolved(host(buildComponentOutletTemplate(localName), true, []), markupSources);
+};
+
+/**
+ * Args the story's own markup binds by name, as host members holding the value the story gave them.
+ */
+const referencedArgFields = (
+  markup: Extract<TemplateResult, { kind: 'literal' }>,
+  shape: StoryShape,
+  boundOutputs: readonly string[],
+  enums: AngularComponentSnippetMeta['enums']
+): { fields: { name: string; value: string }[]; unresolved: string[] } => {
+  // An output already contributes a handler under the same name, and a class cannot hold both.
+  const taken = new Set([...markup.expandedArgs, ...boundOutputs]);
+  const fields: { name: string; value: string }[] = [];
+  const unresolved: string[] = [];
+
+  for (const [name, node] of Object.entries(shape.args)) {
+    if (taken.has(name) || !isValidIdentifier(name)) {
+      continue;
+    }
+    if (!new RegExp(`\\b${name}\\b`).test(markup.markup)) {
+      continue;
+    }
+    const value = evaluateArgLiteral(node, enums);
+    if (value === undefined) {
+      unresolved.push(sourceOf(node));
+      continue;
+    }
+    fields.push({ name, value });
+  }
+
+  return { fields, unresolved };
 };
 
 /** Says which source text a static pass could not read, so a reader can see what is missing. */

@@ -21,6 +21,8 @@ export interface HostComponentSnippetInput {
   ngModules?: { names: string[]; importStatements: string[] };
   /** Output binding names, each of which needs a handler for the template to compile. */
   outputs: string[];
+  /** Args the template refers to by name, which the story supplied through `props: args`. */
+  fields?: { name: string; value: string }[];
 }
 
 export interface HostComponentSnippet {
@@ -60,6 +62,7 @@ export const buildHostComponentSnippet = ({
   standalone,
   ngModules,
   outputs,
+  fields = [],
 }: HostComponentSnippetInput): HostComponentSnippet => {
   // A `standalone: false` component is only reachable through its declaring NgModule, which static
   // analysis cannot find reliably. The modules the story's own `moduleMetadata` lists are the next
@@ -82,6 +85,7 @@ export const buildHostComponentSnippet = ({
       : moduleNames.join(', ');
   const members = [
     ...(viaComponentOutlet ? [`  protected readonly ${componentName} = ${componentName};`] : []),
+    ...fields.map(({ name, value }) => `  ${name} = ${value};`),
     ...outputs.map((name) => `  ${memberName(name)}(event: unknown) {}`),
   ];
   const body = members.length > 0 ? `{\n${members.join('\n')}\n}` : '{}';

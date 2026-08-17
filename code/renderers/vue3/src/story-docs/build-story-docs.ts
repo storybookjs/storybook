@@ -39,7 +39,6 @@ import {
   type ClassifyArgsResult,
   type VueDocgenArgInfo,
 } from './classify-args.ts';
-import { importStatementForBinding } from './render-primitives.ts';
 import { renderSfcSnippet } from './render-sfc.ts';
 import { transformH } from './transform-h.ts';
 import {
@@ -57,6 +56,7 @@ export interface BuildStoryDocsContext {
 
 interface StorySnippetContext {
   componentName: string;
+  componentImportStatement: string | undefined;
   docgenArgInfo: VueDocgenArgInfo;
 }
 
@@ -69,8 +69,7 @@ interface StoryDocsContext {
 
 type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
 type ArgsObjectPath = NodePath<t.ObjectExpression>;
-type StoryDocResult = { doc: StoryDoc; imports: string[] };
-type ExtractStoriesResult = { stories: Record<string, StoryDoc>; imports: string[] };
+type ExtractStoriesResult = { stories: Record<string, StoryDoc> };
 type StaticStoryRenderer =
   | { kind: 'h'; argsParam?: string; expression: t.Expression }
   | { kind: 'sfc' }
@@ -79,7 +78,7 @@ type StaticStoryRenderer =
       componentImports: TemplateRenderConfig['componentImports'];
       template: string;
     };
-type StorySnippetResult = { snippet: string; imports: string[] };
+type StorySnippetResult = { snippet: string };
 type StaticStoryArgs =
   | { kind: 'error'; error: NonNullable<StoryDoc['error']> }
   | { kind: 'classified'; classified: ClassifyArgsResult };
@@ -136,23 +135,16 @@ export async function buildStoryDocsPayload(
   );
   const docgenArgInfo =
     docgenPayload && !docgenPayload.error ? vueDocgenArgInfo(docgenPayload) : undefined;
-  const snippet = componentName && docgenArgInfo ? { componentName, docgenArgInfo } : undefined;
+  const snippet =
+    componentName && docgenArgInfo
+      ? { componentName, componentImportStatement: importStatement, docgenArgInfo }
+      : undefined;
   const extracted = extractStories(csf, { snippet, importBindings, metaPath });
-  // meta statement already binds this name (an `@import` override may redirect it)
-  // drop the snippet-derived duplicate.
-  const componentBindingImport = componentName
-    ? importStatementForBinding(componentName, importBindings.get(componentName))
-    : undefined;
-  const snippetImports = extracted.imports.filter((line) => line !== componentBindingImport);
-  const importCode = Array.from(
-    new Set([importStatement, ...snippetImports].filter((line): line is string => Boolean(line)))
-  ).join('\n');
 
   return {
     id,
     name: componentName ?? docgenPayload?.name ?? fallbackTitle(input.entry.title),
     path: storyFilePath,
-    ...(importCode ? { import: importCode } : {}),
     stories: extracted.stories,
   };
 }
@@ -261,7 +253,6 @@ function argsObjectHasSpread(object: t.ObjectExpression | undefined): boolean {
  * Maps every CSF story export to its StoryDoc, enriched with a snippet or error where possible.
  */
 function extractStories(csf: ParsedCsf, options: StoryDocsContext): ExtractStoriesResult {
-  const imports = new Set<string>();
   const stories = Object.fromEntries(
     Object.entries(csf._stories).map(([storyExport, story]): [string, StoryDoc] => {
       const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[storyExport]);
@@ -272,14 +263,11 @@ function extractStories(csf: ParsedCsf, options: StoryDocsContext): ExtractStori
         summary,
       };
       const enriched = enrichStoryDoc(csf, storyExport, storyDoc, options);
-      for (const importStatement of enriched.imports) {
-        imports.add(importStatement);
-      }
-      return [story.id, enriched.doc];
+      return [story.id, enriched];
     })
   );
 
-  return { imports: Array.from(imports), stories };
+  return { stories };
 }
 
 /**
@@ -290,8 +278,8 @@ function enrichStoryDoc(
   storyExport: string,
   storyDoc: StoryDoc,
   options: StoryDocsContext
-): StoryDocResult {
-  const plain: StoryDocResult = { doc: storyDoc, imports: [] };
+): StoryDoc {
+  const plain = storyDoc;
 
   if (!options.snippet) {
     return plain;
@@ -334,9 +322,7 @@ function enrichStoryDoc(
   );
   if (resolved.kind === 'error') {
     // Only the SFC path reports arg errors; render-function stories defer to runtime source.
-    return renderer.kind === 'sfc'
-      ? { doc: { ...storyDoc, error: resolved.error }, imports: [] }
-      : plain;
+    return renderer.kind === 'sfc' ? { ...storyDoc, error: resolved.error } : plain;
   }
 
   const classified = resolved.classified;
@@ -356,12 +342,9 @@ function enrichStoryDoc(
   }
 
   return {
-    doc: {
-      ...storyDoc,
-      snippet: rendered.snippet,
-      ...(classified.warning ? { warning: classified.warning } : {}),
-    },
-    imports: rendered.imports,
+    ...storyDoc,
+    snippet: rendered.snippet,
+    ...(classified.warning ? { warning: classified.warning } : {}),
   };
 }
 
@@ -371,7 +354,10 @@ function staticRendererForRenderFunction(
 ): StaticStoryRenderer | undefined {
   const renderObject = resolveReturnedObjectExpression(renderFunction);
   const templateConfig = renderObject
-    ? readTemplateRenderConfig(renderObject, options.importBindings)
+    ? readTemplateRenderConfig(renderObject, options.importBindings, {
+        componentImportStatement: options.snippet?.componentImportStatement,
+        componentName: options.snippet?.componentName,
+      })
     : undefined;
   if (templateConfig) {
     return { kind: 'template', ...templateConfig };
@@ -434,8 +420,17 @@ function renderStaticStorySnippet(
   docgenArgInfo: VueDocgenArgInfo,
   options: StoryDocsContext
 ): StorySnippetResult | undefined {
+  const componentImportStatement = options.snippet?.componentImportStatement;
+
   if (renderer.kind === 'sfc') {
-    return renderSfcSnippet({ args, componentName, importBindings: options.importBindings });
+    return componentImportStatement
+      ? renderSfcSnippet({
+          args,
+          componentImportStatement,
+          componentName,
+          importBindings: options.importBindings,
+        })
+      : undefined;
   }
 
   if (renderer.kind === 'template') {
@@ -449,6 +444,7 @@ function renderStaticStorySnippet(
   return transformH({
     args,
     argsParam: renderer.argsParam,
+    componentImportStatement,
     componentName,
     docgen: docgenArgInfo,
     importBindings: options.importBindings,

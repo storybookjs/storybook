@@ -1,5 +1,5 @@
 name: Publish
-run-name: "${{ github.event_name == 'workflow_dispatch' && format('Publish Canary on PR #{0}, triggered by {1}', inputs.pr, github.triggering_actor) || format('Publish new version on {0}, triggered by {1}', github.ref_name, github.triggering_actor) }}"
+run-name: "${{ github.event_name == 'workflow_dispatch' && inputs.skip_publish && format('Finish release bookkeeping on {0}, triggered by {1}', github.ref_name, github.triggering_actor) || github.event_name == 'workflow_dispatch' && format('Publish Canary on PR #{0}, triggered by {1}', inputs.pr, github.triggering_actor) || format('Publish new version on {0}, triggered by {1}', github.ref_name, github.triggering_actor) }}"
 
 on:
   push:
@@ -8,12 +8,16 @@ on:
       - latest-release
       - next-release
   workflow_dispatch:
-    # Manual canary releases on PRs
     inputs:
       pr:
         description: '⚠️ CANARY RELEASES ONLY - Enter the pull request number to create a canary release for'
-        required: true
+        required: false
         type: number
+      skip_publish:
+        description: 'Skip npm publish and finish GitHub Release / merge / Sentry / DX for an already-published version. Run this from next-release or latest-release.'
+        required: false
+        type: boolean
+        default: false
 
 env:
   PLAYWRIGHT_SKIP_BROWSER_DOWNLOAD: 1
@@ -27,8 +31,8 @@ concurrency:
   #   so a newer canary supersedes an older one for the same PR. Only runs
   #   that actually publish a canary join this group.
   # - Pushes to release branches are grouped by branch name and never cancelled.
-  group: ${{ github.event_name == 'workflow_dispatch' && format('{0}-{1}', github.workflow, inputs.pr) || format('{0}-{1}', github.workflow, github.ref_name) }}
-  cancel-in-progress: ${{ github.event_name == 'workflow_dispatch'}}
+  group: ${{ github.event_name == 'workflow_dispatch' && inputs.pr && format('{0}-{1}', github.workflow, inputs.pr) || format('{0}-{1}', github.workflow, github.ref_name) }}
+  cancel-in-progress: ${{ github.event_name == 'workflow_dispatch' && inputs.skip_publish != true }}
 
 jobs:
   publish-normal:
@@ -36,9 +40,18 @@ jobs:
     runs-on: ubuntu-latest
     if: |
       github.repository_owner == 'storybookjs' &&
-      github.event_name == 'push' &&
       (github.ref_name == 'latest-release' || github.ref_name == 'next-release') &&
-      contains(github.event.head_commit.message, '[skip ci]') != true
+      (
+        (
+          github.event_name == 'push' &&
+          contains(github.event.head_commit.message, '[skip ci]') != true
+        ) ||
+        (
+          github.event_name == 'workflow_dispatch' &&
+          inputs.skip_publish == true &&
+          inputs.pr == ''
+        )
+      )
     environment: Release
     permissions:
       contents: write
@@ -99,7 +112,6 @@ jobs:
         run: yarn release:is-version-published "$CURRENT_VERSION"
 
       - name: Check release vs prerelease
-        if: steps.publish-needed.outputs.published == 'false'
         id: is-prerelease
         env:
           CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
@@ -108,14 +120,15 @@ jobs:
       - name: Publish
         env:
           NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
-        if: steps.publish-needed.outputs.published == 'false'
+        if: |
+          steps.publish-needed.outputs.published == 'false' &&
+          !(github.event_name == 'workflow_dispatch' && inputs.skip_publish == true)
         run: yarn release:publish --tag ${{ steps.is-prerelease.outputs.prerelease == 'true' && 'next' || 'latest' }} --verbose
 
       # Bookkeeping for DX deployment tracking, not part of publishing itself, so it runs
       # continue-on-error to avoid aborting an already-published release. Failure is alerted below.
       - name: Register release in DX
         id: register-dx-release
-        if: steps.publish-needed.outputs.published == 'false'
         continue-on-error: true
         env:
           DX_DATACLOUD_API_KEY: ${{ secrets.DX_DATACLOUD_API_KEY }}
@@ -187,7 +200,6 @@ jobs:
         run: echo "target=${{ github.ref_name == 'next-release' && 'next' || 'main' }}" >> $GITHUB_OUTPUT
 
       - name: Get changelog for ${{ steps.version.outputs.current-version }}
-        if: steps.publish-needed.outputs.published == 'false'
         id: changelog
         env:
           CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
@@ -220,7 +232,6 @@ jobs:
           args: 'Publishing v${{ steps.version.outputs.current-version }} succeeded, but labeling patch PRs as "patch:done" failed. They must be labeled manually or they will reappear in the next patch changelog. See run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}'
 
       - name: Create GitHub Release
-        if: steps.publish-needed.outputs.published == 'false'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           CURRENT_VERSION: ${{ steps.version.outputs.current-version }}
@@ -229,6 +240,10 @@ jobs:
           CHANGELOG: ${{ steps.changelog.outputs.changelog }}
           IS_PRERELEASE: ${{ steps.is-prerelease.outputs.prerelease == 'true' && '--prerelease' || '' }}
         run: |
+          if gh release view "v$CURRENT_VERSION" --repo "$REPOSITORY" >/dev/null 2>&1; then
+            echo "GitHub release v$CURRENT_VERSION already exists, skipping create"
+            exit 0
+          fi
           gh release create \
           "v$CURRENT_VERSION" \
             --repo "$REPOSITORY" \
@@ -250,7 +265,13 @@ jobs:
           git push origin "$TARGET_BRANCH"
 
       - name: Force push from 'next' to 'latest-release' and 'main' on minor/major releases
-        if: github.ref_name == 'next-release' && steps.is-prerelease.outputs.prerelease == 'false'
+        if: |
+          github.ref_name == 'next-release' &&
+          steps.is-prerelease.outputs.prerelease == 'false' &&
+          (
+            steps.publish-needed.outputs.published == 'false' ||
+            (github.event_name == 'workflow_dispatch' && inputs.skip_publish == true)
+          )
         run: |
           git checkout next
           git pull
@@ -272,7 +293,7 @@ jobs:
           git push origin next
 
       - name: Create Sentry release
-        if: steps.publish-needed.outputs.published == 'false'
+        continue-on-error: true
         uses: getsentry/action-release@5657c9e888b4e2cc85f4d29143ea4131fde4a73a # v3.6.0
         env:
           SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
@@ -296,7 +317,8 @@ jobs:
     if: |
       github.repository_owner == 'storybookjs' &&
       github.event_name == 'workflow_dispatch' &&
-      contains(github.event.head_commit.message, '[skip ci]') != true
+      inputs.skip_publish != true &&
+      inputs.pr != ''
     environment: Release
     permissions:
       contents: read

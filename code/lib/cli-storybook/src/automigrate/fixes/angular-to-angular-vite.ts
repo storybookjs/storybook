@@ -599,10 +599,6 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
           mainConfig,
           previewConfigPath,
           packageManager,
-          // Steps 3 and 3b have just repointed every `@storybook/angular` Storybook target at
-          // angular-vite — or, on a dry run, established that they would be. Either way their
-          // Compodoc options are dead, and reading only what is on disk would make a dry run
-          // report the opposite of what the real run does.
           builderPackages: [ANGULAR_VITE_PACKAGE, ANGULAR_PACKAGE],
         });
         if (compodocSetup) {

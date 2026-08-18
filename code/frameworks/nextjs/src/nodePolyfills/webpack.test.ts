@@ -30,5 +30,5 @@ it('keeps crypto disabled when caller fallbacks try to re-enable it', () => {
     resolve: { fallback: { crypto: '/fake/crypto-browserify' } },
   } as Configuration);
 
-  expect(config.resolve?.fallback?.crypto).toBe(false);
+  expect(config.resolve?.fallback).toMatchObject({ crypto: false });
 });

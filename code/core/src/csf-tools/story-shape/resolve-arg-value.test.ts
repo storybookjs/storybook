@@ -98,6 +98,19 @@ describe('resolveArgValue', () => {
     });
   });
 
+  it('keeps a shorthand property shorthand while writing out a sibling spread', () => {
+    expect(
+      valueOf(
+        `import { dep } from './helpers'; const base = { size: 'md' };`,
+        `{ dep, nested: { ...base } }`
+      )
+    ).toEqual({
+      node: "{ dep, nested: { size: 'md' } }",
+      imports: ['dep:./helpers'],
+      unresolved: [],
+    });
+  });
+
   it('leaves a literal alone', () => {
     expect(valueOf('', `{ a: 1, b: [2, 3] }`)).toEqual({
       node: '{ a: 1, b: [2, 3] }',

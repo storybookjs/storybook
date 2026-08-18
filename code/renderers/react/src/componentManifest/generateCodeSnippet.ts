@@ -99,7 +99,11 @@ function buildSnippetNode(
       const spreadRes = transformArgsSpreadsInJsx(fn.body, merged);
       const inlineRes = inlineArgsInJsx(spreadRes.node, merged);
       if (spreadRes.changed || inlineRes.changed) {
-        const newFn = t.arrowFunctionExpression([], inlineRes.node, fn.async);
+        const newFn = t.arrowFunctionExpression(
+          remainingParams(fn, inlineRes.node),
+          inlineRes.node,
+          fn.async
+        );
         return t.variableDeclaration('const', [
           t.variableDeclarator(t.identifier(storyName), newFn),
         ]);
@@ -134,18 +138,14 @@ function buildSnippetNode(
       });
 
       if (changed) {
+        const body = t.blockStatement(newBody);
+        const params = remainingParams(fn, body);
         return t.isFunctionDeclaration(fn)
-          ? t.functionDeclaration(
-              t.identifier(storyName),
-              [],
-              t.blockStatement(newBody),
-              fn.generator,
-              fn.async
-            )
+          ? t.functionDeclaration(t.identifier(storyName), params, body, fn.generator, fn.async)
           : t.variableDeclaration('const', [
               t.variableDeclarator(
                 t.identifier(storyName),
-                t.arrowFunctionExpression([], t.blockStatement(newBody), fn.async)
+                t.arrowFunctionExpression(params, body, fn.async)
               ),
             ]);
       }
@@ -180,6 +180,43 @@ function buildSnippetNode(
   );
 
   return t.variableDeclaration('const', [t.variableDeclarator(t.identifier(storyName), arrow)]);
+}
+
+type StoryFunction =
+  | t.ArrowFunctionExpression
+  | t.FunctionExpression
+  | t.FunctionDeclaration
+  | t.ObjectMethod;
+
+/**
+ * Parameters the rewritten story function still needs.
+ *
+ * Inlining the args removes the reason the story took an `args` parameter, so the snippet drops it
+ * - unless something the rewrite could not inline still reads from it, which would leave the
+ * snippet naming a binding it no longer declares.
+ */
+function remainingParams(fn: StoryFunction, body: t.Node): StoryFunction['params'] {
+  return readsArgs(body) ? fn.params : [];
+}
+
+function readsArgs(node: t.Node): boolean {
+  // A key or a member name spelled `args` names a property, not the parameter.
+  const named = new Set<t.Node>();
+  let reads = false;
+
+  t.traverseFast(node, (current) => {
+    if (t.isMemberExpression(current) && !current.computed) {
+      named.add(current.property);
+    }
+    if ((t.isObjectProperty(current) || t.isObjectMethod(current)) && !current.computed) {
+      named.add(current.key);
+    }
+    if (t.isIdentifier(current) && current.name === 'args' && !named.has(current)) {
+      reads = true;
+    }
+  });
+
+  return reads;
 }
 
 /** Build a spread `{...{k: v}}` for props that aren't valid JSX attributes. */

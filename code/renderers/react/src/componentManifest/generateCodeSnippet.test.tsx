@@ -871,3 +871,35 @@ test('a meta-level spread that may carry args is reported', () => {
     ]
   `);
 });
+
+test('a body still reading args after a partial inline keeps the parameter', () => {
+  const input = withCSF3(dedent`
+    export function Usage(args) {
+      return <Button {...args} title={args.notAnArg} />;
+    }
+    Usage.args = { label: 'assigned' };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "function Usage(args) {
+        return <Button label="assigned" title={args.notAnArg}>Click me</Button>;
+    }"
+  `);
+});
+
+test('an arg value keeps a shorthand property shorthand', () => {
+  const input = withCSF3(dedent`
+    import { dep } from './dep';
+    const base = { size: 'md' };
+    export const Shorthand: Story = { args: { cfg: { dep, nested: { ...base } } } };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "const Shorthand = () => <Button
+        cfg={{
+            dep,
+
+            nested: {
+                size: 'md'
+            }
+        }}>Click me</Button>;"
+  `);
+});

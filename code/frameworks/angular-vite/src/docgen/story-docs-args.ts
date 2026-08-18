@@ -1,5 +1,5 @@
 // Turns a resolved arg node into the Angular template expression a binding carries. Reading the args
-// themselves - following spreads and names - is the shared CSF pass in `story-shape/resolve-args`.
+// themselves - following spreads and names - is the shared CSF pass in `story-shape`.
 import { babelPrint, types as t } from 'storybook/internal/babel';
 import { keyOf, unwrapExpression } from 'storybook/internal/csf-tools';
 

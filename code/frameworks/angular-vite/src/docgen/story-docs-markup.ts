@@ -1,6 +1,6 @@
 // Reads the markup a story supplies itself - `template`, a `render` that returns one, or the CSF2
 // function form - so a snippet shows the story as written. Which members the story and its meta hold
-// is the shared CSF pass in `story-shape/resolve-args`, spreads and names already followed.
+// is the shared CSF pass in `story-shape`, spreads and names already followed.
 import { type NodePath, types as t } from 'storybook/internal/babel';
 import type { CsfFile, ResolvedMembers } from 'storybook/internal/csf-tools';
 import { sourceOf, unwrapExpression } from 'storybook/internal/csf-tools';

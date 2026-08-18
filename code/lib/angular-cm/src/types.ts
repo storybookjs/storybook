@@ -1,10 +1,8 @@
 /**
  * The shape the analyzer emits for every class it records, plus what the analyzer adds on top.
  *
- * The raw shape below mirrors Compodoc's own JSON schema for now, since the docgen worker feeds
- * analyzer output through the same argTypes extractor Compodoc-based docgen uses. That's an
- * implementation convenience, not a contract: this package owns these types outright and is free
- * to diverge from Compodoc's shape once there's a reason to.
+ * The raw shape below stays close to Compodoc's JSON schema, while analyzer-owned fields use the
+ * stronger contracts its successor pipeline needs. This package owns these types outright.
  */
 type Html = string;
 
@@ -39,6 +37,22 @@ export interface Method {
   jsdoctags?: JsDocTag[];
 }
 
+export type PropertyInitializer =
+  | {
+      kind: 'literal';
+      literalKind:
+        | 'string'
+        | 'number'
+        | 'boolean'
+        | 'null'
+        | 'undefined'
+        | 'bigint'
+        | 'enum'
+        | 'composite';
+      text: string;
+    }
+  | { kind: 'expression'; text: string };
+
 export interface Property {
   name: string;
   decorators?: Decorator[];
@@ -52,7 +66,8 @@ export interface Property {
   optional?: boolean;
   /** Present for signal inputs and `@Input({ required })`, absent for a plain `@Input()`. */
   required?: boolean;
-  defaultValue?: string;
+  /** Syntax-classified source initializer; expressions are metadata, not display defaults. */
+  initializer?: PropertyInitializer;
   /** 1-based line the member is declared on. */
   line?: number;
   description?: Html;

@@ -22,10 +22,6 @@ export type StaticLoader = (
   context: StaticLoaderContext
 ) => Promise<Record<string, unknown>>;
 
-// Document-relative, like `STORY_INDEX_PATH`: the manager and the preview iframe are siblings in
-// the build output, so both resolve this against the directory Storybook was deployed into. An
-// origin-absolute prefix would resolve against the origin root instead, which is the wrong place
-// whenever Storybook is not deployed at it (a GitHub Pages project site, for one).
 const STATIC_SERVICES_PREFIX = './services/';
 
 function shouldUseBrowserStaticLoader(): boolean {

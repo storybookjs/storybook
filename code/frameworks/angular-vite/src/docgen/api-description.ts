@@ -71,15 +71,20 @@ const docComment = (member: Member): string[] => {
 };
 
 // Hyphen-aliased bindings like `aria-label` must be quoted to stay valid TypeScript.
+const quotedName = (name: string): string =>
+  JSON.stringify(name)
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+
 const fieldName = (name: string): string =>
-  /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)
-    ? name
-    : `'${name.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
+  /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) ? name : quotedName(name);
+
+const bindingName = (name: string): string => quotedName(name).slice(1, -1);
 
 const inputLine = (member: Member, isTwoWay: boolean): string => {
   const optional = member.required ? '' : '?';
   const line = `  ${fieldName(member.name)}${optional}: ${member.type ?? 'any'};`;
-  return isTwoWay ? `${line} // two-way: [(${member.name})]` : line;
+  return isTwoWay ? `${line} // two-way: [(${bindingName(member.name)})]` : line;
 };
 
 // An output is subscribed to rather than passed, so it carries neither optionality nor a default.

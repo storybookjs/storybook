@@ -11,10 +11,10 @@ import {
   parseInputDecoratorConfig,
   readMetadataInputsOutputs,
 } from './decorators.ts';
+import { defaultInitializer } from './default-initializer.ts';
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
-import { initializerText, memberName } from './node-text.ts';
+import { memberName } from './node-text.ts';
 import { buildSignalEntry, parseSignalCall } from './signals.ts';
-import { stripImportQualifiers } from './type-index.ts';
 
 /**
  * A collected member, paired with the identity Angular itself merges on.
@@ -25,8 +25,17 @@ import { stripImportQualifiers } from './type-index.ts';
  */
 export interface MemberEntry<T> {
   declName: string;
-  /** Type parameters the member declares for itself, which shadow the class's inside its types. */
-  typeParameters?: string[];
+  isStatic: boolean;
+  declaration: ts.NamedDeclaration;
+  /** A metadata type the class property's checker type does not represent. */
+  typeSource?:
+    | { kind: 'signal'; signalKind: 'input' | 'output' | 'model' }
+    | {
+        kind: 'transform';
+        checkerType: ts.Type;
+        node?: ts.TypeNode;
+        substitutions?: ReadonlyMap<ts.Symbol, ts.TypeNode>;
+      };
   value: T;
 }
 
@@ -36,6 +45,11 @@ export interface ClassMembers {
   properties: MemberEntry<Property>[];
   methods: MemberEntry<Method>[];
 }
+
+export const sameMemberIdentity = (
+  left: MemberEntry<unknown>,
+  right: MemberEntry<unknown>
+): boolean => left.declName === right.declName && left.isStatic === right.isStatic;
 
 const owningClassName = (node: ts.Node): string => {
   let candidate: ts.Node | undefined = node.parent;
@@ -72,7 +86,7 @@ export function visitClassMembers(
 ): ClassMembers {
   const { ts } = ctx;
   const members: ClassMembers = { inputs: [], outputs: [], properties: [], methods: [] };
-  const visitedAccessors = new Set<string>();
+  const visitedAccessors = new Set<ts.AccessorDeclaration>();
 
   for (const member of classNode.members) {
     if (hasJsDocTag(ts, member, 'ignore')) {
@@ -93,12 +107,7 @@ export function visitClassMembers(
       visitProperty(ctx, member, members);
     } else if (ts.isMethodDeclaration(member)) {
       if (isPreferredMethodDeclaration(ctx, classNode, member)) {
-        members.methods.push({
-          ...entryFor(ctx, member, visitMethod(ctx, member)),
-          ...(member.typeParameters?.length
-            ? { typeParameters: member.typeParameters.map((parameter) => parameter.name.text) }
-            : {}),
-        });
+        members.methods.push(entryFor(ctx, member, visitMethod(ctx, member)));
       }
     } else if (ts.isGetAccessor(member) || ts.isSetAccessor(member)) {
       visitAccessorPair(ctx, classNode, member, members, visitedAccessors);
@@ -120,7 +129,9 @@ export function applyMetadataInputsOutputs(
 ): void {
   for (const decoratorName of ['Component', 'Directive']) {
     for (const entry of readMetadataInputsOutputs(ctx, classNode, decoratorName)) {
-      const index = members.properties.findIndex((property) => property.declName === entry.name);
+      const index = members.properties.findIndex(
+        (property) => property.declName === entry.name && !property.isStatic
+      );
       if (index < 0) {
         continue;
       }
@@ -149,9 +160,13 @@ export function applyMetadataInputsOutputs(
 const entryFor = <T>(
   ctx: AnalyzerContext,
   member: ts.ClassElement & { name: ts.PropertyName },
-  value: T
+  value: T,
+  typeSource?: MemberEntry<T>['typeSource']
 ): MemberEntry<T> => ({
   declName: memberName(ctx.ts, member.name),
+  isStatic: isStatic(ctx, member),
+  declaration: member,
+  ...(typeSource ? { typeSource } : {}),
   value,
 });
 
@@ -163,7 +178,8 @@ const visitProperty = (
   const decorators = getDecorators(ctx, member);
   const inputDecorator = decorators.find((decorator) => decorator.name === 'Input');
   if (inputDecorator) {
-    members.inputs.push(entryFor(ctx, member, buildDecoratorInput(ctx, member, inputDecorator)));
+    const input = buildDecoratorInput(ctx, member, inputDecorator);
+    members.inputs.push(entryFor(ctx, member, input.value, input.typeSource));
     return;
   }
   const outputDecorator = decorators.find((decorator) => decorator.name === 'Output');
@@ -173,10 +189,15 @@ const visitProperty = (
   }
   const signal = parseSignalCall(ctx, member);
   if (signal) {
-    const entry = entryFor(ctx, member, {
-      ...buildSignalEntry(ctx, member, signal),
-      ...memberApiFields(ctx, member),
-    });
+    const entry = entryFor(
+      ctx,
+      member,
+      {
+        ...buildSignalEntry(ctx, member, signal),
+        ...memberApiFields(ctx, member),
+      },
+      { kind: 'signal', signalKind: signal.kind }
+    );
     if (signal.kind !== 'output') {
       members.inputs.push(entry);
     }
@@ -189,33 +210,52 @@ const visitProperty = (
   members.properties.push(entryFor(ctx, member, buildPlainProperty(ctx, member, decorators)));
 };
 
-// An arrow default collapses to `() => {...}` for plain properties only, so decorator IO keeps the
-// raw initializer source instead of going through `initializerText`.
 const buildDecoratorInput = (
   ctx: AnalyzerContext,
   member: ts.PropertyDeclaration,
   decorator: DecoratorInfo
-): Property => {
+): { value: Property; typeSource?: MemberEntry<Property>['typeSource'] } => {
   const config = parseInputDecoratorConfig(ctx, decorator);
-  const type =
-    (config.transform ? transformWriteType(ctx, config.transform) : undefined) ??
-    typeOfPropertyish(ctx, member);
+  const transformed = config.transform ? transformWriteType(ctx, config.transform) : undefined;
+  const type = transformed?.text ?? typeOfPropertyish(ctx, member);
   return {
-    name: config.alias ?? memberName(ctx.ts, member.name),
-    ...(type === undefined ? {} : { type }),
-    optional: config.required !== undefined ? !config.required : !!member.questionToken,
-    ...(config.required === undefined ? {} : { required: config.required }),
-    ...(member.initializer ? { defaultValue: member.initializer.getText() } : {}),
-    ...memberApiFields(ctx, member),
-    ...getJsDocDescription(ctx.ts, member),
-    ...getJsDocTagsField(ctx.ts, member),
+    value: {
+      name: config.alias ?? memberName(ctx.ts, member.name),
+      ...(type === undefined ? {} : { type }),
+      optional: config.required !== undefined ? !config.required : !!member.questionToken,
+      ...(config.required === undefined ? {} : { required: config.required }),
+      ...(member.initializer ? { initializer: defaultInitializer(ctx, member.initializer) } : {}),
+      ...memberApiFields(ctx, member),
+      ...getJsDocDescription(ctx.ts, member),
+      ...getJsDocTagsField(ctx.ts, member),
+    },
+    ...(transformed
+      ? {
+          typeSource: {
+            kind: 'transform' as const,
+            checkerType: transformed.checkerType,
+            ...(transformed.node ? { node: transformed.node } : {}),
+            ...(transformed.substitutions ? { substitutions: transformed.substitutions } : {}),
+          },
+        }
+      : {}),
   };
 };
 
 // A transformed input documents the transform's parameter type: it is what a template may bind,
 // while the declared property type is only what the transform turns it into. `unknown`/`any`
 // (booleanAttribute-style coercions) names nothing a control can offer, so the declared type stays.
-const transformWriteType = (ctx: AnalyzerContext, transform: ts.Expression): string | undefined => {
+const transformWriteType = (
+  ctx: AnalyzerContext,
+  transform: ts.Expression
+):
+  | {
+      text: string;
+      checkerType: ts.Type;
+      node?: ts.TypeNode;
+      substitutions?: ReadonlyMap<ts.Symbol, ts.TypeNode>;
+    }
+  | undefined => {
   const { checker, ts } = ctx;
   // TypeScript infers from the last signature of an overloaded function, so that is the overload
   // Angular's own `TransformT` comes from.
@@ -226,13 +266,40 @@ const transformWriteType = (ctx: AnalyzerContext, transform: ts.Expression): str
   if (!parameterType || parameterType.flags & (ts.TypeFlags.Unknown | ts.TypeFlags.Any)) {
     return undefined;
   }
-  const widened = parameterType.isUnion()
-    ? parameterType
-    : checker.getBaseTypeOfLiteralType(parameterType);
-  ctx.types.addFromType(widened);
-  return stripImportQualifiers(
-    checker.typeToString(widened, transform, ts.TypeFormatFlags.NoTruncation)
+  const declaration = parameter?.valueDeclaration;
+  const node = declaration && ts.isParameter(declaration) ? declaration.type : undefined;
+  let unwrappedTransform = transform;
+  while (
+    ts.isParenthesizedExpression(unwrappedTransform) ||
+    ts.isSatisfiesExpression(unwrappedTransform) ||
+    ts.isNonNullExpression(unwrappedTransform)
+  ) {
+    unwrappedTransform = unwrappedTransform.expression;
+  }
+  const typeArguments =
+    ts.isCallExpression(unwrappedTransform) || ts.isExpressionWithTypeArguments(unwrappedTransform)
+      ? unwrappedTransform.typeArguments
+      : undefined;
+  const substitutions = new Map<ts.Symbol, ts.TypeNode>();
+  const genericSignature = ts.isCallExpression(unwrappedTransform)
+    ? checker.getResolvedSignature(unwrappedTransform)
+    : signature;
+  const typeParameters = (genericSignature?.declaration?.typeParameters ?? []).filter(
+    ts.isTypeParameterDeclaration
   );
+  for (const [index, typeParameter] of typeParameters.entries()) {
+    const symbol = checker.getSymbolAtLocation(typeParameter.name);
+    const argument = typeArguments?.[index];
+    if (symbol && argument) {
+      substitutions.set(symbol, argument);
+    }
+  }
+  return {
+    text: ctx.types.renderValueType(parameterType, transform),
+    checkerType: parameterType,
+    ...(node ? { node } : {}),
+    ...(substitutions.size > 0 ? { substitutions } : {}),
+  };
 };
 
 const buildDecoratorOutput = (
@@ -244,7 +311,7 @@ const buildDecoratorOutput = (
   return {
     name: decoratorStringArg(ctx, decorator) ?? memberName(ctx.ts, member.name),
     ...(type === undefined ? {} : { type }),
-    ...(member.initializer ? { defaultValue: member.initializer.getText() } : {}),
+    ...(member.initializer ? { initializer: defaultInitializer(ctx, member.initializer) } : {}),
     ...memberApiFields(ctx, member),
     ...getJsDocDescription(ctx.ts, member),
     ...getJsDocTagsField(ctx.ts, member),
@@ -262,7 +329,7 @@ const buildPlainProperty = (
     name: memberName(ctx.ts, member.name),
     ...(type === undefined ? {} : { type }),
     optional: !!member.questionToken,
-    ...(member.initializer ? { defaultValue: initializerText(ctx.ts, member.initializer) } : {}),
+    ...(member.initializer ? { initializer: defaultInitializer(ctx, member.initializer) } : {}),
     ...memberApiFields(ctx, member),
     ...getJsDocDescription(ctx.ts, member),
     ...getJsDocTagsField(ctx.ts, member),
@@ -358,9 +425,7 @@ const inferReturnType = (
   if (!signature) {
     return undefined;
   }
-  return stripImportQualifiers(
-    ctx.checker.typeToString(signature.getReturnType(), member, ctx.ts.TypeFormatFlags.NoTruncation)
-  );
+  return ctx.types.renderCheckerType(signature.getReturnType(), member);
 };
 
 const visitConstructorProperties = (
@@ -384,12 +449,14 @@ const visitConstructorProperties = (
     const type = parameter.type ? ctx.types.render(parameter.type) : ctx.types.infer(parameter);
     members.properties.push({
       declName: parameter.name.getText(),
+      isStatic: false,
+      declaration: parameter,
       value: {
         name: parameter.name.getText(),
         ...(type === undefined ? {} : { type }),
         optional: !!parameter.questionToken,
         ...(parameter.initializer
-          ? { defaultValue: initializerText(ctx.ts, parameter.initializer) }
+          ? { initializer: defaultInitializer(ctx, parameter.initializer) }
           : {}),
         ...memberApiFields(ctx, parameter),
         ...getJsDocDescription(ts, parameter),
@@ -404,14 +471,13 @@ const visitAccessorPair = (
   classNode: ts.ClassLikeDeclaration,
   member: ts.GetAccessorDeclaration | ts.SetAccessorDeclaration,
   members: ClassMembers,
-  visited: Set<string>
+  visited: Set<ts.AccessorDeclaration>
 ): void => {
   const { ts } = ctx;
   const name = memberName(ctx.ts, member.name);
-  if (visited.has(name)) {
+  if (visited.has(member)) {
     return;
   }
-  visited.add(name);
   const getter = classNode.members.find(
     (candidate): candidate is ts.GetAccessorDeclaration =>
       ts.isGetAccessor(candidate) && isSameMember(ctx, candidate, member)
@@ -420,6 +486,12 @@ const visitAccessorPair = (
     (candidate): candidate is ts.SetAccessorDeclaration =>
       ts.isSetAccessor(candidate) && isSameMember(ctx, candidate, member)
   );
+  if (getter) {
+    visited.add(getter);
+  }
+  if (setter) {
+    visited.add(setter);
+  }
   const typeNode = getter?.type ?? setter?.parameters[0]?.type;
   const type = typeNode ? ctx.types.render(typeNode) : ctx.types.infer((getter ?? setter)!);
   // The doc comment (and its tags, e.g. `@default`) may sit on either accessor; the getter wins
@@ -433,22 +505,42 @@ const visitAccessorPair = (
     ...(setter ? getDecorators(ctx, setter) : []),
   ];
   const apiFields = memberApiFields(ctx, getter, setter);
-  const accessorEntry = <T>(value: T): MemberEntry<T> => ({ declName: name, value });
+  const declaration = (getter ?? setter)!;
+  const accessorEntry = <T>(
+    value: T,
+    typeSource?: MemberEntry<T>['typeSource']
+  ): MemberEntry<T> => ({
+    declName: name,
+    isStatic: isStatic(ctx, declaration),
+    declaration,
+    ...(typeSource ? { typeSource } : {}),
+    value,
+  });
   const inputDecorator = decorators.find((decorator) => decorator.name === 'Input');
   if (inputDecorator) {
     const config = parseInputDecoratorConfig(ctx, inputDecorator);
-    const inputType =
-      (config.transform ? transformWriteType(ctx, config.transform) : undefined) ?? type;
+    const transformed = config.transform ? transformWriteType(ctx, config.transform) : undefined;
+    const inputType = transformed?.text ?? type;
     members.inputs.push(
-      accessorEntry({
-        name: config.alias ?? name,
-        ...(inputType === undefined ? {} : { type: inputType }),
-        optional: config.required !== undefined ? !config.required : false,
-        ...(config.required === undefined ? {} : { required: config.required }),
-        ...apiFields,
-        ...description,
-        ...tags,
-      })
+      accessorEntry(
+        {
+          name: config.alias ?? name,
+          ...(inputType === undefined ? {} : { type: inputType }),
+          optional: config.required !== undefined ? !config.required : false,
+          ...(config.required === undefined ? {} : { required: config.required }),
+          ...apiFields,
+          ...description,
+          ...tags,
+        },
+        transformed
+          ? {
+              kind: 'transform',
+              checkerType: transformed.checkerType,
+              ...(transformed.node ? { node: transformed.node } : {}),
+              ...(transformed.substitutions ? { substitutions: transformed.substitutions } : {}),
+            }
+          : undefined
+      )
     );
     return;
   }

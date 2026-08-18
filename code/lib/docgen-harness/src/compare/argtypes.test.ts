@@ -165,53 +165,18 @@ describe('compareArgTypes', () => {
     }
   });
 
-  it('waives legacy defaults that print initializer source, only under legacyBaseline', () => {
-    // Legacy compodoc printed initializer source when a default was not a literal; the modern
-    // extractor hides those on purpose, so a candidate without one loses nothing.
-    for (const summary of [
-      'Math.max(1, 3)',
-      'signal(false)',
-      'injectFoo()',
-      '`id-${next++}`',
-      'new Map()',
-      'this.config.side',
-      'this._x',
-      '() => []',
-      '{\n  retries: 3,\n}',
-      '5 * 60 * 1000',
-      '24 * 60',
-    ]) {
-      const baseline = argTypes({
-        count: { name: 'count', table: { defaultValue: { summary } } },
-      });
-      const candidate = argTypes({ count: { name: 'count' } });
-      expect(compareArgTypes(baseline, candidate, { legacyBaseline: true })).toEqual([]);
-      expect(compareArgTypes(baseline, candidate)).toEqual([
-        expect.objectContaining({ arg: 'count', kind: 'lost-default' }),
-      ]);
-    }
-  });
-
-  it('flags lost legacy defaults whose text is a genuine string, not initializer source', () => {
-    // Legacy compodoc records string defaults unquoted, so a parenthesis or a leading `new`/`this`
-    // word inside the text does not make it source.
-    for (const summary of ['Close (Esc)', 'new arrivals', 'this is a hint']) {
-      const baseline = argTypes({
-        label: { name: 'label', table: { defaultValue: { summary } } },
-      });
-      const candidate = argTypes({ label: { name: 'label' } });
-      expect(compareArgTypes(baseline, candidate, { legacyBaseline: true })).toEqual([
-        expect.objectContaining({ arg: 'label', kind: 'lost-default' }),
-      ]);
-    }
-  });
-
-  it('waives the residual case: an unquoted string default that is itself call-shaped, like the CSS value translateX(10px)', () => {
+  it('does not generically waive numeric initializer source from a legacy baseline', () => {
     const baseline = argTypes({
-      transform: { name: 'transform', table: { defaultValue: { summary: 'translateX(10px)' } } },
+      timeoutMs: {
+        name: 'timeoutMs',
+        table: { defaultValue: { summary: '5 * 60 * 1000' } },
+      },
     });
-    const candidate = argTypes({ transform: { name: 'transform' } });
-    expect(compareArgTypes(baseline, candidate, { legacyBaseline: true })).toEqual([]);
+    const candidate = argTypes({ timeoutMs: { name: 'timeoutMs' } });
+
+    expect(compareArgTypes(baseline, candidate, { legacyBaseline: true })).toEqual([
+      expect.objectContaining({ arg: 'timeoutMs', kind: 'lost-default' }),
+    ]);
   });
 
   it('flags dropped raw false, null, and NaN defaults outside legacyBaseline', () => {

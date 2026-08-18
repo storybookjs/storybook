@@ -19,6 +19,7 @@ import type {
   Method,
   Pipe,
   Property,
+  PropertyInitializer,
 } from './types.ts';
 
 export interface ParsingLogger {
@@ -84,7 +85,7 @@ const isMethod = (methodOrProp: Method | Property): methodOrProp is Method =>
 // Compodoc's `required` tracks the `@Input({...})` key's presence, so `optional` must agree. With
 // the key absent an initializer settles it: a defaulted input is never mandatory to bind.
 const isRequired = (item: Property): boolean =>
-  (item.required ?? item.defaultValue === undefined) && !item.optional;
+  (item.required ?? item.initializer === undefined) && !item.optional;
 
 const hasDecorator = (item: Property, decoratorName: string) =>
   item.decorators && item.decorators.find((x: Decorator) => x.name === decoratorName);
@@ -316,51 +317,6 @@ const castDefaultValue = (property: Property, defaultValue: any) => {
 
 const unquote = (value: string): string => value.replace(/^(['"`])([\s\S]*)\1$/, '$2');
 
-const LITERAL_INITIALIZERS = [
-  // A string literal, an interpolation-free template literal included.
-  /^('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`[^`$]*`)$/,
-  // Every numeric spelling TypeScript accepts: decimal, exponent, radix prefix, digit separators.
-  /^[+-]?(0[xX][\dA-Fa-f_]+|0[bB][01_]+|0[oO][0-7_]+|(\d[\d_]*)?\.?\d[\d_]*([eE][+-]?\d+)?)$/,
-  /^(true|false|null|undefined)$/,
-  // An enum-style member reference such as `ButtonKind.Primary`.
-  /^(?!this\b)[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)+$/,
-];
-
-const COMPUTED_PART = /[(`]|\$\{|=>|\bthis\b|\bnew\b/;
-
-const QUOTED_STRING = /'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g;
-
-// A composite prints its own source, so it may only hold values that read as themselves. Property
-// keys, enum-style references and the keyword literals are those; anything else left holding a name
-// is a constant, a shorthand or a computed key, whose value the reader cannot see.
-const namesRuntimeValue = (withoutStrings: string): boolean =>
-  /[A-Za-z_$]/.test(
-    withoutStrings
-      .replace(/[A-Za-z_$][\w$]*\s*:/g, '')
-      .replace(/[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+/g, '')
-      .replace(/\b(?:true|false|null|undefined)\b/g, '')
-  );
-
-// Only a self-describing literal is worth a Default cell. Initializer source like
-// `this._config.variant` or `injectOptions()` names where a value comes from, not what it is, and
-// can even contradict the runtime default.
-const isLiteralInitializer = (text: string): boolean => {
-  if (LITERAL_INITIALIZERS.some((pattern) => pattern.test(text))) {
-    return true;
-  }
-  const composite =
-    (text.startsWith('[') && text.endsWith(']')) || (text.startsWith('{') && text.endsWith('}'));
-  if (!composite) {
-    return false;
-  }
-  const withoutStrings = text.replace(QUOTED_STRING, "''");
-  return (
-    !COMPUTED_PART.test(withoutStrings) &&
-    !withoutStrings.includes('...') &&
-    !namesRuntimeValue(withoutStrings)
-  );
-};
-
 const authoredDefault = (property: Property): string | undefined => {
   let value: string | undefined;
   for (const tag of property.jsdoctags ?? []) {
@@ -373,22 +329,47 @@ const authoredDefault = (property: Property): string | undefined => {
   return value;
 };
 
+const analyzerDefault = (
+  initializer: Extract<PropertyInitializer, { kind: 'literal' }>
+): unknown => {
+  switch (initializer.literalKind) {
+    case 'string':
+      return unquote(initializer.text);
+    case 'number': {
+      const parsed = Number(initializer.text);
+      return Number.isNaN(parsed) ? initializer.text : parsed;
+    }
+    case 'boolean':
+      return initializer.text === 'true';
+    case 'null':
+      return null;
+    case 'undefined':
+      return undefined;
+    case 'bigint':
+    case 'enum':
+    case 'composite':
+      return initializer.text;
+  }
+};
+
 const extractDefaultValue = (property: Property, logger: ParsingLogger) => {
   try {
     const authored = authoredDefault(property);
     if (authored !== undefined) {
       return castDefaultValue(property, authored);
     }
-    if (property.defaultValue === undefined) {
+    if (property.initializer === undefined) {
       return undefined;
     }
-    if (!isLiteralInitializer(property.defaultValue)) {
-      logger.debug(`${property.name}: non-literal default '${property.defaultValue}' not shown`);
+    if (property.initializer.kind === 'expression') {
+      logger.debug(
+        `${property.name}: non-literal default '${property.initializer.text}' not shown`
+      );
       return undefined;
     }
-    return castDefaultValue(property, unquote(property.defaultValue));
+    return analyzerDefault(property.initializer);
   } catch {
-    logger.debug(`Error extracting ${property.name}: ${property.defaultValue}`);
+    logger.debug(`Error extracting ${property.name}: ${property.initializer?.text}`);
     return undefined;
   }
 };

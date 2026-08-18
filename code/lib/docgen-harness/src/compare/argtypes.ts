@@ -112,24 +112,9 @@ const isRecordedSummary = (summary: unknown, legacyBaseline: boolean): boolean =
     return true;
   }
   return (
-    summary !== null &&
-    summary !== false &&
-    !(typeof summary === 'number' && Number.isNaN(summary)) &&
-    !(typeof summary === 'string' && isInitializerSourceSummary(summary))
+    summary !== null && summary !== false && !(typeof summary === 'number' && Number.isNaN(summary))
   );
 };
-
-// Legacy compodoc also printed initializer source (`Math.max(1, 3)`, `signal(false)`) when a
-// default was not a literal, and the modern extractor hides those on purpose, so dropping one loses
-// nothing. Legacy prints string defaults unquoted, so each shape below must be unambiguously
-// source; a call-shaped string like `translateX(10px)` is the residual this cannot separate.
-const isInitializerSourceSummary = (summary: string): boolean =>
-  /[`\n]|=>|\$\{/.test(summary) ||
-  /^[A-Za-z_$][\w$.]*\(/.test(summary) ||
-  /^new\s+[A-Za-z_$][\w$.]*\s*\(/.test(summary) ||
-  /^this[.[]/.test(summary) ||
-  // Arithmetic over numbers only, such as `5 * 60 * 1000`: a sentence never takes this shape.
-  /^\d[\d._]*(\s*[-+*/%]\s*\d[\d._]*)+$/.test(summary);
 
 // `table.type` is loosely typed upstream - `required` is a corpus field the csf type does not
 // declare - hence the unknown-safe reads.

@@ -31,6 +31,8 @@ afterEach(() => {
 const ANALYZER_EXTRACT_OPTIONS = { propsTable: 'all' } as const;
 
 const soleComponent = (meta: ReturnType<typeof analyze>) => meta.components[0] as Directive;
+const literal = (text: string) => ({ kind: 'literal', text });
+const expression = (text: string) => ({ kind: 'expression', text });
 
 describe('@Input and @Output aliases', () => {
   const SOURCE = `
@@ -73,7 +75,10 @@ describe('@Input and @Output aliases', () => {
     // `required` is the option's value, not merely whether the key was written.
     expect(byName(inputs, 'tone')).toMatchObject({ required: true, optional: false });
     expect(byName(inputs, 'hint')).toMatchObject({ required: false, optional: true });
-    expect(byName(inputs, 'buttonLabel')).toMatchObject({ optional: false, defaultValue: "''" });
+    expect(byName(inputs, 'buttonLabel')).toMatchObject({
+      optional: false,
+      initializer: literal("''"),
+    });
     expect(byName(inputs, 'buttonLabel').required).toBeUndefined();
   });
 
@@ -105,7 +110,7 @@ describe('@Input and @Output aliases', () => {
     expect(names(outputs)).toEqual(['saved']);
     expect(byName(outputs, 'saved')).toMatchObject({
       type: 'EventEmitter',
-      defaultValue: 'new EventEmitter<number>()',
+      initializer: expression('new EventEmitter<number>()'),
     });
   });
 });
@@ -202,7 +207,7 @@ describe('pipes, injectables and plain classes', () => {
     expect(injectable).toMatchObject({ name: 'DataService', type: 'injectable' });
     expect(byName(injectable.properties, 'rows')).toMatchObject({
       type: 'number',
-      defaultValue: '3',
+      initializer: literal('3'),
     });
     expect(byName(injectable.methods, 'load').returnType).toBe('Promise<string[]>');
   });
@@ -253,11 +258,11 @@ describe('signal inputs and outputs', () => {
 
     expect(byName(component.inputsClass, 'ratios')).toMatchObject({
       type: 'number[]',
-      defaultValue: '[0.5, 1]',
+      initializer: literal('[0.5, 1]'),
     });
     expect(byName(component.inputsClass, 'align')).toMatchObject({
       type: '"left" | "right"',
-      defaultValue: "'left' as 'left' | 'right'",
+      initializer: literal("'left'"),
     });
     expect(byName(component.outputsClass, 'tags')).toMatchObject({ type: 'Set<string>' });
   });
@@ -287,7 +292,7 @@ describe('signal inputs and outputs', () => {
       type: 'string',
       required: false,
       optional: false,
-      defaultValue: "'hi'",
+      initializer: literal("'hi'"),
     });
     expect(byName(component.inputsClass, 'count')).toMatchObject({
       type: 'number',
@@ -295,7 +300,7 @@ describe('signal inputs and outputs', () => {
     });
     expect(byName(component.inputsClass, 'increment')).toMatchObject({
       type: 'number',
-      defaultValue: '2',
+      initializer: literal('2'),
     });
 
     expect(names(component.outputsClass)).toEqual(['toggled', 'value']);
@@ -304,12 +309,15 @@ describe('signal inputs and outputs', () => {
       required: false,
     });
     for (const bucket of [component.inputsClass, component.outputsClass]) {
-      expect(byName(bucket, 'value')).toMatchObject({ type: 'number', defaultValue: '1' });
+      expect(byName(bucket, 'value')).toMatchObject({
+        type: 'number',
+        initializer: literal('1'),
+      });
     }
 
     // An unresolved call that is not a signal factory stays an ordinary property.
     expect(byName(component.propertiesClass, 'notSignal')).toMatchObject({
-      defaultValue: "compute('x')",
+      initializer: expression("compute('x')"),
     });
   });
 
@@ -330,7 +338,7 @@ describe('signal inputs and outputs', () => {
 
     expect(byName(component.inputsClass, 'label')).toMatchObject({
       type: 'string',
-      defaultValue: "'hi'",
+      initializer: literal("'hi'"),
       required: false,
     });
     expect(byName(component.inputsClass, 'checked')).toMatchObject({
@@ -357,7 +365,7 @@ describe('signal inputs and outputs', () => {
     expect(component.inputsClass).toEqual([]);
     expect(byName(component.propertiesClass, 'label')).toMatchObject({
       type: 'string',
-      defaultValue: "input('hi')",
+      initializer: expression("input('hi')"),
     });
   });
 });
@@ -969,16 +977,16 @@ describe('which members survive, and how they are described', () => {
     expect(names(component.methodsClass)).toEqual(['ngOnInit']);
   });
 
-  it('collapses an arrow default on a plain property, but keeps it on an input', () => {
+  it('records arrow initializer source for diagnostics', () => {
     const component = componentIn(SOURCE);
 
-    // A plain property's body is noise in a props table; an input's default is the thing itself.
+    // Expression text is diagnostic metadata; neither arrow reaches the props table as a default.
     expect(byName(component.propertiesClass, 'formatter')).toMatchObject({
-      defaultValue: '() => {...}',
+      initializer: expression('(value: number) => `${value}`'),
       type: '(value: number) => string',
     });
     expect(byName(component.inputsClass, 'decoratedFormatter')).toMatchObject({
-      defaultValue: '(value: number) => `${value}`',
+      initializer: expression('(value: number) => `${value}`'),
       type: '(value: number) => string',
     });
   });
@@ -1117,7 +1125,9 @@ describe('inheritance', () => {
     `);
 
     // The base decides the bucket, the child's own initializer decides the default.
-    expect(byName(component.inputsClass, 'disabled')).toMatchObject({ defaultValue: 'false' });
+    expect(byName(component.inputsClass, 'disabled')).toMatchObject({
+      initializer: literal('false'),
+    });
     expect(names(component.propertiesClass)).not.toContain('disabled');
   });
 
@@ -1203,7 +1213,7 @@ describe('inheritance', () => {
     // `label` is the base's binding name for the same field, so emitting it too would offer a
     // control that binds to nothing.
     expect(names(child.inputsClass)).toEqual(['text']);
-    expect(byName(child.inputsClass, 'text')).toMatchObject({ defaultValue: "'child'" });
+    expect(byName(child.inputsClass, 'text')).toMatchObject({ initializer: literal("'child'") });
   });
 
   it('merges multi-level bases with the child winning, and takes plain members from a .d.ts', () => {
@@ -1242,12 +1252,14 @@ describe('inheritance', () => {
     expect(names(component.inputsClass)).toEqual(['midFlag', 'own']);
     expect(byName(component.inputsClass, 'midFlag')).toMatchObject({
       type: 'boolean',
-      defaultValue: 'false',
+      initializer: literal('false'),
     });
 
     // `hint` comes from MidBase, which overrides the .d.ts base's declaration.
     expect(names(component.propertiesClass)).toEqual(['hint']);
-    expect(byName(component.propertiesClass, 'hint')).toMatchObject({ defaultValue: "'mid'" });
+    expect(byName(component.propertiesClass, 'hint')).toMatchObject({
+      initializer: literal("'mid'"),
+    });
 
     // A .d.ts records no decorators, so it can only contribute plain members, never IO.
     expect(names(component.methodsClass)).toEqual(['helper', 'midHelper']);
@@ -1422,7 +1434,9 @@ describe('inheritance', () => {
     `);
     const component = soleComponent(meta);
 
-    expect(byName(component.inputsClass, 'config').type).toBe('{ value: string; payload: number }');
+    expect(byName(component.inputsClass, 'config').type).toBe(
+      '{ value: string; payload: number; }'
+    );
   });
 
   it('leaves a shadowing binder alone even when its constraint is itself generic', () => {

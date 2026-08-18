@@ -103,9 +103,87 @@ export class TypeIndex {
     return collapseWhitespace(typeNode.getText());
   }
 
+  /** Render a checker type without losing aliases or truncating its spelling. */
+  renderCheckerType(type: tsModule.Type, node: tsModule.Node): string {
+    this.addFromType(type);
+    return stripImportQualifiers(
+      this.checker.typeToString(type, node, this.ts.TypeFormatFlags.NoTruncation)
+    );
+  }
+
+  /** Preserve a union, but widen a lone literal before rendering a value-facing type. */
+  renderValueType(type: tsModule.Type, node: tsModule.Node): string {
+    const widened = type.isUnion() ? type : this.checker.getBaseTypeOfLiteralType(type);
+    return this.renderCheckerType(widened, node);
+  }
+
+  /**
+   * Render a type node after substituting class type parameters by symbol identity.
+   *
+   * A source-level transform type is not represented by the class property's checker type, so
+   * inherited decorator transforms take this path instead. Symbol identity leaves method-local
+   * binders with the same spelling untouched.
+   */
+  renderInstantiated(
+    typeNode: tsModule.TypeNode,
+    substitutions: ReadonlyMap<tsModule.Symbol, tsModule.TypeNode>
+  ): string {
+    if (substitutions.size === 0) {
+      return this.render(typeNode);
+    }
+
+    this.addFromTypeNode(typeNode);
+    for (const replacement of substitutions.values()) {
+      this.addFromTypeNode(replacement);
+    }
+
+    const resolving = new Set<tsModule.Symbol>();
+    const transformed = this.ts.transform(typeNode, [
+      (context) => {
+        const visit: tsModule.Visitor = (node) => {
+          if (this.ts.isTypeReferenceNode(node) && this.ts.isIdentifier(node.typeName)) {
+            const symbol = this.checker.getSymbolAtLocation(node.typeName);
+            const replacement = symbol && substitutions.get(symbol);
+            if (symbol && replacement && !resolving.has(symbol)) {
+              resolving.add(symbol);
+              const resolved = this.ts.visitNode(replacement, visit);
+              resolving.delete(symbol);
+              return resolved;
+            }
+          }
+          if (
+            this.ts.isLiteralTypeNode(node) &&
+            (this.ts.isStringLiteral(node.literal) ||
+              this.ts.isNoSubstitutionTemplateLiteral(node.literal))
+          ) {
+            return this.ts.factory.createLiteralTypeNode(
+              this.ts.factory.createStringLiteral(node.literal.text)
+            );
+          }
+          return this.ts.visitEachChild(node, visit, context);
+        };
+        return (root) => this.ts.visitNode(root, visit) as tsModule.TypeNode;
+      },
+    ]);
+
+    try {
+      return collapseWhitespace(
+        this.ts
+          .createPrinter({ removeComments: true })
+          .printNode(
+            this.ts.EmitHint.Unspecified,
+            transformed.transformed[0],
+            typeNode.getSourceFile()
+          )
+      );
+    } finally {
+      transformed.dispose();
+    }
+  }
+
   /** Widen and render a declaration's inferred type, as the legacy pipeline did (`'v1'` to `string`). */
   infer(node: tsModule.NamedDeclaration): string | undefined {
-    const { checker, ts } = this;
+    const { checker } = this;
     if (!node.name) {
       return undefined;
     }
@@ -114,8 +192,7 @@ export class TypeIndex {
       return undefined;
     }
     const type = checker.getBaseTypeOfLiteralType(checker.getTypeOfSymbolAtLocation(symbol, node));
-    this.addFromType(type);
-    return stripImportQualifiers(checker.typeToString(type, node, ts.TypeFormatFlags.NoTruncation));
+    return this.renderCheckerType(type, node);
   }
 
   // Checker-derived types have no TypeNode to walk, so the type's own symbol and each union
@@ -133,6 +210,19 @@ export class TypeIndex {
         feed(constituent);
       }
     }
+  }
+
+  private addFromTypeNode(typeNode: tsModule.TypeNode): void {
+    const visit = (node: tsModule.Node): void => {
+      if (this.ts.isTypeReferenceNode(node)) {
+        const symbol = this.checker.getSymbolAtLocation(node.typeName);
+        if (symbol) {
+          this.addFromSymbol(symbol, node.typeName.getText());
+        }
+      }
+      this.ts.forEachChild(node, visit);
+    };
+    visit(typeNode);
   }
 
   addDeclaration(declaration: tsModule.Declaration, referencedAs?: string): void {

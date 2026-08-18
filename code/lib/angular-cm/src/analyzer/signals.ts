@@ -2,10 +2,10 @@ import type * as ts from 'typescript';
 
 import type { Property } from '../types.ts';
 import type { AnalyzerContext } from './context.ts';
+import { defaultInitializer } from './default-initializer.ts';
 import { isAngularCoreOrUnresolved, stringOption } from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField } from './jsdoc.ts';
-import { initializerText, memberName } from './node-text.ts';
-import { stripImportQualifiers } from './type-index.ts';
+import { memberName } from './node-text.ts';
 
 const SIGNAL_INPUT_NAMES = new Set(['input', 'model']);
 const SIGNAL_NAMES = new Set(['input', 'output', 'model']);
@@ -27,6 +27,10 @@ export const parseSignalCall = (
   member: ts.PropertyDeclaration
 ): SignalCall | undefined => {
   const { ts } = ctx;
+  // Angular recognizes signal IO on instance fields only.
+  if (ts.getModifiers(member)?.some((modifier) => modifier.kind === ts.SyntaxKind.StaticKeyword)) {
+    return undefined;
+  }
   const initializer = member.initializer;
   if (!initializer || !ts.isCallExpression(initializer)) {
     return undefined;
@@ -93,7 +97,7 @@ export const buildSignalEntry = (
     // Downstream tells a `model()` apart from an `@Input('x')`/`@Output('x')` alias collision by
     // the same name appearing in both arrays on the same declaration line.
     line: ts.getLineAndCharacterOfPosition(member.getSourceFile(), member.getStart()).line + 1,
-    ...(valueArgument ? { defaultValue: initializerText(ctx.ts, valueArgument) } : {}),
+    ...(valueArgument ? { initializer: defaultInitializer(ctx, valueArgument) } : {}),
     ...getJsDocDescription(ts, member),
     ...getJsDocTagsField(ts, member),
   };
@@ -102,9 +106,15 @@ export const buildSignalEntry = (
 const signalValueTypeFromChecker = (
   ctx: AnalyzerContext,
   member: ts.PropertyDeclaration
+): string | undefined =>
+  signalValueTypeFromType(ctx, ctx.checker.getTypeAtLocation(member), member);
+
+export const signalValueTypeFromType = (
+  ctx: AnalyzerContext,
+  type: ts.Type,
+  node: ts.Node
 ): string | undefined => {
   const { checker, ts } = ctx;
-  const type = checker.getTypeAtLocation(member);
   const symbolName = type.aliasSymbol?.name ?? type.getSymbol()?.name;
   if (!symbolName || !SIGNAL_TYPE_NAMES.has(symbolName)) {
     return undefined;
@@ -128,15 +138,7 @@ const signalValueTypeFromChecker = (
   if (!valueType) {
     return undefined;
   }
-  // Widen a lone literal (`model('x' as const)` → string) but keep literal unions: their quoted
-  // spelling (`"left" | "right"`) is what feeds the extractor's enum path.
-  const widened = valueType.isUnion() ? valueType : checker.getBaseTypeOfLiteralType(valueType);
-  ctx.types.addFromType(widened);
-  // Stripped because `addFromType` files the alias under its bare name, and the extractor matches
-  // `miscellaneous` entries by exact string equality.
-  return stripImportQualifiers(
-    checker.typeToString(widened, member, ts.TypeFormatFlags.NoTruncation)
-  );
+  return ctx.types.renderValueType(valueType, node);
 };
 
 const literalTypeName = (ctx: AnalyzerContext, expression: ts.Expression): string | undefined => {

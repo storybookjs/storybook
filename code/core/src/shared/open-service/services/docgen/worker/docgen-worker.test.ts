@@ -1,44 +1,37 @@
+import type { EventEmitter } from 'node:events';
+
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
 
-const workerThreads = vi.hoisted(() => ({ workerData: undefined as unknown }));
+const workerThreads = vi.hoisted(() => ({
+  parentPort: undefined as unknown as EventEmitter & { postMessage: ReturnType<typeof vi.fn> },
+}));
 
 vi.mock('node:worker_threads', async () => {
   const { EventEmitter } = await import('node:events');
-  return {
-    parentPort: Object.assign(new EventEmitter(), { postMessage: vi.fn() }),
-    get workerData() {
-      return workerThreads.workerData;
-    },
-  };
+  workerThreads.parentPort = Object.assign(new EventEmitter(), { postMessage: vi.fn() });
+  return { parentPort: workerThreads.parentPort };
 });
 
 // Override the global setup stub: these tests assert on the real logger's level state.
 vi.mock('storybook/internal/node-logger', { spy: true });
 
-// The entry applies the level while evaluating, so each load needs a fresh module registry; the
-// mocked logger survives the reset, which is what lets the assertions read its state.
-const loadWorker = async () => {
-  vi.resetModules();
-  await import('./docgen-worker.ts');
-};
-
 afterEach(() => {
-  workerThreads.workerData = undefined;
   logger.setLogLevel('info');
+  vi.clearAllMocks();
 });
 
 describe('docgen worker log level', () => {
-  it('applies the log level forwarded via workerData to its logger', async () => {
-    workerThreads.workerData = { logLevel: 'debug' };
-    await loadWorker();
-    expect(logger.getLogLevel()).toBe('debug');
-  });
+  it('applies the log level from init before composing providers', async () => {
+    await import('./docgen-worker.ts');
 
-  it('leaves the logger level untouched when workerData carries none', async () => {
-    logger.setLogLevel('warn');
-    await loadWorker();
-    expect(logger.getLogLevel()).toBe('warn');
+    workerThreads.parentPort.emit('message', {
+      type: 'init',
+      descriptors: [],
+      logLevel: 'debug',
+    });
+
+    expect(logger.setLogLevel).toHaveBeenCalledWith('debug');
   });
 });

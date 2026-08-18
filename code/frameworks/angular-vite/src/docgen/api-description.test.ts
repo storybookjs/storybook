@@ -398,7 +398,7 @@ describe('buildApiDescription', () => {
     expect(result).toContain('label: any;');
   });
 
-  it('escapes a quote or backslash inside a quoted field name', () => {
+  it('quotes apostrophes, backslashes, and newlines as valid JSON strings', () => {
     const result = buildApiDescription(
       argTypes({
         "it's": {
@@ -409,12 +409,58 @@ describe('buildApiDescription', () => {
           name: 'back\\slash',
           table: { category: 'inputs', type: { summary: 'string', required: false } },
         },
+        'line\nbreak': {
+          name: 'line\nbreak',
+          table: { category: 'inputs', type: { summary: 'string', required: false } },
+        },
       }),
       'OddNamesComponent'
     );
 
-    expect(result).toContain(`'it\\'s'?: string;`);
-    expect(result).toContain(`'back\\\\slash'?: string;`);
+    expect(result).toContain(`"it's"?: string;`);
+    expect(result).toContain(`"back\\\\slash"?: string;`);
+    expect(result).toContain(`"line\\nbreak"?: string;`);
+  });
+
+  it('keeps a hyphenated two-way binding name unquoted in its annotation', () => {
+    const name = 'aria-label';
+    const result = buildApiDescription(
+      argTypes({
+        [name]: {
+          name,
+          table: { category: 'inputs', type: { summary: 'string', required: false } },
+        },
+        [`${name}Change`]: {
+          name: `${name}Change`,
+          table: { category: 'outputs', type: { summary: 'EventEmitter<string>' } },
+        },
+      }),
+      'OddNamesComponent'
+    );
+
+    expect(result).toContain(`"aria-label"?: string; // two-way: [(aria-label)]`);
+  });
+
+  it('escapes a malicious two-way binding name without breaking the code fence', () => {
+    const name = 'mode\\path\n```\nspoof\u2028tail';
+    const result = buildApiDescription(
+      argTypes({
+        [name]: {
+          name,
+          table: { category: 'inputs', type: { summary: 'string', required: false } },
+        },
+        [`${name}Change`]: {
+          name: `${name}Change`,
+          table: { category: 'outputs', type: { summary: 'EventEmitter<string>' } },
+        },
+      }),
+      'OddNamesComponent'
+    );
+
+    expect(result).toContain(
+      `"mode\\\\path\\n\`\`\`\\nspoof\\u2028tail"?: string; // two-way: [(mode\\\\path\\n\`\`\`\\nspoof\\u2028tail)]`
+    );
+    expect(result).not.toContain(name);
   });
 
   it('quotes a field name that is not a valid TypeScript identifier', () => {
@@ -439,8 +485,8 @@ describe('buildApiDescription', () => {
       'DataColumnComponent'
     );
 
-    expect(result).toContain(`'aria-label'?: string;`);
-    expect(result).toContain(`'sr-title': string;`);
-    expect(result).toContain(`'row-select': EventEmitter<Event>;`);
+    expect(result).toContain(`"aria-label"?: string;`);
+    expect(result).toContain(`"sr-title": string;`);
+    expect(result).toContain(`"row-select": EventEmitter<Event>;`);
   });
 });

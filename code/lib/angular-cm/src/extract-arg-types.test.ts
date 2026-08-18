@@ -7,7 +7,7 @@
  * came at the cost of the control. Feeding the predicate strings a test author picked would not
  * have caught that.
  */
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 
 import { componentIn } from './analyzer/__testutils__/inline-source.ts';
 import { extractArgTypesFromData } from './extract-arg-types.ts';
@@ -159,6 +159,10 @@ describe('literal initializers reach the default column', () => {
     expect(shownDefault(`@Input() value = "start";`)).toBe('start');
   });
 
+  it('keeps an interpolation-free template, without its delimiters', () => {
+    expect(shownDefault(`@Input() value = \`start\`;`)).toBe('start');
+  });
+
   it('keeps a number', () => {
     expect(shownDefault(`@Input() value = 42;`)).toBe(42);
   });
@@ -177,6 +181,10 @@ describe('literal initializers reach the default column', () => {
 
   it('keeps a negative scientific-notation number', () => {
     expect(shownDefault(`@Input() value = -1.5e-3;`)).toBe(-0.0015);
+  });
+
+  it('keeps a negative bigint in source form', () => {
+    expect(shownDefault(`@Input() value = -42n;`)).toBe('-42n');
   });
 
   it('keeps a hex number', () => {
@@ -223,6 +231,23 @@ describe('literal initializers reach the default column', () => {
 
   it('keeps an array literal whose string element contains parens', () => {
     expect(shownDefault(`@Input() value = ['(none)', 'all'];`)).toBe("['(none)', 'all']");
+  });
+
+  it('keeps recursively literal arrays and objects', () => {
+    expect(
+      shownDefault(
+        `@Input() value = { tones: [Tone.Primary, { label: 'ready', enabled: true }] };`,
+        `enum Tone { Primary = 'primary' }`
+      )
+    ).toBe("{ tones: [Tone.Primary, { label: 'ready', enabled: true }] }");
+  });
+
+  it('shows the literal inside type-only wrappers', () => {
+    expect(shownDefault(`@Input() value = ('ready' as const)!;`)).toBe('ready');
+  });
+
+  it.each(['false', 'null', 'undefined'])('keeps the string literal %j as a string', (value) => {
+    expect(shownDefault(`@Input() value: '${value}' = "${value}";`)).toBe(value);
   });
 });
 
@@ -287,6 +312,39 @@ describe('non-literal initializers are hidden from the default column', () => {
         `const DEFAULT_ORIENTATION = 'horizontal';`
       )
     ).toBeUndefined();
+  });
+
+  it('hides a shadowed undefined identifier', () => {
+    expect(
+      shownDefault(
+        `@Input() value = undefined;`,
+        `const undefined = runtime(); const runtime = () => 7;`
+      )
+    ).toBeUndefined();
+  });
+
+  it('hides an arbitrary dotted value and logs its source', () => {
+    const component = componentIn(`
+      import { Component, Input } from '@angular/core';
+
+      const settings = { orientation: 'horizontal' };
+
+      @Component({ selector: 'sb-probe', template: '' })
+      export class ProbeComponent {
+        @Input() value = settings.orientation;
+      }
+    `);
+    const debug = vi.fn();
+    const argTypes = extractArgTypesFromData(component, {
+      metadataJson: undefined,
+      propsTable: 'all',
+      logger: { debug, warn: vi.fn() },
+    });
+
+    expect(argTypes.value.table?.defaultValue?.summary).toBeUndefined();
+    expect(debug).toHaveBeenCalledWith(
+      "value: non-literal default 'settings.orientation' not shown"
+    );
   });
 });
 

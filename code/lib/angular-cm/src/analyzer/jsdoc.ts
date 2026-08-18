@@ -39,6 +39,23 @@ const rawJsDocComment = (sourceText: string, jsDoc: tsModule.JSDoc): string => {
     .replace(/\*\/$/, '');
 };
 
+const rawTagComment = (
+  ts: typeof tsModule,
+  sourceText: string,
+  tag: tsModule.JSDocTag
+): string | undefined => {
+  let start: number | undefined;
+  if (ts.isJSDocSeeTag(tag) && tag.name) {
+    start = tag.name.pos;
+  } else if (tag.comment !== undefined) {
+    start = typeof tag.comment === 'string' ? tag.getChildren().at(-1)?.end : tag.comment.pos;
+    start ??= tag.tagName.end;
+  }
+  return start === undefined
+    ? undefined
+    : cleanCommentText(sourceText.slice(start, tag.end)).trimEnd();
+};
+
 // `description` and `rawdescription` both carry the same plain text; nothing downstream parses it
 // as HTML, unlike the Markdown-rendered comments Compodoc produced.
 export function getJsDocDescription(
@@ -74,13 +91,10 @@ function getJsDocTags(ts: typeof tsModule, node: tsModule.Node): JsDocTag[] | un
   if (tags.length === 0) {
     return undefined;
   }
+  const sourceText = node.getSourceFile().text;
   return tags.map((tag) => {
     const name = tag.tagName.text;
-    let comment = tag.comment === undefined ? undefined : ts.getTextOfJSDocComment(tag.comment);
-    // TS parses `@see https://…` into a name (`https`) plus a comment (`://…`).
-    if (ts.isJSDocSeeTag(tag) && tag.name) {
-      comment = `${tag.name.getText()}${comment ?? ''}`;
-    }
+    const comment = rawTagComment(ts, sourceText, tag);
     // Consumers read `escapedText`; `text` mirrors the raw TypeScript tag-node shape.
     const tagName: { text: string; escapedText: string } = { text: name, escapedText: name };
     return { tagName, ...(comment === undefined ? {} : { comment }) };

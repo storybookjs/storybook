@@ -7,6 +7,13 @@ export interface DecoratorInfo {
   call?: ts.CallExpression;
 }
 
+const resolvedSymbol = (ctx: AnalyzerContext, node: ts.Node): ts.Symbol | undefined => {
+  const symbol = ctx.checker.getSymbolAtLocation(node);
+  return symbol && symbol.flags & ctx.ts.SymbolFlags.Alias
+    ? ctx.checker.getAliasedSymbol(symbol)
+    : symbol;
+};
+
 /**
  * Whether `node` resolves to a declaration in `@angular/core`.
  *
@@ -14,13 +21,11 @@ export interface DecoratorInfo {
  * projects whose `@angular/core` types are unreachable.
  */
 export const isAngularCoreOrUnresolved = (ctx: AnalyzerContext, node: ts.Node): boolean => {
-  const { checker, ts } = ctx;
-  const symbol = checker.getSymbolAtLocation(node);
+  const symbol = resolvedSymbol(ctx, node);
   if (!symbol) {
     return true;
   }
-  const target = symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
-  const declarations = target.declarations;
+  const declarations = symbol.declarations;
   if (!declarations?.length) {
     return true;
   }
@@ -29,12 +34,21 @@ export const isAngularCoreOrUnresolved = (ctx: AnalyzerContext, node: ts.Node): 
   );
 };
 
-// Angular matches decorators by imported symbol, so `import { Input as InputDecorator }` still
-// declares an input; the name reported here is the imported one, not the local spelling.
-const importedName = (ctx: AnalyzerContext, identifier: ts.Identifier): string => {
-  const symbol = ctx.checker.getSymbolAtLocation(identifier);
-  const specifier = symbol?.declarations?.find(ctx.ts.isImportSpecifier);
-  return specifier?.propertyName?.text ?? identifier.text;
+// Angular matches decorators by imported symbol, including aliases re-exported through barrels.
+const importedName = (
+  ctx: AnalyzerContext,
+  target: ts.Identifier | ts.PropertyAccessExpression
+): string => {
+  const symbol = resolvedSymbol(ctx, target);
+  if (symbol?.declarations?.length) {
+    return symbol.name;
+  }
+  if (ctx.ts.isIdentifier(target)) {
+    const local = ctx.checker.getSymbolAtLocation(target);
+    const specifier = local?.declarations?.find(ctx.ts.isImportSpecifier);
+    return specifier?.propertyName?.text ?? target.text;
+  }
+  return target.name.text;
 };
 
 export const getDecorators = (ctx: AnalyzerContext, node: ts.Node): DecoratorInfo[] => {
@@ -52,10 +66,9 @@ export const getDecorators = (ctx: AnalyzerContext, node: ts.Node): DecoratorInf
     if (!isAngularCoreOrUnresolved(ctx, target)) {
       continue;
     }
-    const name = ts.isIdentifier(target)
-      ? importedName(ctx, target)
-      : ts.isPropertyAccessExpression(target)
-        ? target.name.text
+    const name =
+      ts.isIdentifier(target) || ts.isPropertyAccessExpression(target)
+        ? importedName(ctx, target)
         : target.getText();
     decorators.push({ name, call });
   }

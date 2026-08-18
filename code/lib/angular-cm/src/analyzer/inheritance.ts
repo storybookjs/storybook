@@ -1,9 +1,10 @@
 import type * as ts from 'typescript';
 
-import type { Property } from '../types.ts';
+import type { Method, Property } from '../types.ts';
 import type { AnalyzerContext } from './context.ts';
 import type { ClassMembers, DocumentedClassKind, MemberEntry } from './members.ts';
-import { applyMetadataInputsOutputs, visitClassMembers } from './members.ts';
+import { applyMetadataInputsOutputs, sameMemberIdentity, visitClassMembers } from './members.ts';
+import { signalValueTypeFromType } from './signals.ts';
 
 type IOBucket = 'inputs' | 'outputs';
 
@@ -20,12 +21,25 @@ type IOBucket = 'inputs' | 'outputs';
 export function resolveClassMembers(
   ctx: AnalyzerContext,
   classNode: ts.ClassLikeDeclaration,
+  kind: DocumentedClassKind
+): ClassMembers {
+  return resolveWithBases(ctx, classNode, kind, new Set([classNode]), new Map());
+}
+
+function resolveWithBases(
+  ctx: AnalyzerContext,
+  classNode: ts.ClassLikeDeclaration,
   kind: DocumentedClassKind,
-  visited: Set<ts.Node> = new Set([classNode])
+  visited: Set<ts.Node>,
+  substitutions: ReadonlyMap<ts.Symbol, ts.TypeNode>,
+  instantiatedType?: ts.Type
 ): ClassMembers {
   const members = visitClassMembers(ctx, classNode, kind);
-  walkBases(ctx, classNode, members, kind, visited);
+  walkBases(ctx, classNode, members, kind, visited, substitutions);
   applyMetadataInputsOutputs(ctx, classNode, members);
+  if (instantiatedType) {
+    instantiateMembers(ctx, instantiatedType, classNode, members, substitutions);
+  }
   return members;
 }
 
@@ -34,7 +48,8 @@ function walkBases(
   classNode: ts.ClassLikeDeclaration,
   members: ClassMembers,
   kind: DocumentedClassKind,
-  visited: Set<ts.Node>
+  visited: Set<ts.Node>,
+  substitutions: ReadonlyMap<ts.Symbol, ts.TypeNode>
 ): void {
   if (!classNode.name) {
     return;
@@ -54,13 +69,23 @@ function walkBases(
       continue;
     }
     visited.add(declaration);
-    const baseMembers = resolveClassMembers(ctx, declaration, kind, visited);
-    substituteInherited(baseMembers, typeParameterSubstitutions(ctx, classNode, declaration));
+    const inheritedSubstitutions = new Map(substitutions);
+    for (const [parameter, argument] of typeParameterSubstitutions(ctx, classNode, declaration)) {
+      inheritedSubstitutions.set(parameter, argument);
+    }
+    const baseMembers = resolveWithBases(
+      ctx,
+      declaration,
+      kind,
+      visited,
+      inheritedSubstitutions,
+      baseType
+    );
     // A declaration file records no decorators or signal calls, so a base from one has nothing to
     // contribute to the IO buckets.
     if (!declaration.getSourceFile().isDeclarationFile) {
-      mergeBucket(members, baseMembers, 'inputs');
-      mergeBucket(members, baseMembers, 'outputs');
+      mergeBucket(ctx, members, baseMembers, 'inputs');
+      mergeBucket(ctx, members, baseMembers, 'outputs');
     }
     mergeInto(members.properties, baseMembers.properties, members);
     mergeInto(members.methods, baseMembers.methods, members);
@@ -95,8 +120,8 @@ const typeParameterSubstitutions = (
   ctx: AnalyzerContext,
   classNode: ts.ClassLikeDeclaration,
   declaration: ts.ClassDeclaration
-): Map<string, string> => {
-  const substitutions = new Map<string, string>();
+): Map<ts.Symbol, ts.TypeNode> => {
+  const substitutions = new Map<ts.Symbol, ts.TypeNode>();
   const parameters = declaration.typeParameters ?? [];
   if (parameters.length === 0) {
     return substitutions;
@@ -108,102 +133,188 @@ const typeParameterSubstitutions = (
   const args = clause.typeArguments ?? [];
   for (const [index, parameter] of parameters.entries()) {
     const argument = args[index] ?? parameter.default;
-    if (!argument) {
+    const symbol = ctx.checker.getSymbolAtLocation(parameter.name);
+    if (!argument || !symbol) {
       continue;
     }
-    const rendered = ctx.types.render(argument);
-    substitutions.set(
-      parameter.name.text,
-      args[index] ? rendered : substituteIdentifiers(rendered, substitutions)
-    );
+    substitutions.set(symbol, argument);
   }
   return substitutions;
 };
 
-// Quoted literals are matched only to be kept as they are: a `'T'` union member must not be
-// rewritten when a type parameter happens to be named `T`.
-const IDENTIFIER_OR_STRING = /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[A-Za-z_$][\w$]*/g;
-
-// A `<...>` group directly before `(` is a function type's own binder, whose parameters shadow the
-// class's throughout the rendered type.
-// A binder's parameter may carry a generic constraint (`<T extends Array<string>>`), so the list
-// has to survive one level of nesting to be recognized at all.
-const FUNCTION_BINDER = /<((?:[^<>]|<[^<>]*>)*)>\s*\(/g;
-
-const binderDeclaredNames = (text: string): string[] =>
-  [...text.matchAll(FUNCTION_BINDER)].flatMap((match) =>
-    match[1].split(',').flatMap((parameter) => {
-      const name = /^\s*(?:const\s+)?([A-Za-z_$][\w$]*)/.exec(parameter);
-      return name ? [name[1]] : [];
-    })
-  );
-
-const withoutShadowed = (
-  substitutions: Map<string, string>,
-  shadowed: string[]
-): Map<string, string> => {
-  if (shadowed.length === 0) {
-    return substitutions;
+const declaredIn = (
+  ctx: AnalyzerContext,
+  entry: MemberEntry<unknown>,
+  classNode: ts.ClassLikeDeclaration
+): boolean => {
+  let node: ts.Node | undefined = entry.declaration;
+  while (node && !ctx.ts.isClassLike(node)) {
+    node = node.parent;
   }
-  const scoped = new Map(substitutions);
-  for (const name of shadowed) {
-    scoped.delete(name);
-  }
-  return scoped;
+  return node === classNode;
 };
 
-// `{ value: string }` keys and `(value: T)` parameter names spell names, not types, so a token in
-// that position stays even when it matches a type parameter.
-const isNamePosition = (text: string, start: number, end: number): boolean => {
-  const before = text.slice(0, start).trimEnd();
-  const previous = before[before.length - 1];
-  if (previous !== '{' && previous !== ';' && previous !== ',' && previous !== '(') {
-    return false;
-  }
-  const after = text.slice(end).trimStart();
-  return (
-    after.startsWith(':') || (after.startsWith('?') && after.slice(1).trimStart().startsWith(':'))
-  );
-};
-
-const substituteIdentifiers = (text: string, substitutions: Map<string, string>): string => {
-  const scoped = withoutShadowed(substitutions, binderDeclaredNames(text));
-  if (scoped.size === 0) {
-    return text;
-  }
-  return text.replace(IDENTIFIER_OR_STRING, (token, offset: number) => {
-    if (token.startsWith('"') || token.startsWith("'")) {
-      return token;
-    }
-    const replacement = scoped.get(token);
-    if (replacement === undefined || isNamePosition(text, offset, offset + token.length)) {
-      return token;
-    }
-    return replacement;
-  });
-};
-
-const substituteInherited = (members: ClassMembers, substitutions: Map<string, string>): void => {
+const instantiateMembers = (
+  ctx: AnalyzerContext,
+  instantiatedType: ts.Type,
+  classNode: ts.ClassLikeDeclaration,
+  members: ClassMembers,
+  substitutions: ReadonlyMap<ts.Symbol, ts.TypeNode>
+): void => {
   if (substitutions.size === 0) {
     return;
   }
-  // A model() is one Property in both IO buckets, and a swap-shaped map must not apply twice.
-  const properties = new Set(
-    [...members.inputs, ...members.outputs, ...members.properties].map((entry) => entry.value)
-  );
-  for (const property of properties) {
-    if (property.type !== undefined) {
-      property.type = substituteIdentifiers(property.type, substitutions);
+  const properties = new Set([...members.inputs, ...members.outputs, ...members.properties]);
+  for (const entry of properties) {
+    instantiateProperty(ctx, instantiatedType, classNode, entry, substitutions);
+  }
+  for (const entry of members.methods) {
+    instantiateMethod(ctx, instantiatedType, classNode, entry, substitutions);
+  }
+};
+
+const instantiateProperty = (
+  ctx: AnalyzerContext,
+  instantiatedType: ts.Type,
+  classNode: ts.ClassLikeDeclaration,
+  entry: MemberEntry<Property>,
+  substitutions: ReadonlyMap<ts.Symbol, ts.TypeNode>
+): void => {
+  if (entry.isStatic) {
+    return;
+  }
+  if (entry.typeSource?.kind === 'transform') {
+    const checkerTypeSymbol = entry.typeSource.checkerType.getSymbol();
+    const checkerReplacement =
+      entry.typeSource.checkerType.flags & ctx.ts.TypeFlags.TypeParameter && checkerTypeSymbol
+        ? substitutions.get(checkerTypeSymbol)
+        : undefined;
+    if (checkerReplacement) {
+      entry.value.type = ctx.types.renderInstantiated(checkerReplacement, substitutions);
+      return;
+    }
+    if (entry.typeSource.node && declaredIn(ctx, entry, classNode)) {
+      const transformSubstitutions = new Map(entry.typeSource.substitutions);
+      for (const [symbol, replacement] of substitutions) {
+        transformSubstitutions.set(symbol, replacement);
+      }
+      entry.value.type = ctx.types.renderInstantiated(
+        entry.typeSource.node,
+        transformSubstitutions
+      );
+    }
+    return;
+  }
+  if (
+    ctx.ts.isPropertyDeclaration(entry.declaration) &&
+    !entry.declaration.type &&
+    entry.declaration.initializer &&
+    ctx.ts.isNewExpression(entry.declaration.initializer)
+  ) {
+    return;
+  }
+  if (entry.typeSource?.kind !== 'signal') {
+    const typeNode = declaredPropertyTypeNode(ctx, entry.declaration);
+    if (typeNode) {
+      if (declaredIn(ctx, entry, classNode)) {
+        entry.value.type = ctx.types.renderInstantiated(typeNode, substitutions);
+      }
+      return;
     }
   }
-  for (const { value: method, typeParameters } of members.methods) {
-    const scoped = withoutShadowed(substitutions, typeParameters ?? []);
-    if (scoped.size === 0) {
-      continue;
+  const type = propertyType(ctx, instantiatedType, entry);
+  if (!type) {
+    return;
+  }
+  const rendered = entry.typeSource
+    ? signalValueTypeFromType(ctx, type, entry.declaration)
+    : ctx.types.renderCheckerType(type, entry.declaration);
+  if (rendered !== undefined) {
+    entry.value.type = rendered;
+  }
+};
+
+const propertyType = (
+  ctx: AnalyzerContext,
+  instantiatedType: ts.Type,
+  entry: MemberEntry<unknown>
+): ts.Type | undefined => {
+  const declarationSymbol = entry.declaration.name
+    ? ctx.checker.getSymbolAtLocation(entry.declaration.name)
+    : undefined;
+  const symbol =
+    instantiatedType
+      .getProperties()
+      .find(
+        (candidate) =>
+          candidate === declarationSymbol || candidate.declarations?.includes(entry.declaration)
+      ) ?? ctx.checker.getPropertyOfType(instantiatedType, entry.declName);
+  return symbol && ctx.checker.getTypeOfSymbolAtLocation(symbol, entry.declaration);
+};
+
+const declaredPropertyTypeNode = (
+  ctx: AnalyzerContext,
+  declaration: ts.NamedDeclaration
+): ts.TypeNode | undefined => {
+  if (ctx.ts.isPropertyDeclaration(declaration) || ctx.ts.isParameter(declaration)) {
+    return declaration.type;
+  }
+  if (ctx.ts.isGetAccessorDeclaration(declaration)) {
+    return declaration.type;
+  }
+  if (ctx.ts.isSetAccessorDeclaration(declaration)) {
+    return declaration.parameters[0]?.type;
+  }
+  return undefined;
+};
+
+const instantiateMethod = (
+  ctx: AnalyzerContext,
+  instantiatedType: ts.Type,
+  classNode: ts.ClassLikeDeclaration,
+  entry: MemberEntry<Method>,
+  substitutions: ReadonlyMap<ts.Symbol, ts.TypeNode>
+): void => {
+  if (entry.isStatic) {
+    return;
+  }
+  const type = propertyType(ctx, instantiatedType, entry);
+  const signatures = type?.getCallSignatures() ?? [];
+  const signature = signatures.length === 1 ? signatures[0] : undefined;
+  const declaredHere = declaredIn(ctx, entry, classNode);
+  if (ctx.ts.isMethodDeclaration(entry.declaration)) {
+    const parameters = entry.declaration.parameters.filter(
+      (parameter) => !ctx.ts.isIdentifier(parameter.name) || parameter.name.text !== 'this'
+    );
+    for (const [index, argument] of entry.value.args.entries()) {
+      const declaredType = parameters[index]?.type;
+      if (declaredType) {
+        if (declaredHere) {
+          argument.type = ctx.types.renderInstantiated(declaredType, substitutions);
+        }
+      } else {
+        const parameter = signature?.getParameters()[index];
+        if (!parameter) {
+          continue;
+        }
+        argument.type = ctx.types.renderCheckerType(
+          ctx.checker.getTypeOfSymbolAtLocation(parameter, entry.declaration),
+          entry.declaration
+        );
+      }
     }
-    method.returnType = substituteIdentifiers(method.returnType, scoped);
-    for (const argument of method.args) {
-      argument.type = substituteIdentifiers(argument.type, scoped);
+    if (entry.declaration.type) {
+      if (declaredHere) {
+        entry.value.returnType = ctx.types.renderInstantiated(
+          entry.declaration.type,
+          substitutions
+        );
+      }
+    } else if (signature) {
+      entry.value.returnType = ctx.types.renderCheckerType(
+        signature.getReturnType(),
+        entry.declaration
+      );
     }
   }
 };
@@ -214,24 +325,33 @@ const substituteInherited = (members: ClassMembers, substitutions: Map<string, s
  * Re-declaring an inherited `@Input()` without repeating the decorator does not un-input it in
  * Angular, so the child's own shape wins while the base decides the bucket.
  */
-function mergeBucket(members: ClassMembers, baseMembers: ClassMembers, bucket: IOBucket): void {
+function mergeBucket(
+  ctx: AnalyzerContext,
+  members: ClassMembers,
+  baseMembers: ClassMembers,
+  bucket: IOBucket
+): void {
   for (const inherited of baseMembers[bucket]) {
-    const key = inherited.declName;
     // The opposite IO bucket is deliberately not consulted: a base's `model()` is one entry in
     // both, and each half has to survive independently.
     const owned = [members[bucket], members.methods].some((entries) =>
-      entries.some((entry) => entry.declName === key)
+      entries.some((entry) => sameMemberIdentity(entry, inherited))
     );
     if (owned) {
       continue;
     }
-    const index = members.properties.findIndex((entry) => entry.declName === key);
+    const index = members.properties.findIndex((entry) => sameMemberIdentity(entry, inherited));
     if (index < 0) {
       members[bucket].push(inherited);
       continue;
     }
     const [own] = members.properties.splice(index, 1);
-    members[bucket].push(promote(own, inherited));
+    const inheritedModel =
+      inherited.typeSource?.kind === 'signal' && inherited.typeSource.signalKind === 'model';
+    const typeOnlyRedeclaration = (
+      ctx.ts.getModifiers(own.declaration as ts.HasModifiers) ?? []
+    ).some((modifier) => modifier.kind === ctx.ts.SyntaxKind.DeclareKeyword);
+    members[bucket].push(promote(own, inherited, inheritedModel && typeOnlyRedeclaration));
   }
 }
 
@@ -241,15 +361,37 @@ function mergeBucket(members: ClassMembers, baseMembers: ClassMembers, bucket: I
  */
 const promote = (
   own: MemberEntry<Property>,
-  inherited: MemberEntry<Property>
-): MemberEntry<Property> => ({
-  ...own,
-  value: { ...own.value, name: inherited.value.name },
-});
+  inherited: MemberEntry<Property>,
+  preserveInheritedSignal: boolean
+): MemberEntry<Property> => {
+  if (!preserveInheritedSignal) {
+    return {
+      ...own,
+      value: {
+        ...own.value,
+        name: inherited.value.name,
+        ...(inherited.value.line === undefined ? {} : { line: inherited.value.line }),
+      },
+    };
+  }
+  return {
+    ...own,
+    ...(inherited.typeSource ? { typeSource: inherited.typeSource } : {}),
+    value: {
+      ...inherited.value,
+      ...(own.value.decorators ? { decorators: own.value.decorators } : {}),
+      ...(own.value.visibility ? { visibility: own.value.visibility } : {}),
+      ...(own.value.internal ? { internal: own.value.internal } : {}),
+      ...(own.value.description ? { description: own.value.description } : {}),
+      ...(own.value.rawdescription ? { rawdescription: own.value.rawdescription } : {}),
+      ...(own.value.jsdoctags ? { jsdoctags: own.value.jsdoctags } : {}),
+    },
+  };
+};
 
-const claimedElsewhere = (members: ClassMembers, key: string): boolean =>
+const claimedElsewhere = (members: ClassMembers, inherited: MemberEntry<unknown>): boolean =>
   [members.inputs, members.outputs, members.properties, members.methods].some((bucket) =>
-    bucket.some((entry) => entry.declName === key)
+    bucket.some((entry) => sameMemberIdentity(entry, inherited))
   );
 
 function mergeInto<T>(
@@ -258,7 +400,7 @@ function mergeInto<T>(
   members: ClassMembers
 ): void {
   for (const inherited of source) {
-    if (!claimedElsewhere(members, inherited.declName)) {
+    if (!claimedElsewhere(members, inherited)) {
       target.push(inherited);
     }
   }

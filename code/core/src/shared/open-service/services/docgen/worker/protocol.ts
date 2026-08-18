@@ -13,18 +13,11 @@ import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
 import type { ErrorLike } from '../../module-graph/types.ts';
 import type { DocgenPayload, DocgenProviderDescriptor } from '../types.ts';
 
-/**
- * Passed as `workerData` at spawn: the worker thread's logger starts at its default level, so the
- * main process's `--loglevel` has to be carried over explicitly.
- */
-export interface DocgenWorkerData {
-  logLevel: LogLevel;
-}
-
 /** Sent once, right after spawn, to compose the provider chain inside the worker. */
 export interface DocgenWorkerInitRequest {
   type: 'init';
   descriptors: DocgenProviderDescriptor[];
+  logLevel: LogLevel;
 }
 
 /** Sent per component to extract its docgen payload. `id` correlates the response. */

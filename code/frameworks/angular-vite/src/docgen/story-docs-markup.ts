@@ -185,9 +185,10 @@ const templateFrom = (
   if (t.isStringLiteral(node)) {
     return { kind: 'literal', markup: node.value, expandedArgs: [] };
   }
-  if (t.isTemplateLiteral(node)) {
+  const parts = templateParts(node);
+  if (parts) {
     const expanded = new Set<string>();
-    const markup = interpolate(node, shape, bindings, scope, expanded);
+    const markup = interpolate(parts, shape, bindings, scope, expanded);
     return markup === undefined
       ? { kind: 'unresolvable', source: sourceOf(node) }
       : { kind: 'literal', markup, expandedArgs: [...expanded] };
@@ -195,22 +196,51 @@ const templateFrom = (
   return { kind: 'unresolvable', source: sourceOf(node) };
 };
 
+interface TemplateParts {
+  quasis: string[];
+  expressions: t.Node[];
+}
+
+// `String.raw` is the identity tag: it hands back the text between the backticks, so a template
+// wearing it is as readable as a plain one. No other tag transforms its input predictably.
+const templateParts = (node: t.Node): TemplateParts | undefined => {
+  if (t.isTemplateLiteral(node)) {
+    return {
+      quasis: node.quasis.map((quasi) => quasi.value.cooked ?? ''),
+      expressions: node.expressions,
+    };
+  }
+  if (!t.isTaggedTemplateExpression(node) || !isStringRawTag(node.tag)) {
+    return undefined;
+  }
+  return {
+    quasis: node.quasi.quasis.map((quasi) => quasi.value.raw),
+    expressions: node.quasi.expressions,
+  };
+};
+
+const isStringRawTag = (tag: t.Expression): boolean =>
+  t.isMemberExpression(tag) &&
+  !tag.computed &&
+  t.isIdentifier(tag.object, { name: 'String' }) &&
+  t.isIdentifier(tag.property, { name: 'raw' });
+
 /** Markup a template literal holds once every `${…}` in it has been substituted. */
 const interpolate = (
-  node: t.TemplateLiteral,
+  { quasis, expressions }: TemplateParts,
   shape: StoryShape,
   bindings: Bindings | undefined,
   scope: FunctionScope,
   expanded: Set<string>
 ): string | undefined => {
-  let markup = node.quasis[0]?.value.cooked ?? '';
+  let markup = quasis[0] ?? '';
 
-  for (const [index, expression] of node.expressions.entries()) {
+  for (const [index, expression] of expressions.entries()) {
     const substituted = substituteExpression(expression, shape, bindings, scope, expanded);
     if (substituted === undefined) {
       return undefined;
     }
-    markup += substituted + (node.quasis[index + 1]?.value.cooked ?? '');
+    markup += substituted + (quasis[index + 1] ?? '');
   }
 
   return markup;

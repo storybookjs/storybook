@@ -1,7 +1,12 @@
 import { types as t } from 'storybook/internal/babel';
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
-import type { CsfFile, StoryArgsResolver, StoryReferences } from 'storybook/internal/csf-tools';
+import type {
+  CsfFile,
+  ResolvedMembers,
+  StoryArgsResolver,
+  StoryReferences,
+} from 'storybook/internal/csf-tools';
 import {
   buildImportStatements,
   collectImportBindings,
@@ -12,6 +17,7 @@ import {
   parseReferenceModule,
   resolveComponentImport,
   unresolvedWarning,
+  unwrapExpression,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
@@ -25,7 +31,14 @@ import {
   evaluateArgLiteral,
 } from './story-docs-args.ts';
 import type { Bindings, StoryShape, TemplateResult } from './story-docs-markup.ts';
-import { sourceOf, userTemplate } from './story-docs-markup.ts';
+import {
+  isBindCall,
+  isStoryFactoryCall,
+  resolvedMember,
+  resolvedProperty,
+  sourceOf,
+  userTemplate,
+} from './story-docs-markup.ts';
 import type { StoryNgModules } from './story-docs-ng-modules.ts';
 import { ngModulesFromDecorators, storyNgModules } from './story-docs-ng-modules.ts';
 import type { HostComponentSnippet } from './story-docs-snippet.ts';
@@ -155,14 +168,11 @@ const buildStoryDoc = (
   story: CsfFile['_stories'][string],
   deps: StoryDocDeps
 ): StoryDoc => {
-  const { csf, snippetMeta } = deps;
+  const { csf } = deps;
   const name = story.name ?? storyNameFromExport(exportName);
   try {
     const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[exportName]);
-    const shape = storyShape(exportName, deps);
-    const rendered = snippetMeta
-      ? renderStorySnippet(snippetMeta, shape, shape.members.properties.decorators, deps)
-      : undefined;
+    const rendered = renderedSnippet(storyShape(exportName, deps), deps);
 
     return {
       id: story.id,
@@ -182,10 +192,59 @@ const buildStoryDoc = (
   }
 };
 
+// `parameters.docs.source.code` is the example the author chose to publish, so it replaces what
+// this pass would derive rather than competing with it.
+const renderedSnippet = (
+  shape: StoryShape,
+  deps: StoryDocDeps
+): HostComponentSnippet | undefined => {
+  const authored = authoredSource(shape);
+  if (authored !== undefined) {
+    return { snippet: authored };
+  }
+  return deps.snippetMeta
+    ? renderStorySnippet(deps.snippetMeta, shape, shape.members.properties.decorators, deps)
+    : undefined;
+};
+
+const authoredSource = (shape: StoryShape): string | undefined => {
+  for (const members of [shape.members, shape.metaMembers]) {
+    const code = memberAt(members, ['parameters', 'docs', 'source', 'code']);
+    const value = code && unwrapExpression(code);
+    if (t.isStringLiteral(value)) {
+      return value.value;
+    }
+    if (t.isTemplateLiteral(value) && value.expressions.length === 0) {
+      return value.quasis[0]?.value.cooked ?? '';
+    }
+  }
+  return undefined;
+};
+
+/** A nested config value, as far as the path is written out in object literals. */
+const memberAt = (members: ResolvedMembers, path: readonly string[]): t.Node | undefined => {
+  const [first, ...rest] = path;
+  const root = resolvedMember(members, first);
+  let node = root.kind === 'value' ? root.node : undefined;
+  for (const key of rest) {
+    const object = node && unwrapExpression(node);
+    if (!object || !t.isObjectExpression(object)) {
+      return undefined;
+    }
+    const property = resolvedProperty(object, key);
+    node = property.kind === 'value' ? property.node : undefined;
+  }
+  return node;
+};
+
 const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
   const resolved = deps.resolveStoryArgs.resolve(exportName);
   const enums = deps.snippetMeta?.enums ?? [];
   const unresolved = [...resolved.unresolved];
+  const factoryCall = opaqueFactoryCall(deps.csf, exportName);
+  if (factoryCall !== undefined) {
+    unresolved.push(factoryCall);
+  }
   for (const value of Object.values(resolved.args)) {
     // An arg that still carries a name has to be reported: an Angular binding is evaluated against
     // the host component the snippet ships, so a name that component does not have reads as
@@ -208,6 +267,21 @@ const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
 };
 
 /**
+ * A call the story is built by that this pass cannot see the config of.
+ *
+ * Only a CSF factory exposes what it was called with; any other call resolves to an empty record
+ * indistinguishable from a story that really declares nothing, which is what makes it worth naming.
+ */
+const opaqueFactoryCall = (csf: CsfFile, exportName: string): string | undefined => {
+  const declared = csf._storyExports[exportName];
+  const init = t.isVariableDeclarator(declared) ? declared.init : declared;
+  const call = init ? unwrapExpression(init) : undefined;
+  const readable =
+    !call || !t.isCallExpression(call) || isStoryFactoryCall(call) || isBindCall(call);
+  return readable ? undefined : sourceOf(call);
+};
+
+/**
  * Snippets show the markup a story supplies itself - through `template`, a `render` that returns
  * one, or the CSF2 function form - as written. Markup or args that cannot be read without running
  * the story fall back to the component-derived bindings: a snippet that fell back is still useful,
@@ -225,10 +299,13 @@ const renderStorySnippet = (
   // between the import statement, the `imports` array and the template.
   const localName = componentNameOf(shape.csf._metaAnnotations.component) ?? snippetMeta.name;
   const ngModules = snippetMeta.standalone ? undefined : storyNgModules(storyDecorators, deps);
-  const bindings = collectBindings(snippetMeta, shape);
+  const expansion = argsExpansion(snippetMeta, shape);
   // Hidden args would expand `argsToTemplate` into markup that looks complete, so the markup is
   // read without bindings then and falls back with a warning instead.
-  const userMarkup = userTemplate(shape, shape.unresolvedArgs.length === 0 ? bindings : undefined);
+  const userMarkup = userTemplate(
+    shape,
+    shape.unresolvedArgs.length === 0 ? expansion.bindings : undefined
+  );
 
   const host = (
     template: string,
@@ -250,13 +327,13 @@ const renderStorySnippet = (
   if (userMarkup?.kind === 'literal') {
     // The markup is shown exactly as it was written, so the host has to supply what the story
     // supplied: handlers for the outputs it binds, and the args it reaches for by name.
-    const boundOutputs = snippetMeta.outputs.filter((name) =>
+    const boundOutputs = expansion.outputs.filter((name) =>
       userMarkup.markup.includes(`(${name})=`)
     );
     const hostArgs = referencedArgFields(userMarkup, shape, boundOutputs, snippetMeta.enums);
-    return withUnresolved(
+    return withWarnings(
       host(formatTemplateMarkup(userMarkup.markup), false, boundOutputs, hostArgs.fields),
-      hostArgs.unresolved
+      unresolvedWarning(hostArgs.unresolved)
     );
   }
 
@@ -264,11 +341,19 @@ const renderStorySnippet = (
   // The outlet form shows no args at all, so naming the args that could not be read would say
   // nothing about what is missing from it.
   return snippetMeta.selector
-    ? withUnresolved(
-        host(buildTemplate(snippetMeta.selector, bindings), false, snippetMeta.outputs),
-        [...markupSources, ...shape.unresolvedArgs]
+    ? withWarnings(
+        host(
+          buildTemplate(snippetMeta.selector, componentBindings(snippetMeta, shape)),
+          false,
+          snippetMeta.outputs
+        ),
+        unresolvedWarning([...markupSources, ...shape.unresolvedArgs]),
+        unboundArgsWarning(localName, snippetMeta, shape)
       )
-    : withUnresolved(host(buildComponentOutletTemplate(localName), true, []), markupSources);
+    : withWarnings(
+        host(buildComponentOutletTemplate(localName), true, []),
+        unresolvedWarning(markupSources)
+      );
 };
 
 /**
@@ -284,12 +369,13 @@ const referencedArgFields = (
   const taken = new Set([...markup.expandedArgs, ...boundOutputs]);
   const fields: { name: string; value: string }[] = [];
   const unresolved: string[] = [];
+  const expressions = expressionText(markup.markup);
 
   for (const [name, node] of Object.entries(shape.args)) {
     if (taken.has(name) || !isValidIdentifier(name)) {
       continue;
     }
-    if (!new RegExp(`\\b${name}\\b`).test(markup.markup)) {
+    if (!new RegExp(`\\b${name}\\b`).test(expressions)) {
       continue;
     }
     const value = evaluateArgLiteral(node, enums);
@@ -303,20 +389,61 @@ const referencedArgFields = (
   return { fields, unresolved };
 };
 
-const withUnresolved = (
-  rendered: HostComponentSnippet,
-  unresolved: readonly string[]
-): HostComponentSnippet => {
-  if (unresolved.length === 0) {
-    return rendered;
+const ATTRIBUTE = /([^\s=<>]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g;
+const BINDING_ATTRIBUTE = /^(?:\[|\(|\*|bind-|on-|bindon-)/;
+const INTERPOLATION = /\{\{([\s\S]*?)\}\}/g;
+const CONTROL_FLOW_BLOCK = /@(?:if|else if|for|switch|case)\b([^{]*)/g;
+const QUOTED = /'[^']*'|"[^"]*"/g;
+
+/**
+ * The parts of the markup Angular evaluates as code, with their string literals removed.
+ *
+ * A plain attribute's value is text, so a name appearing in one is not a reference to anything the
+ * host would have to declare.
+ */
+const expressionText = (markup: string): string => {
+  const expressions: string[] = [];
+  for (const [, name, doubleQuoted, singleQuoted, bare] of markup.matchAll(ATTRIBUTE)) {
+    if (BINDING_ATTRIBUTE.test(name)) {
+      expressions.push(doubleQuoted ?? singleQuoted ?? bare ?? '');
+    }
   }
-  const warning = [rendered.warning, unresolvedWarning(unresolved)]
-    .filter((part) => part !== undefined)
-    .join('\n');
-  return { snippet: rendered.snippet, warning };
+  for (const [, expression] of markup.matchAll(INTERPOLATION)) {
+    expressions.push(expression);
+  }
+  for (const [, condition] of markup.matchAll(CONTROL_FLOW_BLOCK)) {
+    expressions.push(condition);
+  }
+  return expressions.join('\n').replace(QUOTED, '');
 };
 
-const collectBindings = (snippetMeta: AngularComponentSnippetMeta, shape: StoryShape): Bindings => {
+const withWarnings = (
+  rendered: HostComponentSnippet,
+  ...parts: (string | undefined)[]
+): HostComponentSnippet => {
+  const warning = [rendered.warning, ...parts].filter((part) => part !== undefined).join('\n');
+  return warning === '' ? rendered : { snippet: rendered.snippet, warning };
+};
+
+/** Args the generated element cannot carry, since the component declares no binding for them. */
+const unboundArgsWarning = (
+  componentName: string,
+  snippetMeta: AngularComponentSnippetMeta,
+  shape: StoryShape
+): string | undefined => {
+  const bindable = new Set([...snippetMeta.inputs, ...snippetMeta.outputs]);
+  const names = Object.keys(shape.args).filter((name) => !bindable.has(name));
+  return names.length === 0
+    ? undefined
+    : `Incomplete snippet: ${names.map((name) => `\`${name}\``).join(', ')} could not be bound, ` +
+        `since ${componentName} declares no such input.`;
+};
+
+/** Bindings the generated element carries, which is what the component itself accepts. */
+const componentBindings = (
+  snippetMeta: AngularComponentSnippetMeta,
+  shape: StoryShape
+): Bindings => {
   const inputNames = new Set(snippetMeta.inputs);
   const inputs = Object.entries(shape.args)
     .filter(([argName]) => inputNames.has(argName))
@@ -325,4 +452,55 @@ const collectBindings = (snippetMeta: AngularComponentSnippetMeta, shape: StoryS
       expression: evaluateArgExpression(node, snippetMeta.enums),
     }));
   return { inputs, outputs: snippetMeta.outputs };
+};
+
+interface ArgsExpansion {
+  /** What `argsToTemplate(args)` writes into the markup the story wrote. */
+  bindings: Bindings;
+  /** Every name that expansion may bind as an output, each of which needs a host handler. */
+  outputs: string[];
+}
+
+/**
+ * What `argsToTemplate(args)` expands to, which is every arg the story has rather than only the
+ * documented inputs, with a function-valued one bound as an output the way the runtime binds it.
+ */
+const argsExpansion = (
+  snippetMeta: AngularComponentSnippetMeta,
+  shape: StoryShape
+): ArgsExpansion => {
+  const outputs = [
+    ...new Set([
+      ...snippetMeta.outputs,
+      ...Object.entries(shape.args)
+        .filter(([, node]) => isFunctionValue(node))
+        .map(([name]) => name),
+    ]),
+  ];
+  const inputs = Object.entries(shape.args)
+    .filter(([name]) => !outputs.includes(name))
+    .map(([name, node]) => ({
+      name,
+      expression: evaluateArgExpression(node, snippetMeta.enums),
+    }));
+  const handWritten = handWrittenOutputs(shape);
+  return {
+    bindings: { inputs, outputs: outputs.filter((name) => !handWritten.has(name)) },
+    outputs,
+  };
+};
+
+const isFunctionValue = (node: t.Node): boolean => {
+  const unwrapped = unwrapExpression(node);
+  return t.isArrowFunctionExpression(unwrapped) || t.isFunctionExpression(unwrapped);
+};
+
+const OUTPUT_BINDING = /\(([^)\s]+)\)\s*=/g;
+
+// Reading the markup with nothing to expand leaves the output bindings the story wrote by hand,
+// which the expansion has to leave alone or the element ends up binding them twice.
+const handWrittenOutputs = (shape: StoryShape): Set<string> => {
+  const unexpanded = userTemplate(shape, { inputs: [], outputs: [] });
+  const markup = unexpanded?.kind === 'literal' ? unexpanded.markup : '';
+  return new Set([...markup.matchAll(OUTPUT_BINDING)].map(([, name]) => name));
 };

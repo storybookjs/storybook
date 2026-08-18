@@ -692,6 +692,62 @@ describe('buildStoryDocsPayload', () => {
       );
     });
 
+    // `argsToTemplate(args)` reads the args object, not the component, so every arg it holds is
+    // expanded - a wrapper element's own args included.
+    it('expands an arg the component does not declare as an input', async () => {
+      const story = await soleStory(`
+        import { argsToTemplate } from '@storybook/angular-vite';
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save', tooltip: 'Hi' },
+          render: (args) => ({
+            props: args,
+            template: \`<sb-button \${argsToTemplate(args)}></sb-button>\`,
+          }),
+        };
+      `);
+      expect(extractHostComponentTemplate(story.snippet!)).toContain(`[tooltip]="'Hi'"`);
+      expect(story.warning).toBeUndefined();
+    });
+
+    it('expands a function-valued arg as the output binding it becomes at runtime', async () => {
+      const story = await soleStory(`
+        import { argsToTemplate } from '@storybook/angular-vite';
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { onSelect: () => {} },
+          render: (args) => ({
+            props: args,
+            template: \`<sb-button \${argsToTemplate(args)}></sb-button>\`,
+          }),
+        };
+      `);
+      expect(extractHostComponentTemplate(story.snippet!)).toContain(
+        '(onSelect)="onSelect($event)"'
+      );
+      expect(story.snippet).toContain('  onSelect(event: unknown) {}');
+    });
+
+    it('leaves an output the markup binds by hand out of the expansion', async () => {
+      const story = await soleStory(`
+        import { argsToTemplate } from '@storybook/angular-vite';
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save' },
+          render: (args) => ({
+            props: args,
+            template: \`<sb-button (pressed)="pressed($event)" \${argsToTemplate(args)}></sb-button>\`,
+          }),
+        };
+      `);
+      expect(extractHostComponentTemplate(story.snippet!)).toBe(
+        `<sb-button (pressed)="pressed($event)" [label]="'Save'"></sb-button>`
+      );
+    });
+
     it('honours argsToTemplate exclude options', async () => {
       expect((await templatesOf(STORY_SHAPES_FILE)).get('Args To Template Exclude')).toBe(
         `<sb-button [label]="'Save'" (clicked)="clicked($event)"></sb-button>`
@@ -780,6 +836,35 @@ describe('buildStoryDocsPayload', () => {
       expect((await storiesOf(STORY_SHAPES_FILE)).get('Own Template')?.snippet).toContain(
         'export class DemoComponent {}'
       );
+    });
+
+    // A plain attribute's value is text Angular never evaluates, so a name inside one refers to
+    // nothing the host could declare - and declaring it would contradict the markup.
+    it('declares nothing for an arg the markup only names in text', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save' },
+          render: (args) => ({
+            props: args,
+            template: '<sb-button inputId="button-label" label="Static"></sb-button>',
+          }),
+        };
+      `);
+      expect(story.snippet).toContain('export class DemoComponent {}');
+    });
+
+    it('declares an arg the markup names inside an interpolation', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save' },
+          render: (args) => ({ props: args, template: '<sb-button>{{ label }}</sb-button>' }),
+        };
+      `);
+      expect(story.snippet).toContain(`  label = 'Save';`);
     });
 
     // A name the story file declares is read through to its value: the host component the snippet
@@ -994,6 +1079,20 @@ describe('buildStoryDocsPayload', () => {
       expect(story.warning).toContain('render:');
       expect(story.snippet).not.toContain('first');
       expect(story.snippet).toContain(`[label]="'Save'"`);
+    });
+
+    // A helper that builds the whole story hands back a config this pass cannot see into, which is
+    // otherwise indistinguishable from a story that declares nothing.
+    it('reports a story built by a call that is not a CSF factory', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        import { makeStory } from './factory';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = makeStory('primary');
+      `);
+      expect(story.warning).toContain(
+        "Incomplete snippet: `makeStory('primary')` could not be resolved statically."
+      );
     });
 
     it('falls back with a warning when argsToTemplate options need the story to run', async () => {
@@ -1438,6 +1537,99 @@ describe('buildStoryDocsPayload', () => {
       expect(stories.get('Logged In')?.warning).toBe(
         'Incomplete snippet: `...HeaderStories.LoggedIn.args` could not be resolved statically.'
       );
+    });
+  });
+
+  // An arg the element cannot carry is the difference between an example a reader can paste and one
+  // that quietly does something else, so it has to be named rather than dropped.
+  describe('args the generated element cannot represent', () => {
+    it('reports an arg the component declares no input for', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { label: 'Save', tooltip: 'Hi' } };
+      `);
+      expect(story.snippet).toContain(`[label]="'Save'"`);
+      expect(story.snippet).not.toContain('[tooltip]');
+      expect(story.warning).toBe(
+        'Incomplete snippet: `tooltip` could not be bound, since ButtonComponent declares no such input.'
+      );
+    });
+
+    it('names every arg it could not bind', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { tooltip: 'Hi', size: 'large' } };
+      `);
+      expect(story.warning).toContain('`tooltip`, `size`');
+    });
+
+    it('leaves an arg the component declares as an output to its handler', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { pressed: () => {} } };
+      `);
+      expect(story.warning).toBeUndefined();
+      expect(story.snippet).toContain('(pressed)="pressed($event)"');
+    });
+
+    it('reports an arg whose value another module owns', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        import { REMOTE_LABEL } from './labels';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { label: REMOTE_LABEL } };
+      `);
+      expect(story.warning).toBe(
+        'Incomplete snippet: `REMOTE_LABEL` could not be resolved statically.'
+      );
+      expect(story.snippet).toContain('[label]="REMOTE_LABEL"');
+    });
+  });
+
+  // A derived snippet is a stand-in for the example the author did not write, so it never replaces
+  // the one they did.
+  describe('a source the author wrote', () => {
+    it('uses the code the story sets through parameters.docs.source.code', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save' },
+          parameters: { docs: { source: { code: '<sb-button authored></sb-button>' } } },
+        };
+      `);
+      expect(story.snippet).toBe('<sb-button authored></sb-button>');
+      expect(story.warning).toBeUndefined();
+    });
+
+    it('falls back to the code the meta sets when the story sets none', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default {
+          title: 'Example/Button',
+          component: ButtonComponent,
+          parameters: { docs: { source: { code: '<sb-button from-meta></sb-button>' } } },
+        };
+        export const Default = { args: { label: 'Save' } };
+      `);
+      expect(story.snippet).toBe('<sb-button from-meta></sb-button>');
+    });
+
+    it('keeps the authored code when core/docgen has no payload', async () => {
+      const story = await soleStory(
+        `
+          import { ButtonComponent } from './button.component';
+          export default { title: 'Example/Button', component: ButtonComponent };
+          export const Default = {
+            parameters: { docs: { source: { code: '<sb-button authored></sb-button>' } } },
+          };
+        `,
+        noDocgen
+      );
+      expect(story.snippet).toBe('<sb-button authored></sb-button>');
     });
   });
 });

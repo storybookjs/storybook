@@ -1,5 +1,5 @@
 ```ts filename="my-component.stories.ts" renderer="angular" language="ts" tabTitle="CSF 3"
-import type { Meta, StoryObj } from '@storybook/angular';
+import type { Meta, StoryObj } from '@storybook/angular-vite';
 
 import { MyComponent } from './my-component.component';
 

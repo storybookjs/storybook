@@ -46,9 +46,6 @@ The Webpack-based `@storybook/angular` does not generate a components manifest.
 
 On `@storybook/vue3-vite`, the components manifest requires both [`componentsManifest`](../api/main-config/main-config-features.mdx#componentsmanifest) and [`experimentalDocgenServer`](../api/main-config/main-config-features.mdx#experimentaldocgenserver), which uses `vue-component-meta` to read your component API.
 
-Vue entries do not yet carry a props or API section.
-An agent gets your component descriptions, story snippets, and MDX documentation, but no generated API table.
-
 </If>
 
 <If notRenderer={['react', 'angular', 'vue']}>
@@ -414,7 +411,7 @@ The debugger reads prop tables from React docgen data only, so Angular component
 
 <If renderer="vue">
 
-The debugger reads prop tables from React docgen data only, so Vue components are listed without prop types, the same way [`docs-show`](./mcp/overview.mdx#docs-show) returns none.
+The debugger reads prop tables from React docgen data only, so Vue components are listed without prop types even though [`docs-show`](./mcp/overview.mdx#docs-show) does return their API.
 
 </If>
 
@@ -422,11 +419,7 @@ The debugger reads prop tables from React docgen data only, so Vue components ar
 
 By default, all stories and independent docs pages have the `manifest` [tag](../writing-stories/tags.mdx) applied, which means they will be included in the manifests. You can curate what is included in the manifests by adding or removing the `manifest` tag from your stories and docs pages. For example, if you have a story that is for instructional purposes only and the agent should not be aware of it, you can remove the `manifest` tag from that story to exclude it from the manifests:
 
-<If renderer={['react', 'angular', 'vue']}>
-
 <CodeSnippets path="tag-manifest-remove-in-story.md" />
-
-</If>
 
 You can also remove an entire component from the manifest by removing the tag in the file's meta (or default export), which will exclude all stories in that file from the manifests.
 

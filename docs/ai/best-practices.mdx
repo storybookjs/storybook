@@ -21,11 +21,7 @@ Use Storybook together with an AI agent effectively by following these best prac
 
 Stories are referenced by the [MCP server](./mcp/overview.mdx) to provide examples of how your components are used. They are also tested to ensure your components work as expected. Whenever possible, they should demonstrate one concept or use case, and be as descriptive about the "why" behind the story, not just the "what". This will help agents understand when and why to use certain components or patterns.
 
-<If renderer={['react', 'angular', 'vue']}>
-
 <CodeSnippets path="best-practices-in-story.md" />
-
-</If>
 
 You might be wondering how well an agent handles abstractions like [`args`](../writing-stories/args.mdx) or [decorators](../writing-stories/decorators.mdx). The manifest generation process evaluates the final rendered story with all args, decorators, etc. applied, so it can focus on the concept being demonstrated, rather than the specifics of how it's implemented.
 
@@ -100,11 +96,7 @@ Similarly, you can provide descriptions (and summaries) for each story, which se
 
 The agent will receive the summary, if present, or the first 60 characters of the description.
 
-<If renderer={['react', 'angular', 'vue']}>
-
 <CodeSnippets path="story-description-and-summary.md" />
-
-</If>
 
 <If renderer="react">
 
@@ -197,11 +189,7 @@ It's possible to provide too little _or_ too much context to your agent. If your
 
 For stories or docs which the agent does not need to reference (e.g. a story demonstrating an anti-pattern or a docs page about deprecated components), you can exclude them from the manifest by removing the `manifest` [tag](../writing-stories/tags.mdx):
 
-<If renderer={['react', 'angular', 'vue']}>
-
 <CodeSnippets path="tag-manifest-remove-in-story.md" />
-
-</If>
 
 You can also remove an entire component from the manifest, by removing the tag in the meta (or default export) of the file, which will exclude all stories in that file from the manifests.
 

@@ -16,6 +16,15 @@ import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts'
 import { memberName } from './node-text.ts';
 import { buildSignalEntry, parseSignalCall } from './signals.ts';
 
+type TransformTypeSource = {
+  kind: 'transform';
+  checkerType: ts.Type;
+  node?: ts.TypeNode;
+  substitutions?: ReadonlyMap<ts.Symbol, ts.TypeNode>;
+};
+
+type TransformWriteType = Omit<TransformTypeSource, 'kind'> & { text: string };
+
 /**
  * A collected member, paired with the identity Angular itself merges on.
  *
@@ -28,14 +37,7 @@ export interface MemberEntry<T> {
   isStatic: boolean;
   declaration: ts.NamedDeclaration;
   /** A metadata type the class property's checker type does not represent. */
-  typeSource?:
-    | { kind: 'signal'; signalKind: 'input' | 'output' | 'model' }
-    | {
-        kind: 'transform';
-        checkerType: ts.Type;
-        node?: ts.TypeNode;
-        substitutions?: ReadonlyMap<ts.Symbol, ts.TypeNode>;
-      };
+  typeSource?: { kind: 'signal'; signalKind: 'input' | 'output' | 'model' } | TransformTypeSource;
   value: T;
 }
 
@@ -231,16 +233,22 @@ const buildDecoratorInput = (
     },
     ...(transformed
       ? {
-          typeSource: {
-            kind: 'transform' as const,
-            checkerType: transformed.checkerType,
-            ...(transformed.node ? { node: transformed.node } : {}),
-            ...(transformed.substitutions ? { substitutions: transformed.substitutions } : {}),
-          },
+          typeSource: transformTypeSource(transformed),
         }
       : {}),
   };
 };
+
+const transformTypeSource = ({
+  checkerType,
+  node,
+  substitutions,
+}: TransformWriteType): TransformTypeSource => ({
+  kind: 'transform',
+  checkerType,
+  ...(node ? { node } : {}),
+  ...(substitutions ? { substitutions } : {}),
+});
 
 // A transformed input documents the transform's parameter type: it is what a template may bind,
 // while the declared property type is only what the transform turns it into. `unknown`/`any`
@@ -248,14 +256,7 @@ const buildDecoratorInput = (
 const transformWriteType = (
   ctx: AnalyzerContext,
   transform: ts.Expression
-):
-  | {
-      text: string;
-      checkerType: ts.Type;
-      node?: ts.TypeNode;
-      substitutions?: ReadonlyMap<ts.Symbol, ts.TypeNode>;
-    }
-  | undefined => {
+): TransformWriteType | undefined => {
   const { checker, ts } = ctx;
   // TypeScript infers from the last signature of an overloaded function, so that is the overload
   // Angular's own `TransformT` comes from.
@@ -532,14 +533,7 @@ const visitAccessorPair = (
           ...description,
           ...tags,
         },
-        transformed
-          ? {
-              kind: 'transform',
-              checkerType: transformed.checkerType,
-              ...(transformed.node ? { node: transformed.node } : {}),
-              ...(transformed.substitutions ? { substitutions: transformed.substitutions } : {}),
-            }
-          : undefined
+        transformed ? transformTypeSource(transformed) : undefined
       )
     );
     return;

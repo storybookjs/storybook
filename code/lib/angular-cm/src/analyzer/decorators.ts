@@ -1,18 +1,11 @@
 import type * as ts from 'typescript';
 
-import type { AnalyzerContext } from './context.ts';
+import { resolvedSymbol, type AnalyzerContext } from './context.ts';
 
 export interface DecoratorInfo {
   name: string;
   call?: ts.CallExpression;
 }
-
-const resolvedSymbol = (ctx: AnalyzerContext, node: ts.Node): ts.Symbol | undefined => {
-  const symbol = ctx.checker.getSymbolAtLocation(node);
-  return symbol && symbol.flags & ctx.ts.SymbolFlags.Alias
-    ? ctx.checker.getAliasedSymbol(symbol)
-    : symbol;
-};
 
 /**
  * Whether `node` resolves to a declaration in `@angular/core`.

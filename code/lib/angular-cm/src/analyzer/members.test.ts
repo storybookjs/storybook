@@ -13,7 +13,13 @@
 import { logger } from 'storybook/internal/node-logger';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { AngularClassMeta, Directive, Method, Property } from '../types.ts';
+import type {
+  AngularClassMeta,
+  Directive,
+  Method,
+  Property,
+  PropertyInitializer,
+} from '../types.ts';
 import { extractArgTypesFromData } from '../extract-arg-types.ts';
 import {
   analyzeInline as analyze,
@@ -31,7 +37,12 @@ afterEach(() => {
 const ANALYZER_EXTRACT_OPTIONS = { propsTable: 'all' } as const;
 
 const soleComponent = (meta: ReturnType<typeof analyze>) => meta.components[0] as Directive;
-const literal = (text: string) => ({ kind: 'literal', text });
+type LiteralInitializer = Extract<PropertyInitializer, { kind: 'literal' }>;
+
+const literal = (
+  text: string,
+  literalKind: LiteralInitializer['literalKind']
+): LiteralInitializer => ({ kind: 'literal', literalKind, text });
 const expression = (text: string) => ({ kind: 'expression', text });
 
 describe('@Input and @Output aliases', () => {
@@ -77,7 +88,7 @@ describe('@Input and @Output aliases', () => {
     expect(byName(inputs, 'hint')).toMatchObject({ required: false, optional: true });
     expect(byName(inputs, 'buttonLabel')).toMatchObject({
       optional: false,
-      initializer: literal("''"),
+      initializer: literal("''", 'string'),
     });
     expect(byName(inputs, 'buttonLabel').required).toBeUndefined();
   });
@@ -207,7 +218,7 @@ describe('pipes, injectables and plain classes', () => {
     expect(injectable).toMatchObject({ name: 'DataService', type: 'injectable' });
     expect(byName(injectable.properties, 'rows')).toMatchObject({
       type: 'number',
-      initializer: literal('3'),
+      initializer: literal('3', 'number'),
     });
     expect(byName(injectable.methods, 'load').returnType).toBe('Promise<string[]>');
   });
@@ -258,11 +269,11 @@ describe('signal inputs and outputs', () => {
 
     expect(byName(component.inputsClass, 'ratios')).toMatchObject({
       type: 'number[]',
-      initializer: literal('[0.5, 1]'),
+      initializer: literal('[0.5, 1]', 'composite'),
     });
     expect(byName(component.inputsClass, 'align')).toMatchObject({
       type: '"left" | "right"',
-      initializer: literal("'left'"),
+      initializer: literal("'left'", 'string'),
     });
     expect(byName(component.outputsClass, 'tags')).toMatchObject({ type: 'Set<string>' });
   });
@@ -292,7 +303,7 @@ describe('signal inputs and outputs', () => {
       type: 'string',
       required: false,
       optional: false,
-      initializer: literal("'hi'"),
+      initializer: literal("'hi'", 'string'),
     });
     expect(byName(component.inputsClass, 'count')).toMatchObject({
       type: 'number',
@@ -300,7 +311,7 @@ describe('signal inputs and outputs', () => {
     });
     expect(byName(component.inputsClass, 'increment')).toMatchObject({
       type: 'number',
-      initializer: literal('2'),
+      initializer: literal('2', 'number'),
     });
 
     expect(names(component.outputsClass)).toEqual(['toggled', 'value']);
@@ -311,7 +322,7 @@ describe('signal inputs and outputs', () => {
     for (const bucket of [component.inputsClass, component.outputsClass]) {
       expect(byName(bucket, 'value')).toMatchObject({
         type: 'number',
-        initializer: literal('1'),
+        initializer: literal('1', 'number'),
       });
     }
 
@@ -338,7 +349,7 @@ describe('signal inputs and outputs', () => {
 
     expect(byName(component.inputsClass, 'label')).toMatchObject({
       type: 'string',
-      initializer: literal("'hi'"),
+      initializer: literal("'hi'", 'string'),
       required: false,
     });
     expect(byName(component.inputsClass, 'checked')).toMatchObject({
@@ -1126,7 +1137,7 @@ describe('inheritance', () => {
 
     // The base decides the bucket, the child's own initializer decides the default.
     expect(byName(component.inputsClass, 'disabled')).toMatchObject({
-      initializer: literal('false'),
+      initializer: literal('false', 'boolean'),
     });
     expect(names(component.propertiesClass)).not.toContain('disabled');
   });
@@ -1213,7 +1224,9 @@ describe('inheritance', () => {
     // `label` is the base's binding name for the same field, so emitting it too would offer a
     // control that binds to nothing.
     expect(names(child.inputsClass)).toEqual(['text']);
-    expect(byName(child.inputsClass, 'text')).toMatchObject({ initializer: literal("'child'") });
+    expect(byName(child.inputsClass, 'text')).toMatchObject({
+      initializer: literal("'child'", 'string'),
+    });
   });
 
   it('merges multi-level bases with the child winning, and takes plain members from a .d.ts', () => {
@@ -1252,13 +1265,13 @@ describe('inheritance', () => {
     expect(names(component.inputsClass)).toEqual(['midFlag', 'own']);
     expect(byName(component.inputsClass, 'midFlag')).toMatchObject({
       type: 'boolean',
-      initializer: literal('false'),
+      initializer: literal('false', 'boolean'),
     });
 
     // `hint` comes from MidBase, which overrides the .d.ts base's declaration.
     expect(names(component.propertiesClass)).toEqual(['hint']);
     expect(byName(component.propertiesClass, 'hint')).toMatchObject({
-      initializer: literal("'mid'"),
+      initializer: literal("'mid'", 'string'),
     });
 
     // A .d.ts records no decorators, so it can only contribute plain members, never IO.

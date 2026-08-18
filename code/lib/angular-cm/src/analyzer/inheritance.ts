@@ -1,7 +1,7 @@
 import type * as ts from 'typescript';
 
 import type { Method, Property } from '../types.ts';
-import type { AnalyzerContext } from './context.ts';
+import { resolvedSymbol, type AnalyzerContext } from './context.ts';
 import type { ClassMembers, DocumentedClassKind, MemberEntry } from './members.ts';
 import { applyMetadataInputsOutputs, sameMemberIdentity, visitClassMembers } from './members.ts';
 import { signalValueTypeFromType } from './signals.ts';
@@ -99,7 +99,7 @@ const extendsClauseFor = (
   classNode: ts.ClassLikeDeclaration,
   declaration: ts.ClassDeclaration
 ): ts.ExpressionWithTypeArguments | undefined => {
-  const { ts, checker } = ctx;
+  const { ts } = ctx;
   const clause = classNode.heritageClauses?.find(
     (candidate) => candidate.token === ts.SyntaxKind.ExtendsKeyword
   );
@@ -108,9 +108,7 @@ const extendsClauseFor = (
   if (!target || (!ts.isIdentifier(target) && !ts.isPropertyAccessExpression(target))) {
     return undefined;
   }
-  const symbol = checker.getSymbolAtLocation(target);
-  const resolved =
-    symbol && symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+  const resolved = resolvedSymbol(ctx, target);
   return resolved?.declarations?.includes(declaration) ? expression : undefined;
 };
 

@@ -4,7 +4,7 @@ import type * as tsModule from 'typescript';
 
 import type { Class, Directive, Injectable, Pipe, Property } from '../types.ts';
 import type { AngularFileMeta } from '../types.ts';
-import type { AnalyzerContext } from './context.ts';
+import { resolvedSymbol, type AnalyzerContext } from './context.ts';
 import type { DocumentedClassKind } from './members.ts';
 import { collectClassMembers } from './class-members.ts';
 import { decoratorObjectArg, getDecorators, objectProperty, stringOption } from './decorators.ts';
@@ -162,13 +162,11 @@ const resolveInitializer = (
   ctx: AnalyzerContext,
   expression: tsModule.Expression
 ): tsModule.Expression | undefined => {
-  const { ts, checker } = ctx;
+  const { ts } = ctx;
   if (!ts.isIdentifier(expression)) {
     return expression;
   }
-  const symbol = checker.getSymbolAtLocation(expression);
-  const target =
-    symbol && symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+  const target = resolvedSymbol(ctx, expression);
   const declaration = target?.valueDeclaration;
   return declaration && ts.isVariableDeclaration(declaration) ? declaration.initializer : undefined;
 };

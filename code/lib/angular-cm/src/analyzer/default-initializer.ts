@@ -1,7 +1,7 @@
 import type * as ts from 'typescript';
 
 import type { PropertyInitializer } from '../types.ts';
-import type { AnalyzerContext } from './context.ts';
+import { resolvedSymbol, type AnalyzerContext } from './context.ts';
 
 type LiteralKind = Extract<PropertyInitializer, { kind: 'literal' }>['literalKind'];
 
@@ -23,11 +23,7 @@ const isEnumMemberAccess = (
   ctx: AnalyzerContext,
   expression: ts.PropertyAccessExpression
 ): boolean => {
-  const symbol = ctx.checker.getSymbolAtLocation(expression.name);
-  const resolved =
-    symbol && symbol.flags & ctx.ts.SymbolFlags.Alias
-      ? ctx.checker.getAliasedSymbol(symbol)
-      : symbol;
+  const resolved = resolvedSymbol(ctx, expression.name);
   return Boolean(resolved && resolved.flags & ctx.ts.SymbolFlags.EnumMember);
 };
 

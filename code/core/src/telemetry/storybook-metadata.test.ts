@@ -603,6 +603,47 @@ describe('storybook-metadata', () => {
       });
     });
 
+    describe('hasModuleFederation', () => {
+      it('should be true when a @module-federation/* package is a dependency', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: {
+            ...packageJsonMock,
+            dependencies: { '@module-federation/enhanced': 'x.x.x' },
+          } as PackageJson,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.hasModuleFederation).toBe(true);
+      });
+
+      it('should be true when @originjs/vite-plugin-federation is a devDependency', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: {
+            ...packageJsonMock,
+            devDependencies: { '@originjs/vite-plugin-federation': 'x.x.x' },
+          } as PackageJson,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.hasModuleFederation).toBe(true);
+      });
+
+      it('should be false when no Module Federation package is present', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: {
+            ...packageJsonMock,
+            dependencies: { react: 'x.x.x' },
+          } as PackageJson,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.hasModuleFederation).toBe(false);
+      });
+    });
+
     it('should detect userSince info', async () => {
       vi.mocked(isCI).mockImplementation(() => false);
       vi.mocked(globalSettings).mockResolvedValue({

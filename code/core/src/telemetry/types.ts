@@ -106,6 +106,12 @@ export type StorybookMetadata = {
    * onwards, where Turbopack is the default) or when the project isn't using Next.js.
    */
   hasTurbopack?: boolean;
+  /**
+   * Whether the project has a Module Federation package installed (e.g. `@module-federation/*`
+   * or `@originjs/vite-plugin-federation`). This can't detect projects that configure webpack's
+   * built-in `ModuleFederationPlugin` directly without one of these packages.
+   */
+  hasModuleFederation?: boolean;
   features?: StorybookConfig['features'];
   refCount?: number;
   preview?: {

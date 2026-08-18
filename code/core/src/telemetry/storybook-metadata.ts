@@ -24,6 +24,7 @@ import { detectAgent } from './detect-agent.ts';
 import { getApplicationFileCount } from './get-application-file-count.ts';
 import { getChromaticVersionSpecifier } from './get-chromatic-version.ts';
 import { getFrameworkInfo } from './get-framework-info.ts';
+import { getHasModuleFederation } from './get-has-module-federation.ts';
 import { getHasRouterPackage } from './get-has-router-package.ts';
 import { getHasTurbopack } from './get-has-turbopack.ts';
 import { analyzeEcosystemPackages } from './get-known-packages.ts';
@@ -147,6 +148,7 @@ export const computeStorybookMetadata = async ({
   metadata.knownPackages = await analyzeEcosystemPackages(packageJson);
   metadata.hasRouterPackage = getHasRouterPackage(packageJson);
   metadata.hasTurbopack = getHasTurbopack(packageJson);
+  metadata.hasModuleFederation = getHasModuleFederation(packageJson);
 
   const monorepoType = getMonorepoType();
   if (monorepoType) {

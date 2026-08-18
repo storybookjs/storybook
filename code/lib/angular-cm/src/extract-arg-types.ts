@@ -330,6 +330,17 @@ const COMPUTED_PART = /[(`]|\$\{|=>|\bthis\b|\bnew\b/;
 
 const QUOTED_STRING = /'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g;
 
+// A composite prints its own source, so it may only hold values that read as themselves. Property
+// keys, enum-style references and the keyword literals are those; anything else left holding a name
+// is a constant, a shorthand or a computed key, whose value the reader cannot see.
+const namesRuntimeValue = (withoutStrings: string): boolean =>
+  /[A-Za-z_$]/.test(
+    withoutStrings
+      .replace(/[A-Za-z_$][\w$]*\s*:/g, '')
+      .replace(/[A-Za-z_$][\w$]*(?:\.[A-Za-z_$][\w$]*)+/g, '')
+      .replace(/\b(?:true|false|null|undefined)\b/g, '')
+  );
+
 // Only a self-describing literal is worth a Default cell. Initializer source like
 // `this._config.variant` or `injectOptions()` names where a value comes from, not what it is, and
 // can even contradict the runtime default.
@@ -339,7 +350,15 @@ const isLiteralInitializer = (text: string): boolean => {
   }
   const composite =
     (text.startsWith('[') && text.endsWith(']')) || (text.startsWith('{') && text.endsWith('}'));
-  return composite && !COMPUTED_PART.test(text.replace(QUOTED_STRING, "''"));
+  if (!composite) {
+    return false;
+  }
+  const withoutStrings = text.replace(QUOTED_STRING, "''");
+  return (
+    !COMPUTED_PART.test(withoutStrings) &&
+    !withoutStrings.includes('...') &&
+    !namesRuntimeValue(withoutStrings)
+  );
 };
 
 const authoredDefault = (property: Property): string | undefined => {

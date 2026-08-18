@@ -127,7 +127,9 @@ const isInitializerSourceSummary = (summary: string): boolean =>
   /[`\n]|=>|\$\{/.test(summary) ||
   /^[A-Za-z_$][\w$.]*\(/.test(summary) ||
   /^new\s+[A-Za-z_$][\w$.]*\s*\(/.test(summary) ||
-  /^this[.[]/.test(summary);
+  /^this[.[]/.test(summary) ||
+  // Arithmetic over numbers only, such as `5 * 60 * 1000`: a sentence never takes this shape.
+  /^\d[\d._]*(\s*[-+*/%]\s*\d[\d._]*)+$/.test(summary);
 
 // `table.type` is loosely typed upstream - `required` is a corpus field the csf type does not
 // declare - hence the unknown-safe reads.

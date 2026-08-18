@@ -178,6 +178,8 @@ describe('compareArgTypes', () => {
       'this._x',
       '() => []',
       '{\n  retries: 3,\n}',
+      '5 * 60 * 1000',
+      '24 * 60',
     ]) {
       const baseline = argTypes({
         count: { name: 'count', table: { defaultValue: { summary } } },

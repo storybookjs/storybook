@@ -227,6 +227,26 @@ describe('literal initializers reach the default column', () => {
 });
 
 describe('non-literal initializers are hidden from the default column', () => {
+  it('hides an object literal that spreads a runtime value', () => {
+    expect(shownDefault(`@Input() value = { ...defaults };`, `const defaults = { a: 1 };`)).toBe(
+      undefined
+    );
+  });
+
+  it('hides an object literal with a shorthand property naming a constant', () => {
+    expect(shownDefault(`@Input() value = { option };`, `const option = 1;`)).toBe(undefined);
+  });
+
+  it('hides an object literal with a computed key', () => {
+    expect(
+      shownDefault(`@Input() value = { [key]: 1 };`, `const key = 'a'; const value2 = 1;`)
+    ).toBe(undefined);
+  });
+
+  it('hides an array literal whose element only names a constant', () => {
+    expect(shownDefault(`@Input() value = [DEFAULT];`, `const DEFAULT = 1;`)).toBe(undefined);
+  });
+
   it('hides a `this.` reference instead of printing its source', () => {
     expect(
       shownDefault(`

@@ -398,6 +398,25 @@ describe('buildApiDescription', () => {
     expect(result).toContain('label: any;');
   });
 
+  it('escapes a quote or backslash inside a quoted field name', () => {
+    const result = buildApiDescription(
+      argTypes({
+        "it's": {
+          name: "it's",
+          table: { category: 'inputs', type: { summary: 'string', required: false } },
+        },
+        'back\\slash': {
+          name: 'back\\slash',
+          table: { category: 'inputs', type: { summary: 'string', required: false } },
+        },
+      }),
+      'OddNamesComponent'
+    );
+
+    expect(result).toContain(`'it\\'s'?: string;`);
+    expect(result).toContain(`'back\\\\slash'?: string;`);
+  });
+
   it('quotes a field name that is not a valid TypeScript identifier', () => {
     const result = buildApiDescription(
       argTypes({

@@ -126,7 +126,9 @@ const IDENTIFIER_OR_STRING = /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[A-Za-z_$][\w$
 
 // A `<...>` group directly before `(` is a function type's own binder, whose parameters shadow the
 // class's throughout the rendered type.
-const FUNCTION_BINDER = /<([^<>]*)>\s*\(/g;
+// A binder's parameter may carry a generic constraint (`<T extends Array<string>>`), so the list
+// has to survive one level of nesting to be recognized at all.
+const FUNCTION_BINDER = /<((?:[^<>]|<[^<>]*>)*)>\s*\(/g;
 
 const binderDeclaredNames = (text: string): string[] =>
   [...text.matchAll(FUNCTION_BINDER)].flatMap((match) =>

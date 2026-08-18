@@ -1425,6 +1425,23 @@ describe('inheritance', () => {
     expect(byName(component.inputsClass, 'config').type).toBe('{ value: string; payload: number }');
   });
 
+  it('leaves a shadowing binder alone even when its constraint is itself generic', () => {
+    const [component] = analyze(`
+      import { Component, Input } from '@angular/core';
+
+      export class Base<T> {
+        @Input() pick!: <T extends Array<string>>(a: T) => T;
+      }
+
+      @Component({ selector: 'sb-leaf', template: '' })
+      export class LeafComponent extends Base<Entry> {}
+
+      export interface Entry { id: string }
+    `).components as Directive[];
+
+    expect(byName(component.inputsClass, 'pick').type).toBe('<T extends Array<string>>(a: T) => T');
+  });
+
   it('does not rewrite a string literal that spells a type parameter’s name', () => {
     const meta = analyze(`
       import { Component, Input } from '@angular/core';

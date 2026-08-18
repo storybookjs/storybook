@@ -72,7 +72,9 @@ const docComment = (member: Member): string[] => {
 
 // Hyphen-aliased bindings like `aria-label` must be quoted to stay valid TypeScript.
 const fieldName = (name: string): string =>
-  /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) ? name : `'${name}'`;
+  /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name)
+    ? name
+    : `'${name.replace(/\\/g, '\\\\').replace(/'/g, "\\'")}'`;
 
 const inputLine = (member: Member, isTwoWay: boolean): string => {
   const optional = member.required ? '' : '?';

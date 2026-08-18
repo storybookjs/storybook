@@ -712,9 +712,18 @@ describe('buildStoryDocsPayload', () => {
       expect((await warningsOf(STORY_SHAPES_FILE)).get('Null Template')).toBeUndefined();
     });
 
-    it('reports a spread at the config level, not only one inside args', async () => {
-      expect((await warningsOf(STORY_SHAPES_FILE)).get('Config Spread')).toBe(
-        'Incomplete snippet: `...SpreadArgs` could not be resolved statically.'
+    // `{ ...SpreadArgs, args: { count: 12 } }` copies the story it names and then replaces its
+    // args outright, which is what the spread means; only the meta's args survive underneath.
+    it('reads a spread at the config level, not only one inside args', async () => {
+      expect((await warningsOf(STORY_SHAPES_FILE)).get('Config Spread')).toBeUndefined();
+      expect((await templatesOf(STORY_SHAPES_FILE)).get('Config Spread')).toBe(
+        [
+          '<sb-button',
+          `    [label]="'meta'"`,
+          '    [count]="12"',
+          '    (clicked)="clicked($event)">',
+          '</sb-button>',
+        ].join('\n')
       );
     });
 
@@ -773,14 +782,30 @@ describe('buildStoryDocsPayload', () => {
       );
     });
 
-    // A value only the story file can resolve would not compile on the host either, so it is
-    // reported the same way any other unreadable source text is.
-    it('reports an arg whose value needs the story to run instead of declaring it', async () => {
+    // A name the story file declares is read through to its value: the host component the snippet
+    // ships would evaluate `LOCAL_LABEL` against itself and silently find nothing.
+    it('declares the value behind an arg written as a local name', async () => {
       const story = (await storiesOf(STORY_SHAPES_FILE)).get('Identifier Arg Value');
-      expect(story?.warning).toBe(
-        'Incomplete snippet: `LOCAL_LABEL` could not be resolved statically.'
-      );
+      expect(story?.warning).toBeUndefined();
+      expect(story?.snippet).toContain(`  label = 'Save';`);
       expect(story?.snippet).not.toContain('label = LOCAL_LABEL;');
+    });
+
+    // A name another module owns cannot be read here and must not be printed as if it resolved.
+    it('reports an arg whose value another module owns', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        import { REMOTE_LABEL } from './labels';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: REMOTE_LABEL },
+          render: (args) => ({ props: args, template: '<sb-button [label]="label"></sb-button>' }),
+        };
+      `);
+      expect(story.warning).toBe(
+        'Incomplete snippet: `REMOTE_LABEL` could not be resolved statically.'
+      );
+      expect(story.snippet).not.toContain('label = REMOTE_LABEL;');
     });
   });
 
@@ -819,9 +844,9 @@ describe('buildStoryDocsPayload', () => {
       );
     });
 
-    // `{ render: fn, ...base }` runs base.render when the spread carries one, so the explicit
-    // property cannot be trusted.
-    it('falls back with a warning when a later spread can shadow the render', async () => {
+    // `{ render: fn, ...base }` runs base.render when the spread carries one, so reading the spread
+    // is what says whether the explicit property survives.
+    it('keeps the render a later spread turns out not to shadow', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
@@ -831,19 +856,53 @@ describe('buildStoryDocsPayload', () => {
           ...base,
         };
       `);
-      expect(story.warning).toBe('Incomplete snippet: `...base` could not be resolved statically.');
+      expect(story.warning).toBeUndefined();
+      expect(extractHostComponentTemplate(story.snippet!)).toBe(
+        '<sb-button from-story></sb-button>'
+      );
+    });
+
+    it('falls back with a warning when a later spread cannot be read at all', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        declare function makeBase(): object;
+        export const Default = {
+          render: () => ({ template: '<sb-button from-story></sb-button>' }),
+          ...makeBase(),
+        };
+      `);
+      expect(story.warning).toBe(
+        'Incomplete snippet: `...makeBase()` could not be resolved statically.'
+      );
       expect(story.snippet).not.toContain('from-story');
     });
 
-    it('falls back with a warning for a config that is only a spread', async () => {
+    // `{ template: '…', ...makeBase() }` runs the spread after the write, so the template the story
+    // ends up with may be a different one entirely.
+    it('falls back when a later unreadable spread may replace the template', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        declare function makeBase(): object;
+        export const Default = {
+          template: '<sb-button from-story></sb-button>',
+          ...makeBase(),
+        };
+      `);
+      expect(story.warning).toContain('`...makeBase()` could not be resolved statically');
+      expect(story.snippet).not.toContain('from-story');
+    });
+
+    it('reads a config that is only a spread', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
         const base = { args: { label: 'From base' } };
         export const Default = { ...base };
       `);
-      expect(story.warning).toBe('Incomplete snippet: `...base` could not be resolved statically.');
-      expect(story.snippet).not.toContain('From base');
+      expect(story.warning).toBeUndefined();
+      expect(story.snippet).toContain(`[label]="'From base'"`);
     });
 
     it('reads a template written after a harmless earlier spread', async () => {
@@ -893,7 +952,8 @@ describe('buildStoryDocsPayload', () => {
       expect(story.snippet).toContain(`[label]="'Save'"`);
     });
 
-    it('reports a spread of an object that is mutated before the spread runs', async () => {
+    // Assigning a member is not hiding it: the value the spread copies is the assigned one.
+    it('applies a member assignment that has already run when the spread copies the object', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
@@ -901,10 +961,19 @@ describe('buildStoryDocsPayload', () => {
         extra.label = 'mutated';
         export const Default = { args: { ...extra } };
       `);
-      expect(story.warning).toBe(
-        'Incomplete snippet: `...extra` could not be resolved statically.'
-      );
-      expect(story.snippet).not.toContain('extra');
+      expect(story.warning).toBeUndefined();
+      expect(story.snippet).toContain(`[label]="'mutated'"`);
+    });
+
+    it('reports a spread of an object something mutates a level deeper', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        const extra = { nested: { label: 'extra' } };
+        extra.nested.label = 'mutated';
+        export const Default = { args: { ...extra } };
+      `);
+      expect(story.warning).toContain('...extra');
     });
 
     // Which branch runs depends on the story's args at runtime.

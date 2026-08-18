@@ -13,15 +13,14 @@ export const unwrapExpression = (node: t.Node): t.Node =>
     ? unwrapExpression(node.expression)
     : node;
 
-/** Static key of an object member, or `null` when computed/non-literal. */
+/**
+ * Static key of an object member, or `null` when it is computed from something else.
+ *
+ * A computed key written as a string literal is static: `{ ['args']: … }` names the same member as
+ * `{ args: … }`, so it reads as that name rather than as a key only running the story would produce.
+ */
 export const keyOf = (p: t.ObjectMethod | t.ObjectProperty): string | null =>
-  p.computed
-    ? null
-    : t.isIdentifier(p.key)
-      ? p.key.name
-      : t.isStringLiteral(p.key)
-        ? p.key.value
-        : null;
+  t.isStringLiteral(p.key) ? p.key.value : !p.computed && t.isIdentifier(p.key) ? p.key.name : null;
 
 /** Value of an object expression's own property, when it has one. */
 export const propertyValue = (
@@ -146,7 +145,7 @@ export function resolveIdentifierInit(
 }
 
 /** NodePath for a known node inside a program. */
-function pathForNode<T extends t.Node>(
+export function pathForNode<T extends t.Node>(
   program: NodePath<t.Program>,
   target: T | undefined
 ): NodePath<T> | undefined {

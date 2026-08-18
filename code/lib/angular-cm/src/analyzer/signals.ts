@@ -69,8 +69,14 @@ export const buildSignalEntry = (
     optionsArgument && ts.isObjectLiteralExpression(optionsArgument)
       ? stringOption(ctx, optionsArgument, 'alias')
       : undefined;
+  // A two-argument `input<ReadT, WriteT>` is the transform form, and what a template may bind is
+  // the write type, not what the transform turns it into.
+  const explicitTypeArgument =
+    signal.kind === 'input' && call.typeArguments?.length === 2
+      ? call.typeArguments[1]
+      : call.typeArguments?.[0];
   const type =
-    (call.typeArguments?.[0] ? ctx.types.render(call.typeArguments[0]) : undefined) ??
+    (explicitTypeArgument ? ctx.types.render(explicitTypeArgument) : undefined) ??
     signalValueTypeFromChecker(ctx, member) ??
     (valueArgument ? literalTypeName(ctx, valueArgument) : undefined);
   return {
@@ -103,7 +109,16 @@ const signalValueTypeFromChecker = (
   if (!isReference) {
     return undefined;
   }
-  const valueType = checker.getTypeArguments(type as ts.TypeReference)[0];
+  const typeArguments = checker.getTypeArguments(type as ts.TypeReference);
+  let valueType = typeArguments[0];
+  if (symbolName === 'InputSignalWithTransform') {
+    // An `unknown`/`any` write type (booleanAttribute-style coercions) names nothing a control can
+    // offer, so the read type stands in for it.
+    const writeType = typeArguments[1];
+    if (writeType && !(writeType.flags & (ts.TypeFlags.Unknown | ts.TypeFlags.Any))) {
+      valueType = writeType;
+    }
+  }
   if (!valueType) {
     return undefined;
   }

@@ -362,6 +362,144 @@ describe('signal inputs and outputs', () => {
   });
 });
 
+describe('input transforms', () => {
+  it('documents the write type a transform accepts rather than the read type it returns', () => {
+    const meta = analyze(`
+      import { Component, input } from '@angular/core';
+
+      const levelTransform = (value: 'primary' | 'secondary') =>
+        value === 'primary' ? 'primary-button' : 'secondary-button';
+
+      @Component({ selector: 'sb-level', template: '' })
+      export class LevelComponent {
+        level = input.required({ transform: levelTransform });
+      }
+    `);
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'level').type).toBe('"primary" | "secondary"');
+
+    const argTypes = extractArgTypesFromData(component, {
+      metadataJson: meta,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    });
+    expect(argTypes.level.type).toEqual({ name: 'enum', value: ['primary', 'secondary'] });
+  });
+
+  it('documents the second type argument of input.required as the write type', () => {
+    const component = componentIn(`
+      import { Component, input } from '@angular/core';
+
+      @Component({ selector: 'sb-date', template: '' })
+      export class DateComponent {
+        timestamp = input.required<Date, string | Date>({
+          transform: (value: string | Date) => new Date(value),
+        });
+      }
+    `);
+
+    expect(byName(component.inputsClass, 'timestamp').type).toBe('string | Date');
+  });
+
+  it('documents the parameter type of an inline transform on a defaulted input', () => {
+    const meta = analyze(`
+      import { Component, input } from '@angular/core';
+
+      @Component({ selector: 'sb-size', template: '' })
+      export class SizeComponent {
+        size = input('md-resolved', { transform: (value: 'sm' | 'md') => value + '-resolved' });
+      }
+    `);
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'size').type).toBe('"sm" | "md"');
+
+    const argTypes = extractArgTypesFromData(component, {
+      metadataJson: meta,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    });
+    expect(argTypes.size.type).toEqual({ name: 'enum', value: ['sm', 'md'] });
+  });
+
+  it('keeps the value argument type when the transform accepts unknown', () => {
+    const component = componentIn(`
+      import { Component, booleanAttribute, input } from '@angular/core';
+
+      @Component({ selector: 'sb-toggle', template: '' })
+      export class ToggleComponent {
+        disabled = input(false, { transform: booleanAttribute });
+      }
+    `);
+
+    expect(byName(component.inputsClass, 'disabled').type).toBe('boolean');
+  });
+
+  it('documents the parameter type of an @Input transform', () => {
+    const meta = analyze(`
+      import { Component, Input } from '@angular/core';
+
+      @Component({ selector: 'sb-mode', template: '' })
+      export class ModeComponent {
+        @Input({ transform: (value: 'x' | 'y') => value.toUpperCase() }) mode = 'X';
+      }
+    `);
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'mode').type).toBe('"x" | "y"');
+
+    const argTypes = extractArgTypesFromData(component, {
+      metadataJson: meta,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    });
+    expect(argTypes.mode.type).toEqual({ name: 'enum', value: ['x', 'y'] });
+  });
+
+  it('resolves an @Input transform referenced from another file to its parameter alias', () => {
+    const meta = analyze(
+      `
+      import { Component, Input } from '@angular/core';
+
+      import { coerceAppearance } from './transforms.ts';
+
+      @Component({ selector: 'sb-appearance', template: '' })
+      export class AppearanceComponent {
+        @Input({ transform: coerceAppearance }) appearance = 'flat';
+      }
+    `,
+      {
+        'transforms.ts': `
+          export type Appearance = 'flat' | 'raised';
+
+          export const coerceAppearance = (value: Appearance) => value;
+        `,
+      }
+    );
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'appearance').type).toBe('Appearance');
+    expect(names(meta.miscellaneous.typealiases)).toContain('Appearance');
+
+    const argTypes = extractArgTypesFromData(component, {
+      metadataJson: meta,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    });
+    expect(argTypes.appearance.type).toEqual({ name: 'enum', value: ['flat', 'raised'] });
+  });
+
+  it('keeps the declared type when an @Input transform accepts unknown', () => {
+    const component = componentIn(`
+      import { Component, Input, booleanAttribute } from '@angular/core';
+
+      @Component({ selector: 'sb-flag', template: '' })
+      export class FlagComponent {
+        @Input({ transform: booleanAttribute }) active = false;
+      }
+    `);
+
+    expect(byName(component.inputsClass, 'active').type).toBe('boolean');
+  });
+});
+
 describe('the miscellaneous type index', () => {
   const TYPES = `
     export type Outer = Inner;
@@ -523,6 +661,159 @@ describe('the miscellaneous type index', () => {
       ...ANALYZER_EXTRACT_OPTIONS,
     });
     expect(argTypes.dir.type).toEqual({ name: 'enum', value: ['a"b', 'c'] });
+  });
+
+  it('resolves an alias over an as-const array element type to its literal members', () => {
+    const meta = analyze(
+      `
+      import { Component, Input } from '@angular/core';
+
+      import { ButtonVariant } from './types.ts';
+
+      @Component({ selector: 'sb-const-array', template: '' })
+      export class ConstArrayComponent {
+        @Input() variant: ButtonVariant = 'primary';
+      }
+    `,
+      {
+        'types.ts': `
+          export const buttonVariants = ['primary', 'secondary', 'tertiary'] as const;
+
+          export type ButtonVariant = (typeof buttonVariants)[number];
+        `,
+      }
+    );
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'variant').type).toBe('ButtonVariant');
+    expect(byName(meta.miscellaneous.typealiases, 'ButtonVariant').rawtype).toBe(
+      '"primary" | "secondary" | "tertiary"'
+    );
+
+    const argTypes = extractArgTypesFromData(component, {
+      metadataJson: meta,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    });
+    expect(argTypes.variant.type).toEqual({
+      name: 'enum',
+      value: ['primary', 'secondary', 'tertiary'],
+    });
+  });
+
+  it('resolves a union that includes another alias imported from a second file', () => {
+    const meta = analyze(
+      `
+      import { Component, Input } from '@angular/core';
+
+      import { Tone } from './tone.ts';
+
+      @Component({ selector: 'sb-alias-member', template: '' })
+      export class AliasMemberComponent {
+        @Input() tone: Tone = 'info';
+      }
+    `,
+      {
+        'tone.ts': `
+          import { LegacyTone } from './legacy.ts';
+
+          export type Tone = 'info' | 'warn' | LegacyTone;
+        `,
+        'legacy.ts': `export type LegacyTone = 'legacy';`,
+      }
+    );
+    const component = soleComponent(meta);
+
+    expect(byName(meta.miscellaneous.typealiases, 'Tone').rawtype).toBe(
+      '"info" | "warn" | "legacy"'
+    );
+
+    const argTypes = extractArgTypesFromData(component, {
+      metadataJson: meta,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    });
+    expect(argTypes.tone.type).toEqual({ name: 'enum', value: ['info', 'warn', 'legacy'] });
+  });
+
+  it('resolves a keyof typeof alias to the keys of the map behind it', () => {
+    const meta = analyze(
+      `
+      import { Component, Input } from '@angular/core';
+
+      import { IconSize } from './types.ts';
+
+      @Component({ selector: 'sb-keyof', template: '' })
+      export class KeyofComponent {
+        @Input() size: IconSize = 'sm';
+      }
+    `,
+      {
+        'types.ts': `
+          export const ICON_SIZES = { sm: 12, md: 16, lg: 24 };
+
+          export type IconSize = keyof typeof ICON_SIZES;
+        `,
+      }
+    );
+    const component = soleComponent(meta);
+
+    expect(byName(meta.miscellaneous.typealiases, 'IconSize').rawtype).toBe('"sm" | "md" | "lg"');
+
+    const argTypes = extractArgTypesFromData(component, {
+      metadataJson: meta,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    });
+    expect(argTypes.size.type).toEqual({ name: 'enum', value: ['sm', 'md', 'lg'] });
+  });
+
+  it('resolves a union alias re-exported through a barrel file', () => {
+    const meta = analyze(
+      `
+      import { Component, Input } from '@angular/core';
+
+      import { Tone } from './barrel.ts';
+
+      @Component({ selector: 'sb-barrel', template: '' })
+      export class BarrelComponent {
+        @Input() tone: Tone = 'info';
+      }
+    `,
+      {
+        'barrel.ts': `export * from './defs.ts';`,
+        'defs.ts': `export type Tone = 'info' | 'warn' | 'error';`,
+      }
+    );
+    const component = soleComponent(meta);
+
+    const argTypes = extractArgTypesFromData(component, {
+      metadataJson: meta,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    });
+    expect(argTypes.tone.type).toEqual({ name: 'enum', value: ['info', 'warn', 'error'] });
+  });
+
+  it('keeps a union of primitives out of the enum path', () => {
+    const meta = analyze(
+      `
+      import { Component, Input } from '@angular/core';
+
+      import { Amount } from './types.ts';
+
+      @Component({ selector: 'sb-primitive-union', template: '' })
+      export class PrimitiveUnionComponent {
+        @Input() amount: Amount = 0;
+      }
+    `,
+      { 'types.ts': `export type Amount = string | number;` }
+    );
+    const component = soleComponent(meta);
+
+    expect(byName(meta.miscellaneous.typealiases, 'Amount').rawtype).toBe('string | number');
+
+    const argTypes = extractArgTypesFromData(component, {
+      metadataJson: meta,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    });
+    expect(argTypes.amount.type).toEqual({ name: 'other', value: 'empty-enum' });
   });
 
   it('strips the import qualifier so a signal input’s alias matches its indexed entry', () => {
@@ -906,6 +1197,121 @@ describe('inheritance', () => {
     };
     expect(names(midBase.inputsClass)).toEqual(['midFlag']);
     expect(names(midBase.methods)).toEqual(['helper', 'midHelper']);
+  });
+
+  it('substitutes the extends clause’s type arguments into inherited member types', () => {
+    const meta = analyze(
+      `
+      import { Component } from '@angular/core';
+
+      import { BaseCardView } from './base-card-view.ts';
+
+      export class CardTextModel { value = ''; }
+
+      @Component({ selector: 'sb-card-text', template: '' })
+      export class CardTextComponent extends BaseCardView<CardTextModel> {}
+    `,
+      {
+        'base-card-view.ts': `
+          import { Input } from '@angular/core';
+
+          export abstract class BaseCardView<T> {
+            @Input() property!: T;
+
+            items: T[] = [];
+
+            find(key: string): T | undefined { return undefined; }
+          }
+        `,
+      }
+    );
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'property').type).toBe('CardTextModel');
+    expect(byName(component.propertiesClass, 'items').type).toBe('CardTextModel[]');
+    expect(byName(component.methodsClass, 'find')).toMatchObject({
+      args: [{ name: 'key', type: 'string', optional: false }],
+      returnType: 'CardTextModel | undefined',
+    });
+  });
+
+  it('substitutes a literal-union type argument down to an enum control', () => {
+    const meta = analyze(`
+      import { Component, Input } from '@angular/core';
+
+      export abstract class SizedBase<S> {
+        @Input() size!: S;
+      }
+
+      @Component({ selector: 'sb-sized', template: '' })
+      export class SizedComponent extends SizedBase<'small' | 'large'> {}
+    `);
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'size').type).toBe('"small" | "large"');
+
+    const argTypes = extractArgTypesFromData(component, {
+      metadataJson: meta,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    });
+    expect(argTypes.size.type).toEqual({ name: 'enum', value: ['small', 'large'] });
+  });
+
+  it('substitutes through a middle generic base down to the leaf’s concrete argument', () => {
+    const meta = analyze(`
+      import { Component, Input } from '@angular/core';
+
+      export class Entry { id = 0; }
+
+      export class ListBase<T> {
+        @Input() data!: T;
+      }
+
+      export class PagedListBase<U> extends ListBase<U> {}
+
+      @Component({ selector: 'sb-paged', template: '' })
+      export class PagedComponent extends PagedListBase<Entry> {}
+    `);
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'data').type).toBe('Entry');
+
+    const base = byName(meta.classes, 'ListBase') as AngularClassMeta & {
+      inputsClass: Property[];
+    };
+    expect(byName(base.inputsClass, 'data').type).toBe('T');
+  });
+
+  it('falls back to the parameter default when the extends clause pins nothing', () => {
+    const meta = analyze(`
+      import { Component, Input } from '@angular/core';
+
+      export class FallbackBase<T = string> {
+        @Input() fallback!: T;
+      }
+
+      @Component({ selector: 'sb-fallback', template: '' })
+      export class FallbackComponent extends FallbackBase {}
+    `);
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'fallback').type).toBe('string');
+  });
+
+  it('does not rewrite a string literal that spells a type parameter’s name', () => {
+    const meta = analyze(`
+      import { Component, Input } from '@angular/core';
+
+      export abstract class ModeBase<T> {
+        @Input() mode!: 'T' | T;
+      }
+
+      @Component({ selector: 'sb-mode', template: '' })
+      export class ModeComponent extends ModeBase<'live'> {}
+    `);
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'mode').type).toBe('"T" | "live"');
   });
 
   it('ignores a decorator that only shares Angular’s spelling', () => {

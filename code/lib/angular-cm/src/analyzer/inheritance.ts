@@ -53,6 +53,7 @@ function walkBases(
     }
     visited.add(declaration);
     const baseMembers = resolveClassMembers(ctx, declaration, visited);
+    substituteInherited(baseMembers, typeParameterSubstitutions(ctx, classNode, declaration));
     // A declaration file records no decorators or signal calls, so a base from one has nothing to
     // contribute to the IO buckets.
     if (!declaration.getSourceFile().isDeclarationFile) {
@@ -63,6 +64,89 @@ function walkBases(
     mergeInto(members.methods, baseMembers.methods, members);
   }
 }
+
+// Only a clause naming the base itself can be mapped positionally onto its type parameters; a
+// mixin call in the extends position resolves to a base this cannot see through.
+const extendsClauseFor = (
+  ctx: AnalyzerContext,
+  classNode: ts.ClassLikeDeclaration,
+  declaration: ts.ClassDeclaration
+): ts.ExpressionWithTypeArguments | undefined => {
+  const { ts, checker } = ctx;
+  const clause = classNode.heritageClauses?.find(
+    (candidate) => candidate.token === ts.SyntaxKind.ExtendsKeyword
+  );
+  const expression = clause?.types[0];
+  const target = expression?.expression;
+  if (!target || (!ts.isIdentifier(target) && !ts.isPropertyAccessExpression(target))) {
+    return undefined;
+  }
+  const symbol = checker.getSymbolAtLocation(target);
+  const resolved =
+    symbol && symbol.flags & ts.SymbolFlags.Alias ? checker.getAliasedSymbol(symbol) : symbol;
+  return resolved?.declarations?.includes(declaration) ? expression : undefined;
+};
+
+// An argument the extends clause leaves out falls back to the parameter's default, itself
+// substituted so a default referencing an earlier parameter resolves too.
+const typeParameterSubstitutions = (
+  ctx: AnalyzerContext,
+  classNode: ts.ClassLikeDeclaration,
+  declaration: ts.ClassDeclaration
+): Map<string, string> => {
+  const substitutions = new Map<string, string>();
+  const parameters = declaration.typeParameters ?? [];
+  if (parameters.length === 0) {
+    return substitutions;
+  }
+  const clause = extendsClauseFor(ctx, classNode, declaration);
+  if (!clause) {
+    return substitutions;
+  }
+  const args = clause.typeArguments ?? [];
+  for (const [index, parameter] of parameters.entries()) {
+    const argument = args[index] ?? parameter.default;
+    if (!argument) {
+      continue;
+    }
+    const rendered = ctx.types.render(argument);
+    substitutions.set(
+      parameter.name.text,
+      args[index] ? rendered : substituteIdentifiers(rendered, substitutions)
+    );
+  }
+  return substitutions;
+};
+
+// Quoted literals are matched only to be kept as they are: a `'T'` union member must not be
+// rewritten when a type parameter happens to be named `T`.
+const IDENTIFIER_OR_STRING = /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[A-Za-z_$][\w$]*/g;
+
+const substituteIdentifiers = (text: string, substitutions: Map<string, string>): string =>
+  text.replace(IDENTIFIER_OR_STRING, (token) =>
+    token.startsWith('"') || token.startsWith("'") ? token : (substitutions.get(token) ?? token)
+  );
+
+const substituteInherited = (members: ClassMembers, substitutions: Map<string, string>): void => {
+  if (substitutions.size === 0) {
+    return;
+  }
+  // A model() is one Property in both IO buckets, and a swap-shaped map must not apply twice.
+  const properties = new Set(
+    [...members.inputs, ...members.outputs, ...members.properties].map((entry) => entry.value)
+  );
+  for (const property of properties) {
+    if (property.type !== undefined) {
+      property.type = substituteIdentifiers(property.type, substitutions);
+    }
+  }
+  for (const { value: method } of members.methods) {
+    method.returnType = substituteIdentifiers(method.returnType, substitutions);
+    for (const argument of method.args) {
+      argument.type = substituteIdentifiers(argument.type, substitutions);
+    }
+  }
+};
 
 /**
  * Merge one IO bucket, promoting a child's plain re-declaration into it.

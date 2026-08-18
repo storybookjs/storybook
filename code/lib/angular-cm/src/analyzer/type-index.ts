@@ -192,7 +192,10 @@ export class TypeIndex {
       return;
     }
     this.aliasCycleGuard.add(name);
-    const rawtype = this.render(declaration.type);
+    const rendered = this.render(declaration.type);
+    const rawtype = this.enumResolvableAsWritten(declaration.type)
+      ? rendered
+      : (this.literalUnionFromChecker(declaration.type) ?? rendered);
     this.aliasCycleGuard.delete(name);
     this.typealiases.set(name, {
       name,
@@ -202,6 +205,50 @@ export class TypeIndex {
       file: declaration.getSourceFile().fileName,
       kind: declaration.type.kind,
     });
+  }
+
+  // What the extractor's enum path can resolve without help: it splits `rawtype` on `|` and
+  // JSON-parses each member, recursing only into a whole-string alias name.
+  private enumResolvableAsWritten(typeNode: tsModule.TypeNode): boolean {
+    const { ts } = this;
+    if (ts.isLiteralTypeNode(typeNode)) {
+      return true;
+    }
+    if (ts.isTypeReferenceNode(typeNode)) {
+      return !typeNode.typeArguments?.length;
+    }
+    if (ts.isUnionTypeNode(typeNode)) {
+      return typeNode.types.every(
+        (member) => ts.isLiteralTypeNode(member) || member.kind === ts.SyntaxKind.UndefinedKeyword
+      );
+    }
+    return false;
+  }
+
+  private literalUnionFromChecker(typeNode: tsModule.TypeNode): string | undefined {
+    const { checker, ts } = this;
+    const type = checker.getTypeAtLocation(typeNode);
+    if (!type.isUnion()) {
+      return undefined;
+    }
+    const literal =
+      ts.TypeFlags.StringLiteral |
+      ts.TypeFlags.NumberLiteral |
+      ts.TypeFlags.BooleanLiteral |
+      ts.TypeFlags.Undefined |
+      ts.TypeFlags.Null;
+    const allLiteral = type.types.every(
+      (member) => member.flags & literal && !(member.flags & ts.TypeFlags.EnumLiteral)
+    );
+    if (!allLiteral) {
+      return undefined;
+    }
+    // InTypeAlias stops the printer from answering with the alias's own name.
+    return checker.typeToString(
+      type,
+      typeNode,
+      ts.TypeFormatFlags.NoTruncation | ts.TypeFormatFlags.InTypeAlias
+    );
   }
 
   // Numeric initializers stay numbers, so a `0` member is falsy and correctly disables the

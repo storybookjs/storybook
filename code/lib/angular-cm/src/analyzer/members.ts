@@ -178,7 +178,9 @@ const buildDecoratorInput = (
   decorator: DecoratorInfo
 ): Property => {
   const config = parseInputDecoratorConfig(ctx, decorator);
-  const type = typeOfPropertyish(ctx, member);
+  const type =
+    (config.transform ? transformWriteType(ctx, config.transform) : undefined) ??
+    typeOfPropertyish(ctx, member);
   return {
     name: config.alias ?? memberName(ctx.ts, member.name),
     ...(type === undefined ? {} : { type }),
@@ -189,6 +191,26 @@ const buildDecoratorInput = (
     ...getJsDocDescription(ctx.ts, member),
     ...getJsDocTagsField(ctx.ts, member),
   };
+};
+
+// A transformed input documents the transform's parameter type: it is what a template may bind,
+// while the declared property type is only what the transform turns it into. `unknown`/`any`
+// (booleanAttribute-style coercions) names nothing a control can offer, so the declared type stays.
+const transformWriteType = (ctx: AnalyzerContext, transform: ts.Expression): string | undefined => {
+  const { checker, ts } = ctx;
+  const signature = checker.getTypeAtLocation(transform).getCallSignatures()[0];
+  const parameter = signature?.getParameters()[0];
+  const parameterType = parameter && checker.getTypeOfSymbolAtLocation(parameter, transform);
+  if (!parameterType || parameterType.flags & (ts.TypeFlags.Unknown | ts.TypeFlags.Any)) {
+    return undefined;
+  }
+  const widened = parameterType.isUnion()
+    ? parameterType
+    : checker.getBaseTypeOfLiteralType(parameterType);
+  ctx.types.addFromType(widened);
+  return stripImportQualifiers(
+    checker.typeToString(widened, transform, ts.TypeFormatFlags.NoTruncation)
+  );
 };
 
 const buildDecoratorOutput = (

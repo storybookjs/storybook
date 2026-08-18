@@ -132,6 +132,7 @@ interface InputDecoratorConfig {
   alias?: string;
   // The actual boolean value of `@Input({ required })`, not merely whether the key is present.
   required?: boolean;
+  transform?: ts.Expression;
 }
 
 export const parseInputDecoratorConfig = (
@@ -148,9 +149,11 @@ export const parseInputDecoratorConfig = (
   }
   const alias = stringOption(ctx, options, 'alias');
   const required = booleanOption(ctx, options, 'required');
+  const transform = objectProperty(ctx, options, 'transform');
   return {
     ...(alias === undefined ? {} : { alias }),
     ...(required === undefined ? {} : { required }),
+    ...(transform === undefined ? {} : { transform }),
   };
 };
 

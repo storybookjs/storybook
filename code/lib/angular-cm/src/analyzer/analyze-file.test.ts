@@ -298,7 +298,7 @@ describe('signal inputs and outputs', () => {
       defaultValue: "''",
       rawdescription: 'Visible caption next to the control.',
     });
-    // The type comes from the value argument even when a transform widens what may be assigned.
+    // booleanAttribute accepts `unknown`, which no control can offer, so the read type stands in.
     expect(byName(component.inputsClass, 'disabled')).toMatchObject({
       type: 'boolean',
       required: false,

@@ -11,6 +11,7 @@ import {
 } from '../../../shared/open-service/services/story-docs/paths.ts';
 import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
 import type { ComponentManifest, ComponentsManifest } from '../../../types/modules/core-common.ts';
+import type { IndexEntry } from '../../../types/modules/indexer.ts';
 
 import { join } from 'pathe';
 
@@ -30,6 +31,12 @@ export type ComponentManifestIndexEntry = {
   name: string;
   description?: string;
   summary?: string;
+  /**
+   * Set on rows with no docgen whose story file names no component, so a legitimately
+   * componentless project is distinguishable from one where docgen extraction produced nothing.
+   * Both look like a bare `{ id, name }` row otherwise.
+   */
+  componentless?: true;
   docgen?: JsonRef;
   stories?: JsonRef;
   docs?: Record<string, DocsManifestEntry>;
@@ -123,30 +130,47 @@ export async function loadStoryDocsPayloadsFromDisk(
 }
 
 /**
- * Builds `manifests/components.json` index rows for the given component ids.
+ * Whether the story index resolved no component file for this entry.
+ *
+ * A lower bound on "the story file declares no `meta.component`": the index records a
+ * `componentPath` only for a component imported into the story file, so a component class declared
+ * inline in the story file looks the same. Callers therefore only trust it where nothing was
+ * extracted either — an inline class that docgen did resolve is never asked about.
+ */
+function namesNoComponent(entry: IndexEntry): boolean {
+  return entry.type === 'story' && !entry.componentPath;
+}
+
+/**
+ * Builds `manifests/components.json` index rows for the selected component entries.
+ *
+ * Takes the story index entries rather than bare ids because a row that carries no docgen is
+ * otherwise indistinguishable from a failed extraction; the entry says whether there was a
+ * component to extract in the first place.
  */
 export function toComponentManifestIndexEntries(
-  componentIds: string[],
+  components: ReadonlyMap<string, IndexEntry>,
   docgenPayloads: Record<string, DocgenPayload>,
   storyDocsPayloads: Record<string, StoryDocsPayload> = {},
   docsByComponentId: Record<string, Record<string, DocsManifestEntry>> = {}
 ): Record<string, ComponentManifestIndexEntry> {
   const entries: Record<string, ComponentManifestIndexEntry> = {};
 
-  for (const id of componentIds) {
+  for (const [id, indexEntry] of components) {
     const payload = docgenPayloads[id];
     const storyDocs = storyDocsPayloads[id];
-    entries[id] = payload
-      ? {
-          id: payload.id ?? id,
-          name: payload.name ?? id,
-          ...(payload.description !== undefined ? { description: payload.description } : {}),
-          ...(payload.summary !== undefined ? { summary: payload.summary } : {}),
-          docgen: { $ref: docgenManifestRef(id) },
-          ...(storyDocs ? { stories: { $ref: storyDocsManifestRef(id) } } : {}),
-          ...(docsByComponentId[id] ? { docs: docsByComponentId[id] } : {}),
-        }
-      : { id, name: id, ...(docsByComponentId[id] ? { docs: docsByComponentId[id] } : {}) };
+    entries[id] = {
+      id: payload?.id ?? id,
+      name: payload?.name ?? id,
+      ...(payload?.description !== undefined ? { description: payload.description } : {}),
+      ...(payload?.summary !== undefined ? { summary: payload.summary } : {}),
+      ...(!payload && namesNoComponent(indexEntry) ? { componentless: true as const } : {}),
+      ...(payload ? { docgen: { $ref: docgenManifestRef(id) } } : {}),
+      // Stories are indexed whether or not a component was extracted, so the ref does not hang off
+      // the docgen payload: dropping it hid every story of a componentless component.
+      ...(storyDocs ? { stories: { $ref: storyDocsManifestRef(id) } } : {}),
+      ...(docsByComponentId[id] ? { docs: docsByComponentId[id] } : {}),
+    };
   }
 
   return entries;

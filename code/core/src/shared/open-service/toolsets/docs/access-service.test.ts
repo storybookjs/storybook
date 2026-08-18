@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
+import type { StoryIndex, StoryIndexEntry } from 'storybook/internal/types';
 
 import {
   OpenServiceDocgenMissingComponentError,
@@ -9,7 +9,7 @@ import {
 import type { ToolsetGetService } from '../../toolset-definition.ts';
 import { createServiceDocsAccess } from './access-service.ts';
 
-const storyEntry = (id: string, name: string, tags: string[]): IndexEntry => ({
+const storyEntry = (id: string, name: string, tags: string[]): StoryIndexEntry => ({
   type: 'story',
   subtype: 'story',
   id,
@@ -260,6 +260,57 @@ describe('createServiceDocsAccess list', () => {
 
     expect(manifests.docsManifest).toBeUndefined();
     expect(mdxForAllComponents).not.toHaveBeenCalled();
+  });
+
+  describe('componentless', () => {
+    // Mirrors `namesNoComponent` in components-ref-manifest.ts, the static-build leg this dev leg
+    // must stay in parity with (SB-1851/SB-1853).
+    it('marks a component whose story file names none, once docgen produced nothing', async () => {
+      index = {
+        v: 5,
+        entries: { 'gamma--primary': storyEntry('gamma--primary', 'Primary', ['manifest']) },
+      };
+      docgenForAllComponents.mockResolvedValue({});
+
+      const manifests = await createAccess().list({ withStoryIds: false });
+
+      expect(manifests.componentManifest.components.gamma).toEqual({
+        id: 'gamma',
+        name: 'gamma',
+        componentless: true,
+      });
+    });
+
+    it('does not mark componentless once docgen did extract something', async () => {
+      index = {
+        v: 5,
+        entries: { 'gamma--primary': storyEntry('gamma--primary', 'Primary', ['manifest']) },
+      };
+      docgenForAllComponents.mockResolvedValue({
+        gamma: { id: 'gamma', name: 'Gamma', jsDocTags: {} },
+      });
+
+      const manifests = await createAccess().list({ withStoryIds: false });
+
+      expect(manifests.componentManifest.components.gamma).not.toHaveProperty('componentless');
+    });
+
+    it('does not mark componentless when the story file does name a component', async () => {
+      index = {
+        v: 5,
+        entries: {
+          'gamma--primary': {
+            ...storyEntry('gamma--primary', 'Primary', ['manifest']),
+            componentPath: './gamma.tsx',
+          },
+        },
+      };
+      docgenForAllComponents.mockResolvedValue({});
+
+      const manifests = await createAccess().list({ withStoryIds: false });
+
+      expect(manifests.componentManifest.components.gamma).not.toHaveProperty('componentless');
+    });
   });
 });
 

@@ -2,7 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 
 import { selectComponentEntriesByComponentId } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import type { Manifests, Presets } from 'storybook/internal/types';
+import type { IndexEntry, Manifests, Presets } from 'storybook/internal/types';
 
 import { join } from 'pathe';
 import type { Polka } from 'polka';
@@ -62,10 +62,17 @@ function mergeServicePayloads(
   return Object.fromEntries(
     componentIds.flatMap((id) => {
       const docgen = docgenPayloads[id];
+      const storyDocs = storyDocsPayloads[id];
       if (!docgen) {
-        return [];
+        // A componentless component (its story file names no `meta.component`, so no docgen
+        // provider claims it) still has stories to show. Without a stub row here it disappears
+        // from components.html while `toComponentManifestIndexEntries` keeps it in components.json
+        // (SB-1851/SB-1853), so the HTML debugger would contradict the index it exists to explain.
+        return storyDocs
+          ? [[id, mergeManifestPayloads(createDocsOnlyDocgenPayload(id), storyDocs)] as const]
+          : [];
       }
-      return [[id, mergeManifestPayloads(docgen, storyDocsPayloads[id])] as const];
+      return [[id, mergeManifestPayloads(docgen, storyDocs)] as const];
     })
   );
 }
@@ -98,7 +105,7 @@ function isDocsManifest(manifest: unknown): manifest is DocsManifest {
  * Returns the story index entries tagged with `manifest`.
  *
  * Computed once per operation and threaded into {@link getManifests} and
- * {@link getManifestComponentIds} so a single write/render does not re-walk the index.
+ * {@link selectComponentEntriesByComponentId} so a single write/render does not re-walk the index.
  */
 async function getManifestEntries(presets: Presets) {
   const generator = await presets.apply('storyIndexGenerator');
@@ -110,16 +117,6 @@ async function getManifestEntries(presets: Presets) {
 }
 
 type ManifestEntries = Awaited<ReturnType<typeof getManifestEntries>>;
-
-/**
- * Returns component ids for the given manifest-tagged entries.
- *
- * Uses the same component-id selection rules as docgen extraction and the legacy React manifest
- * generator.
- */
-function getManifestComponentIds(manifestEntries: ManifestEntries) {
-  return Array.from(selectComponentEntriesByComponentId(manifestEntries).keys());
-}
 
 /** Loads all manifests from the `experimental_manifests` preset for the given manifest entries. */
 async function getManifests(
@@ -241,9 +238,10 @@ async function writeManifestJsonFiles(
 async function writeDocgenServerManifests(
   outputDir: string,
   manifests: Manifests,
-  manifestComponentIds: string[],
+  manifestComponents: ReadonlyMap<string, IndexEntry>,
   docsManifest?: DocsManifest
 ) {
+  const manifestComponentIds = [...manifestComponents.keys()];
   const hasOtherManifests = Object.keys(manifests).some((name) => name !== 'components');
   const shouldWriteHtml = manifestComponentIds.length > 0 || !!docsManifest;
 
@@ -280,7 +278,7 @@ async function writeDocgenServerManifests(
       JSON.stringify(
         buildComponentsRefManifest(
           toComponentManifestIndexEntries(
-            manifestComponentIds,
+            manifestComponents,
             docgenPayloads,
             storyDocsPayloads,
             attachedDocsWithSummaries
@@ -351,7 +349,7 @@ export async function writeManifests(outputDir: string, presets: Presets) {
       await writeDocgenServerManifests(
         outputDir,
         manifests,
-        getManifestComponentIds(manifestEntries),
+        selectComponentEntriesByComponentId(manifestEntries),
         docsManifest
       );
       return;
@@ -422,7 +420,7 @@ export function registerManifests({ app, presets }: { app: Polka; presets: Prese
         res.end(
           await renderComponentsHtmlFromService(
             manifests,
-            getManifestComponentIds(manifestEntries),
+            [...selectComponentEntriesByComponentId(manifestEntries).keys()],
             docsManifest
           )
         );

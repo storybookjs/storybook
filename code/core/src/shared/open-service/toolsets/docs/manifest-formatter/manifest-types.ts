@@ -131,6 +131,12 @@ export const ComponentManifestV1 = v.object({
   name: v.string(),
   description: v.optional(v.string()),
   summary: v.optional(v.string()),
+  /**
+   * Set when the row carries no docgen because its story file names no component, as opposed to
+   * carrying none because extraction produced nothing. Additive within `v: 1`: a reader that does
+   * not know the field sees the same row it always did.
+   */
+  componentless: v.optional(v.literal(true)),
   error: v.optional(ManifestErrorSchema),
   docgen: v.optional(JsonRef),
   stories: v.optional(v.union([JsonRef, v.array(StorySchema)])),

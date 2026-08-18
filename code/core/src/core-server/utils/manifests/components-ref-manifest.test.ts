@@ -7,6 +7,7 @@ import { vol } from 'memfs';
 import { docgenManifestRef } from '../../../shared/open-service/services/docgen/paths.ts';
 import { storyDocsManifestRef } from '../../../shared/open-service/services/story-docs/paths.ts';
 import type { DocgenPayload } from '../../../shared/open-service/services/docgen/types.ts';
+import type { IndexEntry } from '../../../types/modules/indexer.ts';
 import type { StoryDocsPayload } from '../../../shared/open-service/services/story-docs/types.ts';
 
 import {
@@ -28,6 +29,24 @@ beforeEach(async () => {
     memfs.fs.promises.readFile as unknown as typeof import('node:fs/promises').readFile
   );
 });
+
+/** One selected story index entry per component id, as `selectComponentEntriesByComponentId` returns. */
+function selected(...entries: { id: string; componentPath?: string }[]): Map<string, IndexEntry> {
+  return new Map(
+    entries.map(({ id, componentPath }) => [
+      id,
+      {
+        type: 'story',
+        subtype: 'story',
+        id: `${id}--primary`,
+        name: 'Primary',
+        title: id,
+        importPath: `./${id}.stories.ts`,
+        ...(componentPath ? { componentPath } : {}),
+      } as IndexEntry,
+    ])
+  );
+}
 
 describe('components-ref-manifest', () => {
   it('builds ref-based component manifest entries with nested docgen refs', () => {
@@ -114,7 +133,11 @@ describe('components-ref-manifest', () => {
     };
 
     expect(
-      toComponentManifestIndexEntries(['button'], { button: docgen }, { button: storyDocs })
+      toComponentManifestIndexEntries(
+        selected({ id: 'button', componentPath: './Button.ts' }),
+        { button: docgen },
+        { button: storyDocs }
+      )
     ).toEqual({
       button: {
         id: 'button',
@@ -216,7 +239,11 @@ describe('components-ref-manifest', () => {
       jsDocTags: {},
     };
 
-    expect(toComponentManifestIndexEntries(['button'], { button: payload })).toEqual({
+    expect(
+      toComponentManifestIndexEntries(selected({ id: 'button', componentPath: './Button.ts' }), {
+        button: payload,
+      })
+    ).toEqual({
       button: {
         id: 'button',
         name: 'Button',
@@ -228,8 +255,77 @@ describe('components-ref-manifest', () => {
   });
 
   it('builds a minimal index entry (no docgen ref) when a payload is missing', () => {
-    expect(toComponentManifestIndexEntries(['button'], {})).toEqual({
+    expect(
+      toComponentManifestIndexEntries(selected({ id: 'button', componentPath: './Button.ts' }), {})
+    ).toEqual({
       button: { id: 'button', name: 'button' },
+    });
+  });
+
+  it('keeps the story-docs ref when no docgen payload was extracted', () => {
+    const storyDocs: StoryDocsPayload = {
+      id: 'abstractions-billboard',
+      name: 'Billboard',
+      path: './billboard.stories.ts',
+      stories: {
+        'abstractions-billboard--default': {
+          id: 'abstractions-billboard--default',
+          name: 'Default',
+        },
+      },
+    };
+
+    expect(
+      toComponentManifestIndexEntries(
+        selected({ id: 'abstractions-billboard' }),
+        {},
+        { 'abstractions-billboard': storyDocs }
+      )
+    ).toEqual({
+      'abstractions-billboard': {
+        id: 'abstractions-billboard',
+        name: 'abstractions-billboard',
+        componentless: true,
+        stories: { $ref: storyDocsManifestRef('abstractions-billboard') },
+      },
+    });
+  });
+
+  it('marks a stub whose story file declares no component as componentless', () => {
+    expect(toComponentManifestIndexEntries(selected({ id: 'billboard' }), {})).toEqual({
+      billboard: { id: 'billboard', name: 'billboard', componentless: true },
+    });
+  });
+
+  it('leaves a stub unmarked when the story file does name a component', () => {
+    // Pairs with "marks a stub whose story file declares no component as componentless" above.
+    // Asserts the negative directly rather than the whole entry shape, so this stays distinct from
+    // "builds a minimal index entry (no docgen ref) when a payload is missing", which covers the
+    // same inputs for an unrelated reason (SB-1851's docgen-ref omission, not SB-1853's flag).
+    const result = toComponentManifestIndexEntries(
+      selected({ id: 'button', componentPath: './Button.ts' }),
+      {}
+    );
+
+    expect(result.button).not.toHaveProperty('componentless');
+  });
+
+  it('does not mark an entry that carries docgen, whatever the index knows', () => {
+    const payload: DocgenPayload = {
+      id: 'snackbar',
+      name: 'SnackbarComponent',
+      path: './snackbar.stories.ts',
+      jsDocTags: {},
+    };
+
+    expect(
+      toComponentManifestIndexEntries(selected({ id: 'snackbar' }), { snackbar: payload })
+    ).toEqual({
+      snackbar: {
+        id: 'snackbar',
+        name: 'SnackbarComponent',
+        docgen: { $ref: docgenManifestRef('snackbar') },
+      },
     });
   });
 });

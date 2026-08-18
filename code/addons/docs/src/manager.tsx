@@ -1,6 +1,10 @@
 import React, { useEffect, useState } from 'react';
 
-import { AddonPanel, type SyntaxHighlighterFormatTypes } from 'storybook/internal/components';
+import {
+  AddonPanel,
+  type SupportedLanguage,
+  type SyntaxHighlighterFormatTypes,
+} from 'storybook/internal/components';
 
 import { addons, types, useChannel, useParameter } from 'storybook/manager-api';
 import { ignoreSsrWarning, styled, useTheme } from 'storybook/theming';
@@ -22,6 +26,7 @@ type SnippetRenderedEvent = {
   id?: StoryId;
   source?: string;
   format?: SyntaxHighlighterFormatTypes;
+  language?: SupportedLanguage;
 };
 
 const CodePanel = ({
@@ -41,9 +46,11 @@ const CodePanel = ({
   const [codeSnippet, setSourceCode] = useState<{
     source: string | undefined;
     format: SyntaxHighlighterFormatTypes | undefined;
+    language: SupportedLanguage | undefined;
   }>({
     source: lastEventMatchesCurrentStory ? lastEvent?.source : undefined,
-    format: lastEventMatchesCurrentStory ? (lastEvent?.format ?? undefined) : undefined,
+    format: lastEventMatchesCurrentStory ? lastEvent?.format : undefined,
+    language: lastEventMatchesCurrentStory ? lastEvent?.language : undefined,
   });
 
   const parameter = useParameter(PARAM_KEY, {
@@ -55,12 +62,13 @@ const CodePanel = ({
     setSourceCode({
       source: undefined,
       format: undefined,
+      language: undefined,
     });
   }, [currentStoryId]);
 
   useChannel(
     {
-      [SNIPPET_RENDERED]: ({ id, source, format }) => {
+      [SNIPPET_RENDERED]: ({ id, source, format, language }) => {
         // Ignore snippets emitted for other stories: a slow extraction for the previously selected
         // story can resolve after navigation and would otherwise overwrite the current panel.
         // `useChannel` captures this handler per `deps`, so it must list `currentStoryId` to compare
@@ -68,7 +76,7 @@ const CodePanel = ({
         if (id !== undefined && id !== currentStoryId) {
           return;
         }
-        setSourceCode({ source, format });
+        setSourceCode({ source, format, language });
       },
     },
     [currentStoryId]
@@ -83,10 +91,18 @@ const CodePanel = ({
     codeSnippet.source ||
     (awaitingServiceSnippet ? '' : parameter.source?.originalSource);
 
+  const language = parameter.source?.language ?? codeSnippet.language;
+
   return (
     <AddonPanel active={!!active}>
       <SourceStyles>
-        <Source {...parameter.source} code={code} format={codeSnippet.format} dark={isDark} />
+        <Source
+          {...parameter.source}
+          code={code}
+          language={language}
+          format={codeSnippet.format}
+          dark={isDark}
+        />
       </SourceStyles>
     </AddonPanel>
   );

@@ -2,6 +2,7 @@ import * as v from 'valibot';
 
 import { defineService } from '../../service-definition.ts';
 import type { ServiceInstanceOf } from '../../types.ts';
+import type { ModuleGraphIndexService } from '../module-graph-index/definition.ts';
 import type { ModuleGraphServiceState } from './types.ts';
 import { toStoryIndexPath } from './types.ts';
 
@@ -70,12 +71,11 @@ export type { ModuleGraphServiceState } from './types.ts';
 export const moduleGraphServiceDef = defineService({
   id: 'core/module-graph',
   description:
-    'Story module dependency graph: reverse index from source files to story files, with reactive updates.',
+    'Story module dependency graph: status and revision counters for reactive updates. The reverse index lives in `core/module-graph-index`.',
   initialState: {
     workingDir: process.cwd(),
     status: { value: 'booting' },
     graphRevision: 0,
-    storiesByFile: {},
     storyChangeRevisions: {},
     latestChangedStoryFiles: [],
   } as ModuleGraphServiceState,
@@ -109,19 +109,10 @@ export const moduleGraphServiceDef = defineService({
           })
         )
       ),
-      handler: (input, ctx) => {
-        const { workingDir } = ctx.self.state;
-        return input.files.map((file) => {
-          const entries = ctx.self.state.storiesByFile[toStoryIndexPath(file, workingDir)];
-          if (!entries) {
-            return [];
-          }
-          return Object.entries(entries).map(([storyFile, depth]) => ({
-            storyFile,
-            depth,
-          }));
-        });
-      },
+      handler: (input, ctx) =>
+        ctx
+          .getService<ModuleGraphIndexService>('core/module-graph-index')
+          .queries._storiesForFiles.get(input),
     },
     status: {
       description:
@@ -237,9 +228,13 @@ export const moduleGraphServiceDef = defineService({
       }),
       output: v.void(),
       handler: async (input, ctx) => {
+        await ctx
+          .getService<ModuleGraphIndexService>('core/module-graph-index')
+          .commands._applyIndex({
+            storiesByFile: input.storiesByFile,
+          });
         ctx.self.setState((state) => {
           state.status = { value: 'ready' };
-          state.storiesByFile = input.storiesByFile;
           // The snapshot is the baseline, not a change, so it does not advance the revision. Seed
           // every known story to revision 0 so scoped `graphRevision` reads track existing keys
           // and observe later per-story bumps.
@@ -256,12 +251,14 @@ export const moduleGraphServiceDef = defineService({
     _applyGraphUpdate: {
       internal: true,
       description:
-        'Replaces the reverse index after an incremental patch and bumps versions for affected story files. Called by the graph engine, not by external consumers.',
+        'Optionally replaces the reverse index after an incremental patch and bumps versions for affected story files. Called by the graph engine, not by external consumers.',
       input: v.object({
-        storiesByFile: v.pipe(
-          storiesByFileSchema,
-          v.description(
-            'Complete relative reverse index keyed by story-index-style source file paths. Values map affected story-index-style story file paths to breadth-first-search depths.'
+        storiesByFile: v.optional(
+          v.pipe(
+            storiesByFileSchema,
+            v.description(
+              'Complete relative reverse index keyed by story-index-style source file paths. Values map affected story-index-style story file paths to breadth-first-search depths. Omitted when the patch left the reverse index unchanged.'
+            )
           )
         ),
         bumpedStoryFiles: v.pipe(
@@ -273,13 +270,19 @@ export const moduleGraphServiceDef = defineService({
       }),
       output: v.void(),
       handler: async (input, ctx) => {
+        if (input.storiesByFile !== undefined) {
+          await ctx
+            .getService<ModuleGraphIndexService>('core/module-graph-index')
+            .commands._applyIndex({
+              storiesByFile: input.storiesByFile,
+            });
+        }
+        // A change that bumps no stories must not advance the revision, so watch-all and scoped
+        // subscribers stay put.
+        if (input.bumpedStoryFiles.length === 0) {
+          return;
+        }
         ctx.self.setState((state) => {
-          state.storiesByFile = input.storiesByFile;
-          // An out-of-graph file change recomputes the (unchanged) reverse index but bumps no
-          // stories; it must not advance the revision, so watch-all and scoped subscribers stay put.
-          if (input.bumpedStoryFiles.length === 0) {
-            return;
-          }
           state.graphRevision += 1;
           state.latestChangedStoryFiles = input.bumpedStoryFiles;
           for (const storyFile of input.bumpedStoryFiles) {

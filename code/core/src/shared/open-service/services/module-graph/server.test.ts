@@ -2,6 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 
+import { createTestChannel, installTestChannel } from '../../../../channels/test-channel.ts';
+import { SERVICE_PATCHES } from '../../service-channel.ts';
 import { clearRegistry } from '../../server.ts';
 import {
   buildReverseIndex,
@@ -282,6 +284,26 @@ describe('module-graph open service', () => {
       expect(runtime.queries.latestStoryChanges.get(undefined)).toEqual({
         revision: 0,
         storyFiles: [],
+      });
+    });
+
+    it('keeps the stored index when a bump-only update runs', async () => {
+      const runtime = registerBareModuleGraph();
+      await runtime.commands._applyGraphSnapshot({
+        storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
+      });
+
+      await runtime.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./src/Button.stories.tsx'],
+      });
+
+      expect(runtime.queries.storiesForFiles.get({ files: ['./src/Button.tsx'] })).toEqual([
+        [{ storyFile: './src/Button.stories.tsx', depth: 1 }],
+      ]);
+      expect(runtime.queries.graphRevision.get(undefined)).toBe(1);
+      expect(runtime.queries.latestStoryChanges.get(undefined)).toEqual({
+        revision: 1,
+        storyFiles: ['./src/Button.stories.tsx'],
       });
     });
   });
@@ -565,6 +587,84 @@ describe('module-graph open service', () => {
           storyFiles: ['./src/Card.stories.tsx'],
         });
       });
+    });
+  });
+
+  describe('hot/cold split sync', () => {
+    afterEach(() => {
+      installTestChannel(null);
+    });
+
+    // Many edges, few stories: cold index is large; hot revisions stay small.
+    function fatIndexFixture() {
+      const storyFiles = Array.from({ length: 20 }, (_, j) => `./src/story-${j}.stories.ts`);
+      const fatIndex = Object.fromEntries(
+        Array.from({ length: 400 }, (_, i) => [
+          `./src/file-${i}.ts`,
+          Object.fromEntries(storyFiles.map((storyFile) => [storyFile, 1])),
+        ])
+      );
+      return { storyFiles, fatIndex, fatIndexBytes: JSON.stringify(fatIndex).length };
+    }
+
+    function servicePatches(channel: ReturnType<typeof createTestChannel>) {
+      return channel.emit.mock.calls
+        .filter(([event]) => event === SERVICE_PATCHES)
+        .map(([, payload]) => payload as { serviceId: string; state: Record<string, unknown> });
+    }
+
+    it('broadcasts only the slim hot snapshot on a bump-only update', async () => {
+      const channel = createTestChannel();
+      installTestChannel(channel);
+      const { storyFiles, fatIndex, fatIndexBytes } = fatIndexFixture();
+
+      const runtime = registerBareModuleGraph();
+      await runtime.commands._applyGraphSnapshot({ storiesByFile: fatIndex });
+      channel.emit.mockClear();
+
+      await runtime.commands._applyGraphUpdate({
+        bumpedStoryFiles: ['./src/story-0.stories.ts'],
+      });
+
+      const patches = servicePatches(channel);
+      expect(patches.map((p) => p.serviceId)).toEqual(['core/module-graph']);
+      expect(patches[0].state).not.toHaveProperty('storiesByFile');
+      expect(JSON.stringify(patches[0].state).length).toBeLessThan(fatIndexBytes / 20);
+      expect(runtime.queries.graphRevision.get(undefined)).toBe(1);
+      expect(runtime.queries.storiesForFiles.get({ files: ['./src/file-0.ts'] })).toEqual([
+        storyFiles.map((storyFile) => ({ storyFile, depth: 1 })),
+      ]);
+    });
+
+    it('broadcasts the cold index when an update includes storiesByFile', async () => {
+      const channel = createTestChannel();
+      installTestChannel(channel);
+      const { fatIndex } = fatIndexFixture();
+
+      const runtime = registerBareModuleGraph();
+      await runtime.commands._applyGraphSnapshot({ storiesByFile: fatIndex });
+      channel.emit.mockClear();
+
+      const nextIndex = {
+        ...fatIndex,
+        './src/file-new.ts': { './src/story-0.stories.ts': 2 },
+      };
+      await runtime.commands._applyGraphUpdate({
+        storiesByFile: nextIndex,
+        bumpedStoryFiles: ['./src/story-0.stories.ts'],
+      });
+
+      const patches = servicePatches(channel);
+      expect(patches.map((p) => p.serviceId)).toEqual([
+        'core/module-graph-index',
+        'core/module-graph',
+      ]);
+      expect(patches[0].state).toHaveProperty('storiesByFile');
+      expect(patches[0].state.storiesByFile).toEqual(nextIndex);
+      expect(patches[1].state).not.toHaveProperty('storiesByFile');
+      expect(runtime.queries.storiesForFiles.get({ files: ['./src/file-new.ts'] })).toEqual([
+        [{ storyFile: './src/story-0.stories.ts', depth: 2 }],
+      ]);
     });
   });
 });

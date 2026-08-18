@@ -30,13 +30,12 @@ export interface ModuleGraphEngineOptions {
   onError?: (error: Error) => void;
   /** Fired when the builder adapter reports a startup failure. */
   onUnavailable?: (reason: string, error?: Error) => void;
-  /** Mirrors the built reverse index into the `core/module-graph` open service. */
+  /** Mirrors the built reverse index into the open services after the initial build. */
   onSnapshot?: (storiesByFile: ReturnType<typeof reverseIndexToStoriesByFile>) => void;
-  /** Mirrors state after each settled patch; includes story files whose graph may have changed. */
-  onUpdate?: (payload: {
-    storiesByFile: ReturnType<typeof reverseIndexToStoriesByFile>;
-    bumpedStoryFiles: string[];
-  }) => void;
+  /** Replaces `core/module-graph-index` when a patch moved the reverse index. */
+  onIndex?: (storiesByFile: ReturnType<typeof reverseIndexToStoriesByFile>) => void | Promise<void>;
+  /** Bumps `core/module-graph` revisions for story files affected by a settled patch. */
+  onBump?: (bumpedStoryFiles: string[]) => void | Promise<void>;
 }
 
 /**
@@ -109,24 +108,31 @@ export class ModuleGraphEngine {
     return bumpedStoryFiles;
   }
 
-  private mirrorUpdate(changedFile: string, prePatchBumped: Set<string> = new Set()): void {
+  private async mirrorUpdate(
+    changedFile: string,
+    prePatchBumped: Set<string>,
+    indexChanged: boolean
+  ): Promise<void> {
     if (!this.reverseIndex) {
       return;
     }
-    const normalized = normalize(changedFile);
-    const bumpedStoryFiles = new Set(prePatchBumped);
-    for (const [storyFile] of this.reverseIndex.lookup(normalized)) {
-      bumpedStoryFiles.add(storyFile);
+    const bumpedStoryFiles = new Set([
+      ...prePatchBumped,
+      ...this.collectBumpedStoryFiles(changedFile),
+    ]);
+
+    // Index before bump: subscribers must not observe a new revision against a stale reverse index.
+    // Serializing the index is O(files × stories); only pay it when the reverse index moved.
+    if (indexChanged) {
+      await this.options.onIndex?.(
+        reverseIndexToStoriesByFile(this.reverseIndex.asMap(), this.workingDir)
+      );
     }
-    if (this.storyFiles.has(normalized)) {
-      bumpedStoryFiles.add(normalized);
+    if (bumpedStoryFiles.size > 0) {
+      await this.options.onBump?.(
+        Array.from(bumpedStoryFiles, (storyFile) => toStoryIndexPath(storyFile, this.workingDir))
+      );
     }
-    this.options.onUpdate?.({
-      storiesByFile: reverseIndexToStoriesByFile(this.reverseIndex.asMap(), this.workingDir),
-      bumpedStoryFiles: Array.from(bumpedStoryFiles, (storyFile) =>
-        toStoryIndexPath(storyFile, this.workingDir)
-      ),
-    });
   }
 
   /**
@@ -378,10 +384,11 @@ export class ModuleGraphEngine {
   }
 
   private async handleFileChange(event: FileChangeEvent): Promise<void> {
-    if (!this.incrementalPatcher) {
+    if (!this.incrementalPatcher || !this.reverseIndex) {
       return;
     }
     const prePatchBumped = this.collectBumpedStoryFiles(event.path);
+    const revisionBefore = this.reverseIndex.revision;
     try {
       await this.incrementalPatcher.patch(event);
     } catch (error) {
@@ -389,6 +396,12 @@ export class ModuleGraphEngine {
         `Change detection: failed to apply ${event.kind} for ${event.path}: ${error instanceof Error ? error.message : String(error)}`
       );
     }
-    this.mirrorUpdate(event.path, prePatchBumped);
+    // Partial mutations still bump the reverse-index revision, so a thrown patch is mirrored when
+    // anything actually moved — without guessing from control flow.
+    await this.mirrorUpdate(
+      event.path,
+      prePatchBumped,
+      this.reverseIndex.revision !== revisionBefore
+    );
   }
 }

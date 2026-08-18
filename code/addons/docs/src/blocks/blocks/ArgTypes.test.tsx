@@ -9,8 +9,8 @@ import type { DocsContextProps } from 'storybook/internal/types';
 
 import { ThemeProvider, convert, themes } from 'storybook/theming';
 
-import { ArgTypes } from './ArgTypes';
-import { DocsContext } from './DocsContext';
+import { ArgTypes } from './ArgTypes.tsx';
+import { DocsContext } from './DocsContext.ts';
 
 /** Stands in for a component that documentation names but no story file declares. */
 const NeverStoried = () => null;
@@ -54,6 +54,9 @@ describe('with the docgen server on', () => {
 });
 
 describe('with the docgen server off', () => {
+  beforeEach(() => vi.stubGlobal('FEATURES', { experimentalDocgenServer: false }));
+  afterEach(() => vi.unstubAllGlobals());
+
   it("renders the renderer extractor's rows for the same component", () => {
     renderArgTypes(undefined);
     expect(screen.queryByText('label')).not.toBeNull();

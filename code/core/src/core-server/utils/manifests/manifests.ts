@@ -65,9 +65,9 @@ function mergeServicePayloads(
       const storyDocs = storyDocsPayloads[id];
       if (!docgen) {
         // A componentless component (its story file names no `meta.component`, so no docgen
-        // provider claims it) still has stories to show. Without a stub row here it disappears
-        // from components.html while `toComponentManifestIndexEntries` keeps it in components.json
-        // (SB-1851/SB-1853), so the HTML debugger would contradict the index it exists to explain.
+        // provider claims it) still has stories to show. Without a stub row here it would disappear
+        // from components.html while still appearing in components.json, so the HTML debugger would
+        // contradict the index it exists to explain.
         return storyDocs
           ? [[id, mergeManifestPayloads(createDocsOnlyDocgenPayload(id), storyDocs)] as const]
           : [];

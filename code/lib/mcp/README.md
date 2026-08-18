@@ -339,7 +339,7 @@ package; the transport is yours to choose, so it is not a dependency here.
 ```ts
 // storybook-mcp-stdio.ts
 import { readFile } from 'node:fs/promises';
-import { resolve } from 'node:path';
+import { resolve, sep } from 'node:path';
 
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
@@ -368,9 +368,17 @@ await addGetDocumentationTool(server);
 await addGetStoryDocumentationTool(server);
 
 // Tool-requested paths are relative to the build output, both for `./manifests/*.json` and for the
-// `./services/**` payloads the manifests reference.
+// `./services/**` payloads the manifests reference. `path` comes from the MCP client, so it is
+// resolved against `buildDir` and then checked back against it before reading, refusing anything
+// that escapes via `..` or an absolute path.
 new StdioTransport(server).listen({
-	manifestProvider: (_request, path) => readFile(resolve(buildDir, path), 'utf-8'),
+	manifestProvider: (_request, path) => {
+		const resolved = resolve(buildDir, path);
+		if (resolved !== buildDir && !resolved.startsWith(buildDir + sep)) {
+			throw new Error(`Refusing to read a manifest outside the build directory: ${path}`);
+		}
+		return readFile(resolved, 'utf-8');
+	},
 });
 ```
 

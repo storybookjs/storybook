@@ -40,7 +40,7 @@ const UNRESOLVED_COMPONENT_ERRORS: Record<
   'unreadable-component-expression': {
     name: 'No component found',
     message:
-      'We could not follow meta.component to a component. Storybook follows an imported name, or one property access on a namespace import or a local object.',
+      'We could not follow meta.component to a component. Storybook follows an imported name, a namespace-import property access, or a chain of property accesses and spreads through modules it can resolve.',
   },
 };
 

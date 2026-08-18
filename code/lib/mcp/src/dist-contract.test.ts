@@ -23,9 +23,8 @@ const README = join(import.meta.dirname, '../README.md');
  * Markdown links, minus in-page anchors: a target is relative unless it names a scheme.
  *
  * The README is the only prose in the tarball, and it is read from `node_modules` as often as from
- * npmjs.com. A repo-relative target resolves to nothing there, so it points a reader at something
- * this package does not have — which is how `./serve.ts` came to be documented as the way to run
- * a server that is not published.
+ * npmjs.com. A repo-relative target resolves to nothing there, so it would point a reader at a file
+ * this package does not publish.
  */
 const MARKDOWN_LINK_RE = /\]\(([^)#][^)]*)\)/g;
 

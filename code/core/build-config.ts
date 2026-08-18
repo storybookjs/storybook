@@ -67,6 +67,10 @@ const config: BuildEntries = {
         entryPoint: './src/csf-tools/index.ts',
       },
       {
+        exportEntries: ['./internal/csf-utils'],
+        entryPoint: './src/csf/csf-utils.ts',
+      },
+      {
         exportEntries: ['./internal/babel'],
         entryPoint: './src/babel/index.ts',
       },

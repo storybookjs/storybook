@@ -1,4 +1,5 @@
-import { type Meta, type Story, isMeta, isStory } from 'storybook/internal/csf';
+import { isMeta, isStory } from '../../../../csf/csf-guards.ts';
+import type { Meta, Story } from 'storybook/internal/csf';
 import type {
   Args,
   ComponentAnnotations,

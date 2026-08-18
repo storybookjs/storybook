@@ -1,4 +1,6 @@
-import { type CleanupCallback, combineTags, includeConditionalArg } from 'storybook/internal/csf';
+import { includeConditionalArg } from '../../../../csf/includeConditionalArg.ts';
+import { combineTags } from '../../../../csf/csf-utils.ts';
+import type { CleanupCallback } from 'storybook/internal/csf';
 import { NoRenderFunctionError } from 'storybook/internal/preview-errors';
 import type {
   Args,

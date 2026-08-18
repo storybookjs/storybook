@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
 import { commonGlobOptions, getProjectRoot, normalizeStoryPath } from 'storybook/internal/common';
-import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf';
+import { combineTags, storyNameFromExport, toId } from '../../csf/csf-utils.ts';
 import { getStorySortParameter, loadConfig } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import { isExampleStoryId } from 'storybook/internal/telemetry';

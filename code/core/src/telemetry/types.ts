@@ -78,6 +78,14 @@ export type StorybookMetadata = {
   };
   builder?: string;
   renderer?: string;
+  /**
+   * The installed version of the renderer's underlying UI framework runtime package (e.g. the
+   * `react` version for the `@storybook/react` renderer, `@angular/core` for
+   * `@storybook/angular`), resolved the same way `metaFramework.version` is. `'unknown'` when the
+   * runtime package can't be resolved; `undefined` when the renderer has no separate runtime
+   * package or wasn't detected.
+   */
+  rendererVersion?: string;
   monorepo?: MonorepoType;
   packageManager?: {
     type: DetectResult['name'];

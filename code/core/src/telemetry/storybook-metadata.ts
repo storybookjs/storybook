@@ -27,6 +27,7 @@ import { getFrameworkInfo } from './get-framework-info.ts';
 import { getHasModuleFederation } from './get-has-module-federation.ts';
 import { getHasRouterPackage } from './get-has-router-package.ts';
 import { getHasTurbopack } from './get-has-turbopack.ts';
+import { getRendererRuntimePackage } from './get-renderer-runtime-package.ts';
 import { analyzeEcosystemPackages } from './get-known-packages.ts';
 import { getMonorepoType } from '../shared/utils/get-monorepo-type.ts';
 import { getPackageManagerInfo } from './get-package-manager-info.ts';
@@ -175,6 +176,13 @@ export const computeStorybookMetadata = async ({
   }
 
   const frameworkInfo = await getFrameworkInfo(mainConfig, configDir);
+
+  const rendererRuntimePackage = getRendererRuntimePackage(frameworkInfo.renderer);
+  if (rendererRuntimePackage) {
+    const { version: rendererRuntimeVersion } =
+      await getActualPackageVersion(rendererRuntimePackage);
+    metadata.rendererVersion = rendererRuntimeVersion || 'unknown';
+  }
 
   if (typeof mainConfig.refs === 'object') {
     metadata.refCount = Object.keys(mainConfig.refs).length;

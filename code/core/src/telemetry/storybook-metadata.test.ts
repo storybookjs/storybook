@@ -644,6 +644,69 @@ describe('storybook-metadata', () => {
       });
     });
 
+    describe('rendererVersion', () => {
+      it("should resolve react's installed version for a react project", async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: packageJsonMock,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.rendererVersion).toBe('x.x.x');
+      });
+
+      it("should resolve @angular/core's installed version for an angular project", async () => {
+        vi.mocked(getStorybookInfo).mockImplementation(async () => ({
+          ...defaultInfo,
+          renderer: SupportedRenderer.ANGULAR,
+          rendererPackage: '@storybook/angular',
+        }));
+        vi.mocked(getActualPackageVersion).mockImplementation(async (name) => ({
+          name,
+          version: name === '@angular/core' ? '17.3.0' : 'x.x.x',
+        }));
+
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: packageJsonMock,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.rendererVersion).toBe('17.3.0');
+      });
+
+      it('should be undefined when the renderer has no runtime package to resolve', async () => {
+        vi.mocked(getStorybookInfo).mockImplementation(async () => ({
+          ...defaultInfo,
+          renderer: SupportedRenderer.HTML,
+          rendererPackage: '@storybook/html',
+        }));
+
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: packageJsonMock,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.rendererVersion).toBeUndefined();
+      });
+
+      it("should be 'unknown' when the runtime package can't be resolved", async () => {
+        vi.mocked(getActualPackageVersion).mockImplementation(async (name) => ({
+          name,
+          version: null,
+        }));
+
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: packageJsonMock,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.rendererVersion).toBe('unknown');
+      });
+    });
+
     it('should detect userSince info', async () => {
       vi.mocked(isCI).mockImplementation(() => false);
       vi.mocked(globalSettings).mockResolvedValue({

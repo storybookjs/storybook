@@ -8,8 +8,10 @@
  * keeps the synchronous, CPU-bound TypeScript work off the main event loop so it never starves the
  * Vite dev server during first render.
  */
-import { parentPort } from 'node:worker_threads';
+import { parentPort, workerData } from 'node:worker_threads';
 import { pathToFileURL } from 'node:url';
+
+import { logger } from 'storybook/internal/node-logger';
 
 import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
 import { errorToErrorLike } from '../../module-graph/types.ts';
@@ -19,7 +21,7 @@ import type {
   DocgenProviderDescriptor,
   DocgenWorkerModule,
 } from '../types.ts';
-import type { DocgenWorkerRequest, DocgenWorkerResponse } from './protocol.ts';
+import type { DocgenWorkerData, DocgenWorkerRequest, DocgenWorkerResponse } from './protocol.ts';
 
 if (!parentPort) {
   throw new Error('docgen worker must be run as a worker thread');
@@ -28,6 +30,13 @@ if (!parentPort) {
 // Capture into a const so TypeScript keeps the non-null narrowing inside the async handlers and the
 // message listener below (it won't narrow the mutable `parentPort` binding across those closures).
 const port = parentPort;
+
+// Provider modules resolve the same node-logger instance as this entry, so setting the level here
+// makes their debug diagnostics visible too.
+const { logLevel } = (workerData ?? {}) as Partial<DocgenWorkerData>;
+if (logLevel) {
+  logger.setLogLevel(logLevel);
+}
 
 /** Identity provider that seeds the chain; the bottom of the stack has no docgen to contribute. */
 const seedProvider: DocgenProvider = async () => undefined;

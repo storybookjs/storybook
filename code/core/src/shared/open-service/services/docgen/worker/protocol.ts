@@ -7,9 +7,19 @@
  * `error` (mirroring `ModuleGraphStatus`), rather than an `ok` flag with nullable fields — a
  * response either carries its result or an error, never an ambiguous mix.
  */
+import type { LogLevel } from 'storybook/internal/node-logger';
+
 import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
 import type { ErrorLike } from '../../module-graph/types.ts';
 import type { DocgenPayload, DocgenProviderDescriptor } from '../types.ts';
+
+/**
+ * Passed as `workerData` at spawn: the worker thread's logger starts at its default level, so the
+ * main process's `--loglevel` has to be carried over explicitly.
+ */
+export interface DocgenWorkerData {
+  logLevel: LogLevel;
+}
 
 /** Sent once, right after spawn, to compose the provider chain inside the worker. */
 export interface DocgenWorkerInitRequest {

@@ -5,6 +5,7 @@ import type { DocgenWorkerRequest, DocgenWorkerResponse } from './protocol.ts';
 
 interface FakeWorker {
   posted: DocgenWorkerRequest[];
+  options: unknown;
   postMessage: ReturnType<typeof vi.fn>;
   terminate: ReturnType<typeof vi.fn>;
   unref: ReturnType<typeof vi.fn>;
@@ -21,7 +22,10 @@ vi.mock('node:worker_threads', async () => {
 
   class FakeWorkerImpl extends NodeEventEmitter {
     posted: DocgenWorkerRequest[] = [];
-    constructor() {
+    constructor(
+      _scriptPath: string,
+      public options?: unknown
+    ) {
       super();
       fakeWorkers.push(this as unknown as FakeWorker);
     }
@@ -86,6 +90,17 @@ describe('createDocgenWorkerClient', () => {
 
     expect(client).toBeDefined();
     expect(fakeWorkers).toHaveLength(0);
+  });
+
+  it('forwards the current log level as workerData when spawning the worker', async () => {
+    const { logger } = await import('storybook/internal/node-logger');
+    vi.mocked(logger.getLogLevel).mockReturnValueOnce('debug');
+
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+    client.extract({ id: 'button--primary' } as any).catch(() => undefined);
+
+    expect(fakeWorkers[0].options).toEqual({ workerData: { logLevel: 'debug' } });
   });
 
   it('spawns the worker lazily on the first extract and posts init with descriptors', async () => {

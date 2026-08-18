@@ -8,7 +8,7 @@ import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
 import { importMetaResolve } from '../../../../utils/module.ts';
 import type { ErrorLike } from '../../module-graph/types.ts';
 import type { DocgenPayload, DocgenProviderDescriptor } from '../types.ts';
-import type { DocgenWorkerRequest, DocgenWorkerResponse } from './protocol.ts';
+import type { DocgenWorkerData, DocgenWorkerRequest, DocgenWorkerResponse } from './protocol.ts';
 
 // Resolved via the export map, not a hard-coded dist path, so strict layouts like pnpm's work.
 const WORKER_SPECIFIER = 'storybook/internal/docgen-worker';
@@ -51,7 +51,9 @@ class DocgenWorker implements DocgenWorkerClient {
     descriptors: DocgenProviderDescriptor[],
     private readonly taskTimeoutMs = DEFAULT_TASK_TIMEOUT_MS
   ) {
-    this.worker = new Worker(scriptPath);
+    this.worker = new Worker(scriptPath, {
+      workerData: { logLevel: logger.getLogLevel() } satisfies DocgenWorkerData,
+    });
     this.worker.on('message', (msg: DocgenWorkerResponse) => this.handleMessage(msg));
     this.worker.on('error', (error) => this.fail(error));
     this.worker.on('exit', (code) => {

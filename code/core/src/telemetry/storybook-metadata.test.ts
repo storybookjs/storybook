@@ -546,6 +546,63 @@ describe('storybook-metadata', () => {
       }
     );
 
+    describe('hasTurbopack', () => {
+      it('should be true when a next script passes --turbopack', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: {
+            ...packageJsonMock,
+            dependencies: { next: 'x.x.x' },
+            scripts: { dev: 'next dev --turbopack' },
+          } as PackageJson,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.hasTurbopack).toBe(true);
+      });
+
+      it('should be false when a next script passes --webpack', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: {
+            ...packageJsonMock,
+            dependencies: { next: 'x.x.x' },
+            scripts: { build: 'next build --webpack' },
+          } as PackageJson,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.hasTurbopack).toBe(false);
+      });
+
+      it('should be undefined when a next script has no bundler flag', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: {
+            ...packageJsonMock,
+            dependencies: { next: 'x.x.x' },
+            scripts: { dev: 'next dev' },
+          } as PackageJson,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.hasTurbopack).toBeUndefined();
+      });
+
+      it('should be undefined when the project has no next script at all', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: {
+            ...packageJsonMock,
+            scripts: { build: 'vite build' },
+          } as PackageJson,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.hasTurbopack).toBeUndefined();
+      });
+    });
+
     it('should detect userSince info', async () => {
       vi.mocked(isCI).mockImplementation(() => false);
       vi.mocked(globalSettings).mockResolvedValue({

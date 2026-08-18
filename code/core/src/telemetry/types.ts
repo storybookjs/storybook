@@ -100,6 +100,12 @@ export type StorybookMetadata = {
   hasStaticDirs?: boolean;
   hasCustomWebpack?: boolean;
   hasCustomBabel?: boolean;
+  /**
+   * Whether a Next.js project's scripts opt into Turbopack via an explicit `--turbopack` /
+   * `--webpack` flag. `undefined` when no such flag is present (ambiguous from Next.js 16
+   * onwards, where Turbopack is the default) or when the project isn't using Next.js.
+   */
+  hasTurbopack?: boolean;
   features?: StorybookConfig['features'];
   refCount?: number;
   preview?: {

@@ -10,6 +10,7 @@ import {
   type ReferenceModule,
   resolveArgsRecord,
   resolveBindingMembers,
+  resolveReferencedValue,
   sourceOf,
 } from './resolve-members.ts';
 
@@ -411,5 +412,151 @@ describe('externalize', () => {
       (node) => (t.isStringLiteral(node) ? node : undefined)
     );
     expect(argsOf('', 'Reuse', ctx)).toEqual({ args: {}, unresolved: ['...shared'] });
+  });
+});
+
+describe('resolveReferencedValue', () => {
+  const valueOf = (ctx: ReferenceContext, expression: string) => {
+    const node = (
+      babelParseFile({ code: `(${expression})`, filename: 'probe.ts' }).ast.program
+        .body[0] as t.ExpressionStatement
+    ).expression;
+    const resolved = resolveReferencedValue(ctx, node);
+    return resolved && { value: sourceOf(resolved.node), filePath: resolved.ctx.filePath };
+  };
+
+  it('reads a member of a local object', () => {
+    const ctx = contextOf({
+      'entry.ts': dedent`
+        import { Button } from './button';
+        const config = { component: Button };
+      `,
+    });
+    expect(valueOf(ctx, 'config.component')).toEqual({ value: 'Button', filePath: 'entry.ts' });
+  });
+
+  it('reads a member of an export reached through a namespace import', () => {
+    const ctx = contextOf({
+      'internal.ts': dedent`
+        import { Button } from './button';
+        export const config = { component: Button };
+      `,
+      'entry.ts': dedent`
+        import * as internal from './internal';
+      `,
+    });
+    expect(valueOf(ctx, 'internal.config.component')).toEqual({
+      value: 'Button',
+      filePath: 'internal.ts',
+    });
+  });
+
+  it('absorbs a spread on the way to the member', () => {
+    const ctx = contextOf({
+      'internal.ts': dedent`
+        import { Button } from './button';
+        const base = { component: Button };
+        export const config = { ...base, args: {} };
+      `,
+      'entry.ts': dedent`
+        import * as internal from './internal';
+      `,
+    });
+    expect(valueOf(ctx, 'internal.config.component')).toEqual({
+      value: 'Button',
+      filePath: 'internal.ts',
+    });
+  });
+
+  it('reads nothing from a bare identifier, which names no member', () => {
+    const ctx = contextOf({ 'entry.ts': `const config = { component: 1 };` });
+    expect(valueOf(ctx, 'config')).toBeUndefined();
+  });
+
+  it('reads nothing when the module the namespace names cannot be reached', () => {
+    const ctx = contextOf({ 'entry.ts': `import * as internal from './nowhere';` });
+    expect(valueOf(ctx, 'internal.config.component')).toBeUndefined();
+  });
+
+  it('reads nothing for a member the object does not have', () => {
+    const ctx = contextOf({ 'entry.ts': `const config = { args: {} };` });
+    expect(valueOf(ctx, 'config.component')).toBeUndefined();
+  });
+
+  describe('spread scope', () => {
+    it("keeps a spread-copied member's own scope rather than the spreading module's", () => {
+      // `internal` spreads `base` (owned by `shared`), and separately binds the identical local
+      // name `Button` to an unrelated class imported from `other-button`. A resolver that
+      // re-resolved the copied `Button` identifier against `internal`'s own imports, instead of
+      // `shared`'s, would silently land on the wrong one.
+      const ctx = contextOf({
+        'real-button.ts': `export class Button {}`,
+        'other-button.ts': `export class Button {}`,
+        'shared.ts': dedent`
+          import { Button } from './real-button';
+          export const base = { component: Button };
+        `,
+        'internal.ts': dedent`
+          import { Button } from './other-button';
+          import { base } from './shared';
+          export const config = { ...base, args: {} };
+        `,
+        'entry.ts': `import * as internal from './internal';`,
+      });
+      const resolved = valueOf(ctx, 'internal.config.component');
+      expect(resolved).toEqual({ value: 'Button', filePath: 'shared.ts' });
+    });
+  });
+
+  describe('a member beside an unresolvable spread', () => {
+    it('resolves a member written after an unresolvable spread', () => {
+      const ctx = contextOf({
+        'entry.ts': dedent`
+          declare function makeBase(): object;
+          const config = { ...makeBase(), component: 1 };
+        `,
+      });
+      expect(valueOf(ctx, 'config.component')).toEqual({ value: '1', filePath: 'entry.ts' });
+    });
+
+    it('leaves a member unresolved when an unresolvable spread runs after it', () => {
+      const ctx = contextOf({
+        'entry.ts': dedent`
+          declare function makeBase(): object;
+          const config = { component: 1, ...makeBase() };
+        `,
+      });
+      expect(valueOf(ctx, 'config.component')).toBeUndefined();
+    });
+
+    it('resolves through an intermediate object whose relevant key follows an unresolvable spread', () => {
+      const ctx = contextOf({
+        'entry.ts': dedent`
+          declare function makeBase(): object;
+          const config = { ...makeBase(), nested: { component: 1 } };
+        `,
+      });
+      expect(valueOf(ctx, 'config.nested.component')).toEqual({
+        value: '1',
+        filePath: 'entry.ts',
+      });
+    });
+
+    it('does not descend through an intermediate object whose relevant key an unresolvable spread may shadow', () => {
+      const ctx = contextOf({
+        'entry.ts': dedent`
+          declare function makeBase(): object;
+          const config = { nested: { component: 1 }, ...makeBase() };
+        `,
+      });
+      expect(valueOf(ctx, 'config.nested.component')).toBeUndefined();
+    });
+  });
+
+  it('terminates instead of recursing forever on a self-referential module', () => {
+    const ctx = contextOf({
+      'entry.ts': `export const config = { nested: { ...config } };`,
+    });
+    expect(valueOf(ctx, 'config.nested.component')).toBeUndefined();
   });
 });

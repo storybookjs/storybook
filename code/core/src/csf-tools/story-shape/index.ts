@@ -22,6 +22,7 @@ export {
   resolveArgsRecord,
   resolveBindingMembers,
   resolveObjectMembers,
+  resolveReferencedValue,
   sourceOf,
   type ReferenceContext,
   type ReferenceModule,

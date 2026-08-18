@@ -258,12 +258,7 @@ export const npm = {
       'node/install-packages': {
         'app-dir': appDir,
         'pkg-manager': pkgManager,
-        'cache-only-lockfile': true,
-        // The orb restores its node_modules on top of the one CACHE_KEYS already
-        // restored, skipping paths that exist rather than replacing them, so a
-        // package hoisted differently in the older tree survives the merge. Both
-        // caches are versioned together: v4 pairs with v10 below.
-        'cache-version': 'v4',
+        'with-cache': false,
       },
     };
   },
@@ -404,7 +399,7 @@ export type CachePlatform = 'linux' | 'windows';
  */
 export const NODE_MODULES_CACHE_KEY = (platform: CachePlatform = 'linux') =>
   [
-    `v10-${platform}-node_modules`,
+    `v11-${platform}-node_modules`,
     '{{ checksum ".nvmrc" }}',
     '{{ checksum ".yarnrc.yml" }}',
     '{{ checksum "yarn.lock" }}',

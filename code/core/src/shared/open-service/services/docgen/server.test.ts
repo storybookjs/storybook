@@ -244,7 +244,6 @@ describe('docgen open service', () => {
 
       const moduleGraph = getService('core/module-graph', { internal: true });
       await moduleGraph.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./button.stories.tsx', './card.stories.tsx'],
       });
 
@@ -275,7 +274,6 @@ describe('docgen open service', () => {
 
       const moduleGraph = getService('core/module-graph', { internal: true });
       await moduleGraph.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./button.stories.tsx'],
       });
 

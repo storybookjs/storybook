@@ -27,7 +27,6 @@ export type ModuleGraphServiceState = {
   workingDir: string;
   status: ModuleGraphStatus;
   graphRevision: number;
-  storiesByFile: StoriesByFileRecord;
   /**
    * Per-story revision stamps keyed by story-index-style relative path. Each entry holds the
    * {@link graphRevision} at which that story's subgraph last changed. Seeded to `0` for every
@@ -107,8 +106,3 @@ export function reverseIndexToStoriesByFile(
   }
   return result;
 }
-
-export type GraphUpdatePayload = {
-  storiesByFile: StoriesByFileRecord;
-  bumpedStoryFiles: string[];
-};

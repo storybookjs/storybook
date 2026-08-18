@@ -1,21 +1,4 @@
 {
-  "innerVolume": {
-    "description": undefined,
-    "name": "innerVolume",
-    "table": {
-      "category": "properties",
-      "defaultValue": {
-        "summary": 5,
-      },
-      "type": {
-        "required": true,
-        "summary": "number",
-      },
-    },
-    "type": {
-      "name": "number",
-    },
-  },
   "volume": {
     "description": "Playback volume, clamped between 0 and 10.",
     "name": "volume",

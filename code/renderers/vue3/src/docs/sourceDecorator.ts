@@ -1,6 +1,6 @@
 import { SourceType } from 'storybook/internal/docs-tools';
 
-import { emitTransformCode, useEffect, useRef } from 'storybook/preview-api';
+import { emitTransformCode, useEffect } from 'storybook/preview-api';
 import type { VNode } from 'vue';
 import { isVNode } from 'vue';
 

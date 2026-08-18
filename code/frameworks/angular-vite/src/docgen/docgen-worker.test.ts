@@ -90,7 +90,9 @@ describe('createDocgenProvider', () => {
     const next = vi.fn(passthrough);
 
     await expect(
-      createDocgenProvider()(next)({ entry: { ...entry, importPath: './button.component.ts' } })
+      createDocgenProvider({ propsTable: 'api' })(next)({
+        entry: { ...entry, importPath: './button.component.ts' },
+      })
     ).resolves.toBeUndefined();
 
     expect(next).toHaveBeenCalledOnce();
@@ -101,7 +103,7 @@ describe('createDocgenProvider', () => {
   it('merges over downstream output on success', async () => {
     vi.mocked(buildDocgenPayload).mockReturnValue(ours);
 
-    const payload = await createDocgenProvider()(async () => ({
+    const payload = await createDocgenProvider({ propsTable: 'api' })(async () => ({
       ...downstream,
       somethingElse: 'kept',
     }))({ entry });
@@ -115,21 +117,27 @@ describe('createDocgenProvider', () => {
     vi.mocked(buildDocgenPayload).mockReturnValue(errored);
     const next = vi.fn<DocgenProvider>(async () => downstream);
 
-    await expect(createDocgenProvider()(next)({ entry })).resolves.toEqual(downstream);
+    await expect(createDocgenProvider({ propsTable: 'api' })(next)({ entry })).resolves.toEqual(
+      downstream
+    );
     expect(next).toHaveBeenCalledOnce();
   });
 
   it('reports its own error only when no other provider described the component', async () => {
     vi.mocked(buildDocgenPayload).mockReturnValue(errored);
 
-    await expect(createDocgenProvider()(passthrough)({ entry })).resolves.toEqual(errored);
+    await expect(
+      createDocgenProvider({ propsTable: 'api' })(passthrough)({ entry })
+    ).resolves.toEqual(errored);
   });
 
   it('delegates downstream when it has no payload for the component', async () => {
     vi.mocked(buildDocgenPayload).mockReturnValue(undefined);
     const next = vi.fn<DocgenProvider>(async () => downstream);
 
-    await expect(createDocgenProvider()(next)({ entry })).resolves.toEqual(downstream);
+    await expect(createDocgenProvider({ propsTable: 'api' })(next)({ entry })).resolves.toEqual(
+      downstream
+    );
     expect(next).toHaveBeenCalledOnce();
   });
 
@@ -139,12 +147,14 @@ describe('createDocgenProvider', () => {
       throw failure;
     });
 
-    await expect(createDocgenProvider()(passthrough)({ entry })).rejects.toBe(failure);
+    await expect(createDocgenProvider({ propsTable: 'api' })(passthrough)({ entry })).rejects.toBe(
+      failure
+    );
   });
 
   it('owns one watching analyzer for its lifetime and recycles after each extraction', async () => {
     vi.mocked(buildDocgenPayload).mockReturnValue(ours);
-    const provider = createDocgenProvider()(passthrough);
+    const provider = createDocgenProvider({ propsTable: 'api' })(passthrough);
 
     await provider({ entry });
     await provider({ entry });
@@ -159,15 +169,15 @@ describe('createDocgenProvider', () => {
   it('threads a structured-cloneable options bag and the manager into the payload builder', async () => {
     vi.mocked(buildDocgenPayload).mockReturnValue(ours);
 
-    await createDocgenProvider(structuredClone({ angularFilterNonInputControls: true }))(
-      passthrough
-    )({ entry });
+    await createDocgenProvider(structuredClone({ propsTable: 'inputs' } as const))(passthrough)({
+      entry,
+    });
 
     expect(buildDocgenPayload).toHaveBeenCalledExactlyOnceWith(
       { entry },
       {
         manager: analyzer.instances[0],
-        options: { angularFilterNonInputControls: true },
+        options: { propsTable: 'inputs' },
         logger: expect.objectContaining({
           warn: expect.any(Function),
           debug: expect.any(Function),
@@ -180,7 +190,7 @@ describe('createDocgenProvider', () => {
     analyzer.failConstruction = true;
     vi.mocked(logger.warn).mockImplementation(() => {});
     const next = vi.fn<DocgenProvider>(async () => downstream);
-    const provider = createDocgenProvider()(next);
+    const provider = createDocgenProvider({ propsTable: 'api' })(next);
 
     await expect(provider({ entry })).resolves.toEqual(downstream);
     await expect(provider({ entry })).resolves.toEqual(downstream);

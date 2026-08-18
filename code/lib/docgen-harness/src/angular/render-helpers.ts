@@ -1,28 +1,15 @@
-// Shared machinery for the two Angular baseline recorders: angular-baselines.test.ts (legacy
-// compodoc client path) and angular-component-meta-baselines.test.ts (ACM engine, `acm-` prefixed
-// snapshots). Everything here feeds committed snapshot files, so changes must keep recordings
-// byte-identical for both recorders.
-import { existsSync, readFileSync, readdirSync } from 'node:fs';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
+// The two client-side Angular baseline recorders: angular-baselines.test.ts (legacy compodoc path)
+// and angular-component-meta-baselines.test.ts (ACM engine, `acm-` prefixed snapshots). Everything
+// here feeds committed snapshot files, so changes must keep recordings byte-identical for both.
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 
 import { expect } from 'vitest';
 
 import type { ArgTypes } from 'storybook/internal/types';
 import { computesTemplateSourceFromComponent } from '../../../../frameworks/angular-vite/src/client/renderer/ComputesTemplateFromComponent.ts';
 import { getComponentInputsOutputs } from '../../../../frameworks/angular-vite/src/client/renderer/utils/NgComponentAnalyzer.ts';
-import { expectCurrentOrBetter } from '../compare/expect-current-or-better.ts';
-import { assertGatableAngularSnippet } from '../compare/snippets-angular.ts';
-
-export const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
-
-export const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
-  .filter((entry) => entry.isDirectory())
-  .map((entry) => entry.name)
-  .sort();
-
-export const readCommitted = (path: string): string | undefined =>
-  existsSync(path) ? readFileSync(path, 'utf8') : undefined;
+import { expectNoStaleSnippets, fixturesDir, recordSnippet } from './snippet-recorder.ts';
 
 type AotCmp = {
   inputs: Record<string, [string, number, null]>;
@@ -55,9 +42,8 @@ export async function attachAotCmp(
   }
 }
 
-// One snippet snapshot per story export, ratcheted against its committed recording. The stale-file
-// check at the end exists because toMatchFileSnapshot files sit outside vitest's obsolete-snapshot
-// detection, so a renamed or removed story export would silently leave its old snapshot behind.
+// A noop handler is synthesized for every action argType, standing in for the one addon-actions
+// injects at runtime.
 export async function recordSnippets({
   fixtureCase,
   component,
@@ -88,39 +74,17 @@ export async function recordSnippets({
         props[name] = () => {};
       }
     }
-    const snippetPath = join(testDir, `${prefix}${exportName}.snapshot`);
-    const baselines = [readCommitted(snippetPath)];
-    if (recorder === 'acm') {
-      // Asserted to exist so deleting the legacy files can never silently disarm the parity gate.
-      const legacyLabel = `${fixtureCase}/snippet-${exportName}.snapshot`;
-      const committedLegacy = readCommitted(join(testDir, `snippet-${exportName}.snapshot`));
-      expect(committedLegacy, `missing legacy ${legacyLabel}`).toBeDefined();
-      baselines.push(committedLegacy);
-    }
-    const snippet = computesTemplateSourceFromComponent(component, props, argTypes);
+    const snippet = computesTemplateSourceFromComponent(component, props);
     // null only when the component has no decorator metadata - impossible for these fixtures.
     expect(snippet).not.toBeNull();
-    // Every gate runs BEFORE the snapshot call: under `-u` that call queues the rewrite, so a gate
-    // placed after it would turn the run red while still persisting the regressed recording.
-    assertGatableAngularSnippet(snippet!);
-    for (const baseline of baselines) {
-      if (baseline !== undefined) {
-        expectCurrentOrBetter({
-          kind: 'snippet',
-          framework: 'angular',
-          baseline,
-          candidate: snippet!,
-        });
-      }
-    }
-    await expect(snippet).toMatchFileSnapshot(snippetPath);
+    await recordSnippet({
+      testDir,
+      prefix,
+      exportName,
+      snippet: snippet!,
+      legacyParity: recorder === 'acm',
+    });
   }
 
-  const snippetFilesOnDisk = readdirSync(testDir)
-    .filter((file) => file.startsWith(prefix) && file.endsWith('.snapshot'))
-    .sort();
-  const expectedSnippetFiles = Object.keys(stories)
-    .map((exportName) => `${prefix}${exportName}.snapshot`)
-    .sort();
-  expect(snippetFilesOnDisk).toEqual(expectedSnippetFiles);
+  expectNoStaleSnippets(testDir, prefix, Object.keys(stories));
 }

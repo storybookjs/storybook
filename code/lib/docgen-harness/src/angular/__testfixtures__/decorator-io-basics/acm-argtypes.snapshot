@@ -9,7 +9,7 @@
         "summary": undefined,
       },
       "type": {
-        "required": true,
+        "required": false,
         "summary": "EventEmitter",
       },
     },
@@ -79,7 +79,7 @@
         "summary": "Badge",
       },
       "type": {
-        "required": true,
+        "required": false,
         "summary": "string",
       },
     },

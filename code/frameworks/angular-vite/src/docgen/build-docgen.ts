@@ -12,18 +12,37 @@ import type {
   AngularClassMeta,
   AngularComponentMetaResult,
   ParsingLogger,
+  PropsTableMode,
 } from '@storybook/angular-cm';
 import { extractArgTypesFromData } from '@storybook/angular-cm';
+import { buildApiDescription } from './api-description.ts';
 import { resolveStoryComponent } from './resolve-component.ts';
 
 // Structured-cloned onto the worker thread, so every field must be plain JSON data.
 export interface AngularDocgenOptions {
-  angularFilterNonInputControls?: boolean;
+  propsTable: PropsTableMode;
+}
+
+export interface SnippetEnum {
+  name: string;
+  members: { name: string; value?: string | number }[];
+}
+
+/** Everything the story-docs provider needs to render a component snippet. */
+export interface AngularComponentSnippetMeta {
+  name: string;
+  selector: string | undefined;
+  // `false` only for an explicit `standalone: false`; anything else is the language default.
+  standalone: boolean;
+  inputs: string[];
+  // Output binding names in `outputsClass` order, `model()` outputs `Change`-suffixed.
+  outputs: string[];
+  enums: SnippetEnum[];
 }
 
 export type AngularDocgenPayload = DocgenPayload & {
-  // The analyzer's record for the class, not filtered by `angularFilterNonInputControls`.
-  angularComponentMeta?: AngularClassMeta;
+  // The analyzer's record for the class, never filtered by `propsTable`.
+  angularComponentMeta?: AngularComponentSnippetMeta;
 };
 
 // Structural on purpose: tests hand in a stub instead of a real TypeScript-backed analyzer.
@@ -40,6 +59,39 @@ export interface BuildDocgenContext {
   logger: ParsingLogger;
   resolvePath?: (importPath: string) => string;
 }
+
+const inputsOf = (entry: AngularClassMeta) =>
+  'inputsClass' in entry ? (entry.inputsClass ?? []) : [];
+
+const outputsOf = (entry: AngularClassMeta) =>
+  'outputsClass' in entry ? (entry.outputsClass ?? []) : [];
+
+export const metaToSnippetMeta = (
+  meta: AngularComponentMetaResult
+): AngularComponentSnippetMeta => {
+  const { entry } = meta;
+  const inputs = inputsOf(entry).map((input) => input.name);
+  const inputNames = new Set(inputs);
+  const outputs: string[] = [];
+  for (const output of outputsOf(entry)) {
+    // model() lands under the same bare name in both arrays; its output binds as `${name}Change`.
+    const bindingName = inputNames.has(output.name) ? `${output.name}Change` : output.name;
+    if (!outputs.includes(bindingName)) {
+      outputs.push(bindingName);
+    }
+  }
+  return {
+    name: entry.name,
+    selector: entry.selector,
+    standalone: entry.standalone !== false,
+    inputs,
+    outputs,
+    enums: (meta.json.miscellaneous?.enumerations ?? []).map((enumeration) => ({
+      name: enumeration.name,
+      members: enumeration.childs.map((child) => ({ name: child.name, value: child.value })),
+    })),
+  };
+};
 
 // The description is deliberately not parsed for tags: an `@Input()` inside a documentation code
 // block would become a fabricated tag.
@@ -133,9 +185,20 @@ export const buildDocgenPayload = (
 
   const argTypes = extractArgTypesFromData(meta.entry, {
     metadataJson: meta.json,
-    filterNonInputControls: options.angularFilterNonInputControls,
+    propsTable: options.propsTable,
     logger,
   }) as StrictArgTypes;
+
+  // Agent documentation is pinned to `api` whatever the user chose for their props table: `all`
+  // would hand an agent private wiring it cannot bind, and `inputs` would empty the Outputs section.
+  const apiArgTypes =
+    options.propsTable === 'api'
+      ? argTypes
+      : (extractArgTypesFromData(meta.entry, {
+          metadataJson: meta.json,
+          propsTable: 'api',
+          logger,
+        }) as StrictArgTypes);
 
   const jsDocTags = extractJsDocTags(meta.entry);
   // Tags are excluded from `rawdescription`, which is why it wins over `description`.
@@ -150,6 +213,8 @@ export const buildDocgenPayload = (
     summary: jsDocTags.summary?.[0],
     jsDocTags,
     argTypes,
-    angularComponentMeta: meta.entry,
+    apiDescription: buildApiDescription(apiArgTypes, meta.entry.name),
+    renderer: 'angular',
+    angularComponentMeta: metaToSnippetMeta(meta),
   };
 };

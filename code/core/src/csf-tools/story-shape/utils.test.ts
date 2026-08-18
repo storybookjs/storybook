@@ -5,7 +5,15 @@ import { recast, types as t } from 'storybook/internal/babel';
 import { dedent } from 'ts-dedent';
 
 import { loadCsf } from '../CsfFile.ts';
-import { keyOf, metaObjectPath, resolveIdentifierInit } from './utils.ts';
+import type { RenderFunctionPath } from './render.ts';
+import {
+  keyOf,
+  metaObjectPath,
+  resolveIdentifierInit,
+  returnedExpression,
+  returnedExpressionPath,
+  unwrapExpression,
+} from './utils.ts';
 
 const parse = (code: string) => {
   return loadCsf(code, { makeTitle: (title) => title ?? 'title' }).parse();
@@ -42,26 +50,175 @@ const storyBindIdentifier = (code: string) => {
   };
 };
 
+const renderFunctionPath = (code: string): RenderFunctionPath => {
+  let found: RenderFunctionPath | undefined;
+
+  parse(code)._file.path.traverse({
+    FunctionDeclaration(path) {
+      if (path.node.id?.name === 'render') {
+        found = path;
+        path.stop();
+      }
+    },
+    VariableDeclarator(path) {
+      const id = path.get('id');
+      const init = path.get('init');
+
+      if (
+        id.isIdentifier({ name: 'render' }) &&
+        (init.isArrowFunctionExpression() || init.isFunctionExpression())
+      ) {
+        found = init;
+        path.stop();
+      }
+    },
+  });
+
+  if (!found) {
+    throw new Error('Expected a render function path');
+  }
+
+  return found;
+};
+
 describe('keyOf', () => {
-  it('returns literal object keys and skips dynamic keys', () => {
+  it('returns literal object member keys and skips dynamic keys', () => {
     const meta = metaObjectPath(
       parse(dedent`
         const computed = 'dynamic';
+        const spread = {};
         export default {
           title: 'Button',
           label: 'Save',
           'aria-label': 'Close',
           [computed]: 'ignored',
           1: 'ignored',
+          method() {},
+          'method-label'() {},
+          [computed]() {},
+          ...spread,
         };
       `)
     );
 
     const keys = meta?.node.properties.map((property) =>
-      t.isObjectProperty(property) ? keyOf(property) : null
+      t.isSpreadElement(property) ? null : keyOf(property)
     );
 
-    expect(keys).toEqual(['title', 'label', 'aria-label', null, null]);
+    expect(keys).toEqual([
+      'title',
+      'label',
+      'aria-label',
+      null,
+      null,
+      'method',
+      'method-label',
+      null,
+      null,
+    ]);
+  });
+});
+
+describe('unwrapExpression', () => {
+  const typeAnnotation = t.tsTypeReference(t.identifier('Story'));
+
+  it('unwraps TypeScript expression wrappers and parentheses', () => {
+    const value = t.objectExpression([]);
+
+    expect(unwrapExpression(t.tsAsExpression(value, typeAnnotation))).toBe(value);
+    expect(unwrapExpression(t.tsSatisfiesExpression(value, typeAnnotation))).toBe(value);
+    expect(unwrapExpression(t.tsNonNullExpression(value))).toBe(value);
+    expect(unwrapExpression(t.tsTypeAssertion(typeAnnotation, value))).toBe(value);
+    expect(unwrapExpression(t.parenthesizedExpression(value))).toBe(value);
+  });
+
+  it('unwraps nested TypeScript expression wrappers', () => {
+    const value = t.objectExpression([]);
+    const wrapped = t.tsSatisfiesExpression(
+      t.tsNonNullExpression(t.tsAsExpression(value, typeAnnotation)),
+      typeAnnotation
+    );
+
+    expect(unwrapExpression(wrapped)).toBe(value);
+  });
+
+  it('returns other nodes untouched', () => {
+    const value = t.stringLiteral('Save');
+
+    expect(unwrapExpression(value)).toBe(value);
+  });
+});
+
+describe('returnedExpression', () => {
+  const cases = [
+    {
+      code: dedent`
+        export default { title: 'Button' };
+        const render = () => ({ label: 'Save' });
+        export const A = {};
+      `,
+      expected: "({\n  label: 'Save'\n})",
+      name: 'concise arrow body',
+    },
+    {
+      code: dedent`
+        export default { title: 'Button' };
+        function render() {
+          return { label: 'Save' };
+        }
+        export const A = {};
+      `,
+      expected: "{ label: 'Save' }",
+      name: 'single-return block',
+    },
+    {
+      code: dedent`
+        export default { title: 'Button' };
+        const render = () => {
+          const label = 'Save';
+          return { label };
+        };
+        export const A = {};
+      `,
+      expected: undefined,
+      name: 'multi-statement block',
+    },
+    {
+      code: dedent`
+        export default { title: 'Button' };
+        const render = () => {
+          save();
+        };
+        export const A = {};
+      `,
+      expected: undefined,
+      name: 'no-return block',
+    },
+  ];
+
+  it.each(cases)('resolves $name', ({ code, expected }) => {
+    const returned = returnedExpression(renderFunctionPath(code).node);
+
+    expect(returned ? printed(returned) : undefined).toBe(expected);
+  });
+
+  it.each(cases)('resolves $name as a path', ({ code, expected }) => {
+    const returned = returnedExpressionPath(renderFunctionPath(code));
+
+    expect(returned ? printed(returned.node) : undefined).toBe(expected);
+  });
+
+  it('resolves an object method body, which `setup()` uses', () => {
+    const [method] = t.objectExpression([
+      t.objectMethod(
+        'method',
+        t.identifier('setup'),
+        [],
+        t.blockStatement([t.returnStatement(t.stringLiteral('Save'))])
+      ),
+    ]).properties;
+
+    expect(printed(returnedExpression(method)!)).toBe(`"Save"`);
   });
 });
 

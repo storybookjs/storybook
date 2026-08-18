@@ -1,17 +1,53 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
-import {
-  addGetStoryDocumentationTool,
-  GET_STORY_TOOL_NAME,
-} from './get-documentation-for-story.ts';
+import { addGetStoryDocumentationTool, GET_STORY_TOOL_NAME } from './register.ts';
 import type { Source, StorybookContext } from '../types.ts';
 import smallManifestFixture from '../../fixtures/small-manifest.fixture.json' with { type: 'json' };
-import * as getManifest from '../utils/get-manifest.ts';
+import {
+  COMPONENT_MANIFEST_PATH,
+  DOCS_MANIFEST_PATH,
+  ManifestGetError,
+  RequiresOwnMcpError,
+} from 'storybook/internal/toolsets-docs';
+
+/**
+ * The manifests one provider serves, keyed by source id (`''` for the single-source case). Each
+ * entry either resolves to the manifest JSON or rejects, which is how these tests stand in for a
+ * Storybook that cannot be read.
+ */
+type ServedManifests = {
+  componentManifest?: unknown;
+  docsManifest?: unknown;
+  rejectWith?: unknown;
+};
+
+function createManifestProvider(served: Record<string, ServedManifests>) {
+  return vi.fn(async (_request: Request | undefined, path: string, source?: Source) => {
+    const entry = served[source?.id ?? ''];
+    if (!entry) {
+      throw new ManifestGetError('Failed to fetch manifest: 404 Not Found', path);
+    }
+    if (entry.rejectWith) {
+      throw entry.rejectWith;
+    }
+    const manifest =
+      path === COMPONENT_MANIFEST_PATH
+        ? entry.componentManifest
+        : path === DOCS_MANIFEST_PATH
+          ? entry.docsManifest
+          : undefined;
+    if (!manifest) {
+      throw new ManifestGetError('Failed to fetch manifest: 404 Not Found', path);
+    }
+    return JSON.stringify(manifest);
+  });
+}
 
 describe('getComponentStoryDocumentationTool', () => {
   let server: McpServer<any, StorybookContext>;
-  let getManifestSpy: any;
+  let served: Record<string, ServedManifests>;
+  let manifestProvider: ReturnType<typeof createManifestProvider>;
 
   beforeEach(async () => {
     const adapter = new ValibotJsonSchemaAdapter();
@@ -45,11 +81,9 @@ describe('getComponentStoryDocumentationTool', () => {
     );
     await addGetStoryDocumentationTool(server);
 
-    // Mock getManifest to return the fixture
-    getManifestSpy = vi.spyOn(getManifest, 'getManifests');
-    getManifestSpy.mockResolvedValue({
-      componentManifest: smallManifestFixture,
-    });
+    // Serve the fixture through the context's manifest provider
+    served = { '': { componentManifest: smallManifestFixture } };
+    manifestProvider = createManifestProvider(served);
   });
 
   it('should return formatted story documentation for a specific story', async () => {
@@ -68,7 +102,7 @@ describe('getComponentStoryDocumentationTool', () => {
 
     const mockHttpRequest = new Request('https://example.com/mcp');
     const response = await server.receive(request, {
-      custom: { request: mockHttpRequest },
+      custom: { request: mockHttpRequest, manifestProvider },
     });
 
     expect(response.result).toMatchInlineSnapshot(`
@@ -105,20 +139,20 @@ describe('getComponentStoryDocumentationTool', () => {
 
     const mockHttpRequest = new Request('https://example.com/mcp');
     const response = await server.receive(request, {
-      custom: { request: mockHttpRequest },
+      custom: { request: mockHttpRequest, manifestProvider },
     });
 
     expect(response.result).toMatchInlineSnapshot(`
-			{
-			  "content": [
-			    {
-			      "text": "Component not found: "nonexistent". Use the list-all-documentation tool to see available components.",
-			      "type": "text",
-			    },
-			  ],
-			  "isError": true,
-			}
-		`);
+      {
+        "content": [
+          {
+            "text": "Component not found: "nonexistent". Use the docs-list tool to see available components.",
+            "type": "text",
+          },
+        ],
+        "isError": true,
+      }
+    `);
   });
 
   it('should return an error when a story is not found', async () => {
@@ -137,7 +171,7 @@ describe('getComponentStoryDocumentationTool', () => {
 
     const mockHttpRequest = new Request('https://example.com/mcp');
     const response = await server.receive(request, {
-      custom: { request: mockHttpRequest },
+      custom: { request: mockHttpRequest, manifestProvider },
     });
 
     expect(response.result).toMatchInlineSnapshot(`
@@ -154,12 +188,12 @@ describe('getComponentStoryDocumentationTool', () => {
   });
 
   it('should handle fetch errors gracefully', async () => {
-    getManifestSpy.mockRejectedValue(
-      new getManifest.ManifestGetError(
+    served[''] = {
+      rejectWith: new ManifestGetError(
         'Failed to fetch manifest: 404 Not Found',
         'https://example.com/manifest.json'
-      )
-    );
+      ),
+    };
 
     const request = {
       jsonrpc: '2.0' as const,
@@ -176,25 +210,29 @@ describe('getComponentStoryDocumentationTool', () => {
 
     const mockHttpRequest = new Request('https://example.com/mcp');
     const response = await server.receive(request, {
-      custom: { request: mockHttpRequest },
+      custom: { request: mockHttpRequest, manifestProvider },
     });
 
     expect(response.result).toMatchInlineSnapshot(`
-			{
-			  "content": [
-			    {
-			      "text": "Error getting manifest: Failed to fetch manifest: 404 Not Found",
-			      "type": "text",
-			    },
-			  ],
-			  "isError": true,
-			}
-		`);
+      {
+        "content": [
+          {
+            "text": "Error getting manifest: Failed to get component manifest: Failed to fetch manifest: 404 Not Found
+      Hint: The Storybook at this URL may not have the component manifest enabled. Add \`features: { componentsManifest: true }\` (or \`features: { experimentalComponentsManifest: true }\` for older Storybook versions) to its main.ts config.
+      Caused by: Failed to fetch manifest: 404 Not Found",
+            "type": "text",
+          },
+        ],
+        "isError": true,
+      }
+    `);
   });
 
   it('should include import statement when available', async () => {
     const manifestWithImport = {
-      v: 1,
+      // v0: this manifest inlines docgen/subcomponents/import, which is the inline format.
+      // Labelling it v1 would strip them — a v1 row carries those behind `$ref`s instead.
+      v: 0,
       components: {
         button: {
           id: 'button',
@@ -212,7 +250,7 @@ describe('getComponentStoryDocumentationTool', () => {
       },
     };
 
-    getManifestSpy.mockResolvedValue({ componentManifest: manifestWithImport });
+    served[''] = { componentManifest: manifestWithImport };
 
     const request = {
       jsonrpc: '2.0' as const,
@@ -229,7 +267,7 @@ describe('getComponentStoryDocumentationTool', () => {
 
     const mockHttpRequest = new Request('https://example.com/mcp');
     const response = await server.receive(request, {
-      custom: { request: mockHttpRequest },
+      custom: { request: mockHttpRequest, manifestProvider },
     });
 
     expect(response.result.content[0].text).toContain(
@@ -285,10 +323,8 @@ describe('getComponentStoryDocumentationTool', () => {
       );
       await addGetStoryDocumentationTool(server, undefined, { multiSource: true });
 
-      getManifestSpy = vi.spyOn(getManifest, 'getManifests');
-      getManifestSpy.mockResolvedValue({
-        componentManifest: smallManifestFixture,
-      });
+      served.local = { componentManifest: smallManifestFixture };
+      served.remote = { componentManifest: smallManifestFixture };
     });
 
     it('should return schema validation error when storybookId is missing', async () => {
@@ -304,7 +340,7 @@ describe('getComponentStoryDocumentationTool', () => {
 
       const mockHttpRequest = new Request('https://example.com/mcp');
       const response = await server.receive(request, {
-        custom: { request: mockHttpRequest, sources },
+        custom: { request: mockHttpRequest, manifestProvider, sources },
       });
 
       // storybookId is required in multi-source mode — schema validation rejects it
@@ -325,7 +361,7 @@ describe('getComponentStoryDocumentationTool', () => {
 
       const mockHttpRequest = new Request('https://example.com/mcp');
       const response = await server.receive(request, {
-        custom: { request: mockHttpRequest, sources },
+        custom: { request: mockHttpRequest, manifestProvider, sources },
       });
 
       expect((response.result as any).isError).toBe(true);
@@ -348,15 +384,19 @@ describe('getComponentStoryDocumentationTool', () => {
 
       const mockHttpRequest = new Request('https://example.com/mcp');
       const response = await server.receive(request, {
-        custom: { request: mockHttpRequest, sources },
+        custom: { request: mockHttpRequest, manifestProvider, sources },
       });
 
       expect((response.result as any).content[0].text).toContain('# Button - Primary');
-      expect(getManifestSpy).toHaveBeenCalledWith(mockHttpRequest, undefined, sources[0]);
+      expect(manifestProvider).toHaveBeenCalledWith(
+        mockHttpRequest,
+        COMPONENT_MANIFEST_PATH,
+        sources[0]
+      );
     });
 
     it('should pass remote source to getManifests', async () => {
-      getManifestSpy.mockResolvedValue({ componentManifest: remoteManifest });
+      served.remote = { componentManifest: remoteManifest };
 
       const request = {
         jsonrpc: '2.0' as const,
@@ -370,16 +410,20 @@ describe('getComponentStoryDocumentationTool', () => {
 
       const mockHttpRequest = new Request('https://example.com/mcp');
       const response = await server.receive(request, {
-        custom: { request: mockHttpRequest, sources },
+        custom: { request: mockHttpRequest, manifestProvider, sources },
       });
 
       expect((response.result as any).content[0].text).toContain('# Badge - Default');
-      expect(getManifestSpy).toHaveBeenCalledWith(mockHttpRequest, undefined, sources[1]);
+      expect(manifestProvider).toHaveBeenCalledWith(
+        mockHttpRequest,
+        COMPONENT_MANIFEST_PATH,
+        sources[1]
+      );
     });
 
     it('should return a routing notice when the selected source requires its own MCP', async () => {
       const remoteSource = sources[1] as Source & { url: string };
-      getManifestSpy.mockRejectedValue(new getManifest.RequiresOwnMcpError(remoteSource));
+      served.remote = { rejectWith: new RequiresOwnMcpError(remoteSource) };
 
       const request = {
         jsonrpc: '2.0' as const,
@@ -397,7 +441,7 @@ describe('getComponentStoryDocumentationTool', () => {
 
       const mockHttpRequest = new Request('https://example.com/mcp');
       const response = await server.receive(request, {
-        custom: { request: mockHttpRequest, sources },
+        custom: { request: mockHttpRequest, manifestProvider, sources },
       });
 
       expect((response.result as any).isError).toBeUndefined();

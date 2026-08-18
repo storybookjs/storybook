@@ -18,11 +18,7 @@ vi.mock('node:fs', { spy: true });
 beforeEach(async () => {
   vol.reset();
   const memfs = await vi.importActual<typeof import('memfs')>('memfs');
-  const nodeFs = await vi.importActual<typeof import('node:fs')>('node:fs');
-  vi.mocked(readFileSync).mockImplementation(((path, options) =>
-    typeof path !== 'number' && vol.existsSync(path)
-      ? memfs.fs.readFileSync(path, options)
-      : nodeFs.readFileSync(path, options)) as typeof readFileSync);
+  vi.mocked(readFileSync).mockImplementation(memfs.fs.readFileSync as typeof readFileSync);
 });
 
 afterEach(() => {

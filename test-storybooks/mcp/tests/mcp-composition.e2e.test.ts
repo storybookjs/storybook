@@ -92,6 +92,7 @@ describe('MCP Composition E2E Tests', () => {
 
 				\`\`\`
 				import { Button } from '@my-org/my-component-library';
+				import { fn } from 'storybook/test';
 
 				const Primary = () => <Button onClick={fn()} primary label="Button" />;
 				\`\`\`
@@ -102,6 +103,7 @@ describe('MCP Composition E2E Tests', () => {
 
 				\`\`\`
 				import { Button } from '@my-org/my-component-library';
+				import { fn } from 'storybook/test';
 
 				const Secondary = () => <Button onClick={fn()} label="Button" />;
 				\`\`\`
@@ -112,6 +114,7 @@ describe('MCP Composition E2E Tests', () => {
 
 				\`\`\`
 				import { Button } from '@my-org/my-component-library';
+				import { fn } from 'storybook/test';
 
 				const Large = () => <Button onClick={fn()} size="large" label="Button" />;
 				\`\`\`

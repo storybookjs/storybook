@@ -50,14 +50,9 @@ Now, when running Storybook's dev server, you can access the MCP server at `http
 
 ### 2. Enable the components manifest
 
+<If renderer={['react', 'angular', 'vue']}>
+
 The [docs toolset](#docs) reads the [components manifest](../manifests.mdx), which is off by default.
-
-<If notRenderer={['react', 'angular', 'vue']}>
-
-Your framework does not generate a components manifest yet, so this step does not apply and the [docs toolset](#docs) reports as unavailable.
-Skip ahead to the next step and use the [development](#development) and [testing](#testing) toolsets.
-
-</If>
 
 Enable it in your `.storybook/main.js|ts`:
 
@@ -76,6 +71,15 @@ Manifest generation requires the experimental docgen server. Disabling that serv
 
 On `@storybook/vue3-vite`, the components manifest additionally requires the [`experimentalDocgenServer`](../../api/main-config/main-config-features.mdx#experimentaldocgenserver) feature, which is not enabled by default.
 Set both keys in the same `features` object.
+
+</If>
+
+</If>
+
+<If notRenderer={['react', 'angular', 'vue']}>
+
+Your framework does not generate a components manifest yet, so this step does not apply and the [docs toolset](#docs) reports as unavailable.
+Skip ahead to the next step and use the [development](#development) and [testing](#testing) toolsets.
 
 </If>
 

@@ -642,8 +642,6 @@ export const baseTemplates = {
   'vue3-vite/docgen-server-ts': {
     name: 'Vue Server Docgen v3 (Vite | TypeScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template vue-ts',
-    // TODO: remove once this sandbox has been published to the sandboxes repository.
-    inDevelopment: true,
     minAgeGateExemptions: ['vue-component-meta', '@vue/language-core'],
     expected: {
       framework: '@storybook/vue3-vite',

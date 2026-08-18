@@ -451,7 +451,7 @@ describe('buildStoryDocsPayload', () => {
     expect(story.warning).toContain('NgModule');
   });
 
-  it('leaves a standalone component in `imports` even when moduleMetadata lists modules', async () => {
+  it('imports a standalone component alongside the modules its moduleMetadata lists', async () => {
     givenStoryFile(`
       import { moduleMetadata } from '@storybook/angular-vite';
       import { ButtonComponent } from './button.component';
@@ -467,8 +467,8 @@ describe('buildStoryDocsPayload', () => {
     const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() });
 
     const story = Object.values(payload!.stories)[0];
-    expect(story.snippet).toContain('imports: [ButtonComponent],');
-    expect(story.snippet).not.toContain('IconModule');
+    expect(story.snippet).toContain('imports: [ButtonComponent, IconModule],');
+    expect(story.snippet).toContain("import { IconModule } from './icon.module';");
     expect(story.warning).toBeUndefined();
   });
 

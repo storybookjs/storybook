@@ -66,9 +66,10 @@ export const buildHostComponentSnippet = ({
 }: HostComponentSnippetInput): HostComponentSnippet => {
   // A `standalone: false` component is only reachable through its declaring NgModule, which static
   // analysis cannot find reliably. The modules the story's own `moduleMetadata` lists are the next
-  // best claim; without them the tag path leaves `imports` empty and warns why instead.
+  // best claim; without them the tag path leaves `imports` empty and warns why instead. A standalone
+  // component imports itself and still needs those modules, since its template may depend on them.
   const importable = viaComponentOutlet || standalone;
-  const moduleNames = importable ? [] : (ngModules?.names ?? []);
+  const moduleNames = viaComponentOutlet ? [] : (ngModules?.names ?? []);
   const imports = [
     ...(viaComponentOutlet ? ["import { NgComponentOutlet } from '@angular/common';"] : []),
     "import { Component } from '@angular/core';",
@@ -80,9 +81,7 @@ export const buildHostComponentSnippet = ({
   // so the directive is what the host declares and the class has to be reachable from the template.
   const declared = viaComponentOutlet
     ? 'NgComponentOutlet'
-    : standalone
-      ? componentName
-      : moduleNames.join(', ');
+    : [...(standalone ? [componentName] : []), ...moduleNames].join(', ');
   const members = [
     ...(viaComponentOutlet ? [`  protected readonly ${componentName} = ${componentName};`] : []),
     ...fields.map(({ name, value }) => `  ${name} = ${value};`),

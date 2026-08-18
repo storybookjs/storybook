@@ -22,7 +22,11 @@ export type StaticLoader = (
   context: StaticLoaderContext
 ) => Promise<Record<string, unknown>>;
 
-const STATIC_SERVICES_PREFIX = '/services/';
+// Document-relative, like `STORY_INDEX_PATH`: the manager and the preview iframe are siblings in
+// the build output, so both resolve this against the directory Storybook was deployed into. An
+// origin-absolute prefix would resolve against the origin root instead, which is the wrong place
+// whenever Storybook is not deployed at it (a GitHub Pages project site, for one).
+const STATIC_SERVICES_PREFIX = './services/';
 
 function shouldUseBrowserStaticLoader(): boolean {
   return globalThis.CONFIG_TYPE === 'PRODUCTION';
@@ -31,8 +35,9 @@ function shouldUseBrowserStaticLoader(): boolean {
 /**
  * Returns a fetch-based loader for static build output, or `undefined` in development.
  *
- * Snapshot paths are logical keys such as `core/docgen/foo.json`, resolved from the Storybook
- * origin (absolute `/services/...` so preview iframes and the manager share the same base).
+ * Snapshot paths are logical keys such as `core/docgen/foo.json`, resolved relative to the
+ * document (`./services/...`), so the manager and preview iframes share the same base wherever
+ * the build is deployed.
  */
 export function createBrowserStaticLoader(): StaticLoader | undefined {
   if (!shouldUseBrowserStaticLoader()) {

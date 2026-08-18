@@ -533,9 +533,18 @@
 
 ### Vue 3: `vue-docgen-api` is deprecated
 
-`vue-docgen-api` is the docgen engine `@storybook/vue3-vite` uses to document props, events, slots and exposes. It is deprecated and will be removed in Storybook 12, leaving [`vue-component-meta`](https://github.com/vuejs/language-tools/tree/master/packages/component-meta) — the extractor maintained by the Vue team — as the only engine. It documents more of your components: `.ts`, `.tsx`, `.js` and `.jsx` components as well as SFCs, named exports next to default ones, and richer prop, event, slot and exposed types.
+`vue-docgen-api` is the docgen engine `@storybook/vue3-vite` uses to document props, events, slots and exposes. It is deprecated and will be removed in the next major version of Storybook, leaving [`vue-component-meta`](https://github.com/vuejs/language-tools/tree/master/packages/component-meta) — the extractor maintained by the Vue team — as the only engine. It documents more of your components: `.ts`, `.tsx`, `.js` and `.jsx` components as well as SFCs, named exports next to default ones, and richer prop, event, slot and exposed types.
 
-`vue-docgen-api` is still the default, so Storybook logs the deprecation whenever it runs, including when you never set the `docgen` framework option. Switch to the supported engine:
+`vue-docgen-api` is still the default, so Storybook logs the deprecation whenever it runs, including when you never set the `docgen` framework option.
+
+The path we recommend is server-side docgen, which becomes the default in Storybook 11. It runs `vue-component-meta` on the Storybook server instead of in the builder, and also feeds the component manifest that AI agents read:
+
+```ts
+// .storybook/main.ts
+features: { experimentalDocgenServer: true },
+```
+
+To stay on builder-side docgen for now, select the engine explicitly instead:
 
 ```ts
 // .storybook/main.ts

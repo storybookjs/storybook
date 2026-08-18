@@ -12,7 +12,7 @@ import { OverrideComponent } from '@design-system/components';
 @Component({
   selector: 'app-demo',
   imports: [OverrideComponent],
-  template: `<sb-import-override [heading]="'Overridden'"></sb-import-override>`,
+  template: `<sb-import-override [heading]="'Overridden'" />`,
 })
 export class DemoComponent {}",
     },

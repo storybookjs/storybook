@@ -1,11 +1,7 @@
 #!/usr/bin/env node
+import Module from 'node:module';
 import { pathToFileURL } from 'node:url';
 
-import {
-  JsPackageManagerFactory,
-  executeNodeCommand,
-  getRemotePackageRunnerArgs,
-} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { join } from 'pathe';
@@ -36,6 +32,15 @@ if (!isNodeVersionSupported(major, minor, patch)) {
 }
 
 async function run() {
+  // Cache compiled V8 bytecode on disk (a Node-version-scoped directory under os.tmpdir()) so
+  // repeated CLI invocations — agents call `storybook tools` many times per session — skip the
+  // parse/compile of the module graph. Called before the dynamic imports below so the heavy
+  // bundles are covered. Missing on Node < 22.8, hence the feature detection; the cache is purely
+  // an accelerator, so failing to enable it must never fail the CLI.
+  try {
+    Module.enableCompileCache?.();
+  } catch {}
+
   const args = process.argv.slice(2);
 
   if (['dev', 'build', 'index', 'ai', 'tools', 'skills'].includes(args[0])) {
@@ -43,6 +48,11 @@ async function run() {
     await import(coreBin);
     return;
   }
+
+  // Only the external-CLI routes below need the package-manager machinery; importing it lazily
+  // keeps the (hot) core route above from evaluating that dependency-heavy part of `common`.
+  const { JsPackageManagerFactory, executeNodeCommand, getRemotePackageRunnerArgs } =
+    await import('storybook/internal/common');
 
   const targetCli =
     args[0] === 'init'

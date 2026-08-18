@@ -17,7 +17,7 @@ export interface HostComponentSnippetInput {
   viaComponentOutlet: boolean;
   /** `false` for a `standalone: false` component, which only its declaring NgModule can provide. */
   standalone: boolean;
-  /** NgModules the story's `moduleMetadata` lists, which stand in for a non-standalone component. */
+  /** NgModules the story's `moduleMetadata` adds to its template scope. */
   ngModules?: { names: string[]; importStatements: string[] };
   /** Output binding names, each of which needs a handler for the template to compile. */
   outputs: string[];
@@ -84,7 +84,7 @@ export const buildHostComponentSnippet = ({
     : [...(standalone ? [componentName] : []), ...moduleNames].join(', ');
   const members = [
     ...(viaComponentOutlet ? [`  protected readonly ${componentName} = ${componentName};`] : []),
-    ...fields.map(({ name, value }) => `  ${name} = ${value};`),
+    ...fields.map(({ name, value }) => `  ${memberName(name)} = ${value};`),
     ...outputs.map((name) => `  ${memberName(name)}(event: unknown) {}`),
   ];
   const body = members.length > 0 ? `{\n${members.join('\n')}\n}` : '{}';

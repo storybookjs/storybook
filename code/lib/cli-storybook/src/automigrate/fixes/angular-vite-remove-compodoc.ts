@@ -153,7 +153,7 @@ const SHELL_SEPARATORS = /&{1,2}|\|{1,2}|;|\n/;
  * Windows), or one that points inside the package, as `node …/@compodoc/compodoc/bin/index-cli.js`
  * does.
  */
-const COMPODOC_COMMAND = /(^|[/\\])compodoc(\.[a-z]+)?$|[/\\]@compodoc[/\\]compodoc[/\\]/;
+const COMPODOC_COMMAND = /(^|[/\\])compodoc(\.[a-z]+)?$|(^|[/\\])@compodoc[/\\]compodoc(?:$|[/\\])/;
 // Commands that precede the command they run, so the real command is the first token after them.
 const COMMAND_WRAPPERS = new Set([
   'npx',

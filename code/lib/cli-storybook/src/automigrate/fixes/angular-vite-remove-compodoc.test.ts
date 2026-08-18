@@ -379,6 +379,7 @@ describe('check', () => {
         scripts: {
           'docs:json': 'compodoc -p ./tsconfig.json -e json -d . --disableRoutesGraph',
           compodoc: 'npx compodoc -c doc/compodoc_sources/.compodocrc.json',
+          scoped: 'npx @compodoc/compodoc -p tsconfig.json',
         },
       }),
     });
@@ -388,6 +389,7 @@ describe('check', () => {
     expect(result?.compodocScripts).toEqual([
       { packageJsonPath: PACKAGE_JSON, scriptName: 'docs:json' },
       { packageJsonPath: PACKAGE_JSON, scriptName: 'compodoc' },
+      { packageJsonPath: PACKAGE_JSON, scriptName: 'scoped' },
     ]);
   });
 

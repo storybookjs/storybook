@@ -21,7 +21,7 @@ vi.mock('node:worker_threads', async () => {
 
   class FakeWorkerImpl extends NodeEventEmitter {
     posted: DocgenWorkerRequest[] = [];
-    constructor() {
+    constructor(_scriptPath: string) {
       super();
       fakeWorkers.push(this as unknown as FakeWorker);
     }
@@ -88,6 +88,21 @@ describe('createDocgenWorkerClient', () => {
     expect(fakeWorkers).toHaveLength(0);
   });
 
+  it('forwards the current log level in the init request', async () => {
+    const { logger } = await import('storybook/internal/node-logger');
+    vi.mocked(logger.getLogLevel).mockReturnValueOnce('debug');
+
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+    client.extract({ id: 'button--primary' } as any).catch(() => undefined);
+
+    expect(fakeWorkers[0].posted[0]).toEqual({
+      type: 'init',
+      descriptors: DESCRIPTORS,
+      logLevel: 'debug',
+    });
+  });
+
   it('spawns the worker lazily on the first extract and posts init with descriptors', async () => {
     const { createDocgenWorkerClient } = await loadModule();
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
@@ -96,7 +111,7 @@ describe('createDocgenWorkerClient', () => {
     const worker = fakeWorkers[0];
 
     expect(fakeWorkers).toHaveLength(1);
-    expect(worker.posted[0]).toEqual({ type: 'init', descriptors: DESCRIPTORS });
+    expect(worker.posted[0]).toMatchObject({ type: 'init', descriptors: DESCRIPTORS });
     expect(worker.unref).not.toHaveBeenCalled();
 
     ackInit(worker);

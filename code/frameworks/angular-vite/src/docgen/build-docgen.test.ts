@@ -63,7 +63,14 @@ const componentEntry = (overrides: Record<string, unknown> = {}): AngularClassMe
     propertiesClass: [],
     methodsClass: [],
     outputsClass: [],
-    inputsClass: [{ name: 'label', type: 'string', optional: false, defaultValue: "'Click me'" }],
+    inputsClass: [
+      {
+        name: 'label',
+        type: 'string',
+        optional: false,
+        initializer: { kind: 'literal', literalKind: 'string', text: "'Click me'" },
+      },
+    ],
     ...overrides,
   }) as unknown as AngularClassMeta;
 
@@ -258,7 +265,7 @@ describe('buildDocgenPayload', () => {
           type: 'string',
           optional: true,
           line: 12,
-          defaultValue: "'#345F92'",
+          initializer: { kind: 'literal', literalKind: 'string', text: "'#345F92'" },
           rawdescription: 'The currently selected colour',
         },
       ],

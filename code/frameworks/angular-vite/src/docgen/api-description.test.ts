@@ -226,6 +226,167 @@ describe('buildApiDescription', () => {
     `);
   });
 
+  it('spells an empty-string default as quotes instead of a dangling @default', () => {
+    const result = buildApiDescription(
+      argTypes({
+        label: {
+          name: 'label',
+          table: {
+            category: 'inputs',
+            type: { summary: 'string', required: false },
+            defaultValue: { summary: '' },
+          },
+        },
+      }),
+      'ButtonComponent'
+    );
+
+    expect(result).toMatchInlineSnapshot(`
+      "## Inputs
+
+      \`\`\`
+      export type ButtonComponentInputs = {
+        /** @default '' */
+        label?: string;
+      }
+      \`\`\`"
+    `);
+  });
+
+  it('escapes a comment terminator inside a kept string default', () => {
+    const result = buildApiDescription(
+      argTypes({
+        pattern: {
+          name: 'pattern',
+          table: {
+            category: 'inputs',
+            type: { summary: 'string', required: false },
+            defaultValue: { summary: "'**/*.ts'" },
+          },
+        },
+      }),
+      'GlobComponent'
+    );
+
+    expect(result).toContain(`  /** @default '**\\/*.ts' */`);
+    expect(result).toContain('  pattern?: string;');
+    expect(result?.match(/\*\//g)).toHaveLength(1);
+  });
+
+  it('keeps the doc-comment margin on every line of a multi-line default', () => {
+    const result = buildApiDescription(
+      argTypes({
+        config: {
+          name: 'config',
+          table: {
+            category: 'inputs',
+            type: { summary: 'Config', required: false },
+            defaultValue: { summary: '{\n  depth: 1,\n}' },
+          },
+        },
+      }),
+      'TreeComponent'
+    );
+
+    expect(result).toMatchInlineSnapshot(`
+      "## Inputs
+
+      \`\`\`
+      export type TreeComponentInputs = {
+        /**
+         * @default {
+         *   depth: 1,
+         * }
+         */
+        config?: Config;
+      }
+      \`\`\`"
+    `);
+  });
+
+  it('renders @deprecated from the member jsDocTags into the doc comment', () => {
+    const result = buildApiDescription(
+      argTypes({
+        clrFlashDanger: {
+          name: 'clrFlashDanger',
+          description: 'Displays the danger flash.',
+          table: {
+            category: 'inputs',
+            jsDocTags: { deprecated: 'since 2.0, remove in 4.0' },
+            type: { summary: 'boolean | string', required: false },
+            defaultValue: { summary: 'false' },
+          },
+        },
+      }),
+      'ClrProgressBar'
+    );
+
+    expect(result).toMatchInlineSnapshot(`
+      "## Inputs
+
+      \`\`\`
+      export type ClrProgressBarInputs = {
+        /**
+         * Displays the danger flash.
+         *
+         * @deprecated since 2.0, remove in 4.0
+         * @default false
+         */
+        clrFlashDanger?: boolean | string;
+      }
+      \`\`\`"
+    `);
+  });
+
+  it('keeps a bare @deprecated as a doc comment of its own', () => {
+    const result = buildApiDescription(
+      argTypes({
+        legacy: {
+          name: 'legacy',
+          table: {
+            category: 'inputs',
+            jsDocTags: { deprecated: '' },
+            type: { summary: 'boolean', required: true },
+          },
+        },
+      }),
+      'ButtonComponent'
+    );
+
+    expect(result).toMatchInlineSnapshot(`
+      "## Inputs
+
+      \`\`\`
+      export type ButtonComponentInputs = {
+        /** @deprecated */
+        legacy: boolean;
+      }
+      \`\`\`"
+    `);
+  });
+
+  it('escapes a comment terminator in the description and the deprecation text', () => {
+    const result = buildApiDescription(
+      argTypes({
+        pattern: {
+          name: 'pattern',
+          description: 'Matches */ everything.',
+          table: {
+            category: 'inputs',
+            jsDocTags: { deprecated: 'use */ instead' },
+            type: { summary: 'string', required: true },
+          },
+        },
+      }),
+      'GlobComponent'
+    );
+
+    expect(result).toContain('   * Matches *\\/ everything.');
+    expect(result).toContain('   * @deprecated use *\\/ instead');
+    expect(result).toContain('  pattern: string;');
+    expect(result?.match(/\*\//g)).toHaveLength(1);
+  });
+
   it('falls back to `any` when the analyzer reported no type', () => {
     const result = buildApiDescription(
       argTypes({
@@ -235,5 +396,97 @@ describe('buildApiDescription', () => {
     );
 
     expect(result).toContain('label: any;');
+  });
+
+  it('quotes apostrophes, backslashes, and newlines as valid JSON strings', () => {
+    const result = buildApiDescription(
+      argTypes({
+        "it's": {
+          name: "it's",
+          table: { category: 'inputs', type: { summary: 'string', required: false } },
+        },
+        'back\\slash': {
+          name: 'back\\slash',
+          table: { category: 'inputs', type: { summary: 'string', required: false } },
+        },
+        'line\nbreak': {
+          name: 'line\nbreak',
+          table: { category: 'inputs', type: { summary: 'string', required: false } },
+        },
+      }),
+      'OddNamesComponent'
+    );
+
+    expect(result).toContain(`"it's"?: string;`);
+    expect(result).toContain(`"back\\\\slash"?: string;`);
+    expect(result).toContain(`"line\\nbreak"?: string;`);
+  });
+
+  it('keeps a hyphenated two-way binding name unquoted in its annotation', () => {
+    const name = 'aria-label';
+    const result = buildApiDescription(
+      argTypes({
+        [name]: {
+          name,
+          table: { category: 'inputs', type: { summary: 'string', required: false } },
+        },
+        [`${name}Change`]: {
+          name: `${name}Change`,
+          table: { category: 'outputs', type: { summary: 'EventEmitter<string>' } },
+        },
+      }),
+      'OddNamesComponent'
+    );
+
+    expect(result).toContain(`"aria-label"?: string; // two-way: [(aria-label)]`);
+  });
+
+  it('escapes a malicious two-way binding name without breaking the code fence', () => {
+    const name = 'mode\\path\n```\nspoof\u2028tail';
+    const result = buildApiDescription(
+      argTypes({
+        [name]: {
+          name,
+          table: { category: 'inputs', type: { summary: 'string', required: false } },
+        },
+        [`${name}Change`]: {
+          name: `${name}Change`,
+          table: { category: 'outputs', type: { summary: 'EventEmitter<string>' } },
+        },
+      }),
+      'OddNamesComponent'
+    );
+
+    expect(result).toContain(
+      `"mode\\\\path\\n\`\`\`\\nspoof\\u2028tail"?: string; // two-way: [(mode\\\\path\\n\`\`\`\\nspoof\\u2028tail)]`
+    );
+    expect(result).not.toContain(name);
+  });
+
+  it('quotes a field name that is not a valid TypeScript identifier', () => {
+    const result = buildApiDescription(
+      argTypes({
+        'aria-label': {
+          name: 'aria-label',
+          table: { category: 'inputs', type: { summary: 'string', required: false } },
+        },
+        'sr-title': {
+          name: 'sr-title',
+          table: { category: 'inputs', type: { summary: 'string', required: true } },
+        },
+        'row-select': {
+          name: 'row-select',
+          table: {
+            category: 'outputs',
+            type: { summary: 'EventEmitter<Event>', required: false },
+          },
+        },
+      }),
+      'DataColumnComponent'
+    );
+
+    expect(result).toContain(`"aria-label"?: string;`);
+    expect(result).toContain(`"sr-title": string;`);
+    expect(result).toContain(`"row-select": EventEmitter<Event>;`);
   });
 });

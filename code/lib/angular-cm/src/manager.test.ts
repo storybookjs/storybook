@@ -89,7 +89,7 @@ describe('AngularComponentMetaManager', () => {
     expect(names).toContain('disabled'); // @Input() inherited from ./base-toggle.ts
 
     const label = inputs.find((input) => input.name === 'label');
-    expect(label?.defaultValue).toContain('Toggle');
+    expect(label?.initializer?.text).toContain('Toggle');
   });
 
   it('exposes program source files (component and base) for directory watching', () => {
@@ -253,14 +253,14 @@ describe('AngularComponentMetaManager', () => {
     const componentPath = await makeScratchCopy('sb-acm-fresh-');
 
     const before = manager.extractComponentMeta(componentPath, { exportName: 'ToggleComponent' });
-    expect(inputsOf(before).find((input) => input.name === 'label')?.defaultValue).toContain(
+    expect(inputsOf(before).find((input) => input.name === 'label')?.initializer?.text).toContain(
       'Toggle'
     );
 
     await editFile(componentPath, "label = 'Toggle'", "label = 'Switched'");
 
     const after = manager.extractComponentMeta(componentPath, { exportName: 'ToggleComponent' });
-    expect(inputsOf(after).find((input) => input.name === 'label')?.defaultValue).toContain(
+    expect(inputsOf(after).find((input) => input.name === 'label')?.initializer?.text).toContain(
       'Switched'
     );
   });

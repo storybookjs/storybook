@@ -23,7 +23,7 @@ export function isExportStory(
   { includeStories, excludeStories }: IncludeExcludeOptions
 ) {
   return (
-    // https://babeljs.io/docs/en/babel-plugin-transform-modules-commonjs
+    // Babel's CommonJS interop adds __esModule; it is not a CSF story export.
     key !== '__esModule' &&
     (!includeStories || matches(key, includeStories)) &&
     (!excludeStories || !matches(key, excludeStories))

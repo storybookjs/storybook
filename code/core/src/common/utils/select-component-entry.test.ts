@@ -10,16 +10,12 @@ import {
   selectComponentEntriesByComponentId,
 } from './select-component-entry.ts';
 
-vi.mock('storybook/internal/node-logger', () => ({
-  logger: { debug: vi.fn(), info: vi.fn(), warn: vi.fn(), error: vi.fn() },
-  once: Object.assign(vi.fn(), {
-    verbose: vi.fn(),
-    info: vi.fn(),
-    warn: vi.fn(),
-    error: vi.fn(),
-    clear: vi.fn(),
-  }),
-}));
+vi.mock('storybook/internal/node-logger', { spy: true });
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(once.warn).mockImplementation(() => undefined);
+});
 
 function makeStoryEntry(id: string, title = 'Comp'): IndexEntry {
   return {
@@ -75,10 +71,6 @@ describe('selectComponentEntriesByComponentId', () => {
 });
 
 describe('componentId collision warning', () => {
-  beforeEach(() => {
-    vi.clearAllMocks();
-  });
-
   it('warns with the colliding files and the winner when several story files share a componentId', () => {
     const first = {
       ...makeStoryEntry('collide--a'),

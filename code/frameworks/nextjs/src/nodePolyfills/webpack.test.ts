@@ -24,3 +24,11 @@ it('adds minimal node polyfills without crypto-browserify', () => {
     zlib: expect.stringContaining('browserify-zlib'),
   });
 });
+
+it('keeps crypto disabled when caller fallbacks try to re-enable it', () => {
+  const config = configureNodePolyfills({
+    resolve: { fallback: { crypto: '/fake/crypto-browserify' } },
+  } as Configuration);
+
+  expect(config.resolve?.fallback?.crypto).toBe(false);
+});

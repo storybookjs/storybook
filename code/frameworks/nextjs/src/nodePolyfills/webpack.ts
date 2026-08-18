@@ -32,11 +32,11 @@ export const configureNodePolyfills = (baseConfig: Configuration) => {
   baseConfig.resolve = {
     ...baseConfig.resolve,
     fallback: {
+      ...baseConfig.resolve?.fallback,
       ...nodePolyfillFallback,
       assert: false,
       crypto: false,
       fs: false,
-      ...baseConfig.resolve?.fallback,
     },
   };
 

@@ -55,12 +55,20 @@ const dropped = (node: ts.Node, name: string, reason: string): void => {
   logger.debug(`[angular-cm] ${owningClassName(node)}.${name} left out of docgen: ${reason}`);
 };
 
+/** What a class is to Angular, which decides whether its statics can document anything. */
+export type DocumentedClassKind = 'component' | 'directive' | 'pipe' | 'injectable' | 'class';
+
+const ANGULAR_GENERATED_STATIC = /^(ngAcceptInputType_|ɵ)/;
+
 // Private, protected and `#` members and lifecycle hooks all stay in; filtering them is the
-// extractor's decision, not this visitor's. Statics are the exception: Angular binds and coerces
-// only instance members, so `ngAcceptInputType_*` and `ɵ*` internals would document nothing.
+// extractor's decision, not this visitor's. Statics are the exception, and only for a component or
+// directive: Angular binds and coerces instance members alone, so a static there is either an
+// `ngAcceptInputType_*`/`ɵ*` internal or a field no template can reach. A service or plain class
+// documents its own statics, and only the generated ones are noise.
 export function visitClassMembers(
   ctx: AnalyzerContext,
-  classNode: ts.ClassLikeDeclaration
+  classNode: ts.ClassLikeDeclaration,
+  kind: DocumentedClassKind
 ): ClassMembers {
   const { ts } = ctx;
   const members: ClassMembers = { inputs: [], outputs: [], properties: [], methods: [] };
@@ -72,8 +80,12 @@ export function visitClassMembers(
       continue;
     }
     if (isStatic(ctx, member)) {
-      dropped(member, member.name ? memberName(ts, member.name) : '<unnamed>', 'a static member');
-      continue;
+      const staticName = member.name ? memberName(ts, member.name) : '<unnamed>';
+      const bindsTemplateMembers = kind === 'component' || kind === 'directive';
+      if (bindsTemplateMembers || ANGULAR_GENERATED_STATIC.test(staticName)) {
+        dropped(member, staticName, 'a static member');
+        continue;
+      }
     }
     if (ts.isConstructorDeclaration(member)) {
       visitConstructorProperties(ctx, member, members);
@@ -205,7 +217,10 @@ const buildDecoratorInput = (
 // (booleanAttribute-style coercions) names nothing a control can offer, so the declared type stays.
 const transformWriteType = (ctx: AnalyzerContext, transform: ts.Expression): string | undefined => {
   const { checker, ts } = ctx;
-  const signature = checker.getTypeAtLocation(transform).getCallSignatures()[0];
+  // TypeScript infers from the last signature of an overloaded function, so that is the overload
+  // Angular's own `TransformT` comes from.
+  const signatures = checker.getTypeAtLocation(transform).getCallSignatures();
+  const signature = signatures[signatures.length - 1];
   const parameter = signature?.getParameters()[0];
   const parameterType = parameter && checker.getTypeOfSymbolAtLocation(parameter, transform);
   if (!parameterType || parameterType.flags & (ts.TypeFlags.Unknown | ts.TypeFlags.Any)) {
@@ -422,10 +437,12 @@ const visitAccessorPair = (
   const inputDecorator = decorators.find((decorator) => decorator.name === 'Input');
   if (inputDecorator) {
     const config = parseInputDecoratorConfig(ctx, inputDecorator);
+    const inputType =
+      (config.transform ? transformWriteType(ctx, config.transform) : undefined) ?? type;
     members.inputs.push(
       accessorEntry({
         name: config.alias ?? name,
-        ...(type === undefined ? {} : { type }),
+        ...(inputType === undefined ? {} : { type: inputType }),
         optional: config.required !== undefined ? !config.required : false,
         ...(config.required === undefined ? {} : { required: config.required }),
         ...apiFields,

@@ -2,7 +2,7 @@ import type * as ts from 'typescript';
 
 import type { Property } from '../types.ts';
 import type { AnalyzerContext } from './context.ts';
-import type { ClassMembers, MemberEntry } from './members.ts';
+import type { ClassMembers, DocumentedClassKind, MemberEntry } from './members.ts';
 import { applyMetadataInputsOutputs, visitClassMembers } from './members.ts';
 
 type IOBucket = 'inputs' | 'outputs';
@@ -20,10 +20,11 @@ type IOBucket = 'inputs' | 'outputs';
 export function resolveClassMembers(
   ctx: AnalyzerContext,
   classNode: ts.ClassLikeDeclaration,
+  kind: DocumentedClassKind,
   visited: Set<ts.Node> = new Set([classNode])
 ): ClassMembers {
-  const members = visitClassMembers(ctx, classNode);
-  walkBases(ctx, classNode, members, visited);
+  const members = visitClassMembers(ctx, classNode, kind);
+  walkBases(ctx, classNode, members, kind, visited);
   applyMetadataInputsOutputs(ctx, classNode, members);
   return members;
 }
@@ -32,6 +33,7 @@ function walkBases(
   ctx: AnalyzerContext,
   classNode: ts.ClassLikeDeclaration,
   members: ClassMembers,
+  kind: DocumentedClassKind,
   visited: Set<ts.Node>
 ): void {
   if (!classNode.name) {
@@ -52,7 +54,7 @@ function walkBases(
       continue;
     }
     visited.add(declaration);
-    const baseMembers = resolveClassMembers(ctx, declaration, visited);
+    const baseMembers = resolveClassMembers(ctx, declaration, kind, visited);
     substituteInherited(baseMembers, typeParameterSubstitutions(ctx, classNode, declaration));
     // A declaration file records no decorators or signal calls, so a base from one has nothing to
     // contribute to the IO buckets.

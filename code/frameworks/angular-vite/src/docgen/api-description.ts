@@ -30,21 +30,29 @@ const readMember = (name: string, argType: StrictInputType): Member => {
   };
 };
 
+const commentLines = (text: string): string[] =>
+  text
+    .replace(/\*\//g, '*\\/')
+    .split('\n')
+    .map((line) => line.trimEnd());
+
 // The default belongs in the doc comment rather than after an `=`: the analyzer unquotes string
 // defaults for the props table, so `label: string = Click me` would be the only shape available
 // inline, and re-quoting cannot tell a string literal from an identifier the source referenced.
 const docComment = (member: Member): string[] => {
   const description = member.description?.trim();
-  const body = description ? description.split('\n').map((line) => line.trimEnd()) : [];
+  const body = description ? commentLines(description) : [];
 
   const tags: string[] = [];
   if (member.deprecated !== undefined) {
     const deprecated = member.deprecated.trim();
-    tags.push(...(deprecated ? `@deprecated ${deprecated}` : '@deprecated').split('\n'));
+    tags.push(...commentLines(deprecated ? `@deprecated ${deprecated}` : '@deprecated'));
   }
   if (member.defaultValue !== undefined) {
     // The analyzer unquotes string defaults, so an empty-string default arrives as ''.
-    tags.push(`@default ${member.defaultValue === '' ? "''" : member.defaultValue}`);
+    tags.push(
+      ...commentLines(`@default ${member.defaultValue === '' ? "''" : member.defaultValue}`)
+    );
   }
   if (tags.length > 0) {
     if (body.length > 0) {

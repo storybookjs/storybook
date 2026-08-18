@@ -253,6 +253,57 @@ describe('buildApiDescription', () => {
     `);
   });
 
+  it('escapes a comment terminator inside a kept string default', () => {
+    const result = buildApiDescription(
+      argTypes({
+        pattern: {
+          name: 'pattern',
+          table: {
+            category: 'inputs',
+            type: { summary: 'string', required: false },
+            defaultValue: { summary: "'**/*.ts'" },
+          },
+        },
+      }),
+      'GlobComponent'
+    );
+
+    expect(result).toContain(`  /** @default '**\\/*.ts' */`);
+    expect(result).toContain('  pattern?: string;');
+    expect(result?.match(/\*\//g)).toHaveLength(1);
+  });
+
+  it('keeps the doc-comment margin on every line of a multi-line default', () => {
+    const result = buildApiDescription(
+      argTypes({
+        config: {
+          name: 'config',
+          table: {
+            category: 'inputs',
+            type: { summary: 'Config', required: false },
+            defaultValue: { summary: '{\n  depth: 1,\n}' },
+          },
+        },
+      }),
+      'TreeComponent'
+    );
+
+    expect(result).toMatchInlineSnapshot(`
+      "## Inputs
+
+      \`\`\`
+      export type TreeComponentInputs = {
+        /**
+         * @default {
+         *   depth: 1,
+         * }
+         */
+        config?: Config;
+      }
+      \`\`\`"
+    `);
+  });
+
   it('renders @deprecated from the member jsDocTags into the doc comment', () => {
     const result = buildApiDescription(
       argTypes({
@@ -312,6 +363,28 @@ describe('buildApiDescription', () => {
       }
       \`\`\`"
     `);
+  });
+
+  it('escapes a comment terminator in the description and the deprecation text', () => {
+    const result = buildApiDescription(
+      argTypes({
+        pattern: {
+          name: 'pattern',
+          description: 'Matches */ everything.',
+          table: {
+            category: 'inputs',
+            jsDocTags: { deprecated: 'use */ instead' },
+            type: { summary: 'string', required: true },
+          },
+        },
+      }),
+      'GlobComponent'
+    );
+
+    expect(result).toContain('   * Matches *\\/ everything.');
+    expect(result).toContain('   * @deprecated use *\\/ instead');
+    expect(result).toContain('  pattern: string;');
+    expect(result?.match(/\*\//g)).toHaveLength(1);
   });
 
   it('falls back to `any` when the analyzer reported no type', () => {

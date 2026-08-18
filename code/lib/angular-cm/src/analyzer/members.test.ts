@@ -524,6 +524,45 @@ describe('input transforms', () => {
 
     expect(byName(component.inputsClass, 'active').type).toBe('boolean');
   });
+
+  it('reads an overloaded transform from its last signature, the one Angular infers from', () => {
+    const component = componentIn(`
+      import { Component, Input, input } from '@angular/core';
+
+      export function coerceSize(value: string): number;
+      export function coerceSize(value: number): number;
+      export function coerceSize(value: string | number): number { return Number(value); }
+
+      @Component({ selector: 'sb-size', template: '' })
+      export class SizeComponent {
+        signalWidth = input(0, { transform: coerceSize });
+        @Input({ transform: coerceSize }) decoratorWidth = 0;
+      }
+    `);
+
+    expect(byName(component.inputsClass, 'decoratorWidth').type).toBe(
+      byName(component.inputsClass, 'signalWidth').type
+    );
+    expect(byName(component.inputsClass, 'decoratorWidth').type).toBe('number');
+  });
+
+  it('documents the write type of a transform on a setter-declared @Input', () => {
+    const component = componentIn(`
+      import { Component, Input } from '@angular/core';
+
+      @Component({ selector: 'sb-width', template: '' })
+      export class WidthComponent {
+        @Input({ transform: (value: string | number) => Number(value) })
+        set width(value: number) {
+          this._width = value;
+        }
+
+        private _width = 0;
+      }
+    `);
+
+    expect(byName(component.inputsClass, 'width').type).toBe('string | number');
+  });
 });
 
 describe('the miscellaneous type index', () => {
@@ -1829,6 +1868,26 @@ describe('static members', () => {
     expect(names(component.inputsClass)).toEqual(['date']);
     expect(names(component.propertiesClass)).toEqual([]);
     expect(names(component.methodsClass)).toEqual([]);
+  });
+
+  it('keeps a service’s own statics, dropping only the ones Angular generates', () => {
+    const file = analyze(`
+      import { Injectable } from '@angular/core';
+
+      @Injectable()
+      export class DataService {
+        static VERSION = '1.0.0';
+
+        static ɵfac = () => new DataService();
+
+        static create(): DataService {
+          return new DataService();
+        }
+      }
+    `);
+
+    expect(names(file.injectables[0].properties)).toEqual(['VERSION']);
+    expect(names(file.injectables[0].methods)).toEqual(['create']);
   });
 });
 

@@ -5,6 +5,7 @@ import type * as tsModule from 'typescript';
 import type { Class, Directive, Injectable, Pipe, Property } from '../types.ts';
 import type { AngularFileMeta } from '../types.ts';
 import type { AnalyzerContext } from './context.ts';
+import type { DocumentedClassKind } from './members.ts';
 import { collectClassMembers } from './class-members.ts';
 import { decoratorObjectArg, getDecorators, objectProperty, stringOption } from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
@@ -45,7 +46,7 @@ export function analyzeSourceFile(
     }
     const name = statement.name.text;
     const file = sourceFile.fileName;
-    const members = collectClassMembers(ctx, statement);
+    const members = collectClassMembers(ctx, statement, kind);
     const common = {
       file,
       ...getJsDocDescription(ts, statement),
@@ -111,7 +112,7 @@ export function analyzeSourceFile(
   return meta;
 }
 
-type ClassKind = 'component' | 'directive' | 'pipe' | 'injectable' | 'ngmodule' | 'class';
+type ClassKind = DocumentedClassKind | 'ngmodule';
 
 const KNOWN_DECORATORS: Record<string, ClassKind> = {
   Component: 'component',

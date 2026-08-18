@@ -171,9 +171,13 @@ describe('compareArgTypes', () => {
     for (const summary of [
       'Math.max(1, 3)',
       'signal(false)',
+      'injectFoo()',
       '`id-${next++}`',
       'new Map()',
       'this.config.side',
+      'this._x',
+      '() => []',
+      '{\n  retries: 3,\n}',
     ]) {
       const baseline = argTypes({
         count: { name: 'count', table: { defaultValue: { summary } } },
@@ -184,6 +188,28 @@ describe('compareArgTypes', () => {
         expect.objectContaining({ arg: 'count', kind: 'lost-default' }),
       ]);
     }
+  });
+
+  it('flags lost legacy defaults whose text is a genuine string, not initializer source', () => {
+    // Legacy compodoc records string defaults unquoted, so a parenthesis or a leading `new`/`this`
+    // word inside the text does not make it source.
+    for (const summary of ['Close (Esc)', 'new arrivals', 'this is a hint']) {
+      const baseline = argTypes({
+        label: { name: 'label', table: { defaultValue: { summary } } },
+      });
+      const candidate = argTypes({ label: { name: 'label' } });
+      expect(compareArgTypes(baseline, candidate, { legacyBaseline: true })).toEqual([
+        expect.objectContaining({ arg: 'label', kind: 'lost-default' }),
+      ]);
+    }
+  });
+
+  it('waives the residual case: an unquoted string default that is itself call-shaped, like the CSS value translateX(10px)', () => {
+    const baseline = argTypes({
+      transform: { name: 'transform', table: { defaultValue: { summary: 'translateX(10px)' } } },
+    });
+    const candidate = argTypes({ transform: { name: 'transform' } });
+    expect(compareArgTypes(baseline, candidate, { legacyBaseline: true })).toEqual([]);
   });
 
   it('flags dropped raw false, null, and NaN defaults outside legacyBaseline', () => {

@@ -76,6 +76,16 @@ describe('vue3 api description from real vue-component-meta output', () => {
         /** Whether the box is checked, controlled via the named v-model. */
         checked?: boolean; // v-model:checked="..."
       }
+      \`\`\`
+
+      ## Events
+
+      \`\`\`
+      export type VModelInputEvents = {
+        "update:checked": [value: boolean | undefined];
+        /** Emitted when the text value changes. */
+        "update:modelValue": [value: string];
+      }
       \`\`\`"
     `);
   });

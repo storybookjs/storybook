@@ -237,7 +237,9 @@ const applyReplacements = (markup: string, replacements: readonly Replacement[])
   let position = 0;
   let materialized = '';
   for (const replacement of [...replacements].sort((left, right) => left.start - right.start)) {
-    materialized += markup.slice(position, replacement.start) + replacement.text;
+    const precedingMarkup = markup.slice(position, replacement.start);
+    materialized +=
+      (replacement.text === '' ? precedingMarkup.trimEnd() : precedingMarkup) + replacement.text;
     position = replacement.end;
   }
   return materialized + markup.slice(position);

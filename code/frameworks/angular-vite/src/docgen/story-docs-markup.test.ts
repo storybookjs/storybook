@@ -151,7 +151,7 @@ describe('userTemplate', () => {
     ).toMatchInlineSnapshot(`
       {
         "kind": "literal",
-        "markup": "<sb-button  (pressed)="manual($event)"></sb-button>",
+        "markup": "<sb-button (pressed)="manual($event)"></sb-button>",
         "representedArgs": [
           "pressed",
         ],

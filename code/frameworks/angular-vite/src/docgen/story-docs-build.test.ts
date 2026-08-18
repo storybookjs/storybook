@@ -785,7 +785,7 @@ describe('buildStoryDocsPayload', () => {
         @Component({
           selector: 'app-demo',
           imports: [ButtonComponent],
-          template: \`<sb-button ></sb-button>\`,
+          template: \`<sb-button></sb-button>\`,
         })
         export class DemoComponent {}",
           "warning": undefined,
@@ -814,7 +814,7 @@ describe('buildStoryDocsPayload', () => {
         @Component({
           selector: 'app-demo',
           imports: [ButtonComponent],
-          template: \`<sb-button ></sb-button>\`,
+          template: \`<sb-button></sb-button>\`,
         })
         export class DemoComponent {}",
           "warning": "Incomplete snippet: \`onSelect\` could not be bound, since ButtonComponent declares no such output.",

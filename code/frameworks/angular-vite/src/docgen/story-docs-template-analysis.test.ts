@@ -211,7 +211,7 @@ describe('analyzeStoryTemplate', () => {
           "pressed",
         ],
         "kind": "resolved",
-        "markup": "<sb-button title="> (pressed)="  (pressed)="manual($event)"></sb-button>",
+        "markup": "<sb-button title="> (pressed)=" (pressed)="manual($event)"></sb-button>",
         "referencedNames": [
           "manual",
         ],
@@ -236,7 +236,7 @@ describe('analyzeStoryTemplate', () => {
           "valueChange",
         ],
         "kind": "resolved",
-        "markup": "<input [(value)]="value" >",
+        "markup": "<input [(value)]="value">",
         "referencedNames": [
           "value",
         ],

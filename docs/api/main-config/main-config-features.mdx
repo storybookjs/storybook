@@ -210,17 +210,42 @@ Unlike the current implementation, this method reads the actual stories source f
 
 Type: `boolean`
 
-Default: `false`
+Default: `false`, except on [`@storybook/angular-vite`](../../get-started/frameworks/angular-vite.mdx#component-documentation), which turns it on from its own configuration.
 
-Enable server-side docgen for React projects. Storybook extracts component metadata on the dev server using the TypeScript Language Service (via React Component Meta) instead of injecting docgen into the preview bundle. This provides faster startup, more accurate [Controls](../../essentials/controls.mdx) and ArgTypes tables in [autodocs](../../writing-docs/autodocs.mdx), and improved static code snippets in docs and the Code panel. [Manifests](../../ai/manifests.mdx) and the [MCP server](../../ai/mcp/overview.mdx) use an optimized, ref-based format that loads faster for AI agents.
+Enable server-side docgen. Storybook extracts component metadata on the dev server using the TypeScript Language Service instead of injecting docgen into the preview bundle. This provides faster startup, more accurate [Controls](../../essentials/controls.mdx) and ArgTypes tables in [autodocs](../../writing-docs/autodocs.mdx), and improved static code snippets in docs and the Code panel. [Manifests](../../ai/manifests.mdx) and the [MCP server](../../ai/mcp/overview.mdx) use an optimized, ref-based format that loads faster for AI agents.
 
 When enabled, you do not need [`experimentalCodeExamples`](#experimentalcodeexamples) because snippet generation is handled by the server-side story-docs service.
 
 Snippets are static: they won't update if you change values in the Controls table.
 
-This feature is currently only supported for React projects. We [welcome feedback](https://github.com/storybookjs/storybook/discussions/35333) on the RFC.
+Support is rolling out per framework, and we [welcome feedback](https://github.com/storybookjs/storybook/discussions/35333) on the RFC. React projects opt in with the configuration below.
 
 <CodeSnippets path="main-config-features-experimental-docgen-server.md" />
+
+<If renderer="angular">
+
+`@storybook/angular-vite` is the exception to the default above: it enables this feature itself, so Angular metadata is read from your TypeScript sources and [Compodoc](https://compodoc.app/) never runs. The Webpack-based `@storybook/angular` does not read this feature and always uses Compodoc.
+
+To opt out and go back to Compodoc on `@storybook/angular-vite`:
+
+```ts title=".storybook/main.ts"
+import type { StorybookConfig } from '@storybook/angular-vite';
+
+const config: StorybookConfig = {
+  framework: '@storybook/angular-vite',
+  features: {
+    experimentalDocgenServer: false,
+  },
+};
+
+export default config;
+```
+
+That opt-out is a migration aid. `@storybook/angular-vite` is planned to be marked stable in Storybook 11, and setting this feature to `false` there is planned to be deprecated in the same release and removed in Storybook 12.
+
+See [Known limitations](../../get-started/frameworks/angular-vite.mdx#known-limitations) for what the default path does not yet do.
+
+</If>
 
 ## `experimentalReview`
 

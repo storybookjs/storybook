@@ -1255,12 +1255,14 @@ function extractPropItem(
   checker: ts.TypeChecker,
   prop: ts.Symbol,
   contextNode: ts.Node,
-  defaultsMap?: Map<string, string>
+  defaultsMap?: Map<string, string>,
+  typeOverride?: ts.Type
 ): PropItem {
   const isOptional = !!(prop.flags & typescript.SymbolFlags.Optional);
   const isRequired = !isOptional;
 
-  const propType = checker.getTypeOfSymbolAtLocation(prop, contextNode);
+  // Union props keep one member's metadata but need the merged type.
+  const propType = typeOverride ?? checker.getTypeOfSymbolAtLocation(prop, contextNode);
   const type = serializeType(typescript, checker, propType, isRequired);
 
   const description = typescript.displayPartsToString(prop.getDocumentationComment(checker));
@@ -1530,7 +1532,20 @@ export function serializeComponentDoc(
     if (excluded.has(prop.getName())) {
       continue;
     }
-    const item = extractPropItem(typescript, checker, prop, contextNode, defaultsMap);
+    const unionProp = isUnionType(propsType)
+      ? checker.getPropertyOfType(propsType, prop.getName())
+      : undefined;
+    const unionPropType = unionProp
+      ? checker.getTypeOfSymbolAtLocation(unionProp, contextNode)
+      : undefined;
+    const item = extractPropItem(
+      typescript,
+      checker,
+      prop,
+      contextNode,
+      defaultsMap,
+      unionPropType
+    );
     if (unionForceOptional?.has(prop.getName())) {
       item.required = false;
     }

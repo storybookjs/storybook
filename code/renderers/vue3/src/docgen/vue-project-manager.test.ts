@@ -67,6 +67,8 @@ describe('VueComponentMetaManager', () => {
       value: ['calm', 'loud'],
       required: false,
     });
+    expect(payload?.renderer).toBe('vue3');
+    expect(payload?.apiDescription).toContain('## Props');
     // And the payload still satisfies the worker transport.
     expect(() => structuredClone(payload)).not.toThrow();
   });

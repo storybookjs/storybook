@@ -1,8 +1,9 @@
 // Reads the markup a story supplies itself - `template`, a `render` that returns one, or the CSF2
-// function form - with runtime object semantics, so a snippet shows the story as written.
-import { generate, type NodePath, types as t } from 'storybook/internal/babel';
-import type { CsfFile } from 'storybook/internal/csf-tools';
-import { unwrapExpression } from 'storybook/internal/csf-tools';
+// function form - so a snippet shows the story as written. Which members the story and its meta hold
+// is the shared CSF pass in `story-shape`, spreads and names already followed.
+import { type NodePath, types as t } from 'storybook/internal/babel';
+import type { CsfFile, ResolvedMembers } from 'storybook/internal/csf-tools';
+import { sourceOf, unwrapExpression } from 'storybook/internal/csf-tools';
 
 import { formatPropInTemplate } from '../template-grammar.ts';
 
@@ -10,20 +11,17 @@ import { formatPropInTemplate } from '../template-grammar.ts';
 export interface StoryShape {
   csf: CsfFile;
   exportName: string;
-  annotations: Record<string, t.Node>;
+  /** The story's own config members, spreads and names followed. */
+  members: ResolvedMembers;
+  /** The meta's config members, spreads and names followed. */
+  metaMembers: ResolvedMembers;
   /** Meta args merged under story args, keyed by arg name. */
   args: Record<string, t.Node>;
   /** Source text of everything hiding args from this pass; empty when the merged args are known. */
   unresolvedArgs: string[];
 }
 
-/** Source text of a node, for naming an expression this pass could not read. */
-export const sourceOf = (node: t.Node): string =>
-  generate(node, { concise: true, comments: false }).code;
-
-// A spread at the config level carries args as invisibly as one inside `args`.
-export const unresolvableConfigMembers = (config: t.ObjectExpression | undefined): string[] =>
-  (config?.properties ?? []).filter(isOpaqueMember).map(sourceOf);
+export { sourceOf };
 
 /** Bindings the generated snippet would carry, which is also what `argsToTemplate` expands to. */
 export interface Bindings {
@@ -102,7 +100,7 @@ export const userTemplate = (
   shape: StoryShape,
   bindings: Bindings | undefined
 ): TemplateResult | undefined => {
-  const own = shapeTemplate(storyConfigObject(shape), shape.annotations, shape, bindings);
+  const own = shapeTemplate(shape.members, shape, bindings);
   if (own) {
     return own;
   }
@@ -125,17 +123,16 @@ export const userTemplate = (
     }
   }
 
-  return shapeTemplate(metaConfigObject(shape.csf), shape.csf._metaAnnotations, shape, bindings);
+  return shapeTemplate(shape.metaMembers, shape, bindings);
 };
 
 /** The template one config level declares, directly or through a `render` that returns one. */
 const shapeTemplate = (
-  config: t.ObjectExpression | undefined,
-  annotations: Record<string, t.Node>,
+  members: ResolvedMembers,
   shape: StoryShape,
   bindings: Bindings | undefined
 ): TemplateResult | undefined => {
-  const template = resolveAnnotation(config, annotations, 'template');
+  const template = resolvedMember(members, 'template');
   if (template.kind === 'unresolvable') {
     return { kind: 'unresolvable', ...(template.node ? { source: sourceOf(template.node) } : {}) };
   }
@@ -146,7 +143,7 @@ const shapeTemplate = (
     }
   }
 
-  const render = resolveAnnotation(config, annotations, 'render');
+  const render = resolvedMember(members, 'render');
   if (render.kind === 'missing') {
     return undefined;
   }
@@ -331,60 +328,51 @@ type AnnotationResolution =
   | { kind: 'unresolvable'; node?: t.Node };
 
 /**
- * A named property of a config object, with runtime object semantics: the last occurrence wins, a
- * spread written after it (or standing in for a missing one) makes the value unknowable, and a
- * getter/setter/generator is not a value at all. Falls back to the parser's annotation record when
- * the config is not a plain object literal (CSF2 functions, re-exports).
+ * A named member of a resolved config record.
+ *
+ * The record already applied every spread it could read in source order, so a present member is the
+ * value the story really ends up with - unless the record marks it shadowed, meaning something this
+ * pass could not read runs after the write and may replace it. A member the record does not have is
+ * only knowably absent when the record is complete.
  */
-const resolveAnnotation = (
-  config: t.ObjectExpression | undefined,
-  annotations: Record<string, t.Node>,
-  key: string
-): AnnotationResolution => {
-  const annotated = annotations[key];
-  if (!config) {
-    return annotated === undefined ? { kind: 'missing' } : { kind: 'value', node: annotated };
+export const resolvedMember = (members: ResolvedMembers, key: string): AnnotationResolution => {
+  const node = members.properties[key];
+  if (node !== undefined) {
+    return members.shadowed.includes(key)
+      ? { kind: 'unresolvable', node }
+      : { kind: 'value', node };
   }
-  const own = resolvedProperty(config, key);
-  // An annotation node the literal does not contain is a `Story.render = ...` member assignment,
-  // which runs after the declaration and wins over everything in the literal.
-  if (annotated !== undefined && annotated !== (own.kind === 'value' ? own.node : undefined)) {
-    return { kind: 'value', node: annotated };
-  }
-  return own;
+  return members.unresolved.length > 0 ? { kind: 'unresolvable' } : { kind: 'missing' };
 };
 
-// A spread or a dynamically-keyed member can supply or shadow any property at runtime.
-const isOpaqueMember = (property: t.ObjectExpression['properties'][number]): boolean =>
-  t.isSpreadElement(property) ||
-  ((t.isObjectProperty(property) || t.isObjectMethod(property)) &&
-    keyNameOf(property) === undefined);
-
+/** A named property of an object literal, for options a call site writes out inline. */
 export const resolvedProperty = (object: t.ObjectExpression, key: string): AnnotationResolution => {
-  let found: { index: number; property: t.ObjectMethod | t.ObjectProperty } | undefined;
-  object.properties.forEach((property, index) => {
-    if (
-      (t.isObjectProperty(property) || t.isObjectMethod(property)) &&
-      keyNameOf(property) === key
-    ) {
-      found = { index, property };
+  let found: t.ObjectMethod | t.ObjectProperty | undefined;
+  let opaqueAfter = false;
+  object.properties.forEach((property) => {
+    const isMember = t.isObjectProperty(property) || t.isObjectMethod(property);
+    if (isMember && keyNameOf(property) === key) {
+      found = property;
+      opaqueAfter = false;
+      return;
+    }
+    if (t.isSpreadElement(property) || (isMember && keyNameOf(property) === undefined)) {
+      opaqueAfter = true;
     }
   });
 
   if (!found) {
-    return object.properties.some(isOpaqueMember) ? { kind: 'unresolvable' } : { kind: 'missing' };
+    return opaqueAfter ? { kind: 'unresolvable' } : { kind: 'missing' };
   }
-  if (
-    object.properties.some((property, index) => index > found!.index && isOpaqueMember(property))
-  ) {
+  if (opaqueAfter) {
     return { kind: 'unresolvable' };
   }
-  if (t.isObjectMethod(found.property)) {
-    return found.property.kind === 'method' && !found.property.generator
-      ? { kind: 'value', node: found.property }
-      : { kind: 'unresolvable', node: found.property };
+  if (t.isObjectMethod(found)) {
+    return found.kind === 'method' && !found.generator
+      ? { kind: 'value', node: found }
+      : { kind: 'unresolvable', node: found };
   }
-  return { kind: 'value', node: found.property.value };
+  return { kind: 'value', node: found.value };
 };
 
 // A string-literal computed key has the exact runtime semantics of a plain string key.

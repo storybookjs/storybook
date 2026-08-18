@@ -81,7 +81,7 @@ class DocgenWorker implements DocgenWorkerClient {
     // Spawn is lazy, so an extract is always imminent: stay referenced until `ready` settles.
     this.ready.finally(() => this.keepProcessAliveWhileBusy()).catch(() => undefined);
 
-    this.post({ type: 'init', descriptors });
+    this.post({ type: 'init', descriptors, logLevel: logger.getLogLevel() });
   }
 
   async extract(entry: IndexEntry): Promise<DocgenPayload | undefined> {

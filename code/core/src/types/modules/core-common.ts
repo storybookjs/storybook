@@ -455,6 +455,8 @@ export interface ComponentManifest {
     snippet?: string | undefined;
     description?: string | undefined;
     summary?: string | undefined;
+    /** Why the snippet is an incomplete example; see `StoryDoc.warning`. */
+    warning?: string | undefined;
     error?: { name: string; message: string };
   }[];
   jsDocTags: Record<string, string[]>;

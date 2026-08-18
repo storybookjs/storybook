@@ -1,6 +1,11 @@
 import { type NodePath, type types as t } from 'storybook/internal/babel';
 
-import { keyOf, resolveIdentifierInit } from './utils.ts';
+import {
+  type ReferenceContext,
+  type ResolvedMembers,
+  resolveObjectMembers,
+} from './resolve-members.ts';
+import { keyOf, pathForNode, resolveIdentifierInit } from './utils.ts';
 
 /** A function a story or meta supplies through `render`. */
 export type RenderFunctionPath = NodePath<
@@ -39,12 +44,17 @@ const isRenderFunction = (path: NodePath<t.Node>): path is RenderFunctionPath =>
  * `storyDeclaration` anchors the identifier lookup to the module the story lives in, so a helper
  * declared beside the story resolves while an imported one reports `unresolved`.
  *
+ * `references` lets a spread be read rather than assumed: with it, `{ ...Base }` reports whichever
+ * `render` `Base` supplies, or `missing` when it supplies none, instead of the `unresolved` a pass
+ * that cannot see through the spread has to report.
+ *
  * Throws when `render` is present but is neither a function nor an identifier, because that is a
  * story-file mistake rather than something a static pass merely could not follow.
  */
 export function resolveRenderFunction(
   config: NodePath<t.ObjectExpression> | undefined,
-  storyDeclaration: NodePath<t.Node>
+  storyDeclaration: NodePath<t.Node>,
+  references?: ReferenceContext
 ): RenderResolution {
   const properties = config?.get('properties') ?? [];
 
@@ -61,20 +71,71 @@ export function resolveRenderFunction(
     }
   }
 
+  const throughSpreads = () =>
+    config && references
+      ? renderFromMembers(
+          resolveObjectMembers(config.node, references),
+          references,
+          storyDeclaration
+        )
+      : { kind: 'unresolved' as const };
+
   if (renderIndex === -1) {
     return properties.some((property) => property.isSpreadElement())
-      ? { kind: 'unresolved' }
+      ? throughSpreads()
       : { kind: 'missing' };
   }
 
   const resolved = resolveRenderProperty(properties[renderIndex], storyDeclaration);
   if (properties.some((property, index) => index > renderIndex && property.isSpreadElement())) {
+    const read = throughSpreads();
+    if (read.kind !== 'unresolved') {
+      return read;
+    }
     return resolved.kind === 'resolved'
       ? { kind: 'unresolved', shadowedRender: resolved.path }
       : { kind: 'unresolved' };
   }
 
   return resolved;
+}
+
+/**
+ * The `render` a config's resolved members hold, once its spreads have been followed.
+ *
+ * A member the story file itself does not contain is `unresolved`: a function another module
+ * declares reads as a name that means nothing in a snippet, whichever way it is printed.
+ */
+function renderFromMembers(
+  members: ResolvedMembers,
+  references: ReferenceContext,
+  storyDeclaration: NodePath<t.Node>
+): RenderResolution {
+  if (members.unresolved.length > 0) {
+    return { kind: 'unresolved' };
+  }
+
+  const node = members.properties.render;
+  if (node === undefined) {
+    return { kind: 'missing' };
+  }
+
+  const path = pathForNode(references.program, node);
+  if (!path) {
+    return { kind: 'unresolved' };
+  }
+  if (path.isObjectMethod()) {
+    return path.node.kind === 'method' && !path.node.generator
+      ? { kind: 'resolved', path }
+      : { kind: 'unresolved' };
+  }
+  if (path.isIdentifier()) {
+    const resolved = resolveIdentifierInit(storyDeclaration, path);
+    return resolved && isRenderFunction(resolved)
+      ? { kind: 'resolved', path: resolved }
+      : { kind: 'unresolved' };
+  }
+  return isRenderFunction(path) ? { kind: 'resolved', path } : { kind: 'unresolved' };
 }
 
 function resolveRenderProperty(

@@ -122,10 +122,62 @@ const typeParameterSubstitutions = (
 // rewritten when a type parameter happens to be named `T`.
 const IDENTIFIER_OR_STRING = /"(?:[^"\\]|\\.)*"|'(?:[^'\\]|\\.)*'|[A-Za-z_$][\w$]*/g;
 
-const substituteIdentifiers = (text: string, substitutions: Map<string, string>): string =>
-  text.replace(IDENTIFIER_OR_STRING, (token) =>
-    token.startsWith('"') || token.startsWith("'") ? token : (substitutions.get(token) ?? token)
+// A `<...>` group directly before `(` is a function type's own binder, whose parameters shadow the
+// class's throughout the rendered type.
+const FUNCTION_BINDER = /<([^<>]*)>\s*\(/g;
+
+const binderDeclaredNames = (text: string): string[] =>
+  [...text.matchAll(FUNCTION_BINDER)].flatMap((match) =>
+    match[1].split(',').flatMap((parameter) => {
+      const name = /^\s*(?:const\s+)?([A-Za-z_$][\w$]*)/.exec(parameter);
+      return name ? [name[1]] : [];
+    })
   );
+
+const withoutShadowed = (
+  substitutions: Map<string, string>,
+  shadowed: string[]
+): Map<string, string> => {
+  if (shadowed.length === 0) {
+    return substitutions;
+  }
+  const scoped = new Map(substitutions);
+  for (const name of shadowed) {
+    scoped.delete(name);
+  }
+  return scoped;
+};
+
+// `{ value: string }` keys and `(value: T)` parameter names spell names, not types, so a token in
+// that position stays even when it matches a type parameter.
+const isNamePosition = (text: string, start: number, end: number): boolean => {
+  const before = text.slice(0, start).trimEnd();
+  const previous = before[before.length - 1];
+  if (previous !== '{' && previous !== ';' && previous !== ',' && previous !== '(') {
+    return false;
+  }
+  const after = text.slice(end).trimStart();
+  return (
+    after.startsWith(':') || (after.startsWith('?') && after.slice(1).trimStart().startsWith(':'))
+  );
+};
+
+const substituteIdentifiers = (text: string, substitutions: Map<string, string>): string => {
+  const scoped = withoutShadowed(substitutions, binderDeclaredNames(text));
+  if (scoped.size === 0) {
+    return text;
+  }
+  return text.replace(IDENTIFIER_OR_STRING, (token, offset: number) => {
+    if (token.startsWith('"') || token.startsWith("'")) {
+      return token;
+    }
+    const replacement = scoped.get(token);
+    if (replacement === undefined || isNamePosition(text, offset, offset + token.length)) {
+      return token;
+    }
+    return replacement;
+  });
+};
 
 const substituteInherited = (members: ClassMembers, substitutions: Map<string, string>): void => {
   if (substitutions.size === 0) {
@@ -140,10 +192,14 @@ const substituteInherited = (members: ClassMembers, substitutions: Map<string, s
       property.type = substituteIdentifiers(property.type, substitutions);
     }
   }
-  for (const { value: method } of members.methods) {
-    method.returnType = substituteIdentifiers(method.returnType, substitutions);
+  for (const { value: method, typeParameters } of members.methods) {
+    const scoped = withoutShadowed(substitutions, typeParameters ?? []);
+    if (scoped.size === 0) {
+      continue;
+    }
+    method.returnType = substituteIdentifiers(method.returnType, scoped);
     for (const argument of method.args) {
-      argument.type = substituteIdentifiers(argument.type, substitutions);
+      argument.type = substituteIdentifiers(argument.type, scoped);
     }
   }
 };

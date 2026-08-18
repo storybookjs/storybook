@@ -434,6 +434,32 @@ describe('input transforms', () => {
     expect(byName(component.inputsClass, 'disabled').type).toBe('boolean');
   });
 
+  it('falls back to the explicit read type argument when the write type argument is unknown', () => {
+    const component = componentIn(`
+      import { Component, booleanAttribute, input } from '@angular/core';
+
+      @Component({ selector: 'sb-toggle', template: '' })
+      export class ToggleComponent {
+        disabled = input<boolean, unknown>(false, { transform: booleanAttribute });
+      }
+    `);
+
+    expect(byName(component.inputsClass, 'disabled').type).toBe('boolean');
+  });
+
+  it('falls back to the explicit read type argument when the write type argument is any', () => {
+    const component = componentIn(`
+      import { Component, input } from '@angular/core';
+
+      @Component({ selector: 'sb-toggle', template: '' })
+      export class ToggleComponent {
+        disabled = input<boolean, any>(false, { transform: (value: any) => !!value });
+      }
+    `);
+
+    expect(byName(component.inputsClass, 'disabled').type).toBe('boolean');
+  });
+
   it('documents the parameter type of an @Input transform', () => {
     const meta = analyze(`
       import { Component, Input } from '@angular/core';
@@ -791,7 +817,7 @@ describe('the miscellaneous type index', () => {
     expect(argTypes.tone.type).toEqual({ name: 'enum', value: ['info', 'warn', 'error'] });
   });
 
-  it('keeps a union of primitives out of the enum path', () => {
+  it('resolves a primitive-union alias to a primitive control, not an enum', () => {
     const meta = analyze(
       `
       import { Component, Input } from '@angular/core';
@@ -813,7 +839,7 @@ describe('the miscellaneous type index', () => {
       metadataJson: meta,
       ...ANALYZER_EXTRACT_OPTIONS,
     });
-    expect(argTypes.amount.type).toEqual({ name: 'other', value: 'empty-enum' });
+    expect(argTypes.amount.type).toEqual({ name: 'number' });
   });
 
   it('strips the import qualifier so a signal input’s alias matches its indexed entry', () => {
@@ -1296,6 +1322,68 @@ describe('inheritance', () => {
     const component = soleComponent(meta);
 
     expect(byName(component.inputsClass, 'fallback').type).toBe('string');
+  });
+
+  it('does not rewrite a method’s own type parameter that shadows the class’s', () => {
+    const meta = analyze(`
+      import { Component } from '@angular/core';
+
+      export class Entry { id = 0; }
+
+      export abstract class GridBase<T> {
+        pluck<T>(picker: (row: T) => T): T[] { return []; }
+
+        first(): T | undefined { return undefined; }
+      }
+
+      @Component({ selector: 'sb-grid', template: '' })
+      export class GridComponent extends GridBase<Entry> {}
+    `);
+    const component = soleComponent(meta);
+
+    // pluck's own <T> shadows the class parameter, so its caller-chosen T stays bare.
+    expect(byName(component.methodsClass, 'pluck')).toMatchObject({
+      args: [{ name: 'picker', type: '(row: T) => T' }],
+      returnType: 'T[]',
+    });
+    expect(byName(component.methodsClass, 'first').returnType).toBe('Entry | undefined');
+  });
+
+  it('does not rewrite a function type’s own type parameter that shadows the class’s', () => {
+    const meta = analyze(`
+      import { Component, Input } from '@angular/core';
+
+      export class Entry { id = 0; }
+
+      export abstract class ComparerBase<T> {
+        @Input() compare!: <T>(a: T, b: T) => number;
+
+        @Input() pick!: (row: T) => T;
+      }
+
+      @Component({ selector: 'sb-comparer', template: '' })
+      export class ComparerComponent extends ComparerBase<Entry> {}
+    `);
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'compare').type).toBe('<T>(a: T, b: T) => number');
+    expect(byName(component.inputsClass, 'pick').type).toBe('(row: Entry) => Entry');
+  });
+
+  it('does not rewrite a type-literal property key that spells a type parameter’s name', () => {
+    const meta = analyze(`
+      import { Component, Input } from '@angular/core';
+
+      export abstract class ConfBase<value> {
+        @Input() config!: { value: string; payload: value };
+      }
+
+      @Component({ selector: 'sb-conf', template: '' })
+      export class ConfComponent extends ConfBase<number> {}
+    `);
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'config').type).toBe('{ value: string; payload: number }');
   });
 
   it('does not rewrite a string literal that spells a type parameter’s name', () => {

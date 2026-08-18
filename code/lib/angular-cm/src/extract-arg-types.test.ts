@@ -66,6 +66,72 @@ describe('function-typed inputs', () => {
   });
 });
 
+describe('primitive-union inputs', () => {
+  it('keeps the boolean control and the write-union summary for the canonical booleanAttribute input', () => {
+    const component = componentIn(`
+      import { Component, booleanAttribute, input } from '@angular/core';
+
+      @Component({ selector: 'sb-probe', template: '' })
+      export class ProbeComponent {
+        value = input<boolean, boolean | string>(false, { transform: booleanAttribute });
+      }
+    `);
+    const arg = extractArgTypesFromData(component, {
+      metadataJson: undefined,
+      propsTable: 'all',
+    }).value;
+
+    expect(arg.type).toEqual({ name: 'boolean' });
+    expect(arg.table?.type?.summary).toBe('boolean | string');
+  });
+
+  it('keeps the number control and the write-union summary for the canonical numberAttribute input', () => {
+    const component = componentIn(`
+      import { Component, input, numberAttribute } from '@angular/core';
+
+      @Component({ selector: 'sb-probe', template: '' })
+      export class ProbeComponent {
+        value = input<number, number | string>(0, { transform: numberAttribute });
+      }
+    `);
+    const arg = extractArgTypesFromData(component, {
+      metadataJson: undefined,
+      propsTable: 'all',
+    }).value;
+
+    expect(arg.type).toEqual({ name: 'number' });
+    expect(arg.table?.type?.summary).toBe('number | string');
+  });
+
+  it('keeps the boolean control for a hand-written coercion transform on an @Input', () => {
+    const component = componentIn(`
+      import { Component, Input } from '@angular/core';
+
+      @Component({ selector: 'sb-probe', template: '' })
+      export class ProbeComponent {
+        @Input({ transform: (value: string | boolean) => value === '' || !!value }) value = false;
+      }
+    `);
+    const arg = extractArgTypesFromData(component, {
+      metadataJson: undefined,
+      propsTable: 'all',
+    }).value;
+
+    expect(arg.type).toEqual({ name: 'boolean' });
+  });
+
+  it('prefers number over string for a declared primitive union', () => {
+    const arg = inputTyped('string | number');
+    expect(arg.type).toEqual({ name: 'number' });
+    expect(arg.table?.type?.summary).toBe('string | number');
+  });
+
+  it('leaves a union that mixes a primitive with a named type on the catch-all', () => {
+    const arg = inputTyped('string | Thing');
+    expect(arg.type).toEqual({ name: 'other', value: 'empty-enum' });
+  });
+});
+
 const shownDefault = (classBody: string, topLevel = '') => {
   const component = componentIn(`
     import { Component, Input, computed } from '@angular/core';
@@ -105,6 +171,30 @@ describe('literal initializers reach the default column', () => {
     expect(shownDefault(`@Input() value = false;`)).toBe(false);
   });
 
+  it('keeps a scientific-notation number, as its numeric value', () => {
+    expect(shownDefault(`@Input() value = 1e3;`)).toBe(1000);
+  });
+
+  it('keeps a negative scientific-notation number', () => {
+    expect(shownDefault(`@Input() value = -1.5e-3;`)).toBe(-0.0015);
+  });
+
+  it('keeps a hex number', () => {
+    expect(shownDefault(`@Input() value = 0xFF;`)).toBe(255);
+  });
+
+  it('keeps a binary number', () => {
+    expect(shownDefault(`@Input() value = 0b101;`)).toBe(5);
+  });
+
+  it('keeps a number with numeric separators, as its source spelling', () => {
+    expect(shownDefault(`@Input() value = 1_000;`)).toBe('1_000');
+  });
+
+  it('keeps a unary-plus number', () => {
+    expect(shownDefault(`@Input() value = +1;`)).toBe(1);
+  });
+
   it('keeps an enum member reference', () => {
     expect(shownDefault(`@Input() value = Foo.Bar;`, `export enum Foo { Bar = 'bar' }`)).toBe(
       'Foo.Bar'
@@ -117,6 +207,22 @@ describe('literal initializers reach the default column', () => {
 
   it('keeps a simple object literal', () => {
     expect(shownDefault(`@Input() value = { a: 1 };`)).toBe('{ a: 1 }');
+  });
+
+  it('keeps an object literal whose string value spells `this`', () => {
+    expect(shownDefault(`@Input() value = { hint: 'do this now' };`)).toBe(
+      "{ hint: 'do this now' }"
+    );
+  });
+
+  it('keeps an object literal whose string value spells `new`', () => {
+    expect(shownDefault(`@Input() value = { label: 'Create new item' };`)).toBe(
+      "{ label: 'Create new item' }"
+    );
+  });
+
+  it('keeps an array literal whose string element contains parens', () => {
+    expect(shownDefault(`@Input() value = ['(none)', 'all'];`)).toBe("['(none)', 'all']");
   });
 });
 

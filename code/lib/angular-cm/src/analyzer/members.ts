@@ -25,6 +25,8 @@ import { stripImportQualifiers } from './type-index.ts';
  */
 export interface MemberEntry<T> {
   declName: string;
+  /** Type parameters the member declares for itself, which shadow the class's inside its types. */
+  typeParameters?: string[];
   value: T;
 }
 
@@ -79,7 +81,12 @@ export function visitClassMembers(
       visitProperty(ctx, member, members);
     } else if (ts.isMethodDeclaration(member)) {
       if (isPreferredMethodDeclaration(ctx, classNode, member)) {
-        members.methods.push(entryFor(ctx, member, visitMethod(ctx, member)));
+        members.methods.push({
+          ...entryFor(ctx, member, visitMethod(ctx, member)),
+          ...(member.typeParameters?.length
+            ? { typeParameters: member.typeParameters.map((parameter) => parameter.name.text) }
+            : {}),
+        });
       }
     } else if (ts.isGetAccessor(member) || ts.isSetAccessor(member)) {
       visitAccessorPair(ctx, classNode, member, members, visitedAccessors);

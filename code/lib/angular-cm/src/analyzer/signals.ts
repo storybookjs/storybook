@@ -70,10 +70,16 @@ export const buildSignalEntry = (
       ? stringOption(ctx, optionsArgument, 'alias')
       : undefined;
   // A two-argument `input<ReadT, WriteT>` is the transform form, and what a template may bind is
-  // the write type, not what the transform turns it into.
+  // the write type, not what the transform turns it into. An explicit `unknown`/`any` write type
+  // (booleanAttribute-style coercions) names nothing a control can offer, so the read type stands
+  // in for it, as it does on the checker path.
+  const writeTypeArgument =
+    signal.kind === 'input' && call.typeArguments?.length === 2 ? call.typeArguments[1] : undefined;
   const explicitTypeArgument =
-    signal.kind === 'input' && call.typeArguments?.length === 2
-      ? call.typeArguments[1]
+    writeTypeArgument !== undefined &&
+    writeTypeArgument.kind !== ts.SyntaxKind.UnknownKeyword &&
+    writeTypeArgument.kind !== ts.SyntaxKind.AnyKeyword
+      ? writeTypeArgument
       : call.typeArguments?.[0];
   const type =
     (explicitTypeArgument ? ctx.types.render(explicitTypeArgument) : undefined) ??

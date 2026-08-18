@@ -165,6 +165,19 @@ const selectableUnionMembers = (type: string): string[] =>
     .map((member) => member.trim())
     .filter((member) => member !== 'undefined' && member !== 'null');
 
+// A union sbType falls to the JSON object control downstream, so a union of primitives - a coercion
+// transform's `boolean | string` write union, or an optional `string | undefined` - picks its
+// control from the narrowest member instead, while the summary keeps the full union.
+const CONTROL_PRIMITIVES = ['boolean', 'number', 'string'] as const;
+
+const primitiveUnionControl = (members: string[]): SBType | undefined => {
+  const narrowest = CONTROL_PRIMITIVES.find((name) => members.includes(name));
+  const allPrimitive = members.every((member) =>
+    (CONTROL_PRIMITIVES as readonly string[]).includes(member)
+  );
+  return narrowest !== undefined && allPrimitive ? { name: narrowest } : undefined;
+};
+
 const hasEnumValue = (child: EnumTypeChild): child is EnumTypeChild & { value: string | number } =>
   Boolean(child.value);
 
@@ -246,12 +259,10 @@ const extractType = (
         return { name: 'function' };
       }
       const resolvedType = resolveTypealias(type, metadataJson, componentFile);
-      // An optional primitive like `string | undefined` is a primitive control; treating it as an
-      // enum candidate loses the control entirely.
       if (typeof resolvedType === 'string' && resolvedType.indexOf('|') !== -1) {
-        const members = [...new Set(selectableUnionMembers(resolvedType))];
-        if (members.length === 1 && ['string', 'boolean', 'number'].includes(members[0])) {
-          return { name: members[0] as 'string' | 'boolean' | 'number' };
+        const control = primitiveUnionControl([...new Set(selectableUnionMembers(resolvedType))]);
+        if (control) {
+          return control;
         }
       }
       const enumValues = extractEnumValues(resolvedType, metadataJson, componentFile);
@@ -308,13 +319,16 @@ const unquote = (value: string): string => value.replace(/^(['"`])([\s\S]*)\1$/,
 const LITERAL_INITIALIZERS = [
   // A string literal, an interpolation-free template literal included.
   /^('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`[^`$]*`)$/,
-  /^-?(\d+(\.\d+)?|\.\d+)$/,
+  // Every numeric spelling TypeScript accepts: decimal, exponent, radix prefix, digit separators.
+  /^[+-]?(0[xX][\dA-Fa-f_]+|0[bB][01_]+|0[oO][0-7_]+|(\d[\d_]*)?\.?\d[\d_]*([eE][+-]?\d+)?)$/,
   /^(true|false|null|undefined)$/,
   // An enum-style member reference such as `ButtonKind.Primary`.
   /^(?!this\b)[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)+$/,
 ];
 
 const COMPUTED_PART = /[(`]|\$\{|=>|\bthis\b|\bnew\b/;
+
+const QUOTED_STRING = /'(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"/g;
 
 // Only a self-describing literal is worth a Default cell. Initializer source like
 // `this._config.variant` or `injectOptions()` names where a value comes from, not what it is, and
@@ -325,7 +339,7 @@ const isLiteralInitializer = (text: string): boolean => {
   }
   const composite =
     (text.startsWith('[') && text.endsWith(']')) || (text.startsWith('{') && text.endsWith('}'));
-  return composite && !COMPUTED_PART.test(text);
+  return composite && !COMPUTED_PART.test(text.replace(QUOTED_STRING, "''"));
 };
 
 const authoredDefault = (property: Property): string | undefined => {

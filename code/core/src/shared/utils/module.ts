@@ -1,11 +1,12 @@
-import { statSync } from 'node:fs';
-import { createRequire, register } from 'node:module';
+import { readFileSync, statSync } from 'node:fs';
+import NodeModule, { createRequire, register } from 'node:module';
 import { win32 } from 'node:path/win32';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { resolveModulePath } from 'exsolve';
 import { dirname, join } from 'pathe';
 
+import { addExtensionsToRelativeImports, isTypeScriptUrl } from '../../bin/loader-utils.ts';
 import { jsModuleExtensions } from '../constants/extensions.ts';
 
 /**
@@ -48,6 +49,54 @@ export const resolvePackageDir = (
 let isTypescriptLoaderRegistered = false;
 
 /**
+ * Register the TypeScript loader. On Node with in-thread hook support (`module.registerHooks`,
+ * 22.15+) and native type stripping (`module.stripTypeScriptTypes`, 22.13+) the transform runs
+ * synchronously in-process. The `module.register` worker-thread loader is strictly more expensive:
+ * every module load in the process — plain JS included — pays a synchronous IPC round-trip to the
+ * hook worker, which profiles as 100–200ms per CLI invocation. Older Node falls back to it.
+ */
+function registerTypescriptLoader() {
+  const { registerHooks, stripTypeScriptTypes } = NodeModule as unknown as {
+    registerHooks?: (hooks: {
+      load: (
+        url: string,
+        context: unknown,
+        nextLoad: (url: string, context?: unknown) => unknown
+      ) => unknown;
+    }) => void;
+    stripTypeScriptTypes?: (code: string, options?: { mode?: 'strip' | 'transform' }) => string;
+  };
+
+  if (typeof registerHooks === 'function' && typeof stripTypeScriptTypes === 'function') {
+    registerHooks({
+      load(url, context, nextLoad) {
+        // Strip any query string (e.g. the cache-busting `?<timestamp>` importModule appends for
+        // skipCache) before checking the extension.
+        const urlWithoutQuery = url.split('?')[0];
+        if (!isTypeScriptUrl(urlWithoutQuery)) {
+          return nextLoad(url, context);
+        }
+        const filePath = fileURLToPath(urlWithoutQuery);
+        const rawSource = readFileSync(filePath, 'utf-8');
+        // 'transform' also downlevels enums and namespaces, matching the esbuild `ts` loader the
+        // worker fallback uses.
+        const stripped = stripTypeScriptTypes(rawSource, { mode: 'transform' });
+        return {
+          format: 'module',
+          shortCircuit: true,
+          // Add extensions to relative imports so Node.js ESM can resolve them
+          source: addExtensionsToRelativeImports(stripped, filePath),
+        };
+      },
+    });
+    return;
+  }
+
+  const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
+  register(typescriptLoaderUrl, import.meta.url);
+}
+
+/**
  * Dynamically imports a module with TypeScript support, falling back to require if necessary.
  *
  * @example Import a TypeScript preset
@@ -69,8 +118,7 @@ export async function importModule(
   { skipCache = false }: { skipCache?: boolean } = {}
 ) {
   if (!isTypescriptLoaderRegistered) {
-    const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
-    register(typescriptLoaderUrl, import.meta.url);
+    registerTypescriptLoader();
     isTypescriptLoaderRegistered = true;
   }
 

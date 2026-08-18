@@ -1,7 +1,13 @@
+import { rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { AngularJSON, ProjectType, copyTemplate } from 'storybook/internal/cli';
+import {
+  ANALOG_VITE_PLUGIN_ANGULAR_VERSION,
+  AngularJSON,
+  ProjectType,
+  copyTemplate,
+} from 'storybook/internal/cli';
 import { MIN_SUPPORTED_NODE_VERSIONS } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
@@ -128,6 +134,12 @@ export default defineGeneratorModule({
       copyTemplate(templateDir, root || undefined);
     }
 
+    // `tsconfig.doc.json` only exists for Compodoc to read; `typings.d.ts` stays either way because
+    // `.storybook/tsconfig.json` lists it under `files`.
+    if (!useCompodoc) {
+      rmSync(join(storybookFolder, 'tsconfig.doc.json'), { force: true });
+    }
+
     const toDevkitVersion = (ngRange?: string | null) => {
       if (!ngRange) {
         return undefined;
@@ -178,7 +190,7 @@ export default defineGeneratorModule({
       ...(isVite
         ? [
             angularVersion ? `@angular/animations@${angularVersion}` : '@angular/animations',
-            '@analogjs/vite-plugin-angular',
+            `@analogjs/vite-plugin-angular@${ANALOG_VITE_PLUGIN_ANGULAR_VERSION}`,
             'vite',
           ]
         : []),

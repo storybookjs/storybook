@@ -1,5 +1,5 @@
 import { error, log, shouldLog } from '../logger/index.ts';
-import { wrapTextForClack, wrapTextForClackHint } from '../wrap-utils.ts';
+import { getTerminalWidth, wrapTextForClack, wrapTextForClackHint } from '../wrap-utils.ts';
 import { getPromptProvider } from './prompt-config.ts';
 import type {
   BasePromptOptions,
@@ -33,6 +33,19 @@ export type {
 let activeSpinner: SpinnerInstance | null = null;
 let activeTaskLog: TaskLogInstance | null = null;
 let originalConsoleLog: typeof console.log | null = null;
+
+// Some ptys report a zero-width TTY (`script(1)`, some CI wrappers). Clack divides its rendered line
+// count by that width and then erases `Infinity` lines, throwing `RangeError` mid-command, so the
+// width is pinned here, before the first prompt, spinner or task log of any CLI entry point. Every
+// server-side entry point imports this module, so a stream that refuses the write must not take the
+// process down with it: a too-wide terminal only wraps badly, where throwing here aborts the CLI.
+if (typeof process.stdout.columns === 'number' && !(process.stdout.columns > 0)) {
+  try {
+    process.stdout.columns = getTerminalWidth();
+  } catch {
+    // Left as reported; clack degrades to unreadable wrapping rather than crashing.
+  }
+}
 
 const isInteractiveTerminal = () => {
   return process.stdout.isTTY && process.stdin.isTTY && !process.env.CI;

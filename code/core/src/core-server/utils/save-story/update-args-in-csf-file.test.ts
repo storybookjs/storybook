@@ -217,7 +217,22 @@ describe('success', () => {
           },
           render: (args) => <MyComponent {...args} />,
         } satisfies Story;
-      ...
+        
+        // A spread carries its own args, so saved args have to land after it to take effect
+        export const SpreadsAnotherStory = {
+          ...OnlyArgs,
+        
+      + 
+      +   args: {
+      +     bordered: true,
+      +     initial: "test1",
+      +   },
+      + 
+      + 
+          render: (args) => <MyComponent {...args} />,
+        } satisfies Story;
+        
+        // The order of both the properties of the story and the order of args should be preserved
         export const HasPlayFunction = {
           args: {
             bordered: true,
@@ -281,6 +296,17 @@ describe('success', () => {
       +     initial: "test1",
       + 
           },
+        });
+        // A spread carries its own args, so saved args have to land after it to take effect
+        export const SpreadsAnotherStory = meta.story({
+          ...WithArgs,
+        
+      + 
+      +   args: {
+      +     bordered: true,
+      +     initial: "test1",
+      +   },
+      + 
         });
         "
     `);

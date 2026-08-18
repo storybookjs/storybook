@@ -226,6 +226,67 @@ describe('buildApiDescription', () => {
     `);
   });
 
+  it('renders @deprecated from the member jsDocTags into the doc comment', () => {
+    const result = buildApiDescription(
+      argTypes({
+        clrFlashDanger: {
+          name: 'clrFlashDanger',
+          description: 'Displays the danger flash.',
+          table: {
+            category: 'inputs',
+            jsDocTags: { deprecated: 'since 2.0, remove in 4.0' },
+            type: { summary: 'boolean | string', required: false },
+            defaultValue: { summary: 'false' },
+          },
+        },
+      }),
+      'ClrProgressBar'
+    );
+
+    expect(result).toMatchInlineSnapshot(`
+      "## Inputs
+
+      \`\`\`
+      export type ClrProgressBarInputs = {
+        /**
+         * Displays the danger flash.
+         *
+         * @deprecated since 2.0, remove in 4.0
+         * @default false
+         */
+        clrFlashDanger?: boolean | string;
+      }
+      \`\`\`"
+    `);
+  });
+
+  it('keeps a bare @deprecated as a doc comment of its own', () => {
+    const result = buildApiDescription(
+      argTypes({
+        legacy: {
+          name: 'legacy',
+          table: {
+            category: 'inputs',
+            jsDocTags: { deprecated: '' },
+            type: { summary: 'boolean', required: true },
+          },
+        },
+      }),
+      'ButtonComponent'
+    );
+
+    expect(result).toMatchInlineSnapshot(`
+      "## Inputs
+
+      \`\`\`
+      export type ButtonComponentInputs = {
+        /** @deprecated */
+        legacy: boolean;
+      }
+      \`\`\`"
+    `);
+  });
+
   it('falls back to `any` when the analyzer reported no type', () => {
     const result = buildApiDescription(
       argTypes({
@@ -235,5 +296,32 @@ describe('buildApiDescription', () => {
     );
 
     expect(result).toContain('label: any;');
+  });
+
+  it('quotes a field name that is not a valid TypeScript identifier', () => {
+    const result = buildApiDescription(
+      argTypes({
+        'aria-label': {
+          name: 'aria-label',
+          table: { category: 'inputs', type: { summary: 'string', required: false } },
+        },
+        'sr-title': {
+          name: 'sr-title',
+          table: { category: 'inputs', type: { summary: 'string', required: true } },
+        },
+        'row-select': {
+          name: 'row-select',
+          table: {
+            category: 'outputs',
+            type: { summary: 'EventEmitter<Event>', required: false },
+          },
+        },
+      }),
+      'DataColumnComponent'
+    );
+
+    expect(result).toContain(`'aria-label'?: string;`);
+    expect(result).toContain(`'sr-title': string;`);
+    expect(result).toContain(`'row-select': EventEmitter<Event>;`);
   });
 });

@@ -6,6 +6,7 @@ interface Member {
   type: string | undefined;
   required: boolean;
   defaultValue: string | undefined;
+  deprecated: string | undefined;
 }
 
 // `table.type.required` is Angular's own addition to the argType shape, which `InputType` does not
@@ -14,6 +15,7 @@ type AngularTable = {
   category?: string;
   type?: { summary?: string; required?: boolean };
   defaultValue?: { summary?: string };
+  jsDocTags?: { deprecated?: string };
 };
 
 const readMember = (name: string, argType: StrictInputType): Member => {
@@ -24,6 +26,7 @@ const readMember = (name: string, argType: StrictInputType): Member => {
     type: table?.type?.summary,
     required: table?.type?.required !== false,
     defaultValue: table?.defaultValue?.summary,
+    deprecated: table?.jsDocTags?.deprecated,
   };
 };
 
@@ -34,11 +37,19 @@ const docComment = (member: Member): string[] => {
   const description = member.description?.trim();
   const body = description ? description.split('\n').map((line) => line.trimEnd()) : [];
 
+  const tags: string[] = [];
+  if (member.deprecated !== undefined) {
+    const deprecated = member.deprecated.trim();
+    tags.push(...(deprecated ? `@deprecated ${deprecated}` : '@deprecated').split('\n'));
+  }
   if (member.defaultValue !== undefined) {
+    tags.push(`@default ${member.defaultValue}`);
+  }
+  if (tags.length > 0) {
     if (body.length > 0) {
       body.push('');
     }
-    body.push(`@default ${member.defaultValue}`);
+    body.push(...tags);
   }
 
   if (body.length === 0) {
@@ -50,14 +61,19 @@ const docComment = (member: Member): string[] => {
   return ['  /**', ...body.map((line) => (line ? `   * ${line}` : '   *')), '   */'];
 };
 
+// Hyphen-aliased bindings like `aria-label` must be quoted to stay valid TypeScript.
+const fieldName = (name: string): string =>
+  /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) ? name : `'${name}'`;
+
 const inputLine = (member: Member, isTwoWay: boolean): string => {
   const optional = member.required ? '' : '?';
-  const line = `  ${member.name}${optional}: ${member.type ?? 'any'};`;
+  const line = `  ${fieldName(member.name)}${optional}: ${member.type ?? 'any'};`;
   return isTwoWay ? `${line} // two-way: [(${member.name})]` : line;
 };
 
 // An output is subscribed to rather than passed, so it carries neither optionality nor a default.
-const outputLine = (member: Member): string => `  ${member.name}: ${member.type ?? 'any'};`;
+const outputLine = (member: Member): string =>
+  `  ${fieldName(member.name)}: ${member.type ?? 'any'};`;
 
 const section = (heading: string, typeName: string, lines: string[]): string[] => [
   `## ${heading}`,

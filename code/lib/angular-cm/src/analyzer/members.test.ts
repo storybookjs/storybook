@@ -1105,6 +1105,68 @@ describe('real-world JSDoc, visibility and accessor edge cases', () => {
     expect(cells.description).not.toContain('*');
   });
 
+  it('keeps a leading **bold** marker on undecorated continuation lines', () => {
+    const component = componentIn(`
+      import { Component, Input } from '@angular/core';
+
+      @Component({ selector: 'sb-undecorated-jsdoc', template: '' })
+      export class UndecoratedJsdocComponent {
+        /**
+        Defines the accessible role.
+
+        **Note:** Use the ButtonAccessibleRole type.
+        */
+        @Input() accessibleRole = 'button';
+      }
+    `);
+
+    expect(byName(component.inputsClass, 'accessibleRole').description).toBe(
+      'Defines the accessible role.\n\n**Note:** Use the ButtonAccessibleRole type.'
+    );
+  });
+
+  it('strips the decoration asterisk of a `* **bold**` line, keeping the bold marker', () => {
+    const component = componentIn(`
+      import { Component, Input } from '@angular/core';
+
+      @Component({ selector: 'sb-decorated-jsdoc', template: '' })
+      export class DecoratedJsdocComponent {
+        /**
+         * Defines the accessible role.
+         *
+         * **Note:** Use the ButtonAccessibleRole type.
+         */
+        @Input() accessibleRole = 'button';
+      }
+    `);
+
+    expect(byName(component.inputsClass, 'accessibleRole').description).toBe(
+      'Defines the accessible role.\n\n**Note:** Use the ButtonAccessibleRole type.'
+    );
+  });
+
+  it('keeps a leading **bold** marker in an undecorated @description tag body', () => {
+    const component = componentIn(`
+      import { Component, Input } from '@angular/core';
+
+      @Component({ selector: 'sb-undecorated-description-tag', template: '' })
+      export class UndecoratedDescriptionTagComponent {
+        /**
+        property role
+        @description
+        Defines the role.
+
+        **Note:** stays bold.
+        */
+        @Input() role = 'button';
+      }
+    `);
+
+    expect(byName(component.inputsClass, 'role').description).toBe(
+      'Defines the role.\n\n**Note:** stays bold.'
+    );
+  });
+
   it('keeps @deprecated on a method, so it survives all the way into the props table', () => {
     const component = componentIn(SOURCE);
     const tagNames = (byName(component.methodsClass, 'toggleNav').jsdoctags ?? []).map(

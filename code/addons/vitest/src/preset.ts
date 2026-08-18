@@ -66,13 +66,18 @@ type Event =
  * machinery boots on first request.
  */
 export const services = async (_value: void, options: Options): Promise<void> => {
-  const storyIndexGenerator =
-    await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
+  // Applying the storyIndexGenerator preset builds the full story index, so defer it to the first
+  // tool call that needs it — registration must stay cheap for one-shot callers like the tools
+  // CLI. The preset caches its promise, so consumers share one build.
+  const getIndex = () =>
+    options.presets
+      .apply<StoryIndexGenerator>('storyIndexGenerator')
+      .then((generator) => generator.getIndex());
 
   registerToolset(
     createTestToolset({
       channel: options.channel as Channel,
-      storyIndex: { getIndex: () => storyIndexGenerator.getIndex() },
+      storyIndex: { getIndex },
       a11yEnabled: await options.presets.apply('isAddonA11yEnabled', false),
     })
   );

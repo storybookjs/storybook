@@ -231,10 +231,13 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     features?.componentsManifest &&
     !options.ignorePreview
   ) {
-    const generator = await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
-
+    // Deferred: applying the storyIndexGenerator preset builds the full story index, which must
+    // not happen at registration time (one-shot callers register services they may never use).
     registerMdxService({
-      getIndex: () => generator.getIndex(),
+      getIndex: () =>
+        options.presets
+          .apply<StoryIndexGenerator>('storyIndexGenerator')
+          .then((generator) => generator.getIndex()),
     });
   }
 };

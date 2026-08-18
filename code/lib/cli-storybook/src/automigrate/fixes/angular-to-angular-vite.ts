@@ -2,13 +2,14 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { types as t } from 'storybook/internal/babel';
 import {
+  ANALOG_VITE_PLUGIN_ANGULAR_VERSION,
   AngularJSON,
   editJsonText,
   isStorybookTarget,
   type JSONEditPath,
 } from 'storybook/internal/cli';
 import { formatFileContent, getProjectRoot, transformImportFiles } from 'storybook/internal/common';
-import { type ConfigFile, formatConfig, readConfig } from 'storybook/internal/csf-tools';
+import { formatConfig, readConfig } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
@@ -17,12 +18,13 @@ import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { add } from '../../add.ts';
-import { updateMainConfig } from '../helpers/mainConfigFile.ts';
+import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
 import { findCompodocSetup, removeCompodocSetup } from './angular-vite-remove-compodoc.ts';
 
 export const ANGULAR_PACKAGE = '@storybook/angular';
 export const ANGULAR_VITE_PACKAGE = '@storybook/angular-vite';
+const ANALOG_VITE_PLUGIN_PACKAGE = '@analogjs/vite-plugin-angular';
 
 const FRAMEWORK_DOC_URL = 'https://storybook.js.org/docs/get-started/frameworks/angular-vite';
 const VITE_CONFIG_DOC_URL = 'https://storybook.js.org/docs/builders/vite#configure';
@@ -209,7 +211,14 @@ const processStorybookTargets = (
 
   for (const { pathPrefix, targets } of targetGroups) {
     for (const [targetName, target] of Object.entries(targets)) {
-      if (!isStorybookTarget(target)) {
+      // Detection is deliberately wider than the rewrite. A multi-project upgrade runs each
+      // project's `run()` against the tree the first project's run already rewrote, so from the
+      // second project on every target reads `@storybook/angular-vite` — and a narrow gate would
+      // report no Storybook target at all and skip the zone.js injection without a word.
+      if (
+        !isStorybookTarget(target, ANGULAR_PACKAGE) &&
+        !isStorybookTarget(target, ANGULAR_VITE_PACKAGE)
+      ) {
         continue;
       }
       hasStorybookTarget = true;
@@ -217,10 +226,15 @@ const processStorybookTargets = (
       // Snapshot before editing: `AngularJSON.edit()` reparses `json`, invalidating `target`.
       const currentRef = target.builder ?? target.executor ?? null;
       const hasOldZonelessKey = !!target.options && 'experimentalZoneless' in target.options;
-      const zonelessValue = target.options?.experimentalZoneless;
+      // An earlier run may already have renamed the key, so both spellings count as zoneless.
+      const zonelessValue = target.options?.zoneless ?? target.options?.experimentalZoneless;
 
       if (zonelessValue !== true) {
         allZonelessTrue = false;
+      }
+
+      if (!isStorybookTarget(target, ANGULAR_PACKAGE)) {
+        continue;
       }
 
       const newRef = currentRef ? rewriteStorybookBuilderRef(currentRef) : null;
@@ -354,7 +368,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
   link: FRAMEWORK_DOC_URL,
   defaultSelected: false,
 
-  async check({ packageManager }): Promise<AngularToAngularViteOptions | null> {
+  async check({ packageManager, mainConfig }): Promise<AngularToAngularViteOptions | null> {
     const allDeps = packageManager.getAllDependencies();
 
     // Only apply when @storybook/angular is present and @storybook/angular-vite is not.
@@ -364,6 +378,22 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
 
     // Detect @angular/core version for the Angular 21 prerequisite check.
     const angularVersionRaw = packageManager.getDependencyVersion('@angular/core');
+
+    // Other Angular frameworks declare `@storybook/angular` as their peer, so the dependency alone
+    // does not say which framework the project renders with. Rewriting one of those produces a
+    // half-migrated hybrid, so only the framework this migration knows how to rewrite qualifies.
+    const frameworkPackageName = getFrameworkPackageName(mainConfig);
+    if (frameworkPackageName !== ANGULAR_PACKAGE) {
+      if (angularVersionRaw) {
+        logger.warn(
+          `Skipped ${ANGULAR_VITE_PACKAGE} migration: this project's Storybook framework is ` +
+            `\`${frameworkPackageName ?? 'not set'}\`, and only \`${ANGULAR_PACKAGE}\` projects can be ` +
+            `migrated automatically. See ${FRAMEWORK_DOC_URL} to switch frameworks by hand.`
+        );
+      }
+      return null;
+    }
+
     const angularVersion = angularVersionRaw
       ? (semver.coerce(angularVersionRaw)?.version ?? null)
       : null;
@@ -481,7 +511,24 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
 
     logger.step(`Migrating from ${ANGULAR_PACKAGE} to ${ANGULAR_VITE_PACKAGE}...`);
 
-    // 1. Update dependencies.
+    // 1. Patch .storybook/main.ts(.js). This comes first because it is the migration: `check()`
+    // reads the framework off the evaluated config, which resolves through a shared base file, so
+    // the field can be inherited rather than spelled out here. Everything below assumes the
+    // framework now says angular-vite, and uninstalling @storybook/angular without that leaves a
+    // Storybook that cannot start.
+    logger.debug('Updating main config...');
+    if (!mainConfigPath || !(await transformMainConfig(mainConfigPath, dryRun))) {
+      logger.error(
+        dedent`
+          Migration stopped: the \`framework\` field could not be rewritten in ${mainConfigPath ?? 'your Storybook main config'}.
+          That file names no \`${ANGULAR_PACKAGE}\`, so it most likely inherits the framework from a shared config.
+          Point \`framework\` at \`${ANGULAR_VITE_PACKAGE}\` where it is declared, then run this migration again.
+        `
+      );
+      return;
+    }
+
+    // 2. Update dependencies.
     if (dryRun) {
       logger.debug('Dry run: Skipping dependency updates.');
     } else {
@@ -491,17 +538,13 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       const allDeps = packageManager.getAllDependencies();
       await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
         `${ANGULAR_VITE_PACKAGE}@${storybookVersion}`,
-        ...(allDeps['@analogjs/vite-plugin-angular'] ? [] : ['@analogjs/vite-plugin-angular']),
+        ...(allDeps[ANALOG_VITE_PLUGIN_PACKAGE]
+          ? []
+          : [`${ANALOG_VITE_PLUGIN_PACKAGE}@${ANALOG_VITE_PLUGIN_ANGULAR_VERSION}`]),
       ]);
     }
 
-    // 2. Patch .storybook/main.ts(.js).
-    if (mainConfigPath) {
-      logger.debug('Updating main config...');
-      await transformMainConfig(mainConfigPath, dryRun);
-    }
-
-    // Injection fires unless EVERY storybook target sets `experimentalZoneless: true`.
+    // Injection fires unless EVERY storybook target is declared zoneless.
     let anyStorybookTarget = false;
     let allZonelessTrue = true;
 
@@ -532,7 +575,13 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     // eslint-disable-next-line depend/ban-dependencies
     const { globby } = await import('globby');
     const projectJsonFiles = await globby(['**/project.json'], {
-      ignore: ['**/node_modules/**', '**/dist/**'],
+      // Anchored to the workspace root, the same tree `packageManager.packageJsonPaths` walks up to.
+      // Left at the working directory, running the CLI from inside one app would migrate only that
+      // app while still reasoning about the root `nx.json`/`angular.json`.
+      cwd: getProjectRoot(),
+      // Storybook writes a `project.json` of its own into the build output, which must not be
+      // mistaken for a workspace project.
+      ignore: ['**/node_modules/**', '**/dist/**', '**/storybook-static/**'],
       absolute: true,
     });
     for (const projectJsonPath of projectJsonFiles) {
@@ -548,12 +597,15 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     }
 
     // 4. Rewrite Angular CLI builder references and the `test-storybook` script in package.json.
+    // The write goes through the package manager: it reads package.json from a process-wide cache
+    // that a raw write cannot invalidate, so every later `removeDependencies`/`addDependencies`
+    // would serialise the pre-edit snapshot back over the file and undo this.
     for (const pkgJsonPath of packageManager.packageJsonPaths) {
       try {
         const content = await readFile(pkgJsonPath, 'utf-8');
         const transformed = rewriteTestStorybookScript(rewriteBuilderRefs(content));
         if (transformed !== content && !dryRun) {
-          await writeFile(pkgJsonPath, transformed);
+          packageManager.writePackageJson(JSON.parse(transformed), dirname(pkgJsonPath));
           logger.debug(`Updated builder references and scripts in ${pkgJsonPath}`);
         }
       } catch {
@@ -571,6 +623,11 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
           mainConfig,
           previewConfigPath,
           packageManager,
+          // Steps 3 and 3b have just repointed every `@storybook/angular` Storybook target at
+          // angular-vite — or, on a dry run, established that they would be. Either way their
+          // Compodoc options are dead, and reading only what is on disk would make a dry run
+          // report the opposite of what the real run does.
+          builderPackages: [ANGULAR_VITE_PACKAGE, ANGULAR_PACKAGE],
         });
         if (compodocSetup) {
           await removeCompodocSetup({

@@ -4,18 +4,40 @@ import { resolve } from 'node:path';
 import { prompt } from 'storybook/internal/node-logger';
 import { MissingAngularJsonError } from 'storybook/internal/server-errors';
 
-import { applyEdits, modify } from 'jsonc-parser';
+import { type FormattingOptions, applyEdits, modify } from 'jsonc-parser';
 
 export const ANGULAR_JSON_PATH = 'angular.json';
+
+/**
+ * The version of `@analogjs/vite-plugin-angular` the CLI installs alongside
+ * `@storybook/angular-vite`, which needs it as a peer but cannot rely on the package manager to
+ * add it. Must stay inside the `>=2.0.0` peer range that `@storybook/angular-vite` declares.
+ */
+export const ANALOG_VITE_PLUGIN_ANGULAR_VERSION = '^2.5.2';
 
 /** A path into a JSON document, e.g. `['projects', 'app', 'architect', 'storybook', 'builder']`. */
 export type JSONEditPath = (string | number)[];
 
-const JSON_EDIT_FORMATTING = { insertSpaces: true, tabSize: 2, eol: '\n' } as const;
+/**
+ * `jsonc-parser` re-indents the lines it touches, so a document indented with anything other than
+ * the assumed default comes back with mixed indentation. Line endings need no such option:
+ * `jsonc-parser` reads those off the document itself.
+ */
+const detectIndentation = (text: string): FormattingOptions => {
+  const indent = /^[ \t]+(?=[^\s])/m.exec(text)?.[0];
+
+  if (!indent) {
+    return { insertSpaces: true, tabSize: 2 };
+  }
+
+  return indent.startsWith('\t')
+    ? { insertSpaces: false, tabSize: 1 }
+    : { insertSpaces: true, tabSize: indent.length };
+};
 
 /** Apply a format-preserving edit to a JSON string at `path`. `value === undefined` removes it. */
 export const editJsonText = (text: string, path: JSONEditPath, value: unknown): string =>
-  applyEdits(text, modify(text, path, value, { formattingOptions: JSON_EDIT_FORMATTING }));
+  applyEdits(text, modify(text, path, value, { formattingOptions: detectIndentation(text) }));
 
 /** An `angular.json` architect target or Nx `project.json` target. */
 export interface StorybookBuilderTarget {
@@ -23,20 +45,34 @@ export interface StorybookBuilderTarget {
   executor?: string;
   options?: {
     compodoc?: boolean;
+    zoneless?: boolean;
     experimentalZoneless?: boolean;
     [key: string]: unknown;
   };
 }
 
-export const isStorybookTarget = (target: unknown): target is StorybookBuilderTarget => {
+/**
+ * Whether `target` runs Storybook, optionally narrowed to one builder/executor package.
+ *
+ * The suffix alone says nothing about who provides the builder: `@storybook/angular`,
+ * `@storybook/angular-vite` and `@analogjs/storybook-angular` all end in `:start-storybook`.
+ * Any caller that rewrites or deletes options a specific package owns must pass `builderPackage`,
+ * or it will edit targets belonging to a different one.
+ */
+export const isStorybookTarget = (
+  target: unknown,
+  builderPackage?: string
+): target is StorybookBuilderTarget => {
   if (typeof target !== 'object' || target === null) {
     return false;
   }
   const ref =
     (target as StorybookBuilderTarget).builder ?? (target as StorybookBuilderTarget).executor;
-  return (
-    typeof ref === 'string' &&
-    (ref.endsWith(':start-storybook') || ref.endsWith(':build-storybook'))
+  if (typeof ref !== 'string') {
+    return false;
+  }
+  return ['start-storybook', 'build-storybook'].some((command) =>
+    builderPackage ? ref === `${builderPackage}:${command}` : ref.endsWith(`:${command}`)
   );
 };
 

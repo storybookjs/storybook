@@ -6,6 +6,11 @@ Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=r
 
 ## Self-hosting `@storybook/mcp`
 
+This package is a library: the tarball ships one module and no executable. It declares no `bin`,
+starts no process, and has no CLI. You register its tools on an MCP server you own, using the
+snippets below. If you want a running Storybook MCP server with no code at all, use the dev server
+instead — `storybook dev` serves one at `/mcp` through `@storybook/addon-mcp`.
+
 ### Prerequisites
 
 - Node.js 20+
@@ -15,7 +20,10 @@ Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=r
 
 ### Example implementation
 
-In-repo local server: [`serve.ts`](./serve.ts) (Node process that loads manifests from a directory or URL).
+The Storybook repository has a local HTTP server built on this package,
+[`serve.ts`](https://github.com/storybookjs/storybook/blob/next/code/lib/mcp/serve.ts), that loads
+manifests from a directory or URL. It is a development harness and is not part of the published
+package.
 
 The snippets below cover the common self-hosting patterns.
 
@@ -321,6 +329,65 @@ await addGetStoryDocumentationTool(server);
 ```
 
 After registration, wire your own transport and pass `StorybookContext` per request so tools can resolve manifests (`request`, `manifestProvider`, and optional `sources`).
+
+##### Stdio server over a built Storybook
+
+The same registrations plus a stdio transport give an MCP server that reads a `storybook build`
+output directory. Install `tmcp`, `@tmcp/adapter-valibot` and `@tmcp/transport-stdio` alongside this
+package; the transport is yours to choose, so it is not a dependency here.
+
+```ts
+// storybook-mcp-stdio.ts
+import { readFile } from 'node:fs/promises';
+import { resolve } from 'node:path';
+
+import { McpServer } from 'tmcp';
+import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
+import { StdioTransport } from '@tmcp/transport-stdio';
+import {
+	addGetDocumentationTool,
+	addGetStoryDocumentationTool,
+	addListAllDocumentationTool,
+	STORYBOOK_MCP_INSTRUCTIONS,
+	type StorybookContext,
+} from '@storybook/mcp';
+
+const buildDir = resolve(process.argv[2]);
+
+const server = new McpServer(
+	{ name: 'storybook-mcp', version: '1.0.0', description: 'Storybook component documentation' },
+	{
+		adapter: new ValibotJsonSchemaAdapter(),
+		instructions: STORYBOOK_MCP_INSTRUCTIONS,
+		capabilities: { tools: { listChanged: true } },
+	},
+).withContext<StorybookContext>();
+
+await addListAllDocumentationTool(server);
+await addGetDocumentationTool(server);
+await addGetStoryDocumentationTool(server);
+
+// Tool-requested paths are relative to the build output, both for `./manifests/*.json` and for the
+// `./services/**` payloads the manifests reference.
+new StdioTransport(server).listen({
+	manifestProvider: (_request, path) => readFile(resolve(buildDir, path), 'utf-8'),
+});
+```
+
+Point an MCP client at it as a stdio server.
+Running `./storybook-mcp-stdio.ts` directly with `node`, as below, needs Node.js 22.18+, which strips TypeScript types with no flag.
+That is newer than this package's own Node 20+ floor.
+On an older Node, compile the file to JavaScript first, or point `args` at a `--experimental-strip-types` wrapper (Node 22.6–22.17).
+
+```json
+{
+	"storybook": {
+		"type": "stdio",
+		"command": "node",
+		"args": ["./storybook-mcp-stdio.ts", "./storybook-static"]
+	}
+}
+```
 
 #### `addListAllDocumentationTool`
 

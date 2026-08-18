@@ -27,10 +27,6 @@ export const parseSignalCall = (
   member: ts.PropertyDeclaration
 ): SignalCall | undefined => {
   const { ts } = ctx;
-  // Angular only recognizes signal IO on instance fields.
-  if (ts.getModifiers(member)?.some((modifier) => modifier.kind === ts.SyntaxKind.StaticKeyword)) {
-    return undefined;
-  }
   const initializer = member.initializer;
   if (!initializer || !ts.isCallExpression(initializer)) {
     return undefined;

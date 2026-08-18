@@ -165,6 +165,27 @@ describe('compareArgTypes', () => {
     }
   });
 
+  it('waives legacy defaults that print initializer source, only under legacyBaseline', () => {
+    // Legacy compodoc printed initializer source when a default was not a literal; the modern
+    // extractor hides those on purpose, so a candidate without one loses nothing.
+    for (const summary of [
+      'Math.max(1, 3)',
+      'signal(false)',
+      '`id-${next++}`',
+      'new Map()',
+      'this.config.side',
+    ]) {
+      const baseline = argTypes({
+        count: { name: 'count', table: { defaultValue: { summary } } },
+      });
+      const candidate = argTypes({ count: { name: 'count' } });
+      expect(compareArgTypes(baseline, candidate, { legacyBaseline: true })).toEqual([]);
+      expect(compareArgTypes(baseline, candidate)).toEqual([
+        expect.objectContaining({ arg: 'count', kind: 'lost-default' }),
+      ]);
+    }
+  });
+
   it('flags dropped raw false, null, and NaN defaults outside legacyBaseline', () => {
     // A non-legacy engine records raw false / null only for a genuine `= false` / `= null`
     // default, so dropping one is a lost default in the default (strict) mode.

@@ -25,7 +25,6 @@ import { stripImportQualifiers } from './type-index.ts';
  */
 export interface MemberEntry<T> {
   declName: string;
-  isStatic: boolean;
   value: T;
 }
 
@@ -35,9 +34,6 @@ export interface ClassMembers {
   properties: MemberEntry<Property>[];
   methods: MemberEntry<Method>[];
 }
-
-export const memberKey = (entry: MemberEntry<unknown>): string =>
-  entry.isStatic ? `static:${entry.declName}` : entry.declName;
 
 const owningClassName = (node: ts.Node): string => {
   let candidate: ts.Node | undefined = node.parent;
@@ -57,8 +53,9 @@ const dropped = (node: ts.Node, name: string, reason: string): void => {
   logger.debug(`[angular-cm] ${owningClassName(node)}.${name} left out of docgen: ${reason}`);
 };
 
-// Private, protected, static and `#` members and lifecycle hooks all stay in; filtering them is
-// the extractor's decision, not this visitor's.
+// Private, protected and `#` members and lifecycle hooks all stay in; filtering them is the
+// extractor's decision, not this visitor's. Statics are the exception: Angular binds and coerces
+// only instance members, so `ngAcceptInputType_*` and `ɵ*` internals would document nothing.
 export function visitClassMembers(
   ctx: AnalyzerContext,
   classNode: ts.ClassLikeDeclaration
@@ -70,6 +67,10 @@ export function visitClassMembers(
   for (const member of classNode.members) {
     if (hasJsDocTag(ts, member, 'ignore')) {
       dropped(member, member.name ? memberName(ts, member.name) : '<unnamed>', 'tagged @ignore');
+      continue;
+    }
+    if (isStatic(ctx, member)) {
+      dropped(member, member.name ? memberName(ts, member.name) : '<unnamed>', 'a static member');
       continue;
     }
     if (ts.isConstructorDeclaration(member)) {
@@ -100,9 +101,7 @@ export function applyMetadataInputsOutputs(
 ): void {
   for (const decoratorName of ['Component', 'Directive']) {
     for (const entry of readMetadataInputsOutputs(ctx, classNode, decoratorName)) {
-      const index = members.properties.findIndex(
-        (property) => property.declName === entry.name && !property.isStatic
-      );
+      const index = members.properties.findIndex((property) => property.declName === entry.name);
       if (index < 0) {
         continue;
       }
@@ -134,7 +133,6 @@ const entryFor = <T>(
   value: T
 ): MemberEntry<T> => ({
   declName: memberName(ctx.ts, member.name),
-  isStatic: isStatic(ctx, member),
   value,
 });
 
@@ -342,7 +340,6 @@ const visitConstructorProperties = (
     const type = parameter.type ? ctx.types.render(parameter.type) : ctx.types.infer(parameter);
     members.properties.push({
       declName: parameter.name.getText(),
-      isStatic: false,
       value: {
         name: parameter.name.getText(),
         ...(type === undefined ? {} : { type }),
@@ -367,11 +364,10 @@ const visitAccessorPair = (
 ): void => {
   const { ts } = ctx;
   const name = memberName(ctx.ts, member.name);
-  const visitKey = isStatic(ctx, member) ? `static:${name}` : name;
-  if (visited.has(visitKey)) {
+  if (visited.has(name)) {
     return;
   }
-  visited.add(visitKey);
+  visited.add(name);
   const getter = classNode.members.find(
     (candidate): candidate is ts.GetAccessorDeclaration =>
       ts.isGetAccessor(candidate) && isSameMember(ctx, candidate, member)
@@ -393,11 +389,7 @@ const visitAccessorPair = (
     ...(setter ? getDecorators(ctx, setter) : []),
   ];
   const apiFields = memberApiFields(ctx, getter, setter);
-  const accessorEntry = <T>(value: T): MemberEntry<T> => ({
-    declName: name,
-    isStatic: isStatic(ctx, member),
-    value,
-  });
+  const accessorEntry = <T>(value: T): MemberEntry<T> => ({ declName: name, value });
   const inputDecorator = decorators.find((decorator) => decorator.name === 'Input');
   if (inputDecorator) {
     const config = parseInputDecoratorConfig(ctx, inputDecorator);

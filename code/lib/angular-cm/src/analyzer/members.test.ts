@@ -110,6 +110,30 @@ describe('@Input and @Output aliases', () => {
   });
 });
 
+describe('aliased decorator imports', () => {
+  it('recognizes decorators imported under another name, as Angular itself does', () => {
+    const component = componentIn(`
+      import {
+        Component as NgComponent,
+        EventEmitter,
+        Input as InputDecorator,
+        Output as OutputDecorator,
+      } from '@angular/core';
+
+      @NgComponent({ selector: 'sb-aliased-imports', template: '' })
+      export class AliasedImportsComponent {
+        @InputDecorator() label?: 'a' | 'b';
+
+        @OutputDecorator() saved = new EventEmitter<number>();
+      }
+    `);
+
+    expect(names(component.inputsClass)).toEqual(['label']);
+    expect(names(component.outputsClass)).toEqual(['saved']);
+    expect(names(component.propertiesClass)).toEqual([]);
+  });
+});
+
 describe('pipes, injectables and plain classes', () => {
   const SOURCE = `
     import { Injectable, NgModule, Pipe } from '@angular/core';
@@ -334,23 +358,6 @@ describe('signal inputs and outputs', () => {
     expect(byName(component.propertiesClass, 'label')).toMatchObject({
       type: 'string',
       defaultValue: "input('hi')",
-    });
-  });
-
-  it('keeps a static `input()`-initialized property out of the IO buckets', () => {
-    // Angular only recognizes signal IO on instance fields.
-    const component = componentIn(`
-      import { Component, input } from '@angular/core';
-
-      @Component({ selector: 'sb-static-input', template: '' })
-      export class StaticInputComponent {
-        static defaults = input('nope');
-      }
-    `);
-
-    expect(names(component.inputsClass)).not.toContain('defaults');
-    expect(byName(component.propertiesClass, 'defaults')).toMatchObject({
-      defaultValue: "input('nope')",
     });
   });
 });
@@ -596,18 +603,13 @@ describe('which members survive, and how they are described', () => {
     }
   `;
 
-  it('keeps private, protected, static and lifecycle members, and drops @ignore', () => {
+  it('keeps private, protected and lifecycle members, and drops static and @ignore ones', () => {
     const component = componentIn(SOURCE);
 
     // Visibility is not the analyzer's filter to apply: the consumer decides what to show.
-    expect(names(component.propertiesClass)).toEqual([
-      'cache',
-      'counter',
-      'formatter',
-      'shield',
-      'zoom',
-    ]);
+    expect(names(component.propertiesClass)).toEqual(['cache', 'formatter', 'shield', 'zoom']);
     expect(names(component.propertiesClass)).not.toContain('secret');
+    expect(names(component.propertiesClass)).not.toContain('counter');
     expect(names(component.methodsClass)).toEqual(['ngOnInit']);
   });
 
@@ -1297,10 +1299,42 @@ describe('member identity is the declared field, not the emitted name', () => {
 
     expect(
       component.methodsClass.filter((method) => method.name === 'create').map((m) => m.returnType)
-    ).toEqual(['string', 'number']);
+    ).toEqual(['number']);
     expect(
       component.propertiesClass.filter((property) => property.name === 'mode').map((p) => p.type)
-    ).toEqual(['string', 'number']);
+    ).toEqual(['number']);
+  });
+});
+
+describe('static members', () => {
+  it('drops static members entirely, Angular coercion statics and ɵ internals included', () => {
+    // Angular only recognizes IO on instance fields, `static defaults = input(...)` included.
+    const component = componentIn(`
+      import { Component, Input, input } from '@angular/core';
+
+      @Component({ selector: 'sb-statics', template: '' })
+      export class StaticsComponent {
+        @Input() date?: Date | null | string;
+
+        static ngAcceptInputType_date: Date | null | string;
+
+        static ɵfac = () => new StaticsComponent();
+
+        static defaults = input('nope');
+
+        static describe(): string {
+          return '';
+        }
+
+        static get mode(): string {
+          return 'static';
+        }
+      }
+    `);
+
+    expect(names(component.inputsClass)).toEqual(['date']);
+    expect(names(component.propertiesClass)).toEqual([]);
+    expect(names(component.methodsClass)).toEqual([]);
   });
 });
 

@@ -226,6 +226,33 @@ describe('buildApiDescription', () => {
     `);
   });
 
+  it('spells an empty-string default as quotes instead of a dangling @default', () => {
+    const result = buildApiDescription(
+      argTypes({
+        label: {
+          name: 'label',
+          table: {
+            category: 'inputs',
+            type: { summary: 'string', required: false },
+            defaultValue: { summary: '' },
+          },
+        },
+      }),
+      'ButtonComponent'
+    );
+
+    expect(result).toMatchInlineSnapshot(`
+      "## Inputs
+
+      \`\`\`
+      export type ButtonComponentInputs = {
+        /** @default '' */
+        label?: string;
+      }
+      \`\`\`"
+    `);
+  });
+
   it('renders @deprecated from the member jsDocTags into the doc comment', () => {
     const result = buildApiDescription(
       argTypes({

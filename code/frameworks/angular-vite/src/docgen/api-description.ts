@@ -43,7 +43,8 @@ const docComment = (member: Member): string[] => {
     tags.push(...(deprecated ? `@deprecated ${deprecated}` : '@deprecated').split('\n'));
   }
   if (member.defaultValue !== undefined) {
-    tags.push(`@default ${member.defaultValue}`);
+    // The analyzer unquotes string defaults, so an empty-string default arrives as ''.
+    tags.push(`@default ${member.defaultValue === '' ? "''" : member.defaultValue}`);
   }
   if (tags.length > 0) {
     if (body.length > 0) {

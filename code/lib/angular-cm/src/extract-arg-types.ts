@@ -16,7 +16,6 @@ import type {
   Directive,
   EnumTypeChild,
   Injectable,
-  JsDocTag,
   Method,
   Pipe,
   Property,
@@ -280,8 +279,7 @@ const castUntypedDefault = (defaultValue: any) => {
   }
 };
 
-// Never invents a value: a missing default stays missing rather than becoming `NaN`/`false`, and an
-// expression default keeps its raw source text.
+// Never invents a value: a missing default stays missing rather than becoming `NaN`/`false`.
 const castDefaultValue = (property: Property, defaultValue: any) => {
   if (defaultValue === undefined) {
     return undefined;
@@ -305,34 +303,57 @@ const castDefaultValue = (property: Property, defaultValue: any) => {
   }
 };
 
-const unquote = (value: string): string =>
-  value.replace(/^'(.*)'$/, '$1').replace(/^"(.*)"$/, '$1');
+const unquote = (value: string): string => value.replace(/^(['"`])([\s\S]*)\1$/, '$2');
 
-const extractDefaultValueFromComments = (property: Property, value: any) => {
-  let commentValue = value;
-  // `jsdoctags` is only read after the caller has established it is non-empty.
-  (property.jsdoctags as JsDocTag[]).forEach((tag: JsDocTag) => {
-    // `tagName` is optional in this shape and read unguarded on purpose: a tag without one throws
-    // into `extractDefaultValue`'s catch, which drops the property's default entirely.
-    const tagName = (tag.tagName as { escapedText?: string }).escapedText;
+const LITERAL_INITIALIZERS = [
+  // A string literal, an interpolation-free template literal included.
+  /^('(?:[^'\\]|\\.)*'|"(?:[^"\\]|\\.)*"|`[^`$]*`)$/,
+  /^-?(\d+(\.\d+)?|\.\d+)$/,
+  /^(true|false|null|undefined)$/,
+  // An enum-style member reference such as `ButtonKind.Primary`.
+  /^(?!this\b)[A-Za-z_$][\w$]*(\.[A-Za-z_$][\w$]*)+$/,
+];
+
+const COMPUTED_PART = /[(`]|\$\{|=>|\bthis\b|\bnew\b/;
+
+// Only a self-describing literal is worth a Default cell. Initializer source like
+// `this._config.variant` or `injectOptions()` names where a value comes from, not what it is, and
+// can even contradict the runtime default.
+const isLiteralInitializer = (text: string): boolean => {
+  if (LITERAL_INITIALIZERS.some((pattern) => pattern.test(text))) {
+    return true;
+  }
+  const composite =
+    (text.startsWith('[') && text.endsWith(']')) || (text.startsWith('{') && text.endsWith('}'));
+  return composite && !COMPUTED_PART.test(text);
+};
+
+const authoredDefault = (property: Property): string | undefined => {
+  let value: string | undefined;
+  for (const tag of property.jsdoctags ?? []) {
+    const tagName = tag.tagName?.escapedText?.toLowerCase();
     // A bare `@default` is not a usable default. Last tag wins when there are several.
     if ((tagName === 'default' || tagName === 'defaultvalue') && tag.comment !== undefined) {
-      commentValue = unquote(commentText(tag.comment).trim());
+      value = unquote(commentText(tag.comment).trim());
     }
-  });
-  return commentValue;
+  }
+  return value;
 };
 
 const extractDefaultValue = (property: Property, logger: ParsingLogger) => {
   try {
-    let value: any = property.defaultValue?.replace(/^'(.*)'$/, '$1');
-    value = castDefaultValue(property, value);
-
-    if (value == null && (property.jsdoctags?.length ?? 0) > 0) {
-      value = extractDefaultValueFromComments(property, value);
+    const authored = authoredDefault(property);
+    if (authored !== undefined) {
+      return castDefaultValue(property, authored);
     }
-
-    return value;
+    if (property.defaultValue === undefined) {
+      return undefined;
+    }
+    if (!isLiteralInitializer(property.defaultValue)) {
+      logger.debug(`${property.name}: non-literal default '${property.defaultValue}' not shown`);
+      return undefined;
+    }
+    return castDefaultValue(property, unquote(property.defaultValue));
   } catch {
     logger.debug(`Error extracting ${property.name}: ${property.defaultValue}`);
     return undefined;

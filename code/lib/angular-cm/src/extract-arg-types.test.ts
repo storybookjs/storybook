@@ -65,3 +65,124 @@ describe('function-typed inputs', () => {
     expect(arg.type).not.toEqual(FUNCTION_CONTROL);
   });
 });
+
+const shownDefault = (classBody: string, topLevel = '') => {
+  const component = componentIn(`
+    import { Component, Input, computed } from '@angular/core';
+
+    ${topLevel}
+
+    @Component({ selector: 'sb-probe', template: '' })
+    export class ProbeComponent {
+      ${classBody}
+    }
+  `);
+  const argTypes = extractArgTypesFromData(component, {
+    metadataJson: undefined,
+    propsTable: 'all',
+  });
+  return argTypes.value.table?.defaultValue?.summary;
+};
+
+describe('literal initializers reach the default column', () => {
+  it('keeps a single-quoted string, without its quotes', () => {
+    expect(shownDefault(`@Input() value = 'primary';`)).toBe('primary');
+  });
+
+  it('keeps a double-quoted string, without its quotes', () => {
+    expect(shownDefault(`@Input() value = "start";`)).toBe('start');
+  });
+
+  it('keeps a number', () => {
+    expect(shownDefault(`@Input() value = 42;`)).toBe(42);
+  });
+
+  it('keeps a negated number', () => {
+    expect(shownDefault(`@Input() value = -1;`)).toBe(-1);
+  });
+
+  it('keeps a boolean', () => {
+    expect(shownDefault(`@Input() value = false;`)).toBe(false);
+  });
+
+  it('keeps an enum member reference', () => {
+    expect(shownDefault(`@Input() value = Foo.Bar;`, `export enum Foo { Bar = 'bar' }`)).toBe(
+      'Foo.Bar'
+    );
+  });
+
+  it('keeps an empty array literal', () => {
+    expect(shownDefault(`@Input() value = [];`)).toBe('[]');
+  });
+
+  it('keeps a simple object literal', () => {
+    expect(shownDefault(`@Input() value = { a: 1 };`)).toBe('{ a: 1 }');
+  });
+});
+
+describe('non-literal initializers are hidden from the default column', () => {
+  it('hides a `this.` reference instead of printing its source', () => {
+    expect(
+      shownDefault(`
+        private _config = { variant: 'primary' };
+
+        @Input() value = this._config.variant;
+      `)
+    ).toBeUndefined();
+  });
+
+  it('hides a call expression', () => {
+    expect(
+      shownDefault(
+        `@Input() value = injectBrnDialogDefaultOptions();`,
+        `export const injectBrnDialogDefaultOptions = () => ({ closeDelay: 0 });`
+      )
+    ).toBeUndefined();
+  });
+
+  it('hides a `computed(...)` value', () => {
+    expect(shownDefault(`@Input() value = computed(() => false);`)).toBeUndefined();
+  });
+
+  it('hides a `new` expression', () => {
+    expect(shownDefault(`@Input() value = new Map<string, string>();`)).toBeUndefined();
+  });
+
+  it('hides an interpolated template literal', () => {
+    expect(
+      shownDefault(`@Input() value = \`item-\${nextId++}\`;`, `let nextId = 0;`)
+    ).toBeUndefined();
+  });
+
+  it('hides a bare identifier that only names a constant', () => {
+    expect(
+      shownDefault(
+        `@Input() value = DEFAULT_ORIENTATION;`,
+        `const DEFAULT_ORIENTATION = 'horizontal';`
+      )
+    ).toBeUndefined();
+  });
+});
+
+describe('authored default tags', () => {
+  it('lets a camel-case @defaultValue tag stand in for a hidden initializer', () => {
+    expect(
+      shownDefault(
+        `
+        /** @defaultValue 'horizontal' */
+        @Input() value = DEFAULT_ORIENTATION;
+      `,
+        `const DEFAULT_ORIENTATION = 'horizontal';`
+      )
+    ).toBe('horizontal');
+  });
+
+  it('lets an authored @default tag win over a literal initializer', () => {
+    expect(
+      shownDefault(`
+        /** @default 'horizontal' */
+        @Input() value = 'vertical';
+      `)
+    ).toBe('horizontal');
+  });
+});

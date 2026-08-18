@@ -29,6 +29,14 @@ export const isAngularCoreOrUnresolved = (ctx: AnalyzerContext, node: ts.Node): 
   );
 };
 
+// Angular matches decorators by imported symbol, so `import { Input as InputDecorator }` still
+// declares an input; the name reported here is the imported one, not the local spelling.
+const importedName = (ctx: AnalyzerContext, identifier: ts.Identifier): string => {
+  const symbol = ctx.checker.getSymbolAtLocation(identifier);
+  const specifier = symbol?.declarations?.find(ctx.ts.isImportSpecifier);
+  return specifier?.propertyName?.text ?? identifier.text;
+};
+
 export const getDecorators = (ctx: AnalyzerContext, node: ts.Node): DecoratorInfo[] => {
   const { ts } = ctx;
   if (!ts.canHaveDecorators(node)) {
@@ -45,7 +53,7 @@ export const getDecorators = (ctx: AnalyzerContext, node: ts.Node): DecoratorInf
       continue;
     }
     const name = ts.isIdentifier(target)
-      ? target.text
+      ? importedName(ctx, target)
       : ts.isPropertyAccessExpression(target)
         ? target.name.text
         : target.getText();

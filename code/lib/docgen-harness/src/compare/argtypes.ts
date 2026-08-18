@@ -112,9 +112,18 @@ const isRecordedSummary = (summary: unknown, legacyBaseline: boolean): boolean =
     return true;
   }
   return (
-    summary !== null && summary !== false && !(typeof summary === 'number' && Number.isNaN(summary))
+    summary !== null &&
+    summary !== false &&
+    !(typeof summary === 'number' && Number.isNaN(summary)) &&
+    !(typeof summary === 'string' && isInitializerSourceSummary(summary))
   );
 };
+
+// Legacy compodoc also printed initializer source (`Math.max(1, 3)`, `signal(false)`) when a
+// default was not a literal. The modern extractor hides those on purpose - source text names where
+// a value comes from, not what it is - so dropping one loses nothing.
+const isInitializerSourceSummary = (summary: string): boolean =>
+  /[(`]|=>|\n/.test(summary) || /^(new|this)\b/.test(summary);
 
 // `table.type` is loosely typed upstream - `required` is a corpus field the csf type does not
 // declare - hence the unknown-safe reads.

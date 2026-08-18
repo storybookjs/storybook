@@ -3,7 +3,7 @@ import type * as ts from 'typescript';
 import type { Property } from '../types.ts';
 import type { AnalyzerContext } from './context.ts';
 import type { ClassMembers, MemberEntry } from './members.ts';
-import { applyMetadataInputsOutputs, memberKey, visitClassMembers } from './members.ts';
+import { applyMetadataInputsOutputs, visitClassMembers } from './members.ts';
 
 type IOBucket = 'inputs' | 'outputs';
 
@@ -72,16 +72,16 @@ function walkBases(
  */
 function mergeBucket(members: ClassMembers, baseMembers: ClassMembers, bucket: IOBucket): void {
   for (const inherited of baseMembers[bucket]) {
-    const key = memberKey(inherited);
+    const key = inherited.declName;
     // The opposite IO bucket is deliberately not consulted: a base's `model()` is one entry in
     // both, and each half has to survive independently.
     const owned = [members[bucket], members.methods].some((entries) =>
-      entries.some((entry) => memberKey(entry) === key)
+      entries.some((entry) => entry.declName === key)
     );
     if (owned) {
       continue;
     }
-    const index = members.properties.findIndex((entry) => memberKey(entry) === key);
+    const index = members.properties.findIndex((entry) => entry.declName === key);
     if (index < 0) {
       members[bucket].push(inherited);
       continue;
@@ -105,7 +105,7 @@ const promote = (
 
 const claimedElsewhere = (members: ClassMembers, key: string): boolean =>
   [members.inputs, members.outputs, members.properties, members.methods].some((bucket) =>
-    bucket.some((entry) => memberKey(entry) === key)
+    bucket.some((entry) => entry.declName === key)
   );
 
 function mergeInto<T>(
@@ -114,7 +114,7 @@ function mergeInto<T>(
   members: ClassMembers
 ): void {
   for (const inherited of source) {
-    if (!claimedElsewhere(members, memberKey(inherited))) {
+    if (!claimedElsewhere(members, inherited.declName)) {
       target.push(inherited);
     }
   }

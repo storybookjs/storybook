@@ -21,6 +21,11 @@ vi.mock('node:fs/promises');
 vi.mock('storybook/internal/node-logger');
 vi.mock('esbuild');
 
+/** The deprecation notice is emitted via a lazy logger import; flush it before asserting. */
+async function drainDeprecations() {
+  await new Promise((resolve) => setImmediate(resolve));
+}
+
 describe('loader', () => {
   beforeEach(() => {
     clearDirectoryCache();
@@ -86,33 +91,36 @@ describe('loader', () => {
       expect(deprecate).not.toHaveBeenCalled();
     });
 
-    it('should resolve extensionless import to .ts extension when file exists', () => {
+    it('should resolve extensionless import to .ts extension when file exists', async () => {
       vi.mocked(readdirSync).mockReturnValue(['utils.ts'] as any);
 
       const result = resolveWithExtension('./utils', '/project/src/file.ts');
 
       expect(result).toBe('./utils.ts');
+      await drainDeprecations();
       expect(deprecate).toHaveBeenCalledWith(
         expect.stringContaining('One or more extensionless imports detected: "./utils"')
       );
     });
 
-    it('should resolve extensionless import to .js extension when file exists', () => {
+    it('should resolve extensionless import to .js extension when file exists', async () => {
       vi.mocked(readdirSync).mockReturnValue(['utils.js'] as any);
 
       const result = resolveWithExtension('./utils', '/project/src/file.ts');
 
       expect(result).toBe('./utils.js');
+      await drainDeprecations();
       expect(deprecate).toHaveBeenCalledWith(
         expect.stringContaining('One or more extensionless imports detected: "./utils"')
       );
     });
 
-    it('should show deprecation message when encountering an extensionless import', () => {
+    it('should show deprecation message when encountering an extensionless import', async () => {
       vi.mocked(readdirSync).mockReturnValue(['utils.js'] as any);
 
       resolveWithExtension('./utils', '/project/src/file.ts');
 
+      await drainDeprecations();
       expect(deprecate).toHaveBeenCalledWith(
         expect.stringContaining('One or more extensionless imports detected: "./utils"')
       );
@@ -121,23 +129,25 @@ describe('loader', () => {
       );
     });
 
-    it('should return original path when file cannot be resolved', () => {
+    it('should return original path when file cannot be resolved', async () => {
       vi.mocked(readdirSync).mockReturnValue([] as any);
 
       const result = resolveWithExtension('./missing', '/project/src/file.ts');
 
       expect(result).toBe('./missing');
+      await drainDeprecations();
       expect(deprecate).toHaveBeenCalledWith(
         expect.stringContaining('One or more extensionless imports detected: "./missing"')
       );
     });
 
-    it('should resolve relative to parent directory', () => {
+    it('should resolve relative to parent directory', async () => {
       vi.mocked(readdirSync).mockReturnValue(['utils.ts'] as any);
 
       const result = resolveWithExtension('../utils', '/project/src/file.ts');
 
       expect(result).toBe('../utils.ts');
+      await drainDeprecations();
       expect(deprecate).toHaveBeenCalledWith(
         expect.stringContaining('One or more extensionless imports detected: "../utils"')
       );

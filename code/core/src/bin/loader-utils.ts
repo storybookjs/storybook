@@ -7,9 +7,18 @@
 import { readdirSync } from 'node:fs';
 import * as path from 'node:path';
 
-import { deprecate } from 'storybook/internal/node-logger';
-
 import { dedent } from 'ts-dedent';
+
+/**
+ * The deprecation notice loads the logger lazily: this module is imported from source by the build
+ * scripts, where a static `storybook/internal/node-logger` import would resolve into a dist that
+ * does not exist yet on a clean checkout. The warning does not need to be synchronous.
+ */
+function deprecate(message: string): void {
+  void import('storybook/internal/node-logger')
+    .then((logger) => logger.deprecate(message))
+    .catch(() => {});
+}
 
 /** File extensions the TypeScript loader hook transforms. */
 export const TS_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.mtsx', '.ctsx'] as const;

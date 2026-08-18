@@ -2,10 +2,8 @@ import { readFile } from 'node:fs/promises';
 import { isAbsolute, join } from 'node:path';
 
 import { types as t, type NodePath } from 'storybook/internal/babel';
-import type { StoryReferenceResolver } from 'storybook/internal/common';
 import {
   STORY_FILE_TEST_REGEXP,
-  createStoryReferenceResolver,
   getComponentIdFromEntry,
   getStoryImportPathFromEntry,
 } from 'storybook/internal/common';
@@ -14,24 +12,25 @@ import { storyNameFromExport } from 'storybook/internal/csf';
 import {
   buildImportStatements,
   collectImportBindings,
+  createStoryArgsResolver,
+  createStoryReferenceResolver,
   extractStoryJSDocInfo,
   jsDocTagsForPath,
   loadCsf,
   metaObjectPath,
   normalizeStoryDeclaration,
   propertyValue,
-  resolveArgValue,
-  resolveArgsRecord,
-  resolveBindingMembers,
   resolveComponentImport,
-  resolveObjectMembers,
   resolveRenderFunction,
   resolveReturnedObjectExpression,
   returnedExpressionPath,
+  unresolvedWarning,
   type ImportBinding,
   type ReferenceContext,
   type RenderFunctionPath,
   type RenderResolution,
+  type StoryArgsResolver,
+  type StoryReferenceResolver,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
@@ -70,8 +69,8 @@ interface StoryDocsContext {
   snippet: StorySnippetContext | undefined;
   importBindings: Map<string, ImportBinding>;
   metaPath: NodePath<t.ObjectExpression> | undefined;
-  /** How arg resolution follows a spread or a name out of the story file. */
-  references: ReferenceContext;
+  /** Resolves each story's args, following a spread or a name out of the story file. */
+  resolver: StoryArgsResolver;
 }
 
 // Vue's single-file-component format is tried ahead of the JS/TS extensions, matching how a story
@@ -153,11 +152,10 @@ export async function buildStoryDocsPayload(
     snippet,
     importBindings,
     metaPath,
-    references: {
-      program: csf._file.path,
+    resolver: createStoryArgsResolver(csf, {
       filePath: storyPath,
       ...(context.references ?? openStoryReferences()),
-    },
+    }),
   });
 
   return {
@@ -297,7 +295,7 @@ function enrichStoryDoc(
     storyConfigPath,
     options.metaPath,
     csf._storyDeclarationPath[storyExport],
-    options.references
+    options.resolver.ctx
   );
   const renderer =
     effectiveRender.kind === 'resolved'
@@ -309,7 +307,7 @@ function enrichStoryDoc(
     return plain;
   }
 
-  const resolved = resolveStaticStoryArgs(csf, storyExport, docgenArgInfo, options);
+  const resolved = resolveStaticStoryArgs(storyExport, docgenArgInfo, options);
   const classified = resolved.classified;
   if (classified.defer) {
     return plain;
@@ -335,14 +333,6 @@ function enrichStoryDoc(
     snippet: rendered.snippet,
     ...(warning ? { warning } : {}),
   };
-}
-
-/** Says which source text a static pass could not read, so a reader can see what is missing. */
-function unresolvedWarning(unresolved: readonly string[]): string | undefined {
-  const sources = [...new Set(unresolved)];
-  return sources.length === 0
-    ? undefined
-    : `Incomplete snippet: ${sources.map((source) => `\`${source}\``).join(', ')} could not be resolved statically.`;
 }
 
 function staticRendererForRenderFunction(
@@ -371,36 +361,16 @@ function staticRendererForRenderFunction(
 }
 
 function resolveStaticStoryArgs(
-  csf: ParsedCsf,
   storyExport: string,
   docgenArgInfo: VueDocgenArgInfo,
   options: StoryDocsContext
 ): StaticStoryArgs {
-  const ctx = options.references;
-  const metaMembers = options.metaPath
-    ? resolveObjectMembers(options.metaPath.node, ctx)
-    : undefined;
-  const metaArgs = resolveArgsRecord(metaMembers?.properties.args, ctx);
-  const localName = csf._stories[storyExport]?.localName ?? storyExport;
-  const storyMembers = resolveBindingMembers(ctx, localName);
-  const storyArgs = resolveArgsRecord(storyMembers?.properties.args, ctx);
-  const unresolved = [
-    ...metaArgs.unresolved,
-    ...(storyMembers?.unresolved ?? []),
-    ...storyArgs.unresolved,
-  ];
-
-  const args: Record<string, t.Node> = {};
-  for (const [name, node] of Object.entries({
-    ...metaArgs.properties,
-    ...storyArgs.properties,
-  })) {
-    // An arg naming a value the story file declares carries that value instead, since the name
-    // resolves nowhere in a snippet. A name another module owns stays for the classifier to report.
-    args[name] = resolveArgValue(node, ctx).node;
-  }
-
-  return { classified: classifyArgs(args, docgenArgInfo), unresolved };
+  // A name another module owns stays as written, for the classifier to report.
+  const resolved = options.resolver.resolve(storyExport);
+  return {
+    classified: classifyArgs(resolved.args, docgenArgInfo),
+    unresolved: resolved.unresolved,
+  };
 }
 
 function renderStaticStorySnippet(

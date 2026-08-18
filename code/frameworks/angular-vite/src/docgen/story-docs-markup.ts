@@ -331,13 +331,16 @@ type AnnotationResolution =
  * A named member of a resolved config record.
  *
  * The record already applied every spread it could read in source order, so a present member is the
- * value the story really ends up with. A member the record does not have is only knowably absent
- * when the record is complete: otherwise something this pass could not read may still supply it.
+ * value the story really ends up with - unless the record marks it shadowed, meaning something this
+ * pass could not read runs after the write and may replace it. A member the record does not have is
+ * only knowably absent when the record is complete.
  */
 export const resolvedMember = (members: ResolvedMembers, key: string): AnnotationResolution => {
   const node = members.properties[key];
   if (node !== undefined) {
-    return { kind: 'value', node };
+    return members.shadowed.includes(key)
+      ? { kind: 'unresolvable', node }
+      : { kind: 'value', node };
   }
   return members.unresolved.length > 0 ? { kind: 'unresolvable' } : { kind: 'missing' };
 };

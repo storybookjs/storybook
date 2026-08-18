@@ -837,3 +837,37 @@ test('args assembled at runtime are reported rather than dropped', () => {
     ]
   `);
 });
+
+test('args assigned to a function-declaration story are inlined', () => {
+  const input = withCSF3(dedent`
+    export function Usage(args) {
+      return <Button {...args}></Button>;
+    }
+    Usage.args = { label: 'assigned' };
+  `);
+  expect(generateExample(input)).toMatchInlineSnapshot(`
+    "function Usage() {
+        return <Button label="assigned">Click me</Button>;
+    }"
+  `);
+});
+
+test('a meta-level spread that may carry args is reported', () => {
+  const input = dedent`
+    import { Button } from '@design-system/button';
+    declare function sharedMeta(): object;
+    export default { component: Button, ...sharedMeta() };
+    export const Default = { args: { label: 'x' } };
+  `;
+  expect(generateResolved(input)).toMatchInlineSnapshot(`
+    [
+      {
+        "imports": [],
+        "snippet": "const Default = () => <Button label="x" />;",
+        "unresolved": [
+          "...sharedMeta()",
+        ],
+      },
+    ]
+  `);
+});

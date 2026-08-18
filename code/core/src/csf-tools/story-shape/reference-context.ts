@@ -1,11 +1,12 @@
 import type { types as t } from 'storybook/internal/babel';
-import type { ReferenceContext, ReferenceModule } from 'storybook/internal/csf-tools';
-import { babelParseFile, isSelfContained } from 'storybook/internal/csf-tools';
 
 import { readFileSync } from 'node:fs';
 
+import { createModuleResolver } from '../../common/utils/module-resolver.ts';
 import { jsTsSourceExtensions } from '../../shared/constants/extensions.ts';
-import { createModuleResolver } from './module-resolver.ts';
+import { babelParseFile } from '../CsfFile.ts';
+import { isSelfContained } from './resolve-arg-value.ts';
+import type { ReferenceModule, StoryReferenceResolver } from './resolve-members.ts';
 
 export interface StoryReferenceResolverOptions {
   /** Extensions tried ahead of the JS/TS set, for single-file-component formats like `.vue`. */
@@ -14,14 +15,12 @@ export interface StoryReferenceResolverOptions {
    * Rewrites a value read out of another module into one that stands on its own. Defaults to
    * accepting exactly the values that already do.
    */
-  externalize?: ReferenceContext['externalize'];
+  externalize?: StoryReferenceResolver['externalize'];
 }
 
-/** The half of a {@link ReferenceContext} that is not specific to one story file. */
-export type StoryReferenceResolver = Pick<ReferenceContext, 'resolveModule' | 'externalize'>;
-
 /**
- * Builds the half of a reference context that lets static arg resolution leave the story file.
+ * Builds the half of a story-file reference context that lets static arg resolution leave the
+ * story file.
  *
  * A story's args can spread or name a value another module owns, so resolving them reads those
  * modules too. The returned function opens a resolver for one build, which parses each module it
@@ -31,7 +30,7 @@ export type StoryReferenceResolver = Pick<ReferenceContext, 'resolveModule' | 'e
  * ```ts
  * const openStoryReferences = createStoryReferenceResolver();
  * // per build:
- * const ctx = { program: csf._file.path, filePath: storyPath, ...openStoryReferences() };
+ * const resolver = createStoryArgsResolver(csf, { filePath: storyPath, ...openStoryReferences() });
  * ```
  */
 export function createStoryReferenceResolver(
@@ -43,7 +42,7 @@ export function createStoryReferenceResolver(
     tsconfig: 'auto',
   });
 
-  return function openStoryReferences() {
+  return function openStoryReferences(): StoryReferenceResolver {
     const parsed = new Map<string, ReferenceModule | undefined>();
 
     return {

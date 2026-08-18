@@ -1,6 +1,7 @@
-import { createStoryReferenceResolver, getComponentIdFromEntry } from 'storybook/internal/common';
+import { getComponentIdFromEntry } from 'storybook/internal/common';
 import {
   buildImportStatements,
+  createStoryReferenceResolver,
   extractComponentDescription,
   extractDescription,
 } from 'storybook/internal/csf-tools';

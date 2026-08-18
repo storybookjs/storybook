@@ -4,7 +4,7 @@ import {
   type ReferenceContext,
   type ResolvedMembers,
   resolveObjectMembers,
-} from './resolve-args.ts';
+} from './resolve-members.ts';
 import { keyOf, pathForNode, resolveIdentifierInit } from './utils.ts';
 
 /** A function a story or meta supplies through `render`. */

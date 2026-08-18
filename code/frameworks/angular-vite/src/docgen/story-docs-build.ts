@@ -1,22 +1,17 @@
 import { types as t } from 'storybook/internal/babel';
-import {
-  createStoryReferenceResolver,
-  getComponentIdFromEntry,
-  getStoryImportPathFromEntry,
-  parseReferenceModule,
-} from 'storybook/internal/common';
+import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
-import type { CsfFile, ReferenceContext, ResolvedMembers } from 'storybook/internal/csf-tools';
+import type { CsfFile, StoryArgsResolver, StoryReferences } from 'storybook/internal/csf-tools';
 import {
   buildImportStatements,
   collectImportBindings,
+  createStoryArgsResolver,
+  createStoryReferenceResolver,
   extractStoryJSDocInfo,
   isSelfContained,
-  resolveArgValue,
-  resolveArgsRecord,
-  resolveBindingMembers,
+  parseReferenceModule,
   resolveComponentImport,
-  resolveObjectMembers,
+  unresolvedWarning,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
@@ -75,30 +70,23 @@ export const buildStoryDocsPayload = async (
     : undefined;
 
   const enums = docgenPayload?.angularComponentMeta?.enums ?? [];
-  const references: ReferenceContext = {
-    program: csf._file.path,
+  const { resolveImport } = context;
+  const references: StoryReferences = {
     filePath: storyFilePath,
     externalize: createArgExternalizer(enums),
-    ...(context.resolveImport
-      ? {
-          resolveModule: (fromFile: string, specifier: string) => {
-            const target = context.resolveImport!(fromFile, specifier);
-            return target === undefined ? undefined : parseReferenceModule(target);
-          },
+    resolveModule: resolveImport
+      ? (fromFile, specifier) => {
+          const target = resolveImport(fromFile, specifier);
+          return target === undefined ? undefined : parseReferenceModule(target);
         }
-      : { resolveModule: openStoryReferences().resolveModule }),
+      : openStoryReferences().resolveModule,
   };
 
   const componentName = componentNameOf(componentNode);
   const importBindings = collectImportBindings(csf._file.path);
-  const metaNode = csf._metaNode;
   const deps: StoryDocDeps = {
     csf,
-    references,
-    metaMembers:
-      metaNode && t.isObjectExpression(metaNode)
-        ? resolveObjectMembers(metaNode, references)
-        : { properties: {}, unresolved: [] },
+    resolveStoryArgs: createStoryArgsResolver(csf, references),
     snippetMeta: docgenPayload?.angularComponentMeta,
     componentName,
     componentImport:
@@ -150,10 +138,8 @@ const componentNameOf = (node: t.Node | undefined): string | undefined => {
 
 interface StoryDocDeps {
   csf: CsfFile;
-  /** How args follow a spread or a name, out of the story file when it has to. */
-  references: ReferenceContext;
-  /** The meta's config members, spreads and names followed. */
-  metaMembers: ResolvedMembers;
+  /** Resolves each story's args, following a spread or a name out of the story file. */
+  resolveStoryArgs: StoryArgsResolver;
   snippetMeta: AngularComponentSnippetMeta | undefined;
   componentName: string | undefined;
   componentImport: string | undefined;
@@ -196,49 +182,29 @@ const buildStoryDoc = (
   }
 };
 
-/**
- * Everything reading the story statically produced: its config members, its merged args, and the
- * source text of whatever hid an arg from this pass.
- *
- * A story whose binding cannot be read at all - a re-export the parser resolved but scope does not
- * bind - has no members, which reads as a story that declares nothing rather than as an error.
- */
 const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
-  const { csf, references, metaMembers } = deps;
-  // A re-export documents the story under a different name than the binding it reads.
-  const localName = csf._stories[exportName]?.localName ?? exportName;
-  const members = resolveBindingMembers(references, localName) ?? {
-    properties: {},
-    unresolved: [sourceOf(csf._storyStatements[exportName] ?? t.identifier(exportName))],
-  };
-  const metaArgs = resolveArgsRecord(metaMembers.properties.args, references);
-  const storyArgs = resolveArgsRecord(members.properties.args, references);
-
-  const args: Record<string, t.Node> = {};
-  const unresolved = [
-    ...metaMembers.unresolved,
-    ...metaArgs.unresolved,
-    ...members.unresolved,
-    ...storyArgs.unresolved,
-  ];
+  const resolved = deps.resolveStoryArgs.resolve(exportName);
   const enums = deps.snippetMeta?.enums ?? [];
-  for (const [name, node] of Object.entries({
-    ...metaArgs.properties,
-    ...storyArgs.properties,
-  })) {
-    // A name the story file declares becomes the value it was declared with.
-    const value = resolveArgValue(node, references).node;
-    args[name] = value;
-    // A name that is left has to be reported: an Angular binding is evaluated against the host
-    // component the snippet ships, so a name that component does not have reads as `undefined`
-    // there rather than failing to compile. An enum member still resolves, and an expression that
-    // only names what it declares itself - a handler's own parameters - needs nothing from the host.
+  const unresolved = [...resolved.unresolved];
+  for (const value of Object.values(resolved.args)) {
+    // An arg that still carries a name has to be reported: an Angular binding is evaluated against
+    // the host component the snippet ships, so a name that component does not have reads as
+    // `undefined` there rather than failing to compile. An enum member still resolves, and an
+    // expression that only names what it declares itself - a handler's own parameters - needs
+    // nothing from the host.
     if (evaluateArgLiteral(value, enums) === undefined && !isSelfContained(value)) {
       unresolved.push(sourceOf(value));
     }
   }
 
-  return { csf, exportName, members, metaMembers, args, unresolvedArgs: unresolved };
+  return {
+    csf: deps.csf,
+    exportName,
+    members: resolved.storyMembers,
+    metaMembers: resolved.metaMembers,
+    args: resolved.args,
+    unresolvedArgs: unresolved,
+  };
 };
 
 /**
@@ -336,12 +302,6 @@ const referencedArgFields = (
 
   return { fields, unresolved };
 };
-
-/** Says which source text a static pass could not read, so a reader can see what is missing. */
-const unresolvedWarning = (unresolved: readonly string[]): string =>
-  `Incomplete snippet: ${[...new Set(unresolved)]
-    .map((source) => `\`${source}\``)
-    .join(', ')} could not be resolved statically.`;
 
 const withUnresolved = (
   rendered: HostComponentSnippet,

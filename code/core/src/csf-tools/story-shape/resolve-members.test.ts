@@ -8,11 +8,10 @@ import { babelParseFile } from '../CsfFile.ts';
 import {
   type ReferenceContext,
   type ReferenceModule,
-  resolveArgValue,
   resolveArgsRecord,
   resolveBindingMembers,
   sourceOf,
-} from './resolve-args.ts';
+} from './resolve-members.ts';
 
 const moduleOf = (code: string, filePath: string): ReferenceModule => ({
   program: babelParseFile({ code, filename: filePath }).path,
@@ -159,6 +158,25 @@ describe('spreads inside args', () => {
     });
   });
 
+  it('reports a method a spread copies into args', () => {
+    const code = dedent`
+      const shared = { label: 'shared', count() { return 1; } };
+      export const Spread = { args: { ...shared } };
+    `;
+    expect(argsOf(code, 'Spread')).toEqual({
+      args: { label: "'shared'" },
+      unresolved: ['count() { return 1; }'],
+    });
+  });
+
+  it('drops the member an accessor replaces, whose value only running the story produces', () => {
+    const code = `export const S = { args: { label: 'plain', get label() { return 'x'; } } };`;
+    expect(argsOf(code, 'S')).toEqual({
+      args: {},
+      unresolved: [`get label() { return 'x'; }`],
+    });
+  });
+
   it('reads a spread of an object written out on the spot', () => {
     const code = `export const Inline = { args: { ...{ primary: true }, label: 'inline' } };`;
     expect(argsOf(code, 'Inline')).toEqual({
@@ -260,6 +278,14 @@ describe('spreads at the story config level', () => {
     expect(argsOf(code, 'Assigned')).toEqual({ args: { label: "'assigned'" }, unresolved: [] });
   });
 
+  it('resolves the CSF2 assignment form on a function declaration', () => {
+    const code = dedent`
+      export function Assigned() { return null; }
+      Assigned.args = { label: 'assigned' };
+    `;
+    expect(argsOf(code, 'Assigned')).toEqual({ args: { label: "'assigned'" }, unresolved: [] });
+  });
+
   it('prefers an assignment over the args the declaration carries', () => {
     const code = dedent`
       export const Both = { args: { label: 'declared' } };
@@ -276,6 +302,39 @@ describe('spreads at the story config level', () => {
     expect(resolveBindingMembers(contextOf({ 'entry.ts': code }), 'Deep')?.unresolved).toEqual([
       "Deep.args.label = 'mutated'",
     ]);
+  });
+});
+
+describe('write order', () => {
+  it('marks a member written before an unreadable spread as shadowed', () => {
+    const code = dedent`
+      declare function makeBase(): object;
+      export const S = { template: 'own', ...makeBase() };
+    `;
+    const members = resolveBindingMembers(contextOf({ 'entry.ts': code }), 'S');
+    expect(members?.shadowed).toEqual(['template']);
+    expect(members?.unresolved).toEqual(['...makeBase()']);
+  });
+
+  it('trusts a member written after the unreadable spread', () => {
+    const code = dedent`
+      declare function makeBase(): object;
+      export const S = { ...makeBase(), template: 'own' };
+    `;
+    const members = resolveBindingMembers(contextOf({ 'entry.ts': code }), 'S');
+    expect(members?.shadowed).toEqual([]);
+    expect(members?.unresolved).toEqual(['...makeBase()']);
+  });
+
+  it('unshadows a member a readable spread writes again', () => {
+    const code = dedent`
+      declare function makeBase(): object;
+      const base = { template: 'base' };
+      export const S = { template: 'own', ...makeBase(), ...base };
+    `;
+    const members = resolveBindingMembers(contextOf({ 'entry.ts': code }), 'S');
+    expect(members?.shadowed).toEqual([]);
+    expect(members?.properties.template).toBeDefined();
   });
 });
 
@@ -315,6 +374,24 @@ describe('CSF factories', () => {
     `;
     expect(argsOf(code, 'Bare')).toEqual({ args: {}, unresolved: ['...Base'] });
   });
+
+  // A parent from another module would carry values whose names resolve in that module, not here,
+  // so it must be reported rather than mixed in as if it were local.
+  it('rejects an extend call whose parent another module owns', () => {
+    const ctx = contextOf({
+      'other.stories.ts': dedent`
+        import preview from './preview';
+        const REMOTE_LABEL = 'remote';
+        const meta = preview.meta({ component: 'x' });
+        export const Base = meta.story({ args: { label: REMOTE_LABEL } });
+      `,
+      'entry.ts': dedent`
+        import { Base } from './other.stories';
+        export const Ext = Base.extend({ args: { size: 'lg' } });
+      `,
+    });
+    expect(resolveBindingMembers(ctx, 'Ext')).toBeUndefined();
+  });
 });
 
 describe('externalize', () => {
@@ -334,92 +411,5 @@ describe('externalize', () => {
       (node) => (t.isStringLiteral(node) ? node : undefined)
     );
     expect(argsOf('', 'Reuse', ctx)).toEqual({ args: {}, unresolved: ['...shared'] });
-  });
-});
-
-describe('resolveArgValue', () => {
-  const valueOf = (code: string, expression: string) => {
-    const ctx = contextOf({
-      'entry.ts': `${code}\nexport const Story = { args: { v: ${expression} } };`,
-    });
-    const record = resolveArgsRecord(resolveBindingMembers(ctx, 'Story')?.properties.args, ctx);
-    const resolved = resolveArgValue(record.properties.v, ctx);
-    return {
-      node: sourceOf(resolved.node),
-      imports: resolved.imports.map((ref) => `${ref.localImportName}:${ref.importId}`),
-      unresolved: resolved.unresolved,
-    };
-  };
-
-  it('reads a local const through to the value it was declared with', () => {
-    expect(valueOf(`const LOCAL_LABEL = 'local';`, 'LOCAL_LABEL')).toEqual({
-      node: "'local'",
-      imports: [],
-      unresolved: [],
-    });
-  });
-
-  it('follows a chain of local consts', () => {
-    expect(valueOf(`const A = B; const B = 42;`, 'A')).toEqual({
-      node: '42',
-      imports: [],
-      unresolved: [],
-    });
-  });
-
-  it('keeps an imported name and reports the import it needs', () => {
-    expect(valueOf(`import { IMPORTED_LABEL } from './constants';`, 'IMPORTED_LABEL')).toEqual({
-      node: 'IMPORTED_LABEL',
-      imports: ['IMPORTED_LABEL:./constants'],
-      unresolved: [],
-    });
-  });
-
-  it('reports the import a call expression reaches for', () => {
-    expect(valueOf(`import { computeCount } from './helpers';`, 'computeCount(2)')).toEqual({
-      node: 'computeCount(2)',
-      imports: ['computeCount:./helpers'],
-      unresolved: [],
-    });
-  });
-
-  it('reports a local name a larger expression reaches for, which it cannot substitute', () => {
-    expect(valueOf(`const factor = 2;`, 'factor * 3')).toEqual({
-      node: 'factor * 3',
-      imports: [],
-      unresolved: ['factor'],
-    });
-  });
-
-  it('writes out a spread inside an object the arg holds', () => {
-    expect(valueOf(`const base = { size: 'md' };`, `{ ...base, tone: 'neutral' }`)).toEqual({
-      node: "{ size: 'md', tone: 'neutral' }",
-      imports: [],
-      unresolved: [],
-    });
-  });
-
-  it('leaves an object holding a spread it cannot read exactly as written', () => {
-    expect(valueOf('', `{ ...buildBase(), tone: 'neutral' }`)).toEqual({
-      node: "{ ...buildBase(), tone: 'neutral' }",
-      imports: [],
-      unresolved: ['...buildBase()'],
-    });
-  });
-
-  it('leaves a literal alone', () => {
-    expect(valueOf('', `{ a: 1, b: [2, 3] }`)).toEqual({
-      node: '{ a: 1, b: [2, 3] }',
-      imports: [],
-      unresolved: [],
-    });
-  });
-
-  it('names nothing for a global or a parameter the expression declares itself', () => {
-    expect(valueOf('', '(event) => Math.max(event.x, 0)')).toEqual({
-      node: 'event => Math.max(event.x, 0)',
-      imports: [],
-      unresolved: [],
-    });
   });
 });

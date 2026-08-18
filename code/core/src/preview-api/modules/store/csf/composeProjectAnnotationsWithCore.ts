@@ -2,7 +2,7 @@ import {
   getCoreAnnotations,
   hasCoreAnnotations,
   markAsComposedWithCoreAnnotations,
-} from '../../../../csf/core-annotations.ts';
+} from 'storybook/internal/csf';
 import type {
   ModuleExports,
   NormalizedProjectAnnotations,

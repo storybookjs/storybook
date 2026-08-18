@@ -1,6 +1,5 @@
+import type { Meta, Story } from 'storybook/internal/csf';
 import type { Renderer } from 'storybook/internal/types';
-
-import type { Meta, Story } from './csf-factories.ts';
 
 /**
  * Structural guards for CSF factory objects. They live apart from `csf-factories.ts` so runtime

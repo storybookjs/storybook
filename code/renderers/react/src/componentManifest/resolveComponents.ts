@@ -1,5 +1,5 @@
 import { recast } from 'storybook/internal/babel';
-import { storyNameFromExport } from 'storybook/internal/csf-utils';
+import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import type { ImportRef, StoryReferences } from 'storybook/internal/csf-tools';
 import {
   createStoryArgsResolver,

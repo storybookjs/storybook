@@ -1,7 +1,7 @@
 import { logger } from 'storybook/internal/client-logger';
 import type { Story } from 'storybook/internal/csf';
 import { getStoryChildren, isStory } from '../../../../csf/csf-guards.ts';
-import { isExportStory, toTestId } from '../../../../csf/csf-utils.ts';
+import { isExportStory, toTestId } from 'storybook/internal/csf/csf-utils';
 import type { ComponentTitle, Parameters, Path, Renderer } from 'storybook/internal/types';
 import type {
   CSFFile,

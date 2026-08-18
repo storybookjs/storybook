@@ -1,4 +1,4 @@
-import { sanitize } from '../../../../csf/csf-utils.ts';
+import { sanitize } from 'storybook/internal/csf/csf-utils';
 import type { ModuleExports, NormalizedComponentAnnotations } from 'storybook/internal/types';
 import type { Renderer } from 'storybook/internal/types';
 

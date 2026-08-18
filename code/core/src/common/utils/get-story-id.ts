@@ -1,7 +1,7 @@
 import { relative } from 'node:path';
 
 import { normalizeStories, normalizeStoryPath } from 'storybook/internal/common';
-import { sanitize, storyNameFromExport, toId } from '../../csf/csf-utils.ts';
+import { sanitize, storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
 import type { Options, StoriesEntry } from 'storybook/internal/types';
 
 import { dedent } from 'ts-dedent';

@@ -1,5 +1,5 @@
 import { deprecate, logger } from 'storybook/internal/client-logger';
-import { storyNameFromExport, toId } from '../../../../csf/csf-utils.ts';
+import { storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
 import type {
   ArgTypes,
   ArgsStoryFn,

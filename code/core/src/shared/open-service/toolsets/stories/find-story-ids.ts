@@ -1,7 +1,7 @@
 import path from 'node:path';
 
 import { normalizeStoryPath } from 'storybook/internal/common';
-import { storyNameFromExport } from '../../../../csf/csf-utils.ts';
+import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
 
 import type { StoryInput } from './story-input.ts';

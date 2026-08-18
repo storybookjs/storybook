@@ -1,4 +1,4 @@
-import { isExportStory } from '../../../../csf/csf-utils.ts';
+import { isExportStory } from 'storybook/internal/csf/csf-utils';
 import type { CleanupCallback } from 'storybook/internal/csf';
 import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
 import type {

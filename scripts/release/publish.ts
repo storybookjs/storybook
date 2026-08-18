@@ -4,13 +4,18 @@ import { join } from 'node:path';
 import { program } from 'commander';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
-import pRetry from 'p-retry';
 import picocolors from 'picocolors';
 import semver from 'semver';
 import { dedent } from 'ts-dedent';
 import { z } from 'zod';
 
 import { esMain } from '../utils/esmain.ts';
+import { getCodeWorkspaces } from '../utils/workspace.ts';
+import {
+  listUnpublishedPackages,
+  packagesAcceptedByRegistry,
+  waitForPackagesToBePublished,
+} from './npm-registry.ts';
 
 program
   .name('publish')
@@ -42,6 +47,10 @@ type Options = {
 const CODE_DIR_PATH = join(__dirname, '..', '..', 'code');
 const CODE_PACKAGE_JSON_PATH = join(CODE_DIR_PATH, 'package.json');
 
+const MAX_PUBLISH_ATTEMPTS = 3;
+const REGISTRY_POLL_INTERVAL_MS = 15_000;
+const REGISTRY_POLL_TIMEOUT_MS = 15 * 60 * 1000;
+
 const validateOptions = (options: { [key: string]: any }): options is Options => {
   optionsSchema.parse(options);
   return true;
@@ -57,58 +66,6 @@ const getCurrentVersion = async (verbose?: boolean) => {
   return version;
 };
 
-const isCurrentVersionPublished = async ({
-  packageName,
-  currentVersion,
-  verbose,
-}: {
-  packageName: string;
-  currentVersion: string;
-  verbose?: boolean;
-}) => {
-  const prettyPackage = `${picocolors.blue(packageName)}@${picocolors.green(currentVersion)}`;
-  console.log(`⛅ Checking if ${prettyPackage} is published...`);
-
-  if (verbose) {
-    console.log(`Fetching from npm:`);
-    console.log(
-      `https://registry.npmjs.org/${picocolors.blue(packageName)}/${picocolors.green(currentVersion)}`
-    );
-  }
-  const response = await fetch(`https://registry.npmjs.org/${packageName}/${currentVersion}`);
-  if (response.status === 404) {
-    console.log(`🌤️ ${prettyPackage} is not published`);
-    return false;
-  }
-  if (response.status !== 200) {
-    console.error(
-      `Unexpected status code when checking the current version on npm: ${response.status}`
-    );
-    console.error(await response.text());
-    throw new Error(
-      `Unexpected status code when checking the current version on npm: ${response.status}`
-    );
-  }
-  const data: any = await response.json();
-  if (verbose) {
-    console.log(`Response from npm:`);
-    console.log(data);
-  }
-  if (data.version !== currentVersion) {
-    // this should never happen
-    console.error(
-      `Unexpected version received when checking the current version on npm: ${data.version}`
-    );
-    console.error(JSON.stringify(data, null, 2));
-    throw new Error(
-      `Unexpected version received when checking the current version on npm: ${data.version}`
-    );
-  }
-
-  console.log(`⛈️ ${prettyPackage} is published`);
-  return true;
-};
-
 const buildAllPackages = async () => {
   console.log(`🏗️ Building all packages...`);
   await execaCommand('yarn task --task=compile --start-from=compile --no-link', {
@@ -119,52 +76,125 @@ const buildAllPackages = async () => {
   console.log(`🏗️ Packages successfully built`);
 };
 
-const publishAllPackages = async ({
+export const publishCommand = (tag: string, packageNames: string[]) => {
+  const include = packageNames.map((name) => `--include=${name}`).join(' ');
+  return `yarn workspaces foreach --all --parallel --no-private ${include} --verbose npm publish --provenance --tolerate-republish --tag ${tag}`;
+};
+
+const execaOutput = (error: unknown) => {
+  if (!error || typeof error !== 'object') {
+    return '';
+  }
+  const { stdout, stderr, all } = error as { stdout?: string; stderr?: string; all?: string };
+  return [all, stdout, stderr].filter(Boolean).join('\n');
+};
+
+export const publishAllPackages = async ({
   tag,
   verbose,
   dryRun,
+  currentVersion,
+  packageNames,
 }: {
   tag: string;
   verbose?: boolean;
   dryRun?: boolean;
+  currentVersion: string;
+  packageNames: string[];
 }) => {
   console.log(`📦 Publishing all packages...`);
-  const command = `yarn workspaces foreach --all --parallel --no-private --verbose npm publish --provenance --tolerate-republish --tag ${tag}`;
-  if (verbose) {
-    console.log(`📦 Executing: ${command}`);
-  }
   if (dryRun) {
     console.log(`📦 Dry run, skipping publish. Would have executed:
-    ${picocolors.blue(command)}`);
+    ${picocolors.blue(publishCommand(tag, packageNames))}`);
     return;
   }
 
-  /**
-   * 'yarn npm publish' will fail if just one package fails to publish. But it will continue through
-   * with all the other packages, and --tolerate-republish makes it okay to publish the same version
-   * again. So we can safely retry the whole publishing process if it fails. It's not uncommon for
-   * the registry to fail often, which Yarn catches by checking the registry after a package has
-   * been published.
-   */
-  await pRetry(
-    () =>
-      execaCommand(command, {
-        stdio: 'inherit',
+  // Staged versions are reserved but not in the packument yet; a retry PUT 409s.
+  let toPublish = [...packageNames];
+  let unpublished = [...packageNames];
+  const accepted = new Set<string>();
+  let lastError: unknown;
+
+  for (let attempt = 1; attempt <= MAX_PUBLISH_ATTEMPTS; attempt += 1) {
+    const command = publishCommand(tag, toPublish);
+    if (verbose) {
+      console.log(`📦 Executing: ${command}`);
+    }
+
+    try {
+      await execaCommand(command, {
         cleanup: true,
         cwd: CODE_DIR_PATH,
-      }),
-    {
-      retries: 4,
-      onFailedAttempt: (error) =>
+        stdout: ['pipe', 'inherit'],
+        stderr: ['pipe', 'inherit'],
+      });
+      console.log(`📦 Packages successfully published`);
+      return;
+    } catch (error) {
+      lastError = error;
+      for (const name of packagesAcceptedByRegistry(execaOutput(error))) {
+        accepted.add(name);
+      }
+      toPublish = toPublish.filter((name) => !accepted.has(name));
+
+      unpublished = await listUnpublishedPackages({
+        packageNames,
+        version: currentVersion,
+        verbose,
+      });
+
+      if (unpublished.length === 0) {
         console.log(
-          picocolors.yellow(
-            dedent`❗One or more packages failed to publish, retrying...
-            This was attempt number ${error.attemptNumber}, there are ${error.retriesLeft} retries left. 🤞`
-          )
-        ),
+          `📦 All packages are on npm even though Yarn exited non-zero (registry lag after a staged 409). Treating as success.`
+        );
+        return;
+      }
+
+      console.log(
+        picocolors.yellow(
+          dedent`❗ ${unpublished.length} package(s) are not yet visible on npm: ${unpublished.join(', ')}
+          This was attempt number ${attempt}, there are ${MAX_PUBLISH_ATTEMPTS - attempt} retries left.
+          Waiting for the registry instead of publishing over a staged version.`
+        )
+      );
+
+      unpublished = await waitForPackagesToBePublished({
+        packageNames: unpublished,
+        version: currentVersion,
+        timeoutMs: REGISTRY_POLL_TIMEOUT_MS,
+        intervalMs: REGISTRY_POLL_INTERVAL_MS,
+        verbose,
+      });
+
+      if (unpublished.length === 0) {
+        console.log(`📦 All packages became visible on npm. Treating as success.`);
+        return;
+      }
+
+      toPublish = unpublished.filter((name) => !accepted.has(name));
+      if (toPublish.length === 0) {
+        throw new Error(
+          `Failed to publish version ${currentVersion}. Still missing after staging wait: ${unpublished.join(', ')}`,
+          { cause: lastError }
+        );
+      }
+
+      if (attempt === MAX_PUBLISH_ATTEMPTS) {
+        break;
+      }
+
+      console.log(
+        picocolors.yellow(
+          `❗ Still missing ${toPublish.join(', ')}. Retrying publish for those packages only.`
+        )
+      );
     }
+  }
+
+  throw new Error(
+    `Failed to publish version ${currentVersion}. Still missing: ${unpublished.join(', ')}`,
+    { cause: lastError }
   );
-  console.log(`📦 Packages successfully published`);
 };
 
 export const run = async (options: unknown) => {
@@ -173,20 +203,30 @@ export const run = async (options: unknown) => {
   }
   const { tag, dryRun, verbose } = options;
 
-  // Get the current version from code/package.json
   const currentVersion = await getCurrentVersion(verbose);
-  const isAlreadyPublished = await isCurrentVersionPublished({
-    currentVersion,
-    packageName: 'storybook',
+  const workspaces = await getCodeWorkspaces(false);
+  const packageNames = workspaces.map((workspace) => workspace.name);
+  const unpublished = await listUnpublishedPackages({
+    packageNames,
+    version: currentVersion,
     verbose,
   });
-  if (isAlreadyPublished) {
-    throw new Error(
-      `⛔ Current version (${picocolors.green(currentVersion)}) is already published, aborting.`
+
+  if (unpublished.length === 0) {
+    console.log(
+      `✅ All packages already published at ${picocolors.green(currentVersion)}, skipping publish`
     );
+    return;
   }
+
   await buildAllPackages();
-  await publishAllPackages({ tag, verbose, dryRun });
+  await publishAllPackages({
+    tag,
+    verbose,
+    dryRun,
+    currentVersion,
+    packageNames: unpublished,
+  });
 
   console.log(
     `✅ Published all packages with version ${picocolors.green(currentVersion)}${

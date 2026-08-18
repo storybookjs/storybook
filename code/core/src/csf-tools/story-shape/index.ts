@@ -13,17 +13,28 @@ export {
 export { extractStoryJSDocInfo, jsDocTagsForPath } from './jsdoc.ts';
 export { normalizeStoryDeclaration, type NormalizedStoryDeclaration } from './normalize-story.ts';
 export {
-  isSelfContained,
+  createStoryReferenceResolver,
+  parseReferenceModule,
+  type StoryReferenceResolverOptions,
+} from './reference-context.ts';
+export { isSelfContained, resolveArgValue, type ResolvedArgValue } from './resolve-arg-value.ts';
+export {
   resolveArgsRecord,
-  resolveArgValue,
   resolveBindingMembers,
   resolveObjectMembers,
   sourceOf,
   type ReferenceContext,
   type ReferenceModule,
-  type ResolvedArgValue,
   type ResolvedMembers,
-} from './resolve-args.ts';
+  type StoryReferenceResolver,
+  type StoryReferences,
+} from './resolve-members.ts';
+export {
+  createStoryArgsResolver,
+  unresolvedWarning,
+  type ResolvedStoryArgs,
+  type StoryArgsResolver,
+} from './resolve-story-args.ts';
 export { resolveRenderFunction, type RenderFunctionPath, type RenderResolution } from './render.ts';
 export {
   keyOf,

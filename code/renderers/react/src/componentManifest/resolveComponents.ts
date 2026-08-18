@@ -1,9 +1,14 @@
 import { recast } from 'storybook/internal/babel';
 import { storyNameFromExport } from 'storybook/internal/csf';
-import type { ImportRef } from 'storybook/internal/csf-tools';
-import { extractStoryJSDocInfo, loadCsf } from 'storybook/internal/csf-tools';
+import type { ImportRef, StoryReferences } from 'storybook/internal/csf-tools';
+import {
+  createStoryArgsResolver,
+  extractStoryJSDocInfo,
+  loadCsf,
+  unresolvedWarning,
+} from 'storybook/internal/csf-tools';
 
-import { type StoryReferences, getCodeSnippet } from './generateCodeSnippet.ts';
+import { getCodeSnippet } from './generateCodeSnippet.ts';
 import {
   type ComponentRef,
   type DocgenEngine,
@@ -146,13 +151,6 @@ export interface ExtractedStorySnippets {
   imports: ImportRef[];
 }
 
-/** Says which source text a static pass could not read, so a reader can see what is missing. */
-function unresolvedWarning(unresolved: readonly string[]): string {
-  return `Incomplete snippet: ${[...new Set(unresolved)]
-    .map((source) => `\`${source}\``)
-    .join(', ')} could not be resolved statically.`;
-}
-
 /**
  * Extract per-story code snippets + JSDoc metadata from a parsed CSF file.
  *
@@ -168,14 +166,16 @@ export function extractStorySnippets(
   references?: StoryReferences
 ): ExtractedStorySnippets {
   const imports: ImportRef[] = [];
+  const resolver = createStoryArgsResolver(csf, references);
   const stories = Object.entries(csf._stories)
     .filter(([, story]) => !filterStoryIds || filterStoryIds.has(story.id))
     .map(([storyExport, story]): ResolvedStory => {
       const name = story.name ?? storyNameFromExport(storyExport);
       try {
         const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[storyExport]);
-        const snippet = getCodeSnippet(csf, storyExport, componentName, references);
+        const snippet = getCodeSnippet(csf, storyExport, componentName, resolver);
         imports.push(...snippet.imports);
+        const warning = unresolvedWarning(snippet.unresolved);
 
         return {
           id: story.id,
@@ -183,9 +183,7 @@ export function extractStorySnippets(
           snippet: recast.print(snippet.node).code,
           description,
           summary,
-          ...(snippet.unresolved.length > 0
-            ? { warning: unresolvedWarning(snippet.unresolved) }
-            : {}),
+          ...(warning ? { warning } : {}),
         };
       } catch (e) {
         const err = e instanceof Error ? e : new Error(String(e));

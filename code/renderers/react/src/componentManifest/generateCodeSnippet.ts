@@ -1,17 +1,14 @@
 import { type NodePath, types as t } from 'storybook/internal/babel';
-import type { StoryReferenceResolver } from 'storybook/internal/common';
 import {
+  createStoryArgsResolver,
   type CsfFile,
   type ImportRef,
   metaObjectPath,
   normalizeStoryDeclaration,
   type ReferenceContext,
   type RenderResolution,
-  resolveArgValue,
-  resolveArgsRecord,
-  resolveBindingMembers,
-  resolveObjectMembers,
   resolveRenderFunction,
+  type StoryArgsResolver,
 } from 'storybook/internal/csf-tools';
 
 import { invariant } from './utils.ts';
@@ -21,12 +18,6 @@ function renderFunctionOf(resolution: RenderResolution) {
     return resolution.path;
   }
   return resolution.kind === 'unresolved' ? resolution.shadowedRender : undefined;
-}
-
-/** How arg resolution leaves the story file; omitted when only the story file itself is read. */
-export interface StoryReferences extends StoryReferenceResolver {
-  /** Absolute path of the story file, which every import specifier resolves against. */
-  filePath: string;
 }
 
 /** A story's snippet, and what showing it as a complete example still depends on. */
@@ -42,50 +33,14 @@ export function getCodeSnippet(
   csf: CsfFile,
   storyName: string,
   componentName?: string,
-  references?: StoryReferences
+  resolver: StoryArgsResolver = createStoryArgsResolver(csf)
 ): CodeSnippet {
-  const ctx: ReferenceContext = { program: csf._file.path, filePath: '', ...references };
-  const { merged, imports, unresolved } = collectArgs(csf, storyName, ctx);
+  const { args, imports, unresolved } = resolver.resolve(storyName);
   return {
-    node: buildSnippetNode(csf, storyName, componentName, merged, ctx),
+    node: buildSnippetNode(csf, storyName, componentName, args, resolver.ctx),
     imports,
     unresolved,
   };
-}
-
-/**
- * The story's args as the snippet prints them: spreads followed, and every value read through to
- * something that means the same where the snippet lands.
- */
-function collectArgs(
-  csf: CsfFile,
-  storyName: string,
-  ctx: ReferenceContext
-): { merged: Record<string, t.Node>; imports: ImportRef[]; unresolved: string[] } {
-  const metaObj = csf._metaNode;
-  const metaMembers = metaObj ? resolveObjectMembers(metaObj, ctx) : undefined;
-  const metaArgs = resolveArgsRecord(metaMembers?.properties.args, ctx);
-  // A re-export documents the story under a different name than the binding it reads.
-  const localName = csf._stories[storyName]?.localName ?? storyName;
-  const storyMembers = resolveBindingMembers(ctx, localName);
-  const storyArgs = resolveArgsRecord(storyMembers?.properties.args, ctx);
-
-  const merged: Record<string, t.Node> = {};
-  const imports: ImportRef[] = [];
-  const unresolved = [
-    ...metaArgs.unresolved,
-    ...(storyMembers?.unresolved ?? []),
-    ...storyArgs.unresolved,
-  ];
-
-  for (const [key, node] of Object.entries({ ...metaArgs.properties, ...storyArgs.properties })) {
-    const value = resolveArgValue(node, ctx);
-    merged[key] = value.node;
-    imports.push(...value.imports);
-    unresolved.push(...value.unresolved);
-  }
-
-  return { merged, imports, unresolved };
 }
 
 function buildSnippetNode(

@@ -1,15 +1,19 @@
-// Follows the references a story hides its args behind: a spread of a constant, of a sibling story,
-// or of something another module owns, and an arg value written as a name rather than a value.
+// Follows the references a story hides its config behind: a spread of a constant, of a sibling
+// story, or of something another module owns, applying every write in the order it runs.
 import { generate, type NodePath, types as t } from 'storybook/internal/babel';
 
-import { type ImportRef } from './import-statements.ts';
-import { collectImportBindings, importedName, isTypeSpecifier } from './imports.ts';
+import { importedName, isTypeSpecifier } from './imports.ts';
 import { keyOf, unwrapExpression } from './utils.ts';
 
 /** Members of an object, and what reading it statically could not account for. */
 export interface ResolvedMembers {
-  /** Member name → value node. */
+  /** Member name → value node, as of the last write this pass could read. */
   properties: Record<string, t.Node>;
+  /**
+   * Names whose value an `unresolved` entry written after them may replace at runtime. A member
+   * absent from `properties` is only knowably absent when `unresolved` is empty.
+   */
+  shadowed: string[];
   /** Source text of every member `properties` could not absorb; empty exactly when complete. */
   unresolved: string[];
 }
@@ -36,12 +40,22 @@ export interface ReferenceContext extends ReferenceModule {
   externalize?: (node: t.Node) => t.Node | undefined;
 }
 
+/** The half of a {@link ReferenceContext} that is not specific to one story file. */
+export type StoryReferenceResolver = Pick<ReferenceContext, 'resolveModule' | 'externalize'>;
+
+/** How arg resolution leaves the story file; without it only the story file itself is read. */
+export interface StoryReferences extends StoryReferenceResolver {
+  /** Absolute path of the story file, which every import specifier resolves against. */
+  filePath: string;
+}
+
 /** Source text of a node, for naming an expression a static pass could not read. */
 export const sourceOf = (node: t.Node): string =>
   generate(node, { concise: true, comments: false }).code;
 
 const complete = (properties: Record<string, t.Node> = {}): ResolvedMembers => ({
   properties,
+  shadowed: [],
   unresolved: [],
 });
 
@@ -54,13 +68,13 @@ const complete = (properties: Record<string, t.Node> = {}): ResolvedMembers => (
 export const resolveObjectMembers = (
   object: t.ObjectExpression,
   ctx: ReferenceContext
-): ResolvedMembers => membersOf(object, ctx, new Set(), true);
+): ResolvedMembers => membersOf(object, ctx, new Set());
 
 /**
  * An `args` record, absorbing every spread the context can follow.
  *
  * Unlike {@link resolveObjectMembers} every member has to reduce to a printable value, so a method
- * shorthand is reported rather than kept.
+ * is reported rather than kept, wherever a spread copied it from.
  */
 export const resolveArgsRecord = (
   node: t.Node | undefined,
@@ -71,11 +85,27 @@ export const resolveArgsRecord = (
   }
   const unwrapped = unwrapExpression(node);
   if (t.isObjectExpression(unwrapped)) {
-    return membersOf(unwrapped, ctx, new Set(), false);
+    return asArgsRecord(membersOf(unwrapped, ctx, new Set()));
   }
   // `args: shared` names its record instead of writing one, which reads the same as spreading it.
   const referenced = resolveReference(ctx, unwrapped, node.start ?? undefined, new Set());
-  return referenced ?? { properties: {}, unresolved: [`args: ${sourceOf(unwrapped)}`] };
+  return referenced
+    ? asArgsRecord(referenced)
+    : { properties: {}, shadowed: [], unresolved: [`args: ${sourceOf(unwrapped)}`] };
+};
+
+const asArgsRecord = (members: ResolvedMembers): ResolvedMembers => {
+  const methods = Object.entries(members.properties).filter(([, node]) => t.isObjectMethod(node));
+  if (methods.length === 0) {
+    return members;
+  }
+  const properties = { ...members.properties };
+  const unresolved = [...members.unresolved];
+  for (const [key, node] of methods) {
+    delete properties[key];
+    unresolved.push(sourceOf(node));
+  }
+  return { properties, shadowed: members.shadowed.filter((key) => key in properties), unresolved };
 };
 
 /**
@@ -95,37 +125,54 @@ export const resolveBindingMembers = (
 const membersOf = (
   object: t.ObjectExpression,
   ctx: ReferenceContext,
-  visited: Set<string>,
-  keepMethods: boolean
+  visited: Set<string>
 ): ResolvedMembers => {
   const properties: Record<string, t.Node> = {};
   const unresolved: string[] = [];
+  const shadowed = new Set<string>();
+
+  // A write this pass cannot read may replace any member already written, but a member written
+  // after it wins at runtime, so only the keys known so far become uncertain.
+  const shadowKnownMembers = (source: string) => {
+    unresolved.push(source);
+    for (const key of Object.keys(properties)) {
+      shadowed.add(key);
+    }
+  };
 
   for (const property of object.properties) {
     if (t.isSpreadElement(property)) {
       const spread = spreadMembers(ctx, property, visited);
       if (spread === undefined || spread.unresolved.length > 0) {
-        unresolved.push(sourceOf(property));
+        shadowKnownMembers(sourceOf(property));
         continue;
       }
-      Object.assign(properties, spread.properties);
+      for (const [key, value] of Object.entries(spread.properties)) {
+        properties[key] = value;
+        shadowed.delete(key);
+      }
       continue;
     }
 
-    // A dynamic key, an accessor or a value only calling it produces can supply or shadow any
-    // member at runtime.
-    const opaqueMethod =
-      t.isObjectMethod(property) &&
-      (!keepMethods || property.kind !== 'method' || property.generator);
-    const key = opaqueMethod ? null : keyOf(property);
+    const key = keyOf(property);
     if (key === null) {
+      // A dynamic key can supply or shadow any member at runtime.
+      shadowKnownMembers(sourceOf(property));
+      continue;
+    }
+    if (t.isObjectMethod(property) && (property.kind !== 'method' || property.generator)) {
+      // An accessor or generator replaces exactly the member it names, with a value only running
+      // the story produces.
+      delete properties[key];
+      shadowed.delete(key);
       unresolved.push(sourceOf(property));
       continue;
     }
     properties[key] = t.isObjectMethod(property) ? property : property.value;
+    shadowed.delete(key);
   }
 
-  return { properties, unresolved };
+  return { properties, shadowed: [...shadowed], unresolved };
 };
 
 /** The object a spread copies from, whether it is written out or named. */
@@ -136,7 +183,7 @@ const spreadMembers = (
 ): ResolvedMembers | undefined => {
   const argument = unwrapExpression(spread.argument);
   return t.isObjectExpression(argument)
-    ? membersOf(argument, ctx, visited, true)
+    ? membersOf(argument, ctx, visited)
     : resolveReference(ctx, argument, spread.start ?? undefined, visited);
 };
 
@@ -217,7 +264,7 @@ const unguardedResolveReference = (
     if (!t.isObjectExpression(unwrapped)) {
       return undefined;
     }
-    members = membersOf(unwrapped, located.ctx, visited, true);
+    members = membersOf(unwrapped, located.ctx, visited);
   }
 
   return located.external ? externalized(members, located.ctx) : members;
@@ -293,7 +340,7 @@ const externalized = (
     }
     properties[key] = value;
   }
-  return { properties, unresolved: members.unresolved };
+  return { properties, shadowed: members.shadowed, unresolved: members.unresolved };
 };
 
 type BoundMembers =
@@ -340,15 +387,11 @@ const unguardedBindingMembers = (
     return importedBinding(ctx, binding.path, visited);
   }
 
-  if (!binding.constant || !t.isVariableDeclarator(binding.path.node)) {
-    return undefined;
-  }
-  if (position !== undefined && (binding.path.node.start ?? Number.POSITIVE_INFINITY) > position) {
+  if (!binding.constant) {
     return undefined;
   }
 
-  const init = binding.path.node.init;
-  const declared = init ? declaredMembers(ctx, init, position, visited) : { members: complete() };
+  const declared = declaredBindingMembers(ctx, binding.path.node, position, visited);
   if (declared === undefined) {
     return undefined;
   }
@@ -362,9 +405,29 @@ const unguardedBindingMembers = (
     ...(declared.accessor ? { accessor: declared.accessor } : {}),
     members: {
       properties: { ...declared.members.properties, ...assigned.properties },
+      shadowed: declared.members.shadowed.filter((key) => !(key in assigned.properties)),
       unresolved: [...declared.members.unresolved, ...assigned.unresolved],
     },
   };
+};
+
+const declaredBindingMembers = (
+  ctx: ReferenceContext,
+  node: t.Node,
+  position: number | undefined,
+  visited: Set<string>
+): { members: ResolvedMembers; accessor?: 'input' } | undefined => {
+  if (t.isFunctionDeclaration(node)) {
+    // Hoisted, so it is readable at any position; the CSF2 form gives it members by assignment.
+    return { members: complete() };
+  }
+  if (!t.isVariableDeclarator(node)) {
+    return undefined;
+  }
+  if (position !== undefined && (node.start ?? Number.POSITIVE_INFINITY) > position) {
+    return undefined;
+  }
+  return node.init ? declaredMembers(ctx, node.init, position, visited) : { members: complete() };
 };
 
 /** Members an initializer declares, plus the accessor a CSF factory keeps them behind. */
@@ -377,7 +440,7 @@ const declaredMembers = (
   const unwrapped = unwrapExpression(init);
 
   if (t.isObjectExpression(unwrapped)) {
-    return { members: membersOf(unwrapped, ctx, visited, true) };
+    return { members: membersOf(unwrapped, ctx, visited) };
   }
 
   const factory = factoryCall(unwrapped);
@@ -386,18 +449,29 @@ const declaredMembers = (
     return { members: complete() };
   }
 
-  const config = factory.config ? membersOf(factory.config, ctx, visited, true) : complete();
+  const config = factory.config ? membersOf(factory.config, ctx, visited) : complete();
   if (factory.method === 'story') {
     return { members: config, accessor: 'input' };
   }
 
   const parent = bindingMembers(ctx, factory.parent, position, visited);
-  if (parent === undefined || parent.kind === 'namespace' || parent.accessor !== 'input') {
+  // A parent another module owns would mix nodes whose names resolve elsewhere into a record read
+  // as local, so it is reported instead of merged.
+  if (
+    parent === undefined ||
+    parent.kind === 'namespace' ||
+    parent.accessor !== 'input' ||
+    parent.external
+  ) {
     return undefined;
   }
   return {
     members: {
       properties: mergedAnnotations(parent.members.properties, config.properties),
+      shadowed: [
+        ...parent.members.shadowed.filter((key) => !(key in config.properties)),
+        ...config.shadowed,
+      ],
       unresolved: [...parent.members.unresolved, ...config.unresolved],
     },
     accessor: 'input',
@@ -478,7 +552,7 @@ const assignedMembers = (
   ctx: ReferenceContext,
   name: string,
   position: number | undefined
-): ResolvedMembers => {
+): { properties: Record<string, t.Node>; unresolved: string[] } => {
   const properties: Record<string, t.Node> = {};
   const unresolved: string[] = [];
 
@@ -579,7 +653,7 @@ const exportedBinding = (
             kind: 'members',
             ctx,
             external: true,
-            members: membersOf(declaration, ctx, visited, true),
+            members: membersOf(declaration, ctx, visited),
           }
         : undefined;
     }
@@ -607,227 +681,4 @@ const exportedBinding = (
   return exportName === 'default'
     ? undefined
     : asExternal(bindingMembers(ctx, exportName, undefined, visited));
-};
-
-/** An arg value read through to the definition it names, and what printing it still depends on. */
-export interface ResolvedArgValue {
-  /** Node to print in place of what was written. */
-  node: t.Node;
-  /** Imports the printed node needs to resolve where the snippet lands. */
-  imports: ImportRef[];
-  /** Source text of every name the printed node depends on that no import can supply. */
-  unresolved: string[];
-}
-
-/**
- * The value an arg node stands for, following a name to the definition it refers to.
- *
- * A name the story file declares resolves to the value it was declared with, since that name means
- * nothing where the snippet lands. A name another module owns stays as written and reports the
- * import that makes it resolve. Names a larger expression reaches for are reported the same way,
- * except that a locally declared one can only be named, not substituted into the expression.
- */
-export const resolveArgValue = (node: t.Node, ctx: ReferenceContext): ResolvedArgValue => {
-  const unresolved: string[] = [];
-  const resolved = inlineSpreads(
-    followValue(unwrapExpression(node), ctx, new Set()),
-    ctx,
-    unresolved
-  );
-  const bindings = collectImportBindings(ctx.program);
-  const imports: ImportRef[] = [];
-
-  for (const name of freeNames(resolved)) {
-    const imported = bindings.get(name);
-    if (imported) {
-      imports.push({
-        localImportName: name,
-        importId: imported.importId,
-        importName: imported.importName,
-        ...(imported.importName === '*' ? { namespace: name } : {}),
-      });
-      continue;
-    }
-    if (ctx.program.scope.getBinding(name)) {
-      unresolved.push(name);
-    }
-  }
-
-  return { node: resolved, imports, unresolved };
-};
-
-/**
- * Whether printing a node needs no name from the scope it was written in.
- *
- * This is the bar a value copied out of another module has to clear, since the names that module
- * declares and imports mean nothing where the snippet lands.
- */
-export const isSelfContained = (node: t.Node): boolean => freeNames(node).size === 0;
-
-/**
- * Writes out the spreads inside a value, so an arg holding an object shows what that object holds.
- *
- * A spread this pass cannot read leaves its object exactly as written: printing part of it would
- * claim the value is something it is not, where printing the source at least shows the story.
- */
-const inlineSpreads = (node: t.Node, ctx: ReferenceContext, unresolved: string[]): t.Node => {
-  // A value with nothing to pull in is returned as it was parsed, so it keeps the story's own
-  // formatting rather than being reprinted from a rebuilt tree.
-  if (!hasNamedSpread(node)) {
-    return node;
-  }
-
-  if (t.isArrayExpression(node)) {
-    return t.arrayExpression(
-      node.elements.map((element) =>
-        element && t.isExpression(element)
-          ? (inlineSpreads(element, ctx, unresolved) as t.Expression)
-          : element
-      )
-    );
-  }
-
-  if (!t.isObjectExpression(node)) {
-    return node;
-  }
-  if (!node.properties.some((property) => t.isSpreadElement(property))) {
-    return objectFrom(node.properties, ctx, unresolved) ?? node;
-  }
-
-  const members = membersOf(node, ctx, new Set(), false);
-  if (members.unresolved.length > 0) {
-    unresolved.push(...members.unresolved);
-    return node;
-  }
-  return (
-    objectFrom(
-      Object.entries(members.properties).map(([key, value]) =>
-        t.objectProperty(
-          t.isValidIdentifier(key) ? t.identifier(key) : t.stringLiteral(key),
-          value as t.Expression
-        )
-      ),
-      ctx,
-      unresolved
-    ) ?? node
-  );
-};
-
-/**
- * Whether a value spreads something it names rather than something written out on the spot.
- *
- * Only a named spread is worth writing out: `{ ...{ a: 1 }, b: 2 }` already says what it holds, so
- * rewriting it would reprint the story's own source for no gain.
- */
-const hasNamedSpread = (node: t.Node): boolean => {
-  if (t.isArrayExpression(node)) {
-    return node.elements.some(
-      (element) => element !== null && t.isExpression(element) && hasNamedSpread(element)
-    );
-  }
-  return (
-    t.isObjectExpression(node) &&
-    node.properties.some((property) =>
-      t.isSpreadElement(property)
-        ? !t.isObjectExpression(unwrapExpression(property.argument))
-        : t.isObjectProperty(property) &&
-          t.isExpression(property.value) &&
-          hasNamedSpread(property.value)
-    )
-  );
-};
-
-/** An object literal with every member value's own spreads written out, when they all can be. */
-const objectFrom = (
-  properties: t.ObjectExpression['properties'],
-  ctx: ReferenceContext,
-  unresolved: string[]
-): t.ObjectExpression | undefined => {
-  const rebuilt: t.ObjectExpression['properties'] = [];
-  for (const property of properties) {
-    if (!t.isObjectProperty(property) || !t.isExpression(property.value)) {
-      return undefined;
-    }
-    rebuilt.push(
-      t.objectProperty(
-        property.key,
-        inlineSpreads(property.value, ctx, unresolved) as t.Expression,
-        property.computed
-      )
-    );
-  }
-  return t.objectExpression(rebuilt);
-};
-
-/** Reads a bare name through to the value it was declared with, as far as the chain goes. */
-const followValue = (node: t.Node, ctx: ReferenceContext, seen: Set<string>): t.Node => {
-  if (!t.isIdentifier(node) || seen.has(node.name)) {
-    return node;
-  }
-  const binding = ctx.program.scope.getBinding(node.name);
-  if (
-    !binding ||
-    binding.kind === 'module' ||
-    !binding.constant ||
-    !t.isVariableDeclarator(binding.path.node) ||
-    !binding.path.node.init
-  ) {
-    return node;
-  }
-  seen.add(node.name);
-  return followValue(unwrapExpression(binding.path.node.init), ctx, seen);
-};
-
-/**
- * Names an expression reaches for from outside itself.
- *
- * Property keys and member accesses name nothing, and a name the expression declares itself resolves
- * within it, so none of those are reported.
- */
-const freeNames = (node: t.Node): Set<string> => {
-  const declared = new Set<string>();
-  const skipped = new Set<t.Node>();
-  const candidates: t.Identifier[] = [];
-
-  const declare = (target: t.Node | null | undefined) => {
-    if (t.isIdentifier(target)) {
-      declared.add(target.name);
-      skipped.add(target);
-      return;
-    }
-    if (target) {
-      t.traverseFast(target, (inner) => {
-        if (t.isIdentifier(inner)) {
-          declared.add(inner.name);
-          skipped.add(inner);
-        }
-      });
-    }
-  };
-
-  t.traverseFast(node, (current) => {
-    if (t.isObjectProperty(current) || t.isObjectMethod(current)) {
-      if (!current.computed) {
-        skipped.add(current.key);
-      }
-    }
-    if (t.isMemberExpression(current) && !current.computed) {
-      skipped.add(current.property);
-    }
-    if (t.isFunction(current)) {
-      current.params.forEach(declare);
-    }
-    if (t.isVariableDeclarator(current)) {
-      declare(current.id);
-    }
-    if (t.isIdentifier(current)) {
-      candidates.push(current);
-    }
-  });
-
-  return new Set(
-    candidates
-      .filter((identifier) => !skipped.has(identifier) && !declared.has(identifier.name))
-      .map((identifier) => identifier.name)
-  );
 };

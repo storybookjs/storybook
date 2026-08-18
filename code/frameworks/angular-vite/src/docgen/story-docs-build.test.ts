@@ -878,6 +878,22 @@ describe('buildStoryDocsPayload', () => {
       expect(story.snippet).not.toContain('from-story');
     });
 
+    // `{ template: '…', ...makeBase() }` runs the spread after the write, so the template the story
+    // ends up with may be a different one entirely.
+    it('falls back when a later unreadable spread may replace the template', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        declare function makeBase(): object;
+        export const Default = {
+          template: '<sb-button from-story></sb-button>',
+          ...makeBase(),
+        };
+      `);
+      expect(story.warning).toContain('`...makeBase()` could not be resolved statically');
+      expect(story.snippet).not.toContain('from-story');
+    });
+
     it('reads a config that is only a spread', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';

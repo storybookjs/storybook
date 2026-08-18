@@ -33,7 +33,6 @@ export * from './utils/readTemplate.ts';
 export * from './utils/resolve-meta-component.ts';
 export * from './utils/remove.ts';
 export * from './utils/resolve-path-in-sb-cache.ts';
-export * from './utils/story-reference-context.ts';
 export * from './utils/symlinks.ts';
 export * from './utils/template.ts';
 export * from './utils/tsconfig.ts';

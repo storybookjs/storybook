@@ -206,4 +206,33 @@ export const Primary = { args: { ...buildArgs(), label: 'Hi' } };
       'Incomplete snippet: `...buildArgs()` could not be resolved statically.'
     );
   });
+
+  // The meta spread cannot supply a render here - the story brings its own - but it can still
+  // carry args the snippet does not show, so it has to be named.
+  it('reports a meta-level spread that may carry args', async () => {
+    vol.fromJSON({
+      [STORY_PATH]: `
+import { h } from 'vue';
+import MyButton from './MyButton.vue';
+
+declare function sharedMeta(): object;
+
+export default { component: MyButton, title: 'Example/MyButton', ...sharedMeta() };
+
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => h(MyButton, { label: args.label }),
+};
+`,
+    });
+    const payload = await buildStoryDocsPayload(
+      { entry: ENTRY },
+      { readDocgen: async (id) => docgen(id) }
+    );
+    const story = payload?.stories[STORY_ID];
+    expect(story?.snippet).toBeDefined();
+    expect(story?.warning).toBe(
+      'Incomplete snippet: `...sharedMeta()` could not be resolved statically.'
+    );
+  });
 });

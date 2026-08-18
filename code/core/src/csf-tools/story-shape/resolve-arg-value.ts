@@ -157,11 +157,15 @@ const objectFrom = (
     if (!t.isObjectProperty(property) || !t.isExpression(property.value)) {
       return undefined;
     }
+    const value = inlineSpreads(property.value, ctx, unresolved) as t.Expression;
+    // A shorthand prints its key and nothing else, so it may only stay shorthand while its value is
+    // still the one the key stands for.
     rebuilt.push(
       t.objectProperty(
         property.key,
-        inlineSpreads(property.value, ctx, unresolved) as t.Expression,
-        property.computed
+        value,
+        property.computed,
+        property.shorthand && value === property.value
       )
     );
   }

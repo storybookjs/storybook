@@ -10,6 +10,7 @@ export const frameworkToRendererMap: Record<string, string> = {
   '@nuxtjs/storybook': '@storybook/vue3',
 
   '@storybook/angular': '@storybook/angular',
+  '@storybook/angular-vite': '@storybook/angular',
 
   '@storybook/svelte-vite': '@storybook/svelte',
   '@storybook/sveltekit': '@storybook/svelte',

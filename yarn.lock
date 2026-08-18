@@ -22569,11 +22569,11 @@ __metadata:
     eslint-plugin-node: "npm:^11.1.0"
     oxfmt: "npm:^0.41.0"
     prompts: "npm:^2.4.0"
+    storybook: "workspace:*"
     ts-dedent: "npm:^2.0.0"
     typescript: "npm:^6.0.3"
   peerDependencies:
     eslint: ">=8"
-    storybook: "workspace:^"
   languageName: unknown
   linkType: soft
 

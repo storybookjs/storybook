@@ -128,7 +128,7 @@
     "table": {
       "category": "properties",
       "defaultValue": {
-        "summary": "signal(false)",
+        "summary": undefined,
       },
       "type": {
         "required": false,

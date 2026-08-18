@@ -3,7 +3,7 @@
 import { generate, type NodePath, types as t } from 'storybook/internal/babel';
 
 import { importedName, isTypeSpecifier } from './imports.ts';
-import { keyOf, unwrapExpression } from './utils.ts';
+import { isCanonicalCsf2BindCall, isCsfFactoryCall, keyOf, unwrapExpression } from './utils.ts';
 
 /** Members of an object, and what reading it statically could not account for. */
 export interface ResolvedMembers {
@@ -444,9 +444,13 @@ const declaredMembers = (
   }
 
   const factory = factoryCall(unwrapped);
-  if (factory === undefined) {
-    // A function story carries no config of its own; a CSF2 assignment is still readable.
+  if (factory === undefined && (t.isFunction(unwrapped) || isCanonicalCsf2BindCall(unwrapped))) {
     return { members: complete() };
+  }
+  if (factory === undefined) {
+    return {
+      members: { properties: {}, shadowed: [], unresolved: [sourceOf(unwrapped)] },
+    };
   }
 
   const config = factory.config ? membersOf(factory.config, ctx, visited) : complete();
@@ -516,13 +520,7 @@ const mergedAnnotations = (
 const factoryCall = (
   node: t.Node
 ): { method: 'story' | 'extend'; parent: string; config?: t.ObjectExpression } | undefined => {
-  if (
-    !t.isCallExpression(node) ||
-    !t.isMemberExpression(node.callee) ||
-    node.callee.computed ||
-    !t.isIdentifier(node.callee.property) ||
-    !t.isIdentifier(node.callee.object)
-  ) {
+  if (!isCsfFactoryCall(node)) {
     return undefined;
   }
   const method = node.callee.property.name;

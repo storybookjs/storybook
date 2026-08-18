@@ -338,6 +338,181 @@ describe('write order', () => {
   });
 });
 
+describe('story initializers', () => {
+  it('reports opaque calls while retaining members assigned after the call', () => {
+    const code = dedent`
+      export const Built = makeStory();
+      Built.args = { label: 'assigned' };
+    `;
+
+    expect(argsOf(code, 'Built')).toMatchInlineSnapshot(`
+      {
+        "args": {
+          "label": "'assigned'",
+        },
+        "unresolved": [
+          "makeStory()",
+        ],
+      }
+    `);
+  });
+
+  it('reports a factory call whose named config cannot be inspected', () => {
+    const code = dedent`
+      const CONFIG = getConfig();
+      export const Named = meta.story(CONFIG);
+    `;
+
+    expect(argsOf(code, 'Named')).toMatchInlineSnapshot(`
+      {
+        "args": {},
+        "unresolved": [
+          "meta.story(CONFIG)",
+        ],
+      }
+    `);
+  });
+
+  it('reports every opaque initializer shape while retaining later assignments', () => {
+    const code = dedent`
+      export const Optional = makeStory?.();
+      Optional.args = { label: 'optional' };
+      export const Constructed = new StoryBuilder();
+      Constructed.args = { label: 'constructed' };
+      export const Conditional = usePrimary ? makePrimary() : makeSecondary();
+      Conditional.args = { label: 'conditional' };
+      export const Awaited = await makeStory();
+      Awaited.args = { label: 'awaited' };
+    `;
+
+    expect({
+      optional: argsOf(code, 'Optional'),
+      constructed: argsOf(code, 'Constructed'),
+      conditional: argsOf(code, 'Conditional'),
+      awaited: argsOf(code, 'Awaited'),
+    }).toMatchInlineSnapshot(`
+      {
+        "awaited": {
+          "args": {
+            "label": "'awaited'",
+          },
+          "unresolved": [
+            "await makeStory()",
+          ],
+        },
+        "conditional": {
+          "args": {
+            "label": "'conditional'",
+          },
+          "unresolved": [
+            "usePrimary ? makePrimary() : makeSecondary()",
+          ],
+        },
+        "constructed": {
+          "args": {
+            "label": "'constructed'",
+          },
+          "unresolved": [
+            "new StoryBuilder()",
+          ],
+        },
+        "optional": {
+          "args": {
+            "label": "'optional'",
+          },
+          "unresolved": [
+            "makeStory?.()",
+          ],
+        },
+      }
+    `);
+  });
+
+  it('keeps canonical bind stories readable without exempting bind calls with config', () => {
+    const code = dedent`
+      const Template = (args) => args;
+      export const EmptyObject = Template.bind({});
+      EmptyObject.args = { label: 'empty object' };
+      export const NoArgument = Template.bind();
+      NoArgument.args = { label: 'no argument' };
+      export const Configured = Template.bind({ role: 'button' });
+    `;
+
+    expect({
+      emptyObject: argsOf(code, 'EmptyObject'),
+      noArgument: argsOf(code, 'NoArgument'),
+      configured: argsOf(code, 'Configured'),
+    }).toMatchInlineSnapshot(`
+      {
+        "configured": {
+          "args": {},
+          "unresolved": [
+            "Template.bind({ role: 'button' })",
+          ],
+        },
+        "emptyObject": {
+          "args": {
+            "label": "'empty object'",
+          },
+          "unresolved": [],
+        },
+        "noArgument": {
+          "args": {
+            "label": "'no argument'",
+          },
+          "unresolved": [],
+        },
+      }
+    `);
+  });
+
+  it('keeps function stories and inline factory configs readable', () => {
+    const code = dedent`
+      export const Arrow = (args) => args;
+      Arrow.args = { label: 'arrow' };
+      export function Declared(args) { return args; }
+      Declared.args = { label: 'declared' };
+      export const Inline = meta.story({ args: { label: 'inline' } });
+      export const Extended = Inline.extend({ args: { size: 'large' } });
+    `;
+
+    expect({
+      arrow: argsOf(code, 'Arrow'),
+      declared: argsOf(code, 'Declared'),
+      inline: argsOf(code, 'Inline'),
+      extended: argsOf(code, 'Extended'),
+    }).toMatchInlineSnapshot(`
+      {
+        "arrow": {
+          "args": {
+            "label": "'arrow'",
+          },
+          "unresolved": [],
+        },
+        "declared": {
+          "args": {
+            "label": "'declared'",
+          },
+          "unresolved": [],
+        },
+        "extended": {
+          "args": {
+            "label": "'inline'",
+            "size": "'large'",
+          },
+          "unresolved": [],
+        },
+        "inline": {
+          "args": {
+            "label": "'inline'",
+          },
+          "unresolved": [],
+        },
+      }
+    `);
+  });
+});
+
 describe('CSF factories', () => {
   it("resolves a spread of a factory story's args", () => {
     const code = dedent`

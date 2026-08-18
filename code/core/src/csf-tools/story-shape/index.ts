@@ -37,6 +37,8 @@ export {
 } from './resolve-story-args.ts';
 export { resolveRenderFunction, type RenderFunctionPath, type RenderResolution } from './render.ts';
 export {
+  isCanonicalCsf2BindCall,
+  isCsfFactoryCall,
   keyOf,
   metaObjectPath,
   pathForNode,

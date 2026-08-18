@@ -925,11 +925,13 @@ export const baseTemplates = {
     // create-expo-app pins the current SDK, whose packages are released
     // together and are routinely younger than the gate window.
     // `babel-preset-expo` is part of that set despite not matching `expo-*`.
+    // `multitars` is pulled in transitively by the Expo CLI toolchain.
     minAgeGateExemptions: [
       'expo',
       'expo-*',
       '@expo/*',
       'babel-preset-expo',
+      'multitars',
       'react-native',
       '@react-native/*',
     ],
@@ -956,17 +958,12 @@ export const baseTemplates = {
     },
   },
   'react-native-web-vite/rn-cli-ts': {
-    // NOTE: create-expo-app installs React 18.2.0. But yarn portal
-    // expects 18.3.1 (dunno why). Therefore to run this in dev you
-    // must either:
-    //  - edit the sandbox package.json to depend on react 18.3.1, OR
-    //  - build/run the sandbox in --no-link mode, which is fine
-    //
-    // Users & CI won't see this limitation because they are not using
-    // yarn portals.
     name: 'React Native CLI Latest (Vite | TypeScript)',
     script:
       'npx @react-native-community/cli@latest init --skip-install --install-pods=false --directory={{beforeDir}} rnapp',
+    // The CLI downloads `@react-native-community/template` during init even with
+    // --skip-install; those packages ship in lockstep with each RN release.
+    minAgeGateExemptions: ['@react-native-community/*', 'react-native', '@react-native/*'],
     expected: {
       framework: '@storybook/react-native-web-vite',
       renderer: '@storybook/react',

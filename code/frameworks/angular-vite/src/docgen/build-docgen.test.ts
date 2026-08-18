@@ -398,6 +398,22 @@ describe('buildDocgenPayload', () => {
       expect(payload?.argTypes?.label).toMatchObject({ name: 'label' });
     });
 
+    it('names an unreadable expression by the expression itself, not the story title', () => {
+      // The docgen-harness sandbox recorder treats a payload named `globalThis...` as an artifact
+      // of the shared template stories rather than a real component, and filters it out on that
+      // name alone (`isGloballyReferenced` in sandbox-baselines/read-static-docgen.ts). Naming this
+      // payload by the story title instead of the unreadable expression breaks that filter silently.
+      givenStoryFile(`
+        export default { title: 'Button', component: globalThis.__TEMPLATE_COMPONENTS__.Button };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+      expect(payload?.name).toBe('globalThis.__TEMPLATE_COMPONENTS__.Button');
+    });
+
     it('does not blame the story file for an unresolved import that lives in the module the chain names', () => {
       givenStoryFile(`
         import * as internal from './button.internal-broken-import';

@@ -174,6 +174,9 @@ describe('buildApiDescription', () => {
 
       \`\`\`
       export type ColorPickerEvents = {
+        /** New color value. */
+        "update:modelValue": [value: string];
+        "update:alpha": [value: number];
         close: [];
       }
       \`\`\`"
@@ -192,7 +195,7 @@ describe('buildApiDescription', () => {
 
       \`\`\`
       export type ButtonEvents = {
-        'update:query': [value: string];
+        "update:query": [value: string];
       }
       \`\`\`"
     `);
@@ -271,7 +274,7 @@ describe('buildApiDescription', () => {
 
       \`\`\`
       export type ButtonSlots = {
-        'icon-left': {};
+        "icon-left": {};
       }
       \`\`\`"
     `);

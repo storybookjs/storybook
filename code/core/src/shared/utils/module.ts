@@ -6,7 +6,12 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 import { resolveModulePath } from 'exsolve';
 import { dirname, join } from 'pathe';
 
-import { addExtensionsToRelativeImports, isTypeScriptUrl } from '../../bin/loader-utils.ts';
+import {
+  addExtensionsToRelativeImports,
+  clearDirectoryCache,
+  isTypeScriptUrl,
+} from '../../bin/loader-utils.ts';
+import { NODE_TARGET } from '../constants/environments-support.ts';
 import { jsModuleExtensions } from '../constants/extensions.ts';
 
 /**
@@ -64,10 +69,38 @@ function registerTypescriptLoader() {
         nextLoad: (url: string, context?: unknown) => unknown
       ) => unknown;
     }) => void;
-    stripTypeScriptTypes?: (code: string, options?: { mode?: 'strip' | 'transform' }) => string;
+    stripTypeScriptTypes?: (
+      code: string,
+      options?: { mode?: 'strip' | 'transform'; sourceMap?: boolean; sourceUrl?: string }
+    ) => string;
   };
 
   if (typeof registerHooks === 'function' && typeof stripTypeScriptTypes === 'function') {
+    // The native transform is not a full esbuild replacement: it only downlevels enums and
+    // namespaces, and future Node versions may reduce it to erase-only. Anything it rejects is
+    // retried with the same esbuild transform the worker loader applies, so the two registration
+    // paths accept the same input.
+    const transformTypeScript = (source: string, filePath: string): string => {
+      try {
+        // The source map keeps stack-trace locations of transformed config files accurate.
+        return stripTypeScriptTypes(source, {
+          mode: 'transform',
+          sourceMap: true,
+          sourceUrl: pathToFileURL(filePath).href,
+        });
+      } catch {
+        const { transformSync } = createRequire(import.meta.url)(
+          'esbuild'
+        ) as typeof import('esbuild');
+        return transformSync(source, {
+          loader: 'ts',
+          target: NODE_TARGET,
+          format: 'esm',
+          platform: 'neutral',
+        }).code;
+      }
+    };
+
     registerHooks({
       load(url, context, nextLoad) {
         // Strip any query string (e.g. the cache-busting `?<timestamp>` importModule appends for
@@ -78,14 +111,14 @@ function registerTypescriptLoader() {
         }
         const filePath = fileURLToPath(urlWithoutQuery);
         const rawSource = readFileSync(filePath, 'utf-8');
-        // 'transform' also downlevels enums and namespaces, matching the esbuild `ts` loader the
-        // worker fallback uses.
-        const stripped = stripTypeScriptTypes(rawSource, { mode: 'transform' });
         return {
           format: 'module',
           shortCircuit: true,
           // Add extensions to relative imports so Node.js ESM can resolve them
-          source: addExtensionsToRelativeImports(stripped, filePath),
+          source: addExtensionsToRelativeImports(
+            transformTypeScript(rawSource, filePath),
+            filePath
+          ),
         };
       },
     });
@@ -120,6 +153,12 @@ export async function importModule(
   if (!isTypescriptLoaderRegistered) {
     registerTypescriptLoader();
     isTypescriptLoaderRegistered = true;
+  }
+
+  if (skipCache) {
+    // A cache-busted re-import must also see current directory contents, or the loader's
+    // extension resolution can miss files created since the previous import.
+    clearDirectoryCache();
   }
 
   let mod;

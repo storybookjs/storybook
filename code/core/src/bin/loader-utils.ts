@@ -126,10 +126,10 @@ export function addExtensionsToRelativeImports(source: string, filePath: string)
 
   let result = source;
   for (const pattern of patterns) {
-    result = result.replace(pattern, (match, prefix, path, suffix) => {
+    result = result.replace(pattern, (match, prefix, importPath, suffix) => {
       // Only process relative paths (starting with ./ or ../)
-      if (path.startsWith('./') || path.startsWith('../')) {
-        const resolvedPath = resolveWithExtension(path, filePath);
+      if (importPath.startsWith('./') || importPath.startsWith('../')) {
+        const resolvedPath = resolveWithExtension(importPath, filePath);
         return `${prefix}${resolvedPath}${suffix}`;
       }
       return match;

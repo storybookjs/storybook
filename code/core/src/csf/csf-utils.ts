@@ -1,9 +1,8 @@
 import { toStartCaseStr } from './toStartCaseStr.ts';
 
 /**
- * Remove punctuation and illegal characters from a story ID.
- *
- * See https://gist.github.com/davidjrice/9d2af51100e41c6c4b4a
+ * Remove punctuation and illegal characters from a story ID, so it is safe to use in URLs and CSS
+ * selectors.
  */
 export const sanitize = (string: string) => {
   return string

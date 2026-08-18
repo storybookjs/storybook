@@ -60,6 +60,13 @@ function initSourceTree(route: AnyRoute, counter: { i: number }): void {
   }
 }
 
+/**
+ * if it routeId ends with a trailing slash, strip the slash to get the enclosing layout's id (/_app).
+ */
+function layoutIdFor(id: string): string {
+  return id.length > 1 && id.endsWith('/') ? id.slice(0, -1) : id;
+}
+
 function cloneChild(
   oldRoute: AnyRoute,
   parent: AnyRoute,
@@ -87,7 +94,7 @@ function cloneChild(
   // identity from; its explicit id IS its identity, so preserve it. The falsy
   // check also treats `path: ''` as pathless.
   const cloned = createRoute({
-    ...(!merged.path && explicitId != null ? { id: explicitId } : {}),
+    ...(!merged.path && explicitId != null ? { id: layoutIdFor(explicitId) } : {}),
     ...merged,
     getParentRoute: () => parent as any,
   } as any);

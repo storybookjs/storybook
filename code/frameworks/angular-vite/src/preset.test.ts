@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { findConfigFile } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -17,6 +17,7 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => ({
   ...(await importOriginal()),
   findConfigFile: vi.fn(),
 }));
+vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('./compodoc/ensure-documentation.ts', { spy: true });
 vi.mock('vite', { spy: true });
 // The only mock that has to replace the module rather than spy on it: loading the real Angular
@@ -24,17 +25,15 @@ vi.mock('vite', { spy: true });
 vi.mock('@analogjs/vite-plugin-angular', () => ({ default: (): unknown[] => [] }));
 
 beforeEach(() => {
+  vi.clearAllMocks();
   vi.mocked(findConfigFile).mockReturnValue(undefined);
   vi.mocked(ensureCompodocDocumentation).mockResolvedValue(undefined);
+  vi.mocked(logger.warn).mockImplementation(() => {});
   vi.mocked(mergeConfig).mockImplementation(
     (config: object, extra: object) => ({ ...config, ...extra }) as never
   );
   // Identity, so the workspace-absolute expectations below hold on Windows too.
   vi.mocked(normalizePath).mockImplementation((path: string) => path);
-});
-
-afterEach(() => {
-  vi.mocked(ensureCompodocDocumentation).mockClear();
 });
 
 const WORKSPACE_ROOT = resolve('/workspace');
@@ -102,8 +101,11 @@ describe('angularOptionsPlugin style preprocessor paths', () => {
 describe('angularOptionsPlugin global styles', () => {
   const previewPath = resolve(WORKSPACE_ROOT, '.storybook', 'preview.ts');
 
-  const runTransform = (styles: unknown[]) => {
+  beforeEach(() => {
     vi.mocked(findConfigFile).mockReturnValue(previewPath);
+  });
+
+  const runTransform = (styles: unknown[]) => {
     const options = {
       configDir: resolve(WORKSPACE_ROOT, '.storybook'),
       angularBuilderContext: { workspaceRoot: WORKSPACE_ROOT },
@@ -125,6 +127,20 @@ describe('angularOptionsPlugin global styles', () => {
 
     expect(code).toContain(`import '${resolve(WORKSPACE_ROOT, 'src/styles.scss')}';`);
     expect(code).toContain(`import '${resolve(WORKSPACE_ROOT, 'src/theme.scss')}';`);
+  });
+
+  it('ignores malformed object-form styles from the environment bridge', async () => {
+    const { code } = await runTransform([
+      {},
+      null,
+      { input: 42 },
+      'src/styles.scss',
+      { input: 'src/theme.scss' },
+    ]);
+
+    expect(code).toContain(`import '${resolve(WORKSPACE_ROOT, 'src/styles.scss')}';`);
+    expect(code).toContain(`import '${resolve(WORKSPACE_ROOT, 'src/theme.scss')}';`);
+    expect(code).not.toContain(`import '${resolve(WORKSPACE_ROOT, 'undefined')}';`);
   });
 });
 
@@ -225,16 +241,15 @@ describe('compodocJsonStubPlugin', () => {
     return (plugin.resolveId as any).call(context, source, importer, {});
   };
 
-  const loadStub = async (id: string) => {
+  const loadStub = (id: string) => {
     const load = compodocJsonStubPlugin(CONFIG_DIR).load as (
       this: unknown,
       id: string
     ) => string | null;
     const code = load.call({}, id);
-    const module = await import(
-      /* @vite-ignore */ `data:text/javascript,${encodeURIComponent(code as string)}`
-    );
-    return module.default;
+    const serialized = code?.match(/^export default (.*);$/s)?.[1];
+    expect(serialized).toBeDefined();
+    return JSON.parse(serialized!);
   };
 
   it('stubs the documented preview import when Compodoc never wrote the file', async () => {
@@ -246,7 +261,7 @@ describe('compodocJsonStubPlugin', () => {
   // Shape taken from `compodoc -e json` output of four real Angular workspaces (alauda, ndb-core,
   // ng-clarity, lucca-front): all four agree on these twelve keys and on which are arrays.
   it('stands in an empty value of the shape Compodoc writes for every key it exports', async () => {
-    const docJson = await loadStub('\0storybook-angular-vite/empty-compodoc-json');
+    const docJson = loadStub('\0storybook-angular-vite/empty-compodoc-json');
 
     expect(docJson).toEqual({
       classes: [],
@@ -335,26 +350,22 @@ describe('viteFinal props-table wiring', () => {
   });
 
   it('warns from here, because the docgen preset never runs with the feature off', async () => {
-    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
-    try {
-      await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({ propsTable: 'api' }));
+    await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({ propsTable: 'api' }));
 
-      expect(warn.mock.calls.map(([message]) => String(message)).join('\n')).toContain(
-        'experimentalDocgenServer'
-      );
-    } finally {
-      warn.mockRestore();
-    }
+    expect(
+      vi
+        .mocked(logger.warn)
+        .mock.calls.map(([message]) => String(message))
+        .join('\n')
+    ).toContain('experimentalDocgenServer');
   });
 
   const warningsFor = async (featureFlags: Record<string, boolean>) => {
-    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
-    try {
-      await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({}, featureFlags));
-      return warn.mock.calls.map(([message]) => String(message)).join('\n');
-    } finally {
-      warn.mockRestore();
-    }
+    await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({}, featureFlags));
+    return vi
+      .mocked(logger.warn)
+      .mock.calls.map(([message]) => String(message))
+      .join('\n');
   };
 
   it('points a components-manifest build with the docgen server off at the flag that fixes it', async () => {

@@ -67,10 +67,13 @@ describe('builder schemas', () => {
         compodocArgs: ['-e', 'json'],
       });
 
-      expect(deprecations).toEqual([
-        expect.stringContaining('Option "compodoc" is deprecated'),
-        expect.stringContaining('Option "compodocArgs" is deprecated'),
-      ]);
+      expect(deprecations).toHaveLength(2);
+      expect(deprecations).toEqual(
+        expect.arrayContaining([
+          expect.stringContaining('Option "compodoc" is deprecated'),
+          expect.stringContaining('Option "compodocArgs" is deprecated'),
+        ])
+      );
     }
   );
 

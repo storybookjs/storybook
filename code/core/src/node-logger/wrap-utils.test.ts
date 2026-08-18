@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 // eslint-disable-next-line depend/ban-dependencies
 import { execaSync } from 'execa';
@@ -35,33 +35,37 @@ function getVisibleLength(str: string): number {
   return stripAnsi(str).length;
 }
 
+const stubStdoutColumns = (descriptor: PropertyDescriptor) => {
+  const stdout = Object.create(process.stdout);
+  Object.defineProperty(stdout, 'columns', { configurable: true, ...descriptor });
+
+  const stubbedProcess = Object.create(process);
+  Object.defineProperty(stubbedProcess, 'stdout', { value: stdout, configurable: true });
+  vi.stubGlobal('process', stubbedProcess);
+};
+
 describe('wrap-utils', () => {
   beforeEach(() => {
-    // Mock process.stdout.columns
-    Object.defineProperty(process.stdout, 'columns', {
-      value: 80,
-      configurable: true,
-    });
+    stubStdoutColumns({ value: 80 });
 
     // Clear all mocks
     vi.clearAllMocks();
   });
 
+  afterEach(() => {
+    vi.unstubAllGlobals();
+    vi.unstubAllEnvs();
+  });
+
   describe('getTerminalWidth', () => {
     it('should return process.stdout.columns when available', () => {
-      Object.defineProperty(process.stdout, 'columns', {
-        value: 120,
-        configurable: true,
-      });
+      stubStdoutColumns({ value: 120 });
 
       expect(getTerminalWidth()).toBe(120);
     });
 
     it('should return default width (80) when process.stdout.columns is undefined', () => {
-      Object.defineProperty(process.stdout, 'columns', {
-        value: undefined,
-        configurable: true,
-      });
+      stubStdoutColumns({ value: undefined });
 
       expect(getTerminalWidth()).toBe(80);
     });
@@ -69,20 +73,16 @@ describe('wrap-utils', () => {
     // A pty can report a zero or negative width (`script(1)`, some CI wrappers). Handing that on is
     // worse than having no width at all: callers divide by it and wrap to it.
     it.each([0, -1])('should return default width (80) when columns is %i', (columns) => {
-      Object.defineProperty(process.stdout, 'columns', {
-        value: columns,
-        configurable: true,
-      });
+      stubStdoutColumns({ value: columns });
 
       expect(getTerminalWidth()).toBe(80);
     });
 
     it('should return default width (80) when accessing columns throws an error', () => {
-      Object.defineProperty(process.stdout, 'columns', {
+      stubStdoutColumns({
         get: () => {
           throw new Error('Test error');
         },
-        configurable: true,
       });
 
       expect(getTerminalWidth()).toBe(80);
@@ -490,10 +490,7 @@ describe('wrap-utils', () => {
     });
 
     it('should use terminal width as default when no options provided', () => {
-      Object.defineProperty(process.stdout, 'columns', {
-        value: 100,
-        configurable: true,
-      });
+      stubStdoutColumns({ value: 100 });
 
       const url = 'https://example.com';
       const text = `Visit ${url}`;
@@ -514,28 +511,14 @@ describe('wrap-utils', () => {
     });
 
     it('should not modify text when terminal does not support hyperlinks', () => {
-      // Mock process.env to return unsupported terminal
-      const originalEnv = process.env.TERM_PROGRAM;
-      const originalVersion = process.env.TERM_PROGRAM_VERSION;
-
-      process.env.TERM_PROGRAM = 'Apple_Terminal';
-      delete process.env.TERM_PROGRAM_VERSION;
+      vi.stubEnv('TERM_PROGRAM', 'Apple_Terminal');
+      vi.stubEnv('TERM_PROGRAM_VERSION', undefined);
 
       const text = 'Visit https://example.com for info';
       const result = protectUrls(text);
 
       expect(result).toBe(text);
       expect(result).not.toContain('\u001b]8;;');
-
-      // Restore original env
-      if (originalEnv) {
-        process.env.TERM_PROGRAM = originalEnv;
-      } else {
-        delete process.env.TERM_PROGRAM;
-      }
-      if (originalVersion) {
-        process.env.TERM_PROGRAM_VERSION = originalVersion;
-      }
     });
 
     it('should handle complex URLs with ports and authentication', () => {

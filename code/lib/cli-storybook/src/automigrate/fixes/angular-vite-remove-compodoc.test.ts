@@ -208,8 +208,7 @@ describe('check', () => {
     expect(await angularViteRemoveCompodoc.check(checkOptions({}))).toBeNull();
   });
 
-  // SB-1840: `project.json` discovery has to cover the same tree the package.json walk already
-  // reaches, or "no Storybook target left on the old builder" is concluded from a partial view.
+  // `project.json` discovery has to cover the same tree as the package.json walk.
   it('discovers project.json files from the workspace root, not the working directory', async () => {
     vol.fromNestedJSON({ [PROJECT_JSON]: projectJson({ compodoc: true }) });
 
@@ -231,8 +230,7 @@ describe('check', () => {
     expect(result).toMatchObject({ hasCompodocDependency: true });
   });
 
-  // SB-1840: `:start-storybook` is a suffix every Angular Storybook builder shares. Deleting the
-  // options off a Webpack target flips it to the schema default `compodoc: true`.
+  // `:start-storybook` is a suffix every Angular Storybook builder shares.
   it('ignores a workspace file whose storybook target belongs to the Webpack builder', async () => {
     vol.fromNestedJSON({
       [WEBPACK_PROJECT_JSON]: projectJson({ compodoc: false }, ANGULAR_BUILDER),
@@ -313,9 +311,7 @@ describe('check', () => {
     expect(await angularViteRemoveCompodoc.check(checkOptions({}))).toBeNull();
   });
 
-  // SB-1845 removed `compodoc` from the shipped schemas, which declare `additionalProperties:
-  // false` — a leftover key in a configuration is a hard Architect validation failure, not a
-  // silently ignored option.
+  // A leftover key in a configuration is a hard Architect validation failure.
   it('detects Compodoc options declared under configurations, not just options', async () => {
     vol.fromNestedJSON({
       [PROJECT_JSON]: JSON.stringify({
@@ -376,7 +372,7 @@ describe('check', () => {
     expect(result).toMatchObject({ hasPreviewWiring: true });
   });
 
-  // SB-1839: the repo's own scripts keep needing the binary after Storybook stops needing it.
+  // The repo's own scripts can still need the binary after Storybook stops using it.
   it('reports package.json scripts that still invoke the Compodoc binary', async () => {
     vol.fromNestedJSON({
       [PACKAGE_JSON]: JSON.stringify({
@@ -395,8 +391,7 @@ describe('check', () => {
     ]);
   });
 
-  // SB-1839 again: a miss uninstalls a binary a script still calls, so the matcher has to see
-  // through the command that hosts it as well as the wrapper that precedes it.
+  // A miss uninstalls a binary a script still calls, including through wrappers.
   it('sees the Compodoc binary behind a host command, a wrapper and shell punctuation', async () => {
     vol.fromNestedJSON({
       [PACKAGE_JSON]: JSON.stringify({
@@ -675,8 +670,7 @@ describe('run', () => {
     );
   });
 
-  // SB-1839: the override has to survive the package-manager writes that come after it in the same
-  // process, or the cleanup is a no-op on the migration path.
+  // The override edit has to survive later package-manager writes in the same process.
   it('drops a dangling @compodoc/compodoc override that a later package-manager write cannot restore', async () => {
     vol.fromNestedJSON({
       [PACKAGE_JSON]: JSON.stringify(

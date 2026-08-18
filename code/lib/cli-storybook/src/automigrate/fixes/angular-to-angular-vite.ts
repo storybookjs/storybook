@@ -20,6 +20,11 @@ import { dedent } from 'ts-dedent';
 import { add } from '../../add.ts';
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
+import {
+  findWorkspaceFiles,
+  getTargetGroups,
+  type AngularTargetGroup,
+} from './angular-workspace.ts';
 import { findCompodocSetup, removeCompodocSetup } from './angular-vite-remove-compodoc.ts';
 
 export const ANGULAR_PACKAGE = '@storybook/angular';
@@ -176,12 +181,6 @@ interface TargetEditor {
   edit(path: JSONEditPath, value: unknown): void;
 }
 
-/** A `targets`-shaped object (angular.json's `architect`, or project.json's `targets`) and the JSON path to it. */
-interface TargetGroup {
-  pathPrefix: JSONEditPath;
-  targets: Record<string, unknown>;
-}
-
 /** Accumulates sequential `editJsonText` edits against an in-memory string (project.json's editor). */
 class TextJsonEditor implements TargetEditor {
   content: string;
@@ -201,7 +200,7 @@ class TextJsonEditor implements TargetEditor {
  */
 const processStorybookTargets = (
   editor: TargetEditor,
-  targetGroups: TargetGroup[]
+  targetGroups: AngularTargetGroup[]
 ): Omit<JsonTargetTransformResult, 'allStorybookTargetsZonelessTrue'> & {
   allZonelessTrue: boolean;
 } => {
@@ -270,16 +269,9 @@ const transformAngularJson = (
     };
   }
 
-  const targetGroups: TargetGroup[] = Object.entries(angularJSON.projects)
-    .filter(([, project]) => project?.architect && typeof project.architect === 'object')
-    .map(([projectName, project]) => ({
-      pathPrefix: ['projects', projectName, 'architect'],
-      targets: project.architect,
-    }));
-
   const { changed, hasStorybookTarget, allZonelessTrue } = processStorybookTargets(
     angularJSON,
-    targetGroups
+    getTargetGroups(angularJSON.json)
   );
 
   if (changed && !dryRun) {
@@ -304,15 +296,10 @@ const transformProjectJson = async (
   try {
     const original = await readFile(projectJsonPath, 'utf-8');
     const json = JSON.parse(original);
-    const targets = json?.targets;
-
     const editor = new TextJsonEditor(original);
-    const targetGroups: TargetGroup[] =
-      targets && typeof targets === 'object' ? [{ pathPrefix: ['targets'], targets }] : [];
-
     const { changed, hasStorybookTarget, allZonelessTrue } = processStorybookTargets(
       editor,
-      targetGroups
+      getTargetGroups(json)
     );
 
     if (changed && !dryRun) {
@@ -572,18 +559,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     // `builder`; the `@storybook/angular:<target>` string is identical, so the
     // same rewrite applies. Glob the workspace since they are not co-located
     // with package.json the way angular.json is.
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
-    const projectJsonFiles = await globby(['**/project.json'], {
-      // Anchored to the workspace root, the same tree `packageManager.packageJsonPaths` walks up to.
-      // Left at the working directory, running the CLI from inside one app would migrate only that
-      // app while still reasoning about the root `nx.json`/`angular.json`.
-      cwd: getProjectRoot(),
-      // Storybook writes a `project.json` of its own into the build output, which must not be
-      // mistaken for a workspace project.
-      ignore: ['**/node_modules/**', '**/dist/**', '**/storybook-static/**'],
-      absolute: true,
-    });
+    const projectJsonFiles = await findWorkspaceFiles('project.json');
     for (const projectJsonPath of projectJsonFiles) {
       const { changed, hasStorybookTarget, allStorybookTargetsZonelessTrue } =
         await transformProjectJson(projectJsonPath, dryRun);
@@ -657,6 +633,8 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
 
     // 5. Update import statements across config and story files.
     logger.debug('Scanning and updating import statements...');
+    // eslint-disable-next-line depend/ban-dependencies
+    const { globby } = await import('globby');
     const configFiles = configDir ? await globby([`${configDir}/**/*`]) : [];
     const allFiles = [...storiesPaths, ...configFiles].filter(Boolean) as string[];
 

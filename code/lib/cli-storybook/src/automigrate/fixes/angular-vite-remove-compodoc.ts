@@ -2,11 +2,7 @@ import { writeFile } from 'node:fs/promises';
 
 import { traverse, types as t } from 'storybook/internal/babel';
 import { editJsonText, isStorybookTarget, type JSONEditPath } from 'storybook/internal/cli';
-import {
-  formatFileContent,
-  getProjectRoot,
-  type JsPackageManager,
-} from 'storybook/internal/common';
+import { formatFileContent, type JsPackageManager } from 'storybook/internal/common';
 import { formatConfig, readConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
@@ -18,6 +14,7 @@ import { dedent } from 'ts-dedent';
 
 import { getFrameworkPackageName, updateMainConfig } from '../helpers/mainConfigFile.ts';
 import type { Fix, RunOptions } from '../types.ts';
+import { findWorkspaceFiles, getTargetGroups } from './angular-workspace.ts';
 
 export const COMPODOC_PACKAGE = '@compodoc/compodoc';
 const SET_COMPODOC_JSON = 'setCompodocJson';
@@ -45,34 +42,6 @@ export interface AngularViteRemoveCompodocOptions {
 }
 
 const COMPODOC_OPTIONS = ['compodoc', 'compodocArgs'] as const;
-
-interface TargetGroup {
-  prefix: JSONEditPath;
-  targets: Record<string, unknown>;
-}
-
-/**
- * Every group of concrete targets in a workspace document.
- *
- * `angular.json` nests targets under `projects.<name>.architect`; an Nx `project.json` is one
- * project with its targets at the root. Both shapes reduce to the same list of groups.
- */
-const targetGroups = (json: any): TargetGroup[] => {
-  const groups: TargetGroup[] = [];
-  for (const [name, project] of Object.entries<any>(json?.projects ?? {})) {
-    for (const key of ['architect', 'targets'] as const) {
-      if (project?.[key] && typeof project[key] === 'object') {
-        groups.push({ prefix: ['projects', name, key], targets: project[key] });
-      }
-    }
-  }
-
-  if (json?.targets && typeof json.targets === 'object') {
-    groups.push({ prefix: ['targets'], targets: json.targets });
-  }
-
-  return groups;
-};
 
 /**
  * Compodoc options live under `options` and under every named `configurations` entry. Both are
@@ -104,7 +73,7 @@ const isOwnedBy = (target: unknown, builderPackages: string[]): boolean =>
  * keyed by an executor reference names its package just as a concrete target does.
  */
 const declaredStorybookTargets = (json: any): unknown[] => [
-  ...targetGroups(json).flatMap(({ targets }) => Object.values(targets)),
+  ...getTargetGroups(json).flatMap(({ targets }) => Object.values(targets)),
   ...Object.entries<any>(json?.targetDefaults ?? {}).flatMap(([targetName, target]) => [
     target,
     { executor: targetName },
@@ -140,9 +109,9 @@ const compodocOptionPaths = (
   builderPackages: string[],
   everyStorybookTargetIsOwned: boolean
 ): JSONEditPath[] => {
-  const fromTargets = targetGroups(json).flatMap(({ prefix, targets }) =>
+  const fromTargets = getTargetGroups(json).flatMap(({ pathPrefix, targets }) =>
     Object.entries(targets).flatMap(([targetName, target]) =>
-      isOwnedBy(target, builderPackages) ? optionPathsOf(prefix, targetName, target) : []
+      isOwnedBy(target, builderPackages) ? optionPathsOf(pathPrefix, targetName, target) : []
     )
   );
 
@@ -209,7 +178,7 @@ const stripShellQuoting = (token: string) => token.replace(/^[('"`]+/, '').repla
  * Whether a package.json script runs the Compodoc binary, rather than merely naming a path.
  *
  * Erring towards a match is deliberate: a false one keeps a dependency and prints a warning, while
- * a miss uninstalls a binary the repo's own scripts still call (SB-1839).
+ * a miss uninstalls a binary the repo's own scripts still call.
  */
 const invokesCompodoc = (script: string): boolean =>
   script.split(SHELL_SEPARATORS).some((segment) => {
@@ -230,7 +199,7 @@ const invokesCompodoc = (script: string): boolean =>
  * in `packageJsonPaths` — and its script would still break once the dependency is gone.
  */
 const findCompodocScripts = async (packageJsonPaths: string[]): Promise<CompodocScript[]> => {
-  const paths = new Set([...packageJsonPaths, ...(await globWorkspaceFiles('package.json'))]);
+  const paths = new Set([...packageJsonPaths, ...(await findWorkspaceFiles('package.json'))]);
 
   return [...paths].flatMap((packageJsonPath) =>
     Object.entries<string>(readJson(packageJsonPath)?.scripts ?? {})
@@ -566,25 +535,7 @@ const workspaceJsonCandidates = async (packageJsonPaths: string[]): Promise<stri
     )
     .filter((path) => existsSync(path));
 
-  return [...siblingPaths, ...(await globWorkspaceFiles('project.json'))];
-};
-
-/**
- * Every `basename` in the workspace, anchored to the root the package.json walk already reaches.
- *
- * Left at the working directory, running the CLI from inside one app would conclude "no Storybook
- * target is left on the old builder" from that app alone, while still editing the root `nx.json`
- * every other app inherits. Storybook writes a `project.json` of its own into the build output,
- * which must not be mistaken for a workspace project either.
- */
-const globWorkspaceFiles = async (basename: string): Promise<string[]> => {
-  // eslint-disable-next-line depend/ban-dependencies
-  const { globby } = await import('globby');
-  return globby([`**/${basename}`], {
-    cwd: getProjectRoot(),
-    ignore: ['**/node_modules/**', '**/dist/**', '**/storybook-static/**'],
-    absolute: true,
-  });
+  return [...siblingPaths, ...(await findWorkspaceFiles('project.json'))];
 };
 
 /** Drops the `compodoc` and `compodocArgs` builder options, which angular-vite never read. */

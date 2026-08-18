@@ -335,14 +335,23 @@ export function angularOptionsPlugin(
     },
     async transform(code, id) {
       if (resolvedPreviewPath && normalizePath(id).endsWith(normalizePath(resolvedPreviewPath))) {
-        const imports = [];
+        const imports: string[] = [];
         const styles = options?.angularBuilderOptions?.styles;
 
         if (Array.isArray(styles)) {
-          // angular.json also allows `{ input, bundleName, inject }`; only `input` maps onto a
-          // preview that has a single bundle.
           styles.forEach((style) => {
-            imports.push(typeof style === 'string' ? style : style.input);
+            const stylePath =
+              typeof style === 'string'
+                ? style
+                : style !== null &&
+                    typeof style === 'object' &&
+                    'input' in style &&
+                    typeof style.input === 'string'
+                  ? style.input
+                  : undefined;
+            if (stylePath !== undefined) {
+              imports.push(stylePath);
+            }
           });
         }
 

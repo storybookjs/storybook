@@ -1,16 +1,16 @@
-import { mkdtempSync, readdirSync, rmSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import * as fs from 'node:fs';
+import { join, resolve } from 'node:path';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { AngularJSON } from 'storybook/internal/cli';
+import { AngularJSON, copyTemplate } from 'storybook/internal/cli';
 import { SupportedBuilder } from 'storybook/internal/types';
+
+import { fs as memfs, vol } from 'memfs';
 
 import angularGenerator from './index.ts';
 
-// `copyTemplate` shells out to `cpSync`, which memfs does not implement, so this suite copies the
-// real template files into a real temporary directory.
+vi.mock('node:fs', { spy: true });
 vi.mock('storybook/internal/cli', { spy: true });
 
 const packageManager = {
@@ -18,7 +18,7 @@ const packageManager = {
   addScripts: vi.fn(),
 };
 
-let root: string;
+const root = resolve('/project');
 
 const angularJson = {
   projects: { app: {} },
@@ -40,27 +40,36 @@ const configureWith = (builder: SupportedBuilder) =>
   );
 
 beforeEach(() => {
-  root = mkdtempSync(join(tmpdir(), 'sb-angular-init-'));
+  vi.clearAllMocks();
+  vol.reset();
+  vi.mocked(fs.readdirSync).mockImplementation(memfs.readdirSync as never);
+  vi.mocked(fs.rmSync).mockImplementation(memfs.rmSync as never);
+  vi.mocked(copyTemplate).mockImplementation((_templateDir, destination = '.') => {
+    vol.fromNestedJSON({
+      [join(destination, '.storybook', 'tsconfig.doc.json')]: '',
+      [join(destination, '.storybook', 'tsconfig.json')]: '',
+      [join(destination, '.storybook', 'typings.d.ts')]: '',
+    });
+  });
   vi.mocked(AngularJSON).mockImplementation(function () {
     return angularJson as any;
   } as any);
-});
-
-afterEach(() => {
-  rmSync(root, { recursive: true, force: true });
 });
 
 describe('the Angular generator .storybook folder', () => {
   it('omits the Compodoc-only tsconfig when Compodoc will not run', async () => {
     await configureWith(SupportedBuilder.VITE);
 
-    expect(readdirSync(join(root, '.storybook')).sort()).toEqual(['tsconfig.json', 'typings.d.ts']);
+    expect(fs.readdirSync(join(root, '.storybook')).sort()).toEqual([
+      'tsconfig.json',
+      'typings.d.ts',
+    ]);
   });
 
   it('keeps the Compodoc-only tsconfig on the webpack Compodoc path', async () => {
     await configureWith(SupportedBuilder.WEBPACK5);
 
-    expect(readdirSync(join(root, '.storybook')).sort()).toEqual([
+    expect(fs.readdirSync(join(root, '.storybook')).sort()).toEqual([
       'tsconfig.doc.json',
       'tsconfig.json',
       'typings.d.ts',

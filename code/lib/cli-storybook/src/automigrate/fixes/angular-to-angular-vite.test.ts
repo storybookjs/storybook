@@ -253,8 +253,8 @@ describe('angular-to-angular-vite', () => {
       expect(result?.hasWebpackFinal).toBe(false);
     });
 
-    // SB-1838: `@analogjs/storybook-angular` carries `@storybook/angular` as a peer, so the
-    // dependency alone said nothing about which framework the project actually renders with.
+    // `@analogjs/storybook-angular` carries `@storybook/angular` as a peer, so the dependency alone
+    // does not identify the framework the project renders with.
     it('returns null and says why when the framework is not @storybook/angular', async () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
         [ANGULAR_PACKAGE]: '^9.0.0',
@@ -657,8 +657,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       expect(written.targets.storybook.options).toEqual({ port: 6006 });
     });
 
-    // SB-1840: the workspace-wide rewrite has to cover the same tree the package.json walk reaches,
-    // so running the CLI from inside one app must not silently migrate only that app.
+    // The workspace-wide rewrite has to cover the same tree as the package.json walk.
     it('discovers project.json files from the workspace root, not the working directory', async () => {
       mockPromptConfirm.mockResolvedValue(false);
       mockReadFile.mockResolvedValue(`export default { framework: '${ANGULAR_PACKAGE}' };`);
@@ -869,8 +868,8 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       expect(mockUpdateMainConfig).not.toHaveBeenCalled();
     });
 
-    // SB-1838: uninstalling @storybook/angular while the framework field still points at it leaves
-    // a Storybook that cannot start, and the run used to report success anyway.
+    // Removing @storybook/angular while the main config still references it leaves Storybook unable
+    // to start.
     it('stops before any edit when the framework field is not in the main config file', async () => {
       mockPromptConfirm.mockResolvedValue(false);
       mockReadFile.mockResolvedValue(

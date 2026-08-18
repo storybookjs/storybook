@@ -12,18 +12,10 @@ import {
   readMetadataInputsOutputs,
 } from './decorators.ts';
 import { defaultInitializer } from './default-initializer.ts';
+import { analyzeInputTransform, type InputTransformSource } from './input-transform.ts';
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
 import { memberName } from './node-text.ts';
 import { buildSignalEntry, parseSignalCall } from './signals.ts';
-
-type TransformTypeSource = {
-  kind: 'transform';
-  checkerType: ts.Type;
-  node?: ts.TypeNode;
-  substitutions?: ReadonlyMap<ts.Symbol, ts.TypeNode>;
-};
-
-type TransformWriteType = Omit<TransformTypeSource, 'kind'> & { text: string };
 
 /**
  * A collected member, paired with the identity Angular itself merges on.
@@ -37,7 +29,7 @@ export interface MemberEntry<T> {
   isStatic: boolean;
   declaration: ts.NamedDeclaration;
   /** A metadata type the class property's checker type does not represent. */
-  typeSource?: { kind: 'signal'; signalKind: 'input' | 'output' | 'model' } | TransformTypeSource;
+  typeSource?: { kind: 'signal'; signalKind: 'input' | 'output' | 'model' } | InputTransformSource;
   value: T;
 }
 
@@ -218,8 +210,8 @@ const buildDecoratorInput = (
   decorator: DecoratorInfo
 ): { value: Property; typeSource?: MemberEntry<Property>['typeSource'] } => {
   const config = parseInputDecoratorConfig(ctx, decorator);
-  const transformed = config.transform ? transformWriteType(ctx, config.transform) : undefined;
-  const type = transformed?.text ?? typeOfPropertyish(ctx, member);
+  const transform = config.transform ? analyzeInputTransform(ctx, config.transform) : undefined;
+  const type = transform?.type ?? typeOfPropertyish(ctx, member);
   return {
     value: {
       name: config.alias ?? memberName(ctx.ts, member.name),
@@ -231,75 +223,7 @@ const buildDecoratorInput = (
       ...getJsDocDescription(ctx.ts, member),
       ...getJsDocTagsField(ctx.ts, member),
     },
-    ...(transformed
-      ? {
-          typeSource: transformTypeSource(transformed),
-        }
-      : {}),
-  };
-};
-
-const transformTypeSource = ({
-  checkerType,
-  node,
-  substitutions,
-}: TransformWriteType): TransformTypeSource => ({
-  kind: 'transform',
-  checkerType,
-  ...(node ? { node } : {}),
-  ...(substitutions ? { substitutions } : {}),
-});
-
-// A transformed input documents the transform's parameter type: it is what a template may bind,
-// while the declared property type is only what the transform turns it into. `unknown`/`any`
-// (booleanAttribute-style coercions) names nothing a control can offer, so the declared type stays.
-const transformWriteType = (
-  ctx: AnalyzerContext,
-  transform: ts.Expression
-): TransformWriteType | undefined => {
-  const { checker, ts } = ctx;
-  // TypeScript infers from the last signature of an overloaded function, so that is the overload
-  // Angular's own `TransformT` comes from.
-  const signatures = checker.getTypeAtLocation(transform).getCallSignatures();
-  const signature = signatures[signatures.length - 1];
-  const parameter = signature?.getParameters()[0];
-  const parameterType = parameter && checker.getTypeOfSymbolAtLocation(parameter, transform);
-  if (!parameterType || parameterType.flags & (ts.TypeFlags.Unknown | ts.TypeFlags.Any)) {
-    return undefined;
-  }
-  const declaration = parameter?.valueDeclaration;
-  const node = declaration && ts.isParameter(declaration) ? declaration.type : undefined;
-  let unwrappedTransform = transform;
-  while (
-    ts.isParenthesizedExpression(unwrappedTransform) ||
-    ts.isSatisfiesExpression(unwrappedTransform) ||
-    ts.isNonNullExpression(unwrappedTransform)
-  ) {
-    unwrappedTransform = unwrappedTransform.expression;
-  }
-  const typeArguments =
-    ts.isCallExpression(unwrappedTransform) || ts.isExpressionWithTypeArguments(unwrappedTransform)
-      ? unwrappedTransform.typeArguments
-      : undefined;
-  const substitutions = new Map<ts.Symbol, ts.TypeNode>();
-  const genericSignature = ts.isCallExpression(unwrappedTransform)
-    ? checker.getResolvedSignature(unwrappedTransform)
-    : signature;
-  const typeParameters = (genericSignature?.declaration?.typeParameters ?? []).filter(
-    ts.isTypeParameterDeclaration
-  );
-  for (const [index, typeParameter] of typeParameters.entries()) {
-    const symbol = checker.getSymbolAtLocation(typeParameter.name);
-    const argument = typeArguments?.[index];
-    if (symbol && argument) {
-      substitutions.set(symbol, argument);
-    }
-  }
-  return {
-    text: ctx.types.renderValueType(parameterType, transform),
-    checkerType: parameterType,
-    ...(node ? { node } : {}),
-    ...(substitutions.size > 0 ? { substitutions } : {}),
+    ...(transform ? { typeSource: transform.source } : {}),
   };
 };
 
@@ -520,8 +444,8 @@ const visitAccessorPair = (
   const inputDecorator = decorators.find((decorator) => decorator.name === 'Input');
   if (inputDecorator) {
     const config = parseInputDecoratorConfig(ctx, inputDecorator);
-    const transformed = config.transform ? transformWriteType(ctx, config.transform) : undefined;
-    const inputType = transformed?.text ?? type;
+    const transform = config.transform ? analyzeInputTransform(ctx, config.transform) : undefined;
+    const inputType = transform?.type ?? type;
     members.inputs.push(
       accessorEntry(
         {
@@ -533,7 +457,7 @@ const visitAccessorPair = (
           ...description,
           ...tags,
         },
-        transformed ? transformTypeSource(transformed) : undefined
+        transform?.source
       )
     );
     return;

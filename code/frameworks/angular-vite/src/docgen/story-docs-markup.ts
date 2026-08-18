@@ -203,7 +203,7 @@ interface TemplateParts {
 
 // `String.raw` is the identity tag: it hands back the text between the backticks, so a template
 // wearing it is as readable as a plain one. No other tag transforms its input predictably.
-const templateParts = (node: t.Node): TemplateParts | undefined => {
+export const templateParts = (node: t.Node): TemplateParts | undefined => {
   if (t.isTemplateLiteral(node)) {
     return {
       quasis: node.quasis.map((quasi) => quasi.value.cooked ?? ''),

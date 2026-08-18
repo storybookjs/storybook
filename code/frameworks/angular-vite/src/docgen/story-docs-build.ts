@@ -37,6 +37,7 @@ import {
   resolvedMember,
   resolvedProperty,
   sourceOf,
+  templateParts,
   userTemplate,
 } from './story-docs-markup.ts';
 import type { StoryNgModules } from './story-docs-ng-modules.ts';
@@ -199,26 +200,40 @@ const renderedSnippet = (
   deps: StoryDocDeps
 ): HostComponentSnippet | undefined => {
   const authored = authoredSource(shape);
-  if (authored !== undefined) {
-    return { snippet: authored };
+  if (authored.code !== undefined) {
+    return { snippet: authored.code };
   }
-  return deps.snippetMeta
+  const derived = deps.snippetMeta
     ? renderStorySnippet(deps.snippetMeta, shape, shape.members.properties.decorators, deps)
     : undefined;
+  return derived && authored.unreadable !== undefined
+    ? withWarnings(derived, unresolvedWarning([authored.unreadable]))
+    : derived;
 };
 
-const authoredSource = (shape: StoryShape): string | undefined => {
+/**
+ * The code the author published for this story, which always outranks a generated snippet.
+ *
+ * Reported rather than silently replaced when it is written in a spelling this pass cannot read:
+ * overriding an author's own example without saying so is the failure this exists to prevent.
+ */
+const authoredSource = (shape: StoryShape): { code?: string; unreadable?: string } => {
   for (const members of [shape.members, shape.metaMembers]) {
     const code = memberAt(members, ['parameters', 'docs', 'source', 'code']);
     const value = code && unwrapExpression(code);
+    if (value === undefined) {
+      continue;
+    }
     if (t.isStringLiteral(value)) {
-      return value.value;
+      return { code: value.value };
     }
-    if (t.isTemplateLiteral(value) && value.expressions.length === 0) {
-      return value.quasis[0]?.value.cooked ?? '';
+    const parts = templateParts(value);
+    if (parts && parts.expressions.length === 0) {
+      return { code: parts.quasis[0] ?? '' };
     }
+    return { unreadable: sourceOf(value) };
   }
-  return undefined;
+  return {};
 };
 
 /** A nested config value, as far as the path is written out in object literals. */
@@ -241,10 +256,7 @@ const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
   const resolved = deps.resolveStoryArgs.resolve(exportName);
   const enums = deps.snippetMeta?.enums ?? [];
   const unresolved = [...resolved.unresolved];
-  const factoryCall = opaqueFactoryCall(deps.csf, exportName);
-  if (factoryCall !== undefined) {
-    unresolved.push(factoryCall);
-  }
+  unresolved.push(...(opaqueFactoryCall(deps.csf, exportName) ?? []));
   for (const value of Object.values(resolved.args)) {
     // An arg that still carries a name has to be reported: an Angular binding is evaluated against
     // the host component the snippet ships, so a name that component does not have reads as
@@ -272,13 +284,13 @@ const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
  * Only a CSF factory exposes what it was called with; any other call resolves to an empty record
  * indistinguishable from a story that really declares nothing, which is what makes it worth naming.
  */
-const opaqueFactoryCall = (csf: CsfFile, exportName: string): string | undefined => {
-  const declared = csf._storyExports[exportName];
+const opaqueFactoryCall = (csf: CsfFile, exportName: string): string[] | undefined => {
+  const declared = csf._storyExports[exportName] ?? csf._storyStatements[exportName];
   const init = t.isVariableDeclarator(declared) ? declared.init : declared;
   const call = init ? unwrapExpression(init) : undefined;
   const readable =
     !call || !t.isCallExpression(call) || isStoryFactoryCall(call) || isBindCall(call);
-  return readable ? undefined : sourceOf(call);
+  return readable ? undefined : [sourceOf(call)];
 };
 
 /**
@@ -333,7 +345,11 @@ const renderStorySnippet = (
     const hostArgs = referencedArgFields(userMarkup, shape, boundOutputs, snippetMeta.enums);
     return withWarnings(
       host(formatTemplateMarkup(userMarkup.markup), false, boundOutputs, hostArgs.fields),
-      unresolvedWarning(hostArgs.unresolved)
+      unresolvedWarning([
+        ...hostArgs.unresolved,
+        ...(opaqueFactoryCall(shape.csf, shape.exportName) ?? []),
+      ]),
+      unboundArgsWarning(localName, snippetMeta, shape)
     );
   }
 
@@ -392,7 +408,8 @@ const referencedArgFields = (
 const ATTRIBUTE = /([^\s=<>]+)\s*=\s*(?:"([^"]*)"|'([^']*)'|([^\s>]+))/g;
 const BINDING_ATTRIBUTE = /^(?:\[|\(|\*|bind-|on-|bindon-)/;
 const INTERPOLATION = /\{\{([\s\S]*?)\}\}/g;
-const CONTROL_FLOW_BLOCK = /@(?:if|else if|for|switch|case)\b([^{]*)/g;
+const CONTROL_FLOW_BLOCK = /@(?:if|else if|for|switch|case|defer)\b([^{]*)/g;
+const LET_DECLARATION = /@let\s+[A-Za-z_$][\w$]*\s*=([^;]*);/g;
 const QUOTED = /'[^']*'|"[^"]*"/g;
 
 /**
@@ -414,7 +431,11 @@ const expressionText = (markup: string): string => {
   for (const [, condition] of markup.matchAll(CONTROL_FLOW_BLOCK)) {
     expressions.push(condition);
   }
-  return expressions.join('\n').replace(QUOTED, '');
+  for (const [, value] of markup.matchAll(LET_DECLARATION)) {
+    expressions.push(value);
+  }
+  // Stripped per expression: an unbalanced quote in one would otherwise swallow the next.
+  return expressions.map((expression) => expression.replace(QUOTED, '')).join('\n');
 };
 
 const withWarnings = (
@@ -462,23 +483,24 @@ interface ArgsExpansion {
 }
 
 /**
- * What `argsToTemplate(args)` expands to, which is every arg the story has rather than only the
- * documented inputs, with a function-valued one bound as an output the way the runtime binds it.
+ * What `argsToTemplate(args)` expands to on the component element.
+ *
+ * Only what the component declares: a snippet that binds anything else does not compile, and the
+ * reader cannot tell that from a snippet that does. An arg left out is named in the warning
+ * instead. `undefined` is dropped for the reason the runtime helper drops it - binding it would
+ * suppress the component's own default.
  */
 const argsExpansion = (
   snippetMeta: AngularComponentSnippetMeta,
   shape: StoryShape
 ): ArgsExpansion => {
-  const outputs = [
-    ...new Set([
-      ...snippetMeta.outputs,
-      ...Object.entries(shape.args)
-        .filter(([, node]) => isFunctionValue(node))
-        .map(([name]) => name),
-    ]),
-  ];
+  const { outputs } = snippetMeta;
+  const bindableInputs = new Set(snippetMeta.inputs);
   const inputs = Object.entries(shape.args)
-    .filter(([name]) => !outputs.includes(name))
+    .filter(
+      ([name, node]) =>
+        bindableInputs.has(name) && !outputs.includes(name) && !isUndefinedValue(node)
+    )
     .map(([name, node]) => ({
       name,
       expression: evaluateArgExpression(node, snippetMeta.enums),
@@ -490,17 +512,40 @@ const argsExpansion = (
   };
 };
 
-const isFunctionValue = (node: t.Node): boolean => {
+const isUndefinedValue = (node: t.Node): boolean => {
   const unwrapped = unwrapExpression(node);
-  return t.isArrowFunctionExpression(unwrapped) || t.isFunctionExpression(unwrapped);
+  return t.isIdentifier(unwrapped) && unwrapped.name === 'undefined';
 };
 
 const OUTPUT_BINDING = /\(([^)\s]+)\)\s*=/g;
 
-// Reading the markup with nothing to expand leaves the output bindings the story wrote by hand,
-// which the expansion has to leave alone or the element ends up binding them twice.
+const EXPANSION_MARKER = 'sbExpansionSite';
+
+/**
+ * Outputs the story wrote by hand on the element the expansion lands in, which it has to leave
+ * alone or that element binds them twice.
+ *
+ * Reading the markup with a marker output locates that element: the same name bound on a wrapper or
+ * a sibling belongs to a different element and must not suppress anything. A filter that excludes
+ * the marker also excludes the outputs it would guard, so the empty result stays correct.
+ */
 const handWrittenOutputs = (shape: StoryShape): Set<string> => {
-  const unexpanded = userTemplate(shape, { inputs: [], outputs: [] });
-  const markup = unexpanded?.kind === 'literal' ? unexpanded.markup : '';
-  return new Set([...markup.matchAll(OUTPUT_BINDING)].map(([, name]) => name));
+  const marked = userTemplate(shape, { inputs: [], outputs: [EXPANSION_MARKER] });
+  const markup = marked?.kind === 'literal' ? marked.markup : '';
+  const element = expansionElement(markup);
+  return new Set(
+    [...element.matchAll(OUTPUT_BINDING)]
+      .map(([, name]) => name)
+      .filter((name) => name !== EXPANSION_MARKER)
+  );
+};
+
+const expansionElement = (markup: string): string => {
+  const at = markup.indexOf(`(${EXPANSION_MARKER})=`);
+  if (at === -1) {
+    return '';
+  }
+  const start = markup.lastIndexOf('<', at);
+  const end = markup.indexOf('>', at);
+  return markup.slice(start === -1 ? 0 : start, end === -1 ? markup.length : end);
 };

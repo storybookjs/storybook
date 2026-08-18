@@ -123,7 +123,8 @@
     "style-loader": "^3.3.1",
     "styled-jsx": "^5.1.6",
     "tsconfig-paths": "^4.0.0",
-    "tsconfig-paths-webpack-plugin": "^4.0.1"
+    "tsconfig-paths-webpack-plugin": "^4.0.1",
+    "util": "^0.12.5"
   },
   "devDependencies": {
     "@babel/types": "^7.28.5",

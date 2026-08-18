@@ -9,6 +9,7 @@ const nodePolyfillFallback = {
   buffer: require.resolve('buffer/'),
   process: require.resolve('process/browser.js'),
   stream: require.resolve('stream-browserify'),
+  util: require.resolve('util/'),
   zlib: require.resolve('browserify-zlib'),
 } satisfies NonNullable<Configuration['resolve']>['fallback'];
 

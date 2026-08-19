@@ -120,7 +120,6 @@ const Wrapper = styled.div<WrapperProps>(
             drop-shadow(0 1px 3px rgba(0,0,0,0.1))
           `,
           borderRadius: theme.appBorderRadius + 2,
-          // Portal-rendered; see TooltipNote for why the font is declared rather than inherited.
           fontFamily: theme.typography.fonts.base,
           fontSize: theme.typography.size.s1,
         }

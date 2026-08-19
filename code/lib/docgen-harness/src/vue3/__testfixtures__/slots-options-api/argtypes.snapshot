@@ -1,6 +1,6 @@
 {
   "default": {
-    "description": "Rendered above the content.",
+    "description": "The main content area.",
     "name": "default",
     "table": {
       "category": "slots",

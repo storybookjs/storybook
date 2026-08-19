@@ -14,6 +14,7 @@ export default {
     <h2>{{ heading }}</h2>
     <!-- @slot Rendered above the content. -->
     <slot name="header" />
+    <!-- @slot The main content area. -->
     <slot />
     <ul>
       <li v-for="(entry, index) in ['first', 'second']" :key="entry">

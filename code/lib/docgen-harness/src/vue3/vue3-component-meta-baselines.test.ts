@@ -104,7 +104,7 @@ async function buildComponentMetaDocgen(sfcPath: string): Promise<object | undef
 
   const exposed = meta.exposed
     .filter((expose) => {
-      if (!expose.name.startsWith('on')) {
+      if (!/^on[A-Z]/.test(expose.name)) {
         return true;
       }
       const eventName = lowercaseFirstLetter(expose.name.slice('on'.length));

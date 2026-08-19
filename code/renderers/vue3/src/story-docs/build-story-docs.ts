@@ -85,6 +85,8 @@ const RENDER_UNRESOLVED_WARNING =
   'No static snippet: the `render` function could not be resolved statically.';
 const SLOT_UNRESOLVED_WARNING =
   'No static snippet: a slot function could not be resolved statically.';
+const IMPORT_UNRESOLVED_WARNING =
+  "No static snippet: the component's import could not be resolved statically.";
 
 type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
 type ExtractStoriesResult = { stories: Record<string, StoryDoc> };
@@ -295,7 +297,7 @@ function enrichStoryDoc(
   if (!options.snippet) {
     return plain;
   }
-  const { componentName, docgenArgInfo } = options.snippet;
+  const { componentName, componentImportStatement, docgenArgInfo } = options.snippet;
 
   let normalized;
   try {
@@ -323,6 +325,12 @@ function enrichStoryDoc(
         : undefined;
   if (!renderer) {
     return withWarning(RENDER_UNRESOLVED_WARNING);
+  }
+
+  // The SFC renderer needs the component's import statement; without one, the bail below would
+  // otherwise blame a slot that was never involved.
+  if (renderer.kind === 'sfc' && !componentImportStatement) {
+    return withWarning(IMPORT_UNRESOLVED_WARNING);
   }
 
   const resolved = resolveStaticStoryArgs(storyExport, docgenArgInfo, options);

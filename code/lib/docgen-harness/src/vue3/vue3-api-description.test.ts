@@ -214,6 +214,7 @@ describe('vue3 api description from real vue-component-meta output', () => {
       export type ExposeEventCollisionEvents = {
         focus: [];
         blur: [];
+        boarding: [];
       }
       \`\`\`
 
@@ -225,6 +226,7 @@ describe('vue3 api description from real vue-component-meta output', () => {
       export type ExposeEventCollisionExposed = {
         focus: () => void;
         blur: () => void;
+        onboarding: () => void;
       }
       \`\`\`"
     `);

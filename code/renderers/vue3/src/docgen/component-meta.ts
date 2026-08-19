@@ -13,14 +13,14 @@ import { join, parse } from 'node:path';
 import { getProjectRoot } from 'storybook/internal/common';
 
 import {
+  TypeMeta,
+  createChecker,
+  createCheckerByJson,
   type ComponentMeta,
   type ComponentMetaChecker,
   type MetaCheckerOptions,
   type PropertyMetaSchema,
   type SlotMeta,
-  TypeMeta,
-  createChecker,
-  createCheckerByJson,
 } from 'vue-component-meta';
 import { parseMulti, type ComponentDoc } from 'vue-docgen-api';
 
@@ -143,7 +143,7 @@ export async function collectComponentMetaSources(
       // duplicate: an exposed member merely named like an event (`focus` beside a `focus` event)
       // is an authored `defineExpose` member and has to stay.
       .filter((expose) => {
-        if (!expose.name.startsWith('on')) {
+        if (!/^on[A-Z]/.test(expose.name)) {
           return true;
         }
 

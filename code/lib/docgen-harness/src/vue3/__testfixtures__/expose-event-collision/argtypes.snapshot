@@ -17,6 +17,24 @@
       "value": "",
     },
   },
+  "boarding": {
+    "control": {
+      "disable": true,
+    },
+    "description": undefined,
+    "name": "boarding",
+    "table": {
+      "category": "events",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "",
+    },
+  },
   "focus": {
     "control": {
       "disable": true,
@@ -49,6 +67,23 @@
     "type": {
       "name": "string",
       "required": false,
+    },
+  },
+  "onboarding": {
+    "control": {
+      "disable": true,
+    },
+    "description": undefined,
+    "name": "onboarding",
+    "table": {
+      "category": "expose",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "value": "",
     },
   },
 }

@@ -10,22 +10,28 @@ import type { StoryDoc } from './types.ts';
  */
 export type SnippetRecipeRenderer = (recipe: unknown, args: Args) => string | undefined;
 
-let renderer: SnippetRecipeRenderer | undefined;
+const RENDERER_SYMBOL = Symbol.for('storybook.open-service.snippet-recipe-renderer');
+
+type RendererGlobal = { [key: symbol]: SnippetRecipeRenderer | undefined };
 
 /**
  * Registers the renderer that turns this framework's snippet recipes back into snippets.
  *
- * Called from the framework's preview annotation, the way {@link registerService} is. There is one
- * preview and one framework in it, so there is one renderer; a second registration replaces the
- * first rather than accumulating.
+ * Anchored on a `globalThis` symbol for the same reason the service registry is: the published
+ * bundles reach this module through more than one import path - the preview runtime inlines its own
+ * copy, while a framework calls in through `storybook/open-service` - so a module-level variable
+ * would leave the setter writing one copy and the reader checking another. The failure mode is
+ * silent, and indistinguishable from the feature being switched off.
+ *
+ * There is one preview and one framework in it, so a second registration replaces the first.
  */
 export function registerSnippetRecipeRenderer(register: SnippetRecipeRenderer): void {
-  renderer = register;
+  (globalThis as RendererGlobal)[RENDERER_SYMBOL] = register;
 }
 
 /** Test seam. Preview code never needs this: the preview is torn down with its iframe. */
 export function clearSnippetRecipeRenderer(): void {
-  renderer = undefined;
+  (globalThis as RendererGlobal)[RENDERER_SYMBOL] = undefined;
 }
 
 /**
@@ -40,6 +46,7 @@ export function renderStoryDocSnippet(story: StoryDoc, args: Args | undefined): 
   if (story.snippet === undefined) {
     return undefined;
   }
+  const renderer = (globalThis as RendererGlobal)[RENDERER_SYMBOL];
   if (story.recipe === undefined || args === undefined || renderer === undefined) {
     return story.snippet;
   }

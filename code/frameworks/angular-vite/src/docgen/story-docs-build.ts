@@ -37,6 +37,7 @@ import type { StorySnippetTemplate } from '../story-snippet-template.ts';
 import { SNIPPET_TEMPLATE_KIND } from '../story-snippet-template.ts';
 import {
   buildComponentOutletTemplate,
+  buildTagWireForm,
   buildTemplate,
   formatTemplateMarkup,
 } from '../template-grammar.ts';
@@ -342,9 +343,9 @@ const renderStorySnippet = async (
 /**
  * The template the preview substitutes live args into to rebuild this snippet.
  *
- * Emitted broken whatever its binding count: how many bindings the tag ends up carrying is only
- * known once the preview has filled the holes, and putting a broken tag back on one line needs
- * nothing the text does not already carry.
+ * Emitted in wire form rather than as display markup: how many bindings the tag ends up carrying is
+ * only known once the preview has filled the holes, so the preview lays it out - through the same
+ * `layoutTag` that shaped the snippet beside it.
  *
  * Every field is copied rather than aliased: `snippetMeta` is a reactive proxy over `core/docgen`'s
  * state, and a proxy cannot be structured-cloned, so aliasing one here would make the whole
@@ -357,11 +358,9 @@ const storySnippetTemplate = (
   ngModules: HostComponentSnippetInput['ngModules']
 ): StorySnippetTemplate => ({
   kind: SNIPPET_TEMPLATE_KIND,
-  template: buildTemplate(snippetMeta.selector!, {
+  template: buildTagWireForm(snippetMeta.selector!, {
     inputs: snippetMeta.inputs.map((name) => ({ name, expression: `{{${name}}}` })),
     outputs: [...snippetMeta.outputs],
-    style: 'snippet',
-    forceBreak: true,
   }),
   componentName,
   // Stored unconditionally: `buildHostComponentSnippet` owns the rule about when an import may be

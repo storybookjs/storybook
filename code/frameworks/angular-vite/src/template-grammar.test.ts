@@ -1,11 +1,14 @@
 import { describe, expect, it } from 'vitest';
 
 import type { BuildTemplateInput } from './template-grammar.ts';
+import type { TagClose } from './template-grammar.ts';
 import {
   buildComponentOutletTemplate,
+  buildTagWireForm,
   buildTemplate,
   formatInputValue,
   formatTemplateMarkup,
+  layoutTag,
 } from './template-grammar.ts';
 
 describe('formatInputValue', () => {
@@ -284,5 +287,43 @@ describe('formatTemplateMarkup', () => {
 
     expect(generated).toContain('\n/>');
     expect(formatTemplateMarkup(generated)).toBe(generated);
+  });
+});
+
+// The wire form exists so a consumer holding live values can lay a tag out the way the generator
+// would. That only holds if re-laying-out an untouched wire form reproduces `buildTemplate` exactly,
+// for every shape a selector can produce - a dashed element, a class selector that falls back to a
+// `div`, an attribute selector, an id, and every binding count either side of the break.
+describe('the wire form lays out to what buildTemplate produces', () => {
+  const selectors = ['sb-button', '.card', '[appHighlight]', 'button[sb-action]', 'sb-x#main.a.b'];
+  const outputs = ['clicked'];
+
+  const relayout = (wire: string): string => {
+    const lines = wire.split('\n');
+    const end = lines.at(-1)!;
+    const close: TagClose =
+      end === '/>'
+        ? { selfClosing: true }
+        : { selfClosing: false, tag: end.slice(2, -1), inner: '' };
+    return layoutTag({
+      open: lines[0]!,
+      bindings: lines.slice(1, -1).map((line) => line.trim()),
+      close,
+      style: 'snippet',
+    });
+  };
+
+  it.each(selectors)('%s', (selector) => {
+    for (let count = 0; count <= 4; count += 1) {
+      const inputs = Array.from({ length: count }, (_, index) => ({
+        name: `input${index}`,
+        expression: `'v${index}'`,
+      }));
+      for (const bound of [[], outputs]) {
+        expect(relayout(buildTagWireForm(selector, { inputs, outputs: bound }))).toBe(
+          buildTemplate(selector, { inputs, outputs: bound, style: 'snippet' })
+        );
+      }
+    }
   });
 });

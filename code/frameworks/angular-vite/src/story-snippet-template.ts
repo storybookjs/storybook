@@ -3,7 +3,8 @@
 // must stay free of `@angular/core` and of any other runtime-only import.
 import { escapeAttributeExpression, printArgExpression } from './arg-expression.ts';
 import { buildHostComponentSnippet } from './host-component-snippet.ts';
-import { BREAK_AT_BINDINGS, INDENT } from './template-grammar.ts';
+import type { TagClose } from './template-grammar.ts';
+import { layoutTag } from './template-grammar.ts';
 
 /** Identifies a template this framework wrote, across a version skew a static build can carry. */
 export const SNIPPET_TEMPLATE_KIND = 'angular-snippet-template';
@@ -19,8 +20,8 @@ export const SNIPPET_TEMPLATE_KIND = 'angular-snippet-template';
 export interface StorySnippetTemplate {
   kind: typeof SNIPPET_TEMPLATE_KIND;
   /**
-   * The story's markup, one binding per line, with `[name]="{{name}}"` standing in for every input
-   * the component declares.
+   * The story's tag in wire form: the open line, one binding per line, and the tag's end last, with
+   * `[name]="{{name}}"` standing in for every input the component declares.
    *
    * Every declared input is a hole, not just the ones the story set: a reader can turn any of the
    * others on from the Controls panel, and a template that already carries them places such a
@@ -39,74 +40,48 @@ export interface StorySnippetTemplate {
   ngModules?: { names: string[]; importStatements: string[] };
 }
 
-// One binding whose whole attribute value is its own hole. The name is matched by backreference, so
-// it needs no escaping, and the binding is matched as a unit, so a filled value that happens to
-// read `[x]="{{x}}"` cannot be re-matched: `String.replace` never rescans what it inserted.
-const HOLE_BINDING = /(\s*)\[([^\]]+)\]="\{\{\2\}\}"/g;
-
-/** A template with its holes filled from live args, and how many input bindings survived. */
-interface FilledTemplate {
-  template: string;
-  bindings: number;
-}
-
-const fillHoles = (template: string, args: Record<string, unknown>): FilledTemplate | undefined => {
-  let declined = false;
-  let bindings = 0;
-  const filled = template.replace(HOLE_BINDING, (hole, space: string, name: string) => {
-    // The args ARE the truth, and resetting a control drops the key rather than setting it to
-    // `undefined`, so absence is what removes a binding. The whitespace in front of it is part of
-    // the match, so a dropped binding leaves with its own line while a filled one puts the line
-    // break back - without that, filling a hole would swallow it and un-break the tag.
-    if (!(name in args) || args[name] === undefined) {
-      return '';
-    }
-    const printed = printArgExpression(args[name]);
-    // One arg with no expression form makes the whole rebuild dishonest, not just its own binding:
-    // the reader would see every other binding follow the Controls while this one silently showed
-    // the story's declared value. Declining hands back the server's snippet intact.
-    if (printed === undefined) {
-      declined = true;
-      return hole;
-    }
-    bindings += 1;
-    return `${space}[${name}]="${escapeAttributeExpression(printed)}"`;
-  });
-  return declined ? undefined : { template: filled, bindings };
-};
-
-/**
- * Puts a broken tag back on one line, the exact inverse of the break `buildTemplate` emits: an open
- * line, one indented binding per line, and an end that is either `/>` on its own line or `>` with
- * the closing tag under it.
- */
-const collapseTag = (template: string): string => {
-  const lines = template.split('\n');
-  const end = lines.findIndex((line, index) => index > 0 && !line.startsWith(INDENT));
-  if (end === -1) {
-    return template;
-  }
-  const open =
-    lines[0] +
-    lines
-      .slice(1, end)
-      .map((line) => ` ${line.trim()}`)
-      .join('');
-  const tail = lines.slice(end);
-  return tail[0] === '/>' ? `${open} />` : open + tail.join('');
-};
-
 export const isStorySnippetTemplate = (value: unknown): value is StorySnippetTemplate =>
   typeof value === 'object' &&
   value !== null &&
   (value as { kind?: unknown }).kind === SNIPPET_TEMPLATE_KIND;
 
+// A binding whose whole attribute value is its own hole. The name is matched by backreference, so
+// it needs no escaping and an input cannot be confused with one whose name it is a prefix of.
+const HOLE = /^\[([^\]]+)\]="\{\{\1\}\}"$/;
+
+const DECLINED = Symbol('snippet-template-declined');
+
+/** The binding for one wire-form line: filled, dropped (`undefined`), or unprintable. */
+const fillBinding = (
+  binding: string,
+  args: Record<string, unknown>
+): string | undefined | typeof DECLINED => {
+  const hole = HOLE.exec(binding);
+  if (!hole) {
+    // An output binding carries a handler name rather than a value, so it is never substituted.
+    return binding;
+  }
+  const name = hole[1];
+  // The args ARE the truth, and resetting a control drops the key rather than setting it to
+  // `undefined`, so absence is what removes a binding.
+  if (!(name in args) || args[name] === undefined) {
+    return undefined;
+  }
+  const printed = printArgExpression(args[name]);
+  if (printed === undefined) {
+    return DECLINED;
+  }
+  return `[${name}]="${escapeAttributeExpression(printed)}"`;
+};
+
 /**
  * The story's snippet for the args in front of the reader, or `undefined` to decline the rebuild.
  *
- * Takes `unknown` because it is registered as the framework's renderer directly: declining a
- * payload another framework or an older build wrote is part of the same contract as declining a
- * value with no expression form.
+ * Takes `unknown` because it is the framework's registered renderer: declining a payload another
+ * framework or an older build wrote is part of the same contract as declining a value with no
+ * expression form. One arg with no expression form declines the whole rebuild, because a snippet
+ * where a single binding silently kept the story's value while the rest followed the Controls is
+ * worse than one that is merely stale.
  */
 export const renderSnippetFromTemplate = (
   snippetTemplate: unknown,
@@ -115,15 +90,25 @@ export const renderSnippetFromTemplate = (
   if (!isStorySnippetTemplate(snippetTemplate)) {
     return undefined;
   }
-  const filled = fillHoles(snippetTemplate.template, args);
-  if (filled === undefined) {
-    return undefined;
+  const lines = snippetTemplate.template.split('\n');
+  const end = lines.at(-1)!;
+  const bindings: string[] = [];
+
+  for (const line of lines.slice(1, -1)) {
+    const filled = fillBinding(line.trim(), args);
+    if (filled === DECLINED) {
+      return undefined;
+    }
+    if (filled !== undefined) {
+      bindings.push(filled);
+    }
   }
-  // Outputs are on every tag unconditionally, so they count towards the break here exactly as they
-  // did when the server laid out the snippet this rebuilds.
-  const bindings = filled.bindings + snippetTemplate.outputs.length;
+
+  const close: TagClose =
+    end === '/>' ? { selfClosing: true } : { selfClosing: false, tag: end.slice(2, -1), inner: '' };
+
   return buildHostComponentSnippet({
-    template: bindings >= BREAK_AT_BINDINGS ? filled.template : collapseTag(filled.template),
+    template: layoutTag({ open: lines[0]!, bindings, close, style: 'snippet' }),
     componentName: snippetTemplate.componentName,
     componentImport: snippetTemplate.componentImport,
     viaComponentOutlet: false,

@@ -7,8 +7,9 @@ import {
   renderSnippetFromTemplate,
 } from './story-snippet-template.ts';
 
-// The server emits the tag broken, with a hole for every input the component declares, whatever the
-// story itself set. `sb-button` declares `primary`, `label` and `size`, in that order.
+// The server emits the tag in wire form - open line, one binding per line, the tag's end last -
+// with a hole for every input the component declares, whatever the story itself set. `sb-button`
+// declares `primary`, `label` and `size`, in that order.
 const snippetTemplate: StorySnippetTemplate = {
   kind: SNIPPET_TEMPLATE_KIND,
   template: [
@@ -71,12 +72,12 @@ describe('renderSnippetFromTemplate', () => {
     );
   });
 
-  // A selector that names no custom element keeps its closing tag, so its broken form ends `>` with
-  // `</div>` under it rather than `/>` on a line of its own.
-  it('collapses an element that carries a closing tag', () => {
+  // A selector that names no custom element keeps its closing tag, so its wire form ends `</div>`
+  // rather than `/>`.
+  it('lays out an element that carries a closing tag', () => {
     const withClosingTag: StorySnippetTemplate = {
       ...snippetTemplate,
-      template: ['<div class="card"', '    [label]="{{label}}"', '>', '</div>'].join('\n'),
+      template: ['<div class="card"', '    [label]="{{label}}"', '</div>'].join('\n'),
       outputs: [],
     };
 

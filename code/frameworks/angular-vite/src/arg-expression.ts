@@ -61,19 +61,11 @@ const print = (value: unknown, seen: Set<unknown>): string | undefined => {
 
 /**
  * Renders an arg value as a template expression, or `undefined` when it has none.
- *
- * Declining is the point. A value with no expression form has no honest rendering: printing
- * something plausible would put source in front of a reader that does not compile or does not mean
- * what it says. Callers keep whatever they had instead - on the server the arg falls back to its
- * authored source text, and in the preview the whole snippet falls back to the server's.
  */
 export const printArgExpression = (value: unknown): string | undefined => print(value, new Set());
 
 /**
  * Escapes an expression for the double-quoted attribute it is about to sit in.
- *
- * The delimiter and any text Angular's lexer would decode as a character reference survive the
- * round-trip unchanged.
  */
 export const escapeAttributeExpression = (expression: string): string =>
   expression.replace(/&(?=#|\w+;)/g, '&amp;').replace(/"/g, '&quot;');

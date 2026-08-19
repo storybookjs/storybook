@@ -1,9 +1,3 @@
-// The ingredients a story's Angular snippet is built from, and the builder that turns them back
-// into one. The server records a recipe alongside the snippet it already rendered; the preview
-// re-runs this builder over live arg values so the snippet tracks the Controls.
-//
-// Imported by the dev-server story-docs provider and by the preview, so this module must stay
-// isomorphic: no Babel, no `csf-tools`, no `core-server`, no Node built-in, no `@angular/core`.
 import { escapeAttributeExpression, printArgExpression } from './arg-expression.ts';
 import { buildHostComponentSnippet } from './host-component-snippet.ts';
 import type { TemplateInputBinding } from './template-grammar.ts';
@@ -16,9 +10,6 @@ export const RECIPE_KIND = 'angular-host-component';
 export interface RecipeInput {
   /**
    * The arg's name, which is also the binding's name.
-   *
-   * A binding only exists when its name matches one the component declares, so the two are the same
-   * string by construction rather than by coincidence.
    */
   arg: string;
   /** What the server printed for this binding, used whenever no live value is supplied. */
@@ -50,13 +41,6 @@ export interface StorySnippetRecipe {
   ngModules?: { names: string[]; importStatements: string[] };
 }
 
-/**
- * Rebuilds the snippet, printing live values for the args that have one.
- *
- * With no args it reproduces the server's snippet exactly, because the recipe carries the
- * expressions the server printed. With args it prints them through the same printer and the same
- * layout rules the server used, so the only thing that differs is the values themselves.
- */
 export const renderSnippetFromRecipe = (
   recipe: StorySnippetRecipe,
   args?: Record<string, unknown>
@@ -95,14 +79,6 @@ export const renderSnippetFromRecipe = (
   }).snippet;
 };
 
-/**
- * Whether an opaque recipe from the story-docs payload is one of ours.
- *
- * The payload carries recipes as `unknown` because snippet generation is renderer-specific, so this
- * is the boundary where that `unknown` becomes a `StorySnippetRecipe`. A single discriminator
- * answers it: a payload written by an older Storybook into a static build, which is the real skew
- * this guards, will not carry this `kind`.
- */
 export const isStorySnippetRecipe = (recipe: unknown): recipe is StorySnippetRecipe =>
   typeof recipe === 'object' &&
   recipe !== null &&

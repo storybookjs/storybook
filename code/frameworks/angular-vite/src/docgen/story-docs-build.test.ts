@@ -43,7 +43,7 @@ const givenStoryFile = (source: string) => {
 const noDocgen = async (): Promise<undefined> => undefined;
 
 const buttonDocgen =
-  (jsDocTags: AngularDocgenPayload['jsDocTags'] = {}, standalone = true) =>
+  (jsDocTags: AngularDocgenPayload['jsDocTags'] = {}, standalone = true, outputs = ['pressed']) =>
   async (): Promise<AngularDocgenPayload> => ({
     id: 'example-button',
     name: 'ButtonComponent',
@@ -54,7 +54,7 @@ const buttonDocgen =
       selector: 'sb-button',
       standalone,
       inputs: ['label'],
-      outputs: ['pressed'],
+      outputs,
       enums: [],
     },
   });
@@ -120,21 +120,21 @@ const STORY_SHAPES_FILE = [
   // The idiom every Angular docs example uses: wrapper markup the user wrote, with the bindings
   // filled in by `argsToTemplate`.
   `export const ArgsToTemplate = {`,
-  `  args: { label: 'Save', count: 7 },`,
+  `  args: { label: 'Save', count: 7, clicked: () => {} },`,
   `  render: (args) => ({`,
   '    props: args,',
   '    template: `<div class="wrap"><sb-button ${argsToTemplate(args)}></sb-button></div>`,',
   `  }),`,
   `};`,
   `export const ArgsToTemplateExclude = {`,
-  `  args: { label: 'Save', count: 7 },`,
+  `  args: { label: 'Save', count: 7, clicked: () => {} },`,
   `  render: (args) => ({`,
   '    props: args,',
   "    template: `<sb-button ${argsToTemplate(args, { exclude: ['count'] })}></sb-button>`,",
   `  }),`,
   `};`,
   `export const SlotInterpolation = {`,
-  `  args: { label: 'Save', footer: 'Bye' },`,
+  `  args: { label: 'Save', footer: 'Bye', clicked: () => {} },`,
   `  render: ({ footer, ...args }) => ({`,
   '    props: args,',
   '    template: `<sb-button ${argsToTemplate(args)}><span>${footer}</span></sb-button>`,',
@@ -451,7 +451,7 @@ describe('buildStoryDocsPayload', () => {
     expect(story.warning).toContain('NgModule');
   });
 
-  it('leaves a standalone component in `imports` even when moduleMetadata lists modules', async () => {
+  it('imports a standalone component alongside the modules its moduleMetadata lists', async () => {
     givenStoryFile(`
       import { moduleMetadata } from '@storybook/angular-vite';
       import { ButtonComponent } from './button.component';
@@ -467,9 +467,23 @@ describe('buildStoryDocsPayload', () => {
     const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() });
 
     const story = Object.values(payload!.stories)[0];
-    expect(story.snippet).toContain('imports: [ButtonComponent],');
-    expect(story.snippet).not.toContain('IconModule');
-    expect(story.warning).toBeUndefined();
+    expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+      {
+        "snippet": "import { Component } from '@angular/core';
+      import { ButtonComponent } from './button.component';
+      import { IconModule } from './icon.module';
+
+      @Component({
+        selector: 'app-demo',
+        imports: [ButtonComponent, IconModule],
+        template: \`<sb-button (pressed)="pressed($event)" />\`,
+      })
+      export class DemoComponent {
+        pressed(event: unknown) {}
+      }",
+        "warning": undefined,
+      }
+    `);
   });
 
   it('names the payload after the story file component when core/docgen has no payload', async () => {
@@ -671,6 +685,157 @@ describe('buildStoryDocsPayload', () => {
       );
     });
 
+    it('reports an arg the component does not declare instead of binding it', async () => {
+      const story = await soleStory(`
+        import { argsToTemplate } from '@storybook/angular-vite';
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save', tooltip: 'Hi' },
+          render: (args) => ({
+            props: args,
+            template: \`<sb-button \${argsToTemplate(args)}></sb-button>\`,
+          }),
+        };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button [label]="'Save'"></sb-button>\`,
+        })
+        export class DemoComponent {}",
+          "warning": "Incomplete snippet: \`tooltip\` could not be bound, since ButtonComponent declares no such input.",
+        }
+      `);
+    });
+
+    it('reports an arg whose name is not a binding the component accepts', async () => {
+      const story = await soleStory(`
+        import { argsToTemplate } from '@storybook/angular-vite';
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save', 'aria-label': 'Close', 'two words': 'x' },
+          render: (args) => ({
+            props: args,
+            template: \`<sb-button \${argsToTemplate(args)}></sb-button>\`,
+          }),
+        };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button [label]="'Save'"></sb-button>\`,
+        })
+        export class DemoComponent {}",
+          "warning": "Incomplete snippet: \`aria-label\`, \`two words\` could not be bound, since ButtonComponent declares no such input.",
+        }
+      `);
+    });
+
+    it('leaves an undefined-valued arg unbound, as argsToTemplate does at runtime', async () => {
+      const story = await soleStory(`
+        import { argsToTemplate } from '@storybook/angular-vite';
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: undefined },
+          render: (args) => ({
+            props: args,
+            template: \`<sb-button \${argsToTemplate(args)}></sb-button>\`,
+          }),
+        };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button></sb-button>\`,
+        })
+        export class DemoComponent {}",
+          "warning": undefined,
+        }
+      `);
+    });
+
+    it('reports a function-valued arg the component declares no output for', async () => {
+      const story = await soleStory(`
+        import { argsToTemplate } from '@storybook/angular-vite';
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { onSelect: () => {} },
+          render: (args) => ({
+            props: args,
+            template: \`<sb-button \${argsToTemplate(args)}></sb-button>\`,
+          }),
+        };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button></sb-button>\`,
+        })
+        export class DemoComponent {}",
+          "warning": "Incomplete snippet: \`onSelect\` could not be bound, since ButtonComponent declares no such output.",
+        }
+      `);
+    });
+
+    it('expands only present args whose values match their binding kind', async () => {
+      const story = await soleStory(
+        `
+        import { argsToTemplate } from '@storybook/angular-vite';
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save', pressed: () => {}, changed: 'not a handler' },
+          render: (args) => ({
+            props: args,
+            template: \`<sb-button \${argsToTemplate(args)}></sb-button>\`,
+          }),
+        };
+        `,
+        buttonDocgen({}, true, ['pressed', 'changed', 'absent'])
+      );
+
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button [label]="'Save'" (pressed)="pressed($event)"></sb-button>\`,
+        })
+        export class DemoComponent {
+          pressed(event: unknown) {}
+        }",
+          "warning": "Incomplete snippet: \`changed\` could not be bound, since ButtonComponent declares no such input.",
+        }
+      `);
+    });
+
     it('honours argsToTemplate exclude options', async () => {
       expect((await templatesOf(STORY_SHAPES_FILE)).get('Args To Template Exclude')).toBe(
         `<sb-button [label]="'Save'" (clicked)="clicked($event)"></sb-button>`
@@ -678,13 +843,26 @@ describe('buildStoryDocsPayload', () => {
     });
 
     it('substitutes an interpolated arg used as slot content', async () => {
-      expect((await templatesOf(STORY_SHAPES_FILE)).get('Slot Interpolation')).toBe(
-        [
-          `<sb-button [label]="'Save'" (clicked)="clicked($event)">`,
-          '    <span>Bye</span>',
-          '</sb-button>',
-        ].join('\n')
-      );
+      const story = (await storiesOf(STORY_SHAPES_FILE)).get('Slot Interpolation');
+      expect({ snippet: story?.snippet, warning: story?.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`
+            <sb-button [label]="'Save'" (clicked)="clicked($event)">
+                <span>Bye</span>
+            </sb-button>\`,
+        })
+        export class DemoComponent {
+          clicked(event: unknown) {}
+        }",
+          "warning": undefined,
+        }
+      `);
     });
 
     it('leaves a story it could read entirely alone', async () => {
@@ -749,10 +927,71 @@ describe('buildStoryDocsPayload', () => {
       expect(snippet).not.toContain(`clicked = 'not a handler';`);
     });
 
-    it('declares nothing for a story whose markup names no args', async () => {
-      expect((await storiesOf(STORY_SHAPES_FILE)).get('Own Template')?.snippet).toContain(
-        'export class DemoComponent {}'
-      );
+    it('declares statically keyed and void-valued args as host fields', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { 'two words': 'available', label: void 0 },
+          render: (args) => ({
+            props: args,
+            template: \`<sb-button [label]="label">{{ this['two words'] }}</sb-button>\`,
+          }),
+        };
+      `);
+
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button [label]="label">{{ this['two words'] }}</sb-button>\`,
+        })
+        export class DemoComponent {
+          ['two words'] = 'available';
+          label = undefined;
+        }",
+          "warning": undefined,
+        }
+      `);
+    });
+
+    it('declares an arg a @defer condition reads', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { ready: true },
+          render: (args) => ({
+            props: args,
+            template: '<div>@defer (when ready) { <sb-button></sb-button> }</div>',
+          }),
+        };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`
+            <div>
+                @defer (when ready) {
+                <sb-button></sb-button>
+                }
+            </div>\`,
+        })
+        export class DemoComponent {
+          ready = true;
+        }",
+          "warning": undefined,
+        }
+      `);
     });
 
     // A name the story file declares is read through to its value: the host component the snippet
@@ -967,6 +1206,35 @@ describe('buildStoryDocsPayload', () => {
       expect(story.warning).toContain('render:');
       expect(story.snippet).not.toContain('first');
       expect(story.snippet).toContain(`[label]="'Save'"`);
+    });
+
+    it('reports an opaque factory story even when its template reads', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        import { makeStory } from './factory';
+        export default {
+          title: 'Example/Button',
+          component: ButtonComponent,
+          render: () => ({ template: '<sb-button></sb-button>' }),
+        };
+        export const Default = makeStory('primary');
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button (pressed)="pressed($event)" />\`,
+        })
+        export class DemoComponent {
+          pressed(event: unknown) {}
+        }",
+          "warning": "Incomplete snippet: \`makeStory('primary')\` could not be resolved statically.",
+        }
+      `);
     });
 
     it('falls back with a warning when argsToTemplate options need the story to run', async () => {
@@ -1387,6 +1655,171 @@ describe('buildStoryDocsPayload', () => {
       expect(stories.get('Logged In')?.warning).toBe(
         'Incomplete snippet: `...HeaderStories.LoggedIn.args` could not be resolved statically.'
       );
+    });
+  });
+
+  describe('args the generated element cannot represent', () => {
+    it('reports an arg the component declares no input for', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { label: 'Save', tooltip: 'Hi' } };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button [label]="'Save'" (pressed)="pressed($event)" />\`,
+        })
+        export class DemoComponent {
+          pressed(event: unknown) {}
+        }",
+          "warning": "Incomplete snippet: \`tooltip\` could not be bound, since ButtonComponent declares no such input.",
+        }
+      `);
+    });
+
+    it('names every arg it could not bind', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { tooltip: 'Hi', size: 'large' } };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button (pressed)="pressed($event)" />\`,
+        })
+        export class DemoComponent {
+          pressed(event: unknown) {}
+        }",
+          "warning": "Incomplete snippet: \`tooltip\`, \`size\` could not be bound, since ButtonComponent declares no such input.",
+        }
+      `);
+    });
+
+    it('leaves an arg the component declares as an output to its handler', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { pressed: () => {} } };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button (pressed)="pressed($event)" />\`,
+        })
+        export class DemoComponent {
+          pressed(event: unknown) {}
+        }",
+          "warning": undefined,
+        }
+      `);
+    });
+
+    it('reports an arg whose value another module owns', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        import { REMOTE_LABEL } from './labels';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { label: REMOTE_LABEL } };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button [label]="REMOTE_LABEL" (pressed)="pressed($event)" />\`,
+        })
+        export class DemoComponent {
+          pressed(event: unknown) {}
+        }",
+          "warning": "Incomplete snippet: \`REMOTE_LABEL\` could not be resolved statically.",
+        }
+      `);
+    });
+  });
+
+  describe('a source the author wrote', () => {
+    it('omits generated code when authored source code is explicitly disabled', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save' },
+          parameters: { docs: { source: { code: null } } },
+        };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": undefined,
+          "warning": undefined,
+        }
+      `);
+    });
+
+    it('reports authored code it cannot read instead of replacing it silently', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        import { AUTHORED } from './authored';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save' },
+          parameters: { docs: { source: { code: AUTHORED } } },
+        };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button [label]="'Save'" (pressed)="pressed($event)" />\`,
+        })
+        export class DemoComponent {
+          pressed(event: unknown) {}
+        }",
+          "warning": "Incomplete snippet: \`AUTHORED\` could not be resolved statically.",
+        }
+      `);
+    });
+
+    it('uses authored code even when core/docgen has no payload', async () => {
+      const story = await soleStory(
+        `
+          import { ButtonComponent } from './button.component';
+          export default { title: 'Example/Button', component: ButtonComponent };
+          export const Default = {
+            parameters: { docs: { source: { code: '<sb-button authored></sb-button>' } } },
+          };
+        `,
+        noDocgen
+      );
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "<sb-button authored></sb-button>",
+          "warning": undefined,
+        }
+      `);
     });
   });
 });

@@ -18,6 +18,7 @@
     "src/angular/angular-provider-seam.test.ts",
     "src/angular/angular-render.test.ts",
     "src/angular/render-helpers.ts",
+    "src/angular/__storyshapes__/button-shapes/input.stories.ts",
     "src/angular/story-docs/__testfixtures__/non-standalone-module/input.stories.ts"
   ],
   "vueCompilerOptions": {

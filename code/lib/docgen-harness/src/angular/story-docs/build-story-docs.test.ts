@@ -8,8 +8,10 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { buildStoryDocsPayload } from '../../../../../frameworks/angular-vite/src/docgen/story-docs-build.ts';
-import type { StorySnippetTemplate } from '../../../../../frameworks/angular-vite/src/story-snippet-template.ts';
-import { renderSnippetFromTemplate } from '../../../../../frameworks/angular-vite/src/story-snippet-template.ts';
+import {
+  isStorySnippetTemplate,
+  renderSnippetFromTemplate,
+} from '../../../../../frameworks/angular-vite/src/story-snippet-template.ts';
 import { createFixtureDocgen } from '../docgen-fixture.ts';
 import { listFixtureCases } from '../snippet-recorder.ts';
 
@@ -102,9 +104,15 @@ describe('angular story-docs snippet templates', () => {
           continue;
         }
         const args = { ...annotationArgs(meta), ...annotationArgs(storyExport) };
+        // The preview renders nothing its own guard rejects, so the guard is what the server has to
+        // satisfy. Asserting only the rendered string passes even when the two sides no longer agree
+        // on the discriminator, which is the silent way this feature switches itself off.
+        if (!isStorySnippetTemplate(story.snippetTemplate)) {
+          expect.fail(`${fixtureCase}/${exportName}: the preview's guard rejects this template`);
+        }
 
         expect(
-          renderSnippetFromTemplate(story.snippetTemplate as StorySnippetTemplate, args),
+          renderSnippetFromTemplate(story.snippetTemplate, args),
           `${fixtureCase}/${exportName}`
         ).toBe(story.snippet);
         rebuilt += 1;

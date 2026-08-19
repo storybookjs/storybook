@@ -11,7 +11,7 @@ import { vol } from 'memfs';
 
 import type { AngularDocgenPayload } from './build-docgen.ts';
 import { buildStoryDocsPayload } from './story-docs-build.ts';
-import { extractHostComponentTemplate } from './story-docs-snippet.ts';
+import { extractHostComponentTemplate } from '../host-component-snippet.ts';
 
 vi.mock('node:fs', { spy: true });
 

@@ -10,7 +10,7 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { buildStoryDocsPayload } from '../../../../frameworks/angular-vite/src/docgen/story-docs-build.ts';
-import { extractHostComponentTemplate } from '../../../../frameworks/angular-vite/src/docgen/story-docs-snippet.ts';
+import { extractHostComponentTemplate } from '../../../../frameworks/angular-vite/src/host-component-snippet.ts';
 import { createFixtureDocgen } from './docgen-fixture.ts';
 import {
   expectNoStaleSnippets,

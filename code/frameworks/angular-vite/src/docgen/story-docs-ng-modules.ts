@@ -7,7 +7,7 @@ import {
   unwrapExpression,
 } from 'storybook/internal/csf-tools';
 
-import type { HostComponentSnippetInput } from './story-docs-snippet.ts';
+import type { HostComponentSnippetInput } from '../host-component-snippet.ts';
 
 export interface StoryNgModulesContext {
   metaNgModules: StoryNgModules;

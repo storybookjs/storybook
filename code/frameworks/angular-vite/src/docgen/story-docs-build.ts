@@ -22,17 +22,19 @@ import type { AngularComponentSnippetMeta, AngularDocgenPayload } from './build-
 import { parseStoryFile } from './resolve-component.ts';
 import {
   createArgExternalizer,
-  evaluateArgExpression,
+  evaluateArgBinding,
   evaluateArgLiteral,
 } from './story-docs-args.ts';
 import type { Bindings, StoryShape } from './story-docs-markup.ts';
 import { sourceOf, userTemplate } from './story-docs-markup.ts';
 import type { StoryNgModules } from './story-docs-ng-modules.ts';
 import { ngModulesFromDecorators, storyNgModules } from './story-docs-ng-modules.ts';
-import type { HostComponentSnippet } from './story-docs-snippet.ts';
-import { buildHostComponentSnippet } from './story-docs-snippet.ts';
 import { authoredSource } from './story-docs-source.ts';
 import type { StoryTemplateAnalysis } from './story-docs-template-analysis.ts';
+import type { HostComponentSnippet, HostComponentSnippetInput } from '../host-component-snippet.ts';
+import { buildHostComponentSnippet } from '../host-component-snippet.ts';
+import type { StorySnippetRecipe } from '../story-snippet-recipe.ts';
+import { RECIPE_KIND } from '../story-snippet-recipe.ts';
 import {
   buildComponentOutletTemplate,
   buildTemplate,
@@ -172,6 +174,7 @@ const buildStoryDoc = async (
       name,
       ...(rendered === undefined ? {} : { snippet: rendered.snippet }),
       ...(rendered?.warning === undefined ? {} : { warning: rendered.warning }),
+      ...(rendered?.recipe === undefined ? {} : { recipe: rendered.recipe }),
       ...(description ? { description } : {}),
       ...(summary === undefined ? {} : { summary }),
     };
@@ -190,7 +193,7 @@ const buildStoryDoc = async (
 const renderedSnippet = async (
   shape: StoryShape,
   deps: StoryDocDeps
-): Promise<HostComponentSnippet | undefined> => {
+): Promise<(HostComponentSnippet & { recipe?: StorySnippetRecipe }) | undefined> => {
   const authored = authoredSource(shape, deps.resolveStoryArgs.ctx);
   if (authored.kind === 'code') {
     return { snippet: authored.code };
@@ -243,7 +246,7 @@ const renderStorySnippet = async (
   shape: StoryShape,
   storyDecorators: t.Node | undefined,
   deps: StoryDocDeps
-): Promise<HostComponentSnippet> => {
+): Promise<HostComponentSnippet & { recipe?: StorySnippetRecipe }> => {
   const { componentImport } = deps;
   // The story file's local name is what the import binds, so an aliased import stays consistent
   // between the import statement, the `imports` array and the template.
@@ -305,24 +308,68 @@ const renderStorySnippet = async (
   const markupSources = userMarkup?.source === undefined ? [] : [userMarkup.source];
   // The outlet form shows no args at all, so naming the args that could not be read would say
   // nothing about what is missing from it.
-  return snippetMeta.selector
-    ? withWarnings(
-        host(
-          buildTemplate(snippetMeta.selector, {
-            ...componentBindings(snippetMeta, shape),
-            selfClosing: true,
-          }),
-          false,
-          snippetMeta.outputs
-        ),
-        unresolvedWarning([...markupSources, ...shape.unresolvedArgs]),
-        unboundArgsWarning(localName, snippetMeta, shape)
-      )
-    : withWarnings(
-        host(buildComponentOutletTemplate(localName, { selfClosing: true }), true, []),
-        unresolvedWarning(markupSources)
-      );
+  if (!snippetMeta.selector) {
+    return withWarnings(
+      host(buildComponentOutletTemplate(localName, { selfClosing: true }), true, []),
+      unresolvedWarning(markupSources)
+    );
+  }
+
+  const { bindings, replayable } = componentBindings(snippetMeta, shape);
+  return {
+    ...withWarnings(
+      host(
+        buildTemplate(snippetMeta.selector, { ...bindings, selfClosing: true }),
+        false,
+        snippetMeta.outputs
+      ),
+      unresolvedWarning([...markupSources, ...shape.unresolvedArgs]),
+      unboundArgsWarning(localName, snippetMeta, shape)
+    ),
+    // `replayable` is the whole condition. It is false exactly when a binding in this template was
+    // printed from source text, which is the only thing a consumer holding live values could not
+    // reproduce. An unresolved arg that is not a binding - `args: { onClick: fn() }`, which every
+    // scaffolded story has - makes the example partial and is named in the warning, but does not
+    // change a single character of the template, so it does not withhold the recipe.
+    recipe: replayable
+      ? snippetRecipe(snippetMeta, bindings, localName, componentImport, ngModules)
+      : undefined,
+  };
 };
+
+/**
+ * The ingredients the preview needs to rebuild this snippet from live args.
+ *
+ * Every field is copied rather than aliased: `snippetMeta` is a reactive proxy over `core/docgen`'s
+ * state, and a proxy cannot be structured-cloned, so aliasing one here would make the whole
+ * story-docs payload fail the snapshot the runtime takes of it.
+ */
+const snippetRecipe = (
+  snippetMeta: AngularComponentSnippetMeta,
+  bindings: Bindings,
+  componentName: string,
+  componentImport: string | undefined,
+  ngModules: HostComponentSnippetInput['ngModules']
+): StorySnippetRecipe => ({
+  kind: RECIPE_KIND,
+  selector: snippetMeta.selector!,
+  inputs: bindings.inputs.map(({ name, expression }) => ({ arg: name, expression })),
+  outputs: [...snippetMeta.outputs],
+  componentName,
+  // Stored unconditionally: `buildHostComponentSnippet` owns the rule about when an import may be
+  // listed, and the preview runs that same builder, so repeating the rule here would be a second
+  // copy of it to keep in sync.
+  ...(componentImport === undefined ? {} : { componentImport }),
+  standalone: snippetMeta.standalone,
+  ...(ngModules === undefined
+    ? {}
+    : {
+        ngModules: {
+          names: [...ngModules.names],
+          importStatements: [...ngModules.importStatements],
+        },
+      }),
+});
 
 const referencedArgFields = (
   referencedNames: ReadonlySet<string>,
@@ -353,14 +400,14 @@ const referencedArgFields = (
   return { fields, unresolved };
 };
 
-const withWarnings = (
-  rendered: HostComponentSnippet,
+const withWarnings = <T extends HostComponentSnippet>(
+  rendered: T,
   ...parts: (string | undefined)[]
-): HostComponentSnippet => {
+): T => {
   const warning = [...new Set([rendered.warning, ...parts])]
     .filter((part) => part !== undefined)
     .join('\n');
-  return warning === '' ? rendered : { snippet: rendered.snippet, warning };
+  return warning === '' ? rendered : { ...rendered, warning };
 };
 
 const templateAnalysisWarning = (analysis: StoryTemplateAnalysis): string | undefined =>
@@ -415,18 +462,27 @@ const unboundArgsWarning = (
   );
 };
 
+/**
+ * The component's own bindings, and whether a consumer holding live args could rebuild them.
+ *
+ * A binding printed from source text names things only the story file knows, so one of those makes
+ * the whole set unreplayable rather than just itself.
+ */
 const componentBindings = (
   snippetMeta: AngularComponentSnippetMeta,
   shape: StoryShape
-): Bindings => {
+): { bindings: Bindings; replayable: boolean } => {
   const inputNames = new Set(snippetMeta.inputs);
-  const inputs = Object.entries(shape.args)
+  const entries = Object.entries(shape.args)
     .filter(([argName]) => inputNames.has(argName))
-    .map(([argName, node]) => ({
-      name: argName,
-      expression: evaluateArgExpression(node, snippetMeta.enums),
-    }));
-  return { inputs, outputs: snippetMeta.outputs };
+    .map(([argName, node]) => ({ argName, ...evaluateArgBinding(node, snippetMeta.enums) }));
+  return {
+    bindings: {
+      inputs: entries.map(({ argName, expression }) => ({ name: argName, expression })),
+      outputs: snippetMeta.outputs,
+    },
+    replayable: entries.every(({ fromValue }) => fromValue),
+  };
 };
 
 const argsExpansion = (snippetMeta: AngularComponentSnippetMeta, shape: StoryShape): Bindings => {
@@ -443,7 +499,7 @@ const argsExpansion = (snippetMeta: AngularComponentSnippetMeta, shape: StorySha
         outputs.push(name);
       }
     } else if (inputNames.has(name)) {
-      inputs.push({ name, expression: evaluateArgExpression(node, snippetMeta.enums) });
+      inputs.push({ name, expression: evaluateArgBinding(node, snippetMeta.enums).expression });
     }
   }
   return { inputs, outputs };

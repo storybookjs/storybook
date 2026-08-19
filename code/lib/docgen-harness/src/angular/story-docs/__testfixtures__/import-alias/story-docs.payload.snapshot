@@ -6,6 +6,20 @@
     "storydocs-import-alias--primary": {
       "id": "storydocs-import-alias--primary",
       "name": "Primary",
+      "recipe": {
+        "componentImport": "import { ImportAliasComponent as Alias } from './aliased.component.ts';",
+        "componentName": "Alias",
+        "inputs": [
+          {
+            "arg": "heading",
+            "expression": "'Aliased'",
+          },
+        ],
+        "kind": "angular-host-component",
+        "outputs": [],
+        "selector": "sb-import-alias",
+        "standalone": true,
+      },
       "snippet": "import { Component } from '@angular/core';
 import { ImportAliasComponent as Alias } from './aliased.component.ts';
 

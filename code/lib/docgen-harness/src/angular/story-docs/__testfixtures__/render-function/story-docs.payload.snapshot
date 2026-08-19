@@ -22,6 +22,20 @@ export class DemoComponent {
     "storydocs-render-function--no-render": {
       "id": "storydocs-render-function--no-render",
       "name": "No Render",
+      "recipe": {
+        "componentImport": "import { RenderFunctionComponent } from './render-function.component.ts';",
+        "componentName": "RenderFunctionComponent",
+        "inputs": [
+          {
+            "arg": "label",
+            "expression": "'Plain'",
+          },
+        ],
+        "kind": "angular-host-component",
+        "outputs": [],
+        "selector": "sb-render-function",
+        "standalone": true,
+      },
       "snippet": "import { Component } from '@angular/core';
 import { RenderFunctionComponent } from './render-function.component.ts';
 

@@ -7,6 +7,24 @@
       "description": "Args behind an `as const` assertion.",
       "id": "storydocs-as-cast--casted",
       "name": "Casted",
+      "recipe": {
+        "componentImport": "import { AsCastComponent } from './as-cast.component.ts';",
+        "componentName": "AsCastComponent",
+        "inputs": [
+          {
+            "arg": "label",
+            "expression": "'Cast'",
+          },
+          {
+            "arg": "tone",
+            "expression": "'warn'",
+          },
+        ],
+        "kind": "angular-host-component",
+        "outputs": [],
+        "selector": "sb-as-cast",
+        "standalone": true,
+      },
       "snippet": "import { Component } from '@angular/core';
 import { AsCastComponent } from './as-cast.component.ts';
 
@@ -20,6 +38,20 @@ export class DemoComponent {}",
     "storydocs-as-cast--satisfied": {
       "id": "storydocs-as-cast--satisfied",
       "name": "Satisfied",
+      "recipe": {
+        "componentImport": "import { AsCastComponent } from './as-cast.component.ts';",
+        "componentName": "AsCastComponent",
+        "inputs": [
+          {
+            "arg": "label",
+            "expression": "'Satisfies'",
+          },
+        ],
+        "kind": "angular-host-component",
+        "outputs": [],
+        "selector": "sb-as-cast",
+        "standalone": true,
+      },
       "snippet": "import { Component } from '@angular/core';
 import { AsCastComponent } from './as-cast.component.ts';
 

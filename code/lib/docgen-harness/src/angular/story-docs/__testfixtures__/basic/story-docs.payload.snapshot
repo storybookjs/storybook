@@ -7,6 +7,26 @@
       "description": "The default state.",
       "id": "storydocs-basic--primary",
       "name": "Primary",
+      "recipe": {
+        "componentImport": "import { BasicComponent } from './basic.component.ts';",
+        "componentName": "BasicComponent",
+        "inputs": [
+          {
+            "arg": "label",
+            "expression": "'Base'",
+          },
+          {
+            "arg": "count",
+            "expression": "3",
+          },
+        ],
+        "kind": "angular-host-component",
+        "outputs": [
+          "pressed",
+        ],
+        "selector": "sb-basic",
+        "standalone": true,
+      },
       "snippet": "import { Component } from '@angular/core';
 import { BasicComponent } from './basic.component.ts';
 
@@ -24,6 +44,22 @@ export class DemoComponent {
       "description": "Named through the `name` annotation.",
       "id": "storydocs-basic--renamed",
       "name": "Custom name",
+      "recipe": {
+        "componentImport": "import { BasicComponent } from './basic.component.ts';",
+        "componentName": "BasicComponent",
+        "inputs": [
+          {
+            "arg": "label",
+            "expression": "'Override'",
+          },
+        ],
+        "kind": "angular-host-component",
+        "outputs": [
+          "pressed",
+        ],
+        "selector": "sb-basic",
+        "standalone": true,
+      },
       "snippet": "import { Component } from '@angular/core';
 import { BasicComponent } from './basic.component.ts';
 

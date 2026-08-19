@@ -3,7 +3,7 @@ import React, { useContext, useMemo } from 'react';
 
 import { SourceType } from 'storybook/internal/docs-tools';
 import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
-import type { Args, ModuleExport, StoryId } from 'storybook/internal/types';
+import type { Args, ModuleExport, PreparedStory, StoryId } from 'storybook/internal/types';
 
 import type { SourceCodeProps } from '../components/Source';
 import { Source as PureSource, SourceError } from '../components/Source';
@@ -105,6 +105,20 @@ const useCode = ({
 // state is used by the Canvas block, which also calls useSourceProps
 type PureSourceProps = ComponentProps<typeof PureSource>;
 
+/**
+ * Which args a Source block shows.
+ *
+ * A block pinned to the story's declared args - the `Stories` list, which passes
+ * `__forceInitialArgs` - keeps showing those rather than following the Controls the reader is
+ * moving above it. Both the snippet lookup and the rendered source must agree on this, so it has
+ * one owner.
+ */
+const sourceArgs = (
+  props: Pick<SourceProps, '__forceInitialArgs'>,
+  storyContext: Partial<ReturnType<DocsContextProps['getStoryContext']>>
+): Args | undefined =>
+  props.__forceInitialArgs ? storyContext.initialArgs : storyContext.unmappedArgs;
+
 export const useSourceProps = (
   props: SourceProps,
   docsContext: DocsContextProps,
@@ -129,11 +143,9 @@ export const useSourceProps = (
 
   const storyContext = story ? docsContext.getStoryContext(story) : {};
 
-  const argsForSource = props.__forceInitialArgs
-    ? storyContext.initialArgs
-    : storyContext.unmappedArgs;
+  const argsForSource = sourceArgs(props, storyContext);
 
-  const source = story ? getStorySource(story.id, argsForSource, sourceContext) : null;
+  const source = story ? getStorySource(story.id, argsForSource ?? {}, sourceContext) : null;
 
   const transformedCode = useCode({
     snippet: source ? source.code : '',
@@ -180,10 +192,11 @@ const SourceWithStoryDocsSnippet: FC<
   SourceProps & {
     docsContext: DocsContextProps;
     sourceContext: SourceContextProps;
-    storyId: string;
+    story: PreparedStory;
   }
-> = ({ storyId, docsContext, sourceContext, ...props }) => {
-  const serviceSnippet = useServiceStorySnippet(storyId).data ?? '';
+> = ({ story, docsContext, sourceContext, ...props }) => {
+  const args = sourceArgs(props, docsContext.getStoryContext(story));
+  const serviceSnippet = useServiceStorySnippet(story.id, args).data ?? '';
   const sourceProps = useSourceProps(props, docsContext, sourceContext, serviceSnippet);
   return <PureSource {...sourceProps} />;
 };
@@ -215,7 +228,7 @@ const SourceWithStorySnippet = (props: SourceProps) => {
         {...props}
         docsContext={docsContext}
         sourceContext={sourceContext}
-        storyId={story.id}
+        story={story}
       />
     );
   }

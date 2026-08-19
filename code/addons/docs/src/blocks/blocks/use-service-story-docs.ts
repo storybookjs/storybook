@@ -1,6 +1,6 @@
 import { useCallback } from 'react';
 
-import type { StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
+import type { Args, StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
 
 import { type QueryState, selectSnippetForStory, selectStoryDoc } from 'storybook/open-service';
 import { getService } from 'storybook/preview-api';
@@ -48,7 +48,20 @@ export function useServiceStoryDoc(storyId: string): QueryState<StoryDoc | undef
   return useServiceStory(storyId, selectStoryDoc);
 }
 
-/** Convenience hook returning one story's display snippet (with its CSF import block prepended). */
-export function useServiceStorySnippet(storyId: string): QueryState<string | undefined> {
-  return useServiceStory(storyId, selectSnippetForStory);
+/**
+ * Convenience hook returning one story's display snippet (with its CSF import block prepended).
+ *
+ * Passing the story's current args rebuilds the snippet for them where the framework supports it,
+ * so the Source block shows the args the reader is looking at rather than the ones the story
+ * declared. The selector is rebuilt when the args change, which is what re-runs the subscription.
+ */
+export function useServiceStorySnippet(
+  storyId: string,
+  args?: Args
+): QueryState<string | undefined> {
+  const selector = useCallback(
+    (payload: StoryDocsPayload | undefined, id: string) => selectSnippetForStory(payload, id, args),
+    [args]
+  );
+  return useServiceStory(storyId, selector);
 }

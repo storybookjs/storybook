@@ -31,6 +31,15 @@ export interface StoryDoc {
    * there is no snippet at all.
    */
   warning?: string;
+  /**
+   * What the framework's preview needs to rebuild `snippet` from live args, in whatever shape that
+   * framework's preview annotation understands.
+   *
+   * Deliberately opaque here. Snippet generation is renderer-specific by construction - JSX, Vue
+   * templates and Angular templates share no representable markup form - so core carries the recipe
+   * and never interprets it. A story whose snippet must not be rebuilt carries no recipe at all.
+   */
+  recipe?: unknown;
   error?: StoryDocsError;
 }
 

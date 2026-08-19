@@ -6,6 +6,19 @@
     "storydocs-local-component--primary": {
       "id": "storydocs-local-component--primary",
       "name": "Primary",
+      "recipe": {
+        "componentName": "LocalComponent",
+        "inputs": [
+          {
+            "arg": "heading",
+            "expression": "'Declared here'",
+          },
+        ],
+        "kind": "angular-host-component",
+        "outputs": [],
+        "selector": "sb-local-component",
+        "standalone": true,
+      },
       "snippet": "import { Component } from '@angular/core';
 
 @Component({

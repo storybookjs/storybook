@@ -6,6 +6,22 @@
     "storydocs-non-standalone--primary": {
       "id": "storydocs-non-standalone--primary",
       "name": "Primary",
+      "recipe": {
+        "componentImport": "import { NonStandaloneComponent } from './non-standalone.component.ts';",
+        "componentName": "NonStandaloneComponent",
+        "inputs": [
+          {
+            "arg": "label",
+            "expression": "'Legacy'",
+          },
+        ],
+        "kind": "angular-host-component",
+        "outputs": [
+          "pressed",
+        ],
+        "selector": "sb-non-standalone",
+        "standalone": false,
+      },
       "snippet": "import { Component } from '@angular/core';
 
 @Component({

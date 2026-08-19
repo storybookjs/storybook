@@ -263,11 +263,23 @@ Type: `boolean`
 
 Default: `false`, except on [`@storybook/angular-vite`](../../get-started/frameworks/angular-vite.mdx#component-documentation), which turns it on from its own configuration.
 
-Enable server-side docgen. Storybook extracts component metadata on the dev server using the TypeScript Language Service instead of injecting docgen into the preview bundle. This provides faster startup, more accurate [Controls](../../essentials/controls.mdx) and ArgTypes tables in [autodocs](../../writing-docs/autodocs.mdx), and improved static code snippets in docs and the Code panel. [Manifests](../../ai/manifests.mdx) and the [MCP server](../../ai/mcp/overview.mdx) use an optimized, ref-based format that loads faster for AI agents.
-
-Snippets are static: they won't update if you change values in the Controls table.
+Enable server-side docgen. Storybook extracts component metadata on the dev server using the TypeScript Language Service instead of injecting docgen into the preview bundle. This provides faster startup, more accurate [Controls](../../essentials/controls.mdx) and ArgTypes tables in [autodocs](../../writing-docs/autodocs.mdx), and improved code snippets in docs and the Code panel. [Manifests](../../ai/manifests.mdx) and the [MCP server](../../ai/mcp/overview.mdx) use an optimized, ref-based format that loads faster for AI agents.
 
 Support is rolling out per framework, and we [welcome feedback on the RFC](https://github.com/storybookjs/storybook/discussions/35333).
+
+</If>
+
+<If renderer="angular">
+
+Snippet values follow the Controls table: change a control and the snippet updates to match, in `storybook dev` and in a statically built Storybook alike.
+
+Which bindings a snippet shows is still decided when it is generated, from the args the story declares, so setting a control the story never declared changes the component without adding a binding to the snippet. A snippet Storybook cannot rebuild safely — one whose story supplies its own template, or holds an arg that only running the story could resolve — keeps the values the story declared.
+
+</If>
+
+<If renderer={['react','vue']}>
+
+Snippets are static: they won't update if you change values in the Controls table.
 
 </If>
 

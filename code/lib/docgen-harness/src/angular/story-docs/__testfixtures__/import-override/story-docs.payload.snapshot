@@ -6,6 +6,20 @@
     "storydocs-import-override--primary": {
       "id": "storydocs-import-override--primary",
       "name": "Primary",
+      "recipe": {
+        "componentImport": "import { OverrideComponent } from '@design-system/components';",
+        "componentName": "OverrideComponent",
+        "inputs": [
+          {
+            "arg": "heading",
+            "expression": "'Overridden'",
+          },
+        ],
+        "kind": "angular-host-component",
+        "outputs": [],
+        "selector": "sb-import-override",
+        "standalone": true,
+      },
       "snippet": "import { Component } from '@angular/core';
 import { OverrideComponent } from '@design-system/components';
 

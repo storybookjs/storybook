@@ -6,6 +6,30 @@
     "storydocs-non-standalone-module--primary": {
       "id": "storydocs-non-standalone-module--primary",
       "name": "Primary",
+      "recipe": {
+        "componentImport": "import { LegacyButtonComponent } from './non-standalone-module.component.ts';",
+        "componentName": "LegacyButtonComponent",
+        "inputs": [
+          {
+            "arg": "label",
+            "expression": "'Legacy'",
+          },
+        ],
+        "kind": "angular-host-component",
+        "ngModules": {
+          "importStatements": [
+            "import { LegacyButtonModule } from './non-standalone-module.component.ts';",
+          ],
+          "names": [
+            "LegacyButtonModule",
+          ],
+        },
+        "outputs": [
+          "pressed",
+        ],
+        "selector": "sb-legacy-button",
+        "standalone": false,
+      },
       "snippet": "import { Component } from '@angular/core';
 import { LegacyButtonModule } from './non-standalone-module.component.ts';
 

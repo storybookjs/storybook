@@ -7,6 +7,24 @@
       "description": "Bound from a shared template.",
       "id": "storydocs-csf1-legacy--bound",
       "name": "Bound",
+      "recipe": {
+        "componentImport": "import { CsfOneLegacyComponent } from './csf1-legacy.component.ts';",
+        "componentName": "CsfOneLegacyComponent",
+        "inputs": [
+          {
+            "arg": "label",
+            "expression": "'Bound'",
+          },
+          {
+            "arg": "count",
+            "expression": "2",
+          },
+        ],
+        "kind": "angular-host-component",
+        "outputs": [],
+        "selector": "sb-csf1-legacy",
+        "standalone": true,
+      },
       "snippet": "import { Component } from '@angular/core';
 import { CsfOneLegacyComponent } from './csf1-legacy.component.ts';
 

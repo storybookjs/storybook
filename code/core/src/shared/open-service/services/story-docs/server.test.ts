@@ -63,6 +63,40 @@ describe('story-docs open service', () => {
     expect(provider).toHaveBeenCalledWith({ entry });
   });
 
+  // Core carries the recipe without interpreting it, so the only thing that can go wrong here is
+  // the schema quietly dropping a shape it does not model. It is the preview's only way to rebuild
+  // a snippet in a static build, where there is no server left to ask.
+  it('carries a framework-shaped recipe through the payload without reshaping it', async () => {
+    const recipe = {
+      selector: 'sb-basic',
+      inputs: [{ arg: 'label', expression: "'Base'" }],
+      outputs: ['pressed'],
+      componentName: 'BasicComponent',
+      standalone: true,
+    };
+    const payload = makeStoryDocsPayload({
+      stories: {
+        'button--primary': {
+          id: 'button--primary',
+          name: 'Primary',
+          snippet: '<sb-basic />',
+          recipe,
+        },
+      },
+    });
+
+    const service = registerStoryDocsService({
+      getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
+      storyDocsProvider: vi.fn<StoryDocsProvider>(async () => payload),
+    });
+
+    await service.commands.extractStoryDocs({ id: 'button' });
+
+    expect(
+      service.queries.storyDocs.get({ id: 'button' })?.stories['button--primary']?.recipe
+    ).toEqual(recipe);
+  });
+
   describe('module graph hot refresh', () => {
     // Snippets come from the story file's own source. Already-extracted components must re-extract
     // when their story file changes so snippets stay fresh after the edit.

@@ -2,7 +2,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 
 import { selectComponentEntriesByComponentId } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
-import type { IndexEntry, Manifests, Presets } from 'storybook/internal/types';
+import type { Manifests, Presets } from 'storybook/internal/types';
 
 import { join } from 'pathe';
 import type { Polka } from 'polka';
@@ -105,7 +105,7 @@ function isDocsManifest(manifest: unknown): manifest is DocsManifest {
  * Returns the story index entries tagged with `manifest`.
  *
  * Computed once per operation and threaded into {@link getManifests} and
- * {@link selectComponentEntriesByComponentId} so a single write/render does not re-walk the index.
+ * {@link getManifestComponentIds} so a single write/render does not re-walk the index.
  */
 async function getManifestEntries(presets: Presets) {
   const generator = await presets.apply('storyIndexGenerator');
@@ -117,6 +117,16 @@ async function getManifestEntries(presets: Presets) {
 }
 
 type ManifestEntries = Awaited<ReturnType<typeof getManifestEntries>>;
+
+/**
+ * Returns component ids for the given manifest-tagged entries.
+ *
+ * Uses the same component-id selection rules as docgen extraction and the legacy React manifest
+ * generator.
+ */
+function getManifestComponentIds(manifestEntries: ManifestEntries) {
+  return Array.from(selectComponentEntriesByComponentId(manifestEntries).keys());
+}
 
 /** Loads all manifests from the `experimental_manifests` preset for the given manifest entries. */
 async function getManifests(
@@ -238,10 +248,9 @@ async function writeManifestJsonFiles(
 async function writeDocgenServerManifests(
   outputDir: string,
   manifests: Manifests,
-  manifestComponents: ReadonlyMap<string, IndexEntry>,
+  manifestComponentIds: string[],
   docsManifest?: DocsManifest
 ) {
-  const manifestComponentIds = [...manifestComponents.keys()];
   const hasOtherManifests = Object.keys(manifests).some((name) => name !== 'components');
   const shouldWriteHtml = manifestComponentIds.length > 0 || !!docsManifest;
 
@@ -278,7 +287,7 @@ async function writeDocgenServerManifests(
       JSON.stringify(
         buildComponentsRefManifest(
           toComponentManifestIndexEntries(
-            manifestComponents,
+            manifestComponentIds,
             docgenPayloads,
             storyDocsPayloads,
             attachedDocsWithSummaries
@@ -349,7 +358,7 @@ export async function writeManifests(outputDir: string, presets: Presets) {
       await writeDocgenServerManifests(
         outputDir,
         manifests,
-        selectComponentEntriesByComponentId(manifestEntries),
+        getManifestComponentIds(manifestEntries),
         docsManifest
       );
       return;
@@ -420,7 +429,7 @@ export function registerManifests({ app, presets }: { app: Polka; presets: Prese
         res.end(
           await renderComponentsHtmlFromService(
             manifests,
-            [...selectComponentEntriesByComponentId(manifestEntries).keys()],
+            getManifestComponentIds(manifestEntries),
             docsManifest
           )
         );

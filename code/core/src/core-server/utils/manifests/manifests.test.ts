@@ -525,7 +525,11 @@ describe('manifests', () => {
 
       const files = vol.toJSON();
       const componentsJson = JSON.parse(files['/output/manifests/components.json'] as string);
-      expect(componentsJson.components.billboard).toMatchObject({ componentless: true });
+      // The index keeps the row and its stories even though docgen extracted nothing for it.
+      expect(componentsJson.components.billboard).toMatchObject({
+        id: 'billboard',
+        stories: { $ref: expect.stringContaining('billboard') },
+      });
 
       // The HTML debugger must list the same component the JSON index does, so a maintainer
       // debugging "why can't the agent see this component" is not told two different stories.

@@ -9,7 +9,7 @@
  * component never triggers docgen extraction for every component.
  */
 
-import type { IndexEntry, StoryIndex } from 'storybook/internal/types';
+import type { StoryIndex } from 'storybook/internal/types';
 
 import { getComponentIdFromEntry } from '../../../../common/utils/component-id.ts';
 import { selectComponentEntriesByComponentId } from '../../../../common/utils/select-component-entry.ts';
@@ -52,17 +52,6 @@ export type ServiceDocsAccessOptions = {
 };
 
 /**
- * Whether the story index resolved no component file for this entry.
- *
- * Mirrors `namesNoComponent` in `core-server/utils/manifests/components-ref-manifest.ts`, the
- * static-build leg this dev leg must stay in parity with (SB-1851/SB-1853): duplicated rather than
- * imported, since `shared/open-service` does not depend on `core-server`.
- */
-function namesNoComponent(entry: IndexEntry): boolean {
-  return entry.type === 'story' && !entry.componentPath;
-}
-
-/**
  * Derives the visible set from the story index using core's manifest rules.
  *
  * Component ids keep story-index order: the sidebar order is the order a reader expects, and
@@ -75,13 +64,9 @@ function classifyIndex(index: StoryIndex): DocsClassification {
   const selected = selectComponentEntriesByComponentId(entries);
 
   const storyBasedIds = new Set<string>();
-  const componentlessIds = new Set<string>();
   for (const [id, entry] of selected) {
     if (entry.type === 'story') {
       storyBasedIds.add(id);
-    }
-    if (namesNoComponent(entry)) {
-      componentlessIds.add(id);
     }
   }
 
@@ -105,7 +90,6 @@ function classifyIndex(index: StoryIndex): DocsClassification {
   return {
     componentIds: [...selected.keys()],
     storyBasedIds,
-    componentlessIds,
     unattachedDocs,
     attachedDocsByComponent,
   };
@@ -184,9 +168,6 @@ export function createServiceDocsAccess({
         name: payload?.name ?? id,
         ...(payload?.description !== undefined ? { description: payload.description } : {}),
         ...(payload?.summary !== undefined ? { summary: payload.summary } : {}),
-        ...(!payload && classification.componentlessIds.has(id)
-          ? { componentless: true as const }
-          : {}),
         ...(classification.storyBasedIds.has(id) && withStoryIds
           ? { stories: adaptCoreStories(storiesById.get(id)?.stories) ?? [] }
           : {}),

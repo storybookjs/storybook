@@ -11,12 +11,6 @@ export type DocsClassification = {
   componentIds: string[];
   /** Component ids backed by a story-docs payload. */
   storyBasedIds: Set<string>;
-  /**
-   * Component ids whose story file names no `meta.component`. A lower bound, like its static-build
-   * counterpart `namesNoComponent` in components-ref-manifest.ts: an inline component class looks
-   * the same as none, so callers only trust this where docgen also produced nothing.
-   */
-  componentlessIds: Set<string>;
   /** Standalone MDX docs keyed by docs id → display name. */
   unattachedDocs: Map<string, string>;
   /** Attached MDX docs ids grouped by owning component id. */

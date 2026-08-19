@@ -294,9 +294,7 @@ describe('docs tools render the same text in dev and from a built Storybook', ()
     const files: Record<string, unknown> = {
       './manifests/components.json': buildComponentsRefManifest(
         toComponentManifestIndexEntries(
-          new Map(
-            Object.values(componentlessIndex.entries).map((entry) => [componentId, entry as never])
-          ),
+          [componentId],
           {},
           { [componentId]: componentlessStoryDocs }
         )
@@ -326,19 +324,6 @@ describe('docs tools render the same text in dev and from a built Storybook', ()
 
     expect(dev).toContain(`- ${componentId} (${componentId})`);
     expect(await renderList(staticToolset(), withStoryIds)).toBe(dev);
-  });
-
-  // The `docs-list` Markdown formatter never reads `componentless`, so the rendered-text
-  // comparisons above cannot catch the two legs disagreeing about it - only a raw structural
-  // comparison of what `list` returns can.
-  it('marks a componentless component the same way in the raw listing on both legs', async () => {
-    const dev = await devAccess().list({ withStoryIds: false });
-    const staticListing = await staticAccess().list({ withStoryIds: false });
-
-    expect(dev.componentManifest.components[componentId]).toMatchObject({ componentless: true });
-    expect(staticListing.componentManifest.components[componentId]).toMatchObject({
-      componentless: true,
-    });
   });
 
   it('show names the stories of a componentless component in both', async () => {

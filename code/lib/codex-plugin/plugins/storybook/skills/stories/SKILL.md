@@ -6,7 +6,7 @@ description: Invoke FIRST, before creating, editing, or deleting components, sto
 Prerequisites:
 
 1. Storybook must be installed in the project. Invoke the `$storybook:init` skill to set up Storybook, but only if the user explicitly invoked this skill and approves a Storybook installation.
-2. Storybook must be at least 10.5. Invoke the `$storybook:upgrade` skill to upgrade it, but only if the user
+2. Storybook must be at least 10.6 (or `next` while 10.6 is not yet released). Invoke the `$storybook:upgrade` skill to upgrade it, but only if the user
    explicitly approved a Storybook upgrade.
 3. Ensure `@storybook/addon-mcp` is installed. If it is missing, install it with `npx storybook add @storybook/addon-mcp`.
 
@@ -14,21 +14,9 @@ In sandboxed Codex environments, run every Storybook CLI command with `require_e
 
 Run the Storybook dev server and every Storybook CLI command from the same working directory: the package where Storybook is installed (in a monorepo often a leaf package such as `packages/ui`).
 
-Check the installed Storybook version once per session (`npx storybook --version`) and follow the matching section below. Never upgrade Storybook just to switch sections — an upgrade always needs the user's explicit approval.
-
-## Storybook 10.6.0-alpha.6 and newer
-
 Run `npx storybook skills get stories` and read the output in its **entirety** to get the **mandatory, ordered workflow** for working on UI changes, writing stories, and keeping stories in sync with every frontend component you create, modify, or delete. This workflow explains how to write stories, preview stories, and display a curated Storybook review.
 
 Before invoking any `npx storybook tools` command for the first time in a session, run it with `--help` appended and read the output fully. The workflow only names the commands; each command's argument shape and usage rules (which fields to include when) live in its own help output. Never guess a command's arguments from its name — a validation error only reports missing required fields, not the optional fields the workflow expects you to provide.
-
-## Storybook 10.5.x
-
-Run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --help` and read the output in its **entirety** to get the **mandatory, ordered workflow** for working on UI changes, writing stories, and keeping stories in sync with every frontend component you create, modify, or delete. This workflow explains how to write stories, preview stories, and display a curated Storybook review.
-
-Before invoking any `storybook ai` command for the first time in a session, run `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai <command> --help` and read it fully. The top-level help only lists the commands; each command's payload shape and usage rules (which fields to include when) live in its own help output. Never guess a `--json` payload from the command name — a validation error only reports missing required fields, not the optional fields the workflow expects you to provide.
-
-## Dev server
 
 Some commands require a running Storybook dev server:
 

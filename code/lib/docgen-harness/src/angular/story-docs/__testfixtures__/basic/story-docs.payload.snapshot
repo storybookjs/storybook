@@ -10,14 +10,18 @@
       "recipe": {
         "componentImport": "import { BasicComponent } from './basic.component.ts';",
         "componentName": "BasicComponent",
+        "inputNames": [
+          "count",
+          "label",
+        ],
         "inputs": [
-          {
-            "arg": "label",
-            "expression": "'Base'",
-          },
           {
             "arg": "count",
             "expression": "3",
+          },
+          {
+            "arg": "label",
+            "expression": "'Base'",
           },
         ],
         "kind": "angular-host-component",
@@ -33,7 +37,7 @@ import { BasicComponent } from './basic.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [BasicComponent],
-  template: `<sb-basic [label]="'Base'" [count]="3" (pressed)="pressed($event)" />`,
+  template: `<sb-basic [count]="3" [label]="'Base'" (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}
@@ -47,6 +51,10 @@ export class DemoComponent {
       "recipe": {
         "componentImport": "import { BasicComponent } from './basic.component.ts';",
         "componentName": "BasicComponent",
+        "inputNames": [
+          "count",
+          "label",
+        ],
         "inputs": [
           {
             "arg": "label",

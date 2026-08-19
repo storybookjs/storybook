@@ -10,6 +10,9 @@
       "recipe": {
         "componentImport": "import { CsfFourComponent } from './csf4.component.ts';",
         "componentName": "CsfFourComponent",
+        "inputNames": [
+          "label",
+        ],
         "inputs": [
           {
             "arg": "label",
@@ -42,6 +45,9 @@ export class DemoComponent {
       "recipe": {
         "componentImport": "import { CsfFourComponent } from './csf4.component.ts';",
         "componentName": "CsfFourComponent",
+        "inputNames": [
+          "label",
+        ],
         "inputs": [
           {
             "arg": "label",

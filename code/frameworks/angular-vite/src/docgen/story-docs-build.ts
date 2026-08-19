@@ -354,6 +354,9 @@ const snippetRecipe = (
   kind: RECIPE_KIND,
   selector: snippetMeta.selector!,
   inputs: bindings.inputs.map(({ name, expression }) => ({ arg: name, expression })),
+  // Every input the component declares, in declaration order. The story's own args are a subset;
+  // the rest are the ones a reader can turn on from the Controls panel.
+  inputNames: [...snippetMeta.inputs],
   outputs: [...snippetMeta.outputs],
   componentName,
   // Stored unconditionally: `buildHostComponentSnippet` owns the rule about when an import may be
@@ -472,10 +475,15 @@ const componentBindings = (
   snippetMeta: AngularComponentSnippetMeta,
   shape: StoryShape
 ): { bindings: Bindings; replayable: boolean } => {
-  const inputNames = new Set(snippetMeta.inputs);
-  const entries = Object.entries(shape.args)
-    .filter(([argName]) => inputNames.has(argName))
-    .map(([argName, node]) => ({ argName, ...evaluateArgBinding(node, snippetMeta.enums) }));
+  // Bindings follow the order the component declares its inputs, not the order the story happens to
+  // list its args. The preview adds and removes bindings as a reader turns Controls on and off, and
+  // only a component-anchored order keeps a binding in the same place while that happens.
+  const entries = snippetMeta.inputs
+    .filter((argName) => argName in shape.args)
+    .map((argName) => ({
+      argName,
+      ...evaluateArgBinding(shape.args[argName]!, snippetMeta.enums),
+    }));
   return {
     bindings: {
       inputs: entries.map(({ argName, expression }) => ({ name: argName, expression })),
@@ -485,23 +493,30 @@ const componentBindings = (
   };
 };
 
+/**
+ * What `argsToTemplate(args)` expands to, in the same component-anchored order
+ * {@link componentBindings} uses, so one component's bindings read the same way whether a story
+ * wrote its own markup or the snippet was generated for it.
+ *
+ * A function-valued arg is an output and never an input, and an arg the story set to `undefined`
+ * binds nothing at all, which is what the runtime helper does with it too.
+ */
 const argsExpansion = (snippetMeta: AngularComponentSnippetMeta, shape: StoryShape): Bindings => {
-  const inputNames = new Set(snippetMeta.inputs);
-  const outputNames = new Set(snippetMeta.outputs);
+  const bindable = (name: string): t.Node | undefined => {
+    const node = shape.args[name];
+    return node === undefined || isUndefinedValue(node) ? undefined : node;
+  };
   const inputs: Bindings['inputs'] = [];
-  const outputs: string[] = [];
-  for (const [name, node] of Object.entries(shape.args)) {
-    if (isUndefinedValue(node)) {
-      continue;
-    }
-    if (isFunctionValue(node)) {
-      if (outputNames.has(name)) {
-        outputs.push(name);
-      }
-    } else if (inputNames.has(name)) {
+  for (const name of snippetMeta.inputs) {
+    const node = bindable(name);
+    if (node !== undefined && !isFunctionValue(node)) {
       inputs.push({ name, expression: evaluateArgBinding(node, snippetMeta.enums).expression });
     }
   }
+  const outputs = snippetMeta.outputs.filter((name) => {
+    const node = bindable(name);
+    return node !== undefined && isFunctionValue(node);
+  });
   return { inputs, outputs };
 };
 

@@ -9,6 +9,9 @@
       "recipe": {
         "componentImport": "import { NonStandaloneComponent } from './non-standalone.component.ts';",
         "componentName": "NonStandaloneComponent",
+        "inputNames": [
+          "label",
+        ],
         "inputs": [
           {
             "arg": "label",

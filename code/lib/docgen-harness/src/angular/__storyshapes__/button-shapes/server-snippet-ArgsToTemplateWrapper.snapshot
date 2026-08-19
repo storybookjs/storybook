@@ -7,8 +7,8 @@ import { ShapeButtonComponent } from './shape-button.component.ts';
   template: `
     <div class="wrap">
         <sb-shape-button
-            [label]="'Save'"
             [count]="7"
+            [label]="'Save'"
             (clicked)="clicked($event)">
         </sb-shape-button>
     </div>`,

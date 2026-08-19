@@ -10,6 +10,10 @@
       "recipe": {
         "componentImport": "import { AsCastComponent } from './as-cast.component.ts';",
         "componentName": "AsCastComponent",
+        "inputNames": [
+          "label",
+          "tone",
+        ],
         "inputs": [
           {
             "arg": "label",
@@ -41,6 +45,10 @@ export class DemoComponent {}",
       "recipe": {
         "componentImport": "import { AsCastComponent } from './as-cast.component.ts';",
         "componentName": "AsCastComponent",
+        "inputNames": [
+          "label",
+          "tone",
+        ],
         "inputs": [
           {
             "arg": "label",

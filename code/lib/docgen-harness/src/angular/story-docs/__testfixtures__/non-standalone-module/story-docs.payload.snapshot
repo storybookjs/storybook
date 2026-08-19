@@ -9,6 +9,9 @@
       "recipe": {
         "componentImport": "import { LegacyButtonComponent } from './non-standalone-module.component.ts';",
         "componentName": "LegacyButtonComponent",
+        "inputNames": [
+          "label",
+        ],
         "inputs": [
           {
             "arg": "label",

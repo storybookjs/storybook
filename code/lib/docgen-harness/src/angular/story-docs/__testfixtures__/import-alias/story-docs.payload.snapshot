@@ -9,6 +9,9 @@
       "recipe": {
         "componentImport": "import { ImportAliasComponent as Alias } from './aliased.component.ts';",
         "componentName": "Alias",
+        "inputNames": [
+          "heading",
+        ],
         "inputs": [
           {
             "arg": "heading",

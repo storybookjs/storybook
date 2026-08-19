@@ -25,6 +25,9 @@ export class DemoComponent {
       "recipe": {
         "componentImport": "import { RenderFunctionComponent } from './render-function.component.ts';",
         "componentName": "RenderFunctionComponent",
+        "inputNames": [
+          "label",
+        ],
         "inputs": [
           {
             "arg": "label",

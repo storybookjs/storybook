@@ -37,6 +37,14 @@ export interface StorySnippetRecipe {
   componentImport?: string;
   /** `false` for a `standalone: false` component, which only its declaring NgModule can provide. */
   standalone: boolean;
+  /**
+   * Every input the component declares, in declaration order.
+   *
+   * `inputs` covers only what the story itself set. A reader can turn on any of the others from the
+   * Controls panel, and this is what lets the rebuild place such a binding where the component
+   * declares it rather than appending it wherever it happened to be switched on.
+   */
+  inputNames: string[];
   /** NgModules that stand in for a non-standalone component. */
   ngModules?: { names: string[]; importStatements: string[] };
 }
@@ -45,20 +53,32 @@ export const renderSnippetFromRecipe = (
   recipe: StorySnippetRecipe,
   args?: Record<string, unknown>
 ): string | undefined => {
+  const authored = new Map(recipe.inputs.map(({ arg, expression }) => [arg, expression]));
   const inputs: TemplateInputBinding[] = [];
-  for (const { arg, expression } of recipe.inputs) {
-    if (!args || !(arg in args)) {
-      inputs.push({ name: arg, expression });
+
+  for (const name of recipe.inputNames) {
+    // Without live args there is nothing to follow, so the server's own expressions reproduce its
+    // snippet exactly. With them, the args ARE the truth: an input missing from them is one the
+    // reader reset, and resetting a control drops the key rather than setting it to `undefined`, so
+    // absence is what has to remove the binding.
+    if (args === undefined) {
+      const expression = authored.get(name);
+      if (expression !== undefined) {
+        inputs.push({ name, expression });
+      }
       continue;
     }
-    const printed = printArgExpression(args[arg]);
+    if (!(name in args) || args[name] === undefined) {
+      continue;
+    }
+    const printed = printArgExpression(args[name]);
     // One arg with no expression form makes the whole rebuild dishonest, not just its own binding:
     // the reader would see every other binding follow the Controls while this one silently showed
     // the story's declared value. Declining hands back the server's snippet intact.
     if (printed === undefined) {
       return undefined;
     }
-    inputs.push({ name: arg, expression: escapeAttributeExpression(printed) });
+    inputs.push({ name, expression: escapeAttributeExpression(printed) });
   }
 
   return buildHostComponentSnippet({

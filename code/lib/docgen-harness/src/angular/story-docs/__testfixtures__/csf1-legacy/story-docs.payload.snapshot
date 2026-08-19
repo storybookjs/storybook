@@ -10,14 +10,18 @@
       "recipe": {
         "componentImport": "import { CsfOneLegacyComponent } from './csf1-legacy.component.ts';",
         "componentName": "CsfOneLegacyComponent",
+        "inputNames": [
+          "count",
+          "label",
+        ],
         "inputs": [
-          {
-            "arg": "label",
-            "expression": "'Bound'",
-          },
           {
             "arg": "count",
             "expression": "2",
+          },
+          {
+            "arg": "label",
+            "expression": "'Bound'",
           },
         ],
         "kind": "angular-host-component",
@@ -31,7 +35,7 @@ import { CsfOneLegacyComponent } from './csf1-legacy.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [CsfOneLegacyComponent],
-  template: `<sb-csf1-legacy [label]="'Bound'" [count]="2" />`,
+  template: `<sb-csf1-legacy [count]="2" [label]="'Bound'" />`,
 })
 export class DemoComponent {}",
     },

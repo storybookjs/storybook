@@ -8,6 +8,9 @@
       "name": "Primary",
       "recipe": {
         "componentName": "LocalComponent",
+        "inputNames": [
+          "heading",
+        ],
         "inputs": [
           {
             "arg": "heading",

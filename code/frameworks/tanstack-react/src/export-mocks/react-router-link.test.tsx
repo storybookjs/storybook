@@ -88,15 +88,11 @@ describe('Link mock', () => {
   it('resolves render-prop children with link state', async () => {
     await renderWithRouter(
       <Link to="/" data-testid="home-link">
-        {({ isActive, isTransitioning }) => (
-          <span>
-            {isActive ? 'active' : 'inactive'}:{String(isTransitioning)}
-          </span>
-        )}
+        {({ isActive }) => <span>{isActive ? 'active' : 'inactive'}</span>}
       </Link>
     );
 
-    expect(await screen.findByText('active:false')).toBeTruthy();
+    expect(await screen.findByText('active')).toBeTruthy();
   });
 
   it('serializes search params into the href', async () => {

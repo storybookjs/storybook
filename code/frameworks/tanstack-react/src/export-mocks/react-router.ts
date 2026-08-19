@@ -54,9 +54,11 @@ export const Navigate: typeof _Navigate = ({ to, href }) => {
   return null;
 };
 
+// Mirrors what the real Link passes to render-prop children at runtime, which is
+// `isActive` only — `isTransitioning` is present in the upstream type but never
+// actually supplied by the component.
 type LinkRenderState = {
   isActive: boolean;
-  isTransitioning: boolean;
 };
 
 export const Link = ({
@@ -75,10 +77,7 @@ export const Link = ({
   >;
   const resolvedChildren =
     typeof children === 'function'
-      ? children({
-          isActive: linkProps['data-status'] === 'active',
-          isTransitioning: linkProps['data-transitioning'] === 'transitioning',
-        })
+      ? children({ isActive: linkProps['data-status'] === 'active' })
       : children;
 
   return React.createElement(

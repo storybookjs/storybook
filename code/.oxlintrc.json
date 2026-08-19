@@ -146,7 +146,7 @@
         "frameworks/angular-vite/src/template-grammar.ts",
         "frameworks/angular-vite/src/arg-expression.ts",
         "frameworks/angular-vite/src/host-component-snippet.ts",
-        "frameworks/angular-vite/src/story-snippet-recipe.ts"
+        "frameworks/angular-vite/src/story-snippet-template.ts"
       ],
       "rules": {
         "no-restricted-imports": [

@@ -97,6 +97,15 @@ export interface BuildTemplateInput {
   outputs: string[];
   innerTemplate?: string;
   style: TemplateStyle;
+  /**
+   * Break the tag whatever its binding count.
+   *
+   * A snippet template carries a hole for every input the component declares, so how many bindings
+   * it ends up with is only known once the preview has filled them. The broken form is the one the
+   * preview can lay out from: collapsing a tag needs nothing the text does not already carry, while
+   * breaking one would need the indentation back.
+   */
+  forceBreak?: boolean;
 }
 
 // A selector that names no element, `.card` or `[appHighlight]`, matches a `div` in the snippet.
@@ -113,15 +122,18 @@ const ELEMENT_AND_ATTRIBUTES = /(\S+)(.*)/;
 // Binding count from which a snippet goes one binding per line, with the tag's end on a line of its
 // own. Counting bindings instead of measuring the rendered tag keeps the layout independent of the
 // values, so a snippet does not change shape while a reader types into a Controls knob.
-const BREAK_AT_BINDINGS = 3;
+export const BREAK_AT_BINDINGS = 3;
 
 // Width past which the legacy shape breaks, and what story-authored markup falls back to.
 const MAX_SINGLE_LINE = 80;
 
+// One level of indentation, which is also what a broken tag indents its bindings by.
+export const INDENT = '    ';
+
 // Expands a component selector into the element a story renders, carrying its bindings.
 export const buildTemplate = (
   selector: string,
-  { inputs, outputs, innerTemplate = '', style }: BuildTemplateInput
+  { inputs, outputs, innerTemplate = '', style, forceBreak = false }: BuildTemplateInput
 ) => {
   const bindings = [
     ...inputs.map(({ name, expression }) => `[${name}]="${expression}"`),
@@ -147,14 +159,16 @@ export const buildTemplate = (
 
     const inlineTag = `<${element}${attributes}${bindings.map((binding) => ` ${binding}`).join('')}`;
     const inline = closesItself ? `${inlineTag} />` : `${inlineTag}>${innerTemplate}</${element}>`;
-    const breaks = legacy
-      ? bindings.length > 0 && inline.length > MAX_SINGLE_LINE
-      : bindings.length >= BREAK_AT_BINDINGS;
+    const breaks =
+      bindings.length > 0 &&
+      (legacy
+        ? inline.length > MAX_SINGLE_LINE
+        : forceBreak || bindings.length >= BREAK_AT_BINDINGS);
     if (!breaks) {
       return inline;
     }
 
-    const brokenTag = `<${element}${attributes}\n${bindings.map((binding) => `    ${binding}`).join('\n')}`;
+    const brokenTag = `<${element}${attributes}\n${bindings.map((binding) => `${INDENT}${binding}`).join('\n')}`;
     if (closesItself) {
       // The bracket takes the line the closing tag would have had, rather than trailing a binding.
       return legacy ? `${brokenTag} />` : `${brokenTag}\n/>`;
@@ -169,8 +183,6 @@ export const buildComponentOutletTemplate = (componentName: string, style: Templ
   style === 'legacy'
     ? `<ng-container *ngComponentOutlet="${componentName}"></ng-container>`
     : `<ng-container *ngComponentOutlet="${componentName}" />`;
-
-const INDENT = '    ';
 
 interface MarkupElement {
   tag: string;

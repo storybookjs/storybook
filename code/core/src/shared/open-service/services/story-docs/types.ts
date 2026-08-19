@@ -36,10 +36,10 @@ export interface StoryDoc {
    * framework's preview annotation understands.
    *
    * Deliberately opaque here. Snippet generation is renderer-specific by construction - JSX, Vue
-   * templates and Angular templates share no representable markup form - so core carries the recipe
-   * and never interprets it. A story whose snippet must not be rebuilt carries no recipe at all.
+   * templates and Angular templates share no representable markup form - so core carries the
+   * template and never interprets it. A story whose snippet must not be rebuilt carries none at all.
    */
-  recipe?: unknown;
+  snippetTemplate?: unknown;
   error?: StoryDocsError;
 }
 

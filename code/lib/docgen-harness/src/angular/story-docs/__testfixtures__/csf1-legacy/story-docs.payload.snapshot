@@ -7,28 +7,6 @@
       "description": "Bound from a shared template.",
       "id": "storydocs-csf1-legacy--bound",
       "name": "Bound",
-      "recipe": {
-        "componentImport": "import { CsfOneLegacyComponent } from './csf1-legacy.component.ts';",
-        "componentName": "CsfOneLegacyComponent",
-        "inputNames": [
-          "count",
-          "label",
-        ],
-        "inputs": [
-          {
-            "arg": "count",
-            "expression": "2",
-          },
-          {
-            "arg": "label",
-            "expression": "'Bound'",
-          },
-        ],
-        "kind": "angular-host-component",
-        "outputs": [],
-        "selector": "sb-csf1-legacy",
-        "standalone": true,
-      },
       "snippet": "import { Component } from '@angular/core';
 import { CsfOneLegacyComponent } from './csf1-legacy.component.ts';
 
@@ -38,6 +16,17 @@ import { CsfOneLegacyComponent } from './csf1-legacy.component.ts';
   template: `<sb-csf1-legacy [count]="2" [label]="'Bound'" />`,
 })
 export class DemoComponent {}",
+      "snippetTemplate": {
+        "componentImport": "import { CsfOneLegacyComponent } from './csf1-legacy.component.ts';",
+        "componentName": "CsfOneLegacyComponent",
+        "kind": "angular-snippet-template",
+        "outputs": [],
+        "standalone": true,
+        "template": "<sb-csf1-legacy
+    [count]="{{count}}"
+    [label]="{{label}}"
+/>",
+      },
     },
   },
 }

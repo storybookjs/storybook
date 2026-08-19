@@ -7,30 +7,6 @@
       "description": "The default state.",
       "id": "storydocs-basic--primary",
       "name": "Primary",
-      "recipe": {
-        "componentImport": "import { BasicComponent } from './basic.component.ts';",
-        "componentName": "BasicComponent",
-        "inputNames": [
-          "count",
-          "label",
-        ],
-        "inputs": [
-          {
-            "arg": "count",
-            "expression": "3",
-          },
-          {
-            "arg": "label",
-            "expression": "'Base'",
-          },
-        ],
-        "kind": "angular-host-component",
-        "outputs": [
-          "pressed",
-        ],
-        "selector": "sb-basic",
-        "standalone": true,
-      },
       "snippet": "import { Component } from '@angular/core';
 import { BasicComponent } from './basic.component.ts';
 
@@ -47,32 +23,26 @@ import { BasicComponent } from './basic.component.ts';
 export class DemoComponent {
   pressed(event: unknown) {}
 }",
+      "snippetTemplate": {
+        "componentImport": "import { BasicComponent } from './basic.component.ts';",
+        "componentName": "BasicComponent",
+        "kind": "angular-snippet-template",
+        "outputs": [
+          "pressed",
+        ],
+        "standalone": true,
+        "template": "<sb-basic
+    [count]="{{count}}"
+    [label]="{{label}}"
+    (pressed)="pressed($event)"
+/>",
+      },
       "summary": "Primary look",
     },
     "storydocs-basic--renamed": {
       "description": "Named through the `name` annotation.",
       "id": "storydocs-basic--renamed",
       "name": "Custom name",
-      "recipe": {
-        "componentImport": "import { BasicComponent } from './basic.component.ts';",
-        "componentName": "BasicComponent",
-        "inputNames": [
-          "count",
-          "label",
-        ],
-        "inputs": [
-          {
-            "arg": "label",
-            "expression": "'Override'",
-          },
-        ],
-        "kind": "angular-host-component",
-        "outputs": [
-          "pressed",
-        ],
-        "selector": "sb-basic",
-        "standalone": true,
-      },
       "snippet": "import { Component } from '@angular/core';
 import { BasicComponent } from './basic.component.ts';
 
@@ -84,6 +54,20 @@ import { BasicComponent } from './basic.component.ts';
 export class DemoComponent {
   pressed(event: unknown) {}
 }",
+      "snippetTemplate": {
+        "componentImport": "import { BasicComponent } from './basic.component.ts';",
+        "componentName": "BasicComponent",
+        "kind": "angular-snippet-template",
+        "outputs": [
+          "pressed",
+        ],
+        "standalone": true,
+        "template": "<sb-basic
+    [count]="{{count}}"
+    [label]="{{label}}"
+    (pressed)="pressed($event)"
+/>",
+      },
     },
   },
 }

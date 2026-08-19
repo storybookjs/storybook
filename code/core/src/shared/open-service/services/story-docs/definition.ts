@@ -19,7 +19,7 @@ const storyDocSchema = v.object({
   description: v.optional(v.string()),
   summary: v.optional(v.string()),
   warning: v.optional(v.string()),
-  recipe: v.optional(v.unknown()),
+  snippetTemplate: v.optional(v.unknown()),
   error: v.optional(storyDocsErrorSchema),
 });
 

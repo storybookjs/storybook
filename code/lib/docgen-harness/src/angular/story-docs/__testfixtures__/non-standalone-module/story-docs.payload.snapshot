@@ -6,33 +6,6 @@
     "storydocs-non-standalone-module--primary": {
       "id": "storydocs-non-standalone-module--primary",
       "name": "Primary",
-      "recipe": {
-        "componentImport": "import { LegacyButtonComponent } from './non-standalone-module.component.ts';",
-        "componentName": "LegacyButtonComponent",
-        "inputNames": [
-          "label",
-        ],
-        "inputs": [
-          {
-            "arg": "label",
-            "expression": "'Legacy'",
-          },
-        ],
-        "kind": "angular-host-component",
-        "ngModules": {
-          "importStatements": [
-            "import { LegacyButtonModule } from './non-standalone-module.component.ts';",
-          ],
-          "names": [
-            "LegacyButtonModule",
-          ],
-        },
-        "outputs": [
-          "pressed",
-        ],
-        "selector": "sb-legacy-button",
-        "standalone": false,
-      },
       "snippet": "import { Component } from '@angular/core';
 import { LegacyButtonModule } from './non-standalone-module.component.ts';
 
@@ -44,6 +17,27 @@ import { LegacyButtonModule } from './non-standalone-module.component.ts';
 export class DemoComponent {
   pressed(event: unknown) {}
 }",
+      "snippetTemplate": {
+        "componentImport": "import { LegacyButtonComponent } from './non-standalone-module.component.ts';",
+        "componentName": "LegacyButtonComponent",
+        "kind": "angular-snippet-template",
+        "ngModules": {
+          "importStatements": [
+            "import { LegacyButtonModule } from './non-standalone-module.component.ts';",
+          ],
+          "names": [
+            "LegacyButtonModule",
+          ],
+        },
+        "outputs": [
+          "pressed",
+        ],
+        "standalone": false,
+        "template": "<sb-legacy-button
+    [label]="{{label}}"
+    (pressed)="pressed($event)"
+/>",
+      },
     },
   },
 }

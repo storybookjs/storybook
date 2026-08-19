@@ -7,25 +7,6 @@
       "description": "A factory story with no config at all.",
       "id": "storydocs-csf4--empty",
       "name": "Empty",
-      "recipe": {
-        "componentImport": "import { CsfFourComponent } from './csf4.component.ts';",
-        "componentName": "CsfFourComponent",
-        "inputNames": [
-          "label",
-        ],
-        "inputs": [
-          {
-            "arg": "label",
-            "expression": "'Base'",
-          },
-        ],
-        "kind": "angular-host-component",
-        "outputs": [
-          "saved",
-        ],
-        "selector": "sb-csf4",
-        "standalone": true,
-      },
       "snippet": "import { Component } from '@angular/core';
 import { CsfFourComponent } from './csf4.component.ts';
 
@@ -37,30 +18,24 @@ import { CsfFourComponent } from './csf4.component.ts';
 export class DemoComponent {
   saved(event: unknown) {}
 }",
+      "snippetTemplate": {
+        "componentImport": "import { CsfFourComponent } from './csf4.component.ts';",
+        "componentName": "CsfFourComponent",
+        "kind": "angular-snippet-template",
+        "outputs": [
+          "saved",
+        ],
+        "standalone": true,
+        "template": "<sb-csf4
+    [label]="{{label}}"
+    (saved)="saved($event)"
+/>",
+      },
     },
     "storydocs-csf4--primary": {
       "description": "A CSF4 factory story.",
       "id": "storydocs-csf4--primary",
       "name": "Primary",
-      "recipe": {
-        "componentImport": "import { CsfFourComponent } from './csf4.component.ts';",
-        "componentName": "CsfFourComponent",
-        "inputNames": [
-          "label",
-        ],
-        "inputs": [
-          {
-            "arg": "label",
-            "expression": "'Save'",
-          },
-        ],
-        "kind": "angular-host-component",
-        "outputs": [
-          "saved",
-        ],
-        "selector": "sb-csf4",
-        "standalone": true,
-      },
       "snippet": "import { Component } from '@angular/core';
 import { CsfFourComponent } from './csf4.component.ts';
 
@@ -72,6 +47,19 @@ import { CsfFourComponent } from './csf4.component.ts';
 export class DemoComponent {
   saved(event: unknown) {}
 }",
+      "snippetTemplate": {
+        "componentImport": "import { CsfFourComponent } from './csf4.component.ts';",
+        "componentName": "CsfFourComponent",
+        "kind": "angular-snippet-template",
+        "outputs": [
+          "saved",
+        ],
+        "standalone": true,
+        "template": "<sb-csf4
+    [label]="{{label}}"
+    (saved)="saved($event)"
+/>",
+      },
       "summary": "Factory summary",
     },
   },

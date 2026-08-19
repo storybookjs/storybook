@@ -3,19 +3,19 @@ import type { Args } from '../../../../types/modules/csf.ts';
 import type { StoryDoc } from './types.ts';
 
 /**
- * Rebuilds a story's snippet from its framework-owned recipe and the args a reader is looking at.
+ * Rebuilds a story's snippet from its framework-owned template and the args a reader is looking at.
  *
- * Returning `undefined` means "this recipe is not mine to render" and leaves the server's snippet in
- * place; throwing means the same, and is caught.
+ * Returning `undefined` means "this template is not mine to render" and leaves the server's snippet
+ * in place; throwing means the same, and is caught.
  */
-export type SnippetRecipeRenderer = (recipe: unknown, args: Args) => string | undefined;
+export type SnippetTemplateRenderer = (snippetTemplate: unknown, args: Args) => string | undefined;
 
-const RENDERER_SYMBOL = Symbol.for('storybook.open-service.snippet-recipe-renderer');
+const RENDERER_SYMBOL = Symbol.for('storybook.open-service.snippet-template-renderer');
 
-type RendererGlobal = { [key: symbol]: SnippetRecipeRenderer | undefined };
+type RendererGlobal = { [key: symbol]: SnippetTemplateRenderer | undefined };
 
 /**
- * Registers the renderer that turns this framework's snippet recipes back into snippets.
+ * Registers the renderer that turns this framework's snippet templates back into snippets.
  *
  * Anchored on a `globalThis` symbol for the same reason the service registry is: the published
  * bundles reach this module through more than one import path - the preview runtime inlines its own
@@ -25,12 +25,12 @@ type RendererGlobal = { [key: symbol]: SnippetRecipeRenderer | undefined };
  *
  * There is one preview and one framework in it, so a second registration replaces the first.
  */
-export function registerSnippetRecipeRenderer(register: SnippetRecipeRenderer): void {
+export function registerSnippetTemplateRenderer(register: SnippetTemplateRenderer): void {
   (globalThis as RendererGlobal)[RENDERER_SYMBOL] = register;
 }
 
 /** Test seam. Preview code never needs this: the preview is torn down with its iframe. */
-export function clearSnippetRecipeRenderer(): void {
+export function clearSnippetTemplateRenderer(): void {
   (globalThis as RendererGlobal)[RENDERER_SYMBOL] = undefined;
 }
 
@@ -38,8 +38,8 @@ export function clearSnippetRecipeRenderer(): void {
  * The story's snippet for the args in front of the reader.
  *
  * Falls back to the snippet the server rendered whenever anything is missing or goes wrong: no
- * recipe, no framework renderer, a value the framework cannot print. A snippet that lags the
- * Controls is merely stale; one rebuilt from a half-understood recipe would be wrong, and wrong
+ * template, no framework renderer, a value the framework cannot print. A snippet that lags the
+ * Controls is merely stale; one rebuilt from a half-understood template would be wrong, and wrong
  * source is not copy-pasteable.
  */
 export function renderStoryDocSnippet(story: StoryDoc, args: Args | undefined): string | undefined {
@@ -47,11 +47,11 @@ export function renderStoryDocSnippet(story: StoryDoc, args: Args | undefined): 
     return undefined;
   }
   const renderer = (globalThis as RendererGlobal)[RENDERER_SYMBOL];
-  if (story.recipe === undefined || args === undefined || renderer === undefined) {
+  if (story.snippetTemplate === undefined || args === undefined || renderer === undefined) {
     return story.snippet;
   }
   try {
-    return renderer(story.recipe, args) ?? story.snippet;
+    return renderer(story.snippetTemplate, args) ?? story.snippet;
   } catch (error) {
     once.warn(
       `Could not rebuild the code snippet for "${story.id}" from the current args, so it shows the story's declared args instead. ${String(error)}`

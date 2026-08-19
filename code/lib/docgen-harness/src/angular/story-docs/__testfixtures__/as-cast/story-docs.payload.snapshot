@@ -7,28 +7,6 @@
       "description": "Args behind an `as const` assertion.",
       "id": "storydocs-as-cast--casted",
       "name": "Casted",
-      "recipe": {
-        "componentImport": "import { AsCastComponent } from './as-cast.component.ts';",
-        "componentName": "AsCastComponent",
-        "inputNames": [
-          "label",
-          "tone",
-        ],
-        "inputs": [
-          {
-            "arg": "label",
-            "expression": "'Cast'",
-          },
-          {
-            "arg": "tone",
-            "expression": "'warn'",
-          },
-        ],
-        "kind": "angular-host-component",
-        "outputs": [],
-        "selector": "sb-as-cast",
-        "standalone": true,
-      },
       "snippet": "import { Component } from '@angular/core';
 import { AsCastComponent } from './as-cast.component.ts';
 
@@ -38,28 +16,21 @@ import { AsCastComponent } from './as-cast.component.ts';
   template: `<sb-as-cast [label]="'Cast'" [tone]="'warn'" />`,
 })
 export class DemoComponent {}",
+      "snippetTemplate": {
+        "componentImport": "import { AsCastComponent } from './as-cast.component.ts';",
+        "componentName": "AsCastComponent",
+        "kind": "angular-snippet-template",
+        "outputs": [],
+        "standalone": true,
+        "template": "<sb-as-cast
+    [label]="{{label}}"
+    [tone]="{{tone}}"
+/>",
+      },
     },
     "storydocs-as-cast--satisfied": {
       "id": "storydocs-as-cast--satisfied",
       "name": "Satisfied",
-      "recipe": {
-        "componentImport": "import { AsCastComponent } from './as-cast.component.ts';",
-        "componentName": "AsCastComponent",
-        "inputNames": [
-          "label",
-          "tone",
-        ],
-        "inputs": [
-          {
-            "arg": "label",
-            "expression": "'Satisfies'",
-          },
-        ],
-        "kind": "angular-host-component",
-        "outputs": [],
-        "selector": "sb-as-cast",
-        "standalone": true,
-      },
       "snippet": "import { Component } from '@angular/core';
 import { AsCastComponent } from './as-cast.component.ts';
 
@@ -69,6 +40,17 @@ import { AsCastComponent } from './as-cast.component.ts';
   template: `<sb-as-cast [label]="'Satisfies'" />`,
 })
 export class DemoComponent {}",
+      "snippetTemplate": {
+        "componentImport": "import { AsCastComponent } from './as-cast.component.ts';",
+        "componentName": "AsCastComponent",
+        "kind": "angular-snippet-template",
+        "outputs": [],
+        "standalone": true,
+        "template": "<sb-as-cast
+    [label]="{{label}}"
+    [tone]="{{tone}}"
+/>",
+      },
     },
   },
 }

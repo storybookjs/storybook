@@ -17,7 +17,7 @@ const TYPED_LABEL = 'typedLabel';
  * dev server behind it, because "works in dev only" was never the deliverable.
  */
 test.describe('dynamic snippets', () => {
-  // Only `angular-vite` registers a snippet-recipe renderer today, and only its docgen-server
+  // Only `angular-vite` registers a snippet-template renderer today, and only its docgen-server
   // template turns the flag on. Everywhere else the snippet is still static by design, so asserting
   // a change would be asserting a bug.
   test.skip(

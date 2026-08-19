@@ -1,5 +1,5 @@
 import type { Args } from '../../../../types/modules/csf.ts';
-import { renderStoryDocSnippet } from './recipe-renderer.ts';
+import { renderStoryDocSnippet } from './snippet-template-renderer.ts';
 import type { StoryDoc, StoryDocsPayload } from './types.ts';
 
 /** Prepends a CSF file import block to a story snippet for display in docs and the Code panel. */
@@ -22,9 +22,9 @@ export function selectStoryDoc(
 /**
  * Resolves the display snippet for one story from a story-docs payload.
  *
- * With `args`, a story that carries a recipe is rebuilt for those args, so the snippet shows what
- * the reader is looking at rather than what the story declared. Without them - or without a recipe -
- * the server's snippet is used as-is.
+ * With `args`, a story that carries a snippet template is rebuilt for those args, so the snippet
+ * shows what the reader is looking at rather than what the story declared. Without them - or
+ * without a template - the server's snippet is used as-is.
  */
 export function selectSnippetForStory(
   payload: StoryDocsPayload | undefined,

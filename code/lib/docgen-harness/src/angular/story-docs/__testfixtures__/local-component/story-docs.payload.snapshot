@@ -6,22 +6,6 @@
     "storydocs-local-component--primary": {
       "id": "storydocs-local-component--primary",
       "name": "Primary",
-      "recipe": {
-        "componentName": "LocalComponent",
-        "inputNames": [
-          "heading",
-        ],
-        "inputs": [
-          {
-            "arg": "heading",
-            "expression": "'Declared here'",
-          },
-        ],
-        "kind": "angular-host-component",
-        "outputs": [],
-        "selector": "sb-local-component",
-        "standalone": true,
-      },
       "snippet": "import { Component } from '@angular/core';
 
 @Component({
@@ -30,6 +14,15 @@
   template: `<sb-local-component [heading]="'Declared here'" />`,
 })
 export class DemoComponent {}",
+      "snippetTemplate": {
+        "componentName": "LocalComponent",
+        "kind": "angular-snippet-template",
+        "outputs": [],
+        "standalone": true,
+        "template": "<sb-local-component
+    [heading]="{{heading}}"
+/>",
+      },
       "warning": "LocalComponent is declared in the story file, so the snippet references it without importing it.",
     },
   },

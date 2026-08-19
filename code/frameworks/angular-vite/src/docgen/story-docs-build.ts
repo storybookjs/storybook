@@ -33,8 +33,8 @@ import { authoredSource } from './story-docs-source.ts';
 import type { StoryTemplateAnalysis } from './story-docs-template-analysis.ts';
 import type { HostComponentSnippet, HostComponentSnippetInput } from '../host-component-snippet.ts';
 import { buildHostComponentSnippet } from '../host-component-snippet.ts';
-import type { StorySnippetRecipe } from '../story-snippet-recipe.ts';
-import { RECIPE_KIND } from '../story-snippet-recipe.ts';
+import type { StorySnippetTemplate } from '../story-snippet-template.ts';
+import { SNIPPET_TEMPLATE_KIND } from '../story-snippet-template.ts';
 import {
   buildComponentOutletTemplate,
   buildTemplate,
@@ -174,7 +174,9 @@ const buildStoryDoc = async (
       name,
       ...(rendered === undefined ? {} : { snippet: rendered.snippet }),
       ...(rendered?.warning === undefined ? {} : { warning: rendered.warning }),
-      ...(rendered?.recipe === undefined ? {} : { recipe: rendered.recipe }),
+      ...(rendered?.snippetTemplate === undefined
+        ? {}
+        : { snippetTemplate: rendered.snippetTemplate }),
       ...(description ? { description } : {}),
       ...(summary === undefined ? {} : { summary }),
     };
@@ -193,7 +195,7 @@ const buildStoryDoc = async (
 const renderedSnippet = async (
   shape: StoryShape,
   deps: StoryDocDeps
-): Promise<(HostComponentSnippet & { recipe?: StorySnippetRecipe }) | undefined> => {
+): Promise<(HostComponentSnippet & { snippetTemplate?: StorySnippetTemplate }) | undefined> => {
   const authored = authoredSource(shape, deps.resolveStoryArgs.ctx);
   if (authored.kind === 'code') {
     return { snippet: authored.code };
@@ -246,7 +248,7 @@ const renderStorySnippet = async (
   shape: StoryShape,
   storyDecorators: t.Node | undefined,
   deps: StoryDocDeps
-): Promise<HostComponentSnippet & { recipe?: StorySnippetRecipe }> => {
+): Promise<HostComponentSnippet & { snippetTemplate?: StorySnippetTemplate }> => {
   const { componentImport } = deps;
   // The story file's local name is what the import binds, so an aliased import stays consistent
   // between the import statement, the `imports` array and the template.
@@ -330,40 +332,44 @@ const renderStorySnippet = async (
     // printed from source text, which is the only thing a consumer holding live values could not
     // reproduce. An unresolved arg that is not a binding - `args: { onClick: fn() }`, which every
     // scaffolded story has - makes the example partial and is named in the warning, but does not
-    // change a single character of the template, so it does not withhold the recipe.
-    recipe: replayable
-      ? snippetRecipe(snippetMeta, bindings, localName, componentImport, ngModules)
+    // change a single character of the template, so it does not withhold the snippet template.
+    snippetTemplate: replayable
+      ? storySnippetTemplate(snippetMeta, localName, componentImport, ngModules)
       : undefined,
   };
 };
 
 /**
- * The ingredients the preview needs to rebuild this snippet from live args.
+ * The template the preview substitutes live args into to rebuild this snippet.
+ *
+ * Emitted broken whatever its binding count: how many bindings the tag ends up carrying is only
+ * known once the preview has filled the holes, and putting a broken tag back on one line needs
+ * nothing the text does not already carry.
  *
  * Every field is copied rather than aliased: `snippetMeta` is a reactive proxy over `core/docgen`'s
  * state, and a proxy cannot be structured-cloned, so aliasing one here would make the whole
  * story-docs payload fail the snapshot the runtime takes of it.
  */
-const snippetRecipe = (
+const storySnippetTemplate = (
   snippetMeta: AngularComponentSnippetMeta,
-  bindings: Bindings,
   componentName: string,
   componentImport: string | undefined,
   ngModules: HostComponentSnippetInput['ngModules']
-): StorySnippetRecipe => ({
-  kind: RECIPE_KIND,
-  selector: snippetMeta.selector!,
-  inputs: bindings.inputs.map(({ name, expression }) => ({ arg: name, expression })),
-  // Every input the component declares, in declaration order. The story's own args are a subset;
-  // the rest are the ones a reader can turn on from the Controls panel.
-  inputNames: [...snippetMeta.inputs],
-  outputs: [...snippetMeta.outputs],
+): StorySnippetTemplate => ({
+  kind: SNIPPET_TEMPLATE_KIND,
+  template: buildTemplate(snippetMeta.selector!, {
+    inputs: snippetMeta.inputs.map((name) => ({ name, expression: `{{${name}}}` })),
+    outputs: [...snippetMeta.outputs],
+    style: 'snippet',
+    forceBreak: true,
+  }),
   componentName,
   // Stored unconditionally: `buildHostComponentSnippet` owns the rule about when an import may be
   // listed, and the preview runs that same builder, so repeating the rule here would be a second
   // copy of it to keep in sync.
   ...(componentImport === undefined ? {} : { componentImport }),
   standalone: snippetMeta.standalone,
+  outputs: [...snippetMeta.outputs],
   ...(ngModules === undefined
     ? {}
     : {

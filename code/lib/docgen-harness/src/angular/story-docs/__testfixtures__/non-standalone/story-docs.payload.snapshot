@@ -6,25 +6,6 @@
     "storydocs-non-standalone--primary": {
       "id": "storydocs-non-standalone--primary",
       "name": "Primary",
-      "recipe": {
-        "componentImport": "import { NonStandaloneComponent } from './non-standalone.component.ts';",
-        "componentName": "NonStandaloneComponent",
-        "inputNames": [
-          "label",
-        ],
-        "inputs": [
-          {
-            "arg": "label",
-            "expression": "'Legacy'",
-          },
-        ],
-        "kind": "angular-host-component",
-        "outputs": [
-          "pressed",
-        ],
-        "selector": "sb-non-standalone",
-        "standalone": false,
-      },
       "snippet": "import { Component } from '@angular/core';
 
 @Component({
@@ -35,6 +16,19 @@
 export class DemoComponent {
   pressed(event: unknown) {}
 }",
+      "snippetTemplate": {
+        "componentImport": "import { NonStandaloneComponent } from './non-standalone.component.ts';",
+        "componentName": "NonStandaloneComponent",
+        "kind": "angular-snippet-template",
+        "outputs": [
+          "pressed",
+        ],
+        "standalone": false,
+        "template": "<sb-non-standalone
+    [label]="{{label}}"
+    (pressed)="pressed($event)"
+/>",
+      },
       "warning": "NonStandaloneComponent is declared with `standalone: false`, so it cannot be listed in the host component's `imports`. Add the NgModule that declares and exports NonStandaloneComponent to `imports` to make this snippet compile.",
     },
   },

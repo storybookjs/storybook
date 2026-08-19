@@ -1,9 +1,9 @@
 import { SourceType } from 'storybook/internal/docs-tools';
 import type { DecoratorFunction, Parameters } from 'storybook/internal/types';
 
-import { registerSnippetRecipeRenderer } from 'storybook/open-service';
+import { registerSnippetTemplateRenderer } from 'storybook/open-service';
 
-import { isStorySnippetRecipe, renderSnippetFromRecipe } from '../../story-snippet-recipe.ts';
+import { isStorySnippetTemplate, renderSnippetFromTemplate } from '../../story-snippet-template.ts';
 import { sourceDecorator } from './sourceDecorator';
 
 // With the docgen server on, the Source block and Code panel show the story-docs snippet, which is
@@ -23,11 +23,13 @@ export const parameters: Parameters = {
 
 export const decorators: DecoratorFunction[] = useStaticServiceSnippets ? [] : [sourceDecorator];
 
-// The server ships a snippet plus the recipe it was built from; rebuilding that recipe here, with
+// The server ships a snippet plus the template it was built from; filling that template here, with
 // the args the reader is looking at, is what makes the snippet follow the Controls. The layout is
-// decided by the same builder on both sides, so an untouched story rebuilds byte for byte.
+// decided by the same rule on both sides, so an untouched story rebuilds byte for byte.
 if (useStaticServiceSnippets) {
-  registerSnippetRecipeRenderer((recipe, args) =>
-    isStorySnippetRecipe(recipe) ? renderSnippetFromRecipe(recipe, args) : undefined
+  registerSnippetTemplateRenderer((snippetTemplate, args) =>
+    isStorySnippetTemplate(snippetTemplate)
+      ? renderSnippetFromTemplate(snippetTemplate, args)
+      : undefined
   );
 }

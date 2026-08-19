@@ -1,13 +1,15 @@
+import { readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterAll, describe, expect, it } from 'vitest';
 
+import { loadCsf } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { buildStoryDocsPayload } from '../../../../../frameworks/angular-vite/src/docgen/story-docs-build.ts';
-import type { StorySnippetRecipe } from '../../../../../frameworks/angular-vite/src/story-snippet-recipe.ts';
-import { renderSnippetFromRecipe } from '../../../../../frameworks/angular-vite/src/story-snippet-recipe.ts';
+import type { StorySnippetTemplate } from '../../../../../frameworks/angular-vite/src/story-snippet-template.ts';
+import { renderSnippetFromTemplate } from '../../../../../frameworks/angular-vite/src/story-snippet-template.ts';
 import { createFixtureDocgen } from '../docgen-fixture.ts';
 import { listFixtureCases } from '../snippet-recorder.ts';
 
@@ -46,47 +48,70 @@ describe('angular story-docs payload baselines', () => {
   });
 });
 
-// The recipe exists so the preview can rebuild the snippet without the CSF source. If rebuilding it
-// from the recipe alone does not reproduce the snippet byte for byte, the recipe is missing an
-// ingredient and the preview would quietly render something the server never would.
+// The snippet template exists so the preview can rebuild the snippet without the CSF source. It
+// carries holes rather than values, so the values come from the fixture's own story module: the
+// same object a running preview holds as its args. If filling the template with those does not
+// reproduce the snippet byte for byte, the two sides disagree and the preview would quietly render
+// something the server never would.
 //
-// Which fixtures carry no recipe is asserted too, so the invariant cannot pass by the recipe
+// Which stories carry no template is asserted too, so the invariant cannot pass by the mechanism
 // quietly disappearing.
-const NO_RECIPE_FIXTURES: Record<string, string> = {
-  'args-formatting': 'a function arg only the running story resolves',
-  'meta-render': 'the meta supplies its own template',
-  'no-component': 'no component to derive bindings from',
-  'no-selector': 'reached through *ngComponentOutlet, which shows no args',
+const NO_TEMPLATE_STORIES: Record<string, string> = {
+  'args-formatting/EveryValueShape': 'a function arg only the running story resolves',
+  'meta-render/InheritsMetaRender': 'the meta supplies its own template',
+  'no-component/Primary': 'no component to derive bindings from',
+  'no-selector/Primary': 'reached through *ngComponentOutlet, which shows no args',
+  'render-function/CustomRender': 'the story supplies its own markup',
 };
 
-describe('angular story-docs recipes', () => {
-  it('rebuild their own snippet, and are withheld exactly where they cannot be', async () => {
-    const withoutRecipe: string[] = [];
+// CSF4 keeps a story's annotations behind `input`; CSF1-3 carry them on the export itself.
+const annotationArgs = (annotation: unknown): Record<string, unknown> => {
+  const carrier = annotation as {
+    input?: { args?: Record<string, unknown> };
+    args?: Record<string, unknown>;
+  };
+  return carrier?.input?.args ?? carrier?.args ?? {};
+};
+
+describe('angular story-docs snippet templates', () => {
+  it('rebuild their own snippet from the story’s live args, and are withheld exactly where they cannot be', async () => {
+    const withoutTemplate: string[] = [];
     let rebuilt = 0;
 
     for (const fixtureCase of listFixtureCases(FIXTURES_DIR)) {
       const testDir = join(FIXTURES_DIR, fixtureCase);
-      const entry = makeEntry(join(testDir, 'input.stories.ts'), `StoryDocs/${fixtureCase}`);
+      const storyPath = join(testDir, 'input.stories.ts');
+      const title = `StoryDocs/${fixtureCase}`;
+      const entry = makeEntry(storyPath, title);
       const payload = await buildStoryDocsPayload(
         { entry },
         { getDocgenPayload: docgen.getDocgenPayload(entry), resolvePath: (path) => path }
       );
 
-      const stories = Object.values(payload?.stories ?? {});
-      const recipes = stories.filter((story) => story.recipe !== undefined);
-      if (recipes.length === 0) {
-        withoutRecipe.push(fixtureCase);
-      }
+      // The same parse the builder runs, used here only to map export names back to story ids.
+      const csf = loadCsf(readFileSync(storyPath, 'utf8'), { makeTitle: () => title }).parse();
+      const { default: meta, ...storyExports } = await import(
+        `./__testfixtures__/${fixtureCase}/input.stories.ts`
+      );
 
-      for (const story of recipes) {
-        expect(renderSnippetFromRecipe(story.recipe as StorySnippetRecipe), fixtureCase).toBe(
-          story.snippet
-        );
+      for (const [exportName, storyExport] of Object.entries(storyExports)) {
+        const storyId = csf._stories[exportName]?.id;
+        const story = storyId === undefined ? undefined : payload?.stories[storyId];
+        if (story?.snippetTemplate === undefined) {
+          withoutTemplate.push(`${fixtureCase}/${exportName}`);
+          continue;
+        }
+        const args = { ...annotationArgs(meta), ...annotationArgs(storyExport) };
+
+        expect(
+          renderSnippetFromTemplate(story.snippetTemplate as StorySnippetTemplate, args),
+          `${fixtureCase}/${exportName}`
+        ).toBe(story.snippet);
         rebuilt += 1;
       }
     }
 
-    expect(withoutRecipe.sort()).toEqual(Object.keys(NO_RECIPE_FIXTURES).sort());
+    expect(withoutTemplate.sort()).toEqual(Object.keys(NO_TEMPLATE_STORIES).sort());
     expect(rebuilt).toBeGreaterThan(0);
   });
 });

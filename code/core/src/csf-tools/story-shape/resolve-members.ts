@@ -15,7 +15,7 @@ export interface ResolvedMembers {
    */
   shadowed: string[];
   /** Source text of every member `properties` could not absorb; empty exactly when complete. */
-unresolved: string[];
+  unresolved: string[];
 }
 
 /** A module a reference reaches into, parsed and paired with the path it was read from. */

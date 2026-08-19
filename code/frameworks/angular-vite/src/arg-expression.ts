@@ -37,10 +37,18 @@ const print = (value: unknown, seen: Set<unknown>): string | undefined => {
   }
   seen.add(value);
   if (Array.isArray(value)) {
-    const elements = value.map((element) => print(element ?? null, seen));
-    return elements.every((element) => element !== undefined)
-      ? `[${elements.join(', ')}]`
-      : undefined;
+    const elements: string[] = [];
+    // Indexed rather than `map`, which skips holes: it would leave them empty on `join` and print
+    // `[, 1]`, which Angular's parser rejects. A hole reads as `undefined` here and prints as
+    // `null`, the same as an explicit `undefined` and the same as `JSON.stringify`.
+    for (let index = 0; index < value.length; index += 1) {
+      const printed = print(value[index] ?? null, seen);
+      if (printed === undefined) {
+        return undefined;
+      }
+      elements.push(printed);
+    }
+    return `[${elements.join(', ')}]`;
   }
   if (!isPlainObject(value)) {
     return undefined;

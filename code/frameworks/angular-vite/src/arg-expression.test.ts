@@ -32,6 +32,14 @@ describe('printArgExpression', () => {
     expect(printArgExpression({ 'not-an-ident': 1 })).toBe("{'not-an-ident': 1}");
   });
 
+  // `map` skips holes, so an earlier version printed `[, 1]` - which Angular's parser rejects with
+  // "Unexpected token ,". A hole is indistinguishable from `undefined` once printed.
+  it('prints a sparse hole as null rather than leaving a gap Angular cannot parse', () => {
+    expect(printArgExpression([, 1])).toBe('[null, 1]');
+    expect(printArgExpression([1, , 2])).toBe('[1, null, 2]');
+    expect(printArgExpression(new Array(3))).toBe('[null, null, null]');
+  });
+
   it('drops an undefined object entry but keeps an undefined array hole as null', () => {
     expect(printArgExpression({ a: 1, b: undefined })).toBe('{a: 1}');
     expect(printArgExpression([1, undefined, 2])).toBe('[1, null, 2]');

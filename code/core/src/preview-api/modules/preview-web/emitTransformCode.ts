@@ -12,7 +12,15 @@ type Transformer =
   | ((code: string, storyContext: ReducedStoryContext) => string | Promise<string>)
   | undefined;
 
-export async function emitTransformCode(source: string | undefined, context: ReducedStoryContext) {
+/**
+ * @param warning Why `source` is an incomplete example, when it is one. Travels with the snippet so
+ *   the Code panel and the docs Source block can flag it; see `StoryDoc.warning`.
+ */
+export async function emitTransformCode(
+  source: string | undefined,
+  context: ReducedStoryContext,
+  warning?: string
+) {
   const transform = context.parameters?.docs?.source?.transform as Transformer;
   const { id, unmappedArgs } = context;
 
@@ -23,5 +31,6 @@ export async function emitTransformCode(source: string | undefined, context: Red
     id,
     source: result,
     args: unmappedArgs,
+    warning,
   });
 }

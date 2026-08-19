@@ -16,6 +16,7 @@ import { Source } from '.';
 import { DocsContext } from '../blocks/DocsContext';
 import { getStoryId } from '../blocks/Story';
 import { getBlockBackgroundStyle } from './BlockBackgroundStyles';
+import { SnippetWarning } from './SnippetWarning';
 import { StorySkeleton } from './Story';
 import { Toolbar } from './Toolbar';
 import { ZoomContext } from './ZoomContext';
@@ -83,6 +84,11 @@ const ChildrenContainer = styled.div<PreviewProps & { layout: Layout }>(
 const ActionBar = styled(Bar)({
   marginTop: -40,
   marginBottom: 40,
+});
+
+/** Opposite end of the row from the left-aligned "Show code" and "Copy code" buttons. */
+const TrailingSnippetWarning = styled(SnippetWarning)({
+  marginInlineStart: 'auto',
 });
 
 const StyledSource = styled(Source)(({ theme }) => ({
@@ -185,6 +191,7 @@ export const Preview: FC<PreviewProps> = ({
 
   const childProps = getChildProps(children);
 
+  const { warning: sourceWarning, ...sourceProps } = withSource ?? {};
   const hasSourceError = !!(withSource && withSource.error);
   const hasValidSource = !!(withSource && !withSource.error);
 
@@ -224,7 +231,7 @@ export const Preview: FC<PreviewProps> = ({
         </ZoomContext.Provider>
         {hasValidSource && expanded && (
           <div id={sourceId}>
-            <StyledSource {...withSource} dark copyable={false} />
+            <StyledSource {...sourceProps} dark copyable={false} />
           </div>
         )}
       </PreviewContainer>
@@ -274,6 +281,7 @@ export const Preview: FC<PreviewProps> = ({
               </Button>
             )
           )}
+          {hasValidSource && <TrailingSnippetWarning warning={sourceWarning} />}
         </ActionBar>
       )}
     </>

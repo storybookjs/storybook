@@ -51,6 +51,18 @@ export const CodeError = () => (
   </Preview>
 );
 
+/**
+ * A snippet the provider flagged as an incomplete example. The caveat sits at the trailing end of
+ * the action row, opposite the "Hide code" and "Copy code" buttons.
+ */
+export const IncompleteSnippet = () => (
+  <Preview inline isExpanded withSource={sourceStories.IncompleteSnippet.args}>
+    <Button ariaLabel={false} variant="outline">
+      Button 1
+    </Button>
+  </Preview>
+);
+
 export const ActionBarWrapping = {
   render: () => (
     <Preview inline isExpanded withSource={sourceStories.JSX.args}>

@@ -1,4 +1,9 @@
-import { toStartCaseStr } from './toStartCaseStr.ts';
+/**
+ * The export-story helpers live in their own module so the ESLint plugin can bundle them without
+ * the rest of these utilities; re-exported here so consumers have one entry for the pure CSF
+ * helpers.
+ */
+export { isExportStory, storyNameFromExport, type IncludeExcludeOptions } from './export-story.ts';
 
 /**
  * Remove punctuation and illegal characters from a story ID, so it is safe to use in URLs and CSS
@@ -29,35 +34,6 @@ export const toId = (kind: string, name?: string) =>
 /** Generate a storybook test ID from a story ID and test name. */
 export const toTestId = (parentId: string, testName: string) =>
   `${parentId}:${sanitizeSafe(testName, 'test')}`;
-
-/** Transform a CSF named export into a readable story name */
-export const storyNameFromExport = (key: string) => toStartCaseStr(key);
-
-type StoryDescriptor = string[] | RegExp;
-export interface IncludeExcludeOptions {
-  includeStories?: StoryDescriptor;
-  excludeStories?: StoryDescriptor;
-}
-
-function matches(storyKey: string, arrayOrRegex: StoryDescriptor) {
-  if (Array.isArray(arrayOrRegex)) {
-    return arrayOrRegex.includes(storyKey);
-  }
-  return storyKey.match(arrayOrRegex);
-}
-
-/** Does a named export match CSF inclusion/exclusion options? */
-export function isExportStory(
-  key: string,
-  { includeStories, excludeStories }: IncludeExcludeOptions
-) {
-  return (
-    // https://babeljs.io/docs/en/babel-plugin-transform-modules-commonjs
-    key !== '__esModule' &&
-    (!includeStories || matches(key, includeStories)) &&
-    (!excludeStories || !matches(key, excludeStories))
-  );
-}
 
 export interface SeparatorOptions {
   rootSeparator: string | RegExp;

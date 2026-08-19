@@ -1,6 +1,6 @@
 {
   "default": {
-    "description": "",
+    "description": "Rendered above the content.",
     "name": "default",
     "table": {
       "category": "slots",
@@ -27,18 +27,38 @@
       "value": "{}",
     },
   },
+  "heading": {
+    "defaultValue": {
+      "summary": "'Title'",
+    },
+    "description": "",
+    "name": "heading",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": "'Title'",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
   "item": {
     "description": "Renders one entry; receives the entry and its position.",
     "name": "item",
     "table": {
       "category": "slots",
       "type": {
-        "summary": "{ entry: string; index: number; }",
+        "summary": "{ entry: unknown; index: unknown }",
       },
     },
     "type": {
       "name": "other",
-      "value": "{ entry: string; index: number; }",
+      "value": "{ entry: unknown; index: unknown }",
     },
   },
 }

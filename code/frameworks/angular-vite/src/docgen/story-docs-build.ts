@@ -265,10 +265,17 @@ const renderStorySnippet = (
   // nothing about what is missing from it.
   return snippetMeta.selector
     ? withUnresolved(
-        host(buildTemplate(snippetMeta.selector, bindings), false, snippetMeta.outputs),
+        host(
+          buildTemplate(snippetMeta.selector, { ...bindings, selfClosing: true }),
+          false,
+          snippetMeta.outputs
+        ),
         [...markupSources, ...shape.unresolvedArgs]
       )
-    : withUnresolved(host(buildComponentOutletTemplate(localName), true, []), markupSources);
+    : withUnresolved(
+        host(buildComponentOutletTemplate(localName, { selfClosing: true }), true, []),
+        markupSources
+      );
 };
 
 /**

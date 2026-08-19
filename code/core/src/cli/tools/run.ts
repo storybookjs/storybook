@@ -112,6 +112,29 @@ export async function runToolsCommand(
   invocation: ToolsInvocation,
   deps: ToolsRunDeps = {}
 ): Promise<ToolsRunResult> {
+  const parsed = parseToolsTokens(invocation.tokens, invocation.flags ?? {});
+  if (!parsed.ok || !parsed.json || parsed.help) {
+    return runToolsCommandBody(invocation, deps);
+  }
+
+  // `--json` promises a parseable stdout, but config loading and the tool itself log through
+  // writers this realm does not own (clack-backed node-logger, vite) that print to stdout.
+  // Divert every stdout write to stderr while the run executes; the caller prints the JSON
+  // result after this returns, against the restored stream.
+  const originalWrite = process.stdout.write;
+  process.stdout.write = ((...args: Parameters<typeof process.stderr.write>) =>
+    process.stderr.write(...args)) as typeof process.stdout.write;
+  try {
+    return await runToolsCommandBody(invocation, deps);
+  } finally {
+    process.stdout.write = originalWrite;
+  }
+}
+
+async function runToolsCommandBody(
+  invocation: ToolsInvocation,
+  deps: ToolsRunDeps = {}
+): Promise<ToolsRunResult> {
   const { toolset: toolsetName, tool: toolName, tokens, target, flags = {} } = invocation;
 
   const parsed = parseToolsTokens(tokens, flags);

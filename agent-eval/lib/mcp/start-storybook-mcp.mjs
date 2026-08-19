@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { closeSync, openSync } from 'node:fs';
-import { copyFile, mkdir, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const port = process.env.STORYBOOK_MCP_PORT || '6006';
@@ -58,14 +58,21 @@ if (child.pid !== undefined) {
   }
 }
 
+await dumpMcpDebug();
+
+// The sandbox is torn down with this failure, so the error message is the only
+// place the startup log reliably survives to (the eval result snapshot records it).
+const logTail = await readFile(logPath, 'utf8')
+  .then((content) => content.split('\n').slice(-40).join('\n'))
+  .catch(() => '(no Storybook log was written)');
+
 throw new Error(
   'Storybook MCP server did not become ready at ' +
     mcpUrl +
     ' within ' +
     timeoutMs +
-    'ms. See ' +
-    logPath +
-    ' for Storybook logs.'
+    'ms. Storybook log tail:\n' +
+    logTail
 );
 
 async function isReady() {
@@ -84,6 +91,10 @@ async function dumpMcpDebug() {
   const debugDir = '.storybook/mcp-debug';
   try {
     await mkdir(debugDir, { recursive: true });
+
+    // The startup log first: on the failure path the fetches below throw, and the
+    // log is the one artifact that explains why Storybook never became ready.
+    await copyFile(logPath, debugDir + '/storybook.log').catch(() => {});
 
     const landing = await fetch(mcpUrl, {
       headers: { Accept: 'text/html' },
@@ -110,8 +121,6 @@ async function dumpMcpDebug() {
       signal: AbortSignal.timeout(5_000),
     });
     await writeFile(debugDir + '/initialize.txt', await init.text());
-
-    await copyFile(logPath, debugDir + '/storybook.log').catch(() => {});
   } catch (error) {
     await writeFile(debugDir + '/error.txt', String(error)).catch(() => {});
   }

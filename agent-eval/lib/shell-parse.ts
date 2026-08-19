@@ -84,6 +84,17 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
     }
 
     const cli = tokens[index + 1];
+    if (cli === 'skills') {
+      // `storybook skills get write-story` serves the same document the MCP channel
+      // exposes as the get-storybook-story-instructions tool; record it under that
+      // name so channel-agnostic assertions keep working. Other skill ids have no
+      // workflow-tool equivalent.
+      if (tokens[index + 2] === 'get' && tokens[index + 3] === 'write-story') {
+        calls.push({ name: 'get-storybook-story-instructions', input: {}, source: 'storybook-ai' });
+        index += 3;
+      }
+      continue;
+    }
     if (cli !== 'ai' && cli !== 'tools') {
       continue;
     }

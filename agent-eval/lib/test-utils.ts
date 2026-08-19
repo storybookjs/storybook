@@ -541,10 +541,11 @@ export type WorkflowToolResult = {
 
 // The validation workflow the instructions demand: run test-run after
 // each component or story change, and fix failing tests before reporting
-// success. The section headers come from the test-run result
-// formatter in packages/addon-mcp (## Passing Stories / ## Failing Stories /
-// ## Unhandled Errors) and appear verbatim in the MCP tool result and in the
-// `storybook ai test-run` CLI output.
+// success. The result format is transport-dependent: the MCP tool result (and
+// the legacy `storybook ai test-run` output) carries the per-story sections
+// (## Passing Stories / ## Failing Stories / ## Unhandled Errors), while the
+// `storybook tools test run` CLI renders a count summary headed
+// `# Test run completed`.
 //
 // `covering` pins the final green run to the change under test: at least one
 // of the given substrings must appear in its story ids. A stricter
@@ -576,7 +577,15 @@ export function expectStoryTestsRanAndPassed(options?: { covering?: string[] }):
   expect(
     lastResult.output,
     `Final test-run result must report passing stories. Output: ${truncateForMessage(lastResult.output)}`
-  ).toMatch(/## Passing Stories/);
+  ).toMatch(/## Passing Stories|# Test run completed/);
+  if (!/## Passing Stories/.test(lastResult.output)) {
+    // The CLI summary carries only counts, so a completed run with failures must
+    // still fail here (`- Component tests: 4 passed, 1 failed`).
+    expect(
+      lastResult.output,
+      `Final test-run summary must report zero failures. Output: ${truncateForMessage(lastResult.output)}`
+    ).not.toMatch(/ [1-9]\d* failed/);
+  }
 
   const covering = options?.covering ?? [];
   if (covering.length > 0) {
@@ -601,6 +610,9 @@ const RUN_STORY_TESTS_REPORT_MARKERS = [
   '## Accessibility Violations',
   '## Unhandled Errors',
   'No stories found matching',
+  '# Test run completed',
+  '# Test run failed',
+  '# No stories matched',
 ];
 
 // On the plugin path agents pipe the `storybook ai test-run` CLI

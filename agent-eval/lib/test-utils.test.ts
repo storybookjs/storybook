@@ -12,6 +12,17 @@ import {
 } from './test-utils.ts';
 
 describe('parseStorybookWorkflowShellCommands', () => {
+  test('records `skills get write-story` as get-storybook-story-instructions', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      'npx storybook skills get write-story 2>&1 | grep -v "npm warn"',
+      'npx storybook skills get stories',
+      'npx storybook skills list',
+    ]);
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.name).toBe('get-storybook-story-instructions');
+  });
+
   test('preserves repeated workflow calls across separate plugin commands', () => {
     const command =
       'storybook ai test-run --json \'{"stories":[{"storyId":"example-button--primary"}]}\'';

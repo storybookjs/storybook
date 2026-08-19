@@ -97,7 +97,7 @@ Use `remove` for a full uninstall without manual config edits.
 
 ## MCP Runtime
 
-The plugin's `plugins/storybook/.mcp.json` contains no MCP servers; the plugin's skills invoke the `storybook ai` CLI instead.
+The plugin's `plugins/storybook/.mcp.json` contains no MCP servers; the plugin's skills invoke the `storybook skills` and `storybook tools` CLI instead (with a `storybook ai` fallback for Storybook 10.5).
 
 ## Smoke Test
 

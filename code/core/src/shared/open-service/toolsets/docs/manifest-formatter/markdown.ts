@@ -135,11 +135,15 @@ function formatTagName(tagName: string): string {
 }
 
 function formatJsDocTagBlockquote(tagName: string, values: string[]): string[] {
-  return values.map((value) => {
-    const trimmedValue = value.trim();
+  return values.flatMap((value) => {
+    const [firstLine, ...remainingLines] = value.trim().split('\n');
     const label = formatTagName(tagName);
-    return trimmedValue ? `> **${label}:** ${trimmedValue}` : `> **${label}**`;
+    return [
+      firstLine ? `> **${label}:** ${firstLine}` : `> **${label}**`,
+      ...remainingLines.map((line) => (line ? `> ${line}` : '>')),
+    ];
   });
+}
 }
 
 function isTopJsDocTag(tagName: string): boolean {

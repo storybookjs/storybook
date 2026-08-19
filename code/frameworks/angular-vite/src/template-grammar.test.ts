@@ -231,9 +231,13 @@ describe('formatTemplateMarkup', () => {
     expect(
       formatTemplateMarkup(`<sb-button [label]="'x'" [count]="7" (clicked)="c($event)" />`)
     ).toBe(
-      ['<sb-button', `    [label]="'x'"`, '    [count]="7"', '    (clicked)="c($event)" />'].join(
-        '\n'
-      )
+      [
+        '<sb-button',
+        `    [label]="'x'"`,
+        '    [count]="7"',
+        '    (clicked)="c($event)"',
+        '/>',
+      ].join('\n')
     );
   });
 
@@ -266,5 +270,19 @@ describe('formatTemplateMarkup', () => {
     expect(formatTemplateMarkup('plain interpolated {{ text }}')).toBe(
       'plain interpolated {{ text }}'
     );
+  });
+
+  it('leaves a generated template alone, so a broken tag ends the same way whoever wrote it', () => {
+    const generated = buildTemplate('sb-button', {
+      inputs: [
+        { name: 'label', expression: "'x'" },
+        { name: 'count', expression: '7' },
+      ],
+      outputs: ['clicked'],
+      style: 'snippet',
+    });
+
+    expect(generated).toContain('\n/>');
+    expect(formatTemplateMarkup(generated)).toBe(generated);
   });
 });

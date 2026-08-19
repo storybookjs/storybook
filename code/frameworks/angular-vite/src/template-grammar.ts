@@ -271,13 +271,13 @@ const openTagLines = (
   if (attrs.length === 0 || (!forceAttrBreak && !breaksAttributes(attrs, inlineOpen.length))) {
     return [inlineOpen];
   }
-  const bracket = node.closed ? ' />' : '>';
-  return [
-    `${pad}<${node.tag}`,
-    ...attrs.map(
-      (attr, index) => `${pad}${INDENT}${attr}${index === attrs.length - 1 ? bracket : ''}`
-    ),
-  ];
+  const lines = [`${pad}<${node.tag}`, ...attrs.map((attr) => `${pad}${INDENT}${attr}`)];
+  // The same end a generated tag gets: a self-closing bracket takes the line the closing tag would
+  // have had, rather than trailing an attribute.
+  if (node.closed) {
+    return [...lines, `${pad}/>`];
+  }
+  return [...lines.slice(0, -1), `${lines.at(-1)}>`];
 };
 
 const printMarkup = (markup: string, node: MarkupElement | string, depth: number): string[] => {

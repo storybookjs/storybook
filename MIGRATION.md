@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
+  - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
   - [`@storybook/csf-plugin` removed](#storybookcsf-plugin-removed)
 - [From version 10.4.0 to 10.5.0](#from-version-1040-to-1050)
@@ -529,6 +530,47 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 10.5.x to 10.6.0
+
+### Vue 3: `vue-docgen-api` is deprecated
+
+`vue-docgen-api` is the docgen engine `@storybook/vue3-vite` uses to document props, events, slots and exposes. It is deprecated and will be removed in the next major version of Storybook, leaving [`vue-component-meta`](https://github.com/vuejs/language-tools/tree/master/packages/component-meta) — the extractor maintained by the Vue team — as the only engine. It documents more of your components: `.ts`, `.tsx`, `.js` and `.jsx` components as well as SFCs, named exports next to default ones, and richer prop, event, slot and exposed types.
+
+`vue-docgen-api` is still the default, so Storybook logs the deprecation whenever it runs, including when you never set the `docgen` framework option.
+
+The path we recommend is server-side docgen, which becomes the default in Storybook 11. It runs `vue-component-meta` on the Storybook server instead of in the builder, and also feeds the component manifest that AI agents read:
+
+```ts
+// .storybook/main.ts
+features: { experimentalDocgenServer: true },
+```
+
+To stay on builder-side docgen for now, select the engine explicitly instead:
+
+```ts
+// .storybook/main.ts
+framework: {
+  name: '@storybook/vue3-vite',
+  options: {
+    docgen: 'vue-component-meta',
+  },
+},
+```
+
+If your main `tsconfig.json` only references other tsconfig files, such as `tsconfig.app.json`, point the engine at the one that resolves your components, or import aliases will not resolve:
+
+```ts
+// .storybook/main.ts
+framework: {
+  name: '@storybook/vue3-vite',
+  options: {
+    docgen: { plugin: 'vue-component-meta', tsconfig: 'tsconfig.app.json' },
+  },
+},
+```
+
+`docgen: true` is an alias for `vue-docgen-api` and is deprecated with it. `docgen: false`, which turns docgen off entirely, is unaffected and logs nothing.
+
+The two engines emit different `__docgenInfo` shapes. Storybook's own argTypes extraction handles both, but code of yours that reads `__docgenInfo` directly needs updating: the `expose` entries become `exposed`, and props, events and slots carry `vue-component-meta`'s type information. The `VueDocgenInfo` and `VueDocgenInfoEntry` types exported from `@storybook/vue3` are parameterized by engine (`VueDocgenInfo<'vue-component-meta'>`) to help with that.
 
 ### Angular Vite: a new `propsTable` framework option
 

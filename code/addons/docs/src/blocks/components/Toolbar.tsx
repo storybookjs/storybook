@@ -32,6 +32,13 @@ interface LoadingProps {
 
 export type ToolbarProps = BarProps & ZoomProps & EjectProps & LoadingProps & ReloadProps;
 
+/**
+ * Distance from the docs content edge to the trailing icons stacked down the right of a story: this
+ * toolbar's "open canvas in new tab", the snippet warning in the action row, and the args-table
+ * reset button. Set by the reset button, which had it first.
+ */
+export const TRAILING_INSET = 10;
+
 const AbsoluteBar = styled(SharedToolbar)({
   position: 'absolute',
   left: 0,
@@ -66,7 +73,14 @@ export const Toolbar: FC<ToolbarProps> = ({
   ...rest
 }) => (
   <AbsoluteBar
-    innerStyle={{ gap: 4, paddingInline: 7, justifyContent: 'space-between' }}
+    // The toolbar is absolutely positioned inside the preview container's 1px border, so it lands
+    // on the shared edge one pixel short of the inset the other two icons use.
+    innerStyle={{
+      gap: 4,
+      paddingInline: 7,
+      paddingInlineEnd: TRAILING_INSET - 1,
+      justifyContent: 'space-between',
+    }}
     lang="en"
     {...rest}
   >

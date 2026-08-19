@@ -25,9 +25,22 @@ export const Default: Story = {
     const canvas = within(canvasElement);
     const trigger = await canvas.findByRole('button', { name: SNIPPET_WARNING_LABEL });
 
-    await expect(canvas.queryByText(WARNING)).not.toBeInTheDocument();
+    await expect(within(document.body).queryByText(WARNING)).not.toBeInTheDocument();
 
-    await userEvent.click(trigger);
+    await userEvent.hover(trigger);
+    await expect(await within(document.body).findByText(WARNING)).toBeVisible();
+  },
+};
+
+/** Keyboard users get the same note: the tooltip opens on focus, not only on hover. */
+export const OpensOnFocus: Story = {
+  args: { warning: WARNING },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const trigger = await canvas.findByRole('button', { name: SNIPPET_WARNING_LABEL });
+
+    await userEvent.tab();
+    await expect(trigger).toHaveFocus();
     await expect(await within(document.body).findByText(WARNING)).toBeVisible();
   },
 };
@@ -39,10 +52,10 @@ export const MultipleCaveats: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.click(await canvas.findByRole('button', { name: SNIPPET_WARNING_LABEL }));
+    await userEvent.hover(await canvas.findByRole('button', { name: SNIPPET_WARNING_LABEL }));
 
-    const message = await within(document.body).findByText(/omits args/);
-    await expect(message).toHaveTextContent(WARNING);
+    const note = await within(document.body).findByText(/omits args/);
+    await expect(note).toHaveTextContent(WARNING);
   },
 };
 

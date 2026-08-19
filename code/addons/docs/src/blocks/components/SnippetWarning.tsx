@@ -1,22 +1,12 @@
 import type { FC } from 'react';
 import React from 'react';
 
-import { Button, PopoverProvider } from 'storybook/internal/components';
+import { Button } from 'storybook/internal/components';
 
 import { AlertIcon } from '@storybook/icons';
 import { styled } from 'storybook/theming';
 
 export const SNIPPET_WARNING_LABEL = 'Incomplete code snippet';
-
-const Message = styled.div(({ theme }) => ({
-  maxWidth: 280,
-  padding: 8,
-  color: theme.color.defaultText,
-  fontSize: theme.typography.size.s1,
-  lineHeight: '18px',
-  // Providers join several caveats with newlines, and each one is its own sentence.
-  whiteSpace: 'pre-line',
-}));
 
 const WarningButton = styled(Button)(({ theme }) => ({
   color: theme.fgColor.warning,
@@ -46,24 +36,16 @@ export const SnippetWarning: FC<SnippetWarningProps> = ({ warning, className }) 
   }
 
   return (
-    <PopoverProvider
+    <WarningButton
+      className={className}
+      // The label names the condition for screen readers; the tooltip carries the whole reason.
       ariaLabel={SNIPPET_WARNING_LABEL}
-      placement="bottom-end"
-      padding={0}
-      popover={<Message>{warning}</Message>}
+      tooltip={warning}
+      variant="ghost"
+      size="small"
+      padding="small"
     >
-      <WarningButton
-        className={className}
-        ariaLabel={SNIPPET_WARNING_LABEL}
-        variant="ghost"
-        size="small"
-        padding="small"
-        // The popover carries the message; a hover tooltip on the same trigger would stack a second
-        // overlay on top of it.
-        disableAllTooltips
-      >
-        <AlertIcon />
-      </WarningButton>
-    </PopoverProvider>
+      <AlertIcon />
+    </WarningButton>
   );
 };

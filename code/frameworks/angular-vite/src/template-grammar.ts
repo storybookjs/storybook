@@ -100,7 +100,9 @@ export interface BuildTemplateInput {
 }
 
 /** How a tag ends: it brings its own end, or it closes with a tag and holds `inner` between. */
-export type TagClose = { selfClosing: true } | { selfClosing: false; tag: string; inner: string };
+export type TagClose =
+  | { selfClosing: true; tag?: never; inner?: never }
+  | { selfClosing: false; tag: string; inner: string };
 
 export interface LayoutTagInput {
   /** The element and its static attributes, `<sb-x class="a"` - no bindings, no closing bracket. */
@@ -119,15 +121,23 @@ export interface LayoutTagInput {
  */
 export const layoutTag = ({ open, bindings, close, style, breaks }: LayoutTagInput): string => {
   const inline = `${open}${bindings.map((binding) => ` ${binding}`).join('')}`;
-  if (!(breaks ?? bindings.length >= BREAK_AT_BINDINGS)) {
-    return close.selfClosing ? `${inline} />` : `${inline}>${close.inner}</${close.tag}>`;
-  }
-  const broken = `${open}\n${bindings.map((binding) => `${INDENT}${binding}`).join('\n')}`;
+  const stays = !(breaks ?? bindings.length >= BREAK_AT_BINDINGS);
+
   if (close.selfClosing) {
+    if (stays) {
+      return `${inline} />`;
+    }
+    const broken = `${open}\n${bindings.map((binding) => `${INDENT}${binding}`).join('\n')}`;
     // The bracket takes the line the closing tag would have had, rather than trailing a binding.
     return style === 'legacy' ? `${broken} />` : `${broken}\n/>`;
   }
-  return `${broken}>${close.inner === '' ? '\n' : `\n${close.inner}\n`}</${close.tag}>`;
+
+  const { inner = '', tag = '' } = close;
+  if (stays) {
+    return `${inline}>${inner}</${tag}>`;
+  }
+  const broken = `${open}\n${bindings.map((binding) => `${INDENT}${binding}`).join('\n')}`;
+  return `${broken}>${inner === '' ? '\n' : `\n${inner}\n`}</${tag}>`;
 };
 
 // A selector that names no element, `.card` or `[appHighlight]`, matches a `div` in the snippet.

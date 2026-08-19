@@ -66,9 +66,8 @@ type Event =
  * machinery boots on first request.
  */
 export const services = async (_value: void, options: Options): Promise<void> => {
-  // Applying the storyIndexGenerator preset builds the full story index, so defer it to the first
-  // tool call that needs it — registration must stay cheap for one-shot callers like the tools
-  // CLI. The preset caches its promise, so consumers share one build.
+  // Deferred: applying the storyIndexGenerator preset builds the full story index, which must
+  // not happen at registration time (one-shot callers register services they may never use).
   const getIndex = () =>
     options.presets
       .apply<StoryIndexGenerator>('storyIndexGenerator')

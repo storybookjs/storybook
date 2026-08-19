@@ -32,11 +32,9 @@ if (!isNodeVersionSupported(major, minor, patch)) {
 }
 
 async function run() {
-  // Cache compiled V8 bytecode on disk (a Node-version-scoped directory under os.tmpdir()) so
-  // repeated CLI invocations — agents call `storybook tools` many times per session — skip the
-  // parse/compile of the module graph. Called before the dynamic imports below so the heavy
-  // bundles are covered. Missing on Node < 22.8, hence the feature detection; the cache is purely
-  // an accelerator, so failing to enable it must never fail the CLI.
+  // Cache compiled V8 bytecode on disk so repeated CLI invocations (agents call `storybook
+  // tools` many times per session) skip parse/compile of the module graph. Feature-detected
+  // (added in Node 22.8) and best-effort: a cache failure must never fail the CLI.
   try {
     Module.enableCompileCache?.();
   } catch {}

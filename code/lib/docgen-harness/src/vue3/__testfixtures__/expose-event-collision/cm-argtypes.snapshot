@@ -1,0 +1,52 @@
+{
+  "blur": {
+    "control": {
+      "disable": true,
+    },
+    "description": "",
+    "name": "blur",
+    "table": {
+      "category": "events",
+      "type": {
+        "summary": "[]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "[]",
+    },
+  },
+  "focus": {
+    "control": {
+      "disable": true,
+    },
+    "description": "",
+    "name": "focus",
+    "table": {
+      "category": "events",
+      "type": {
+        "summary": "[]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "[]",
+    },
+  },
+  "label": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+}

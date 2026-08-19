@@ -104,11 +104,11 @@ async function buildComponentMetaDocgen(sfcPath: string): Promise<object | undef
 
   const exposed = meta.exposed
     .filter((expose) => {
-      let nameWithoutOnPrefix = expose.name;
-      if (nameWithoutOnPrefix.startsWith('on')) {
-        nameWithoutOnPrefix = lowercaseFirstLetter(expose.name.replace('on', ''));
+      if (!expose.name.startsWith('on')) {
+        return true;
       }
-      return !meta.events.find((event) => event.name === nameWithoutOnPrefix);
+      const eventName = lowercaseFirstLetter(expose.name.slice('on'.length));
+      return !meta.events.some((event) => event.name === eventName);
     })
     .filter((expose) => {
       if (expose.name === '$slots') {

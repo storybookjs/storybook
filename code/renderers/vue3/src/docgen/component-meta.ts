@@ -139,15 +139,16 @@ export async function collectComponentMetaSources(
     });
 
     const exposed = meta.exposed
+      // Drop `onX` handler entries duplicating a declared event. Only the prefixed form is a
+      // duplicate: an exposed member merely named like an event (`focus` beside a `focus` event)
+      // is an authored `defineExpose` member and has to stay.
       .filter((expose) => {
-        let nameWithoutOnPrefix = expose.name;
-
-        if (nameWithoutOnPrefix.startsWith('on')) {
-          nameWithoutOnPrefix = lowercaseFirstLetter(expose.name.replace('on', ''));
+        if (!expose.name.startsWith('on')) {
+          return true;
         }
 
-        const hasEvent = meta.events.find((event) => event.name === nameWithoutOnPrefix);
-        return !hasEvent;
+        const eventName = lowercaseFirstLetter(expose.name.slice('on'.length));
+        return !meta.events.some((event) => event.name === eventName);
       })
       // remove duplicated "$slots" expose
       .filter((expose) => {

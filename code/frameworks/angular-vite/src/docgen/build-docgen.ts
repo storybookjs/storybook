@@ -141,10 +141,6 @@ export const buildDocgenPayload = (
       return undefined;
     }
 
-    // The sandbox baseline recorder filters a payload out by name alone when it is the shared
-    // template stories' unresolvable `globalThis.__TEMPLATE_COMPONENTS__.*` reference, so a
-    // resolvable expression's own source text is the name that keeps that filter working - the
-    // story title would hide which expression the story actually used.
     const unreadableBase = {
       id: getComponentIdFromEntry(input.entry),
       name:

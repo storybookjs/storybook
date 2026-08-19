@@ -96,6 +96,58 @@ describe('storyDocsSourceBeforeEach', () => {
     vi.unstubAllGlobals();
   });
 
+  // The renderer travels in `docs.source.renderSnippetTemplate`, which is a contract between this
+  // reader and every framework that sets it. Nothing else pins the key's spelling on both sides.
+  it('rebuilds the snippet with the renderer the story parameters carry', async () => {
+    mockStoryDocsService(() =>
+      Promise.resolve({
+        ...payload,
+        stories: {
+          [storyId]: { ...payload.stories[storyId]!, snippetTemplate: { kind: 'test-template' } },
+        },
+      })
+    );
+    const context = {
+      id: storyId,
+      unmappedArgs: { label: 'Live' },
+      parameters: {
+        __isArgsStory: true,
+        docs: {
+          source: {
+            renderSnippetTemplate: (template: unknown, args: unknown) =>
+              `${(template as { kind: string }).kind}:${JSON.stringify(args)}`,
+          },
+        },
+      },
+    } as unknown as StoryContext;
+
+    const cleanup = storyDocsSourceBeforeEach(context);
+    await vi.waitFor(() => expect(mockedEmitTransformCode).toHaveBeenCalled());
+
+    expect(mockedEmitTransformCode).toHaveBeenCalledWith(
+      'import { Button } from \'./Button\';\n\ntest-template:{"label":"Live"}',
+      context
+    );
+    await cleanup?.();
+  });
+
+  it("falls back to the story's own source when the payload fails to load", async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    mockStoryDocsService(() => Promise.reject(new Error('boom')));
+    const context = {
+      id: storyId,
+      parameters: { __isArgsStory: true, docs: { source: { originalSource: 'ORIGINAL' } } },
+    } as unknown as StoryContext;
+
+    const cleanup = storyDocsSourceBeforeEach(context);
+    await vi.waitFor(() => expect(mockedEmitTransformCode).toHaveBeenCalled());
+
+    expect(mockedEmitTransformCode).toHaveBeenCalledWith('ORIGINAL', context);
+    expect(warn).toHaveBeenCalledOnce();
+    await cleanup?.();
+    vi.restoreAllMocks();
+  });
+
   it('emits the service snippet through emitTransformCode', async () => {
     const context = {
       id: storyId,

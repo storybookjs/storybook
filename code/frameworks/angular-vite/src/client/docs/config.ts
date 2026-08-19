@@ -1,9 +1,7 @@
 import { SourceType } from 'storybook/internal/docs-tools';
 import type { DecoratorFunction, Parameters } from 'storybook/internal/types';
 
-import { registerSnippetTemplateRenderer } from 'storybook/open-service';
-
-import { isStorySnippetTemplate, renderSnippetFromTemplate } from '../../story-snippet-template.ts';
+import { renderSnippetFromTemplate } from '../../story-snippet-template.ts';
 import { sourceDecorator } from './sourceDecorator';
 
 // With the docgen server on, the Source block and Code panel show the story-docs snippet, which is
@@ -17,19 +15,14 @@ export const parameters: Parameters = {
     source: {
       type: SourceType.DYNAMIC,
       language: useStaticServiceSnippets ? 'ts' : 'html',
+      // The server ships a snippet plus the template it was built from; filling that template with
+      // the args the reader is looking at is what makes the snippet follow the Controls. Carried in
+      // parameters for the same reason `docs.source.transform` is: both consumers of the snippet
+      // already hold the story's parameters. The layout is decided by the same rule on both sides,
+      // so an untouched story rebuilds byte for byte.
+      renderSnippetTemplate: renderSnippetFromTemplate,
     },
   },
 };
 
 export const decorators: DecoratorFunction[] = useStaticServiceSnippets ? [] : [sourceDecorator];
-
-// The server ships a snippet plus the template it was built from; filling that template here, with
-// the args the reader is looking at, is what makes the snippet follow the Controls. The layout is
-// decided by the same rule on both sides, so an untouched story rebuilds byte for byte.
-if (useStaticServiceSnippets) {
-  registerSnippetTemplateRenderer((snippetTemplate, args) =>
-    isStorySnippetTemplate(snippetTemplate)
-      ? renderSnippetFromTemplate(snippetTemplate, args)
-      : undefined
-  );
-}

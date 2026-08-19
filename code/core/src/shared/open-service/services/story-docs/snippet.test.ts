@@ -1,0 +1,99 @@
+import { describe, expect, it, vi } from 'vitest';
+
+import { selectSnippetForStory } from './snippet.ts';
+import type { StoryDocsPayload } from './types.ts';
+
+const payload = (snippetTemplate?: { kind: string }): StoryDocsPayload => ({
+  id: 'button',
+  name: 'Button',
+  path: './button.stories.ts',
+  stories: {
+    'button--primary': {
+      id: 'button--primary',
+      name: 'Primary',
+      snippet: 'SERVER',
+      snippetTemplate,
+    },
+  },
+});
+
+const template = { kind: 'angular-snippet-template' };
+
+describe('selectSnippetForStory with a snippet template', () => {
+  it('rebuilds the snippet from the args a reader is looking at', () => {
+    expect(
+      selectSnippetForStory(
+        payload(template),
+        'button--primary',
+        { label: 'Live' },
+        (snippetTemplate, args) =>
+          `${(snippetTemplate as { kind: string }).kind}:${JSON.stringify(args)}`
+      )
+    ).toBe('angular-snippet-template:{"label":"Live"}');
+  });
+
+  it('keeps the server snippet when nothing can rebuild it', () => {
+    const args = { label: 'Live' };
+    const render = () => 'REBUILT';
+
+    // No renderer: another framework, or the flag off.
+    expect(selectSnippetForStory(payload(template), 'button--primary', args)).toBe('SERVER');
+    // No template: the server withheld it because this story must not be rebuilt.
+    expect(selectSnippetForStory(payload(), 'button--primary', args, render)).toBe('SERVER');
+    // No args: a caller that has none, such as a cold Code panel.
+    expect(selectSnippetForStory(payload(template), 'button--primary', undefined, render)).toBe(
+      'SERVER'
+    );
+  });
+
+  it('keeps the server snippet when the renderer declines or throws, and says why once', () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const args = { label: 'Live' };
+
+    expect(selectSnippetForStory(payload(template), 'button--primary', args, () => undefined)).toBe(
+      'SERVER'
+    );
+    expect(warn).not.toHaveBeenCalled();
+
+    expect(
+      selectSnippetForStory(payload(template), 'button--primary', args, () => {
+        throw new Error('unprintable arg');
+      })
+    ).toBe('SERVER');
+    expect(warn).toHaveBeenCalledOnce();
+
+    vi.restoreAllMocks();
+  });
+
+  it('still prepends the CSF import block to a rebuilt snippet', () => {
+    expect(
+      selectSnippetForStory(
+        { ...payload(template), import: "import { Button } from './button';" },
+        'button--primary',
+        { label: 'Live' },
+        () => 'REBUILT'
+      )
+    ).toBe("import { Button } from './button';\n\nREBUILT");
+  });
+});
+
+// The renderer used to be registered into a `globalThis` slot, which the published bundles could
+// reach through two import paths - `preview/runtime.js` inlines its own copy of this module, while
+// a framework called in through `storybook/open-service`. With the renderer passed in as a value
+// there is no module state left to disagree about, and this pins that: two module instances of the
+// reader produce the same result from one renderer defined outside both.
+it('renders the same from two module instances of this module', async () => {
+  // The query string defeats the module cache; TypeScript cannot resolve it, hence the cast.
+  const other = (await import(
+    './snippet.ts?instance=second' as string
+  )) as typeof import('./snippet.ts');
+  const render = () => 'REBUILT';
+
+  expect(other.selectSnippetForStory).not.toBe(selectSnippetForStory);
+  expect(other.selectSnippetForStory(payload(template), 'button--primary', {}, render)).toBe(
+    selectSnippetForStory(payload(template), 'button--primary', {}, render)
+  );
+  expect(other.selectSnippetForStory(payload(template), 'button--primary', {}, render)).toBe(
+    'REBUILT'
+  );
+});

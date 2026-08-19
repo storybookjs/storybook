@@ -96,13 +96,25 @@ const collapseTag = (template: string): string => {
   return tail[0] === '/>' ? `${open} />` : open + tail.join('');
 };
 
+export const isStorySnippetTemplate = (value: unknown): value is StorySnippetTemplate =>
+  typeof value === 'object' &&
+  value !== null &&
+  (value as { kind?: unknown }).kind === SNIPPET_TEMPLATE_KIND;
+
 /**
  * The story's snippet for the args in front of the reader, or `undefined` to decline the rebuild.
+ *
+ * Takes `unknown` because it is registered as the framework's renderer directly: declining a
+ * payload another framework or an older build wrote is part of the same contract as declining a
+ * value with no expression form.
  */
 export const renderSnippetFromTemplate = (
-  snippetTemplate: StorySnippetTemplate,
+  snippetTemplate: unknown,
   args: Record<string, unknown>
 ): string | undefined => {
+  if (!isStorySnippetTemplate(snippetTemplate)) {
+    return undefined;
+  }
   const filled = fillHoles(snippetTemplate.template, args);
   if (filled === undefined) {
     return undefined;
@@ -120,8 +132,3 @@ export const renderSnippetFromTemplate = (
     outputs: snippetTemplate.outputs,
   }).snippet;
 };
-
-export const isStorySnippetTemplate = (value: unknown): value is StorySnippetTemplate =>
-  typeof value === 'object' &&
-  value !== null &&
-  (value as StorySnippetTemplate).kind === SNIPPET_TEMPLATE_KIND;

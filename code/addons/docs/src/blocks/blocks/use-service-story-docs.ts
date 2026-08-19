@@ -4,6 +4,7 @@ import type { Args, StoryDoc, StoryDocsPayload } from 'storybook/internal/types'
 
 import {
   type QueryState,
+  type SnippetTemplateRenderer,
   prependImportToSnippet,
   renderStoryDocSnippet,
   selectStoryDoc,
@@ -70,15 +71,16 @@ const selectSnippetParts = (payload: StoryDocsPayload | undefined, storyId: stri
  */
 export function useServiceStorySnippet(
   storyId: string,
-  args?: Args
+  args?: Args,
+  render?: SnippetTemplateRenderer
 ): QueryState<string | undefined> {
   const state = useServiceStory(storyId, selectSnippetParts);
   const { story, importBlock } = state.data ?? {};
 
   const snippet = useMemo(() => {
-    const rendered = story && renderStoryDocSnippet(story, args);
+    const rendered = story && renderStoryDocSnippet(story, args, render);
     return rendered === undefined ? undefined : prependImportToSnippet(importBlock, rendered);
-  }, [story, importBlock, args]);
+  }, [story, importBlock, args, render]);
 
   return { ...state, data: snippet };
 }

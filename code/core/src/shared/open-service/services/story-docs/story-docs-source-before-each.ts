@@ -5,6 +5,7 @@ import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePan
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
+import type { SnippetTemplateRenderer } from './snippet.ts';
 import { selectSnippetForStory } from './snippet.ts';
 
 export { shouldSkipStoryDocsEmit };
@@ -13,8 +14,11 @@ export { shouldSkipStoryDocsEmit };
  * Preview `beforeEach` hook that emits the story-docs snippet to the manager Code panel via
  * {@link emitTransformCode}.
  *
+ * `emitTransformCode` broadcasts `SNIPPET_RENDERED`, which the docs `SourceContainer` also stores
+ * and the `Source` block reads back, so this hook feeds both consumers rather than only the panel.
+ *
  * Runs on every story invocation, which includes every args change, so passing the context's args
- * through is what makes the Code panel track the Controls.
+ * through is what makes the snippet track the Controls.
  */
 export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallback | void {
   if (!globalThis.FEATURES?.experimentalDocgenServer) {
@@ -48,7 +52,12 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
       if (cancelled) {
         return;
       }
-      const snippet = selectSnippetForStory(payload, storyId, context.unmappedArgs);
+      const snippet = selectSnippetForStory(
+        payload,
+        storyId,
+        context.unmappedArgs,
+        context.parameters?.docs?.source?.renderSnippetTemplate as SnippetTemplateRenderer
+      );
       const source = snippet ?? context.parameters?.docs?.source?.originalSource;
       if (source === undefined) {
         return;

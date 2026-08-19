@@ -195,8 +195,14 @@ const SourceWithStoryDocsSnippet: FC<
     story: PreparedStory;
   }
 > = ({ story, docsContext, sourceContext, ...props }) => {
-  const args = sourceArgs(props, docsContext.getStoryContext(story));
-  const serviceSnippet = useServiceStorySnippet(story.id, args).data ?? '';
+  // One `getStoryContext` for both reads: each call re-runs `prepareContext` over every arg.
+  const storyContext = docsContext.getStoryContext(story);
+  const serviceSnippet =
+    useServiceStorySnippet(
+      story.id,
+      sourceArgs(props, storyContext),
+      storyContext.parameters?.docs?.source?.renderSnippetTemplate
+    ).data ?? '';
   const sourceProps = useSourceProps(props, docsContext, sourceContext, serviceSnippet);
   return <PureSource {...sourceProps} />;
 };

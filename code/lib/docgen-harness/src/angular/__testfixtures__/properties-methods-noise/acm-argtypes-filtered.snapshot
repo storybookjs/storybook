@@ -1,0 +1,36 @@
+{
+  "density": {
+    "description": undefined,
+    "name": "density",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "compact",
+      },
+      "type": {
+        "required": false,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+  "title": {
+    "description": undefined,
+    "name": "title",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "",
+      },
+      "type": {
+        "required": false,
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

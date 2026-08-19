@@ -43,19 +43,6 @@
       "description": "Build the static version of the sandbox optimized for testing purposes",
       "default": false
     },
-    "compodoc": {
-      "type": "boolean",
-      "description": "Execute compodoc before.",
-      "default": true
-    },
-    "compodocArgs": {
-      "type": "array",
-      "description": "Compodoc options : https://compodoc.app/guides/options.html. Options `-p` with tsconfig path and `-d` with workspace root is always given.",
-      "default": ["-e", "json"],
-      "items": {
-        "type": "string"
-      }
-    },
     "statsJson": {
       "type": ["boolean", "string"],
       "description": "Write stats JSON to disk",

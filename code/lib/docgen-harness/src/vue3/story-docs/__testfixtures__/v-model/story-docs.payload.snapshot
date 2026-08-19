@@ -1,0 +1,25 @@
+{
+  "id": "v-model",
+  "name": "ModelToggle",
+  "path": "__PATH__",
+  "stories": {
+    "forms-v-model--primary": {
+      "description": undefined,
+      "id": "forms-v-model--primary",
+      "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import { ref } from "vue";
+import ModelToggle from './ModelToggle.vue';
+
+const checked = ref(true);
+
+const modelValue = ref('Accepted');
+</script>
+
+<template>
+  <ModelToggle v-model:checked="checked" v-model="modelValue" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

@@ -1,0 +1,38 @@
+{
+  "items": {
+    "description": undefined,
+    "name": "items",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "[]",
+      },
+      "type": {
+        "required": false,
+        "summary": "T[]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "empty-enum",
+    },
+  },
+  "selected": {
+    "description": undefined,
+    "name": "selected",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "required": false,
+        "summary": "T",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "empty-enum",
+    },
+  },
+}

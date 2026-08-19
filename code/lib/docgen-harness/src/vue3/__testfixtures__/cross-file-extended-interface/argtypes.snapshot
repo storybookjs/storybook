@@ -1,0 +1,50 @@
+{
+  "extra": {
+    "description": "Field declared directly on the component.",
+    "name": "extra",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+      "required": true,
+    },
+  },
+  "id": {
+    "description": "Identifier from the deepest base interface.",
+    "name": "id",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": true,
+    },
+  },
+  "name": {
+    "description": "Name contributed by the middle interface.",
+    "name": "name",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+}

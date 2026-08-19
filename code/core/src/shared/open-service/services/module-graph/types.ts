@@ -2,6 +2,8 @@ import { posix, win32 } from 'node:path';
 
 import { normalize } from 'pathe';
 
+import { slash } from '../../../utils/paths.ts';
+
 import type { ReverseIndex } from './engine/dependency-graph/types.ts';
 
 /** JSON-serializable reverse index shape stored in open-service state. */
@@ -25,7 +27,6 @@ export type ModuleGraphServiceState = {
   workingDir: string;
   status: ModuleGraphStatus;
   graphRevision: number;
-  storiesByFile: StoriesByFileRecord;
   /**
    * Per-story revision stamps keyed by story-index-style relative path. Each entry holds the
    * {@link graphRevision} at which that story's subgraph last changed. Seeded to `0` for every
@@ -56,13 +57,9 @@ function isPosixAbsolutePath(path: string): boolean {
   return posix.isAbsolute(path);
 }
 
-function normalizePathSeparators(path: string): string {
-  return path.replace(/\\/g, '/');
-}
-
 function formatStoryIndexPath(path: string): string {
   const withoutDotSlash = path.startsWith('./') ? path.slice(2) : path;
-  const normalized = normalizePathSeparators(normalize(withoutDotSlash));
+  const normalized = slash(normalize(withoutDotSlash));
 
   if (normalized === '.' || normalized.startsWith('../')) {
     return normalized;
@@ -81,20 +78,20 @@ export function toStoryIndexPath(path: string, workingDir: string): string {
     return formatStoryIndexPath(win32.relative(workingDir, path));
   }
 
-  const slashPath = normalizePathSeparators(path);
+  const slashPath = slash(path);
   if (isPosixAbsolutePath(slashPath)) {
-    return formatStoryIndexPath(posix.relative(normalizePathSeparators(workingDir), slashPath));
+    return formatStoryIndexPath(posix.relative(slash(workingDir), slashPath));
   }
 
   return formatStoryIndexPath(slashPath);
 }
 
 export function storyIndexPathToAbsolutePath(path: string, workingDir: string): string {
-  if (isWindowsAbsolutePath(path) || isPosixAbsolutePath(normalizePathSeparators(path))) {
-    return normalizePathSeparators(normalize(path));
+  if (isWindowsAbsolutePath(path) || isPosixAbsolutePath(slash(path))) {
+    return slash(normalize(path));
   }
 
-  return normalizePathSeparators(normalize(posix.join(normalizePathSeparators(workingDir), path)));
+  return slash(normalize(posix.join(slash(workingDir), path)));
 }
 
 export function reverseIndexToStoriesByFile(
@@ -109,8 +106,3 @@ export function reverseIndexToStoriesByFile(
   }
   return result;
 }
-
-export type GraphUpdatePayload = {
-  storiesByFile: StoriesByFileRecord;
-  bumpedStoryFiles: string[];
-};

@@ -3,7 +3,7 @@ name: storybook-upgrade
 description: Use this skill when Storybook exists but needs an upgrade.
 ---
 
-Storybook must end up at version 10.6 or later (or `next` while 10.6 is not yet released).
+Storybook must end up at version 10.6.0-alpha.6 or later (a `next` prerelease while 10.6 is not yet released).
 
 Read https://storybook.js.org/docs/releases/upgrading.md in its **entirety** to get the latest Storybook upgrade instructions.
 

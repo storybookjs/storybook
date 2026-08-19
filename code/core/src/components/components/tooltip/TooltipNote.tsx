@@ -3,6 +3,9 @@ import React from 'react';
 import { styled } from 'storybook/theming';
 
 const Note = styled.div(({ theme }) => ({
+  // Portal-rendered, so it cannot rely on inheriting a base font: the preview iframe root has
+  // none, and a user's own styles may sit there instead.
+  fontFamily: theme.typography.fonts.base,
   padding: '2px 6px',
   lineHeight: '16px',
   fontSize: 10,

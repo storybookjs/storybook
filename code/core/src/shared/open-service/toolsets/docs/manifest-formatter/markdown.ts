@@ -28,10 +28,9 @@ import {
  */
 export const MAX_STORIES_TO_SHOW = 3;
 
-/** Tags rendered above the description: they gate whether to use the component at all. */
 const TOP_JSDOC_TAG_NAMES = new Set(['deprecated']);
 const EXAMPLE_JSDOC_TAG_NAME = 'example';
-/** Never forwarded to the output; each entry documents why. */
+
 const HIDDEN_JSDOC_TAG_NAMES = new Set([
   // Asks for the component to be hidden, so echoing it back is the opposite of the intent.
   'ignore',

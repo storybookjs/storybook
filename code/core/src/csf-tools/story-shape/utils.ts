@@ -3,6 +3,10 @@ import { type NodePath, types as t } from 'storybook/internal/babel';
 import type { CsfFile } from '../CsfFile.ts';
 import type { RenderFunctionPath } from './render.ts';
 
+type StaticIdentifierMemberCall = t.CallExpression & {
+  callee: t.MemberExpression & { object: t.Identifier; property: t.Identifier };
+};
+
 /** Peels TS assertion/satisfies wrappers and parentheses off an expression node. */
 export const unwrapExpression = (node: t.Node): t.Node =>
   t.isTSAsExpression(node) ||
@@ -13,15 +17,33 @@ export const unwrapExpression = (node: t.Node): t.Node =>
     ? unwrapExpression(node.expression)
     : node;
 
-/** Static key of an object member, or `null` when computed/non-literal. */
+export const isCanonicalCsf2BindCall = (node: t.Node): node is StaticIdentifierMemberCall =>
+  t.isCallExpression(node) &&
+  t.isMemberExpression(node.callee) &&
+  !node.callee.computed &&
+  t.isIdentifier(node.callee.object) &&
+  t.isIdentifier(node.callee.property, { name: 'bind' }) &&
+  (node.arguments.length === 0 ||
+    (node.arguments.length === 1 &&
+      t.isObjectExpression(node.arguments[0]) &&
+      node.arguments[0].properties.length === 0));
+
+export const isCsfFactoryCall = (node: t.Node): node is StaticIdentifierMemberCall =>
+  t.isCallExpression(node) &&
+  t.isMemberExpression(node.callee) &&
+  !node.callee.computed &&
+  t.isIdentifier(node.callee.object) &&
+  t.isIdentifier(node.callee.property) &&
+  (node.callee.property.name === 'story' || node.callee.property.name === 'extend');
+
+/**
+ * Static key of an object member, or `null` when it is computed from something else.
+ *
+ * A computed key written as a string literal is static: `{ ['args']: … }` names the same member as
+ * `{ args: … }`, so it reads as that name rather than as a key only running the story would produce.
+ */
 export const keyOf = (p: t.ObjectMethod | t.ObjectProperty): string | null =>
-  p.computed
-    ? null
-    : t.isIdentifier(p.key)
-      ? p.key.name
-      : t.isStringLiteral(p.key)
-        ? p.key.value
-        : null;
+  t.isStringLiteral(p.key) ? p.key.value : !p.computed && t.isIdentifier(p.key) ? p.key.name : null;
 
 /** Value of an object expression's own property, when it has one. */
 export const propertyValue = (
@@ -146,7 +168,7 @@ export function resolveIdentifierInit(
 }
 
 /** NodePath for a known node inside a program. */
-function pathForNode<T extends t.Node>(
+export function pathForNode<T extends t.Node>(
   program: NodePath<t.Program>,
   target: T | undefined
 ): NodePath<T> | undefined {

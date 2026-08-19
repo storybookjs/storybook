@@ -422,8 +422,7 @@
         }
       },
       "type": {
-        "name": "other",
-        "value": "empty-enum"
+        "name": "number"
       }
     }
   },

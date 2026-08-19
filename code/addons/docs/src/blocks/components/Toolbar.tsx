@@ -32,11 +32,6 @@ interface LoadingProps {
 
 export type ToolbarProps = BarProps & ZoomProps & EjectProps & LoadingProps & ReloadProps;
 
-/**
- * Distance from the docs content edge to the trailing icons stacked down the right of a story: this
- * toolbar's "open canvas in new tab", the snippet warning in the action row, and the args-table
- * reset button. Set by the reset button, which had it first.
- */
 export const TRAILING_INSET = 10;
 
 const AbsoluteBar = styled(SharedToolbar)({

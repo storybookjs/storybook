@@ -149,10 +149,6 @@ const SourceStyles = styled.div({
   },
 });
 
-/**
- * Centred under the panel's close button in the tab bar directly above. Both are 28px wide, so the
- * same trailing inset lines up their centres.
- */
 const PositionedSnippetWarning = styled(SnippetWarning)({
   position: 'absolute',
   top: 8,

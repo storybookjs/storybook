@@ -32,7 +32,6 @@ export const Base = meta.story({
   },
 });
 
-/** A note that is a sentence rather than a label wraps instead of running out of the viewport. */
 export const Sentence = meta.story({
   args: {
     note: 'LocalComponent is declared in the story file, so the snippet references it without importing it.',

@@ -23,13 +23,6 @@ export interface SnippetWarningProps {
   className?: string;
 }
 
-/**
- * Flags a snippet that is a deliberately incomplete example, and carries the reason.
- *
- * The snippet is still worth showing — it is the only place a reader sees which bindings a story
- * sets — so the caveat travels next to it rather than suppressing it. Renders nothing without a
- * warning, which keeps every snippet that has none looking exactly as it did.
- */
 export const SnippetWarning: FC<SnippetWarningProps> = ({ warning, className }) => {
   if (!warning?.trim()) {
     return null;

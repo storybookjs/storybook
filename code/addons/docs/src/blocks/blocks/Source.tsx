@@ -169,8 +169,6 @@ export const useSourceProps = (
 
   format = source?.format ?? true;
 
-  // The caveat is written about the snippet a provider emitted. A `transform`, or a fall back to
-  // `originalSource`, renders something else that it no longer describes.
   let warning: string | undefined;
   if (transformedCode === serviceSnippet) {
     warning = serviceWarning;

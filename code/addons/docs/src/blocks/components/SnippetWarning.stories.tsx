@@ -4,10 +4,6 @@ import { expect, userEvent, within } from 'storybook/test';
 
 import { SNIPPET_WARNING_LABEL, SnippetWarning } from './SnippetWarning';
 
-/**
- * The caveat that travels with a story-docs snippet that is a deliberately incomplete example. Used
- * by the docs Source block, the Canvas action row and the manager Code panel.
- */
 const meta = {
   component: SnippetWarning,
 } satisfies Meta<typeof SnippetWarning>;

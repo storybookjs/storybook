@@ -86,11 +86,6 @@ const ActionBar = styled(Bar)({
   marginBottom: 40,
 });
 
-/**
- * Opposite end of the row from the left-aligned "Show code" and "Copy code" buttons, and inset to
- * the same {@link TRAILING_INSET} as the toolbar and the args-table reset button above and below
- * it, so all three trailing icons share one vertical edge.
- */
 const TrailingSnippetWarning = styled(SnippetWarning)({
   marginInlineStart: 'auto',
   marginInlineEnd: TRAILING_INSET,

@@ -22,6 +22,12 @@ export async function loadStorybook(
     BuilderOptions & {
       storybookVersion?: string;
       previewConfigPath?: string;
+      /**
+       * The channel handed to every preset. Callers that prepared state on a channel of their own
+       * (the `storybook tools` CLI prepares the UniversalStore singleton on one) must pass it here,
+       * so addon hooks that answer requests over `options.channel` share the caller's bus.
+       */
+      channel?: Channel;
     }
 ): Promise<Options> {
   const configDir = resolve(options.configDir);
@@ -32,8 +38,9 @@ export async function loadStorybook(
   options.configDir = configDir;
   options.cacheKey = cacheKey;
 
-  // no-op channel, as it's only relevant in dev mode
-  const channel = new Channel({});
+  // Without a caller-supplied channel this is a transport-less local bus, as there is no dev
+  // server to transport to.
+  const channel = options.channel ?? new Channel({});
   setChannel(channel);
 
   const config = await loadMainConfig(options);
@@ -89,8 +96,8 @@ export async function loadStorybook(
     overridePresets: [
       import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
-    channel,
     ...options,
+    channel,
   });
 
   const features = await presets.apply('features');
@@ -100,6 +107,8 @@ export async function loadStorybook(
 
   return {
     ...options,
+    // the resolved channel — the one the presets received — never the possibly-absent option
+    channel,
     presets,
     features,
   } as Options;

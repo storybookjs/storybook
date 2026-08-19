@@ -1,11 +1,13 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import { resolve } from 'node:path';
 
 import { mergeConfig, normalizePath } from 'vite';
 
 import { ensureCompodocDocumentation } from './compodoc/ensure-documentation.ts';
-import { angularOptionsPlugin, viteFinal } from './preset.ts';
+import { angularOptionsPlugin, compodocJsonStubPlugin, features, viteFinal } from './preset.ts';
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 
 // The plugin's `config` hook looks up the preview file on disk before reading
@@ -90,13 +92,20 @@ describe('angularOptionsPlugin style preprocessor paths', () => {
 });
 
 describe('viteFinal Compodoc generation', () => {
-  const optionsWith = (frameworkOptions: Record<string, unknown>) =>
+  const optionsWith = (
+    frameworkOptions: Record<string, unknown>,
+    featureFlags: Record<string, boolean> = {}
+  ) =>
     ({
       configDir: resolve(WORKSPACE_ROOT, '.storybook'),
       angularBuilderContext: { workspaceRoot: WORKSPACE_ROOT },
       presets: {
-        apply: async (key: string, fallback?: unknown) =>
-          key === 'framework' ? { options: frameworkOptions } : fallback,
+        apply: async (key: string, fallback?: unknown) => {
+          if (key === 'framework') {
+            return { options: frameworkOptions };
+          }
+          return key === 'features' ? featureFlags : fallback;
+        },
       },
     }) as unknown as StandaloneOptions;
 
@@ -126,5 +135,142 @@ describe('viteFinal Compodoc generation', () => {
     await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({ compodoc: false }));
 
     expect(ensureCompodocDocumentation).not.toHaveBeenCalled();
+  });
+
+  it('generates nothing when the docgen server extracts in-process instead', async () => {
+    await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({}, { experimentalDocgenServer: true }));
+
+    expect(ensureCompodocDocumentation).not.toHaveBeenCalled();
+  });
+
+  it('registers the documentation.json stub only when the docgen server is on', async () => {
+    const withServer = await viteFinal(
+      { root: WORKSPACE_ROOT },
+      optionsWith({}, { experimentalDocgenServer: true })
+    );
+    const withoutServer = await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({}));
+
+    const stubNames = (result: any) =>
+      result.plugins
+        .map((plugin: any) => plugin?.name)
+        .filter((name: string) => name === 'storybook-angular-vite-compodoc-json-stub');
+
+    expect(stubNames(withServer)).toHaveLength(1);
+    expect(stubNames(withoutServer)).toHaveLength(0);
+  });
+});
+
+describe('features', () => {
+  const applyFeatures = features as (existing: unknown, options: unknown) => Promise<any>;
+
+  it('turns the docgen server on by default', async () => {
+    expect(await applyFeatures({}, {})).toMatchObject({ experimentalDocgenServer: true });
+  });
+
+  it('keeps other framework and core feature defaults', async () => {
+    expect(await applyFeatures({ componentsManifest: true }, {})).toMatchObject({
+      componentsManifest: true,
+      experimentalDocgenServer: true,
+    });
+  });
+});
+
+describe('compodocJsonStubPlugin', () => {
+  const CONFIG_DIR = '/workspace/.storybook';
+
+  const runResolve = (
+    source: string,
+    resolvedByVite: unknown,
+    importer = `${CONFIG_DIR}/preview.ts`
+  ) => {
+    const plugin = compodocJsonStubPlugin(CONFIG_DIR);
+    const context = { resolve: vi.fn().mockResolvedValue(resolvedByVite) };
+    return (plugin.resolveId as any).call(context, source, importer, {});
+  };
+
+  it('stubs the documented preview import when Compodoc never wrote the file', async () => {
+    const id = await runResolve('../documentation.json', null);
+
+    expect(id).toBe('\0storybook-angular-vite/empty-compodoc-json');
+
+    const load = compodocJsonStubPlugin(CONFIG_DIR).load as (
+      this: unknown,
+      id: string
+    ) => string | null;
+    expect(load.call({}, id as string)).toBe('export default {};');
+  });
+
+  it('leaves a documentation.json that exists on disk alone', async () => {
+    expect(await runResolve('../documentation.json', { id: '/workspace/documentation.json' })).toBe(
+      null
+    );
+  });
+
+  it('ignores imports of any other module', async () => {
+    expect(await runResolve('./some-other.json', null)).toBe(null);
+  });
+
+  // Only the import `storybook init` wrote into the preview is stood in for; the project's own
+  // `documentation.json` is a real dependency and a missing one has to fail.
+  it("leaves a documentation.json imported from the user's own code alone", async () => {
+    expect(await runResolve('./documentation.json', null, '/workspace/src/app/docs.ts')).toBe(null);
+  });
+
+  it('leaves an import with no importer alone', async () => {
+    const plugin = compodocJsonStubPlugin(CONFIG_DIR);
+    const context = { resolve: vi.fn().mockResolvedValue(null) };
+
+    expect(
+      await (plugin.resolveId as any).call(context, '../documentation.json', undefined, {})
+    ).toBe(null);
+  });
+});
+
+describe('viteFinal props-table wiring', () => {
+  const optionsWith = (
+    frameworkOptions: Record<string, unknown>,
+    featureFlags: Record<string, boolean> = {}
+  ) =>
+    ({
+      configDir: resolve(WORKSPACE_ROOT, '.storybook'),
+      angularBuilderContext: { workspaceRoot: WORKSPACE_ROOT },
+      presets: {
+        apply: async (key: string, fallback?: unknown) => {
+          if (key === 'framework') {
+            return { options: frameworkOptions };
+          }
+          return key === 'features' ? featureFlags : fallback;
+        },
+      },
+    }) as unknown as StandaloneOptions;
+
+  const definedMode = async (
+    frameworkOptions: Record<string, unknown>,
+    featureFlags: Record<string, boolean> = {}
+  ) => {
+    const result = (await viteFinal(
+      { root: WORKSPACE_ROOT },
+      optionsWith(frameworkOptions, featureFlags)
+    )) as any;
+    return JSON.parse(result.define.STORYBOOK_ANGULAR_OPTIONS).propsTable;
+  };
+
+  it('hands the preview the resolved mode, which is how the flag-off path reads it', async () => {
+    await expect(definedMode({})).resolves.toBe('api');
+    await expect(definedMode({ propsTable: 'all' })).resolves.toBe('all');
+    await expect(definedMode({}, { angularFilterNonInputControls: true })).resolves.toBe('inputs');
+  });
+
+  it('warns from here, because the docgen preset never runs with the feature off', async () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    try {
+      await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({ propsTable: 'api' }));
+
+      expect(warn.mock.calls.map(([message]) => String(message)).join('\n')).toContain(
+        'experimentalDocgenServer'
+      );
+    } finally {
+      warn.mockRestore();
+    }
   });
 });

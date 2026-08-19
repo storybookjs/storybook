@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import { ArgsStore } from './ArgsStore.ts';
 
@@ -207,6 +207,22 @@ describe('ArgsStore', () => {
 
       store.updateFromPersisted(story, { a: 'a' });
       expect(store.get('id')).toEqual({ a: 'a' });
+    });
+
+    // Server docgen keeps `argTypes` annotation-only, so a plain `args` entry arrives here without
+    // a type and would be dropped rather than applied.
+    describe('with experimentalDocgenServer', () => {
+      afterEach(() => vi.unstubAllGlobals());
+
+      it('types args from their initial value when the story declares no argTypes', () => {
+        vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+        const store = new ArgsStore();
+        const story = { id: 'id', initialArgs: { a: 'Button', b: 1 }, argTypes: {} } as any;
+        store.setInitial(story);
+
+        store.updateFromPersisted(story, { a: 'Hello world', b: '42' });
+        expect(store.get('id')).toEqual({ a: 'Hello world', b: 42 });
+      });
     });
   });
 });

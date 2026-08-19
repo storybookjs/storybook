@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { deprecate } from 'storybook/internal/node-logger';
+
 import type { Options } from 'storybook/internal/types';
 
 import { vueComponentMeta } from './plugins/vue-component-meta.ts';
@@ -13,7 +15,10 @@ vi.mock('./plugins/vue-template.ts', { spy: true });
 vi.mock('./plugins/vue-component-meta.ts', { spy: true });
 vi.mock('./plugins/vue-docgen.ts', { spy: true });
 
+vi.mock('storybook/internal/node-logger', { spy: true });
+
 beforeEach(() => {
+  vi.mocked(deprecate).mockImplementation(() => {});
   vi.mocked(templateCompilation).mockResolvedValue({ name: 'template' });
   vi.mocked(vueComponentMeta).mockResolvedValue({ name: 'vue-component-meta' });
   vi.mocked(vueDocgen).mockResolvedValue({ name: 'vue-docgen-api' });
@@ -48,27 +53,37 @@ describe('viteFinal', () => {
     expect(await pluginNames(docgen)).toEqual(['template', expected]);
   });
 
-  // The service extracts the same metadata, so leaving the plugin on would compile every component
-  // twice and put a `__docgenInfo` in the preview bundle that nothing reads.
-  it('omits the vue-component-meta plugin when the docgen service is on', async () => {
-    expect(await pluginNames('vue-component-meta', { experimentalDocgenServer: true })).toEqual([
-      'template',
-    ]);
-  });
-
-  // vue-docgen-api has no worker-side extractor, so the feature flag must not strip its plugin —
-  // that would leave these projects with no docgen at all.
-  it.each(['vue-docgen-api' as const, undefined])(
-    'keeps the docgen plugin for docgen: %s even when the docgen service is on',
+  it.each(['vue-component-meta' as const, 'vue-docgen-api' as const, undefined, false as const])(
+    'omits the legacy docgen plugin for docgen: %s when the server is on',
     async (docgen) => {
-      expect(await pluginNames(docgen, { experimentalDocgenServer: true })).toEqual([
-        'template',
-        'vue-docgen-api',
-      ]);
+      expect(await pluginNames(docgen, { experimentalDocgenServer: true })).toEqual(['template']);
     }
   );
 
   it('keeps template compilation when docgen is disabled', async () => {
     expect(await pluginNames(false)).toEqual(['template']);
+  });
+});
+
+describe('vue-docgen-api deprecation', () => {
+  it.each([undefined, true as const, 'vue-docgen-api' as const])(
+    'warns for docgen: %s',
+    async (docgen) => {
+      await pluginNames(docgen);
+      expect(vi.mocked(deprecate).mock.calls.map(([message]) => message)).toMatchInlineSnapshot(`
+        [
+          "\`vue-docgen-api\` is deprecated and will be removed in the next major release of Storybook. It is still the default docgen engine, so this also applies when you have not set the \`docgen\` framework option. Enable server-side docgen with \`features: { experimentalDocgenServer: true }\` in your \`.storybook/main.ts\`, which becomes the default in Storybook 11, or set \`framework: { name: '@storybook/vue3-vite', options: { docgen: 'vue-component-meta' } }\` to keep docgen in the builder.",
+        ]
+      `);
+    }
+  );
+
+  it.each([
+    ['vue-component-meta' as const, {}],
+    [false as const, {}],
+    [undefined, { experimentalDocgenServer: true }],
+  ])('stays quiet for docgen: %s with features %o', async (docgen, features) => {
+    await pluginNames(docgen, features);
+    expect(vi.mocked(deprecate)).not.toHaveBeenCalled();
   });
 });

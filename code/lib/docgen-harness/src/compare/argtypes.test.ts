@@ -14,6 +14,12 @@ describe('compareArgTypes', () => {
     expect(violations).toEqual([expect.objectContaining({ arg: 'size', kind: 'lost-arg' })]);
   });
 
+  it('waives a lost ES-private member, which no modern engine is expected to record', () => {
+    const baseline = argTypes({ '#secret': { name: '#secret', type: { name: 'string' } } });
+
+    expect(compareArgTypes(baseline, argTypes({}))).toEqual([]);
+  });
+
   it('passes when the candidate has keys the baseline lacks', () => {
     const candidate = argTypes({
       size: { name: 'size', type: { name: 'string' } },
@@ -157,6 +163,20 @@ describe('compareArgTypes', () => {
       const candidate = argTypes({ count: { name: 'count' } });
       expect(compareArgTypes(baseline, candidate, { legacyBaseline: true })).toEqual([]);
     }
+  });
+
+  it('does not generically waive numeric initializer source from a legacy baseline', () => {
+    const baseline = argTypes({
+      timeoutMs: {
+        name: 'timeoutMs',
+        table: { defaultValue: { summary: '5 * 60 * 1000' } },
+      },
+    });
+    const candidate = argTypes({ timeoutMs: { name: 'timeoutMs' } });
+
+    expect(compareArgTypes(baseline, candidate, { legacyBaseline: true })).toEqual([
+      expect.objectContaining({ arg: 'timeoutMs', kind: 'lost-default' }),
+    ]);
   });
 
   it('flags dropped raw false, null, and NaN defaults outside legacyBaseline', () => {

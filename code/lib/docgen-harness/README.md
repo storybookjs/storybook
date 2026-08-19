@@ -182,7 +182,7 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - #9721 -> `jsdoc-tags/`: member JSDoc tags must reach `table.jsDocTags` structurally. Red marker.
 - #33779 (not reproduced) -> `decorator-union-enum/`: the reported union collapse does not occur at compodoc 2.0.0; regression baseline, no marker.
 - #29697 (not reproduced) -> `signal-io/`: aliased signal inputs record under their alias at 2.0.0; regression baseline, no marker.
-- #22007 -> `properties-methods-noise/`: the filter flag's origin case, and the fixture where both flag states meaningfully differ.
+- #22007 -> `properties-methods-noise/`: the filter flag's origin case, and the fixture where both flag states meaningfully differ. The ACM engine closes it: `propsTable: 'api'` (its default) drops private and `#` properties and methods plus `@internal` members, while keeping `protected` members and every declared input and output, so the `acm-` baselines record fewer rows than the legacy ones on purpose.
 
 ## The performance bench
 

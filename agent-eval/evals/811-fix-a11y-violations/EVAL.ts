@@ -15,8 +15,8 @@ import {
 
 test('runs the story tests more than once while fixing the violations', () => {
   expect(
-    getWorkflowCalls('run-story-tests').length,
-    'Expected run-story-tests to be called at least twice: once to see the violations, once to verify the fix'
+    getWorkflowCalls('test-run').length,
+    'Expected test-run to be called at least twice: once to see the violations, once to verify the fix'
   ).toBeGreaterThanOrEqual(2);
 });
 
@@ -25,14 +25,14 @@ test('fixes the semantic button-name violation', () => {
 
   // The violation must have been observed before it can count as fixed — a
   // run that never evaluates accessibility cannot claim the fix.
-  const results = getWorkflowToolResults('run-story-tests');
+  const results = getWorkflowToolResults('test-run');
   expect(
     results.some((result) => /button-name/.test(result.output)),
-    'Expected some run-story-tests result to surface the seeded button-name violation'
+    'Expected some test-run result to surface the seeded button-name violation'
   ).toBe(true);
   expect(
     results.at(-1)?.output,
-    'Final run-story-tests result must no longer report the button-name violation'
+    'Final test-run result must no longer report the button-name violation'
   ).not.toMatch(/button-name/);
 
   // Guard against a vacuous pass: the violation must be gone because the
@@ -48,12 +48,10 @@ test('fixes the semantic button-name violation', () => {
 // A run that turns accessibility checks off cannot claim the violations
 // were addressed.
 test('never disables accessibility checks while fixing a11y issues', () => {
-  const disabledCall = getWorkflowCalls('run-story-tests').find(
-    (call) => call.input.a11y === false
-  );
+  const disabledCall = getWorkflowCalls('test-run').find((call) => call.input.a11y === false);
   expect(
     disabledCall,
-    'Expected no run-story-tests call to pass a11y: false in an a11y-fixing task'
+    'Expected no test-run call to pass a11y: false in an a11y-fixing task'
   ).toBeUndefined();
 });
 

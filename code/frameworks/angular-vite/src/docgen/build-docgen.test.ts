@@ -63,7 +63,14 @@ const componentEntry = (overrides: Record<string, unknown> = {}): AngularClassMe
     propertiesClass: [],
     methodsClass: [],
     outputsClass: [],
-    inputsClass: [{ name: 'label', type: 'string', optional: false, defaultValue: "'Click me'" }],
+    inputsClass: [
+      {
+        name: 'label',
+        type: 'string',
+        optional: false,
+        initializer: { kind: 'literal', literalKind: 'string', text: "'Click me'" },
+      },
+    ],
     ...overrides,
   }) as unknown as AngularClassMeta;
 
@@ -76,11 +83,11 @@ const managerReturning = (meta: AngularComponentMetaResult | undefined) => ({
 
 const context = (
   manager: AngularComponentMetaSource,
-  options: BuildDocgenContext['options'] = {}
+  options: BuildDocgenContext['options'] = { propsTable: 'all' }
 ): BuildDocgenContext => ({ manager, options, logger });
 
 describe('buildDocgenPayload', () => {
-  it('extracts argTypes from the analyzer and attaches the raw class record unfiltered', () => {
+  it('extracts argTypes from the analyzer and derives the snippet meta', () => {
     givenStoryFile();
     const classMeta = componentEntry();
     const manager = managerReturning(metaFor(classMeta));
@@ -97,15 +104,33 @@ describe('buildDocgenPayload', () => {
       path: entry.importPath,
       description: 'Renders a button.',
       jsDocTags: {},
+      renderer: 'angular',
+      apiDescription: expect.stringContaining('export type ButtonComponentInputs = {'),
     });
     expect(payload?.argTypes?.label).toMatchObject({
       name: 'label',
       table: { category: 'inputs', defaultValue: { summary: 'Click me' } },
     });
-    expect(payload?.angularComponentMeta).toBe(classMeta);
+    expect(payload?.angularComponentMeta).toEqual({
+      name: 'ButtonComponent',
+      selector: undefined,
+      standalone: true,
+      inputs: ['label'],
+      outputs: [],
+      enums: [],
+    });
     expect(payload?.compodoc).toBeUndefined();
     expect(payload?.subcomponents).toBeUndefined();
     expect(payload?.error).toBeUndefined();
+  });
+
+  it('marks the snippet meta non-standalone only for an explicit `standalone: false`', () => {
+    givenStoryFile();
+    const manager = managerReturning(metaFor(componentEntry({ standalone: false })));
+
+    const payload = buildDocgenPayload({ entry }, context(manager));
+
+    expect(payload?.angularComponentMeta?.standalone).toBe(false);
   });
 
   describe('description and JSDoc tags', () => {
@@ -211,25 +236,106 @@ describe('buildDocgenPayload', () => {
     });
   });
 
-  it('honours `angularFilterNonInputControls`', () => {
+  it('hands `propsTable` to the conversion', () => {
     givenStoryFile();
     const classMeta = componentEntry({
-      propertiesClass: [{ name: 'internal', type: 'string', optional: false }],
+      propertiesClass: [
+        { name: 'note', type: 'string', optional: false },
+        { name: 'cdr', type: 'ChangeDetectorRef', optional: false, visibility: 'private' },
+      ],
+    });
+    const argNames = (options: BuildDocgenContext['options']) =>
+      Object.keys(
+        buildDocgenPayload({ entry }, context(managerReturning(metaFor(classMeta)), options))
+          ?.argTypes ?? {}
+      );
+
+    expect(argNames({ propsTable: 'all' })).toEqual(['note', 'cdr', 'label']);
+    expect(argNames({ propsTable: 'api' })).toEqual(['note', 'label']);
+    expect(argNames({ propsTable: 'inputs' })).toEqual(['label']);
+  });
+
+  describe('apiDescription', () => {
+    // `line` is what marks the input/output pair as one `model()`, not two aliased members.
+    const colorPicker = componentEntry({
+      name: 'ColorPickerComponent',
+      inputsClass: [
+        {
+          name: 'color',
+          type: 'string',
+          optional: true,
+          line: 12,
+          initializer: { kind: 'literal', literalKind: 'string', text: "'#345F92'" },
+          rawdescription: 'The currently selected colour',
+        },
+      ],
+      outputsClass: [{ name: 'color', type: 'string', line: 12 }],
+      propertiesClass: [
+        { name: 'cdr', type: 'ChangeDetectorRef', optional: false, visibility: 'private' },
+      ],
     });
 
-    expect(
-      Object.keys(
-        buildDocgenPayload({ entry }, context(managerReturning(metaFor(classMeta))))?.argTypes ?? {}
-      )
-    ).toEqual(['internal', 'label']);
-    expect(
-      Object.keys(
-        buildDocgenPayload(
+    it('documents the two-way binding and tags the payload with its renderer', () => {
+      givenStoryFile();
+      const manager = managerReturning(metaFor(colorPicker));
+
+      const payload = buildDocgenPayload({ entry }, context(manager, { propsTable: 'api' }));
+
+      expect(payload?.renderer).toBe('angular');
+      expect(payload?.apiDescription?.split('\n')).toEqual([
+        '## Inputs',
+        '',
+        '```',
+        'export type ColorPickerComponentInputs = {',
+        '  /**',
+        '   * The currently selected colour',
+        '   *',
+        // The analyzer unquotes string defaults for the props table, and this reads that value.
+        '   * @default #345F92',
+        '   */',
+        '  color?: string; // two-way: [(color)]',
+        '}',
+        '```',
+        '',
+        '## Outputs',
+        '',
+        '```',
+        'export type ColorPickerComponentOutputs = {',
+        '  colorChange: (e: string) => void;',
+        '}',
+        '```',
+      ]);
+    });
+
+    it.each(['all', 'inputs'] as const)(
+      'documents the same api surface when the props table is `%s`',
+      (propsTable) => {
+        givenStoryFile();
+        const manager = managerReturning(metaFor(colorPicker));
+        const apiPayload = buildDocgenPayload(
           { entry },
-          context(managerReturning(metaFor(classMeta)), { angularFilterNonInputControls: true })
-        )?.argTypes ?? {}
-      )
-    ).toEqual(['label']);
+          context(managerReturning(metaFor(colorPicker)), { propsTable: 'api' })
+        );
+
+        const payload = buildDocgenPayload({ entry }, context(manager, { propsTable }));
+
+        expect(payload?.apiDescription).toBe(apiPayload?.apiDescription);
+        expect(payload?.apiDescription).toContain('## Outputs');
+        expect(payload?.apiDescription).not.toContain('cdr');
+      }
+    );
+
+    it('is omitted for a component that binds nothing', () => {
+      givenStoryFile();
+      const manager = managerReturning(
+        metaFor(componentEntry({ inputsClass: [], outputsClass: [] }))
+      );
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.apiDescription).toBeUndefined();
+      expect(payload?.renderer).toBe('angular');
+    });
   });
 
   describe('component resolution', () => {

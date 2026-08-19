@@ -70,7 +70,13 @@ describe('installYarn2', () => {
     // They are published to Verdaccio seconds before this install, so they can never
     // satisfy the gate on their own.
     expect(readConfig().npmPreapprovedPackages).toEqual(
-      expect.arrayContaining(['storybook', '@storybook/*', 'create-storybook', 'sb'])
+      expect.arrayContaining([
+        'storybook',
+        '@storybook/*',
+        'create-storybook',
+        'sb',
+        'vite-plugin-storybook-nextjs',
+      ])
     );
   });
 

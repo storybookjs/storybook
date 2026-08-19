@@ -7,8 +7,8 @@ import {
 } from '#test-utils';
 
 test('previews stories using story IDs', () => {
-  const previewCalls = getWorkflowCalls('preview-stories');
-  expectWorkflowCalls(['preview-stories']);
+  const previewCalls = getWorkflowCalls('stories-preview');
+  expectWorkflowCalls(['stories-preview']);
   expect(previewCalls.some(workflowCallUsesStoryId)).toBe(true);
   expect(
     previewCalls.some((call) =>

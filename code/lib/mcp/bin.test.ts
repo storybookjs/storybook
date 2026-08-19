@@ -145,23 +145,23 @@ describe('bin.ts stdio MCP server', () => {
       result: {
         tools: expect.arrayContaining([
           expect.objectContaining({
-            name: 'list-all-documentation',
+            name: 'docs-list',
           }),
           expect.objectContaining({
-            name: 'get-documentation',
+            name: 'docs-show',
           }),
         ]),
       },
     });
   }, 15000);
 
-  it('should execute list-all-documentation tool', async () => {
+  it('should execute docs-list tool', async () => {
     const request = {
       jsonrpc: '2.0',
       id: 3,
       method: 'tools/call',
       params: {
-        name: 'list-all-documentation',
+        name: 'docs-list',
         arguments: {},
       },
     };

@@ -1,0 +1,16 @@
+import { Component } from '@angular/core';
+import { DecoratorIoBasicsComponent } from './decorator-io-basics.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [DecoratorIoBasicsComponent],
+  template: `
+    <sb-decorator-io-basics
+        [label]="'Save'"
+        [data]="{id: 7, tags: ['a', 'b'], nested: {deep: true}}"
+        (clicked)="clicked($event)"
+    />`,
+})
+export class DemoComponent {
+  clicked(event: unknown) {}
+}

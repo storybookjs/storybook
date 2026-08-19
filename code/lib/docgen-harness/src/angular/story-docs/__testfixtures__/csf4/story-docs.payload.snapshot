@@ -1,0 +1,40 @@
+{
+  "id": "csf4",
+  "name": "CsfFourComponent",
+  "path": "__PATH__",
+  "stories": {
+    "storydocs-csf4--empty": {
+      "description": "A factory story with no config at all.",
+      "id": "storydocs-csf4--empty",
+      "name": "Empty",
+      "snippet": "import { Component } from '@angular/core';
+import { CsfFourComponent } from './csf4.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [CsfFourComponent],
+  template: `<sb-csf4 [label]="'Base'" (saved)="saved($event)" />`,
+})
+export class DemoComponent {
+  saved(event: unknown) {}
+}",
+    },
+    "storydocs-csf4--primary": {
+      "description": "A CSF4 factory story.",
+      "id": "storydocs-csf4--primary",
+      "name": "Primary",
+      "snippet": "import { Component } from '@angular/core';
+import { CsfFourComponent } from './csf4.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [CsfFourComponent],
+  template: `<sb-csf4 [label]="'Save'" (saved)="saved($event)" />`,
+})
+export class DemoComponent {
+  saved(event: unknown) {}
+}",
+      "summary": "Factory summary",
+    },
+  },
+}

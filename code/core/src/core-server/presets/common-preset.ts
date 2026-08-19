@@ -375,8 +375,8 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   // Applying the storyIndexGenerator preset builds the full story index (globbing and parsing
   // every story file), so keep registration cheap by deferring it to the first consumer that
   // actually needs the index: one-shot callers like the tools CLI register these services for
-  // commands that may never touch stories. `presets.apply` caches the underlying promise, so all
-  // consumers share one build.
+  // commands that may never touch stories. The preset memoizes its generator promise
+  // (storyIndexGeneratorPromise below), so all consumers share one build.
   const getIndex = () =>
     options.presets
       .apply<StoryIndexGenerator>('storyIndexGenerator')

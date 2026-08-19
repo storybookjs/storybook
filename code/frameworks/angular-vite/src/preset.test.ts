@@ -37,6 +37,23 @@ afterEach(() => {
 
 const WORKSPACE_ROOT = resolve('/workspace');
 
+const optionsWith = (
+  frameworkOptions: Record<string, unknown>,
+  featureFlags: Record<string, boolean> = {}
+) =>
+  ({
+    configDir: resolve(WORKSPACE_ROOT, '.storybook'),
+    angularBuilderContext: { workspaceRoot: WORKSPACE_ROOT },
+    presets: {
+      apply: async (key: string, fallback?: unknown) => {
+        if (key === 'framework') {
+          return { options: frameworkOptions };
+        }
+        return key === 'features' ? featureFlags : fallback;
+      },
+    },
+  }) as unknown as StandaloneOptions;
+
 function runConfig(stylePreprocessorOptions: Record<string, unknown> | undefined) {
   const options = {
     configDir: resolve(WORKSPACE_ROOT, '.storybook'),
@@ -92,23 +109,6 @@ describe('angularOptionsPlugin style preprocessor paths', () => {
 });
 
 describe('viteFinal Compodoc generation', () => {
-  const optionsWith = (
-    frameworkOptions: Record<string, unknown>,
-    featureFlags: Record<string, boolean> = {}
-  ) =>
-    ({
-      configDir: resolve(WORKSPACE_ROOT, '.storybook'),
-      angularBuilderContext: { workspaceRoot: WORKSPACE_ROOT },
-      presets: {
-        apply: async (key: string, fallback?: unknown) => {
-          if (key === 'framework') {
-            return { options: frameworkOptions };
-          }
-          return key === 'features' ? featureFlags : fallback;
-        },
-      },
-    }) as unknown as StandaloneOptions;
-
   it('generates against the resolved workspace root, tsconfig and output directory', async () => {
     await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({}));
 
@@ -157,6 +157,36 @@ describe('viteFinal Compodoc generation', () => {
 
     expect(stubNames(withServer)).toHaveLength(1);
     expect(stubNames(withoutServer)).toHaveLength(0);
+  });
+});
+
+describe('viteFinal tsconfig path resolution', () => {
+  it('defaults tsconfig path resolution on, so tsconfig paths win over node_modules in dev and build alike', async () => {
+    const result = (await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({}))) as any;
+
+    expect(result.resolve.tsconfigPaths).toBe(true);
+  });
+
+  it('leaves an explicit opt-out in the project vite config alone', async () => {
+    const result = (await viteFinal(
+      { root: WORKSPACE_ROOT, resolve: { tsconfigPaths: false } },
+      optionsWith({})
+    )) as any;
+
+    expect(result.resolve.tsconfigPaths).toBe(false);
+  });
+
+  it('keeps the aliases a project already recreated by hand, so both resolve', async () => {
+    const { mergeConfig: realMergeConfig } = await vi.importActual<typeof import('vite')>('vite');
+    vi.mocked(mergeConfig).mockImplementation(realMergeConfig);
+    const alias = [{ find: /^@app\/ui$/, replacement: resolve(WORKSPACE_ROOT, 'libs/ui/src') }];
+
+    const result = (await viteFinal(
+      { root: WORKSPACE_ROOT, resolve: { alias } },
+      optionsWith({})
+    )) as any;
+
+    expect(result.resolve).toMatchObject({ alias, tsconfigPaths: true });
   });
 });
 
@@ -227,23 +257,6 @@ describe('compodocJsonStubPlugin', () => {
 });
 
 describe('viteFinal props-table wiring', () => {
-  const optionsWith = (
-    frameworkOptions: Record<string, unknown>,
-    featureFlags: Record<string, boolean> = {}
-  ) =>
-    ({
-      configDir: resolve(WORKSPACE_ROOT, '.storybook'),
-      angularBuilderContext: { workspaceRoot: WORKSPACE_ROOT },
-      presets: {
-        apply: async (key: string, fallback?: unknown) => {
-          if (key === 'framework') {
-            return { options: frameworkOptions };
-          }
-          return key === 'features' ? featureFlags : fallback;
-        },
-      },
-    }) as unknown as StandaloneOptions;
-
   const definedMode = async (
     frameworkOptions: Record<string, unknown>,
     featureFlags: Record<string, boolean> = {}

@@ -161,6 +161,15 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     });
 
   return mergeConfig(config, {
+    // `build` already falls back to `compilerOptions.paths` once normal resolution fails, so an
+    // Angular workspace alias with no `node_modules` counterpart already resolves in `build`
+    // today; `dev` only consults `paths` when this is on, so the same alias fails to serve.
+    // Turning it on closes that gap, but for a specifier that resolves both ways - a tsconfig
+    // path alongside a `node_modules` copy of the same package - it also flips precedence to the
+    // tsconfig target in `build`, not just `dev`. See MIGRATION.md.
+    resolve: {
+      tsconfigPaths: config.resolve?.tsconfigPaths ?? true,
+    },
     // Add dependencies to pre-optimization
     optimizeDeps: {
       include: [

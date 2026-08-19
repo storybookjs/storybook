@@ -17,7 +17,13 @@ vi.mock('node:fs', { spy: true });
 beforeEach(async () => {
   vol.reset();
   const memfs = await vi.importActual<typeof import('memfs')>('memfs');
-  vi.mocked(readFileSync).mockImplementation(memfs.fs.readFileSync as typeof readFileSync);
+  const realFs = await vi.importActual<typeof import('node:fs')>('node:fs');
+  // memfs supplies the story files the tests write; every other module the resolver reaches is a
+  // fixture on disk.
+  vi.mocked(readFileSync).mockImplementation(((path: Parameters<typeof readFileSync>[0], ...rest) =>
+    vol.existsSync(path as string)
+      ? (memfs.fs.readFileSync as typeof readFileSync)(path, ...rest)
+      : realFs.readFileSync(path, ...rest)) as typeof readFileSync);
 });
 
 afterEach(() => {
@@ -374,6 +380,73 @@ describe('buildDocgenPayload', () => {
     });
   });
 
+  describe('component reached through another module', () => {
+    it('follows a property access on a namespace import to the component it names', () => {
+      givenStoryFile(`
+        import * as internal from './button.internal';
+        export default { title: 'Button', component: internal.config.component };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(manager.extractComponentMeta).toHaveBeenCalledExactlyOnceWith(COMPONENT_PATH, {
+        exportName: 'ButtonComponent',
+        localName: 'ButtonComponent',
+      });
+      expect(payload?.error).toBeUndefined();
+      expect(payload?.argTypes?.label).toMatchObject({ name: 'label' });
+    });
+
+    it('names an unreadable expression by the expression itself, not the story title', () => {
+      // The docgen-harness sandbox recorder treats a payload named `globalThis...` as an artifact
+      // of the shared template stories rather than a real component, and filters it out on that
+      // name alone (`isGloballyReferenced` in sandbox-baselines/read-static-docgen.ts). Naming this
+      // payload by the story title instead of the unreadable expression breaks that filter silently.
+      givenStoryFile(`
+        export default { title: 'Button', component: globalThis.__TEMPLATE_COMPONENTS__.Button };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+      expect(payload?.name).toBe('globalThis.__TEMPLATE_COMPONENTS__.Button');
+    });
+
+    it('does not blame the story file for an unresolved import that lives in the module the chain names', () => {
+      givenStoryFile(`
+        import * as internal from './button.internal-broken-import';
+        export default { title: 'Button', component: internal.config.component };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+      expect(payload?.error?.message).toContain('./does-not-exist.component');
+      // The story file only names `internal.config.component`; the import statement that fails to
+      // resolve is written in button.internal-broken-import.ts, not here.
+      expect(payload?.error?.message).not.toContain('The story file imports');
+      expect(manager.extractComponentMeta).not.toHaveBeenCalled();
+    });
+
+    it('does not send the user to the story file to fix a type-only import that lives elsewhere', () => {
+      givenStoryFile(`
+        import * as internal from './button.internal-type-only';
+        export default { title: 'Button', component: internal.config.component };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+      // The type-only import is in button.internal-type-only.ts; the story file binds nothing here.
+      expect(payload?.error?.message).not.toContain(`in ${STORY_PATH}`);
+      expect(manager.extractComponentMeta).not.toHaveBeenCalled();
+    });
+  });
+
   describe('error payloads', () => {
     it('names the file and export, and points at tsconfig coverage, when extraction misses', () => {
       givenStoryFile();
@@ -405,6 +478,34 @@ describe('buildDocgenPayload', () => {
       expect(payload?.error?.message).toContain(COMPONENT_PATH);
       expect(payload).toMatchObject({ id: 'button', name: 'ButtonComponent', jsDocTags: {} });
       expect(payload?.argTypes).toBeUndefined();
+    });
+
+    it('reports a component expression it cannot follow instead of staying silent', () => {
+      givenStoryFile(`
+        import * as internal from './nowhere';
+        export default { title: 'Button', component: internal.config.component };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+      expect(payload?.error?.message).toContain('internal.config.component');
+      expect(payload).toMatchObject({ id: 'button', jsDocTags: {} });
+      expect(manager.extractComponentMeta).not.toHaveBeenCalled();
+    });
+
+    it('reports a type-only component import instead of staying silent', () => {
+      givenStoryFile(`
+        import type { ButtonComponent } from './button.component';
+        export default { title: 'Button', component: ButtonComponent };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+      expect(manager.extractComponentMeta).not.toHaveBeenCalled();
     });
 
     it('reports an import that resolves to no file without asking the analyzer', () => {

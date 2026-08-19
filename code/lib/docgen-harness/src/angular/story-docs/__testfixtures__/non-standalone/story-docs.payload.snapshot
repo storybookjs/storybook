@@ -11,11 +11,7 @@
 @Component({
   selector: 'app-demo',
   imports: [],
-  template: `
-    <sb-non-standalone
-        [label]="'Legacy'"
-        (pressed)="pressed($event)">
-    </sb-non-standalone>`,
+  template: `<sb-non-standalone [label]="'Legacy'" (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}

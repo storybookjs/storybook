@@ -82,13 +82,13 @@ export const renderSnippetFromRecipe = (
   }
 
   return buildHostComponentSnippet({
-    // `selfClosing` mirrors the server call site: this rebuilds the server's snippet, not the
-    // legacy runtime template the preview renderer emits. The harness invariant - every fixture
-    // recipe rebuilding its own snippet byte for byte - is what keeps the two call sites in step.
+    // The style mirrors the server call site: this rebuilds the server's snippet, not the legacy
+    // runtime template the preview renderer emits. The harness invariant - every fixture recipe
+    // rebuilding its own snippet byte for byte - is what keeps the two call sites in step.
     template: buildTemplate(recipe.selector, {
       inputs,
       outputs: recipe.outputs,
-      selfClosing: true,
+      style: 'snippet',
     }),
     componentName: recipe.componentName,
     componentImport: recipe.componentImport,

@@ -622,7 +622,13 @@ describe('buildStoryDocsPayload', () => {
 
     it('treats a null template as no template rather than as markup', async () => {
       expect((await templatesOf(STORY_SHAPES_FILE)).get('Null Template')).toBe(
-        `<sb-button [label]="'meta'" [count]="2" (clicked)="clicked($event)" />`
+        [
+          '<sb-button',
+          `    [label]="'meta'"`,
+          `    [count]="2"`,
+          '    (clicked)="clicked($event)"',
+          '/>',
+        ].join('\n')
       );
     });
 
@@ -652,7 +658,13 @@ describe('buildStoryDocsPayload', () => {
 
     it('reads args CSF2 assigned after the declaration', async () => {
       expect((await templatesOf(STORY_SHAPES_FILE)).get('Csf 2 Assigned Args')).toBe(
-        `<sb-button [label]="'assigned'" [count]="11" (clicked)="clicked($event)" />`
+        [
+          '<sb-button',
+          `    [label]="'assigned'"`,
+          `    [count]="11"`,
+          '    (clicked)="clicked($event)"',
+          '/>',
+        ].join('\n')
       );
     });
 
@@ -661,9 +673,24 @@ describe('buildStoryDocsPayload', () => {
     it.each([
       [
         'ReExported',
-        `<sb-button [label]="'reexported'" [count]="9" (clicked)="clicked($event)" />`,
+        [
+          '<sb-button',
+          `    [label]="'reexported'"`,
+          `    [count]="9"`,
+          '    (clicked)="clicked($event)"',
+          '/>',
+        ].join('\n'),
       ],
-      ['RenamedStory', `<sb-button [label]="'meta'" [count]="10" (clicked)="clicked($event)" />`],
+      [
+        'RenamedStory',
+        [
+          '<sb-button',
+          `    [label]="'meta'"`,
+          `    [count]="10"`,
+          '    (clicked)="clicked($event)"',
+          '/>',
+        ].join('\n'),
+      ],
       ['ReExportedTemplate', '<sb-button reexported></sb-button>'],
     ])('reads the re-exported %s story from its own config', async (storyName, expected) => {
       expect((await templatesOf(STORY_SHAPES_FILE)).get(storyName)).toBe(expected);
@@ -874,7 +901,13 @@ describe('buildStoryDocsPayload', () => {
     it('reads a spread at the config level, not only one inside args', async () => {
       expect((await warningsOf(STORY_SHAPES_FILE)).get('Config Spread')).toBeUndefined();
       expect((await templatesOf(STORY_SHAPES_FILE)).get('Config Spread')).toBe(
-        `<sb-button [label]="'meta'" [count]="12" (clicked)="clicked($event)" />`
+        [
+          '<sb-button',
+          `    [label]="'meta'"`,
+          `    [count]="12"`,
+          '    (clicked)="clicked($event)"',
+          '/>',
+        ].join('\n')
       );
     });
 
@@ -1482,7 +1515,13 @@ describe('buildStoryDocsPayload', () => {
         export const Secondary = { args: { ...Primary.args, label: 'Secondary' } };
       `);
       expect(templates.get('Secondary')).toBe(
-        `<sb-button [label]="'Secondary'" [count]="1" (clicked)="clicked($event)" />`
+        [
+          '<sb-button',
+          `    [label]="'Secondary'"`,
+          `    [count]="1"`,
+          '    (clicked)="clicked($event)"',
+          '/>',
+        ].join('\n')
       );
     });
 
@@ -1495,7 +1534,13 @@ describe('buildStoryDocsPayload', () => {
         export const TwoDeep = { args: { ...Chained.args, label: 'deep' } };
       `);
       expect(templates.get('Two Deep')).toBe(
-        `<sb-button [label]="'deep'" [count]="1" (clicked)="clicked($event)" />`
+        [
+          '<sb-button',
+          `    [label]="'deep'"`,
+          `    [count]="1"`,
+          '    (clicked)="clicked($event)"',
+          '/>',
+        ].join('\n')
       );
     });
 
@@ -1508,7 +1553,13 @@ describe('buildStoryDocsPayload', () => {
         export const Secondary = meta.story({ args: { ...Primary.input.args, label: 'Secondary' } });
       `);
       expect(templates.get('Secondary')).toBe(
-        `<sb-button [label]="'Secondary'" [count]="1" (clicked)="clicked($event)" />`
+        [
+          '<sb-button',
+          `    [label]="'Secondary'"`,
+          `    [count]="1"`,
+          '    (clicked)="clicked($event)"',
+          '/>',
+        ].join('\n')
       );
     });
 
@@ -1522,7 +1573,13 @@ describe('buildStoryDocsPayload', () => {
         export const Spread = meta.story({ args: { ...Extended.input.args, label: 'spread' } });
       `);
       expect(templates.get('Spread')).toBe(
-        `<sb-button [label]="'spread'" [count]="2" (clicked)="clicked($event)" />`
+        [
+          '<sb-button',
+          `    [label]="'spread'"`,
+          `    [count]="2"`,
+          '    (clicked)="clicked($event)"',
+          '/>',
+        ].join('\n')
       );
     });
 
@@ -1543,7 +1600,13 @@ describe('buildStoryDocsPayload', () => {
         }
       );
       expect(templates.get('Logged In')).toBe(
-        `<sb-button [label]="'from header'" [count]="3" (clicked)="clicked($event)" />`
+        [
+          '<sb-button',
+          `    [label]="'from header'"`,
+          `    [count]="3"`,
+          '    (clicked)="clicked($event)"',
+          '/>',
+        ].join('\n')
       );
     });
 

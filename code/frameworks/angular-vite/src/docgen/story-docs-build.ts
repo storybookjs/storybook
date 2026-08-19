@@ -310,7 +310,7 @@ const renderStorySnippet = async (
   // nothing about what is missing from it.
   if (!snippetMeta.selector) {
     return withWarnings(
-      host(buildComponentOutletTemplate(localName, { selfClosing: true }), true, []),
+      host(buildComponentOutletTemplate(localName, 'snippet'), true, []),
       unresolvedWarning(markupSources)
     );
   }
@@ -319,7 +319,7 @@ const renderStorySnippet = async (
   return {
     ...withWarnings(
       host(
-        buildTemplate(snippetMeta.selector, { ...bindings, selfClosing: true }),
+        buildTemplate(snippetMeta.selector, { ...bindings, style: 'snippet' }),
         false,
         snippetMeta.outputs
       ),

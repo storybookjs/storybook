@@ -45,17 +45,31 @@ describe('renderSnippetFromRecipe', () => {
     );
   });
 
-  // The layout rule measures the fully inlined tag, so a value crossing 80 characters changes the
-  // tag's shape and not just its text. The preview re-runs that rule rather than substituting into
-  // a finished string, which is the only reason a live snippet stays valid Angular here.
-  it('re-runs the layout rule, so a long value breaks the tag the way the server would', () => {
+  // Layout follows the binding count, so a reader typing into a Controls knob never reshapes the
+  // tag under themselves - only the text between the quotes moves.
+  it('keeps the tag shape a value cannot change, however long the value grows', () => {
     const oneBinding: StorySnippetRecipe = { ...recipe, inputs: [recipe.inputs[0]!], outputs: [] };
 
     expect(renderSnippetFromRecipe(oneBinding, { label: 'Save' })).toContain(
       `<sb-button [label]="'Save'" />`
     );
-    expect(renderSnippetFromRecipe(oneBinding, { label: 'x'.repeat(60) })).toContain(
-      `<sb-button\n        [label]="'${'x'.repeat(60)}'"`
+    expect(renderSnippetFromRecipe(oneBinding, { label: 'x'.repeat(400) })).toContain(
+      `<sb-button [label]="'${'x'.repeat(400)}'" />`
+    );
+  });
+
+  it('breaks the tag one binding per line once three bindings are bound', () => {
+    expect(
+      renderSnippetFromRecipe(recipe, { label: 'Save', primary: true, size: 'large' })
+    ).toContain(
+      [
+        '<sb-button',
+        `        [primary]="true"`,
+        `        [label]="'Save'"`,
+        `        [size]="'large'"`,
+        '        (pressed)="pressed($event)"',
+        '    />',
+      ].join('\n')
     );
   });
 

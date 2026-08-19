@@ -37,7 +37,12 @@ import { BasicComponent } from './basic.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [BasicComponent],
-  template: `<sb-basic [count]="3" [label]="'Base'" (pressed)="pressed($event)" />`,
+  template: `
+    <sb-basic
+        [count]="3"
+        [label]="'Base'"
+        (pressed)="pressed($event)"
+    />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}

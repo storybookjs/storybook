@@ -140,10 +140,10 @@ describe('local tools', () => {
     const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
     try {
       const { deps } = makeDeps();
-      const noisyBootstrap = vi.fn(async (target: never) => {
+      const noisyBootstrap: ToolsRunDeps['bootstrap'] = async (...args) => {
         process.stdout.write('logger noise during config load\n');
-        return deps.bootstrap!(target);
-      });
+        return deps.bootstrap!(...args);
+      };
 
       const result = await run(['docs', 'list', '--json'], { ...deps, bootstrap: noisyBootstrap });
 

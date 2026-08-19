@@ -16,6 +16,7 @@ import {
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
   jsDocTagsForPath,
+  keyOf,
   loadCsf,
   metaObjectPath,
   normalizeStoryDeclaration,
@@ -23,7 +24,9 @@ import {
   resolveComponentImport,
   resolveRenderFunction,
   resolveReturnedObjectExpression,
+  returnedExpression,
   returnedExpressionPath,
+  unwrapExpression,
   unresolvedWarning,
   type ImportBinding,
   type ReferenceContext,
@@ -350,6 +353,15 @@ function staticRendererForRenderFunction(
     return { kind: 'template', ...templateConfig };
   }
 
+  const setupExpression = renderObject && setupReturnedRenderExpression(renderObject);
+  if (setupExpression) {
+    return {
+      argsParam: argsParameterName(renderFunction.node),
+      expression: setupExpression,
+      kind: 'h',
+    };
+  }
+
   const hExpression = returnedExpressionPath(renderFunction)?.node;
   return hExpression
     ? {
@@ -410,6 +422,46 @@ function renderStaticStorySnippet(
     importBindings: options.importBindings,
     node: renderer.expression,
   });
+}
+
+/**
+ * The `h()` tree a render object's `setup` returns through its render closure, when nothing else
+ * on the object can change what the story renders.
+ *
+ * @example `render: (args) => ({ setup: () => () => h(C, { label: args.label }) })` -> the `h(...)` call
+ */
+function setupReturnedRenderExpression(renderObject: t.ObjectExpression): t.Expression | undefined {
+  const supported = renderObject.properties.every((property) => {
+    if (t.isSpreadElement(property)) {
+      return false;
+    }
+    const key = keyOf(property);
+    return key === 'setup' || key === 'components' || key === 'inheritAttrs';
+  });
+  if (!supported) {
+    return undefined;
+  }
+
+  const setup = renderObject.properties.find(
+    (property) => !t.isSpreadElement(property) && keyOf(property) === 'setup'
+  );
+  const setupFn = t.isObjectMethod(setup)
+    ? setup
+    : t.isObjectProperty(setup)
+      ? unwrapExpression(setup.value)
+      : undefined;
+  if (!setupFn || !t.isFunction(setupFn)) {
+    return undefined;
+  }
+
+  const renderClosure = returnedExpression(setupFn);
+  const closure = renderClosure && unwrapExpression(renderClosure);
+  // A render closure with parameters would receive values the snippet cannot reproduce.
+  if (!closure || !t.isFunction(closure) || closure.params.length > 0) {
+    return undefined;
+  }
+
+  return returnedExpression(closure);
 }
 
 function argsParameterName(renderFunction: RenderFunctionPath['node']): string | undefined {

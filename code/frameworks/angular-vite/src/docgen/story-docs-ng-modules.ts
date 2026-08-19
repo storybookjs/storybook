@@ -1,5 +1,3 @@
-// Mirrors the NgModules a story's `moduleMetadata` decorator wires a non-standalone component
-// through, so the host snippet can claim them in `imports` instead of the component itself.
 import { types as t } from 'storybook/internal/babel';
 import type { collectImportBindings } from 'storybook/internal/csf-tools';
 import {

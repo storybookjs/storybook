@@ -91,6 +91,10 @@ export interface BuildTemplateInput {
   // Output binding names; each renders as `(name)="name($event)"`.
   outputs: string[];
   innerTemplate?: string;
+  // On, a dashed element drops its closing tag, and any tag that ends itself puts `/>` on its own
+  // line once it breaks -- void elements included. Off reproduces the legacy runtime generator's
+  // output, which is what the preview renderer emits.
+  selfClosing?: boolean;
 }
 
 // A selector that names no element, `.card` or `[appHighlight]`, matches a `div` in the snippet.
@@ -104,13 +108,13 @@ const ATTRIBUTE = /\[(.+?)]/g;
 // The leading non-space run is the element name; whatever follows are its attributes.
 const ELEMENT_AND_ATTRIBUTES = /(\S+)(.*)/;
 
-// Width past which the bindings go one per line, with the closing tag on its own.
+// Width past which the bindings go one per line, with the tag's end on a line of its own.
 const MAX_SINGLE_LINE = 80;
 
 // Expands a component selector into the element a story renders, carrying its bindings.
 export const buildTemplate = (
   selector: string,
-  { inputs, outputs, innerTemplate = '' }: BuildTemplateInput
+  { inputs, outputs, innerTemplate = '', selfClosing = false }: BuildTemplateInput
 ) => {
   const bindings = [
     ...inputs.map(({ name, expression }) => `[${name}]="${expression}"`),
@@ -129,17 +133,20 @@ export const buildTemplate = (
     .replace(ATTRIBUTE, ' $1');
 
   return asAttributes.replace(ELEMENT_AND_ATTRIBUTES, (_, element: string, attributes: string) => {
+    // HTML reserves a dashed name for custom elements, so Angular can never reject one self-closed.
+    const closesItself =
+      VOID_ELEMENTS.has(element) || (selfClosing && element.includes('-') && innerTemplate === '');
+
     const inlineTag = `<${element}${attributes}${bindings.map((binding) => ` ${binding}`).join('')}`;
-    const inline = VOID_ELEMENTS.has(element)
-      ? `${inlineTag} />`
-      : `${inlineTag}>${innerTemplate}</${element}>`;
+    const inline = closesItself ? `${inlineTag} />` : `${inlineTag}>${innerTemplate}</${element}>`;
     if (inline.length <= MAX_SINGLE_LINE || bindings.length === 0) {
       return inline;
     }
 
     const brokenTag = `<${element}${attributes}\n${bindings.map((binding) => `    ${binding}`).join('\n')}`;
-    if (VOID_ELEMENTS.has(element)) {
-      return `${brokenTag} />`;
+    if (closesItself) {
+      // The bracket takes the line the closing tag would have had, rather than trailing a binding.
+      return selfClosing ? `${brokenTag}\n/>` : `${brokenTag} />`;
     }
     const content = innerTemplate === '' ? '\n' : `\n${innerTemplate}\n`;
     return `${brokenTag}>${content}</${element}>`;
@@ -147,8 +154,13 @@ export const buildTemplate = (
 };
 
 // Fallback element for a component whose decorator declares no selector.
-export const buildComponentOutletTemplate = (componentName: string): string =>
-  `<ng-container *ngComponentOutlet="${componentName}"></ng-container>`;
+export const buildComponentOutletTemplate = (
+  componentName: string,
+  { selfClosing = false }: { selfClosing?: boolean } = {}
+): string =>
+  selfClosing
+    ? `<ng-container *ngComponentOutlet="${componentName}" />`
+    : `<ng-container *ngComponentOutlet="${componentName}"></ng-container>`;
 
 const INDENT = '    ';
 

@@ -165,6 +165,20 @@ describe('compareArgTypes', () => {
     }
   });
 
+  it('does not generically waive numeric initializer source from a legacy baseline', () => {
+    const baseline = argTypes({
+      timeoutMs: {
+        name: 'timeoutMs',
+        table: { defaultValue: { summary: '5 * 60 * 1000' } },
+      },
+    });
+    const candidate = argTypes({ timeoutMs: { name: 'timeoutMs' } });
+
+    expect(compareArgTypes(baseline, candidate, { legacyBaseline: true })).toEqual([
+      expect.objectContaining({ arg: 'timeoutMs', kind: 'lost-default' }),
+    ]);
+  });
+
   it('flags dropped raw false, null, and NaN defaults outside legacyBaseline', () => {
     // A non-legacy engine records raw false / null only for a genuine `= false` / `= null`
     // default, so dropping one is a lost default in the default (strict) mode.

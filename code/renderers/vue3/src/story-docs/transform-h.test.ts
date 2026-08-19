@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import { types as t } from 'storybook/internal/babel';
 import {
-  argsRecordFromObjectPath,
   collectImportBindings,
-  keyOf,
   loadCsf,
-  mergeArgsRecords,
-  metaArgsRecord,
   metaObjectPath,
   normalizeStoryDeclaration,
+  type ReferenceContext,
+  resolveArgsRecord,
+  resolveBindingMembers,
+  resolveObjectMembers,
   resolveRenderFunction,
   returnedExpression,
 } from 'storybook/internal/csf-tools';
@@ -89,18 +89,17 @@ ${storySource}
     throw new Error('Expected a config story');
   }
 
-  const storyArgsPath = normalized.path
-    .get('properties')
-    .find((property) => property.isObjectProperty() && keyOf(property.node) === 'args')
-    ?.get('value');
-  const storyArgsObjectPath =
-    storyArgsPath && !Array.isArray(storyArgsPath) && storyArgsPath.isObjectExpression()
-      ? storyArgsPath
-      : undefined;
-  const storyArgs = storyArgsObjectPath ? argsRecordFromObjectPath(storyArgsObjectPath) : {};
   const metaPath = metaObjectPath(csf);
+  const references: ReferenceContext = { program: csf._file.path, filePath: 'entry.ts' };
+  const metaMembers = metaPath ? resolveObjectMembers(metaPath.node, references) : undefined;
   const classified = classifyArgs(
-    mergeArgsRecords(metaArgsRecord(metaPath?.node), storyArgs),
+    {
+      ...resolveArgsRecord(metaMembers?.properties.args, references).properties,
+      ...resolveArgsRecord(
+        resolveBindingMembers(references, 'Primary')?.properties.args,
+        references
+      ).properties,
+    },
     docgen
   );
   // Mirrors resolveEffectiveRender in build-story-docs: story render wins, meta is the fallback.

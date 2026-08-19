@@ -605,8 +605,9 @@ export const Primary = {
     `);
   });
 
-  it('emits no snippet when a later spread can shadow the render', async () => {
-    const payload = await buildPayload(`
+  it('keeps the render a later spread turns out not to shadow', async () => {
+    expect(
+      await primarySnippet(`
 const base = {};
 
 export const Primary = {
@@ -617,6 +618,29 @@ export const Primary = {
     template: '<MyButton v-bind="args" />',
   }),
   ...base,
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton label="Hi" />
+      </template>"
+    `);
+  });
+
+  it('emits no snippet when a later spread cannot be read at all', async () => {
+    const payload = await buildPayload(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton v-bind="args" />',
+  }),
+  ...buildBase(),
 };
 `);
     expect(payload.stories['example-mybutton--primary']?.snippet).toBeUndefined();

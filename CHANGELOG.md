@@ -1,3 +1,14 @@
+## 10.5.9
+
+- Addon-Pseudo-States: Fix pseudo-states rewriting for nested functional selectors - [#34318](https://github.com/storybookjs/storybook/pull/34318), thanks @filipw01!
+- Core: Skip module-graph reverse-index mirror when a patch is a no-op - [#35825](https://github.com/storybookjs/storybook/pull/35825), thanks @ndelangen!
+- Core: Split module-graph into hot revisions and cold index services - [#35831](https://github.com/storybookjs/storybook/pull/35831), thanks @ndelangen!
+- Preview: Fix crash when initialising UrlStore on a docs path - [#35521](https://github.com/storybookjs/storybook/pull/35521), thanks @TheSeydiCharyyev!
+- Pseudo-States: Make stylesheet rewrites WebKit-safe - [#35629](https://github.com/storybookjs/storybook/pull/35629), thanks @ethriel3695!
+- TanStack: Keep the layout id when cloning a standalone index file route - [#35660](https://github.com/storybookjs/storybook/pull/35660), thanks @Insik-Han!
+- TanStack: Render real link hrefs in the Link mock - [#35505](https://github.com/storybookjs/storybook/pull/35505), thanks @unpunnyfuns!
+- Webpack: Prevent long preview output filenames - [#35533](https://github.com/storybookjs/storybook/pull/35533), thanks @zhangli091011!
+
 ## 10.5.8
 
 - React: Fix RDT tsconfig selection for Vite project references - [#35743](https://github.com/storybookjs/storybook/pull/35743), thanks @ndelangen!

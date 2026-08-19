@@ -23,11 +23,17 @@ import {
 } from 'vue-component-meta';
 import { parseMulti } from 'vue-docgen-api';
 
-type Serializable<T> = T extends object
-  ? { [K in keyof T]: Serializable<T[K]> }
-  : T extends Function
-    ? never
-    : T;
+// Mirrors the JSON round-trip in toSerializableMeta: methods (e.g. `getDeclarations`) do not
+// survive it, so their keys are dropped rather than kept as unconstructible phantom fields.
+type AnyFunction = (...args: never[]) => unknown;
+
+type Serializable<T> = T extends AnyFunction
+  ? never
+  : T extends readonly (infer E)[]
+    ? Serializable<E>[]
+    : T extends object
+      ? { [K in keyof T as T[K] extends AnyFunction ? never : K]: Serializable<T[K]> }
+      : T;
 
 /** One component's normalized `vue-component-meta` output, tagged with the export it came from. */
 export type MetaSource = {

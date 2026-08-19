@@ -144,7 +144,6 @@ function formatJsDocTagBlockquote(tagName: string, values: string[]): string[] {
     ];
   });
 }
-}
 
 function isTopJsDocTag(tagName: string): boolean {
   return TOP_JSDOC_TAG_NAMES.has(tagName);

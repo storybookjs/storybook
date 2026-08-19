@@ -2,6 +2,7 @@ import { type NodePath, types as t } from 'storybook/internal/babel';
 import type { CsfFile } from 'storybook/internal/csf-tools';
 
 import { parseReferenceModule } from '../../csf-tools/story-shape/reference-context.ts';
+import { isSelfContained } from '../../csf-tools/story-shape/resolve-arg-value.ts';
 import {
   type ReferenceModule,
   resolveReferencedValue,
@@ -128,7 +129,14 @@ export function createMetaComponentResolver(options: MetaComponentResolverOption
 
     // A deeper property access (a shape another module owns, or a shared config object) is
     // followed to the name it lands on, which is then read in the module that binds it.
-    const referenced = resolveReferencedValue({ ...storyModule, resolveModule }, expression);
+    const referenced = resolveReferencedValue(
+      {
+        ...storyModule,
+        resolveModule,
+        externalize: (n: t.Node) => (isSelfContained(n) ? n : undefined),
+      },
+      expression
+    );
     if (referenced) {
       const value = unwrapComponentExpression(referenced.node);
       if (t.isIdentifier(value)) {

@@ -133,38 +133,34 @@ describe('createMetaComponentResolver', () => {
     ).toEqual({ reason: 'no-component-import' });
   });
 
+  // A member copied in by a spread was written in another module, so the names inside it resolve
+  // against that module rather than the one the chain lands in. Rather than track a scope per
+  // member, a value carrying free names is refused once it crosses a module boundary: the caller
+  // reports an unreadable expression, which is visible, instead of a class it guessed at.
   describe('a spread copies a component from a third module', () => {
-    it('resolves to the class the spreading module actually wrote, not one of the same name it imports', () => {
+    it('refuses rather than picking the spreading module same-named import', () => {
       // internal2.ts spreads `base` (which owns `component: ButtonComponent` from ./lib/button)
       // and separately imports an unrelated class under the identical local name `ButtonComponent`
-      // from ./legacy/button. A resolver that re-resolves the copied identifier against internal2's
-      // own imports would silently return the legacy class instead.
+      // from ./legacy/button. Resolving the copied identifier against internal2's own imports would
+      // silently return the legacy class.
       expect(
         resolveInFixtures(`import * as internal from './internal2';
                            export default { component: internal.config.component };`)
       ).toEqual({
-        component: {
-          localName: 'ButtonComponent',
-          importId: './lib/button',
-          exportName: 'ButtonComponent',
-          path: join(FIXTURES, 'lib', 'button.ts'),
-        },
+        reason: 'unreadable-component-expression',
+        expression: 'internal.config.component',
       });
     });
 
-    it('does not resolve to a path in a module that never mentions the class', () => {
+    it('refuses rather than naming a module that never mentions the class', () => {
       // internal3.ts spreads the same `base`, but binds no local name `ButtonComponent` at all, so
-      // a wrong-scope resolution would report a path to a file with no such class.
+      // resolving in its scope would report a path to a file with no such class.
       expect(
         resolveInFixtures(`import * as internal from './internal3';
                            export default { component: internal.config.component };`)
       ).toEqual({
-        component: {
-          localName: 'ButtonComponent',
-          importId: './lib/button',
-          exportName: 'ButtonComponent',
-          path: join(FIXTURES, 'lib', 'button.ts'),
-        },
+        reason: 'unreadable-component-expression',
+        expression: 'internal.config.component',
       });
     });
   });

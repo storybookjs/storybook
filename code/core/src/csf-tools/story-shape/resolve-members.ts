@@ -24,7 +24,6 @@ export interface ResolvedMembers {
    * imports, not the spreading module's. Absent for a key whose origin was never tracked, in
    * which case the enclosing object's own module is the closest available answer.
    */
-  propertyCtx?: Record<string, ReferenceContext>;
 }
 
 /** A module a reference reaches into, parsed and paired with the path it was read from. */
@@ -66,7 +65,6 @@ const complete = (properties: Record<string, t.Node> = {}): ResolvedMembers => (
   properties,
   shadowed: [],
   unresolved: [],
-  propertyCtx: {},
 });
 
 /**
@@ -110,16 +108,13 @@ const asArgsRecord = (members: ResolvedMembers): ResolvedMembers => {
     return members;
   }
   const properties = { ...members.properties };
-  const propertyCtx = { ...members.propertyCtx };
   const unresolved = [...members.unresolved];
   for (const [key, node] of methods) {
     delete properties[key];
-    delete propertyCtx[key];
     unresolved.push(sourceOf(node));
   }
   return {
     properties,
-    propertyCtx,
     shadowed: members.shadowed.filter((key) => key in properties),
     unresolved,
   };
@@ -163,7 +158,7 @@ export const resolveReferencedValue = (
   }
 
   let members = located.members;
-  let scope = located.ctx;
+  const scope = located.ctx;
   for (const [index, key] of located.path.entries()) {
     // A key shadowed by a later unreadable write may hold something else at runtime; a key this
     // pass never saw written to is knowably absent only once nothing here was left unresolved.
@@ -174,18 +169,14 @@ export const resolveReferencedValue = (
     if (value === undefined) {
       return undefined;
     }
-    // A spread copies a value's node as-is from the module that wrote it, which may differ from
-    // the module owning the object this key was just read off of.
-    const valueScope = members.propertyCtx?.[key] ?? scope;
     if (index === located.path.length - 1) {
-      return { node: value, ctx: valueScope };
+      return { node: value, ctx: scope };
     }
     const unwrapped = unwrapExpression(value);
     if (!t.isObjectExpression(unwrapped)) {
       return undefined;
     }
-    members = membersOf(unwrapped, valueScope, visited);
-    scope = valueScope;
+    members = membersOf(unwrapped, scope, visited);
   }
 
   return undefined;
@@ -197,7 +188,6 @@ const membersOf = (
   visited: Set<string>
 ): ResolvedMembers => {
   const properties: Record<string, t.Node> = {};
-  const propertyCtx: Record<string, ReferenceContext> = {};
   const unresolved: string[] = [];
   const shadowed = new Set<string>();
 
@@ -221,7 +211,6 @@ const membersOf = (
         properties[key] = value;
         // The spread source already knows which module wrote this value, if it crossed a module
         // boundary to get it; otherwise it is whatever the spread itself reads as.
-        propertyCtx[key] = spread.propertyCtx?.[key] ?? ctx;
         shadowed.delete(key);
       }
       continue;
@@ -237,17 +226,15 @@ const membersOf = (
       // An accessor or generator replaces exactly the member it names, with a value only running
       // the story produces.
       delete properties[key];
-      delete propertyCtx[key];
       shadowed.delete(key);
       unresolved.push(sourceOf(property));
       continue;
     }
     properties[key] = t.isObjectMethod(property) ? property : property.value;
-    propertyCtx[key] = ctx;
     shadowed.delete(key);
   }
 
-  return { properties, shadowed: [...shadowed], unresolved, propertyCtx };
+  return { properties, shadowed: [...shadowed], unresolved };
 };
 
 /** The object a spread copies from, whether it is written out or named. */
@@ -326,7 +313,7 @@ const unguardedResolveReference = (
   }
 
   let members = located.members;
-  let scope = located.ctx;
+  const scope = located.ctx;
   for (const [index, key] of located.path.entries()) {
     if (members.unresolved.length > 0) {
       return undefined;
@@ -336,15 +323,11 @@ const unguardedResolveReference = (
       // Spreading a member the object does not have copies nothing; reading through one throws.
       return index === located.path.length - 1 ? complete() : undefined;
     }
-    // A spread copies a value's node as-is from the module that wrote it, which may differ from
-    // the module owning the object this key was just read off of.
-    const valueScope = members.propertyCtx?.[key] ?? scope;
     const unwrapped = unwrapExpression(value);
     if (!t.isObjectExpression(unwrapped)) {
       return undefined;
     }
-    members = membersOf(unwrapped, valueScope, visited);
-    scope = valueScope;
+    members = membersOf(unwrapped, scope, visited);
   }
 
   return located.external ? externalized(members, scope) : members;
@@ -424,7 +407,6 @@ const externalized = (
     properties,
     shadowed: members.shadowed,
     unresolved: members.unresolved,
-    propertyCtx: members.propertyCtx,
   };
 };
 
@@ -490,7 +472,6 @@ const unguardedBindingMembers = (
     ...(declared.accessor ? { accessor: declared.accessor } : {}),
     members: {
       properties: { ...declared.members.properties, ...assigned.properties },
-      propertyCtx: { ...declared.members.propertyCtx, ...assigned.propertyCtx },
       shadowed: declared.members.shadowed.filter((key) => !(key in assigned.properties)),
       unresolved: [...declared.members.unresolved, ...assigned.unresolved],
     },
@@ -551,11 +532,10 @@ const declaredMembers = (
   ) {
     return undefined;
   }
-  const merged = mergedAnnotations(parent.members, config, ctx);
+  const merged = mergedAnnotations(parent.members, config);
   return {
     members: {
       properties: merged.properties,
-      propertyCtx: merged.propertyCtx,
       shadowed: [
         ...parent.members.shadowed.filter((key) => !(key in config.properties)),
         ...config.shadowed,
@@ -578,12 +558,10 @@ const MERGED_ANNOTATIONS = ['args', 'argTypes', 'parameters', 'globals'];
  * read, whether each side is written out or named.
  */
 const mergedAnnotations = (
-  parent: Pick<ResolvedMembers, 'properties' | 'propertyCtx'>,
-  child: Pick<ResolvedMembers, 'properties' | 'propertyCtx'>,
-  ctx: ReferenceContext
-): { properties: Record<string, t.Node>; propertyCtx: Record<string, ReferenceContext> } => {
+  parent: Pick<ResolvedMembers, 'properties'>,
+  child: Pick<ResolvedMembers, 'properties'>
+): { properties: Record<string, t.Node> } => {
   const properties = { ...parent.properties, ...child.properties };
-  const propertyCtx = { ...parent.propertyCtx, ...child.propertyCtx };
 
   for (const key of MERGED_ANNOTATIONS) {
     const from = parent.properties[key];
@@ -597,12 +575,9 @@ const mergedAnnotations = (
       continue;
     }
     properties[key] = t.objectExpression([t.spreadElement(from), t.spreadElement(over)]);
-    // The merge synthesizes a node neither module wrote; `ctx` (which extend already requires to
-    // be local, see the `parent.external` guard above) is the closest module that can claim it.
-    propertyCtx[key] = ctx;
   }
 
-  return { properties, propertyCtx };
+  return { properties };
 };
 
 /** A CSF factory call, which holds its config behind `input` rather than as its own members. */
@@ -647,11 +622,9 @@ const assignedMembers = (
   position: number | undefined
 ): {
   properties: Record<string, t.Node>;
-  propertyCtx: Record<string, ReferenceContext>;
   unresolved: string[];
 } => {
   const properties: Record<string, t.Node> = {};
-  const propertyCtx: Record<string, ReferenceContext> = {};
   const unresolved: string[] = [];
 
   for (const statement of ctx.program.node.body) {
@@ -683,10 +656,9 @@ const assignedMembers = (
       continue;
     }
     properties[outermost] = assignment.right;
-    propertyCtx[outermost] = ctx;
   }
 
-  return { properties, propertyCtx, unresolved };
+  return { properties, unresolved };
 };
 
 const importedBinding = (

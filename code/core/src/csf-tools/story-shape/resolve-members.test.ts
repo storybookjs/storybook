@@ -5,6 +5,7 @@ import { types as t } from 'storybook/internal/babel';
 import { dedent } from 'ts-dedent';
 
 import { babelParseFile } from '../CsfFile.ts';
+import { isSelfContained } from './resolve-arg-value.ts';
 import {
   type ReferenceContext,
   type ReferenceModule,
@@ -484,12 +485,15 @@ describe('resolveReferencedValue', () => {
   });
 
   describe('spread scope', () => {
-    it("keeps a spread-copied member's own scope rather than the spreading module's", () => {
+    // A spread copies the value node as written in the module that owns it, and this pass reads it
+    // in the module the chain lands in. Callers that care which module a name resolves against pass
+    // an `externalize` that refuses a value carrying free names once it crosses a module boundary,
+    // rather than resolving it in the wrong scope.
+    it('refuses a spread-copied member carrying free names when the caller externalizes', () => {
       // `internal` spreads `base` (owned by `shared`), and separately binds the identical local
-      // name `Button` to an unrelated class imported from `other-button`. A resolver that
-      // re-resolved the copied `Button` identifier against `internal`'s own imports, instead of
-      // `shared`'s, would silently land on the wrong one.
-      const ctx = contextOf({
+      // name `Button` to an unrelated class. Reading the copied `Button` against `internal`'s own
+      // imports would silently land on the wrong one.
+      const files = {
         'real-button.ts': `export class Button {}`,
         'other-button.ts': `export class Button {}`,
         'shared.ts': dedent`
@@ -502,9 +506,13 @@ describe('resolveReferencedValue', () => {
           export const config = { ...base, args: {} };
         `,
         'entry.ts': `import * as internal from './internal';`,
-      });
-      const resolved = valueOf(ctx, 'internal.config.component');
-      expect(resolved).toEqual({ value: 'Button', filePath: 'shared.ts' });
+      };
+
+      const guarded = contextOf(files, 'entry.ts', (node) =>
+        isSelfContained(node) ? node : undefined
+      );
+
+      expect(valueOf(guarded, 'internal.config.component')).toBeUndefined();
     });
   });
 

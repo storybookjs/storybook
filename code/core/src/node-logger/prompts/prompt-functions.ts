@@ -34,16 +34,14 @@ let activeSpinner: SpinnerInstance | null = null;
 let activeTaskLog: TaskLogInstance | null = null;
 let originalConsoleLog: typeof console.log | null = null;
 
-// Some ptys report a zero-width TTY (`script(1)`, some CI wrappers). Clack divides its rendered line
-// count by that width and then erases `Infinity` lines, throwing `RangeError` mid-command, so the
-// width is pinned here, before the first prompt, spinner or task log of any CLI entry point. Every
-// server-side entry point imports this module, so a stream that refuses the write must not take the
-// process down with it: a too-wide terminal only wraps badly, where throwing here aborts the CLI.
+// A zero-width TTY (`script(1)`, some CI wrappers) makes clack divide its rendered line count by
+// that width and erase `Infinity` lines, throwing `RangeError` mid-command. Every server-side entry
+// point imports this module, so pinning the width here happens before the first clack render.
 if (typeof process.stdout.columns === 'number' && !(process.stdout.columns > 0)) {
   try {
     process.stdout.columns = getTerminalWidth();
   } catch {
-    // Left as reported; clack degrades to unreadable wrapping rather than crashing.
+    // A width that refuses the write only wraps badly; throwing here would abort the CLI.
   }
 }
 

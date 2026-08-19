@@ -232,8 +232,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
 const COMPODOC_JSON_STUB_ID = '\0storybook-angular-vite/empty-compodoc-json';
 
 // Every key `compodoc -e json` writes, in the shape it writes it, so a preview that spreads or
-// drills into one finds an empty value rather than `undefined`. The `grouped*` maps are keyed by
-// source file, `routes` is the root route node and `coverage` is a report, hence objects there.
+// drills into one finds an empty value rather than `undefined`.
 const EMPTY_COMPODOC_JSON: Record<string, unknown> = {
   classes: [],
   components: [],

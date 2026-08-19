@@ -70,8 +70,7 @@ describe('wrap-utils', () => {
       expect(getTerminalWidth()).toBe(80);
     });
 
-    // A pty can report a zero or negative width (`script(1)`, some CI wrappers). Handing that on is
-    // worse than having no width at all: callers divide by it and wrap to it.
+    // Some ptys and CI wrappers report non-positive terminal widths.
     it.each([0, -1])('should return default width (80) when columns is %i', (columns) => {
       stubStdoutColumns({ value: columns });
 

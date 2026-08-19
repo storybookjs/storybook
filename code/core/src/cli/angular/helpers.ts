@@ -8,21 +8,14 @@ import { type FormattingOptions, applyEdits, modify } from 'jsonc-parser';
 
 export const ANGULAR_JSON_PATH = 'angular.json';
 
-/**
- * The version of `@analogjs/vite-plugin-angular` the CLI installs alongside
- * `@storybook/angular-vite`, which needs it as a peer but cannot rely on the package manager to
- * add it. Must stay inside the `>=2.0.0` peer range that `@storybook/angular-vite` declares.
- */
+/** Must stay inside the `>=2.0.0` peer range that `@storybook/angular-vite` declares. */
 export const ANALOG_VITE_PLUGIN_ANGULAR_VERSION = '^2.5.2';
 
 /** A path into a JSON document, e.g. `['projects', 'app', 'architect', 'storybook', 'builder']`. */
 export type JSONEditPath = (string | number)[];
 
-/**
- * `jsonc-parser` re-indents the lines it touches, so a document indented with anything other than
- * the assumed default comes back with mixed indentation. Line endings need no such option:
- * `jsonc-parser` reads those off the document itself.
- */
+// `jsonc-parser` re-indents the lines it touches, so a wrong tab size leaves the document with
+// mixed indentation.
 const detectIndentation = (text: string): FormattingOptions => {
   const indent = /^[ \t]+(?=[^\s])/m.exec(text)?.[0];
 
@@ -52,12 +45,10 @@ export interface StorybookBuilderTarget {
 }
 
 /**
- * Whether `target` runs Storybook, optionally narrowed to one builder/executor package.
+ * Whether `target` runs Storybook, narrowed to `builderPackage` when one is given.
  *
- * The suffix alone says nothing about who provides the builder: `@storybook/angular`,
- * `@storybook/angular-vite` and `@analogjs/storybook-angular` all end in `:start-storybook`.
- * Any caller that rewrites or deletes options a specific package owns must pass `builderPackage`,
- * or it will edit targets belonging to a different one.
+ * `@storybook/angular`, `@storybook/angular-vite` and `@analogjs/storybook-angular` all end in
+ * `:start-storybook`, so a caller that edits options one of them owns must pass `builderPackage`.
  */
 export const isStorybookTarget = (
   target: unknown,

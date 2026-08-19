@@ -210,10 +210,9 @@ const processStorybookTargets = (
 
   for (const { pathPrefix, targets } of targetGroups) {
     for (const [targetName, target] of Object.entries(targets)) {
-      // Detection is deliberately wider than the rewrite. A multi-project upgrade runs each
-      // project's `run()` against the tree the first project's run already rewrote, so from the
-      // second project on every target reads `@storybook/angular-vite` — and a narrow gate would
-      // report no Storybook target at all and skip the zone.js injection without a word.
+      // Detection is wider than the rewrite: a multi-project upgrade runs each project against the
+      // tree the first project already rewrote, and a narrower gate would report no Storybook
+      // target at all and skip the zone.js injection.
       if (
         !isStorybookTarget(target, ANGULAR_PACKAGE) &&
         !isStorybookTarget(target, ANGULAR_VITE_PACKAGE)
@@ -498,11 +497,9 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
 
     logger.step(`Migrating from ${ANGULAR_PACKAGE} to ${ANGULAR_VITE_PACKAGE}...`);
 
-    // 1. Patch .storybook/main.ts(.js). This comes first because it is the migration: `check()`
-    // reads the framework off the evaluated config, which resolves through a shared base file, so
-    // the field can be inherited rather than spelled out here. Everything below assumes the
-    // framework now says angular-vite, and uninstalling @storybook/angular without that leaves a
-    // Storybook that cannot start.
+    // 1. Patch .storybook/main.ts(.js). This comes first because everything below assumes the
+    // framework already says angular-vite: `check()` reads it off the evaluated config, so the
+    // field can be inherited from a shared base file rather than spelled out in this one.
     logger.debug('Updating main config...');
     if (!mainConfigPath || !(await transformMainConfig(mainConfigPath, dryRun))) {
       logger.error(
@@ -574,8 +571,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
 
     // 4. Rewrite Angular CLI builder references and the `test-storybook` script in package.json.
     // The write goes through the package manager: it reads package.json from a process-wide cache
-    // that a raw write cannot invalidate, so every later `removeDependencies`/`addDependencies`
-    // would serialise the pre-edit snapshot back over the file and undo this.
+    // that a raw write cannot invalidate, so a later `addDependencies` would undo this one.
     for (const pkgJsonPath of packageManager.packageJsonPaths) {
       try {
         const content = await readFile(pkgJsonPath, 'utf-8');

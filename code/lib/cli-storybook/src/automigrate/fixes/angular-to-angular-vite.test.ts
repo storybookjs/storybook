@@ -590,8 +590,8 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith(['@compodoc/compodoc']);
     });
 
-    // The Compodoc cleanup is gated on the angular-vite builder, so step 3b MUST rewrite the
-    // executor before step 4b looks at it. Pin the order: one run, both edits.
+    // The Compodoc cleanup is gated on the angular-vite builder, so the executor rewrite has to
+    // land before the cleanup reads it.
     it("rewrites an Nx executor and drops that target's Compodoc options in the same run", async () => {
       mockPromptConfirm.mockResolvedValue(false);
       vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(null);
@@ -685,8 +685,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       );
     });
 
-    // A dry run reads the same files the real run would have rewritten by then, so without the
-    // migration's own builder package in scope it would preview none of the Compodoc edits.
+    // A dry run reads the files the real run would have rewritten by then, still on the old builder.
     it('previews the Compodoc option edits it would make on a dry run', async () => {
       mockPromptConfirm.mockResolvedValue(false);
       vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(null);
@@ -1004,9 +1003,8 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         storybookVersion: '9.0.0',
       } as any);
 
-      // Through the package manager, never `writeFile`: it reads package.json from a process-wide
-      // cache that a raw write cannot invalidate, so the next `removeDependencies`/`addDependencies`
-      // of the same run would serialise the pre-edit snapshot straight back over this file.
+      // `JsPackageManager` reads package.json from a process-wide cache that a raw `writeFile`
+      // cannot invalidate, so a later `addDependencies` would write the pre-edit snapshot back.
       expect(mockPackageManager.writePackageJson).toHaveBeenCalledWith(
         expect.objectContaining({
           scripts: {

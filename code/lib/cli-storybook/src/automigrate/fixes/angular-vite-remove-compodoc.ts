@@ -81,12 +81,9 @@ const declaredStorybookTargets = (json: any): unknown[] => [
 ];
 
 /**
- * Nx `targetDefaults` are keyed either by an executor reference or by a bare target name. A bare
- * name identifies no package, so such an entry can only be attributed by elimination: some
- * workspace file declares a Storybook target the migration owns, and none declares one it does not.
- *
- * "Nothing declares a Storybook target" is unknown rather than safe — Nx can crystallize the
- * targets from a plugin instead — so the entry is left alone.
+ * An Nx `targetDefaults` entry keyed by a bare target name names no package, so it can only be
+ * attributed by elimination. Nx can crystallize Storybook targets from a plugin, so a workspace
+ * that declares none is unknown rather than safe.
  */
 const ownsTargetDefault = (
   targetName: string,
@@ -140,18 +137,17 @@ const DOCUMENTATION_JSON_IMPORT =
   /(?:import\(|require\(|from|import)\s*['"](?:[^'"]*[/\\])?documentation\.json['"]/;
 
 /**
- * A preview counts as wired even without a visible `setCompodocJson` call: `radix-ng` routes the
- * call through an imported helper, leaving only the `documentation.json` import behind, and that
- * import is what keeps a multi-megabyte payload in the bundle.
+ * A preview counts as wired without a visible `setCompodocJson` call, which projects route through
+ * an imported helper. The `documentation.json` import alone keeps a multi-megabyte payload in the
+ * bundle.
  */
 const previewWiresCompodoc = (source: string): boolean =>
   source.includes(SET_COMPODOC_JSON) || DOCUMENTATION_JSON_IMPORT.test(source);
 
 const SHELL_SEPARATORS = /&{1,2}|\|{1,2}|;|\n/;
 /**
- * A command that runs Compodoc: one whose own path ends in the binary name (`.cmd`/`.exe` on
- * Windows), or one that points inside the package, as `node …/@compodoc/compodoc/bin/index-cli.js`
- * does.
+ * A command whose path ends in the binary name (`.cmd`/`.exe` on Windows), or points inside the
+ * package, as `node …/@compodoc/compodoc/bin/index-cli.js` does.
  */
 const COMPODOC_COMMAND = /(^|[/\\])compodoc(\.[a-z]+)?$|(^|[/\\])@compodoc[/\\]compodoc(?:$|[/\\])/;
 // Commands that precede the command they run, so the real command is the first token after them.
@@ -175,10 +171,8 @@ const COMMAND_WRAPPERS = new Set([
 const stripShellQuoting = (token: string) => token.replace(/^[('"`]+/, '').replace(/[)'"`]+$/, '');
 
 /**
- * Whether a package.json script runs the Compodoc binary, rather than merely naming a path.
- *
- * Erring towards a match is deliberate: a false one keeps a dependency and prints a warning, while
- * a miss uninstalls a binary the repo's own scripts still call.
+ * Whether a package.json script runs the Compodoc binary, rather than merely naming a path. Erring
+ * towards a match is deliberate: a miss uninstalls a binary the repo's own scripts still call.
  */
 const invokesCompodoc = (script: string): boolean =>
   script.split(SHELL_SEPARATORS).some((segment) => {
@@ -195,8 +189,8 @@ const invokesCompodoc = (script: string): boolean =>
 
 /**
  * Scans every package.json in the workspace, not only the ones the package manager enumerates: a
- * docs-only workspace package holds neither stories nor the Storybook config, so it never appears
- * in `packageJsonPaths` — and its script would still break once the dependency is gone.
+ * docs-only package holds no stories and no Storybook config, yet its script still breaks once the
+ * dependency is gone.
  */
 const findCompodocScripts = async (packageJsonPaths: string[]): Promise<CompodocScript[]> => {
   const paths = new Set([...packageJsonPaths, ...(await findWorkspaceFiles('package.json'))]);
@@ -258,9 +252,9 @@ export const findCompodocSetup = async ({
   previewConfigPath?: string;
   packageManager: JsPackageManager;
   /**
-   * Builder packages whose Compodoc options are dead. The standalone fix owns angular-vite alone;
-   * `angular-to-angular-vite` also owns `@storybook/angular`, because by the time it asks, every
-   * such target either has been rewritten or — on a dry run, which writes nothing — will be.
+   * Builder packages whose Compodoc options are dead. `angular-to-angular-vite` also owns
+   * `@storybook/angular`: by the time it asks, every such target has been rewritten already, or,
+   * on a dry run, would have been.
    */
   builderPackages?: string[];
 }): Promise<AngularViteRemoveCompodocOptions | null> => {
@@ -338,8 +332,7 @@ export const removeCompodocSetup = async ({
     hasCompodocDependency,
   } = result;
 
-  // A dry run must describe the same edits the real run makes, so every branch below reports and
-  // only the writes are skipped.
+  // A dry run describes the same edits the real run makes, so only the writes below are skipped.
   const removed = dryRun ? 'Would remove' : 'Removed';
 
   if (hasFrameworkOptions) {
@@ -381,7 +374,7 @@ export const removeCompodocSetup = async ({
 const OVERRIDE_CONTAINERS = [['overrides'], ['resolutions'], ['pnpm', 'overrides']] as const;
 
 /**
- * Version pins for a dependency nothing depends on anymore (`lucca-front` left one behind).
+ * Drops version pins for a dependency nothing depends on anymore.
  *
  * The edit goes through the package manager rather than `node:fs`: `JsPackageManager` reads
  * package.json through a process-wide cache that no raw write invalidates, so every later
@@ -417,7 +410,7 @@ const removeCompodocOverrides = (packageManager: JsPackageManager, dryRun: boole
 const manualRemovalHint = (previewConfigPath: string, reason: string) =>
   logger.warn(
     `Left the Compodoc wiring in ${previewConfigPath} alone: ${reason}. ` +
-      `Compodoc has no effect anymore, so remove what is left there by hand when convenient — ` +
+      `Compodoc has no effect anymore, so remove what is left there by hand when convenient: ` +
       `a documentation.json import on its own still ships in your bundle.`
   );
 

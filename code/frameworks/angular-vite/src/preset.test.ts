@@ -258,8 +258,7 @@ describe('compodocJsonStubPlugin', () => {
     );
   });
 
-  // Shape taken from `compodoc -e json` output of four real Angular workspaces (alauda, ndb-core,
-  // ng-clarity, lucca-front): all four agree on these twelve keys and on which are arrays.
+  // The expected shape is `compodoc -e json` output, down to which keys are arrays.
   it('stands in an empty value of the shape Compodoc writes for every key it exports', async () => {
     const docJson = loadStub('\0storybook-angular-vite/empty-compodoc-json');
 
@@ -378,8 +377,8 @@ describe('viteFinal props-table wiring', () => {
     expect(warnings).toContain('features: { experimentalDocgenServer: true }');
   });
 
-  // `@storybook/addon-mcp` turns `componentsManifest` on from its own `features` hook, so the
-  // warning cannot tell the user to delete a key that is not in their `main.ts`.
+  // `@storybook/addon-mcp` turns `componentsManifest` on from its own `features` hook, so the key
+  // need not be in the user's `main.ts`.
   it('does not tell the user to drop a feature an addon set on their behalf', async () => {
     const warnings = await warningsFor({
       componentsManifest: true,

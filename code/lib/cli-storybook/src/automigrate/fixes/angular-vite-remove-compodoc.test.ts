@@ -76,12 +76,9 @@ const projectJson = (options: Record<string, unknown>, executor = ANGULAR_VITE_B
 const nxJson = (options: Record<string, unknown>) =>
   JSON.stringify({ targetDefaults: { 'build-storybook': { options } } });
 
-/**
- * Stands in for `JsPackageManager`, including the part that matters here: package.json is read
- * through a process-wide cache that a raw `writeFileSync` cannot invalidate, and every write
- * serialises that cache back over the file. `flushCache()` is what any later `addDependencies`
- * (`storybook add @storybook/addon-vitest`, for one) does to the same file.
- */
+// Stands in for `JsPackageManager`: package.json is read through a process-wide cache that a raw
+// `writeFileSync` cannot invalidate, and every write serialises that cache back over the file.
+// `flushCache()` is what any later `addDependencies` does to the same file.
 const packageManager = (hasCompodoc: boolean) => {
   let cached: any;
   const read = () => (cached ??= JSON.parse(memfs.readFileSync(PACKAGE_JSON, 'utf8') as string));
@@ -208,7 +205,6 @@ describe('check', () => {
     expect(await angularViteRemoveCompodoc.check(checkOptions({}))).toBeNull();
   });
 
-  // `project.json` discovery has to cover the same tree as the package.json walk.
   it('discovers project.json files from the workspace root, not the working directory', async () => {
     vol.fromNestedJSON({ [PROJECT_JSON]: projectJson({ compodoc: true }) });
 
@@ -259,8 +255,8 @@ describe('check', () => {
     expect(await angularViteRemoveCompodoc.check(checkOptions({}))).toBeNull();
   });
 
-  // hra-ui: `nx.json` targetDefaults name a target but no package, so they can only be attributed
-  // once every Storybook target left in the workspace is on angular-vite.
+  // A bare-name `targetDefaults` entry names no package, so it is only attributable once every
+  // Storybook target left in the workspace is on angular-vite.
   it('detects the Compodoc options in nx.json targetDefaults', async () => {
     vol.fromNestedJSON({
       [NX_JSON]: nxJson({ compodoc: true, compodocArgs: ['-e', 'json'] }),
@@ -355,8 +351,8 @@ describe('check', () => {
     expect(result).toMatchObject({ hasPreviewWiring: true });
   });
 
-  // radix-ng: the `setCompodocJson` call lives in an imported helper, so the preview only shows
-  // the `documentation.json` import. Without this the user is told nothing at all.
+  // A preview can route the `setCompodocJson` call through an imported helper, leaving only the
+  // `documentation.json` import behind.
   it('detects preview wiring that only imports documentation.json', async () => {
     vol.fromNestedJSON({
       [PREVIEW]: dedent`
@@ -372,7 +368,6 @@ describe('check', () => {
     expect(result).toMatchObject({ hasPreviewWiring: true });
   });
 
-  // The repo's own scripts can still need the binary after Storybook stops using it.
   it('reports package.json scripts that still invoke the Compodoc binary', async () => {
     vol.fromNestedJSON({
       [PACKAGE_JSON]: JSON.stringify({
@@ -393,7 +388,6 @@ describe('check', () => {
     ]);
   });
 
-  // A miss uninstalls a binary a script still calls, including through wrappers.
   it('sees the Compodoc binary behind a host command, a wrapper and shell punctuation', async () => {
     vol.fromNestedJSON({
       [PACKAGE_JSON]: JSON.stringify({
@@ -508,8 +502,7 @@ describe('run', () => {
     expect(preview).toContain('import { components } from "../documentation.json"');
   });
 
-  // The shape `vmware-clarity/ng-clarity` ships: the call is wrapped in a helper that also
-  // pre-processes the JSON, so rewriting it automatically is not safe.
+  // A call wrapped in a helper that also pre-processes the JSON cannot be rewritten safely.
   it('leaves a preview alone when setCompodocJson is not called at the top level', async () => {
     const wrapped = dedent`
       import { setCompodocJson } from "@storybook/addon-docs/angular";
@@ -672,7 +665,6 @@ describe('run', () => {
     );
   });
 
-  // The override edit has to survive later package-manager writes in the same process.
   it('drops a dangling @compodoc/compodoc override that a later package-manager write cannot restore', async () => {
     vol.fromNestedJSON({
       [PACKAGE_JSON]: JSON.stringify(

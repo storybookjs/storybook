@@ -8,8 +8,7 @@ function getTerminalWidth(): number {
   const defaultWidth = 80;
 
   try {
-    // A pty can report a zero or negative width (`script(1)`, some CI wrappers), which is worse than
-    // no width at all: callers divide by it and wrap to it.
+    // A pty can report a zero or negative width (`script(1)`), and callers divide by it.
     return process.stdout.columns > 0 ? process.stdout.columns : defaultWidth;
   } catch {
     return defaultWidth;

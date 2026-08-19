@@ -308,7 +308,10 @@ const renderStorySnippet = async (
   return snippetMeta.selector
     ? withWarnings(
         host(
-          buildTemplate(snippetMeta.selector, componentBindings(snippetMeta, shape)),
+          buildTemplate(snippetMeta.selector, {
+            ...componentBindings(snippetMeta, shape),
+            selfClosing: true,
+          }),
           false,
           snippetMeta.outputs
         ),
@@ -316,7 +319,7 @@ const renderStorySnippet = async (
         unboundArgsWarning(localName, snippetMeta, shape)
       )
     : withWarnings(
-        host(buildComponentOutletTemplate(localName), true, []),
+        host(buildComponentOutletTemplate(localName, { selfClosing: true }), true, []),
         unresolvedWarning(markupSources)
       );
 };

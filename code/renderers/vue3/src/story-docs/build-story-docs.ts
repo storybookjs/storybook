@@ -27,6 +27,7 @@ import {
   returnedExpression,
   returnedExpressionPath,
   unwrapExpression,
+  noSnippetWarning,
   unresolvedWarning,
   type ImportBinding,
   type ReferenceContext,
@@ -79,6 +80,11 @@ interface StoryDocsContext {
 // Vue's single-file-component format is tried ahead of the JS/TS extensions, matching how a story
 // file resolves an import of a `.vue` module.
 const openStoryReferences = createStoryReferenceResolver({ extensions: ['.vue'] });
+
+const RENDER_UNRESOLVED_WARNING =
+  'No static snippet: the `render` function could not be resolved statically.';
+const SLOT_UNRESOLVED_WARNING =
+  'No static snippet: a slot function could not be resolved statically.';
 
 type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
 type ExtractStoriesResult = { stories: Record<string, StoryDoc> };
@@ -267,7 +273,14 @@ function extractStories(csf: ParsedCsf, options: StoryDocsContext): ExtractStori
 }
 
 /**
- * Attaches a synthesized snippet (or an "unsupported args" error) to a story doc.
+ * Attaches a synthesized snippet to a story doc, or a standalone `warning` saying why none could
+ * be produced.
+ *
+ * The runtime source decorator still renders an exact snippet in the browser, but payload
+ * consumers that never run the story (manifests, agents) would otherwise see nothing at all, so
+ * every statically unresolvable story names what could not be read instead of staying silent.
+ * Only stories outside the provider's scope (CSF2 function stories, unreadable declarations,
+ * missing docgen) stay unmarked.
  */
 function enrichStoryDoc(
   csf: ParsedCsf,
@@ -276,6 +289,8 @@ function enrichStoryDoc(
   options: StoryDocsContext
 ): StoryDoc {
   const plain = storyDoc;
+  const withWarning = (warning: string | undefined): StoryDoc =>
+    warning ? { ...storyDoc, warning } : plain;
 
   if (!options.snippet) {
     return plain;
@@ -307,34 +322,30 @@ function enrichStoryDoc(
         ? { kind: 'sfc' as const }
         : undefined;
   if (!renderer) {
-    return plain;
+    return withWarning(RENDER_UNRESOLVED_WARNING);
   }
 
   const resolved = resolveStaticStoryArgs(storyExport, docgenArgInfo, options);
-  const classified = resolved.classified;
-  if (classified.defer) {
-    return plain;
+  const { args, unresolved: classifyUnresolved } = resolved.classified;
+  const unresolved = [...classifyUnresolved, ...resolved.unresolved];
+
+  // A snippet showing none of the args the story actually sets would be a worse example than the
+  // runtime one, so no snippet is emitted and the warning names everything that was dropped.
+  if (args.length === 0 && unresolved.length > 0) {
+    return withWarning(noSnippetWarning(unresolved));
   }
 
-  const rendered = renderStaticStorySnippet(
-    renderer,
-    classified.args,
-    componentName,
-    docgenArgInfo,
-    options
-  );
+  const rendered = renderStaticStorySnippet(renderer, args, componentName, docgenArgInfo, options);
   if (!rendered) {
-    return plain;
+    return withWarning(
+      renderer.kind === 'sfc' ? SLOT_UNRESOLVED_WARNING : RENDER_UNRESOLVED_WARNING
+    );
   }
-
-  const warning = [classified.warning, unresolvedWarning(resolved.unresolved)]
-    .filter((part) => part !== undefined)
-    .join('\n');
 
   return {
     ...storyDoc,
     snippet: rendered.snippet,
-    ...(warning ? { warning } : {}),
+    ...(unresolved.length > 0 ? { warning: unresolvedWarning(unresolved) } : {}),
   };
 }
 

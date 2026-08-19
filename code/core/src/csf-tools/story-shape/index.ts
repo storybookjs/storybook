@@ -31,6 +31,7 @@ export {
 } from './resolve-members.ts';
 export {
   createStoryArgsResolver,
+  noSnippetWarning,
   unresolvedWarning,
   type ResolvedStoryArgs,
   type StoryArgsResolver,

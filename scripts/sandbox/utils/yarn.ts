@@ -4,7 +4,9 @@ import { join } from 'path';
 
 import semver from 'semver';
 
-import { ROOT_DIRECTORY } from '../../utils/constants.ts';
+import { BEFORE_SANDBOX_NPM_MIN_VERSION, ROOT_DIRECTORY } from '../../utils/constants.ts';
+
+export { BEFORE_SANDBOX_NPM_MIN_VERSION };
 import { runCommand } from '../generate.ts';
 
 export {
@@ -67,13 +69,6 @@ export const BEFORE_SANDBOX_MIN_AGE_GATE = '7d';
 export const BEFORE_SANDBOX_MIN_AGE_MINUTES = 7 * 24 * 60;
 /** npm `min-release-age` is in days (npm 11.10+). */
 export const BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS = 7;
-/**
- * npm below this version silently ignores `NPM_CONFIG_MIN_RELEASE_AGE`.
- * 11.17+ is required for `min-release-age-exclude`, which templates with
- * `minAgeGateExemptions` rely on during npx/npm scaffolds.
- */
-export const BEFORE_SANDBOX_NPM_MIN_VERSION = '11.17.0';
-
 export async function ensureNpmSupportsMinReleaseAge() {
   const { stdout } = await runCommand('npm --version', { cwd: process.cwd() });
   const version = String(stdout).trim();

@@ -53,6 +53,7 @@ export {
   selectSnippetForStory,
   selectStoryDoc,
 } from './services/story-docs/snippet.ts';
+export { renderStoryDocSnippet } from './services/story-docs/snippet-template-renderer.ts';
 export type { SnippetTemplateRenderer } from './services/story-docs/snippet-template-renderer.ts';
 export { registerSnippetTemplateRenderer } from './services/story-docs/snippet-template-renderer.ts';
 

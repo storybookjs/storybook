@@ -60,7 +60,14 @@ export const storyDocsServiceDef = defineService({
         Object.hasOwn(ctx.self.state.components, input.id)
           ? ctx.self.state.components[input.id]
           : undefined,
+      // `load` means "make sure this query has data", which a stored payload already does. The
+      // command means "extract now", and the module-graph refresh calls it directly, so a story
+      // file edit still re-extracts. Conflating the two re-ran the whole provider for every new
+      // subscription - once per keystroke while a reader moves a Controls knob.
       load: async (input, ctx) => {
+        if (Object.hasOwn(ctx.self.state.components, input.id)) {
+          return;
+        }
         await ctx.self.commands.extractStoryDocs(input);
       },
       staticPath: (input) => storyDocsQueryStaticPath(input.id),

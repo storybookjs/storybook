@@ -97,6 +97,38 @@ describe('story-docs open service', () => {
     ).toEqual(snippetTemplate);
   });
 
+  // Every new subscription seeds through the query's `load`. Docs blocks re-subscribe whenever what
+  // they derive from the payload changes, so a `load` that re-extracted ran the whole provider -
+  // a TS language-service docgen pass for Angular - once per Controls keystroke.
+  it('does not re-run the provider for a component it has already extracted', async () => {
+    const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
+    const service = registerStoryDocsService({
+      getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
+      storyDocsProvider: provider,
+    });
+
+    await service.queries.storyDocs.loaded({ id: 'button' });
+    await service.queries.storyDocs.loaded({ id: 'button' });
+    await service.queries.storyDocs.loaded({ id: 'button' });
+
+    expect(provider).toHaveBeenCalledTimes(1);
+  });
+
+  // The command is the "extract now" path and must stay unguarded, or the hot refresh below has no
+  // way to pick up an edited story file.
+  it('re-runs the provider when the extract command is called directly', async () => {
+    const provider = vi.fn<StoryDocsProvider>(async () => makeStoryDocsPayload());
+    const service = registerStoryDocsService({
+      getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
+      storyDocsProvider: provider,
+    });
+
+    await service.queries.storyDocs.loaded({ id: 'button' });
+    await service.commands.extractStoryDocs({ id: 'button' });
+
+    expect(provider).toHaveBeenCalledTimes(2);
+  });
+
   describe('module graph hot refresh', () => {
     // Snippets come from the story file's own source. Already-extracted components must re-extract
     // when their story file changes so snippets stay fresh after the edit.

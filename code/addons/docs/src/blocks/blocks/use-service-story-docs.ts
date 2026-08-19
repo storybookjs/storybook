@@ -1,8 +1,13 @@
-import { useCallback } from 'react';
+import { useCallback, useMemo } from 'react';
 
 import type { Args, StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
 
-import { type QueryState, selectSnippetForStory, selectStoryDoc } from 'storybook/open-service';
+import {
+  type QueryState,
+  prependImportToSnippet,
+  renderStoryDocSnippet,
+  selectStoryDoc,
+} from 'storybook/open-service';
 import { getService } from 'storybook/preview-api';
 
 import { useQuerySubscription } from './use-query-subscription.ts';
@@ -48,20 +53,32 @@ export function useServiceStoryDoc(storyId: string): QueryState<StoryDoc | undef
   return useServiceStory(storyId, selectStoryDoc);
 }
 
+// One identity for the module's lifetime, so args can never enter the subscription's identity.
+// Reads exactly two fields, which is what keeps the subscription from firing for a sibling story.
+const selectSnippetParts = (payload: StoryDocsPayload | undefined, storyId: string) => ({
+  story: payload?.stories[storyId],
+  importBlock: payload?.import,
+});
+
 /**
  * Convenience hook returning one story's display snippet (with its CSF import block prepended).
  *
  * Passing the story's current args rebuilds the snippet for them where the framework supports it,
  * so the Source block shows the args the reader is looking at rather than the ones the story
- * declared. The selector is rebuilt when the args change, which is what re-runs the subscription.
+ * declared. Args are applied to the loaded payload rather than folded into the selector: a selector
+ * is subscription identity, so keying it on args re-subscribed - and re-loaded - on every keystroke.
  */
 export function useServiceStorySnippet(
   storyId: string,
   args?: Args
 ): QueryState<string | undefined> {
-  const selector = useCallback(
-    (payload: StoryDocsPayload | undefined, id: string) => selectSnippetForStory(payload, id, args),
-    [args]
-  );
-  return useServiceStory(storyId, selector);
+  const state = useServiceStory(storyId, selectSnippetParts);
+  const { story, importBlock } = state.data ?? {};
+
+  const snippet = useMemo(() => {
+    const rendered = story && renderStoryDocSnippet(story, args);
+    return rendered === undefined ? undefined : prependImportToSnippet(importBlock, rendered);
+  }, [story, importBlock, args]);
+
+  return { ...state, data: snippet };
 }

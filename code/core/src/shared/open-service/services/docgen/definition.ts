@@ -95,7 +95,12 @@ export const docgenServiceDef = defineService({
       input: docgenInputSchema,
       output: docgenOutputSchema,
       handler: (input, ctx) => ctx.self.state.components[input.id],
+      // See `core/story-docs`: `load` only has to make sure the query has data, while the command
+      // re-extracts unconditionally for the module-graph refresh that calls it directly.
       load: async (input, ctx) => {
+        if (Object.hasOwn(ctx.self.state.components, input.id)) {
+          return;
+        }
         await ctx.self.commands.extractDocgen(input);
       },
       staticPath: (input) => docgenQueryStaticPath(input.id),

@@ -15,15 +15,7 @@ export interface ResolvedMembers {
    */
   shadowed: string[];
   /** Source text of every member `properties` could not absorb; empty exactly when complete. */
-  unresolved: string[];
-  /**
-   * The module each `properties` value was actually written in, keyed the same as `properties`.
-   * A spread copies a value's node as-is from the module that wrote it, which is not necessarily
-   * the module owning the object literal the spread appears in; a caller that resolves a name
-   * found inside a value (rather than just printing it) has to do so against this module's
-   * imports, not the spreading module's. Absent for a key whose origin was never tracked, in
-   * which case the enclosing object's own module is the closest available answer.
-   */
+unresolved: string[];
 }
 
 /** A module a reference reaches into, parsed and paired with the path it was read from. */

@@ -200,6 +200,32 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       `);
     });
 
+    it('does not render tags Storybook consumes as structured fields', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        import: "import { Button } from '@my-org/ui';",
+        summary: 'A customizable button.',
+        jsDocTags: {
+          import: ["import { Button } from '@my-org/ui';"],
+          summary: ['A customizable button.'],
+          since: ['1.2.3'],
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        A button component
+
+        > **Since:** 1.2.3"
+      `);
+    });
+
     it('renders examples as fenced code blocks after generic tags', () => {
       const manifest: ComponentManifest = {
         id: 'button',

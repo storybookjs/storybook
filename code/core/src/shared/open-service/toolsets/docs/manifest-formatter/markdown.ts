@@ -10,10 +10,10 @@ import type {
   AllManifests,
   ComponentManifest,
   ComponentManifestEntry,
-  SubcomponentManifest,
   Doc,
   DocEntry,
   Story,
+  SubcomponentManifest,
 } from './manifest-types.ts';
 import {
   parseReactComponentMeta,
@@ -31,7 +31,20 @@ export const MAX_STORIES_TO_SHOW = 3;
 /** Tags rendered above the description: they gate whether to use the component at all. */
 const TOP_JSDOC_TAG_NAMES = new Set(['deprecated']);
 const EXAMPLE_JSDOC_TAG_NAME = 'example';
-const HIDDEN_JSDOC_TAG_NAMES = new Set(['ignore', 'desc', 'description', 'describe']);
+/** Never forwarded to the output; each entry documents why. */
+const HIDDEN_JSDOC_TAG_NAMES = new Set([
+  // Asks for the component to be hidden, so echoing it back is the opposite of the intent.
+  'ignore',
+  // Consumed by `extractComponentDescription` as the description, which is rendered on its own.
+  'desc',
+  'description',
+  // Storybook's own description override, consumed alongside `desc`.
+  'describe',
+  // Consumed into the `summary` field, which the component listing already prints.
+  'summary',
+  // Consumed into the import statement printed above every story snippet.
+  'import',
+]);
 
 type ListFormattingOptions = {
   withStoryIds?: boolean;

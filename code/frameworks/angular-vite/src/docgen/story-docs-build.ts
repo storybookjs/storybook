@@ -484,8 +484,11 @@ const componentBindings = (
   // Bindings follow the order the component declares its inputs, not the order the story happens to
   // list its args. The preview adds and removes bindings as a reader turns Controls on and off, and
   // only a component-anchored order keeps a binding in the same place while that happens.
+  // `undefined` binds nothing, the same rule `argsExpansion` and `unboundArgsWarning` already apply
+  // and the same one the preview applies when a reader resets a control. Without it this path alone
+  // emitted `[label]="undefined"`, which the preview then dropped - two snippets for one story.
   const entries = snippetMeta.inputs
-    .filter((argName) => argName in shape.args)
+    .filter((argName) => argName in shape.args && !isUndefinedValue(shape.args[argName]!))
     .map((argName) => ({
       argName,
       ...evaluateArgBinding(shape.args[argName]!, snippetMeta.enums),

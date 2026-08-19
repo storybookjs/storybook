@@ -18,7 +18,6 @@ import { ArgsFormattingComponent } from './args-formatting.component.ts';
         [formatter]="(value) => value.replace('&quot;', '\\'')"
         [greeting]="'hello'"
         [kind]="'secondary'"
-        [label]="undefined"
         [offset]="-4"
         [tags]="['a', 'b']"
     />`,

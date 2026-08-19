@@ -341,6 +341,19 @@ describe('check', () => {
     expect(await angularViteRemoveCompodoc.check(checkOptions({}))).toBeNull();
   });
 
+  it('does not mistake a comment mentioning the Compodoc setup for wiring', async () => {
+    vol.fromNestedJSON({
+      [PREVIEW]: dedent`
+        // We used to call setCompodocJson with "../documentation.json" here.
+        const note = 'setCompodocJson("../documentation.json")';
+
+        export default { note };
+      `,
+    });
+
+    expect(await angularViteRemoveCompodoc.check(checkOptions({}))).toBeNull();
+  });
+
   it('detects a documentation.json fed in through a dynamic import', async () => {
     vol.fromNestedJSON({
       [PREVIEW]: 'const docs = await import("../documentation.json");',

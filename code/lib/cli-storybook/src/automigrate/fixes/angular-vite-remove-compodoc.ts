@@ -1,6 +1,6 @@
 import { writeFile } from 'node:fs/promises';
 
-import { traverse, types as t } from 'storybook/internal/babel';
+import { babelParse, traverse, types as t } from 'storybook/internal/babel';
 import { editJsonText, isStorybookTarget, type JSONEditPath } from 'storybook/internal/cli';
 import { formatFileContent, type JsPackageManager } from 'storybook/internal/common';
 import { formatConfig, readConfig } from 'storybook/internal/csf-tools';
@@ -133,16 +133,48 @@ const readJson = (filePath: string): any | null => {
   }
 };
 
-const DOCUMENTATION_JSON_IMPORT =
-  /(?:import\(|require\(|from|import)\s*['"](?:[^'"]*[/\\])?documentation\.json['"]/;
+const DOCUMENTATION_JSON = /(^|[/\\])documentation\.json$/;
+
+const isModuleSource = (literal: t.StringLiteral, parent: t.Node): boolean =>
+  t.isImportDeclaration(parent) ||
+  t.isExportNamedDeclaration(parent) ||
+  t.isExportAllDeclaration(parent) ||
+  (t.isCallExpression(parent) &&
+    parent.arguments[0] === literal &&
+    (t.isImport(parent.callee) || t.isIdentifier(parent.callee, { name: 'require' })));
 
 /**
  * A preview counts as wired without a visible `setCompodocJson` call, which projects route through
  * an imported helper. The `documentation.json` import alone keeps a multi-megabyte payload in the
  * bundle.
+ *
+ * Both markers are ordinary words in a comment or a string, so they are read off the syntax tree
+ * rather than the source text.
  */
-const previewWiresCompodoc = (source: string): boolean =>
-  source.includes(SET_COMPODOC_JSON) || DOCUMENTATION_JSON_IMPORT.test(source);
+const previewWiresCompodoc = (source: string): boolean => {
+  let wired = false;
+
+  try {
+    traverse(babelParse(source), {
+      Identifier(path) {
+        if (path.node.name === SET_COMPODOC_JSON) {
+          wired = true;
+          path.stop();
+        }
+      },
+      StringLiteral(path) {
+        if (DOCUMENTATION_JSON.test(path.node.value) && isModuleSource(path.node, path.parent)) {
+          wired = true;
+          path.stop();
+        }
+      },
+    });
+  } catch {
+    return false;
+  }
+
+  return wired;
+};
 
 const SHELL_SEPARATORS = /&{1,2}|\|{1,2}|;|\n/;
 /**
@@ -453,7 +485,7 @@ const removePreviewWiring = async (previewConfigPath: string, dryRun: boolean): 
     if (callsToDrop.length === 0) {
       manualRemovalHint(
         previewConfigPath,
-        readFileSync(previewConfigPath, 'utf8').includes(SET_COMPODOC_JSON)
+        countReferences(program, SET_COMPODOC_JSON) > 0
           ? `${SET_COMPODOC_JSON} is not called at the top level`
           : `no ${SET_COMPODOC_JSON} call is visible here, only a documentation.json import`
       );

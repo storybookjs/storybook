@@ -21,13 +21,7 @@ vi.mock('../utils/constants', () => {
   };
 });
 
-vi.mock('storybook/internal/csf/csf-utils', async (importOriginal) => {
-  const csf = await importOriginal<typeof import('storybook/internal/csf/csf-utils')>();
-  return {
-    ...csf,
-    toId: vi.fn(csf.toId),
-  };
-});
+vi.mock('storybook/internal/csf/csf-utils', { spy: true });
 
 vi.mock('storybook/internal/node-logger');
 

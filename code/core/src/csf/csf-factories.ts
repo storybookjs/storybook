@@ -23,8 +23,6 @@ import { mountDestructured } from '../preview-api/modules/preview-web/render/mou
 import { Tag } from '../shared/constants/tags.ts';
 import { getCoreAnnotations, markAsComposedWithCoreAnnotations } from './core-annotations.ts';
 
-export { getStoryChildren, isMeta, isStory } from './csf-guards.ts';
-
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';
   input: ProjectAnnotations<TRenderer> & { addons?: PreviewAddon<never>[] };
@@ -118,6 +116,10 @@ export interface Meta<
   ): Story<TRenderer, TInput>;
 }
 
+export function isMeta(input: unknown): input is Meta<Renderer> {
+  return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Meta';
+}
+
 function defineMeta<
   TRenderer extends Renderer,
   TInput extends ComponentAnnotations<TRenderer, TRenderer['args']> = ComponentAnnotations<
@@ -170,6 +172,10 @@ export interface Story<
     annotations: StoryAnnotations<TRenderer, TRenderer['args']>,
     fn: TestFunction<TRenderer>
   ): void;
+}
+
+export function isStory<TRenderer extends Renderer>(input: unknown): input is Story<TRenderer> {
+  return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Story';
 }
 
 function defineStory<
@@ -271,4 +277,13 @@ function defineStory<
       );
     },
   };
+}
+
+export function getStoryChildren<TRenderer extends Renderer>(
+  story: Story<TRenderer>
+): Story<TRenderer>[] {
+  if ('__children' in story) {
+    return story.__children as Story<TRenderer>[];
+  }
+  return [];
 }

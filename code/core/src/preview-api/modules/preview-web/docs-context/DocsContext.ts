@@ -1,5 +1,5 @@
 import type { Channel } from 'storybook/internal/channels';
-import { isStory } from '../../../../csf/csf-guards.ts';
+import { isStory } from 'storybook/internal/csf';
 import type {
   CSFFile,
   ModuleExport,

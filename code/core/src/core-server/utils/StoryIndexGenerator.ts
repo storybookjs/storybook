@@ -30,8 +30,8 @@ import { dedent } from 'ts-dedent';
 import * as TsconfigPaths from 'tsconfig-paths';
 
 import { resolveImport, supportedExtensions } from '../../common/index.ts';
-import { userOrAutoTitleFromSpecifier } from '../../preview-api/modules/store/autoTitle.ts';
-import { sortStoriesV7 } from '../../preview-api/modules/store/sortStories.ts';
+import { userOrAutoTitleFromSpecifier } from '../../shared/story-index/autoTitle.ts';
+import { sortStoriesV7 } from '../../shared/story-index/sortStories.ts';
 import { Tag } from '../../shared/constants/tags.ts';
 import { isMdxEntry } from '../../shared/utils/story-index-filters.ts';
 import { IndexingError, MultipleIndexingError } from './IndexingError.ts';

@@ -35,11 +35,13 @@ export interface StoryDoc {
    * What the framework's preview needs to rebuild `snippet` from live args, in whatever shape that
    * framework's preview annotation understands.
    *
-   * Deliberately opaque here. Snippet generation is renderer-specific by construction - JSX, Vue
+   * Opaque past `kind`. Snippet generation is renderer-specific by construction - JSX, Vue
    * templates and Angular templates share no representable markup form - so core carries the
-   * template and never interprets it. A story whose snippet must not be rebuilt carries none at all.
+   * template and never interprets it. `kind` is the exception, and only so a preview can tell a
+   * payload it wrote from one another framework or an older build did. A story whose snippet must
+   * not be rebuilt carries no template at all.
    */
-  snippetTemplate?: unknown;
+  snippetTemplate?: { kind: string };
   error?: StoryDocsError;
 }
 

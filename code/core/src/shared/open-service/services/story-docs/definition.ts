@@ -19,7 +19,11 @@ const storyDocSchema = v.object({
   description: v.optional(v.string()),
   summary: v.optional(v.string()),
   warning: v.optional(v.string()),
-  snippetTemplate: v.optional(v.unknown()),
+  // `looseObject` for the same reason `core/docgen` uses it: the open service owns the portable
+  // contract while a renderer attaches its own keys. `kind` is the one field core does depend on -
+  // it is what lets a preview ignore a payload from another framework or an older build instead of
+  // half-rendering it - so it is modelled, and everything past it is carried through untouched.
+  snippetTemplate: v.optional(v.looseObject({ kind: v.string() })),
   error: v.optional(storyDocsErrorSchema),
 });
 

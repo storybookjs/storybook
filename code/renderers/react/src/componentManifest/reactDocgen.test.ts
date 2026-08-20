@@ -1,26 +1,61 @@
-import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
-import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { existsSync, lstatSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import { join, resolve } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
 
+import * as find from 'empathic/find';
+import * as walk from 'empathic/walk';
+import { fs as memfs, vol } from 'memfs';
 import { dedent } from 'ts-dedent';
+
+vi.mock('node:fs', { spy: true });
+vi.mock('empathic/find', { spy: true });
 
 import { matchPath, parseWithReactDocgen } from './reactDocgen.ts';
 import { invalidateCache } from './utils.ts';
 
-const tempDirs: string[] = [];
+const PROJECT_ROOT = resolve('/workspace');
 
-beforeEach(() => {
+function memfsThenReal(
+  memFn: (path: unknown, options?: unknown) => unknown,
+  realFn: (path: unknown, options?: unknown) => unknown
+) {
+  return (path: unknown, options?: unknown) =>
+    memfs.existsSync(path as string) ? memFn(path, options) : realFn(path, options);
+}
+
+beforeEach(async () => {
+  vol.reset();
   invalidateCache();
+  const actual = await vi.importActual<typeof import('node:fs')>('node:fs');
+  vi.mocked(existsSync).mockImplementation(
+    (path) => memfs.existsSync(path) || actual.existsSync(path)
+  );
+  vi.mocked(readFileSync).mockImplementation(
+    memfsThenReal(memfs.readFileSync, actual.readFileSync) as typeof readFileSync
+  );
+  vi.mocked(statSync).mockImplementation(
+    memfsThenReal(memfs.statSync, actual.statSync) as typeof statSync
+  );
+  vi.mocked(lstatSync).mockImplementation(
+    memfsThenReal(memfs.lstatSync, actual.lstatSync) as typeof lstatSync
+  );
+  vi.mocked(readdirSync).mockImplementation(
+    memfsThenReal(memfs.readdirSync, actual.readdirSync) as typeof readdirSync
+  );
+  vi.mocked(find.up).mockImplementation((name, options) => {
+    for (const dir of walk.up(options?.cwd ?? '', options)) {
+      const candidate = join(dir, name);
+      if (memfs.existsSync(candidate) || actual.existsSync(candidate)) {
+        return candidate;
+      }
+    }
+  });
 });
 
 afterEach(() => {
+  vol.reset();
   vi.restoreAllMocks();
-
-  for (const dir of tempDirs.splice(0)) {
-    rmSync(dir, { recursive: true, force: true });
-  }
 });
 
 async function parse(code: string, name = 'Component.tsx') {
@@ -286,14 +321,10 @@ describe('parseWithReactDocgen exportName coverage', () => {
 });
 
 function createTempProject(files: Record<string, string>) {
-  const dir = mkdtempSync(join(tmpdir(), 'storybook-react-docgen-'));
-  tempDirs.push(dir);
-
+  const json: Record<string, string> = {};
   for (const [relativePath, content] of Object.entries(files)) {
-    const fullPath = join(dir, relativePath);
-    mkdirSync(dirname(fullPath), { recursive: true });
-    writeFileSync(fullPath, content, 'utf-8');
+    json[join(PROJECT_ROOT, relativePath)] = content;
   }
-
-  return dir;
+  vol.fromJSON(json);
+  return PROJECT_ROOT;
 }

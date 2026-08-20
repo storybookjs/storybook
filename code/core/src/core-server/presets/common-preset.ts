@@ -309,8 +309,11 @@ export const experimental_serverChannel = async (
   channel: Channel,
   options: OptionsWithRequiredCache
 ) => {
-  initAIAnalyticsChannel(channel, options, () => storyIndexGeneratorPromise);
-  initializeChecklist(channel, () => storyIndexGeneratorPromise, options.configDir);
+  const getStoryIndexGenerator = () =>
+    options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+
+  initAIAnalyticsChannel(channel, options, getStoryIndexGenerator);
+  initializeChecklist(channel, getStoryIndexGenerator, options.configDir);
   initializeWhatsNew(channel, options);
   initializeSaveStory(channel, options);
   initFileSearchChannel(channel, options);
@@ -372,14 +375,17 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   }
   globalThis.STORYBOOK_SERVICES_LOADED = true;
 
-  // `presets.apply` flattens the generator preset's returned promise, so this is the resolved
-  // generator, not a promise.
-  const storyIndexGenerator =
-    await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+  // Resolved on first read, never at registration: a caller that only enumerates the services and
+  // toolsets below must not pay for a full story index build.
+  let generatorPromise: Promise<StoryIndexGenerator> | undefined;
+  const getIndex = async () => {
+    generatorPromise ??= options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+    return (await generatorPromise).getIndex();
+  };
 
   registerModuleGraphService({
     channel: options.channel,
-    getIndex: () => storyIndexGenerator.getIndex(),
+    getIndex,
     workingDir: process.cwd(),
     presets: options.presets,
     getAdapter: () => getHeadlessChangeDetectionAdapter(options),
@@ -389,7 +395,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
 
   // Toolsets register imperatively alongside their services: addons contribute both from their own
   // `services` hook. The test toolset registers from addon-vitest, which owns the channel it needs.
-  const storyIndex = { getIndex: () => storyIndexGenerator.getIndex() };
+  const storyIndex = { getIndex };
   const gitDiffProvider = new GitDiffProvider(process.cwd());
 
   registerToolset(
@@ -412,14 +418,12 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   );
 
   if (isReviewFeatureEnabled(features)) {
-    registerReviewService({
-      getIndex: () => storyIndexGenerator.getIndex(),
-    });
+    registerReviewService({ getIndex });
     registerToolset(reviewToolset);
   }
 
   // Skip when previewing is off — the docgen service's staticInputs depends on the story index,
-  // so registering it would force full story-index generation during manager-only builds (and
+  // so its static build would force full story-index generation during manager-only builds (and
   // produce docgen files that wouldn't be served anywhere). Mirrors the !options.ignorePreview
   // gate around index.json and writeManifests in build-static.ts.
   if (features?.experimentalDocgenServer && !options.ignorePreview) {
@@ -441,7 +445,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
 
     if (docgenWorker) {
       registerDocgenService({
-        getIndex: () => storyIndexGenerator.getIndex(),
+        getIndex,
         docgenProvider: (input) => docgenWorker.extract(input.entry),
         workingDir: process.cwd(),
       });
@@ -452,7 +456,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     // reading from the services and degrades to the manifests otherwise, so reordering or gating
     // these registrations cannot make the docs toolset throw — only fall back.
     registerStoryDocsService({
-      getIndex: () => storyIndexGenerator.getIndex(),
+      getIndex,
       storyDocsProvider,
       workingDir: process.cwd(),
     });

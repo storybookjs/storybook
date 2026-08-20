@@ -19,6 +19,7 @@ const FILES = {
   unsupportedCsfVariances: join(__dirname, 'mocks/unsupported-csf-variances.stories.tsx'),
   exportVariances: join(__dirname, 'mocks/export-variances.stories.tsx'),
   dataVariances: join(__dirname, 'mocks/data-variances.stories.tsx'),
+  kebabCaseArgs: join(__dirname, 'mocks/kebab-case-args.stories.tsx'),
 };
 
 describe('success', () => {
@@ -329,6 +330,63 @@ describe('success', () => {
         
         const BlockExport: Story = {
         ..."
+    `);
+  });
+  test('Kebab-case args', async () => {
+    const newArgs = { 'data-testid': 'after', 'aria-label': 'button', label: 'bar' };
+
+    const before = await format(await readFile(FILES.kebabCaseArgs, 'utf-8'), {
+      parser: 'typescript',
+    });
+    const CSF = await readCsf(FILES.kebabCaseArgs, { makeTitle });
+
+    const parsed = CSF.parse();
+    const names = Object.keys(parsed._stories);
+    const nodes = names.map((name) => CSF.getStoryExport(name));
+
+    nodes.forEach((node) => {
+      updateArgsInCsfFile(node, newArgs);
+    });
+
+    // formatting would throw if the generated keys were emitted unquoted
+    const after = await format(printCsf(parsed).code, {
+      parser: 'typescript',
+    });
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  ...
+          "aria-label": string;
+        }> = (props) => <pre>{JSON.stringify(props)}</pre>;
+        
+        
+      - export const NoArgs = {} satisfies Story;
+      - 
+      + export const NoArgs = {
+      +   args: {
+      +     "data-testid": "after",
+      +     "aria-label": "button",
+      +     label: "bar",
+      +   },
+      + } satisfies Story;
+      + 
+        
+        export const QuotedKebabArg = {
+          args: {
+        
+      -     "data-testid": "before",
+      -     label: "foo",
+      - 
+      +     "data-testid": "after",
+      +     label: "bar",
+      +     "aria-label": "button",
+      + 
+          },
+        } satisfies Story;
+        "
     `);
   });
   test('Data Variances', async () => {

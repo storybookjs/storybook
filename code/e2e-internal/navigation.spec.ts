@@ -1,5 +1,6 @@
 import { expect, test } from '@playwright/test';
 import process from 'process';
+
 import { SbPage } from '../e2e-sandbox/util.ts';
 
 const storybookUrl = process.env.STORYBOOK_URL || 'http://localhost:6006';
@@ -18,6 +19,17 @@ test.describe('navigating', () => {
     );
 
     expect(sbPage.page.url()).toContain('/docs/example-button--docs');
+  });
+
+  test('searching for "typography" surfaces the brand typography docs entry', async ({ page }) => {
+    await page.goto(storybookUrl);
+
+    const searchField = page.locator('#storybook-explorer-searchfield');
+    await expect(searchField).toBeVisible();
+    await searchField.fill('typography');
+
+    await expect(page.locator('[data-id="brand-typography--docs"]')).toBeVisible();
+    await expect(page.locator('[data-id="brand-typography"]')).toBeHidden();
   });
 
   test.describe('docs story anchor navigation', () => {

@@ -14,6 +14,8 @@ import { getInterpretedFile } from 'storybook/internal/common';
 import { readConfig } from 'storybook/internal/csf-tools';
 import type { PackageJson, StorybookConfig } from 'storybook/internal/types';
 
+import { RN_STORYBOOK_DIR } from '../shared/constants/config-folder.ts';
+
 import * as pkg from 'empathic/package';
 
 import { version } from '../../package.json';
@@ -310,20 +312,35 @@ async function hashMainConfig(configDir: string): Promise<string> {
   }
 }
 
+function resolveDefaultConfigDir(packageJson: PackageJson): string {
+  /*
+    TODO: improve the way configDir is extracted, as a "storybook" script might not be present.
+    Scenarios:
+    1. user changed it to something else e.g. "storybook:dev"
+    2. they are using angular/nx where the storybook config is defined somewhere else
+    3. React Native on-device Storybook uses `.rnstorybook` and `storybook:ios`/`storybook:android`
+       scripts (no `storybook` script), so the `.storybook` default never finds the config.
+  */
+  const fromScript = getStorybookConfiguration(
+    String((packageJson?.scripts as Record<string, unknown> | undefined)?.storybook || ''),
+    '-c',
+    '--config-dir'
+  ) as string | null;
+
+  if (fromScript) {
+    return fromScript;
+  }
+
+  if (existsSync(resolve(RN_STORYBOOK_DIR))) {
+    return RN_STORYBOOK_DIR;
+  }
+
+  return '.storybook';
+}
+
 export const getStorybookMetadata = async (_configDir?: string) => {
   const { packageJson, packageJsonPath } = await getPackageJsonDetails();
-  // TODO: improve the way configDir is extracted, as a "storybook" script might not be present
-  // Scenarios:
-  // 1. user changed it to something else e.g. "storybook:dev"
-  // 2. they are using angular/nx where the storybook config is defined somewhere else
-  const configDir =
-    (_configDir ||
-      (getStorybookConfiguration(
-        String((packageJson?.scripts as Record<string, unknown> | undefined)?.storybook || ''),
-        '-c',
-        '--config-dir'
-      ) as string)) ??
-    '.storybook';
+  const configDir = _configDir || resolveDefaultConfigDir(packageJson);
   const contentHash = await hashMainConfig(configDir);
   const cacheKey = `${configDir}::${contentHash}`;
   const cached = metadataCache.get(cacheKey);

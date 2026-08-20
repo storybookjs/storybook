@@ -1,3 +1,5 @@
 import { sourceDecorator } from './docs/sourceDecorator.ts';
 
-export const decorators = [sourceDecorator];
+const isDocgenServerEnabled = (globalThis as any).FEATURES?.experimentalDocgenServer;
+
+export const decorators = isDocgenServerEnabled ? [] : [sourceDecorator];

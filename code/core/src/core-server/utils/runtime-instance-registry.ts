@@ -58,8 +58,9 @@ export function getDefaultRuntimeInstanceRegistryDir() {
   return join(homedir(), '.storybook', 'instances');
 }
 
-export function getOrigin(address: string) {
-  return new URL(address).origin;
+export function getStorybookBaseUrl(address: string) {
+  const url = new URL(address);
+  return `${url.origin}${url.pathname.replace(/\/$/, '')}`;
 }
 
 export function getMcpMetadataFromMainConfig(
@@ -113,7 +114,7 @@ export function createRuntimeInstanceRecord({
   port: number;
   storybookVersion: string;
 }): RuntimeInstanceRecord {
-  const origin = getOrigin(address);
+  const storybookBaseUrl = getStorybookBaseUrl(address);
   const timestamp = now.toISOString();
 
   return {
@@ -122,7 +123,7 @@ export function createRuntimeInstanceRecord({
     pid,
     cwd: resolve(cwd),
     ...(configDir ? { configDir: resolve(cwd, configDir) } : {}),
-    url: origin,
+    url: storybookBaseUrl,
     port,
     ...(agent ? { agent } : {}),
     storybookVersion,

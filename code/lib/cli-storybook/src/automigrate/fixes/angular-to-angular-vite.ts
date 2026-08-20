@@ -33,13 +33,6 @@ export const ANALOG_PACKAGE = '@analogjs/storybook-angular';
 export const ANGULAR_VITE_PACKAGE = '@storybook/angular-vite';
 const ANALOG_VITE_PLUGIN_PACKAGE = '@analogjs/vite-plugin-angular';
 
-/**
- * The frameworks this migration can rewrite into `@storybook/angular-vite`.
- *
- * Both render Angular through a builder whose targets `@storybook/angular-vite` also accepts, so
- * the rewrite is the same shape for either: repoint the framework, the builder refs and the
- * imports. Anything else stays put, because a hybrid is worse than an untouched project.
- */
 const MIGRATABLE_FRAMEWORKS = [ANGULAR_PACKAGE, ANALOG_PACKAGE] as const;
 type MigratableFramework = (typeof MIGRATABLE_FRAMEWORKS)[number];
 

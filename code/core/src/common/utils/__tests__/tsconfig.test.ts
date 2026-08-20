@@ -1,14 +1,9 @@
-import { existsSync, readFileSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { dirname, join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import * as find from 'empathic/find';
-import * as walk from 'empathic/walk';
-import { fs as memfs, vol } from 'memfs';
-
-vi.mock('node:fs', { spy: true });
-vi.mock('empathic/find', { spy: true });
 vi.mock('../paths.ts', { spy: true });
 
 import {
@@ -18,27 +13,18 @@ import {
 } from '../tsconfig.ts';
 import * as paths from '../paths.ts';
 
-const PROJECT_ROOT = resolve('/workspace');
+const tempDirs: string[] = [];
 
 beforeEach(() => {
-  vol.reset();
-  vi.mocked(existsSync).mockImplementation(memfs.existsSync as typeof existsSync);
-  vi.mocked(readFileSync).mockImplementation(memfs.readFileSync as unknown as typeof readFileSync);
-  vi.mocked(statSync).mockImplementation(memfs.statSync as unknown as typeof statSync);
-  vi.mocked(find.up).mockImplementation((name, options) => {
-    for (const dir of walk.up(options?.cwd ?? '', options)) {
-      const candidate = join(dir, name);
-      if (memfs.existsSync(candidate)) {
-        return candidate;
-      }
-    }
-  });
   vi.mocked(paths.getProjectRoot).mockReset();
 });
 
 afterEach(() => {
-  vol.reset();
   vi.restoreAllMocks();
+
+  for (const dir of tempDirs.splice(0)) {
+    rmSync(dir, { recursive: true, force: true });
+  }
 });
 
 describe('findTsconfigPathForFile', () => {
@@ -323,11 +309,15 @@ describe('getTsconfigPathsBaseDir', () => {
 });
 
 function createTempProject(files: Record<string, string>) {
-  const json: Record<string, string> = {};
+  const dir = mkdtempSync(join(tmpdir(), 'storybook-tsconfig-'));
+  tempDirs.push(dir);
+
   for (const [relativePath, content] of Object.entries(files)) {
-    json[join(PROJECT_ROOT, relativePath)] = content;
+    const fullPath = join(dir, relativePath);
+    mkdirSync(dirname(fullPath), { recursive: true });
+    writeFileSync(fullPath, content, 'utf-8');
   }
-  vol.fromJSON(json);
-  vi.mocked(paths.getProjectRoot).mockReturnValue(PROJECT_ROOT);
-  return PROJECT_ROOT;
+
+  vi.mocked(paths.getProjectRoot).mockReturnValue(dir);
+  return dir;
 }

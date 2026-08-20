@@ -40,8 +40,10 @@ export class ServerChannelTransport {
         }
 
         if (!options.skipValidation) {
-          const originHost = request.headers.origin && new URL(request.headers.origin).host;
-          if (!isValidHost(originHost, options)) {
+          // Browsers always send Origin on upgrades, so an absent one means a non-browser client,
+          // which the token alone authenticates.
+          const { origin } = request.headers;
+          if (origin && !isValidHost(new URL(origin).host, options)) {
             throw new Error('Invalid websocket origin');
           }
 

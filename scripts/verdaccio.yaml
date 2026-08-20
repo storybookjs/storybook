@@ -213,6 +213,10 @@ packages:
     access: $all
     publish: $all
 
+  'vite-plugin-storybook-nextjs':
+    access: $all
+    publish: $all
+
   '@*/*':
     access: $all
     publish: $all

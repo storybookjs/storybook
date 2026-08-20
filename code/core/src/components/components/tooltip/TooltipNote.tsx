@@ -23,10 +23,6 @@ const Note = styled.div<{ maxWidth: number }>(
 
 export interface TooltipNoteProps {
   note: string;
-  /**
-   * Width the note wraps at. Labels shorter than this are unaffected; notes that are a sentence
-   * wrap instead of running out of the viewport on one line.
-   */
   maxWidth?: number;
 }
 

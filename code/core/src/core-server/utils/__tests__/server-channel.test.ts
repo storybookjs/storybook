@@ -198,17 +198,45 @@ describe('ServerChannelTransport', () => {
     expect(destroySpy).toHaveBeenCalled();
   });
 
-  it('rejects connections without origin header', () => {
+  it('accepts connections without origin header when the token is valid', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter() as any;
     socket.write = vi.fn();
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
+    const handleUpgradeSpy = vi.fn();
     const transport = new ServerChannelTransport(server, options);
 
-    // Simulate upgrade request without origin header
+    // @ts-expect-error (accessing private property)
+    transport.socket.handleUpgrade = handleUpgradeSpy;
+
     const request = {
       url: `/storybook-server-channel?token=${mockToken}`,
+      headers: {},
+    } as any;
+    const head = Buffer.from('');
+
+    server.listeners('upgrade')[0](request, socket, head);
+
+    expect(socket.write).not.toHaveBeenCalled();
+    expect(destroySpy).not.toHaveBeenCalled();
+    expect(handleUpgradeSpy).toHaveBeenCalled();
+  });
+
+  it('rejects connections without origin header when the token is invalid', () => {
+    const server = new EventEmitter() as any as Server;
+    const socket = new EventEmitter() as any;
+    socket.write = vi.fn();
+    socket.destroy = vi.fn();
+    const destroySpy = vi.spyOn(socket, 'destroy');
+    const handleUpgradeSpy = vi.fn();
+    const transport = new ServerChannelTransport(server, options);
+
+    // @ts-expect-error (accessing private property)
+    transport.socket.handleUpgrade = handleUpgradeSpy;
+
+    const request = {
+      url: '/storybook-server-channel?token=wrong-token',
       headers: {},
     } as any;
     const head = Buffer.from('');
@@ -219,6 +247,34 @@ describe('ServerChannelTransport', () => {
       'HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n'
     );
     expect(destroySpy).toHaveBeenCalled();
+    expect(handleUpgradeSpy).not.toHaveBeenCalled();
+  });
+
+  it('rejects connections without origin header and without token', () => {
+    const server = new EventEmitter() as any as Server;
+    const socket = new EventEmitter() as any;
+    socket.write = vi.fn();
+    socket.destroy = vi.fn();
+    const destroySpy = vi.spyOn(socket, 'destroy');
+    const handleUpgradeSpy = vi.fn();
+    const transport = new ServerChannelTransport(server, options);
+
+    // @ts-expect-error (accessing private property)
+    transport.socket.handleUpgrade = handleUpgradeSpy;
+
+    const request = {
+      url: '/storybook-server-channel',
+      headers: {},
+    } as any;
+    const head = Buffer.from('');
+
+    server.listeners('upgrade')[0](request, socket, head);
+
+    expect(socket.write).toHaveBeenCalledWith(
+      'HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n'
+    );
+    expect(destroySpy).toHaveBeenCalled();
+    expect(handleUpgradeSpy).not.toHaveBeenCalled();
   });
 
   it('accepts connections with network address origin', () => {

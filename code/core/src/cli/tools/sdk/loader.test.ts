@@ -9,6 +9,7 @@ import { loadTools } from './loader.ts';
 
 vi.mock('node:module', { spy: true });
 
+// Real files on disk, not memfs: Node's resolver and dynamic import bypass a virtual filesystem.
 const temporaryDirectories: string[] = [];
 
 function createTemporaryDirectory() {
@@ -83,22 +84,30 @@ describe('loadTools', () => {
     });
   });
 
-  it('resolves from the project directory, which is what Yarn PnP hooks into', async () => {
-    const projectDir = createTemporaryDirectory();
-    const entryPath = writeToolsPackage(
-      join(createTemporaryDirectory(), 'node_modules', 'storybook-virtual'),
-      'dist/tools.js',
-      namedExport('pnp')
-    );
-    const resolve = vi.fn().mockReturnValue(entryPath);
-    vi.mocked(createRequire).mockReturnValue({ resolve } as unknown as NodeRequire);
+  describe('a Yarn PnP project, where PnP owns resolution', () => {
+    const resolve = vi.fn();
 
-    await expect(loadTools(projectDir)).resolves.toEqual({
-      marker: 'pnp',
-      options: { cwd: projectDir },
+    beforeEach(() => {
+      const entryPath = writeToolsPackage(
+        join(createTemporaryDirectory(), 'node_modules', 'storybook-virtual'),
+        'dist/tools.js',
+        namedExport('pnp')
+      );
+      resolve.mockReset();
+      resolve.mockReturnValue(entryPath);
+      vi.mocked(createRequire).mockReturnValue({ resolve } as unknown as NodeRequire);
     });
-    expect(createRequire).toHaveBeenCalledWith(join(projectDir, 'package.json'));
-    expect(resolve).toHaveBeenCalledWith('storybook/internal/tools', { paths: [projectDir] });
+
+    it('imports what PnP resolves, asking it from the project directory', async () => {
+      const projectDir = createTemporaryDirectory();
+
+      await expect(loadTools(projectDir)).resolves.toEqual({
+        marker: 'pnp',
+        options: { cwd: projectDir },
+      });
+      expect(createRequire).toHaveBeenCalledWith(join(projectDir, 'package.json'));
+      expect(resolve).toHaveBeenCalledWith('storybook/internal/tools', { paths: [projectDir] });
+    });
   });
 
   it('forwards every option, letting the caller override the project directory as cwd', async () => {

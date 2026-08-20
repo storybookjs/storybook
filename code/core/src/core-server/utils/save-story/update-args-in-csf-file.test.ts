@@ -356,8 +356,13 @@ describe('success', () => {
       updateArgsInCsfFile(node, newArgs);
     });
 
+    const rawAfter = printCsf(parsed).code;
+
+    // reserved-word keys are emitted quoted; prettier strips the optional quotes below
+    expect(rawAfter).toContain('"default":');
+
     // formatting would throw if the generated keys were emitted unquoted
-    const after = await format(printCsf(parsed).code, {
+    const after = await format(rawAfter, {
       parser: 'typescript',
     });
 

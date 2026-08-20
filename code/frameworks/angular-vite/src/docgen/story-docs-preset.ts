@@ -47,11 +47,13 @@ const createDocgenPayloadGetter =
       storyFiles: [storyImportPath],
     });
     const pulledAt = docgenRevisions.get(componentId);
+
+    const payload = await (pulledAt === undefined || pulledAt === revision
+      ? docgenService.queries.docgen.loaded({ id: componentId })
+      : docgenService.commands.extractDocgen({ id: componentId }));
     docgenRevisions.set(componentId, revision);
 
-    return pulledAt === undefined || pulledAt === revision
-      ? docgenService.queries.docgen.loaded({ id: componentId })
-      : docgenService.commands.extractDocgen({ id: componentId });
+    return payload;
   };
 
 export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (nextStoryDocs) => {

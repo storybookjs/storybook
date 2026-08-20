@@ -69,6 +69,25 @@ describe('experimental_storyDocsProvider', () => {
     expect(extractDocgen).toHaveBeenCalledOnce();
   });
 
+  it('keeps extracting after a failed pull instead of falling back to the cache', async () => {
+    const extractDocgen = vi
+      .fn()
+      .mockRejectedValueOnce(new Error('docgen worker restarted'))
+      .mockResolvedValue({ id: 'retried', name: 'Edited' });
+    const loaded = vi.fn(async () => ({ id: 'retried', name: 'Cached' }));
+    mockServices({ commands: { extractDocgen }, queries: { docgen: { loaded } } });
+    const pull = await getDocgenPayload();
+
+    await expect(pull('retried')).resolves.toEqual({ id: 'retried', name: 'Cached' });
+
+    graphRevision = 1;
+    await expect(pull('retried')).rejects.toThrow('docgen worker restarted');
+
+    await expect(pull('retried')).resolves.toEqual({ id: 'retried', name: 'Edited' });
+    expect(extractDocgen).toHaveBeenCalledTimes(2);
+    expect(loaded).toHaveBeenCalledOnce();
+  });
+
   it('propagates extraction failures so the payload is not cached', async () => {
     mockServices({
       queries: {

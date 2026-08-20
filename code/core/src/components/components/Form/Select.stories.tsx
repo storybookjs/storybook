@@ -28,9 +28,6 @@ export const Select: Story = {
   ),
 };
 
-// Logical padding keeps the dropdown chevron clear of the text under `dir="rtl"`;
-// the old physical `padding-right` reserved space on the wrong side and the value
-// overlapped the chevron (#35481).
 export const Rtl: Story = {
   ...Select,
   decorators: [

@@ -51,16 +51,11 @@ export const Nested = {
   ),
 };
 
-// Under `dir="rtl"` the expander icon's logical margins resolve to the opposite
-// physical sides so it keeps hugging the heading's inline-start; the old physical
-// `marginLeft`/`marginRight` stayed put and overlapped the label (#35481).
 export const SectionRtl = {
   args: { ...Section.args },
   parameters: { direction: 'rtl' },
 };
 
-// The collapsed state renders the right-pointing chevron, which is mirrored under
-// RTL so it keeps pointing along the reading direction.
 export const CollapsedRtl = {
   args: { ...Collapsed.args },
   parameters: { direction: 'rtl' },

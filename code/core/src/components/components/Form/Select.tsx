@@ -31,9 +31,8 @@ const BaseSelect = styled.select<SelectProps>(sizes, ({ theme }) => ({
     background: theme.input.background,
     padding: '6px 10px',
   },
-  // The fallback chevron is a background image, which has no logical-property
-  // equivalent, so mirror it to the inline-start edge under RTL (#35481). The
-  // base-select path above lays the chevron out with flexbox and already flips.
+  // A background image has no logical equivalent for its position, so RTL needs an explicit rule.
+  // The `base-select` branch above lays the chevron out with flexbox and flips on its own.
   '&:dir(rtl)': {
     backgroundPositionX: 'left 12px',
   },

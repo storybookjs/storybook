@@ -115,48 +115,15 @@ describe('AngularComponentMetaManager', () => {
     expect(inputsOf(result).map((input) => input.name)).toContain('note');
   });
 
-  it('attaches TypeScript JSDoc info for default-exported components', async () => {
-    const dir = await mkdtemp(join(tmpdir(), 'sb-acm-jsdoc-'));
-    scratchDirs.push(dir);
-    const namedDefaultPath = normalize(join(dir, 'named-default.component.ts'));
-    const aliasedDefaultPath = normalize(join(dir, 'aliased-default.component.ts'));
-    await writeFile(
-      namedDefaultPath,
-      [
-        "import { Component } from '@angular/core';",
-        '',
-        '/**',
-        ' * Default export docs.',
-        ' *',
-        ' * @summary Named default summary.',
-        ' */',
-        "@Component({ selector: 'sb-named-default', template: '' })",
-        'export default class NamedDefaultComponent {}',
-        '',
-      ].join('\n')
+  it('attaches TypeScript JSDoc info for default-exported components', () => {
+    const namedDefault = manager.extractComponentMeta(
+      normalize(join(fixturesDir, 'default-export.component.ts')),
+      { exportName: 'default' }
     );
-    await writeFile(
-      aliasedDefaultPath,
-      [
-        "import { Component } from '@angular/core';",
-        '',
-        '/**',
-        ' * Aliased default docs.',
-        ' *',
-        ' * @summary Aliased default summary.',
-        ' */',
-        "@Component({ selector: 'sb-aliased-default', template: '' })",
-        'class AliasedDefaultComponent {}',
-        '',
-        'export { AliasedDefaultComponent as default };',
-        '',
-      ].join('\n')
+    const aliasedDefault = manager.extractComponentMeta(
+      normalize(join(fixturesDir, 'aliased-default.component.ts')),
+      { exportName: 'default' }
     );
-
-    const namedDefault = manager.extractComponentMeta(namedDefaultPath, { exportName: 'default' });
-    const aliasedDefault = manager.extractComponentMeta(aliasedDefaultPath, {
-      exportName: 'default',
-    });
 
     expect(namedDefault?.jsDocInfo).toMatchInlineSnapshot(`
       {

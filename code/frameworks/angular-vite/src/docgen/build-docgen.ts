@@ -66,6 +66,19 @@ const inputsOf = (entry: AngularClassMeta) =>
 const outputsOf = (entry: AngularClassMeta) =>
   'outputsClass' in entry ? (entry.outputsClass ?? []) : [];
 
+const analyzerJsDocTags = (entry: AngularClassMeta): DocgenJsDocTags => {
+  const tags: DocgenJsDocTags = {};
+  for (const tag of entry.jsdoctags ?? []) {
+    const name = tag.tagName?.escapedText;
+    if (!name) {
+      continue;
+    }
+    const value = tag.comment === undefined ? '' : String(tag.comment).trim();
+    (tags[name] ??= []).push(value);
+  }
+  return tags;
+};
+
 export const metaToSnippetMeta = (
   meta: AngularComponentMetaResult
 ): AngularComponentSnippetMeta => {
@@ -91,22 +104,6 @@ export const metaToSnippetMeta = (
       members: enumeration.childs.map((child) => ({ name: child.name, value: child.value })),
     })),
   };
-};
-
-// The description is deliberately not parsed for tags: an `@Input()` inside a documentation code
-// block would become a fabricated tag.
-const extractJsDocTags = (entry: AngularClassMeta): DocgenJsDocTags => {
-  const tags: DocgenJsDocTags = {};
-  for (const tag of entry.jsdoctags ?? []) {
-    const name = tag?.tagName?.escapedText;
-    if (!name) {
-      continue;
-    }
-    // The analyzer's comments are plain text, never the Markdown-rendered HTML Compodoc produced.
-    const value = tag.comment === undefined ? '' : String(tag.comment).trim();
-    (tags[name] ??= []).push(value);
-  }
-  return tags;
 };
 
 const errorPayload = (
@@ -234,10 +231,10 @@ export const buildDocgenPayload = (
           logger,
         }) as StrictArgTypes);
 
-  const jsDocTags = extractJsDocTags(meta.entry);
-  // Tags are excluded from `rawdescription`, which is why it wins over `description`.
-  const description =
-    meta.entry.rawdescription?.trim() || (meta.entry.description ?? '').trim() || undefined;
+  const jsDocTags: DocgenJsDocTags = meta.jsDocInfo?.jsDocTags ?? analyzerJsDocTags(meta.entry);
+  const description = meta.jsDocInfo
+    ? meta.jsDocInfo.description
+    : meta.entry.rawdescription?.trim() || meta.entry.description?.trim() || undefined;
 
   return {
     ...base,

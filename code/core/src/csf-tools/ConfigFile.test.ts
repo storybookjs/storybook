@@ -9,6 +9,8 @@ import { loadConfig, printConfig } from './ConfigFile.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 
+const mockedLogger = vi.mocked(logger);
+
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
   test: (val) => true,
@@ -1945,10 +1947,10 @@ describe('ConfigFile', () => {
       ).parse();
       expect(config.hasDefaultExport).toBe(true);
       expect(config.getFieldValue(['tags'])).toBeUndefined();
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(mockedLogger.warn).toHaveBeenCalledWith(
         expect.stringContaining("it is imported from './pre'")
       );
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(mockedLogger.warn).toHaveBeenCalledWith(
         expect.stringContaining("default export of 'preview.ts'")
       );
     });
@@ -1960,7 +1962,7 @@ describe('ConfigFile', () => {
           export default previewConfig;
         `
       ).parse();
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(mockedLogger.warn).toHaveBeenCalledWith(
         expect.stringContaining("default export of this config file: it is imported from './pre'")
       );
     });
@@ -1973,7 +1975,7 @@ describe('ConfigFile', () => {
           export default definePreview(previewConfig);
         `
       ).parse();
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(mockedLogger.warn).toHaveBeenCalledWith(
         expect.stringContaining("it is imported from './pre'")
       );
     });
@@ -1987,7 +1989,7 @@ describe('ConfigFile', () => {
         `
       ).parse();
       expect(config.getFieldValue(['tags'])).toEqual(['autodocs']);
-      expect(logger.warn).not.toHaveBeenCalled();
+      expect(mockedLogger.warn).not.toHaveBeenCalled();
     });
 
     it('warns with an actionable message for a re-exported default', () => {
@@ -1997,7 +1999,7 @@ describe('ConfigFile', () => {
         `
       ).parse();
       expect(config.hasDefaultExport).toBe(true);
-      expect(logger.warn).toHaveBeenCalledWith(
+      expect(mockedLogger.warn).toHaveBeenCalledWith(
         expect.stringContaining("it is imported from './pre'")
       );
     });
@@ -2011,7 +2013,26 @@ describe('ConfigFile', () => {
       ).parse();
       expect(config.hasDefaultExport).toBe(true);
       expect(config.getFieldValue(['tags'])).toEqual(['autodocs']);
-      expect(logger.warn).not.toHaveBeenCalled();
+      expect(mockedLogger.warn).not.toHaveBeenCalled();
+    });
+
+    it('warns only once when the same config is parsed repeatedly', () => {
+      const source = dedent`
+        import { previewConfig } from './pre';
+        export default previewConfig;
+      `;
+      loadConfig(source, 'preview.ts').parse();
+      loadConfig(source, 'preview.ts').parse();
+      expect(mockedLogger.warn).toHaveBeenCalledTimes(1);
+    });
+
+    it('throws when setting a field on a re-exported default', () => {
+      const config = loadConfig(
+        dedent`
+          export { previewConfig as default } from './pre';
+        `
+      ).parse();
+      expect(() => config.setFieldValue(['tags'], ['test'])).toThrow(/default export/);
     });
 
     it('falls back to the generic parsing warning for other unresolvable default exports', () => {
@@ -2020,8 +2041,10 @@ describe('ConfigFile', () => {
           export default foo;
         `
       ).parse();
-      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('CSF Parsing error'));
-      expect(logger.warn).not.toHaveBeenCalledWith(expect.stringContaining('it is imported from'));
+      expect(mockedLogger.warn).toHaveBeenCalledWith(expect.stringContaining('CSF Parsing error'));
+      expect(mockedLogger.warn).not.toHaveBeenCalledWith(
+        expect.stringContaining('it is imported from')
+      );
     });
   });
 });

@@ -328,11 +328,6 @@ const renderStorySnippet = async (
       unresolvedWarning([...markupSources, ...shape.unresolvedArgs]),
       unboundArgsWarning(localName, snippetMeta, shape)
     ),
-    // `replayable` is the whole condition. It is false exactly when a binding in this template was
-    // printed from source text, which is the only thing a consumer holding live values could not
-    // reproduce. An unresolved arg that is not a binding - `args: { onClick: fn() }`, which every
-    // scaffolded story has - makes the example partial and is named in the warning, but does not
-    // change a single character of the template, so it does not withhold the snippet template.
     snippetTemplate: replayable
       ? storySnippetTemplate(
           snippetMeta.selector,

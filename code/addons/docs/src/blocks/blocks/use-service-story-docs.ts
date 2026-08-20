@@ -76,14 +76,6 @@ const selectSnippetParts = (payload: StoryDocsPayload | undefined, storyId: stri
   };
 };
 
-/**
- * Convenience hook returning one story's display snippet (with its CSF import block prepended).
- *
- * Passing the story's current args rebuilds the snippet for them where the framework supports it,
- * so the Source block shows the args the reader is looking at rather than the ones the story
- * declared. Args are applied to the loaded payload rather than folded into the selector: a selector
- * is subscription identity, so keying it on args re-subscribed - and re-loaded - on every keystroke.
- */
 export function useServiceStorySnippet(
   storyId: string,
   args?: Args,

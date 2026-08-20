@@ -20,10 +20,16 @@ export interface NodeChannelOptions {
 export interface NodeChannelConnection {
   channel: Channel;
   /**
+   * Resolves once the WebSocket handshake succeeds. Rejects when the socket errors or closes
+   * before opening, so callers can fail fast instead of hanging on a dead URL.
+   */
+  connected: Promise<void>;
+  /**
    * Rejects with `StorybookDevServerDisconnectedError` when the dev server closes the socket. Race
    * it against in-flight work so a dropped connection surfaces as an error instead of a hang.
    */
   disconnected: Promise<never>;
+  close(): void;
 }
 
 /**
@@ -41,11 +47,15 @@ export function createNodeChannel({ url, token }: NodeChannelOptions): NodeChann
   socketUrl.search = new URLSearchParams({ token }).toString();
 
   const rejectUnauthorized = !LOOPBACK_HOSTNAMES.has(socketUrl.hostname);
+  const socket = new WebSocket(socketUrl.href, { rejectUnauthorized });
+  const connected = waitUntilOpen(socket);
+  // A caller that never awaits `connected` must not get an unhandled rejection on a dead URL.
+  void connected.catch(() => {});
 
   const transport = new WebsocketTransport({
     url: socketUrl.href,
     onError: () => {},
-    createSocket: (target) => new WebSocket(target, { rejectUnauthorized }),
+    createSocket: () => socket,
   });
 
   const channel = new Channel({ transports: [transport] });
@@ -60,5 +70,39 @@ export function createNodeChannel({ url, token }: NodeChannelOptions): NodeChann
   // A caller that never races `disconnected` must not get an unhandled rejection on server shutdown.
   void disconnected.catch(() => {});
 
-  return { channel, disconnected };
+  return {
+    channel,
+    connected,
+    disconnected,
+    close: () => {
+      socket.close();
+    },
+  };
+}
+
+function waitUntilOpen(socket: WebSocket): Promise<void> {
+  return new Promise((resolve, reject) => {
+    if (socket.readyState === WebSocket.OPEN) {
+      resolve();
+      return;
+    }
+    const fail = (reason?: string) => reject(new StorybookDevServerDisconnectedError({ reason }));
+    if (socket.readyState === WebSocket.CLOSED || socket.readyState === WebSocket.CLOSING) {
+      fail('WebSocket closed before the Storybook channel opened');
+      return;
+    }
+    const settle = (action: () => void) => {
+      socket.off('open', onOpen);
+      socket.off('error', onError);
+      socket.off('close', onClose);
+      action();
+    };
+    const onOpen = () => settle(resolve);
+    const onError = (error: Error) => settle(() => fail(error.message));
+    const onClose = () =>
+      settle(() => fail('WebSocket closed before the Storybook channel opened'));
+    socket.once('open', onOpen);
+    socket.once('error', onError);
+    socket.once('close', onClose);
+  });
 }

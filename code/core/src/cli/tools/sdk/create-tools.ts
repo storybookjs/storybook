@@ -1,5 +1,6 @@
 import { versions } from 'storybook/internal/common';
 
+import { StorybookDevServerDisconnectedError } from '../../../server-errors.ts';
 import { formatIssues } from '../../../shared/open-service/errors.ts';
 import type {
   AnyToolsetDefinition,
@@ -10,20 +11,31 @@ import type {
 import { parseToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
 import { toCatalogEntry } from './catalog.ts';
 import { AttachUnavailableError, ToolsRuntimeError } from './errors.ts';
-import { bootstrapToolsRuntime, type ToolsRuntime } from './local-runtime.ts';
+import type { ToolsRuntime } from './local-runtime.ts';
 import type {
+  AttachedTools,
   CreateToolsOptions,
   LocalTools,
   Tools,
   ToolsCallOptions,
   ToolsClientInfo,
   ToolsDescribeOptions,
+  ToolsMode,
+  ToolsStorybookInfo,
   ToolsetCatalog,
 } from './types.ts';
 
 /** Injectable dependencies for tests. */
 export type CreateToolsDeps = {
-  bootstrap?: typeof bootstrapToolsRuntime;
+  bootstrap?: (target: { cwd?: string; configDir?: string }) => Promise<ToolsRuntime>;
+  attach?: (
+    target: { cwd?: string; configDir?: string },
+    deps?: unknown
+  ) => Promise<{
+    runtime: ToolsRuntime;
+    record: { url: string; pid: number; configDir?: string };
+    connection: { close(): void; disconnected: Promise<never> };
+  }>;
 };
 
 /**
@@ -33,27 +45,63 @@ export type CreateToolsDeps = {
  * `process.cwd()` for the rest of the process — everything the `services` preset hooks register
  * keys its file mapping off it. Capture your launch directory first if you still need it.
  *
- * @throws {ToolsRuntimeError} With reason `mode-unavailable` for `attached` and `auto`, which
- *   attach to a running Storybook and are not available yet; with reason `config-load-failed` when
- *   the target configuration cannot be loaded.
+ * `attached` joins a running Storybook over its channel and never changes `process.cwd()`.
+ *
+ * @throws {ToolsRuntimeError} With reason `mode-unavailable` for `auto`, which is not available
+ *   yet; with reason `config-load-failed` when the target configuration cannot be loaded.
+ * @throws {AttachUnavailableError} When `attached` cannot find or reach a matching instance.
+ * @throws {EnvironmentMismatchError} When this process is not the instance's twin (cwd or version).
  */
 export function createTools(
   options: CreateToolsOptions & { mode: 'local' },
   deps?: CreateToolsDeps
 ): Promise<LocalTools>;
+export function createTools(
+  options: CreateToolsOptions & { mode: 'attached' },
+  deps?: CreateToolsDeps
+): Promise<AttachedTools>;
 export function createTools(options?: CreateToolsOptions, deps?: CreateToolsDeps): Promise<Tools>;
 export async function createTools(
   options: CreateToolsOptions = {},
   deps: CreateToolsDeps = {}
 ): Promise<Tools> {
-  const mode = options.mode ?? 'auto';
-  if (mode !== 'local') {
+  const mode: ToolsMode = options.mode ?? 'auto';
+  if (mode === 'auto') {
     throw new ToolsRuntimeError({
       reason: 'mode-unavailable',
-      message: `The \`${mode}\` tools mode attaches to a running Storybook, which is not available yet. Pass \`mode: 'local'\` to load the target Storybook configuration in this process.`,
+      message: `The \`auto\` tools mode attaches to a running Storybook when it can and otherwise loads the project's configuration in this process, which is not available yet. Pass \`mode: 'local'\` or \`mode: 'attached'\`.`,
     });
   }
 
+  const clientInfo: Required<ToolsClientInfo> = {
+    name: options.clientInfo?.name ?? 'storybook-tools-sdk',
+    version: options.clientInfo?.version ?? versions.storybook,
+    kind: options.clientInfo?.kind ?? 'sdk',
+  };
+
+  if (mode === 'attached') {
+    // local-runtime pulls core-server at import, which must not run before the attached channel is prepared.
+    const { bootstrapAttachedRuntime } = await import('./attached-runtime.ts');
+    const attached = await (deps.attach ?? bootstrapAttachedRuntime)({
+      cwd: options.cwd,
+      configDir: options.configDir,
+    });
+    return createToolsHost({
+      mode: 'attached',
+      runtime: attached.runtime,
+      clientInfo,
+      storybook: {
+        version: versions.storybook,
+        configDir: attached.runtime.configDir,
+        url: attached.record.url,
+        pid: attached.record.pid,
+      },
+      close: () => attached.connection.close(),
+      disconnected: attached.connection.disconnected,
+    });
+  }
+
+  const { bootstrapToolsRuntime } = await import('./local-runtime.ts');
   let runtime: ToolsRuntime;
   try {
     runtime = await (deps.bootstrap ?? bootstrapToolsRuntime)({
@@ -70,19 +118,44 @@ export async function createTools(
     });
   }
 
-  const clientInfo: Required<ToolsClientInfo> = {
-    name: options.clientInfo?.name ?? 'storybook-tools-sdk',
-    version: options.clientInfo?.version ?? versions.storybook,
-    kind: options.clientInfo?.kind ?? 'sdk',
-  };
-  return createLocalTools(runtime, clientInfo);
+  return createToolsHost({
+    mode: 'local',
+    runtime,
+    clientInfo,
+    storybook: { version: versions.storybook, configDir: runtime.configDir },
+  });
 }
 
-function createLocalTools(
-  runtime: ToolsRuntime,
-  clientInfo: Required<ToolsClientInfo>
-): LocalTools {
-  const ctx: ToolsetCtx = { transport: 'cli', getService: runtime.getService };
+function createToolsHost(args: {
+  mode: 'local';
+  runtime: ToolsRuntime;
+  clientInfo: Required<ToolsClientInfo>;
+  storybook: ToolsStorybookInfo;
+  close?: () => void;
+  disconnected?: Promise<never>;
+}): LocalTools;
+function createToolsHost(args: {
+  mode: 'attached';
+  runtime: ToolsRuntime;
+  clientInfo: Required<ToolsClientInfo>;
+  storybook: ToolsStorybookInfo;
+  close?: () => void;
+  disconnected?: Promise<never>;
+}): AttachedTools;
+function createToolsHost(args: {
+  mode: 'local' | 'attached';
+  runtime: ToolsRuntime;
+  clientInfo: Required<ToolsClientInfo>;
+  storybook: ToolsStorybookInfo;
+  close?: () => void;
+  disconnected?: Promise<never>;
+}): Tools {
+  const { mode, runtime, clientInfo, storybook } = args;
+  const ctx: ToolsetCtx = {
+    transport: 'cli',
+    getService: runtime.getService,
+    ...(storybook.url ? { origin: storybook.url } : {}),
+  };
   let closed = false;
 
   const assertOpen = () => {
@@ -94,11 +167,40 @@ function createLocalTools(
     }
   };
 
+  const invoke = async (
+    ref: string,
+    input: Record<string, unknown>,
+    options: ToolsCallOptions
+  ): Promise<AnyToolsetOutcome> => {
+    options.signal?.throwIfAborted();
+
+    const { toolsetId, methodName } = splitRef(ref);
+    const method = findMethod(findToolset(runtime, toolsetId), methodName);
+
+    if (mode === 'local' && method.requiresDevServer) {
+      throw new AttachUnavailableError({
+        reason: 'no-instance',
+        instances: [],
+        remediation: `\`${ref}\` needs a running Storybook dev server, and this tools host loaded the project's configuration on its own. Start Storybook (for example \`npm run storybook\`), then retry.`,
+      });
+    }
+
+    const validation = await method.input['~standard'].validate(input);
+    if (validation.issues) {
+      throw new ToolsRuntimeError({
+        reason: 'invalid-input',
+        message: `Invalid input for \`${ref}\`:\n${formatIssues(validation.issues)}`,
+      });
+    }
+
+    return method.handler(validation.value, ctx);
+  };
+
   return {
-    mode: 'local',
+    mode,
     clientInfo,
     runtime,
-    storybook: { version: versions.storybook, configDir: runtime.configDir },
+    storybook,
 
     async describe(options: ToolsDescribeOptions = {}): Promise<ToolsetCatalog> {
       assertOpen();
@@ -116,32 +218,26 @@ function createLocalTools(
       options: ToolsCallOptions = {}
     ): Promise<AnyToolsetOutcome> {
       assertOpen();
-      options.signal?.throwIfAborted();
-
-      const { toolsetId, methodName } = splitRef(ref);
-      const method = findMethod(findToolset(runtime, toolsetId), methodName);
-
-      if (method.requiresDevServer) {
-        throw new AttachUnavailableError({
-          reason: 'no-instance',
-          instances: [],
-          remediation: `\`${ref}\` needs a running Storybook dev server, and this tools host loaded the project's configuration on its own. Start Storybook (for example \`npm run storybook\`), then retry.`,
-        });
+      try {
+        if (!args.disconnected) {
+          return await invoke(ref, input, options);
+        }
+        return await Promise.race([invoke(ref, input, options), args.disconnected]);
+      } catch (error) {
+        if (error instanceof StorybookDevServerDisconnectedError) {
+          throw new ToolsRuntimeError({
+            reason: 'connection-lost',
+            message: error.message,
+            cause: error,
+          });
+        }
+        throw error;
       }
-
-      const validation = await method.input['~standard'].validate(input);
-      if (validation.issues) {
-        throw new ToolsRuntimeError({
-          reason: 'invalid-input',
-          message: `Invalid input for \`${ref}\`:\n${formatIssues(validation.issues)}`,
-        });
-      }
-
-      return method.handler(validation.value, ctx);
     },
 
     async close(): Promise<void> {
       closed = true;
+      args.close?.();
     },
   };
 }

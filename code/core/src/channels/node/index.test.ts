@@ -62,9 +62,10 @@ afterEach(async () => {
 
 describe('createNodeChannel', () => {
   it('connects to the server channel path with the token in the query string', async () => {
-    createNodeChannel({ url: baseUrl, token: TOKEN });
+    const { connected } = createNodeChannel({ url: baseUrl, token: TOKEN });
 
     await firstConnection();
+    await expect(connected).resolves.toBeUndefined();
     expect(upgradeUrls).toEqual([`${SERVER_CHANNEL_PATH}?token=${TOKEN}`]);
   });
 

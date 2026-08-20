@@ -20,8 +20,14 @@ import {
 } from '../../shared/open-service/toolset-registry.ts';
 import type { DocsAccess } from '../../shared/open-service/toolsets/docs/access.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
-import { runToolsCommand, type ToolsRunDeps } from './run.ts';
-import { ToolsRuntimeError, type LocalTools, type ToolsRuntime } from './sdk/index.ts';
+import { runToolsCommand, type ToolsInvocation, type ToolsRunDeps } from './run.ts';
+import {
+  AttachUnavailableError,
+  ToolsRuntimeError,
+  type AttachedTools,
+  type LocalTools,
+  type ToolsRuntime,
+} from './sdk/index.ts';
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
 
 const CONFIG_DIR = '/repo/.storybook';
@@ -109,9 +115,22 @@ function makeDeps(overrides: Partial<ToolsRunDeps> & { runtime?: Partial<ToolsRu
   return { deps: { ...deps, createTools, discoverInstance }, createTools, discoverInstance };
 }
 
-function run(argv: string[], deps: ToolsRunDeps) {
+function makeAttachedTools(runtimeOverrides: Partial<ToolsRuntime> = {}): AttachedTools {
+  return {
+    ...makeLocalTools(runtimeOverrides),
+    mode: 'attached',
+    storybook: {
+      version: '0.0.0',
+      configDir: CONFIG_DIR,
+      url: 'http://localhost:6006',
+      pid: 123,
+    },
+  };
+}
+
+function run(argv: string[], deps: ToolsRunDeps, extra: Partial<ToolsInvocation> = {}) {
   const [toolset, tool, ...tokens] = argv;
-  return runToolsCommand({ toolset, tool, tokens, target: {} }, deps);
+  return runToolsCommand({ toolset, tool, tokens, target: {}, ...extra }, deps);
 }
 
 beforeEach(() => {
@@ -245,6 +264,7 @@ describe('local tools', () => {
       cwd: '/repo',
       configDir: '.storybook',
       mode: 'local',
+      autoSpawn: false,
       clientInfo: { name: 'storybook-cli', version: expect.any(String), kind: 'cli' },
     });
   });
@@ -691,5 +711,74 @@ describe('host failures', () => {
       'Could not load the Storybook configuration for this project: No configuration files found'
     );
     expect(result.outcome).toMatchObject({ kind: 'error' });
+  });
+});
+
+describe('attached tools', () => {
+  it('asks the SDK for attached mode', async () => {
+    const { deps, createTools } = makeDeps({
+      createTools: vi.fn(async () => makeAttachedTools()),
+    });
+
+    await run(['docs', 'list'], deps, { attach: true });
+
+    expect(createTools).toHaveBeenCalledWith(
+      expect.objectContaining({ mode: 'attached', autoSpawn: false })
+    );
+  });
+
+  it('runs a requiresDevServer tool caller-side with the instance origin, without proxying', async () => {
+    clearToolsetRegistry();
+    registerToolset(
+      defineToolset({
+        id: 'foreign',
+        description: 'Toolset whose method needs a running Storybook.',
+        methods: {
+          ping: {
+            title: 'Ping',
+            input: v.object({}),
+            description: 'ping',
+            requiresDevServer: true,
+            handler: async (_input, ctx) => ({
+              ok: true as const,
+              data: { origin: ctx.origin },
+              markdown: ctx.origin ?? '',
+            }),
+          },
+        },
+      })
+    );
+    const mcpToolCall = vi.fn();
+    const { deps, discoverInstance } = makeDeps({
+      createTools: vi.fn(async () => makeAttachedTools()),
+      mcpToolCall,
+    });
+
+    const result = await run(['foreign', 'ping'], deps, { attach: true });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toBe('http://localhost:6006');
+    expect(mcpToolCall).not.toHaveBeenCalled();
+    expect(discoverInstance).not.toHaveBeenCalled();
+  });
+
+  it('prints attach failures as intercepts', async () => {
+    const { deps } = makeDeps({
+      createTools: vi.fn(async () => {
+        throw new AttachUnavailableError({
+          reason: 'no-instance',
+          instances: [],
+          remediation:
+            'No running Storybook was found for this project. Start it first (for example `npm run storybook`), then retry with `--attach`.',
+        });
+      }),
+    });
+
+    const result = await run(['docs', 'list'], deps, { attach: true });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'attach-unavailable' });
+    expect(result.output).toContain('npm run storybook');
+    expect(result.output).toContain('--attach');
   });
 });

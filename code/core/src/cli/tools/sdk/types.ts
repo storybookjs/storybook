@@ -77,6 +77,8 @@ export type ToolsCallOptions = {
 type ToolsBase = {
   clientInfo: Required<ToolsClientInfo>;
   storybook: ToolsStorybookInfo;
+  /** Toolset registry and service accessor the CLI uses for help and dispatch. */
+  runtime: ToolsRuntime;
   describe(options?: ToolsDescribeOptions): Promise<ToolsetCatalog>;
   /**
    * Run one tool by its dotted `toolsetId.methodName` reference.
@@ -98,14 +100,14 @@ type ToolsBase = {
 };
 
 /**
- * A host that loaded the target configuration in this process, so its toolset registry and
- * service accessor are reachable directly. The `storybook tools` CLI renders its help from them.
+ * A host that loaded the target configuration in this process. The `storybook tools` CLI renders
+ * its help from the toolset registry.
  */
 export type LocalTools = ToolsBase & {
   mode: 'local';
-  runtime: ToolsRuntime;
 };
 
+/** A host that joined a running Storybook over its channel. */
 export type AttachedTools = ToolsBase & {
   mode: 'attached';
 };

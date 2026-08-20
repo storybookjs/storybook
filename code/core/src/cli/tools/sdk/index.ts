@@ -7,7 +7,7 @@ export {
   type AttachUnavailableReason,
   type ToolsRuntimeErrorReason,
 } from './errors.ts';
-export { bootstrapToolsRuntime, type ToolsRuntime } from './local-runtime.ts';
+export type { ToolsRuntime } from './local-runtime.ts';
 export type { ToolsetJsonSchema } from './json-schema.ts';
 export type {
   AttachedTools,

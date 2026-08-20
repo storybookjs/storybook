@@ -1,7 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { sendTelemetryError, withTelemetry } from 'storybook/internal/core-server';
+import { sendTelemetryError, withTelemetry } from '../../core-server/withTelemetry.ts';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
@@ -21,6 +21,7 @@ export type CommandFailureHandler = (
 type ToolsPassthroughOptions = ToolsOutputFlags & {
   cwd?: string;
   configDir?: string;
+  attach?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by `withTelemetry`. */
   disableTelemetry?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by the failure handler. */
@@ -90,6 +91,7 @@ export function registerToolsPassthrough(
                   tool,
                   tokens,
                   target: { cwd: options.cwd, configDir: options.configDir },
+                  attach: options.attach,
                   flags: {
                     input: options.input,
                     json: options.json,

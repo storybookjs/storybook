@@ -13,7 +13,13 @@ import {
 } from '../../shared/open-service/toolset-names.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import { callMcpTool } from './mcp-client.ts';
-import { createTools, type ToolsClientInfo, type ToolsRuntime } from './sdk/index.ts';
+import {
+  AttachUnavailableError,
+  createTools,
+  EnvironmentMismatchError,
+  type ToolsClientInfo,
+  type ToolsRuntime,
+} from './sdk/index.ts';
 import {
   discoverRunningInstance,
   type InstanceDiscovery,
@@ -61,6 +67,7 @@ export type ToolsInvocation = {
   target: ToolsTarget;
   /** Values of the same flags when given before the toolset name (commander-owned). */
   flags?: ToolsOutputFlags;
+  attach?: boolean;
 };
 
 /** Identifies this CLI to the tools SDK that hosts its run. */
@@ -121,7 +128,14 @@ export async function runToolsCommand(
   invocation: ToolsInvocation,
   deps: ToolsRunDeps = {}
 ): Promise<ToolsRunResult> {
-  const { toolset: toolsetName, tool: toolName, tokens, target, flags = {} } = invocation;
+  const {
+    toolset: toolsetName,
+    tool: toolName,
+    tokens,
+    target,
+    flags = {},
+    attach = false,
+  } = invocation;
 
   const parsed = parseToolsTokens(tokens, flags);
   if (!parsed.ok) {
@@ -133,6 +147,8 @@ export async function runToolsCommand(
     };
   }
 
+  const useAttach = attach || parsed.attach === true;
+
   // `-o/--output` applies to whatever the run produced — help, intercepts, and tool results
   // alike — matching the ai CLI, where the output file always receives the printed text.
   const result = (partial: Omit<ToolsRunResult, 'outputPath'>): ToolsRunResult => ({
@@ -141,18 +157,27 @@ export async function runToolsCommand(
   });
 
   let runtime: ToolsRuntime;
+  let attached = false;
+  let originFromAttach: string | undefined;
   try {
     const tools = await (deps.createTools ?? createTools)({
       cwd: target.cwd,
       configDir: target.configDir,
-      mode: 'local',
+      mode: useAttach ? 'attached' : 'local',
+      autoSpawn: false,
       clientInfo: CLI_CLIENT_INFO,
     });
-    // Help rendering, dispatch and the dev-server proxy all read the toolset definitions
-    // themselves, which only a local host has.
     runtime = tools.runtime;
+    attached = tools.mode === 'attached';
+    originFromAttach = tools.storybook.url;
   } catch (error) {
-    // The SDK's own message already names the failure and the configuration it could not load.
+    if (error instanceof AttachUnavailableError || error instanceof EnvironmentMismatchError) {
+      return result({
+        exitCode: 1,
+        output: error.message,
+        outcome: { kind: 'intercept', reason: 'attach-unavailable' },
+      });
+    }
     return result({
       exitCode: 1,
       output: error instanceof Error ? error.message : String(error),
@@ -210,9 +235,9 @@ export async function runToolsCommand(
     });
   }
 
-  let origin: string | undefined;
+  let origin: string | undefined = originFromAttach;
   let proxyTarget: StorybookInstanceRecord | undefined;
-  if (method.requiresDevServer) {
+  if (method.requiresDevServer && !attached) {
     const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(target);
     if (!discovery.currentRecord) {
       return result({

@@ -1,5 +1,6 @@
 import os from 'node:os';
 
+import { SERVER_CHANNEL_PATH } from 'storybook/internal/channels';
 import { logger } from 'storybook/internal/node-logger';
 import { NoFreePortError } from 'storybook/internal/server-errors';
 
@@ -54,7 +55,7 @@ export const getServerPort = (port?: number, { exactPort }: PortOptions = {}) =>
     });
 
 export const getServerChannelUrl = (port: number, { https }: { https?: boolean }) => {
-  return `${https ? 'wss' : 'ws'}://localhost:${port}/storybook-server-channel`;
+  return `${https ? 'wss' : 'ws'}://localhost:${port}${SERVER_CHANNEL_PATH}`;
 };
 
 const getLocalIp = () => {

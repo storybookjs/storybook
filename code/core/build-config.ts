@@ -100,6 +100,13 @@ const config: BuildEntries = {
         exportEntries: ['./internal/mocking-utils'],
         entryPoint: './src/mocking-utils/index.ts',
       },
+      {
+        // Node client for a dev server's websocket channel. Deliberately not re-exported from the
+        // `./internal/channels` barrel, which is a browser entry: neither `ws` nor `server-errors.ts`
+        // may reach a manager or preview bundle.
+        exportEntries: ['./internal/channels/node'],
+        entryPoint: './src/channels/node/index.ts',
+      },
     ],
     browser: [
       {

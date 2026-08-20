@@ -101,15 +101,15 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
         if (argsProperty.isObjectProperty()) {
           const a = argsProperty.get('value');
           if (a.isObjectExpression()) {
-            a.traverse({
-              ObjectProperty(p) {
+            // only direct properties, so nested keys cannot consume args meant for the top level
+            a.get('properties').forEach((p) => {
+              if (p.isObjectProperty()) {
                 const keyName = argKeyName(p.node.key);
                 if (keyName !== null && keyName in args) {
                   p.get('value').replaceWith(args[keyName]);
                   delete args[keyName];
                 }
-              },
-              noScope: true,
+              }
             });
 
             const remainder = Object.entries(args);

@@ -20,6 +20,7 @@ const FILES = {
   exportVariances: join(__dirname, 'mocks/export-variances.stories.tsx'),
   dataVariances: join(__dirname, 'mocks/data-variances.stories.tsx'),
   kebabCaseArgs: join(__dirname, 'mocks/kebab-case-args.stories.tsx'),
+  kebabCaseArgsCsf4: join(__dirname, 'mocks/kebab-case-args-csf4.stories.tsx'),
 };
 
 describe('success', () => {
@@ -386,6 +387,55 @@ describe('success', () => {
       + 
           },
         } satisfies Story;
+        "
+    `);
+  });
+  test('Kebab-case args (CSF4)', async () => {
+    const newArgs = { 'aria-label': 'button' };
+
+    const before = await format(await readFile(FILES.kebabCaseArgsCsf4, 'utf-8'), {
+      parser: 'typescript',
+    });
+    const CSF = await readCsf(FILES.kebabCaseArgsCsf4, { makeTitle });
+
+    const parsed = CSF.parse();
+    const names = Object.keys(parsed._stories);
+    const nodes = names.map((name) => CSF.getStoryExport(name));
+
+    nodes.forEach((node) => {
+      updateArgsInCsfFile(node, newArgs);
+    });
+
+    const after = await format(printCsf(parsed).code, {
+      parser: 'typescript',
+    });
+
+    // check if the code was updated at all
+    expect(after).not.toBe(before);
+
+    // check if the code was updated correctly: the nested 'aria-label' must stay
+    // untouched and the new arg must be added at the top level
+    expect(getDiff(before, after)).toMatchInlineSnapshot(`
+      "  ...
+        export const QuotedKebabArg = meta.story({
+          args: {
+            "data-testid": "before",
+        
+      +     "aria-label": "button",
+      + 
+          },
+        });
+        export const NestedCollision = meta.story({
+          args: {
+            nested: {
+              "aria-label": "inner",
+            },
+        
+      + 
+      +     "aria-label": "button",
+      + 
+          },
+        });
         "
     `);
   });

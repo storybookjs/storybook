@@ -13,6 +13,7 @@ import { add } from '../../add.ts';
 import { updateMainConfig } from '../helpers/mainConfigFile.ts';
 import type { CheckOptions } from './index.ts';
 import {
+  ANALOG_PACKAGE,
   ANGULAR_PACKAGE,
   ANGULAR_VITE_PACKAGE,
   angularToAngularVite,
@@ -253,24 +254,91 @@ describe('angular-to-angular-vite', () => {
       expect(result?.hasWebpackFinal).toBe(false);
     });
 
-    // `@analogjs/storybook-angular` carries `@storybook/angular` as a peer, so the dependency alone
-    // does not identify the framework the project renders with.
-    it('returns null and says why when the framework is not @storybook/angular', async () => {
+    it('accepts an @analogjs/storybook-angular project and records it as the source framework', async () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
         [ANGULAR_PACKAGE]: '^9.0.0',
-        '@analogjs/storybook-angular': '^1.0.0',
+        [ANALOG_PACKAGE]: '^2.6.3',
+      });
+      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^21.0.0');
+      mockReadFile.mockRejectedValue(new Error('ENOENT'));
+
+      const result = await angularToAngularVite.check({
+        packageManager: mockPackageManager,
+        mainConfig: { framework: ANALOG_PACKAGE },
+      } as CheckOptions);
+
+      expect(result?.framework).toBe(ANALOG_PACKAGE);
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    // `main.ts` conventionally writes `getAbsolutePath('<pkg>')`, and Storybook only maps that path
+    // back to a package name for frameworks it ships, so a third-party one arrives as a path.
+    it.each([
+      ['a resolved package directory', `/repo/node_modules/${ANALOG_PACKAGE}`],
+      [
+        'a pnpm virtual-store directory',
+        `/repo/node_modules/.pnpm/@analogjs+storybook-angular@2.6.3_x/node_modules/${ANALOG_PACKAGE}`,
+      ],
+    ])('resolves an Analog framework named by %s', async (_label, frameworkPath) => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        [ANALOG_PACKAGE]: '^2.6.3',
+      });
+      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^21.0.0');
+      mockReadFile.mockRejectedValue(new Error('ENOENT'));
+
+      const result = await angularToAngularVite.check({
+        packageManager: mockPackageManager,
+        mainConfig: { framework: { name: frameworkPath } },
+      } as CheckOptions);
+
+      expect(result?.framework).toBe(ANALOG_PACKAGE);
+    });
+
+    it('does not mistake a resolved @storybook/angular-vite path for @storybook/angular', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        [ANGULAR_PACKAGE]: '^9.0.0',
       });
       vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^21.0.0');
 
       const result = await angularToAngularVite.check({
         packageManager: mockPackageManager,
-        mainConfig: { framework: '@analogjs/storybook-angular' },
+        mainConfig: { framework: { name: `/repo/node_modules/${ANGULAR_VITE_PACKAGE}` } },
       } as CheckOptions);
 
       expect(result).toBeNull();
-      expect(logger.warn).toHaveBeenCalledWith(
-        expect.stringContaining('@analogjs/storybook-angular')
-      );
+    });
+
+    it('records @storybook/angular as the source framework for a webpack project', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        [ANGULAR_PACKAGE]: '^9.0.0',
+      });
+      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^21.0.0');
+      mockReadFile.mockRejectedValue(new Error('ENOENT'));
+
+      const result = await angularToAngularVite.check({
+        packageManager: mockPackageManager,
+        mainConfig: { framework: ANGULAR_PACKAGE },
+      } as CheckOptions);
+
+      expect(result?.framework).toBe(ANGULAR_PACKAGE);
+    });
+
+    // Another Angular framework can carry `@storybook/angular` as a peer, so the dependency alone
+    // does not identify the framework the project renders with.
+    it('returns null and says why for an Angular framework it cannot rewrite', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        [ANGULAR_PACKAGE]: '^9.0.0',
+        '@acme/storybook-angular': '^1.0.0',
+      });
+      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^21.0.0');
+
+      const result = await angularToAngularVite.check({
+        packageManager: mockPackageManager,
+        mainConfig: { framework: '@acme/storybook-angular' },
+      } as CheckOptions);
+
+      expect(result).toBeNull();
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('@acme/storybook-angular'));
     });
 
     it('stays quiet about a non-Angular project that merely carries the dependency', async () => {
@@ -300,6 +368,7 @@ describe('angular-to-angular-vite', () => {
 
   describe('run function', () => {
     const baseResult = {
+      framework: ANGULAR_PACKAGE,
       angularUnsupportedVersion: false,
       angularVersion: '21.0.0',
       hasWebpackFinal: false,
@@ -790,6 +859,73 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       );
     });
 
+    it('rewrites an @analogjs/storybook-angular executor and renames its zoneless option', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+
+      // eslint-disable-next-line depend/ban-dependencies
+      const { globby } = await import('globby');
+      vi.mocked(globby).mockResolvedValueOnce(['/project/libs/soba/project.json']);
+
+      const projectJsonContent = JSON.stringify({
+        name: 'soba',
+        targets: {
+          storybook: {
+            executor: `${ANALOG_PACKAGE}:start-storybook`,
+            options: { experimentalZoneless: true },
+          },
+        },
+      });
+
+      mockReadFile.mockImplementation(
+        (filePath: any) =>
+          Promise.resolve(
+            String(filePath).endsWith('project.json')
+              ? projectJsonContent
+              : `export default { framework: '${ANALOG_PACKAGE}' };`
+          ) as any
+      );
+
+      await angularToAngularVite.run!({
+        result: { ...baseResult, framework: ANALOG_PACKAGE },
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      const written = vi
+        .mocked(mockWriteFile)
+        .mock.calls.find(([file]) => String(file).endsWith('project.json'))?.[1];
+      expect(written).toContain(`${ANGULAR_VITE_PACKAGE}:start-storybook`);
+      expect(written).not.toContain(ANALOG_PACKAGE);
+      // `experimentalZoneless` is Analog's spelling; angular-vite's schema only accepts `zoneless`,
+      // and rejects unknown keys outright.
+      expect(written).toContain('"zoneless": true');
+      expect(written).not.toContain('experimentalZoneless');
+    });
+
+    it('drops both the Analog framework and the @storybook/angular peer it required', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      mockReadFile.mockResolvedValue(`export default { framework: '${ANALOG_PACKAGE}' };`);
+
+      await angularToAngularVite.run!({
+        result: { ...baseResult, framework: ANALOG_PACKAGE },
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith([
+        ANALOG_PACKAGE,
+        ANGULAR_PACKAGE,
+      ]);
+    });
+
     it('leaves a storybook target owned by another framework package alone', async () => {
       mockPromptConfirm.mockResolvedValue(false);
 
@@ -801,7 +937,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         name: 'soba',
         targets: {
           storybook: {
-            executor: '@analogjs/storybook-angular:start-storybook',
+            executor: '@acme/storybook-angular:start-storybook',
             options: { experimentalZoneless: true },
           },
         },

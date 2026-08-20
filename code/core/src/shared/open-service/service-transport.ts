@@ -289,6 +289,13 @@ export function connectRuntimeToChannel(
  * can invoke a command implemented in either. Command events are *not* relayed across a hub's other
  * transports, so a preview cannot directly invoke a server-only command (and vice versa) — route such
  * calls through the manager or implement the command on a directly-connected peer.
+ *
+ * ## Delegated mode
+ *
+ * A delegated runtime (one attached to an already-running Storybook) owns no dispatch at all: it
+ * requests *every* command over the channel and answers no invoke, because the runtime it attached
+ * to is the implementer. Local handlers stay registered and inspectable but never run, so a service
+ * author writes the same definition either way.
  */
 export function connectCommandTransport(context: {
   /** Id of the service these commands belong to; stamped on every emitted envelope. */
@@ -305,9 +312,23 @@ export function connectCommandTransport(context: {
   implementedCommandNames: ReadonlySet<string>;
   /** Every command name declared by the service definition. */
   commandNames: readonly string[];
+  /** Whether this runtime delegates all dispatch to the peer it is attached to. */
+  delegated: boolean;
 }): { commands: Record<string, RuntimeCommand>; disconnect: () => void } {
-  const { serviceId, ownClientId, channel, localCommands, implementedCommandNames, commandNames } =
-    context;
+  const {
+    serviceId,
+    ownClientId,
+    channel,
+    localCommands,
+    implementedCommandNames,
+    commandNames,
+    delegated,
+  } = context;
+
+  // A delegated runtime dispatches nothing itself, so its local handlers are inert on both sides of
+  // the protocol: it requests every command and answers no invoke.
+  const dispatchesLocally = (commandName: string): boolean =>
+    !delegated && implementedCommandNames.has(commandName);
 
   // Requester bookkeeping: in-flight remote calls keyed by callId, settled by the first reply.
   const pending = new Map<string, PendingRemoteCommand>();
@@ -328,7 +349,7 @@ export function connectCommandTransport(context: {
     if (
       !parsed.success ||
       parsed.output.serviceId !== serviceId ||
-      !implementedCommandNames.has(parsed.output.commandName)
+      !dispatchesLocally(parsed.output.commandName)
     ) {
       return;
     }
@@ -410,6 +431,7 @@ export function connectCommandTransport(context: {
             new OpenServiceRemoteCommandUnhandledError({
               serviceId,
               commandName: entry.commandName,
+              delegated,
             })
           )
         );
@@ -428,7 +450,7 @@ export function connectCommandTransport(context: {
 
   const commands: Record<string, RuntimeCommand> = {};
   for (const name of commandNames) {
-    commands[name] = implementedCommandNames.has(name)
+    commands[name] = dispatchesLocally(name)
       ? localCommands[name]
       : (input: unknown) => requestRemote(name, input);
   }
@@ -479,6 +501,8 @@ export function connectServiceToChannel(
     implementedCommandNames: ReadonlySet<string>;
     /** Every command name declared by the service definition. */
     commandNames: readonly string[];
+    /** Whether this runtime delegates all dispatch to the peer it is attached to. */
+    delegated: boolean;
     /** Runtime to wire with the channel-routed command map for load bodies. */
     runtime: ChannelConnectedRuntime;
   }
@@ -493,6 +517,7 @@ export function connectServiceToChannel(
     commands,
     implementedCommandNames,
     commandNames,
+    delegated,
     runtime,
   } = context;
 
@@ -515,6 +540,7 @@ export function connectServiceToChannel(
     localCommands: broadcastCommands,
     implementedCommandNames,
     commandNames,
+    delegated,
   });
 
   const disconnectSync = connectRuntimeToChannel({
@@ -527,8 +553,12 @@ export function connectServiceToChannel(
   });
 
   // Load bodies call commands through the channel-routed map so a command implemented only on a peer
-  // is requested remotely instead of throwing locally.
-  runtime.attachChannelCommands(commandTransport.commands, implementedCommandNames);
+  // is requested remotely instead of throwing locally. A delegated runtime dispatches none of its
+  // commands, so every name counts as remote here too.
+  runtime.attachChannelCommands(
+    commandTransport.commands,
+    delegated ? new Set<string>() : implementedCommandNames
+  );
 
   return {
     commands: commandTransport.commands,

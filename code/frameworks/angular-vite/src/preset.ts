@@ -304,13 +304,16 @@ export function angularOptionsPlugin(
   options: StandaloneOptions,
   { normalizePath, zoneless }: any
 ): Plugin {
-  let resolvedConfig: UserConfig;
   let resolvedPreviewPath: string | undefined;
+  // Angular resolves builder paths against the workspace root, which in a monorepo is a level (or
+  // several) above the Vite root. Both `stylePreprocessorOptions` and `styles` need it.
+  let workspaceRoot = process.cwd();
   return {
     name: 'storybook-angular-vite-options-plugin',
     config(userConfig: UserConfig) {
-      resolvedConfig = userConfig;
       resolvedPreviewPath = findConfigFile('preview', options.configDir) ?? undefined;
+      workspaceRoot =
+        options.angularBuilderContext?.workspaceRoot ?? userConfig?.root ?? process.cwd();
       const stylePreprocessorOptions =
         options?.angularBuilderOptions?.stylePreprocessorOptions ?? {};
       // Angular's builder schema (and this framework's builder schema) names the
@@ -324,9 +327,6 @@ export function angularOptionsPlugin(
       if (!Array.isArray(loadPaths) && !sassOptions) {
         return;
       }
-
-      const workspaceRoot =
-        options.angularBuilderContext?.workspaceRoot ?? userConfig?.root ?? process.cwd();
 
       return {
         css: {
@@ -358,7 +358,11 @@ export function angularOptionsPlugin(
                   ? style.input
                   : undefined;
             if (stylePath !== undefined) {
-              imports.push(stylePath);
+              // Every `styles` entry is a path the Angular builder resolves against the workspace
+              // root - the schema has no package-specifier form - and in a monorepo that root sits
+              // above the Vite root. Left unresolved, Vite reads `apps/ui/styles.css` as a bare
+              // specifier and fails to find a package by that name.
+              imports.push(normalizePath(resolve(workspaceRoot, stylePath)));
             }
           });
         }
@@ -367,24 +371,9 @@ export function angularOptionsPlugin(
           imports.push('zone.js');
         }
 
-        // Use vite config root when angularBuilderContext is not available
-        // (e.g., when running via Vitest instead of Angular builders)
-        const projectRoot = resolvedConfig?.root ?? process.cwd();
-
         return {
           code: `
-            ${imports
-              .map((extraImport) => {
-                if (extraImport.startsWith('.') || extraImport.startsWith('src')) {
-                  // relative to root — normalize to forward slashes so the
-                  // generated import specifier is valid on Windows.
-                  return `import '${normalizePath(resolve(projectRoot, extraImport))}';`;
-                }
-
-                // absolute import
-                return `import '${extraImport}';`;
-              })
-              .join('\n')}
+            ${imports.map((extraImport) => `import '${extraImport}';`).join('\n')}
             ${code}
           `,
         };

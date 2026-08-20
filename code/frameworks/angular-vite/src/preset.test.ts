@@ -8,7 +8,15 @@ import { resolve } from 'node:path';
 import { mergeConfig, normalizePath } from 'vite';
 
 import { ensureCompodocDocumentation } from './compodoc/ensure-documentation.ts';
-import { angularOptionsPlugin, compodocJsonStubPlugin, features, viteFinal } from './preset.ts';
+import {
+  angularOptionsPlugin,
+  compodocJsonStubPlugin,
+  experimental_docgenProvider,
+  experimental_manifests,
+  experimental_storyDocsProvider,
+  features,
+  viteFinal,
+} from './preset.ts';
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 
 // The plugin's `config` hook looks up the preview file on disk before reading
@@ -37,6 +45,19 @@ beforeEach(() => {
 });
 
 const WORKSPACE_ROOT = resolve('/workspace');
+
+// Storybook discovers these by reading the preset module's exports, so dropping a re-export is
+// type-valid and silent: docgen extraction simply stops running, and the failure only surfaces as
+// an empty static build several minutes into a sandbox job.
+describe('docgen preset entry points', () => {
+  it.each([
+    ['experimental_docgenProvider', experimental_docgenProvider],
+    ['experimental_manifests', experimental_manifests],
+    ['experimental_storyDocsProvider', experimental_storyDocsProvider],
+  ])('re-exports %s', (_name, entryPoint) => {
+    expect(entryPoint).toBeTypeOf('function');
+  });
+});
 
 const optionsWith = (
   frameworkOptions: Record<string, unknown>,
@@ -144,6 +165,51 @@ describe('angularOptionsPlugin global styles', () => {
 
     expect(code).toContain(`import '${resolve(WORKSPACE_ROOT, 'src/styles.scss')}';`);
     expect(code).toContain(`import '${resolve(WORKSPACE_ROOT, 'src/theme.scss')}';`);
+  });
+
+  // The Vite root is the project directory in a monorepo, while Angular resolves `styles` against
+  // the workspace root above it. Reproduces spartan-ng: `apps/ui-storybook/.storybook/tailwind.css`
+  // reached Vite as a bare specifier and 500'd the whole preview module.
+  it('resolves a workspace-relative style against the workspace root, not the Vite root', async () => {
+    const options = {
+      configDir: resolve(WORKSPACE_ROOT, 'apps/ui-storybook/.storybook'),
+      angularBuilderContext: { workspaceRoot: WORKSPACE_ROOT },
+      angularBuilderOptions: { styles: ['apps/ui-storybook/.storybook/tailwind.css'] },
+    } as unknown as StandaloneOptions;
+    const projectPreview = resolve(WORKSPACE_ROOT, 'apps/ui-storybook/.storybook/preview.ts');
+    vi.mocked(findConfigFile).mockReturnValue(projectPreview);
+
+    const plugin = angularOptionsPlugin(options, { normalizePath, zoneless: true });
+    // The Vite root is the project dir, a level below the workspace root.
+    (plugin.config as (userConfig: unknown) => unknown)({
+      root: resolve(WORKSPACE_ROOT, 'apps/ui-storybook'),
+    });
+    const { code } = (await (plugin.transform as any).call({}, '// preview', projectPreview)) as {
+      code: string;
+    };
+
+    expect(code).toContain(
+      `import '${normalizePath(resolve(WORKSPACE_ROOT, 'apps/ui-storybook/.storybook/tailwind.css'))}';`
+    );
+    expect(code).not.toContain("import 'apps/ui-storybook/.storybook/tailwind.css';");
+    expect(code).not.toContain('apps/ui-storybook/apps/ui-storybook');
+  });
+
+  it('leaves the zone.js package specifier alone', async () => {
+    const options = {
+      configDir: resolve(WORKSPACE_ROOT, '.storybook'),
+      angularBuilderContext: { workspaceRoot: WORKSPACE_ROOT },
+      angularBuilderOptions: { styles: ['src/styles.css'] },
+    } as unknown as StandaloneOptions;
+    vi.mocked(findConfigFile).mockReturnValue(previewPath);
+
+    const plugin = angularOptionsPlugin(options, { normalizePath, zoneless: false });
+    (plugin.config as (userConfig: unknown) => unknown)({ root: WORKSPACE_ROOT });
+    const { code } = (await (plugin.transform as any).call({}, '// preview', previewPath)) as {
+      code: string;
+    };
+
+    expect(code).toContain("import 'zone.js';");
   });
 
   it('ignores malformed object-form styles from the environment bridge', async () => {

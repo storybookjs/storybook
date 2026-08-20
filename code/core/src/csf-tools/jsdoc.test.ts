@@ -2,7 +2,7 @@ import { expect, it } from 'vitest';
 
 import { dedent } from 'ts-dedent';
 
-import { extractJSDocInfo } from './jsdoc.ts';
+import { extractComponentDescription, extractJSDocInfo } from './jsdoc.ts';
 
 it('should extract @summary tag', () => {
   const code = dedent`description\n@summary\n my summary`;
@@ -63,4 +63,47 @@ it('preserves blank lines and newlines in the description so Markdown survives',
     ].join('\n')
   );
   expect(tags).toEqual({ summary: ['short summary'] });
+});
+
+it('uses docblock tags when docgen JSDoc tags are empty', () => {
+  const metaJsDoc = dedent`
+    Meta description.
+
+    @summary Meta summary.
+    @describe Meta describe.
+  `;
+
+  expect(extractComponentDescription(metaJsDoc, 'Component description.', {})).toEqual({
+    description: 'Meta describe.',
+    summary: 'Meta summary.',
+    jsDocTags: {
+      describe: ['Meta describe.'],
+      summary: ['Meta summary.'],
+    },
+  });
+});
+
+it('lets non-empty docgen JSDoc tags win over matching docblock tags', () => {
+  const metaJsDoc = dedent`
+    Meta description.
+
+    @summary Meta summary.
+    @describe Meta describe.
+    @deprecated Use NewButton.
+  `;
+
+  expect(
+    extractComponentDescription(metaJsDoc, 'Component description.', {
+      describe: ['Component describe.'],
+      summary: ['Component summary.'],
+    })
+  ).toEqual({
+    description: 'Component describe.',
+    summary: 'Component summary.',
+    jsDocTags: {
+      deprecated: ['Use NewButton.'],
+      describe: ['Component describe.'],
+      summary: ['Component summary.'],
+    },
+  });
 });

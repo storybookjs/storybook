@@ -77,6 +77,8 @@ export type ToolsCallOptions = {
 type ToolsBase = {
   clientInfo: Required<ToolsClientInfo>;
   storybook: ToolsStorybookInfo;
+  /** Set when `auto` mode could not attach and loaded the project configuration instead. */
+  fallbackNotice?: string;
   /** Toolset registry and service accessor the CLI uses for help and dispatch. */
   runtime: ToolsRuntime;
   describe(options?: ToolsDescribeOptions): Promise<ToolsetCatalog>;

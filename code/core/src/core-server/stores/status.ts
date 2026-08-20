@@ -14,8 +14,9 @@ const statusStore = createStatusStore({
       This will be fixed when we do the planned UniversalStore v0.2.
 
       STORYBOOK_ATTACHED_TOOLS is set by createTools in attached mode (and by the CLI dispatcher
-      for `tools --attach`), because that process loads this module before it can prepare a
-      follower channel.
+      for `tools` without `--no-attach`, and for `ai`), because that process may load this module
+      before it can prepare a follower channel. Local fallback clears the env before loading
+      core-server.
     */
     leader:
       !optionalEnvToBoolean(process.env.VITEST_CHILD_PROCESS) &&

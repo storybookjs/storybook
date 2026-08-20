@@ -15,6 +15,8 @@ type Story = StoryObj<typeof meta>;
 const WARNING =
   'LocalComponent is declared in the story file, so the snippet references it without importing it.';
 
+// Focus, not hover: react-aria delays a hovered tooltip by 400ms unless another was shown in the
+// last 500ms, which it tracks globally, so hover races the findBy timeout. Focus opens immediately.
 export const Default: Story = {
   args: { warning: WARNING },
   play: async ({ canvasElement }) => {
@@ -22,18 +24,6 @@ export const Default: Story = {
     const trigger = await canvas.findByRole('button', { name: SNIPPET_WARNING_LABEL });
 
     await expect(within(document.body).queryByText(WARNING)).not.toBeInTheDocument();
-
-    await userEvent.hover(trigger);
-    await expect(await within(document.body).findByText(WARNING)).toBeVisible();
-  },
-};
-
-/** Keyboard users get the same note: the tooltip opens on focus, not only on hover. */
-export const OpensOnFocus: Story = {
-  args: { warning: WARNING },
-  play: async ({ canvasElement }) => {
-    const canvas = within(canvasElement);
-    const trigger = await canvas.findByRole('button', { name: SNIPPET_WARNING_LABEL });
 
     await userEvent.tab();
     await expect(trigger).toHaveFocus();
@@ -48,7 +38,10 @@ export const MultipleCaveats: Story = {
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await userEvent.hover(await canvas.findByRole('button', { name: SNIPPET_WARNING_LABEL }));
+    const trigger = await canvas.findByRole('button', { name: SNIPPET_WARNING_LABEL });
+
+    await userEvent.tab();
+    await expect(trigger).toHaveFocus();
 
     const note = await within(document.body).findByText(/omits args/);
     await expect(note).toHaveTextContent(WARNING);

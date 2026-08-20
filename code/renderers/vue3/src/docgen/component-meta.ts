@@ -11,6 +11,11 @@ import { readFile, stat } from 'node:fs/promises';
 import { join, parse } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
+import {
+  type ComponentJsDocInfo,
+  extractComponentJsDocInfo,
+  resolveExportedSymbol,
+} from 'storybook/internal/component-meta';
 
 import {
   TypeMeta,
@@ -23,6 +28,7 @@ import {
   type SlotMeta,
 } from 'vue-component-meta';
 import { parseMulti, type ComponentDoc } from 'vue-docgen-api';
+import type ts from 'typescript';
 
 // Mirrors the JSON round-trip in toSerializableMeta: methods (e.g. `getDeclarations`) do not
 // survive it, so their keys are dropped rather than kept as unconstructible phantom fields.
@@ -36,11 +42,18 @@ type Serializable<T> = T extends AnyFunction
       ? { [K in keyof T as T[K] extends AnyFunction ? never : K]: Serializable<T[K]> }
       : T;
 
+type MetaSourceEntry = {
+  name: string;
+  meta: ComponentMeta;
+  jsDocInfo: ComponentJsDocInfo | undefined;
+};
+
 /** One component's normalized `vue-component-meta` output, tagged with the export it came from. */
 export type MetaSource = {
   exportName: string;
   displayName: string;
   sourceFiles: string;
+  jsDocTags?: Record<string, string[]>;
 } & Serializable<ComponentMeta> &
   MetaCheckerOptions['schema'];
 
@@ -92,29 +105,42 @@ export async function createVueComponentMetaChecker(
  * export cannot suppress the docgen of its siblings.
  */
 export async function collectComponentMetaSources(
+  typescript: typeof ts,
   checker: ComponentMetaChecker,
   id: string
 ): Promise<MetaSource[]> {
-  const exportNames: string[] = [];
-  let componentsMeta: ComponentMeta[] = [];
+  let entries: MetaSourceEntry[] = [];
 
   for (const name of checker.getExportNames(id)) {
+    let meta: ComponentMeta | undefined;
     try {
-      const meta = checker.getComponentMeta(id, name);
-      exportNames.push(name);
-      componentsMeta.push(meta);
+      meta = checker.getComponentMeta(id, name);
     } catch {}
+
+    if (!meta) {
+      continue;
+    }
+
+    entries.push({
+      name,
+      meta,
+      jsDocInfo: extractVueComponentJsDocInfo(typescript, checker, id, name),
+    });
   }
 
-  if (componentsMeta.length === 0) {
+  if (entries.length === 0) {
     return [];
   }
 
-  componentsMeta = await applyVueDocgenApiTempFixes(id, componentsMeta);
+  const fixedComponentsMeta = await applyVueDocgenApiTempFixes(
+    id,
+    entries.map((entry) => entry.meta)
+  );
+  entries = entries.map((entry, index) => ({ ...entry, meta: fixedComponentsMeta[index]! }));
 
   const metaSources: MetaSource[] = [];
 
-  componentsMeta.forEach((meta, index) => {
+  entries.forEach(({ name, meta, jsDocInfo }) => {
     // filter out empty meta
     const isEmpty =
       !meta.props.length && !meta.events.length && !meta.slots.length && !meta.exposed.length;
@@ -122,8 +148,6 @@ export async function collectComponentMetaSources(
     if (isEmpty || meta.type === TypeMeta.Unknown) {
       return;
     }
-
-    const exportName = exportNames[index];
 
     // we remove nested object schemas here since they are not used inside Storybook (we don't generate controls for object properties)
     // and they can cause "out of memory" issues for large/complex schemas (e.g. HTMLElement)
@@ -161,9 +185,11 @@ export async function collectComponentMetaSources(
 
     metaSources.push(
       toSerializableMeta({
-        exportName,
-        displayName: exportName === 'default' ? getFilenameWithoutExtension(id) : exportName,
+        exportName: name,
+        displayName: name === 'default' ? getFilenameWithoutExtension(id) : name,
         ...meta,
+        description: jsDocInfo?.description,
+        jsDocTags: jsDocInfo?.jsDocTags,
         exposed,
         sourceFiles: id,
       })
@@ -171,6 +197,27 @@ export async function collectComponentMetaSources(
   });
 
   return metaSources;
+}
+
+function extractVueComponentJsDocInfo(
+  typescript: typeof ts,
+  checker: ComponentMetaChecker,
+  id: string,
+  exportName: string
+): ComponentJsDocInfo | undefined {
+  const program = checker.getProgram();
+  const sourceFile = program?.getSourceFile(id.replace(/\\/g, '/'));
+  if (!program || !sourceFile) {
+    return undefined;
+  }
+
+  const typeChecker = program.getTypeChecker();
+  const symbol = resolveExportedSymbol(typescript, typeChecker, sourceFile, exportName);
+  if (!symbol) {
+    return undefined;
+  }
+
+  return extractComponentJsDocInfo(typescript, typeChecker, symbol);
 }
 
 /** Gets the filename without file extension. */

@@ -69,7 +69,8 @@ describe('story-docs open service', () => {
   it('carries a framework-shaped snippet template through the payload without reshaping it', async () => {
     const snippetTemplate = {
       kind: 'angular-snippet-template',
-      template: '<sb-basic\n    [label]="{{label}}"\n/>',
+      selector: 'sb-basic',
+      inputNames: ['label'],
       outputs: ['pressed'],
       componentName: 'BasicComponent',
       standalone: true,

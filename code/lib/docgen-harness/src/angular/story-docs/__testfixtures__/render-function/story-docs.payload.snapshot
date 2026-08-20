@@ -34,12 +34,13 @@ export class DemoComponent {}",
       "snippetTemplate": {
         "componentImport": "import { RenderFunctionComponent } from './render-function.component.ts';",
         "componentName": "RenderFunctionComponent",
+        "inputNames": [
+          "label",
+        ],
         "kind": "angular-snippet-template",
         "outputs": [],
+        "selector": "sb-render-function",
         "standalone": true,
-        "template": "<sb-render-function
-    [label]="{{label}}"
-/>",
       },
     },
   },

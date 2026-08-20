@@ -14,15 +14,19 @@ describe('printArgExpression', () => {
     expect(printArgExpression('Tom & Jerry')).toBe("'Tom & Jerry'");
   });
 
-  it('prints the other primitives as their literal text', () => {
+  it('prints supported primitives as their literal text', () => {
     expect(printArgExpression(42)).toBe('42');
     expect(printArgExpression(-1)).toBe('-1');
-    expect(printArgExpression(-0)).toBe('0');
-    expect(printArgExpression(Number.NaN)).toBe('NaN');
-    expect(printArgExpression(Infinity)).toBe('Infinity');
+    expect(printArgExpression(-0)).toBe('-0');
     expect(printArgExpression(true)).toBe('true');
     expect(printArgExpression(null)).toBe('null');
     expect(printArgExpression(undefined)).toBe('undefined');
+  });
+
+  it('declines non-finite numbers because Angular reads them as component members', () => {
+    expect(printArgExpression(Number.NaN)).toBeUndefined();
+    expect(printArgExpression(Infinity)).toBeUndefined();
+    expect(printArgExpression(-Infinity)).toBeUndefined();
   });
 
   it('prints arrays and objects with unquoted identifier keys and spaced separators', () => {
@@ -32,17 +36,15 @@ describe('printArgExpression', () => {
     expect(printArgExpression({ 'not-an-ident': 1 })).toBe("{'not-an-ident': 1}");
   });
 
-  // `map` skips holes, so an earlier version printed `[, 1]` - which Angular's parser rejects with
-  // "Unexpected token ,". A hole is indistinguishable from `undefined` once printed.
   it('prints a sparse hole as null rather than leaving a gap Angular cannot parse', () => {
     expect(printArgExpression([, 1])).toBe('[null, 1]');
     expect(printArgExpression([1, , 2])).toBe('[1, null, 2]');
     expect(printArgExpression(new Array(3))).toBe('[null, null, null]');
   });
 
-  it('drops an undefined object entry but keeps an undefined array hole as null', () => {
-    expect(printArgExpression({ a: 1, b: undefined })).toBe('{a: 1}');
-    expect(printArgExpression([1, undefined, 2])).toBe('[1, null, 2]');
+  it('preserves explicit undefined entries', () => {
+    expect(printArgExpression({ a: 1, b: undefined })).toBe('{a: 1, b: undefined}');
+    expect(printArgExpression([1, undefined, 2])).toBe('[1, undefined, 2]');
   });
 
   it('declines a circular reference rather than inventing a placeholder for it', () => {
@@ -50,6 +52,14 @@ describe('printArgExpression', () => {
     circular.self = circular;
 
     expect(printArgExpression(circular)).toBeUndefined();
+  });
+
+  it('prints an acyclic shared reference each time it appears', () => {
+    const shared = { value: 1 };
+
+    expect(printArgExpression({ first: shared, second: shared })).toBe(
+      '{first: {value: 1}, second: {value: 1}}'
+    );
   });
 
   // An Angular template expression may only name the component's own members, so none of these has

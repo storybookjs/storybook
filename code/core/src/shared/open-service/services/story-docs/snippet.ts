@@ -11,6 +11,13 @@ import type { StoryDoc, StoryDocsPayload } from './types.ts';
  */
 export type SnippetTemplateRenderer = (snippetTemplate: unknown, args: Args) => string | undefined;
 
+/** Internal framework-to-docs parameters for rebuilding service snippets from current args. */
+export interface StoryDocsSnippetSourceParameters {
+  renderSnippetTemplate?: SnippetTemplateRenderer;
+}
+
+type StoryDocSnippet = Pick<StoryDoc, 'id' | 'snippet' | 'snippetTemplate'>;
+
 /** Prepends a CSF file import block to a story snippet for display in docs and the Code panel. */
 export function prependImportToSnippet(importBlock: string | undefined, snippet: string): string {
   const trimmedImport = importBlock?.trim();
@@ -37,7 +44,7 @@ export function selectStoryDoc(
  * source is not copy-pasteable.
  */
 export function renderStoryDocSnippet(
-  story: StoryDoc,
+  story: StoryDocSnippet,
   args: Args | undefined,
   render: SnippetTemplateRenderer | undefined
 ): string | undefined {

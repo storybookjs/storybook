@@ -8,6 +8,7 @@ import type {
   PreparedStory,
   Renderer,
 } from 'storybook/internal/types';
+import type { StoryDocsSnippetSourceParameters } from 'storybook/open-service';
 
 import type { ThemeVars } from 'storybook/theming';
 
@@ -123,7 +124,7 @@ type DescriptionBlockParameters = {
   story?: string;
 };
 
-type SourceBlockParameters = {
+type SourceBlockParameters = StoryDocsSnippetSourceParameters & {
   /** The source code to be rendered. Will be inferred if not passed */
   code?: string;
   /** Whether to render the code in dark mode */

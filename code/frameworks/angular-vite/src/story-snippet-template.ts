@@ -1,82 +1,50 @@
-// Rebuilds a story's snippet from the template the server emitted for it and the args a reader is
-// looking at. Imported by the dev-server story-docs provider and by the preview, so this module
-// must stay free of `@angular/core` and of any other runtime-only import.
+// Imported by the dev-server story-docs provider and by the preview, so this module must stay free
+// of `@angular/core` and of any other runtime-only import.
 import { escapeAttributeExpression, printArgExpression } from './arg-expression.ts';
-import type { HostComponentSnippetInput } from './host-component-snippet.ts';
 import { buildHostComponentSnippet } from './host-component-snippet.ts';
-import type { TagClose } from './template-grammar.ts';
-import { layoutTag } from './template-grammar.ts';
+import type { TemplateInputBinding } from './template-grammar.ts';
+import { buildTemplate } from './template-grammar.ts';
 
-/** Identifies a template this framework wrote, across a version skew a static build can carry. */
 export const SNIPPET_TEMPLATE_KIND = 'angular-snippet-template';
 
-/**
- * Everything needed to rebuild a story's snippet without its source file.
- *
- * Only recorded for snippets built from the component's own bindings, where every binding's value
- * was statically evaluable. A story that supplies its own markup, reaches its component through
- * `*ngComponentOutlet`, or holds an arg that only running the story could resolve, carries no
- * template at all - a partial one would let the preview render something the server never would.
- */
-export interface StorySnippetTemplate extends Omit<
-  HostComponentSnippetInput,
-  'viaComponentOutlet' | 'fields'
-> {
+export interface StorySnippetTemplate {
   kind: typeof SNIPPET_TEMPLATE_KIND;
-  /**
-   * The story's tag in wire form: the open line, one binding per line, and the tag's end last, with
-   * `[name]="{{name}}"` standing in for every input the component declares.
-   *
-   * Every declared input is a hole, not just the ones the story set: a reader can turn any of the
-   * others on from the Controls panel, and a template that already carries them places such a
-   * binding where the component declares it rather than appending it wherever it was switched on.
-   */
-  template: string;
+  selector: string;
+  inputNames: string[];
+  outputs: string[];
+  componentName: string;
+  componentImport?: string;
+  standalone: boolean;
+  ngModules?: { names: string[]; importStatements: string[] };
 }
 
-export const isStorySnippetTemplate = (value: unknown): value is StorySnippetTemplate =>
+const isStringArray = (value: unknown): value is string[] =>
+  Array.isArray(value) && value.every((item) => typeof item === 'string');
+
+const isNgModules = (value: unknown): value is NonNullable<StorySnippetTemplate['ngModules']> =>
   typeof value === 'object' &&
   value !== null &&
-  (value as { kind?: unknown }).kind === SNIPPET_TEMPLATE_KIND;
+  isStringArray((value as { names?: unknown }).names) &&
+  isStringArray((value as { importStatements?: unknown }).importStatements);
 
-// A binding whose whole attribute value is its own hole. The name is matched by backreference, so
-// it needs no escaping and an input cannot be confused with one whose name it is a prefix of.
-const HOLE = /^\[([^\]]+)\]="\{\{\1\}\}"$/;
+export const isStorySnippetTemplate = (value: unknown): value is StorySnippetTemplate => {
+  if (typeof value !== 'object' || value === null) {
+    return false;
+  }
 
-const DECLINED = Symbol('snippet-template-declined');
-
-/** The binding for one wire-form line: filled, dropped (`undefined`), or unprintable. */
-const fillBinding = (
-  binding: string,
-  args: Record<string, unknown>
-): string | undefined | typeof DECLINED => {
-  const hole = HOLE.exec(binding);
-  if (!hole) {
-    // An output binding carries a handler name rather than a value, so it is never substituted.
-    return binding;
-  }
-  const name = hole[1];
-  // The args ARE the truth, and resetting a control drops the key rather than setting it to
-  // `undefined`, so absence is what removes a binding.
-  if (!(name in args) || args[name] === undefined) {
-    return undefined;
-  }
-  const printed = printArgExpression(args[name]);
-  if (printed === undefined) {
-    return DECLINED;
-  }
-  return `[${name}]="${escapeAttributeExpression(printed)}"`;
+  const template = value as Partial<Record<keyof StorySnippetTemplate, unknown>>;
+  return (
+    template.kind === SNIPPET_TEMPLATE_KIND &&
+    typeof template.selector === 'string' &&
+    isStringArray(template.inputNames) &&
+    isStringArray(template.outputs) &&
+    typeof template.componentName === 'string' &&
+    (template.componentImport === undefined || typeof template.componentImport === 'string') &&
+    typeof template.standalone === 'boolean' &&
+    (template.ngModules === undefined || isNgModules(template.ngModules))
+  );
 };
 
-/**
- * The story's snippet for the args in front of the reader, or `undefined` to decline the rebuild.
- *
- * Takes `unknown` because it is the framework's registered renderer: declining a payload another
- * framework or an older build wrote is part of the same contract as declining a value with no
- * expression form. One arg with no expression form declines the whole rebuild, because a snippet
- * where a single binding silently kept the story's value while the rest followed the Controls is
- * worse than one that is merely stale.
- */
 export const renderSnippetFromTemplate = (
   snippetTemplate: unknown,
   args: Record<string, unknown>
@@ -84,28 +52,30 @@ export const renderSnippetFromTemplate = (
   if (!isStorySnippetTemplate(snippetTemplate)) {
     return undefined;
   }
-  const lines = snippetTemplate.template.split('\n');
-  const end = lines.at(-1)!;
-  const bindings: string[] = [];
 
-  for (const line of lines.slice(1, -1)) {
-    const filled = fillBinding(line.trim(), args);
-    if (filled === DECLINED) {
+  const inputs: TemplateInputBinding[] = [];
+  for (const name of snippetTemplate.inputNames) {
+    if (!Object.hasOwn(args, name) || args[name] === undefined) {
+      continue;
+    }
+    const expression = printArgExpression(args[name]);
+    if (expression === undefined) {
       return undefined;
     }
-    if (filled !== undefined) {
-      bindings.push(filled);
-    }
+    inputs.push({ name, expression: escapeAttributeExpression(expression) });
   }
 
-  const close: TagClose =
-    end === '/>' ? { selfClosing: true } : { selfClosing: false, tag: end.slice(2, -1), inner: '' };
-
   return buildHostComponentSnippet({
-    ...snippetTemplate,
-    template: layoutTag({ open: lines[0]!, bindings, close, style: 'snippet' }),
-    // The outlet path shows no args at all, so it never carries a template; the authored-markup
-    // path owns `fields`, and it never carries one either.
+    template: buildTemplate(snippetTemplate.selector, {
+      inputs,
+      outputs: snippetTemplate.outputs,
+      style: 'snippet',
+    }),
+    componentName: snippetTemplate.componentName,
+    componentImport: snippetTemplate.componentImport,
+    standalone: snippetTemplate.standalone,
+    ngModules: snippetTemplate.ngModules,
+    outputs: snippetTemplate.outputs,
     viaComponentOutlet: false,
   }).snippet;
 };

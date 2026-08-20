@@ -37,7 +37,6 @@ import type { StorySnippetTemplate } from '../story-snippet-template.ts';
 import { SNIPPET_TEMPLATE_KIND } from '../story-snippet-template.ts';
 import {
   buildComponentOutletTemplate,
-  buildTagWireForm,
   buildTemplate,
   formatTemplateMarkup,
 } from '../template-grammar.ts';
@@ -335,40 +334,31 @@ const renderStorySnippet = async (
     // scaffolded story has - makes the example partial and is named in the warning, but does not
     // change a single character of the template, so it does not withhold the snippet template.
     snippetTemplate: replayable
-      ? storySnippetTemplate(snippetMeta, localName, componentImport, ngModules)
+      ? storySnippetTemplate(
+          snippetMeta.selector,
+          snippetMeta,
+          localName,
+          componentImport,
+          ngModules
+        )
       : undefined,
   };
 };
 
-/**
- * The template the preview substitutes live args into to rebuild this snippet.
- *
- * Emitted in wire form rather than as display markup: how many bindings the tag ends up carrying is
- * only known once the preview has filled the holes, so the preview lays it out - through the same
- * `layoutTag` that shaped the snippet beside it.
- *
- * Every field is copied rather than aliased: `snippetMeta` is a reactive proxy over `core/docgen`'s
- * state, and a proxy cannot be structured-cloned, so aliasing one here would make the whole
- * story-docs payload fail the snapshot the runtime takes of it.
- */
 const storySnippetTemplate = (
+  selector: string,
   snippetMeta: AngularComponentSnippetMeta,
   componentName: string,
   componentImport: string | undefined,
   ngModules: HostComponentSnippetInput['ngModules']
 ): StorySnippetTemplate => ({
   kind: SNIPPET_TEMPLATE_KIND,
-  template: buildTagWireForm(snippetMeta.selector!, {
-    inputs: snippetMeta.inputs.map((name) => ({ name, expression: `{{${name}}}` })),
-    outputs: [...snippetMeta.outputs],
-  }),
+  selector,
+  inputNames: [...snippetMeta.inputs],
+  outputs: [...snippetMeta.outputs],
   componentName,
-  // Stored unconditionally: `buildHostComponentSnippet` owns the rule about when an import may be
-  // listed, and the preview runs that same builder, so repeating the rule here would be a second
-  // copy of it to keep in sync.
   ...(componentImport === undefined ? {} : { componentImport }),
   standalone: snippetMeta.standalone,
-  outputs: [...snippetMeta.outputs],
   ...(ngModules === undefined
     ? {}
     : {
@@ -470,24 +460,14 @@ const unboundArgsWarning = (
   );
 };
 
-/**
- * The component's own bindings, and whether a consumer holding live args could rebuild them.
- *
- * A binding printed from source text names things only the story file knows, so one of those makes
- * the whole set unreplayable rather than just itself.
- */
 const componentBindings = (
   snippetMeta: AngularComponentSnippetMeta,
   shape: StoryShape
 ): { bindings: Bindings; replayable: boolean } => {
-  // Bindings follow the order the component declares its inputs, not the order the story happens to
-  // list its args. The preview adds and removes bindings as a reader turns Controls on and off, and
-  // only a component-anchored order keeps a binding in the same place while that happens.
-  // `undefined` binds nothing, the same rule `argsExpansion` and `unboundArgsWarning` already apply
-  // and the same one the preview applies when a reader resets a control. Without it this path alone
-  // emitted `[label]="undefined"`, which the preview then dropped - two snippets for one story.
   const entries = snippetMeta.inputs
-    .filter((argName) => argName in shape.args && !isUndefinedValue(shape.args[argName]!))
+    .filter(
+      (argName) => Object.hasOwn(shape.args, argName) && !isUndefinedValue(shape.args[argName]!)
+    )
     .map((argName) => ({
       argName,
       ...evaluateArgBinding(shape.args[argName]!, snippetMeta.enums),
@@ -501,30 +481,23 @@ const componentBindings = (
   };
 };
 
-/**
- * What `argsToTemplate(args)` expands to, in the same component-anchored order
- * {@link componentBindings} uses, so one component's bindings read the same way whether a story
- * wrote its own markup or the snippet was generated for it.
- *
- * A function-valued arg is an output and never an input, and an arg the story set to `undefined`
- * binds nothing at all, which is what the runtime helper does with it too.
- */
 const argsExpansion = (snippetMeta: AngularComponentSnippetMeta, shape: StoryShape): Bindings => {
-  const bindable = (name: string): t.Node | undefined => {
-    const node = shape.args[name];
-    return node === undefined || isUndefinedValue(node) ? undefined : node;
-  };
+  const inputNames = new Set(snippetMeta.inputs);
+  const outputNames = new Set(snippetMeta.outputs);
   const inputs: Bindings['inputs'] = [];
-  for (const name of snippetMeta.inputs) {
-    const node = bindable(name);
-    if (node !== undefined && !isFunctionValue(node)) {
+  const outputs: string[] = [];
+  for (const [name, node] of Object.entries(shape.args)) {
+    if (isUndefinedValue(node)) {
+      continue;
+    }
+    if (isFunctionValue(node)) {
+      if (outputNames.has(name)) {
+        outputs.push(name);
+      }
+    } else if (inputNames.has(name)) {
       inputs.push({ name, expression: evaluateArgBinding(node, snippetMeta.enums).expression });
     }
   }
-  const outputs = snippetMeta.outputs.filter((name) => {
-    const node = bindable(name);
-    return node !== undefined && isFunctionValue(node);
-  });
   return { inputs, outputs };
 };
 

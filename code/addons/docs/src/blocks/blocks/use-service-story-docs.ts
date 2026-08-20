@@ -55,11 +55,26 @@ export function useServiceStoryDoc(storyId: string): QueryState<StoryDoc | undef
 }
 
 // One identity for the module's lifetime, so args can never enter the subscription's identity.
-// Reads exactly two fields, which is what keeps the subscription from firing for a sibling story.
-const selectSnippetParts = (payload: StoryDocsPayload | undefined, storyId: string) => ({
-  story: payload?.stories[storyId],
-  importBlock: payload?.import,
-});
+// The selector reads only one story and the file import, so sibling updates stay isolated.
+const selectSnippetParts = (payload: StoryDocsPayload | undefined, storyId: string) => {
+  const story = payload?.stories[storyId];
+  return {
+    story:
+      story === undefined
+        ? undefined
+        : {
+            id: story.id,
+            snippet: story.snippet,
+            // The framework owns the template fields, so its JSON form is the only primitive
+            // revision core can select without knowing their shape.
+            snippetTemplateJSON:
+              story.snippetTemplate === undefined
+                ? undefined
+                : JSON.stringify(story.snippetTemplate),
+          },
+    importBlock: payload?.import,
+  };
+};
 
 /**
  * Convenience hook returning one story's display snippet (with its CSF import block prepended).
@@ -78,7 +93,20 @@ export function useServiceStorySnippet(
   const { story, importBlock } = state.data ?? {};
 
   const snippet = useMemo(() => {
-    const rendered = story && renderStoryDocSnippet(story, args, render);
+    const rendered =
+      story &&
+      renderStoryDocSnippet(
+        {
+          id: story.id,
+          snippet: story.snippet,
+          snippetTemplate:
+            story.snippetTemplateJSON === undefined
+              ? undefined
+              : JSON.parse(story.snippetTemplateJSON),
+        },
+        args,
+        render
+      );
     return rendered === undefined ? undefined : prependImportToSnippet(importBlock, rendered);
   }, [story, importBlock, args, render]);
 

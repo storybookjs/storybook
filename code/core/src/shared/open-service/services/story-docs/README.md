@@ -4,9 +4,11 @@ Per-story snippets, descriptions, and file-level import statements for docs page
 panel, and the components HTML debugger. Component prop docgen lives in the sibling `core/docgen`
 service.
 
-When `experimentalDocgenServer` is enabled, the preview `storyDocsSourceBeforeEach` hook emits static
+When `experimentalDocgenServer` is enabled, the preview `storyDocsSourceBeforeEach` hook emits
 snippets to the manager Code panel via `SNIPPET_RENDERED`, replacing renderer `jsxDecorator` while
-preserving `parameters.docs.source.transform` handling in preview.
+preserving `parameters.docs.source.transform` handling in preview. Frameworks may provide a typed
+renderer that rebuilds a server-owned snippet template from current args; otherwise the server
+snippet is emitted unchanged.
 
 ## Import snippets
 

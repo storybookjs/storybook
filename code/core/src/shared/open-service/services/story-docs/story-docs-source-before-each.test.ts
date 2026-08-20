@@ -1,3 +1,4 @@
+import { once } from 'storybook/internal/client-logger';
 import { SourceType } from 'storybook/internal/docs-tools';
 import type { StoryContext } from 'storybook/internal/types';
 
@@ -5,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
+import { buildQueryState, toError } from '../../query-state.ts';
 import type { StoryDocsService } from './definition.ts';
 import { prependImportToSnippet, selectSnippetForStory } from './snippet.ts';
 import {
@@ -14,6 +16,7 @@ import {
 import type { StoryDocsPayload } from './types.ts';
 
 vi.mock('storybook/preview-api', { spy: true });
+vi.mock('storybook/internal/client-logger', { spy: true });
 
 const mockedEmitTransformCode = vi.mocked(emitTransformCode);
 const mockedGetService = vi.mocked(getService);
@@ -34,13 +37,55 @@ const payload: StoryDocsPayload = {
 };
 const serviceSnippet = 'import { Button } from \'./Button\';\n\n<Button label="hi" />';
 
-/** Builds a minimal `core/story-docs` service mock whose `storyDocs.loaded` returns `loaded`. */
+function storyDocsQueryState(data: StoryDocsPayload | undefined, error?: Error, loading = false) {
+  return buildQueryState(data, {
+    error,
+    status: error ? 'error' : loading ? 'pending' : 'success',
+    loadStatus: loading ? 'loading' : 'idle',
+  });
+}
+
 function mockStoryDocsService(loaded: () => Promise<StoryDocsPayload>) {
+  let subscriber: ((state: ReturnType<typeof storyDocsQueryState>) => void) | undefined;
+  let active = false;
+  const unsubscribe = vi.fn(() => {
+    active = false;
+  });
+  const subscribe = vi.fn(
+    (_input: { id: string }, callback: (state: ReturnType<typeof storyDocsQueryState>) => void) => {
+      active = true;
+      subscriber = callback;
+      callback(storyDocsQueryState(undefined, undefined, true));
+      void loaded().then(
+        (data) => {
+          if (active) {
+            callback(storyDocsQueryState(data));
+          }
+        },
+        (value) => {
+          if (active) {
+            callback(storyDocsQueryState(undefined, toError(value)));
+          }
+        }
+      );
+      return unsubscribe;
+    }
+  );
+
   mockedGetService.mockReturnValue({
     queries: {
-      storyDocs: Object.assign(() => payload, { loaded }),
+      storyDocs: Object.assign(() => payload, { loaded, subscribe }),
     },
   } as unknown as StoryDocsService);
+
+  return {
+    publish(data: StoryDocsPayload) {
+      if (active) {
+        subscriber?.(storyDocsQueryState(data));
+      }
+    },
+    unsubscribe,
+  };
 }
 
 describe('snippet helpers', () => {
@@ -88,6 +133,7 @@ describe('storyDocsSourceBeforeEach', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+    vi.mocked(once.warn).mockImplementation(() => {});
     mockedEmitTransformCode.mockResolvedValue(undefined);
     mockStoryDocsService(() => Promise.resolve(payload));
   });
@@ -96,8 +142,6 @@ describe('storyDocsSourceBeforeEach', () => {
     vi.unstubAllGlobals();
   });
 
-  // The renderer travels in `docs.source.renderSnippetTemplate`, which is a contract between this
-  // reader and every framework that sets it. Nothing else pins the key's spelling on both sides.
   it('rebuilds the snippet with the renderer the story parameters carry', async () => {
     mockStoryDocsService(() =>
       Promise.resolve({
@@ -132,7 +176,6 @@ describe('storyDocsSourceBeforeEach', () => {
   });
 
   it("falls back to the story's own source when the payload fails to load", async () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
     mockStoryDocsService(() => Promise.reject(new Error('boom')));
     const context = {
       id: storyId,
@@ -143,9 +186,30 @@ describe('storyDocsSourceBeforeEach', () => {
     await vi.waitFor(() => expect(mockedEmitTransformCode).toHaveBeenCalled());
 
     expect(mockedEmitTransformCode).toHaveBeenCalledWith('ORIGINAL', context);
-    expect(warn).toHaveBeenCalledOnce();
+    expect(once.warn).toHaveBeenCalledOnce();
     await cleanup?.();
-    vi.restoreAllMocks();
+  });
+
+  it('does not relabel or retry a transform failure as a load failure', async () => {
+    const error = new Error('transform failed');
+    mockedEmitTransformCode.mockRejectedValueOnce(error);
+    const context = {
+      id: storyId,
+      parameters: {
+        __isArgsStory: true,
+        docs: { source: { originalSource: 'ORIGINAL' } },
+      },
+    } as unknown as StoryContext;
+
+    const cleanup = storyDocsSourceBeforeEach(context);
+    await vi.waitFor(() => expect(mockedEmitTransformCode).toHaveBeenCalledOnce());
+
+    await cleanup?.();
+    expect(mockedEmitTransformCode).toHaveBeenCalledOnce();
+    expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context);
+    expect(once.warn).toHaveBeenCalledWith(
+      `Could not emit the code snippet for "${storyId}": ${String(error)}`
+    );
   });
 
   it('emits the service snippet through emitTransformCode', async () => {
@@ -155,11 +219,40 @@ describe('storyDocsSourceBeforeEach', () => {
     } as unknown as StoryContext;
 
     const cleanup = storyDocsSourceBeforeEach(context);
-    await Promise.resolve();
-    await Promise.resolve();
+    await vi.waitFor(() => expect(mockedEmitTransformCode).toHaveBeenCalled());
 
     expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context);
     await cleanup?.();
+  });
+
+  it('emits updated snippets while the story remains active', async () => {
+    const service = mockStoryDocsService(() => Promise.resolve(payload));
+    const context = {
+      id: storyId,
+      parameters: { __isArgsStory: true },
+    } as unknown as StoryContext;
+
+    const cleanup = storyDocsSourceBeforeEach(context);
+    await vi.waitFor(() =>
+      expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context)
+    );
+    mockedEmitTransformCode.mockClear();
+
+    service.publish({
+      ...payload,
+      stories: {
+        [storyId]: { ...payload.stories[storyId]!, snippet: '<Button label="updated" />' },
+      },
+    });
+
+    await vi.waitFor(() =>
+      expect(mockedEmitTransformCode).toHaveBeenCalledWith(
+        'import { Button } from \'./Button\';\n\n<Button label="updated" />',
+        context
+      )
+    );
+    await cleanup?.();
+    expect(service.unsubscribe).toHaveBeenCalledOnce();
   });
 
   it('does not emit for portable stories', async () => {

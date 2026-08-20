@@ -19,13 +19,14 @@ export class DemoComponent {}",
       "snippetTemplate": {
         "componentImport": "import { CsfOneLegacyComponent } from './csf1-legacy.component.ts';",
         "componentName": "CsfOneLegacyComponent",
+        "inputNames": [
+          "count",
+          "label",
+        ],
         "kind": "angular-snippet-template",
         "outputs": [],
+        "selector": "sb-csf1-legacy",
         "standalone": true,
-        "template": "<sb-csf1-legacy
-    [count]="{{count}}"
-    [label]="{{label}}"
-/>",
       },
     },
   },

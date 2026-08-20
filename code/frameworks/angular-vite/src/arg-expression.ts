@@ -29,42 +29,44 @@ const print = (value: unknown, seen: Set<unknown>): string | undefined => {
   if (typeof value === 'symbol' || typeof value === 'bigint' || typeof value === 'function') {
     return undefined;
   }
+  if (typeof value === 'number') {
+    return Number.isFinite(value) ? (Object.is(value, -0) ? '-0' : String(value)) : undefined;
+  }
   if (typeof value !== 'object' || value === null) {
-    return `${value}`;
+    return String(value);
+  }
+  if (!Array.isArray(value) && !isPlainObject(value)) {
+    return undefined;
   }
   if (seen.has(value)) {
     return undefined;
   }
   seen.add(value);
-  if (Array.isArray(value)) {
-    const elements: string[] = [];
-    // Indexed rather than `map`, which skips holes: it would leave them empty on `join` and print
-    // `[, 1]`, which Angular's parser rejects. A hole reads as `undefined` here and prints as
-    // `null`, the same as an explicit `undefined` and the same as `JSON.stringify`.
-    for (let index = 0; index < value.length; index += 1) {
-      const printed = print(value[index] ?? null, seen);
+  try {
+    if (Array.isArray(value)) {
+      const elements: string[] = [];
+      for (let index = 0; index < value.length; index += 1) {
+        const printed = print(Object.hasOwn(value, index) ? value[index] : null, seen);
+        if (printed === undefined) {
+          return undefined;
+        }
+        elements.push(printed);
+      }
+      return `[${elements.join(', ')}]`;
+    }
+
+    const entries: string[] = [];
+    for (const [key, entryValue] of Object.entries(value)) {
+      const printed = print(entryValue, seen);
       if (printed === undefined) {
         return undefined;
       }
-      elements.push(printed);
+      entries.push(`${isValidIdentifier(key) ? key : quoteExpressionString(key)}: ${printed}`);
     }
-    return `[${elements.join(', ')}]`;
+    return `{${entries.join(', ')}}`;
+  } finally {
+    seen.delete(value);
   }
-  if (!isPlainObject(value)) {
-    return undefined;
-  }
-  const entries: string[] = [];
-  for (const [key, entryValue] of Object.entries(value)) {
-    if (entryValue === undefined) {
-      continue;
-    }
-    const printed = print(entryValue, seen);
-    if (printed === undefined) {
-      return undefined;
-    }
-    entries.push(`${isValidIdentifier(key) ? key : quoteExpressionString(key)}: ${printed}`);
-  }
-  return `{${entries.join(', ')}}`;
 };
 
 /**

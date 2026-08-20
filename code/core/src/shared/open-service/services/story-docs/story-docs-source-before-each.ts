@@ -5,7 +5,7 @@ import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePan
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
-import type { SnippetTemplateRenderer } from './snippet.ts';
+import type { StoryDocsSnippetSourceParameters } from './snippet.ts';
 import { selectSnippetForStory } from './snippet.ts';
 
 export { shouldSkipStoryDocsEmit };
@@ -41,43 +41,49 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
 
   const storyId = context.id;
   const componentId = storyId.split('--')[0]!;
+  const sourceParameters = (context.parameters?.docs?.source ??
+    {}) as StoryDocsSnippetSourceParameters & { originalSource?: string };
   let cancelled = false;
+  let lastSource: string | undefined;
+  let emitQueue = Promise.resolve();
 
-  // Do not await story-docs I/O here — story render should start immediately. Cleanup flips
-  // `cancelled` so a slow load cannot emit after the story is torn down, then returns the chain
-  // so navigation waits for in-flight work to settle.
-  const codePanelSnippetPromise = service.queries.storyDocs
-    .loaded({ id: componentId })
-    .then((payload) => {
+  const scheduleEmit = (source: string | undefined) => {
+    if (source === undefined || source === lastSource) {
+      return;
+    }
+    lastSource = source;
+    emitQueue = emitQueue.then(async () => {
       if (cancelled) {
         return;
       }
-      const snippet = selectSnippetForStory(
-        payload,
+      try {
+        await emitTransformCode(source, context);
+      } catch (error) {
+        once.warn(`Could not emit the code snippet for "${storyId}": ${String(error)}`);
+      }
+    });
+  };
+
+  const unsubscribe = service.queries.storyDocs.subscribe({ id: componentId }, (state) => {
+    if (cancelled || (state.data === undefined && state.isInitialLoading)) {
+      return;
+    }
+    if (state.isError) {
+      once.warn(`Could not load code snippets for "${componentId}": ${String(state.error)}`);
+    }
+    scheduleEmit(
+      selectSnippetForStory(
+        state.data,
         storyId,
         context.unmappedArgs,
-        context.parameters?.docs?.source?.renderSnippetTemplate as SnippetTemplateRenderer
-      );
-      const source = snippet ?? context.parameters?.docs?.source?.originalSource;
-      if (source === undefined) {
-        return;
-      }
-      return emitTransformCode(source, context);
-    })
-    // A failed load used to leave the Code panel blank forever while the docs Source block degraded
-    // to the story's own source. Emitting the same fallback the success path uses makes the two
-    // consumers of one payload fail the same way.
-    .catch((error) => {
-      once.warn(`Could not load code snippets for "${componentId}": ${String(error)}`);
-      const fallback = context.parameters?.docs?.source?.originalSource;
-      if (cancelled || fallback === undefined) {
-        return;
-      }
-      return emitTransformCode(fallback, context);
-    });
+        sourceParameters.renderSnippetTemplate
+      ) ?? sourceParameters.originalSource
+    );
+  });
 
   return () => {
     cancelled = true;
-    return codePanelSnippetPromise;
+    unsubscribe();
+    return emitQueue;
   };
 }

@@ -16,12 +16,13 @@
 export class DemoComponent {}",
       "snippetTemplate": {
         "componentName": "LocalComponent",
+        "inputNames": [
+          "heading",
+        ],
         "kind": "angular-snippet-template",
         "outputs": [],
+        "selector": "sb-local-component",
         "standalone": true,
-        "template": "<sb-local-component
-    [heading]="{{heading}}"
-/>",
       },
       "warning": "LocalComponent is declared in the story file, so the snippet references it without importing it.",
     },

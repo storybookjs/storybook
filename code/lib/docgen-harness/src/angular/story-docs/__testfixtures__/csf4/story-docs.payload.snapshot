@@ -21,15 +21,15 @@ export class DemoComponent {
       "snippetTemplate": {
         "componentImport": "import { CsfFourComponent } from './csf4.component.ts';",
         "componentName": "CsfFourComponent",
+        "inputNames": [
+          "label",
+        ],
         "kind": "angular-snippet-template",
         "outputs": [
           "saved",
         ],
+        "selector": "sb-csf4",
         "standalone": true,
-        "template": "<sb-csf4
-    [label]="{{label}}"
-    (saved)="saved($event)"
-/>",
       },
     },
     "storydocs-csf4--primary": {
@@ -50,15 +50,15 @@ export class DemoComponent {
       "snippetTemplate": {
         "componentImport": "import { CsfFourComponent } from './csf4.component.ts';",
         "componentName": "CsfFourComponent",
+        "inputNames": [
+          "label",
+        ],
         "kind": "angular-snippet-template",
         "outputs": [
           "saved",
         ],
+        "selector": "sb-csf4",
         "standalone": true,
-        "template": "<sb-csf4
-    [label]="{{label}}"
-    (saved)="saved($event)"
-/>",
       },
       "summary": "Factory summary",
     },

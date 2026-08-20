@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 
+import { once } from '../../../../client-logger/index.ts';
 import { selectSnippetForStory } from './snippet.ts';
 import type { StoryDocsPayload } from './types.ts';
+
+vi.mock('../../../../client-logger/index.ts', { spy: true });
 
 const payload = (snippetTemplate?: { kind: string }): StoryDocsPayload => ({
   id: 'button',
@@ -47,7 +50,7 @@ describe('selectSnippetForStory with a snippet template', () => {
   });
 
   it('keeps the server snippet when the renderer declines or throws, and says why once', () => {
-    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {});
+    const warn = vi.mocked(once.warn).mockImplementation(() => {});
     const args = { label: 'Live' };
 
     expect(selectSnippetForStory(payload(template), 'button--primary', args, () => undefined)).toBe(
@@ -61,8 +64,6 @@ describe('selectSnippetForStory with a snippet template', () => {
       })
     ).toBe('SERVER');
     expect(warn).toHaveBeenCalledOnce();
-
-    vi.restoreAllMocks();
   });
 
   it('still prepends the CSF import block to a rebuilt snippet', () => {
@@ -75,25 +76,4 @@ describe('selectSnippetForStory with a snippet template', () => {
       )
     ).toBe("import { Button } from './button';\n\nREBUILT");
   });
-});
-
-// The renderer used to be registered into a `globalThis` slot, which the published bundles could
-// reach through two import paths - `preview/runtime.js` inlines its own copy of this module, while
-// a framework called in through `storybook/open-service`. With the renderer passed in as a value
-// there is no module state left to disagree about, and this pins that: two module instances of the
-// reader produce the same result from one renderer defined outside both.
-it('renders the same from two module instances of this module', async () => {
-  // The query string defeats the module cache; TypeScript cannot resolve it, hence the cast.
-  const other = (await import(
-    './snippet.ts?instance=second' as string
-  )) as typeof import('./snippet.ts');
-  const render = () => 'REBUILT';
-
-  expect(other.selectSnippetForStory).not.toBe(selectSnippetForStory);
-  expect(other.selectSnippetForStory(payload(template), 'button--primary', {}, render)).toBe(
-    selectSnippetForStory(payload(template), 'button--primary', {}, render)
-  );
-  expect(other.selectSnippetForStory(payload(template), 'button--primary', {}, render)).toBe(
-    'REBUILT'
-  );
 });

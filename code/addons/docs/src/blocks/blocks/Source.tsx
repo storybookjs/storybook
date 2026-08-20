@@ -4,6 +4,7 @@ import React, { useContext, useMemo } from 'react';
 import { SourceType } from 'storybook/internal/docs-tools';
 import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 import type { Args, ModuleExport, PreparedStory, StoryId } from 'storybook/internal/types';
+import type { StoryDocsSnippetSourceParameters } from 'storybook/open-service';
 
 import type { SourceCodeProps } from '../components/Source';
 import { Source as PureSource, SourceError } from '../components/Source';
@@ -15,17 +16,18 @@ import { useServiceStorySnippet } from './use-service-story-docs.ts';
 import { useTransformCode } from './useTransformCode';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
-export type SourceParameters = SourceCodeProps & {
-  /** Where to read the source code from, see `SourceType` */
-  type?: SourceType;
-  /** Transform the detected source for display */
-  transform?: (
-    code: string,
-    storyContext: ReturnType<DocsContextProps['getStoryContext']>
-  ) => string | Promise<string>;
-  /** Internal: set by our CSF loader (`enrichCsf` in `storybook/internal/csf-tools`). */
-  originalSource?: string;
-};
+export type SourceParameters = SourceCodeProps &
+  StoryDocsSnippetSourceParameters & {
+    /** Where to read the source code from, see `SourceType` */
+    type?: SourceType;
+    /** Transform the detected source for display */
+    transform?: (
+      code: string,
+      storyContext: ReturnType<DocsContextProps['getStoryContext']>
+    ) => string | Promise<string>;
+    /** Internal: set by our CSF loader (`enrichCsf` in `storybook/internal/csf-tools`). */
+    originalSource?: string;
+  };
 
 export type SourceProps = SourceParameters & {
   /**
@@ -105,46 +107,47 @@ const useCode = ({
 // state is used by the Canvas block, which also calls useSourceProps
 type PureSourceProps = ComponentProps<typeof PureSource>;
 
-/**
- * Which args a Source block shows.
- *
- * A block pinned to the story's declared args - the `Stories` list, which passes
- * `__forceInitialArgs` - keeps showing those rather than following the Controls the reader is
- * moving above it. Both the snippet lookup and the rendered source must agree on this, so it has
- * one owner.
- */
 const sourceArgs = (
   props: Pick<SourceProps, '__forceInitialArgs'>,
   storyContext: Partial<ReturnType<DocsContextProps['getStoryContext']>>
 ): Args | undefined =>
   props.__forceInitialArgs ? storyContext.initialArgs : storyContext.unmappedArgs;
 
-export const useSourceProps = (
+type SourceSubject =
+  | {
+      story: PreparedStory;
+      storyContext: ReturnType<DocsContextProps['getStoryContext']>;
+    }
+  | { story?: undefined; storyContext?: undefined };
+
+const useSourceSubject = (
+  of: ModuleExport | undefined,
+  docsContext: DocsContextProps
+): SourceSubject => {
+  const story = useMemo(() => {
+    if (of) {
+      return docsContext.resolveOf(of, ['story']).story;
+    }
+    try {
+      return docsContext.storyById();
+    } catch {
+      return undefined;
+    }
+  }, [docsContext, of]);
+
+  return story ? { story, storyContext: docsContext.getStoryContext(story) } : {};
+};
+
+const useResolvedSourceProps = (
   props: SourceProps,
-  docsContext: DocsContextProps,
+  subject: SourceSubject,
   sourceContext: SourceContextProps,
   serviceSnippet = ''
 ): PureSourceProps => {
   const { of } = props;
-
-  const story = useMemo(() => {
-    if (of) {
-      const resolved = docsContext.resolveOf(of, ['story']);
-      return resolved.story;
-    } else {
-      try {
-        // Always fall back to the primary story for source parameters, even if code is set.
-        return docsContext.storyById();
-      } catch {
-        // You are allowed to use <Source code="..." /> and <Canvas /> unattached.
-      }
-    }
-  }, [docsContext, of]);
-
-  const storyContext = story ? docsContext.getStoryContext(story) : {};
-
+  const { story } = subject;
+  const storyContext = subject.storyContext ?? {};
   const argsForSource = sourceArgs(props, storyContext);
-
   const source = story ? getStorySource(story.id, argsForSource ?? {}, sourceContext) : null;
 
   const transformedCode = useCode({
@@ -188,22 +191,40 @@ export const useSourceProps = (
   };
 };
 
+export const useSourceProps = (
+  props: SourceProps,
+  docsContext: DocsContextProps,
+  sourceContext: SourceContextProps,
+  serviceSnippet = ''
+): PureSourceProps => {
+  const subject = useSourceSubject(props.of, docsContext);
+  return useResolvedSourceProps(props, subject, sourceContext, serviceSnippet);
+};
+
 const SourceWithStoryDocsSnippet: FC<
   SourceProps & {
-    docsContext: DocsContextProps;
     sourceContext: SourceContextProps;
-    story: PreparedStory;
+    subject: Extract<SourceSubject, { story: PreparedStory }>;
   }
-> = ({ story, docsContext, sourceContext, ...props }) => {
-  // One `getStoryContext` for both reads: each call re-runs `prepareContext` over every arg.
-  const storyContext = docsContext.getStoryContext(story);
+> = ({ subject, sourceContext, ...props }) => {
+  const { story, storyContext } = subject;
   const serviceSnippet =
     useServiceStorySnippet(
       story.id,
       sourceArgs(props, storyContext),
       storyContext.parameters?.docs?.source?.renderSnippetTemplate
     ).data ?? '';
-  const sourceProps = useSourceProps(props, docsContext, sourceContext, serviceSnippet);
+  const sourceProps = useResolvedSourceProps(props, subject, sourceContext, serviceSnippet);
+  return <PureSource {...sourceProps} />;
+};
+
+const SourceWithResolvedSubject: FC<
+  SourceProps & {
+    sourceContext: SourceContextProps;
+    subject: SourceSubject;
+  }
+> = ({ subject, sourceContext, ...props }) => {
+  const sourceProps = useResolvedSourceProps(props, subject, sourceContext);
   return <PureSource {...sourceProps} />;
 };
 
@@ -215,32 +236,15 @@ const SourceWithStorySnippet = (props: SourceProps) => {
   const { of } = props;
   const sourceContext = useContext(SourceContext);
   const docsContext = useContext(DocsContext);
+  const subject = useSourceSubject(of, docsContext);
 
-  const story = useMemo(() => {
-    if (of) {
-      const resolved = docsContext.resolveOf(of, ['story']);
-      return resolved.story;
-    }
-    try {
-      return docsContext.storyById();
-    } catch {
-      // You are allowed to use <Source code="..." /> and <Canvas /> unattached.
-    }
-  }, [docsContext, of]);
-
-  if (globalThis.FEATURES?.experimentalDocgenServer && story?.id) {
+  if (globalThis.FEATURES?.experimentalDocgenServer && subject.story) {
     return (
-      <SourceWithStoryDocsSnippet
-        {...props}
-        docsContext={docsContext}
-        sourceContext={sourceContext}
-        story={story}
-      />
+      <SourceWithStoryDocsSnippet {...props} sourceContext={sourceContext} subject={subject} />
     );
   }
 
-  const sourceProps = useSourceProps(props, docsContext, sourceContext);
-  return <PureSource {...sourceProps} />;
+  return <SourceWithResolvedSubject {...props} sourceContext={sourceContext} subject={subject} />;
 };
 
 const SourceWithCode = (props: SourceProps) => {
@@ -251,7 +255,8 @@ const SourceWithCode = (props: SourceProps) => {
 };
 
 const SourceImpl = (props: SourceProps) => {
-  const hasCodeProp = props.code !== undefined;
+  const { code } = props;
+  const hasCodeProp = code !== undefined;
   return hasCodeProp ? <SourceWithCode {...props} /> : <SourceWithStorySnippet {...props} />;
 };
 

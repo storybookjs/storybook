@@ -19,13 +19,14 @@ export class DemoComponent {}",
       "snippetTemplate": {
         "componentImport": "import { AsCastComponent } from './as-cast.component.ts';",
         "componentName": "AsCastComponent",
+        "inputNames": [
+          "label",
+          "tone",
+        ],
         "kind": "angular-snippet-template",
         "outputs": [],
+        "selector": "sb-as-cast",
         "standalone": true,
-        "template": "<sb-as-cast
-    [label]="{{label}}"
-    [tone]="{{tone}}"
-/>",
       },
     },
     "storydocs-as-cast--satisfied": {
@@ -43,13 +44,14 @@ export class DemoComponent {}",
       "snippetTemplate": {
         "componentImport": "import { AsCastComponent } from './as-cast.component.ts';",
         "componentName": "AsCastComponent",
+        "inputNames": [
+          "label",
+          "tone",
+        ],
         "kind": "angular-snippet-template",
         "outputs": [],
+        "selector": "sb-as-cast",
         "standalone": true,
-        "template": "<sb-as-cast
-    [label]="{{label}}"
-    [tone]="{{tone}}"
-/>",
       },
     },
   },

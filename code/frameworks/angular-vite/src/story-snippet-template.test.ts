@@ -7,19 +7,10 @@ import {
   renderSnippetFromTemplate,
 } from './story-snippet-template.ts';
 
-// The server emits the tag in wire form - open line, one binding per line, the tag's end last -
-// with a hole for every input the component declares, whatever the story itself set. `sb-button`
-// declares `primary`, `label` and `size`, in that order.
 const snippetTemplate: StorySnippetTemplate = {
   kind: SNIPPET_TEMPLATE_KIND,
-  template: [
-    '<sb-button',
-    '    [primary]="{{primary}}"',
-    '    [label]="{{label}}"',
-    '    [size]="{{size}}"',
-    '    (pressed)="pressed($event)"',
-    '/>',
-  ].join('\n'),
+  selector: 'sb-button',
+  inputNames: ['primary', 'label', 'size'],
   outputs: ['pressed'],
   componentName: 'ButtonComponent',
   componentImport: "import { ButtonComponent } from './button.component';",
@@ -28,7 +19,7 @@ const snippetTemplate: StorySnippetTemplate = {
 
 const oneBinding: StorySnippetTemplate = {
   ...snippetTemplate,
-  template: ['<sb-button', '    [label]="{{label}}"', '/>'].join('\n'),
+  inputNames: ['label'],
   outputs: [],
 };
 
@@ -46,8 +37,6 @@ describe('renderSnippetFromTemplate', () => {
     );
   });
 
-  // Layout follows the binding count, so a reader typing into a Controls knob never reshapes the
-  // tag under themselves - only the text between the quotes moves.
   it('keeps the tag shape a value cannot change, however long the value grows', () => {
     expect(renderSnippetFromTemplate(oneBinding, { label: 'Save' })).toContain(
       `<sb-button [label]="'Save'" />`
@@ -72,12 +61,11 @@ describe('renderSnippetFromTemplate', () => {
     );
   });
 
-  // A selector that names no custom element keeps its closing tag, so its wire form ends `</div>`
-  // rather than `/>`.
   it('lays out an element that carries a closing tag', () => {
     const withClosingTag: StorySnippetTemplate = {
       ...snippetTemplate,
-      template: ['<div class="card"', '    [label]="{{label}}"', '</div>'].join('\n'),
+      selector: '.card',
+      inputNames: ['label'],
       outputs: [],
     };
 
@@ -86,8 +74,6 @@ describe('renderSnippetFromTemplate', () => {
     );
   });
 
-  // Declining hands the caller back the server's snippet whole, rather than a snippet where one
-  // binding silently lags every other one.
   it('declines the whole rebuild when one live value has no Angular expression form', () => {
     expect(
       renderSnippetFromTemplate(snippetTemplate, { label: Symbol('x'), primary: true })
@@ -107,28 +93,26 @@ describe('isStorySnippetTemplate', () => {
     expect(isStorySnippetTemplate(undefined)).toBe(false);
     expect(isStorySnippetTemplate(null)).toBe(false);
     expect(isStorySnippetTemplate('sb-button')).toBe(false);
-    expect(isStorySnippetTemplate({ template: '<Button />', holes: {} })).toBe(false);
+    expect(isStorySnippetTemplate({ kind: SNIPPET_TEMPLATE_KIND })).toBe(false);
+    expect(isStorySnippetTemplate({ ...snippetTemplate, inputNames: ['label', 7] })).toBe(false);
+    expect(isStorySnippetTemplate({ ...snippetTemplate, ngModules: { names: [] } })).toBe(false);
     expect(isStorySnippetTemplate({ ...snippetTemplate, kind: 'vue-sfc' })).toBe(false);
   });
 });
 
 describe('args the story never declared', () => {
-  it('binds an arg the reader switched on, in the order the component declares it', () => {
+  it('binds an input the reader switched on, in docgen order', () => {
     const snippet = renderSnippetFromTemplate(snippetTemplate, {
       label: 'Save',
       primary: true,
       size: 'large',
     })!;
 
-    // `size` is declared after `label`, so it lands after it - not appended wherever the reader
-    // happened to switch it on.
     expect(snippet).toContain(`[primary]="true"`);
     expect(snippet.indexOf(`[label]=`)).toBeLessThan(snippet.indexOf(`[size]=`));
     expect(snippet).toContain(`[size]="'large'"`);
   });
 
-  // Resetting a control deletes the key from the args store rather than setting it to `undefined`,
-  // so absence has to drop the binding too - not leave the hole standing.
   it('drops a binding the reader reset, whether that reads as undefined or as absent', () => {
     expect(renderSnippetFromTemplate(snippetTemplate, { primary: true })).not.toContain('[label]=');
 
@@ -157,5 +141,13 @@ describe('args the story never declared', () => {
     expect(renderSnippetFromTemplate(snippetTemplate, { ...args, notAnInput: 'x' })).toBe(
       renderSnippetFromTemplate(snippetTemplate, args)
     );
+  });
+
+  it('ignores inherited args', () => {
+    const args = Object.assign(Object.create({ label: 'inherited' }) as Record<string, unknown>, {
+      primary: true,
+    });
+
+    expect(renderSnippetFromTemplate(snippetTemplate, args)).not.toContain('[label]=');
   });
 });

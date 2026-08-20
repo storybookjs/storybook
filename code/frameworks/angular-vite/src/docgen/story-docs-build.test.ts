@@ -712,6 +712,28 @@ describe('buildStoryDocsPayload', () => {
       );
     });
 
+    it('keeps argsToTemplate bindings in runtime arg order', async () => {
+      const story = await soleStory(
+        `
+          import { argsToTemplate } from '@storybook/angular-vite';
+          import { ButtonComponent } from './button.component';
+          export default { title: 'Example/Button', component: ButtonComponent };
+          export const Default = {
+            args: { count: 7, label: 'Save' },
+            render: (args) => ({
+              props: args,
+              template: \`<sb-button \${argsToTemplate(args)}></sb-button>\`,
+            }),
+          };
+        `,
+        shapesDocgen
+      );
+
+      expect(extractHostComponentTemplate(story.snippet!)).toBe(
+        `<sb-button [count]="7" [label]="'Save'"></sb-button>`
+      );
+    });
+
     it('reports an arg the component does not declare instead of binding it', async () => {
       const story = await soleStory(`
         import { argsToTemplate } from '@storybook/angular-vite';

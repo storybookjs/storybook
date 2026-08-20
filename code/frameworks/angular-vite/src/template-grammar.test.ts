@@ -1,14 +1,11 @@
 import { describe, expect, it } from 'vitest';
 
 import type { BuildTemplateInput } from './template-grammar.ts';
-import type { TagClose } from './template-grammar.ts';
 import {
   buildComponentOutletTemplate,
-  buildTagWireForm,
   buildTemplate,
   formatInputValue,
   formatTemplateMarkup,
-  layoutTag,
 } from './template-grammar.ts';
 
 describe('formatInputValue', () => {
@@ -194,7 +191,7 @@ describe('formatTemplateMarkup', () => {
     );
   });
 
-  it('breaks an attribute run of three one per line, like the generated templates', () => {
+  it('breaks an over-wide attribute run one per line', () => {
     expect(
       formatTemplateMarkup(
         `<div class="wrap"><sb-button [label]="'Save'" [count]="7" (clicked)="clicked($event)"></sb-button></div>`
@@ -230,21 +227,13 @@ describe('formatTemplateMarkup', () => {
     );
   });
 
-  it('breaks an element of three bindings whether or not it is over-long', () => {
-    expect(
-      formatTemplateMarkup(`<sb-button [label]="'x'" [count]="7" (clicked)="c($event)" />`)
-    ).toBe(
-      [
-        '<sb-button',
-        `    [label]="'x'"`,
-        '    [count]="7"',
-        '    (clicked)="c($event)"',
-        '/>',
-      ].join('\n')
-    );
+  it('keeps short authored markup inline regardless of its binding count', () => {
+    const markup = '<pre [a]="a" [b]="b" [c]="c">x</pre>';
+
+    expect(formatTemplateMarkup(markup)).toBe(markup);
   });
 
-  it('falls back to width for an element carrying fewer than three bindings', () => {
+  it('breaks authored markup on width', () => {
     const short = `<sb-button [label]="'Save'" [count]="7"></sb-button>`;
     expect(formatTemplateMarkup(short)).toBe(short);
     expect(
@@ -287,43 +276,5 @@ describe('formatTemplateMarkup', () => {
 
     expect(generated).toContain('\n/>');
     expect(formatTemplateMarkup(generated)).toBe(generated);
-  });
-});
-
-// The wire form exists so a consumer holding live values can lay a tag out the way the generator
-// would. That only holds if re-laying-out an untouched wire form reproduces `buildTemplate` exactly,
-// for every shape a selector can produce - a dashed element, a class selector that falls back to a
-// `div`, an attribute selector, an id, and every binding count either side of the break.
-describe('the wire form lays out to what buildTemplate produces', () => {
-  const selectors = ['sb-button', '.card', '[appHighlight]', 'button[sb-action]', 'sb-x#main.a.b'];
-  const outputs = ['clicked'];
-
-  const relayout = (wire: string): string => {
-    const lines = wire.split('\n');
-    const end = lines.at(-1)!;
-    const close: TagClose =
-      end === '/>'
-        ? { selfClosing: true }
-        : { selfClosing: false, tag: end.slice(2, -1), inner: '' };
-    return layoutTag({
-      open: lines[0]!,
-      bindings: lines.slice(1, -1).map((line) => line.trim()),
-      close,
-      style: 'snippet',
-    });
-  };
-
-  it.each(selectors)('%s', (selector) => {
-    for (let count = 0; count <= 4; count += 1) {
-      const inputs = Array.from({ length: count }, (_, index) => ({
-        name: `input${index}`,
-        expression: `'v${index}'`,
-      }));
-      for (const bound of [[], outputs]) {
-        expect(relayout(buildTagWireForm(selector, { inputs, outputs: bound }))).toBe(
-          buildTemplate(selector, { inputs, outputs: bound, style: 'snippet' })
-        );
-      }
-    }
   });
 });

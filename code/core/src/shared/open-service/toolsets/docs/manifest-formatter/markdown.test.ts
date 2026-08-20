@@ -6,6 +6,7 @@ import {
   formatComponentManifest,
   formatManifestsToLists,
   formatMultiSourceManifestsToLists,
+  formatStoryDocumentation,
 } from './markdown.ts';
 
 describe('MarkdownFormatter - formatComponentManifest', () => {
@@ -472,6 +473,68 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
 				<Button icon="check">With Icon</Button>
 				\`\`\`"
+			`);
+    });
+
+    it('should list stories that carry no snippet instead of dropping them', () => {
+      const manifest: ComponentManifest = {
+        id: 'abstractions-billboard',
+        name: 'abstractions-billboard',
+        stories: [
+          { id: 'abstractions-billboard--default', name: 'Default' },
+          { id: 'abstractions-billboard--text', name: 'Text' },
+        ],
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toMatchInlineSnapshot(`
+				"# abstractions-billboard
+
+				ID: abstractions-billboard
+
+				## Stories
+
+				- Default (abstractions-billboard--default)
+				- Text (abstractions-billboard--text)"
+			`);
+    });
+
+    it('should list snippet-less stories under the ones it shows in full', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        name: 'Button',
+        import: 'import { Button } from "@/components";',
+        stories: [
+          { id: 'button--default', name: 'Default', snippet: '<Button>Default</Button>' },
+          { id: 'button--primary', name: 'Primary' },
+          { id: 'button--secondary', name: 'Secondary', summary: 'The quiet one' },
+        ],
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toMatchInlineSnapshot(`
+				"# Button
+
+				ID: button
+
+				## Stories
+
+				### Default
+
+				Story ID: button--default
+
+				\`\`\`
+				import { Button } from "@/components";
+
+				<Button>Default</Button>
+				\`\`\`
+
+				### Other Stories
+
+				- Primary (button--primary)
+				- Secondary (button--secondary): The quiet one"
 			`);
     });
   });
@@ -1063,6 +1126,220 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 			}
 			\`\`\`"
 		`);
+  });
+
+  describe('apiDescription section', () => {
+    const angularApiDescription = [
+      '## Inputs',
+      '',
+      '```',
+      'export type ColorPickerComponentInputs = {',
+      '  /**',
+      '   * The currently selected colour',
+      '   *',
+      "   * @default '#345F92'",
+      '   */',
+      '  color?: string; // two-way: [(color)]',
+      '}',
+      '```',
+      '',
+      '## Outputs',
+      '',
+      '```',
+      'export type ColorPickerComponentOutputs = {',
+      '  colorChange: (e: string) => void;',
+      '}',
+      '```',
+    ].join('\n');
+
+    it('renders the framework-authored markdown in place of the props section', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        apiDescription: angularApiDescription,
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# ColorPickerComponent
+
+        ID: color-picker
+
+        ## Inputs
+
+        \`\`\`
+        export type ColorPickerComponentInputs = {
+          /**
+           * The currently selected colour
+           *
+           * @default '#345F92'
+           */
+          color?: string; // two-way: [(color)]
+        }
+        \`\`\`
+
+        ## Outputs
+
+        \`\`\`
+        export type ColorPickerComponentOutputs = {
+          colorChange: (e: string) => void;
+        }
+        \`\`\`"
+      `);
+    });
+
+    it('wins over the react docgen fields, which then do not also render', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        apiDescription: angularApiDescription,
+        reactDocgen: {
+          props: {
+            label: { type: { name: 'string' }, description: 'From react-docgen' },
+          },
+        },
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toContain('## Inputs');
+      expect(result).not.toContain('## Props');
+      expect(result).not.toContain('From react-docgen');
+    });
+
+    it('limits the stories shown in full, as a react props table does', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        apiDescription: angularApiDescription,
+        stories: [
+          { name: 'Default', snippet: '<app-color-picker />' },
+          { name: 'Red', snippet: '<app-color-picker color="#f00" />' },
+          { name: 'Green', snippet: '<app-color-picker color="#0f0" />' },
+          { name: 'Blue', summary: 'A blue picker', snippet: '<app-color-picker color="#00f" />' },
+        ],
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toContain('### Other Stories');
+      expect(result).toContain('- Blue: A blue picker');
+    });
+
+    it('leads with the api sections, ahead of the stories that apply them', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        apiDescription: angularApiDescription,
+        stories: [{ name: 'Default', snippet: '<app-color-picker />' }],
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result.indexOf('## Inputs')).toBeLessThan(result.indexOf('## Stories'));
+      expect(result.indexOf('## Outputs')).toBeLessThan(result.indexOf('## Stories'));
+    });
+
+    it('nests a subcomponent`s own sections under its heading', () => {
+      const manifest: ComponentManifest = {
+        id: 'color-picker',
+        name: 'ColorPickerComponent',
+        path: 'src/color-picker.stories.ts',
+        subcomponents: {
+          swatch: { name: 'SwatchComponent', apiDescription: angularApiDescription },
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# ColorPickerComponent
+
+        ID: color-picker
+
+        ## Subcomponents
+
+        ### SwatchComponent
+
+        #### Inputs
+
+        \`\`\`
+        export type ColorPickerComponentInputs = {
+          /**
+           * The currently selected colour
+           *
+           * @default '#345F92'
+           */
+          color?: string; // two-way: [(color)]
+        }
+        \`\`\`
+
+        #### Outputs
+
+        \`\`\`
+        export type ColorPickerComponentOutputs = {
+          colorChange: (e: string) => void;
+        }
+        \`\`\`"
+      `);
+    });
+  });
+});
+
+describe('MarkdownFormatter - formatStoryDocumentation', () => {
+  it('renders a story that has a snippet', () => {
+    const manifest: ComponentManifest = {
+      id: 'button',
+      name: 'Button',
+      import: 'import { Button } from "@/components";',
+      stories: [
+        {
+          id: 'button--primary',
+          name: 'Primary',
+          description: 'The primary action',
+          snippet: '<Button variant="primary" />',
+        },
+      ],
+    };
+
+    expect(formatStoryDocumentation(manifest, 'Primary')).toMatchInlineSnapshot(`
+			"# Button - Primary
+
+			The primary action
+
+			\`\`\`
+			import { Button } from "@/components";
+
+			<Button variant="primary" />
+			\`\`\`"
+		`);
+  });
+
+  it('names a story that has no snippet instead of returning nothing', () => {
+    const manifest: ComponentManifest = {
+      id: 'abstractions-billboard',
+      name: 'abstractions-billboard',
+      stories: [{ id: 'abstractions-billboard--default', name: 'Default' }],
+    };
+
+    expect(formatStoryDocumentation(manifest, 'Default')).toMatchInlineSnapshot(`
+			"# abstractions-billboard - Default
+
+			Story ID: abstractions-billboard--default
+
+			No code snippet was extracted for this story."
+		`);
+  });
+
+  it('returns nothing for a story the component does not have', () => {
+    const manifest: ComponentManifest = {
+      id: 'button',
+      name: 'Button',
+      stories: [{ id: 'button--primary', name: 'Primary' }],
+    };
+
+    expect(formatStoryDocumentation(manifest, 'Missing')).toBe('');
   });
 });
 

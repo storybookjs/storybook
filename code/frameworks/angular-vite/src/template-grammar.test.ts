@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
 
-import { formatInputValue } from './template-grammar.ts';
+import type { BuildTemplateInput } from './template-grammar.ts';
+import {
+  buildComponentOutletTemplate,
+  buildTemplate,
+  formatInputValue,
+  formatTemplateMarkup,
+} from './template-grammar.ts';
 
 describe('formatInputValue', () => {
   it('renders primitives as their literal text and strings single-quoted', () => {
@@ -40,5 +46,142 @@ describe('formatInputValue', () => {
     const value: Record<string, unknown> = { name: 'loop' };
     value.self = value;
     expect(formatInputValue(value)).toBe("{name: 'loop', self: '[Circular]'}");
+  });
+});
+
+describe('buildTemplate', () => {
+  const short: BuildTemplateInput = { inputs: [{ name: 'label', expression: "'x'" }], outputs: [] };
+  const long: BuildTemplateInput = {
+    inputs: [{ name: 'label', expression: "'a label long enough to push the tag past the limit'" }],
+    outputs: ['clicked'],
+  };
+
+  it('keeps the closing tag when the caller does not opt in', () => {
+    expect(buildTemplate('sb-button', short)).toBe(`<sb-button [label]="'x'"></sb-button>`);
+  });
+
+  it('self-closes a dashed element that fits on one line', () => {
+    expect(buildTemplate('sb-button', { ...short, selfClosing: true })).toBe(
+      `<sb-button [label]="'x'" />`
+    );
+  });
+
+  it('puts the bracket on its own line when the tag breaks over lines', () => {
+    expect(buildTemplate('sb-shape-button', { ...long, selfClosing: true })).toBe(
+      [
+        '<sb-shape-button',
+        `    [label]="'a label long enough to push the tag past the limit'"`,
+        '    (clicked)="clicked($event)"',
+        '/>',
+      ].join('\n')
+    );
+  });
+
+  it('keeps the closing tag for a selector naming an element with an attribute', () => {
+    expect(buildTemplate('button[sb-button]', { ...short, selfClosing: true })).toBe(
+      `<button sb-button [label]="'x'"></button>`
+    );
+  });
+
+  it('keeps the closing tag for a selector that names no element', () => {
+    expect(buildTemplate('.card', { ...short, selfClosing: true })).toBe(
+      `<div class="card" [label]="'x'"></div>`
+    );
+  });
+
+  it('keeps a void element inline when it fits on one line', () => {
+    expect(buildTemplate('input[appInput]', { ...short, selfClosing: true })).toBe(
+      `<input appInput [label]="'x'" />`
+    );
+  });
+
+  it('moves the bracket of a broken void element onto its own line only under the opt-in', () => {
+    expect(buildTemplate('input[appInput]', { ...long, selfClosing: true })).toBe(
+      [
+        '<input appInput',
+        `    [label]="'a label long enough to push the tag past the limit'"`,
+        '    (clicked)="clicked($event)"',
+        '/>',
+      ].join('\n')
+    );
+    expect(buildTemplate('input[appInput]', long)).toBe(
+      [
+        '<input appInput',
+        `    [label]="'a label long enough to push the tag past the limit'"`,
+        '    (clicked)="clicked($event)" />',
+      ].join('\n')
+    );
+  });
+
+  it('keeps the closing tag when the element carries inner content', () => {
+    expect(buildTemplate('sb-button', { ...short, innerTemplate: 'hi', selfClosing: true })).toBe(
+      `<sb-button [label]="'x'">hi</sb-button>`
+    );
+  });
+});
+
+describe('buildComponentOutletTemplate', () => {
+  it('keeps the closing tag when the caller does not opt in', () => {
+    expect(buildComponentOutletTemplate('ButtonComponent')).toBe(
+      '<ng-container *ngComponentOutlet="ButtonComponent"></ng-container>'
+    );
+  });
+
+  it('self-closes the outlet under the opt-in', () => {
+    expect(buildComponentOutletTemplate('ButtonComponent', { selfClosing: true })).toBe(
+      '<ng-container *ngComponentOutlet="ButtonComponent" />'
+    );
+  });
+});
+
+describe('formatTemplateMarkup', () => {
+  it('moves nested elements onto their own lines', () => {
+    expect(formatTemplateMarkup('<div class="bound"><sb-button></sb-button></div>')).toBe(
+      ['<div class="bound">', '    <sb-button></sb-button>', '</div>'].join('\n')
+    );
+  });
+
+  it('keeps a short element with only text content as written', () => {
+    expect(formatTemplateMarkup('<sb-button emphasis>hi</sb-button>')).toBe(
+      '<sb-button emphasis>hi</sb-button>'
+    );
+  });
+
+  it('breaks an over-long attribute run one binding per line, like the generated templates', () => {
+    expect(
+      formatTemplateMarkup(
+        `<div class="wrap"><sb-button [label]="'Save'" [count]="7" [kind]="'primary'" (clicked)="clicked($event)"></sb-button></div>`
+      )
+    ).toBe(
+      [
+        '<div class="wrap">',
+        '    <sb-button',
+        `        [label]="'Save'"`,
+        '        [count]="7"',
+        `        [kind]="'primary'"`,
+        '        (clicked)="clicked($event)">',
+        '    </sb-button>',
+        '</div>',
+      ].join('\n')
+    );
+  });
+
+  it('keeps a self-closing child on its own line', () => {
+    expect(formatTemplateMarkup('<div><sb-icon name="x" /></div>')).toBe(
+      ['<div>', '    <sb-icon name="x" />', '</div>'].join('\n')
+    );
+  });
+
+  it('places sibling text and elements on their own lines', () => {
+    expect(formatTemplateMarkup('<sb-button [label]="\'Save\'"><span>Bye</span></sb-button>')).toBe(
+      [`<sb-button [label]="'Save'">`, '    <span>Bye</span>', '</sb-button>'].join('\n')
+    );
+  });
+
+  it('returns markup it cannot follow exactly as written', () => {
+    expect(formatTemplateMarkup('<div><span></div>')).toBe('<div><span></div>');
+    expect(formatTemplateMarkup('plain interpolated {{ text }}')).toBe(
+      'plain interpolated {{ text }}'
+    );
   });
 });

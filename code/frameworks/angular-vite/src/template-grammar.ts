@@ -91,6 +91,10 @@ export interface BuildTemplateInput {
   // Output binding names; each renders as `(name)="name($event)"`.
   outputs: string[];
   innerTemplate?: string;
+  // On, a dashed element drops its closing tag, and any tag that ends itself puts `/>` on its own
+  // line once it breaks -- void elements included. Off reproduces the legacy runtime generator's
+  // output, which is what the preview renderer emits.
+  selfClosing?: boolean;
 }
 
 // A selector that names no element, `.card` or `[appHighlight]`, matches a `div` in the snippet.
@@ -104,13 +108,13 @@ const ATTRIBUTE = /\[(.+?)]/g;
 // The leading non-space run is the element name; whatever follows are its attributes.
 const ELEMENT_AND_ATTRIBUTES = /(\S+)(.*)/;
 
-// Width past which the bindings go one per line, with the closing tag on its own.
+// Width past which the bindings go one per line, with the tag's end on a line of its own.
 const MAX_SINGLE_LINE = 80;
 
 // Expands a component selector into the element a story renders, carrying its bindings.
 export const buildTemplate = (
   selector: string,
-  { inputs, outputs, innerTemplate = '' }: BuildTemplateInput
+  { inputs, outputs, innerTemplate = '', selfClosing = false }: BuildTemplateInput
 ) => {
   const bindings = [
     ...inputs.map(({ name, expression }) => `[${name}]="${expression}"`),
@@ -129,17 +133,20 @@ export const buildTemplate = (
     .replace(ATTRIBUTE, ' $1');
 
   return asAttributes.replace(ELEMENT_AND_ATTRIBUTES, (_, element: string, attributes: string) => {
+    // HTML reserves a dashed name for custom elements, so Angular can never reject one self-closed.
+    const closesItself =
+      VOID_ELEMENTS.has(element) || (selfClosing && element.includes('-') && innerTemplate === '');
+
     const inlineTag = `<${element}${attributes}${bindings.map((binding) => ` ${binding}`).join('')}`;
-    const inline = VOID_ELEMENTS.has(element)
-      ? `${inlineTag} />`
-      : `${inlineTag}>${innerTemplate}</${element}>`;
+    const inline = closesItself ? `${inlineTag} />` : `${inlineTag}>${innerTemplate}</${element}>`;
     if (inline.length <= MAX_SINGLE_LINE || bindings.length === 0) {
       return inline;
     }
 
     const brokenTag = `<${element}${attributes}\n${bindings.map((binding) => `    ${binding}`).join('\n')}`;
-    if (VOID_ELEMENTS.has(element)) {
-      return `${brokenTag} />`;
+    if (closesItself) {
+      // The bracket takes the line the closing tag would have had, rather than trailing a binding.
+      return selfClosing ? `${brokenTag}\n/>` : `${brokenTag} />`;
     }
     const content = innerTemplate === '' ? '\n' : `\n${innerTemplate}\n`;
     return `${brokenTag}>${content}</${element}>`;
@@ -147,5 +154,129 @@ export const buildTemplate = (
 };
 
 // Fallback element for a component whose decorator declares no selector.
-export const buildComponentOutletTemplate = (componentName: string): string =>
-  `<ng-container *ngComponentOutlet="${componentName}"></ng-container>`;
+export const buildComponentOutletTemplate = (
+  componentName: string,
+  { selfClosing = false }: { selfClosing?: boolean } = {}
+): string =>
+  selfClosing
+    ? `<ng-container *ngComponentOutlet="${componentName}" />`
+    : `<ng-container *ngComponentOutlet="${componentName}"></ng-container>`;
+
+const INDENT = '    ';
+
+interface MarkupElement {
+  tag: string;
+  /** The open tag exactly as written, closing bracket included. */
+  rawOpen: string;
+  attrText: string;
+  /** Self-closing or void: the element brings its own end. */
+  closed: boolean;
+  start: number;
+  end: number;
+  children: (MarkupElement | string)[];
+}
+
+const MARKUP_TAG = /<(\/?)([A-Za-z][\w-]*)((?:"[^"]*"|'[^']*'|[^>"'])*)>/g;
+
+const parseMarkup = (markup: string): (MarkupElement | string)[] | undefined => {
+  const root: MarkupElement = {
+    tag: '',
+    rawOpen: '',
+    attrText: '',
+    closed: false,
+    start: 0,
+    end: 0,
+    children: [],
+  };
+  const stack = [root];
+  let lastIndex = 0;
+  for (const match of markup.matchAll(MARKUP_TAG)) {
+    const text = markup.slice(lastIndex, match.index).trim();
+    if (text) {
+      stack.at(-1)!.children.push(text);
+    }
+    lastIndex = match.index + match[0].length;
+    const [rawOpen, closing, tag, rawAttrText] = match;
+    if (closing) {
+      const open = stack.pop();
+      if (!open || open.tag !== tag || stack.length === 0) {
+        return undefined;
+      }
+      open.end = lastIndex;
+      continue;
+    }
+    const selfClosing = rawAttrText.trimEnd().endsWith('/');
+    const attrText = selfClosing ? rawAttrText.trimEnd().slice(0, -1) : rawAttrText;
+    const element: MarkupElement = {
+      tag,
+      rawOpen,
+      attrText: attrText.trimEnd(),
+      closed: selfClosing || VOID_ELEMENTS.has(tag),
+      start: match.index,
+      end: lastIndex,
+      children: [],
+    };
+    stack.at(-1)!.children.push(element);
+    if (!element.closed) {
+      stack.push(element);
+    }
+  }
+  const trailing = markup.slice(lastIndex).trim();
+  if (trailing) {
+    stack.at(-1)!.children.push(trailing);
+  }
+  return stack.length === 1 ? root.children : undefined;
+};
+
+// An attribute name with an optional quoted or bare value; quoted values are skipped whole.
+const MARKUP_ATTRIBUTE = /[^\s=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|\S+))?/g;
+
+const openTagLines = (node: MarkupElement, pad: string, forceAttrBreak: boolean): string[] => {
+  const inlineOpen = `${pad}${node.rawOpen}`;
+  const attrs = node.attrText.match(MARKUP_ATTRIBUTE) ?? [];
+  if ((inlineOpen.length <= MAX_SINGLE_LINE && !forceAttrBreak) || attrs.length === 0) {
+    return [inlineOpen];
+  }
+  const bracket = node.closed ? ' />' : '>';
+  return [
+    `${pad}<${node.tag}`,
+    ...attrs.map(
+      (attr, index) => `${pad}${INDENT}${attr}${index === attrs.length - 1 ? bracket : ''}`
+    ),
+  ];
+};
+
+const printMarkup = (markup: string, node: MarkupElement | string, depth: number): string[] => {
+  const pad = INDENT.repeat(depth);
+  if (typeof node === 'string') {
+    return [`${pad}${node}`];
+  }
+  const hasElementChild = node.children.some((child) => typeof child !== 'string');
+  const verbatim = markup.slice(node.start, node.end);
+  if (!hasElementChild && pad.length + verbatim.length <= MAX_SINGLE_LINE) {
+    return [`${pad}${verbatim}`];
+  }
+  // A childless element broke on length alone, so keeping its attribute run inline gains nothing.
+  const openLines = openTagLines(node, pad, !hasElementChild);
+  if (node.closed) {
+    return openLines;
+  }
+  return [
+    ...openLines,
+    ...node.children.flatMap((child) => printMarkup(markup, child, depth + 1)),
+    `${pad}</${node.tag}>`,
+  ];
+};
+
+/**
+ * Reshape story-authored markup the way the generated templates are shaped: nested elements move
+ * onto their own lines and an over-long attribute run breaks one binding per line. Nothing is
+ * added, dropped or reordered, and markup this cannot follow is returned exactly as written.
+ */
+export const formatTemplateMarkup = (markup: string): string => {
+  const children = parseMarkup(markup);
+  if (!children || children.length === 0) {
+    return markup;
+  }
+  return children.flatMap((child) => printMarkup(markup, child, 0)).join('\n');
+};

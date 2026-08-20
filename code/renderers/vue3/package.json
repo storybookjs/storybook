@@ -50,6 +50,7 @@
   ],
   "dependencies": {
     "@storybook/global": "^5.0.0",
+    "@vue/compiler-dom": "^3.2.47",
     "@vue/language-core": "^3.2.7",
     "type-fest": "^5.6.0",
     "vue-component-meta": "^3.2.7",

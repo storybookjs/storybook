@@ -175,6 +175,24 @@ function formatPropsSection(
   return parts;
 }
 
+const FENCE_LINE = /^\s*(?:```|~~~)/;
+const HEADING_LINE = /^(#{1,4}) /;
+
+/** Nests a framework's own `##` sections under the `### <subcomponent>` heading they render inside. */
+function demoteHeadings(markdown: string): string {
+  let inFence = false;
+  return markdown
+    .split('\n')
+    .map((line) => {
+      if (FENCE_LINE.test(line)) {
+        inFence = !inFence;
+        return line;
+      }
+      return inFence ? line : line.replace(HEADING_LINE, '##$1 ');
+    })
+    .join('\n');
+}
+
 function formatSubcomponentsSection(
   subcomponents: Record<string, SubcomponentManifest> | undefined
 ): string[] {
@@ -217,6 +235,12 @@ function formatSubcomponentsSection(
       continue;
     }
 
+    if (subcomponent.apiDescription) {
+      parts.push(demoteHeadings(subcomponent.apiDescription));
+      parts.push('');
+      continue;
+    }
+
     const parsedDocgen = getParsedDocgen(subcomponent);
     const typeName = `${(subcomponent.name || key).replace(/\W+/g, '')}Props`;
     parts.push(...formatPropsSection(parsedDocgen, { title: '#### Props', typeName }));
@@ -248,6 +272,14 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
   // Parse docgen data (from either engine)
   const parsedDocgen = getParsedDocgen(componentManifest);
 
+  // A framework's own API markdown leads, because it is the component's contract and the stories
+  // below are examples of applying it. The `react*` props section keeps its historical position.
+  const { apiDescription } = componentManifest;
+  if (apiDescription) {
+    parts.push(apiDescription);
+    parts.push('');
+  }
+
   // Stories section
   const stories = Array.isArray(componentManifest.stories) ? componentManifest.stories : [];
   if (stories.length > 0) {
@@ -257,12 +289,17 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
     const storiesWithSnippets = stories.filter((s) => s.snippet);
 
     // Check if component has props - if not, show all stories fully
-    const hasProps = parsedDocgen && Object.keys(parsedDocgen.props).length > 0;
+    const hasProps =
+      !!apiDescription || (parsedDocgen && Object.keys(parsedDocgen.props).length > 0);
 
     const storiesToShow = hasProps
       ? storiesWithSnippets.slice(0, MAX_STORIES_TO_SHOW)
       : storiesWithSnippets;
-    const remainingStories = hasProps ? storiesWithSnippets.slice(MAX_STORIES_TO_SHOW) : [];
+
+    // Everything not shown in full is still named and addressable by story id, snippet or not:
+    // a component whose snippets could not be extracted must not read as having no stories.
+    const shown = new Set(storiesToShow);
+    const remainingStories = stories.filter((story) => !shown.has(story));
 
     // Show first X stories in full detail (or all if no props)
     for (const story of storiesToShow) {
@@ -280,8 +317,8 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
     if (remainingStories.length > 0) {
       if (storiesToShow.length > 0) {
         parts.push('### Other Stories');
+        parts.push('');
       }
-      parts.push('');
       for (const story of remainingStories) {
         const summary = extractSummary(story);
         const summaryPart = summary ? `: ${summary}` : '';
@@ -292,7 +329,9 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
     }
   }
 
-  parts.push(...formatPropsSection(parsedDocgen));
+  if (!apiDescription) {
+    parts.push(...formatPropsSection(parsedDocgen));
+  }
 
   // Attached docs section
   if (componentManifest.docs && Object.keys(componentManifest.docs).length > 0) {
@@ -432,7 +471,7 @@ export function formatStoryDocumentation(
     ? componentManifest.stories.find((s) => s.name === storyName)
     : undefined;
 
-  if (!story || !story.snippet) {
+  if (!story) {
     return '';
   }
 
@@ -441,6 +480,22 @@ export function formatStoryDocumentation(
   // Component name - Story name header
   parts.push(`# ${componentManifest.name} - ${story.name}`);
   parts.push('');
+
+  // A story with no snippet still exists and is worth naming; saying so beats an empty answer,
+  // which reads as a broken tool rather than as missing data.
+  if (!story.snippet) {
+    if (story.id) {
+      parts.push(`Story ID: ${story.id}`);
+      parts.push('');
+    }
+    if (story.description) {
+      parts.push(story.description);
+      parts.push('');
+    }
+    parts.push('No code snippet was extracted for this story.');
+    return parts.join('\n').trim();
+  }
+
   parts.push(...formatStoryContent(story, componentManifest.import));
 
   return parts.join('\n').trim();

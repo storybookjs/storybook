@@ -13,7 +13,9 @@ import { extractArgTypes } from '../extractArgTypes.ts';
 
 import type { ComponentMetaChecker } from 'vue-component-meta';
 
+import { buildApiDescription } from './api-description.ts';
 import { type MetaSource, collectComponentMetaSources } from './component-meta.ts';
+import { followReExport } from './follow-re-export.ts';
 import { type UnresolvedComponentReason, resolveMetaComponent } from './resolve-component.ts';
 
 type VueDocgenPayload = DocgenPayload & { vueComponentMeta?: MetaSource };
@@ -34,6 +36,11 @@ const UNRESOLVED_COMPONENT_ERRORS: Record<
   'no-component-import': {
     name: 'No component import found',
     message: 'No component file found for the component declared in meta.component.',
+  },
+  'unreadable-component-expression': {
+    name: 'No component found',
+    message:
+      'We could not follow meta.component to a component. Storybook follows an imported name, a namespace-import property access, or a chain of property accesses and spreads through modules it can resolve.',
   },
 };
 
@@ -115,18 +122,22 @@ export async function buildDocgenPayload(
   }
 
   const { component } = resolved;
-  const metaSources = await collectComponentMetaSources(
-    context.getChecker(component.path),
-    component.path
-  );
-  const componentMeta = metaSources.find((meta) => meta.exportName === component.exportName);
+  const checker = context.getChecker(component.path);
+  // Resolving the barrel first also means the event-description pass reads the declaring SFC rather
+  // than the index file, which has no component in it to read descriptions from.
+  const declared = followReExport(checker, component.path, component.exportName) ?? {
+    path: component.path,
+    exportName: component.exportName,
+  };
+  const metaSources = await collectComponentMetaSources(checker, declared.path);
+  const componentMeta = metaSources.find((meta) => meta.exportName === declared.exportName);
 
   if (!componentMeta) {
     return {
       ...base,
       error: {
         name: 'No docgen found',
-        message: `vue-component-meta extracted no component metadata for the "${component.exportName}" export of ${component.path}.`,
+        message: `vue-component-meta extracted no component metadata for the "${declared.exportName}" export of ${declared.path}.`,
       },
     };
   }
@@ -143,5 +154,7 @@ export async function buildDocgenPayload(
     jsDocTags,
     vueComponentMeta: componentMeta,
     argTypes: extractArgTypes({ __docgenInfo: componentMeta }) ?? undefined,
+    apiDescription: buildApiDescription(componentMeta),
+    renderer: 'vue3',
   };
 }

@@ -12,13 +12,15 @@ import type {
   AngularClassMeta,
   AngularComponentMetaResult,
   ParsingLogger,
+  PropsTableMode,
 } from '@storybook/angular-cm';
 import { extractArgTypesFromData } from '@storybook/angular-cm';
+import { buildApiDescription } from './api-description.ts';
 import { resolveStoryComponent } from './resolve-component.ts';
 
 // Structured-cloned onto the worker thread, so every field must be plain JSON data.
 export interface AngularDocgenOptions {
-  angularFilterNonInputControls?: boolean;
+  propsTable: PropsTableMode;
 }
 
 export interface SnippetEnum {
@@ -39,6 +41,7 @@ export interface AngularComponentSnippetMeta {
 }
 
 export type AngularDocgenPayload = DocgenPayload & {
+  // The analyzer's record for the class, never filtered by `propsTable`.
   angularComponentMeta?: AngularComponentSnippetMeta;
 };
 
@@ -130,8 +133,37 @@ export const buildDocgenPayload = (
   const storyFilePath = resolvePath(storyImportPath);
   const resolved = resolveStoryComponent(storyFilePath, input.entry.title);
   if ('reason' in resolved) {
-    logger.debug(`No Angular component resolved from ${storyFilePath}: ${resolved.reason}.`);
-    return undefined;
+    // A story file with no `component` at all documents no Angular component, so the next provider
+    // gets its turn. A `component` that is there but unreadable is this provider's failure to
+    // report: staying quiet would be indistinguishable from a story that documents nothing.
+    if (resolved.reason === 'no-meta-component') {
+      logger.debug(`No Angular component resolved from ${storyFilePath}: ${resolved.reason}.`);
+      return undefined;
+    }
+
+    const unreadableBase = {
+      id: getComponentIdFromEntry(input.entry),
+      name:
+        resolved.reason === 'unreadable-component-expression'
+          ? resolved.expression
+          : (input.entry.title.split('/').at(-1) ?? input.entry.title),
+      path: storyImportPath,
+    };
+    return errorPayload(
+      unreadableBase,
+      'AngularComponentMetaNotFound',
+      resolved.reason === 'unreadable-component-expression'
+        ? `The story file sets \`component: ${resolved.expression}\`, which does not resolve to a class.\n` +
+            `Storybook follows an imported name, a namespace-import property access, or a chain of ` +
+            `property accesses and spreads through modules it can resolve. ` +
+            `Assign the component to a name in ${storyFilePath}.`
+        : // `meta.component` may reach this binding through another module (e.g. a spread config
+          // object), so the type-only or namespace import is not necessarily written in the story
+          // file itself - naming it here would send the reader to the wrong file.
+          `Resolving \`meta.component\` from ${storyFilePath} reached a binding that is a type-only ` +
+            `or namespace import, which carries no class to document.\n` +
+            `Import the component as a value in whichever module declares that binding.`
+    );
   }
 
   const { component } = resolved;
@@ -151,8 +183,13 @@ export const buildDocgenPayload = (
     return errorPayload(
       base,
       'AngularComponentMetaNotFound',
-      `The story file imports "${displayName}" from "${component.importId}", which did not resolve to a file.\n` +
-        `Check the import specifier (and any tsconfig path aliases it relies on) in ${storyFilePath}.`
+      // `component.importId` may be read from a module `meta.component` only reaches through a
+      // chain (e.g. a spread config object), so the import is not necessarily written in the story
+      // file itself - naming it here would send the reader to the wrong file.
+      `Storybook could not resolve the import of "${displayName}" from "${component.importId}", ` +
+        `reached while resolving \`meta.component\` from ${storyFilePath}.\n` +
+        `Check the import specifier (and any tsconfig path aliases it relies on) in whichever module ` +
+        `actually imports it.`
     );
   }
 
@@ -182,9 +219,20 @@ export const buildDocgenPayload = (
 
   const argTypes = extractArgTypesFromData(meta.entry, {
     metadataJson: meta.json,
-    filterNonInputControls: options.angularFilterNonInputControls,
+    propsTable: options.propsTable,
     logger,
   }) as StrictArgTypes;
+
+  // Agent documentation is pinned to `api` whatever the user chose for their props table: `all`
+  // would hand an agent private wiring it cannot bind, and `inputs` would empty the Outputs section.
+  const apiArgTypes =
+    options.propsTable === 'api'
+      ? argTypes
+      : (extractArgTypesFromData(meta.entry, {
+          metadataJson: meta.json,
+          propsTable: 'api',
+          logger,
+        }) as StrictArgTypes);
 
   const jsDocTags = extractJsDocTags(meta.entry);
   // Tags are excluded from `rawdescription`, which is why it wins over `description`.
@@ -199,6 +247,8 @@ export const buildDocgenPayload = (
     summary: jsDocTags.summary?.[0],
     jsDocTags,
     argTypes,
+    apiDescription: buildApiDescription(apiArgTypes, meta.entry.name),
+    renderer: 'angular',
     angularComponentMeta: metaToSnippetMeta(meta),
   };
 };

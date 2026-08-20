@@ -455,6 +455,8 @@ export interface ComponentManifest {
     snippet?: string | undefined;
     description?: string | undefined;
     summary?: string | undefined;
+    /** Why the snippet is an incomplete example; see `StoryDoc.warning`. */
+    warning?: string | undefined;
     error?: { name: string; message: string };
   }[];
   jsDocTags: Record<string, string[]>;
@@ -603,7 +605,12 @@ export interface StorybookFeatures {
    * Set NODE_ENV to development in built Storybooks for better testability and debuggability
    */
   developmentModeForBuild?: boolean;
-  /** Only show input controls in Angular */
+  /**
+   * Only show input controls in Angular.
+   *
+   * @deprecated On `@storybook/angular-vite`, use the `propsTable` framework option instead:
+   *   `'inputs'` for this flag on, `'all'` for it off. Still read by `@storybook/angular`.
+   */
   angularFilterNonInputControls?: boolean;
 
   /**
@@ -642,7 +649,11 @@ export interface StorybookFeatures {
    * generates per-component docgen JSON snapshots during static builds. Renderer and addon
    * providers contribute through the `experimental_docgenProvider` preset.
    *
-   * @default false
+   * `@storybook/angular-vite` is the one framework that defaults this to `true`: it is experimental
+   * itself and ships server-side extraction as its only docgen path. Set it to `false` there to go
+   * back to Compodoc.
+   *
+   * @default false // `true` when the framework is `@storybook/angular-vite`
    * @experimental This feature is in early development and may change significantly in future releases.
    */
   experimentalDocgenServer?: boolean;

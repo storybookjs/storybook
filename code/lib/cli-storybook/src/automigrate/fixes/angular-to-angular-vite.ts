@@ -2,13 +2,14 @@ import { readFile, writeFile } from 'node:fs/promises';
 
 import { types as t } from 'storybook/internal/babel';
 import {
+  ANALOG_VITE_PLUGIN_ANGULAR_VERSION,
   AngularJSON,
   editJsonText,
   isStorybookTarget,
   type JSONEditPath,
 } from 'storybook/internal/cli';
 import { formatFileContent, getProjectRoot, transformImportFiles } from 'storybook/internal/common';
-import { type ConfigFile, formatConfig, readConfig } from 'storybook/internal/csf-tools';
+import { formatConfig, readConfig } from 'storybook/internal/csf-tools';
 import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
@@ -17,11 +18,18 @@ import semver from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { add } from '../../add.ts';
-import { updateMainConfig } from '../helpers/mainConfigFile.ts';
+import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
 import type { Fix } from '../types.ts';
+import {
+  findWorkspaceFiles,
+  getTargetGroups,
+  type AngularTargetGroup,
+} from './angular-workspace.ts';
+import { findCompodocSetup, removeCompodocSetup } from './angular-vite-remove-compodoc.ts';
 
 export const ANGULAR_PACKAGE = '@storybook/angular';
 export const ANGULAR_VITE_PACKAGE = '@storybook/angular-vite';
+const ANALOG_VITE_PLUGIN_PACKAGE = '@analogjs/vite-plugin-angular';
 
 const FRAMEWORK_DOC_URL = 'https://storybook.js.org/docs/get-started/frameworks/angular-vite';
 const VITE_CONFIG_DOC_URL = 'https://storybook.js.org/docs/builders/vite#configure';
@@ -153,7 +161,6 @@ const transformMainConfig = async (mainConfigPath: string, dryRun: boolean): Pro
 
 interface JsonTargetTransformResult {
   changed: boolean;
-  disablesCompodoc: boolean;
   hasStorybookTarget: boolean;
   allStorybookTargetsZonelessTrue: boolean;
 }
@@ -172,12 +179,6 @@ const rewriteStorybookBuilderRef = (ref: string): string | null => {
 /** Applies a single format-preserving edit; shared by `AngularJSON` and `TextJsonEditor` below. */
 interface TargetEditor {
   edit(path: JSONEditPath, value: unknown): void;
-}
-
-/** A `targets`-shaped object (angular.json's `architect`, or project.json's `targets`) and the JSON path to it. */
-interface TargetGroup {
-  pathPrefix: JSONEditPath;
-  targets: Record<string, unknown>;
 }
 
 /** Accumulates sequential `editJsonText` edits against an in-memory string (project.json's editor). */
@@ -199,33 +200,39 @@ class TextJsonEditor implements TargetEditor {
  */
 const processStorybookTargets = (
   editor: TargetEditor,
-  targetGroups: TargetGroup[]
+  targetGroups: AngularTargetGroup[]
 ): Omit<JsonTargetTransformResult, 'allStorybookTargetsZonelessTrue'> & {
   allZonelessTrue: boolean;
 } => {
   let changed = false;
-  let disablesCompodoc = false;
   let hasStorybookTarget = false;
   let allZonelessTrue = true;
 
   for (const { pathPrefix, targets } of targetGroups) {
     for (const [targetName, target] of Object.entries(targets)) {
-      if (!isStorybookTarget(target)) {
+      // Detection is wider than the rewrite: a multi-project upgrade runs each project against the
+      // tree the first project already rewrote, and a narrower gate would report no Storybook
+      // target at all and skip the zone.js injection.
+      if (
+        !isStorybookTarget(target, ANGULAR_PACKAGE) &&
+        !isStorybookTarget(target, ANGULAR_VITE_PACKAGE)
+      ) {
         continue;
       }
       hasStorybookTarget = true;
 
       // Snapshot before editing: `AngularJSON.edit()` reparses `json`, invalidating `target`.
       const currentRef = target.builder ?? target.executor ?? null;
-      const compodocDisabled = target.options?.compodoc === false;
       const hasOldZonelessKey = !!target.options && 'experimentalZoneless' in target.options;
-      const zonelessValue = target.options?.experimentalZoneless;
+      // An earlier run may already have renamed the key, so both spellings count as zoneless.
+      const zonelessValue = target.options?.zoneless ?? target.options?.experimentalZoneless;
 
-      if (compodocDisabled) {
-        disablesCompodoc = true;
-      }
       if (zonelessValue !== true) {
         allZonelessTrue = false;
+      }
+
+      if (!isStorybookTarget(target, ANGULAR_PACKAGE)) {
+        continue;
       }
 
       const newRef = currentRef ? rewriteStorybookBuilderRef(currentRef) : null;
@@ -243,7 +250,7 @@ const processStorybookTargets = (
     }
   }
 
-  return { changed, disablesCompodoc, hasStorybookTarget, allZonelessTrue };
+  return { changed, hasStorybookTarget, allZonelessTrue };
 };
 
 const transformAngularJson = (
@@ -256,21 +263,15 @@ const transformAngularJson = (
   } catch {
     return {
       changed: false,
-      disablesCompodoc: false,
       hasStorybookTarget: false,
       allStorybookTargetsZonelessTrue: true,
     };
   }
 
-  const targetGroups: TargetGroup[] = Object.entries(angularJSON.projects)
-    .filter(([, project]) => project?.architect && typeof project.architect === 'object')
-    .map(([projectName, project]) => ({
-      pathPrefix: ['projects', projectName, 'architect'],
-      targets: project.architect,
-    }));
-
-  const { changed, disablesCompodoc, hasStorybookTarget, allZonelessTrue } =
-    processStorybookTargets(angularJSON, targetGroups);
+  const { changed, hasStorybookTarget, allZonelessTrue } = processStorybookTargets(
+    angularJSON,
+    getTargetGroups(angularJSON.json)
+  );
 
   if (changed && !dryRun) {
     angularJSON.write();
@@ -278,7 +279,6 @@ const transformAngularJson = (
 
   return {
     changed,
-    disablesCompodoc,
     hasStorybookTarget,
     allStorybookTargetsZonelessTrue: allZonelessTrue,
   };
@@ -295,14 +295,11 @@ const transformProjectJson = async (
   try {
     const original = await readFile(projectJsonPath, 'utf-8');
     const json = JSON.parse(original);
-    const targets = json?.targets;
-
     const editor = new TextJsonEditor(original);
-    const targetGroups: TargetGroup[] =
-      targets && typeof targets === 'object' ? [{ pathPrefix: ['targets'], targets }] : [];
-
-    const { changed, disablesCompodoc, hasStorybookTarget, allZonelessTrue } =
-      processStorybookTargets(editor, targetGroups);
+    const { changed, hasStorybookTarget, allZonelessTrue } = processStorybookTargets(
+      editor,
+      getTargetGroups(json)
+    );
 
     if (changed && !dryRun) {
       await writeFile(projectJsonPath, editor.content);
@@ -310,14 +307,12 @@ const transformProjectJson = async (
 
     return {
       changed,
-      disablesCompodoc,
       hasStorybookTarget,
       allStorybookTargetsZonelessTrue: allZonelessTrue,
     };
   } catch {
     return {
       changed: false,
-      disablesCompodoc: false,
       hasStorybookTarget: false,
       allStorybookTargetsZonelessTrue: true,
     };
@@ -354,48 +349,12 @@ const addZoneJsPreviewImport = async (
   }
 };
 
-/**
- * Set `framework.options.compodoc` to `false` in main config, preserving the framework name.
- *
- * `framework` can take three shapes, and each needs different handling so the name survives:
- *
- * - Bare string: `framework: '@storybook/angular-vite'`
- * - Wrapped call: `framework: getAbsolutePath('@storybook/angular-vite')`
- * - Object form: `framework: { name: ..., options: {...} }`
- *
- * For the string and call-expression shapes, a nested `setFieldValue(['framework', 'options',
- * 'compodoc'], false)` would replace the whole `framework` value, dropping the name (e.g. producing
- * `framework: { options: { compodoc: false } }`). So we operate on the AST node directly and wrap
- * the original node as `name`, which preserves a `getAbsolutePath(...)` call verbatim. The object
- * shape (inline or referenced via a variable) is already nestable, so the nested set is correct.
- */
-export const setFrameworkCompodocFalse = (main: ConfigFile): void => {
-  const frameworkNode = main.getFieldNode(['framework']);
-
-  if (frameworkNode && (t.isStringLiteral(frameworkNode) || t.isCallExpression(frameworkNode))) {
-    main.setFieldNode(
-      ['framework'],
-      t.objectExpression([
-        t.objectProperty(t.identifier('name'), frameworkNode),
-        t.objectProperty(
-          t.identifier('options'),
-          t.objectExpression([t.objectProperty(t.identifier('compodoc'), t.booleanLiteral(false))])
-        ),
-      ])
-    );
-    return;
-  }
-
-  // Object form (inline or via a variable reference): keep the existing name and options.
-  main.setFieldValue(['framework', 'options', 'compodoc'], false);
-};
-
 export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
   id: 'angular-to-angular-vite',
   link: FRAMEWORK_DOC_URL,
   defaultSelected: false,
 
-  async check({ packageManager }): Promise<AngularToAngularViteOptions | null> {
+  async check({ packageManager, mainConfig }): Promise<AngularToAngularViteOptions | null> {
     const allDeps = packageManager.getAllDependencies();
 
     // Only apply when @storybook/angular is present and @storybook/angular-vite is not.
@@ -405,6 +364,22 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
 
     // Detect @angular/core version for the Angular 21 prerequisite check.
     const angularVersionRaw = packageManager.getDependencyVersion('@angular/core');
+
+    // Other Angular frameworks declare `@storybook/angular` as their peer, so the dependency alone
+    // does not say which framework the project renders with. Rewriting one of those produces a
+    // half-migrated hybrid, so only the framework this migration knows how to rewrite qualifies.
+    const frameworkPackageName = getFrameworkPackageName(mainConfig);
+    if (frameworkPackageName !== ANGULAR_PACKAGE) {
+      if (angularVersionRaw) {
+        logger.warn(
+          `Skipped ${ANGULAR_VITE_PACKAGE} migration: this project's Storybook framework is ` +
+            `\`${frameworkPackageName ?? 'not set'}\`, and only \`${ANGULAR_PACKAGE}\` projects can be ` +
+            `migrated automatically. See ${FRAMEWORK_DOC_URL} to switch frameworks by hand.`
+        );
+      }
+      return null;
+    }
+
     const angularVersion = angularVersionRaw
       ? (semver.coerce(angularVersionRaw)?.version ?? null)
       : null;
@@ -468,6 +443,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
   async run({
     result,
     dryRun = false,
+    mainConfig,
     mainConfigPath,
     previewConfigPath,
     storiesPaths,
@@ -521,7 +497,22 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
 
     logger.step(`Migrating from ${ANGULAR_PACKAGE} to ${ANGULAR_VITE_PACKAGE}...`);
 
-    // 1. Update dependencies.
+    // 1. Patch .storybook/main.ts(.js). This comes first because everything below assumes the
+    // framework already says angular-vite: `check()` reads it off the evaluated config, so the
+    // field can be inherited from a shared base file rather than spelled out in this one.
+    logger.debug('Updating main config...');
+    if (!mainConfigPath || !(await transformMainConfig(mainConfigPath, dryRun))) {
+      logger.error(
+        dedent`
+          Migration stopped: the \`framework\` field could not be rewritten in ${mainConfigPath ?? 'your Storybook main config'}.
+          That file names no \`${ANGULAR_PACKAGE}\`, so it most likely inherits the framework from a shared config.
+          Point \`framework\` at \`${ANGULAR_VITE_PACKAGE}\` where it is declared, then run this migration again.
+        `
+      );
+      return;
+    }
+
+    // 2. Update dependencies.
     if (dryRun) {
       logger.debug('Dry run: Skipping dependency updates.');
     } else {
@@ -531,20 +522,13 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       const allDeps = packageManager.getAllDependencies();
       await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
         `${ANGULAR_VITE_PACKAGE}@${storybookVersion}`,
-        ...(allDeps['@analogjs/vite-plugin-angular'] ? [] : ['@analogjs/vite-plugin-angular']),
+        ...(allDeps[ANALOG_VITE_PLUGIN_PACKAGE]
+          ? []
+          : [`${ANALOG_VITE_PLUGIN_PACKAGE}@${ANALOG_VITE_PLUGIN_ANGULAR_VERSION}`]),
       ]);
     }
 
-    // 2. Patch .storybook/main.ts(.js).
-    if (mainConfigPath) {
-      logger.debug('Updating main config...');
-      await transformMainConfig(mainConfigPath, dryRun);
-    }
-
-    // Track whether any migrated builder config disabled Compodoc, so the
-    // intent can be carried into framework.options (step 4b).
-    let disableCompodoc = false;
-    // Injection fires unless EVERY storybook target sets `experimentalZoneless: true`.
+    // Injection fires unless EVERY storybook target is declared zoneless.
     let anyStorybookTarget = false;
     let allZonelessTrue = true;
 
@@ -553,9 +537,10 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     for (const pkgJsonPath of packageManager.packageJsonPaths) {
       const dir = pkgJsonPath.replace(/[/\\]package\.json$/, '');
       const angularJsonPath = `${dir}/angular.json`;
-      const { changed, disablesCompodoc, hasStorybookTarget, allStorybookTargetsZonelessTrue } =
-        transformAngularJson(angularJsonPath, dryRun);
-      disableCompodoc ||= disablesCompodoc;
+      const { changed, hasStorybookTarget, allStorybookTargetsZonelessTrue } = transformAngularJson(
+        angularJsonPath,
+        dryRun
+      );
       if (hasStorybookTarget) {
         anyStorybookTarget = true;
         allZonelessTrue = allZonelessTrue && allStorybookTargetsZonelessTrue;
@@ -571,16 +556,10 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     // `builder`; the `@storybook/angular:<target>` string is identical, so the
     // same rewrite applies. Glob the workspace since they are not co-located
     // with package.json the way angular.json is.
-    // eslint-disable-next-line depend/ban-dependencies
-    const { globby } = await import('globby');
-    const projectJsonFiles = await globby(['**/project.json'], {
-      ignore: ['**/node_modules/**', '**/dist/**'],
-      absolute: true,
-    });
+    const projectJsonFiles = await findWorkspaceFiles('project.json');
     for (const projectJsonPath of projectJsonFiles) {
-      const { changed, disablesCompodoc, hasStorybookTarget, allStorybookTargetsZonelessTrue } =
+      const { changed, hasStorybookTarget, allStorybookTargetsZonelessTrue } =
         await transformProjectJson(projectJsonPath, dryRun);
-      disableCompodoc ||= disablesCompodoc;
       if (hasStorybookTarget) {
         anyStorybookTarget = true;
         allZonelessTrue = allZonelessTrue && allStorybookTargetsZonelessTrue;
@@ -591,12 +570,14 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     }
 
     // 4. Rewrite Angular CLI builder references and the `test-storybook` script in package.json.
+    // The write goes through the package manager: it reads package.json from a process-wide cache
+    // that a raw write cannot invalidate, so a later `addDependencies` would undo this one.
     for (const pkgJsonPath of packageManager.packageJsonPaths) {
       try {
         const content = await readFile(pkgJsonPath, 'utf-8');
         const transformed = rewriteTestStorybookScript(rewriteBuilderRefs(content));
         if (transformed !== content && !dryRun) {
-          await writeFile(pkgJsonPath, transformed);
+          packageManager.writePackageJson(JSON.parse(transformed), dirname(pkgJsonPath));
           logger.debug(`Updated builder references and scripts in ${pkgJsonPath}`);
         }
       } catch {
@@ -604,24 +585,31 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       }
     }
 
-    // 4b. Carry a disabled Compodoc setting into framework.options. Compodoc is
-    // now generated only by the framework Vite plugin (default on), so a builder
-    // `compodoc: false` must move to main.ts — otherwise the cold-start default
-    // would silently re-enable it.
-    if (disableCompodoc && mainConfigPath) {
+    // 4b. Drop the Compodoc setup. `@storybook/angular-vite` extracts Angular metadata on the
+    // server, so nothing here runs Compodoc or reads its output. The dedicated
+    // `angular-vite-remove-compodoc` fix cannot do it: every fix is checked against the main config
+    // as it stood when the run started, where the framework is still `@storybook/angular`.
+    if (mainConfigPath) {
       try {
-        await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
-          if (dryRun) {
-            return;
-          }
-
-          setFrameworkCompodocFalse(main);
+        const compodocSetup = await findCompodocSetup({
+          mainConfig,
+          previewConfigPath,
+          packageManager,
+          builderPackages: [ANGULAR_VITE_PACKAGE, ANGULAR_PACKAGE],
         });
-        logger.debug('Carried `compodoc: false` into framework.options.');
+        if (compodocSetup) {
+          await removeCompodocSetup({
+            result: compodocSetup,
+            dryRun: !!dryRun,
+            mainConfigPath,
+            previewConfigPath,
+            packageManager,
+          });
+        }
       } catch (error) {
         logger.warn(
-          `Could not set \`framework.options.compodoc\` automatically: ${error}. ` +
-            "Set `compodoc: false` in your main config's framework.options manually."
+          `Could not remove the Compodoc setup automatically: ${error}. ` +
+            'Compodoc no longer runs, so its options and the `setCompodocJson` wiring can go.'
         );
       }
     }
@@ -637,6 +625,8 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
 
     // 5. Update import statements across config and story files.
     logger.debug('Scanning and updating import statements...');
+    // eslint-disable-next-line depend/ban-dependencies
+    const { globby } = await import('globby');
     const configFiles = configDir ? await globby([`${configDir}/**/*`]) : [];
     const allFiles = [...storiesPaths, ...configFiles].filter(Boolean) as string[];
 

@@ -1,5 +1,9 @@
 import type { MetaComponentResolution } from 'storybook/internal/common';
-import { createMetaComponentResolver } from 'storybook/internal/common';
+import {
+  createMetaComponentResolver,
+  createModuleResolver,
+  jsTsSourceExtensions,
+} from 'storybook/internal/common';
 import type { CsfFile } from 'storybook/internal/csf-tools';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
@@ -9,15 +13,25 @@ import { readFileSync } from 'node:fs';
 // are enough. One instance per process: the resolver caches its module resolutions.
 const resolveMetaComponent = createMetaComponentResolver();
 
-export interface ParsedStoryFile {
-  source: string;
-  csf: CsfFile;
+const storyImportResolver = createModuleResolver({
+  extensions: [...jsTsSourceExtensions],
+  mainFields: ['module', 'main'],
+  tsconfig: 'auto',
+});
+
+/** Resolves an import specifier from a story file to a file path, `undefined` when it does not. */
+export function resolveStoryImport(fromFile: string, specifier: string): string | undefined {
+  try {
+    return storyImportResolver.resolveFileSync(fromFile, specifier);
+  } catch {
+    return undefined;
+  }
 }
 
-export function parseStoryFile(storyFilePath: string, title: string): ParsedStoryFile | undefined {
+export function parseStoryFile(storyFilePath: string, title: string): CsfFile | undefined {
   try {
-    const source = readFileSync(storyFilePath, 'utf8').replace(/\r\n/g, '\n');
-    return { source, csf: loadCsf(source, { makeTitle: () => title }).parse() };
+    const source = readFileSync(storyFilePath, 'utf8');
+    return loadCsf(source, { makeTitle: () => title }).parse();
   } catch {
     return undefined;
   }
@@ -33,10 +47,10 @@ export function resolveStoryComponent(
   storyFilePath: string,
   title = 'Docgen'
 ): MetaComponentResolution {
-  const parsed = parseStoryFile(storyFilePath, title);
-  if (!parsed) {
+  const csf = parseStoryFile(storyFilePath, title);
+  if (!csf) {
     return { reason: 'no-meta-component' };
   }
 
-  return resolveMetaComponent(parsed.csf, storyFilePath);
+  return resolveMetaComponent(csf, storyFilePath);
 }

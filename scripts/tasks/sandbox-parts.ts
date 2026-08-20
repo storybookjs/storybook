@@ -742,7 +742,8 @@ export const addStories: Task['run'] = async (
     template.expected.renderer.startsWith('@storybook/') &&
     template.expected.renderer !== '@storybook/server';
 
-  const sandboxSpecificStoriesFolder = key.replaceAll('/', '-');
+  const sandboxSpecificStoriesFolder =
+    template.modifications?.storiesVariant ?? key.replaceAll('/', '-');
   const storiesVariantFolder = getStoriesFolderWithVariant(sandboxSpecificStoriesFolder);
 
   if (isCoreRenderer) {
@@ -967,6 +968,23 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
 export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
   logger.log('📝 Extending preview.js');
   const previewConfig = await readConfig({ cwd: sandboxDir, fileName: 'preview' });
+
+  // `storybook init` writes the Compodoc wiring for the Webpack builder only, since
+  // `@storybook/angular-vite` extracts the metadata itself. A sandbox that opts back out of the
+  // docgen server exists to cover the browser docgen path, and nothing feeds that path without the
+  // wiring an opting-out user adds by hand.
+  if (template.expected.framework === '@storybook/angular-vite') {
+    const mainConfig = await readConfig({ cwd: sandboxDir, fileName: 'main' });
+    if (mainConfig.getFieldValue(['features', 'experimentalDocgenServer']) === false) {
+      previewConfig.setImport(['setCompodocJson'], '@storybook/addon-docs/angular');
+      previewConfig.setImport('docJson', '../documentation.json');
+      previewConfig._ast.program.body.push(
+        t.expressionStatement(
+          t.callExpression(t.identifier('setCompodocJson'), [t.identifier('docJson')])
+        )
+      );
+    }
+  }
 
   if (template.modifications?.useCsfFactory) {
     const storiesDir = (await pathExists(join(sandboxDir, 'src/stories')))

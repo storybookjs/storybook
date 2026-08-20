@@ -1,6 +1,5 @@
 {
   "id": "csf4",
-  "import": "import CsfFourButton from './CsfFourButton.vue';",
   "name": "CsfFourButton",
   "path": "__PATH__",
   "stories": {
@@ -8,7 +7,11 @@
       "description": "Empty CSF4 story description.",
       "id": "forms-csf4--empty",
       "name": "Empty",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import CsfFourButton from './CsfFourButton.vue';
+</script>
+
+<template>
   <CsfFourButton />
 </template>",
       "summary": undefined,
@@ -17,7 +20,11 @@
       "description": "CSF4 button description.",
       "id": "forms-csf4--primary",
       "name": "Primary",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import CsfFourButton from './CsfFourButton.vue';
+</script>
+
+<template>
   <CsfFourButton label="Save" />
 </template>",
       "summary": "CSF4 button summary.",

@@ -17,7 +17,12 @@ export function createFixtureDocgen() {
     getDocgenPayload: (entry: IndexEntry) => async (): Promise<AngularDocgenPayload | undefined> =>
       buildDocgenPayload(
         { entry },
-        { manager, options: {}, logger: noopLogger, resolvePath: (path) => path }
+        {
+          manager,
+          options: { propsTable: 'api' },
+          logger: noopLogger,
+          resolvePath: (path) => path,
+        }
       ),
     dispose: () => manager.dispose(),
   };

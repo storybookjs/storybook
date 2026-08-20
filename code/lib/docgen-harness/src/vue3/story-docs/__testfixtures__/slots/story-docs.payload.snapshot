@@ -1,6 +1,5 @@
 {
   "id": "slots",
-  "import": "import SlotsPanel from './SlotsPanel.vue';",
   "name": "SlotsPanel",
   "path": "__PATH__",
   "stories": {
@@ -9,16 +8,14 @@
       "id": "forms-slots--primary",
       "name": "Primary",
       "snippet": "<script lang="ts" setup>
-const _default = 'Body copy';
-
-const header = 'Header copy';
+import SlotsPanel from './SlotsPanel.vue';
 </script>
 
 <template>
   <SlotsPanel :footer="42">
-    {{ _default }}
+    Body copy
     <template #header>
-      {{ header }}
+      Header copy
     </template>
   </SlotsPanel>
 </template>",

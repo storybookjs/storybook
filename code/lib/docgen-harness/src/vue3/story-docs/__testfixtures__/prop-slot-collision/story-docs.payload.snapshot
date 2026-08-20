@@ -1,6 +1,5 @@
 {
   "id": "prop-slot-collision",
-  "import": "import PropSlotCollision from './PropSlotCollision.vue';",
   "name": "PropSlotCollision",
   "path": "__PATH__",
   "stories": {
@@ -8,7 +7,11 @@
       "description": undefined,
       "id": "forms-prop-slot-collision--primary",
       "name": "Primary",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import PropSlotCollision from './PropSlotCollision.vue';
+</script>
+
+<template>
   <PropSlotCollision default="fallback text" icon="pi pi-check" />
 </template>",
       "summary": undefined,

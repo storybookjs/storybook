@@ -1,6 +1,5 @@
 {
   "id": "slot-scoped",
-  "import": "import ScopedList from './ScopedList.vue';",
   "name": "ScopedList",
   "path": "__PATH__",
   "stories": {

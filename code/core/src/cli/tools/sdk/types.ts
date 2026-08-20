@@ -24,6 +24,8 @@ export type CreateToolsOptions = {
   cwd?: string;
   /** Directory to load the Storybook configuration from; relative paths resolve from `cwd`. */
   configDir?: string;
+  /** Port of a running Storybook, to pick one instance when several match the project. */
+  port?: number;
   /** Defaults to `auto`. */
   mode?: ToolsMode;
   /** Whether the SDK may start a child host in the target project's own environment. */

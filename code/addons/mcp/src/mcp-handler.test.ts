@@ -587,42 +587,6 @@ describe('mcpServerHandler', () => {
     expect(toolNames).toContain('stories-changed');
     expect(toolNames).not.toContain('review-create');
   });
-
-  it('lists review-create for storybook ai CLI requests when only the changeDetection feature flag is on', async () => {
-    const mockOptions = createMockOptions({
-      port: 6014,
-      presets: {
-        apply: vi.fn(async (key: string, defaultValue?: any) => {
-          if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: true };
-          return defaultValue;
-        }),
-      },
-    });
-
-    const toolNames = await getRegisteredToolNames(mockOptions, 6014, {
-      headers: { 'x-storybook-mcp-proxy': 'true' },
-    });
-    expect(toolNames).toContain('review-create');
-  });
-
-  it('does not list review-create for CLI requests when experimentalReview is explicitly false', async () => {
-    const mockOptions = createMockOptions({
-      port: 6015,
-      presets: {
-        apply: vi.fn(async (key: string, defaultValue?: any) => {
-          if (key === 'core') return { disableTelemetry: false };
-          if (key === 'features') return { changeDetection: true, experimentalReview: false };
-          return defaultValue;
-        }),
-      },
-    });
-
-    const toolNames = await getRegisteredToolNames(mockOptions, 6015, {
-      headers: { 'x-storybook-mcp-proxy': 'true' },
-    });
-    expect(toolNames).not.toContain('review-create');
-  });
 });
 
 describe('getToolsets', () => {

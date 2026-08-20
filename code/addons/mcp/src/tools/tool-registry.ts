@@ -214,8 +214,8 @@ const addonToolDefinitions: AddonToolDefinition[] = [
   fromToolset({
     toolset: 'dev',
     // Registered whenever the CLI default could turn review on; the per-request `reviewEnabled`
-    // context (explicit flag, or the trusted local-client header) decides whether a given MCP
-    // client actually sees the tool.
+    // context (the explicit `experimentalReview` flag) decides whether a given MCP client actually
+    // sees the tool. The CLI attaches through the tools SDK and does not use this MCP path.
     available: ({ availability }) => availability.reviewEnabledForCli,
     wrapEnabled:
       (server, { availability }, enabled) =>

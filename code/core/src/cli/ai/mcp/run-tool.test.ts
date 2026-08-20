@@ -1,14 +1,21 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resolve } from 'node:path';
-import { McpJsonRpcError, callMcpTool, listMcpTools } from '../../tools/mcp-client.ts';
+
 import { loadStorybookAiMetadata, type StorybookAiMetadata } from './local-metadata.ts';
 import { readRegistry } from '../../tools/instances/registry.ts';
+import { createTools } from '../../tools/sdk/create-tools.ts';
+import {
+  AttachUnavailableError,
+  ToolsRuntimeError,
+  type AttachedTools,
+  type ToolsetCatalog,
+} from '../../tools/sdk/index.ts';
 import { buildStorybookCommandsHelp, runAiTool, runAiToolHelp } from './run-tool.ts';
 import type { StorybookInstanceRecord } from '../../tools/instances/types.ts';
 
 vi.mock('../../tools/instances/registry.ts', { spy: true });
-vi.mock('../../tools/mcp-client.ts', { spy: true });
+vi.mock('../../tools/sdk/create-tools.ts', { spy: true });
 vi.mock('./local-metadata.ts', { spy: true });
 
 const record: StorybookInstanceRecord = {
@@ -29,14 +36,72 @@ const defaultRuntimeMetadata: StorybookAiMetadata = {
   ],
 };
 
+const defaultCatalog: ToolsetCatalog = {
+  configDir: '/projects/foo/.storybook',
+  toolsets: [
+    {
+      id: 'docs',
+      description: 'Docs',
+      methods: [
+        {
+          ref: 'docs.list',
+          title: 'List docs',
+          description: 'List docs',
+          requiresDevServer: true,
+          inputSchema: undefined,
+        },
+        {
+          ref: 'docs.show',
+          title: 'Get docs',
+          description: 'Get docs.',
+          requiresDevServer: true,
+          inputSchema: undefined,
+        },
+      ],
+    },
+  ],
+};
+
+function makeAttachedTools(
+  overrides: {
+    call?: AttachedTools['call'];
+    describe?: AttachedTools['describe'];
+  } = {}
+): AttachedTools & { call: ReturnType<typeof vi.fn>; describe: ReturnType<typeof vi.fn> } {
+  const call =
+    overrides.call ??
+    vi.fn(async () => ({ ok: true as const, data: {}, markdown: 'upstream result' }));
+  const describe = overrides.describe ?? vi.fn(async () => defaultCatalog);
+  return {
+    mode: 'attached',
+    clientInfo: { name: 'storybook-cli', version: '0.0.0', kind: 'cli' },
+    runtime: {
+      configDir: '/projects/foo/.storybook',
+      toolsets: [],
+      getService: () => {
+        throw new Error('no services registered in this test');
+      },
+    },
+    storybook: {
+      version: '0.0.0',
+      configDir: '/projects/foo/.storybook',
+      url: 'http://localhost:6006',
+      pid: 1,
+    },
+    describe,
+    call,
+    close: async () => {},
+  };
+}
+
+let toolsHost: ReturnType<typeof makeAttachedTools>;
+
 beforeEach(() => {
   vi.mocked(readRegistry).mockReset().mockResolvedValue([record]);
-  vi.mocked(callMcpTool)
+  toolsHost = makeAttachedTools();
+  vi.mocked(createTools)
     .mockReset()
-    .mockResolvedValue({ content: [{ type: 'text', text: 'upstream result' }] });
-  vi.mocked(listMcpTools)
-    .mockReset()
-    .mockResolvedValue([{ name: 'docs-list', description: 'List docs' }]);
+    .mockImplementation(async () => toolsHost);
   vi.mocked(loadStorybookAiMetadata).mockReset().mockResolvedValue(defaultRuntimeMetadata);
 });
 
@@ -50,11 +115,15 @@ describe('runAiTool', () => {
       cwd: '/projects/foo',
     });
 
-    expect(callMcpTool).toHaveBeenCalledWith(
-      record,
-      { name: 'docs-list', arguments: { withStoryIds: true } },
-      undefined
-    );
+    expect(createTools).toHaveBeenCalledWith({
+      cwd: '/projects/foo',
+      configDir: undefined,
+      port: 6006,
+      mode: 'attached',
+      autoSpawn: false,
+      clientInfo: { name: 'storybook-cli', version: expect.any(String), kind: 'cli' },
+    });
+    expect(toolsHost.call).toHaveBeenCalledWith('docs.list', { withStoryIds: true });
     expect(result).toEqual({
       exitCode: 0,
       output: 'upstream result',
@@ -66,7 +135,7 @@ describe('runAiTool', () => {
     });
   });
 
-  it('runs local tools from Storybook AI metadata without contacting the MCP server', async () => {
+  it('runs local tools from Storybook AI metadata without contacting the running Storybook', async () => {
     vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
       instructions: 'Follow the story workflow.',
       tools: [{ name: 'get-storybook-story-instructions', description: 'Get story guidance' }],
@@ -89,7 +158,7 @@ describe('runAiTool', () => {
       outcome: { kind: 'success' },
     });
     expect(readRegistry).not.toHaveBeenCalled();
-    expect(callMcpTool).not.toHaveBeenCalled();
+    expect(createTools).not.toHaveBeenCalled();
   });
 
   it('runs any metadata-declared local tool locally even when a Storybook server is ready', async () => {
@@ -111,7 +180,7 @@ describe('runAiTool', () => {
 
     expect(result.output).toBe('custom local result');
     expect(readRegistry).not.toHaveBeenCalled();
-    expect(callMcpTool).not.toHaveBeenCalled();
+    expect(createTools).not.toHaveBeenCalled();
   });
 
   it('loads known local tools from a custom config dir option', async () => {
@@ -180,7 +249,7 @@ describe('runAiTool', () => {
       error: expect.objectContaining({ name: 'LocalAiToolError' }),
     });
     expect(readRegistry).not.toHaveBeenCalled();
-    expect(callMcpTool).not.toHaveBeenCalled();
+    expect(createTools).not.toHaveBeenCalled();
   });
 
   it('surfaces local tool error results with the stable MCP error wrapper', async () => {
@@ -242,7 +311,14 @@ describe('runAiTool', () => {
 
     const result = await runAiTool('docs-list', [], { cwd: '/repo/packages/ui' });
 
-    expect(callMcpTool).toHaveBeenCalledWith(rootInstance, expect.anything(), undefined);
+    expect(createTools).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cwd: '/repo/packages/ui',
+        port: 6006,
+        mode: 'attached',
+      })
+    );
+    expect(toolsHost.call).toHaveBeenCalledWith('docs.list', {});
     expect(result.exitCode).toBe(0);
   });
 
@@ -259,7 +335,15 @@ describe('runAiTool', () => {
       configDir: 'packages/ui/.storybook',
     });
 
-    expect(callMcpTool).toHaveBeenCalledWith(leafInstance, expect.anything(), undefined);
+    expect(createTools).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cwd: '/repo',
+        configDir: 'packages/ui/.storybook',
+        port: 6006,
+        mode: 'attached',
+      })
+    );
+    expect(toolsHost.call).toHaveBeenCalledWith('docs.list', {});
     expect(result.exitCode).toBe(0);
   });
 
@@ -275,11 +359,7 @@ describe('runAiTool', () => {
       json: '{"id":"base","verbose":true}',
     });
 
-    expect(callMcpTool).toHaveBeenCalledWith(
-      record,
-      { name: 'docs-show', arguments: { id: 'override', verbose: true } },
-      undefined
-    );
+    expect(toolsHost.call).toHaveBeenCalledWith('docs.show', { id: 'override', verbose: true });
   });
 
   it('returns the arg-parsing error without contacting the registry', async () => {
@@ -303,6 +383,7 @@ describe('runAiTool', () => {
     expect(result.output).toContain('- `storybook ai --cwd /projects/foo <command> [args...]`');
     expect(result.output).toContain('BEFORE the command name');
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'no-instance' });
+    expect(createTools).not.toHaveBeenCalled();
   });
 
   it('includes a --config-dir retry example in the no-instance markdown when recorded', async () => {
@@ -324,7 +405,6 @@ describe('runAiTool', () => {
   });
 
   it('does not route by cwd when an explicit --config-dir targets a different config', async () => {
-    // Only the root Storybook runs; the agent explicitly targets the (not running) ui package.
     vi.mocked(readRegistry).mockResolvedValue([
       { ...record, cwd: resolve('/repo'), configDir: resolve('/repo/.storybook') },
     ]);
@@ -334,7 +414,7 @@ describe('runAiTool', () => {
       configDir: 'packages/ui/.storybook',
     });
 
-    expect(callMcpTool).not.toHaveBeenCalled();
+    expect(createTools).not.toHaveBeenCalled();
     expect(result.exitCode).toBe(1);
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'no-instance' });
   });
@@ -351,7 +431,7 @@ describe('runAiTool', () => {
     expect(result.output).toContain('@storybook/addon-mcp');
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'addon-missing' });
     expect(readRegistry).not.toHaveBeenCalled();
-    expect(callMcpTool).not.toHaveBeenCalled();
+    expect(createTools).not.toHaveBeenCalled();
   });
 
   it('routes to the instance on the requested --port when several share the cwd', async () => {
@@ -361,7 +441,9 @@ describe('runAiTool', () => {
       cwd: '/projects/foo',
       port: '6007',
     });
-    expect(callMcpTool).toHaveBeenCalledWith(onOtherPort, expect.anything(), undefined);
+    expect(createTools).toHaveBeenCalledWith(
+      expect.objectContaining({ port: 6007, mode: 'attached' })
+    );
     expect(result.exitCode).toBe(0);
   });
 
@@ -374,6 +456,7 @@ describe('runAiTool', () => {
     expect(result.output).toContain('not on port `9999`');
     expect(result.output).toContain('- port `6006`');
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'port-mismatch' });
+    expect(createTools).not.toHaveBeenCalled();
   });
 
   it('rejects an invalid --port without contacting the registry', async () => {
@@ -396,10 +479,11 @@ describe('runAiTool', () => {
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain(expected);
     expect(result.outcome).toEqual({ kind: 'intercept', reason });
+    expect(createTools).not.toHaveBeenCalled();
   });
 
   it('prints a placeholder when the tool returns no content', async () => {
-    vi.mocked(callMcpTool).mockResolvedValue({ content: [] });
+    toolsHost.call.mockResolvedValue({ ok: true, data: {}, markdown: '' });
     const result = await runAiTool('docs-list', [], { cwd: '/projects/foo' });
     expect(result).toEqual({
       exitCode: 0,
@@ -408,30 +492,31 @@ describe('runAiTool', () => {
     });
   });
 
-  it('surfaces a clean error when a ready record is missing its endpoint', async () => {
-    vi.mocked(callMcpTool).mockRejectedValue(
-      new Error('The Storybook instance at /projects/foo has no server endpoint registered')
+  it('surfaces the SDK message when attach fails after a ready record is resolved', async () => {
+    vi.mocked(createTools).mockRejectedValue(
+      new AttachUnavailableError({
+        reason: 'old-server',
+        instances: [record],
+        remediation: 'Restart Storybook (v10.2.0+) to enable attach.',
+      })
     );
-    vi.mocked(readRegistry).mockResolvedValue([{ ...record, mcp: { status: 'ready' } }]);
     const result = await runAiTool('docs-list', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('Failed to reach the Storybook server at (no endpoint)');
+    expect(result.output).toContain('Restart Storybook');
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'attach-unavailable' });
   });
 
-  it('renders non-text content items as JSON blocks', async () => {
-    vi.mocked(callMcpTool).mockResolvedValue({
-      content: [
-        { type: 'text', text: 'intro' },
-        { type: 'resource_link', uri: 'http://x' },
-      ],
+  it('joins multi-block markdown from the SDK', async () => {
+    toolsHost.call.mockResolvedValue({
+      ok: true,
+      data: {},
+      markdown: ['intro', 'more'],
     });
     const result = await runAiTool('docs-show', [], { cwd: '/projects/foo' });
-    expect(result.output).toContain('intro');
-    expect(result.output).toContain('```json');
-    expect(result.output).toContain('"resource_link"');
+    expect(result.output).toBe('intro\n\nmore');
   });
 
-  it('does not call live MCP for commands hidden by preset metadata', async () => {
+  it('does not call the running Storybook for commands hidden by preset metadata', async () => {
     const result = await runAiTool('test-run', [], { cwd: '/projects/foo' });
 
     expect(result.exitCode).toBe(1);
@@ -440,7 +525,7 @@ describe('runAiTool', () => {
     expect(result.output).not.toContain('- `test-run`');
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'unknown-command' });
     expect(readRegistry).not.toHaveBeenCalled();
-    expect(callMcpTool).not.toHaveBeenCalled();
+    expect(createTools).not.toHaveBeenCalled();
   });
 
   it('lists the server tools when a metadata-visible runtime command is missing server-side', async () => {
@@ -448,27 +533,15 @@ describe('runAiTool', () => {
       ...defaultRuntimeMetadata,
       tools: [...defaultRuntimeMetadata.tools, { name: 'no-such-tool', description: 'Stale tool' }],
     });
-    vi.mocked(callMcpTool).mockRejectedValue(new McpJsonRpcError(-32601, 'unknown tool'));
+    toolsHost.call.mockRejectedValue(
+      new ToolsRuntimeError({
+        reason: 'unknown-method',
+        message: 'Unknown tool `docs.noSuchTool`.',
+      })
+    );
 
     const result = await runAiTool('no-such-tool', [], { cwd: '/projects/foo' });
 
-    expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('Unknown command `no-such-tool`');
-    expect(result.output).toContain('- `docs-list`');
-    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'unknown-command' });
-  });
-
-  it('lists the available tools when the server reports the unknown tool as an error result', async () => {
-    vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
-      ...defaultRuntimeMetadata,
-      tools: [...defaultRuntimeMetadata.tools, { name: 'no-such-tool', description: 'Stale tool' }],
-    });
-    // addon-mcp (tmcp) reports unknown tools as an isError result, not a JSON-RPC error.
-    vi.mocked(callMcpTool).mockResolvedValue({
-      content: [{ type: 'text', text: 'Tool no-such-tool not found' }],
-      isError: true,
-    });
-    const result = await runAiTool('no-such-tool', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
     expect(result.output).toContain('Unknown command `no-such-tool`');
     expect(result.output).toContain('- `docs-list`');
@@ -476,9 +549,10 @@ describe('runAiTool', () => {
   });
 
   it('keeps the original error result when the failing tool does exist', async () => {
-    vi.mocked(callMcpTool).mockResolvedValue({
-      content: [{ type: 'text', text: 'tests failed' }],
-      isError: true,
+    toolsHost.call.mockResolvedValue({
+      ok: false,
+      data: {},
+      markdown: 'tests failed',
     });
     const result = await runAiTool('docs-list', [], { cwd: '/projects/foo' });
     expect(result).toEqual({
@@ -486,44 +560,51 @@ describe('runAiTool', () => {
       output: 'tests failed',
       outcome: { kind: 'error', error: expect.objectContaining({ name: 'McpToolResultError' }) },
     });
-    // Constant message keeps the telemetry error hash aggregatable; the tool's error text only
-    // travels as `cause` (uploaded path-sanitized, and only with crash-reports consent).
     const error = (result.outcome as { error: Error }).error;
     expect(error.message).toBe('The Storybook AI command returned an error result');
     expect(error.cause).toBe('tests failed');
   });
 
-  it('prints the original JSON-RPC error when the tool exists', async () => {
-    const error = new McpJsonRpcError(-32602, 'invalid arguments');
-    vi.mocked(callMcpTool).mockRejectedValue(error);
+  it('prints the original runtime error when the tool exists', async () => {
+    const error = new ToolsRuntimeError({
+      reason: 'invalid-input',
+      message: 'Invalid input for `docs.list`',
+    });
+    toolsHost.call.mockRejectedValue(error);
     const result = await runAiTool('docs-list', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('Storybook server error -32602: invalid arguments');
+    expect(result.output).toContain('Invalid input for `docs.list`');
     expect(result.outcome).toEqual({ kind: 'error', error });
   });
 
-  it('prints the original JSON-RPC error when the tool list cannot be fetched', async () => {
-    const error = new McpJsonRpcError(-32601, 'unknown tool');
+  it('prints the original runtime error when the catalog cannot be fetched', async () => {
+    const error = new ToolsRuntimeError({
+      reason: 'unknown-method',
+      message: 'Unknown tool `docs.noSuchTool`.',
+    });
     vi.mocked(loadStorybookAiMetadata).mockResolvedValue({
       ...defaultRuntimeMetadata,
       tools: [...defaultRuntimeMetadata.tools, { name: 'no-such-tool', description: 'Stale tool' }],
     });
-    vi.mocked(callMcpTool).mockRejectedValue(error);
-    vi.mocked(listMcpTools).mockRejectedValue(new Error('boom'));
+    toolsHost.call.mockRejectedValue(error);
+    toolsHost.describe.mockRejectedValue(new Error('boom'));
     const result = await runAiTool('no-such-tool', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('Storybook server error -32601: unknown tool');
+    expect(result.output).toContain('Unknown tool `docs.noSuchTool`');
     expect(result.outcome).toEqual({ kind: 'error', error });
   });
 
-  it('surfaces a friendly error when the MCP server is unreachable', async () => {
-    const error = new Error('connection refused');
-    vi.mocked(callMcpTool).mockRejectedValue(error);
+  it('surfaces a friendly error when attach cannot reach the running Storybook', async () => {
+    const error = new AttachUnavailableError({
+      reason: 'connection-failed',
+      instances: [record],
+      remediation: `Could not connect to the Storybook at ${record.url}.`,
+    });
+    vi.mocked(createTools).mockRejectedValue(error);
     const result = await runAiTool('docs-show', [], { cwd: '/projects/foo' });
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('Failed to reach the Storybook server at /mcp');
-    expect(result.output).toContain('connection refused');
-    expect(result.outcome).toEqual({ kind: 'error', error });
+    expect(result.output).toContain('Could not connect to the Storybook at http://localhost:6006');
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'attach-unavailable' });
   });
 
   it('prepends a warning when multiple instances run at the same cwd', async () => {
@@ -576,11 +657,10 @@ describe('runAiTool', () => {
     it('only warns about instances in the selected agent bucket', async () => {
       const result = await runAiTool('docs-list', [], { cwd: '/projects/foo' });
 
-      expect(callMcpTool).toHaveBeenCalledWith(
-        selectedPreview,
-        { name: 'docs-list', arguments: {} },
-        undefined
+      expect(createTools).toHaveBeenCalledWith(
+        expect.objectContaining({ port: 6008, mode: 'attached' })
       );
+      expect(toolsHost.call).toHaveBeenCalledWith('docs.list', {});
       expect(result.exitCode).toBe(0);
       expect(result.output).toContain('Multiple Storybook instances match this project');
       expect(result.output).toContain('cwd `/projects/foo`');
@@ -781,8 +861,6 @@ describe('runAiToolHelp', () => {
     const result = await runAiToolHelp('review-create', { cwd: '/projects/foo' });
 
     expect(result.exitCode).toBe(0);
-    // Nested array-item fields self-document; the primitive `changedFiles` array
-    // stays flat (no "each item:" expansion).
     expect(result.output).toMatchInlineSnapshot(`
       "Usage: storybook ai review-create [--key value ...]
 
@@ -864,8 +942,6 @@ describe('runAiToolHelp', () => {
           description: 'Has an unmodeled schema.',
           inputSchema: {
             properties: {
-              // `items: false` is valid JSON Schema but outside the node schema, so
-              // validation fails and the help must degrade rather than throw or drop it.
               weird: { type: 'string', description: 'An odd one', items: false },
             },
             required: ['weird'],
@@ -877,7 +953,6 @@ describe('runAiToolHelp', () => {
     const result = await runAiToolHelp('exotic-tool', { cwd: '/projects/foo' });
 
     expect(result.exitCode).toBe(0);
-    // Degrades to the top-level type/description; no crash, no dropped argument.
     expect(result.output).toMatchInlineSnapshot(`
       "Usage: storybook ai exotic-tool [--key value ...]
 
@@ -918,7 +993,7 @@ describe('runAiToolHelp', () => {
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('Usage: storybook ai docs-show');
     expect(result.outcome).toEqual({ kind: 'help' });
-    expect(callMcpTool).not.toHaveBeenCalled();
+    expect(createTools).not.toHaveBeenCalled();
     expect(readRegistry).not.toHaveBeenCalled();
   });
 

@@ -3,11 +3,6 @@ import { experimental_loadStorybook as loadStorybook } from 'storybook/internal/
 import * as v from 'valibot';
 
 import { resolveStorybookConfigDir } from '../../tools/config-dir.ts';
-import {
-  McpToolDescriptorSchema,
-  type McpToolDescriptor,
-  type ToolCallResult,
-} from '../../tools/mcp-client.ts';
 
 const STORYBOOK_AI_METADATA_PRESET = 'experimental_storybookAi';
 
@@ -17,6 +12,39 @@ class StorybookAiMetadataError extends Error {
     this.name = 'StorybookAiMetadataError';
   }
 }
+
+export const ToolResultContentItemSchema = v.looseObject({
+  type: v.string(),
+  text: v.optional(v.string()),
+});
+export type ToolResultContentItem = v.InferOutput<typeof ToolResultContentItemSchema>;
+
+export const ToolCallResultSchema = v.looseObject({
+  content: v.optional(v.array(ToolResultContentItemSchema)),
+  structuredContent: v.optional(v.record(v.string(), v.unknown())),
+  isError: v.optional(v.boolean()),
+});
+export type ToolCallResult = v.InferOutput<typeof ToolCallResultSchema>;
+
+export const McpToolDescriptorSchema = v.looseObject({
+  name: v.string(),
+  description: v.optional(v.string()),
+  inputSchema: v.optional(
+    v.looseObject({
+      properties: v.optional(
+        v.record(
+          v.string(),
+          v.looseObject({
+            type: v.optional(v.string()),
+            description: v.optional(v.string()),
+          })
+        )
+      ),
+      required: v.optional(v.array(v.string())),
+    })
+  ),
+});
+export type McpToolDescriptor = v.InferOutput<typeof McpToolDescriptorSchema>;
 
 export type StorybookAiMetadata = {
   instructions?: string;

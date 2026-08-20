@@ -119,6 +119,26 @@ describe('bootstrapAttachedRuntime', () => {
     await expect(failure).rejects.toThrow('--config-dir /apps/web/.storybook');
   });
 
+  it('picks the instance on the requested port when several match the project', async () => {
+    const onOtherPort: StorybookInstanceRecord = {
+      ...RECORD,
+      instanceId: 'other-port',
+      pid: 789,
+      port: 6007,
+      url: 'http://localhost:6007',
+      token: 'other-secret',
+    };
+    const { deps } = makeRuntimeDeps([RECORD, onOtherPort]);
+
+    const result = await bootstrapAttachedRuntime({ cwd: '/repo', port: 6007 }, deps);
+
+    expect(result.record).toEqual(onOtherPort);
+    expect(deps.createNodeChannel).toHaveBeenCalledWith({
+      url: onOtherPort.url,
+      token: onOtherPort.token,
+    });
+  });
+
   it('rejects when several instances match and names each --config-dir', async () => {
     const sibling: StorybookInstanceRecord = {
       ...RECORD,

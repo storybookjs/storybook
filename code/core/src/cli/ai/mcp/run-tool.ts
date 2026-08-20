@@ -1,36 +1,47 @@
 import { resolve } from 'node:path';
 
+import { versions } from 'storybook/internal/common';
 import * as v from 'valibot';
 
+import type { AnyToolsetOutcome } from '../../../shared/open-service/toolset-definition.ts';
+import { toMcpToolName } from '../../../shared/open-service/toolset-names.ts';
 import { detectAgent } from '../../../telemetry/detect-agent.ts';
 import { resolveStorybookConfigDir } from '../../tools/config-dir.ts';
 import { readRegistry } from '../../tools/instances/registry.ts';
 import { resolveInstance } from '../../tools/instances/resolve.ts';
 import type { InterceptReason, StorybookInstanceRecord } from '../../tools/instances/types.ts';
 import {
-  McpJsonRpcError,
-  ToolCallResultSchema,
-  callMcpTool,
-  listMcpTools,
-  type McpToolDescriptor,
-  type ToolCallResult,
-} from '../../tools/mcp-client.ts';
-import {
   JsonSchemaNodeSchema,
   MAX_SCHEMA_DEPTH,
   schemaLines,
   type JsonSchemaNode,
 } from '../../tools/schema-lines.ts';
+import { createTools } from '../../tools/sdk/create-tools.ts';
+import {
+  AttachUnavailableError,
+  EnvironmentMismatchError,
+  ToolsRuntimeError,
+} from '../../tools/sdk/errors.ts';
+import type { Tools, ToolsClientInfo, ToolsetCatalog } from '../../tools/sdk/types.ts';
 import { getInterceptMarkdown } from './intercepts.ts';
-import { loadStorybookAiMetadata, type StorybookAiMetadata } from './local-metadata.ts';
+import {
+  loadStorybookAiMetadata,
+  ToolCallResultSchema,
+  type McpToolDescriptor,
+  type StorybookAiMetadata,
+} from './local-metadata.ts';
 import { parsePort, parseToolArgs } from './tool-args.ts';
 
 /**
  * Why an invocation failed before any command executed, for the `ai-command` telemetry event
- * (storybookjs/storybook#35131). Extends the instance-resolution intercepts with the two CLI-level
- * cases: arguments that never parsed, and command names the server does not provide.
+ * (storybookjs/storybook#35131). Extends the instance-resolution intercepts with CLI-level cases:
+ * arguments that never parsed, command names the server does not provide, and attach failures.
  */
-export type AiCommandInterceptReason = InterceptReason | 'invalid-arguments' | 'unknown-command';
+export type AiCommandInterceptReason =
+  | InterceptReason
+  | 'invalid-arguments'
+  | 'unknown-command'
+  | 'attach-unavailable';
 
 /**
  * Telemetry-facing classification of a run. `help` marks lookups via `--help` flags, which are not
@@ -66,10 +77,16 @@ class LocalAiToolError extends Error {
   }
 }
 
+const AI_CLIENT_INFO: ToolsClientInfo = {
+  name: 'storybook-cli',
+  version: versions.storybook,
+  kind: 'cli',
+};
+
 /** Injectable dependencies for tests. */
 export type AiToolRunDeps = {
   registryDir?: string;
-  fetchImpl?: typeof fetch;
+  createTools?: typeof createTools;
   loadStorybookAiMetadata?: typeof loadStorybookAiMetadata;
 };
 
@@ -86,8 +103,8 @@ export type AiToolOptions = {
 
 /**
  * Run a Storybook AI command and return its result as markdown. Commands exposed as local metadata
- * run without a dev server; runtime-bound commands still go through the running Storybook MCP
- * server and use {@link getInterceptMarkdown} when routing fails.
+ * run without a dev server; runtime-bound commands attach to the running Storybook and use
+ * {@link getInterceptMarkdown} when routing fails.
  */
 export async function runAiTool(
   toolName: string,
@@ -146,52 +163,57 @@ export async function runAiTool(
   const { record, matches } = resolution;
 
   try {
-    const result = await callMcpTool(
-      record,
-      { name: toolName, arguments: parsed.args },
-      deps.fetchImpl
-    );
-    if (result.isError) {
-      // addon-mcp reports unknown tools as an error *result* rather than a JSON-RPC error.
-      const unknownTool = await describeUnknownTool(record, toolName, deps.fetchImpl);
-      if (unknownTool) {
-        return {
-          exitCode: 1,
-          output: unknownTool,
-          outcome: { kind: 'intercept', reason: 'unknown-command' },
-        };
-      }
-    }
-    const siblings = matches.filter((r) => r !== record);
-    const toolOutput = formatToolResult(result);
-    const sections = [
-      ...(siblings.length > 0 ? [formatMultiInstanceWarning(record, siblings)] : []),
-      toolOutput,
-    ];
-    const output = sections.join('\n\n');
-    if (result.isError) {
+    const tools = await (deps.createTools ?? createTools)({
+      cwd: options.cwd,
+      configDir: options.configDir,
+      port: record.port,
+      mode: 'attached',
+      autoSpawn: false,
+      clientInfo: AI_CLIENT_INFO,
+    });
+    const result = await callRuntimeTool(tools, toolName, parsed.args);
+    if (result.kind === 'unknown') {
       return {
         exitCode: 1,
-        output,
-        outcome: { kind: 'error', error: new McpToolResultError({ cause: toolOutput }) },
+        output: result.output,
+        outcome: { kind: 'intercept', reason: 'unknown-command' },
       };
     }
-    return { exitCode: 0, output, outcome: { kind: 'success' } };
-  } catch (error) {
-    if (error instanceof McpJsonRpcError) {
-      const unknownTool = await describeUnknownTool(record, toolName, deps.fetchImpl);
-      if (unknownTool) {
-        return {
-          exitCode: 1,
-          output: unknownTool,
-          outcome: { kind: 'intercept', reason: 'unknown-command' },
-        };
-      }
-      return { exitCode: 1, output: error.message, outcome: { kind: 'error', error } };
+    const siblings = matches.filter((candidate) => candidate !== record);
+    const sections = [
+      ...(siblings.length > 0 ? [formatMultiInstanceWarning(record, siblings)] : []),
+      result.output,
+    ];
+    const output = sections.join('\n\n');
+    if (result.ok) {
+      return { exitCode: 0, output, outcome: { kind: 'success' } };
     }
     return {
       exitCode: 1,
-      output: formatServerUnreachable(record, error),
+      output,
+      outcome: { kind: 'error', error: new McpToolResultError({ cause: result.output }) },
+    };
+  } catch (error) {
+    if (error instanceof AttachUnavailableError) {
+      return {
+        exitCode: 1,
+        output: error.message,
+        outcome: {
+          kind: 'intercept',
+          reason: error.data.reason === 'no-instance' ? 'no-instance' : 'attach-unavailable',
+        },
+      };
+    }
+    if (error instanceof EnvironmentMismatchError) {
+      return {
+        exitCode: 1,
+        output: error.message,
+        outcome: { kind: 'intercept', reason: 'attach-unavailable' },
+      };
+    }
+    return {
+      exitCode: 1,
+      output: error instanceof Error ? error.message : String(error),
       outcome: { kind: 'error', error },
     };
   }
@@ -439,12 +461,6 @@ function formatErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
 
-function formatServerUnreachable(record: StorybookInstanceRecord, error: unknown): string {
-  return `Failed to reach the Storybook server at ${record.mcp.endpoint ?? '(no endpoint)'}: ${
-    error instanceof Error ? error.message : String(error)
-  }`;
-}
-
 type InstanceResolution =
   | { kind: 'ok'; record: StorybookInstanceRecord; matches: StorybookInstanceRecord[] }
   | {
@@ -491,25 +507,102 @@ async function resolveReadyInstance(
   return { kind: 'ok', record: resolution.record, matches: resolution.matches };
 }
 
+// `docs-list` → `docs.list`; inverse of toMcpToolName when the toolset id has no hyphens.
+function mcpToolNameToRef(mcpName: string): string {
+  const separator = mcpName.indexOf('-');
+  if (separator <= 0 || separator === mcpName.length - 1) {
+    return mcpName;
+  }
+  const toolsetId = mcpName.slice(0, separator);
+  const methodName = mcpName
+    .slice(separator + 1)
+    .replace(/-([a-z])/g, (_, letter: string) => letter.toUpperCase());
+  return `${toolsetId}.${methodName}`;
+}
+
+function catalogMethodNames(catalog: ToolsetCatalog): string[] {
+  return catalog.toolsets.flatMap((toolset) =>
+    toolset.methods.map((method) => toMcpToolName(method.ref))
+  );
+}
+
+function findRefByMcpName(catalog: ToolsetCatalog, mcpName: string): string | undefined {
+  for (const toolset of catalog.toolsets) {
+    for (const method of toolset.methods) {
+      if (toMcpToolName(method.ref) === mcpName) {
+        return method.ref;
+      }
+    }
+  }
+}
+
+function isUnknownToolError(error: unknown): boolean {
+  return (
+    error instanceof ToolsRuntimeError &&
+    (error.data.reason === 'unknown-method' || error.data.reason === 'unknown-toolset')
+  );
+}
+
+async function callRuntimeTool(
+  tools: Tools,
+  toolName: string,
+  args: Record<string, unknown>
+): Promise<{ kind: 'result'; ok: boolean; output: string } | { kind: 'unknown'; output: string }> {
+  let catalog: ToolsetCatalog | undefined;
+  try {
+    catalog = await tools.describe();
+  } catch {
+    catalog = undefined;
+  }
+
+  const ref = (catalog && findRefByMcpName(catalog, toolName)) ?? mcpToolNameToRef(toolName);
+
+  try {
+    const outcome = await tools.call(ref, args);
+    return { kind: 'result', ok: outcome.ok, output: formatOutcomeMarkdown(outcome) };
+  } catch (error) {
+    if (isUnknownToolError(error)) {
+      const unknownTool = await describeUnknownTool(tools, toolName, catalog);
+      if (unknownTool) {
+        return { kind: 'unknown', output: unknownTool };
+      }
+    }
+    throw error;
+  }
+}
+
 /**
  * Build the "unknown tool" error listing the available tools, or null when the tool does exist
- * (the JSON-RPC error had another cause) or the tool list cannot be fetched.
+ * (the error had another cause) or the catalog cannot be fetched.
  */
 async function describeUnknownTool(
-  record: StorybookInstanceRecord,
+  tools: Tools,
   toolName: string,
-  fetchImpl?: typeof fetch
+  catalog?: ToolsetCatalog
 ): Promise<string | null> {
-  let tools: McpToolDescriptor[];
-  try {
-    tools = await listMcpTools(record, fetchImpl);
-  } catch {
+  let resolved = catalog;
+  if (!resolved) {
+    try {
+      resolved = await tools.describe();
+    } catch {
+      return null;
+    }
+  }
+  const names = catalogMethodNames(resolved);
+  if (names.includes(toolName)) {
     return null;
   }
-  if (tools.some((tool) => tool.name === toolName)) {
-    return null;
-  }
-  return formatUnknownTool(toolName, tools, `The Storybook running at ${record.url}`);
+  return formatUnknownTool(
+    toolName,
+    names.map((name) => ({ name })),
+    formatToolsSource(tools)
+  );
+}
+
+function formatToolsSource(tools: Tools): string {
+  return tools.storybook.url
+    ? `The Storybook running at ${tools.storybook.url}`
+    : `The Storybook configuration at ${tools.storybook.configDir}`;
 }
 
 function formatUnknownTool(toolName: string, tools: McpToolDescriptor[], source: string): string {
@@ -528,8 +621,14 @@ function formatUnknownMetadataTool(
   return formatUnknownTool(toolName, tools, `The Storybook configuration at ${configDir}`);
 }
 
-/** Render a tools/call result as markdown: text content verbatim, other content as JSON blocks. */
-function formatToolResult(result: ToolCallResult): string {
+function formatOutcomeMarkdown(outcome: AnyToolsetOutcome): string {
+  const markdown = Array.isArray(outcome.markdown)
+    ? outcome.markdown.join('\n\n')
+    : outcome.markdown;
+  return markdown.length > 0 ? markdown : '(the command returned no content)';
+}
+
+function formatToolResult(result: v.InferOutput<typeof ToolCallResultSchema>): string {
   const content = result.content ?? [];
   if (content.length === 0) {
     return '(the command returned no content)';
@@ -563,9 +662,6 @@ function formatToolHelp(tool: McpToolDescriptor, { local }: { local: boolean }):
     const required = new Set(tool.inputSchema?.required ?? []);
     lines.push('', 'Arguments:');
     for (const [name, schema] of properties) {
-      // Validate at this boundary rather than tightening the lenient tools/list
-      // parse: an unmodeled schema shape falls back to its top-level type and
-      // description instead of dropping the argument or failing the command.
       const parsed = v.safeParse(JsonSchemaNodeSchema, schema);
       const node: JsonSchemaNode = parsed.success
         ? parsed.output
@@ -581,8 +677,6 @@ function formatMultiInstanceWarning(
   siblings: StorybookInstanceRecord[]
 ): string {
   const all = [chosen, ...siblings];
-  // Matches can span cwds (a record can match by config dir), so each line carries the
-  // instance's own cwd/config dir to tell the competing projects apart.
   const lines = all.map((r) => {
     const marker = r === chosen ? ' (used)' : '';
     const configDir = r.configDir ? `, config dir \`${r.configDir}\`` : '';

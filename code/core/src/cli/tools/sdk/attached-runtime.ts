@@ -64,16 +64,20 @@ export type AttachRuntimeDeps = {
 };
 
 export async function bootstrapAttachedRuntime(
-  options: { cwd?: string; configDir?: string; autoSpawn?: boolean } = {},
+  options: { cwd?: string; configDir?: string; autoSpawn?: boolean; port?: number } = {},
   deps: AttachRuntimeDeps = {}
 ): Promise<AttachedBootstrapResult> {
   const discoveryCwd = resolve(options.cwd ?? process.cwd());
   const records = await (deps.readRegistry ?? readRegistry)();
-  const matches = listProjectMatches(records, {
+  const projectMatches = listProjectMatches(records, {
     cwd: discoveryCwd,
     configDir: options.configDir,
     configDirExplicit: options.configDir != null,
   });
+  const matches =
+    options.port == null
+      ? projectMatches
+      : projectMatches.filter((record) => record.port === options.port);
 
   if (matches.length === 0) {
     throw new AttachUnavailableError({

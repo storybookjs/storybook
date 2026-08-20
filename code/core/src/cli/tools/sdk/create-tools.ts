@@ -37,7 +37,7 @@ import type {
 export type CreateToolsDeps = {
   bootstrap?: (target: { cwd?: string; configDir?: string }) => Promise<ToolsRuntime>;
   attach?: (
-    target: { cwd?: string; configDir?: string },
+    target: { cwd?: string; configDir?: string; port?: number },
     deps?: unknown
   ) => Promise<
     | AttachedBootstrapResult
@@ -143,6 +143,7 @@ async function createAttachedTools(
   )({
     cwd: options.cwd,
     configDir: options.configDir,
+    ...(options.port != null ? { port: options.port } : {}),
   });
   if ('kind' in attached && attached.kind === 'spawn') {
     return (deps.spawnChild ?? spawnChildHost)({

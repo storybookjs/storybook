@@ -114,6 +114,18 @@ describe('createTools', () => {
     expect(attach).toHaveBeenCalledOnce();
   });
 
+  it('forwards an explicit port to attach', async () => {
+    const attach = vi.fn(async () => ({
+      runtime: makeRuntime(),
+      record: { url: 'http://localhost:6007', pid: 456, configDir: CONFIG_DIR },
+      connection: { close: vi.fn(), disconnected: new Promise<never>(() => {}) },
+    }));
+
+    await createTools({ cwd: '/repo', mode: 'attached', port: 6007 }, { attach });
+
+    expect(attach).toHaveBeenCalledWith({ cwd: '/repo', configDir: undefined, port: 6007 });
+  });
+
   it('runs a requiresDevServer method when attached', async () => {
     const attach = vi.fn(async () => ({
       runtime: makeRuntime(),

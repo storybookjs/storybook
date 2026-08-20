@@ -171,8 +171,8 @@ also changes `process.cwd()` to the target project for the rest of the one-shot 
 that need the launch directory must capture it first.
 
 Methods marked `requiresDevServer` use the runtime instance registry. `stories.preview` needs only
-the recorded origin. Until connect mode exists, `review.create` is the one temporary exception
-forwarded through the running Storybook's MCP endpoint; keep that proxy branch self-contained.
+the recorded origin. Until connect mode is the default, `review.create` attaches to the running
+Storybook through the tools SDK when the CLI loaded the project configuration locally.
 
 ### Query
 

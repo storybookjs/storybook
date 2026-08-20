@@ -1,7 +1,7 @@
 import type { InterceptReason, StorybookInstanceRecord } from '../../tools/instances/types.ts';
 
 /**
- * Repair-instruction markdown returned when `storybook ai` cannot reach a usable MCP endpoint
+ * Repair-instruction markdown returned when `storybook ai` cannot reach a usable running Storybook
  * (no matching instance, port mismatch, missing addon, or MCP not ready).
  */
 const NO_INSTANCE_EMPTY = `Storybook is not running at this cwd. Start \`storybook dev\` from the project's cwd and retry the command.`;

@@ -118,6 +118,17 @@ function isAgentFacingError(error: unknown): error is Error {
   return error instanceof Error && (error as { agentFacing?: boolean }).agentFacing === true;
 }
 
+function normalizeHelpFlag(invocation: ToolsInvocation): ToolsInvocation {
+  if (invocation.tool !== '--help' && invocation.tool !== '-h') {
+    return invocation;
+  }
+  return {
+    ...invocation,
+    tool: undefined,
+    flags: { ...invocation.flags, help: true },
+  };
+}
+
 /**
  * Run one `storybook tools` invocation against the toolsets the target Storybook configuration
  * registers in this process. This is the whole command behind the commander wiring: dispatch,
@@ -135,7 +146,7 @@ export async function runToolsCommand(
     target,
     flags = {},
     attach = false,
-  } = invocation;
+  } = normalizeHelpFlag(invocation);
 
   const parsed = parseToolsTokens(tokens, flags);
   if (!parsed.ok) {

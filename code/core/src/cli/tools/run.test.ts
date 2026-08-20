@@ -518,6 +518,17 @@ describe('help', () => {
     expect(result.output).toContain('docs show-story  [local]');
   });
 
+  it('treats `--help` in the tool slot as toolset help, matching `tools docs --help`', async () => {
+    const { deps } = makeDeps();
+
+    const result = await run(['docs', '--help'], deps);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.outcome).toEqual({ kind: 'help' });
+    expect(result.output).toContain('Usage: npx storybook tools docs <tool> [--key value ...]');
+    expect(result.output).not.toContain('Unknown tool');
+  });
+
   it('renders one tool’s help on --help after the tool name', async () => {
     const { deps } = makeDeps();
 

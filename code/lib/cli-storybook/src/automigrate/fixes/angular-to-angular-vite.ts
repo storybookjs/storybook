@@ -427,8 +427,6 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     const frameworkPackageName = getFrameworkPackageName(mainConfig);
     const framework = matchMigratableFramework(frameworkPackageName);
     if (!framework) {
-      // Only nag a project that is actually Angular: a React one carrying `@storybook/angular` as a
-      // stray dependency has nothing to migrate and no reason to hear about it.
       if (angularVersionRaw) {
         logger.warn(
           `Skipped ${ANGULAR_VITE_PACKAGE} migration: this project's Storybook framework is ` +

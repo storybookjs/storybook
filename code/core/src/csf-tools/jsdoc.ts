@@ -20,8 +20,8 @@ function groupByTag(specs: Spec[]): Map<string, Spec[]> {
 /**
  * Splits a bare docblock body (no `/**` markers) into its description and a compact tag map.
  *
- * Shared by the server-side docgen providers so component descriptions and `@summary` / `@import`
- * style tags read the same across renderers.
+ * Canonical shared extractor for component docblocks: inline tags such as `{@link Foo}` and
+ * mid-line bare `@tag` text stay in the description; only line-leading block tags are extracted.
  */
 export function extractJSDocInfo(jsdocComment: string) {
   const lines = jsdocComment.split('\n');
@@ -40,8 +40,8 @@ export function extractJSDocInfo(jsdocComment: string) {
     tags: Object.fromEntries(
       Array.from(groupByTag(parsed[0].tags), ([tag, specs]) => [
         tag,
-        specs.map(
-          (spec) => (spec.type ? `{${spec.type}} ` : '') + `${spec.name} ${spec.description}`
+        specs.map((spec) =>
+          ((spec.type ? `{${spec.type}} ` : '') + `${spec.name} ${spec.description}`).trim()
         ),
       ])
     ) as JsDocTagMap,
@@ -66,7 +66,7 @@ export function extractComponentDescription(
 
   return {
     description: ((tags?.describe?.[0] || tags?.desc?.[0]) ?? description)?.trim(),
-    summary: tags.summary?.[0],
+    summary: tags.summary?.[0].trim(),
     jsDocTags: tags,
   };
 }

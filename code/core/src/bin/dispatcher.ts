@@ -32,9 +32,7 @@ if (!isNodeVersionSupported(major, minor, patch)) {
 }
 
 async function run() {
-  // Cache compiled V8 bytecode on disk so repeated CLI invocations (agents call `storybook
-  // tools` many times per session) skip parse/compile of the module graph. Feature-detected
-  // (added in Node 22.8) and best-effort: a cache failure must never fail the CLI.
+  // TODO: remove try/catch in SB 11 where Node 22 is the minimum supported version
   try {
     Module.enableCompileCache?.();
   } catch {}

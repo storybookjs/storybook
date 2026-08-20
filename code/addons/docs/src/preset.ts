@@ -231,8 +231,6 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     features?.componentsManifest &&
     !options.ignorePreview
   ) {
-    // Deferred: applying the storyIndexGenerator preset builds the full story index, which must
-    // not happen at registration time (one-shot callers register services they may never use).
     registerMdxService({
       getIndex: () =>
         options.presets

@@ -16,33 +16,41 @@ import { invalidateCache } from './utils.ts';
 
 const PROJECT_ROOT = resolve('/workspace');
 
-function memfsThenReal(
-  memFn: (path: unknown, options?: unknown) => unknown,
-  realFn: (path: unknown, options?: unknown) => unknown
-) {
-  return (path: unknown, options?: unknown) =>
-    memfs.existsSync(path as string) ? memFn(path, options) : realFn(path, options);
-}
-
 beforeEach(async () => {
   vol.reset();
   invalidateCache();
   const actual = await vi.importActual<typeof import('node:fs')>('node:fs');
   vi.mocked(existsSync).mockImplementation(
-    (path) => memfs.existsSync(path) || actual.existsSync(path)
+    (path) => memfs.existsSync(String(path)) || actual.existsSync(path)
   );
-  vi.mocked(readFileSync).mockImplementation(
-    memfsThenReal(memfs.readFileSync, actual.readFileSync) as typeof readFileSync
-  );
-  vi.mocked(statSync).mockImplementation(
-    memfsThenReal(memfs.statSync, actual.statSync) as typeof statSync
-  );
-  vi.mocked(lstatSync).mockImplementation(
-    memfsThenReal(memfs.lstatSync, actual.lstatSync) as typeof lstatSync
-  );
-  vi.mocked(readdirSync).mockImplementation(
-    memfsThenReal(memfs.readdirSync, actual.readdirSync) as typeof readdirSync
-  );
+  vi.mocked(readFileSync).mockImplementation((path, options) => {
+    const filePath = String(path);
+    if (memfs.existsSync(filePath)) {
+      return (memfs.readFileSync as typeof readFileSync)(filePath, options as never);
+    }
+    return actual.readFileSync(path, options);
+  });
+  vi.mocked(statSync).mockImplementation((path, options) => {
+    const filePath = String(path);
+    if (memfs.existsSync(filePath)) {
+      return (memfs.statSync as typeof statSync)(filePath, options as never);
+    }
+    return actual.statSync(path, options);
+  });
+  vi.mocked(lstatSync).mockImplementation((path, options) => {
+    const filePath = String(path);
+    if (memfs.existsSync(filePath)) {
+      return (memfs.lstatSync as typeof lstatSync)(filePath, options as never);
+    }
+    return actual.lstatSync(path, options);
+  });
+  vi.mocked(readdirSync).mockImplementation((path, options) => {
+    const filePath = String(path);
+    if (memfs.existsSync(filePath)) {
+      return memfs.readdirSync(filePath, options as never) as never;
+    }
+    return actual.readdirSync(path as never, options as never) as never;
+  });
   vi.mocked(find.up).mockImplementation((name, options) => {
     for (const dir of walk.up(options?.cwd ?? '', options)) {
       const candidate = join(dir, name);

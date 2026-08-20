@@ -7,6 +7,7 @@ import type {
   AnyToolsetOutcome,
   ToolsetCtx,
 } from '../../../shared/open-service/toolset-definition.ts';
+import { parseToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
 import { toCatalogEntry } from './catalog.ts';
 import { AttachUnavailableError, ToolsRuntimeError } from './errors.ts';
 import { bootstrapToolsRuntime, type ToolsRuntime } from './local-runtime.ts';
@@ -146,14 +147,14 @@ function createLocalTools(
 }
 
 function splitRef(ref: string): { toolsetId: string; methodName: string } {
-  const separator = ref.indexOf('.');
-  if (separator <= 0 || separator !== ref.lastIndexOf('.') || separator === ref.length - 1) {
+  try {
+    return parseToolsetMethodId(ref);
+  } catch {
     throw new ToolsRuntimeError({
       reason: 'unknown-method',
       message: `Invalid tool reference \`${ref}\`. Expected \`toolsetId.methodName\`.`,
     });
   }
-  return { toolsetId: ref.slice(0, separator), methodName: ref.slice(separator + 1) };
 }
 
 function findToolset(runtime: ToolsRuntime, toolsetId: string): AnyToolsetDefinition {

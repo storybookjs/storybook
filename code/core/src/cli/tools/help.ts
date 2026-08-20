@@ -1,7 +1,4 @@
-import { toJsonSchema } from '@valibot/to-json-schema';
 import * as v from 'valibot';
-
-import type { StandardSchemaV1 } from '@standard-schema/spec';
 
 import {
   resolveToolsetDescription,
@@ -10,6 +7,7 @@ import {
   type ToolsetCtx,
 } from '../../shared/open-service/toolset-definition.ts';
 import { toCliMethodName } from '../../shared/open-service/toolset-names.ts';
+import { toToolsetJsonSchema } from './sdk/json-schema.ts';
 import {
   JsonSchemaNodeSchema,
   MAX_SCHEMA_DEPTH,
@@ -137,7 +135,7 @@ function badge(method: AnyToolsetMethod): string {
 function methodBodyLines(method: AnyToolsetMethod, ctx: ToolsetCtx): string[] {
   const lines = [resolveToolsetDescription(method.description, ctx).trim()];
 
-  const inputSchema = toJsonSchemaObject(method.input);
+  const inputSchema = toToolsetJsonSchema(method.input);
   const argumentLines = inputSchema ? propertyLines(inputSchema, { flagPrefix: true }) : undefined;
   if (argumentLines === undefined) {
     lines.push('', 'Arguments: (this schema could not be rendered)');
@@ -148,7 +146,7 @@ function methodBodyLines(method: AnyToolsetMethod, ctx: ToolsetCtx): string[] {
   }
 
   if (method.output) {
-    const outputSchema = toJsonSchemaObject(method.output);
+    const outputSchema = toToolsetJsonSchema(method.output);
     const outputLines = outputSchema ? propertyLines(outputSchema, { flagPrefix: false }) : [];
     if (outputLines.length > 0) {
       lines.push('', 'Output:', ...outputLines);
@@ -156,24 +154,6 @@ function methodBodyLines(method: AnyToolsetMethod, ctx: ToolsetCtx): string[] {
   }
 
   return lines;
-}
-
-/**
- * Core toolset schemas are valibot, which converts losslessly; a third-party toolset may register
- * another standard schema, for which there is no converter — its arguments render as unavailable
- * rather than failing the whole help dump. The vendor check is load-bearing: the converter's
- * `ignore` mode turns a foreign schema into an empty object, which would render as the false
- * "Arguments: none." — while `ignore` on a genuine valibot schema only drops exotic pipe actions.
- */
-function toJsonSchemaObject(schema: StandardSchemaV1): Record<string, unknown> | undefined {
-  if (schema['~standard'].vendor !== 'valibot') {
-    return undefined;
-  }
-  try {
-    return toJsonSchema(schema as never, { errorMode: 'ignore' }) as Record<string, unknown>;
-  } catch {
-    return undefined;
-  }
 }
 
 function propertyLines(

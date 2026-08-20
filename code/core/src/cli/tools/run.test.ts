@@ -20,8 +20,8 @@ import {
 } from '../../shared/open-service/toolset-registry.ts';
 import type { DocsAccess } from '../../shared/open-service/toolsets/docs/access.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
-import type { ToolsRuntime } from './bootstrap.ts';
 import { runToolsCommand, type ToolsRunDeps } from './run.ts';
+import { ToolsRuntimeError, type LocalTools, type ToolsRuntime } from './sdk/index.ts';
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
 
 const CONFIG_DIR = '/repo/.storybook';
@@ -81,21 +81,32 @@ const REVIEW_INPUT = {
   changedFiles: [],
 };
 
+function makeLocalTools(runtimeOverrides: Partial<ToolsRuntime> = {}): LocalTools {
+  const runtime: ToolsRuntime = {
+    configDir: CONFIG_DIR,
+    toolsets: getRegisteredToolsets(),
+    getService: () => {
+      throw new Error('no services registered in this test');
+    },
+    ...runtimeOverrides,
+  };
+  return {
+    mode: 'local',
+    clientInfo: { name: 'storybook-cli', version: '0.0.0', kind: 'cli' },
+    runtime,
+    storybook: { version: '0.0.0', configDir: runtime.configDir },
+    describe: async () => ({ configDir: runtime.configDir, toolsets: [] }),
+    call: async () => ({ ok: true, data: {}, markdown: '' }),
+    close: async () => {},
+  };
+}
+
 function makeDeps(overrides: Partial<ToolsRunDeps> & { runtime?: Partial<ToolsRuntime> } = {}) {
   const { runtime: runtimeOverrides, ...deps } = overrides;
-  const bootstrap =
-    deps.bootstrap ??
-    vi.fn(async () => ({
-      configDir: CONFIG_DIR,
-      toolsets: getRegisteredToolsets(),
-      getService: () => {
-        throw new Error('no services registered in this test');
-      },
-      ...runtimeOverrides,
-    }));
+  const createTools = deps.createTools ?? vi.fn(async () => makeLocalTools(runtimeOverrides));
   const discoverInstance =
     deps.discoverInstance ?? vi.fn(async () => ({ currentRecord: undefined, records: [] }));
-  return { deps: { ...deps, bootstrap, discoverInstance }, bootstrap, discoverInstance };
+  return { deps: { ...deps, createTools, discoverInstance }, createTools, discoverInstance };
 }
 
 function run(argv: string[], deps: ToolsRunDeps) {
@@ -142,7 +153,7 @@ describe('local tools', () => {
         storiesForFiles: { loaded: async () => [] },
       },
     };
-    const { deps, bootstrap } = makeDeps({
+    const { deps } = makeDeps({
       runtime: {
         getService: () => moduleGraph as never,
       },
@@ -150,7 +161,6 @@ describe('local tools', () => {
 
     const result = await run(['stories', 'changed'], deps);
 
-    expect(bootstrap).toHaveBeenCalledWith({});
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('# Changed stories');
     expect(result.output).toContain('New: 0, modified: 0, affected: 0');
@@ -168,7 +178,7 @@ describe('local tools', () => {
         storiesForFiles: { loaded: async () => [] },
       },
     };
-    const { deps, bootstrap } = makeDeps({
+    const { deps } = makeDeps({
       runtime: {
         getService: () => moduleGraph as never,
       },
@@ -179,7 +189,6 @@ describe('local tools', () => {
       deps
     );
 
-    expect(bootstrap).toHaveBeenCalledWith({});
     expect(result.exitCode).toBe(1);
     expect(result.outcome).toEqual({ kind: 'failure' });
     expect(result.output).toContain('builder does not support change detection');
@@ -219,12 +228,25 @@ describe('local tools', () => {
     expect(result).toMatchObject({ exitCode: 0, output: 'ready' });
   });
 
-  it('bootstraps the shared runtime for tools that do not use the module graph', async () => {
-    const { deps, bootstrap } = makeDeps();
+  it('hosts the run on a local SDK instance for the targeted project, identified as the CLI', async () => {
+    const { deps, createTools } = makeDeps();
 
-    await run(['docs', 'list'], deps);
+    await runToolsCommand(
+      {
+        toolset: 'docs',
+        tool: 'list',
+        tokens: [],
+        target: { cwd: '/repo', configDir: '.storybook' },
+      },
+      deps
+    );
 
-    expect(bootstrap).toHaveBeenCalledWith({});
+    expect(createTools).toHaveBeenCalledWith({
+      cwd: '/repo',
+      configDir: '.storybook',
+      mode: 'local',
+      clientInfo: { name: 'storybook-cli', version: expect.any(String), kind: 'cli' },
+    });
   });
 });
 
@@ -650,18 +672,24 @@ describe('telemetry sink', () => {
   });
 });
 
-describe('bootstrap failures', () => {
-  it('reports a configuration that cannot be loaded', async () => {
+describe('host failures', () => {
+  it('surfaces the SDK’s message when the configuration cannot be loaded', async () => {
     const deps: ToolsRunDeps = {
-      bootstrap: async () => {
-        throw new Error('No configuration files found');
+      createTools: async () => {
+        throw new ToolsRuntimeError({
+          reason: 'config-load-failed',
+          message:
+            'Could not load the Storybook configuration for this project: No configuration files found',
+        });
       },
     };
 
     const result = await run(['docs', 'list'], deps);
 
     expect(result.exitCode).toBe(1);
-    expect(result.output).toContain('Could not load the Storybook configuration');
-    expect(result.output).toContain('No configuration files found');
+    expect(result.output).toBe(
+      'Could not load the Storybook configuration for this project: No configuration files found'
+    );
+    expect(result.outcome).toMatchObject({ kind: 'error' });
   });
 });

@@ -14,10 +14,10 @@ import { CHANGE_DETECTION_STATUS_TYPE_ID, type Options } from 'storybook/interna
 import type {
   AnyToolsetDefinition,
   ToolsetGetService,
-} from '../../shared/open-service/toolset-definition.ts';
-import { getRegisteredToolsets } from '../../shared/open-service/toolset-registry.ts';
-import { resolveStorybookConfigDir } from './config-dir.ts';
-import type { ToolsTarget } from './discover-instance.ts';
+} from '../../../shared/open-service/toolset-definition.ts';
+import { getRegisteredToolsets } from '../../../shared/open-service/toolset-registry.ts';
+import { resolveStorybookConfigDir } from '../config-dir.ts';
+import type { ToolsTarget } from '../discover-instance.ts';
 
 export type ToolsRuntime = {
   configDir: string;

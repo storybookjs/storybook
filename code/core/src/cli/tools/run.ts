@@ -1,3 +1,5 @@
+import { versions } from 'storybook/internal/common';
+
 import type {
   AnyToolsetDefinition,
   AnyToolsetMethod,
@@ -11,7 +13,7 @@ import {
 } from '../../shared/open-service/toolset-names.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import { callMcpTool } from './mcp-client.ts';
-import { bootstrapToolsRuntime, type ToolsRuntime } from './bootstrap.ts';
+import { createTools, type ToolsClientInfo, type ToolsRuntime } from './sdk/index.ts';
 import {
   discoverRunningInstance,
   type InstanceDiscovery,
@@ -61,9 +63,16 @@ export type ToolsInvocation = {
   flags?: ToolsOutputFlags;
 };
 
+/** Identifies this CLI to the tools SDK that hosts its run. */
+const CLI_CLIENT_INFO: ToolsClientInfo = {
+  name: 'storybook-cli',
+  version: versions.storybook,
+  kind: 'cli',
+};
+
 /** Injectable dependencies for tests. */
 export type ToolsRunDeps = {
-  bootstrap?: typeof bootstrapToolsRuntime;
+  createTools?: typeof createTools;
   discoverInstance?: typeof discoverRunningInstance;
   /** Stub for {@link PROXY_VIA_MCP_METHODS}; goes away with the proxy in Milestone 5b. */
   mcpToolCall?: typeof callMcpTool;
@@ -133,13 +142,20 @@ export async function runToolsCommand(
 
   let runtime: ToolsRuntime;
   try {
-    runtime = await (deps.bootstrap ?? bootstrapToolsRuntime)(target);
+    const tools = await (deps.createTools ?? createTools)({
+      cwd: target.cwd,
+      configDir: target.configDir,
+      mode: 'local',
+      clientInfo: CLI_CLIENT_INFO,
+    });
+    // Help rendering, dispatch and the dev-server proxy all read the toolset definitions
+    // themselves, which only a local host has.
+    runtime = tools.runtime;
   } catch (error) {
+    // The SDK's own message already names the failure and the configuration it could not load.
     return result({
       exitCode: 1,
-      output: `Could not load the Storybook configuration for this project: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
+      output: error instanceof Error ? error.message : String(error),
       outcome: { kind: 'error', error },
     });
   }

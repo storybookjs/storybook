@@ -6,7 +6,7 @@ import {
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { bootstrapToolsRuntime } from './bootstrap.ts';
+import { bootstrapToolsRuntime } from './local-runtime.ts';
 
 vi.mock('storybook/internal/core-server', { spy: true });
 

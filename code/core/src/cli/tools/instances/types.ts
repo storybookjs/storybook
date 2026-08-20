@@ -31,6 +31,11 @@ export const StorybookInstanceRecordSchema = v.object({
   configDir: v.optional(v.string()),
   url: v.string(),
   port: v.pipe(v.number(), v.minValue(1), v.maxValue(65535), v.integer()),
+  /**
+   * Token authenticating clients against the instance's WebSocket channel. Optional: records
+   * written by older Storybooks lack it.
+   */
+  token: v.optional(v.string()),
   agent: v.optional(v.string()),
   storybookVersion: v.optional(v.string()),
   startedAt: v.optional(v.string()),

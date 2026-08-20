@@ -1,5 +1,5 @@
 import { existsSync, rmSync } from 'node:fs';
-import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { chmod, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { homedir } from 'node:os';
 
@@ -16,6 +16,8 @@ const STORYBOOK_MCP_ADDON = '@storybook/addon-mcp';
 const DEFAULT_MCP_ENDPOINT = '/mcp';
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * ONE_DAY_MS;
+const REGISTRY_DIR_MODE = 0o700;
+const RECORD_FILE_MODE = 0o600;
 
 export type RuntimeInstanceRecord = {
   schemaVersion: 1;
@@ -30,6 +32,8 @@ export type RuntimeInstanceRecord = {
   configDir?: string;
   url: string;
   port: number;
+  /** Token authenticating clients against this instance's WebSocket channel. */
+  token?: string;
   agent?: string;
   storybookVersion: string;
   startedAt: string;
@@ -102,6 +106,7 @@ export function createRuntimeInstanceRecord({
   pid = process.pid,
   port,
   storybookVersion,
+  token,
 }: {
   address: string;
   agent?: string;
@@ -113,6 +118,7 @@ export function createRuntimeInstanceRecord({
   pid?: number;
   port: number;
   storybookVersion: string;
+  token?: string;
 }): RuntimeInstanceRecord {
   const storybookBaseUrl = getStorybookBaseUrl(address);
   const timestamp = now.toISOString();
@@ -125,6 +131,7 @@ export function createRuntimeInstanceRecord({
     ...(configDir ? { configDir: resolve(cwd, configDir) } : {}),
     url: storybookBaseUrl,
     port,
+    ...(token ? { token } : {}),
     ...(agent ? { agent } : {}),
     storybookVersion,
     startedAt: timestamp,
@@ -137,7 +144,9 @@ export async function writeRuntimeInstanceRecord(
   record: RuntimeInstanceRecord,
   registryDir = getDefaultRuntimeInstanceRegistryDir()
 ) {
-  await mkdir(registryDir, { recursive: true });
+  await mkdir(registryDir, { recursive: true, mode: REGISTRY_DIR_MODE });
+  // `mkdir` ignores `mode` for an existing dir and umask can clear bits, so modes are enforced.
+  await chmod(registryDir, REGISTRY_DIR_MODE);
   await cleanupRuntimeInstanceRegistry(registryDir);
 
   const recordPath = join(registryDir, `${record.instanceId}.json`);
@@ -147,7 +156,11 @@ export async function writeRuntimeInstanceRecord(
   );
 
   try {
-    await writeFile(tempPath, `${JSON.stringify(record, null, 2)}\n`, 'utf-8');
+    await writeFile(tempPath, `${JSON.stringify(record, null, 2)}\n`, {
+      encoding: 'utf-8',
+      mode: RECORD_FILE_MODE,
+    });
+    await chmod(tempPath, RECORD_FILE_MODE);
     await rename(tempPath, recordPath);
   } catch (error) {
     await rm(tempPath, { force: true }).catch(() => undefined);
@@ -337,6 +350,7 @@ export async function writeStorybookRuntimeInstanceRecord({
   registryDir,
   registerCleanup = true,
   storybookVersion,
+  token,
 }: {
   address: string;
   agent?: string;
@@ -348,6 +362,7 @@ export async function writeStorybookRuntimeInstanceRecord({
   registryDir?: string;
   registerCleanup?: boolean;
   storybookVersion: string;
+  token?: string;
 }): Promise<RuntimeInstanceRegistration> {
   const record = createRuntimeInstanceRecord({
     address,
@@ -358,6 +373,7 @@ export async function writeStorybookRuntimeInstanceRecord({
     pid,
     port,
     storybookVersion,
+    token,
   });
   const recordPath = await writeRuntimeInstanceRecord(record, registryDir);
   const unregisterProcessCleanup = registerCleanup ? registerProcessCleanup(recordPath) : () => {};

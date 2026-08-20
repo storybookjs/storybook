@@ -273,7 +273,7 @@ Support is rolling out per framework, and we [welcome feedback on the RFC](https
 
 Snippet values follow the Controls table: change a control and the snippet updates to match, in `storybook dev` and in a statically built Storybook alike.
 
-Snippet bindings follow the component inputs discovered by server-side docgen, not only the args initially set by the story. Enabling a control for another component input adds its binding in docgen's stable input order. Args that are not component inputs are ignored. A snippet Storybook cannot rebuild safely — one whose story supplies its own template, or whose generated input binding depends on an arg that only running the story could resolve — keeps the values the story declared.
+Snippet bindings follow the component inputs discovered by server-side docgen, not only the args initially set by the story. Enabling a control for another component input adds its binding in docgen's stable input order. Args that are not component inputs are ignored. Snippets Storybook cannot rebuild safely keep the values the story declared: see [when snippets cannot follow your controls](../../get-started/frameworks/angular-vite.mdx#some-code-snippets-cannot-follow-your-controls).
 
 </If>
 

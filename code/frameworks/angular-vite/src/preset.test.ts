@@ -1,5 +1,6 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { findConfigFile } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { resolve } from 'node:path';
@@ -14,8 +15,9 @@ import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 // style options; stub just that lookup so the test stays hermetic.
 vi.mock(import('storybook/internal/common'), async (importOriginal) => ({
   ...(await importOriginal()),
-  findConfigFile: () => undefined,
+  findConfigFile: vi.fn(),
 }));
+vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('./compodoc/ensure-documentation.ts', { spy: true });
 vi.mock('vite', { spy: true });
 // The only mock that has to replace the module rather than spy on it: loading the real Angular
@@ -23,16 +25,15 @@ vi.mock('vite', { spy: true });
 vi.mock('@analogjs/vite-plugin-angular', () => ({ default: (): unknown[] => [] }));
 
 beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(findConfigFile).mockReturnValue(undefined);
   vi.mocked(ensureCompodocDocumentation).mockResolvedValue(undefined);
+  vi.mocked(logger.warn).mockImplementation(() => {});
   vi.mocked(mergeConfig).mockImplementation(
     (config: object, extra: object) => ({ ...config, ...extra }) as never
   );
   // Identity, so the workspace-absolute expectations below hold on Windows too.
   vi.mocked(normalizePath).mockImplementation((path: string) => path);
-});
-
-afterEach(() => {
-  vi.mocked(ensureCompodocDocumentation).mockClear();
 });
 
 const WORKSPACE_ROOT = resolve('/workspace');
@@ -102,9 +103,61 @@ describe('angularOptionsPlugin style preprocessor paths', () => {
     });
   });
 
+  it('forwards `sass` options that come without any load paths', () => {
+    const result = runConfig({ sass: { silenceDeprecations: ['import'] } });
+
+    expect(result.css.preprocessorOptions.scss).toEqual({ silenceDeprecations: ['import'] });
+  });
+
   it('returns nothing when no style preprocessor paths are configured', () => {
     expect(runConfig(undefined)).toBeUndefined();
     expect(runConfig({})).toBeUndefined();
+  });
+});
+
+describe('angularOptionsPlugin global styles', () => {
+  const previewPath = resolve(WORKSPACE_ROOT, '.storybook', 'preview.ts');
+
+  beforeEach(() => {
+    vi.mocked(findConfigFile).mockReturnValue(previewPath);
+  });
+
+  const runTransform = (styles: unknown[]) => {
+    const options = {
+      configDir: resolve(WORKSPACE_ROOT, '.storybook'),
+      angularBuilderContext: { workspaceRoot: WORKSPACE_ROOT },
+      angularBuilderOptions: { styles },
+    } as unknown as StandaloneOptions;
+
+    const plugin = angularOptionsPlugin(options, { normalizePath, zoneless: true });
+    (plugin.config as (userConfig: unknown) => unknown)({ root: WORKSPACE_ROOT });
+    return (plugin.transform as any).call({}, '// preview', previewPath) as Promise<{
+      code: string;
+    }>;
+  };
+
+  it('imports both `styles` spellings the builder schema accepts', async () => {
+    const { code } = await runTransform([
+      'src/styles.scss',
+      { input: 'src/theme.scss', bundleName: 'theme' },
+    ]);
+
+    expect(code).toContain(`import '${resolve(WORKSPACE_ROOT, 'src/styles.scss')}';`);
+    expect(code).toContain(`import '${resolve(WORKSPACE_ROOT, 'src/theme.scss')}';`);
+  });
+
+  it('ignores malformed object-form styles from the environment bridge', async () => {
+    const { code } = await runTransform([
+      {},
+      null,
+      { input: 42 },
+      'src/styles.scss',
+      { input: 'src/theme.scss' },
+    ]);
+
+    expect(code).toContain(`import '${resolve(WORKSPACE_ROOT, 'src/styles.scss')}';`);
+    expect(code).toContain(`import '${resolve(WORKSPACE_ROOT, 'src/theme.scss')}';`);
+    expect(code).not.toContain(`import '${resolve(WORKSPACE_ROOT, 'undefined')}';`);
   });
 });
 
@@ -218,16 +271,50 @@ describe('compodocJsonStubPlugin', () => {
     return (plugin.resolveId as any).call(context, source, importer, {});
   };
 
-  it('stubs the documented preview import when Compodoc never wrote the file', async () => {
-    const id = await runResolve('../documentation.json', null);
-
-    expect(id).toBe('\0storybook-angular-vite/empty-compodoc-json');
-
+  const loadStub = (id: string) => {
     const load = compodocJsonStubPlugin(CONFIG_DIR).load as (
       this: unknown,
       id: string
     ) => string | null;
-    expect(load.call({}, id as string)).toBe('export default {};');
+    const code = load.call({}, id);
+    const serialized = code?.match(/^export default (.*);$/s)?.[1];
+    expect(serialized).toBeDefined();
+    return JSON.parse(serialized!);
+  };
+
+  it('stubs the documented preview import when Compodoc never wrote the file', async () => {
+    expect(await runResolve('../documentation.json', null)).toBe(
+      '\0storybook-angular-vite/empty-compodoc-json'
+    );
+  });
+
+  // The expected shape is `compodoc -e json` output, down to which keys are arrays.
+  it('stands in an empty value of the shape Compodoc writes for every key it exports', async () => {
+    const docJson = loadStub('\0storybook-angular-vite/empty-compodoc-json');
+
+    expect(docJson).toEqual({
+      classes: [],
+      components: [],
+      coverage: { count: 0, status: 'low', files: [] },
+      directives: [],
+      guards: [],
+      interceptors: [],
+      interfaces: [],
+      injectables: [],
+      miscellaneous: {
+        enumerations: [],
+        functions: [],
+        groupedEnumerations: {},
+        groupedFunctions: {},
+        groupedTypeAliases: {},
+        groupedVariables: {},
+        typealiases: [],
+        variables: [],
+      },
+      modules: [],
+      pipes: [],
+      routes: { name: '<root>', kind: 'module', children: [] },
+    });
   });
 
   it('leaves a documentation.json that exists on disk alone', async () => {
@@ -275,15 +362,54 @@ describe('viteFinal props-table wiring', () => {
   });
 
   it('warns from here, because the docgen preset never runs with the feature off', async () => {
-    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
-    try {
-      await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({ propsTable: 'api' }));
+    await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({ propsTable: 'api' }));
 
-      expect(warn.mock.calls.map(([message]) => String(message)).join('\n')).toContain(
-        'experimentalDocgenServer'
-      );
-    } finally {
-      warn.mockRestore();
-    }
+    expect(
+      vi
+        .mocked(logger.warn)
+        .mock.calls.map(([message]) => String(message))
+        .join('\n')
+    ).toContain('experimentalDocgenServer');
+  });
+
+  const warningsFor = async (featureFlags: Record<string, boolean>) => {
+    await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({}, featureFlags));
+    return vi
+      .mocked(logger.warn)
+      .mock.calls.map(([message]) => String(message))
+      .join('\n');
+  };
+
+  it('points a components-manifest build with the docgen server off at the flag that fixes it', async () => {
+    const warnings = await warningsFor({
+      componentsManifest: true,
+      experimentalDocgenServer: false,
+    });
+
+    expect(warnings).toContain('no components manifest');
+    expect(warnings).toContain('features: { experimentalDocgenServer: true }');
+  });
+
+  // `@storybook/addon-mcp` turns `componentsManifest` on from its own `features` hook, so the key
+  // need not be in the user's `main.ts`.
+  it('does not tell the user to drop a feature an addon set on their behalf', async () => {
+    const warnings = await warningsFor({
+      componentsManifest: true,
+      experimentalDocgenServer: false,
+    });
+
+    expect(warnings).not.toMatch(/drop|remove/i);
+  });
+
+  it('stays quiet about the components manifest when the docgen server is on', async () => {
+    await expect(
+      warningsFor({ componentsManifest: true, experimentalDocgenServer: true })
+    ).resolves.not.toContain('componentsManifest');
+  });
+
+  it('stays quiet about the components manifest when it was never asked for', async () => {
+    await expect(warningsFor({ experimentalDocgenServer: false })).resolves.not.toContain(
+      'componentsManifest'
+    );
   });
 });

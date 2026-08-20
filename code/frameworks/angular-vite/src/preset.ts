@@ -6,6 +6,7 @@ import {
   getAutomockCode,
   getRealPath,
 } from 'storybook/internal/mocking-utils';
+import { logger } from 'storybook/internal/node-logger';
 import type { PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
 
 import { readFileSync } from 'node:fs';
@@ -128,6 +129,14 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   const propsTable = resolvePropsTable(framework.options, resolvedFeatures);
   warnAboutPropsTable(framework.options, resolvedFeatures);
 
+  if (resolvedFeatures?.componentsManifest && !docgenServer) {
+    logger.warn(
+      `The \`componentsManifest\` feature needs the \`experimentalDocgenServer\` feature, which is off, so this Storybook publishes no components manifest ` +
+        `and MCP clients get no component API from it. ` +
+        `Turn the docgen server on with \`features: { experimentalDocgenServer: true }\` in your \`main.ts\`.`
+    );
+  }
+
   const zoneless = resolveZoneless(options?.angularBuilderOptions);
   const angularPlugins = angular({
     jit: typeof framework.options?.jit !== 'undefined' ? framework.options?.jit : true,
@@ -231,10 +240,36 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
 
 const COMPODOC_JSON_STUB_ID = '\0storybook-angular-vite/empty-compodoc-json';
 
+// Every key `compodoc -e json` writes, in the shape it writes it, so a preview that spreads or
+// drills into one finds an empty value rather than `undefined`.
+const EMPTY_COMPODOC_JSON: Record<string, unknown> = {
+  classes: [],
+  components: [],
+  coverage: { count: 0, status: 'low', files: [] },
+  directives: [],
+  guards: [],
+  injectables: [],
+  interceptors: [],
+  interfaces: [],
+  miscellaneous: {
+    enumerations: [],
+    functions: [],
+    groupedEnumerations: {},
+    groupedFunctions: {},
+    groupedTypeAliases: {},
+    groupedVariables: {},
+    typealiases: [],
+    variables: [],
+  },
+  modules: [],
+  pipes: [],
+  routes: { name: '<root>', kind: 'module', children: [] },
+};
+
 // `storybook init` writes a static `import docJson from '../documentation.json'` into the Angular
 // preview, and that file is normally gitignored Compodoc output. With the docgen server on nothing
-// generates it and nothing reads it, so resolve it to an empty object rather than failing the build
-// of a project that followed the documented setup.
+// generates it and nothing reads it, so resolve it to an empty document rather than failing the
+// build of a project that followed the documented setup.
 export function compodocJsonStubPlugin(configDir: string): Plugin {
   // Only the import `storybook init` wrote into the Storybook config is stood in for. A
   // `documentation.json` the project imports from anywhere else is the user's own file, and a
@@ -258,7 +293,9 @@ export function compodocJsonStubPlugin(configDir: string): Plugin {
       return resolved ? null : COMPODOC_JSON_STUB_ID;
     },
     load(id) {
-      return id === COMPODOC_JSON_STUB_ID ? 'export default {};' : null;
+      return id === COMPODOC_JSON_STUB_ID
+        ? `export default ${JSON.stringify(EMPTY_COMPODOC_JSON)};`
+        : null;
     },
   };
 }
@@ -284,31 +321,45 @@ export function angularOptionsPlugin(
       const loadPaths = stylePreprocessorOptions.includePaths ?? stylePreprocessorOptions.loadPaths;
       const sassOptions = stylePreprocessorOptions.sass;
 
-      if (Array.isArray(loadPaths)) {
-        const workspaceRoot =
-          options.angularBuilderContext?.workspaceRoot ?? userConfig?.root ?? process.cwd();
-        return {
-          css: {
-            preprocessorOptions: {
-              scss: {
-                ...sassOptions,
-                loadPaths: loadPaths.map((loadPath) => `${resolve(workspaceRoot, loadPath)}`),
-              },
-            },
-          },
-        };
+      if (!Array.isArray(loadPaths) && !sassOptions) {
+        return;
       }
 
-      return;
+      const workspaceRoot =
+        options.angularBuilderContext?.workspaceRoot ?? userConfig?.root ?? process.cwd();
+
+      return {
+        css: {
+          preprocessorOptions: {
+            scss: {
+              ...sassOptions,
+              ...(Array.isArray(loadPaths)
+                ? { loadPaths: loadPaths.map((loadPath) => `${resolve(workspaceRoot, loadPath)}`) }
+                : {}),
+            },
+          },
+        },
+      };
     },
     async transform(code, id) {
       if (resolvedPreviewPath && normalizePath(id).endsWith(normalizePath(resolvedPreviewPath))) {
-        const imports = [];
+        const imports: string[] = [];
         const styles = options?.angularBuilderOptions?.styles;
 
         if (Array.isArray(styles)) {
           styles.forEach((style) => {
-            imports.push(style);
+            const stylePath =
+              typeof style === 'string'
+                ? style
+                : style !== null &&
+                    typeof style === 'object' &&
+                    'input' in style &&
+                    typeof style.input === 'string'
+                  ? style.input
+                  : undefined;
+            if (stylePath !== undefined) {
+              imports.push(stylePath);
+            }
           });
         }
 

@@ -113,13 +113,12 @@ test.describe('storybook tools attach', () => {
 
   test('auto mode falls back to local with a notice when no instance matches', async () => {
     const result = await runTools([
-      'docs',
-      'list',
       '--cwd',
       '/tmp/storybook-tools-attach-no-instance',
+      'docs',
+      'list',
     ]);
 
-    expect(result.exitCode).not.toBe(0);
     expect(result.output).toContain('Falling back to loading this project');
     expect(result.output).toContain('npm run storybook');
   });

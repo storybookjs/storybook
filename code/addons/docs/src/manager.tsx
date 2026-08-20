@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 
 import { AddonPanel, type SyntaxHighlighterFormatTypes } from 'storybook/internal/components';
 
@@ -37,56 +37,38 @@ const CodePanel = ({
   storyParameters: StoryDocsCodePanelParameters | undefined;
   storyPrepared: boolean | undefined;
 }) => {
-  const lastEventMatchesCurrentStory = lastEvent?.id === currentStoryId;
-  const [codeSnippet, setSourceCode] = useState<{
-    source: string | undefined;
-    format: SyntaxHighlighterFormatTypes | undefined;
-  }>({
-    source: lastEventMatchesCurrentStory ? lastEvent?.source : undefined,
-    format: lastEventMatchesCurrentStory ? (lastEvent?.format ?? undefined) : undefined,
-  });
+  const [receivedEvent, setReceivedEvent] = useState<SnippetRenderedEvent | undefined>(undefined);
 
   const parameter = useParameter(PARAM_KEY, {
     source: { code: '' } as SourceParameters,
     theme: 'dark',
   });
 
-  useEffect(() => {
-    setSourceCode({
-      source: undefined,
-      format: undefined,
-    });
-  }, [currentStoryId]);
-
-  useChannel(
-    {
-      [SNIPPET_RENDERED]: ({ id, source, format }) => {
-        // Ignore snippets emitted for other stories: a slow extraction for the previously selected
-        // story can resolve after navigation and would otherwise overwrite the current panel.
-        // `useChannel` captures this handler per `deps`, so it must list `currentStoryId` to compare
-        // against the currently selected story rather than the one selected on mount.
-        if (id !== undefined && id !== currentStoryId) {
-          return;
-        }
-        setSourceCode({ source, format });
-      },
-    },
-    [currentStoryId]
-  );
+  // Stored unfiltered: a snippet can be emitted before the manager knows which story is selected,
+  // so an event that does not match yet may still be the one for the story about to be shown.
+  useChannel({ [SNIPPET_RENDERED]: (event: SnippetRenderedEvent) => setReceivedEvent(event) }, []);
 
   const theme = useTheme();
   const isDark = theme.base !== 'light';
 
+  // The panel mounts when the story is selected, which can be after the preview already emitted its
+  // snippet, so the channel's last event stands in for the emit this panel was not there to hear.
+  // Both are matched against the selected story: a slow extraction for the previously selected one
+  // can resolve after navigation and must not show up under the story that replaced it.
+  const codeSnippet = [receivedEvent, lastEvent].find(
+    (event) => event !== undefined && (event.id === undefined || event.id === currentStoryId)
+  );
+
   const awaitingServiceSnippet = shouldWaitForServiceSnippet(storyParameters, storyPrepared);
   const code =
     parameter.source?.code ||
-    codeSnippet.source ||
+    codeSnippet?.source ||
     (awaitingServiceSnippet ? '' : parameter.source?.originalSource);
 
   return (
     <AddonPanel active={!!active}>
       <SourceStyles>
-        <Source {...parameter.source} code={code} format={codeSnippet.format} dark={isDark} />
+        <Source {...parameter.source} code={code} format={codeSnippet?.format} dark={isDark} />
       </SourceStyles>
     </AddonPanel>
   );

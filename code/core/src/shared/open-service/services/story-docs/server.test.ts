@@ -135,6 +135,29 @@ describe('story-docs open service', () => {
     expect(service.queries.storyDocs.get({ id: 'button' })).toEqual(payload);
   });
 
+  // `extractAllStoryDocs` stores an error payload for every component whose provider rejected, so
+  // a load that treated any stored value as extracted would serve one transient failure for the
+  // rest of the session.
+  it('tries again when the cached payload is a stored extraction error', async () => {
+    const payload = makeStoryDocsPayload();
+    const provider = vi
+      .fn<StoryDocsProvider>()
+      .mockRejectedValueOnce(new Error('worker restarted'))
+      .mockResolvedValue(payload);
+    const service = registerStoryDocsService({
+      getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
+      storyDocsProvider: provider,
+    });
+
+    await service.commands.extractAllStoryDocs(undefined);
+    expect(service.queries.storyDocs.get({ id: 'button' })?.error).toBeDefined();
+
+    await service.queries.storyDocs.loaded({ id: 'button' });
+
+    expect(provider).toHaveBeenCalledTimes(2);
+    expect(service.queries.storyDocs.get({ id: 'button' })).toEqual(payload);
+  });
+
   // The command is the "extract now" path and must stay unguarded, or the hot refresh below has no
   // way to pick up an edited story file.
   it('re-runs the provider when the extract command is called directly', async () => {

@@ -60,8 +60,15 @@ export const storyDocsServiceDef = defineService({
         Object.hasOwn(ctx.self.state.components, input.id)
           ? ctx.self.state.components[input.id]
           : undefined,
+      // `load` only has to make sure the query has data, while the command re-extracts
+      // unconditionally for the module-graph refresh that calls it directly. A stored extraction
+      // error is not data: `extractAllStoryDocs` records one for every component whose provider
+      // rejected, so loading retries it instead of pinning a transient failure.
       load: async (input, ctx) => {
-        if (Object.hasOwn(ctx.self.state.components, input.id)) {
+        if (
+          Object.hasOwn(ctx.self.state.components, input.id) &&
+          !ctx.self.state.components[input.id].error
+        ) {
           return;
         }
         await ctx.self.commands.extractStoryDocs(input);

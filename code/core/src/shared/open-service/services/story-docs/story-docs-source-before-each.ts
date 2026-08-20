@@ -10,9 +10,18 @@ import { selectSnippetForStory } from './snippet.ts';
 
 export { shouldSkipStoryDocsEmit };
 
-// `beforeEach` runs on every args-driven render, while its cleanups wait for teardown. Replacing
-// the active subscription prevents an HMR update from replaying snippets built with stale args.
-const liveSubscriptions = new Map<string, () => void>();
+type LiveStory = {
+  /** Serializes emits across renders so a slow transform cannot let an older snippet land last. */
+  queue: Promise<void>;
+  /** Bumped per render; a queued emit from an earlier generation is dropped instead of emitted. */
+  generation: number;
+  stop?: () => void;
+};
+
+// `beforeEach` runs on every args-driven render, while its cleanups wait for teardown. Keeping one
+// record per story replaces the active subscription and orders its emits, so neither an HMR update
+// nor an async `docs.source.transform` can replay snippets built with stale args.
+const liveStories = new Map<string, LiveStory>();
 
 /**
  * Preview `beforeEach` hook that emits the story-docs snippet to the manager Code panel via
@@ -49,15 +58,25 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
     {}) as StoryDocsSnippetSourceParameters & { originalSource?: string };
   let cancelled = false;
   let lastSource: string | undefined;
-  let emitQueue = Promise.resolve();
+
+  let liveStory = liveStories.get(storyId);
+  if (!liveStory) {
+    liveStory = { queue: Promise.resolve(), generation: 0 };
+    liveStories.set(storyId, liveStory);
+  }
+  const live = liveStory;
+  const generation = ++live.generation;
+  const previousStop = live.stop;
+  live.stop = undefined;
+  previousStop?.();
 
   const scheduleEmit = (source: string | undefined) => {
     if (source === undefined || source === lastSource) {
       return;
     }
     lastSource = source;
-    emitQueue = emitQueue.then(async () => {
-      if (cancelled) {
+    live.queue = live.queue.then(async () => {
+      if (cancelled || live.generation !== generation) {
         return;
       }
       try {
@@ -67,8 +86,6 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
       }
     });
   };
-
-  liveSubscriptions.get(storyId)?.();
 
   const unsubscribe = service.queries.storyDocs.subscribe({ id: componentId }, (state) => {
     if (cancelled || (state.data === undefined && state.isInitialLoading)) {
@@ -93,14 +110,17 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
     }
     cancelled = true;
     unsubscribe();
-    if (liveSubscriptions.get(storyId) === stop) {
-      liveSubscriptions.delete(storyId);
+    if (live.generation === generation) {
+      live.stop = undefined;
+      if (liveStories.get(storyId) === live) {
+        liveStories.delete(storyId);
+      }
     }
   };
-  liveSubscriptions.set(storyId, stop);
+  live.stop = stop;
 
   return () => {
     stop();
-    return emitQueue;
+    return live.queue;
   };
 }

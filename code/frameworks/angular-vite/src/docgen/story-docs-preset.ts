@@ -27,10 +27,32 @@ const resolveDocgenService = () => {
   }
 };
 
-// Query loading deliberately reuses cached docgen. Story-docs extraction needs the command's
-// "extract now" semantics so an HMR refresh cannot rebuild snippets from pre-edit metadata.
-const getDocgenPayload = async (componentId: string): Promise<AngularDocgenPayload | undefined> =>
-  resolveDocgenService()?.commands.extractDocgen({ id: componentId });
+/** Revision at which each component's docgen was last pulled, keyed by component id. */
+const docgenRevisions = new Map<string, number>();
+
+// Docgen is only stale for a component whose story subgraph changed since it was last pulled, and
+// `graphRevision` reports exactly that. On the first pull the shared cache is authoritative, so the
+// query is loaded rather than running a second extraction next to `core/docgen`'s own consumers;
+// after a change the command's "extract now" semantics keep an HMR refresh from rebuilding snippets
+// from pre-edit metadata, whichever service's refresh runs first.
+const createDocgenPayloadGetter =
+  (storyImportPath: string) =>
+  async (componentId: string): Promise<AngularDocgenPayload | undefined> => {
+    const docgenService = resolveDocgenService();
+    if (!docgenService) {
+      return undefined;
+    }
+
+    const revision = getService('core/module-graph', { internal: true }).queries.graphRevision.get({
+      storyFiles: [storyImportPath],
+    });
+    const pulledAt = docgenRevisions.get(componentId);
+    docgenRevisions.set(componentId, revision);
+
+    return pulledAt === undefined || pulledAt === revision
+      ? docgenService.queries.docgen.loaded({ id: componentId })
+      : docgenService.commands.extractDocgen({ id: componentId });
+  };
 
 export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (nextStoryDocs) => {
   return async (input) => {
@@ -39,7 +61,9 @@ export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (ne
       return nextStoryDocs(input);
     }
 
-    const ours = await buildStoryDocsPayload(input, { getDocgenPayload });
+    const ours = await buildStoryDocsPayload(input, {
+      getDocgenPayload: createDocgenPayloadGetter(storyImportPath),
+    });
 
     if (!ours) {
       return nextStoryDocs(input);

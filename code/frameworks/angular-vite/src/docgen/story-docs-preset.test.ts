@@ -18,8 +18,18 @@ const entry: IndexEntry = {
   importPath: './button.stories.ts',
 };
 
+let graphRevision = 0;
+
+const mockServices = (docgenService: unknown) => {
+  vi.mocked(getService).mockImplementation(((id: string) =>
+    id === 'core/module-graph'
+      ? { queries: { graphRevision: { get: () => graphRevision } } }
+      : docgenService) as never);
+};
+
 beforeEach(() => {
   vi.clearAllMocks();
+  graphRevision = 0;
   vi.mocked(buildStoryDocsPayload).mockResolvedValue(undefined);
 });
 
@@ -30,32 +40,47 @@ const getDocgenPayload = async () => {
 };
 
 describe('experimental_storyDocsProvider', () => {
-  it('extracts current docgen instead of loading a cached query value', async () => {
-    const extractDocgen = vi.fn(async () => ({ id: 'button', name: 'Button' }));
-    const loaded = vi.fn();
-    vi.mocked(getService).mockReturnValue({
-      commands: { extractDocgen },
-      queries: { docgen: { loaded } },
-    } as never);
+  it('reuses the shared docgen cache instead of extracting a second time', async () => {
+    const extractDocgen = vi.fn();
+    const loaded = vi.fn(async () => ({ id: 'cached', name: 'Button' }));
+    mockServices({ commands: { extractDocgen }, queries: { docgen: { loaded } } });
 
-    await expect((await getDocgenPayload())('button')).resolves.toEqual({
-      id: 'button',
+    await expect((await getDocgenPayload())('cached')).resolves.toEqual({
+      id: 'cached',
       name: 'Button',
     });
-    expect(extractDocgen).toHaveBeenCalledWith({ id: 'button' });
-    expect(loaded).not.toHaveBeenCalled();
+    expect(loaded).toHaveBeenCalledWith({ id: 'cached' });
+    expect(extractDocgen).not.toHaveBeenCalled();
+  });
+
+  it('extracts current docgen once the story subgraph changed', async () => {
+    const extractDocgen = vi.fn(async () => ({ id: 'edited', name: 'Edited' }));
+    const loaded = vi.fn(async () => ({ id: 'edited', name: 'Cached' }));
+    mockServices({ commands: { extractDocgen }, queries: { docgen: { loaded } } });
+    const pull = await getDocgenPayload();
+
+    await expect(pull('edited')).resolves.toEqual({ id: 'edited', name: 'Cached' });
+
+    graphRevision = 1;
+    await expect(pull('edited')).resolves.toEqual({ id: 'edited', name: 'Edited' });
+    expect(extractDocgen).toHaveBeenCalledWith({ id: 'edited' });
+
+    await expect(pull('edited')).resolves.toEqual({ id: 'edited', name: 'Cached' });
+    expect(extractDocgen).toHaveBeenCalledOnce();
   });
 
   it('propagates extraction failures so the payload is not cached', async () => {
-    vi.mocked(getService).mockReturnValue({
-      commands: {
-        extractDocgen: vi.fn(async () => {
-          throw new Error('docgen worker is no longer running');
-        }),
+    mockServices({
+      queries: {
+        docgen: {
+          loaded: vi.fn(async () => {
+            throw new Error('docgen worker is no longer running');
+          }),
+        },
       },
-    } as never);
+    });
 
-    await expect((await getDocgenPayload())('button')).rejects.toThrow(
+    await expect((await getDocgenPayload())('failing')).rejects.toThrow(
       'docgen worker is no longer running'
     );
   });

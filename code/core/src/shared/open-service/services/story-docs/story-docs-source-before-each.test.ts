@@ -316,6 +316,59 @@ describe('storyDocsSourceBeforeEach', () => {
     await currentCleanup?.();
   });
 
+  // Each render builds its own `beforeEach` closure, so emits have to be ordered per story: an
+  // `emitTransformCode` that awaits a slow `docs.source.transform` would otherwise resolve after
+  // the render that superseded it and pin the Code panel to a snippet built with stale args.
+  it('holds a later render behind an emit that has already started', async () => {
+    mockStoryDocsService(() =>
+      Promise.resolve({
+        ...payload,
+        stories: {
+          [storyId]: { ...payload.stories[storyId]!, snippetTemplate: { kind: 'declared' } },
+        },
+      })
+    );
+    let releaseStaleEmit = () => {};
+    mockedEmitTransformCode.mockImplementationOnce(
+      () =>
+        new Promise<void>((resolve) => {
+          releaseStaleEmit = resolve;
+        })
+    );
+    const contextFor = (label: string) =>
+      ({
+        id: storyId,
+        unmappedArgs: { label },
+        parameters: {
+          __isArgsStory: true,
+          docs: {
+            source: {
+              renderSnippetTemplate: (template: unknown, args: unknown) =>
+                `${(template as { kind: string }).kind}:${JSON.stringify(args)}`,
+            },
+          },
+        },
+      }) as unknown as StoryContext;
+
+    const staleCleanup = storyDocsSourceBeforeEach(contextFor('stale'));
+    await vi.waitFor(() => expect(mockedEmitTransformCode).toHaveBeenCalledOnce());
+
+    const liveContext = contextFor('live');
+    const liveCleanup = storyDocsSourceBeforeEach(liveContext);
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(mockedEmitTransformCode).toHaveBeenCalledOnce();
+
+    releaseStaleEmit();
+    await vi.waitFor(() => expect(mockedEmitTransformCode).toHaveBeenCalledTimes(2));
+    expect(mockedEmitTransformCode).toHaveBeenLastCalledWith(
+      `import { Button } from './Button';\n\ndeclared:{"label":"live"}`,
+      liveContext
+    );
+
+    await staleCleanup?.();
+    await liveCleanup?.();
+  });
+
   it('does not emit for portable stories', async () => {
     const context = {
       id: storyId,

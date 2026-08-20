@@ -6,7 +6,7 @@ import {
   parseList,
 } from 'storybook/internal/common';
 import { withTelemetry } from '../core-server/withTelemetry.ts';
-import { logTracker, logger } from 'storybook/internal/node-logger';
+import { logTracker, logger, type LogLevel } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
 import { Option, program } from 'commander';
@@ -21,7 +21,7 @@ import { registerToolsPassthrough } from '../cli/tools/register.ts';
 import { build } from '../cli/build.ts';
 import { buildIndex as index } from '../cli/buildIndex.ts';
 import { dev } from '../cli/dev.ts';
-import { globalSettings } from '../cli/globalSettings.ts';
+import { addSharedCliOptions } from './cli-command.ts';
 import { resolveDevCommandOptions } from './dev-options.ts';
 
 addToGlobalContext('cliVersion', version);
@@ -50,41 +50,10 @@ const handleCommandFailure = async (logFilePath: string | boolean): Promise<neve
   process.exit(1);
 };
 
-const command = (name: string) =>
-  program
-    .command(name)
-    .option(
-      '--disable-telemetry',
-      'Disable sending telemetry data',
-      optionalEnvToBoolean(process.env.STORYBOOK_DISABLE_TELEMETRY)
-    )
-    .option('--debug', 'Get more logs in debug mode', false)
-    .option('--enable-crash-reports', 'Enable sending crash reports to telemetry data')
-    .addOption(
-      new Option('--loglevel <level>', 'Define log level')
-        .choices(['trace', 'debug', 'info', 'warn', 'error', 'silent'])
-        .default('info')
-    )
-    .option(
-      '--logfile [path]',
-      'Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided'
-    )
-    .hook('preAction', async (self) => {
-      try {
-        const options = self.opts();
-        const loglevel = options.debug ? 'debug' : options.loglevel;
-        logger.setLogLevel(loglevel);
-
-        if (options.logfile) {
-          logTracker.enableLogWriting();
-        }
-
-        await globalSettings();
-      } catch (e) {
-        logger.error('Error loading global settings:\n' + String(e));
-      }
-    })
-    .hook('postAction', async (command) => {
+const command = (name: string, defaultLogLevel?: LogLevel) =>
+  addSharedCliOptions(program.command(name), defaultLogLevel).hook(
+    'postAction',
+    async (command) => {
       if (logTracker.shouldWriteLogsToFile) {
         try {
           const logFile = await logTracker.writeToFile(command.getOptionValue('logfile'));
@@ -95,7 +64,8 @@ const command = (name: string) =>
       if (command.name() === 'build') {
         process.exit(0);
       }
-    });
+    }
+  );
 
 command('dev')
   .option('-p, --port <number>', 'Port to run Storybook')
@@ -241,7 +211,7 @@ const handleCliCommandFailure =
     return handleCommandFailure(logFilePath ?? false);
   };
 
-const aiCommand = command('ai')
+const aiCommand = command('ai', 'silent')
   .description('AI agent helpers for Storybook (deprecated — see `storybook skills`)')
   .option(
     '-o, --output <path>',
@@ -281,14 +251,14 @@ if (isAiCliFeatureEnabled()) {
 
 // `storybook tools <toolset> <tool>`: runs the toolsets registered by the target Storybook
 // configuration in this process, disconnected from any dev server (storybookjs/storybook#35716).
-const toolsCommand = command('tools').description(
+const toolsCommand = command('tools', 'silent').description(
   'Run the agent tools provided by the target Storybook configuration'
 );
 registerToolsPassthrough(program, toolsCommand, handleCliCommandFailure);
 
 // `storybook skills`: agent-facing instruction documents served by the target Storybook
 // configuration (storybookjs/storybook#35526, Milestone 6).
-const skillsCommand = command('skills').description(
+const skillsCommand = command('skills', 'silent').description(
   'Agent skills served by the target Storybook configuration'
 );
 registerSkillsCommand(program, skillsCommand, handleCliCommandFailure);

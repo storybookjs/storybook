@@ -23,6 +23,16 @@ describe('parseStorybookWorkflowShellCommands', () => {
     expect(calls[0]?.name).toBe('get-storybook-story-instructions');
   });
 
+  test('does not record skills help requests or quoted mentions as instruction fetches', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      'npx storybook skills get write-story --help',
+      'npx storybook skills get write-story -h && npx storybook skills list',
+      "echo 'storybook skills get write-story'",
+    ]);
+
+    expect(calls).toHaveLength(0);
+  });
+
   test('preserves repeated workflow calls across separate plugin commands', () => {
     const command =
       'storybook ai test-run --json \'{"stories":[{"storyId":"example-button--primary"}]}\'';

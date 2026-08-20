@@ -63,7 +63,7 @@ await dumpMcpDebug();
 // The sandbox is torn down with this failure, so the error message is the only
 // place the startup log reliably survives to (the eval result snapshot records it).
 const logTail = await readFile(logPath, 'utf8')
-  .then((content) => content.split('\n').slice(-40).join('\n'))
+  .then((content) => content.trimEnd().split('\n').slice(-40).join('\n'))
   .catch(() => '(no Storybook log was written)');
 
 throw new Error(

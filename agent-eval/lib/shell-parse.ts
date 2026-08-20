@@ -88,8 +88,15 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
       // `storybook skills get write-story` serves the same document the MCP channel
       // exposes as the get-storybook-story-instructions tool; record it under that
       // name so channel-agnostic assertions keep working. Other skill ids have no
-      // workflow-tool equivalent.
-      if (tokens[index + 2] === 'get' && tokens[index + 3] === 'write-story') {
+      // workflow-tool equivalent. A help request prints usage instead of the skill,
+      // so it does not count — same rule as the ai/tools branch below.
+      if (
+        tokens[index + 2] === 'get' &&
+        tokens[index + 3] === 'write-story' &&
+        !segmentUntilSeparator(tokens, index + 4).some(
+          (token) => token === '--help' || token === '-h'
+        )
+      ) {
         calls.push({ name: 'get-storybook-story-instructions', input: {}, source: 'storybook-ai' });
         index += 3;
       }
@@ -107,6 +114,13 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
   }
 
   return calls;
+}
+
+function segmentUntilSeparator(tokens: string[], start: number): string[] {
+  const end = tokens.findIndex(
+    (token, index) => index >= start && SHELL_COMMAND_SEPARATORS.has(token)
+  );
+  return tokens.slice(start, end === -1 ? tokens.length : end);
 }
 
 function parseStorybookCliInvocation(

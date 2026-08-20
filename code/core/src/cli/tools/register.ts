@@ -95,23 +95,32 @@ export function registerToolsPassthrough(
             const start = Date.now();
             let result: ToolsRunResult;
             try {
-              result = await runToolsCommand(
-                {
-                  toolset,
-                  tool,
-                  tokens,
-                  target: { cwd: options.cwd, configDir: options.configDir },
-                  attach: options.noAttach ? false : options.attach,
-                  flags: {
-                    input: options.input,
-                    json: options.json,
-                    output: options.output,
-                    help: options.help,
+              if (options.attach && options.noAttach) {
+                result = {
+                  exitCode: 1,
+                  output: 'Cannot combine `--attach` and `--no-attach`.',
+                  outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+                  attachMode: 'auto',
+                };
+              } else {
+                result = await runToolsCommand(
+                  {
+                    toolset,
+                    tool,
+                    tokens,
+                    target: { cwd: options.cwd, configDir: options.configDir },
                     attach: options.noAttach ? false : options.attach,
+                    flags: {
+                      input: options.input,
+                      json: options.json,
+                      output: options.output,
+                      help: options.help,
+                      attach: options.noAttach ? false : options.attach,
+                    },
                   },
-                },
-                { methodTelemetry: createMethodTelemetrySink(cliOptions) }
-              );
+                  { methodTelemetry: createMethodTelemetrySink(cliOptions) }
+                );
+              }
             } finally {
               clearInterval(keepAlive);
             }

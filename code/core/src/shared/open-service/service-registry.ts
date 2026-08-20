@@ -71,6 +71,26 @@ function getRegistry(): Map<string, RegistryEntry> {
   return registryGlobal[REGISTRY_SYMBOL];
 }
 
+let delegatedMode = false;
+
+/**
+ * Marks this runtime as delegated, so every registered service dispatches its commands over the
+ * channel instead of running local handlers.
+ *
+ * Set it once at the runtime entry boundary, before any `registerService` call — it is read at
+ * registration time, like the installed channel. Service definitions are unaffected: their handlers
+ * stay registered and inspectable, they simply never run here because the Storybook this runtime
+ * attached to is the implementer.
+ */
+export function setDelegatedMode(enabled: boolean): void {
+  delegatedMode = enabled;
+}
+
+/** Whether this runtime delegates command dispatch to the Storybook it is attached to. */
+export function isDelegatedMode(): boolean {
+  return delegatedMode;
+}
+
 function assertUniqueOperationNames(definition: AnyServiceDefinition): void {
   const duplicateName = Object.keys(definition.queries).find((name) =>
     Object.hasOwn(definition.commands, name)
@@ -276,7 +296,8 @@ export function registerService<
 
   // A command may only have a handler in some runtimes (e.g. supplied at server registration). Where
   // a local handler exists, callers run it locally and broadcast; where it does not, the resulting
-  // command routes calls to a peer that implements it and awaits the reply.
+  // command routes calls to a peer that implements it and awaits the reply. A delegated runtime
+  // routes every command to its peer regardless.
   const implementedCommandNames = new Set<string>(
     Object.entries(resolvedDefinition.commands)
       .filter(([, command]) => typeof command.handler === 'function')
@@ -295,6 +316,7 @@ export function registerService<
     commands: runtime.commands as Record<string, (input: unknown) => Promise<unknown>>,
     implementedCommandNames,
     commandNames: Object.keys(resolvedDefinition.commands),
+    delegated: delegatedMode,
     runtime,
   });
 
@@ -384,7 +406,8 @@ export function unregisterService(serviceId: ServiceId): void {
 }
 
 /**
- * Clears the registry, tearing down each service's channel listeners first.
+ * Clears the registry, tearing down each service's channel listeners first, and resets delegated
+ * mode.
  *
  * Tests call this after each case so registrations — and the channel listeners a registration attaches
  * — from one scenario do not leak into the next.
@@ -397,4 +420,5 @@ export function clearRegistry(): void {
   }
 
   registry.clear();
+  delegatedMode = false;
 }

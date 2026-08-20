@@ -1,4 +1,4 @@
-import { PlainButton } from './PlainButton';
+import { PlainButton } from './PlainButton.ts';
 
 export default {
   title: 'Example/PlainButton',

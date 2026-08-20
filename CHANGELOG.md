@@ -5,7 +5,6 @@
 - Dependencies: Bump Vitest to 4.1.6 (CVE-2026-47428) - [#35530](https://github.com/storybookjs/storybook/pull/35530), thanks @anupamme!
 - Docs: Declare the font on overlay surfaces so docs tooltips are not left to inherit - [#35966](https://github.com/storybookjs/storybook/pull/35966), thanks @valentinpalkovic!
 - ESLint Plugin: Bundle CSF helpers so the plugin loads without storybook - [#35950](https://github.com/storybookjs/storybook/pull/35950), thanks @ndelangen!
-- Nextjs-Vite: Recover from Next.js 16.3 raw config cache - [#35882](https://github.com/storybookjs/storybook/pull/35882), thanks @ndelangen!
 - React: Preserve discriminated union prop values in metadata extraction - [#35844](https://github.com/storybookjs/storybook/pull/35844), thanks @s-robertson!
 
 ## 10.5.9

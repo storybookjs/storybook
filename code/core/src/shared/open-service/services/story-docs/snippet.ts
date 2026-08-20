@@ -32,9 +32,7 @@ export function selectStoryDoc(
  * The story's snippet for the args in front of the reader.
  *
  * Falls back to the snippet the server rendered whenever anything is missing or goes wrong: no
- * template, no framework renderer, a value the framework cannot print. A snippet that lags the
- * Controls is merely stale; one rebuilt from a half-understood template would be wrong, and wrong
- * source is not copy-pasteable.
+ * template, no framework renderer, a value the framework cannot print.
  */
 export function renderStoryDocSnippet(
   story: StoryDoc,
@@ -62,7 +60,7 @@ export function renderStoryDocSnippet(
  *
  * With `args` and the framework's renderer, a story that carries a snippet template is rebuilt for
  * those args, so the snippet shows what the reader is looking at rather than what the story
- * declared. Without them - or without a template - the server's snippet is used as-is.
+ * declared.
  */
 export function selectSnippetForStory(
   payload: StoryDocsPayload | undefined,

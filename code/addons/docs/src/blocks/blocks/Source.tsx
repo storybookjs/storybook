@@ -105,14 +105,6 @@ const useCode = ({
 // state is used by the Canvas block, which also calls useSourceProps
 type PureSourceProps = ComponentProps<typeof PureSource>;
 
-/**
- * Which args a Source block shows.
- *
- * A block pinned to the story's declared args - the `Stories` list, which passes
- * `__forceInitialArgs` - keeps showing those rather than following the Controls the reader is
- * moving above it. Both the snippet lookup and the rendered source must agree on this, so it has
- * one owner.
- */
 const sourceArgs = (
   props: Pick<SourceProps, '__forceInitialArgs'>,
   storyContext: Partial<ReturnType<DocsContextProps['getStoryContext']>>

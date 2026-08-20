@@ -64,9 +64,6 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
       }
       return emitTransformCode(source, context);
     })
-    // A failed load used to leave the Code panel blank forever while the docs Source block degraded
-    // to the story's own source. Emitting the same fallback the success path uses makes the two
-    // consumers of one payload fail the same way.
     .catch((error) => {
       once.warn(`Could not load code snippets for "${componentId}": ${String(error)}`);
       const fallback = context.parameters?.docs?.source?.originalSource;

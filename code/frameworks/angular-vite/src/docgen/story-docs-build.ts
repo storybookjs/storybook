@@ -329,11 +329,6 @@ const renderStorySnippet = async (
       unresolvedWarning([...markupSources, ...shape.unresolvedArgs]),
       unboundArgsWarning(localName, snippetMeta, shape)
     ),
-    // `replayable` is the whole condition. It is false exactly when a binding in this template was
-    // printed from source text, which is the only thing a consumer holding live values could not
-    // reproduce. An unresolved arg that is not a binding - `args: { onClick: fn() }`, which every
-    // scaffolded story has - makes the example partial and is named in the warning, but does not
-    // change a single character of the template, so it does not withhold the snippet template.
     snippetTemplate: replayable
       ? storySnippetTemplate(snippetMeta, localName, componentImport, ngModules)
       : undefined,
@@ -342,14 +337,6 @@ const renderStorySnippet = async (
 
 /**
  * The template the preview substitutes live args into to rebuild this snippet.
- *
- * Emitted in wire form rather than as display markup: how many bindings the tag ends up carrying is
- * only known once the preview has filled the holes, so the preview lays it out - through the same
- * `layoutTag` that shaped the snippet beside it.
- *
- * Every field is copied rather than aliased: `snippetMeta` is a reactive proxy over `core/docgen`'s
- * state, and a proxy cannot be structured-cloned, so aliasing one here would make the whole
- * story-docs payload fail the snapshot the runtime takes of it.
  */
 const storySnippetTemplate = (
   snippetMeta: AngularComponentSnippetMeta,
@@ -470,12 +457,6 @@ const unboundArgsWarning = (
   );
 };
 
-/**
- * The component's own bindings, and whether a consumer holding live args could rebuild them.
- *
- * A binding printed from source text names things only the story file knows, so one of those makes
- * the whole set unreplayable rather than just itself.
- */
 const componentBindings = (
   snippetMeta: AngularComponentSnippetMeta,
   shape: StoryShape
@@ -505,9 +486,6 @@ const componentBindings = (
  * What `argsToTemplate(args)` expands to, in the same component-anchored order
  * {@link componentBindings} uses, so one component's bindings read the same way whether a story
  * wrote its own markup or the snippet was generated for it.
- *
- * A function-valued arg is an output and never an input, and an arg the story set to `undefined`
- * binds nothing at all, which is what the runtime helper does with it too.
  */
 const argsExpansion = (snippetMeta: AngularComponentSnippetMeta, shape: StoryShape): Bindings => {
   const bindable = (name: string): t.Node | undefined => {

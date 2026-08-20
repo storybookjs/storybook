@@ -77,11 +77,6 @@ describe('selectSnippetForStory with a snippet template', () => {
   });
 });
 
-// The renderer used to be registered into a `globalThis` slot, which the published bundles could
-// reach through two import paths - `preview/runtime.js` inlines its own copy of this module, while
-// a framework called in through `storybook/open-service`. With the renderer passed in as a value
-// there is no module state left to disagree about, and this pins that: two module instances of the
-// reader produce the same result from one renderer defined outside both.
 it('renders the same from two module instances of this module', async () => {
   // The query string defeats the module cache; TypeScript cannot resolve it, hence the cast.
   const other = (await import(

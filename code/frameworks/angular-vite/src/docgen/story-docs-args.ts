@@ -21,16 +21,6 @@ export const createArgExternalizer =
     return value === EVAL_FAILED ? undefined : t.valueToNode(value);
   };
 
-/**
- * The arg as a binding expression, and whether it came from a value or from source text.
- *
- * An arg no static evaluation could reduce to a value falls back to its source text, which names
- * things only the story file knows; a consumer holding the live value cannot substitute into it, so
- * `fromValue` says which of the two a binding holds.
- *
- * Every expression is escaped for the attribute position it lands in: the double-quote delimiter
- * and text Angular's lexer would decode as a character reference survive the round-trip unchanged.
- */
 export const evaluateArgBinding = (
   node: t.Node,
   enums: SnippetEnum[]

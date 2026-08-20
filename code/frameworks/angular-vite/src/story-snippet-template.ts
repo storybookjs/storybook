@@ -12,11 +12,6 @@ export const SNIPPET_TEMPLATE_KIND = 'angular-snippet-template';
 
 /**
  * Everything needed to rebuild a story's snippet without its source file.
- *
- * Only recorded for snippets built from the component's own bindings, where every binding's value
- * was statically evaluable. A story that supplies its own markup, reaches its component through
- * `*ngComponentOutlet`, or holds an arg that only running the story could resolve, carries no
- * template at all - a partial one would let the preview render something the server never would.
  */
 export interface StorySnippetTemplate extends Omit<
   HostComponentSnippetInput,
@@ -70,12 +65,6 @@ const fillBinding = (
 
 /**
  * The story's snippet for the args in front of the reader, or `undefined` to decline the rebuild.
- *
- * Takes `unknown` because it is the framework's registered renderer: declining a payload another
- * framework or an older build wrote is part of the same contract as declining a value with no
- * expression form. One arg with no expression form declines the whole rebuild, because a snippet
- * where a single binding silently kept the story's value while the rest followed the Controls is
- * worse than one that is merely stale.
  */
 export const renderSnippetFromTemplate = (
   snippetTemplate: unknown,

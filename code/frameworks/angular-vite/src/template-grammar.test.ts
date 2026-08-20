@@ -290,10 +290,6 @@ describe('formatTemplateMarkup', () => {
   });
 });
 
-// The wire form exists so a consumer holding live values can lay a tag out the way the generator
-// would. That only holds if re-laying-out an untouched wire form reproduces `buildTemplate` exactly,
-// for every shape a selector can produce - a dashed element, a class selector that falls back to a
-// `div`, an attribute selector, an id, and every binding count either side of the break.
 describe('the wire form lays out to what buildTemplate produces', () => {
   const selectors = ['sb-button', '.card', '[appHighlight]', 'button[sb-action]', 'sb-x#main.a.b'];
   const outputs = ['clicked'];

@@ -15,11 +15,7 @@ export const parameters: Parameters = {
     source: {
       type: SourceType.DYNAMIC,
       language: useStaticServiceSnippets ? 'ts' : 'html',
-      // The server ships a snippet plus the template it was built from; filling that template with
-      // the args the reader is looking at is what makes the snippet follow the Controls. Carried in
-      // parameters for the same reason `docs.source.transform` is: both consumers of the snippet
-      // already hold the story's parameters. The layout is decided by the same rule on both sides,
-      // so an untouched story rebuilds byte for byte.
+      // The server ships a snippet plus the template it was built from
       renderSnippetTemplate: renderSnippetFromTemplate,
     },
   },

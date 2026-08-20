@@ -9,13 +9,6 @@ const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 const DECLARED_LABEL = 'declaredLabel';
 const TYPED_LABEL = 'typedLabel';
 
-/**
- * The snippet in the Code panel and the docs Source block follows the Controls.
- *
- * The rest of the suite asserts a snippet *renders*; this is the only place that asserts it
- * *changes*. It runs unchanged against the dev server and against a built Storybook served with no
- * dev server behind it, because "works in dev only" was never the deliverable.
- */
 test.describe('dynamic snippets', () => {
   // Only `angular-vite` registers a snippet-template renderer today, and only its docgen-server
   // template turns the flag on. Everywhere else the snippet is still static by design, so asserting

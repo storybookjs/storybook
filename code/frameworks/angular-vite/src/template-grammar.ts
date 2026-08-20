@@ -190,10 +190,6 @@ const expandSelector = (selector: string): { element: string; attributes: string
 /**
  * The machine-readable form of a generated tag: the open line, one binding per line, and the tag's
  * own end on the last line.
- *
- * Never shown to a reader. A consumer that holds live values keeps the binding lines it wants and
- * hands them to {@link layoutTag}, which is what decides shape - so the shape is decided once the
- * bindings are known, by the same rule that shaped the tag here.
  */
 export const buildTagWireForm = (
   selector: string,

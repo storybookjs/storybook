@@ -1,14 +1,8 @@
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 
-import type { Args, StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
+import type { StoryDoc, StoryDocsPayload } from 'storybook/internal/types';
 
-import {
-  type QueryState,
-  type SnippetTemplateRenderer,
-  prependImportToSnippet,
-  renderStoryDocSnippet,
-  selectStoryDoc,
-} from 'storybook/open-service';
+import { type QueryState, selectStoryDoc } from 'storybook/open-service';
 import { getService } from 'storybook/preview-api';
 
 import { useQuerySubscription } from './use-query-subscription.ts';
@@ -52,55 +46,4 @@ export function useServiceStory<TSelected>(
 /** Convenience hook for the common case: the story-docs entry for one story. */
 export function useServiceStoryDoc(storyId: string): QueryState<StoryDoc | undefined> {
   return useServiceStory(storyId, selectStoryDoc);
-}
-
-// One identity for the module's lifetime, so args can never enter the subscription's identity.
-// The selector reads only one story and the file import, so sibling updates stay isolated.
-const selectSnippetParts = (payload: StoryDocsPayload | undefined, storyId: string) => {
-  const story = payload?.stories[storyId];
-  return {
-    story:
-      story === undefined
-        ? undefined
-        : {
-            id: story.id,
-            snippet: story.snippet,
-            // The framework owns the template fields, so its JSON form is the only primitive
-            // revision core can select without knowing their shape.
-            snippetTemplateJSON:
-              story.snippetTemplate === undefined
-                ? undefined
-                : JSON.stringify(story.snippetTemplate),
-          },
-    importBlock: payload?.import,
-  };
-};
-
-export function useServiceStorySnippet(
-  storyId: string,
-  args?: Args,
-  render?: SnippetTemplateRenderer
-): QueryState<string | undefined> {
-  const state = useServiceStory(storyId, selectSnippetParts);
-  const { story, importBlock } = state.data ?? {};
-
-  const snippet = useMemo(() => {
-    const rendered =
-      story &&
-      renderStoryDocSnippet(
-        {
-          id: story.id,
-          snippet: story.snippet,
-          snippetTemplate:
-            story.snippetTemplateJSON === undefined
-              ? undefined
-              : JSON.parse(story.snippetTemplateJSON),
-        },
-        args,
-        render
-      );
-    return rendered === undefined ? undefined : prependImportToSnippet(importBlock, rendered);
-  }, [story, importBlock, args, render]);
-
-  return { ...state, data: snippet };
 }

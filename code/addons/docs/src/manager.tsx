@@ -2,11 +2,21 @@ import React, { useState } from 'react';
 
 import { AddonPanel, type SyntaxHighlighterFormatTypes } from 'storybook/internal/components';
 
-import { addons, types, useChannel, useParameter } from 'storybook/manager-api';
+import {
+  addons,
+  getService,
+  types,
+  useArgs,
+  useChannel,
+  useParameter,
+  useServiceQuery,
+} from 'storybook/manager-api';
+import { createDynamicSnippetInput } from 'storybook/open-service';
 import { ignoreSsrWarning, styled, useTheme } from 'storybook/theming';
 
 import {
   ADDON_ID,
+  isStoryDocsSnippetEligible,
   PANEL_ID,
   PARAM_KEY,
   type StoryDocsCodePanelParameters,
@@ -24,19 +34,88 @@ type SnippetRenderedEvent = {
   format?: SyntaxHighlighterFormatTypes;
 };
 
-const CodePanel = ({
+type CodePanelProps = {
+  active: boolean | undefined;
+  lastEvent: SnippetRenderedEvent | undefined;
+  currentStoryId: string | undefined;
+  storyRefId: string | undefined;
+  storyParameters: StoryDocsCodePanelParameters | undefined;
+  storyPrepared: boolean | undefined;
+};
+
+const CodePanelContents = ({
   active,
-  lastEvent,
-  currentStoryId,
+  source,
+  format,
+  storyRefId,
   storyParameters,
   storyPrepared,
 }: {
   active: boolean | undefined;
-  lastEvent: SnippetRenderedEvent | undefined;
-  currentStoryId: string | undefined;
+  source: string | undefined;
+  format: SyntaxHighlighterFormatTypes | undefined;
+  storyRefId: string | undefined;
   storyParameters: StoryDocsCodePanelParameters | undefined;
   storyPrepared: boolean | undefined;
 }) => {
+  const parameter = useParameter(PARAM_KEY, {
+    source: { code: '' } as SourceParameters,
+    theme: 'dark',
+  });
+
+  const theme = useTheme();
+  const isDark = theme.base !== 'light';
+
+  const awaitingServiceSnippet =
+    storyRefId === undefined && shouldWaitForServiceSnippet(storyParameters, storyPrepared);
+  const code =
+    parameter.source?.code ??
+    source ??
+    (awaitingServiceSnippet ? '' : parameter.source?.originalSource);
+
+  return (
+    <AddonPanel active={!!active}>
+      <SourceStyles>
+        <Source {...parameter.source} code={code} format={format} dark={isDark} />
+      </SourceStyles>
+    </AddonPanel>
+  );
+};
+
+const ServiceCodePanel = ({
+  active,
+  currentStoryId,
+  storyRefId,
+  storyParameters,
+  storyPrepared,
+}: Omit<CodePanelProps, 'currentStoryId' | 'lastEvent'> & { currentStoryId: string }) => {
+  const [args] = useArgs();
+  const service = getService('core/dynamic-snippets', { internal: true });
+  const { data } = useServiceQuery(
+    service.queries.dynamicSnippet,
+    createDynamicSnippetInput(currentStoryId, args)
+  );
+
+  return (
+    <CodePanelContents
+      active={active}
+      source={data?.transformedSource ?? data?.source}
+      format={undefined}
+      storyRefId={storyRefId}
+      storyParameters={storyParameters}
+      storyPrepared={storyPrepared}
+    />
+  );
+};
+
+const LegacyCodePanel = ({
+  active,
+  lastEvent,
+  currentStoryId,
+  storyRefId,
+  storyParameters,
+  storyPrepared,
+}: CodePanelProps) => {
   const lastEventMatchesCurrentStory = lastEvent?.id === currentStoryId;
   const [codeSnippet, setSourceCode] = useState<{
     source: string | undefined;
@@ -44,11 +123,6 @@ const CodePanel = ({
   }>({
     source: lastEventMatchesCurrentStory ? lastEvent?.source : undefined,
     format: lastEventMatchesCurrentStory ? (lastEvent?.format ?? undefined) : undefined,
-  });
-
-  const parameter = useParameter(PARAM_KEY, {
-    source: { code: '' } as SourceParameters,
-    theme: 'dark',
   });
 
   useChannel(
@@ -67,22 +141,30 @@ const CodePanel = ({
     [currentStoryId]
   );
 
-  const theme = useTheme();
-  const isDark = theme.base !== 'light';
-
-  const awaitingServiceSnippet = shouldWaitForServiceSnippet(storyParameters, storyPrepared);
-  const code =
-    parameter.source?.code ||
-    codeSnippet.source ||
-    (awaitingServiceSnippet ? '' : parameter.source?.originalSource);
-
   return (
-    <AddonPanel active={!!active}>
-      <SourceStyles>
-        <Source {...parameter.source} code={code} format={codeSnippet.format} dark={isDark} />
-      </SourceStyles>
-    </AddonPanel>
+    <CodePanelContents
+      active={active}
+      source={codeSnippet.source}
+      format={codeSnippet.format}
+      storyRefId={storyRefId}
+      storyParameters={storyParameters}
+      storyPrepared={storyPrepared}
+    />
   );
+};
+
+const CodePanel = ({ currentStoryId, lastEvent, ...panelProps }: CodePanelProps) => {
+  if (
+    globalThis.FEATURES?.experimentalDocgenServer &&
+    panelProps.storyPrepared &&
+    panelProps.storyRefId === undefined &&
+    currentStoryId &&
+    isStoryDocsSnippetEligible(panelProps.storyParameters)
+  ) {
+    return <ServiceCodePanel {...panelProps} currentStoryId={currentStoryId} />;
+  }
+
+  return <LegacyCodePanel {...panelProps} currentStoryId={currentStoryId} lastEvent={lastEvent} />;
 };
 
 addons.register(ADDON_ID, (api) => {
@@ -113,8 +195,9 @@ addons.register(ADDON_ID, (api) => {
 
       return (
         <CodePanel
-          key={currentStory?.id}
+          key={`${currentStory?.refId ?? ''}:${currentStory?.id ?? ''}`}
           currentStoryId={currentStory?.id}
+          storyRefId={currentStory?.refId}
           storyParameters={currentStory?.parameters}
           storyPrepared={currentStory?.prepared}
           lastEvent={lastEvent}

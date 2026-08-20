@@ -3,14 +3,17 @@ import React, { useCallback, useContext } from 'react';
 import type { FC } from 'react';
 
 import { FORCE_REMOUNT } from 'storybook/internal/core-events';
+import { isStoryDocsSnippetEligible } from 'storybook/internal/docs-tools';
 import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
-import type { ModuleExport, ModuleExports } from 'storybook/internal/types';
+import type { ModuleExport, ModuleExports, PreparedStory } from 'storybook/internal/types';
 
 import type { Layout, PreviewProps as PurePreviewProps } from '../components';
 import { Preview as PurePreview } from '../components';
+import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import type { SourceProps } from './Source';
-import { useSourceProps } from './Source';
+import { useSourceProps, useSourcePropsWithDynamicSnippet } from './Source';
+import type { SourceContextProps } from './SourceContainer';
 import { SourceContext } from './SourceContainer';
 import type { StoryProps } from './Story';
 import { Story } from './Story';
@@ -63,17 +66,19 @@ type CanvasProps = Pick<PurePreviewProps, 'withToolbar' | 'additionalActions' | 
   story?: Pick<StoryProps, 'inline' | 'height' | 'autoplay' | '__forceInitialArgs' | '__primary'>;
 };
 
-const CanvasImpl: FC<CanvasProps> = (props) => {
-  const docsContext = useContext(DocsContext);
-  const sourceContext = useContext(SourceContext);
-  const { of, source } = props;
-  if ('of' in props && of === undefined) {
-    throw new InvalidBlockOfPropError();
+type ResolvedCanvasProps = {
+  docsContext: DocsContextProps;
+  props: CanvasProps;
+  sourceContext: SourceContextProps;
+  story: PreparedStory;
+};
+
+const CanvasContent: FC<
+  Omit<ResolvedCanvasProps, 'sourceContext'> & {
+    sourceProps: ReturnType<typeof useSourceProps>;
   }
-
-  const { story } = useOf(of || 'story', ['story']);
-  const sourceProps = useSourceProps({ ...source, ...(of && { of }) }, docsContext, sourceContext);
-
+> = ({ docsContext, props, sourceProps, story }) => {
+  const { of } = props;
   const layout =
     props.layout ?? story.parameters.layout ?? story.parameters.docs?.canvas?.layout ?? 'padded';
   const withToolbar = props.withToolbar ?? story.parameters.docs?.canvas?.withToolbar ?? false;
@@ -101,6 +106,68 @@ const CanvasImpl: FC<CanvasProps> = (props) => {
     >
       <Story of={of || story.moduleExport} meta={props.meta} {...props.story} />
     </PurePreview>
+  );
+};
+
+const CanvasWithLegacySource: FC<ResolvedCanvasProps> = ({
+  docsContext,
+  props,
+  sourceContext,
+  story,
+}) => {
+  const sourceProps = useSourceProps(
+    { ...props.source, ...(props.of && { of: props.of }) },
+    docsContext,
+    sourceContext
+  );
+  return (
+    <CanvasContent
+      docsContext={docsContext}
+      props={props}
+      sourceProps={sourceProps}
+      story={story}
+    />
+  );
+};
+
+const CanvasWithDynamicSource: FC<ResolvedCanvasProps> = ({
+  docsContext,
+  props,
+  sourceContext,
+  story,
+}) => {
+  const sourceProps = useSourcePropsWithDynamicSnippet(
+    { ...props.source, ...(props.of && { of: props.of }) },
+    story,
+    docsContext.getStoryContext(story),
+    sourceContext
+  );
+  return (
+    <CanvasContent
+      docsContext={docsContext}
+      props={props}
+      sourceProps={sourceProps}
+      story={story}
+    />
+  );
+};
+
+const CanvasImpl: FC<CanvasProps> = (props) => {
+  const docsContext = useContext(DocsContext);
+  const sourceContext = useContext(SourceContext);
+  const { of } = props;
+  if ('of' in props && of === undefined) {
+    throw new InvalidBlockOfPropError();
+  }
+
+  const { story } = useOf(of || 'story', ['story']);
+  const resolvedProps = { docsContext, props, sourceContext, story };
+
+  return globalThis.FEATURES?.experimentalDocgenServer &&
+    isStoryDocsSnippetEligible(story.parameters, props.source?.type) ? (
+    <CanvasWithDynamicSource {...resolvedProps} />
+  ) : (
+    <CanvasWithLegacySource {...resolvedProps} />
   );
 };
 

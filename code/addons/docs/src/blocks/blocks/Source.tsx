@@ -1,7 +1,7 @@
 import type { ComponentProps, FC } from 'react';
 import React, { useContext, useMemo } from 'react';
 
-import { SourceType } from 'storybook/internal/docs-tools';
+import { isStoryDocsSnippetEligible, SourceType } from 'storybook/internal/docs-tools';
 import { InvalidBlockOfPropError } from 'storybook/internal/preview-errors';
 import type { Args, ModuleExport, PreparedStory, StoryId } from 'storybook/internal/types';
 import type { StoryDocsSnippetSourceParameters } from 'storybook/open-service';
@@ -12,7 +12,7 @@ import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import type { SourceContextProps, SourceItem } from './SourceContainer';
 import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
-import { useServiceStorySnippet } from './use-service-story-docs.ts';
+import { useDynamicSnippetSource } from './use-service-dynamic-snippet.ts';
 import { useTransformCode } from './useTransformCode';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
@@ -74,7 +74,7 @@ const useCode = ({
   transformFromProps,
 }: {
   snippet: string;
-  serviceSnippet: string;
+  serviceSnippet?: string;
   storyContext: ReturnType<DocsContextProps['getStoryContext']>;
   typeFromProps: SourceType;
   transformFromProps?: SourceProps['transform'];
@@ -85,23 +85,18 @@ const useCode = ({
 
   const type = typeFromProps || sourceParameters.type || SourceType.AUTO;
 
-  const staticSnippet = serviceSnippet || snippet;
+  const dynamicSnippet = serviceSnippet ?? snippet;
   const useSnippet =
-    // if user has explicitly set this as dynamic, use snippet
     type === SourceType.DYNAMIC ||
-    // if this is an args story and there's a snippet
-    (type === SourceType.AUTO && staticSnippet && isArgsStory);
+    Boolean(type === SourceType.AUTO && dynamicSnippet && isArgsStory);
+  const code =
+    sourceParameters.code ?? (useSnippet ? dynamicSnippet : sourceParameters.originalSource) ?? '';
+  const transformer =
+    sourceParameters.code === undefined
+      ? (transformFromProps ?? sourceParameters.transform)
+      : undefined;
 
-  const code = useSnippet ? staticSnippet : sourceParameters.originalSource || '';
-  const transformer = transformFromProps ?? sourceParameters.transform;
-
-  const transformedCode = transformer ? useTransformCode(code, transformer, storyContext) : code;
-
-  if (sourceParameters.code !== undefined) {
-    return sourceParameters.code;
-  }
-
-  return transformedCode;
+  return useTransformCode(code, transformer, storyContext);
 };
 
 // state is used by the Canvas block, which also calls useSourceProps
@@ -142,7 +137,7 @@ const useResolvedSourceProps = (
   props: SourceProps,
   subject: SourceSubject,
   sourceContext: SourceContextProps,
-  serviceSnippet = ''
+  serviceSnippet?: string
 ): PureSourceProps => {
   const { of } = props;
   const { story } = subject;
@@ -195,26 +190,34 @@ export const useSourceProps = (
   props: SourceProps,
   docsContext: DocsContextProps,
   sourceContext: SourceContextProps,
-  serviceSnippet = ''
+  serviceSnippet?: string
 ): PureSourceProps => {
   const subject = useSourceSubject(props.of, docsContext);
   return useResolvedSourceProps(props, subject, sourceContext, serviceSnippet);
 };
 
-const SourceWithStoryDocsSnippet: FC<
+export const useSourcePropsWithDynamicSnippet = (
+  props: SourceProps,
+  story: PreparedStory,
+  storyContext: ReturnType<DocsContextProps['getStoryContext']>,
+  sourceContext: SourceContextProps
+): PureSourceProps => {
+  const serviceSnippet = useDynamicSnippetSource(
+    story.id,
+    sourceArgs(props, storyContext),
+    props.__forceInitialArgs ? 'initial' : 'current'
+  ).data;
+  return useResolvedSourceProps(props, { story, storyContext }, sourceContext, serviceSnippet);
+};
+
+const SourceWithDynamicSnippet: FC<
   SourceProps & {
     sourceContext: SourceContextProps;
     subject: Extract<SourceSubject, { story: PreparedStory }>;
   }
 > = ({ subject, sourceContext, ...props }) => {
   const { story, storyContext } = subject;
-  const serviceSnippet =
-    useServiceStorySnippet(
-      story.id,
-      sourceArgs(props, storyContext),
-      storyContext.parameters?.docs?.source?.renderSnippetTemplate
-    ).data ?? '';
-  const sourceProps = useResolvedSourceProps(props, subject, sourceContext, serviceSnippet);
+  const sourceProps = useSourcePropsWithDynamicSnippet(props, story, storyContext, sourceContext);
   return <PureSource {...sourceProps} />;
 };
 
@@ -233,15 +236,17 @@ const SourceWithResolvedSubject: FC<
  * provided, or the source for the current story if nothing is provided.
  */
 const SourceWithStorySnippet = (props: SourceProps) => {
-  const { of } = props;
+  const { of, type } = props;
   const sourceContext = useContext(SourceContext);
   const docsContext = useContext(DocsContext);
   const subject = useSourceSubject(of, docsContext);
 
-  if (globalThis.FEATURES?.experimentalDocgenServer && subject.story) {
-    return (
-      <SourceWithStoryDocsSnippet {...props} sourceContext={sourceContext} subject={subject} />
-    );
+  if (
+    globalThis.FEATURES?.experimentalDocgenServer &&
+    subject.story &&
+    isStoryDocsSnippetEligible(subject.story.parameters, type)
+  ) {
+    return <SourceWithDynamicSnippet {...props} sourceContext={sourceContext} subject={subject} />;
   }
 
   return <SourceWithResolvedSubject {...props} sourceContext={sourceContext} subject={subject} />;

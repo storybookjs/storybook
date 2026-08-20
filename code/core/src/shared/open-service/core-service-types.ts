@@ -1,4 +1,5 @@
 import { docgenServiceDef } from './services/docgen/definition.ts';
+import { dynamicSnippetServiceDef } from './services/dynamic-snippets/definition.ts';
 import { moduleGraphServiceDef } from './services/module-graph/definition.ts';
 import { moduleGraphIndexServiceDef } from './services/module-graph-index/definition.ts';
 import { reviewServiceDef } from './services/review/definition.ts';
@@ -27,8 +28,17 @@ import type {
  *
  * Stateful services shared across realms appear in each matching list so their state can synchronize.
  */
-export const managerCoreServiceDefs = [docgenServiceDef, reviewServiceDef];
-export const previewCoreServiceDefs = [docgenServiceDef, storyDocsServiceDef];
+export const managerCoreServiceDefs = [
+  docgenServiceDef,
+  storyDocsServiceDef,
+  dynamicSnippetServiceDef,
+  reviewServiceDef,
+];
+export const previewCoreServiceDefs = [
+  docgenServiceDef,
+  storyDocsServiceDef,
+  dynamicSnippetServiceDef,
+];
 export const serverCoreServiceDefs = [
   docgenServiceDef,
   storyDocsServiceDef,

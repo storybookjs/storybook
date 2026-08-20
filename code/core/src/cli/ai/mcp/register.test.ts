@@ -114,7 +114,19 @@ beforeEach(() => {
   vi.mocked(withTelemetry).mockImplementation(async (_eventType, _options, run) => run());
   vi.mocked(telemetry).mockResolvedValue(undefined);
   vi.mocked(sendTelemetryError).mockResolvedValue(undefined);
-  vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
+  vi.spyOn(process.stdout, 'write').mockImplementation(((
+    _chunk: unknown,
+    encodingOrCb?: BufferEncoding | ((error?: Error | null) => void),
+    cb?: (error?: Error | null) => void
+  ) => {
+    if (typeof encodingOrCb === 'function') {
+      encodingOrCb();
+    } else if (typeof cb === 'function') {
+      cb();
+    }
+    return true;
+  }) as typeof process.stdout.write);
+  vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
 });
 
 afterEach(() => {
@@ -254,7 +266,7 @@ describe('with the feature flag (passthrough registered)', () => {
       outcome: { kind: 'success' },
     });
     await parse(program, ['ai', 'tool-x']);
-    expect(process.stdout.write).toHaveBeenCalledWith('markdown result\n');
+    expect(process.stdout.write).toHaveBeenCalledWith('markdown result\n', expect.any(Function));
     expect(process.exitCode).toBeUndefined();
   });
 
@@ -266,7 +278,7 @@ describe('with the feature flag (passthrough registered)', () => {
       outcome: { kind: 'intercept', reason: 'no-instance' },
     });
     await parse(program, ['ai', 'tool-x']);
-    expect(process.stdout.write).toHaveBeenCalledWith('repair instructions\n');
+    expect(process.stdout.write).toHaveBeenCalledWith('repair instructions\n', expect.any(Function));
     expect(process.exitCode).toBe(1);
   });
 
@@ -333,7 +345,7 @@ describe('with the feature flag (passthrough registered)', () => {
       configDir: undefined,
       port: undefined,
     });
-    expect(process.stdout.write).toHaveBeenCalledWith('tool help\n');
+    expect(process.stdout.write).toHaveBeenCalledWith('tool help\n', expect.any(Function));
     expect(runAiTool).not.toHaveBeenCalled();
   });
 

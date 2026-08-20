@@ -93,37 +93,50 @@ export function registerAiMcpPassthrough(
         // from a cwd without a Storybook is the `no-instance` intercept this event exists to
         // measure. The explicit opt-outs (env var, flag, loadable `core.disableTelemetry`)
         // still apply.
-        return withTelemetry(
+        await withTelemetry(
           'ai-command',
           { cliOptions, fallbackTelemetryState: true },
           async () => {
+            // The attached channel keeps its event loop alive; this realm has no server, and some
+            // of the async work the toolsets await holds no libuv handle while in flight.
+            const keepAlive = setInterval(() => {}, 60_000);
             const target = {
               cwd: options.cwd,
               configDir: options.configDir,
               port: options.port,
             };
-            if (options.help && command) {
-              await printResult(await runAiToolHelp(command, target), options.output);
-              return;
-            }
-            if (options.help || !command) {
-              const commandsSection = await buildStorybookCommandsHelp(target);
-              process.stdout.write(`${aiCommand.helpInformation()}\n${commandsSection}\n`);
-              return;
-            }
-            const start = Date.now();
-            const result = await runAiTool(command, commandArgs, { ...target, json: options.json });
-            const duration = Date.now() - start;
             try {
-              await printResult(result, options.output);
+              if (options.help && command) {
+                await printResult(await runAiToolHelp(command, target), options.output);
+                return;
+              }
+              if (options.help || !command) {
+                const commandsSection = await buildStorybookCommandsHelp(target);
+                await new Promise<void>((resolveWrite) => {
+                  process.stdout.write(`${aiCommand.helpInformation()}\n${commandsSection}\n`, () =>
+                    resolveWrite()
+                  );
+                });
+                return;
+              }
+              const start = Date.now();
+              const result = await runAiTool(command, commandArgs, {
+                ...target,
+                json: options.json,
+              });
+              const duration = Date.now() - start;
+              try {
+                await printResult(result, options.output);
+              } finally {
+                await reportAiCommandTelemetry(command, result.outcome, duration, cliOptions);
+              }
             } finally {
-              // The command has executed either way, so a failed `--output` write must not lose
-              // the event. Reporting after printing keeps a slow telemetry endpoint from ever
-              // delaying the user's result.
-              await reportAiCommandTelemetry(command, result.outcome, duration, cliOptions);
+              clearInterval(keepAlive);
             }
           }
         ).catch(handleCommandFailure(options.logfile));
+        // Attached hosts leave live handles that natural drain cannot clear.
+        process.exit();
       }
     );
 }
@@ -196,7 +209,9 @@ async function printResult(
     await writeFile(resolvedPath, `${output}\n`, 'utf-8');
     logger.log(`Output written to ${resolvedPath}`);
   } else {
-    process.stdout.write(`${output}\n`);
+    await new Promise<void>((resolveWrite) => {
+      process.stdout.write(`${output}\n`, () => resolveWrite());
+    });
   }
   if (exitCode !== 0) {
     process.exitCode = exitCode;

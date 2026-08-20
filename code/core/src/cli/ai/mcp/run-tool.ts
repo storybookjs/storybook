@@ -162,8 +162,9 @@ export async function runAiTool(
   }
   const { record, matches } = resolution;
 
+  let tools: Awaited<ReturnType<typeof createTools>> | undefined;
   try {
-    const tools = await (deps.createTools ?? createTools)({
+    tools = await (deps.createTools ?? createTools)({
       cwd: options.cwd,
       configDir: options.configDir,
       port: record.port,
@@ -195,13 +196,14 @@ export async function runAiTool(
     };
   } catch (error) {
     if (error instanceof AttachUnavailableError) {
+      const reason =
+        error.data.reason === 'no-instance' || error.data.reason === 'port-mismatch'
+          ? error.data.reason
+          : 'attach-unavailable';
       return {
         exitCode: 1,
         output: error.message,
-        outcome: {
-          kind: 'intercept',
-          reason: error.data.reason === 'no-instance' ? 'no-instance' : 'attach-unavailable',
-        },
+        outcome: { kind: 'intercept', reason },
       };
     }
     if (error instanceof EnvironmentMismatchError) {
@@ -216,6 +218,8 @@ export async function runAiTool(
       output: error instanceof Error ? error.message : String(error),
       outcome: { kind: 'error', error },
     };
+  } finally {
+    await tools?.close();
   }
 }
 

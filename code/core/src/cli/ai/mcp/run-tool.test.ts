@@ -90,7 +90,7 @@ function makeAttachedTools(
     },
     describe,
     call,
-    close: async () => {},
+    close: vi.fn(async () => {}),
   };
 }
 
@@ -124,6 +124,7 @@ describe('runAiTool', () => {
       clientInfo: { name: 'storybook-cli', version: expect.any(String), kind: 'cli' },
     });
     expect(toolsHost.call).toHaveBeenCalledWith('docs.list', { withStoryIds: true });
+    expect(toolsHost.close).toHaveBeenCalledOnce();
     expect(result).toEqual({
       exitCode: 0,
       output: 'upstream result',

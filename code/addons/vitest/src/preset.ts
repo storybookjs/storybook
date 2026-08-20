@@ -66,13 +66,18 @@ type Event =
  * machinery boots on first request.
  */
 export const services = async (_value: void, options: Options): Promise<void> => {
-  const storyIndexGenerator =
-    await options.presets.apply<Promise<StoryIndexGenerator>>('storyIndexGenerator');
+  // Resolved on first read, never at registration: registering the toolset must not pay for a full
+  // story index build when nothing runs a test.
+  let generatorPromise: Promise<StoryIndexGenerator> | undefined;
+  const getIndex = async () => {
+    generatorPromise ??= options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+    return (await generatorPromise).getIndex();
+  };
 
   registerToolset(
     createTestToolset({
       channel: options.channel as Channel,
-      storyIndex: { getIndex: () => storyIndexGenerator.getIndex() },
+      storyIndex: { getIndex },
       a11yEnabled: await options.presets.apply('isAddonA11yEnabled', false),
     })
   );

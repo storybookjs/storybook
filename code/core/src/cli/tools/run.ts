@@ -134,17 +134,6 @@ function isAttachGateError(error: unknown): boolean {
   );
 }
 
-function normalizeHelpFlag(invocation: ToolsInvocation): ToolsInvocation {
-  if (invocation.tool !== '--help' && invocation.tool !== '-h') {
-    return invocation;
-  }
-  return {
-    ...invocation,
-    tool: undefined,
-    flags: { ...invocation.flags, help: true },
-  };
-}
-
 /**
  * Run one `storybook tools` invocation against the toolsets the target Storybook configuration
  * registers in this process. This is the whole command behind the commander wiring: dispatch,

@@ -11,10 +11,9 @@ import { buildStoryDocsPayload } from './story-docs-build.ts';
 // a type-level guarantee, so this stays defensive rather than asserting the service exists.
 let warnedMissingDocgenService = false;
 
-const getDocgenPayload = async (componentId: string): Promise<AngularDocgenPayload | undefined> => {
+const resolveDocgenService = () => {
   try {
-    const docgenService = getService('core/docgen', { internal: true });
-    return await docgenService.queries.docgen.loaded({ id: componentId });
+    return getService('core/docgen', { internal: true });
   } catch (error) {
     if (!warnedMissingDocgenService) {
       warnedMissingDocgenService = true;
@@ -27,6 +26,11 @@ const getDocgenPayload = async (componentId: string): Promise<AngularDocgenPaylo
     return undefined;
   }
 };
+
+// Query loading deliberately reuses cached docgen. Story-docs extraction needs the command's
+// "extract now" semantics so an HMR refresh cannot rebuild snippets from pre-edit metadata.
+const getDocgenPayload = async (componentId: string): Promise<AngularDocgenPayload | undefined> =>
+  resolveDocgenService()?.commands.extractDocgen({ id: componentId });
 
 export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (nextStoryDocs) => {
   return async (input) => {

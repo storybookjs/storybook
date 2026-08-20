@@ -115,6 +115,26 @@ describe('story-docs open service', () => {
     expect(provider).toHaveBeenCalledTimes(1);
   });
 
+  it('tries again when a provider failure left nothing cached', async () => {
+    const payload = makeStoryDocsPayload();
+    const provider = vi
+      .fn<StoryDocsProvider>()
+      .mockResolvedValueOnce(undefined)
+      .mockResolvedValue(payload);
+    const service = registerStoryDocsService({
+      getIndex: makeGetIndex([makeStoryEntry('button--primary', 'Button')]),
+      storyDocsProvider: provider,
+    });
+
+    await service.queries.storyDocs.loaded({ id: 'button' });
+    expect(service.queries.storyDocs.get({ id: 'button' })).toBeUndefined();
+
+    await service.queries.storyDocs.loaded({ id: 'button' });
+
+    expect(provider).toHaveBeenCalledTimes(2);
+    expect(service.queries.storyDocs.get({ id: 'button' })).toEqual(payload);
+  });
+
   // The command is the "extract now" path and must stay unguarded, or the hot refresh below has no
   // way to pick up an edited story file.
   it('re-runs the provider when the extract command is called directly', async () => {

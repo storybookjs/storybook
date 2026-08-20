@@ -249,6 +249,26 @@ describe('buildStoryDocsPayload', () => {
     });
   });
 
+  it('abandons the payload when docgen extraction fails', async () => {
+    givenStoryFile(dedent`
+      import { ButtonComponent } from './button.component';
+
+      export default { title: 'Example/Button', component: ButtonComponent };
+      export const Default = { args: { label: 'hi' } };
+    `);
+
+    const result = await buildStoryDocsPayload(
+      { entry },
+      {
+        getDocgenPayload: async () => {
+          throw new Error('docgen worker is no longer running');
+        },
+      }
+    );
+
+    expect(result).toBeUndefined();
+  });
+
   it('keeps unevaluable arg source when the story file uses CRLF', async () => {
     givenStoryFile(
       dedent`

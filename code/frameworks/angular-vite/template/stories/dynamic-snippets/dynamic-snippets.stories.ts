@@ -1,6 +1,6 @@
 import type { Meta, StoryObj } from '@storybook/angular-vite';
 
-import { DynamicSnippetsComponent } from './dynamic-snippets.component.ts';
+import { DynamicSnippetsComponent } from './dynamic-snippets.component';
 
 const meta: Meta<DynamicSnippetsComponent> = {
   component: DynamicSnippetsComponent,

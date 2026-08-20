@@ -10,6 +10,10 @@ import { selectSnippetForStory } from './snippet.ts';
 
 export { shouldSkipStoryDocsEmit };
 
+// `beforeEach` runs on every args-driven render, while its cleanups wait for teardown. Replacing
+// the active subscription prevents an HMR update from replaying snippets built with stale args.
+const liveSubscriptions = new Map<string, () => void>();
+
 /**
  * Preview `beforeEach` hook that emits the story-docs snippet to the manager Code panel via
  * {@link emitTransformCode}.
@@ -64,6 +68,8 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
     });
   };
 
+  liveSubscriptions.get(storyId)?.();
+
   const unsubscribe = service.queries.storyDocs.subscribe({ id: componentId }, (state) => {
     if (cancelled || (state.data === undefined && state.isInitialLoading)) {
       return;
@@ -81,9 +87,20 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
     );
   });
 
-  return () => {
+  const stop = () => {
+    if (cancelled) {
+      return;
+    }
     cancelled = true;
     unsubscribe();
+    if (liveSubscriptions.get(storyId) === stop) {
+      liveSubscriptions.delete(storyId);
+    }
+  };
+  liveSubscriptions.set(storyId, stop);
+
+  return () => {
+    stop();
     return emitQueue;
   };
 }

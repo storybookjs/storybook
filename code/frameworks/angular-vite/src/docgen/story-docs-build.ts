@@ -43,8 +43,8 @@ import {
 
 export interface BuildStoryDocsContext {
   /**
-   * Resolves the docgen payload for a component id, `undefined` when docgen is unavailable. Must
-   * not throw: the preset wrapper owns failure handling.
+   * Resolves docgen for a component, or `undefined` when no service is available. A rejected
+   * extraction abandons the payload so a transient failure is never cached as snippet-less docs.
    */
   getDocgenPayload: (componentId: string) => Promise<AngularDocgenPayload | undefined>;
   resolvePath?: (importPath: string) => string;
@@ -69,9 +69,14 @@ export const buildStoryDocsPayload = async (
   }
 
   const componentNode = csf._metaAnnotations.component;
-  const docgenPayload = componentNode
-    ? await context.getDocgenPayload(getComponentIdFromEntry(input.entry))
-    : undefined;
+  let docgenPayload: AngularDocgenPayload | undefined;
+  if (componentNode) {
+    try {
+      docgenPayload = await context.getDocgenPayload(getComponentIdFromEntry(input.entry));
+    } catch {
+      return undefined;
+    }
+  }
 
   const enums = docgenPayload?.angularComponentMeta?.enums ?? [];
   const { resolveImport } = context;

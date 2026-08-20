@@ -46,29 +46,28 @@ function storyDocsQueryState(data: StoryDocsPayload | undefined, error?: Error, 
 }
 
 function mockStoryDocsService(loaded: () => Promise<StoryDocsPayload>) {
-  let subscriber: ((state: ReturnType<typeof storyDocsQueryState>) => void) | undefined;
-  let active = false;
-  const unsubscribe = vi.fn(() => {
-    active = false;
-  });
+  const subscribers = new Set<(state: ReturnType<typeof storyDocsQueryState>) => void>();
+  const unsubscribe = vi.fn();
   const subscribe = vi.fn(
     (_input: { id: string }, callback: (state: ReturnType<typeof storyDocsQueryState>) => void) => {
-      active = true;
-      subscriber = callback;
+      subscribers.add(callback);
       callback(storyDocsQueryState(undefined, undefined, true));
       void loaded().then(
         (data) => {
-          if (active) {
+          if (subscribers.has(callback)) {
             callback(storyDocsQueryState(data));
           }
         },
         (value) => {
-          if (active) {
+          if (subscribers.has(callback)) {
             callback(storyDocsQueryState(undefined, toError(value)));
           }
         }
       );
-      return unsubscribe;
+      return () => {
+        subscribers.delete(callback);
+        unsubscribe();
+      };
     }
   );
 
@@ -80,8 +79,8 @@ function mockStoryDocsService(loaded: () => Promise<StoryDocsPayload>) {
 
   return {
     publish(data: StoryDocsPayload) {
-      if (active) {
-        subscriber?.(storyDocsQueryState(data));
+      for (const subscriber of subscribers) {
+        subscriber(storyDocsQueryState(data));
       }
     },
     unsubscribe,
@@ -253,6 +252,68 @@ describe('storyDocsSourceBeforeEach', () => {
     );
     await cleanup?.();
     expect(service.unsubscribe).toHaveBeenCalledOnce();
+  });
+
+  it('replaces a stale subscription when the same story renders again', async () => {
+    const service = mockStoryDocsService(() =>
+      Promise.resolve({
+        ...payload,
+        stories: {
+          [storyId]: { ...payload.stories[storyId]!, snippetTemplate: { kind: 'declared' } },
+        },
+      })
+    );
+    const contextFor = (label: string) =>
+      ({
+        id: storyId,
+        unmappedArgs: { label },
+        parameters: {
+          __isArgsStory: true,
+          docs: {
+            source: {
+              renderSnippetTemplate: (template: unknown, args: unknown) =>
+                `${(template as { kind: string }).kind}:${JSON.stringify(args)}`,
+            },
+          },
+        },
+      }) as unknown as StoryContext;
+
+    const firstContext = contextFor('stale');
+    const firstCleanup = storyDocsSourceBeforeEach(firstContext);
+    await vi.waitFor(() =>
+      expect(mockedEmitTransformCode).toHaveBeenCalledWith(
+        `import { Button } from './Button';\n\ndeclared:{"label":"stale"}`,
+        firstContext
+      )
+    );
+
+    const currentContext = contextFor('live');
+    const currentCleanup = storyDocsSourceBeforeEach(currentContext);
+    await vi.waitFor(() =>
+      expect(mockedEmitTransformCode).toHaveBeenCalledWith(
+        `import { Button } from './Button';\n\ndeclared:{"label":"live"}`,
+        currentContext
+      )
+    );
+    mockedEmitTransformCode.mockClear();
+
+    service.publish({
+      ...payload,
+      stories: {
+        [storyId]: { ...payload.stories[storyId]!, snippetTemplate: { kind: 'edited' } },
+      },
+    });
+
+    await vi.waitFor(() => expect(mockedEmitTransformCode).toHaveBeenCalled());
+    expect(mockedEmitTransformCode).toHaveBeenCalledOnce();
+    expect(mockedEmitTransformCode).toHaveBeenCalledWith(
+      `import { Button } from './Button';\n\nedited:{"label":"live"}`,
+      currentContext
+    );
+    expect(service.unsubscribe).toHaveBeenCalledOnce();
+
+    await firstCleanup?.();
+    await currentCleanup?.();
   });
 
   it('does not emit for portable stories', async () => {

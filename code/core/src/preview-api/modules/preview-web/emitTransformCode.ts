@@ -12,10 +12,6 @@ type Transformer =
   | ((code: string, storyContext: ReducedStoryContext) => string | Promise<string>)
   | undefined;
 
-/**
- * @param warning Why `source` is an incomplete example, when it is one. Travels with the snippet so
- *   the Code panel and the docs Source block can flag it; see `StoryDoc.warning`.
- */
 export async function emitTransformCode(
   source: string | undefined,
   context: ReducedStoryContext,

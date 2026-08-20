@@ -76,6 +76,7 @@ Internal exports include:
 - `storybook/internal/csf-tools`
 - `storybook/internal/common`
 - `storybook/internal/channels`
+- `storybook/internal/tools` — Node SDK for `storybook tools` / `storybook ai` (`createTools`)
 
 ### Key flow
 
@@ -95,8 +96,13 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
   toolsets, as addon-vitest does for `test`.
 - Register services and toolsets from the same `services` preset hook and behind the same feature
   gate. Missing or duplicate registrations fail loudly.
+- The tools CLI and `storybook ai` consume `storybook/internal/tools` (`createTools`). Default mode
+  is attach-preferred (`auto`): join a running instance as a delegated leaf, or load locally on gate
+  failure. `--attach` requires attachment; `--no-attach` forces local; `--port` picks one instance
+  when several match. There is no MCP proxy on this path.
 - Read `code/core/src/shared/open-service/README.md` before changing the contract, adapters,
-  registration, docs access, transport rendering, or tools CLI.
+  registration, docs access, or transport rendering. Read `code/core/src/cli/tools/README.md` and
+  `code/core/src/cli/tools/architecture.md` before changing attachment, the SDK, or the tools CLI.
 
 ### Agent-facing skills
 
@@ -157,6 +163,9 @@ yarn storybook:vitest
 | Run the docgen perf bench       | `yarn workspace @storybook/docgen-harness bench:docgen-perf`                   |
 | Run the docgen memory gate      | `yarn workspace @storybook/docgen-harness bench:docgen-memory`                 |
 | Verify sandbox docgen baselines | `yarn workspace @storybook/docgen-harness baselines:sandbox`                   |
+| List docs via tools CLI         | `cd code && node core/dist/bin/dispatcher.js tools docs list`                  |
+| Require attach / force local    | add `--attach` or `--no-attach` before the toolset name                        |
+| Pick one of several instances   | add `--port <number>` (or `--config-dir`) before the toolset name              |
 
 ## NX and `yarn task`
 
@@ -249,6 +258,7 @@ Common templates:
 - Use `yarn task e2e-tests --start-from auto` or `yarn task e2e-tests-dev --start-from auto` for E2E coverage
 - Use `yarn task test-runner --start-from auto` or `yarn task test-runner-dev --start-from auto` for test-runner scenarios
 - Use `yarn task smoke-test --start-from auto` for smoke checks
+- Use `cd code && yarn playwright test e2e-internal/tools-attach.spec.ts --config playwright.config.ts` for tools attach coverage (same checkout as the running internal UI)
 
 Watch-mode commands:
 
@@ -357,7 +367,7 @@ These are recurring failure modes in agent-authored changes to this repo. Apply 
 
 ## Comments and JSDoc
 
-Code should be self-explanatory. A comment is only justified when the code cannot explain itself (a non-obvious *why*) or when a public API needs explanation. Never comment to record that you did x, y, z.
+Code should be self-explanatory. A comment is only justified when the code cannot explain itself (a non-obvious _why_) or when a public API needs explanation. Never comment to record that you did x, y, z.
 
 Before writing or editing any code file, read [`.agents/guidelines/comments-and-jsdoc.md`](.agents/guidelines/comments-and-jsdoc.md) and follow it. Read it once per session, not once per file.
 

@@ -23,7 +23,7 @@ export type MdxAnalysisResult = {
   isTemplate: boolean;
   metaTags?: string[];
   imports: string[];
-  anchors: DocsAnchor[];
+  anchors?: DocsAnchor[];
 };
 
 type ImportMap = Record<string, string>;

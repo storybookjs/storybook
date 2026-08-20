@@ -91,4 +91,9 @@ test.describe('storybook tools --attach', () => {
     ]);
     expect(review.exitCode, review.output).toBe(0);
   });
+
+  test('attaches from a different cwd via a project-local child host', async () => {
+    const list = await runTools(['--attach', 'docs', 'list', '--json'], join(codeDir, '..'));
+    expect(list.exitCode, list.output).toBe(0);
+  });
 });

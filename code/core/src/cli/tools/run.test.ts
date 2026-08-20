@@ -21,6 +21,8 @@ import {
 import type { DocsAccess } from '../../shared/open-service/toolsets/docs/access.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import { runToolsCommand, type ToolsInvocation, type ToolsRunDeps } from './run.ts';
+import { parseToolsetMethodId } from '../../shared/open-service/toolset-names.ts';
+import { toCatalogEntry } from './sdk/catalog.ts';
 import {
   AttachUnavailableError,
   ToolsRuntimeError,
@@ -96,13 +98,35 @@ function makeLocalTools(runtimeOverrides: Partial<ToolsRuntime> = {}): LocalTool
     },
     ...runtimeOverrides,
   };
+  const ctx: ToolsetCtx = { transport: 'cli', getService: runtime.getService };
   return {
     mode: 'local',
     clientInfo: { name: 'storybook-cli', version: '0.0.0', kind: 'cli' },
     runtime,
     storybook: { version: '0.0.0', configDir: runtime.configDir },
-    describe: async () => ({ configDir: runtime.configDir, toolsets: [] }),
-    call: async () => ({ ok: true, data: {}, markdown: '' }),
+    describe: async (options) => {
+      const toolsets =
+        options?.toolset === undefined
+          ? runtime.toolsets
+          : runtime.toolsets.filter((toolset) => toolset.id === options.toolset);
+      return {
+        configDir: runtime.configDir,
+        toolsets: toolsets.map((toolset) => toCatalogEntry(toolset, ctx)),
+      };
+    },
+    call: async (ref, input) => {
+      const { toolsetId, methodName } = parseToolsetMethodId(ref);
+      const toolset = runtime.toolsets.find((candidate) => candidate.id === toolsetId);
+      const method = toolset?.methods[methodName];
+      if (!method) {
+        throw new Error(`Unknown tool \`${ref}\`.`);
+      }
+      const validation = await method.input['~standard'].validate(input ?? {});
+      if (validation.issues) {
+        throw new Error(`Invalid input for \`${ref}\``);
+      }
+      return method.handler(validation.value, ctx);
+    },
     close: async () => {},
   };
 }
@@ -116,14 +140,44 @@ function makeDeps(overrides: Partial<ToolsRunDeps> & { runtime?: Partial<ToolsRu
 }
 
 function makeAttachedTools(runtimeOverrides: Partial<ToolsRuntime> = {}): AttachedTools {
+  const local = makeLocalTools(runtimeOverrides);
+  const origin = 'http://localhost:6006';
+  const ctx: ToolsetCtx = {
+    transport: 'cli',
+    origin,
+    getService: local.runtime.getService,
+  };
   return {
-    ...makeLocalTools(runtimeOverrides),
+    ...local,
     mode: 'attached',
     storybook: {
       version: '0.0.0',
       configDir: CONFIG_DIR,
-      url: 'http://localhost:6006',
+      url: origin,
       pid: 123,
+    },
+    describe: async (options) => {
+      const toolsets =
+        options?.toolset === undefined
+          ? local.runtime.toolsets
+          : local.runtime.toolsets.filter((toolset) => toolset.id === options.toolset);
+      return {
+        configDir: local.runtime.configDir,
+        toolsets: toolsets.map((toolset) => toCatalogEntry(toolset, ctx)),
+      };
+    },
+    call: async (ref, input) => {
+      const { toolsetId, methodName } = parseToolsetMethodId(ref);
+      const toolset = local.runtime.toolsets.find((candidate) => candidate.id === toolsetId);
+      const method = toolset?.methods[methodName];
+      if (!method) {
+        throw new Error(`Unknown tool \`${ref}\`.`);
+      }
+      const validation = await method.input['~standard'].validate(input ?? {});
+      if (validation.issues) {
+        throw new Error(`Invalid input for \`${ref}\``);
+      }
+      return method.handler(validation.value, ctx);
     },
   };
 }
@@ -264,7 +318,6 @@ describe('local tools', () => {
       cwd: '/repo',
       configDir: '.storybook',
       mode: 'local',
-      autoSpawn: false,
       clientInfo: { name: 'storybook-cli', version: expect.any(String), kind: 'cli' },
     });
   });
@@ -733,9 +786,7 @@ describe('attached tools', () => {
 
     await run(['docs', 'list'], deps, { attach: true });
 
-    expect(createTools).toHaveBeenCalledWith(
-      expect.objectContaining({ mode: 'attached', autoSpawn: false })
-    );
+    expect(createTools).toHaveBeenCalledWith(expect.objectContaining({ mode: 'attached' }));
   });
 
   it('runs a requiresDevServer tool caller-side with the instance origin, without proxying', async () => {

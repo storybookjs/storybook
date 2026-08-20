@@ -4,7 +4,7 @@ import * as v from 'valibot';
 
 import { defineToolset } from '../../../shared/open-service/toolset-definition.ts';
 import { createTools } from './create-tools.ts';
-import { AttachUnavailableError, ToolsRuntimeError } from './errors.ts';
+import { AttachUnavailableError } from './errors.ts';
 import { bootstrapToolsRuntime, type ToolsRuntime } from './local-runtime.ts';
 
 vi.mock('./local-runtime.ts', { spy: true });
@@ -126,6 +126,53 @@ describe('createTools', () => {
       ok: true,
       data: {},
       markdown: '',
+    });
+  });
+
+  it('spawns a child host when attach reports a fidelity mismatch that auto-spawn can fix', async () => {
+    const record = {
+      schemaVersion: 1 as const,
+      instanceId: 'abc',
+      pid: 123,
+      cwd: '/repo',
+      configDir: CONFIG_DIR,
+      url: 'http://localhost:6006',
+      port: 6006,
+      token: 'secret',
+      storybookVersion: '10.2.0',
+      mcp: { status: 'ready' as const },
+    };
+    const spawned = {
+      mode: 'attached' as const,
+      clientInfo: { name: 'storybook-tools-sdk', version: '0.0.0', kind: 'sdk' as const },
+      storybook: { version: '10.2.0', configDir: CONFIG_DIR, url: record.url, pid: record.pid },
+      runtime: makeRuntime(),
+      describe: async () => ({ configDir: CONFIG_DIR, toolsets: [] }),
+      call: async () => ({ ok: true as const, data: {}, markdown: 'spawned' }),
+      close: async () => {},
+    };
+    const attach = vi.fn(async () => ({ kind: 'spawn' as const, record }));
+    const spawnChild = vi.fn(async () => spawned);
+
+    const tools = await createTools(
+      { cwd: '/elsewhere', mode: 'attached' },
+      { attach, spawnChild }
+    );
+
+    expect(spawnChild).toHaveBeenCalledWith({
+      record,
+      options: expect.objectContaining({
+        cwd: '/repo',
+        mode: 'attached',
+        autoSpawn: false,
+      }),
+      clientInfo: expect.objectContaining({ kind: 'sdk' }),
+    });
+    expect(bootstrapToolsRuntime).not.toHaveBeenCalled();
+    await expect(tools.call('echo.ok')).resolves.toEqual({
+      ok: true,
+      data: {},
+      markdown: 'spawned',
     });
   });
 

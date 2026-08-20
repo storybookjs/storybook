@@ -5,7 +5,12 @@ import type { Channel } from 'storybook/internal/channels';
 import type { NodeChannelConnection } from '../../../channels/node/index.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import { bootstrapAttachedRuntime } from './attached-runtime.ts';
-import { AttachUnavailableError, EnvironmentMismatchError, ToolsRuntimeError } from './errors.ts';
+import {
+  AttachUnavailableError,
+  EnvironmentMismatchError,
+  SpawnFailedError,
+  ToolsRuntimeError,
+} from './errors.ts';
 
 const RECORD: StorybookInstanceRecord = {
   schemaVersion: 1,
@@ -86,8 +91,11 @@ describe('bootstrapAttachedRuntime', () => {
     expect(deps.setDelegatedMode.mock.invocationCallOrder[0]).toBeLessThan(
       deps.loadStorybook.mock.invocationCallOrder[0]
     );
+    expect(result.kind).toBe('in-process');
     expect(result.record).toEqual(RECORD);
-    expect(result.runtime.configDir).toBe(RECORD.configDir);
+    if (result.kind === 'in-process') {
+      expect(result.runtime.configDir).toBe(RECORD.configDir);
+    }
   });
 
   it('does not change process.cwd()', async () => {
@@ -157,6 +165,59 @@ describe('bootstrapAttachedRuntime', () => {
     await expect(failure).rejects.toThrow('10.1.0');
     await expect(failure).rejects.toThrow('10.2.0');
     await expect(failure).rejects.toThrow('Restart your Storybook');
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
+
+  it('returns spawn when autoSpawn is on and the project package matches the instance', async () => {
+    const { deps } = makeRuntimeDeps([RECORD], {
+      cwd: () => '/elsewhere',
+      resolveProjectVersion: () => '10.2.0',
+    });
+
+    const result = await bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    expect(result).toEqual({ kind: 'spawn', record: RECORD });
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
+
+  it('throws restart guidance when autoSpawn cannot help because the project package also differs', async () => {
+    const { deps } = makeRuntimeDeps([RECORD], {
+      version: '10.3.0',
+      resolveProjectVersion: () => '10.4.0',
+    });
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    await expect(failure).rejects.toThrow(EnvironmentMismatchError);
+    await expect(failure).rejects.toThrow('10.4.0');
+    await expect(failure).rejects.toThrow('10.2.0');
+    await expect(failure).rejects.toThrow('Restart your Storybook');
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
+
+  it('throws SpawnFailedError when autoSpawn is on but storybook cannot be resolved under the instance', async () => {
+    const { deps } = makeRuntimeDeps([RECORD], {
+      cwd: () => '/elsewhere',
+      resolveProjectVersion: () => undefined,
+    });
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    await expect(failure).rejects.toThrow(SpawnFailedError);
+    await expect(failure).rejects.toThrow(RECORD.cwd);
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
+
+  it('throws a mismatch rather than spawning when this process is already a child host', async () => {
+    const { deps } = makeRuntimeDeps([RECORD], {
+      cwd: () => '/elsewhere',
+      isChildHost: true,
+      resolveProjectVersion: () => '10.2.0',
+    });
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    await expect(failure).rejects.toThrow(EnvironmentMismatchError);
     expect(deps.createNodeChannel).not.toHaveBeenCalled();
   });
 

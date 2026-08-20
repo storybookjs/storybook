@@ -6,8 +6,9 @@ import {
   type AnyToolsetMethod,
   type ToolsetCtx,
 } from '../../shared/open-service/toolset-definition.ts';
-import { toCliMethodName } from '../../shared/open-service/toolset-names.ts';
+import { parseToolsetMethodId, toCliMethodName } from '../../shared/open-service/toolset-names.ts';
 import { toToolsetJsonSchema } from './sdk/json-schema.ts';
+import type { ToolsetCatalog, ToolsetCatalogEntry, ToolsetCatalogMethod } from './sdk/types.ts';
 import {
   JsonSchemaNodeSchema,
   MAX_SCHEMA_DEPTH,
@@ -28,7 +29,7 @@ function optionLines(): string[] {
  * One line per tool for the `Commands:` listing, in commander's shape: the subcommand padded to a
  * shared column, a one-sentence summary, and the execution badge.
  */
-function commandLines(toolsets: AnyToolsetDefinition[], ctx: ToolsetCtx): string[] {
+function commandLines(toolsets: AnyToolsetDefinition[], _ctx: ToolsetCtx): string[] {
   const commands = toolsets.flatMap((toolset) =>
     Object.entries(toolset.methods).map(([methodKey, method]) => ({
       path: cliPath(toolset, methodKey),
@@ -174,4 +175,110 @@ function propertyLines(
     lines.push(...schemaLines(label, node, required.has(name), '', MAX_SCHEMA_DEPTH));
   }
   return lines;
+}
+
+function catalogCliPath(method: ToolsetCatalogMethod): string {
+  const { toolsetId, methodName } = parseToolsetMethodId(method.ref);
+  return `${toolsetId} ${toCliMethodName(methodName)}`;
+}
+
+function catalogBadge(method: ToolsetCatalogMethod): string {
+  return method.requiresDevServer ? DEV_SERVER_BADGE : LOCAL_BADGE;
+}
+
+function catalogArgumentLines(schema: Record<string, unknown> | undefined, flagPrefix: boolean) {
+  if (schema === undefined) {
+    return undefined;
+  }
+  return propertyLines(schema, { flagPrefix });
+}
+
+function catalogMethodBodyLines(method: ToolsetCatalogMethod): string[] {
+  const lines = [method.description.trim()];
+  const argumentLines = catalogArgumentLines(method.inputSchema, true);
+  if (argumentLines === undefined) {
+    lines.push('', 'Arguments: (this schema could not be rendered)');
+  } else if (argumentLines.length === 0) {
+    lines.push('', 'Arguments: none.');
+  } else {
+    lines.push('', 'Arguments:', ...argumentLines);
+  }
+  const outputLines = catalogArgumentLines(method.outputSchema, false);
+  if (outputLines && outputLines.length > 0) {
+    lines.push('', 'Output:', ...outputLines);
+  }
+  return lines;
+}
+
+export function renderToolsHelpFromCatalog(catalog: ToolsetCatalog): string {
+  const commands = catalog.toolsets.flatMap((toolset) =>
+    toolset.methods.map((method) => ({
+      path: catalogCliPath(method),
+      summary: method.title,
+      badge: catalogBadge(method),
+    }))
+  );
+  const column =
+    commands.length === 0 ? 0 : Math.max(...commands.map((command) => command.path.length)) + 2;
+  const commandBlock =
+    commands.length === 0
+      ? '  (none)'
+      : commands
+          .map((command) => `  ${command.path.padEnd(column)}${command.summary}  ${command.badge}`)
+          .join('\n');
+  const header = [
+    'Usage: npx storybook tools [options] [toolset] [tool] [args...]',
+    '',
+    `Storybook tools from the Storybook configuration at ${catalog.configDir}.`,
+    '',
+    'Options:',
+    ...optionLines(),
+    '',
+    'Commands:',
+    commandBlock,
+  ].join('\n');
+  const notes = [
+    `${LOCAL_BADGE} tools run in this process, without a running Storybook.`,
+    `${DEV_SERVER_BADGE} tools need a running Storybook dev server; start it first.`,
+    'Individual `--key value` flags override entries of `--input`.',
+  ].join('\n');
+  const referenceIntro =
+    'Tool reference — every command in full (`npx storybook tools <toolset> <tool> --help` shows one alone):';
+  const sections = [header, notes, referenceIntro];
+  for (const toolset of catalog.toolsets) {
+    sections.push(renderCatalogToolsetSection(toolset));
+  }
+  return sections.join('\n\n');
+}
+
+export function renderToolsetHelpFromCatalog(entry: ToolsetCatalogEntry): string {
+  return [
+    `Usage: npx storybook tools ${entry.id} <tool> [--key value ...]`,
+    '',
+    renderCatalogToolsetSection(entry),
+  ].join('\n');
+}
+
+export function renderMethodHelpFromCatalog(
+  entry: ToolsetCatalogEntry,
+  method: ToolsetCatalogMethod
+): string {
+  return [
+    `Usage: npx storybook tools ${catalogCliPath(method)} [--key value ...]`,
+    '',
+    method.requiresDevServer
+      ? 'Execution: requires a running Storybook dev server; start it first.'
+      : 'Execution: local (no running Storybook required).',
+    '',
+    ...catalogMethodBodyLines(method),
+  ].join('\n');
+}
+
+function renderCatalogToolsetSection(entry: ToolsetCatalogEntry): string {
+  const sections = [`${entry.id} — ${entry.description}`];
+  for (const method of entry.methods) {
+    const heading = `  ${catalogCliPath(method)}  ${catalogBadge(method)}`;
+    sections.push([heading, '', ...indented(catalogMethodBodyLines(method), 4)].join('\n'));
+  }
+  return sections.join('\n\n');
 }

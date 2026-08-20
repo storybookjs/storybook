@@ -10,6 +10,8 @@ import type {
 } from '../../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
 import { toCatalogEntry } from './catalog.ts';
+import type { AttachedBootstrapResult } from './attached-runtime.ts';
+import { spawnChildHost } from './child-client.ts';
 import { AttachUnavailableError, ToolsRuntimeError } from './errors.ts';
 import type { ToolsRuntime } from './local-runtime.ts';
 import type {
@@ -31,11 +33,15 @@ export type CreateToolsDeps = {
   attach?: (
     target: { cwd?: string; configDir?: string },
     deps?: unknown
-  ) => Promise<{
-    runtime: ToolsRuntime;
-    record: { url: string; pid: number; configDir?: string };
-    connection: { close(): void; disconnected: Promise<never> };
-  }>;
+  ) => Promise<
+    | AttachedBootstrapResult
+    | {
+        runtime: ToolsRuntime;
+        record: { url: string; pid: number; configDir?: string; cwd?: string };
+        connection: { close(): void; disconnected: Promise<never> };
+      }
+  >;
+  spawnChild?: typeof spawnChildHost;
 };
 
 /**
@@ -45,12 +51,16 @@ export type CreateToolsDeps = {
  * `process.cwd()` for the rest of the process — everything the `services` preset hooks register
  * keys its file mapping off it. Capture your launch directory first if you still need it.
  *
- * `attached` joins a running Storybook over its channel and never changes `process.cwd()`.
+ * `attached` joins a running Storybook over its channel and never changes `process.cwd()`. When
+ * this process is not that instance's twin, attached mode defaults to spawning a child host from
+ * the `storybook` package resolved under the instance directory.
  *
  * @throws {ToolsRuntimeError} With reason `mode-unavailable` for `auto`, which is not available
  *   yet; with reason `config-load-failed` when the target configuration cannot be loaded.
  * @throws {AttachUnavailableError} When `attached` cannot find or reach a matching instance.
- * @throws {EnvironmentMismatchError} When this process is not the instance's twin (cwd or version).
+ * @throws {EnvironmentMismatchError} When this process is not the instance's twin and auto-spawn is
+ *   declined, or when spawning cannot reconcile the running instance with the project package.
+ * @throws {SpawnFailedError} When a child host cannot be resolved or started.
  */
 export function createTools(
   options: CreateToolsOptions & { mode: 'local' },
@@ -83,22 +93,38 @@ export async function createTools(
     process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
     // local-runtime pulls core-server at import, which must not run before the attached channel is prepared.
     const { bootstrapAttachedRuntime } = await import('./attached-runtime.ts');
-    const attached = await (deps.attach ?? bootstrapAttachedRuntime)({
+    const isChildHost = process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
+    const autoSpawn = isChildHost ? false : (options.autoSpawn ?? true);
+    const attached = await (
+      deps.attach ?? ((target) => bootstrapAttachedRuntime({ ...target, autoSpawn }))
+    )({
       cwd: options.cwd,
       configDir: options.configDir,
     });
+    if ('kind' in attached && attached.kind === 'spawn') {
+      return (deps.spawnChild ?? spawnChildHost)({
+        record: attached.record,
+        options: { ...options, mode: 'attached', autoSpawn: false, cwd: attached.record.cwd },
+        clientInfo,
+      });
+    }
+    const inProcess = attached as {
+      runtime: ToolsRuntime;
+      record: { url: string; pid: number; configDir?: string };
+      connection: { close(): void; disconnected: Promise<never> };
+    };
     return createToolsHost({
       mode: 'attached',
-      runtime: attached.runtime,
+      runtime: inProcess.runtime,
       clientInfo,
       storybook: {
         version: versions.storybook,
-        configDir: attached.runtime.configDir,
-        url: attached.record.url,
-        pid: attached.record.pid,
+        configDir: inProcess.runtime.configDir,
+        url: inProcess.record.url,
+        pid: inProcess.record.pid,
       },
-      close: () => attached.connection.close(),
-      disconnected: attached.connection.disconnected,
+      close: () => inProcess.connection.close(),
+      disconnected: inProcess.connection.disconnected,
     });
   }
 

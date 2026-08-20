@@ -58,7 +58,7 @@ export type ClassifiedArg = ClassifiedPropLikeArg | ClassifiedSlotArg;
  * Outcome of classifying one arg, before any story-level decision is taken.
  *
  * `omit` and `unrepresentable` stay distinct because the story-level aggregation treats them
- * differently: the first is silent, the second is named in a warning.
+ * differently: the first is silent, the second is named in `unresolved`.
  */
 export type ArgClassification =
   | { kind: 'classified'; arg: ClassifiedArg }
@@ -68,27 +68,21 @@ export type ArgClassification =
 export interface ClassifyArgsResult {
   /** Args that can be rendered into a static Vue snippet. */
   args: ClassifiedArg[];
-  /** Story needs a real renderer, so runtime source stays authoritative and no snippet is emitted. */
-  defer?: boolean;
-  /** Args left out of the snippet because their values do not resolve statically. */
-  warning?: string;
+  /** Source text of args dropped because their values do not resolve statically. */
+  unresolved: string[];
 }
 
 /**
  * Classifies merged CSF args by Vue docgen precedence: slot, event, v-model, then prop.
  *
- * Five outcomes, one per reason an arg can fail to render:
+ * Three outcomes, one per reason an arg can fail to render:
  *
  * - dropped silently — no static form exists and the runtime source decorator drops it too
  *   (functions passed as undeclared args, args explicitly set to `undefined`, empty strings)
- * - dropped with a `warning` — the value references something the snippet cannot declare, so the
- *   rest of the story still renders and the omission is named
- * - `defer` — nothing the story sets survived classification, so a static snippet would be a
- *   worse example than the runtime one
+ * - named in `unresolved` — the value references something the snippet cannot declare; the caller
+ *   decides whether that reads as a partial snippet or as no snippet at all
  * - forwarded as a `function-slot` plan — a slot receives function content only a
  *   render-tree-aware renderer can realize; rendering bails back to runtime source otherwise
- * - no result at all — the args container itself is unreadable, which the caller reports as an
- *   `error` (see `argsContainerError`)
  *
  * Function args matching a declared event render as listeners, and declared function props hoist.
  */
@@ -97,7 +91,7 @@ export function classifyArgs(
   docgen: VueDocgenArgInfo
 ): ClassifyArgsResult {
   const classified: ClassifiedArg[] = [];
-  const omitted: string[] = [];
+  const unresolved: string[] = [];
 
   for (const [name, value] of Object.entries(args)) {
     const result = classifyArg(name, value, docgen);
@@ -105,22 +99,11 @@ export function classifyArgs(
     if (result.kind === 'classified') {
       classified.push(result.arg);
     } else if (result.kind === 'unrepresentable') {
-      omitted.push(`${name}: ${printValue(value)}`);
+      unresolved.push(`${name}: ${printValue(value)}`);
     }
   }
 
-  // A snippet showing none of the args the story actually sets is a worse example than the one the
-  // runtime source decorator builds from real values, so leave it to that instead.
-  if (omitted.length > 0 && classified.length === 0) {
-    return { args: [], defer: true };
-  }
-
-  return {
-    args: classified,
-    ...(omitted.length > 0
-      ? { warning: `Omitted args that cannot be resolved statically: ${omitted.join(', ')}` }
-      : {}),
-  };
+  return { args: classified, unresolved };
 }
 
 /**

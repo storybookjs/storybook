@@ -16,6 +16,7 @@ import {
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
   jsDocTagsForPath,
+  keyOf,
   loadCsf,
   metaObjectPath,
   normalizeStoryDeclaration,
@@ -23,7 +24,10 @@ import {
   resolveComponentImport,
   resolveRenderFunction,
   resolveReturnedObjectExpression,
+  returnedExpression,
   returnedExpressionPath,
+  unwrapExpression,
+  noSnippetWarning,
   unresolvedWarning,
   type ImportBinding,
   type ReferenceContext,
@@ -76,6 +80,13 @@ interface StoryDocsContext {
 // Vue's single-file-component format is tried ahead of the JS/TS extensions, matching how a story
 // file resolves an import of a `.vue` module.
 const openStoryReferences = createStoryReferenceResolver({ extensions: ['.vue'] });
+
+const RENDER_UNRESOLVED_WARNING =
+  'No static snippet: the `render` function could not be resolved statically.';
+const SLOT_UNRESOLVED_WARNING =
+  'No static snippet: a slot function could not be resolved statically.';
+const IMPORT_UNRESOLVED_WARNING =
+  "No static snippet: the component's import could not be resolved statically.";
 
 type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
 type ExtractStoriesResult = { stories: Record<string, StoryDoc> };
@@ -264,7 +275,14 @@ function extractStories(csf: ParsedCsf, options: StoryDocsContext): ExtractStori
 }
 
 /**
- * Attaches a synthesized snippet (or an "unsupported args" error) to a story doc.
+ * Attaches a synthesized snippet to a story doc, or a standalone `warning` saying why none could
+ * be produced.
+ *
+ * The runtime source decorator still renders an exact snippet in the browser, but payload
+ * consumers that never run the story (manifests, agents) would otherwise see nothing at all, so
+ * every statically unresolvable story names what could not be read instead of staying silent.
+ * Only stories outside the provider's scope (CSF2 function stories, unreadable declarations,
+ * missing docgen) stay unmarked.
  */
 function enrichStoryDoc(
   csf: ParsedCsf,
@@ -273,11 +291,13 @@ function enrichStoryDoc(
   options: StoryDocsContext
 ): StoryDoc {
   const plain = storyDoc;
+  const withWarning = (warning: string | undefined): StoryDoc =>
+    warning ? { ...storyDoc, warning } : plain;
 
   if (!options.snippet) {
     return plain;
   }
-  const { componentName, docgenArgInfo } = options.snippet;
+  const { componentName, componentImportStatement, docgenArgInfo } = options.snippet;
 
   let normalized;
   try {
@@ -304,34 +324,36 @@ function enrichStoryDoc(
         ? { kind: 'sfc' as const }
         : undefined;
   if (!renderer) {
-    return plain;
+    return withWarning(RENDER_UNRESOLVED_WARNING);
+  }
+
+  // The SFC renderer needs the component's import statement; without one, the bail below would
+  // otherwise blame a slot that was never involved.
+  if (renderer.kind === 'sfc' && !componentImportStatement) {
+    return withWarning(IMPORT_UNRESOLVED_WARNING);
   }
 
   const resolved = resolveStaticStoryArgs(storyExport, docgenArgInfo, options);
-  const classified = resolved.classified;
-  if (classified.defer) {
-    return plain;
+  const { args, unresolved: classifyUnresolved } = resolved.classified;
+  const unresolved = [...classifyUnresolved, ...resolved.unresolved];
+
+  // A snippet showing none of the args the story actually sets would be a worse example than the
+  // runtime one, so no snippet is emitted and the warning names everything that was dropped.
+  if (args.length === 0 && unresolved.length > 0) {
+    return withWarning(noSnippetWarning(unresolved));
   }
 
-  const rendered = renderStaticStorySnippet(
-    renderer,
-    classified.args,
-    componentName,
-    docgenArgInfo,
-    options
-  );
+  const rendered = renderStaticStorySnippet(renderer, args, componentName, docgenArgInfo, options);
   if (!rendered) {
-    return plain;
+    return withWarning(
+      renderer.kind === 'sfc' ? SLOT_UNRESOLVED_WARNING : RENDER_UNRESOLVED_WARNING
+    );
   }
-
-  const warning = [classified.warning, unresolvedWarning(resolved.unresolved)]
-    .filter((part) => part !== undefined)
-    .join('\n');
 
   return {
     ...storyDoc,
     snippet: rendered.snippet,
-    ...(warning ? { warning } : {}),
+    ...(unresolved.length > 0 ? { warning: unresolvedWarning(unresolved) } : {}),
   };
 }
 
@@ -348,6 +370,15 @@ function staticRendererForRenderFunction(
     : undefined;
   if (templateConfig) {
     return { kind: 'template', ...templateConfig };
+  }
+
+  const setupExpression = renderObject && setupReturnedRenderExpression(renderObject);
+  if (setupExpression) {
+    return {
+      argsParam: argsParameterName(renderFunction.node),
+      expression: setupExpression,
+      kind: 'h',
+    };
   }
 
   const hExpression = returnedExpressionPath(renderFunction)?.node;
@@ -410,6 +441,46 @@ function renderStaticStorySnippet(
     importBindings: options.importBindings,
     node: renderer.expression,
   });
+}
+
+/**
+ * The `h()` tree a render object's `setup` returns through its render closure, when nothing else
+ * on the object can change what the story renders.
+ *
+ * @example `render: (args) => ({ setup: () => () => h(C, { label: args.label }) })` -> the `h(...)` call
+ */
+function setupReturnedRenderExpression(renderObject: t.ObjectExpression): t.Expression | undefined {
+  const supported = renderObject.properties.every((property) => {
+    if (t.isSpreadElement(property)) {
+      return false;
+    }
+    const key = keyOf(property);
+    return key === 'setup' || key === 'components' || key === 'inheritAttrs';
+  });
+  if (!supported) {
+    return undefined;
+  }
+
+  const setup = renderObject.properties.find(
+    (property) => !t.isSpreadElement(property) && keyOf(property) === 'setup'
+  );
+  const setupFn = t.isObjectMethod(setup)
+    ? setup
+    : t.isObjectProperty(setup)
+      ? unwrapExpression(setup.value)
+      : undefined;
+  if (!setupFn || !t.isFunction(setupFn)) {
+    return undefined;
+  }
+
+  const renderClosure = returnedExpression(setupFn);
+  const closure = renderClosure && unwrapExpression(renderClosure);
+  // A render closure with parameters would receive values the snippet cannot reproduce.
+  if (!closure || !t.isFunction(closure) || closure.params.length > 0) {
+    return undefined;
+  }
+
+  return returnedExpression(closure);
 }
 
 function argsParameterName(renderFunction: RenderFunctionPath['node']): string | undefined {

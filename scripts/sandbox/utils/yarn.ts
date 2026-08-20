@@ -64,17 +64,39 @@ export const BEFORE_SANDBOX_MIN_AGE_GATE = '7d';
 export const BEFORE_SANDBOX_MIN_AGE_MINUTES = 7 * 24 * 60;
 /** npm `min-release-age` is in days (npm 11.10+). */
 export const BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS = 7;
-/** npm below this version silently ignores `NPM_CONFIG_MIN_RELEASE_AGE`. */
-export const BEFORE_SANDBOX_NPM_MIN_VERSION = '11.10.0';
+/**
+ * npm below this version silently ignores `NPM_CONFIG_MIN_RELEASE_AGE`.
+ * 11.17+ is required for `min-release-age-exclude`, which templates with
+ * `minAgeGateExemptions` rely on during npx/npm scaffolds.
+ */
+export const BEFORE_SANDBOX_NPM_MIN_VERSION = '11.17.0';
 
 export async function ensureNpmSupportsMinReleaseAge() {
   const { stdout } = await runCommand('npm --version', { cwd: process.cwd() });
   const version = String(stdout).trim();
   if (!semver.gte(version, BEFORE_SANDBOX_NPM_MIN_VERSION)) {
     throw new Error(
-      `Sandbox generation requires npm >= ${BEFORE_SANDBOX_NPM_MIN_VERSION} so NPM_CONFIG_MIN_RELEASE_AGE is honored (found ${version}). Upgrade with: npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}`
+      `Sandbox generation requires npm >= ${BEFORE_SANDBOX_NPM_MIN_VERSION} so NPM_CONFIG_MIN_RELEASE_AGE and min-release-age-exclude are honored (found ${version}). Upgrade with: npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}`
     );
   }
+}
+
+/**
+ * Templates with a Yarn allowlist also need matching npm exclusions when their
+ * before-script runs through npx/npm. Array config cannot be expressed reliably
+ * via environment variables, so write a scratch `.npmrc` in the scaffold cwd.
+ */
+export async function writeScaffoldNpmrc(cwd: string, minAgeGateExemptions: string[]) {
+  if (!minAgeGateExemptions.length) {
+    return;
+  }
+
+  const lines = [
+    `min-release-age=${BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS}`,
+    ...minAgeGateExemptions.map((pattern) => `min-release-age-exclude[]=${pattern}`),
+  ];
+
+  await writeFile(join(cwd, '.npmrc'), `${lines.join('\n')}\n`);
 }
 
 interface RefreshLockfileOptions {

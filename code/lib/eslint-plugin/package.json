@@ -59,12 +59,12 @@
     "eslint-plugin-node": "^11.1.0",
     "oxfmt": "^0.41.0",
     "prompts": "^2.4.0",
+    "storybook": "workspace:*",
     "ts-dedent": "^2.0.0",
     "typescript": "^6.0.3"
   },
   "peerDependencies": {
-    "eslint": ">=8",
-    "storybook": "workspace:^"
+    "eslint": ">=8"
   },
   "publishConfig": {
     "access": "public"

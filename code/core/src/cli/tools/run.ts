@@ -18,7 +18,7 @@ import {
   type ToolsTarget,
 } from './discover-instance.ts';
 import { renderMethodHelp, renderToolsHelp, renderToolsetHelp } from './help.ts';
-import { parseToolsTokens, type ToolsOutputFlags } from './tool-tokens.ts';
+import { parseToolsTokens, type ParsedToolsTokens, type ToolsOutputFlags } from './tool-tokens.ts';
 
 /**
  * Why an invocation stopped before its handler executed, for the `tools-command` telemetry event.
@@ -113,19 +113,27 @@ export async function runToolsCommand(
   deps: ToolsRunDeps = {}
 ): Promise<ToolsRunResult> {
   const parsed = parseToolsTokens(invocation.tokens, invocation.flags ?? {});
-  if (!parsed.ok || !parsed.json || parsed.help) {
-    return runToolsCommandBody(invocation, deps);
+  if (!parsed.ok) {
+    return {
+      exitCode: 1,
+      output: parsed.error,
+      outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+      outputPath: invocation.flags?.output,
+    };
+  }
+  if (!parsed.json || parsed.help) {
+    return runToolsCommandBody(invocation, parsed, deps);
   }
 
   // `--json` promises a parseable stdout, but config loading and the tool itself log through
   // writers this realm does not own (clack-backed node-logger, vite) that print to stdout.
-  // Divert every stdout write to stderr while the run executes; the caller prints the JSON
-  // result after this returns, against the restored stream.
+  // Divert every stdout write to stderr while the run executes; the caller prints or
+  // `--output`-writes the JSON result after this returns, against the restored stream.
   const originalWrite = process.stdout.write;
   process.stdout.write = ((...args: Parameters<typeof process.stderr.write>) =>
     process.stderr.write(...args)) as typeof process.stdout.write;
   try {
-    return await runToolsCommandBody(invocation, deps);
+    return await runToolsCommandBody(invocation, parsed, deps);
   } finally {
     process.stdout.write = originalWrite;
   }
@@ -133,19 +141,10 @@ export async function runToolsCommand(
 
 async function runToolsCommandBody(
   invocation: ToolsInvocation,
+  parsed: Extract<ParsedToolsTokens, { ok: true }>,
   deps: ToolsRunDeps = {}
 ): Promise<ToolsRunResult> {
-  const { toolset: toolsetName, tool: toolName, tokens, target, flags = {} } = invocation;
-
-  const parsed = parseToolsTokens(tokens, flags);
-  if (!parsed.ok) {
-    return {
-      exitCode: 1,
-      output: parsed.error,
-      outcome: { kind: 'intercept', reason: 'invalid-arguments' },
-      outputPath: flags.output,
-    };
-  }
+  const { toolset: toolsetName, tool: toolName, target } = invocation;
 
   // `-o/--output` applies to whatever the run produced — help, intercepts, and tool results
   // alike — matching the ai CLI, where the output file always receives the printed text.

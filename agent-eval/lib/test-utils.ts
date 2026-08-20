@@ -589,11 +589,20 @@ export function expectStoryTestsRanAndPassed(options?: { covering?: string[] }):
 
   const covering = options?.covering ?? [];
   if (covering.length > 0) {
+    const covers = (space: string) =>
+      covering.some((substring) => space.toLowerCase().includes(substring.toLowerCase()));
+    // The CLI's `# Test run completed` summary carries only counts; story names then reach the
+    // capture through the streamed vitest reporter lines, which an aggressive grep/tail can
+    // strip. Only for that counts-only flavor, fall back to every captured test-run output
+    // before declaring the change uncovered — the per-story flavor keeps the strict
+    // final-run pin.
+    const countsOnly = !/## (Passing|Failing) Stories/.test(lastResult.output);
+    const covered =
+      covers(lastResult.output) ||
+      (countsOnly && covers(results.map((result) => result.output).join('\n')));
     expect(
-      covering.some((substring) =>
-        lastResult.output.toLowerCase().includes(substring.toLowerCase())
-      ),
-      `Final test-run result must cover the changed component (one of: ${covering.join(', ')}). Output: ${truncateForMessage(lastResult.output)}`
+      covered,
+      `Test-run output must cover the changed component (one of: ${covering.join(', ')}). Final output: ${truncateForMessage(lastResult.output)}`
     ).toBe(true);
   }
 }

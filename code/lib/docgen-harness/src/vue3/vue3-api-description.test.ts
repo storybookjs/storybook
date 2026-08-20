@@ -198,4 +198,37 @@ describe('vue3 api description from real vue-component-meta output', () => {
       \`\`\`"
     `);
   });
+  it('expose-event-collision keeps authored exposed members named like events', async () => {
+    expect(await apiDescriptionFor('expose-event-collision')).toMatchInlineSnapshot(`
+      "## Props
+
+      \`\`\`
+      export type ExposeEventCollisionProps = {
+        label?: string;
+      }
+      \`\`\`
+
+      ## Events
+
+      \`\`\`
+      export type ExposeEventCollisionEvents = {
+        focus: [];
+        blur: [];
+        boarding: [];
+      }
+      \`\`\`
+
+      ## Exposed
+
+      Available on the component instance through a template ref.
+
+      \`\`\`
+      export type ExposeEventCollisionExposed = {
+        focus: () => void;
+        blur: () => void;
+        onboarding: () => void;
+      }
+      \`\`\`"
+    `);
+  });
 });

@@ -653,7 +653,9 @@ Treat that opt-out as a migration aid rather than a long-term setting.
 
 The webpack-based `@storybook/angular` package is unaffected and keeps Compodoc as its only docgen path.
 
-The `compodoc` and `compodocArgs` options have also been removed from the `@storybook/angular-vite` `start-storybook` and `build-storybook` builder schemas. Those options were validated by the Angular CLI and never read; Compodoc is configured through `framework.options` in your main config.
+The `compodoc` and `compodocArgs` options on the `@storybook/angular-vite` `start-storybook` and `build-storybook` builder schemas are deprecated.
+They are still accepted, so a workspace that still declares them in `angular.json` keeps building, and `ng run` now reports them as deprecated.
+Nothing reads them: Compodoc is configured through `framework.options` in your main config.
 
 ### Angular Vite: tsconfig paths now take priority over `node_modules` in production builds too
 

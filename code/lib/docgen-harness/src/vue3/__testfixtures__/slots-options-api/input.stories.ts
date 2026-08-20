@@ -1,7 +1,7 @@
 import { h } from 'vue';
 
 import type { Meta, StoryObj } from '@storybook/vue3';
-
+// @ts-expect-error component doesn't have lang=ts
 import OptionsApiSlots from './OptionsApiSlots.vue';
 
 const meta = {

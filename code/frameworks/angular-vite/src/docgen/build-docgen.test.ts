@@ -192,7 +192,10 @@ describe('buildDocgenPayload', () => {
       expect(payload?.summary).toBe('A clickable button');
     });
 
-    it('does not fall back to analyzer prose when TypeScript reports an empty description', () => {
+    // TypeScript reports an empty description for a docblock that is nothing but tags, and for a
+    // class with no docblock at all. Neither means "the analyzer's description is wrong", so an
+    // empty one falls through rather than overwriting it.
+    it('falls back to analyzer prose when TypeScript reports an empty description', () => {
       givenStoryFile();
       const manager = managerReturning(
         metaFor(componentEntry({ rawdescription: 'Legacy analyzer prose.' }), {
@@ -203,8 +206,22 @@ describe('buildDocgenPayload', () => {
 
       const payload = buildDocgenPayload({ entry }, context(manager));
 
-      expect(payload?.description).toBe('');
+      expect(payload?.description).toBe('Legacy analyzer prose.');
       expect(payload?.jsDocTags).toEqual({ deprecated: ['Use NewButton.'] });
+    });
+
+    it('leaves the description undefined for an undocumented component', () => {
+      givenStoryFile();
+      const manager = managerReturning(
+        metaFor(componentEntry({ rawdescription: undefined, description: undefined }), {
+          description: '',
+          jsDocTags: {},
+        })
+      );
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.description).toBeUndefined();
     });
 
     it('falls back to analyzer tags when TypeScript JSDoc is unavailable', () => {

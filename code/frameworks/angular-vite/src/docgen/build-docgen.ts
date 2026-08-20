@@ -66,6 +66,8 @@ const inputsOf = (entry: AngularClassMeta) =>
 const outputsOf = (entry: AngularClassMeta) =>
   'outputsClass' in entry ? (entry.outputsClass ?? []) : [];
 
+const describedBy = (text: string | undefined): string | undefined => text?.trim() || undefined;
+
 const analyzerJsDocTags = (entry: AngularClassMeta): DocgenJsDocTags => {
   const tags: DocgenJsDocTags = {};
   for (const tag of entry.jsdoctags ?? []) {
@@ -232,9 +234,10 @@ export const buildDocgenPayload = (
         }) as StrictArgTypes);
 
   const jsDocTags: DocgenJsDocTags = meta.jsDocInfo?.jsDocTags ?? analyzerJsDocTags(meta.entry);
-  const description = meta.jsDocInfo
-    ? meta.jsDocInfo.description
-    : meta.entry.rawdescription?.trim() || meta.entry.description?.trim() || undefined;
+  const description =
+    describedBy(meta.jsDocInfo?.description) ??
+    describedBy(meta.entry.rawdescription) ??
+    describedBy(meta.entry.description);
 
   return {
     ...base,

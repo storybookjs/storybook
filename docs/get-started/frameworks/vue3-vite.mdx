@@ -77,7 +77,7 @@ setup((app) => {
 
 [`vue-component-meta`](https://github.com/vuejs/language-tools/tree/master/packages/component-meta) is a tool maintained by the Vue team that extracts metadata from Vue components. Storybook can use it to generate the [controls](../../essentials/controls.mdx) for your stories and documentation. It's a more full-featured alternative to `vue-docgen-api` and is recommended for most projects.
 
-If you want to use `vue-component-meta`, you can configure it in your `.storybook/main.js|ts` file:
+If you want to use `vue-component-meta`, you can configure it in your [.storybook/main.*](../../configure/index.mdx#configure-your-storybook-project) file:
 
 ```ts title=".storybook/main.ts"
 import type { StorybookConfig } from '@storybook/vue3-vite';
@@ -217,7 +217,7 @@ The definition above will generate the following controls:
 
 #### Override the default configuration
 
-If you're working with a project that relies on [`tsconfig references`](https://www.typescriptlang.org/docs/handbook/project-references.html) to link to other existing configuration files (e.g., `tsconfig.app.json`, `tsconfig.node.json`), we recommend that you update your [`.storybook/main.js|ts`](../../configure/index.mdx) configuration file and add the following:
+If you're working with a project that relies on [`tsconfig references`](https://www.typescriptlang.org/docs/handbook/project-references.html) to link to other existing configuration files (e.g., `tsconfig.app.json`, `tsconfig.node.json`), we recommend that you update your [.storybook/main.*](../../configure/index.mdx#configure-your-storybook-project) configuration file and add the following:
 
 ```ts title=".storybook/main.ts"
 import type { StorybookConfig } from '@storybook/vue3-vite';
@@ -253,7 +253,7 @@ First, install the framework:
 
 <CodeSnippets path="vue3-vite-install.md" />
 
-Then, update your `.storybook/main.js|ts` to change the framework property:
+Then, update your [.storybook/main.*](../../configure/index.mdx#configure-your-storybook-project) to change the framework property:
 
 <CodeSnippets path="vue3-vite-add-framework.md" />
 

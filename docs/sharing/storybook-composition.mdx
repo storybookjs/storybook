@@ -20,7 +20,7 @@ You’ll see the composed Storybook’s stories in the sidebar alongside your ow
 
 ## Compose published Storybooks
 
-In your [`.storybook/main.js|ts`](../configure/index.mdx#configure-story-rendering) file add a `refs` field with information about the reference Storybook. Pass in a URL to a statically built Storybook.
+In your [.storybook/main.*](../configure/index.mdx#configure-your-storybook-project) file add a `refs` field with information about the reference Storybook. Pass in a URL to a statically built Storybook.
 
 <CodeSnippets path="main-config-refs.md" />
 
@@ -32,7 +32,7 @@ Addons in composed Storybooks will not work as they normally do in a non-compose
 
 ## Compose local Storybooks
 
-You can also compose multiple Storybooks that are running locally. For instance, if you have a React Storybook and an Angular Storybook running on different ports, you can update your configuration file (i.e., `.storybook/main.js|ts`) and reference them as follows:
+You can also compose multiple Storybooks that are running locally. For instance, if you have a React Storybook and an Angular Storybook running on different ports, you can update your configuration file (i.e., [.storybook/main.*](../configure/index.mdx#configure-your-storybook-project)) and reference them as follows:
 
 <CodeSnippets path="storybook-main-ref-local.md" />
 

@@ -545,9 +545,9 @@ Calls to `getConfig` would return the following object when called within Storyb
 
 Next.js comes with a lot of things for free out of the box like Sass support, but sometimes you add [custom Webpack config modifications to Next.js](https://nextjs.org/docs/pages/api-reference/next-config-js/webpack). This framework takes care of most of the Webpack modifications you would want to add. If Next.js supports a feature out of the box, then that feature will work out of the box in Storybook. If Next.js doesn't support something out of the box, but makes it easy to configure, then this framework will do the same for that thing for Storybook.
 
-Any Webpack modifications desired for Storybook should be made in [`.storybook/main.js|ts`](../../builders/webpack.mdx#override-the-default-configuration).
+Any Webpack modifications desired for Storybook should be made in [.storybook/main.*](../../configure/index.mdx#configure-your-storybook-project).
 
-Note: Not all Webpack modifications are copy/paste-able between `next.config.js` and `.storybook/main.js|ts`. It is recommended to do your research on how to properly make your modification to Storybook's Webpack config and on how [Webpack works](https://webpack.js.org/concepts/).
+Note: Not all Webpack modifications are copy/paste-able between `next.config.js` and [.storybook/main.*](../../configure/index.mdx#configure-your-storybook-project). It is recommended to do your research on how to properly make your modification to Storybook's Webpack config and on how [Webpack works](https://webpack.js.org/concepts/).
 
 Below is an example of how to add SVGR support to Storybook with this framework.
 
@@ -574,7 +574,7 @@ Storybook handles most [Typescript](https://www.typescriptlang.org/) configurati
 
 If your app uses [React Server Components (RSC)](https://nextjs.org/docs/app/building-your-application/rendering/server-components), Storybook can render them in stories in the browser.
 
-To enable this set the `experimentalRSC` feature flag in your `.storybook/main.js|ts` config:
+To enable this set the `experimentalRSC` feature flag in your [.storybook/main.*](../../configure/index.mdx#configure-your-storybook-project) config:
 
 <CodeSnippets path="rsc-feature-flag.md" />
 
@@ -609,7 +609,7 @@ First, install the framework:
 
 <CodeSnippets path="nextjs-install.md" />
 
-Then, update your `.storybook/main.js|ts` to change the framework property:
+Then, update your [.storybook/main.*](../../configure/index.mdx#configure-your-storybook-project) to change the framework property:
 
 <CodeSnippets path="nextjs-add-framework.md" />
 

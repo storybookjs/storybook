@@ -626,4 +626,54 @@ describe('compound component extraction', () => {
       importOverride: "import { Button } from '@design-system/components/override';",
     });
   });
+
+  it('keeps inline tags and mid-line bare tags in component JSDoc descriptions', async () => {
+    const entry = await extractFromStory(
+      {
+        'button.tsx': dedent`
+          import React from 'react';
+
+          export interface ButtonProps {
+            label: string;
+          }
+
+          /**
+           * Uses {@link ToggleGroup} inline.
+           *
+           * Also mid-line @see ToggleGroup for accessibility.
+           *
+           * @deprecated Use {@link NewButton} instead.
+           * @since 8.0
+           */
+          export const Button = ({ label }: ButtonProps) => <button>{label}</button>;
+        `,
+        'button.stories.tsx': dedent`
+          import React from 'react';
+          import { Button } from './button';
+          export default { component: Button };
+          export const Default = () => <Button label="Click" />;
+        `,
+      },
+      'button.stories.tsx'
+    );
+
+    expect({
+      description: entry.component?.reactComponentMeta?.description,
+      jsDocTags: entry.component?.componentJsDocTags,
+    }).toMatchInlineSnapshot(`
+      {
+        "description": "Uses {@link ToggleGroup} inline.
+
+      Also mid-line @see ToggleGroup for accessibility.",
+        "jsDocTags": {
+          "deprecated": [
+            "Use {@link NewButton} instead.",
+          ],
+          "since": [
+            "8.0",
+          ],
+        },
+      }
+    `);
+  });
 });

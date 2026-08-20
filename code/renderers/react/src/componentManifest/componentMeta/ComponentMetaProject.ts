@@ -276,7 +276,7 @@ export class ComponentMetaProject extends ProgramBackedProject<
         if (doc) {
           entryComponent.reactComponentMeta = doc;
           entryComponent.componentJsDocTags = doc.jsDocTags;
-          entryComponent.importOverride = entryComponent.componentJsDocTags?.import?.[0]?.trim();
+          entryComponent.importOverride = entryComponent.componentJsDocTags?.import?.[0];
         }
       } catch {
         // One bad component should not kill the entire batch.

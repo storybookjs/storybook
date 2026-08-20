@@ -23,8 +23,9 @@
  */
 import type ts from 'typescript';
 
+import { extractJSDocInfo } from 'storybook/internal/csf-tools';
+
 import type { ComponentRef, ResolvedComponentTarget } from '../types.ts';
-import { groupBy } from '../utils.ts';
 
 // ---------------------------------------------------------------------------
 // Output types — compatible with react-docgen-typescript's ComponentDoc shape
@@ -1371,23 +1372,45 @@ function computeDisplayName({
   return exportName;
 }
 
-function extractComponentJsDocTags(
+function stripJsDocMarkers(text: string): string {
+  return text
+    .replace(/^\s*\/\*\*\s?/, '')
+    .replace(/\s?\*\/\s*$/, '')
+    .split(/\r?\n/)
+    .map((line) => line.replace(/^\s*\* ?/, ''))
+    .join('\n')
+    .trim();
+}
+
+function getLastJsDocBlock(typescript: typeof ts, declaration: ts.Node): ts.JSDoc | undefined {
+  let lastJsDoc: ts.JSDoc | undefined;
+  for (const node of typescript.getJSDocCommentsAndTags(declaration)) {
+    if (typescript.isJSDoc(node)) {
+      lastJsDoc = node;
+    }
+  }
+  return lastJsDoc;
+}
+
+function extractComponentJsDocInfo(
   typescript: typeof ts,
-  checker: ts.TypeChecker,
   symbol: ts.Symbol
-): Record<string, string[]> | undefined {
-  const tags = symbol.getJsDocTags(checker);
-  if (tags.length === 0) {
+): { description: string; tags?: Record<string, string[]> } | undefined {
+  const declaration = getSymbolContextNode(symbol);
+  if (!declaration) {
     return undefined;
   }
 
-  const groupedTags = groupBy(tags, (tag) => tag.name);
-  return Object.fromEntries(
-    Object.entries(groupedTags).map(([name, grouped]) => [
-      name,
-      (grouped ?? []).map((tag) => typescript.displayPartsToString(tag.text ?? []).trim()),
-    ])
-  );
+  const jsDoc = getLastJsDocBlock(typescript, declaration);
+  if (!jsDoc) {
+    return undefined;
+  }
+
+  const { description, tags } = extractJSDocInfo(stripJsDocMarkers(jsDoc.getText()));
+  return {
+    description: description.trim(),
+    tags: Object.keys(tags).length > 0 ? tags : undefined,
+  };
 }
 
 // ---------------------------------------------------------------------------
@@ -1560,14 +1583,15 @@ export function serializeComponentDoc(
     }) ??
     displayNameOverride;
 
-  const description = typescript.displayPartsToString(resolved.getDocumentationComment(checker));
-  const selectedJsDocTags = extractComponentJsDocTags(typescript, checker, resolved);
+  const selectedJsDocInfo = extractComponentJsDocInfo(typescript, resolved);
+  const description = selectedJsDocInfo?.description ?? '';
+  const selectedJsDocTags = selectedJsDocInfo?.tags;
   const exportResolved =
     exportSymbol && exportSymbol !== resolved
       ? resolveAliasedSymbol(typescript, checker, exportSymbol)
       : undefined;
   const exportJsDocTags = exportResolved
-    ? extractComponentJsDocTags(typescript, checker, exportResolved)
+    ? extractComponentJsDocInfo(typescript, exportResolved)?.tags
     : undefined;
   const jsDocTags =
     selectedJsDocTags?.import || !exportJsDocTags?.import

@@ -19,6 +19,7 @@ import {
   formatMultipleMatches,
   formatNoInstance,
   formatOldServer,
+  formatPortMismatch,
   formatRestartRequired,
   formatVersionMismatch,
 } from './attach-messages.ts';
@@ -80,6 +81,13 @@ export async function bootstrapAttachedRuntime(
       : projectMatches.filter((record) => record.port === options.port);
 
   if (matches.length === 0) {
+    if (options.port != null && projectMatches.length > 0) {
+      throw new AttachUnavailableError({
+        reason: 'port-mismatch',
+        instances: projectMatches,
+        remediation: formatPortMismatch(options.port, projectMatches),
+      });
+    }
     throw new AttachUnavailableError({
       reason: 'no-instance',
       instances: records,

@@ -7,6 +7,7 @@ import {
   formatCwdMismatch,
   formatMultipleMatches,
   formatNoInstance,
+  formatPortMismatch,
   formatOldServer,
   formatRestartRequired,
   formatVersionMismatch,
@@ -45,17 +46,27 @@ describe('attach failure messages', () => {
 
       Running Storybook instances that did not match this project — target one with \`cd <cwd>\` or \`--config-dir <dir>\`:
       - http://localhost:6006 (cwd \`/apps/web\`; configDir \`/apps/web/.storybook\`)
-        cd /apps/web && npx storybook tools --attach --cwd /apps/web --config-dir /apps/web/.storybook"
+        cd /apps/web && npx storybook tools --attach --cwd /apps/web --config-dir /apps/web/.storybook --port 6006"
     `);
   });
 
-  it('names each match and the --config-dir that selects it', () => {
+  it('names each match and the --config-dir or --port that selects it', () => {
     expect(formatMultipleMatches([other, sibling])).toMatchInlineSnapshot(`
-      "Multiple Storybook instances match this project. Disambiguate with \`--config-dir <dir>\`:
-      - http://localhost:6006 (configDir \`/apps/web/.storybook\`)
-        npx storybook tools --attach --cwd /apps/web --config-dir /apps/web/.storybook
-      - http://localhost:6007 (configDir \`/apps/ui/.storybook\`)
-        npx storybook tools --attach --cwd /apps/ui --config-dir /apps/ui/.storybook"
+      "Multiple Storybook instances match this project. Disambiguate with \`--config-dir <dir>\` or \`--port <number>\`:
+      - http://localhost:6006 (configDir \`/apps/web/.storybook\`; port \`6006\`)
+        npx storybook tools --attach --cwd /apps/web --config-dir /apps/web/.storybook --port 6006
+      - http://localhost:6007 (configDir \`/apps/ui/.storybook\`; port \`6007\`)
+        npx storybook tools --attach --cwd /apps/ui --config-dir /apps/ui/.storybook --port 6007"
+    `);
+  });
+
+  it('lists the running ports for the project when the requested port is not among them', () => {
+    expect(formatPortMismatch(9999, [other])).toMatchInlineSnapshot(`
+      "Storybook is running for this project, but not on port \`9999\`. Retry with one of the running ports below, or omit \`--port\` to route by project alone.
+
+      Running Storybooks for this project:
+      - port \`6006\` (http://localhost:6006)
+        npx storybook tools --attach --cwd /apps/web --config-dir /apps/web/.storybook --port 6006"
     `);
   });
 

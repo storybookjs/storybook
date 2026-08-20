@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseToolsTokens } from './tool-tokens.ts';
+import { parseToolsPort, parseToolsTokens } from './tool-tokens.ts';
 
 describe('parseToolsTokens', () => {
   it('parses --key value pairs with JSON coercion', () => {
@@ -81,5 +81,19 @@ describe('parseToolsTokens', () => {
     expect(parseToolsTokens(['--attach=yes'])).toMatchObject({ ok: false });
     expect(parseToolsTokens(['--no-attach=yes'])).toMatchObject({ ok: false });
     expect(parseToolsTokens(['--attach', '--no-attach'])).toMatchObject({ ok: false });
+  });
+});
+
+describe('parseToolsPort', () => {
+  it('accepts a missing port and an integer in range', () => {
+    expect(parseToolsPort(undefined)).toEqual({ ok: true, port: undefined });
+    expect(parseToolsPort('6007')).toEqual({ ok: true, port: 6007 });
+  });
+
+  it('rejects values that are not a port number', () => {
+    expect(parseToolsPort('abc')).toMatchObject({ ok: false });
+    expect(parseToolsPort('0')).toMatchObject({ ok: false });
+    expect(parseToolsPort('65536')).toMatchObject({ ok: false });
+    expect(parseToolsPort('6007.5')).toMatchObject({ ok: false });
   });
 });

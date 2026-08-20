@@ -11,7 +11,7 @@ import { Option, type Command } from 'commander';
 import type { ToolsetTelemetry } from '../../shared/open-service/toolset-definition.ts';
 import { resolveStorybookConfigDir } from './config-dir.ts';
 import { runToolsCommand, type ToolsCommandOutcome, type ToolsRunResult } from './run.ts';
-import { TOOLS_OPTION_SPECS, type ToolsOutputFlags } from './tool-tokens.ts';
+import { parseToolsPort, TOOLS_OPTION_SPECS, type ToolsOutputFlags } from './tool-tokens.ts';
 
 /** `handleCommandFailure` from `bin/core.ts`, passed in to avoid an import cycle. */
 export type CommandFailureHandler = (
@@ -21,6 +21,7 @@ export type CommandFailureHandler = (
 type ToolsPassthroughOptions = ToolsOutputFlags & {
   cwd?: string;
   configDir?: string;
+  port?: string;
   attach?: boolean;
   noAttach?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by `withTelemetry`. */
@@ -95,10 +96,18 @@ export function registerToolsPassthrough(
             const start = Date.now();
             let result: ToolsRunResult;
             try {
+              const parsedPort = parseToolsPort(options.port);
               if (options.attach && options.noAttach) {
                 result = {
                   exitCode: 1,
                   output: 'Cannot combine `--attach` and `--no-attach`.',
+                  outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+                  attachMode: 'auto',
+                };
+              } else if (!parsedPort.ok) {
+                result = {
+                  exitCode: 1,
+                  output: parsedPort.error,
                   outcome: { kind: 'intercept', reason: 'invalid-arguments' },
                   attachMode: 'auto',
                 };
@@ -108,7 +117,11 @@ export function registerToolsPassthrough(
                     toolset,
                     tool,
                     tokens,
-                    target: { cwd: options.cwd, configDir: options.configDir },
+                    target: {
+                      cwd: options.cwd,
+                      configDir: options.configDir,
+                      port: parsedPort.port,
+                    },
                     attach: options.noAttach ? false : options.attach,
                     flags: {
                       input: options.input,

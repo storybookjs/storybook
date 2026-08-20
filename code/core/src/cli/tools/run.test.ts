@@ -305,6 +305,24 @@ describe('local tools', () => {
       clientInfo: { name: 'storybook-cli', version: expect.any(String), kind: 'cli' },
     });
   });
+
+  it('forwards an explicit target port to the SDK', async () => {
+    const { deps, createTools } = makeDeps();
+
+    await runToolsCommand(
+      {
+        toolset: 'docs',
+        tool: 'list',
+        tokens: [],
+        target: { cwd: '/repo', port: 6007 },
+      },
+      deps
+    );
+
+    expect(createTools).toHaveBeenCalledWith(
+      expect.objectContaining({ cwd: '/repo', port: 6007, mode: 'auto' })
+    );
+  });
 });
 
 describe('requires-dev-server contract', () => {

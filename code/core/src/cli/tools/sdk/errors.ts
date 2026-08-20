@@ -4,6 +4,7 @@ import type { StorybookInstanceRecord } from '../instances/types.ts';
 /** Why attaching to a running Storybook was not possible. */
 export type AttachUnavailableReason =
   | 'no-instance'
+  | 'port-mismatch'
   | 'multiple-matches'
   | 'old-server'
   | 'connection-failed';

@@ -174,6 +174,7 @@ export async function runToolsCommand(
     tools = await (deps.createTools ?? createTools)({
       cwd: target.cwd,
       configDir: target.configDir,
+      ...(target.port != null ? { port: target.port } : {}),
       mode: requestedMode,
       clientInfo: CLI_CLIENT_INFO,
     });

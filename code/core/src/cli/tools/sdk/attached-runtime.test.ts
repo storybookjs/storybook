@@ -119,6 +119,18 @@ describe('bootstrapAttachedRuntime', () => {
     await expect(failure).rejects.toThrow('--config-dir /apps/web/.storybook');
   });
 
+  it('rejects a port that none of the project matches occupy', async () => {
+    const { deps } = makeRuntimeDeps([RECORD]);
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', port: 9999 }, deps);
+
+    await expect(failure).rejects.toThrow(AttachUnavailableError);
+    await expect(failure).rejects.toMatchObject({ data: { reason: 'port-mismatch' } });
+    await expect(failure).rejects.toThrow('not on port `9999`');
+    await expect(failure).rejects.toThrow('--port 6006');
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
+
   it('picks the instance on the requested port when several match the project', async () => {
     const onOtherPort: StorybookInstanceRecord = {
       ...RECORD,

@@ -1,9 +1,8 @@
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 
 function attachCommand(record: StorybookInstanceRecord): string {
-  return record.configDir
-    ? `npx storybook tools --attach --cwd ${record.cwd} --config-dir ${record.configDir}`
-    : `npx storybook tools --attach --cwd ${record.cwd}`;
+  const configDir = record.configDir ? ` --config-dir ${record.configDir}` : '';
+  return `npx storybook tools --attach --cwd ${record.cwd}${configDir} --port ${record.port}`;
 }
 
 export function formatNoInstance(records: StorybookInstanceRecord[]): string {
@@ -24,16 +23,27 @@ export function formatNoInstance(records: StorybookInstanceRecord[]): string {
   return lines.join('\n');
 }
 
+export function formatPortMismatch(port: number, records: StorybookInstanceRecord[]): string {
+  const lines = [
+    `Storybook is running for this project, but not on port \`${port}\`. Retry with one of the running ports below, or omit \`--port\` to route by project alone.`,
+    '',
+    'Running Storybooks for this project:',
+  ];
+  for (const record of records) {
+    lines.push(`- port \`${record.port}\` (${record.url})`);
+    lines.push(`  ${attachCommand(record)}`);
+  }
+  return lines.join('\n');
+}
+
 export function formatMultipleMatches(matches: StorybookInstanceRecord[]): string {
   const lines = [
-    'Multiple Storybook instances match this project. Disambiguate with `--config-dir <dir>`:',
+    'Multiple Storybook instances match this project. Disambiguate with `--config-dir <dir>` or `--port <number>`:',
   ];
   for (const record of matches) {
     const configDir = record.configDir ?? '(none)';
-    lines.push(`- ${record.url} (configDir \`${configDir}\`)`);
-    if (record.configDir) {
-      lines.push(`  ${attachCommand(record)}`);
-    }
+    lines.push(`- ${record.url} (configDir \`${configDir}\`; port \`${record.port}\`)`);
+    lines.push(`  ${attachCommand(record)}`);
   }
   return lines.join('\n');
 }

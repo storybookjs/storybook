@@ -11,6 +11,8 @@ export type ToolsTarget = {
   cwd?: string;
   /** Directory where to load Storybook configuration from; relative paths resolve from `cwd`. */
   configDir?: string;
+  /** Port of a running Storybook, to pick one instance when several match the project. */
+  port?: number;
 };
 
 export type InstanceDiscovery = {

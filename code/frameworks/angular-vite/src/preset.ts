@@ -307,7 +307,7 @@ export function angularOptionsPlugin(
   let resolvedPreviewPath: string | undefined;
   // Angular resolves builder paths against the workspace root, which in a monorepo is a level (or
   // several) above the Vite root. Both `stylePreprocessorOptions` and `styles` need it.
-  let workspaceRoot: string;
+  let workspaceRoot = process.cwd();
   return {
     name: 'storybook-angular-vite-options-plugin',
     config(userConfig: UserConfig) {

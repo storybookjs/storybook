@@ -8,7 +8,15 @@ import { resolve } from 'node:path';
 import { mergeConfig, normalizePath } from 'vite';
 
 import { ensureCompodocDocumentation } from './compodoc/ensure-documentation.ts';
-import { angularOptionsPlugin, compodocJsonStubPlugin, features, viteFinal } from './preset.ts';
+import {
+  angularOptionsPlugin,
+  compodocJsonStubPlugin,
+  experimental_docgenProvider,
+  experimental_manifests,
+  experimental_storyDocsProvider,
+  features,
+  viteFinal,
+} from './preset.ts';
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 
 // The plugin's `config` hook looks up the preview file on disk before reading
@@ -37,6 +45,19 @@ beforeEach(() => {
 });
 
 const WORKSPACE_ROOT = resolve('/workspace');
+
+// Storybook discovers these by reading the preset module's exports, so dropping a re-export is
+// type-valid and silent: docgen extraction simply stops running, and the failure only surfaces as
+// an empty static build several minutes into a sandbox job.
+describe('docgen preset entry points', () => {
+  it.each([
+    ['experimental_docgenProvider', experimental_docgenProvider],
+    ['experimental_manifests', experimental_manifests],
+    ['experimental_storyDocsProvider', experimental_storyDocsProvider],
+  ])('re-exports %s', (_name, entryPoint) => {
+    expect(entryPoint).toBeTypeOf('function');
+  });
+});
 
 const optionsWith = (
   frameworkOptions: Record<string, unknown>,

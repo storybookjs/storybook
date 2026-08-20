@@ -10,9 +10,12 @@ export default {
 type Story = StoryObj<typeof MyComponent>;
 
 // dummy component
-const MyComponent: FC<{ label: string; 'data-testid': string; 'aria-label': string }> = (props) => (
-  <pre>{JSON.stringify(props)}</pre>
-);
+const MyComponent: FC<{
+  label: string;
+  'data-testid': string;
+  'aria-label': string;
+  123: string;
+}> = (props) => <pre>{JSON.stringify(props)}</pre>;
 
 export const NoArgs = {} satisfies Story;
 
@@ -20,5 +23,11 @@ export const QuotedKebabArg = {
   args: {
     'data-testid': 'before',
     label: 'foo',
+  },
+} satisfies Story;
+
+export const NumericKeyArg = {
+  args: {
+    123: 'before',
   },
 } satisfies Story;

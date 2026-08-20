@@ -334,7 +334,7 @@ describe('success', () => {
     `);
   });
   test('Kebab-case args', async () => {
-    const newArgs = { 'data-testid': 'after', 'aria-label': 'button', label: 'bar' };
+    const newArgs = { 'data-testid': 'after', 'aria-label': 'button', label: 'bar', '123': 'baz' };
 
     const before = await format(await readFile(FILES.kebabCaseArgs, 'utf-8'), {
       parser: 'typescript',
@@ -360,7 +360,7 @@ describe('success', () => {
     // check if the code was updated correctly
     expect(getDiff(before, after)).toMatchInlineSnapshot(`
       "  ...
-          "aria-label": string;
+          123: string;
         }> = (props) => <pre>{JSON.stringify(props)}</pre>;
         
         
@@ -368,6 +368,7 @@ describe('success', () => {
       - 
       + export const NoArgs = {
       +   args: {
+      +     "123": "baz",
       +     "data-testid": "after",
       +     "aria-label": "button",
       +     label: "bar",
@@ -383,7 +384,21 @@ describe('success', () => {
       - 
       +     "data-testid": "after",
       +     label: "bar",
+      +     "123": "baz",
       +     "aria-label": "button",
+      + 
+          },
+        } satisfies Story;
+        
+        export const NumericKeyArg = {
+          args: {
+        
+      -     123: "before",
+      - 
+      +     123: "baz",
+      +     "data-testid": "after",
+      +     "aria-label": "button",
+      +     label: "bar",
       + 
           },
         } satisfies Story;

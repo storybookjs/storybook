@@ -14,6 +14,9 @@ const argKeyName = (key: t.ObjectProperty['key']): string | null => {
   if (t.isStringLiteral(key)) {
     return key.value;
   }
+  if (t.isNumericLiteral(key)) {
+    return String(key.value);
+  }
   return null;
 };
 

@@ -52,6 +52,7 @@ export {
   prependImportToSnippet,
   selectSnippetForStory,
   selectStoryDoc,
+  selectWarningForStory,
 } from './services/story-docs/snippet.ts';
 
 export type {

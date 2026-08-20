@@ -80,6 +80,7 @@ export async function createTools(
   };
 
   if (mode === 'attached') {
+    process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
     // local-runtime pulls core-server at import, which must not run before the attached channel is prepared.
     const { bootstrapAttachedRuntime } = await import('./attached-runtime.ts');
     const attached = await (deps.attach ?? bootstrapAttachedRuntime)({

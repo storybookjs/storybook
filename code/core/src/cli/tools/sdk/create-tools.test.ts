@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as v from 'valibot';
 
@@ -54,6 +54,10 @@ beforeEach(() => {
   vi.mocked(bootstrapToolsRuntime).mockResolvedValue(makeRuntime());
 });
 
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
+
 describe('createTools', () => {
   it('loads the target configuration in this process in local mode', async () => {
     const tools = await createTools({ cwd: '/repo', configDir: '.storybook', mode: 'local' });
@@ -92,6 +96,22 @@ describe('createTools', () => {
       url: 'http://localhost:6006',
       pid: 123,
     });
+  });
+
+  it('sets STORYBOOK_ATTACHED_TOOLS before attaching so store construction stays a follower', async () => {
+    delete process.env.STORYBOOK_ATTACHED_TOOLS;
+    const attach = vi.fn(async () => {
+      expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBe('true');
+      return {
+        runtime: makeRuntime(),
+        record: { url: 'http://localhost:6006', pid: 123, configDir: CONFIG_DIR },
+        connection: { close: vi.fn(), disconnected: new Promise<never>(() => {}) },
+      };
+    });
+
+    await createTools({ mode: 'attached' }, { attach });
+
+    expect(attach).toHaveBeenCalledOnce();
   });
 
   it('runs a requiresDevServer method when attached', async () => {

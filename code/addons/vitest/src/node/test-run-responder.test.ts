@@ -189,6 +189,21 @@ describe('wireTestRunResponder', () => {
     expect(options.presets.apply).not.toHaveBeenCalled();
   });
 
+  it('wires nothing on an attached tools host, so the instance remains the only leader', async () => {
+    vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', 'true');
+    const { wireTestRunResponder } = await loadResponder();
+    const channel = new Channel({});
+    const responses = vi.fn();
+    channel.on(TRIGGER_TEST_RUN_RESPONSE, responses);
+
+    await wireTestRunResponder({ channel, options: makeOptions() });
+    emitRequest(channel, 'req-1');
+
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    expect(responses).not.toHaveBeenCalled();
+    expect(experimental_UniversalStore.create).not.toHaveBeenCalled();
+  });
+
   it('wires nothing inside the vitest child process', async () => {
     vi.stubEnv('VITEST_CHILD_PROCESS', 'true');
     const { wireTestRunResponder } = await loadResponder();

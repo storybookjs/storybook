@@ -334,7 +334,14 @@ describe('success', () => {
     `);
   });
   test('Kebab-case args', async () => {
-    const newArgs = { 'data-testid': 'after', 'aria-label': 'button', label: 'bar', '123': 'baz' };
+    const newArgs = {
+      'data-testid': 'after',
+      'aria-label': 'button',
+      label: 'bar',
+      '123': 'baz',
+      default: 'reserved',
+      '123abc': 'mixed',
+    };
 
     const before = await format(await readFile(FILES.kebabCaseArgs, 'utf-8'), {
       parser: 'typescript',
@@ -372,6 +379,8 @@ describe('success', () => {
       +     "data-testid": "after",
       +     "aria-label": "button",
       +     label: "bar",
+      +     default: "reserved",
+      +     "123abc": "mixed",
       +   },
       + } satisfies Story;
       + 
@@ -386,6 +395,8 @@ describe('success', () => {
       +     label: "bar",
       +     "123": "baz",
       +     "aria-label": "button",
+      +     default: "reserved",
+      +     "123abc": "mixed",
       + 
           },
         } satisfies Story;
@@ -399,6 +410,8 @@ describe('success', () => {
       +     "data-testid": "after",
       +     "aria-label": "button",
       +     label: "bar",
+      +     default: "reserved",
+      +     "123abc": "mixed",
       + 
           },
         } satisfies Story;

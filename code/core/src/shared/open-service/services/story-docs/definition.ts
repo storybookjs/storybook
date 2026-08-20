@@ -56,10 +56,9 @@ export const storyDocsServiceDef = defineService({
         'Returns the story-docs payload for one component id, or undefined when not loaded.',
       input: storyDocsInputSchema,
       output: storyDocsOutputSchema,
-      handler: (input, ctx) =>
-        Object.hasOwn(ctx.self.state.components, input.id)
-          ? ctx.self.state.components[input.id]
-          : undefined,
+      // Read the key directly: `Object.hasOwn` bypasses the deep-signal `get` trap, so a subscriber
+      // that ran while the component was missing would never re-emit once its payload lands.
+      handler: (input, ctx) => ctx.self.state.components[input.id],
       // `load` only has to make sure the query has data, while the command re-extracts
       // unconditionally for the module-graph refresh that calls it directly. A stored extraction
       // error is not data: `extractAllStoryDocs` records one for every component whose provider

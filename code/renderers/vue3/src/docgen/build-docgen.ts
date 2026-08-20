@@ -37,6 +37,11 @@ const UNRESOLVED_COMPONENT_ERRORS: Record<
     name: 'No component import found',
     message: 'No component file found for the component declared in meta.component.',
   },
+  'unreadable-component-expression': {
+    name: 'No component found',
+    message:
+      'We could not follow meta.component to a component. Storybook follows an imported name, a namespace-import property access, or a chain of property accesses and spreads through modules it can resolve.',
+  },
 };
 
 /**

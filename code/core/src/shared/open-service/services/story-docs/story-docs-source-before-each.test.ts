@@ -6,7 +6,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
 import type { StoryDocsService } from './definition.ts';
-import { prependImportToSnippet, selectSnippetForStory } from './snippet.ts';
+import { prependImportToSnippet, selectSnippetForStory, selectWarningForStory } from './snippet.ts';
 import {
   shouldSkipStoryDocsEmit,
   storyDocsSourceBeforeEach,
@@ -32,6 +32,12 @@ const payload: StoryDocsPayload = {
     },
   },
 };
+const warning =
+  'Label is declared in the story file, so the snippet references it without importing it.';
+const payloadWithWarning: StoryDocsPayload = {
+  ...payload,
+  stories: { [storyId]: { ...payload.stories[storyId]!, warning } },
+};
 const serviceSnippet = 'import { Button } from \'./Button\';\n\n<Button label="hi" />';
 
 /** Builds a minimal `core/story-docs` service mock whose `storyDocs.loaded` returns `loaded`. */
@@ -52,6 +58,14 @@ describe('snippet helpers', () => {
 
   it('selects a story snippet with its import block from a payload', () => {
     expect(selectSnippetForStory(payload, storyId)).toBe(serviceSnippet);
+  });
+
+  it('selects the story warning from a payload', () => {
+    expect(selectWarningForStory(payloadWithWarning, storyId)).toBe(warning);
+  });
+
+  it('selects no warning for a story that does not carry one', () => {
+    expect(selectWarningForStory(payload, storyId)).toBeUndefined();
   });
 });
 
@@ -106,7 +120,46 @@ describe('storyDocsSourceBeforeEach', () => {
     await Promise.resolve();
     await Promise.resolve();
 
-    expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context);
+    expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context, undefined);
+    await cleanup?.();
+  });
+
+  it('emits the story warning alongside the service snippet', async () => {
+    mockStoryDocsService(() => Promise.resolve(payloadWithWarning));
+    const context = {
+      id: storyId,
+      parameters: { __isArgsStory: true },
+    } as unknown as StoryContext;
+
+    const cleanup = storyDocsSourceBeforeEach(context);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockedEmitTransformCode).toHaveBeenCalledWith(serviceSnippet, context, warning);
+    await cleanup?.();
+  });
+
+  it('emits no warning when it falls back to the CSF source', async () => {
+    mockStoryDocsService(() =>
+      Promise.resolve({ ...payloadWithWarning, stories: {} } as StoryDocsPayload)
+    );
+    const context = {
+      id: storyId,
+      parameters: {
+        __isArgsStory: true,
+        docs: { source: { originalSource: 'export const Primary = {};' } },
+      },
+    } as unknown as StoryContext;
+
+    const cleanup = storyDocsSourceBeforeEach(context);
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(mockedEmitTransformCode).toHaveBeenCalledWith(
+      'export const Primary = {};',
+      context,
+      undefined
+    );
     await cleanup?.();
   });
 

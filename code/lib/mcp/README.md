@@ -6,6 +6,11 @@ Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=r
 
 ## Self-hosting `@storybook/mcp`
 
+This package is a library: the tarball ships one module and no executable. It declares no `bin`,
+starts no process, and has no CLI. You register its tools on an MCP server you own, using the
+snippets below. If you want a running Storybook MCP server with no code at all, use the dev server
+instead — `storybook dev` serves one at `/mcp` through `@storybook/addon-mcp`.
+
 ### Prerequisites
 
 - Node.js 20+
@@ -15,7 +20,10 @@ Learn more about Storybook at [storybook.js.org](https://storybook.js.org/?ref=r
 
 ### Example implementation
 
-In-repo local server: [`serve.ts`](./serve.ts) (Node process that loads manifests from a directory or URL).
+The Storybook repository has a local HTTP server built on this package,
+[`serve.ts`](https://github.com/storybookjs/storybook/blob/next/code/lib/mcp/serve.ts), that loads
+manifests from a directory or URL. It is a development harness and is not part of the published
+package.
 
 The snippets below cover the common self-hosting patterns.
 

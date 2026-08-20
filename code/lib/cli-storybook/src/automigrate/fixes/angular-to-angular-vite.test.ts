@@ -4,14 +4,16 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
-import { loadConfig, printConfig } from 'storybook/internal/csf-tools';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
+
+import { ANALOG_VITE_PLUGIN_ANGULAR_VERSION } from 'storybook/internal/cli';
 
 import { add } from '../../add.ts';
 import { updateMainConfig } from '../helpers/mainConfigFile.ts';
 import type { CheckOptions } from './index.ts';
 import {
+  ANALOG_PACKAGE,
   ANGULAR_PACKAGE,
   ANGULAR_VITE_PACKAGE,
   angularToAngularVite,
@@ -66,7 +68,8 @@ vi.mock('../../add.ts', () => ({
   add: vi.fn().mockResolvedValue(undefined),
 }));
 
-vi.mock('../helpers/mainConfigFile.ts', () => ({
+vi.mock('../helpers/mainConfigFile.ts', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('../helpers/mainConfigFile.ts')>()),
   updateMainConfig: vi.fn(),
 }));
 
@@ -85,6 +88,7 @@ describe('angular-to-angular-vite', () => {
     packageJsonPaths: ['/project/package.json'],
     removeDependencies: vi.fn().mockResolvedValue(undefined),
     addDependencies: vi.fn().mockResolvedValue(undefined),
+    writePackageJson: vi.fn(),
     getDependencyVersion: vi.fn(),
     type: 'npm',
   } as unknown as JsPackageManager;
@@ -174,6 +178,7 @@ describe('angular-to-angular-vite', () => {
 
       const result = await angularToAngularVite.check({
         packageManager: mockPackageManager,
+        mainConfig: { framework: ANGULAR_PACKAGE },
       } as CheckOptions);
 
       expect(result).not.toBeNull();
@@ -190,6 +195,7 @@ describe('angular-to-angular-vite', () => {
 
       const result = await angularToAngularVite.check({
         packageManager: mockPackageManager,
+        mainConfig: { framework: ANGULAR_PACKAGE },
       } as CheckOptions);
 
       expect(result).not.toBeNull();
@@ -219,6 +225,7 @@ describe('angular-to-angular-vite', () => {
 
       const result = await angularToAngularVite.check({
         packageManager: mockPackageManager,
+        mainConfig: { framework: ANGULAR_PACKAGE },
       } as CheckOptions);
 
       expect(result?.hasWebpackFinal).toBe(true);
@@ -241,9 +248,112 @@ describe('angular-to-angular-vite', () => {
 
       const result = await angularToAngularVite.check({
         packageManager: mockPackageManager,
+        mainConfig: { framework: ANGULAR_PACKAGE },
       } as CheckOptions);
 
       expect(result?.hasWebpackFinal).toBe(false);
+    });
+
+    it('accepts an @analogjs/storybook-angular project and records it as the source framework', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        [ANGULAR_PACKAGE]: '^9.0.0',
+        [ANALOG_PACKAGE]: '^2.6.3',
+      });
+      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^21.0.0');
+      mockReadFile.mockRejectedValue(new Error('ENOENT'));
+
+      const result = await angularToAngularVite.check({
+        packageManager: mockPackageManager,
+        mainConfig: { framework: ANALOG_PACKAGE },
+      } as CheckOptions);
+
+      expect(result?.framework).toBe(ANALOG_PACKAGE);
+      expect(logger.warn).not.toHaveBeenCalled();
+    });
+
+    // `main.ts` conventionally writes `getAbsolutePath('<pkg>')`, and Storybook only maps that path
+    // back to a package name for frameworks it ships, so a third-party one arrives as a path.
+    it.each([
+      ['a resolved package directory', `/repo/node_modules/${ANALOG_PACKAGE}`],
+      [
+        'a pnpm virtual-store directory',
+        `/repo/node_modules/.pnpm/@analogjs+storybook-angular@2.6.3_x/node_modules/${ANALOG_PACKAGE}`,
+      ],
+    ])('resolves an Analog framework named by %s', async (_label, frameworkPath) => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        [ANALOG_PACKAGE]: '^2.6.3',
+      });
+      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^21.0.0');
+      mockReadFile.mockRejectedValue(new Error('ENOENT'));
+
+      const result = await angularToAngularVite.check({
+        packageManager: mockPackageManager,
+        mainConfig: { framework: { name: frameworkPath } },
+      } as CheckOptions);
+
+      expect(result?.framework).toBe(ANALOG_PACKAGE);
+    });
+
+    it('does not mistake a resolved @storybook/angular-vite path for @storybook/angular', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        [ANGULAR_PACKAGE]: '^9.0.0',
+      });
+      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^21.0.0');
+
+      const result = await angularToAngularVite.check({
+        packageManager: mockPackageManager,
+        mainConfig: { framework: { name: `/repo/node_modules/${ANGULAR_VITE_PACKAGE}` } },
+      } as CheckOptions);
+
+      expect(result).toBeNull();
+    });
+
+    it('records @storybook/angular as the source framework for a webpack project', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        [ANGULAR_PACKAGE]: '^9.0.0',
+      });
+      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^21.0.0');
+      mockReadFile.mockRejectedValue(new Error('ENOENT'));
+
+      const result = await angularToAngularVite.check({
+        packageManager: mockPackageManager,
+        mainConfig: { framework: ANGULAR_PACKAGE },
+      } as CheckOptions);
+
+      expect(result?.framework).toBe(ANGULAR_PACKAGE);
+    });
+
+    // Another Angular framework can carry `@storybook/angular` as a peer, so the dependency alone
+    // does not identify the framework the project renders with.
+    it('returns null and says why for an Angular framework it cannot rewrite', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        [ANGULAR_PACKAGE]: '^9.0.0',
+        '@acme/storybook-angular': '^1.0.0',
+      });
+      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^21.0.0');
+
+      const result = await angularToAngularVite.check({
+        packageManager: mockPackageManager,
+        mainConfig: { framework: '@acme/storybook-angular' },
+      } as CheckOptions);
+
+      expect(result).toBeNull();
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('@acme/storybook-angular'));
+    });
+
+    it('stays quiet about a non-Angular project that merely carries the dependency', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        [ANGULAR_PACKAGE]: '^9.0.0',
+      });
+      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(null);
+
+      const result = await angularToAngularVite.check({
+        packageManager: mockPackageManager,
+        mainConfig: { framework: '@storybook/react-vite' },
+      } as CheckOptions);
+
+      expect(result).toBeNull();
+      expect(logger.warn).not.toHaveBeenCalled();
     });
   });
 
@@ -258,6 +368,7 @@ describe('angular-to-angular-vite', () => {
 
   describe('run function', () => {
     const baseResult = {
+      framework: ANGULAR_PACKAGE,
       angularUnsupportedVersion: false,
       angularVersion: '21.0.0',
       hasWebpackFinal: false,
@@ -356,7 +467,10 @@ describe('angular-to-angular-vite', () => {
       // installed alongside the framework because yarn/pnpm do not auto-install missing peers.
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
         { type: 'devDependencies', skipInstall: true },
-        [`${ANGULAR_VITE_PACKAGE}@9.0.0`, '@analogjs/vite-plugin-angular']
+        [
+          `${ANGULAR_VITE_PACKAGE}@9.0.0`,
+          `@analogjs/vite-plugin-angular@${ANALOG_VITE_PLUGIN_ANGULAR_VERSION}`,
+        ]
       );
     });
 
@@ -545,6 +659,315 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith(['@compodoc/compodoc']);
     });
 
+    // The Compodoc cleanup is gated on the angular-vite builder, so the executor rewrite has to
+    // land before the cleanup reads it.
+    it("rewrites an Nx executor and drops that target's Compodoc options in the same run", async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(null);
+
+      // eslint-disable-next-line depend/ban-dependencies
+      const { globby } = await import('globby');
+      vi.mocked(globby).mockResolvedValue(['/project/libs/soba/project.json']);
+
+      let projectJsonContent = JSON.stringify(
+        {
+          name: 'soba',
+          targets: {
+            storybook: {
+              executor: '@storybook/angular:start-storybook',
+              options: { compodoc: true, compodocArgs: ['-e', 'json'], port: 6006 },
+            },
+          },
+        },
+        null,
+        2
+      );
+
+      mockReadFile.mockImplementation(
+        (filePath: any) =>
+          Promise.resolve(
+            String(filePath).endsWith('project.json')
+              ? projectJsonContent
+              : `export default { framework: '${ANGULAR_PACKAGE}' };`
+          ) as any
+      );
+      mockReadFileSync.mockImplementation((filePath: any) => {
+        if (String(filePath).endsWith('project.json')) {
+          return projectJsonContent;
+        }
+        throw new Error(`ENOENT: ${filePath}`);
+      });
+      mockExistsSync.mockReturnValue(false);
+      mockWriteFile.mockImplementation((filePath: any, content: any) => {
+        if (String(filePath).endsWith('project.json')) {
+          projectJsonContent = String(content);
+        }
+        return Promise.resolve() as any;
+      });
+      mockWriteFileSync.mockImplementation((filePath: any, content: any) => {
+        if (String(filePath).endsWith('project.json')) {
+          projectJsonContent = String(content);
+        }
+      });
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfig: { framework: ANGULAR_PACKAGE },
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      const written = JSON.parse(projectJsonContent);
+      expect(written.targets.storybook.executor).toBe(`${ANGULAR_VITE_PACKAGE}:start-storybook`);
+      expect(written.targets.storybook.options).toEqual({ port: 6006 });
+    });
+
+    // The workspace-wide rewrite has to cover the same tree as the package.json walk.
+    it('discovers project.json files from the workspace root, not the working directory', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      mockReadFile.mockResolvedValue(`export default { framework: '${ANGULAR_PACKAGE}' };`);
+
+      // eslint-disable-next-line depend/ban-dependencies
+      const { globby } = await import('globby');
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(globby).toHaveBeenCalledWith(
+        ['**/project.json'],
+        expect.objectContaining({
+          cwd: '/project',
+          absolute: true,
+          ignore: expect.arrayContaining(['**/storybook-static/**']),
+        })
+      );
+    });
+
+    // A dry run reads the files the real run would have rewritten by then, still on the old builder.
+    it('previews the Compodoc option edits it would make on a dry run', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(null);
+
+      // eslint-disable-next-line depend/ban-dependencies
+      const { globby } = await import('globby');
+      vi.mocked(globby).mockResolvedValue(['/project/libs/soba/project.json']);
+
+      const projectJsonContent = JSON.stringify({
+        name: 'soba',
+        targets: {
+          storybook: {
+            executor: '@storybook/angular:start-storybook',
+            options: { compodoc: true, compodocArgs: ['-e', 'json'], port: 6006 },
+          },
+        },
+      });
+
+      mockReadFile.mockImplementation(
+        (filePath: any) =>
+          Promise.resolve(
+            String(filePath).endsWith('project.json')
+              ? projectJsonContent
+              : `export default { framework: '${ANGULAR_PACKAGE}' };`
+          ) as any
+      );
+      mockReadFileSync.mockImplementation((filePath: any) => {
+        if (String(filePath).endsWith('project.json')) {
+          return projectJsonContent;
+        }
+        throw new Error(`ENOENT: ${filePath}`);
+      });
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: true,
+        packageManager: mockPackageManager,
+        mainConfig: { framework: ANGULAR_PACKAGE },
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockWriteFileSync).not.toHaveBeenCalled();
+      expect(logger.step).toHaveBeenCalledWith(
+        expect.stringContaining(
+          'Would remove the Compodoc builder options from /project/libs/soba/project.json'
+        )
+      );
+    });
+
+    it('skips a project.json that Storybook itself wrote into its build output', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+
+      // eslint-disable-next-line depend/ban-dependencies
+      const { globby } = await import('globby');
+      const discovered = [
+        '/project/libs/soba/project.json',
+        '/project/storybook-static/project.json',
+      ];
+      vi.mocked(globby).mockImplementation(async (_patterns: any, options: any) =>
+        discovered.filter(
+          (path) =>
+            !options?.ignore?.some((pattern: string) =>
+              path.includes(`/${pattern.replaceAll('**/', '').replaceAll('/**', '')}/`)
+            )
+        )
+      );
+
+      const projectJsonContent = JSON.stringify({
+        name: 'soba',
+        targets: { storybook: { executor: '@storybook/angular:start-storybook' } },
+      });
+
+      mockReadFile.mockImplementation(
+        (filePath: any) =>
+          Promise.resolve(
+            String(filePath).endsWith('project.json')
+              ? projectJsonContent
+              : `export default { framework: '${ANGULAR_PACKAGE}' };`
+          ) as any
+      );
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockWriteFile).toHaveBeenCalledWith(
+        '/project/libs/soba/project.json',
+        expect.stringContaining(`${ANGULAR_VITE_PACKAGE}:start-storybook`)
+      );
+      expect(mockWriteFile).not.toHaveBeenCalledWith(
+        '/project/storybook-static/project.json',
+        expect.anything()
+      );
+    });
+
+    it('rewrites an @analogjs/storybook-angular executor and renames its zoneless option', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+
+      // eslint-disable-next-line depend/ban-dependencies
+      const { globby } = await import('globby');
+      vi.mocked(globby).mockResolvedValueOnce(['/project/libs/soba/project.json']);
+
+      const projectJsonContent = JSON.stringify({
+        name: 'soba',
+        targets: {
+          storybook: {
+            executor: `${ANALOG_PACKAGE}:start-storybook`,
+            options: { experimentalZoneless: true },
+          },
+        },
+      });
+
+      mockReadFile.mockImplementation(
+        (filePath: any) =>
+          Promise.resolve(
+            String(filePath).endsWith('project.json')
+              ? projectJsonContent
+              : `export default { framework: '${ANALOG_PACKAGE}' };`
+          ) as any
+      );
+
+      await angularToAngularVite.run!({
+        result: { ...baseResult, framework: ANALOG_PACKAGE },
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      const written = vi
+        .mocked(mockWriteFile)
+        .mock.calls.find(([file]) => String(file).endsWith('project.json'))?.[1];
+      expect(written).toContain(`${ANGULAR_VITE_PACKAGE}:start-storybook`);
+      expect(written).not.toContain(ANALOG_PACKAGE);
+      // `experimentalZoneless` is Analog's spelling; angular-vite's schema only accepts `zoneless`,
+      // and rejects unknown keys outright.
+      expect(written).toContain('"zoneless": true');
+      expect(written).not.toContain('experimentalZoneless');
+    });
+
+    it('drops both the Analog framework and the @storybook/angular peer it required', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      mockReadFile.mockResolvedValue(`export default { framework: '${ANALOG_PACKAGE}' };`);
+
+      await angularToAngularVite.run!({
+        result: { ...baseResult, framework: ANALOG_PACKAGE },
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith([
+        ANALOG_PACKAGE,
+        ANGULAR_PACKAGE,
+      ]);
+    });
+
+    it('leaves a storybook target owned by another framework package alone', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+
+      // eslint-disable-next-line depend/ban-dependencies
+      const { globby } = await import('globby');
+      vi.mocked(globby).mockResolvedValueOnce(['/project/libs/soba/project.json']);
+
+      const projectJsonContent = JSON.stringify({
+        name: 'soba',
+        targets: {
+          storybook: {
+            executor: '@acme/storybook-angular:start-storybook',
+            options: { experimentalZoneless: true },
+          },
+        },
+      });
+
+      mockReadFile.mockImplementation(
+        (filePath: any) =>
+          Promise.resolve(
+            String(filePath).endsWith('project.json')
+              ? projectJsonContent
+              : `export default { framework: '${ANGULAR_PACKAGE}' };`
+          ) as any
+      );
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockWriteFile).not.toHaveBeenCalledWith(
+        '/project/libs/soba/project.json',
+        expect.anything()
+      );
+    });
+
     it('does not touch framework.options when compodoc is not disabled', async () => {
       mockPromptConfirm.mockResolvedValue(false);
 
@@ -578,6 +1001,36 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       } as any);
 
       expect(mockUpdateMainConfig).not.toHaveBeenCalled();
+    });
+
+    // Removing @storybook/angular while the main config still references it leaves Storybook unable
+    // to start.
+    it('stops before any edit when the framework field is not in the main config file', async () => {
+      mockPromptConfirm.mockResolvedValue(false);
+      mockReadFile.mockResolvedValue(
+        "import base from '../../.storybook/main.base'; export default { ...base };"
+      );
+
+      await angularToAngularVite.run!({
+        result: baseResult,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '9.0.0',
+      } as any);
+
+      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
+      expect(mockPackageManager.addDependencies).not.toHaveBeenCalled();
+      expect(mockWriteFile).not.toHaveBeenCalled();
+      expect(mockAdd).not.toHaveBeenCalled();
+      expect(logger.step).not.toHaveBeenCalledWith(
+        expect.stringContaining('Migration completed successfully')
+      );
+      expect(logger.error).toHaveBeenCalledWith(
+        expect.stringContaining('/project/.storybook/main.ts')
+      );
     });
 
     it('skips dependency and file updates in dry-run mode', async () => {
@@ -686,15 +1139,18 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         storybookVersion: '9.0.0',
       } as any);
 
-      expect(mockWriteFile).toHaveBeenCalledWith(
-        '/project/package.json',
-        expect.stringContaining('"test-storybook": "vitest run"')
+      // `JsPackageManager` reads package.json from a process-wide cache that a raw `writeFile`
+      // cannot invalidate, so a later `addDependencies` would write the pre-edit snapshot back.
+      expect(mockPackageManager.writePackageJson).toHaveBeenCalledWith(
+        expect.objectContaining({
+          scripts: {
+            storybook: `${ANGULAR_VITE_PACKAGE}:start-storybook`,
+            'test-storybook': 'vitest run',
+          },
+        }),
+        '/project'
       );
-      // Builder refs in the same file are still rewritten alongside the script change.
-      expect(mockWriteFile).toHaveBeenCalledWith(
-        '/project/package.json',
-        expect.stringContaining(`${ANGULAR_VITE_PACKAGE}:start-storybook`)
-      );
+      expect(mockWriteFile).not.toHaveBeenCalledWith('/project/package.json', expect.anything());
     });
 
     it('leaves package.json untouched when there is no test-storybook script or builder ref', async () => {
@@ -719,6 +1175,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       } as any);
 
       expect(mockWriteFile).not.toHaveBeenCalledWith('/project/package.json', expect.anything());
+      expect(mockPackageManager.writePackageJson).not.toHaveBeenCalled();
     });
 
     it('creates a wired vitest.config.ts when no Vite/Vitest config exists', async () => {
@@ -851,6 +1308,72 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
       it('does not modify the preview when every storybook target sets experimentalZoneless: true', async () => {
         mockPromptConfirm.mockResolvedValue(false);
         mockFilesFor(angularJsonWithFlag(true), 'export default {};');
+
+        await angularToAngularVite.run!({
+          result: baseResult,
+          dryRun: false,
+          packageManager: mockPackageManager,
+          mainConfigPath: '/project/.storybook/main.ts',
+          previewConfigPath,
+          storiesPaths: [],
+          configDir: '.storybook',
+          storybookVersion: '9.0.0',
+        } as any);
+
+        expect(mockWriteFile).not.toHaveBeenCalledWith(previewConfigPath, expect.anything());
+      });
+
+      // A multi-project upgrade runs every project's `run()` against the tree the first project's
+      // run already rewrote, so projects 2..N only ever see angular-vite refs.
+      it('still injects zone.js when an earlier run already rewrote the targets', async () => {
+        mockPromptConfirm.mockResolvedValue(false);
+        mockFilesFor(
+          JSON.stringify({
+            projects: {
+              myApp: {
+                architect: {
+                  storybook: { builder: `${ANGULAR_VITE_PACKAGE}:start-storybook`, options: {} },
+                },
+              },
+            },
+          }),
+          'export default {};'
+        );
+
+        await angularToAngularVite.run!({
+          result: baseResult,
+          dryRun: false,
+          packageManager: mockPackageManager,
+          mainConfigPath: '/project/.storybook/main.ts',
+          previewConfigPath,
+          storiesPaths: [],
+          configDir: '.storybook',
+          storybookVersion: '9.0.0',
+        } as any);
+
+        expect(mockWriteFile).toHaveBeenCalledWith(
+          previewConfigPath,
+          expect.stringContaining('import "zone.js";')
+        );
+      });
+
+      it('reads the zoneless flag an earlier run renamed, so a zoneless preview stays untouched', async () => {
+        mockPromptConfirm.mockResolvedValue(false);
+        mockFilesFor(
+          JSON.stringify({
+            projects: {
+              myApp: {
+                architect: {
+                  storybook: {
+                    builder: `${ANGULAR_VITE_PACKAGE}:start-storybook`,
+                    options: { zoneless: true },
+                  },
+                },
+              },
+            },
+          }),
+          'export default {};'
+        );
 
         await angularToAngularVite.run!({
           result: baseResult,

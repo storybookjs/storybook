@@ -232,4 +232,32 @@ describe('components-ref-manifest', () => {
       button: { id: 'button', name: 'button' },
     });
   });
+
+  it('keeps the story-docs ref when no docgen payload was extracted', () => {
+    const storyDocs: StoryDocsPayload = {
+      id: 'abstractions-billboard',
+      name: 'Billboard',
+      path: './billboard.stories.ts',
+      stories: {
+        'abstractions-billboard--default': {
+          id: 'abstractions-billboard--default',
+          name: 'Default',
+        },
+      },
+    };
+
+    expect(
+      toComponentManifestIndexEntries(
+        ['abstractions-billboard'],
+        {},
+        { 'abstractions-billboard': storyDocs }
+      )
+    ).toEqual({
+      'abstractions-billboard': {
+        id: 'abstractions-billboard',
+        name: 'abstractions-billboard',
+        stories: { $ref: storyDocsManifestRef('abstractions-billboard') },
+      },
+    });
+  });
 });

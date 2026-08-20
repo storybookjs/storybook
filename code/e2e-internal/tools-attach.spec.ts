@@ -1,7 +1,7 @@
-import { execFile } from 'node:child_process';
-import { dirname, join } from 'node:path';
-import { fileURLToPath } from 'node:url';
-import { promisify } from 'node:util';
+import { execFile } from 'child_process';
+import { join } from 'path';
+import { promisify } from 'util';
+import process from 'process';
 
 import { expect, test } from '@playwright/test';
 
@@ -14,11 +14,9 @@ import { expect, test } from '@playwright/test';
  */
 
 const execFileAsync = promisify(execFile);
-const here = dirname(fileURLToPath(import.meta.url));
-const codeDir = join(here, '..');
-const dispatcher = join(codeDir, 'core/dist/bin/dispatcher.js');
+const dispatcher = join(process.cwd(), 'core/dist/bin/dispatcher.js');
 
-async function runTools(args: string[], cwd = codeDir) {
+async function runTools(args: string[], cwd = process.cwd()) {
   try {
     const { stdout, stderr } = await execFileAsync(
       process.execPath,
@@ -30,6 +28,7 @@ async function runTools(args: string[], cwd = codeDir) {
           STORYBOOK_DISABLE_TELEMETRY: '1',
         },
         timeout: 60_000,
+        maxBuffer: 16 * 1024 * 1024,
       }
     );
     return { exitCode: 0, output: `${stdout}${stderr}` };
@@ -54,17 +53,13 @@ test.describe('storybook tools --attach', () => {
   });
 
   test('docs show, stories preview, and review create against the running internal UI', async () => {
-    const list = await runTools(['--attach', 'docs', 'list', '--json']);
+    const list = await runTools(['--attach', 'docs', 'list']);
     expect(list.exitCode, list.output).toBe(0);
-    const parsed = JSON.parse(list.output) as {
-      manifests?: { componentManifest?: { components?: Record<string, { id?: string }> } };
-    };
-    const docsId = Object.keys(parsed.manifests?.componentManifest?.components ?? {})[0];
-    expect(docsId).toBeTruthy();
+    expect(list.output).toContain('example-button');
 
-    const show = await runTools(['--attach', 'docs', 'show', '--id', docsId]);
+    const show = await runTools(['--attach', 'docs', 'show', '--id', 'example-button']);
     expect(show.exitCode, show.output).toBe(0);
-    expect(show.output.length).toBeGreaterThan(0);
+    expect(show.output).toContain('label');
 
     const preview = await runTools([
       '--attach',

@@ -2,6 +2,7 @@
 // looking at. Imported by the dev-server story-docs provider and by the preview, so this module
 // must stay free of `@angular/core` and of any other runtime-only import.
 import { escapeAttributeExpression, printArgExpression } from './arg-expression.ts';
+import type { HostComponentSnippetInput } from './host-component-snippet.ts';
 import { buildHostComponentSnippet } from './host-component-snippet.ts';
 import type { TagClose } from './template-grammar.ts';
 import { layoutTag } from './template-grammar.ts';
@@ -17,7 +18,10 @@ export const SNIPPET_TEMPLATE_KIND = 'angular-snippet-template';
  * `*ngComponentOutlet`, or holds an arg that only running the story could resolve, carries no
  * template at all - a partial one would let the preview render something the server never would.
  */
-export interface StorySnippetTemplate {
+export interface StorySnippetTemplate extends Omit<
+  HostComponentSnippetInput,
+  'viaComponentOutlet' | 'fields'
+> {
   kind: typeof SNIPPET_TEMPLATE_KIND;
   /**
    * The story's tag in wire form: the open line, one binding per line, and the tag's end last, with
@@ -28,16 +32,6 @@ export interface StorySnippetTemplate {
    * binding where the component declares it rather than appending it wherever it was switched on.
    */
   template: string;
-  /** Local name the template and the `imports` array refer to the component by. */
-  componentName: string;
-  /** Import statement for the component; absent when it is declared in the story file itself. */
-  componentImport?: string;
-  /** `false` for a `standalone: false` component, which only its declaring NgModule can provide. */
-  standalone: boolean;
-  /** Output binding names, each of which needs a handler for the template to compile. */
-  outputs: string[];
-  /** NgModules that stand in for a non-standalone component. */
-  ngModules?: { names: string[]; importStatements: string[] };
 }
 
 export const isStorySnippetTemplate = (value: unknown): value is StorySnippetTemplate =>
@@ -108,12 +102,10 @@ export const renderSnippetFromTemplate = (
     end === '/>' ? { selfClosing: true } : { selfClosing: false, tag: end.slice(2, -1), inner: '' };
 
   return buildHostComponentSnippet({
+    ...snippetTemplate,
     template: layoutTag({ open: lines[0]!, bindings, close, style: 'snippet' }),
-    componentName: snippetTemplate.componentName,
-    componentImport: snippetTemplate.componentImport,
+    // The outlet path shows no args at all, so it never carries a template; the authored-markup
+    // path owns `fields`, and it never carries one either.
     viaComponentOutlet: false,
-    standalone: snippetTemplate.standalone,
-    ngModules: snippetTemplate.ngModules,
-    outputs: snippetTemplate.outputs,
   }).snippet;
 };

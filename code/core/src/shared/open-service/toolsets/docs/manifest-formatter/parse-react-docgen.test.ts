@@ -512,7 +512,7 @@ describe.each([
     `);
   });
 
-  test('skips non-string tag values', () => {
+  test('renders non-string tag values instead of dropping them', () => {
     const result = parseComponentDocLike({
       displayName: 'Button',
       filePath: 'src/Button.tsx',
@@ -522,6 +522,9 @@ describe.each([
         deprecated: 'Use NewButton instead.',
         since: 123,
         see: null,
+        author: ['Ada', 'Grace'],
+        meta: { owner: 'design-system' },
+        experimental: true,
       },
       props: {},
     });
@@ -530,8 +533,24 @@ describe.each([
       {
         "props": {},
         "tags": {
+          "author": [
+            "Ada",
+            "Grace",
+          ],
           "deprecated": [
             "Use NewButton instead.",
+          ],
+          "experimental": [
+            "true",
+          ],
+          "meta": [
+            "{"owner":"design-system"}",
+          ],
+          "see": [
+            "",
+          ],
+          "since": [
+            "123",
           ],
         },
       }

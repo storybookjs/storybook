@@ -50,7 +50,7 @@ type PropDescriptor = NonNullable<Documentation['props']>[string];
 
 /** Structural subset of react-docgen-typescript's `ComponentDoc` output. */
 type ComponentDoc = {
-  tags?: Record<string, string>;
+  tags?: Record<string, unknown>;
   props?: Record<
     string,
     {
@@ -146,12 +146,20 @@ export const parseReactDocgen = (reactDocgen: Documentation): ParsedDocgen => {
  * RDT uses flat type strings (prop.type.name / prop.type.raw) instead of react-docgen's
  * nested tsType structure, so no serialization is needed.
  */
+const tagValues = (value: unknown): string[] => {
+  if (Array.isArray(value)) {
+    return value.flatMap(tagValues);
+  }
+  if (value === null || value === undefined) {
+    return [''];
+  }
+  return [typeof value === 'object' ? JSON.stringify(value) : String(value)];
+};
+
 const parseComponentDocLike = (componentDoc: ComponentDocLike): ParsedDocgen => {
   const props = componentDoc.props ?? {};
   const tags = Object.fromEntries(
-    Object.entries(componentDoc.tags ?? {}).flatMap(([tagName, value]) =>
-      typeof value === 'string' ? [[tagName, [value]]] : []
-    )
+    Object.entries(componentDoc.tags ?? {}).map(([tagName, value]) => [tagName, tagValues(value)])
   );
   const parsedDocgen: ParsedDocgen = {
     props: Object.fromEntries(

@@ -135,7 +135,9 @@ function formatTagName(tagName: string): string {
 }
 
 function formatJsDocTagBlockquote(tagName: string, values: string[]): string[] {
-  return values.flatMap((value) => {
+  const described = values.filter((value) => value.trim());
+
+  return (described.length > 0 ? described : ['']).flatMap((value) => {
     const [firstLine, ...remainingLines] = value.trim().split('\n');
     const label = formatTagName(tagName);
     return [

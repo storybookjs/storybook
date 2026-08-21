@@ -170,8 +170,7 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
         > **Since:** 1.2.3
         > **See:** ButtonGroup
-        > **CustomTag:** alpha
-        > **CustomTag**"
+        > **CustomTag:** alpha"
       `);
     });
 

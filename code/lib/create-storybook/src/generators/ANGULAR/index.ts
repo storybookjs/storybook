@@ -7,6 +7,7 @@ import {
   AngularJSON,
   ProjectType,
   copyTemplate,
+  toDevkitVersion,
 } from 'storybook/internal/cli';
 import { MIN_SUPPORTED_NODE_VERSIONS } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -107,12 +108,11 @@ export default defineGeneratorModule({
     });
     angularJSON.write();
 
-    // Everything below either feeds this to `semver.minVersion` (which throws on a non-range) or
-    // interpolates it into an install specifier, so only a real semver range may reach it. The raw
-    // package.json specifier is `catalog:angular` or `workspace:*` in a monorepo; prefer the
-    // declared range so the project's own caret convention carries into the packages we add, and
-    // fall back to the package manager's resolution, which reads pnpm catalogs and the installed
-    // version. Anything still not a range leaves the added packages unpinned.
+    // Everything below interpolates this into an install specifier, so only a real semver range
+    // may reach it. The raw package.json specifier is `catalog:angular` or `workspace:*` in a
+    // monorepo; prefer the declared range so the project's own caret convention carries into the
+    // packages we add, and fall back to the package manager's resolution, which reads pnpm
+    // catalogs and the installed version. Anything still not a range leaves the packages unpinned.
     const asRange = (specifier: string | null | undefined) =>
       specifier && semver.validRange(specifier) ? specifier : null;
     const angularVersion =
@@ -150,23 +150,6 @@ export default defineGeneratorModule({
       rmSync(join(storybookFolder, 'tsconfig.doc.json'), { force: true });
     }
 
-    const toDevkitVersion = (ngRange?: string | null) => {
-      if (!ngRange) {
-        return undefined;
-      }
-      const min = semver.minVersion(ngRange);
-
-      if (!min) {
-        return undefined;
-      }
-      const pre = min.prerelease && min.prerelease.length > 0 ? `-${min.prerelease.join('.')}` : '';
-      // devkit follows 0.<major*100 + minor>.<patch>
-      const devkitMinor = min.major * 100 + min.minor;
-      const versionCore = `0.${devkitMinor}.${min.patch}${pre}`;
-      const hasCaret = ngRange.trim().startsWith('^');
-      return hasCaret ? `^${versionCore}` : versionCore;
-    };
-
     const devkitVersion = toDevkitVersion(angularVersion);
 
     const extraAngularDeps = [
@@ -200,6 +183,10 @@ export default defineGeneratorModule({
       ...(isVite
         ? [
             angularVersion ? `@angular/animations@${angularVersion}` : '@angular/animations',
+            // `@analogjs/vite-plugin-angular` `require`s `@angular/build/private` on every Angular
+            // it supports above 17, and marks the peer optional, so a missing `@angular/build`
+            // installs cleanly and then fails at runtime with `Cannot find module`.
+            angularVersion ? `@angular/build@${angularVersion}` : '@angular/build',
             `@analogjs/vite-plugin-angular@${ANALOG_VITE_PLUGIN_ANGULAR_VERSION}`,
             'vite',
           ]

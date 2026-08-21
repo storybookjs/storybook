@@ -107,7 +107,11 @@ export default defineGeneratorModule({
     });
     angularJSON.write();
 
-    const angularVersion = packageManager.getDependencyVersion('@angular/core');
+    const asRange = (specifier: string | null | undefined) =>
+      specifier && semver.validRange(specifier) ? specifier : null;
+    const angularVersion =
+      asRange(packageManager.getDependencyVersion('@angular/core')) ??
+      asRange(await packageManager.getDeclaredVersionSpecifier('@angular/core'));
 
     // Handle script addition for single-project workspaces
     if (Object.keys(projects).length === 1) {

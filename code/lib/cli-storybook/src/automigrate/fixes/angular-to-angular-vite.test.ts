@@ -4,6 +4,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
+import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import { logger, prompt } from 'storybook/internal/node-logger';
 
@@ -90,19 +91,69 @@ describe('angular-to-angular-vite', () => {
     addDependencies: vi.fn().mockResolvedValue(undefined),
     writePackageJson: vi.fn(),
     getDependencyVersion: vi.fn(),
+    getDeclaredVersionSpecifier: vi.fn(),
     type: 'npm',
   } as unknown as JsPackageManager;
+
+  /**
+   * Model both package-manager reads at once, the way the real ones relate: `getDependencyVersion`
+   * hands back the raw package.json specifier, while `getDeclaredVersionSpecifier` resolves it
+   * (installed version first, then a pnpm catalog lookup).
+   */
+  const mockAngularCore = ({
+    declared,
+    resolved,
+  }: {
+    declared: string | null;
+    resolved: string | null;
+  }) => {
+    vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(declared);
+    vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue(resolved);
+  };
 
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(mockPackageManager.removeDependencies).mockResolvedValue(undefined);
     vi.mocked(mockPackageManager.addDependencies).mockResolvedValue(undefined);
-    vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(null);
+    mockAngularCore({ declared: null, resolved: null });
     vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({});
     // Default: angular.json doesn't exist (AngularJSON gracefully skips it). Tests that need
     // angular.json content override this via `mockAngularJson(...)`.
     mockExistsSync.mockReturnValue(false);
   });
+
+  /**
+   * Drive the fix end to end the way the automigrate runner does: `check()`, then `run()` on
+   * whatever it returned. A precondition that bails inside `run()` shows up here as "nothing was
+   * migrated", which is exactly what the runner cannot see: it records the fix as succeeded.
+   */
+  const checkThenRun = async (
+    mainConfig: StorybookConfigRaw = { framework: ANGULAR_PACKAGE, stories: [] }
+  ) => {
+    // Declines the optional addon prompts so the run stops at the dependency rewrite.
+    mockPromptConfirm.mockResolvedValue(false);
+    mockReadFile.mockResolvedValue(`export default { framework: '${ANGULAR_PACKAGE}' };`);
+
+    const result = await angularToAngularVite.check({
+      packageManager: mockPackageManager,
+      mainConfig,
+    } as CheckOptions);
+
+    if (result) {
+      await angularToAngularVite.run!({
+        result,
+        dryRun: false,
+        packageManager: mockPackageManager,
+        mainConfig,
+        mainConfigPath: '/project/.storybook/main.ts',
+        storiesPaths: [],
+        configDir: '.storybook',
+        storybookVersion: '10.0.0',
+      });
+    }
+
+    return result;
+  };
 
   /** Wire the sync `node:fs` mocks so `AngularJSON` reads `/project/angular.json` as `content`. */
   const mockAngularJson = (content: string) => {
@@ -159,6 +210,7 @@ describe('angular-to-angular-vite', () => {
         packageJsonPaths: [],
         getAllDependencies: vi.fn().mockReturnValue({}),
         getDependencyVersion: vi.fn().mockReturnValue(null),
+        getDeclaredVersionSpecifier: vi.fn().mockResolvedValue(null),
       } as unknown as JsPackageManager;
 
       const result = await angularToAngularVite.check({
@@ -168,46 +220,112 @@ describe('angular-to-angular-vite', () => {
       expect(result).toBeNull();
     });
 
-    it('reports angularUnsupportedVersion: true when @angular/core is < 21', async () => {
-      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
-        [ANGULAR_PACKAGE]: '^9.0.0',
-      });
-      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^20.0.0');
-      // main config read will throw (no file) — that's fine, hasWebpackFinal stays false
-      mockReadFile.mockRejectedValue(new Error('ENOENT'));
+    // The Angular 21 prerequisite used to be read off the raw package.json specifier, which is not
+    // a version in any monorepo: `semver.coerce` returns null for `catalog:` and `workspace:`, and
+    // the specifier is missing entirely when `@angular/core` is declared in a workspace package the
+    // CLI does not scan. Every one of these projects was told the migration had succeeded while it
+    // had bailed out untouched, so these assert the migration actually happened.
+    it.each([
+      ['a pnpm catalog pin', 'catalog:angular', '21.2.19'],
+      ['the workspace protocol', 'workspace:*', '21.0.4'],
+      ['a declaration the CLI cannot see in any scanned package.json', null, '21.2.7'],
+    ])(
+      'migrates an Angular 21 project that declares @angular/core with %s',
+      async (_label, declared, resolved) => {
+        vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+          [ANGULAR_PACKAGE]: '^10.0.0',
+          ...(declared ? { '@angular/core': declared } : {}),
+        });
+        mockAngularCore({ declared, resolved });
 
-      const result = await angularToAngularVite.check({
-        packageManager: mockPackageManager,
-        mainConfig: { framework: ANGULAR_PACKAGE },
-      } as CheckOptions);
+        const result = await checkThenRun();
+
+        expect(result).not.toBeNull();
+        expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith([ANGULAR_PACKAGE]);
+      }
+    );
+
+    // Pin rather than regression test: `^21.2.0` already cleared the old `coerce`-based gate. It
+    // guards the replacement, where reading the range as a version (`satisfies('^21.2.0',
+    // '>=21.0.0')` is false) would reject every project that declares one.
+    it('migrates an Angular 21 project that declares a caret range', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        [ANGULAR_PACKAGE]: '^10.0.0',
+        '@angular/core': '^21.2.0',
+      });
+      mockAngularCore({ declared: '^21.2.0', resolved: '^21.2.0' });
+
+      const result = await checkThenRun();
 
       expect(result).not.toBeNull();
-      expect(result?.angularUnsupportedVersion).toBe(true);
-      expect(result?.angularVersion).toBe('20.0.0');
+      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith([ANGULAR_PACKAGE]);
     });
 
-    it('reports angularUnsupportedVersion: false when @angular/core is 21.x', async () => {
+    // Bailing inside `run()` left the runner recording FixStatus.SUCCEEDED for a migration that
+    // never ran. Returning null keeps the fix from being offered at all.
+    it.each([
+      ['an exact version', '20.3.1'],
+      ['a caret range', '^20.0.0'],
+      // The lower bound is what decides: this range still resolves to Angular 20.
+      ['a range that also admits Angular 20', '^20.0.0 || ^21.0.0'],
+    ])('does not offer the migration on Angular 20, declared as %s', async (_label, resolved) => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
-        [ANGULAR_PACKAGE]: '^9.0.0',
+        [ANGULAR_PACKAGE]: '^10.0.0',
+        '@angular/core': resolved,
       });
-      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^21.2.0');
-      mockReadFile.mockRejectedValue(new Error('ENOENT'));
+      mockAngularCore({ declared: resolved, resolved });
 
-      const result = await angularToAngularVite.check({
-        packageManager: mockPackageManager,
-        mainConfig: { framework: ANGULAR_PACKAGE },
-      } as CheckOptions);
+      const result = await checkThenRun();
+
+      expect(result).toBeNull();
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('needs Angular 21'));
+      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
+    });
+
+    // Fail open: refusing a supported project is the failure being fixed here, and the migration's
+    // other preconditions still apply.
+    it('migrates with a warning when the @angular/core version cannot be determined', async () => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        [ANGULAR_PACKAGE]: '^10.0.0',
+        '@angular/core': 'workspace:*',
+      });
+      mockAngularCore({ declared: 'workspace:*', resolved: null });
+
+      const result = await checkThenRun();
 
       expect(result).not.toBeNull();
-      expect(result?.angularUnsupportedVersion).toBe(false);
-      expect(result?.angularVersion).toBe('21.2.0');
+      expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Could not determine'));
+      expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith([ANGULAR_PACKAGE]);
     });
+
+    // `*` and its spellings admit every version, so their floor is 0.0.0. Angular has never had a
+    // 0.x, so that floor is an absence of information and belongs on the fail-open path rather than
+    // being refused as "this project is on Angular 0".
+    it.each(['*', 'x', '>=0.0.0', '21.2.7 || *'])(
+      'treats %s as an unknown version and migrates with a warning',
+      async (declared) => {
+        vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+          [ANGULAR_PACKAGE]: '^10.0.0',
+          '@angular/core': declared,
+        });
+        // The package manager really does hand `*` back: `semver.validRange('*')` is truthy, so
+        // `getDeclaredVersionSpecifier` returns the declared range rather than null.
+        mockAngularCore({ declared, resolved: declared });
+
+        const result = await checkThenRun();
+
+        expect(result).not.toBeNull();
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Could not determine'));
+        expect(logger.warn).not.toHaveBeenCalledWith(expect.stringContaining('Angular 0'));
+        expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith([ANGULAR_PACKAGE]);
+      }
+    );
 
     it('reports hasWebpackFinal: true when main config contains webpackFinal', async () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
         [ANGULAR_PACKAGE]: '^9.0.0',
       });
-      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^21.0.0');
+      mockAngularCore({ declared: '^21.0.0', resolved: '21.0.4' });
 
       // check() reads main config files first (via the webpackFinal probe loop),
       // then reads package.json files (for packageJsonFiles collection).
@@ -235,7 +353,7 @@ describe('angular-to-angular-vite', () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
         [ANGULAR_PACKAGE]: '^9.0.0',
       });
-      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^21.0.0');
+      mockAngularCore({ declared: '^21.0.0', resolved: '21.0.4' });
 
       mockReadFile.mockImplementation((filePath: any) => {
         if (String(filePath).endsWith('package.json')) {
@@ -259,7 +377,7 @@ describe('angular-to-angular-vite', () => {
         [ANGULAR_PACKAGE]: '^9.0.0',
         [ANALOG_PACKAGE]: '^2.6.3',
       });
-      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^21.0.0');
+      mockAngularCore({ declared: '^21.0.0', resolved: '21.0.4' });
       mockReadFile.mockRejectedValue(new Error('ENOENT'));
 
       const result = await angularToAngularVite.check({
@@ -283,7 +401,7 @@ describe('angular-to-angular-vite', () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
         [ANALOG_PACKAGE]: '^2.6.3',
       });
-      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^21.0.0');
+      mockAngularCore({ declared: '^21.0.0', resolved: '21.0.4' });
       mockReadFile.mockRejectedValue(new Error('ENOENT'));
 
       const result = await angularToAngularVite.check({
@@ -298,7 +416,7 @@ describe('angular-to-angular-vite', () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
         [ANGULAR_PACKAGE]: '^9.0.0',
       });
-      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^21.0.0');
+      mockAngularCore({ declared: '^21.0.0', resolved: '21.0.4' });
 
       const result = await angularToAngularVite.check({
         packageManager: mockPackageManager,
@@ -312,7 +430,7 @@ describe('angular-to-angular-vite', () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
         [ANGULAR_PACKAGE]: '^9.0.0',
       });
-      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^21.0.0');
+      mockAngularCore({ declared: '^21.0.0', resolved: '21.0.4' });
       mockReadFile.mockRejectedValue(new Error('ENOENT'));
 
       const result = await angularToAngularVite.check({
@@ -330,7 +448,7 @@ describe('angular-to-angular-vite', () => {
         [ANGULAR_PACKAGE]: '^9.0.0',
         '@acme/storybook-angular': '^1.0.0',
       });
-      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue('^21.0.0');
+      mockAngularCore({ declared: '^21.0.0', resolved: '21.0.4' });
 
       const result = await angularToAngularVite.check({
         packageManager: mockPackageManager,
@@ -345,7 +463,7 @@ describe('angular-to-angular-vite', () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
         [ANGULAR_PACKAGE]: '^9.0.0',
       });
-      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(null);
+      mockAngularCore({ declared: null, resolved: null });
 
       const result = await angularToAngularVite.check({
         packageManager: mockPackageManager,
@@ -369,8 +487,6 @@ describe('angular-to-angular-vite', () => {
   describe('run function', () => {
     const baseResult = {
       framework: ANGULAR_PACKAGE,
-      angularUnsupportedVersion: false,
-      angularVersion: '21.0.0',
       hasWebpackFinal: false,
       packageJsonFiles: ['/project/package.json'],
     };
@@ -387,20 +503,6 @@ describe('angular-to-angular-vite', () => {
           storybookVersion: '9.0.0',
         } as any)
       ).resolves.toBeUndefined();
-
-      expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
-    });
-
-    it('exits early and logs message when Angular version is unsupported', async () => {
-      await angularToAngularVite.run!({
-        result: { ...baseResult, angularUnsupportedVersion: true, angularVersion: '20.0.0' },
-        dryRun: false,
-        packageManager: mockPackageManager,
-        mainConfigPath: '/project/.storybook/main.ts',
-        storiesPaths: [],
-        configDir: '.storybook',
-        storybookVersion: '9.0.0',
-      } as any);
 
       expect(mockPackageManager.removeDependencies).not.toHaveBeenCalled();
     });
@@ -663,7 +765,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
     // land before the cleanup reads it.
     it("rewrites an Nx executor and drops that target's Compodoc options in the same run", async () => {
       mockPromptConfirm.mockResolvedValue(false);
-      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(null);
+      mockAngularCore({ declared: null, resolved: null });
 
       // eslint-disable-next-line depend/ban-dependencies
       const { globby } = await import('globby');
@@ -757,7 +859,7 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
     // A dry run reads the files the real run would have rewritten by then, still on the old builder.
     it('previews the Compodoc option edits it would make on a dry run', async () => {
       mockPromptConfirm.mockResolvedValue(false);
-      vi.mocked(mockPackageManager.getDependencyVersion).mockReturnValue(null);
+      mockAngularCore({ declared: null, resolved: null });
 
       // eslint-disable-next-line depend/ban-dependencies
       const { globby } = await import('globby');

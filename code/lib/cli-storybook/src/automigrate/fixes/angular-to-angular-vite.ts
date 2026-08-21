@@ -39,13 +39,11 @@ type MigratableFramework = (typeof MIGRATABLE_FRAMEWORKS)[number];
 const FRAMEWORK_DOC_URL = 'https://storybook.js.org/docs/get-started/frameworks/angular-vite';
 const VITE_CONFIG_DOC_URL = 'https://storybook.js.org/docs/builders/vite#configure';
 
+const ANGULAR_MIN_MAJOR = 21;
+
 interface AngularToAngularViteOptions {
   /** The framework the project renders with today, and the one every rewrite below keys off. */
   framework: MigratableFramework;
-  /** True when @angular/core is not found or is outside the 21.x range. */
-  angularUnsupportedVersion: boolean;
-  /** The detected @angular/core version string, or null if not found. */
-  angularVersion: string | null;
   /** True when the main config contains a webpackFinal hook. */
   hasWebpackFinal: boolean;
   /** package.json paths that reference @storybook/angular. */
@@ -398,6 +396,12 @@ const addZoneJsPreviewImport = async (
   }
 };
 
+const getGuaranteedAngularMajor = (specifier: string | null): number | null => {
+  const range = specifier ? semver.validRange(specifier) : null;
+  const major = range ? (semver.minVersion(range)?.major ?? null) : null;
+  return major === 0 ? null : major;
+};
+
 export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
   id: 'angular-to-angular-vite',
   link: FRAMEWORK_DOC_URL,
@@ -411,8 +415,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       return null;
     }
 
-    // Detect @angular/core version for the Angular 21 prerequisite check.
-    const angularVersionRaw = packageManager.getDependencyVersion('@angular/core');
+    const angularSpecifier = await packageManager.getDeclaredVersionSpecifier('@angular/core');
 
     // `@analogjs/storybook-angular` declares `@storybook/angular` as its peer, so the dependency
     // alone does not say which framework the project renders with, and a framework this migration
@@ -420,7 +423,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     const frameworkPackageName = getFrameworkPackageName(mainConfig);
     const framework = matchMigratableFramework(frameworkPackageName);
     if (!framework) {
-      if (angularVersionRaw) {
+      if (angularSpecifier) {
         logger.warn(
           `Skipped ${ANGULAR_VITE_PACKAGE} migration: this project's Storybook framework is ` +
             `\`${frameworkPackageName ?? 'not set'}\`, and only ` +
@@ -431,11 +434,22 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       return null;
     }
 
-    const angularVersion = angularVersionRaw
-      ? (semver.coerce(angularVersionRaw)?.version ?? null)
-      : null;
-    const angularUnsupportedVersion =
-      !angularVersion || !semver.satisfies(angularVersion, '>=21.0.0');
+    const angularMajor = getGuaranteedAngularMajor(angularSpecifier);
+    if (angularMajor !== null && angularMajor < ANGULAR_MIN_MAJOR) {
+      logger.warn(
+        `Skipped ${ANGULAR_VITE_PACKAGE} migration: it needs Angular ${ANGULAR_MIN_MAJOR}, and ` +
+          `this project is on Angular ${angularMajor}. Run \`ng update @angular/core @angular/cli\` ` +
+          `to upgrade, then run this migration again.`
+      );
+      return null;
+    }
+    if (angularMajor === null) {
+      logger.warn(
+        `Could not determine the \`@angular/core\` version, so the ${ANGULAR_VITE_PACKAGE} ` +
+          `migration cannot confirm this project is on Angular ${ANGULAR_MIN_MAJOR} or newer. ` +
+          `Continuing anyway. If the migrated project fails to build, upgrade Angular first.`
+      );
+    }
 
     // Detect webpackFinal in main config by scanning package.json paths for the
     // config dir, then reading main config content.
@@ -481,8 +495,6 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
 
     return {
       framework,
-      angularUnsupportedVersion,
-      angularVersion,
       hasWebpackFinal,
       packageJsonFiles,
     };
@@ -506,17 +518,6 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     addonsToPostinstall,
   }) {
     if (!result) {
-      return;
-    }
-
-    // Hard bail if Angular version is unsupported — the prompt already told the user what to do.
-    if (result.angularUnsupportedVersion) {
-      logger.log(
-        dedent`
-          Migration skipped: Angular 21 is required.
-          Run \`ng update @angular/core @angular/cli\` to upgrade, then try again.
-        `
-      );
       return;
     }
 

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import type { Options } from 'storybook/internal/types';
-import { getToolAvailability } from 'storybook/internal/core-server';
-import { experimental_devServer } from './preset.ts';
+import { getToolAvailability, createDocsToolset } from 'storybook/internal/core-server';
+import { experimental_devServer, experimental_docsSources } from './preset.ts';
 import * as mcpHandlerModule from './mcp-handler.ts';
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
 
@@ -789,5 +789,75 @@ describe('experimental_devServer', () => {
     // Should not throw
     const result = await (experimental_devServer as any)(mockApp, optionsWithThrowingRefs);
     expect(result).toBe(mockApp);
+  });
+});
+
+describe('experimental_docsSources', () => {
+  const COMPONENTS = JSON.stringify({
+    v: 0,
+    components: {
+      button: { id: 'button', name: 'Button', stories: [{ name: 'Primary' }] },
+    },
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('returns undefined when the project has no remote refs', async () => {
+    const options = {
+      port: 6006,
+      presets: { apply: vi.fn(async () => undefined) },
+    } as unknown as Options;
+
+    await expect(experimental_docsSources(undefined, options)).resolves.toBeUndefined();
+  });
+
+  it('registers composition docs that list refs and route show by storybookId', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (input: string | URL) => {
+        const url = String(input);
+        if (url.includes('manifests/components.json')) {
+          return {
+            ok: true,
+            status: 200,
+            headers: new Headers(),
+            text: async () => COMPONENTS,
+          };
+        }
+        return { ok: false, status: 404, headers: new Headers(), text: async () => '' };
+      })
+    );
+
+    const options = {
+      port: 6006,
+      presets: {
+        apply: vi.fn(async (key: string) => {
+          if (key === 'refs') {
+            return {
+              'design-system': { title: 'Design System', url: 'https://design.example.com' },
+            };
+          }
+          return undefined;
+        }),
+      },
+    } as unknown as Options;
+
+    const sources = await experimental_docsSources(undefined, options);
+    expect(sources?.map((source) => source.source.id)).toEqual(['local', 'design-system']);
+
+    const toolset = createDocsToolset({ sources: sources! });
+    const ctx = { transport: 'cli' as const, getService: () => ({}) as never };
+    const listed = await toolset.methods.list.handler({ withStoryIds: false }, ctx);
+
+    expect(listed.ok).toBe(true);
+    expect(listed.markdown).toEqual(expect.stringContaining('Design System'));
+
+    const shown = await toolset.methods.show.handler(
+      { id: 'button', storybookId: 'design-system' },
+      ctx
+    );
+    expect(shown.ok).toBe(true);
   });
 });

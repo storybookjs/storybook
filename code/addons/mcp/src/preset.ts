@@ -1,5 +1,5 @@
 import { mcpServerHandler } from './mcp-handler.ts';
-import type { PresetPropertyFn, StorybookConfigRaw } from 'storybook/internal/types';
+import type { Options, PresetPropertyFn, StorybookConfigRaw } from 'storybook/internal/types';
 import { AddonOptions, type AddonOptionsInput } from './types.ts';
 import * as v from 'valibot';
 import {
@@ -8,6 +8,7 @@ import {
   getToolAvailability,
   loadManifests,
 } from 'storybook/internal/core-server';
+import { createCompositionDocsSources, type DocsSource } from 'storybook/internal/toolsets-docs';
 import htmlTemplate from './template.html';
 import path from 'node:path';
 import { extractBearerToken, type ManifestProvider } from './auth/index.ts';
@@ -236,6 +237,29 @@ export const experimental_devServer: PresetPropertyFn<
   });
   return app;
 };
+
+/**
+ * Composition docs sources for the boot-registered `docs` toolset. Absent when this Storybook has
+ * no remote refs, so core keeps the local-only toolset.
+ */
+export async function experimental_docsSources(
+  _existing: DocsSource[] | undefined,
+  options: Options
+): Promise<DocsSource[] | undefined> {
+  const resolved = await resolveCompositionSources(options);
+  if (!resolved.multiSource || !resolved.sources) {
+    return undefined;
+  }
+  const origin = `http://localhost:${options.port ?? 6006}`;
+  return createCompositionDocsSources({
+    sources: resolved.sources,
+    manifestProvider: resolved.compositionAuth.createManifestProvider(origin),
+    localAccess: createLocalDocsAccess({
+      storyIndex: { getIndex: () => getStoryIndex(options) },
+      getManifests: () => loadManifests(options.presets),
+    }),
+  });
+}
 
 export const experimental_storybookAi = async (
   existingMetadata: StorybookAiMetadata | undefined,

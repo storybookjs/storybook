@@ -20349,6 +20349,7 @@ __metadata:
     "@types/semver": "npm:^7.7.1"
     commander: "npm:^14.0.2"
     empathic: "npm:^2.0.0"
+    memfs: "npm:^4.11.1"
     picocolors: "npm:^1.1.0"
     process-ancestry: "npm:^0.0.2"
     react: "npm:^18.2.0"

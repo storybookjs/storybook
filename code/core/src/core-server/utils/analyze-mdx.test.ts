@@ -563,5 +563,14 @@ describe('analyzeMdx', () => {
         { id: 'usage-2', title: 'Usage' },
       ]);
     });
+
+    it('slugs H5/H6 headings so later duplicate ids match the docs renderer', async () => {
+      const input = dedent`
+        ##### Usage
+        ## Usage
+      `;
+      const { anchors } = await analyzeMdx(input);
+      expect(anchors).toEqual([{ id: 'usage-1', title: 'Usage' }]);
+    });
   });
 });

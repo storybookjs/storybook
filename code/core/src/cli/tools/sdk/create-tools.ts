@@ -280,7 +280,12 @@ function createToolsHost(args: {
       });
     }
 
-    return method.handler(validation.value, ctx);
+    const callCtx: ToolsetCtx = {
+      ...ctx,
+      ...(options.origin !== undefined ? { origin: options.origin } : {}),
+      ...(options.telemetry ? { telemetry: options.telemetry } : {}),
+    };
+    return method.handler(validation.value, callCtx);
   };
 
   return {

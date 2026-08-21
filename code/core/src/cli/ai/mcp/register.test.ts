@@ -78,6 +78,10 @@ function parse(program: Command, argv: string[]) {
   return program.parseAsync(['node', 'storybook', ...argv]);
 }
 
+const METHOD_TELEMETRY_DEPS = expect.objectContaining({
+  methodTelemetry: expect.any(Function),
+});
+
 function stdoutText(): string {
   return vi
     .mocked(process.stdout.write)
@@ -164,12 +168,17 @@ describe('with the feature flag (passthrough registered)', () => {
   it('forwards `ai <tool>` with pass-through tokens to runAiTool', async () => {
     const { program } = buildProgram({ withPassthrough: true });
     await parse(program, ['ai', 'docs-show', '--id', 'button-docs']);
-    expect(runAiTool).toHaveBeenCalledWith('docs-show', ['--id', 'button-docs'], {
-      cwd: undefined,
-      configDir: undefined,
-      port: undefined,
-      json: undefined,
-    });
+    expect(runAiTool).toHaveBeenCalledWith(
+      'docs-show',
+      ['--id', 'button-docs'],
+      {
+        cwd: undefined,
+        configDir: undefined,
+        port: undefined,
+        json: undefined,
+      },
+      METHOD_TELEMETRY_DEPS
+    );
   });
 
   it('parses target options before the tool name and leaves later tokens as command args', async () => {
@@ -194,30 +203,41 @@ describe('with the feature flag (passthrough registered)', () => {
         configDir: 'config/storybook',
         port: '6007',
         json: undefined,
-      }
+      },
+      METHOD_TELEMETRY_DEPS
     );
   });
 
   it('parses --json before the tool name as the command argument escape hatch', async () => {
     const { program } = buildProgram({ withPassthrough: true });
     await parse(program, ['ai', '--json', '{"a":1}', 'docs-show']);
-    expect(runAiTool).toHaveBeenCalledWith('docs-show', [], {
-      cwd: undefined,
-      configDir: undefined,
-      port: undefined,
-      json: '{"a":1}',
-    });
+    expect(runAiTool).toHaveBeenCalledWith(
+      'docs-show',
+      [],
+      {
+        cwd: undefined,
+        configDir: undefined,
+        port: undefined,
+        json: '{"a":1}',
+      },
+      METHOD_TELEMETRY_DEPS
+    );
   });
 
   it('parses -c before the tool name as a config-dir CLI option', async () => {
     const { program } = buildProgram({ withPassthrough: true });
     await parse(program, ['ai', '-c', 'config/storybook', 'docs-show']);
-    expect(runAiTool).toHaveBeenCalledWith('docs-show', [], {
-      cwd: undefined,
-      configDir: 'config/storybook',
-      port: undefined,
-      json: undefined,
-    });
+    expect(runAiTool).toHaveBeenCalledWith(
+      'docs-show',
+      [],
+      {
+        cwd: undefined,
+        configDir: 'config/storybook',
+        port: undefined,
+        json: undefined,
+      },
+      METHOD_TELEMETRY_DEPS
+    );
   });
 
   it('passes tokens after the tool name through verbatim, even option-like ones', async () => {
@@ -242,7 +262,8 @@ describe('with the feature flag (passthrough registered)', () => {
         configDir: undefined,
         port: undefined,
         json: undefined,
-      }
+      },
+      METHOD_TELEMETRY_DEPS
     );
   });
 
@@ -278,7 +299,10 @@ describe('with the feature flag (passthrough registered)', () => {
       outcome: { kind: 'intercept', reason: 'no-instance' },
     });
     await parse(program, ['ai', 'tool-x']);
-    expect(process.stdout.write).toHaveBeenCalledWith('repair instructions\n', expect.any(Function));
+    expect(process.stdout.write).toHaveBeenCalledWith(
+      'repair instructions\n',
+      expect.any(Function)
+    );
     expect(process.exitCode).toBe(1);
   });
 
@@ -352,12 +376,17 @@ describe('with the feature flag (passthrough registered)', () => {
   it('passes a --help token after the tool name through to runAiTool', async () => {
     const { program } = buildProgram({ withPassthrough: true });
     await parse(program, ['ai', 'docs-show', '--help']);
-    expect(runAiTool).toHaveBeenCalledWith('docs-show', ['--help'], {
-      cwd: undefined,
-      configDir: undefined,
-      port: undefined,
-      json: undefined,
-    });
+    expect(runAiTool).toHaveBeenCalledWith(
+      'docs-show',
+      ['--help'],
+      {
+        cwd: undefined,
+        configDir: undefined,
+        port: undefined,
+        json: undefined,
+      },
+      METHOD_TELEMETRY_DEPS
+    );
   });
 });
 

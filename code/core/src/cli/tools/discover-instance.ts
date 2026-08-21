@@ -20,6 +20,8 @@ export type InstanceDiscovery = {
   currentRecord: StorybookInstanceRecord | undefined;
   /** All live records, so callers can point at Storybooks running for other projects. */
   records: StorybookInstanceRecord[];
+  /** Set when the target named a port that no project-matching instance is serving. */
+  portMismatch?: { port: number; projectRecords: StorybookInstanceRecord[] };
 };
 
 /**
@@ -42,11 +44,23 @@ export async function discoverRunningInstance(
     cwd,
     configDir,
     configDirExplicit: target.configDir != null,
+    port: target.port,
     agent: detectAgent()?.name,
   });
 
-  // `resolveInstance` dispatches on the record's MCP status; a status intercept still carries the
-  // matched records (most recent first), which is all this consumer needs.
-  const currentRecord = resolution.kind === 'instance' ? resolution.record : resolution.matches[0];
-  return { currentRecord, records };
+  if (resolution.kind === 'instance') {
+    return { currentRecord: resolution.record, records };
+  }
+
+  if (resolution.reason === 'port-mismatch' && target.port != null) {
+    return {
+      currentRecord: undefined,
+      records,
+      portMismatch: { port: target.port, projectRecords: resolution.records ?? [] },
+    };
+  }
+
+  // A status intercept still carries the matched records (most recent first), which is all this
+  // consumer needs when recommending a running instance.
+  return { currentRecord: resolution.matches[0], records };
 }

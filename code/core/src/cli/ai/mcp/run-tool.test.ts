@@ -123,7 +123,11 @@ describe('runAiTool', () => {
       autoSpawn: false,
       clientInfo: { name: 'storybook-cli', version: expect.any(String), kind: 'cli' },
     });
-    expect(toolsHost.call).toHaveBeenCalledWith('docs.list', { withStoryIds: true });
+    expect(toolsHost.call).toHaveBeenCalledWith(
+      'docs.list',
+      { withStoryIds: true },
+      { origin: 'http://localhost:6006' }
+    );
     expect(toolsHost.close).toHaveBeenCalledOnce();
     expect(result).toEqual({
       exitCode: 0,
@@ -314,12 +318,17 @@ describe('runAiTool', () => {
 
     expect(createTools).toHaveBeenCalledWith(
       expect.objectContaining({
-        cwd: '/repo/packages/ui',
+        cwd: resolve('/repo'),
+        configDir: resolve('/repo/packages/ui/.storybook'),
         port: 6006,
         mode: 'attached',
       })
     );
-    expect(toolsHost.call).toHaveBeenCalledWith('docs.list', {});
+    expect(toolsHost.call).toHaveBeenCalledWith(
+      'docs.list',
+      {},
+      { origin: 'http://localhost:6006' }
+    );
     expect(result.exitCode).toBe(0);
   });
 
@@ -338,13 +347,17 @@ describe('runAiTool', () => {
 
     expect(createTools).toHaveBeenCalledWith(
       expect.objectContaining({
-        cwd: '/repo',
-        configDir: 'packages/ui/.storybook',
+        cwd: resolve('/repo/packages/ui'),
+        configDir: resolve('/repo/packages/ui/.storybook'),
         port: 6006,
         mode: 'attached',
       })
     );
-    expect(toolsHost.call).toHaveBeenCalledWith('docs.list', {});
+    expect(toolsHost.call).toHaveBeenCalledWith(
+      'docs.list',
+      {},
+      { origin: 'http://localhost:6006' }
+    );
     expect(result.exitCode).toBe(0);
   });
 
@@ -360,7 +373,35 @@ describe('runAiTool', () => {
       json: '{"id":"base","verbose":true}',
     });
 
-    expect(toolsHost.call).toHaveBeenCalledWith('docs.show', { id: 'override', verbose: true });
+    expect(toolsHost.call).toHaveBeenCalledWith(
+      'docs.show',
+      { id: 'override', verbose: true },
+      { origin: 'http://localhost:6006' }
+    );
+  });
+
+  it('forwards storybookId so composition docs-show addresses the named source', async () => {
+    await runAiTool('docs-show', ['--id', 'button', '--storybookId', 'design-system'], {
+      cwd: '/projects/foo',
+    });
+
+    expect(toolsHost.call).toHaveBeenCalledWith(
+      'docs.show',
+      { id: 'button', storybookId: 'design-system' },
+      { origin: 'http://localhost:6006' }
+    );
+  });
+
+  it('threads the per-method telemetry sink through the SDK call', async () => {
+    const methodTelemetry = vi.fn(async () => {});
+
+    await runAiTool('docs-list', [], { cwd: '/projects/foo' }, { methodTelemetry });
+
+    expect(toolsHost.call).toHaveBeenCalledWith(
+      'docs.list',
+      {},
+      expect.objectContaining({ origin: 'http://localhost:6006', telemetry: methodTelemetry })
+    );
   });
 
   it('returns the arg-parsing error without contacting the registry', async () => {
@@ -661,7 +702,11 @@ describe('runAiTool', () => {
       expect(createTools).toHaveBeenCalledWith(
         expect.objectContaining({ port: 6008, mode: 'attached' })
       );
-      expect(toolsHost.call).toHaveBeenCalledWith('docs.list', {});
+      expect(toolsHost.call).toHaveBeenCalledWith(
+        'docs.list',
+        {},
+        { origin: 'http://localhost:6006' }
+      );
       expect(result.exitCode).toBe(0);
       expect(result.output).toContain('Multiple Storybook instances match this project');
       expect(result.output).toContain('cwd `/projects/foo`');

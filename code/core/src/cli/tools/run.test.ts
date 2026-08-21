@@ -150,7 +150,7 @@ function makeAttachedTools(runtimeOverrides: Partial<ToolsRuntime> = {}): Attach
         toolsets: toolsets.map((toolset) => toCatalogEntry(toolset, ctx)),
       };
     },
-    call: async (ref, input) => {
+    call: async (ref, input, options = {}) => {
       const { toolsetId, methodName } = parseToolsetMethodId(ref);
       const toolset = local.runtime.toolsets.find((candidate) => candidate.id === toolsetId);
       const method = toolset?.methods[methodName];
@@ -161,7 +161,11 @@ function makeAttachedTools(runtimeOverrides: Partial<ToolsRuntime> = {}): Attach
       if (validation.issues) {
         throw new Error(`Invalid input for \`${ref}\``);
       }
-      return method.handler(validation.value, ctx);
+      return method.handler(validation.value, {
+        ...ctx,
+        ...(options.origin !== undefined ? { origin: options.origin } : {}),
+        ...(options.telemetry ? { telemetry: options.telemetry } : {}),
+      });
     },
   };
 }
@@ -351,6 +355,27 @@ describe('requires-dev-server contract', () => {
 
     expect(result.output).toContain('http://localhost:6006');
     expect(result.output).toContain('--cwd');
+  });
+
+  it('reports a port-mismatch instead of recommending a different instance', async () => {
+    const { deps } = makeDeps({
+      discoverInstance: vi.fn(async () => ({
+        currentRecord: undefined,
+        records: [RECORD],
+        portMismatch: { port: 9999, projectRecords: [RECORD] },
+      })),
+    });
+
+    const result = await run(
+      ['stories', 'preview', '--stories', '[{"storyId":"button--primary"}]'],
+      deps,
+      { target: { port: 9999 } }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'requires-dev-server' });
+    expect(result.output).toContain('not on port `9999`');
+    expect(result.output).toContain('port `6006`');
   });
 
   it('intercepts stories preview in local mode even when an instance is running', async () => {
@@ -674,6 +699,21 @@ describe('telemetry sink', () => {
     const { deps } = makeDeps({ methodTelemetry });
 
     await run(['docs', 'list'], deps);
+
+    expect(methodTelemetry).toHaveBeenCalledWith(
+      'tool:listAllDocumentation',
+      expect.objectContaining({ toolset: 'docs' })
+    );
+  });
+
+  it('forwards per-method events through an attached host', async () => {
+    const methodTelemetry = vi.fn(async () => {});
+    const { deps } = makeDeps({
+      methodTelemetry,
+      createTools: vi.fn(async () => makeAttachedTools()),
+    });
+
+    await run(['docs', 'list'], deps, { attach: true });
 
     expect(methodTelemetry).toHaveBeenCalledWith(
       'tool:listAllDocumentation',

@@ -9,6 +9,7 @@ import type { CLIOptions } from 'storybook/internal/types';
 
 import type { Command } from 'commander';
 
+import type { ToolsetTelemetry } from '../../../shared/open-service/toolset-definition.ts';
 import { resolveStorybookConfigDir } from '../../tools/config-dir.ts';
 import type { CommandFailureHandler } from '../../tools/register.ts';
 import {
@@ -120,10 +121,15 @@ export function registerAiMcpPassthrough(
                 return;
               }
               const start = Date.now();
-              const result = await runAiTool(command, commandArgs, {
-                ...target,
-                json: options.json,
-              });
+              const result = await runAiTool(
+                command,
+                commandArgs,
+                {
+                  ...target,
+                  json: options.json,
+                },
+                { methodTelemetry: createMethodTelemetrySink(cliOptions) }
+              );
               const duration = Date.now() - start;
               try {
                 await printResult(result, options.output);
@@ -156,6 +162,20 @@ function pickCliOptions(options: AiPassthroughOptions): CLIOptions {
     disableTelemetry: options.disableTelemetry,
     logfile: options.logfile,
     configDir: resolveStorybookConfigDir({ cwd: targetCwd, configDir: targetConfigDir }),
+  };
+}
+
+function createMethodTelemetrySink(cliOptions: CLIOptions): ToolsetTelemetry {
+  return async (event, payload) => {
+    try {
+      await telemetry(
+        'addon-mcp' as any,
+        { event, transport: 'cli', ...payload },
+        { configDir: cliOptions.configDir }
+      );
+    } catch (error) {
+      logger.debug(`Error collecting telemetry: ${String(error)}`);
+    }
   };
 }
 

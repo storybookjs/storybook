@@ -18,6 +18,7 @@ import {
   type ToolsMode,
   type ToolsRuntime,
 } from './sdk/index.ts';
+import { formatPortMismatch } from './sdk/attach-messages.ts';
 import {
   discoverRunningInstance,
   type InstanceDiscovery,
@@ -196,7 +197,7 @@ export async function runToolsCommand(
   try {
     const dispatched =
       tools.mode === 'attached'
-        ? await dispatchAttachedTools(tools, normalized, parsed, result)
+        ? await dispatchAttachedTools(tools, normalized, parsed, result, deps)
         : await dispatchLocalTools(tools, normalized, parsed, deps, requestedMode, result);
     const output =
       tools.fallbackNotice && !parsed.json
@@ -212,7 +213,8 @@ async function dispatchAttachedTools(
   tools: Tools,
   invocation: ToolsInvocation,
   parsed: Extract<ParsedToolsTokens, { ok: true }>,
-  result: (partial: Omit<ToolsRunResult, 'outputPath' | 'attachMode'>) => ToolsRunResult
+  result: (partial: Omit<ToolsRunResult, 'outputPath' | 'attachMode'>) => ToolsRunResult,
+  deps: ToolsRunDeps
 ): Promise<ToolsRunResult> {
   const { toolset: toolsetName, tool: toolName } = invocation;
   const catalog = await tools.describe();
@@ -263,7 +265,10 @@ async function dispatchAttachedTools(
   }
 
   try {
-    const outcome = await tools.call(method.ref, parsed.args);
+    const outcome = await tools.call(method.ref, parsed.args, {
+      ...(tools.storybook.url ? { origin: tools.storybook.url } : {}),
+      ...(deps.methodTelemetry ? { telemetry: deps.methodTelemetry } : {}),
+    });
     const output = parsed.json
       ? JSON.stringify(outcome.data, null, 2)
       : joinMarkdown(outcome.markdown);
@@ -451,6 +456,13 @@ function formatRequiresDevServer(
   discovery: InstanceDiscovery,
   requestedMode: ToolsMode
 ): string {
+  if (discovery.portMismatch) {
+    return `\`${commandPath}\` requires a running Storybook on port \`${
+      discovery.portMismatch.port
+    }\`.
+
+${formatPortMismatch(discovery.portMismatch.port, discovery.portMismatch.projectRecords)}`;
+  }
   if (discovery.currentRecord && requestedMode === 'local') {
     return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` cannot run from a local tools host. Re-run without \`--no-attach\` to attach to that instance.`;
   }

@@ -370,6 +370,36 @@ describe('call', () => {
     expect(outcome).toEqual({ ok: true, data: { value: 'hello' }, markdown: 'hello' });
   });
 
+  it('merges per-call telemetry and origin into the method context', async () => {
+    const telemetry = vi.fn(async () => {});
+    const seen = defineToolset({
+      id: 'seen',
+      description: 'Captures call context.',
+      methods: {
+        go: {
+          title: 'Go',
+          description: 'Go',
+          input: v.object({}),
+          handler: async (_input, ctx) => {
+            await ctx.telemetry?.('tool:listAllDocumentation', { toolset: 'docs' });
+            return { ok: true as const, data: { origin: ctx.origin }, markdown: ctx.origin ?? '' };
+          },
+        },
+      },
+    });
+    vi.mocked(bootstrapToolsRuntime).mockResolvedValue(makeRuntime({ toolsets: [seen] }));
+    const tools = await createTools({ mode: 'local' });
+
+    const outcome = await tools.call('seen.go', {}, { telemetry, origin: 'http://example.test' });
+
+    expect(telemetry).toHaveBeenCalledWith('tool:listAllDocumentation', { toolset: 'docs' });
+    expect(outcome).toEqual({
+      ok: true,
+      data: { origin: 'http://example.test' },
+      markdown: 'http://example.test',
+    });
+  });
+
   it('returns a failing outcome rather than throwing when the tool reports bad news', async () => {
     const tools = await createTools({ mode: 'local' });
 

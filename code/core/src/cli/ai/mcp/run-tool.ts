@@ -3,7 +3,10 @@ import { resolve } from 'node:path';
 import { versions } from 'storybook/internal/common';
 import * as v from 'valibot';
 
-import type { AnyToolsetOutcome } from '../../../shared/open-service/toolset-definition.ts';
+import type {
+  AnyToolsetOutcome,
+  ToolsetTelemetry,
+} from '../../../shared/open-service/toolset-definition.ts';
 import { toMcpToolName } from '../../../shared/open-service/toolset-names.ts';
 import { detectAgent } from '../../../telemetry/detect-agent.ts';
 import { resolveStorybookConfigDir } from '../../tools/config-dir.ts';
@@ -88,6 +91,7 @@ export type AiToolRunDeps = {
   registryDir?: string;
   createTools?: typeof createTools;
   loadStorybookAiMetadata?: typeof loadStorybookAiMetadata;
+  methodTelemetry?: ToolsetTelemetry;
 };
 
 export type AiToolOptions = {
@@ -165,14 +169,14 @@ export async function runAiTool(
   let tools: Awaited<ReturnType<typeof createTools>> | undefined;
   try {
     tools = await (deps.createTools ?? createTools)({
-      cwd: options.cwd,
-      configDir: options.configDir,
+      cwd: record.cwd,
+      configDir: record.configDir,
       port: record.port,
       mode: 'attached',
       autoSpawn: false,
       clientInfo: AI_CLIENT_INFO,
     });
-    const result = await callRuntimeTool(tools, toolName, parsed.args);
+    const result = await callRuntimeTool(tools, toolName, parsed.args, deps);
     if (result.kind === 'unknown') {
       return {
         exitCode: 1,
@@ -550,7 +554,8 @@ function isUnknownToolError(error: unknown): boolean {
 async function callRuntimeTool(
   tools: Tools,
   toolName: string,
-  args: Record<string, unknown>
+  args: Record<string, unknown>,
+  deps: AiToolRunDeps
 ): Promise<{ kind: 'result'; ok: boolean; output: string } | { kind: 'unknown'; output: string }> {
   let catalog: ToolsetCatalog | undefined;
   try {
@@ -562,7 +567,10 @@ async function callRuntimeTool(
   const ref = (catalog && findRefByMcpName(catalog, toolName)) ?? mcpToolNameToRef(toolName);
 
   try {
-    const outcome = await tools.call(ref, args);
+    const outcome = await tools.call(ref, args, {
+      ...(tools.storybook.url ? { origin: tools.storybook.url } : {}),
+      ...(deps.methodTelemetry ? { telemetry: deps.methodTelemetry } : {}),
+    });
     return { kind: 'result', ok: outcome.ok, output: formatOutcomeMarkdown(outcome) };
   } catch (error) {
     if (isUnknownToolError(error)) {

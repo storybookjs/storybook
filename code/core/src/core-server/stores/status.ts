@@ -20,7 +20,7 @@ const statusStore = createStatusStore({
     leader:
       !optionalEnvToBoolean(process.env.VITEST_CHILD_PROCESS) &&
       !optionalEnvToBoolean(process.env.STORYBOOK_ATTACHED_TOOLS) &&
-      UniversalStore.preparation.environment !== UniversalStore.Environment.UNKNOWN,
+      UniversalStore.preparedEnvironment !== UniversalStore.Environment.UNKNOWN,
   }),
   environment: 'server',
 });

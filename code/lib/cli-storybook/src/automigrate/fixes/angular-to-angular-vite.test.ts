@@ -1,6 +1,7 @@
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { readFile, writeFile } from 'node:fs/promises';
 
+import semver from 'semver';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { JsPackageManager } from 'storybook/internal/common';
@@ -489,6 +490,7 @@ describe('angular-to-angular-vite', () => {
       framework: ANGULAR_PACKAGE,
       hasWebpackFinal: false,
       packageJsonFiles: ['/project/package.json'],
+      angularVersion: '21.2.4',
     };
 
     it('exits early when result is null', async () => {
@@ -565,13 +567,16 @@ describe('angular-to-angular-vite', () => {
       } as any);
 
       expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith([ANGULAR_PACKAGE]);
-      // @analogjs/vite-plugin-angular is a required peer of @storybook/angular-vite and is
-      // installed alongside the framework because yarn/pnpm do not auto-install missing peers.
+      // These are required peers of @storybook/angular-vite, and are installed alongside the
+      // framework because yarn/pnpm do not auto-install missing peers.
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
         { type: 'devDependencies', skipInstall: true },
         [
           `${ANGULAR_VITE_PACKAGE}@9.0.0`,
           `@analogjs/vite-plugin-angular@${ANALOG_VITE_PLUGIN_ANGULAR_VERSION}`,
+          '@angular/build@21.2.4',
+          '@angular/animations@21.2.4',
+          '@angular-devkit/architect@0.2102.4',
         ]
       );
     });
@@ -596,7 +601,12 @@ describe('angular-to-angular-vite', () => {
 
       expect(mockPackageManager.addDependencies).toHaveBeenCalledWith(
         { type: 'devDependencies', skipInstall: true },
-        [`${ANGULAR_VITE_PACKAGE}@9.0.0`]
+        [
+          `${ANGULAR_VITE_PACKAGE}@9.0.0`,
+          '@angular/build@21.2.4',
+          '@angular/animations@21.2.4',
+          '@angular-devkit/architect@0.2102.4',
+        ]
       );
     });
 
@@ -1793,5 +1803,82 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
         expect(written.projects.appB.architect.storybook.options).toEqual({});
       });
     });
+  });
+
+  describe('required Angular peers', () => {
+    const migrate = async (deps: Record<string, string>, angularCore: string | null) => {
+      vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+        [ANGULAR_PACKAGE]: '^10.0.0',
+        ...deps,
+      });
+      mockAngularCore({ declared: angularCore, resolved: angularCore });
+
+      await checkThenRun();
+
+      return vi.mocked(mockPackageManager.addDependencies).mock.calls.at(-1)?.[1] ?? [];
+    };
+
+    it('adds all three, pinned to the workspace Angular version', async () => {
+      const added = await migrate({ '@angular/core': '21.2.4' }, '21.2.4');
+
+      expect(added).toEqual([
+        `${ANGULAR_VITE_PACKAGE}@10.0.0`,
+        `@analogjs/vite-plugin-angular@${ANALOG_VITE_PLUGIN_ANGULAR_VERSION}`,
+        '@angular/build@21.2.4',
+        '@angular/animations@21.2.4',
+        // `@angular-devkit/architect` numbers itself `0.<major * 100 + minor>.<patch>`.
+        '@angular-devkit/architect@0.2102.4',
+      ]);
+    });
+
+    it('carries a declared caret range onto all three', async () => {
+      const added = await migrate({ '@angular/core': '^21.2.0' }, '^21.2.0');
+
+      expect(added).toEqual(
+        expect.arrayContaining([
+          '@angular/build@^21.2.0',
+          '@angular/animations@^21.2.0',
+          '@angular-devkit/architect@^0.2102.0',
+        ])
+      );
+    });
+
+    // Pins, not regression tests: before this fix nothing was added at all, so they passed
+    // vacuously. They hold the skip in place now that something is.
+    it.each([
+      ['@angular/build', '@angular/build@21.2.4'],
+      ['@angular/animations', '@angular/animations@21.2.4'],
+      ['@angular-devkit/architect', '@angular-devkit/architect@0.2102.4'],
+    ])('leaves %s alone when the project already declares it', async (pkg, specifier) => {
+      const added = await migrate(
+        { '@angular/core': '21.2.4', [pkg]: 'whatever-the-project-picked' },
+        '21.2.4'
+      );
+
+      expect(added).not.toContain(specifier);
+      expect(added).not.toContainEqual(expect.stringContaining(`${pkg}@`));
+    });
+
+    // `addDependencies` writes `latest` into package.json for any entry without a version, and
+    // `@angular/build`'s latest is already the next Angular major, so an unpinnable peer is left
+    // out and named instead. `*` reaches here as a valid range with no floor.
+    it.each([null, 'workspace:*', '*'])(
+      'adds no peer it cannot pin, when @angular/core resolves to %s',
+      async (angularCore) => {
+        const added = await migrate({}, angularCore);
+
+        expect(added).toEqual([
+          `${ANGULAR_VITE_PACKAGE}@10.0.0`,
+          `@analogjs/vite-plugin-angular@${ANALOG_VITE_PLUGIN_ANGULAR_VERSION}`,
+        ]);
+        added.forEach((specifier) => {
+          const version = specifier.slice(specifier.lastIndexOf('@') + 1);
+          expect(semver.validRange(version)).not.toBeNull();
+        });
+        expect(logger.warn).toHaveBeenCalledWith(
+          expect.stringContaining('`@angular/build`, `@angular/animations`')
+        );
+      }
+    );
   });
 });

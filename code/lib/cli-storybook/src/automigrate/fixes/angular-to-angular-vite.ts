@@ -8,6 +8,7 @@ import {
   isStorybookTarget,
   type JSONEditPath,
   type StorybookBuilderTarget,
+  toDevkitVersion,
 } from 'storybook/internal/cli';
 import { formatFileContent, getProjectRoot, transformImportFiles } from 'storybook/internal/common';
 import { formatConfig, readConfig } from 'storybook/internal/csf-tools';
@@ -33,6 +34,10 @@ export const ANALOG_PACKAGE = '@analogjs/storybook-angular';
 export const ANGULAR_VITE_PACKAGE = '@storybook/angular-vite';
 const ANALOG_VITE_PLUGIN_PACKAGE = '@analogjs/vite-plugin-angular';
 
+const ANGULAR_BUILD_PACKAGE = '@angular/build';
+const ANGULAR_ANIMATIONS_PACKAGE = '@angular/animations';
+const ANGULAR_DEVKIT_ARCHITECT_PACKAGE = '@angular-devkit/architect';
+
 const MIGRATABLE_FRAMEWORKS = [ANGULAR_PACKAGE, ANALOG_PACKAGE] as const;
 type MigratableFramework = (typeof MIGRATABLE_FRAMEWORKS)[number];
 
@@ -44,6 +49,7 @@ const ANGULAR_MIN_MAJOR = 21;
 interface AngularToAngularViteOptions {
   /** The framework the project renders with today, and the one every rewrite below keys off. */
   framework: MigratableFramework;
+  angularVersion: string | null;
   /** True when the main config contains a webpackFinal hook. */
   hasWebpackFinal: boolean;
   /** package.json paths that reference @storybook/angular. */
@@ -497,6 +503,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       framework,
       hasWebpackFinal,
       packageJsonFiles,
+      angularVersion: angularMajor === null ? null : angularSpecifier,
     };
   },
 
@@ -577,11 +584,43 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       );
 
       const allDeps = packageManager.getAllDependencies();
+      const { angularVersion } = result;
+      // `@angular-devkit/architect` numbers itself `0.<major * 100 + minor>.<patch>`, so it cannot
+      // take the Angular range unchanged.
+      const architectVersion = toDevkitVersion(angularVersion);
+
+      const unpinnableAngularPeers = angularVersion
+        ? []
+        : [
+            ANGULAR_BUILD_PACKAGE,
+            ANGULAR_ANIMATIONS_PACKAGE,
+            ANGULAR_DEVKIT_ARCHITECT_PACKAGE,
+          ].filter((pkg) => !allDeps[pkg]);
+
+      if (unpinnableAngularPeers.length > 0) {
+        logger.warn(
+          `Could not determine the \`@angular/core\` version, so ` +
+            `${unpinnableAngularPeers.map((pkg) => `\`${pkg}\``).join(', ')} were not added. ` +
+            `${ANGULAR_VITE_PACKAGE} needs them at your Angular version, and adding them ` +
+            `unpinned would install the next Angular major. Add them by hand before starting ` +
+            `Storybook.`
+        );
+      }
+
       await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
         `${ANGULAR_VITE_PACKAGE}@${storybookVersion}`,
         ...(allDeps[ANALOG_VITE_PLUGIN_PACKAGE]
           ? []
           : [`${ANALOG_VITE_PLUGIN_PACKAGE}@${ANALOG_VITE_PLUGIN_ANGULAR_VERSION}`]),
+        ...(allDeps[ANGULAR_BUILD_PACKAGE] || !angularVersion
+          ? []
+          : [`${ANGULAR_BUILD_PACKAGE}@${angularVersion}`]),
+        ...(allDeps[ANGULAR_ANIMATIONS_PACKAGE] || !angularVersion
+          ? []
+          : [`${ANGULAR_ANIMATIONS_PACKAGE}@${angularVersion}`]),
+        ...(allDeps[ANGULAR_DEVKIT_ARCHITECT_PACKAGE] || !architectVersion
+          ? []
+          : [`${ANGULAR_DEVKIT_ARCHITECT_PACKAGE}@${architectVersion}`]),
       ]);
     }
 

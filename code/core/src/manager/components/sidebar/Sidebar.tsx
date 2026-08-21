@@ -162,7 +162,7 @@ export const Sidebar = React.memo(function Sidebar({
         Storybook
       </h1>
       <IconSymbols />
-      <ScrollArea vertical offset={3} scrollbarSize={6} scrollPadding="4rem" containOverscroll>
+      <ScrollArea vertical offset={3} scrollbarSize={6} scrollPadding="4rem">
         <Stack>
           <div>
             <Heading

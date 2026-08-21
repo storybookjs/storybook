@@ -85,6 +85,7 @@ export const LeafNodeStyleWrapper = styled.div(({ theme }) => ({
   background: 'transparent',
   minHeight: 28,
   borderRadius: 4,
+  overflow: 'hidden',
   '--tree-node-background-hover': theme.background.content,
 
   [MEDIA_DESKTOP_BREAKPOINT]: {

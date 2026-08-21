@@ -131,13 +131,16 @@ async function hostedMcpCalls(manifestsUrl: string, toolCalls: { name: string; i
 
 // Derived from the story file's path under the linked framework template stories.
 const COLOR_PICKER_ID = 'stories-frameworks-angular-vite-model-signal-color-picker';
+// Derived from the story file's path under the linked renderer template stories.
+const DEFINE_MODEL_ID = 'stories-renderers-vue3-vue3-vite-default-ts-component-meta-definemodel';
 
 const isReactSandbox = templateName === 'react-vite/default-ts';
 const isAngularSandbox = templateName === 'angular-vite/docgen-server-ts';
+const isVueSandbox = templateName === 'vue3-vite/docgen-server-ts';
 
 test.describe('addon-mcp', () => {
   test.skip(
-    !isReactSandbox && !isAngularSandbox,
+    !isReactSandbox && !isAngularSandbox && !isVueSandbox,
     'Only run for sandboxes with addon-mcp configured'
   );
 
@@ -406,6 +409,54 @@ test.describe('addon-mcp', () => {
       const outputs = text.slice(text.indexOf('## Outputs')).split('\n## ')[0];
       expect(outputs.match(/\bcolorChange\b/g)).toHaveLength(1);
       expect(outputs).not.toMatch(/^\s+color[?:]/m);
+    });
+  });
+
+  test.describe('MCP (Vue)', () => {
+    test.skip(type !== 'dev', 'MCP server only runs in dev mode');
+    test.skip(!isVueSandbox, 'Asserts on the Vue sandbox fixtures');
+
+    test('docs-show returns the models and events of a defineModel() component', async ({
+      request,
+    }) => {
+      const list = await mcpRequest(request, 'tools/call', {
+        name: 'docs-list',
+        arguments: {},
+      });
+      const listing: string = list.result.content[0].text;
+      expect(listing, `no define-model component listed:\n${listing}`).toContain(DEFINE_MODEL_ID);
+
+      const response = await mcpRequest(request, 'tools/call', {
+        name: 'docs-show',
+        arguments: { id: DEFINE_MODEL_ID },
+      });
+      const text: string = response.result.content[0].text;
+
+      expect(text).toContain('## Models');
+      expect(text).toContain('modelValue?: string; // v-model="..."');
+      expect(text).toContain('## Events');
+      expect(text).toContain('"update:modelValue": [value: string | undefined];');
+      expect(text).toContain('<Component v-model="modelValue" />');
+    });
+  });
+
+  test.describe('Hosted MCP (Vue, static build)', () => {
+    test.skip(type !== 'build', 'Reads the built output a hosted Storybook serves');
+    test.skip(!isVueSandbox, 'Asserts on the Vue sandbox fixtures');
+
+    test('@storybook/mcp serves the same api sections as the dev server', async () => {
+      const [listing, documentation] = await hostedMcpCalls(`${storybookUrl}/manifests`, [
+        { name: 'docs-list', id: '' },
+        { name: 'docs-show', id: DEFINE_MODEL_ID },
+      ]);
+
+      expect(listing).toContain(DEFINE_MODEL_ID);
+
+      expect(documentation).toContain('## Models');
+      expect(documentation).toContain('modelValue?: string; // v-model="..."');
+      expect(documentation).toContain('## Events');
+      expect(documentation).toContain('"update:modelValue"');
+      expect(documentation.indexOf('## Models')).toBeLessThan(documentation.indexOf('## Stories'));
     });
   });
 

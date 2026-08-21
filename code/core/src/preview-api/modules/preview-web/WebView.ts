@@ -105,6 +105,13 @@ export class WebView implements View<HTMLElement> {
     return document.getElementById('storybook-docs')!;
   }
 
+  scrollToAnchor(hash: string) {
+    // getElementById instead of querySelector: anchor ids (e.g. story ids) may contain
+    // characters that are invalid in CSS selectors.
+    const element = document.getElementById(decodeURIComponent(hash.substring(1)));
+    element?.scrollIntoView({ behavior: 'smooth' });
+  }
+
   applyLayout(layout: Layout = 'padded') {
     if (layout === 'none') {
       document.body.classList.remove(this.currentLayoutClass!);

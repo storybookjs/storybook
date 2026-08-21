@@ -491,9 +491,10 @@ export const storyIndexGenerator: PresetPropertyFn<
       workingDir,
     });
 
-    const [indexers, docs] = await Promise.all([
+    const [indexers, docs, features] = await Promise.all([
       options.presets.apply('experimental_indexers', []),
       options.presets.apply('docs'),
+      options.presets.apply('features'),
     ]);
 
     const generator = new StoryIndexGenerator(normalizedStories, {
@@ -501,6 +502,7 @@ export const storyIndexGenerator: PresetPropertyFn<
       configDir,
       indexers,
       docs,
+      features,
     });
     await generator.initialize();
     return generator;

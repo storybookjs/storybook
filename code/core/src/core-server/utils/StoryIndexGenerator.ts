@@ -30,6 +30,7 @@ import { dedent } from 'ts-dedent';
 import * as TsconfigPaths from 'tsconfig-paths';
 
 import { resolveImport, supportedExtensions } from '../../common/index.ts';
+import { anchorBlockIdFromId } from '../../docs-tools/shared.ts';
 import { userOrAutoTitleFromSpecifier } from '../../shared/story-index/autoTitle.ts';
 import { sortStoriesV7 } from '../../shared/story-index/sortStories.ts';
 import { Tag } from '../../shared/constants/tags.ts';
@@ -64,6 +65,7 @@ export type StoryIndexGeneratorOptions = {
   indexers: Indexer[];
   docs: DocsOptions;
   build?: StorybookConfigRaw['build'];
+  features?: StorybookConfigRaw['features'];
 };
 
 const makeAbsolute = (otherImport: Path, normalizedPath: Path, workingDir: Path) =>
@@ -496,6 +498,11 @@ export class StoryIndexGenerator {
         type: 'docs',
         tags,
         storiesImports: [],
+        ...(this.options.features?.experimentalSearchDocsHeadings && {
+          // Each story in an autodocs page is wrapped in an `Anchor` block whose DOM id is
+          // derived from the story id, so those are the reliable in-page navigation targets.
+          anchors: storyEntries.map((e) => ({ id: anchorBlockIdFromId(e.id), title: e.name })),
+        }),
       };
 
       return {
@@ -619,6 +626,7 @@ export class StoryIndexGenerator {
         storiesImports: sortedDependencies.map((dep) => dep.entries[0].importPath),
         type: 'docs',
         tags,
+        ...(this.options.features?.experimentalSearchDocsHeadings && { anchors: result.anchors }),
       };
       return docsEntry;
     } catch (err) {

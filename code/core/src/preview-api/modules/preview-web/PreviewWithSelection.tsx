@@ -3,6 +3,7 @@ import {
   CURRENT_STORY_WAS_SET,
   DOCS_PREPARED,
   GLOBALS_UPDATED,
+  NAVIGATE_URL,
   PRELOAD_ENTRIES,
   PREVIEW_KEYDOWN,
   SET_CURRENT_STORY,
@@ -123,6 +124,16 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     this.channel.on(SET_CURRENT_STORY, this.onSetCurrentStory.bind(this));
     this.channel.on(UPDATE_QUERY_PARAMS, this.onUpdateQueryParams.bind(this));
     this.channel.on(PRELOAD_ENTRIES, this.onPreloadStories.bind(this));
+    this.channel.on(NAVIGATE_URL, this.onNavigateUrl.bind(this));
+  }
+
+  // The manager emits NAVIGATE_URL for in-page (`#hash`) navigation, e.g. when a docs heading is
+  // selected in search while its page is already rendered. Nothing re-renders in that case, so the
+  // view scrolls to the anchor explicitly.
+  onNavigateUrl(url: string) {
+    if (url.startsWith('#')) {
+      this.view.scrollToAnchor?.(url);
+    }
   }
 
   async setInitialGlobals() {

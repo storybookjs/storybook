@@ -97,6 +97,9 @@ const evaluateNode = (node: t.Node, enums: SnippetEnum[]): unknown => {
   if (t.isIdentifier(unwrapped) && unwrapped.name === 'undefined') {
     return undefined;
   }
+  if (t.isUnaryExpression(unwrapped) && unwrapped.operator === 'void') {
+    return undefined;
+  }
   if (
     t.isUnaryExpression(unwrapped) &&
     unwrapped.operator === '-' &&

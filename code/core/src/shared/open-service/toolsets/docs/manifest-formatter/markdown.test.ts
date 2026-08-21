@@ -6,6 +6,7 @@ import {
   formatComponentManifest,
   formatManifestsToLists,
   formatMultiSourceManifestsToLists,
+  formatStoryDocumentation,
 } from './markdown.ts';
 
 describe('MarkdownFormatter - formatComponentManifest', () => {
@@ -472,6 +473,68 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
 				<Button icon="check">With Icon</Button>
 				\`\`\`"
+			`);
+    });
+
+    it('should list stories that carry no snippet instead of dropping them', () => {
+      const manifest: ComponentManifest = {
+        id: 'abstractions-billboard',
+        name: 'abstractions-billboard',
+        stories: [
+          { id: 'abstractions-billboard--default', name: 'Default' },
+          { id: 'abstractions-billboard--text', name: 'Text' },
+        ],
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toMatchInlineSnapshot(`
+				"# abstractions-billboard
+
+				ID: abstractions-billboard
+
+				## Stories
+
+				- Default (abstractions-billboard--default)
+				- Text (abstractions-billboard--text)"
+			`);
+    });
+
+    it('should list snippet-less stories under the ones it shows in full', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        name: 'Button',
+        import: 'import { Button } from "@/components";',
+        stories: [
+          { id: 'button--default', name: 'Default', snippet: '<Button>Default</Button>' },
+          { id: 'button--primary', name: 'Primary' },
+          { id: 'button--secondary', name: 'Secondary', summary: 'The quiet one' },
+        ],
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toMatchInlineSnapshot(`
+				"# Button
+
+				ID: button
+
+				## Stories
+
+				### Default
+
+				Story ID: button--default
+
+				\`\`\`
+				import { Button } from "@/components";
+
+				<Button>Default</Button>
+				\`\`\`
+
+				### Other Stories
+
+				- Primary (button--primary)
+				- Secondary (button--secondary): The quiet one"
 			`);
     });
   });
@@ -1221,6 +1284,62 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
         \`\`\`"
       `);
     });
+  });
+});
+
+describe('MarkdownFormatter - formatStoryDocumentation', () => {
+  it('renders a story that has a snippet', () => {
+    const manifest: ComponentManifest = {
+      id: 'button',
+      name: 'Button',
+      import: 'import { Button } from "@/components";',
+      stories: [
+        {
+          id: 'button--primary',
+          name: 'Primary',
+          description: 'The primary action',
+          snippet: '<Button variant="primary" />',
+        },
+      ],
+    };
+
+    expect(formatStoryDocumentation(manifest, 'Primary')).toMatchInlineSnapshot(`
+			"# Button - Primary
+
+			The primary action
+
+			\`\`\`
+			import { Button } from "@/components";
+
+			<Button variant="primary" />
+			\`\`\`"
+		`);
+  });
+
+  it('names a story that has no snippet instead of returning nothing', () => {
+    const manifest: ComponentManifest = {
+      id: 'abstractions-billboard',
+      name: 'abstractions-billboard',
+      stories: [{ id: 'abstractions-billboard--default', name: 'Default' }],
+    };
+
+    expect(formatStoryDocumentation(manifest, 'Default')).toMatchInlineSnapshot(`
+			"# abstractions-billboard - Default
+
+			Story ID: abstractions-billboard--default
+
+			No code snippet was extracted for this story."
+		`);
+  });
+
+  it('returns nothing for a story the component does not have', () => {
+    const manifest: ComponentManifest = {
+      id: 'button',
+      name: 'Button',
+      stories: [{ id: 'button--primary', name: 'Primary' }],
+    };
+
+    expect(formatStoryDocumentation(manifest, 'Missing')).toBe('');
   });
 });
 

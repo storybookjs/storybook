@@ -3,7 +3,12 @@
 // is the shared CSF pass in `story-shape`, spreads and names already followed.
 import { type NodePath, types as t } from 'storybook/internal/babel';
 import type { CsfFile, ResolvedMembers } from 'storybook/internal/csf-tools';
-import { sourceOf, unwrapExpression } from 'storybook/internal/csf-tools';
+import {
+  isCanonicalCsf2BindCall,
+  isCsfFactoryCall,
+  sourceOf,
+  unwrapExpression,
+} from 'storybook/internal/csf-tools';
 
 import { formatPropInTemplate } from '../template-grammar.ts';
 
@@ -29,6 +34,13 @@ export interface Bindings {
   outputs: string[];
 }
 
+// One `argsToTemplate` site, materialized after Angular identifies its surrounding element.
+export interface TemplateExpansion {
+  marker: string;
+  inputAttributes: string[];
+  outputAttributes: { name: string; markup: string }[];
+}
+
 /** Which arg names a binding list covers, mirroring `argsToTemplate`'s own options. */
 interface BindingFilter {
   include?: readonly string[];
@@ -44,26 +56,35 @@ interface BindingFilter {
 const bindingAttributes = (
   { inputs, outputs }: Bindings,
   filter: BindingFilter,
-  expanded: Set<string>
-): string[] => {
+  representedArgs: Set<string>
+): Omit<TemplateExpansion, 'marker'> => {
   const allowed = (name: string) =>
     filter.include ? filter.include.includes(name) : !filter.exclude?.includes(name);
-  const expandedInputs = inputs.filter(({ name }) => allowed(name));
-  expandedInputs.forEach(({ name }) => expanded.add(name));
-  return [
-    ...expandedInputs.map(({ name, expression }) => `[${name}]="${expression}"`),
-    ...outputs.filter(allowed).map((name) => `(${name})="${formatPropInTemplate(name)}($event)"`),
-  ];
+  const representedInputs = inputs.filter(({ name }) => allowed(name));
+  const representedOutputs = outputs.filter(allowed);
+  representedInputs.forEach(({ name }) => representedArgs.add(name));
+  representedOutputs.forEach((name) => representedArgs.add(name));
+  return {
+    inputAttributes: representedInputs.map(({ name, expression }) => `[${name}]="${expression}"`),
+    outputAttributes: representedOutputs.map((name) => ({
+      name,
+      markup: `(${name})="${formatPropInTemplate(name)}($event)"`,
+    })),
+  };
 };
 
 /** What a `template` turned out to hold. */
 export type TemplateResult =
   /**
-   * Read as markup, so the story is shown as written. `expandedArgs` names the args an
-   * `argsToTemplate` call already wrote into the markup as values, which is what tells a caller
-   * which of the remaining args the markup can only be referring to by name.
+   * Read as markup, so the story is shown as written. `representedArgs` names the args whose values
+   * the markup already contains.
    */
-  | { kind: 'literal'; markup: string; expandedArgs: readonly string[] }
+  | {
+      kind: 'literal';
+      markup: string;
+      representedArgs: readonly string[];
+      expansions: readonly TemplateExpansion[];
+    }
   /**
    * A `template` or `render` exists, but its markup needs the story to run. `source` is that
    * expression as written, so the story can say which one it fell back from; it is absent when a
@@ -73,8 +94,10 @@ export type TemplateResult =
 
 /** What the function owning a template literal binds, deciding how `${name}` resolves. */
 interface FunctionScope {
-  /** Names bound from the function's parameters; they resolve to story args. */
-  paramNames: ReadonlySet<string>;
+  /** Local parameter names mapped to the story arg each one destructures. */
+  argBindings: ReadonlyMap<string, string>;
+  /** Every parameter-local name, including bindings whose value cannot be mapped to one arg. */
+  parameterNames: ReadonlySet<string>;
   /** Names its body declares; their value at render time is not statically knowable. */
   bodyDeclared: ReadonlySet<string>;
   /**
@@ -85,7 +108,8 @@ interface FunctionScope {
 }
 
 const NO_SCOPE: FunctionScope = {
-  paramNames: new Set(),
+  argBindings: new Map(),
+  parameterNames: new Set(),
   bodyDeclared: new Set(),
   argsExpansions: new Map(),
 };
@@ -183,34 +207,89 @@ const templateFrom = (
     return undefined;
   }
   if (t.isStringLiteral(node)) {
-    return { kind: 'literal', markup: node.value, expandedArgs: [] };
+    return literalTemplate(node.value, new Set(), []);
   }
-  if (t.isTemplateLiteral(node)) {
-    const expanded = new Set<string>();
-    const markup = interpolate(node, shape, bindings, scope, expanded);
+  const parts = templateParts(node);
+  if (parts) {
+    const representedArgs = new Set<string>();
+    const expansions: TemplateExpansion[] = [];
+    const markup = interpolate(parts, shape, bindings, scope, representedArgs, expansions);
     return markup === undefined
       ? { kind: 'unresolvable', source: sourceOf(node) }
-      : { kind: 'literal', markup, expandedArgs: [...expanded] };
+      : literalTemplate(markup, representedArgs, expansions);
   }
   return { kind: 'unresolvable', source: sourceOf(node) };
 };
 
+const literalTemplate = (
+  markup: string,
+  representedArgs: ReadonlySet<string>,
+  expansions: readonly TemplateExpansion[]
+): Extract<TemplateResult, { kind: 'literal' }> => ({
+  kind: 'literal',
+  markup,
+  representedArgs: [...representedArgs],
+  expansions,
+});
+
+interface TemplateParts {
+  quasis: string[];
+  expressions: t.Node[];
+}
+
+// `String.raw` is the identity tag: it hands back the text between the backticks, so a template
+// wearing it is as readable as a plain one. No other tag transforms its input predictably.
+export const templateParts = (node: t.Node): TemplateParts | undefined => {
+  if (t.isTemplateLiteral(node)) {
+    return {
+      quasis: node.quasis.map((quasi) => quasi.value.cooked ?? ''),
+      expressions: node.expressions,
+    };
+  }
+  if (!t.isTaggedTemplateExpression(node) || !isStringRawTag(node.tag)) {
+    return undefined;
+  }
+  return {
+    quasis: node.quasi.quasis.map((quasi) => quasi.value.raw),
+    expressions: node.quasi.expressions,
+  };
+};
+
+const isStringRawTag = (tag: t.Expression): boolean =>
+  t.isMemberExpression(tag) &&
+  !tag.computed &&
+  t.isIdentifier(tag.object, { name: 'String' }) &&
+  t.isIdentifier(tag.property, { name: 'raw' });
+
 /** Markup a template literal holds once every `${…}` in it has been substituted. */
 const interpolate = (
-  node: t.TemplateLiteral,
+  { quasis, expressions }: TemplateParts,
   shape: StoryShape,
   bindings: Bindings | undefined,
   scope: FunctionScope,
-  expanded: Set<string>
+  representedArgs: Set<string>,
+  expansions: TemplateExpansion[]
 ): string | undefined => {
-  let markup = node.quasis[0]?.value.cooked ?? '';
+  let markup = quasis[0] ?? '';
 
-  for (const [index, expression] of node.expressions.entries()) {
-    const substituted = substituteExpression(expression, shape, bindings, scope, expanded);
+  for (const [index, expression] of expressions.entries()) {
+    let marker = `data-storybook-args-to-template-${index}`;
+    while (markup.includes(marker) || quasis.some((quasi) => quasi.includes(marker))) {
+      marker += '-x';
+    }
+    const substituted = substituteExpression(
+      expression,
+      shape,
+      bindings,
+      scope,
+      representedArgs,
+      marker,
+      expansions
+    );
     if (substituted === undefined) {
       return undefined;
     }
-    markup += substituted + (node.quasis[index + 1]?.value.cooked ?? '');
+    markup += substituted + (quasis[index + 1] ?? '');
   }
 
   return markup;
@@ -233,13 +312,11 @@ const substituteExpression = (
   shape: StoryShape,
   bindings: Bindings | undefined,
   scope: FunctionScope,
-  expanded: Set<string>
+  representedArgs: Set<string>,
+  marker: string,
+  expansions: TemplateExpansion[]
 ): string | undefined => {
-  if (
-    t.isCallExpression(expression) &&
-    t.isIdentifier(expression.callee) &&
-    expression.callee.name === 'argsToTemplate'
-  ) {
+  if (t.isCallExpression(expression) && isImportedArgsToTemplate(expression, shape)) {
     // Only the args parameter (whole, or as a rest binding) has a knowable expansion; a derived
     // object expands to whatever the story computes at runtime.
     const argument = expression.arguments[0];
@@ -256,14 +333,23 @@ const substituteExpression = (
     const allowed = filter.include
       ? { ...withRest, include: filter.include.filter((name) => !excluded.includes(name)) }
       : withRest;
-    return bindingAttributes(bindings, allowed, expanded).join(' ');
+    expansions.push({ marker, ...bindingAttributes(bindings, allowed, representedArgs) });
+    return marker;
   }
 
   if (!t.isIdentifier(expression)) {
     return undefined;
   }
-  if (scope.paramNames.has(expression.name)) {
-    return shape.unresolvedArgs.length === 0 ? literalText(shape.args[expression.name]) : undefined;
+  const argName = scope.argBindings.get(expression.name);
+  if (argName !== undefined) {
+    const text = shape.unresolvedArgs.length === 0 ? literalText(shape.args[argName]) : undefined;
+    if (text !== undefined) {
+      representedArgs.add(argName);
+    }
+    return text;
+  }
+  if (scope.parameterNames.has(expression.name)) {
+    return undefined;
   }
   // A name the body declares has a render-time value this pass cannot know.
   if (scope.bodyDeclared.has(expression.name)) {
@@ -271,6 +357,29 @@ const substituteExpression = (
   }
   const declared = declaredValue(shape, expression);
   return declared === expression ? undefined : literalText(declared);
+};
+
+const ARGS_TO_TEMPLATE_MODULES = new Set(['@storybook/angular', '@storybook/angular-vite']);
+
+const isImportedArgsToTemplate = (call: t.CallExpression, shape: StoryShape): boolean => {
+  if (!t.isIdentifier(call.callee)) {
+    return false;
+  }
+  const binding = shape.csf._file.path.scope.getBinding(call.callee.name);
+  if (!binding?.referencePaths.some((path) => path.node === call.callee)) {
+    return false;
+  }
+  const specifier = binding?.path.node;
+  const declaration = binding?.path.findParent((path) => t.isImportDeclaration(path.node))?.node;
+  if (!t.isImportSpecifier(specifier) || !t.isImportDeclaration(declaration)) {
+    return false;
+  }
+  const importedName = t.isIdentifier(specifier.imported)
+    ? specifier.imported.name
+    : specifier.imported.value;
+  return (
+    importedName === 'argsToTemplate' && ARGS_TO_TEMPLATE_MODULES.has(declaration.source.value)
+  );
 };
 
 /** Filter for `argsToTemplate` options, or `undefined` when the options need the story to run. */
@@ -317,15 +426,14 @@ const literalText = (node: t.Node | undefined): string | undefined => {
     : undefined;
 };
 
-/** How one annotation resolved against its config object. */
 type AnnotationResolution =
   | { kind: 'value'; node: t.Node }
   | { kind: 'missing' }
-  /**
-   * A spread may shadow or supply the property, or it is an accessor; the value is unknowable.
-   * `node` is the accessor itself; a spread cause carries no node, the config-member scan names it.
-   */
   | { kind: 'unresolvable'; node?: t.Node };
+
+type PropertyResolution =
+  | Exclude<AnnotationResolution, { kind: 'unresolvable' }>
+  | { kind: 'unresolvable'; node: t.Node };
 
 /**
  * A named member of a resolved config record.
@@ -346,26 +454,26 @@ export const resolvedMember = (members: ResolvedMembers, key: string): Annotatio
 };
 
 /** A named property of an object literal, for options a call site writes out inline. */
-export const resolvedProperty = (object: t.ObjectExpression, key: string): AnnotationResolution => {
+export const resolvedProperty = (object: t.ObjectExpression, key: string): PropertyResolution => {
   let found: t.ObjectMethod | t.ObjectProperty | undefined;
-  let opaqueAfter = false;
+  let opaqueAfter: t.ObjectExpression['properties'][number] | undefined;
   object.properties.forEach((property) => {
     const isMember = t.isObjectProperty(property) || t.isObjectMethod(property);
     if (isMember && keyNameOf(property) === key) {
       found = property;
-      opaqueAfter = false;
+      opaqueAfter = undefined;
       return;
     }
     if (t.isSpreadElement(property) || (isMember && keyNameOf(property) === undefined)) {
-      opaqueAfter = true;
+      opaqueAfter = property;
     }
   });
 
   if (!found) {
-    return opaqueAfter ? { kind: 'unresolvable' } : { kind: 'missing' };
+    return opaqueAfter ? { kind: 'unresolvable', node: opaqueAfter } : { kind: 'missing' };
   }
   if (opaqueAfter) {
-    return { kind: 'unresolvable' };
+    return { kind: 'unresolvable', node: opaqueAfter };
   }
   if (t.isObjectMethod(found)) {
     return found.kind === 'method' && !found.generator
@@ -400,7 +508,7 @@ export const storyConfigObject = (
     if (unwrapped && t.isObjectExpression(unwrapped)) {
       return unwrapped;
     }
-    if (unwrapped && t.isCallExpression(unwrapped) && isStoryFactoryCall(unwrapped)) {
+    if (unwrapped && isCsfFactoryCall(unwrapped)) {
       const argument = unwrapped.arguments[0];
       const config = argument && unwrapExpression(argument);
       if (config && t.isObjectExpression(config)) {
@@ -410,11 +518,6 @@ export const storyConfigObject = (
   }
   return undefined;
 };
-
-export const isStoryFactoryCall = (call: t.CallExpression): boolean =>
-  t.isMemberExpression(call.callee) &&
-  t.isIdentifier(call.callee.property) &&
-  ['story', 'extend'].includes(call.callee.property.name);
 
 export const metaConfigObject = (csf: CsfFile): t.ObjectExpression | undefined => {
   const node = csf._metaNode;
@@ -469,8 +572,8 @@ const csf2Shape = (shape: StoryShape): { fn: t.Node; returned: t.ObjectExpressio
   for (const candidate of candidates) {
     let fn = candidate ? unwrapExpression(candidate) : undefined;
     // `Template.bind({})` renders Template; the bound copy shares its body.
-    if (fn && t.isCallExpression(fn) && isBindCall(fn)) {
-      fn = declaredValue(shape, unwrapExpression((fn.callee as t.MemberExpression).object));
+    if (fn && isCanonicalCsf2BindCall(fn)) {
+      fn = declaredValue(shape, fn.callee.object);
     }
     const returned = returnedObject(fn);
     if (fn && returned) {
@@ -479,9 +582,6 @@ const csf2Shape = (shape: StoryShape): { fn: t.Node; returned: t.ObjectExpressio
   }
   return undefined;
 };
-
-export const isBindCall = (call: t.CallExpression): boolean =>
-  t.isMemberExpression(call.callee) && t.isIdentifier(call.callee.property, { name: 'bind' });
 
 /** What a render function binds, as far as it can be enumerated statically. */
 const functionScope = (fn: t.Node | undefined): FunctionScope => {
@@ -494,27 +594,23 @@ const functionScope = (fn: t.Node | undefined): FunctionScope => {
     return NO_SCOPE;
   }
 
-  const paramNames = new Set<string>();
-  const collect = (pattern: t.Node): void => {
-    if (t.isIdentifier(pattern)) {
-      paramNames.add(pattern.name);
-    } else if (t.isObjectPattern(pattern)) {
-      for (const property of pattern.properties) {
-        if (t.isRestElement(property)) {
-          collect(property.argument);
-        } else {
-          collect(property.value);
-        }
+  const [firstParam] = fn.params;
+  const argsPattern = t.isAssignmentPattern(firstParam) ? firstParam.left : firstParam;
+  const parameterNames = new Set<string>();
+  fn.params.forEach((param) => collectPatternNames(param, parameterNames));
+  const argBindings = new Map<string, string>();
+  if (t.isObjectPattern(argsPattern)) {
+    for (const property of argsPattern.properties) {
+      if (!t.isObjectProperty(property) || property.computed) {
+        continue;
       }
-    } else if (t.isArrayPattern(pattern)) {
-      pattern.elements.forEach((element) => element && collect(element));
-    } else if (t.isAssignmentPattern(pattern)) {
-      collect(pattern.left);
-    } else if (t.isRestElement(pattern)) {
-      collect(pattern.argument);
+      const argName = keyNameOf(property);
+      const local = t.isAssignmentPattern(property.value) ? property.value.left : property.value;
+      if (argName !== undefined && t.isIdentifier(local)) {
+        argBindings.set(local.name, argName);
+      }
     }
-  };
-  fn.params.forEach(collect);
+  }
 
   const bodyDeclared = new Set<string>();
   if (t.isBlockStatement(fn.body)) {
@@ -528,28 +624,30 @@ const functionScope = (fn: t.Node | undefined): FunctionScope => {
   }
 
   const argsExpansions = new Map<string, readonly string[]>();
-  const [firstParam] = fn.params;
-  if (t.isIdentifier(firstParam)) {
-    argsExpansions.set(firstParam.name, []);
-  } else if (t.isObjectPattern(firstParam)) {
+  if (t.isIdentifier(argsPattern)) {
+    argsExpansions.set(argsPattern.name, []);
+  } else if (t.isObjectPattern(argsPattern)) {
     const destructured: string[] = [];
     let rest: string | undefined;
-    for (const property of firstParam.properties) {
+    let knownKeys = true;
+    for (const property of argsPattern.properties) {
       if (t.isRestElement(property) && t.isIdentifier(property.argument)) {
         rest = property.argument.name;
       } else if (t.isObjectProperty(property)) {
-        const key = keyNameOf(property);
+        const key = property.computed ? undefined : keyNameOf(property);
         if (key !== undefined) {
           destructured.push(key);
+        } else {
+          knownKeys = false;
         }
       }
     }
-    if (rest !== undefined) {
+    if (rest !== undefined && knownKeys) {
       argsExpansions.set(rest, destructured);
     }
   }
 
-  return { paramNames, bodyDeclared, argsExpansions };
+  return { argBindings, parameterNames, bodyDeclared, argsExpansions };
 };
 
 const collectPatternNames = (pattern: t.Node, into: Set<string>): void => {

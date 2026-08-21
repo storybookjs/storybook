@@ -22,6 +22,7 @@ export {
   resolveArgsRecord,
   resolveBindingMembers,
   resolveObjectMembers,
+  resolveReferencedValue,
   sourceOf,
   type ReferenceContext,
   type ReferenceModule,
@@ -31,12 +32,15 @@ export {
 } from './resolve-members.ts';
 export {
   createStoryArgsResolver,
+  noSnippetWarning,
   unresolvedWarning,
   type ResolvedStoryArgs,
   type StoryArgsResolver,
 } from './resolve-story-args.ts';
 export { resolveRenderFunction, type RenderFunctionPath, type RenderResolution } from './render.ts';
 export {
+  isCanonicalCsf2BindCall,
+  isCsfFactoryCall,
   keyOf,
   metaObjectPath,
   pathForNode,

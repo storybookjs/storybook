@@ -4,6 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
+import ts from 'typescript';
 import { createCheckerByJson } from 'vue-component-meta';
 
 import { buildApiDescription } from '../../../../renderers/vue3/src/docgen/api-description.ts';
@@ -18,7 +19,7 @@ const checker = createCheckerByJson(fixturesDir, { include: ['**/*'] }, CHECKER_
 async function apiDescriptionFor(fixtureCase: string): Promise<string | undefined> {
   const testDir = join(fixturesDir, fixtureCase);
   const [sfcFile] = readdirSync(testDir).filter((file) => file.endsWith('.vue'));
-  const sources = await collectComponentMetaSources(checker, join(testDir, sfcFile));
+  const sources = await collectComponentMetaSources(checker, join(testDir, sfcFile), ts);
   const meta = sources.find((source) => source.exportName === 'default');
   return meta && buildApiDescription(meta);
 }
@@ -194,6 +195,39 @@ describe('vue3 api description from real vue-component-meta output', () => {
          * @default "Untitled"
          */
         title?: string;
+      }
+      \`\`\`"
+    `);
+  });
+  it('expose-event-collision keeps authored exposed members named like events', async () => {
+    expect(await apiDescriptionFor('expose-event-collision')).toMatchInlineSnapshot(`
+      "## Props
+
+      \`\`\`
+      export type ExposeEventCollisionProps = {
+        label?: string;
+      }
+      \`\`\`
+
+      ## Events
+
+      \`\`\`
+      export type ExposeEventCollisionEvents = {
+        focus: [];
+        blur: [];
+        boarding: [];
+      }
+      \`\`\`
+
+      ## Exposed
+
+      Available on the component instance through a template ref.
+
+      \`\`\`
+      export type ExposeEventCollisionExposed = {
+        focus: () => void;
+        blur: () => void;
+        onboarding: () => void;
       }
       \`\`\`"
     `);

@@ -295,7 +295,11 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
     const storiesToShow = hasProps
       ? storiesWithSnippets.slice(0, MAX_STORIES_TO_SHOW)
       : storiesWithSnippets;
-    const remainingStories = hasProps ? storiesWithSnippets.slice(MAX_STORIES_TO_SHOW) : [];
+
+    // Everything not shown in full is still named and addressable by story id, snippet or not:
+    // a component whose snippets could not be extracted must not read as having no stories.
+    const shown = new Set(storiesToShow);
+    const remainingStories = stories.filter((story) => !shown.has(story));
 
     // Show first X stories in full detail (or all if no props)
     for (const story of storiesToShow) {
@@ -313,8 +317,8 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
     if (remainingStories.length > 0) {
       if (storiesToShow.length > 0) {
         parts.push('### Other Stories');
+        parts.push('');
       }
-      parts.push('');
       for (const story of remainingStories) {
         const summary = extractSummary(story);
         const summaryPart = summary ? `: ${summary}` : '';
@@ -467,7 +471,7 @@ export function formatStoryDocumentation(
     ? componentManifest.stories.find((s) => s.name === storyName)
     : undefined;
 
-  if (!story || !story.snippet) {
+  if (!story) {
     return '';
   }
 
@@ -476,6 +480,22 @@ export function formatStoryDocumentation(
   // Component name - Story name header
   parts.push(`# ${componentManifest.name} - ${story.name}`);
   parts.push('');
+
+  // A story with no snippet still exists and is worth naming; saying so beats an empty answer,
+  // which reads as a broken tool rather than as missing data.
+  if (!story.snippet) {
+    if (story.id) {
+      parts.push(`Story ID: ${story.id}`);
+      parts.push('');
+    }
+    if (story.description) {
+      parts.push(story.description);
+      parts.push('');
+    }
+    parts.push('No code snippet was extracted for this story.');
+    return parts.join('\n').trim();
+  }
+
   parts.push(...formatStoryContent(story, componentManifest.import));
 
   return parts.join('\n').trim();

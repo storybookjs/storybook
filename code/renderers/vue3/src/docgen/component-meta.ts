@@ -12,11 +12,12 @@ import { join, parse } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
 import {
-  type ComponentJsDocInfo,
   extractComponentJsDocInfo,
   resolveExportedSymbol,
+  type ComponentJsDocInfo,
 } from 'storybook/internal/component-meta';
 
+import type ts from 'typescript';
 import {
   TypeMeta,
   createChecker,
@@ -28,7 +29,6 @@ import {
   type SlotMeta,
 } from 'vue-component-meta';
 import { parseMulti, type ComponentDoc } from 'vue-docgen-api';
-import type ts from 'typescript';
 
 // Mirrors the JSON round-trip in toSerializableMeta: methods (e.g. `getDeclarations`) do not
 // survive it, so their keys are dropped rather than kept as unconstructible phantom fields.
@@ -105,9 +105,9 @@ export async function createVueComponentMetaChecker(
  * export cannot suppress the docgen of its siblings.
  */
 export async function collectComponentMetaSources(
-  typescript: typeof ts,
   checker: ComponentMetaChecker,
-  id: string
+  id: string,
+  typescript?: typeof ts
 ): Promise<MetaSource[]> {
   let entries: MetaSourceEntry[] = [];
 
@@ -124,7 +124,9 @@ export async function collectComponentMetaSources(
     entries.push({
       name,
       meta,
-      jsDocInfo: extractVueComponentJsDocInfo(typescript, checker, id, name),
+      jsDocInfo: typescript
+        ? extractVueComponentJsDocInfo(typescript, checker, id, name)
+        : undefined,
     });
   }
 

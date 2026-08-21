@@ -19,7 +19,7 @@ const checker = createCheckerByJson(fixturesDir, { include: ['**/*'] }, CHECKER_
 async function apiDescriptionFor(fixtureCase: string): Promise<string | undefined> {
   const testDir = join(fixturesDir, fixtureCase);
   const [sfcFile] = readdirSync(testDir).filter((file) => file.endsWith('.vue'));
-  const sources = await collectComponentMetaSources(ts, checker, join(testDir, sfcFile));
+  const sources = await collectComponentMetaSources(checker, join(testDir, sfcFile), ts);
   const meta = sources.find((source) => source.exportName === 'default');
   return meta && buildApiDescription(meta);
 }

@@ -132,7 +132,7 @@ export async function buildDocgenPayload(
     path: component.path,
     exportName: component.exportName,
   };
-  const metaSources = await collectComponentMetaSources(context.typescript, checker, declared.path);
+  const metaSources = await collectComponentMetaSources(checker, declared.path, context.typescript);
   const componentMeta = metaSources.find((meta) => meta.exportName === declared.exportName);
 
   if (!componentMeta) {

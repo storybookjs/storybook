@@ -6,6 +6,7 @@ import { EventEmitter } from 'node:events';
 import { createServer, type Server } from 'node:http';
 import { connect } from 'node:net';
 import { stringify } from 'telejson';
+import type { WebSocketServer } from 'ws';
 
 import { ServerChannelTransport, getServerChannel } from '../get-server-channel.ts';
 
@@ -37,6 +38,10 @@ function closeCreatedTransports() {
   for (const transport of createdTransports.splice(0)) {
     transport.close();
   }
+}
+
+function websocketServer(transport: ServerChannelTransport) {
+  return (transport as unknown as { socket: WebSocketServer }).socket;
 }
 
 async function readRejectedUpgrade(requestLines: string[]): Promise<string> {
@@ -118,8 +123,7 @@ describe('ServerChannelTransport', () => {
     const handler = vi.fn();
     transport.setHandler(handler);
 
-    // @ts-expect-error (an internal API)
-    transport.socket.emit('connection', socket);
+    websocketServer(transport).emit('connection', socket);
     socket.emit('message', '"hello"');
 
     expect(handler).toHaveBeenCalledWith('hello');
@@ -132,8 +136,7 @@ describe('ServerChannelTransport', () => {
     const handler = vi.fn();
     transport.setHandler(handler);
 
-    // @ts-expect-error (an internal API)
-    transport.socket.emit('connection', socket);
+    websocketServer(transport).emit('connection', socket);
     socket.emit('message', JSON.stringify({ type: 'hello' }));
 
     expect(handler).toHaveBeenCalledWith({ type: 'hello' });
@@ -146,8 +149,7 @@ describe('ServerChannelTransport', () => {
     const handler = vi.fn();
     transport.setHandler(handler);
 
-    // @ts-expect-error (an internal API)
-    transport.socket.emit('connection', socket);
+    websocketServer(transport).emit('connection', socket);
 
     const input: any = { a: 1 };
     input.b = input;
@@ -210,7 +212,7 @@ describe('ServerChannelTransport', () => {
     const endSpy = vi.spyOn(socket, 'end');
     const transport = createTransport(server);
     const handleUpgradeSpy = vi
-      .spyOn(transport.socket, 'handleUpgrade')
+      .spyOn(websocketServer(transport), 'handleUpgrade')
       .mockImplementation(() => {});
 
     // Simulate upgrade request with correct token and valid origin
@@ -256,7 +258,7 @@ describe('ServerChannelTransport', () => {
     const endSpy = vi.spyOn(socket, 'end');
     const transport = createTransport(server);
     const handleUpgradeSpy = vi
-      .spyOn(transport.socket, 'handleUpgrade')
+      .spyOn(websocketServer(transport), 'handleUpgrade')
       .mockImplementation(() => {});
 
     const request = {
@@ -278,7 +280,7 @@ describe('ServerChannelTransport', () => {
     const endSpy = vi.spyOn(socket, 'end');
     const transport = createTransport(server);
     const handleUpgradeSpy = vi
-      .spyOn(transport.socket, 'handleUpgrade')
+      .spyOn(websocketServer(transport), 'handleUpgrade')
       .mockImplementation(() => {});
 
     const request = {
@@ -300,7 +302,7 @@ describe('ServerChannelTransport', () => {
     const endSpy = vi.spyOn(socket, 'end');
     const transport = createTransport(server);
     const handleUpgradeSpy = vi
-      .spyOn(transport.socket, 'handleUpgrade')
+      .spyOn(websocketServer(transport), 'handleUpgrade')
       .mockImplementation(() => {});
 
     const request = {
@@ -322,7 +324,7 @@ describe('ServerChannelTransport', () => {
     const endSpy = vi.spyOn(socket, 'end');
     const transport = createTransport(server);
     const handleUpgradeSpy = vi
-      .spyOn(transport.socket, 'handleUpgrade')
+      .spyOn(websocketServer(transport), 'handleUpgrade')
       .mockImplementation(() => {});
 
     // Simulate upgrade request with network address origin
@@ -347,7 +349,7 @@ describe('ServerChannelTransport', () => {
     const endSpy = vi.spyOn(socket, 'end');
     const transport = createTransport(server);
     const handleUpgradeSpy = vi
-      .spyOn(transport.socket, 'handleUpgrade')
+      .spyOn(websocketServer(transport), 'handleUpgrade')
       .mockImplementation(() => {});
 
     // Simulate upgrade request with 127.0.0.1 origin
@@ -372,7 +374,7 @@ describe('ServerChannelTransport', () => {
     const endSpy = vi.spyOn(socket, 'end');
     const transport = createTransport(server);
     const handleUpgradeSpy = vi
-      .spyOn(transport.socket, 'handleUpgrade')
+      .spyOn(websocketServer(transport), 'handleUpgrade')
       .mockImplementation(() => {});
 
     // Simulate upgrade request to wrong path
@@ -398,7 +400,7 @@ describe('ServerChannelTransport', () => {
     const endSpy = vi.spyOn(socket, 'end');
     const transport = createTransport(server, webContainerOptions);
     const handleUpgradeSpy = vi
-      .spyOn(transport.socket, 'handleUpgrade')
+      .spyOn(websocketServer(transport), 'handleUpgrade')
       .mockImplementation(() => {});
 
     const request = {
@@ -422,7 +424,7 @@ describe('ServerChannelTransport', () => {
     const endSpy = vi.spyOn(socket, 'end');
     const transport = createTransport(server, webContainerOptions);
     const handleUpgradeSpy = vi
-      .spyOn(transport.socket, 'handleUpgrade')
+      .spyOn(websocketServer(transport), 'handleUpgrade')
       .mockImplementation(() => {});
 
     const request = {

@@ -64,7 +64,7 @@ export async function loadStorybookAiMetadata(
   options: StorybookAiMetadataOptions = {}
 ): Promise<StorybookAiMetadata | undefined> {
   const configDir = resolveStorybookConfigDir(options);
-  const storybook = await loadStorybook({ configDir });
+  const storybook = await loadStorybook({ configDir, skipServices: true });
 
   const metadata = await storybook.presets.apply<unknown>(STORYBOOK_AI_METADATA_PRESET, undefined);
 

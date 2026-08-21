@@ -28,6 +28,11 @@ export async function loadStorybook(
        * so addon hooks that answer requests over `options.channel` share the caller's bus.
        */
       channel?: Channel;
+      /**
+       * Skip the one-shot `services` preset. Metadata-only loads must leave that slot free so a
+       * later attached host can register services on the real channel.
+       */
+      skipServices?: boolean;
     }
 ): Promise<Options> {
   const configDir = resolve(options.configDir);
@@ -103,7 +108,9 @@ export async function loadStorybook(
   const features = await presets.apply('features');
   global.FEATURES = features;
 
-  await applyServicesPresetOnce(presets);
+  if (!options.skipServices) {
+    await applyServicesPresetOnce(presets);
+  }
 
   return {
     ...options,

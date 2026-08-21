@@ -41,7 +41,10 @@ describe('loadStorybookAiMetadata', () => {
 
     const metadata = await loadStorybookAiMetadata({ cwd: '/repo' });
 
-    expect(loadStorybook).toHaveBeenCalledWith({ configDir: resolve('/repo/.storybook') });
+    expect(loadStorybook).toHaveBeenCalledWith({
+      configDir: resolve('/repo/.storybook'),
+      skipServices: true,
+    });
     expect(apply).toHaveBeenCalledWith('experimental_storybookAi', undefined);
     expect(metadata).toEqual({
       instructions: 'Follow the story workflow.',
@@ -66,7 +69,10 @@ describe('loadStorybookAiMetadata', () => {
 
     await loadStorybookAiMetadata({ cwd: '/repo', configDir: 'config/storybook' });
 
-    expect(loadStorybook).toHaveBeenCalledWith({ configDir: resolve('/repo/config/storybook') });
+    expect(loadStorybook).toHaveBeenCalledWith({
+      configDir: resolve('/repo/config/storybook'),
+      skipServices: true,
+    });
   });
 
   it('normalizes optional metadata fields and hides descriptor-less local tools', async () => {

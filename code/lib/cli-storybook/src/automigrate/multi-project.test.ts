@@ -48,12 +48,19 @@ describe('multi-project automigrations', () => {
     consoleErrorSpy.mockRestore();
   });
 
-  const createMockFix = (id: string, checkResult: any = {}): Fix => ({
-    id,
-    check: vi.fn().mockResolvedValue(checkResult),
-    prompt: vi.fn().mockReturnValue(`Prompt for ${id}`),
-    promptType: 'auto',
-    run: vi.fn(),
+  const createMockFix = (id: string, checkResult: any = {}, overrides: Partial<Fix> = {}): Fix =>
+    ({
+      id,
+      check: vi.fn().mockResolvedValue(checkResult),
+      prompt: vi.fn().mockReturnValue(`Prompt for ${id}`),
+      promptType: 'auto',
+      run: vi.fn(),
+      ...overrides,
+    }) as Fix;
+
+  const asAutomigration = (fix: Fix, project: ProjectAutomigrationData) => ({
+    fix,
+    reports: [{ result: { needsFix: true }, status: 'check_succeeded' as const, project }],
   });
 
   const createMockProject = (configDir: string): ProjectAutomigrationData => ({
@@ -224,6 +231,126 @@ describe('multi-project automigrations', () => {
 
       expect(result).toEqual(automigrations);
       expect(logSpy).toHaveBeenCalledWith('Running all detected automigrations:');
+    });
+
+    it('should exclude opt-in non-auto automigrations when yes option is true', async () => {
+      const project1 = createMockProject('/project1/.storybook');
+      const defaultFix = createMockFix('default-fix');
+      const optInFix = createMockFix(
+        'opt-in-fix',
+        {},
+        {
+          defaultSelected: false,
+          promptType: undefined,
+        }
+      );
+
+      const automigrations = [
+        asAutomigration(defaultFix, project1),
+        asAutomigration(optInFix, project1),
+      ];
+
+      const result = await promptForAutomigrations(automigrations, { dryRun: false, yes: true });
+
+      expect(result.map(({ fix }) => fix.id)).toEqual(['default-fix']);
+    });
+
+    it('should keep opt-in automigrations that declare promptType auto when yes option is true', async () => {
+      const project1 = createMockProject('/project1/.storybook');
+      const autoOptInFix = createMockFix(
+        'auto-opt-in-fix',
+        {},
+        {
+          defaultSelected: false,
+          promptType: 'auto',
+        }
+      );
+
+      const automigrations = [asAutomigration(autoOptInFix, project1)];
+
+      const result = await promptForAutomigrations(automigrations, { dryRun: false, yes: true });
+
+      expect(result.map(({ fix }) => fix.id)).toEqual(['auto-opt-in-fix']);
+    });
+
+    it('should run preselected opt-in automigrations alongside the usual selection when yes option is true', async () => {
+      const project1 = createMockProject('/project1/.storybook');
+      const defaultFix = createMockFix('default-fix');
+      const requestedFix = createMockFix(
+        'requested-fix',
+        {},
+        {
+          defaultSelected: false,
+          promptType: undefined,
+        }
+      );
+      const otherOptInFix = createMockFix(
+        'other-opt-in-fix',
+        {},
+        {
+          defaultSelected: false,
+          promptType: undefined,
+        }
+      );
+
+      const automigrations = [
+        asAutomigration(defaultFix, project1),
+        asAutomigration(requestedFix, project1),
+        asAutomigration(otherOptInFix, project1),
+      ];
+
+      const result = await promptForAutomigrations(automigrations, {
+        dryRun: false,
+        yes: true,
+        preselectedIds: ['requested-fix'],
+      });
+
+      expect(result.map(({ fix }) => fix.id)).toEqual(['default-fix', 'requested-fix']);
+    });
+
+    it('should still offer every automigration when ids are preselected interactively', async () => {
+      const { prompt } = await import('storybook/internal/node-logger');
+      const project1 = createMockProject('/project1/.storybook');
+      const defaultFix = createMockFix('default-fix');
+      const requestedFix = createMockFix(
+        'requested-fix',
+        {},
+        {
+          defaultSelected: false,
+          promptType: undefined,
+        }
+      );
+      const otherOptInFix = createMockFix(
+        'other-opt-in-fix',
+        {},
+        {
+          defaultSelected: false,
+          promptType: undefined,
+        }
+      );
+
+      const automigrations = [
+        asAutomigration(defaultFix, project1),
+        asAutomigration(requestedFix, project1),
+        asAutomigration(otherOptInFix, project1),
+      ];
+
+      vi.mocked(prompt.multiselect).mockResolvedValue(['default-fix', 'requested-fix']);
+
+      const result = await promptForAutomigrations(automigrations, {
+        dryRun: false,
+        yes: false,
+        preselectedIds: ['requested-fix'],
+      });
+
+      const [{ options: choices, initialValues }] = vi.mocked(prompt.multiselect).mock.calls[0];
+      expect(choices.map((choice) => choice.value)).toEqual([
+        'default-fix',
+        'requested-fix',
+        'other-opt-in-fix',
+      ]);
+      expect(initialValues).toEqual(['default-fix', 'requested-fix']);
+      expect(result.map(({ fix }) => fix.id)).toEqual(['default-fix', 'requested-fix']);
     });
 
     it('should return empty array when dryRun is true', async () => {

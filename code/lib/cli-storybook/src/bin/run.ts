@@ -19,7 +19,7 @@ import picocolors from 'picocolors';
 import { version } from '../../package.json';
 import { add } from '../add.ts';
 import { doAutomigrate } from '../automigrate/index.ts';
-import { FEATURE_FLAG_FIXES } from '../automigrate/fixes/experimental-features.ts';
+import { resolveRequestedFeatures } from '../automigrate/fixes/experimental-features.ts';
 import { doctor } from '../doctor/index.ts';
 import { link } from '../link.ts';
 import { migrate } from '../migrate.ts';
@@ -173,17 +173,12 @@ command('upgrade')
       '--features <list>',
       'Comma-separated list of experimental feature flags to enable during the upgrade'
     ).argParser((value) => {
-      const names = value
-        .split(',')
-        .map((name) => name.trim())
-        .filter(Boolean);
-      const unknown = names.filter((name) => !(name in FEATURE_FLAG_FIXES));
-      if (unknown.length > 0) {
-        throw new InvalidArgumentError(
-          `Unknown feature flag(s): ${unknown.join(', ')}. Available: ${Object.keys(FEATURE_FLAG_FIXES).join(', ')}.`
-        );
+      try {
+        resolveRequestedFeatures(value);
+      } catch (error) {
+        throw new InvalidArgumentError(error instanceof Error ? error.message : String(error));
       }
-      return names.join(',');
+      return value;
     })
   )
   .option('-f --force', 'force the upgrade, skipping autoblockers')

@@ -9,6 +9,11 @@ export interface CheckOptions {
   storybookVersion: string;
   /** Version installed before the upgrade. Only set when running as part of `storybook upgrade`. */
   beforeVersion?: string;
+  /**
+   * The user named this fix explicitly (`storybook automigrate <fixId>` or `storybook upgrade
+   * --features <flag>`). Opt-in fixes may treat this as consent and skip their own gating.
+   */
+  requested?: boolean;
   previewConfigPath?: string;
   mainConfigPath?: string;
   storiesPaths: string[];

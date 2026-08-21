@@ -1,8 +1,13 @@
-import type { StorybookFeatures } from 'storybook/internal/types';
+import type { StorybookConfigRaw, StorybookFeatures } from 'storybook/internal/types';
+import { SupportedRenderer } from 'storybook/internal/types';
 
 import semver from 'semver';
 
-import { updateMainConfig } from '../helpers/mainConfigFile.ts';
+import {
+  getFrameworkPackageName,
+  getRendererName,
+  updateMainConfig,
+} from '../helpers/mainConfigFile.ts';
 import type { CheckOptions, Fix } from '../types.ts';
 
 const MIN_VERSION = '10.5.0';
@@ -29,13 +34,26 @@ const crossesFeatureBoundary = (beforeVersion: string, targetVersion: string): b
 
 const checkFeature =
   (name: keyof StorybookFeatures, requires?: keyof StorybookFeatures) =>
-  async ({ mainConfigPath, mainConfig, beforeVersion, storybookVersion }: CheckOptions) => {
+  async ({
+    mainConfigPath,
+    mainConfig,
+    beforeVersion,
+    storybookVersion,
+    requested,
+  }: CheckOptions) => {
     if (!mainConfigPath) {
       return null;
     }
-    // Outside an upgrade (`storybook automigrate`, or an explicit `--features` request) there is
-    // no boundary to cross, so only real applicability below decides.
-    if (beforeVersion && !crossesFeatureBoundary(beforeVersion, storybookVersion)) {
+    // The flag does not exist before 10.5, so writing it into an older project's main config would
+    // only confuse it. This floor holds even when the user asked for the fix by name.
+    const current = semver.coerce(storybookVersion);
+    if (!current || semver.lt(current, MIN_VERSION)) {
+      return null;
+    }
+    // These flags are opt-in, so they are only ever surfaced on the upgrade that introduces them.
+    // Naming the fix (`automigrate <fixId>` or `upgrade --features <flag>`) is itself the opt-in
+    // and skips the boundary, which is what makes `--features` work on a project already on 10.5.
+    if (!requested && !(beforeVersion && crossesFeatureBoundary(beforeVersion, storybookVersion))) {
       return null;
     }
     // Leave an explicit choice alone, in either direction.
@@ -48,6 +66,19 @@ const checkFeature =
     }
     return {};
   };
+
+/**
+ * Whether the project resolves an `experimental_docgenProvider`. Every React framework inherits one
+ * from the React renderer preset, while Vue and Angular ship theirs at the framework level, so
+ * their non-Vite siblings (nuxt, vue3-rsbuild, `@storybook/angular`) have none. Without a provider
+ * the flag only strips the docgen-derived `inferArgTypes`/`inferControls` enhancers and serves
+ * nothing in their place.
+ */
+const hasDocgenProvider = (mainConfig: StorybookConfigRaw): boolean =>
+  getRendererName(mainConfig) === SupportedRenderer.REACT ||
+  ['@storybook/vue3-vite', '@storybook/angular-vite'].includes(
+    getFrameworkPackageName(mainConfig) ?? ''
+  );
 
 const enableFeature = (name: keyof StorybookFeatures) =>
   async function run({ mainConfigPath, dryRun }: { mainConfigPath: string; dryRun?: boolean }) {
@@ -66,18 +97,48 @@ export const enableExperimentalReview: Fix = {
   run: enableFeature('experimentalReview'),
 };
 
+const checkDocgenServer = checkFeature('experimentalDocgenServer');
+
 export const enableExperimentalDocgenServer: Fix = {
   id: 'enable-experimental-docgen-server',
   link: 'https://storybook.js.org/docs/api/main-config/main-config-features#experimentaldocgenserver',
   defaultSelected: false,
-  check: checkFeature('experimentalDocgenServer'),
+  check: async (options) =>
+    hasDocgenProvider(options.mainConfig) ? checkDocgenServer(options) : null,
   prompt: () =>
     'Enable experimentalDocgenServer for faster startup and more accurate Controls/ArgTypes in React projects.',
   run: enableFeature('experimentalDocgenServer'),
 };
 
 /** Feature-flag names accepted by `storybook upgrade --features`, mapped to the fix that sets them. */
-export const FEATURE_FLAG_FIXES = {
+const FEATURE_FLAG_FIXES = {
   experimentalReview: enableExperimentalReview,
   experimentalDocgenServer: enableExperimentalDocgenServer,
 } satisfies Partial<Record<keyof StorybookFeatures, Fix>>;
+
+/**
+ * Maps a `--features experimentalReview,...` value onto the fixes that enable those flags. Throws
+ * on any name that is not a supported flag, so both the CLI arg parser and the upgrade run fail
+ * loudly rather than silently ignoring a typo.
+ */
+export const resolveRequestedFeatures = (
+  features: string | undefined
+): Array<{ name: string; fixId: string }> => {
+  const names =
+    features
+      ?.split(',')
+      .map((name) => name.trim())
+      .filter(Boolean) ?? [];
+
+  const unknown = names.filter((name) => !(name in FEATURE_FLAG_FIXES));
+  if (unknown.length > 0) {
+    throw new Error(
+      `Unknown feature flag(s): ${unknown.join(', ')}. Available: ${Object.keys(FEATURE_FLAG_FIXES).join(', ')}.`
+    );
+  }
+
+  return names.map((name) => ({
+    name,
+    fixId: FEATURE_FLAG_FIXES[name as keyof typeof FEATURE_FLAG_FIXES].id,
+  }));
+};

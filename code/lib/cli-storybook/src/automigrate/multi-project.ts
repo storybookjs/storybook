@@ -6,7 +6,7 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 import type { UpgradeOptions } from '../upgrade.ts';
 import { shortenPath } from '../util.ts';
 import type { CollectProjectsSuccessResult } from '../util.ts';
-import { FEATURE_FLAG_FIXES } from './fixes/experimental-features.ts';
+import { resolveRequestedFeatures } from './fixes/experimental-features.ts';
 import { allFixes } from './fixes/index.ts';
 import { rnstorybookConfig } from './fixes/rnstorybook-config.ts';
 import type { CheckOptions, Fix, FixId, RunOptions } from './types.ts';
@@ -43,7 +43,7 @@ export interface MultiProjectAutomigrationOptions {
   yes?: boolean;
   skipInstall?: boolean;
   taskLog: TaskLogInstance;
-  /** Fix ids the user asked for explicitly; these skip upgrade-boundary gating. */
+  /** Fix ids the user asked for explicitly; forwarded to `check` as `requested`. */
   requestedFixIds?: string[];
 }
 
@@ -111,9 +111,8 @@ export async function collectAutomigrationsAcrossProjects(
           configDir: project.configDir,
           mainConfig: project.mainConfig,
           storybookVersion: project.storybookVersion,
-          // An explicitly requested fix is not subject to upgrade-boundary gating: the user
-          // already said they want it, so `check` should only judge real applicability.
-          beforeVersion: requestedFixIds?.includes(fix.id) ? undefined : project.beforeVersion,
+          beforeVersion: project.beforeVersion,
+          requested: requestedFixIds?.includes(fix.id),
           previewConfigPath: project.previewConfigPath,
           mainConfigPath: project.mainConfigPath,
           storiesPaths: project.storiesPaths,
@@ -203,18 +202,6 @@ const formatProjectDirs = (list: AutomigrationCheckResult['reports']) => {
   return `${relativeDirs.slice(0, amountOfProjectsShown).join(', ')}${remaining > 0 ? ` and ${remaining} more...` : ''}`;
 };
 
-/** Maps `--features experimentalReview,...` onto the fix ids that enable those flags. */
-const resolveRequestedFixIds = (features: string | undefined): string[] | undefined => {
-  const names = features
-    ?.split(',')
-    .map((name) => name.trim())
-    .filter(Boolean);
-  if (!names?.length) {
-    return undefined;
-  }
-  return names.map((name) => FEATURE_FLAG_FIXES[name as keyof typeof FEATURE_FLAG_FIXES].id);
-};
-
 /** Prompts user to select which automigrations to run */
 export async function promptForAutomigrations(
   automigrations: AutomigrationCheckResult[],
@@ -231,15 +218,7 @@ export async function promptForAutomigrations(
     });
   };
 
-  if (options.preselectedIds?.length) {
-    const selected = automigrations.filter(({ fix }) => options.preselectedIds!.includes(fix.id));
-    if (options.dryRun) {
-      logSelection('Requested automigrations (dry run - no changes will be made):', selected);
-      return [];
-    }
-    logSelection('Running requested automigrations:', selected);
-    return selected;
-  }
+  const preselectedIds = new Set(options.preselectedIds ?? []);
 
   if (options.dryRun) {
     logSelection('Detected automigrations (dry run - no changes will be made):', automigrations);
@@ -247,9 +226,14 @@ export async function promptForAutomigrations(
   }
 
   if (options.yes) {
-    // `defaultSelected: false` marks a fix as opt-in (e.g. a framework migration or a new
-    // experimental flag). `--yes` means "don't ask me", not "opt me into everything".
-    const selected = automigrations.filter(({ fix }) => fix.defaultSelected !== false);
+    // `--yes` means "don't ask me", not "opt me into everything". Both halves of the rule matter:
+    // an opt-in fix that declares `promptType: 'auto'` is still meant to run unattended
+    // (upgrade-storybook-related-dependencies), while the framework migrations and experimental
+    // flags leave `promptType` unset and need a deliberate choice.
+    const selected = automigrations.filter(
+      ({ fix }) =>
+        preselectedIds.has(fix.id) || fix.defaultSelected !== false || fix.promptType === 'auto'
+    );
     logSelection('Running all detected automigrations:', selected);
     return selected;
   }
@@ -271,7 +255,7 @@ export async function promptForAutomigrations(
       value: am.fix.id,
       label,
       hint: hint.join('\n'),
-      defaultSelected: am.fix.defaultSelected ?? true,
+      defaultSelected: preselectedIds.has(am.fix.id) || (am.fix.defaultSelected ?? true),
     };
   });
 
@@ -468,6 +452,9 @@ export async function runAutomigrations(
   detectedAutomigrations: AutomigrationCheckResult[];
   automigrationResults: Record<string, AutomigrationResult>;
 }> {
+  const requestedFeatures = resolveRequestedFeatures(options.features);
+  const requestedFixIds = requestedFeatures.map(({ fixId }) => fixId);
+
   // Prepare project data for automigrations
   const projectAutomigrationData: ProjectAutomigrationData[] = projects.map((project) => ({
     configDir: project.configDir,
@@ -488,7 +475,6 @@ export async function runAutomigrations(
         ? `Detecting automigrations for ${projectAutomigrationData.length} projects...`
         : `Detecting automigrations...`,
   });
-  const requestedFixIds = resolveRequestedFixIds(options.features);
 
   // Collect all applicable automigrations across all projects
   const detectedAutomigrations = await collectAutomigrationsAcrossProjects({
@@ -505,6 +491,19 @@ export async function runAutomigrations(
   const successfulAutomigrations = detectedAutomigrations.filter((am) =>
     am.reports.some((report) => report.status === 'check_succeeded')
   );
+
+  requestedFeatures
+    .filter(({ fixId }) => !successfulAutomigrations.some((am) => am.fix.id === fixId))
+    .forEach(({ name, fixId }) => {
+      const checkFailed = detectedAutomigrations
+        .find((am) => am.fix.id === fixId)
+        ?.reports.some((report) => report.status === 'check_failed');
+      logger.warn(
+        checkFailed
+          ? `Skipping --features ${name}: the '${fixId}' migration check failed. Run with --debug for details.`
+          : `Skipping --features ${name}: the '${fixId}' migration does not apply here. ${name} is either already set in your main config, unsupported by your Storybook version, or missing a prerequisite.`
+      );
+    });
 
   // Prompt user to select which automigrations to run
   const selectedAutomigrations = await promptForAutomigrations(successfulAutomigrations, {

@@ -298,6 +298,29 @@ describe('angular-to-angular-vite', () => {
       expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith([ANGULAR_PACKAGE]);
     });
 
+    // `*` and its spellings admit every version, so their floor is 0.0.0. Angular has never had a
+    // 0.x, so that floor is an absence of information and belongs on the fail-open path rather than
+    // being refused as "this project is on Angular 0".
+    it.each(['*', 'x', '>=0.0.0', '21.2.7 || *'])(
+      'treats %s as an unknown version and migrates with a warning',
+      async (declared) => {
+        vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
+          [ANGULAR_PACKAGE]: '^10.0.0',
+          '@angular/core': declared,
+        });
+        // The package manager really does hand `*` back: `semver.validRange('*')` is truthy, so
+        // `getDeclaredVersionSpecifier` returns the declared range rather than null.
+        mockAngularCore({ declared, resolved: declared });
+
+        const result = await checkThenRun();
+
+        expect(result).not.toBeNull();
+        expect(logger.warn).toHaveBeenCalledWith(expect.stringContaining('Could not determine'));
+        expect(logger.warn).not.toHaveBeenCalledWith(expect.stringContaining('Angular 0'));
+        expect(mockPackageManager.removeDependencies).toHaveBeenCalledWith([ANGULAR_PACKAGE]);
+      }
+    );
+
     it('reports hasWebpackFinal: true when main config contains webpackFinal', async () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
         [ANGULAR_PACKAGE]: '^9.0.0',

@@ -406,10 +406,16 @@ const addZoneJsPreviewImport = async (
  * instead, which is the only major the range guarantees: `^20 || ^21` may resolve to 20, so it is
  * not an Angular 21 project. Comparing `.major` rather than the version keeps a `21.0.0-rc.0`
  * prerelease on the Angular 21 side of the line, where `semver.gte` would put it below `21.0.0`.
+ *
+ * A floor of major 0 is treated as no answer rather than as Angular 0: only a range admitting
+ * everything from zero (`*`, `x`, `>=0.0.0`, `21.2.7 || *`) produces one, and Angular has never
+ * had a 0.x. Reporting those as unknown keeps them on the fail-open path with every other
+ * specifier that carries no version, instead of refusing them as "Angular 0".
  */
 const getGuaranteedAngularMajor = (specifier: string | null): number | null => {
   const range = specifier ? semver.validRange(specifier) : null;
-  return range ? (semver.minVersion(range)?.major ?? null) : null;
+  const major = range ? (semver.minVersion(range)?.major ?? null) : null;
+  return major === 0 ? null : major;
 };
 
 export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {

@@ -30,6 +30,7 @@ const docgenFor = (importPath: string, title: string) =>
     {
       getChecker: (componentPath: string) => manager.getCheckerForFile(componentPath),
       resolvePath: (path: string) => join(barrelDir, path),
+      typescript: ts,
     }
   );
 

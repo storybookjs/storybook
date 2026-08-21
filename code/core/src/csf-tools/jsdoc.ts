@@ -56,8 +56,8 @@ export function extractJSDocInfo(jsdocComment: string) {
     tags: Object.fromEntries(
       Array.from(groupByTag(parsed[0].tags), ([tag, specs]) => [
         tag,
-        specs.map(
-          (spec) => (spec.type ? `{${spec.type}} ` : '') + `${spec.name} ${spec.description}`
+        specs.map((spec) =>
+          ((spec.type ? `{${spec.type}} ` : '') + `${spec.name} ${spec.description}`).trim()
         ),
       ])
     ) as JsDocTagMap,

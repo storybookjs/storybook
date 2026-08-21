@@ -12,7 +12,7 @@ it('should extract @summary tag', () => {
       "description": "description",
       "tags": {
         "summary": [
-          " my summary",
+          "my summary",
         ],
       },
     }
@@ -105,5 +105,14 @@ it('lets non-empty docgen JSDoc tags win over matching docblock tags', () => {
       describe: ['Component describe.'],
       summary: ['Component summary.'],
     },
+  });
+});
+
+it('trims a single-word tag value, whose name and empty description would otherwise join with a space', () => {
+  expect(
+    extractJSDocInfo('A button.\n\n@summary Clickable\n@deprecated Use NewButton.').tags
+  ).toEqual({
+    summary: ['Clickable'],
+    deprecated: ['Use NewButton.'],
   });
 });

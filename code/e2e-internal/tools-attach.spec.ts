@@ -112,15 +112,12 @@ test.describe('storybook tools attach', () => {
   });
 
   test('auto mode falls back to local with a notice when no instance matches', async () => {
-    const result = await runTools([
-      '--cwd',
-      '/tmp/storybook-tools-attach-no-instance',
-      'docs',
-      'list',
-    ]);
+    const result = await runTools(['--port', '59999', 'docs', 'list']);
 
+    expect(result.exitCode, result.output).toBe(0);
+    expect(result.output).toContain('example-button');
     expect(result.output).toContain('Falling back to loading this project');
-    expect(result.output).toContain('npm run storybook');
+    expect(result.output).toContain('not on port `59999`');
   });
 
   test('attaches from a different cwd via a project-local child host', async () => {

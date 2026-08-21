@@ -816,7 +816,7 @@ describe('attached tools', () => {
     expect(result.output).toContain('--attach');
   });
 
-  it('prints the SDK fallback notice ahead of a local result', async () => {
+  it('prints the SDK fallback notice separately from the local result', async () => {
     const tools = makeLocalTools();
     tools.fallbackNotice =
       "No running Storybook was found for this project.\n\nFalling back to loading this project's Storybook configuration in this process.";
@@ -828,7 +828,8 @@ describe('attached tools', () => {
 
     expect(createTools).toHaveBeenCalledWith(expect.objectContaining({ mode: 'auto' }));
     expect(result.attachMode).toBe('local');
-    expect(result.output).toContain('Falling back to loading this project');
+    expect(result.fallbackNotice).toContain('Falling back to loading this project');
     expect(result.output).toContain('Button');
+    expect(result.output).not.toContain('Falling back');
   });
 });

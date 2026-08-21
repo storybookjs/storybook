@@ -13,7 +13,12 @@ import {
   type ChildHelloMessage,
   type ParentMessage,
 } from './child-protocol.ts';
-import { SpawnFailedError, ToolsRuntimeError } from './errors.ts';
+import {
+  AttachUnavailableError,
+  EnvironmentMismatchError,
+  SpawnFailedError,
+  ToolsRuntimeError,
+} from './errors.ts';
 import { resolveChildHostScript } from './resolve-project-storybook.ts';
 import type {
   AttachedTools,
@@ -133,7 +138,7 @@ export async function spawnChildHost(
       waiter.resolve(raw.value);
       return;
     }
-    waiter.reject(deserializeError(raw.error as SerializedError));
+    waiter.reject(rehydrateSerializedToolsError(raw.error as SerializedError));
   });
 
   const send = (message: ParentMessage) => {
@@ -174,7 +179,7 @@ export async function spawnChildHost(
         }
         if (isChildMessage(raw) && raw.type === 'error' && raw.id === 'init') {
           cleanup();
-          reject(deserializeError(raw.error));
+          reject(rehydrateSerializedToolsError(raw.error));
         }
       };
       const onExit = (code: number | null, signal: NodeJS.Signals | null) => {
@@ -303,4 +308,33 @@ export async function spawnChildHost(
       child.kill();
     },
   };
+}
+
+function rehydrateSerializedToolsError(serialized: SerializedError): Error {
+  const plain = deserializeError(serialized);
+  const data = (plain as { data?: unknown }).data;
+  if (data === undefined || data === null || typeof data !== 'object') {
+    return plain;
+  }
+  switch (toolsErrorKind(serialized)) {
+    case 'AttachUnavailableError':
+      return new AttachUnavailableError(data as AttachUnavailableError['data']);
+    case 'EnvironmentMismatchError':
+      return new EnvironmentMismatchError(data as EnvironmentMismatchError['data']);
+    case 'SpawnFailedError':
+      return new SpawnFailedError(data as SpawnFailedError['data']);
+    case 'ToolsRuntimeError':
+      return new ToolsRuntimeError(data as ToolsRuntimeError['data']);
+    default:
+      return plain;
+  }
+}
+
+function toolsErrorKind(serialized: SerializedError): string {
+  const fromProps = serialized.properties?._name;
+  if (typeof fromProps === 'string') {
+    return fromProps;
+  }
+  const match = serialized.name.match(/\(([^)]+)\)$/);
+  return match?.[1] ?? serialized.name;
 }

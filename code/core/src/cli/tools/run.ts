@@ -9,10 +9,10 @@ import type {
 import { parseToolsetMethodId, toCliMethodName } from '../../shared/open-service/toolset-names.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import {
-  AttachUnavailableError,
   createTools,
-  EnvironmentMismatchError,
-  SpawnFailedError,
+  isAttachGateError,
+  type CreateToolsDeps,
+  type CreateToolsOptions,
   type Tools,
   type ToolsClientInfo,
   type ToolsMode,
@@ -64,6 +64,8 @@ export type ToolsRunResult = {
   outputPath?: string;
   /** Requested or resolved attach mode for the `tools-command` event. */
   attachMode: ToolsMode;
+  /** Set when `auto` could not attach and loaded the project configuration instead. */
+  fallbackNotice?: string;
 };
 
 export type ToolsInvocation = {
@@ -87,7 +89,7 @@ const CLI_CLIENT_INFO: ToolsClientInfo = {
 
 /** Injectable dependencies for tests. */
 export type ToolsRunDeps = {
-  createTools?: typeof createTools;
+  createTools?: (options?: CreateToolsOptions, deps?: CreateToolsDeps) => Promise<Tools>;
   discoverInstance?: typeof discoverRunningInstance;
   /** Sink for the per-method toolset telemetry events; absent when telemetry is disabled. */
   methodTelemetry?: ToolsetTelemetry;
@@ -125,14 +127,6 @@ function resolveToolsMode(
     return 'local';
   }
   return 'auto';
-}
-
-function isAttachGateError(error: unknown): boolean {
-  return (
-    error instanceof AttachUnavailableError ||
-    error instanceof EnvironmentMismatchError ||
-    error instanceof SpawnFailedError
-  );
 }
 
 /**
@@ -199,11 +193,7 @@ export async function runToolsCommand(
       tools.mode === 'attached'
         ? await dispatchAttachedTools(tools, normalized, parsed, result, deps)
         : await dispatchLocalTools(tools, normalized, parsed, deps, requestedMode, result);
-    const output =
-      tools.fallbackNotice && !parsed.json
-        ? `${tools.fallbackNotice}\n\n${dispatched.output}`
-        : dispatched.output;
-    return { ...dispatched, output, attachMode: tools.mode };
+    return { ...dispatched, attachMode: tools.mode, fallbackNotice: tools.fallbackNotice };
   } finally {
     await tools.close();
   }

@@ -30,7 +30,7 @@ const OTHER: StorybookInstanceRecord = {
 
 function makeConnection(): NodeChannelConnection {
   return {
-    channel: { id: 'channel' } as NodeChannelConnection['channel'],
+    channel: { id: 'channel' } as unknown as NodeChannelConnection['channel'],
     connected: Promise.resolve(),
     disconnected: new Promise<never>(() => {}),
     close: vi.fn(),

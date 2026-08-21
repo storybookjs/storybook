@@ -45,8 +45,6 @@ const unescapeTemplateLiteral = (template: string): string =>
 // Mirrors `formatPropInTemplate`, which reaches a non-identifier output through `this['name']`.
 const memberName = (name: string): string => (isValidIdentifier(name) ? name : `['${name}']`);
 
-// An arg written out in full - an arrow function with a body, a wide object - prints over several
-// lines, which stay with their member instead of restarting at column 0.
 const memberValue = (value: string): string => value.split('\n').join('\n  ');
 
 // A template `buildTemplate` broke over lines moves onto its own lines inside the literal too.

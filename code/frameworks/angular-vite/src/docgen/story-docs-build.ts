@@ -418,17 +418,6 @@ const unboundArgsWarning = (
   );
 };
 
-/**
- * The element's own bindings for a story that supplies args and no markup, and the fields they need.
- *
- * A binding may only carry a value the Angular expression grammar accepts and the host component
- * resolves, which for a derived snippet means a value that reduced to a literal. Anything else the
- * story wrote out in full moves onto the host as a field and the binding names that field: a class
- * body is ordinary TypeScript, so `new`, an arrow function and the ES globals all mean there what
- * the story meant by them. A value that still needs a name from the story file is left as written,
- * which is what `shape.unresolvedArgs` already warns about - hoisting it would only move the
- * dangling name from the template into the class.
- */
 const componentBindings = (
   snippetMeta: AngularComponentSnippetMeta,
   shape: StoryShape

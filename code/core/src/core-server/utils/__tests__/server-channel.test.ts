@@ -22,6 +22,23 @@ const webContainerOptions = {
   skipValidation: true,
 } as any;
 
+const createdTransports: ServerChannelTransport[] = [];
+
+function createTransport(
+  server: Server,
+  transportOptions: typeof options = options
+): ServerChannelTransport {
+  const transport = new ServerChannelTransport(server, transportOptions);
+  createdTransports.push(transport);
+  return transport;
+}
+
+function closeCreatedTransports() {
+  for (const transport of createdTransports.splice(0)) {
+    transport.close();
+  }
+}
+
 async function readRejectedUpgrade(requestLines: string[]): Promise<string> {
   const server = createServer();
   await new Promise<void>((resolve) => {
@@ -31,7 +48,7 @@ async function readRejectedUpgrade(requestLines: string[]): Promise<string> {
   if (!address || typeof address === 'string') {
     throw new Error('expected a TCP address');
   }
-  new ServerChannelTransport(server, options);
+  const transport = new ServerChannelTransport(server, options);
   const client = connect({ host: '127.0.0.1', port: address.port });
   try {
     return await new Promise<string>((resolve, reject) => {
@@ -45,6 +62,7 @@ async function readRejectedUpgrade(requestLines: string[]): Promise<string> {
     });
   } finally {
     client.destroy();
+    transport.close();
     await new Promise<void>((resolve, reject) => {
       server.close((error) => (error ? reject(error) : resolve()));
     });
@@ -52,15 +70,23 @@ async function readRejectedUpgrade(requestLines: string[]): Promise<string> {
 }
 
 describe('getServerChannel', () => {
+  afterEach(() => {
+    closeCreatedTransports();
+  });
+
   it('should return a channel', () => {
     const server = { on: vi.fn() } as any as Server;
     const result = getServerChannel(server, options);
+    // @ts-expect-error private transports
+    createdTransports.push(...result.transports);
     expect(result).toBeInstanceOf(Channel);
   });
 
   it('should attach to the http server', () => {
     const server = { on: vi.fn() } as any as Server;
-    getServerChannel(server, options);
+    const result = getServerChannel(server, options);
+    // @ts-expect-error private transports
+    createdTransports.push(...result.transports);
     expect(server.on).toHaveBeenCalledWith('upgrade', expect.any(Function));
   });
 });
@@ -71,13 +97,14 @@ describe('ServerChannelTransport', () => {
   });
 
   afterEach(() => {
+    closeCreatedTransports();
     vi.restoreAllMocks();
   });
 
   it('parses simple JSON', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter();
-    const transport = new ServerChannelTransport(server, options);
+    const transport = createTransport(server);
     const handler = vi.fn();
     transport.setHandler(handler);
 
@@ -91,7 +118,7 @@ describe('ServerChannelTransport', () => {
   it('parses object JSON', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter();
-    const transport = new ServerChannelTransport(server, options);
+    const transport = createTransport(server);
     const handler = vi.fn();
     transport.setHandler(handler);
 
@@ -105,7 +132,7 @@ describe('ServerChannelTransport', () => {
   it('supports telejson cyclical data', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter();
-    const transport = new ServerChannelTransport(server, options);
+    const transport = createTransport(server);
     const handler = vi.fn();
     transport.setHandler(handler);
 
@@ -129,7 +156,7 @@ describe('ServerChannelTransport', () => {
     const socket = new EventEmitter() as any;
     socket.end = vi.fn();
     const endSpy = vi.spyOn(socket, 'end');
-    const transport = new ServerChannelTransport(server, options);
+    const transport = createTransport(server);
 
     // Simulate upgrade request without token
     const request = {
@@ -150,7 +177,7 @@ describe('ServerChannelTransport', () => {
     const socket = new EventEmitter() as any;
     socket.end = vi.fn();
     const endSpy = vi.spyOn(socket, 'end');
-    new ServerChannelTransport(server, options);
+    createTransport(server);
 
     // Simulate upgrade request with wrong token
     const request = {
@@ -171,7 +198,7 @@ describe('ServerChannelTransport', () => {
     const socket = new EventEmitter() as any;
     socket.end = vi.fn();
     const endSpy = vi.spyOn(socket, 'end');
-    const transport = new ServerChannelTransport(server, options);
+    const transport = createTransport(server);
     const handleUpgradeSpy = vi
       .spyOn(transport.socket, 'handleUpgrade')
       .mockImplementation(() => {});
@@ -196,7 +223,7 @@ describe('ServerChannelTransport', () => {
     const socket = new EventEmitter() as any;
     socket.end = vi.fn();
     const endSpy = vi.spyOn(socket, 'end');
-    const transport = new ServerChannelTransport(server, options);
+    const transport = createTransport(server);
 
     // Simulate upgrade request with invalid origin
     const request = {
@@ -217,7 +244,7 @@ describe('ServerChannelTransport', () => {
     const socket = new EventEmitter() as any;
     socket.end = vi.fn();
     const endSpy = vi.spyOn(socket, 'end');
-    const transport = new ServerChannelTransport(server, options);
+    const transport = createTransport(server);
     const handleUpgradeSpy = vi
       .spyOn(transport.socket, 'handleUpgrade')
       .mockImplementation(() => {});
@@ -239,7 +266,7 @@ describe('ServerChannelTransport', () => {
     const socket = new EventEmitter() as any;
     socket.end = vi.fn();
     const endSpy = vi.spyOn(socket, 'end');
-    const transport = new ServerChannelTransport(server, options);
+    const transport = createTransport(server);
     const handleUpgradeSpy = vi
       .spyOn(transport.socket, 'handleUpgrade')
       .mockImplementation(() => {});
@@ -261,7 +288,7 @@ describe('ServerChannelTransport', () => {
     const socket = new EventEmitter() as any;
     socket.end = vi.fn();
     const endSpy = vi.spyOn(socket, 'end');
-    const transport = new ServerChannelTransport(server, options);
+    const transport = createTransport(server);
     const handleUpgradeSpy = vi
       .spyOn(transport.socket, 'handleUpgrade')
       .mockImplementation(() => {});
@@ -283,7 +310,7 @@ describe('ServerChannelTransport', () => {
     const socket = new EventEmitter() as any;
     socket.end = vi.fn();
     const endSpy = vi.spyOn(socket, 'end');
-    const transport = new ServerChannelTransport(server, options);
+    const transport = createTransport(server);
     const handleUpgradeSpy = vi
       .spyOn(transport.socket, 'handleUpgrade')
       .mockImplementation(() => {});
@@ -308,7 +335,7 @@ describe('ServerChannelTransport', () => {
     const socket = new EventEmitter() as any;
     socket.end = vi.fn();
     const endSpy = vi.spyOn(socket, 'end');
-    const transport = new ServerChannelTransport(server, options);
+    const transport = createTransport(server);
     const handleUpgradeSpy = vi
       .spyOn(transport.socket, 'handleUpgrade')
       .mockImplementation(() => {});
@@ -333,7 +360,7 @@ describe('ServerChannelTransport', () => {
     const socket = new EventEmitter() as any;
     socket.end = vi.fn();
     const endSpy = vi.spyOn(socket, 'end');
-    const transport = new ServerChannelTransport(server, options);
+    const transport = createTransport(server);
     const handleUpgradeSpy = vi
       .spyOn(transport.socket, 'handleUpgrade')
       .mockImplementation(() => {});
@@ -359,7 +386,7 @@ describe('ServerChannelTransport', () => {
     const socket = new EventEmitter() as any;
     socket.end = vi.fn();
     const endSpy = vi.spyOn(socket, 'end');
-    const transport = new ServerChannelTransport(server, webContainerOptions);
+    const transport = createTransport(server, webContainerOptions);
     const handleUpgradeSpy = vi
       .spyOn(transport.socket, 'handleUpgrade')
       .mockImplementation(() => {});
@@ -383,7 +410,7 @@ describe('ServerChannelTransport', () => {
     const socket = new EventEmitter() as any;
     socket.end = vi.fn();
     const endSpy = vi.spyOn(socket, 'end');
-    const transport = new ServerChannelTransport(server, webContainerOptions);
+    const transport = createTransport(server, webContainerOptions);
     const handleUpgradeSpy = vi
       .spyOn(transport.socket, 'handleUpgrade')
       .mockImplementation(() => {});

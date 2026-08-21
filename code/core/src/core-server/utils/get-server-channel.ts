@@ -90,6 +90,10 @@ export class ServerChannelTransport {
     });
   }
 
+  close() {
+    this.socket.close();
+  }
+
   setHandler(handler: ChannelHandler) {
     this.handler = handler;
   }

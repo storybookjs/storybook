@@ -164,8 +164,10 @@ export async function runToolsCommand(
   });
 
   let tools: Tools;
+  const create: (options?: CreateToolsOptions, deps?: CreateToolsDeps) => Promise<Tools> =
+    deps.createTools ?? createTools;
   try {
-    tools = await (deps.createTools ?? createTools)({
+    tools = await create({
       cwd: target.cwd,
       configDir: target.configDir,
       mode: requestedMode,

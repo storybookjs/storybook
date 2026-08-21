@@ -292,13 +292,12 @@ function mergeEventDescriptions(meta: ComponentMeta, events: ComponentDoc['event
     return;
   }
 
-  meta.events = meta.events.map((event) => {
+  for (const event of meta.events) {
     const description = events.find((i) => i.name === event.name)?.description;
     if (description) {
       (event as typeof event & { description: string }).description = description;
     }
-    return event;
-  });
+  }
 }
 
 /**

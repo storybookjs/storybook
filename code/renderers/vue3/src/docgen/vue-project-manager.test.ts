@@ -214,7 +214,7 @@ describe('VueComponentMetaManager', () => {
               "Use OptionsButton.",
             ],
             "summary": [
-              "Clickable ",
+              "Clickable",
             ],
           },
         }

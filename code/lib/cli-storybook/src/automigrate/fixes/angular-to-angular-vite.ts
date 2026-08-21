@@ -184,7 +184,8 @@ const transformMainConfig = async (
 interface JsonTargetTransformResult {
   changed: boolean;
   hasStorybookTarget: boolean;
-  allStorybookTargetsZonelessTrue: boolean;
+  /** True when at least one storybook target explicitly declares `zoneless: false`. */
+  anyZoneBasedTarget: boolean;
 }
 
 /** Map a migratable builder/executor ref to its angular-vite equivalent, or `null` if unrelated. */
@@ -248,18 +249,17 @@ class TextJsonEditor implements TargetEditor {
 }
 
 /**
- * Rewrite builder/executor references, detect Compodoc/zone.js signals, and rename any leftover
- * `experimentalZoneless` key to `zoneless`, across every storybook target in `targetGroups`.
+ * Rewrite builder/executor references and rename any leftover `experimentalZoneless` key to
+ * `zoneless`, across every storybook target in `targetGroups`, reporting whether any of them
+ * explicitly opts out of zoneless change detection.
  */
 const processStorybookTargets = (
   editor: TargetEditor,
   targetGroups: AngularTargetGroup[]
-): Omit<JsonTargetTransformResult, 'allStorybookTargetsZonelessTrue'> & {
-  allZonelessTrue: boolean;
-} => {
+): JsonTargetTransformResult => {
   let changed = false;
   let hasStorybookTarget = false;
-  let allZonelessTrue = true;
+  let anyZoneBasedTarget = false;
 
   for (const { pathPrefix, targets } of targetGroups) {
     for (const [targetName, target] of Object.entries(targets)) {
@@ -277,11 +277,11 @@ const processStorybookTargets = (
       // Snapshot before editing: `AngularJSON.edit()` reparses `json`, invalidating `target`.
       const currentRef = target.builder ?? target.executor ?? null;
       const hasOldZonelessKey = !!target.options && 'experimentalZoneless' in target.options;
-      // An earlier run may already have renamed the key, so both spellings count as zoneless.
+      // An earlier run may already have renamed the key, so both spellings count.
       const zonelessValue = target.options?.zoneless ?? target.options?.experimentalZoneless;
 
-      if (zonelessValue !== true) {
-        allZonelessTrue = false;
+      if (zonelessValue === false) {
+        anyZoneBasedTarget = true;
       }
 
       if (!isMigratableStorybookTarget(target)) {
@@ -303,7 +303,7 @@ const processStorybookTargets = (
     }
   }
 
-  return { changed, hasStorybookTarget, allZonelessTrue };
+  return { changed, hasStorybookTarget, anyZoneBasedTarget };
 };
 
 const transformAngularJson = (
@@ -317,24 +317,17 @@ const transformAngularJson = (
     return {
       changed: false,
       hasStorybookTarget: false,
-      allStorybookTargetsZonelessTrue: true,
+      anyZoneBasedTarget: false,
     };
   }
 
-  const { changed, hasStorybookTarget, allZonelessTrue } = processStorybookTargets(
-    angularJSON,
-    getTargetGroups(angularJSON.json)
-  );
+  const result = processStorybookTargets(angularJSON, getTargetGroups(angularJSON.json));
 
-  if (changed && !dryRun) {
+  if (result.changed && !dryRun) {
     angularJSON.write();
   }
 
-  return {
-    changed,
-    hasStorybookTarget,
-    allStorybookTargetsZonelessTrue: allZonelessTrue,
-  };
+  return result;
 };
 
 /**
@@ -349,25 +342,18 @@ const transformProjectJson = async (
     const original = await readFile(projectJsonPath, 'utf-8');
     const json = JSON.parse(original);
     const editor = new TextJsonEditor(original);
-    const { changed, hasStorybookTarget, allZonelessTrue } = processStorybookTargets(
-      editor,
-      getTargetGroups(json)
-    );
+    const result = processStorybookTargets(editor, getTargetGroups(json));
 
-    if (changed && !dryRun) {
+    if (result.changed && !dryRun) {
       await writeFile(projectJsonPath, editor.content);
     }
 
-    return {
-      changed,
-      hasStorybookTarget,
-      allStorybookTargetsZonelessTrue: allZonelessTrue,
-    };
+    return result;
   } catch {
     return {
       changed: false,
       hasStorybookTarget: false,
-      allStorybookTargetsZonelessTrue: true,
+      anyZoneBasedTarget: false,
     };
   }
 };
@@ -624,22 +610,22 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       ]);
     }
 
-    // Injection fires unless EVERY storybook target is declared zoneless.
     let anyStorybookTarget = false;
-    let allZonelessTrue = true;
+    let anyZoneBasedTarget = false;
 
     // 3. Rewrite Angular CLI builder references in angular.json.
     // Search for angular.json beside every package.json we know about.
     for (const pkgJsonPath of packageManager.packageJsonPaths) {
       const dir = pkgJsonPath.replace(/[/\\]package\.json$/, '');
       const angularJsonPath = `${dir}/angular.json`;
-      const { changed, hasStorybookTarget, allStorybookTargetsZonelessTrue } = transformAngularJson(
-        angularJsonPath,
-        dryRun
-      );
+      const {
+        changed,
+        hasStorybookTarget,
+        anyZoneBasedTarget: zoneBased,
+      } = transformAngularJson(angularJsonPath, dryRun);
       if (hasStorybookTarget) {
         anyStorybookTarget = true;
-        allZonelessTrue = allZonelessTrue && allStorybookTargetsZonelessTrue;
+        anyZoneBasedTarget = anyZoneBasedTarget || zoneBased;
       }
       if (changed) {
         logger.debug(`Updated Angular CLI builder references in ${angularJsonPath}`);
@@ -654,11 +640,14 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     // with package.json the way angular.json is.
     const projectJsonFiles = await findWorkspaceFiles('project.json');
     for (const projectJsonPath of projectJsonFiles) {
-      const { changed, hasStorybookTarget, allStorybookTargetsZonelessTrue } =
-        await transformProjectJson(projectJsonPath, dryRun);
+      const {
+        changed,
+        hasStorybookTarget,
+        anyZoneBasedTarget: zoneBased,
+      } = await transformProjectJson(projectJsonPath, dryRun);
       if (hasStorybookTarget) {
         anyStorybookTarget = true;
-        allZonelessTrue = allZonelessTrue && allStorybookTargetsZonelessTrue;
+        anyZoneBasedTarget = anyZoneBasedTarget || zoneBased;
       }
       if (changed) {
         logger.debug(`Updated Nx builder references in ${projectJsonPath}`);
@@ -710,7 +699,23 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       }
     }
 
-    const needsZoneJs = anyStorybookTarget && !allZonelessTrue;
+    // `@storybook/angular-vite` reads the same `zoneless` builder option and treats its absence as
+    // zoneless, so the option cannot decide this: a target declaring nothing - what this migration
+    // itself writes - would get an `import 'zone.js'` the framework has already decided the project
+    // does not need, and that the project may not even be able to resolve. The dependency tree is
+    // the signal that survives an option nobody wrote.
+    const hasZoneJsDependency = packageManager.isDependencyInstalled('zone.js');
+
+    if (anyStorybookTarget && anyZoneBasedTarget && !hasZoneJsDependency) {
+      logger.warn(
+        'A Storybook builder target sets `zoneless: false`, but this project does not depend on ' +
+          "`zone.js`, so no `import 'zone.js';` was added to your preview - it could not resolve, " +
+          'and every story would fail to load. Install `zone.js`, or set `zoneless: true` on that ' +
+          'target if your app uses zoneless change detection.'
+      );
+    }
+
+    const needsZoneJs = anyStorybookTarget && hasZoneJsDependency;
     if (needsZoneJs && previewConfigPath) {
       await addZoneJsPreviewImport(previewConfigPath, dryRun);
     } else if (needsZoneJs && !previewConfigPath) {

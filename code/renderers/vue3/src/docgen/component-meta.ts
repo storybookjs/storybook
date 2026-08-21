@@ -53,6 +53,8 @@ type MetaSourceEntry = {
 export type MetaSource = {
   exportName: string;
   displayName: string;
+  /** Component-level TypeScript type parameters declared by the SFC. */
+  typeParams?: string;
   sourceFiles: string;
   jsDocTags?: Record<string, string[]>;
 } & Serializable<ComponentMeta> &
@@ -135,6 +137,7 @@ export async function collectComponentMetaSources(
     return [];
   }
 
+  const typeParams = await extractVueSfcTypeParams(id);
   const fixedComponentsMeta = await applyVueDocgenApiTempFixes(
     id,
     entries.map((entry) => entry.meta),
@@ -191,6 +194,7 @@ export async function collectComponentMetaSources(
       toSerializableMeta({
         exportName: name,
         displayName: name === 'default' ? getFilenameWithoutExtension(id) : name,
+        typeParams,
         ...meta,
         description: jsDocInfo?.description,
         jsDocTags: jsDocInfo?.jsDocTags,
@@ -201,6 +205,28 @@ export async function collectComponentMetaSources(
   });
 
   return metaSources;
+}
+
+async function extractVueSfcTypeParams(id: string): Promise<string | undefined> {
+  if (!id.endsWith('.vue')) {
+    return undefined;
+  }
+
+  try {
+    const source = await readFile(id, 'utf-8');
+    // Scan open tags one by one: only the `<script setup>` block may declare `generic`, and the
+    // attribute value may be unquoted.
+    for (const [openTag] of source.matchAll(/<script\b(?:"[^"]*"|'[^']*'|[^'">])*>/gi)) {
+      if (!/\bsetup\b/.test(openTag)) {
+        continue;
+      }
+      const generic = openTag.match(/\bgeneric\s*=\s*(?:(["'])(.*?)\1|([^\s'">]+))/);
+      return generic?.[2] ?? generic?.[3];
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function extractVueComponentJsDocInfo(

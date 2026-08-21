@@ -7,9 +7,10 @@ import {
   getRealPath,
 } from 'storybook/internal/mocking-utils';
 import { logger } from 'storybook/internal/node-logger';
+import { AngularUnresolvedStyleError } from 'storybook/internal/server-errors';
 import type { PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { basename, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -300,6 +301,35 @@ export function compodocJsonStubPlugin(configDir: string): Plugin {
   };
 }
 
+const STYLE_EXTENSIONS = ['.css', '.scss', '.sass', '.less'];
+
+const isFile = (path: string) => statSync(path, { throwIfNoEntry: false })?.isFile() === true;
+
+// Angular resolves a `styles` entry relative-first from the workspace root and only then through
+// node_modules: `preferRelative` on the webpack builder's enhanced-resolve, an esbuild `@import`
+// with `resolveDir: workspaceRoot` on the esbuild builder. Both spellings occur in the wild.
+function resolveBuilderStyle(stylePath: string, workspaceRoot: string) {
+  const workspacePath = resolve(workspaceRoot, stylePath);
+  const onDisk = [workspacePath, ...STYLE_EXTENSIONS.map((ext) => workspacePath + ext)].find(
+    isFile
+  );
+  if (onDisk) {
+    return onDisk;
+  }
+
+  // Emitting a path-shaped entry verbatim would make Vite resolve it against `preview.ts` rather
+  // than the workspace root, and node_modules cannot rescue one either.
+  if (isAbsolute(stylePath) || /^\.\.?[/\\]/.test(stylePath)) {
+    throw new AngularUnresolvedStyleError({
+      stylePath,
+      workspaceRoot,
+      extensions: STYLE_EXTENSIONS,
+    });
+  }
+
+  return stylePath;
+}
+
 export function angularOptionsPlugin(
   options: StandaloneOptions,
   { normalizePath, zoneless }: any
@@ -358,11 +388,7 @@ export function angularOptionsPlugin(
                   ? style.input
                   : undefined;
             if (stylePath !== undefined) {
-              // Every `styles` entry is a path the Angular builder resolves against the workspace
-              // root - the schema has no package-specifier form - and in a monorepo that root sits
-              // above the Vite root. Left unresolved, Vite reads `apps/ui/styles.css` as a bare
-              // specifier and fails to find a package by that name.
-              imports.push(normalizePath(resolve(workspaceRoot, stylePath)));
+              imports.push(normalizePath(resolveBuilderStyle(stylePath, workspaceRoot)));
             }
           });
         }

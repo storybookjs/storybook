@@ -1,10 +1,13 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { findConfigFile } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
+import { AngularUnresolvedStyleError } from 'storybook/internal/server-errors';
 
+import { statSync } from 'node:fs';
 import { resolve } from 'node:path';
 
+import { fs as memfs, vol } from 'memfs';
 import { mergeConfig, normalizePath } from 'vite';
 
 import { ensureCompodocDocumentation } from './compodoc/ensure-documentation.ts';
@@ -28,6 +31,9 @@ vi.mock(import('storybook/internal/common'), async (importOriginal) => ({
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('./compodoc/ensure-documentation.ts', { spy: true });
 vi.mock('vite', { spy: true });
+// Spy-only mock: `styles` resolution stats candidate files, and only that call is redirected to a
+// memfs volume, so everything else in the preset keeps reading the real filesystem.
+vi.mock('node:fs', { spy: true });
 // The only mock that has to replace the module rather than spy on it: loading the real Angular
 // plugin drags a full Angular toolchain into the run, and none of these tests are about it.
 vi.mock('@analogjs/vite-plugin-angular', () => ({ default: (): unknown[] => [] }));
@@ -141,6 +147,22 @@ describe('angularOptionsPlugin global styles', () => {
 
   beforeEach(() => {
     vi.mocked(findConfigFile).mockReturnValue(previewPath);
+    vol.fromJSON(
+      {
+        'src/styles.css': '',
+        'src/styles.scss': '',
+        'src/theme.scss': '',
+        'apps/ui-storybook/.storybook/tailwind.css': '',
+        'node_modules/dso-toolkit/dist/dso.css': '',
+      },
+      WORKSPACE_ROOT
+    );
+    vi.mocked(statSync).mockImplementation(memfs.statSync as unknown as typeof statSync);
+  });
+
+  afterEach(() => {
+    vol.reset();
+    vi.mocked(statSync).mockReset();
   });
 
   const runTransform = (styles: unknown[]) => {
@@ -210,6 +232,51 @@ describe('angularOptionsPlugin global styles', () => {
     };
 
     expect(code).toContain("import 'zone.js';");
+  });
+
+  // A package specifier is a legitimate Angular `styles` entry: the builder hands it to a resolver
+  // anchored at the workspace root that falls through to node_modules, where dso-toolkit only is.
+  it('emits a package specifier bare, so Vite resolves it through node_modules', async () => {
+    const { code } = await runTransform(['dso-toolkit/dist/dso.css']);
+
+    expect(code).toContain("import 'dso-toolkit/dist/dso.css';");
+    expect(code).not.toContain(resolve(WORKSPACE_ROOT, 'dso-toolkit/dist/dso.css'));
+  });
+
+  it('resolves a `./`-prefixed entry against the workspace root, not the preview file', async () => {
+    const { code } = await runTransform(['./src/styles.css']);
+
+    expect(code).toContain(`import '${resolve(WORKSPACE_ROOT, 'src/styles.css')}';`);
+    expect(code).not.toContain("import './src/styles.css';");
+  });
+
+  it('resolves an extensionless entry to the stylesheet on disk', async () => {
+    const { code } = await runTransform(['src/theme']);
+
+    expect(code).toContain(`import '${resolve(WORKSPACE_ROOT, 'src/theme.scss')}';`);
+  });
+
+  // `dist/canopy/canopy.css` is a real corpus entry and a build output: on disk in a built
+  // workspace, absent in a clean checkout.
+  it('emits a bare-looking entry with no file on disk as a specifier, not a workspace path', async () => {
+    const { code } = await runTransform(['dist/canopy/canopy.css']);
+
+    expect(code).toContain("import 'dist/canopy/canopy.css';");
+    expect(code).not.toContain(resolve(WORKSPACE_ROOT, 'dist/canopy/canopy.css'));
+  });
+
+  it('never resolves a directory as a stylesheet', async () => {
+    const { code } = await runTransform(['src']);
+
+    expect(code).toContain("import 'src';");
+    expect(code).not.toContain(`import '${resolve(WORKSPACE_ROOT, 'src')}';`);
+  });
+
+  it('fails with the entry the user wrote when a path-shaped entry has no file', async () => {
+    await expect(runTransform(['./src/missing.css'])).rejects.toThrow(AngularUnresolvedStyleError);
+    await expect(runTransform(['./src/missing.css'])).rejects.toThrow(
+      /Cannot resolve the stylesheet '\.\/src\/missing\.css' from the Angular workspace root/
+    );
   });
 
   it('ignores malformed object-form styles from the environment bridge', async () => {

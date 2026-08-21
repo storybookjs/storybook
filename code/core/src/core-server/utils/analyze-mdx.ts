@@ -222,10 +222,13 @@ const getAnchors = (root: ParsedMdxRoot): DocsAnchor[] => {
   const walk = (nodes: unknown[]) => {
     for (const node of nodes) {
       const n = node as { type: string; depth?: number; children?: unknown[] };
-      if (n.type === 'heading' && typeof n.depth === 'number' && n.depth <= 4) {
+      if (n.type === 'heading' && typeof n.depth === 'number') {
         const title = getHeadingText(n as { children?: unknown[] });
         if (title) {
-          anchors.push({ id: slugger.slug(title), title });
+          const id = slugger.slug(title);
+          if (n.depth <= 4) {
+            anchors.push({ id, title });
+          }
         }
       }
       if (n.children) {

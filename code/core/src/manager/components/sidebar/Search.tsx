@@ -204,12 +204,16 @@ export const Search = React.memo<SearchProps>(function Search({
             )
           : null;
 
+        const { anchors: _anchors, ...baseSearchItem } = searchItem(
+          datasetValue,
+          dataset.hash[refId]
+        );
+
         list.push({
-          ...searchItem(datasetValue, dataset.hash[refId]),
+          ...baseSearchItem,
           status: mostCriticalStatusValue ?? groupStatus[datasetValue.id] ?? null,
         });
 
-        // Narrow down type to more specific API_DocsEntry with anchors
         if (datasetValue.type !== 'docs') {
           continue;
         }
@@ -219,11 +223,11 @@ export const Search = React.memo<SearchProps>(function Search({
         }
 
         datasetValue.anchors?.forEach((anchor) => {
-          const searchItemRef = searchItem(datasetValue, dataset.hash[refId]);
-          const namePostfix = searchItemRef.path?.[0] === anchor.title ? '' : ` / ${anchor.title}`;
+          const namePostfix = baseSearchItem.path?.[0] === anchor.title ? '' : ` / ${anchor.title}`;
 
           list.push({
-            ...searchItemRef,
+            ...baseSearchItem,
+            anchors: [anchor],
             // Fuse requires unique ids, so suffix the entry id with the anchor's DOM id
             id: `${datasetValue.id}#${anchor.id}`,
             name: `${datasetValue.name}${namePostfix}`,

@@ -44,6 +44,12 @@ test.describe('navigating', () => {
         exact: true,
       });
       await expect(searchItem).toBeVisible();
+      await expect(
+        page.getByRole('option', {
+          name: 'Docs / Sans-serif brand / Typography',
+          exact: true,
+        })
+      ).toBeHidden();
     });
 
     test('a subheading gets scrolled into view when navigating to an anchor link on the current docs page', async ({

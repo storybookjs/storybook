@@ -85,6 +85,7 @@ export function renderComponentsManifest(
     stories: analyses.reduce((sum, a) => sum + a.totalStories, 0),
     storyErrors: analyses.reduce((sum, a) => sum + a.storyErrors, 0),
     storyWarnings: analyses.reduce((sum, a) => sum + a.storyWarnings, 0),
+    componentsWithoutApi: analyses.filter((a) => a.api.kind === 'none').length,
     docs: docsEntries.length + attachedDocs,
     docsWithError: unattachedDocsWithError + attachedDocsWithError,
   };
@@ -113,6 +114,10 @@ export function renderComponentsManifest(
   const snippetWarningsPill =
     totals.storyWarnings > 0
       ? `<a class="filter-pill info" data-k="story-warnings" href="#filter-story-warnings">${totals.storyWarnings}/${totals.stories} incomplete snippets</a>`
+      : '';
+  const noApiPill =
+    totals.componentsWithoutApi > 0
+      ? `<a class="filter-pill" data-k="no-api" href="#filter-no-api">${totals.componentsWithoutApi}/${totals.components} without API description</a>`
       : '';
   const docsPill =
     totals.docs > 0
@@ -279,6 +284,7 @@ export function renderComponentsManifest(
       #filter-infos:target ~ header .filter-pill[data-k='infos'],
       #filter-story-errors:target ~ header .filter-pill[data-k='story-errors'],
       #filter-story-warnings:target ~ header .filter-pill[data-k='story-warnings'],
+      #filter-no-api:target ~ header .filter-pill[data-k='no-api'],
       #filter-doc-errors:target ~ header .filter-pill[data-k='docs'],
       #filter-docs:target ~ header .filter-pill[data-k='docs'] {
           box-shadow: 0 0 0 var(--active-ring) currentColor;
@@ -291,6 +297,7 @@ export function renderComponentsManifest(
       #filter-infos,
       #filter-story-errors,
       #filter-story-warnings,
+      #filter-no-api,
       #filter-doc-errors,
       #filter-docs {
           display: none;
@@ -634,6 +641,10 @@ export function renderComponentsManifest(
           display: none;
       }
 
+      #filter-no-api:target ~ main .card:not(.missing-api) {
+          display: none;
+      }
+
       #filter-doc-errors:target ~ main .card:not(.has-doc-error) {
           display: none;
       }
@@ -762,12 +773,13 @@ export function renderComponentsManifest(
 <span id="filter-infos"></span>
 <span id="filter-story-errors"></span>
 <span id="filter-story-warnings"></span>
+<span id="filter-no-api"></span>
 <span id="filter-doc-errors"></span>
 <span id="filter-docs"></span>
 <header>
   <div class="wrap">
     <h1>Manifest Debugger</h1>
-    <div class="summary">${allPill}${compErrorsPill}${compInfosPill}${storiesPill}${snippetWarningsPill}${docsPill}</div>
+    <div class="summary">${allPill}${compErrorsPill}${compInfosPill}${noApiPill}${storiesPill}${snippetWarningsPill}${docsPill}</div>
   </div>
 </header>
 <main>
@@ -833,7 +845,8 @@ const esc = (s: unknown) =>
 const plural = (n: number, one: string, many = `${one}s`) => (n === 1 ? one : many);
 
 function analyzeComponent(c: ComponentManifestWithDocs) {
-  const hasApiError = !!c.error;
+  const api = resolveComponentApi(c);
+  const hasApiError = api.kind === 'error';
   const warns: string[] = [];
 
   if (!c.description?.trim()) {
@@ -861,6 +874,7 @@ function analyzeComponent(c: ComponentManifestWithDocs) {
   const hasAnyError = hasApiError || storyErrors > 0 || docsErrors > 0; // for status dot (red if any errors)
 
   return {
+    api,
     hasApiError,
     hasAnyError,
     hasWarns: warns.length > 0,
@@ -979,7 +993,7 @@ function renderComponentCard(
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-+|-+$/g, '')}`;
 
-  const api = resolveComponentApi(c);
+  const { api } = a;
   const primaryBadge =
     api.kind === 'error'
       ? `<label for="${slug}-err" class="badge err as-toggle">API error</label>`
@@ -1054,6 +1068,7 @@ function renderComponentCard(
   ${a.hasWarns ? 'has-info' : 'no-info'}
   ${a.storyErrors ? 'has-story-error' : 'no-story-error'}
   ${a.storyWarnings ? 'has-story-warning' : 'no-story-warning'}
+  ${api.kind === 'none' ? 'missing-api' : ''}
   ${a.docsErrors ? 'has-doc-error' : 'no-doc-error'}"
   role="listitem"
   aria-label="${esc(c.name || key)}">

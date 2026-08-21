@@ -104,6 +104,37 @@ describe('renderComponentsManifest component API panel', () => {
     expect(html).toContain('no API description');
   });
 
+  it('surfaces components without an API description as a top-level filter', () => {
+    const html = renderComponentsManifest({
+      v: 1,
+      components: {
+        bare: component({ id: 'bare', name: 'Bare' }),
+        documented: component({
+          id: 'documented',
+          name: 'Documented',
+          apiDescription: '## Inputs',
+        }),
+      },
+    });
+
+    expect(html).toContain('1/2 without API description');
+    expect(html).toContain('missing-api');
+  });
+
+  it('offers no such filter when every component describes its API', () => {
+    const html = renderComponentsManifest({
+      v: 1,
+      components: {
+        documented: component({ id: 'documented', apiDescription: '## Inputs' }),
+        broken: component({ id: 'broken', error: { name: 'Boom', message: 'boom' } }),
+      },
+    });
+
+    // An extraction failure is its own state and says what went wrong, so it must not be
+    // counted as a component that merely has nothing to describe.
+    expect(html).not.toContain('without API description');
+  });
+
   it('keeps the React prop-type output untouched', () => {
     const html = renderComponentsManifest({
       v: 1,

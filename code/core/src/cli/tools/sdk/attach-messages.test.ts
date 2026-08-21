@@ -82,7 +82,20 @@ describe('attach failure messages', () => {
     );
   });
 
-  it('gives the exact cd / --cwd to land in the instance directory', () => {
+  it('quotes paths that contain whitespace in copy-paste commands', () => {
+    const spaced: StorybookInstanceRecord = {
+      ...other,
+      cwd: '/work/My App',
+      configDir: '/work/My App/.storybook',
+    };
+
+    expect(formatNoInstance([spaced])).toContain(
+      `cd '/work/My App' && npx storybook tools --attach --cwd '/work/My App' --config-dir '/work/My App/.storybook'`
+    );
+    expect(formatCwdMismatch('/tmp/agent', '/work/My App')).toContain("`--cwd '/work/My App'`");
+  });
+
+  it('tells the caller to move into the instance directory', () => {
     expect(formatCwdMismatch('/tmp/agent', '/apps/web')).toMatchInlineSnapshot(
       `"This process is running from /tmp/agent, but the Storybook instance is running from /apps/web. \`cd /apps/web\` and retry, or pass \`--cwd /apps/web\`."`
     );

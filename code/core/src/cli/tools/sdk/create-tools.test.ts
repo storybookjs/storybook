@@ -52,11 +52,16 @@ function makeRuntime(overrides: Partial<ToolsRuntime> = {}): ToolsRuntime {
 beforeEach(() => {
   vi.mocked(bootstrapToolsRuntime).mockReset();
   vi.mocked(bootstrapToolsRuntime).mockResolvedValue(makeRuntime());
+  attach.mockReset();
+  spawnChild.mockReset();
 });
 
 afterEach(() => {
   vi.unstubAllEnvs();
 });
+
+const attach = vi.fn();
+const spawnChild = vi.fn();
 
 describe('createTools', () => {
   it('loads the target configuration in this process in local mode', async () => {
@@ -163,8 +168,8 @@ describe('createTools', () => {
       call: async () => ({ ok: true as const, data: {}, markdown: 'spawned' }),
       close: async () => {},
     };
-    const attach = vi.fn(async () => ({ kind: 'spawn' as const, record }));
-    const spawnChild = vi.fn(async () => spawned);
+    vi.mocked(attach).mockResolvedValue({ kind: 'spawn' as const, record });
+    vi.mocked(spawnChild).mockResolvedValue(spawned);
 
     const tools = await createTools(
       { cwd: '/elsewhere', mode: 'attached' },
@@ -261,6 +266,41 @@ describe('createTools', () => {
       data: { reason: 'config-load-failed' },
     });
     await expect(localLoadFailure).rejects.toThrow('Falling back');
+  });
+
+  it('applies per-call origin and telemetry to the method context', async () => {
+    const telemetry = vi.fn(async () => {});
+    vi.mocked(bootstrapToolsRuntime).mockResolvedValue(
+      makeRuntime({
+        toolsets: [
+          defineToolset({
+            id: 'probe',
+            description: 'Records call context.',
+            methods: {
+              ping: {
+                title: 'Ping',
+                description: 'ping',
+                input: v.object({}),
+                handler: async (_input, ctx) => {
+                  await ctx.telemetry?.('tool:ping', { toolset: 'probe' });
+                  return {
+                    ok: true as const,
+                    data: { origin: ctx.origin },
+                    markdown: ctx.origin ?? '',
+                  };
+                },
+              },
+            },
+          }),
+        ],
+      })
+    );
+    const tools = await createTools({ mode: 'local' });
+
+    const outcome = await tools.call('probe.ping', {}, { origin: 'http://localhost:9', telemetry });
+
+    expect(outcome).toMatchObject({ data: { origin: 'http://localhost:9' } });
+    expect(telemetry).toHaveBeenCalledWith('tool:ping', { toolset: 'probe' });
   });
 
   it('wraps a configuration that cannot be loaded', async () => {
@@ -450,6 +490,29 @@ describe('call', () => {
     await expect(
       tools.call('echo.ok', { value: 'hello' }, { signal: AbortSignal.abort() })
     ).rejects.toThrow();
+  });
+
+  it('rejects an in-flight call when the signal aborts', async () => {
+    const hang = defineToolset({
+      id: 'hang',
+      description: 'Never settles.',
+      methods: {
+        never: {
+          title: 'Hang',
+          description: 'hang',
+          input: v.object({}),
+          handler: () => new Promise(() => {}),
+        },
+      },
+    });
+    vi.mocked(bootstrapToolsRuntime).mockResolvedValue(makeRuntime({ toolsets: [hang] }));
+    const tools = await createTools({ mode: 'local' });
+    const controller = new AbortController();
+
+    const pending = tools.call('hang.never', {}, { signal: controller.signal });
+    controller.abort('stopped');
+
+    await expect(pending).rejects.toBe('stopped');
   });
 
   it('serves no calls once closed', async () => {

@@ -12,6 +12,7 @@ import type { ToolsetGetService } from '../../../shared/open-service/toolset-def
 import { getRegisteredToolsets } from '../../../shared/open-service/toolset-registry.ts';
 import { readRegistry } from '../instances/registry.ts';
 import { listProjectMatches } from '../instances/resolve.ts';
+import { resolveStorybookConfigDir } from '../config-dir.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import {
   formatConnectionFailed,
@@ -69,10 +70,14 @@ export async function bootstrapAttachedRuntime(
   deps: AttachRuntimeDeps = {}
 ): Promise<AttachedBootstrapResult> {
   const discoveryCwd = resolve(options.cwd ?? process.cwd());
+  const resolvedConfigDir = resolveStorybookConfigDir({
+    cwd: discoveryCwd,
+    configDir: options.configDir,
+  });
   const records = await (deps.readRegistry ?? readRegistry)();
   const projectMatches = listProjectMatches(records, {
     cwd: discoveryCwd,
-    configDir: options.configDir,
+    configDir: resolvedConfigDir,
     configDirExplicit: options.configDir != null,
   });
   const matches =
@@ -168,7 +173,7 @@ export async function bootstrapAttachedRuntime(
       url: record.url,
       token: record.token,
     });
-    await connection.connected;
+    await waitForHandshake(connection);
   } catch {
     connection?.close();
     throw new AttachUnavailableError({
@@ -178,13 +183,15 @@ export async function bootstrapAttachedRuntime(
     });
   }
 
-  (deps.setDelegatedMode ?? setDelegatedMode)(true);
+  const enableDelegatedMode = deps.setDelegatedMode ?? setDelegatedMode;
+  enableDelegatedMode(true);
 
   const configDir = record.configDir ?? resolve(record.cwd, '.storybook');
   const { loadStorybook, getService } = await resolveLoaders(deps);
   try {
     await loadStorybook({ configDir, channel: connection.channel });
   } catch (error) {
+    enableDelegatedMode(false);
     connection.close();
     throw new ToolsRuntimeError({
       reason: 'config-load-failed',
@@ -217,7 +224,13 @@ async function resolveLoaders(deps: AttachRuntimeDeps): Promise<{
   // Status stores are constructed when this module evaluates; the channel must already be prepared.
   const core = await import('storybook/internal/core-server');
   return {
-    loadStorybook: deps.loadStorybook ?? core.experimental_loadStorybook,
+    loadStorybook:
+      deps.loadStorybook ??
+      ((options) =>
+        core.experimental_loadStorybook({
+          configDir: options.configDir,
+          channel: options.channel as never,
+        })),
     getService: deps.getService ?? ((id, options) => core.getService(id as never, options)),
   };
 }
@@ -227,5 +240,21 @@ function resolveStorybookBinPath(): string {
     return createRequire(import.meta.url).resolve('storybook/package.json');
   } catch {
     return process.execPath;
+  }
+}
+
+const ATTACH_HANDSHAKE_TIMEOUT_MS = 10_000;
+
+async function waitForHandshake(connection: NodeChannelConnection): Promise<void> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    await Promise.race([
+      connection.connected,
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(() => reject(), ATTACH_HANDSHAKE_TIMEOUT_MS);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timer);
   }
 }

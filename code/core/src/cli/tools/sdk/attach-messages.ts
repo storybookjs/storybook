@@ -1,8 +1,15 @@
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 
+function quoteShellArg(value: string): string {
+  if (!/[\s'"$`\\]/.test(value)) {
+    return value;
+  }
+  return `'${value.replace(/'/g, `'\\''`)}'`;
+}
+
 function attachCommand(record: StorybookInstanceRecord): string {
-  const configDir = record.configDir ? ` --config-dir ${record.configDir}` : '';
-  return `npx storybook tools --attach --cwd ${record.cwd}${configDir} --port ${record.port}`;
+  const configDir = record.configDir ? ` --config-dir ${quoteShellArg(record.configDir)}` : '';
+  return `npx storybook tools --attach --cwd ${quoteShellArg(record.cwd)}${configDir} --port ${record.port}`;
 }
 
 export function formatNoInstance(records: StorybookInstanceRecord[]): string {
@@ -17,7 +24,7 @@ export function formatNoInstance(records: StorybookInstanceRecord[]): string {
     for (const record of records) {
       const configDir = record.configDir ? `; configDir \`${record.configDir}\`` : '';
       lines.push(`- ${record.url} (cwd \`${record.cwd}\`${configDir})`);
-      lines.push(`  cd ${record.cwd} && ${attachCommand(record)}`);
+      lines.push(`  cd ${quoteShellArg(record.cwd)} && ${attachCommand(record)}`);
     }
   }
   return lines.join('\n');
@@ -57,7 +64,7 @@ export function formatConnectionFailed(record: StorybookInstanceRecord): string 
 }
 
 export function formatCwdMismatch(processCwd: string, instanceCwd: string): string {
-  return `This process is running from ${processCwd}, but the Storybook instance is running from ${instanceCwd}. \`cd ${instanceCwd}\` and retry, or pass \`--cwd ${instanceCwd}\`.`;
+  return `This process is running from ${processCwd}, but the Storybook instance is running from ${instanceCwd}. \`cd ${quoteShellArg(instanceCwd)}\` and retry, or pass \`--cwd ${quoteShellArg(instanceCwd)}\`.`;
 }
 
 export function formatVersionMismatch(callerVersion: string, instanceVersion: string): string {

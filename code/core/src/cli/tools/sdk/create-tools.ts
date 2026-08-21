@@ -223,7 +223,7 @@ function createToolsHost(args: {
   disconnected?: Promise<never>;
 }): Tools {
   const { mode, runtime, clientInfo, storybook } = args;
-  const ctx: ToolsetCtx = {
+  const baseCtx: ToolsetCtx = {
     transport: 'cli',
     getService: runtime.getService,
     ...(storybook.url ? { origin: storybook.url } : {}),
@@ -265,12 +265,16 @@ function createToolsHost(args: {
       });
     }
 
-    const callCtx: ToolsetCtx = {
-      ...ctx,
-      ...(options.origin !== undefined ? { origin: options.origin } : {}),
-      ...(options.telemetry ? { telemetry: options.telemetry } : {}),
-    };
-    return method.handler(validation.value, callCtx);
+    return raceAbort(
+      options.signal,
+      Promise.resolve(
+        method.handler(validation.value, {
+          ...baseCtx,
+          ...(options.origin !== undefined ? { origin: options.origin } : {}),
+          ...(options.telemetry ? { telemetry: options.telemetry } : {}),
+        })
+      )
+    );
   };
 
   return {
@@ -285,7 +289,7 @@ function createToolsHost(args: {
         options.toolset === undefined ? runtime.toolsets : [findToolset(runtime, options.toolset)];
       return {
         configDir: runtime.configDir,
-        toolsets: toolsets.map((toolset) => toCatalogEntry(toolset, ctx)),
+        toolsets: toolsets.map((toolset) => toCatalogEntry(toolset, baseCtx)),
       };
     },
 
@@ -313,10 +317,30 @@ function createToolsHost(args: {
     },
 
     async close(): Promise<void> {
+      if (closed) {
+        return;
+      }
       closed = true;
       args.close?.();
     },
   };
+}
+
+function raceAbort<T>(signal: AbortSignal | undefined, work: Promise<T>): Promise<T> {
+  if (!signal) {
+    return work;
+  }
+  signal.throwIfAborted();
+
+  let onAbort!: () => void;
+  const aborted = new Promise<never>((_, reject) => {
+    onAbort = () => reject(signal.reason);
+    signal.addEventListener('abort', onAbort, { once: true });
+  });
+
+  return Promise.race([work, aborted]).finally(() => {
+    signal.removeEventListener('abort', onAbort);
+  });
 }
 
 function splitRef(ref: string): { toolsetId: string; methodName: string } {

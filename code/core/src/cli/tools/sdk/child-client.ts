@@ -170,65 +170,10 @@ export async function spawnChildHost(
 
   let hello: ChildHelloMessage;
   try {
-    hello = await new Promise<ChildHelloMessage>((resolve, reject) => {
-      const onMessage = (raw: unknown) => {
-        if (isChildMessage(raw) && raw.type === 'hello') {
-          cleanup();
-          resolve(raw);
-          return;
-        }
-        if (isChildMessage(raw) && raw.type === 'error' && raw.id === 'init') {
-          cleanup();
-          reject(rehydrateSerializedToolsError(raw.error));
-        }
-      };
-      const onExit = (code: number | null, signal: NodeJS.Signals | null) => {
-        cleanup();
-        reject(
-          new SpawnFailedError({
-            reason: `The tools child host for ${args.record.cwd} exited before it was ready${
-              signal ? ` (${signal})` : code != null ? ` (code ${code})` : ''
-            }.`,
-          })
-        );
-      };
-      const onError = (cause: Error) => {
-        cleanup();
-        reject(
-          new SpawnFailedError({
-            reason: `The tools child host for ${args.record.cwd} failed to start.`,
-            cause,
-          })
-        );
-      };
-      const cleanup = () => {
-        child.off('message', onMessage);
-        child.off('exit', onExit);
-        child.off('error', onError);
-      };
-      child.on('message', onMessage);
-      child.once('exit', onExit);
-      child.once('error', onError);
-      try {
-        send({
-          type: 'init',
-          options: {
-            ...args.options,
-            cwd: args.record.cwd,
-            mode: 'attached',
-            autoSpawn: false,
-            clientInfo: args.clientInfo,
-          },
-        });
-      } catch (cause) {
-        cleanup();
-        reject(
-          new SpawnFailedError({
-            reason: `Could not initialize a tools child host for ${args.record.cwd}.`,
-            cause,
-          })
-        );
-      }
+    hello = await waitForHello(child, send, {
+      cwd: args.record.cwd,
+      options: args.options,
+      clientInfo: args.clientInfo,
     });
   } catch (error) {
     closed = true;
@@ -281,18 +226,27 @@ export async function spawnChildHost(
       assertOpen();
       options.signal?.throwIfAborted();
       const id = String(++nextId);
-      const onAbort = () => {
-        try {
-          send({ type: 'cancel', id });
-        } catch {
-          return;
-        }
-      };
-      options.signal?.addEventListener('abort', onAbort, { once: true });
+      let onAbort: (() => void) | undefined;
+      const aborted = options.signal
+        ? new Promise<never>((_, reject) => {
+            onAbort = () => {
+              try {
+                send({ type: 'cancel', id });
+              } catch {
+                // The child may already have disconnected.
+              }
+              reject(options.signal!.reason);
+            };
+            options.signal!.addEventListener('abort', onAbort, { once: true });
+          })
+        : undefined;
       try {
-        return (await request({ type: 'call', id, ref, input })) as AnyToolsetOutcome;
+        const work = request({ type: 'call', id, ref, input });
+        return (await (aborted ? Promise.race([work, aborted]) : work)) as AnyToolsetOutcome;
       } finally {
-        options.signal?.removeEventListener('abort', onAbort);
+        if (onAbort) {
+          options.signal?.removeEventListener('abort', onAbort);
+        }
       }
     },
     async close(): Promise<void> {
@@ -300,6 +254,12 @@ export async function spawnChildHost(
         return;
       }
       closed = true;
+      failPending(
+        new ToolsRuntimeError({
+          reason: 'closed',
+          message: 'This tools host is closed. Create a new one with `createTools`.',
+        })
+      );
       try {
         send({ type: 'close' });
       } catch {
@@ -308,6 +268,89 @@ export async function spawnChildHost(
       child.kill();
     },
   };
+}
+
+const HELLO_TIMEOUT_MS = 10_000;
+
+async function waitForHello(
+  child: ChildProcess,
+  send: (message: ParentMessage) => void,
+  args: {
+    cwd: string;
+    options: CreateToolsOptions;
+    clientInfo: Required<ToolsClientInfo>;
+  }
+): Promise<ChildHelloMessage> {
+  const { cwd, options, clientInfo } = args;
+  return new Promise<ChildHelloMessage>((resolve, reject) => {
+    const onMessage = (raw: unknown) => {
+      if (isChildMessage(raw) && raw.type === 'hello') {
+        cleanup();
+        resolve(raw);
+        return;
+      }
+      if (isChildMessage(raw) && raw.type === 'error' && raw.id === 'init') {
+        cleanup();
+        reject(rehydrateSerializedToolsError(raw.error));
+      }
+    };
+    const onExit = (code: number | null, signal: NodeJS.Signals | null) => {
+      cleanup();
+      reject(
+        new SpawnFailedError({
+          reason: `The tools child host for ${cwd} exited before it was ready${
+            signal ? ` (${signal})` : code != null ? ` (code ${code})` : ''
+          }.`,
+        })
+      );
+    };
+    const onError = (cause: Error) => {
+      cleanup();
+      reject(
+        new SpawnFailedError({
+          reason: `The tools child host for ${cwd} failed to start.`,
+          cause,
+        })
+      );
+    };
+    const cleanup = () => {
+      clearTimeout(timer);
+      child.off('message', onMessage);
+      child.off('exit', onExit);
+      child.off('error', onError);
+    };
+    const timer = setTimeout(() => {
+      cleanup();
+      reject(
+        new SpawnFailedError({
+          reason: `The tools child host for ${cwd} did not become ready in time.`,
+        })
+      );
+    }, HELLO_TIMEOUT_MS);
+    child.on('message', onMessage);
+    child.once('exit', onExit);
+    child.once('error', onError);
+    try {
+      send({
+        type: 'init',
+        options: {
+          ...options,
+          cwd,
+          mode: 'attached',
+          autoSpawn: false,
+          clientInfo,
+        },
+      });
+    } catch (cause) {
+      cleanup();
+      reject(
+        new SpawnFailedError({
+          reason: `Could not initialize a tools child host for ${cwd}.`,
+          cause,
+        })
+      );
+    }
+  });
 }
 
 function rehydrateSerializedToolsError(serialized: SerializedError): Error {

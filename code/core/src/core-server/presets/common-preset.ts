@@ -310,8 +310,9 @@ export const experimental_serverChannel = async (
   channel: Channel,
   options: OptionsWithRequiredCache
 ) => {
+  let generatorPromise: Promise<StoryIndexGenerator> | undefined;
   const getStoryIndexGenerator = () =>
-    options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+    (generatorPromise ??= options.presets.apply<StoryIndexGenerator>('storyIndexGenerator'));
 
   initAIAnalyticsChannel(channel, options, getStoryIndexGenerator);
   initializeChecklist(channel, getStoryIndexGenerator, options.configDir);

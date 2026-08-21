@@ -207,7 +207,19 @@ async function dispatchAttachedTools(
   deps: ToolsRunDeps
 ): Promise<ToolsRunResult> {
   const { toolset: toolsetName, tool: toolName } = invocation;
-  const catalog = await tools.describe();
+  let catalog;
+  try {
+    catalog = await tools.describe();
+  } catch (error) {
+    if (isAgentFacingError(error)) {
+      return result({ exitCode: 1, output: error.message, outcome: { kind: 'failure' } });
+    }
+    return result({
+      exitCode: 1,
+      output: error instanceof Error ? error.message : String(error),
+      outcome: { kind: 'error', error },
+    });
+  }
 
   if (!toolsetName) {
     return result({

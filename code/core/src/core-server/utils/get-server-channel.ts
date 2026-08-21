@@ -44,12 +44,16 @@ export class ServerChannelTransport {
           // which the token alone authenticates.
           const { origin } = request.headers;
           if (origin && !isValidHost(new URL(origin).host, options)) {
-            throw new Error('Invalid websocket origin');
+            socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+            socket.destroy();
+            return;
           }
 
           const requestToken = url.searchParams.get('token');
           if (!isValidToken(requestToken, options.token)) {
-            throw new Error('Invalid websocket token');
+            socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
+            socket.destroy();
+            return;
           }
         }
 

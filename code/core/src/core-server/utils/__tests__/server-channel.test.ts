@@ -114,7 +114,7 @@ describe('ServerChannelTransport', () => {
     server.listeners('upgrade')[0](request, socket, head);
 
     expect(socket.write).toHaveBeenCalledWith(
-      'HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n'
+      'HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n'
     );
     expect(destroySpy).toHaveBeenCalled();
   });
@@ -139,7 +139,7 @@ describe('ServerChannelTransport', () => {
     server.listeners('upgrade')[0](request, socket, head);
 
     expect(socket.write).toHaveBeenCalledWith(
-      'HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n'
+      'HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n'
     );
     expect(destroySpy).toHaveBeenCalled();
   });
@@ -150,12 +150,10 @@ describe('ServerChannelTransport', () => {
     socket.write = vi.fn();
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
-    const handleUpgradeSpy = vi.fn();
     const transport = new ServerChannelTransport(server, options);
-
-    // Mock handleUpgrade to track if it's called
-    // @ts-expect-error (accessing private property)
-    transport.socket.handleUpgrade = handleUpgradeSpy;
+    const handleUpgradeSpy = vi
+      .spyOn(transport.socket, 'handleUpgrade')
+      .mockImplementation(() => {});
 
     // Simulate upgrade request with correct token and valid origin
     const request = {
@@ -204,11 +202,10 @@ describe('ServerChannelTransport', () => {
     socket.write = vi.fn();
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
-    const handleUpgradeSpy = vi.fn();
     const transport = new ServerChannelTransport(server, options);
-
-    // @ts-expect-error (accessing private property)
-    transport.socket.handleUpgrade = handleUpgradeSpy;
+    const handleUpgradeSpy = vi
+      .spyOn(transport.socket, 'handleUpgrade')
+      .mockImplementation(() => {});
 
     const request = {
       url: `/storybook-server-channel?token=${mockToken}`,
@@ -229,11 +226,10 @@ describe('ServerChannelTransport', () => {
     socket.write = vi.fn();
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
-    const handleUpgradeSpy = vi.fn();
     const transport = new ServerChannelTransport(server, options);
-
-    // @ts-expect-error (accessing private property)
-    transport.socket.handleUpgrade = handleUpgradeSpy;
+    const handleUpgradeSpy = vi
+      .spyOn(transport.socket, 'handleUpgrade')
+      .mockImplementation(() => {});
 
     const request = {
       url: '/storybook-server-channel?token=wrong-token',
@@ -244,7 +240,7 @@ describe('ServerChannelTransport', () => {
     server.listeners('upgrade')[0](request, socket, head);
 
     expect(socket.write).toHaveBeenCalledWith(
-      'HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n'
+      'HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n'
     );
     expect(destroySpy).toHaveBeenCalled();
     expect(handleUpgradeSpy).not.toHaveBeenCalled();
@@ -256,11 +252,10 @@ describe('ServerChannelTransport', () => {
     socket.write = vi.fn();
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
-    const handleUpgradeSpy = vi.fn();
     const transport = new ServerChannelTransport(server, options);
-
-    // @ts-expect-error (accessing private property)
-    transport.socket.handleUpgrade = handleUpgradeSpy;
+    const handleUpgradeSpy = vi
+      .spyOn(transport.socket, 'handleUpgrade')
+      .mockImplementation(() => {});
 
     const request = {
       url: '/storybook-server-channel',
@@ -271,7 +266,7 @@ describe('ServerChannelTransport', () => {
     server.listeners('upgrade')[0](request, socket, head);
 
     expect(socket.write).toHaveBeenCalledWith(
-      'HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n'
+      'HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n'
     );
     expect(destroySpy).toHaveBeenCalled();
     expect(handleUpgradeSpy).not.toHaveBeenCalled();
@@ -283,12 +278,10 @@ describe('ServerChannelTransport', () => {
     socket.write = vi.fn();
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
-    const handleUpgradeSpy = vi.fn();
     const transport = new ServerChannelTransport(server, options);
-
-    // Mock handleUpgrade to track if it's called
-    // @ts-expect-error (accessing private property)
-    transport.socket.handleUpgrade = handleUpgradeSpy;
+    const handleUpgradeSpy = vi
+      .spyOn(transport.socket, 'handleUpgrade')
+      .mockImplementation(() => {});
 
     // Simulate upgrade request with network address origin
     const request = {
@@ -312,12 +305,10 @@ describe('ServerChannelTransport', () => {
     socket.write = vi.fn();
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
-    const handleUpgradeSpy = vi.fn();
     const transport = new ServerChannelTransport(server, options);
-
-    // Mock handleUpgrade to track if it's called
-    // @ts-expect-error (accessing private property)
-    transport.socket.handleUpgrade = handleUpgradeSpy;
+    const handleUpgradeSpy = vi
+      .spyOn(transport.socket, 'handleUpgrade')
+      .mockImplementation(() => {});
 
     // Simulate upgrade request with 127.0.0.1 origin
     const request = {
@@ -341,12 +332,10 @@ describe('ServerChannelTransport', () => {
     socket.write = vi.fn();
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
-    const handleUpgradeSpy = vi.fn();
     const transport = new ServerChannelTransport(server, options);
-
-    // Mock handleUpgrade to track if it's called
-    // @ts-expect-error (accessing private property)
-    transport.socket.handleUpgrade = handleUpgradeSpy;
+    const handleUpgradeSpy = vi
+      .spyOn(transport.socket, 'handleUpgrade')
+      .mockImplementation(() => {});
 
     // Simulate upgrade request to wrong path
     const request = {
@@ -371,12 +360,10 @@ describe('ServerChannelTransport', () => {
     socket.write = vi.fn();
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
-    const handleUpgradeSpy = vi.fn();
     const transport = new ServerChannelTransport(server, webContainerOptions);
-
-    // Mock handleUpgrade to track if it's called
-    // @ts-expect-error (accessing private property)
-    transport.socket.handleUpgrade = handleUpgradeSpy;
+    const handleUpgradeSpy = vi
+      .spyOn(transport.socket, 'handleUpgrade')
+      .mockImplementation(() => {});
 
     const request = {
       url: '/storybook-server-channel',
@@ -399,12 +386,10 @@ describe('ServerChannelTransport', () => {
     socket.write = vi.fn();
     socket.destroy = vi.fn();
     const destroySpy = vi.spyOn(socket, 'destroy');
-    const handleUpgradeSpy = vi.fn();
     const transport = new ServerChannelTransport(server, webContainerOptions);
-
-    // Mock handleUpgrade to track if it's called
-    // @ts-expect-error (accessing private property)
-    transport.socket.handleUpgrade = handleUpgradeSpy;
+    const handleUpgradeSpy = vi
+      .spyOn(transport.socket, 'handleUpgrade')
+      .mockImplementation(() => {});
 
     const request = {
       url: '/storybook-server-channel?token=wrong-token',

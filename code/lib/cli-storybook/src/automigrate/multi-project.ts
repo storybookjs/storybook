@@ -226,10 +226,6 @@ export async function promptForAutomigrations(
   }
 
   if (options.yes) {
-    // `--yes` means "don't ask me", not "opt me into everything". Both halves of the rule matter:
-    // an opt-in fix that declares `promptType: 'auto'` is still meant to run unattended
-    // (upgrade-storybook-related-dependencies), while the framework migrations and experimental
-    // flags leave `promptType` unset and need a deliberate choice.
     const selected = automigrations.filter(
       ({ fix }) =>
         preselectedIds.has(fix.id) || fix.defaultSelected !== false || fix.promptType === 'auto'

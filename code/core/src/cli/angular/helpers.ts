@@ -12,17 +12,6 @@ export const ANGULAR_JSON_PATH = 'angular.json';
 /** Must stay inside the `>=2.0.0` peer range that `@storybook/angular-vite` declares. */
 export const ANALOG_VITE_PLUGIN_ANGULAR_VERSION = '^2.5.2';
 
-/**
- * Translate an `@angular/core` semver range into the matching `@angular-devkit/architect` one.
- *
- * The devkit packages that still carry a `0.x` version number themselves
- * `0.<major * 100 + minor>.<patch>`, so Angular `21.2.4` is architect `0.2102.4`. A caret on the
- * input is carried over, so a project declaring `^21.2.0` keeps a range rather than being pinned
- * to an exact devkit version.
- *
- * Returns `undefined` for anything that is not a semver range, so callers add the package
- * unpinned instead of asking a package manager to resolve `@angular-devkit/architect@catalog:`.
- */
 export const toDevkitVersion = (ngRange?: string | null): string | undefined => {
   if (!ngRange) {
     return undefined;

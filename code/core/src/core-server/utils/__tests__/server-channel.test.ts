@@ -101,6 +101,16 @@ describe('ServerChannelTransport', () => {
     vi.restoreAllMocks();
   });
 
+  it('unregisters the SIGTERM listener when closed', () => {
+    const before = process.listenerCount('SIGTERM');
+    const server = new EventEmitter() as any as Server;
+    const transport = createTransport(server);
+    expect(process.listenerCount('SIGTERM')).toBe(before + 1);
+    transport.close();
+    transport.close();
+    expect(process.listenerCount('SIGTERM')).toBe(before);
+  });
+
   it('parses simple JSON', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter();

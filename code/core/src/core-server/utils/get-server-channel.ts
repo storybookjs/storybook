@@ -29,6 +29,17 @@ export class ServerChannelTransport {
 
   private handler?: ChannelHandler;
 
+  private closed = false;
+
+  private readonly onSigterm = () => {
+    this.socket.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.close(1001, 'Server is shutting down');
+      }
+    });
+    this.socket.close(() => process.exit(0));
+  };
+
   constructor(server: Server, options: ServerChannelTransportOptions) {
     this.socket = new WebSocketServer({ noServer: true });
 
@@ -80,17 +91,15 @@ export class ServerChannelTransport {
       clearInterval(interval);
     });
 
-    process.on('SIGTERM', () => {
-      this.socket.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.close(1001, 'Server is shutting down');
-        }
-      });
-      this.socket.close(() => process.exit(0));
-    });
+    process.on('SIGTERM', this.onSigterm);
   }
 
   close() {
+    if (this.closed) {
+      return;
+    }
+    this.closed = true;
+    process.removeListener('SIGTERM', this.onSigterm);
     this.socket.close();
   }
 

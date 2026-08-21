@@ -1,0 +1,3 @@
+<template>
+  <ModelWithRuntimeEmits modelValue="draft" />
+</template>

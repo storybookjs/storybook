@@ -1,0 +1,56 @@
+{
+  "step": {
+    "defaultValue": {
+      "summary": "1",
+    },
+    "description": "",
+    "name": "step",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "summary": "1",
+      },
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": false,
+    },
+  },
+  "stepped": {
+    "control": {
+      "disable": true,
+    },
+    "description": "",
+    "name": "stepped",
+    "table": {
+      "category": "events",
+      "type": {
+        "summary": "any[]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "any[]",
+    },
+  },
+  "update:by-step": {
+    "control": {
+      "disable": true,
+    },
+    "description": "",
+    "name": "update:by-step",
+    "table": {
+      "category": "events",
+      "type": {
+        "summary": "any[]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "any[]",
+    },
+  },
+}

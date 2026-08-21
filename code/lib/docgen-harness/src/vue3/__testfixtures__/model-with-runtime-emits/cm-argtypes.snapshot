@@ -1,0 +1,52 @@
+{
+  "blur": {
+    "control": {
+      "disable": true,
+    },
+    "description": "",
+    "name": "blur",
+    "table": {
+      "category": "events",
+      "type": {
+        "summary": "any[]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "any[]",
+    },
+  },
+  "modelValue": {
+    "defaultValue": undefined,
+    "description": "",
+    "name": "modelValue",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": false,
+    },
+  },
+  "update:modelValue": {
+    "control": {
+      "disable": true,
+    },
+    "description": "",
+    "name": "update:modelValue",
+    "table": {
+      "category": "events",
+      "type": {
+        "summary": "[value: string]",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "[value: string | undefined]",
+    },
+  },
+}

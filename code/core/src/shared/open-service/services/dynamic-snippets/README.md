@@ -17,7 +17,8 @@ preview-owned `renderDynamicSnippet` command. The command reads current or initi
 preview's StoryStore and uses them only when their `argsKey` matches the query; the key is record
 identity, not a lossy substitute for the framework's runtime values. If no matching context exists,
 it stores the declared StoryDocs snippet. If StoryDocs cannot load, rendering falls back to
-`parameters.docs.source.originalSource`.
+`parameters.docs.source.originalSource`. A warning attached to the StoryDocs snippet travels with
+that record, but is omitted when the source falls back to `originalSource`.
 
 The preview `beforeEach` hook calls that public command on every eligible render. This publishes the
 record to the manager even when a Source block populated the preview's local query first. With the

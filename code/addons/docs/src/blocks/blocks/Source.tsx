@@ -12,7 +12,7 @@ import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import type { SourceContextProps, SourceItem } from './SourceContainer';
 import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
-import { useDynamicSnippetSource } from './use-service-dynamic-snippet.ts';
+import { useDynamicSnippet } from './use-service-dynamic-snippet.ts';
 import { useTransformCode } from './useTransformCode';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
@@ -137,7 +137,8 @@ const useResolvedSourceProps = (
   props: SourceProps,
   subject: SourceSubject,
   sourceContext: SourceContextProps,
-  serviceSnippet?: string
+  serviceSnippet?: string,
+  serviceWarning?: string
 ): PureSourceProps => {
   const { of } = props;
   const { story } = subject;
@@ -178,11 +179,19 @@ const useResolvedSourceProps = (
 
   format = source?.format ?? true;
 
+  let warning: string | undefined;
+  if (transformedCode === serviceSnippet) {
+    warning = serviceWarning;
+  } else if (transformedCode === source?.code) {
+    warning = source.warning;
+  }
+
   return {
     code: transformedCode,
     format,
     language,
     dark,
+    warning,
   };
 };
 
@@ -190,10 +199,11 @@ export const useSourceProps = (
   props: SourceProps,
   docsContext: DocsContextProps,
   sourceContext: SourceContextProps,
-  serviceSnippet?: string
+  serviceSnippet?: string,
+  serviceWarning?: string
 ): PureSourceProps => {
   const subject = useSourceSubject(props.of, docsContext);
-  return useResolvedSourceProps(props, subject, sourceContext, serviceSnippet);
+  return useResolvedSourceProps(props, subject, sourceContext, serviceSnippet, serviceWarning);
 };
 
 export const useSourcePropsWithDynamicSnippet = (
@@ -202,12 +212,18 @@ export const useSourcePropsWithDynamicSnippet = (
   storyContext: ReturnType<DocsContextProps['getStoryContext']>,
   sourceContext: SourceContextProps
 ): PureSourceProps => {
-  const serviceSnippet = useDynamicSnippetSource(
+  const record = useDynamicSnippet(
     story.id,
     sourceArgs(props, storyContext),
     props.__forceInitialArgs ? 'initial' : 'current'
   ).data;
-  return useResolvedSourceProps(props, { story, storyContext }, sourceContext, serviceSnippet);
+  return useResolvedSourceProps(
+    props,
+    { story, storyContext },
+    sourceContext,
+    record?.source,
+    record?.warning
+  );
 };
 
 const SourceWithDynamicSnippet: FC<

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 
 import { once } from '../../../../client-logger/index.ts';
-import { selectSnippetForStory } from './snippet.ts';
+import { selectSnippetForStory, selectWarningForStory } from './snippet.ts';
 import type { StoryDocsPayload } from './types.ts';
 
 vi.mock('../../../../client-logger/index.ts', { spy: true });
@@ -75,5 +75,18 @@ describe('selectSnippetForStory with a snippet template', () => {
         () => 'REBUILT'
       )
     ).toBe("import { Button } from './button';\n\nREBUILT");
+  });
+});
+
+describe('selectWarningForStory', () => {
+  it('selects the warning attached to the story', () => {
+    const storyDocs = payload();
+    storyDocs.stories['button--primary']!.warning = 'Incomplete snippet';
+
+    expect(selectWarningForStory(storyDocs, 'button--primary')).toBe('Incomplete snippet');
+  });
+
+  it('returns undefined when the story has no warning', () => {
+    expect(selectWarningForStory(payload(), 'button--primary')).toBeUndefined();
   });
 });

@@ -24,6 +24,7 @@ const dynamicSnippetRecordSchema = v.object({
   revision: v.string(),
   source: v.optional(v.string()),
   transformedSource: v.optional(v.string()),
+  warning: v.optional(v.string()),
 });
 
 const dynamicSnippetOutputSchema = v.optional(dynamicSnippetRecordSchema);

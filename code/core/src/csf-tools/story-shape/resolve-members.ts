@@ -105,7 +105,11 @@ const asArgsRecord = (members: ResolvedMembers): ResolvedMembers => {
     delete properties[key];
     unresolved.push(sourceOf(node));
   }
-  return { properties, shadowed: members.shadowed.filter((key) => key in properties), unresolved };
+  return {
+    properties,
+    shadowed: members.shadowed.filter((key) => key in properties),
+    unresolved,
+  };
 };
 
 /**
@@ -120,6 +124,54 @@ export const resolveBindingMembers = (
 ): ResolvedMembers | undefined => {
   const bound = bindingMembers(ctx, name, undefined, new Set());
   return bound === undefined || bound.kind === 'namespace' ? undefined : bound.members;
+};
+
+/**
+ * The value a member chain names, paired with the module whose scope its names resolve against.
+ *
+ * Unlike {@link resolveObjectMembers} the value is returned as written rather than read into
+ * members, so a chain landing on a name, as `internal.config.component` reaching the class an
+ * Angular story documents does, can be followed further by the caller. `undefined` when the chain
+ * leaves what this pass can read, and for a bare identifier, which names no member.
+ */
+export const resolveReferencedValue = (
+  ctx: ReferenceContext,
+  expression: t.Node
+): { node: t.Node; ctx: ReferenceContext } | undefined => {
+  const chain = memberChain(expression);
+  if (!chain || chain.path.length === 0) {
+    return undefined;
+  }
+
+  const visited = new Set<string>();
+  const located = locate(ctx, chain, undefined, visited);
+  if (!located || located.path.length === 0) {
+    return undefined;
+  }
+
+  let members = located.members;
+  const scope = located.ctx;
+  for (const [index, key] of located.path.entries()) {
+    // A key shadowed by a later unreadable write may hold something else at runtime; a key this
+    // pass never saw written to is knowably absent only once nothing here was left unresolved.
+    if (members.shadowed.includes(key)) {
+      return undefined;
+    }
+    const value = members.properties[key];
+    if (value === undefined) {
+      return undefined;
+    }
+    if (index === located.path.length - 1) {
+      return { node: value, ctx: scope };
+    }
+    const unwrapped = unwrapExpression(value);
+    if (!t.isObjectExpression(unwrapped)) {
+      return undefined;
+    }
+    members = membersOf(unwrapped, scope, visited);
+  }
+
+  return undefined;
 };
 
 const membersOf = (
@@ -149,6 +201,8 @@ const membersOf = (
       }
       for (const [key, value] of Object.entries(spread.properties)) {
         properties[key] = value;
+        // The spread source already knows which module wrote this value, if it crossed a module
+        // boundary to get it; otherwise it is whatever the spread itself reads as.
         shadowed.delete(key);
       }
       continue;
@@ -250,7 +304,8 @@ const unguardedResolveReference = (
     return undefined;
   }
 
-  let { members } = located;
+  let members = located.members;
+  const scope = located.ctx;
   for (const [index, key] of located.path.entries()) {
     if (members.unresolved.length > 0) {
       return undefined;
@@ -264,10 +319,10 @@ const unguardedResolveReference = (
     if (!t.isObjectExpression(unwrapped)) {
       return undefined;
     }
-    members = membersOf(unwrapped, located.ctx, visited);
+    members = membersOf(unwrapped, scope, visited);
   }
 
-  return located.external ? externalized(members, located.ctx) : members;
+  return located.external ? externalized(members, scope) : members;
 };
 
 interface LocatedMembers {
@@ -340,7 +395,11 @@ const externalized = (
     }
     properties[key] = value;
   }
-  return { properties, shadowed: members.shadowed, unresolved: members.unresolved };
+  return {
+    properties,
+    shadowed: members.shadowed,
+    unresolved: members.unresolved,
+  };
 };
 
 type BoundMembers =
@@ -469,9 +528,10 @@ const declaredMembers = (
   ) {
     return undefined;
   }
+  const merged = mergedAnnotations(parent.members, config);
   return {
     members: {
-      properties: mergedAnnotations(parent.members.properties, config.properties),
+      properties: merged.properties,
       shadowed: [
         ...parent.members.shadowed.filter((key) => !(key in config.properties)),
         ...config.shadowed,
@@ -494,14 +554,14 @@ const MERGED_ANNOTATIONS = ['args', 'argTypes', 'parameters', 'globals'];
  * read, whether each side is written out or named.
  */
 const mergedAnnotations = (
-  parent: Record<string, t.Node>,
-  child: Record<string, t.Node>
-): Record<string, t.Node> => {
-  const merged = { ...parent, ...child };
+  parent: Pick<ResolvedMembers, 'properties'>,
+  child: Pick<ResolvedMembers, 'properties'>
+): { properties: Record<string, t.Node> } => {
+  const properties = { ...parent.properties, ...child.properties };
 
   for (const key of MERGED_ANNOTATIONS) {
-    const from = parent[key];
-    const over = child[key];
+    const from = parent.properties[key];
+    const over = child.properties[key];
     if (
       from === undefined ||
       over === undefined ||
@@ -510,10 +570,10 @@ const mergedAnnotations = (
     ) {
       continue;
     }
-    merged[key] = t.objectExpression([t.spreadElement(from), t.spreadElement(over)]);
+    properties[key] = t.objectExpression([t.spreadElement(from), t.spreadElement(over)]);
   }
 
-  return merged;
+  return { properties };
 };
 
 /** A CSF factory call, which holds its config behind `input` rather than as its own members. */
@@ -550,7 +610,10 @@ const assignedMembers = (
   ctx: ReferenceContext,
   name: string,
   position: number | undefined
-): { properties: Record<string, t.Node>; unresolved: string[] } => {
+): {
+  properties: Record<string, t.Node>;
+  unresolved: string[];
+} => {
   const properties: Record<string, t.Node> = {};
   const unresolved: string[] = [];
 

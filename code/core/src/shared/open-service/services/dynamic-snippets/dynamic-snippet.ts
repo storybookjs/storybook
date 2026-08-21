@@ -17,6 +17,7 @@ export type DynamicSnippetRecord = {
   revision: string;
   source?: string;
   transformedSource?: string;
+  warning?: string;
 };
 
 type DynamicSnippetStateEntry = {

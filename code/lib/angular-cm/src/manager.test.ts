@@ -115,6 +115,38 @@ describe('AngularComponentMetaManager', () => {
     expect(inputsOf(result).map((input) => input.name)).toContain('note');
   });
 
+  it('attaches TypeScript JSDoc info for default-exported components', () => {
+    const namedDefault = manager.extractComponentMeta(
+      normalize(join(fixturesDir, 'default-export.component.ts')),
+      { exportName: 'default' }
+    );
+    const aliasedDefault = manager.extractComponentMeta(
+      normalize(join(fixturesDir, 'aliased-default.component.ts')),
+      { exportName: 'default' }
+    );
+
+    expect(namedDefault?.jsDocInfo).toMatchInlineSnapshot(`
+      {
+        "description": "Default export docs.",
+        "jsDocTags": {
+          "summary": [
+            "Named default summary.",
+          ],
+        },
+      }
+    `);
+    expect(aliasedDefault?.jsDocInfo).toMatchInlineSnapshot(`
+      {
+        "description": "Aliased default docs.",
+        "jsDocTags": {
+          "summary": [
+            "Aliased default summary.",
+          ],
+        },
+      }
+    `);
+  });
+
   it('resolves a component behind a star barrel to its defining file', () => {
     const barrelPath = normalize(join(fixturesDir, 'barrel-star.ts'));
     const result = manager.extractComponentMeta(barrelPath, { exportName: 'ToggleComponent' });

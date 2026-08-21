@@ -1,3 +1,12 @@
+## 10.5.10
+
+- Core: Fetch static open-service snapshots relative to the document - [#35945](https://github.com/storybookjs/storybook/pull/35945), thanks @valentinpalkovic!
+- Core: Pin oxc-resolver to 11.21.2 to keep tsconfig path aliases on solution-style tsconfigs - [#35929](https://github.com/storybookjs/storybook/pull/35929), thanks @valentinpalkovic!
+- Dependencies: Bump Vitest to 4.1.6 (CVE-2026-47428) - [#35530](https://github.com/storybookjs/storybook/pull/35530), thanks @anupamme!
+- Docs: Declare the font on overlay surfaces so docs tooltips are not left to inherit - [#35966](https://github.com/storybookjs/storybook/pull/35966), thanks @valentinpalkovic!
+- ESLint Plugin: Bundle CSF helpers so the plugin loads without storybook - [#35950](https://github.com/storybookjs/storybook/pull/35950), thanks @ndelangen!
+- React: Preserve discriminated union prop values in metadata extraction - [#35844](https://github.com/storybookjs/storybook/pull/35844), thanks @s-robertson!
+
 ## 10.5.9
 
 - Addon-Pseudo-States: Fix pseudo-states rewriting for nested functional selectors - [#34318](https://github.com/storybookjs/storybook/pull/34318), thanks @filipw01!

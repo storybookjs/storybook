@@ -25,6 +25,7 @@ import {
 } from 'storybook/internal/docs-tools';
 import type { StoryId } from 'storybook/internal/types';
 import type { SourceParameters } from './blocks/blocks';
+import { SnippetWarning } from './blocks/components/SnippetWarning';
 import { Source } from './blocks/components/Source';
 
 /** Payload emitted on the `SNIPPET_RENDERED` channel event (see `emitTransformCode`). */
@@ -32,6 +33,7 @@ type SnippetRenderedEvent = {
   id?: StoryId;
   source?: string;
   format?: SyntaxHighlighterFormatTypes;
+  warning?: string;
 };
 
 type CodePanelProps = {
@@ -47,6 +49,7 @@ const CodePanelContents = ({
   active,
   source,
   format,
+  warning,
   storyRefId,
   storyParameters,
   storyPrepared,
@@ -54,6 +57,7 @@ const CodePanelContents = ({
   active: boolean | undefined;
   source: string | undefined;
   format: SyntaxHighlighterFormatTypes | undefined;
+  warning: string | undefined;
   storyRefId: string | undefined;
   storyParameters: StoryDocsCodePanelParameters | undefined;
   storyPrepared: boolean | undefined;
@@ -72,11 +76,13 @@ const CodePanelContents = ({
     parameter.source?.code ??
     source ??
     (awaitingServiceSnippet ? '' : parameter.source?.originalSource);
+  const snippetWarning = parameter.source?.code === undefined ? warning : undefined;
 
   return (
     <AddonPanel active={!!active}>
       <SourceStyles>
         <Source {...parameter.source} code={code} format={format} dark={isDark} />
+        <PositionedSnippetWarning warning={snippetWarning} />
       </SourceStyles>
     </AddonPanel>
   );
@@ -101,6 +107,7 @@ const ServiceCodePanel = ({
       active={active}
       source={data?.transformedSource ?? data?.source}
       format={undefined}
+      warning={data?.warning}
       storyRefId={storyRefId}
       storyParameters={storyParameters}
       storyPrepared={storyPrepared}
@@ -120,14 +127,16 @@ const LegacyCodePanel = ({
   const [codeSnippet, setSourceCode] = useState<{
     source: string | undefined;
     format: SyntaxHighlighterFormatTypes | undefined;
+    warning: string | undefined;
   }>({
     source: lastEventMatchesCurrentStory ? lastEvent?.source : undefined,
     format: lastEventMatchesCurrentStory ? (lastEvent?.format ?? undefined) : undefined,
+    warning: lastEventMatchesCurrentStory ? lastEvent?.warning : undefined,
   });
 
   useChannel(
     {
-      [SNIPPET_RENDERED]: ({ id, source, format }) => {
+      [SNIPPET_RENDERED]: ({ id, source, format, warning }) => {
         // Ignore snippets emitted for other stories: a slow extraction for the previously selected
         // story can resolve after navigation and would otherwise overwrite the current panel.
         // `useChannel` captures this handler per `deps`, so it must list `currentStoryId` to compare
@@ -135,7 +144,7 @@ const LegacyCodePanel = ({
         if (id !== undefined && id !== currentStoryId) {
           return;
         }
-        setSourceCode({ source, format });
+        setSourceCode({ source, format, warning });
       },
     },
     [currentStoryId]
@@ -146,6 +155,7 @@ const LegacyCodePanel = ({
       active={active}
       source={codeSnippet.source}
       format={codeSnippet.format}
+      warning={codeSnippet.warning}
       storyRefId={storyRefId}
       storyParameters={storyParameters}
       storyPrepared={storyPrepared}
@@ -208,11 +218,18 @@ addons.register(ADDON_ID, (api) => {
   });
 });
 
-const SourceStyles = styled.div(() => ({
+const SourceStyles = styled.div({
   height: '100%',
+  position: 'relative',
   [`> :first-child${ignoreSsrWarning}`]: {
     margin: 0,
     height: '100%',
     boxShadow: 'none',
   },
-}));
+});
+
+const PositionedSnippetWarning = styled(SnippetWarning)({
+  position: 'absolute',
+  top: 8,
+  right: 10,
+});

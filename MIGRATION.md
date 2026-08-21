@@ -653,7 +653,40 @@ Treat that opt-out as a migration aid rather than a long-term setting.
 
 The webpack-based `@storybook/angular` package is unaffected and keeps Compodoc as its only docgen path.
 
-The `compodoc` and `compodocArgs` options have also been removed from the `@storybook/angular-vite` `start-storybook` and `build-storybook` builder schemas. Those options were validated by the Angular CLI and never read; Compodoc is configured through `framework.options` in your main config.
+The `compodoc` and `compodocArgs` options on the `@storybook/angular-vite` `start-storybook` and `build-storybook` builder schemas are deprecated.
+They are still accepted, so a workspace that still declares them in `angular.json` keeps building, and `ng run` now reports them as deprecated.
+Nothing reads them: Compodoc is configured through `framework.options` in your main config.
+
+### Angular Vite: tsconfig paths now take priority over `node_modules` in production builds too
+
+`@storybook/angular-vite` now sets Vite's `resolve.tsconfigPaths` to `true` by default.
+Previously `dev` only consulted your tsconfig's `compilerOptions.paths` when that flag was on, while `build` already fell back to `paths` whenever normal resolution failed.
+That asymmetry meant a workspace alias with no matching `node_modules` package could build successfully and then fail to serve in `dev`.
+Turning the flag on by default closes that gap, and matches how `tsc` already looks up the same paths - though only for module resolution, not for rewriting emitted import specifiers, which TypeScript never does.
+
+Beyond closing the dev gap, this also changes what `build` bundles for a specifier that resolves two different ways: through a `paths` entry in your tsconfig, and through an actual package of the same name in `node_modules`.
+That overlap is ordinary in an Nx or Yarn/npm workspace, and it is the one case worth checking after this upgrade - the dev-serving fix applies with no downside.
+For example, a root tsconfig mapping `"@org/ui": ["libs/ui/src/index.ts"]`, in a workspace that also has a `node_modules/@org/ui` entry (a workspace symlink, or an installed published copy of the same library).
+Before this change, `storybook build` bundled the compiled package from `node_modules`.
+After this change, it bundles the raw `libs/ui/src/index.ts` source instead, which goes through Analog's Angular transform under the app's compiler flags rather than the library's own.
+
+To keep the previous `build` behavior, opt out in your Vite config:
+
+```ts
+// .storybook/main.ts
+export default {
+  framework: '@storybook/angular-vite',
+  async viteFinal(config) {
+    return {
+      ...config,
+      resolve: {
+        ...config.resolve,
+        tsconfigPaths: false,
+      },
+    };
+  },
+};
+```
 
 ### Experimental Playwright CT integration removed
 

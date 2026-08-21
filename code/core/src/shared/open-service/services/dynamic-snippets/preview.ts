@@ -7,6 +7,7 @@ import { nanoid } from 'nanoid';
 
 import { getService, registerService } from '../../preview.ts';
 import type { StoryDocsService } from '../story-docs/definition.ts';
+import { selectWarningForStory } from '../story-docs/snippet.ts';
 import type { StoryDocsPayload } from '../story-docs/types.ts';
 import { dynamicSnippetServiceDef } from './definition.ts';
 import {
@@ -100,6 +101,10 @@ export const registerDynamicSnippetPreviewService = () =>
                 ? sourceContext.unmappedArgs
                 : undefined;
             const source = renderDynamicSnippetSource(input, payload, sourceContext, sourceArgs);
+            const warning =
+              source === undefined || payload?.stories[input.storyId]?.snippet === undefined
+                ? undefined
+                : selectWarningForStory(payload, input.storyId);
             const transform = activeContext?.context.parameters.docs?.source?.transform as
               | SourceTransform
               | undefined;
@@ -122,6 +127,7 @@ export const registerDynamicSnippetPreviewService = () =>
               revision: dynamicSnippetRevision(payload, input.storyId),
               ...(source === undefined ? {} : { source }),
               ...(transformedSource === undefined ? {} : { transformedSource }),
+              ...(warning === undefined ? {} : { warning }),
             };
 
             const contextIsActive =
@@ -135,7 +141,8 @@ export const registerDynamicSnippetPreviewService = () =>
                 if (
                   current?.revision !== record.revision ||
                   current.source !== record.source ||
-                  current.transformedSource !== record.transformedSource
+                  current.transformedSource !== record.transformedSource ||
+                  current.warning !== record.warning
                 ) {
                   const storyRecords = (state.records[input.storyId] ??= {});
                   storyRecords[input.slot] = { argsKey: input.argsKey, record };

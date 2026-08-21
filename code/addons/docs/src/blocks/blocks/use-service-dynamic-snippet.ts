@@ -10,19 +10,19 @@ import { getService } from 'storybook/preview-api';
 
 import { useQuerySubscription } from './use-query-subscription.ts';
 
-const selectSource = (record: DynamicSnippetRecord | undefined) => record?.source;
+const selectRecord = (record: DynamicSnippetRecord | undefined) => record;
 
-export function useDynamicSnippetSource(
+export function useDynamicSnippet(
   storyId: string,
   args: Args = {},
   slot: DynamicSnippetSlot = 'current'
-): QueryState<string | undefined> {
+): QueryState<DynamicSnippetRecord | undefined> {
   const service = getService('core/dynamic-snippets', { internal: true });
   const input = createDynamicSnippetInput(storyId, args, slot);
   return useQuerySubscription(
     dynamicSnippetInputKey(input),
     service.queries.dynamicSnippet,
     input,
-    selectSource
+    selectRecord
   );
 }

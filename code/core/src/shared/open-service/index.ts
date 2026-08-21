@@ -62,6 +62,7 @@ export {
   renderStoryDocSnippet,
   selectSnippetForStory,
   selectStoryDoc,
+  selectWarningForStory,
 } from './services/story-docs/snippet.ts';
 export type {
   SnippetTemplateRenderer,

@@ -31,7 +31,7 @@ const storyId = 'button--primary';
 const args = { disabled: true, label: 'Live' };
 const input = createDynamicSnippetInput(storyId, args);
 
-const makePayload = (kind = 'Button'): StoryDocsPayload => ({
+const makePayload = (kind = 'Button', warning?: string): StoryDocsPayload => ({
   id: 'button',
   name: 'Button',
   path: './Button.stories.tsx',
@@ -42,6 +42,7 @@ const makePayload = (kind = 'Button'): StoryDocsPayload => ({
       name: 'Primary',
       snippet: `<${kind} label="Declared" />`,
       snippetTemplate: { kind },
+      ...(warning === undefined ? {} : { warning }),
     },
   },
 });
@@ -174,7 +175,7 @@ describe('dynamic snippet preview service', () => {
 
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: 'core/story-docs',
-      state: { components: { button: makePayload() } },
+      state: { components: { button: makePayload('Button', 'Initial warning') } },
       version: 1,
       clientId: 'story-docs-peer',
     });
@@ -183,11 +184,12 @@ describe('dynamic snippet preview service', () => {
     await vi.waitFor(() =>
       expect(service.queries.dynamicSnippet.get(input)?.source).toContain('<Button label="Live" />')
     );
+    expect(service.queries.dynamicSnippet.get(input)?.warning).toBe('Initial warning');
     expect(preview.getStoryContext).toHaveBeenCalledTimes(1);
 
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: 'core/story-docs',
-      state: { components: { button: makePayload('FancyButton') } },
+      state: { components: { button: makePayload('FancyButton', 'Updated warning') } },
       version: 2,
       clientId: 'story-docs-peer',
     });
@@ -198,6 +200,7 @@ describe('dynamic snippet preview service', () => {
       )
     );
     expect(preview.getStoryContext).toHaveBeenCalledTimes(2);
+    expect(service.queries.dynamicSnippet.get(input)?.warning).toBe('Updated warning');
 
     channel.emitExternal(SERVICE_PATCHES, {
       serviceId: 'core/dynamic-snippets',
@@ -242,6 +245,52 @@ describe('dynamic snippet preview service', () => {
       source: '<Button label="Original" />',
     });
     expect(service.queries.dynamicSnippet.get(input)).toEqual(record);
+  });
+
+  it('does not carry a StoryDocs warning with the original-source fallback', async () => {
+    const source = sourceParameters();
+    stubPreview(source);
+    registerStoryDocsPreviewService();
+    const service = registerDynamicSnippetPreviewService();
+    const storyDocs = makePayload();
+    storyDocs.stories[storyId] = {
+      id: storyId,
+      name: 'Primary',
+      warning: 'No static snippet',
+    };
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: 'core/story-docs',
+      state: { components: { button: storyDocs } },
+      version: 1,
+      clientId: 'story-docs-peer',
+    });
+
+    const record = await service.commands.renderDynamicSnippet(input);
+
+    expect(record).toEqual({
+      revision: expect.any(String),
+      source: '<Button label="Original" />',
+    });
+  });
+
+  it('carries the StoryDocs warning with the generated source', async () => {
+    const source = sourceParameters();
+    stubPreview(source);
+    registerStoryDocsPreviewService();
+    const service = registerDynamicSnippetPreviewService();
+    channel.emitExternal(SERVICE_PATCHES, {
+      serviceId: 'core/story-docs',
+      state: { components: { button: makePayload('Button', 'Incomplete snippet') } },
+      version: 1,
+      clientId: 'story-docs-peer',
+    });
+
+    const record = await service.commands.renderDynamicSnippet(input);
+
+    expect(record).toMatchObject({
+      source: expect.stringContaining('<Button label="Live" />'),
+      warning: 'Incomplete snippet',
+    });
   });
 
   it('uses the active render context for source transformations', async () => {

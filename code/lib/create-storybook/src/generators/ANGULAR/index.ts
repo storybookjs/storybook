@@ -12,8 +12,8 @@ import { MIN_SUPPORTED_NODE_VERSIONS } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
-import semver from 'semver';
 import { dedent } from 'ts-dedent';
+import { findMinimumForRange } from 'verkit';
 
 import { createPromptCancelOptions } from '../../prompt-cancel.ts';
 import { defineGeneratorModule } from '../modules/GeneratorModule.ts';
@@ -144,7 +144,7 @@ export default defineGeneratorModule({
       if (!ngRange) {
         return undefined;
       }
-      const min = semver.minVersion(ngRange);
+      const min = findMinimumForRange(ngRange);
 
       if (!min) {
         return undefined;

@@ -1,8 +1,8 @@
 import { versions } from 'storybook/internal/common';
 import { CLI_COLORS } from 'storybook/internal/node-logger';
 
-import { coerce, gt, major, parse } from 'semver';
 import { dedent } from 'ts-dedent';
+import { coerce, getMajor, isGreater, tryParse } from 'verkit';
 
 import { createBlocker } from './types.ts';
 
@@ -23,8 +23,8 @@ export function validateVersionTransition(
     return 'ok';
   }
 
-  const current = parse(currentVersion);
-  const target = parse(targetVersion);
+  const current = tryParse(currentVersion);
+  const target = tryParse(targetVersion);
   if (!current || !target) {
     return 'ok';
   }
@@ -35,7 +35,7 @@ export function validateVersionTransition(
   }
 
   // Check for downgrade (when current version is greater than target)
-  if (gt(currentVersion, targetVersion)) {
+  if (isGreater(currentVersion, targetVersion)) {
     return 'downgrade';
   }
 
@@ -83,7 +83,7 @@ export const blocker = createBlocker<MajorVersionData>({
     }
 
     if (coercedVersion) {
-      const currentMajor = major(coercedVersion);
+      const currentMajor = getMajor(coercedVersion);
       const nextMajor = currentMajor + 1;
       return {
         title: 'Major Version Gap Detected',

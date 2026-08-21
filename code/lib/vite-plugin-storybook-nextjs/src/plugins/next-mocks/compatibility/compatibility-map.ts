@@ -1,5 +1,5 @@
 import { createRequire } from 'node:module';
-import semver from 'semver';
+import { rangesIntersect } from 'verkit';
 
 import { VITEST_PLUGIN_NAME, getNextjsVersion } from '../../../utils.ts';
 
@@ -26,7 +26,7 @@ export const getCompatibilityAliases = (env: Env) => {
 
   // biome-ignore lint/complexity/noForEach: <explanation>
   Object.keys(compatMap).forEach((key) => {
-    if (semver.intersects(version, key)) {
+    if (rangesIntersect(version, key)) {
       Object.assign(result, compatMap[key]);
     }
   });

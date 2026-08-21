@@ -1,4 +1,4 @@
-import { lt } from 'semver';
+import { isLess } from 'verkit';
 
 import { createBlocker } from './types.ts';
 
@@ -6,7 +6,7 @@ export const blocker = createBlocker({
   id: 'minimumNode20',
   async check() {
     const nodeVersion = process.versions.node;
-    if (nodeVersion && lt(nodeVersion, '20.0.0')) {
+    if (nodeVersion && isLess(nodeVersion, '20.0.0')) {
       return { nodeVersion };
     }
     return false;

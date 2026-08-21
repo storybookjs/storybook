@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { SupportedLanguage } from 'storybook/internal/types';
 
-import semver from 'semver';
+import { isGreaterOrEqual, satisfies as verSatisfies } from 'verkit';
 
 /**
  * Detect whether the project should be treated as TypeScript or JavaScript. The js/tsconfig lookup
@@ -66,7 +66,7 @@ export async function detectIncompatiblePackageVersions(
     if (!version) {
       return false;
     }
-    return semver.satisfies(version, range, { includePrerelease: true });
+    return verSatisfies(version, range, { includePrerelease: true });
   };
 
   const incompatibleReasons: string[] = [];
@@ -74,7 +74,7 @@ export async function detectIncompatiblePackageVersions(
   if (typescriptVersion && !satisfies(typescriptVersion, '>=4.9.0')) {
     incompatibleReasons.push(`typescript ${typescriptVersion} is below 4.9.0`);
   }
-  if (prettierVersion && !semver.gte(prettierVersion, '2.8.0')) {
+  if (prettierVersion && !isGreaterOrEqual(prettierVersion, '2.8.0')) {
     incompatibleReasons.push(`prettier ${prettierVersion} is below 2.8.0`);
   }
   if (

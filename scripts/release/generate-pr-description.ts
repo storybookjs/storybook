@@ -1,8 +1,8 @@
 import { setOutput } from '@actions/core';
 import { program } from 'commander';
 import picocolors from 'picocolors';
-import semver from 'semver';
 import { dedent } from 'ts-dedent';
+import { isPrerelease } from 'verkit';
 import { z } from 'zod';
 
 import { esMain } from '../utils/esmain.ts';
@@ -141,7 +141,7 @@ export const generateReleaseDescription = ({
   changelogText: string;
   manualCherryPicks?: string;
 }): string => {
-  const workflow = semver.prerelease(nextVersion)
+  const workflow = isPrerelease(nextVersion)
     ? 'prepare-non-patch-release'
     : 'prepare-patch-release';
   const workflowUrl = `https://github.com/storybookjs/storybook/actions/workflows/${workflow}.yml`;

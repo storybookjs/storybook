@@ -3,7 +3,7 @@ import type { API_UnknownEntries, API_Version, API_Versions } from 'storybook/in
 import { global } from '@storybook/global';
 
 import memoize from 'memoizerific';
-import semver from 'semver';
+import { difference, getMajor, getMinor, getPatch, isGreater, isPrerelease } from 'verkit';
 
 import type { ModuleFn } from '../lib/types.tsx';
 import { version as currentVersion } from '../version.ts';
@@ -95,8 +95,8 @@ export const init: ModuleFn = ({ store }) => {
       const {
         versions: { latest, next, current },
       } = store.getState();
-      if (current && semver.prerelease(current.version) && next) {
-        return (latest && semver.gt(latest.version, next.version) ? latest : next) as API_Version;
+      if (current && isPrerelease(current.version) && next) {
+        return (latest && isGreater(latest.version, next.version) ? latest : next) as API_Version;
       }
       return latest as API_Version;
     },
@@ -111,13 +111,13 @@ export const init: ModuleFn = ({ store }) => {
       let url = `https://storybook.js.org/${asset ? 'docs-assets' : 'docs'}/`;
 
       if (asset && activeVersion) {
-        url += `${semver.major(activeVersion)}.${semver.minor(activeVersion)}/`;
+        url += `${getMajor(activeVersion)}.${getMinor(activeVersion)}/`;
       } else if (versioned && activeVersion && latestVersion) {
-        const versionDiff = semver.diff(latestVersion, activeVersion);
+        const versionDiff = difference(latestVersion, activeVersion);
         const isLatestDocs = versionDiff === 'patch' || versionDiff === null;
 
         if (!isLatestDocs) {
-          url += `${semver.major(activeVersion)}.${semver.minor(activeVersion)}/`;
+          url += `${getMajor(activeVersion)}.${getMinor(activeVersion)}/`;
         }
       }
 
@@ -157,18 +157,18 @@ export const init: ModuleFn = ({ store }) => {
           return true;
         }
 
-        const onPrerelease = !!semver.prerelease(current.version);
+        const onPrerelease = isPrerelease(current.version);
 
         const actualCurrent = onPrerelease
-          ? `${semver.major(current.version)}.${semver.minor(current.version)}.${semver.patch(
+          ? `${getMajor(current.version)}.${getMinor(current.version)}.${getPatch(
               current.version
             )}`
           : current.version;
 
-        const diff = semver.diff(actualCurrent, latest.version);
+        const diff = difference(actualCurrent, latest.version);
 
         return (
-          semver.gt(latest.version, actualCurrent) && diff !== 'patch' && !diff!.includes('pre')
+          isGreater(latest.version, actualCurrent) && diff !== 'patch' && !diff!.includes('pre')
         );
       }
       return false;

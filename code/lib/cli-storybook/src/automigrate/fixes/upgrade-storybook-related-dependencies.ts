@@ -6,8 +6,8 @@ import type { JsPackageManager } from 'storybook/internal/common';
 import { isCorePackage, isSatelliteAddon } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
-import { gt } from 'semver';
 import { dedent } from 'ts-dedent';
+import { isGreater } from 'verkit';
 
 import { getIncompatibleStorybookPackages } from '../../doctor/getIncompatibleStorybookPackages.ts';
 import type { Fix } from '../types.ts';
@@ -106,7 +106,7 @@ export const upgradeStorybookRelatedDependencies = {
           return false;
         }
 
-        return gt(afterVersion, beforeVersion);
+        return isGreater(afterVersion, beforeVersion);
       }
     );
 

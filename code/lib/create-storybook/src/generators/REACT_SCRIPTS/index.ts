@@ -5,8 +5,8 @@ import { fileURLToPath } from 'node:url';
 import { ProjectType } from 'storybook/internal/cli';
 import { SupportedBuilder, SupportedRenderer } from 'storybook/internal/types';
 
-import semver from 'semver';
 import { dedent } from 'ts-dedent';
+import { isLess } from 'verkit';
 
 import { defineGeneratorModule } from '../modules/GeneratorModule.ts';
 
@@ -43,7 +43,7 @@ export default defineGeneratorModule({
       `);
     }
 
-    if (craVersion && semver.lt(craVersion, '5.0.0')) {
+    if (craVersion && isLess(craVersion, '5.0.0')) {
       throw new Error(dedent`
         Storybook 7.0+ doesn't support react-scripts@<5.0.0.
   

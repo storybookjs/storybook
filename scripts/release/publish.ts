@@ -5,8 +5,8 @@ import { program } from 'commander';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 import picocolors from 'picocolors';
-import semver from 'semver';
 import { dedent } from 'ts-dedent';
+import { isValid } from 'verkit';
 import { z } from 'zod';
 
 import { esMain } from '../utils/esmain.ts';
@@ -33,7 +33,7 @@ const optionsSchema = z
     verbose: z.boolean().optional(),
     dryRun: z.boolean().optional(),
   })
-  .refine((schema) => (schema.tag ? !semver.valid(schema.tag) : true), {
+  .refine((schema) => (schema.tag ? !isValid(schema.tag) : true), {
     message:
       'The tag can not be a valid semver version, it must be a plain string like "next" or "latest"',
   });

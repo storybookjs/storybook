@@ -1,5 +1,5 @@
-import semver from 'semver';
 import { dedent } from 'ts-dedent';
+import { isLess } from 'verkit';
 
 import { createBlocker } from './types.ts';
 
@@ -20,7 +20,7 @@ export const blocker = createBlocker({
       return false;
     }
 
-    return semver.lt(vitestVersion, '3.0.0');
+    return isLess(vitestVersion, '3.0.0');
   },
   log() {
     return {

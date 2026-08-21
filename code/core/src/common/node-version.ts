@@ -1,4 +1,4 @@
-import { satisfies } from 'semver';
+import { satisfies } from 'verkit';
 
 export interface MinNodeVersion {
   major: number;

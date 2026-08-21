@@ -16,7 +16,7 @@ import * as walk from 'empathic/walk';
 // eslint-disable-next-line depend/ban-dependencies
 import { globby, globbySync } from 'globby';
 import picocolors from 'picocolors';
-import { lt, prerelease } from 'semver';
+import { isLess, isPrerelease } from 'verkit';
 
 import { autoblock } from './autoblock/index.ts';
 import type { AutoblockerResult } from './autoblock/types.ts';
@@ -172,7 +172,7 @@ const validateUpgradeCompatibility = (
   beforeVersion: string,
   isCanary: boolean
 ): void => {
-  if (!isCanary && lt(currentVersion, beforeVersion)) {
+  if (!isCanary && isLess(currentVersion, beforeVersion)) {
     throw new UpgradeStorybookToLowerVersionError({
       beforeVersion,
       currentVersion: currentVersion,
@@ -322,11 +322,11 @@ const processProject = async ({
 
     // Calculate version flags
     const isCLIOutdated =
-      latestCLIVersionOnNPM != null && lt(currentCLIVersion, latestCLIVersionOnNPM);
+      latestCLIVersionOnNPM != null && isLess(currentCLIVersion, latestCLIVersionOnNPM);
     const isCLIExactLatest = currentCLIVersion === latestCLIVersionOnNPM;
-    const isCLIPrerelease = prerelease(currentCLIVersion) !== null;
+    const isCLIPrerelease = isPrerelease(currentCLIVersion);
     const isCLIExactPrerelease = currentCLIVersion === latestPrereleaseCLIVersionOnNPM;
-    const isUpgrade = lt(versionInstalled, currentCLIVersion);
+    const isUpgrade = isLess(versionInstalled, currentCLIVersion);
 
     // Check for blockers
     let autoblockerCheckResults: AutoblockerResult<unknown>[] | null = null;

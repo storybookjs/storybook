@@ -15,8 +15,8 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 
 import * as find from 'empathic/find';
 import { dirname, relative, resolve } from 'pathe';
-import semver from 'semver';
 import { dedent } from 'ts-dedent';
+import { coerce, satisfies } from 'verkit';
 
 import { add } from '../../add.ts';
 import { getFrameworkPackageName } from '../helpers/mainConfigFile.ts';
@@ -432,10 +432,10 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     }
 
     const angularVersion = angularVersionRaw
-      ? (semver.coerce(angularVersionRaw)?.version ?? null)
+      ? (coerce(angularVersionRaw)?.version ?? null)
       : null;
     const angularUnsupportedVersion =
-      !angularVersion || !semver.satisfies(angularVersion, '>=21.0.0');
+      !angularVersion || !satisfies(angularVersion, '>=21.0.0');
 
     // Detect webpackFinal in main config by scanning package.json paths for the
     // config dir, then reading main config content.

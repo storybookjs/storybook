@@ -5,7 +5,7 @@ import { fileURLToPath } from 'node:url';
 import type { NextConfig } from 'next';
 import { cssFileResolve } from 'next/dist/build/webpack/config/blocks/css/loaders/file-resolve.js';
 import { getCssModuleLocalIdent } from 'next/dist/build/webpack/config/blocks/css/loaders/getCssModuleLocalIdent.js';
-import semver from 'semver';
+import { isGreaterOrEqual } from 'verkit';
 import type { Configuration as WebpackConfig } from 'webpack';
 
 import { resolvePackageDir } from '../../../../core/src/shared/utils/module.ts';
@@ -111,7 +111,7 @@ const isCssLoaderV6 = () => {
     const cssLoaderVersion = JSON.parse(
       readFileSync(join(resolvePackageDir('css-loader'), 'package.json'), 'utf8')
     ).version;
-    return semver.gte(cssLoaderVersion, '6.0.0');
+    return isGreaterOrEqual(cssLoaderVersion, '6.0.0');
   } catch {
     /**
      * Css-loader isn't a resolvable dependency thus storybook webpack 5 manager will resolve to use

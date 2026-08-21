@@ -13,8 +13,8 @@ import { NxProjectDetectedError } from 'storybook/internal/server-errors';
 import type { SupportedLanguage } from 'storybook/internal/types';
 
 import * as find from 'empathic/find';
-import semver from 'semver';
 import { dedent } from 'ts-dedent';
+import { findMinimumForRange, isValidRange } from 'verkit';
 
 import type { CommandOptions } from '../generators/types.ts';
 
@@ -222,8 +222,8 @@ export class ProjectTypeService {
 
   private eqMajor(versionRange: string, major: number) {
     // Uses validRange to avoid a throw from minVersion if an invalid range gets passed
-    if (semver.validRange(versionRange)) {
-      return semver.minVersion(versionRange)?.major === major;
+    if (isValidRange(versionRange)) {
+      return findMinimumForRange(versionRange)?.major === major;
     }
     return false;
   }

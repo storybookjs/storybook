@@ -6,7 +6,8 @@ import { program } from 'commander';
 // eslint-disable-next-line depend/ban-dependencies
 import { execaCommand } from 'execa';
 import picocolors from 'picocolors';
-import semver from 'semver';
+import type { IncrementType } from 'verkit';
+import { increment, isValid } from 'verkit';
 import { z } from 'zod';
 
 import { esMain } from '../utils/esmain.ts';
@@ -44,7 +45,7 @@ const optionsSchema = z
     exact: z
       .string()
       .optional()
-      .refine((version) => (version ? semver.valid(version) !== null : true), {
+      .refine((version) => (version ? isValid(version) : true), {
         message: '--exact version has to be a valid semver string',
       }),
     deferred: z.boolean().optional(),
@@ -89,12 +90,12 @@ const optionsSchema = z
 
 type BaseOptions = { verbose: boolean };
 type BumpOptions = BaseOptions & {
-  releaseType: semver.ReleaseType;
+  releaseType: IncrementType;
   preId?: string;
   deferred?: boolean;
 };
 type ExactOptions = BaseOptions & {
-  exact: semver.ReleaseType;
+  exact: IncrementType;
   deferred?: boolean;
 };
 type ApplyOptions = BaseOptions & {
@@ -270,7 +271,7 @@ export const run = async (options: unknown) => {
       console.log(`🆔 Version prerelease identifier selected: ${picocolors.yellow(preId)}`);
     }
 
-    nextVersion = semver.inc(currentVersion, releaseType, preId);
+    nextVersion = increment(currentVersion, releaseType, { identifier: preId })!;
 
     console.log(
       `⏭ Bumping version ${picocolors.blue(currentVersion)} with release type ${picocolors.green(

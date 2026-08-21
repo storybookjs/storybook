@@ -6,12 +6,12 @@ import { logger, prompt } from 'storybook/internal/node-logger';
 import detectIndent from 'detect-indent';
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
-import { type ResultPromise } from 'execa';
+import type { ResultPromise } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
 import picocolors from 'picocolors';
-import { coerce, gt, satisfies, validRange } from 'semver';
 import invariant from 'tiny-invariant';
+import { coerce, isGreater, isValidRange, satisfies } from 'verkit';
 
 import { HandledError } from '../utils/HandledError.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
@@ -307,7 +307,7 @@ export abstract class JsPackageManager {
       return installed;
     }
     const declared = this.getAllDependencies()[packageName];
-    return declared && validRange(declared) ? declared : null;
+    return declared && isValidRange(declared) ? declared : null;
   }
 
   /**
@@ -528,7 +528,7 @@ export abstract class JsPackageManager {
     }
 
     const versionToUse =
-      current && (!constraint || satisfies(current, constraint)) && gt(current, latest)
+      current && (!constraint || satisfies(current, constraint)) && isGreater(current, latest)
         ? current
         : latest;
     return `^${versionToUse}`;

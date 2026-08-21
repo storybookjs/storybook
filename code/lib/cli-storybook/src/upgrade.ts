@@ -22,8 +22,8 @@ import { telemetry } from 'storybook/internal/telemetry';
 
 import { sync as spawnSync } from 'cross-spawn';
 import picocolors from 'picocolors';
-import semver, { clean, lt } from 'semver';
 import { dedent } from 'ts-dedent';
+import { clean, compareReversed, isGreaterOrEqual, isLess } from 'verkit';
 
 import { processAutoblockerResults } from './autoblock/utils.ts';
 import {
@@ -92,7 +92,7 @@ export const checkVersionConsistency = () => {
     logger.warn(`'npm ls | grep storybook' can show if multiple versions are installed.`);
     return;
   }
-  storybookPackages.sort((a, b) => semver.rcompare(a.version, b.version));
+  storybookPackages.sort((a, b) => compareReversed(a.version, b.version));
   const latestVersion = storybookPackages[0].version;
   const outdated = storybookPackages.filter((pkg) => pkg.version !== latestVersion);
   if (outdated.length > 0) {
@@ -107,7 +107,7 @@ export const checkVersionConsistency = () => {
   }
 
   deprecatedPackages.forEach(({ minVersion, url, deprecations }) => {
-    if (semver.gte(latestVersion, minVersion)) {
+    if (isGreaterOrEqual(latestVersion, minVersion)) {
       const deprecated = storybookPackages.filter((pkg) => deprecations.includes(pkg.package));
       if (deprecated.length > 0) {
         logger.warn(
@@ -378,7 +378,7 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
 
     // Checks whether we can upgrade
     storybookProjects.some((project) => {
-      if (!project.isCanary && lt(project.currentCLIVersion, project.beforeVersion)) {
+      if (!project.isCanary && isLess(project.currentCLIVersion, project.beforeVersion)) {
         throw new UpgradeStorybookToLowerVersionError({
           beforeVersion: project.beforeVersion,
           currentVersion: project.currentCLIVersion,

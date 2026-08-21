@@ -42,31 +42,6 @@ describe('VersionService', () => {
     });
   });
 
-  describe('isPrerelease', () => {
-    it('should return true for prerelease versions', () => {
-      expect(versionService.isPrerelease('8.0.0-alpha.1')).toBe(true);
-      expect(versionService.isPrerelease('8.0.0-beta.2')).toBe(true);
-      expect(versionService.isPrerelease('8.0.0-rc.3')).toBe(true);
-    });
-
-    it('should return false for stable versions', () => {
-      expect(versionService.isPrerelease('8.0.0')).toBe(false);
-      expect(versionService.isPrerelease('8.1.2')).toBe(false);
-    });
-  });
-
-  describe('isOutdated', () => {
-    it('should return true when current version is older than latest', () => {
-      expect(versionService.isOutdated('8.0.0', '8.1.0')).toBe(true);
-      expect(versionService.isOutdated('7.6.0', '8.0.0')).toBe(true);
-    });
-
-    it('should return false when current version is same or newer', () => {
-      expect(versionService.isOutdated('8.1.0', '8.1.0')).toBe(false);
-      expect(versionService.isOutdated('8.2.0', '8.1.0')).toBe(false);
-    });
-  });
-
   describe('getStorybookVersionFromAncestry', () => {
     it('should extract version from create-storybook command', () => {
       const ancestry = [

@@ -16,9 +16,9 @@ import {
 import { Feature } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-import { coerce, satisfies } from 'semver';
 import stripJsonComments from 'strip-json-comments';
 import invariant from 'tiny-invariant';
+import { coerce, satisfies } from 'verkit';
 
 import { getRendererDir } from './dirs.ts';
 

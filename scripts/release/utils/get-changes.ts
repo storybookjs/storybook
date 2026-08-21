@@ -1,5 +1,5 @@
 import picocolors from 'picocolors';
-import semver from 'semver';
+import { isValid } from 'verkit';
 
 import type { PullRequestInfo } from './get-github-info.ts';
 import { getPullInfoFromCommit } from './get-github-info.ts';
@@ -26,7 +26,7 @@ export const LABELS_BY_IMPORTANCE = {
 } as const;
 
 const getCommitAt = async (id: string, verbose?: boolean) => {
-  if (!semver.valid(id)) {
+  if (!isValid(id)) {
     console.log(
       `🔍 ${picocolors.red(id)} is not a valid semver string, assuming it is a commit hash`
     );

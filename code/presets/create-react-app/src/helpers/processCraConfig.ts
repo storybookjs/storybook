@@ -1,7 +1,7 @@
 import { resolve } from 'node:path';
 
 import type { PluginItem, TransformOptions } from '@babel/core';
-import semver from 'semver';
+import { coerce, isGreaterOrEqual } from 'verkit';
 import type { Configuration, RuleSetCondition, RuleSetRule } from 'webpack';
 
 import type { PluginOptions } from '../types.ts';
@@ -38,8 +38,8 @@ export const processCraConfig = async (
    *
    * See: https://github.com/storybookjs/storybook/pull/9157
    */
-  const storybookVersion = semver.coerce(options.packageJson?.version) || '';
-  const isStorybook530 = semver.gte(storybookVersion, '5.3.0');
+  const storybookVersion = coerce(options.packageJson?.version) || '';
+  const isStorybook530 = isGreaterOrEqual(storybookVersion, '5.3.0');
   const babelOptions = await options.presets.apply('babel');
 
   if (!craWebpackConfig?.module?.rules) {

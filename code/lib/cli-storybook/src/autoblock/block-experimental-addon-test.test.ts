@@ -1,11 +1,11 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
-import semver from 'semver';
 import { dedent } from 'ts-dedent';
+import { isLess } from 'verkit';
 
 import { blocker } from './block-experimental-addon-test.ts';
 
-vi.mock('semver');
+vi.mock('verkit');
 
 vi.mock('picocolors', async (importOriginal) => {
   const mod = (await importOriginal()) as any;
@@ -25,7 +25,7 @@ describe('experimentalAddonTestVitest blocker', () => {
 
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(semver.lt).mockReturnValue(false);
+    vi.mocked(isLess).mockReturnValue(false);
     mockPackageManager.getInstalledVersion.mockResolvedValue('3.0.0');
   });
 
@@ -83,7 +83,7 @@ describe('experimentalAddonTestVitest blocker', () => {
       }
       return '3.0.0';
     });
-    vi.mocked(semver.lt).mockReturnValue(true);
+    vi.mocked(isLess).mockReturnValue(true);
 
     const result = await blocker.check({
       packageJson: {
@@ -97,7 +97,7 @@ describe('experimentalAddonTestVitest blocker', () => {
 
     expect(result).toBe(true);
     expect(mockPackageManager.getInstalledVersion).toHaveBeenCalledWith('vitest');
-    expect(semver.lt).toHaveBeenCalledWith('2.9.0', '3.0.0');
+    expect(isLess).toHaveBeenCalledWith('2.9.0', '3.0.0');
   });
 
   test('should return false if vitest version is 3.0.0 or greater', async () => {
@@ -110,7 +110,7 @@ describe('experimentalAddonTestVitest blocker', () => {
       }
       return '3.0.0';
     });
-    vi.mocked(semver.lt).mockReturnValue(false);
+    vi.mocked(isLess).mockReturnValue(false);
 
     const result = await blocker.check({
       packageJson: {
@@ -124,7 +124,7 @@ describe('experimentalAddonTestVitest blocker', () => {
 
     expect(result).toBe(false);
     expect(mockPackageManager.getInstalledVersion).toHaveBeenCalledWith('vitest');
-    expect(semver.lt).toHaveBeenCalledWith('3.0.0', '3.0.0');
+    expect(isLess).toHaveBeenCalledWith('3.0.0', '3.0.0');
   });
 
   test('should check both dependencies and devDependencies for experimental addon', async () => {

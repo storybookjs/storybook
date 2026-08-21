@@ -9,7 +9,7 @@ import type { PresetProperty } from 'storybook/internal/types';
 
 import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
 import { loadPartialConfig } from '@babel/core';
-import semver from 'semver';
+import { isGreaterOrEqual } from 'verkit';
 
 import nextBabelPreset from './babel/preset.ts';
 import { configureConfig } from './config/webpack.ts';
@@ -173,7 +173,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   const nextjsVersion = getNextjsVersion();
   const isDevelopment = options.configType !== 'PRODUCTION';
 
-  const isNext14orNewer = semver.gte(nextjsVersion, '14.0.0');
+  const isNext14orNewer = isGreaterOrEqual(nextjsVersion, '14.0.0');
   const useSWC =
     isNext14orNewer && (nextConfig.experimental?.forceSwcTransforms || !hasBabelConfig);
 

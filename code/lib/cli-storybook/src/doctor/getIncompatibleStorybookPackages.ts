@@ -4,7 +4,7 @@ import { versions as storybookCorePackages } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import picocolors from 'picocolors';
-import semver from 'semver';
+import { isGreater, isValidRange, satisfies } from 'verkit';
 
 import { consolidatedPackages } from '../automigrate/helpers/consolidated-packages.ts';
 
@@ -60,8 +60,8 @@ export const checkPackageCompatibility = async (
           versionRange &&
           // We can't check compatibility for 0.x packages, so we skip them
           !/^[~^]?0\./.test(versionRange) &&
-          semver.validRange(versionRange) &&
-          !semver.satisfies(currentStorybookVersion, versionRange)
+          isValidRange(versionRange) &&
+          !satisfies(currentStorybookVersion, versionRange)
         );
       });
 
@@ -72,12 +72,12 @@ export const checkPackageCompatibility = async (
 
     // For now, we notify about updates only for core packages (which will match the currently installed storybook version)
     // In the future, we can use packageManager.latestVersion(name, constraint) for all packages
-    if (isCorePackage && packageVersion && semver.gt(currentStorybookVersion, packageVersion)) {
+    if (isCorePackage && packageVersion && isGreater(currentStorybookVersion, packageVersion)) {
       availableUpdate = currentStorybookVersion;
     }
 
     // If the package is greater than the current version, this means a core update is available.
-    if (isCorePackage && packageVersion && semver.gt(packageVersion, currentStorybookVersion)) {
+    if (isCorePackage && packageVersion && isGreater(packageVersion, currentStorybookVersion)) {
       availableCoreUpdate = packageVersion;
     }
 

@@ -7,7 +7,7 @@ import type { PresetProperty } from 'storybook/internal/types';
 import type { StorybookConfigVite } from '@storybook/builder-vite';
 import { viteFinal as reactViteFinal } from '@storybook/react-vite/preset';
 
-import semver from 'semver';
+import { isGreaterOrEqual } from 'verkit';
 import vitePluginStorybookNextjs from 'vite-plugin-storybook-nextjs';
 
 import { normalizePostCssConfig } from './find-postcss-config.ts';
@@ -26,7 +26,7 @@ export const previewAnnotations: PresetProperty<'previewAnnotations'> = (entry =
   ];
 
   const nextjsVersion = getNextjsVersion();
-  const isNext16orNewer = semver.gte(nextjsVersion, '16.0.0');
+  const isNext16orNewer = isGreaterOrEqual(nextjsVersion, '16.0.0');
 
   // TODO: Remove this once we only support Next.js v16 and above
   if (!isNext16orNewer) {

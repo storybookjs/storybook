@@ -11,8 +11,8 @@ import {
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
-import { coerce, gte } from 'semver';
 import { dedent } from 'ts-dedent';
+import { coerce, isGreaterOrEqual } from 'verkit';
 import { type Document, parseDocument } from 'yaml';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
@@ -112,7 +112,7 @@ export class PNPMProxy extends JsPackageManager {
 
   #pnpmGte(minimum: string): boolean {
     const version = coerce(this.#readPnpmVersion());
-    return version != null && gte(version, minimum);
+    return version != null && isGreaterOrEqual(version, minimum);
   }
 
   getInstallArgs(): string[] {

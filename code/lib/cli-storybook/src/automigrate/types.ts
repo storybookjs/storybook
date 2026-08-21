@@ -83,7 +83,7 @@ export type Fix<ResultType = any> =
 export type CommandFix<ResultType = any> = {
   promptType: PromptType<ResultType, 'command'>;
   run: (options: RunOptions<ResultType>) => Promise<void>;
-} & Omit<BaseFix<ResultType>, 'versionRange' | 'check' | 'prompt'>;
+} & Omit<BaseFix<ResultType>, 'check' | 'prompt'>;
 
 export type FixId = string;
 

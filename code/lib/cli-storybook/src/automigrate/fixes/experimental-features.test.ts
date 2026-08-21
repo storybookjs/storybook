@@ -9,6 +9,7 @@ import { vol } from 'memfs';
 
 import type { CheckOptions, RunOptions } from '../types.ts';
 import {
+  createExperimentalFeatureFix,
   enableExperimentalDocgenServer,
   enableExperimentalReview,
   resolveRequestedFeatures,
@@ -65,6 +66,39 @@ describe('experimental feature flag automigrations', () => {
   });
 
   describe('check', () => {
+    // Each flag carries its own `introducedIn`, so a flag added in a later minor must stay hidden
+    // on an upgrade that does not reach it. Both shipped flags are 10.5, so this needs its own fix.
+    describe('per-feature introducedIn', () => {
+      const futureFlag = createExperimentalFeatureFix({
+        id: 'enable-future-flag',
+        name: 'experimentalDocgenServer',
+        introducedIn: '10.7.0',
+        link: 'https://example.com',
+        prompt: 'Enable a flag introduced in 10.7.',
+      });
+
+      it('is not offered on an upgrade that stops short of its own version', async () => {
+        const result = await futureFlag.check(
+          checkOptions({ beforeVersion: '10.4.0', storybookVersion: '10.5.0' })
+        );
+        expect(result).toBeNull();
+      });
+
+      it('is offered on the upgrade that crosses its own version', async () => {
+        const result = await futureFlag.check(
+          checkOptions({ beforeVersion: '10.6.0', storybookVersion: '10.7.0' })
+        );
+        expect(result).not.toBeNull();
+      });
+
+      it('is not written into a project older than its own version, even when requested', async () => {
+        const result = await futureFlag.check(
+          checkOptions({ beforeVersion: undefined, storybookVersion: '10.6.0', requested: true })
+        );
+        expect(result).toBeNull();
+      });
+    });
+
     it.each([
       ['crossing 10.5 within the same major', '10.4.0', '10.5.0', true],
       ['crossing into a 10.5 prerelease', '10.4.0', '10.5.0-rc.1', true],

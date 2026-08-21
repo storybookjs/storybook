@@ -1,43 +1,63 @@
 import type { StorybookConfigRaw, StorybookFeatures } from 'storybook/internal/types';
 import { SupportedRenderer } from 'storybook/internal/types';
 
-import semver from 'semver';
-
 import {
   getFrameworkPackageName,
   getRendererName,
   updateMainConfig,
 } from '../helpers/mainConfigFile.ts';
-import type { CheckOptions, Fix } from '../types.ts';
+import { crossesVersionBoundary, isAtOrPastVersion } from '../helpers/versionBoundary.ts';
+import type { Fix } from '../types.ts';
 
-const MIN_VERSION = '10.5.0';
+const hasDocgenProvider = (mainConfig: StorybookConfigRaw): boolean =>
+  getRendererName(mainConfig) === SupportedRenderer.REACT ||
+  ['@storybook/vue3-vite', '@storybook/angular-vite'].includes(
+    getFrameworkPackageName(mainConfig) ?? ''
+  );
 
-const crossesFeatureBoundary = (beforeVersion: string, targetVersion: string): boolean => {
-  const before = semver.coerce(beforeVersion);
-  const target = semver.coerce(targetVersion);
-  if (!before || !target) {
-    return false;
-  }
-  return semver.lt(before, MIN_VERSION) && semver.gte(target, MIN_VERSION);
-};
+export interface ExperimentalFeatureFixOptions {
+  id: string;
+  /** The `features` key this fix sets to `true`. */
+  name: keyof StorybookFeatures;
+  /** Storybook version that added this flag. Each flag carries its own, per release. */
+  introducedIn: string;
+  link: string;
+  /** Keep it to one line, like every other automigration prompt. */
+  prompt: string;
+  /** A feature this flag builds on; the flag is inert when that one is explicitly disabled. */
+  requires?: keyof StorybookFeatures;
+  /** Extra applicability check, e.g. the project must ship a docgen provider. */
+  isSupported?: (mainConfig: StorybookConfigRaw) => boolean;
+}
 
-const checkFeature =
-  (name: keyof StorybookFeatures, requires?: keyof StorybookFeatures) =>
-  async ({
-    mainConfigPath,
-    mainConfig,
-    beforeVersion,
-    storybookVersion,
-    requested,
-  }: CheckOptions) => {
+export const createExperimentalFeatureFix = ({
+  id,
+  name,
+  introducedIn,
+  link,
+  prompt,
+  requires,
+  isSupported,
+}: ExperimentalFeatureFixOptions): Fix => ({
+  id,
+  link,
+  defaultSelected: false,
+  prompt: () => prompt,
+
+  async check({ mainConfigPath, mainConfig, beforeVersion, storybookVersion, requested }) {
     if (!mainConfigPath) {
       return null;
     }
-    const current = semver.coerce(storybookVersion);
-    if (!current || semver.lt(current, MIN_VERSION)) {
+    if (isSupported && !isSupported(mainConfig)) {
       return null;
     }
-    if (!requested && !(beforeVersion && crossesFeatureBoundary(beforeVersion, storybookVersion))) {
+    if (!isAtOrPastVersion(storybookVersion, introducedIn)) {
+      return null;
+    }
+    if (
+      !requested &&
+      !(beforeVersion && crossesVersionBoundary(beforeVersion, storybookVersion, introducedIn))
+    ) {
       return null;
     }
     // Leave an explicit choice alone, in either direction.
@@ -48,43 +68,33 @@ const checkFeature =
       return null;
     }
     return {};
-  };
+  },
 
-const hasDocgenProvider = (mainConfig: StorybookConfigRaw): boolean =>
-  getRendererName(mainConfig) === SupportedRenderer.REACT ||
-  ['@storybook/vue3-vite', '@storybook/angular-vite'].includes(
-    getFrameworkPackageName(mainConfig) ?? ''
-  );
-
-const enableFeature = (name: keyof StorybookFeatures) =>
-  async function run({ mainConfigPath, dryRun }: { mainConfigPath: string; dryRun?: boolean }) {
+  run: async ({ mainConfigPath, dryRun }) => {
     await updateMainConfig({ mainConfigPath, dryRun: !!dryRun }, async (main) => {
       main.setFieldValue(['features', name], true);
     });
-  };
+  },
+});
 
-export const enableExperimentalReview: Fix = {
+export const enableExperimentalReview = createExperimentalFeatureFix({
   id: 'enable-experimental-review',
+  name: 'experimentalReview',
+  introducedIn: '10.5.0',
+  requires: 'changeDetection',
   link: 'https://storybook.js.org/docs/api/main-config/main-config-features#experimentalreview',
-  defaultSelected: false,
-  check: checkFeature('experimentalReview', 'changeDetection'),
-  prompt: () =>
+  prompt:
     'Enable experimentalReview to offer the agentic review workflow to all MCP clients, not just the storybook ai CLI.',
-  run: enableFeature('experimentalReview'),
-};
+});
 
-const checkDocgenServer = checkFeature('experimentalDocgenServer');
-
-export const enableExperimentalDocgenServer: Fix = {
+export const enableExperimentalDocgenServer = createExperimentalFeatureFix({
   id: 'enable-experimental-docgen-server',
+  name: 'experimentalDocgenServer',
+  introducedIn: '10.5.0',
+  isSupported: hasDocgenProvider,
   link: 'https://storybook.js.org/docs/api/main-config/main-config-features#experimentaldocgenserver',
-  defaultSelected: false,
-  check: async (options) =>
-    hasDocgenProvider(options.mainConfig) ? checkDocgenServer(options) : null,
-  prompt: () =>
-    'Enable experimentalDocgenServer for faster startup and more accurate Controls/ArgTypes.',
-  run: enableFeature('experimentalDocgenServer'),
-};
+  prompt: 'Enable experimentalDocgenServer for faster startup and more accurate Controls/ArgTypes.',
+});
 
 /** Feature-flag names accepted by `storybook upgrade --features`, mapped to the fix that sets them. */
 const FEATURE_FLAG_FIXES = {

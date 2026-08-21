@@ -256,8 +256,6 @@ const toolsCommand = command('tools', 'silent').description(
 );
 registerToolsPassthrough(program, toolsCommand, handleCliCommandFailure);
 
-// `storybook skills`: agent-facing instruction documents served by the target Storybook
-// configuration (storybookjs/storybook#35526, Milestone 6).
 const skillsCommand = command('skills', 'silent').description(
   'Agent skills served by the target Storybook configuration'
 );

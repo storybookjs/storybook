@@ -218,6 +218,11 @@
       "code": "./src/cli/tools/sdk/child-host.ts",
       "default": "./dist/cli/tools/sdk/child-host.js"
     },
+    "./internal/tools/loader": {
+      "types": "./dist/cli/tools/sdk/loader.d.ts",
+      "code": "./src/cli/tools/sdk/loader.ts",
+      "default": "./dist/cli/tools/sdk/loader.js"
+    },
     "./internal/toolsets-docs": {
       "types": "./dist/shared/open-service/toolsets/docs/public.d.ts",
       "code": "./src/shared/open-service/toolsets/docs/public.ts",

@@ -112,6 +112,12 @@ const config: BuildEntries = {
         exportEntries: ['./internal/tools/child-host'],
         entryPoint: './src/cli/tools/sdk/child-host.ts',
       },
+      {
+        // Loader for the tools SDK, kept as its own entry so an embedder that bundles `storybook`
+        // gets the shim rather than the SDK it must not run: it imports nothing but node builtins.
+        exportEntries: ['./internal/tools/loader'],
+        entryPoint: './src/cli/tools/sdk/loader.ts',
+      },
     ],
     browser: [
       {

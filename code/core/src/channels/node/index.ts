@@ -24,6 +24,8 @@ export interface NodeChannelConnection {
    * it against in-flight work so a dropped connection surfaces as an error instead of a hang.
    */
   disconnected: Promise<never>;
+  /** Close the client socket and stop the transport heartbeat. */
+  close(): void;
 }
 
 /**
@@ -60,5 +62,5 @@ export function createNodeChannel({ url, token }: NodeChannelOptions): NodeChann
   // A caller that never races `disconnected` must not get an unhandled rejection on server shutdown.
   void disconnected.catch(() => {});
 
-  return { channel, disconnected };
+  return { channel, disconnected, close: () => transport.close() };
 }

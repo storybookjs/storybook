@@ -5,7 +5,7 @@ import { CHANNEL_WS_DISCONNECT } from 'storybook/internal/core-events';
 
 import { isJSON, parse, stringify } from 'telejson';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { type WebSocket, WebSocketServer } from 'ws';
+import { WebSocket, WebSocketServer } from 'ws';
 
 import { SERVER_CHANNEL_PATH } from '../websocket/index.ts';
 import { createNodeChannel } from './index.ts';
@@ -19,10 +19,19 @@ let upgradeUrls: string[];
 let originHeaders: (string | undefined)[];
 let connections: WebSocket[];
 let receivedByServer: any[];
+let created: ReturnType<typeof createNodeChannel>[] = [];
 
 const firstConnection = async () => {
   await vi.waitFor(() => expect(connections).toHaveLength(1));
   return connections[0];
+};
+
+const openNodeChannel = (
+  options: { url: string; token: string } = { url: baseUrl, token: TOKEN }
+) => {
+  const connection = createNodeChannel(options);
+  created.push(connection);
+  return connection;
 };
 
 beforeEach(async () => {
@@ -30,6 +39,7 @@ beforeEach(async () => {
   originHeaders = [];
   connections = [];
   receivedByServer = [];
+  created = [];
 
   httpServer = createServer();
   wsServer = new WebSocketServer({ noServer: true });
@@ -55,6 +65,8 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  created.forEach((connection) => connection.close());
+  created = [];
   connections.forEach((ws) => ws.terminate());
   wsServer.close();
   await new Promise<void>((resolve) => httpServer.close(() => resolve()));
@@ -62,28 +74,28 @@ afterEach(async () => {
 
 describe('createNodeChannel', () => {
   it('connects to the server channel path with the token in the query string', async () => {
-    createNodeChannel({ url: baseUrl, token: TOKEN });
+    openNodeChannel({ url: baseUrl, token: TOKEN });
 
     await firstConnection();
     expect(upgradeUrls).toEqual([`${SERVER_CHANNEL_PATH}?token=${TOKEN}`]);
   });
 
   it('sends no Origin header, which browsers cannot omit', async () => {
-    createNodeChannel({ url: baseUrl, token: TOKEN });
+    openNodeChannel({ url: baseUrl, token: TOKEN });
 
     await firstConnection();
     expect(originHeaders).toEqual([undefined]);
   });
 
   it('replaces the path and query of the given base url', async () => {
-    createNodeChannel({ url: `${baseUrl}/some/base/path?existing=param`, token: TOKEN });
+    openNodeChannel({ url: `${baseUrl}/some/base/path?existing=param`, token: TOKEN });
 
     await firstConnection();
     expect(upgradeUrls).toEqual([`${SERVER_CHANNEL_PATH}?token=${TOKEN}`]);
   });
 
   it('replies to a server ping with a pong', async () => {
-    createNodeChannel({ url: baseUrl, token: TOKEN });
+    openNodeChannel({ url: baseUrl, token: TOKEN });
     const connection = await firstConnection();
 
     connection.send(stringify({ type: 'ping' }));
@@ -92,7 +104,7 @@ describe('createNodeChannel', () => {
   });
 
   it('does not surface transport pings as channel events', async () => {
-    const { channel } = createNodeChannel({ url: baseUrl, token: TOKEN });
+    const { channel } = openNodeChannel({ url: baseUrl, token: TOKEN });
     const onPing = vi.fn();
     channel.on('ping', onPing);
     const connection = await firstConnection();
@@ -104,7 +116,7 @@ describe('createNodeChannel', () => {
   });
 
   it('round-trips telejson-only values in both directions', async () => {
-    const { channel } = createNodeChannel({ url: baseUrl, token: TOKEN });
+    const { channel } = openNodeChannel({ url: baseUrl, token: TOKEN });
     const connection = await firstConnection();
 
     channel.emit('outgoing', { when: new Date('2026-08-20T00:00:00.000Z'), pattern: /token/gi });
@@ -133,7 +145,7 @@ describe('createNodeChannel', () => {
   });
 
   it('emits CHANNEL_WS_DISCONNECT and rejects with a dev server disconnected error on close', async () => {
-    const { channel, disconnected } = createNodeChannel({ url: baseUrl, token: TOKEN });
+    const { channel, disconnected } = openNodeChannel({ url: baseUrl, token: TOKEN });
     const disconnects: any[] = [];
     channel.on(CHANNEL_WS_DISCONNECT, (payload) => disconnects.push(payload));
     const connection = await firstConnection();
@@ -147,8 +159,17 @@ describe('createNodeChannel', () => {
   it('rejects with a dev server disconnected error when the server was never reachable', async () => {
     await new Promise<void>((resolve) => httpServer.close(() => resolve()));
 
-    const { disconnected } = createNodeChannel({ url: baseUrl, token: TOKEN });
+    const { disconnected } = openNodeChannel({ url: baseUrl, token: TOKEN });
 
     await expect(disconnected).rejects.toThrow('Storybook dev server disconnected');
+  });
+
+  it('closes the client socket from the caller', async () => {
+    const connection = openNodeChannel({ url: baseUrl, token: TOKEN });
+    const serverSocket = await firstConnection();
+
+    connection.close();
+
+    await vi.waitFor(() => expect(serverSocket.readyState).toBe(WebSocket.CLOSED));
   });
 });

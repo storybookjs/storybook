@@ -110,6 +110,15 @@ export class WebsocketTransport implements ChannelTransport {
     }
   }
 
+  close() {
+    if (this.isClosed) {
+      return;
+    }
+    this.isClosed = true;
+    clearTimeout(this.pingTimeout);
+    this.socket.close();
+  }
+
   private sendLater(event: any) {
     this.buffer.push(event);
   }

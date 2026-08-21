@@ -46,7 +46,6 @@
     "@types/semver": "^7.7.1",
     "commander": "^14.0.2",
     "empathic": "^2.0.0",
-    "memfs": "^4.11.1",
     "picocolors": "^1.1.0",
     "process-ancestry": "^0.0.2",
     "react": "^18.2.0",

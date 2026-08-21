@@ -62,16 +62,12 @@ const defaultCatalog: ToolsetCatalog = {
   ],
 };
 
-function makeAttachedTools(
-  overrides: {
-    call?: AttachedTools['call'];
-    describe?: AttachedTools['describe'];
-  } = {}
-): AttachedTools & { call: ReturnType<typeof vi.fn>; describe: ReturnType<typeof vi.fn> } {
-  const call =
-    overrides.call ??
-    vi.fn(async () => ({ ok: true as const, data: {}, markdown: 'upstream result' }));
-  const describe = overrides.describe ?? vi.fn(async () => defaultCatalog);
+function makeAttachedTools(): AttachedTools & {
+  call: ReturnType<typeof vi.fn>;
+  describe: ReturnType<typeof vi.fn>;
+} {
+  const call = vi.fn(async () => ({ ok: true as const, data: {}, markdown: 'upstream result' }));
+  const describe = vi.fn(async () => defaultCatalog);
   return {
     mode: 'attached',
     clientInfo: { name: 'storybook-cli', version: '0.0.0', kind: 'cli' },

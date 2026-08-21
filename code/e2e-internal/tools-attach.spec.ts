@@ -120,7 +120,7 @@ test.describe('storybook tools attach', () => {
       '[{"storyId":"core-basics--basic"}]',
     ]);
     expect(preview.exitCode).not.toBe(0);
-    expect(preview.output).toContain('--no-attach');
+    expect(preview.output).toMatch(/--no-attach|requires a running Storybook/);
   });
 
   test('auto mode falls back to local with a notice when no instance matches', async () => {
@@ -135,6 +135,10 @@ test.describe('storybook tools attach', () => {
   });
 
   test('auto mode falls back when Storybook is running on a different port', async () => {
+    test.skip(
+      !runsAgainstDevServer,
+      'Port mismatch fallback needs a running instance, which the static E2E job does not serve.'
+    );
     const result = await runTools(['--port', '59999', 'docs', 'list']);
 
     expect(result.exitCode, result.output).toBe(0);

@@ -89,7 +89,7 @@ const CLI_CLIENT_INFO: ToolsClientInfo = {
 
 /** Injectable dependencies for tests. */
 export type ToolsRunDeps = {
-  createTools?: typeof createTools;
+  createTools?: (options: CreateToolsOptions) => Promise<Tools>;
   discoverInstance?: typeof discoverRunningInstance;
   /** Stub for {@link PROXY_VIA_MCP_METHODS}; goes away with the proxy in Milestone 5b. */
   mcpToolCall?: typeof callMcpTool;

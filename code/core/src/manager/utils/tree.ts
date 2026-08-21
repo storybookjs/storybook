@@ -6,7 +6,7 @@ import memoize from 'memoizerific';
 import type { HashEntry, IndexHash } from 'storybook/manager-api';
 
 import { DEFAULT_REF_ID } from '../components/sidebar/Sidebar.tsx';
-import type { Dataset, Item, RefType, SearchItem } from '../components/sidebar/types.ts';
+import type { Dataset, Item, RefType } from '../components/sidebar/types.ts';
 
 const { document, window: globalWindow } = global;
 
@@ -64,7 +64,10 @@ export function getPath(item: Item, ref: Pick<RefType, 'id' | 'title' | 'index'>
   return ref.id === DEFAULT_REF_ID ? [] : [ref.title || ref.id];
 }
 
-export const searchItem = (item: Item, ref: Parameters<typeof getPath>[1]): SearchItem => {
+export const searchItem = <T extends Item>(
+  item: T,
+  ref: Parameters<typeof getPath>[1]
+): T & { refId: string; path: string[] } => {
   return { ...item, refId: ref.id, path: getPath(item, ref) };
 };
 

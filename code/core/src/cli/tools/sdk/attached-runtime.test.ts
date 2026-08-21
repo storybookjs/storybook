@@ -1,7 +1,5 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Channel } from 'storybook/internal/channels';
-
 import type { NodeChannelConnection } from '../../../channels/node/index.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import { bootstrapAttachedRuntime } from './attached-runtime.ts';
@@ -37,7 +35,7 @@ const OTHER: StorybookInstanceRecord = {
 
 function makeConnection(): NodeChannelConnection {
   return {
-    channel: { id: 'channel' } as unknown as Channel,
+    channel: { id: 'channel' } as NodeChannelConnection['channel'],
     connected: Promise.resolve(),
     disconnected: new Promise<never>(() => {}),
     close: vi.fn(),

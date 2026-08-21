@@ -161,9 +161,10 @@ function createLocalTools(
   };
 }
 
-function raceAbort<T>(signal: AbortSignal | undefined, work: Promise<T>): Promise<T> {
+function raceAbort<T>(signal: AbortSignal | undefined, work: T | PromiseLike<T>): Promise<T> {
+  const pending = Promise.resolve(work);
   if (!signal) {
-    return work;
+    return pending;
   }
   signal.throwIfAborted();
 
@@ -173,7 +174,7 @@ function raceAbort<T>(signal: AbortSignal | undefined, work: Promise<T>): Promis
     signal.addEventListener('abort', onAbort, { once: true });
   });
 
-  return Promise.race([work, aborted]).finally(() => {
+  return Promise.race([pending, aborted]).finally(() => {
     signal.removeEventListener('abort', onAbort);
   });
 }

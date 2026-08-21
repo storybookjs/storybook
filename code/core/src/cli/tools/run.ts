@@ -200,7 +200,7 @@ export async function runToolsCommand(
 
   try {
     if (tools.mode === 'attached') {
-      return await dispatchAttachedTools(tools, normalized, parsed, result);
+      return await dispatchAttachedTools(tools, normalized, parsed, deps, result);
     }
 
     return await dispatchLocalTools(tools, normalized, parsed, deps, result);
@@ -213,10 +213,23 @@ async function dispatchAttachedTools(
   tools: Tools,
   invocation: ToolsInvocation,
   parsed: Extract<ParsedToolsTokens, { ok: true }>,
+  deps: ToolsRunDeps,
   result: (partial: Omit<ToolsRunResult, 'outputPath'>) => ToolsRunResult
 ): Promise<ToolsRunResult> {
   const { toolset: toolsetName, tool: toolName } = invocation;
-  const catalog = await tools.describe();
+  let catalog;
+  try {
+    catalog = await tools.describe();
+  } catch (error) {
+    if (isAgentFacingError(error)) {
+      return result({ exitCode: 1, output: error.message, outcome: { kind: 'failure' } });
+    }
+    return result({
+      exitCode: 1,
+      output: error instanceof Error ? error.message : String(error),
+      outcome: { kind: 'error', error },
+    });
+  }
 
   if (!toolsetName) {
     return result({
@@ -264,7 +277,9 @@ async function dispatchAttachedTools(
   }
 
   try {
-    const outcome = await tools.call(method.ref, parsed.args);
+    const outcome = await tools.call(method.ref, parsed.args, {
+      ...(deps.methodTelemetry ? { telemetry: deps.methodTelemetry } : {}),
+    });
     const output = parsed.json
       ? JSON.stringify(outcome.data, null, 2)
       : joinMarkdown(outcome.markdown);

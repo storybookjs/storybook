@@ -1,4 +1,7 @@
-import type { AnyToolsetOutcome } from '../../../shared/open-service/toolset-definition.ts';
+import type {
+  AnyToolsetOutcome,
+  ToolsetTelemetry,
+} from '../../../shared/open-service/toolset-definition.ts';
 import type { ToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
 import type { ToolsetJsonSchema } from './json-schema.ts';
 import type { ToolsRuntime } from './local-runtime.ts';
@@ -72,6 +75,8 @@ export type ToolsDescribeOptions = {
 
 export type ToolsCallOptions = {
   signal?: AbortSignal;
+  origin?: string;
+  telemetry?: ToolsetTelemetry;
 };
 
 type ToolsBase = {

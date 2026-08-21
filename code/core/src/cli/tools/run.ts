@@ -17,6 +17,8 @@ import {
   AttachUnavailableError,
   createTools,
   EnvironmentMismatchError,
+  type CreateToolsOptions,
+  type Tools,
   type ToolsClientInfo,
   type ToolsRuntime,
 } from './sdk/index.ts';
@@ -79,7 +81,7 @@ const CLI_CLIENT_INFO: ToolsClientInfo = {
 
 /** Injectable dependencies for tests. */
 export type ToolsRunDeps = {
-  createTools?: typeof createTools;
+  createTools?: (options: CreateToolsOptions) => Promise<Tools>;
   discoverInstance?: typeof discoverRunningInstance;
   /** Stub for {@link PROXY_VIA_MCP_METHODS}; goes away with the proxy in Milestone 5b. */
   mcpToolCall?: typeof callMcpTool;
@@ -167,11 +169,12 @@ export async function runToolsCommand(
     outputPath: parsed.output,
   });
 
+  let tools: Tools | undefined;
   let runtime: ToolsRuntime;
   let attached = false;
   let originFromAttach: string | undefined;
   try {
-    const tools = await (deps.createTools ?? createTools)({
+    tools = await (deps.createTools ?? createTools)({
       cwd: target.cwd,
       configDir: target.configDir,
       mode: useAttach ? 'attached' : 'local',
@@ -196,7 +199,50 @@ export async function runToolsCommand(
     });
   }
 
-  const ctx = buildContext(runtime, deps, undefined);
+  try {
+    return await dispatchToolsCommand({
+      tools,
+      runtime,
+      attached,
+      originFromAttach,
+      toolsetName,
+      toolName,
+      parsed,
+      result,
+      target,
+      deps,
+    });
+  } finally {
+    await tools.close();
+  }
+}
+
+async function dispatchToolsCommand(args: {
+  tools: Tools;
+  runtime: ToolsRuntime;
+  attached: boolean;
+  originFromAttach: string | undefined;
+  toolsetName: string | undefined;
+  toolName: string | undefined;
+  parsed: Extract<ReturnType<typeof parseToolsTokens>, { ok: true }>;
+  result: (partial: Omit<ToolsRunResult, 'outputPath'>) => ToolsRunResult;
+  target: ToolsTarget;
+  deps: ToolsRunDeps;
+}): Promise<ToolsRunResult> {
+  const {
+    tools,
+    runtime,
+    attached,
+    originFromAttach,
+    toolsetName,
+    toolName,
+    parsed,
+    result,
+    target,
+    deps,
+  } = args;
+
+  const ctx = buildContext(runtime, deps, originFromAttach);
 
   if (!toolsetName) {
     return result({
@@ -314,7 +360,10 @@ export async function runToolsCommand(
       });
     }
 
-    const outcome = await method.handler(validation.value, buildContext(runtime, deps, origin));
+    const outcome = await tools.call(resolvedRef, validation.value as Record<string, unknown>, {
+      ...(origin ? { origin } : {}),
+      ...(deps.methodTelemetry ? { telemetry: deps.methodTelemetry } : {}),
+    });
     const output = parsed.json
       ? JSON.stringify(outcome.data, null, 2)
       : joinMarkdown(outcome.markdown);

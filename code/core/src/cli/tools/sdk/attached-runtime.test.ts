@@ -4,7 +4,7 @@ import type { Channel } from 'storybook/internal/channels';
 
 import type { NodeChannelConnection } from '../../../channels/node/index.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
-import { bootstrapAttachedRuntime } from './attached-runtime.ts';
+import { type AttachRuntimeDeps, bootstrapAttachedRuntime } from './attached-runtime.ts';
 import { AttachUnavailableError, EnvironmentMismatchError, ToolsRuntimeError } from './errors.ts';
 
 const RECORD: StorybookInstanceRecord = {
@@ -39,7 +39,10 @@ function makeConnection(): NodeChannelConnection {
   };
 }
 
-function makeRuntimeDeps(records: StorybookInstanceRecord[], extras: Record<string, unknown> = {}) {
+function makeRuntimeDeps(
+  records: StorybookInstanceRecord[],
+  extras: Partial<AttachRuntimeDeps> = {}
+) {
   const connection = makeConnection();
   const loadStorybook = vi.fn(async () => ({}));
   const getService = vi.fn(() => {
@@ -83,8 +86,8 @@ describe('bootstrapAttachedRuntime', () => {
       configDir: RECORD.configDir,
       channel: connection.channel,
     });
-    expect(deps.setDelegatedMode.mock.invocationCallOrder[0]).toBeLessThan(
-      deps.loadStorybook.mock.invocationCallOrder[0]
+    expect(vi.mocked(deps.setDelegatedMode).mock.invocationCallOrder[0]).toBeLessThan(
+      vi.mocked(deps.loadStorybook).mock.invocationCallOrder[0]
     );
     expect(result.record).toEqual(RECORD);
     expect(result.runtime.configDir).toBe(RECORD.configDir);
@@ -175,7 +178,7 @@ describe('bootstrapAttachedRuntime', () => {
   });
 
   it('wraps a configuration that cannot be loaded', async () => {
-    const { deps } = makeRuntimeDeps([RECORD], {
+    const { connection, deps } = makeRuntimeDeps([RECORD], {
       loadStorybook: vi.fn(async () => {
         throw new Error('No configuration files found');
       }),
@@ -185,5 +188,21 @@ describe('bootstrapAttachedRuntime', () => {
 
     await expect(failure).rejects.toThrow(ToolsRuntimeError);
     await expect(failure).rejects.toMatchObject({ data: { reason: 'config-load-failed' } });
+    expect(deps.setDelegatedMode).toHaveBeenLastCalledWith(false);
+    expect(connection.close).toHaveBeenCalled();
+  });
+
+  it('matches a nested package cwd against a parent-cwd record whose configDir is the package Storybook', async () => {
+    const nested: StorybookInstanceRecord = {
+      ...RECORD,
+      cwd: '/repo',
+      configDir: '/repo/packages/ui/.storybook',
+    };
+    const { deps } = makeRuntimeDeps([nested], { cwd: () => '/repo' });
+
+    const result = await bootstrapAttachedRuntime({ cwd: '/repo/packages/ui' }, deps);
+
+    expect(result.record).toEqual(nested);
+    expect(result.runtime.configDir).toBe(nested.configDir);
   });
 });

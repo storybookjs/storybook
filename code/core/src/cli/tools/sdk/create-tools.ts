@@ -2,6 +2,7 @@ import { versions } from 'storybook/internal/common';
 
 import { StorybookDevServerDisconnectedError } from '../../../server-errors.ts';
 import { formatIssues } from '../../../shared/open-service/errors.ts';
+import { clearRegistry, setDelegatedMode } from '../../../shared/open-service/service-registry.ts';
 import type {
   AnyToolsetDefinition,
   AnyToolsetMethod,
@@ -9,6 +10,7 @@ import type {
   ToolsetCtx,
 } from '../../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
+import { clearToolsetRegistry } from '../../../shared/open-service/toolset-registry.ts';
 import { toCatalogEntry } from './catalog.ts';
 import { AttachUnavailableError, ToolsRuntimeError } from './errors.ts';
 import type { ToolsRuntime } from './local-runtime.ts';
@@ -80,26 +82,45 @@ export async function createTools(
   };
 
   if (mode === 'attached') {
+    const previousAttached = process.env.STORYBOOK_ATTACHED_TOOLS;
     process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
-    // local-runtime pulls core-server at import, which must not run before the attached channel is prepared.
-    const { bootstrapAttachedRuntime } = await import('./attached-runtime.ts');
-    const attached = await (deps.attach ?? bootstrapAttachedRuntime)({
-      cwd: options.cwd,
-      configDir: options.configDir,
-    });
-    return createToolsHost({
-      mode: 'attached',
-      runtime: attached.runtime,
-      clientInfo,
-      storybook: {
-        version: versions.storybook,
-        configDir: attached.runtime.configDir,
-        url: attached.record.url,
-        pid: attached.record.pid,
-      },
-      close: () => attached.connection.close(),
-      disconnected: attached.connection.disconnected,
-    });
+    const restoreAttachedEnv = () => {
+      if (previousAttached === undefined) {
+        delete process.env.STORYBOOK_ATTACHED_TOOLS;
+      } else {
+        process.env.STORYBOOK_ATTACHED_TOOLS = previousAttached;
+      }
+    };
+    try {
+      // local-runtime pulls core-server at import, which must not run before the attached channel is prepared.
+      const { bootstrapAttachedRuntime } = await import('./attached-runtime.ts');
+      const attached = await (deps.attach ?? bootstrapAttachedRuntime)({
+        cwd: options.cwd,
+        configDir: options.configDir,
+      });
+      return createToolsHost({
+        mode: 'attached',
+        runtime: attached.runtime,
+        clientInfo,
+        storybook: {
+          version: versions.storybook,
+          configDir: attached.runtime.configDir,
+          url: attached.record.url,
+          pid: attached.record.pid,
+        },
+        close: () => {
+          attached.connection.close();
+          restoreAttachedEnv();
+          setDelegatedMode(false);
+          clearRegistry();
+          clearToolsetRegistry();
+        },
+        disconnected: attached.connection.disconnected,
+      });
+    } catch (error) {
+      restoreAttachedEnv();
+      throw error;
+    }
   }
 
   const { bootstrapToolsRuntime } = await import('./local-runtime.ts');
@@ -152,7 +173,7 @@ function createToolsHost(args: {
   disconnected?: Promise<never>;
 }): Tools {
   const { mode, runtime, clientInfo, storybook } = args;
-  const ctx: ToolsetCtx = {
+  const baseCtx: ToolsetCtx = {
     transport: 'cli',
     getService: runtime.getService,
     ...(storybook.url ? { origin: storybook.url } : {}),
@@ -168,6 +189,12 @@ function createToolsHost(args: {
     }
   };
 
+  const contextFor = (options: ToolsCallOptions = {}): ToolsetCtx => ({
+    ...baseCtx,
+    ...(options.origin ? { origin: options.origin } : {}),
+    ...(options.telemetry ? { telemetry: options.telemetry } : {}),
+  });
+
   const invoke = async (
     ref: string,
     input: Record<string, unknown>,
@@ -178,7 +205,7 @@ function createToolsHost(args: {
     const { toolsetId, methodName } = splitRef(ref);
     const method = findMethod(findToolset(runtime, toolsetId), methodName);
 
-    if (mode === 'local' && method.requiresDevServer) {
+    if (mode === 'local' && method.requiresDevServer && !options.origin && !storybook.url) {
       throw new AttachUnavailableError({
         reason: 'no-instance',
         instances: [],
@@ -194,7 +221,10 @@ function createToolsHost(args: {
       });
     }
 
-    return method.handler(validation.value, ctx);
+    return raceAbort(
+      options.signal,
+      Promise.resolve(method.handler(validation.value, contextFor(options)))
+    );
   };
 
   return {
@@ -209,7 +239,7 @@ function createToolsHost(args: {
         options.toolset === undefined ? runtime.toolsets : [findToolset(runtime, options.toolset)];
       return {
         configDir: runtime.configDir,
-        toolsets: toolsets.map((toolset) => toCatalogEntry(toolset, ctx)),
+        toolsets: toolsets.map((toolset) => toCatalogEntry(toolset, contextFor())),
       };
     },
 
@@ -237,10 +267,30 @@ function createToolsHost(args: {
     },
 
     async close(): Promise<void> {
+      if (closed) {
+        return;
+      }
       closed = true;
       args.close?.();
     },
   };
+}
+
+function raceAbort<T>(signal: AbortSignal | undefined, work: Promise<T>): Promise<T> {
+  if (!signal) {
+    return work;
+  }
+  signal.throwIfAborted();
+
+  let onAbort!: () => void;
+  const aborted = new Promise<never>((_, reject) => {
+    onAbort = () => reject(signal.reason);
+    signal.addEventListener('abort', onAbort, { once: true });
+  });
+
+  return Promise.race([work, aborted]).finally(() => {
+    signal.removeEventListener('abort', onAbort);
+  });
 }
 
 function splitRef(ref: string): { toolsetId: string; methodName: string } {
@@ -268,8 +318,7 @@ function findToolset(runtime: ToolsRuntime, toolsetId: string): AnyToolsetDefini
 }
 
 function findMethod(toolset: AnyToolsetDefinition, methodName: string): AnyToolsetMethod {
-  const method = toolset.methods[methodName];
-  if (!method) {
+  if (!Object.hasOwn(toolset.methods, methodName)) {
     throw new ToolsRuntimeError({
       reason: 'unknown-method',
       message: `Unknown tool \`${toolset.id}.${methodName}\`. The \`${
@@ -277,5 +326,5 @@ function findMethod(toolset: AnyToolsetDefinition, methodName: string): AnyTools
       }\` toolset provides: ${Object.keys(toolset.methods).join(', ')}.`,
     });
   }
-  return method;
+  return toolset.methods[methodName];
 }

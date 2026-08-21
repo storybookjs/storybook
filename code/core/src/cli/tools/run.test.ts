@@ -96,13 +96,31 @@ function makeLocalTools(runtimeOverrides: Partial<ToolsRuntime> = {}): LocalTool
     },
     ...runtimeOverrides,
   };
+  const storybook = { version: '0.0.0', configDir: runtime.configDir };
   return {
     mode: 'local',
     clientInfo: { name: 'storybook-cli', version: '0.0.0', kind: 'cli' },
     runtime,
-    storybook: { version: '0.0.0', configDir: runtime.configDir },
+    storybook,
     describe: async () => ({ configDir: runtime.configDir, toolsets: [] }),
-    call: async () => ({ ok: true, data: {}, markdown: '' }),
+    call: async (ref, input = {}, options = {}) => {
+      const [toolsetId, methodName] = ref.split('.');
+      const toolset = runtime.toolsets.find((candidate) => candidate.id === toolsetId);
+      const method =
+        toolset && Object.hasOwn(toolset.methods, methodName)
+          ? toolset.methods[methodName]
+          : undefined;
+      if (!method) {
+        throw new Error(`Unknown method ${ref}`);
+      }
+      const ctx: ToolsetCtx = {
+        transport: 'cli',
+        getService: runtime.getService,
+        ...(options.origin ? { origin: options.origin } : {}),
+        ...(options.telemetry ? { telemetry: options.telemetry } : {}),
+      };
+      return method.handler(input, ctx);
+    },
     close: async () => {},
   };
 }
@@ -736,6 +754,41 @@ describe('attached tools', () => {
     expect(createTools).toHaveBeenCalledWith(
       expect.objectContaining({ mode: 'attached', autoSpawn: false })
     );
+  });
+
+  it('closes the host after a successful command and after a handler failure', async () => {
+    const success = makeLocalTools();
+    const successClose = vi.spyOn(success, 'close');
+    const { deps: successDeps } = makeDeps({ createTools: async () => success });
+
+    await run(['docs', 'list'], successDeps);
+
+    expect(successClose).toHaveBeenCalledOnce();
+
+    clearToolsetRegistry();
+    registerToolset(
+      defineToolset({
+        id: 'boom',
+        description: 'Throws.',
+        methods: {
+          crash: {
+            title: 'Crash',
+            description: 'crash',
+            input: v.object({}),
+            handler: async () => {
+              throw new Error('boom');
+            },
+          },
+        },
+      })
+    );
+    const failure = makeLocalTools();
+    const failureClose = vi.spyOn(failure, 'close');
+    const { deps: failureDeps } = makeDeps({ createTools: async () => failure });
+
+    await run(['boom', 'crash'], failureDeps);
+
+    expect(failureClose).toHaveBeenCalledOnce();
   });
 
   it('runs a requiresDevServer tool caller-side with the instance origin, without proxying', async () => {

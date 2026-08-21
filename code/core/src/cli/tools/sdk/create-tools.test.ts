@@ -4,7 +4,7 @@ import * as v from 'valibot';
 
 import { defineToolset } from '../../../shared/open-service/toolset-definition.ts';
 import { createTools } from './create-tools.ts';
-import { AttachUnavailableError, ToolsRuntimeError } from './errors.ts';
+import { AttachUnavailableError } from './errors.ts';
 import { bootstrapToolsRuntime, type ToolsRuntime } from './local-runtime.ts';
 
 vi.mock('./local-runtime.ts', { spy: true });
@@ -52,6 +52,7 @@ function makeRuntime(overrides: Partial<ToolsRuntime> = {}): ToolsRuntime {
 beforeEach(() => {
   vi.mocked(bootstrapToolsRuntime).mockReset();
   vi.mocked(bootstrapToolsRuntime).mockResolvedValue(makeRuntime());
+  vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', undefined);
 });
 
 afterEach(() => {
@@ -99,7 +100,7 @@ describe('createTools', () => {
   });
 
   it('sets STORYBOOK_ATTACHED_TOOLS before attaching so store construction stays a follower', async () => {
-    delete process.env.STORYBOOK_ATTACHED_TOOLS;
+    vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', undefined);
     const attach = vi.fn(async () => {
       expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBe('true');
       return {
@@ -112,6 +113,44 @@ describe('createTools', () => {
     await createTools({ mode: 'attached' }, { attach });
 
     expect(attach).toHaveBeenCalledOnce();
+  });
+
+  it('restores STORYBOOK_ATTACHED_TOOLS when attach fails so a later local host is not a follower', async () => {
+    vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', undefined);
+    const attach = vi.fn(async () => {
+      throw new AttachUnavailableError({
+        reason: 'no-instance',
+        instances: [],
+        remediation: 'none',
+      });
+    });
+
+    await expect(createTools({ mode: 'attached' }, { attach })).rejects.toThrow(
+      AttachUnavailableError
+    );
+    expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBeUndefined();
+
+    const local = await createTools({ mode: 'local' });
+    expect(local.mode).toBe('local');
+    expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBeUndefined();
+  });
+
+  it('restores STORYBOOK_ATTACHED_TOOLS when the attached host closes', async () => {
+    vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', undefined);
+    const connection = { close: vi.fn(), disconnected: new Promise<never>(() => {}) };
+    const attach = vi.fn(async () => ({
+      runtime: makeRuntime(),
+      record: { url: 'http://localhost:6006', pid: 123, configDir: CONFIG_DIR },
+      connection,
+    }));
+    const tools = await createTools({ mode: 'attached' }, { attach });
+
+    expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBe('true');
+    await tools.close();
+    await tools.close();
+
+    expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBeUndefined();
+    expect(connection.close).toHaveBeenCalledOnce();
   });
 
   it('runs a requiresDevServer method when attached', async () => {

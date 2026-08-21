@@ -16,6 +16,7 @@ vi.mock('node:fs/promises', { spy: true });
 const REGISTRY_DIR = '/home/tester/.storybook/instances';
 
 beforeEach(async () => {
+  vol.reset();
   const memfs = await vi.importActual<typeof import('memfs')>('memfs');
 
   vi.mocked(chmod).mockImplementation(
@@ -45,7 +46,6 @@ beforeEach(async () => {
 });
 
 afterEach(() => {
-  vol.reset();
   vi.restoreAllMocks();
 });
 

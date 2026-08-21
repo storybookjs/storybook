@@ -4,7 +4,7 @@ import type { GetServiceOptions } from './types.ts';
 
 type AnySchema = StandardSchemaV1<unknown, unknown>;
 
-export type ToolsetTransport = 'cli' | 'mcp';
+export type ToolsetTransport = 'cli' | 'mcp' | 'sdk';
 
 /**
  * Service lookup for toolset handlers. Intentionally not keyed to ServerCoreServices:
@@ -39,7 +39,8 @@ export type ToolsetCtx = {
  *
  * The function form exists because descriptions cross-reference sibling methods, and each surface
  * spells those differently (`stories-changed` on MCP, `npx storybook tools stories changed` on
- * the CLI). Use `getToolName(ctx)` to render a reference rather than hardcoding either spelling.
+ * the CLI, dotted `toolsetId.methodName` in the SDK). Use `getToolName(ctx)` to render a reference
+ * rather than hardcoding a spelling.
  */
 export type ToolsetMethodDescription = string | ((context: ToolsetCtx) => string);
 
@@ -191,7 +192,7 @@ export function resolveToolsetDescription(
  * Analytics event names (`tool:previewStories`, …) and payload classifiers (`toolset: 'dev' |
  * 'docs' | 'test'`) are a frozen cross-version contract. Keep them aligned with older Storybook
  * releases even when MCP wire tool names or toolset ids change. The channel field is `transport`
- * (`'cli' | 'mcp'`), matching the toolset API.
+ * (`'cli' | 'mcp' | 'sdk'`), matching the toolset API.
  */
 export async function reportToolsetTelemetry(
   context: ToolsetCtx,

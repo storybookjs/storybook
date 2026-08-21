@@ -584,6 +584,8 @@ This automigration tool performs the following actions:
 
 If your project has custom Webpack configurations in `.storybook/main.js|ts` (via `webpackFinal`), you'll need to migrate those to Vite configuration (via `viteFinal`) after running this automigration. See the [Vite builder documentation](../../builders/vite.mdx#migrating-from-webpack) for more information.
 
+Direct `.md` imports also need Vite's [`?raw` suffix](../../builders/vite.mdx#importing-markdown-files-as-strings), which Webpack applied for you.
+
 </Callout>
 
 #### Manual migration
@@ -599,6 +601,8 @@ Then, update your `.storybook/main.js|ts` to change the framework property:
 <Callout variant="info">
 
 If your Storybook configuration contains custom Webpack operations in [`webpackFinal`](../../api/main-config/main-config-webpack-final.mdx), you will likely need to create equivalents in [`viteFinal`](../../api/main-config/main-config-vite-final.mdx).
+
+Direct `.md` imports also need Vite's [`?raw` suffix](../../builders/vite.mdx#importing-markdown-files-as-strings), which Webpack applied for you.
 
 For more information, see the [Vite builder documentation](../../builders/vite.mdx#migrating-from-webpack).
 

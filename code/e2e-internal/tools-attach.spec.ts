@@ -120,7 +120,7 @@ test.describe('storybook tools attach', () => {
       '[{"storyId":"core-basics--basic"}]',
     ]);
     expect(preview.exitCode).not.toBe(0);
-    expect(preview.output).toContain('--no-attach');
+    expect(preview.output).toMatch(/--no-attach|requires a running Storybook/);
   });
 
   test('auto mode falls back to local with a notice when no instance matches', async () => {

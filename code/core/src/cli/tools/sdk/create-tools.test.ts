@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as v from 'valibot';
 
-import { defineToolset } from '../../../shared/open-service/toolset-definition.ts';
+import {
+  defineToolset,
+  type AnyToolsetOutcome,
+} from '../../../shared/open-service/toolset-definition.ts';
 import { createTools } from './create-tools.ts';
 import { AttachUnavailableError, SpawnFailedError } from './errors.ts';
 import { bootstrapToolsRuntime, type ToolsRuntime } from './local-runtime.ts';
@@ -459,7 +462,7 @@ describe('call', () => {
           title: 'Hang',
           description: 'hang',
           input: v.object({}),
-          handler: () => new Promise(() => {}),
+          handler: () => new Promise<AnyToolsetOutcome>(() => {}),
         },
       },
     });

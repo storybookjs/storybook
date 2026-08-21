@@ -121,10 +121,9 @@ function modelBinding(propName: string): string {
 // declared types, so both reads stay guarded.
 function docComment(member: DocMember, defaultValue?: string): string[] {
   const description = member.description?.trim() ?? '';
-  const tagLines = (member.tags ?? []).map(
-    (tag) => `@${tag.name}${tag.text ? ` ${tag.text}` : ''}`
-  );
-  if (defaultValue !== undefined) {
+  const tags = member.tags ?? [];
+  const tagLines = tags.map((tag) => `@${tag.name}${tag.text ? ` ${tag.text}` : ''}`);
+  if (defaultValue !== undefined && !tags.some((tag) => tag.name === 'default')) {
     tagLines.push(`@default ${defaultValue}`);
   }
 

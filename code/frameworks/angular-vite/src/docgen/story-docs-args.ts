@@ -41,6 +41,17 @@ export const evaluateArgLiteral = (node: t.Node, enums: SnippetEnum[]): string |
   return value === EVAL_FAILED ? undefined : printExpressionValue(value, new Set());
 };
 
+/**
+ * The arg's value as the TypeScript a class field is initialized with.
+ *
+ * An Angular template expression is a strict subset of JavaScript resolved against the host
+ * component, so `new`, a statement-bodied arrow and a call on an ES global are all either rejected
+ * outright or read as `undefined` there. A field body is ordinary TypeScript, where each of them
+ * means what the story meant, so the value is printed as written and nothing is escaped: this text
+ * lands in code, not in an attribute.
+ */
+export const argFieldValue = (node: t.Node): string => printArgSource(unwrapExpression(node));
+
 // recast reprints a node it parsed straight from the file's own text, comments and indentation
 // included. A clone drops the bookkeeping that path relies on and is formatted from the AST
 // instead, which is what leaves a binding holding the expression and nothing else.

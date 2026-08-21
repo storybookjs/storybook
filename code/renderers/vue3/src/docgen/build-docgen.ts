@@ -9,6 +9,8 @@ import {
 } from 'storybook/internal/csf-tools';
 import type { DocgenPayload, DocgenProviderInput } from 'storybook/internal/types';
 
+import type ts from 'typescript';
+
 import { extractArgTypes } from '../extractArgTypes.ts';
 
 import type { ComponentMetaChecker } from 'vue-component-meta';
@@ -23,6 +25,7 @@ type VueDocgenPayload = DocgenPayload & { vueComponentMeta?: MetaSource };
 export interface BuildDocgenContext {
   getChecker: (componentFilePath: string) => ComponentMetaChecker;
   resolvePath?: (importPath: string) => string;
+  typescript: typeof ts;
 }
 
 const UNRESOLVED_COMPONENT_ERRORS: Record<
@@ -129,7 +132,7 @@ export async function buildDocgenPayload(
     path: component.path,
     exportName: component.exportName,
   };
-  const metaSources = await collectComponentMetaSources(checker, declared.path);
+  const metaSources = await collectComponentMetaSources(checker, declared.path, context.typescript);
   const componentMeta = metaSources.find((meta) => meta.exportName === declared.exportName);
 
   if (!componentMeta) {
@@ -142,9 +145,11 @@ export async function buildDocgenPayload(
     };
   }
 
+  const metaJsDoc = extractDescription(csf._metaStatement) || undefined;
   const { description, summary, jsDocTags } = extractComponentDescription(
-    extractDescription(csf._metaStatement) || undefined,
-    componentMeta.description
+    metaJsDoc,
+    componentMeta.description,
+    componentMeta.jsDocTags
   );
 
   return {

@@ -69,9 +69,9 @@ describe('experimental feature flag automigrations', () => {
       ['crossing 10.5 within the same major', '10.4.0', '10.5.0', true],
       ['crossing into a 10.5 prerelease', '10.4.0', '10.5.0-rc.1', true],
       ['crossing 10.5 via a later minor', '10.4.0', '10.6.0-alpha.7', true],
+      ['crossing a major boundary', '9.0.0', '10.5.0', true],
       ['already past the boundary', '10.5.0', '10.6.0', false],
       ['not reaching the boundary', '10.3.0', '10.4.0', false],
-      ['crossing a major boundary', '9.0.0', '10.5.0', false],
     ])('%s', async (_label, beforeVersion, storybookVersion, expected) => {
       const result = await enableExperimentalDocgenServer.check(
         checkOptions({ beforeVersion, storybookVersion })

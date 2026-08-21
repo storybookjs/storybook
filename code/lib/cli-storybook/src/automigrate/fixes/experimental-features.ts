@@ -13,7 +13,7 @@ import type { CheckOptions, Fix } from '../types.ts';
 const MIN_VERSION = '10.5.0';
 
 /**
- * Whether this upgrade crosses the 10.5 boundary within the same major.
+ * Whether this upgrade crosses the 10.5 boundary from below.
  *
  * Prereleases are coerced away so that upgrading to `10.5.0-rc.1` counts as reaching 10.5; without
  * that, an RC user would be skipped here and then skipped again on the stable release, because by
@@ -25,11 +25,7 @@ const crossesFeatureBoundary = (beforeVersion: string, targetVersion: string): b
   if (!before || !target) {
     return false;
   }
-  return (
-    semver.lt(before, MIN_VERSION) &&
-    semver.gte(target, MIN_VERSION) &&
-    before.major === target.major
-  );
+  return semver.lt(before, MIN_VERSION) && semver.gte(target, MIN_VERSION);
 };
 
 const checkFeature =

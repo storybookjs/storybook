@@ -11,6 +11,7 @@ import type { CheckOptions, RunOptions } from '../types.ts';
 import {
   enableExperimentalDocgenServer,
   enableExperimentalReview,
+  resolveRequestedFeatures,
 } from './experimental-features.ts';
 
 // Spy-only mock: keep the real `node:fs/promises` module shape, then redirect the calls used by
@@ -157,6 +158,28 @@ describe('experimental feature flag automigrations', () => {
       );
       expect(result).not.toBeNull();
     });
+  });
+
+  describe('resolveRequestedFeatures', () => {
+    it('maps supported flag names onto their fixes', () => {
+      expect(resolveRequestedFeatures('experimentalReview, experimentalDocgenServer')).toEqual([
+        { name: 'experimentalReview', fixId: enableExperimentalReview.id },
+        { name: 'experimentalDocgenServer', fixId: enableExperimentalDocgenServer.id },
+      ]);
+    });
+
+    it('returns nothing when no flags were requested', () => {
+      expect(resolveRequestedFeatures(undefined)).toEqual([]);
+    });
+
+    it.each(['experimentalRevieww', 'constructor', 'toString', '__proto__'])(
+      'rejects %s',
+      (name) => {
+        expect(() => resolveRequestedFeatures(name)).toThrow(
+          `Unknown feature flag(s): ${name}. Available: experimentalReview, experimentalDocgenServer.`
+        );
+      }
+    );
   });
 
   describe('run', () => {

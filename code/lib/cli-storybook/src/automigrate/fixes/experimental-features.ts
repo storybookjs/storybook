@@ -106,7 +106,7 @@ export const enableExperimentalDocgenServer: Fix = {
   check: async (options) =>
     hasDocgenProvider(options.mainConfig) ? checkDocgenServer(options) : null,
   prompt: () =>
-    'Enable experimentalDocgenServer for faster startup and more accurate Controls/ArgTypes in React projects.',
+    'Enable experimentalDocgenServer for faster startup and more accurate Controls/ArgTypes.',
   run: enableFeature('experimentalDocgenServer'),
 };
 
@@ -130,7 +130,7 @@ export const resolveRequestedFeatures = (
       .map((name) => name.trim())
       .filter(Boolean) ?? [];
 
-  const unknown = names.filter((name) => !(name in FEATURE_FLAG_FIXES));
+  const unknown = names.filter((name) => !Object.hasOwn(FEATURE_FLAG_FIXES, name));
   if (unknown.length > 0) {
     throw new Error(
       `Unknown feature flag(s): ${unknown.join(', ')}. Available: ${Object.keys(FEATURE_FLAG_FIXES).join(', ')}.`

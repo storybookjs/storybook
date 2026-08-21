@@ -97,20 +97,7 @@ The upgrade command supports several flags to customize the upgrade process:
 storybook@latest upgrade [options]
 ```
 
-### Available flags
-
-| Flag                             | Description                                                                                                                    |
-| -------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
-| `-c, --config-dir <dir-name...>` | Directory or directories to find Storybook configurations                                                                      |
-| `--debug`                        | Enable more logs for debugging (default: false)                                                                                |
-| `--disable-telemetry`            | Disable sending telemetry data                                                                                                 |
-| `--enable-crash-reports`         | Enable sending crash reports to telemetry data                                                                                 |
-| `-f, --force`                    | Force the upgrade, skipping autoblockers                                                                                       |
-| `--loglevel <level>`             | Define log level: `debug`, `error`, `info`, `silent`, `trace`, or `warn` (default: `info`)                                     |
-| `--package-manager <manager>`    | Force package manager: `npm`, `pnpm`, `yarn1`, `yarn2`, or `bun`                                                               |
-| `-s, --skip-check`               | Skip postinstall version and automigration checks                                                                              |
-| `--logfile [path]`               | Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided. |
-| `-y, --yes`                      | Skip prompting the user                                                                                                        |
+See the [`upgrade` command reference](../api/cli-options.mdx#upgrade) for the full list of supported flags.
 
 ### Example usage
 

@@ -107,12 +107,6 @@ export default defineGeneratorModule({
     });
     angularJSON.write();
 
-    // Everything below either feeds this to `semver.minVersion` (which throws on a non-range) or
-    // interpolates it into an install specifier, so only a real semver range may reach it. The raw
-    // package.json specifier is `catalog:angular` or `workspace:*` in a monorepo; prefer the
-    // declared range so the project's own caret convention carries into the packages we add, and
-    // fall back to the package manager's resolution, which reads pnpm catalogs and the installed
-    // version. Anything still not a range leaves the added packages unpinned.
     const asRange = (specifier: string | null | undefined) =>
       specifier && semver.validRange(specifier) ? specifier : null;
     const angularVersion =

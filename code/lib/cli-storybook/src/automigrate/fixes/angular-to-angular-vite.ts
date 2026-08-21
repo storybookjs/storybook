@@ -396,22 +396,6 @@ const addZoneJsPreviewImport = async (
   }
 };
 
-/**
- * Reduce a declared `@angular/core` specifier to the major it guarantees, or null when the
- * specifier is not semver at all.
- *
- * The specifier can be a range (`^21.2.0`), and a range is not a version: `semver.satisfies` reads
- * its first argument as a version and returns false for anything else, so comparing the range
- * directly rejects every project that declares one. Take the lowest version the range admits
- * instead, which is the only major the range guarantees: `^20 || ^21` may resolve to 20, so it is
- * not an Angular 21 project. Comparing `.major` rather than the version keeps a `21.0.0-rc.0`
- * prerelease on the Angular 21 side of the line, where `semver.gte` would put it below `21.0.0`.
- *
- * A floor of major 0 is treated as no answer rather than as Angular 0: only a range admitting
- * everything from zero (`*`, `x`, `>=0.0.0`, `21.2.7 || *`) produces one, and Angular has never
- * had a 0.x. Reporting those as unknown keeps them on the fail-open path with every other
- * specifier that carries no version, instead of refusing them as "Angular 0".
- */
 const getGuaranteedAngularMajor = (specifier: string | null): number | null => {
   const range = specifier ? semver.validRange(specifier) : null;
   const major = range ? (semver.minVersion(range)?.major ?? null) : null;
@@ -431,10 +415,6 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       return null;
     }
 
-    // Detect @angular/core for the Angular 21 prerequisite check. `getDependencyVersion` would hand
-    // back the raw package.json specifier, which is `catalog:angular` or `workspace:*` in the
-    // monorepos this migration exists to serve, and is absent entirely when the declaration sits in
-    // a workspace package the CLI does not scan. The package manager resolves all three.
     const angularSpecifier = await packageManager.getDeclaredVersionSpecifier('@angular/core');
 
     // `@analogjs/storybook-angular` declares `@storybook/angular` as its peer, so the dependency

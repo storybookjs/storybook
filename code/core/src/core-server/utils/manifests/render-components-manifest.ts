@@ -1277,10 +1277,6 @@ type ComponentApi =
 /**
  * The component's API surface, as the one question this page exists to answer: is there an API
  * description, and if not, did extraction fail or did the component simply bind nothing?
- *
- * Renderers describe a component in two different shapes. React ships raw docgen that gets parsed
- * into a props list here; Angular and Vue ship `apiDescription`, Markdown they rendered themselves,
- * which also covers members `argTypes` has no room for (Vue slots and exposed refs).
  */
 function resolveComponentApi(component: ComponentManifestLikeWithDocgen): ComponentApi {
   if (component.error) {

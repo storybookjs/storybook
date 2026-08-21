@@ -40,8 +40,8 @@ import {
   buildReviewStoryHref,
   buildSummaryBackHref,
 } from '../review-navigation.ts';
+import type { ReviewBanner } from '../review-context.ts';
 import type { ReviewState } from '../review-state.ts';
-import type { ReviewBanner } from '../review-store.ts';
 import type { StoryInfo } from '../review-types.ts';
 
 const MarkdownWrapper = styled(DocumentWrapper)(({ theme }) => ({
@@ -239,17 +239,18 @@ const CollectionLandmark: FC<{ titleId: string; children: ReactNode }> = ({
   );
 };
 
-// A `contentinfo` landmark must stay top-level, but this footer is rendered
-// inside the `main` landmark, so it is exposed as a named `region` instead
-// (a `<footer>` nested in `<main>` has no implicit `contentinfo` role).
+// A `contentinfo` landmark must stay top-level, but this footer sits inside the
+// `main` landmark, so it is exposed as a named `region` instead. It renders as a
+// `section` because `region` is not an allowed role on `footer` (aria-allowed-role),
+// and a `<footer>` nested in `<main>` has no implicit `contentinfo` role anyway.
 const FooterLandmark: FC<{ children: ReactNode }> = ({ children }) => {
   const regionRef = useRef<HTMLDivElement>(null);
   const { landmarkProps } = useLandmark(
-    { role: 'region', 'aria-label': 'About this review' },
+    { role: 'contentinfo', 'aria-label': 'About this review' },
     regionRef
   );
   return (
-    <Footer as="footer" ref={regionRef} {...landmarkProps}>
+    <Footer as="section" ref={regionRef} {...landmarkProps}>
       {children}
     </Footer>
   );
@@ -351,7 +352,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             padding="small"
             ariaLabel="Copy prompt to refresh this review"
             ariaLabelOnCopy="Prompt copied to clipboard"
-            content="Generate a Storybook review including my latest changes using the display-review tool."
+            content="Generate a Storybook review including my latest changes using the review-create tool."
             childrenOnCopy={
               <>
                 <CheckIcon /> Copy prompt

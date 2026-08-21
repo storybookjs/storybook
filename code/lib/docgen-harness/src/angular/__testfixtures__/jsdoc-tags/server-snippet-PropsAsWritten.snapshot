@@ -1,0 +1,9 @@
+import { Component } from '@angular/core';
+import { JsdocTagsComponent } from './jsdoc-tags.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [JsdocTagsComponent],
+  template: `<sb-jsdoc-tags [text]="'Deployed'" [accent]="'seagreen'" />`,
+})
+export class DemoComponent {}

@@ -9,6 +9,8 @@ import type { CLIOptions } from 'storybook/internal/types';
 
 import type { Command } from 'commander';
 
+import { resolveStorybookConfigDir } from '../../tools/config-dir.ts';
+import type { CommandFailureHandler } from '../../tools/register.ts';
 import {
   type AiCommandOutcome,
   type AiToolRunResult,
@@ -16,7 +18,6 @@ import {
   runAiTool,
   runAiToolHelp,
 } from './run-tool.ts';
-import { resolveStorybookConfigDir } from './local-metadata.ts';
 
 /**
  * The `storybook ai <tool>` MCP passthrough is experimental (storybookjs/storybook#35124) and only
@@ -44,11 +45,6 @@ type AiPassthroughOptions = {
   /** From the shared command options in `bin/core.ts`; consumed by the failure handler. */
   logfile?: string | boolean;
 };
-
-/** `handleAiCommandFailure` from `bin/core.ts`, passed in to avoid an import cycle. */
-export type CommandFailureHandler = (
-  logFilePath: string | boolean | undefined
-) => (error: unknown) => Promise<never>;
 
 /**
  * Register the passthrough on the `ai` command: a generic `[command] [args...]` argument pair that

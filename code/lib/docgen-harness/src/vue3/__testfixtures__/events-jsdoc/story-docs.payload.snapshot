@@ -1,0 +1,24 @@
+{
+  "id": "events-jsdoc",
+  "name": "EventsJsdoc",
+  "path": "__PATH__",
+  "stories": {
+    "forms-events-jsdoc--with-handlers": {
+      "description": undefined,
+      "id": "forms-events-jsdoc--with-handlers",
+      "name": "With Handlers",
+      "snippet": "<script lang="ts" setup>
+import EventsJsdoc from './EventsJsdoc.vue';
+
+const onCancel = () => {};
+
+const onSave = () => {};
+</script>
+
+<template>
+  <EventsJsdoc label="Save" @cancel="onCancel" @save="onSave" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

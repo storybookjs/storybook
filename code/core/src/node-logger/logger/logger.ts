@@ -161,7 +161,7 @@ export const error = createLogger('error', (...args: LogFunctionArgs<typeof LOG_
   LOG_FUNCTIONS.error()(...args)
 );
 
-type BoxOptions = {
+export type BoxOptions = {
   title?: string;
 } & clack.BoxOptions;
 

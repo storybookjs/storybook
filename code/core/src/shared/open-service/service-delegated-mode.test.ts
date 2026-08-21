@@ -91,6 +91,19 @@ describe('delegated mode flag', () => {
     clearRegistry();
     expect(isDelegatedMode()).toBe(false);
   });
+
+  it('shares the flag with a separately loaded copy of this module', async () => {
+    setDelegatedMode(true);
+
+    vi.resetModules();
+    const other = await import('./service-registry.ts');
+
+    expect(isDelegatedMode()).toBe(true);
+    expect(other.isDelegatedMode()).toBe(true);
+
+    other.setDelegatedMode(false);
+    expect(isDelegatedMode()).toBe(false);
+  });
 });
 
 describe('delegated command dispatch', () => {

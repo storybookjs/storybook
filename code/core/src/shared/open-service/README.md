@@ -710,8 +710,10 @@ Every registered runtime plays **both** roles at once, decided per command:
   validates input, mutates state, and broadcasts the post-mutation snapshot through the normal command
   wrappers so every peer converges — then emits `services:command-result` or `services:command-error`.
 
-A runtime never requests a command it implements (it runs that locally), so a responder never answers
-its own invoke echo: `onInvoke` only acts on commands in its `implementedCommandNames` set.
+Outside [delegated mode](#delegated-mode), a runtime never requests a command it implements (it runs
+that locally), so a responder never answers its own invoke echo: `onInvoke` only acts on commands in
+its `implementedCommandNames` set. A delegated runtime does request commands it implements — that is
+how dispatch reaches the Storybook it attached to.
 
 ### Events
 
@@ -805,10 +807,12 @@ rejects outstanding calls with `OpenServiceRemoteCommandDisconnectedError`.
 ### Delegated mode
 
 A runtime that attaches to an already-running Storybook (rather than starting its own) must not
-execute anything itself: the Storybook it attached to owns the story index, the module graph, and the
-providers, so it is the implementer for every command. `setDelegatedMode(true)` in
-[service-registry.ts](./service-registry.ts) puts the whole runtime in that role; `isDelegatedMode()`
-reads it and the default is `false`.
+dispatch commands locally: the Storybook it attached to owns the story index, the module graph, and
+the providers, so it is the implementer for every command. Loads, toolset methods, and query handlers
+still run in this process. `setDelegatedMode(true)` in [service-registry.ts](./service-registry.ts)
+puts command dispatch in that role; `isDelegatedMode()` reads it and the default is `false`. The flag
+lives on the same realm-global inventory as the service map, so every import path in one realm sees
+the same value.
 
 What changes is **dispatch**, not registration:
 

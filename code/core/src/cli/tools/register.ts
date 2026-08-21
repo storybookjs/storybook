@@ -63,7 +63,6 @@ export function registerToolsPassthrough(
       const option = new Option(flags, description);
       // Commander treats `--no-*` as the negation of `--*`, which would default `--attach` to true.
       option.negate = false;
-      option.attributeName('noAttach');
       toolsCommand.addOption(option);
       continue;
     }
@@ -234,7 +233,17 @@ async function reportToolsCommandTelemetry(
 }
 
 /** Print to stdout, or to the file given via `-o, --output`. */
-async function printResult({ output, exitCode, outputPath }: ToolsRunResult): Promise<void> {
+async function printResult({
+  output,
+  exitCode,
+  outputPath,
+  fallbackNotice,
+}: ToolsRunResult): Promise<void> {
+  if (fallbackNotice) {
+    await new Promise<void>((resolveWrite) => {
+      process.stderr.write(`${fallbackNotice}\n`, () => resolveWrite());
+    });
+  }
   if (outputPath) {
     const resolvedPath = resolve(outputPath);
     await writeFile(resolvedPath, `${output}\n`, 'utf-8');

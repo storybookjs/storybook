@@ -251,6 +251,41 @@ describe('createTools', () => {
     await expect(localLoadFailure).rejects.toThrow('Falling back');
   });
 
+  it('applies per-call origin and telemetry to the method context', async () => {
+    const telemetry = vi.fn(async () => {});
+    vi.mocked(bootstrapToolsRuntime).mockResolvedValue(
+      makeRuntime({
+        toolsets: [
+          defineToolset({
+            id: 'probe',
+            description: 'Records call context.',
+            methods: {
+              ping: {
+                title: 'Ping',
+                description: 'ping',
+                input: v.object({}),
+                handler: async (_input, ctx) => {
+                  await ctx.telemetry?.('tool:ping', { toolset: 'probe' });
+                  return {
+                    ok: true as const,
+                    data: { origin: ctx.origin },
+                    markdown: ctx.origin ?? '',
+                  };
+                },
+              },
+            },
+          }),
+        ],
+      })
+    );
+    const tools = await createTools({ mode: 'local' });
+
+    const outcome = await tools.call('probe.ping', {}, { origin: 'http://localhost:9', telemetry });
+
+    expect(outcome).toMatchObject({ data: { origin: 'http://localhost:9' } });
+    expect(telemetry).toHaveBeenCalledWith('tool:ping', { toolset: 'probe' });
+  });
+
   it('wraps a configuration that cannot be loaded', async () => {
     const cause = new Error('No configuration files found');
     vi.mocked(bootstrapToolsRuntime).mockRejectedValue(cause);

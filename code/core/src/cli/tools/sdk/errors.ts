@@ -102,3 +102,13 @@ export class ToolsRuntimeError extends StorybookError {
     });
   }
 }
+
+export function isAttachGateError(
+  error: unknown
+): error is AttachUnavailableError | EnvironmentMismatchError | SpawnFailedError {
+  return (
+    error instanceof AttachUnavailableError ||
+    error instanceof EnvironmentMismatchError ||
+    error instanceof SpawnFailedError
+  );
+}

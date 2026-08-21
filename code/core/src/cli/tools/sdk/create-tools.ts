@@ -13,12 +13,7 @@ import { toCatalogEntry } from './catalog.ts';
 import type { AttachedBootstrapResult } from './attached-runtime.ts';
 import { formatAttachFallback } from './attach-messages.ts';
 import { spawnChildHost } from './child-client.ts';
-import {
-  AttachUnavailableError,
-  EnvironmentMismatchError,
-  SpawnFailedError,
-  ToolsRuntimeError,
-} from './errors.ts';
+import { AttachUnavailableError, ToolsRuntimeError, isAttachGateError } from './errors.ts';
 import type { ToolsRuntime } from './local-runtime.ts';
 import type {
   AttachedTools,
@@ -202,16 +197,6 @@ async function createLocalTools(
   });
 }
 
-function isAttachGateError(
-  error: unknown
-): error is AttachUnavailableError | EnvironmentMismatchError | SpawnFailedError {
-  return (
-    error instanceof AttachUnavailableError ||
-    error instanceof EnvironmentMismatchError ||
-    error instanceof SpawnFailedError
-  );
-}
-
 function createToolsHost(args: {
   mode: 'local';
   runtime: ToolsRuntime;
@@ -279,7 +264,11 @@ function createToolsHost(args: {
       });
     }
 
-    return method.handler(validation.value, ctx);
+    return method.handler(validation.value, {
+      ...ctx,
+      ...(options.origin !== undefined ? { origin: options.origin } : {}),
+      ...(options.telemetry ? { telemetry: options.telemetry } : {}),
+    });
   };
 
   return {

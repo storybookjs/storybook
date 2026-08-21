@@ -4,6 +4,7 @@ export {
   EnvironmentMismatchError,
   SpawnFailedError,
   ToolsRuntimeError,
+  isAttachGateError,
   type AttachUnavailableReason,
   type ToolsRuntimeErrorReason,
 } from './errors.ts';

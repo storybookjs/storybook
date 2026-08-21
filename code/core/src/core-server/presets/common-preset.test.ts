@@ -10,10 +10,10 @@ import { clearToolsetRegistry } from '../../shared/open-service/toolset-registry
 import { services } from './common-preset.ts';
 
 const storyIndex: StoryIndex = { v: 5, entries: {} };
+const getIndex = vi.fn();
 
 function createOptions() {
   const appliedExtensions: string[] = [];
-  const getIndex = vi.fn(async () => storyIndex);
   const channel = createTestChannel();
 
   const options = {
@@ -43,6 +43,8 @@ const countApplied = (appliedExtensions: string[]) =>
 describe('services preset hook', () => {
   beforeEach(() => {
     vi.stubGlobal('STORYBOOK_SERVICES_LOADED', false);
+    vi.mocked(getIndex).mockReset();
+    vi.mocked(getIndex).mockResolvedValue(storyIndex);
   });
 
   afterEach(() => {

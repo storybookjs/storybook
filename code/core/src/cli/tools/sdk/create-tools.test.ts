@@ -52,11 +52,16 @@ function makeRuntime(overrides: Partial<ToolsRuntime> = {}): ToolsRuntime {
 beforeEach(() => {
   vi.mocked(bootstrapToolsRuntime).mockReset();
   vi.mocked(bootstrapToolsRuntime).mockResolvedValue(makeRuntime());
+  attach.mockReset();
+  spawnChild.mockReset();
 });
 
 afterEach(() => {
   vi.unstubAllEnvs();
 });
+
+const attach = vi.fn();
+const spawnChild = vi.fn();
 
 describe('createTools', () => {
   it('loads the target configuration in this process in local mode', async () => {
@@ -151,8 +156,8 @@ describe('createTools', () => {
       call: async () => ({ ok: true as const, data: {}, markdown: 'spawned' }),
       close: async () => {},
     };
-    const attach = vi.fn(async () => ({ kind: 'spawn' as const, record }));
-    const spawnChild = vi.fn(async () => spawned);
+    vi.mocked(attach).mockResolvedValue({ kind: 'spawn' as const, record });
+    vi.mocked(spawnChild).mockResolvedValue(spawned);
 
     const tools = await createTools(
       { cwd: '/elsewhere', mode: 'attached' },
@@ -443,6 +448,29 @@ describe('call', () => {
     await expect(
       tools.call('echo.ok', { value: 'hello' }, { signal: AbortSignal.abort() })
     ).rejects.toThrow();
+  });
+
+  it('rejects an in-flight call when the signal aborts', async () => {
+    const hang = defineToolset({
+      id: 'hang',
+      description: 'Never settles.',
+      methods: {
+        never: {
+          title: 'Hang',
+          description: 'hang',
+          input: v.object({}),
+          handler: () => new Promise(() => {}),
+        },
+      },
+    });
+    vi.mocked(bootstrapToolsRuntime).mockResolvedValue(makeRuntime({ toolsets: [hang] }));
+    const tools = await createTools({ mode: 'local' });
+    const controller = new AbortController();
+
+    const pending = tools.call('hang.never', {}, { signal: controller.signal });
+    controller.abort('stopped');
+
+    await expect(pending).rejects.toBe('stopped');
   });
 
   it('serves no calls once closed', async () => {

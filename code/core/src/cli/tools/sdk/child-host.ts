@@ -11,10 +11,6 @@ import {
 import { ToolsRuntimeError } from './errors.ts';
 import type { Tools, ToolsetCatalog } from './types.ts';
 
-process.on('disconnect', () => {
-  process.exit(0);
-});
-
 export async function runChildHost({
   send = (message) => {
     process.send?.(message);
@@ -28,6 +24,9 @@ export async function runChildHost({
   subscribe?: (handler: (message: unknown) => void) => void;
   cwd?: () => string;
 } = {}): Promise<void> {
+  process.on('disconnect', () => {
+    process.exit(0);
+  });
   process.env.STORYBOOK_TOOLS_CHILD_HOST = 'true';
   process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
 

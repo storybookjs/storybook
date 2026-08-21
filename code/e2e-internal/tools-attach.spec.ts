@@ -17,6 +17,7 @@ import { expect, test } from '@playwright/test';
 
 const execFileAsync = promisify(execFile);
 const dispatcher = join(process.cwd(), 'core/dist/bin/dispatcher.js');
+const runsAgainstDevServer = !['build', 'static'].includes(process.env.STORYBOOK_TYPE || 'dev');
 
 async function runTools(args: string[], cwd = process.cwd(), extraEnv: NodeJS.ProcessEnv = {}) {
   try {
@@ -70,6 +71,10 @@ test.describe('storybook tools attach', () => {
   });
 
   test('auto mode attaches for docs, preview, and review against the running internal UI', async () => {
+    test.skip(
+      !runsAgainstDevServer,
+      'Live attach requires the running Storybook channel, which the static E2E job does not serve.'
+    );
     const list = await runTools(['docs', 'list']);
     expect(list.exitCode, list.output).toBe(0);
     expect(list.output).toContain('example-button');
@@ -93,6 +98,10 @@ test.describe('storybook tools attach', () => {
   });
 
   test('--attach still joins the running internal UI', async () => {
+    test.skip(
+      !runsAgainstDevServer,
+      'Live attach requires the running Storybook channel, which the static E2E job does not serve.'
+    );
     const list = await runTools(['--attach', 'docs', 'list']);
     expect(list.exitCode, list.output).toBe(0);
     expect(list.output).toContain('example-button');
@@ -126,6 +135,10 @@ test.describe('storybook tools attach', () => {
   });
 
   test('attaches from a different cwd via a project-local child host', async () => {
+    test.skip(
+      !runsAgainstDevServer,
+      'Child-host attach requires the running Storybook channel, which the static E2E job does not serve.'
+    );
     const list = await runTools(
       ['--cwd', process.cwd(), 'docs', 'list'],
       join(process.cwd(), '..')

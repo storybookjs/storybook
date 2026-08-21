@@ -11,9 +11,11 @@ import {
   toMcpToolName,
   type ToolsetMethodId,
 } from '../../shared/open-service/toolset-names.ts';
+import { getService } from '../../shared/open-service/server.ts';
+import { getRegisteredToolsets } from '../../shared/open-service/toolset-registry.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import { callMcpTool } from './mcp-client.ts';
-import { createTools, type ToolsClientInfo, type ToolsRuntime } from './sdk/index.ts';
+import { createTools, type Tools, type ToolsClientInfo } from './sdk/index.ts';
 import {
   discoverRunningInstance,
   type InstanceDiscovery,
@@ -140,17 +142,14 @@ export async function runToolsCommand(
     outputPath: parsed.output,
   });
 
-  let runtime: ToolsRuntime;
+  let tools: Tools | undefined;
   try {
-    const tools = await (deps.createTools ?? createTools)({
+    tools = await (deps.createTools ?? createTools)({
       cwd: target.cwd,
       configDir: target.configDir,
       mode: 'local',
       clientInfo: CLI_CLIENT_INFO,
     });
-    // Help rendering, dispatch and the dev-server proxy all read the toolset definitions
-    // themselves, which only a local host has.
-    runtime = tools.runtime;
   } catch (error) {
     // The SDK's own message already names the failure and the configuration it could not load.
     return result({
@@ -160,21 +159,53 @@ export async function runToolsCommand(
     });
   }
 
-  const ctx = buildContext(runtime, deps, undefined);
+  try {
+    return await runWithHost(tools, {
+      toolsetName,
+      toolName,
+      parsed,
+      result,
+      target,
+      deps,
+    });
+  } finally {
+    await tools.close();
+  }
+}
+
+async function runWithHost(
+  tools: Tools,
+  args: {
+    toolsetName: string | undefined;
+    toolName: string | undefined;
+    parsed: Extract<ReturnType<typeof parseToolsTokens>, { ok: true }>;
+    result: (partial: Omit<ToolsRunResult, 'outputPath'>) => ToolsRunResult;
+    target: ToolsTarget;
+    deps: ToolsRunDeps;
+  }
+): Promise<ToolsRunResult> {
+  const { toolsetName, toolName, parsed, result, target, deps } = args;
+  const toolsets = getRegisteredToolsets();
+  const configDir = tools.storybook.configDir;
+  const ctx: ToolsetCtx = {
+    transport: 'cli',
+    getService: (serviceId, options) => getService(serviceId as never, options),
+    ...(deps.methodTelemetry ? { telemetry: deps.methodTelemetry } : {}),
+  };
 
   if (!toolsetName) {
     return result({
       exitCode: 0,
-      output: renderToolsHelp(runtime.configDir, runtime.toolsets, ctx),
+      output: renderToolsHelp(configDir, toolsets, ctx),
       outcome: { kind: 'help' },
     });
   }
 
-  const toolset = runtime.toolsets.find((candidate) => candidate.id === toolsetName);
+  const toolset = toolsets.find((candidate) => candidate.id === toolsetName);
   if (!toolset) {
     return result({
       exitCode: 1,
-      output: formatUnknownToolset(toolsetName, runtime),
+      output: formatUnknownToolset(toolsetName, configDir, toolsets),
       outcome: { kind: 'intercept', reason: 'unknown-toolset' },
     });
   }
@@ -278,7 +309,10 @@ export async function runToolsCommand(
       });
     }
 
-    const outcome = await method.handler(validation.value, buildContext(runtime, deps, origin));
+    const outcome = await tools.call(resolvedRef, validation.value as Record<string, unknown>, {
+      ...(origin ? { origin } : {}),
+      ...(deps.methodTelemetry ? { telemetry: deps.methodTelemetry } : {}),
+    });
     const output = parsed.json
       ? JSON.stringify(outcome.data, null, 2)
       : joinMarkdown(outcome.markdown);
@@ -301,27 +335,17 @@ export async function runToolsCommand(
   }
 }
 
-function buildContext(
-  runtime: ToolsRuntime,
-  deps: ToolsRunDeps,
-  origin: string | undefined
-): ToolsetCtx {
-  const { methodTelemetry } = deps;
-  return {
-    transport: 'cli',
-    ...(origin ? { origin } : {}),
-    getService: runtime.getService,
-    ...(methodTelemetry ? { telemetry: methodTelemetry } : {}),
-  };
-}
-
 function joinMarkdown(markdown: string | string[]): string {
   return Array.isArray(markdown) ? markdown.join('\n\n') : markdown;
 }
 
-function formatUnknownToolset(toolsetName: string, runtime: ToolsRuntime): string {
-  const available = runtime.toolsets.map((toolset) => `- \`${toolset.id}\``).join('\n');
-  return `Unknown toolset \`${toolsetName}\`. The Storybook configuration at ${runtime.configDir} provides:
+function formatUnknownToolset(
+  toolsetName: string,
+  configDir: string,
+  toolsets: AnyToolsetDefinition[]
+): string {
+  const available = toolsets.map((toolset) => `- \`${toolset.id}\``).join('\n');
+  return `Unknown toolset \`${toolsetName}\`. The Storybook configuration at ${configDir} provides:
 
 ${available}
 

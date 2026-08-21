@@ -6,6 +6,7 @@ import type {
   AnyToolsetMethod,
   AnyToolsetOutcome,
   ToolsetCtx,
+  ToolsetTransport,
 } from '../../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
 import { toCatalogEntry } from './catalog.ts';
@@ -21,7 +22,7 @@ import type {
   ToolsetCatalog,
 } from './types.ts';
 
-/** Injectable dependencies for tests. */
+/** Injectable dependencies for tests. Not part of the public SDK. */
 export type CreateToolsDeps = {
   bootstrap?: typeof bootstrapToolsRuntime;
 };
@@ -78,11 +79,15 @@ export async function createTools(
   return createLocalTools(runtime, clientInfo);
 }
 
+function transportFor(kind: Required<ToolsClientInfo>['kind']): ToolsetTransport {
+  return kind === 'cli' ? 'cli' : 'sdk';
+}
+
 function createLocalTools(
   runtime: ToolsRuntime,
   clientInfo: Required<ToolsClientInfo>
 ): LocalTools {
-  const ctx: ToolsetCtx = { transport: 'cli', getService: runtime.getService };
+  const transport = transportFor(clientInfo.kind);
   let closed = false;
 
   const assertOpen = () => {
@@ -94,10 +99,16 @@ function createLocalTools(
     }
   };
 
+  const contextFor = (options: ToolsCallOptions = {}): ToolsetCtx => ({
+    transport,
+    getService: runtime.getService,
+    ...(options.origin ? { origin: options.origin } : {}),
+    ...(options.telemetry ? { telemetry: options.telemetry } : {}),
+  });
+
   return {
     mode: 'local',
     clientInfo,
-    runtime,
     storybook: { version: versions.storybook, configDir: runtime.configDir },
 
     async describe(options: ToolsDescribeOptions = {}): Promise<ToolsetCatalog> {
@@ -106,7 +117,7 @@ function createLocalTools(
         options.toolset === undefined ? runtime.toolsets : [findToolset(runtime, options.toolset)];
       return {
         configDir: runtime.configDir,
-        toolsets: toolsets.map((toolset) => toCatalogEntry(toolset, ctx)),
+        toolsets: toolsets.map((toolset) => toCatalogEntry(toolset, contextFor())),
       };
     },
 
@@ -121,7 +132,7 @@ function createLocalTools(
       const { toolsetId, methodName } = splitRef(ref);
       const method = findMethod(findToolset(runtime, toolsetId), methodName);
 
-      if (method.requiresDevServer) {
+      if (method.requiresDevServer && !options.origin) {
         throw new AttachUnavailableError({
           reason: 'no-instance',
           instances: [],
@@ -137,13 +148,35 @@ function createLocalTools(
         });
       }
 
-      return method.handler(validation.value, ctx);
+      return raceAbort(options.signal, method.handler(validation.value, contextFor(options)));
     },
 
     async close(): Promise<void> {
+      if (closed) {
+        return;
+      }
       closed = true;
+      await runtime.close();
     },
   };
+}
+
+function raceAbort<T>(signal: AbortSignal | undefined, work: T | PromiseLike<T>): Promise<T> {
+  const pending = Promise.resolve(work);
+  if (!signal) {
+    return pending;
+  }
+  signal.throwIfAborted();
+
+  let onAbort!: () => void;
+  const aborted = new Promise<never>((_, reject) => {
+    onAbort = () => reject(signal.reason);
+    signal.addEventListener('abort', onAbort, { once: true });
+  });
+
+  return Promise.race([pending, aborted]).finally(() => {
+    signal.removeEventListener('abort', onAbort);
+  });
 }
 
 function splitRef(ref: string): { toolsetId: string; methodName: string } {
@@ -171,8 +204,7 @@ function findToolset(runtime: ToolsRuntime, toolsetId: string): AnyToolsetDefini
 }
 
 function findMethod(toolset: AnyToolsetDefinition, methodName: string): AnyToolsetMethod {
-  const method = toolset.methods[methodName];
-  if (!method) {
+  if (!Object.hasOwn(toolset.methods, methodName)) {
     throw new ToolsRuntimeError({
       reason: 'unknown-method',
       message: `Unknown tool \`${toolset.id}.${methodName}\`. The \`${
@@ -180,5 +212,5 @@ function findMethod(toolset: AnyToolsetDefinition, methodName: string): AnyTools
       }\` toolset provides: ${Object.keys(toolset.methods).join(', ')}.`,
     });
   }
-  return method;
+  return toolset.methods[methodName];
 }

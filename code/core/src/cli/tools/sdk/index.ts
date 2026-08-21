@@ -1,4 +1,4 @@
-export { createTools, type CreateToolsDeps } from './create-tools.ts';
+export { createTools } from './create-tools.ts';
 export {
   AttachUnavailableError,
   EnvironmentMismatchError,
@@ -7,7 +7,6 @@ export {
   type AttachUnavailableReason,
   type ToolsRuntimeErrorReason,
 } from './errors.ts';
-export { bootstrapToolsRuntime, type ToolsRuntime } from './local-runtime.ts';
 export type { ToolsetJsonSchema } from './json-schema.ts';
 export type {
   AttachedTools,

@@ -21,7 +21,8 @@ import {
 import type { DocsAccess } from '../../shared/open-service/toolsets/docs/access.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import { runToolsCommand, type ToolsRunDeps } from './run.ts';
-import { ToolsRuntimeError, type LocalTools, type ToolsRuntime } from './sdk/index.ts';
+import { ToolsRuntimeError, type LocalTools } from './sdk/index.ts';
+import type { ToolsRuntime } from './sdk/local-runtime.ts';
 import { registerCoreToolsetsForTest } from './test-support/register-core-toolsets.ts';
 
 const CONFIG_DIR = '/repo/.storybook';
@@ -88,15 +89,33 @@ function makeLocalTools(runtimeOverrides: Partial<ToolsRuntime> = {}): LocalTool
     getService: () => {
       throw new Error('no services registered in this test');
     },
+    close: async () => {},
     ...runtimeOverrides,
   };
   return {
     mode: 'local',
     clientInfo: { name: 'storybook-cli', version: '0.0.0', kind: 'cli' },
-    runtime,
     storybook: { version: '0.0.0', configDir: runtime.configDir },
     describe: async () => ({ configDir: runtime.configDir, toolsets: [] }),
-    call: async () => ({ ok: true, data: {}, markdown: '' }),
+    call: async (ref, input = {}, options = {}) => {
+      const toolsetId = ref.slice(0, ref.indexOf('.'));
+      const methodName = ref.slice(ref.indexOf('.') + 1);
+      const toolset = runtime.toolsets.find((candidate) => candidate.id === toolsetId);
+      const method =
+        toolset && Object.hasOwn(toolset.methods, methodName)
+          ? toolset.methods[methodName]
+          : undefined;
+      if (!method) {
+        throw new Error(`unknown method ${ref}`);
+      }
+      const ctx: ToolsetCtx = {
+        transport: 'cli',
+        getService: runtime.getService,
+        ...(options.origin ? { origin: options.origin } : {}),
+        ...(options.telemetry ? { telemetry: options.telemetry } : {}),
+      };
+      return method.handler(input, ctx);
+    },
     close: async () => {},
   };
 }

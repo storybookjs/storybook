@@ -1,7 +1,9 @@
-import type { AnyToolsetOutcome } from '../../../shared/open-service/toolset-definition.ts';
+import type {
+  AnyToolsetOutcome,
+  ToolsetTelemetry,
+} from '../../../shared/open-service/toolset-definition.ts';
 import type { ToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
 import type { ToolsetJsonSchema } from './json-schema.ts';
-import type { ToolsRuntime } from './local-runtime.ts';
 
 /**
  * How the SDK hosts the target project's tools.
@@ -72,6 +74,9 @@ export type ToolsDescribeOptions = {
 
 export type ToolsCallOptions = {
   signal?: AbortSignal;
+  /** Storybook UI base URL for methods that need a live origin. */
+  origin?: string;
+  telemetry?: ToolsetTelemetry;
 };
 
 type ToolsBase = {
@@ -97,13 +102,9 @@ type ToolsBase = {
   close(): Promise<void>;
 };
 
-/**
- * A host that loaded the target configuration in this process, so its toolset registry and
- * service accessor are reachable directly. The `storybook tools` CLI renders its help from them.
- */
+/** A host that loaded the target configuration in this process. */
 export type LocalTools = ToolsBase & {
   mode: 'local';
-  runtime: ToolsRuntime;
 };
 
 export type AttachedTools = ToolsBase & {

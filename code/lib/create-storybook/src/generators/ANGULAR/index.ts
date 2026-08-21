@@ -178,9 +178,6 @@ export default defineGeneratorModule({
       ...(isVite
         ? [
             angularVersion ? `@angular/animations@${angularVersion}` : '@angular/animations',
-            // `@analogjs/vite-plugin-angular` `require`s `@angular/build/private` on every Angular
-            // it supports above 17, and marks the peer optional, so a missing `@angular/build`
-            // installs cleanly and then fails at runtime with `Cannot find module`.
             angularVersion ? `@angular/build@${angularVersion}` : '@angular/build',
             `@analogjs/vite-plugin-angular@${ANALOG_VITE_PLUGIN_ANGULAR_VERSION}`,
             'vite',

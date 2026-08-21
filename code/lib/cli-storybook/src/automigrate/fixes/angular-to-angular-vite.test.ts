@@ -1805,13 +1805,6 @@ export default { framework: { name: '${ANGULAR_VITE_PACKAGE}', options: {} } };`
     });
   });
 
-  // The project this migration exists for is on the webpack Angular builder, which is exactly the
-  // project that has none of these: `@angular/build` (the Analog plugin `require`s
-  // `@angular/build/private` and marks the peer optional, so it only fails at runtime),
-  // `@angular/animations` (optional to `@angular/platform-browser`, so Angular 21 apps omit it and
-  // the Vite build dies on `ɵAnimationEngine`) and `@angular-devkit/architect` (imported as a value
-  // by both builders). Driven through `check()` so the resolved Angular version has to survive into
-  // `run()`, which is where the pin comes from.
   describe('required Angular peers', () => {
     const migrate = async (deps: Record<string, string>, angularCore: string | null) => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({

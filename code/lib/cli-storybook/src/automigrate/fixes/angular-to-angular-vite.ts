@@ -34,15 +34,6 @@ export const ANALOG_PACKAGE = '@analogjs/storybook-angular';
 export const ANGULAR_VITE_PACKAGE = '@storybook/angular-vite';
 const ANALOG_VITE_PLUGIN_PACKAGE = '@analogjs/vite-plugin-angular';
 
-// Required peers of `@storybook/angular-vite` that a project on the webpack Angular builder does
-// not already have, and that nothing installs on its way in:
-//   - `@analogjs/vite-plugin-angular` `require`s `@angular/build/private` unconditionally, and
-//     marks the peer optional, so a missing one fails at runtime rather than at install.
-//   - `PropertyExtractor` imports `@angular/platform-browser/animations`, and `@angular/animations`
-//     is optional to `@angular/platform-browser`, so Angular 21 apps do not carry it.
-//   - Both Angular builders import `@angular-devkit/architect` as a value, not as a type.
-// Each is pinned to the workspace's Angular version: their peer windows span two Angular majors,
-// and an unpinned install takes the top of that window and drags the next major's compiler in.
 const ANGULAR_BUILD_PACKAGE = '@angular/build';
 const ANGULAR_ANIMATIONS_PACKAGE = '@angular/animations';
 const ANGULAR_DEVKIT_ARCHITECT_PACKAGE = '@angular-devkit/architect';
@@ -58,10 +49,6 @@ const ANGULAR_MIN_MAJOR = 21;
 interface AngularToAngularViteOptions {
   /** The framework the project renders with today, and the one every rewrite below keys off. */
   framework: MigratableFramework;
-  /**
-   * The declared `@angular/core` range the added Angular peers are pinned to, or null when the
-   * workspace's Angular version could not be determined.
-   */
   angularVersion: string | null;
   /** True when the main config contains a webpackFinal hook. */
   hasWebpackFinal: boolean;
@@ -516,9 +503,6 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       framework,
       hasWebpackFinal,
       packageJsonFiles,
-      // Only a specifier that named a real Angular major may pin anything: a range with no floor
-      // (`*`, `>=0.0.0`) is valid semver and useless as a pin, because it resolves to whatever the
-      // registry has, which today is the next Angular major.
       angularVersion: angularMajor === null ? null : angularSpecifier,
     };
   },

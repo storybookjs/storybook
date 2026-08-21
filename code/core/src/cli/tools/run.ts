@@ -19,6 +19,8 @@ import {
   createTools,
   EnvironmentMismatchError,
   SpawnFailedError,
+  type CreateToolsDeps,
+  type CreateToolsOptions,
   type Tools,
   type ToolsClientInfo,
   type ToolsRuntime,
@@ -89,7 +91,7 @@ const CLI_CLIENT_INFO: ToolsClientInfo = {
 
 /** Injectable dependencies for tests. */
 export type ToolsRunDeps = {
-  createTools?: (options: CreateToolsOptions) => Promise<Tools>;
+  createTools?: (options?: CreateToolsOptions, deps?: CreateToolsDeps) => Promise<Tools>;
   discoverInstance?: typeof discoverRunningInstance;
   /** Stub for {@link PROXY_VIA_MCP_METHODS}; goes away with the proxy in Milestone 5b. */
   mcpToolCall?: typeof callMcpTool;
@@ -172,8 +174,10 @@ export async function runToolsCommand(
   });
 
   let tools: Tools;
+  const create: (options?: CreateToolsOptions, deps?: CreateToolsDeps) => Promise<Tools> =
+    deps.createTools ?? createTools;
   try {
-    tools = await (deps.createTools ?? createTools)({
+    tools = await create({
       cwd: target.cwd,
       configDir: target.configDir,
       mode: useAttach ? 'attached' : 'local',

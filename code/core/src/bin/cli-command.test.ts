@@ -4,9 +4,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Command } from 'commander';
 
-import { globalSettings } from '../cli/globalSettings.ts';
+import { globalSettings, Settings } from '../cli/globalSettings.ts';
 import { addSharedCliOptions } from './cli-command.ts';
 
+vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('../cli/globalSettings.ts', { spy: true });
 
 const parse = (program: Command, argv: string[]) =>
@@ -22,12 +23,15 @@ function buildProgram(name: string, defaultLogLevel: LogLevel) {
 
 describe('addSharedCliOptions log level', () => {
   beforeEach(() => {
-    logger.setLogLevel = vi.fn();
-    vi.mocked(globalSettings).mockResolvedValue(undefined as never);
+    vi.mocked(logger.setLogLevel).mockImplementation(() => {});
+    vi.mocked(globalSettings).mockResolvedValue(
+      new Settings('/unused-settings.json', { version: 1 })
+    );
   });
 
   afterEach(() => {
-    vi.clearAllMocks();
+    vi.mocked(logger.setLogLevel).mockReset();
+    vi.mocked(globalSettings).mockReset();
   });
 
   it('defaults agent commands to silent so logger output stays off', async () => {

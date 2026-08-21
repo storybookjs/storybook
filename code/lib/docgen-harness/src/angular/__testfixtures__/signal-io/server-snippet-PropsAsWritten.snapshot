@@ -1,0 +1,18 @@
+import { Component } from '@angular/core';
+import { SignalIoComponent } from './signal-io.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [SignalIoComponent],
+  template: `
+    <sb-signal-io
+        [label]="'Quantity'"
+        [count]="2"
+        [increment]="5"
+        [disabled]="true"
+        (toggled)="toggled($event)"
+    />`,
+})
+export class DemoComponent {
+  toggled(event: unknown) {}
+}

@@ -1,4 +1,4 @@
-import type { ComponentProps } from 'react';
+import type { ComponentProps, FC } from 'react';
 import React, { useContext, useMemo } from 'react';
 
 import { SourceType } from 'storybook/internal/docs-tools';
@@ -11,7 +11,7 @@ import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import type { SourceContextProps, SourceItem } from './SourceContainer';
 import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
-import { useServiceStorySnippet } from './use-service-story-docs.ts';
+import { useServiceStorySnippet, useServiceStoryWarning } from './use-service-story-docs.ts';
 import { useTransformCode } from './useTransformCode';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
@@ -108,7 +108,9 @@ type PureSourceProps = ComponentProps<typeof PureSource>;
 export const useSourceProps = (
   props: SourceProps,
   docsContext: DocsContextProps,
-  sourceContext: SourceContextProps
+  sourceContext: SourceContextProps,
+  serviceSnippet = '',
+  serviceWarning?: string
 ): PureSourceProps => {
   const { of } = props;
 
@@ -133,8 +135,6 @@ export const useSourceProps = (
     : storyContext.unmappedArgs;
 
   const source = story ? getStorySource(story.id, argsForSource, sourceContext) : null;
-
-  const serviceSnippet = useServiceStorySnippet(story?.id) ?? '';
 
   const transformedCode = useCode({
     snippet: source ? source.code : '',
@@ -169,12 +169,39 @@ export const useSourceProps = (
 
   format = source?.format ?? true;
 
+  let warning: string | undefined;
+  if (transformedCode === serviceSnippet) {
+    warning = serviceWarning;
+  } else if (transformedCode === source?.code) {
+    warning = source.warning;
+  }
+
   return {
     code: transformedCode,
     format,
     language,
     dark,
+    warning,
   };
+};
+
+const SourceWithStoryDocsSnippet: FC<
+  SourceProps & {
+    docsContext: DocsContextProps;
+    sourceContext: SourceContextProps;
+    storyId: string;
+  }
+> = ({ storyId, docsContext, sourceContext, ...props }) => {
+  const serviceSnippet = useServiceStorySnippet(storyId).data ?? '';
+  const serviceWarning = useServiceStoryWarning(storyId).data;
+  const sourceProps = useSourceProps(
+    props,
+    docsContext,
+    sourceContext,
+    serviceSnippet,
+    serviceWarning
+  );
+  return <PureSource {...sourceProps} />;
 };
 
 /**
@@ -182,10 +209,34 @@ export const useSourceProps = (
  * provided, or the source for the current story if nothing is provided.
  */
 const SourceWithStorySnippet = (props: SourceProps) => {
+  const { of } = props;
   const sourceContext = useContext(SourceContext);
   const docsContext = useContext(DocsContext);
-  const sourceProps = useSourceProps(props, docsContext, sourceContext);
 
+  const story = useMemo(() => {
+    if (of) {
+      const resolved = docsContext.resolveOf(of, ['story']);
+      return resolved.story;
+    }
+    try {
+      return docsContext.storyById();
+    } catch {
+      // You are allowed to use <Source code="..." /> and <Canvas /> unattached.
+    }
+  }, [docsContext, of]);
+
+  if (globalThis.FEATURES?.experimentalDocgenServer && story?.id) {
+    return (
+      <SourceWithStoryDocsSnippet
+        {...props}
+        docsContext={docsContext}
+        sourceContext={sourceContext}
+        storyId={story.id}
+      />
+    );
+  }
+
+  const sourceProps = useSourceProps(props, docsContext, sourceContext);
   return <PureSource {...sourceProps} />;
 };
 

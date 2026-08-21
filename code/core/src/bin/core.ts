@@ -16,10 +16,13 @@ import picocolors from 'picocolors';
 import { version } from '../../package.json';
 import { aiSetup } from '../cli/ai/index.ts';
 import { isAiCliFeatureEnabled, registerAiMcpPassthrough } from '../cli/ai/mcp/register.ts';
+import { registerSkillsCommand } from '../cli/skills/register.ts';
+import { registerToolsPassthrough } from '../cli/tools/register.ts';
 import { build } from '../cli/build.ts';
 import { buildIndex as index } from '../cli/buildIndex.ts';
 import { dev } from '../cli/dev.ts';
 import { globalSettings } from '../cli/globalSettings.ts';
+import { resolveDevCommandOptions } from './dev-options.ts';
 
 addToGlobalContext('cliVersion', version);
 process.env.STORYBOOK = 'true';
@@ -33,6 +36,7 @@ process.env.STORYBOOK = 'true';
  * - `build`: Build the Storybook static files
  * - `index`: Generate the Storybook index file
  * - `ai`: AI agent helpers (always bundled so agent invocations never download an extra package)
+ * - `tools`: Agent tools derived from the target Storybook configuration's registered toolsets
  *
  * The dispatch CLI at ./dispatcher.ts routes commands to this core CLI.
  */
@@ -94,7 +98,7 @@ const command = (name: string) =>
     });
 
 command('dev')
-  .option('-p, --port <number>', 'Port to run Storybook', (str) => parseInt(str, 10))
+  .option('-p, --port <number>', 'Port to run Storybook')
   .option('-h, --host <string>', 'Host to run Storybook')
   .option('-c, --config-dir <dir-name>', 'Directory where to load Storybook configurations from')
   .option(
@@ -138,21 +142,15 @@ command('dev')
 
     logger.intro(`${packageJson.name} v${packageJson.version}`);
 
-    // The key is the field created in `options` variable for
-    // each command line argument. Value is the env variable.
-    getEnvConfig(options, {
-      port: 'SBCONFIG_PORT',
-      host: 'SBCONFIG_HOSTNAME',
-      staticDir: 'SBCONFIG_STATIC_DIR',
-      configDir: 'SBCONFIG_CONFIG_DIR',
-      ci: 'CI',
-    });
-
-    if (parseInt(`${options.port}`, 10)) {
-      options.port = parseInt(`${options.port}`, 10);
+    let resolvedOptions: typeof options;
+    try {
+      resolvedOptions = resolveDevCommandOptions(options);
+    } catch (error) {
+      logger.error(error instanceof Error ? error.message : String(error));
+      return handleCommandFailure(options.logfile);
     }
 
-    await dev({ ...options, packageJson }).catch(() => {
+    await dev({ ...resolvedOptions, packageJson }).catch(() => {
       handleCommandFailure(options.logfile);
     });
   });
@@ -233,8 +231,8 @@ command('index')
   });
 
 // Like `handleCommandFailure`, but curried and surfacing the error, matching the signature the
-// `ai` command handlers expect.
-const handleAiCommandFailure =
+// `ai` and `tools` command handlers expect.
+const handleCliCommandFailure =
   (logFilePath: string | boolean | undefined) =>
   async (error: unknown): Promise<never> => {
     if (!(error instanceof HandledError)) {
@@ -244,7 +242,7 @@ const handleAiCommandFailure =
   };
 
 const aiCommand = command('ai')
-  .description('AI agent helpers for Storybook')
+  .description('AI agent helpers for Storybook (deprecated — see `storybook skills`)')
   .option(
     '-o, --output <path>',
     'Write the prompt output to a file instead of printing it to stdout'
@@ -252,7 +250,9 @@ const aiCommand = command('ai')
 
 aiCommand
   .command('setup')
-  .description('Generate setup instructions to write stories for real components')
+  .description(
+    'Generate setup instructions to write stories for real components (deprecated: use `storybook skills get setup`)'
+  )
   .addOption(
     new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
       Object.values(PackageManagerName)
@@ -265,7 +265,7 @@ aiCommand
     const mergedOptions = { ...parentOptions, ...options, runId };
     await withTelemetry('ai-setup', { cliOptions: mergedOptions }, async () => {
       await aiSetup(mergedOptions);
-    }).catch(handleAiCommandFailure(mergedOptions.logfile));
+    }).catch(handleCliCommandFailure(mergedOptions.logfile));
   });
 
 // Show available subcommands when `storybook ai` is run without arguments
@@ -276,8 +276,22 @@ aiCommand.action(() => {
 // Experimental `storybook ai <tool>` passthrough to the local Storybook MCP server
 // (storybookjs/storybook#35124). Overrides the help-only action above when enabled.
 if (isAiCliFeatureEnabled()) {
-  registerAiMcpPassthrough(program, aiCommand, handleAiCommandFailure);
+  registerAiMcpPassthrough(program, aiCommand, handleCliCommandFailure);
 }
+
+// `storybook tools <toolset> <tool>`: runs the toolsets registered by the target Storybook
+// configuration in this process, disconnected from any dev server (storybookjs/storybook#35716).
+const toolsCommand = command('tools').description(
+  'Run the agent tools provided by the target Storybook configuration'
+);
+registerToolsPassthrough(program, toolsCommand, handleCliCommandFailure);
+
+// `storybook skills`: agent-facing instruction documents served by the target Storybook
+// configuration (storybookjs/storybook#35526, Milestone 6).
+const skillsCommand = command('skills').description(
+  'Agent skills served by the target Storybook configuration'
+);
+registerSkillsCommand(program, skillsCommand, handleCliCommandFailure);
 
 program.on('command:*', ([invalidCmd]) => {
   let errorMessage = ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`;

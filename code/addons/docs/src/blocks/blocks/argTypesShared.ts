@@ -6,7 +6,7 @@ import {
 } from 'storybook/internal/docs-tools';
 
 import { ArgsTableError } from '../components';
-import { useServiceDocgen } from './useServiceDocgen';
+import { useServiceDocgen } from './use-service-docgen.ts';
 
 /** Runs the renderer's docgen extractor against a component, throwing when it is unavailable. */
 export function extractComponentArgTypes(
@@ -46,8 +46,9 @@ export type DocgenServiceRows = {
  *
  * Subscribes to the `core/docgen` service for the component's server-extracted argTypes and merges
  * them with the locally-prepared `customArgTypes` (the service only carries extracted component
- * docgen, so the block works regardless of whether the story rendered). Returns `null` until the
- * service payload is available, so callers render nothing while docgen is still resolving.
+ * docgen, so the block works regardless of whether the story rendered). Surfaces the query's
+ * `isInitialLoading` flag alongside the rows so callers can render a loading skeleton while docgen is
+ * still resolving (instead of rendering nothing); `rows` stays `null` until a payload arrives.
  */
 export function useDocgenServiceRows({
   componentId,
@@ -56,27 +57,30 @@ export function useDocgenServiceRows({
   initialArgs,
   customArgTypes,
 }: {
-  componentId?: string;
+  componentId: string;
   storyId?: string;
   parameters?: Parameters;
   initialArgs?: Args;
   customArgTypes?: StrictArgTypes;
-}): DocgenServiceRows | null {
-  const servicePayload = useServiceDocgen(componentId);
+}): { rows: DocgenServiceRows | null; isInitialLoading: boolean } {
+  const { data: servicePayload, isInitialLoading } = useServiceDocgen(componentId);
 
-  if (!servicePayload || !componentId) {
-    return null;
+  if (!servicePayload) {
+    return { rows: null, isInitialLoading };
   }
 
   return {
-    serviceComponentName: servicePayload.name,
-    mainRows: mergeServiceArgTypes({
-      payload: servicePayload,
-      storyId: storyId ?? componentId,
-      parameters,
-      initialArgs,
-      customArgTypes,
-    }),
-    subcomponentRows: getServiceSubcomponentArgTypes(servicePayload),
+    rows: {
+      serviceComponentName: servicePayload.name,
+      mainRows: mergeServiceArgTypes({
+        payload: servicePayload,
+        storyId: storyId ?? componentId,
+        parameters,
+        initialArgs,
+        customArgTypes,
+      }),
+      subcomponentRows: getServiceSubcomponentArgTypes(servicePayload),
+    },
+    isInitialLoading,
   };
 }

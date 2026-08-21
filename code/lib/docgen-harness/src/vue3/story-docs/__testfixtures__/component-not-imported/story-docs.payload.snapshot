@@ -1,0 +1,14 @@
+{
+  "id": "component-not-imported",
+  "name": "LocalCard",
+  "path": "__PATH__",
+  "stories": {
+    "forms-component-not-imported--primary": {
+      "description": undefined,
+      "id": "forms-component-not-imported--primary",
+      "name": "Primary",
+      "summary": undefined,
+      "warning": "No static snippet: the component's import could not be resolved statically.",
+    },
+  },
+}

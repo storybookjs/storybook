@@ -11,7 +11,6 @@ import type {
 import { CHANGE_DETECTION_STATUS_TYPE_ID } from 'storybook/internal/types';
 
 import { getService } from '../../shared/open-service/server.ts';
-import type { ModuleGraphService } from '../../shared/open-service/services/module-graph/definition.ts';
 import { getStoryIdsByAbsolutePath } from '../../shared/open-service/services/module-graph/story-files.ts';
 import type {
   ErrorLike,
@@ -151,7 +150,11 @@ export class ChangeDetectionService {
   }
 
   private getModuleGraph() {
-    return getService<ModuleGraphService>('core/module-graph');
+    return getService('core/module-graph', { internal: true });
+  }
+
+  private getModuleGraphIndex() {
+    return getService('core/module-graph-index', { internal: true });
   }
 
   /** True while the service is live and change-detection status publishing is enabled. */
@@ -231,20 +234,24 @@ export class ChangeDetectionService {
     this.changeDetectionEnabled = true;
 
     const moduleGraph = this.getModuleGraph();
-    this.unsubscribeModuleGraphStatus = moduleGraph.queries.getStatus.subscribe(
+    this.unsubscribeModuleGraphStatus = moduleGraph.queries.status.subscribe(
       undefined,
-      (status) => this.onModuleGraphStatus(status as ModuleGraphStatus)
+      ({ data }) => {
+        if (data !== undefined) {
+          this.onModuleGraphStatus(data as ModuleGraphStatus);
+        }
+      }
     );
-    this.unsubscribeModuleGraphRevision = moduleGraph.queries.getGraphRevision.subscribe(
+    this.unsubscribeModuleGraphRevision = moduleGraph.queries.graphRevision.subscribe(
       undefined,
-      (revision) => {
-        if (revision > 0) {
+      ({ data }) => {
+        if ((data ?? 0) > 0) {
           this.onGraphChange();
         }
       }
     );
 
-    void moduleGraph.queries.getStatus
+    void moduleGraph.queries.status
       .loaded(undefined)
       .then((status) => {
         this.onModuleGraphStatus(status as ModuleGraphStatus);
@@ -320,7 +327,7 @@ export class ChangeDetectionService {
     // (between a story's removeStory and the re-walk's recordEdges) reads a transiently empty
     // reverse index and publishes incorrect statuses.
     const moduleGraph = this.getModuleGraph();
-    const status = await moduleGraph.queries.getStatus.loaded(undefined);
+    const status = await moduleGraph.queries.status.loaded(undefined);
 
     if (this.disposed || status.value !== 'ready') {
       return;
@@ -403,8 +410,8 @@ export class ChangeDetectionService {
     const storyIdsByFile = getStoryIdsByAbsolutePath(storyIndex, this.workingDir);
     const statuses = new Map<string, Status>();
     const scannedFilesArray = [...scannedFiles];
-    const moduleGraph = this.getModuleGraph();
-    const lookupResults = await moduleGraph.queries.getStoriesForFiles.loaded({
+    const moduleGraphIndex = this.getModuleGraphIndex();
+    const lookupResults = await moduleGraphIndex.queries.storiesForFiles.loaded({
       files: scannedFilesArray,
     });
 

@@ -192,6 +192,7 @@ const StyledButton = styled(Button)({
 export enum ArgsTableError {
   NO_COMPONENT = 'No component found.',
   ARGS_UNSUPPORTED = 'Args unsupported. See Args documentation for your framework.',
+  NOT_A_STORY_COMPONENT = 'No docs found for this component on this page. Import the story file whose meta.component is this component, or pass `of={ComponentStories}`.',
 }
 
 export type SortType = 'alpha' | 'requiredFirst' | 'none';
@@ -217,6 +218,7 @@ export interface ArgsTableOptionProps {
   sort?: SortType;
   storyId?: string;
   controlsId?: string;
+  docsLang?: string;
 }
 interface ArgsTableDataProps {
   rows: ArgTypes;
@@ -342,6 +344,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
     isLoading,
     storyId,
     controlsId,
+    docsLang,
   } = props;
 
   const { rows, args, globals } =
@@ -431,6 +434,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
               onClick={handleResetClick}
               disabled={isResetting}
               ariaLabel={isResetting ? 'Resetting controls...' : 'Reset controls'}
+              lang="en"
             >
               <UndoIcon />
             </StyledButton>
@@ -440,6 +444,7 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
         <TableWrapper
           {...{ compact, inAddonPanel, inTabPanel }}
           className="docblock-argstable sb-unstyled"
+          lang="en"
         >
           <thead className="docblock-argstable-head">
             <tr>
@@ -465,7 +470,13 @@ export const ArgsTable: FC<ArgsTableProps> = (props) => {
           </thead>
           <tbody className="docblock-argstable-body">
             {groups.ungrouped.map((row) => (
-              <ArgRow key={row.key} row={row} arg={args && args[row.key]} {...common} />
+              <ArgRow
+                key={row.key}
+                row={row}
+                arg={args && args[row.key]}
+                docsLang={docsLang}
+                {...common}
+              />
             ))}
 
             {Object.entries(groups.ungroupedSubsections).map(([subcategory, subsection]) => (

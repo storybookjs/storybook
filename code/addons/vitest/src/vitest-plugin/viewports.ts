@@ -5,7 +5,6 @@ import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
 import type { ViewportMap } from 'storybook/viewport';
 
 declare global {
-  // eslint-disable-next-line no-var
   var __vitest_browser__: boolean;
 }
 

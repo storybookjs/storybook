@@ -1,11 +1,10 @@
-import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePanel.ts';
 import type { CleanupCallback } from 'storybook/internal/csf';
 import type { StoryContext } from 'storybook/internal/types';
+import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePanel.ts';
 
-import type { StoryDocsService } from 'storybook/open-service';
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
-import { selectSnippetForStory } from './snippet.ts';
+import { selectSnippetForStory, selectWarningForStory } from './snippet.ts';
 
 export { shouldSkipStoryDocsEmit };
 
@@ -21,10 +20,14 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
     return;
   }
 
-  let service: StoryDocsService;
-  try {
-    service = getService<StoryDocsService>('core/story-docs');
-  } catch {
+  const service = (() => {
+    try {
+      return getService('core/story-docs', { internal: true });
+    } catch {
+      return undefined;
+    }
+  })();
+  if (!service) {
     return;
   }
 
@@ -35,7 +38,7 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
   // Do not await story-docs I/O here — story render should start immediately. Cleanup flips
   // `cancelled` so a slow load cannot emit after the story is torn down, then returns the chain
   // so navigation waits for in-flight work to settle.
-  const codePanelSnippetPromise = service.queries.getStoryDocs
+  const codePanelSnippetPromise = service.queries.storyDocs
     .loaded({ id: componentId })
     .then((payload) => {
       if (cancelled) {
@@ -46,7 +49,9 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
       if (source === undefined) {
         return;
       }
-      return emitTransformCode(source, context);
+      // The warning describes the service snippet, so it must not survive the fall back to raw CSF.
+      const warning = snippet === undefined ? undefined : selectWarningForStory(payload, storyId);
+      return emitTransformCode(source, context, warning);
     });
 
   return () => {

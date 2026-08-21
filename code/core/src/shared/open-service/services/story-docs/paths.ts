@@ -2,7 +2,7 @@
 export const STORY_DOCS_SERVICE_ID = 'core/story-docs';
 
 /**
- * Relative path segment for one component's static snapshot file, as returned by the `getStoryDocs`
+ * Relative path segment for one component's static snapshot file, as returned by the `storyDocs`
  * query's `staticPath`. Must stay aligned with {@link storyDocsServiceDef} and manifest `$ref`s.
  */
 export function storyDocsQueryStaticPath(id: string): string {

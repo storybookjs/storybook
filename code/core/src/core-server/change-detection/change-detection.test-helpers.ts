@@ -5,6 +5,23 @@ import { getService } from '../../shared/open-service/server.ts';
 import type { ModuleGraphService } from '../../shared/open-service/services/module-graph/definition.ts';
 import { ModuleGraphEngine } from '../../shared/open-service/services/module-graph/engine/module-graph-engine.ts';
 import type { ModuleGraphStatus } from '../../shared/open-service/services/module-graph/types.ts';
+import type { QueryState } from '../../shared/open-service/types.ts';
+
+/** Wraps a value as a settled `success`/`idle` {@link QueryState}, mirroring a real subscription emission. */
+function toSuccessState<TData>(data: TData): QueryState<TData> {
+  return {
+    data,
+    error: undefined,
+    status: 'success',
+    loadStatus: 'idle',
+    isPending: false,
+    isSuccess: true,
+    isError: false,
+    isLoading: false,
+    isInitialLoading: false,
+    isRefreshing: false,
+  };
+}
 import {
   errorToErrorLike,
   toStoryIndexPath,
@@ -23,22 +40,22 @@ export {
 type ChangeDetectionServiceOptions = ConstructorParameters<typeof ChangeDetectionService>[0];
 
 /**
- * Installs a `getService('core/module-graph')` mock backed by a real {@link ModuleGraphEngine}
- * instance (for tests that call `graph.start(adapter)`).
+ * Installs `getService` mocks for `core/module-graph` and `core/module-graph-index`, backed by a
+ * real {@link ModuleGraphEngine} (for tests that call `graph.start(adapter)`).
  */
 export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
   let status: ModuleGraphStatus = engine.hasGraph() ? { value: 'ready' } : { value: 'booting' };
   let graphRevision = 0;
   let latestChangedStoryFiles: string[] = [];
-  const statusSubscribers = new Set<(next: ModuleGraphStatus) => void>();
-  const revisionSubscribers = new Set<(next: number) => void>();
+  const statusSubscribers = new Set<(next: QueryState<ModuleGraphStatus>) => void>();
+  const revisionSubscribers = new Set<(next: QueryState<number>) => void>();
   const emitStatus = () => {
-    statusSubscribers.forEach((subscriber) => subscriber(status));
+    statusSubscribers.forEach((subscriber) => subscriber(toSuccessState(status)));
   };
   const emitRevision = () => {
-    revisionSubscribers.forEach((subscriber) => subscriber(graphRevision));
+    revisionSubscribers.forEach((subscriber) => subscriber(toSuccessState(graphRevision)));
   };
-  const getStoriesForFiles = ({ files }: { files: string[] }) =>
+  const storiesForFiles = ({ files }: { files: string[] }) =>
     files.map((file) => {
       const hits = engine.lookup(normalize(file));
       return [...hits.entries()].map(([storyFile, depth]) => ({
@@ -47,40 +64,60 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
       }));
     });
 
-  vi.mocked(getService).mockReturnValue({
+  const hotService = {
     queries: {
-      getStatus: Object.assign(() => status, {
+      status: {
+        get: () => status,
         loaded: async () => {
           await engine.whenSettled();
           return status;
         },
-        subscribe: vi.fn((_input: undefined, callback: (next: ModuleGraphStatus) => void) => {
-          statusSubscribers.add(callback);
-          callback(status);
-          return () => statusSubscribers.delete(callback);
-        }),
-      }),
-      getStoriesForFiles: Object.assign(getStoriesForFiles, {
-        loaded: async (input: { files: string[] }) => {
-          await engine.whenSettled();
-          return getStoriesForFiles(input);
-        },
-      }),
-      getGraphRevision: Object.assign(() => 0, {
-        subscribe: vi.fn((_input: undefined, callback: (next: number) => void) => {
+        subscribe: vi.fn(
+          (_input: undefined, callback: (next: QueryState<ModuleGraphStatus>) => void) => {
+            statusSubscribers.add(callback);
+            callback(toSuccessState(status));
+            return () => statusSubscribers.delete(callback);
+          }
+        ),
+      },
+      graphRevision: {
+        get: () => 0,
+        subscribe: vi.fn((_input: undefined, callback: (next: QueryState<number>) => void) => {
           revisionSubscribers.add(callback);
-          callback(graphRevision);
+          callback(toSuccessState(graphRevision));
           return () => revisionSubscribers.delete(callback);
         }),
-      }),
-      getLatestStoryChanges: Object.assign(
-        () => ({ revision: graphRevision, storyFiles: latestChangedStoryFiles }),
-        {
-          subscribe: vi.fn(() => () => undefined),
-        }
-      ),
+      },
+      latestStoryChanges: {
+        get: () => ({ revision: graphRevision, storyFiles: latestChangedStoryFiles }),
+        subscribe: vi.fn(() => () => undefined),
+      },
     },
-  } as unknown as ModuleGraphService);
+    commands: {
+      _waitForSettledEngine: async () => {
+        await engine.whenSettled();
+      },
+    },
+  };
+
+  const indexService = {
+    queries: {
+      storiesForFiles: {
+        get: storiesForFiles,
+        loaded: async (input: { files: string[] }) => {
+          await engine.whenSettled();
+          return storiesForFiles(input);
+        },
+      },
+    },
+  };
+
+  vi.mocked(getService).mockImplementation((serviceId: string) => {
+    if (serviceId === 'core/module-graph-index') {
+      return indexService as never;
+    }
+    return hotService as unknown as ModuleGraphService;
+  });
 
   return {
     applySnapshot: () => {
@@ -136,7 +173,7 @@ export function createWiredChangeDetection(
     },
     workingDir: options.workingDir,
     onSnapshot: () => moduleGraphMockRef.current?.applySnapshot(),
-    onUpdate: ({ bumpedStoryFiles }) => moduleGraphMockRef.current?.applyUpdate(bumpedStoryFiles),
+    onBump: (bumpedStoryFiles) => moduleGraphMockRef.current?.applyUpdate(bumpedStoryFiles),
     onError: (error) => moduleGraphMockRef.current?.applyError(error),
     onUnavailable: (reason, error) => moduleGraphMockRef.current?.applyUnavailable(reason, error),
   });

@@ -17,10 +17,11 @@ import type {
 interface DocsManifestEntry {
   id: string;
   name: string;
-  path: string;
-  title: string;
+  path?: string;
+  title?: string;
   content?: string;
   summary?: string;
+  mdx?: { $ref: string };
   error?: { name: string; message: string };
 }
 
@@ -115,7 +116,7 @@ export function renderComponentsManifest(
         : `<a class="filter-pill ok" data-k="docs" href="#filter-docs">${totals.docs} ${plural(totals.docs, 'doc')} ok</a>`
       : '';
 
-  const grid = entries.map(([key, c], idx) => renderComponentCard(key, c, `${idx}`)).join('');
+  const grid = entries.map(([key, c], idx) => renderComponentCard(key, c, `${idx}`, key)).join('');
   const docsGrid = docsEntries.map(([key, d], idx) => renderDocCard(key, d, `doc-${idx}`)).join('');
 
   const errorGroups = Object.entries(
@@ -308,6 +309,14 @@ export function renderComponentsManifest(
           display: flex;
           flex-direction: column;
           gap: 10px;
+          /* Keep a deep-linked card clear of the sticky header when scrolled into view */
+          scroll-margin-top: 110px;
+      }
+
+      /* Highlight the card deep-linked via components.html#<manifest-id> */
+      .card:target {
+          box-shadow: 0 0 0 2px var(--info);
+          border-color: var(--info);
       }
 
       .head {
@@ -886,7 +895,7 @@ function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
         ${contentBadge}
       </div>
     </div>
-    <div class="meta" title="${esc(d.path)}">${esc(d.id)} · ${esc(d.path)}</div>
+    <div class="meta" title="${esc(d.path ?? d.id)}">${d.path ? `${esc(d.id)} · ${esc(d.path)}` : esc(d.id)}</div>
     ${d.summary ? `<div>${esc(d.summary)}</div>` : ''}
   </div>
 
@@ -920,7 +929,15 @@ function renderDocCard(key: string, d: DocsManifestEntry, id: string) {
 </article>`;
 }
 
-function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: string) {
+// `anchorId`, when set, renders a stable `id` on the card so `components.html#<anchorId>` deep-links
+// resolve. Only the primary grid passes it; the error-group section re-renders the same components,
+// so anchoring those too would create duplicate DOM ids.
+function renderComponentCard(
+  key: string,
+  c: ComponentManifestWithDocs,
+  id: string,
+  anchorId?: string
+) {
   const a = analyzeComponent(c);
   const statusDot = a.hasAnyError ? 'dot-err' : 'dot-ok';
   const allStories = storyEntries(c.stories);
@@ -966,7 +983,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
     engine: cardEngine,
     filePath,
     exportName,
-  } = getDocgenRenderData(c, a.hasPropTypeError);
+  } = docgenRenderData(c, a.hasPropTypeError);
   const propEntries = activeParsed ? Object.entries(activeParsed.props ?? {}) : [];
   const propTypesBadge =
     !a.hasPropTypeError && propEntries.length > 0
@@ -1006,6 +1023,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
 
   return `
 <article
+  ${anchorId ? `id="${esc(anchorId)}"` : ''}
   class="card 
   ${a.hasPropTypeError ? 'has-error' : 'no-error'} 
   ${a.hasWarns ? 'has-info' : 'no-info'} 
@@ -1132,7 +1150,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
                 <span class="ex-name">${esc(doc.name)}</span>
                 <span class="badge err">doc error</span>
               </div>
-              <div class="hint">${esc(doc.path)}</div>
+              ${doc.path ? `<div class="hint">${esc(doc.path)}</div>` : ''}
               ${doc?.summary ? `<div>${esc(doc.summary)}</div>` : ''}
               ${doc?.error?.message ? `<pre><code>${esc(doc.error.message)}</code></pre>` : ''}
             </div>`
@@ -1146,7 +1164,7 @@ function renderComponentCard(key: string, c: ComponentManifestWithDocs, id: stri
                 <span class="ex-name">${esc(doc.name)}</span>
                 <span class="badge ok">doc ok</span>
               </div>
-              <div class="hint">${esc(doc.path)}</div>
+              ${doc.path ? `<div class="hint">${esc(doc.path)}</div>` : ''}
               ${doc?.summary ? `<div>${esc(doc.summary)}</div>` : ''}
               ${doc?.content ? `<div class="mdx-content"><pre><code>${esc(doc.content)}</code></pre></div>` : ''}
             </div>`
@@ -1190,7 +1208,7 @@ type DocgenRenderData = {
   exportName?: string;
 };
 
-const getDocgenRenderData = (
+const docgenRenderData = (
   component: ComponentManifestLikeWithDocgen,
   hasPropTypeError: boolean
 ): DocgenRenderData => {
@@ -1233,10 +1251,7 @@ function renderSubcomponentNote(
   subcomponent: ComponentManifestLikeWithDocgen
 ) {
   const hasPropTypeError = Boolean(subcomponent.error);
-  const { parsed, engine, filePath, exportName } = getDocgenRenderData(
-    subcomponent,
-    hasPropTypeError
-  );
+  const { parsed, engine, filePath, exportName } = docgenRenderData(subcomponent, hasPropTypeError);
   const propEntries = Object.entries(parsed?.props ?? {});
   const tags =
     subcomponent.jsDocTags && typeof subcomponent.jsDocTags === 'object'

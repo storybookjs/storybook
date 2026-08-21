@@ -1,8 +1,10 @@
+import { resolve } from 'node:path';
+
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { experimental_loadStorybook as loadStorybook } from 'storybook/internal/core-server';
 
-import { loadStorybookAiMetadata, resolveStorybookConfigDir } from './local-metadata.ts';
+import { loadStorybookAiMetadata } from './local-metadata.ts';
 
 vi.mock('storybook/internal/core-server', { spy: true });
 
@@ -23,7 +25,7 @@ describe('loadStorybookAiMetadata', () => {
     const apply = vi.fn().mockResolvedValue({
       instructions: 'Follow the story workflow.',
       tools: [
-        { name: 'get-documentation', description: 'Get docs.' },
+        { name: 'docs-show', description: 'Get docs.' },
         {
           name: 'get-storybook-story-instructions',
           description: 'Get story guidance.',
@@ -39,12 +41,12 @@ describe('loadStorybookAiMetadata', () => {
 
     const metadata = await loadStorybookAiMetadata({ cwd: '/repo' });
 
-    expect(loadStorybook).toHaveBeenCalledWith({ configDir: '/repo/.storybook' });
+    expect(loadStorybook).toHaveBeenCalledWith({ configDir: resolve('/repo/.storybook') });
     expect(apply).toHaveBeenCalledWith('experimental_storybookAi', undefined);
     expect(metadata).toEqual({
       instructions: 'Follow the story workflow.',
       tools: [
-        { name: 'get-documentation', description: 'Get docs.' },
+        { name: 'docs-show', description: 'Get docs.' },
         {
           name: 'get-storybook-story-instructions',
           description: 'Get story guidance.',
@@ -64,7 +66,7 @@ describe('loadStorybookAiMetadata', () => {
 
     await loadStorybookAiMetadata({ cwd: '/repo', configDir: 'config/storybook' });
 
-    expect(loadStorybook).toHaveBeenCalledWith({ configDir: '/repo/config/storybook' });
+    expect(loadStorybook).toHaveBeenCalledWith({ configDir: resolve('/repo/config/storybook') });
   });
 
   it('normalizes optional metadata fields and hides descriptor-less local tools', async () => {
@@ -72,11 +74,11 @@ describe('loadStorybookAiMetadata', () => {
     mockLoadedStorybook(
       vi.fn().mockResolvedValue({
         instructions: 123,
-        tools: [{ name: 'get-documentation' }],
+        tools: [{ name: 'docs-show' }],
         localTools: {
           invalid: {},
           notObject: true,
-          'get-documentation': { call },
+          'docs-show': { call },
         },
       })
     );
@@ -85,9 +87,9 @@ describe('loadStorybookAiMetadata', () => {
 
     expect(metadata).toEqual({
       instructions: undefined,
-      tools: [{ name: 'get-documentation' }],
+      tools: [{ name: 'docs-show' }],
       localTools: {
-        'get-documentation': { call },
+        'docs-show': { call },
       },
     });
   });
@@ -121,23 +123,5 @@ describe('loadStorybookAiMetadata', () => {
     mockLoadedStorybook(vi.fn().mockResolvedValue(undefined));
 
     await expect(loadStorybookAiMetadata({ cwd: '/repo' })).resolves.toBeUndefined();
-  });
-});
-
-describe('resolveStorybookConfigDir', () => {
-  it('defaults to .storybook under the target cwd', () => {
-    expect(resolveStorybookConfigDir({ cwd: '/repo' })).toBe('/repo/.storybook');
-  });
-
-  it('resolves relative config dirs from the target cwd', () => {
-    expect(resolveStorybookConfigDir({ cwd: '/repo', configDir: 'config/storybook' })).toBe(
-      '/repo/config/storybook'
-    );
-  });
-
-  it('keeps absolute config dirs unchanged', () => {
-    expect(resolveStorybookConfigDir({ cwd: '/repo', configDir: '/custom/.storybook' })).toBe(
-      '/custom/.storybook'
-    );
   });
 });

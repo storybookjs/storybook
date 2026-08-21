@@ -217,6 +217,12 @@ export const skipJsxRender = (context: StoryContext<ReactRenderer>) => {
   const sourceParams = context?.parameters.docs?.source;
   const isArgsStory = context?.parameters.__isArgsStory;
 
+  // Portable stories (vitest, playwright/jest portable) have no Source doc block consuming the
+  // emitted snippet, so serializing the story to a JSX string is pure overhead. Skip it.
+  if (context?.parameters.__isPortableStory) {
+    return true;
+  }
+
   // always render if the user forces it
   if (sourceParams?.type === SourceType.DYNAMIC) {
     return false;

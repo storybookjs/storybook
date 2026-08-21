@@ -1,26 +1,28 @@
-import React, { type ComponentType } from 'react';
 import type { Decorator } from '@storybook/react-vite';
+import type { AnyRootRoute, AnyRoute, Router } from '@tanstack/react-router';
 import {
   createMemoryHistory,
   createRootRoute,
   createRoute,
   createRouter,
-  type Route,
+  defaultStringifySearch,
+  interpolatePath,
   RouterProvider,
   type RootRoute,
-  interpolatePath,
-  defaultStringifySearch,
+  type Route,
 } from '@tanstack/react-router';
-import type { Router, AnyRootRoute, AnyRoute } from '@tanstack/react-router';
-import type { RouterParameters } from './types.ts';
+import React, { type ComponentType } from 'react';
 import {
   duplicateRouteTree,
   findRootRoute,
+  mountPathFor,
+  originalRouteId,
   resolveStoryLeaf,
   type DuplicatedTree,
 } from './duplicate-tree.ts';
-import { isRoute } from './utils.ts';
 import { normalizeFileRoutePath } from './path-utils.ts';
+import type { RouterParameters } from './types.ts';
+import { isRoute } from './utils.ts';
 
 interface TanStackRouterStoryProps {
   Story: ComponentType;
@@ -40,7 +42,7 @@ interface ResolvedTree {
 
 const StoryContext = React.createContext<{ Story: ComponentType }>({ Story: () => null });
 
-const StoryFromContext: ComponentType = () => {
+export const StoryFromContext: ComponentType = () => {
   const { Story } = React.useContext(StoryContext);
   return <Story />;
 };
@@ -50,21 +52,20 @@ export const tanstackRouteDecorator: Decorator = (Story, context) => {
 };
 
 function TanStackRouterStory({ Story, context }: TanStackRouterStoryProps) {
+  const router = context.tanstackRouter as Router<AnyRootRoute> | undefined;
+
   const routerContext = context.parameters.tanstack?.router?.useRouterContext?.({
     storyContext: context,
   });
 
-  const router = React.useMemo(
-    () => createStoryRouter({ Story: StoryFromContext, context, routerContext }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [context.id]
-  );
+  if (!router) {
+    throw new Error(
+      'No story router found on the story context: the `routerBeforeEach` hook of @storybook/tanstack-react did not run before rendering. Note that portable stories are not supported by this framework.'
+    );
+  }
 
   const providerContext = React.useMemo(
-    () => ({
-      ...context.parameters.tanstack?.router?.context,
-      ...routerContext,
-    }),
+    () => routerContext,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [context.id, routerContext]
   );
@@ -76,7 +77,7 @@ function TanStackRouterStory({ Story, context }: TanStackRouterStoryProps) {
   );
 }
 
-function createStoryRouter({
+export function createStoryRouter({
   Story,
   context,
   routerContext,
@@ -85,20 +86,15 @@ function createStoryRouter({
   const { tree, leaf } = resolveTree(Story, context);
   const routeTree = tree.root;
 
-  // Infer the initial path for the router. The priority is:
-  // 1. `parameters.tanstack.router.path` (explicit path override)
-  // 2. `leaf.fullPath` (the full path of the resolved leaf route, if it has one)
-  // 3. The normalized `leaf.id` (defensive fallback: a leaf may carry an unnormalized id
-  //    like `/(group)/page` with an empty `fullPath`, which would otherwise silently
-  //    coerce to `/`).
-  // 4. The full path of the first child of the route tree, if it exists (e.g. the Story's parent route)
-  // 5. `/` as a last resort
+  // Infer the initial path for the router. Cloned routes are not yet
+  // `init()`ed here, so the `fullPath` getter is only usable for routes that
+  // already lived in an initialized router; `mountPathFor` walks the cloned
+  // parent chain's options instead and always yields a mountable URL.
   const inferredPath =
     routerParameters?.path ||
     leaf.fullPath ||
     (leaf.id ? normalizeFileRoutePath(leaf.id) : undefined) ||
-    (routeTree.children as AnyRoute[] | undefined)?.[0]?.fullPath ||
-    '/';
+    mountPathFor(leaf);
 
   // Interpolate params into the path and append query/search params.
   let resolvedPath = interpolatePath({
@@ -126,6 +122,43 @@ function createStoryRouter({
     },
     context: routerContext,
   });
+}
+
+/**
+ * A pathless layout (explicit `id`, no `path`) only matches when one of its
+ * children matches. If a story is bound directly to such a route, return an
+ * index child (`path: '/'`) under it so the layout becomes matchable and path
+ * inference resolves to a real URL: reuse the layout's existing index child
+ * when it has one (the common `_authed/index.tsx` shape — attaching a
+ * synthetic sibling would derive the same generated id and make
+ * `createRouter` throw `Duplicate routes found`), otherwise mount a synthetic
+ * bare index child. The story itself still renders at the layout's position —
+ * `injectStoryComponent` already replaced the layout's own `component`.
+ */
+function ensureMatchableLeaf(tree: DuplicatedTree, leaf: AnyRoute): AnyRoute {
+  const isPathlessLeaf =
+    leaf !== (tree.root as unknown as AnyRoute) &&
+    !(leaf as any).options?.path &&
+    (leaf as any).options?.id != null;
+  if (!isPathlessLeaf) {
+    return leaf;
+  }
+  const existingIndexChild = (((leaf as any).children as AnyRoute[] | undefined) ?? []).find(
+    (child) => (child as any).options?.path === '/'
+  );
+  if (existingIndexChild) {
+    return existingIndexChild;
+  }
+  const syntheticLeaf = createRoute({
+    path: '/',
+    component: () => null,
+    getParentRoute: () => leaf as any,
+  } as any);
+  (leaf as any).addChildren([
+    ...(((leaf as any).children as AnyRoute[] | undefined) ?? []),
+    syntheticLeaf,
+  ]);
+  return syntheticLeaf as unknown as AnyRoute;
 }
 
 function injectStoryComponent(
@@ -178,10 +211,12 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
     const leaf = resolveStoryLeaf(tree, {
       path: routerParameters.path as string | undefined,
       boundRouteId: resolvedRoute && resolvedRoute !== rootRoute ? resolvedRoute.id : undefined,
+      params: routerParameters.params as Record<string, unknown> | undefined,
     });
 
-    injectStoryComponent(leaf, Story, routeOverrides, leaf.id);
-    return { tree, leaf };
+    injectStoryComponent(leaf, Story, routeOverrides, originalRouteId(tree, leaf) ?? leaf.id);
+    const renderLeaf = ensureMatchableLeaf(tree, leaf);
+    return { tree, leaf: renderLeaf };
   }
 
   if (isRoute(routerParameterRoute)) {
@@ -195,8 +230,9 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
     syntheticRoot.addChildren([routerParameterRoute]);
     const tree = duplicateRouteTree(syntheticRoot, { overrides: routeOverrides });
     const leaf = tree.byId.get(routerParameterRoute.id) ?? tree.root;
-    injectStoryComponent(leaf, Story, routeOverrides, leaf.id);
-    return { tree, leaf };
+    injectStoryComponent(leaf, Story, routeOverrides, routerParameterRoute.id);
+    const renderLeaf = ensureMatchableLeaf(tree, leaf);
+    return { tree, leaf: renderLeaf };
   }
 
   // No route instance — build a synthetic root + child from plain options.
@@ -212,16 +248,29 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
   const syntheticRoot = createRootRoute(
     (routeOverrides as Record<string, any> | undefined)?.__root__ ?? {}
   );
+  // The other branches apply overrides through `duplicateRouteTree`; this
+  // branch builds the child directly, so merge the leaf's override in here too
+  // (otherwise a story-supplied `component`/`loader` override is dropped).
+  const leafOverrideKey = syntheticRouteId ?? (plainRoutePath as string | undefined);
+  const leafOverride = leafOverrideKey
+    ? ((routeOverrides as Record<string, any> | undefined)?.[leafOverrideKey] ?? {})
+    : {};
   const syntheticChild = createRoute({
     component: () => <Story />,
     id: syntheticRouteId,
     path: plainRoutePath as string | undefined,
     ...plainRouteRest,
+    ...leafOverride,
     getParentRoute: () => syntheticRoot,
   } as any);
   syntheticRoot.addChildren([syntheticChild]);
 
-  injectStoryComponent(syntheticChild, Story, routeOverrides, syntheticChild.id);
+  injectStoryComponent(
+    syntheticChild,
+    Story,
+    routeOverrides,
+    syntheticRouteId ?? (plainRoutePath as string | undefined) ?? syntheticChild.id
+  );
   return {
     tree: { root: syntheticRoot, byId: new Map([[syntheticChild.id, syntheticChild]]) },
     leaf: syntheticChild,

@@ -11,9 +11,8 @@ import type { Combo } from 'storybook/manager-api';
 import { focusableUIElements } from '../../../../manager-api/modules/layout.ts';
 
 const menuMapper = ({ api, state }: Combo) => ({
-  isVisible: api.getIsNavShown(),
+  navAvailability: api.getNavAvailability(),
   singleStory: state.singleStory,
-  viewMode: state.viewMode,
   showSidebar: async (forceFocus: boolean) => {
     api.toggleNav(true);
     api.focusOnUIElement(focusableUIElements.sidebarRegion, {
@@ -32,9 +31,9 @@ export const menuTool: Addon_BaseType = {
   render: () => {
     return (
       <Consumer filter={menuMapper}>
-        {({ isVisible, showSidebar, singleStory }) =>
+        {({ navAvailability, showSidebar, singleStory }) =>
           !singleStory &&
-          !isVisible && (
+          navAvailability === 'hidden' && (
             <>
               <Button
                 padding="small"

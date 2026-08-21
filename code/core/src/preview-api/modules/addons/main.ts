@@ -19,20 +19,22 @@ export class AddonStore {
   private resolve: any;
 
   getChannel = (): Channel => {
-    if (!this.channel) {
-      const installed = readInstalledChannel();
-      if (installed) {
-        this.channel = installed as Channel;
-        this.resolve();
-        return this.channel;
-      }
-
-      const channel = mockChannel() as unknown as Channel;
-      this.setChannel(channel);
-      return channel;
+    if (this.channel) {
+      return this.channel;
     }
 
-    return this.channel;
+    const installed = readInstalledChannel();
+    if (installed) {
+      this.channel = installed as Channel;
+      this.resolve();
+      return this.channel;
+    }
+
+    // No channel has been installed in this runtime yet. Return a throwaway mock so callers do not
+    // crash, but do NOT cache it, mirror it to the shared channel slot, or resolve `ready()` with
+    // it. Otherwise a single early read would poison the whole runtime, and the real channel
+    // installed later (at the runtime entry point) would never take over.
+    return mockChannel() as unknown as Channel;
   };
 
   ready = (): Promise<Channel> => this.promise;

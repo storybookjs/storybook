@@ -9,6 +9,7 @@ import highlightAnnotations, { type HighlightTypes } from '../highlight/preview.
 import measureAnnotations, { type MeasureTypes } from '../measure/preview.ts';
 import outlineAnnotations, { type OutlineTypes } from '../outline/preview.ts';
 import docgenAnnotations from '../shared/open-service/services/docgen/preview.ts';
+import dynamicSnippetAnnotations from '../shared/open-service/services/dynamic-snippets/preview.ts';
 import storyDocsAnnotations from '../shared/open-service/services/story-docs/preview.ts';
 import testAnnotations, { type TestTypes } from '../test/preview.ts';
 import viewportAnnotations, { type ViewportTypes } from '../viewport/preview.ts';
@@ -92,5 +93,7 @@ export function getCoreAnnotations() {
     (docgenAnnotations.default ?? docgenAnnotations)(),
     // @ts-expect-error CJS fallback
     (storyDocsAnnotations.default ?? storyDocsAnnotations)(),
+    // @ts-expect-error CJS fallback
+    (dynamicSnippetAnnotations.default ?? dynamicSnippetAnnotations)(),
   ];
 }

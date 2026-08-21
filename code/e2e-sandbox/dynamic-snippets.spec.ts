@@ -8,6 +8,8 @@ const templateName = process.env.STORYBOOK_TEMPLATE_NAME || '';
 
 const DECLARED_LABEL = 'declaredLabel';
 const TYPED_LABEL = 'typedLabel';
+const FIRST_TAB_LABEL = 'firstTabLabel';
+const SECOND_TAB_LABEL = 'secondTabLabel';
 
 test.describe('dynamic snippets', () => {
   // Only `angular-vite` registers a snippet-template renderer today, and only its docgen-server
@@ -55,5 +57,40 @@ test.describe('dynamic snippets', () => {
     await root.locator('textarea[name=label]').fill(TYPED_LABEL);
 
     await expect(root.locator('pre.prismjs').first()).toContainText(`[label]="'${TYPED_LABEL}'"`);
+  });
+
+  test('dynamic snippets stay isolated between browser tabs', async ({ context, page }) => {
+    await page.goto(storybookUrl);
+    const firstStorybook = new SbPage(page, expect);
+    await firstStorybook.waitUntilLoaded();
+    await firstStorybook.navigateToStory(
+      'stories/frameworks/angular-vite/dynamic-snippets',
+      'default'
+    );
+
+    const secondPage = await context.newPage();
+    await secondPage.goto(storybookUrl);
+    const secondStorybook = new SbPage(secondPage, expect);
+    await secondStorybook.waitUntilLoaded();
+    await secondStorybook.navigateToStory(
+      'stories/frameworks/angular-vite/dynamic-snippets',
+      'default'
+    );
+
+    await firstStorybook.viewAddonPanel('Controls');
+    await firstStorybook.panelContent().locator('textarea[name=label]').fill(FIRST_TAB_LABEL);
+    await expect(firstStorybook.previewRoot().locator('button')).toContainText(FIRST_TAB_LABEL);
+
+    await secondStorybook.viewAddonPanel('Controls');
+    await secondStorybook.panelContent().locator('textarea[name=label]').fill(SECOND_TAB_LABEL);
+    await expect(secondStorybook.previewRoot().locator('button')).toContainText(SECOND_TAB_LABEL);
+
+    await firstStorybook.viewAddonPanel('Code');
+    await expect(firstStorybook.panelContent()).toContainText(`[label]="'${FIRST_TAB_LABEL}'"`);
+    await expect(firstStorybook.panelContent()).not.toContainText(SECOND_TAB_LABEL);
+
+    await secondStorybook.viewAddonPanel('Code');
+    await expect(secondStorybook.panelContent()).toContainText(`[label]="'${SECOND_TAB_LABEL}'"`);
+    await expect(secondStorybook.panelContent()).not.toContainText(FIRST_TAB_LABEL);
   });
 });

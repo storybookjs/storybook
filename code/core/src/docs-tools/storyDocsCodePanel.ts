@@ -11,38 +11,34 @@ export type StoryDocsCodePanelParameters = {
   };
 };
 
-/**
- * Whether the preview story-docs hook should skip emitting a snippet to the manager Code panel.
- *
- * The args/source shape logic mirrors {@link skipJsxRender} in the React `jsxDecorator`, so static
- * service snippets replace dynamic JSX rendering under the same conditions. It additionally skips
- * portable stories (vitest, playwright/jest portable): those have no manager Code panel and no OSA
- * server peer, so the `extractStoryDocs` remote command has no handler and would reject after the
- * ack timeout — there is nothing to emit to.
- */
-export function shouldSkipStoryDocsEmit(parameters?: StoryDocsCodePanelParameters): boolean {
+/** Whether StoryDocs should build a dynamic snippet for this story. */
+export function isStoryDocsSnippetEligible(
+  parameters?: StoryDocsCodePanelParameters,
+  typeOverride?: SourceType
+): boolean {
   const sourceParams = parameters?.docs?.source;
   const isArgsStory = parameters?.__isArgsStory;
+  const type = typeOverride ?? sourceParams?.type;
 
-  if (parameters?.__isPortableStory) {
-    return true;
-  }
-
-  if (sourceParams?.type === SourceType.DYNAMIC) {
+  if (parameters?.__isPortableStory || sourceParams?.code !== undefined) {
     return false;
   }
 
-  return !isArgsStory || sourceParams?.code !== undefined || sourceParams?.type === SourceType.CODE;
+  if (type === SourceType.DYNAMIC) {
+    return true;
+  }
+
+  return Boolean(isArgsStory && type !== SourceType.CODE);
 }
 
 /**
  * Whether the Code panel should keep rendering blank while it waits for a story-docs service snippet
  * instead of falling back to raw CSF (`originalSource`).
  *
- * True while the docgen server might still emit a snippet for the current story: either the story is
- * known to emit one, or it is not prepared yet so the emit decision — which depends on prepared
- * parameters like `__isArgsStory` — is still unknown in the manager. Holding the fallback during
- * that window prevents flashing raw CSF before the service snippet arrives for newly opened stories.
+ * True while StoryDocs might still produce a snippet for the current story: either the story is
+ * eligible, or it is not prepared yet so eligibility — which depends on prepared parameters like
+ * `__isArgsStory` — is still unknown in the manager. Holding the fallback during that window
+ * prevents flashing raw CSF before the service snippet arrives for newly opened stories.
  */
 export function shouldWaitForServiceSnippet(
   parameters: StoryDocsCodePanelParameters | undefined,
@@ -51,5 +47,5 @@ export function shouldWaitForServiceSnippet(
   if (!globalThis.FEATURES?.experimentalDocgenServer) {
     return false;
   }
-  return !storyPrepared || !shouldSkipStoryDocsEmit(parameters);
+  return !storyPrepared || isStoryDocsSnippetEligible(parameters);
 }

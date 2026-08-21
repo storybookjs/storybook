@@ -44,15 +44,13 @@ export class ServerChannelTransport {
           // which the token alone authenticates.
           const { origin } = request.headers;
           if (origin && !isValidHost(new URL(origin).host, options)) {
-            socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
-            socket.destroy();
+            socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
             return;
           }
 
           const requestToken = url.searchParams.get('token');
           if (!isValidToken(requestToken, options.token)) {
-            socket.write('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
-            socket.destroy();
+            socket.end('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
             return;
           }
         }
@@ -62,8 +60,7 @@ export class ServerChannelTransport {
         });
       } catch (error) {
         logger.warn(`Rejecting WebSocket connection: ${error}`);
-        socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
-        socket.destroy();
+        socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
       }
     });
 

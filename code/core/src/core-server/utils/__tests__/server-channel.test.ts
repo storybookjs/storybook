@@ -2,8 +2,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
 
-import { EventEmitter } from 'events';
-import type { Server } from 'http';
+import { EventEmitter } from 'node:events';
+import { createServer, type Server } from 'node:http';
+import { connect } from 'node:net';
 import { stringify } from 'telejson';
 
 import { ServerChannelTransport, getServerChannel } from '../get-server-channel.ts';
@@ -20,6 +21,35 @@ const webContainerOptions = {
   ...options,
   skipValidation: true,
 } as any;
+
+async function readRejectedUpgrade(requestLines: string[]): Promise<string> {
+  const server = createServer();
+  await new Promise<void>((resolve) => {
+    server.listen(0, '127.0.0.1', resolve);
+  });
+  const address = server.address();
+  if (!address || typeof address === 'string') {
+    throw new Error('expected a TCP address');
+  }
+  new ServerChannelTransport(server, options);
+  const client = connect({ host: '127.0.0.1', port: address.port });
+  try {
+    return await new Promise<string>((resolve, reject) => {
+      const chunks: Buffer[] = [];
+      client.on('data', (chunk) => chunks.push(chunk));
+      client.on('error', reject);
+      client.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
+      client.on('connect', () => {
+        client.write(`${requestLines.join('\r\n')}\r\n\r\n`);
+      });
+    });
+  } finally {
+    client.destroy();
+    await new Promise<void>((resolve, reject) => {
+      server.close((error) => (error ? reject(error) : resolve()));
+    });
+  }
+}
 
 describe('getServerChannel', () => {
   it('should return a channel', () => {
@@ -97,9 +127,8 @@ describe('ServerChannelTransport', () => {
   it('rejects connections without token', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter() as any;
-    socket.write = vi.fn();
-    socket.destroy = vi.fn();
-    const destroySpy = vi.spyOn(socket, 'destroy');
+    socket.end = vi.fn();
+    const endSpy = vi.spyOn(socket, 'end');
     const transport = new ServerChannelTransport(server, options);
 
     // Simulate upgrade request without token
@@ -113,18 +142,14 @@ describe('ServerChannelTransport', () => {
 
     server.listeners('upgrade')[0](request, socket, head);
 
-    expect(socket.write).toHaveBeenCalledWith(
-      'HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n'
-    );
-    expect(destroySpy).toHaveBeenCalled();
+    expect(endSpy).toHaveBeenCalledWith('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
   });
 
   it('rejects connections with invalid token', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter() as any;
-    socket.write = vi.fn();
-    socket.destroy = vi.fn();
-    const destroySpy = vi.spyOn(socket, 'destroy');
+    socket.end = vi.fn();
+    const endSpy = vi.spyOn(socket, 'end');
     new ServerChannelTransport(server, options);
 
     // Simulate upgrade request with wrong token
@@ -138,18 +163,14 @@ describe('ServerChannelTransport', () => {
 
     server.listeners('upgrade')[0](request, socket, head);
 
-    expect(socket.write).toHaveBeenCalledWith(
-      'HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n'
-    );
-    expect(destroySpy).toHaveBeenCalled();
+    expect(endSpy).toHaveBeenCalledWith('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
   });
 
   it('accepts connections with valid token', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter() as any;
-    socket.write = vi.fn();
-    socket.destroy = vi.fn();
-    const destroySpy = vi.spyOn(socket, 'destroy');
+    socket.end = vi.fn();
+    const endSpy = vi.spyOn(socket, 'end');
     const transport = new ServerChannelTransport(server, options);
     const handleUpgradeSpy = vi
       .spyOn(transport.socket, 'handleUpgrade')
@@ -166,17 +187,15 @@ describe('ServerChannelTransport', () => {
 
     server.listeners('upgrade')[0](request, socket, head);
 
-    expect(socket.write).not.toHaveBeenCalled();
-    expect(destroySpy).not.toHaveBeenCalled();
+    expect(endSpy).not.toHaveBeenCalled();
     expect(handleUpgradeSpy).toHaveBeenCalled();
   });
 
   it('rejects connections with invalid origin', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter() as any;
-    socket.write = vi.fn();
-    socket.destroy = vi.fn();
-    const destroySpy = vi.spyOn(socket, 'destroy');
+    socket.end = vi.fn();
+    const endSpy = vi.spyOn(socket, 'end');
     const transport = new ServerChannelTransport(server, options);
 
     // Simulate upgrade request with invalid origin
@@ -190,18 +209,14 @@ describe('ServerChannelTransport', () => {
 
     server.listeners('upgrade')[0](request, socket, head);
 
-    expect(socket.write).toHaveBeenCalledWith(
-      'HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n'
-    );
-    expect(destroySpy).toHaveBeenCalled();
+    expect(endSpy).toHaveBeenCalledWith('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
   });
 
   it('accepts connections without origin header when the token is valid', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter() as any;
-    socket.write = vi.fn();
-    socket.destroy = vi.fn();
-    const destroySpy = vi.spyOn(socket, 'destroy');
+    socket.end = vi.fn();
+    const endSpy = vi.spyOn(socket, 'end');
     const transport = new ServerChannelTransport(server, options);
     const handleUpgradeSpy = vi
       .spyOn(transport.socket, 'handleUpgrade')
@@ -215,17 +230,15 @@ describe('ServerChannelTransport', () => {
 
     server.listeners('upgrade')[0](request, socket, head);
 
-    expect(socket.write).not.toHaveBeenCalled();
-    expect(destroySpy).not.toHaveBeenCalled();
+    expect(endSpy).not.toHaveBeenCalled();
     expect(handleUpgradeSpy).toHaveBeenCalled();
   });
 
   it('rejects connections without origin header when the token is invalid', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter() as any;
-    socket.write = vi.fn();
-    socket.destroy = vi.fn();
-    const destroySpy = vi.spyOn(socket, 'destroy');
+    socket.end = vi.fn();
+    const endSpy = vi.spyOn(socket, 'end');
     const transport = new ServerChannelTransport(server, options);
     const handleUpgradeSpy = vi
       .spyOn(transport.socket, 'handleUpgrade')
@@ -239,19 +252,15 @@ describe('ServerChannelTransport', () => {
 
     server.listeners('upgrade')[0](request, socket, head);
 
-    expect(socket.write).toHaveBeenCalledWith(
-      'HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n'
-    );
-    expect(destroySpy).toHaveBeenCalled();
+    expect(endSpy).toHaveBeenCalledWith('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
     expect(handleUpgradeSpy).not.toHaveBeenCalled();
   });
 
   it('rejects connections without origin header and without token', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter() as any;
-    socket.write = vi.fn();
-    socket.destroy = vi.fn();
-    const destroySpy = vi.spyOn(socket, 'destroy');
+    socket.end = vi.fn();
+    const endSpy = vi.spyOn(socket, 'end');
     const transport = new ServerChannelTransport(server, options);
     const handleUpgradeSpy = vi
       .spyOn(transport.socket, 'handleUpgrade')
@@ -265,19 +274,15 @@ describe('ServerChannelTransport', () => {
 
     server.listeners('upgrade')[0](request, socket, head);
 
-    expect(socket.write).toHaveBeenCalledWith(
-      'HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n'
-    );
-    expect(destroySpy).toHaveBeenCalled();
+    expect(endSpy).toHaveBeenCalledWith('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
     expect(handleUpgradeSpy).not.toHaveBeenCalled();
   });
 
   it('accepts connections with network address origin', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter() as any;
-    socket.write = vi.fn();
-    socket.destroy = vi.fn();
-    const destroySpy = vi.spyOn(socket, 'destroy');
+    socket.end = vi.fn();
+    const endSpy = vi.spyOn(socket, 'end');
     const transport = new ServerChannelTransport(server, options);
     const handleUpgradeSpy = vi
       .spyOn(transport.socket, 'handleUpgrade')
@@ -294,17 +299,15 @@ describe('ServerChannelTransport', () => {
 
     server.listeners('upgrade')[0](request, socket, head);
 
-    expect(socket.write).not.toHaveBeenCalled();
-    expect(destroySpy).not.toHaveBeenCalled();
+    expect(endSpy).not.toHaveBeenCalled();
     expect(handleUpgradeSpy).toHaveBeenCalled();
   });
 
   it('accepts connections with 127.0.0.1 origin', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter() as any;
-    socket.write = vi.fn();
-    socket.destroy = vi.fn();
-    const destroySpy = vi.spyOn(socket, 'destroy');
+    socket.end = vi.fn();
+    const endSpy = vi.spyOn(socket, 'end');
     const transport = new ServerChannelTransport(server, options);
     const handleUpgradeSpy = vi
       .spyOn(transport.socket, 'handleUpgrade')
@@ -321,17 +324,15 @@ describe('ServerChannelTransport', () => {
 
     server.listeners('upgrade')[0](request, socket, head);
 
-    expect(socket.write).not.toHaveBeenCalled();
-    expect(destroySpy).not.toHaveBeenCalled();
+    expect(endSpy).not.toHaveBeenCalled();
     expect(handleUpgradeSpy).toHaveBeenCalled();
   });
 
   it('rejects connections to wrong path', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter() as any;
-    socket.write = vi.fn();
-    socket.destroy = vi.fn();
-    const destroySpy = vi.spyOn(socket, 'destroy');
+    socket.end = vi.fn();
+    const endSpy = vi.spyOn(socket, 'end');
     const transport = new ServerChannelTransport(server, options);
     const handleUpgradeSpy = vi
       .spyOn(transport.socket, 'handleUpgrade')
@@ -350,16 +351,14 @@ describe('ServerChannelTransport', () => {
 
     // Should not call handleUpgrade for wrong path
     expect(handleUpgradeSpy).not.toHaveBeenCalled();
-    // Socket should not be destroyed for wrong path (just ignored)
-    expect(destroySpy).not.toHaveBeenCalled();
+    expect(endSpy).not.toHaveBeenCalled();
   });
 
   it('accepts connections without token when validation is disabled', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter() as any;
-    socket.write = vi.fn();
-    socket.destroy = vi.fn();
-    const destroySpy = vi.spyOn(socket, 'destroy');
+    socket.end = vi.fn();
+    const endSpy = vi.spyOn(socket, 'end');
     const transport = new ServerChannelTransport(server, webContainerOptions);
     const handleUpgradeSpy = vi
       .spyOn(transport.socket, 'handleUpgrade')
@@ -375,17 +374,15 @@ describe('ServerChannelTransport', () => {
 
     server.listeners('upgrade')[0](request, socket, head);
 
-    expect(socket.write).not.toHaveBeenCalled();
-    expect(destroySpy).not.toHaveBeenCalled();
+    expect(endSpy).not.toHaveBeenCalled();
     expect(handleUpgradeSpy).toHaveBeenCalled();
   });
 
   it('accepts connections with invalid origin when validation is disabled', () => {
     const server = new EventEmitter() as any as Server;
     const socket = new EventEmitter() as any;
-    socket.write = vi.fn();
-    socket.destroy = vi.fn();
-    const destroySpy = vi.spyOn(socket, 'destroy');
+    socket.end = vi.fn();
+    const endSpy = vi.spyOn(socket, 'end');
     const transport = new ServerChannelTransport(server, webContainerOptions);
     const handleUpgradeSpy = vi
       .spyOn(transport.socket, 'handleUpgrade')
@@ -401,8 +398,28 @@ describe('ServerChannelTransport', () => {
 
     server.listeners('upgrade')[0](request, socket, head);
 
-    expect(socket.write).not.toHaveBeenCalled();
-    expect(destroySpy).not.toHaveBeenCalled();
+    expect(endSpy).not.toHaveBeenCalled();
     expect(handleUpgradeSpy).toHaveBeenCalled();
+  });
+
+  it('flushes HTTP 401 to a real client when the token is missing', async () => {
+    const response = await readRejectedUpgrade([
+      'GET /storybook-server-channel HTTP/1.1',
+      'Host: 127.0.0.1',
+      'Connection: Upgrade',
+      'Upgrade: websocket',
+    ]);
+    expect(response).toContain('HTTP/1.1 401 Unauthorized');
+  });
+
+  it('flushes HTTP 403 to a real client when Origin is invalid', async () => {
+    const response = await readRejectedUpgrade([
+      `GET /storybook-server-channel?token=${mockToken} HTTP/1.1`,
+      'Host: 127.0.0.1',
+      'Connection: Upgrade',
+      'Upgrade: websocket',
+      'Origin: http://malicious-site.com',
+    ]);
+    expect(response).toContain('HTTP/1.1 403 Forbidden');
   });
 });

@@ -204,25 +204,24 @@ export const Search = React.memo<SearchProps>(function Search({
             )
           : null;
 
-        const { anchors: _anchors, ...baseSearchItem } = searchItem(
-          datasetValue,
-          dataset.hash[refId]
-        );
+        const status = mostCriticalStatusValue ?? groupStatus[datasetValue.id] ?? null;
+
+        if (datasetValue.type !== 'docs' || !globalThis?.FEATURES?.experimentalSearchDocsHeadings) {
+          list.push({
+            ...searchItem(datasetValue, dataset.hash[refId]),
+            status,
+          });
+          continue;
+        }
+
+        const { anchors, ...baseSearchItem } = searchItem(datasetValue, dataset.hash[refId]);
 
         list.push({
           ...baseSearchItem,
-          status: mostCriticalStatusValue ?? groupStatus[datasetValue.id] ?? null,
+          status,
         });
 
-        if (datasetValue.type !== 'docs') {
-          continue;
-        }
-
-        if (!globalThis?.FEATURES?.experimentalSearchDocsHeadings) {
-          continue;
-        }
-
-        datasetValue.anchors?.forEach((anchor) => {
+        anchors?.forEach((anchor) => {
           const namePostfix = baseSearchItem.path?.[0] === anchor.title ? '' : ` / ${anchor.title}`;
 
           list.push({
@@ -231,7 +230,7 @@ export const Search = React.memo<SearchProps>(function Search({
             // Fuse requires unique ids, so suffix the entry id with the anchor's DOM id
             id: `${datasetValue.id}#${anchor.id}`,
             name: `${datasetValue.name}${namePostfix}`,
-            status: mostCriticalStatusValue || groupStatus[datasetValue.id] || null,
+            status,
           });
         });
       }

@@ -11,7 +11,7 @@ import { withTelemetry } from 'storybook/internal/core-server';
 import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
-import { Option, program } from 'commander';
+import { InvalidArgumentError, Option, program } from 'commander';
 import envinfo from 'envinfo';
 import leven from 'leven';
 import picocolors from 'picocolors';
@@ -19,6 +19,7 @@ import picocolors from 'picocolors';
 import { version } from '../../package.json';
 import { add } from '../add.ts';
 import { doAutomigrate } from '../automigrate/index.ts';
+import { FEATURE_FLAG_FIXES } from '../automigrate/fixes/experimental-features.ts';
 import { doctor } from '../doctor/index.ts';
 import { link } from '../link.ts';
 import { migrate } from '../migrate.ts';
@@ -167,9 +168,23 @@ command('upgrade')
     )
   )
   .option('-y --yes', 'Skip prompting the user')
-  .option(
-    '--features <list>',
-    'Comma-separated list of experimental flags to enable during the upgrade (e.g. "experimentalReview,experimentalDocgenServer")'
+  .addOption(
+    new Option(
+      '--features <list>',
+      'Comma-separated list of experimental feature flags to enable during the upgrade'
+    ).argParser((value) => {
+      const names = value
+        .split(',')
+        .map((name) => name.trim())
+        .filter(Boolean);
+      const unknown = names.filter((name) => !(name in FEATURE_FLAG_FIXES));
+      if (unknown.length > 0) {
+        throw new InvalidArgumentError(
+          `Unknown feature flag(s): ${unknown.join(', ')}. Available: ${Object.keys(FEATURE_FLAG_FIXES).join(', ')}.`
+        );
+      }
+      return names.join(',');
+    })
   )
   .option('-f --force', 'force the upgrade, skipping autoblockers')
   .option('-n --dry-run', 'Only check for upgrades, do not install')

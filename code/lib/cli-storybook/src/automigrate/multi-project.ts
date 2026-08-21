@@ -6,6 +6,7 @@ import type { StorybookConfigRaw } from 'storybook/internal/types';
 import type { UpgradeOptions } from '../upgrade.ts';
 import { shortenPath } from '../util.ts';
 import type { CollectProjectsSuccessResult } from '../util.ts';
+import { FEATURE_FLAG_FIXES } from './fixes/experimental-features.ts';
 import { allFixes } from './fixes/index.ts';
 import { rnstorybookConfig } from './fixes/rnstorybook-config.ts';
 import type { CheckOptions, Fix, FixId, RunOptions } from './types.ts';
@@ -42,6 +43,8 @@ export interface MultiProjectAutomigrationOptions {
   yes?: boolean;
   skipInstall?: boolean;
   taskLog: TaskLogInstance;
+  /** Fix ids the user asked for explicitly; these skip upgrade-boundary gating. */
+  requestedFixIds?: string[];
 }
 
 export interface MultiProjectRunAutomigrationOptions {
@@ -55,7 +58,7 @@ export interface MultiProjectRunAutomigrationOptions {
 export async function collectAutomigrationsAcrossProjects(
   options: MultiProjectAutomigrationOptions
 ): Promise<AutomigrationCheckResult[]> {
-  const { fixes, projects, taskLog } = options;
+  const { fixes, projects, taskLog, requestedFixIds } = options;
   const automigrationMap = new Map<FixId, AutomigrationCheckResult>();
 
   logger.debug(
@@ -108,6 +111,9 @@ export async function collectAutomigrationsAcrossProjects(
           configDir: project.configDir,
           mainConfig: project.mainConfig,
           storybookVersion: project.storybookVersion,
+          // An explicitly requested fix is not subject to upgrade-boundary gating: the user
+          // already said they want it, so `check` should only judge real applicability.
+          beforeVersion: requestedFixIds?.includes(fix.id) ? undefined : project.beforeVersion,
           previewConfigPath: project.previewConfigPath,
           mainConfigPath: project.mainConfigPath,
           storiesPaths: project.storiesPaths,
@@ -197,29 +203,55 @@ const formatProjectDirs = (list: AutomigrationCheckResult['reports']) => {
   return `${relativeDirs.slice(0, amountOfProjectsShown).join(', ')}${remaining > 0 ? ` and ${remaining} more...` : ''}`;
 };
 
+/** Maps `--features experimentalReview,...` onto the fix ids that enable those flags. */
+const resolveRequestedFixIds = (features: string | undefined): string[] | undefined => {
+  const names = features
+    ?.split(',')
+    .map((name) => name.trim())
+    .filter(Boolean);
+  if (!names?.length) {
+    return undefined;
+  }
+  return names.map((name) => FEATURE_FLAG_FIXES[name as keyof typeof FEATURE_FLAG_FIXES].id);
+};
+
 /** Prompts user to select which automigrations to run */
 export async function promptForAutomigrations(
   automigrations: AutomigrationCheckResult[],
-  options: { dryRun?: boolean; yes?: boolean }
+  options: { dryRun?: boolean; yes?: boolean; preselectedIds?: string[] }
 ): Promise<AutomigrationCheckResult[]> {
   if (automigrations.length === 0) {
     return [];
   }
 
-  if (options.dryRun) {
-    logger.log('Detected automigrations (dry run - no changes will be made):');
-    automigrations.forEach(({ fix, reports: list }) => {
+  const logSelection = (title: string, selection: AutomigrationCheckResult[]) => {
+    logger.log(title);
+    selection.forEach(({ fix, reports: list }) => {
       logger.log(`  - ${fix.id} (${formatProjectDirs(list)})`);
     });
+  };
+
+  if (options.preselectedIds?.length) {
+    const selected = automigrations.filter(({ fix }) => options.preselectedIds!.includes(fix.id));
+    if (options.dryRun) {
+      logSelection('Requested automigrations (dry run - no changes will be made):', selected);
+      return [];
+    }
+    logSelection('Running requested automigrations:', selected);
+    return selected;
+  }
+
+  if (options.dryRun) {
+    logSelection('Detected automigrations (dry run - no changes will be made):', automigrations);
     return [];
   }
 
   if (options.yes) {
-    logger.log('Running all detected automigrations:');
-    automigrations.forEach(({ fix, reports: list }) => {
-      logger.log(`  - ${fix.id} (${formatProjectDirs(list)})`);
-    });
-    return automigrations;
+    // `defaultSelected: false` marks a fix as opt-in (e.g. a framework migration or a new
+    // experimental flag). `--yes` means "don't ask me", not "opt me into everything".
+    const selected = automigrations.filter(({ fix }) => fix.defaultSelected !== false);
+    logSelection('Running all detected automigrations:', selected);
+    return selected;
   }
 
   // Create choices for multiselect prompt
@@ -456,6 +488,8 @@ export async function runAutomigrations(
         ? `Detecting automigrations for ${projectAutomigrationData.length} projects...`
         : `Detecting automigrations...`,
   });
+  const requestedFixIds = resolveRequestedFixIds(options.features);
+
   // Collect all applicable automigrations across all projects
   const detectedAutomigrations = await collectAutomigrationsAcrossProjects({
     fixes: allFixes,
@@ -464,6 +498,7 @@ export async function runAutomigrations(
     yes: options.yes,
     skipInstall: options.skipInstall,
     taskLog: detectingAutomigrationTask,
+    requestedFixIds,
   });
 
   // Filter out automigrations that should run
@@ -475,6 +510,7 @@ export async function runAutomigrations(
   const selectedAutomigrations = await promptForAutomigrations(successfulAutomigrations, {
     dryRun: options.dryRun,
     yes: options.yes,
+    preselectedIds: requestedFixIds,
   });
   // Run selected automigrations for each project
   const automigrationResults = await runAutomigrationsForProjects(selectedAutomigrations, {

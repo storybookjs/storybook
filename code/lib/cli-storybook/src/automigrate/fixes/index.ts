@@ -11,6 +11,10 @@ import { addonMdxGfmRemove } from './addon-mdx-gfm-remove.ts';
 import { addonStorysourceCodePanel } from './addon-storysource-code-panel.ts';
 import { consolidatedImports } from './consolidated-imports.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
+import {
+  enableExperimentalDocgenServer,
+  enableExperimentalReview,
+} from './experimental-features.ts';
 import { fixFauxEsmRequire } from './fix-faux-esm-require.ts';
 import { initialGlobals } from './initial-globals.ts';
 import { migrateAddonConsole } from './migrate-addon-console.ts';
@@ -54,6 +58,8 @@ export const allFixes: Fix[] = [
   wrapGetAbsolutePath,
   fixFauxEsmRequire,
   storybookPackageNameConflict,
+  enableExperimentalReview,
+  enableExperimentalDocgenServer,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];

@@ -7,6 +7,8 @@ export interface CheckOptions {
   configDir?: string;
   mainConfig: StorybookConfigRaw;
   storybookVersion: string;
+  /** Version installed before the upgrade. Only set when running as part of `storybook upgrade`. */
+  beforeVersion?: string;
   previewConfigPath?: string;
   mainConfigPath?: string;
   storiesPaths: string[];

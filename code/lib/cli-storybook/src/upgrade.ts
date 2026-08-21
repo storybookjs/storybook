@@ -33,7 +33,6 @@ import {
 } from './automigrate/multi-project.ts';
 import { FixStatus } from './automigrate/types.ts';
 import { displayDoctorResults, runMultiProjectDoctor } from './doctor/index.ts';
-import { runExperimentalFlagsHighlightStep } from './experimentalFlags.ts';
 import { configureDeferredAddons } from './postinstallAddon.ts';
 import type { ProjectDoctorData, ProjectDoctorResults } from './doctor/types.ts';
 import {
@@ -440,8 +439,6 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
         task.error(`Failed to upgrade dependencies: ${String(err)}`);
       }
     }
-
-    await runExperimentalFlagsHighlightStep(storybookProjects, options);
 
     // Run automigrations for all projects (unless explicitly skipped)
     let automigrationResults: Record<string, AutomigrationResult> = {};

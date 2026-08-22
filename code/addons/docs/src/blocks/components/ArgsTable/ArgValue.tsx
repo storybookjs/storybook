@@ -27,6 +27,13 @@ interface ArgSummaryProps {
 
 const ITEMS_BEFORE_EXPANSION = 8;
 
+const DELIMITERS = new Map([
+  ['(', ')'],
+  ['[', ']'],
+  ['{', '}'],
+  ['<', '>'],
+]);
+
 const Summary = styled.div<{ isExpanded?: boolean }>(({ isExpanded }) => ({
   display: 'flex',
   flexDirection: isExpanded ? 'column' : 'row',
@@ -142,8 +149,72 @@ const getSummaryItems = (summary: string) => {
   if (!summary) {
     return [summary];
   }
-  const splittedItems = summary.split('|');
-  const summaryItems = splittedItems.map((value) => value.trim());
+
+  const summaryItems: string[] = [];
+  const closingDelimiters: string[] = [];
+  let itemStart = 0;
+  let quote: '"' | "'" | '`' | undefined;
+  let isEscaped = false;
+
+  for (let index = 0; index < summary.length; index += 1) {
+    const character = summary[index];
+
+    if (isEscaped) {
+      isEscaped = false;
+      continue;
+    }
+
+    if (character === '\\') {
+      isEscaped = true;
+      continue;
+    }
+
+    if (quote) {
+      if (character === quote) {
+        quote = undefined;
+      }
+      continue;
+    }
+
+    if (character === '"' || character === "'" || character === '`') {
+      quote = character;
+      continue;
+    }
+
+    const closingDelimiter = DELIMITERS.get(character);
+    if (closingDelimiter) {
+      closingDelimiters.push(closingDelimiter);
+      continue;
+    }
+
+    if (character === '>' && summary[index - 1] === '=') {
+      continue;
+    }
+
+    if (character === ')' || character === ']' || character === '}' || character === '>') {
+      if (closingDelimiters.at(-1) !== character) {
+        return [summary];
+      }
+      closingDelimiters.pop();
+      continue;
+    }
+
+    if (
+      character === '|' &&
+      closingDelimiters.length === 0 &&
+      summary[index - 1] !== '|' &&
+      summary[index + 1] !== '|'
+    ) {
+      summaryItems.push(summary.slice(itemStart, index).trim());
+      itemStart = index + 1;
+    }
+  }
+
+  if (quote || closingDelimiters.length > 0) {
+    return [summary];
+  }
+
+  summaryItems.push(summary.slice(itemStart).trim());
 
   return uniq(summaryItems);
 };
@@ -176,13 +247,13 @@ const ArgSummary: FC<ArgSummaryProps> = ({ value, initialExpandedArgs }) => {
   const summaryAsString = typeof summary.toString === 'function' ? summary.toString() : summary;
 
   if (detail == null) {
-    const cannotBeSafelySplitted = /[(){}[\]<>]/.test(summaryAsString);
+    const summaryItems = getSummaryItems(summaryAsString);
+    const cannotBeSafelySplit = summaryItems.length === 1 && /[(){}[\]<>]/.test(summaryAsString);
 
-    if (cannotBeSafelySplitted) {
+    if (cannotBeSafelySplit) {
       return <ArgText text={summaryAsString} />;
     }
 
-    const summaryItems = getSummaryItems(summaryAsString);
     const itemsCount = summaryItems.length;
     const hasManyItems = itemsCount > ITEMS_BEFORE_EXPANSION;
 

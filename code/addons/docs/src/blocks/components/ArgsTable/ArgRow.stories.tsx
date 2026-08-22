@@ -427,7 +427,32 @@ export const ComplexUnion = {
       },
     },
   },
-};
+  play: ({ canvas }) => {
+    expect(canvas.getByText('((a: string | SVGSVGElement) => void)')).toBeVisible();
+    expect(canvas.getByText('RefObject<SVGSVGElement | number>')).toBeVisible();
+    expect(canvas.getByText('[a|b]')).toBeVisible();
+    expect(canvas.getByText('{a|b}')).toBeVisible();
+  },
+} satisfies StoryObj<typeof ArgRow>;
+
+export const ArrayAndTupleUnion = {
+  args: {
+    row: {
+      ...ComplexUnion.args.row,
+      key: 'arrayAndTupleUnion',
+      name: 'Array and tuple',
+      table: {
+        type: {
+          summary: 'Array<number> | [number, number]',
+        },
+      },
+    },
+  },
+  play: ({ canvas }) => {
+    expect(canvas.getByText('Array<number>')).toBeVisible();
+    expect(canvas.getByText('[number, number]')).toBeVisible();
+  },
+} satisfies StoryObj<typeof ArgRow>;
 
 export const Markdown = {
   args: {

@@ -19,6 +19,26 @@ const referencesDir = join(fixturesDir, 'references');
 const manager = new VueComponentMetaManager(ts);
 afterAll(() => manager.dispose());
 
+const entryFor = (importPath: string, title: string) =>
+  ({
+    type: 'story',
+    subtype: 'story',
+    id: title.toLowerCase().replace(/\W+/g, '-'),
+    name: 'Default',
+    title,
+    importPath,
+  }) as unknown as IndexEntry;
+
+const docgenForFixture = (importPath: string, title: string) =>
+  buildDocgenPayload(
+    { entry: entryFor(importPath, title) },
+    {
+      getChecker: (componentPath) => manager.getCheckerForFile(componentPath),
+      resolvePath: (path) => join(fixturesDir, path),
+      typescript: ts,
+    }
+  );
+
 describe('VueComponentMetaManager', () => {
   // The stock `create-vue` scaffold: the root tsconfig is nothing but `references`. The previous
   // single-checker path bailed to a whole-project `include: ['**/*']` fallback here (upstream:
@@ -38,20 +58,14 @@ describe('VueComponentMetaManager', () => {
   });
 
   it('extracts docgen end to end through the manager-resolved checker', async () => {
-    const entry = {
-      type: 'story',
-      subtype: 'story',
-      id: 'example-refbutton--default',
-      name: 'Default',
-      title: 'Example/RefButton',
-      importPath: './src/RefButton.stories.ts',
-    } as unknown as IndexEntry;
+    const entry = entryFor('./src/RefButton.stories.ts', 'Example/RefButton');
 
     const payload = await buildDocgenPayload(
       { entry },
       {
         getChecker: (componentPath) => manager.getCheckerForFile(componentPath),
         resolvePath: (importPath) => join(referencesDir, importPath),
+        typescript: ts,
       }
     );
 
@@ -71,6 +85,140 @@ describe('VueComponentMetaManager', () => {
     expect(payload?.apiDescription).toContain('## Props');
     // And the payload still satisfies the worker transport.
     expect(() => structuredClone(payload)).not.toThrow();
+  });
+
+  it('extracts component-level JSDoc tags from an options API SFC', async () => {
+    const payload = await docgenForFixture(
+      './jsdoc/OptionsButton.stories.ts',
+      'Example/OptionsButton'
+    );
+
+    expect(payload?.error).toBeUndefined();
+    expect({ description: payload?.description, jsDocTags: payload?.jsDocTags })
+      .toMatchInlineSnapshot(`
+        {
+          "description": "Renders with {@link IconButton } in prose.
+        Use together with",
+          "jsDocTags": {
+            "deprecated": [
+              "Use NewButton.",
+            ],
+            "example": [
+              "<sb-button label="Save">
+        Save
+        </sb-button>",
+            ],
+            "see": [
+              "ButtonGroup for accessibility.",
+            ],
+          },
+        }
+      `);
+  });
+
+  it('uses component JSDoc tags before story meta tags while keeping story-only tags', async () => {
+    const payload = await docgenForFixture(
+      './jsdoc/MixedPrecedenceButton.stories.ts',
+      'Example/MixedPrecedenceButton'
+    );
+
+    expect(payload?.error).toBeUndefined();
+    expect({
+      description: payload?.description,
+      summary: payload?.summary,
+      jsDocTags: payload?.jsDocTags,
+    }).toMatchInlineSnapshot(`
+        {
+          "description": "Story-level description.",
+          "jsDocTags": {
+            "deprecated": [
+              "Use NewButton.",
+            ],
+            "example": [
+              "<sb-button label="Save">
+        Save
+        </sb-button>",
+            ],
+            "see": [
+              "ButtonGroup for accessibility.",
+            ],
+            "summary": [
+              "Story summary.",
+            ],
+          },
+          "summary": "Story summary.",
+        }
+      `);
+  });
+
+  it('extracts component-level JSDoc tags from a plain TS component', async () => {
+    const payload = await docgenForFixture('./jsdoc/PlainButton.stories.ts', 'Example/PlainButton');
+
+    expect(payload?.error).toBeUndefined();
+    expect({ description: payload?.description, jsDocTags: payload?.jsDocTags })
+      .toMatchInlineSnapshot(`
+        {
+          "description": "Renders with {@link IconButton } in prose.
+        Use together with",
+          "jsDocTags": {
+            "deprecated": [
+              "Use NewButton.",
+            ],
+            "example": [
+              "<sb-button label="Save">
+        Save
+        </sb-button>",
+            ],
+            "see": [
+              "ButtonGroup for accessibility.",
+            ],
+          },
+        }
+      `);
+  });
+
+  it('uses story meta tags when component JSDoc has only a description', async () => {
+    const payload = await docgenForFixture(
+      './jsdoc/DescriptionOnlyButton.stories.ts',
+      'Example/DescriptionOnlyButton'
+    );
+
+    expect(payload?.error).toBeUndefined();
+    expect({
+      componentJsDocTags: payload?.vueComponentMeta?.jsDocTags,
+      description: payload?.description,
+      jsDocTags: payload?.jsDocTags,
+    }).toMatchInlineSnapshot(`
+      {
+        "componentJsDocTags": {},
+        "description": "Story-level description.",
+        "jsDocTags": {
+          "deprecated": [
+            "Use OptionsButton.",
+          ],
+        },
+      }
+    `);
+  });
+
+  it('keeps script setup component tags empty and uses the story meta docblock fallback', async () => {
+    const payload = await docgenForFixture('./Button.stories.ts', 'Example/Button');
+
+    expect(payload?.error).toBeUndefined();
+    expect({ description: payload?.description, jsDocTags: payload?.jsDocTags })
+      .toMatchInlineSnapshot(`
+        {
+          "description": "A button.",
+          "jsDocTags": {
+            "deprecated": [
+              "Use OptionsButton.",
+            ],
+            "summary": [
+              "Clickable",
+            ],
+          },
+        }
+      `);
   });
 
   // `__testfixtures__/tsconfig.json` has no `include`, so it covers everything beneath it — but

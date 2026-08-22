@@ -49,12 +49,29 @@ export class WebsocketTransport implements ChannelTransport {
 
   private pingTimeout: number | NodeJS.Timeout = 0;
 
+  private heartbeatPaused = false;
+
   private heartbeat() {
     clearTimeout(this.pingTimeout);
+    if (this.heartbeatPaused || this.isClosed) {
+      return;
+    }
 
     this.pingTimeout = setTimeout(() => {
       this.socket.close(3008, 'timeout');
     }, HEARTBEAT_INTERVAL + HEARTBEAT_MAX_LATENCY);
+  }
+
+  pauseHeartbeat() {
+    this.heartbeatPaused = true;
+    clearTimeout(this.pingTimeout);
+  }
+
+  resumeHeartbeat() {
+    this.heartbeatPaused = false;
+    if (this.isReady) {
+      this.heartbeat();
+    }
   }
 
   constructor({ url, onError, page, createSocket }: WebsocketTransportArgs) {

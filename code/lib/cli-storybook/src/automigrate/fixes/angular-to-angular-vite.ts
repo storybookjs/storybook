@@ -699,11 +699,6 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       }
     }
 
-    // `@storybook/angular-vite` reads the same `zoneless` builder option and treats its absence as
-    // zoneless, so the option cannot decide this: a target declaring nothing - what this migration
-    // itself writes - would get an `import 'zone.js'` the framework has already decided the project
-    // does not need, and that the project may not even be able to resolve. The dependency tree is
-    // the signal that survives an option nobody wrote.
     const hasZoneJsDependency = packageManager.isDependencyInstalled('zone.js');
 
     if (anyStorybookTarget && anyZoneBasedTarget && !hasZoneJsDependency) {

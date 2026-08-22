@@ -28,6 +28,7 @@ interface WebsocketTransportArgs extends Partial<Config> {
   url: string;
   onError: OnError;
   createSocket?: (url: string) => ChannelWebSocket;
+  enableHeartbeat?: boolean;
 }
 
 export const HEARTBEAT_INTERVAL = 15000;
@@ -51,9 +52,11 @@ export class WebsocketTransport implements ChannelTransport {
 
   private heartbeatPaused = false;
 
+  private enableHeartbeat = true;
+
   private heartbeat() {
     clearTimeout(this.pingTimeout);
-    if (this.heartbeatPaused || this.isClosed) {
+    if (!this.enableHeartbeat || this.heartbeatPaused || this.isClosed) {
       return;
     }
 
@@ -74,7 +77,14 @@ export class WebsocketTransport implements ChannelTransport {
     }
   }
 
-  constructor({ url, onError, page, createSocket }: WebsocketTransportArgs) {
+  constructor({
+    url,
+    onError,
+    page,
+    createSocket,
+    enableHeartbeat = true,
+  }: WebsocketTransportArgs) {
+    this.enableHeartbeat = enableHeartbeat;
     // eslint-disable-next-line compat/compat
     this.socket = createSocket ? createSocket(url) : new WebSocket(url);
     this.socket.onopen = () => {

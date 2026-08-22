@@ -39,8 +39,6 @@ function makeConnection(): NodeChannelConnection {
     connected: Promise.resolve(),
     disconnected: new Promise<never>(() => {}),
     close: vi.fn(),
-    pauseHeartbeat: vi.fn(),
-    resumeHeartbeat: vi.fn(),
   };
 }
 
@@ -96,14 +94,6 @@ describe('bootstrapAttachedRuntime', () => {
     if (result.kind === 'in-process') {
       expect(result.runtime.configDir).toBe(RECORD.configDir);
     }
-    expect(connection.pauseHeartbeat).toHaveBeenCalledOnce();
-    expect(connection.resumeHeartbeat).toHaveBeenCalledOnce();
-    expect(vi.mocked(connection.pauseHeartbeat).mock.invocationCallOrder[0]).toBeLessThan(
-      vi.mocked(deps.loadStorybook).mock.invocationCallOrder[0]
-    );
-    expect(vi.mocked(deps.loadStorybook).mock.invocationCallOrder[0]).toBeLessThan(
-      vi.mocked(connection.resumeHeartbeat).mock.invocationCallOrder[0]
-    );
   });
 
   it('does not change process.cwd()', async () => {
@@ -288,8 +278,6 @@ describe('bootstrapAttachedRuntime', () => {
     await expect(failure).rejects.toMatchObject({ data: { reason: 'config-load-failed' } });
     expect(deps.setDelegatedMode).toHaveBeenLastCalledWith(false);
     expect(connection.close).toHaveBeenCalled();
-    expect(connection.pauseHeartbeat).toHaveBeenCalledOnce();
-    expect(connection.resumeHeartbeat).not.toHaveBeenCalled();
   });
 
   it('matches a nested package cwd against a parent-cwd record whose configDir is the package Storybook', async () => {

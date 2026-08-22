@@ -100,6 +100,24 @@ describe('WebsocketTransport heartbeat', () => {
     expect(socket.closed).toEqual({ code: 3008, reason: 'timeout' });
   });
 
+  it('does not start the receive watchdog when enableHeartbeat is false', () => {
+    const transport = new WebsocketTransport({
+      url: 'ws://localhost:6006',
+      page: 'manager',
+      onError: vi.fn(),
+      enableHeartbeat: false,
+    });
+    transport.setHandler(vi.fn());
+    socketRef.current.onopen?.();
+
+    vi.advanceTimersByTime(TIMEOUT * 3);
+    expect(socketRef.current.closed).toBeUndefined();
+
+    transport.resumeHeartbeat();
+    vi.advanceTimersByTime(TIMEOUT * 3);
+    expect(socketRef.current.closed).toBeUndefined();
+  });
+
   it('resets the heartbeat and replies with pong when a ping is received', () => {
     const { socket } = createConnectedTransport();
 

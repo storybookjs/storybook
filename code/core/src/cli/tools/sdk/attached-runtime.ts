@@ -124,6 +124,8 @@ export async function bootstrapAttachedRuntime(
 
   const configDir = record.configDir ?? resolve(record.cwd, '.storybook');
   const { loadStorybook, getService } = await resolveLoaders(deps);
+  // Loading presets can occupy this event loop longer than the 20s receive watchdog.
+  connection.pauseHeartbeat();
   try {
     await loadStorybook({ configDir, channel: connection.channel });
   } catch (error) {
@@ -137,6 +139,7 @@ export async function bootstrapAttachedRuntime(
       cause: error,
     });
   }
+  connection.resumeHeartbeat();
 
   return {
     runtime: {

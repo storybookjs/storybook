@@ -30,6 +30,8 @@ export interface NodeChannelConnection {
    */
   disconnected: Promise<never>;
   close(): void;
+  pauseHeartbeat(): void;
+  resumeHeartbeat(): void;
 }
 
 /**
@@ -77,6 +79,8 @@ export function createNodeChannel({ url, token }: NodeChannelOptions): NodeChann
     close: () => {
       socket.close();
     },
+    pauseHeartbeat: () => transport.pauseHeartbeat(),
+    resumeHeartbeat: () => transport.resumeHeartbeat(),
   };
 }
 

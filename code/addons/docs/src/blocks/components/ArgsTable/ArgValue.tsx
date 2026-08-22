@@ -188,6 +188,9 @@ const getSummaryItems = (summary: string) => {
     }
 
     if (character === '>' && summary[index - 1] === '=') {
+      if (closingDelimiters.length === 0) {
+        return [summary];
+      }
       continue;
     }
 

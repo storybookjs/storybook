@@ -454,6 +454,43 @@ export const ArrayAndTupleUnion = {
   },
 } satisfies StoryObj<typeof ArgRow>;
 
+export const FunctionReturningUnion = {
+  args: {
+    row: {
+      ...ComplexUnion.args.row,
+      key: 'functionReturningUnion',
+      name: 'Function returning union',
+      table: {
+        type: {
+          summary: '() => string | number',
+        },
+      },
+    },
+  },
+  play: ({ canvas }) => {
+    expect(canvas.getByText('() => string | number')).toBeVisible();
+  },
+} satisfies StoryObj<typeof ArgRow>;
+
+export const FunctionReturningUnionOrNull = {
+  args: {
+    row: {
+      ...ComplexUnion.args.row,
+      key: 'functionReturningUnionOrNull',
+      name: 'Function returning union or null',
+      table: {
+        type: {
+          summary: '(() => string | number) | null',
+        },
+      },
+    },
+  },
+  play: ({ canvas }) => {
+    expect(canvas.getByText('(() => string | number)')).toBeVisible();
+    expect(canvas.getByText('null')).toBeVisible();
+  },
+} satisfies StoryObj<typeof ArgRow>;
+
 export const Markdown = {
   args: {
     row: {

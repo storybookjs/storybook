@@ -5,11 +5,27 @@ import { prompt } from 'storybook/internal/node-logger';
 import { MissingAngularJsonError } from 'storybook/internal/server-errors';
 
 import { type FormattingOptions, applyEdits, modify } from 'jsonc-parser';
+import semver from 'semver';
 
 export const ANGULAR_JSON_PATH = 'angular.json';
 
 /** Must stay inside the `>=2.0.0` peer range that `@storybook/angular-vite` declares. */
 export const ANALOG_VITE_PLUGIN_ANGULAR_VERSION = '^2.5.2';
+
+export const toDevkitVersion = (ngRange?: string | null): string | undefined => {
+  if (!ngRange) {
+    return undefined;
+  }
+  const min = semver.validRange(ngRange) ? semver.minVersion(ngRange) : null;
+
+  if (!min) {
+    return undefined;
+  }
+  const pre = min.prerelease.length > 0 ? `-${min.prerelease.join('.')}` : '';
+  const versionCore = `0.${min.major * 100 + min.minor}.${min.patch}${pre}`;
+
+  return ngRange.trim().startsWith('^') ? `^${versionCore}` : versionCore;
+};
 
 /** A path into a JSON document, e.g. `['projects', 'app', 'architect', 'storybook', 'builder']`. */
 export type JSONEditPath = (string | number)[];

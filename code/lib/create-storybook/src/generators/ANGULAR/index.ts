@@ -7,6 +7,7 @@ import {
   AngularJSON,
   ProjectType,
   copyTemplate,
+  toDevkitVersion,
 } from 'storybook/internal/cli';
 import { MIN_SUPPORTED_NODE_VERSIONS } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
@@ -107,7 +108,11 @@ export default defineGeneratorModule({
     });
     angularJSON.write();
 
-    const angularVersion = packageManager.getDependencyVersion('@angular/core');
+    const asRange = (specifier: string | null | undefined) =>
+      specifier && semver.validRange(specifier) ? specifier : null;
+    const angularVersion =
+      asRange(packageManager.getDependencyVersion('@angular/core')) ??
+      asRange(await packageManager.getDeclaredVersionSpecifier('@angular/core'));
 
     // Handle script addition for single-project workspaces
     if (Object.keys(projects).length === 1) {
@@ -139,23 +144,6 @@ export default defineGeneratorModule({
     if (!useCompodoc) {
       rmSync(join(storybookFolder, 'tsconfig.doc.json'), { force: true });
     }
-
-    const toDevkitVersion = (ngRange?: string | null) => {
-      if (!ngRange) {
-        return undefined;
-      }
-      const min = semver.minVersion(ngRange);
-
-      if (!min) {
-        return undefined;
-      }
-      const pre = min.prerelease && min.prerelease.length > 0 ? `-${min.prerelease.join('.')}` : '';
-      // devkit follows 0.<major*100 + minor>.<patch>
-      const devkitMinor = min.major * 100 + min.minor;
-      const versionCore = `0.${devkitMinor}.${min.patch}${pre}`;
-      const hasCaret = ngRange.trim().startsWith('^');
-      return hasCaret ? `^${versionCore}` : versionCore;
-    };
 
     const devkitVersion = toDevkitVersion(angularVersion);
 
@@ -190,6 +178,7 @@ export default defineGeneratorModule({
       ...(isVite
         ? [
             angularVersion ? `@angular/animations@${angularVersion}` : '@angular/animations',
+            angularVersion ? `@angular/build@${angularVersion}` : '@angular/build',
             `@analogjs/vite-plugin-angular@${ANALOG_VITE_PLUGIN_ANGULAR_VERSION}`,
             'vite',
           ]

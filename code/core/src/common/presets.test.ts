@@ -1,4 +1,4 @@
-import path, { join, normalize, relative } from 'node:path';
+import path, { dirname, join, normalize, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL, resolve } from 'node:url';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -474,6 +474,69 @@ describe('resolveAddonName', () => {
       name: '@storybook/addon-essentials',
       type: 'presets',
     });
+  });
+
+  it('should resolve absolute addon directories through the package exports map', () => {
+    // An exports-map-only package: no root-level preset/manager/preview shims,
+    // so joining subpaths onto the directory misses every entry (#36010).
+    const addonDir = join(
+      dirname(fileURLToPath(import.meta.url)),
+      '__node_modules__',
+      'addon-exports'
+    );
+    const resolveMock = vi
+      .spyOn(resolveUtils, 'safeResolveModule')
+      .mockImplementation(({ specifier }: { specifier: string }) => {
+        if (specifier === 'addon-exports/preset') return '/resolved/addon-exports/preset.js';
+        if (specifier === 'addon-exports/manager') return '/resolved/addon-exports/manager.js';
+        if (specifier === 'addon-exports/preview') return '/resolved/addon-exports/preview.js';
+        return undefined;
+      });
+
+    try {
+      expect(resolveAddonName({} as any, addonDir, {})).toEqual({
+        type: 'virtual',
+        name: addonDir,
+        presets: [{ name: '/resolved/addon-exports/preset.js', options: {} }],
+        managerEntries: ['/resolved/addon-exports/manager.js'],
+        previewAnnotations: ['/resolved/addon-exports/preview.js'],
+      });
+      // every entry must have gone through the bare specifier, not the directory
+      const specifiers = resolveMock.mock.calls.map((c: any[]) => c[0]?.specifier);
+      expect(specifiers).toContain('addon-exports/preset');
+      expect(specifiers).not.toContain(join(addonDir, 'preset'));
+    } finally {
+      resolveMock.mockRestore();
+    }
+  });
+
+  it('should fall back to path joins for absolute addon directories without a package name', () => {
+    const addonDir = join(
+      dirname(fileURLToPath(import.meta.url)),
+      '__node_modules__',
+      'addon-no-pkg-json'
+    );
+    const resolveMock = vi
+      .spyOn(resolveUtils, 'safeResolveModule')
+      .mockImplementation(({ specifier }: { specifier: string }) => {
+        // presets.ts joins with pathe, which normalizes separators; compare on
+        // a suffix so the mock is separator-agnostic
+        if (specifier.split('\\').join('/').endsWith('/addon-no-pkg-json/manager'))
+          return join(addonDir, 'manager');
+        return undefined;
+      });
+
+    try {
+      expect(resolveAddonName({} as any, addonDir, {})).toEqual({
+        type: 'virtual',
+        name: addonDir,
+        presets: [],
+        managerEntries: [join(addonDir, 'manager')],
+        previewAnnotations: [],
+      });
+    } finally {
+      resolveMock.mockRestore();
+    }
   });
 });
 

@@ -12,7 +12,8 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { join, parse, resolve } from 'pathe';
+import { join, parse, resolve, isAbsolute } from 'pathe';
+import { readFileSync } from 'node:fs';
 import { dedent } from 'ts-dedent';
 
 import type { ChannelLike } from '../channels/index.ts';
@@ -65,6 +66,24 @@ function resolvePresetFunction<T = any>(
  *   '@storybook/addon-docs/preset', options } }`
  */
 
+/**
+ * When an addon is referenced as an absolute directory path (e.g. wrapped by
+ * `getAbsolutePath`), joining entry subpaths onto the directory resolves them
+ * as filesystem paths, bypassing the package's `exports` map. Modern packages
+ * that only expose entries through `exports` (without root-level shim files)
+ * therefore fail all three lookups and get dropped. Recovering the bare
+ * package specifier from the directory's package.json lets the entries
+ * resolve through the exports map again.
+ */
+function getPackageSpecifierFromDir(dir: string): string | undefined {
+  try {
+    const pkgJson = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+    return typeof pkgJson?.name === 'string' && pkgJson.name !== '' ? pkgJson.name : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 export const resolveAddonName = (
   configDir: string,
   name: string,
@@ -79,9 +98,19 @@ export const resolveAddonName = (
     };
   }
 
-  const presetFile = safeResolveModule({ specifier: join(name, 'preset'), parent: configDir });
-  const managerFile = safeResolveModule({ specifier: join(name, 'manager'), parent: configDir });
-  const previewFile = safeResolveModule({ specifier: join(name, 'preview'), parent: configDir });
+  // For absolute addon directories, try the package's exports map first (via
+  // its bare specifier) and fall back to the direct path join for directories
+  // without a readable package name.
+  const packageSpecifier = isAbsolute(name) ? getPackageSpecifierFromDir(name) : undefined;
+  const resolveEntryFile = (entry: string) =>
+    (packageSpecifier
+      ? safeResolveModule({ specifier: `${packageSpecifier}/${entry}`, parent: configDir })
+      : undefined) ??
+    safeResolveModule({ specifier: join(name, entry), parent: configDir });
+
+  const presetFile = resolveEntryFile('preset');
+  const managerFile = resolveEntryFile('manager');
+  const previewFile = resolveEntryFile('preview');
 
   if (managerFile || previewFile || presetFile) {
     const previewAnnotations = [];

@@ -104,7 +104,7 @@ test.describe('storybook tools --attach', () => {
       'Child-host attach requires the running Storybook channel, which the static E2E job does not serve.'
     );
     const list = await runTools(
-      ['--attach', 'docs', 'list', '--json', '--cwd', codeDir],
+      ['--attach', '--cwd', codeDir, 'docs', 'list', '--json'],
       join(codeDir, '..')
     );
     expect(list.exitCode, list.output).toBe(0);

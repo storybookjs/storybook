@@ -33,7 +33,7 @@ The asynchronous function [`viteFinal`](../api/main-config/main-config-vite-fina
 
 ### Configure Vite build options
 
-Storybook does not merge the `build` object from your Vite configuration because some options can conflict with its static build. From that object, Storybook only reads `build.target`; configure other Storybook-specific build options through `viteFinal`:
+Storybook does not merge the `build` object from your Vite configuration because some options can conflict with its static build. It only reads `build.target` from that file. Configure other Vite build options for Storybook, such as `build.chunkSizeWarningLimit`, through `viteFinal`:
 
 <CodeSnippets path="storybook-vite-builder-build-options.md" />
 

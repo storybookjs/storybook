@@ -267,7 +267,7 @@ module.exports = {
         },
         {
           name: 'Inline stories',
-          supported: ['react', 'vue', 'web-components', 'html', 'svelte', 'angular'],
+          supported: ['react', 'vue', 'web-components', 'html', 'svelte', 'angular', 'solid'],
         },
       ],
     },

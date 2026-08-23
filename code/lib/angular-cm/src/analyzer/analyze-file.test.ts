@@ -143,7 +143,7 @@ describe('the selector', () => {
 });
 
 describe('standalone', () => {
-  it('records the literal value and stays absent when the decorator leaves it unspecified', () => {
+  it('records the literal value and defaults to true when the decorator omits the property', () => {
     const meta = analyze(`
       import { Component, Directive } from '@angular/core';
 
@@ -160,11 +160,7 @@ describe('standalone', () => {
       export class LegacyDirective {}
     `);
 
-    expect(meta.components.map((component) => component.standalone)).toEqual([
-      false,
-      true,
-      undefined,
-    ]);
+    expect(meta.components.map((component) => component.standalone)).toEqual([false, true, true]);
     expect(meta.directives[0].standalone).toBe(false);
   });
 
@@ -192,6 +188,35 @@ describe('standalone', () => {
     `);
 
     expect(component.standalone).toBeUndefined();
+  });
+
+  it('reports an unspecified value rather than the Angular 21 default when the property might exist under a form the lookup does not read', () => {
+    const shorthand = componentIn(`
+      import { Component } from '@angular/core';
+
+      const standalone = false;
+
+      @Component({ selector: 'sb-shorthand', standalone, template: '' })
+      export class ShorthandComponent {}
+    `);
+    const spread = componentIn(`
+      import { Component } from '@angular/core';
+
+      const options = { standalone: false };
+
+      @Component({ selector: 'sb-spread', ...options, template: '' })
+      export class SpreadComponent {}
+    `);
+    const quoted = componentIn(`
+      import { Component } from '@angular/core';
+
+      @Component({ selector: 'sb-quoted', 'standalone': false, template: '' })
+      export class QuotedComponent {}
+    `);
+
+    expect(shorthand.standalone).toBeUndefined();
+    expect(spread.standalone).toBeUndefined();
+    expect(quoted.standalone).toBeUndefined();
   });
 });
 

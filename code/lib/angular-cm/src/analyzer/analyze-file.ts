@@ -141,12 +141,33 @@ const decoratorSelector = (
   return value && ctx.ts.isStringLiteralLike(value) ? value.text : undefined;
 };
 
+// `objectProperty` only matches a plain `key: value` assignment; a spread, a shorthand property,
+// or a quoted key can still supply `standalone` without it noticing.
+const standalonePropertyIsProvablyAbsent = (
+  ctx: AnalyzerContext,
+  metadata: tsModule.ObjectLiteralExpression
+): boolean =>
+  metadata.properties.every((property) => {
+    if (ctx.ts.isSpreadAssignment(property)) {
+      return false;
+    }
+    const name = ctx.ts.isShorthandPropertyAssignment(property)
+      ? property.name
+      : ctx.ts.isPropertyAssignment(property) && ctx.ts.isStringLiteralLike(property.name)
+        ? property.name
+        : undefined;
+    return name === undefined || name.text !== 'standalone';
+  });
+
 const decoratorStandalone = (
   ctx: AnalyzerContext,
   metadata: tsModule.ObjectLiteralExpression
 ): boolean | undefined => {
   const standalone = objectProperty(ctx, metadata, 'standalone');
-  const value = standalone && resolveInitializer(ctx, standalone);
+  if (!standalone) {
+    return standalonePropertyIsProvablyAbsent(ctx, metadata) ? true : undefined;
+  }
+  const value = resolveInitializer(ctx, standalone);
   if (value?.kind === ctx.ts.SyntaxKind.TrueKeyword) {
     return true;
   }

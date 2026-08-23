@@ -326,6 +326,47 @@ describe('buildStoryDocsPayload', () => {
     expect(story.warning).toContain('NgModule');
   });
 
+  it('never places a component with unreadable standalone metadata directly in `imports`, even with a literal template', async () => {
+    givenStoryFile(`
+      import { moduleMetadata } from '@storybook/angular-vite';
+      import { ButtonComponent } from './button.component';
+      import { ButtonModule } from './button.module';
+      export default {
+        title: 'Example/Button',
+        component: ButtonComponent,
+        decorators: [moduleMetadata({ imports: [ButtonModule] })],
+      };
+      export const Default = { template: '<sb-button></sb-button>', args: { label: 'Save' } };
+    `);
+
+    const unknownStandaloneDocgen = async (): Promise<AngularDocgenPayload> => ({
+      id: 'example-button',
+      name: 'ButtonComponent',
+      path: STORY_PATH,
+      jsDocTags: {},
+      angularComponentMeta: {
+        name: 'ButtonComponent',
+        selector: 'sb-button',
+        standalone: undefined,
+        inputs: ['label'],
+        outputs: ['pressed'],
+        enums: [],
+      },
+    });
+
+    const payload = await buildStoryDocsPayload(
+      { entry },
+      { getDocgenPayload: unknownStandaloneDocgen }
+    );
+
+    const story = Object.values(payload!.stories)[0];
+    // Matches `ButtonComponent` anywhere in the array, not just as its sole entry.
+    expect(story.snippet).not.toMatch(/imports: \[[^\]]*ButtonComponent/);
+    expect(story.snippet).not.toContain("import { ButtonComponent } from './button.component';");
+    expect(story.snippet).toContain('imports: [ButtonModule],');
+    expect(story.warning).toContain('could not be determined');
+  });
+
   it("mirrors the story's moduleMetadata modules for a non-standalone component", async () => {
     givenStoryFile(`
       import { moduleMetadata } from '@storybook/angular-vite';

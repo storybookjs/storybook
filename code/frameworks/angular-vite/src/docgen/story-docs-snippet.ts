@@ -15,8 +15,11 @@ export interface HostComponentSnippetInput {
   componentImport?: string;
   /** Whether the template reaches the component through `*ngComponentOutlet` rather than a tag. */
   viaComponentOutlet: boolean;
-  /** `false` for a `standalone: false` component, which only its declaring NgModule can provide. */
-  standalone: boolean;
+  /**
+   * `false` for a `standalone: false` component, which only its declaring NgModule can provide.
+   * `undefined` when the analyzer could not determine standalone status.
+   */
+  standalone: boolean | undefined;
   /** NgModules the story's `moduleMetadata` adds to its template scope. */
   ngModules?: { names: string[]; importStatements: string[] };
   /** Output binding names, each of which needs a handler for the template to compile. */
@@ -44,6 +47,52 @@ const unescapeTemplateLiteral = (template: string): string =>
 
 // Mirrors `formatPropInTemplate`, which reaches a non-identifier output through `this['name']`.
 const memberName = (name: string): string => (isValidIdentifier(name) ? name : `['${name}']`);
+
+// Tells the reader what the snippet could not resolve on its own: a known non-standalone
+// component, an unresolvable standalone status, or a story-file-local component that has no
+// import to derive (which the snippet names without bringing into scope).
+const importabilityWarning = ({
+  componentName,
+  componentImport,
+  viaComponentOutlet,
+  standalone,
+  importable,
+  moduleNames,
+}: {
+  componentName: string;
+  componentImport: string | undefined;
+  viaComponentOutlet: boolean;
+  standalone: boolean | undefined;
+  importable: boolean | undefined;
+  moduleNames: string[];
+}): string | undefined => {
+  const addDirectly =
+    componentImport === undefined
+      ? `add ${componentName} to \`imports\` directly`
+      : `import ${componentName} and add it to \`imports\` directly`;
+
+  if (!viaComponentOutlet && standalone === false && moduleNames.length === 0) {
+    return (
+      `${componentName} is declared with \`standalone: false\`, so it cannot be listed in the ` +
+      `host component's \`imports\`. Add the NgModule that declares and exports ` +
+      `${componentName} to \`imports\` to make this snippet compile.`
+    );
+  }
+  if (standalone === undefined && !viaComponentOutlet) {
+    return moduleNames.length > 0
+      ? `${componentName}'s \`standalone\` status could not be determined, so the NgModules ` +
+          `readable from \`moduleMetadata\` were listed instead of importing ${componentName} ` +
+          `directly. Confirm one of them declares and exports ${componentName}; if ` +
+          `${componentName} is standalone instead, ${addDirectly}.`
+      : `${componentName}'s \`standalone\` status could not be determined, so it was not added ` +
+          `to the host component's \`imports\`. Add the NgModule that declares and exports ` +
+          `${componentName}, or, if it is standalone, ${addDirectly}.`;
+  }
+  if (importable && componentImport === undefined) {
+    return `${componentName} is declared in the story file, so the snippet references it without importing it.`;
+  }
+  return undefined;
+};
 
 // A template `buildTemplate` broke over lines moves onto its own lines inside the literal too.
 const embedTemplate = (template: string): string =>
@@ -100,16 +149,14 @@ export const buildHostComponentSnippet = ({
     `export class ${HOST_CLASS} ${body}`,
   ].join('\n');
 
-  // A story-file-local component has no import to derive, so the snippet names it without bringing
-  // it into scope; it still shows the bindings the story sets, so it stays with the caveat attached.
-  const warning =
-    !importable && moduleNames.length === 0
-      ? `${componentName} is declared with \`standalone: false\`, so it cannot be listed in the ` +
-        `host component's \`imports\`. Add the NgModule that declares and exports ` +
-        `${componentName} to \`imports\` to make this snippet compile.`
-      : importable && componentImport === undefined
-        ? `${componentName} is declared in the story file, so the snippet references it without importing it.`
-        : undefined;
+  const warning = importabilityWarning({
+    componentName,
+    componentImport,
+    viaComponentOutlet,
+    standalone,
+    importable,
+    moduleNames,
+  });
 
   return warning === undefined ? { snippet } : { snippet, warning };
 };

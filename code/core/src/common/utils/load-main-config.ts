@@ -8,6 +8,7 @@ import type { StorybookConfig } from 'storybook/internal/types';
 import { dedent } from 'ts-dedent';
 
 import { importModule } from '../../shared/utils/module.ts';
+import { toCommonJsGlobalInEsmError } from './cjs-global-in-esm.ts';
 import { getInterpretedFile } from './interpret-files.ts';
 import { validateConfigurationFiles } from './validate-configuration-files.ts';
 
@@ -31,6 +32,11 @@ export async function loadMainConfig({
     if (!(e instanceof Error)) {
       throw e;
     }
+    const location = relative(process.cwd(), mainPath);
+    const toMainFileError = (error: Error) =>
+      toCommonJsGlobalInEsmError(error, { location }) ??
+      new MainFileEvaluationError({ location, error });
+
     if (e.message.includes('not defined in ES module scope')) {
       logger.info(
         'Loading main config failed as the file does not seem to be valid ESM. Trying a temporary fix, please ensure the main config is valid ESM.'
@@ -56,6 +62,16 @@ export async function loadMainConfig({
         let out;
         try {
           out = await importModule(modifiedMainPath);
+        } catch (retryError) {
+          // The header only covers the main file itself, so a CommonJS global used in a file it
+          // imports still fails here. Wrap it instead of letting the raw error escape.
+          if (retryError instanceof Error) {
+            throw (
+              toCommonJsGlobalInEsmError(retryError, { location }) ??
+              new MainFileEvaluationError({ location, error: retryError })
+            );
+          }
+          throw retryError;
         } finally {
           await rm(modifiedMainPath);
         }
@@ -63,9 +79,6 @@ export async function loadMainConfig({
       }
     }
 
-    throw new MainFileEvaluationError({
-      location: relative(process.cwd(), mainPath),
-      error: e,
-    });
+    throw toMainFileError(e);
   }
 }

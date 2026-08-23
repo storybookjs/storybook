@@ -38,16 +38,28 @@ describe('loadMainConfig', () => {
     );
   });
 
-  it('wraps a failing polyfill retry (CommonJS global in an imported file)', async () => {
+  it('wraps a failing polyfill retry and points at the imported file, not the temp copy', async () => {
     // First import fails with the ESM-scope variant (triggers the polyfill), the retry of the
     // temp file fails again because the offending global lives in an imported file.
+    const retryError = new ReferenceError('__dirname is not defined in ES module scope');
+    retryError.stack = [
+      'ReferenceError: __dirname is not defined in ES module scope',
+      `    at file://${process.cwd()}/.storybook/paths.ts:2:21`,
+      `    at file://${process.cwd()}/.storybook/main.tmp..ts:9:1`,
+    ].join('\n');
     vi.spyOn(moduleUtils, 'importModule')
       .mockRejectedValueOnce(new ReferenceError('__dirname is not defined in ES module scope'))
-      .mockRejectedValueOnce(new ReferenceError('__dirname is not defined in ES module scope'));
+      .mockRejectedValueOnce(retryError);
 
-    await expect(loadMainConfig({ configDir: '.storybook' })).rejects.toBeInstanceOf(
-      CommonJsGlobalInEsmError
-    );
+    const error = (await loadMainConfig({ configDir: '.storybook' }).catch(
+      (e: unknown) => e
+    )) as Error;
+
+    expect(error).toBeInstanceOf(CommonJsGlobalInEsmError);
+    // The subject names the imported file, and never the throwaway temp copy.
+    const subject = error.message.split('\n')[0];
+    expect(subject).toContain('.storybook/paths.ts');
+    expect(subject).not.toContain('main.tmp');
   });
 
   it('falls back to MainFileEvaluationError for unrelated failures', async () => {

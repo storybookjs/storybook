@@ -67,8 +67,10 @@ export async function loadMainConfig({
           // imports still fails here. Wrap it instead of letting the raw error escape.
           if (retryError instanceof Error) {
             throw (
-              toCommonJsGlobalInEsmError(retryError, { location }) ??
-              new MainFileEvaluationError({ location, error: retryError })
+              toCommonJsGlobalInEsmError(retryError, {
+                location,
+                sourceExclude: [modifiedMainPath],
+              }) ?? new MainFileEvaluationError({ location, error: retryError })
             );
           }
           throw retryError;

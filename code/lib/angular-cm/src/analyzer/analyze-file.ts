@@ -151,6 +151,9 @@ const standalonePropertyIsProvablyAbsent = (
     if (ctx.ts.isSpreadAssignment(property)) {
       return false;
     }
+    if (ctx.ts.isPropertyAssignment(property) && ctx.ts.isComputedPropertyName(property.name)) {
+      return false;
+    }
     const name = ctx.ts.isShorthandPropertyAssignment(property)
       ? property.name
       : ctx.ts.isPropertyAssignment(property) && ctx.ts.isStringLiteralLike(property.name)

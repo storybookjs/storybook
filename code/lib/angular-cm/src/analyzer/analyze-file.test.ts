@@ -213,10 +213,17 @@ describe('standalone', () => {
       @Component({ selector: 'sb-quoted', 'standalone': false, template: '' })
       export class QuotedComponent {}
     `);
+    const computed = componentIn(`
+      import { Component } from '@angular/core';
+
+      @Component({ selector: 'sb-computed', ['standalone']: false, template: '' })
+      export class ComputedComponent {}
+    `);
 
     expect(shorthand.standalone).toBeUndefined();
     expect(spread.standalone).toBeUndefined();
     expect(quoted.standalone).toBeUndefined();
+    expect(computed.standalone).toBeUndefined();
   });
 });
 

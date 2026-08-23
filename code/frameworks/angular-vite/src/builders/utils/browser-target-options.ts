@@ -24,10 +24,10 @@ type BrowserTargetOptions = Partial<
  * Storybook target underneath the Storybook target's own options.
  *
  * The Storybook target's own options always win; options inherited from the
- * browser target only fill the gaps. This mirrors how `@storybook/angular`
- * deep-merges browser-target options for webpack, and fixes the angular-vite
- * builders silently discarding everything but `tsConfig` from the validated
- * browser-target options (https://github.com/storybookjs/storybook/issues/36009).
+ * browser target only fill the gaps, mirroring how `@storybook/angular`
+ * deep-merges browser-target options for webpack. Omitted (`undefined`) own
+ * options are inheritable, while explicitly-set own options always take
+ * precedence over the browser target's value.
  */
 export const mergeBrowserTargetOptions = <T extends StylingBuilderOptions>(
   ownOptions: T,

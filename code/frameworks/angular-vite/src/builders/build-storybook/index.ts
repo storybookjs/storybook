@@ -107,8 +107,11 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
     disableTelemetry,
     assets,
     previewUrl,
-    sourceMap = false,
-    preserveSymlinks = false,
+    // Deliberately no destructuring defaults here: omitted options must stay
+    // undefined so referenced browser-target values can fill the gap. The
+    // fallback default is applied after merging below.
+    sourceMap,
+    preserveSymlinks,
     zoneless = true,
   } = options;
 
@@ -130,13 +133,15 @@ const commandBuilder: BuilderHandlerFn<StorybookBuilderOptions> = async (
     angularBuilderContext: context,
     angularBuilderOptions: (() => {
       // The Storybook target's own options win; the referenced browser
-      // target's options fill the gaps (#36009).
+      // target's options fill the gaps.
       const merged = mergeBrowserTargetOptions(
         { stylePreprocessorOptions, styles, assets, sourceMap, preserveSymlinks },
         browserOptions as any
       );
       return {
-        ...(merged.stylePreprocessorOptions ? { stylePreprocessorOptions: merged.stylePreprocessorOptions } : {}),
+        ...(merged.stylePreprocessorOptions
+          ? { stylePreprocessorOptions: merged.stylePreprocessorOptions }
+          : {}),
         ...(merged.styles ? { styles: merged.styles } : {}),
         ...(merged.assets ? { assets: merged.assets } : {}),
         sourceMap: merged.sourceMap ?? false,

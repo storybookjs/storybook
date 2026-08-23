@@ -23,13 +23,25 @@ Update your Storybook configuration (in `.storybook/main.js|ts`) to include the 
 
 ## Configuration
 
-Out of the box, Storybook's Vite builder includes a set of configuration defaults for the supported frameworks, which are merged alongside your existing configuration file. For an optimal experience when using the Vite builder, we recommend applying any configuration directly inside Vite's configuration file (i.e., [`vite.config.js|ts`](https://vitejs.dev/config/)).
+Out of the box, Storybook's Vite builder includes a set of configuration defaults for the supported frameworks, which are merged alongside your existing configuration file. For most projects, we recommend keeping shared configuration in Vite's configuration file (i.e., [`vite.config.js|ts`](https://vitejs.dev/config/)).
 
 When Storybook loads, it automatically merges the configuration into its own. However, since different projects may have specific requirements, you may need to provide a custom configuration for Storybook. In such cases, you can modify your configuration file (`.storybook/main.js|ts`) and add the `viteFinal` configuration function as follows:
 
 <CodeSnippets path="storybook-vite-builder-aliasing.md" />
 
 The asynchronous function [`viteFinal`](../api/main-config/main-config-vite-final.mdx) receives a `config` object with the default builder configuration and returns the updated configuration.
+
+### Configure Vite build options
+
+Storybook does not merge the `build` object from your Vite configuration because some options can conflict with its static build. From that object, Storybook only reads `build.target`; configure other Storybook-specific build options through `viteFinal`:
+
+<CodeSnippets path="storybook-vite-builder-build-options.md" />
+
+<Callout variant="info" icon="ℹ️">
+
+Storybook controls `build.outDir`. To change the static build location, use the [`--output-dir`](../api/cli-options.mdx) CLI option.
+
+</Callout>
 
 ### Environment-based configuration
 

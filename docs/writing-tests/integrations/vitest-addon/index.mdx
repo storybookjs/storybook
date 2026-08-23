@@ -8,11 +8,11 @@ tab:
   title: Guide
 ---
 
-<If notRenderer={['react', 'preact', 'vue', 'svelte', 'web-components', 'angular']}>
+<If notRenderer={['react', 'preact', 'vue', 'svelte', 'web-components', 'angular', 'solid']}>
   
 <Callout variant="info">
 
-The Vitest addon is supported and recommended for [React](?renderer=react), [Preact](?renderer=preact), [Vue](?renderer=vue), [Svelte](?renderer=svelte), [Web Components](?renderer=web-components), and [Angular](?renderer=angular) projects, which use the [Vite builder](../../../builders/vite.mdx) (or the [Next.js framework with Vite](../../../get-started/frameworks/nextjs-vite.mdx)).
+The Vitest addon is supported and recommended for [React](?renderer=react), [Preact](?renderer=preact), [Vue](?renderer=vue), [Svelte](?renderer=svelte), [Web Components](?renderer=web-components), [Angular](?renderer=angular), and [SolidJS](?renderer=solid) projects, which use the [Vite builder](../../../builders/vite.mdx) (or the [Next.js framework with Vite](../../../get-started/frameworks/nextjs-vite.mdx)).
 
 If you are using the Webpack builder, you can use the [Storybook test runner](../test-runner.mdx) to test your stories.
 
@@ -21,7 +21,7 @@ If you are using the Webpack builder, you can use the [Storybook test runner](..
 </If>
 {/* End non-supported renderers */}
 
-<If renderer={['react', 'preact', 'vue', 'svelte', 'web-components', 'angular']}>
+<If renderer={['react', 'preact', 'vue', 'svelte', 'web-components', 'angular', 'solid']}>
 
 Storybook's Vitest addon allows you to test your components directly inside Storybook. On its own, it transforms your [stories](../../../writing-stories/index.mdx) into component tests, which test the rendering and behavior of your components in a real browser environment. It can also calculate project [coverage](../../test-coverage.mdx) provided by your stories.
 
@@ -37,7 +37,7 @@ You can also run tests in watch mode, which will automatically re-run tests when
 
 Before installing, make sure your project meets the following requirements:
 
-- A Storybook framework that uses Vite (e.g. [`vue3-vite`](../../../get-started/frameworks/vue3-vite.mdx), [`react-vite`](../../../get-started/frameworks/react-vite.mdx), [`preact-vite`](../../../get-started/frameworks/preact-vite.mdx), [`nextjs-vite`](../../../get-started/frameworks/nextjs-vite.mdx), [`sveltekit`](../../../get-started/frameworks/sveltekit.mdx), etc.)
+- A Storybook framework that uses Vite (e.g. [`vue3-vite`](../../../get-started/frameworks/vue3-vite.mdx), [`react-vite`](../../../get-started/frameworks/react-vite.mdx), [`preact-vite`](../../../get-started/frameworks/preact-vite.mdx), [`nextjs-vite`](../../../get-started/frameworks/nextjs-vite.mdx), [`sveltekit`](../../../get-started/frameworks/sveltekit.mdx), [`storybook-solidjs-vite`](https://github.com/solidjs-community/storybook), etc.)
 - Vitest ≥ 3.0
   - If you're not yet using Vitest, it will be installed and configured for you automatically
 - (optional) MSW ≥ 2.0

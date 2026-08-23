@@ -118,3 +118,30 @@ export default definePreview({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+import addonA11y from '@storybook/addon-a11y';
+
+export default definePreview({
+  addons: [addonA11y()],
+  parameters: {
+    // 👇 Fail all accessibility tests when violations are found
+    a11y: { test: 'error' },
+  },
+});
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+import addonA11y from '@storybook/addon-a11y';
+
+export default definePreview({
+  addons: [addonA11y()],
+  parameters: {
+    // 👇 Fail all accessibility tests when violations are found
+    a11y: { test: 'error' },
+  },
+});
+```

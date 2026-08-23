@@ -445,3 +445,50 @@ export const CustomFooter = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```tsx filename="Page.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+type PagePropsAndCustomArgs = React.ComponentProps<typeof Page> & {
+  footer?: string;
+};
+
+const meta = preview.type<{ args: PagePropsAndCustomArgs }>().meta({
+  component: Page,
+  render: ({ footer, ...args }) => (
+    <Page {...args}>
+      <footer>{footer}</footer>
+    </Page>
+  ),
+});
+
+export const CustomFooter = meta.story({
+  args: {
+    footer: 'Built with Storybook',
+  },
+});
+```
+
+```jsx filename="Page.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  render: ({ footer, ...args }) => (
+    <Page {...args}>
+      <footer>{footer}</footer>
+    </Page>
+  ),
+});
+
+export const CustomFooter = meta.story({
+  args: {
+    footer: 'Built with Storybook',
+  },
+});
+```

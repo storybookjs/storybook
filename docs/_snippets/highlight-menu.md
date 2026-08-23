@@ -738,3 +738,165 @@ export const StyledHighlight = meta.story({
   ],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import { MyComponent } from './MyComponent';
+
+export default {
+  component: MyComponent,
+};
+
+export const StyledHighlight = {
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        menu: [
+          [
+            {
+              id: 'button-name',
+              title: 'Login',
+              description: 'Navigate to the login page',
+              clickEvent: 'my-menu-click-event',
+            },
+            {
+              id: 'h2-home',
+              title: 'Acme',
+              description: 'Navigate to the home page',
+            },
+          ],
+        ],
+      });
+      return storyFn();
+    },
+  ],
+};
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import { MyComponent } from './MyComponent';
+
+const meta = {
+  component: MyComponent,
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const StyledHighlight: Story = {
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        menu: [
+          [
+            {
+              id: 'button-name',
+              title: 'Login',
+              description: 'Navigate to the login page',
+              clickEvent: 'my-menu-click-event',
+            },
+            {
+              id: 'h2-home',
+              title: 'Acme',
+              description: 'Navigate to the home page',
+            },
+          ],
+        ],
+      });
+      return storyFn();
+    },
+  ],
+};
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const StyledHighlight = meta.story({
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        menu: [
+          [
+            {
+              id: 'button-name',
+              title: 'Login',
+              description: 'Navigate to the login page',
+              clickEvent: 'my-menu-click-event',
+            },
+            {
+              id: 'h2-home',
+              title: 'Acme',
+              description: 'Navigate to the home page',
+            },
+          ],
+        ],
+      });
+      return storyFn();
+    },
+  ],
+});
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const StyledHighlight = meta.story({
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+        menu: [
+          [
+            {
+              id: 'button-name',
+              title: 'Login',
+              description: 'Navigate to the login page',
+              clickEvent: 'my-menu-click-event',
+            },
+            {
+              id: 'h2-home',
+              title: 'Acme',
+              description: 'Navigate to the home page',
+            },
+          ],
+        ],
+      });
+      return storyFn();
+    },
+  ],
+});
+```

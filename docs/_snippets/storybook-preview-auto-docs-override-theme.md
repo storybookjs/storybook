@@ -192,3 +192,46 @@ export default definePreview({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+import addonDocs from '@storybook/addon-docs';
+import { ensure, themes } from 'storybook/theming';
+
+export default definePreview({
+  addons: [addonDocs()],
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+    docs: {
+      theme: ensure(themes.dark), // The replacement theme to use
+    },
+  },
+});
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+import addonDocs from '@storybook/addon-docs';
+import { ensure, themes } from 'storybook/theming';
+
+export default definePreview({
+  addons: [addonDocs()],
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+    docs: {
+      theme: ensure(themes.dark), // The replacement theme to use
+    },
+  },
+});
+```

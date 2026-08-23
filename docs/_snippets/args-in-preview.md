@@ -87,3 +87,22 @@ export default definePreview({
   args: { theme: 'light' },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+export default definePreview({
+  // The default value of the theme arg for all stories
+  args: { theme: 'light' },
+});
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+export default definePreview({
+  // The default value of the theme arg for all stories
+  args: { theme: 'light' },
+});
+```

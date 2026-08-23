@@ -350,3 +350,46 @@ export const OneItem = meta.story({
   ),
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+
+//👇 Instead of importing ListItem, we import the stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const OneItem = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <Unchecked {...Unchecked.input.args} />
+    </List>
+  ),
+});
+```
+
+```jsx filename="List.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+
+//👇 Instead of importing ListItem, we import the stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const OneItem = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <Unchecked {...Unchecked.input.args} />
+    </List>
+  ),
+});
+```

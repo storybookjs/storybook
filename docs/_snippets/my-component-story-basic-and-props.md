@@ -396,3 +396,69 @@ export const WithProp = meta.story({
   render: () => html`<my-component prop="value" />`,
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+import { MyComponent } from './MyComponent';
+
+export default {
+  component: MyComponent,
+};
+
+export const Basic = {};
+
+export const WithProp = {
+  render: () => <MyComponent prop="value" />,
+};
+```
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+
+import { MyComponent } from './MyComponent';
+
+const meta = {
+  component: MyComponent,
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Basic: Story = {};
+
+export const WithProp: Story = {
+  render: () => <MyComponent prop="value" />,
+};
+```
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Basic = meta.story();
+
+export const WithProp = meta.story({
+  render: () => <MyComponent prop="value" />,
+});
+```
+
+```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Basic = meta.story();
+
+export const WithProp = meta.story({
+  render: () => <MyComponent prop="value" />,
+});
+```

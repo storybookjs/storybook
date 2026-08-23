@@ -473,3 +473,56 @@ export const ManyItems = meta.story({
   ),
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+//👇 We're importing the necessary stories from ListItem
+import { Selected, Unselected } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const ManyItems = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem {...Selected.input.args} />
+      <ListItem {...Unselected.input.args} />
+      <ListItem {...Unselected.input.args} />
+    </List>
+  ),
+});
+```
+
+```jsx filename="List.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+//👇 We're importing the necessary stories from ListItem
+import { Selected, Unselected } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const ManyItems = meta.story({
+  render: (args) => (
+    <List {...args}>
+      <ListItem {...Selected.input.args} />
+      <ListItem {...Unselected.input.args} />
+      <ListItem {...Unselected.input.args} />
+    </List>
+  ),
+});
+```

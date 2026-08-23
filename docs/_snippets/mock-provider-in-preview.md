@@ -106,3 +106,100 @@ export default definePreview({
   ],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename=".storybook/preview.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+import { ThemeProvider } from 'styled-components';
+
+// themes = { light, dark }
+import * as themes from '../src/themes';
+
+export default {
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    (Story, { parameters }) => {
+      // 👇 Make it configurable by reading the theme value from parameters
+      const { theme = 'light' } = parameters;
+      return (
+        <ThemeProvider theme={themes[theme]}>
+          <Story />
+        </ThemeProvider>
+      );
+    },
+  ],
+};
+```
+
+```tsx filename=".storybook/preview.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+import type { Preview } from 'storybook-solidjs-vite';
+
+import { ThemeProvider } from 'styled-components';
+
+// themes = { light, dark }
+import * as themes from '../src/themes';
+
+const preview: Preview = {
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    (Story, { parameters }) => {
+      // 👇 Make it configurable by reading the theme value from parameters
+      const { theme = 'light' } = parameters;
+      return (
+        <ThemeProvider theme={themes[theme]}>
+          <Story />
+        </ThemeProvider>
+      );
+    },
+  ],
+};
+
+export default preview;
+```
+
+```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+import { ThemeProvider } from 'styled-components';
+
+// themes = { light, dark }
+import * as themes from '../src/themes';
+
+export default definePreview({
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    (Story, { parameters }) => {
+      // 👇 Make it configurable by reading the theme value from parameters
+      const { theme = 'light' } = parameters;
+      return (
+        <ThemeProvider theme={themes[theme]}>
+          <Story />
+        </ThemeProvider>
+      );
+    },
+  ],
+});
+```
+
+```jsx filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+import { ThemeProvider } from 'styled-components';
+
+// themes = { light, dark }
+import * as themes from '../src/themes';
+
+export default definePreview({
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    (Story, { parameters }) => {
+      // 👇 Make it configurable by reading the theme value from parameters
+      const { theme = 'light' } = parameters;
+      return (
+        <ThemeProvider theme={themes[theme]}>
+          <Story />
+        </ThemeProvider>
+      );
+    },
+  ],
+});
+```

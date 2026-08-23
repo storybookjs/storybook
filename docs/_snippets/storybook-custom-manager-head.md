@@ -105,3 +105,26 @@ export default defineMain({
   `,
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  managerHead: (head) => `
+    ${head}
+    <link rel="icon" type="image/png" href="/logo192.png" sizes="192x192" />
+  `,
+});
+```
+
+```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  managerHead: (head) => `
+    ${head}
+    <link rel="icon" type="image/png" href="/logo192.png" sizes="192x192" />
+  `,
+});
+```

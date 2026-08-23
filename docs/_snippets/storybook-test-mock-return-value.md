@@ -335,3 +335,46 @@ export const Basic = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Page.stories.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { mocked } from 'storybook/test';
+
+import preview from '../.storybook/preview';
+
+// 👇 Automocked module resolves to '../lib/__mocks__/session'
+import { getUserFromSession } from '../lib/session';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const Basic = meta.story({
+  async beforeEach() {
+    // 👇 Set the return value for the getUserFromSession function
+    mocked(getUserFromSession).mockReturnValue({ id: '1', name: 'Alice' });
+  },
+});
+```
+
+```js filename="Page.stories.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 Automocked module resolves to '../lib/__mocks__/session'
+import { getUserFromSession } from '../lib/session';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const Basic = meta.story({
+  async beforeEach() {
+    // 👇 Set the return value for the getUserFromSession function
+    getUserFromSession.mockReturnValue({ id: '1', name: 'Alice' });
+  },
+});
+```

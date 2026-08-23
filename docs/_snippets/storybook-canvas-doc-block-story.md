@@ -213,3 +213,110 @@ export const Colors = meta.story({
   ),
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { ColorItem, ColorPalette } from '@storybook/addon-docs/blocks';
+
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+const theme = {
+  colors: {
+    primaryDark: {
+      value: '#1C1C1C',
+    },
+    primaryRegular: {
+      value: '#363636',
+    },
+    primaryLight1: {
+      value: '#4D4D4D',
+    },
+    primaryLight2: {
+      value: '#878787',
+    },
+    primaryLight3: {
+      value: '#D1D1D1',
+    },
+    primaryLight4: {
+      value: '#EDEDED',
+    },
+  },
+};
+
+// ❌ Don't use the Doc Blocks inside your stories. It will break Storybook with a cryptic error.
+export const Colors = meta.story({
+  render: () => (
+    <ColorPalette>
+      {Object.entries(theme.colors).map(([key, { value }]) => (
+        <ColorItem
+          colors={{
+            [key]: value,
+          }}
+          key={key}
+          subtitle={`theme.colors.${key}`}
+          title={key}
+        />
+      ))}
+    </ColorPalette>
+  ),
+});
+```
+
+```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { ColorItem, ColorPalette } from '@storybook/addon-docs/blocks';
+
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+const theme = {
+  colors: {
+    primaryDark: {
+      value: '#1C1C1C',
+    },
+    primaryRegular: {
+      value: '#363636',
+    },
+    primaryLight1: {
+      value: '#4D4D4D',
+    },
+    primaryLight2: {
+      value: '#878787',
+    },
+    primaryLight3: {
+      value: '#D1D1D1',
+    },
+    primaryLight4: {
+      value: '#EDEDED',
+    },
+  },
+};
+
+// ❌ Don't use the Doc Blocks inside your stories. It will break Storybook with a cryptic error.
+export const Colors = meta.story({
+  render: () => (
+    <ColorPalette>
+      {Object.entries(theme.colors).map(([key, { value }]) => (
+        <ColorItem
+          colors={{
+            [key]: value,
+          }}
+          key={key}
+          subtitle={`theme.colors.${key}`}
+          title={key}
+        />
+      ))}
+    </ColorPalette>
+  ),
+});
+```

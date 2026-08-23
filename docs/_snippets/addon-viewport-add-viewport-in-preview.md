@@ -312,3 +312,72 @@ export default definePreview({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
+
+const kindleViewports = {
+  kindleFire2: {
+    name: 'Kindle Fire 2',
+    styles: {
+      width: '600px',
+      height: '963px',
+    },
+  },
+  kindleFireHD: {
+    name: 'Kindle Fire HD',
+    styles: {
+      width: '533px',
+      height: '801px',
+    },
+  },
+};
+
+export default definePreview({
+  parameters: {
+    viewport: {
+      options: {
+        ...MINIMAL_VIEWPORTS,
+        ...kindleViewports,
+      },
+    },
+  },
+});
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+import { MINIMAL_VIEWPORTS } from 'storybook/viewport';
+
+const kindleViewports = {
+  kindleFire2: {
+    name: 'Kindle Fire 2',
+    styles: {
+      width: '600px',
+      height: '963px',
+    },
+  },
+  kindleFireHD: {
+    name: 'Kindle Fire HD',
+    styles: {
+      width: '533px',
+      height: '801px',
+    },
+  },
+};
+
+export default definePreview({
+  parameters: {
+    viewport: {
+      options: {
+        ...MINIMAL_VIEWPORTS,
+        ...kindleViewports,
+      },
+    },
+  },
+});
+```

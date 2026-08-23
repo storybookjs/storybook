@@ -336,3 +336,78 @@ export default definePreview({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+import { MDXProvider } from '@mdx-js/react';
+
+import { definePreview } from 'storybook-solidjs-vite';
+import addonDocs from '@storybook/addon-docs';
+import { DocsContainer } from '@storybook/addon-docs/blocks';
+
+import * as DesignSystem from 'your-design-system';
+
+export const MyDocsContainer = (props) => (
+  <MDXProvider
+    components={{
+      h1: DesignSystem.H1,
+      h2: DesignSystem.H2,
+    }}
+  >
+    <DocsContainer {...props} />
+  </MDXProvider>
+);
+
+export default definePreview({
+  addons: [addonDocs()],
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+    docs: {
+      container: MyDocsContainer,
+    },
+  },
+});
+```
+
+```jsx filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+import { MDXProvider } from '@mdx-js/react';
+
+import { definePreview } from 'storybook-solidjs-vite';
+import addonDocs from '@storybook/addon-docs';
+import { DocsContainer } from '@storybook/addon-docs/blocks';
+
+import * as DesignSystem from 'your-design-system';
+
+export const MyDocsContainer = (props) => (
+  <MDXProvider
+    components={{
+      h1: DesignSystem.H1,
+      h2: DesignSystem.H2,
+    }}
+  >
+    <DocsContainer {...props} />
+  </MDXProvider>
+);
+
+export default definePreview({
+  addons: [addonDocs()],
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+    docs: {
+      container: MyDocsContainer,
+    },
+  },
+});
+```

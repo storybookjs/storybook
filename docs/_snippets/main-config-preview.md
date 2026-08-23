@@ -271,3 +271,60 @@ export default defineMain({
  `,
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="Body (CSF Next 🧪)"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  previewBody: (body) => `
+    ${body}
+    ${
+      process.env.ANALYTICS_ID ? '<script src="https://cdn.example.com/analytics.js"></script>' : ''
+    }
+  `,
+});
+```
+
+```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="Body (CSF Next 🧪)"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  previewBody: (body) => `
+    ${body}
+    ${
+      process.env.ANALYTICS_ID ? '<script src="https://cdn.example.com/analytics.js"></script>' : ''
+    }
+  `,
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="Head (CSF Next 🧪)"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  previewHead: (head) => `
+    ${head}
+    <style>
+      html, body {
+        background: #827979;
+      }
+    </style>
+ `,
+});
+```
+
+```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="Head (CSF Next 🧪)"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  previewHead: (head) => `
+    ${head}
+    <style>
+      html, body {
+        background: #827979;
+      }
+    </style>
+ `,
+});
+```

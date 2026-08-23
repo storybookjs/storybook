@@ -188,3 +188,61 @@ export const Primary = {
   render: () => <ButtonWithHooks />,
 } satisfies Story;
 ```
+
+```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { createSignal } from 'solid-js';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+const ButtonWithHooks = () => {
+  const [value, setValue] = createSignal('Secondary');
+  const [isPrimary, setIsPrimary] = createSignal(false);
+
+  const handleOnChange = () => {
+    if (!isPrimary()) {
+      setIsPrimary(true);
+      setValue('Primary');
+    }
+  };
+  return <Button primary={isPrimary()} onClick={handleOnChange} label={value()} />;
+};
+
+export const Primary = meta.story({
+  render: () => <ButtonWithHooks />,
+});
+```
+
+```jsx filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { createSignal } from 'solid-js';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+const ButtonWithHooks = () => {
+  const [value, setValue] = createSignal('Secondary');
+  const [isPrimary, setIsPrimary] = createSignal(false);
+
+  const handleOnChange = () => {
+    if (!isPrimary()) {
+      setIsPrimary(true);
+      setValue('Primary');
+    }
+  };
+  return <Button primary={isPrimary()} onClick={handleOnChange} label={value()} />;
+};
+
+export const Primary = meta.story({
+  render: () => <ButtonWithHooks />,
+});
+```

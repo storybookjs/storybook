@@ -562,3 +562,47 @@ export const Primary = meta.story({
   ],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { TodoItem } from './TodoItem';
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+const meta = preview.meta({
+  component: TodoItem,
+  render: (args, { loaded: { todo } }) => <TodoItem {...args} {...todo} />,
+});
+
+export const Primary = meta.story({
+  loaders: [
+    async () => ({
+      todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
+    }),
+  ],
+});
+```
+
+```jsx filename="TodoItem.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { TodoItem } from './TodoItem';
+
+const meta = preview.meta({
+  component: TodoItem,
+  render: (args, { loaded: { todo } }) => <TodoItem {...args} {...todo} />,
+});
+
+export const Primary = meta.story({
+  loaders: [
+    async () => ({
+      todo: await (await fetch('https://jsonplaceholder.typicode.com/todos/1')).json(),
+    }),
+  ],
+});
+```

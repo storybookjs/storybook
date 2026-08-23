@@ -308,3 +308,73 @@ export const ExperimentalFeatureStory = meta.story({
   tags: ['!stable', 'experimental'],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Button.stories.ts" renderer="solid" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+
+import { Button } from './Button';
+
+const meta = {
+  component: Button,
+  // 👇 Applies to all stories in this file
+  tags: ['stable'],
+} satisfies Meta<typeof Button>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const ExperimentalFeatureStory: Story = {
+  //👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag
+  tags: ['!stable', 'experimental'],
+};
+```
+
+```ts filename="Button.stories.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  // 👇 Applies to all stories in this file
+  tags: ['stable'],
+});
+
+export const ExperimentalFeatureStory = meta.story({
+  //👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag
+  tags: ['!stable', 'experimental'],
+});
+```
+
+```js filename="Button.stories.js" renderer="solid" language="js" tabTitle="CSF 3"
+import { Button } from './Button';
+
+export default {
+  component: Button,
+  // 👇 Applies to all stories in this file
+  tags: ['stable'],
+};
+
+export const ExperimentalFeatureStory = {
+  //👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag
+  tags: ['!stable', 'experimental'],
+};
+```
+
+```js filename="Button.stories.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  // 👇 Applies to all stories in this file
+  tags: ['stable'],
+});
+
+export const ExperimentalFeatureStory = meta.story({
+  //👇 For this particular story, remove the inherited `stable` tag and apply the `experimental` tag
+  tags: ['!stable', 'experimental'],
+});
+```

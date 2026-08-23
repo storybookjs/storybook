@@ -46,3 +46,14 @@ export default defineMain({
   },
 });
 ```
+```ts filename=".storybook/main.js|ts (CSF Next 🧪)" renderer="solid" language="ts"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  framework: 'storybook-solidjs-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    experimentalTestSyntax: true,
+  },
+});
+```

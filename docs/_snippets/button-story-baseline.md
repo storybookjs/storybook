@@ -121,3 +121,19 @@ export const Primary = meta.story({
   },
 });
 ```
+```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+//👇 Throws a type error if the args don't match the component props
+export const Primary = meta.story({
+  args: {
+    primary: true,
+  },
+});
+```

@@ -350,3 +350,81 @@ export const NonA11yStory = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+import { MyComponent } from './MyComponent';
+
+export default {
+  component: MyComponent,
+};
+
+export const NonA11yStory = {
+  globals: {
+    a11y: {
+      // This option disables all automatic a11y checks on this story
+      manual: true,
+    },
+  },
+};
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+
+import { MyComponent } from './MyComponent';
+
+const meta = {
+  component: MyComponent,
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const NonA11yStory: Story = {
+  globals: {
+    a11y: {
+      // This option disables all automatic a11y checks on this story
+      manual: true,
+    },
+  },
+};
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const NonA11yStory = meta.story({
+  globals: {
+    a11y: {
+      // This option disables all automatic a11y checks on this story
+      manual: true,
+    },
+  },
+});
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const NonA11yStory = meta.story({
+  globals: {
+    a11y: {
+      // This option disables all automatic a11y checks on this story
+      manual: true,
+    },
+  },
+});
+```

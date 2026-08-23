@@ -9,3 +9,6 @@ pnpm add --save-dev @storybook/react-webpack5
 ```shell renderer="react" packageManager="yarn"
 yarn add --dev @storybook/react-webpack5
 ```
+```shell renderer="solid" packageManager="npm"
+npm install --save-dev storybook-solidjs-vite
+```

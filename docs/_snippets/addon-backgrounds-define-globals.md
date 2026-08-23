@@ -343,3 +343,46 @@ export const OnDark = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  globals: {
+    // 👇 Set background value for all component stories
+    backgrounds: { value: 'gray', grid: false },
+  },
+});
+
+export const OnDark = meta.story({
+  globals: {
+    // 👇 Override background value for this story
+    backgrounds: { value: 'dark' },
+  },
+});
+```
+
+```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  globals: {
+    // 👇 Set background value for all component stories
+    backgrounds: { value: 'gray', grid: false },
+  },
+});
+
+export const OnDark = meta.story({
+  globals: {
+    // 👇 Override background value for this story
+    backgrounds: { value: 'dark' },
+  },
+});
+```

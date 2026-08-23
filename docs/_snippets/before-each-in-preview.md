@@ -114,3 +114,28 @@ export default definePreview({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+import MockDate from 'mockdate';
+
+export default definePreview({
+  async beforeEach() {
+    MockDate.reset();
+  },
+});
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+import MockDate from 'mockdate';
+
+export default definePreview({
+  async beforeEach() {
+    MockDate.reset();
+  },
+});
+```

@@ -129,3 +129,94 @@ export default definePreview({
   decorators: [AppDecorator],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename=".storybook/preview.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+import * as React from 'react';
+
+import { normal as NavigationNormal } from '../components/Navigation.stories';
+import GlobalContainerContext from '../components/lib/GlobalContainerContext';
+
+const context = {
+  NavigationContainer: NavigationNormal,
+};
+
+const AppDecorator = (storyFn) => {
+  return (
+    <GlobalContainerContext.Provider value={context}>{storyFn()}</GlobalContainerContext.Provider>
+  );
+};
+
+export default { decorators: [AppDecorator] };
+```
+
+```tsx filename=".storybook/preview.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+import * as React from 'react';
+
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+
+import { normal as NavigationNormal } from '../components/Navigation.stories';
+import GlobalContainerContext from '../components/lib/GlobalContainerContext';
+
+const context = {
+  NavigationContainer: NavigationNormal,
+};
+
+const AppDecorator = (storyFn) => {
+  return (
+    <GlobalContainerContext.Provider value={context}>{storyFn()}</GlobalContainerContext.Provider>
+  );
+};
+
+const preview: Preview = {
+  decorators: [AppDecorator],
+};
+
+export default preview;
+```
+
+```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+import { definePreview } from 'storybook-solidjs-vite';
+
+import { normal as NavigationNormal } from '../components/Navigation.stories';
+import GlobalContainerContext from '../components/lib/GlobalContainerContext';
+
+const context = {
+  NavigationContainer: NavigationNormal,
+};
+
+const AppDecorator = (storyFn) => {
+  return (
+    <GlobalContainerContext.Provider value={context}>{storyFn()}</GlobalContainerContext.Provider>
+  );
+};
+
+export default definePreview({
+  decorators: [AppDecorator],
+});
+```
+
+```jsx filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import * as React from 'react';
+
+import { definePreview } from 'storybook-solidjs-vite';
+
+import { normal as NavigationNormal } from '../components/Navigation.stories';
+import GlobalContainerContext from '../components/lib/GlobalContainerContext';
+
+const context = {
+  NavigationContainer: NavigationNormal,
+};
+
+const AppDecorator = (storyFn) => {
+  return (
+    <GlobalContainerContext.Provider value={context}>{storyFn()}</GlobalContainerContext.Provider>
+  );
+};
+
+export default definePreview({
+  decorators: [AppDecorator],
+});
+```

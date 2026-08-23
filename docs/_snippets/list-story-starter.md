@@ -368,3 +368,30 @@ const meta = preview.meta({
 // Always an empty list, not super interesting
 export const Empty = meta.story();
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+
+const meta = preview.meta({
+  component: List,
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story();
+```
+
+```js filename="List.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+
+const meta = preview.meta({
+  component: List,
+});
+
+// Always an empty list, not super interesting
+export const Empty = meta.story();
+```

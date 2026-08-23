@@ -27,7 +27,7 @@ module.exports = {
         },
         {
           name: 'Controls',
-          supported: ['react', 'vue', 'angular', 'web-components', 'ember'],
+          supported: ['react', 'vue', 'angular', 'web-components', 'ember', 'solid'],
           path: 'essentials/controls',
         },
         {
@@ -60,6 +60,7 @@ module.exports = {
             'html',
             'svelte',
             'preact',
+            'solid',
           ],
           unsupported: ['ember', 'qwik'],
         },
@@ -74,6 +75,7 @@ module.exports = {
             'html',
             'svelte',
             'preact',
+            'solid',
           ],
           unsupported: ['ember'],
           path: 'writing-tests/integrations/test-runner',
@@ -89,6 +91,7 @@ module.exports = {
             'html',
             'svelte',
             'preact',
+            'solid',
           ],
           unsupported: ['ember'],
           path: 'writing-tests/test-coverage',
@@ -154,6 +157,7 @@ module.exports = {
             'html',
             'svelte',
             'preact',
+            'solid',
           ],
         },
         {

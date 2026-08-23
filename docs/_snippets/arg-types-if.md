@@ -593,3 +593,78 @@ const meta = preview.meta({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Example.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Example } from './Example';
+
+const meta = preview.meta({
+  component: Example,
+  argTypes: {
+    parent: { control: 'select', options: ['one', 'two', 'three'] },
+
+    // 👇 Only shown when `parent` arg exists
+    parentExists: { if: { arg: 'parent', exists: true } },
+
+    // 👇 Only shown when `parent` arg does not exist
+    parentDoesNotExist: { if: { arg: 'parent', exists: false } },
+
+    // 👇 Only shown when `parent` arg value is truthy
+    parentIsTruthy: { if: { arg: 'parent' } },
+    parentIsTruthyVerbose: { if: { arg: 'parent', truthy: true } },
+
+    // 👇 Only shown when `parent` arg value is not truthy
+    parentIsNotTruthy: { if: { arg: 'parent', truthy: false } },
+
+    // 👇 Only shown when `parent` arg value is 'three'
+    parentIsEqToValue: { if: { arg: 'parent', eq: 'three' } },
+
+    // 👇 Only shown when `parent` arg value is not 'three'
+    parentIsNotEqToValue: { if: { arg: 'parent', neq: 'three' } },
+
+    // Each of the above can also be conditional on the value of a globalType, e.g.:
+
+    // 👇 Only shown when `theme` global exists
+    parentExists: { if: { global: 'theme', exists: true } },
+  },
+});
+```
+
+```js filename="Example.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Example } from './Example';
+
+const meta = preview.meta({
+  component: Example,
+  argTypes: {
+    parent: { control: 'select', options: ['one', 'two', 'three'] },
+
+    // 👇 Only shown when `parent` arg exists
+    parentExists: { if: { arg: 'parent', exists: true } },
+
+    // 👇 Only shown when `parent` arg does not exist
+    parentDoesNotExist: { if: { arg: 'parent', exists: false } },
+
+    // 👇 Only shown when `parent` arg value is truthy
+    parentIsTruthy: { if: { arg: 'parent' } },
+    parentIsTruthyVerbose: { if: { arg: 'parent', truthy: true } },
+
+    // 👇 Only shown when `parent` arg value is not truthy
+    parentIsNotTruthy: { if: { arg: 'parent', truthy: false } },
+
+    // 👇 Only shown when `parent` arg value is 'three'
+    parentIsEqToValue: { if: { arg: 'parent', eq: 'three' } },
+
+    // 👇 Only shown when `parent` arg value is not 'three'
+    parentIsNotEqToValue: { if: { arg: 'parent', neq: 'three' } },
+
+    // Each of the above can also be conditional on the value of a globalType, e.g.:
+
+    // 👇 Only shown when `theme` global exists
+    parentExists: { if: { global: 'theme', exists: true } },
+  },
+});
+```

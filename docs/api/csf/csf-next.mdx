@@ -6,17 +6,17 @@ tab:
   title: CSF Next (Preview)
 ---
 
-<If notRenderer={['react', 'vue', 'angular', 'web-components']}>
+<If notRenderer={['react', 'vue', 'angular', 'web-components', 'solid']}>
 
 <Callout variant="info" icon="🧪">
 
-CSF Next is currently in [preview](../../releases/features.mdx#preview) and only supported in [React](?renderer=react), [Vue](?renderer=vue), [Angular](?renderer=angular), and [Web Components](?renderer=web-components) projects.
+CSF Next is currently in [preview](../../releases/features.mdx#preview) and only supported in [React](?renderer=react), [Vue](?renderer=vue), [Angular](?renderer=angular), [Web Components](?renderer=web-components), and [SolidJS](?renderer=solid) projects.
 
 </Callout>
 
 </If>
 
-<If renderer={['react', 'vue', 'angular', 'web-components']}>
+<If renderer={['react', 'vue', 'angular', 'web-components', 'solid']}>
 
 <Callout variant="warning" icon="🧪">
 
@@ -47,6 +47,12 @@ export default defineMain({
 });
 ```
 
+<If renderer="solid">
+
+<CodeSnippets path="solid-csf-next-main.md" />
+
+</If>
+
 ### `definePreview`
 
 Similarly, the `definePreview` function specifies your project's story configuration. This function is also type-safe and will infer types throughout your project.
@@ -71,6 +77,12 @@ export default definePreview({
   },
 });
 ```
+
+<If renderer="solid">
+
+<CodeSnippets path="solid-csf-next-preview.md" />
+
+</If>
 
 <Callout variant="info">
 

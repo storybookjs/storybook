@@ -191,3 +191,46 @@ export default definePreview({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+import addonA11y from '@storybook/addon-a11y';
+
+export default definePreview({
+  addons: [addonA11y()],
+  parameters: {
+    a11y: {
+      options: {
+        /*
+         * Opt in to running WCAG 2.x AAA rules
+         * Note that you must explicitly re-specify the defaults (all but the last array entry)
+         * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter-examples for more details
+         */
+        runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice', 'wcag2aaa'],
+      },
+    },
+  },
+});
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+import addonA11y from '@storybook/addon-a11y';
+
+export default definePreview({
+  addons: [addonA11y()],
+  parameters: {
+    a11y: {
+      options: {
+        /*
+         * Opt in to running WCAG 2.x AAA rules
+         * Note that you must explicitly re-specify the defaults (all but the last array entry)
+         * See https://github.com/dequelabs/axe-core/blob/develop/doc/API.md#options-parameter-examples for more details
+         */
+        runOnly: ['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'best-practice', 'wcag2aaa'],
+      },
+    },
+  },
+});
+```

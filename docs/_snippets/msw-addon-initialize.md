@@ -139,3 +139,34 @@ export default definePreview({
   addons: [addonMsw()],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+import addonMsw from 'msw-storybook-addon';
+
+export default definePreview({
+  /*
+   * Register the MSW loader for all stories
+   * See https://github.com/mswjs/msw-storybook-addon#csf-next
+   * to learn how to customize it
+   */
+  addons: [addonMsw()],
+});
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+import addonMsw from 'msw-storybook-addon';
+
+export default definePreview({
+  /*
+   * Register the MSW loader for all stories
+   * See https://github.com/mswjs/msw-storybook-addon#csf-next
+   * to learn how to customize it
+   */
+  addons: [addonMsw()],
+});
+```

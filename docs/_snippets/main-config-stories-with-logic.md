@@ -163,3 +163,40 @@ export default defineMain({
   ],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import type { StoriesEntry } from 'storybook/internal/types';
+
+import { defineMain } from 'storybook-solidjs-vite';
+
+async function findStories(): Promise<StoriesEntry[]> {
+  // your custom logic returns a list of files
+}
+
+export default defineMain({
+  framework: { name: 'storybook-solidjs-vite' },
+  stories: async (list: StoriesEntry[]) => [
+    ...list,
+    // 👇 Add your found stories to the existing list of story files
+    ...(await findStories()),
+  ],
+});
+```
+
+```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from 'storybook-solidjs-vite';
+
+async function findStories() {
+  // your custom logic returns a list of files
+}
+
+export default defineMain({
+  framework: { name: 'storybook-solidjs-vite' },
+  stories: async (list) => [
+    ...list,
+    // 👇 Add your found stories to the existing list of story files
+    ...(await findStories()),
+  ],
+});
+```

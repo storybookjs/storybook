@@ -655,3 +655,149 @@ export const Secondary = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+
+import { Button } from './Button';
+
+const meta = {
+  component: Button,
+  parameters: {
+    docs: {
+      // 👇 Enable Code panel for all stories in this file
+      codePanel: true,
+    },
+  },
+} satisfies Meta<typeof Button>;
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+// 👇 This story will display the Code panel
+export const Primary: Story = {
+  args: {
+    children: 'Button',
+  },
+};
+
+export const Secondary: Story = {
+  args: {
+    children: 'Button',
+    variant: 'secondary',
+  },
+  parameters: {
+    docs: {
+      // 👇 Disable Code panel for this specific story
+      codePanel: false,
+    },
+  },
+};
+```
+
+```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+import { Button } from './Button';
+
+export default {
+  component: Button,
+  parameters: {
+    docs: {
+      // 👇 Enable Code panel for all stories in this file
+      codePanel: true,
+    },
+  },
+};
+
+// 👇 This story will display the Code panel
+export const Primary = {
+  args: {
+    children: 'Button',
+  },
+};
+
+export const Secondary = {
+  args: {
+    children: 'Button',
+    variant: 'secondary',
+  },
+  parameters: {
+    docs: {
+      // 👇 Disable Code panel for this specific story
+      codePanel: false,
+    },
+  },
+};
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      // 👇 Enable Code panel for all stories in this file
+      codePanel: true,
+    },
+  },
+});
+
+// 👇 This story will display the Code panel
+export const Primary = meta.story({
+  args: {
+    children: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    children: 'Button',
+    variant: 'secondary',
+  },
+  parameters: {
+    docs: {
+      // 👇 Disable Code panel for this specific story
+      codePanel: false,
+    },
+  },
+});
+```
+
+```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      // 👇 Enable Code panel for all stories in this file
+      codePanel: true,
+    },
+  },
+});
+
+// 👇 This story will display the Code panel
+export const Primary = meta.story({
+  args: {
+    children: 'Button',
+  },
+});
+
+export const Secondary = meta.story({
+  args: {
+    children: 'Button',
+    variant: 'secondary',
+  },
+  parameters: {
+    docs: {
+      // 👇 Disable Code panel for this specific story
+      codePanel: false,
+    },
+  },
+});
+```

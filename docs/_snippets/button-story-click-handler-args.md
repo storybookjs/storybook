@@ -438,3 +438,44 @@ export const Text = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Text = meta.story({
+  args: {
+    label: 'Hello',
+    onClick: action('clicked'),
+  },
+  render: ({ label, onClick }) => <Button label={label} onClick={onClick} />,
+});
+```
+
+```jsx filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Text = meta.story({
+  args: {
+    label: 'Hello',
+    onClick: action('clicked'),
+  },
+  render: ({ label, onClick }) => <Button label={label} onClick={onClick} />,
+});
+```

@@ -264,3 +264,88 @@ export default defineMain({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="With Webpack (CSF Next 🧪)"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  framework: { name: 'storybook-solidjs-vite' },
+  stories: ['../src/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  async webpackFinal(config) {
+    config.module?.rules?.push({
+      test: /\.(graphql|gql)$/,
+      include: [path.resolve('./lib/emails')],
+      exclude: /node_modules/,
+      loader: 'graphql-tag/loader',
+    });
+    config.module?.rules?.push({
+      test: /\.(graphql|gql)$/,
+      include: [path.resolve('./lib/schema')],
+      exclude: /node_modules/,
+      loader: 'raw-loader',
+    });
+
+    return config;
+  },
+});
+```
+
+```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="With Webpack (CSF Next 🧪)"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  framework: { name: 'storybook-solidjs-vite' },
+  stories: ['../src/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  async webpackFinal(config) {
+    config.module?.rules?.push({
+      test: /\.(graphql|gql)$/,
+      include: [path.resolve('./lib/emails')],
+      exclude: /node_modules/,
+      loader: 'graphql-tag/loader',
+    });
+    config.module?.rules?.push({
+      test: /\.(graphql|gql)$/,
+      include: [path.resolve('./lib/schema')],
+      exclude: /node_modules/,
+      loader: 'raw-loader',
+    });
+
+    return config;
+  },
+});
+```
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="With Vite (CSF Next 🧪)"
+import { defineMain } from 'storybook-solidjs-vite';
+
+import graphql from 'vite-plugin-graphql-loader';
+
+export default defineMain({
+  framework: { name: 'storybook-solidjs-vite' },
+  stories: ['../src/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  async viteFinal(config) {
+    return {
+      ...config,
+      plugins: [...(config.plugins ?? []), graphql()],
+    };
+  },
+});
+```
+
+```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="With Vite (CSF Next 🧪)"
+import { defineMain } from 'storybook-solidjs-vite';
+
+import graphql from 'vite-plugin-graphql-loader';
+
+export default defineMain({
+  framework: { name: 'storybook-solidjs-vite' },
+  stories: ['../src/**/*.mdx', '../stories/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  async viteFinal(config) {
+    return {
+      ...config,
+      plugins: [...(config.plugins ?? []), graphql()],
+    };
+  },
+});
+```

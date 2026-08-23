@@ -361,3 +361,84 @@ const meta = preview.meta({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+import { Button } from './Button';
+
+export default {
+  component: Button,
+  parameters: {
+    backgrounds: {
+      options: {
+        // 👇 Override the default `dark` option
+        dark: { name: 'Dark', value: '#000' },
+        // 👇 Add a new option
+        gray: { name: 'Gray', value: '#CCC' },
+      },
+    },
+  },
+};
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+import type { Meta } from 'storybook-solidjs-vite';
+
+import { Button } from './Button';
+
+const meta = {
+  component: Button,
+  parameters: {
+    backgrounds: {
+      options: {
+        // 👇 Override the default `dark` option
+        dark: { name: 'Dark', value: '#000' },
+        // 👇 Add a new option
+        gray: { name: 'Gray', value: '#CCC' },
+      },
+    },
+  },
+} satisfies Meta<typeof Button>;
+
+export default meta;
+```
+
+```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    backgrounds: {
+      options: {
+        // 👇 Override the default `dark` option
+        dark: { name: 'Dark', value: '#000' },
+        // 👇 Add a new option
+        gray: { name: 'Gray', value: '#CCC' },
+      },
+    },
+  },
+});
+```
+
+```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    backgrounds: {
+      options: {
+        // 👇 Override the default `dark` option
+        dark: { name: 'Dark', value: '#000' },
+        // 👇 Add a new option
+        gray: { name: 'Gray', value: '#CCC' },
+      },
+    },
+  },
+});
+```

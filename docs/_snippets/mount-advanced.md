@@ -378,3 +378,126 @@ export const Basic = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```tsx filename="Page.stories.tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+
+// 👇 Automocked module resolves to '../lib/__mocks__/db'
+import db from '../lib/db';
+import { Page } from './Page';
+
+const meta = { component: Page } satisfies Meta<typeof Page>;
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const Basic: Story = {
+  play: async ({ mount, args, userEvent }) => {
+    const note = await db.note.create({
+      data: { title: 'Mount inside of play' },
+    });
+
+    const canvas = await mount(
+      // 👇 Pass data that is created inside of the play function to the component
+      //   For example, a just-generated UUID
+      <Page {...args} params={{ id: String(note.id) }} />,
+    );
+
+    await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
+  },
+  argTypes: {
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
+    params: { control: { disable: true } },
+  },
+};
+```
+
+```jsx filename="Page.stories.jsx" renderer="solid" language="js" tabTitle="CSF 3"
+// 👇 Automocked module resolves to '../lib/__mocks__/db'
+import db from '../lib/db';
+import { Page } from './Page';
+
+export default { component: Page };
+
+export const Basic = {
+  play: async ({ mount, args, userEvent }) => {
+    const note = await db.note.create({
+      data: { title: 'Mount inside of play' },
+    });
+
+    const canvas = await mount(
+      // 👇 Pass data that is created inside of the play function to the component
+      //   For example, a just-generated UUID
+      <Page {...args} params={{ id: String(note.id) }} />,
+    );
+
+    await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
+  },
+  argTypes: {
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
+    params: { control: { disable: true } },
+  },
+};
+```
+
+```tsx filename="Page.stories.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+// 👇 Automocked module resolves to '../lib/__mocks__/db'
+import db from '../lib/db';
+import { Page } from './Page';
+
+const meta = preview.meta({ component: Page });
+
+export const Basic = meta.story({
+  play: async ({ mount, args, userEvent }) => {
+    const note = await db.note.create({
+      data: { title: 'Mount inside of play' },
+    });
+
+    const canvas = await mount(
+      // 👇 Pass data that is created inside of the play function to the component
+      //   For example, a just-generated UUID
+      <Page {...args} params={{ id: String(note.id) }} />,
+    );
+
+    await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
+  },
+  argTypes: {
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
+    params: { control: { disable: true } },
+  },
+});
+```
+
+```jsx filename="Page.stories.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+// 👇 Automocked module resolves to '../lib/__mocks__/db'
+import db from '../lib/db';
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const Basic = meta.story({
+  play: async ({ mount, args, userEvent }) => {
+    const note = await db.note.create({
+      data: { title: 'Mount inside of play' },
+    });
+
+    const canvas = await mount(
+      // 👇 Pass data that is created inside of the play function to the component
+      //   For example, a just-generated UUID
+      <Page {...args} params={{ id: String(note.id) }} />,
+    );
+
+    await userEvent.click(await canvas.findByRole('menuitem', { name: /login to add/i }));
+  },
+  argTypes: {
+    // 👇 Make the params prop un-controllable, as the value is always overridden in the play function.
+    params: { control: { disable: true } },
+  },
+});
+```

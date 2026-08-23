@@ -61,3 +61,34 @@ export default definePreview({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="example-addon/src/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import type { ProjectAnnotations, Renderer } from 'storybook/internal/types';
+
+import { definePreview } from 'storybook-solidjs-vite';
+
+import { PARAM_KEY } from './constants';
+import { CustomDecorator } from './decorators';
+
+export default definePreview({
+  decorators: [CustomDecorator],
+  globals: {
+    [PARAM_KEY]: false,
+  },
+});
+```
+
+```js filename="example-addon/src/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+import { PARAM_KEY } from './constants';
+import { CustomDecorator } from './decorators';
+
+export default definePreview({
+  decorators: [CustomDecorator],
+  globals: {
+    [PARAM_KEY]: false,
+  },
+});
+```

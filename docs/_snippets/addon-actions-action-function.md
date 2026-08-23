@@ -257,3 +257,36 @@ const meta = preview.meta({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Button.stories.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
+
+import Button from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  args: {
+    // 👇 Create an action that appears when the onClick event is fired
+    onClick: action('on-click'),
+  },
+});
+```
+
+```js filename="Button.stories.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { action } from 'storybook/actions';
+
+import preview from '../.storybook/preview';
+
+import Button from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  args: {
+    // 👇 Create an action that appears when the onClick event is fired
+    onClick: action('on-click'),
+  },
+});
+```

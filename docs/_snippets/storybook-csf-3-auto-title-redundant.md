@@ -253,3 +253,42 @@ export const Basic = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="components/MyComponent/MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  component: MyComponent,
+  title: 'components/MyComponent/MyComponent',
+});
+
+export const Basic = meta.story({
+  args: {
+    something: 'Something else',
+  },
+});
+```
+
+```js filename="components/MyComponent/MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+  title: 'components/MyComponent/MyComponent',
+});
+
+export const Basic = meta.story({
+  args: {
+    something: 'Something else',
+  },
+});
+```

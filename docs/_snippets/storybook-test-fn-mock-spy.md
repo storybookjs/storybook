@@ -497,3 +497,66 @@ export const SaveFlow = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="NoteUI.stories.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
+
+// 👇 Automocked module resolves to '../app/__mocks__/actions'
+import { saveNote } from '../app/actions';
+import { createNotes } from '../app/mocks/notes';
+
+import NoteUI from './note-ui';
+
+const meta = preview.meta({ component: NoteUI });
+
+const notes = createNotes();
+
+export const SaveFlow = meta.story({
+  name: 'Save Flow ▶',
+  args: {
+    isEditing: true,
+    note: notes[0],
+  },
+  play: async ({ canvas, userEvent }) => {
+    const saveButton = canvas.getByRole('menuitem', { name: /done/i });
+    await userEvent.click(saveButton);
+    // 👇 This is the mock function, so you can assert its behavior
+    await expect(saveNote).toHaveBeenCalled();
+  },
+});
+```
+
+```js filename="NoteUI.stories.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
+
+// 👇 Automocked module resolves to '../app/__mocks__/actions'
+import { saveNote } from '../app/actions';
+import { createNotes } from '../app/mocks/notes';
+
+import NoteUI from './note-ui';
+
+const meta = preview.meta({
+  component: NoteUI,
+});
+
+const notes = createNotes();
+
+export const SaveFlow = meta.story({
+  name: 'Save Flow ▶',
+  args: {
+    isEditing: true,
+    note: notes[0],
+  },
+  play: async ({ canvas, userEvent }) => {
+    const saveButton = canvas.getByRole('menuitem', { name: /done/i });
+    await userEvent.click(saveButton);
+    // 👇 This is the mock function, so you can assert its behavior
+    await expect(saveNote).toHaveBeenCalled();
+  },
+});
+```

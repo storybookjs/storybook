@@ -263,3 +263,36 @@ export const Unchecked = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Checkbox.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Checkbox } from './Checkbox';
+
+const meta = preview.meta({
+  component: Checkbox,
+});
+
+export const Unchecked = meta.story({
+  args: {
+    label: 'Unchecked',
+  },
+});
+```
+
+```js filename="Checkbox.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Checkbox } from './Checkbox';
+
+const meta = preview.meta({
+  component: Checkbox,
+});
+
+export const Unchecked = meta.story({
+  args: {
+    label: 'Unchecked',
+  },
+});
+```

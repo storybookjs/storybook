@@ -140,3 +140,34 @@ export default definePreview({
   // ...
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+import { sb } from 'storybook/test';
+
+// 👇 Replaces imports of this module with imports to `../lib/__mocks__/session.ts`
+sb.mock(import('../lib/session.ts'));
+// 👇 Replaces imports of this module with imports to `../__mocks__/uuid.ts`
+sb.mock(import('uuid'));
+
+export default definePreview({
+  // ...
+});
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+import { sb } from 'storybook/test';
+
+// 👇 Replaces imports of this module with imports to `../lib/__mocks__/session.ts`
+sb.mock('../lib/session.js');
+// 👇 Replaces imports of this module with imports to `../__mocks__/uuid.ts`
+sb.mock('uuid');
+
+export default definePreview({
+  // ...
+});
+```

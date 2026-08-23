@@ -103,3 +103,54 @@ test('Validates form', async () => {
   expect(isFormValid).not.toBeInTheDocument();
 });
 ```
+```js filename="Form.test.js|jsx" renderer="solid" language="js"
+import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+import { composeStory } from 'storybook-solidjs-vite';
+
+import Meta, { ValidForm as ValidFormStory } from './LoginForm.stories';
+
+const ValidForm = composeStory(ValidFormStory, Meta);
+
+test('Validates form', async () => {
+  const user = userEvent.setup();
+
+  await ValidForm.run();
+
+  const buttonElement = screen.getByRole('button', {
+    name: 'Submit',
+  });
+
+  await user.click(buttonElement);
+
+  const isFormValid = screen.getByLabelText('invalid-form');
+  expect(isFormValid).not.toBeInTheDocument();
+});
+```
+
+```ts filename="Form.test.ts|tsx" renderer="solid" language="ts"
+import { screen } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
+
+import { composeStory } from 'storybook-solidjs-vite';
+
+import Meta, { ValidForm as ValidFormStory } from './LoginForm.stories';
+
+const ValidForm = composeStory(ValidFormStory, Meta);
+
+test('Validates form', async () => {
+  const user = userEvent.setup();
+
+  await ValidForm.run();
+
+  const buttonElement = screen.getByRole('button', {
+    name: 'Submit',
+  });
+
+  await user.click(buttonElement);
+
+  const isFormValid = screen.getByLabelText('invalid-form');
+  expect(isFormValid).not.toBeInTheDocument();
+});
+```

@@ -263,6 +263,40 @@ describe('spawnChildHost', () => {
     });
   });
 
+  it('does not reject the call when a forwarded telemetry sink throws synchronously', async () => {
+    child.send.mockImplementation((message: { type: string; id?: string }) => {
+      if (message.type === 'init') {
+        queueMicrotask(() => child.emit('message', HELLO));
+      }
+      if (message.type === 'call') {
+        queueMicrotask(() => {
+          child.emit('message', {
+            type: 'telemetry',
+            id: message.id,
+            event: 'tool:listAllDocumentation',
+            payload: { toolset: 'docs' },
+          });
+          child.emit('message', {
+            type: 'result',
+            id: message.id,
+            value: { ok: true, data: { ran: true }, markdown: 'ok' },
+          });
+        });
+      }
+      return true;
+    });
+    const sink = vi.fn(() => {
+      throw new Error('telemetry down');
+    });
+    const tools = await spawn();
+
+    await expect(tools.call('docs.list', {}, { telemetry: sink })).resolves.toEqual({
+      ok: true,
+      data: { ran: true },
+      markdown: 'ok',
+    });
+  });
+
   it('sends a cancel envelope keyed by the call id when the signal aborts', async () => {
     child.send.mockImplementation((message: { type: string; id?: string }) => {
       if (message.type === 'init') {

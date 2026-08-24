@@ -58,12 +58,16 @@ if (child.pid !== undefined) {
   }
 }
 
-// The sandbox dies with this failure, taking dumpMcpDebug()'s files with it;
-// only the final stderr lines survive — the harness keeps the last 10 lines
-// of output (errorBody: 'last10') and npm's error trailer takes about half.
-// So: log tail last, no throw (a stack trace would push the tail out of the
-// window), and exitCode rather than process.exit(), which would truncate the
-// pending pipe write.
+// Failure path. This script runs from a package.json postinstall hook during
+// `npm install`, inside a disposable @vercel/agent-eval sandbox. When
+// Storybook never becomes ready, the sandbox is destroyed: files written in
+// it (like the ones dumpMcpDebug() would write) are lost, and the eval
+// report keeps only the last 10 lines of npm's output — about half of which
+// npm's own "npm error" trailer fills. Those few surviving lines are the
+// only diagnostics anyone will ever see. So: print the Storybook log tail
+// as the very last stderr output, don't throw (a stack trace would push the
+// tail out of the window), and set exitCode rather than calling
+// process.exit(), which can truncate a pending pipe write.
 const logTail = await readFile(logPath, 'utf8')
   .then((content) => content.trimEnd().split('\n').slice(-5).join('\n'))
   .catch(() => '')

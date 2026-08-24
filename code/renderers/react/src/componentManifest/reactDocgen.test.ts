@@ -279,6 +279,7 @@ describe('parseWithReactDocgen exportName coverage', () => {
     const importerPath = join(dir, 'test-app/src/Component.tsx');
     vi.spyOn(process, 'cwd').mockReturnValue(join(dir, 'test-app'));
 
+    expect(matchPath('@tools/my-plugin', importerPath)).toBe(join(dir, 'tools/my-plugin/src'));
     expect(matchPath('@tools/my-plugin/const', importerPath)).toBe(
       join(dir, 'tools/my-plugin/src/const')
     );

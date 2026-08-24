@@ -27,6 +27,7 @@ const DOCGEN_CATEGORIES: Record<string, string> = {
   theme: 'props',
   updateProgressInfo: 'props',
   click: 'events',
+  submit: 'events',
   'update:modelValue': 'events',
   default: 'slots',
   header: 'slots',
@@ -460,6 +461,39 @@ export const Primary = {
     `);
   });
 
+  it('reuses a hoisted object arg across directive expressions', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: {
+    theme: {
+      color: 'red',
+      mode: 'dark',
+    },
+  },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<section><MyButton :style="{ color: args.theme.color }" /><div :data-mode="args.theme.mode" /></section>',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
+      const theme = {
+        color: 'red',
+        mode: 'dark',
+      };
+      </script>
+
+      <template>
+        <section><MyButton :style="{ color: theme.color }" /><div :data-mode="theme.mode" /></section>
+      </template>"
+    `);
+  });
+
   it('renames hoisted args that collide with slot and v-for template bindings', async () => {
     expect(
       await primarySnippet(`
@@ -658,6 +692,31 @@ export const Primary = {
 
       <template>
         <MyButton @click="onClick" />
+      </template>"
+    `);
+  });
+
+  it('reuses a hoisted handler across repeated event bindings', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { onSubmit: () => {} },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<section><MyButton @submit="args.onSubmit" /><MyButton @submit="args.onSubmit" /></section>',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
+      const onSubmit = () => {};
+      </script>
+
+      <template>
+        <section><MyButton @submit="onSubmit" /><MyButton @submit="onSubmit" /></section>
       </template>"
     `);
   });

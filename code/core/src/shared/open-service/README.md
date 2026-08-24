@@ -166,8 +166,8 @@ so its bundled declaration must remain flat and import only its declared allowli
 The `storybook tools` CLI is a slim shell over `storybook/internal/tools`. Default mode is `auto`:
 attach to a matching running instance as a delegated leaf, and fall back to an in-process local
 host when `createTools` cannot attach. `--attach` requires attachment (gate failures are errors).
-`--no-attach` forces local. There is no MCP proxy on this path; toolset handlers run in the SDK
-process, and attached service commands execute on the instance.
+`--no-attach` forces local. Toolset handlers run in the SDK process, and attached service commands
+execute on the instance.
 
 Local bootstrap still hosts the module graph so addon-owned toolsets can query it without appearing
 in a core allowlist; an unsupported builder settles the graph as unavailable without failing

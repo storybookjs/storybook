@@ -2,12 +2,12 @@
 
 `storybook tools` is a shell over the Node SDK at `storybook/internal/tools`.
 The SDK owns both runtimes: **attached** (join a running Storybook as another Open Service
-runtime) and **local** (load the project configuration in this process). Decisions live in
+runtime) and **local** (load the project configuration in this process). How attach works is in
 [architecture.md](./architecture.md). Delegated command dispatch lives in the
 [open-service README](../../shared/open-service/README.md#delegated-mode).
 
-There is no MCP proxy in this CLI. Toolset handlers run in the SDK process. Service commands in
-attached mode execute on the instance.
+Toolset handlers run in the SDK process. Service commands in attached mode execute on the
+instance.
 
 ## SDK
 

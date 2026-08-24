@@ -75,7 +75,7 @@ describe('defineToolset types', () => {
   it('narrows both branches of an outcome on its tag', async () => {
     const outcome = await reviewToolset.methods.create.handler(
       { title: 'x' },
-      { transport: 'cli', getService: () => ({}) as never }
+      { transport: 'cli', agent: false, getService: () => ({}) as never }
     );
 
     if (outcome.ok) {

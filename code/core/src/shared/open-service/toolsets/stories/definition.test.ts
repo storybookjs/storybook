@@ -131,11 +131,12 @@ beforeEach(() => {
   graphMatchesByFile = new Map([[componentPath, [buttonStoryHit]]]);
   cliCtx = {
     transport: 'cli',
+    agent: false,
     origin: 'http://localhost:6006',
     getService: vi.fn(() => moduleGraph) as ToolsetCtx['getService'],
     telemetry,
   };
-  mcpCtx = { ...cliCtx, transport: 'mcp' };
+  mcpCtx = { ...cliCtx, transport: 'mcp', agent: true };
   getIndex.mockResolvedValue(index);
   getChangedFiles.mockResolvedValue({
     changed: new Set([changedComponentFile]),

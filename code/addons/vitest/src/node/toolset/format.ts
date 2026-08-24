@@ -300,5 +300,5 @@ function formatTestRunSummary(data: TestRunData): string {
 }
 
 export function formatTestRun(data: TestRunData, ctx: ToolsetCtx): string {
-  return ctx.transport === 'mcp' ? formatTestRunForAgent(data, ctx) : formatTestRunSummary(data);
+  return ctx.agent ? formatTestRunForAgent(data, ctx) : formatTestRunSummary(data);
 }

@@ -26,6 +26,12 @@ export type ToolsetTelemetry = (event: string, payload: Record<string, unknown>)
 export type ToolsetCtx = {
   transport: ToolsetTransport;
   /**
+   * Whether the consumer driving this call is an AI agent. Always true on MCP; the tools CLI
+   * detects the invoking environment via std-env. Selects agent-facing rendering where a method
+   * formats differently per audience, while `transport` governs tool-name spelling.
+   */
+  agent: boolean;
+  /**
    * Storybook UI base URL, including any deployment subpath. Absent when running from a CLI
    * without a live Storybook.
    */

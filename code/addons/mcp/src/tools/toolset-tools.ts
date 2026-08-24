@@ -98,6 +98,7 @@ function buildContext(server: Server): ToolsetCtx {
   const custom = server.ctx.custom;
   return {
     transport: 'mcp',
+    agent: true,
     // The toolset origin is the complete UI base URL, including any deployment subpath.
     origin: resolveToolsetOrigin(custom ?? {}),
     getService: (serviceId, serviceOptions) => getService(serviceId as any, serviceOptions) as any,
@@ -150,6 +151,7 @@ export function getToolsetToolMetadata(options: ToolsetToolOptions) {
   const method = resolveMethod(resolveToolset(options), options);
   const descriptionCtx: ToolsetCtx = {
     transport: 'mcp',
+    agent: true,
     getService: (serviceId, serviceOptions) => getService(serviceId as any, serviceOptions) as any,
   };
 

@@ -1,3 +1,5 @@
+import { isAgent } from 'std-env';
+
 import type {
   AnyToolsetDefinition,
   AnyToolsetMethod,
@@ -293,6 +295,7 @@ function buildContext(
   const { methodTelemetry } = deps;
   return {
     transport: 'cli',
+    agent: isAgent,
     ...(origin ? { origin } : {}),
     getService: runtime.getService,
     ...(methodTelemetry ? { telemetry: methodTelemetry } : {}),

@@ -231,15 +231,11 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     features?.componentsManifest &&
     !options.ignorePreview
   ) {
-    // Resolved on first read, never at registration: registering the service must not pay for a
-    // full story index build.
-    let generatorPromise: Promise<StoryIndexGenerator> | undefined;
-
     registerMdxService({
-      getIndex: async () => {
-        generatorPromise ??= options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
-        return (await generatorPromise).getIndex();
-      },
+      getIndex: () =>
+        options.presets
+          .apply<StoryIndexGenerator>('storyIndexGenerator')
+          .then((generator) => generator.getIndex()),
     });
   }
 };

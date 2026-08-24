@@ -1,4 +1,4 @@
-import { parseLocalBindings } from 'storybook/internal/oxc-parser';
+import { parseModuleBindings } from 'storybook/internal/oxc-parser';
 
 import MagicString from 'magic-string';
 import type { ModuleNode, Plugin } from 'vite';
@@ -45,24 +45,24 @@ export async function vueComponentMeta(
 
           const s = new MagicString(src);
 
-          // Names with a local binding in this module that we can safely attach "__docgenInfo" to.
+          // Names bound in this module that we can safely attach "__docgenInfo" to.
           // Re-exports (e.g. "export { default as MyComponent } from './MyComponent.vue'" or
-          // "export * from './Tabs'") resolve via checker.getExportNames but have no local binding
-          // here, so attaching to them would reference an undefined variable at runtime.
-          const localBindings = await parseLocalBindings(id, src);
+          // "export * from './Tabs'") resolve via checker.getExportNames but bind nothing here,
+          // so attaching to them would reference an undefined variable at runtime.
+          const { declared, imported } = await parseModuleBindings(id, src);
 
           metaSources.forEach((meta) => {
             const isDefaultExport = meta.exportName === 'default';
             const name = isDefaultExport ? '_sfc_main' : meta.exportName;
+
+            // This hook runs in "post", so a built SFC arrives as a shim that imports _sfc_main
+            // from its own virtual script module rather than declaring it.
             const isImportedSfcMain =
               isDefaultExport &&
               id.endsWith('.vue') &&
-              /^import\s+_sfc_main\s+from\s+['"][^'"]+\?vue&type=script(?:&[^'"]*)?['"];?$/m.test(
-                src
-              );
+              (imported.get(name)?.includes('?vue&type=script') ?? false);
 
-            // Production SFCs can import `_sfc_main` from their virtual script module.
-            if (!localBindings.has(name) && !isImportedSfcMain) {
+            if (!declared.has(name) && !isImportedSfcMain) {
               return;
             }
 

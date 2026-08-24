@@ -118,28 +118,46 @@ function collectDeclaredNames(
   }
 }
 
+/** Bindings a module introduces into its own scope, split by how they got there. */
+export interface ModuleBindings {
+  /**
+   * Names declared in this module: top-level `var`/`let`/`const`, function and class declarations,
+   * including those introduced via `export <declaration>`.
+   */
+  declared: Set<string>;
+  /**
+   * Names bound by an `import`, mapped to the specifier they came from. These are referenceable
+   * identifiers here even though the value lives in another module, so a property can be assigned
+   * to them. Type-only imports are excluded because they leave no runtime binding.
+   */
+  imported: Map<string, string>;
+}
+
 /**
- * Names declared locally in this module — top-level `var`/`let`/`const`, function and class
- * declarations, including those introduced via `export <declaration>`. Imports and re-exports
- * (`export { X } from '...'`, `export * from '...'`) are excluded because their bindings live in
- * another module and are not referenceable identifiers here.
+ * Bindings this module introduces into its own scope, whether declared locally or imported.
+ * Re-exports (`export { X } from '...'`, `export * from '...'`) appear in neither set, since they
+ * introduce no identifier here at all.
  *
  * Used by the Vue docgen plugin to decide whether a generated `.__docgenInfo` assignment can
  * safely target a name without producing a reference to an undefined binding.
  */
-export async function parseLocalBindings(filePath: string, source: string): Promise<Set<string>> {
+export async function parseModuleBindings(
+  filePath: string,
+  source: string
+): Promise<ModuleBindings> {
+  const declared = new Set<string>();
+  const imported = new Map<string, string>();
+
   let parseResult: Awaited<ReturnType<typeof oxcRawParseSync>>;
   try {
     parseResult = oxcRawParseSync(filePath, source);
   } catch {
-    return new Set();
+    return { declared, imported };
   }
   const body = parseResult.program?.body;
   if (!Array.isArray(body)) {
-    return new Set();
+    return { declared, imported };
   }
-
-  const names = new Set<string>();
 
   for (const statement of body) {
     const node = statement;
@@ -148,15 +166,34 @@ export async function parseLocalBindings(filePath: string, source: string): Prom
       node.type === 'FunctionDeclaration' ||
       node.type === 'ClassDeclaration'
     ) {
-      collectDeclaredNames(node, names);
+      collectDeclaredNames(node, declared);
     } else if (node.type === 'ExportNamedDeclaration' && node.declaration && !node.source) {
       // `export const X` / `export function X` / `export class X` — a local declaration.
       // Specifier-only (`export { X }`) and re-exports (with a `source`) introduce no binding here.
-      collectDeclaredNames(node.declaration, names);
+      collectDeclaredNames(node.declaration, declared);
+    } else if (node.type === 'ImportDeclaration' && node.importKind !== 'type') {
+      for (const specifier of node.specifiers ?? []) {
+        // `import { type X }` leaves no runtime binding, unlike the rest of the clause.
+        if (specifier.type === 'ImportSpecifier' && specifier.importKind === 'type') {
+          continue;
+        }
+        if (specifier.local?.name) {
+          imported.set(specifier.local.name, node.source.value);
+        }
+      }
     }
   }
 
-  return names;
+  return { declared, imported };
+}
+
+/**
+ * Names declared locally in this module. See {@link parseModuleBindings} for imports, which are
+ * also referenceable here.
+ */
+export async function parseLocalBindings(filePath: string, source: string): Promise<Set<string>> {
+  const { declared } = await parseModuleBindings(filePath, source);
+  return declared;
 }
 
 export async function parseReExports(

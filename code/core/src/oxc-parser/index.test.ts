@@ -1,7 +1,7 @@
 // Integration tests for parseReExports — exercises the real oxc-parser binary.
 import { describe, expect, it } from 'vitest';
 
-import { parseLocalBindings, parseReExports } from './index.ts';
+import { parseLocalBindings, parseModuleBindings, parseReExports } from './index.ts';
 
 describe('parseReExports', () => {
   it('maps a named re-export to its source specifier and imported name', async () => {
@@ -109,5 +109,63 @@ describe('parseLocalBindings', () => {
 
     expect(names).toBeInstanceOf(Set);
     expect(names.size).toBe(0);
+  });
+});
+
+describe('parseModuleBindings', () => {
+  it('maps imported names to the specifier they came from', async () => {
+    const source = [
+      `import _sfc_main from './Tab.vue?vue&type=script&setup=true&lang.ts';`,
+      `import { Baz } from './B';`,
+      `import * as NS from './C';`,
+    ].join('\n');
+
+    const { declared, imported } = await parseModuleBindings('/project/src/Tab.ts', source);
+
+    expect(declared.size).toBe(0);
+    expect(imported.get('_sfc_main')).toBe('./Tab.vue?vue&type=script&setup=true&lang.ts');
+    expect(imported.get('Baz')).toBe('./B');
+    expect(imported.get('NS')).toBe('./C');
+  });
+
+  it('excludes type-only imports, which leave no runtime binding', async () => {
+    const source = [
+      `import type Foo from './Foo';`,
+      `import { type Bar, Baz } from './B';`,
+      `import './side-effect';`,
+    ].join('\n');
+
+    const { imported } = await parseModuleBindings('/project/src/Tab.ts', source);
+
+    expect([...imported.keys()]).toEqual(['Baz']);
+  });
+
+  it('leaves re-exports out of both sets, since they bind nothing here', async () => {
+    const source = [
+      `export { default as Card } from './Card.vue';`,
+      `export * from './Other';`,
+    ].join('\n');
+
+    const { declared, imported } = await parseModuleBindings('/project/src/barrel.ts', source);
+
+    expect(declared.size).toBe(0);
+    expect(imported.size).toBe(0);
+  });
+
+  it('keeps a name in `declared` when it is declared rather than imported', async () => {
+    const { declared, imported } = await parseModuleBindings(
+      '/project/src/Tab.ts',
+      `const _sfc_main = {};\nexport default _sfc_main;`
+    );
+
+    expect([...declared]).toEqual(['_sfc_main']);
+    expect(imported.size).toBe(0);
+  });
+
+  it('returns empty sets on parse failure', async () => {
+    const { declared, imported } = await parseModuleBindings('/project/src/Tab.ts', `const = ;`);
+
+    expect(declared.size).toBe(0);
+    expect(imported.size).toBe(0);
   });
 });

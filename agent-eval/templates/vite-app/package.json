@@ -7,8 +7,8 @@
     "#test-utils": "./__agent_eval__/test-utils.ts"
   },
   "scripts": {
-    "build": "vite build",
     "dev": "vite",
+    "build": "vite build",
     "typecheck": "tsc --noEmit --project ./tsconfig.app.json"
   },
   "dependencies": {

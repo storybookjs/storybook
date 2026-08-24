@@ -2,8 +2,8 @@
   "name": "823-setup-outdated-storybook",
   "type": "module",
   "scripts": {
-    "build-storybook": "storybook build",
-    "storybook": "storybook dev"
+    "storybook": "storybook dev",
+    "build-storybook": "storybook build"
   },
   "devDependencies": {
     "@storybook/react": "10.4.0",

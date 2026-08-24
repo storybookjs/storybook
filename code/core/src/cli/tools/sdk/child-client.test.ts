@@ -295,6 +295,17 @@ describe('spawnChildHost', () => {
       data: { ran: true },
       markdown: 'ok',
     });
+    expect(sink).toHaveBeenCalledWith(
+      'tool:listAllDocumentation',
+      expect.objectContaining({
+        toolset: 'docs',
+        client: 'sdk',
+        requestedMode: 'attached',
+        resolvedMode: 'attached',
+        attachMode: 'attached',
+        host: 'child',
+      })
+    );
   });
 
   it('sends a cancel envelope keyed by the call id when the signal aborts', async () => {

@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
-import { toId } from 'storybook/internal/csf';
+import { toId } from 'storybook/internal/csf/csf-utils';
 import { getStorySortParameter, loadCsf } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import type {
@@ -25,13 +25,7 @@ vi.mock('../utils/constants', () => {
   };
 });
 
-vi.mock('storybook/internal/csf', async (importOriginal) => {
-  const csf = await importOriginal<typeof import('storybook/internal/csf')>();
-  return {
-    ...csf,
-    toId: vi.fn(csf.toId),
-  };
-});
+vi.mock('storybook/internal/csf/csf-utils', { spy: true });
 
 vi.mock('storybook/internal/node-logger');
 

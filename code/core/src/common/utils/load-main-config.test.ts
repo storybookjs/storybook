@@ -1,4 +1,6 @@
-import { describe, expect, it, vi } from 'vitest';
+import { readFile, rm, writeFile } from 'node:fs/promises';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import {
   CommonJsGlobalInEsmError,
@@ -10,14 +12,21 @@ import * as interpretFiles from './interpret-files.ts';
 import { loadMainConfig } from './load-main-config.ts';
 import * as validateFiles from './validate-configuration-files.ts';
 
-vi.mock('node:fs/promises', () => ({
-  readFile: vi.fn(async () => 'export default {};'),
-  writeFile: vi.fn(async () => {}),
-  rm: vi.fn(async () => {}),
-}));
+vi.mock('node:fs/promises', { spy: true });
 
-vi.spyOn(validateFiles, 'validateConfigurationFiles').mockResolvedValue(undefined as any);
-vi.spyOn(interpretFiles, 'getInterpretedFile').mockReturnValue('.storybook/main.ts');
+beforeEach(() => {
+  // The polyfill path reads the main file and writes/removes a temp copy; the test never asserts
+  // disk state, so redirect these spies to no-ops instead of touching the real filesystem.
+  vi.mocked(readFile).mockResolvedValue('export default {};');
+  vi.mocked(writeFile).mockResolvedValue();
+  vi.mocked(rm).mockResolvedValue();
+  vi.spyOn(validateFiles, 'validateConfigurationFiles').mockResolvedValue(undefined as any);
+  vi.spyOn(interpretFiles, 'getInterpretedFile').mockReturnValue('.storybook/main.ts');
+});
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe('loadMainConfig', () => {
   it('returns the config when it loads cleanly', async () => {

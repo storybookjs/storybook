@@ -1,6 +1,5 @@
 {
   "id": "runtime-multi-constructor",
-  "import": "import RuntimeMultiConstructor from './RuntimeMultiConstructor.vue';",
   "name": "RuntimeMultiConstructor",
   "path": "__PATH__",
   "stories": {
@@ -8,7 +7,11 @@
       "description": undefined,
       "id": "forms-runtime-multi-constructor--props-as-written",
       "name": "Props As Written",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import RuntimeMultiConstructor from './RuntimeMultiConstructor.vue';
+</script>
+
+<template>
   <RuntimeMultiConstructor :width="200" />
 </template>",
       "summary": undefined,

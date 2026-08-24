@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
+  - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
   - [`@storybook/csf-plugin` removed](#storybookcsf-plugin-removed)
 - [From version 10.4.0 to 10.5.0](#from-version-1040-to-1050)
@@ -530,6 +531,47 @@
 
 ## From version 10.5.x to 10.6.0
 
+### Vue 3: `vue-docgen-api` is deprecated
+
+`vue-docgen-api` is the docgen engine `@storybook/vue3-vite` uses to document props, events, slots and exposes. It is deprecated and will be removed in the next major version of Storybook, leaving [`vue-component-meta`](https://github.com/vuejs/language-tools/tree/master/packages/component-meta) — the extractor maintained by the Vue team — as the only engine. It documents more of your components: `.ts`, `.tsx`, `.js` and `.jsx` components as well as SFCs, named exports next to default ones, and richer prop, event, slot and exposed types.
+
+`vue-docgen-api` is still the default, so Storybook logs the deprecation whenever it runs, including when you never set the `docgen` framework option.
+
+The path we recommend is server-side docgen, which becomes the default in Storybook 11. It runs `vue-component-meta` on the Storybook server instead of in the builder, and also feeds the component manifest that AI agents read:
+
+```ts
+// .storybook/main.ts
+features: { experimentalDocgenServer: true },
+```
+
+To stay on builder-side docgen for now, select the engine explicitly instead:
+
+```ts
+// .storybook/main.ts
+framework: {
+  name: '@storybook/vue3-vite',
+  options: {
+    docgen: 'vue-component-meta',
+  },
+},
+```
+
+If your main `tsconfig.json` only references other tsconfig files, such as `tsconfig.app.json`, point the engine at the one that resolves your components, or import aliases will not resolve:
+
+```ts
+// .storybook/main.ts
+framework: {
+  name: '@storybook/vue3-vite',
+  options: {
+    docgen: { plugin: 'vue-component-meta', tsconfig: 'tsconfig.app.json' },
+  },
+},
+```
+
+`docgen: true` is an alias for `vue-docgen-api` and is deprecated with it. `docgen: false`, which turns docgen off entirely, is unaffected and logs nothing.
+
+The two engines emit different `__docgenInfo` shapes. Storybook's own argTypes extraction handles both, but code of yours that reads `__docgenInfo` directly needs updating: the `expose` entries become `exposed`, and props, events and slots carry `vue-component-meta`'s type information. The `VueDocgenInfo` and `VueDocgenInfoEntry` types exported from `@storybook/vue3` are parameterized by engine (`VueDocgenInfo<'vue-component-meta'>`) to help with that.
+
 ### Angular Vite: a new `propsTable` framework option
 
 `@storybook/angular-vite` now lets you choose which members the props table documents, through a `propsTable` framework option. It defaults to `'api'`, which leaves out TypeScript `private` properties and methods, ECMAScript private `#` members, and anything tagged `@internal`. No template can reach a `private` property or method, and `@internal` declares a member non-API, so a row for them documents your component's wiring rather than its API. Injected services such as `private readonly cdr = inject(ChangeDetectorRef)` are the common case.
@@ -575,6 +617,76 @@ Storybook's MCP tools are now named from their toolset and method (`stories.prev
 | `get-documentation-for-story` | `docs-show-story` |
 
 `get-storybook-story-instructions` is unchanged (it is not backed by a toolset method).
+
+### Angular Vite defaults to server-side docgen
+
+`experimentalDocgenServer` moves component analysis out of the browser and onto the Storybook server, where each component is read from its TypeScript source once and the resulting inputs, outputs and descriptions are served to the Controls table, the Docs pages and the component manifest that AI agents read.
+
+`@storybook/angular-vite` now enables that feature by default. Angular metadata is extracted in process, so Compodoc no longer runs, `documentation.json` is no longer read, and Compodoc is no longer needed as a dependency.
+
+The `storybook automigrate` command removes the Compodoc setup that has no effect anymore: the `compodoc` and `compodocArgs` framework options, the `setCompodocJson` wiring in your preview config, the Compodoc options on the `angular.json` Storybook targets, and the `@compodoc/compodoc` dependency.
+
+To keep using Compodoc, opt out and skip that automigration:
+
+```js
+// .storybook/main.js
+export default {
+  framework: '@storybook/angular-vite',
+  features: { experimentalDocgenServer: false },
+};
+```
+
+Opting out keeps the Compodoc setup an existing project already has.
+A project created after this change has none, because `storybook init` no longer sets Compodoc up for the Vite builder, so opting out there means installing `@compodoc/compodoc`, generating `documentation.json`, and handing it to Storybook yourself:
+
+```js
+// .storybook/preview.js
+import { setCompodocJson } from '@storybook/addon-docs/angular';
+
+import docJson from '../documentation.json';
+
+setCompodocJson(docJson);
+```
+
+Treat that opt-out as a migration aid rather than a long-term setting.
+`@storybook/angular-vite` is planned to be marked stable in Storybook 11, and `experimentalDocgenServer: false` is planned to be deprecated in the same release and removed in Storybook 12, together with the `compodoc` and `compodocArgs` framework options and the `setCompodocJson` wiring.
+
+The webpack-based `@storybook/angular` package is unaffected and keeps Compodoc as its only docgen path.
+
+The `compodoc` and `compodocArgs` options on the `@storybook/angular-vite` `start-storybook` and `build-storybook` builder schemas are deprecated.
+They are still accepted, so a workspace that still declares them in `angular.json` keeps building, and `ng run` now reports them as deprecated.
+Nothing reads them: Compodoc is configured through `framework.options` in your main config.
+
+### Angular Vite: tsconfig paths now take priority over `node_modules` in production builds too
+
+`@storybook/angular-vite` now sets Vite's `resolve.tsconfigPaths` to `true` by default.
+Previously `dev` only consulted your tsconfig's `compilerOptions.paths` when that flag was on, while `build` already fell back to `paths` whenever normal resolution failed.
+That asymmetry meant a workspace alias with no matching `node_modules` package could build successfully and then fail to serve in `dev`.
+Turning the flag on by default closes that gap, and matches how `tsc` already looks up the same paths - though only for module resolution, not for rewriting emitted import specifiers, which TypeScript never does.
+
+Beyond closing the dev gap, this also changes what `build` bundles for a specifier that resolves two different ways: through a `paths` entry in your tsconfig, and through an actual package of the same name in `node_modules`.
+That overlap is ordinary in an Nx or Yarn/npm workspace, and it is the one case worth checking after this upgrade - the dev-serving fix applies with no downside.
+For example, a root tsconfig mapping `"@org/ui": ["libs/ui/src/index.ts"]`, in a workspace that also has a `node_modules/@org/ui` entry (a workspace symlink, or an installed published copy of the same library).
+Before this change, `storybook build` bundled the compiled package from `node_modules`.
+After this change, it bundles the raw `libs/ui/src/index.ts` source instead, which goes through Analog's Angular transform under the app's compiler flags rather than the library's own.
+
+To keep the previous `build` behavior, opt out in your Vite config:
+
+```ts
+// .storybook/main.ts
+export default {
+  framework: '@storybook/angular-vite',
+  async viteFinal(config) {
+    return {
+      ...config,
+      resolve: {
+        ...config.resolve,
+        tsconfigPaths: false,
+      },
+    };
+  },
+};
+```
 
 ### Experimental Playwright CT integration removed
 

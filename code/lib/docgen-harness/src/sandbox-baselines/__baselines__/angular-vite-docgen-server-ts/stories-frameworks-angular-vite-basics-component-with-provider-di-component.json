@@ -1,5 +1,20 @@
 {
   "argTypes": {
+    "elRef": {
+      "name": "elRef",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "ElementRef"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
     "elRefStr": {
       "name": "elRefStr",
       "table": {
@@ -15,6 +30,21 @@
         "value": "void"
       }
     },
+    "injector": {
+      "name": "injector",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "Injector"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
     "isAllDeps": {
       "name": "isAllDeps",
       "table": {
@@ -28,6 +58,20 @@
       "type": {
         "name": "other",
         "value": "void"
+      }
+    },
+    "testToken": {
+      "name": "testToken",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "number"
       }
     },
     "title": {

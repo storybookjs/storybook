@@ -37,7 +37,7 @@ describe('buildHostComponentSnippet', () => {
   it('declares NgComponentOutlet and exposes the class when there is no selector', () => {
     const { snippet } = build({
       viaComponentOutlet: true,
-      template: '<ng-container *ngComponentOutlet="ButtonComponent"></ng-container>',
+      template: '<ng-container *ngComponentOutlet="ButtonComponent" />',
     });
 
     expect(snippet).toContain("import { NgComponentOutlet } from '@angular/common';");
@@ -76,7 +76,7 @@ describe('buildHostComponentSnippet', () => {
     const { snippet, warning } = build({
       standalone: false,
       viaComponentOutlet: true,
-      template: '<ng-container *ngComponentOutlet="ButtonComponent"></ng-container>',
+      template: '<ng-container *ngComponentOutlet="ButtonComponent" />',
       ngModules: {
         names: ['ButtonModule'],
         importStatements: ["import { ButtonModule } from './button.module.ts';"],

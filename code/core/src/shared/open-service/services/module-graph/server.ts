@@ -3,6 +3,7 @@ import { STORY_INDEX_INVALIDATED } from 'storybook/internal/core-events';
 import type { Presets } from 'storybook/internal/types';
 
 import { registerService } from '../../server.ts';
+import { registerModuleGraphIndexService } from '../module-graph-index/server.ts';
 import { moduleGraphServiceDef } from './definition.ts';
 import type { ChangeDetectionAdapter } from './engine/adapters/types.ts';
 import { ModuleGraphEngine, type ModuleGraphEngineOptions } from './engine/module-graph-engine.ts';
@@ -58,10 +59,11 @@ export function resetChangeDetectionAdapterForTests(): void {
 }
 
 /**
- * Registers the `core/module-graph` open service, constructs the graph engine, wires state mirroring
- * into the service commands, and listens for story-index invalidation on the server channel. The
- * engine starts once {@link resolveChangeDetectionAdapter} provides the builder adapter, or once
- * the first `_waitForSettledEngine` call obtains one through {@link RegisterModuleGraphServiceOptions.getAdapter}.
+ * Registers `core/module-graph-index` then `core/module-graph`, constructs the graph engine, wires
+ * state mirroring into the service commands, and listens for story-index invalidation on the server
+ * channel. The engine starts once {@link resolveChangeDetectionAdapter} provides the builder adapter,
+ * or once the first `_waitForSettledEngine` call obtains one through
+ * {@link RegisterModuleGraphServiceOptions.getAdapter}.
  *
  * The engine lives for the entire dev-server process, so there is no teardown path: the OS reclaims
  * everything when the process exits.
@@ -72,6 +74,8 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
   let engine: ModuleGraphEngine | undefined = undefined;
   let engineStarted = false;
   let obtainAdapter: Promise<void> | undefined;
+
+  const indexRuntime = registerModuleGraphIndexService(workingDir);
 
   const runtime = registerService(
     {
@@ -101,9 +105,8 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
     onSnapshot: (storiesByFile) => {
       void runtime.commands._applyGraphSnapshot({ storiesByFile });
     },
-    onUpdate: ({ storiesByFile, bumpedStoryFiles }) => {
-      void runtime.commands._applyGraphUpdate({ storiesByFile, bumpedStoryFiles });
-    },
+    onIndex: (storiesByFile) => indexRuntime.commands._applyIndex({ storiesByFile }),
+    onBump: (bumpedStoryFiles) => runtime.commands._applyGraphUpdate({ bumpedStoryFiles }),
     onError: (error) => {
       void runtime.commands._setStatus({ value: 'error', error: errorToErrorLike(error) });
     },

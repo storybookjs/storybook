@@ -5,10 +5,10 @@
     "table": {
       "category": "inputs",
       "defaultValue": {
-        "summary": "Math.max(1, 3)",
+        "summary": undefined,
       },
       "type": {
-        "required": true,
+        "required": false,
         "summary": "number",
       },
     },
@@ -22,10 +22,10 @@
     "table": {
       "category": "inputs",
       "defaultValue": {
-        "summary": "5 * 60 * 1000",
+        "summary": undefined,
       },
       "type": {
-        "required": true,
+        "required": false,
         "summary": "number",
       },
     },

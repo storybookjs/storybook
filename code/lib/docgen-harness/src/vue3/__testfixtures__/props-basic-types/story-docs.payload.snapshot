@@ -1,6 +1,5 @@
 {
   "id": "props-basic-types",
-  "import": "import PropsBasicTypes from './PropsBasicTypes.vue';",
   "name": "PropsBasicTypes",
   "path": "__PATH__",
   "stories": {
@@ -8,7 +7,11 @@
       "description": undefined,
       "id": "forms-props-basic-types--props-as-written",
       "name": "Props As Written",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import PropsBasicTypes from './PropsBasicTypes.vue';
+</script>
+
+<template>
   <PropsBasicTypes :count="2" enabled label="Hello" />
 </template>",
       "summary": undefined,
@@ -18,6 +21,8 @@
       "id": "forms-props-basic-types--unrepresentable-args",
       "name": "Unrepresentable Args",
       "snippet": "<script lang="ts" setup>
+import PropsBasicTypes from './PropsBasicTypes.vue';
+
 const big = BigInt('9007199254740993');
 
 const config = { theme: 'dark', dense: true };

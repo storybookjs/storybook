@@ -43,7 +43,7 @@ const givenStoryFile = (source: string) => {
 const noDocgen = async (): Promise<undefined> => undefined;
 
 const buttonDocgen =
-  (jsDocTags: AngularDocgenPayload['jsDocTags'] = {}, standalone = true) =>
+  (jsDocTags: AngularDocgenPayload['jsDocTags'] = {}, standalone = true, outputs = ['pressed']) =>
   async (): Promise<AngularDocgenPayload> => ({
     id: 'example-button',
     name: 'ButtonComponent',
@@ -54,7 +54,7 @@ const buttonDocgen =
       selector: 'sb-button',
       standalone,
       inputs: ['label'],
-      outputs: ['pressed'],
+      outputs,
       enums: [],
     },
   });
@@ -89,6 +89,7 @@ const STORY_SHAPES_FILE = [
   `const HOISTED_TEMPLATE = '<sb-button hoisted></sb-button>';`,
   `const renderFn = () => ({ template: '<sb-button via-fn></sb-button>' });`,
   `const sharedArgs = { label: 'shared' };`,
+  `const LOCAL_LABEL = 'Save';`,
   `export default {`,
   `  title: 'Example/Button',`,
   `  component: ButtonComponent,`,
@@ -119,25 +120,53 @@ const STORY_SHAPES_FILE = [
   // The idiom every Angular docs example uses: wrapper markup the user wrote, with the bindings
   // filled in by `argsToTemplate`.
   `export const ArgsToTemplate = {`,
-  `  args: { label: 'Save', count: 7 },`,
+  `  args: { label: 'Save', count: 7, clicked: () => {} },`,
   `  render: (args) => ({`,
   '    props: args,',
   '    template: `<div class="wrap"><sb-button ${argsToTemplate(args)}></sb-button></div>`,',
   `  }),`,
   `};`,
   `export const ArgsToTemplateExclude = {`,
-  `  args: { label: 'Save', count: 7 },`,
+  `  args: { label: 'Save', count: 7, clicked: () => {} },`,
   `  render: (args) => ({`,
   '    props: args,',
   "    template: `<sb-button ${argsToTemplate(args, { exclude: ['count'] })}></sb-button>`,",
   `  }),`,
   `};`,
   `export const SlotInterpolation = {`,
-  `  args: { label: 'Save', footer: 'Bye' },`,
+  `  args: { label: 'Save', footer: 'Bye', clicked: () => {} },`,
   `  render: ({ footer, ...args }) => ({`,
   '    props: args,',
   '    template: `<sb-button ${argsToTemplate(args)}><span>${footer}</span></sb-button>`,',
   `  }),`,
+  `};`,
+  // Markup written without `argsToTemplate` binds the args by name, which only resolves because
+  // the story hands them to the template through `props: args`.
+  `export const HandWrittenBindings = {`,
+  `  args: { label: 'Save', count: 3 },`,
+  `  render: (args) => ({`,
+  '    props: args,',
+  `    template: '<sb-button [label]="label" [count]="count"></sb-button>',`,
+  `  }),`,
+  `};`,
+  // The half-and-half shape `exclude` exists for: most bindings expanded, one written by hand.
+  `export const PartlyHandWritten = {`,
+  `  args: { label: 'Save', count: 7 },`,
+  `  render: (args) => ({`,
+  '    props: args,',
+  '    template: `<sb-button ${argsToTemplate(args, { exclude: [\'label\'] })} [label]="label.toUpperCase()"></sb-button>`,',
+  `  }),`,
+  `};`,
+  `export const OutputNamedArg = {`,
+  `  args: { clicked: 'not a handler' },`,
+  `  render: (args) => ({`,
+  '    props: args,',
+  `    template: '<sb-button (clicked)="clicked($event)"></sb-button>',`,
+  `  }),`,
+  `};`,
+  `export const IdentifierArgValue = {`,
+  `  args: { label: LOCAL_LABEL },`,
+  `  render: (args) => ({ props: args, template: '<sb-button [label]="label"></sb-button>' }),`,
   `};`,
   `export const UnreadableInterpolation = {`,
   `  args: { label: 'Save' },`,
@@ -220,6 +249,20 @@ describe('buildStoryDocsPayload', () => {
     });
   });
 
+  it('keeps unevaluable arg source when the story file uses CRLF', async () => {
+    givenStoryFile(
+      dedent`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { label: (value) => value } };
+      `.replace(/\n/g, '\r\n')
+    );
+
+    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() });
+
+    expect(Object.values(payload!.stories)[0].snippet).toContain(`[label]="(value) => value"`);
+  });
+
   it('builds a snippet from the snippet meta core/docgen carries alongside argTypes', async () => {
     givenStoryFile(`
       import { ButtonComponent } from './button.component';
@@ -247,6 +290,21 @@ describe('buildStoryDocsPayload', () => {
     expect(story.snippet).toContain('sb-button');
     expect(story.snippet).toContain(`[label]="'Save'"`);
     expect(story.warning).toBeUndefined();
+  });
+
+  it('slices an unevaluable arg out of a story file written with CRLF line endings', async () => {
+    givenStoryFile(
+      [
+        `import { ButtonComponent } from './button.component';`,
+        `export default { title: 'Example/Button', component: ButtonComponent };`,
+        `export const Default = { args: { label: (value) => value.trim() } };`,
+      ].join('\r\n')
+    );
+
+    const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() });
+
+    const story = Object.values(payload!.stories)[0];
+    expect(story.snippet).toContain(`[label]="(value) => value.trim()"`);
   });
 
   it('attaches the snippet builder warning for a non-standalone component', async () => {
@@ -393,7 +451,7 @@ describe('buildStoryDocsPayload', () => {
     expect(story.warning).toContain('NgModule');
   });
 
-  it('leaves a standalone component in `imports` even when moduleMetadata lists modules', async () => {
+  it('imports a standalone component alongside the modules its moduleMetadata lists', async () => {
     givenStoryFile(`
       import { moduleMetadata } from '@storybook/angular-vite';
       import { ButtonComponent } from './button.component';
@@ -409,9 +467,23 @@ describe('buildStoryDocsPayload', () => {
     const payload = await buildStoryDocsPayload({ entry }, { getDocgenPayload: buttonDocgen() });
 
     const story = Object.values(payload!.stories)[0];
-    expect(story.snippet).toContain('imports: [ButtonComponent],');
-    expect(story.snippet).not.toContain('IconModule');
-    expect(story.warning).toBeUndefined();
+    expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+      {
+        "snippet": "import { Component } from '@angular/core';
+      import { ButtonComponent } from './button.component';
+      import { IconModule } from './icon.module';
+
+      @Component({
+        selector: 'app-demo',
+        imports: [ButtonComponent, IconModule],
+        template: \`<sb-button (pressed)="pressed($event)" />\`,
+      })
+      export class DemoComponent {
+        pressed(event: unknown) {}
+      }",
+        "warning": undefined,
+      }
+    `);
   });
 
   it('names the payload after the story file component when core/docgen has no payload', async () => {
@@ -446,7 +518,7 @@ describe('buildStoryDocsPayload', () => {
       @Component({
         selector: 'app-demo',
         imports: [ButtonComponent],
-        template: \`<sb-button [label]="'Save'" (pressed)="pressed($event)"></sb-button>\`,
+        template: \`<sb-button [label]="'Save'" (pressed)="pressed($event)" />\`,
       })
       export class DemoComponent {
         pressed(event: unknown) {}
@@ -550,7 +622,7 @@ describe('buildStoryDocsPayload', () => {
 
     it('treats a null template as no template rather than as markup', async () => {
       expect((await templatesOf(STORY_SHAPES_FILE)).get('Null Template')).toBe(
-        `<sb-button [label]="'meta'" [count]="2" (clicked)="clicked($event)"></sb-button>`
+        `<sb-button [label]="'meta'" [count]="2" (clicked)="clicked($event)" />`
       );
     });
 
@@ -580,13 +652,7 @@ describe('buildStoryDocsPayload', () => {
 
     it('reads args CSF2 assigned after the declaration', async () => {
       expect((await templatesOf(STORY_SHAPES_FILE)).get('Csf 2 Assigned Args')).toBe(
-        [
-          '<sb-button',
-          `    [label]="'assigned'"`,
-          '    [count]="11"',
-          '    (clicked)="clicked($event)">',
-          '</sb-button>',
-        ].join('\n')
+        `<sb-button [label]="'assigned'" [count]="11" (clicked)="clicked($event)" />`
       );
     });
 
@@ -595,24 +661,9 @@ describe('buildStoryDocsPayload', () => {
     it.each([
       [
         'ReExported',
-        [
-          '<sb-button',
-          `    [label]="'reexported'"`,
-          '    [count]="9"',
-          '    (clicked)="clicked($event)">',
-          '</sb-button>',
-        ].join('\n'),
+        `<sb-button [label]="'reexported'" [count]="9" (clicked)="clicked($event)" />`,
       ],
-      [
-        'RenamedStory',
-        [
-          '<sb-button',
-          `    [label]="'meta'"`,
-          '    [count]="10"',
-          '    (clicked)="clicked($event)">',
-          '</sb-button>',
-        ].join('\n'),
-      ],
+      ['RenamedStory', `<sb-button [label]="'meta'" [count]="10" (clicked)="clicked($event)" />`],
       ['ReExportedTemplate', '<sb-button reexported></sb-button>'],
     ])('reads the re-exported %s story from its own config', async (storyName, expected) => {
       expect((await templatesOf(STORY_SHAPES_FILE)).get(storyName)).toBe(expected);
@@ -634,6 +685,157 @@ describe('buildStoryDocsPayload', () => {
       );
     });
 
+    it('reports an arg the component does not declare instead of binding it', async () => {
+      const story = await soleStory(`
+        import { argsToTemplate } from '@storybook/angular-vite';
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save', tooltip: 'Hi' },
+          render: (args) => ({
+            props: args,
+            template: \`<sb-button \${argsToTemplate(args)}></sb-button>\`,
+          }),
+        };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button [label]="'Save'"></sb-button>\`,
+        })
+        export class DemoComponent {}",
+          "warning": "Incomplete snippet: \`tooltip\` could not be bound, since ButtonComponent declares no such input.",
+        }
+      `);
+    });
+
+    it('reports an arg whose name is not a binding the component accepts', async () => {
+      const story = await soleStory(`
+        import { argsToTemplate } from '@storybook/angular-vite';
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save', 'aria-label': 'Close', 'two words': 'x' },
+          render: (args) => ({
+            props: args,
+            template: \`<sb-button \${argsToTemplate(args)}></sb-button>\`,
+          }),
+        };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button [label]="'Save'"></sb-button>\`,
+        })
+        export class DemoComponent {}",
+          "warning": "Incomplete snippet: \`aria-label\`, \`two words\` could not be bound, since ButtonComponent declares no such input.",
+        }
+      `);
+    });
+
+    it('leaves an undefined-valued arg unbound, as argsToTemplate does at runtime', async () => {
+      const story = await soleStory(`
+        import { argsToTemplate } from '@storybook/angular-vite';
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: undefined },
+          render: (args) => ({
+            props: args,
+            template: \`<sb-button \${argsToTemplate(args)}></sb-button>\`,
+          }),
+        };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button></sb-button>\`,
+        })
+        export class DemoComponent {}",
+          "warning": undefined,
+        }
+      `);
+    });
+
+    it('reports a function-valued arg the component declares no output for', async () => {
+      const story = await soleStory(`
+        import { argsToTemplate } from '@storybook/angular-vite';
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { onSelect: () => {} },
+          render: (args) => ({
+            props: args,
+            template: \`<sb-button \${argsToTemplate(args)}></sb-button>\`,
+          }),
+        };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button></sb-button>\`,
+        })
+        export class DemoComponent {}",
+          "warning": "Incomplete snippet: \`onSelect\` could not be bound, since ButtonComponent declares no such output.",
+        }
+      `);
+    });
+
+    it('expands only present args whose values match their binding kind', async () => {
+      const story = await soleStory(
+        `
+        import { argsToTemplate } from '@storybook/angular-vite';
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save', pressed: () => {}, changed: 'not a handler' },
+          render: (args) => ({
+            props: args,
+            template: \`<sb-button \${argsToTemplate(args)}></sb-button>\`,
+          }),
+        };
+        `,
+        buttonDocgen({}, true, ['pressed', 'changed', 'absent'])
+      );
+
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button [label]="'Save'" (pressed)="pressed($event)"></sb-button>\`,
+        })
+        export class DemoComponent {
+          pressed(event: unknown) {}
+        }",
+          "warning": "Incomplete snippet: \`changed\` could not be bound, since ButtonComponent declares no such input.",
+        }
+      `);
+    });
+
     it('honours argsToTemplate exclude options', async () => {
       expect((await templatesOf(STORY_SHAPES_FILE)).get('Args To Template Exclude')).toBe(
         `<sb-button [label]="'Save'" (clicked)="clicked($event)"></sb-button>`
@@ -641,22 +843,38 @@ describe('buildStoryDocsPayload', () => {
     });
 
     it('substitutes an interpolated arg used as slot content', async () => {
-      expect((await templatesOf(STORY_SHAPES_FILE)).get('Slot Interpolation')).toBe(
-        [
-          `<sb-button [label]="'Save'" (clicked)="clicked($event)">`,
-          '    <span>Bye</span>',
-          '</sb-button>',
-        ].join('\n')
-      );
+      const story = (await storiesOf(STORY_SHAPES_FILE)).get('Slot Interpolation');
+      expect({ snippet: story?.snippet, warning: story?.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`
+            <sb-button [label]="'Save'" (clicked)="clicked($event)">
+                <span>Bye</span>
+            </sb-button>\`,
+        })
+        export class DemoComponent {
+          clicked(event: unknown) {}
+        }",
+          "warning": undefined,
+        }
+      `);
     });
 
     it('leaves a story it could read entirely alone', async () => {
       expect((await warningsOf(STORY_SHAPES_FILE)).get('Null Template')).toBeUndefined();
     });
 
-    it('reports a spread at the config level, not only one inside args', async () => {
-      expect((await warningsOf(STORY_SHAPES_FILE)).get('Config Spread')).toBe(
-        'Incomplete snippet: `...SpreadArgs` could not be resolved statically.'
+    // `{ ...SpreadArgs, args: { count: 12 } }` copies the story it names and then replaces its
+    // args outright, which is what the spread means; only the meta's args survive underneath.
+    it('reads a spread at the config level, not only one inside args', async () => {
+      expect((await warningsOf(STORY_SHAPES_FILE)).get('Config Spread')).toBeUndefined();
+      expect((await templatesOf(STORY_SHAPES_FILE)).get('Config Spread')).toBe(
+        `<sb-button [label]="'meta'" [count]="12" (clicked)="clicked($event)" />`
       );
     });
 
@@ -669,6 +887,137 @@ describe('buildStoryDocsPayload', () => {
 
       expect(byName.get('Args To Template')).toContain('clicked(event: unknown) {}');
       expect(byName.get('Own Template')).not.toContain('clicked(event: unknown) {}');
+    });
+  });
+
+  // Hand-written markup runs against the story's `props: args`, which the host component the
+  // snippet ships does not have. The args it names have to come with it or the example is dead.
+  describe('args the markup binds by name', () => {
+    it('declares them on the host, leaving the markup as written', async () => {
+      expect((await storiesOf(STORY_SHAPES_FILE)).get('Hand Written Bindings')?.snippet).toBe(
+        [
+          `import { Component } from '@angular/core';`,
+          `import { ButtonComponent } from './button.component';`,
+          '',
+          '@Component({',
+          `  selector: 'app-demo',`,
+          '  imports: [ButtonComponent],',
+          '  template: `<sb-button [label]="label" [count]="count"></sb-button>`,',
+          '})',
+          'export class DemoComponent {',
+          `  label = 'Save';`,
+          '  count = 3;',
+          '}',
+        ].join('\n')
+      );
+    });
+
+    // An expanded binding carries its value in the markup, so only the attribute name is left to
+    // match on; declaring it would add a member nothing reads.
+    it('skips the args argsToTemplate already expanded', async () => {
+      const snippet = (await storiesOf(STORY_SHAPES_FILE)).get('Partly Hand Written')?.snippet;
+      expect(snippet).toContain(`[count]="7"`);
+      expect(snippet).toContain(`  label = 'Save';`);
+      expect(snippet).not.toContain('count = 7;');
+    });
+
+    it('leaves an output binding to its handler rather than declaring both', async () => {
+      const snippet = (await storiesOf(STORY_SHAPES_FILE)).get('Output Named Arg')?.snippet;
+      expect(snippet).toContain('  clicked(event: unknown) {}');
+      expect(snippet).not.toContain(`clicked = 'not a handler';`);
+    });
+
+    it('declares statically keyed and void-valued args as host fields', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { 'two words': 'available', label: void 0 },
+          render: (args) => ({
+            props: args,
+            template: \`<sb-button [label]="label">{{ this['two words'] }}</sb-button>\`,
+          }),
+        };
+      `);
+
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button [label]="label">{{ this['two words'] }}</sb-button>\`,
+        })
+        export class DemoComponent {
+          ['two words'] = 'available';
+          label = undefined;
+        }",
+          "warning": undefined,
+        }
+      `);
+    });
+
+    it('declares an arg a @defer condition reads', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { ready: true },
+          render: (args) => ({
+            props: args,
+            template: '<div>@defer (when ready) { <sb-button></sb-button> }</div>',
+          }),
+        };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`
+            <div>
+                @defer (when ready) {
+                <sb-button></sb-button>
+                }
+            </div>\`,
+        })
+        export class DemoComponent {
+          ready = true;
+        }",
+          "warning": undefined,
+        }
+      `);
+    });
+
+    // A name the story file declares is read through to its value: the host component the snippet
+    // ships would evaluate `LOCAL_LABEL` against itself and silently find nothing.
+    it('declares the value behind an arg written as a local name', async () => {
+      const story = (await storiesOf(STORY_SHAPES_FILE)).get('Identifier Arg Value');
+      expect(story?.warning).toBeUndefined();
+      expect(story?.snippet).toContain(`  label = 'Save';`);
+      expect(story?.snippet).not.toContain('label = LOCAL_LABEL;');
+    });
+
+    // A name another module owns cannot be read here and must not be printed as if it resolved.
+    it('reports an arg whose value another module owns', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        import { REMOTE_LABEL } from './labels';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: REMOTE_LABEL },
+          render: (args) => ({ props: args, template: '<sb-button [label]="label"></sb-button>' }),
+        };
+      `);
+      expect(story.warning).toBe(
+        'Incomplete snippet: `REMOTE_LABEL` could not be resolved statically.'
+      );
+      expect(story.snippet).not.toContain('label = REMOTE_LABEL;');
     });
   });
 
@@ -703,13 +1052,13 @@ describe('buildStoryDocsPayload', () => {
       `);
       expect(story.warning).toContain('get render()');
       expect(extractHostComponentTemplate(story.snippet!)).toBe(
-        `<sb-button [label]="'Save'" (pressed)="pressed($event)"></sb-button>`
+        `<sb-button [label]="'Save'" (pressed)="pressed($event)" />`
       );
     });
 
-    // `{ render: fn, ...base }` runs base.render when the spread carries one, so the explicit
-    // property cannot be trusted.
-    it('falls back with a warning when a later spread can shadow the render', async () => {
+    // `{ render: fn, ...base }` runs base.render when the spread carries one, so reading the spread
+    // is what says whether the explicit property survives.
+    it('keeps the render a later spread turns out not to shadow', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
@@ -719,19 +1068,53 @@ describe('buildStoryDocsPayload', () => {
           ...base,
         };
       `);
-      expect(story.warning).toBe('Incomplete snippet: `...base` could not be resolved statically.');
+      expect(story.warning).toBeUndefined();
+      expect(extractHostComponentTemplate(story.snippet!)).toBe(
+        '<sb-button from-story></sb-button>'
+      );
+    });
+
+    it('falls back with a warning when a later spread cannot be read at all', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        declare function makeBase(): object;
+        export const Default = {
+          render: () => ({ template: '<sb-button from-story></sb-button>' }),
+          ...makeBase(),
+        };
+      `);
+      expect(story.warning).toBe(
+        'Incomplete snippet: `...makeBase()` could not be resolved statically.'
+      );
       expect(story.snippet).not.toContain('from-story');
     });
 
-    it('falls back with a warning for a config that is only a spread', async () => {
+    // `{ template: '…', ...makeBase() }` runs the spread after the write, so the template the story
+    // ends up with may be a different one entirely.
+    it('falls back when a later unreadable spread may replace the template', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        declare function makeBase(): object;
+        export const Default = {
+          template: '<sb-button from-story></sb-button>',
+          ...makeBase(),
+        };
+      `);
+      expect(story.warning).toContain('`...makeBase()` could not be resolved statically');
+      expect(story.snippet).not.toContain('from-story');
+    });
+
+    it('reads a config that is only a spread', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
         const base = { args: { label: 'From base' } };
         export const Default = { ...base };
       `);
-      expect(story.warning).toBe('Incomplete snippet: `...base` could not be resolved statically.');
-      expect(story.snippet).not.toContain('From base');
+      expect(story.warning).toBeUndefined();
+      expect(story.snippet).toContain(`[label]="'From base'"`);
     });
 
     it('reads a template written after a harmless earlier spread', async () => {
@@ -752,7 +1135,7 @@ describe('buildStoryDocsPayload', () => {
         export const Default = { args: { ...extra } };
       `);
       expect(extractHostComponentTemplate(story.snippet!)).toBe(
-        `<sb-button [label]="'extra'" (pressed)="pressed($event)"></sb-button>`
+        `<sb-button [label]="'extra'" (pressed)="pressed($event)" />`
       );
     });
 
@@ -764,7 +1147,7 @@ describe('buildStoryDocsPayload', () => {
         export const Default = { args: { label: 'Save' } };
       `);
       expect(extractHostComponentTemplate(story.snippet!)).toBe(
-        `<sb-button [label]="'Save'" (pressed)="pressed($event)"></sb-button>`
+        `<sb-button [label]="'Save'" (pressed)="pressed($event)" />`
       );
     });
 
@@ -781,7 +1164,8 @@ describe('buildStoryDocsPayload', () => {
       expect(story.snippet).toContain(`[label]="'Save'"`);
     });
 
-    it('reports a spread of an object that is mutated before the spread runs', async () => {
+    // Assigning a member is not hiding it: the value the spread copies is the assigned one.
+    it('applies a member assignment that has already run when the spread copies the object', async () => {
       const story = await soleStory(`
         import { ButtonComponent } from './button.component';
         export default { title: 'Example/Button', component: ButtonComponent };
@@ -789,10 +1173,19 @@ describe('buildStoryDocsPayload', () => {
         extra.label = 'mutated';
         export const Default = { args: { ...extra } };
       `);
-      expect(story.warning).toBe(
-        'Incomplete snippet: `...extra` could not be resolved statically.'
-      );
-      expect(story.snippet).not.toContain('extra');
+      expect(story.warning).toBeUndefined();
+      expect(story.snippet).toContain(`[label]="'mutated'"`);
+    });
+
+    it('reports a spread of an object something mutates a level deeper', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        const extra = { nested: { label: 'extra' } };
+        extra.nested.label = 'mutated';
+        export const Default = { args: { ...extra } };
+      `);
+      expect(story.warning).toContain('...extra');
     });
 
     // Which branch runs depends on the story's args at runtime.
@@ -813,6 +1206,35 @@ describe('buildStoryDocsPayload', () => {
       expect(story.warning).toContain('render:');
       expect(story.snippet).not.toContain('first');
       expect(story.snippet).toContain(`[label]="'Save'"`);
+    });
+
+    it('reports an opaque factory story even when its template reads', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        import { makeStory } from './factory';
+        export default {
+          title: 'Example/Button',
+          component: ButtonComponent,
+          render: () => ({ template: '<sb-button></sb-button>' }),
+        };
+        export const Default = makeStory('primary');
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button (pressed)="pressed($event)" />\`,
+        })
+        export class DemoComponent {
+          pressed(event: unknown) {}
+        }",
+          "warning": "Incomplete snippet: \`makeStory('primary')\` could not be resolved statically.",
+        }
+      `);
     });
 
     it('falls back with a warning when argsToTemplate options need the story to run', async () => {
@@ -1008,6 +1430,45 @@ describe('buildStoryDocsPayload', () => {
       `);
       expect(story.snippet).toContain(expected);
     });
+
+    it('binds an unevaluable arg the same way whatever whitespace the file uses', async () => {
+      const storyFile = (eol: string, indent: string) =>
+        [
+          `import { ButtonComponent } from './button.component';`,
+          `export default { title: 'Example/Button', component: ButtonComponent };`,
+          `export const Default = {`,
+          `${indent}args: {`,
+          `${indent}${indent}label: (value) => {`,
+          `${indent}${indent}${indent}return value.replace('a', 'b');`,
+          `${indent}${indent}},`,
+          `${indent}},`,
+          `};`,
+        ].join(eol);
+
+      const lf = await soleStory(storyFile('\n', '  '));
+      const crlf = await soleStory(storyFile('\r\n', '  '));
+      const tabs = await soleStory(storyFile('\n', '\t'));
+
+      expect(lf.snippet).toContain(
+        `[label]="(value) => {\n      return value.replace('a', 'b');\n    }"`
+      );
+      expect(crlf.snippet).toBe(lf.snippet);
+      expect(tabs.snippet).toBe(lf.snippet);
+    });
+
+    it.each([
+      ['above the arg', `label:\n          // why\n          (value) => value.trim(),`],
+      ['before the arg', `label: /* why */ (value) => value.trim(),`],
+      ['inside the arg', `label: (value) => /* why */ value.trim(),`],
+      ['inside the parameter list', `label: (/* why */ value) => value.trim(),`],
+    ])('leaves a comment %s out of the binding', async (_name, property) => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { ${property} } };
+      `);
+      expect(story.snippet).toContain(`[label]="(value) => value.trim()"`);
+    });
   });
 
   describe("spreads of another story's args", () => {
@@ -1021,13 +1482,7 @@ describe('buildStoryDocsPayload', () => {
         export const Secondary = { args: { ...Primary.args, label: 'Secondary' } };
       `);
       expect(templates.get('Secondary')).toBe(
-        [
-          '<sb-button',
-          `    [label]="'Secondary'"`,
-          '    [count]="1"',
-          '    (clicked)="clicked($event)">',
-          '</sb-button>',
-        ].join('\n')
+        `<sb-button [label]="'Secondary'" [count]="1" (clicked)="clicked($event)" />`
       );
     });
 
@@ -1040,7 +1495,7 @@ describe('buildStoryDocsPayload', () => {
         export const TwoDeep = { args: { ...Chained.args, label: 'deep' } };
       `);
       expect(templates.get('Two Deep')).toBe(
-        `<sb-button [label]="'deep'" [count]="1" (clicked)="clicked($event)"></sb-button>`
+        `<sb-button [label]="'deep'" [count]="1" (clicked)="clicked($event)" />`
       );
     });
 
@@ -1053,13 +1508,7 @@ describe('buildStoryDocsPayload', () => {
         export const Secondary = meta.story({ args: { ...Primary.input.args, label: 'Secondary' } });
       `);
       expect(templates.get('Secondary')).toBe(
-        [
-          '<sb-button',
-          `    [label]="'Secondary'"`,
-          '    [count]="1"',
-          '    (clicked)="clicked($event)">',
-          '</sb-button>',
-        ].join('\n')
+        `<sb-button [label]="'Secondary'" [count]="1" (clicked)="clicked($event)" />`
       );
     });
 
@@ -1073,13 +1522,7 @@ describe('buildStoryDocsPayload', () => {
         export const Spread = meta.story({ args: { ...Extended.input.args, label: 'spread' } });
       `);
       expect(templates.get('Spread')).toBe(
-        [
-          '<sb-button',
-          `    [label]="'spread'"`,
-          '    [count]="2"',
-          '    (clicked)="clicked($event)">',
-          '</sb-button>',
-        ].join('\n')
+        `<sb-button [label]="'spread'" [count]="2" (clicked)="clicked($event)" />`
       );
     });
 
@@ -1100,13 +1543,7 @@ describe('buildStoryDocsPayload', () => {
         }
       );
       expect(templates.get('Logged In')).toBe(
-        [
-          '<sb-button',
-          `    [label]="'from header'"`,
-          '    [count]="3"',
-          '    (clicked)="clicked($event)">',
-          '</sb-button>',
-        ].join('\n')
+        `<sb-button [label]="'from header'" [count]="3" (clicked)="clicked($event)" />`
       );
     });
 
@@ -1128,7 +1565,7 @@ describe('buildStoryDocsPayload', () => {
         }
       );
       expect(templates.get('Logged In')).toBe(
-        `<sb-button [label]="'from header'" (clicked)="clicked($event)"></sb-button>`
+        `<sb-button [label]="'from header'" (clicked)="clicked($event)" />`
       );
     });
 
@@ -1142,10 +1579,10 @@ describe('buildStoryDocsPayload', () => {
         export const SeesReplaced = { args: { ...Primary.args } };
       `);
       expect(templates.get('Sees Original')).toBe(
-        `<sb-button [label]="'original'" (clicked)="clicked($event)"></sb-button>`
+        `<sb-button [label]="'original'" (clicked)="clicked($event)" />`
       );
       expect(templates.get('Sees Replaced')).toBe(
-        `<sb-button [label]="'replaced'" (clicked)="clicked($event)"></sb-button>`
+        `<sb-button [label]="'replaced'" (clicked)="clicked($event)" />`
       );
     });
 
@@ -1218,6 +1655,171 @@ describe('buildStoryDocsPayload', () => {
       expect(stories.get('Logged In')?.warning).toBe(
         'Incomplete snippet: `...HeaderStories.LoggedIn.args` could not be resolved statically.'
       );
+    });
+  });
+
+  describe('args the generated element cannot represent', () => {
+    it('reports an arg the component declares no input for', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { label: 'Save', tooltip: 'Hi' } };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button [label]="'Save'" (pressed)="pressed($event)" />\`,
+        })
+        export class DemoComponent {
+          pressed(event: unknown) {}
+        }",
+          "warning": "Incomplete snippet: \`tooltip\` could not be bound, since ButtonComponent declares no such input.",
+        }
+      `);
+    });
+
+    it('names every arg it could not bind', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { tooltip: 'Hi', size: 'large' } };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button (pressed)="pressed($event)" />\`,
+        })
+        export class DemoComponent {
+          pressed(event: unknown) {}
+        }",
+          "warning": "Incomplete snippet: \`tooltip\`, \`size\` could not be bound, since ButtonComponent declares no such input.",
+        }
+      `);
+    });
+
+    it('leaves an arg the component declares as an output to its handler', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { pressed: () => {} } };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button (pressed)="pressed($event)" />\`,
+        })
+        export class DemoComponent {
+          pressed(event: unknown) {}
+        }",
+          "warning": undefined,
+        }
+      `);
+    });
+
+    it('reports an arg whose value another module owns', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        import { REMOTE_LABEL } from './labels';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = { args: { label: REMOTE_LABEL } };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button [label]="REMOTE_LABEL" (pressed)="pressed($event)" />\`,
+        })
+        export class DemoComponent {
+          pressed(event: unknown) {}
+        }",
+          "warning": "Incomplete snippet: \`REMOTE_LABEL\` could not be resolved statically.",
+        }
+      `);
+    });
+  });
+
+  describe('a source the author wrote', () => {
+    it('omits generated code when authored source code is explicitly disabled', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save' },
+          parameters: { docs: { source: { code: null } } },
+        };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": undefined,
+          "warning": undefined,
+        }
+      `);
+    });
+
+    it('reports authored code it cannot read instead of replacing it silently', async () => {
+      const story = await soleStory(`
+        import { ButtonComponent } from './button.component';
+        import { AUTHORED } from './authored';
+        export default { title: 'Example/Button', component: ButtonComponent };
+        export const Default = {
+          args: { label: 'Save' },
+          parameters: { docs: { source: { code: AUTHORED } } },
+        };
+      `);
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "import { Component } from '@angular/core';
+        import { ButtonComponent } from './button.component';
+
+        @Component({
+          selector: 'app-demo',
+          imports: [ButtonComponent],
+          template: \`<sb-button [label]="'Save'" (pressed)="pressed($event)" />\`,
+        })
+        export class DemoComponent {
+          pressed(event: unknown) {}
+        }",
+          "warning": "Incomplete snippet: \`AUTHORED\` could not be resolved statically.",
+        }
+      `);
+    });
+
+    it('uses authored code even when core/docgen has no payload', async () => {
+      const story = await soleStory(
+        `
+          import { ButtonComponent } from './button.component';
+          export default { title: 'Example/Button', component: ButtonComponent };
+          export const Default = {
+            parameters: { docs: { source: { code: '<sb-button authored></sb-button>' } } },
+          };
+        `,
+        noDocgen
+      );
+      expect({ snippet: story.snippet, warning: story.warning }).toMatchInlineSnapshot(`
+        {
+          "snippet": "<sb-button authored></sb-button>",
+          "warning": undefined,
+        }
+      `);
     });
   });
 });

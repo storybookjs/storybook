@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular-compodoc",
-  "version": "10.6.0-alpha.5",
+  "version": "10.6.0-alpha.7",
   "private": true,
   "description": "Shared Compodoc metadata parsing for Storybook's Angular frameworks",
   "keywords": [

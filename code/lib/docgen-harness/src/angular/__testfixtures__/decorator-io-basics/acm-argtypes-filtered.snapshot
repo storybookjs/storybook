@@ -60,7 +60,7 @@
         "summary": "Badge",
       },
       "type": {
-        "required": true,
+        "required": false,
         "summary": "string",
       },
     },

@@ -37,6 +37,13 @@ export interface TemplateRenderConfig {
   componentImports: Map<string, string>;
 }
 
+export interface ReadTemplateRenderConfigOptions {
+  /** Meta component identifier from CSF meta.component. */
+  componentName?: string;
+  /** Import statement for the meta component, after any `@import` override. */
+  componentImportStatement?: string;
+}
+
 export interface TransformTemplateInput {
   /** Static Vue template markup from a render object. */
   template: string;
@@ -49,8 +56,6 @@ export interface TransformTemplateInput {
 export interface TransformTemplateResult {
   /** Vue SFC snippet for the docs payload. */
   snippet: string;
-  /** Import statements for components actually used by the transformed template. */
-  imports: string[];
 }
 
 interface Edit {
@@ -63,7 +68,6 @@ interface TransformState {
   argsByName: Map<string, ClassifiedArg>;
   ctx: RenderContext;
   edits: Edit[];
-  usedImports: Set<string>;
   componentImports: Map<string, string>;
   template: string;
 }
@@ -76,7 +80,8 @@ const SETUP_PROPERTY = 'setup';
 /** Read a transformable template-render object without resolving the render function itself. */
 export function readTemplateRenderConfig(
   renderObject: t.ObjectExpression,
-  importBindings: Map<string, ImportBinding>
+  importBindings: Map<string, ImportBinding>,
+  options: ReadTemplateRenderConfigOptions = {}
 ): TemplateRenderConfig | undefined {
   if (!hasOnlySupportedRenderProperties(renderObject)) {
     return undefined;
@@ -94,7 +99,8 @@ export function readTemplateRenderConfig(
 
   const componentImports = readComponentImports(
     propertyValue(renderObject, 'components'),
-    importBindings
+    importBindings,
+    options
   );
   return componentImports ? { template, componentImports } : undefined;
 }
@@ -121,7 +127,6 @@ export function transformTemplate(
     argsByName: new Map(input.args.map((arg) => [arg.name, arg])),
     ctx: createRenderContext(),
     edits: [],
-    usedImports: new Set(),
     componentImports: input.componentImports,
     template: input.template,
   };
@@ -135,7 +140,6 @@ export function transformTemplate(
       templateCode: applyEdits(input.template, state.edits),
       ctx: state.ctx,
     }),
-    imports: Array.from(state.usedImports),
   };
 }
 
@@ -195,7 +199,7 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
 
   const importStatement = componentImportForTag(node.tag, state.componentImports);
   if (importStatement) {
-    state.usedImports.add(importStatement);
+    state.ctx.componentImports.add(importStatement);
   }
 
   const nameCounts = attributeNameCounts(node);
@@ -386,16 +390,23 @@ function hasOnlySupportedRenderProperties(renderObject: t.ObjectExpression): boo
     }
 
     const key = keyOf(property);
-    return key === 'components' || key === SETUP_PROPERTY || key === 'template';
+    // `inheritAttrs` only tunes runtime attribute fallthrough; the markup stays faithful without it.
+    return (
+      key === 'components' || key === SETUP_PROPERTY || key === 'template' || key === 'inheritAttrs'
+    );
   });
 }
 
 // { Button, 'my-button': Button }
 function readComponentImports(
   value: t.Node | undefined,
-  importBindings: Map<string, ImportBinding>
+  importBindings: Map<string, ImportBinding>,
+  options: ReadTemplateRenderConfigOptions
 ): Map<string, string> | undefined {
   const componentImports = new Map<string, string>();
+  if (options.componentName && options.componentImportStatement) {
+    componentImports.set(options.componentName, options.componentImportStatement);
+  }
   if (!value) {
     return componentImports;
   }
@@ -414,10 +425,10 @@ function readComponentImports(
       return undefined;
     }
 
-    const importStatement = importStatementForBinding(
-      component.name,
-      importBindings.get(component.name)
-    );
+    const importStatement =
+      component.name === options.componentName
+        ? options.componentImportStatement
+        : importStatementForBinding(component.name, importBindings.get(component.name));
     if (!importStatement) {
       return undefined;
     }

@@ -5,12 +5,7 @@ import { ShapeButtonComponent } from './shape-button.component.ts';
 import { IMPORTED_TEMPLATE } from './templates.ts';
 import * as BaseStories from './base-args.stories.ts';
 
-// This file is only ever parsed, not executed; a declaration keeps the package's client tree out
-// of the harness type graph while the generator matches the call by name.
-declare function argsToTemplate(
-  args: unknown,
-  options?: { include?: readonly string[]; exclude?: readonly string[] }
-): string;
+import { argsToTemplate } from '@storybook/angular-vite';
 
 type LooseStory = {
   args?: Record<string, unknown>;
@@ -49,7 +44,7 @@ export const MethodRender = {
 };
 
 export const ArgsToTemplateWrapper = {
-  args: { label: 'Save', count: 7 },
+  args: { label: 'Save', count: 7, clicked: () => {} },
   render: (args: Record<string, unknown>) => ({
     props: args,
     template: `<div class="wrap"><sb-shape-button ${argsToTemplate(args)}></sb-shape-button></div>`,

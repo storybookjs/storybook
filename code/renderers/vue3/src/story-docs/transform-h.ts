@@ -38,6 +38,8 @@ export interface TransformHInput {
   argsParam?: string;
   /** Story component tag the docgen roles describe. */
   componentName: string;
+  /** Import statement for the story component tag, after any `@import` override. */
+  componentImportStatement?: string;
   /** Docgen roles used to classify values written directly into the render tree. */
   docgen: VueDocgenArgInfo;
   /** Import bindings from the CSF module. */
@@ -47,8 +49,6 @@ export interface TransformHInput {
 export interface TransformHResult {
   /** Vue SFC snippet for the docs payload. */
   snippet: string;
-  /** Import statements for components used by the h tree. */
-  imports: string[];
 }
 
 type HRenderOptions = {
@@ -56,6 +56,7 @@ type HRenderOptions = {
   argsParam?: string;
   /** Story component tag the docgen roles apply to; absent in slot content. */
   componentName?: string;
+  componentImportStatements: Map<string, string>;
   ctx: RenderContext;
   docgen: VueDocgenArgInfo;
   importBindings: Map<string, ImportBinding>;
@@ -102,10 +103,14 @@ const isComponentName = (name: string): boolean => /^[A-Z]/.test(name);
 /** Transform a statically decidable Vue `h()` tree into an SFC snippet. */
 export function transformH(input: TransformHInput): TransformHResult | undefined {
   const ctx = createRenderContext();
+  const componentImportStatements = input.componentImportStatement
+    ? new Map([[input.componentName, input.componentImportStatement]])
+    : new Map<string, string>();
   const templateCode = renderHNode(input.node, {
     args: input.args,
     argsParam: input.argsParam,
     componentName: input.componentName,
+    componentImportStatements,
     ctx,
     docgen: input.docgen,
     importBindings: input.importBindings,
@@ -114,7 +119,6 @@ export function transformH(input: TransformHInput): TransformHResult | undefined
   return templateCode
     ? {
         snippet: renderPreparedSfcSnippet({ templateCode, ctx }),
-        imports: Array.from(ctx.componentImports),
       }
     : undefined;
 }
@@ -123,21 +127,25 @@ export function transformH(input: TransformHInput): TransformHResult | undefined
 export function renderSlotArgContent(
   arg: ClassifiedSlotArg,
   ctx: RenderContext,
-  importBindings: Map<string, ImportBinding>
+  importBindings: Map<string, ImportBinding>,
+  componentImportStatements: Map<string, string> = new Map()
 ): string | undefined {
   if (arg.plan.kind !== 'function-slot') {
     return renderSlotContent(arg, arg.plan, ctx);
   }
 
   const value = unwrapExpression(arg.value);
-  return isFunctionExpression(value) ? renderHSlotFunction(value, ctx, importBindings) : undefined;
+  return isFunctionExpression(value)
+    ? renderHSlotFunction(value, ctx, importBindings, componentImportStatements)
+    : undefined;
 }
 
 /** Render a zero-argument slot function whose body is a static `h()` child tree. */
 function renderHSlotFunction(
   node: t.ArrowFunctionExpression | t.FunctionExpression,
   ctx: RenderContext,
-  importBindings: Map<string, ImportBinding>
+  importBindings: Map<string, ImportBinding>,
+  componentImportStatements: Map<string, string>
 ): string | undefined {
   if (node.params.length > 0) {
     return undefined;
@@ -150,6 +158,7 @@ function renderHSlotFunction(
 
   return renderHNode(returned, {
     args: [],
+    componentImportStatements,
     ctx,
     // Slot content renders children of components the story does not describe, so nothing here can
     // be resolved to a declared slot, event, or v-model.
@@ -235,7 +244,9 @@ function renderTag(node: t.Node | undefined | null, options: HRenderOptions): HT
  * compile where a reader pastes it.
  */
 function componentTag(name: string, options: HRenderOptions): HTag | undefined {
-  const importStatement = importStatementForBinding(name, options.importBindings.get(name));
+  const importStatement =
+    options.componentImportStatements.get(name) ??
+    importStatementForBinding(name, options.importBindings.get(name));
   if (!importStatement) {
     return undefined;
   }
@@ -295,7 +306,12 @@ function renderProps(
   ];
   const slotChildren: string[] = [];
   for (const slot of partitioned.slots) {
-    const content = renderSlotArgContent(slot, options.ctx, options.importBindings);
+    const content = renderSlotArgContent(
+      slot,
+      options.ctx,
+      options.importBindings,
+      options.componentImportStatements
+    );
     // A function slot without renderable content would misrepresent the story, so bail.
     if (content === undefined) {
       return undefined;
@@ -437,7 +453,12 @@ function renderSlotsObject(
       return undefined;
     }
 
-    const content = renderHSlotFunction(slotFunction, options.ctx, options.importBindings);
+    const content = renderHSlotFunction(
+      slotFunction,
+      options.ctx,
+      options.importBindings,
+      options.componentImportStatements
+    );
     if (content === undefined) {
       return undefined;
     }

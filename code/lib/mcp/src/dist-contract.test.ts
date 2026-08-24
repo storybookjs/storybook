@@ -17,6 +17,42 @@ import packageJson from '../package.json' with { type: 'json' };
 
 const DIST_ENTRY = join(import.meta.dirname, '../dist/index.js');
 const DTS_ENTRY = join(import.meta.dirname, '../dist/index.d.ts');
+const README = join(import.meta.dirname, '../README.md');
+
+/**
+ * Markdown links, minus in-page anchors: a target is relative unless it names a scheme.
+ *
+ * The README is the only prose in the tarball, and it is read from `node_modules` as often as from
+ * npmjs.com. A repo-relative target resolves to nothing there, so it would point a reader at a file
+ * this package does not publish.
+ */
+const MARKDOWN_LINK_RE = /\]\(([^)#][^)]*)\)/g;
+
+/** Reference-style link definitions, e.g. `[serve]: ./serve.ts` — the other way to write a link. */
+const REFERENCE_LINK_DEFINITION_RE = /^ {0,3}\[[^\]]+\]:\s*([^\s#][^\s]*)/gm;
+
+/**
+ * Fenced code blocks and inline code spans, stripped before link matching runs.
+ *
+ * The README is majority TypeScript snippets, and destructuring/index syntax like
+ * `handlers['docs-list'](ctx)` contains a `](` sequence that reads as a Markdown link to a bare
+ * regex; without stripping, every such snippet is a false positive that grows with every example.
+ */
+function stripCode(markdown: string): string {
+  return markdown
+    .replace(/```[\s\S]*?```/g, '')
+    .replace(/~~~[\s\S]*?~~~/g, '')
+    .replace(/`[^`\n]*`/g, '');
+}
+
+/** Every link target the README writes, in either form, minus in-page anchors and code examples. */
+function markdownLinkTargets(markdown: string): string[] {
+  const prose = stripCode(markdown);
+  return [
+    ...[...prose.matchAll(MARKDOWN_LINK_RE)].map(([, target]) => target),
+    ...[...prose.matchAll(REFERENCE_LINK_DEFINITION_RE)].map(([, target]) => target),
+  ];
+}
 
 /**
  * Headroom over the current size, so ordinary edits pass but a bundling regression does not.
@@ -90,6 +126,30 @@ describe('published package contract', () => {
     // working for them.
     expect(declarations).not.toMatch(/["']react(?:["']|\/)/);
     expect(declarations).not.toMatch(STORYBOOK_IMPORT_RE);
+  });
+
+  it('links only to targets that exist outside the repository', () => {
+    const targets = markdownLinkTargets(readFileSync(README, 'utf-8'));
+
+    expect(targets.filter((target) => !/^[a-z]+:/i.test(target))).toEqual([]);
+  });
+
+  describe('markdownLinkTargets', () => {
+    it('does not mistake code-fence syntax for a link', () => {
+      const snippet = "```ts\nconst run = handlers['docs-list'](ctx);\n```";
+
+      expect(markdownLinkTargets(snippet)).toEqual([]);
+    });
+
+    it('does not mistake an inline code span for a link', () => {
+      expect(markdownLinkTargets('Call `tools[K](server)` to register.')).toEqual([]);
+    });
+
+    it('catches a reference-style link definition, the other way to write a relative link', () => {
+      const markdown = '[serve]: ./serve.ts\n\nSee [serve][serve] for the harness.';
+
+      expect(markdownLinkTargets(markdown)).toEqual(['./serve.ts']);
+    });
   });
 
   it.runIf(DTS_BUILT)('keeps the declarations within their size budget', () => {

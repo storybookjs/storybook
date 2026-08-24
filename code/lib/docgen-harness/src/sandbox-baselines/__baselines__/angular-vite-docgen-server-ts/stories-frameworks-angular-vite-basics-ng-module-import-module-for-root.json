@@ -22,7 +22,7 @@
         "category": "outputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "EventEmitter"
         }
       },
@@ -38,7 +38,7 @@
         "category": "outputs",
         "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "EventEmitter"
         }
       },

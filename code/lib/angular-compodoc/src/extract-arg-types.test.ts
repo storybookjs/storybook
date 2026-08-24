@@ -338,6 +338,22 @@ describe('modern', () => {
       });
     });
 
+    it('maps a signature that leads with `new` or with type parameters', () => {
+      expect(extractMember({ type: 'new (value: number) => Thing' }).type).toEqual({
+        name: 'function',
+      });
+      expect(extractMember({ type: '<T>(value: T) => T' }).type).toEqual({ name: 'function' });
+      expect(extractMember({ type: 'new <T>(value: T) => Thing' }).type).toEqual({
+        name: 'function',
+      });
+    });
+
+    it('does not read a type that merely mentions a signature as a function', () => {
+      expect(extractMember({ type: 'Array<(value: number) => string>' }).type).not.toEqual({
+        name: 'function',
+      });
+    });
+
     it('leaves them on the other/empty-enum catch-all with the flag off', () => {
       expect(extractMember({ type: 'function' }, { modern: false }).type).toEqual({
         name: 'other',

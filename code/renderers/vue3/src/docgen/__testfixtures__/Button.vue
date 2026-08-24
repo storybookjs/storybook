@@ -1,4 +1,9 @@
 <script setup lang="ts">
+/**
+ * Script setup component-file docs are not attached to the component symbol.
+ *
+ * @deprecated This component-file tag should not surface.
+ */
 defineProps<{
   /** Text shown inside the button. */
   label: string;

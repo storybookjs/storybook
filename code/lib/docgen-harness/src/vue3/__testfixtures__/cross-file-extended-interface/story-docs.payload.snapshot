@@ -1,6 +1,5 @@
 {
   "id": "cross-file-extended-interface",
-  "import": "import ExtendedInterfaceProps from './ExtendedInterfaceProps.vue';",
   "name": "ExtendedInterfaceProps",
   "path": "__PATH__",
   "stories": {
@@ -8,7 +7,11 @@
       "description": undefined,
       "id": "forms-cross-file-extended-interface--props-as-written",
       "name": "Props As Written",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import ExtendedInterfaceProps from './ExtendedInterfaceProps.vue';
+</script>
+
+<template>
   <ExtendedInterfaceProps extra :id="7" name="Chained" />
 </template>",
       "summary": undefined,

@@ -2,10 +2,10 @@ import type * as ts from 'typescript';
 
 import type { Property } from '../types.ts';
 import type { AnalyzerContext } from './context.ts';
+import { defaultInitializer } from './default-initializer.ts';
 import { isAngularCoreOrUnresolved, stringOption } from './decorators.ts';
 import { getJsDocDescription, getJsDocTagsField } from './jsdoc.ts';
-import { initializerText, memberName } from './node-text.ts';
-import { stripImportQualifiers } from './type-index.ts';
+import { memberName } from './node-text.ts';
 
 const SIGNAL_INPUT_NAMES = new Set(['input', 'model']);
 const SIGNAL_NAMES = new Set(['input', 'output', 'model']);
@@ -27,7 +27,7 @@ export const parseSignalCall = (
   member: ts.PropertyDeclaration
 ): SignalCall | undefined => {
   const { ts } = ctx;
-  // Angular only recognizes signal IO on instance fields.
+  // Angular recognizes signal IO on instance fields only.
   if (ts.getModifiers(member)?.some((modifier) => modifier.kind === ts.SyntaxKind.StaticKeyword)) {
     return undefined;
   }
@@ -73,8 +73,20 @@ export const buildSignalEntry = (
     optionsArgument && ts.isObjectLiteralExpression(optionsArgument)
       ? stringOption(ctx, optionsArgument, 'alias')
       : undefined;
+  // A two-argument `input<ReadT, WriteT>` is the transform form, and what a template may bind is
+  // the write type, not what the transform turns it into. An explicit `unknown`/`any` write type
+  // (booleanAttribute-style coercions) names nothing a control can offer, so the read type stands
+  // in for it, as it does on the checker path.
+  const writeTypeArgument =
+    signal.kind === 'input' && call.typeArguments?.length === 2 ? call.typeArguments[1] : undefined;
+  const explicitTypeArgument =
+    writeTypeArgument !== undefined &&
+    writeTypeArgument.kind !== ts.SyntaxKind.UnknownKeyword &&
+    writeTypeArgument.kind !== ts.SyntaxKind.AnyKeyword
+      ? writeTypeArgument
+      : call.typeArguments?.[0];
   const type =
-    (call.typeArguments?.[0] ? ctx.types.render(call.typeArguments[0]) : undefined) ??
+    (explicitTypeArgument ? ctx.types.render(explicitTypeArgument) : undefined) ??
     signalValueTypeFromChecker(ctx, member) ??
     (valueArgument ? literalTypeName(ctx, valueArgument) : undefined);
   return {
@@ -85,7 +97,7 @@ export const buildSignalEntry = (
     // Downstream tells a `model()` apart from an `@Input('x')`/`@Output('x')` alias collision by
     // the same name appearing in both arrays on the same declaration line.
     line: ts.getLineAndCharacterOfPosition(member.getSourceFile(), member.getStart()).line + 1,
-    ...(valueArgument ? { defaultValue: initializerText(ctx.ts, valueArgument) } : {}),
+    ...(valueArgument ? { initializer: defaultInitializer(ctx, valueArgument) } : {}),
     ...getJsDocDescription(ts, member),
     ...getJsDocTagsField(ts, member),
   };
@@ -94,9 +106,15 @@ export const buildSignalEntry = (
 const signalValueTypeFromChecker = (
   ctx: AnalyzerContext,
   member: ts.PropertyDeclaration
+): string | undefined =>
+  signalValueTypeFromType(ctx, ctx.checker.getTypeAtLocation(member), member);
+
+export const signalValueTypeFromType = (
+  ctx: AnalyzerContext,
+  type: ts.Type,
+  node: ts.Node
 ): string | undefined => {
   const { checker, ts } = ctx;
-  const type = checker.getTypeAtLocation(member);
   const symbolName = type.aliasSymbol?.name ?? type.getSymbol()?.name;
   if (!symbolName || !SIGNAL_TYPE_NAMES.has(symbolName)) {
     return undefined;
@@ -107,19 +125,20 @@ const signalValueTypeFromChecker = (
   if (!isReference) {
     return undefined;
   }
-  const valueType = checker.getTypeArguments(type as ts.TypeReference)[0];
+  const typeArguments = checker.getTypeArguments(type as ts.TypeReference);
+  let valueType = typeArguments[0];
+  if (symbolName === 'InputSignalWithTransform') {
+    // An `unknown`/`any` write type (booleanAttribute-style coercions) names nothing a control can
+    // offer, so the read type stands in for it.
+    const writeType = typeArguments[1];
+    if (writeType && !(writeType.flags & (ts.TypeFlags.Unknown | ts.TypeFlags.Any))) {
+      valueType = writeType;
+    }
+  }
   if (!valueType) {
     return undefined;
   }
-  // Widen a lone literal (`model('x' as const)` → string) but keep literal unions: their quoted
-  // spelling (`"left" | "right"`) is what feeds the extractor's enum path.
-  const widened = valueType.isUnion() ? valueType : checker.getBaseTypeOfLiteralType(valueType);
-  ctx.types.addFromType(widened);
-  // Stripped because `addFromType` files the alias under its bare name, and the extractor matches
-  // `miscellaneous` entries by exact string equality.
-  return stripImportQualifiers(
-    checker.typeToString(widened, member, ts.TypeFormatFlags.NoTruncation)
-  );
+  return ctx.types.renderValueType(valueType, node);
 };
 
 const literalTypeName = (ctx: AnalyzerContext, expression: ts.Expression): string | undefined => {

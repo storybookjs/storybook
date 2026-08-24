@@ -1,3 +1,23 @@
+## 10.5.10
+
+- Core: Fetch static open-service snapshots relative to the document - [#35945](https://github.com/storybookjs/storybook/pull/35945), thanks @valentinpalkovic!
+- Core: Pin oxc-resolver to 11.21.2 to keep tsconfig path aliases on solution-style tsconfigs - [#35929](https://github.com/storybookjs/storybook/pull/35929), thanks @valentinpalkovic!
+- Dependencies: Bump Vitest to 4.1.6 (CVE-2026-47428) - [#35530](https://github.com/storybookjs/storybook/pull/35530), thanks @anupamme!
+- Docs: Declare the font on overlay surfaces so docs tooltips are not left to inherit - [#35966](https://github.com/storybookjs/storybook/pull/35966), thanks @valentinpalkovic!
+- ESLint Plugin: Bundle CSF helpers so the plugin loads without storybook - [#35950](https://github.com/storybookjs/storybook/pull/35950), thanks @ndelangen!
+- React: Preserve discriminated union prop values in metadata extraction - [#35844](https://github.com/storybookjs/storybook/pull/35844), thanks @s-robertson!
+
+## 10.5.9
+
+- Addon-Pseudo-States: Fix pseudo-states rewriting for nested functional selectors - [#34318](https://github.com/storybookjs/storybook/pull/34318), thanks @filipw01!
+- Core: Skip module-graph reverse-index mirror when a patch is a no-op - [#35825](https://github.com/storybookjs/storybook/pull/35825), thanks @ndelangen!
+- Core: Split module-graph into hot revisions and cold index services - [#35831](https://github.com/storybookjs/storybook/pull/35831), thanks @ndelangen!
+- Preview: Fix crash when initialising UrlStore on a docs path - [#35521](https://github.com/storybookjs/storybook/pull/35521), thanks @TheSeydiCharyyev!
+- Pseudo-States: Make stylesheet rewrites WebKit-safe - [#35629](https://github.com/storybookjs/storybook/pull/35629), thanks @ethriel3695!
+- TanStack: Keep the layout id when cloning a standalone index file route - [#35660](https://github.com/storybookjs/storybook/pull/35660), thanks @Insik-Han!
+- TanStack: Render real link hrefs in the Link mock - [#35505](https://github.com/storybookjs/storybook/pull/35505), thanks @unpunnyfuns!
+- Webpack: Prevent long preview output filenames - [#35533](https://github.com/storybookjs/storybook/pull/35533), thanks @zhangli091011!
+
 ## 10.5.8
 
 - React: Fix RDT tsconfig selection for Vite project references - [#35743](https://github.com/storybookjs/storybook/pull/35743), thanks @ndelangen!

@@ -33,11 +33,9 @@
       "name": "onChange",
       "table": {
         "category": "properties",
-        "defaultValue": {
-          "summary": "NOOP"
-        },
+        "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "(value: any) => void"
         }
       },
@@ -49,11 +47,9 @@
       "name": "onTouch",
       "table": {
         "category": "properties",
-        "defaultValue": {
-          "summary": "NOOP"
-        },
+        "defaultValue": {},
         "type": {
-          "required": true,
+          "required": false,
           "summary": "() => void"
         }
       },

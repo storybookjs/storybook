@@ -8,7 +8,7 @@
         "summary": "[]",
       },
       "type": {
-        "required": true,
+        "required": false,
         "summary": "T[]",
       },
     },

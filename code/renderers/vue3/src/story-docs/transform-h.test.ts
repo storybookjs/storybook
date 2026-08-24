@@ -2,14 +2,14 @@ import { describe, expect, it } from 'vitest';
 
 import { types as t } from 'storybook/internal/babel';
 import {
-  argsRecordFromObjectPath,
   collectImportBindings,
-  keyOf,
   loadCsf,
-  mergeArgsRecords,
-  metaArgsRecord,
   metaObjectPath,
   normalizeStoryDeclaration,
+  type ReferenceContext,
+  resolveArgsRecord,
+  resolveBindingMembers,
+  resolveObjectMembers,
   resolveRenderFunction,
   returnedExpression,
 } from 'storybook/internal/csf-tools';
@@ -36,13 +36,15 @@ function renderStory(
   storySource: string,
   docgen: VueDocgenArgInfo = DEFAULT_DOCGEN,
   importSource = "import MyButton from './MyButton.vue';",
-  metaRender?: string
+  metaRender?: string,
+  componentImportStatement = "import MyButton from './MyButton.vue';"
 ): TransformHResult | undefined {
   const parsed = parseRender(storySource, docgen, importSource, metaRender);
   return parsed.expression
     ? transformH({
         args: parsed.args,
         argsParam: parsed.argsParam,
+        componentImportStatement,
         componentName: 'MyButton',
         docgen,
         importBindings: parsed.importBindings,
@@ -87,18 +89,17 @@ ${storySource}
     throw new Error('Expected a config story');
   }
 
-  const storyArgsPath = normalized.path
-    .get('properties')
-    .find((property) => property.isObjectProperty() && keyOf(property.node) === 'args')
-    ?.get('value');
-  const storyArgsObjectPath =
-    storyArgsPath && !Array.isArray(storyArgsPath) && storyArgsPath.isObjectExpression()
-      ? storyArgsPath
-      : undefined;
-  const storyArgs = storyArgsObjectPath ? argsRecordFromObjectPath(storyArgsObjectPath) : {};
   const metaPath = metaObjectPath(csf);
+  const references: ReferenceContext = { program: csf._file.path, filePath: 'entry.ts' };
+  const metaMembers = metaPath ? resolveObjectMembers(metaPath.node, references) : undefined;
   const classified = classifyArgs(
-    mergeArgsRecords(metaArgsRecord(metaPath?.node), storyArgs),
+    {
+      ...resolveArgsRecord(metaMembers?.properties.args, references).properties,
+      ...resolveArgsRecord(
+        resolveBindingMembers(references, 'Primary')?.properties.args,
+        references
+      ).properties,
+    },
     docgen
   );
   // Mirrors resolveEffectiveRender in build-story-docs: story render wins, meta is the fallback.
@@ -136,7 +137,11 @@ export const Primary = {
 };
 `)?.snippet
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
         <MyButton active label="Render" />
       </template>"
     `);
@@ -154,7 +159,11 @@ export const Primary = {
 };
 `)?.snippet
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
         <MyButton active :count="2" label="Override" />
       </template>"
     `);
@@ -175,7 +184,11 @@ export const Primary = {
         `(args) => h(MyButton, args)`
       )?.snippet
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
         <MyButton active label="Render" />
       </template>"
     `);
@@ -197,7 +210,11 @@ export const Primary = {
         `() => h('div', 'Meta')`
       )?.snippet
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
         <MyButton active label="Story" />
       </template>"
     `);
@@ -212,6 +229,8 @@ export const Primary = {
 `)?.snippet
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
       const date = new Date('2020-01-01');
 
       const label = \`a\${1}b\`;
@@ -250,7 +269,11 @@ export const Primary = {
 };
 `)?.snippet
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
         <MyButton>
           <span>Body</span>
           <template #footer>
@@ -273,11 +296,12 @@ export const Primary = {
         "import ChildButton from './ChildButton.vue';\nimport MyButton from './MyButton.vue';"
       )
     ).toEqual({
-      imports: [
-        "import MyButton from './MyButton.vue';",
-        "import ChildButton from './ChildButton.vue';",
-      ],
-      snippet: `<template>
+      snippet: `<script lang="ts" setup>
+import ChildButton from './ChildButton.vue';
+import MyButton from './MyButton.vue';
+</script>
+
+<template>
   <MyButton>
     <ChildButton label="Click me" />
   </MyButton>
@@ -300,7 +324,11 @@ export const Primary = {
         "import ChildButton from './ChildButton.vue';\nimport MyButton from './MyButton.vue';"
       )?.snippet
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import ChildButton from './ChildButton.vue';
+      </script>
+
+      <template>
         <section>
           <div default="Body"></div>
           <ChildButton default="Inner" />
@@ -337,7 +365,12 @@ export const Primary = {
         "import ChildButton from './ChildButton.vue';\nimport MyButton from './MyButton.vue';"
       )?.snippet
     ).toMatchInlineSnapshot(`
-      "<template>
+      "<script lang="ts" setup>
+      import ChildButton from './ChildButton.vue';
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
         <MyButton>
           <ChildButton label="Click me" />
         </MyButton>

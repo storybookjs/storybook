@@ -38,8 +38,6 @@ export type StorybookBuilderOptions = JsonObject & {
   tsConfig?: string;
   test: boolean;
   docs: boolean;
-  compodoc: boolean;
-  compodocArgs: string[];
   enableProdMode?: boolean;
   styles?: StyleElement[];
   stylePreprocessorOptions?: StylePreprocessorOptions;

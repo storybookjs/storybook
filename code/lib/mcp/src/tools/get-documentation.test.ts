@@ -421,6 +421,104 @@ describe('getDocumentationTool', () => {
 		`);
   });
 
+  it('should render apiDescription ahead of the stories it is applied by', async () => {
+    served[''] = {
+      componentManifest: {
+        // v0: this manifest inlines docgen/subcomponents/import, which is the inline format.
+        // Labelling it v1 would strip them — a v1 row carries those behind `$ref`s instead.
+        v: 0,
+        components: {
+          widget: {
+            id: 'widget',
+            name: 'Widget',
+            description: 'A widget.',
+            apiDescription: [
+              '## API',
+              '',
+              '```',
+              'export type WidgetApi = {',
+              '  /** @default medium */',
+              '  size?: "small" | "medium";',
+              '}',
+              '```',
+            ].join('\n'),
+            stories: [
+              {
+                id: 'widget--basic',
+                name: 'Basic',
+                snippet: '<Widget />',
+              },
+              {
+                id: 'widget--small',
+                name: 'Small',
+                snippet: '<Widget size="small" />',
+              },
+            ],
+          },
+        },
+      },
+    };
+
+    const request = {
+      jsonrpc: '2.0' as const,
+      id: 1,
+      method: 'tools/call',
+      params: {
+        name: GET_TOOL_NAME,
+        arguments: {
+          id: 'widget',
+        },
+      },
+    };
+
+    const mockHttpRequest = new Request('https://example.com/mcp');
+    const response = await server.receive(request, {
+      custom: { request: mockHttpRequest, manifestProvider },
+    });
+
+    expect(response.result).toMatchInlineSnapshot(`
+      {
+        "content": [
+          {
+            "text": "# Widget
+
+      ID: widget
+
+      A widget.
+
+      ## API
+
+      \`\`\`
+      export type WidgetApi = {
+        /** @default medium */
+        size?: "small" | "medium";
+      }
+      \`\`\`
+
+      ## Stories
+
+      ### Basic
+
+      Story ID: widget--basic
+
+      \`\`\`
+      <Widget />
+      \`\`\`
+
+      ### Small
+
+      Story ID: widget--small
+
+      \`\`\`
+      <Widget size="small" />
+      \`\`\`",
+            "type": "text",
+          },
+        ],
+      }
+    `);
+  });
+
   it('should include subcomponents in get-documentation output', async () => {
     served[''] = {
       componentManifest: {

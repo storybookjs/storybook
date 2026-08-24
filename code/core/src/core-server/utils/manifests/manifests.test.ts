@@ -460,6 +460,85 @@ describe('manifests', () => {
       expect(docgenProvider).not.toHaveBeenCalled();
     });
 
+    it('includes a componentless component in components.html, matching components.json', async () => {
+      mockPresets = setupMockPresets({
+        componentsManifest: true,
+        experimentalDocgenServer: true,
+      });
+      mockGetIndex.mockResolvedValue({
+        v: 5,
+        entries: {
+          'billboard--default': {
+            type: 'story',
+            subtype: 'story',
+            id: 'billboard--default',
+            name: 'Default',
+            title: 'Billboard',
+            importPath: './billboard.stories.tsx',
+            tags: [Tag.MANIFEST],
+            // No `componentPath`: the story file names no `meta.component`.
+          },
+        },
+      } as StoryIndex);
+
+      mockManifests = {
+        components: {
+          v: 0,
+          components: {},
+          meta: { docgen: 'react-component-meta', durationMs: 0 },
+        },
+      };
+
+      const storyDocsProvider = vi.fn<StoryDocsProvider>(async () => ({
+        id: 'billboard',
+        name: 'Billboard',
+        path: './billboard.stories.tsx',
+        stories: { 'billboard--default': { id: 'billboard--default', name: 'Default' } },
+      }));
+
+      registerTestModuleGraphService();
+      registerDocgenService({
+        getIndex: () => mockGenerator.getIndex(),
+        docgenProvider: vi.fn<DocgenProvider>(async () => undefined),
+      });
+      registerStoryDocsService({
+        getIndex: () => mockGenerator.getIndex(),
+        storyDocsProvider,
+      });
+
+      vol.fromNestedJSON({
+        '/output/services/core/story-docs/billboard.json': JSON.stringify({
+          components: {
+            billboard: {
+              id: 'billboard',
+              name: 'Billboard',
+              path: './billboard.stories.tsx',
+              stories: { 'billboard--default': { id: 'billboard--default', name: 'Default' } },
+            },
+          },
+        }),
+        // Deliberately no /output/services/core/docgen/billboard.json snapshot: docgen extracted
+        // nothing, because the story file names no component.
+      });
+
+      await writeManifests('/output', mockPresets);
+
+      const files = vol.toJSON();
+      const componentsJson = JSON.parse(files['/output/manifests/components.json'] as string);
+      // The index keeps the row and its stories even though docgen extracted nothing for it.
+      expect(componentsJson.components.billboard).toMatchObject({
+        id: 'billboard',
+        stories: { $ref: expect.stringContaining('billboard') },
+      });
+
+      // The HTML debugger must list the same component the JSON index does, so a maintainer
+      // debugging "why can't the agent see this component" is not told two different stories.
+      // The stub row has no display name of its own (nothing extracted it), so it falls back to the
+      // id, same as components.json's `name: payload?.name ?? id`.
+      expect(files['/output/manifests/components.html']).toContain('id="billboard"');
+      expect(files['/output/manifests/components.html']).toContain('Default');
+    });
+
     it('writes shallow MDX refs and renders HTML from MDX service snapshots', async () => {
       mockPresets = setupMockPresets({
         componentsManifest: true,

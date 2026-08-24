@@ -22,6 +22,7 @@ export {
   resolveArgsRecord,
   resolveBindingMembers,
   resolveObjectMembers,
+  resolveReferencedValue,
   sourceOf,
   type ReferenceContext,
   type ReferenceModule,
@@ -31,6 +32,7 @@ export {
 } from './resolve-members.ts';
 export {
   createStoryArgsResolver,
+  noSnippetWarning,
   unresolvedWarning,
   type ResolvedStoryArgs,
   type StoryArgsResolver,

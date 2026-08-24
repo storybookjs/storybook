@@ -58,22 +58,27 @@ if (child.pid !== undefined) {
   }
 }
 
-await dumpMcpDebug();
-
-// The sandbox is torn down with this failure, so the error message is the only
-// place the startup log reliably survives to (the eval result snapshot records it).
+// The sandbox is torn down with this failure, so the only diagnostics that
+// survive are the final stderr lines: the eval harness snapshots a failed
+// npm install as its last 10 lines of output, and npm's own error trailer
+// takes about half of that window. Print the log tail last and exit without
+// throwing — an uncaught error's stack and Node's version banner would push
+// the log out of the window (and the in-sandbox dumpMcpDebug() files die
+// with the sandbox, so there is no point writing them here).
 const logTail = await readFile(logPath, 'utf8')
-  .then((content) => content.trimEnd().split('\n').slice(-40).join('\n'))
+  .then((content) => content.trimEnd().split('\n').slice(-5).join('\n'))
   .catch(() => '(no Storybook log was written)');
 
-throw new Error(
+process.stderr.write(
   'Storybook MCP server did not become ready at ' +
     mcpUrl +
     ' within ' +
     timeoutMs +
     'ms. Storybook log tail:\n' +
-    logTail
+    logTail +
+    '\n'
 );
+process.exit(1);
 
 async function isReady() {
   try {

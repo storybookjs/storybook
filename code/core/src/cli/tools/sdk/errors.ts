@@ -112,3 +112,26 @@ export function isAttachGateError(
     error instanceof SpawnFailedError
   );
 }
+
+/** Why attached mode was not used, either as a hard failure or as an `auto` fallback. */
+export type ToolsAttachGateReason =
+  | AttachUnavailableReason
+  | 'environment-mismatch'
+  | 'spawn-failed';
+
+export function attachGateReasonFromError(
+  error: AttachUnavailableError | EnvironmentMismatchError | SpawnFailedError
+): ToolsAttachGateReason;
+export function attachGateReasonFromError(error: unknown): ToolsAttachGateReason | undefined;
+export function attachGateReasonFromError(error: unknown): ToolsAttachGateReason | undefined {
+  if (error instanceof AttachUnavailableError) {
+    return error.data.reason;
+  }
+  if (error instanceof EnvironmentMismatchError) {
+    return 'environment-mismatch';
+  }
+  if (error instanceof SpawnFailedError) {
+    return 'spawn-failed';
+  }
+  return undefined;
+}

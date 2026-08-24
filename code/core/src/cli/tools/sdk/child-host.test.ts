@@ -17,7 +17,10 @@ describe('runChildHost', () => {
     async (
       _ref: string,
       _input?: Record<string, unknown>,
-      options?: { signal?: AbortSignal }
+      options?: {
+        signal?: AbortSignal;
+        telemetry?: (event: string, payload: Record<string, unknown>) => Promise<void>;
+      }
     ): Promise<AnyToolsetOutcome> => {
       if (options?.signal?.aborted) {
         throw new Error('aborted');
@@ -35,6 +38,8 @@ describe('runChildHost', () => {
     vi.mocked(createTools).mockReset();
     vi.mocked(createTools).mockResolvedValue({
       mode: 'attached',
+      requestedMode: 'attached',
+      host: 'in-process',
       clientInfo: { name: 'storybook-tools-sdk', version: '10.2.0', kind: 'sdk' },
       storybook: { version: '10.2.0', configDir: '/repo/.storybook', url: 'http://localhost:6006' },
       runtime: {
@@ -113,6 +118,35 @@ describe('runChildHost', () => {
     await vi.waitFor(() => expect(close).toHaveBeenCalled());
     expect(exit).toHaveBeenCalledWith(0);
     exit.mockRestore();
+  });
+
+  it('forwards method telemetry over IPC keyed by the call id', async () => {
+    call.mockImplementation(async (_ref, _input, options) => {
+      await options?.telemetry?.('tool:listAllDocumentation', { toolset: 'docs' });
+      return { ok: true, data: { ran: true }, markdown: 'ok' };
+    });
+    await runChildHost({
+      send,
+      subscribe: (handler) => {
+        handlers.push(handler);
+      },
+      cwd: () => '/repo',
+    });
+    handlers[0]({ type: 'init', options: {} });
+    await vi.waitFor(() => expect(createTools).toHaveBeenCalled());
+
+    handlers[0]({ type: 'call', id: 'call-7', ref: 'docs.list', input: {} });
+    await vi.waitFor(() =>
+      expect(send).toHaveBeenCalledWith({
+        type: 'telemetry',
+        id: 'call-7',
+        event: 'tool:listAllDocumentation',
+        payload: { toolset: 'docs' },
+      })
+    );
+    await vi.waitFor(() =>
+      expect(send).toHaveBeenCalledWith(expect.objectContaining({ type: 'result', id: 'call-7' }))
+    );
   });
 
   it('cancels an in-flight call when a cancel envelope arrives', async () => {

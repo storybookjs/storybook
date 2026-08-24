@@ -87,6 +87,8 @@ function makeLocalTools(runtimeOverrides: Partial<ToolsRuntime> = {}): LocalTool
   return {
     mode: 'local',
     clientInfo: { name: 'storybook-cli', version: '0.0.0', kind: 'cli' },
+    requestedMode: 'local',
+    host: 'in-process',
     runtime,
     storybook,
     describe: async (options) => {
@@ -139,6 +141,8 @@ function makeAttachedTools(runtimeOverrides: Partial<ToolsRuntime> = {}): Attach
   return {
     ...local,
     mode: 'attached',
+    requestedMode: 'attached',
+    host: 'in-process',
     storybook: {
       version: '0.0.0',
       configDir: CONFIG_DIR,
@@ -201,6 +205,26 @@ describe('local tools', () => {
     expect(result.outcome).toEqual({ kind: 'success' });
     expect(result.output).toContain('Button');
     expect(result.output).toBe(mcpOutcome.markdown);
+  });
+
+  it('stamps tools-command dimensions onto per-method telemetry for a local host', async () => {
+    const methodTelemetry = vi.fn(async () => {});
+    const { deps } = makeDeps({ methodTelemetry });
+
+    const result = await run(['docs', 'list'], deps);
+
+    expect(result.outcome).toEqual({ kind: 'success' });
+    expect(methodTelemetry).toHaveBeenCalledWith(
+      'tool:listAllDocumentation',
+      expect.objectContaining({
+        toolset: 'docs',
+        client: 'cli',
+        requestedMode: 'local',
+        resolvedMode: 'local',
+        attachMode: 'local',
+        host: 'in-process',
+      })
+    );
   });
 
   it('prints the structured result data with --json', async () => {
@@ -777,7 +801,8 @@ describe('attached tools', () => {
     const result = await run(['docs', 'list'], deps, { attach: true });
 
     expect(result.exitCode).toBe(1);
-    expect(result.outcome).toEqual({ kind: 'failure' });
+    expect(result.outcome).toEqual({ kind: 'attach-gate', reason: 'no-instance' });
+    expect(result.requestedMode).toBe('attached');
     expect(result.attachMode).toBe('attached');
     expect(result.output).toContain('npm run storybook');
     expect(result.output).toContain('--attach');
@@ -787,6 +812,8 @@ describe('attached tools', () => {
     const tools = makeLocalTools();
     tools.fallbackNotice =
       "No running Storybook was found for this project.\n\nFalling back to loading this project's Storybook configuration in this process.";
+    tools.requestedMode = 'auto';
+    tools.fallbackReason = 'no-instance';
     const { deps, createTools } = makeDeps({
       createTools: vi.fn(async () => tools),
     });
@@ -794,7 +821,10 @@ describe('attached tools', () => {
     const result = await run(['docs', 'list'], deps);
 
     expect(createTools).toHaveBeenCalledWith(expect.objectContaining({ mode: 'auto' }));
+    expect(result.requestedMode).toBe('auto');
     expect(result.attachMode).toBe('local');
+    expect(result.host).toBe('in-process');
+    expect(result.fallbackReason).toBe('no-instance');
     expect(result.fallbackNotice).toContain('Falling back to loading this project');
     expect(result.output).toContain('Button');
     expect(result.output).not.toContain('Falling back');

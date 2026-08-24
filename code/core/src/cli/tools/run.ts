@@ -9,12 +9,17 @@ import type {
 import { parseToolsetMethodId, toCliMethodName } from '../../shared/open-service/toolset-names.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import {
+  attachGateReasonFromError,
   createTools,
   isAttachGateError,
+  toolsCommandDimensions,
+  wrapMethodTelemetry,
   type CreateToolsDeps,
   type CreateToolsOptions,
   type Tools,
+  type ToolsAttachGateReason,
   type ToolsClientInfo,
+  type ToolsHostKind,
   type ToolsMode,
   type ToolsRuntime,
 } from './sdk/index.ts';
@@ -46,13 +51,15 @@ export type ToolsInterceptReason =
  * Telemetry-facing classification of a run. `help` marks lookups, excluded from the
  * `tools-command` event so they cannot skew success rates. `failure` is a completed run whose
  * outcome was `ok: false` or an agent-facing error — the tool did its job and reported bad news,
- * so no crash report is sent. `error` carries unexpected failures for the sanitized error path.
+ * so no crash report is sent. `attach-gate` is a hard attach failure (`--attach`, or SDK
+ * `mode: 'attached'`). `error` carries unexpected failures for the sanitized error path.
  */
 export type ToolsCommandOutcome =
   | { kind: 'success' }
   | { kind: 'help' }
   | { kind: 'failure' }
   | { kind: 'intercept'; reason: ToolsInterceptReason }
+  | { kind: 'attach-gate'; reason: ToolsAttachGateReason }
   | { kind: 'error'; error: unknown };
 
 export type ToolsRunResult = {
@@ -61,10 +68,16 @@ export type ToolsRunResult = {
   outcome: ToolsCommandOutcome;
   /** From `-o`/`--output`; the caller writes `output` there instead of stdout. */
   outputPath?: string;
-  /** Requested or resolved attach mode for the `tools-command` event. */
+  /** Requested attach mode, including `auto`. */
+  requestedMode: ToolsMode;
+  /** Resolved host mode for the `tools-command` event; `auto` only when no host was created. */
   attachMode: ToolsMode;
+  /** Set once a host exists. */
+  host?: ToolsHostKind;
   /** Set when `auto` could not attach and loaded the project configuration instead. */
   fallbackNotice?: string;
+  /** Why `auto` loaded locally instead of attaching. */
+  fallbackReason?: ToolsAttachGateReason;
 };
 
 export type ToolsInvocation = {
@@ -151,15 +164,19 @@ export async function runToolsCommand(
       output: parsed.error,
       outcome: { kind: 'intercept', reason: 'invalid-arguments' },
       outputPath: flags.output,
+      requestedMode,
       attachMode: requestedMode,
     };
   }
 
   // `-o/--output` applies to whatever the run produced — help, intercepts, and tool results
   // alike — matching the ai CLI, where the output file always receives the printed text.
-  const result = (partial: Omit<ToolsRunResult, 'outputPath' | 'attachMode'>): ToolsRunResult => ({
+  const result = (
+    partial: Omit<ToolsRunResult, 'outputPath' | 'attachMode' | 'requestedMode'>
+  ): ToolsRunResult => ({
     ...partial,
     outputPath: parsed.output,
+    requestedMode,
     attachMode: requestedMode,
   });
 
@@ -178,7 +195,7 @@ export async function runToolsCommand(
       return result({
         exitCode: 1,
         output: error instanceof Error ? error.message : String(error),
-        outcome: { kind: 'failure' },
+        outcome: { kind: 'attach-gate', reason: attachGateReasonFromError(error) },
       });
     }
     return result({
@@ -189,11 +206,32 @@ export async function runToolsCommand(
   }
 
   try {
+    const methodTelemetry =
+      tools.mode === 'local' && deps.methodTelemetry
+        ? wrapMethodTelemetry(
+            deps.methodTelemetry,
+            toolsCommandDimensions({
+              clientInfo: tools.clientInfo,
+              requestedMode: tools.requestedMode,
+              resolvedMode: tools.mode,
+              host: tools.host,
+              fallbackReason: tools.fallbackReason,
+            })
+          )
+        : deps.methodTelemetry;
+    const dispatchDeps: ToolsRunDeps = { ...deps, methodTelemetry };
     const dispatched =
       tools.mode === 'attached'
-        ? await dispatchAttachedTools(tools, normalized, parsed, result, deps)
-        : await dispatchLocalTools(tools, normalized, parsed, deps, requestedMode, result);
-    return { ...dispatched, attachMode: tools.mode, fallbackNotice: tools.fallbackNotice };
+        ? await dispatchAttachedTools(tools, normalized, parsed, result, dispatchDeps)
+        : await dispatchLocalTools(tools, normalized, parsed, dispatchDeps, requestedMode, result);
+    return {
+      ...dispatched,
+      requestedMode: tools.requestedMode,
+      attachMode: tools.mode,
+      host: tools.host,
+      fallbackNotice: tools.fallbackNotice,
+      fallbackReason: tools.fallbackReason,
+    };
   } finally {
     await tools.close();
   }
@@ -203,7 +241,9 @@ async function dispatchAttachedTools(
   tools: Tools,
   invocation: ToolsInvocation,
   parsed: Extract<ParsedToolsTokens, { ok: true }>,
-  result: (partial: Omit<ToolsRunResult, 'outputPath' | 'attachMode'>) => ToolsRunResult,
+  result: (
+    partial: Omit<ToolsRunResult, 'outputPath' | 'attachMode' | 'requestedMode'>
+  ) => ToolsRunResult,
   deps: ToolsRunDeps
 ): Promise<ToolsRunResult> {
   const { toolset: toolsetName, tool: toolName } = invocation;
@@ -297,7 +337,9 @@ async function dispatchLocalTools(
   parsed: Extract<ParsedToolsTokens, { ok: true }>,
   deps: ToolsRunDeps,
   requestedMode: ToolsMode,
-  result: (partial: Omit<ToolsRunResult, 'outputPath' | 'attachMode'>) => ToolsRunResult
+  result: (
+    partial: Omit<ToolsRunResult, 'outputPath' | 'attachMode' | 'requestedMode'>
+  ) => ToolsRunResult
 ): Promise<ToolsRunResult> {
   const { toolset: toolsetName, tool: toolName, target } = invocation;
   const runtime = tools.runtime;

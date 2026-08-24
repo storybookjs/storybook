@@ -60,7 +60,12 @@ export async function runChildHost({
         controllers.set(message.id, controller);
         try {
           await reply(message.id, tools, () =>
-            tools!.call(message.ref, message.input, { signal: controller.signal })
+            tools!.call(message.ref, message.input, {
+              signal: controller.signal,
+              telemetry: async (event, payload) => {
+                send({ type: 'telemetry', id: message.id, event, payload });
+              },
+            })
           );
         } finally {
           controllers.delete(message.id);

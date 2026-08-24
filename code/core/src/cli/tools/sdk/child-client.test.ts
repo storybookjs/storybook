@@ -1,15 +1,17 @@
 import { EventEmitter } from 'node:events';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { telemetry } from 'storybook/internal/telemetry';
 
 import { serializeError } from '../../../shared/open-service/service-error-serialization.ts';
 import { spawnChildHost } from './child-client.ts';
 import { CHILD_HOST_PROTOCOL_VERSION } from './child-protocol.ts';
 import { SpawnFailedError, ToolsRuntimeError, AttachUnavailableError } from './errors.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
-import type { CreateToolsOptions, ToolsClientInfo } from './types.ts';
+import type { CreateToolsOptions, ToolsClientInfo, ToolsMode } from './types.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
+vi.mock('storybook/internal/telemetry', { spy: true });
 
 const RECORD: StorybookInstanceRecord = {
   schemaVersion: 1,
@@ -72,6 +74,8 @@ describe('spawnChildHost', () => {
     warn.mockReset();
     child = createFakeChild();
     fork = vi.fn(() => child);
+    vi.mocked(telemetry).mockReset();
+    vi.mocked(telemetry).mockResolvedValue(undefined);
     child.send.mockImplementation((message: { type: string; id?: string }) => {
       if (message.type === 'init') {
         queueMicrotask(() => child.emit('message', HELLO));
@@ -103,9 +107,9 @@ describe('spawnChildHost', () => {
     vi.unstubAllGlobals();
   });
 
-  const spawn = () =>
+  const spawn = (requestedMode: ToolsMode = 'attached') =>
     spawnChildHost(
-      { record: RECORD, options: OPTIONS, clientInfo: CLIENT },
+      { record: RECORD, options: OPTIONS, clientInfo: CLIENT, requestedMode },
       {
         fork: fork as never,
         resolveScript: () => '/repo/node_modules/storybook/dist/cli/tools/sdk/child-host.js',
@@ -145,6 +149,8 @@ describe('spawnChildHost', () => {
     const tools = await spawn();
 
     expect(tools.mode).toBe('attached');
+    expect(tools.host).toBe('child');
+    expect(tools.requestedMode).toBe('attached');
     expect(tools.storybook).toEqual(HELLO.storybook);
     await expect(tools.describe()).resolves.toEqual({
       configDir: RECORD.configDir,
@@ -164,6 +170,62 @@ describe('spawnChildHost', () => {
         ref: 'docs.list',
         input: { id: 'button' },
       })
+    );
+  });
+
+  it('forwards child method telemetry to the call sink without resolving the waiter', async () => {
+    child.send.mockImplementation((message: { type: string; id?: string }) => {
+      if (message.type === 'init') {
+        queueMicrotask(() => child.emit('message', HELLO));
+      }
+      if (message.type === 'call') {
+        queueMicrotask(() => {
+          child.emit('message', {
+            type: 'telemetry',
+            id: message.id,
+            event: 'tool:listAllDocumentation',
+            payload: { toolset: 'docs' },
+          });
+          child.emit('message', {
+            type: 'result',
+            id: message.id,
+            value: { ok: true, data: { ran: true }, markdown: 'ok' },
+          });
+        });
+      }
+      return true;
+    });
+    const sink = vi.fn(async () => {});
+    const tools = await spawn('auto');
+
+    await expect(tools.call('docs.list', {}, { telemetry: sink })).resolves.toEqual({
+      ok: true,
+      data: { ran: true },
+      markdown: 'ok',
+    });
+    expect(tools.requestedMode).toBe('auto');
+    expect(sink).toHaveBeenCalledWith(
+      'tool:listAllDocumentation',
+      expect.objectContaining({
+        toolset: 'docs',
+        client: 'sdk',
+        requestedMode: 'auto',
+        resolvedMode: 'attached',
+        attachMode: 'attached',
+        host: 'child',
+      })
+    );
+    expect(telemetry).toHaveBeenCalledWith(
+      'tools-command',
+      expect.objectContaining({
+        command: 'docs list',
+        success: true,
+        outcome: 'success',
+        client: 'sdk',
+        requestedMode: 'auto',
+        host: 'child',
+      }),
+      expect.anything()
     );
   });
 
@@ -256,7 +318,7 @@ describe('spawnChildHost', () => {
 
   it('throws SpawnFailedError when the child-host script cannot be resolved', async () => {
     const failure = spawnChildHost(
-      { record: RECORD, options: OPTIONS, clientInfo: CLIENT },
+      { record: RECORD, options: OPTIONS, clientInfo: CLIENT, requestedMode: 'attached' },
       {
         fork: fork as never,
         resolveScript: () => {

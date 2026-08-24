@@ -13,7 +13,19 @@ import { toCatalogEntry } from './catalog.ts';
 import type { AttachedBootstrapResult } from './attached-runtime.ts';
 import { formatAttachFallback } from './attach-messages.ts';
 import { spawnChildHost } from './child-client.ts';
-import { AttachUnavailableError, ToolsRuntimeError, isAttachGateError } from './errors.ts';
+import {
+  reportSdkAttachGate,
+  reportSdkInvocation,
+  resolveCallTelemetry,
+  toolsCommandDimensions,
+} from './command-telemetry.ts';
+import {
+  AttachUnavailableError,
+  ToolsRuntimeError,
+  attachGateReasonFromError,
+  isAttachGateError,
+  type ToolsAttachGateReason,
+} from './errors.ts';
 import type { ToolsRuntime } from './local-runtime.ts';
 import type {
   AttachedTools,
@@ -23,6 +35,7 @@ import type {
   ToolsCallOptions,
   ToolsClientInfo,
   ToolsDescribeOptions,
+  ToolsHostKind,
   ToolsMode,
   ToolsStorybookInfo,
   ToolsetCatalog,
@@ -88,18 +101,31 @@ export async function createTools(
 
   switch (mode) {
     case 'attached':
-      return createAttachedTools(options, deps, clientInfo);
+      try {
+        return await createAttachedTools(options, deps, clientInfo, mode);
+      } catch (error) {
+        await reportSdkAttachGate({
+          error,
+          clientInfo,
+          requestedMode: mode,
+          configDir: options.configDir,
+        });
+        throw error;
+      }
     case 'auto':
       try {
-        return await createAttachedTools(options, deps, clientInfo);
+        return await createAttachedTools(options, deps, clientInfo, mode);
       } catch (error) {
         if (!isAttachGateError(error)) {
           throw error;
         }
         const notice = formatAttachFallback(error.message);
+        const fallbackReason = attachGateReasonFromError(error);
         try {
-          const local = await createLocalTools(options, deps, clientInfo);
-          return { ...local, fallbackNotice: notice };
+          return await createLocalTools(options, deps, clientInfo, mode, {
+            fallbackNotice: notice,
+            fallbackReason,
+          });
         } catch (localError) {
           if (
             localError instanceof ToolsRuntimeError &&
@@ -115,7 +141,7 @@ export async function createTools(
         }
       }
     case 'local':
-      return createLocalTools(options, deps, clientInfo);
+      return createLocalTools(options, deps, clientInfo, mode);
     default: {
       const exhaustive: never = mode;
       throw exhaustive;
@@ -126,7 +152,8 @@ export async function createTools(
 async function createAttachedTools(
   options: CreateToolsOptions,
   deps: CreateToolsDeps,
-  clientInfo: Required<ToolsClientInfo>
+  clientInfo: Required<ToolsClientInfo>,
+  requestedMode: ToolsMode
 ): Promise<AttachedTools> {
   process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
   // local-runtime pulls core-server at import, which must not run before the attached channel is prepared.
@@ -144,6 +171,7 @@ async function createAttachedTools(
       record: attached.record,
       options: { ...options, mode: 'attached', autoSpawn: false, cwd: attached.record.cwd },
       clientInfo,
+      requestedMode,
     });
   }
   const inProcess = attached as {
@@ -153,6 +181,8 @@ async function createAttachedTools(
   };
   return createToolsHost({
     mode: 'attached',
+    host: 'in-process',
+    requestedMode,
     runtime: inProcess.runtime,
     clientInfo,
     storybook: {
@@ -169,7 +199,9 @@ async function createAttachedTools(
 async function createLocalTools(
   options: CreateToolsOptions,
   deps: CreateToolsDeps,
-  clientInfo: Required<ToolsClientInfo>
+  clientInfo: Required<ToolsClientInfo>,
+  requestedMode: ToolsMode,
+  fallback?: { fallbackNotice: string; fallbackReason?: ToolsAttachGateReason }
 ): Promise<LocalTools> {
   delete process.env.STORYBOOK_ATTACHED_TOOLS;
   const { bootstrapToolsRuntime } = await import('./local-runtime.ts');
@@ -191,6 +223,9 @@ async function createLocalTools(
 
   return createToolsHost({
     mode: 'local',
+    host: 'in-process',
+    requestedMode,
+    ...fallback,
     runtime,
     clientInfo,
     storybook: { version: versions.storybook, configDir: runtime.configDir },
@@ -199,6 +234,10 @@ async function createLocalTools(
 
 function createToolsHost(args: {
   mode: 'local';
+  host: ToolsHostKind;
+  requestedMode: ToolsMode;
+  fallbackNotice?: string;
+  fallbackReason?: ToolsAttachGateReason;
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
   storybook: ToolsStorybookInfo;
@@ -207,6 +246,10 @@ function createToolsHost(args: {
 }): LocalTools;
 function createToolsHost(args: {
   mode: 'attached';
+  host: ToolsHostKind;
+  requestedMode: ToolsMode;
+  fallbackNotice?: string;
+  fallbackReason?: ToolsAttachGateReason;
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
   storybook: ToolsStorybookInfo;
@@ -215,13 +258,17 @@ function createToolsHost(args: {
 }): AttachedTools;
 function createToolsHost(args: {
   mode: 'local' | 'attached';
+  host: ToolsHostKind;
+  requestedMode: ToolsMode;
+  fallbackNotice?: string;
+  fallbackReason?: ToolsAttachGateReason;
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
   storybook: ToolsStorybookInfo;
   close?: () => void;
   disconnected?: Promise<never>;
 }): Tools {
-  const { mode, runtime, clientInfo, storybook } = args;
+  const { mode, host, requestedMode, runtime, clientInfo, storybook } = args;
   const baseCtx: ToolsetCtx = {
     transport: 'cli',
     getService: runtime.getService,
@@ -276,11 +323,23 @@ function createToolsHost(args: {
     );
   };
 
+  const dimensions = toolsCommandDimensions({
+    clientInfo,
+    requestedMode,
+    resolvedMode: mode,
+    host,
+    fallbackReason: args.fallbackReason,
+  });
+
   return {
     mode,
+    host,
+    requestedMode,
     clientInfo,
     runtime,
     storybook,
+    ...(args.fallbackNotice ? { fallbackNotice: args.fallbackNotice } : {}),
+    ...(args.fallbackReason ? { fallbackReason: args.fallbackReason } : {}),
 
     async describe(options: ToolsDescribeOptions = {}): Promise<ToolsetCatalog> {
       assertOpen();
@@ -298,20 +357,52 @@ function createToolsHost(args: {
       options: ToolsCallOptions = {}
     ): Promise<AnyToolsetOutcome> {
       assertOpen();
+      const telemetry = resolveCallTelemetry(options, dimensions, {
+        clientInfo,
+        configDir: runtime.configDir,
+      });
+      const callOptions: ToolsCallOptions = {
+        ...options,
+        ...(telemetry ? { telemetry } : {}),
+      };
+      const start = Date.now();
       try {
-        if (!args.disconnected) {
-          return await invoke(ref, input, options);
-        }
-        return await Promise.race([invoke(ref, input, options), args.disconnected]);
+        const outcome = args.disconnected
+          ? await Promise.race([invoke(ref, input, callOptions), args.disconnected])
+          : await invoke(ref, input, callOptions);
+        await reportSdkInvocation({
+          ref,
+          clientInfo,
+          requestedMode,
+          resolvedMode: mode,
+          host,
+          fallbackReason: args.fallbackReason,
+          result: outcome,
+          duration: Date.now() - start,
+          configDir: runtime.configDir,
+        });
+        return outcome;
       } catch (error) {
-        if (error instanceof StorybookDevServerDisconnectedError) {
-          throw new ToolsRuntimeError({
-            reason: 'connection-lost',
-            message: error.message,
-            cause: error,
-          });
-        }
-        throw error;
+        const mapped =
+          error instanceof StorybookDevServerDisconnectedError
+            ? new ToolsRuntimeError({
+                reason: 'connection-lost',
+                message: error.message,
+                cause: error,
+              })
+            : error;
+        await reportSdkInvocation({
+          ref,
+          clientInfo,
+          requestedMode,
+          resolvedMode: mode,
+          host,
+          fallbackReason: args.fallbackReason,
+          result: { error: mapped },
+          duration: Date.now() - start,
+          configDir: runtime.configDir,
+        });
+        throw mapped;
       }
     },
 

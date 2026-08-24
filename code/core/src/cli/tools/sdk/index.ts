@@ -1,13 +1,16 @@
 export { createTools, type CreateToolsDeps } from './create-tools.ts';
 export {
+  attachGateReasonFromError,
   AttachUnavailableError,
   EnvironmentMismatchError,
   SpawnFailedError,
   ToolsRuntimeError,
   isAttachGateError,
   type AttachUnavailableReason,
+  type ToolsAttachGateReason,
   type ToolsRuntimeErrorReason,
 } from './errors.ts';
+export { toolsCommandDimensions, wrapMethodTelemetry } from './command-telemetry.ts';
 export type { ToolsRuntime } from './local-runtime.ts';
 export type { ToolsetJsonSchema } from './json-schema.ts';
 export type {
@@ -21,6 +24,7 @@ export type {
   ToolsetCatalog,
   ToolsetCatalogEntry,
   ToolsetCatalogMethod,
+  ToolsHostKind,
   ToolsMode,
   ToolsStorybookInfo,
 } from './types.ts';

@@ -11,7 +11,7 @@ import type { DocsContextProps } from './DocsContext';
 import { DocsContext } from './DocsContext';
 import type { SourceContextProps, SourceItem } from './SourceContainer';
 import { SourceContext, UNKNOWN_ARGS_HASH, argsHash } from './SourceContainer';
-import { useServiceStorySnippet } from './use-service-story-docs.ts';
+import { useServiceStorySnippet, useServiceStoryWarning } from './use-service-story-docs.ts';
 import { useTransformCode } from './useTransformCode';
 import { withMdxComponentOverride } from './with-mdx-component-override';
 
@@ -120,7 +120,8 @@ export const useSourceProps = (
   props: SourceProps,
   docsContext: DocsContextProps,
   sourceContext: SourceContextProps,
-  serviceSnippet = ''
+  serviceSnippet = '',
+  serviceWarning?: string
 ): PureSourceProps => {
   const { of } = props;
 
@@ -168,7 +169,24 @@ export const useSourceProps = (
 
   const format = props.code !== undefined ? props.format : (source?.format ?? true);
 
-  return { code, format, language, dark };
+  if (hasDirectCode) {
+    return { code, format, language, dark };
+  }
+
+  let warning: string | undefined;
+  if (code === serviceSnippet) {
+    warning = serviceWarning;
+  } else if (code === source?.code) {
+    warning = source.warning;
+  }
+
+  return {
+    code,
+    format,
+    language,
+    dark,
+    warning,
+  };
 };
 
 const SourceWithStoryDocsSnippet: FC<
@@ -179,7 +197,14 @@ const SourceWithStoryDocsSnippet: FC<
   }
 > = ({ storyId, docsContext, sourceContext, ...props }) => {
   const serviceSnippet = useServiceStorySnippet(storyId).data ?? '';
-  const sourceProps = useSourceProps(props, docsContext, sourceContext, serviceSnippet);
+  const serviceWarning = useServiceStoryWarning(storyId).data;
+  const sourceProps = useSourceProps(
+    props,
+    docsContext,
+    sourceContext,
+    serviceSnippet,
+    serviceWarning
+  );
   return <PureSource {...sourceProps} />;
 };
 

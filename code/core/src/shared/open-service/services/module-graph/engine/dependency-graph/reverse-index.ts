@@ -11,6 +11,13 @@ export class ReverseIndexImpl {
   private readonly index: ReverseIndex = new Map();
   /** Forward mapping from story file -> Set of dep files it reaches. */
   private readonly forwardIndex = new Map<string, Set<string>>();
+  // Bumped only when a mutator actually changes index contents. Callers compare before/after
+  // to learn whether the reverse index moved, without reverse-engineering patch control flow.
+  private _revision = 0;
+
+  get revision(): number {
+    return this._revision;
+  }
 
   /** Records (or updates with min) the depth for (dep, story). */
   record(dep: string, story: string, depth: number): void {
@@ -29,6 +36,7 @@ export class ReverseIndexImpl {
         this.forwardIndex.set(story, deps);
       }
       deps.add(dep);
+      this._revision += 1;
     }
   }
 
@@ -48,6 +56,7 @@ export class ReverseIndexImpl {
       }
     }
     this.forwardIndex.delete(story);
+    this._revision += 1;
   }
 
   /** Removes a single (dep, story) pair without affecting other stories' depths to that dep. */
@@ -67,6 +76,7 @@ export class ReverseIndexImpl {
           this.forwardIndex.delete(story);
         }
       }
+      this._revision += 1;
     }
   }
 

@@ -1,0 +1,235 @@
+{
+  "pipes": [],
+  "interfaces": [],
+  "injectables": [],
+  "guards": [],
+  "interceptors": [],
+  "classes": [],
+  "directives": [],
+  "components": [
+    {
+      "name": "JsdocTagsComponent",
+      "id": "component-JsdocTagsComponent-ddf01d5c1a823a652285e3333c2e4d16d7d1a131d8aca0c808fd9b2fa6f74a22f6fe96ddb56d119c03ef3de06ca3d13834332ded412db9b25eb6900187984813",
+      "file": "jsdoc-tags.component.ts",
+      "encapsulation": [],
+      "entryComponents": [],
+      "inputs": [],
+      "outputs": [],
+      "providers": [],
+      "selector": "sb-jsdoc-tags",
+      "styleUrls": [],
+      "styles": [],
+      "template": "<span [style.color]=\"accent\">{{ text }}</span>",
+      "templateUrl": [],
+      "templateVariables": [],
+      "viewProviders": [],
+      "hostDirectives": [],
+      "inputsClass": [
+        {
+          "coverageIgnore": false,
+          "name": "accent",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "jsdoctags": [
+            {
+              "pos": 527,
+              "end": 551,
+              "kind": 328,
+              "id": 0,
+              "flags": 16842752,
+              "modifierFlagsCache": 0,
+              "transformFlags": 0,
+              "tagName": {
+                "pos": 528,
+                "end": 535,
+                "kind": 80,
+                "id": 0,
+                "flags": 16842752,
+                "transformFlags": 0,
+                "escapedText": "default"
+              },
+              "comment": "<p>&#39;steelblue&#39;</p>\n"
+            }
+          ],
+          "rawdescription": "\n\nAccent color applied to the chip text.\n\n'steelblue'\n",
+          "description": "<p>Accent color applied to the chip text.</p>\n<p>&#39;steelblue&#39;</p>\n",
+          "line": 27,
+          "type": "string",
+          "decorators": []
+        },
+        {
+          "coverageIgnore": false,
+          "name": "text",
+          "defaultValue": "''",
+          "deprecated": true,
+          "deprecationMessage": "Use `label` on the parent panel instead.",
+          "jsdoctags": [
+            {
+              "pos": 310,
+              "end": 368,
+              "kind": 332,
+              "id": 0,
+              "flags": 16842752,
+              "modifierFlagsCache": 0,
+              "transformFlags": 0,
+              "tagName": {
+                "pos": 311,
+                "end": 321,
+                "kind": 80,
+                "id": 0,
+                "flags": 16842752,
+                "transformFlags": 0,
+                "escapedText": "deprecated"
+              },
+              "comment": "<p>Use <code>label</code> on the parent panel instead.</p>\n"
+            },
+            {
+              "pos": 368,
+              "end": 413,
+              "kind": 348,
+              "id": 0,
+              "flags": 16842752,
+              "modifierFlagsCache": 0,
+              "transformFlags": 0,
+              "tagName": {
+                "pos": 369,
+                "end": 372,
+                "kind": 80,
+                "id": 0,
+                "flags": 16842752,
+                "transformFlags": 0,
+                "escapedText": "see"
+              },
+              "comment": "<p>://example.com/docs/chip-text</p>\n",
+              "name": {
+                "pos": 373,
+                "end": 378,
+                "kind": 311,
+                "id": 0,
+                "flags": 16842752,
+                "modifierFlagsCache": 0,
+                "transformFlags": 0,
+                "name": {
+                  "pos": 373,
+                  "end": 378,
+                  "kind": 80,
+                  "id": 0,
+                  "flags": 16842752,
+                  "transformFlags": 0,
+                  "escapedText": "https"
+                }
+              }
+            },
+            {
+              "pos": 413,
+              "end": 441,
+              "kind": 328,
+              "id": 0,
+              "flags": 16842752,
+              "modifierFlagsCache": 0,
+              "transformFlags": 0,
+              "tagName": {
+                "pos": 414,
+                "end": 424,
+                "kind": 80,
+                "id": 0,
+                "flags": 16842752,
+                "transformFlags": 0,
+                "escapedText": "sbCategory"
+              },
+              "comment": "<p>presentation</p>\n"
+            }
+          ],
+          "rawdescription": "\n\nChip text.\n\nSee https://example.com/docs/chip-text\npresentation\n",
+          "description": "<p>Chip text.</p>\n<p>See <a href=\"https://example.com/docs/chip-text\">https://example.com/docs/chip-text</a>\npresentation</p>\n",
+          "line": 20,
+          "type": "string",
+          "decorators": []
+        }
+      ],
+      "outputsClass": [],
+      "propertiesClass": [],
+      "methodsClass": [],
+      "coverageIgnore": false,
+      "deprecated": false,
+      "deprecationMessage": "",
+      "hostBindings": [],
+      "hostListeners": [],
+      "standalone": false,
+      "imports": [],
+      "description": "<p>Renders a colored status chip.</p>\n<p>See <a href=\"https://example.com/design/chips\">https://example.com/design/chips</a></p>\n",
+      "rawdescription": "\n\nRenders a colored status chip.\n\nSee https://example.com/design/chips\n",
+      "type": "component",
+      "sourceCode": "import { Component, Input } from '@angular/core';\n\n/**\n * Renders a colored status chip.\n *\n * @see https://example.com/design/chips\n */\n@Component({\n  selector: 'sb-jsdoc-tags',\n  template: '<span [style.color]=\"accent\">{{ text }}</span>',\n})\nexport class JsdocTagsComponent {\n  /**\n   * Chip text.\n   *\n   * @deprecated Use `label` on the parent panel instead.\n   * @see https://example.com/docs/chip-text\n   * @sbCategory presentation\n   */\n  @Input() text = '';\n\n  /**\n   * Accent color applied to the chip text.\n   *\n   * @default 'steelblue'\n   */\n  @Input() accent?: string;\n}\n",
+      "assetsDirs": [],
+      "styleUrlsData": "",
+      "stylesData": "",
+      "jsdoctags": [
+        {
+          "pos": 95,
+          "end": 134,
+          "kind": 348,
+          "id": 0,
+          "flags": 16777216,
+          "modifierFlagsCache": 0,
+          "transformFlags": 0,
+          "tagName": {
+            "pos": 96,
+            "end": 99,
+            "kind": 80,
+            "id": 0,
+            "flags": 16777216,
+            "transformFlags": 0,
+            "escapedText": "see"
+          },
+          "comment": "<p>://example.com/design/chips</p>\n",
+          "name": {
+            "pos": 100,
+            "end": 105,
+            "kind": 311,
+            "id": 0,
+            "flags": 16777216,
+            "modifierFlagsCache": 0,
+            "transformFlags": 0,
+            "name": {
+              "pos": 100,
+              "end": 105,
+              "kind": 80,
+              "id": 0,
+              "flags": 16777216,
+              "transformFlags": 0,
+              "escapedText": "https"
+            }
+          }
+        }
+      ],
+      "extends": [],
+      "relationships": {
+        "incoming": [],
+        "outgoing": []
+      }
+    }
+  ],
+  "modules": [],
+  "miscellaneous": [],
+  "routes": {
+    "name": "<root>",
+    "kind": "module",
+    "children": []
+  },
+  "coverage": {
+    "count": 100,
+    "status": "very-good",
+    "files": [
+      {
+        "filePath": "jsdoc-tags.component.ts",
+        "type": "component",
+        "linktype": "component",
+        "name": "JsdocTagsComponent",
+        "coveragePercent": 100,
+        "coverageCount": "3/3",
+        "status": "very-good"
+      }
+    ]
+  }
+}

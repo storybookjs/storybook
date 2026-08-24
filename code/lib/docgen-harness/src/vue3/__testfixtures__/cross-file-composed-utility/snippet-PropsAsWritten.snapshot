@@ -1,0 +1,3 @@
+<template>
+  <UtilityComposedProps label="Picked" />
+</template>

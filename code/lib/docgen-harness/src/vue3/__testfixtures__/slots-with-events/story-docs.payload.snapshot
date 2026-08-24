@@ -1,0 +1,25 @@
+{
+  "id": "slots-with-events",
+  "name": "SlotsWithEvents",
+  "path": "__PATH__",
+  "stories": {
+    "forms-slots-with-events--string-child": {
+      "description": undefined,
+      "id": "forms-slots-with-events--string-child",
+      "name": "String Child",
+      "snippet": "<script lang="ts" setup>
+import SlotsWithEvents from './SlotsWithEvents.vue';
+</script>
+
+<template>
+  <SlotsWithEvents title="Notice">
+    Body text
+    <template #leading>
+      !
+    </template>
+  </SlotsWithEvents>
+</template>",
+      "summary": undefined,
+    },
+  },
+}

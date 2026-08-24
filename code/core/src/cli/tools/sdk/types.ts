@@ -51,8 +51,8 @@ export type ToolsetCatalogMethod = {
   description: string;
   requiresDevServer: boolean;
   /** `undefined` when the method's schema has no JSON Schema representation. */
-  inputSchema: ToolsetJsonSchema | undefined;
-  outputSchema?: ToolsetJsonSchema;
+  input: ToolsetJsonSchema | undefined;
+  output?: ToolsetJsonSchema;
 };
 
 export type ToolsetCatalogEntry = {

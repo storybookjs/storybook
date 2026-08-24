@@ -14,10 +14,11 @@ import {
   normalizeStorybookWorkflowName,
   parseJson,
   parseStorybookWorkflowShellCommands,
+  workflowCallMatchesName,
 } from './shell-parse.ts';
 import type { StorybookWorkflowCall } from './shell-parse.ts';
 
-export { isRecord, parseJson, parseStorybookWorkflowShellCommands };
+export { isRecord, parseJson, parseStorybookWorkflowShellCommands, workflowCallMatchesName };
 export type { StorybookWorkflowCall };
 
 const AGENT_CONTEXT_PATH = '__agent_eval__/agent.json';
@@ -119,7 +120,7 @@ export function getStorybookWorkflowCalls(): StorybookWorkflowCall[] {
 }
 
 export function getWorkflowCalls(name: string): StorybookWorkflowCall[] {
-  return getStorybookWorkflowCalls().filter((call) => call.name === name);
+  return getStorybookWorkflowCalls().filter((call) => workflowCallMatchesName(call, name));
 }
 
 export function expectWorkflowCalls(expectedNames: string[]): void {
@@ -719,7 +720,9 @@ function isWorkflowToolUse(block: Record<string, unknown>, workflowName: string)
     return false;
   }
 
-  return parseStorybookWorkflowShellCommands([command]).some((call) => call.name === workflowName);
+  return parseStorybookWorkflowShellCommands([command]).some((call) =>
+    workflowCallMatchesName(call, workflowName)
+  );
 }
 
 // Codex raw transcripts report completed MCP tool calls and shell commands as
@@ -750,7 +753,9 @@ function collectCodexWorkflowToolResult(
   if (
     item.type === 'command_execution' &&
     typeof item.command === 'string' &&
-    parseStorybookWorkflowShellCommands([item.command]).some((call) => call.name === workflowName)
+    parseStorybookWorkflowShellCommands([item.command]).some((call) =>
+      workflowCallMatchesName(call, workflowName)
+    )
   ) {
     results.push({
       output: typeof item.aggregated_output === 'string' ? item.aggregated_output : '',

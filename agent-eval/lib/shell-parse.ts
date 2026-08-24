@@ -5,8 +5,22 @@
 export type StorybookWorkflowCall = {
   name: string;
   input: Record<string, unknown>;
-  source: 'mcp' | 'storybook-ai';
+  source: 'mcp' | 'storybook-ai' | 'cli';
 };
+
+// `storybook skills get write-story` serves the same document the MCP channel
+// exposes as the get-storybook-story-instructions tool. Assertions ask by that
+// historic name; this matcher owns the cross-channel equivalence.
+export function workflowCallMatchesName(call: StorybookWorkflowCall, name: string): boolean {
+  if (call.name === name) {
+    return true;
+  }
+  return (
+    name === 'get-storybook-story-instructions' &&
+    call.name === 'skills-get' &&
+    call.input.id === 'write-story'
+  );
+}
 
 export const STORYBOOK_WORKFLOW_TOOL_NAMES = [
   'docs-list',
@@ -85,19 +99,19 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
 
     const cli = tokens[index + 1];
     if (cli === 'skills') {
-      // `storybook skills get write-story` serves the same document the MCP channel
-      // exposes as the get-storybook-story-instructions tool; record it under that
-      // name so channel-agnostic assertions keep working. Other skill ids have no
-      // workflow-tool equivalent. A help request prints usage instead of the skill,
-      // so it does not count — same rule as the ai/tools branch below.
+      // Record the literal invocation; which skill serves which workflow document
+      // is workflowCallMatchesName's concern. A help request prints usage instead
+      // of the skill, so it does not count — same rule as the ai/tools branch below.
+      const skillId = tokens[index + 2] === 'get' ? tokens[index + 3] : undefined;
       if (
-        tokens[index + 2] === 'get' &&
-        tokens[index + 3] === 'write-story' &&
+        skillId !== undefined &&
+        !skillId.startsWith('-') &&
+        !SHELL_COMMAND_SEPARATORS.has(skillId) &&
         !segmentUntilSeparator(tokens, index + 4).some(
           (token) => token === '--help' || token === '-h'
         )
       ) {
-        calls.push({ name: 'get-storybook-story-instructions', input: {}, source: 'storybook-ai' });
+        calls.push({ name: 'skills-get', input: { id: skillId }, source: 'cli' });
         index += 3;
       }
       continue;

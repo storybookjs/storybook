@@ -7,20 +7,34 @@ import {
   parseStorybookWorkflowShellCommands,
   parseWorkflowToolResults,
   selectFinalRunStoryTestsReport,
+  workflowCallMatchesName,
   workflowCallIncludesStory,
   workflowCallUsesStoryId,
 } from './test-utils.ts';
 
 describe('parseStorybookWorkflowShellCommands', () => {
-  test('records `skills get write-story` as get-storybook-story-instructions', () => {
+  test('records `skills get <id>` invocations literally, with their skill id', () => {
     const calls = parseStorybookWorkflowShellCommands([
       'npx storybook skills get write-story 2>&1 | grep -v "npm warn"',
       'npx storybook skills get stories',
       'npx storybook skills list',
     ]);
 
-    expect(calls).toHaveLength(1);
-    expect(calls[0]?.name).toBe('get-storybook-story-instructions');
+    expect(calls).toEqual([
+      { name: 'skills-get', input: { id: 'write-story' }, source: 'cli' },
+      { name: 'skills-get', input: { id: 'stories' }, source: 'cli' },
+    ]);
+  });
+
+  test('matches only the write-story skill to the historic instructions name', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      'npx storybook skills get write-story',
+      'npx storybook skills get stories',
+    ]);
+
+    expect(
+      calls.map((call) => workflowCallMatchesName(call, 'get-storybook-story-instructions'))
+    ).toEqual([true, false]);
   });
 
   test('does not record skills help requests or quoted mentions as instruction fetches', () => {

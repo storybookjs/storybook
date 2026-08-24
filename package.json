@@ -4,6 +4,7 @@
   "type": "module",
   "workspaces": {
     "packages": [
+      "agent-eval",
       "code",
       "code/addons/*",
       "code/builders/*",
@@ -42,22 +43,30 @@
     "vite-ecosystem-ci:test": "./scripts/ecosystem-ci/test.sh react-vite/default-ts"
   },
   "resolutions": {
+    "@ai-sdk/anthropic": "^2.0.0",
     "@babel/runtime": "latest",
     "@babel/traverse": "latest",
     "@babel/types": "^7.28.4",
     "@playwright/test": "1.58.2",
-    "@testing-library/user-event@npm:^14.4.0": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch",
-    "@testing-library/user-event@npm:^14.6.1": "patch:@testing-library/user-event@npm%3A14.6.1#~/.yarn/patches/@testing-library-user-event-npm-14.6.1-5da7e1d4e2.patch",
+    "@testing-library/jest-dom": "6.9.1",
+    "@testing-library/user-event@npm:^14.4.0": "patch:@testing-library/user-event@npm%3A14.6.3#~/.yarn/patches/@testing-library-user-event-npm-14.6.3-15ecebe390.patch",
+    "@testing-library/user-event@npm:^14.6.3": "patch:@testing-library/user-event@npm%3A14.6.3#~/.yarn/patches/@testing-library-user-event-npm-14.6.3-15ecebe390.patch",
     "@types/babel__traverse@npm:*": "patch:@types/babel__traverse@npm%3A7.20.6#~/.yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
     "@types/babel__traverse@npm:^7.18.0": "patch:@types/babel__traverse@npm%3A7.20.6#~/.yarn/patches/@types-babel__traverse-npm-7.20.6-fac4243243.patch",
     "@types/node": "^22.19.1",
     "@types/react": "^18.0.0",
     "@typescript-eslint/types": "8.60.0",
+    "@vercel/agent-eval-playground/react": "^19.2.0",
+    "@vercel/agent-eval-playground/react-dom": "^19.2.0",
+    "@vercel/agent-eval@npm:1.2.0": "patch:@vercel/agent-eval@npm%3A1.2.0#~/.yarn/patches/@vercel-agent-eval-npm-1.2.0-861deb21a0.patch",
     "@vitest/expect@npm:3.2.4": "patch:@vitest/expect@npm%3A3.2.4#~/.yarn/patches/@vitest-expect-npm-3.2.4-97c526d5cc.patch",
+    "agent-eval/typescript": "5.9.3",
     "aria-query@5.3.0": "^5.3.0",
     "esbuild": "^0.28.0",
     "playwright": "1.58.2",
     "playwright-core": "1.58.2",
+    "polka@npm:1.0.0-next.28/@polka/url": "1.0.0-next.29",
+    "radix-ui@npm:^1.4.3": "1.6.0",
     "react": "^18.2.0",
     "react-joyride/type-fest": "~2.19",
     "rxjs": "^7.8.2",
@@ -77,7 +86,7 @@
     "oxfmt": "^0.41.0",
     "std-env": "^4.0.0",
     "vite": "^7.0.4",
-    "vitest": "^4.1.5"
+    "vitest": "^4.1.6"
   },
-  "packageManager": "yarn@4.10.3"
+  "packageManager": "yarn@4.18.0"
 }

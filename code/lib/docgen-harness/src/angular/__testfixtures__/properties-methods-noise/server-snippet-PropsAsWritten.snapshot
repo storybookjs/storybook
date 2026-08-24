@@ -1,0 +1,15 @@
+import { Component } from '@angular/core';
+import { PropertiesMethodsNoiseComponent } from './properties-methods-noise.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [PropertiesMethodsNoiseComponent],
+  template: `
+    <sb-properties-methods-noise
+        [title]="'Paged results'"
+        (densityChange)="densityChange($event)"
+    />`,
+})
+export class DemoComponent {
+  densityChange(event: unknown) {}
+}

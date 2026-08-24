@@ -5,6 +5,8 @@ import {
 } from 'storybook/internal/types';
 
 import type { App, ConcreteComponent } from 'vue';
+import type { ComponentMeta } from 'vue-component-meta';
+import type { ComponentDoc } from 'vue-docgen-api';
 
 export type { RenderContext } from 'storybook/internal/types';
 
@@ -35,3 +37,34 @@ export interface VueRenderer extends WebRenderer {
 }
 
 export interface VueTypes extends VueRenderer {}
+
+export type VueDocgenPlugin = 'vue-docgen-api' | 'vue-component-meta';
+
+type ArrayElement<T> = T extends readonly (infer A)[] ? A : never;
+
+export type VueDocgenInfo<T extends VueDocgenPlugin> = T extends 'vue-component-meta'
+  ? ComponentMeta
+  : ComponentDoc;
+
+/**
+ * Single prop/event/slot/exposed entry of "__docgenInfo" depending on the used docgenPlugin.
+ *
+ * @example
+ *
+ * ```ts
+ * type PropInfo = VueDocgenInfoEntry<'vue-component-meta', 'props'>;
+ * ```
+ */
+export type VueDocgenInfoEntry<
+  T extends VueDocgenPlugin,
+  TKey extends 'props' | 'events' | 'slots' | 'exposed' | 'expose' =
+    | 'props'
+    | 'events'
+    | 'slots'
+    | 'exposed'
+    | 'expose',
+> = ArrayElement<
+  T extends 'vue-component-meta'
+    ? VueDocgenInfo<'vue-component-meta'>[Exclude<TKey, 'expose'>]
+    : VueDocgenInfo<'vue-docgen-api'>[Exclude<TKey, 'exposed'>]
+>;

@@ -7,13 +7,13 @@ sidebar:
 
 <Callout variant="info" icon="🧪">
 
-The best practices here relate to the [generated manifests](./manifests.mdx), which are currently only supported for [React](?renderer=react) projects.
+The best practices here relate to the [generated manifests](./manifests.mdx), which are in [preview](../releases/features.mdx#preview).
+The API may change in future releases.
+We welcome feedback and contributions to help improve this feature.
 
-Additionally, the API may change in future releases. We welcome feedback and contributions to help improve this feature.
+See [framework support](./mcp/overview.mdx#framework-support) for which frameworks generate manifests today.
 
 </Callout>
-
-<If renderer={['react']}>
 
 Use Storybook together with an AI agent effectively by following these best practices.
 
@@ -37,6 +37,8 @@ Help the agent understand what a component should be used for by providing a des
 
 The agent will receive the summary, if present, or a truncated version of the description.
 
+<If renderer="react">
+
 ```ts title="Button.tsx"
 /**
  * Button is used for user interactions that do not navigate to another route.
@@ -46,6 +48,45 @@ The agent will receive the summary, if present, or a truncated version of the de
  */
 export const Button = // ...
 ```
+
+</If>
+
+<If renderer="angular">
+
+```ts title="button.component.ts"
+/**
+ * Button is used for user interactions that do not navigate to another route.
+ * For navigation, use [Link](?path=/docs/link--default) instead.
+ *
+ * @summary for user interactions that do not navigate to another route
+ */
+@Component({
+  selector: 'storybook-button',
+  template: `<button>{{ label }}</button>`,
+})
+export class Button {}
+```
+
+</If>
+
+<If renderer="vue">
+
+```vue title="Button.vue"
+<script setup lang="ts">
+/**
+ * Button is used for user interactions that do not navigate to another route.
+ * For navigation, use [Link](?path=/docs/link--default) instead.
+ *
+ * @summary for user interactions that do not navigate to another route
+ */
+defineOptions({ name: 'Button' });
+</script>
+```
+
+In a `<script setup>` SFC, attach the docblock to a `defineOptions()` call.
+A docblock sitting on its own at the top of the block is not picked up.
+
+</If>
 
 You can use Markdown syntax in your description to add formatting or links.
 
@@ -57,13 +98,19 @@ The agent will receive the summary, if present, or the first 60 characters of th
 
 <CodeSnippets path="story-description-and-summary.md" />
 
+<If renderer="react">
+
 ### Prop type extraction
 
 We highly recommend using `react-docgen-typescript` for prop type extraction (set with the [`reactDocgen`](../api/main-config/main-config-typescript.mdx#reactdocgen) config option), because it provides more accurate and comprehensive information about your components' props, which will help agents use them more effectively. If manifest generation seems too slow, you can switch to `react-docgen`, which is faster but less detailed.
 
+</If>
+
 ### Prop descriptions
 
 It's also helpful to provide descriptions for your component's props in the JSDoc comments in your component code, as agents will use these to understand how to use the component effectively.
+
+<If renderer="react">
 
 ```ts title="Button.tsx"
 export interface ButtonProps {
@@ -71,6 +118,32 @@ export interface ButtonProps {
   icon?: ReactNode;
 }
 ```
+
+</If>
+
+<If renderer="angular">
+
+```ts title="button.component.ts"
+export class Button {
+  /** The icon to render before the button text */
+  @Input() icon?: string;
+}
+```
+
+</If>
+
+<If renderer="vue">
+
+```vue title="Button.vue"
+<script setup lang="ts">
+defineProps<{
+  /** The icon to render before the button text */
+  icon?: string;
+}>();
+</script>
+```
+
+</If>
 
 ## Docs summaries
 
@@ -127,9 +200,6 @@ import { Meta } from '@storybook/addon-docs/blocks';
 
 <Meta title="Doc for Humans Only" tags={['!manifest']} />
 ```
-
-</If>
-{/* End supported renderers */}
 
 **More AI resources**
 

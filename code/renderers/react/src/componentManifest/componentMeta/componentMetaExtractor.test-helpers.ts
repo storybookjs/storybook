@@ -50,10 +50,11 @@ export async function withProject<T>(
   vol.fromNestedJSON(
     Object.fromEntries(Object.entries(filePaths).map(([name, filePath]) => [filePath, files[name]]))
   );
-  for (const fp of Object.values(filePaths)) {
-    fsFileSnapshots.delete(fp);
-  }
-  (sharedProject as any).projectVersion++;
+  // Report every rewritten path as changed: the tracker evicts its snapshots and bumps versions,
+  // which stays correct even when consecutive writes land within one mtime tick.
+  sharedProject.onFilesChanged(
+    Object.values(filePaths).map((filePath) => ({ filePath, type: 'changed' as const }))
+  );
   return fn(sharedProject, filePaths);
 }
 

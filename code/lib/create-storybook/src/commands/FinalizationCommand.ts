@@ -13,8 +13,8 @@ export type FinalizationCommandOptions = {
   showAgentFollowUp: boolean;
   /** When true, show the "paste this prompt to your AI agent" instructions */
   showAiInstructions: boolean;
-  /** Package-manager-aware `storybook skills get setup` command shown to agents */
-  setupSkillCommand: string;
+  /** Package-manager-aware `storybook ai setup` command shown to agents */
+  aiSetupCommand: string;
 };
 
 type ExecuteFinalizationParams = {
@@ -85,8 +85,8 @@ export class FinalizationCommand {
     } catch {}
   }
 
-  private getSetupSkillPromptText(): string {
-    return `Run \`${this.options.setupSkillCommand}\` and follow its instructions precisely.`;
+  private getAiSetupPromptText(): string {
+    return `Run \`${this.options.aiSetupCommand}\` and follow its instructions precisely.`;
   }
 
   private printSuccessMessage(storybookCommand?: string | null): void {
@@ -94,7 +94,7 @@ export class FinalizationCommand {
       logger.step(
         CLI_COLORS.storybook(
           dedent`Storybook is installed but is not entirely set up yet.
-          To finish setting up, now run \`${this.options.setupSkillCommand}\` and follow its instructions precisely.`
+          To finish setting up, now run \`${this.options.aiSetupCommand}\` and follow its instructions precisely.`
         )
       );
     } else {
@@ -123,7 +123,7 @@ export class FinalizationCommand {
     if (this.options.showAiInstructions) {
       logger.step(dedent`To finalize setting up with AI, paste this prompt to your AI agent:
 
-        ${CLI_COLORS.storybook(this.getSetupSkillPromptText())}
+        ${CLI_COLORS.storybook(this.getAiSetupPromptText())}
       `);
     }
   }
@@ -133,13 +133,13 @@ export const executeFinalization = ({
   logfile,
   showAgentFollowUp,
   showAiInstructions,
-  setupSkillCommand,
+  aiSetupCommand,
   ...params
 }: ExecuteFinalizationParams & FinalizationCommandOptions) => {
   return new FinalizationCommand({
     logfile,
     showAgentFollowUp,
     showAiInstructions,
-    setupSkillCommand,
+    aiSetupCommand,
   }).execute(params);
 };

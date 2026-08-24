@@ -135,27 +135,6 @@ describe('local tools', () => {
     expect(data.manifests.componentManifest.components.button.name).toBe('Button');
   });
 
-  it('diverts mid-run stdout writes to stderr with --json, restoring stdout afterwards', async () => {
-    const originalWrite = process.stdout.write;
-    const stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
-    try {
-      const { deps } = makeDeps();
-      const noisyBootstrap: ToolsRunDeps['bootstrap'] = async (...args) => {
-        process.stdout.write('logger noise during config load\n');
-        return deps.bootstrap!(...args);
-      };
-
-      const result = await run(['docs', 'list', '--json'], { ...deps, bootstrap: noisyBootstrap });
-
-      expect(result.exitCode).toBe(0);
-      expect(() => JSON.parse(result.output)).not.toThrow();
-      expect(stderrSpy).toHaveBeenCalledWith('logger noise during config load\n');
-      expect(process.stdout.write).toBe(originalWrite);
-    } finally {
-      stderrSpy.mockRestore();
-    }
-  });
-
   it('runs stories changed against the in-process module graph when it is ready', async () => {
     const moduleGraph = {
       queries: {

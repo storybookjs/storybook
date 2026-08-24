@@ -88,6 +88,7 @@ vi.mock('storybook/internal/common', () => {
     versions: {
       storybook: '8.0.0',
       '@storybook/addon-docs': '8.0.0',
+      '@storybook/addon-mcp': '8.0.0',
     },
     frameworkToRenderer: vi.fn(),
   };
@@ -127,6 +128,8 @@ describe('add', () => {
     { input: '@storybook/addon-docs@~4', expected: '@storybook/addon-docs@~4' },
     { input: '@storybook/addon-docs@next', expected: '@storybook/addon-docs@next' },
     { input: '@storybook/addon-docs', expected: '@storybook/addon-docs@^8.0.0' }, // takes it from the versions file
+    // Core monorepo package: pins to versions.storybook, not registry latest (mocked as 1.0.0)
+    { input: '@storybook/addon-mcp', expected: '@storybook/addon-mcp@^8.0.0' },
   ];
 
   test.each(testData)('$input', async ({ input, expected }) => {

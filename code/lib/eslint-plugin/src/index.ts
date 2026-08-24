@@ -3,6 +3,8 @@
  * This file has been automatically generated,
  * in order to update its content execute "yarn update"
  */
+import { name, version } from '../package.json';
+
 // configs
 import csf from './configs/csf.ts';
 import csfStrict from './configs/csf-strict.ts';
@@ -64,7 +66,13 @@ export const rules = {
   'use-storybook-testing-library': useStorybookTestingLibrary,
 };
 
+export const meta = {
+  name,
+  version,
+};
+
 export default {
   configs,
+  meta,
   rules,
 };

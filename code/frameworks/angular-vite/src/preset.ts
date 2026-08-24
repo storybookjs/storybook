@@ -6,16 +6,32 @@ import {
   getAutomockCode,
   getRealPath,
 } from 'storybook/internal/mocking-utils';
-import type { PresetProperty } from 'storybook/internal/types';
+import { logger } from 'storybook/internal/node-logger';
+import { AngularUnresolvedStyleError } from 'storybook/internal/server-errors';
+import type { PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
 
-import { readFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { readFileSync, statSync } from 'node:fs';
+import { basename, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { DOCUMENTATION_JSON, resolveCompodocConfig } from './compodoc-config.ts';
+import { resolvePropsTable, warnAboutPropsTable } from './props-table.ts';
+import { ensureCompodocDocumentation } from './compodoc/ensure-documentation.ts';
 import type { StandaloneOptions } from './builders/utils/standalone-options.ts';
 import type { UserConfig, Plugin } from 'vite';
 
+export { experimental_docgenProvider, experimental_manifests } from './docgen/preset.ts';
+export { experimental_storyDocsProvider } from './docgen/story-docs-preset.ts';
+
 export const addons: PresetProperty<'addons'> = [];
+
+// `angular-vite` is itself experimental, so it ships one docgen path rather than two: server-side
+// extraction is the default here, while the stable webpack `@storybook/angular` keeps Compodoc.
+// A user's `main.ts` merges over this, so `features: { experimentalDocgenServer: false }` opts out.
+export const features: PresetProperty<'features'> = async (existing) => ({
+  ...existing,
+  experimentalDocgenServer: true,
+});
 
 export const previewAnnotations: PresetProperty<'previewAnnotations'> = async (
   entries = [],
@@ -76,34 +92,14 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     }
   }
 
-  // Remove any loaded analogjs plugins from a vite.config.(m)ts file, and
-  // demote storybook's CSF plugin out of the "pre" bucket. csf-plugin and
-  // analogjs both declare `enforce: 'pre'`; within the same enforce bucket
-  // plugins run in registration order. builder-vite registers `plugin-csf`
-  // first, then this preset adds analogjs, so analogjs's transform — which
-  // discards the incoming `code` and re-emits from its own TS file emitter —
-  // silently overwrites the csf enrichment that adds
-  // `parameters.docs.description.story` / `parameters.docs.source
-  // .originalSource`. Demoting csf-plugin to the normal stage means it runs
-  // after analogjs has produced its compiled JS, so the enrichment lands in
-  // the bundle. csf-plugin reads the original source from disk (not the
-  // upstream `code`), so the JSDoc/source extraction is unaffected.
   // Drop any analogjs plugin loaded from the user's vite.config(.m)ts file —
-  // we register our own pinned-to-`enforce: 'pre'` instance below. Demote
-  // builder-vite's csf-plugin out of the `pre` bucket so analogjs (also
-  // `enforce: 'pre'`) doesn't overwrite csf-plugin's docs/story enrichment.
+  // we register our own pinned-to-`enforce: 'pre'` instance below.
   // The post-analogjs `angularViteRedirectReapplyPlugin` handles every mock
   // contract (redirects + automock) on top of analogjs's emitted JS, so we
   // don't need to demote `storybook:mock-loader` here.
   config.plugins = (config.plugins ?? [])
     .flat()
-    .filter((plugin: any) => !plugin.name.includes('analogjs'))
-    .map((plugin: any) => {
-      if (plugin?.name === 'plugin-csf' && plugin.enforce === 'pre') {
-        return { ...plugin, enforce: undefined };
-      }
-      return plugin;
-    });
+    .filter((plugin: any) => !plugin?.name?.includes('analogjs'));
 
   // Merge custom configuration into the default config
   const { mergeConfig, normalizePath } = await import('vite');
@@ -112,30 +108,34 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   // @ts-expect-error options is possibly undefined here, but presets.apply is guarded at runtime
   const framework = await options.presets.apply('framework');
 
-  // Generate compodoc's documentation.json on cold start when no builder
-  // path has produced it yet (e.g. addon-vitest child, ng run without the
-  // Angular CLI builder). Skipped when the file already exists or when the
-  // user opts out via framework.options.compodoc === false.
-  if (framework.options?.compodoc !== false) {
-    const { existsSync } = await import('node:fs');
-    const path = await import('node:path');
-    const workspaceRoot =
-      (options as any)?.angularBuilderContext?.workspaceRoot ?? config?.root ?? process.cwd();
-    const documentationJsonPath = path.resolve(workspaceRoot, 'documentation.json');
-    if (!existsSync(documentationJsonPath)) {
-      const { runCompodoc } = await import('./builders/utils/run-compodoc.ts');
-      const tsconfig =
-        framework.options?.tsconfig ??
-        (options as any)?.tsConfig ??
-        (options as any)?.angularBuilderOptions?.tsConfig ??
-        path.resolve(workspaceRoot, 'tsconfig.json');
-      const compodocArgs = framework.options?.compodocArgs ?? ['-e', 'json', '-d', '.'];
-      try {
-        await runCompodoc({ compodocArgs, tsconfig, workspaceRoot });
-      } catch (err) {
-        console.warn('[storybook-angular-vite] compodoc generation failed:', err);
-      }
-    }
+  // @ts-expect-error same as `framework` above: `options` is optional in the signature only
+  const resolvedFeatures: StorybookConfigRaw['features'] = await options.presets.apply(
+    'features',
+    {}
+  );
+  const docgenServer = !!resolvedFeatures?.experimentalDocgenServer;
+
+  // With the docgen server on, ACM extracts in-process and nothing reads `documentation.json`, so
+  // the whole-project scan (1.0 s to 35.6 s on real repositories) buys nothing.
+  const compodocConfig = await resolveCompodocConfig(options, { viteRoot: config?.root });
+  if (compodocConfig.enabled && !docgenServer) {
+    await ensureCompodocDocumentation({
+      compodocArgs: compodocConfig.compodocArgs,
+      tsconfig: compodocConfig.tsconfig,
+      workspaceRoot: compodocConfig.workspaceRoot,
+      outputDir: compodocConfig.outputDir,
+    });
+  }
+
+  const propsTable = resolvePropsTable(framework.options, resolvedFeatures);
+  warnAboutPropsTable(framework.options, resolvedFeatures);
+
+  if (resolvedFeatures?.componentsManifest && !docgenServer) {
+    logger.warn(
+      `The \`componentsManifest\` feature needs the \`experimentalDocgenServer\` feature, which is off, so this Storybook publishes no components manifest ` +
+        `and MCP clients get no component API from it. ` +
+        `Turn the docgen server on with \`features: { experimentalDocgenServer: true }\` in your \`main.ts\`.`
+    );
   }
 
   const zoneless = resolveZoneless(options?.angularBuilderOptions);
@@ -157,9 +157,10 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
   // so it transforms `.ts` sources before storybook's automock plugin
   // (`storybook:mock-loader`) runs. analogjs's transform re-emits files
   // from its own internal Angular file emitter and discards the incoming
-  // `code`, so anything mock-loader or csf-plugin did upstream is wiped
-  // unless those plugins run *after* analogjs (see csf-plugin demote
-  // above and `angularViteRedirectReapplyPlugin`).
+  // `code`, so anything mock-loader did upstream is wiped unless those
+  // plugins run *after* analogjs (`angularViteRedirectReapplyPlugin`).
+  // addon-docs' CSF plugin stays in the same `pre` bucket but uses
+  // `transform.order: 'post'` so enrichment lands on analogjs output.
   const pluginsToInject = (Array.isArray(angularPlugins) ? angularPlugins : [angularPlugins])
     .filter(Boolean)
     .map((plugin: any) => {
@@ -170,6 +171,15 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
     });
 
   return mergeConfig(config, {
+    // `build` already falls back to `compilerOptions.paths` once normal resolution fails, so an
+    // Angular workspace alias with no `node_modules` counterpart already resolves in `build`
+    // today; `dev` only consults `paths` when this is on, so the same alias fails to serve.
+    // Turning it on closes that gap, but for a specifier that resolves both ways - a tsconfig
+    // path alongside a `node_modules` copy of the same package - it also flips precedence to the
+    // tsconfig target in `build`, not just `dev`. See MIGRATION.md.
+    resolve: {
+      tsconfigPaths: config.resolve?.tsconfigPaths ?? true,
+    },
     // Add dependencies to pre-optimization
     optimizeDeps: {
       include: [
@@ -218,26 +228,122 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
       angularViteRedirectReapplyPlugin(options),
       angularOptionsPlugin(options, { normalizePath, zoneless }),
       storybookOxcPlugin(),
+      ...(docgenServer && options?.configDir ? [compodocJsonStubPlugin(options.configDir)] : []),
     ],
     define: {
       STORYBOOK_ANGULAR_OPTIONS: JSON.stringify({
         zoneless: !!zoneless,
+        propsTable,
       }),
     },
   });
 };
 
+const COMPODOC_JSON_STUB_ID = '\0storybook-angular-vite/empty-compodoc-json';
+
+// Every key `compodoc -e json` writes, in the shape it writes it, so a preview that spreads or
+// drills into one finds an empty value rather than `undefined`.
+const EMPTY_COMPODOC_JSON: Record<string, unknown> = {
+  classes: [],
+  components: [],
+  coverage: { count: 0, status: 'low', files: [] },
+  directives: [],
+  guards: [],
+  injectables: [],
+  interceptors: [],
+  interfaces: [],
+  miscellaneous: {
+    enumerations: [],
+    functions: [],
+    groupedEnumerations: {},
+    groupedFunctions: {},
+    groupedTypeAliases: {},
+    groupedVariables: {},
+    typealiases: [],
+    variables: [],
+  },
+  modules: [],
+  pipes: [],
+  routes: { name: '<root>', kind: 'module', children: [] },
+};
+
+// `storybook init` writes a static `import docJson from '../documentation.json'` into the Angular
+// preview, and that file is normally gitignored Compodoc output. With the docgen server on nothing
+// generates it and nothing reads it, so resolve it to an empty document rather than failing the
+// build of a project that followed the documented setup.
+export function compodocJsonStubPlugin(configDir: string): Plugin {
+  // Only the import `storybook init` wrote into the Storybook config is stood in for. A
+  // `documentation.json` the project imports from anywhere else is the user's own file, and a
+  // missing one there has to fail the way any missing import does.
+  const importedFromStorybookConfig = (importer: string | undefined) => {
+    if (!importer) {
+      return false;
+    }
+    const fromConfigDir = relative(configDir, importer);
+    return fromConfigDir !== '' && !fromConfigDir.startsWith('..') && !isAbsolute(fromConfigDir);
+  };
+
+  return {
+    name: 'storybook-angular-vite-compodoc-json-stub',
+    enforce: 'pre',
+    async resolveId(source, importer, resolveOptions) {
+      if (basename(source) !== DOCUMENTATION_JSON || !importedFromStorybookConfig(importer)) {
+        return null;
+      }
+      const resolved = await this.resolve(source, importer, { ...resolveOptions, skipSelf: true });
+      return resolved ? null : COMPODOC_JSON_STUB_ID;
+    },
+    load(id) {
+      return id === COMPODOC_JSON_STUB_ID
+        ? `export default ${JSON.stringify(EMPTY_COMPODOC_JSON)};`
+        : null;
+    },
+  };
+}
+
+const STYLE_EXTENSIONS = ['.css', '.scss', '.sass', '.less'];
+
+const isFile = (path: string) => statSync(path, { throwIfNoEntry: false })?.isFile() === true;
+
+// Angular resolves a `styles` entry relative-first from the workspace root and only then through
+// node_modules: `preferRelative` on the webpack builder's enhanced-resolve, an esbuild `@import`
+// with `resolveDir: workspaceRoot` on the esbuild builder. Both spellings occur in the wild.
+function resolveBuilderStyle(stylePath: string, workspaceRoot: string) {
+  const workspacePath = resolve(workspaceRoot, stylePath);
+  const onDisk = [workspacePath, ...STYLE_EXTENSIONS.map((ext) => workspacePath + ext)].find(
+    isFile
+  );
+  if (onDisk) {
+    return onDisk;
+  }
+
+  // Emitting a path-shaped entry verbatim would make Vite resolve it against `preview.ts` rather
+  // than the workspace root, and node_modules cannot rescue one either.
+  if (isAbsolute(stylePath) || /^\.\.?[/\\]/.test(stylePath)) {
+    throw new AngularUnresolvedStyleError({
+      stylePath,
+      workspaceRoot,
+      extensions: STYLE_EXTENSIONS,
+    });
+  }
+
+  return stylePath;
+}
+
 export function angularOptionsPlugin(
   options: StandaloneOptions,
   { normalizePath, zoneless }: any
 ): Plugin {
-  let resolvedConfig: UserConfig;
   let resolvedPreviewPath: string | undefined;
+  // Angular resolves builder paths against the workspace root, which in a monorepo is a level (or
+  // several) above the Vite root. Both `stylePreprocessorOptions` and `styles` need it.
+  let workspaceRoot = process.cwd();
   return {
     name: 'storybook-angular-vite-options-plugin',
     config(userConfig: UserConfig) {
-      resolvedConfig = userConfig;
       resolvedPreviewPath = findConfigFile('preview', options.configDir) ?? undefined;
+      workspaceRoot =
+        options.angularBuilderContext?.workspaceRoot ?? userConfig?.root ?? process.cwd();
       const stylePreprocessorOptions =
         options?.angularBuilderOptions?.stylePreprocessorOptions ?? {};
       // Angular's builder schema (and this framework's builder schema) names the
@@ -248,31 +354,42 @@ export function angularOptionsPlugin(
       const loadPaths = stylePreprocessorOptions.includePaths ?? stylePreprocessorOptions.loadPaths;
       const sassOptions = stylePreprocessorOptions.sass;
 
-      if (Array.isArray(loadPaths)) {
-        const workspaceRoot =
-          options.angularBuilderContext?.workspaceRoot ?? userConfig?.root ?? process.cwd();
-        return {
-          css: {
-            preprocessorOptions: {
-              scss: {
-                ...sassOptions,
-                loadPaths: loadPaths.map((loadPath) => `${resolve(workspaceRoot, loadPath)}`),
-              },
-            },
-          },
-        };
+      if (!Array.isArray(loadPaths) && !sassOptions) {
+        return;
       }
 
-      return;
+      return {
+        css: {
+          preprocessorOptions: {
+            scss: {
+              ...sassOptions,
+              ...(Array.isArray(loadPaths)
+                ? { loadPaths: loadPaths.map((loadPath) => `${resolve(workspaceRoot, loadPath)}`) }
+                : {}),
+            },
+          },
+        },
+      };
     },
     async transform(code, id) {
       if (resolvedPreviewPath && normalizePath(id).endsWith(normalizePath(resolvedPreviewPath))) {
-        const imports = [];
+        const imports: string[] = [];
         const styles = options?.angularBuilderOptions?.styles;
 
         if (Array.isArray(styles)) {
           styles.forEach((style) => {
-            imports.push(style);
+            const stylePath =
+              typeof style === 'string'
+                ? style
+                : style !== null &&
+                    typeof style === 'object' &&
+                    'input' in style &&
+                    typeof style.input === 'string'
+                  ? style.input
+                  : undefined;
+            if (stylePath !== undefined) {
+              imports.push(normalizePath(resolveBuilderStyle(stylePath, workspaceRoot)));
+            }
           });
         }
 
@@ -280,24 +397,9 @@ export function angularOptionsPlugin(
           imports.push('zone.js');
         }
 
-        // Use vite config root when angularBuilderContext is not available
-        // (e.g., when running via Vitest instead of Angular builders)
-        const projectRoot = resolvedConfig?.root ?? process.cwd();
-
         return {
           code: `
-            ${imports
-              .map((extraImport) => {
-                if (extraImport.startsWith('.') || extraImport.startsWith('src')) {
-                  // relative to root — normalize to forward slashes so the
-                  // generated import specifier is valid on Windows.
-                  return `import '${normalizePath(resolve(projectRoot, extraImport))}';`;
-                }
-
-                // absolute import
-                return `import '${extraImport}';`;
-              })
-              .join('\n')}
+            ${imports.map((extraImport) => `import '${extraImport}';`).join('\n')}
             ${code}
           `,
         };

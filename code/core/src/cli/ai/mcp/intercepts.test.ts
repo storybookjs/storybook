@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { getInterceptMarkdown } from './intercepts.ts';
-import type { StorybookInstanceRecord } from './types.ts';
+import type { StorybookInstanceRecord } from '../../tools/instances/types.ts';
 
 const record = (
   cwd: string,

@@ -1,0 +1,9 @@
+import { Component } from '@angular/core';
+import { DecoratorGenericComponent } from './decorator-generic.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [DecoratorGenericComponent],
+  template: `<sb-decorator-generic [items]="['alpha', 'beta']" [selected]="'alpha'" />`,
+})
+export class DemoComponent {}

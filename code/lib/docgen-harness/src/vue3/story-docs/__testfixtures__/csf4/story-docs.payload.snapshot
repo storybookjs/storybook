@@ -1,0 +1,33 @@
+{
+  "id": "csf4",
+  "name": "CsfFourButton",
+  "path": "__PATH__",
+  "stories": {
+    "forms-csf4--empty": {
+      "description": "Empty CSF4 story description.",
+      "id": "forms-csf4--empty",
+      "name": "Empty",
+      "snippet": "<script lang="ts" setup>
+import CsfFourButton from './CsfFourButton.vue';
+</script>
+
+<template>
+  <CsfFourButton />
+</template>",
+      "summary": undefined,
+    },
+    "forms-csf4--primary": {
+      "description": "CSF4 button description.",
+      "id": "forms-csf4--primary",
+      "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import CsfFourButton from './CsfFourButton.vue';
+</script>
+
+<template>
+  <CsfFourButton label="Save" />
+</template>",
+      "summary": "CSF4 button summary.",
+    },
+  },
+}

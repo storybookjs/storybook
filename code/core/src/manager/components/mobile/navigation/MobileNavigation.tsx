@@ -1,5 +1,5 @@
 import type { ComponentProps, FC } from 'react';
-import React, { useLayoutEffect, useRef } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef } from 'react';
 
 import { Button } from 'storybook/internal/components';
 import type { API_IndexHash, API_Refs } from 'storybook/internal/types';
@@ -7,7 +7,7 @@ import type { API_IndexHash, API_Refs } from 'storybook/internal/types';
 import { BottomBarToggleIcon, MenuIcon } from '@storybook/icons';
 
 import { useId } from '@react-aria/utils';
-import { useStorybookApi, useStorybookState } from 'storybook/manager-api';
+import { type API_KeyCollection, useStorybookApi, useStorybookState } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { useLandmark } from '../../../hooks/useLandmark.ts';
@@ -78,6 +78,7 @@ interface MobileBottomBarContentProps {
   setMobilePanelOpen: (isOpen: boolean) => void;
   showMenu: boolean;
   showPanel: boolean;
+  navShortcut?: API_KeyCollection;
 }
 
 /**
@@ -95,6 +96,7 @@ const MobileBottomBarContent: FC<MobileBottomBarContentProps> = ({
   setMobilePanelOpen,
   showMenu,
   showPanel,
+  navShortcut,
 }) => {
   const headingId = useId();
   const sectionRef = useRef<HTMLElement>(null);
@@ -115,7 +117,8 @@ const MobileBottomBarContent: FC<MobileBottomBarContentProps> = ({
           onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
           ariaLabel="Open navigation menu"
           aria-expanded={isMobileMenuOpen}
-          aria-controls="storybook-mobile-menu"
+          aria-controls={isMobileMenuOpen ? 'storybook-mobile-menu' : undefined}
+          shortcut={navShortcut}
         >
           <MenuIcon />
           <Text>{fullStoryName}</Text>
@@ -131,7 +134,7 @@ const MobileBottomBarContent: FC<MobileBottomBarContentProps> = ({
           onClick={() => setMobilePanelOpen(true)}
           ariaLabel="Open addon panel"
           aria-expanded={isMobilePanelOpen}
-          aria-controls="storybook-mobile-addon-panel"
+          aria-controls={isMobilePanelOpen ? 'storybook-mobile-addon-panel' : undefined}
         >
           <BottomBarToggleIcon />
         </BottomBarButton>
@@ -147,9 +150,27 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
   showPanel,
   ...props
 }) => {
-  const { isMobileMenuOpen, isMobilePanelOpen, setMobileMenuOpen, setMobilePanelOpen } =
-    useLayout();
+  const { isMobilePanelOpen, setMobilePanelOpen } = useLayout();
   const fullStoryName = useFullStoryName();
+  const api = useStorybookApi();
+  // The drawer's open state is the manager-api layout field, the single source of truth. On mobile
+  // `api.toggleNav()` flips this field, so the sidebar keyboard shortcut opens the drawer too.
+  const { layout, ui } = useStorybookState();
+  const isMobileMenuOpen = layout.showMobileNavigation;
+  // Stable identity: the `showMenu` effect below lists this in its deps.
+  const setMobileMenuOpen = useCallback((open: boolean) => api.setMobileNavigation(open), [api]);
+
+  // Reset the drawer state when the mobile nav leaves the tree (e.g. resizing to desktop), so a
+  // drawer left open on mobile does not linger as stale store state. Read `api` through a ref so the
+  // reset only runs on unmount, not whenever the api identity changes.
+  const apiRef = useRef(api);
+  apiRef.current = api;
+  useEffect(() => () => apiRef.current.setMobileNavigation(false), []);
+
+  // Read `enableShortcuts` from the store, the same source the shortcut handler checks, so the
+  // button never advertises a shortcut the handler would ignore.
+  const enableShortcuts = ui.enableShortcuts ?? true;
+  const navShortcut = enableShortcuts ? api.getShortcutKeys().toggleNav : undefined;
 
   useLayoutEffect(() => {
     if (!showMenu) {
@@ -186,6 +207,7 @@ export const MobileNavigation: FC<MobileNavigationProps & ComponentProps<typeof 
           setMobilePanelOpen={setMobilePanelOpen}
           showMenu={showMenu}
           showPanel={showPanel}
+          navShortcut={navShortcut}
         />
       )}
     </Container>

@@ -70,7 +70,7 @@ EVAL_ONLY=803-edit-component yarn workspace agent-eval run eval
 ```
 
 Before a local run, rebuild the local `@storybook/addon-mcp`/`@storybook/mcp`
-builds the sandboxes inject (`yarn nx run-many -t compile -p addon-mcp mcp`
+builds the sandboxes inject (`yarn nx run-many -t compile --projects mcp,addon-mcp`
 from the repository root). A stale `dist` importing since-renamed core exports
 crashes the sandbox Storybook at preset load, which surfaces as the readiness
 timeout below rather than a build error.

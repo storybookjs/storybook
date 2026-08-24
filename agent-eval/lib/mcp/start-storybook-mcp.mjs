@@ -58,18 +58,16 @@ if (child.pid !== undefined) {
   }
 }
 
-// The sandbox is torn down with this failure, so the only diagnostics that
-// survive are the final stderr lines: the eval harness snapshots a failed
-// npm install as its last 10 lines of output, and npm's own error trailer
-// takes about half of that window. Print the log tail last and exit without
-// throwing — an uncaught error's stack and Node's version banner would push
-// the log out of the window (and the in-sandbox dumpMcpDebug() files die
-// with the sandbox, so there is no point writing them here). Setting
-// exitCode instead of calling process.exit() lets the pending pipe write
-// flush — exit() would truncate it at the pipe buffer.
+// The sandbox dies with this failure, taking dumpMcpDebug()'s files with it;
+// only the final stderr lines survive — the harness keeps the last 10 lines
+// of output (errorBody: 'last10') and npm's error trailer takes about half.
+// So: log tail last, no throw (a stack trace would push the tail out of the
+// window), and exitCode rather than process.exit(), which would truncate the
+// pending pipe write.
 const logTail = await readFile(logPath, 'utf8')
   .then((content) => content.trimEnd().split('\n').slice(-5).join('\n'))
-  .catch(() => '(no Storybook log was written)');
+  .catch(() => '')
+  .then((tail) => tail || '(no Storybook log was written)');
 
 process.stderr.write(
   'Storybook MCP server did not become ready at ' +
@@ -99,8 +97,7 @@ async function dumpMcpDebug() {
   try {
     await mkdir(debugDir, { recursive: true });
 
-    // The startup log first: on the failure path the fetches below throw, and the
-    // log is the one artifact that explains why Storybook never became ready.
+    // The startup log first, so it is captured even when the fetches below throw.
     await copyFile(logPath, debugDir + '/storybook.log').catch(() => {});
 
     const landing = await fetch(mcpUrl, {

@@ -309,12 +309,8 @@ export const experimental_serverChannel = async (
   channel: Channel,
   options: OptionsWithRequiredCache
 ) => {
-  let generatorPromise: Promise<StoryIndexGenerator> | undefined;
-  const getStoryIndexGenerator = () =>
-    (generatorPromise ??= options.presets.apply<StoryIndexGenerator>('storyIndexGenerator'));
-
-  initAIAnalyticsChannel(channel, options, getStoryIndexGenerator);
-  initializeChecklist(channel, getStoryIndexGenerator, options.configDir);
+  initAIAnalyticsChannel(channel, options, () => storyIndexGeneratorPromise);
+  initializeChecklist(channel, () => storyIndexGeneratorPromise, options.configDir);
   initializeWhatsNew(channel, options);
   initializeSaveStory(channel, options);
   initFileSearchChannel(channel, options);
@@ -376,13 +372,10 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   }
   globalThis.STORYBOOK_SERVICES_LOADED = true;
 
-  // Resolved on first read, never at registration: a caller that only enumerates the services and
-  // toolsets below must not pay for a full story index build.
-  let generatorPromise: Promise<StoryIndexGenerator> | undefined;
-  const getIndex = async () => {
-    generatorPromise ??= options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
-    return (await generatorPromise).getIndex();
-  };
+  const getIndex = () =>
+    options.presets
+      .apply<StoryIndexGenerator>('storyIndexGenerator')
+      .then((generator) => generator.getIndex());
 
   registerModuleGraphService({
     channel: options.channel,
@@ -419,12 +412,14 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   );
 
   if (isReviewFeatureEnabled(features)) {
-    registerReviewService({ getIndex });
+    registerReviewService({
+      getIndex,
+    });
     registerToolset(reviewToolset);
   }
 
   // Skip when previewing is off — the docgen service's staticInputs depends on the story index,
-  // so its static build would force full story-index generation during manager-only builds (and
+  // so registering it would force full story-index generation during manager-only builds (and
   // produce docgen files that wouldn't be served anywhere). Mirrors the !options.ignorePreview
   // gate around index.json and writeManifests in build-static.ts.
   if (features?.experimentalDocgenServer && !options.ignorePreview) {
@@ -496,9 +491,10 @@ export const storyIndexGenerator: PresetPropertyFn<
       workingDir,
     });
 
-    const [indexers, docs] = await Promise.all([
+    const [indexers, docs, features] = await Promise.all([
       options.presets.apply('experimental_indexers', []),
       options.presets.apply('docs'),
+      options.presets.apply('features'),
     ]);
 
     const generator = new StoryIndexGenerator(normalizedStories, {
@@ -506,6 +502,7 @@ export const storyIndexGenerator: PresetPropertyFn<
       configDir,
       indexers,
       docs,
+      features,
     });
     await generator.initialize();
     return generator;

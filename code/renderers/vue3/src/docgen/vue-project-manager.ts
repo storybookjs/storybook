@@ -261,7 +261,8 @@ export class VueComponentMetaManager extends ComponentMetaManager<
   VueComponentMetaProject,
   ts.ParsedCommandLine
 > {
-  constructor(typescript: typeof ts) {
+  constructor(public readonly typeScriptModule: typeof ts) {
+    const typescript = typeScriptModule;
     super(typescript, createVueProjectFactory(typescript));
   }
 

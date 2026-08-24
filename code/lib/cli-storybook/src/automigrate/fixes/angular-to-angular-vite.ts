@@ -7,6 +7,8 @@ import {
   editJsonText,
   isStorybookTarget,
   type JSONEditPath,
+  type StorybookBuilderTarget,
+  toDevkitVersion,
 } from 'storybook/internal/cli';
 import { formatFileContent, getProjectRoot, transformImportFiles } from 'storybook/internal/common';
 import { formatConfig, readConfig } from 'storybook/internal/csf-tools';
@@ -28,16 +30,25 @@ import {
 import { findCompodocSetup, removeCompodocSetup } from './angular-vite-remove-compodoc.ts';
 
 export const ANGULAR_PACKAGE = '@storybook/angular';
+export const ANALOG_PACKAGE = '@analogjs/storybook-angular';
 export const ANGULAR_VITE_PACKAGE = '@storybook/angular-vite';
 const ANALOG_VITE_PLUGIN_PACKAGE = '@analogjs/vite-plugin-angular';
+
+const ANGULAR_BUILD_PACKAGE = '@angular/build';
+const ANGULAR_ANIMATIONS_PACKAGE = '@angular/animations';
+const ANGULAR_DEVKIT_ARCHITECT_PACKAGE = '@angular-devkit/architect';
+
+const MIGRATABLE_FRAMEWORKS = [ANGULAR_PACKAGE, ANALOG_PACKAGE] as const;
+type MigratableFramework = (typeof MIGRATABLE_FRAMEWORKS)[number];
 
 const FRAMEWORK_DOC_URL = 'https://storybook.js.org/docs/get-started/frameworks/angular-vite';
 const VITE_CONFIG_DOC_URL = 'https://storybook.js.org/docs/builders/vite#configure';
 
+const ANGULAR_MIN_MAJOR = 21;
+
 interface AngularToAngularViteOptions {
-  /** True when @angular/core is not found or is outside the 21.x range. */
-  angularUnsupportedVersion: boolean;
-  /** The detected @angular/core version string, or null if not found. */
+  /** The framework the project renders with today, and the one every rewrite below keys off. */
+  framework: MigratableFramework;
   angularVersion: string | null;
   /** True when the main config contains a webpackFinal hook. */
   hasWebpackFinal: boolean;
@@ -50,9 +61,13 @@ interface AngularToAngularViteOptions {
  * `angular.json` architect entries and `package.json` scripts.
  */
 const rewriteBuilderRefs = (content: string): string =>
-  content
-    .replace(/@storybook\/angular:start-storybook/g, `${ANGULAR_VITE_PACKAGE}:start-storybook`)
-    .replace(/@storybook\/angular:build-storybook/g, `${ANGULAR_VITE_PACKAGE}:build-storybook`);
+  MIGRATABLE_FRAMEWORKS.reduce(
+    (acc, framework) =>
+      acc
+        .replaceAll(`${framework}:start-storybook`, `${ANGULAR_VITE_PACKAGE}:start-storybook`)
+        .replaceAll(`${framework}:build-storybook`, `${ANGULAR_VITE_PACKAGE}:build-storybook`),
+    content
+  );
 
 /**
  * Repoint an existing `test-storybook` package.json script at standalone Vitest. The
@@ -136,17 +151,24 @@ export default defineConfig({
 });
 `;
 
-const transformMainConfig = async (mainConfigPath: string, dryRun: boolean): Promise<boolean> => {
+const transformMainConfig = async (
+  mainConfigPath: string,
+  dryRun: boolean,
+  framework: MigratableFramework
+): Promise<boolean> => {
   try {
     const content = await readFile(mainConfigPath, 'utf-8');
 
-    if (!content.includes(ANGULAR_PACKAGE)) {
+    if (!content.includes(framework)) {
       return false;
     }
 
-    // Replace @storybook/angular with @storybook/angular-vite using a negative
-    // lookahead so references that are already @storybook/angular-vite are left alone.
-    const transformed = content.replace(/@storybook\/angular(?!-vite)/g, ANGULAR_VITE_PACKAGE);
+    // Only `@storybook/angular` is a prefix of `@storybook/angular-vite`, so only it needs the
+    // negative lookahead that leaves already-migrated references alone.
+    const transformed =
+      framework === ANGULAR_PACKAGE
+        ? content.replace(/@storybook\/angular(?!-vite)/g, ANGULAR_VITE_PACKAGE)
+        : content.replaceAll(framework, ANGULAR_VITE_PACKAGE);
 
     if (transformed !== content && !dryRun) {
       await writeFile(mainConfigPath, transformed);
@@ -165,15 +187,46 @@ interface JsonTargetTransformResult {
   allStorybookTargetsZonelessTrue: boolean;
 }
 
-/** Map the old @storybook/angular builder/executor ref to its angular-vite equivalent, or `null` if unrelated. */
+/** Map a migratable builder/executor ref to its angular-vite equivalent, or `null` if unrelated. */
 const rewriteStorybookBuilderRef = (ref: string): string | null => {
-  if (ref === `${ANGULAR_PACKAGE}:start-storybook`) {
-    return `${ANGULAR_VITE_PACKAGE}:start-storybook`;
-  }
-  if (ref === `${ANGULAR_PACKAGE}:build-storybook`) {
-    return `${ANGULAR_VITE_PACKAGE}:build-storybook`;
+  for (const framework of MIGRATABLE_FRAMEWORKS) {
+    if (ref === `${framework}:start-storybook`) {
+      return `${ANGULAR_VITE_PACKAGE}:start-storybook`;
+    }
+    if (ref === `${framework}:build-storybook`) {
+      return `${ANGULAR_VITE_PACKAGE}:build-storybook`;
+    }
   }
   return null;
+};
+
+/** Whether `target` runs Storybook through a framework this migration can rewrite. */
+const isMigratableStorybookTarget = (target: unknown): target is StorybookBuilderTarget =>
+  MIGRATABLE_FRAMEWORKS.some((framework) => isStorybookTarget(target, framework));
+
+/**
+ * Resolve what `main.ts` names as its framework to one this migration can rewrite.
+ *
+ * `getFrameworkPackageName` maps a resolved path back to a package name only for frameworks
+ * Storybook itself ships, so a third-party one like `@analogjs/storybook-angular` arrives as
+ * whatever `getAbsolutePath()` returned: the installed package directory, or a pnpm virtual-store
+ * dir that spells the scope slash as `+`.
+ */
+const matchMigratableFramework = (
+  frameworkPackageName: string | null
+): MigratableFramework | undefined => {
+  if (!frameworkPackageName) {
+    return undefined;
+  }
+  const normalized = frameworkPackageName.replace(/\\/g, '/');
+  return MIGRATABLE_FRAMEWORKS.find(
+    (framework) =>
+      normalized === framework ||
+      // `@storybook/angular` must not match a path ending in `@storybook/angular-vite`, which the
+      // leading slash guarantees.
+      normalized.endsWith(`/${framework}`) ||
+      normalized.includes(`/.pnpm/${framework.replace('/', '+')}@`)
+  );
 };
 
 /** Applies a single format-preserving edit; shared by `AngularJSON` and `TextJsonEditor` below. */
@@ -214,7 +267,7 @@ const processStorybookTargets = (
       // tree the first project already rewrote, and a narrower gate would report no Storybook
       // target at all and skip the zone.js injection.
       if (
-        !isStorybookTarget(target, ANGULAR_PACKAGE) &&
+        !isMigratableStorybookTarget(target) &&
         !isStorybookTarget(target, ANGULAR_VITE_PACKAGE)
       ) {
         continue;
@@ -231,7 +284,7 @@ const processStorybookTargets = (
         allZonelessTrue = false;
       }
 
-      if (!isStorybookTarget(target, ANGULAR_PACKAGE)) {
+      if (!isMigratableStorybookTarget(target)) {
         continue;
       }
 
@@ -349,6 +402,12 @@ const addZoneJsPreviewImport = async (
   }
 };
 
+const getGuaranteedAngularMajor = (specifier: string | null): number | null => {
+  const range = specifier ? semver.validRange(specifier) : null;
+  const major = range ? (semver.minVersion(range)?.major ?? null) : null;
+  return major === 0 ? null : major;
+};
+
 export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
   id: 'angular-to-angular-vite',
   link: FRAMEWORK_DOC_URL,
@@ -357,34 +416,46 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
   async check({ packageManager, mainConfig }): Promise<AngularToAngularViteOptions | null> {
     const allDeps = packageManager.getAllDependencies();
 
-    // Only apply when @storybook/angular is present and @storybook/angular-vite is not.
-    if (!allDeps[ANGULAR_PACKAGE] || allDeps[ANGULAR_VITE_PACKAGE]) {
+    // Only apply when a migratable framework is present and @storybook/angular-vite is not.
+    if (allDeps[ANGULAR_VITE_PACKAGE] || MIGRATABLE_FRAMEWORKS.every((pkg) => !allDeps[pkg])) {
       return null;
     }
 
-    // Detect @angular/core version for the Angular 21 prerequisite check.
-    const angularVersionRaw = packageManager.getDependencyVersion('@angular/core');
+    const angularSpecifier = await packageManager.getDeclaredVersionSpecifier('@angular/core');
 
-    // Other Angular frameworks declare `@storybook/angular` as their peer, so the dependency alone
-    // does not say which framework the project renders with. Rewriting one of those produces a
-    // half-migrated hybrid, so only the framework this migration knows how to rewrite qualifies.
+    // `@analogjs/storybook-angular` declares `@storybook/angular` as its peer, so the dependency
+    // alone does not say which framework the project renders with, and a framework this migration
+    // cannot rewrite would come out a half-migrated hybrid. Only the `framework` field decides.
     const frameworkPackageName = getFrameworkPackageName(mainConfig);
-    if (frameworkPackageName !== ANGULAR_PACKAGE) {
-      if (angularVersionRaw) {
+    const framework = matchMigratableFramework(frameworkPackageName);
+    if (!framework) {
+      if (angularSpecifier) {
         logger.warn(
           `Skipped ${ANGULAR_VITE_PACKAGE} migration: this project's Storybook framework is ` +
-            `\`${frameworkPackageName ?? 'not set'}\`, and only \`${ANGULAR_PACKAGE}\` projects can be ` +
+            `\`${frameworkPackageName ?? 'not set'}\`, and only ` +
+            `${MIGRATABLE_FRAMEWORKS.map((pkg) => `\`${pkg}\``).join(' and ')} projects can be ` +
             `migrated automatically. See ${FRAMEWORK_DOC_URL} to switch frameworks by hand.`
         );
       }
       return null;
     }
 
-    const angularVersion = angularVersionRaw
-      ? (semver.coerce(angularVersionRaw)?.version ?? null)
-      : null;
-    const angularUnsupportedVersion =
-      !angularVersion || !semver.satisfies(angularVersion, '>=21.0.0');
+    const angularMajor = getGuaranteedAngularMajor(angularSpecifier);
+    if (angularMajor !== null && angularMajor < ANGULAR_MIN_MAJOR) {
+      logger.warn(
+        `Skipped ${ANGULAR_VITE_PACKAGE} migration: it needs Angular ${ANGULAR_MIN_MAJOR}, and ` +
+          `this project is on Angular ${angularMajor}. Run \`ng update @angular/core @angular/cli\` ` +
+          `to upgrade, then run this migration again.`
+      );
+      return null;
+    }
+    if (angularMajor === null) {
+      logger.warn(
+        `Could not determine the \`@angular/core\` version, so the ${ANGULAR_VITE_PACKAGE} ` +
+          `migration cannot confirm this project is on Angular ${ANGULAR_MIN_MAJOR} or newer. ` +
+          `Continuing anyway. If the migrated project fails to build, upgrade Angular first.`
+      );
+    }
 
     // Detect webpackFinal in main config by scanning package.json paths for the
     // config dir, then reading main config content.
@@ -413,14 +484,14 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       }
     }
 
-    // Collect package.json files that reference @storybook/angular.
+    // Collect package.json files that reference a migratable framework.
     const packageJsonFiles: string[] = [];
     for (const pkgJsonPath of packageManager.packageJsonPaths) {
       try {
         const raw = await readFile(pkgJsonPath, 'utf-8');
         const pkg = JSON.parse(raw);
         const deps = { ...(pkg.dependencies ?? {}), ...(pkg.devDependencies ?? {}) };
-        if (Object.keys(deps).includes(ANGULAR_PACKAGE)) {
+        if (MIGRATABLE_FRAMEWORKS.some((pkg) => pkg in deps)) {
           packageJsonFiles.push(pkgJsonPath);
         }
       } catch {
@@ -429,15 +500,15 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     }
 
     return {
-      angularUnsupportedVersion,
-      angularVersion,
+      framework,
       hasWebpackFinal,
       packageJsonFiles,
+      angularVersion: angularMajor === null ? null : angularSpecifier,
     };
   },
 
   prompt() {
-    return 'Migrate from @storybook/angular (Webpack) to @storybook/angular-vite (in preview).';
+    return 'Migrate from @storybook/angular (Webpack) or @analogjs/storybook-angular to @storybook/angular-vite (in preview).';
   },
 
   async run({
@@ -454,17 +525,6 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     addonsToPostinstall,
   }) {
     if (!result) {
-      return;
-    }
-
-    // Hard bail if Angular version is unsupported — the prompt already told the user what to do.
-    if (result.angularUnsupportedVersion) {
-      logger.log(
-        dedent`
-          Migration skipped: Angular 21 is required.
-          Run \`ng update @angular/core @angular/cli\` to upgrade, then try again.
-        `
-      );
       return;
     }
 
@@ -495,17 +555,17 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       }
     }
 
-    logger.step(`Migrating from ${ANGULAR_PACKAGE} to ${ANGULAR_VITE_PACKAGE}...`);
+    logger.step(`Migrating from ${result.framework} to ${ANGULAR_VITE_PACKAGE}...`);
 
     // 1. Patch .storybook/main.ts(.js). This comes first because everything below assumes the
     // framework already says angular-vite: `check()` reads it off the evaluated config, so the
     // field can be inherited from a shared base file rather than spelled out in this one.
     logger.debug('Updating main config...');
-    if (!mainConfigPath || !(await transformMainConfig(mainConfigPath, dryRun))) {
+    if (!mainConfigPath || !(await transformMainConfig(mainConfigPath, dryRun, result.framework))) {
       logger.error(
         dedent`
           Migration stopped: the \`framework\` field could not be rewritten in ${mainConfigPath ?? 'your Storybook main config'}.
-          That file names no \`${ANGULAR_PACKAGE}\`, so it most likely inherits the framework from a shared config.
+          That file names no \`${result.framework}\`, so it most likely inherits the framework from a shared config.
           Point \`framework\` at \`${ANGULAR_VITE_PACKAGE}\` where it is declared, then run this migration again.
         `
       );
@@ -517,14 +577,50 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       logger.debug('Dry run: Skipping dependency updates.');
     } else {
       logger.debug('Updating dependencies...');
-      await packageManager.removeDependencies([ANGULAR_PACKAGE]);
+      // `@analogjs/storybook-angular` declares `@storybook/angular` as a peer, so an Analog project
+      // carries both and neither renders anything once the framework points at angular-vite.
+      await packageManager.removeDependencies(
+        result.framework === ANALOG_PACKAGE ? [ANALOG_PACKAGE, ANGULAR_PACKAGE] : [ANGULAR_PACKAGE]
+      );
 
       const allDeps = packageManager.getAllDependencies();
+      const { angularVersion } = result;
+      // `@angular-devkit/architect` numbers itself `0.<major * 100 + minor>.<patch>`, so it cannot
+      // take the Angular range unchanged.
+      const architectVersion = toDevkitVersion(angularVersion);
+
+      const unpinnableAngularPeers = angularVersion
+        ? []
+        : [
+            ANGULAR_BUILD_PACKAGE,
+            ANGULAR_ANIMATIONS_PACKAGE,
+            ANGULAR_DEVKIT_ARCHITECT_PACKAGE,
+          ].filter((pkg) => !allDeps[pkg]);
+
+      if (unpinnableAngularPeers.length > 0) {
+        logger.warn(
+          `Could not determine the \`@angular/core\` version, so ` +
+            `${unpinnableAngularPeers.map((pkg) => `\`${pkg}\``).join(', ')} were not added. ` +
+            `${ANGULAR_VITE_PACKAGE} needs them at your Angular version, and adding them ` +
+            `unpinned would install the next Angular major. Add them by hand before starting ` +
+            `Storybook.`
+        );
+      }
+
       await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
         `${ANGULAR_VITE_PACKAGE}@${storybookVersion}`,
         ...(allDeps[ANALOG_VITE_PLUGIN_PACKAGE]
           ? []
           : [`${ANALOG_VITE_PLUGIN_PACKAGE}@${ANALOG_VITE_PLUGIN_ANGULAR_VERSION}`]),
+        ...(allDeps[ANGULAR_BUILD_PACKAGE] || !angularVersion
+          ? []
+          : [`${ANGULAR_BUILD_PACKAGE}@${angularVersion}`]),
+        ...(allDeps[ANGULAR_ANIMATIONS_PACKAGE] || !angularVersion
+          ? []
+          : [`${ANGULAR_ANIMATIONS_PACKAGE}@${angularVersion}`]),
+        ...(allDeps[ANGULAR_DEVKIT_ARCHITECT_PACKAGE] || !architectVersion
+          ? []
+          : [`${ANGULAR_DEVKIT_ARCHITECT_PACKAGE}@${architectVersion}`]),
       ]);
     }
 
@@ -595,7 +691,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
           mainConfig,
           previewConfigPath,
           packageManager,
-          builderPackages: [ANGULAR_VITE_PACKAGE, ANGULAR_PACKAGE],
+          builderPackages: [ANGULAR_VITE_PACKAGE, ...MIGRATABLE_FRAMEWORKS],
         });
         if (compodocSetup) {
           await removeCompodocSetup({
@@ -632,7 +728,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
 
     const transformErrors = await transformImportFiles(
       allFiles,
-      { [ANGULAR_PACKAGE]: ANGULAR_VITE_PACKAGE },
+      Object.fromEntries(MIGRATABLE_FRAMEWORKS.map((pkg) => [pkg, ANGULAR_VITE_PACKAGE])),
       !!dryRun
     );
 

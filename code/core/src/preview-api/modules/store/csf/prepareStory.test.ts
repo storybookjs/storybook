@@ -609,26 +609,34 @@ describe('prepareStory', () => {
       });
     });
 
-    it('evaluates conditional args against the unmapped value of a mapped arg', () => {
-      const story = prepareStory(
-        {
-          id,
-          name,
-          args: { icon: 'star', iconPosition: 'left' },
-          argTypes: {
-            icon: { name: 'icon', mapping: { none: undefined, star: 'mapped-star' } },
-            iconPosition: { name: 'iconPosition', if: { arg: 'icon', eq: 'star' } },
+    it.each([
+      [{ none: undefined, star: 'mapped-star' }, { arg: 'icon', eq: 'star' }, 'mapped-star'],
+      [{ none: undefined, star: 'mapped-star' }, { arg: 'icon', neq: 'none' }, 'mapped-star'],
+      [{ star: '', none: undefined }, { arg: 'icon' }, ''],
+      [{ star: undefined, none: undefined }, { arg: 'icon', exists: true }, undefined],
+    ] as const)(
+      'evaluates conditional args against the unmapped value of a mapped arg',
+      (mapping, condition, mappedIcon) => {
+        const story = prepareStory(
+          {
+            id,
+            name,
+            args: { icon: 'star', iconPosition: 'left' },
+            argTypes: {
+              icon: { name: 'icon', mapping },
+              iconPosition: { name: 'iconPosition', if: condition },
+            },
+            moduleExport,
           },
-          moduleExport,
-        },
-        { id, title },
-        { render: vi.fn() as any }
-      );
+          { id, title },
+          { render: vi.fn() as any }
+        );
 
-      const context = prepareContext({ args: story.initialArgs, globals: {}, ...story });
+        const context = prepareContext({ args: story.initialArgs, globals: {}, ...story });
 
-      expect(context.args).toEqual({ icon: 'mapped-star', iconPosition: 'left' });
-    });
+        expect(context.args).toEqual({ icon: mappedIcon, iconPosition: 'left' });
+      }
+    );
   });
 
   describe('with `FEATURES.argTypeTargetsV7`', () => {

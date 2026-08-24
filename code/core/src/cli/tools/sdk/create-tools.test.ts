@@ -654,4 +654,14 @@ describe('tools-command telemetry', () => {
 
     expect(invocationPayloads()).toEqual([]);
   });
+
+  it('does not emit attach-gate for an unrelated attached-mode failure', async () => {
+    const attach = vi.fn(async () => {
+      throw new Error('disk full');
+    });
+
+    await expect(createTools({ mode: 'attached' }, { attach })).rejects.toThrow('disk full');
+
+    expect(invocationPayloads()).toEqual([]);
+  });
 });

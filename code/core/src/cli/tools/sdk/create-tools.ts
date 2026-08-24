@@ -104,12 +104,14 @@ export async function createTools(
       try {
         return await createAttachedTools(options, deps, clientInfo, mode);
       } catch (error) {
-        await reportSdkAttachGate({
-          error,
-          clientInfo,
-          requestedMode: mode,
-          configDir: options.configDir,
-        });
+        if (isAttachGateError(error)) {
+          await reportSdkAttachGate({
+            error,
+            clientInfo,
+            requestedMode: mode,
+            configDir: options.configDir,
+          });
+        }
         throw error;
       }
     case 'auto':

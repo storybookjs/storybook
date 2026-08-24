@@ -141,7 +141,9 @@ export async function spawnChildHost(
       return;
     }
     if (raw.type === 'telemetry') {
-      void pendingTelemetry.get(raw.id)?.(raw.event, raw.payload);
+      void Promise.resolve(pendingTelemetry.get(raw.id)?.(raw.event, raw.payload)).catch(() => {
+        // Method telemetry is never part of the call result.
+      });
       return;
     }
     const waiter = pending.get(raw.id);

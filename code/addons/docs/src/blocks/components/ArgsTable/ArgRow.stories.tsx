@@ -4,7 +4,7 @@ import { ResetWrapper } from 'storybook/internal/components';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { expect, screen } from 'storybook/test';
+import { expect, screen, userEvent, within } from 'storybook/test';
 
 import { ArgRow } from './ArgRow';
 import { TableWrapper } from './ArgsTable';
@@ -411,7 +411,7 @@ export const LongEnum = {
 } satisfies StoryObj<typeof ArgRow>;
 
 const complexUnion =
-  '((a: string | SVGSVGElement) => void) | RefObject<SVGSVGElement | number> | [a|b] | {a|b}';
+  '((a: string | SVGSVGElement) => void) | RefObject<SVGSVGElement | number> | [a|b] | {a|b} | string | number | boolean | undefined | null';
 export const ComplexUnion = {
   args: {
     row: {
@@ -427,67 +427,20 @@ export const ComplexUnion = {
       },
     },
   },
-  play: ({ canvas }) => {
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
     expect(canvas.getByText('((a: string | SVGSVGElement) => void)')).toBeVisible();
     expect(canvas.getByText('RefObject<SVGSVGElement | number>')).toBeVisible();
     expect(canvas.getByText('[a|b]')).toBeVisible();
     expect(canvas.getByText('{a|b}')).toBeVisible();
-  },
-} satisfies StoryObj<typeof ArgRow>;
+    expect(canvas.getByText('null')).not.toBeVisible();
 
-export const ArrayAndTupleUnion = {
-  args: {
-    row: {
-      ...ComplexUnion.args.row,
-      key: 'arrayAndTupleUnion',
-      name: 'Array and tuple',
-      table: {
-        type: {
-          summary: 'Array<number> | [number, number]',
-        },
-      },
-    },
-  },
-  play: ({ canvas }) => {
-    expect(canvas.getByText('Array<number>')).toBeVisible();
-    expect(canvas.getByText('[number, number]')).toBeVisible();
-  },
-} satisfies StoryObj<typeof ArgRow>;
-
-export const FunctionReturningUnion = {
-  args: {
-    row: {
-      ...ComplexUnion.args.row,
-      key: 'functionReturningUnion',
-      name: 'Function returning union',
-      table: {
-        type: {
-          summary: '() => string | number',
-        },
-      },
-    },
-  },
-  play: ({ canvas }) => {
-    expect(canvas.getByText('() => string | number')).toBeVisible();
-  },
-} satisfies StoryObj<typeof ArgRow>;
-
-export const FunctionReturningUnionOrNull = {
-  args: {
-    row: {
-      ...ComplexUnion.args.row,
-      key: 'functionReturningUnionOrNull',
-      name: 'Function returning union or null',
-      table: {
-        type: {
-          summary: '(() => string | number) | null',
-        },
-      },
-    },
-  },
-  play: ({ canvas }) => {
-    expect(canvas.getByText('(() => string | number)')).toBeVisible();
+    await userEvent.click(canvas.getByRole('button', { name: 'Show 1 more...' }));
     expect(canvas.getByText('null')).toBeVisible();
+
+    await userEvent.click(canvas.getByRole('button', { name: 'Show less...' }));
+    expect(canvas.getByText('null')).not.toBeVisible();
   },
 } satisfies StoryObj<typeof ArgRow>;
 

@@ -26,6 +26,9 @@ describe('getSummaryItems', () => {
     ['template literal pipes', '`a | b` | null', ['`a | b`', 'null']],
     ['an escaped pipe', 'a\\|b | c', ['a\\|b', 'c']],
     ['a logical OR', 'boolean || string | number', ['boolean || string', 'number']],
+    ['a leading union separator', '  | string', ['  | string']],
+    ['a trailing union separator', 'string |  ', ['string |  ']],
+    ['repeated union separators', 'string |   | number', ['string |   | number']],
     [
       'a conditional type',
       'T extends Promise<infer U> ? U | null : never',

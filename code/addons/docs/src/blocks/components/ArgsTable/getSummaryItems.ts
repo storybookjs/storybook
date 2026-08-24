@@ -74,7 +74,11 @@ export const getSummaryItems = (summary: string) => {
       summary[index - 1] !== '|' &&
       summary[index + 1] !== '|'
     ) {
-      summaryItems.push(summary.slice(itemStart, index).trim());
+      const item = summary.slice(itemStart, index).trim();
+      if (!item) {
+        return [summary];
+      }
+      summaryItems.push(item);
       itemStart = index + 1;
     }
   }
@@ -83,7 +87,11 @@ export const getSummaryItems = (summary: string) => {
     return [summary];
   }
 
-  summaryItems.push(summary.slice(itemStart).trim());
+  const finalItem = summary.slice(itemStart).trim();
+  if (summaryItems.length > 0 && !finalItem) {
+    return [summary];
+  }
+  summaryItems.push(finalItem);
 
   return uniq(summaryItems);
 };

@@ -79,8 +79,18 @@ beforeEach(() => {
   vi.mocked(withTelemetry).mockImplementation(async (_eventType, _options, run) => run());
   vi.mocked(telemetry).mockResolvedValue(undefined);
   vi.mocked(sendTelemetryError).mockResolvedValue(undefined);
-  vi.spyOn(process.stdout, 'write').mockImplementation(() => true);
-  vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+  vi.spyOn(process.stdout, 'write').mockImplementation(((chunk: unknown, cb?: unknown) => {
+    if (typeof cb === 'function') {
+      (cb as () => void)();
+    }
+    return true;
+  }) as typeof process.stdout.write);
+  vi.spyOn(process.stderr, 'write').mockImplementation(((chunk: unknown, cb?: unknown) => {
+    if (typeof cb === 'function') {
+      (cb as () => void)();
+    }
+    return true;
+  }) as typeof process.stderr.write);
   vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
 });
 

@@ -72,11 +72,25 @@ function createYarnPnpProject() {
       dependencies: { storybook: 'portal:./vendor/storybook' },
     })
   );
-  writeFileSync(join(projectDir, '.yarnrc.yml'), 'nodeLinker: pnp\nenableGlobalCache: false\n');
-  execFileSync(process.execPath, [findYarnRelease(fileURLToPath(import.meta.url)), 'install'], {
-    cwd: projectDir,
-    encoding: 'utf8',
-  });
+  writeFileSync(
+    join(projectDir, '.yarnrc.yml'),
+    'nodeLinker: pnp\nenableGlobalCache: false\nenableImmutableInstalls: false\n'
+  );
+  const env = { ...process.env };
+  // CI turns on Yarn immutable installs, which refuse a fixture that has no lockfile yet.
+  delete env.CI;
+  env.YARN_ENABLE_IMMUTABLE_INSTALLS = 'false';
+  env.YARN_ENABLE_GLOBAL_CACHE = 'false';
+  try {
+    execFileSync(process.execPath, [findYarnRelease(fileURLToPath(import.meta.url)), 'install'], {
+      cwd: projectDir,
+      encoding: 'utf8',
+      env,
+    });
+  } catch (error) {
+    const failure = error as { message: string; stderr?: string; stdout?: string };
+    throw new Error([failure.message, failure.stderr, failure.stdout].filter(Boolean).join('\n'));
+  }
   return projectDir;
 }
 

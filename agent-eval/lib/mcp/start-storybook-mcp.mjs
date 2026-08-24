@@ -1,6 +1,6 @@
 import { spawn } from 'node:child_process';
 import { closeSync, openSync } from 'node:fs';
-import { copyFile, mkdir, writeFile } from 'node:fs/promises';
+import { copyFile, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { setTimeout as delay } from 'node:timers/promises';
 
 const port = process.env.STORYBOOK_MCP_PORT || '6006';
@@ -58,15 +58,29 @@ if (child.pid !== undefined) {
   }
 }
 
-throw new Error(
+// The sandbox is torn down with this failure, so the only diagnostics that
+// survive are the final stderr lines: the eval harness snapshots a failed
+// npm install as its last 10 lines of output, and npm's own error trailer
+// takes about half of that window. Print the log tail last and exit without
+// throwing — an uncaught error's stack and Node's version banner would push
+// the log out of the window (and the in-sandbox dumpMcpDebug() files die
+// with the sandbox, so there is no point writing them here). Setting
+// exitCode instead of calling process.exit() lets the pending pipe write
+// flush — exit() would truncate it at the pipe buffer.
+const logTail = await readFile(logPath, 'utf8')
+  .then((content) => content.trimEnd().split('\n').slice(-5).join('\n'))
+  .catch(() => '(no Storybook log was written)');
+
+process.stderr.write(
   'Storybook MCP server did not become ready at ' +
     mcpUrl +
     ' within ' +
     timeoutMs +
-    'ms. See ' +
-    logPath +
-    ' for Storybook logs.'
+    'ms. Storybook log tail:\n' +
+    logTail +
+    '\n'
 );
+process.exitCode = 1;
 
 async function isReady() {
   try {
@@ -84,6 +98,10 @@ async function dumpMcpDebug() {
   const debugDir = '.storybook/mcp-debug';
   try {
     await mkdir(debugDir, { recursive: true });
+
+    // The startup log first: on the failure path the fetches below throw, and the
+    // log is the one artifact that explains why Storybook never became ready.
+    await copyFile(logPath, debugDir + '/storybook.log').catch(() => {});
 
     const landing = await fetch(mcpUrl, {
       headers: { Accept: 'text/html' },
@@ -110,8 +128,6 @@ async function dumpMcpDebug() {
       signal: AbortSignal.timeout(5_000),
     });
     await writeFile(debugDir + '/initialize.txt', await init.text());
-
-    await copyFile(logPath, debugDir + '/storybook.log').catch(() => {});
   } catch (error) {
     await writeFile(debugDir + '/error.txt', String(error)).catch(() => {});
   }

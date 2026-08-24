@@ -1,15 +1,22 @@
-import { mkdirSync, mkdtempSync, realpathSync, rmSync, symlinkSync, writeFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
+import { execFileSync } from 'node:child_process';
+import {
+  existsSync,
+  mkdirSync,
+  mkdtempSync,
+  realpathSync,
+  rmSync,
+  symlinkSync,
+  writeFileSync,
+} from 'node:fs';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { dirname, isAbsolute, join, relative } from 'node:path';
+import { fileURLToPath, pathToFileURL } from 'node:url';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 
 import { loadTools } from './loader.ts';
 
-vi.mock('node:module', { spy: true });
-
-// Real files on disk, not memfs: Node's resolver and dynamic import bypass a virtual filesystem.
+// Real files on disk, not memfs: Node's resolver, dynamic import, and Yarn PnP bypass a virtual filesystem.
 const temporaryDirectories: string[] = [];
 
 function createTemporaryDirectory() {
@@ -38,9 +45,56 @@ function namedExport(marker: string) {
   return `export const createTools = async (options) => ({ marker: '${marker}', options });`;
 }
 
-beforeEach(() => {
-  vi.mocked(createRequire).mockReset();
-});
+function findYarnRelease(from: string) {
+  let current = from;
+  for (;;) {
+    const candidate = join(current, '.yarn', 'releases', 'yarn-4.18.0.cjs');
+    if (existsSync(candidate)) {
+      return candidate;
+    }
+    const parent = dirname(current);
+    if (parent === current) {
+      throw new Error('Could not find the Yarn 4.18.0 release used to build this fixture.');
+    }
+    current = parent;
+  }
+}
+
+function createYarnPnpProject() {
+  const projectDir = createTemporaryDirectory();
+  writeToolsPackage(join(projectDir, 'vendor', 'storybook'), 'dist/tools.js', namedExport('pnp'));
+  writeFileSync(
+    join(projectDir, 'package.json'),
+    JSON.stringify({
+      name: 'pnp-tools-fixture',
+      private: true,
+      packageManager: 'yarn@4.18.0',
+      dependencies: { storybook: 'portal:./vendor/storybook' },
+    })
+  );
+  writeFileSync(join(projectDir, '.yarnrc.yml'), 'nodeLinker: pnp\nenableGlobalCache: false\n');
+  execFileSync(process.execPath, [findYarnRelease(fileURLToPath(import.meta.url)), 'install'], {
+    cwd: projectDir,
+    encoding: 'utf8',
+  });
+  return projectDir;
+}
+
+function loadToolsInPlainNode(projectDir: string) {
+  const loaderUrl = pathToFileURL(fileURLToPath(new URL('./loader.ts', import.meta.url))).href;
+  const script = `
+    import { loadTools } from ${JSON.stringify(loaderUrl)};
+    process.stdout.write(JSON.stringify(await loadTools(${JSON.stringify(projectDir)})));
+  `;
+  const env = { ...process.env };
+  delete env.NODE_OPTIONS;
+  return JSON.parse(
+    execFileSync(process.execPath, ['--input-type=module', '--eval', script], {
+      encoding: 'utf8',
+      env,
+    })
+  );
+}
 
 afterEach(() => {
   for (const directory of temporaryDirectories) {
@@ -59,6 +113,22 @@ describe('loadTools', () => {
     );
 
     await expect(loadTools(projectDir)).resolves.toEqual({
+      marker: 'npm',
+      options: { cwd: projectDir },
+    });
+  });
+
+  it('loads the SDK from a relative project directory', async () => {
+    const projectDir = createTemporaryDirectory();
+    writeToolsPackage(
+      join(projectDir, 'node_modules', 'storybook'),
+      'dist/tools.js',
+      namedExport('npm')
+    );
+    const relativeProjectDir = relative(process.cwd(), projectDir);
+    expect(isAbsolute(relativeProjectDir)).toBe(false);
+
+    await expect(loadTools(relativeProjectDir)).resolves.toEqual({
       marker: 'npm',
       options: { cwd: projectDir },
     });
@@ -84,31 +154,14 @@ describe('loadTools', () => {
     });
   });
 
-  describe('a Yarn PnP project, where PnP owns resolution', () => {
-    const resolve = vi.fn();
+  it('loads the SDK a Yarn PnP project installed, from a plain Node process', () => {
+    const projectDir = createYarnPnpProject();
 
-    beforeEach(() => {
-      const entryPath = writeToolsPackage(
-        join(createTemporaryDirectory(), 'node_modules', 'storybook-virtual'),
-        'dist/tools.js',
-        namedExport('pnp')
-      );
-      resolve.mockReset();
-      resolve.mockReturnValue(entryPath);
-      vi.mocked(createRequire).mockReturnValue({ resolve } as unknown as NodeRequire);
+    expect(loadToolsInPlainNode(projectDir)).toEqual({
+      marker: 'pnp',
+      options: { cwd: projectDir },
     });
-
-    it('imports what PnP resolves, asking it from the project directory', async () => {
-      const projectDir = createTemporaryDirectory();
-
-      await expect(loadTools(projectDir)).resolves.toEqual({
-        marker: 'pnp',
-        options: { cwd: projectDir },
-      });
-      expect(createRequire).toHaveBeenCalledWith(join(projectDir, 'package.json'));
-      expect(resolve).toHaveBeenCalledWith('storybook/internal/tools', { paths: [projectDir] });
-    });
-  });
+  }, 60_000);
 
   it('forwards every option, letting the caller override the project directory as cwd', async () => {
     const projectDir = createTemporaryDirectory();

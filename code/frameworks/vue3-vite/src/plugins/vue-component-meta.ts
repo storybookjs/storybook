@@ -54,10 +54,9 @@ export async function vueComponentMeta(
           // Production SFCs can import `_sfc_main` from their virtual script module
           // instead of declaring it locally.
           const sfcMainImportSource = (await parseDefaultImports(id, src)).get('_sfc_main');
+          const sfcMainQuery = new URLSearchParams(sfcMainImportSource?.split('?')[1]);
           const hasImportedSfcMain =
-            id.endsWith('.vue') &&
-            sfcMainImportSource !== undefined &&
-            /\?vue&type=script(?:&|$)/.test(sfcMainImportSource);
+            id.endsWith('.vue') && sfcMainQuery.has('vue') && sfcMainQuery.get('type') === 'script';
 
           metaSources.forEach((meta) => {
             const isDefaultExport = meta.exportName === 'default';

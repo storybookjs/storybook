@@ -153,6 +153,39 @@ describe('vue-component-meta plugin', () => {
       expect(result!.code).toContain('_sfc_main.__docgenInfo');
     });
 
+    it('should inject __docgenInfo when another plugin emits ahead of the _sfc_main import', async () => {
+      // This hook runs in "post", so anything earlier in the chain can prepend to the module.
+      // unplugin-vue-components puts its marker on the same line as the import, which a
+      // line-anchored pattern match would miss.
+      const src = [
+        `/* unplugin-vue-components disabled */import _sfc_main from './Tab.vue?vue&type=script&setup=true&lang.ts';`,
+        `export default _sfc_main;`,
+      ].join('\n');
+      const id = '/project/src/components/Tab.vue';
+
+      mockChecker.getExportNames.mockReturnValue(['default']);
+
+      const result = await transform(src, id);
+
+      expect(result).toBeDefined();
+      expect(result!.code).toContain('_sfc_main.__docgenInfo');
+    });
+
+    it('should inject __docgenInfo regardless of the virtual script module query order', async () => {
+      const src = [
+        `import _sfc_main from './Tab.vue?vue&setup=true&type=script&lang.ts';`,
+        `export default _sfc_main;`,
+      ].join('\n');
+      const id = '/project/src/components/Tab.vue';
+
+      mockChecker.getExportNames.mockReturnValue(['default']);
+
+      const result = await transform(src, id);
+
+      expect(result).toBeDefined();
+      expect(result!.code).toContain('_sfc_main.__docgenInfo');
+    });
+
     it('should not inject __docgenInfo when an SFC default export has no _sfc_main import', async () => {
       const src = `export default { name: 'Tab' };\n`;
       const id = '/project/src/components/Tab.vue';

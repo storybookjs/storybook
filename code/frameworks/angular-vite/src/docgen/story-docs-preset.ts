@@ -11,10 +11,9 @@ import { buildStoryDocsPayload } from './story-docs-build.ts';
 // a type-level guarantee, so this stays defensive rather than asserting the service exists.
 let warnedMissingDocgenService = false;
 
-const getDocgenPayload = async (componentId: string): Promise<AngularDocgenPayload | undefined> => {
+const resolveDocgenService = () => {
   try {
-    const docgenService = getService('core/docgen', { internal: true });
-    return await docgenService.queries.docgen.loaded({ id: componentId });
+    return getService('core/docgen', { internal: true });
   } catch (error) {
     if (!warnedMissingDocgenService) {
       warnedMissingDocgenService = true;
@@ -28,6 +27,35 @@ const getDocgenPayload = async (componentId: string): Promise<AngularDocgenPaylo
   }
 };
 
+/** Revision at which each component's docgen was last pulled, keyed by component id. */
+const docgenRevisions = new Map<string, number>();
+
+// Docgen is only stale for a component whose story subgraph changed since it was last pulled, and
+// `graphRevision` reports exactly that. On the first pull the shared cache is authoritative, so the
+// query is loaded rather than running a second extraction next to `core/docgen`'s own consumers;
+// after a change the command's "extract now" semantics keep an HMR refresh from rebuilding snippets
+// from pre-edit metadata, whichever service's refresh runs first.
+const createDocgenPayloadGetter =
+  (storyImportPath: string) =>
+  async (componentId: string): Promise<AngularDocgenPayload | undefined> => {
+    const docgenService = resolveDocgenService();
+    if (!docgenService) {
+      return undefined;
+    }
+
+    const revision = getService('core/module-graph', { internal: true }).queries.graphRevision.get({
+      storyFiles: [storyImportPath],
+    });
+    const pulledAt = docgenRevisions.get(componentId);
+
+    const payload = await (pulledAt === undefined || pulledAt === revision
+      ? docgenService.queries.docgen.loaded({ id: componentId })
+      : docgenService.commands.extractDocgen({ id: componentId }));
+    docgenRevisions.set(componentId, revision);
+
+    return payload;
+  };
+
 export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (nextStoryDocs) => {
   return async (input) => {
     const storyImportPath = getStoryImportPathFromEntry(input.entry);
@@ -35,7 +63,9 @@ export const experimental_storyDocsProvider: StoryDocsProviderPreset = async (ne
       return nextStoryDocs(input);
     }
 
-    const ours = await buildStoryDocsPayload(input, { getDocgenPayload });
+    const ours = await buildStoryDocsPayload(input, {
+      getDocgenPayload: createDocgenPayloadGetter(storyImportPath),
+    });
 
     if (!ours) {
       return nextStoryDocs(input);

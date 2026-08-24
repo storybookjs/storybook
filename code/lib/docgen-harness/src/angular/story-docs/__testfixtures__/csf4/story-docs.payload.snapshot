@@ -18,6 +18,19 @@ import { CsfFourComponent } from './csf4.component.ts';
 export class DemoComponent {
   saved(event: unknown) {}
 }",
+      "snippetTemplate": {
+        "componentImport": "import { CsfFourComponent } from './csf4.component.ts';",
+        "componentName": "CsfFourComponent",
+        "inputNames": [
+          "label",
+        ],
+        "kind": "angular-snippet-template",
+        "outputs": [
+          "saved",
+        ],
+        "selector": "sb-csf4",
+        "standalone": true,
+      },
     },
     "storydocs-csf4--primary": {
       "description": "A CSF4 factory story.",
@@ -34,6 +47,19 @@ import { CsfFourComponent } from './csf4.component.ts';
 export class DemoComponent {
   saved(event: unknown) {}
 }",
+      "snippetTemplate": {
+        "componentImport": "import { CsfFourComponent } from './csf4.component.ts';",
+        "componentName": "CsfFourComponent",
+        "inputNames": [
+          "label",
+        ],
+        "kind": "angular-snippet-template",
+        "outputs": [
+          "saved",
+        ],
+        "selector": "sb-csf4",
+        "standalone": true,
+      },
       "summary": "Factory summary",
     },
   },

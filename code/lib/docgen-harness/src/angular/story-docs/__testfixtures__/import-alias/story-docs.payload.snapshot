@@ -15,6 +15,17 @@ import { ImportAliasComponent as Alias } from './aliased.component.ts';
   template: `<sb-import-alias [heading]="'Aliased'" />`,
 })
 export class DemoComponent {}",
+      "snippetTemplate": {
+        "componentImport": "import { ImportAliasComponent as Alias } from './aliased.component.ts';",
+        "componentName": "Alias",
+        "inputNames": [
+          "heading",
+        ],
+        "kind": "angular-snippet-template",
+        "outputs": [],
+        "selector": "sb-import-alias",
+        "standalone": true,
+      },
     },
   },
 }

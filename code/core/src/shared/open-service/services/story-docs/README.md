@@ -4,9 +4,13 @@ Per-story snippets, descriptions, and file-level import statements for docs page
 panel, and the components HTML debugger. Component prop docgen lives in the sibling `core/docgen`
 service.
 
-When `experimentalDocgenServer` is enabled, the preview `storyDocsSourceBeforeEach` hook emits static
-snippets to the manager Code panel via `SNIPPET_RENDERED`, replacing renderer `jsxDecorator` while
-preserving `parameters.docs.source.transform` handling in preview.
+When `experimentalDocgenServer` is enabled, the server, manager, and preview register the same open
+service. Provider-extracted component payloads live under `components`; they are the service's only
+state. The sibling browser-only [`core/dynamic-snippets`](../dynamic-snippets/README.md) service owns
+args-aware source records and their manager-facing preview transforms.
+
+Static builds serialize one component payload per `storyDocs` query input. Browser consumers fetch
+that snapshot through the same query contract.
 
 ## Import snippets
 

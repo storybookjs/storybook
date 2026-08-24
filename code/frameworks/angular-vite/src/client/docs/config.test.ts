@@ -4,7 +4,10 @@ const configWithFeatures = async (features: Record<string, boolean> | undefined)
   vi.stubGlobal('FEATURES', features);
   vi.resetModules();
   const { parameters, decorators } = await import('./config.ts');
-  return { language: parameters.docs.source.language, decorators };
+  return {
+    language: parameters.docs.source.language,
+    decorators,
+  };
 };
 
 const featureOffCases: [string, Record<string, boolean> | undefined][] = [

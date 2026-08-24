@@ -86,16 +86,49 @@ export interface TemplateInputBinding {
   expression: string;
 }
 
+// The two shapes this module prints. `snippet` is the source Storybook shows a reader: a dashed
+// element drops its closing tag, `/>` takes a line of its own once the tag breaks, and the tag
+// breaks on its binding count. `legacy` is what the runtime generator has always emitted.
+export type TemplateStyle = 'snippet' | 'legacy';
+
 export interface BuildTemplateInput {
   inputs: TemplateInputBinding[];
   // Output binding names; each renders as `(name)="name($event)"`.
   outputs: string[];
   innerTemplate?: string;
-  // On, a dashed element drops its closing tag, and any tag that ends itself puts `/>` on its own
-  // line once it breaks -- void elements included. Off reproduces the legacy runtime generator's
-  // output, which is what the preview renderer emits.
-  selfClosing?: boolean;
+  style: TemplateStyle;
 }
+
+type TagClose =
+  | { selfClosing: true; tag?: never; inner?: never }
+  | { selfClosing: false; tag: string; inner: string };
+
+interface LayoutTagInput {
+  open: string;
+  bindings: string[];
+  close: TagClose;
+  style: TemplateStyle;
+}
+
+const layoutTag = ({ open, bindings, close, style }: LayoutTagInput): string => {
+  const inlineOpen = `${open}${bindings.map((binding) => ` ${binding}`).join('')}`;
+  const inline = close.selfClosing
+    ? `${inlineOpen} />`
+    : `${inlineOpen}>${close.inner}</${close.tag}>`;
+  const breaks =
+    bindings.length > 0 &&
+    (style === 'legacy' ? inline.length > MAX_SINGLE_LINE : bindings.length >= BREAK_AT_BINDINGS);
+
+  if (!breaks) {
+    return inline;
+  }
+
+  const broken = `${open}\n${bindings.map((binding) => `${INDENT}${binding}`).join('\n')}`;
+  if (close.selfClosing) {
+    return style === 'legacy' ? `${broken} />` : `${broken}\n/>`;
+  }
+  return `${broken}>${close.inner === '' ? '\n' : `\n${close.inner}\n`}</${close.tag}>`;
+};
 
 // A selector that names no element, `.card` or `[appHighlight]`, matches a `div` in the snippet.
 const LEADING_CLASS = /^\..+/;
@@ -108,19 +141,24 @@ const ATTRIBUTE = /\[(.+?)]/g;
 // The leading non-space run is the element name; whatever follows are its attributes.
 const ELEMENT_AND_ATTRIBUTES = /(\S+)(.*)/;
 
-// Width past which the bindings go one per line, with the tag's end on a line of its own.
+// Binding count from which a snippet goes one binding per line, with the tag's end on a line of its
+// own. Counting bindings instead of measuring the rendered tag keeps the layout independent of the
+// values, so a snippet does not change shape while a reader types into a Controls knob.
+const BREAK_AT_BINDINGS = 3;
+
+// Width past which the legacy shape breaks, and what story-authored markup falls back to.
 const MAX_SINGLE_LINE = 80;
 
-// Expands a component selector into the element a story renders, carrying its bindings.
-export const buildTemplate = (
-  selector: string,
-  { inputs, outputs, innerTemplate = '', selfClosing = false }: BuildTemplateInput
-) => {
-  const bindings = [
-    ...inputs.map(({ name, expression }) => `[${name}]="${expression}"`),
-    ...outputs.map((name) => `(${name})="${formatPropInTemplate(name)}($event)"`),
-  ];
+// One level of indentation, which is also what a broken tag indents its bindings by.
+const INDENT = '    ';
 
+const renderBindings = (inputs: TemplateInputBinding[], outputs: readonly string[]): string[] => [
+  ...inputs.map(({ name, expression }) => `[${name}]="${expression}"`),
+  ...outputs.map((name) => `(${name})="${formatPropInTemplate(name)}($event)"`),
+];
+
+// Expands a component selector into the element a story renders, and the attributes it carries.
+const expandSelector = (selector: string): { element: string; attributes: string } => {
   const firstSelector = selector.split(',')[0];
   const withElement =
     LEADING_CLASS.test(firstSelector) || LEADING_ATTRIBUTE.test(firstSelector)
@@ -132,37 +170,34 @@ export const buildTemplate = (
     .replace(CLASS_RUN, (classes) => ` class="${classes.split('.').join(' ').trim()}"`)
     .replace(ATTRIBUTE, ' $1');
 
-  return asAttributes.replace(ELEMENT_AND_ATTRIBUTES, (_, element: string, attributes: string) => {
-    // HTML reserves a dashed name for custom elements, so Angular can never reject one self-closed.
-    const closesItself =
-      VOID_ELEMENTS.has(element) || (selfClosing && element.includes('-') && innerTemplate === '');
+  const [, element, attributes] = ELEMENT_AND_ATTRIBUTES.exec(asAttributes)!;
+  return { element, attributes };
+};
 
-    const inlineTag = `<${element}${attributes}${bindings.map((binding) => ` ${binding}`).join('')}`;
-    const inline = closesItself ? `${inlineTag} />` : `${inlineTag}>${innerTemplate}</${element}>`;
-    if (inline.length <= MAX_SINGLE_LINE || bindings.length === 0) {
-      return inline;
-    }
+/** Expands a component selector into the element a story renders, carrying its bindings. */
+export const buildTemplate = (
+  selector: string,
+  { inputs, outputs, innerTemplate = '', style }: BuildTemplateInput
+) => {
+  const bindings = renderBindings(inputs, outputs);
+  const { element, attributes } = expandSelector(selector);
+  const legacy = style === 'legacy';
+  // HTML reserves a dashed name for custom elements, so Angular can never reject one self-closed.
+  const closesItself =
+    VOID_ELEMENTS.has(element) || (!legacy && element.includes('-') && innerTemplate === '');
 
-    const brokenTag = `<${element}${attributes}\n${bindings.map((binding) => `    ${binding}`).join('\n')}`;
-    if (closesItself) {
-      // The bracket takes the line the closing tag would have had, rather than trailing a binding.
-      return selfClosing ? `${brokenTag}\n/>` : `${brokenTag} />`;
-    }
-    const content = innerTemplate === '' ? '\n' : `\n${innerTemplate}\n`;
-    return `${brokenTag}>${content}</${element}>`;
-  });
+  const open = `<${element}${attributes}`;
+  const close: TagClose = closesItself
+    ? { selfClosing: true }
+    : { selfClosing: false, tag: element, inner: innerTemplate };
+  return layoutTag({ open, bindings, close, style });
 };
 
 // Fallback element for a component whose decorator declares no selector.
-export const buildComponentOutletTemplate = (
-  componentName: string,
-  { selfClosing = false }: { selfClosing?: boolean } = {}
-): string =>
-  selfClosing
-    ? `<ng-container *ngComponentOutlet="${componentName}" />`
-    : `<ng-container *ngComponentOutlet="${componentName}"></ng-container>`;
-
-const INDENT = '    ';
+export const buildComponentOutletTemplate = (componentName: string, style: TemplateStyle): string =>
+  style === 'legacy'
+    ? `<ng-container *ngComponentOutlet="${componentName}"></ng-container>`
+    : `<ng-container *ngComponentOutlet="${componentName}" />`;
 
 interface MarkupElement {
   tag: string;
@@ -231,19 +266,25 @@ const parseMarkup = (markup: string): (MarkupElement | string)[] | undefined => 
 // An attribute name with an optional quoted or bare value; quoted values are skipped whole.
 const MARKUP_ATTRIBUTE = /[^\s=]+(?:\s*=\s*(?:"[^"]*"|'[^']*'|\S+))?/g;
 
-const openTagLines = (node: MarkupElement, pad: string, forceAttrBreak: boolean): string[] => {
+const exceedsLineWidth = (inlineWidth: number): boolean => inlineWidth > MAX_SINGLE_LINE;
+
+const openTagLines = (
+  node: MarkupElement,
+  pad: string,
+  attrs: string[],
+  forceAttrBreak: boolean
+): string[] => {
   const inlineOpen = `${pad}${node.rawOpen}`;
-  const attrs = node.attrText.match(MARKUP_ATTRIBUTE) ?? [];
-  if ((inlineOpen.length <= MAX_SINGLE_LINE && !forceAttrBreak) || attrs.length === 0) {
+  if (attrs.length === 0 || (!forceAttrBreak && !exceedsLineWidth(inlineOpen.length))) {
     return [inlineOpen];
   }
-  const bracket = node.closed ? ' />' : '>';
-  return [
-    `${pad}<${node.tag}`,
-    ...attrs.map(
-      (attr, index) => `${pad}${INDENT}${attr}${index === attrs.length - 1 ? bracket : ''}`
-    ),
-  ];
+  const lines = [`${pad}<${node.tag}`, ...attrs.map((attr) => `${pad}${INDENT}${attr}`)];
+  // The same end a generated tag gets: a self-closing bracket takes the line the closing tag would
+  // have had, rather than trailing an attribute.
+  if (node.closed) {
+    return [...lines, `${pad}/>`];
+  }
+  return [...lines.slice(0, -1), `${lines.at(-1)}>`];
 };
 
 const printMarkup = (markup: string, node: MarkupElement | string, depth: number): string[] => {
@@ -252,12 +293,13 @@ const printMarkup = (markup: string, node: MarkupElement | string, depth: number
     return [`${pad}${node}`];
   }
   const hasElementChild = node.children.some((child) => typeof child !== 'string');
+  const attrs = node.attrText.match(MARKUP_ATTRIBUTE) ?? [];
   const verbatim = markup.slice(node.start, node.end);
-  if (!hasElementChild && pad.length + verbatim.length <= MAX_SINGLE_LINE) {
+  if (!hasElementChild && !exceedsLineWidth(pad.length + verbatim.length)) {
     return [`${pad}${verbatim}`];
   }
-  // A childless element broke on length alone, so keeping its attribute run inline gains nothing.
-  const openLines = openTagLines(node, pad, !hasElementChild);
+  // A childless element already decided to break, so keeping its attribute run inline gains nothing.
+  const openLines = openTagLines(node, pad, attrs, !hasElementChild);
   if (node.closed) {
     return openLines;
   }
@@ -270,7 +312,7 @@ const printMarkup = (markup: string, node: MarkupElement | string, depth: number
 
 /**
  * Reshape story-authored markup the way the generated templates are shaped: nested elements move
- * onto their own lines and an over-long attribute run breaks one binding per line. Nothing is
+ * onto their own lines, and an element too wide to fit breaks one attribute per line. Nothing is
  * added, dropped or reordered, and markup this cannot follow is returned exactly as written.
  */
 export const formatTemplateMarkup = (markup: string): string => {

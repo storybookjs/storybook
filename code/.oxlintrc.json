@@ -142,6 +142,34 @@
       }
     },
     {
+      "files": [
+        "frameworks/angular-vite/src/template-grammar.ts",
+        "frameworks/angular-vite/src/arg-expression.ts",
+        "frameworks/angular-vite/src/host-component-snippet.ts",
+        "frameworks/angular-vite/src/story-snippet-template.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": [
+                  "@angular/*",
+                  "node:*",
+                  "storybook/internal/babel",
+                  "storybook/internal/core-server",
+                  "storybook/internal/csf-tools",
+                  "**/docgen/**"
+                ],
+                "message": "Angular's snippet grammar runs in the preview and on the dev server, so these modules must stay isomorphic. Keep Babel, CSF reading, server-only code and `@angular/core` on the server side of the seam."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "files": ["**/*.compat.ts", "**/*.compat.tsx"],
       "rules": {
         "local-rules/no-uncategorized-errors": "off"

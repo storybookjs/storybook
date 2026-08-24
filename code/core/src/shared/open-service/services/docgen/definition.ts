@@ -95,7 +95,17 @@ export const docgenServiceDef = defineService({
       input: docgenInputSchema,
       output: docgenOutputSchema,
       handler: (input, ctx) => ctx.self.state.components[input.id],
+      // See `core/story-docs`: `load` only has to make sure the query has data, while the command
+      // re-extracts unconditionally for the module-graph refresh that calls it directly. A stored
+      // extraction error is not data: `extractAllDocgen` records one for every component whose
+      // provider rejected, so loading retries it instead of pinning a transient failure.
       load: async (input, ctx) => {
+        if (
+          Object.hasOwn(ctx.self.state.components, input.id) &&
+          !ctx.self.state.components[input.id].error
+        ) {
+          return;
+        }
         await ctx.self.commands.extractDocgen(input);
       },
       staticPath: (input) => docgenQueryStaticPath(input.id),

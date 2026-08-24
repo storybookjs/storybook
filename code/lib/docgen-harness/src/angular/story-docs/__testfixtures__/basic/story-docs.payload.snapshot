@@ -13,11 +13,30 @@ import { BasicComponent } from './basic.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [BasicComponent],
-  template: `<sb-basic [label]="'Base'" [count]="3" (pressed)="pressed($event)" />`,
+  template: `
+    <sb-basic
+        [count]="3"
+        [label]="'Base'"
+        (pressed)="pressed($event)"
+    />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}
 }",
+      "snippetTemplate": {
+        "componentImport": "import { BasicComponent } from './basic.component.ts';",
+        "componentName": "BasicComponent",
+        "inputNames": [
+          "count",
+          "label",
+        ],
+        "kind": "angular-snippet-template",
+        "outputs": [
+          "pressed",
+        ],
+        "selector": "sb-basic",
+        "standalone": true,
+      },
       "summary": "Primary look",
     },
     "storydocs-basic--renamed": {
@@ -35,6 +54,20 @@ import { BasicComponent } from './basic.component.ts';
 export class DemoComponent {
   pressed(event: unknown) {}
 }",
+      "snippetTemplate": {
+        "componentImport": "import { BasicComponent } from './basic.component.ts';",
+        "componentName": "BasicComponent",
+        "inputNames": [
+          "count",
+          "label",
+        ],
+        "kind": "angular-snippet-template",
+        "outputs": [
+          "pressed",
+        ],
+        "selector": "sb-basic",
+        "standalone": true,
+      },
     },
   },
 }

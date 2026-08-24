@@ -6,9 +6,9 @@ import { DecoratorUnionEnumComponent } from './decorator-union-enum.component.ts
   imports: [DecoratorUnionEnumComponent],
   template: `
     <sb-decorator-union-enum
+        [kind]="'secondary'"
         [size]="'large'"
         [tone]="'warn'"
-        [kind]="'secondary'"
     />`,
 })
 export class DemoComponent {}

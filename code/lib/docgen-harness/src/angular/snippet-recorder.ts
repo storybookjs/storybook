@@ -31,6 +31,7 @@ export async function recordSnippet({
   snippet,
   comparable = (text) => text,
   legacyParity = false,
+  legacyOmissions,
 }: {
   testDir: string;
   prefix: SnippetPrefix;
@@ -42,6 +43,9 @@ export async function recordSnippet({
   comparable?: (text: string) => string;
   // Additionally gate the snippet against the legacy recorder's committed `snippet-` file.
   legacyParity?: boolean;
+  // Bindings the legacy recording represents that this snippet deliberately does not. Checked in
+  // both directions, so a declaration that stops being true fails the run.
+  legacyOmissions?: readonly string[];
 }): Promise<void> {
   const snippetPath = join(testDir, `${prefix}${exportName}.snapshot`);
   const committedSnippet = readCommitted(snippetPath);
@@ -71,6 +75,7 @@ export async function recordSnippet({
       framework: 'angular',
       baseline: comparable(committedLegacySnippet!),
       candidate: comparable(snippet),
+      ...(legacyOmissions === undefined ? {} : { declaredOmissions: legacyOmissions }),
     });
   }
 

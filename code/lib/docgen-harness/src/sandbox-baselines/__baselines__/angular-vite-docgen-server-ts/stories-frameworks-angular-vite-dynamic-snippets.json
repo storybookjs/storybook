@@ -1,0 +1,41 @@
+{
+  "argTypes": {
+    "label": {
+      "description": "Text the button shows. Driven by a Controls knob in the dynamic-snippets e2e.",
+      "name": "label",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": ""
+        },
+        "type": {
+          "required": false,
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "pressed": {
+      "action": "pressed",
+      "name": "pressed",
+      "table": {
+        "category": "outputs",
+        "defaultValue": {},
+        "type": {
+          "required": false,
+          "summary": "EventEmitter"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-dynamic-snippets",
+  "jsDocTags": {},
+  "name": "DynamicSnippetsComponent",
+  "path": "./src/stories/frameworks/angular-vite/dynamic-snippets/dynamic-snippets.stories.ts"
+}

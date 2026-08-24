@@ -1,6 +1,9 @@
 import { describe, expect, it } from 'vitest';
 
-import { buildHostComponentSnippet, extractHostComponentTemplate } from './story-docs-snippet.ts';
+import {
+  buildHostComponentSnippet,
+  extractHostComponentTemplate,
+} from './host-component-snippet.ts';
 
 const build = (overrides: Partial<Parameters<typeof buildHostComponentSnippet>[0]> = {}) =>
   buildHostComponentSnippet({

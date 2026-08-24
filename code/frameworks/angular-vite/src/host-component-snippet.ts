@@ -1,7 +1,7 @@
 // Wraps a story's template in the host component a reader would have to write to run it, so the
-// snippet is copy-pasteable on its own. Server-side only: the preview renderer still emits the bare
-// template, which is what the legacy runtime generator produced.
-import { isValidIdentifier } from '../template-grammar.ts';
+// snippet is copy-pasteable on its own. Imported by the dev-server story-docs provider and by the
+// preview, which re-runs it over live args, so this module must stay isomorphic.
+import { isValidIdentifier } from './template-grammar.ts';
 
 const HOST_SELECTOR = 'app-demo';
 const HOST_CLASS = 'DemoComponent';

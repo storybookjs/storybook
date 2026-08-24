@@ -17,6 +17,27 @@ import { LegacyButtonModule } from './non-standalone-module.component.ts';
 export class DemoComponent {
   pressed(event: unknown) {}
 }",
+      "snippetTemplate": {
+        "componentImport": "import { LegacyButtonComponent } from './non-standalone-module.component.ts';",
+        "componentName": "LegacyButtonComponent",
+        "inputNames": [
+          "label",
+        ],
+        "kind": "angular-snippet-template",
+        "ngModules": {
+          "importStatements": [
+            "import { LegacyButtonModule } from './non-standalone-module.component.ts';",
+          ],
+          "names": [
+            "LegacyButtonModule",
+          ],
+        },
+        "outputs": [
+          "pressed",
+        ],
+        "selector": "sb-legacy-button",
+        "standalone": false,
+      },
     },
   },
 }

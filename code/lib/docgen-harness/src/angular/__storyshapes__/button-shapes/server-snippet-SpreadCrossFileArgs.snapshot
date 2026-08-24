@@ -6,8 +6,8 @@ import { ShapeButtonComponent } from './shape-button.component.ts';
   imports: [ShapeButtonComponent],
   template: `
     <sb-shape-button
-        [label]="'overridden'"
         [count]="4"
+        [label]="'overridden'"
         (clicked)="clicked($event)"
     />`,
 })

@@ -31,6 +31,11 @@ export interface StoryDoc {
    * produced at all. An `error` means the provider itself failed.
    */
   warning?: string;
+  /**
+   * What the framework's preview needs to rebuild `snippet` from live args, in whatever shape that
+   * framework's preview annotation understands.
+   */
+  snippetTemplate?: { kind: string };
   error?: StoryDocsError;
 }
 

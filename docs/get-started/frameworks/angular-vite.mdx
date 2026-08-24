@@ -125,7 +125,7 @@ The flag-off column is temporary. It exists so that a project upgrading to 10.6 
 
 Nothing to set up. `npx storybook@latest init` neither installs Compodoc nor writes any Compodoc wiring for this framework, and there is no `documentation.json` to generate or keep current.
 
-Because your sources are read directly, editing a component updates its controls and descriptions without restarting Storybook.
+Because your sources are read directly, editing a component updates its controls, descriptions, and code snippets without restarting Storybook.
 
 See [Known limitations](#known-limitations) for what this path does not yet do.
 
@@ -294,9 +294,9 @@ async viteFinal(config) {
 
 These apply to the default server-side extraction path, which is what you get unless you [turn the feature off](#using-compodoc-instead). They are not opt-in: if you use `@storybook/angular-vite`, they apply to you.
 
-### Code snippets do not follow your controls
+### Some code snippets cannot follow your controls
 
-The snippets shown in autodocs and the Code panel are generated from your story's source, so they show the story as you wrote it. Changing a value in the controls table updates the rendered component but not the snippet next to it.
+Code snippets in autodocs and the Code panel follow your controls when Storybook can safely rebuild the generated component template. A story that supplies its own template, or whose generated input binding depends on an arg that server-side analysis cannot evaluate, keeps the values declared by the story instead.
 
 ### An input typed `T | undefined` falls back to an object control
 

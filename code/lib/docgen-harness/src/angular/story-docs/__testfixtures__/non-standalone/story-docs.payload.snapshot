@@ -16,6 +16,19 @@
 export class DemoComponent {
   pressed(event: unknown) {}
 }",
+      "snippetTemplate": {
+        "componentImport": "import { NonStandaloneComponent } from './non-standalone.component.ts';",
+        "componentName": "NonStandaloneComponent",
+        "inputNames": [
+          "label",
+        ],
+        "kind": "angular-snippet-template",
+        "outputs": [
+          "pressed",
+        ],
+        "selector": "sb-non-standalone",
+        "standalone": false,
+      },
       "warning": "NonStandaloneComponent is declared with `standalone: false`, so it cannot be listed in the host component's `imports`. Add the NgModule that declares and exports NonStandaloneComponent to `imports` to make this snippet compile.",
     },
   },

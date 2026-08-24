@@ -10,7 +10,7 @@ import { loadCsf } from 'storybook/internal/csf-tools';
 import type { IndexEntry } from 'storybook/internal/types';
 
 import { buildStoryDocsPayload } from '../../../../frameworks/angular-vite/src/docgen/story-docs-build.ts';
-import { extractHostComponentTemplate } from '../../../../frameworks/angular-vite/src/docgen/story-docs-snippet.ts';
+import { extractHostComponentTemplate } from '../../../../frameworks/angular-vite/src/host-component-snippet.ts';
 import { createFixtureDocgen } from './docgen-fixture.ts';
 import {
   expectNoStaleSnippets,
@@ -18,6 +18,14 @@ import {
   fixturesDir,
   recordSnippet,
 } from './snippet-recorder.ts';
+
+// The legacy runtime binds an arg the story set to `undefined` and prints `[label]="undefined"`.
+// The server binds nothing for it, on either of its two paths, and neither does the preview when a
+// reader clears a control. Declared rather than waived: `expectCurrentOrBetter` fails if a candidate
+// starts representing a name listed here, so the declaration cannot outlive the gap it documents.
+const LEGACY_OMISSIONS: Record<string, readonly string[]> = {
+  'decorator-io-basics/ExplicitUndefinedArg': ['label'],
+};
 
 // One manager for the whole suite: each fixture directory carries its own tsconfig.json, so every
 // component file resolves to its own per-fixture project.
@@ -66,6 +74,7 @@ describe('angular story-docs server snippets', () => {
         // bare template, so both sides are compared as templates.
         comparable: (text) => extractHostComponentTemplate(text) ?? text,
         legacyParity: true,
+        legacyOmissions: LEGACY_OMISSIONS[`${fixtureCase}/${exportName}`],
       });
     }
 

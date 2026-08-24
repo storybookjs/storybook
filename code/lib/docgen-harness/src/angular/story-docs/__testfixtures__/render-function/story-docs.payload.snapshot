@@ -31,6 +31,17 @@ import { RenderFunctionComponent } from './render-function.component.ts';
   template: `<sb-render-function [label]="'Plain'" />`,
 })
 export class DemoComponent {}",
+      "snippetTemplate": {
+        "componentImport": "import { RenderFunctionComponent } from './render-function.component.ts';",
+        "componentName": "RenderFunctionComponent",
+        "inputNames": [
+          "label",
+        ],
+        "kind": "angular-snippet-template",
+        "outputs": [],
+        "selector": "sb-render-function",
+        "standalone": true,
+      },
     },
   },
 }

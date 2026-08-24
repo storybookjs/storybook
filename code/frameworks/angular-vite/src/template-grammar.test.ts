@@ -50,85 +50,129 @@ describe('formatInputValue', () => {
 });
 
 describe('buildTemplate', () => {
-  const short: BuildTemplateInput = { inputs: [{ name: 'label', expression: "'x'" }], outputs: [] };
-  const long: BuildTemplateInput = {
-    inputs: [{ name: 'label', expression: "'a label long enough to push the tag past the limit'" }],
+  const LONG_LABEL = {
+    name: 'label',
+    expression: "'a label long enough to push the tag past the limit'",
+  };
+  const one: BuildTemplateInput = {
+    inputs: [{ name: 'label', expression: "'x'" }],
+    outputs: [],
+    style: 'snippet',
+  };
+  const two: BuildTemplateInput = { inputs: [LONG_LABEL], outputs: ['clicked'], style: 'snippet' };
+  const three: BuildTemplateInput = {
+    inputs: [LONG_LABEL, { name: 'kind', expression: "'primary'" }],
     outputs: ['clicked'],
+    style: 'snippet',
   };
 
-  it('keeps the closing tag when the caller does not opt in', () => {
-    expect(buildTemplate('sb-button', short)).toBe(`<sb-button [label]="'x'"></sb-button>`);
-  });
-
-  it('self-closes a dashed element that fits on one line', () => {
-    expect(buildTemplate('sb-button', { ...short, selfClosing: true })).toBe(
-      `<sb-button [label]="'x'" />`
+  it('keeps the closing tag in the legacy shape', () => {
+    expect(buildTemplate('sb-button', { ...one, style: 'legacy' })).toBe(
+      `<sb-button [label]="'x'"></sb-button>`
     );
   });
 
-  it('puts the bracket on its own line when the tag breaks over lines', () => {
-    expect(buildTemplate('sb-shape-button', { ...long, selfClosing: true })).toBe(
+  it('self-closes a dashed element in the snippet shape', () => {
+    expect(buildTemplate('sb-button', one)).toBe(`<sb-button [label]="'x'" />`);
+  });
+
+  it('breaks a snippet at three bindings, however short they are', () => {
+    expect(
+      buildTemplate('sb-shape-button', {
+        ...three,
+        inputs: [
+          { name: 'label', expression: "'x'" },
+          { name: 'kind', expression: "'primary'" },
+        ],
+      })
+    ).toBe(
       [
         '<sb-shape-button',
-        `    [label]="'a label long enough to push the tag past the limit'"`,
+        `    [label]="'x'"`,
+        `    [kind]="'primary'"`,
         '    (clicked)="clicked($event)"',
         '/>',
       ].join('\n')
     );
   });
 
+  it('keeps a snippet of two bindings inline, however wide they are', () => {
+    expect(buildTemplate('sb-shape-button', two)).toBe(
+      `<sb-shape-button [label]="'a label long enough to push the tag past the limit'" (clicked)="clicked($event)" />`
+    );
+  });
+
+  it('breaks the legacy shape on width rather than on binding count', () => {
+    expect(buildTemplate('sb-button', { ...two, style: 'legacy' })).toBe(
+      [
+        '<sb-button',
+        `    [label]="'a label long enough to push the tag past the limit'"`,
+        '    (clicked)="clicked($event)">',
+        '</sb-button>',
+      ].join('\n')
+    );
+    expect(
+      buildTemplate('input[appInput]', {
+        ...three,
+        style: 'legacy',
+        inputs: [
+          { name: 'label', expression: "'x'" },
+          { name: 'kind', expression: "'primary'" },
+        ],
+      })
+    ).toBe(`<input appInput [label]="'x'" [kind]="'primary'" (clicked)="clicked($event)" />`);
+  });
+
   it('keeps the closing tag for a selector naming an element with an attribute', () => {
-    expect(buildTemplate('button[sb-button]', { ...short, selfClosing: true })).toBe(
+    expect(buildTemplate('button[sb-button]', one)).toBe(
       `<button sb-button [label]="'x'"></button>`
     );
   });
 
   it('keeps the closing tag for a selector that names no element', () => {
-    expect(buildTemplate('.card', { ...short, selfClosing: true })).toBe(
-      `<div class="card" [label]="'x'"></div>`
-    );
+    expect(buildTemplate('.card', one)).toBe(`<div class="card" [label]="'x'"></div>`);
   });
 
-  it('keeps a void element inline when it fits on one line', () => {
-    expect(buildTemplate('input[appInput]', { ...short, selfClosing: true })).toBe(
-      `<input appInput [label]="'x'" />`
-    );
+  it('keeps a void element inline while it carries fewer than three bindings', () => {
+    expect(buildTemplate('input[appInput]', one)).toBe(`<input appInput [label]="'x'" />`);
   });
 
-  it('moves the bracket of a broken void element onto its own line only under the opt-in', () => {
-    expect(buildTemplate('input[appInput]', { ...long, selfClosing: true })).toBe(
+  it('moves the bracket of a broken void element onto its own line only in the snippet shape', () => {
+    expect(buildTemplate('input[appInput]', three)).toBe(
       [
         '<input appInput',
         `    [label]="'a label long enough to push the tag past the limit'"`,
+        `    [kind]="'primary'"`,
         '    (clicked)="clicked($event)"',
         '/>',
       ].join('\n')
     );
-    expect(buildTemplate('input[appInput]', long)).toBe(
+    expect(buildTemplate('input[appInput]', { ...three, style: 'legacy' })).toBe(
       [
         '<input appInput',
         `    [label]="'a label long enough to push the tag past the limit'"`,
+        `    [kind]="'primary'"`,
         '    (clicked)="clicked($event)" />',
       ].join('\n')
     );
   });
 
   it('keeps the closing tag when the element carries inner content', () => {
-    expect(buildTemplate('sb-button', { ...short, innerTemplate: 'hi', selfClosing: true })).toBe(
+    expect(buildTemplate('sb-button', { ...one, innerTemplate: 'hi' })).toBe(
       `<sb-button [label]="'x'">hi</sb-button>`
     );
   });
 });
 
 describe('buildComponentOutletTemplate', () => {
-  it('keeps the closing tag when the caller does not opt in', () => {
-    expect(buildComponentOutletTemplate('ButtonComponent')).toBe(
+  it('keeps the closing tag in the legacy shape', () => {
+    expect(buildComponentOutletTemplate('ButtonComponent', 'legacy')).toBe(
       '<ng-container *ngComponentOutlet="ButtonComponent"></ng-container>'
     );
   });
 
-  it('self-closes the outlet under the opt-in', () => {
-    expect(buildComponentOutletTemplate('ButtonComponent', { selfClosing: true })).toBe(
+  it('self-closes the outlet in the snippet shape', () => {
+    expect(buildComponentOutletTemplate('ButtonComponent', 'snippet')).toBe(
       '<ng-container *ngComponentOutlet="ButtonComponent" />'
     );
   });
@@ -147,10 +191,10 @@ describe('formatTemplateMarkup', () => {
     );
   });
 
-  it('breaks an over-long attribute run one binding per line, like the generated templates', () => {
+  it('breaks an over-wide attribute run one per line', () => {
     expect(
       formatTemplateMarkup(
-        `<div class="wrap"><sb-button [label]="'Save'" [count]="7" [kind]="'primary'" (clicked)="clicked($event)"></sb-button></div>`
+        `<div class="wrap"><sb-button [label]="'Save'" [count]="7" (clicked)="clicked($event)"></sb-button></div>`
       )
     ).toBe(
       [
@@ -158,11 +202,46 @@ describe('formatTemplateMarkup', () => {
         '    <sb-button',
         `        [label]="'Save'"`,
         '        [count]="7"',
-        `        [kind]="'primary'"`,
         '        (clicked)="clicked($event)">',
         '    </sb-button>',
         '</div>',
       ].join('\n')
+    );
+  });
+
+  it('keeps static attributes as written, and breaks them only on width', () => {
+    expect(formatTemplateMarkup('<div class="a" id="b" role="c">text</div>')).toBe(
+      '<div class="a" id="b" role="c">text</div>'
+    );
+    expect(
+      formatTemplateMarkup(`<div class="a" id="b" role="c">${'text '.repeat(20).trim()}</div>`)
+    ).toBe(
+      [
+        '<div',
+        '    class="a"',
+        '    id="b"',
+        '    role="c">',
+        `    ${'text '.repeat(20).trim()}`,
+        '</div>',
+      ].join('\n')
+    );
+  });
+
+  it('keeps short authored markup inline regardless of its binding count', () => {
+    const markup = '<pre [a]="a" [b]="b" [c]="c">x</pre>';
+
+    expect(formatTemplateMarkup(markup)).toBe(markup);
+  });
+
+  it('breaks authored markup on width', () => {
+    const short = `<sb-button [label]="'Save'" [count]="7"></sb-button>`;
+    expect(formatTemplateMarkup(short)).toBe(short);
+    expect(
+      formatTemplateMarkup(`<sb-button [label]="'${'x'.repeat(80)}'" [count]="7"></sb-button>`)
+    ).toBe(
+      ['<sb-button', `    [label]="'${'x'.repeat(80)}'"`, '    [count]="7">', '</sb-button>'].join(
+        '\n'
+      )
     );
   });
 
@@ -183,5 +262,19 @@ describe('formatTemplateMarkup', () => {
     expect(formatTemplateMarkup('plain interpolated {{ text }}')).toBe(
       'plain interpolated {{ text }}'
     );
+  });
+
+  it('leaves a generated template alone, so a broken tag ends the same way whoever wrote it', () => {
+    const generated = buildTemplate('sb-button', {
+      inputs: [
+        { name: 'label', expression: "'x'" },
+        { name: 'count', expression: '7' },
+      ],
+      outputs: ['clicked'],
+      style: 'snippet',
+    });
+
+    expect(generated).toContain('\n/>');
+    expect(formatTemplateMarkup(generated)).toBe(generated);
   });
 });

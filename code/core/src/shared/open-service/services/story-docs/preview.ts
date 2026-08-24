@@ -1,25 +1,21 @@
 import { definePreviewAddon } from 'storybook/internal/csf';
 
-import type { ServiceInstanceOf } from 'storybook/open-service';
-
 import { registerService } from '../../preview.ts';
 import { storyDocsServiceDef } from './definition.ts';
-import { storyDocsSourceBeforeEach } from './story-docs-source-before-each.ts';
 
-export type StoryDocsService = ServiceInstanceOf<typeof storyDocsServiceDef>;
+export const registerStoryDocsPreviewService = () => registerService(storyDocsServiceDef);
 
 export default () => {
-  const useStaticServiceSnippets =
+  const useStoryDocsService =
     'FEATURES' in globalThis && globalThis.FEATURES?.experimentalDocgenServer;
 
-  if (!useStaticServiceSnippets) {
+  if (!useStoryDocsService) {
     return definePreviewAddon({});
   }
 
   return definePreviewAddon({
     beforeAll: () => {
-      registerService(storyDocsServiceDef);
+      registerStoryDocsPreviewService();
     },
-    beforeEach: storyDocsSourceBeforeEach,
   });
 };

@@ -6,10 +6,10 @@ import { SignalIoComponent } from './signal-io.component.ts';
   imports: [SignalIoComponent],
   template: `
     <sb-signal-io
-        [label]="'Quantity'"
         [count]="2"
-        [increment]="5"
         [disabled]="true"
+        [increment]="5"
+        [label]="'Quantity'"
         (toggled)="toggled($event)"
     />`,
 })

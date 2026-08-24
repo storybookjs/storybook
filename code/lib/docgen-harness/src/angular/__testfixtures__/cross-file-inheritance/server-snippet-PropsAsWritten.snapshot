@@ -6,8 +6,8 @@ import { CrossFileInheritanceComponent } from './cross-file-inheritance.componen
   imports: [CrossFileInheritanceComponent],
   template: `
     <sb-cross-file-inheritance
-        [heading]="'Storage almost full'"
         [dismissible]="true"
+        [heading]="'Storage almost full'"
         (dismissed)="dismissed($event)"
     />`,
 })

@@ -15,6 +15,17 @@ import { OverrideComponent } from '@design-system/components';
   template: `<sb-import-override [heading]="'Overridden'" />`,
 })
 export class DemoComponent {}",
+      "snippetTemplate": {
+        "componentImport": "import { OverrideComponent } from '@design-system/components';",
+        "componentName": "OverrideComponent",
+        "inputNames": [
+          "heading",
+        ],
+        "kind": "angular-snippet-template",
+        "outputs": [],
+        "selector": "sb-import-override",
+        "standalone": true,
+      },
     },
   },
 }

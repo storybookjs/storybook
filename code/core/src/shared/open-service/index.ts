@@ -49,10 +49,24 @@ export type { DocgenService } from './services/docgen/definition.ts';
 export type { DocgenPayload } from './services/docgen/types.ts';
 export type { StoryDocsService } from './services/story-docs/definition.ts';
 export {
+  createDynamicSnippetInput,
+  dynamicSnippetInputKey,
+} from './services/dynamic-snippets/dynamic-snippet.ts';
+export type {
+  DynamicSnippetInput,
+  DynamicSnippetRecord,
+  DynamicSnippetSlot,
+} from './services/dynamic-snippets/dynamic-snippet.ts';
+export {
   prependImportToSnippet,
+  renderStoryDocSnippet,
   selectSnippetForStory,
   selectStoryDoc,
   selectWarningForStory,
+} from './services/story-docs/snippet.ts';
+export type {
+  SnippetTemplateRenderer,
+  StoryDocsSnippetSourceParameters,
 } from './services/story-docs/snippet.ts';
 
 export type {

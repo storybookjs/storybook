@@ -4,7 +4,12 @@ import { ShapeButtonComponent } from './shape-button.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [ShapeButtonComponent],
-  template: `<sb-shape-button [label]="'Save'" [count]="3" (clicked)="clicked($event)" />`,
+  template: `
+    <sb-shape-button
+        [count]="3"
+        [label]="'Save'"
+        (clicked)="clicked($event)"
+    />`,
 })
 export class DemoComponent {
   clicked(event: unknown) {}

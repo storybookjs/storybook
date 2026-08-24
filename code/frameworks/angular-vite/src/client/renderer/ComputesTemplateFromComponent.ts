@@ -48,6 +48,7 @@ export const computesTemplateFromComponent = (
     inputs: inputs.map((name) => ({ name, expression: formatPropInTemplate(name) })),
     outputs,
     innerTemplate,
+    style: 'legacy',
   });
 };
 
@@ -63,7 +64,7 @@ export const computesTemplateSourceFromComponent = (
 
   if (!ngComponentMetadata.selector) {
     // Allow to add renderer component when NgComponent selector is undefined
-    return buildComponentOutletTemplate(component.name);
+    return buildComponentOutletTemplate(component.name, 'legacy');
   }
 
   const ngComponentInputsOutputs = getComponentInputsOutputs(component);
@@ -75,5 +76,6 @@ export const computesTemplateSourceFromComponent = (
   return buildTemplate(ngComponentMetadata.selector, {
     inputs: inputs.map((name) => ({ name, expression: formatInputValue(initialProps?.[name]) })),
     outputs,
+    style: 'legacy',
   });
 };

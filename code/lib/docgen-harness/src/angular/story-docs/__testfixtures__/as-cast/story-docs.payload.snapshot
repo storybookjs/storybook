@@ -16,6 +16,18 @@ import { AsCastComponent } from './as-cast.component.ts';
   template: `<sb-as-cast [label]="'Cast'" [tone]="'warn'" />`,
 })
 export class DemoComponent {}",
+      "snippetTemplate": {
+        "componentImport": "import { AsCastComponent } from './as-cast.component.ts';",
+        "componentName": "AsCastComponent",
+        "inputNames": [
+          "label",
+          "tone",
+        ],
+        "kind": "angular-snippet-template",
+        "outputs": [],
+        "selector": "sb-as-cast",
+        "standalone": true,
+      },
     },
     "storydocs-as-cast--satisfied": {
       "id": "storydocs-as-cast--satisfied",
@@ -29,6 +41,18 @@ import { AsCastComponent } from './as-cast.component.ts';
   template: `<sb-as-cast [label]="'Satisfies'" />`,
 })
 export class DemoComponent {}",
+      "snippetTemplate": {
+        "componentImport": "import { AsCastComponent } from './as-cast.component.ts';",
+        "componentName": "AsCastComponent",
+        "inputNames": [
+          "label",
+          "tone",
+        ],
+        "kind": "angular-snippet-template",
+        "outputs": [],
+        "selector": "sb-as-cast",
+        "standalone": true,
+      },
     },
   },
 }

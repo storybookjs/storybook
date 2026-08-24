@@ -19,6 +19,7 @@ const storyDocSchema = v.object({
   description: v.optional(v.string()),
   summary: v.optional(v.string()),
   warning: v.optional(v.string()),
+  snippetTemplate: v.optional(v.looseObject({ kind: v.string() })),
   error: v.optional(storyDocsErrorSchema),
 });
 
@@ -55,11 +56,20 @@ export const storyDocsServiceDef = defineService({
         'Returns the story-docs payload for one component id, or undefined when not loaded.',
       input: storyDocsInputSchema,
       output: storyDocsOutputSchema,
-      handler: (input, ctx) =>
-        Object.hasOwn(ctx.self.state.components, input.id)
-          ? ctx.self.state.components[input.id]
-          : undefined,
+      // Read the key directly: `Object.hasOwn` bypasses the deep-signal `get` trap, so a subscriber
+      // that ran while the component was missing would never re-emit once its payload lands.
+      handler: (input, ctx) => ctx.self.state.components[input.id],
+      // `load` only has to make sure the query has data, while the command re-extracts
+      // unconditionally for the module-graph refresh that calls it directly. A stored extraction
+      // error is not data: `extractAllStoryDocs` records one for every component whose provider
+      // rejected, so loading retries it instead of pinning a transient failure.
       load: async (input, ctx) => {
+        if (
+          Object.hasOwn(ctx.self.state.components, input.id) &&
+          !ctx.self.state.components[input.id].error
+        ) {
+          return;
+        }
         await ctx.self.commands.extractStoryDocs(input);
       },
       staticPath: (input) => storyDocsQueryStaticPath(input.id),

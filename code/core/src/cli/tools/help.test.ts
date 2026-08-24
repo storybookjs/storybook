@@ -37,7 +37,6 @@ Use this detailed second line only in the full reference.`,
 
 const ctx: ToolsetCtx = {
   transport: 'cli',
-  agent: false,
   getService: () => ({}) as never,
 };
 

@@ -44,8 +44,8 @@ const docsAccess: DocsAccess = {
 
 const toolset = createDocsToolset({ docsAccess });
 
-const mcpCtx: ToolsetCtx = { transport: 'mcp', agent: true, getService: () => ({}) as never };
-const cliCtx: ToolsetCtx = { transport: 'cli', agent: false, getService: () => ({}) as never };
+const mcpCtx: ToolsetCtx = { transport: 'mcp', getService: () => ({}) as never };
+const cliCtx: ToolsetCtx = { transport: 'cli', getService: () => ({}) as never };
 
 describe('docs.list', () => {
   it('returns the manifests from the access and renders the list Markdown', async () => {
@@ -166,7 +166,6 @@ describe('usage reporting', () => {
     const events: Array<[string, Record<string, unknown>]> = [];
     const ctx: ToolsetCtx = {
       transport,
-      agent: transport === 'mcp',
       getService: () => ({}) as never,
       telemetry: async (event, payload) => {
         events.push([event, payload]);

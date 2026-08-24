@@ -23,7 +23,7 @@ import { createProviderDocsAccess } from './access-provider.ts';
 import { createServiceDocsAccess } from './access-service.ts';
 import { createDocsToolset } from './definition.ts';
 
-const ctx: ToolsetCtx = { transport: 'mcp', agent: true, getService: () => ({}) as never };
+const ctx: ToolsetCtx = { transport: 'mcp', getService: () => ({}) as never };
 
 const storyIndex = {
   v: 5,

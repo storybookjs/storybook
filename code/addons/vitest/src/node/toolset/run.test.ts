@@ -295,7 +295,6 @@ describe('createTestToolset channel identity', () => {
       }),
       {
         transport: 'cli',
-        agent: false,
         getService: () => {
           throw new Error('unused');
         },

@@ -40,7 +40,6 @@ type ToolEnabled = Parameters<Server['tool']>[0]['enabled'];
 
 const ctx: ToolsetCtx = {
   transport: 'mcp',
-  agent: true,
   getService: () => {
     throw new Error('Open services are not available in a hosted Storybook.');
   },

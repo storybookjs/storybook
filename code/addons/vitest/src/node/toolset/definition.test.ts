@@ -18,13 +18,12 @@ const channel = {} as never;
 
 const ctx = {
   transport: 'cli',
-  agent: false,
   origin: 'http://localhost:6006',
   getService: vi.fn() as ToolsetCtx['getService'],
   telemetry,
 } satisfies ToolsetCtx;
 
-const mcpCtx = { ...ctx, transport: 'mcp', agent: true } satisfies ToolsetCtx;
+const mcpCtx = { ...ctx, transport: 'mcp' } satisfies ToolsetCtx;
 
 const baseResult: TestRunResult = {
   config: { coverage: false, a11y: false },
@@ -98,20 +97,7 @@ describe('test API', () => {
     });
   });
 
-  it('summarizes counts for a human-driven CLI run', async () => {
-    const outcome = await runTests();
-
-    expect(outcome.markdown).toBe(
-      [
-        '# Test run completed',
-        '- Total tests: 3',
-        '- Component tests: 2 passed, 0 failed',
-        '- Accessibility tests: 1 passed, 0 warnings, 0 failed',
-      ].join('\n')
-    );
-  });
-
-  it('renders per-story sections for an agent-driven CLI run, matching the MCP rendering', async () => {
+  it('renders the same per-story sections for the CLI consumer as for MCP', async () => {
     vi.mocked(runStoryTests).mockResolvedValue(
       completed({
         storyIds: ['button--primary'],
@@ -121,7 +107,7 @@ describe('test API', () => {
       })
     );
 
-    const outcome = await runTests({}, { ...ctx, agent: true });
+    const outcome = await runTests();
     const mcpOutcome = await runForMcp();
 
     expect(outcome.markdown).toBe(`## Passing Stories

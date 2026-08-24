@@ -131,10 +131,7 @@ An error whose message speaks to the agent and names its own recovery declares `
 (a `StorybookError` constructor prop); adapters surface such errors verbatim by reading that
 property — never by keeping a class list, which misclassifies across bundle copies.
 
-`ctx` is `{ transport: 'cli' | 'mcp', agent, origin?, getService, telemetry? }`. `agent` is whether
-the consumer driving the call is an AI agent — always `true` on MCP, detected via `std-env` on the
-CLI — and selects agent-facing rendering where a method formats differently per audience, while
-`transport` governs tool-name spelling. `origin` is the complete
+`ctx` is `{ transport: 'cli' | 'mcp', origin?, getService, telemetry? }`. `origin` is the complete
 Storybook UI base URL, including a deployment subpath; the MCP adapter derives it from the request.
 Descriptions that name a sibling tool must render it through `getToolName(ctx)` rather than hardcoding
 either spelling, so the same sentence reads as the derived MCP tool name or the CLI command for the

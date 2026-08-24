@@ -48,11 +48,10 @@ beforeEach(() => {
   });
   cliCtx = {
     transport: 'cli',
-    agent: false,
     origin: 'http://localhost:6006',
     getService: vi.fn(() => ({ commands: { setReview } })) as ToolsetCtx['getService'],
   };
-  mcpCtx = { ...cliCtx, transport: 'mcp', agent: true };
+  mcpCtx = { ...cliCtx, transport: 'mcp' };
 });
 
 describe('review.create', () => {

@@ -4,7 +4,7 @@ You can use Storybook's Codex plugin to connect agents to your Storybook. Agents
 
 ## Requirements
 
-- Storybook 10.6.0-alpha.6 or later (a `next` prerelease while 10.6 is not yet released)
+- Storybook 10.6 or later (while 10.6 is unreleased, `next` satisfies this — 10.6.0-alpha.x; any canary build, `0.0.0-pr-*`, also qualifies)
 - [Codex](https://openai.com/codex/)
 
 ## Installation

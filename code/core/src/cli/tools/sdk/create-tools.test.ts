@@ -336,12 +336,12 @@ describe('describe', () => {
       title: 'Echo the input',
       description: 'Echo the input back.',
       requiresDevServer: false,
-      inputSchema: expect.objectContaining({
+      input: expect.objectContaining({
         type: 'object',
         properties: { value: { type: 'string' } },
         required: ['value'],
       }),
-      outputSchema: expect.objectContaining({ type: 'object' }),
+      output: expect.objectContaining({ type: 'object' }),
     });
   });
 
@@ -400,7 +400,7 @@ describe('describe', () => {
 
     const catalog = await tools.describe();
 
-    expect(catalog.toolsets[0].methods[0].inputSchema).toBeUndefined();
+    expect(catalog.toolsets[0].methods[0].input).toBeUndefined();
   });
 });
 

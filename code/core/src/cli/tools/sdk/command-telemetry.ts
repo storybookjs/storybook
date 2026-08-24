@@ -139,18 +139,30 @@ export async function reportSdkInvocation(args: {
   if (!shouldReportSdkInvocation(args.clientInfo.kind)) {
     return;
   }
-  const thrown = 'error' in args.result;
-  const attachGate = thrown ? attachGateReasonFromError(args.result.error) : undefined;
-  const success = !thrown && args.result.ok;
   const dimensions = toolsCommandDimensions(args);
+  if (!('ok' in args.result)) {
+    const attachGate = attachGateReasonFromError(args.result.error);
+    await reportToolsCommandEvent(
+      {
+        command: commandNameFromRef(args.ref),
+        success: false,
+        outcome: attachGate ? 'attach-gate' : 'error',
+        duration: args.duration,
+        ...dimensions,
+        ...(attachGate ? { attachGate } : {}),
+      },
+      { configDir: args.configDir }
+    );
+    return;
+  }
+  const success = args.result.ok;
   await reportToolsCommandEvent(
     {
       command: commandNameFromRef(args.ref),
       success,
-      outcome: thrown ? (attachGate ? 'attach-gate' : 'error') : success ? 'success' : 'failure',
+      outcome: success ? 'success' : 'failure',
       duration: args.duration,
       ...dimensions,
-      ...(attachGate ? { attachGate } : {}),
     },
     { configDir: args.configDir }
   );

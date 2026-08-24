@@ -195,7 +195,7 @@ function catalogArgumentLines(schema: Record<string, unknown> | undefined, flagP
 
 function catalogMethodBodyLines(method: ToolsetCatalogMethod): string[] {
   const lines = [method.description.trim()];
-  const argumentLines = catalogArgumentLines(method.inputSchema, true);
+  const argumentLines = catalogArgumentLines(method.input, true);
   if (argumentLines === undefined) {
     lines.push('', 'Arguments: (this schema could not be rendered)');
   } else if (argumentLines.length === 0) {
@@ -203,7 +203,7 @@ function catalogMethodBodyLines(method: ToolsetCatalogMethod): string[] {
   } else {
     lines.push('', 'Arguments:', ...argumentLines);
   }
-  const outputLines = catalogArgumentLines(method.outputSchema, false);
+  const outputLines = catalogArgumentLines(method.output, false);
   if (outputLines && outputLines.length > 0) {
     lines.push('', 'Output:', ...outputLines);
   }

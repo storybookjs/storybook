@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { dirname, relative, sep } from 'node:path';
 
-import { findTsconfigPathForFile } from 'storybook/internal/common';
+import { findTsconfigPathForFile, getTsconfigPathsBaseDir } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { createFilter } from '@rollup/pluginutils';
@@ -136,11 +136,11 @@ function createTsconfigMatchPath(filePath: string) {
   }
 
   logger.debug('Using tsconfig paths for react-docgen');
-  const matchPath = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
-    'browser',
-    'module',
-    'main',
-  ]);
+  const matchPath = TsconfigPaths.createMatchPath(
+    getTsconfigPathsBaseDir(tsconfig.configFileAbsolutePath),
+    tsconfig.paths,
+    ['browser', 'module', 'main']
+  );
   matchPathByTsconfigPath.set(tsconfigPath, matchPath);
   return matchPath;
 }

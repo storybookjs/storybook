@@ -115,7 +115,7 @@ describe('parseLocalBindings', () => {
 describe('parseDefaultImports', () => {
   it('maps a default import to its module specifier', async () => {
     const map = await parseDefaultImports(
-      '/tmp/Tab.vue',
+      'fixtures/Tab.vue',
       `import _sfc_main from './Tab.vue?vue&type=script&setup=true&lang.ts';`
     );
 
@@ -123,7 +123,10 @@ describe('parseDefaultImports', () => {
   });
 
   it('maps a default import mixed with named specifiers', async () => {
-    const map = await parseDefaultImports('/tmp/a.ts', `import Button, { Icon } from './Button';`);
+    const map = await parseDefaultImports(
+      'fixtures/a.ts',
+      `import Button, { Icon } from './Button';`
+    );
 
     expect(map.get('Button')).toBe('./Button');
     expect(map.has('Icon')).toBe(false);
@@ -131,7 +134,7 @@ describe('parseDefaultImports', () => {
 
   it('excludes named, namespace and side-effect imports', async () => {
     const map = await parseDefaultImports(
-      '/tmp/a.ts',
+      'fixtures/a.ts',
       `import { x } from './x';\nimport * as ns from './ns';\nimport './side-effect';`
     );
 
@@ -139,7 +142,7 @@ describe('parseDefaultImports', () => {
   });
 
   it('excludes type-only default imports', async () => {
-    const map = await parseDefaultImports('/tmp/a.ts', `import type Foo from './Foo';`);
+    const map = await parseDefaultImports('fixtures/a.ts', `import type Foo from './Foo';`);
 
     expect(map.size).toBe(0);
   });

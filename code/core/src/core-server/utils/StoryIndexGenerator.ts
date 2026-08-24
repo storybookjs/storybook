@@ -3,7 +3,7 @@ import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
 import { commonGlobOptions, getProjectRoot, normalizeStoryPath } from 'storybook/internal/common';
-import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf';
+import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
 import { getStorySortParameter, loadConfig } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import { isExampleStoryId } from 'storybook/internal/telemetry';
@@ -30,8 +30,9 @@ import { dedent } from 'ts-dedent';
 import * as TsconfigPaths from 'tsconfig-paths';
 
 import { resolveImport, supportedExtensions } from '../../common/index.ts';
-import { userOrAutoTitleFromSpecifier } from '../../preview-api/modules/store/autoTitle.ts';
-import { sortStoriesV7 } from '../../preview-api/modules/store/sortStories.ts';
+import { anchorBlockIdFromId } from '../../docs-tools/shared.ts';
+import { userOrAutoTitleFromSpecifier } from '../../shared/story-index/autoTitle.ts';
+import { sortStoriesV7 } from '../../shared/story-index/sortStories.ts';
 import { Tag } from '../../shared/constants/tags.ts';
 import { isMdxEntry } from '../../shared/utils/story-index-filters.ts';
 import { IndexingError, MultipleIndexingError } from './IndexingError.ts';
@@ -64,6 +65,7 @@ export type StoryIndexGeneratorOptions = {
   indexers: Indexer[];
   docs: DocsOptions;
   build?: StorybookConfigRaw['build'];
+  features?: StorybookConfigRaw['features'];
 };
 
 const makeAbsolute = (otherImport: Path, normalizedPath: Path, workingDir: Path) =>
@@ -496,6 +498,11 @@ export class StoryIndexGenerator {
         type: 'docs',
         tags,
         storiesImports: [],
+        ...(this.options.features?.experimentalSearchDocsHeadings && {
+          // Each story in an autodocs page is wrapped in an `Anchor` block whose DOM id is
+          // derived from the story id, so those are the reliable in-page navigation targets.
+          anchors: storyEntries.map((e) => ({ id: anchorBlockIdFromId(e.id), title: e.name })),
+        }),
       };
 
       return {
@@ -619,6 +626,7 @@ export class StoryIndexGenerator {
         storiesImports: sortedDependencies.map((dep) => dep.entries[0].importPath),
         type: 'docs',
         tags,
+        ...(this.options.features?.experimentalSearchDocsHeadings && { anchors: result.anchors }),
       };
       return docsEntry;
     } catch (err) {

@@ -7,8 +7,8 @@ import type { DocgenProvider } from './types.ts';
 export type RegisterDocgenServiceOptions = {
   workingDir?: string;
   /**
-   * Returns the current story index when a service needs it. Callers should memoize the generator
-   * behind it so each call does not repeat generator initialization.
+   * Returns the current story index when a service needs it. Callers should bind this to a
+   * pre-resolved generator so each call does not re-await generator initialization.
    */
   getIndex: () => Promise<StoryIndex>;
   /** Fully composed docgen provider chain from `presets.apply('experimental_docgenProvider', ...)`. */

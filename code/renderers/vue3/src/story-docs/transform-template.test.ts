@@ -15,10 +15,17 @@ const STORY_PATH = '/stories/MyButton.stories.ts';
 
 const DOCGEN_CATEGORIES: Record<string, string> = {
   active: 'props',
+  columns: 'props',
   count: 'props',
+  isCollapsed: 'props',
   label: 'props',
   options: 'props',
+  release: 'props',
   ref: 'props',
+  row: 'props',
+  status: 'props',
+  theme: 'props',
+  updateProgressInfo: 'props',
   click: 'events',
   'update:modelValue': 'events',
   default: 'slots',
@@ -51,14 +58,15 @@ const ENTRY: IndexEntry = {
 
 async function buildPayload(
   storySource: string,
-  importSource = "import MyButton from './MyButton.vue';"
+  importSource = "import MyButton from './MyButton.vue';",
+  componentName = 'MyButton'
 ) {
   vol.fromJSON({
     [STORY_PATH]: `
 ${importSource}
 
 const meta = {
-  component: MyButton,
+  component: ${componentName},
   title: 'Example/MyButton',
 };
 
@@ -78,8 +86,8 @@ ${storySource}
   return payload;
 }
 
-async function primarySnippet(storySource: string, importSource?: string) {
-  const payload = await buildPayload(storySource, importSource);
+async function primarySnippet(storySource: string, importSource?: string, componentName?: string) {
+  const payload = await buildPayload(storySource, importSource, componentName);
   return payload.stories['example-mybutton--primary']?.snippet;
 }
 
@@ -298,6 +306,314 @@ export const Primary = {
     `);
   });
 
+  it('substitutes args references inside a wrapper style expression and expands v-bind args', async () => {
+    expect(
+      await primarySnippet(
+        `
+export const Primary = {
+  args: {
+    isCollapsed: false,
+    release: { version: '1.2.3' },
+    status: { label: 'Ready' },
+    updateProgressInfo: null,
+  },
+  render: (args) => ({
+    components: { UpdateStatusItem },
+    setup: () => ({ args }),
+    template: '<div :style="{ \\'--w\\': \\'52px\\', width: args.isCollapsed ? \\'52px\\' : \\'176px\\' }"><UpdateStatusItem v-bind="args" /></div>',
+  }),
+};
+`,
+        "import UpdateStatusItem from './UpdateStatusItem.vue';",
+        'UpdateStatusItem'
+      )
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import UpdateStatusItem from './UpdateStatusItem.vue';
+
+      const release = { version: '1.2.3' };
+
+      const status = { label: 'Ready' };
+      </script>
+
+      <template>
+        <div :style="{ '--w': '52px', width: false ? '52px' : '176px' }"><UpdateStatusItem :isCollapsed="false" :release="release" :status="status" :updateProgressInfo="null" /></div>
+      </template>"
+    `);
+  });
+
+  it('substitutes inline string args as JavaScript literals inside directive expressions', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Ready' },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: '<MyButton :aria-label="\\'Status: \\' + args.label" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton :aria-label="'Status: ' + 'Ready'" />
+      </template>"
+    `);
+  });
+
+  it('bails when a substituted string would terminate a single-quoted attribute', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: '<MyButton :aria-label=\\'args.label + "!"\\' v-bind="args" />',
+  }),
+};
+`)
+    ).toBeUndefined();
+  });
+
+  it('substitutes args references inside interpolation expressions', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { count: 2 },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: '<p>{{ args.count + 1 }}</p>',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <p>{{ 2 + 1 }}</p>
+      </template>"
+    `);
+  });
+
+  it('allows double quotes from substituted args inside interpolation expressions', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: "it's" },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: '<p>{{ args.label + "!" }}</p>',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <p>{{ "it's" + "!" }}</p>
+      </template>"
+    `);
+  });
+
+  it('wraps negative inline args before exponentiation', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { count: -2 },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: '<MyButton :x="args.count ** 2" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton :x="(-2) ** 2" />
+      </template>"
+    `);
+  });
+
+  it('substitutes hoisted object args before member access in directive expressions', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { theme: { color: 'red' } },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: '<MyButton :style="{ color: args.theme.color }" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
+      const theme = { color: 'red' };
+      </script>
+
+      <template>
+        <MyButton :style="{ color: theme.color }" />
+      </template>"
+    `);
+  });
+
+  it('renames hoisted args that collide with slot and v-for template bindings', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: {
+    columns: ['a'],
+    row: { id: 1 },
+  },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton :columns="args.columns"><template #cell="{ row }"><b :title="args.row.id" /></template></MyButton>',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
+      const columns = ['a'];
+
+      const row2 = { id: 1 };
+      </script>
+
+      <template>
+        <MyButton :columns="columns"><template #cell="{ row }"><b :title="row2.id" /></template></MyButton>
+      </template>"
+    `);
+
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: {
+    columns: ['a'],
+    row: { cells: ['b'] },
+  },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<ul><li v-for="row in args.columns" :key="row"><b v-for="c in args.row.cells" :key="c">{{ c }}</b></li></ul>',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      const columns = ['a'];
+
+      const row2 = { cells: ['b'] };
+      </script>
+
+      <template>
+        <ul><li v-for="row in columns" :key="row"><b v-for="c in row2.cells" :key="c">{{ c }}</b></li></ul>
+      </template>"
+    `);
+  });
+
+  it('bails when expression substitution would entity-decode an arg value', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'a&amp;b' },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: '<MyButton :x="args.label + 1" />',
+  }),
+};
+`)
+    ).toBeUndefined();
+  });
+
+  it('bails on unquoted directive expressions but still substitutes quoted ones', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: '<MyButton :x=args.label+1 />',
+  }),
+};
+`)
+    ).toBeUndefined();
+
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: '<MyButton :x="args.label+1" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton :x="'Hi'+1" />
+      </template>"
+    `);
+  });
+
+  it('bails on delete expressions that mutate args', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { count: 2 },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: '<MyButton :x="delete args.count" />',
+  }),
+};
+`)
+    ).toBeUndefined();
+  });
+
+  it('substitutes optional args member references inside expression branches', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { isCollapsed: false },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: '<MyButton :x="args?.isCollapsed ? \\'closed\\' : \\'open\\'" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton :x="false ? 'closed' : 'open'" />
+      </template>"
+    `);
+  });
+
+  it('bails when Vue entity-decodes the original directive expression', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { count: 2 },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: '<MyButton :disabled="args.count &gt; 1" />',
+  }),
+};
+`)
+    ).toBeUndefined();
+  });
+
   it('keeps author-written slot templates, including the shorthand, untouched', async () => {
     expect(
       await primarySnippet(`
@@ -433,14 +749,53 @@ export const Primary = {
     ).toBeUndefined();
   });
 
-  it('bails when args are used in unsupported directive expressions', async () => {
+  it('substitutes args references inside v-if expressions', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
-  args: { count: 2 },
+  args: { isCollapsed: false },
   render: (args) => ({
     setup: () => ({ args }),
-    template: '<MyButton v-if="args.count" />',
+    template: '<MyButton v-if="args.isCollapsed" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton v-if="false" />
+      </template>"
+    `);
+  });
+
+  it.each([
+    ['spread args', '<MyButton v-bind="{ ...args }" />', { count: 2 }],
+    ['computed args member', '<MyButton :x="args[key]" />', { count: 2 }],
+    ['update expression in event handler', '<MyButton @click="args.count++" />', { count: 2 }],
+    ['assignment in event handler', '<MyButton @click="args.count = 1" />', { count: 2 }],
+    ['missing arg name', '<MyButton :x="args.missing + 1" />', { count: 2 }],
+    [
+      'inline string value containing a double quote',
+      `<MyButton :aria-label="'Status: ' + args.label" />`,
+      { label: 'say "hi"' },
+    ],
+    ['v-for args shadowing', '<MyButton v-for="args in items" :key="args.id" />', { count: 2 }],
+    [
+      'v-slot args shadowing',
+      '<MyButton><template v-slot="{ args }">{{ args.label }}</template></MyButton>',
+      { label: 'Hi' },
+    ],
+  ])('bails on %s in directive expressions', async (_name, template, args) => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: ${JSON.stringify(args)},
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: ${JSON.stringify(template)},
   }),
 };
 `)

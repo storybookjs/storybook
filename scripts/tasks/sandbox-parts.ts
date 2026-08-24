@@ -905,14 +905,7 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
     },
     ...(template.modifications?.editAddons
       ? {
-          // Dedupe: `storybook init` may already register an addon the template appends
-          // (e.g. addon-mcp), and a twice-listed addon shows up doubled in agent-facing
-          // surfaces like `storybook skills get setup`.
-          addons: [
-            ...new Set(
-              template.modifications?.editAddons(mainConfig.getFieldValue(['addons']) || [])
-            ),
-          ],
+          addons: template.modifications?.editAddons(mainConfig.getFieldValue(['addons']) || []),
         }
       : {}),
     core: {

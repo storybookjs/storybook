@@ -72,6 +72,259 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
     });
   });
 
+  describe('JSDoc tags', () => {
+    it('renders top-level deprecation tags after the component ID', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        jsDocTags: {
+          deprecated: ['Use NewButton instead.'],
+        },
+        reactDocgenTypescript: {
+          tags: {
+            deprecated: 'Use LegacyButton instead.',
+          },
+          props: {},
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        > **Deprecated:** Use NewButton instead.
+
+        A button component"
+      `);
+    });
+
+    it('falls back to react-docgen-typescript component tags', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        reactDocgenTypescript: {
+          tags: {
+            deprecated: 'Use NewButton instead.',
+          },
+          props: {},
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        > **Deprecated:** Use NewButton instead.
+
+        A button component"
+      `);
+    });
+
+    it('renders bare deprecation tags without a colon', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        jsDocTags: {
+          deprecated: ['   '],
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        > **Deprecated**
+
+        A button component"
+      `);
+    });
+
+    it('forwards generic tags after the description in object order', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        jsDocTags: {
+          since: ['1.2.3'],
+          see: ['ButtonGroup'],
+          customTag: ['alpha', ''],
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        A button component
+
+        > **Since:** 1.2.3
+        > **See:** ButtonGroup
+        > **CustomTag:** alpha"
+      `);
+    });
+
+    it('does not render ignore or description-family tags', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        jsDocTags: {
+          ignore: ['true'],
+          desc: ['Short text'],
+          description: ['Long text'],
+          describe: ['More text'],
+          since: ['1.2.3'],
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        A button component
+
+        > **Since:** 1.2.3"
+      `);
+    });
+
+    it('does not render tags Storybook consumes as structured fields', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        import: "import { Button } from '@my-org/ui';",
+        summary: 'A customizable button.',
+        jsDocTags: {
+          import: ["import { Button } from '@my-org/ui';"],
+          summary: ['A customizable button.'],
+          since: ['1.2.3'],
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        A button component
+
+        > **Since:** 1.2.3"
+      `);
+    });
+
+    it('renders examples as fenced code blocks after generic tags', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        jsDocTags: {
+          since: ['1.2.3'],
+          example: ['<Button />', '<Button disabled />'],
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        A button component
+
+        > **Since:** 1.2.3
+
+        **Example:**
+        \`\`\`
+        <Button />
+        \`\`\`
+
+        **Example:**
+        \`\`\`
+        <Button disabled />
+        \`\`\`"
+      `);
+    });
+
+    it('renders subcomponent deprecation tags under the subcomponent heading', () => {
+      const manifest: ComponentManifest = {
+        id: 'combo-box',
+        name: 'ComboBox',
+        path: 'src/components/ComboBox.tsx',
+        subcomponents: {
+          Item: {
+            name: 'ComboBoxItem',
+            path: 'src/components/ComboBoxItem.tsx',
+            summary: 'Use for individual list items.',
+            jsDocTags: {
+              deprecated: ['Use ListBoxItem instead.'],
+            },
+          },
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# ComboBox
+
+        ID: combo-box
+
+        ## Subcomponents
+
+        ### ComboBoxItem
+
+        > **Deprecated:** Use ListBoxItem instead.
+
+        Use for individual list items."
+      `);
+    });
+
+    it('does not change untagged component and subcomponent output', () => {
+      const manifest: ComponentManifest = {
+        id: 'combo-box',
+        name: 'ComboBox',
+        path: 'src/components/ComboBox.tsx',
+        description: 'A combo box component',
+        subcomponents: {
+          Item: {
+            name: 'ComboBoxItem',
+            path: 'src/components/ComboBoxItem.tsx',
+            summary: 'Item summary.',
+            description: 'Item description.',
+          },
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# ComboBox
+
+        ID: combo-box
+
+        A combo box component
+
+        ## Subcomponents
+
+        ### ComboBoxItem
+
+        Item summary.
+
+        Item description."
+      `);
+    });
+  });
+
   describe('subcomponents section', () => {
     it('should include subcomponent docs and props before stories', () => {
       const manifest: ComponentManifest = {

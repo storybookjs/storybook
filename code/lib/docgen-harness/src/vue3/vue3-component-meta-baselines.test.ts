@@ -65,21 +65,22 @@ async function buildComponentMetaDocgen(sfcPath: string): Promise<object | undef
     }
     meta = checker.getComponentMeta(sfcPath, 'default');
 
-    // The shared temp-fix pass pairs metas with parseMulti results by export position, so keep
-    // the array aligned with the file's export order the way collectComponentMetaSources does.
-    const metas = exportNames.map((name) => {
+    // The shared temp-fix pass pairs metas with parseMulti results by export name, so hand it
+    // every extractable export the way collectComponentMetaSources does.
+    const entries = exportNames.flatMap((name) => {
       if (name === 'default') {
-        return meta;
+        return [{ name, meta }];
       }
       try {
-        return checker.getComponentMeta(sfcPath, name);
+        return [{ name, meta: checker.getComponentMeta(sfcPath, name) }];
       } catch {
-        return undefined;
+        return [];
       }
     });
     await applyVueDocgenApiTempFixes(
       sfcPath,
-      metas.filter((entry): entry is ComponentMeta => entry !== undefined)
+      entries.map((entry) => entry.meta),
+      entries.map((entry) => entry.name)
     );
   } catch {
     // the production transform swallows checker failures and attaches nothing

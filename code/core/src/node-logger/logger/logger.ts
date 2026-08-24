@@ -161,6 +161,12 @@ export const error = createLogger('error', (...args: LogFunctionArgs<typeof LOG_
   LOG_FUNCTIONS.error()(...args)
 );
 
+/** Write a failure diagnostic to stderr, ignoring the log level and prompt library. */
+export const diagnostic = (message: string): void => {
+  logTracker.addLog('error', message);
+  console.error(message);
+};
+
 export type BoxOptions = {
   title?: string;
 } & clack.BoxOptions;

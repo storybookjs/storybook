@@ -1,11 +1,15 @@
-import { logger, type LogLevel } from 'storybook/internal/node-logger';
+import { logTracker, logger, type LogLevel } from 'storybook/internal/node-logger';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Command } from 'commander';
 
 import { globalSettings, Settings } from '../cli/globalSettings.ts';
-import { addSharedCliOptions } from './cli-command.ts';
+import {
+  addSharedCliOptions,
+  defaultLogLevelForCommand,
+  writeCommandFailureDiagnostics,
+} from './cli-command.ts';
 
 vi.mock('storybook/internal/node-logger', { spy: true });
 vi.mock('../cli/globalSettings.ts', { spy: true });
@@ -13,13 +17,27 @@ vi.mock('../cli/globalSettings.ts', { spy: true });
 const parse = (program: Command, argv: string[]) =>
   program.parseAsync(['node', 'storybook', ...argv]);
 
-function buildProgram(name: string, defaultLogLevel: LogLevel) {
+function buildProgram(name: string, defaultLogLevel?: LogLevel) {
   const program = new Command();
   program.exitOverride();
   const action = vi.fn();
-  addSharedCliOptions(program.command(name), defaultLogLevel).action(action);
+  addSharedCliOptions(
+    program.command(name),
+    defaultLogLevel ?? defaultLogLevelForCommand(name)
+  ).action(action);
   return { program, action };
 }
+
+describe('defaultLogLevelForCommand', () => {
+  it('defaults ai, tools, and skills to silent, and every other command to info', () => {
+    expect(defaultLogLevelForCommand('ai')).toBe('silent');
+    expect(defaultLogLevelForCommand('tools')).toBe('silent');
+    expect(defaultLogLevelForCommand('skills')).toBe('silent');
+    expect(defaultLogLevelForCommand('dev')).toBe('info');
+    expect(defaultLogLevelForCommand('build')).toBe('info');
+    expect(defaultLogLevelForCommand('index')).toBe('info');
+  });
+});
 
 describe('addSharedCliOptions log level', () => {
   beforeEach(() => {
@@ -34,17 +52,20 @@ describe('addSharedCliOptions log level', () => {
     vi.mocked(globalSettings).mockReset();
   });
 
-  it('defaults agent commands to silent so logger output stays off', async () => {
-    const { program, action } = buildProgram('tools', 'silent');
+  it.each(['ai', 'tools', 'skills'] as const)(
+    'defaults the registered %s command to silent so logger chatter stays off',
+    async (name) => {
+      const { program, action } = buildProgram(name);
 
-    await parse(program, ['tools']);
+      await parse(program, [name]);
 
-    expect(action).toHaveBeenCalledOnce();
-    expect(logger.setLogLevel).toHaveBeenCalledWith('silent');
-  });
+      expect(action).toHaveBeenCalledOnce();
+      expect(logger.setLogLevel).toHaveBeenCalledWith('silent');
+    }
+  );
 
   it('keeps human-facing commands at info when no log flags are passed', async () => {
-    const { program } = buildProgram('dev', 'info');
+    const { program } = buildProgram('dev');
 
     await parse(program, ['dev']);
 
@@ -52,7 +73,7 @@ describe('addSharedCliOptions log level', () => {
   });
 
   it('lets --loglevel override the silent default', async () => {
-    const { program } = buildProgram('tools', 'silent');
+    const { program } = buildProgram('tools');
 
     await parse(program, ['tools', '--loglevel', 'warn']);
 
@@ -60,7 +81,7 @@ describe('addSharedCliOptions log level', () => {
   });
 
   it('lets --debug override both the silent default and --loglevel', async () => {
-    const { program } = buildProgram('ai', 'silent');
+    const { program } = buildProgram('ai');
 
     await parse(program, ['ai', '--loglevel', 'error', '--debug']);
 
@@ -71,12 +92,42 @@ describe('addSharedCliOptions log level', () => {
     const program = new Command();
     program.exitOverride();
     const action = vi.fn();
-    const ai = addSharedCliOptions(program.command('ai'), 'silent');
+    const ai = addSharedCliOptions(program.command('ai'), defaultLogLevelForCommand('ai'));
     ai.command('setup').action(action);
 
     await parse(program, ['ai', 'setup']);
 
     expect(action).toHaveBeenCalledOnce();
     expect(logger.setLogLevel).toHaveBeenCalledWith('silent');
+  });
+});
+
+describe('writeCommandFailureDiagnostics', () => {
+  beforeEach(() => {
+    vi.mocked(logger.diagnostic).mockImplementation(() => {});
+    vi.mocked(logTracker.writeToFile).mockResolvedValue('/tmp/debug-storybook.log');
+  });
+
+  afterEach(() => {
+    vi.mocked(logger.diagnostic).mockReset();
+    vi.mocked(logTracker.writeToFile).mockReset();
+  });
+
+  it('writes the logfile location and exit notice through the diagnostic channel', async () => {
+    await writeCommandFailureDiagnostics(true);
+
+    expect(logger.diagnostic).toHaveBeenCalledWith(
+      'Debug logs are written to: /tmp/debug-storybook.log'
+    );
+    expect(logger.diagnostic).toHaveBeenCalledWith('Storybook exited with an error');
+  });
+
+  it('still writes the exit notice when the logfile cannot be written', async () => {
+    vi.mocked(logTracker.writeToFile).mockRejectedValue(new Error('EACCES'));
+
+    await writeCommandFailureDiagnostics(true);
+
+    expect(logger.diagnostic).toHaveBeenCalledOnce();
+    expect(logger.diagnostic).toHaveBeenCalledWith('Storybook exited with an error');
   });
 });

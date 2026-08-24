@@ -6,8 +6,20 @@ import { Option, type Command } from 'commander';
 import { globalSettings } from '../cli/globalSettings.ts';
 
 const CLI_LOG_LEVELS = ['trace', 'debug', 'info', 'warn', 'error', 'silent'] as const;
+const AGENT_CLI_COMMANDS = new Set(['ai', 'tools', 'skills']);
 
-// Agent-facing commands pass `silent` so logger chatter cannot mix into parseable stdout.
+export function defaultLogLevelForCommand(commandName: string): LogLevel {
+  return AGENT_CLI_COMMANDS.has(commandName) ? 'silent' : 'info';
+}
+
+export async function writeCommandFailureDiagnostics(logFilePath: string | boolean): Promise<void> {
+  try {
+    const logFile = await logTracker.writeToFile(logFilePath);
+    logger.diagnostic(`Debug logs are written to: ${logFile}`);
+  } catch {}
+  logger.diagnostic('Storybook exited with an error');
+}
+
 export function addSharedCliOptions(command: Command, defaultLogLevel: LogLevel = 'info'): Command {
   return command
     .option(
@@ -38,7 +50,7 @@ export function addSharedCliOptions(command: Command, defaultLogLevel: LogLevel 
 
         await globalSettings();
       } catch (e) {
-        logger.error('Error loading global settings:\n' + String(e));
+        logger.diagnostic('Error loading global settings:\n' + String(e));
       }
     });
 }

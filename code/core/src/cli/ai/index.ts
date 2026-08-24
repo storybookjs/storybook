@@ -27,9 +27,9 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
 
   if (!result.ok) {
     const [firstLine, ...rest] = result.message.split('\n');
-    logger.error(firstLine);
+    logger.diagnostic(firstLine);
     if (rest.length > 0) {
-      logger.log(rest.join('\n'));
+      logger.diagnostic(rest.join('\n'));
     }
     return;
   }
@@ -40,7 +40,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
     projectInfo.rendererPackage !== '@storybook/react' ||
     projectInfo.builderPackage !== '@storybook/builder-vite'
   ) {
-    logger.log(
+    logger.diagnostic(
       'AI-assisted setup is currently only available for projects using the React renderer with Vite builder. Detected renderer: ' +
         projectInfo.rendererPackage +
         ', builder: ' +

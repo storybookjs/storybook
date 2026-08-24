@@ -6,7 +6,7 @@ import {
   parseList,
 } from 'storybook/internal/common';
 import { withTelemetry } from 'storybook/internal/core-server';
-import { logTracker, logger, type LogLevel } from 'storybook/internal/node-logger';
+import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
 import { Option, program } from 'commander';
@@ -21,7 +21,11 @@ import { registerToolsPassthrough } from '../cli/tools/register.ts';
 import { build } from '../cli/build.ts';
 import { buildIndex as index } from '../cli/buildIndex.ts';
 import { dev } from '../cli/dev.ts';
-import { addSharedCliOptions } from './cli-command.ts';
+import {
+  addSharedCliOptions,
+  defaultLogLevelForCommand,
+  writeCommandFailureDiagnostics,
+} from './cli-command.ts';
 import { resolveDevCommandOptions } from './dev-options.ts';
 
 addToGlobalContext('cliVersion', version);
@@ -42,16 +46,12 @@ process.env.STORYBOOK = 'true';
  */
 
 const handleCommandFailure = async (logFilePath: string | boolean): Promise<never> => {
-  try {
-    const logFile = await logTracker.writeToFile(logFilePath);
-    logger.log(`Debug logs are written to: ${logFile}`);
-  } catch {}
-  logger.outro('Storybook exited with an error');
+  await writeCommandFailureDiagnostics(logFilePath);
   process.exit(1);
 };
 
-const command = (name: string, defaultLogLevel?: LogLevel) =>
-  addSharedCliOptions(program.command(name), defaultLogLevel).hook(
+const command = (name: string) =>
+  addSharedCliOptions(program.command(name), defaultLogLevelForCommand(name)).hook(
     'postAction',
     async (command) => {
       if (logTracker.shouldWriteLogsToFile) {
@@ -206,12 +206,12 @@ const handleCliCommandFailure =
   (logFilePath: string | boolean | undefined) =>
   async (error: unknown): Promise<never> => {
     if (!(error instanceof HandledError)) {
-      logger.error(String(error));
+      logger.diagnostic(String(error));
     }
     return handleCommandFailure(logFilePath ?? false);
   };
 
-const aiCommand = command('ai', 'silent')
+const aiCommand = command('ai')
   .description('AI agent helpers for Storybook (deprecated — see `storybook skills`)')
   .option(
     '-o, --output <path>',
@@ -251,12 +251,12 @@ if (isAiCliFeatureEnabled()) {
 
 // `storybook tools <toolset> <tool>`: runs the toolsets registered by the target Storybook
 // configuration in this process, disconnected from any dev server (storybookjs/storybook#35716).
-const toolsCommand = command('tools', 'silent').description(
+const toolsCommand = command('tools').description(
   'Run the agent tools provided by the target Storybook configuration'
 );
 registerToolsPassthrough(program, toolsCommand, handleCliCommandFailure);
 
-const skillsCommand = command('skills', 'silent').description(
+const skillsCommand = command('skills').description(
   'Agent skills served by the target Storybook configuration'
 );
 registerSkillsCommand(program, skillsCommand, handleCliCommandFailure);

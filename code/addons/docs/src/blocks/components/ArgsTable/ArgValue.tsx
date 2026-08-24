@@ -5,9 +5,9 @@ import { PopoverProvider, SyntaxHighlighter, codeCommon } from 'storybook/intern
 
 import { ChevronSmallDownIcon, ChevronSmallUpIcon } from '@storybook/icons';
 
-import { uniq } from 'es-toolkit/array';
 import { styled } from 'storybook/theming';
 
+import { getSummaryItems } from './getSummaryItems.ts';
 import type { PropSummaryValue } from './types';
 
 interface ArgValueProps {
@@ -26,13 +26,6 @@ interface ArgSummaryProps {
 }
 
 const ITEMS_BEFORE_EXPANSION = 8;
-
-const DELIMITERS = new Map([
-  ['(', ')'],
-  ['[', ']'],
-  ['{', '}'],
-  ['<', '>'],
-]);
 
 const Summary = styled.div<{ isExpanded?: boolean }>(({ isExpanded }) => ({
   display: 'flex',
@@ -143,83 +136,6 @@ const EmptyArg = () => {
 
 const ArgText: FC<ArgTextProps> = ({ text, simple }) => {
   return <Text simple={simple}>{text}</Text>;
-};
-
-const getSummaryItems = (summary: string) => {
-  if (!summary) {
-    return [summary];
-  }
-
-  const summaryItems: string[] = [];
-  const closingDelimiters: string[] = [];
-  let itemStart = 0;
-  let quote: '"' | "'" | '`' | undefined;
-  let isEscaped = false;
-
-  for (let index = 0; index < summary.length; index += 1) {
-    const character = summary[index];
-
-    if (isEscaped) {
-      isEscaped = false;
-      continue;
-    }
-
-    if (character === '\\') {
-      isEscaped = true;
-      continue;
-    }
-
-    if (quote) {
-      if (character === quote) {
-        quote = undefined;
-      }
-      continue;
-    }
-
-    if (character === '"' || character === "'" || character === '`') {
-      quote = character;
-      continue;
-    }
-
-    const closingDelimiter = DELIMITERS.get(character);
-    if (closingDelimiter) {
-      closingDelimiters.push(closingDelimiter);
-      continue;
-    }
-
-    if (character === '>' && summary[index - 1] === '=') {
-      if (closingDelimiters.length === 0) {
-        return [summary];
-      }
-      continue;
-    }
-
-    if (character === ')' || character === ']' || character === '}' || character === '>') {
-      if (closingDelimiters.at(-1) !== character) {
-        return [summary];
-      }
-      closingDelimiters.pop();
-      continue;
-    }
-
-    if (
-      character === '|' &&
-      closingDelimiters.length === 0 &&
-      summary[index - 1] !== '|' &&
-      summary[index + 1] !== '|'
-    ) {
-      summaryItems.push(summary.slice(itemStart, index).trim());
-      itemStart = index + 1;
-    }
-  }
-
-  if (quote || closingDelimiters.length > 0) {
-    return [summary];
-  }
-
-  summaryItems.push(summary.slice(itemStart).trim());
-
-  return uniq(summaryItems);
 };
 
 const renderSummaryItems = (summaryItems: string[]) => {

@@ -97,23 +97,42 @@ describe('test API', () => {
     });
   });
 
-  it('renders the same per-story sections for the CLI consumer as for MCP', async () => {
+  it('renders the same per-story report for the CLI consumer as for MCP', async () => {
     vi.mocked(runStoryTests).mockResolvedValue(
       completed({
-        storyIds: ['button--primary'],
-        totalTestCount: 1,
-        componentTestCount: { success: 1, error: 0 },
-        componentTestStatuses: [componentTest('button--primary', 'status-value:success')],
+        componentTestCount: { success: 1, error: 1 },
+        a11yCount: { success: 0, warning: 0, error: 1 },
+        componentTestStatuses: [
+          componentTest('button--primary', 'status-value:success'),
+          componentTest(
+            'button--secondary',
+            'status-value:error',
+            'Expected button text to be "Secondary"'
+          ),
+        ],
+        a11yReports: {
+          'button--primary': [
+            {
+              violations: [
+                {
+                  id: 'color-contrast',
+                  description: 'Color contrast ratio is insufficient',
+                  nodes: [{ html: '<button>Click me</button>', impact: 'critical' }],
+                },
+              ],
+            },
+          ],
+        },
       })
     );
 
     const outcome = await runTests();
     const mcpOutcome = await runForMcp();
 
-    expect(outcome.markdown).toBe(`## Passing Stories
-
-- button--primary`);
     expect(outcome.markdown).toBe(mcpOutcome.markdown);
+    expect(outcome.markdown).toContain('## Passing Stories');
+    expect(outcome.markdown).toContain('## Failing Stories');
+    expect(outcome.markdown).toContain('## Accessibility Violations');
   });
 
   it('serializes concurrent test runs for one API registration', async () => {

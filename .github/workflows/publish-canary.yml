@@ -114,18 +114,30 @@ jobs:
             printf '%s\n' '```'
           } > "$RUNNER_TEMP/canary-body.md"
 
+          {
+            echo "create_storybook_package_url=$create_storybook_package_url"
+            echo "storybook_package_url=$storybook_package_url"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Verify Canary Install Commands
+        id: verify-canary-commands
+        if: ${{ github.event_name == 'pull_request' && steps.canary-content.outcome == 'success' }}
+        env:
+          CREATE_STORYBOOK_PACKAGE_URL: ${{ steps.canary-content.outputs.create_storybook_package_url }}
+          STORYBOOK_PACKAGE_URL: ${{ steps.canary-content.outputs.storybook_package_url }}
+        run: |
           # npm 12+ defaults allow-remote to none. Run from an empty directory so
           # `storybook --help` does not resolve packages through this repo's Yarn.
           assertion_dir=$(mktemp -d)
           (
             cd "$assertion_dir"
-            npx --yes --allow-remote=all "$create_storybook_package_url" --help
-            npx --yes --allow-remote=all "$storybook_package_url" --help
+            npx --yes --allow-remote=all "$CREATE_STORYBOOK_PACKAGE_URL" --help
+            npx --yes --allow-remote=all "$STORYBOOK_PACKAGE_URL" --help
           )
 
       - name: Update Canary Release Heading and Body
         id: replace-pr-body
-        if: ${{ github.event_name == 'pull_request' && steps.canary-content.outcome == 'success' }}
+        if: ${{ github.event_name == 'pull_request' && steps.canary-content.outcome == 'success' && steps.verify-canary-commands.outcome == 'success' }}
         continue-on-error: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
         env:
           GH_TOKEN: ${{ github.token }}

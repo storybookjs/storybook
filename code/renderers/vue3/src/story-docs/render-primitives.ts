@@ -41,7 +41,7 @@ export interface RenderContext {
   statements: string[];
 }
 
-export interface RenderPropValueInput {
+interface RenderPropValueInput {
   /** Vue template attribute name. */
   attributeName: string;
   /** JavaScript identifier referenced by hoisted values. */
@@ -66,7 +66,7 @@ const VUE_PACKAGE = 'vue';
  *
  * Sorted before rendering, so hoisted consts are declared in the order their attributes appear.
  */
-export function partitionArgsByRole(args: ClassifiedArg[]): {
+function partitionArgsByRole(args: ClassifiedArg[]): {
   props: ClassifiedPropLikeArg[];
   events: ClassifiedPropLikeArg[];
   slots: ClassifiedSlotArg[];
@@ -118,7 +118,7 @@ function renderPropArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): Rendered
 }
 
 /** Render a classified arg value into a Vue template attribute under a chosen attribute name. */
-export function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): RenderedProp {
+function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): RenderedProp {
   const value = unwrapExpression(input.value);
 
   if (input.plan.kind === 'hoist') {

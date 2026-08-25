@@ -92,7 +92,7 @@ export function isFunctionExpression<T extends t.Node>(
 }
 
 /** `args: { a: undefined }` unsets an inherited meta arg, so it renders nothing. */
-export function isUndefinedIdentifier(node: t.Node): boolean {
+function isUndefinedIdentifier(node: t.Node): boolean {
   const unwrapped = unwrapExpression(node);
   return unwrapped.type === 'Identifier' && unwrapped.name === UNDEFINED_IDENTIFIER;
 }

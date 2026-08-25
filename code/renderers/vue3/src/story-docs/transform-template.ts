@@ -183,9 +183,11 @@ export function readTemplateRenderConfig(
 }
 
 /**
- * Transform supported template-render markup into a static SFC snippet.
+ * Transform Vue template markup into a static SFC snippet.
  *
- * The template is parsed with Vue's own parser, and only understood args ranges are spliced in the
+ * This is the single args-semantics engine: author-written render templates, markup printed from
+ * `h()` trees, and the synthesized template for render-less stories all pass through here. The
+ * template is parsed with Vue's own parser, and only understood args ranges are spliced in the
  * original source, so every untouched author byte survives verbatim. Args usage that cannot be
  * substituted safely, and anything Vue itself refuses to parse, bails to the runtime source
  * fallback.

@@ -1,5 +1,5 @@
 import type { JsPackageManager } from 'storybook/internal/common';
-import { versions } from 'storybook/internal/common';
+import { getStorybookVersionSpecifierFromAncestry, versions } from 'storybook/internal/common';
 
 import type { getProcessAncestry } from 'process-ancestry';
 import { lt, prerelease } from 'semver';
@@ -26,20 +26,11 @@ export class VersionService {
     return lt(currentVersion, latestVersion);
   }
 
-  /**
-   * Extract Storybook version from process ancestry Looks for version specifiers in command history
-   * like: create-storybook@1.0.0 or storybook@1.0.0
-   */
+  /** Extract a Storybook version specifier from process ancestry commands. */
   getStorybookVersionFromAncestry(
     ancestry: ReturnType<typeof getProcessAncestry>
   ): string | undefined {
-    for (const ancestor of ancestry.toReversed()) {
-      const match = ancestor.command?.match(/\s(?:create-storybook|storybook)@([^\s]+)/);
-      if (match) {
-        return match[1];
-      }
-    }
-    return undefined;
+    return getStorybookVersionSpecifierFromAncestry(ancestry);
   }
 
   /**

@@ -101,6 +101,16 @@ describe('VersionService', () => {
       expect(version).toBe('https://pkg.pr.new/create-storybook@abc123');
     });
 
+    it('should extract a direct pkg.pr.new create-storybook URL', () => {
+      const version = versionService.getStorybookVersionFromAncestry([
+        {
+          command: 'npx --yes https://pkg.pr.new/storybookjs/storybook/create-storybook@c83e731',
+        },
+      ] as any);
+
+      expect(version).toBe('https://pkg.pr.new/storybookjs/storybook/create-storybook@c83e731');
+    });
+
     it('should extract a repo-scoped pkg.pr.new specifier from storybook upgrade', () => {
       const ancestry = [
         {

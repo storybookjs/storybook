@@ -126,13 +126,13 @@ curl -I "https://pkg.pr.new/storybookjs/storybook/storybook@$RUN_SHA"
 For a new project:
 
 ```bash
-npm create storybook@https://pkg.pr.new/storybookjs/storybook/storybook@<SHA>
+npx --yes https://pkg.pr.new/storybookjs/storybook/create-storybook@<SHA>
 ```
 
 For an existing project:
 
 ```bash
-npx storybook@https://pkg.pr.new/storybookjs/storybook/storybook@<SHA> upgrade
+npx --yes https://pkg.pr.new/storybookjs/storybook/storybook@<SHA> upgrade
 ```
 
 ## Requirements

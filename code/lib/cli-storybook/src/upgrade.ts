@@ -2,6 +2,7 @@ import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
   JsPackageManagerFactory,
+  getStorybookVersionSpecifierFromAncestry,
   isCI,
   isCorePackage,
 } from 'storybook/internal/common';
@@ -80,14 +81,9 @@ const deprecatedPackages = [
 
 const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
 
-const getStorybookVersionSpecifierFromAncestry = (): string | undefined => {
+const getStorybookVersionSpecifierFromCli = (): string | undefined => {
   try {
-    for (const ancestor of getProcessAncestry().toReversed()) {
-      const match = ancestor.command?.match(/\s(?:create-storybook|storybook)@([^\s]+)/);
-      if (match) {
-        return match[1];
-      }
-    }
+    return getStorybookVersionSpecifierFromAncestry(getProcessAncestry());
   } catch {
     // Ignore ancestry lookup failures and fall back to embedded version behavior.
   }
@@ -343,7 +339,7 @@ async function sendMultiUpgradeTelemetry(options: MultiUpgradeTelemetryOptions) 
 }
 
 export async function upgrade(options: UpgradeOptions): Promise<void> {
-  const storybookVersionSpecifier = getStorybookVersionSpecifierFromAncestry();
+  const storybookVersionSpecifier = getStorybookVersionSpecifierFromCli();
   const projectsResult = await getProjects(options);
 
   if (projectsResult === undefined || projectsResult.selectedProjects.length === 0) {

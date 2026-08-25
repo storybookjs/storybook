@@ -39,23 +39,28 @@ jobs:
         run: |
           echo "run_url=https://github.com/$REPOSITORY/actions/runs/$RUN_ID" >> "$GITHUB_OUTPUT"
 
-      - name: "Update Canary Release Heading: Pending"
-        id: replace-canary-heading-pending
-        if: ${{ github.event_name == 'pull_request' }}
-        continue-on-error: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
-        uses: ivangabriele/find-and-replace-pull-request-body@9d26f37218b2649daea37dbc04bfd092b9ebeeca # v1.1.5
-        with:
-          githubToken: ${{ github.token }}
-          find: "CANARY_RELEASE_HEADING"
-          isHtmlCommentTag: true
-          replace: "## 🦋 Canary Release - ⏳ [Pending](${{ steps.canary-status.outputs.run_url }})"
-
       - name: Checkout Pull Request Head
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
         with:
           repository: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name || github.repository }}
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
+
+      - name: "Update Canary Release Heading: Pending"
+        id: replace-canary-heading-pending
+        if: ${{ github.event_name == 'pull_request' }}
+        continue-on-error: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_URL: ${{ steps.canary-status.outputs.run_url }}
+        run: |
+          printf '## 🦋 Canary Release - ⏳ [Pending](%s)\n' "$RUN_URL" > "$RUNNER_TEMP/canary-heading.md"
+          python3 .github/scripts/replace-pr-body-markers.py \
+            --repo "$REPOSITORY" \
+            --pr "$PR_NUMBER" \
+            --marker CANARY_RELEASE_HEADING "$RUNNER_TEMP/canary-heading.md"
 
       - name: Setup Node.js and Install Dependencies
         uses: ./.github/actions/setup-node-and-install
@@ -83,63 +88,64 @@ jobs:
         env:
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
+          create_storybook_package_url=$(jq -r '.packages[] | select(.name == "create-storybook") | .url' ./pkg-pr-new-output.json)
           storybook_package_url=$(jq -r '.packages[] | select(.name == "storybook") | .url' ./pkg-pr-new-output.json)
 
-          if [[ -z "$storybook_package_url" ]]; then
+          if [[ -z "$create_storybook_package_url" || "$create_storybook_package_url" == "null" ]]; then
+            create_storybook_package_url="https://pkg.pr.new/storybookjs/storybook/create-storybook@$COMMIT_SHA"
+          fi
+
+          if [[ -z "$storybook_package_url" || "$storybook_package_url" == "null" ]]; then
             storybook_package_url="https://pkg.pr.new/storybookjs/storybook/storybook@$COMMIT_SHA"
           fi
 
-          echo 'heading<<EOF' >> "$GITHUB_OUTPUT"
-          printf '## 🦋 Canary Release - 🚢 Released `%s`\n' "$storybook_package_url" >> "$GITHUB_OUTPUT"
-          echo 'EOF' >> "$GITHUB_OUTPUT"
+          npx --yes "$create_storybook_package_url" --help >/dev/null
+          npx --yes "$storybook_package_url" upgrade --help >/dev/null
 
-          echo 'body<<EOF' >> "$GITHUB_OUTPUT"
-          cat <<EOF >> "$GITHUB_OUTPUT"
-          This pull request has been released as canary packages. Try it out in a new project or update an existing project with the commands below.
+          printf '## 🦋 Canary Release - 🚢 Released `%s`\n' "$storybook_package_url" > "$RUNNER_TEMP/canary-heading.md"
 
-          ```sh
-          # For a new project
-          npm create storybook@$storybook_package_url
+          {
+            printf '%s\n' 'This pull request has been released as canary packages. Try it out in a new project or update an existing project with the commands below.'
+            printf '%s\n' ''
+            printf '%s\n' '```sh'
+            printf '%s\n' '# For a new project'
+            printf 'npx --yes %s\n' "$create_storybook_package_url"
+            printf '%s\n' ''
+            printf '%s\n' '# or for an existing project'
+            printf 'npx --yes %s upgrade\n' "$storybook_package_url"
+            printf '%s\n' '```'
+          } > "$RUNNER_TEMP/canary-body.md"
 
-          # or for an existing project
-          npx storybook@$storybook_package_url upgrade
-          ```
-
-          EOF
-          echo 'EOF' >> "$GITHUB_OUTPUT"
-
-      - name: "Update Canary Release Heading: Released"
-        id: replace-canary-heading-released
+      - name: Update Canary Release Heading and Body
+        id: replace-pr-body
         if: ${{ github.event_name == 'pull_request' && steps.canary-content.outcome == 'success' }}
         continue-on-error: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
-        uses: ivangabriele/find-and-replace-pull-request-body@9d26f37218b2649daea37dbc04bfd092b9ebeeca # v1.1.5
-        with:
-          githubToken: ${{ github.token }}
-          find: "CANARY_RELEASE_HEADING"
-          isHtmlCommentTag: true
-          replace: ${{ steps.canary-content.outputs.heading }}
-
-      - name: Update Canary Release Body
-        id: replace-pr-body
-        if: ${{ github.event_name == 'pull_request' }}
-        continue-on-error: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
-        uses: ivangabriele/find-and-replace-pull-request-body@9d26f37218b2649daea37dbc04bfd092b9ebeeca # v1.1.5
-        with:
-          githubToken: ${{ github.token }}
-          find: "CANARY_RELEASE_SECTION"
-          isHtmlCommentTag: true
-          replace: ${{ steps.canary-content.outputs.body }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 .github/scripts/replace-pr-body-markers.py \
+            --repo "$REPOSITORY" \
+            --pr "$PR_NUMBER" \
+            --marker CANARY_RELEASE_HEADING "$RUNNER_TEMP/canary-heading.md" \
+            --marker CANARY_RELEASE_SECTION "$RUNNER_TEMP/canary-body.md"
 
       - name: "Update Canary Release Heading: Failed"
         id: replace-canary-heading-failed
         if: ${{ github.event_name == 'pull_request' && failure() && steps.publish.outcome != 'success' }}
         continue-on-error: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
-        uses: ivangabriele/find-and-replace-pull-request-body@9d26f37218b2649daea37dbc04bfd092b9ebeeca # v1.1.5
-        with:
-          githubToken: ${{ github.token }}
-          find: "CANARY_RELEASE_HEADING"
-          isHtmlCommentTag: true
-          replace: "## 🦋 Canary Release - 💥 [Failed](${{ steps.canary-status.outputs.run_url }})"
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
+          RUN_URL: ${{ steps.canary-status.outputs.run_url }}
+        run: |
+          printf '## 🦋 Canary Release - 💥 [Failed](%s)\n' "$RUN_URL" > "$RUNNER_TEMP/canary-heading.md"
+          python3 .github/scripts/replace-pr-body-markers.py \
+            --repo "$REPOSITORY" \
+            --pr "$PR_NUMBER" \
+            --marker CANARY_RELEASE_HEADING "$RUNNER_TEMP/canary-heading.md"
 
       - name: Create Failure Comment on PR
         if: ${{ github.event_name == 'pull_request' && failure() && steps.publish.outcome != 'success' && steps.replace-pr-body.outcome != 'failure' }}

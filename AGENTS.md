@@ -341,7 +341,7 @@ Canary packages publish to `pkg.pr.new`, not npm.
 
 - A human adds the `ci:canary` label to a PR. While the label remains, every push republishes.
 - Any branch can be published from the GitHub Actions UI or `gh workflow run --ref <branch>` on `publish-canary.yml`.
-- Install with `storybook@https://pkg.pr.new/storybookjs/storybook/storybook@<SHA>`.
+- Install with `npx --yes https://pkg.pr.new/storybookjs/storybook/create-storybook@<SHA>` or upgrade with `npx --yes https://pkg.pr.new/storybookjs/storybook/storybook@<SHA> upgrade`.
 - Details: `.agents/skills/canary/SKILL.md` and `CONTRIBUTING/RELEASING.md`.
 
 ## Commands To Avoid

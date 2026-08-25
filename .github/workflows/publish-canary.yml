@@ -139,22 +139,24 @@ jobs:
 
       - name: "Update Canary Release Heading: Failed"
         id: replace-canary-heading-failed
-        if: ${{ github.event_name == 'pull_request' && failure() && steps.publish.outcome != 'success' }}
+        if: ${{ github.event_name == 'pull_request' && failure() && steps.replace-pr-body.outcome != 'success' }}
         continue-on-error: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
         env:
           GH_TOKEN: ${{ github.token }}
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPOSITORY: ${{ github.repository }}
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
           RUN_URL: ${{ steps.canary-status.outputs.run_url }}
         run: |
-          printf '## 🦋 Canary Release - 💥 [Failed](%s)\n' "$RUN_URL" > "$RUNNER_TEMP/canary-heading.md"
+          short_sha="${COMMIT_SHA:0:7}"
+          printf '## 🦋 Canary Release - 💥 Failed [`%s`](%s)\n' "$short_sha" "$RUN_URL" > "$RUNNER_TEMP/canary-heading.md"
           python3 .github/scripts/replace-pr-body-markers.py \
             --repo "$REPOSITORY" \
             --pr "$PR_NUMBER" \
             --marker CANARY_RELEASE_HEADING "$RUNNER_TEMP/canary-heading.md"
 
       - name: Create Failure Comment on PR
-        if: ${{ github.event_name == 'pull_request' && failure() && steps.publish.outcome != 'success' && steps.replace-pr-body.outcome != 'failure' }}
+        if: ${{ github.event_name == 'pull_request' && failure() && steps.replace-pr-body.outcome != 'success' }}
         continue-on-error: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
         env:
           GH_TOKEN: ${{ github.token }}

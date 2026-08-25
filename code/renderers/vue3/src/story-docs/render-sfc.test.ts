@@ -23,13 +23,13 @@ import C from './C.vue';
 </template>`);
   });
 
-  it('hoists a value that needs script scope', () => {
+  it('hoists a value that needs script scope, indented like the snippet around it', () => {
     expect(render([prop('options', `{\n    tone: "neutral"\n}`, 'hoist')]))
       .toBe(`<script lang="ts" setup>
 import C from './C.vue';
 
 const options = {
-    tone: "neutral"
+  tone: "neutral"
 };
 </script>
 

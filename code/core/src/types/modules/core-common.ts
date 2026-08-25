@@ -455,6 +455,8 @@ export interface ComponentManifest {
     snippet?: string | undefined;
     description?: string | undefined;
     summary?: string | undefined;
+    /** Why the snippet is an incomplete example; see `StoryDoc.warning`. */
+    warning?: string | undefined;
     error?: { name: string; message: string };
   }[];
   jsDocTags: Record<string, string[]>;
@@ -596,6 +598,13 @@ export interface StorybookFeatures {
    * Enable asynchronous component rendering in React renderer
    */
   experimentalRSC?: boolean;
+
+  /**
+   * Adds docs story subheadings to the search index.
+   *
+   * @experimental This feature is in early development and may change significantly in future releases.
+   */
+  experimentalSearchDocsHeadings?: boolean;
 
   /**
    * @temporary This feature flag is a migration assistant, and is scheduled to be removed.

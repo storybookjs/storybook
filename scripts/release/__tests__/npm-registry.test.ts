@@ -149,4 +149,15 @@ describe('packagesAcceptedByRegistry', () => {
       )
     ).toEqual(['storybook', '@storybook/react']);
   });
+
+  it('extracts workspaces when Yarn prefixes lines with ANSI color codes', () => {
+    expect(
+      packagesAcceptedByRegistry(
+        [
+          '\u001b[38;5;167m[storybook]:\u001b[39m YN0035: Cannot publish over previously staged version "10.5.9".',
+          '\u001b[38;5;73m[@storybook/react]:\u001b[39m Package archive published',
+        ].join('\n')
+      )
+    ).toEqual(['storybook', '@storybook/react']);
+  });
 });

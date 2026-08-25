@@ -118,10 +118,12 @@ export const waitForPackagesToBePublished = async ({
   return missing;
 };
 
+const stripAnsi = (value: string) => value.replace(/\u001b\[[0-9;]*m/g, '');
+
 export const packagesAcceptedByRegistry = (output: string) => {
   const accepted = new Set<string>();
   for (const line of output.split('\n')) {
-    const prefix = line.match(/^\[([^\]]+)\]:/);
+    const prefix = stripAnsi(line).match(/\[([^\]]+)\]:/);
     if (!prefix) {
       continue;
     }

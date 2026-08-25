@@ -1,44 +1,42 @@
 import { types as t } from 'storybook/internal/babel';
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
 import { storyNameFromExport } from 'storybook/internal/csf';
-import type { CsfFile } from 'storybook/internal/csf-tools';
+import type { CsfFile, StoryArgsResolver, StoryReferences } from 'storybook/internal/csf-tools';
 import {
   buildImportStatements,
   collectImportBindings,
+  createStoryArgsResolver,
+  createStoryReferenceResolver,
   extractStoryJSDocInfo,
+  isSelfContained,
+  parseReferenceModule,
   resolveComponentImport,
+  unresolvedWarning,
+  unwrapExpression,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
 
 import type { AngularComponentSnippetMeta, AngularDocgenPayload } from './build-docgen.ts';
-import { parseStoryFile, resolveStoryImport } from './resolve-component.ts';
-import type { ArgsRecord, SpreadArgsContext } from './story-docs-args.ts';
+import { parseStoryFile } from './resolve-component.ts';
 import {
-  argsProperties,
-  createSpreadArgsResolver,
-  deepAssignmentSources,
+  createArgExternalizer,
   evaluateArgExpression,
   evaluateArgLiteral,
 } from './story-docs-args.ts';
-import type { Bindings, StoryShape, TemplateResult } from './story-docs-markup.ts';
-import {
-  metaConfigObject,
-  sourceOf,
-  storyConfigObject,
-  unresolvableConfigMembers,
-  userTemplate,
-} from './story-docs-markup.ts';
+import type { Bindings, StoryShape } from './story-docs-markup.ts';
+import { sourceOf, userTemplate } from './story-docs-markup.ts';
 import type { StoryNgModules } from './story-docs-ng-modules.ts';
 import { ngModulesFromDecorators, storyNgModules } from './story-docs-ng-modules.ts';
 import type { HostComponentSnippet } from './story-docs-snippet.ts';
 import { buildHostComponentSnippet } from './story-docs-snippet.ts';
+import { authoredSource } from './story-docs-source.ts';
+import type { StoryTemplateAnalysis } from './story-docs-template-analysis.ts';
 import {
   buildComponentOutletTemplate,
   buildTemplate,
   formatTemplateMarkup,
-  isValidIdentifier,
 } from '../template-grammar.ts';
 
 export interface BuildStoryDocsContext {
@@ -73,21 +71,24 @@ export const buildStoryDocsPayload = async (
     ? await context.getDocgenPayload(getComponentIdFromEntry(input.entry))
     : undefined;
 
-  const spreadContext: SpreadArgsContext = {
-    csf,
+  const enums = docgenPayload?.angularComponentMeta?.enums ?? [];
+  const { resolveImport } = context;
+  const references: StoryReferences = {
     filePath: storyFilePath,
-    enums: docgenPayload?.angularComponentMeta?.enums ?? [],
-    resolveImport: context.resolveImport ?? resolveStoryImport,
+    externalize: createArgExternalizer(enums),
+    resolveModule: resolveImport
+      ? (fromFile, specifier) => {
+          const target = resolveImport(fromFile, specifier);
+          return target === undefined ? undefined : parseReferenceModule(target);
+        }
+      : openStoryReferences().resolveModule,
   };
-  const resolveArgs = (node: t.Node | undefined) =>
-    argsProperties(node, createSpreadArgsResolver(spreadContext));
 
   const componentName = componentNameOf(componentNode);
   const importBindings = collectImportBindings(csf._file.path);
   const deps: StoryDocDeps = {
     csf,
-    resolveArgs,
-    metaArgs: resolveArgs(csf._metaAnnotations.args),
+    resolveStoryArgs: createStoryArgsResolver(csf, references),
     snippetMeta: docgenPayload?.angularComponentMeta,
     componentName,
     componentImport:
@@ -98,10 +99,14 @@ export const buildStoryDocsPayload = async (
     importBindings,
   };
 
-  const stories: Record<string, StoryDoc> = {};
-  for (const [exportName, story] of Object.entries(csf._stories)) {
-    stories[story.id] = buildStoryDoc(exportName, story, deps);
-  }
+  const stories = Object.fromEntries(
+    await Promise.all(
+      Object.entries(csf._stories).map(
+        async ([exportName, story]) =>
+          [story.id, await buildStoryDoc(exportName, story, deps)] as const
+      )
+    )
+  );
 
   const titleName = input.entry.title.split('/').at(-1)!.replace(/\s+/g, '');
   return {
@@ -139,8 +144,8 @@ const componentNameOf = (node: t.Node | undefined): string | undefined => {
 
 interface StoryDocDeps {
   csf: CsfFile;
-  resolveArgs: (node: t.Node | undefined) => ArgsRecord;
-  metaArgs: ArgsRecord;
+  /** Resolves each story's args, following a spread or a name out of the story file. */
+  resolveStoryArgs: StoryArgsResolver;
   snippetMeta: AngularComponentSnippetMeta | undefined;
   componentName: string | undefined;
   componentImport: string | undefined;
@@ -148,33 +153,19 @@ interface StoryDocDeps {
   importBindings: ReturnType<typeof collectImportBindings>;
 }
 
-const buildStoryDoc = (
+// One instance per process, so the module-resolution cache is shared; each build opens its own.
+const openStoryReferences = createStoryReferenceResolver();
+
+const buildStoryDoc = async (
   exportName: string,
   story: CsfFile['_stories'][string],
   deps: StoryDocDeps
-): StoryDoc => {
-  const { csf, snippetMeta } = deps;
+): Promise<StoryDoc> => {
+  const { csf } = deps;
   const name = story.name ?? storyNameFromExport(exportName);
   try {
     const { description, summary } = extractStoryJSDocInfo(csf._storyStatements[exportName]);
-    const annotations = csf._storyAnnotations[exportName] ?? {};
-    const storyArgs = deps.resolveArgs(annotations.args);
-    const shape: StoryShape = {
-      csf,
-      exportName,
-      annotations,
-      args: { ...deps.metaArgs.properties, ...storyArgs.properties },
-      unresolvedArgs: [
-        ...deps.metaArgs.unresolved,
-        ...unresolvableConfigMembers(metaConfigObject(csf)),
-        ...storyArgs.unresolved,
-        ...unresolvableConfigMembers(storyConfigObject({ csf, exportName })),
-        ...deepAssignmentSources(csf, exportName),
-      ],
-    };
-    const rendered = snippetMeta
-      ? renderStorySnippet(snippetMeta, shape, annotations.decorators, deps)
-      : undefined;
+    const rendered = await renderedSnippet(storyShape(exportName, deps), deps);
 
     return {
       id: story.id,
@@ -194,6 +185,52 @@ const buildStoryDoc = (
   }
 };
 
+// `parameters.docs.source.code` is the example the author chose to publish, so it replaces what
+// this pass would derive rather than competing with it.
+const renderedSnippet = async (
+  shape: StoryShape,
+  deps: StoryDocDeps
+): Promise<HostComponentSnippet | undefined> => {
+  const authored = authoredSource(shape, deps.resolveStoryArgs.ctx);
+  if (authored.kind === 'code') {
+    return { snippet: authored.code };
+  }
+  if (authored.kind === 'disabled') {
+    return undefined;
+  }
+  const derived = deps.snippetMeta
+    ? await renderStorySnippet(deps.snippetMeta, shape, shape.members.properties.decorators, deps)
+    : undefined;
+  return derived && authored.kind === 'unresolvable'
+    ? withWarnings(derived, unresolvedWarning([authored.source]))
+    : derived;
+};
+
+const storyShape = (exportName: string, deps: StoryDocDeps): StoryShape => {
+  const resolved = deps.resolveStoryArgs.resolve(exportName);
+  const enums = deps.snippetMeta?.enums ?? [];
+  const unresolved = [...resolved.unresolved];
+  for (const value of Object.values(resolved.args)) {
+    // An arg that still carries a name has to be reported: an Angular binding is evaluated against
+    // the host component the snippet ships, so a name that component does not have reads as
+    // `undefined` there rather than failing to compile. An enum member still resolves, and an
+    // expression that only names what it declares itself - a handler's own parameters - needs
+    // nothing from the host.
+    if (evaluateArgLiteral(value, enums) === undefined && !isSelfContained(value)) {
+      unresolved.push(sourceOf(value));
+    }
+  }
+
+  return {
+    csf: deps.csf,
+    exportName,
+    members: resolved.storyMembers,
+    metaMembers: resolved.metaMembers,
+    args: resolved.args,
+    unresolvedArgs: unresolved,
+  };
+};
+
 /**
  * Snippets show the markup a story supplies itself - through `template`, a `render` that returns
  * one, or the CSF2 function form - as written. Markup or args that cannot be read without running
@@ -201,21 +238,21 @@ const buildStoryDoc = (
  * but silently shipping it would leave a consumer no way to know its example is partial, so the
  * story carries a `warning` naming the source text this pass could not read.
  */
-const renderStorySnippet = (
+const renderStorySnippet = async (
   snippetMeta: AngularComponentSnippetMeta,
   shape: StoryShape,
   storyDecorators: t.Node | undefined,
   deps: StoryDocDeps
-): HostComponentSnippet => {
+): Promise<HostComponentSnippet> => {
   const { componentImport } = deps;
   // The story file's local name is what the import binds, so an aliased import stays consistent
   // between the import statement, the `imports` array and the template.
   const localName = componentNameOf(shape.csf._metaAnnotations.component) ?? snippetMeta.name;
-  const ngModules = snippetMeta.standalone ? undefined : storyNgModules(storyDecorators, deps);
-  const bindings = collectBindings(snippetMeta, shape);
+  const ngModules = storyNgModules(storyDecorators, deps);
+  const expansion = argsExpansion(snippetMeta, shape);
   // Hidden args would expand `argsToTemplate` into markup that looks complete, so the markup is
   // read without bindings then and falls back with a warning instead.
-  const userMarkup = userTemplate(shape, shape.unresolvedArgs.length === 0 ? bindings : undefined);
+  const userMarkup = userTemplate(shape, shape.unresolvedArgs.length === 0 ? expansion : undefined);
 
   const host = (
     template: string,
@@ -235,15 +272,33 @@ const renderStorySnippet = (
     });
 
   if (userMarkup?.kind === 'literal') {
-    // The markup is shown exactly as it was written, so the host has to supply what the story
-    // supplied: handlers for the outputs it binds, and the args it reaches for by name.
-    const boundOutputs = snippetMeta.outputs.filter((name) =>
-      userMarkup.markup.includes(`(${name})=`)
+    const { analyzeStoryTemplate } = await import('./story-docs-template-analysis.ts');
+    const analysis = analyzeStoryTemplate(userMarkup.markup, userMarkup.expansions);
+    const referencedNames = new Set(analysis.kind === 'resolved' ? analysis.referencedNames : []);
+    const boundOutputs =
+      analysis.kind === 'resolved'
+        ? snippetMeta.outputs.filter((name) => analysis.boundOutputs.includes(name))
+        : [];
+    const hostArgs = referencedArgFields(
+      referencedNames,
+      userMarkup.representedArgs,
+      shape,
+      boundOutputs,
+      snippetMeta.enums
     );
-    const hostArgs = referencedArgFields(userMarkup, shape, boundOutputs, snippetMeta.enums);
-    return withUnresolved(
-      host(formatTemplateMarkup(userMarkup.markup), false, boundOutputs, hostArgs.fields),
-      hostArgs.unresolved
+    return withWarnings(
+      host(formatTemplateMarkup(analysis.markup), false, boundOutputs, hostArgs.fields),
+      unresolvedWarning([
+        ...shape.metaMembers.unresolved,
+        ...shape.members.unresolved,
+        ...hostArgs.unresolved,
+      ]),
+      templateAnalysisWarning(analysis),
+      unknownTemplateReferencesWarning(referencedNames, shape, boundOutputs),
+      unboundArgsWarning(localName, snippetMeta, shape, [
+        ...userMarkup.representedArgs,
+        ...referencedNames,
+      ])
     );
   }
 
@@ -251,32 +306,40 @@ const renderStorySnippet = (
   // The outlet form shows no args at all, so naming the args that could not be read would say
   // nothing about what is missing from it.
   return snippetMeta.selector
-    ? withUnresolved(
-        host(buildTemplate(snippetMeta.selector, bindings), false, snippetMeta.outputs),
-        [...markupSources, ...shape.unresolvedArgs]
+    ? withWarnings(
+        host(
+          buildTemplate(snippetMeta.selector, {
+            ...componentBindings(snippetMeta, shape),
+            selfClosing: true,
+          }),
+          false,
+          snippetMeta.outputs
+        ),
+        unresolvedWarning([...markupSources, ...shape.unresolvedArgs]),
+        unboundArgsWarning(localName, snippetMeta, shape)
       )
-    : withUnresolved(host(buildComponentOutletTemplate(localName), true, []), markupSources);
+    : withWarnings(
+        host(buildComponentOutletTemplate(localName, { selfClosing: true }), true, []),
+        unresolvedWarning(markupSources)
+      );
 };
 
-/**
- * Args the story's own markup binds by name, as host members holding the value the story gave them.
- */
 const referencedArgFields = (
-  markup: Extract<TemplateResult, { kind: 'literal' }>,
+  referencedNames: ReadonlySet<string>,
+  representedArgs: readonly string[],
   shape: StoryShape,
   boundOutputs: readonly string[],
   enums: AngularComponentSnippetMeta['enums']
 ): { fields: { name: string; value: string }[]; unresolved: string[] } => {
-  // An output already contributes a handler under the same name, and a class cannot hold both.
-  const taken = new Set([...markup.expandedArgs, ...boundOutputs]);
+  const taken = new Set([...representedArgs, ...boundOutputs]);
   const fields: { name: string; value: string }[] = [];
   const unresolved: string[] = [];
 
   for (const [name, node] of Object.entries(shape.args)) {
-    if (taken.has(name) || !isValidIdentifier(name)) {
+    if (taken.has(name)) {
       continue;
     }
-    if (!new RegExp(`\\b${name}\\b`).test(markup.markup)) {
+    if (!referencedNames.has(name)) {
       continue;
     }
     const value = evaluateArgLiteral(node, enums);
@@ -290,26 +353,72 @@ const referencedArgFields = (
   return { fields, unresolved };
 };
 
-/** Says which source text a static pass could not read, so a reader can see what is missing. */
-const unresolvedWarning = (unresolved: readonly string[]): string =>
-  `Incomplete snippet: ${[...new Set(unresolved)]
-    .map((source) => `\`${source}\``)
-    .join(', ')} could not be resolved statically.`;
-
-const withUnresolved = (
+const withWarnings = (
   rendered: HostComponentSnippet,
-  unresolved: readonly string[]
+  ...parts: (string | undefined)[]
 ): HostComponentSnippet => {
-  if (unresolved.length === 0) {
-    return rendered;
-  }
-  const warning = [rendered.warning, unresolvedWarning(unresolved)]
+  const warning = [...new Set([rendered.warning, ...parts])]
     .filter((part) => part !== undefined)
     .join('\n');
-  return { snippet: rendered.snippet, warning };
+  return warning === '' ? rendered : { snippet: rendered.snippet, warning };
 };
 
-const collectBindings = (snippetMeta: AngularComponentSnippetMeta, shape: StoryShape): Bindings => {
+const templateAnalysisWarning = (analysis: StoryTemplateAnalysis): string | undefined =>
+  analysis.kind === 'resolved'
+    ? undefined
+    : `Incomplete snippet: the story template could not be analyzed statically. ${analysis.errors.join('\n')}`;
+
+const unknownTemplateReferencesWarning = (
+  referencedNames: ReadonlySet<string>,
+  shape: StoryShape,
+  outputHandlers: readonly string[]
+): string | undefined => {
+  const provided = new Set([...Object.keys(shape.args), ...outputHandlers]);
+  const names = [...referencedNames].filter((name) => !provided.has(name));
+  return names.length === 0
+    ? undefined
+    : `Incomplete snippet: ${names.map((name) => `\`${name}\``).join(', ')} could not be provided, ` +
+        `since the story declares no such arg.`;
+};
+
+const unboundArgsWarning = (
+  componentName: string,
+  snippetMeta: AngularComponentSnippetMeta,
+  shape: StoryShape,
+  representedArgs?: readonly string[]
+): string | undefined => {
+  const represented = new Set(representedArgs);
+  const inputNames = new Set(snippetMeta.inputs);
+  const outputNames = new Set(snippetMeta.outputs);
+  const unbound = Object.entries(shape.args)
+    .filter(([name, node]) => {
+      if (represented.has(name) || isUndefinedValue(node)) {
+        return false;
+      }
+      if (representedArgs === undefined) {
+        return !inputNames.has(name) && !outputNames.has(name);
+      }
+      return isFunctionValue(node) ? !outputNames.has(name) : !inputNames.has(name);
+    })
+    .map(([name, node]) => ({ name, kind: isFunctionValue(node) ? 'output' : 'input' }));
+  if (unbound.length === 0) {
+    return undefined;
+  }
+  const kinds = new Set(unbound.map(({ kind }) => kind));
+  const reason =
+    kinds.size === 1
+      ? `declares no such ${unbound[0]!.kind}`
+      : 'declares no compatible input or output';
+  return (
+    `Incomplete snippet: ${unbound.map(({ name }) => `\`${name}\``).join(', ')} could not be bound, ` +
+    `since ${componentName} ${reason}.`
+  );
+};
+
+const componentBindings = (
+  snippetMeta: AngularComponentSnippetMeta,
+  shape: StoryShape
+): Bindings => {
   const inputNames = new Set(snippetMeta.inputs);
   const inputs = Object.entries(shape.args)
     .filter(([argName]) => inputNames.has(argName))
@@ -318,4 +427,37 @@ const collectBindings = (snippetMeta: AngularComponentSnippetMeta, shape: StoryS
       expression: evaluateArgExpression(node, snippetMeta.enums),
     }));
   return { inputs, outputs: snippetMeta.outputs };
+};
+
+const argsExpansion = (snippetMeta: AngularComponentSnippetMeta, shape: StoryShape): Bindings => {
+  const inputNames = new Set(snippetMeta.inputs);
+  const outputNames = new Set(snippetMeta.outputs);
+  const inputs: Bindings['inputs'] = [];
+  const outputs: string[] = [];
+  for (const [name, node] of Object.entries(shape.args)) {
+    if (isUndefinedValue(node)) {
+      continue;
+    }
+    if (isFunctionValue(node)) {
+      if (outputNames.has(name)) {
+        outputs.push(name);
+      }
+    } else if (inputNames.has(name)) {
+      inputs.push({ name, expression: evaluateArgExpression(node, snippetMeta.enums) });
+    }
+  }
+  return { inputs, outputs };
+};
+
+const isFunctionValue = (node: t.Node): boolean => {
+  const unwrapped = unwrapExpression(node);
+  return t.isFunction(unwrapped);
+};
+
+const isUndefinedValue = (node: t.Node): boolean => {
+  const unwrapped = unwrapExpression(node);
+  return (
+    (t.isIdentifier(unwrapped) && unwrapped.name === 'undefined') ||
+    t.isUnaryExpression(unwrapped, { operator: 'void' })
+  );
 };

@@ -17,7 +17,13 @@ vi.mock('node:fs', { spy: true });
 beforeEach(async () => {
   vol.reset();
   const memfs = await vi.importActual<typeof import('memfs')>('memfs');
-  vi.mocked(readFileSync).mockImplementation(memfs.fs.readFileSync as typeof readFileSync);
+  const realFs = await vi.importActual<typeof import('node:fs')>('node:fs');
+  // memfs supplies the story files the tests write; every other module the resolver reaches is a
+  // fixture on disk.
+  vi.mocked(readFileSync).mockImplementation(((path: Parameters<typeof readFileSync>[0], ...rest) =>
+    vol.existsSync(path as string)
+      ? (memfs.fs.readFileSync as typeof readFileSync)(path, ...rest)
+      : realFs.readFileSync(path, ...rest)) as typeof readFileSync);
 });
 
 afterEach(() => {
@@ -63,12 +69,26 @@ const componentEntry = (overrides: Record<string, unknown> = {}): AngularClassMe
     propertiesClass: [],
     methodsClass: [],
     outputsClass: [],
-    inputsClass: [{ name: 'label', type: 'string', optional: false, defaultValue: "'Click me'" }],
+    inputsClass: [
+      {
+        name: 'label',
+        type: 'string',
+        optional: false,
+        initializer: { kind: 'literal', literalKind: 'string', text: "'Click me'" },
+      },
+    ],
     ...overrides,
   }) as unknown as AngularClassMeta;
 
-const metaFor = (classMeta: AngularClassMeta): AngularComponentMetaResult =>
-  ({ entry: classMeta, json: { components: [classMeta] } }) as AngularComponentMetaResult;
+const metaFor = (
+  classMeta: AngularClassMeta,
+  jsDocInfo?: AngularComponentMetaResult['jsDocInfo']
+): AngularComponentMetaResult =>
+  ({
+    entry: classMeta,
+    json: { components: [classMeta] },
+    ...(jsDocInfo ? { jsDocInfo } : {}),
+  }) as AngularComponentMetaResult;
 
 const managerReturning = (meta: AngularComponentMetaResult | undefined) => ({
   extractComponentMeta: vi.fn<AngularComponentMetaSource['extractComponentMeta']>(() => meta),
@@ -129,7 +149,7 @@ describe('buildDocgenPayload', () => {
   describe('description and JSDoc tags', () => {
     it.each([
       [
-        'prefers the trimmed rawdescription',
+        'falls back to the trimmed rawdescription when TypeScript JSDoc is unavailable',
         '\n\nRenders a button.\n',
         'ignored',
         'Renders a button.',
@@ -148,17 +168,72 @@ describe('buildDocgenPayload', () => {
       expect(buildDocgenPayload({ entry }, context(manager))?.description).toBe(expected);
     });
 
-    it('publishes the analyzer`s own tags and sources `summary` from a @summary tag', () => {
+    it('publishes TypeScript-rendered tags and sources `summary` from a @summary tag', () => {
       givenStoryFile();
-      const tag = (name: string, comment?: string) => ({ tagName: { escapedText: name }, comment });
+      const manager = managerReturning(
+        metaFor(componentEntry(), {
+          description: 'Renders a TypeScript-documented button.',
+          jsDocTags: {
+            summary: ['A clickable button'],
+            see: ['a', 'b'],
+            internal: [''],
+          },
+        })
+      );
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.description).toBe('Renders a TypeScript-documented button.');
+      expect(payload?.jsDocTags).toEqual({
+        summary: ['A clickable button'],
+        see: ['a', 'b'],
+        internal: [''],
+      });
+      expect(payload?.summary).toBe('A clickable button');
+    });
+
+    // TypeScript reports an empty description for a docblock that is nothing but tags, and for a
+    // class with no docblock at all. Neither means "the analyzer's description is wrong", so an
+    // empty one falls through rather than overwriting it.
+    it('falls back to analyzer prose when TypeScript reports an empty description', () => {
+      givenStoryFile();
+      const manager = managerReturning(
+        metaFor(componentEntry({ rawdescription: 'Legacy analyzer prose.' }), {
+          description: '',
+          jsDocTags: { deprecated: ['Use NewButton.'] },
+        })
+      );
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.description).toBe('Legacy analyzer prose.');
+      expect(payload?.jsDocTags).toEqual({ deprecated: ['Use NewButton.'] });
+    });
+
+    it('leaves the description undefined for an undocumented component', () => {
+      givenStoryFile();
+      const manager = managerReturning(
+        metaFor(componentEntry({ rawdescription: undefined, description: undefined }), {
+          description: '',
+          jsDocTags: {},
+        })
+      );
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.description).toBeUndefined();
+    });
+
+    it('falls back to analyzer tags when TypeScript JSDoc is unavailable', () => {
+      givenStoryFile();
       const manager = managerReturning(
         metaFor(
           componentEntry({
             jsdoctags: [
-              tag('summary', 'A clickable button'),
-              tag('see', 'a'),
-              tag('see', 'b'),
-              tag('internal'),
+              { tagName: { escapedText: 'summary' }, comment: 'A clickable button' },
+              { tagName: { escapedText: 'see' }, comment: 'a' },
+              { tagName: { escapedText: 'see' }, comment: 'b' },
+              { tagName: { escapedText: 'internal' } },
               { comment: 'orphan' },
               {},
             ],
@@ -168,12 +243,23 @@ describe('buildDocgenPayload', () => {
 
       const payload = buildDocgenPayload({ entry }, context(manager));
 
-      expect(payload?.jsDocTags).toEqual({
-        summary: ['A clickable button'],
-        see: ['a', 'b'],
-        internal: [''],
-      });
-      expect(payload?.summary).toBe('A clickable button');
+      expect({ summary: payload?.summary, jsDocTags: payload?.jsDocTags }).toMatchInlineSnapshot(`
+          {
+            "jsDocTags": {
+              "internal": [
+                "",
+              ],
+              "see": [
+                "a",
+                "b",
+              ],
+              "summary": [
+                "A clickable button",
+              ],
+            },
+            "summary": "A clickable button",
+          }
+        `);
     });
   });
 
@@ -183,7 +269,6 @@ describe('buildDocgenPayload', () => {
       // reads as an HTML tag.
       givenStoryFile();
       const classMeta = componentEntry({
-        jsdoctags: [{ tagName: { escapedText: 'remarks' }, comment: 'Accepts Array<string>.' }],
         inputsClass: [
           {
             name: 'items',
@@ -196,7 +281,7 @@ describe('buildDocgenPayload', () => {
 
       const payload = buildDocgenPayload({ entry }, context(managerReturning(metaFor(classMeta))));
 
-      expect(payload?.jsDocTags).toEqual({ remarks: ['Accepts Array<string>.'] });
+      expect(payload?.jsDocTags).toEqual({});
       expect(payload?.argTypes?.items?.table?.defaultValue).toEqual({
         summary: '[] as Array<string>',
       });
@@ -258,7 +343,7 @@ describe('buildDocgenPayload', () => {
           type: 'string',
           optional: true,
           line: 12,
-          defaultValue: "'#345F92'",
+          initializer: { kind: 'literal', literalKind: 'string', text: "'#345F92'" },
           rawdescription: 'The currently selected colour',
         },
       ],
@@ -367,6 +452,73 @@ describe('buildDocgenPayload', () => {
     });
   });
 
+  describe('component reached through another module', () => {
+    it('follows a property access on a namespace import to the component it names', () => {
+      givenStoryFile(`
+        import * as internal from './button.internal';
+        export default { title: 'Button', component: internal.config.component };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(manager.extractComponentMeta).toHaveBeenCalledExactlyOnceWith(COMPONENT_PATH, {
+        exportName: 'ButtonComponent',
+        localName: 'ButtonComponent',
+      });
+      expect(payload?.error).toBeUndefined();
+      expect(payload?.argTypes?.label).toMatchObject({ name: 'label' });
+    });
+
+    it('names an unreadable expression by the expression itself, not the story title', () => {
+      // The docgen-harness sandbox recorder treats a payload named `globalThis...` as an artifact
+      // of the shared template stories rather than a real component, and filters it out on that
+      // name alone (`isGloballyReferenced` in sandbox-baselines/read-static-docgen.ts). Naming this
+      // payload by the story title instead of the unreadable expression breaks that filter silently.
+      givenStoryFile(`
+        export default { title: 'Button', component: globalThis.__TEMPLATE_COMPONENTS__.Button };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+      expect(payload?.name).toBe('globalThis.__TEMPLATE_COMPONENTS__.Button');
+    });
+
+    it('does not blame the story file for an unresolved import that lives in the module the chain names', () => {
+      givenStoryFile(`
+        import * as internal from './button.internal-broken-import';
+        export default { title: 'Button', component: internal.config.component };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+      expect(payload?.error?.message).toContain('./does-not-exist.component');
+      // The story file only names `internal.config.component`; the import statement that fails to
+      // resolve is written in button.internal-broken-import.ts, not here.
+      expect(payload?.error?.message).not.toContain('The story file imports');
+      expect(manager.extractComponentMeta).not.toHaveBeenCalled();
+    });
+
+    it('does not send the user to the story file to fix a type-only import that lives elsewhere', () => {
+      givenStoryFile(`
+        import * as internal from './button.internal-type-only';
+        export default { title: 'Button', component: internal.config.component };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+      // The type-only import is in button.internal-type-only.ts; the story file binds nothing here.
+      expect(payload?.error?.message).not.toContain(`in ${STORY_PATH}`);
+      expect(manager.extractComponentMeta).not.toHaveBeenCalled();
+    });
+  });
+
   describe('error payloads', () => {
     it('names the file and export, and points at tsconfig coverage, when extraction misses', () => {
       givenStoryFile();
@@ -398,6 +550,34 @@ describe('buildDocgenPayload', () => {
       expect(payload?.error?.message).toContain(COMPONENT_PATH);
       expect(payload).toMatchObject({ id: 'button', name: 'ButtonComponent', jsDocTags: {} });
       expect(payload?.argTypes).toBeUndefined();
+    });
+
+    it('reports a component expression it cannot follow instead of staying silent', () => {
+      givenStoryFile(`
+        import * as internal from './nowhere';
+        export default { title: 'Button', component: internal.config.component };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+      expect(payload?.error?.message).toContain('internal.config.component');
+      expect(payload).toMatchObject({ id: 'button', jsDocTags: {} });
+      expect(manager.extractComponentMeta).not.toHaveBeenCalled();
+    });
+
+    it('reports a type-only component import instead of staying silent', () => {
+      givenStoryFile(`
+        import type { ButtonComponent } from './button.component';
+        export default { title: 'Button', component: ButtonComponent };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+      expect(manager.extractComponentMeta).not.toHaveBeenCalled();
     });
 
     it('reports an import that resolves to no file without asking the analyzer', () => {

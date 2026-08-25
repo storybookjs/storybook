@@ -13,7 +13,13 @@
 import { logger } from 'storybook/internal/node-logger';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
-import type { AngularClassMeta, Directive, Method, Property } from '../types.ts';
+import type {
+  AngularClassMeta,
+  Directive,
+  Method,
+  Property,
+  PropertyInitializer,
+} from '../types.ts';
 import { extractArgTypesFromData } from '../extract-arg-types.ts';
 import {
   analyzeInline as analyze,
@@ -31,6 +37,13 @@ afterEach(() => {
 const ANALYZER_EXTRACT_OPTIONS = { propsTable: 'all' } as const;
 
 const soleComponent = (meta: ReturnType<typeof analyze>) => meta.components[0] as Directive;
+type LiteralInitializer = Extract<PropertyInitializer, { kind: 'literal' }>;
+
+const literal = (
+  text: string,
+  literalKind: LiteralInitializer['literalKind']
+): LiteralInitializer => ({ kind: 'literal', literalKind, text });
+const expression = (text: string) => ({ kind: 'expression', text });
 
 describe('@Input and @Output aliases', () => {
   const SOURCE = `
@@ -73,7 +86,10 @@ describe('@Input and @Output aliases', () => {
     // `required` is the option's value, not merely whether the key was written.
     expect(byName(inputs, 'tone')).toMatchObject({ required: true, optional: false });
     expect(byName(inputs, 'hint')).toMatchObject({ required: false, optional: true });
-    expect(byName(inputs, 'buttonLabel')).toMatchObject({ optional: false, defaultValue: "''" });
+    expect(byName(inputs, 'buttonLabel')).toMatchObject({
+      optional: false,
+      initializer: literal("''", 'string'),
+    });
     expect(byName(inputs, 'buttonLabel').required).toBeUndefined();
   });
 
@@ -105,8 +121,32 @@ describe('@Input and @Output aliases', () => {
     expect(names(outputs)).toEqual(['saved']);
     expect(byName(outputs, 'saved')).toMatchObject({
       type: 'EventEmitter',
-      defaultValue: 'new EventEmitter<number>()',
+      initializer: expression('new EventEmitter<number>()'),
     });
+  });
+});
+
+describe('aliased decorator imports', () => {
+  it('recognizes decorators imported under another name, as Angular itself does', () => {
+    const component = componentIn(`
+      import {
+        Component as NgComponent,
+        EventEmitter,
+        Input as InputDecorator,
+        Output as OutputDecorator,
+      } from '@angular/core';
+
+      @NgComponent({ selector: 'sb-aliased-imports', template: '' })
+      export class AliasedImportsComponent {
+        @InputDecorator() label?: 'a' | 'b';
+
+        @OutputDecorator() saved = new EventEmitter<number>();
+      }
+    `);
+
+    expect(names(component.inputsClass)).toEqual(['label']);
+    expect(names(component.outputsClass)).toEqual(['saved']);
+    expect(names(component.propertiesClass)).toEqual([]);
   });
 });
 
@@ -178,7 +218,7 @@ describe('pipes, injectables and plain classes', () => {
     expect(injectable).toMatchObject({ name: 'DataService', type: 'injectable' });
     expect(byName(injectable.properties, 'rows')).toMatchObject({
       type: 'number',
-      defaultValue: '3',
+      initializer: literal('3', 'number'),
     });
     expect(byName(injectable.methods, 'load').returnType).toBe('Promise<string[]>');
   });
@@ -229,11 +269,11 @@ describe('signal inputs and outputs', () => {
 
     expect(byName(component.inputsClass, 'ratios')).toMatchObject({
       type: 'number[]',
-      defaultValue: '[0.5, 1]',
+      initializer: literal('[0.5, 1]', 'composite'),
     });
     expect(byName(component.inputsClass, 'align')).toMatchObject({
       type: '"left" | "right"',
-      defaultValue: "'left' as 'left' | 'right'",
+      initializer: literal("'left'", 'string'),
     });
     expect(byName(component.outputsClass, 'tags')).toMatchObject({ type: 'Set<string>' });
   });
@@ -263,7 +303,7 @@ describe('signal inputs and outputs', () => {
       type: 'string',
       required: false,
       optional: false,
-      defaultValue: "'hi'",
+      initializer: literal("'hi'", 'string'),
     });
     expect(byName(component.inputsClass, 'count')).toMatchObject({
       type: 'number',
@@ -271,7 +311,7 @@ describe('signal inputs and outputs', () => {
     });
     expect(byName(component.inputsClass, 'increment')).toMatchObject({
       type: 'number',
-      defaultValue: '2',
+      initializer: literal('2', 'number'),
     });
 
     expect(names(component.outputsClass)).toEqual(['toggled', 'value']);
@@ -280,12 +320,15 @@ describe('signal inputs and outputs', () => {
       required: false,
     });
     for (const bucket of [component.inputsClass, component.outputsClass]) {
-      expect(byName(bucket, 'value')).toMatchObject({ type: 'number', defaultValue: '1' });
+      expect(byName(bucket, 'value')).toMatchObject({
+        type: 'number',
+        initializer: literal('1', 'number'),
+      });
     }
 
     // An unresolved call that is not a signal factory stays an ordinary property.
     expect(byName(component.propertiesClass, 'notSignal')).toMatchObject({
-      defaultValue: "compute('x')",
+      initializer: expression("compute('x')"),
     });
   });
 
@@ -306,7 +349,7 @@ describe('signal inputs and outputs', () => {
 
     expect(byName(component.inputsClass, 'label')).toMatchObject({
       type: 'string',
-      defaultValue: "'hi'",
+      initializer: literal("'hi'", 'string'),
       required: false,
     });
     expect(byName(component.inputsClass, 'checked')).toMatchObject({
@@ -333,24 +376,7 @@ describe('signal inputs and outputs', () => {
     expect(component.inputsClass).toEqual([]);
     expect(byName(component.propertiesClass, 'label')).toMatchObject({
       type: 'string',
-      defaultValue: "input('hi')",
-    });
-  });
-
-  it('keeps a static `input()`-initialized property out of the IO buckets', () => {
-    // Angular only recognizes signal IO on instance fields.
-    const component = componentIn(`
-      import { Component, input } from '@angular/core';
-
-      @Component({ selector: 'sb-static-input', template: '' })
-      export class StaticInputComponent {
-        static defaults = input('nope');
-      }
-    `);
-
-    expect(names(component.inputsClass)).not.toContain('defaults');
-    expect(byName(component.propertiesClass, 'defaults')).toMatchObject({
-      defaultValue: "input('nope')",
+      initializer: expression("input('hi')"),
     });
   });
 });
@@ -518,6 +544,159 @@ describe('the miscellaneous type index', () => {
     expect(argTypes.dir.type).toEqual({ name: 'enum', value: ['a"b', 'c'] });
   });
 
+  it('resolves an alias over an as-const array element type to its literal members', () => {
+    const meta = analyze(
+      `
+      import { Component, Input } from '@angular/core';
+
+      import { ButtonVariant } from './types.ts';
+
+      @Component({ selector: 'sb-const-array', template: '' })
+      export class ConstArrayComponent {
+        @Input() variant: ButtonVariant = 'primary';
+      }
+    `,
+      {
+        'types.ts': `
+          export const buttonVariants = ['primary', 'secondary', 'tertiary'] as const;
+
+          export type ButtonVariant = (typeof buttonVariants)[number];
+        `,
+      }
+    );
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'variant').type).toBe('ButtonVariant');
+    expect(byName(meta.miscellaneous.typealiases, 'ButtonVariant').rawtype).toBe(
+      '"primary" | "secondary" | "tertiary"'
+    );
+
+    const argTypes = extractArgTypesFromData(component, {
+      metadataJson: meta,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    });
+    expect(argTypes.variant.type).toEqual({
+      name: 'enum',
+      value: ['primary', 'secondary', 'tertiary'],
+    });
+  });
+
+  it('resolves a union that includes another alias imported from a second file', () => {
+    const meta = analyze(
+      `
+      import { Component, Input } from '@angular/core';
+
+      import { Tone } from './tone.ts';
+
+      @Component({ selector: 'sb-alias-member', template: '' })
+      export class AliasMemberComponent {
+        @Input() tone: Tone = 'info';
+      }
+    `,
+      {
+        'tone.ts': `
+          import { LegacyTone } from './legacy.ts';
+
+          export type Tone = 'info' | 'warn' | LegacyTone;
+        `,
+        'legacy.ts': `export type LegacyTone = 'legacy';`,
+      }
+    );
+    const component = soleComponent(meta);
+
+    expect(byName(meta.miscellaneous.typealiases, 'Tone').rawtype).toBe(
+      '"info" | "warn" | "legacy"'
+    );
+
+    const argTypes = extractArgTypesFromData(component, {
+      metadataJson: meta,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    });
+    expect(argTypes.tone.type).toEqual({ name: 'enum', value: ['info', 'warn', 'legacy'] });
+  });
+
+  it('resolves a keyof typeof alias to the keys of the map behind it', () => {
+    const meta = analyze(
+      `
+      import { Component, Input } from '@angular/core';
+
+      import { IconSize } from './types.ts';
+
+      @Component({ selector: 'sb-keyof', template: '' })
+      export class KeyofComponent {
+        @Input() size: IconSize = 'sm';
+      }
+    `,
+      {
+        'types.ts': `
+          export const ICON_SIZES = { sm: 12, md: 16, lg: 24 };
+
+          export type IconSize = keyof typeof ICON_SIZES;
+        `,
+      }
+    );
+    const component = soleComponent(meta);
+
+    expect(byName(meta.miscellaneous.typealiases, 'IconSize').rawtype).toBe('"sm" | "md" | "lg"');
+
+    const argTypes = extractArgTypesFromData(component, {
+      metadataJson: meta,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    });
+    expect(argTypes.size.type).toEqual({ name: 'enum', value: ['sm', 'md', 'lg'] });
+  });
+
+  it('resolves a union alias re-exported through a barrel file', () => {
+    const meta = analyze(
+      `
+      import { Component, Input } from '@angular/core';
+
+      import { Tone } from './barrel.ts';
+
+      @Component({ selector: 'sb-barrel', template: '' })
+      export class BarrelComponent {
+        @Input() tone: Tone = 'info';
+      }
+    `,
+      {
+        'barrel.ts': `export * from './defs.ts';`,
+        'defs.ts': `export type Tone = 'info' | 'warn' | 'error';`,
+      }
+    );
+    const component = soleComponent(meta);
+
+    const argTypes = extractArgTypesFromData(component, {
+      metadataJson: meta,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    });
+    expect(argTypes.tone.type).toEqual({ name: 'enum', value: ['info', 'warn', 'error'] });
+  });
+
+  it('resolves a primitive-union alias to a primitive control, not an enum', () => {
+    const meta = analyze(
+      `
+      import { Component, Input } from '@angular/core';
+
+      import { Amount } from './types.ts';
+
+      @Component({ selector: 'sb-primitive-union', template: '' })
+      export class PrimitiveUnionComponent {
+        @Input() amount: Amount = 0;
+      }
+    `,
+      { 'types.ts': `export type Amount = string | number;` }
+    );
+    const component = soleComponent(meta);
+
+    expect(byName(meta.miscellaneous.typealiases, 'Amount').rawtype).toBe('string | number');
+
+    const argTypes = extractArgTypesFromData(component, {
+      metadataJson: meta,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    });
+    expect(argTypes.amount.type).toEqual({ name: 'number' });
+  });
+
   it('strips the import qualifier so a signal input’s alias matches its indexed entry', () => {
     const meta = analyze(
       `
@@ -596,31 +775,26 @@ describe('which members survive, and how they are described', () => {
     }
   `;
 
-  it('keeps private, protected, static and lifecycle members, and drops @ignore', () => {
+  it('keeps private, protected and lifecycle members, and drops static and @ignore ones', () => {
     const component = componentIn(SOURCE);
 
     // Visibility is not the analyzer's filter to apply: the consumer decides what to show.
-    expect(names(component.propertiesClass)).toEqual([
-      'cache',
-      'counter',
-      'formatter',
-      'shield',
-      'zoom',
-    ]);
+    expect(names(component.propertiesClass)).toEqual(['cache', 'formatter', 'shield', 'zoom']);
     expect(names(component.propertiesClass)).not.toContain('secret');
+    expect(names(component.propertiesClass)).not.toContain('counter');
     expect(names(component.methodsClass)).toEqual(['ngOnInit']);
   });
 
-  it('collapses an arrow default on a plain property, but keeps it on an input', () => {
+  it('records arrow initializer source for diagnostics', () => {
     const component = componentIn(SOURCE);
 
-    // A plain property's body is noise in a props table; an input's default is the thing itself.
+    // Expression text is diagnostic metadata; neither arrow reaches the props table as a default.
     expect(byName(component.propertiesClass, 'formatter')).toMatchObject({
-      defaultValue: '() => {...}',
+      initializer: expression('(value: number) => `${value}`'),
       type: '(value: number) => string',
     });
     expect(byName(component.inputsClass, 'decoratedFormatter')).toMatchObject({
-      defaultValue: '(value: number) => `${value}`',
+      initializer: expression('(value: number) => `${value}`'),
       type: '(value: number) => string',
     });
   });
@@ -759,7 +933,9 @@ describe('inheritance', () => {
     `);
 
     // The base decides the bucket, the child's own initializer decides the default.
-    expect(byName(component.inputsClass, 'disabled')).toMatchObject({ defaultValue: 'false' });
+    expect(byName(component.inputsClass, 'disabled')).toMatchObject({
+      initializer: literal('false', 'boolean'),
+    });
     expect(names(component.propertiesClass)).not.toContain('disabled');
   });
 
@@ -845,7 +1021,9 @@ describe('inheritance', () => {
     // `label` is the base's binding name for the same field, so emitting it too would offer a
     // control that binds to nothing.
     expect(names(child.inputsClass)).toEqual(['text']);
-    expect(byName(child.inputsClass, 'text')).toMatchObject({ defaultValue: "'child'" });
+    expect(byName(child.inputsClass, 'text')).toMatchObject({
+      initializer: literal("'child'", 'string'),
+    });
   });
 
   it('merges multi-level bases with the child winning, and takes plain members from a .d.ts', () => {
@@ -884,12 +1062,14 @@ describe('inheritance', () => {
     expect(names(component.inputsClass)).toEqual(['midFlag', 'own']);
     expect(byName(component.inputsClass, 'midFlag')).toMatchObject({
       type: 'boolean',
-      defaultValue: 'false',
+      initializer: literal('false', 'boolean'),
     });
 
     // `hint` comes from MidBase, which overrides the .d.ts base's declaration.
     expect(names(component.propertiesClass)).toEqual(['hint']);
-    expect(byName(component.propertiesClass, 'hint')).toMatchObject({ defaultValue: "'mid'" });
+    expect(byName(component.propertiesClass, 'hint')).toMatchObject({
+      initializer: literal("'mid'", 'string'),
+    });
 
     // A .d.ts records no decorators, so it can only contribute plain members, never IO.
     expect(names(component.methodsClass)).toEqual(['helper', 'midHelper']);
@@ -904,6 +1084,202 @@ describe('inheritance', () => {
     };
     expect(names(midBase.inputsClass)).toEqual(['midFlag']);
     expect(names(midBase.methods)).toEqual(['helper', 'midHelper']);
+  });
+
+  it('substitutes the extends clause’s type arguments into inherited member types', () => {
+    const meta = analyze(
+      `
+      import { Component } from '@angular/core';
+
+      import { BaseCardView } from './base-card-view.ts';
+
+      export class CardTextModel { value = ''; }
+
+      @Component({ selector: 'sb-card-text', template: '' })
+      export class CardTextComponent extends BaseCardView<CardTextModel> {}
+    `,
+      {
+        'base-card-view.ts': `
+          import { Input } from '@angular/core';
+
+          export abstract class BaseCardView<T> {
+            @Input() property!: T;
+
+            items: T[] = [];
+
+            find(key: string): T | undefined { return undefined; }
+          }
+        `,
+      }
+    );
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'property').type).toBe('CardTextModel');
+    expect(byName(component.propertiesClass, 'items').type).toBe('CardTextModel[]');
+    expect(byName(component.methodsClass, 'find')).toMatchObject({
+      args: [{ name: 'key', type: 'string', optional: false }],
+      returnType: 'CardTextModel | undefined',
+    });
+  });
+
+  it('substitutes a literal-union type argument down to an enum control', () => {
+    const meta = analyze(`
+      import { Component, Input } from '@angular/core';
+
+      export abstract class SizedBase<S> {
+        @Input() size!: S;
+      }
+
+      @Component({ selector: 'sb-sized', template: '' })
+      export class SizedComponent extends SizedBase<'small' | 'large'> {}
+    `);
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'size').type).toBe('"small" | "large"');
+
+    const argTypes = extractArgTypesFromData(component, {
+      metadataJson: meta,
+      ...ANALYZER_EXTRACT_OPTIONS,
+    });
+    expect(argTypes.size.type).toEqual({ name: 'enum', value: ['small', 'large'] });
+  });
+
+  it('substitutes through a middle generic base down to the leaf’s concrete argument', () => {
+    const meta = analyze(`
+      import { Component, Input } from '@angular/core';
+
+      export class Entry { id = 0; }
+
+      export class ListBase<T> {
+        @Input() data!: T;
+      }
+
+      export class PagedListBase<U> extends ListBase<U> {}
+
+      @Component({ selector: 'sb-paged', template: '' })
+      export class PagedComponent extends PagedListBase<Entry> {}
+    `);
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'data').type).toBe('Entry');
+
+    const base = byName(meta.classes, 'ListBase') as AngularClassMeta & {
+      inputsClass: Property[];
+    };
+    expect(byName(base.inputsClass, 'data').type).toBe('T');
+  });
+
+  it('falls back to the parameter default when the extends clause pins nothing', () => {
+    const meta = analyze(`
+      import { Component, Input } from '@angular/core';
+
+      export class FallbackBase<T = string> {
+        @Input() fallback!: T;
+      }
+
+      @Component({ selector: 'sb-fallback', template: '' })
+      export class FallbackComponent extends FallbackBase {}
+    `);
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'fallback').type).toBe('string');
+  });
+
+  it('does not rewrite a method’s own type parameter that shadows the class’s', () => {
+    const meta = analyze(`
+      import { Component } from '@angular/core';
+
+      export class Entry { id = 0; }
+
+      export abstract class GridBase<T> {
+        pluck<T>(picker: (row: T) => T): T[] { return []; }
+
+        first(): T | undefined { return undefined; }
+      }
+
+      @Component({ selector: 'sb-grid', template: '' })
+      export class GridComponent extends GridBase<Entry> {}
+    `);
+    const component = soleComponent(meta);
+
+    // pluck's own <T> shadows the class parameter, so its caller-chosen T stays bare.
+    expect(byName(component.methodsClass, 'pluck')).toMatchObject({
+      args: [{ name: 'picker', type: '(row: T) => T' }],
+      returnType: 'T[]',
+    });
+    expect(byName(component.methodsClass, 'first').returnType).toBe('Entry | undefined');
+  });
+
+  it('does not rewrite a function type’s own type parameter that shadows the class’s', () => {
+    const meta = analyze(`
+      import { Component, Input } from '@angular/core';
+
+      export class Entry { id = 0; }
+
+      export abstract class ComparerBase<T> {
+        @Input() compare!: <T>(a: T, b: T) => number;
+
+        @Input() pick!: (row: T) => T;
+      }
+
+      @Component({ selector: 'sb-comparer', template: '' })
+      export class ComparerComponent extends ComparerBase<Entry> {}
+    `);
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'compare').type).toBe('<T>(a: T, b: T) => number');
+    expect(byName(component.inputsClass, 'pick').type).toBe('(row: Entry) => Entry');
+  });
+
+  it('does not rewrite a type-literal property key that spells a type parameter’s name', () => {
+    const meta = analyze(`
+      import { Component, Input } from '@angular/core';
+
+      export abstract class ConfBase<value> {
+        @Input() config!: { value: string; payload: value };
+      }
+
+      @Component({ selector: 'sb-conf', template: '' })
+      export class ConfComponent extends ConfBase<number> {}
+    `);
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'config').type).toBe(
+      '{ value: string; payload: number; }'
+    );
+  });
+
+  it('leaves a shadowing binder alone even when its constraint is itself generic', () => {
+    const [component] = analyze(`
+      import { Component, Input } from '@angular/core';
+
+      export class Base<T> {
+        @Input() pick!: <T extends Array<string>>(a: T) => T;
+      }
+
+      @Component({ selector: 'sb-leaf', template: '' })
+      export class LeafComponent extends Base<Entry> {}
+
+      export interface Entry { id: string }
+    `).components as Directive[];
+
+    expect(byName(component.inputsClass, 'pick').type).toBe('<T extends Array<string>>(a: T) => T');
+  });
+
+  it('does not rewrite a string literal that spells a type parameter’s name', () => {
+    const meta = analyze(`
+      import { Component, Input } from '@angular/core';
+
+      export abstract class ModeBase<T> {
+        @Input() mode!: 'T' | T;
+      }
+
+      @Component({ selector: 'sb-mode', template: '' })
+      export class ModeComponent extends ModeBase<'live'> {}
+    `);
+    const component = soleComponent(meta);
+
+    expect(byName(component.inputsClass, 'mode').type).toBe('"T" | "live"');
   });
 
   it('ignores a decorator that only shares Angular’s spelling', () => {
@@ -1105,6 +1481,68 @@ describe('real-world JSDoc, visibility and accessor edge cases', () => {
     expect(cells.description).not.toContain('*');
   });
 
+  it('keeps a leading **bold** marker on undecorated continuation lines', () => {
+    const component = componentIn(`
+      import { Component, Input } from '@angular/core';
+
+      @Component({ selector: 'sb-undecorated-jsdoc', template: '' })
+      export class UndecoratedJsdocComponent {
+        /**
+        Defines the accessible role.
+
+        **Note:** Use the ButtonAccessibleRole type.
+        */
+        @Input() accessibleRole = 'button';
+      }
+    `);
+
+    expect(byName(component.inputsClass, 'accessibleRole').description).toBe(
+      'Defines the accessible role.\n\n**Note:** Use the ButtonAccessibleRole type.'
+    );
+  });
+
+  it('strips the decoration asterisk of a `* **bold**` line, keeping the bold marker', () => {
+    const component = componentIn(`
+      import { Component, Input } from '@angular/core';
+
+      @Component({ selector: 'sb-decorated-jsdoc', template: '' })
+      export class DecoratedJsdocComponent {
+        /**
+         * Defines the accessible role.
+         *
+         * **Note:** Use the ButtonAccessibleRole type.
+         */
+        @Input() accessibleRole = 'button';
+      }
+    `);
+
+    expect(byName(component.inputsClass, 'accessibleRole').description).toBe(
+      'Defines the accessible role.\n\n**Note:** Use the ButtonAccessibleRole type.'
+    );
+  });
+
+  it('keeps a leading **bold** marker in an undecorated @description tag body', () => {
+    const component = componentIn(`
+      import { Component, Input } from '@angular/core';
+
+      @Component({ selector: 'sb-undecorated-description-tag', template: '' })
+      export class UndecoratedDescriptionTagComponent {
+        /**
+        property role
+        @description
+        Defines the role.
+
+        **Note:** stays bold.
+        */
+        @Input() role = 'button';
+      }
+    `);
+
+    expect(byName(component.inputsClass, 'role').description).toBe(
+      'Defines the role.\n\n**Note:** stays bold.'
+    );
+  });
+
   it('keeps @deprecated on a method, so it survives all the way into the props table', () => {
     const component = componentIn(SOURCE);
     const tagNames = (byName(component.methodsClass, 'toggleNav').jsdoctags ?? []).map(
@@ -1235,10 +1673,62 @@ describe('member identity is the declared field, not the emitted name', () => {
 
     expect(
       component.methodsClass.filter((method) => method.name === 'create').map((m) => m.returnType)
-    ).toEqual(['string', 'number']);
+    ).toEqual(['number']);
     expect(
       component.propertiesClass.filter((property) => property.name === 'mode').map((p) => p.type)
-    ).toEqual(['string', 'number']);
+    ).toEqual(['number']);
+  });
+});
+
+describe('static members', () => {
+  it('drops static members entirely, Angular coercion statics and ɵ internals included', () => {
+    // Angular only recognizes IO on instance fields, `static defaults = input(...)` included.
+    const component = componentIn(`
+      import { Component, Input, input } from '@angular/core';
+
+      @Component({ selector: 'sb-statics', template: '' })
+      export class StaticsComponent {
+        @Input() date?: Date | null | string;
+
+        static ngAcceptInputType_date: Date | null | string;
+
+        static ɵfac = () => new StaticsComponent();
+
+        static defaults = input('nope');
+
+        static describe(): string {
+          return '';
+        }
+
+        static get mode(): string {
+          return 'static';
+        }
+      }
+    `);
+
+    expect(names(component.inputsClass)).toEqual(['date']);
+    expect(names(component.propertiesClass)).toEqual([]);
+    expect(names(component.methodsClass)).toEqual([]);
+  });
+
+  it('keeps a service’s own statics, dropping only the ones Angular generates', () => {
+    const file = analyze(`
+      import { Injectable } from '@angular/core';
+
+      @Injectable()
+      export class DataService {
+        static VERSION = '1.0.0';
+
+        static ɵfac = () => new DataService();
+
+        static create(): DataService {
+          return new DataService();
+        }
+      }
+    `);
+
+    expect(names(file.injectables[0].properties)).toEqual(['VERSION']);
+    expect(names(file.injectables[0].methods)).toEqual(['create']);
   });
 });
 

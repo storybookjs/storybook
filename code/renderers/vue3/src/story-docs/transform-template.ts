@@ -390,7 +390,10 @@ function hasOnlySupportedRenderProperties(renderObject: t.ObjectExpression): boo
     }
 
     const key = keyOf(property);
-    return key === 'components' || key === SETUP_PROPERTY || key === 'template';
+    // `inheritAttrs` only tunes runtime attribute fallthrough; the markup stays faithful without it.
+    return (
+      key === 'components' || key === SETUP_PROPERTY || key === 'template' || key === 'inheritAttrs'
+    );
   });
 }
 

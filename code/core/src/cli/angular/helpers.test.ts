@@ -2,7 +2,7 @@ import * as fs from 'node:fs';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { AngularJSON } from './helpers.ts';
+import { AngularJSON, editJsonText, isStorybookTarget } from './helpers.ts';
 
 vi.mock('node:fs', () => ({
   existsSync: vi.fn(() => true),
@@ -57,5 +57,71 @@ describe('AngularJSON.addStorybookEntries', () => {
     expect(storybook.builder).toBe('@storybook/angular:start-storybook');
     expect(storybook.options.compodoc).toBe(true);
     expect(storybook.options.compodocArgs).toEqual(['-e', 'json', '-d', '.']);
+  });
+});
+
+describe('editJsonText', () => {
+  const removeCompodoc = (text: string) =>
+    editJsonText(text, ['targets', 'storybook', 'options', 'compodoc'], undefined);
+
+  it('keeps tab indentation', () => {
+    const tabbed =
+      '{\n\t"targets": {\n\t\t"storybook": {\n\t\t\t"options": {\n\t\t\t\t"compodoc": true,\n\t\t\t\t"port": 6006\n\t\t\t}\n\t\t}\n\t}\n}\n';
+
+    expect(removeCompodoc(tabbed)).toBe(
+      '{\n\t"targets": {\n\t\t"storybook": {\n\t\t\t"options": {\n\t\t\t\t"port": 6006\n\t\t\t}\n\t\t}\n\t}\n}\n'
+    );
+  });
+
+  it('keeps 4-space indentation', () => {
+    const fourSpace =
+      '{\n    "targets": {\n        "storybook": {\n            "options": {\n                "compodoc": true,\n                "port": 6006\n            }\n        }\n    }\n}\n';
+
+    expect(removeCompodoc(fourSpace)).toBe(
+      '{\n    "targets": {\n        "storybook": {\n            "options": {\n                "port": 6006\n            }\n        }\n    }\n}\n'
+    );
+  });
+
+  it('keeps 2-space indentation', () => {
+    const twoSpace =
+      '{\n  "targets": {\n    "storybook": {\n      "options": {\n        "compodoc": true,\n        "port": 6006\n      }\n    }\n  }\n}\n';
+
+    expect(removeCompodoc(twoSpace)).toBe(
+      '{\n  "targets": {\n    "storybook": {\n      "options": {\n        "port": 6006\n      }\n    }\n  }\n}\n'
+    );
+  });
+});
+
+describe('isStorybookTarget', () => {
+  it('matches any package by suffix when no builder package is given', () => {
+    expect(isStorybookTarget({ builder: '@storybook/angular:start-storybook' })).toBe(true);
+    expect(isStorybookTarget({ executor: '@analogjs/storybook-angular:build-storybook' })).toBe(
+      true
+    );
+    expect(isStorybookTarget({ builder: '@nx/angular:package' })).toBe(false);
+  });
+
+  it('matches only the given builder package', () => {
+    expect(
+      isStorybookTarget(
+        { executor: '@storybook/angular-vite:start-storybook' },
+        '@storybook/angular-vite'
+      )
+    ).toBe(true);
+    expect(
+      isStorybookTarget(
+        { executor: '@storybook/angular:start-storybook' },
+        '@storybook/angular-vite'
+      )
+    ).toBe(false);
+    expect(
+      isStorybookTarget({ builder: '@storybook/angular:build-storybook' }, '@storybook/angular')
+    ).toBe(true);
+    expect(
+      isStorybookTarget(
+        { builder: '@analogjs/storybook-angular:start-storybook' },
+        '@storybook/angular'
+      )
+    ).toBe(false);
   });
 });

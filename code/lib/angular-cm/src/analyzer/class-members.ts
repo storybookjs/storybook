@@ -2,7 +2,7 @@ import type * as ts from 'typescript';
 
 import type { AnalyzerContext } from './context.ts';
 import { resolveClassMembers } from './inheritance.ts';
-import type { ClassMembers, MemberEntry } from './members.ts';
+import type { ClassMembers, DocumentedClassKind, MemberEntry } from './members.ts';
 
 export type EmittedMembers = {
   [K in keyof ClassMembers]: ClassMembers[K][number]['value'][];
@@ -11,9 +11,10 @@ export type EmittedMembers = {
 /** Collect one class's members, base classes and decorator metadata included. */
 export function collectClassMembers(
   ctx: AnalyzerContext,
-  classNode: ts.ClassLikeDeclaration
+  classNode: ts.ClassLikeDeclaration,
+  kind: DocumentedClassKind
 ): EmittedMembers {
-  const members = resolveClassMembers(ctx, classNode);
+  const members = resolveClassMembers(ctx, classNode, kind);
   sortMembers(members);
   return emitMembers(members);
 }

@@ -400,10 +400,60 @@ describe('experimental_devServer', () => {
     expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
   });
 
+  it('names the missing manifest prerequisite instead of claiming the framework is unsupported', async () => {
+    // `mockOptions` has no manifests and `componentsManifest: false`, which is what an
+    // Angular-vite or Vue project that only forgot a feature flag looks like.
+    let getHandler: any;
+    mockApp.get = vi.fn((_path, handler) => {
+      getHandler = handler;
+    });
+
+    await (experimental_devServer as any)(mockApp, mockOptions);
+
+    const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
+    await getHandler({ headers: { accept: 'text/html' } } as any, mockRes);
+
+    const html = mockRes.end.mock.calls[0][0] as string;
+    expect(html).toContain('This toolset requires a components manifest,');
+    expect(html).toContain('<code>componentsManifest</code>');
+    expect(html).toContain('<code>@storybook/angular-vite</code>');
+    expect(html).not.toContain('React-based setups');
+    expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
+  });
+
+  it('blames the framework, not the config, when the feature is on and there is still no manifest', async () => {
+    const featureOnNoManifestOptions = {
+      ...mockOptions,
+      presets: {
+        apply: vi.fn(async (key: string) => {
+          if (key === 'features') {
+            return { componentsManifest: true };
+          }
+          return undefined;
+        }),
+      },
+    } as unknown as Options;
+
+    let getHandler: any;
+    mockApp.get = vi.fn((_path, handler) => {
+      getHandler = handler;
+    });
+
+    await (experimental_devServer as any)(mockApp, featureOnNoManifestOptions);
+
+    const mockRes = { writeHead: vi.fn(), end: vi.fn() } as any;
+    await getHandler({ headers: { accept: 'text/html' } } as any, mockRes);
+
+    const html = mockRes.end.mock.calls[0][0] as string;
+    expect(html).toContain('which your framework does not generate');
+    expect(html).not.toContain('Enable the <code>componentsManifest</code> feature');
+    expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
+  });
+
   it('prompts to enable the manifest feature when manifests exist but the flag is off', async () => {
     // Manifests are present on disk, but `componentsManifest` is not enabled — the docs
     // toolset is unavailable for a different reason than "no manifests", so the page shows
-    // the "enable the feature" notice rather than the React-only one.
+    // the "enable the feature" notice rather than the missing-manifest one.
     const manifestsNoFlagOptions = {
       ...mockOptions,
       presets: {
@@ -431,7 +481,7 @@ describe('experimental_devServer', () => {
 
     const html = mockRes.end.mock.calls[0][0] as string;
     expect(html).toContain('This toolset requires enabling the component manifest feature.');
-    expect(html).not.toContain('only supported in React-based setups');
+    expect(html).not.toContain('This toolset requires a components manifest,');
     expect(html).not.toMatch(/\{\{[A-Z_]+\}\}/);
   });
 

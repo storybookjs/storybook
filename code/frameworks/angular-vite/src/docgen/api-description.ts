@@ -6,6 +6,7 @@ interface Member {
   type: string | undefined;
   required: boolean;
   defaultValue: string | undefined;
+  deprecated: string | undefined;
 }
 
 // `table.type.required` is Angular's own addition to the argType shape, which `InputType` does not
@@ -14,6 +15,7 @@ type AngularTable = {
   category?: string;
   type?: { summary?: string; required?: boolean };
   defaultValue?: { summary?: string };
+  jsDocTags?: { deprecated?: string };
 };
 
 const readMember = (name: string, argType: StrictInputType): Member => {
@@ -24,21 +26,39 @@ const readMember = (name: string, argType: StrictInputType): Member => {
     type: table?.type?.summary,
     required: table?.type?.required !== false,
     defaultValue: table?.defaultValue?.summary,
+    deprecated: table?.jsDocTags?.deprecated,
   };
 };
+
+const commentLines = (text: string): string[] =>
+  text
+    .replace(/\*\//g, '*\\/')
+    .split('\n')
+    .map((line) => line.trimEnd());
 
 // The default belongs in the doc comment rather than after an `=`: the analyzer unquotes string
 // defaults for the props table, so `label: string = Click me` would be the only shape available
 // inline, and re-quoting cannot tell a string literal from an identifier the source referenced.
 const docComment = (member: Member): string[] => {
   const description = member.description?.trim();
-  const body = description ? description.split('\n').map((line) => line.trimEnd()) : [];
+  const body = description ? commentLines(description) : [];
 
+  const tags: string[] = [];
+  if (member.deprecated !== undefined) {
+    const deprecated = member.deprecated.trim();
+    tags.push(...commentLines(deprecated ? `@deprecated ${deprecated}` : '@deprecated'));
+  }
   if (member.defaultValue !== undefined) {
+    // The analyzer unquotes string defaults, so an empty-string default arrives as ''.
+    tags.push(
+      ...commentLines(`@default ${member.defaultValue === '' ? "''" : member.defaultValue}`)
+    );
+  }
+  if (tags.length > 0) {
     if (body.length > 0) {
       body.push('');
     }
-    body.push(`@default ${member.defaultValue}`);
+    body.push(...tags);
   }
 
   if (body.length === 0) {
@@ -50,14 +70,26 @@ const docComment = (member: Member): string[] => {
   return ['  /**', ...body.map((line) => (line ? `   * ${line}` : '   *')), '   */'];
 };
 
+// Hyphen-aliased bindings like `aria-label` must be quoted to stay valid TypeScript.
+const quotedName = (name: string): string =>
+  JSON.stringify(name)
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+
+const fieldName = (name: string): string =>
+  /^[A-Za-z_$][A-Za-z0-9_$]*$/.test(name) ? name : quotedName(name);
+
+const bindingName = (name: string): string => quotedName(name).slice(1, -1);
+
 const inputLine = (member: Member, isTwoWay: boolean): string => {
   const optional = member.required ? '' : '?';
-  const line = `  ${member.name}${optional}: ${member.type ?? 'any'};`;
-  return isTwoWay ? `${line} // two-way: [(${member.name})]` : line;
+  const line = `  ${fieldName(member.name)}${optional}: ${member.type ?? 'any'};`;
+  return isTwoWay ? `${line} // two-way: [(${bindingName(member.name)})]` : line;
 };
 
 // An output is subscribed to rather than passed, so it carries neither optionality nor a default.
-const outputLine = (member: Member): string => `  ${member.name}: ${member.type ?? 'any'};`;
+const outputLine = (member: Member): string =>
+  `  ${fieldName(member.name)}: ${member.type ?? 'any'};`;
 
 const section = (heading: string, typeName: string, lines: string[]): string[] => [
   `## ${heading}`,

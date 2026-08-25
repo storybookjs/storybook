@@ -7,13 +7,11 @@ sidebar:
 
 <Callout variant="info" icon="🧪">
 
-While they are in [preview](../../releases/features.mdx#preview), Storybook's AI capabilities (specifically, the [manifests](../manifests.mdx) and MCP server) are currently only supported for [React](?renderer=react) projects.
-
-Additionally, the API may change in future releases. We welcome feedback and contributions to help improve this feature.
+Storybook's AI capabilities are in [preview](../../releases/features.mdx#preview).
+The API may change in future releases.
+We welcome feedback and contributions to help improve this feature.
 
 </Callout>
-
-<If renderer={['react']}>
 
 ## `@storybook/addon-mcp` options
 
@@ -59,7 +57,7 @@ Type: `boolean`
 
 Default: `true`
 
-The docs toolset includes the [`docs-show`](./overview.mdx#docs-show), [`docs-show-story`](./overview.mdx#docs-show-story), and [`docs-list`](./overview.mdx#docs-list) tools.
+The docs toolset includes the [`docs-show`](./overview.mdx#docs-show), [`docs-show-story`](./overview.mdx#docs-show-story), and [`docs-list`](./overview.mdx#docs-list) tools when a [components manifest](../manifests.mdx) is generated for your framework.
 
 #### `test`
 
@@ -68,9 +66,6 @@ Type: `boolean`
 Default: `true`
 
 The testing toolset includes the [`test-run`](./overview.mdx#test-run) tool when `@storybook/addon-vitest` is installed and enabled.
-
-</If>
-{/* End supported renderers */}
 
 **More AI resources**
 

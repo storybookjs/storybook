@@ -10,8 +10,8 @@ import { SignalIoComponent } from './signal-io.component.ts';
         [count]="2"
         [increment]="5"
         [disabled]="true"
-        (toggled)="toggled($event)">
-    </sb-signal-io>`,
+        (toggled)="toggled($event)"
+    />`,
 })
 export class DemoComponent {
   toggled(event: unknown) {}

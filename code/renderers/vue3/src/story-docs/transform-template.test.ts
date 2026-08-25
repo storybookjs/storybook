@@ -1103,7 +1103,7 @@ export const Primary = {
     ).toBeUndefined();
   });
 
-  it('bails when setup returns anything except args', async () => {
+  it('forwards a setup that returns more than the args', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -1117,7 +1117,17 @@ export const Primary = {
   }),
 };
 `)
-    ).toBeUndefined();
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
+      const state = {};
+      </script>
+
+      <template>
+        <MyButton label="Hi" />
+      </template>"
+    `);
   });
 
   it('bails when the returned render object has extra properties', async () => {

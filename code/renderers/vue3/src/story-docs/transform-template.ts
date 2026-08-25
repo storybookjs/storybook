@@ -11,13 +11,13 @@ import { babelParseExpression, types as t } from 'storybook/internal/babel';
 import {
   keyOf,
   propertyValue,
-  returnedExpression,
   unwrapExpression,
   type ImportBinding,
 } from 'storybook/internal/csf-tools';
 
 import type { ClassifiedArg } from './classify-args.ts';
 import { isFunctionExpression, printValue } from './classify-value.ts';
+import { readForwardableSetup, type ForwardableSetup } from './forward-setup.ts';
 import {
   createRenderContext,
   escapeTextContent,
@@ -38,13 +38,25 @@ export interface TemplateRenderConfig {
   template: string;
   /** Component tag name to import statement. */
   componentImports: Map<string, string>;
+  /** Setup statements to forward into the snippet's script. */
+  setup?: ForwardableSetup;
 }
+
+export type TemplateRenderResolution =
+  | { kind: 'config'; config: TemplateRenderConfig }
+  | { kind: 'bail'; warning: string }
+  /** Not a transformable template render object; the h-tree path may still resolve it. */
+  | { kind: 'skip' };
 
 export interface ReadTemplateRenderConfigOptions {
   /** Meta component identifier from CSF meta.component. */
   componentName?: string;
   /** Import statement for the meta component, after any `@import` override. */
   componentImportStatement?: string;
+  /** Render-function parameter the setup body closes over as the story args. */
+  argsParam?: string;
+  /** Story file source backing the render object, for forwarding setup statements. */
+  source?: string;
 }
 
 export interface TransformTemplateInput {
@@ -60,6 +72,8 @@ export interface TransformTemplateInput {
   importBindings?: Map<string, ImportBinding>;
   /** Pre-seeded context carrying imports and hoists an upstream printer collected. */
   ctx?: RenderContext;
+  /** Setup statements to forward into the snippet's script. */
+  setup?: ForwardableSetup;
 }
 
 export interface TransformTemplateResult {
@@ -114,24 +128,46 @@ const ARGS_IDENTIFIER_REGEXP = /(^|[^\w$])args([^\w$]|$)/;
 const ARGS_MEMBER_REGEXP = /^args\.([A-Za-z_$][\w$]*)$/;
 const SETUP_PROPERTY = 'setup';
 
+const TEMPLATE_UNREADABLE_WARNING =
+  'No static snippet: the `template` could not be read statically.';
+const COMPONENTS_UNREADABLE_WARNING =
+  'No static snippet: the `components` map could not be read statically.';
+
 /** Read a transformable template-render object without resolving the render function itself. */
 export function readTemplateRenderConfig(
   renderObject: t.ObjectExpression,
   importBindings: Map<string, ImportBinding>,
   options: ReadTemplateRenderConfigOptions = {}
-): TemplateRenderConfig | undefined {
+): TemplateRenderResolution {
   if (!hasOnlySupportedRenderProperties(renderObject)) {
-    return undefined;
+    return { kind: 'skip' };
   }
 
-  const template = staticTemplateSource(propertyValue(renderObject, 'template'));
+  const templateProperty = propertyValue(renderObject, 'template');
+  if (!templateProperty) {
+    return { kind: 'skip' };
+  }
+  const template = staticTemplateSource(templateProperty);
   if (template === undefined) {
-    return undefined;
+    return { kind: 'bail', warning: TEMPLATE_UNREADABLE_WARNING };
   }
 
-  const setup = setupProperty(renderObject);
-  if (setup && !isTrivialSetup(setup)) {
-    return undefined;
+  let setup: ForwardableSetup | undefined;
+  const setupProp = setupProperty(renderObject);
+  if (setupProp) {
+    const resolution = readForwardableSetup(setupProp, {
+      argsParam: options.argsParam,
+      importBindings,
+      source: options.source ?? '',
+    });
+    // A setup returning a render closure wins over the template at runtime.
+    if (resolution.kind === 'render-closure') {
+      return { kind: 'skip' };
+    }
+    if (resolution.kind === 'bail') {
+      return resolution;
+    }
+    setup = resolution.setup;
   }
 
   const componentImports = readComponentImports(
@@ -139,7 +175,11 @@ export function readTemplateRenderConfig(
     importBindings,
     options
   );
-  return componentImports ? { template, componentImports } : undefined;
+  if (!componentImports) {
+    return { kind: 'bail', warning: COMPONENTS_UNREADABLE_WARNING };
+  }
+
+  return { kind: 'config', config: { template, componentImports, setup } };
 }
 
 /**
@@ -169,11 +209,19 @@ export function transformTemplate(
     template: input.template,
   };
 
+  if (input.setup && !seedForwardedSetup(input.setup, state)) {
+    return undefined;
+  }
+
   if (!collectTemplateScopeBindings(ast.children, state.ctx)) {
     return undefined;
   }
 
   if (!ast.children.every((child) => transformNode(child, state))) {
+    return undefined;
+  }
+
+  if (input.setup && !appendSetupStatements(input.setup, state)) {
     return undefined;
   }
 
@@ -183,6 +231,59 @@ export function transformTemplate(
       ctx: state.ctx,
     }),
   };
+}
+
+/** Reserve setup names and route forwarded imports before any hoist can collide with them. */
+function seedForwardedSetup(setup: ForwardableSetup, state: TransformState): boolean {
+  for (const name of setup.bindings) {
+    state.ctx.bindings.add(name);
+  }
+  for (const { localName, binding } of setup.imports) {
+    if (binding.importName === localName) {
+      (state.ctx.imports[binding.importId] ??= new Set()).add(localName);
+    } else {
+      const statement = importStatementForBinding(localName, binding);
+      if (!statement) {
+        return false;
+      }
+      state.ctx.componentImports.add(statement);
+    }
+  }
+  return true;
+}
+
+function appendSetupStatements(setup: ForwardableSetup, state: TransformState): boolean {
+  for (const statement of setup.statements) {
+    let text = statement.source;
+    for (const read of [...statement.argsReads].sort((a, b) => b.start - a.start)) {
+      const arg = state.argsByName.get(read.name);
+      // Only prop args substitute: a model arg becomes a ref, and slot or event args have no
+      // value form a script statement can read.
+      if (!arg || arg.role !== 'prop') {
+        return false;
+      }
+      const rendered =
+        arg.plan.kind === 'inline'
+          ? printValue(unwrapExpression(arg.value))
+          : hoistArgValue(arg.name, arg.value, state.ctx);
+      const wrapped = rendered.startsWith('-') ? `(${rendered})` : rendered;
+      text = text.slice(0, read.start) + wrapped + text.slice(read.end);
+    }
+    state.ctx.statements.push(dedentBy(text, statement.column));
+  }
+  return true;
+}
+
+// Continuation lines keep the story file's nesting; strip the statement's own column from them.
+function dedentBy(source: string, column: number): string {
+  if (column <= 0) {
+    return source;
+  }
+  const indentation = ' '.repeat(column);
+  return source
+    .split('\n')
+    .map((line, index) => (index > 0 && line.startsWith(indentation) ? line.slice(column) : line))
+    .join('\n');
 }
 
 function transformNode(node: TemplateChildNode, state: TransformState): boolean {
@@ -908,29 +1009,4 @@ function setupProperty(
     }
     return keyOf(property) === SETUP_PROPERTY;
   });
-}
-
-// setup: () => ({ args })
-function isTrivialSetup(setup: t.ObjectMethod | t.ObjectProperty): boolean {
-  const returned = setupReturnObject(setup);
-  if (!returned || returned.properties.length !== 1) {
-    return false;
-  }
-
-  const [property] = returned.properties;
-  if (!t.isObjectProperty(property) || keyOf(property) !== ARGS_NAME) {
-    return false;
-  }
-
-  const value = unwrapExpression(property.value);
-  return t.isIdentifier(value, { name: ARGS_NAME });
-}
-
-// setup() { return { args }; } or setup: () => ({ args })
-function setupReturnObject(
-  setup: t.ObjectMethod | t.ObjectProperty
-): t.ObjectExpression | undefined {
-  const setupFunction = t.isObjectMethod(setup) ? setup : unwrapExpression(setup.value);
-  const returned = returnedExpression(setupFunction);
-  return t.isObjectExpression(returned) ? returned : undefined;
 }

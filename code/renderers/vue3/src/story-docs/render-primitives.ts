@@ -37,6 +37,8 @@ export interface RenderContext {
   hoistedArgs: Map<string, { binding: string; source: string }>;
   /** Import statements for components the rendered markup references. */
   componentImports: Set<string>;
+  /** Setup statements forwarded into `<script setup>`, printed after the hoisted consts. */
+  statements: string[];
 }
 
 export interface RenderPropValueInput {
@@ -91,6 +93,7 @@ export function createRenderContext(): RenderContext {
     variables: new Map(),
     hoistedArgs: new Map(),
     componentImports: new Set(),
+    statements: [],
   };
 }
 
@@ -138,13 +141,20 @@ export function renderPropValue(input: RenderPropValueInput, ctx: RenderContext)
   return { attrName: `:${input.attributeName}`, value: printValue(value) };
 }
 
+/** Arg-value hoists share one const per arg name, so every reference keeps the same identity. */
 function hoistedProp(
   input: Pick<RenderPropValueInput, 'attributeName' | 'variableName'>,
   ctx: RenderContext,
   source: string
 ): RenderedProp {
+  const existing = ctx.hoistedArgs.get(input.variableName);
+  if (existing?.source === source) {
+    return { attrName: `:${input.attributeName}`, value: existing.binding };
+  }
+
   const bindingName = allocateBindingName(input.variableName, ctx);
   ctx.variables.set(bindingName, source);
+  ctx.hoistedArgs.set(input.variableName, { binding: bindingName, source });
   return { attrName: `:${input.attributeName}`, value: bindingName };
 }
 
@@ -225,18 +235,15 @@ function renderScript(ctx: RenderContext): string | undefined {
   const variablesCode = Array.from(ctx.variables.entries())
     .map(([name, value]) => `const ${name} = ${value};`)
     .join('\n\n');
+  const statementsCode = ctx.statements.join('\n');
 
-  if (!importsCode && !variablesCode) {
+  const sections = [importsCode, variablesCode, statementsCode].filter(Boolean);
+  if (sections.length === 0) {
     return undefined;
   }
 
-  const scriptCode =
-    importsCode && variablesCode
-      ? `${importsCode}\n\n${variablesCode}`
-      : importsCode || variablesCode;
-
   return `<script lang="ts" setup>
-${scriptCode}
+${sections.join('\n\n')}
 </script>`;
 }
 

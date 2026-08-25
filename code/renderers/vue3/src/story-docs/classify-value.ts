@@ -23,7 +23,7 @@ export type ValuePlan =
  * Everything that is not an `inline` {@link ValuePlan} is hoisted into `<script setup>`, so this is
  * the JavaScript global scope rather than Vue's narrower template-expression allowlist.
  */
-const RESOLVABLE_GLOBALS = new Set([
+export const RESOLVABLE_GLOBALS = new Set([
   'Array',
   'BigInt',
   'Boolean',
@@ -146,7 +146,7 @@ function statementIsResolvable(statement: t.Statement, locals: Set<string>): boo
  *
  * @example `({ a, b = 1 }, ...rest)` → adds `a`, `b`, `rest`
  */
-function collectPatternNames(pattern: t.Node, into: Set<string>): boolean {
+export function collectPatternNames(pattern: t.Node, into: Set<string>): boolean {
   switch (pattern.type) {
     case 'Identifier':
       into.add(pattern.name);

@@ -41,6 +41,10 @@ Add these labels to the PR:
 - `ci:daily` - daily sandbox set; use this when changes affect prerelease sandboxes or sandboxes pinned to a framework or React version other than latest
 - `ci:docs` - documentation-only changes (use with `documentation` category)
 
+**Canary (optional):**
+
+- `ci:canary` - publish pkg.pr.new canary packages for this PR; later pushes republish while the label remains. Do not add this unless the user asks for a canary.
+
 **QA (required, pick one):**
 
 Tells the release team whether manual QA is needed before the next minor release.

@@ -74,7 +74,7 @@ Do not describe how YOU tested the PR code, but how a separate maintainer should
 
 <!-- CANARY_RELEASE_SECTION -->
 
-This PR does not have a canary release associated. Canary releases are automatically created when one of `ci:normal`, `ci:merged`, or `ci:daily` labels are added to the PR.
+This PR does not have a canary release associated. Add the `ci:canary` label to publish canary packages. Subsequent pushes republish while the label remains. You can also trigger a canary for any branch from the [canary workflow](https://github.com/storybookjs/storybook/actions/workflows/publish-canary.yml).
 
 <!-- CANARY_RELEASE_SECTION -->
 

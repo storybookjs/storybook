@@ -68,7 +68,7 @@ EOF
 
 Share the PR URL. Then **AskQuestion**: "Do you want to create a canary release for this PR?"
 
-- **Yes** — run `/canary <PR_NUMBER>` and report workflow status
+- **Yes** — add the `ci:canary` label so this PR and later pushes publish canaries. If the label does not exist yet, trigger `publish-canary.yml` on the branch instead (see the `canary` skill)
 - **No** — stop
 
 ## Notes

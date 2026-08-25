@@ -10,11 +10,7 @@ Use this skill to get a branch-specific canary build from `pkg.pr.new`.
 
 Canary publishes are driven by the `publish-canary.yml` workflow.
 
-The labels that trigger automatic canary publishes on PRs are:
-
-- `ci:normal`
-- `ci:merged`
-- `ci:daily`
+Automatic canary publishes on PRs are triggered only by the `ci:canary` label. A human must apply that label. While it remains, every push to the PR republishes.
 
 ## Version string
 
@@ -39,9 +35,9 @@ An HTTP `200` status code means the canary already exists for that commit.
 
 Use this skill with the following if-then behavior.
 
-### A. If the branch already has a PR with one of the CI labels
+### A. If the branch already has a PR with the `ci:canary` label
 
-If the branch already has an associated PR labeled `ci:normal`, `ci:merged`, or `ci:daily`, do not trigger anything manually first. Reuse the workflow run that should already exist.
+If the branch already has an associated PR labeled `ci:canary`, do not trigger anything manually first. Reuse the workflow run that should already exist.
 
 Find the labeled PR for the current branch:
 
@@ -53,7 +49,7 @@ gh pr list \
 	--head "$BRANCH" \
 	--state open \
 	--json number,title,labels,url \
-	--jq '.[] | select(any(.labels[]?; .name == "ci:normal" or .name == "ci:merged" or .name == "ci:daily"))'
+	--jq '.[] | select(any(.labels[]?; .name == "ci:canary"))'
 ```
 
 Find the latest successful canary workflow run for that branch:
@@ -86,9 +82,9 @@ Optionally confirm the package is live:
 curl -I "https://pkg.pr.new/storybookjs/storybook/storybook@$RUN_SHA"
 ```
 
-### B. If the branch does not have a PR with one of the CI labels
+### B. If the branch does not have a PR with the `ci:canary` label
 
-Trigger the canary workflow manually on the branch and watch it finish. It usually takes about 10 minutes.
+Trigger the canary workflow manually on the branch and watch it finish. It usually takes about 10 minutes. You can also use the GitHub Actions UI: open `publish-canary.yml`, click "Run workflow", and select the branch.
 
 ```bash
 BRANCH=$(git branch --show-current)

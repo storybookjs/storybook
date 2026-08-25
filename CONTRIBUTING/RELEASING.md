@@ -430,7 +430,7 @@ Before you start you should make sure that your working tree is clean and the re
 
 ## Canary Releases
 
-For most pull requests, no manual action is needed to get canary packages. PRs labeled `ci:normal`, `ci:merged`, or `ci:daily` automatically trigger the [canary publish workflow](../.github/workflows/publish-canary.yml), which publishes packages to `pkg.pr.new` and updates the PR body with commands for creating a new project or upgrading an existing one.
+Canary packages are opt-in. A human adds the `ci:canary` label to a pull request, and the [canary publish workflow](../.github/workflows/publish-canary.yml) publishes packages to `pkg.pr.new`. While the label remains, every subsequent push republishes and updates the PR body with commands for creating a new project or upgrading an existing one.
 
 ### Manual Canary Release
 

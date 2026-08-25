@@ -335,6 +335,15 @@ Avoid `console.log`, `console.warn`, and `console.error` unless the file is isol
 | `FIX_ON_COMMIT`               | Force autofix for fmt & lint in pre-commit hook |
 | `NX_CLOUD_ACCESS_TOKEN`       | Authenticate the NX Cloud remote cache          |
 
+## Canary Releases
+
+Canary packages publish to `pkg.pr.new`, not npm.
+
+- A human adds the `ci:canary` label to a PR. While the label remains, every push republishes.
+- Any branch can be published from the GitHub Actions UI or `gh workflow run --ref <branch>` on `publish-canary.yml`.
+- Install with `storybook@https://pkg.pr.new/storybookjs/storybook/storybook@<SHA>`.
+- Details: `.agents/skills/canary/SKILL.md` and `CONTRIBUTING/RELEASING.md`.
+
 ## Commands To Avoid
 
 - **DO NOT RUN** `yarn task dev` without an explicit sandbox template

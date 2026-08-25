@@ -1,6 +1,7 @@
 name: Publish Canary Packages
 
 on:
+  # Manual run from the Actions UI or `gh workflow run`. Select any branch.
   workflow_dispatch:
   pull_request:
     types: [opened, synchronize, reopened, labeled]
@@ -23,12 +24,9 @@ jobs:
     if: |
       github.event_name == 'workflow_dispatch' ||
       (
-        (github.event.action == 'labeled' && contains(fromJSON('["ci:normal","ci:merged","ci:daily"]'), github.event.label.name)) ||
-        (github.event.action != 'labeled' && (
-          contains(github.event.pull_request.labels.*.name, 'ci:normal') ||
-          contains(github.event.pull_request.labels.*.name, 'ci:merged') ||
-          contains(github.event.pull_request.labels.*.name, 'ci:daily')
-        ))
+        github.event.pull_request.state == 'open' &&
+        contains(github.event.pull_request.labels.*.name, 'ci:canary') &&
+        (github.event.action != 'labeled' || github.event.label.name == 'ci:canary')
       )
     runs-on: ubuntu-latest
     steps:

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseToolsTokens } from './tool-tokens.ts';
+import { parseToolsTokens, printsJsonToStdout } from './tool-tokens.ts';
 
 describe('parseToolsTokens', () => {
   it('parses --key value pairs with JSON coercion', () => {
@@ -72,5 +72,29 @@ describe('parseToolsTokens', () => {
   it('rejects values on the bare flags', () => {
     expect(parseToolsTokens(['--json=data'])).toMatchObject({ ok: false });
     expect(parseToolsTokens(['--help=me'])).toMatchObject({ ok: false });
+  });
+});
+
+describe('printsJsonToStdout', () => {
+  it('is true when --json is given on either side of the tool name', () => {
+    expect(printsJsonToStdout(['--json'])).toBe(true);
+    expect(printsJsonToStdout([], { json: true })).toBe(true);
+  });
+
+  it('is false without --json', () => {
+    expect(printsJsonToStdout(['--id', 'button-docs'])).toBe(false);
+  });
+
+  it('is false when the document goes to a file instead of stdout', () => {
+    expect(printsJsonToStdout(['--json', '-o', 'out.json'])).toBe(false);
+    expect(printsJsonToStdout(['--json'], { output: 'out.json' })).toBe(false);
+  });
+
+  it('is false for help, which renders markdown even under --json', () => {
+    expect(printsJsonToStdout(['--json', '--help'])).toBe(false);
+  });
+
+  it('is false when the tokens do not parse, since no JSON is produced', () => {
+    expect(printsJsonToStdout(['--json', 'button'])).toBe(false);
   });
 });

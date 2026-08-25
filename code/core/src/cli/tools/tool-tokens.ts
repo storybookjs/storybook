@@ -152,6 +152,18 @@ function coerceValue(raw: string): unknown {
 }
 
 /**
+ * Whether this invocation will write a JSON document to stdout, which makes stdout a
+ * machine-readable stream that nothing else may write to.
+ *
+ * `--help` renders markdown even under `--json`, and `-o/--output` sends the document to a file
+ * and leaves stdout human-facing; both keep stdout free for log output.
+ */
+export function printsJsonToStdout(tokens: string[], flags: ToolsOutputFlags = {}): boolean {
+  const parsed = parseToolsTokens(tokens, flags);
+  return parsed.ok && parsed.json && !parsed.help && parsed.output === undefined;
+}
+
+/**
  * The generic flags of `storybook tools`, in display order. One list serves both the commander
  * registration and the help renderer: commander's own help is disabled (the command surface is
  * derived from the target project's toolset registry at runtime), so the custom help must document

@@ -11,7 +11,7 @@ import type { Command } from 'commander';
 import type { ToolsetTelemetry } from '../../shared/open-service/toolset-definition.ts';
 import { resolveStorybookConfigDir } from './config-dir.ts';
 import { runToolsCommand, type ToolsCommandOutcome, type ToolsRunResult } from './run.ts';
-import { TOOLS_OPTION_SPECS, type ToolsOutputFlags } from './tool-tokens.ts';
+import { TOOLS_OPTION_SPECS, printsJsonToStdout, type ToolsOutputFlags } from './tool-tokens.ts';
 
 /** `handleCommandFailure` from `bin/core.ts`, passed in to avoid an import cycle. */
 export type CommandFailureHandler = (
@@ -69,6 +69,19 @@ export function registerToolsPassthrough(
         options: ToolsPassthroughOptions
       ) => {
         const cliOptions = pickCliOptions(options);
+        const flags: ToolsOutputFlags = {
+          input: options.input,
+          json: options.json,
+          output: options.output,
+          help: options.help,
+        };
+        // A `--json` run makes stdout a JSON document, and the logger writes to stdout (see
+        // `node-logger`), so any warning a toolset or the indexer emits while the tool runs lands
+        // ahead of the payload and breaks `JSON.parse` for the agent reading it. Silence the
+        // logger for the duration of the run: `logTracker` records log calls before the level is
+        // consulted, so `--logfile` still captures everything that was suppressed.
+        const silenceLogger = printsJsonToStdout(tokens, flags);
+        const previousLogLevel = logger.getLogLevel();
         // Like `init`, the fallback keeps telemetry on when no main config is loadable: running
         // from a cwd without a Storybook is a failure this event exists to measure. The explicit
         // opt-outs (env var, flag, loadable `core.disableTelemetry`) still apply.
@@ -83,6 +96,9 @@ export function registerToolsPassthrough(
             const keepAlive = setInterval(() => {}, 60_000);
             const start = Date.now();
             let result: ToolsRunResult;
+            if (silenceLogger) {
+              logger.setLogLevel('silent');
+            }
             try {
               result = await runToolsCommand(
                 {
@@ -90,17 +106,17 @@ export function registerToolsPassthrough(
                   tool,
                   tokens,
                   target: { cwd: options.cwd, configDir: options.configDir },
-                  flags: {
-                    input: options.input,
-                    json: options.json,
-                    output: options.output,
-                    help: options.help,
-                  },
+                  flags,
                 },
                 { methodTelemetry: createMethodTelemetrySink(cliOptions) }
               );
             } finally {
               clearInterval(keepAlive);
+              // Restored before anything is printed, so the result, the failure handler's own
+              // output and the `--logfile` notice are never swallowed.
+              if (silenceLogger) {
+                logger.setLogLevel(previousLogLevel);
+              }
             }
             const duration = Date.now() - start;
             try {

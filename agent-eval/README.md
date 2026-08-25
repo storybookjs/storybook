@@ -92,6 +92,9 @@ Sandbox setup resolves the Storybook npm dist-tag at run time and pins the
 exact version it finds into the sandbox `package.json`, so each result snapshot
 records which version the run used. By default it pins the `next` tag and keeps
 the local `@storybook/addon-mcp`/`@storybook/mcp` builds from this checkout.
+Set `EVAL_STORYBOOK_VERSION` to pin an exact release instead — use a canary
+build (`EVAL_STORYBOOK_VERSION=0.0.0-pr-<num>-sha-<sha>`) when the run must
+exercise behavior that is merged to `next` but not yet in a published alpha.
 Set `EVAL_STORYBOOK_LATEST=1` to pin the `latest` tag instead — including the
 published `@storybook/addon-mcp` and `@storybook/mcp` in place of the local
 builds — to check whether a behavior change (e.g. in the documentation tooling)

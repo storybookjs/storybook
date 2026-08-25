@@ -3,8 +3,8 @@ import { expectWorkflowCalls, getWorkflowCalls, workflowCallIncludesStory } from
 
 describe('previewing Button stories by file path', () => {
   test('previews the requested stories from the file path prompt', () => {
-    const previewCalls = getWorkflowCalls('preview-stories');
-    expectWorkflowCalls(['preview-stories']);
+    const previewCalls = getWorkflowCalls('stories-preview');
+    expectWorkflowCalls(['stories-preview']);
     // Deliberately no storyId: this eval requires the path + export strategy,
     // and workflowCallIncludesStory would accept a storyId match on its own.
     expect(

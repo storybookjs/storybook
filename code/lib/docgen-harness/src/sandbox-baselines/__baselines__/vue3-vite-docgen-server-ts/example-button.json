@@ -1,0 +1,88 @@
+{
+  "argTypes": {
+    "backgroundColor": {
+      "description": "background color of the button",
+      "name": "backgroundColor",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "click": {
+      "control": {
+        "disable": true
+      },
+      "description": "",
+      "name": "click",
+      "table": {
+        "category": "events",
+        "type": {
+          "summary": "[id: number]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "[id: number]"
+      }
+    },
+    "label": {
+      "description": "The label of the button",
+      "name": "label",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": true
+      }
+    },
+    "primary": {
+      "defaultValue": {
+        "summary": "false"
+      },
+      "description": "primary or secondary button",
+      "name": "primary",
+      "table": {
+        "category": "props",
+        "defaultValue": {
+          "summary": "false"
+        },
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean",
+        "required": false
+      }
+    },
+    "size": {
+      "description": "size of the button",
+      "name": "size",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "\"small\" | \"medium\" | \"large\""
+        }
+      },
+      "type": {
+        "name": "enum",
+        "required": false,
+        "value": ["small", "medium", "large"]
+      }
+    }
+  },
+  "id": "example-button",
+  "jsDocTags": {},
+  "name": "Button",
+  "path": "./src/stories/Button.stories.ts"
+}

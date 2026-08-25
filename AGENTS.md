@@ -89,28 +89,22 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
 
 ### Open services and toolsets
 
-- OSA hosts two sibling constructs behind the `storybook/open-service` entry: **services**
-  (`defineService`/`registerService`) own internal state, synchronization, queries, commands, and
-  loading; **toolsets** (`defineToolset`/`registerToolset`) are the public agent surface for CLI/MCP.
-  They live in mirrored trees: `open-service/services/` and `open-service/toolsets/`.
-- All core OSA services are `internal: true` and may change without a public semver bump. Resolve
-  internal services with `getService(id, { internal: true })`. A plain `getService(id)` throws when
-  the service is internal.
-- A toolset has an `id`, description, and methods with only `schema`, `description`, and `handler`.
-- Toolsets register imperatively via `registerToolset`, called from the same place the paired
-  service registers (the `services` preset hook for core and addons; the mechanism itself does not
-  depend on the Node preset system). Feature gating is shared: a disabled feature registers neither
-  the service nor its toolset. Adapters read the set via `getRegisteredToolsets()`; nothing consumes
-  it before Milestone 4.
-- Handlers receive `(input, ctx)` with `consumer` (`'cli' | 'mcp'`), optional `origin`, required
-  `format` (`'markdown' | 'json'`), and `getService`. Methods never declare the output format;
-  adapters own the mapping (CLI `--json` flag, MCP `json` tool input).
-- The docs toolset's Markdown is a verbatim port of the `@storybook/mcp` manifest formatter
-  (`toolsets/docs/manifest-formatter/`); the two copies must not drift until Milestone 4 deletes the
-  original. MCP consumer + Markdown is the parity-tested cell.
-- The toolset surface remains experimental. Production MCP migration is Milestone 4. CLI generation
-  and production `storybook tools` wiring are Milestone 5. MCP tools remain hand-authored in
-  `addon-mcp` until Milestone 4.
+- Open services own internal state, synchronization, queries, commands, and loading. Toolsets expose
+  capabilities to agents through MCP and the `storybook tools` CLI.
+- Definitions live under `code/core/src/shared/open-service/`; addons may own and register their own
+  toolsets, as addon-vitest does for `test`.
+- Register services and toolsets from the same `services` preset hook and behind the same feature
+  gate. Missing or duplicate registrations fail loudly.
+- Read `code/core/src/shared/open-service/README.md` before changing the contract, adapters,
+  registration, docs access, transport rendering, or tools CLI.
+
+### Agent-facing skills
+
+- `storybook skills` serves the `stories`, `write-story`, and `setup` documents as Markdown.
+- Pure content lives in `code/core/src/cli/skills/content/` and is exported through
+  `storybook/internal/skills`; addon-mcp consumes the same builders.
+- Keep `cli/skills/**` independent of `cli/ai/**`, and keep `cli/skills/content/**` independent of
+  `core-server`. Lint rules enforce both boundaries.
 
 ## Common Commands
 
@@ -162,6 +156,7 @@ yarn storybook:vitest
 | Run sandbox test-runner tests   | `yarn task test-runner-dev --template react-vite/default-ts --start-from auto` |
 | Run the docgen perf bench       | `yarn workspace @storybook/docgen-harness bench:docgen-perf`                   |
 | Run the docgen memory gate      | `yarn workspace @storybook/docgen-harness bench:docgen-memory`                 |
+| Verify sandbox docgen baselines | `yarn workspace @storybook/docgen-harness baselines:sandbox`                   |
 
 ## NX and `yarn task`
 
@@ -351,7 +346,7 @@ These usually start long-running development servers and are the wrong default f
 
 These are recurring failure modes in agent-authored changes to this repo. Apply them when writing or reviewing code, not just when asked.
 
-- **Comments are maintenance docs, not an investigation transcript.** Explain *why* for the next maintainer. Do not commit internal ticket / acceptance-criteria codes (`AC-X2`, `Probe B`, `R6`), the narrative of how you figured something out, "verified byte-identical" provenance prose, or cross-file line references (`L125→L131`) — they are noise and they rot. One or two sentences of rationale beats a paragraph of evidence.
+- **Write comments only for the two reasons in [Comments and JSDoc](#comments-and-jsdoc).** That section is the rule; this list does not restate it.
 - **Verify environment assumptions empirically before encoding them.** If a design rests on "the bundler strips X" or "this metadata is empty here", prove it with a throwaway probe before building on it (and before writing it into a comment as fact). A 10-line experiment is cheaper than a wrong architecture.
 - **Encode assumptions with static checks first.** If an assumption is expected to always hold, prefer making it impossible via TypeScript types and existing lint rules. When static checks are not practical, add a cheap runtime assertion close to the boundary so violations fail loudly at the source.
 - **Avoid redundant tests already covered elsewhere.** Do not add tests for code patterns already guaranteed by TypeScript or linting, and do not duplicate coverage that already exists in Storybook `play` functions or Playwright tests.
@@ -360,9 +355,23 @@ These are recurring failure modes in agent-authored changes to this repo. Apply 
 - **Prefer deletion and simplicity over speculative generality.** No abstraction, fallback, or "flexibility" for a consumer or scenario that does not exist in this codebase today. If a change adds many lines, check whether the right change removes them.
 - **Don't commit accidental overrides to generated code.** Files like `code/core/src/manager/globals/exports.ts` are auto-generated, as stated in their JSDoc header. Only commit changes if they match changes you made on your PR, otherwise leave them untouched and flag flaky generated files in the PR description.
 
+## Comments and JSDoc
+
+Code should be self-explanatory. A comment is only justified when the code cannot explain itself (a non-obvious *why*) or when a public API needs explanation. Never comment to record that you did x, y, z.
+
+Before writing or editing any code file, read [`.agents/guidelines/comments-and-jsdoc.md`](.agents/guidelines/comments-and-jsdoc.md) and follow it. Read it once per session, not once per file.
+
 ## Maintenance Rules For Agents
 
 - Use this file as the canonical instruction source
 - Update `AGENTS.md` when architecture, commands, versions, release flows, or contributor guidance changes
 - Keep `CLAUDE.md` and other agent entrypoints as thin references to `AGENTS.md`
 - Do not reintroduce duplicated instruction files when a reference will do
+
+## Learned User Preferences
+
+- Prefer git worktrees for parallel or experimental work; keep the primary workspace clean and base feature branches on `origin/next`, not a dirty local `next`.
+- Prefer simplicity: avoid premature helpers and one-off abstractions; implement small logic inline when a shared helper is not clearly reused.
+- Keep e2e and long interaction tests as a readable continuous flow; do not force DRY with loops or heavy helpers when repetition is clearer.
+- For Storybook stories, put human-facing description in JSDoc above the `meta` const rather than a `description` parameter.
+- When renaming tools or APIs that emit telemetry, keep historical telemetry string names stable across Storybook versions unless the field is brand-new and has no existing data.

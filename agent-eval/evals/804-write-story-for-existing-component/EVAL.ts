@@ -22,7 +22,7 @@ describe('writing stories for an existing AlertBanner', () => {
 
   describe.runIf(review)('when review is enabled', () => {
     test('uses Storybook story instructions and publishes a display review', () => {
-      expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
+      expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
       expectDisplayReviewForVisualChange();
     });
 

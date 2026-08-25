@@ -80,8 +80,8 @@ export function getEvalContext(): EvalContext {
 // runs are review-on only when EVAL_REVIEW=1 (the ci:review PR label) sets
 // the `experimentalReview` feature flag in the sandbox Storybook. EVAL.ts
 // files branch on this — with review on, visual work must end in a published
-// display-review; with review off, display-review is not even exposed and
-// the workflow ends in preview-stories links.
+// review-create; with review off, review-create is not even exposed and
+// the workflow ends in stories-preview links.
 export function isReviewEnabled(): boolean {
   return getEvalContext().review;
 }
@@ -145,9 +145,9 @@ export function expectFinalResponseMatches(patterns: RegExp[]): void {
 }
 
 export function expectDisplayReviewForVisualChange(): void {
-  const displayReview = getWorkflowCalls('display-review').at(-1);
+  const displayReview = getWorkflowCalls('review-create').at(-1);
   if (displayReview === undefined) {
-    expect.fail('Expected display-review to be called');
+    expect.fail('Expected review-create to be called');
   }
 
   expectValidDisplayReviewPayload(displayReview.input);
@@ -156,18 +156,18 @@ export function expectDisplayReviewForVisualChange(): void {
 
 // Review-off counterpart of expectDisplayReviewForVisualChange (review is
 // opt-in via the `experimentalReview` flag, so this is the default path):
-// display-review is not registered, so visual work must end in
-// preview-stories calls and the final response must share the preview URLs.
-// `covering` requires each substring to appear in some preview-stories story
+// review-create is not registered, so visual work must end in
+// stories-preview calls and the final response must share the preview URLs.
+// `covering` requires each substring to appear in some stories-preview story
 // input (storyId, exportName, or story path); `coveringAnyOf` requires at
 // least one of the substrings instead.
 export function expectPreviewStoriesWithFinalLinks(options?: {
   covering?: string[];
   coveringAnyOf?: string[];
 }): void {
-  expectWorkflowCalls(['preview-stories']);
+  expectWorkflowCalls(['stories-preview']);
 
-  const storyInputs = getWorkflowCalls('preview-stories').flatMap((call) =>
+  const storyInputs = getWorkflowCalls('stories-preview').flatMap((call) =>
     getStoryInputs(call.input)
   );
   const inputCovers = (substring: string) =>
@@ -178,7 +178,7 @@ export function expectPreviewStoriesWithFinalLinks(options?: {
   for (const substring of options?.covering ?? []) {
     expect(
       inputCovers(substring),
-      `Expected a preview-stories story input covering "${substring}". Received: ${JSON.stringify(storyInputs)}`
+      `Expected a stories-preview story input covering "${substring}". Received: ${JSON.stringify(storyInputs)}`
     ).toBe(true);
   }
 
@@ -186,7 +186,7 @@ export function expectPreviewStoriesWithFinalLinks(options?: {
   if (anyOf.length > 0) {
     expect(
       anyOf.some(inputCovers),
-      `Expected a preview-stories story input covering one of ${JSON.stringify(anyOf)}. Received: ${JSON.stringify(storyInputs)}`
+      `Expected a stories-preview story input covering one of ${JSON.stringify(anyOf)}. Received: ${JSON.stringify(storyInputs)}`
     ).toBe(true);
   }
 
@@ -203,10 +203,10 @@ export function expectPreviewStoriesWithFinalLinks(options?: {
 // Trigger correctness: a pure non-visual refactor must NOT publish a review,
 // and the final response must not pretend there is one.
 export function expectNoDisplayReview(): void {
-  const displayReviewCalls = getWorkflowCalls('display-review');
+  const displayReviewCalls = getWorkflowCalls('review-create');
   expect(
     displayReviewCalls.length,
-    `Expected display-review NOT to be called for a non-visual change. Received payloads: ${JSON.stringify(
+    `Expected review-create NOT to be called for a non-visual change. Received payloads: ${JSON.stringify(
       displayReviewCalls.map((call) => call.input)
     )}`
   ).toBe(0);
@@ -222,15 +222,15 @@ export function expectNoDisplayReview(): void {
 // (changedFiles is required in the schema; `[]` is the explicit browse-mode
 // value.)
 export function expectDisplayReviewForBrowseRequest(): void {
-  const displayReview = getWorkflowCalls('display-review').at(-1);
+  const displayReview = getWorkflowCalls('review-create').at(-1);
   if (displayReview === undefined) {
-    expect.fail('Expected display-review to be called');
+    expect.fail('Expected review-create to be called');
   }
 
   expectValidDisplayReviewCollections(displayReview.input);
   expect(
     displayReview.input.changedFiles,
-    'Browse-request display-review must pass changedFiles: []'
+    'Browse-request review-create must pass changedFiles: []'
   ).toEqual([]);
   expectFinalResponseSharesReviewLink();
 }
@@ -240,9 +240,9 @@ export function expectDisplayReviewForBrowseRequest(): void {
 // stories, never omit them. Assumes the template starts without story files,
 // so every story file on disk was created by the agent.
 export function expectAllStoryExportsInDisplayReview(): void {
-  const displayReview = getWorkflowCalls('display-review').at(-1);
+  const displayReview = getWorkflowCalls('review-create').at(-1);
   if (displayReview === undefined) {
-    expect.fail('Expected display-review to be called');
+    expect.fail('Expected review-create to be called');
   }
 
   const payloadStoryIds = getDisplayReviewStoryIds(displayReview.input);
@@ -256,7 +256,7 @@ export function expectAllStoryExportsInDisplayReview(): void {
       const suffix = `--${kebabCase(exportName)}`;
       expect(
         payloadStoryIds.some((storyId) => storyId.endsWith(suffix)),
-        `Expected story "${exportName}" from ${storyFile} in the display-review payload. Received storyIds: ${JSON.stringify(payloadStoryIds)}`
+        `Expected story "${exportName}" from ${storyFile} in the review-create payload. Received storyIds: ${JSON.stringify(payloadStoryIds)}`
       ).toBe(true);
     }
   }
@@ -267,16 +267,16 @@ export function expectAllStoryExportsInDisplayReview(): void {
 // expectAllStoryExportsInDisplayReview, for fixtures with pre-existing
 // stories the agent may legitimately leave out of the review.
 export function expectStoryIdsInDisplayReview(idSubstrings: string[]): void {
-  const displayReview = getWorkflowCalls('display-review').at(-1);
+  const displayReview = getWorkflowCalls('review-create').at(-1);
   if (displayReview === undefined) {
-    expect.fail('Expected display-review to be called');
+    expect.fail('Expected review-create to be called');
   }
 
   const storyIds = getDisplayReviewStoryIds(displayReview.input);
   for (const substring of idSubstrings) {
     expect(
       storyIds.some((storyId) => storyId.includes(substring)),
-      `Expected a storyId containing "${substring}" in the display-review payload. Received storyIds: ${JSON.stringify(storyIds)}`
+      `Expected a storyId containing "${substring}" in the review-create payload. Received storyIds: ${JSON.stringify(storyIds)}`
     ).toBe(true);
   }
 }
@@ -320,11 +320,7 @@ function kebabCase(value: string): string {
     .toLowerCase();
 }
 
-const DOCUMENTATION_WORKFLOW_NAMES = [
-  'get-documentation',
-  'get-documentation-for-story',
-  'list-all-documentation',
-] as const;
+const DOCUMENTATION_WORKFLOW_NAMES = ['docs-show', 'docs-show-story', 'docs-list'] as const;
 
 const LAUNCH_CONFIG_PATH = '.claude/launch.json';
 
@@ -384,7 +380,7 @@ export function expectValidStorybookLaunchConfig(): void {
 //   a kill routed through an unrelated variable, e.g. `PID=$(lsof -ti:6006)`
 //   then `kill $PID` in a later command, is beyond this heuristic).
 //   A liveness probe at eval time is deliberately NOT used: the sandbox
-//   Storybook can crash on its own after run-story-tests (the storybook/test
+//   Storybook can crash on its own after test-run (the storybook/test
 //   vitest sub-runner dies on "Restarting Vitest due to config change" →
 //   "No projects matched the filter", taking the dev-server process with it;
 //   local runs 2026-07-08), so a probe would fail on that infra bug, not on
@@ -523,11 +519,11 @@ export function isLocalStorybookPreviewUrl(value: string): boolean {
   return isLocalDevServerUrl(value) && STORYBOOK_PREVIEW_URL_PATTERN.test(value);
 }
 
-// Story IDs must come from a discovery tool (get-changed-stories, or the
-// get-stories-by-component fallback), never from file names or memory. A
+// Story IDs must come from a discovery tool (stories-changed, or the
+// stories-find-by-component fallback), never from file names or memory. A
 // published review without a prior discovery call means the agent guessed
 // its way to valid-looking IDs.
-const STORY_DISCOVERY_WORKFLOW_NAMES = ['get-changed-stories', 'get-stories-by-component'];
+const STORY_DISCOVERY_WORKFLOW_NAMES = ['stories-changed', 'stories-find-by-component'];
 
 export function expectStoryDiscoveryBeforeReview(): void {
   const calls = getStorybookWorkflowCalls();
@@ -539,8 +535,8 @@ export function expectStoryDiscoveryBeforeReview(): void {
     `Expected a story-discovery call (${STORY_DISCOVERY_WORKFLOW_NAMES.join(' or ')}) before publishing the review`
   ).toBeGreaterThanOrEqual(0);
 
-  const lastReviewIndex = calls.findLastIndex((call) => call.name === 'display-review');
-  expect(lastReviewIndex, 'Expected display-review to be called').toBeGreaterThanOrEqual(0);
+  const lastReviewIndex = calls.findLastIndex((call) => call.name === 'review-create');
+  expect(lastReviewIndex, 'Expected review-create to be called').toBeGreaterThanOrEqual(0);
   expect(
     firstDiscoveryIndex,
     'Story discovery must happen before the review is published'
@@ -552,46 +548,43 @@ export type WorkflowToolResult = {
   isError: boolean;
 };
 
-// The validation workflow the instructions demand: run run-story-tests after
+// The validation workflow the instructions demand: run test-run after
 // each component or story change, and fix failing tests before reporting
-// success. The section headers come from the run-story-tests result
+// success. The section headers come from the test-run result
 // formatter in packages/addon-mcp (## Passing Stories / ## Failing Stories /
 // ## Unhandled Errors) and appear verbatim in the MCP tool result and in the
-// `storybook ai run-story-tests` CLI output.
+// `storybook ai test-run` CLI output.
 //
 // `covering` pins the final green run to the change under test: at least one
 // of the given substrings must appear in its story ids. A stricter
 // after-the-edit ordering check is deliberately not encoded, because real
 // passing flows legitimately run tests before the discovery step.
 export function expectStoryTestsRanAndPassed(options?: { covering?: string[] }): void {
-  expectWorkflowCalls(['run-story-tests']);
+  expectWorkflowCalls(['test-run']);
 
-  const results = getWorkflowToolResults('run-story-tests');
-  expect(
-    results.length,
-    'Expected at least one run-story-tests result in the transcript'
-  ).toBeGreaterThan(0);
+  const results = getWorkflowToolResults('test-run');
+  expect(results.length, 'Expected at least one test-run result in the transcript').toBeGreaterThan(
+    0
+  );
 
   const lastResult = selectFinalRunStoryTestsReport(results);
   if (lastResult === undefined) {
-    expect.fail('Expected a final run-story-tests result');
+    expect.fail('Expected a final test-run result');
   }
 
   expect(
     lastResult.isError,
-    `Final run-story-tests call must succeed. Output: ${truncateForMessage(lastResult.output)}`
+    `Final test-run call must succeed. Output: ${truncateForMessage(lastResult.output)}`
   ).toBe(false);
+  expect(lastResult.output, 'Final test-run result must not report failing stories').not.toMatch(
+    /## Failing Stories/
+  );
+  expect(lastResult.output, 'Final test-run result must not report unhandled errors').not.toMatch(
+    /## Unhandled Errors/
+  );
   expect(
     lastResult.output,
-    'Final run-story-tests result must not report failing stories'
-  ).not.toMatch(/## Failing Stories/);
-  expect(
-    lastResult.output,
-    'Final run-story-tests result must not report unhandled errors'
-  ).not.toMatch(/## Unhandled Errors/);
-  expect(
-    lastResult.output,
-    `Final run-story-tests result must report passing stories. Output: ${truncateForMessage(lastResult.output)}`
+    `Final test-run result must report passing stories. Output: ${truncateForMessage(lastResult.output)}`
   ).toMatch(/## Passing Stories/);
 
   const covering = options?.covering ?? [];
@@ -600,12 +593,12 @@ export function expectStoryTestsRanAndPassed(options?: { covering?: string[] }):
       covering.some((substring) =>
         lastResult.output.toLowerCase().includes(substring.toLowerCase())
       ),
-      `Final run-story-tests result must cover the changed component (one of: ${covering.join(', ')}). Output: ${truncateForMessage(lastResult.output)}`
+      `Final test-run result must cover the changed component (one of: ${covering.join(', ')}). Output: ${truncateForMessage(lastResult.output)}`
     ).toBe(true);
   }
 }
 
-// The run-story-tests result formatter (packages/addon-mcp) always emits at
+// The test-run result formatter (packages/addon-mcp) always emits at
 // least one of these markers. A captured output with none of them is a
 // shell-filtered fragment of the real report, not the report itself. isError
 // deliberately does not count as recognizable: a piped `… | grep` exits
@@ -619,11 +612,11 @@ const RUN_STORY_TESTS_REPORT_MARKERS = [
   'No stories found matching',
 ];
 
-// On the plugin path agents pipe the `storybook ai run-story-tests` CLI
+// On the plugin path agents pipe the `storybook ai test-run` CLI
 // output through grep/sed/tail, so the chronologically last captured output
 // can be a filtered fragment of an otherwise correct run (observed in CI run
 // 28672627415, 2026-07-03). Judge the last output that still looks like a
-// run-story-tests report; only when no output is recognizable does the raw
+// test-run report; only when no output is recognizable does the raw
 // last result stand, so fully-filtered transcripts still fail loud.
 export function selectFinalRunStoryTestsReport(
   results: WorkflowToolResult[]
@@ -1006,7 +999,7 @@ function killProcessTree(child: ReturnType<typeof spawn>): void {
 // mechanically, because "meaningful grouping" and "useful rationale" are
 // judgment calls.
 export const DISPLAY_REVIEW_CURATION_CRITERION = [
-  'The final display-review tool call publishes a well-curated review.',
+  'The final review-create tool call publishes a well-curated review.',
   'It groups stories into 2 to 5 collections.',
   'No collection contains only a single story, unless there are too few stories to avoid it.',
   "Collections follow a meaningful layering, such as the changed component's visual states, its interaction behavior, or the surfaces that consume it — not arbitrary groupings.",
@@ -1029,19 +1022,19 @@ function readAgentContext(): AgentContext {
 function expectValidDisplayReviewPayload(input: Record<string, unknown>): void {
   expectValidDisplayReviewCollections(input);
 
-  expectNonEmptyArray(input.changedFiles, 'visual change display-review changedFiles');
+  expectNonEmptyArray(input.changedFiles, 'visual change review-create changedFiles');
   input.changedFiles.forEach((filePath, fileIndex) =>
-    expectNonEmptyString(filePath, `visual change display-review changedFiles[${fileIndex}]`)
+    expectNonEmptyString(filePath, `visual change review-create changedFiles[${fileIndex}]`)
   );
 }
 
 function expectValidDisplayReviewCollections(input: Record<string, unknown>): void {
-  expectNonEmptyString(input.title, 'display-review title');
-  expectNonEmptyString(input.description, 'display-review description');
-  expectNonEmptyArray(input.collections, 'display-review collections');
+  expectNonEmptyString(input.title, 'review-create title');
+  expectNonEmptyString(input.description, 'review-create description');
+  expectNonEmptyArray(input.collections, 'review-create collections');
 
   for (const [index, collection] of input.collections.entries()) {
-    const label = `display-review collection ${index}`;
+    const label = `review-create collection ${index}`;
     expectRecord(collection, label);
     expectNonEmptyString(collection.title, `${label} title`);
     expectNonEmptyString(collection.rationale, `${label} rationale`);

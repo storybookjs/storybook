@@ -1,8 +1,4 @@
-/**
- * Compodoc renders doc comments through Markdown, so the value is an HTML fragment rather than the
- * text that was written. Unwrap it before displaying it. Each field's `raw` counterpart carries the
- * original comment.
- */
+// Compodoc renders doc comments through Markdown; each field's `raw` counterpart has the original.
 type Html = string;
 
 export interface Method {
@@ -12,6 +8,7 @@ export interface Method {
   decorators?: Decorator[];
   description?: Html;
   rawdescription?: string;
+  jsdoctags?: JsDocTag[];
 }
 
 export interface JsDocTag {
@@ -26,18 +23,13 @@ export interface Property {
   decorators?: Decorator[];
   /** Omitted by Compodoc for members it cannot type, e.g. `@HostBinding`. */
   type?: string;
-  /**
-   * Whether the member is TS-optional. Compodoc omits it entirely for `@Input()`-decorated
-   * properties while emitting it for signal inputs and plain class properties (compodoc#863, still
-   * open at 2.0.0), so it is absent far more often than the old non-optional declaration implied.
-   */
+  /** Omitted by Compodoc for `@Input()` properties, emitted for the rest (compodoc#863). */
   optional?: boolean;
-  /**
-   * Compodoc's own requiredness flag, which is what Angular actually means by a required input.
-   * Present for signal inputs and for `@Input({ required })`; absent for a plain `@Input()`.
-   */
+  /** Present for signal inputs and `@Input({ required })`, absent for a plain `@Input()`. */
   required?: boolean;
   defaultValue?: string;
+  /** 1-based line the member is declared on. */
+  line?: number;
   description?: Html;
   rawdescription?: string;
   jsdoctags?: JsDocTag[];
@@ -46,6 +38,8 @@ export interface Property {
 export interface Class {
   name: string;
   type: 'class';
+  /** Declaring source file, which Compodoc emits despite omitting it from its published types. */
+  file?: string;
   properties: Property[];
   methods: Method[];
   description?: Html;
@@ -55,6 +49,8 @@ export interface Class {
 export interface Injectable {
   name: string;
   type: 'injectable';
+  /** Declaring source file, which Compodoc emits despite omitting it from its published types. */
+  file?: string;
   properties: Property[];
   methods: Method[];
   description?: Html;
@@ -66,6 +62,8 @@ export interface Pipe {
   /** The pipe's Angular name, which is what templates use rather than the class name. */
   ngname: string;
   type: 'pipe';
+  /** Declaring source file, which Compodoc emits despite omitting it from its published types. */
+  file?: string;
   properties: Property[];
   methods: Method[];
   description?: Html;
@@ -75,6 +73,8 @@ export interface Pipe {
 export interface Directive {
   name: string;
   type: 'directive' | 'component';
+  /** Declaring source file, which Compodoc emits despite omitting it from its published types. */
+  file?: string;
   propertiesClass: Property[];
   inputsClass: Property[];
   outputsClass: Property[];
@@ -118,7 +118,8 @@ export interface EnumType {
 
 export interface EnumTypeChild {
   name: string;
-  value?: string;
+  /** Numeric for a numeric initializer, keeping a `0` member falsy for the extractor. */
+  value?: string | number;
 }
 
 /**

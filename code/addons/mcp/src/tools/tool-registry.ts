@@ -1,40 +1,30 @@
-import type { McpServer } from 'tmcp';
-import type { Options } from 'storybook/internal/types';
+import type { ToolAvailability } from 'storybook/internal/core-server';
 import { logger } from 'storybook/internal/node-logger';
 import {
-  addGetDocumentationTool,
-  addGetStoryDocumentationTool,
-  addListAllDocumentationTool,
-  GET_STORY_TOOL_NAME,
-  GET_TOOL_NAME,
-  getDocumentationToolMetadata,
-  getListAllDocumentationToolMetadata,
-  getStoryDocumentationToolMetadata,
-  LIST_TOOL_NAME,
-} from '@storybook/mcp';
+  createCompositionDocsSources,
+  createDocsToolset,
+  type DocsToolset,
+} from 'storybook/internal/toolsets-docs';
+import type { Options } from 'storybook/internal/types';
+import type { McpServer } from 'tmcp';
 import type { AddonContext } from '../types.ts';
-import type { ToolAvailability } from '../utils/get-tool-availability.ts';
-import { getDisplayReviewToolMetadata, addDisplayReviewTool } from './display-review.ts';
-import { getChangedStoriesToolMetadata, addGetChangedStoriesTool } from './get-changed-stories.ts';
+import { withFriendlyErrors } from '../utils/format-validation-issues.ts';
 import {
-  getStoriesByComponentToolMetadata,
-  addGetStoriesByComponentTool,
-} from './get-stories-by-component.ts';
-import {
+  addGetUIBuildingInstructionsTool,
   buildStorybookStoryInstructions,
   getStorybookStoryInstructionsToolMetadata,
-  addGetUIBuildingInstructionsTool,
 } from './get-storybook-story-instructions.ts';
-import { getPreviewStoriesToolMetadata, addPreviewStoriesTool } from './preview-stories.ts';
-import { getRunStoryTestsToolMetadata, addRunStoryTestsTool } from './run-story-tests.ts';
+import { addPreviewStoriesResource, PREVIEW_STORIES_RESOURCE_URI } from './preview-stories.ts';
+// The error class must come from the same entry as `getToolset` (which throws it, via
+// `toolset-tools.ts`); a copy from another core entry is a different constructor and
+// `instanceof` would silently fail.
+import { OpenServiceMissingToolsetError, toMcpToolName } from 'storybook/open-service';
+import { GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME } from './tool-names.ts';
 import {
-  DISPLAY_REVIEW_TOOL_NAME,
-  GET_CHANGED_STORIES_TOOL_NAME,
-  GET_STORIES_BY_COMPONENT_TOOL_NAME,
-  GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
-  PREVIEW_STORIES_TOOL_NAME,
-  RUN_STORY_TESTS_TOOL_NAME,
-} from './tool-names.ts';
+  getToolsetToolMetadata,
+  registerToolsetTool,
+  type ToolsetToolOptions,
+} from './toolset-tools.ts';
 
 export type ToolMetadata = {
   name: string;
@@ -94,28 +84,109 @@ const createToolsetEnabled =
   () =>
     server.ctx.custom?.toolsets?.[toolset] ?? true;
 
+/**
+ * Declares an MCP tool that is backed by a core toolset method.
+ *
+ * The addon contributes only what is specific to this surface: the MCP toolset grouping, the
+ * availability gate, and any MCP-only metadata. Name, title, description, schemas, behaviour and
+ * telemetry all come from the method.
+ */
+function fromToolset(
+  definition: Omit<AddonToolDefinition, 'name' | 'getMetadata' | 'register'> & {
+    options: ToolsetToolOptions;
+    available?: (context: AddonToolRegistryContext) => boolean;
+    /** Narrows the tool further per request, on top of the toolset gate. */
+    wrapEnabled?: (
+      server: McpServer<any, AddonContext>,
+      context: AddonToolRegistryContext,
+      enabled: ToolEnabled
+    ) => ToolEnabled;
+  }
+): AddonToolDefinition {
+  const { options, available, wrapEnabled, ...rest } = definition;
+  return {
+    ...rest,
+    // Read from the constant, not the registry: this array is built at import time, while toolsets
+    // register later from their preset hooks. Each availability gate is written to match the
+    // condition under which its toolset registers; if they still disagree, resolution fails loudly
+    // (getToolset throws) and the registry drops that one tool with an error log rather than taking
+    // down the whole server (see resolveDefinitionOrDrop).
+    name: toMcpToolName(options.method),
+    available: (context) => available?.(context) ?? true,
+    getMetadata: () => getToolsetToolMetadata(options),
+    register: async (server, context, enabled) => {
+      registerToolsetTool(server, options, wrapEnabled?.(server, context, enabled) ?? enabled);
+    },
+  };
+}
+
+/**
+ * Builds the docs toolset for a composition.
+ *
+ * The composed sources, their manifest provider and the local source's own access all arrive with
+ * the request, so this cannot be the toolset registered once at boot. Called
+ * without a server for metadata only, where the sources shape the schemas but nothing is fetched.
+ */
+function compositionDocsToolset(server?: McpServer<any, AddonContext>): DocsToolset {
+  const custom = server?.ctx.custom;
+  return createDocsToolset({
+    sources: createCompositionDocsSources({
+      sources: custom?.sources ?? [{ id: 'local', title: 'Local' }],
+      manifestProvider: custom?.manifestProvider,
+      getRequest: () => custom?.request,
+      localAccess: custom?.localAccess,
+    }),
+  });
+}
+
+/** The docs tools, in the two shapes the registry needs: registered toolset, or per-request one. */
+function docsToolDefinition(
+  method: 'docs.list' | 'docs.show' | 'docs.showStory'
+): AddonToolDefinition {
+  const forContext = (context: AddonToolRegistryContext): ToolsetToolOptions =>
+    context.multiSource
+      ? { method, resolveToolset: (server) => compositionDocsToolset(server) }
+      : { method };
+
+  return {
+    name: toMcpToolName(method),
+    toolset: 'docs',
+    available: ({ availability }) => availability.docsEnabled,
+    getMetadata: (context) => getToolsetToolMetadata(forContext(context)),
+    register: async (server, context, enabled) => {
+      registerToolsetTool(server, forContext(context), enabled);
+    },
+  };
+}
+
+const docsToolDefinitions: AddonToolDefinition[] = [
+  docsToolDefinition('docs.list'),
+  docsToolDefinition('docs.show'),
+  docsToolDefinition('docs.showStory'),
+];
+
 const addonToolDefinitions: AddonToolDefinition[] = [
-  {
-    name: PREVIEW_STORIES_TOOL_NAME,
+  fromToolset({
     toolset: 'dev',
-    getMetadata: ({ availability }) =>
-      getPreviewStoriesToolMetadata({ reviewEnabled: availability.reviewEnabled }),
-    register: (server, { availability }, enabled) =>
-      addPreviewStoriesTool(server, enabled, { reviewEnabled: availability.reviewEnabled }),
-  },
+    options: {
+      method: 'stories.preview',
+      extras: { _meta: { ui: { resourceUri: PREVIEW_STORIES_RESOURCE_URI } } },
+    },
+  }),
   {
     name: GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME,
     toolset: 'dev',
     getMetadata: ({ availability, toolsets }) => {
-      const testToolsetAvailable = isToolsetEnabled('test', toolsets) && availability.testSupported;
+      const testSupported = isToolsetEnabled('test', toolsets) && availability.testSupported;
       return getStorybookStoryInstructionsToolMetadata({
-        testToolsetAvailable,
-        a11yAvailable: testToolsetAvailable && availability.a11yEnabled,
+        testSupported,
+        a11yAvailable: testSupported && availability.a11yEnabled,
       });
     },
     register: (server, { availability, toolsets }, enabled) =>
       addGetUIBuildingInstructionsTool(server, enabled, {
-        docsAvailable: isToolsetEnabled('docs', toolsets) && availability.docsEnabled,
+        docsEnabled: isToolsetEnabled('docs', toolsets) && availability.docsEnabled,
+        addonVitestAvailable: availability.testSupported,
       }),
     getLocalTool: ({ availability, toolsets, options }) => ({
       call: async () => {
@@ -123,95 +194,83 @@ const addonToolDefinitions: AddonToolDefinition[] = [
           toolsets,
           a11yEnabled: availability.a11yEnabled,
           addonVitestAvailable: availability.testSupported,
-          docsAvailable: isToolsetEnabled('docs', toolsets) && availability.docsEnabled,
+          docsEnabled: isToolsetEnabled('docs', toolsets) && availability.docsEnabled,
           reviewEnabled: availability.reviewEnabled,
         });
         return { content: [{ type: 'text', text }] };
       },
     }),
   },
-  {
-    name: GET_CHANGED_STORIES_TOOL_NAME,
+  fromToolset({
     toolset: 'dev',
     available: ({ availability }) => availability.changeDetectionEnabled,
-    getMetadata: () => getChangedStoriesToolMetadata(),
-    register: (server, { availability }, enabled) =>
-      addGetChangedStoriesTool(server, enabled, { reviewEnabled: availability.reviewEnabled }),
-  },
-  {
-    name: GET_STORIES_BY_COMPONENT_TOOL_NAME,
+    options: { method: 'stories.changed' },
+  }),
+  fromToolset({
     toolset: 'dev',
     available: ({ availability }) => availability.moduleGraphSupported,
-    getMetadata: ({ availability }) =>
-      getStoriesByComponentToolMetadata({ reviewEnabled: availability.reviewEnabled }),
-    register: (server, { availability }, enabled) =>
-      addGetStoriesByComponentTool(server, enabled, {
-        reviewEnabled: availability.reviewEnabled,
-      }),
-  },
-  {
-    name: DISPLAY_REVIEW_TOOL_NAME,
+    options: { method: 'stories.findByComponent' },
+  }),
+  fromToolset({
     toolset: 'dev',
-    // Registered whenever the CLI default could turn review on; the per-request
-    // `reviewEnabled` context (explicit flag, or the trusted local-client header)
-    // decides whether a given MCP client actually sees the tool.
+    // Registered whenever the CLI default could turn review on; the per-request `reviewEnabled`
+    // context (explicit flag, or the trusted local-client header) decides whether a given MCP
+    // client actually sees the tool.
     available: ({ availability }) => availability.reviewEnabledForCli,
-    getMetadata: () => getDisplayReviewToolMetadata(),
-    register: (server, { availability }, enabled) =>
-      addDisplayReviewTool(
-        server,
-        async () =>
-          ((await enabled?.()) ?? true) &&
-          (server.ctx.custom?.reviewEnabled ?? availability.reviewEnabled)
-      ),
-  },
-  {
-    name: RUN_STORY_TESTS_TOOL_NAME,
+    wrapEnabled:
+      (server, { availability }, enabled) =>
+      async () =>
+        ((await enabled?.()) ?? true) &&
+        (server.ctx.custom?.reviewEnabled ?? availability.reviewEnabled),
+    options: {
+      method: 'review.create',
+      wrapSchema: withFriendlyErrors,
+    },
+  }),
+  fromToolset({
     toolset: 'test',
     available: ({ availability }) => availability.testSupported,
-    getMetadata: ({ availability }) =>
-      getRunStoryTestsToolMetadata({ a11yEnabled: availability.a11yEnabled }),
-    register: (server, { availability }, enabled) =>
-      addRunStoryTestsTool(server, { a11yEnabled: availability.a11yEnabled }, enabled),
-  },
-  {
-    name: LIST_TOOL_NAME,
-    toolset: 'docs',
-    available: ({ availability }) => availability.docsEnabled,
-    getMetadata: () => getListAllDocumentationToolMetadata(),
-    register: async (server, _context, enabled) => {
-      logger.info(
-        'Experimental components manifest feature detected - registering component tools'
-      );
-      await addListAllDocumentationTool(server, enabled);
-    },
-  },
-  {
-    name: GET_TOOL_NAME,
-    toolset: 'docs',
-    available: ({ availability }) => availability.docsEnabled,
-    getMetadata: ({ multiSource }) => getDocumentationToolMetadata({ multiSource }),
-    register: (server, { multiSource }, enabled) =>
-      addGetDocumentationTool(server, enabled, {
-        multiSource,
-      }),
-  },
-  {
-    name: GET_STORY_TOOL_NAME,
-    toolset: 'docs',
-    available: ({ availability }) => availability.docsEnabled,
-    getMetadata: ({ multiSource }) => getStoryDocumentationToolMetadata({ multiSource }),
-    register: (server, { multiSource }, enabled) =>
-      addGetStoryDocumentationTool(server, enabled, {
-        multiSource,
-      }),
-  },
+    options: { method: 'test.run' },
+  }),
+  // Docs run on the core docs toolset in both modes. A composition builds its toolset per request,
+  // because the sources it reads and the provider that fetches them belong to the request.
+  ...docsToolDefinitions,
 ];
+
+/**
+ * Logs and drops one tool when its availability gate said yes but the backing toolset never
+ * registered.
+ *
+ * That mismatch is a wiring bug (each gate is written to match its toolset's registration
+ * condition), but it must cost the user one tool, not the whole MCP server or the `storybook ai`
+ * metadata build — the error log keeps it loud. Only this one error is contained: every other
+ * failure rethrows, so a genuinely broken adapter still fails fast.
+ */
+function dropToolIfToolsetMissing(name: string, error: unknown): undefined {
+  if (!(error instanceof OpenServiceMissingToolsetError)) {
+    throw error;
+  }
+  logger.error(`Skipping MCP tool "${name}", its backing toolset is not registered: ${error}`);
+  return undefined;
+}
+
+function resolveDefinitionOrDrop<T>(name: string, resolve: () => T): T | undefined {
+  try {
+    return resolve();
+  } catch (error) {
+    return dropToolIfToolsetMissing(name, error);
+  }
+}
 
 export function getAddonToolMetadata(context: AddonToolRegistryContext): ToolMetadata[] {
   return addonToolDefinitions
     .filter((definition) => isMetadataToolEnabled(definition, context))
-    .map((definition) => definition.getMetadata(context));
+    .flatMap((definition) => {
+      const metadata = resolveDefinitionOrDrop(definition.name, () =>
+        definition.getMetadata(context)
+      );
+      return metadata ? [metadata] : [];
+    });
 }
 
 export function getAddonLocalTools(
@@ -221,7 +280,9 @@ export function getAddonLocalTools(
     addonToolDefinitions
       .filter((definition) => isMetadataToolEnabled(definition, context))
       .flatMap((definition) => {
-        const localTool = definition.getLocalTool?.(context);
+        const localTool = resolveDefinitionOrDrop(definition.name, () =>
+          definition.getLocalTool?.(context)
+        );
         return localTool ? [[definition.name, localTool]] : [];
       })
   );
@@ -231,12 +292,27 @@ export async function registerAddonMcpTools(
   server: McpServer<any, AddonContext>,
   context: AddonToolRegistryContext
 ) {
+  // The preview app resource ships with the preview tool: when the dev toolset is disabled the
+  // tool is absent, and the resource must not appear in resources/list either — the same boot
+  // gate the tool's own registration uses below.
+  if (isToolsetEnabled('dev', context.toolsets)) {
+    await addPreviewStoriesResource(server);
+  }
+
   for (const definition of addonToolDefinitions) {
     if (
       isToolsetEnabled(definition.toolset, context.toolsets) &&
       isToolAvailable(definition, context)
     ) {
-      await definition.register(server, context, createToolsetEnabled(server, definition.toolset));
+      try {
+        await definition.register(
+          server,
+          context,
+          createToolsetEnabled(server, definition.toolset)
+        );
+      } catch (error) {
+        dropToolIfToolsetMissing(definition.name, error);
+      }
     }
   }
 }

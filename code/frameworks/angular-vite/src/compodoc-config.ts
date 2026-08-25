@@ -1,11 +1,4 @@
-/**
- * Single source of truth for "where does Compodoc write, and against which tsconfig".
- *
- * Three code paths need that answer and must agree: `viteFinal` generates `documentation.json`, the
- * docgen preset tells the worker where to read it, and `runCompodoc` builds the command line. When
- * each derived it separately they drifted, and a redirected output directory regenerated on every
- * cold start.
- */
+// `viteFinal` and the Compodoc run must agree here, or a redirected output regenerates every start.
 import type { Preset } from 'storybook/internal/types';
 
 import { resolve } from 'node:path';
@@ -23,7 +16,7 @@ export const DOCUMENTATION_JSON = 'documentation.json';
  * `--output=dir` spelling Commander accepts. Scanned backwards, because a later `-d` wins on the
  * command line; a malformed occurrence is skipped so an earlier one still counts.
  */
-export const readCompodocOutputDir = (compodocArgs: string[]): string | undefined => {
+const readCompodocOutputDir = (compodocArgs: string[]): string | undefined => {
   for (let index = compodocArgs.length - 1; index >= 0; index--) {
     const arg = compodocArgs[index];
     if (arg.startsWith('--output=')) {
@@ -65,7 +58,12 @@ export const resolveCompodocConfig = async (
     typeof framework === 'string' ? {} : (framework?.options ?? {});
 
   const workspaceRoot =
-    options?.angularBuilderContext?.workspaceRoot ?? extra.viteRoot ?? process.cwd();
+    options?.angularBuilderContext?.workspaceRoot ??
+    extra.viteRoot ??
+    // Mirrors what builder-vite does with Vite's root, which only `viteFinal` can pass along. Without
+    // it the docgen reader falls back to cwd and looks in a different directory than the writer.
+    (options?.configDir ? resolve(options.configDir, '..') : undefined) ??
+    process.cwd();
   const compodocArgs = frameworkOptions.compodocArgs ?? DEFAULT_COMPODOC_ARGS;
 
   return {

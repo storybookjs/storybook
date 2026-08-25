@@ -47,7 +47,23 @@ describe('collectTelemetry', () => {
         roots: { listChanged: true },
       },
       customField: 'custom-value',
+      transport: 'mcp',
     });
+  });
+
+  it('reports the storybook ai CLI channel as the cli transport', async () => {
+    vi.mocked(telemetry).mockResolvedValue(undefined);
+
+    const cliServer = Object.assign(Object.create(mockServer), {
+      ctx: { ...mockServer.ctx, custom: { cliClient: true } },
+    }) as any;
+
+    await collectTelemetry({ event: 'test-event', server: cliServer });
+
+    expect(telemetry).toHaveBeenCalledWith(
+      'addon-mcp',
+      expect.objectContaining({ transport: 'cli' })
+    );
   });
 
   it('should pass through additional payload fields', async () => {
@@ -56,7 +72,9 @@ describe('collectTelemetry', () => {
     await collectTelemetry({
       event: 'tool-called',
       server: mockServer,
-      toolName: 'list-all-documentation',
+      // Stable analytics string — keep the historical MCP tool spelling even when the wire name
+      // derived from the toolset method differs.
+      toolName: 'docs-list',
       duration: 123,
       success: true,
     });
@@ -66,9 +84,10 @@ describe('collectTelemetry', () => {
       mcpSessionId: 'test-session-123',
       clientInfo: expect.any(Object),
       clientCapabilities: expect.any(Object),
-      toolName: 'list-all-documentation',
+      toolName: 'docs-list',
       duration: 123,
       success: true,
+      transport: 'mcp',
     });
   });
 
@@ -103,6 +122,7 @@ describe('collectTelemetry', () => {
       mcpSessionId: undefined,
       clientInfo: undefined,
       clientCapabilities: undefined,
+      transport: 'mcp',
     });
   });
 });

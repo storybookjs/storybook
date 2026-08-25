@@ -1,5 +1,6 @@
 import { fileURLToPath } from 'node:url';
 
+import { DOCGEN_WORKER_SPECIFIER } from '@storybook/vue3/preset';
 import type {
   DocgenProviderDescriptor,
   IndexEntry,
@@ -8,7 +9,6 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { Vue3ViteDocgenManifestError } from './errors.ts';
 import { VUE_COMPONENT_META, resolveDocgenContext } from './options.ts';
 
 /**
@@ -29,7 +29,7 @@ export const experimental_docgenProvider = async (
   return [
     ...existing,
     {
-      moduleSpecifier: fileURLToPath(import.meta.resolve('@storybook/vue3/internal/docgen-worker')),
+      moduleSpecifier: fileURLToPath(import.meta.resolve(DOCGEN_WORKER_SPECIFIER)),
     },
   ];
 };
@@ -39,15 +39,7 @@ export const experimental_manifests: PresetPropertyFn<
   StorybookConfigRaw,
   { manifestEntries: IndexEntry[]; watch: boolean }
 > = async (existingManifests = {}, options) => {
-  const { features, docgenServerActive } = await resolveDocgenContext(options);
-
-  if (
-    features?.experimentalDocgenServer === true &&
-    features.componentsManifest === true &&
-    !docgenServerActive
-  ) {
-    throw new Vue3ViteDocgenManifestError();
-  }
+  const { docgenServerActive } = await resolveDocgenContext(options);
 
   if (!docgenServerActive) {
     return existingManifests;

@@ -9,15 +9,15 @@ export type StorybookWorkflowCall = {
 };
 
 export const STORYBOOK_WORKFLOW_TOOL_NAMES = [
-  'display-review',
-  'get-changed-stories',
-  'get-documentation',
-  'get-documentation-for-story',
-  'get-stories-by-component',
+  'docs-list',
+  'docs-show',
+  'docs-show-story',
   'get-storybook-story-instructions',
-  'list-all-documentation',
-  'preview-stories',
-  'run-story-tests',
+  'review-create',
+  'stories-changed',
+  'stories-find-by-component',
+  'stories-preview',
+  'test-run',
 ] as const;
 
 const SHELL_COMMAND_SEPARATORS = new Set(['&&', '||', ';', '|']);
@@ -30,7 +30,9 @@ export function parseStorybookWorkflowShellCommands(commands: string[]): Storybo
   return commands.flatMap(parsePluginWorkflowCalls);
 }
 
-export function normalizeStorybookWorkflowName(name: string): string | undefined {
+export function normalizeStorybookWorkflowName(
+  name: string
+): (typeof STORYBOOK_WORKFLOW_TOOL_NAMES)[number] | undefined {
   return STORYBOOK_WORKFLOW_TOOL_NAMES.find(
     (toolName) =>
       name === toolName ||
@@ -66,22 +68,27 @@ function parsePluginWorkflowCalls(command: string): StorybookWorkflowCall[] {
     return parsePluginWorkflowCalls(nestedCommand);
   }
 
-  // Only genuine `storybook ai` CLI invocations count as plugin workflow
-  // calls. Raw curl requests to the MCP endpoint (or ad hoc helper scripts)
+  // Only genuine `storybook ai` / `storybook tools` CLI invocations count as plugin
+  // workflow calls. Raw curl requests to the MCP endpoint (or ad hoc helper scripts)
   // are deliberately not recognized: agents must use the documented CLI.
-  return parseStorybookAiWorkflowCalls(command);
+  return parseStorybookCliWorkflowCalls(command);
 }
 
-function parseStorybookAiWorkflowCalls(command: string): StorybookWorkflowCall[] {
+function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[] {
   const tokens = tokenizeShellCommand(command);
   const calls: StorybookWorkflowCall[] = [];
 
   for (let index = 0; index < tokens.length - 1; index += 1) {
-    if (tokens[index] !== 'storybook' || tokens[index + 1] !== 'ai') {
+    if (tokens[index] !== 'storybook') {
       continue;
     }
 
-    const invocation = parseStorybookAiInvocation(tokens.slice(index + 2));
+    const cli = tokens[index + 1];
+    if (cli !== 'ai' && cli !== 'tools') {
+      continue;
+    }
+
+    const invocation = parseStorybookCliInvocation(tokens.slice(index + 2), cli);
     if (invocation !== undefined) {
       calls.push(invocation.call);
       index += invocation.consumed + 1;
@@ -91,17 +98,52 @@ function parseStorybookAiWorkflowCalls(command: string): StorybookWorkflowCall[]
   return calls;
 }
 
-function parseStorybookAiInvocation(
-  aiArgs: string[]
+function parseStorybookCliInvocation(
+  cliArgs: string[],
+  cli: 'ai' | 'tools'
 ): { call: StorybookWorkflowCall; consumed: number } | undefined {
-  const endIndex = aiArgs.findIndex(
+  const endIndex = cliArgs.findIndex(
     (token, index) =>
-      SHELL_COMMAND_SEPARATORS.has(token) || (token === 'storybook' && aiArgs[index + 1] === 'ai')
+      SHELL_COMMAND_SEPARATORS.has(token) || (token === 'storybook' && cliArgs[index + 1] === cli)
   );
-  const consumed = endIndex === -1 ? aiArgs.length : endIndex;
-  const segment = aiArgs.slice(0, consumed);
+  const consumed = endIndex === -1 ? cliArgs.length : endIndex;
+  const segment = cliArgs.slice(0, consumed);
 
   if (segment.includes('--help') || segment.includes('-h') || segment[0] === 'help') {
+    return undefined;
+  }
+
+  const command = findWorkflowCommand(segment, cli);
+  if (command === undefined) {
+    return undefined;
+  }
+
+  return {
+    call: {
+      name: command.name,
+      input: parseStorybookAiInput(segment.slice(command.endIndex)),
+      source: 'storybook-ai',
+    },
+    consumed,
+  };
+}
+
+function findWorkflowCommand(
+  segment: string[],
+  cli: 'ai' | 'tools'
+): { name: (typeof STORYBOOK_WORKFLOW_TOOL_NAMES)[number]; endIndex: number } | undefined {
+  if (cli === 'tools') {
+    for (let index = 0; index < segment.length - 1; index += 1) {
+      const first = segment[index];
+      const second = segment[index + 1];
+      if (first === undefined || second === undefined) {
+        continue;
+      }
+      const name = normalizeStorybookWorkflowName(`${first}-${second}`);
+      if (name !== undefined) {
+        return { name, endIndex: index + 2 };
+      }
+    }
     return undefined;
   }
 
@@ -112,18 +154,11 @@ function parseStorybookAiInvocation(
   const name =
     commandToken === undefined ? undefined : normalizeStorybookWorkflowName(commandToken);
 
-  if (name === undefined) {
+  if (name === undefined || commandIndex === -1) {
     return undefined;
   }
 
-  return {
-    call: {
-      name,
-      input: parseStorybookAiInput(segment.slice(commandIndex + 1)),
-      source: 'storybook-ai',
-    },
-    consumed,
-  };
+  return { name, endIndex: commandIndex + 1 };
 }
 
 // Matches the shell binary of a `bash -c '…'`-style wrapper, with or without a

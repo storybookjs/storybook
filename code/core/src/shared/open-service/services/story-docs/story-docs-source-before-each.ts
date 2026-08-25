@@ -1,10 +1,10 @@
-import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePanel.ts';
 import type { CleanupCallback } from 'storybook/internal/csf';
 import type { StoryContext } from 'storybook/internal/types';
+import { shouldSkipStoryDocsEmit } from '../../../../docs-tools/storyDocsCodePanel.ts';
 
 import { emitTransformCode, getService } from 'storybook/preview-api';
 
-import { selectSnippetForStory } from './snippet.ts';
+import { selectSnippetForStory, selectWarningForStory } from './snippet.ts';
 
 export { shouldSkipStoryDocsEmit };
 
@@ -49,7 +49,9 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
       if (source === undefined) {
         return;
       }
-      return emitTransformCode(source, context);
+      // The warning describes the service snippet, so it must not survive the fall back to raw CSF.
+      const warning = snippet === undefined ? undefined : selectWarningForStory(payload, storyId);
+      return emitTransformCode(source, context, warning);
     });
 
   return () => {

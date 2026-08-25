@@ -24,7 +24,7 @@ describe('creating an accessible ToggleSwitch without a launch config', () => {
 
   describe.runIf(reviewEnabled)('with review enabled', () => {
     test('uses Storybook story instructions and publishes a display review', () => {
-      expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
+      expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
       expectDisplayReviewForVisualChange();
     });
 
@@ -39,7 +39,7 @@ describe('creating an accessible ToggleSwitch without a launch config', () => {
     // Skipped: agents publish one collection with every story instead of 2-5
     // meaningful collections (e.g. visual states vs interaction behavior).
     // Seen as score 0.15 < 0.5 in the 2026-07-01T22-16-52 cc-plugin run.
-    // Re-enable when display-review workflow guidance teaches that grouping.
+    // Re-enable when review-create workflow guidance teaches that grouping.
     test.skip('publishes a well-curated review', async () => {
       // 0.5 keeps this soft (curation quality is scored, not gating): minor
       // flaws like one single-story collection pass, arbitrary story dumps
@@ -61,12 +61,12 @@ describe('creating an accessible ToggleSwitch without a launch config', () => {
     // Building with external Reshaped components requires the docs tools: props
     // must not be guessed or read out of node_modules. Skipped for Codex+MCP:
     // GPT-5.5 intermittently builds from prior knowledge without calling
-    // get-documentation (~1/4 runs), despite tool descriptions and server
+    // docs-show (~1/4 runs), despite tool descriptions and server
     // instructions. Codex+plugin passes consistently. Seen in CI 28673251562
     // and local runs on 2026-07-03. Re-enable when Codex MCP reliably uses the
     // docs tools.
     test.skipIf(agent === 'codex' && integration === 'mcp')('uses the documentation tooling', () =>
-      expectWorkflowCalls(['get-documentation'])
+      expectWorkflowCalls(['docs-show'])
     );
 
     test.skipIf(integration === 'mcp')('invokes the stories skill', () =>

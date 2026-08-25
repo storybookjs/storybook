@@ -12,7 +12,7 @@ describe('answering which props ReviewCard accepts', () => {
   const claudeCodeMcp = agent === 'claude-code' && integration === 'mcp';
 
   test.skipIf(claudeCodeMcp)('uses the documentation tooling to resolve props and usage', () => {
-    expectWorkflowCalls(['list-all-documentation', 'get-documentation']);
+    expectWorkflowCalls(['docs-list', 'docs-show']);
   });
 
   // The fixture component has exactly these three props; a grounded answer

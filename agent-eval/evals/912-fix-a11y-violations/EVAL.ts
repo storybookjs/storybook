@@ -8,8 +8,8 @@ import {
 
 describe('fixing accessibility violations found by story tests', () => {
   test('reruns story tests while fixing accessibility issues', () => {
-    expectWorkflowCalls(['run-story-tests']);
-    expect(getWorkflowCalls('run-story-tests').length).toBeGreaterThanOrEqual(2);
+    expectWorkflowCalls(['test-run']);
+    expect(getWorkflowCalls('test-run').length).toBeGreaterThanOrEqual(2);
   });
 
   test('asks before visual accessibility changes', async () => {

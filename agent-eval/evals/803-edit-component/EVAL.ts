@@ -22,7 +22,7 @@ describe('editing ReviewCard to add date and optional onReport', () => {
 
   describe.runIf(review)('when review is enabled', () => {
     test('uses Storybook story instructions and publishes a display review', () => {
-      expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
+      expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
       expectDisplayReviewForVisualChange();
     });
 
@@ -46,11 +46,11 @@ describe('editing ReviewCard to add date and optional onReport', () => {
     const { agent, integration } = getEvalContext();
 
     // The edit pulls in a new Reshaped component (Button), which requires the
-    // docs tools. Skipped for Codex: it omits get-documentation under both
+    // docs tools. Skipped for Codex: it omits docs-show under both
     // instruction shapes (CI 28660377980, 2026-07-03). Re-enable after the
     // documentation tool call passes on three consecutive scheduled CI runs.
     test.skipIf(agent === 'codex')('uses the documentation tooling', () => {
-      expectWorkflowCalls(['get-documentation']);
+      expectWorkflowCalls(['docs-show']);
     });
 
     test.skipIf(integration === 'mcp')('invokes the stories skill', () => {

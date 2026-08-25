@@ -13,9 +13,9 @@ describe('discovering story IDs before previewing Button stories by ID', () => {
   }
 
   test('discovers story IDs before previewing by ID', () => {
-    const previewCalls = getWorkflowCalls('preview-stories');
-    expectWorkflowCalls(['list-all-documentation', 'preview-stories']);
-    expect(getWorkflowCalls('list-all-documentation').some(includesStoryIds)).toBe(true);
+    const previewCalls = getWorkflowCalls('stories-preview');
+    expectWorkflowCalls(['docs-list', 'stories-preview']);
+    expect(getWorkflowCalls('docs-list').some(includesStoryIds)).toBe(true);
     expect(previewCalls.some(workflowCallUsesStoryId)).toBe(true);
     expect(
       previewCalls.some((call) =>

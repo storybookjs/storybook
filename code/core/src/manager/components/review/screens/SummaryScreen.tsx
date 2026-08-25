@@ -352,7 +352,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             padding="small"
             ariaLabel="Copy prompt to refresh this review"
             ariaLabelOnCopy="Prompt copied to clipboard"
-            content="Generate a Storybook review including my latest changes using the display-review tool."
+            content="Generate a Storybook review including my latest changes using the review-create tool."
             childrenOnCopy={
               <>
                 <CheckIcon /> Copy prompt

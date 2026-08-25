@@ -7,7 +7,7 @@ describe('fixing failing Button story tests', () => {
   // button, so the Default story's play function fails until the agent fixes
   // the component.
 
-  // A single run-story-tests call is enough: agents may spot the initial
+  // A single test-run call is enough: agents may spot the initial
   // failure through any channel, as long as the fix is verified through the
   // tool.
   test('finishes with the story tests passing', () => {

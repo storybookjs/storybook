@@ -7,7 +7,7 @@ describe('running Button story tests with a11y disabled via an explicit prompt',
   }
 
   test('runs Storybook story tests with a11y disabled', () => {
-    expectWorkflowCalls(['run-story-tests']);
-    expect(getWorkflowCalls('run-story-tests').some(disablesA11y)).toBe(true);
+    expectWorkflowCalls(['test-run']);
+    expect(getWorkflowCalls('test-run').some(disablesA11y)).toBe(true);
   });
 });

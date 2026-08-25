@@ -9,31 +9,22 @@ import type {
 
 import { fileURLToPath } from 'node:url';
 
-import { resolveCompodocConfig } from '../compodoc-config.ts';
+import { resolvePropsTable } from '../props-table.ts';
 import type { AngularDocgenOptions } from './build-docgen.ts';
 
-/**
- * Contributes a {@link DocgenProviderDescriptor} pointing at {@link ./docgen-worker.ts}, which
- * core's docgen worker imports and runs off the main thread. The descriptor's `options` carry the
- * values the worker cannot derive on its own; see {@link AngularDocgenOptions}.
- */
+/** Contribute the descriptor for the worker module core imports and runs off the main thread. */
 export const experimental_docgenProvider = async (
   existing: DocgenProviderDescriptor[] = [],
   options?: Options
 ): Promise<DocgenProviderDescriptor[]> => {
   const features = await options?.presets?.apply('features', {});
 
-  // Core only applies this preset when the flag is on, so this is a second gate rather than the
-  // only one.
+  // `framework.options.compodoc` is not consulted: it switches the Compodoc run, and no Compodoc
+  // runs here. Reading it would drop the props table for everyone carrying `compodoc: false`, which
+  // is what `storybook init` and the angular-to-angular-vite automigration write on the user's
+  // behalf. Decided once, statically: no descriptor means no worker module to import and no
+  // per-component branch to evaluate.
   if (!features?.experimentalDocgenServer) {
-    return existing;
-  }
-
-  const compodocConfig = await resolveCompodocConfig(options);
-
-  // Opting out of Compodoc is a static setting, so it is decided once here: no descriptor means no
-  // worker module to import and no per-component branch to evaluate.
-  if (!compodocConfig.enabled) {
     return existing;
   }
 
@@ -41,12 +32,8 @@ export const experimental_docgenProvider = async (
     moduleSpecifier: fileURLToPath(
       import.meta.resolve('@storybook/angular-vite/internal/docgen-worker')
     ),
-    // Structured-cloned onto the worker thread: plain JSON only, no closures or class instances.
     options: {
-      outputDir: compodocConfig.outputDir,
-      workspaceRoot: compodocConfig.workspaceRoot,
-      angularFilterNonInputControls: features?.angularFilterNonInputControls,
-      tsconfig: compodocConfig.tsconfig,
+      propsTable: resolvePropsTable(await options?.presets?.apply('frameworkOptions'), features),
     },
   };
 
@@ -71,7 +58,7 @@ export const experimental_manifests: PresetPropertyFn<
     components: {
       v: existingComponents?.v ?? 0,
       components: existingComponents?.components ?? {},
-      meta: { docgen: 'compodoc', durationMs: 0 },
+      meta: { docgen: 'angular-component-meta', durationMs: 0 },
     },
   } as Manifests;
 };

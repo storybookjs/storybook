@@ -17,7 +17,7 @@ import {
 // The workflow assertions below were test.todo while agents ran `storybook ai`
 // from the monorepo root and hit the degraded help of
 // storybookjs/storybook#35359 (still open). Re-enabled now that the stories
-// skills direct the dev server and every `storybook ai` command to the
+// skills direct the dev server and every Storybook CLI command to the
 // package where Storybook is installed, which avoids the degraded-help path.
 
 const review = isReviewEnabled();

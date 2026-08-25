@@ -56,7 +56,7 @@ To remove a plugin:
 
 The plugin includes instructions to help the agent understand how and when to use the [skills](#skills) and [tools](#tools) available to it. As your agent works on UI tasks, it can use the plugin to generate stories, run tests, and preview its work in your Storybook. You can also explicitly call the plugin's skills in prompts (e.g. `/upgrade`) to have the agent perform specific actions.
 
-The agent will use the plugin to automatically open relevant stories or an [agentic review summary](https://storybook.js.org/docs/10.5/ai/agentic-review) in the ADE preview, so you can review the agent's work.
+The agent will use the plugin to automatically open relevant stories or an [agentic review summary](https://storybook.js.org/docs/ai/agentic-review) in the ADE preview, so you can review the agent's work.
 
 ## Skills
 

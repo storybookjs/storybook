@@ -39857,7 +39857,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vue-component-meta@npm:^3.2.7, vue-component-meta@npm:^3.3.9":
+"vue-component-meta@npm:^3.3.9":
   version: 3.3.9
   resolution: "vue-component-meta@npm:3.3.9"
   dependencies:

@@ -139,6 +139,7 @@ export type UpgradeOptions = {
   packageManager?: PackageManagerName;
   dryRun: boolean;
   yes: boolean;
+  features?: string;
   force: boolean;
   disableTelemetry: boolean;
   configDir?: string[];
@@ -339,6 +340,13 @@ async function sendMultiUpgradeTelemetry(options: MultiUpgradeTelemetryOptions) 
 }
 
 export async function upgrade(options: UpgradeOptions): Promise<void> {
+  if (options.features && options.skipAutomigrations) {
+    logger.error(
+      'The --features flag enables feature flags through automigrations, so it cannot be combined with --skip-automigrations.'
+    );
+    throw new HandledError('--features cannot be combined with --skip-automigrations');
+  }
+
   const storybookVersionSpecifier = getStorybookVersionSpecifierFromCli();
   const projectsResult = await getProjects(options);
 

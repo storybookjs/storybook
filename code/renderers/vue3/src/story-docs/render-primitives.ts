@@ -33,6 +33,8 @@ export interface RenderContext {
   bindings: Set<string>;
   /** Const declarations hoisted into `<script setup>`. */
   variables: Map<string, string>;
+  /** Value-identical arg hoists already declared in `<script setup>`. */
+  hoistedArgs: Map<string, { binding: string; source: string }>;
   /** Import statements for components the rendered markup references. */
   componentImports: Set<string>;
 }
@@ -87,6 +89,7 @@ export function createRenderContext(): RenderContext {
     // `ref` is reserved up front so no hoisted arg can shadow the Vue import a v-model may need.
     bindings: new Set(['ref']),
     variables: new Map(),
+    hoistedArgs: new Map(),
     componentImports: new Set(),
   };
 }
@@ -334,8 +337,15 @@ export function renderBoundArgAttribute(
 
 /** Hoist an arg value into `<script setup>` and return the binding name that replaces it. */
 export function hoistArgValue(name: string, value: t.Node, ctx: RenderContext): string {
+  const source = printValue(unwrapExpression(value));
+  const existing = ctx.hoistedArgs.get(name);
+  if (existing?.source === source) {
+    return existing.binding;
+  }
+
   const bindingName = allocateBindingName(name, ctx);
-  ctx.variables.set(bindingName, printValue(unwrapExpression(value)));
+  ctx.variables.set(bindingName, source);
+  ctx.hoistedArgs.set(name, { binding: bindingName, source });
   return bindingName;
 }
 

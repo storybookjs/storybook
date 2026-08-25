@@ -7,14 +7,13 @@ import { logger } from 'storybook/internal/node-logger';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Command } from 'commander';
+import { writeFile } from 'node:fs/promises';
 
 import { registerToolsPassthrough } from './register.ts';
-import type { ToolsRunResult } from './run.ts';
+import { runToolsCommand, type ToolsRunResult } from './run.ts';
 
-const { runToolsCommand } = vi.hoisted(() => ({ runToolsCommand: vi.fn() }));
-
-vi.mock('./run.ts', () => ({ runToolsCommand }));
-vi.mock('node:fs/promises', () => ({ writeFile: vi.fn() }));
+vi.mock('./run.ts', { spy: true });
+vi.mock('node:fs/promises', { spy: true });
 // The shared setup replaces the logger with spies; this file is about the real one's level.
 vi.mock('storybook/internal/node-logger', async (importOriginal) =>
   importOriginal<typeof import('storybook/internal/node-logger')>()
@@ -55,55 +54,78 @@ async function runCli(argv: string[]): Promise<string> {
 
 describe('registerToolsPassthrough', () => {
   const exitSpy = vi.spyOn(process, 'exit').mockImplementation((() => {}) as never);
+  const success = (output: string): ToolsRunResult => ({
+    exitCode: 0,
+    output,
+    outcome: { kind: 'success' },
+  });
 
   beforeEach(() => {
     logger.setLogLevel('info');
-    runToolsCommand.mockImplementation(
-      async (): Promise<ToolsRunResult> => ({
-        exitCode: 0,
-        output: '{"ok":true}',
-        outcome: { kind: 'success' },
-      })
-    );
+    // `-o/--output` reaches the real `writeFile` otherwise, and these runs are about the log level.
+    vi.mocked(writeFile).mockResolvedValue(undefined);
+    vi.mocked(runToolsCommand).mockImplementation(async () => success('{"ok":true}'));
   });
 
   afterEach(() => {
     vi.clearAllMocks();
     logger.setLogLevel('info');
+    exitSpy.mockClear();
   });
 
-  afterEach(() => exitSpy.mockClear());
-
-  it('keeps a --json stdout free of log output while the tool runs', async () => {
-    runToolsCommand.mockImplementation(async (): Promise<ToolsRunResult> => {
-      logger.warn('Multiple story files share the component id');
-      return { exitCode: 0, output: '{"ok":true}', outcome: { kind: 'success' } };
+  describe('when the tool logs while a --json result is on its way to stdout', () => {
+    beforeEach(() => {
+      vi.mocked(runToolsCommand).mockImplementation(async () => {
+        logger.warn('Multiple story files share the component id');
+        return success('{"ok":true}');
+      });
     });
 
-    const stdout = await runCli(['docs', 'show', '--json']);
+    it('keeps stdout free of log output', async () => {
+      const stdout = await runCli(['docs', 'show', '--json']);
 
-    expect(() => JSON.parse(stdout)).not.toThrow();
-    expect(stdout).not.toContain('Multiple story files');
+      expect(() => JSON.parse(stdout)).not.toThrow();
+      expect(stdout).not.toContain('Multiple story files');
+    });
   });
 
-  it('restores the log level once the run is over, including when it throws', async () => {
-    runToolsCommand.mockRejectedValue(new Error('boom'));
-
-    await expect(runCli(['docs', 'show', '--json'])).rejects.toThrow('unexpected command failure');
-
-    expect(logger.getLogLevel()).toBe('info');
-  });
-
-  it('leaves logging on without --json, and when the JSON goes to a file', async () => {
-    const outputs: string[] = [];
-    runToolsCommand.mockImplementation(async (): Promise<ToolsRunResult> => {
-      outputs.push(logger.getLogLevel());
-      return { exitCode: 0, output: 'markdown', outcome: { kind: 'success' } };
+  describe('when the run throws', () => {
+    beforeEach(() => {
+      vi.mocked(runToolsCommand).mockRejectedValue(new Error('boom'));
     });
 
-    await runCli(['docs', 'show']);
-    await runCli(['docs', 'show', '--json', '--output', 'out.json']);
+    it('restores the log level anyway', async () => {
+      await expect(runCli(['docs', 'show', '--json'])).rejects.toThrow(
+        'unexpected command failure'
+      );
 
-    expect(outputs).toEqual(['info', 'info']);
+      expect(logger.getLogLevel()).toBe('info');
+    });
+  });
+
+  describe('when stdout is not a JSON document', () => {
+    const levels: string[] = [];
+
+    beforeEach(() => {
+      levels.length = 0;
+      vi.mocked(runToolsCommand).mockImplementation(async () => {
+        levels.push(logger.getLogLevel());
+        return success('markdown');
+      });
+    });
+
+    it('leaves logging on without --json, and when the JSON goes to a file', async () => {
+      await runCli(['docs', 'show']);
+      await runCli(['docs', 'show', '--json', '--output', 'out.json']);
+
+      expect(levels).toEqual(['info', 'info']);
+    });
+
+    it('leaves logging on for an incomplete command path, which lists tools as markdown', async () => {
+      await runCli(['--json']);
+      await runCli(['docs', '--json']);
+
+      expect(levels).toEqual(['info', 'info']);
+    });
   });
 });

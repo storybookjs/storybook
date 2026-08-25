@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parseToolsTokens, printsJsonToStdout } from './tool-tokens.ts';
+import { parseToolsTokens, printsJsonToStdout, type ToolsOutputFlags } from './tool-tokens.ts';
 
 describe('parseToolsTokens', () => {
   it('parses --key value pairs with JSON coercion', () => {
@@ -76,25 +76,38 @@ describe('parseToolsTokens', () => {
 });
 
 describe('printsJsonToStdout', () => {
+  /** A complete command path, which is what `--json` turns into a JSON document. */
+  const invocation = (tokens: string[], flags?: ToolsOutputFlags) => ({
+    toolset: 'docs',
+    tool: 'show',
+    tokens,
+    flags,
+  });
+
   it('is true when --json is given on either side of the tool name', () => {
-    expect(printsJsonToStdout(['--json'])).toBe(true);
-    expect(printsJsonToStdout([], { json: true })).toBe(true);
+    expect(printsJsonToStdout(invocation(['--json']))).toBe(true);
+    expect(printsJsonToStdout(invocation([], { json: true }))).toBe(true);
   });
 
   it('is false without --json', () => {
-    expect(printsJsonToStdout(['--id', 'button-docs'])).toBe(false);
+    expect(printsJsonToStdout(invocation(['--id', 'button-docs']))).toBe(false);
   });
 
   it('is false when the document goes to a file instead of stdout', () => {
-    expect(printsJsonToStdout(['--json', '-o', 'out.json'])).toBe(false);
-    expect(printsJsonToStdout(['--json'], { output: 'out.json' })).toBe(false);
+    expect(printsJsonToStdout(invocation(['--json', '-o', 'out.json']))).toBe(false);
+    expect(printsJsonToStdout(invocation(['--json'], { output: 'out.json' }))).toBe(false);
   });
 
   it('is false for help, which renders markdown even under --json', () => {
-    expect(printsJsonToStdout(['--json', '--help'])).toBe(false);
+    expect(printsJsonToStdout(invocation(['--json', '--help']))).toBe(false);
   });
 
   it('is false when the tokens do not parse, since no JSON is produced', () => {
-    expect(printsJsonToStdout(['--json', 'button'])).toBe(false);
+    expect(printsJsonToStdout(invocation(['--json', 'button']))).toBe(false);
+  });
+
+  it('is false for an incomplete command path, which lists what is available as markdown', () => {
+    expect(printsJsonToStdout({ tokens: [], flags: { json: true } })).toBe(false);
+    expect(printsJsonToStdout({ toolset: 'docs', tokens: ['--json'] })).toBe(false);
   });
 });

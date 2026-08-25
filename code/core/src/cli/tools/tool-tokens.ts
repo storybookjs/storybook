@@ -155,10 +155,21 @@ function coerceValue(raw: string): unknown {
  * Whether this invocation will write a JSON document to stdout, which makes stdout a
  * machine-readable stream that nothing else may write to.
  *
+ * Only a complete command path produces JSON: an incomplete one (`storybook tools --json`, or
+ * `storybook tools <toolset> --json`) renders the markdown listing of what is available instead.
  * `--help` renders markdown even under `--json`, and `-o/--output` sends the document to a file
- * and leaves stdout human-facing; both keep stdout free for log output.
+ * and leaves stdout human-facing. All of those keep stdout human-facing, so log output may go there.
  */
-export function printsJsonToStdout(tokens: string[], flags: ToolsOutputFlags = {}): boolean {
+export function printsJsonToStdout(invocation: {
+  toolset?: string;
+  tool?: string;
+  tokens: string[];
+  flags?: ToolsOutputFlags;
+}): boolean {
+  const { toolset, tool, tokens, flags = {} } = invocation;
+  if (!toolset || !tool) {
+    return false;
+  }
   const parsed = parseToolsTokens(tokens, flags);
   return parsed.ok && parsed.json && !parsed.help && parsed.output === undefined;
 }

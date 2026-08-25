@@ -80,7 +80,7 @@ export function registerToolsPassthrough(
         // ahead of the payload and breaks `JSON.parse` for the agent reading it. Silence the
         // logger for the duration of the run: `logTracker` records log calls before the level is
         // consulted, so `--logfile` still captures everything that was suppressed.
-        const silenceLogger = printsJsonToStdout(tokens, flags);
+        const silenceLogger = printsJsonToStdout({ toolset, tool, tokens, flags });
         const previousLogLevel = logger.getLogLevel();
         // Like `init`, the fallback keeps telemetry on when no main config is loadable: running
         // from a cwd without a Storybook is a failure this event exists to measure. The explicit

@@ -135,6 +135,34 @@ STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai -p 36917 review-create --json "$(cat
     expect(calls[0]?.input.changedFiles).toEqual(['src/components/ProfileCard.tsx']);
   });
 
+  test('parses --json placed before the workflow command name', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --port 43383 --json '{
+  "title": "ReviewCard with date and report button",
+  "description": "ReviewCard now shows a date.",
+  "collections": [
+    {
+      "title": "ReviewCard states",
+      "rationale": "Default plus report.",
+      "storyIds": ["reviews-reviewcard--default"]
+    }
+  ],
+  "changedFiles": ["src/components/ReviewCard.tsx"]
+}' review-create 2>&1`,
+    ]);
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.name).toBe('review-create');
+    expect(calls[0]?.input.title).toBe('ReviewCard with date and report button');
+    expect(calls[0]?.input.collections).toEqual([
+      {
+        title: 'ReviewCard states',
+        rationale: 'Default plus report.',
+        storyIds: ['reviews-reviewcard--default'],
+      },
+    ]);
+  });
+
   test('does not credit ad hoc MCP invocations from the shell', () => {
     const calls = parseStorybookWorkflowShellCommands([
       'node scripts/mcp-call.mjs test-run \'{"stories":[{"storyId":"example-button--primary"}]}\'',

@@ -120,10 +120,16 @@ function parseStorybookCliInvocation(
     return undefined;
   }
 
+  const commandTokenCount = cli === 'tools' ? 2 : 1;
+  const inputTokens = [
+    ...segment.slice(0, command.endIndex - commandTokenCount),
+    ...segment.slice(command.endIndex),
+  ];
+
   return {
     call: {
       name: command.name,
-      input: parseStorybookAiInput(segment.slice(command.endIndex), heredocs),
+      input: parseStorybookAiInput(inputTokens, heredocs),
       source: 'storybook-ai',
     },
     consumed,

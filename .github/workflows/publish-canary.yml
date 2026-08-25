@@ -50,7 +50,12 @@ jobs:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
-      - name: "Update Canary Release Heading: Pending"
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+
+      - name: 'Update Canary Release Heading: Pending'
         id: replace-canary-heading-pending
         if: ${{ github.event_name == 'pull_request' }}
         continue-on-error: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
@@ -61,7 +66,7 @@ jobs:
           RUN_URL: ${{ steps.canary-status.outputs.run_url }}
         run: |
           printf '## 🦋 Canary Release - ⏳ [Pending](%s)\n' "$RUN_URL" > "$RUNNER_TEMP/canary-heading.md"
-          python3 .github/scripts/replace-pr-body-markers.py \
+          node .github/scripts/replace-pr-body-markers.ts \
             --repo "$REPOSITORY" \
             --pr "$PR_NUMBER" \
             --marker CANARY_RELEASE_HEADING "$RUNNER_TEMP/canary-heading.md"
@@ -122,17 +127,17 @@ jobs:
 
           printf '## 🦋 Canary Release - 🚢 Released [`%s`](%s)\n' "$short_sha" "$PKG_PR_NEW_PAGE" > "$RUNNER_TEMP/canary-heading.md"
 
-          {
-            printf '%s\n' 'This pull request has been released as canary packages. Try it out in a new project or update an existing project with the commands below.'
-            printf '%s\n' ''
-            printf '%s\n' '```sh'
-            printf '%s\n' '# For a new project'
-            printf 'npx --yes --allow-remote=all %s\n' "$CREATE_STORYBOOK_PACKAGE_URL"
-            printf '%s\n' ''
-            printf '%s\n' '# or for an existing project'
-            printf 'npx --yes --allow-remote=all %s upgrade\n' "$STORYBOOK_PACKAGE_URL"
-            printf '%s\n' '```'
-          } > "$RUNNER_TEMP/canary-body.md"
+          cat > "$RUNNER_TEMP/canary-body.md" <<EOF
+          This pull request has been released as canary packages. Try it out in a new project or update an existing project with the commands below.
+
+          ```sh
+          # For a new project
+          npx --yes --allow-remote=all ${CREATE_STORYBOOK_PACKAGE_URL}
+
+          # or for an existing project
+          npx --yes --allow-remote=all ${STORYBOOK_PACKAGE_URL} upgrade
+          ```
+          EOF
 
       - name: Update Canary Release Heading and Body
         id: replace-pr-body
@@ -143,13 +148,13 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPOSITORY: ${{ github.repository }}
         run: |
-          python3 .github/scripts/replace-pr-body-markers.py \
+          node .github/scripts/replace-pr-body-markers.ts \
             --repo "$REPOSITORY" \
             --pr "$PR_NUMBER" \
             --marker CANARY_RELEASE_HEADING "$RUNNER_TEMP/canary-heading.md" \
             --marker CANARY_RELEASE_SECTION "$RUNNER_TEMP/canary-body.md"
 
-      - name: "Update Canary Release Heading: Failed"
+      - name: 'Update Canary Release Heading: Failed'
         id: replace-canary-heading-failed
         if: ${{ github.event_name == 'pull_request' && failure() && steps.replace-pr-body.outcome != 'success' }}
         continue-on-error: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
@@ -162,7 +167,7 @@ jobs:
         run: |
           short_sha="${COMMIT_SHA:0:7}"
           printf '## 🦋 Canary Release - 💥 Failed [`%s`](%s)\n' "$short_sha" "$PKG_PR_NEW_PAGE" > "$RUNNER_TEMP/canary-heading.md"
-          python3 .github/scripts/replace-pr-body-markers.py \
+          node .github/scripts/replace-pr-body-markers.ts \
             --repo "$REPOSITORY" \
             --pr "$PR_NUMBER" \
             --marker CANARY_RELEASE_HEADING "$RUNNER_TEMP/canary-heading.md"

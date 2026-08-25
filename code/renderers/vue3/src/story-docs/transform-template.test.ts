@@ -489,6 +489,28 @@ export const Primary = {
     `);
   });
 
+  it('wraps numeric inline args substituted before a member access', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { count: 5 },
+  render: (args) => ({
+    setup: () => ({ args }),
+    template: '<MyButton :label="args.count.toFixed(1)" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton :label="(5).toFixed(1)" />
+      </template>"
+    `);
+  });
+
   it('substitutes hoisted object args before member access in directive expressions', async () => {
     expect(
       await primarySnippet(`

@@ -15,6 +15,7 @@ const STORY_PATH = '/stories/MyButton.stories.ts';
 const STORY_ID = 'example-mybutton--primary';
 
 const DOCGEN_CATEGORIES: Record<string, string> = {
+  count: 'props',
   label: 'props',
   options: 'props',
   'update:modelValue': 'events',
@@ -173,6 +174,34 @@ export const Primary = {
 
       <template>
         <MyButton :label="upper" />
+      </template>"
+    `);
+  });
+
+  it('parenthesizes a numeric read used as a member-expression object', async () => {
+    const story = await primaryStory(`
+export const Primary = {
+  args: { count: 5 },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const digits = args.count.toFixed(1);
+      return { args, digits };
+    },
+    template: '<MyButton :label="digits" />',
+  }),
+};
+`);
+
+    expect(story?.snippet).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
+      const digits = (5).toFixed(1);
+      </script>
+
+      <template>
+        <MyButton :label="digits" />
       </template>"
     `);
   });

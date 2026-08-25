@@ -268,12 +268,25 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
         arg.plan.kind === 'inline'
           ? printValue(unwrapExpression(arg.value))
           : hoistArgValue(arg.name, arg.value, state.ctx);
-      const wrapped = rendered.startsWith('-') ? `(${rendered})` : rendered;
+      const wrapped = wrapSubstitution(rendered, text.slice(read.end));
       text = text.slice(0, read.start) + wrapped + text.slice(read.end);
     }
     state.ctx.statements.push(dedentBy(text, statement.column));
   }
   return true;
+}
+
+/**
+ * Parenthesize substituted text that would fuse with the surrounding expression.
+ *
+ * @example `-2` before ` ** 2` → `(-2)`; `5` before `.toFixed(1)` → `(5)`, since `5.toFixed`
+ * lexes the dot into the number
+ */
+function wrapSubstitution(text: string, following: string): string {
+  if (text.startsWith('-') || (following.startsWith('.') && /^\d/.test(text))) {
+    return `(${text})`;
+  }
+  return text;
 }
 
 // Continuation lines keep the story file's nesting; strip the statement's own column from them.
@@ -616,11 +629,11 @@ function substituteArgsExpression(
   const text = references
     .sort((a, b) => b.start - a.start)
     .reduce((expression, reference) => {
-      return (
-        expression.slice(0, reference.start) +
-        replacements.get(reference.name)! +
+      const wrapped = wrapSubstitution(
+        replacements.get(reference.name)!,
         expression.slice(reference.end)
       );
+      return expression.slice(0, reference.start) + wrapped + expression.slice(reference.end);
     }, exp.content);
 
   return { start: exp.loc.start.offset, end: exp.loc.end.offset, text };
@@ -788,7 +801,7 @@ function replacementForArgsReference(
     return undefined;
   }
 
-  return text.startsWith('-') ? `(${text})` : text;
+  return text;
 }
 
 /**

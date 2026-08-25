@@ -1,6 +1,6 @@
 {
   "name": "@storybook/codex-plugin",
-  "version": "10.6.0-alpha.7",
+  "version": "10.6.0-alpha.8",
   "private": true,
   "description": "Build, preview, and test UI components from Codex",
   "keywords": [

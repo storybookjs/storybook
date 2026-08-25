@@ -101,6 +101,32 @@ describe('VersionService', () => {
       expect(version).toBe('https://pkg.pr.new/create-storybook@abc123');
     });
 
+    it('should extract a repo-scoped pkg.pr.new specifier from storybook upgrade', () => {
+      const ancestry = [
+        {
+          command:
+            'npx storybook@https://pkg.pr.new/storybookjs/storybook/storybook@deadbeef upgrade',
+        },
+      ];
+
+      const version = versionService.getStorybookVersionFromAncestry(ancestry as any);
+
+      expect(version).toBe('https://pkg.pr.new/storybookjs/storybook/storybook@deadbeef');
+    });
+
+    it('should extract npm tags and prerelease versions from storybook commands', () => {
+      expect(
+        versionService.getStorybookVersionFromAncestry([
+          { command: 'npx storybook@next upgrade' },
+        ] as any)
+      ).toBe('next');
+      expect(
+        versionService.getStorybookVersionFromAncestry([
+          { command: 'npx storybook@10.6.0-alpha.7 upgrade' },
+        ] as any)
+      ).toBe('10.6.0-alpha.7');
+    });
+
     it('should return undefined if no version found', () => {
       const ancestry = [{ command: 'npm install' }, { command: 'node /usr/local/bin/npm' }];
 

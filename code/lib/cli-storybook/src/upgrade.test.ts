@@ -183,6 +183,46 @@ describe('toUpgradedDependencies', () => {
       ]);
     });
 
+    it('should use repo-scoped pkg.pr.new specs from the published canary URL', async () => {
+      const deps = {
+        '@storybook/react': '^8.0.0',
+        storybook: '^8.0.0',
+      };
+
+      const result = await generateUpgradeSpecs(deps, {
+        packageManager: mockPackageManager,
+        isCanary: true,
+        isCLIOutdated: false,
+        isCLIPrerelease: false,
+        isCLIExactPrerelease: false,
+        isCLIExactLatest: false,
+        storybookVersionSpecifier: 'https://pkg.pr.new/storybookjs/storybook/storybook@deadbeef',
+      });
+
+      expect(result).toEqual([
+        '@storybook/react@https://pkg.pr.new/storybookjs/storybook/@storybook/react@deadbeef',
+        'storybook@https://pkg.pr.new/storybookjs/storybook/storybook@deadbeef',
+      ]);
+    });
+
+    it('should keep caret ranges for prerelease CLI upgrades that are not canaries', async () => {
+      const deps = {
+        '@storybook/react': '^8.0.0',
+      };
+
+      const result = await generateUpgradeSpecs(deps, {
+        packageManager: mockPackageManager,
+        isCanary: false,
+        isCLIOutdated: false,
+        isCLIPrerelease: true,
+        isCLIExactPrerelease: false,
+        isCLIExactLatest: false,
+        storybookVersionSpecifier: '10.6.0-alpha.7',
+      });
+
+      expect(result).toEqual(['@storybook/react@^9.0.0']);
+    });
+
     it('should treat pkg.pr.new Storybook specifiers as canaries during project collection', async () => {
       const mockPackageManager = {
         latestVersion: vi.fn(async (packageName: string) =>

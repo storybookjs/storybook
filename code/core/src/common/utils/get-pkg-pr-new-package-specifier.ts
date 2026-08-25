@@ -1,5 +1,5 @@
 const PKG_PR_NEW_STORYBOOK_SPECIFIER_RE =
-  /^(https?:\/\/[^/\s]*pkg\.pr\.new\/)(?:create-storybook|storybook|@storybook\/[^@\s]+)(@[^\s]+)$/;
+  /^(https?:\/\/[^/\s]*pkg\.pr\.new\/(?:[^@\s/]+\/[^@\s/]+\/)?)(?:create-storybook|storybook|@storybook\/[^@\s]+)(@[^\s]+)$/;
 
 export const isPkgPrNewVersionSpecifier = (storybookVersionSpecifier?: string) =>
   !!storybookVersionSpecifier?.match(PKG_PR_NEW_STORYBOOK_SPECIFIER_RE);

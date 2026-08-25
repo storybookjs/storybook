@@ -127,16 +127,18 @@ jobs:
 
           printf '## 🦋 Canary Release - 🚢 Released [`%s`](%s)\n' "$short_sha" "$PKG_PR_NEW_PAGE" > "$RUNNER_TEMP/canary-heading.md"
 
+          # Quote the markdown fence. An unquoted ``` in this heredoc is
+          # command substitution and would run the npx lines in this repo.
           cat > "$RUNNER_TEMP/canary-body.md" <<EOF
           This pull request has been released as canary packages. Try it out in a new project or update an existing project with the commands below.
 
-          ```sh
+          \`\`\`sh
           # For a new project
           npx --yes --allow-remote=all ${CREATE_STORYBOOK_PACKAGE_URL}
 
           # or for an existing project
           npx --yes --allow-remote=all ${STORYBOOK_PACKAGE_URL} upgrade
-          ```
+          \`\`\`
           EOF
 
       - name: Update Canary Release Heading and Body

@@ -8,11 +8,11 @@ test('uses Storybook story instructions', () => {
 });
 
 test('previews the stories', () => {
-  expectWorkflowCalls(['preview-stories']);
+  expectWorkflowCalls(['stories-preview']);
 });
 
 // Not part of the original eval: added to track whether agents use the
 // documentation tools for the external Reshaped components.
 test('uses the documentation tooling', () => {
-  expectWorkflowCalls(['get-documentation']);
+  expectWorkflowCalls(['docs-show']);
 });

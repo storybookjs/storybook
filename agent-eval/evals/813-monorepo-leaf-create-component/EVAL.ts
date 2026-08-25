@@ -30,7 +30,7 @@ test('creates the component inside the leaf package', () => {
 });
 
 test.runIf(review)('uses Storybook story instructions and publishes a display review', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
+  expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
   expectDisplayReviewForVisualChange();
 });
 

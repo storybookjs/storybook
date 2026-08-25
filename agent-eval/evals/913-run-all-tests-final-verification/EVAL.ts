@@ -9,6 +9,6 @@ function runsAllStories(call: StorybookWorkflowCall): boolean {
 }
 
 test('runs the full Storybook story test suite', () => {
-  expectWorkflowCalls(['run-story-tests']);
-  expect(getWorkflowCalls('run-story-tests').some(runsAllStories)).toBe(true);
+  expectWorkflowCalls(['test-run']);
+  expect(getWorkflowCalls('test-run').some(runsAllStories)).toBe(true);
 });

@@ -1,0 +1,64 @@
+{
+  "argTypes": {
+    "default": {
+      "description": "Some description for \"default\" slot.",
+      "name": "default",
+      "table": {
+        "category": "slots",
+        "type": {
+          "summary": "{ num: number; }"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "{ num: number; }"
+      }
+    },
+    "named": {
+      "description": "Some description for \"named\" slot.",
+      "name": "named",
+      "table": {
+        "category": "slots",
+        "type": {
+          "summary": "{ str: string; }"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "{ str: string; }"
+      }
+    },
+    "no-bind": {
+      "description": "Some description for \"no-bind\" slot.",
+      "name": "no-bind",
+      "table": {
+        "category": "slots",
+        "type": {
+          "summary": "any"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "any"
+      }
+    },
+    "vbind": {
+      "description": "Some description for \"vbind\" slot.",
+      "name": "vbind",
+      "table": {
+        "category": "slots",
+        "type": {
+          "summary": "{ num: number; str: string; }"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "{ num: number; str: string; }"
+      }
+    }
+  },
+  "id": "stories-renderers-vue3-vue3-vite-default-ts-component-meta-defineslots",
+  "jsDocTags": {},
+  "name": "Component",
+  "path": "./src/stories/renderers/vue3_vue3-vite-default-ts/component-meta/DefineSlots.stories.ts"
+}

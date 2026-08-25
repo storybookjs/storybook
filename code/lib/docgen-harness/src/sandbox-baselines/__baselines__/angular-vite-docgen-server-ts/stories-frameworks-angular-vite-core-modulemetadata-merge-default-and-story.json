@@ -1,0 +1,10 @@
+{
+  "error": {
+    "message": "No metadata was extracted for the \"MergeWithDefaultModuleMetadata\" export of <sandbox>/src/stories/frameworks/angular-vite/core/moduleMetadata/merge-default-and-story.stories.ts.\nCheck that the file exports the component class and is covered by a tsconfig.json in or above its directory.",
+    "name": "AngularComponentMetaNotFound"
+  },
+  "id": "stories-frameworks-angular-vite-core-modulemetadata-merge-default-and-story",
+  "jsDocTags": {},
+  "name": "MergeWithDefaultModuleMetadata",
+  "path": "./src/stories/frameworks/angular-vite/core/moduleMetadata/merge-default-and-story.stories.ts"
+}

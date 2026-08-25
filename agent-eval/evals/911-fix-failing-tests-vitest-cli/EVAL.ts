@@ -7,6 +7,6 @@ function usesVitestCli(command: string): boolean {
 
 test('reruns the Vitest CLI after fixing failures', () => {
   expect(getShellCommands().filter(usesVitestCli).length).toBeGreaterThanOrEqual(2);
-  expect(getWorkflowCalls('run-story-tests').length).toBe(0);
-  expectWorkflowCalls(['preview-stories']);
+  expect(getWorkflowCalls('test-run').length).toBe(0);
+  expectWorkflowCalls(['stories-preview']);
 });

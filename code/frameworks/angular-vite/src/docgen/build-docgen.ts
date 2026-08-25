@@ -1,5 +1,4 @@
 import { getComponentIdFromEntry, getStoryImportPathFromEntry } from 'storybook/internal/common';
-import { getRealPath } from 'storybook/internal/mocking-utils';
 import type {
   DocgenJsDocTags,
   DocgenPayload,
@@ -7,162 +6,106 @@ import type {
   StrictArgTypes,
 } from 'storybook/internal/types';
 
-import { existsSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { resolve } from 'node:path';
 
 import type {
-  CompodocEntry,
-  CompodocJson,
-  CompodocParsingLogger,
-  JsDocTag,
-} from '@storybook/angular-compodoc';
-import { extractArgTypesFromData, htmlToText } from '@storybook/angular-compodoc';
-import { DOCUMENTATION_JSON } from '../compodoc-config.ts';
-import type { ResolvedMetaComponent } from 'storybook/internal/common';
+  AngularClassMeta,
+  AngularComponentMetaResult,
+  ParsingLogger,
+  PropsTableMode,
+} from '@storybook/angular-cm';
+import { extractArgTypesFromData } from '@storybook/angular-cm';
+import { buildApiDescription } from './api-description.ts';
 import { resolveStoryComponent } from './resolve-component.ts';
 
-/**
- * Configuration the `angular-vite` preset hands to the docgen worker.
- *
- * The descriptor's `options` object is structured-cloned onto the worker thread, so every field
- * here must be plain JSON data.
- */
+// Structured-cloned onto the worker thread, so every field must be plain JSON data.
 export interface AngularDocgenOptions {
-  /** Absolute directory Compodoc writes {@link DOCUMENTATION_JSON} into. */
-  outputDir: string;
-  /** Compodoc's own argument list. */
-  compodocArgs: string[];
-  /**
-   * Directory Compodoc ran in, which is the base its entries' relative `file` paths are written
-   * against.
-   */
-  workspaceRoot: string;
-  /**
-   * `features.angularFilterNonInputControls`. Threaded rather than defaulted: hardcoding it would
-   * silently give half of all users the opposite of their configured Controls behaviour.
-   */
-  angularFilterNonInputControls?: boolean;
-  /** tsconfig Compodoc scans against. Reported in the "component missing from the scan" message. */
-  tsconfig: string;
+  propsTable: PropsTableMode;
+}
+
+export interface SnippetEnum {
+  name: string;
+  members: { name: string; value?: string | number }[];
+}
+
+/** Everything the story-docs provider needs to render a component snippet. */
+export interface AngularComponentSnippetMeta {
+  name: string;
+  selector: string | undefined;
+  // `false` only for an explicit `standalone: false`; anything else is the language default.
+  standalone: boolean;
+  inputs: string[];
+  // Output binding names in `outputsClass` order, `model()` outputs `Change`-suffixed.
+  outputs: string[];
+  enums: SnippetEnum[];
 }
 
 export type AngularDocgenPayload = DocgenPayload & {
-  /** The raw Compodoc entry, unfiltered - a few kilobytes per component, mostly `sourceCode`. */
-  compodoc?: CompodocEntry;
+  // The analyzer's record for the class, never filtered by `propsTable`.
+  angularComponentMeta?: AngularComponentSnippetMeta;
 };
 
-export interface BuildDocgenContext {
-  options: AngularDocgenOptions;
-  readDocumentationJson: (path: string) => CompodocJson;
-  logger: CompodocParsingLogger;
+// Structural on purpose: tests hand in a stub instead of a real TypeScript-backed analyzer.
+export interface AngularComponentMetaSource {
+  extractComponentMeta(
+    componentPath: string,
+    names: { exportName: string; localName?: string }
+  ): AngularComponentMetaResult | undefined;
 }
 
-/** Compodoc attaches the raw TypeScript JSDoc tag nodes, which its published types omit. */
-type WithJsDocTags<T> = T & { jsdoctags?: JsDocTag[] };
+export interface BuildDocgenContext {
+  manager: AngularComponentMetaSource;
+  options: AngularDocgenOptions;
+  logger: ParsingLogger;
+  resolvePath?: (importPath: string) => string;
+}
 
-/** Compodoc records a source file on every entry, but its published types omit the field. */
-type WithFile<T> = T & { file?: string };
+const inputsOf = (entry: AngularClassMeta) =>
+  'inputsClass' in entry ? (entry.inputsClass ?? []) : [];
 
-/**
- * Rewrites a path into the form both sides of a comparison are held in: absolute, symlinks
- * resolved, forward slashes, no trailing slash. Lowercased on Windows only - NTFS is
- * case-insensitive, but Linux is not, so lowercasing everywhere would collapse `Button.ts` and
- * `button.ts` into one candidate.
- */
-const comparablePath = (filePath: string, base?: string): string => {
-  const absolute = getRealPath(base ? resolve(base, filePath) : resolve(filePath), true);
-  const posix = absolute.replace(/\\/g, '/');
-  const trimmed = posix.length > 1 ? posix.replace(/\/+$/, '') : posix;
-  return process.platform === 'win32' ? trimmed.toLowerCase() : trimmed;
-};
+const outputsOf = (entry: AngularClassMeta) =>
+  'outputsClass' in entry ? (entry.outputsClass ?? []) : [];
 
-/**
- * Locates the one Compodoc entry that documents a resolved component.
- *
- * Class names are not unique - a stock Angular sandbox has `ButtonComponent` three times, in three
- * files, with different inputs - so the component's source file decides. Name alone is only trusted
- * when exactly one entry in the whole scan carries it; an ambiguous name with no matching file is
- * reported as undocumented rather than answered with another component's props.
- *
- * Lookup is restricted to `components` and `directives`: the shared five-array `findComponentByName`
- * also returns pipes, injectables and plain classes, which carry no `inputsClass`.
- */
-export const findCompodocEntry = (
-  json: CompodocJson,
-  component: Pick<ResolvedMetaComponent, 'exportName' | 'path'>,
-  workspaceRoot: string
-): CompodocEntry | undefined => {
-  const { exportName, path } = component;
-  const entries = [...(json.components ?? []), ...(json.directives ?? [])].filter(
-    Boolean
-  ) as WithFile<CompodocEntry>[];
+const describedBy = (text: string | undefined): string | undefined => text?.trim() || undefined;
 
-  if (path) {
-    const wanted = comparablePath(path);
-    const inFile = entries.filter(
-      (entry) =>
-        typeof entry.file === 'string' && comparablePath(entry.file, workspaceRoot) === wanted
-    );
-
-    // A default-exported class keeps its own name in `documentation.json`, which the story file
-    // never mentions, so the file is the only thing left to match on. Compodoc can list one physical
-    // file more than once - a symlinked directory yields both a relative and an absolute spelling of
-    // the same path - so entries agreeing on the class name are one component, not an ambiguity.
-    const onPath =
-      exportName === 'default'
-        ? namesAgree(inFile)
-          ? inFile[0]
-          : undefined
-        : inFile.find((entry) => entry.name === exportName);
-    if (onPath) {
-      return onPath;
-    }
-  }
-
-  if (exportName === 'default') {
-    return undefined;
-  }
-
-  const byName = entries.filter((entry) => entry.name === exportName);
-  return sameComponent(byName, workspaceRoot) ? byName[0] : undefined;
-};
-
-/** Whether every entry describes the same class, so picking the first is not a guess. */
-const namesAgree = (entries: WithFile<CompodocEntry>[]): boolean =>
-  entries.length > 0 && entries.every((entry) => entry.name === entries[0].name);
-
-/** Whether same-named entries are all the same physical file, rather than genuine namesakes. */
-const sameComponent = (entries: WithFile<CompodocEntry>[], workspaceRoot: string): boolean => {
-  if (entries.length === 0) {
-    return false;
-  }
-  // An entry with no `file` cannot be shown to be the same file as any other, so it stands alone:
-  // two file-less namesakes are a genuine ambiguity, not one component listed twice.
-  const files = new Set(
-    entries.map((entry, index) =>
-      typeof entry.file === 'string' ? comparablePath(entry.file, workspaceRoot) : `#${index}`
-    )
-  );
-  return files.size === 1;
-};
-
-/**
- * Compodoc's own JSDoc tag nodes, reshaped as the payload's `Record<name, values>`. The description
- * is deliberately not parsed for tags: it is rendered Markdown prose, and an `@Input()` inside a
- * documentation code block would become a fabricated tag.
- */
-const extractJsDocTags = (entry: CompodocEntry): DocgenJsDocTags => {
+const analyzerJsDocTags = (entry: AngularClassMeta): DocgenJsDocTags => {
   const tags: DocgenJsDocTags = {};
-  for (const tag of (entry as WithJsDocTags<CompodocEntry>).jsdoctags ?? []) {
-    const name = tag?.tagName?.escapedText;
+  for (const tag of entry.jsdoctags ?? []) {
+    const name = tag.tagName?.escapedText;
     if (!name) {
       continue;
     }
-    // Compodoc renders each tag's comment to HTML too, and a tag may legitimately carry none.
-    const value = tag.comment === undefined ? '' : htmlToText(tag.comment).trim();
+    const value = tag.comment === undefined ? '' : String(tag.comment).trim();
     (tags[name] ??= []).push(value);
   }
   return tags;
+};
+
+export const metaToSnippetMeta = (
+  meta: AngularComponentMetaResult
+): AngularComponentSnippetMeta => {
+  const { entry } = meta;
+  const inputs = inputsOf(entry).map((input) => input.name);
+  const inputNames = new Set(inputs);
+  const outputs: string[] = [];
+  for (const output of outputsOf(entry)) {
+    // model() lands under the same bare name in both arrays; its output binds as `${name}Change`.
+    const bindingName = inputNames.has(output.name) ? `${output.name}Change` : output.name;
+    if (!outputs.includes(bindingName)) {
+      outputs.push(bindingName);
+    }
+  }
+  return {
+    name: entry.name,
+    selector: entry.selector,
+    standalone: entry.standalone !== false,
+    inputs,
+    outputs,
+    enums: (meta.json.miscellaneous?.enumerations ?? []).map((enumeration) => ({
+      name: enumeration.name,
+      members: enumeration.childs.map((child) => ({ name: child.name, value: child.value })),
+    })),
+  };
 };
 
 const errorPayload = (
@@ -171,36 +114,59 @@ const errorPayload = (
   message: string
 ): AngularDocgenPayload => ({ ...base, jsDocTags: {}, error: { name, message } });
 
-/**
- * Builds an Angular {@link DocgenPayload} for one story entry from Compodoc's `documentation.json`.
- *
- * Returns `undefined` for "not an Angular component here" (no story import path, no `meta.component`
- * - fall through to the next provider), and a payload carrying `error` for "mine, but extraction
- * failed". The two are different and callers must not collapse them.
- */
+// `undefined` means "no Angular component here", so callers fall through to the next provider,
+// while a payload carrying `error` means "mine, but extraction failed".
 export const buildDocgenPayload = (
   input: DocgenProviderInput,
   context: BuildDocgenContext
 ): AngularDocgenPayload | undefined => {
-  const { options, logger } = context;
+  const { manager, options, logger } = context;
   const storyImportPath = getStoryImportPathFromEntry(input.entry);
   if (!storyImportPath) {
     return undefined;
   }
 
-  // The index writes `importPath` relative to the Storybook working directory, which is the
-  // worker's cwd.
-  const storyFilePath = resolve(process.cwd(), storyImportPath);
+  // The index writes `importPath` relative to the Storybook working directory, the worker's cwd.
+  const resolvePath =
+    context.resolvePath ?? ((importPath: string) => resolve(process.cwd(), importPath));
+  const storyFilePath = resolvePath(storyImportPath);
   const resolved = resolveStoryComponent(storyFilePath, input.entry.title);
   if ('reason' in resolved) {
-    // Passing through is correct - it means "no Angular component here" - but leave a trace.
-    logger.debug(`No Angular component resolved from ${storyFilePath}: ${resolved.reason}.`);
-    return undefined;
+    // A story file with no `component` at all documents no Angular component, so the next provider
+    // gets its turn. A `component` that is there but unreadable is this provider's failure to
+    // report: staying quiet would be indistinguishable from a story that documents nothing.
+    if (resolved.reason === 'no-meta-component') {
+      logger.debug(`No Angular component resolved from ${storyFilePath}: ${resolved.reason}.`);
+      return undefined;
+    }
+
+    const unreadableBase = {
+      id: getComponentIdFromEntry(input.entry),
+      name:
+        resolved.reason === 'unreadable-component-expression'
+          ? resolved.expression
+          : (input.entry.title.split('/').at(-1) ?? input.entry.title),
+      path: storyImportPath,
+    };
+    return errorPayload(
+      unreadableBase,
+      'AngularComponentMetaNotFound',
+      resolved.reason === 'unreadable-component-expression'
+        ? `The story file sets \`component: ${resolved.expression}\`, which does not resolve to a class.\n` +
+            `Storybook follows an imported name, a namespace-import property access, or a chain of ` +
+            `property accesses and spreads through modules it can resolve. ` +
+            `Assign the component to a name in ${storyFilePath}.`
+        : // `meta.component` may reach this binding through another module (e.g. a spread config
+          // object), so the type-only or namespace import is not necessarily written in the story
+          // file itself - naming it here would send the reader to the wrong file.
+          `Resolving \`meta.component\` from ${storyFilePath} reached a binding that is a type-only ` +
+            `or namespace import, which carries no class to document.\n` +
+            `Import the component as a value in whichever module declares that binding.`
+    );
   }
 
   const { component } = resolved;
-  // `default` is an export name, not a class name; the local binding is the only thing left to
-  // call the component before its Compodoc entry is found.
+  // `default` is an export name, not a class name, so the local binding is the best name so far.
   const displayName =
     component.exportName === 'default' ? component.localName : component.exportName;
 
@@ -209,69 +175,80 @@ export const buildDocgenPayload = (
     name: displayName,
     path: storyImportPath,
   };
-  const documentationJson = join(options.outputDir, DOCUMENTATION_JSON);
-  const enableCompodoc =
-    `Enable Compodoc so Storybook can extract Angular metadata: make sure framework.options.compodoc is not false, ` +
-    `or generate it yourself with "compodoc -p ${options.tsconfig} -e json -d ${options.outputDir}".`;
 
-  if (!existsSync(documentationJson)) {
+  // A component declared in the story file resolves to the story file itself, so no path at all can
+  // only mean the import specifier did not resolve.
+  if (!component.path) {
     return errorPayload(
       base,
-      'NoCompodocDocumentation',
-      `No Compodoc documentation.json at ${documentationJson}.\n${enableCompodoc}`
+      'AngularComponentMetaNotFound',
+      // `component.importId` may be read from a module `meta.component` only reaches through a
+      // chain (e.g. a spread config object), so the import is not necessarily written in the story
+      // file itself - naming it here would send the reader to the wrong file.
+      `Storybook could not resolve the import of "${displayName}" from "${component.importId}", ` +
+        `reached while resolving \`meta.component\` from ${storyFilePath}.\n` +
+        `Check the import specifier (and any tsconfig path aliases it relies on) in whichever module ` +
+        `actually imports it.`
     );
   }
 
-  let compodocJson: CompodocJson;
+  // The language service can throw a TS Debug Failure on a single pathological file.
+  let meta: AngularComponentMetaResult | undefined;
   try {
-    compodocJson = context.readDocumentationJson(documentationJson);
-  } catch (error) {
+    meta = manager.extractComponentMeta(component.path, {
+      exportName: component.exportName,
+      localName: component.localName,
+    });
+  } catch (err) {
     return errorPayload(
       base,
-      'NoCompodocDocumentation',
-      `${documentationJson} could not be read: ${error instanceof Error ? error.message : String(error)}\n${enableCompodoc}`
+      'AngularComponentMetaExtractionFailed',
+      `The analyzer threw while extracting "${component.exportName}" from ${component.path}: ` +
+        `${err instanceof Error ? err.message : String(err)}`
+    );
+  }
+  if (!meta) {
+    return errorPayload(
+      base,
+      'AngularComponentMetaNotFound',
+      `No metadata was extracted for the "${component.exportName}" export of ${component.path}.\n` +
+        `Check that the file exports the component class and is covered by a tsconfig.json in or above its directory.`
     );
   }
 
-  const entry = findCompodocEntry(compodocJson, component, options.workspaceRoot);
-  if (!entry) {
-    const declaredInStoryFile =
-      component.path !== undefined &&
-      comparablePath(component.path) === comparablePath(storyFilePath);
-
-    return errorPayload(
-      base,
-      'ComponentNotDocumented',
-      declaredInStoryFile
-        ? `Compodoc does not document components declared inside story files, so "${displayName}" has no metadata.\nMove it into its own file to have it documented. Source: ${documentationJson}`
-        : `Compodoc documented this project but not the component "${displayName}".\nCheck that the component's file is covered by the tsconfig Compodoc runs against (${
-            options.tsconfig
-          }) and re-run Compodoc. Source: ${documentationJson}`
-    );
-  }
-
-  const argTypes = extractArgTypesFromData(entry, {
-    compodocJson,
-    filterNonInputControls: options.angularFilterNonInputControls,
+  const argTypes = extractArgTypesFromData(meta.entry, {
+    metadataJson: meta.json,
+    propsTable: options.propsTable,
     logger,
-    unwrapHtml: htmlToText,
   }) as StrictArgTypes;
 
-  // `rawdescription` is not used: it opens with blank lines, which makes its first line empty.
-  const description = entry.description ? htmlToText(entry.description).trim() : undefined;
-  const jsDocTags = extractJsDocTags(entry);
+  // Agent documentation is pinned to `api` whatever the user chose for their props table: `all`
+  // would hand an agent private wiring it cannot bind, and `inputs` would empty the Outputs section.
+  const apiArgTypes =
+    options.propsTable === 'api'
+      ? argTypes
+      : (extractArgTypesFromData(meta.entry, {
+          metadataJson: meta.json,
+          propsTable: 'api',
+          logger,
+        }) as StrictArgTypes);
+
+  const jsDocTags: DocgenJsDocTags = meta.jsDocInfo?.jsDocTags ?? analyzerJsDocTags(meta.entry);
+  const description =
+    describedBy(meta.jsDocInfo?.description) ??
+    describedBy(meta.entry.rawdescription) ??
+    describedBy(meta.entry.description);
 
   return {
     ...base,
-    // Compodoc knows the class name even when the story file imported it as a default export.
-    name: entry.name ?? displayName,
+    // The analyzer knows the class name even when the story file imported it as a default export.
+    name: meta.entry.name,
     description,
-    // Same meaning as on React, which also sources `summary` from a `@summary` tag.
     summary: jsDocTags.summary?.[0],
     jsDocTags,
     argTypes,
-    // `subcomponents` stays unset: Compodoc flattens inherited members into the component's own
-    // `inputsClass`/`outputsClass`, and Angular has no second construct the field would describe.
-    compodoc: entry,
+    apiDescription: buildApiDescription(apiArgTypes, meta.entry.name),
+    renderer: 'angular',
+    angularComponentMeta: metaToSnippetMeta(meta),
   };
 };

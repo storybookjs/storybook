@@ -17,10 +17,6 @@ const config: BuildEntries = {
         entryPoint: './src/entry-preview-docs.ts',
         dts: false,
       },
-      {
-        exportEntries: ['./experimental-playwright'],
-        entryPoint: './src/playwright.ts',
-      },
     ],
     node: [
       {

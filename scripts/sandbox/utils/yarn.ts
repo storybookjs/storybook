@@ -4,7 +4,9 @@ import { join } from 'path';
 
 import semver from 'semver';
 
-import { ROOT_DIRECTORY } from '../../utils/constants.ts';
+import { BEFORE_SANDBOX_NPM_MIN_VERSION, ROOT_DIRECTORY } from '../../utils/constants.ts';
+
+export { BEFORE_SANDBOX_NPM_MIN_VERSION };
 import { runCommand } from '../generate.ts';
 
 export {
@@ -58,17 +60,42 @@ export async function localizeYarnConfigFiles(baseDir: string, beforeDir: string
 }
 
 /**
- * 7-day Yarn `npmMinimalAgeGate` window applied to generated sandboxes.
+ * 7-day age gate for generated sandboxes.
  *
- * Consumers who pull a sandbox and run `yarn install` are protected from
- * dependency versions published within this window (defense against
- * supply-chain attacks via freshly-published malicious packages).
- *
- * Use the duration string for `YARN_NPM_MINIMAL_AGE_GATE` (scaffold env) and
- * the minute value for `yarn config set npmMinimalAgeGate`.
+ * - Yarn: `BEFORE_SANDBOX_MIN_AGE_GATE` / `BEFORE_SANDBOX_MIN_AGE_MINUTES`
+ * - npm scaffold: `BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS` → `NPM_CONFIG_MIN_RELEASE_AGE`
  */
 export const BEFORE_SANDBOX_MIN_AGE_GATE = '7d';
 export const BEFORE_SANDBOX_MIN_AGE_MINUTES = 7 * 24 * 60;
+/** npm `min-release-age` is in days (npm 11.10+). */
+export const BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS = 7;
+export async function ensureNpmSupportsMinReleaseAge() {
+  const { stdout } = await runCommand('npm --version', { cwd: process.cwd() });
+  const version = String(stdout).trim();
+  if (!semver.gte(version, BEFORE_SANDBOX_NPM_MIN_VERSION)) {
+    throw new Error(
+      `Sandbox generation requires npm >= ${BEFORE_SANDBOX_NPM_MIN_VERSION} so NPM_CONFIG_MIN_RELEASE_AGE and min-release-age-exclude are honored (found ${version}). Upgrade with: npm install -g npm@${BEFORE_SANDBOX_NPM_MIN_VERSION}`
+    );
+  }
+}
+
+/**
+ * Templates with a Yarn allowlist also need matching npm exclusions when their
+ * before-script runs through npx/npm. Array config cannot be expressed reliably
+ * via environment variables, so write a scratch `.npmrc` in the scaffold cwd.
+ */
+export async function writeScaffoldNpmrc(cwd: string, minAgeGateExemptions: string[]) {
+  if (!minAgeGateExemptions.length) {
+    return;
+  }
+
+  const lines = [
+    `min-release-age=${BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS}`,
+    ...minAgeGateExemptions.map((pattern) => `min-release-age-exclude[]=${pattern}`),
+  ];
+
+  await writeFile(join(cwd, '.npmrc'), `${lines.join('\n')}\n`);
+}
 
 interface RefreshLockfileOptions {
   cwd: string;

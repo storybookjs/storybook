@@ -1,26 +1,18 @@
-import { existsSync } from 'node:fs';
-
 import type { StoryIndex } from 'storybook/internal/types';
 
-import { isAbsolute, join } from 'pathe';
-
-import type { ModuleGraphService } from '../../services/module-graph/definition.ts';
 import type { FindByComponentOutput } from './definition.ts';
+import {
+  resolveComponentStories,
+  type ComponentStoryDepth,
+  type ModuleGraphAccess,
+} from './resolve-component-stories.ts';
 
-/** Default import-graph distance ceiling (mirrors addon-mcp). */
+/** Default import-graph distance ceiling. */
 export const DEFAULT_MAX_DISTANCE = 3;
 
-export type ComponentStoryDepth = {
-  storyId: string;
-  depth: number;
-};
-
-export type ResolveComponentMatchesResult = {
-  /** Echo of the caller's input path (normalized by the resolver). */
-  componentPath: string;
-  matches: ComponentStoryDepth[];
-  /** `true` when no file exists at the resolved path. */
-  pathNotFound?: boolean;
+export type ClippedByMaxDistance = {
+  count: number;
+  distances: number[];
 };
 
 export type FindStoriesByComponentParams = {
@@ -28,13 +20,19 @@ export type FindStoriesByComponentParams = {
   /** Maximum import-graph distance to include. Defaults to {@link DEFAULT_MAX_DISTANCE}. */
   maxDistance?: number;
   index: StoryIndex;
-  moduleGraph: ModuleGraphService;
+  moduleGraph: ModuleGraphAccess | undefined;
 };
 
-export type ClippedByMaxDistance = {
-  count: number;
-  distances: number[];
-};
+/**
+ * Either the per-path matches, or why the module graph could not answer.
+ *
+ * The unavailable case is distinct on purpose: reporting "no stories" when the graph is still
+ * building or the builder has no change detection would tell an agent that every component is
+ * unused.
+ */
+export type FindStoriesByComponentResult =
+  | { available: false; reason: string }
+  | { available: true; results: FindByComponentOutput['results'] };
 
 function applyMaxDistance(
   depths: ComponentStoryDepth[],
@@ -44,12 +42,12 @@ function applyMaxDistance(
   const clippedDistances = new Set<number>();
   let clippedCount = 0;
 
-  for (const d of depths) {
-    if (d.depth <= maxDistance) {
-      kept.push(d);
+  for (const depth of depths) {
+    if (depth.depth <= maxDistance) {
+      kept.push(depth);
     } else {
       clippedCount++;
-      clippedDistances.add(d.depth);
+      clippedDistances.add(depth.depth);
     }
   }
 
@@ -64,79 +62,6 @@ function applyMaxDistance(
   return { kept, clipped };
 }
 
-export async function resolveComponentMatches({
-  componentPaths,
-  index,
-  moduleGraph,
-}: {
-  componentPaths: string[];
-  index: StoryIndex;
-  moduleGraph: ModuleGraphService;
-}): Promise<ResolveComponentMatchesResult[]> {
-  // Exists-check first so missing paths skip the graph query cost when every path is missing.
-  // Mixed present/missing still queries once for the batch (module-graph API is bulk).
-  const absolutePaths = componentPaths.map((componentPath) =>
-    isAbsolute(componentPath) ? componentPath : join(process.cwd(), componentPath)
-  );
-  const missing = absolutePaths.map((absolute) => !existsSync(absolute));
-  if (missing.every(Boolean)) {
-    return componentPaths.map((componentPath) => ({
-      componentPath,
-      matches: [],
-      pathNotFound: true,
-    }));
-  }
-
-  let storiesForFiles: Array<Array<{ storyFile: string; depth: number }>>;
-  try {
-    storiesForFiles = await moduleGraph.queries.storiesForFiles.loaded({
-      files: componentPaths,
-    });
-  } catch {
-    return componentPaths.map((componentPath, position) =>
-      missing[position]
-        ? { componentPath, matches: [], pathNotFound: true }
-        : { componentPath, matches: [] }
-    );
-  }
-
-  const storyIdsByFile = new Map<string, string[]>();
-  for (const entry of Object.values(index.entries)) {
-    if (entry.type !== 'story' || entry.importPath.startsWith('virtual:')) {
-      continue;
-    }
-    const key = entry.importPath.startsWith('./') ? entry.importPath : `./${entry.importPath}`;
-    const ids = storyIdsByFile.get(key) ?? [];
-    ids.push(entry.id);
-    storyIdsByFile.set(key, ids);
-  }
-
-  return componentPaths.map((componentPath, position) => {
-    if (missing[position]) {
-      return { componentPath, matches: [], pathNotFound: true };
-    }
-
-    const byStoryId = new Map<string, number>();
-    for (const { storyFile, depth } of storiesForFiles[position] ?? []) {
-      for (const storyId of storyIdsByFile.get(storyFile) ?? []) {
-        const existing = byStoryId.get(storyId);
-        if (existing === undefined || depth < existing) {
-          byStoryId.set(storyId, depth);
-        }
-      }
-    }
-
-    return {
-      componentPath,
-      matches: [...byStoryId.entries()]
-        .map(([storyId, depth]) => ({ storyId, depth }))
-        .sort((a, b) =>
-          a.depth !== b.depth ? a.depth - b.depth : a.storyId.localeCompare(b.storyId)
-        ),
-    };
-  });
-}
-
 /**
  * Resolves reverse-graph matches into the `stories.findByComponent` output, applying
  * `maxDistance` clipping and story-index enrichment.
@@ -146,10 +71,20 @@ export async function findStoriesByComponent({
   maxDistance = DEFAULT_MAX_DISTANCE,
   index,
   moduleGraph,
-}: FindStoriesByComponentParams): Promise<FindByComponentOutput> {
-  const resolved = await resolveComponentMatches({ componentPaths, index, moduleGraph });
+}: FindStoriesByComponentParams): Promise<FindStoriesByComponentResult> {
+  const lookup = await resolveComponentStories(
+    { componentPaths },
+    { getStoryIndex: async () => index, moduleGraph }
+  );
 
-  const results: FindByComponentOutput['results'] = resolved.map((entry) => {
+  if (!lookup.available) {
+    return {
+      available: false,
+      reason: lookup.reason ?? "Storybook's story module graph is unavailable.",
+    };
+  }
+
+  const results = (lookup.results ?? []).map((entry) => {
     if (entry.pathNotFound) {
       return { componentPath: entry.componentPath, matches: [], pathNotFound: true };
     }
@@ -176,5 +111,5 @@ export async function findStoriesByComponent({
       : { componentPath: entry.componentPath, matches };
   });
 
-  return { results };
+  return { available: true, results };
 }

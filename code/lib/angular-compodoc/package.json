@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular-compodoc",
-  "version": "10.6.0-alpha.4",
+  "version": "10.6.0-alpha.7",
   "private": true,
   "description": "Shared Compodoc metadata parsing for Storybook's Angular frameworks",
   "keywords": [
@@ -47,9 +47,6 @@
   "dependencies": {
     "@storybook/global": "^5.0.0",
     "entities": "^4.5.0"
-  },
-  "devDependencies": {
-    "typescript": "^6.0.3"
   },
   "peerDependencies": {
     "storybook": "workspace:^"

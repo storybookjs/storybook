@@ -14,33 +14,33 @@ import {
 describe('parseStorybookWorkflowShellCommands', () => {
   test('preserves repeated workflow calls across separate plugin commands', () => {
     const command =
-      'storybook ai run-story-tests --json \'{"stories":[{"storyId":"example-button--primary"}]}\'';
+      'storybook ai test-run --json \'{"stories":[{"storyId":"example-button--primary"}]}\'';
 
     const calls = parseStorybookWorkflowShellCommands([command, command]);
 
     expect(calls).toHaveLength(2);
-    expect(calls.map((call) => call.name)).toEqual(['run-story-tests', 'run-story-tests']);
+    expect(calls.map((call) => call.name)).toEqual(['test-run', 'test-run']);
     expect(calls.every(workflowCallUsesStoryId)).toBe(true);
   });
 
   test('preserves repeated workflow calls chained in one plugin command', () => {
     const command =
-      'storybook ai run-story-tests --json \'{"stories":[{"storyId":"example-button--primary"}]}\' && storybook ai run-story-tests --json \'{"stories":[{"storyId":"example-button--primary"}]}\'';
+      'storybook ai test-run --json \'{"stories":[{"storyId":"example-button--primary"}]}\' && storybook ai test-run --json \'{"stories":[{"storyId":"example-button--primary"}]}\'';
 
     const calls = parseStorybookWorkflowShellCommands([command]);
 
     expect(calls).toHaveLength(2);
-    expect(calls.map((call) => call.name)).toEqual(['run-story-tests', 'run-story-tests']);
+    expect(calls.map((call) => call.name)).toEqual(['test-run', 'test-run']);
     expect(calls.every(workflowCallUsesStoryId)).toBe(true);
   });
 
   test('parses storybook ai path and export JSON input', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'storybook ai preview-stories --json \'{"stories":[{"absoluteStoryPath":"stories/Button.stories.tsx","exportName":"Primary"}]}\'',
+      'storybook ai stories-preview --json \'{"stories":[{"absoluteStoryPath":"stories/Button.stories.tsx","exportName":"Primary"}]}\'',
     ]);
 
     expect(calls).toHaveLength(1);
-    expect(calls[0]?.name).toBe('preview-stories');
+    expect(calls[0]?.name).toBe('stories-preview');
     expect(
       calls.some((call) =>
         workflowCallIncludesStory(call, {
@@ -53,11 +53,11 @@ describe('parseStorybookWorkflowShellCommands', () => {
 
   test('parses inline storybook ai JSON input', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'storybook ai run-story-tests --json=\'{"stories":[{"storyId":"example-button--primary"}],"a11y":false}\'',
+      'storybook ai test-run --json=\'{"stories":[{"storyId":"example-button--primary"}],"a11y":false}\'',
     ]);
 
     expect(calls).toHaveLength(1);
-    expect(calls[0]?.name).toBe('run-story-tests');
+    expect(calls[0]?.name).toBe('test-run');
     expect(calls[0]?.input.a11y).toBe(false);
     expect(
       calls.some((call) => workflowCallIncludesStory(call, { storyId: 'example-button--primary' }))
@@ -68,7 +68,7 @@ describe('parseStorybookWorkflowShellCommands', () => {
     // POSIX single quotes preserve backslashes, so the CLI receives valid JSON
     // with escaped inner quotes. The tokenizer must not consume them.
     const command = [
-      "STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --port 39497 display-review --json '{",
+      "STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --port 39497 review-create --json '{",
       '  "title": "Accessible ToggleSwitch component",',
       '  "description": "A switch with `role=\\"switch\\"` semantics.",',
       '  "collections": [',
@@ -84,7 +84,7 @@ describe('parseStorybookWorkflowShellCommands', () => {
     const calls = parseStorybookWorkflowShellCommands([command]);
 
     expect(calls).toHaveLength(1);
-    expect(calls[0]?.name).toBe('display-review');
+    expect(calls[0]?.name).toBe('review-create');
     expect(calls[0]?.input.title).toBe('Accessible ToggleSwitch component');
     expect(calls[0]?.input.description).toBe('A switch with `role="switch"` semantics.');
     expect(calls[0]?.input.collections).toEqual([
@@ -98,8 +98,8 @@ describe('parseStorybookWorkflowShellCommands', () => {
 
   test('does not credit ad hoc MCP invocations from the shell', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'node scripts/mcp-call.mjs run-story-tests \'{"stories":[{"storyId":"example-button--primary"}]}\'',
-      'curl http://127.0.0.1:6006/mcp/preview-stories --data \'{"params":{"arguments":{"stories":[{"storyId":"example-button--secondary"}]}}}\'',
+      'node scripts/mcp-call.mjs test-run \'{"stories":[{"storyId":"example-button--primary"}]}\'',
+      'curl http://127.0.0.1:6006/mcp/stories-preview --data \'{"params":{"arguments":{"stories":[{"storyId":"example-button--secondary"}]}}}\'',
     ]);
 
     expect(calls).toHaveLength(0);
@@ -107,8 +107,8 @@ describe('parseStorybookWorkflowShellCommands', () => {
 
   test('ignores shell redirections in storybook ai commands', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai get-changed-stories 2>&1',
-      'npx storybook ai --port 6006 run-story-tests >out.txt 2> err.log',
+      'STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai stories-changed 2>&1',
+      'npx storybook ai --port 6006 test-run >out.txt 2> err.log',
     ]);
 
     expect(calls).toHaveLength(2);
@@ -118,34 +118,51 @@ describe('parseStorybookWorkflowShellCommands', () => {
 
   test('does not mistake a non-shell -c flag for a bash -c wrapper', () => {
     // Regression: cc-plugin 802 (2026-07-03 CI run 28647682172) chained
-    // `head -c 800` before a real get-changed-stories call in one compound
+    // `head -c 800` before a real stories-changed call in one compound
     // command; the parser recursed into the literal `800` as if it were a
     // `bash -c` payload and dropped the workflow call.
     const calls = parseStorybookWorkflowShellCommands([
-      'sleep 3; curl -s http://localhost:40097/index.json 2>/dev/null | head -c 800; echo; echo "---changed---"; STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --port 40097 get-changed-stories 2>&1 | grep -v "No story files" | head -40',
-      'curl -c cookies.txt http://localhost:6006/ && npx storybook ai get-changed-stories',
-      'grep -c foo bar.txt; npx storybook ai get-stories-by-component --json \'{"componentPaths":["src/Badge.tsx"]}\'',
+      'sleep 3; curl -s http://localhost:40097/index.json 2>/dev/null | head -c 800; echo; echo "---changed---"; STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --port 40097 stories-changed 2>&1 | grep -v "No story files" | head -40',
+      'curl -c cookies.txt http://localhost:6006/ && npx storybook ai stories-changed',
+      'grep -c foo bar.txt; npx storybook ai stories-find-by-component --json \'{"componentPaths":["src/Badge.tsx"]}\'',
     ]);
 
     expect(calls.map((call) => call.name)).toEqual([
-      'get-changed-stories',
-      'get-changed-stories',
-      'get-stories-by-component',
+      'stories-changed',
+      'stories-changed',
+      'stories-find-by-component',
     ]);
   });
 
   test('still unwraps genuine shell wrappers around storybook ai calls', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      "bash -c 'npx storybook ai get-changed-stories'",
-      "/bin/sh -lc 'npx storybook ai --port 6006 run-story-tests'",
-      "env bash -x -c 'npx storybook ai get-stories-by-component'",
+      "bash -c 'npx storybook ai stories-changed'",
+      "/bin/sh -lc 'npx storybook ai --port 6006 test-run'",
+      "env bash -x -c 'npx storybook ai stories-find-by-component'",
     ]);
 
     expect(calls.map((call) => call.name)).toEqual([
-      'get-changed-stories',
-      'run-story-tests',
-      'get-stories-by-component',
+      'stories-changed',
+      'test-run',
+      'stories-find-by-component',
     ]);
+  });
+
+  test('parses storybook tools toolset/method pairs', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      'npx storybook tools test run --json \'{"stories":[{"storyId":"example-button--primary"}]}\'',
+      'npx storybook tools stories find-by-component --json \'{"componentPaths":["src/Badge.tsx"]}\'',
+      'npx storybook tools review create --json \'{"title":"Pass","description":"x","collections":[]}\'',
+    ]);
+
+    expect(calls.map((call) => call.name)).toEqual([
+      'test-run',
+      'stories-find-by-component',
+      'review-create',
+    ]);
+    expect(calls[0]?.input).toMatchObject({
+      stories: [{ storyId: 'example-button--primary' }],
+    });
   });
 });
 
@@ -168,15 +185,15 @@ describe('parseWorkflowToolResults', () => {
 
   test('pairs Claude MCP tool_use and tool_result blocks by id', () => {
     const transcript = [
-      claudeToolUseLine('toolu_1', 'mcp__storybook-dev-mcp__run-story-tests', {}),
-      claudeToolUseLine('toolu_2', 'mcp__storybook-dev-mcp__preview-stories', {}),
+      claudeToolUseLine('toolu_1', 'mcp__storybook-dev-mcp__test-run', {}),
+      claudeToolUseLine('toolu_2', 'mcp__storybook-dev-mcp__stories-preview', {}),
       claudeToolResultLine('toolu_2', [{ type: 'text', text: 'http://localhost:6006' }]),
       claudeToolResultLine('toolu_1', [
         { type: 'text', text: '## Passing Stories\n\n- example-button--primary' },
       ]),
     ].join('\n');
 
-    const results = parseWorkflowToolResults(transcript, 'run-story-tests');
+    const results = parseWorkflowToolResults(transcript, 'test-run');
 
     expect(results).toHaveLength(1);
     expect(results[0]?.output).toContain('## Passing Stories');
@@ -186,12 +203,12 @@ describe('parseWorkflowToolResults', () => {
   test('extracts Claude plugin-path results from storybook ai shell invocations', () => {
     const transcript = [
       claudeToolUseLine('toolu_1', 'Bash', {
-        command: 'STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --port 6006 run-story-tests',
+        command: 'STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --port 6006 test-run',
       }),
       claudeToolResultLine('toolu_1', '## Failing Stories\n\n### example-button--primary'),
     ].join('\n');
 
-    const results = parseWorkflowToolResults(transcript, 'run-story-tests');
+    const results = parseWorkflowToolResults(transcript, 'test-run');
 
     expect(results).toHaveLength(1);
     expect(results[0]?.output).toContain('## Failing Stories');
@@ -199,11 +216,11 @@ describe('parseWorkflowToolResults', () => {
 
   test('marks errored Claude tool results', () => {
     const transcript = [
-      claudeToolUseLine('toolu_1', 'mcp__storybook-dev-mcp__run-story-tests', {}),
+      claudeToolUseLine('toolu_1', 'mcp__storybook-dev-mcp__test-run', {}),
       claudeToolResultLine('toolu_1', 'Test run was cancelled', true),
     ].join('\n');
 
-    const results = parseWorkflowToolResults(transcript, 'run-story-tests');
+    const results = parseWorkflowToolResults(transcript, 'test-run');
 
     expect(results).toHaveLength(1);
     expect(results[0]?.isError).toBe(true);
@@ -215,7 +232,7 @@ describe('parseWorkflowToolResults', () => {
         type: 'item.started',
         item: {
           type: 'mcp_tool_call',
-          tool: 'run-story-tests',
+          tool: 'test-run',
           result: null,
           status: 'in_progress',
         },
@@ -224,7 +241,7 @@ describe('parseWorkflowToolResults', () => {
         type: 'item.completed',
         item: {
           type: 'mcp_tool_call',
-          tool: 'run-story-tests',
+          tool: 'test-run',
           status: 'completed',
           error: null,
           result: { content: [{ type: 'text', text: '## Passing Stories\n\n- a--b' }] },
@@ -232,7 +249,7 @@ describe('parseWorkflowToolResults', () => {
       }),
     ].join('\n');
 
-    const results = parseWorkflowToolResults(transcript, 'run-story-tests');
+    const results = parseWorkflowToolResults(transcript, 'test-run');
 
     expect(results).toHaveLength(1);
     expect(results[0]?.output).toContain('## Passing Stories');
@@ -245,7 +262,7 @@ describe('parseWorkflowToolResults', () => {
         type: 'item.completed',
         item: {
           type: 'command_execution',
-          command: "/bin/bash -lc 'npx storybook ai --port 6006 run-story-tests'",
+          command: "/bin/bash -lc 'npx storybook ai --port 6006 test-run'",
           aggregated_output: '## Passing Stories\n\n- a--b\n\n## Failing Stories\n\n### a--c',
           exit_code: 0,
           status: 'completed',
@@ -253,7 +270,7 @@ describe('parseWorkflowToolResults', () => {
       }),
     ].join('\n');
 
-    const results = parseWorkflowToolResults(transcript, 'run-story-tests');
+    const results = parseWorkflowToolResults(transcript, 'test-run');
 
     expect(results).toHaveLength(1);
     expect(results[0]?.output).toContain('## Failing Stories');
@@ -266,7 +283,7 @@ describe('parseWorkflowToolResults', () => {
       claudeToolResultLine('toolu_1', 'lint ok'),
     ].join('\n');
 
-    expect(parseWorkflowToolResults(transcript, 'run-story-tests')).toHaveLength(0);
+    expect(parseWorkflowToolResults(transcript, 'test-run')).toHaveLength(0);
   });
 });
 

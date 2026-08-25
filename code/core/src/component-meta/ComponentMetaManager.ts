@@ -20,6 +20,7 @@ import * as path from 'path';
 import { dedent } from 'ts-dedent';
 import * as v8 from 'v8';
 
+import { slash } from '../shared/utils/paths.ts';
 import type {
   ComponentMetaFileSystem,
   ComponentMetaProjectBase,
@@ -124,6 +125,7 @@ export class ComponentMetaManager<
     this.inferredProject?.dispose();
     this.configProjects.clear();
     this.inferredProject = undefined;
+    this.factory.recycle?.();
   }
 
   // ---------------------------------------------------------------------------
@@ -132,7 +134,7 @@ export class ComponentMetaManager<
   // ---------------------------------------------------------------------------
 
   private findMatchTSConfig(filePath: string): string | null {
-    const fileName = filePath.replace(/\\/g, '/');
+    const fileName = slash(filePath);
 
     // Adapted from:
     // https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L104-L118
@@ -143,7 +145,7 @@ export class ComponentMetaManager<
       }
       this.searchedDirs.add(dir);
       for (const tsConfigName of rootTsConfigNames) {
-        const tsconfigPath = path.join(dir, tsConfigName).replace(/\\/g, '/');
+        const tsconfigPath = slash(path.join(dir, tsConfigName));
         if (this.typescript.sys.fileExists(tsconfigPath)) {
           this.rootTsConfigs.add(tsconfigPath);
         }
@@ -241,7 +243,7 @@ export class ComponentMetaManager<
         const newChains: string[][] = [];
 
         for (const projectReference of commandLine.projectReferences) {
-          let tsConfigPath = projectReference.path.replace(/\\/g, '/');
+          let tsConfigPath = slash(projectReference.path);
 
           // fix https://github.com/johnsoncodehk/volar/issues/712
           if (this.typescript.sys.directoryExists(tsConfigPath)) {
@@ -294,7 +296,7 @@ export class ComponentMetaManager<
   // ---------------------------------------------------------------------------
 
   private getOrCreateConfiguredProject(tsconfig: string): P | null {
-    tsconfig = tsconfig.replace(/\\/g, '/');
+    tsconfig = slash(tsconfig);
     let project = this.configProjects.get(tsconfig);
     if (!project) {
       try {
@@ -353,7 +355,7 @@ export class ComponentMetaManager<
    * https://github.com/volarjs/volar.js/blob/882cd56d46a13d272f34e451f495d3d62251969a/packages/language-server/lib/project/typescriptProject.ts#L43-L68
    */
   onConfigChanged(configPath: string, type: 'created' | 'changed' | 'deleted') {
-    configPath = configPath.replace(/\\/g, '/');
+    configPath = slash(configPath);
     if (type === 'created') {
       this.rootTsConfigs.add(configPath);
     } else if ((type === 'changed' || type === 'deleted') && this.configProjects.has(configPath)) {
@@ -424,7 +426,7 @@ export class ComponentMetaManager<
       let candidate = dir;
       while (candidate !== path.dirname(candidate)) {
         // If already covered by an existing watcher, skip
-        const normalized = candidate.replace(/\\/g, '/');
+        const normalized = slash(candidate);
         let alreadyWatched = false;
         for (const watched of this.watchersByDir.keys()) {
           if (normalized === watched || normalized.startsWith(watched + '/')) {
@@ -458,7 +460,7 @@ export class ComponentMetaManager<
       return;
     }
 
-    const normalized = dir.replace(/\\/g, '/');
+    const normalized = slash(dir);
 
     for (const watched of this.watchersByDir.keys()) {
       // Already covered by an existing broader watcher
@@ -482,7 +484,7 @@ export class ComponentMetaManager<
         if (!filename) {
           return;
         }
-        const filePath = path.resolve(dir, filename).replace(/\\/g, '/');
+        const filePath = slash(path.resolve(dir, filename));
 
         if (filePath.includes('/node_modules/') || filePath.includes('/.git/')) {
           return;

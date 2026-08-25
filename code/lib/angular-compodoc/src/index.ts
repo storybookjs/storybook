@@ -28,5 +28,6 @@ export {
   findComponentByName,
   getComponentData,
   isMethod,
+  unwrapPlainText,
 } from './extract-arg-types.ts';
 export { htmlToText } from './html-to-text.ts';

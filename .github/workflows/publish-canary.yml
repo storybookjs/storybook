@@ -85,34 +85,8 @@ jobs:
 
           test -s ./pkg-pr-new-output.json
 
-      - name: Build Canary Release Content
-        id: canary-content
-        if: ${{ github.event_name == 'pull_request' }}
-        working-directory: scripts
-        env:
-          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
-          PKG_PR_NEW_PAGE: ${{ steps.canary-status.outputs.pkg_pr_new_page }}
-        run: |
-          jq -e '.packages[] | select(.name == "create-storybook")' ./pkg-pr-new-output.json >/dev/null
-          jq -e '.packages[] | select(.name == "storybook")' ./pkg-pr-new-output.json >/dev/null
-
-          short_sha="${COMMIT_SHA:0:7}"
-          create_storybook_package_url="https://pkg.pr.new/storybookjs/storybook/create-storybook@$short_sha"
-          storybook_package_url="https://pkg.pr.new/storybookjs/storybook/storybook@$short_sha"
-
-          printf '## 🦋 Canary Release - 🚢 Released [`%s`](%s)\n' "$short_sha" "$PKG_PR_NEW_PAGE" > "$RUNNER_TEMP/canary-heading.md"
-
-          {
-            printf '%s\n' 'This pull request has been released as canary packages. Try it out in a new project or update an existing project with the commands below.'
-            printf '%s\n' ''
-            printf '%s\n' '```sh'
-            printf '%s\n' '# For a new project'
-            printf 'npx --yes --allow-remote=all %s\n' "$create_storybook_package_url"
-            printf '%s\n' ''
-            printf '%s\n' '# or for an existing project'
-            printf 'npx --yes --allow-remote=all %s upgrade\n' "$storybook_package_url"
-            printf '%s\n' '```'
-          } > "$RUNNER_TEMP/canary-body.md"
+          create_storybook_package_url=$(jq -er '.packages[] | select(.name == "create-storybook") | .url' ./pkg-pr-new-output.json)
+          storybook_package_url=$(jq -er '.packages[] | select(.name == "storybook") | .url' ./pkg-pr-new-output.json)
 
           {
             echo "create_storybook_package_url=$create_storybook_package_url"
@@ -121,10 +95,10 @@ jobs:
 
       - name: Verify Canary Install Commands
         id: verify-canary-commands
-        if: ${{ github.event_name == 'pull_request' && steps.canary-content.outcome == 'success' }}
+        if: ${{ github.event_name == 'pull_request' && steps.publish.outcome == 'success' }}
         env:
-          CREATE_STORYBOOK_PACKAGE_URL: ${{ steps.canary-content.outputs.create_storybook_package_url }}
-          STORYBOOK_PACKAGE_URL: ${{ steps.canary-content.outputs.storybook_package_url }}
+          CREATE_STORYBOOK_PACKAGE_URL: ${{ steps.publish.outputs.create_storybook_package_url }}
+          STORYBOOK_PACKAGE_URL: ${{ steps.publish.outputs.storybook_package_url }}
         run: |
           # npm 12+ defaults allow-remote to none. Run from an empty directory so
           # `storybook --help` does not resolve packages through this repo's Yarn.
@@ -134,6 +108,31 @@ jobs:
             npx --yes --allow-remote=all "$CREATE_STORYBOOK_PACKAGE_URL" --help
             npx --yes --allow-remote=all "$STORYBOOK_PACKAGE_URL" --help
           )
+
+      - name: Build Canary Release Content
+        id: canary-content
+        if: ${{ github.event_name == 'pull_request' && steps.verify-canary-commands.outcome == 'success' }}
+        env:
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+          PKG_PR_NEW_PAGE: ${{ steps.canary-status.outputs.pkg_pr_new_page }}
+          CREATE_STORYBOOK_PACKAGE_URL: ${{ steps.publish.outputs.create_storybook_package_url }}
+          STORYBOOK_PACKAGE_URL: ${{ steps.publish.outputs.storybook_package_url }}
+        run: |
+          short_sha="${COMMIT_SHA:0:7}"
+
+          printf '## 🦋 Canary Release - 🚢 Released [`%s`](%s)\n' "$short_sha" "$PKG_PR_NEW_PAGE" > "$RUNNER_TEMP/canary-heading.md"
+
+          {
+            printf '%s\n' 'This pull request has been released as canary packages. Try it out in a new project or update an existing project with the commands below.'
+            printf '%s\n' ''
+            printf '%s\n' '```sh'
+            printf '%s\n' '# For a new project'
+            printf 'npx --yes --allow-remote=all %s\n' "$CREATE_STORYBOOK_PACKAGE_URL"
+            printf '%s\n' ''
+            printf '%s\n' '# or for an existing project'
+            printf 'npx --yes --allow-remote=all %s upgrade\n' "$STORYBOOK_PACKAGE_URL"
+            printf '%s\n' '```'
+          } > "$RUNNER_TEMP/canary-body.md"
 
       - name: Update Canary Release Heading and Body
         id: replace-pr-body

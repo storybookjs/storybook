@@ -124,6 +124,11 @@
       "code": "./src/csf-tools/index.ts",
       "default": "./dist/csf-tools/index.js"
     },
+    "./internal/csf/csf-utils": {
+      "types": "./dist/csf/csf-utils.d.ts",
+      "code": "./src/csf/csf-utils.ts",
+      "default": "./dist/csf/csf-utils.js"
+    },
     "./internal/docgen-worker": "./dist/shared/open-service/services/docgen/worker/docgen-worker.js",
     "./internal/docs-tools": {
       "types": "./dist/docs-tools/index.d.ts",

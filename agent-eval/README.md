@@ -69,6 +69,12 @@ EVAL_EXTRA_EVALS=1 yarn workspace agent-eval run eval
 EVAL_ONLY=803-edit-component yarn workspace agent-eval run eval
 ```
 
+Before a local run, rebuild the local `@storybook/addon-mcp`/`@storybook/mcp`
+builds the sandboxes inject (`yarn nx run-many -t compile --projects mcp,addon-mcp`
+from the repository root). A stale `dist` importing since-renamed core exports
+crashes the sandbox Storybook at preset load, which surfaces as the readiness
+timeout below rather than a build error.
+
 A full `EVAL_EXTRA_EVALS=1` run (12 workflow evals × 4 experiments + 3
 lifecycle evals × 2 plugin experiments) costs roughly **$30–45** in agent
 tokens at current per-run averages ($0.30–0.80 per workflow eval, $1–2 per

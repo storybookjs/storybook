@@ -87,6 +87,29 @@ describe('VueComponentMetaManager', () => {
     expect(() => structuredClone(payload)).not.toThrow();
   });
 
+  it('uses the title-derived name when meta.component is null', async () => {
+    const payload = await docgenForFixture('./NullComponent.stories.ts', 'Example/NullComponent');
+
+    expect(payload?.name).toBe('NullComponent');
+  });
+
+  it('uses the resolved display name when meta.component is a cast expression', async () => {
+    const payload = await docgenForFixture('./CastComponent.stories.ts', 'Example/CastComponent');
+
+    expect(payload?.error).toBeUndefined();
+    expect(payload?.name).toBe('Button');
+  });
+
+  it('keeps the authored identifier as the name when the import cannot be resolved', async () => {
+    const payload = await docgenForFixture(
+      './MissingImportComponent.stories.ts',
+      'Example/MissingImportComponent'
+    );
+
+    expect(payload?.error?.name).toBe('No component import found');
+    expect(payload?.name).toBe('MissingButton');
+  });
+
   it('extracts component-level JSDoc tags from an options API SFC', async () => {
     const payload = await docgenForFixture(
       './jsdoc/OptionsButton.stories.ts',

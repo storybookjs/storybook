@@ -147,6 +147,10 @@ const config: BuildEntries = {
         entryPoint: './src/csf/index.ts',
       },
       {
+        exportEntries: ['./internal/csf/csf-utils'],
+        entryPoint: './src/csf/csf-utils.ts',
+      },
+      {
         exportEntries: ['./internal/manager-errors'],
         entryPoint: './src/manager-errors.ts',
       },

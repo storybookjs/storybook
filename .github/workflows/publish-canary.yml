@@ -41,6 +41,7 @@ jobs:
           RUN_ID: ${{ github.run_id }}
         run: |
           echo "run_url=https://github.com/$REPOSITORY/actions/runs/$RUN_ID" >> "$GITHUB_OUTPUT"
+          echo "pkg_pr_new_page=https://pkg.pr.new/~/storybookjs/storybook" >> "$GITHUB_OUTPUT"
 
       - name: Checkout Pull Request Head
         uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
@@ -90,16 +91,16 @@ jobs:
         working-directory: scripts
         env:
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
+          PKG_PR_NEW_PAGE: ${{ steps.canary-status.outputs.pkg_pr_new_page }}
         run: |
           jq -e '.packages[] | select(.name == "create-storybook")' ./pkg-pr-new-output.json >/dev/null
           jq -e '.packages[] | select(.name == "storybook")' ./pkg-pr-new-output.json >/dev/null
 
           short_sha="${COMMIT_SHA:0:7}"
-          pkg_pr_new_page="https://pkg.pr.new/~/storybookjs/storybook"
           create_storybook_package_url="https://pkg.pr.new/storybookjs/storybook/create-storybook@$short_sha"
           storybook_package_url="https://pkg.pr.new/storybookjs/storybook/storybook@$short_sha"
 
-          printf '## 🦋 Canary Release - 🚢 Released [`%s`](%s)\n' "$short_sha" "$pkg_pr_new_page" > "$RUNNER_TEMP/canary-heading.md"
+          printf '## 🦋 Canary Release - 🚢 Released [`%s`](%s)\n' "$short_sha" "$PKG_PR_NEW_PAGE" > "$RUNNER_TEMP/canary-heading.md"
 
           {
             printf '%s\n' 'This pull request has been released as canary packages. Try it out in a new project or update an existing project with the commands below.'
@@ -146,10 +147,10 @@ jobs:
           PR_NUMBER: ${{ github.event.pull_request.number }}
           REPOSITORY: ${{ github.repository }}
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
-          RUN_URL: ${{ steps.canary-status.outputs.run_url }}
+          PKG_PR_NEW_PAGE: ${{ steps.canary-status.outputs.pkg_pr_new_page }}
         run: |
           short_sha="${COMMIT_SHA:0:7}"
-          printf '## 🦋 Canary Release - 💥 Failed [`%s`](%s)\n' "$short_sha" "$RUN_URL" > "$RUNNER_TEMP/canary-heading.md"
+          printf '## 🦋 Canary Release - 💥 Failed [`%s`](%s)\n' "$short_sha" "$PKG_PR_NEW_PAGE" > "$RUNNER_TEMP/canary-heading.md"
           python3 .github/scripts/replace-pr-body-markers.py \
             --repo "$REPOSITORY" \
             --pr "$PR_NUMBER" \

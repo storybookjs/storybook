@@ -39,12 +39,7 @@ import {
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 
-import {
-  classifyArgs,
-  type ClassifiedArg,
-  type ClassifyArgsResult,
-  type VueDocgenArgInfo,
-} from './classify-args.ts';
+import { classifyArgs, type ClassifyArgsResult, type VueDocgenArgInfo } from './classify-args.ts';
 import { renderSfcSnippet } from './render-sfc.ts';
 import { transformH } from './transform-h.ts';
 import {
@@ -83,10 +78,18 @@ const openStoryReferences = createStoryReferenceResolver({ extensions: ['.vue'] 
 
 const RENDER_UNRESOLVED_WARNING =
   'No static snippet: the `render` function could not be resolved statically.';
+const TEMPLATE_UNRESOLVED_WARNING =
+  'No static snippet: the story template could not be resolved statically.';
 const SLOT_UNRESOLVED_WARNING =
   'No static snippet: a slot function could not be resolved statically.';
 const IMPORT_UNRESOLVED_WARNING =
   "No static snippet: the component's import could not be resolved statically.";
+/** Names what a story renders from, so a bail points at the source that could not be read. */
+const UNRENDERED_WARNINGS: Record<StaticStoryRenderer['kind'], string> = {
+  h: RENDER_UNRESOLVED_WARNING,
+  sfc: SLOT_UNRESOLVED_WARNING,
+  template: TEMPLATE_UNRESOLVED_WARNING,
+};
 
 type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
 type ExtractStoriesResult = { stories: Record<string, StoryDoc> };
@@ -343,11 +346,15 @@ function enrichStoryDoc(
     return withWarning(noSnippetWarning(unresolved));
   }
 
-  const rendered = renderStaticStorySnippet(renderer, args, componentName, docgenArgInfo, options);
+  const rendered = renderStaticStorySnippet(
+    renderer,
+    resolved.classified,
+    componentName,
+    docgenArgInfo,
+    options
+  );
   if (!rendered) {
-    return withWarning(
-      renderer.kind === 'sfc' ? SLOT_UNRESOLVED_WARNING : RENDER_UNRESOLVED_WARNING
-    );
+    return withWarning(UNRENDERED_WARNINGS[renderer.kind]);
   }
 
   return {
@@ -406,12 +413,13 @@ function resolveStaticStoryArgs(
 
 function renderStaticStorySnippet(
   renderer: StaticStoryRenderer,
-  args: ClassifiedArg[],
+  classified: ClassifyArgsResult,
   componentName: string,
   docgenArgInfo: VueDocgenArgInfo,
   options: StoryDocsContext
 ): StorySnippetResult | undefined {
   const componentImportStatement = options.snippet?.componentImportStatement;
+  const { args } = classified;
 
   if (renderer.kind === 'sfc') {
     return componentImportStatement
@@ -429,6 +437,7 @@ function renderStaticStorySnippet(
       args,
       componentImports: renderer.componentImports,
       template: renderer.template,
+      unsetArgs: classified.unset,
     });
   }
 

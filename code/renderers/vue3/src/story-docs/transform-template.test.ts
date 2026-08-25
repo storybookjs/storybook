@@ -808,6 +808,169 @@ export const Primary = {
     ).toBeUndefined();
   });
 
+  it('drops a binding for an arg explicitly set to undefined, which Vue reads as absent', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi', theme: undefined },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton :theme="args.theme" :label="args.label" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton label="Hi" />
+      </template>"
+    `);
+  });
+
+  it('takes the whole line when the dropped binding was written on its own', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi', theme: undefined, status: undefined },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: \`<MyButton
+  :theme="args.theme"
+  :label="args.label"
+  :status="args.status"
+/>\`,
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton
+          label="Hi"
+        />
+      </template>"
+    `);
+  });
+
+  it('drops an event binding whose handler arg is undefined', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi', onClick: undefined },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton @click="args.onClick" :label="args.label" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton label="Hi" />
+      </template>"
+    `);
+  });
+
+  it('keeps a v-model bound to an undefined arg, starting its ref empty', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi', modelValue: undefined },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton v-model="args.modelValue" :label="args.label" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import { ref } from "vue";
+      import MyButton from './MyButton.vue';
+
+      const modelValue = ref();
+      </script>
+
+      <template>
+        <MyButton v-model="modelValue" label="Hi" />
+      </template>"
+    `);
+  });
+
+  it('bails when an event or model binding names an arg the story never sets', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton @click="args.onClick" :label="args.label" />',
+  }),
+};
+`)
+    ).toBeUndefined();
+
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton v-model="args.modelValue" :label="args.label" />',
+  }),
+};
+`)
+    ).toBeUndefined();
+  });
+
+  it('bails when a bound arg is missing from the story args altogether', async () => {
+    const payload = await buildPayload(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton :theme="args.theme" :label="args.label" />',
+  }),
+};
+`);
+    const story = payload.stories['example-mybutton--primary'];
+
+    expect(story?.snippet).toBeUndefined();
+    expect(story?.warning).toMatchInlineSnapshot(
+      `"No static snippet: the story template could not be resolved statically."`
+    );
+  });
+
+  it('bails when a static attribute already sets the prop an undefined arg binds', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { theme: undefined },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton theme="dark" :theme="args.theme" />',
+  }),
+};
+`)
+    ).toBeUndefined();
+  });
+
   it('substitutes args references inside v-if expressions', async () => {
     expect(
       await primarySnippet(`

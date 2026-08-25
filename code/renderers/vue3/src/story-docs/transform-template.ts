@@ -50,6 +50,8 @@ export interface TransformTemplateInput {
   template: string;
   /** Merged and classified CSF args for the story. */
   args: ClassifiedArg[];
+  /** Names of args explicitly set to `undefined`, whose bindings render as if never written. */
+  unsetArgs: Set<string>;
   /** Component tag name to import statement from the render object's components map. */
   componentImports: Map<string, string>;
 }
@@ -67,6 +69,7 @@ interface Edit {
 
 interface TransformState {
   argsByName: Map<string, ClassifiedArg>;
+  unsetArgs: Set<string>;
   ctx: RenderContext;
   edits: Edit[];
   componentImports: Map<string, string>;
@@ -82,6 +85,7 @@ interface ArgsReference {
 type ExpressionContext = 'directive' | 'interpolation';
 
 const ARGS_NAME = 'args';
+const BLANK_REGEXP = /[ \t]/;
 const ARGS_IDENTIFIER_REGEXP = /(^|[^\w$])args([^\w$]|$)/;
 const ARGS_MEMBER_REGEXP = /^args\.([A-Za-z_$][\w$]*)$/;
 const SETUP_PROPERTY = 'setup';
@@ -133,6 +137,7 @@ export function transformTemplate(
 
   const state: TransformState = {
     argsByName: new Map(input.args.map((arg) => [arg.name, arg])),
+    unsetArgs: input.unsetArgs,
     ctx: createRenderContext(),
     edits: [],
     componentImports: input.componentImports,
@@ -268,8 +273,21 @@ function transformDirective(
 
   // <MyButton :label="args.label" />
   if (directive.name === 'bind' && boundProp && directive.modifiers.length === 0 && argName) {
+    if ((nameCounts.get(boundProp) ?? 0) > 1) {
+      return false;
+    }
+
     const arg = state.argsByName.get(argName);
-    if (!arg || arg.role === 'slot' || (nameCounts.get(boundProp) ?? 0) > 1) {
+    // Vue resolves a prop bound to `undefined` to its declared default, exactly as an absent
+    // attribute does, so the binding is dropped rather than failing the whole snippet.
+    if (!arg) {
+      if (!state.unsetArgs.has(argName)) {
+        return false;
+      }
+      state.edits.push(replacementFor(directive, '', state.template));
+      return true;
+    }
+    if (arg.role === 'slot') {
       return false;
     }
     state.edits.push({
@@ -283,6 +301,11 @@ function transformDirective(
   // <MyButton @click="args.onClick" />
   if (directive.name === 'on' && boundProp && argName && expressionNode) {
     const arg = state.argsByName.get(argName);
+    // An `undefined` handler attaches no listener, exactly as an absent binding does.
+    if (!arg && state.unsetArgs.has(argName)) {
+      state.edits.push(replacementFor(directive, '', state.template));
+      return true;
+    }
     if (!arg || !isFunctionExpression(arg.value)) {
       return false;
     }
@@ -297,13 +320,18 @@ function transformDirective(
   // <MyButton v-model="args.modelValue" />
   if (directive.name === 'model' && argName && expressionNode) {
     const arg = state.argsByName.get(argName);
-    if (!arg || arg.role === 'slot' || arg.role === 'event') {
+    // Dropping the binding would drop the two-way flow the story demonstrates, so an arg with no
+    // value keeps the model and starts its ref empty, which is the state the story renders in.
+    if (!arg && !state.unsetArgs.has(argName)) {
+      return false;
+    }
+    if (arg && (arg.role === 'slot' || arg.role === 'event')) {
       return false;
     }
     state.edits.push({
       start: expressionNode.loc.start.offset,
       end: expressionNode.loc.end.offset,
-      text: hoistModelRef(argName, arg.value, state.ctx),
+      text: hoistModelRef(argName, arg?.value, state.ctx),
     });
     return true;
   }
@@ -542,16 +570,37 @@ function replacementForArgsReference(
 
 /**
  * Removing a directive outright must also consume the whitespace that separated it from its
- * neighbors, so `<MyButton v-bind="args" />` with nothing to expand stays `<MyButton />`.
+ * neighbors, so `<MyButton v-bind="args" />` with nothing to expand stays `<MyButton />`, and a
+ * directive written on its own line takes the line with it instead of leaving a blank one.
  */
 function replacementFor(directive: DirectiveNode, text: string, template: string): Edit {
-  let start = directive.loc.start.offset;
-  if (text === '') {
-    while (start > 0 && template[start - 1] === ' ') {
-      start -= 1;
-    }
+  const start = directive.loc.start.offset;
+  const end = directive.loc.end.offset;
+  if (text !== '') {
+    return { start, end, text };
   }
-  return { start, end: directive.loc.end.offset, text };
+
+  const lineStart = blankRunStart(template, start);
+  const lineEnd = blankRunEnd(template, end);
+  return template[lineStart - 1] === '\n' && template[lineEnd] === '\n'
+    ? { start: lineStart - 1, end: lineEnd, text }
+    : { start: lineStart, end, text };
+}
+
+function blankRunStart(template: string, index: number): number {
+  let start = index;
+  while (start > 0 && BLANK_REGEXP.test(template[start - 1])) {
+    start -= 1;
+  }
+  return start;
+}
+
+function blankRunEnd(template: string, index: number): number {
+  let end = index;
+  while (end < template.length && BLANK_REGEXP.test(template[end])) {
+    end += 1;
+  }
+  return end;
 }
 
 function applyEdits(template: string, edits: Edit[]): string {

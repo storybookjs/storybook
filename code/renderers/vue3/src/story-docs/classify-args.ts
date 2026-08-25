@@ -5,6 +5,7 @@ import {
   classifyValue,
   isFunctionExpression,
   isSelfContainedFunction,
+  isUndefinedIdentifier,
   printValue,
   type ValuePlan,
 } from './classify-value.ts';
@@ -70,6 +71,8 @@ export interface ClassifyArgsResult {
   args: ClassifiedArg[];
   /** Source text of args dropped because their values do not resolve statically. */
   unresolved: string[];
+  /** Names of args explicitly set to `undefined` */
+  unset: Set<string>;
 }
 
 /**
@@ -92,6 +95,7 @@ export function classifyArgs(
 ): ClassifyArgsResult {
   const classified: ClassifiedArg[] = [];
   const unresolved: string[] = [];
+  const unset = new Set<string>();
 
   for (const [name, value] of Object.entries(args)) {
     const result = classifyArg(name, value, docgen);
@@ -100,10 +104,12 @@ export function classifyArgs(
       classified.push(result.arg);
     } else if (result.kind === 'unrepresentable') {
       unresolved.push(`${name}: ${printValue(value)}`);
+    } else if (isUndefinedIdentifier(value)) {
+      unset.add(name);
     }
   }
 
-  return { args: classified, unresolved };
+  return { args: classified, unresolved, unset };
 }
 
 /**

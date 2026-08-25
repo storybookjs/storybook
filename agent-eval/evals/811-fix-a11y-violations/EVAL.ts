@@ -48,9 +48,7 @@ describe('fixing Button accessibility violations', () => {
   // A run that turns accessibility checks off cannot claim the violations
   // were addressed.
   test('never disables accessibility checks while fixing a11y issues', () => {
-    const disabledCall = getWorkflowCalls('test-run').find(
-      (call) => call.input.a11y === false
-    );
+    const disabledCall = getWorkflowCalls('test-run').find((call) => call.input.a11y === false);
     expect(
       disabledCall,
       'Expected no test-run call to pass a11y: false in an a11y-fixing task'

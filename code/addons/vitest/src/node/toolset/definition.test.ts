@@ -131,8 +131,13 @@ describe('test API', () => {
 
     expect(outcome.markdown).toBe(mcpOutcome.markdown);
     expect(outcome.markdown).toContain('## Passing Stories');
+    expect(outcome.markdown).toContain('- button--primary');
     expect(outcome.markdown).toContain('## Failing Stories');
+    expect(outcome.markdown).toContain('### button--secondary');
+    expect(outcome.markdown).toContain('Expected button text to be "Secondary"');
     expect(outcome.markdown).toContain('## Accessibility Violations');
+    expect(outcome.markdown).toContain('### button--primary - color-contrast');
+    expect(outcome.markdown).toContain('Color contrast ratio is insufficient');
   });
 
   it('serializes concurrent test runs for one API registration', async () => {

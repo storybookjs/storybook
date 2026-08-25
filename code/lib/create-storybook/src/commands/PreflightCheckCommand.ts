@@ -4,6 +4,7 @@ import {
   JsPackageManagerFactory,
   PackageManagerName,
   getPrettyPackageManagerName,
+  getStorybookVersionSpecifierFromAncestry,
   isCI,
   invalidateProjectRootCache,
 } from 'storybook/internal/common';
@@ -41,7 +42,7 @@ export class PreflightCheckCommand {
     if (options.storybookVersionSpecifier === undefined) {
       try {
         options.storybookVersionSpecifier =
-          this.versionService.getStorybookVersionFromAncestry(getProcessAncestry());
+          getStorybookVersionSpecifierFromAncestry(getProcessAncestry());
       } catch {
         // Ignore ancestry lookup failures and fall back to the embedded release versions.
       }

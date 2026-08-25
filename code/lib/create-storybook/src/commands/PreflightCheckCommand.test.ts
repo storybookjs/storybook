@@ -3,6 +3,7 @@ import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest';
 import {
   JsPackageManagerFactory,
   PackageManagerName,
+  getStorybookVersionSpecifierFromAncestry,
   invalidateProjectRootCache,
 } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
@@ -38,7 +39,6 @@ describe('PreflightCheckCommand', () => {
         isOutdated: false,
       }),
       getCurrentVersion: vi.fn().mockReturnValue('8.0.0'),
-      getStorybookVersionFromAncestry: vi.fn().mockReturnValue(undefined),
     };
     command = new PreflightCheckCommand(mockVersionService);
 
@@ -53,6 +53,7 @@ describe('PreflightCheckCommand', () => {
       configurable: true,
     });
     vi.clearAllMocks();
+    vi.mocked(getStorybookVersionSpecifierFromAncestry).mockReturnValue(undefined);
   });
 
   afterAll(() => {
@@ -168,17 +169,17 @@ describe('PreflightCheckCommand', () => {
       await command.execute(options as any);
 
       expect(options.storybookVersionSpecifier).toBe(specifier);
-      expect(mockVersionService.getStorybookVersionFromAncestry).not.toHaveBeenCalled();
+      expect(getStorybookVersionSpecifierFromAncestry).not.toHaveBeenCalled();
     });
 
     it('should fill storybookVersionSpecifier from process ancestry when it is unset', async () => {
       vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
-      mockVersionService.getStorybookVersionFromAncestry.mockReturnValue('10.6.0-alpha.7');
+      vi.mocked(getStorybookVersionSpecifierFromAncestry).mockReturnValue('10.6.0-alpha.7');
       const options = { force: false } as any;
 
       await command.execute(options);
 
-      expect(mockVersionService.getStorybookVersionFromAncestry).toHaveBeenCalled();
+      expect(getStorybookVersionSpecifierFromAncestry).toHaveBeenCalled();
       expect(options.storybookVersionSpecifier).toBe('10.6.0-alpha.7');
     });
 

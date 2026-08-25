@@ -1,5 +1,5 @@
 import type { JsPackageManager } from 'storybook/internal/common';
-import { getStorybookVersionSpecifierFromAncestry, versions } from 'storybook/internal/common';
+import { versions } from 'storybook/internal/common';
 
 import type { getProcessAncestry } from 'process-ancestry';
 import { lt, prerelease } from 'semver';
@@ -24,13 +24,6 @@ export class VersionService {
   /** Check if the current version is outdated compared to the latest version */
   isOutdated(currentVersion: string, latestVersion: string): boolean {
     return lt(currentVersion, latestVersion);
-  }
-
-  /** Extract a Storybook version specifier from process ancestry commands. */
-  getStorybookVersionFromAncestry(
-    ancestry: ReturnType<typeof getProcessAncestry>
-  ): string | undefined {
-    return getStorybookVersionSpecifierFromAncestry(ancestry);
   }
 
   /**

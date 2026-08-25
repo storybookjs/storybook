@@ -345,7 +345,7 @@ export function prepareContext<
   const includedArgs = Object.entries(mappedArgs).reduce((acc, [key, val]) => {
     const argType = targetedContext.argTypes[key] || {};
 
-    if (includeConditionalArg(argType, targetedContext.args, targetedContext.globals)) {
+    if (includeConditionalArg(argType, unmappedArgs, targetedContext.globals)) {
       acc[key] = val;
     }
     return acc;

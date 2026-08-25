@@ -692,6 +692,31 @@ describe('prepareStory', () => {
       );
     });
 
+    it('evaluates conditional args against targeted args', () => {
+      const renderMock = vi.fn();
+      const firstStory = prepareStory(
+        {
+          id,
+          name,
+          args: { a: 1, b: 2 },
+          argTypes: {
+            a: { name: 'a', if: { arg: 'b', eq: 2 } },
+            b: { name: 'b', target: 'foo' },
+          },
+          moduleExport,
+        },
+        { id, title },
+        { render: renderMock }
+      );
+
+      const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
+      firstStory.unboundStoryFn(addExtraContext(context));
+      expect(renderMock).toHaveBeenCalledWith(
+        { a: 1 },
+        expect.objectContaining({ args: { a: 1 }, allArgs: { a: 1, b: 2 } })
+      );
+    });
+
     it('adds argsByTarget to context', () => {
       const renderMock = vi.fn();
       const firstStory = prepareStory(

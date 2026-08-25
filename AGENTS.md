@@ -337,14 +337,7 @@ Avoid `console.log`, `console.warn`, and `console.error` unless the file is isol
 
 ## Canary Releases
 
-Canary packages publish to `pkg.pr.new`, not npm.
-
-- Every push to `next` publishes a canary.
-- A human adds the `ci:canary` label to a PR. While the label remains, every push republishes.
-- Any branch can be published from the GitHub Actions UI or `gh workflow run --ref <branch>` on `publish-canary.yml`.
-- Install with `npx --yes --allow-remote=all https://pkg.pr.new/storybookjs/storybook/create-storybook@<short-sha>` or upgrade with `npx --yes --allow-remote=all https://pkg.pr.new/storybookjs/storybook/storybook@<short-sha> upgrade`.
-- The canary dashboard is https://pkg.pr.new/~/storybookjs/storybook.
-- Details: `.agents/skills/canary/SKILL.md` and `CONTRIBUTING/RELEASING.md`.
+When you need a pkg.pr.new canary, follow [`.agents/skills/canary/SKILL.md`](.agents/skills/canary/SKILL.md) and [`CONTRIBUTING/RELEASING.md`](CONTRIBUTING/RELEASING.md).
 
 ## Commands To Avoid
 
@@ -368,7 +361,7 @@ These are recurring failure modes in agent-authored changes to this repo. Apply 
 
 ## Comments and JSDoc
 
-Code should be self-explanatory. A comment is only justified when the code cannot explain itself (a non-obvious *why*) or when a public API needs explanation. Never comment to record that you did x, y, z.
+Code should be self-explanatory. A comment is only justified when the code cannot explain itself (a non-obvious _why_) or when a public API needs explanation. Never comment to record that you did x, y, z.
 
 Before writing or editing any code file, read [`.agents/guidelines/comments-and-jsdoc.md`](.agents/guidelines/comments-and-jsdoc.md) and follow it. Read it once per session, not once per file.
 

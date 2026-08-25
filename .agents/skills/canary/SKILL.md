@@ -40,9 +40,7 @@ Use this skill with the following if-then behavior.
 
 ### A. If the branch already has a PR with the `ci:canary` label
 
-If the branch already has an associated PR labeled `ci:canary`, do not trigger anything manually first. Reuse the workflow run that should already exist.
-
-Find the labeled PR for the current branch:
+Do not trigger anything manually. Read the canary heading and install commands from the PR body. That section is the current run status and the most recent release.
 
 ```bash
 BRANCH=$(git branch --show-current)
@@ -55,39 +53,19 @@ gh pr list \
 	--jq '.[] | select(any(.labels[]?; .name == "ci:canary"))'
 ```
 
-Find the latest successful canary workflow run for that branch:
-
 ```bash
-BRANCH=$(git branch --show-current)
-
-RUN_ID=$(gh run list \
-	--repo storybookjs/storybook \
-	--workflow publish-canary.yml \
-	--branch "$BRANCH" \
-	--event pull_request \
-	--json databaseId,conclusion \
-	--jq '.[] | select(.conclusion == "success") | .databaseId' \
-	| head -n 1)
-
-gh run view "$RUN_ID" --repo storybookjs/storybook
+gh pr view <NUMBER> --repo storybookjs/storybook --json body --jq .body
 ```
 
-Pull the SHA from that run and construct the version string from it:
+Use the heading and the `CANARY_RELEASE_SECTION` commands as-is:
 
-```bash
-RUN_SHA=$(gh run view "$RUN_ID" --repo storybookjs/storybook --json headSha --jq '.headSha')
-echo "storybook@https://pkg.pr.new/storybookjs/storybook/storybook@$RUN_SHA"
-```
-
-Optionally confirm the package is live:
-
-```bash
-curl -I "https://pkg.pr.new/storybookjs/storybook/storybook@$RUN_SHA"
-```
+- **Released** — use the install commands from the body
+- **Pending** — wait; the heading links to the in-progress workflow run
+- **Failed** — the heading links to pkg.pr.new; the failure comment links to the workflow run
 
 ### B. If the branch does not have a PR with the `ci:canary` label
 
-Trigger the canary workflow manually on the branch and watch it finish. It usually takes about 10 minutes. You can also use the GitHub Actions UI: open `publish-canary.yml`, click "Run workflow", and select the branch.
+Trigger the canary workflow manually on the branch and watch it finish. It usually takes 5-10 minutes. You can also use the GitHub Actions UI: open `publish-canary.yml`, click "Run workflow", and select the branch.
 
 ```bash
 BRANCH=$(git branch --show-current)

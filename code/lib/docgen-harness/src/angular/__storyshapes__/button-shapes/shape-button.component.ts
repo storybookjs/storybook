@@ -9,5 +9,9 @@ export class ShapeButtonComponent {
 
   @Input() count?: number;
 
+  @Input() items: number[] = [];
+
+  @Input() loadingError?: Error;
+
   @Output() clicked = new EventEmitter<string>();
 }

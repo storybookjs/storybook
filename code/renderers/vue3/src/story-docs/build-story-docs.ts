@@ -46,12 +46,9 @@ import {
   type VueDocgenArgInfo,
 } from './classify-args.ts';
 import { renderSfcSnippet } from './render-sfc.ts';
+import { readTemplateRenderConfig, type TemplateRenderConfig } from './template-render-config.ts';
 import { transformH } from './transform-h.ts';
-import {
-  readTemplateRenderConfig,
-  transformTemplate,
-  type TemplateRenderConfig,
-} from './transform-template.ts';
+import { transformTemplate } from './transform-template.ts';
 
 export interface BuildStoryDocsContext {
   /** Resolve a CSF import path to an absolute file path. Defaults to `process.cwd()` join. */
@@ -75,6 +72,8 @@ interface StoryDocsContext {
   metaPath: NodePath<t.ObjectExpression> | undefined;
   /** Resolves each story's args, following a spread or a name out of the story file. */
   resolver: StoryArgsResolver;
+  /** Full story file source, used for byte-preserving setup slices. */
+  storySource: string;
 }
 
 // Vue's single-file-component format is tried ahead of the JS/TS extensions, matching how a story
@@ -96,6 +95,7 @@ type StaticStoryRenderer =
   | {
       kind: 'template';
       componentImports: TemplateRenderConfig['componentImports'];
+      setupBlock?: TemplateRenderConfig['setupBlock'];
       template: string;
     };
 type StorySnippetResult = { snippet: string };
@@ -167,6 +167,7 @@ export async function buildStoryDocsPayload(
       filePath: storyPath,
       ...(context.references ?? openStoryReferences()),
     }),
+    storySource: storyFile,
   });
 
   return {
@@ -363,7 +364,7 @@ function staticRendererForRenderFunction(
 ): StaticStoryRenderer | undefined {
   const renderObject = resolveReturnedObjectExpression(renderFunction);
   const templateConfig = renderObject
-    ? readTemplateRenderConfig(renderObject, options.importBindings, {
+    ? readTemplateRenderConfig(renderObject, options.storySource, options.importBindings, {
         componentImportStatement: options.snippet?.componentImportStatement,
         componentName: options.snippet?.componentName,
       })
@@ -428,6 +429,7 @@ function renderStaticStorySnippet(
     return transformTemplate({
       args,
       componentImports: renderer.componentImports,
+      setupBlock: renderer.setupBlock,
       template: renderer.template,
     });
   }

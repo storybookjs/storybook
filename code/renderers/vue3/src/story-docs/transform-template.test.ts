@@ -16,7 +16,9 @@ const STORY_PATH = '/stories/MyButton.stories.ts';
 const DOCGEN_CATEGORIES: Record<string, string> = {
   active: 'props',
   columns: 'props',
+  computed: 'props',
   count: 'props',
+  formatter: 'props',
   isCollapsed: 'props',
   label: 'props',
   options: 'props',
@@ -25,6 +27,8 @@ const DOCGEN_CATEGORIES: Record<string, string> = {
   row: 'props',
   status: 'props',
   theme: 'props',
+  title: 'props',
+  titleTag: 'props',
   updateProgressInfo: 'props',
   click: 'events',
   submit: 'events',
@@ -778,6 +782,294 @@ export const Primary = {
     `);
   });
 
+  it('declares setup locals returned alongside args before rendering the template', async () => {
+    expect(
+      await primarySnippet(
+        `
+export const Primary = {
+  args: {
+    title: 'Un titre',
+    titleTag: 'h3',
+  },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const selectedAccordion = ref(undefined);
+      return { selectedAccordion, args };
+    },
+    template: '<MyButton v-model="selectedAccordion" :title="args.title + \\' 1\\'" :title-tag="args.titleTag">Contenu</MyButton>',
+  }),
+};
+`,
+        `
+import { ref } from 'vue';
+import MyButton from './MyButton.vue';
+`
+      )
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import { ref } from "vue";
+      import MyButton from './MyButton.vue';
+
+      const selectedAccordion = ref(undefined);
+      </script>
+
+      <template>
+        <MyButton v-model="selectedAccordion" :title="'Un titre' + ' 1'" title-tag="h3">Contenu</MyButton>
+      </template>"
+    `);
+  });
+
+  it('declares setup locals derived from args when args is not returned', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { title: 'Un titre' },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const title1 = \`\${args.title} 1\`;
+      const title2 = \`\${title1} 2\`;
+      return { title2 };
+    },
+    template: '<MyButton :title="title2">Contenu</MyButton>',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
+      const title1 = \`\${'Un titre'} 1\`;
+      const title2 = \`\${title1} 2\`;
+      </script>
+
+      <template>
+        <MyButton :title="title2">Contenu</MyButton>
+      </template>"
+    `);
+  });
+
+  it('dedupes ref imports from setup locals and v-model arg hoists', async () => {
+    expect(
+      await primarySnippet(
+        `
+export const Primary = {
+  args: { modelValue: 'Typed text' },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const selected = ref(undefined);
+      return { selected, args };
+    },
+    template: '<MyButton v-model="args.modelValue"><span>{{ selected }}</span></MyButton>',
+  }),
+};
+`,
+        `
+import { ref } from 'vue';
+import MyButton from './MyButton.vue';
+`
+      )
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import { ref } from "vue";
+      import MyButton from './MyButton.vue';
+
+      const selected = ref(undefined);
+
+      const modelValue = ref('Typed text');
+      </script>
+
+      <template>
+        <MyButton v-model="modelValue"><span>{{ selected }}</span></MyButton>
+      </template>"
+    `);
+  });
+
+  it('bails when a setup local named ref would shadow the v-model import', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { title: 'x', modelValue: 'On' },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const ref = { current: null };
+      return { ref };
+    },
+    template: '<MyButton v-model="args.modelValue" :title="ref" />',
+  }),
+};
+`)
+    ).toBeUndefined();
+  });
+
+  it('renames a hoisted arg when it collides with a setup local', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { title: { text: 'From args' } },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const title = "Local title";
+      return { title, args };
+    },
+    template: '<MyButton :title="args.title" :aria-label="title" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
+      const title = "Local title";
+
+      const title2 = { text: 'From args' };
+      </script>
+
+      <template>
+        <MyButton :title="title2" :aria-label="title" />
+      </template>"
+    `);
+  });
+
+  it('hoists a function arg called in setup so the call stays intact', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { formatter: (value) => value + '!' },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const label = args.formatter('x');
+      return { label };
+    },
+    template: '<MyButton :label="label" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
+      const formatter = (value) => value + '!';
+
+      const label = formatter('x');
+      </script>
+
+      <template>
+        <MyButton :label="label" />
+      </template>"
+    `);
+  });
+
+  it('reuses one hoisted object arg for repeated setup references', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { options: { deep: true } },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const a = args.options;
+      const b = args.options;
+      return { a, b };
+    },
+    template: '<MyButton :options="a === b ? a : b" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
+      const options = { deep: true };
+
+      const a = options;
+      const b = options;
+      </script>
+
+      <template>
+        <MyButton :options="a === b ? a : b" />
+      </template>"
+    `);
+  });
+
+  it('bails when setup reads a slot arg', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { default: 'Hello' },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const slotText = args.default();
+      return { slotText };
+    },
+    template: '<MyButton>{{ slotText }}</MyButton>',
+  }),
+};
+`)
+    ).toBeUndefined();
+  });
+
+  it('renames an arg hoist colliding with a setup import', async () => {
+    expect(
+      await primarySnippet(
+        `
+export const Primary = {
+  args: { computed: { deep: true } },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const value = computed(() => args.computed);
+      return { value };
+    },
+    template: '<MyButton :options="value" />',
+  }),
+};
+`,
+        `
+import { computed } from 'vue';
+import MyButton from './MyButton.vue';
+`
+      )
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import { computed } from "vue";
+      import MyButton from './MyButton.vue';
+
+      const computed2 = { deep: true };
+
+      const value = computed(() => computed2);
+      </script>
+
+      <template>
+        <MyButton :options="value" />
+      </template>"
+    `);
+  });
+
+  it('bails when setup declares a local args binding', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { title: 'Story title' },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const args = { title: 'Local title' };
+      return { args };
+    },
+    template: '<MyButton :title="args.title" />',
+  }),
+};
+`)
+    ).toBeUndefined();
+  });
+
   it('bails when an expanded arg collides with an attribute already on the element', async () => {
     expect(
       await primarySnippet(`
@@ -956,23 +1248,6 @@ export const Primary = {
   render: (args) => ({
     setup: () => ({ args }),
     template: '<p>{{ args.label }}{ok}</p>',
-  }),
-};
-`)
-    ).toBeUndefined();
-  });
-
-  it('bails when setup returns anything except args', async () => {
-    expect(
-      await primarySnippet(`
-export const Primary = {
-  args: { label: 'Hi' },
-  render: (args) => ({
-    setup() {
-      const state = {};
-      return { args, state };
-    },
-    template: '<MyButton v-bind="args" />',
   }),
 };
 `)

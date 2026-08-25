@@ -31,6 +31,10 @@ export interface RenderContext {
   imports: Record<string, Set<string>>;
   /** Identifiers already taken in `<script setup>` scope. */
   bindings: Set<string>;
+  /** Author setup statements copied into `<script setup>`. */
+  setupSource?: string;
+  /** Const declarations that setupSource references. */
+  setupVariables: Map<string, string>;
   /** Const declarations hoisted into `<script setup>`. */
   variables: Map<string, string>;
   /** Value-identical arg hoists already declared in `<script setup>`. */
@@ -57,7 +61,7 @@ export interface RenderedProp {
   value?: string;
 }
 
-const VUE_PACKAGE = 'vue';
+export const VUE_PACKAGE = 'vue';
 
 /**
  * Split classified args by role, each group sorted in stable attribute order.
@@ -86,8 +90,10 @@ export function partitionArgsByRole(args: ClassifiedArg[]): {
 export function createRenderContext(): RenderContext {
   return {
     imports: {},
-    // `ref` is reserved up front so no hoisted arg can shadow the Vue import a v-model may need.
+    // `ref` is reserved up front so no setup local or arg hoist can shadow the Vue import a
+    // v-model may need after bindings are already registered.
     bindings: new Set(['ref']),
+    setupVariables: new Map(),
     variables: new Map(),
     hoistedArgs: new Map(),
     componentImports: new Set(),
@@ -96,10 +102,13 @@ export function createRenderContext(): RenderContext {
 
 /** Wrap prepared template markup with the shared SFC block assembly. */
 export function renderPreparedSfcSnippet(input: RenderSfcMarkupInput): string {
-  const template = `<template>\n${indent(input.templateCode)}\n</template>`;
+  // Author template literals often start and end with newline-plus-indent; those edge bytes would
+  // become blank lines inside the wrapper, so the block is normalized before re-indenting.
+  const templateCode = dedentBlock(trimBlankEdgeLines(input.templateCode));
+  const template = `<template>\n${indent(templateCode)}\n</template>`;
   const script = renderScript(input.ctx);
 
-  return script ? `${script}\n\n${template}` : template;
+  return trimLineEndWhitespace(script ? `${script}\n\n${template}` : template);
 }
 
 /** Render a classified prop or model arg into a Vue template attribute. */
@@ -225,15 +234,17 @@ function renderScript(ctx: RenderContext): string | undefined {
   const variablesCode = Array.from(ctx.variables.entries())
     .map(([name, value]) => `const ${name} = ${value};`)
     .join('\n\n');
+  const setupVariablesCode = Array.from(ctx.setupVariables.entries())
+    .map(([name, value]) => `const ${name} = ${value};`)
+    .join('\n\n');
 
-  if (!importsCode && !variablesCode) {
+  if (!importsCode && !setupVariablesCode && !ctx.setupSource && !variablesCode) {
     return undefined;
   }
 
-  const scriptCode =
-    importsCode && variablesCode
-      ? `${importsCode}\n\n${variablesCode}`
-      : importsCode || variablesCode;
+  const scriptCode = [importsCode, setupVariablesCode, ctx.setupSource, variablesCode]
+    .filter(Boolean)
+    .join('\n\n');
 
   return `<script lang="ts" setup>
 ${scriptCode}
@@ -352,6 +363,7 @@ export function hoistArgValue(name: string, value: t.Node, ctx: RenderContext): 
 /** Hoist an arg value as a `ref` for a `v-model` binding. */
 export function hoistModelRef(name: string, value: t.Node, ctx: RenderContext): string {
   (ctx.imports[VUE_PACKAGE] ??= new Set()).add('ref');
+  ctx.bindings.add('ref');
   const bindingName = allocateBindingName(name, ctx);
   ctx.variables.set(bindingName, `ref(${printValue(unwrapExpression(value))})`);
   return bindingName;
@@ -386,6 +398,22 @@ export function wrapSlotContent(name: string, content: string): string {
   return name === 'default' ? content : `<template #${name}>\n${indent(content)}\n</template>`;
 }
 
+/** Strip leading and trailing whitespace-only lines, keeping interior blank lines. */
+function trimBlankEdgeLines(source: string): string {
+  return source.replace(/^(?:[ \t]*\r?\n)+/, '').replace(/(?:\r?\n[ \t]*)+$/, '');
+}
+
+/** Remove the smallest common indentation of non-empty lines. */
+export function dedentBlock(source: string): string {
+  const lines = source.split('\n');
+  const indentWidth = lines.reduce((min, line) => {
+    return line.trim() ? Math.min(min, /^[\t ]*/.exec(line)?.[0].length ?? 0) : min;
+  }, Number.POSITIVE_INFINITY);
+  return Number.isFinite(indentWidth) && indentWidth > 0
+    ? lines.map((line) => line.slice(Math.min(indentWidth, line.length))).join('\n')
+    : source;
+}
+
 export function indent(source: string): string {
   return source
     .split('\n')
@@ -399,4 +427,11 @@ function slotSortKey(name: string): string {
 
 function isVueExpressionAttribute(name: string): boolean {
   return name.startsWith(':') || name.startsWith('@') || name.startsWith('v-');
+}
+
+function trimLineEndWhitespace(source: string): string {
+  return source
+    .split('\n')
+    .map((line) => line.replace(/[ \t]+$/, ''))
+    .join('\n');
 }

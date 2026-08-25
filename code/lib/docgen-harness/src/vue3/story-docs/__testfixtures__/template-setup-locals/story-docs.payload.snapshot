@@ -1,0 +1,86 @@
+{
+  "id": "template-setup-locals",
+  "name": "SetupLocalsPanel",
+  "path": "__PATH__",
+  "stories": {
+    "forms-template-setup-locals--derived-local-only": {
+      "description": "A local derived from `args`, with `args` itself never returned.",
+      "id": "forms-template-setup-locals--derived-local-only",
+      "name": "Derived Local Only",
+      "snippet": "<script lang="ts" setup>
+import SetupLocalsPanel from './SetupLocalsPanel.vue';
+
+const heading = `${'Section'} details`;
+</script>
+
+<template>
+  <SetupLocalsPanel :title="heading">Details</SetupLocalsPanel>
+</template>",
+      "summary": undefined,
+    },
+    "forms-template-setup-locals--let-local": {
+      "description": "A reassignable local is pasted into the snippet with the rest of setup.",
+      "id": "forms-template-setup-locals--let-local",
+      "name": "Let Local",
+      "snippet": "<script lang="ts" setup>
+import SetupLocalsPanel from './SetupLocalsPanel.vue';
+
+let heading = 'Section 1';
+heading += ' (draft)';
+</script>
+
+<template>
+  <SetupLocalsPanel :title="heading">Section</SetupLocalsPanel>
+</template>",
+      "summary": undefined,
+    },
+    "forms-template-setup-locals--local-alongside-args": {
+      "description": "A local declared beside `args`, bound by the template through `v-model`.",
+      "id": "forms-template-setup-locals--local-alongside-args",
+      "name": "Local Alongside Args",
+      "snippet": "<script lang="ts" setup>
+import { ref } from "vue";
+import SetupLocalsPanel from './SetupLocalsPanel.vue';
+
+const openPanel = ref(undefined);
+</script>
+
+<template>
+  <SetupLocalsPanel v-model="openPanel" :title="'Section' + ' 1'" title-tag="h4">
+    First
+  </SetupLocalsPanel>
+</template>",
+      "summary": undefined,
+    },
+    "forms-template-setup-locals--model-arg-with-ref-local": {
+      "description": "A `v-model` arg and a `ref()` local in one story.
+
+Both need `ref` from Vue, so the snippet has to import it exactly once.",
+      "id": "forms-template-setup-locals--model-arg-with-ref-local",
+      "name": "Model Arg With Ref Local",
+      "snippet": "<script lang="ts" setup>
+import { ref } from "vue";
+import SetupLocalsPanel from './SetupLocalsPanel.vue';
+
+const badge = ref('New');
+
+const modelValue = ref('Accepted');
+</script>
+
+<template>
+  <SetupLocalsPanel v-model="modelValue" title="Terms">
+    <template #title>{{ badge }}</template>
+    Body
+  </SetupLocalsPanel>
+</template>",
+      "summary": undefined,
+    },
+    "forms-template-setup-locals--unsupported-renamed-return": {
+      "description": "A renamed return has no declaration the snippet could carry, so it stays snippet-less.",
+      "id": "forms-template-setup-locals--unsupported-renamed-return",
+      "name": "Unsupported Renamed Return",
+      "summary": undefined,
+      "warning": "No static snippet: the `render` function could not be resolved statically.",
+    },
+  },
+}

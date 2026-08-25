@@ -9,41 +9,23 @@ import {
 } from '@vue/compiler-dom';
 
 import { babelParseExpression, types as t } from 'storybook/internal/babel';
-import {
-  keyOf,
-  propertyValue,
-  returnedExpression,
-  unwrapExpression,
-  type ImportBinding,
-} from 'storybook/internal/csf-tools';
+import { unwrapExpression } from 'storybook/internal/csf-tools';
 
 import type { ClassifiedArg } from './classify-args.ts';
 import { isFunctionExpression, printValue } from './classify-value.ts';
 import {
   createRenderContext,
+  dedentBlock,
   hoistArgValue,
   hoistModelRef,
-  importStatementForBinding,
   inlinePrimitiveSource,
   renderArgsBindingAttributes,
   renderBoundArgAttribute,
   renderPreparedSfcSnippet,
+  VUE_PACKAGE,
   type RenderContext,
 } from './render-primitives.ts';
-
-export interface TemplateRenderConfig {
-  /** Static Vue template string returned from the render function. */
-  template: string;
-  /** Component tag name to import statement. */
-  componentImports: Map<string, string>;
-}
-
-export interface ReadTemplateRenderConfigOptions {
-  /** Meta component identifier from CSF meta.component. */
-  componentName?: string;
-  /** Import statement for the meta component, after any `@import` override. */
-  componentImportStatement?: string;
-}
+import { ARGS_NAME, type SetupBlock } from './template-render-config.ts';
 
 export interface TransformTemplateInput {
   /** Static Vue template markup from a render object. */
@@ -52,6 +34,8 @@ export interface TransformTemplateInput {
   args: ClassifiedArg[];
   /** Component tag name to import statement from the render object's components map. */
   componentImports: Map<string, string>;
+  /** Setup statements the template can reference. */
+  setupBlock?: SetupBlock;
 }
 
 export interface TransformTemplateResult {
@@ -81,37 +65,12 @@ interface ArgsReference {
 
 type ExpressionContext = 'directive' | 'interpolation';
 
-const ARGS_NAME = 'args';
 const ARGS_IDENTIFIER_REGEXP = /(^|[^\w$])args([^\w$]|$)/;
 const ARGS_MEMBER_REGEXP = /^args\.([A-Za-z_$][\w$]*)$/;
-const SETUP_PROPERTY = 'setup';
 
-/** Read a transformable template-render object without resolving the render function itself. */
-export function readTemplateRenderConfig(
-  renderObject: t.ObjectExpression,
-  importBindings: Map<string, ImportBinding>,
-  options: ReadTemplateRenderConfigOptions = {}
-): TemplateRenderConfig | undefined {
-  if (!hasOnlySupportedRenderProperties(renderObject)) {
-    return undefined;
-  }
-
-  const template = staticTemplateSource(propertyValue(renderObject, 'template'));
-  if (template === undefined) {
-    return undefined;
-  }
-
-  const setup = setupProperty(renderObject);
-  if (setup && !isTrivialSetup(setup)) {
-    return undefined;
-  }
-
-  const componentImports = readComponentImports(
-    propertyValue(renderObject, 'components'),
-    importBindings,
-    options
-  );
-  return componentImports ? { template, componentImports } : undefined;
+interface ComponentImport {
+  importStatement: string;
+  localName: string;
 }
 
 /**
@@ -138,6 +97,10 @@ export function transformTemplate(
     componentImports: input.componentImports,
     template: input.template,
   };
+
+  if (!registerSetupBlock(input.setupBlock, state)) {
+    return undefined;
+  }
 
   if (!collectTemplateScopeBindings(ast.children, state.ctx)) {
     return undefined;
@@ -219,9 +182,10 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
     return false;
   }
 
-  const importStatement = componentImportForTag(node.tag, state.componentImports);
-  if (importStatement) {
-    state.ctx.componentImports.add(importStatement);
+  const componentImport = componentImportForTag(node.tag, state.componentImports);
+  if (componentImport) {
+    state.ctx.componentImports.add(componentImport.importStatement);
+    state.ctx.bindings.add(componentImport.localName);
   }
 
   const nameCounts = attributeNameCounts(node);
@@ -603,8 +567,15 @@ function attributeNameCounts(node: ElementNode): Map<string, number> {
 function componentImportForTag(
   tag: string,
   componentImports: Map<string, string>
-): string | undefined {
-  return componentImports.get(tag) ?? componentImports.get(pascalCase(tag));
+): ComponentImport | undefined {
+  const direct = componentImports.get(tag);
+  if (direct) {
+    return { importStatement: direct, localName: tag };
+  }
+
+  const pascal = pascalCase(tag);
+  const pascalImport = componentImports.get(pascal);
+  return pascalImport ? { importStatement: pascalImport, localName: pascal } : undefined;
 }
 
 function pascalCase(tag: string): string {
@@ -621,108 +592,68 @@ function valueReferencesArgs(value: string): boolean {
   return ARGS_IDENTIFIER_REGEXP.test(value);
 }
 
-// '<MyButton />' or `<MyButton />` without substitutions
-function staticTemplateSource(node: t.Node | undefined): string | undefined {
-  if (t.isStringLiteral(node)) {
-    return node.value;
+function registerSetupBlock(setupBlock: SetupBlock | undefined, state: TransformState): boolean {
+  if (!setupBlock) {
+    return true;
   }
-  if (t.isTemplateLiteral(node) && node.expressions.length === 0) {
-    return node.quasis[0]?.value.cooked;
-  }
-  return undefined;
-}
 
-// { components: { Button }, setup: () => ({ args }), template: '<Button />' }
-function hasOnlySupportedRenderProperties(renderObject: t.ObjectExpression): boolean {
-  return renderObject.properties.every((property) => {
-    // { ...baseRender, template: '<Button />' }
-    if (t.isSpreadElement(property)) {
+  if (setupBlock.bindings.some((binding) => state.ctx.bindings.has(binding))) {
+    return false;
+  }
+
+  // Vue's own `ref` import may take the reserved name: the v-model hoist dedupes with it. Any
+  // other import must not collide, or two declarations would share one identifier.
+  const importCollides = setupBlock.imports.some((binding) => {
+    if (binding.importName === 'ref') {
+      return binding.importId !== VUE_PACKAGE;
+    }
+    return state.ctx.bindings.has(binding.importName);
+  });
+  if (importCollides) {
+    return false;
+  }
+
+  setupBlock.bindings.forEach((binding) => state.ctx.bindings.add(binding));
+  setupBlock.imports.forEach((binding) => state.ctx.bindings.add(binding.importName));
+
+  const edits: Edit[] = [];
+  for (const reference of setupBlock.argsRefs) {
+    const text = replacementForSetupArgsReference(reference.name, state);
+    if (!text) {
       return false;
     }
+    edits.push({
+      end: reference.end - setupBlock.start,
+      start: reference.start - setupBlock.start,
+      text,
+    });
+  }
 
-    const key = keyOf(property);
-    // `inheritAttrs` only tunes runtime attribute fallthrough; the markup stays faithful without it.
-    return (
-      key === 'components' || key === SETUP_PROPERTY || key === 'template' || key === 'inheritAttrs'
-    );
-  });
+  for (const binding of setupBlock.imports) {
+    (state.ctx.imports[binding.importId] ??= new Set()).add(binding.importName);
+  }
+
+  state.ctx.setupSource = dedentBlock(applyEdits(setupBlock.source, edits));
+  return true;
 }
 
-// { Button, 'my-button': Button }
-function readComponentImports(
-  value: t.Node | undefined,
-  importBindings: Map<string, ImportBinding>,
-  options: ReadTemplateRenderConfigOptions
-): Map<string, string> | undefined {
-  const componentImports = new Map<string, string>();
-  if (options.componentName && options.componentImportStatement) {
-    componentImports.set(options.componentName, options.componentImportStatement);
-  }
-  if (!value) {
-    return componentImports;
-  }
-  if (!t.isObjectExpression(value)) {
+function replacementForSetupArgsReference(name: string, state: TransformState): string | undefined {
+  const arg = state.argsByName.get(name);
+  if (!arg || arg.role === 'slot') {
     return undefined;
   }
 
-  for (const property of value.properties) {
-    if (!t.isObjectProperty(property)) {
-      return undefined;
-    }
-
-    const tagName = keyOf(property);
-    const component = unwrapExpression(property.value);
-    if (!tagName || !t.isIdentifier(component)) {
-      return undefined;
-    }
-
-    const importStatement =
-      component.name === options.componentName
-        ? options.componentImportStatement
-        : importStatementForBinding(component.name, importBindings.get(component.name));
-    if (!importStatement) {
-      return undefined;
-    }
-
-    componentImports.set(tagName, importStatement);
-  }
-
-  return componentImports;
+  return arg.plan.kind === 'inline'
+    ? printValue(unwrapExpression(arg.value))
+    : hoistSetupArgValue(arg.name, arg.value, state);
 }
 
-// setup() { return { args }; }
-function setupProperty(
-  renderObject: t.ObjectExpression
-): t.ObjectMethod | t.ObjectProperty | undefined {
-  return renderObject.properties.find((property): property is t.ObjectMethod | t.ObjectProperty => {
-    if (!t.isObjectMethod(property) && !t.isObjectProperty(property)) {
-      return false;
-    }
-    return keyOf(property) === SETUP_PROPERTY;
-  });
-}
-
-// setup: () => ({ args })
-function isTrivialSetup(setup: t.ObjectMethod | t.ObjectProperty): boolean {
-  const returned = setupReturnObject(setup);
-  if (!returned || returned.properties.length !== 1) {
-    return false;
+function hoistSetupArgValue(name: string, value: t.Node, state: TransformState): string {
+  const bindingName = hoistArgValue(name, value, state.ctx);
+  const source = state.ctx.variables.get(bindingName);
+  if (source) {
+    state.ctx.variables.delete(bindingName);
+    state.ctx.setupVariables.set(bindingName, source);
   }
-
-  const [property] = returned.properties;
-  if (!t.isObjectProperty(property) || keyOf(property) !== ARGS_NAME) {
-    return false;
-  }
-
-  const value = unwrapExpression(property.value);
-  return t.isIdentifier(value, { name: ARGS_NAME });
-}
-
-// setup() { return { args }; } or setup: () => ({ args })
-function setupReturnObject(
-  setup: t.ObjectMethod | t.ObjectProperty
-): t.ObjectExpression | undefined {
-  const setupFunction = t.isObjectMethod(setup) ? setup : unwrapExpression(setup.value);
-  const returned = returnedExpression(setupFunction);
-  return t.isObjectExpression(returned) ? returned : undefined;
+  return bindingName;
 }

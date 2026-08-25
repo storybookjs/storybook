@@ -38,6 +38,7 @@ describe('PreflightCheckCommand', () => {
         isOutdated: false,
       }),
       getCurrentVersion: vi.fn().mockReturnValue('8.0.0'),
+      getStorybookVersionFromAncestry: vi.fn().mockReturnValue(undefined),
     };
     command = new PreflightCheckCommand(mockVersionService);
 
@@ -157,6 +158,28 @@ describe('PreflightCheckCommand', () => {
       expect(vi.mocked(logger.warn)).not.toHaveBeenCalledWith(
         expect.stringContaining('Your package.json "name" field is set to "storybook"')
       );
+    });
+
+    it('should keep an explicit storybookVersionSpecifier instead of overwriting it from ancestry', async () => {
+      vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
+      const specifier = 'https://pkg.pr.new/storybookjs/storybook/storybook@abc123';
+      const options = { force: false, storybookVersionSpecifier: specifier };
+
+      await command.execute(options as any);
+
+      expect(options.storybookVersionSpecifier).toBe(specifier);
+      expect(mockVersionService.getStorybookVersionFromAncestry).not.toHaveBeenCalled();
+    });
+
+    it('should fill storybookVersionSpecifier from process ancestry when it is unset', async () => {
+      vi.mocked(scaffoldModule.currentDirectoryIsEmpty).mockReturnValue(false);
+      mockVersionService.getStorybookVersionFromAncestry.mockReturnValue('10.6.0-alpha.7');
+      const options = { force: false } as any;
+
+      await command.execute(options);
+
+      expect(mockVersionService.getStorybookVersionFromAncestry).toHaveBeenCalled();
+      expect(options.storybookVersionSpecifier).toBe('10.6.0-alpha.7');
     });
 
     it('should call the package manager Storybook install precheck', async () => {

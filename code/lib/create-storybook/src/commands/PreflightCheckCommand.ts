@@ -38,11 +38,13 @@ export class PreflightCheckCommand {
     private readonly telemetryService = new TelemetryService()
   ) {}
   async execute(options: CommandOptions): Promise<PreflightCheckResult> {
-    try {
-      options.storybookVersionSpecifier =
-        this.versionService.getStorybookVersionFromAncestry(getProcessAncestry());
-    } catch {
-      // Ignore ancestry lookup failures and fall back to the embedded release versions.
+    if (options.storybookVersionSpecifier === undefined) {
+      try {
+        options.storybookVersionSpecifier =
+          this.versionService.getStorybookVersionFromAncestry(getProcessAncestry());
+      } catch {
+        // Ignore ancestry lookup failures and fall back to the embedded release versions.
+      }
     }
 
     const isEmptyDirProject = options.force !== true && currentDirectoryIsEmpty();

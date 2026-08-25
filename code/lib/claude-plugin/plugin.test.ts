@@ -84,6 +84,7 @@ describe('stories skill prerequisites', () => {
 
     expect(skill).toContain('docs-list');
     expect(skill).toContain('docs-show');
+    expect(skill.indexOf('docs-list')).toBeLessThan(skill.indexOf('docs-show'));
     expect(skill).toContain('set up or install Storybook');
   });
 });

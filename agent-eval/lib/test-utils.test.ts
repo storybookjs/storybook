@@ -103,6 +103,38 @@ describe('parseStorybookWorkflowShellCommands', () => {
     ]);
   });
 
+  test('resolves review-create --json from a same-command cat heredoc', () => {
+    const command = `cat > /tmp/review.json <<'EOF'
+{
+  "title": "New ProfileCard component",
+  "description": "A new ProfileCard.",
+  "collections": [
+    {
+      "title": "The full card",
+      "rationale": "Default composition.",
+      "storyIds": ["src-components-profilecard--default"]
+    }
+  ],
+  "changedFiles": ["src/components/ProfileCard.tsx"]
+}
+EOF
+STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai -p 36917 review-create --json "$(cat /tmp/review.json)" 2>&1 | tail -20`;
+
+    const calls = parseStorybookWorkflowShellCommands([command]);
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.name).toBe('review-create');
+    expect(calls[0]?.input.title).toBe('New ProfileCard component');
+    expect(calls[0]?.input.collections).toEqual([
+      {
+        title: 'The full card',
+        rationale: 'Default composition.',
+        storyIds: ['src-components-profilecard--default'],
+      },
+    ]);
+    expect(calls[0]?.input.changedFiles).toEqual(['src/components/ProfileCard.tsx']);
+  });
+
   test('does not credit ad hoc MCP invocations from the shell', () => {
     const calls = parseStorybookWorkflowShellCommands([
       'node scripts/mcp-call.mjs test-run \'{"stories":[{"storyId":"example-button--primary"}]}\'',

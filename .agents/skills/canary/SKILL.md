@@ -10,7 +10,10 @@ Use this skill to get a branch-specific canary build from `pkg.pr.new`.
 
 Canary publishes are driven by the `publish-canary.yml` workflow.
 
-Automatic canary publishes on PRs are triggered only by the `ci:canary` label. A human must apply that label. While it remains, every push to the PR republishes.
+Automatic canary publishes:
+
+- Every push to `next`
+- PRs labeled `ci:canary` (a human must apply that label). While it remains, every push to the PR republishes.
 
 ## Version string
 
@@ -20,7 +23,7 @@ The canary version string is constructed like this:
 storybook@https://pkg.pr.new/storybookjs/storybook/storybook@<SHA>
 ```
 
-Replace `<SHA>` with the full commit SHA.
+Replace `<SHA>` with the short commit SHA (first 7 characters). The pkg.pr.new dashboard is always `https://pkg.pr.new/~/storybookjs/storybook`.
 
 ## Check whether a canary already exists
 

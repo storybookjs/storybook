@@ -3,6 +3,8 @@ name: Publish Canary Packages
 on:
   # Manual run from the Actions UI or `gh workflow run`. Select any branch.
   workflow_dispatch:
+  push:
+    branches: [next]
   pull_request:
     types: [opened, synchronize, reopened, labeled]
 
@@ -15,7 +17,7 @@ permissions:
   pull-requests: write
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event_name == 'workflow_dispatch' && github.ref_name || github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ github.event_name == 'pull_request' && github.event.pull_request.number || github.ref_name }}
   cancel-in-progress: true
 
 jobs:
@@ -23,6 +25,7 @@ jobs:
     name: Publish Canary Packages
     if: |
       github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'push' ||
       (
         github.event.pull_request.state == 'open' &&
         contains(github.event.pull_request.labels.*.name, 'ci:canary') &&
@@ -88,18 +91,15 @@ jobs:
         env:
           COMMIT_SHA: ${{ github.event.pull_request.head.sha }}
         run: |
-          create_storybook_package_url=$(jq -r '.packages[] | select(.name == "create-storybook") | .url' ./pkg-pr-new-output.json)
-          storybook_package_url=$(jq -r '.packages[] | select(.name == "storybook") | .url' ./pkg-pr-new-output.json)
+          jq -e '.packages[] | select(.name == "create-storybook")' ./pkg-pr-new-output.json >/dev/null
+          jq -e '.packages[] | select(.name == "storybook")' ./pkg-pr-new-output.json >/dev/null
 
-          if [[ -z "$create_storybook_package_url" || "$create_storybook_package_url" == "null" ]]; then
-            create_storybook_package_url="https://pkg.pr.new/storybookjs/storybook/create-storybook@$COMMIT_SHA"
-          fi
+          short_sha="${COMMIT_SHA:0:7}"
+          pkg_pr_new_page="https://pkg.pr.new/~/storybookjs/storybook"
+          create_storybook_package_url="https://pkg.pr.new/storybookjs/storybook/create-storybook@$short_sha"
+          storybook_package_url="https://pkg.pr.new/storybookjs/storybook/storybook@$short_sha"
 
-          if [[ -z "$storybook_package_url" || "$storybook_package_url" == "null" ]]; then
-            storybook_package_url="https://pkg.pr.new/storybookjs/storybook/storybook@$COMMIT_SHA"
-          fi
-
-          printf '## 🦋 Canary Release - 🚢 Released `%s`\n' "$storybook_package_url" > "$RUNNER_TEMP/canary-heading.md"
+          printf '## 🦋 Canary Release - 🚢 Released [`%s`](%s)\n' "$short_sha" "$pkg_pr_new_page" > "$RUNNER_TEMP/canary-heading.md"
 
           {
             printf '%s\n' 'This pull request has been released as canary packages. Try it out in a new project or update an existing project with the commands below.'

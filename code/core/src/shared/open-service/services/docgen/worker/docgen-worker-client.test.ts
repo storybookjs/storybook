@@ -1,16 +1,16 @@
-// Unit tests for the docgen worker client's dispatch / readiness / failure plumbing. A real worker is
-// replaced with an EventEmitter stand-in so the tests stay hermetic.
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { DocgenProviderDescriptor } from '../types.ts';
 import type { DocgenWorkerRequest, DocgenWorkerResponse } from './protocol.ts';
 
-/** Only the surface the tests touch; the runtime instance is a real Node EventEmitter subclass. */
 interface FakeWorker {
   posted: DocgenWorkerRequest[];
   postMessage: ReturnType<typeof vi.fn>;
   terminate: ReturnType<typeof vi.fn>;
   unref: ReturnType<typeof vi.fn>;
+  ref: ReturnType<typeof vi.fn>;
+  /** `message` listeners registered at the moment `unref()` ran; see the ordering test below. */
+  messageListenersAtUnref: number;
   emit: (event: string, ...args: unknown[]) => boolean;
 }
 
@@ -21,7 +21,7 @@ vi.mock('node:worker_threads', async () => {
 
   class FakeWorkerImpl extends NodeEventEmitter {
     posted: DocgenWorkerRequest[] = [];
-    constructor() {
+    constructor(_scriptPath: string) {
       super();
       fakeWorkers.push(this as unknown as FakeWorker);
     }
@@ -29,7 +29,11 @@ vi.mock('node:worker_threads', async () => {
       this.posted.push(msg);
     });
     terminate = vi.fn(async () => 0);
-    unref = vi.fn();
+    messageListenersAtUnref = -1;
+    unref = vi.fn(() => {
+      this.messageListenersAtUnref = this.listenerCount('message');
+    });
+    ref = vi.fn();
   }
 
   return { Worker: FakeWorkerImpl };
@@ -38,8 +42,7 @@ vi.mock('node:worker_threads', async () => {
 vi.mock('node:fs', () => ({ existsSync: vi.fn(() => true) }));
 
 vi.mock('../../../../utils/module.ts', () => ({
-  // Include a drive letter so `fileURLToPath()` accepts it on Windows too (a driveless file URL
-  // throws ERR_INVALID_FILE_URL_PATH there, which would make the client resolve to undefined).
+  // Drive letter included so `fileURLToPath()` accepts this URL on Windows too.
   importMetaResolve: vi.fn(() => 'file:///C:/fake/storybook/docgen-worker.js'),
 }));
 
@@ -51,7 +54,6 @@ const DESCRIPTORS: DocgenProviderDescriptor[] = [
   { moduleSpecifier: '/fake/react/docgen-worker.js' },
 ];
 
-/** Resolve the worker's `init` ack so awaiting `extract` calls can proceed. */
 function ackInit(worker: FakeWorker, error?: { name: string; message: string }) {
   worker.emit(
     'message',
@@ -86,6 +88,21 @@ describe('createDocgenWorkerClient', () => {
     expect(fakeWorkers).toHaveLength(0);
   });
 
+  it('forwards the current log level in the init request', async () => {
+    const { logger } = await import('storybook/internal/node-logger');
+    vi.mocked(logger.getLogLevel).mockReturnValueOnce('debug');
+
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+    client.extract({ id: 'button--primary' } as any).catch(() => undefined);
+
+    expect(fakeWorkers[0].posted[0]).toEqual({
+      type: 'init',
+      descriptors: DESCRIPTORS,
+      logLevel: 'debug',
+    });
+  });
+
   it('spawns the worker lazily on the first extract and posts init with descriptors', async () => {
     const { createDocgenWorkerClient } = await loadModule();
     const client = createDocgenWorkerClient(DESCRIPTORS)!;
@@ -94,19 +111,26 @@ describe('createDocgenWorkerClient', () => {
     const worker = fakeWorkers[0];
 
     expect(fakeWorkers).toHaveLength(1);
-    expect(worker.posted[0]).toEqual({ type: 'init', descriptors: DESCRIPTORS });
-    expect(worker.unref).toHaveBeenCalled();
+    expect(worker.posted[0]).toMatchObject({ type: 'init', descriptors: DESCRIPTORS });
+    expect(worker.unref).not.toHaveBeenCalled();
 
-    // Drive the extract to completion so dispose isn't racing a not-yet-queued request.
     ackInit(worker);
     await Promise.resolve();
     const extractMsg = worker.posted.find((m) => m.type === 'extract') as { id: number };
+    // Loose on purpose: a transient unref can land before the extract continuation runs.
+    expect(worker.ref).toHaveBeenCalled();
     worker.emit('message', {
       type: 'extract',
       id: extractMsg.id,
       payload: { id: 'button', name: 'Button', path: './button.stories.tsx', jsDocTags: {} },
     } satisfies DocgenWorkerResponse);
     await expect(promise).resolves.toMatchObject({ id: 'button' });
+    const lastRef = Math.max(...worker.ref.mock.invocationCallOrder);
+    const lastUnref = Math.max(...worker.unref.mock.invocationCallOrder);
+    expect(lastUnref).toBeGreaterThan(lastRef);
+
+    // Attaching a `message` listener re-refs the port, so unref before that holds the loop open.
+    expect(worker.messageListenersAtUnref).toBeGreaterThan(0);
   });
 });
 
@@ -119,7 +143,6 @@ describe('DocgenWorkerClient.extract', () => {
     const promise = client.extract(entry);
     const worker = fakeWorkers[0];
 
-    // Nothing is dispatched until init is acked.
     expect(worker.posted.filter((m) => m.type === 'extract')).toHaveLength(0);
     ackInit(worker);
     await Promise.resolve();
@@ -153,8 +176,6 @@ describe('DocgenWorkerClient.extract', () => {
 
     const promise = client.extract({ id: 'x' } as any);
     const worker = fakeWorkers[0];
-    // Worker dies during boot, before its `init` ack — `ready` must reject so the awaiting extract
-    // fails fast instead of hanging forever.
     worker.emit('exit', 1);
 
     await expect(promise).rejects.toThrow(/exited unexpectedly/);
@@ -193,5 +214,53 @@ describe('DocgenWorkerClient.extract', () => {
     worker.emit('exit', 1);
 
     await expect(promise).rejects.toThrow(/exited unexpectedly/);
+  });
+
+  it('names the death in every extract that follows it', async () => {
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+
+    const first = client.extract({ id: 'x' } as any);
+    ackInit(fakeWorkers[0]);
+    await Promise.resolve();
+    fakeWorkers[0].emit('error', new Error('worker ran out of memory'));
+    await expect(first).rejects.toThrow('worker ran out of memory');
+
+    // Never served a request, so the next extract reuses the corpse rather than respawning into
+    // the same failure - and says what that failure was.
+    await expect(client.extract({ id: 'y' } as any)).rejects.toThrow(
+      'docgen worker is no longer running: worker ran out of memory'
+    );
+    expect(fakeWorkers).toHaveLength(1);
+  });
+
+  it('spawns a replacement once a dead worker had served requests', async () => {
+    const { createDocgenWorkerClient } = await loadModule();
+    const client = createDocgenWorkerClient(DESCRIPTORS)!;
+
+    const first = client.extract({ id: 'x' } as any);
+    ackInit(fakeWorkers[0]);
+    await Promise.resolve();
+    const extractMsg = fakeWorkers[0].posted.find((m) => m.type === 'extract') as { id: number };
+    fakeWorkers[0].emit('message', {
+      type: 'extract',
+      id: extractMsg.id,
+      payload: { id: 'x', name: 'X', path: './x.stories.ts', jsDocTags: {} },
+    } satisfies DocgenWorkerResponse);
+    await expect(first).resolves.toMatchObject({ id: 'x' });
+
+    fakeWorkers[0].emit('error', new Error('worker ran out of memory'));
+
+    const second = client.extract({ id: 'y' } as any);
+    expect(fakeWorkers).toHaveLength(2);
+    ackInit(fakeWorkers[1]);
+    await Promise.resolve();
+    const retryMsg = fakeWorkers[1].posted.find((m) => m.type === 'extract') as { id: number };
+    fakeWorkers[1].emit('message', {
+      type: 'extract',
+      id: retryMsg.id,
+      payload: { id: 'y', name: 'Y', path: './y.stories.ts', jsDocTags: {} },
+    } satisfies DocgenWorkerResponse);
+    await expect(second).resolves.toMatchObject({ id: 'y' });
   });
 });

@@ -1,0 +1,283 @@
+{
+  "argTypes": {
+    "array": {
+      "description": "description required array object",
+      "name": "array",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "MyNestedProps[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "MyNestedProps[]"
+      }
+    },
+    "arrayOptional": {
+      "description": "description optional array object",
+      "name": "arrayOptional",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "MyNestedProps[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "MyNestedProps[] | undefined"
+      }
+    },
+    "bar": {
+      "defaultValue": {
+        "summary": "1"
+      },
+      "description": "description bar is optional number",
+      "name": "bar",
+      "table": {
+        "category": "props",
+        "defaultValue": {
+          "summary": "1"
+        },
+        "type": {
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "number",
+        "required": false
+      }
+    },
+    "baz": {
+      "description": "description baz is required boolean",
+      "name": "baz",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean",
+        "required": true
+      }
+    },
+    "enumValue": {
+      "control": {
+        "labels": {
+          "0": "MyEnum.Small",
+          "1": "MyEnum.Medium",
+          "2": "MyEnum.Large"
+        }
+      },
+      "description": "description enum value",
+      "name": "enumValue",
+      "options": [0, 1, 2],
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "MyEnum"
+        }
+      },
+      "type": {
+        "name": "enum",
+        "required": true,
+        "value": [0, 1, 2]
+      }
+    },
+    "foo": {
+      "description": "@default: \"rounded\"<br>@since: v1.0.0<br>@see: https://vuejs.org/<br>@deprecated: v1.1.0<br><br>string foo",
+      "name": "foo",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": true
+      }
+    },
+    "inlined": {
+      "description": "",
+      "name": "inlined",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "{ foo: string; }"
+        }
+      },
+      "type": {
+        "name": "object",
+        "required": true,
+        "value": {}
+      }
+    },
+    "literalFromContext": {
+      "description": "description literal type alias that require context",
+      "name": "literalFromContext",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "\"Uncategorized\" | \"Content\" | \"Interaction\" | \"Display\" | \"Forms\" | \"Addons\""
+        }
+      },
+      "type": {
+        "name": "enum",
+        "required": true,
+        "value": ["Uncategorized", "Content", "Interaction", "Display", "Forms", "Addons"]
+      }
+    },
+    "nested": {
+      "description": "description nested is required nested object",
+      "name": "nested",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "MyNestedProps"
+        }
+      },
+      "type": {
+        "name": "object",
+        "required": true,
+        "value": {}
+      }
+    },
+    "nestedIntersection": {
+      "description": "description required nested object with intersection",
+      "name": "nestedIntersection",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "MyNestedProps & { additionalProp: string; }"
+        }
+      },
+      "type": {
+        "name": "object",
+        "required": true,
+        "value": {}
+      }
+    },
+    "nestedOptional": {
+      "description": "description optional nested object",
+      "name": "nestedOptional",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "MyNestedProps | MyIgnoredNestedProps"
+        }
+      },
+      "type": {
+        "name": "union",
+        "required": false,
+        "value": [
+          {
+            "name": "object",
+            "required": false,
+            "value": {}
+          },
+          {
+            "name": "object",
+            "required": false,
+            "value": {}
+          }
+        ]
+      }
+    },
+    "recursive": {
+      "description": "",
+      "name": "recursive",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "MyNestedRecursiveProps"
+        }
+      },
+      "type": {
+        "name": "object",
+        "required": false,
+        "value": {}
+      }
+    },
+    "stringArray": {
+      "defaultValue": {
+        "summary": "[\"foo\", \"bar\"]"
+      },
+      "description": "description stringArray is string array",
+      "name": "stringArray",
+      "table": {
+        "category": "props",
+        "defaultValue": {
+          "summary": "[\"foo\", \"bar\"]"
+        },
+        "type": {
+          "summary": "string[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": false,
+        "value": "string[] | undefined"
+      }
+    },
+    "union": {
+      "description": "description union is required union type",
+      "name": "union",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "string | number"
+        }
+      },
+      "type": {
+        "name": "union",
+        "required": true,
+        "value": [
+          {
+            "name": "string",
+            "required": false
+          },
+          {
+            "name": "number",
+            "required": false
+          }
+        ]
+      }
+    },
+    "unionOptional": {
+      "description": "description unionOptional is optional union type",
+      "name": "unionOptional",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "string | number | boolean"
+        }
+      },
+      "type": {
+        "name": "union",
+        "required": false,
+        "value": [
+          {
+            "name": "string",
+            "required": false
+          },
+          {
+            "name": "number",
+            "required": false
+          },
+          {
+            "name": "boolean",
+            "required": false
+          }
+        ]
+      }
+    }
+  },
+  "id": "stories-renderers-vue3-vue3-vite-default-ts-component-meta-referencetypeprops",
+  "jsDocTags": {},
+  "name": "Component",
+  "path": "./src/stories/renderers/vue3_vue3-vite-default-ts/component-meta/ReferenceTypeProps.stories.ts"
+}

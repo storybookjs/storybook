@@ -1,6 +1,5 @@
 {
   "id": "template-unsupported",
-  "import": "import TemplateUnsupportedPanel from './TemplateUnsupportedPanel.vue';",
   "name": "TemplateUnsupportedPanel",
   "path": "__PATH__",
   "stories": {
@@ -9,6 +8,7 @@
       "id": "forms-template-unsupported--primary",
       "name": "Primary",
       "summary": undefined,
+      "warning": "No static snippet: the `render` function could not be resolved statically.",
     },
   },
 }

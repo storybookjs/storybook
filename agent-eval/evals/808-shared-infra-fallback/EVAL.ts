@@ -70,9 +70,9 @@ test.runIf(review && !codexMcpReviewGap)(
 // legitimately surface both consumers from the diff alone, and that is
 // correct behavior — the fallback is only required when it doesn't.
 test.runIf(review && !codexMcpReviewGap)(
-  'falls back to get-stories-by-component when the diff does not cover the consumers',
+  'falls back to stories-find-by-component when the diff does not cover the consumers',
   () => {
-    const changedStoriesResults = getWorkflowToolResults('get-changed-stories');
+    const changedStoriesResults = getWorkflowToolResults('stories-changed');
     const lastChangedStories = changedStoriesResults.at(-1);
     const diffCoversConsumers =
       lastChangedStories !== undefined &&
@@ -85,8 +85,8 @@ test.runIf(review && !codexMcpReviewGap)(
     }
 
     expect(
-      getWorkflowCalls('get-stories-by-component').length,
-      'get-changed-stories did not surface the consumer stories, so get-stories-by-component must be used'
+      getWorkflowCalls('stories-find-by-component').length,
+      'stories-changed did not surface the consumer stories, so stories-find-by-component must be used'
     ).toBeGreaterThan(0);
   }
 );

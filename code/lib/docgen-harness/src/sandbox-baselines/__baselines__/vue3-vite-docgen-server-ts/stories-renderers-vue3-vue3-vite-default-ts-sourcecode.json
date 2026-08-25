@@ -1,0 +1,125 @@
+{
+  "argTypes": {
+    "array": {
+      "description": "",
+      "name": "array",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "string[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "string[]"
+      }
+    },
+    "bar": {
+      "description": "",
+      "name": "bar",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "number",
+        "required": false
+      }
+    },
+    "default": {
+      "description": "",
+      "name": "default",
+      "table": {
+        "category": "slots",
+        "type": {
+          "summary": "any"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "any"
+      }
+    },
+    "foo": {
+      "description": "",
+      "name": "foo",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": true
+      }
+    },
+    "modelValue": {
+      "description": "",
+      "name": "modelValue",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "namedSlot": {
+      "description": "",
+      "name": "namedSlot",
+      "table": {
+        "category": "slots",
+        "type": {
+          "summary": "{ foo: string; }"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "{ foo: string; }"
+      }
+    },
+    "object": {
+      "description": "",
+      "name": "object",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "Record<string, unknown>"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "Record<string, unknown>"
+      }
+    },
+    "update:modelValue": {
+      "control": {
+        "disable": true
+      },
+      "description": "",
+      "name": "update:modelValue",
+      "table": {
+        "category": "events",
+        "type": {
+          "summary": "[value: string]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "[value: string]"
+      }
+    }
+  },
+  "id": "stories-renderers-vue3-vue3-vite-default-ts-sourcecode",
+  "jsDocTags": {},
+  "name": "SourceCode",
+  "path": "./src/stories/renderers/vue3_vue3-vite-default-ts/SourceCode.stories.ts"
+}

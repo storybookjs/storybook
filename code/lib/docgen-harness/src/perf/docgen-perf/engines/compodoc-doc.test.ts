@@ -41,8 +41,10 @@ describe('countDocumentation', () => {
     });
 
     it('reports none when every member describes itself', () => {
-      expect(fixture('properties-methods-noise').opaqueTypes).toBe(0);
       expect(fixture('jsdoc-tags').opaqueTypes).toBe(0);
+      // properties-methods-noise carries exactly one opaque member: its `@Output()` records
+      // `EventEmitter` with the payload type dropped, like decorator-io-basics.
+      expect(fixture('properties-methods-noise').opaqueTypes).toBe(1);
     });
   });
 });

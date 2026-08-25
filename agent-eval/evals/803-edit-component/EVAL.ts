@@ -20,11 +20,11 @@ const review = isReviewEnabled();
 // tools under both instruction shapes, CI run 28660377980, 2026-07-03).
 // Re-enable this assertion for Codex after the documentation tool call passes on three consecutive scheduled CI runs.
 test.skipIf(getEvalContext().agent === 'codex')('uses the documentation tooling', () => {
-  expectWorkflowCalls(['get-documentation']);
+  expectWorkflowCalls(['docs-show']);
 });
 
 test.runIf(review)('uses Storybook story instructions and publishes a display review', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
+  expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
   expectDisplayReviewForVisualChange();
 });
 

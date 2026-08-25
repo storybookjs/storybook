@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.json",
+  "compilerOptions": {},
+  "include": ["src/**/*"],
+  // Fixtures import @angular/core, which this package deliberately does not depend on; the tests
+  // compile them with their own TS programs instead.
+  "exclude": ["src/**/__testfixtures__/**"]
+}

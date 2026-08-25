@@ -705,18 +705,20 @@ function replacementFor(prop: { loc: ElementProp['loc'] }, text: string, templat
 /**
  * Splices slot children into an element, opening a self-closing tag when needed.
  *
- * @example `<C label="Hi" />` + `Body` → `<C label="Hi">Body</C>`
+ * Children always sit on their own indented lines: slot text is whitespace-safe by construction,
+ * because padded strings hoist to interpolations before they get here.
+ *
+ * @example `<C label="Hi" />` + `Body` → `<C label="Hi">\n  Body\n</C>`
  */
 function slotChildrenEdit(
   node: ElementNode,
   children: string[],
   template: string
 ): Edit | undefined {
-  // Text children stay inline because breaking them onto lines introduces whitespace Vue renders.
   const baseIndent = ' '.repeat(Math.max(node.loc.start.column - 1, 0));
-  const joined = children.every((child) => child.startsWith('<'))
-    ? `\n${children.map((child) => indentBy(child, `${baseIndent}  `)).join('\n')}\n${baseIndent}`
-    : children.join('');
+  const joined = `\n${children
+    .map((child) => indentBy(child, `${baseIndent}  `))
+    .join('\n')}\n${baseIndent}`;
 
   if (node.isSelfClosing) {
     let start = node.loc.end.offset - 2;

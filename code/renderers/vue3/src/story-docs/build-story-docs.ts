@@ -47,7 +47,6 @@ import {
 } from './classify-args.ts';
 import { printH } from './print-h.ts';
 import { createRenderContext } from './render-primitives.ts';
-import { renderSfcSnippet } from './render-sfc.ts';
 import {
   readTemplateRenderConfig,
   transformTemplate,
@@ -414,13 +413,15 @@ function renderStaticStorySnippet(
 ): StorySnippetResult | undefined {
   const componentImportStatement = options.snippet?.componentImportStatement;
 
+  // A story without a render function shows the component receiving the args directly.
   if (renderer.kind === 'sfc') {
     return componentImportStatement
-      ? renderSfcSnippet({
+      ? transformTemplate({
           args,
-          componentImportStatement,
+          componentImports: new Map([[componentName, componentImportStatement]]),
           componentName,
           importBindings: options.importBindings,
+          template: `<${componentName} v-bind="args" />`,
         })
       : undefined;
   }

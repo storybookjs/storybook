@@ -1,0 +1,20 @@
+{
+  "id": "expose-event-collision",
+  "name": "ExposeEventCollision",
+  "path": "__PATH__",
+  "stories": {
+    "forms-expose-event-collision--primary": {
+      "description": undefined,
+      "id": "forms-expose-event-collision--primary",
+      "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import ExposeEventCollision from './ExposeEventCollision.vue';
+</script>
+
+<template>
+  <ExposeEventCollision label="Name" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

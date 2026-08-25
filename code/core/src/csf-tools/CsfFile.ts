@@ -11,7 +11,12 @@ import {
   types as t,
   traverse,
 } from 'storybook/internal/babel';
-import { isExportStory, storyNameFromExport, toId, toTestId } from 'storybook/internal/csf';
+import {
+  isExportStory,
+  storyNameFromExport,
+  toId,
+  toTestId,
+} from 'storybook/internal/csf/csf-utils';
 import { logger } from 'storybook/internal/node-logger';
 import type {
   ComponentAnnotations,

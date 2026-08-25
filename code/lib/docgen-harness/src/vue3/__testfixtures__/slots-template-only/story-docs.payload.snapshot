@@ -8,6 +8,7 @@
       "id": "forms-slots-template-only--scoped-bindings",
       "name": "Scoped Bindings",
       "summary": undefined,
+      "warning": "No static snippet: a slot function could not be resolved statically.",
     },
     "forms-slots-template-only--string-child": {
       "description": undefined,

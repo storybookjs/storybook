@@ -4,10 +4,11 @@ import {
   type AttributeNode,
   type DirectiveNode,
   type ElementNode,
+  type SimpleExpressionNode,
   type TemplateChildNode,
 } from '@vue/compiler-dom';
 
-import { types as t } from 'storybook/internal/babel';
+import { babelParseExpression, types as t } from 'storybook/internal/babel';
 import {
   keyOf,
   propertyValue,
@@ -17,7 +18,7 @@ import {
 } from 'storybook/internal/csf-tools';
 
 import type { ClassifiedArg } from './classify-args.ts';
-import { isFunctionExpression } from './classify-value.ts';
+import { isFunctionExpression, printValue } from './classify-value.ts';
 import {
   createRenderContext,
   hoistArgValue,
@@ -72,6 +73,14 @@ interface TransformState {
   template: string;
 }
 
+interface ArgsReference {
+  start: number;
+  end: number;
+  name: string;
+}
+
+type ExpressionContext = 'directive' | 'interpolation';
+
 const ARGS_NAME = 'args';
 const ARGS_IDENTIFIER_REGEXP = /(^|[^\w$])args([^\w$]|$)/;
 const ARGS_MEMBER_REGEXP = /^args\.([A-Za-z_$][\w$]*)$/;
@@ -108,10 +117,9 @@ export function readTemplateRenderConfig(
 /**
  * Transform supported template-render markup into a static SFC snippet.
  *
- * The template is parsed with Vue's own parser, and only the ranges this pass fully understands
- * (`v-bind="args"`, `:prop="args.x"`, `@event="args.onX"`, `v-model="args.x"`, `{{ args.x }}`) are
- * spliced in the original source, so every untouched author byte survives verbatim. Anything else
- * that references args, and anything Vue itself refuses to parse, bails to the runtime source
+ * The template is parsed with Vue's own parser, and only understood args ranges are spliced in the
+ * original source, so every untouched author byte survives verbatim. Args usage that cannot be
+ * substituted safely, and anything Vue itself refuses to parse, bails to the runtime source
  * fallback.
  */
 export function transformTemplate(
@@ -130,6 +138,10 @@ export function transformTemplate(
     componentImports: input.componentImports,
     template: input.template,
   };
+
+  if (!collectTemplateScopeBindings(ast.children, state.ctx)) {
+    return undefined;
+  }
 
   if (!ast.children.every((child) => transformNode(child, state))) {
     return undefined;
@@ -160,12 +172,22 @@ function transformInterpolation(
   node: Extract<TemplateChildNode, { type: NodeTypes.INTERPOLATION }>,
   state: TransformState
 ): boolean {
-  const expression =
-    node.content.type === NodeTypes.SIMPLE_EXPRESSION ? node.content.content.trim() : '';
+  const expressionNode =
+    node.content.type === NodeTypes.SIMPLE_EXPRESSION ? node.content : undefined;
+  const expression = expressionNode?.content.trim() ?? '';
   const argName = exactArgsMemberName(expression);
 
   if (!argName) {
-    return !valueReferencesArgs(expression);
+    if (!expressionNode || !valueReferencesArgs(expression)) {
+      return true;
+    }
+
+    const edit = substituteArgsExpression(expressionNode, state, 'interpolation');
+    if (!edit) {
+      return false;
+    }
+    state.edits.push(edit);
+    return true;
   }
 
   const arg = state.argsByName.get(argName);
@@ -223,8 +245,9 @@ function transformDirective(
     return false;
   }
 
-  const expression =
-    directive.exp?.type === NodeTypes.SIMPLE_EXPRESSION ? directive.exp.content.trim() : undefined;
+  const expressionNode =
+    directive.exp?.type === NodeTypes.SIMPLE_EXPRESSION ? directive.exp : undefined;
+  const expression = expressionNode?.content.trim();
 
   // <MyButton v-bind="args" />
   if (directive.name === 'bind' && !directive.arg && expression === ARGS_NAME) {
@@ -258,35 +281,263 @@ function transformDirective(
   }
 
   // <MyButton @click="args.onClick" />
-  if (directive.name === 'on' && boundProp && argName && directive.exp) {
+  if (directive.name === 'on' && boundProp && argName && expressionNode) {
     const arg = state.argsByName.get(argName);
     if (!arg || !isFunctionExpression(arg.value)) {
       return false;
     }
     state.edits.push({
-      start: directive.exp.loc.start.offset,
-      end: directive.exp.loc.end.offset,
+      start: expressionNode.loc.start.offset,
+      end: expressionNode.loc.end.offset,
       text: hoistArgValue(argName, arg.value, state.ctx),
     });
     return true;
   }
 
   // <MyButton v-model="args.modelValue" />
-  if (directive.name === 'model' && argName && directive.exp) {
+  if (directive.name === 'model' && argName && expressionNode) {
     const arg = state.argsByName.get(argName);
     if (!arg || arg.role === 'slot' || arg.role === 'event') {
       return false;
     }
     state.edits.push({
-      start: directive.exp.loc.start.offset,
-      end: directive.exp.loc.end.offset,
+      start: expressionNode.loc.start.offset,
+      end: expressionNode.loc.end.offset,
       text: hoistModelRef(argName, arg.value, state.ctx),
     });
     return true;
   }
 
-  // Any other args usage is beyond what a static snippet can honestly represent.
-  return expression === undefined || !valueReferencesArgs(expression);
+  if (!expressionNode || !expression || !valueReferencesArgs(expression)) {
+    return true;
+  }
+
+  if (directive.name === 'on' || directive.name === 'model' || directive.name === 'slot') {
+    return false;
+  }
+
+  const edit = substituteArgsExpression(expressionNode, state, 'directive');
+  if (!edit) {
+    return false;
+  }
+  state.edits.push(edit);
+  return true;
+}
+
+function substituteArgsExpression(
+  exp: SimpleExpressionNode,
+  state: TransformState,
+  context: ExpressionContext
+): Edit | undefined {
+  const source = state.template.slice(exp.loc.start.offset, exp.loc.end.offset);
+  if (source !== exp.content) {
+    return undefined;
+  }
+
+  let ast: t.Expression;
+  try {
+    ast = babelParseExpression(exp.content);
+  } catch {
+    return undefined;
+  }
+
+  const references = collectArgsReferences(ast);
+  if (!references) {
+    return undefined;
+  }
+
+  const quote =
+    context === 'directive' ? surroundingAttributeQuote(exp, state.template) : undefined;
+  if (context === 'directive' && !quote) {
+    return undefined;
+  }
+
+  const replacements = new Map<string, string>();
+  for (const reference of references) {
+    const replacement =
+      replacements.get(reference.name) ?? replacementForArgsReference(reference, quote, state);
+    if (!replacement) {
+      return undefined;
+    }
+    replacements.set(reference.name, replacement);
+  }
+
+  const text = references
+    .sort((a, b) => b.start - a.start)
+    .reduce((expression, reference) => {
+      return (
+        expression.slice(0, reference.start) +
+        replacements.get(reference.name)! +
+        expression.slice(reference.end)
+      );
+    }, exp.content);
+
+  return { start: exp.loc.start.offset, end: exp.loc.end.offset, text };
+}
+
+function collectTemplateScopeBindings(nodes: TemplateChildNode[], ctx: RenderContext): boolean {
+  for (const node of nodes) {
+    if (node.type !== NodeTypes.ELEMENT) {
+      continue;
+    }
+
+    for (const prop of node.props) {
+      if (prop.type !== NodeTypes.DIRECTIVE) {
+        continue;
+      }
+
+      const pattern = bindingPatternForDirective(prop);
+      if (pattern && !addBindingPattern(pattern, ctx)) {
+        return false;
+      }
+    }
+
+    if (!collectTemplateScopeBindings(node.children, ctx)) {
+      return false;
+    }
+  }
+
+  return true;
+}
+
+function bindingPatternForDirective(directive: DirectiveNode): string | undefined {
+  const expression =
+    directive.exp?.type === NodeTypes.SIMPLE_EXPRESSION ? directive.exp.content.trim() : undefined;
+  if (!expression) {
+    return undefined;
+  }
+
+  if (directive.name === 'for') {
+    const match = /\s+(?:in|of)\s+/.exec(expression);
+    return match ? expression.slice(0, match.index).trim() : expression;
+  }
+
+  return directive.name === 'slot' ? expression : undefined;
+}
+
+function addBindingPattern(pattern: string, ctx: RenderContext): boolean {
+  let ast: t.Expression;
+  try {
+    ast = babelParseExpression(`${arrowParamsForPattern(pattern)} => 0`);
+  } catch {
+    return false;
+  }
+
+  if (!t.isArrowFunctionExpression(ast)) {
+    return false;
+  }
+
+  for (const param of ast.params) {
+    for (const name of Object.keys(t.getBindingIdentifiers(param))) {
+      ctx.bindings.add(name);
+    }
+  }
+
+  return true;
+}
+
+function arrowParamsForPattern(pattern: string): string {
+  const trimmed = pattern.trim();
+  return trimmed.startsWith('(') && trimmed.endsWith(')') ? trimmed : `(${trimmed})`;
+}
+
+function surroundingAttributeQuote(
+  exp: SimpleExpressionNode,
+  template: string
+): '"' | "'" | undefined {
+  const quote = template[exp.loc.start.offset - 1];
+  return quote === '"' || quote === "'" ? quote : undefined;
+}
+
+function collectArgsReferences(expression: t.Expression): ArgsReference[] | undefined {
+  const references: ArgsReference[] = [];
+  let invalid = false;
+
+  const visit = (node: t.Node | null | undefined, parent?: t.Node): void => {
+    if (!node || invalid) {
+      return;
+    }
+
+    if (
+      t.isAssignmentExpression(node) ||
+      t.isUpdateExpression(node) ||
+      (t.isUnaryExpression(node) && node.operator === 'delete')
+    ) {
+      invalid = true;
+      return;
+    }
+
+    const reference = argsReference(node);
+    if (reference) {
+      references.push(reference);
+    }
+
+    if (t.isIdentifier(node, { name: ARGS_NAME }) && !isAllowedArgsObject(node, parent)) {
+      invalid = true;
+      return;
+    }
+
+    for (const key of t.VISITOR_KEYS[node.type] ?? []) {
+      const value = node[key as keyof typeof node];
+      if (Array.isArray(value)) {
+        value.forEach((child) => {
+          if (t.isNode(child)) {
+            visit(child, node);
+          }
+        });
+      } else if (t.isNode(value)) {
+        visit(value, node);
+      }
+    }
+  };
+
+  visit(expression);
+
+  return invalid ? undefined : references;
+}
+
+function argsReference(node: t.Node): ArgsReference | undefined {
+  const member =
+    t.isMemberExpression(node) || t.isOptionalMemberExpression(node) ? node : undefined;
+  if (!member || member.computed || !t.isIdentifier(member.object, { name: ARGS_NAME })) {
+    return undefined;
+  }
+  if (!t.isIdentifier(member.property) || member.start == null || member.end == null) {
+    return undefined;
+  }
+
+  return { start: member.start, end: member.end, name: member.property.name };
+}
+
+function isAllowedArgsObject(node: t.Identifier, parent: t.Node | undefined): boolean {
+  if (!parent || (!t.isMemberExpression(parent) && !t.isOptionalMemberExpression(parent))) {
+    return false;
+  }
+  return parent.object === node && !parent.computed;
+}
+
+function replacementForArgsReference(
+  reference: ArgsReference,
+  quote: '"' | "'" | undefined,
+  state: TransformState
+): string | undefined {
+  const arg = state.argsByName.get(reference.name);
+  // Non-slot args are typed with renderable plans only, so no 'function-slot' check is needed.
+  if (!arg || arg.role === 'slot') {
+    return undefined;
+  }
+
+  const text =
+    arg.plan.kind === 'inline'
+      ? printValue(unwrapExpression(arg.value))
+      : hoistArgValue(arg.name, arg.value, state.ctx);
+
+  // Vue entity-decodes generated markup on re-parse, so `&` cannot be substituted faithfully.
+  if ((quote && text.includes(quote)) || text.includes('}}') || text.includes('&')) {
+    return undefined;
+  }
+
+  return text.startsWith('-') ? `(${text})` : text;
 }
 
 /**
@@ -390,7 +641,10 @@ function hasOnlySupportedRenderProperties(renderObject: t.ObjectExpression): boo
     }
 
     const key = keyOf(property);
-    return key === 'components' || key === SETUP_PROPERTY || key === 'template';
+    // `inheritAttrs` only tunes runtime attribute fallthrough; the markup stays faithful without it.
+    return (
+      key === 'components' || key === SETUP_PROPERTY || key === 'template' || key === 'inheritAttrs'
+    );
   });
 }
 

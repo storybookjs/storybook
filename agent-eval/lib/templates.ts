@@ -161,8 +161,7 @@ export async function setupSandbox(
   if (packageJson.evals?.pinStorybook !== false) {
     await pinStorybookPackages(
       files,
-      process.env.EVAL_STORYBOOK_VERSION ??
-        (process.env.EVAL_STORYBOOK_LATEST === '1' ? 'latest' : 'next')
+      process.env.EVAL_STORYBOOK_LATEST === '1' ? 'latest' : 'next'
     );
   }
 
@@ -425,16 +424,15 @@ async function installAmazonLinuxPackages(sandbox: Sandbox, packageNames: string
 }
 
 // Pin every Storybook dependency in the sandbox package.json files (the root
-// and any workspace package) to the given exact version, or to the version
-// currently behind the given npm dist-tag, so result snapshots record the
-// exact version each run used. The local @storybook/addon-mcp and
-// @storybook/mcp file: builds are always kept as-is. EVAL_STORYBOOK_VERSION
-// pins an exact release — typically a canary build (`0.0.0-pr-*`) when the
-// run must exercise unreleased behavior; EVAL_STORYBOOK_LATEST=1 switches to
-// the `latest` tag to test against the last stable release.
+// and any workspace package) to the version currently behind the given npm
+// dist-tag, so result snapshots record the exact version each run used. The
+// local @storybook/addon-mcp and @storybook/mcp file: builds are always kept
+// as-is; EVAL_STORYBOOK_LATEST=1 only switches the Storybook release itself
+// to the `latest` tag, to test the current checkout against the last stable
+// release.
 export async function pinStorybookPackages(
   files: Record<string, string>,
-  pin: string
+  distTag: 'next' | 'latest'
 ): Promise<void> {
   for (const filePath of workspacePackageJsonPaths(files)) {
     const packageJson = parseJsonFile(filePath, files[filePath] ?? '', 'fixture');
@@ -456,7 +454,7 @@ export async function pinStorybookPackages(
         if (typeof spec === 'string' && spec.startsWith('file:')) {
           continue;
         }
-        dependencies[name] = /^\d/.test(pin) ? pin : await resolveDistTagVersion(name, pin);
+        dependencies[name] = await resolveDistTagVersion(name, distTag);
         pinned = true;
       }
     }

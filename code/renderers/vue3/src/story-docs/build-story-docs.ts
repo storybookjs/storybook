@@ -443,6 +443,7 @@ function renderStaticStorySnippet(
 
   return transformH({
     args,
+    unsetArgs: classified.unset,
     argsParam: renderer.argsParam,
     componentImportStatement,
     componentName,

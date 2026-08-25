@@ -27,6 +27,7 @@ const DEFAULT_DOCGEN: VueDocgenArgInfo = { props: new Set(), events: new Set(), 
 
 interface ParsedRender {
   args: ClassifiedArg[];
+  unsetArgs: Set<string>;
   argsParam?: string;
   expression?: t.Node;
   importBindings: ReturnType<typeof collectImportBindings>;
@@ -43,6 +44,7 @@ function renderStory(
   return parsed.expression
     ? transformH({
         args: parsed.args,
+        unsetArgs: parsed.unsetArgs,
         argsParam: parsed.argsParam,
         componentImportStatement,
         componentName: 'MyButton',
@@ -112,6 +114,7 @@ ${storySource}
   if (renderResolution.kind !== 'resolved') {
     return {
       args: classified.args,
+      unsetArgs: classified.unset,
       importBindings: collectImportBindings(csf._file.path),
     };
   }
@@ -119,6 +122,7 @@ ${storySource}
   const [parameter] = renderResolution.path.node.params;
   return {
     args: classified.args,
+    unsetArgs: classified.unset,
     argsParam: t.isIdentifier(parameter) ? parameter.name : undefined,
     expression: returnedExpression(renderResolution.path.node),
     importBindings: collectImportBindings(csf._file.path),
@@ -145,6 +149,62 @@ export const Primary = {
         <MyButton active label="Render" />
       </template>"
     `);
+  });
+
+  it('drops a prop reading an arg the story set to undefined', () => {
+    expect(
+      renderStory(`
+export const Primary = {
+  args: {
+    label: 'Render',
+    theme: undefined,
+  },
+  render: (args) => h(MyButton, { theme: args.theme, label: args.label }),
+};
+`)?.snippet
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton label="Render" />
+      </template>"
+    `);
+  });
+
+  it('renders no child for a child reading an arg the story set to undefined', () => {
+    expect(
+      renderStory(`
+export const Primary = {
+  args: {
+    label: undefined,
+  },
+  render: (args) => h(MyButton, null, args.label),
+};
+`)?.snippet
+    ).toMatchInlineSnapshot(`
+        "<script lang="ts" setup>
+        import MyButton from './MyButton.vue';
+        </script>
+
+        <template>
+          <MyButton />
+        </template>"
+      `);
+  });
+
+  it('bails when a prop reads an arg the story never sets', () => {
+    expect(
+      renderStory(`
+export const Primary = {
+  args: {
+    label: 'Render',
+  },
+  render: (args) => h(MyButton, { theme: args.theme, label: args.label }),
+};
+`)
+    ).toBeUndefined();
   });
 
   it('applies args spread and later literal overrides', () => {

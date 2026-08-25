@@ -34,6 +34,8 @@ export interface TransformHInput {
   node: t.Node;
   /** Merged and classified CSF args visible to the render function. */
   args: ClassifiedArg[];
+  /** Names of args explicitly set to `undefined`, which render as if they were never written. */
+  unsetArgs: Set<string>;
   /** Name of the render function's args parameter. */
   argsParam?: string;
   /** Story component tag the docgen roles describe. */
@@ -53,6 +55,7 @@ export interface TransformHResult {
 
 type HRenderOptions = {
   args: ClassifiedArg[];
+  unsetArgs: ReadonlySet<string>;
   argsParam?: string;
   /** Story component tag the docgen roles apply to; absent in slot content. */
   componentName?: string;
@@ -77,6 +80,7 @@ type HArguments = {
 const H_FUNCTION = 'h';
 
 const NO_DOCGEN: VueDocgenArgInfo = { props: new Set(), events: new Set(), slots: new Set() };
+const NO_UNSET_ARGS: ReadonlySet<string> = new Set();
 
 /** @see https://html.spec.whatwg.org/multipage/syntax.html#void-elements */
 const VOID_ELEMENTS = new Set([
@@ -108,6 +112,7 @@ export function transformH(input: TransformHInput): TransformHResult | undefined
     : new Map<string, string>();
   const templateCode = renderHNode(input.node, {
     args: input.args,
+    unsetArgs: input.unsetArgs,
     argsParam: input.argsParam,
     componentName: input.componentName,
     componentImportStatements,
@@ -158,6 +163,7 @@ function renderHSlotFunction(
 
   return renderHNode(returned, {
     args: [],
+    unsetArgs: NO_UNSET_ARGS,
     componentImportStatements,
     ctx,
     // Slot content renders children of components the story does not describe, so nothing here can
@@ -361,9 +367,18 @@ function collectProps(node: t.Node, options: HRenderOptions): ClassifiedArg[] | 
     }
 
     const name = keyOf(property);
-    const argValue = name ? substituteArgsMember(property.value, options) : undefined;
-    if (!name || !argValue) {
+    if (!name) {
       return undefined;
+    }
+
+    const argValue = substituteArgsMember(property.value, options);
+
+    if (!argValue) {
+      if (!referencesUnsetArg(property.value, options)) {
+        return undefined;
+      }
+      argsByName.delete(name);
+      continue;
     }
 
     const classification = classifyArg(name, argValue, options.docgen);
@@ -402,8 +417,9 @@ function renderChildren(node: t.Node | undefined, options: HRenderOptions): stri
 // 'Hi', h('b', 'Hi'), or ['a', h('b', 'c')] -> one markup child per rendered vnode
 function renderChildValue(node: t.Node, options: HRenderOptions): string[] | undefined {
   const value = substituteArgsMember(node, options);
+  // An `undefined` child renders nothing at all, so it contributes no markup.
   if (!value) {
-    return undefined;
+    return referencesUnsetArg(node, options) ? [] : undefined;
   }
 
   const unwrapped = unwrapExpression(value);
@@ -481,6 +497,18 @@ function substituteArgsMember(node: t.Node, options: HRenderOptions): t.Node | u
   }
 
   return options.args.find((candidate) => candidate.name === property.name)?.value;
+}
+
+// args.label -> whether 'label' is an arg the story explicitly set to `undefined`
+function referencesUnsetArg(node: t.Node, options: HRenderOptions): boolean {
+  const value = unwrapExpression(node);
+  if (!options.argsParam || !t.isMemberExpression(value) || value.computed) {
+    return false;
+  }
+  if (!t.isIdentifier(value.object, { name: options.argsParam })) {
+    return false;
+  }
+  return t.isIdentifier(value.property) && options.unsetArgs.has(value.property.name);
 }
 
 function isArgsIdentifier(node: t.Node, argsParam: string | undefined): boolean {

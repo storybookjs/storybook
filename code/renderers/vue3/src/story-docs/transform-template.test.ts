@@ -130,7 +130,7 @@ export const Primary = {
     `);
   });
 
-  it('renders a v-bind model arg as the one-way prop binding the runtime performs', async () => {
+  it('expands a v-bind model arg into a v-model binding with a hoisted ref', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -144,16 +144,19 @@ export const Primary = {
 `)
     ).toMatchInlineSnapshot(`
       "<script lang="ts" setup>
+      import { ref } from "vue";
       import MyButton from './MyButton.vue';
+
+      const modelValue = ref('Typed text');
       </script>
 
       <template>
-        <MyButton modelValue="Typed text" />
+        <MyButton v-model="modelValue" />
       </template>"
     `);
   });
 
-  it('bails when v-bind args include slot content the runtime would never render', async () => {
+  it('renders v-bind slot args as slot children on the story tag', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -168,7 +171,47 @@ export const Primary = {
   }),
 };
 `)
-    ).toBeUndefined();
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton label="Hi">Body copy</MyButton>
+      </template>"
+    `);
+  });
+
+  it('renders a function slot arg forwarded through v-bind', async () => {
+    expect(
+      await primarySnippet(
+        `
+export const Primary = {
+  args: {
+    default: () => h(OtherButton, { label: 'Nested' }),
+    label: 'Hi',
+  },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton v-bind="args" />',
+  }),
+};
+`,
+        "import { h } from 'vue';\nimport MyButton from './MyButton.vue';\nimport OtherButton from './OtherButton.vue';"
+      )
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      import OtherButton from './OtherButton.vue';
+      </script>
+
+      <template>
+        <MyButton label="Hi">
+          <OtherButton label="Nested" />
+        </MyButton>
+      </template>"
+    `);
   });
 
   it('preserves author markup around the component byte for byte', async () => {
@@ -243,7 +286,7 @@ export const Primary = {
     `);
   });
 
-  it('bails on interpolated strings the template parser would read as markup', async () => {
+  it('escapes interpolated strings the template parser would read as markup', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -254,7 +297,11 @@ export const Primary = {
   }),
 };
 `)
-    ).toBeUndefined();
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <p>&lt;b&gt;bold?&lt;/b&gt; &amp; 1 &lt; 2</p>
+      </template>"
+    `);
   });
 
   it('rewrites direct v-bind prop expressions with shared value formatting', async () => {
@@ -778,7 +825,34 @@ export const Primary = {
     `);
   });
 
-  it('bails when an expanded arg collides with an attribute already on the element', async () => {
+  it('converts a slot-named binding on the story tag into slot children', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { header: 'Title text' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton :header="args.header" label="static" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton label="static">
+          <template #header>
+            Title text
+          </template>
+        </MyButton>
+      </template>"
+    `);
+  });
+
+  it('drops an expanded arg when a later attribute overrides it', async () => {
     expect(
       await primarySnippet(`
 export const Primary = {
@@ -787,6 +861,68 @@ export const Primary = {
     components: { MyButton },
     setup: () => ({ args }),
     template: '<MyButton v-bind="args" label="static" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton label="static" />
+      </template>"
+    `);
+  });
+
+  it('removes an earlier attribute an expanded arg overrides', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: 'FromArgs' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton label="static" v-bind="args" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton label="FromArgs" />
+      </template>"
+    `);
+  });
+
+  it.each([
+    [
+      'an expanded event arg collides with a listener',
+      `{ onClick: () => {} }`,
+      '<MyButton @click="args.onClick" v-bind="args" />',
+    ],
+    [
+      'an expanded model arg collides with a v-model',
+      `{ modelValue: 'Typed text' }`,
+      '<MyButton v-model="args.modelValue" v-bind="args" />',
+    ],
+    [
+      'an expanded class arg collides with a class attribute',
+      `{ class: 'primary' }`,
+      '<MyButton class="static" v-bind="args" />',
+    ],
+  ])('bails when %s already on the element', async (_name, argsSource, template) => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: ${argsSource},
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: ${JSON.stringify(template)},
   }),
 };
 `)

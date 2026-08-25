@@ -1,7 +1,6 @@
 import {
   NodeTypes,
   parse,
-  type AttributeNode,
   type DirectiveNode,
   type ElementNode,
   type SimpleExpressionNode,
@@ -21,15 +20,18 @@ import type { ClassifiedArg } from './classify-args.ts';
 import { isFunctionExpression, printValue } from './classify-value.ts';
 import {
   createRenderContext,
+  escapeTextContent,
   hoistArgValue,
   hoistModelRef,
   importStatementForBinding,
   inlinePrimitiveSource,
-  renderArgsBindingAttributes,
+  renderArgsBindingExpansion,
   renderBoundArgAttribute,
   renderPreparedSfcSnippet,
+  wrapSlotContent,
   type RenderContext,
 } from './render-primitives.ts';
+import { renderSlotArgContent } from './transform-h.ts';
 
 export interface TemplateRenderConfig {
   /** Static Vue template string returned from the render function. */
@@ -52,6 +54,12 @@ export interface TransformTemplateInput {
   args: ClassifiedArg[];
   /** Component tag name to import statement from the render object's components map. */
   componentImports: Map<string, string>;
+  /** Story component tag; role-aware args expansion applies only to it. */
+  componentName?: string;
+  /** Import bindings from the CSF module, for components a function slot renders. */
+  importBindings?: Map<string, ImportBinding>;
+  /** Pre-seeded context carrying imports and hoists an upstream printer collected. */
+  ctx?: RenderContext;
 }
 
 export interface TransformTemplateResult {
@@ -70,7 +78,27 @@ interface TransformState {
   ctx: RenderContext;
   edits: Edit[];
   componentImports: Map<string, string>;
+  componentName?: string;
+  importBindings: Map<string, ImportBinding>;
   template: string;
+}
+
+type ElementProp = ElementNode['props'][number];
+
+interface ElementContext {
+  /** Whether the element is the story component tag, where role-aware expansion applies. */
+  storyTag: boolean;
+  /** Wrapped slot children waiting to be spliced into the element. */
+  slotChildren: string[];
+}
+
+interface ArgsExpansionPlan {
+  /** The `v-bind="args"` directive to expand, when the element carries exactly one. */
+  directive?: DirectiveNode;
+  /** Args surviving later-wins collision resolution against the element's own attributes. */
+  surviving: ClassifiedArg[];
+  /** Author attributes the expansion overrides, removed because the expansion comes later. */
+  removed: Set<ElementProp>;
 }
 
 interface ArgsReference {
@@ -133,9 +161,11 @@ export function transformTemplate(
 
   const state: TransformState = {
     argsByName: new Map(input.args.map((arg) => [arg.name, arg])),
-    ctx: createRenderContext(),
+    ctx: input.ctx ?? createRenderContext(),
     edits: [],
     componentImports: input.componentImports,
+    componentName: input.componentName,
+    importBindings: input.importBindings ?? new Map(),
     template: input.template,
   };
 
@@ -192,23 +222,25 @@ function transformInterpolation(
 
   const arg = state.argsByName.get(argName);
   const rendered = arg ? inlinePrimitiveSource(arg.value) : undefined;
-  // Runtime interpolation renders escaped text; a value the template parser would read as markup
-  // or as a new interpolation has no faithful inline form.
-  if (rendered === undefined || /[<&]|{{/.test(rendered)) {
+  if (rendered === undefined) {
     return false;
   }
+
+  // Runtime interpolation renders escaped text, so markup and mustache characters in the value
+  // are entity-escaped to decode back to the same text when the snippet re-parses.
+  const text = escapeTextContent(rendered);
 
   // A value edge touching an author '{' would concatenate into a new '{{'.
   const start = node.loc.start.offset;
   const end = node.loc.end.offset;
   if (
-    (rendered.startsWith('{') && state.template[start - 1] === '{') ||
-    (rendered.endsWith('{') && state.template[end] === '{')
+    (text.startsWith('{') && state.template[start - 1] === '{') ||
+    (text.endsWith('{') && state.template[end] === '{')
   ) {
     return false;
   }
 
-  state.edits.push({ start, end, text: rendered });
+  state.edits.push({ start, end, text });
   return true;
 }
 
@@ -224,19 +256,131 @@ function transformElement(node: ElementNode, state: TransformState): boolean {
     state.ctx.componentImports.add(importStatement);
   }
 
-  const nameCounts = attributeNameCounts(node);
+  const element: ElementContext = {
+    storyTag: node.tag === state.componentName,
+    slotChildren: [],
+  };
+  const attributesByName = attributePropsByName(node);
+  const plan = planArgsBindingExpansion(node, attributesByName, state);
+  if (!plan) {
+    return false;
+  }
+
   for (const prop of node.props) {
-    if (prop.type === NodeTypes.DIRECTIVE && !transformDirective(prop, nameCounts, state)) {
+    if (plan.removed.has(prop)) {
+      state.edits.push(replacementFor(prop, '', state.template));
+      continue;
+    }
+    if (plan.directive && prop === plan.directive) {
+      if (!expandArgsBinding(plan.directive, plan.surviving, element, state)) {
+        return false;
+      }
+      continue;
+    }
+    if (
+      prop.type === NodeTypes.DIRECTIVE &&
+      !transformDirective(prop, attributesByName, element, state)
+    ) {
       return false;
     }
+  }
+
+  if (element.slotChildren.length > 0) {
+    // Slot children joining an element that already renders its own content would reorder or
+    // duplicate what the story shows, so only an empty element takes them.
+    if (hasNonWhitespaceChildren(node)) {
+      return false;
+    }
+    const edit = slotChildrenEdit(node, element.slotChildren, state.template);
+    if (!edit) {
+      return false;
+    }
+    state.edits.push(edit);
   }
 
   return node.children.every((child) => transformNode(child, state));
 }
 
+/**
+ * Collision resolution for a `v-bind="args"` expansion, mirroring Vue's own merge order: the
+ * binding that appears later in the source wins.
+ *
+ * @example `<C v-bind="args" label="x" />` drops the `label` arg;
+ * `<C label="x" v-bind="args" />` removes the attribute
+ */
+function planArgsBindingExpansion(
+  node: ElementNode,
+  attributesByName: Map<string, ElementProp[]>,
+  state: TransformState
+): ArgsExpansionPlan | undefined {
+  const directives = node.props.filter(
+    (prop): prop is DirectiveNode =>
+      prop.type === NodeTypes.DIRECTIVE &&
+      prop.name === 'bind' &&
+      !prop.arg &&
+      prop.exp?.type === NodeTypes.SIMPLE_EXPRESSION &&
+      prop.exp.content.trim() === ARGS_NAME
+  );
+  if (directives.length === 0) {
+    return { surviving: [], removed: new Set() };
+  }
+  // Two expansions of the same args cannot both win the element.
+  if (directives.length > 1) {
+    return undefined;
+  }
+
+  const [directive] = directives;
+  const removed = new Set<ElementProp>();
+  const surviving: ClassifiedArg[] = [];
+
+  for (const arg of state.argsByName.values()) {
+    const attributeName = arg.role === 'event' ? (arg.eventName ?? arg.name) : arg.name;
+    const competitors = attributesByName.get(attributeName) ?? [];
+    if (competitors.length === 0) {
+      surviving.push(arg);
+      continue;
+    }
+    // Vue merges class and style from every source, runs every colliding listener, and pairs a
+    // v-model with an update listener; none of those reduce to a single later-wins winner.
+    if (attributeName === 'class' || attributeName === 'style' || arg.role !== 'prop') {
+      return undefined;
+    }
+    if (competitors.some((prop) => prop.loc.start.offset > directive.loc.start.offset)) {
+      continue;
+    }
+    for (const prop of competitors) {
+      removed.add(prop);
+    }
+    surviving.push(arg);
+  }
+
+  return { directive, surviving, removed };
+}
+
+function expandArgsBinding(
+  directive: DirectiveNode,
+  surviving: ClassifiedArg[],
+  element: ElementContext,
+  state: TransformState
+): boolean {
+  const rendered = renderArgsBindingExpansion(surviving, state.ctx, {
+    roleAware: element.storyTag,
+    renderSlotArg: (slot) =>
+      renderSlotArgContent(slot, state.ctx, state.importBindings, state.componentImports),
+  });
+  if (!rendered) {
+    return false;
+  }
+
+  element.slotChildren.push(...rendered.slotChildren);
+  state.edits.push(replacementFor(directive, rendered.attributes.join(' '), state.template));
+  return true;
+}
+
 function transformDirective(
   directive: DirectiveNode,
-  nameCounts: Map<string, number>,
+  attributesByName: Map<string, ElementProp[]>,
+  element: ElementContext,
   state: TransformState
 ): boolean {
   // A dynamic argument (`:[args.key]`, `#[args.slotName]`) reads a binding the snippet's script
@@ -249,28 +393,32 @@ function transformDirective(
     directive.exp?.type === NodeTypes.SIMPLE_EXPRESSION ? directive.exp : undefined;
   const expression = expressionNode?.content.trim();
 
-  // <MyButton v-bind="args" />
-  if (directive.name === 'bind' && !directive.arg && expression === ARGS_NAME) {
-    const rendered = renderArgsBindingAttributes(
-      Array.from(state.argsByName.values()),
-      new Set(nameCounts.keys()),
-      state.ctx
-    );
-    if (rendered === undefined) {
-      return false;
-    }
-    state.edits.push(replacementFor(directive, rendered, state.template));
-    return true;
-  }
-
   const boundProp = staticDirectiveArg(directive);
   const argName = expression === undefined ? undefined : exactArgsMemberName(expression);
 
   // <MyButton :label="args.label" />
   if (directive.name === 'bind' && boundProp && directive.modifiers.length === 0 && argName) {
     const arg = state.argsByName.get(argName);
-    if (!arg || arg.role === 'slot' || (nameCounts.get(boundProp) ?? 0) > 1) {
+    if (!arg || (attributesByName.get(boundProp)?.length ?? 0) > 1) {
       return false;
+    }
+    // <MyButton :header="args.header" /> fills the slot the binding names.
+    if (arg.role === 'slot') {
+      if (!element.storyTag) {
+        return false;
+      }
+      const content = renderSlotArgContent(
+        arg,
+        state.ctx,
+        state.importBindings,
+        state.componentImports
+      );
+      if (content === undefined) {
+        return false;
+      }
+      element.slotChildren.push(wrapSlotContent(boundProp, content));
+      state.edits.push(replacementFor(directive, '', state.template));
+      return true;
     }
     state.edits.push({
       start: directive.loc.start.offset,
@@ -541,17 +689,76 @@ function replacementForArgsReference(
 }
 
 /**
- * Removing a directive outright must also consume the whitespace that separated it from its
+ * Removing an attribute outright must also consume the whitespace that separated it from its
  * neighbors, so `<MyButton v-bind="args" />` with nothing to expand stays `<MyButton />`.
  */
-function replacementFor(directive: DirectiveNode, text: string, template: string): Edit {
-  let start = directive.loc.start.offset;
+function replacementFor(prop: { loc: ElementProp['loc'] }, text: string, template: string): Edit {
+  let start = prop.loc.start.offset;
   if (text === '') {
     while (start > 0 && template[start - 1] === ' ') {
       start -= 1;
     }
   }
-  return { start, end: directive.loc.end.offset, text };
+  return { start, end: prop.loc.end.offset, text };
+}
+
+/**
+ * Splices slot children into an element, opening a self-closing tag when needed.
+ *
+ * @example `<C label="Hi" />` + `Body` → `<C label="Hi">Body</C>`
+ */
+function slotChildrenEdit(
+  node: ElementNode,
+  children: string[],
+  template: string
+): Edit | undefined {
+  // Text children stay inline because breaking them onto lines introduces whitespace Vue renders.
+  const baseIndent = ' '.repeat(Math.max(node.loc.start.column - 1, 0));
+  const joined = children.every((child) => child.startsWith('<'))
+    ? `\n${children.map((child) => indentBy(child, `${baseIndent}  `)).join('\n')}\n${baseIndent}`
+    : children.join('');
+
+  if (node.isSelfClosing) {
+    let start = node.loc.end.offset - 2;
+    while (start > 0 && template[start - 1] === ' ') {
+      start -= 1;
+    }
+    return { start, end: node.loc.end.offset, text: `>${joined}</${node.tag}>` };
+  }
+
+  if (node.children.length > 0) {
+    const start = node.children[0].loc.start.offset;
+    const end = node.children[node.children.length - 1].loc.end.offset;
+    return { start, end, text: joined };
+  }
+
+  const innerStart = openTagEndOffset(node, template);
+  return innerStart === undefined
+    ? undefined
+    : { start: innerStart, end: innerStart, text: joined };
+}
+
+function hasNonWhitespaceChildren(node: ElementNode): boolean {
+  return node.children.some(
+    (child) => child.type !== NodeTypes.TEXT || child.content.trim() !== ''
+  );
+}
+
+// After the last attribute only whitespace and the tag close remain, so scanning for '>' is safe.
+function openTagEndOffset(node: ElementNode, template: string): number | undefined {
+  const lastProp = node.props.at(-1);
+  let offset = lastProp ? lastProp.loc.end.offset : node.loc.start.offset + 1 + node.tag.length;
+  while (offset < template.length && template[offset] !== '>') {
+    offset += 1;
+  }
+  return template[offset] === '>' ? offset + 1 : undefined;
+}
+
+function indentBy(source: string, indentation: string): string {
+  return source
+    .split('\n')
+    .map((line) => `${indentation}${line}`)
+    .join('\n');
 }
 
 function applyEdits(template: string, edits: Edit[]): string {
@@ -571,29 +778,28 @@ function staticDirectiveArg(directive: DirectiveNode): string | undefined {
 }
 
 /**
- * How often each attribute name occurs on the element, counting a directive by the prop or event
- * it binds. Vue resolves collisions by source order and merge rules a static rewrite cannot
- * reproduce, so callers bail when a name is already taken.
+ * The element's attributes grouped by the prop or event name each one binds, counting a directive
+ * by its static argument. Callers consult positions to resolve name collisions the way Vue does.
  */
-function attributeNameCounts(node: ElementNode): Map<string, number> {
-  const counts = new Map<string, number>();
-  const add = (name: string | undefined): void => {
+function attributePropsByName(node: ElementNode): Map<string, ElementProp[]> {
+  const byName = new Map<string, ElementProp[]>();
+  const add = (name: string | undefined, prop: ElementProp): void => {
     if (name) {
-      counts.set(name, (counts.get(name) ?? 0) + 1);
+      byName.set(name, [...(byName.get(name) ?? []), prop]);
     }
   };
 
   for (const prop of node.props) {
     if (prop.type === NodeTypes.ATTRIBUTE) {
-      add((prop as AttributeNode).name);
+      add(prop.name, prop);
     } else if (prop.name === 'model' && !prop.arg) {
-      add('modelValue');
+      add('modelValue', prop);
     } else {
-      add(staticDirectiveArg(prop));
+      add(staticDirectiveArg(prop), prop);
     }
   }
 
-  return counts;
+  return byName;
 }
 
 /**

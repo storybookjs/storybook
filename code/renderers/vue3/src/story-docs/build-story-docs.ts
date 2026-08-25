@@ -19,6 +19,7 @@ import {
   keyOf,
   loadCsf,
   metaObjectPath,
+  noSnippetWarning,
   normalizeStoryDeclaration,
   propertyValue,
   resolveComponentImport,
@@ -26,9 +27,8 @@ import {
   resolveReturnedObjectExpression,
   returnedExpression,
   returnedExpressionPath,
-  unwrapExpression,
-  noSnippetWarning,
   unresolvedWarning,
+  unwrapExpression,
   type ImportBinding,
   type ReferenceContext,
   type RenderFunctionPath,
@@ -428,6 +428,8 @@ function renderStaticStorySnippet(
     return transformTemplate({
       args,
       componentImports: renderer.componentImports,
+      componentName,
+      importBindings: options.importBindings,
       template: renderer.template,
     });
   }

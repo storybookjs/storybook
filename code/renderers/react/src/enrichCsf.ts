@@ -9,7 +9,7 @@ import { getCodeSnippet } from './componentManifest/generateCodeSnippet.ts';
 
 export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (input, options) => {
   const features = await options.presets.apply('features');
-  if (!features.experimentalCodeExamples) {
+  if (!features.experimentalCodeExamples || features.experimentalDocgenServer) {
     return;
   }
   return async (csf: CsfFile, csfSource: CsfFile) => {
@@ -21,7 +21,7 @@ export const enrichCsf: PresetPropertyFn<'experimental_enrichCsf'> = async (inpu
       let node;
       let snippet;
       try {
-        node = getCodeSnippet(csfSource, key, csfSource._meta?.component);
+        node = getCodeSnippet(csfSource, key, csfSource._meta?.component).node;
       } catch (e) {
         if (!(e instanceof Error)) {
           return;

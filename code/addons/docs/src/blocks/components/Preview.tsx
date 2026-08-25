@@ -2,8 +2,8 @@ import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
 import React, { Children, useCallback, useContext, useMemo, useState } from 'react';
 
 import { logger } from 'storybook/internal/client-logger';
-import { Bar, Button, ToggleButton, Zoom } from 'storybook/internal/components';
 import type { ActionItem } from 'storybook/internal/components';
+import { Bar, Button, ToggleButton, Zoom } from 'storybook/internal/components';
 
 import { CopyIcon, MarkupIcon } from '@storybook/icons';
 
@@ -16,8 +16,9 @@ import { Source } from '.';
 import { DocsContext } from '../blocks/DocsContext';
 import { getStoryId } from '../blocks/Story';
 import { getBlockBackgroundStyle } from './BlockBackgroundStyles';
+import { SnippetWarning } from './SnippetWarning';
 import { StorySkeleton } from './Story';
-import { Toolbar } from './Toolbar';
+import { TRAILING_INSET, Toolbar } from './Toolbar';
 import { ZoomContext } from './ZoomContext';
 
 export type PreviewProps = PropsWithChildren<{
@@ -83,6 +84,11 @@ const ChildrenContainer = styled.div<PreviewProps & { layout: Layout }>(
 const ActionBar = styled(Bar)({
   marginTop: -40,
   marginBottom: 40,
+});
+
+const TrailingSnippetWarning = styled(SnippetWarning)({
+  marginInlineStart: 'auto',
+  marginInlineEnd: TRAILING_INSET,
 });
 
 const StyledSource = styled(Source)(({ theme }) => ({
@@ -185,6 +191,7 @@ export const Preview: FC<PreviewProps> = ({
 
   const childProps = getChildProps(children);
 
+  const { warning: sourceWarning, ...sourceProps } = withSource ?? {};
   const hasSourceError = !!(withSource && withSource.error);
   const hasValidSource = !!(withSource && !withSource.error);
 
@@ -224,7 +231,7 @@ export const Preview: FC<PreviewProps> = ({
         </ZoomContext.Provider>
         {hasValidSource && expanded && (
           <div id={sourceId}>
-            <StyledSource {...withSource} dark copyable={false} />
+            <StyledSource {...sourceProps} dark copyable={false} />
           </div>
         )}
       </PreviewContainer>
@@ -232,6 +239,7 @@ export const Preview: FC<PreviewProps> = ({
         <ActionBar className="sbdocs sbdocs-preview-actions" innerStyle={{ paddingInline: 0 }}>
           {hasSourceError && (
             <Button
+              lang="en"
               ariaLabel={false}
               disabled
               variant="ghost"
@@ -243,6 +251,7 @@ export const Preview: FC<PreviewProps> = ({
           {hasValidSource && (
             <>
               <ToggleButton
+                lang="en"
                 ariaLabel={false}
                 pressed={expanded}
                 aria-expanded={expanded}
@@ -253,7 +262,7 @@ export const Preview: FC<PreviewProps> = ({
               >
                 <MarkupIcon /> {expanded ? 'Hide code' : 'Show code'}
               </ToggleButton>
-              <Button ariaLabel={false} variant="ghost" onClick={handleCopyCode}>
+              <Button lang="en" ariaLabel={false} variant="ghost" onClick={handleCopyCode}>
                 <CopyIcon /> {copied ?? 'Copy code'}
               </Button>
             </>
@@ -272,6 +281,7 @@ export const Preview: FC<PreviewProps> = ({
               </Button>
             )
           )}
+          {hasValidSource && <TrailingSnippetWarning warning={sourceWarning} />}
         </ActionBar>
       )}
     </>

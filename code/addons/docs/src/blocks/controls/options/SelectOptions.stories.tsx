@@ -15,6 +15,15 @@ const labels = {
   Cat: 'Catwoman',
   Rat: 'Ratwoman',
 };
+// Only `Bat` is labelled; `Cat` and `Rat` should fall back to String(item).
+const partialLabels = {
+  Bat: 'Batwoman',
+};
+// Option names that collide with Array.prototype method names.
+// When `labels` is mistakenly emitted as an array (e.g. by Svelte docgen),
+// the old code resolved e.g. labels['reverse'] → Array.prototype.reverse
+// (a native function string). The fix must show 'reverse', 'map', 'filter'.
+const prototypeCollisionOptions = ['reverse', 'map', 'filter'];
 const argTypeMultiSelect = {
   argTypes: {
     value: {
@@ -114,6 +123,58 @@ export const ArrayMultiLabels: Story = {
     labels,
   },
   ...argTypeMultiSelect,
+};
+
+// Partial labels: only 'Bat' is mapped; 'Cat' and 'Rat' fall back to String(item).
+export const ArrayLabelsPartial: Story = {
+  args: {
+    value: arrayOptions[0],
+    labels: partialLabels,
+  },
+};
+
+export const ArrayMultiLabelsPartial: Story = {
+  args: {
+    type: 'multi-select',
+    value: [arrayOptions[1], arrayOptions[2]],
+    labels: partialLabels,
+  },
+  ...argTypeMultiSelect,
+};
+
+// Regression: when `labels` is emitted as an array by docgen (e.g. Svelte),
+// options whose names match Array.prototype methods previously showed
+// `function reverse() { [native code] }` instead of the option's string value.
+// With the fix, each option must display as String(item) — 'reverse', 'map', 'filter'.
+export const ArrayLabelsIsArray: Story = {
+  name: 'Array Labels (docgen array — prototype-collision fix)',
+  args: {
+    value: prototypeCollisionOptions[0],
+    argType: { options: prototypeCollisionOptions },
+    labels: ['Reverse', 'Map', 'Filter'] as any,
+  },
+  argTypes: {
+    value: {
+      control: { type: 'select' },
+      options: prototypeCollisionOptions,
+    },
+  },
+};
+
+export const ArrayMultiLabelsIsArray: Story = {
+  name: 'Array Multi Labels (docgen array — prototype-collision fix)',
+  args: {
+    type: 'multi-select',
+    value: [prototypeCollisionOptions[0], prototypeCollisionOptions[1]],
+    argType: { options: prototypeCollisionOptions },
+    labels: ['Reverse', 'Map', 'Filter'] as any,
+  },
+  argTypes: {
+    value: {
+      control: { type: 'multi-select' },
+      options: prototypeCollisionOptions,
+    },
+  },
 };
 
 export const Object: Story = {

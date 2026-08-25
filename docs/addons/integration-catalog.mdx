@@ -89,7 +89,13 @@ The `package.json` above appears like below in the catalog. See an example of a 
 
 #### How long does it take for my addon to show up in the catalog?
 
-Once you publish the addon, it will appear in the catalog. There may be a delay between the time you publish your addon and when it's listed in the catalog. If your addon doesn't show up within 24 hours, [open an issue](https://github.com/storybookjs/frontpage/issues).
+Once you publish the addon, it will appear in the catalog. However, there may be a slight delay between the time you publish your addon and when it's listed. If your addon doesn't appear in the catalog after a short period, check it to ensure it includes the required fields, keywords, and information outlined in the above sections. This information is essential for the catalog to index and display your addon correctly. You can also run the following command to confirm that the latest npm version includes the catalog metadata:
+
+```shell
+npm view your-addon-package-name --json
+```
+
+If everything looks correct, but your addon is still missing from the catalog, please open an [issue](https://github.com/storybookjs/web) in the Storybook documentation repository. Include the npm package URL (including the latest version), the package repository, and the command output to help the team investigate further and resolve any potential indexing issues.
 
 ## Recipes
 

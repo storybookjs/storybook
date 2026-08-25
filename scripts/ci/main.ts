@@ -10,9 +10,14 @@ import {
   build_windows,
   check,
   commonJobsNoOpJob,
+  defineCircleciCompletion,
+  docgenMemoryGate,
+  docgenPerfGate,
   knip,
   lint,
   fmt,
+  internalStorybookBuildE2e,
+  internalStorybookE2e,
   storybookChromatic,
   testUnit_windows,
   testsStories_linux,
@@ -51,7 +56,7 @@ function generateConfig(workflow: Workflow) {
     const initEmpty = getInitEmpty(workflow);
 
     if (isWorkflowOrAbove(workflow, 'daily')) {
-      jobs.push(build_windows, testUnit_windows);
+      jobs.push(build_windows, testUnit_windows, docgenMemoryGate, docgenPerfGate);
     }
 
     jobs.push(
@@ -66,6 +71,8 @@ function generateConfig(workflow: Workflow) {
       knip,
 
       storybookChromatic,
+      internalStorybookE2e,
+      internalStorybookBuildE2e,
       benchmarkPackages,
 
       sandboxesNoOpJob,
@@ -102,6 +109,11 @@ function generateConfig(workflow: Workflow) {
   const isDebugging = filteredJobs.length !== jobs.length;
 
   const ensuredJobs = ensureRequiredJobs(filteredJobs);
+
+  // Append a completion job that depends on every other job in the workflow.
+  // It acts as a single status check for GitHub branch protection: it only runs
+  // (and reports success) once every required job has finished successfully.
+  ensuredJobs.push(defineCircleciCompletion([...ensuredJobs]));
 
   const sortedJobs = ensuredJobs.sort((a, b) => {
     if (a.requires.length && b.requires.length) {

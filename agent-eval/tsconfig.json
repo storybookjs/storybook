@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "allowImportingTsExtensions": true,
+    "allowJs": true,
+    "esModuleInterop": true,
+    "isolatedModules": true,
+    "jsx": "react-jsx",
+    "lib": ["es2023", "es2024", "dom", "dom.iterable"],
+    "module": "preserve",
+    "moduleDetection": "force",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
+    "paths": {
+      "#test-utils": ["./lib/test-utils.ts"],
+      "@storybook/mcp": ["../code/lib/mcp/src/index.ts"]
+    },
+    "resolveJsonModule": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "target": "es2022",
+    "verbatimModuleSyntax": true
+  },
+  "include": [
+    "eval.d.ts",
+    "eval-matchers.d.ts",
+    "experiments/**/*.ts",
+    "evals/**/EVAL.ts",
+    "evals/**/EVAL.tsx",
+    "lib/**/*.ts",
+    "vitest.config.ts"
+  ],
+  "exclude": ["results/**", "templates/**"]
+}

@@ -1,4 +1,4 @@
-import { Channel } from 'storybook/internal/channels';
+import { Channel, setChannel } from 'storybook/internal/channels';
 import {
   getProjectRoot,
   loadAllPresets,
@@ -8,6 +8,7 @@ import {
 } from 'storybook/internal/common';
 import { oneWayHash } from 'storybook/internal/telemetry';
 import type { BuilderOptions, CLIOptions, LoadOptions, Options } from 'storybook/internal/types';
+import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 
 import { global } from '@storybook/global';
 
@@ -15,14 +16,18 @@ import { dirname, isAbsolute, join, relative, resolve } from 'pathe';
 
 import { resolvePackageDir } from '../shared/utils/module.ts';
 
-globalThis.STORYBOOK_SERVICES_LOADED = globalThis.STORYBOOK_SERVICES_LOADED ?? false;
-
 export async function loadStorybook(
   options: CLIOptions &
     LoadOptions &
     BuilderOptions & {
       storybookVersion?: string;
       previewConfigPath?: string;
+      /**
+       * The channel handed to every preset. Callers that prepared state on a channel of their own
+       * (the `storybook tools` CLI prepares the UniversalStore singleton on one) must pass it here,
+       * so addon hooks that answer requests over `options.channel` share the caller's bus.
+       */
+      channel?: Channel;
     }
 ): Promise<Options> {
   const configDir = resolve(options.configDir);
@@ -32,6 +37,11 @@ export async function loadStorybook(
   options.configType = 'DEVELOPMENT';
   options.configDir = configDir;
   options.cacheKey = cacheKey;
+
+  // Without a caller-supplied channel this is a transport-less local bus, as there is no dev
+  // server to transport to.
+  const channel = options.channel ?? new Channel({});
+  setChannel(channel);
 
   const config = await loadMainConfig(options);
   const { framework } = config;
@@ -50,10 +60,6 @@ export async function loadStorybook(
   // Load first pass: We need to determine the builder
   // We need to do this because builders might introduce 'overridePresets' which we need to take into account
   // We hope to remove this in SB8
-
-  // no-op channel, as it's only relevant in dev mode
-  const channel = new Channel({});
-
   let presets = await loadAllPresets({
     corePresets,
     overridePresets: [
@@ -90,20 +96,19 @@ export async function loadStorybook(
     overridePresets: [
       import.meta.resolve('storybook/internal/core-server/presets/common-override-preset'),
     ],
-    channel,
     ...options,
+    channel,
   });
 
   const features = await presets.apply('features');
   global.FEATURES = features;
 
-  if (!globalThis.STORYBOOK_SERVICES_LOADED) {
-    await presets.apply('services');
-    globalThis.STORYBOOK_SERVICES_LOADED = true;
-  }
+  await applyServicesPresetOnce(presets);
 
   return {
     ...options,
+    // the resolved channel — the one the presets received — never the possibly-absent option
+    channel,
     presets,
     features,
   } as Options;

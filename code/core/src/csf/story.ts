@@ -1,3 +1,6 @@
+import type { BoundFunctions, queries } from '@testing-library/dom';
+import type { userEvent } from '@testing-library/user-event';
+
 import type { OmitIndexSignature, Simplify, UnionToIntersection } from 'type-fest';
 
 import type { ToolbarArgType } from '../toolbar/index.ts';
@@ -264,7 +267,7 @@ export type AfterEach<TRenderer extends Renderer = Renderer, TArgs = Args> = (
   context: StoryContext<TRenderer, TArgs>
 ) => Awaitable<void>;
 
-export interface Canvas {}
+export interface Canvas extends BoundFunctions<typeof queries> {}
 
 export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Args>
   extends StoryContextForEnhancers<TRenderer, TArgs>, Required<StoryContextUpdate<TArgs>> {
@@ -277,6 +280,7 @@ export interface StoryContext<TRenderer extends Renderer = Renderer, TArgs = Arg
   step: StepFunction<TRenderer, TArgs>;
   context: this;
   canvas: Canvas;
+  userEvent: ReturnType<typeof userEvent.setup>;
   mount: TRenderer['mount'];
   reporting: ReportingAPI;
 }
@@ -537,8 +541,10 @@ export interface ComponentAnnotations<
   play?: PlayFunction<TRenderer, TArgs>;
 
   /** Override the globals values for all stories in this component */
-  globals?: Globals &
-    (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown);
+  globals?: Partial<
+    Globals &
+      (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown)
+  >;
 }
 
 export type StoryAnnotations<
@@ -556,8 +562,10 @@ export type StoryAnnotations<
   play?: PlayFunction<TRenderer, TArgs>;
 
   /** Override the globals values for this story */
-  globals?: Globals &
-    (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown);
+  globals?: Partial<
+    Globals &
+      (TRenderer['csf4'] extends true ? CoreTypes['globals'] & TRenderer['globals'] : unknown)
+  >;
 
   /** @deprecated */
   story?: Omit<StoryAnnotations<TRenderer, TArgs>, 'story'>;

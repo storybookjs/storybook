@@ -19,6 +19,7 @@ export enum Category {
   MANAGER_ROUTER = 'MANAGER_ROUTER',
   MANAGER_THEMING = 'MANAGER_THEMING',
   MANAGER_UNIVERSAL_STORE = 'MANAGER_UNIVERSAL-STORE',
+  MANAGER_OPEN_SERVICE = 'MANAGER_OPEN-SERVICE',
 }
 
 export class ProviderDoesNotExtendBaseProviderError extends StorybookError {
@@ -75,6 +76,49 @@ export class UniversalStoreFollowerTimeoutError extends StorybookError {
       category: Category.MANAGER_UNIVERSAL_STORE,
       code: 1,
       message: `Timed out waiting for leader state for UniversalStore follower with id: '${followerId}'. Ensure a leader with the same id exists and is reachable before creating a follower.`,
+    });
+  }
+}
+
+export class OpenServiceStaticSnapshotLoadError extends StorybookError {
+  constructor(
+    public data: {
+      serviceId: string;
+      queryName: string;
+      input: unknown;
+      logicalPath: string;
+      url: string;
+      cause: unknown;
+      status?: number;
+      statusText?: string;
+    }
+  ) {
+    super({
+      name: 'OpenServiceStaticSnapshotLoadError',
+      category: Category.MANAGER_OPEN_SERVICE,
+      code: 1,
+      message: `Failed to load open-service static snapshot "${data.logicalPath}" from "${data.url}" for "${data.serviceId}.${data.queryName}".`,
+      cause: data.cause,
+    });
+  }
+}
+
+export class OpenServiceStaticSnapshotInvalidError extends StorybookError {
+  constructor(
+    public data: {
+      serviceId: string;
+      queryName: string;
+      input: unknown;
+      logicalPath: string;
+      url: string;
+      received: unknown;
+    }
+  ) {
+    super({
+      name: 'OpenServiceStaticSnapshotInvalidError',
+      category: Category.MANAGER_OPEN_SERVICE,
+      code: 2,
+      message: `Open-service static snapshot "${data.logicalPath}" from "${data.url}" for "${data.serviceId}.${data.queryName}" must be a plain object.`,
     });
   }
 }

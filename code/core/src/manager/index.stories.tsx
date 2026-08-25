@@ -8,17 +8,22 @@ import { global } from '@storybook/global';
 import { FailedIcon } from '@storybook/icons';
 
 import { HelmetProvider } from 'react-helmet-async';
+import { getChannel, setChannel } from 'storybook/internal/channels';
+
 import type { API, AddonStore } from 'storybook/manager-api';
 import { addons, mockChannel } from 'storybook/manager-api';
 import { screen, within } from 'storybook/test';
 import { color } from 'storybook/theming';
 
 import preview from '../../../.storybook/preview.tsx';
+import './components/review/review-service-story-helpers.ts';
 import { Main } from './index.tsx';
 import Provider from './provider.ts';
 
 const WS_DISCONNECTED_NOTIFICATION_ID = 'CORE/WS_DISCONNECTED';
+const MOCK_STORY_PATH = '/?path=/story/example-button--primary';
 
+const originalChannel = getChannel();
 const channel = mockChannel() as unknown as Channel;
 
 const originalGetItem = Storage.prototype.getItem;
@@ -50,12 +55,8 @@ class ReactProvider extends Provider {
   constructor() {
     super();
 
-    addons.setChannel(channel);
-    channel.emit(CHANNEL_CREATED);
-
     this.addons = addons;
     this.channel = channel;
-    global.__STORYBOOK_ADDONS_CHANNEL__ = channel;
   }
 
   getElements(type: Addon_Types) {
@@ -111,11 +112,19 @@ const meta = preview.meta({
   beforeEach: () => {
     global.PREVIEW_URL = 'about:blank';
 
+    addons.setChannel(channel);
+    channel.emit(CHANNEL_CREATED);
+
     Storage.prototype.getItem = () => null;
     Storage.prototype.setItem = () => {};
     Storage.prototype.clear = () => {};
   },
   afterEach: () => {
+    if (originalChannel) {
+      setChannel(originalChannel);
+      addons.setChannel(originalChannel as Channel);
+    }
+
     Storage.prototype.getItem = originalGetItem;
     Storage.prototype.setItem = originalSetItem;
     Storage.prototype.clear = originalClear;
@@ -123,7 +132,7 @@ const meta = preview.meta({
   decorators: [
     (Story) => (
       <HelmetProvider key="helmet.Provider">
-        <MemoryRouter key="location.provider">
+        <MemoryRouter initialEntries={[MOCK_STORY_PATH]} key="location.provider">
           <Story />
         </MemoryRouter>
       </HelmetProvider>

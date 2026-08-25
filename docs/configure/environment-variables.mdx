@@ -103,6 +103,14 @@ You can pass additional arguments to the browser by setting the `BROWSER_ARGS` e
 
 ## Troubleshooting
 
+<If renderer={['angular', 'ember' ]}>
+
+### The `process` variable not being detected
+
+If you're using a Webpack-based framework (e.g., Angular with Webpack) and you run into a runtime error such as `Can't find variable: process` when referencing Storybook's prefixed environment variables (e.g., `STORYBOOK_`), this is likely because one or more environment variables are missing or not properly configured. To fix this, ensure they are configured via `.env` files, injected via command-line arguments, and include default values as outlined in the [section above](#using-storybook-configuration).
+
+</If>
+
 ### Environment variables are not working
 
 If you're trying to use framework-specific environment variables (e.g.,`VUE_APP_`), you may run into issues primarily due to the fact that Storybook and your framework may have specific configurations and may not be able to recognize and use those environment variables. If you run into a similar situation, you may need to adjust your framework configuration to make sure that it can recognize and use those environment variables. For example, if you're working with a Vite-based framework, you can extend the configuration file and enable the [`envPrefix`](https://vitejs.dev/config/shared-options.html#envprefix) option. Other frameworks may require a similar approach.

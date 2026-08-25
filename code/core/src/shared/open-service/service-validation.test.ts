@@ -16,11 +16,18 @@ import {
 /**
  * Asserts the exact validation text we document for callers.
  *
- * `vi.defineHelper()` keeps failure stacks anchored at the individual test callsite.
+ * `vi.defineHelper()` keeps failure stacks anchored at the individual test callsite. The helper
+ * accepts both sync and async producers so it can target sync queries and async commands with the
+ * same assertion shape.
  */
 const expectValidationMessage = vi.defineHelper(
-  async (run: () => Promise<unknown>, expectedMessage: string): Promise<void> => {
-    await expect(run()).rejects.toMatchObject({
+  async (run: () => unknown, expectedMessage: string): Promise<void> => {
+    await expect(async () => {
+      const result = run();
+      if (result instanceof Promise) {
+        await result;
+      }
+    }).rejects.toMatchObject({
       fromStorybook: true,
       code: 5,
       message: expectedMessage,
@@ -37,9 +44,9 @@ describe('service validation', () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
     await expectValidationMessage(
-      () => service.queries.getRecordFields({} as unknown as { entryId: string }),
+      () => service.queries.recordFields.get({} as unknown as { entryId: string }),
       dedent`
-        Invalid input for query "test/mutable-record-lookup.getRecordFields":
+        Invalid input for query "internal-fixture/mutable-record-lookup.recordFields":
         entryId: Invalid key: Expected "entryId" but received undefined
       `
     );
@@ -49,9 +56,9 @@ describe('service validation', () => {
     const service = registerService(createInvalidQueryOutputServiceDef());
 
     await expectValidationMessage(
-      () => service.queries.getBrokenValue(undefined),
+      () => service.queries.brokenValue.get(undefined),
       dedent`
-        Invalid output for query "test/invalid-query-output.getBrokenValue":
+        Invalid output for query "internal-fixture/invalid-query-output.brokenValue":
         Invalid type: Expected string but received 42
       `
     );
@@ -72,7 +79,7 @@ describe('service validation', () => {
           fieldValue: string;
         }),
       dedent`
-        Invalid input for command "test/mutable-record-lookup.assignRecordField":
+        Invalid input for command "internal-fixture/mutable-record-lookup.assignRecordField":
         fieldValue: Invalid type: Expected string but received 1
       `
     );
@@ -84,19 +91,19 @@ describe('service validation', () => {
     await expectValidationMessage(
       () => service.commands.runBrokenCommand(undefined),
       dedent`
-        Invalid output for command "test/invalid-command-output.runBrokenCommand":
+        Invalid output for command "internal-fixture/invalid-command-output.runBrokenCommand":
         Invalid type: Expected string but received 42
       `
     );
   });
 
-  it('shows the full actionable message for invalid static preload input', async () => {
+  it('shows the full actionable message for invalid static load input', async () => {
     registerService(createInvalidStaticInputServiceDef());
 
     await expectValidationMessage(
       () => buildStaticFiles(),
       dedent`
-        Invalid input for query "test/invalid-static-input.getPreloadedValue":
+        Invalid input for query "internal-fixture/invalid-static-input.preloadedValue":
         entryId: Invalid key: Expected "entryId" but received undefined
       `
     );
@@ -105,10 +112,10 @@ describe('service validation', () => {
   it('shows nested field paths for validation issues inside arrays and objects', async () => {
     const service = registerService(
       defineService({
-        id: 'test/nested-query-output',
+        id: 'internal-fixture/nested-query-output',
         initialState: {} as Record<string, never>,
         queries: {
-          getBrokenTree: {
+          brokenTree: {
             input: v.undefined(),
             output: v.object({
               items: v.array(
@@ -127,9 +134,9 @@ describe('service validation', () => {
     );
 
     await expectValidationMessage(
-      () => service.queries.getBrokenTree(undefined),
+      () => service.queries.brokenTree.get(undefined),
       dedent`
-        Invalid output for query "test/nested-query-output.getBrokenTree":
+        Invalid output for query "internal-fixture/nested-query-output.brokenTree":
         items[0].name: Invalid type: Expected string but received 1
       `
     );
@@ -138,10 +145,10 @@ describe('service validation', () => {
   it('wraps zod schema issues in the same actionable validation error shape', async () => {
     const service = registerService(
       defineService({
-        id: 'test/zod-query-input',
+        id: 'internal-fixture/zod-query-input',
         initialState: {} as Record<string, never>,
         queries: {
-          getGreeting: {
+          greeting: {
             input: z.object({
               name: z.string().min(2, 'Name must be at least 2 characters'),
             }),
@@ -154,23 +161,23 @@ describe('service validation', () => {
     );
 
     await expectValidationMessage(
-      () => service.queries.getGreeting({ name: 'x' }),
+      () => service.queries.greeting.get({ name: 'x' }),
       dedent`
-        Invalid input for query "test/zod-query-input.getGreeting":
+        Invalid input for query "internal-fixture/zod-query-input.greeting":
         name: Name must be at least 2 characters
       `
     );
   });
 
-  it('accepts unexpected query input fields when the schema allows them', async () => {
+  it('accepts unexpected query input fields when the schema allows them', () => {
     const service = registerService(mutableRecordLookupServiceDef);
 
-    await expect(
-      service.queries.getRecordFields({
+    expect(
+      service.queries.recordFields.get({
         entryId: 'entry-a',
         unexpected: 'extra',
       } as unknown as { entryId: string })
-    ).resolves.toBeNull();
+    ).toBeNull();
   });
 
   it('accepts unexpected command input fields when the schema allows them', async () => {
@@ -189,7 +196,7 @@ describe('service validation', () => {
       })
     ).resolves.toBeUndefined();
 
-    await expect(service.queries.getRecordFields({ entryId: 'entry-a' })).resolves.toEqual({
+    expect(service.queries.recordFields.get({ entryId: 'entry-a' })).toEqual({
       marker: 'match',
     });
   });
@@ -198,7 +205,7 @@ describe('service validation', () => {
     expect(mutableRecordLookupServiceDef.description).toBe(
       'Provides a mutable record lookup keyed by entry id.'
     );
-    expect(mutableRecordLookupServiceDef.queries.getRecordFields.description).toBe(
+    expect(mutableRecordLookupServiceDef.queries.recordFields.description).toBe(
       'Returns all stored fields for one entry, or null when absent.'
     );
     expect(mutableRecordLookupServiceDef.commands.assignRecordField.description).toBe(

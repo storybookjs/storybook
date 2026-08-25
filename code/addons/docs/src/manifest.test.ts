@@ -204,6 +204,101 @@ describe('experimental_manifests', () => {
     );
   });
 
+  it('should emit shallow MDX refs when experimentalDocgenServer is enabled', async () => {
+    const manifestEntries: IndexEntry[] = [
+      {
+        id: 'example--docs',
+        name: 'docs',
+        title: 'Example',
+        type: 'docs',
+        importPath: './Example.mdx',
+        tags: [Tag.MANIFEST, Tag.ATTACHED_MDX],
+        storiesImports: ['./Example.stories.tsx'],
+      } satisfies DocsIndexEntry,
+      {
+        id: 'standalone--docs',
+        name: 'docs',
+        title: 'Standalone',
+        type: 'docs',
+        importPath: './Standalone.mdx',
+        tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX],
+        storiesImports: [],
+      } satisfies DocsIndexEntry,
+    ];
+
+    const result = (await manifests(
+      {
+        components: {
+          v: 0,
+          components: {},
+          meta: { docgen: 'react-component-meta', durationMs: 0 },
+        },
+      },
+      {
+        manifestEntries,
+        presets: {
+          apply: vi.fn().mockResolvedValue({
+            experimentalDocgenServer: true,
+            componentsManifest: true,
+          }),
+        },
+      } as any
+    )) as ManifestResult;
+
+    // Shallow refs are structural only; summaries are layered into the static index by core from
+    // the MDX service snapshots, so the preset never reads files in docgen-server mode.
+    expect(result.docs?.docs['standalone--docs']).toEqual({
+      id: 'standalone--docs',
+      name: 'docs',
+      mdx: {
+        $ref: '../services/addon-docs/mdx/standalone--docs.json#/components/standalone--docs/docs/standalone--docs',
+      },
+    });
+    expect(result.docs?.v).toBe(1);
+    expect(result.components?.components.example.docs?.['example--docs']).toEqual({
+      id: 'example--docs',
+      name: 'docs',
+      mdx: {
+        $ref: '../services/addon-docs/mdx/example.json#/components/example/docs/example--docs',
+      },
+    });
+    expect(result.docs?.docs['standalone--docs'].content).toBeUndefined();
+    expect(result.components?.components.example.docs?.['example--docs'].content).toBeUndefined();
+  });
+
+  it('builds shallow MDX refs without reading the source file', async () => {
+    const manifestEntries: IndexEntry[] = [
+      {
+        id: 'missing--docs',
+        name: 'docs',
+        title: 'Missing',
+        type: 'docs',
+        importPath: './DoesNotExist.mdx',
+        tags: [Tag.MANIFEST, Tag.UNATTACHED_MDX],
+        storiesImports: [],
+      } satisfies DocsIndexEntry,
+    ];
+
+    const result = (await manifests(undefined, {
+      manifestEntries,
+      presets: {
+        apply: vi.fn().mockResolvedValue({
+          experimentalDocgenServer: true,
+          componentsManifest: true,
+        }),
+      },
+    } as any)) as ManifestResult;
+
+    // No `error` despite the missing file: ref mode is purely structural.
+    expect(result.docs?.docs['missing--docs']).toEqual({
+      id: 'missing--docs',
+      name: 'docs',
+      mdx: {
+        $ref: '../services/addon-docs/mdx/missing--docs.json#/components/missing--docs/docs/missing--docs',
+      },
+    });
+  });
+
   it('should handle both attached and unattached docs entries separately', async () => {
     const existingManifests = {
       components: {
@@ -429,7 +524,7 @@ describe('experimental_manifests', () => {
     );
   });
 
-  it('should not include summary property when analyze returns no summary', async () => {
+  it('should derive a fallback summary from content when analyze returns no summary', async () => {
     vol.fromJSON(
       {
         './NoSummary.mdx': '# No Summary\n\nThis content has no summary.',
@@ -455,6 +550,8 @@ describe('experimental_manifests', () => {
     expect(result.docs?.docs['nosummary--docs'].content).toBe(
       '# No Summary\n\nThis content has no summary.'
     );
-    expect(result.docs?.docs['nosummary--docs'].summary).toBeUndefined();
+    expect(result.docs?.docs['nosummary--docs'].summary).toBe(
+      '# No Summary This content has no summary.'
+    );
   });
 });

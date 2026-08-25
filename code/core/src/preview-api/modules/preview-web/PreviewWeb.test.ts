@@ -3627,9 +3627,11 @@ describe('PreviewWeb', () => {
       await waitForRender();
 
       // @ts-expect-error Ignore protected property
-      expect((preview.storyStoreValue as StoryStore<Renderer>)!.userGlobals.get()).toEqual({
-        a: 'edited',
-      });
+      expect((preview.storyStoreValue as StoryStore<Renderer>)!.userGlobals.get()).toEqual(
+        expect.objectContaining({
+          a: 'edited',
+        })
+      );
     });
 
     it('emits SET_GLOBALS with new values', async () => {
@@ -3642,7 +3644,7 @@ describe('PreviewWeb', () => {
 
       await waitForEvents([SET_GLOBALS]);
       expect(mockChannel.emit).toHaveBeenCalledWith(SET_GLOBALS, {
-        globals: { a: 'edited' },
+        globals: expect.objectContaining({ a: 'edited' }),
         globalTypes: {},
       });
     });
@@ -3707,7 +3709,7 @@ describe('PreviewWeb', () => {
         expect.objectContaining({
           storyContext: expect.objectContaining({
             args: { foo: 'a', one: 'mapped-1', global: 'added' },
-            globals: { a: 'edited' },
+            globals: expect.objectContaining({ a: 'edited' }),
           }),
         }),
         'story-element'

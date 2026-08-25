@@ -1,0 +1,54 @@
+{
+  "argTypes": {
+    "backgroundColor": {
+      "description": "",
+      "name": "backgroundColor",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "classes": {
+      "control": {
+        "disable": true
+      },
+      "description": "",
+      "name": "classes",
+      "table": {
+        "category": "exposed",
+        "type": {
+          "summary": "{ 'storybook-button': boolean; 'storybook-button--primary': boolean; 'storybook-button--large': boolean; }"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "{ 'storybook-button': boolean; 'storybook-button--primary': boolean; 'storybook-button--large': boolean; }"
+      }
+    },
+    "icon": {
+      "description": "",
+      "name": "icon",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "Record<string, any>"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "Record<string, any>"
+      }
+    }
+  },
+  "id": "stories-renderers-vue3-vue3-vite-default-ts-overrideargs",
+  "jsDocTags": {},
+  "name": "OverrideArgs",
+  "path": "./src/stories/renderers/vue3_vue3-vite-default-ts/OverrideArgs.stories.js"
+}

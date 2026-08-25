@@ -1,5 +1,4 @@
 import { type CleanupCallback, isExportStory } from 'storybook/internal/csf';
-import { getCoreAnnotations } from 'storybook/internal/csf';
 import { MountMustBeDestructuredError } from 'storybook/internal/preview-errors';
 import type {
   Args,
@@ -21,7 +20,6 @@ import type {
 } from 'storybook/internal/types';
 
 import type { UserEventObject } from 'storybook/test';
-import { dedent } from 'ts-dedent';
 
 import { HooksContext } from '../../../addons.ts';
 import {
@@ -31,6 +29,7 @@ import {
 } from '../../preview-web/render/animation-utils.ts';
 import { ReporterAPI } from '../reporter-api.ts';
 import { composeConfigs } from './composeConfigs.ts';
+import { composeProjectAnnotationsWithCore } from './composeProjectAnnotationsWithCore.ts';
 import { getCsfFactoryAnnotations } from './csf-factory-utils.ts';
 import { getValuesFromGlobalTypes } from './getValuesFromGlobalTypes.ts';
 import { normalizeComponentAnnotations } from './normalizeComponentAnnotations.ts';
@@ -40,9 +39,7 @@ import { prepareContext, prepareStory } from './prepareStory.ts';
 
 // TODO we should get to the bottom of the singleton issues caused by dual ESM/CJS modules
 declare global {
-  // eslint-disable-next-line no-var
   var globalProjectAnnotations: NormalizedProjectAnnotations<any>;
-  // eslint-disable-next-line no-var
   var defaultProjectAnnotations: ProjectAnnotations<any>;
 }
 
@@ -56,30 +53,19 @@ export function setDefaultProjectAnnotations<TRenderer extends Renderer = Render
 const DEFAULT_STORY_TITLE = 'ComposedStory';
 const DEFAULT_STORY_NAME = 'Unnamed Story';
 
-function extractAnnotation<TRenderer extends Renderer = Renderer>(
-  annotation: NamedOrDefaultProjectAnnotations<TRenderer>
-) {
-  if (!annotation) {
-    return {};
-  }
-  // support imports such as
-  // import * as annotations from '.storybook/preview'
-  // import annotations from '.storybook/preview'
-  // in both cases: 1 - the file has a default export; 2 - named exports only
-  // also support when the file has both annotations coming from default and named exports
-  return composeConfigs([annotation]);
-}
-
 export function setProjectAnnotations<TRenderer extends Renderer = Renderer>(
   projectAnnotations:
     | NamedOrDefaultProjectAnnotations<TRenderer>
     | NamedOrDefaultProjectAnnotations<TRenderer>[]
 ): NormalizedProjectAnnotations<TRenderer> {
   const annotations = Array.isArray(projectAnnotations) ? projectAnnotations : [projectAnnotations];
-  globalThis.globalProjectAnnotations = composeConfigs([
-    ...getCoreAnnotations(),
+  // Pass the raw annotation modules (which may use `default` and/or named exports, e.g. from
+  // `import * as annotations from '.storybook/preview'`) straight through: `composeConfigs` unwraps
+  // those, and `composeProjectAnnotationsWithCore` detects the CSF4 marker (set by `definePreview`,
+  // which is what e.g. addon-vitest passes here) so core annotations are never applied twice.
+  globalThis.globalProjectAnnotations = composeProjectAnnotationsWithCore<TRenderer>([
     globalThis.defaultProjectAnnotations ?? {},
-    composeConfigs(annotations.map(extractAnnotation)),
+    ...annotations,
   ]);
 
   return globalThis.globalProjectAnnotations ?? {};
@@ -194,6 +180,21 @@ export function composeStory<TRenderer extends Renderer = Renderer, TArgs extend
         if (unmount) {
           cleanups.push(unmount);
         }
+        // `hooks` is loosely typed (`unknown`) on the portable story context.
+        const hooks = context.hooks as HooksContext<TRenderer>;
+        // Register the hook teardown BEFORE flushing so a throwing effect can't skip it: `clean()`
+        // runs the effect destroy fns on the next run/explicit cleanup (mirroring
+        // `StoryStore.cleanupStory`), so the applied effects survive through play + the a11y
+        // `afterEach` of this run.
+        cleanups.push(() => hooks.clean());
+        // In the browser (PreviewWeb) path, preview-api `useEffect` callbacks registered during
+        // render are flushed when `StoryRender` emits `STORY_RENDERED`, whose listener also detaches
+        // the hooks context. The portable path never emits that event, so invoke the same listener
+        // directly here (after the render resolves, before play + the a11y `afterEach` observe the
+        // DOM): it triggers the effects (e.g. `@storybook/addon-themes` setting `data-theme` on
+        // `<html>`), clears the current context, and removes the now-stale render listener. (Effect-
+        // only decorators; preview-api state updates that re-render are a separate, unsupported case.)
+        hooks.renderListener(context.id);
       };
     }
 
@@ -299,77 +300,6 @@ export function composeStories<TModule extends Store_CSFExports>(
   );
 
   return composedStories;
-}
-
-type WrappedStoryRef =
-  | { __pw_type: 'jsx'; props: Record<string, any> }
-  | { __pw_type: 'importRef' };
-type UnwrappedJSXStoryRef = {
-  __pw_type: 'jsx';
-  type: UnwrappedImportStoryRef;
-};
-type UnwrappedImportStoryRef = ComposedStoryFn;
-
-declare global {
-  function __pwUnwrapObject(
-    storyRef: WrappedStoryRef
-  ): Promise<UnwrappedJSXStoryRef | UnwrappedImportStoryRef>;
-}
-
-export function createPlaywrightTest<TFixture extends { extend: any }>(
-  baseTest: TFixture
-): TFixture {
-  return baseTest.extend({
-    mount: async ({ mount, page }: any, use: any) => {
-      await use(async (storyRef: WrappedStoryRef, ...restArgs: any) => {
-        // Playwright CT deals with JSX import references differently than normal imports
-        // and we can currently only handle JSX import references
-        if (
-          !('__pw_type' in storyRef) ||
-          ('__pw_type' in storyRef && storyRef.__pw_type !== 'jsx')
-        ) {
-          // eslint-disable-next-line local-rules/no-uncategorized-errors
-          throw new Error(dedent`
-              Portable stories in Playwright CT only work when referencing JSX elements.
-              Please use JSX format for your components such as:
-
-              instead of:
-              await mount(MyComponent, { props: { foo: 'bar' } })
-
-              do:
-              await mount(<MyComponent foo="bar"/>)
-
-              More info: https://storybook.js.org/docs/api/portable-stories/portable-stories-playwright?ref=error
-            `);
-        }
-
-        // Props are not necessarily serialisable and so can't be passed to browser via
-        // `page.evaluate`. Regardless they are not needed for storybook load/play steps.
-        const { props, ...storyRefWithoutProps } = storyRef;
-
-        await page.evaluate(async (wrappedStoryRef: WrappedStoryRef) => {
-          const unwrappedStoryRef = await globalThis.__pwUnwrapObject?.(wrappedStoryRef);
-          const story =
-            '__pw_type' in unwrappedStoryRef ? unwrappedStoryRef.type : unwrappedStoryRef;
-          return story?.load?.();
-        }, storyRefWithoutProps);
-
-        // mount the story
-        const mountResult = await mount(storyRef, ...restArgs);
-
-        // play the story in the browser
-        await page.evaluate(async (wrappedStoryRef: WrappedStoryRef) => {
-          const unwrappedStoryRef = await globalThis.__pwUnwrapObject?.(wrappedStoryRef);
-          const story =
-            '__pw_type' in unwrappedStoryRef ? unwrappedStoryRef.type : unwrappedStoryRef;
-          const canvasElement = document.querySelector('#root');
-          return story?.play?.({ canvasElement });
-        }, storyRefWithoutProps);
-
-        return mountResult;
-      });
-    },
-  });
 }
 
 // TODO At some point this function should live in prepareStory and become the core of StoryRender.render as well.

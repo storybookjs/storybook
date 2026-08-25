@@ -55,5 +55,11 @@ describe('JsPackageManager', () => {
       expect(result).toEqual(['@storybook/react@https://pkg.pr.new/@storybook/react@abc123']);
       expect(mockLatestVersion).not.toHaveBeenCalled();
     });
+
+    it('should return the package name as is if it is not a Storybook package', async () => {
+      const result = await jsPackageManager.getVersionedPackages(['some-other-package']);
+
+      expect(result).toEqual(['some-other-package']);
+    });
   });
 });

@@ -9,10 +9,12 @@ import { dedent } from 'ts-dedent';
 
 export type FinalizationCommandOptions = {
   logfile: string | boolean | undefined;
-  /** When true, show the agent follow-up message ("run npx storybook ai setup") instead of the normal success message */
+  /** When true, show the agent follow-up message instead of the normal success message */
   showAgentFollowUp: boolean;
   /** When true, show the "paste this prompt to your AI agent" instructions */
   showAiInstructions: boolean;
+  /** Package-manager-aware `storybook skills get setup` command shown to agents */
+  setupSkillCommand: string;
 };
 
 type ExecuteFinalizationParams = {
@@ -83,13 +85,16 @@ export class FinalizationCommand {
     } catch {}
   }
 
-  /** Print success message with feature summary */
+  private getSetupSkillPromptText(): string {
+    return `Run \`${this.options.setupSkillCommand}\` and follow its instructions precisely.`;
+  }
+
   private printSuccessMessage(storybookCommand?: string | null): void {
     if (this.options.showAgentFollowUp) {
       logger.step(
         CLI_COLORS.storybook(
           dedent`Storybook is installed but is not entirely set up yet.
-          To finish setting up, now run \`npx storybook ai setup\` and follow its instructions precisely.`
+          To finish setting up, now run \`${this.options.setupSkillCommand}\` and follow its instructions precisely.`
         )
       );
     } else {
@@ -118,7 +123,7 @@ export class FinalizationCommand {
     if (this.options.showAiInstructions) {
       logger.step(dedent`To finalize setting up with AI, paste this prompt to your AI agent:
 
-        ${CLI_COLORS.storybook(`Run \`npx storybook ai setup\` and follow its instructions precisely.`)}
+        ${CLI_COLORS.storybook(this.getSetupSkillPromptText())}
       `);
     }
   }
@@ -128,9 +133,13 @@ export const executeFinalization = ({
   logfile,
   showAgentFollowUp,
   showAiInstructions,
+  setupSkillCommand,
   ...params
 }: ExecuteFinalizationParams & FinalizationCommandOptions) => {
-  return new FinalizationCommand({ logfile, showAgentFollowUp, showAiInstructions }).execute(
-    params
-  );
+  return new FinalizationCommand({
+    logfile,
+    showAgentFollowUp,
+    showAiInstructions,
+    setupSkillCommand,
+  }).execute(params);
 };

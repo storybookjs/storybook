@@ -33,7 +33,7 @@ export * from './types.ts';
 export { default as createCache } from '@emotion/cache';
 export { default as isPropValid } from '@emotion/is-prop-valid';
 
-export { createGlobal, createReset, srOnlyStyles } from './global.ts';
+export { createGlobal, createReset, srOnlyStyles, srOnlyUnsetStyles } from './global.ts';
 export * from './create.ts';
 export * from './convert.ts';
 export * from './ensure.ts';

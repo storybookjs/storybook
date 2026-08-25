@@ -112,6 +112,7 @@ const SingleSelect: FC<SelectProps> = ({
   options,
   onChange,
   argType,
+  required,
 }) => {
   const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
     onChange(options[e.currentTarget.value]);
@@ -127,7 +128,13 @@ const SingleSelect: FC<SelectProps> = ({
       <label htmlFor={controlId} className="sb-sr-only">
         {name}
       </label>
-      <OptionsSelect disabled={readonly} id={controlId} value={selection} onChange={handleChange}>
+      <OptionsSelect
+        disabled={readonly}
+        id={controlId}
+        value={selection}
+        onChange={handleChange}
+        aria-required={required || undefined}
+      >
         <option disabled={selection === NO_SELECTION} key="no-selection">
           {NO_SELECTION}
         </option>
@@ -149,6 +156,7 @@ const MultiSelect: FC<SelectProps> = ({
   options,
   onChange,
   argType,
+  required,
 }) => {
   const handleChange = (e: ChangeEvent<HTMLSelectElement>) => {
     const selection = Array.from(e.currentTarget.options)
@@ -172,6 +180,7 @@ const MultiSelect: FC<SelectProps> = ({
         multiple
         value={selection}
         onChange={handleChange}
+        aria-required={required || undefined}
       >
         {Object.keys(options).map((key) => (
           <option key={key} value={key}>
@@ -190,6 +199,6 @@ export const SelectControl: FC<SelectProps> = (props) => {
     return <>-</>;
   }
 
-  // eslint-disable-next-line react/destructuring-assignment
+  // oxlint-disable-next-line react-classic/destructuring-assignment
   return props.isMulti ? <MultiSelect {...props} /> : <SingleSelect {...props} />;
 };

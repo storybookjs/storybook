@@ -1,4 +1,4 @@
-/* eslint-disable react/destructuring-assignment */
+/* oxlint-disable react-classic/destructuring-assignment */
 import type { FunctionComponent } from 'react';
 import React, { useEffect, useRef, useState } from 'react';
 
@@ -82,7 +82,12 @@ const InlineStory: FunctionComponent<InlineStoryProps> = (props) => {
         )} { min-height: ${height}; transform: translateZ(0); overflow: auto }`}</style>
       ) : null}
       {showLoader && <StorySkeleton />}
-      <div ref={storyRef as any} id={`${storyBlockIdFromId(props)}-inner`} data-name={story.name} />
+      <div
+        ref={storyRef as any}
+        id={`${storyBlockIdFromId(props)}-inner`}
+        data-name={story.name}
+        lang={story.parameters?.htmlLang || 'en'}
+      />
     </>
   );
 };

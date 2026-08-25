@@ -1,7 +1,7 @@
 import type { IncomingMessage } from 'node:http';
 
 import type { ChannelHandler } from 'storybook/internal/channels';
-import { Channel, HEARTBEAT_INTERVAL } from 'storybook/internal/channels';
+import { Channel, HEARTBEAT_INTERVAL, setChannel } from 'storybook/internal/channels';
 
 import { isJSON, parse, stringify } from 'telejson';
 import WebSocket, { WebSocketServer } from 'ws';
@@ -105,8 +105,27 @@ export function getServerChannel(server: Server, options: ServerChannelTransport
 
   const channel = new Channel({ transports, async: true });
 
+  setChannel(channel);
+
   UniversalStore.__prepare(channel, UniversalStore.Environment.SERVER);
 
+  return channel;
+}
+
+/**
+ * Prepare the UniversalStore singleton for a server realm without a dev server (the `storybook
+ * tools` CLI). Leader stores only become ready — and accept writes — once prepared, which the dev
+ * server does above with its live channel; a headless realm has no followers to synchronize, so a
+ * transport-less channel is correct. The channel is returned so the caller can hand the same bus
+ * to configuration loading: stores only hear events on the channel they were prepared with, and
+ * addon responders (addon-vitest's test runner among them) relay child-process store events onto
+ * the channel their preset hooks received. Lives here (not in the CLI) so the preparation call
+ * stays next to the class it configures instead of reaching through an internal static from
+ * another entry, which the published type declarations strip.
+ */
+export function prepareHeadlessUniversalStores(): Channel {
+  const channel = new Channel({});
+  UniversalStore.__prepare(channel, UniversalStore.Environment.SERVER);
   return channel;
 }
 

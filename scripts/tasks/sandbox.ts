@@ -7,6 +7,7 @@ import dirSize from 'fast-folder-size';
 import { now, saveBench } from '../bench/utils.ts';
 import type { Task, TaskKey } from '../task.ts';
 import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '../utils/constants.ts';
+import { exec } from '../utils/exec.ts';
 import { isNxTaskExecution } from '../utils/nx.ts';
 
 const logger = console;
@@ -96,6 +97,12 @@ export const sandbox: Task = {
       'uuid',
     ];
 
+    const extraDevDeps = [
+      ...(details.template.modifications?.extraDevDependencies ?? []),
+      // Always installed regardless of the template.
+      '@storybook/test-runner@latest',
+    ];
+
     const shouldAddVitestIntegration = !details.template.skipTasks?.includes('vitest-integration');
 
     if (shouldAddVitestIntegration) {
@@ -161,6 +168,10 @@ export const sandbox: Task = {
       debug: options.debug,
       dryRun: options.dryRun,
       extraDeps,
+      extraDevDeps,
+      removeDeps: details.template.modifications?.removeDependencies,
+      removeDevDeps: details.template.modifications?.removeDevDependencies,
+      resolutions: details.template.modifications?.resolutions,
     });
 
     await extendMain(details, options);
@@ -174,6 +185,20 @@ export const sandbox: Task = {
 
     await rm(path.join(details.sandboxDir, 'node_modules'), { force: true, recursive: true });
     await packageManager.installDependencies();
+
+    // After sb init the kept before-storybook lockfile can leave nested copies
+    // of shared packages (notably react under @storybook/addon-docs). Collapse
+    // those before we cache/run the sandbox.
+    await exec(
+      'yarn dedupe',
+      { cwd: details.sandboxDir },
+      {
+        dryRun: options.dryRun,
+        debug: options.debug,
+        startMessage: '🧶 Deduplicating dependencies',
+        errorMessage: '🚨 yarn dedupe failed',
+      }
+    );
 
     await runMigrations(details, options);
 

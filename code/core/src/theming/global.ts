@@ -22,6 +22,19 @@ export const srOnlyStyles = {
   border: 0,
 };
 
+export const srOnlyUnsetStyles = {
+  position: 'unset' as const,
+  width: 'unset' as const,
+  height: 'unset' as const,
+  padding: 'unset' as const,
+  margin: 'unset' as const,
+  overflow: 'unset' as const,
+  whiteSpace: 'unset' as const,
+  clip: 'unset' as const,
+  clipPath: 'unset' as const,
+  border: 'unset' as const,
+};
+
 export const createReset = memoize(1)(
   ({ typography }: { typography: Typography }): Return => ({
     body: {

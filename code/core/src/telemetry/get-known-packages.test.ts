@@ -36,6 +36,7 @@ describe('get-known-packages', () => {
           vitest: '1.0.0',
           playwright: '1.30.0',
           '@testing-library/react': '1.0.0',
+          '@chromatic-com/vitest': '1.0.0',
         },
       };
 
@@ -48,6 +49,7 @@ describe('get-known-packages', () => {
         vitest: '1.0.0',
         playwright: '1.0.0',
         '@testing-library/react': '1.0.0',
+        '@chromatic-com/vitest': '1.0.0',
       });
     });
 

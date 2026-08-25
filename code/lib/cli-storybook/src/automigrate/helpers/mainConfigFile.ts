@@ -1,26 +1,17 @@
-import { dirname, isAbsolute, join, normalize } from 'node:path';
+import { normalize } from 'node:path';
 
 import {
-  JsPackageManagerFactory,
   builderPackages,
   extractFrameworkPackageName,
   frameworkPackages,
-  getStorybookInfo,
 } from 'storybook/internal/common';
-import type { PackageManagerName } from 'storybook/internal/common';
 import { frameworkToRenderer } from 'storybook/internal/common';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
-import {
-  isCsfFactoryPreview,
-  readConfig,
-  writeConfig as writeConfigFile,
-} from 'storybook/internal/csf-tools';
+import { readConfig, writeConfig as writeConfigFile } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import type { StorybookConfigRaw } from 'storybook/internal/types';
 
 import picocolors from 'picocolors';
-
-import { getStoriesPathsFromConfig } from '../../util.ts';
 
 /**
  * Given a Storybook configuration object, retrieves the package name or file path of the framework.
@@ -103,81 +94,7 @@ export const getFrameworkOptions = (
     : (mainConfig?.framework?.options ?? null);
 };
 
-export const getStorybookData = async ({
-  configDir: userDefinedConfigDir,
-  packageManagerName,
-}: {
-  configDir?: string;
-  packageManagerName?: PackageManagerName;
-  cache?: boolean;
-}) => {
-  logger.debug('Getting Storybook info...');
-  const {
-    mainConfig,
-    mainConfigPath: mainConfigPath,
-    configDir: configDirFromScript,
-    previewConfigPath,
-    versionSpecifier,
-    frameworkPackage,
-    rendererPackage,
-    renderer,
-    builderPackage,
-    addons,
-  } = await getStorybookInfo(
-    userDefinedConfigDir,
-    userDefinedConfigDir ? dirname(userDefinedConfigDir) : undefined
-  );
-
-  const configDir = userDefinedConfigDir || configDirFromScript || '.storybook';
-
-  logger.debug('Loading main config...');
-
-  const workingDir = isAbsolute(configDir)
-    ? dirname(configDir)
-    : dirname(join(process.cwd(), configDir));
-
-  logger.debug('Getting stories paths...');
-  const storiesPaths = await getStoriesPathsFromConfig({
-    stories: mainConfig.stories,
-    configDir,
-    workingDir,
-  });
-
-  logger.debug('Getting package manager...');
-  const packageManager = JsPackageManagerFactory.getPackageManager({
-    force: packageManagerName,
-    configDir,
-    storiesPaths,
-  });
-
-  logger.debug('Getting Storybook version...');
-  const versionInstalled = (await packageManager.getModulePackageJSON('storybook'))?.version;
-
-  logger.debug('Detecting CSF factory usage...');
-  const hasCsfFactoryPreview = previewConfigPath
-    ? isCsfFactoryPreview(await readConfig(previewConfigPath))
-    : false;
-
-  return {
-    configDir,
-    mainConfig,
-    /** The version specifier of Storybook from the user's package.json */
-    versionSpecifier,
-    /** The version of Storybook installed in the user's project */
-    versionInstalled,
-    mainConfigPath,
-    previewConfigPath,
-    packageManager,
-    storiesPaths,
-    hasCsfFactoryPreview,
-    frameworkPackage,
-    rendererPackage,
-    renderer,
-    builderPackage,
-    addons,
-  };
-};
-export type GetStorybookData = typeof getStorybookData;
+export { getStorybookData, type GetStorybookData } from 'storybook/internal/cli';
 
 /**
  * A helper function to safely read and write the main config file. At the end of the callback,

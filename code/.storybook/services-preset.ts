@@ -1,15 +1,16 @@
 import type { Options, StorybookConfigRaw } from 'storybook/internal/types';
 
+import { registerOpenServiceSyncDemos } from '../core/src/shared/open-service/sync-test/server.ts';
 import { registerOpenServiceDebugService } from './open-service-debug-service.ts';
 
 /**
- * Preset hook that registers the internal open-service debug service.
+ * Preset hook that registers internal open-service examples and the opt-in debug service.
  *
- * Lives in its own preset file so the `services` slot stays out of the public `StorybookConfig`
- * surface while still letting the internal Storybook self-test the registration path. Set
- * `STORYBOOK_OPEN_SERVICE_DEBUG=true` to opt in.
+ * Set `STORYBOOK_OPEN_SERVICE_DEBUG=true` to additionally register the debug service.
  */
 export const services = async (_value: void, options: Options): Promise<void> => {
+  registerOpenServiceSyncDemos();
+
   if (process.env.STORYBOOK_OPEN_SERVICE_DEBUG === 'true') {
     await registerOpenServiceDebugService(
       options.presets.apply<NonNullable<StorybookConfigRaw['storyIndexGenerator']>>(

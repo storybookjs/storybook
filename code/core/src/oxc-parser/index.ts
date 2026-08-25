@@ -1,4 +1,10 @@
-import { parse as oxcRawParse } from 'oxc-parser';
+import {
+  parseSync as oxcRawParseSync,
+  type Class,
+  type Declaration,
+  type Function,
+  type VariableDeclaration,
+} from 'oxc-parser';
 
 import { oxcParse } from './parse.ts';
 import type { ImportEdge, ReExportEntry } from './types.ts';
@@ -52,9 +58,9 @@ export { disposeOxcParsePool };
  * is not added as a fallback dep (which would cause false-positive change signals).
  */
 export async function parseBarrelInfo(filePath: string, source: string): Promise<BarrelInfo> {
-  let parseResult: Awaited<ReturnType<typeof oxcRawParse>>;
+  let parseResult: Awaited<ReturnType<typeof oxcRawParseSync>>;
   try {
-    parseResult = await oxcRawParse(filePath, source);
+    parseResult = oxcRawParseSync(filePath, source);
   } catch {
     return { named: new Map(), wildcards: [] };
   }
@@ -90,13 +96,76 @@ export async function parseBarrelInfo(filePath: string, source: string): Promise
   return { named, wildcards };
 }
 
+/** Adds the binding name(s) introduced by a top-level declaration node to `names`. */
+function collectDeclaredNames(
+  node: VariableDeclaration | Class | Function | Declaration,
+  names: Set<string>
+): void {
+  if (node.type === 'FunctionDeclaration' || node.type === 'ClassDeclaration') {
+    if (node.id?.name) {
+      names.add(node.id.name);
+    }
+    return;
+  }
+  if (node.type === 'VariableDeclaration' && Array.isArray(node.declarations)) {
+    for (const declarator of node.declarations) {
+      const { id } = declarator;
+      // Only simple identifier bindings are referenceable by name (skip destructuring patterns).
+      if (id?.type === 'Identifier' && id.name) {
+        names.add(id.name);
+      }
+    }
+  }
+}
+
+/**
+ * Names declared locally in this module — top-level `var`/`let`/`const`, function and class
+ * declarations, including those introduced via `export <declaration>`. Imports and re-exports
+ * (`export { X } from '...'`, `export * from '...'`) are excluded because their bindings live in
+ * another module and are not referenceable identifiers here.
+ *
+ * Used by the Vue docgen plugin to decide whether a generated `.__docgenInfo` assignment can
+ * safely target a name without producing a reference to an undefined binding.
+ */
+export async function parseLocalBindings(filePath: string, source: string): Promise<Set<string>> {
+  let parseResult: Awaited<ReturnType<typeof oxcRawParseSync>>;
+  try {
+    parseResult = oxcRawParseSync(filePath, source);
+  } catch {
+    return new Set();
+  }
+  const body = parseResult.program?.body;
+  if (!Array.isArray(body)) {
+    return new Set();
+  }
+
+  const names = new Set<string>();
+
+  for (const statement of body) {
+    const node = statement;
+    if (
+      node.type === 'VariableDeclaration' ||
+      node.type === 'FunctionDeclaration' ||
+      node.type === 'ClassDeclaration'
+    ) {
+      collectDeclaredNames(node, names);
+    } else if (node.type === 'ExportNamedDeclaration' && node.declaration && !node.source) {
+      // `export const X` / `export function X` / `export class X` — a local declaration.
+      // Specifier-only (`export { X }`) and re-exports (with a `source`) introduce no binding here.
+      collectDeclaredNames(node.declaration, names);
+    }
+  }
+
+  return names;
+}
+
 export async function parseReExports(
   filePath: string,
   source: string
 ): Promise<Map<string, ReExportEntry>> {
-  let parseResult: Awaited<ReturnType<typeof oxcRawParse>>;
+  let parseResult: Awaited<ReturnType<typeof oxcRawParseSync>>;
   try {
-    parseResult = await oxcRawParse(filePath, source);
+    parseResult = oxcRawParseSync(filePath, source);
   } catch {
     return new Map();
   }

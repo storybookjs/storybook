@@ -1,5 +1,5 @@
 import type { TSESLint } from '@typescript-eslint/utils';
-import { ESLintUtils } from '@typescript-eslint/utils';
+import { RuleCreator } from '@typescript-eslint/utils/eslint-utils';
 
 import type { StorybookRuleMeta } from '../types/index.ts';
 import { docsUrl } from './index.ts';
@@ -21,7 +21,7 @@ export function createStorybookRule<
     optionsWithDefault: Readonly<TOptions>
   ) => TRuleListener;
 }>) {
-  const ruleCreator = ESLintUtils.RuleCreator(docsUrl);
+  const ruleCreator = RuleCreator(docsUrl);
   return ruleCreator({
     ...remainingConfig,
     create,

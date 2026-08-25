@@ -1,6 +1,7 @@
 import { SupportedFramework } from '../types/index.ts';
 
 export const SUPPORTED_FRAMEWORKS: readonly SupportedFramework[] = [
+  SupportedFramework.ANGULAR_VITE,
   SupportedFramework.HTML_VITE,
   SupportedFramework.NEXTJS_VITE,
   SupportedFramework.PREACT_VITE,

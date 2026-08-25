@@ -21,7 +21,7 @@ import {
 } from '../preview-api/index.ts';
 import { mountDestructured } from '../preview-api/modules/preview-web/render/mount-utils.ts';
 import { Tag } from '../shared/constants/tags.ts';
-import { getCoreAnnotations } from './core-annotations.ts';
+import { getCoreAnnotations, markAsComposedWithCoreAnnotations } from './core-annotations.ts';
 
 export interface Preview<TRenderer extends Renderer = Renderer> {
   readonly _tag: 'Preview';
@@ -54,8 +54,12 @@ export function definePreview<TRenderer extends Renderer, Addons extends Preview
         return composed;
       }
       const { addons, ...rest } = input;
-      composed = normalizeProjectAnnotations<TRenderer & InferTypes<Addons>>(
-        composeConfigs([...getCoreAnnotations(), ...(addons ?? []), rest])
+      // The composed result already includes the core annotations. Mark it so that downstream
+      // consumers (StoryStore / portable setProjectAnnotations) don't prepend them a second time.
+      composed = markAsComposedWithCoreAnnotations(
+        normalizeProjectAnnotations<TRenderer & InferTypes<Addons>>(
+          composeConfigs([...getCoreAnnotations(), ...(addons ?? []), rest])
+        )
       );
       return composed;
     },

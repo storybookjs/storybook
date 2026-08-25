@@ -1,0 +1,1297 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`angular component properties doc-button 1`] = `
+Object {
+  "classes": Array [],
+  "components": Array [
+    Object {
+      "accessors": Object {
+        "inputValue": Object {
+          "getSignature": Object {
+            "description": "<p>Getter for <code>inputValue</code>.</p>
+",
+            "line": 115,
+            "name": "inputValue",
+            "rawdescription": "Getter for \`inputValue\`.",
+            "returnType": "",
+            "type": "",
+          },
+          "name": "inputValue",
+          "setSignature": Object {
+            "args": Array [
+              Object {
+                "deprecated": false,
+                "deprecationMessage": "",
+                "name": "value",
+                "type": "string",
+              },
+            ],
+            "deprecated": false,
+            "deprecationMessage": "",
+            "description": "<p>Setter for <code>inputValue</code> that is also an <code>@Input</code>.</p>
+",
+            "jsdoctags": Array [
+              Object {
+                "deprecated": false,
+                "deprecationMessage": "",
+                "name": "value",
+                "tagName": Object {
+                  "text": "param",
+                },
+                "type": "string",
+              },
+            ],
+            "line": 110,
+            "name": "inputValue",
+            "rawdescription": "Setter for \`inputValue\` that is also an \`@Input\`.",
+            "returnType": "void",
+            "type": "void",
+          },
+        },
+        "item": Object {
+          "name": "item",
+          "setSignature": Object {
+            "args": Array [
+              Object {
+                "deprecated": false,
+                "deprecationMessage": "",
+                "name": "item",
+                "type": "T[]",
+              },
+            ],
+            "deprecated": false,
+            "deprecationMessage": "",
+            "jsdoctags": Array [
+              Object {
+                "deprecated": false,
+                "deprecationMessage": "",
+                "name": "item",
+                "tagName": Object {
+                  "text": "param",
+                },
+                "type": "T[]",
+              },
+            ],
+            "line": 195,
+            "name": "item",
+            "returnType": "void",
+            "type": "void",
+          },
+        },
+        "value": Object {
+          "getSignature": Object {
+            "description": "<p>Get the private value.</p>
+",
+            "line": 154,
+            "name": "value",
+            "rawdescription": "Get the private value.",
+            "returnType": "string | number",
+            "type": "",
+          },
+          "name": "value",
+          "setSignature": Object {
+            "args": Array [
+              Object {
+                "deprecated": false,
+                "deprecationMessage": "",
+                "name": "value",
+                "type": "string | number",
+              },
+            ],
+            "deprecated": false,
+            "deprecationMessage": "",
+            "description": "<p>Set the private value.</p>
+",
+            "jsdoctags": Array [
+              Object {
+                "deprecated": false,
+                "deprecationMessage": "",
+                "name": "value",
+                "tagName": Object {
+                  "text": "param",
+                },
+                "type": "string | number",
+              },
+            ],
+            "line": 149,
+            "name": "value",
+            "rawdescription": "Set the private value.",
+            "returnType": "void",
+            "type": "void",
+          },
+        },
+      },
+      "assetsDirs": Array [],
+      "deprecated": false,
+      "deprecationMessage": "",
+      "description": "<p>This is a simple button that demonstrates various JSDoc handling in Storybook Docs for Angular.</p>
+<p>It supports <a href=\\"https://en.wikipedia.org/wiki/Markdown\\">markdown</a>, so you can embed formatted text,
+like <strong>bold</strong>, <em>italic</em>, and <code>inline code</code>.</p>
+<blockquote>
+<p>How you like dem apples?! It&#39;s never been easier to document all your components.</p>
+</blockquote>
+",
+      "encapsulation": Array [],
+      "entryComponents": Array [],
+      "file": "addons/docs/src/frameworks/angular/__testfixtures__/doc-button/input.ts",
+      "hostBindings": Array [
+        Object {
+          "defaultValue": "false",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "line": 124,
+          "name": "class.focused",
+          "type": "boolean",
+        },
+      ],
+      "hostListeners": Array [
+        Object {
+          "args": Array [
+            Object {
+              "deprecated": false,
+              "deprecationMessage": "",
+              "name": "btn",
+              "type": "",
+            },
+          ],
+          "argsDecorator": Array [
+            "$event.target",
+          ],
+          "deprecated": false,
+          "deprecationMessage": "",
+          "line": 120,
+          "name": "click",
+        },
+      ],
+      "id": "component-InputComponent-fd2eff3e4da750f1c06d4928670993b3",
+      "inputs": Array [],
+      "inputsClass": Array [
+        Object {
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "<p>Specify the accent-type of the button</p>
+",
+          "line": 56,
+          "name": "accent",
+          "rawdescription": "Specify the accent-type of the button",
+          "type": "ButtonAccent",
+        },
+        Object {
+          "defaultValue": "'secondary'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "<p>Appearance style of the button.</p>
+",
+          "line": 52,
+          "name": "appearance",
+          "rawdescription": "Appearance style of the button.",
+          "type": "\\"primary\\" | \\"secondary\\"",
+        },
+        Object {
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "<p>Setter for <code>inputValue</code> that is also an <code>@Input</code>.</p>
+",
+          "line": 110,
+          "name": "inputValue",
+          "rawdescription": "Setter for \`inputValue\` that is also an \`@Input\`.",
+          "type": "string",
+        },
+        Object {
+          "defaultValue": "false",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "<p>Sets the button to a disabled state.</p>
+",
+          "line": 60,
+          "name": "isDisabled",
+          "rawdescription": "Sets the button to a disabled state.",
+          "type": "boolean",
+        },
+        Object {
+          "deprecated": false,
+          "deprecationMessage": "",
+          "line": 195,
+          "name": "item",
+          "type": "[]",
+        },
+        Object {
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "<p>The inner text of the button.</p>
+",
+          "jsdoctags": Array [
+            Object {
+              "comment": "",
+              "end": 1590,
+              "flags": 4227072,
+              "kind": 317,
+              "modifierFlagsCache": 0,
+              "pos": 1576,
+              "tagName": Object {
+                "end": 1585,
+                "escapedText": "required",
+                "flags": 4227072,
+                "kind": 78,
+                "modifierFlagsCache": 0,
+                "pos": 1577,
+                "transformFlags": 0,
+              },
+              "transformFlags": 0,
+            },
+          ],
+          "line": 68,
+          "name": "label",
+          "rawdescription": "The inner text of the button.",
+          "type": "string",
+        },
+        Object {
+          "deprecated": false,
+          "deprecationMessage": "",
+          "line": 192,
+          "name": "showKeyAlias",
+          "type": "",
+        },
+        Object {
+          "defaultValue": "'medium'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "<p>Size of the button.</p>
+",
+          "line": 72,
+          "name": "size",
+          "rawdescription": "Size of the button.",
+          "type": "ButtonSize",
+        },
+        Object {
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "<p>Specifies some arbitrary object</p>
+",
+          "line": 75,
+          "name": "someDataObject",
+          "rawdescription": "Specifies some arbitrary object",
+          "type": "ISomeInterface",
+        },
+        Object {
+          "defaultValue": "false",
+          "deprecated": true,
+          "deprecationMessage": "",
+          "description": "<p>Some input you shouldn&#39;t use.</p>
+",
+          "jsdoctags": Array [
+            Object {
+              "comment": "",
+              "end": 1882,
+              "flags": 4227072,
+              "kind": 321,
+              "modifierFlagsCache": 0,
+              "pos": 1866,
+              "tagName": Object {
+                "end": 1877,
+                "escapedText": "deprecated",
+                "flags": 4227072,
+                "kind": 78,
+                "modifierFlagsCache": 0,
+                "pos": 1867,
+                "transformFlags": 0,
+              },
+              "transformFlags": 0,
+            },
+          ],
+          "line": 83,
+          "name": "somethingYouShouldNotUse",
+          "rawdescription": "Some input you shouldn't use.",
+          "type": "boolean",
+        },
+      ],
+      "methodsClass": Array [
+        Object {
+          "args": Array [
+            Object {
+              "deprecated": false,
+              "deprecationMessage": "",
+              "name": "x",
+              "type": "number",
+            },
+            Object {
+              "deprecated": false,
+              "deprecationMessage": "",
+              "name": "y",
+              "type": "string | number",
+            },
+          ],
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "<p>An internal calculation method which adds <code>x</code> and <code>y</code> together.</p>
+",
+          "jsdoctags": Array [
+            Object {
+              "comment": "<p>Some number you&#39;d like to use.</p>
+",
+              "deprecated": false,
+              "deprecationMessage": "",
+              "name": Object {
+                "end": 3678,
+                "escapedText": "x",
+                "flags": 4227072,
+                "kind": 78,
+                "modifierFlagsCache": 0,
+                "pos": 3677,
+                "transformFlags": 0,
+              },
+              "tagName": Object {
+                "end": 3676,
+                "escapedText": "param",
+                "flags": 4227072,
+                "kind": 78,
+                "modifierFlagsCache": 0,
+                "pos": 3671,
+                "transformFlags": 0,
+              },
+              "type": "number",
+            },
+            Object {
+              "comment": "<p>Some other number or string you&#39;d like to use, will have <code>parseInt()</code> applied before calculation.</p>
+",
+              "deprecated": false,
+              "deprecationMessage": "",
+              "name": Object {
+                "end": 3724,
+                "escapedText": "y",
+                "flags": 4227072,
+                "kind": 78,
+                "modifierFlagsCache": 0,
+                "pos": 3723,
+                "transformFlags": 0,
+              },
+              "tagName": Object {
+                "end": 3722,
+                "escapedText": "param",
+                "flags": 4227072,
+                "kind": 78,
+                "modifierFlagsCache": 0,
+                "pos": 3717,
+                "transformFlags": 0,
+              },
+              "type": "string | number",
+            },
+          ],
+          "line": 164,
+          "modifierKind": Array [
+            122,
+          ],
+          "name": "calc",
+          "optional": false,
+          "rawdescription": "
+
+An internal calculation method which adds \`x\` and \`y\` together.
+
+",
+          "returnType": "number",
+          "typeParameters": Array [],
+        },
+        Object {
+          "args": Array [
+            Object {
+              "deprecated": false,
+              "deprecationMessage": "",
+              "name": "btn",
+              "type": "",
+            },
+          ],
+          "decorators": Array [
+            Object {
+              "name": "HostListener",
+              "stringifiedArguments": "'click', ['$event.target']",
+            },
+          ],
+          "deprecated": false,
+          "deprecationMessage": "",
+          "jsdoctags": Array [
+            Object {
+              "deprecated": false,
+              "deprecationMessage": "",
+              "name": "btn",
+              "tagName": Object {
+                "text": "param",
+              },
+              "type": "",
+            },
+          ],
+          "line": 120,
+          "name": "onClickListener",
+          "optional": false,
+          "returnType": "void",
+          "typeParameters": Array [],
+        },
+        Object {
+          "args": Array [
+            Object {
+              "deprecated": false,
+              "deprecationMessage": "",
+              "name": "password",
+              "type": "string",
+            },
+          ],
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "<p>A private method.</p>
+",
+          "jsdoctags": Array [
+            Object {
+              "comment": "<p>Some <code>password</code>.</p>
+",
+              "deprecated": false,
+              "deprecationMessage": "",
+              "name": Object {
+                "end": 4263,
+                "escapedText": "password",
+                "flags": 4227072,
+                "kind": 78,
+                "modifierFlagsCache": 0,
+                "pos": 4255,
+                "transformFlags": 0,
+              },
+              "tagName": Object {
+                "end": 4254,
+                "escapedText": "param",
+                "flags": 4227072,
+                "kind": 78,
+                "modifierFlagsCache": 0,
+                "pos": 4249,
+                "transformFlags": 0,
+              },
+              "type": "string",
+            },
+          ],
+          "line": 187,
+          "modifierKind": Array [
+            120,
+          ],
+          "name": "privateMethod",
+          "optional": false,
+          "rawdescription": "
+
+A private method.
+
+",
+          "returnType": "void",
+          "typeParameters": Array [],
+        },
+        Object {
+          "args": Array [
+            Object {
+              "deprecated": false,
+              "deprecationMessage": "",
+              "name": "id",
+              "optional": true,
+              "type": "number",
+            },
+          ],
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "<p>A protected method.</p>
+",
+          "jsdoctags": Array [
+            Object {
+              "comment": "<p>Some <code>id</code>.</p>
+",
+              "deprecated": false,
+              "deprecationMessage": "",
+              "name": Object {
+                "end": 4113,
+                "escapedText": "id",
+                "flags": 4227072,
+                "kind": 78,
+                "modifierFlagsCache": 0,
+                "pos": 4111,
+                "transformFlags": 0,
+              },
+              "optional": true,
+              "tagName": Object {
+                "end": 4110,
+                "escapedText": "param",
+                "flags": 4227072,
+                "kind": 78,
+                "modifierFlagsCache": 0,
+                "pos": 4105,
+                "transformFlags": 0,
+              },
+              "type": "number",
+            },
+          ],
+          "line": 178,
+          "modifierKind": Array [
+            121,
+          ],
+          "name": "protectedMethod",
+          "optional": false,
+          "rawdescription": "
+
+A protected method.
+
+",
+          "returnType": "void",
+          "typeParameters": Array [],
+        },
+        Object {
+          "args": Array [
+            Object {
+              "deprecated": false,
+              "deprecationMessage": "",
+              "name": "things",
+              "type": "ISomeInterface",
+            },
+          ],
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "<p>A public method using an interface.</p>
+",
+          "jsdoctags": Array [
+            Object {
+              "deprecated": false,
+              "deprecationMessage": "",
+              "name": "things",
+              "tagName": Object {
+                "text": "param",
+              },
+              "type": "ISomeInterface",
+            },
+          ],
+          "line": 169,
+          "modifierKind": Array [
+            122,
+          ],
+          "name": "publicMethod",
+          "optional": false,
+          "rawdescription": "
+A public method using an interface.",
+          "returnType": "void",
+          "typeParameters": Array [],
+        },
+      ],
+      "name": "InputComponent",
+      "outputs": Array [],
+      "outputsClass": Array [
+        Object {
+          "defaultValue": "new EventEmitter<Event>()",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "<p>Handler to be called when the button is clicked by a user.</p>
+<p>Will also block the emission of the event if <code>isDisabled</code> is true.</p>
+",
+          "line": 91,
+          "name": "onClick",
+          "rawdescription": "
+
+Handler to be called when the button is clicked by a user.
+
+Will also block the emission of the event if \`isDisabled\` is true.
+",
+          "type": "EventEmitter",
+        },
+      ],
+      "propertiesClass": Array [
+        Object {
+          "defaultValue": "'some value'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "",
+          "line": 106,
+          "modifierKind": Array [
+            120,
+          ],
+          "name": "_inputValue",
+          "optional": false,
+          "type": "string",
+        },
+        Object {
+          "defaultValue": "'Private hello'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "<p>Private value.</p>
+",
+          "line": 146,
+          "modifierKind": Array [
+            120,
+          ],
+          "name": "_value",
+          "optional": false,
+          "rawdescription": "
+Private value.",
+          "type": "string",
+        },
+        Object {
+          "decorators": Array [
+            Object {
+              "name": "ViewChild",
+              "stringifiedArguments": "'buttonRef', {static: false}",
+            },
+          ],
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "",
+          "line": 48,
+          "name": "buttonRef",
+          "optional": false,
+          "type": "ElementRef",
+        },
+        Object {
+          "decorators": Array [
+            Object {
+              "name": "HostBinding",
+              "stringifiedArguments": "'class.focused'",
+            },
+          ],
+          "defaultValue": "false",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "",
+          "line": 124,
+          "name": "focus",
+          "optional": false,
+          "type": "",
+        },
+        Object {
+          "defaultValue": "'Public hello'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "<p>Public value.</p>
+",
+          "line": 143,
+          "modifierKind": Array [
+            122,
+          ],
+          "name": "internalProperty",
+          "optional": false,
+          "rawdescription": "
+Public value.",
+          "type": "string",
+        },
+        Object {
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "",
+          "line": 199,
+          "modifierKind": Array [
+            122,
+          ],
+          "name": "processedItem",
+          "optional": false,
+          "type": "T[]",
+        },
+      ],
+      "providers": Array [],
+      "rawdescription": "
+
+This is a simple button that demonstrates various JSDoc handling in Storybook Docs for Angular.
+
+It supports [markdown](https://en.wikipedia.org/wiki/Markdown), so you can embed formatted text,
+like **bold**, _italic_, and \`inline code\`.
+
+> How you like dem apples?! It's never been easier to document all your components.
+
+",
+      "selector": "doc-button",
+      "sourceCode": "import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  HostBinding,
+  HostListener,
+  Input,
+  Output,
+  ViewChild,
+} from '@angular/core';
+
+export const exportedConstant = 'An exported constant';
+
+export type ButtonSize = 'small' | 'medium' | 'large' | 'xlarge';
+
+export enum ButtonAccent {
+  'Normal' = 'Normal',
+  'High' = 'High',
+}
+
+export interface ISomeInterface {
+  one: string;
+  two: boolean;
+  three: any[];
+}
+
+/**
+ * This is a simple button that demonstrates various JSDoc handling in Storybook Docs for Angular.
+ *
+ * It supports [markdown](https://en.wikipedia.org/wiki/Markdown), so you can embed formatted text,
+ * like **bold**, _italic_, and \`inline code\`.
+ *
+ * > How you like dem apples?! It's never been easier to document all your components.
+ *
+ * @string Hello world
+ * @link [Example](http://example.com)
+ * @code \`ThingThing\`
+ * @html <span class=\\"badge\\">aaa</span>
+ */
+@Component({
+  selector: 'doc-button',
+  template: '<button>{{ label }}</button>',
+})
+export class InputComponent<T> {
+  @ViewChild('buttonRef', { static: false }) buttonRef: ElementRef;
+
+  /** Appearance style of the button. */
+  @Input()
+  public appearance: 'primary' | 'secondary' = 'secondary';
+
+  /** Specify the accent-type of the button */
+  @Input()
+  public accent: ButtonAccent;
+
+  /** Sets the button to a disabled state. */
+  @Input()
+  public isDisabled = false;
+
+  /**
+   * The inner text of the button.
+   *
+   * @required
+   */
+  @Input()
+  public label: string;
+
+  /** Size of the button. */
+  @Input()
+  public size?: ButtonSize = 'medium';
+
+  /** Specifies some arbitrary object */
+  @Input() public someDataObject: ISomeInterface;
+
+  /**
+   * Some input you shouldn't use.
+   *
+   * @deprecated
+   */
+  @Input()
+  public somethingYouShouldNotUse = false;
+
+  /**
+   * Handler to be called when the button is clicked by a user.
+   *
+   * Will also block the emission of the event if \`isDisabled\` is true.
+   */
+  @Output()
+  public onClick = new EventEmitter<Event>();
+
+  /**
+   * This is an internal method that we don't want to document and have added the \`ignore\` annotation to.
+   *
+   * @ignore
+   */
+  public handleClick(event: Event) {
+    event.stopPropagation();
+
+    if (!this.isDisabled) {
+      this.onClick.emit(event);
+    }
+  }
+
+  private _inputValue = 'some value';
+
+  /** Setter for \`inputValue\` that is also an \`@Input\`. */
+  @Input()
+  public set inputValue(value: string) {
+    this._inputValue = value;
+  }
+
+  /** Getter for \`inputValue\`. */
+  public get inputValue() {
+    return this._inputValue;
+  }
+
+  @HostListener('click', ['$event.target'])
+  onClickListener(btn) {
+    console.log('button', btn);
+  }
+
+  @HostBinding('class.focused') focus = false;
+
+  /**
+   * Returns all the CSS classes for the button.
+   *
+   * @ignore
+   */
+  public get classes(): string[] {
+    return [this.appearance, this.size]
+      .filter((_class) => !!_class)
+      .map((_class) => \`btn-\${_class}\`);
+  }
+
+  /**
+   * @ignore
+   */
+  public ignoredProperty = 'Ignore me';
+
+  /** Public value. */
+  public internalProperty = 'Public hello';
+
+  /** Private value. */
+  private _value = 'Private hello';
+
+  /** Set the private value. */
+  public set value(value: string | number) {
+    this._value = \`\${value}\`;
+  }
+
+  /** Get the private value. */
+  public get value(): string | number {
+    return this._value;
+  }
+
+  /**
+   * An internal calculation method which adds \`x\` and \`y\` together.
+   *
+   * @param x Some number you'd like to use.
+   * @param y Some other number or string you'd like to use, will have \`parseInt()\` applied before calculation.
+   */
+  public calc(x: number, y: string | number): number {
+    return x + parseInt(\`\${y}\`, 10);
+  }
+
+  /** A public method using an interface. */
+  public publicMethod(things: ISomeInterface) {
+    console.log(things);
+  }
+
+  /**
+   * A protected method.
+   *
+   * @param id Some \`id\`.
+   */
+  protected protectedMethod(id?: number) {
+    console.log(id);
+  }
+
+  /**
+   * A private method.
+   *
+   * @param password Some \`password\`.
+   */
+  private privateMethod(password: string) {
+    console.log(password);
+  }
+
+  @Input('showKeyAlias')
+  public showKey: keyof T;
+
+  @Input()
+  public set item(item: T[]) {
+    this.processedItem = item;
+  }
+
+  public processedItem: T[];
+}
+",
+      "styleUrls": Array [],
+      "styleUrlsData": "",
+      "styles": Array [],
+      "stylesData": "",
+      "template": "<button>{{ label }}</button>",
+      "templateUrl": Array [],
+      "type": "component",
+      "viewProviders": Array [],
+    },
+  ],
+  "coverage": Object {
+    "count": 21,
+    "files": Array [
+      Object {
+        "coverageCount": "16/25",
+        "coveragePercent": 64,
+        "filePath": "addons/docs/src/frameworks/angular/__testfixtures__/doc-button/input.ts",
+        "linktype": "component",
+        "name": "InputComponent",
+        "status": "good",
+        "type": "component",
+      },
+      Object {
+        "coverageCount": "0/4",
+        "coveragePercent": 0,
+        "filePath": "addons/docs/src/frameworks/angular/__testfixtures__/doc-button/input.ts",
+        "linktype": "interface",
+        "name": "ISomeInterface",
+        "status": "low",
+        "type": "interface",
+      },
+      Object {
+        "coverageCount": "0/1",
+        "coveragePercent": 0,
+        "filePath": "addons/docs/src/frameworks/angular/__testfixtures__/doc-button/input.ts",
+        "linksubtype": "variable",
+        "linktype": "miscellaneous",
+        "name": "exportedConstant",
+        "status": "low",
+        "type": "variable",
+      },
+    ],
+    "status": "low",
+  },
+  "directives": Array [],
+  "guards": Array [],
+  "injectables": Array [],
+  "interceptors": Array [],
+  "interfaces": Array [
+    Object {
+      "deprecated": false,
+      "deprecationMessage": "",
+      "file": "addons/docs/src/frameworks/angular/__testfixtures__/doc-button/input.ts",
+      "id": "interface-ISomeInterface-fd2eff3e4da750f1c06d4928670993b3",
+      "indexSignatures": Array [],
+      "kind": 163,
+      "methods": Array [],
+      "name": "ISomeInterface",
+      "properties": Array [
+        Object {
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "",
+          "line": 25,
+          "name": "one",
+          "optional": false,
+          "type": "string",
+        },
+        Object {
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "",
+          "line": 27,
+          "name": "three",
+          "optional": false,
+          "type": "any[]",
+        },
+        Object {
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "",
+          "line": 26,
+          "name": "two",
+          "optional": false,
+          "type": "boolean",
+        },
+      ],
+      "sourceCode": "import {
+  Component,
+  ElementRef,
+  EventEmitter,
+  HostBinding,
+  HostListener,
+  Input,
+  Output,
+  ViewChild,
+} from '@angular/core';
+
+export const exportedConstant = 'An exported constant';
+
+export type ButtonSize = 'small' | 'medium' | 'large' | 'xlarge';
+
+export enum ButtonAccent {
+  'Normal' = 'Normal',
+  'High' = 'High',
+}
+
+export interface ISomeInterface {
+  one: string;
+  two: boolean;
+  three: any[];
+}
+
+/**
+ * This is a simple button that demonstrates various JSDoc handling in Storybook Docs for Angular.
+ *
+ * It supports [markdown](https://en.wikipedia.org/wiki/Markdown), so you can embed formatted text,
+ * like **bold**, _italic_, and \`inline code\`.
+ *
+ * > How you like dem apples?! It's never been easier to document all your components.
+ *
+ * @string Hello world
+ * @link [Example](http://example.com)
+ * @code \`ThingThing\`
+ * @html <span class=\\"badge\\">aaa</span>
+ */
+@Component({
+  selector: 'doc-button',
+  template: '<button>{{ label }}</button>',
+})
+export class InputComponent<T> {
+  @ViewChild('buttonRef', { static: false }) buttonRef: ElementRef;
+
+  /** Appearance style of the button. */
+  @Input()
+  public appearance: 'primary' | 'secondary' = 'secondary';
+
+  /** Specify the accent-type of the button */
+  @Input()
+  public accent: ButtonAccent;
+
+  /** Sets the button to a disabled state. */
+  @Input()
+  public isDisabled = false;
+
+  /**
+   * The inner text of the button.
+   *
+   * @required
+   */
+  @Input()
+  public label: string;
+
+  /** Size of the button. */
+  @Input()
+  public size?: ButtonSize = 'medium';
+
+  /** Specifies some arbitrary object */
+  @Input() public someDataObject: ISomeInterface;
+
+  /**
+   * Some input you shouldn't use.
+   *
+   * @deprecated
+   */
+  @Input()
+  public somethingYouShouldNotUse = false;
+
+  /**
+   * Handler to be called when the button is clicked by a user.
+   *
+   * Will also block the emission of the event if \`isDisabled\` is true.
+   */
+  @Output()
+  public onClick = new EventEmitter<Event>();
+
+  /**
+   * This is an internal method that we don't want to document and have added the \`ignore\` annotation to.
+   *
+   * @ignore
+   */
+  public handleClick(event: Event) {
+    event.stopPropagation();
+
+    if (!this.isDisabled) {
+      this.onClick.emit(event);
+    }
+  }
+
+  private _inputValue = 'some value';
+
+  /** Setter for \`inputValue\` that is also an \`@Input\`. */
+  @Input()
+  public set inputValue(value: string) {
+    this._inputValue = value;
+  }
+
+  /** Getter for \`inputValue\`. */
+  public get inputValue() {
+    return this._inputValue;
+  }
+
+  @HostListener('click', ['$event.target'])
+  onClickListener(btn) {
+    console.log('button', btn);
+  }
+
+  @HostBinding('class.focused') focus = false;
+
+  /**
+   * Returns all the CSS classes for the button.
+   *
+   * @ignore
+   */
+  public get classes(): string[] {
+    return [this.appearance, this.size]
+      .filter((_class) => !!_class)
+      .map((_class) => \`btn-\${_class}\`);
+  }
+
+  /**
+   * @ignore
+   */
+  public ignoredProperty = 'Ignore me';
+
+  /** Public value. */
+  public internalProperty = 'Public hello';
+
+  /** Private value. */
+  private _value = 'Private hello';
+
+  /** Set the private value. */
+  public set value(value: string | number) {
+    this._value = \`\${value}\`;
+  }
+
+  /** Get the private value. */
+  public get value(): string | number {
+    return this._value;
+  }
+
+  /**
+   * An internal calculation method which adds \`x\` and \`y\` together.
+   *
+   * @param x Some number you'd like to use.
+   * @param y Some other number or string you'd like to use, will have \`parseInt()\` applied before calculation.
+   */
+  public calc(x: number, y: string | number): number {
+    return x + parseInt(\`\${y}\`, 10);
+  }
+
+  /** A public method using an interface. */
+  public publicMethod(things: ISomeInterface) {
+    console.log(things);
+  }
+
+  /**
+   * A protected method.
+   *
+   * @param id Some \`id\`.
+   */
+  protected protectedMethod(id?: number) {
+    console.log(id);
+  }
+
+  /**
+   * A private method.
+   *
+   * @param password Some \`password\`.
+   */
+  private privateMethod(password: string) {
+    console.log(password);
+  }
+
+  @Input('showKeyAlias')
+  public showKey: keyof T;
+
+  @Input()
+  public set item(item: T[]) {
+    this.processedItem = item;
+  }
+
+  public processedItem: T[];
+}
+",
+      "type": "interface",
+    },
+  ],
+  "miscellaneous": Object {
+    "enumerations": Array [
+      Object {
+        "childs": Array [
+          Object {
+            "deprecated": false,
+            "deprecationMessage": "",
+            "name": "Normal",
+            "value": "Normal",
+          },
+          Object {
+            "deprecated": false,
+            "deprecationMessage": "",
+            "name": "High",
+            "value": "High",
+          },
+        ],
+        "ctype": "miscellaneous",
+        "deprecated": false,
+        "deprecationMessage": "",
+        "description": "",
+        "file": "addons/docs/src/frameworks/angular/__testfixtures__/doc-button/input.ts",
+        "name": "ButtonAccent",
+        "subtype": "enum",
+      },
+    ],
+    "functions": Array [],
+    "groupedEnumerations": Object {
+      "addons/docs/src/frameworks/angular/__testfixtures__/doc-button/input.ts": Array [
+        Object {
+          "childs": Array [
+            Object {
+              "deprecated": false,
+              "deprecationMessage": "",
+              "name": "Normal",
+              "value": "Normal",
+            },
+            Object {
+              "deprecated": false,
+              "deprecationMessage": "",
+              "name": "High",
+              "value": "High",
+            },
+          ],
+          "ctype": "miscellaneous",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "",
+          "file": "addons/docs/src/frameworks/angular/__testfixtures__/doc-button/input.ts",
+          "name": "ButtonAccent",
+          "subtype": "enum",
+        },
+      ],
+    },
+    "groupedFunctions": Object {},
+    "groupedTypeAliases": Object {
+      "addons/docs/src/frameworks/angular/__testfixtures__/doc-button/input.ts": Array [
+        Object {
+          "ctype": "miscellaneous",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "description": "",
+          "file": "addons/docs/src/frameworks/angular/__testfixtures__/doc-button/input.ts",
+          "kind": 183,
+          "name": "ButtonSize",
+          "rawtype": "\\"small\\" | \\"medium\\" | \\"large\\" | \\"xlarge\\"",
+          "subtype": "typealias",
+        },
+      ],
+    },
+    "groupedVariables": Object {
+      "addons/docs/src/frameworks/angular/__testfixtures__/doc-button/input.ts": Array [
+        Object {
+          "ctype": "miscellaneous",
+          "defaultValue": "'An exported constant'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "file": "addons/docs/src/frameworks/angular/__testfixtures__/doc-button/input.ts",
+          "name": "exportedConstant",
+          "subtype": "variable",
+          "type": "string",
+        },
+      ],
+    },
+    "typealiases": Array [
+      Object {
+        "ctype": "miscellaneous",
+        "deprecated": false,
+        "deprecationMessage": "",
+        "description": "",
+        "file": "addons/docs/src/frameworks/angular/__testfixtures__/doc-button/input.ts",
+        "kind": 183,
+        "name": "ButtonSize",
+        "rawtype": "\\"small\\" | \\"medium\\" | \\"large\\" | \\"xlarge\\"",
+        "subtype": "typealias",
+      },
+    ],
+    "variables": Array [
+      Object {
+        "ctype": "miscellaneous",
+        "defaultValue": "'An exported constant'",
+        "deprecated": false,
+        "deprecationMessage": "",
+        "file": "addons/docs/src/frameworks/angular/__testfixtures__/doc-button/input.ts",
+        "name": "exportedConstant",
+        "subtype": "variable",
+        "type": "string",
+      },
+    ],
+  },
+  "modules": Array [],
+  "pipes": Array [],
+  "routes": Array [],
+}
+`;

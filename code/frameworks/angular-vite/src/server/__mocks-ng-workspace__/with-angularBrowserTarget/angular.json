@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "projects": {
+    "foo-project": {
+      "root": "",
+      "sourceRoot": "src",
+      "architect": {
+        "build": {
+          "options": {
+            "tsConfig": "src/tsconfig.app.json",
+            "assets": []
+          }
+        }
+      }
+    },
+    "no-confs-project": {
+      "root": "",
+      "sourceRoot": "src",
+      "architect": {
+        "target-build": {
+          "options": {
+            "tsConfig": "src/tsconfig.app.json",
+            "assets": []
+          }
+        }
+      }
+    },
+    "no-target-conf-project": {
+      "root": "",
+      "sourceRoot": "src",
+      "architect": {
+        "target-build": {
+          "options": {
+            "tsConfig": "src/tsconfig.app.json",
+            "assets": []
+          },
+          "configurations": {
+            "other-conf": {
+              "styles": ["src/styles.css"]
+            }
+          }
+        }
+      }
+    },
+    "target-project": {
+      "root": "",
+      "sourceRoot": "src",
+      "architect": {
+        "target-build": {
+          "options": {
+            "tsConfig": "src/tsconfig.app.json",
+            "assets": []
+          },
+          "configurations": {
+            "target-conf": {
+              "styles": ["src/styles.css"]
+            }
+          }
+        }
+      }
+    }
+  },
+  "defaultProject": "foo-project"
+}

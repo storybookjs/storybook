@@ -47,6 +47,43 @@ describe('configureMain', () => {
     `);
   });
 
+  it('promotes framework to { name, options } when frameworkOptions are provided', async () => {
+    await configureMain({
+      language: SupportedLanguage.TYPESCRIPT,
+      addons: [],
+      prefixes: [],
+      storybookConfigFolder: '.storybook',
+      framework: '@storybook/angular-vite',
+      frameworkPackage: '@storybook/angular-vite',
+      features: new Set([]),
+      frameworkOptions: { compodoc: false },
+    });
+
+    const { calls } = vi.mocked(fsp.writeFile).mock;
+    const [, mainConfigContent] = calls[calls.length - 1];
+
+    expect(mainConfigContent).toContain('"framework": {');
+    expect(mainConfigContent).toContain('"name": "@storybook/angular-vite"');
+    expect(mainConfigContent).toContain('"compodoc": false');
+  });
+
+  it('leaves framework as a string when no frameworkOptions are provided', async () => {
+    await configureMain({
+      language: SupportedLanguage.TYPESCRIPT,
+      addons: [],
+      prefixes: [],
+      storybookConfigFolder: '.storybook',
+      framework: '@storybook/angular-vite',
+      frameworkPackage: '@storybook/angular-vite',
+      features: new Set([]),
+    });
+
+    const { calls } = vi.mocked(fsp.writeFile).mock;
+    const [, mainConfigContent] = calls[calls.length - 1];
+
+    expect(mainConfigContent).toContain('"framework": "@storybook/angular-vite"');
+  });
+
   it('should generate main.ts with docs feature', async () => {
     await configureMain({
       language: SupportedLanguage.TYPESCRIPT,

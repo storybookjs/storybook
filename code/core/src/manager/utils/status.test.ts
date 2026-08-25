@@ -1,5 +1,6 @@
 // @vitest-environment happy-dom
 import { describe, expect, it } from 'vitest';
+import { REVIEW_STATUS_TYPE_ID } from 'storybook/internal/types';
 import type { StatusByTypeId, StatusValue } from 'storybook/internal/types';
 
 import { mockDataset } from '../components/sidebar/mockdata.ts';
@@ -231,6 +232,16 @@ describe('dual-slot status splitting', () => {
     const { changeStatus, testStatus } = getChangeDetectionStatus(statuses);
     expect(changeStatus).toBe('status-value:unknown');
     expect(testStatus).toBe('status-value:warning');
+  });
+
+  it('ignores reviewing status for sidebar test slot', () => {
+    const statuses = {
+      [REVIEW_STATUS_TYPE_ID]: makeStatus(REVIEW_STATUS_TYPE_ID, 'status-value:reviewing'),
+      'storybook/vitest': makeStatus('storybook/vitest', 'status-value:success'),
+    };
+    const { changeStatus, testStatus } = getChangeDetectionStatus(statuses);
+    expect(changeStatus).toBe('status-value:unknown');
+    expect(testStatus).toBe('status-value:success');
   });
 
   it('priority within change-detection slot: new beats modified beats affected', () => {

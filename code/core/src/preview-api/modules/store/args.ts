@@ -58,9 +58,11 @@ const map = (arg: unknown, argType: InputType): any => {
       const isPrimitiveArg =
         typeof arg === 'string' || typeof arg === 'number' || typeof arg === 'boolean';
 
-      // Only proceed if `argType.value` is a `ReactNode`.
-      // Only permit primitives: they are included in `ReactNode` type, making them easily applicable.
-      if (type.value === 'ReactNode' && isPrimitiveArg) {
+      // Keep primitive args for any `other` SBType. ReactNode primitives need this, and so do
+      // primitives whose type is extracted as `other` (e.g. TS/Vue string-union selects), which
+      // would otherwise be dropped from the URL and lost on reload / "open in new tab" (#29076).
+      // Non-primitive `other` values stay incompatible; option validity is enforced by validateOptions.
+      if (isPrimitiveArg) {
         return arg;
       }
 

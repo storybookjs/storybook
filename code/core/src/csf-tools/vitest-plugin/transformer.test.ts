@@ -595,6 +595,62 @@ describe('transformer', () => {
           }
         `);
       });
+
+      it('should pass skip tags to child .test() calls using tags.skip', async () => {
+        const code = `
+          export default {};
+          export const Primary = {};
+          Primary.test("runs", () => {});
+          Primary.test("skipped", { tags: ['skip-me'] }, () => {});
+        `;
+
+        const result = await transform({
+          code,
+          tagsFilter: { include: [Tag.TEST], exclude: [], skip: ['skip-me'] },
+        });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect, describe as _describe } from "vitest";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
+          const _meta = {
+            title: "automatic/calculated/title"
+          };
+          export default _meta;
+          export const Primary = {};
+          Primary.test("runs", () => {});
+          Primary.test("skipped", {
+            tags: ['skip-me']
+          }, () => {});
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _describe("Primary  ", () => {
+              _test("base story", _testStory({
+                exportName: "Primary",
+                story: Primary,
+                meta: _meta,
+                skipTags: ["skip-me"],
+                storyId: "automatic-calculated-title--primary"
+              }));
+              _test("runs", _testStory({
+                exportName: "Primary",
+                story: Primary,
+                meta: _meta,
+                skipTags: ["skip-me"],
+                storyId: "automatic-calculated-title--primary:runs",
+                testName: "runs"
+              }));
+              _test("skipped", _testStory({
+                exportName: "Primary",
+                story: Primary,
+                meta: _meta,
+                skipTags: ["skip-me"],
+                storyId: "automatic-calculated-title--primary:skipped",
+                testName: "skipped"
+              }));
+            });
+          }
+        `);
+      });
     });
 
     describe('component info extraction', () => {
@@ -1184,6 +1240,63 @@ describe('transformer', () => {
               skipTags: ["skip-me"],
               storyId: "automatic-calculated-title--skipped"
             }));
+          }
+        `);
+      });
+
+      it('should pass skip tags to child .test() calls using tags.skip', async () => {
+        const code = `
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({});
+          export const Primary = meta.story({});
+          Primary.test("runs", () => {});
+          Primary.test("skipped", { tags: ['skip-me'] }, () => {});
+        `;
+
+        const result = await transform({
+          code,
+          tagsFilter: { include: [Tag.TEST], exclude: [], skip: ['skip-me'] },
+        });
+
+        expect(result.code).toMatchInlineSnapshot(`
+          import { test as _test, expect as _expect, describe as _describe } from "vitest";
+          import { testStory as _testStory, convertToFilePath } from "@storybook/addon-vitest/internal/test-utils";
+          import { config } from '#.storybook/preview';
+          const meta = config.meta({
+            title: "automatic/calculated/title"
+          });
+          export const Primary = meta.story({});
+          Primary.test("runs", () => {});
+          Primary.test("skipped", {
+            tags: ['skip-me']
+          }, () => {});
+          const _isRunningFromThisFile = convertToFilePath(import.meta.url).includes(globalThis.__vitest_worker__.filepath ?? _expect.getState().testPath);
+          if (_isRunningFromThisFile) {
+            _describe("Primary  ", () => {
+              _test("base story", _testStory({
+                exportName: "Primary",
+                story: Primary,
+                meta: meta,
+                skipTags: ["skip-me"],
+                storyId: "automatic-calculated-title--primary"
+              }));
+              _test("runs", _testStory({
+                exportName: "Primary",
+                story: Primary,
+                meta: meta,
+                skipTags: ["skip-me"],
+                storyId: "automatic-calculated-title--primary:runs",
+                testName: "runs"
+              }));
+              _test("skipped", _testStory({
+                exportName: "Primary",
+                story: Primary,
+                meta: meta,
+                skipTags: ["skip-me"],
+                storyId: "automatic-calculated-title--primary:skipped",
+                testName: "skipped"
+              }));
+            });
           }
         `);
       });

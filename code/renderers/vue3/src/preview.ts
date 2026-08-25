@@ -145,7 +145,7 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
  * story level.
  */
 export interface VueMeta<T extends VueTypes, MetaInput extends ComponentAnnotations<T>>
-  // @ts-expect-error VueMeta requires two type parameters, but Meta's constraints differ
+  /** @ts-expect-error VueMeta requires two type parameters, but Meta's constraints differ */
   extends Meta<T, MetaInput> {
   /**
    * Creates a story with a custom render function that takes no args.

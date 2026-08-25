@@ -27,9 +27,9 @@ const Key = styled.kbd(({ theme }) => ({
   },
 }));
 
-export const Shortcut = ({ keys }: { keys: string[] }) => (
+export const Shortcut = ({ keys }: { keys?: string[] }) => (
   <Wrapper>
-    {keys.map((key) => (
+    {(keys ?? []).map((key) => (
       <Key key={key}>{shortcutToHumanString([key])}</Key>
     ))}
   </Wrapper>

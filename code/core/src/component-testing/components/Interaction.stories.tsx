@@ -87,6 +87,32 @@ export const Done: Story = {
   },
 };
 
+export const PreventsFocusLossOnPointerDown: Story = {
+  tags: ['vitest'],
+  args: Done.args,
+  render: (args) => (
+    <>
+      <li style={{ listStyleType: 'none', padding: 8 }}>
+        <input data-testid="test-input" />
+      </li>
+      <Interaction {...args} />
+    </>
+  ),
+  play: async ({ canvas }) => {
+    const input = canvas.getByTestId('test-input');
+    input.focus();
+    await expect(input).toHaveFocus();
+
+    await userEvent.pointer({
+      target: canvas.getByRole('button', {
+        name: 'Go to interaction row: toHaveBeenCalled. Status: passed.',
+      }),
+      keys: '[MouseLeft]',
+    });
+    await expect(input).toHaveFocus();
+  },
+};
+
 export const WithParent: Story = {
   args: {
     call: { ...getCalls(CallStates.DONE, -1)[0], ancestors: ['parent-id'] },

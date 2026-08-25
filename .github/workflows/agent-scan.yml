@@ -38,6 +38,7 @@ permissions: {}
 on:
   # Use `pull_request_target` so we can run this workflow on PRs from forks, as its goal is to assess
   # if PR authors are trustworthy. Only reasons on the PR author and does not check out the fork code.
+  # zizmor: ignore[dangerous-triggers]  # required for fork PRs; no fork code is checked out
   pull_request_target:
     types:
       - opened

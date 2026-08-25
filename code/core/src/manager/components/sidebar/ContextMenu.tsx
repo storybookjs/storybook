@@ -1,5 +1,5 @@
-import type { ComponentProps, FC, MouseEvent, SyntheticEvent } from 'react';
-import React, { useContext, useMemo, useState } from 'react';
+import type { ComponentProps, FC, MouseEvent, ReactElement, SyntheticEvent } from 'react';
+import React, { useMemo, useState } from 'react';
 
 import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
 import {
@@ -18,11 +18,8 @@ import { styled } from 'storybook/theming';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
-import { getMostCriticalStatusValue } from '../../utils/status.tsx';
 import { Shortcut } from '../Shortcut.tsx';
-import { UseSymbol } from './IconSymbols.tsx';
 import { StatusButton } from './StatusButton.tsx';
-import { StatusContext } from './StatusContext.tsx';
 import type { ExcludesNull } from './Tree.tsx';
 
 const empty = {
@@ -41,10 +38,14 @@ const FloatingStatusButton = styled(StatusButton)({
   },
 });
 
-export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) => {
+export const useContextMenu = (
+  context: API_HashEntry,
+  links: Link[],
+  api: API,
+  visibleStatus?: { icon: ReactElement | null; status: StatusValue } | null
+) => {
   const [hoverCount, setHoverCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
-  const { allStatuses, groupStatus } = useContext(StatusContext);
 
   const exportName = context && 'exportName' in context ? (context.exportName ?? '') : '';
   const { children: copyText, buttonProps: copyButtonProps } = useCopyButton<string>({
@@ -53,7 +54,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
   });
 
   const shortcutKeys = api.getShortcutKeys();
-  const enableShortcuts = !!shortcutKeys;
+  const openInEditorShortcut = shortcutKeys?.openInEditor;
 
   const topLinks = useMemo<Link[]>(() => {
     const defaultLinks = [];
@@ -63,7 +64,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
         id: 'open-in-editor',
         title: 'Open in editor',
         icon: <EditorIcon />,
-        right: enableShortcuts ? <Shortcut keys={shortcutKeys.openInEditor} /> : null,
+        right: openInEditorShortcut ? <Shortcut keys={openInEditorShortcut} /> : null,
         onClick: (e: SyntheticEvent) => {
           if (context.importPath) {
             e.preventDefault();
@@ -91,7 +92,7 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
     }
 
     return defaultLinks;
-  }, [api, context, copyText, copyButtonProps, enableShortcuts, shortcutKeys]);
+  }, [api, context, copyText, copyButtonProps, openInEditorShortcut]);
 
   const handlers = useMemo(() => {
     return {
@@ -124,68 +125,8 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
   const shouldRender =
     !context.refId && (providerLinks.length > 0 || links.length > 0 || topLinks.length > 0);
 
-  const isLeafNode = context.type === 'story' || context.type === 'docs';
-
-  const itemStatus = useMemo<StatusValue>(() => {
-    let status: StatusValue = 'status-value:unknown';
-    if (!context) {
-      return status;
-    }
-
-    if (isLeafNode) {
-      const values = Object.values(allStatuses?.[context.id] || {}).map((s) => s.value);
-      status = getMostCriticalStatusValue(values);
-    }
-
-    if (!isLeafNode) {
-      // On component/groups we only show non-ellipsis on hover on non-success status colors
-      const groupValue = groupStatus && groupStatus[context.id];
-      status =
-        groupValue === 'status-value:success' || groupValue === undefined
-          ? 'status-value:unknown'
-          : groupValue;
-    }
-
-    return status;
-  }, [allStatuses, groupStatus, context, isLeafNode]);
-
-  const MenuIcon = useMemo(() => {
-    // On component/groups we only show non-ellipsis on hover on non-success statuses
-    if (context.type !== 'story' && context.type !== 'docs') {
-      if (itemStatus !== 'status-value:success' && itemStatus !== 'status-value:unknown') {
-        return (
-          <svg key="icon" viewBox="0 0 6 6" width="6" height="6">
-            <UseSymbol type="dot" />
-          </svg>
-        );
-      }
-
-      return <EllipsisIcon />;
-    }
-
-    if (itemStatus === 'status-value:error') {
-      return (
-        <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-          <UseSymbol type="error" />
-        </svg>
-      );
-    }
-    if (itemStatus === 'status-value:warning') {
-      return (
-        <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-          <UseSymbol type="warning" />
-        </svg>
-      );
-    }
-    if (itemStatus === 'status-value:success') {
-      return (
-        <svg key="icon" viewBox="0 0 14 14" width="14" height="14">
-          <UseSymbol type="success" />
-        </svg>
-      );
-    }
-    return <EllipsisIcon />;
-  }, [itemStatus, context.type]);
+  const buttonStatus = visibleStatus?.status ?? 'status-value:unknown';
+  const menuIcon = visibleStatus?.icon ?? <EllipsisIcon />;
 
   return useMemo(() => {
     // Never show the SidebarContextMenu in production
@@ -211,15 +152,15 @@ export const useContextMenu = (context: API_HashEntry, links: Link[], api: API) 
             data-testid="context-menu"
             ariaLabel="Open context menu"
             type="button"
-            status={itemStatus}
+            status={buttonStatus}
             onClick={handlers.onOpen}
           >
-            {MenuIcon}
+            {menuIcon}
           </FloatingStatusButton>
         </PopoverProvider>
       ) : null,
     };
-  }, [context, handlers, isOpen, shouldRender, links, topLinks, itemStatus, MenuIcon]);
+  }, [context, handlers, isOpen, shouldRender, links, topLinks, buttonStatus, menuIcon]);
 };
 
 /**

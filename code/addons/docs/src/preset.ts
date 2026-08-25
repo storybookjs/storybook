@@ -1,13 +1,20 @@
 import { isAbsolute } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import type { StoryIndexGenerator } from 'storybook/internal/core-server';
+import type { EnrichCsfOptions } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 import type { Options, PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
 
-import type { CsfPluginOptions } from '@storybook/csf-plugin';
-
 import { resolvePackageDir } from '../../../core/src/shared/utils/module';
+import { vite as csfPluginVite, webpack as csfPluginWebpack } from './csf-plugin/index.ts';
 import type { CompileOptions } from './compiler';
+import { registerMdxService } from './mdx-service/server.ts';
+
+type DocsOptions = Options & {
+  csfPluginOptions?: EnrichCsfOptions | null;
+  mdxPluginOptions?: CompileOptions;
+};
 
 /**
  * Get the resolvedReact preset, which points either to the user's react dependencies or the react
@@ -28,15 +35,7 @@ const getResolvedReact = async (options: Options) => {
   };
 };
 
-async function webpack(
-  webpackConfig: any = {},
-  options: Options & {
-    csfPluginOptions: CsfPluginOptions | null;
-    mdxPluginOptions?: CompileOptions;
-  } /* & Parameters<
-      typeof createCompiler
-    >[0] */
-) {
+async function webpack(webpackConfig: any = {}, options: DocsOptions) {
   const { module = {} } = webpackConfig;
 
   const { csfPluginOptions = {}, mdxPluginOptions = {} } = options;
@@ -105,7 +104,7 @@ async function webpack(
 
       ...(csfPluginOptions
         ? [
-            (await import('@storybook/csf-plugin')).webpack({
+            csfPluginWebpack({
               ...csfPluginOptions,
               enrichCsf,
             }),
@@ -158,10 +157,12 @@ export const addons: PresetProperty<'addons'> = [
   import.meta.resolve('@storybook/react-dom-shim/preset'),
 ];
 
-export const viteFinal = async (config: any, options: Options) => {
+export const viteFinal = async (config: any, options: DocsOptions) => {
   const { plugins = [] } = config;
+  const { csfPluginOptions = {} } = options;
 
   const { mdxPlugin } = await import('./mdx-plugin');
+  const enrichCsf = await options.presets.apply('experimental_enrichCsf');
 
   // Use the resolvedReact preset to alias react and react-dom to either the users version or the version shipped with addon-docs
   const { react, reactDom, mdx } = await getResolvedReact(options);
@@ -181,6 +182,15 @@ export const viteFinal = async (config: any, options: Options) => {
       },
     }),
   };
+
+  if (csfPluginOptions) {
+    plugins.unshift(
+      csfPluginVite({
+        ...csfPluginOptions,
+        enrichCsf,
+      })
+    );
+  }
 
   // add alias plugin early to ensure any other plugins that also add the aliases will override this
   // eg. the preact vite plugin adds its own aliases
@@ -212,6 +222,23 @@ export const resolvedReact = async (existing: any) => ({
   reactDom: existing?.reactDom ?? resolvePackageDir('react-dom'),
   mdx: existing?.mdx ?? fileURLToPath(import.meta.resolve('@mdx-js/react')),
 });
+
+export const services = async (_value: void, options: Options): Promise<void> => {
+  const features = await options.presets.apply('features');
+
+  if (
+    features?.experimentalDocgenServer &&
+    features?.componentsManifest &&
+    !options.ignorePreview
+  ) {
+    registerMdxService({
+      getIndex: () =>
+        options.presets
+          .apply<StoryIndexGenerator>('storyIndexGenerator')
+          .then((generator) => generator.getIndex()),
+    });
+  }
+};
 
 const optimizeViteDeps = [
   '@storybook/addon-docs',

@@ -1,6 +1,6 @@
 /// <reference path="./typings.d.ts" />
+import { getChannel } from 'storybook/internal/channels';
 import { TELEMETRY_ERROR } from 'storybook/internal/core-events';
-
 import { globalPackages, globalsNameReferenceMap } from './globals/globals.ts';
 import { globalsNameValueMap } from './globals/runtime.ts';
 import { prepareForTelemetry, shouldSkipError } from './utils/prepareForTelemetry.ts';
@@ -17,7 +17,7 @@ globalThis.sendTelemetryError = (error) => {
     return;
   }
 
-  const channel = globalThis.__STORYBOOK_ADDONS_CHANNEL__;
+  const channel = getChannel();
   const preparedError = prepareForTelemetry(error);
 
   if (!channel) {

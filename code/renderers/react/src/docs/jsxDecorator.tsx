@@ -80,6 +80,8 @@ type JSXOptions = Options & {
   enableBeautify?: boolean;
   /** Override the display name used for a component */
   displayName?: string | Options['displayName'];
+  /** The meta's `component`. Used to recover names for subcomponents attached as parent properties */
+  parentComponent?: any;
 };
 
 /** Apply the users parameters and render the jsx for a story */
@@ -148,6 +150,15 @@ export const renderJsx = (code: React.ReactElement, options?: JSXOptions) => {
         } else if (el.type.name && el.type.name !== '_default') {
           return el.type.name;
         } else if (typeof el.type === 'function') {
+          const parent = options?.parentComponent;
+          if (parent) {
+            for (const key of Object.keys(parent)) {
+              if (/^[A-Z]/.test(key) && (parent as any)[key] === el.type) {
+                const parentName = (parent as any).displayName || parent.name || '';
+                return parentName ? `${parentName}.${key}` : key;
+              }
+            }
+          }
           return 'No Display Name';
         } else if (isForwardRef(el.type)) {
           return el.type.render.name;
@@ -206,6 +217,12 @@ export const skipJsxRender = (context: StoryContext<ReactRenderer>) => {
   const sourceParams = context?.parameters.docs?.source;
   const isArgsStory = context?.parameters.__isArgsStory;
 
+  // Portable stories (vitest, playwright/jest portable) have no Source doc block consuming the
+  // emitted snippet, so serializing the story to a JSX string is pure overhead. Skip it.
+  if (context?.parameters.__isPortableStory) {
+    return true;
+  }
+
   // always render if the user forces it
   if (sourceParams?.type === SourceType.DYNAMIC) {
     return false;
@@ -243,6 +260,7 @@ export const jsxDecorator = (
   const options = {
     ...defaultOpts,
     ...(context?.parameters.jsx || {}),
+    parentComponent: context?.component,
   } as Required<JSXOptions>;
 
   const storyJsx = context.originalStoryFn(context.args, context);

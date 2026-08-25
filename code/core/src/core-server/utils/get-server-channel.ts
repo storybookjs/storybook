@@ -29,6 +29,17 @@ export class ServerChannelTransport {
 
   private handler?: ChannelHandler;
 
+  private closed = false;
+
+  private readonly onSigterm = () => {
+    this.socket.clients.forEach((client) => {
+      if (client.readyState === WebSocket.OPEN) {
+        client.close(1001, 'Server is shutting down');
+      }
+    });
+    this.socket.close(() => process.exit(0));
+  };
+
   constructor(server: Server, options: ServerChannelTransportOptions) {
     this.socket = new WebSocketServer({ noServer: true });
 
@@ -40,14 +51,18 @@ export class ServerChannelTransport {
         }
 
         if (!options.skipValidation) {
-          const originHost = request.headers.origin && new URL(request.headers.origin).host;
-          if (!isValidHost(originHost, options)) {
-            throw new Error('Invalid websocket origin');
+          // Browsers always send Origin on upgrades, so an absent one means a non-browser client,
+          // which the token alone authenticates.
+          const { origin } = request.headers;
+          if (origin && !isValidHost(new URL(origin).host, options)) {
+            socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
+            return;
           }
 
           const requestToken = url.searchParams.get('token');
           if (!isValidToken(requestToken, options.token)) {
-            throw new Error('Invalid websocket token');
+            socket.end('HTTP/1.1 401 Unauthorized\r\nConnection: close\r\n\r\n');
+            return;
           }
         }
 
@@ -56,8 +71,7 @@ export class ServerChannelTransport {
         });
       } catch (error) {
         logger.warn(`Rejecting WebSocket connection: ${error}`);
-        socket.write('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
-        socket.destroy();
+        socket.end('HTTP/1.1 403 Forbidden\r\nConnection: close\r\n\r\n');
       }
     });
 
@@ -77,14 +91,16 @@ export class ServerChannelTransport {
       clearInterval(interval);
     });
 
-    process.on('SIGTERM', () => {
-      this.socket.clients.forEach((client) => {
-        if (client.readyState === WebSocket.OPEN) {
-          client.close(1001, 'Server is shutting down');
-        }
-      });
-      this.socket.close(() => process.exit(0));
-    });
+    process.on('SIGTERM', this.onSigterm);
+  }
+
+  close() {
+    if (this.closed) {
+      return;
+    }
+    this.closed = true;
+    process.removeListener('SIGTERM', this.onSigterm);
+    this.socket.close();
   }
 
   setHandler(handler: ChannelHandler) {

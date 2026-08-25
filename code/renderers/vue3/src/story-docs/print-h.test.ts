@@ -20,8 +20,10 @@ import {
   type ClassifiedSlotArg,
   type VueDocgenArgInfo,
 } from './classify-args.ts';
+import { printH } from './print-h.ts';
 import { createRenderContext } from './render-primitives.ts';
-import { renderSlotArgContent, transformH, type TransformHResult } from './transform-h.ts';
+import { renderSlotArgContent } from './render-slot-content.ts';
+import { transformTemplate, type TransformTemplateResult } from './transform-template.ts';
 
 const DEFAULT_DOCGEN: VueDocgenArgInfo = { props: new Set(), events: new Set(), slots: new Set() };
 
@@ -32,25 +34,62 @@ interface ParsedRender {
   importBindings: ReturnType<typeof collectImportBindings>;
 }
 
+/** Runs the real snippet pipeline for an h-render story: print the tree, then transform it. */
 function renderStory(
   storySource: string,
   docgen: VueDocgenArgInfo = DEFAULT_DOCGEN,
   importSource = "import MyButton from './MyButton.vue';",
   metaRender?: string,
   componentImportStatement = "import MyButton from './MyButton.vue';"
-): TransformHResult | undefined {
+): TransformTemplateResult | undefined {
   const parsed = parseRender(storySource, docgen, importSource, metaRender);
-  return parsed.expression
-    ? transformH({
-        args: parsed.args,
-        argsParam: parsed.argsParam,
-        componentImportStatement,
-        componentName: 'MyButton',
-        docgen,
-        importBindings: parsed.importBindings,
-        node: parsed.expression,
-      })
-    : undefined;
+  if (!parsed.expression) {
+    return undefined;
+  }
+
+  const ctx = createRenderContext();
+  const printed = printH({
+    argsParam: parsed.argsParam,
+    componentImportStatement,
+    componentName: 'MyButton',
+    ctx,
+    docgen,
+    importBindings: parsed.importBindings,
+    node: parsed.expression,
+  });
+  if (!printed) {
+    return undefined;
+  }
+
+  return transformTemplate({
+    args: parsed.args,
+    componentImports: printed.componentImports,
+    componentName: 'MyButton',
+    ctx,
+    importBindings: parsed.importBindings,
+    template: printed.template,
+  });
+}
+
+/** The markup the printer emits before the engine substitutes args. */
+function printedTemplate(
+  storySource: string,
+  docgen: VueDocgenArgInfo = DEFAULT_DOCGEN
+): string | undefined {
+  const parsed = parseRender(storySource, docgen);
+  if (!parsed.expression) {
+    return undefined;
+  }
+
+  return printH({
+    argsParam: parsed.argsParam,
+    componentImportStatement: "import MyButton from './MyButton.vue';",
+    componentName: 'MyButton',
+    ctx: createRenderContext(),
+    docgen,
+    importBindings: parsed.importBindings,
+    node: parsed.expression,
+  })?.template;
 }
 
 function parseRender(
@@ -125,7 +164,21 @@ ${storySource}
   };
 }
 
-describe('transformH', () => {
+describe('printH', () => {
+  it('preserves args syntax in the printed markup, in source order', () => {
+    expect(
+      printedTemplate(`
+export const Primary = {
+  args: {
+    count: 2,
+    onClick: () => {},
+  },
+  render: (args) => h(MyButton, { ...args, count: args.count, onClick: args.onClick }),
+};
+`)
+    ).toBe('<MyButton v-bind="args" :count="args.count" @click="args.onClick" />');
+  });
+
   it('expands a whole args object into component props', () => {
     expect(
       renderStory(`
@@ -167,6 +220,58 @@ export const Primary = {
         <MyButton active :count="2" label="Override" />
       </template>"
     `);
+  });
+
+  it('substitutes an arbitrary args expression written into the tree', () => {
+    expect(
+      renderStory(`
+export const Primary = {
+  args: { count: 2 },
+  render: (args) => h(MyButton, { count: args.count + 1 }),
+};
+`)?.snippet
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton :count="2 + 1" />
+      </template>"
+    `);
+  });
+
+  it('renames a render parameter that is not called args', () => {
+    expect(
+      renderStory(`
+export const Primary = {
+  args: {
+    label: 'Render',
+  },
+  render: (props) => h(MyButton, { ...props, label: props.label }),
+};
+`)?.snippet
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton active label="Render" />
+      </template>"
+    `);
+  });
+
+  it('bails when renaming the render parameter would capture another args binding', () => {
+    expect(
+      renderStory(`
+const args = { label: 'Outer' };
+
+export const Primary = {
+  render: (props) => h(MyButton, { label: args.label }),
+};
+`)
+    ).toBeUndefined();
   });
 
   it('falls back to a render function defined on the meta', () => {
@@ -220,7 +325,7 @@ export const Primary = {
     `);
   });
 
-  it('hoists prop values that resolve against JavaScript globals', () => {
+  it('hoists prop values that resolve against JavaScript globals, in source order', () => {
     expect(
       renderStory(`
 export const Primary = {
@@ -233,13 +338,13 @@ export const Primary = {
 
       const date = new Date('2020-01-01');
 
-      const label = \`a\${1}b\`;
-
       const ratio = Math.PI;
+
+      const label = \`a\${1}b\`;
       </script>
 
       <template>
-        <MyButton :date="date" :label="label" :ratio="ratio" />
+        <MyButton :date="date" :ratio="ratio" :label="label" />
       </template>"
     `);
   });
@@ -439,6 +544,38 @@ export const Primary = {
 
   it.each([
     [
+      'an args expression that would end the printed attribute quote',
+      `
+export const Primary = {
+  args: { label: 'Render' },
+  render: (args) => h(MyButton, { label: args.label + '"' }),
+};
+`,
+    ],
+    [
+      'an args expression containing an ampersand',
+      `
+export const Primary = {
+  args: { label: 'Render' },
+  render: (args) => h(MyButton, { label: args.label + '&' }),
+};
+`,
+    ],
+    [
+      'an args text child that would end the printed interpolation',
+      `
+export const Primary = {
+  args: { label: 'Render' },
+  render: (args) => h('p', [args.label + ' }} ']),
+};
+`,
+    ],
+  ])('does not print %s', (_name, storySource) => {
+    expect(renderStory(storySource)).toBeUndefined();
+  });
+
+  it.each([
+    [
       'conditional props',
       `
 const fallback = { label: 'Off' };
@@ -457,15 +594,6 @@ const labelFor = (label: string) => label;
 export const Primary = {
   args: { label: 'Render' },
   render: (args) => h(MyButton, { label: labelFor(args.label) }),
-};
-`,
-    ],
-    [
-      'computed values',
-      `
-export const Primary = {
-  args: { count: 2 },
-  render: (args) => h(MyButton, { count: args.count + 1 }),
 };
 `,
     ],

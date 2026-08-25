@@ -45,8 +45,9 @@ import {
   type ClassifyArgsResult,
   type VueDocgenArgInfo,
 } from './classify-args.ts';
+import { printH } from './print-h.ts';
+import { createRenderContext } from './render-primitives.ts';
 import { renderSfcSnippet } from './render-sfc.ts';
-import { transformH } from './transform-h.ts';
 import {
   readTemplateRenderConfig,
   transformTemplate,
@@ -434,14 +435,27 @@ function renderStaticStorySnippet(
     });
   }
 
-  return transformH({
-    args,
+  const ctx = createRenderContext();
+  const printed = printH({
     argsParam: renderer.argsParam,
     componentImportStatement,
     componentName,
+    ctx,
     docgen: docgenArgInfo,
     importBindings: options.importBindings,
     node: renderer.expression,
+  });
+  if (!printed) {
+    return undefined;
+  }
+
+  return transformTemplate({
+    args,
+    componentImports: printed.componentImports,
+    componentName,
+    ctx,
+    importBindings: options.importBindings,
+    template: printed.template,
   });
 }
 

@@ -31,7 +31,7 @@ import {
   wrapSlotContent,
   type RenderContext,
 } from './render-primitives.ts';
-import { renderSlotArgContent } from './transform-h.ts';
+import { renderSlotArgContent } from './render-slot-content.ts';
 
 export interface TemplateRenderConfig {
   /** Static Vue template string returned from the render function. */

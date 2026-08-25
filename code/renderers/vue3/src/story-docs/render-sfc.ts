@@ -12,7 +12,7 @@ import {
   wrapSlotContent,
   type RenderContext,
 } from './render-primitives.ts';
-import { renderSlotArgContent } from './transform-h.ts';
+import { renderSlotArgContent } from './render-slot-content.ts';
 
 export interface RenderSfcInput {
   /** Component identifier from CSF meta.component. */

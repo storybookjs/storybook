@@ -434,7 +434,7 @@ async function installAmazonLinuxPackages(sandbox: Sandbox, packageNames: string
 // the `latest` tag to test against the last stable release.
 export async function pinStorybookPackages(
   files: Record<string, string>,
-  spec: string
+  pin: string
 ): Promise<void> {
   for (const filePath of workspacePackageJsonPaths(files)) {
     const packageJson = parseJsonFile(filePath, files[filePath] ?? '', 'fixture');
@@ -456,7 +456,7 @@ export async function pinStorybookPackages(
         if (typeof spec === 'string' && spec.startsWith('file:')) {
           continue;
         }
-        dependencies[name] = /^\d/.test(spec) ? spec : await resolveDistTagVersion(name, spec);
+        dependencies[name] = /^\d/.test(pin) ? pin : await resolveDistTagVersion(name, pin);
         pinned = true;
       }
     }

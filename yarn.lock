@@ -36689,6 +36689,7 @@ __metadata:
     polka: "npm:^1.0.0-next.28"
     prettier: "npm:^3.7.1"
     pretty-hrtime: "npm:^1.0.3"
+    process-ancestry: "npm:^0.0.2"
     qrcode.react: "npm:^4.2.0"
     react: "npm:^18.2.0"
     react-aria-components: "patch:react-aria-components@npm%3A1.12.2#~/.yarn/patches/react-aria-components-npm-1.12.2-6c5dcdafab.patch"

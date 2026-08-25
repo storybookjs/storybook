@@ -2,9 +2,9 @@ import { PackageManagerName } from 'storybook/internal/common';
 import {
   HandledError,
   JsPackageManagerFactory,
-  getStorybookVersionSpecifierFromAncestry,
   isCI,
   isCorePackage,
+  resolveStorybookVersionSpecifier,
 } from 'storybook/internal/common';
 import {
   CLI_COLORS,
@@ -83,12 +83,11 @@ const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;
 
 const getStorybookVersionSpecifierFromCli = (): string | undefined => {
   try {
-    return getStorybookVersionSpecifierFromAncestry(getProcessAncestry());
+    return resolveStorybookVersionSpecifier(getProcessAncestry());
   } catch {
-    // Ignore ancestry lookup failures and fall back to embedded version behavior.
+    // Ignore ancestry lookup failures and fall back to the dispatcher env var or embedded versions.
+    return resolveStorybookVersionSpecifier([]);
   }
-
-  return undefined;
 };
 
 const warnPackages = (pkgs: Package[]) => pkgs.map((pkg) => `- ${formatPackage(pkg)}`).join('\n');

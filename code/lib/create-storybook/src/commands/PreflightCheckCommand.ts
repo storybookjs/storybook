@@ -4,7 +4,7 @@ import {
   JsPackageManagerFactory,
   PackageManagerName,
   getPrettyPackageManagerName,
-  getStorybookVersionSpecifierFromAncestry,
+  resolveStorybookVersionSpecifier,
   isCI,
   invalidateProjectRootCache,
 } from 'storybook/internal/common';
@@ -41,8 +41,7 @@ export class PreflightCheckCommand {
   async execute(options: CommandOptions): Promise<PreflightCheckResult> {
     if (options.storybookVersionSpecifier === undefined) {
       try {
-        options.storybookVersionSpecifier =
-          getStorybookVersionSpecifierFromAncestry(getProcessAncestry());
+        options.storybookVersionSpecifier = resolveStorybookVersionSpecifier(getProcessAncestry());
       } catch {
         // Ignore ancestry lookup failures and fall back to the embedded release versions.
       }

@@ -84,18 +84,22 @@ jobs:
         id: publish
         working-directory: scripts
         run: |
+          # --yarn uses `yarn pack`, which rewrites leftover workspace: ranges
+          # (npm pack leaves them; npm install then fails with EUNSUPPORTEDPROTOCOL).
           yarn workspaces list --json --no-private \
             | jq -j '"../" + .location + "\u0000"' \
-            | xargs -0 -r yarn pkg-pr-new publish --no-template --comment=off --json=./pkg-pr-new-output.json
+            | xargs -0 -r yarn pkg-pr-new publish --yarn --no-template --comment=off --json=./pkg-pr-new-output.json
 
           test -s ./pkg-pr-new-output.json
 
           create_storybook_package_url=$(jq -er '.packages[] | select(.name == "create-storybook") | .url' ./pkg-pr-new-output.json)
           storybook_package_url=$(jq -er '.packages[] | select(.name == "storybook") | .url' ./pkg-pr-new-output.json)
+          react_vite_package_url=$(jq -er '.packages[] | select(.name == "@storybook/react-vite") | .url' ./pkg-pr-new-output.json)
 
           {
             echo "create_storybook_package_url=$create_storybook_package_url"
             echo "storybook_package_url=$storybook_package_url"
+            echo "react_vite_package_url=$react_vite_package_url"
           } >> "$GITHUB_OUTPUT"
 
       - name: Verify Canary Install Commands
@@ -104,6 +108,7 @@ jobs:
         env:
           CREATE_STORYBOOK_PACKAGE_URL: ${{ steps.publish.outputs.create_storybook_package_url }}
           STORYBOOK_PACKAGE_URL: ${{ steps.publish.outputs.storybook_package_url }}
+          REACT_VITE_PACKAGE_URL: ${{ steps.publish.outputs.react_vite_package_url }}
         run: |
           # npm 12+ defaults allow-remote to none. Run from an empty directory so
           # `storybook --help` does not resolve packages through this repo's Yarn.
@@ -113,6 +118,16 @@ jobs:
             npx --yes --allow-remote=all "$CREATE_STORYBOOK_PACKAGE_URL" --help
             npx --yes --allow-remote=all "$STORYBOOK_PACKAGE_URL" --help
           )
+
+          # Frameworks declare storybook as workspace:^. yarn pack must rewrite that
+          # before upload; otherwise npm install fails with EUNSUPPORTEDPROTOCOL.
+          curl -fsSL "$REACT_VITE_PACKAGE_URL" -o "$assertion_dir/react-vite.tgz"
+          mkdir -p "$assertion_dir/react-vite"
+          tar -xzf "$assertion_dir/react-vite.tgz" -C "$assertion_dir/react-vite"
+          if grep -F 'workspace:' "$assertion_dir/react-vite/package/package.json"; then
+            echo "Canary tarball still contains workspace: protocol" >&2
+            exit 1
+          fi
 
       - name: Build Canary Release Content
         id: canary-content

@@ -96,6 +96,17 @@ describe('getStorybookVersionSpecifierFromAncestry', () => {
     ).toBe('https://pkg.pr.new/storybookjs/storybook/storybook@c83e731');
   });
 
+  it('extracts a pkg.pr.new URL from npx --allow-remote=all', () => {
+    expect(
+      getStorybookVersionSpecifierFromAncestry([
+        {
+          command:
+            'npx --yes --allow-remote=all https://pkg.pr.new/storybookjs/storybook/create-storybook@c83e731',
+        },
+      ])
+    ).toBe('https://pkg.pr.new/storybookjs/storybook/create-storybook@c83e731');
+  });
+
   it('extracts a quoted direct pkg.pr.new URL', () => {
     expect(
       getStorybookVersionSpecifierFromAncestry([

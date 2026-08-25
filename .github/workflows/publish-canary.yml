@@ -99,9 +99,6 @@ jobs:
             storybook_package_url="https://pkg.pr.new/storybookjs/storybook/storybook@$COMMIT_SHA"
           fi
 
-          npx --yes "$create_storybook_package_url" --help >/dev/null
-          npx --yes "$storybook_package_url" upgrade --help >/dev/null
-
           printf '## 🦋 Canary Release - 🚢 Released `%s`\n' "$storybook_package_url" > "$RUNNER_TEMP/canary-heading.md"
 
           {
@@ -109,12 +106,21 @@ jobs:
             printf '%s\n' ''
             printf '%s\n' '```sh'
             printf '%s\n' '# For a new project'
-            printf 'npx --yes %s\n' "$create_storybook_package_url"
+            printf 'npx --yes --allow-remote=all %s\n' "$create_storybook_package_url"
             printf '%s\n' ''
             printf '%s\n' '# or for an existing project'
-            printf 'npx --yes %s upgrade\n' "$storybook_package_url"
+            printf 'npx --yes --allow-remote=all %s upgrade\n' "$storybook_package_url"
             printf '%s\n' '```'
           } > "$RUNNER_TEMP/canary-body.md"
+
+          # npm 12+ defaults allow-remote to none. Run from an empty directory so
+          # `storybook --help` does not resolve packages through this repo's Yarn.
+          assertion_dir=$(mktemp -d)
+          (
+            cd "$assertion_dir"
+            npx --yes --allow-remote=all "$create_storybook_package_url" --help
+            npx --yes --allow-remote=all "$storybook_package_url" --help
+          )
 
       - name: Update Canary Release Heading and Body
         id: replace-pr-body

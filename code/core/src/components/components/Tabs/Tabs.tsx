@@ -190,13 +190,13 @@ class TabErrorBoundary extends Component<ErrorBoundaryProps, { hasError: boolean
 // Webpack innerGraph drops the memo binding from that joined var.
 function TabsImpl({
   children,
-  selected = null,
+  selected,
   actions,
   absolute = false,
   bordered = false,
   tools = null,
   backgroundColor,
-  id: htmlId = null,
+  id: htmlId,
   menuName = 'Tabs',
   emptyState,
   showToolsWhenEmpty,
@@ -221,7 +221,6 @@ function TabsImpl({
   }
 
   return (
-    // @ts-expect-error (non strict)
     <Wrapper data-deprecated="Tabs" absolute={absolute} bordered={bordered} id={htmlId}>
       <FlexBar scrollable={false} border backgroundColor={backgroundColor}>
         {/* @ts-expect-error (non strict) */}

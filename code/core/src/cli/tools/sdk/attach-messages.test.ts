@@ -7,6 +7,7 @@ import {
   formatMultipleMatches,
   formatNoInstance,
   formatOldServer,
+  formatRestartRequired,
   formatVersionMismatch,
 } from './attach-messages.ts';
 
@@ -91,6 +92,12 @@ describe('attach failure messages', () => {
   it('names both Storybook versions and tells the caller to restart', () => {
     expect(formatVersionMismatch('10.2.0', '10.1.0')).toMatchInlineSnapshot(
       `"This process is Storybook 10.2.0, but the running instance is 10.1.0. Restart your Storybook so both sides match."`
+    );
+  });
+
+  it('names the on-disk package and the running instance when spawning cannot reconcile them', () => {
+    expect(formatRestartRequired('10.4.0', '10.2.0')).toMatchInlineSnapshot(
+      `"The Storybook package in this project is 10.4.0, but the running instance is 10.2.0. Restart your Storybook so both sides match."`
     );
   });
 });

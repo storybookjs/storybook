@@ -21,17 +21,32 @@ import {
   formatMultipleMatches,
   formatNoInstance,
   formatOldServer,
+  formatRestartRequired,
   formatVersionMismatch,
 } from './attach-messages.ts';
-import { AttachUnavailableError, EnvironmentMismatchError, ToolsRuntimeError } from './errors.ts';
-import { checkFidelity } from './fidelity.ts';
+import {
+  AttachUnavailableError,
+  EnvironmentMismatchError,
+  SpawnFailedError,
+  ToolsRuntimeError,
+} from './errors.ts';
+import { resolveProjectStorybookVersion } from './resolve-project-storybook.ts';
+import { planAttachHost } from './spawn-plan.ts';
 import type { ToolsRuntime } from './local-runtime.ts';
 
-export type AttachedBootstrapResult = {
+export type AttachedInProcessResult = {
+  kind: 'in-process';
   runtime: ToolsRuntime;
   record: StorybookInstanceRecord;
   connection: Pick<NodeChannelConnection, 'close' | 'disconnected'>;
 };
+
+export type AttachedSpawnResult = {
+  kind: 'spawn';
+  record: StorybookInstanceRecord;
+};
+
+export type AttachedBootstrapResult = AttachedInProcessResult | AttachedSpawnResult;
 
 export type AttachRuntimeDeps = {
   readRegistry?: typeof readRegistry;
@@ -46,10 +61,12 @@ export type AttachRuntimeDeps = {
   cwd?: () => string;
   version?: string;
   resolveBinPath?: () => string;
+  isChildHost?: boolean;
+  resolveProjectVersion?: (cwd: string) => string | undefined;
 };
 
 export async function bootstrapAttachedRuntime(
-  options: { cwd?: string; configDir?: string } = {},
+  options: { cwd?: string; configDir?: string; autoSpawn?: boolean } = {},
   deps: AttachRuntimeDeps = {}
 ): Promise<AttachedBootstrapResult> {
   const discoveryCwd = resolve(options.cwd ?? process.cwd());
@@ -92,16 +109,51 @@ export async function bootstrapAttachedRuntime(
   }
 
   const processCwd = deps.cwd?.() ?? process.cwd();
-  const fidelity = checkFidelity(record, { cwd: processCwd, version: callerVersion });
-  if (!fidelity.ok) {
-    throw new EnvironmentMismatchError({
-      instanceCwd: record.cwd,
-      resolvedBinPath: (deps.resolveBinPath ?? resolveStorybookBinPath)(),
-      reason:
-        fidelity.kind === 'cwd'
-          ? formatCwdMismatch(fidelity.processCwd, fidelity.instanceCwd)
-          : formatVersionMismatch(fidelity.callerVersion, fidelity.instanceVersion),
-    });
+  const autoSpawn = options.autoSpawn ?? false;
+  const isChildHost = deps.isChildHost ?? process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
+  const resolvedProjectVersion = (deps.resolveProjectVersion ?? resolveProjectStorybookVersion)(
+    record.cwd
+  );
+  const plan = planAttachHost({
+    processCwd,
+    callerVersion,
+    record,
+    autoSpawn,
+    isChildHost,
+    resolvedProjectVersion,
+  });
+  const resolvedBinPath = (deps.resolveBinPath ?? resolveStorybookBinPath)();
+
+  switch (plan.action) {
+    case 'in-process':
+      break;
+    case 'spawn':
+      return { kind: 'spawn', record };
+    case 'throw-mismatch': {
+      const { fidelity } = plan;
+      throw new EnvironmentMismatchError({
+        instanceCwd: record.cwd,
+        resolvedBinPath,
+        reason:
+          fidelity.kind === 'cwd'
+            ? formatCwdMismatch(fidelity.processCwd, fidelity.instanceCwd)
+            : formatVersionMismatch(fidelity.callerVersion, fidelity.instanceVersion),
+      });
+    }
+    case 'throw-restart':
+      throw new EnvironmentMismatchError({
+        instanceCwd: record.cwd,
+        resolvedBinPath,
+        reason: formatRestartRequired(plan.resolvedProjectVersion, plan.instanceVersion),
+      });
+    case 'throw-spawn-failed':
+      throw new SpawnFailedError({
+        reason: `Could not resolve the \`storybook\` package from ${record.cwd}. Install Storybook in that project, then retry.`,
+      });
+    default: {
+      const exhaustive: never = plan;
+      throw exhaustive;
+    }
   }
 
   let connection: NodeChannelConnection | undefined;
@@ -140,6 +192,7 @@ export async function bootstrapAttachedRuntime(
   }
 
   return {
+    kind: 'in-process',
     runtime: {
       configDir,
       toolsets: (deps.getRegisteredToolsets ?? getRegisteredToolsets)(),

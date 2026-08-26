@@ -16,7 +16,7 @@ export type FidelityMismatch =
 export type FidelityResult = FidelityMatch | FidelityMismatch;
 
 export function checkFidelity(
-  record: StorybookInstanceRecord,
+  record: Pick<StorybookInstanceRecord, 'cwd' | 'storybookVersion'>,
   { cwd, version }: { cwd: string; version: string }
 ): FidelityResult {
   const processCwd = resolve(cwd);

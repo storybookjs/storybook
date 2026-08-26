@@ -2,7 +2,6 @@ import { versions } from 'storybook/internal/common';
 
 import { StorybookDevServerDisconnectedError } from '../../../server-errors.ts';
 import { formatIssues } from '../../../shared/open-service/errors.ts';
-import { clearRegistry, setDelegatedMode } from '../../../shared/open-service/service-registry.ts';
 import type {
   AnyToolsetDefinition,
   AnyToolsetMethod,
@@ -11,8 +10,9 @@ import type {
   ToolsetTransport,
 } from '../../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
-import { clearToolsetRegistry } from '../../../shared/open-service/toolset-registry.ts';
 import { toCatalogEntry } from './catalog.ts';
+import type { AttachedBootstrapResult } from './attached-runtime.ts';
+import { spawnChildHost } from './child-client.ts';
 import { AttachUnavailableError, ToolsRuntimeError } from './errors.ts';
 import type { ToolsRuntime } from './local-runtime.ts';
 import type {
@@ -34,11 +34,15 @@ export type CreateToolsDeps = {
   attach?: (
     target: { cwd?: string; configDir?: string },
     deps?: unknown
-  ) => Promise<{
-    runtime: ToolsRuntime;
-    record: { url: string; pid: number; configDir?: string };
-    connection: { close(): void; disconnected: Promise<never> };
-  }>;
+  ) => Promise<
+    | AttachedBootstrapResult
+    | {
+        runtime: ToolsRuntime;
+        record: { url: string; pid: number; configDir?: string; cwd?: string };
+        connection: { close(): void; disconnected: Promise<never> };
+      }
+  >;
+  spawnChild?: typeof spawnChildHost;
 };
 
 /**
@@ -48,12 +52,16 @@ export type CreateToolsDeps = {
  * `process.cwd()` for the rest of the process — everything the `services` preset hooks register
  * keys its file mapping off it. Capture your launch directory first if you still need it.
  *
- * `attached` joins a running Storybook over its channel and never changes `process.cwd()`.
+ * `attached` joins a running Storybook over its channel and never changes `process.cwd()`. When
+ * this process is not that instance's twin, attached mode defaults to spawning a child host from
+ * the `storybook` package resolved under the instance directory.
  *
  * @throws {ToolsRuntimeError} With reason `mode-unavailable` for `auto`, which is not available
  *   yet; with reason `config-load-failed` when the target configuration cannot be loaded.
  * @throws {AttachUnavailableError} When `attached` cannot find or reach a matching instance.
- * @throws {EnvironmentMismatchError} When this process is not the instance's twin (cwd or version).
+ * @throws {EnvironmentMismatchError} When this process is not the instance's twin and auto-spawn is
+ *   declined, or when spawning cannot reconcile the running instance with the project package.
+ * @throws {SpawnFailedError} When a child host cannot be resolved or started.
  */
 export function createTools(
   options: CreateToolsOptions & { mode: 'local' },
@@ -83,45 +91,42 @@ export async function createTools(
   };
 
   if (mode === 'attached') {
-    const previousAttached = process.env.STORYBOOK_ATTACHED_TOOLS;
     process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
-    const restoreAttachedEnv = () => {
-      if (previousAttached === undefined) {
-        delete process.env.STORYBOOK_ATTACHED_TOOLS;
-      } else {
-        process.env.STORYBOOK_ATTACHED_TOOLS = previousAttached;
-      }
-    };
-    try {
-      // local-runtime pulls core-server at import, which must not run before the attached channel is prepared.
-      const { bootstrapAttachedRuntime } = await import('./attached-runtime.ts');
-      const attached = await (deps.attach ?? bootstrapAttachedRuntime)({
-        cwd: options.cwd,
-        configDir: options.configDir,
-      });
-      return createToolsHost({
-        mode: 'attached',
-        runtime: attached.runtime,
+    // local-runtime pulls core-server at import, which must not run before the attached channel is prepared.
+    const { bootstrapAttachedRuntime } = await import('./attached-runtime.ts');
+    const isChildHost = process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
+    const autoSpawn = isChildHost ? false : (options.autoSpawn ?? true);
+    const attached = await (
+      deps.attach ?? ((target) => bootstrapAttachedRuntime({ ...target, autoSpawn }))
+    )({
+      cwd: options.cwd,
+      configDir: options.configDir,
+    });
+    if ('kind' in attached && attached.kind === 'spawn') {
+      return (deps.spawnChild ?? spawnChildHost)({
+        record: attached.record,
+        options: { ...options, mode: 'attached', autoSpawn: false, cwd: attached.record.cwd },
         clientInfo,
-        storybook: {
-          version: versions.storybook,
-          configDir: attached.runtime.configDir,
-          url: attached.record.url,
-          pid: attached.record.pid,
-        },
-        close: () => {
-          attached.connection.close();
-          restoreAttachedEnv();
-          setDelegatedMode(false);
-          clearRegistry();
-          clearToolsetRegistry();
-        },
-        disconnected: attached.connection.disconnected,
       });
-    } catch (error) {
-      restoreAttachedEnv();
-      throw error;
     }
+    const inProcess = attached as {
+      runtime: ToolsRuntime;
+      record: { url: string; pid: number; configDir?: string };
+      connection: { close(): void; disconnected: Promise<never> };
+    };
+    return createToolsHost({
+      mode: 'attached',
+      runtime: inProcess.runtime,
+      clientInfo,
+      storybook: {
+        version: versions.storybook,
+        configDir: inProcess.runtime.configDir,
+        url: inProcess.record.url,
+        pid: inProcess.record.pid,
+      },
+      close: () => inProcess.connection.close(),
+      disconnected: inProcess.connection.disconnected,
+    });
   }
 
   const { bootstrapToolsRuntime } = await import('./local-runtime.ts');
@@ -194,12 +199,6 @@ function createToolsHost(args: {
     }
   };
 
-  const contextFor = (options: ToolsCallOptions = {}): ToolsetCtx => ({
-    ...baseCtx,
-    ...(options.origin ? { origin: options.origin } : {}),
-    ...(options.telemetry ? { telemetry: options.telemetry } : {}),
-  });
-
   const invoke = async (
     ref: string,
     input: Record<string, unknown>,
@@ -210,7 +209,7 @@ function createToolsHost(args: {
     const { toolsetId, methodName } = splitRef(ref);
     const method = findMethod(findToolset(runtime, toolsetId), methodName);
 
-    if (mode === 'local' && method.requiresDevServer && !options.origin && !storybook.url) {
+    if (mode === 'local' && method.requiresDevServer) {
       throw new AttachUnavailableError({
         reason: 'no-instance',
         instances: [],
@@ -227,7 +226,14 @@ function createToolsHost(args: {
       });
     }
 
-    return raceAbort(options.signal, method.handler(validation.value, contextFor(options)));
+    return raceAbort(
+      options.signal,
+      method.handler(validation.value, {
+        ...baseCtx,
+        ...(options.origin ? { origin: options.origin } : {}),
+        ...(options.telemetry ? { telemetry: options.telemetry } : {}),
+      })
+    );
   };
 
   return {
@@ -242,7 +248,7 @@ function createToolsHost(args: {
         options.toolset === undefined ? runtime.toolsets : [findToolset(runtime, options.toolset)];
       return {
         configDir: runtime.configDir,
-        toolsets: toolsets.map((toolset) => toCatalogEntry(toolset, contextFor())),
+        toolsets: toolsets.map((toolset) => toCatalogEntry(toolset, baseCtx)),
       };
     },
 

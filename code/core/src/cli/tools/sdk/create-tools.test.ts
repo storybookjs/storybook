@@ -2,7 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as v from 'valibot';
 
-import { defineToolset } from '../../../shared/open-service/toolset-definition.ts';
+import {
+  defineToolset,
+  type AnyToolsetOutcome,
+} from '../../../shared/open-service/toolset-definition.ts';
 import { getToolName } from '../../../shared/open-service/toolset-names.ts';
 import { createTools } from './create-tools.ts';
 import { AttachUnavailableError } from './errors.ts';
@@ -69,12 +72,16 @@ function makeRuntime(overrides: Partial<ToolsRuntime> = {}): ToolsRuntime {
 beforeEach(() => {
   vi.mocked(bootstrapToolsRuntime).mockReset();
   vi.mocked(bootstrapToolsRuntime).mockResolvedValue(makeRuntime());
-  vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', undefined);
+  attach.mockReset();
+  spawnChild.mockReset();
 });
 
 afterEach(() => {
   vi.unstubAllEnvs();
 });
+
+const attach = vi.fn();
+const spawnChild = vi.fn();
 
 describe('createTools', () => {
   it('loads the target configuration in this process in local mode', async () => {
@@ -117,7 +124,7 @@ describe('createTools', () => {
   });
 
   it('sets STORYBOOK_ATTACHED_TOOLS before attaching so store construction stays a follower', async () => {
-    vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', undefined);
+    delete process.env.STORYBOOK_ATTACHED_TOOLS;
     const attach = vi.fn(async () => {
       expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBe('true');
       return {
@@ -132,44 +139,6 @@ describe('createTools', () => {
     expect(attach).toHaveBeenCalledOnce();
   });
 
-  it('restores STORYBOOK_ATTACHED_TOOLS when attach fails so a later local host is not a follower', async () => {
-    vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', undefined);
-    const attach = vi.fn(async () => {
-      throw new AttachUnavailableError({
-        reason: 'no-instance',
-        instances: [],
-        remediation: 'none',
-      });
-    });
-
-    await expect(createTools({ mode: 'attached' }, { attach })).rejects.toThrow(
-      AttachUnavailableError
-    );
-    expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBeUndefined();
-
-    const local = await createTools({ mode: 'local' });
-    expect(local.mode).toBe('local');
-    expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBeUndefined();
-  });
-
-  it('restores STORYBOOK_ATTACHED_TOOLS when the attached host closes', async () => {
-    vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', undefined);
-    const connection = { close: vi.fn(), disconnected: new Promise<never>(() => {}) };
-    const attach = vi.fn(async () => ({
-      runtime: makeRuntime(),
-      record: { url: 'http://localhost:6006', pid: 123, configDir: CONFIG_DIR },
-      connection,
-    }));
-    const tools = await createTools({ mode: 'attached' }, { attach });
-
-    expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBe('true');
-    await tools.close();
-    await tools.close();
-
-    expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBeUndefined();
-    expect(connection.close).toHaveBeenCalledOnce();
-  });
-
   it('runs a requiresDevServer method when attached', async () => {
     const attach = vi.fn(async () => ({
       runtime: makeRuntime(),
@@ -182,6 +151,53 @@ describe('createTools', () => {
       ok: true,
       data: {},
       markdown: '',
+    });
+  });
+
+  it('spawns a child host when attach reports a fidelity mismatch that auto-spawn can fix', async () => {
+    const record = {
+      schemaVersion: 1 as const,
+      instanceId: 'abc',
+      pid: 123,
+      cwd: '/repo',
+      configDir: CONFIG_DIR,
+      url: 'http://localhost:6006',
+      port: 6006,
+      token: 'secret',
+      storybookVersion: '10.2.0',
+      mcp: { status: 'ready' as const },
+    };
+    const spawned = {
+      mode: 'attached' as const,
+      clientInfo: { name: 'storybook-tools-sdk', version: '0.0.0', kind: 'sdk' as const },
+      storybook: { version: '10.2.0', configDir: CONFIG_DIR, url: record.url, pid: record.pid },
+      runtime: makeRuntime(),
+      describe: async () => ({ configDir: CONFIG_DIR, toolsets: [] }),
+      call: async () => ({ ok: true as const, data: {}, markdown: 'spawned' }),
+      close: async () => {},
+    };
+    vi.mocked(attach).mockResolvedValue({ kind: 'spawn' as const, record });
+    vi.mocked(spawnChild).mockResolvedValue(spawned);
+
+    const tools = await createTools(
+      { cwd: '/elsewhere', mode: 'attached' },
+      { attach, spawnChild }
+    );
+
+    expect(spawnChild).toHaveBeenCalledWith({
+      record,
+      options: expect.objectContaining({
+        cwd: '/repo',
+        mode: 'attached',
+        autoSpawn: false,
+      }),
+      clientInfo: expect.objectContaining({ kind: 'sdk' }),
+    });
+    expect(bootstrapToolsRuntime).not.toHaveBeenCalled();
+    await expect(tools.call('echo.ok')).resolves.toEqual({
+      ok: true,
+      data: {},
+      markdown: 'spawned',
     });
   });
 
@@ -349,6 +365,29 @@ describe('call', () => {
     await expect(
       tools.call('echo.ok', { value: 'hello' }, { signal: AbortSignal.abort() })
     ).rejects.toThrow();
+  });
+
+  it('rejects an in-flight call when the signal aborts', async () => {
+    const hang = defineToolset({
+      id: 'hang',
+      description: 'Never settles.',
+      methods: {
+        never: {
+          title: 'Hang',
+          description: 'hang',
+          input: v.object({}),
+          handler: () => new Promise<AnyToolsetOutcome>(() => {}),
+        },
+      },
+    });
+    vi.mocked(bootstrapToolsRuntime).mockResolvedValue(makeRuntime({ toolsets: [hang] }));
+    const tools = await createTools({ mode: 'local' });
+    const controller = new AbortController();
+
+    const pending = tools.call('hang.never', {}, { signal: controller.signal });
+    controller.abort('stopped');
+
+    await expect(pending).rejects.toBe('stopped');
   });
 
   it('serves no calls once closed', async () => {

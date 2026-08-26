@@ -21,6 +21,8 @@ import {
 import type { DocsAccess } from '../../shared/open-service/toolsets/docs/access.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import { runToolsCommand, type ToolsInvocation, type ToolsRunDeps } from './run.ts';
+import { parseToolsetMethodId } from '../../shared/open-service/toolset-names.ts';
+import { toCatalogEntry } from './sdk/catalog.ts';
 import {
   AttachUnavailableError,
   ToolsRuntimeError,
@@ -97,24 +99,31 @@ function makeLocalTools(runtimeOverrides: Partial<ToolsRuntime> = {}): LocalTool
     close: async () => {},
     ...runtimeOverrides,
   };
+  const ctx: ToolsetCtx = { transport: 'cli', getService: runtime.getService };
   const storybook = { version: '0.0.0', configDir: runtime.configDir };
   return {
     mode: 'local',
     clientInfo: { name: 'storybook-cli', version: '0.0.0', kind: 'cli' },
     runtime,
     storybook,
-    describe: async () => ({ configDir: runtime.configDir, toolsets: [] }),
-    call: async (ref, input = {}, options = {}) => {
-      const [toolsetId, methodName] = ref.split('.');
+    describe: async (options) => {
+      const toolsets =
+        options?.toolset === undefined
+          ? runtime.toolsets
+          : runtime.toolsets.filter((toolset) => toolset.id === options.toolset);
+      return {
+        configDir: runtime.configDir,
+        toolsets: toolsets.map((toolset) => toCatalogEntry(toolset, ctx)),
+      };
+    },
+    call: async (ref, input, options = {}) => {
+      const { toolsetId, methodName } = parseToolsetMethodId(ref);
       const toolset = runtime.toolsets.find((candidate) => candidate.id === toolsetId);
-      const method =
-        toolset && Object.hasOwn(toolset.methods, methodName)
-          ? toolset.methods[methodName]
-          : undefined;
+      const method = toolset?.methods[methodName];
       if (!method) {
-        throw new Error(`Unknown method ${ref}`);
+        throw new Error(`Unknown tool \`${ref}\`.`);
       }
-      const validation = await method.input['~standard'].validate(input);
+      const validation = await method.input['~standard'].validate(input ?? {});
       if (validation.issues) {
         throw new ToolsRuntimeError({
           reason: 'invalid-input',
@@ -122,13 +131,11 @@ function makeLocalTools(runtimeOverrides: Partial<ToolsRuntime> = {}): LocalTool
           issues: validation.issues,
         });
       }
-      const ctx: ToolsetCtx = {
-        transport: 'cli',
-        getService: runtime.getService,
+      return method.handler(validation.value, {
+        ...ctx,
         ...(options.origin ? { origin: options.origin } : {}),
         ...(options.telemetry ? { telemetry: options.telemetry } : {}),
-      };
-      return method.handler(validation.value, ctx);
+      });
     },
     close: async () => {},
   };
@@ -143,14 +150,51 @@ function makeDeps(overrides: Partial<ToolsRunDeps> & { runtime?: Partial<ToolsRu
 }
 
 function makeAttachedTools(runtimeOverrides: Partial<ToolsRuntime> = {}): AttachedTools {
+  const local = makeLocalTools(runtimeOverrides);
+  const origin = 'http://localhost:6006';
+  const ctx: ToolsetCtx = {
+    transport: 'cli',
+    origin,
+    getService: local.runtime.getService,
+  };
   return {
-    ...makeLocalTools(runtimeOverrides),
+    ...local,
     mode: 'attached',
     storybook: {
       version: '0.0.0',
       configDir: CONFIG_DIR,
-      url: 'http://localhost:6006',
+      url: origin,
       pid: 123,
+    },
+    describe: async (options) => {
+      const toolsets =
+        options?.toolset === undefined
+          ? local.runtime.toolsets
+          : local.runtime.toolsets.filter((toolset) => toolset.id === options.toolset);
+      return {
+        configDir: local.runtime.configDir,
+        toolsets: toolsets.map((toolset) => toCatalogEntry(toolset, ctx)),
+      };
+    },
+    call: async (ref, input, options = {}) => {
+      const { toolsetId, methodName } = parseToolsetMethodId(ref);
+      const toolset = local.runtime.toolsets.find((candidate) => candidate.id === toolsetId);
+      const method = toolset?.methods[methodName];
+      if (!method) {
+        throw new Error(`Unknown tool \`${ref}\`.`);
+      }
+      const validation = await method.input['~standard'].validate(input ?? {});
+      if (validation.issues) {
+        throw new ToolsRuntimeError({
+          reason: 'invalid-input',
+          message: `Invalid input for \`${ref}\``,
+          issues: validation.issues,
+        });
+      }
+      return method.handler(validation.value, {
+        ...ctx,
+        ...(options.telemetry ? { telemetry: options.telemetry } : {}),
+      });
     },
   };
 }
@@ -290,7 +334,6 @@ describe('local tools', () => {
       cwd: '/repo',
       configDir: '.storybook',
       mode: 'local',
-      autoSpawn: false,
       clientInfo: { name: 'storybook-cli', version: expect.any(String), kind: 'cli' },
     });
   });
@@ -727,6 +770,21 @@ describe('telemetry sink', () => {
       expect.objectContaining({ toolset: 'docs' })
     );
   });
+
+  it('forwards per-method events through attached tools.call', async () => {
+    const methodTelemetry = vi.fn(async () => {});
+    const { deps } = makeDeps({
+      methodTelemetry,
+      createTools: async () => makeAttachedTools(),
+    });
+
+    await run(['docs', 'list'], deps, { attach: true });
+
+    expect(methodTelemetry).toHaveBeenCalledWith(
+      'tool:listAllDocumentation',
+      expect.objectContaining({ toolset: 'docs' })
+    );
+  });
 });
 
 describe('host failures', () => {
@@ -759,44 +817,7 @@ describe('attached tools', () => {
 
     await run(['docs', 'list'], deps, { attach: true });
 
-    expect(createTools).toHaveBeenCalledWith(
-      expect.objectContaining({ mode: 'attached', autoSpawn: false })
-    );
-  });
-
-  it('closes the host after a successful command and after a handler failure', async () => {
-    const success = makeLocalTools();
-    const successClose = vi.spyOn(success, 'close');
-    const { deps: successDeps } = makeDeps({ createTools: async () => success });
-
-    await run(['docs', 'list'], successDeps);
-
-    expect(successClose).toHaveBeenCalledOnce();
-
-    clearToolsetRegistry();
-    registerToolset(
-      defineToolset({
-        id: 'boom',
-        description: 'Throws.',
-        methods: {
-          crash: {
-            title: 'Crash',
-            description: 'crash',
-            input: v.object({}),
-            handler: async () => {
-              throw new Error('boom');
-            },
-          },
-        },
-      })
-    );
-    const failure = makeLocalTools();
-    const failureClose = vi.spyOn(failure, 'close');
-    const { deps: failureDeps } = makeDeps({ createTools: async () => failure });
-
-    await run(['boom', 'crash'], failureDeps);
-
-    expect(failureClose).toHaveBeenCalledOnce();
+    expect(createTools).toHaveBeenCalledWith(expect.objectContaining({ mode: 'attached' }));
   });
 
   it('runs a requiresDevServer tool caller-side with the instance origin, without proxying', async () => {
@@ -852,5 +873,25 @@ describe('attached tools', () => {
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'attach-unavailable' });
     expect(result.output).toContain('npm run storybook');
     expect(result.output).toContain('--attach');
+  });
+
+  it('maps catalog failures onto the command runner error contract', async () => {
+    const { deps } = makeDeps({
+      createTools: vi.fn(async () => ({
+        ...makeAttachedTools(),
+        describe: async () => {
+          throw new ToolsRuntimeError({
+            reason: 'connection-lost',
+            message: 'The tools child host exited.',
+          });
+        },
+      })),
+    });
+
+    const result = await run(['docs', 'list'], deps, { attach: true });
+
+    expect(result.exitCode).toBe(1);
+    expect(result.outcome.kind).toBe('error');
+    expect(result.output).toContain('The tools child host exited.');
   });
 });

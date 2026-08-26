@@ -15,6 +15,7 @@ import { expect, test } from '@playwright/test';
 
 const execFileAsync = promisify(execFile);
 const dispatcher = join(process.cwd(), 'core/dist/bin/dispatcher.js');
+const codeDir = process.cwd();
 const runsAgainstDevServer = !['build', 'static'].includes(process.env.STORYBOOK_TYPE || 'dev');
 
 async function runTools(args: string[], cwd = process.cwd()) {
@@ -95,5 +96,17 @@ test.describe('storybook tools --attach', () => {
       }),
     ]);
     expect(review.exitCode, review.output).toBe(0);
+  });
+
+  test('attaches from a different cwd via a project-local child host', async () => {
+    test.skip(
+      !runsAgainstDevServer,
+      'Child-host attach requires the running Storybook channel, which the static E2E job does not serve.'
+    );
+    const list = await runTools(
+      ['--attach', '--cwd', codeDir, 'docs', 'list', '--json'],
+      join(codeDir, '..')
+    );
+    expect(list.exitCode, list.output).toBe(0);
   });
 });

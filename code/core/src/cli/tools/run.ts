@@ -7,6 +7,7 @@ import type {
   ToolsetTelemetry,
 } from '../../shared/open-service/toolset-definition.ts';
 import {
+  parseToolsetMethodId,
   toCliMethodName,
   toMcpToolName,
   type ToolsetMethodId,
@@ -17,7 +18,9 @@ import {
   AttachUnavailableError,
   createTools,
   EnvironmentMismatchError,
+  SpawnFailedError,
   ToolsRuntimeError,
+  type CreateToolsDeps,
   type CreateToolsOptions,
   type Tools,
   type ToolsClientInfo,
@@ -28,8 +31,15 @@ import {
   type InstanceDiscovery,
   type ToolsTarget,
 } from './discover-instance.ts';
-import { renderMethodHelp, renderToolsHelp, renderToolsetHelp } from './help.ts';
-import { parseToolsTokens, type ToolsOutputFlags } from './tool-tokens.ts';
+import {
+  renderMethodHelp,
+  renderMethodHelpFromCatalog,
+  renderToolsHelp,
+  renderToolsHelpFromCatalog,
+  renderToolsetHelp,
+  renderToolsetHelpFromCatalog,
+} from './help.ts';
+import { parseToolsTokens, type ParsedToolsTokens, type ToolsOutputFlags } from './tool-tokens.ts';
 
 /**
  * Why an invocation stopped before its handler executed, for the `tools-command` telemetry event.
@@ -82,7 +92,7 @@ const CLI_CLIENT_INFO: ToolsClientInfo = {
 
 /** Injectable dependencies for tests. */
 export type ToolsRunDeps = {
-  createTools?: (options: CreateToolsOptions) => Promise<Tools>;
+  createTools?: (options?: CreateToolsOptions, deps?: CreateToolsDeps) => Promise<Tools>;
   discoverInstance?: typeof discoverRunningInstance;
   /** Stub for {@link PROXY_VIA_MCP_METHODS}; goes away with the proxy in Milestone 5b. */
   mcpToolCall?: typeof callMcpTool;
@@ -146,14 +156,8 @@ export async function runToolsCommand(
   invocation: ToolsInvocation,
   deps: ToolsRunDeps = {}
 ): Promise<ToolsRunResult> {
-  const {
-    toolset: toolsetName,
-    tool: toolName,
-    tokens,
-    target,
-    flags = {},
-    attach = false,
-  } = normalizeHelpFlag(invocation);
+  const normalized = normalizeHelpFlag(invocation);
+  const { tokens, target, flags = {}, attach = false } = normalized;
 
   const parsed = parseToolsTokens(tokens, flags);
   if (!parsed.ok) {
@@ -174,23 +178,22 @@ export async function runToolsCommand(
     outputPath: parsed.output,
   });
 
-  let tools: Tools | undefined;
-  let runtime: ToolsRuntime;
-  let attached = false;
-  let originFromAttach: string | undefined;
+  let tools: Tools;
+  const create: (options?: CreateToolsOptions, deps?: CreateToolsDeps) => Promise<Tools> =
+    deps.createTools ?? createTools;
   try {
-    tools = await (deps.createTools ?? createTools)({
+    tools = await create({
       cwd: target.cwd,
       configDir: target.configDir,
       mode: useAttach ? 'attached' : 'local',
-      autoSpawn: false,
       clientInfo: CLI_CLIENT_INFO,
     });
-    runtime = tools.runtime;
-    attached = tools.mode === 'attached';
-    originFromAttach = tools.storybook.url;
   } catch (error) {
-    if (error instanceof AttachUnavailableError || error instanceof EnvironmentMismatchError) {
+    if (
+      error instanceof AttachUnavailableError ||
+      error instanceof EnvironmentMismatchError ||
+      error instanceof SpawnFailedError
+    ) {
       return result({
         exitCode: 1,
         output: error.message,
@@ -205,49 +208,128 @@ export async function runToolsCommand(
   }
 
   try {
-    return await dispatchToolsCommand({
-      tools,
-      runtime,
-      attached,
-      originFromAttach,
-      toolsetName,
-      toolName,
-      parsed,
-      result,
-      target,
-      deps,
-    });
+    if (tools.mode === 'attached') {
+      return await dispatchAttachedTools(tools, normalized, parsed, deps, result);
+    }
+
+    return await dispatchLocalTools(tools, normalized, parsed, deps, result);
   } finally {
     await tools.close();
   }
 }
 
-async function dispatchToolsCommand(args: {
-  tools: Tools;
-  runtime: ToolsRuntime;
-  attached: boolean;
-  originFromAttach: string | undefined;
-  toolsetName: string | undefined;
-  toolName: string | undefined;
-  parsed: Extract<ReturnType<typeof parseToolsTokens>, { ok: true }>;
-  result: (partial: Omit<ToolsRunResult, 'outputPath'>) => ToolsRunResult;
-  target: ToolsTarget;
-  deps: ToolsRunDeps;
-}): Promise<ToolsRunResult> {
-  const {
-    tools,
-    runtime,
-    attached,
-    originFromAttach,
-    toolsetName,
-    toolName,
-    parsed,
-    result,
-    target,
-    deps,
-  } = args;
+async function dispatchAttachedTools(
+  tools: Tools,
+  invocation: ToolsInvocation,
+  parsed: Extract<ParsedToolsTokens, { ok: true }>,
+  deps: ToolsRunDeps,
+  result: (partial: Omit<ToolsRunResult, 'outputPath'>) => ToolsRunResult
+): Promise<ToolsRunResult> {
+  const { toolset: toolsetName, tool: toolName } = invocation;
+  let catalog;
+  try {
+    catalog = await tools.describe();
+  } catch (error) {
+    if (isAgentFacingError(error)) {
+      return result({ exitCode: 1, output: error.message, outcome: { kind: 'failure' } });
+    }
+    return result({
+      exitCode: 1,
+      output: error instanceof Error ? error.message : String(error),
+      outcome: { kind: 'error', error },
+    });
+  }
 
-  const ctx = buildContext(runtime, deps, originFromAttach);
+  if (!toolsetName) {
+    return result({
+      exitCode: 0,
+      output: renderToolsHelpFromCatalog(catalog),
+      outcome: { kind: 'help' },
+    });
+  }
+
+  const entry = catalog.toolsets.find((candidate) => candidate.id === toolsetName);
+  if (!entry) {
+    return result({
+      exitCode: 1,
+      output: formatUnknownToolsetFromCatalog(toolsetName, catalog),
+      outcome: { kind: 'intercept', reason: 'unknown-toolset' },
+    });
+  }
+
+  if (!toolName) {
+    return result({
+      exitCode: 0,
+      output: renderToolsetHelpFromCatalog(entry),
+      outcome: { kind: 'help' },
+    });
+  }
+
+  const method = entry.methods.find((candidate) => {
+    const { methodName } = parseToolsetMethodId(candidate.ref);
+    return methodName === toMethodKey(toolName) || toCliMethodName(methodName) === toolName;
+  });
+  if (!method) {
+    return result({
+      exitCode: 1,
+      output: formatUnknownToolFromCatalog(toolName, entry),
+      outcome: { kind: 'intercept', reason: 'unknown-tool' },
+    });
+  }
+
+  if (parsed.help) {
+    return result({
+      exitCode: 0,
+      output: renderMethodHelpFromCatalog(entry, method),
+      outcome: { kind: 'help' },
+    });
+  }
+
+  try {
+    const outcome = await tools.call(method.ref, parsed.args, {
+      ...(deps.methodTelemetry ? { telemetry: deps.methodTelemetry } : {}),
+    });
+    const output = parsed.json
+      ? JSON.stringify(outcome.data, null, 2)
+      : joinMarkdown(outcome.markdown);
+    return result({
+      exitCode: outcome.ok ? 0 : 1,
+      output,
+      outcome: { kind: outcome.ok ? 'success' : 'failure' },
+    });
+  } catch (error) {
+    if (isInvalidInputError(error)) {
+      const { methodName } = parseToolsetMethodId(method.ref);
+      return result({
+        exitCode: 1,
+        output: formatValidationIssues(
+          `npx storybook tools ${entry.id} ${toCliMethodName(methodName)}`,
+          error.data.issues ?? []
+        ),
+        outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+      });
+    }
+    if (isAgentFacingError(error)) {
+      return result({ exitCode: 1, output: error.message, outcome: { kind: 'failure' } });
+    }
+    return result({
+      exitCode: 1,
+      output: error instanceof Error ? error.message : String(error),
+      outcome: { kind: 'error', error },
+    });
+  }
+}
+
+async function dispatchLocalTools(
+  tools: Tools,
+  invocation: ToolsInvocation,
+  parsed: Extract<ParsedToolsTokens, { ok: true }>,
+  deps: ToolsRunDeps,
+  result: (partial: Omit<ToolsRunResult, 'outputPath'>) => ToolsRunResult
+): Promise<ToolsRunResult> {
+  const { toolset: toolsetName, tool: toolName, target } = invocation;
+  const runtime = tools.runtime;
+  const ctx = buildContext(runtime, deps, undefined);
 
   if (!toolsetName) {
     return result({
@@ -286,7 +368,6 @@ async function dispatchToolsCommand(args: {
     });
   }
   const commandPath = `npx storybook tools ${toolset.id} ${toCliMethodName(methodKey)}`;
-  /** The method the toolset actually resolved, which the dev-server contract dispatches on. */
   const resolvedRef = `${toolset.id}.${methodKey}`;
 
   if (parsed.help) {
@@ -297,9 +378,9 @@ async function dispatchToolsCommand(args: {
     });
   }
 
-  let origin: string | undefined = originFromAttach;
+  let origin: string | undefined;
   let proxyTarget: StorybookInstanceRecord | undefined;
-  if (method.requiresDevServer && !attached) {
+  if (method.requiresDevServer) {
     const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(target);
     if (!discovery.currentRecord) {
       return result({
@@ -317,8 +398,6 @@ async function dispatchToolsCommand(args: {
         });
       }
       proxyTarget = discovery.currentRecord;
-      // No core method reaches this arm today — it guards trait-marked methods from toolsets
-      // outside core's own set, which have no MCP tool name to proxy to.
     } else if (!ORIGIN_ONLY_METHODS.has(resolvedRef)) {
       return result({
         exitCode: 1,
@@ -339,8 +418,6 @@ async function dispatchToolsCommand(args: {
           outcome: { kind: 'intercept', reason: 'invalid-arguments' },
         });
       }
-      // The dev server runs the handler, so its telemetry and side effects stay in the process
-      // that owns them; this side only unwraps the reply the same way the MCP adapter wrapped it.
       const reply = await (deps.mcpToolCall ?? callMcpTool)(proxyTarget, {
         name: toMcpToolName(resolvedRef as ToolsetMethodId),
         arguments: validation.value as Record<string, unknown>,
@@ -353,9 +430,6 @@ async function dispatchToolsCommand(args: {
         .join('\n\n');
       return result({
         exitCode: reply.isError ? 1 : 0,
-        // `--json` prints whatever structured data the reply carries; a reply without it (an
-        // error from a method that declares no failure data) falls back to the text rather than
-        // inventing a shape, and the exit code still tells a script the call failed.
         output:
           parsed.json && reply.structuredContent !== undefined
             ? JSON.stringify(reply.structuredContent, null, 2)
@@ -384,8 +458,6 @@ async function dispatchToolsCommand(args: {
         outcome: { kind: 'intercept', reason: 'invalid-arguments' },
       });
     }
-    // An agent-facing error is a tool speaking to the agent and naming its own recovery — surface
-    // it verbatim as a result, not as a crash.
     if (isAgentFacingError(error)) {
       return result({ exitCode: 1, output: error.message, outcome: { kind: 'failure' } });
     }
@@ -395,6 +467,32 @@ async function dispatchToolsCommand(args: {
       outcome: { kind: 'error', error },
     });
   }
+}
+
+function formatUnknownToolsetFromCatalog(
+  toolsetName: string,
+  catalog: { configDir: string; toolsets: { id: string }[] }
+): string {
+  const available = catalog.toolsets.map((toolset) => `- \`${toolset.id}\``).join('\n');
+  return `Unknown toolset \`${toolsetName}\`. The Storybook configuration at ${catalog.configDir} provides:
+
+${available}
+
+Run \`npx storybook tools --help\` for every tool.`;
+}
+
+function formatUnknownToolFromCatalog(
+  toolName: string,
+  entry: { id: string; methods: { ref: string }[] }
+): string {
+  const available = entry.methods
+    .map((method) => `- \`${toCliMethodName(parseToolsetMethodId(method.ref).methodName)}\``)
+    .join('\n');
+  return `Unknown tool \`${toolName}\`. The \`${entry.id}\` toolset provides:
+
+${available}
+
+Run \`npx storybook tools ${entry.id}\` for their descriptions.`;
 }
 
 function buildContext(

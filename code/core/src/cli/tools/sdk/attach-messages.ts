@@ -60,3 +60,10 @@ export function formatCwdMismatch(processCwd: string, instanceCwd: string): stri
 export function formatVersionMismatch(callerVersion: string, instanceVersion: string): string {
   return `This process is Storybook ${callerVersion}, but the running instance is ${instanceVersion}. Restart your Storybook so both sides match.`;
 }
+
+export function formatRestartRequired(
+  resolvedProjectVersion: string,
+  instanceVersion: string
+): string {
+  return `The Storybook package in this project is ${resolvedProjectVersion}, but the running instance is ${instanceVersion}. Restart your Storybook so both sides match.`;
+}

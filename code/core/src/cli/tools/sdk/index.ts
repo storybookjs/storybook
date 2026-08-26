@@ -21,6 +21,7 @@ export type {
   ToolsetCatalog,
   ToolsetCatalogEntry,
   ToolsetCatalogMethod,
+  ToolsHostKind,
   ToolsMode,
   ToolsStorybookInfo,
 } from './types.ts';

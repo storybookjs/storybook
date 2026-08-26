@@ -96,7 +96,8 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
 - Register services and toolsets from the same `services` preset hook and behind the same feature
   gate. Missing or duplicate registrations fail loudly.
 - Read `code/core/src/shared/open-service/README.md` before changing the contract, adapters,
-  registration, docs access, transport rendering, or tools CLI.
+  registration, docs access, transport rendering, or tools CLI. Local `createTools` never
+  `chdir`s: a foreign `cwd` starts a project-local child host.
 
 ### Agent-facing skills
 

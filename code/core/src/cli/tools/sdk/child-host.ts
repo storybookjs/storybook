@@ -28,7 +28,6 @@ export async function runChildHost({
     process.exit(0);
   });
   process.env.STORYBOOK_TOOLS_CHILD_HOST = 'true';
-  process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
 
   let tools: Tools | undefined;
   const controllers = new Map<string, AbortController>();
@@ -37,10 +36,16 @@ export async function runChildHost({
     const message = raw as ParentMessage;
     switch (message.type) {
       case 'init': {
+        const mode = message.options.mode === 'local' ? 'local' : 'attached';
+        if (mode === 'attached') {
+          process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
+        } else {
+          delete process.env.STORYBOOK_ATTACHED_TOOLS;
+        }
         tools = await createTools({
           ...message.options,
           cwd: cwd(),
-          mode: 'attached',
+          mode,
           autoSpawn: false,
         });
         send({

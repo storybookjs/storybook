@@ -86,6 +86,7 @@ function makeLocalTools(runtimeOverrides: Partial<ToolsRuntime> = {}): LocalTool
   const storybook = { version: '0.0.0', configDir: runtime.configDir };
   return {
     mode: 'local',
+    host: 'in-process',
     clientInfo: { name: 'storybook-cli', version: '0.0.0', kind: 'cli' },
     runtime,
     storybook,
@@ -727,6 +728,26 @@ describe('attached tools', () => {
     await run(['docs', 'list'], deps, { attach: false });
 
     expect(createTools).toHaveBeenCalledWith(expect.objectContaining({ mode: 'local' }));
+  });
+
+  it('dispatches a local child host through describe and call', async () => {
+    const tools = makeLocalTools();
+    const child: LocalTools = {
+      ...tools,
+      host: 'child',
+      runtime: {
+        ...tools.runtime,
+        toolsets: [],
+      },
+    };
+    const { deps } = makeDeps({
+      createTools: vi.fn(async () => child),
+    });
+
+    const result = await run(['docs', 'list'], deps, { attach: false });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain('Button');
   });
 
   it('runs a requiresDevServer tool caller-side with the instance origin, without proxying', async () => {

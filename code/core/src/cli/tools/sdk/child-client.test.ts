@@ -25,6 +25,7 @@ const RECORD: StorybookInstanceRecord = {
 };
 
 const OPTIONS: CreateToolsOptions = { mode: 'attached', configDir: '/repo/.storybook' };
+const LOCAL_OPTIONS: CreateToolsOptions = { mode: 'local', configDir: '/repo/.storybook' };
 const CLIENT: Required<ToolsClientInfo> = {
   name: 'storybook-tools-sdk',
   version: '10.3.0',
@@ -103,9 +104,9 @@ describe('spawnChildHost', () => {
     vi.unstubAllGlobals();
   });
 
-  const spawn = () =>
+  const spawn = (options: CreateToolsOptions = OPTIONS) =>
     spawnChildHost(
-      { record: RECORD, options: OPTIONS, clientInfo: CLIENT },
+      { cwd: RECORD.cwd, options, clientInfo: CLIENT },
       {
         fork: fork as never,
         resolveScript: () => '/repo/node_modules/storybook/dist/cli/tools/sdk/child-host.js',
@@ -141,10 +142,39 @@ describe('spawnChildHost', () => {
     );
   });
 
+  it('forks a local child host without STORYBOOK_ATTACHED_TOOLS', async () => {
+    const tools = await spawn(LOCAL_OPTIONS);
+
+    expect(fork).toHaveBeenCalledWith(
+      '/repo/node_modules/storybook/dist/cli/tools/sdk/child-host.js',
+      [],
+      expect.objectContaining({
+        cwd: '/repo',
+        env: expect.not.objectContaining({
+          STORYBOOK_ATTACHED_TOOLS: 'true',
+        }),
+      })
+    );
+    expect(child.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'init',
+        options: expect.objectContaining({
+          cwd: '/repo',
+          mode: 'local',
+          autoSpawn: false,
+          clientInfo: CLIENT,
+        }),
+      })
+    );
+    expect(tools.mode).toBe('local');
+    expect(tools.host).toBe('child');
+  });
+
   it('proxies describe and call over IPC and returns the child storybook info', async () => {
     const tools = await spawn();
 
     expect(tools.mode).toBe('attached');
+    expect(tools.host).toBe('child');
     expect(tools.storybook).toEqual(HELLO.storybook);
     await expect(tools.describe()).resolves.toEqual({
       configDir: RECORD.configDir,
@@ -256,7 +286,7 @@ describe('spawnChildHost', () => {
 
   it('throws SpawnFailedError when the child-host script cannot be resolved', async () => {
     const failure = spawnChildHost(
-      { record: RECORD, options: OPTIONS, clientInfo: CLIENT },
+      { cwd: RECORD.cwd, options: OPTIONS, clientInfo: CLIENT },
       {
         fork: fork as never,
         resolveScript: () => {

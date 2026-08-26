@@ -190,7 +190,7 @@ export async function runToolsCommand(
 
   try {
     const dispatched =
-      tools.mode === 'attached'
+      tools.mode === 'attached' || tools.host === 'child'
         ? await dispatchAttachedTools(tools, normalized, parsed, result, deps)
         : await dispatchLocalTools(tools, normalized, parsed, deps, requestedMode, result);
     return { ...dispatched, attachMode: tools.mode, fallbackNotice: tools.fallbackNotice };

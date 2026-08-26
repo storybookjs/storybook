@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import { versions } from 'storybook/internal/common';
 
 import { StorybookDevServerDisconnectedError } from '../../../server-errors.ts';
@@ -13,7 +15,12 @@ import { toCatalogEntry } from './catalog.ts';
 import type { AttachedBootstrapResult } from './attached-runtime.ts';
 import { formatAttachFallback } from './attach-messages.ts';
 import { spawnChildHost } from './child-client.ts';
-import { AttachUnavailableError, ToolsRuntimeError, isAttachGateError } from './errors.ts';
+import {
+  AttachUnavailableError,
+  SpawnFailedError,
+  ToolsRuntimeError,
+  isAttachGateError,
+} from './errors.ts';
 import type { ToolsRuntime } from './local-runtime.ts';
 import type {
   AttachedTools,
@@ -23,6 +30,7 @@ import type {
   ToolsCallOptions,
   ToolsClientInfo,
   ToolsDescribeOptions,
+  ToolsHostKind,
   ToolsMode,
   ToolsStorybookInfo,
   ToolsetCatalog,
@@ -48,9 +56,9 @@ export type CreateToolsDeps = {
 /**
  * Resolve a host for the tools the target Storybook configuration registers.
  *
- * `local` loads that configuration in this process, which adopts the target directory as
- * `process.cwd()` for the rest of the process — everything the `services` preset hooks register
- * keys its file mapping off it. Capture your launch directory first if you still need it.
+ * `local` loads that configuration without a running Storybook. When this process is already in
+ * the target directory, it loads in-process. Otherwise it spawns a child host from the `storybook`
+ * package resolved under that directory. It never changes `process.cwd()`.
  *
  * `attached` joins a running Storybook over its channel and never changes `process.cwd()`. When
  * this process is not that instance's twin, attached mode defaults to spawning a child host from
@@ -60,7 +68,8 @@ export type CreateToolsDeps = {
  * then carries `fallbackNotice` with the gate message and that it fell back.
  *
  * @throws {ToolsRuntimeError} With reason `config-load-failed` when the target configuration cannot
- *   be loaded.
+ *   be loaded, or `mode-unavailable` when a foreign `cwd` needs a child host and `autoSpawn` is
+ *   declined.
  * @throws {AttachUnavailableError} When `attached` cannot find or reach a matching instance.
  * @throws {EnvironmentMismatchError} When this process is not the instance's twin and auto-spawn is
  *   declined, or when spawning cannot reconcile the running instance with the project package.
@@ -101,14 +110,11 @@ export async function createTools(
           const local = await createLocalTools(options, deps, clientInfo);
           return { ...local, fallbackNotice: notice };
         } catch (localError) {
-          if (
-            localError instanceof ToolsRuntimeError &&
-            localError.data.reason === 'config-load-failed'
-          ) {
+          if (shouldWrapAutoLocalFailure(localError)) {
             throw new ToolsRuntimeError({
               reason: 'config-load-failed',
-              message: `${notice}\n\n${localError.message}`,
-              cause: localError.data.cause,
+              message: `${notice}\n\n${localError instanceof Error ? localError.message : String(localError)}`,
+              cause: localError instanceof ToolsRuntimeError ? localError.data.cause : localError,
             });
           }
           throw localError;
@@ -141,7 +147,7 @@ async function createAttachedTools(
   });
   if ('kind' in attached && attached.kind === 'spawn') {
     return (deps.spawnChild ?? spawnChildHost)({
-      record: attached.record,
+      cwd: attached.record.cwd,
       options: { ...options, mode: 'attached', autoSpawn: false, cwd: attached.record.cwd },
       clientInfo,
     });
@@ -153,6 +159,7 @@ async function createAttachedTools(
   };
   return createToolsHost({
     mode: 'attached',
+    host: 'in-process',
     runtime: inProcess.runtime,
     clientInfo,
     storybook: {
@@ -172,11 +179,29 @@ async function createLocalTools(
   clientInfo: Required<ToolsClientInfo>
 ): Promise<LocalTools> {
   delete process.env.STORYBOOK_ATTACHED_TOOLS;
+  const cwd = resolve(options.cwd ?? process.cwd());
+  const isChildHost = process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
+  const autoSpawn = isChildHost ? false : (options.autoSpawn ?? true);
+
+  if (cwd !== process.cwd()) {
+    if (!autoSpawn) {
+      throw new ToolsRuntimeError({
+        reason: 'mode-unavailable',
+        message: `This process is running from ${process.cwd()}, but the target Storybook is at ${cwd}. Re-run from that directory, or omit \`autoSpawn: false\` so a child host can load the project.`,
+      });
+    }
+    return (deps.spawnChild ?? spawnChildHost)({
+      cwd,
+      options: { ...options, mode: 'local', autoSpawn: false, cwd },
+      clientInfo,
+    });
+  }
+
   const { bootstrapToolsRuntime } = await import('./local-runtime.ts');
   let runtime: ToolsRuntime;
   try {
     runtime = await (deps.bootstrap ?? bootstrapToolsRuntime)({
-      cwd: options.cwd,
+      cwd,
       configDir: options.configDir,
     });
   } catch (error) {
@@ -191,14 +216,26 @@ async function createLocalTools(
 
   return createToolsHost({
     mode: 'local',
+    host: 'in-process',
     runtime,
     clientInfo,
     storybook: { version: versions.storybook, configDir: runtime.configDir },
   });
 }
 
+function shouldWrapAutoLocalFailure(error: unknown): boolean {
+  if (error instanceof SpawnFailedError) {
+    return true;
+  }
+  return (
+    error instanceof ToolsRuntimeError &&
+    (error.data.reason === 'config-load-failed' || error.data.reason === 'mode-unavailable')
+  );
+}
+
 function createToolsHost(args: {
   mode: 'local';
+  host: ToolsHostKind;
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
   storybook: ToolsStorybookInfo;
@@ -207,6 +244,7 @@ function createToolsHost(args: {
 }): LocalTools;
 function createToolsHost(args: {
   mode: 'attached';
+  host: ToolsHostKind;
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
   storybook: ToolsStorybookInfo;
@@ -215,13 +253,14 @@ function createToolsHost(args: {
 }): AttachedTools;
 function createToolsHost(args: {
   mode: 'local' | 'attached';
+  host: ToolsHostKind;
   runtime: ToolsRuntime;
   clientInfo: Required<ToolsClientInfo>;
   storybook: ToolsStorybookInfo;
   close?: () => void;
   disconnected?: Promise<never>;
 }): Tools {
-  const { mode, runtime, clientInfo, storybook } = args;
+  const { mode, host, runtime, clientInfo, storybook } = args;
   const baseCtx: ToolsetCtx = {
     transport: 'cli',
     getService: runtime.getService,
@@ -278,6 +317,7 @@ function createToolsHost(args: {
 
   return {
     mode,
+    host,
     clientInfo,
     runtime,
     storybook,

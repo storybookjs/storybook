@@ -163,12 +163,12 @@ and provider accesses feed the same definition; composition combines accesses ra
 second engine. `storybook/internal/toolsets-docs` is a portable entry consumed by both MCP packages,
 so its bundled declaration must remain flat and import only its declared allowlist.
 
-The `storybook tools` CLI loads the target Storybook configuration in its own process and derives
-dispatch, help, validation, and output from the registered toolsets. Bootstrap always hosts the
-module graph so addon-owned toolsets can query it without appearing in a core allowlist; an
-unsupported builder settles the graph as unavailable without failing unrelated tools. Bootstrap
-also changes `process.cwd()` to the target project for the rest of the one-shot process. Embedders
-that need the launch directory must capture it first.
+The `storybook tools` CLI loads the target Storybook configuration through
+`storybook/internal/tools`. When this process is already in the project, local mode loads in-process
+and derives dispatch, help, validation, and output from the registered toolsets. When `--cwd` points
+elsewhere, it starts a child host in that directory instead of changing `process.cwd()`. Bootstrap
+always hosts the module graph so addon-owned toolsets can query it without appearing in a core
+allowlist; an unsupported builder settles the graph as unavailable without failing unrelated tools.
 
 Methods marked `requiresDevServer` use the runtime instance registry. `stories.preview` needs only
 the recorded origin. Until connect mode exists, `review.create` is the one temporary exception

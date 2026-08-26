@@ -36,3 +36,11 @@ it('does not treat next-suffixed binaries or next.* file paths as next scripts',
     })
   ).toBeUndefined();
 });
+
+it('does not treat next as an argument to another command as a next script', () => {
+  expect(getHasTurbopack({ scripts: { shout: 'echo next --turbopack' } })).toBeUndefined();
+});
+
+it('does not treat next without a dev/build subcommand as a next script', () => {
+  expect(getHasTurbopack({ scripts: { start: 'next start --turbopack' } })).toBeUndefined();
+});

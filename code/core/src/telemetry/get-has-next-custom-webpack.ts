@@ -24,8 +24,9 @@ export function getHasNextCustomWebpack(projectRoot: string): boolean {
       continue;
     }
     try {
-      // matches `webpack: (config) => ...`, `webpack(config) {`, and `webpack = ...` forms
-      return /\bwebpack\s*[:(=]/.test(readFileSync(configPath, 'utf8'));
+      // matches `webpack: (config) => ...`, `webpack(config) {`, `webpack = ...`, and quoted
+      // `'webpack':` / `"webpack":` key forms
+      return /(?<![\w$-])['"]?webpack['"]?\s*[:(=]/.test(readFileSync(configPath, 'utf8'));
     } catch {
       return false;
     }

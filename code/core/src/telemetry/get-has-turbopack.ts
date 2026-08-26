@@ -15,9 +15,11 @@ import type { PackageJson } from '../types/index.ts';
  * @returns Boolean-ish turbopack usage, or undefined when it can't be determined
  */
 export function getHasTurbopack(packageJson: PackageJson): boolean | undefined {
-  // `next` as a standalone command word — not part of another command or path
-  // such as `next-sitemap`, `something-next` or `next.config.js`
-  const nextCommand = /(?<![\w/.-])next(?![\w.-])/;
+  // a `next dev` / `next build` invocation, with `next` as a standalone command word — the only
+  // Next CLI commands that accept a bundler flag. Not part of another command or path such as
+  // `next-sitemap`, `something-next` or `next.config.js`, and not `next` as an argument to
+  // another command such as `echo next`.
+  const nextCommand = /(?<![\w/.-])next\s+(?:dev|build)(?![\w.-])/;
   const scripts = Object.values(packageJson?.scripts ?? {}).filter(
     (script): script is string => typeof script === 'string' && nextCommand.test(script)
   );

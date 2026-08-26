@@ -22,6 +22,53 @@ export interface NodeChannelConnection {
   close(): void;
 }
 
+const installedNodeChannels: Channel[] = [];
+let displacedSlot:
+  | {
+      channel: ReturnType<typeof getChannel>;
+      environment: typeof UniversalStore.preparedEnvironment;
+    }
+  | undefined;
+
+function installNodeChannel(channel: Channel): void {
+  if (installedNodeChannels.length === 0) {
+    displacedSlot = {
+      channel: getChannel(),
+      environment: UniversalStore.preparedEnvironment,
+    };
+  }
+  installedNodeChannels.push(channel);
+  setChannel(channel);
+  UniversalStore.__prepare(channel, UniversalStore.Environment.UNKNOWN);
+}
+
+function uninstallNodeChannel(channel: Channel): void {
+  const index = installedNodeChannels.indexOf(channel);
+  if (index >= 0) {
+    installedNodeChannels.splice(index, 1);
+  }
+  if (getChannel() !== channel) {
+    if (installedNodeChannels.length === 0) {
+      displacedSlot = undefined;
+    }
+    return;
+  }
+  const remaining = installedNodeChannels.at(-1);
+  if (remaining) {
+    setChannel(remaining);
+    UniversalStore.__prepare(remaining, UniversalStore.Environment.UNKNOWN);
+    return;
+  }
+  const previous = displacedSlot;
+  displacedSlot = undefined;
+  setChannel(previous?.channel ?? null);
+  if (previous?.channel && previous.environment) {
+    UniversalStore.__prepare(previous.channel, previous.environment);
+  } else {
+    UniversalStore.__reset();
+  }
+}
+
 export function createNodeChannel({ url, token }: NodeChannelOptions): NodeChannelConnection {
   const socketUrl = new URL(url);
   socketUrl.protocol = socketUrl.protocol === 'https:' ? 'wss:' : 'ws:';
@@ -44,10 +91,7 @@ export function createNodeChannel({ url, token }: NodeChannelOptions): NodeChann
   });
 
   const channel = new Channel({ transports: [transport] });
-  const previousChannel = getChannel();
-  const previousEnvironment = UniversalStore.preparedEnvironment;
-  setChannel(channel);
-  UniversalStore.__prepare(channel, UniversalStore.Environment.UNKNOWN);
+  installNodeChannel(channel);
 
   const disconnected = new Promise<never>((_, reject) => {
     channel.once(CHANNEL_WS_DISCONNECT, ({ code, reason }: { code?: number; reason?: string }) => {
@@ -59,15 +103,7 @@ export function createNodeChannel({ url, token }: NodeChannelOptions): NodeChann
 
   const close = () => {
     socket.close();
-    if (getChannel() !== channel) {
-      return;
-    }
-    setChannel(previousChannel);
-    if (previousChannel && previousEnvironment) {
-      UniversalStore.__prepare(previousChannel, previousEnvironment);
-    } else {
-      UniversalStore.__reset();
-    }
+    uninstallNodeChannel(channel);
   };
 
   return {

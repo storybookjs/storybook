@@ -197,6 +197,7 @@ export async function bootstrapAttachedRuntime(
       configDir,
       toolsets: (deps.getRegisteredToolsets ?? getRegisteredToolsets)(),
       getService,
+      close: async () => {},
     },
     record,
     connection,

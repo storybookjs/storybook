@@ -60,7 +60,7 @@ beforeEach(() => {
   vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
   vi.mocked(runToolsCommand).mockImplementation(async () => {
     process.stdout.write('noise during the run\n');
-    return { exitCode: 0, output: '{"ok":true}', outcome: { kind: 'success' } };
+    return { exitCode: 0, output: '{"ok":true}', outcome: { kind: 'success' }, attachMode: 'auto' };
   });
 });
 
@@ -93,7 +93,12 @@ describe('the --json stream contract', () => {
   it('leaves stdout alone without --json', async () => {
     vi.mocked(runToolsCommand).mockImplementation(async () => {
       process.stdout.write('noise during the run\n');
-      return { exitCode: 0, output: 'markdown result', outcome: { kind: 'success' } };
+      return {
+        exitCode: 0,
+        output: 'markdown result',
+        outcome: { kind: 'success' },
+        attachMode: 'auto',
+      };
     });
 
     await makeProgram().parseAsync(['tools', 'docs', 'list'], { from: 'user' });

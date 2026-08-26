@@ -1,4 +1,6 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { inspect } from 'node:util';
+
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { NodeChannelConnection } from './node-channel.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
@@ -67,8 +69,26 @@ function makeRuntimeDeps(records: StorybookInstanceRecord[], extras: Record<stri
   };
 }
 
+async function rejectedAttachUnavailable(
+  failure: Promise<unknown>
+): Promise<AttachUnavailableError> {
+  try {
+    await failure;
+  } catch (caught) {
+    expect(caught).toBeInstanceOf(AttachUnavailableError);
+    if (caught instanceof AttachUnavailableError) {
+      return caught;
+    }
+  }
+  throw new Error('expected AttachUnavailableError');
+}
+
 beforeEach(() => {
   vi.unstubAllGlobals();
+});
+
+afterEach(() => {
+  vi.useRealTimers();
 });
 
 describe('bootstrapAttachedRuntime', () => {
@@ -115,6 +135,9 @@ describe('bootstrapAttachedRuntime', () => {
     await expect(failure).rejects.toThrow('npm run storybook');
     await expect(failure).rejects.toThrow('cd /apps/web');
     await expect(failure).rejects.toThrow('--config-dir /apps/web/.storybook');
+    const error = await rejectedAttachUnavailable(failure);
+    expect(error.data.instances.every((instance) => !('token' in instance))).toBe(true);
+    expect(inspect(error)).not.toContain('secret');
   });
 
   it('rejects when several instances match and names each --config-dir', async () => {
@@ -133,6 +156,9 @@ describe('bootstrapAttachedRuntime', () => {
     await expect(failure).rejects.toMatchObject({ data: { reason: 'multiple-matches' } });
     await expect(failure).rejects.toThrow('--config-dir /repo/.storybook');
     await expect(failure).rejects.toThrow('--config-dir /repo/.storybook-alt');
+    const error = await rejectedAttachUnavailable(failure);
+    expect(error.data.instances.every((instance) => !('token' in instance))).toBe(true);
+    expect(inspect(error)).not.toContain('secret');
   });
 
   it('rejects a tokenless record as an old server', async () => {
@@ -231,6 +257,30 @@ describe('bootstrapAttachedRuntime', () => {
     await expect(failure).rejects.toMatchObject({ data: { reason: 'connection-failed' } });
     await expect(failure).rejects.toThrow(RECORD.url);
     await expect(failure).rejects.toThrow('npm run storybook');
+    const error = await rejectedAttachUnavailable(failure);
+    expect(error.data.instances.every((instance) => !('token' in instance))).toBe(true);
+    expect(inspect(error)).not.toContain('secret');
+  });
+
+  it('rejects when the handshake never completes', async () => {
+    vi.useFakeTimers();
+    const close = vi.fn();
+    const { deps } = makeRuntimeDeps([RECORD], {
+      createNodeChannel: vi.fn(async () => ({
+        channel: { id: 'channel' } as unknown as NodeChannelConnection['channel'],
+        connected: new Promise<void>(() => {}),
+        disconnected: new Promise<never>(() => {}),
+        close,
+      })),
+    });
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+    const assertion = expect(failure).rejects.toMatchObject({
+      data: { reason: 'connection-failed' },
+    });
+    await vi.advanceTimersByTimeAsync(10_000);
+    await assertion;
+    expect(close).toHaveBeenCalled();
   });
 
   it('wraps a configuration that cannot be loaded', async () => {

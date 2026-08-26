@@ -1,3 +1,4 @@
+import { execFile } from 'node:child_process';
 import { chmod, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 
 import { vol } from 'memfs';
@@ -12,6 +13,7 @@ import {
 // Spy-only mock: keep the real `node:fs/promises` shape and redirect the calls the writer makes to
 // `memfs`, so file modes can be asserted without touching the developer's home directory.
 vi.mock('node:fs/promises', { spy: true });
+vi.mock('node:child_process', { spy: true });
 
 const REGISTRY_DIR = '/home/tester/.storybook/instances';
 
@@ -43,6 +45,13 @@ beforeEach(async () => {
   vi.mocked(writeFile).mockImplementation(
     memfs.fs.promises.writeFile as unknown as typeof import('node:fs/promises').writeFile
   );
+  vi.mocked(execFile).mockImplementation((...args: unknown[]) => {
+    const callback = args.find((arg) => typeof arg === 'function') as
+      | ((error: Error | null, stdout: string, stderr: string) => void)
+      | undefined;
+    callback?.(null, '', '');
+    return { pid: 0 } as ReturnType<typeof execFile>;
+  });
 });
 
 afterEach(() => {

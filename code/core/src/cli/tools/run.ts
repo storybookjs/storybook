@@ -11,6 +11,7 @@ import type { StorybookInstanceRecord } from './instances/types.ts';
 import {
   createTools,
   isAttachGateError,
+  ToolsRuntimeError,
   type CreateToolsDeps,
   type CreateToolsOptions,
   type Tools,
@@ -103,6 +104,10 @@ function isAgentFacingError(error: unknown): error is Error {
   return error instanceof Error && (error as { agentFacing?: boolean }).agentFacing === true;
 }
 
+function isInvalidInputError(error: unknown): error is ToolsRuntimeError {
+  return error instanceof ToolsRuntimeError && error.data.reason === 'invalid-input';
+}
+
 function normalizeHelpFlag(invocation: ToolsInvocation): ToolsInvocation {
   if (invocation.tool !== '--help' && invocation.tool !== '-h') {
     return invocation;
@@ -131,7 +136,7 @@ function resolveToolsMode(
 /**
  * Run one `storybook tools` invocation against the toolsets the target Storybook configuration
  * registers in this process. This is the whole command behind the commander wiring: dispatch,
- * help, argument parsing and validation, the requires-dev-server contract, and the mechanical
+ * help, argument parsing, the requires-dev-server contract, and the mechanical
  * outcome mapping (markdown to stdout, `--json` for data, `ok` drives the exit code).
  */
 export async function runToolsCommand(
@@ -280,6 +285,17 @@ async function dispatchAttachedTools(
       outcome: { kind: outcome.ok ? 'success' : 'failure' },
     });
   } catch (error) {
+    if (isInvalidInputError(error)) {
+      const { methodName } = parseToolsetMethodId(method.ref);
+      return result({
+        exitCode: 1,
+        output: formatValidationIssues(
+          `npx storybook tools ${entry.id} ${toCliMethodName(methodName)}`,
+          error.data.issues ?? []
+        ),
+        outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+      });
+    }
     if (isAgentFacingError(error)) {
       return result({ exitCode: 1, output: error.message, outcome: { kind: 'failure' } });
     }
@@ -358,17 +374,10 @@ async function dispatchLocalTools(
     });
   }
 
-  const validation = await method.input['~standard'].validate(parsed.args);
-  if (validation.issues) {
-    return result({
-      exitCode: 1,
-      output: formatValidationIssues(commandPath, validation.issues),
-      outcome: { kind: 'intercept', reason: 'invalid-arguments' },
-    });
-  }
-
   try {
-    const outcome = await method.handler(validation.value, ctx);
+    const outcome = await tools.call(`${toolset.id}.${methodKey}`, parsed.args, {
+      ...(deps.methodTelemetry ? { telemetry: deps.methodTelemetry } : {}),
+    });
     const output = parsed.json
       ? JSON.stringify(outcome.data, null, 2)
       : joinMarkdown(outcome.markdown);
@@ -378,6 +387,13 @@ async function dispatchLocalTools(
       outcome: { kind: outcome.ok ? 'success' : 'failure' },
     });
   } catch (error) {
+    if (isInvalidInputError(error)) {
+      return result({
+        exitCode: 1,
+        output: formatValidationIssues(commandPath, error.data.issues ?? []),
+        outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+      });
+    }
     if (isAgentFacingError(error)) {
       return result({ exitCode: 1, output: error.message, outcome: { kind: 'failure' } });
     }

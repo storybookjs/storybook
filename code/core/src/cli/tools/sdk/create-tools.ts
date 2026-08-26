@@ -261,6 +261,7 @@ function createToolsHost(args: {
       throw new ToolsRuntimeError({
         reason: 'invalid-input',
         message: `Invalid input for \`${ref}\`:\n${formatIssues(validation.issues)}`,
+        issues: validation.issues,
       });
     }
 

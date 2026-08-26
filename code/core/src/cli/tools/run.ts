@@ -17,6 +17,7 @@ import {
   AttachUnavailableError,
   createTools,
   EnvironmentMismatchError,
+  ToolsRuntimeError,
   type CreateToolsOptions,
   type Tools,
   type ToolsClientInfo,
@@ -120,6 +121,10 @@ function isAgentFacingError(error: unknown): error is Error {
   return error instanceof Error && (error as { agentFacing?: boolean }).agentFacing === true;
 }
 
+function isInvalidInputError(error: unknown): error is ToolsRuntimeError {
+  return error instanceof ToolsRuntimeError && error.data.reason === 'invalid-input';
+}
+
 function normalizeHelpFlag(invocation: ToolsInvocation): ToolsInvocation {
   if (invocation.tool !== '--help' && invocation.tool !== '-h') {
     return invocation;
@@ -134,7 +139,7 @@ function normalizeHelpFlag(invocation: ToolsInvocation): ToolsInvocation {
 /**
  * Run one `storybook tools` invocation against the toolsets the target Storybook configuration
  * registers in this process. This is the whole command behind the commander wiring: dispatch,
- * help, argument parsing and validation, the requires-dev-server contract, and the mechanical
+ * help, argument parsing, the requires-dev-server contract, and the mechanical
  * outcome mapping (markdown to stdout, `--json` for data, `ok` drives the exit code).
  */
 export async function runToolsCommand(
@@ -324,17 +329,16 @@ async function dispatchToolsCommand(args: {
     origin = discovery.currentRecord.url;
   }
 
-  const validation = await method.input['~standard'].validate(parsed.args);
-  if (validation.issues) {
-    return result({
-      exitCode: 1,
-      output: formatValidationIssues(commandPath, validation.issues),
-      outcome: { kind: 'intercept', reason: 'invalid-arguments' },
-    });
-  }
-
   try {
     if (proxyTarget) {
+      const validation = await method.input['~standard'].validate(parsed.args);
+      if (validation.issues) {
+        return result({
+          exitCode: 1,
+          output: formatValidationIssues(commandPath, validation.issues),
+          outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+        });
+      }
       // The dev server runs the handler, so its telemetry and side effects stay in the process
       // that owns them; this side only unwraps the reply the same way the MCP adapter wrapped it.
       const reply = await (deps.mcpToolCall ?? callMcpTool)(proxyTarget, {
@@ -360,7 +364,7 @@ async function dispatchToolsCommand(args: {
       });
     }
 
-    const outcome = await tools.call(resolvedRef, validation.value as Record<string, unknown>, {
+    const outcome = await tools.call(resolvedRef, parsed.args, {
       ...(origin ? { origin } : {}),
       ...(deps.methodTelemetry ? { telemetry: deps.methodTelemetry } : {}),
     });
@@ -373,6 +377,13 @@ async function dispatchToolsCommand(args: {
       outcome: { kind: outcome.ok ? 'success' : 'failure' },
     });
   } catch (error) {
+    if (isInvalidInputError(error)) {
+      return result({
+        exitCode: 1,
+        output: formatValidationIssues(commandPath, error.data.issues ?? []),
+        outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+      });
+    }
     // An agent-facing error is a tool speaking to the agent and naming its own recovery — surface
     // it verbatim as a result, not as a crash.
     if (isAgentFacingError(error)) {

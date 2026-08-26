@@ -66,13 +66,26 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, fullAPI, provider }) =
       return store.getState().globalTypes!;
     },
     updateGlobals(newGlobals) {
-      // Only emit the message to the local ref
+      // Emit to the local ref
       provider.channel?.emit(UPDATE_GLOBALS, {
         globals: newGlobals,
         options: {
           target: 'storybook-preview-iframe',
         },
       });
+
+      // Emit to all composed refs that are previewInitialized
+      const refs = fullAPI.getRefs();
+      for (const [refId, ref] of Object.entries(refs)) {
+        if (ref.previewInitialized) {
+          provider.channel?.emit(UPDATE_GLOBALS, {
+            globals: newGlobals,
+            options: {
+              target: `storybook-ref-${refId}`,
+            },
+          });
+        }
+      }
     },
   };
 

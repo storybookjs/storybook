@@ -19,6 +19,7 @@ import {
   keyOf,
   loadCsf,
   metaObjectPath,
+  noSnippetWarning,
   normalizeStoryDeclaration,
   propertyValue,
   resolveComponentImport,
@@ -26,9 +27,8 @@ import {
   resolveReturnedObjectExpression,
   returnedExpression,
   returnedExpressionPath,
-  unwrapExpression,
-  noSnippetWarning,
   unresolvedWarning,
+  unwrapExpression,
   type ImportBinding,
   type ReferenceContext,
   type RenderFunctionPath,
@@ -45,8 +45,9 @@ import {
   type ClassifyArgsResult,
   type VueDocgenArgInfo,
 } from './classify-args.ts';
-import { renderSfcSnippet } from './render-sfc.ts';
-import { transformH } from './transform-h.ts';
+import type { ForwardableSetup } from './forward-setup.ts';
+import { printH } from './print-h.ts';
+import { createRenderContext } from './render-primitives.ts';
 import {
   readTemplateRenderConfig,
   transformTemplate,
@@ -75,6 +76,8 @@ interface StoryDocsContext {
   metaPath: NodePath<t.ObjectExpression> | undefined;
   /** Resolves each story's args, following a spread or a name out of the story file. */
   resolver: StoryArgsResolver;
+  /** Story file source, for forwarding setup statements verbatim. */
+  source: string;
 }
 
 // Vue's single-file-component format is tried ahead of the JS/TS extensions, matching how a story
@@ -91,12 +94,14 @@ const IMPORT_UNRESOLVED_WARNING =
 type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
 type ExtractStoriesResult = { stories: Record<string, StoryDoc> };
 type StaticStoryRenderer =
+  | { kind: 'bail'; warning: string }
   | { kind: 'h'; argsParam?: string; expression: t.Expression }
   | { kind: 'sfc' }
   | {
       kind: 'template';
       componentImports: TemplateRenderConfig['componentImports'];
       template: string;
+      setup?: ForwardableSetup;
     };
 type StorySnippetResult = { snippet: string };
 type StaticStoryArgs = {
@@ -167,6 +172,7 @@ export async function buildStoryDocsPayload(
       filePath: storyPath,
       ...(context.references ?? openStoryReferences()),
     }),
+    source: storyFile,
   });
 
   return {
@@ -326,6 +332,9 @@ function enrichStoryDoc(
   if (!renderer) {
     return withWarning(RENDER_UNRESOLVED_WARNING);
   }
+  if (renderer.kind === 'bail') {
+    return withWarning(renderer.warning);
+  }
 
   // The SFC renderer needs the component's import statement; without one, the bail below would
   // otherwise blame a slot that was never involved.
@@ -362,23 +371,28 @@ function staticRendererForRenderFunction(
   options: StoryDocsContext
 ): StaticStoryRenderer | undefined {
   const renderObject = resolveReturnedObjectExpression(renderFunction);
-  const templateConfig = renderObject
-    ? readTemplateRenderConfig(renderObject, options.importBindings, {
-        componentImportStatement: options.snippet?.componentImportStatement,
-        componentName: options.snippet?.componentName,
-      })
-    : undefined;
-  if (templateConfig) {
-    return { kind: 'template', ...templateConfig };
-  }
-
-  const setupExpression = renderObject && setupReturnedRenderExpression(renderObject);
-  if (setupExpression) {
-    return {
+  if (renderObject) {
+    const resolution = readTemplateRenderConfig(renderObject, options.importBindings, {
       argsParam: argsParameterName(renderFunction.node),
-      expression: setupExpression,
-      kind: 'h',
-    };
+      componentImportStatement: options.snippet?.componentImportStatement,
+      componentName: options.snippet?.componentName,
+      source: options.source,
+    });
+    if (resolution.kind === 'bail') {
+      return { kind: 'bail', warning: resolution.warning };
+    }
+    if (resolution.kind === 'config') {
+      return { kind: 'template', ...resolution.config };
+    }
+
+    const setupExpression = setupReturnedRenderExpression(renderObject);
+    if (setupExpression) {
+      return {
+        argsParam: argsParameterName(renderFunction.node),
+        expression: setupExpression,
+        kind: 'h',
+      };
+    }
   }
 
   const hExpression = returnedExpressionPath(renderFunction)?.node;
@@ -405,7 +419,7 @@ function resolveStaticStoryArgs(
 }
 
 function renderStaticStorySnippet(
-  renderer: StaticStoryRenderer,
+  renderer: Exclude<StaticStoryRenderer, { kind: 'bail' }>,
   args: ClassifiedArg[],
   componentName: string,
   docgenArgInfo: VueDocgenArgInfo,
@@ -413,13 +427,15 @@ function renderStaticStorySnippet(
 ): StorySnippetResult | undefined {
   const componentImportStatement = options.snippet?.componentImportStatement;
 
+  // A story without a render function shows the component receiving the args directly.
   if (renderer.kind === 'sfc') {
     return componentImportStatement
-      ? renderSfcSnippet({
+      ? transformTemplate({
           args,
-          componentImportStatement,
+          componentImports: new Map([[componentName, componentImportStatement]]),
           componentName,
           importBindings: options.importBindings,
+          template: `<${componentName} v-bind="args" />`,
         })
       : undefined;
   }
@@ -428,18 +444,34 @@ function renderStaticStorySnippet(
     return transformTemplate({
       args,
       componentImports: renderer.componentImports,
+      componentName,
+      importBindings: options.importBindings,
+      setup: renderer.setup,
       template: renderer.template,
     });
   }
 
-  return transformH({
-    args,
+  const ctx = createRenderContext();
+  const printed = printH({
     argsParam: renderer.argsParam,
     componentImportStatement,
     componentName,
+    ctx,
     docgen: docgenArgInfo,
     importBindings: options.importBindings,
     node: renderer.expression,
+  });
+  if (!printed) {
+    return undefined;
+  }
+
+  return transformTemplate({
+    args,
+    componentImports: printed.componentImports,
+    componentName,
+    ctx,
+    importBindings: options.importBindings,
+    template: printed.template,
   });
 }
 

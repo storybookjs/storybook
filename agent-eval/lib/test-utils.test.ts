@@ -1,5 +1,12 @@
-import { describe, expect, test } from 'vitest';
+import { readFileSync } from 'node:fs';
+
+import { afterEach, beforeEach, describe, expect, test, vi } from 'vitest';
+
+vi.mock('node:fs', { spy: true });
+
 import {
+  expectPreviewBrowserStarted,
+  expectValidStorybookLaunchConfig,
   findDevServerKillCommands,
   isLocalDevServerUrl,
   isLocalStorybookPreviewUrl,
@@ -92,6 +99,66 @@ describe('parseStorybookWorkflowShellCommands', () => {
         title: 'ToggleSwitch states',
         rationale: 'All states.',
         storyIds: ['components-toggleswitch--off'],
+      },
+    ]);
+  });
+
+  test('resolves review-create --json from a same-command cat heredoc', () => {
+    const command = `cat > /tmp/review.json <<'EOF'
+{
+  "title": "New ProfileCard component",
+  "description": "A new ProfileCard.",
+  "collections": [
+    {
+      "title": "The full card",
+      "rationale": "Default composition.",
+      "storyIds": ["src-components-profilecard--default"]
+    }
+  ],
+  "changedFiles": ["src/components/ProfileCard.tsx"]
+}
+EOF
+STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai -p 36917 review-create --json "$(cat /tmp/review.json)" 2>&1 | tail -20`;
+
+    const calls = parseStorybookWorkflowShellCommands([command]);
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.name).toBe('review-create');
+    expect(calls[0]?.input.title).toBe('New ProfileCard component');
+    expect(calls[0]?.input.collections).toEqual([
+      {
+        title: 'The full card',
+        rationale: 'Default composition.',
+        storyIds: ['src-components-profilecard--default'],
+      },
+    ]);
+    expect(calls[0]?.input.changedFiles).toEqual(['src/components/ProfileCard.tsx']);
+  });
+
+  test('parses --json placed before the workflow command name', () => {
+    const calls = parseStorybookWorkflowShellCommands([
+      `STORYBOOK_FEATURE_AI_CLI=1 npx storybook ai --port 43383 --json '{
+  "title": "ReviewCard with date and report button",
+  "description": "ReviewCard now shows a date.",
+  "collections": [
+    {
+      "title": "ReviewCard states",
+      "rationale": "Default plus report.",
+      "storyIds": ["reviews-reviewcard--default"]
+    }
+  ],
+  "changedFiles": ["src/components/ReviewCard.tsx"]
+}' review-create 2>&1`,
+    ]);
+
+    expect(calls).toHaveLength(1);
+    expect(calls[0]?.name).toBe('review-create');
+    expect(calls[0]?.input.title).toBe('ReviewCard with date and report button');
+    expect(calls[0]?.input.collections).toEqual([
+      {
+        title: 'ReviewCard states',
+        rationale: 'Default plus report.',
+        storyIds: ['reviews-reviewcard--default'],
       },
     ]);
   });
@@ -425,5 +492,48 @@ describe('isLocalStorybookPreviewUrl', () => {
     expect(isLocalStorybookPreviewUrl('http://localhost:5173/')).toBe(false);
     expect(isLocalStorybookPreviewUrl('http://localhost:6006/')).toBe(false);
     expect(isLocalStorybookPreviewUrl('https://storybook.js.org/?path=/story/button')).toBe(false);
+  });
+});
+
+describe('launch/preview helpers fail loud out of context', () => {
+  const agentContextPath = '__agent_eval__/agent.json';
+
+  beforeEach(() => {
+    vi.mocked(readFileSync).mockReset();
+  });
+
+  afterEach(() => {
+    vi.mocked(readFileSync).mockRestore();
+  });
+
+  function stubAgentContext(agent: string, integration: 'mcp' | 'plugin') {
+    vi.mocked(readFileSync).mockImplementation(((path: unknown) => {
+      if (String(path) === agentContextPath) {
+        return JSON.stringify({ agent, integration, review: false });
+      }
+      throw new Error(`Unexpected readFileSync path in fail-loud helper test: ${String(path)}`);
+    }) as typeof readFileSync);
+  }
+
+  test('expectValidStorybookLaunchConfig fails when integration is mcp', () => {
+    stubAgentContext('claude-code', 'mcp');
+
+    expect(() => expectValidStorybookLaunchConfig()).toThrow(
+      /only for claude-code \+ plugin.*integration=mcp/
+    );
+  });
+
+  test('expectValidStorybookLaunchConfig fails for codex plugin (not Claude preview tooling)', () => {
+    stubAgentContext('codex', 'plugin');
+
+    expect(() => expectValidStorybookLaunchConfig()).toThrow(
+      /only for claude-code \+ plugin.*agent=codex/
+    );
+  });
+
+  test('expectPreviewBrowserStarted fails when integration is mcp', () => {
+    stubAgentContext('claude-code', 'mcp');
+
+    expect(() => expectPreviewBrowserStarted()).toThrow(/only for plugin.*integration=mcp/);
   });
 });

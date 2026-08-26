@@ -76,6 +76,7 @@ function parsePluginWorkflowCalls(command: string): StorybookWorkflowCall[] {
 
 function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[] {
   const tokens = tokenizeShellCommand(command);
+  const heredocs = extractCatHeredocs(command);
   const calls: StorybookWorkflowCall[] = [];
 
   for (let index = 0; index < tokens.length - 1; index += 1) {
@@ -88,7 +89,7 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
       continue;
     }
 
-    const invocation = parseStorybookCliInvocation(tokens.slice(index + 2), cli);
+    const invocation = parseStorybookCliInvocation(tokens.slice(index + 2), cli, heredocs);
     if (invocation !== undefined) {
       calls.push(invocation.call);
       index += invocation.consumed + 1;
@@ -100,7 +101,8 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
 
 function parseStorybookCliInvocation(
   cliArgs: string[],
-  cli: 'ai' | 'tools'
+  cli: 'ai' | 'tools',
+  heredocs: Map<string, string>
 ): { call: StorybookWorkflowCall; consumed: number } | undefined {
   const endIndex = cliArgs.findIndex(
     (token, index) =>
@@ -118,10 +120,16 @@ function parseStorybookCliInvocation(
     return undefined;
   }
 
+  const commandTokenCount = cli === 'tools' ? 2 : 1;
+  const inputTokens = [
+    ...segment.slice(0, command.endIndex - commandTokenCount),
+    ...segment.slice(command.endIndex),
+  ];
+
   return {
     call: {
       name: command.name,
-      input: parseStorybookAiInput(segment.slice(command.endIndex)),
+      input: parseStorybookAiInput(inputTokens, heredocs),
       source: 'storybook-ai',
     },
     consumed,
@@ -201,7 +209,10 @@ function isShellRedirection(token: string): boolean {
   return SHELL_REDIRECTION_PATTERN.test(token);
 }
 
-function parseStorybookAiInput(tokens: string[]): Record<string, unknown> {
+function parseStorybookAiInput(
+  tokens: string[],
+  heredocs: Map<string, string>
+): Record<string, unknown> {
   const input: Record<string, unknown> = {};
   let index = 0;
 
@@ -218,12 +229,12 @@ function parseStorybookAiInput(tokens: string[]): Record<string, unknown> {
     }
 
     if (token.startsWith('--')) {
-      index = parseFlagToken(tokens, index, input);
+      index = parseFlagToken(tokens, index, input, heredocs);
       continue;
     }
 
     // Positional argument: the CLI accepts the JSON payload bare.
-    mergeJsonInput(input, parseCliValue(token));
+    mergeJsonInput(input, parseCliValue(token, heredocs));
     index += 1;
   }
 
@@ -233,7 +244,12 @@ function parseStorybookAiInput(tokens: string[]): Record<string, unknown> {
 // Parse one `--flag`, `--flag=value`, or `--flag value` starting at `index`;
 // returns the index of the next unconsumed token. `--json` values merge into
 // the input object, every other flag assigns its (JSON-parsed) value.
-function parseFlagToken(tokens: string[], index: number, input: Record<string, unknown>): number {
+function parseFlagToken(
+  tokens: string[],
+  index: number,
+  input: Record<string, unknown>,
+  heredocs: Map<string, string>
+): number {
   const token = tokens[index] ?? '';
   const [rawKey = '', inlineValue] = token.slice(2).split('=', 2);
   if (rawKey.length === 0) {
@@ -250,13 +266,13 @@ function parseFlagToken(tokens: string[], index: number, input: Record<string, u
   };
 
   if (inlineValue !== undefined) {
-    assign(parseCliValue(inlineValue));
+    assign(parseCliValue(inlineValue, heredocs));
     return index + 1;
   }
 
   const next = tokens[index + 1];
   if (next !== undefined && !next.startsWith('-') && !isShellRedirection(next)) {
-    assign(parseCliValue(next));
+    assign(parseCliValue(next, heredocs));
     return index + 2;
   }
 
@@ -273,12 +289,30 @@ function mergeJsonInput(input: Record<string, unknown>, value: unknown): void {
   input.json = value;
 }
 
-function parseCliValue(value: string): unknown {
+function parseCliValue(value: string, heredocs: Map<string, string>): unknown {
+  const catPath = CAT_SUBSTITUTION.exec(value.trim())?.[1];
+  const fromHeredoc = catPath === undefined ? undefined : heredocs.get(catPath);
+  const payload = fromHeredoc ?? value;
   try {
-    return JSON.parse(value) as unknown;
+    return JSON.parse(payload) as unknown;
   } catch {
-    return value;
+    return payload;
   }
+}
+
+const CAT_SUBSTITUTION = /^\$\(\s*cat\s+(\S+)\s*\)$/;
+
+function extractCatHeredocs(command: string): Map<string, string> {
+  const files = new Map<string, string>();
+  const pattern = /cat\s+>\s+(\S+)\s+<<(['"]?)(\w+)\2\n([\s\S]*?)\n\3\b/g;
+  for (const match of command.matchAll(pattern)) {
+    const path = match[1];
+    const body = match[4];
+    if (path !== undefined && body !== undefined) {
+      files.set(path, body);
+    }
+  }
+  return files;
 }
 
 function kebabToCamel(value: string): string {
@@ -299,9 +333,9 @@ function unwrapWorkflowInput(value: Record<string, unknown>): Record<string, unk
   return value;
 }
 
-// Known limitation: command substitution (`$(...)`) and heredocs are treated
-// as literal text, so a `storybook ai` invocation nested inside them is not
-// recognized. Acceptable for eval scoring; extend if agents start doing that.
+// Known limitation: a `storybook ai` invocation nested inside `$(...)` is not
+// recognized. `$(cat path)` is resolved when that path was written by a
+// `cat > path <<TAG` heredoc in the same command.
 function tokenizeShellCommand(command: string): string[] {
   const tokens: string[] = [];
   let token = '';

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { NodeChannelConnection } from '../../../channels/node/index.ts';
+import type { NodeChannelConnection } from './node-channel.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import { bootstrapAttachedRuntime } from './attached-runtime.ts';
 import {

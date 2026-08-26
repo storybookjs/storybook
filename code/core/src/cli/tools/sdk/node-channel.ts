@@ -2,50 +2,33 @@ import { CHANNEL_WS_DISCONNECT } from 'storybook/internal/core-events';
 
 import { WebSocket } from 'ws';
 
-import { StorybookDevServerDisconnectedError } from '../../server-errors.ts';
-import { UniversalStore } from '../../shared/universal-store/index.ts';
-import { setChannel } from '../channel-slot.ts';
-import { Channel } from '../main.ts';
-import { SERVER_CHANNEL_PATH, WebsocketTransport } from '../websocket/index.ts';
+import { StorybookDevServerDisconnectedError } from '../../../server-errors.ts';
+import { UniversalStore } from '../../../shared/universal-store/index.ts';
+import { setChannel } from '../../../channels/channel-slot.ts';
+import { Channel } from '../../../channels/main.ts';
+import { SERVER_CHANNEL_PATH, WebsocketTransport } from '../../../channels/websocket/index.ts';
 
 const LOOPBACK_HOSTNAMES = new Set(['localhost', '127.0.0.1', '::1', '[::1]']);
 
 export interface NodeChannelOptions {
-  /** Base URL a Storybook dev server is listening on, e.g. `http://localhost:6006`. */
   url: string;
-  /** The dev server's websocket token, as recorded alongside its URL. */
   token: string;
 }
 
 export interface NodeChannelConnection {
   channel: Channel;
-  /**
-   * Resolves once the WebSocket handshake succeeds. Rejects when the socket errors or closes
-   * before opening, so callers can fail fast instead of hanging on a dead URL.
-   */
   connected: Promise<void>;
-  /**
-   * Rejects with `StorybookDevServerDisconnectedError` when the dev server closes the socket. Race
-   * it against in-flight work so a dropped connection surfaces as an error instead of a hang.
-   */
   disconnected: Promise<never>;
   close(): void;
 }
 
-/**
- * Connect this Node process to a running Storybook dev server's channel and install it as the
- * process-wide addons channel.
- *
- * The channel joins as a UniversalStore follower: the dev server leads, this process mirrors. TLS
- * verification is relaxed for loopback hosts only, so a `wss://` dev server using a self-signed
- * development certificate is reachable while remote hosts keep full verification.
- */
 export function createNodeChannel({ url, token }: NodeChannelOptions): NodeChannelConnection {
   const socketUrl = new URL(url);
   socketUrl.protocol = socketUrl.protocol === 'https:' ? 'wss:' : 'ws:';
   socketUrl.pathname = SERVER_CHANNEL_PATH;
   socketUrl.search = new URLSearchParams({ token }).toString();
 
+  // Loopback only: a local `wss://` Storybook often uses a self-signed dev certificate.
   const rejectUnauthorized = !LOOPBACK_HOSTNAMES.has(socketUrl.hostname);
   const socket = new WebSocket(socketUrl.href, { rejectUnauthorized });
   const connected = waitUntilOpen(socket);

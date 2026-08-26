@@ -6,7 +6,7 @@ import { versions } from 'storybook/internal/common';
 import {
   createNodeChannel as connectNodeChannel,
   type NodeChannelConnection,
-} from '../../../channels/node/index.ts';
+} from './node-channel.ts';
 import { setDelegatedMode } from '../../../shared/open-service/service-registry.ts';
 import type { ToolsetGetService } from '../../../shared/open-service/toolset-definition.ts';
 import { getRegisteredToolsets } from '../../../shared/open-service/toolset-registry.ts';

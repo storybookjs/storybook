@@ -10,7 +10,9 @@ export type StorybookWorkflowCall = {
 
 // `storybook skills get write-story` serves the same document the MCP channel
 // exposes as the get-storybook-story-instructions tool. Assertions ask by that
-// historic name; this matcher owns the cross-channel equivalence.
+// historic name; this matcher owns the cross-channel equivalence. Remove the
+// alias once the MCP tool and the skill share one name (or the tool is
+// retired) — until then it keeps the assertions channel-agnostic.
 export function workflowCallMatchesName(call: StorybookWorkflowCall, name: string): boolean {
   if (call.name === name) {
     return true;
@@ -102,17 +104,17 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
       // Record the literal invocation; which skill serves which workflow document
       // is workflowCallMatchesName's concern. A help request prints usage instead
       // of the skill, so it does not count — same rule as the ai/tools branch below.
-      const skillId = tokens[index + 2] === 'get' ? tokens[index + 3] : undefined;
+      const segment = segmentUntilSeparator(tokens, index + 2);
+      const [subcommand, skillId, ...rest] = segment;
       if (
+        subcommand === 'get' &&
         skillId !== undefined &&
         !skillId.startsWith('-') &&
-        !SHELL_COMMAND_SEPARATORS.has(skillId) &&
-        !segmentUntilSeparator(tokens, index + 4).some(
-          (token) => token === '--help' || token === '-h'
-        )
+        !rest.includes('--help') &&
+        !rest.includes('-h')
       ) {
         calls.push({ name: 'skills-get', input: { id: skillId }, source: 'cli' });
-        index += 3;
+        index += 1 + segment.length;
       }
       continue;
     }

@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AnyToolsetOutcome } from '../../../shared/open-service/toolset-definition.ts';
 import { runChildHost } from './child-host.ts';
@@ -32,8 +32,8 @@ describe('runChildHost', () => {
     describe.mockReset();
     call.mockReset();
     handlers.length = 0;
-    delete process.env.STORYBOOK_ATTACHED_TOOLS;
-    delete process.env.STORYBOOK_TOOLS_CHILD_HOST;
+    vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', undefined);
+    vi.stubEnv('STORYBOOK_TOOLS_CHILD_HOST', undefined);
     vi.mocked(createTools).mockReset();
     vi.mocked(createTools).mockResolvedValue({
       mode: 'attached',
@@ -61,6 +61,10 @@ describe('runChildHost', () => {
       }
       return { ok: true, data: { ran: true }, markdown: 'ok' };
     });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
   });
 
   it('boots local tools when init asks for local mode', async () => {

@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 
 import { versions } from 'storybook/internal/common';
 
+import { StorybookDevServerDisconnectedError } from '../../../server-errors.ts';
 import {
   createNodeChannel as connectNodeChannel,
   type NodeChannelConnection,
@@ -239,7 +240,15 @@ async function waitForHandshake(connection: NodeChannelConnection): Promise<void
     await Promise.race([
       connection.connected,
       new Promise<never>((_, reject) => {
-        timer = setTimeout(() => reject(), ATTACH_HANDSHAKE_TIMEOUT_MS);
+        timer = setTimeout(
+          () =>
+            reject(
+              new StorybookDevServerDisconnectedError({
+                reason: 'Timed out waiting for the Storybook channel to open',
+              })
+            ),
+          ATTACH_HANDSHAKE_TIMEOUT_MS
+        );
       }),
     ]);
   } finally {

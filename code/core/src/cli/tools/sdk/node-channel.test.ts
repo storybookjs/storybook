@@ -7,8 +7,10 @@ import { isJSON, parse, stringify } from 'telejson';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type WebSocket, WebSocketServer } from 'ws';
 
+import { getChannel, installNoopChannel, setChannel } from '../../../channels/channel-slot.ts';
 import { SERVER_CHANNEL_PATH } from '../../../channels/websocket/index.ts';
-import { createNodeChannel } from './node-channel.ts';
+import { UniversalStore } from '../../../shared/universal-store/index.ts';
+import { createNodeChannel, type NodeChannelConnection } from './node-channel.ts';
 
 const TOKEN = 'a-dev-server-token';
 
@@ -19,6 +21,7 @@ let upgradeUrls: string[];
 let originHeaders: (string | undefined)[];
 let connections: WebSocket[];
 let receivedByServer: any[];
+let clients: NodeChannelConnection[];
 
 const firstConnection = async () => {
   await vi.waitFor(() => expect(connections).toHaveLength(1));
@@ -30,6 +33,7 @@ beforeEach(async () => {
   originHeaders = [];
   connections = [];
   receivedByServer = [];
+  clients = [];
 
   httpServer = createServer();
   wsServer = new WebSocketServer({ noServer: true });
@@ -55,14 +59,23 @@ beforeEach(async () => {
 });
 
 afterEach(async () => {
+  for (const client of clients.splice(0)) {
+    client.close();
+  }
   connections.forEach((ws) => ws.terminate());
   wsServer.close();
   await new Promise<void>((resolve) => httpServer.close(() => resolve()));
 });
 
+const openChannel = (url = baseUrl) => {
+  const client = createNodeChannel({ url, token: TOKEN });
+  clients.push(client);
+  return client;
+};
+
 describe('createNodeChannel', () => {
   it('connects to the server channel path with the token in the query string', async () => {
-    const { connected } = createNodeChannel({ url: baseUrl, token: TOKEN });
+    const { connected } = openChannel();
 
     await firstConnection();
     await expect(connected).resolves.toBeUndefined();
@@ -70,21 +83,21 @@ describe('createNodeChannel', () => {
   });
 
   it('sends no Origin header, which browsers cannot omit', async () => {
-    createNodeChannel({ url: baseUrl, token: TOKEN });
+    openChannel();
 
     await firstConnection();
     expect(originHeaders).toEqual([undefined]);
   });
 
   it('replaces the path and query of the given base url', async () => {
-    createNodeChannel({ url: `${baseUrl}/some/base/path?existing=param`, token: TOKEN });
+    openChannel(`${baseUrl}/some/base/path?existing=param`);
 
     await firstConnection();
     expect(upgradeUrls).toEqual([`${SERVER_CHANNEL_PATH}?token=${TOKEN}`]);
   });
 
   it('replies to a server ping with a pong', async () => {
-    createNodeChannel({ url: baseUrl, token: TOKEN });
+    openChannel();
     const connection = await firstConnection();
 
     connection.send(stringify({ type: 'ping' }));
@@ -93,7 +106,7 @@ describe('createNodeChannel', () => {
   });
 
   it('does not surface transport pings as channel events', async () => {
-    const { channel } = createNodeChannel({ url: baseUrl, token: TOKEN });
+    const { channel } = openChannel();
     const onPing = vi.fn();
     channel.on('ping', onPing);
     const connection = await firstConnection();
@@ -105,7 +118,7 @@ describe('createNodeChannel', () => {
   });
 
   it('round-trips telejson-only values in both directions', async () => {
-    const { channel } = createNodeChannel({ url: baseUrl, token: TOKEN });
+    const { channel } = openChannel();
     const connection = await firstConnection();
 
     channel.emit('outgoing', { when: new Date('2026-08-20T00:00:00.000Z'), pattern: /token/gi });
@@ -134,7 +147,7 @@ describe('createNodeChannel', () => {
   });
 
   it('emits CHANNEL_WS_DISCONNECT and rejects with a dev server disconnected error on close', async () => {
-    const { channel, disconnected } = createNodeChannel({ url: baseUrl, token: TOKEN });
+    const { channel, disconnected } = openChannel();
     const disconnects: any[] = [];
     channel.on(CHANNEL_WS_DISCONNECT, (payload) => disconnects.push(payload));
     const connection = await firstConnection();
@@ -148,8 +161,65 @@ describe('createNodeChannel', () => {
   it('rejects with a dev server disconnected error when the server was never reachable', async () => {
     await new Promise<void>((resolve) => httpServer.close(() => resolve()));
 
-    const { disconnected } = createNodeChannel({ url: baseUrl, token: TOKEN });
+    const { disconnected } = openChannel();
 
     await expect(disconnected).rejects.toThrow('Storybook dev server disconnected');
+  });
+
+  it('restores the process channel and UniversalStore on close', async () => {
+    const previousChannel = getChannel();
+    const previousEnvironment = UniversalStore.preparedEnvironment;
+    const client = openChannel();
+
+    expect(getChannel()).toBe(client.channel);
+    expect(UniversalStore.preparedEnvironment).toBe(UniversalStore.Environment.UNKNOWN);
+
+    await firstConnection();
+    client.close();
+
+    expect(getChannel()).toBe(previousChannel);
+    expect(UniversalStore.preparedEnvironment).toBe(previousEnvironment);
+  });
+
+  it('does not restore the process channel when another caller owns the slot', async () => {
+    const client = openChannel();
+    await firstConnection();
+    const replacement = {};
+    setChannel(replacement as never);
+
+    client.close();
+
+    expect(getChannel()).toBe(replacement);
+    installNoopChannel();
+  });
+
+  it('does not restore a closed overlapping node channel', async () => {
+    const previousChannel = getChannel();
+    const previousEnvironment = UniversalStore.preparedEnvironment;
+    const first = openChannel();
+    await firstConnection();
+    const second = openChannel();
+    await vi.waitFor(() => expect(connections).toHaveLength(2));
+
+    first.close();
+    expect(getChannel()).toBe(second.channel);
+
+    second.close();
+    expect(getChannel()).toBe(previousChannel);
+    expect(UniversalStore.preparedEnvironment).toBe(previousEnvironment);
+  });
+
+  it('restores the remaining node channel when the later one closes first', async () => {
+    const previousChannel = getChannel();
+    const first = openChannel();
+    await firstConnection();
+    const second = openChannel();
+    await vi.waitFor(() => expect(connections).toHaveLength(2));
+
+    second.close();
+    expect(getChannel()).toBe(first.channel);
+
+    first.close();
+    expect(getChannel()).toBe(previousChannel);
   });
 });

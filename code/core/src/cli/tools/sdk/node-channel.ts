@@ -4,7 +4,7 @@ import { WebSocket } from 'ws';
 
 import { StorybookDevServerDisconnectedError } from '../../../server-errors.ts';
 import { UniversalStore } from '../../../shared/universal-store/index.ts';
-import { setChannel } from '../../../channels/channel-slot.ts';
+import { getChannel, setChannel } from '../../../channels/channel-slot.ts';
 import { Channel } from '../../../channels/main.ts';
 import { SERVER_CHANNEL_PATH, WebsocketTransport } from '../../../channels/websocket/index.ts';
 
@@ -20,6 +20,53 @@ export interface NodeChannelConnection {
   connected: Promise<void>;
   disconnected: Promise<never>;
   close(): void;
+}
+
+const installedNodeChannels: Channel[] = [];
+let displacedSlot:
+  | {
+      channel: ReturnType<typeof getChannel>;
+      environment: typeof UniversalStore.preparedEnvironment;
+    }
+  | undefined;
+
+function installNodeChannel(channel: Channel): void {
+  if (installedNodeChannels.length === 0) {
+    displacedSlot = {
+      channel: getChannel(),
+      environment: UniversalStore.preparedEnvironment,
+    };
+  }
+  installedNodeChannels.push(channel);
+  setChannel(channel);
+  UniversalStore.__prepare(channel, UniversalStore.Environment.UNKNOWN);
+}
+
+function uninstallNodeChannel(channel: Channel): void {
+  const index = installedNodeChannels.indexOf(channel);
+  if (index >= 0) {
+    installedNodeChannels.splice(index, 1);
+  }
+  if (getChannel() !== channel) {
+    if (installedNodeChannels.length === 0) {
+      displacedSlot = undefined;
+    }
+    return;
+  }
+  const remaining = installedNodeChannels.at(-1);
+  if (remaining) {
+    setChannel(remaining);
+    UniversalStore.__prepare(remaining, UniversalStore.Environment.UNKNOWN);
+    return;
+  }
+  const previous = displacedSlot;
+  displacedSlot = undefined;
+  setChannel(previous?.channel ?? null);
+  if (previous?.channel && previous.environment) {
+    UniversalStore.__prepare(previous.channel, previous.environment);
+  } else {
+    UniversalStore.__reset();
+  }
 }
 
 export function createNodeChannel({ url, token }: NodeChannelOptions): NodeChannelConnection {
@@ -44,8 +91,7 @@ export function createNodeChannel({ url, token }: NodeChannelOptions): NodeChann
   });
 
   const channel = new Channel({ transports: [transport] });
-  setChannel(channel);
-  UniversalStore.__prepare(channel, UniversalStore.Environment.UNKNOWN);
+  installNodeChannel(channel);
 
   const disconnected = new Promise<never>((_, reject) => {
     channel.once(CHANNEL_WS_DISCONNECT, ({ code, reason }: { code?: number; reason?: string }) => {
@@ -55,13 +101,16 @@ export function createNodeChannel({ url, token }: NodeChannelOptions): NodeChann
   // A caller that never races `disconnected` must not get an unhandled rejection on server shutdown.
   void disconnected.catch(() => {});
 
+  const close = () => {
+    socket.close();
+    uninstallNodeChannel(channel);
+  };
+
   return {
     channel,
     connected,
     disconnected,
-    close: () => {
-      socket.close();
-    },
+    close,
   };
 }
 

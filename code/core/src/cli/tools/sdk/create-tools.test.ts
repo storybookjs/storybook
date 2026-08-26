@@ -439,7 +439,7 @@ describe('call', () => {
     const tools = await createTools({ mode: 'local' });
 
     await expect(tools.call('echo.ok', { value: 7 })).rejects.toMatchObject({
-      data: { reason: 'invalid-input' },
+      data: { reason: 'invalid-input', issues: expect.any(Array) },
     });
     await expect(tools.call('echo.ok', { value: 7 })).rejects.toThrow(
       'Invalid input for `echo.ok`'

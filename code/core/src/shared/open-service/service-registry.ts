@@ -54,21 +54,51 @@ type RegistryEntry = {
 
 const REGISTRY_SYMBOL = Symbol.for('storybook.open-service.registry');
 
+type RegistryInventory = {
+  entries: Map<string, RegistryEntry>;
+  delegatedMode: boolean;
+};
+
 /**
- * Returns the realm-global registry backing service registration.
+ * Returns the realm-global inventory backing service registration and delegated mode.
  *
  * Lazily created so importing the module does not eagerly mutate global state. Anchoring it on a
- * `globalThis` symbol keeps runtime lookups, static builds, and tests pointed at one service inventory
- * even when the module is reached through different import paths.
+ * `globalThis` symbol keeps the service map and the delegated-mode flag shared even when this file is
+ * reached through different import paths.
  */
-function getRegistry(): Map<string, RegistryEntry> {
+function getInventory(): RegistryInventory {
   const registryGlobal = globalThis as {
-    [key: symbol]: Map<string, RegistryEntry> | undefined;
+    [key: symbol]: RegistryInventory | undefined;
   };
 
-  registryGlobal[REGISTRY_SYMBOL] ??= new Map<string, RegistryEntry>();
+  registryGlobal[REGISTRY_SYMBOL] ??= {
+    entries: new Map<string, RegistryEntry>(),
+    delegatedMode: false,
+  };
 
   return registryGlobal[REGISTRY_SYMBOL];
+}
+
+function getRegistry(): Map<string, RegistryEntry> {
+  return getInventory().entries;
+}
+
+/**
+ * Marks this runtime as delegated, so every registered service dispatches its commands over the
+ * channel instead of running local handlers.
+ *
+ * Set it once at the runtime entry boundary, before any `registerService` call — it is read at
+ * registration time, like the installed channel. Service definitions are unaffected: their handlers
+ * stay registered and inspectable, they simply never run here because the Storybook this runtime
+ * attached to is the implementer.
+ */
+export function setDelegatedMode(enabled: boolean): void {
+  getInventory().delegatedMode = enabled;
+}
+
+/** Whether this runtime delegates command dispatch to the Storybook it is attached to. */
+export function isDelegatedMode(): boolean {
+  return getInventory().delegatedMode;
 }
 
 function assertUniqueOperationNames(definition: AnyServiceDefinition): void {
@@ -276,7 +306,8 @@ export function registerService<
 
   // A command may only have a handler in some runtimes (e.g. supplied at server registration). Where
   // a local handler exists, callers run it locally and broadcast; where it does not, the resulting
-  // command routes calls to a peer that implements it and awaits the reply.
+  // command routes calls to a peer that implements it and awaits the reply. A delegated runtime
+  // routes every command to its peer regardless.
   const implementedCommandNames = new Set<string>(
     Object.entries(resolvedDefinition.commands)
       .filter(([, command]) => typeof command.handler === 'function')
@@ -295,6 +326,7 @@ export function registerService<
     commands: runtime.commands as Record<string, (input: unknown) => Promise<unknown>>,
     implementedCommandNames,
     commandNames: Object.keys(resolvedDefinition.commands),
+    delegated: isDelegatedMode(),
     runtime,
   });
 
@@ -384,7 +416,8 @@ export function unregisterService(serviceId: ServiceId): void {
 }
 
 /**
- * Clears the registry, tearing down each service's channel listeners first.
+ * Clears the registry, tearing down each service's channel listeners first, and resets delegated
+ * mode.
  *
  * Tests call this after each case so registrations — and the channel listeners a registration attaches
  * — from one scenario do not leak into the next.
@@ -397,4 +430,5 @@ export function clearRegistry(): void {
   }
 
   registry.clear();
+  getInventory().delegatedMode = false;
 }

@@ -2,7 +2,12 @@ import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 import { dirname, extname, join, normalize, relative, resolve, sep } from 'node:path';
 
-import { commonGlobOptions, getProjectRoot, normalizeStoryPath } from 'storybook/internal/common';
+import {
+  commonGlobOptions,
+  getProjectRoot,
+  getTsconfigPathsBaseDir,
+  normalizeStoryPath,
+} from 'storybook/internal/common';
 import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
 import { getStorySortParameter, loadConfig } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
@@ -421,11 +426,11 @@ export class StoryIndexGenerator {
     const tsconfig = TsconfigPaths.loadConfig(tsconfigPath);
     let matchPath: TsconfigPaths.MatchPath | undefined;
     if (tsconfig.resultType === 'success') {
-      matchPath = TsconfigPaths.createMatchPath(tsconfig.absoluteBaseUrl, tsconfig.paths, [
-        'browser',
-        'module',
-        'main',
-      ]);
+      matchPath = TsconfigPaths.createMatchPath(
+        getTsconfigPathsBaseDir(tsconfig.configFileAbsolutePath),
+        tsconfig.paths,
+        ['browser', 'module', 'main']
+      );
     }
 
     const toImportPath = (path: string | undefined) => {

@@ -2,20 +2,24 @@ import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { optionalEnvToBoolean } from 'storybook/internal/common';
+import { sendTelemetryError, withTelemetry } from 'storybook/internal/core-server';
 import { telemetry } from 'storybook/internal/telemetry';
 
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 
 import { Command } from 'commander';
 
-import { sendTelemetryError, withTelemetry } from '../../core-server/withTelemetry.ts';
 import { registerToolsPassthrough } from './register.ts';
 import { runToolsCommand } from './run.ts';
 import type { ToolsRunResult } from './run.ts';
 
 vi.mock('./run.ts', { spy: true });
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('../../core-server/withTelemetry.ts', { spy: true });
+// Factory mock: a spy of this package loads the real withTelemetry and hangs these CLI tests.
+vi.mock('storybook/internal/core-server', () => ({
+  withTelemetry: vi.fn(async (_event, _options, run: () => Promise<unknown>) => run()),
+  sendTelemetryError: vi.fn(),
+}));
 vi.mock('storybook/internal/telemetry', { spy: true });
 
 function buildProgram() {
@@ -72,6 +76,15 @@ function successResult(overrides: Partial<ToolsRunResult> = {}): ToolsRunResult 
   };
 }
 
+function makeProgram() {
+  const program = new Command();
+  const toolsCommand = program.command('tools');
+  registerToolsPassthrough(program, toolsCommand, () => async (error: unknown) => {
+    throw error;
+  });
+  return program;
+}
+
 beforeEach(() => {
   vi.stubEnv('STORYBOOK_DISABLE_TELEMETRY', undefined);
   vi.mocked(runToolsCommand).mockResolvedValue(successResult());
@@ -79,18 +92,16 @@ beforeEach(() => {
   vi.mocked(withTelemetry).mockImplementation(async (_eventType, _options, run) => run());
   vi.mocked(telemetry).mockResolvedValue(undefined);
   vi.mocked(sendTelemetryError).mockResolvedValue(undefined);
-  vi.spyOn(process.stdout, 'write').mockImplementation(((chunk: unknown, cb?: unknown) => {
-    if (typeof cb === 'function') {
-      (cb as () => void)();
-    }
+  vi.spyOn(process.stdout, 'write').mockImplementation((_chunk, ...args) => {
+    const callback = args.find((arg) => typeof arg === 'function');
+    callback?.();
     return true;
-  }) as typeof process.stdout.write);
-  vi.spyOn(process.stderr, 'write').mockImplementation(((chunk: unknown, cb?: unknown) => {
-    if (typeof cb === 'function') {
-      (cb as () => void)();
-    }
+  });
+  vi.spyOn(process.stderr, 'write').mockImplementation((_chunk, ...args) => {
+    const callback = args.find((arg) => typeof arg === 'function');
+    callback?.();
     return true;
-  }) as typeof process.stderr.write);
+  });
   vi.spyOn(process, 'exit').mockImplementation((() => undefined) as never);
 });
 
@@ -295,5 +306,69 @@ describe('tools-command telemetry', () => {
       }),
       expect.any(Function)
     );
+  });
+});
+
+describe('the --json stream contract', () => {
+  let stdoutSpy: MockInstance<typeof process.stdout.write>;
+  let stderrSpy: MockInstance<typeof process.stderr.write>;
+
+  beforeEach(() => {
+    stdoutSpy = vi.spyOn(process.stdout, 'write').mockImplementation((_chunk, ...args) => {
+      const callback = args.find((arg) => typeof arg === 'function');
+      callback?.();
+      return true;
+    });
+    stderrSpy = vi.spyOn(process.stderr, 'write').mockImplementation(() => true);
+    vi.mocked(withTelemetry).mockImplementation(async (_event, _options, run) => {
+      process.stdout.write('noise during telemetry resolution\n');
+      return run();
+    });
+    vi.mocked(telemetry).mockImplementation(async () => {
+      process.stdout.write('noise after the result\n');
+    });
+    vi.mocked(runToolsCommand).mockImplementation(async () => {
+      process.stdout.write('noise during the run\n');
+      return successResult({ output: '{"ok":true}' });
+    });
+  });
+
+  it('prints only the result on stdout; every mid-command write lands on stderr', async () => {
+    const originalWrite = process.stdout.write;
+
+    await makeProgram().parseAsync(['tools', 'docs', 'list', '--json'], { from: 'user' });
+
+    expect(stdoutSpy).toHaveBeenCalledTimes(1);
+    expect(stdoutSpy.mock.calls[0][0]).toBe('{"ok":true}\n');
+    const stderrText = stderrSpy.mock.calls.map(([chunk]) => chunk).join('');
+    expect(stderrText).toContain('noise during telemetry resolution');
+    expect(stderrText).toContain('noise during the run');
+    expect(stderrText).toContain('noise after the result');
+    expect(process.stdout.write).toBe(originalWrite);
+  });
+
+  it('restores stdout when the command fails', async () => {
+    const originalWrite = process.stdout.write;
+    vi.mocked(withTelemetry).mockRejectedValueOnce(new Error('boom'));
+
+    await expect(
+      makeProgram().parseAsync(['tools', 'docs', 'list', '--json'], { from: 'user' })
+    ).rejects.toThrow('boom');
+
+    expect(process.stdout.write).toBe(originalWrite);
+  });
+
+  it('leaves stdout alone without --json', async () => {
+    vi.mocked(runToolsCommand).mockImplementation(async () => {
+      process.stdout.write('noise during the run\n');
+      return successResult({ output: 'markdown result' });
+    });
+
+    await makeProgram().parseAsync(['tools', 'docs', 'list'], { from: 'user' });
+
+    const stdoutText = stdoutSpy.mock.calls.map(([chunk]) => chunk).join('');
+    expect(stdoutText).toContain('noise during the run');
+    expect(stdoutText).toContain('markdown result\n');
+    expect(stderrSpy).not.toHaveBeenCalled();
   });
 });

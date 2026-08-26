@@ -414,7 +414,7 @@ Defaults to ${DEFAULT_MAX_DISTANCE}; raise it to widen recall, lower it to tight
           });
 
           const data: FindByComponentOutput = { results: lookup.results, maxDistance };
-          return { ok: true, data, markdown: formatFindByComponent(data, ctx) };
+          return { ok: true, data, markdown: formatFindByComponent(data) };
         },
       },
     },

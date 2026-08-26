@@ -287,12 +287,14 @@ export class OpenServiceRemoteCommandDisconnectedError extends StorybookError {
 }
 
 export class OpenServiceRemoteCommandUnhandledError extends StorybookError {
-  constructor(public data: { serviceId: ServiceId; commandName: string }) {
+  constructor(public data: { serviceId: ServiceId; commandName: string; delegated?: boolean }) {
     super({
       name: 'OpenServiceRemoteCommandUnhandledError',
       category: Category.CORE_COMMON,
       code: 15,
-      message: `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
+      message: data.delegated
+        ? `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; this runtime delegates every command to the Storybook it is attached to, and that Storybook was started with a different configuration. Restart it so the command's handler is available.`
+        : `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
     });
   }
 }
@@ -569,6 +571,23 @@ export class AngularLegacyBuildOptionsError extends StorybookError {
         You must use Angular builder to have an explicit configuration on the project used in angular.json.
         
         Please run 'npx storybook automigrate' to automatically fix your config.`,
+    });
+  }
+}
+
+export class AngularUnresolvedStyleError extends StorybookError {
+  constructor(public data: { stylePath: string; workspaceRoot: string; extensions: string[] }) {
+    super({
+      name: 'AngularUnresolvedStyleError',
+      category: Category.FRAMEWORK_ANGULAR,
+      code: 2,
+      documentation: 'https://storybook.js.org/docs/get-started/frameworks/angular-vite',
+      message: dedent`
+        Cannot resolve the stylesheet '${data.stylePath}' from the Angular workspace root '${data.workspaceRoot}'.
+
+        No file matches it there, with or without a ${data.extensions.join(', ')} extension.
+
+        Angular resolves a 'styles' entry from the workspace root, so a relative entry has to point at a file below it. Check the 'styles' array on your Storybook builder target in angular.json.`,
     });
   }
 }

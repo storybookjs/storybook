@@ -11,7 +11,7 @@ import type { Command } from 'commander';
 import type { ToolsetTelemetry } from '../../shared/open-service/toolset-definition.ts';
 import { resolveStorybookConfigDir } from './config-dir.ts';
 import { runToolsCommand, type ToolsCommandOutcome, type ToolsRunResult } from './run.ts';
-import { TOOLS_OPTION_SPECS, type ToolsOutputFlags } from './tool-tokens.ts';
+import { isJsonToolsRun, TOOLS_OPTION_SPECS, type ToolsOutputFlags } from './tool-tokens.ts';
 
 /** `handleCommandFailure` from `bin/core.ts`, passed in to avoid an import cycle. */
 export type CommandFailureHandler = (
@@ -69,56 +69,76 @@ export function registerToolsPassthrough(
         options: ToolsPassthroughOptions
       ) => {
         const cliOptions = pickCliOptions(options);
-        // Like `init`, the fallback keeps telemetry on when no main config is loadable: running
-        // from a cwd without a Storybook is a failure this event exists to measure. The explicit
-        // opt-outs (env var, flag, loadable `core.disableTelemetry`) still apply.
-        await withTelemetry(
-          'tools-command',
-          { cliOptions, fallbackTelemetryState: true },
-          async () => {
-            // The dev server's listening socket keeps its event loop alive; this realm has no
-            // server, and some of the async work the toolsets await (native parser/resolver calls
-            // in the module-graph engine) holds no libuv handle while in flight. Without a
-            // keep-alive the loop can drain mid-await and Node exits silently with code 0.
-            const keepAlive = setInterval(() => {}, 60_000);
-            const start = Date.now();
-            let result: ToolsRunResult;
-            try {
-              result = await runToolsCommand(
-                {
+        const flags: ToolsOutputFlags = {
+          input: options.input,
+          json: options.json,
+          output: options.output,
+          help: options.help,
+        };
+        // `--json` promises a parseable stdout, but writers this realm does not own print to it:
+        // `withTelemetry` evaluates the project's `main.ts` to resolve the telemetry opt-out
+        // before the command body runs (and the module cache means import-time logging fires only
+        // in that first load), config loading and the tool log through clack-backed node-logger
+        // and vite, and the telemetry report after the result can log as well. Divert every
+        // stdout write to stderr for the whole command; `printResult` writes the result through
+        // the saved writer.
+        const originalStdoutWrite = process.stdout.write;
+        if (isJsonToolsRun(tokens, flags)) {
+          // Bound, not assigned: both streams share the inherited `Writable.prototype.write`,
+          // which dispatches on `this` — unbound it would keep writing to stdout.
+          process.stdout.write = process.stderr.write.bind(
+            process.stderr
+          ) as typeof process.stdout.write;
+        }
+        try {
+          // Like `init`, the fallback keeps telemetry on when no main config is loadable: running
+          // from a cwd without a Storybook is a failure this event exists to measure. The explicit
+          // opt-outs (env var, flag, loadable `core.disableTelemetry`) still apply.
+          await withTelemetry(
+            'tools-command',
+            { cliOptions, fallbackTelemetryState: true },
+            async () => {
+              // The dev server's listening socket keeps its event loop alive; this realm has no
+              // server, and some of the async work the toolsets await (native parser/resolver calls
+              // in the module-graph engine) holds no libuv handle while in flight. Without a
+              // keep-alive the loop can drain mid-await and Node exits silently with code 0.
+              const keepAlive = setInterval(() => {}, 60_000);
+              const start = Date.now();
+              let result: ToolsRunResult;
+              try {
+                result = await runToolsCommand(
+                  {
+                    toolset,
+                    tool,
+                    tokens,
+                    target: { cwd: options.cwd, configDir: options.configDir },
+                    flags,
+                  },
+                  { methodTelemetry: createMethodTelemetrySink(cliOptions) }
+                );
+              } finally {
+                clearInterval(keepAlive);
+              }
+              const duration = Date.now() - start;
+              try {
+                await printResult(result, originalStdoutWrite);
+              } finally {
+                // The tool has executed either way, so a failed `--output` write must not lose the
+                // event. Reporting after printing keeps a slow telemetry endpoint from ever
+                // delaying the user's result.
+                await reportToolsCommandTelemetry(
                   toolset,
                   tool,
-                  tokens,
-                  target: { cwd: options.cwd, configDir: options.configDir },
-                  flags: {
-                    input: options.input,
-                    json: options.json,
-                    output: options.output,
-                    help: options.help,
-                  },
-                },
-                { methodTelemetry: createMethodTelemetrySink(cliOptions) }
-              );
-            } finally {
-              clearInterval(keepAlive);
+                  result.outcome,
+                  duration,
+                  cliOptions
+                );
+              }
             }
-            const duration = Date.now() - start;
-            try {
-              await printResult(result);
-            } finally {
-              // The tool has executed either way, so a failed `--output` write must not lose the
-              // event. Reporting after printing keeps a slow telemetry endpoint from ever
-              // delaying the user's result.
-              await reportToolsCommandTelemetry(
-                toolset,
-                tool,
-                result.outcome,
-                duration,
-                cliOptions
-              );
-            }
-          }
-        ).catch(handleCommandFailure(options.logfile));
+          ).catch(handleCommandFailure(options.logfile));
+        } finally {
+          process.stdout.write = originalStdoutWrite;
+        }
         // Exit explicitly: tool handlers may leave live handles behind that natural drain cannot
         // clear — the vitest child process's IPC pipe among them (its owner kills the child from a
         // process exit handler, which only fires once exit is under way). `printResult` set a
@@ -209,7 +229,10 @@ async function reportToolsCommandTelemetry(
 }
 
 /** Print to stdout, or to the file given via `-o, --output`. */
-async function printResult({ output, exitCode, outputPath }: ToolsRunResult): Promise<void> {
+async function printResult(
+  { output, exitCode, outputPath }: ToolsRunResult,
+  stdoutWrite: typeof process.stdout.write
+): Promise<void> {
   if (outputPath) {
     const resolvedPath = resolve(outputPath);
     await writeFile(resolvedPath, `${output}\n`, 'utf-8');
@@ -217,8 +240,10 @@ async function printResult({ output, exitCode, outputPath }: ToolsRunResult): Pr
   } else {
     // Awaiting the flush matters because the command exits explicitly right after: `process.exit`
     // truncates output still buffered in a piped stdout, and agents pipe this output.
+    // `stdoutWrite` is the stream's saved original writer, so the result escapes the `--json`
+    // diversion above.
     await new Promise<void>((resolveWrite) => {
-      process.stdout.write(`${output}\n`, () => resolveWrite());
+      stdoutWrite.call(process.stdout, `${output}\n`, undefined, () => resolveWrite());
     });
   }
   if (exitCode !== 0) {

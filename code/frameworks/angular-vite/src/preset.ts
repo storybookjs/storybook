@@ -7,9 +7,10 @@ import {
   getRealPath,
 } from 'storybook/internal/mocking-utils';
 import { logger } from 'storybook/internal/node-logger';
+import { AngularUnresolvedStyleError } from 'storybook/internal/server-errors';
 import type { PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
 
-import { readFileSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { basename, isAbsolute, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -69,7 +70,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   };
 };
 
-function resolveZoneless(angularBuilderOptions: StandaloneOptions['angularBuilderOptions']) {
+export function resolveZoneless(angularBuilderOptions: StandaloneOptions['angularBuilderOptions']) {
   return angularBuilderOptions?.zoneless ?? true;
 }
 
@@ -300,17 +301,49 @@ export function compodocJsonStubPlugin(configDir: string): Plugin {
   };
 }
 
+const STYLE_EXTENSIONS = ['.css', '.scss', '.sass', '.less'];
+
+const isFile = (path: string) => statSync(path, { throwIfNoEntry: false })?.isFile() === true;
+
+// Angular resolves a `styles` entry relative-first from the workspace root and only then through
+// node_modules: `preferRelative` on the webpack builder's enhanced-resolve, an esbuild `@import`
+// with `resolveDir: workspaceRoot` on the esbuild builder. Both spellings occur in the wild.
+function resolveBuilderStyle(stylePath: string, workspaceRoot: string) {
+  const workspacePath = resolve(workspaceRoot, stylePath);
+  const onDisk = [workspacePath, ...STYLE_EXTENSIONS.map((ext) => workspacePath + ext)].find(
+    isFile
+  );
+  if (onDisk) {
+    return onDisk;
+  }
+
+  // Emitting a path-shaped entry verbatim would make Vite resolve it against `preview.ts` rather
+  // than the workspace root, and node_modules cannot rescue one either.
+  if (isAbsolute(stylePath) || /^\.\.?[/\\]/.test(stylePath)) {
+    throw new AngularUnresolvedStyleError({
+      stylePath,
+      workspaceRoot,
+      extensions: STYLE_EXTENSIONS,
+    });
+  }
+
+  return stylePath;
+}
+
 export function angularOptionsPlugin(
   options: StandaloneOptions,
   { normalizePath, zoneless }: any
 ): Plugin {
-  let resolvedConfig: UserConfig;
   let resolvedPreviewPath: string | undefined;
+  // Angular resolves builder paths against the workspace root, which in a monorepo is a level (or
+  // several) above the Vite root. Both `stylePreprocessorOptions` and `styles` need it.
+  let workspaceRoot = process.cwd();
   return {
     name: 'storybook-angular-vite-options-plugin',
     config(userConfig: UserConfig) {
-      resolvedConfig = userConfig;
       resolvedPreviewPath = findConfigFile('preview', options.configDir) ?? undefined;
+      workspaceRoot =
+        options.angularBuilderContext?.workspaceRoot ?? userConfig?.root ?? process.cwd();
       const stylePreprocessorOptions =
         options?.angularBuilderOptions?.stylePreprocessorOptions ?? {};
       // Angular's builder schema (and this framework's builder schema) names the
@@ -324,9 +357,6 @@ export function angularOptionsPlugin(
       if (!Array.isArray(loadPaths) && !sassOptions) {
         return;
       }
-
-      const workspaceRoot =
-        options.angularBuilderContext?.workspaceRoot ?? userConfig?.root ?? process.cwd();
 
       return {
         css: {
@@ -358,7 +388,7 @@ export function angularOptionsPlugin(
                   ? style.input
                   : undefined;
             if (stylePath !== undefined) {
-              imports.push(stylePath);
+              imports.push(normalizePath(resolveBuilderStyle(stylePath, workspaceRoot)));
             }
           });
         }
@@ -367,24 +397,9 @@ export function angularOptionsPlugin(
           imports.push('zone.js');
         }
 
-        // Use vite config root when angularBuilderContext is not available
-        // (e.g., when running via Vitest instead of Angular builders)
-        const projectRoot = resolvedConfig?.root ?? process.cwd();
-
         return {
           code: `
-            ${imports
-              .map((extraImport) => {
-                if (extraImport.startsWith('.') || extraImport.startsWith('src')) {
-                  // relative to root — normalize to forward slashes so the
-                  // generated import specifier is valid on Windows.
-                  return `import '${normalizePath(resolve(projectRoot, extraImport))}';`;
-                }
-
-                // absolute import
-                return `import '${extraImport}';`;
-              })
-              .join('\n')}
+            ${imports.map((extraImport) => `import '${extraImport}';`).join('\n')}
             ${code}
           `,
         };

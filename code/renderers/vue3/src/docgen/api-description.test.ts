@@ -232,6 +232,39 @@ describe('buildApiDescription', () => {
     `);
   });
 
+  it('uses an authored default tag instead of appending the runtime default', () => {
+    const result = buildApiDescription(
+      source({
+        props: [
+          prop({
+            name: 'placeholder',
+            type: 'string | undefined',
+            description: 'Placeholder shown while empty.',
+            required: false,
+            default: "'runtime-search'",
+            tags: [{ name: 'default', text: '"Search…"' }],
+          }),
+        ],
+      })
+    );
+
+    expect(result?.match(/@default/g)).toHaveLength(1);
+    expect(result).toMatchInlineSnapshot(`
+      "## Props
+
+      \`\`\`
+      export type ButtonProps = {
+        /**
+         * Placeholder shown while empty.
+         *
+         * @default "Search…"
+         */
+        placeholder?: string;
+      }
+      \`\`\`"
+    `);
+  });
+
   it('keeps multiline descriptions in a multiline doc comment', () => {
     const result = buildApiDescription(
       source({

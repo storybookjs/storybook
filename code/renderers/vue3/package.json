@@ -1,6 +1,6 @@
 {
   "name": "@storybook/vue3",
-  "version": "10.6.0-alpha.7",
+  "version": "10.6.0-alpha.9",
   "description": "Storybook Vue 3 renderer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -53,7 +53,7 @@
     "@vue/compiler-dom": "^3.2.47",
     "@vue/language-core": "^3.2.7",
     "type-fest": "^5.6.0",
-    "vue-component-meta": "^3.2.7",
+    "vue-component-meta": "^3.3.9",
     "vue-component-type-helpers": "^3.2.9",
     "vue-docgen-api": "^4.75.1"
   },

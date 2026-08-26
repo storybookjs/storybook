@@ -806,7 +806,7 @@ describe('attached tools', () => {
   it('prints the SDK fallback notice separately from the local result', async () => {
     const tools = makeLocalTools();
     tools.fallbackNotice =
-      "No running Storybook was found for this project.\n\nFalling back to loading this project's Storybook configuration in this process.";
+      "No running Storybook was found for this project.\n\nFalling back to loading this project's Storybook configuration.";
     const { deps, createTools } = makeDeps({
       createTools: vi.fn(async () => tools),
     });

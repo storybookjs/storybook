@@ -108,7 +108,7 @@ describe('attach failure messages', () => {
     ).toMatchInlineSnapshot(
       `"Restart Storybook (v10.2.0+) to enable attach.
 
-Falling back to loading this project's Storybook configuration in this process."`
+Falling back to loading this project's Storybook configuration."`
     );
   });
 });

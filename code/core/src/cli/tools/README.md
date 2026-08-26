@@ -72,7 +72,7 @@ npx storybook tools --cwd /apps/web --config-dir /apps/web/.storybook docs list
 
 ## Modes
 
-**Attached.** Discover `~/.storybook/instances/*.json`, connect with `createNodeChannel` to
+**Attached.** Discover `~/.storybook/instances/*.json`, connect a Node WebSocket to
 `/storybook-server-channel?token=…` (no Origin), load the instance config as a **leaf** and
 **follower**, set `setDelegatedMode(true)` before the first `registerService`. This path never
 `chdir`s the host process.

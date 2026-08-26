@@ -111,7 +111,7 @@ consumer amortizes config load across many calls on the live synced runtime.
    configDir. No record → local fallback, or a hard error under `--attach`.
 2. **Gate + fidelity.** Token present (else "restart Storybook" + fallback). Same cwd and
    version, else auto-spawn (or `EnvironmentMismatchError` when `autoSpawn: false`).
-3. **Connect.** `createNodeChannel` to `record.url` + `/storybook-server-channel?token=…`, no
+3. **Connect.** Node WebSocket to `record.url` + `/storybook-server-channel?token=…`, no
    Origin. `UniversalStore.__prepare(channel, follower)`.
 4. **Register.** Load config from `record.configDir`. Set delegated mode. `services:sync-start`
    pulls snapshots and patches from the server.

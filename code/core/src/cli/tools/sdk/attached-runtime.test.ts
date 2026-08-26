@@ -67,6 +67,20 @@ function makeRuntimeDeps(
   };
 }
 
+async function rejectedAttachUnavailable(
+  failure: Promise<unknown>
+): Promise<AttachUnavailableError> {
+  try {
+    await failure;
+  } catch (caught) {
+    expect(caught).toBeInstanceOf(AttachUnavailableError);
+    if (caught instanceof AttachUnavailableError) {
+      return caught;
+    }
+  }
+  throw new Error('expected AttachUnavailableError');
+}
+
 beforeEach(() => {
   vi.unstubAllGlobals();
 });
@@ -116,7 +130,7 @@ describe('bootstrapAttachedRuntime', () => {
     await expect(failure).rejects.toThrow('npm run storybook');
     await expect(failure).rejects.toThrow('cd /apps/web');
     await expect(failure).rejects.toThrow('--config-dir /apps/web/.storybook');
-    const error = await failure.catch((caught: AttachUnavailableError) => caught);
+    const error = await rejectedAttachUnavailable(failure);
     expect(error.data.instances.every((instance) => !('token' in instance))).toBe(true);
     expect(inspect(error)).not.toContain('secret');
   });
@@ -137,7 +151,7 @@ describe('bootstrapAttachedRuntime', () => {
     await expect(failure).rejects.toMatchObject({ data: { reason: 'multiple-matches' } });
     await expect(failure).rejects.toThrow('--config-dir /repo/.storybook');
     await expect(failure).rejects.toThrow('--config-dir /repo/.storybook-alt');
-    const error = await failure.catch((caught: AttachUnavailableError) => caught);
+    const error = await rejectedAttachUnavailable(failure);
     expect(error.data.instances.every((instance) => !('token' in instance))).toBe(true);
     expect(inspect(error)).not.toContain('secret');
   });
@@ -185,7 +199,7 @@ describe('bootstrapAttachedRuntime', () => {
     await expect(failure).rejects.toMatchObject({ data: { reason: 'connection-failed' } });
     await expect(failure).rejects.toThrow(RECORD.url);
     await expect(failure).rejects.toThrow('npm run storybook');
-    const error = await failure.catch((caught: AttachUnavailableError) => caught);
+    const error = await rejectedAttachUnavailable(failure);
     expect(error.data.instances.every((instance) => !('token' in instance))).toBe(true);
     expect(inspect(error)).not.toContain('secret');
   });

@@ -7,8 +7,8 @@ import { isJSON, parse, stringify } from 'telejson';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { type WebSocket, WebSocketServer } from 'ws';
 
-import { SERVER_CHANNEL_PATH } from '../websocket/index.ts';
-import { createNodeChannel } from './index.ts';
+import { SERVER_CHANNEL_PATH } from '../../../channels/websocket/index.ts';
+import { createNodeChannel } from './node-channel.ts';
 
 const TOKEN = 'a-dev-server-token';
 

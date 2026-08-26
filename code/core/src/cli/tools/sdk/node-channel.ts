@@ -4,7 +4,7 @@ import { WebSocket } from 'ws';
 
 import { StorybookDevServerDisconnectedError } from '../../../server-errors.ts';
 import { UniversalStore } from '../../../shared/universal-store/index.ts';
-import { setChannel } from '../../../channels/channel-slot.ts';
+import { getChannel, setChannel } from '../../../channels/channel-slot.ts';
 import { Channel } from '../../../channels/main.ts';
 import { SERVER_CHANNEL_PATH, WebsocketTransport } from '../../../channels/websocket/index.ts';
 
@@ -44,6 +44,8 @@ export function createNodeChannel({ url, token }: NodeChannelOptions): NodeChann
   });
 
   const channel = new Channel({ transports: [transport] });
+  const previousChannel = getChannel();
+  const previousEnvironment = UniversalStore.preparedEnvironment;
   setChannel(channel);
   UniversalStore.__prepare(channel, UniversalStore.Environment.UNKNOWN);
 
@@ -55,13 +57,24 @@ export function createNodeChannel({ url, token }: NodeChannelOptions): NodeChann
   // A caller that never races `disconnected` must not get an unhandled rejection on server shutdown.
   void disconnected.catch(() => {});
 
+  const close = () => {
+    socket.close();
+    if (getChannel() !== channel) {
+      return;
+    }
+    setChannel(previousChannel);
+    if (previousChannel && previousEnvironment) {
+      UniversalStore.__prepare(previousChannel, previousEnvironment);
+    } else {
+      UniversalStore.__reset();
+    }
+  };
+
   return {
     channel,
     connected,
     disconnected,
-    close: () => {
-      socket.close();
-    },
+    close,
   };
 }
 

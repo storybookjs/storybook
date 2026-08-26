@@ -37,6 +37,7 @@ Pin explicit versions (do not leave a live query):
 - `code/core/src/shared/constants/environments-support.ts` — `BROWSER_TARGETS` (`chromeN`, `edgeN`, `firefoxN`, `safariN.N`, `iosN.N`; Opera only if kept)
 - `code/package.json` — `browserslist`
 - `docs/get-started/install.mdx` — public list
+- `MIGRATION.md` — next major `From version X.x to Y.0.0` section. Create that section at the top if it does not exist.
 
 If browserslist cannot resolve the new pins, bump `caniuse-lite` (root `resolutions` + lockfile). The repo has a 7-day npm age gate.
 

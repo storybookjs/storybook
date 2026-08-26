@@ -40,8 +40,13 @@ describe('classifyArgs', () => {
     });
   });
 
+  it('tracks an arg explicitly set to undefined without naming it unresolved', () => {
+    expect(classify(`{ a: undefined, label: 'ok' }`)).toEqual({
+      args: ['a: undefined -> unset', `label: 'ok' -> prop (inline)`],
+    });
+  });
+
   it.each([
-    { label: 'undefined', value: 'undefined' },
     { label: 'a function', value: '() => null' },
     { label: 'an empty string', value: `''` },
   ])('drops an arg set to $label without naming it', ({ value }) => {
@@ -209,6 +214,9 @@ function parseArgs(code: string): Record<string, t.Node> {
 }
 
 function formatArg(arg: ClassifiedArg): string {
+  if (arg.role === 'unset') {
+    return `${arg.name}: ${printValue(arg.value)} -> unset`;
+  }
   const destination =
     arg.role === 'event' && arg.eventName ? `${arg.role}:${arg.eventName}` : arg.role;
   return `${arg.name}: ${printValue(arg.value)} -> ${destination} (${arg.plan.kind})`;

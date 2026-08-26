@@ -319,7 +319,7 @@ export function renderArgsBindingExpansion(
   ctx: RenderContext,
   options: RenderArgsBindingExpansionOptions
 ): ArgsBindingExpansion | undefined {
-  const partitioned = partitionArgsByRole(args);
+  const partitioned = partitionArgsByRole(args.filter((arg) => arg.role !== 'unset'));
   if (partitioned.slots.length > 0 && !options.roleAware) {
     return undefined;
   }

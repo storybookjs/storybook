@@ -25,8 +25,8 @@ export type ArgRole = 'event' | 'model' | 'prop' | 'slot';
 /**
  * The plans that produce snippet source.
  *
- * `omit` and `unrepresentable` args never become a {@link ClassifiedArg}, so the renderer has no
- * fallback branch to get wrong.
+ * `omit` and `unrepresentable` args never become a renderable {@link ClassifiedArg}, so the
+ * renderer has no fallback branch to get wrong.
  */
 export type RenderableValuePlan = Extract<ValuePlan, { kind: 'hoist' | 'inline' }>;
 
@@ -51,8 +51,14 @@ export interface ClassifiedSlotArg {
   plan: RenderableValuePlan | FunctionSlotPlan;
 }
 
+export interface ClassifiedUnsetArg {
+  name: string;
+  value: t.Node;
+  role: 'unset';
+}
+
 /** Split by role so `arg.role` checks narrow the plans a renderer has to handle. */
-export type ClassifiedArg = ClassifiedPropLikeArg | ClassifiedSlotArg;
+export type ClassifiedArg = ClassifiedPropLikeArg | ClassifiedSlotArg | ClassifiedUnsetArg;
 
 /**
  * Outcome of classifying one arg, before any story-level decision is taken.
@@ -78,7 +84,7 @@ export interface ClassifyArgsResult {
  * Three outcomes, one per reason an arg can fail to render:
  *
  * - dropped silently — no static form exists and the runtime source decorator drops it too
- *   (functions passed as undeclared args, args explicitly set to `undefined`, empty strings)
+ *   (functions passed as undeclared args, empty strings)
  * - named in `unresolved` — the value references something the snippet cannot declare; the caller
  *   decides whether that reads as a partial snippet or as no snippet at all
  * - forwarded as a `function-slot` plan — a slot receives function content only a
@@ -131,7 +137,7 @@ export function classifyArg(
         };
       }
 
-      if (plan.kind === 'omit') {
+      if (plan.kind === 'omit' || plan.kind === 'unset') {
         return { kind: 'omit' };
       }
     }
@@ -167,6 +173,10 @@ export function classifyArg(
 
   if (plan.kind === 'omit' || plan.kind === 'unrepresentable') {
     return { kind: plan.kind };
+  }
+
+  if (plan.kind === 'unset') {
+    return { kind: 'classified', arg: { name, value, role: 'unset' } };
   }
 
   return {

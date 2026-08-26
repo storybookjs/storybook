@@ -336,6 +336,233 @@ export const Primary = {
     `);
   });
 
+  it('drops a binding for an arg explicitly set to undefined', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: {
+    label: 'Hi',
+    theme: undefined,
+  },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton :theme="args.theme" :label="args.label" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton label="Hi" />
+      </template>"
+    `);
+  });
+
+  it('takes the whole line when the dropped binding was written on its own', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: {
+    label: 'Hi',
+    status: undefined,
+    theme: undefined,
+  },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: \`<MyButton
+  :theme="args.theme"
+  :status="args.status"
+  :label="args.label"
+/>\`,
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton
+          label="Hi"
+        />
+      </template>"
+    `);
+  });
+
+  it('takes the whole CRLF line when the dropped binding was written on its own', async () => {
+    expect(
+      (
+        await primarySnippet(`
+export const Primary = {
+  args: {
+    label: 'Hi',
+    status: undefined,
+    theme: undefined,
+  },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton\\r\\n  :theme="args.theme"\\r\\n  :status="args.status"\\r\\n  :label="args.label"\\r\\n/>',
+  }),
+};
+`)
+      )?.replaceAll('\r\n', '\n')
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton
+          label="Hi"
+        />
+      </template>"
+    `);
+  });
+
+  it('bails when a bound arg is missing from the story args altogether', async () => {
+    const payload = await buildPayload(`
+export const Primary = {
+  args: { label: 'Hi' },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton :theme="args.theme" :label="args.label" />',
+  }),
+};
+`);
+
+    expect(payload.stories['example-mybutton--primary']?.snippet).toBeUndefined();
+    expect(payload.stories['example-mybutton--primary']?.warning).toMatchInlineSnapshot(
+      `"No static snippet: the story template could not be resolved statically."`
+    );
+  });
+
+  it('bails when a static attribute already sets the prop an undefined arg binds', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { theme: undefined },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton theme="dark" :theme="args.theme" />',
+  }),
+};
+`)
+    ).toBeUndefined();
+  });
+
+  it('drops an event binding whose handler arg is undefined', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: {
+    label: 'Hi',
+    onClick: undefined,
+  },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton @click="args.onClick" :label="args.label" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton label="Hi" />
+      </template>"
+    `);
+  });
+
+  it('keeps a v-model bound to an undefined arg, starting its ref empty', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: {
+    label: 'Hi',
+    modelValue: undefined,
+  },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton v-model="args.modelValue" :label="args.label" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import { ref } from "vue";
+      import MyButton from './MyButton.vue';
+
+      const modelValue = ref(undefined);
+      </script>
+
+      <template>
+        <MyButton v-model="modelValue" label="Hi" />
+      </template>"
+    `);
+  });
+
+  it('renders empty text for an interpolation of an undefined arg', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: {
+    label: 'Hi',
+    theme: undefined,
+  },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton :label="args.label">{{ args.theme }}</MyButton>',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton label="Hi"></MyButton>
+      </template>"
+    `);
+  });
+
+  it('substitutes undefined for an unset arg read inside a directive expression', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { count: undefined },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton :style="{ width: args.count }" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton :style="{ width: undefined }" />
+      </template>"
+    `);
+  });
+
   it('quotes rewritten string values that contain double quotes', async () => {
     expect(
       await primarySnippet(`
@@ -1177,6 +1404,34 @@ export const Primary = {
     `);
   });
 
+  it('substitutes undefined in a forwarded setup statement reading an unset arg', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: undefined },
+  render: (args) => ({
+    components: { MyButton },
+    setup() {
+      const state = { label: args.label };
+      return { args, state };
+    },
+    template: '<MyButton :label="state.label" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+
+      const state = { label: undefined };
+      </script>
+
+      <template>
+        <MyButton :label="state.label" />
+      </template>"
+    `);
+  });
+
   it('bails when the returned render object has extra properties', async () => {
     expect(
       await primarySnippet(`
@@ -1281,6 +1536,53 @@ export const Primary = {
 
       <template>
         <other-button label="Saved" />
+      </template>"
+    `);
+  });
+
+  it('drops an unset prop through the h-tree path', async () => {
+    expect(
+      await primarySnippet(
+        `
+export const Primary = {
+  args: {
+    label: 'Hi',
+    theme: undefined,
+  },
+  render: (args) => h(MyButton, { theme: args.theme, label: args.label }),
+};
+`,
+        "import { h } from 'vue';\nimport MyButton from './MyButton.vue';"
+      )
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton label="Hi" />
+      </template>"
+    `);
+  });
+
+  it('renders no child when an h-tree child reads an unset arg', async () => {
+    expect(
+      await primarySnippet(
+        `
+export const Primary = {
+  args: { label: undefined },
+  render: (args) => h(MyButton, null, args.label),
+};
+`,
+        "import { h } from 'vue';\nimport MyButton from './MyButton.vue';"
+      )
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton />
       </template>"
     `);
   });

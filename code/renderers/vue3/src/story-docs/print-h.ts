@@ -6,7 +6,12 @@ import {
   type ImportBinding,
 } from 'storybook/internal/csf-tools';
 
-import { classifyArg, type ClassifiedSlotArg, type VueDocgenArgInfo } from './classify-args.ts';
+import {
+  classifyArg,
+  type ClassifiedArg,
+  type ClassifiedSlotArg,
+  type VueDocgenArgInfo,
+} from './classify-args.ts';
 import { isFunctionExpression, printValue } from './classify-value.ts';
 import {
   escapeTextContent,
@@ -24,6 +29,7 @@ import {
 export interface PrintHInput {
   /** Render-function expression to print as template markup. */
   node: t.Node;
+  args: ClassifiedArg[];
   /** Name of the render function's args parameter. */
   argsParam?: string;
   /** Story component tag the docgen roles describe. */
@@ -57,6 +63,7 @@ export interface PrintHFragmentOptions {
 type PrintOptions = {
   /** Render-function args parameter the printed markup references as `args`; absent in fragments. */
   argsParam?: string;
+  argsByName?: Map<string, ClassifiedArg>;
   /** Story component tag the docgen roles apply to; absent in slot content. */
   componentName?: string;
   componentImports: Map<string, string>;
@@ -133,6 +140,7 @@ export function printH(input: PrintHInput): PrintHResult | undefined {
 
   const template = printNode(input.node, {
     argsParam: input.argsParam,
+    argsByName: new Map(input.args.map((arg) => [arg.name, arg])),
     componentName: input.componentName,
     componentImports,
     ctx: input.ctx,
@@ -352,6 +360,9 @@ function printProps(
     }
 
     const arg = classification.arg;
+    if (arg.role === 'unset') {
+      continue;
+    }
     if (arg.role === 'slot') {
       const content = printSlotArgContent(arg, options);
       if (content === undefined) {
@@ -444,6 +455,9 @@ function printChildValue(node: t.Node, options: PrintOptions): string[] | undefi
   }
 
   if (options.argsParam && referencesIdentifier(value, options.argsParam)) {
+    if (exactUnsetArgsMember(value, options)) {
+      return [];
+    }
     const expression = printedArgsExpression(value, options.argsParam);
     // '&' entity-decodes and '}}' ends the interpolation when the engine re-parses the markup.
     if (!expression || expression.includes('&') || expression.includes('}}')) {
@@ -454,6 +468,22 @@ function printChildValue(node: t.Node, options: PrintOptions): string[] | undefi
 
   const text = inlinePrimitiveSource(value);
   return text === undefined ? undefined : [escapeTextContent(text)];
+}
+
+function exactUnsetArgsMember(node: t.Node, options: PrintOptions): boolean {
+  const value = unwrapExpression(node);
+  if (
+    !options.argsParam ||
+    !options.argsByName ||
+    !t.isMemberExpression(value) ||
+    value.computed ||
+    !t.isIdentifier(value.object, { name: options.argsParam }) ||
+    !t.isIdentifier(value.property)
+  ) {
+    return false;
+  }
+
+  return options.argsByName.get(value.property.name)?.role === 'unset';
 }
 
 // { header: () => h('span', 'Hi') } -> <template #header><span>Hi</span></template>

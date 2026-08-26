@@ -90,6 +90,14 @@ const SLOT_UNRESOLVED_WARNING =
   'No static snippet: a slot function could not be resolved statically.';
 const IMPORT_UNRESOLVED_WARNING =
   "No static snippet: the component's import could not be resolved statically.";
+const TEMPLATE_UNRESOLVED_WARNING =
+  'No static snippet: the story template could not be resolved statically.';
+const UNRENDERED_WARNINGS: Record<Exclude<StaticStoryRenderer, { kind: 'bail' }>['kind'], string> =
+  {
+    h: RENDER_UNRESOLVED_WARNING,
+    sfc: SLOT_UNRESOLVED_WARNING,
+    template: TEMPLATE_UNRESOLVED_WARNING,
+  };
 
 type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
 type ExtractStoriesResult = { stories: Record<string, StoryDoc> };
@@ -348,15 +356,13 @@ function enrichStoryDoc(
 
   // A snippet showing none of the args the story actually sets would be a worse example than the
   // runtime one, so no snippet is emitted and the warning names everything that was dropped.
-  if (args.length === 0 && unresolved.length > 0) {
+  if (!args.some((arg) => arg.role !== 'unset') && unresolved.length > 0) {
     return withWarning(noSnippetWarning(unresolved));
   }
 
   const rendered = renderStaticStorySnippet(renderer, args, componentName, docgenArgInfo, options);
   if (!rendered) {
-    return withWarning(
-      renderer.kind === 'sfc' ? SLOT_UNRESOLVED_WARNING : RENDER_UNRESOLVED_WARNING
-    );
+    return withWarning(UNRENDERED_WARNINGS[renderer.kind]);
   }
 
   return {
@@ -453,6 +459,7 @@ function renderStaticStorySnippet(
 
   const ctx = createRenderContext();
   const printed = printH({
+    args,
     argsParam: renderer.argsParam,
     componentImportStatement,
     componentName,

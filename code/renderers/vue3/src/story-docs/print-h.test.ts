@@ -49,6 +49,7 @@ function renderStory(
 
   const ctx = createRenderContext();
   const printed = printH({
+    args: parsed.args,
     argsParam: parsed.argsParam,
     componentImportStatement,
     componentName: 'MyButton',
@@ -82,6 +83,7 @@ function printedTemplate(
   }
 
   return printH({
+    args: parsed.args,
     argsParam: parsed.argsParam,
     componentImportStatement: "import MyButton from './MyButton.vue';",
     componentName: 'MyButton',

@@ -101,10 +101,6 @@ const config: BuildEntries = {
         entryPoint: './src/mocking-utils/index.ts',
       },
       {
-        exportEntries: ['./internal/channels/node'],
-        entryPoint: './src/channels/node/index.ts',
-      },
-      {
         exportEntries: ['./internal/tools'],
         entryPoint: './src/cli/tools/sdk/index.ts',
       },

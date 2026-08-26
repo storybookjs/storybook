@@ -76,6 +76,7 @@ Internal exports include:
 - `storybook/internal/csf-tools`
 - `storybook/internal/common`
 - `storybook/internal/channels`
+- `storybook/internal/tools` — Node SDK for `storybook tools` (`createTools`)
 
 ### Key flow
 
@@ -95,9 +96,13 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
   toolsets, as addon-vitest does for `test`.
 - Register services and toolsets from the same `services` preset hook and behind the same feature
   gate. Missing or duplicate registrations fail loudly.
-- Read `code/core/src/shared/open-service/README.md` before changing the contract, adapters,
-  registration, docs access, transport rendering, or tools CLI. Local `createTools` never
+- The tools CLI consumes `storybook/internal/tools` (`createTools`). Default mode is
+  attach-preferred (`auto`): join a running instance as a delegated leaf, or load locally on gate
+  failure. `--attach` requires attachment; `--no-attach` forces local. Local `createTools` never
   `chdir`s: a foreign `cwd` starts a project-local child host.
+- Read `code/core/src/shared/open-service/README.md` before changing the contract, adapters,
+  registration, docs access, or transport rendering. Read `code/core/src/cli/tools/README.md` and
+  `code/core/src/cli/tools/architecture.md` before changing attachment, the SDK, or the tools CLI.
 
 ### Agent-facing skills
 
@@ -158,6 +163,8 @@ yarn storybook:vitest
 | Run the docgen perf bench       | `yarn workspace @storybook/docgen-harness bench:docgen-perf`                   |
 | Run the docgen memory gate      | `yarn workspace @storybook/docgen-harness bench:docgen-memory`                 |
 | Verify sandbox docgen baselines | `yarn workspace @storybook/docgen-harness baselines:sandbox`                   |
+| List docs via tools CLI         | `cd code && node core/dist/bin/dispatcher.js tools docs list`                  |
+| Require attach / force local    | add `--attach` or `--no-attach` before the toolset name                        |
 
 ## NX and `yarn task`
 
@@ -250,6 +257,7 @@ Common templates:
 - Use `yarn task e2e-tests --start-from auto` or `yarn task e2e-tests-dev --start-from auto` for E2E coverage
 - Use `yarn task test-runner --start-from auto` or `yarn task test-runner-dev --start-from auto` for test-runner scenarios
 - Use `yarn task smoke-test --start-from auto` for smoke checks
+- Use `cd code && yarn playwright test -c e2e-internal/playwright.config.ts e2e-internal/tools-attach.spec.ts` for tools attach coverage (same checkout as the running internal UI)
 
 Watch-mode commands:
 

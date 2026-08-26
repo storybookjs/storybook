@@ -163,16 +163,22 @@ and provider accesses feed the same definition; composition combines accesses ra
 second engine. `storybook/internal/toolsets-docs` is a portable entry consumed by both MCP packages,
 so its bundled declaration must remain flat and import only its declared allowlist.
 
-The `storybook tools` CLI loads the target Storybook configuration through
-`storybook/internal/tools`. When this process is already in the project, local mode loads in-process
-and derives dispatch, help, validation, and output from the registered toolsets. When `--cwd` points
-elsewhere, it starts a child host in that directory instead of changing `process.cwd()`. Bootstrap
-always hosts the module graph so addon-owned toolsets can query it without appearing in a core
-allowlist; an unsupported builder settles the graph as unavailable without failing unrelated tools.
+The `storybook tools` CLI is a slim shell over `storybook/internal/tools`. Default mode is `auto`:
+attach to a matching running instance as a delegated leaf, and fall back to an in-process local
+host when `createTools` cannot attach. `--attach` requires attachment (gate failures are errors).
+`--no-attach` forces local. Toolset handlers run in the SDK process, and attached service commands
+execute on the instance.
 
-Methods marked `requiresDevServer` use the runtime instance registry. `stories.preview` needs only
-the recorded origin. Until connect mode exists, `review.create` is the one temporary exception
-forwarded through the running Storybook's MCP endpoint; keep that proxy branch self-contained.
+Local bootstrap still hosts the module graph so addon-owned toolsets can query it without appearing
+in a core allowlist; an unsupported builder settles the graph as unavailable without failing
+unrelated tools. When this process is already in the project, local mode loads in-process. When
+`--cwd` points elsewhere, it starts a child host in that directory instead of changing
+`process.cwd()`. Attached mode never `chdir`s the host; a cwd or version mismatch spawns a
+project-local child host instead.
+
+Methods marked `requiresDevServer` intercept only in **local** mode (start-your-Storybook
+guidance). In attached mode they run caller-side. `stories.preview` reads the recorded origin from
+the instance record. See [cli/tools/README.md](../../cli/tools/README.md).
 
 ### Query
 
@@ -834,6 +840,9 @@ When nothing acknowledges within `REMOTE_COMMAND_ACK_TIMEOUT_MS`, the resulting
 implemented in any connected runtime": the attached Storybook was started with a different
 configuration, so it must be restarted for that command's handler to exist.
 
+The `storybook tools` SDK is the attached caller: it sets this flag, then loads the instance
+config. See [cli/tools/architecture.md](../../cli/tools/architecture.md).
+
 ## React Hooks
 
 ### `useServiceQuery`
@@ -978,6 +987,7 @@ React hook tests must include `// @vitest-environment happy-dom` as the first li
 - If you need to change schema handling, start in [service-validation.ts](./service-validation.ts).
 - If you need to change service authoring ergonomics, start in [service-definition.ts](./service-definition.ts) and [types.ts](./types.ts).
 - If you need to change channel transport, relay behavior, remote command execution, or delegated dispatch, start in [service-transport.ts](./service-transport.ts) — the delegated-mode flag itself lives in [service-registry.ts](./service-registry.ts).
+- If you need to change how the tools CLI or SDK attaches, start in [cli/tools/README.md](../../cli/tools/README.md) and [cli/tools/architecture.md](../../cli/tools/architecture.md).
 - If you need to change how thrown errors cross the channel for remote commands, start in [service-error-serialization.ts](./service-error-serialization.ts).
 - If you need to change last-write-wins ordering or the structural merge, start in [service-sync.ts](./service-sync.ts).
 - If you need to change the channel protocol (event names, payloads, channel reader), start in [service-channel.ts](./service-channel.ts).

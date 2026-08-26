@@ -1056,6 +1056,31 @@ export const Primary = {
     }
   );
 
+  it('renders a component named Component when no is binding makes it dynamic', async () => {
+    expect(
+      await primarySnippet(
+        `
+export const Primary = {
+  args: { modelValue: 'Typed text' },
+};
+`,
+        "import Component from './Component.vue';",
+        'Component'
+      )
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import { ref } from "vue";
+      import Component from './Component.vue';
+
+      const modelValue = ref('Typed text');
+      </script>
+
+      <template>
+        <Component v-model="modelValue" />
+      </template>"
+    `);
+  });
+
   it('bails on dynamic directive arguments, which read bindings the snippet never declares', async () => {
     expect(
       await primarySnippet(`

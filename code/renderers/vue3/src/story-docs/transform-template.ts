@@ -361,9 +361,10 @@ function transformInterpolation(
 }
 
 function transformElement(node: ElementNode, state: TransformState): boolean {
-  // A snippet cannot re-create the registration context a dynamic component resolves against.
-  // Vue's compiler accepts both spellings of the built-in tag.
-  if (node.tag === 'component' || node.tag === 'Component') {
+  // Vue reads either spelling as the built-in dynamic component only when an `is` binding is
+  // present; a snippet cannot re-create the registration context that binding resolves against.
+  // Without one, the tag resolves like any other component, including one named `Component`.
+  if ((node.tag === 'component' || node.tag === 'Component') && hasIsBinding(node)) {
     return false;
   }
 
@@ -893,6 +894,16 @@ function staticDirectiveArg(directive: DirectiveNode): string | undefined {
   return directive.arg?.type === NodeTypes.SIMPLE_EXPRESSION && directive.arg.isStatic
     ? directive.arg.content
     : undefined;
+}
+
+// <component is="x">, <component :is="x">, or the legacy <component v-is="x">
+function hasIsBinding(node: ElementNode): boolean {
+  return node.props.some((prop) => {
+    if (prop.type === NodeTypes.ATTRIBUTE) {
+      return prop.name === 'is';
+    }
+    return prop.name === 'is' || (prop.name === 'bind' && staticDirectiveArg(prop) === 'is');
+  });
 }
 
 /**

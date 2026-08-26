@@ -10,7 +10,7 @@ import { Option, type Command } from 'commander';
 
 import type { ToolsetTelemetry } from '../../shared/open-service/toolset-definition.ts';
 import { resolveStorybookConfigDir } from './config-dir.ts';
-import { runToolsCommand, type ToolsCommandOutcome, type ToolsRunResult } from './run.ts';
+import { runToolsCommand, type ToolsRunResult } from './run.ts';
 import { isJsonToolsRun, TOOLS_OPTION_SPECS, type ToolsOutputFlags } from './tool-tokens.ts';
 
 /** `handleCommandFailure` from `bin/core.ts`, passed in to avoid an import cycle. */
@@ -122,6 +122,7 @@ export function registerToolsPassthrough(
                     exitCode: 1,
                     output: 'Cannot combine `--attach` and `--no-attach`.',
                     outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+                    requestedMode: 'auto',
                     attachMode: 'auto',
                   };
                 } else {
@@ -147,14 +148,7 @@ export function registerToolsPassthrough(
                 // The tool has executed either way, so a failed `--output` write must not lose the
                 // event. Reporting after printing keeps a slow telemetry endpoint from ever
                 // delaying the user's result.
-                await reportToolsCommandTelemetry(
-                  toolset,
-                  tool,
-                  result.outcome,
-                  duration,
-                  cliOptions,
-                  result.attachMode
-                );
+                await reportToolsCommandTelemetry(toolset, tool, result, duration, cliOptions);
               }
             }
           ).catch(handleCommandFailure(options.logfile));
@@ -222,11 +216,11 @@ function sanitizeNamePart(part: string): string {
 async function reportToolsCommandTelemetry(
   toolset: string | undefined,
   tool: string | undefined,
-  outcome: ToolsCommandOutcome,
+  result: ToolsRunResult,
   duration: number,
-  cliOptions: CLIOptions,
-  attachMode: ToolsRunResult['attachMode']
+  cliOptions: CLIOptions
 ): Promise<void> {
+  const { outcome } = result;
   if (outcome.kind === 'help') {
     return;
   }
@@ -240,8 +234,17 @@ async function reportToolsCommandTelemetry(
     {
       command,
       success: outcome.kind === 'success',
-      attachMode,
-      ...(outcome.kind === 'intercept' && { interceptReason: outcome.reason }),
+      outcome: outcome.kind,
+      client: 'cli',
+      requestedMode: result.requestedMode,
+      attachMode: result.attachMode,
+      ...(result.host && (result.attachMode === 'attached' || result.attachMode === 'local')
+        ? { resolvedMode: result.attachMode }
+        : {}),
+      ...(result.host ? { host: result.host } : {}),
+      ...(result.fallbackReason ? { attachGate: result.fallbackReason } : {}),
+      ...(outcome.kind === 'attach-gate' ? { attachGate: outcome.reason } : {}),
+      ...(outcome.kind === 'intercept' ? { interceptReason: outcome.reason } : {}),
       duration,
     },
     // Metadata must describe the target project, consistent with the opt-out resolution.

@@ -116,6 +116,41 @@ export const Primary = {
     expect(story?.warning).toBeUndefined();
   });
 
+  it('forwards setup statements from CRLF story source', async () => {
+    const story = await primaryStory(
+      [
+        '',
+        'export const Primary = {',
+        "  args: { label: 'Hi' },",
+        '  render: (args) => ({',
+        '    components: { MyButton },',
+        '    setup() {',
+        '      const count = ref(0);',
+        '      return { args, count };',
+        '    },',
+        '    template: \'<MyButton :label="args.label" @click="count++" />\',',
+        '  }),',
+        '};',
+        '',
+      ].join('\r\n'),
+      "import { ref } from 'vue';\nimport MyButton from './MyButton.vue';"
+    );
+
+    expect(story?.snippet).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import { ref } from "vue";
+      import MyButton from './MyButton.vue';
+
+      const count = ref(0);
+      </script>
+
+      <template>
+        <MyButton label="Hi" @click="count++" />
+      </template>"
+    `);
+    expect(story?.warning).toBeUndefined();
+  });
+
   it('substitutes arg reads inside statements, sharing hoisted consts with the template', async () => {
     const story = await primaryStory(
       `

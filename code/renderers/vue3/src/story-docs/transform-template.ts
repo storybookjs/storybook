@@ -271,6 +271,7 @@ function appendSetupStatements(setup: ForwardableSetup, state: TransformState): 
       const wrapped = wrapSubstitution(rendered, text.slice(read.end));
       text = text.slice(0, read.start) + wrapped + text.slice(read.end);
     }
+    text = text.replace(/\r\n?/g, '\n');
     state.ctx.statements.push(dedentBy(text, statement.column));
   }
   return true;

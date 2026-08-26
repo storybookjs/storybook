@@ -64,7 +64,11 @@ const ARGS_NAME = 'args';
 
 type SetupBody = { statements: t.Statement[]; returned?: t.Node };
 
-type ArgsReadsResult = { ok: true; reads: ArgsRead[] } | { ok: false; reference: string };
+type SourcePosition = NonNullable<t.Node['loc']>['start'];
+type SourceRange = { start: SourcePosition; end: SourcePosition };
+type ArgsReadLocation = SourceRange & { name: string };
+
+type ArgsReadsResult = { ok: true; reads: ArgsReadLocation[] } | { ok: false; reference: string };
 
 /**
  * Reads a render object's `setup` into statements the snippet forwards into `<script setup>`.
@@ -182,24 +186,45 @@ export function readForwardableSetup(
     return bail(setupReferencesWarning(unresolvable));
   }
 
+  const lineStarts = lineStartOffsets(options.source);
   const statements: ForwardableStatement[] = [];
   for (const statement of body.statements) {
-    const { start, end, loc } = statement;
-    if (start == null || end == null || loc == null || end > options.source.length) {
+    const { loc } = statement;
+    if (loc == null) {
+      return bail(SETUP_UNSUPPORTED_WARNING);
+    }
+    const start = offsetAt(lineStarts, loc.start);
+    const end = offsetAt(lineStarts, loc.end);
+    if (start == null || end == null || start > end || end > options.source.length) {
       return bail(SETUP_UNSUPPORTED_WARNING);
     }
     const reads = collectArgsReads(statement, options.argsParam);
     if (!reads.ok) {
       return bail(setupReferencesWarning([reads.reference]));
     }
+    const argsReads: ArgsRead[] = [];
+    for (const read of reads.reads) {
+      const readStart = offsetAt(lineStarts, read.start);
+      const readEnd = offsetAt(lineStarts, read.end);
+      if (
+        readStart == null ||
+        readEnd == null ||
+        readStart < start ||
+        readEnd < readStart ||
+        readEnd > end
+      ) {
+        return bail(SETUP_UNSUPPORTED_WARNING);
+      }
+      argsReads.push({
+        start: readStart - start,
+        end: readEnd - start,
+        name: read.name,
+      });
+    }
     statements.push({
       source: options.source.slice(start, end),
       column: loc.start.column,
-      argsReads: reads.reads.map((read) => ({
-        start: read.start - start,
-        end: read.end - start,
-        name: read.name,
-      })),
+      argsReads,
     });
   }
 
@@ -211,6 +236,27 @@ export function readForwardableSetup(
       statements: [...statements, ...aliasStatements],
     },
   };
+}
+
+function lineStartOffsets(source: string): number[] {
+  const starts = [0];
+  for (let index = 0; index < source.length; index += 1) {
+    const code = source.charCodeAt(index);
+    if (code === 13) {
+      if (source.charCodeAt(index + 1) === 10) {
+        index += 1;
+      }
+      starts.push(index + 1);
+    } else if (code === 10 || code === 0x2028 || code === 0x2029) {
+      starts.push(index + 1);
+    }
+  }
+  return starts;
+}
+
+function offsetAt(lineStarts: number[], pos: { line: number; column: number }): number | undefined {
+  const lineStart = lineStarts[pos.line - 1];
+  return lineStart == null ? undefined : lineStart + pos.column;
 }
 
 // setup() { ...statements; return {...}; } or setup: () => ({ ... })
@@ -245,7 +291,7 @@ function collectArgsReads(statement: t.Statement, argsParam: string | undefined)
     return { ok: true, reads: [] };
   }
 
-  const reads: ArgsRead[] = [];
+  const reads: ArgsReadLocation[] = [];
   let blocked: string | undefined;
 
   const visit = (node: t.Node, parent?: t.Node): void => {
@@ -272,16 +318,11 @@ function collectArgsReads(statement: t.Statement, argsParam: string | undefined)
         !parent.computed
           ? parent
           : undefined;
-      if (
-        !member ||
-        !t.isIdentifier(member.property) ||
-        member.start == null ||
-        member.end == null
-      ) {
+      if (!member || !t.isIdentifier(member.property) || member.loc == null) {
         blocked = argsParam;
         return;
       }
-      reads.push({ start: member.start, end: member.end, name: member.property.name });
+      reads.push({ start: member.loc.start, end: member.loc.end, name: member.property.name });
       return;
     }
 

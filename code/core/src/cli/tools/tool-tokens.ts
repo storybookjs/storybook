@@ -164,6 +164,15 @@ export function parseToolsTokens(
   return { ok: true, help, json, output, attach, args: { ...inputArgs, ...flagArgs } };
 }
 
+/**
+ * Whether an invocation is a `--json` data run — the case whose stdout must carry nothing but the
+ * printed JSON result. Help requests and invalid tokens produce prose, not data, and are excluded.
+ */
+export function isJsonToolsRun(tokens: string[], defaults: ToolsOutputFlags = {}): boolean {
+  const parsed = parseToolsTokens(tokens, defaults);
+  return parsed.ok && parsed.json && !parsed.help;
+}
+
 function coerceValue(raw: string): unknown {
   try {
     return JSON.parse(raw);

@@ -198,12 +198,12 @@ describe('stories.preview', () => {
   });
 
   describe('rendering', () => {
-    it('lists titled entries for the CLI', async () => {
+    it('returns the same text blocks for the CLI as for MCP', async () => {
       const outcome = await runPreview([{ storyId: 'button--primary' }]);
+      const mcpOutcome = await runPreview([{ storyId: 'button--primary' }], mcpCtx);
 
-      expect(outcome.markdown).toBe(
-        ['# Story previews', '- Button - Primary', `  ${previewUrl}`].join('\n')
-      );
+      expect(outcome.markdown).toEqual([previewUrl]);
+      expect(outcome.markdown).toEqual(mcpOutcome.markdown);
     });
 
     it('returns one text block per URL for MCP', async () => {
@@ -330,20 +330,18 @@ describe('stories.changed', () => {
   });
 
   describe('rendering', () => {
-    it('summarizes counts and unreachable files for the CLI', async () => {
+    // Byte parity holds outside the coverage hint, whose tool reference legitimately renders as
+    // the CLI command on one transport and the MCP tool name on the other (getToolName).
+    it('renders the same bucketed report for the CLI as for MCP', async () => {
       markChanged('button--primary', 'status-value:new');
+      markReachable(themePath);
       const outcome = await runChanged();
+      const mcpOutcome = await runChanged(mcpCtx);
 
-      expect(outcome.markdown).toBe(
-        [
-          '# Changed stories',
-          'New: 1, modified: 0, affected: 0',
-          '- [new] Button - Primary',
-          '',
-          '## Unreachable files',
-          `- ${changedThemeFile}`,
-        ].join('\n')
+      expect(outcome.markdown).toContain(
+        'Detected 1 changed story (1 new, 0 modified, 0 related).'
       );
+      expect(outcome.markdown).toBe(mcpOutcome.markdown);
     });
 
     it('buckets stories by status for MCP', async () => {
@@ -473,17 +471,11 @@ describe('stories.findByComponent', () => {
   });
 
   describe('rendering', () => {
-    it('renders a headed section per component for the CLI', async () => {
+    it('renders the same distance buckets for the CLI as for MCP', async () => {
       const outcome = await runFindByComponent({ componentPaths: [componentPath] });
+      const mcpOutcome = await runFindByComponent({ componentPaths: [componentPath] }, mcpCtx);
 
-      expect(outcome.markdown).toBe(
-        `# Stories by component
-## ${componentPath}
-${componentPath}:
-→ 1 story across 1 component, distances 1..1 (d1=1)
-distance 1:
-  - \`button--primary\`: Button / Primary (\`./src/Button.stories.tsx\`)`
-      );
+      expect(outcome.markdown).toBe(mcpOutcome.markdown);
     });
 
     it('renders distance buckets without headings for MCP', async () => {

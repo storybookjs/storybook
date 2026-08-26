@@ -54,24 +54,34 @@ type RegistryEntry = {
 
 const REGISTRY_SYMBOL = Symbol.for('storybook.open-service.registry');
 
+type RegistryInventory = {
+  entries: Map<string, RegistryEntry>;
+  delegatedMode: boolean;
+};
+
 /**
- * Returns the realm-global registry backing service registration.
+ * Returns the realm-global inventory backing service registration and delegated mode.
  *
  * Lazily created so importing the module does not eagerly mutate global state. Anchoring it on a
- * `globalThis` symbol keeps runtime lookups, static builds, and tests pointed at one service inventory
- * even when the module is reached through different import paths.
+ * `globalThis` symbol keeps the service map and the delegated-mode flag shared even when this file is
+ * reached through different import paths.
  */
-function getRegistry(): Map<string, RegistryEntry> {
+function getInventory(): RegistryInventory {
   const registryGlobal = globalThis as {
-    [key: symbol]: Map<string, RegistryEntry> | undefined;
+    [key: symbol]: RegistryInventory | undefined;
   };
 
-  registryGlobal[REGISTRY_SYMBOL] ??= new Map<string, RegistryEntry>();
+  registryGlobal[REGISTRY_SYMBOL] ??= {
+    entries: new Map<string, RegistryEntry>(),
+    delegatedMode: false,
+  };
 
   return registryGlobal[REGISTRY_SYMBOL];
 }
 
-let delegatedMode = false;
+function getRegistry(): Map<string, RegistryEntry> {
+  return getInventory().entries;
+}
 
 /**
  * Marks this runtime as delegated, so every registered service dispatches its commands over the
@@ -83,12 +93,12 @@ let delegatedMode = false;
  * attached to is the implementer.
  */
 export function setDelegatedMode(enabled: boolean): void {
-  delegatedMode = enabled;
+  getInventory().delegatedMode = enabled;
 }
 
 /** Whether this runtime delegates command dispatch to the Storybook it is attached to. */
 export function isDelegatedMode(): boolean {
-  return delegatedMode;
+  return getInventory().delegatedMode;
 }
 
 function assertUniqueOperationNames(definition: AnyServiceDefinition): void {
@@ -316,7 +326,7 @@ export function registerService<
     commands: runtime.commands as Record<string, (input: unknown) => Promise<unknown>>,
     implementedCommandNames,
     commandNames: Object.keys(resolvedDefinition.commands),
-    delegated: delegatedMode,
+    delegated: isDelegatedMode(),
     runtime,
   });
 
@@ -420,5 +430,5 @@ export function clearRegistry(): void {
   }
 
   registry.clear();
-  delegatedMode = false;
+  getInventory().delegatedMode = false;
 }

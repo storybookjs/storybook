@@ -23,8 +23,11 @@ export const convertToFilePath = (url: string): string => {
   const path = url.replace(/^file:\/\//, '');
   // Handle Windows paths
   const normalizedPath = path.replace(/^\/+([a-zA-Z]:)/, '$1');
-  // Convert %20 to spaces
-  return normalizedPath.replace(/%20/g, ' ');
+  try {
+    return decodeURIComponent(normalizedPath);
+  } catch {
+    return normalizedPath;
+  }
 };
 
 export const testStory = ({

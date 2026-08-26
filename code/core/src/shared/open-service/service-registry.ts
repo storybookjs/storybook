@@ -322,7 +322,7 @@ export function registerService<
     reconciler,
     getSnapshot,
     channel,
-    relay: delegatedMode ? false : relay,
+    relay: isDelegatedMode() ? false : relay,
     commands: runtime.commands as Record<string, (input: unknown) => Promise<unknown>>,
     implementedCommandNames,
     commandNames: Object.keys(resolvedDefinition.commands),

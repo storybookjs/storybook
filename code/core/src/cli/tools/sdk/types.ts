@@ -4,6 +4,7 @@ import type {
 } from '../../../shared/open-service/toolset-definition.ts';
 import type { ToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
 import type { ToolsetJsonSchema } from './json-schema.ts';
+import type { ToolsRuntime } from './local-runtime.ts';
 
 /**
  * How the SDK hosts the target project's tools.
@@ -82,6 +83,8 @@ export type ToolsCallOptions = {
 type ToolsBase = {
   clientInfo: Required<ToolsClientInfo>;
   storybook: ToolsStorybookInfo;
+  /** Toolset registry and service accessor the CLI uses for help and dispatch. */
+  runtime: ToolsRuntime;
   describe(options?: ToolsDescribeOptions): Promise<ToolsetCatalog>;
   /**
    * Run one tool by its dotted `toolsetId.methodName` reference.
@@ -102,11 +105,15 @@ type ToolsBase = {
   close(): Promise<void>;
 };
 
-/** A host that loaded the target configuration in this process. */
+/**
+ * A host that loaded the target configuration in this process. The `storybook tools` CLI renders
+ * its help from the toolset registry.
+ */
 export type LocalTools = ToolsBase & {
   mode: 'local';
 };
 
+/** A host that joined a running Storybook over its channel. */
 export type AttachedTools = ToolsBase & {
   mode: 'attached';
 };

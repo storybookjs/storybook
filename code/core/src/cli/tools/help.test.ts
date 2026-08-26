@@ -50,6 +50,7 @@ describe('tools help rendering', () => {
       Options:
         --cwd <path>                 Project directory of the target Storybook
         -c, --config-dir <dir-name>  Storybook config directory of the target Storybook
+        --attach                     Attach to a running Storybook instead of loading configuration in this process
         --input <object>             Raw JSON object with the tool arguments (escape hatch for complex values)
         --json                       Print the tool's structured result data as JSON instead of markdown
         -o, --output <path>          Write the result to a file instead of stdout

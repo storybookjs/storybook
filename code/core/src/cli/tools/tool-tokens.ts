@@ -8,6 +8,7 @@ export type ToolsOutputFlags = {
   json?: boolean;
   output?: string;
   help?: boolean;
+  attach?: boolean;
 };
 
 export type ParsedToolsTokens =
@@ -18,6 +19,7 @@ export type ParsedToolsTokens =
       json: boolean;
       /** Write the output to this file instead of stdout. */
       output?: string;
+      attach?: boolean;
       args: Record<string, unknown>;
     }
   | { ok: false; error: string };
@@ -46,6 +48,7 @@ export function parseToolsTokens(
   let help = defaults.help ?? false;
   let json = defaults.json ?? false;
   let output = defaults.output;
+  let attach = defaults.attach ?? false;
   const flagArgs: Record<string, unknown> = {};
 
   let i = 0;
@@ -60,6 +63,11 @@ export function parseToolsTokens(
 
     if (token === '--json') {
       json = true;
+      continue;
+    }
+
+    if (token === '--attach') {
+      attach = true;
       continue;
     }
 
@@ -96,7 +104,7 @@ export function parseToolsTokens(
 
     // Only reachable via `--help=x` / `--json=x` (or a stray positional after them, which the
     // generic branch consumed as a value): these flags never take one.
-    if (key === 'help' || key === 'json') {
+    if (key === 'help' || key === 'json' || key === 'attach') {
       return { ok: false, error: `\`--${key}\` does not take a value.` };
     }
 
@@ -140,7 +148,7 @@ export function parseToolsTokens(
     inputArgs = parsed as Record<string, unknown>;
   }
 
-  return { ok: true, help, json, output, args: { ...inputArgs, ...flagArgs } };
+  return { ok: true, help, json, output, attach, args: { ...inputArgs, ...flagArgs } };
 }
 
 /**
@@ -171,6 +179,10 @@ export const TOOLS_OPTION_SPECS: ReadonlyArray<{ flags: string; description: str
   {
     flags: '-c, --config-dir <dir-name>',
     description: 'Storybook config directory of the target Storybook',
+  },
+  {
+    flags: '--attach',
+    description: 'Attach to a running Storybook instead of loading configuration in this process',
   },
   {
     flags: '--input <object>',

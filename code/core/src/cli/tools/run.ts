@@ -11,11 +11,18 @@ import {
   toMcpToolName,
   type ToolsetMethodId,
 } from '../../shared/open-service/toolset-names.ts';
-import { getService } from '../../shared/open-service/server.ts';
-import { getRegisteredToolsets } from '../../shared/open-service/toolset-registry.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import { callMcpTool } from './mcp-client.ts';
-import { createTools, ToolsRuntimeError, type Tools, type ToolsClientInfo } from './sdk/index.ts';
+import {
+  AttachUnavailableError,
+  createTools,
+  EnvironmentMismatchError,
+  ToolsRuntimeError,
+  type CreateToolsOptions,
+  type Tools,
+  type ToolsClientInfo,
+  type ToolsRuntime,
+} from './sdk/index.ts';
 import {
   discoverRunningInstance,
   type InstanceDiscovery,
@@ -63,6 +70,7 @@ export type ToolsInvocation = {
   target: ToolsTarget;
   /** Values of the same flags when given before the toolset name (commander-owned). */
   flags?: ToolsOutputFlags;
+  attach?: boolean;
 };
 
 /** Identifies this CLI to the tools SDK that hosts its run. */
@@ -74,7 +82,7 @@ const CLI_CLIENT_INFO: ToolsClientInfo = {
 
 /** Injectable dependencies for tests. */
 export type ToolsRunDeps = {
-  createTools?: typeof createTools;
+  createTools?: (options: CreateToolsOptions) => Promise<Tools>;
   discoverInstance?: typeof discoverRunningInstance;
   /** Stub for {@link PROXY_VIA_MCP_METHODS}; goes away with the proxy in Milestone 5b. */
   mcpToolCall?: typeof callMcpTool;
@@ -117,6 +125,17 @@ function isInvalidInputError(error: unknown): error is ToolsRuntimeError {
   return error instanceof ToolsRuntimeError && error.data.reason === 'invalid-input';
 }
 
+function normalizeHelpFlag(invocation: ToolsInvocation): ToolsInvocation {
+  if (invocation.tool !== '--help' && invocation.tool !== '-h') {
+    return invocation;
+  }
+  return {
+    ...invocation,
+    tool: undefined,
+    flags: { ...invocation.flags, help: true },
+  };
+}
+
 /**
  * Run one `storybook tools` invocation against the toolsets the target Storybook configuration
  * registers in this process. This is the whole command behind the commander wiring: dispatch,
@@ -127,7 +146,14 @@ export async function runToolsCommand(
   invocation: ToolsInvocation,
   deps: ToolsRunDeps = {}
 ): Promise<ToolsRunResult> {
-  const { toolset: toolsetName, tool: toolName, tokens, target, flags = {} } = invocation;
+  const {
+    toolset: toolsetName,
+    tool: toolName,
+    tokens,
+    target,
+    flags = {},
+    attach = false,
+  } = normalizeHelpFlag(invocation);
 
   const parsed = parseToolsTokens(tokens, flags);
   if (!parsed.ok) {
@@ -139,6 +165,8 @@ export async function runToolsCommand(
     };
   }
 
+  const useAttach = attach || parsed.attach === true;
+
   // `-o/--output` applies to whatever the run produced — help, intercepts, and tool results
   // alike — matching the ai CLI, where the output file always receives the printed text.
   const result = (partial: Omit<ToolsRunResult, 'outputPath'>): ToolsRunResult => ({
@@ -147,15 +175,28 @@ export async function runToolsCommand(
   });
 
   let tools: Tools | undefined;
+  let runtime: ToolsRuntime;
+  let attached = false;
+  let originFromAttach: string | undefined;
   try {
     tools = await (deps.createTools ?? createTools)({
       cwd: target.cwd,
       configDir: target.configDir,
-      mode: 'local',
+      mode: useAttach ? 'attached' : 'local',
+      autoSpawn: false,
       clientInfo: CLI_CLIENT_INFO,
     });
+    runtime = tools.runtime;
+    attached = tools.mode === 'attached';
+    originFromAttach = tools.storybook.url;
   } catch (error) {
-    // The SDK's own message already names the failure and the configuration it could not load.
+    if (error instanceof AttachUnavailableError || error instanceof EnvironmentMismatchError) {
+      return result({
+        exitCode: 1,
+        output: error.message,
+        outcome: { kind: 'intercept', reason: 'attach-unavailable' },
+      });
+    }
     return result({
       exitCode: 1,
       output: error instanceof Error ? error.message : String(error),
@@ -164,7 +205,11 @@ export async function runToolsCommand(
   }
 
   try {
-    return await runWithHost(tools, {
+    return await dispatchToolsCommand({
+      tools,
+      runtime,
+      attached,
+      originFromAttach,
       toolsetName,
       toolName,
       parsed,
@@ -177,39 +222,46 @@ export async function runToolsCommand(
   }
 }
 
-async function runWithHost(
-  tools: Tools,
-  args: {
-    toolsetName: string | undefined;
-    toolName: string | undefined;
-    parsed: Extract<ReturnType<typeof parseToolsTokens>, { ok: true }>;
-    result: (partial: Omit<ToolsRunResult, 'outputPath'>) => ToolsRunResult;
-    target: ToolsTarget;
-    deps: ToolsRunDeps;
-  }
-): Promise<ToolsRunResult> {
-  const { toolsetName, toolName, parsed, result, target, deps } = args;
-  const toolsets = getRegisteredToolsets();
-  const configDir = tools.storybook.configDir;
-  const ctx: ToolsetCtx = {
-    transport: 'cli',
-    getService: (serviceId, options) => getService(serviceId as never, options),
-    ...(deps.methodTelemetry ? { telemetry: deps.methodTelemetry } : {}),
-  };
+async function dispatchToolsCommand(args: {
+  tools: Tools;
+  runtime: ToolsRuntime;
+  attached: boolean;
+  originFromAttach: string | undefined;
+  toolsetName: string | undefined;
+  toolName: string | undefined;
+  parsed: Extract<ReturnType<typeof parseToolsTokens>, { ok: true }>;
+  result: (partial: Omit<ToolsRunResult, 'outputPath'>) => ToolsRunResult;
+  target: ToolsTarget;
+  deps: ToolsRunDeps;
+}): Promise<ToolsRunResult> {
+  const {
+    tools,
+    runtime,
+    attached,
+    originFromAttach,
+    toolsetName,
+    toolName,
+    parsed,
+    result,
+    target,
+    deps,
+  } = args;
+
+  const ctx = buildContext(runtime, deps, originFromAttach);
 
   if (!toolsetName) {
     return result({
       exitCode: 0,
-      output: renderToolsHelp(configDir, toolsets, ctx),
+      output: renderToolsHelp(runtime.configDir, runtime.toolsets, ctx),
       outcome: { kind: 'help' },
     });
   }
 
-  const toolset = toolsets.find((candidate) => candidate.id === toolsetName);
+  const toolset = runtime.toolsets.find((candidate) => candidate.id === toolsetName);
   if (!toolset) {
     return result({
       exitCode: 1,
-      output: formatUnknownToolset(toolsetName, configDir, toolsets),
+      output: formatUnknownToolset(toolsetName, runtime),
       outcome: { kind: 'intercept', reason: 'unknown-toolset' },
     });
   }
@@ -245,9 +297,9 @@ async function runWithHost(
     });
   }
 
-  let origin: string | undefined;
+  let origin: string | undefined = originFromAttach;
   let proxyTarget: StorybookInstanceRecord | undefined;
-  if (method.requiresDevServer) {
+  if (method.requiresDevServer && !attached) {
     const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(target);
     if (!discovery.currentRecord) {
       return result({
@@ -345,17 +397,27 @@ async function runWithHost(
   }
 }
 
+function buildContext(
+  runtime: ToolsRuntime,
+  deps: ToolsRunDeps,
+  origin: string | undefined
+): ToolsetCtx {
+  const { methodTelemetry } = deps;
+  return {
+    transport: 'cli',
+    ...(origin ? { origin } : {}),
+    getService: runtime.getService,
+    ...(methodTelemetry ? { telemetry: methodTelemetry } : {}),
+  };
+}
+
 function joinMarkdown(markdown: string | string[]): string {
   return Array.isArray(markdown) ? markdown.join('\n\n') : markdown;
 }
 
-function formatUnknownToolset(
-  toolsetName: string,
-  configDir: string,
-  toolsets: AnyToolsetDefinition[]
-): string {
-  const available = toolsets.map((toolset) => `- \`${toolset.id}\``).join('\n');
-  return `Unknown toolset \`${toolsetName}\`. The Storybook configuration at ${configDir} provides:
+function formatUnknownToolset(toolsetName: string, runtime: ToolsRuntime): string {
+  const available = runtime.toolsets.map((toolset) => `- \`${toolset.id}\``).join('\n');
+  return `Unknown toolset \`${toolsetName}\`. The Storybook configuration at ${runtime.configDir} provides:
 
 ${available}
 

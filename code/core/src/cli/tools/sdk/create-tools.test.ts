@@ -1,11 +1,11 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import * as v from 'valibot';
 
 import { defineToolset } from '../../../shared/open-service/toolset-definition.ts';
 import { getToolName } from '../../../shared/open-service/toolset-names.ts';
 import { createTools } from './create-tools.ts';
-import { AttachUnavailableError, ToolsRuntimeError } from './errors.ts';
+import { AttachUnavailableError } from './errors.ts';
 import { bootstrapToolsRuntime, type ToolsRuntime } from './local-runtime.ts';
 
 vi.mock('./local-runtime.ts', { spy: true });
@@ -69,6 +69,11 @@ function makeRuntime(overrides: Partial<ToolsRuntime> = {}): ToolsRuntime {
 beforeEach(() => {
   vi.mocked(bootstrapToolsRuntime).mockReset();
   vi.mocked(bootstrapToolsRuntime).mockResolvedValue(makeRuntime());
+  vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', undefined);
+});
+
+afterEach(() => {
+  vi.unstubAllEnvs();
 });
 
 describe('createTools', () => {
@@ -92,12 +97,92 @@ describe('createTools', () => {
     expect(named.clientInfo).toEqual({ name: 'storybook-cli', version: '1.2.3', kind: 'cli' });
   });
 
-  it('rejects attached mode as not available yet', async () => {
-    await expect(createTools({ mode: 'attached' })).rejects.toThrow(ToolsRuntimeError);
-    await expect(createTools({ mode: 'attached' })).rejects.toMatchObject({
-      data: { reason: 'mode-unavailable' },
-    });
+  it('joins a running Storybook in attached mode without loading the local runtime', async () => {
+    const attach = vi.fn(async () => ({
+      runtime: makeRuntime(),
+      record: { url: 'http://localhost:6006', pid: 123, configDir: CONFIG_DIR },
+      connection: { close: vi.fn(), disconnected: new Promise<never>(() => {}) },
+    }));
+
+    const tools = await createTools({ cwd: '/repo', mode: 'attached' }, { attach });
+
+    expect(attach).toHaveBeenCalledWith({ cwd: '/repo', configDir: undefined });
     expect(bootstrapToolsRuntime).not.toHaveBeenCalled();
+    expect(tools.mode).toBe('attached');
+    expect(tools.storybook).toMatchObject({
+      configDir: CONFIG_DIR,
+      url: 'http://localhost:6006',
+      pid: 123,
+    });
+  });
+
+  it('sets STORYBOOK_ATTACHED_TOOLS before attaching so store construction stays a follower', async () => {
+    vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', undefined);
+    const attach = vi.fn(async () => {
+      expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBe('true');
+      return {
+        runtime: makeRuntime(),
+        record: { url: 'http://localhost:6006', pid: 123, configDir: CONFIG_DIR },
+        connection: { close: vi.fn(), disconnected: new Promise<never>(() => {}) },
+      };
+    });
+
+    await createTools({ mode: 'attached' }, { attach });
+
+    expect(attach).toHaveBeenCalledOnce();
+  });
+
+  it('restores STORYBOOK_ATTACHED_TOOLS when attach fails so a later local host is not a follower', async () => {
+    vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', undefined);
+    const attach = vi.fn(async () => {
+      throw new AttachUnavailableError({
+        reason: 'no-instance',
+        instances: [],
+        remediation: 'none',
+      });
+    });
+
+    await expect(createTools({ mode: 'attached' }, { attach })).rejects.toThrow(
+      AttachUnavailableError
+    );
+    expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBeUndefined();
+
+    const local = await createTools({ mode: 'local' });
+    expect(local.mode).toBe('local');
+    expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBeUndefined();
+  });
+
+  it('restores STORYBOOK_ATTACHED_TOOLS when the attached host closes', async () => {
+    vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', undefined);
+    const connection = { close: vi.fn(), disconnected: new Promise<never>(() => {}) };
+    const attach = vi.fn(async () => ({
+      runtime: makeRuntime(),
+      record: { url: 'http://localhost:6006', pid: 123, configDir: CONFIG_DIR },
+      connection,
+    }));
+    const tools = await createTools({ mode: 'attached' }, { attach });
+
+    expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBe('true');
+    await tools.close();
+    await tools.close();
+
+    expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBeUndefined();
+    expect(connection.close).toHaveBeenCalledOnce();
+  });
+
+  it('runs a requiresDevServer method when attached', async () => {
+    const attach = vi.fn(async () => ({
+      runtime: makeRuntime(),
+      record: { url: 'http://localhost:6006', pid: 123, configDir: CONFIG_DIR },
+      connection: { close: vi.fn(), disconnected: new Promise<never>(() => {}) },
+    }));
+    const tools = await createTools({ mode: 'attached' }, { attach });
+
+    await expect(tools.call('echo.live')).resolves.toEqual({
+      ok: true,
+      data: {},
+      markdown: '',
+    });
   });
 
   it('rejects auto mode, the default, as not available yet', async () => {

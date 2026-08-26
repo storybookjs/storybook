@@ -13,7 +13,10 @@ const testProviderStore = createTestProviderStore({
             before it was ready.
             This will be fixed when we do the planned UniversalStore v0.2.
           */
-    leader: !optionalEnvToBoolean(process.env.VITEST_CHILD_PROCESS),
+    leader:
+      !optionalEnvToBoolean(process.env.VITEST_CHILD_PROCESS) &&
+      !optionalEnvToBoolean(process.env.STORYBOOK_ATTACHED_TOOLS) &&
+      UniversalStore.preparedEnvironment !== UniversalStore.Environment.UNKNOWN,
   }),
 });
 

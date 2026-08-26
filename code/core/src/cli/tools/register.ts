@@ -21,6 +21,7 @@ export type CommandFailureHandler = (
 type ToolsPassthroughOptions = ToolsOutputFlags & {
   cwd?: string;
   configDir?: string;
+  attach?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by `withTelemetry`. */
   disableTelemetry?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by the failure handler. */
@@ -112,6 +113,7 @@ export function registerToolsPassthrough(
                     tool,
                     tokens,
                     target: { cwd: options.cwd, configDir: options.configDir },
+                    attach: options.attach,
                     flags,
                   },
                   { methodTelemetry: createMethodTelemetrySink(cliOptions) }

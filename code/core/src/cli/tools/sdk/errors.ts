@@ -14,16 +14,21 @@ export type AttachUnavailableReason =
  * `remediation` is the whole message: it is written for the agent or developer that triggered the
  * call and names the next step, which is what `agentFacing` declares. `instances` carries every
  * live record the SDK knows about so a caller can point at another project or disambiguate a
- * `multiple-matches` failure itself.
+ * `multiple-matches` failure itself. Channel tokens are omitted so logging the error cannot leak
+ * them.
  */
 export class AttachUnavailableError extends StorybookError {
-  constructor(
-    public data: {
-      reason: AttachUnavailableReason;
-      instances: StorybookInstanceRecord[];
-      remediation: string;
-    }
-  ) {
+  public data: {
+    reason: AttachUnavailableReason;
+    instances: StorybookInstanceRecord[];
+    remediation: string;
+  };
+
+  constructor(data: {
+    reason: AttachUnavailableReason;
+    instances: StorybookInstanceRecord[];
+    remediation: string;
+  }) {
     super({
       name: 'AttachUnavailableError',
       category: Category.CLI,
@@ -31,6 +36,15 @@ export class AttachUnavailableError extends StorybookError {
       message: data.remediation,
       agentFacing: true,
     });
+    this.data = {
+      reason: data.reason,
+      instances: data.instances.map((instance) => {
+        const rest = { ...instance };
+        delete rest.token;
+        return rest;
+      }),
+      remediation: data.remediation,
+    };
   }
 }
 

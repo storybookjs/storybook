@@ -788,6 +788,20 @@ export class NoFreePortError extends StorybookError {
   }
 }
 
+export class StorybookDevServerDisconnectedError extends StorybookError {
+  constructor(public data: { code?: number; reason?: string } = {}) {
+    super({
+      name: 'StorybookDevServerDisconnectedError',
+      category: Category.CORE_SERVER,
+      code: 19,
+      message: dedent`
+        Storybook dev server disconnected${data.code ? ` (close code ${data.code}${data.reason ? `: ${data.reason}` : ''})` : ''}.
+        Any request that was still in flight has been abandoned.
+        Make sure the dev server is still running, then try again.`,
+    });
+  }
+}
+
 export class GenerateNewProjectOnInitError extends StorybookError {
   constructor(
     public data: { error: unknown | Error; packageManager: string; projectType: string }

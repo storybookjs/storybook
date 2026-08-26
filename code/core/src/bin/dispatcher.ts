@@ -39,6 +39,10 @@ async function run() {
 
   const args = process.argv.slice(2);
 
+  if (args[0] === 'tools' && args.includes('--attach')) {
+    process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
+  }
+
   if (['dev', 'build', 'index', 'ai', 'tools', 'skills'].includes(args[0])) {
     const coreBin = pathToFileURL(join(resolvePackageDir('storybook'), 'dist/bin/core.js')).href;
     await import(coreBin);

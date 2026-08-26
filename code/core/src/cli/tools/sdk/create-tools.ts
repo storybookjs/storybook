@@ -329,8 +329,7 @@ function findToolset(runtime: ToolsRuntime, toolsetId: string): AnyToolsetDefini
 }
 
 function findMethod(toolset: AnyToolsetDefinition, methodName: string): AnyToolsetMethod {
-  const method = toolset.methods[methodName];
-  if (!method) {
+  if (!Object.hasOwn(toolset.methods, methodName)) {
     throw new ToolsRuntimeError({
       reason: 'unknown-method',
       message: `Unknown tool \`${toolset.id}.${methodName}\`. The \`${
@@ -338,5 +337,5 @@ function findMethod(toolset: AnyToolsetDefinition, methodName: string): AnyTools
       }\` toolset provides: ${Object.keys(toolset.methods).join(', ')}.`,
     });
   }
-  return method;
+  return toolset.methods[methodName];
 }

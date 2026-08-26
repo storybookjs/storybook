@@ -119,7 +119,8 @@ consumer amortizes config load across many calls on the live synced runtime.
    state. `.loaded()` warms via delegated commands. Every command goes over the channel.
 6. **Render + close.** `ToolsetOutcome` through markdown / `--json`; `ok` drives the exit code.
 
-Local mode (no instance, or `--no-attach`) loads the target configuration in this process.
+Local mode (no instance, or `--no-attach`) loads in-process when `cwd` already matches, and
+starts a child host when it does not.
 
 ## Failure matrix
 

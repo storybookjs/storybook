@@ -164,8 +164,8 @@ second engine. `storybook/internal/toolsets-docs` is a portable entry consumed b
 so its bundled declaration must remain flat and import only its declared allowlist.
 
 The `storybook tools` CLI is a slim shell over `storybook/internal/tools`. Default mode is `auto`:
-attach to a matching running instance as a delegated leaf, and fall back to an in-process local
-host when `createTools` cannot attach. `--attach` requires attachment (gate failures are errors).
+attach to a matching running instance as a delegated leaf, and fall back to a local host when
+`createTools` cannot attach. `--attach` requires attachment (gate failures are errors).
 `--no-attach` forces local. Toolset handlers run in the SDK process, and attached service commands
 execute on the instance.
 

@@ -78,11 +78,6 @@
       "code": "./src/channels/index.ts",
       "default": "./dist/channels/index.js"
     },
-    "./internal/channels/node": {
-      "types": "./dist/channels/node/index.d.ts",
-      "code": "./src/channels/node/index.ts",
-      "default": "./dist/channels/node/index.js"
-    },
     "./internal/cli": {
       "types": "./dist/cli/index.d.ts",
       "code": "./src/cli/index.ts",

@@ -1,12 +1,15 @@
 <script setup lang="ts">
-withDefaults(defineProps<{
-  id: string;
-  label?: string;
-  hint?: string;
-  modelValue?: string;
-}>(), {
-  id: 'testid',
-});
+withDefaults(
+  defineProps<{
+    id: string;
+    label?: string;
+    hint?: string;
+    modelValue?: string;
+  }>(),
+  {
+    id: 'testid',
+  }
+);
 
 defineEmits<{
   clear: [];

@@ -192,4 +192,34 @@ describe('createNodeChannel', () => {
     expect(getChannel()).toBe(replacement);
     installNoopChannel();
   });
+
+  it('does not restore a closed overlapping node channel', async () => {
+    const previousChannel = getChannel();
+    const previousEnvironment = UniversalStore.preparedEnvironment;
+    const first = openChannel();
+    await firstConnection();
+    const second = openChannel();
+    await vi.waitFor(() => expect(connections).toHaveLength(2));
+
+    first.close();
+    expect(getChannel()).toBe(second.channel);
+
+    second.close();
+    expect(getChannel()).toBe(previousChannel);
+    expect(UniversalStore.preparedEnvironment).toBe(previousEnvironment);
+  });
+
+  it('restores the remaining node channel when the later one closes first', async () => {
+    const previousChannel = getChannel();
+    const first = openChannel();
+    await firstConnection();
+    const second = openChannel();
+    await vi.waitFor(() => expect(connections).toHaveLength(2));
+
+    second.close();
+    expect(getChannel()).toBe(first.channel);
+
+    first.close();
+    expect(getChannel()).toBe(previousChannel);
+  });
 });

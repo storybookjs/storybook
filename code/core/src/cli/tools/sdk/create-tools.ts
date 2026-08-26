@@ -8,6 +8,7 @@ import type {
   AnyToolsetMethod,
   AnyToolsetOutcome,
   ToolsetCtx,
+  ToolsetTransport,
 } from '../../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
 import { clearToolsetRegistry } from '../../../shared/open-service/toolset-registry.ts';
@@ -27,7 +28,7 @@ import type {
   ToolsetCatalog,
 } from './types.ts';
 
-/** Injectable dependencies for tests. */
+/** Injectable dependencies for tests. Not part of the public SDK. */
 export type CreateToolsDeps = {
   bootstrap?: (target: { cwd?: string; configDir?: string }) => Promise<ToolsRuntime>;
   attach?: (
@@ -148,6 +149,10 @@ export async function createTools(
   });
 }
 
+function transportFor(kind: Required<ToolsClientInfo>['kind']): ToolsetTransport {
+  return kind === 'cli' ? 'cli' : 'sdk';
+}
+
 function createToolsHost(args: {
   mode: 'local';
   runtime: ToolsRuntime;
@@ -174,7 +179,7 @@ function createToolsHost(args: {
 }): Tools {
   const { mode, runtime, clientInfo, storybook } = args;
   const baseCtx: ToolsetCtx = {
-    transport: 'cli',
+    transport: transportFor(clientInfo.kind),
     getService: runtime.getService,
     ...(storybook.url ? { origin: storybook.url } : {}),
   };
@@ -222,10 +227,7 @@ function createToolsHost(args: {
       });
     }
 
-    return raceAbort(
-      options.signal,
-      Promise.resolve(method.handler(validation.value, contextFor(options)))
-    );
+    return raceAbort(options.signal, method.handler(validation.value, contextFor(options)));
   };
 
   return {
@@ -273,13 +275,15 @@ function createToolsHost(args: {
       }
       closed = true;
       args.close?.();
+      await runtime.close();
     },
   };
 }
 
-function raceAbort<T>(signal: AbortSignal | undefined, work: Promise<T>): Promise<T> {
+function raceAbort<T>(signal: AbortSignal | undefined, work: T | PromiseLike<T>): Promise<T> {
+  const pending = Promise.resolve(work);
   if (!signal) {
-    return work;
+    return pending;
   }
   signal.throwIfAborted();
 
@@ -289,7 +293,7 @@ function raceAbort<T>(signal: AbortSignal | undefined, work: Promise<T>): Promis
     signal.addEventListener('abort', onAbort, { once: true });
   });
 
-  return Promise.race([work, aborted]).finally(() => {
+  return Promise.race([pending, aborted]).finally(() => {
     signal.removeEventListener('abort', onAbort);
   });
 }

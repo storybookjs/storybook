@@ -75,6 +75,7 @@ export type ToolsDescribeOptions = {
 
 export type ToolsCallOptions = {
   signal?: AbortSignal;
+  /** Storybook UI base URL for methods that need a live origin. */
   origin?: string;
   telemetry?: ToolsetTelemetry;
 };

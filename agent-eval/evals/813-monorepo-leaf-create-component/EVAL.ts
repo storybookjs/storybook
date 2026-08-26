@@ -14,18 +14,11 @@ import {
   isReviewEnabled,
 } from '#test-utils';
 
-<<<<<<< HEAD
-// The workflow assertions below were test.todo while agents ran `storybook ai`
-// from the monorepo root and hit the degraded help of
-// storybookjs/storybook#35359 (still open). Re-enabled now that the stories
-// skills direct the dev server and every Storybook CLI command to the
-// package where Storybook is installed, which avoids the degraded-help path.
-=======
 describe('creating a Callout in a monorepo UI package', () => {
-  // Workflow asserts are enabled. Stories skills require cwd = the package where
-  // Storybook is installed (avoids degraded `storybook ai --help` at monorepo
-  // root; historical context: storybookjs/storybook#35359).
->>>>>>> origin/next
+  // Workflow asserts are enabled. The stories skills direct the dev server and
+  // every Storybook CLI command to the package where Storybook is installed,
+  // which avoids the degraded help output at the monorepo root (historical
+  // context: storybookjs/storybook#35359).
 
   const review = isReviewEnabled();
 

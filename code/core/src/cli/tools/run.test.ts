@@ -96,6 +96,7 @@ function makeLocalTools(runtimeOverrides: Partial<ToolsRuntime> = {}): LocalTool
     getService: () => {
       throw new Error('no services registered in this test');
     },
+    close: async () => {},
     ...runtimeOverrides,
   };
   const ctx: ToolsetCtx = { transport: 'cli', getService: runtime.getService };

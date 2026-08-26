@@ -4,6 +4,8 @@ import {
   ChangeDetectionService,
   experimental_getStatusStore,
   experimental_loadStorybook,
+  experimental_resetChangeDetectionReadiness,
+  experimental_resetServicesPresetOnce,
   experimental_setChangeDetectionHost,
   getService,
   prepareHeadlessUniversalStores,
@@ -11,11 +13,15 @@ import {
 } from 'storybook/internal/core-server';
 import { CHANGE_DETECTION_STATUS_TYPE_ID, type Options } from 'storybook/internal/types';
 
+import { clearRegistry } from '../../../shared/open-service/service-registry.ts';
 import type {
   AnyToolsetDefinition,
   ToolsetGetService,
 } from '../../../shared/open-service/toolset-definition.ts';
-import { getRegisteredToolsets } from '../../../shared/open-service/toolset-registry.ts';
+import {
+  clearToolsetRegistry,
+  getRegisteredToolsets,
+} from '../../../shared/open-service/toolset-registry.ts';
 import { resolveStorybookConfigDir } from '../config-dir.ts';
 import type { ToolsTarget } from '../discover-instance.ts';
 import { ToolsRuntimeError } from './errors.ts';
@@ -24,6 +30,7 @@ export type ToolsRuntime = {
   configDir: string;
   toolsets: AnyToolsetDefinition[];
   getService: ToolsetGetService;
+  close(): Promise<void>;
 };
 
 /**
@@ -65,14 +72,27 @@ export async function bootstrapToolsRuntime(
 
   const options = await experimental_loadStorybook({ configDir, channel });
 
-  (deps.setChangeDetectionHost ?? experimental_setChangeDetectionHost)(() =>
-    startChangeDetectionInProcess(options)
-  );
+  const setChangeDetectionHost = deps.setChangeDetectionHost ?? experimental_setChangeDetectionHost;
+  setChangeDetectionHost(() => startChangeDetectionInProcess(options));
+
+  let closed = false;
+  const close = async () => {
+    if (closed) {
+      return;
+    }
+    closed = true;
+    clearRegistry();
+    clearToolsetRegistry();
+    experimental_resetServicesPresetOnce();
+    setChangeDetectionHost(undefined);
+    experimental_resetChangeDetectionReadiness();
+  };
 
   return {
     configDir,
     toolsets: getRegisteredToolsets(),
     getService: (serviceId, serviceOptions) => getService(serviceId as never, serviceOptions),
+    close,
   };
 }
 

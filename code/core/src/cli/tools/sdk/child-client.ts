@@ -232,6 +232,7 @@ export async function spawnChildHost(
         message: 'Toolset services are served by the project-local child host.',
       });
     },
+    close: async () => {},
   };
 
   const assertOpen = () => {

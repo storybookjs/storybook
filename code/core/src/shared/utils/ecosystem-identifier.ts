@@ -109,6 +109,38 @@ export const ROUTER_PACKAGES = [
   '@reach/router',
 ] as const;
 
+// Bundlers and their direct tooling. Storybook's own builder packages are reported separately
+// (as storybookPackages), so patterns here stay exact or scoped to avoid re-matching them.
+export const BUNDLER_PACKAGES = [
+  'webpack',
+  'webpack-cli',
+  'webpack-dev-server',
+  'vite',
+  'rolldown',
+  'rolldown-vite',
+  'esbuild',
+  'parcel',
+  '@parcel/*',
+  '@rspack/*',
+  '@rsbuild/*',
+] as const;
+
+// UI framework runtime packages underlying Storybook's renderers, plus their runtime companions
+// (e.g. react-dom, whose version can drift from react's).
+export const RENDERER_PACKAGES = [
+  'react',
+  'react-dom',
+  'react-native',
+  'vue',
+  'svelte',
+  'preact',
+  'lit',
+  'ember-source',
+  '@angular/core',
+  'solid-js',
+  '@builder.io/qwik',
+] as const;
+
 export function globToRegex(pattern: string): RegExp {
   // Escape special regex characters except *
   const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&');

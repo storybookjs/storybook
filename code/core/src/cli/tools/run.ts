@@ -1,3 +1,5 @@
+import { versions } from 'storybook/internal/common';
+
 import type {
   AnyToolsetDefinition,
   AnyToolsetMethod,
@@ -9,9 +11,11 @@ import {
   toMcpToolName,
   type ToolsetMethodId,
 } from '../../shared/open-service/toolset-names.ts';
+import { getService } from '../../shared/open-service/server.ts';
+import { getRegisteredToolsets } from '../../shared/open-service/toolset-registry.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import { callMcpTool } from './mcp-client.ts';
-import { bootstrapToolsRuntime, type ToolsRuntime } from './bootstrap.ts';
+import { createTools, ToolsRuntimeError, type Tools, type ToolsClientInfo } from './sdk/index.ts';
 import {
   discoverRunningInstance,
   type InstanceDiscovery,
@@ -61,9 +65,16 @@ export type ToolsInvocation = {
   flags?: ToolsOutputFlags;
 };
 
+/** Identifies this CLI to the tools SDK that hosts its run. */
+const CLI_CLIENT_INFO: ToolsClientInfo = {
+  name: 'storybook-cli',
+  version: versions.storybook,
+  kind: 'cli',
+};
+
 /** Injectable dependencies for tests. */
 export type ToolsRunDeps = {
-  bootstrap?: typeof bootstrapToolsRuntime;
+  createTools?: typeof createTools;
   discoverInstance?: typeof discoverRunningInstance;
   /** Stub for {@link PROXY_VIA_MCP_METHODS}; goes away with the proxy in Milestone 5b. */
   mcpToolCall?: typeof callMcpTool;
@@ -102,10 +113,14 @@ function isAgentFacingError(error: unknown): error is Error {
   return error instanceof Error && (error as { agentFacing?: boolean }).agentFacing === true;
 }
 
+function isInvalidInputError(error: unknown): error is ToolsRuntimeError {
+  return error instanceof ToolsRuntimeError && error.data.reason === 'invalid-input';
+}
+
 /**
  * Run one `storybook tools` invocation against the toolsets the target Storybook configuration
  * registers in this process. This is the whole command behind the commander wiring: dispatch,
- * help, argument parsing and validation, the requires-dev-server contract, and the mechanical
+ * help, argument parsing, the requires-dev-server contract, and the mechanical
  * outcome mapping (markdown to stdout, `--json` for data, `ok` drives the exit code).
  */
 export async function runToolsCommand(
@@ -131,34 +146,70 @@ export async function runToolsCommand(
     outputPath: parsed.output,
   });
 
-  let runtime: ToolsRuntime;
+  let tools: Tools | undefined;
   try {
-    runtime = await (deps.bootstrap ?? bootstrapToolsRuntime)(target);
+    tools = await (deps.createTools ?? createTools)({
+      cwd: target.cwd,
+      configDir: target.configDir,
+      mode: 'local',
+      clientInfo: CLI_CLIENT_INFO,
+    });
   } catch (error) {
+    // The SDK's own message already names the failure and the configuration it could not load.
     return result({
       exitCode: 1,
-      output: `Could not load the Storybook configuration for this project: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
+      output: error instanceof Error ? error.message : String(error),
       outcome: { kind: 'error', error },
     });
   }
 
-  const ctx = buildContext(runtime, deps, undefined);
+  try {
+    return await runWithHost(tools, {
+      toolsetName,
+      toolName,
+      parsed,
+      result,
+      target,
+      deps,
+    });
+  } finally {
+    await tools.close();
+  }
+}
+
+async function runWithHost(
+  tools: Tools,
+  args: {
+    toolsetName: string | undefined;
+    toolName: string | undefined;
+    parsed: Extract<ReturnType<typeof parseToolsTokens>, { ok: true }>;
+    result: (partial: Omit<ToolsRunResult, 'outputPath'>) => ToolsRunResult;
+    target: ToolsTarget;
+    deps: ToolsRunDeps;
+  }
+): Promise<ToolsRunResult> {
+  const { toolsetName, toolName, parsed, result, target, deps } = args;
+  const toolsets = getRegisteredToolsets();
+  const configDir = tools.storybook.configDir;
+  const ctx: ToolsetCtx = {
+    transport: 'cli',
+    getService: (serviceId, options) => getService(serviceId as never, options),
+    ...(deps.methodTelemetry ? { telemetry: deps.methodTelemetry } : {}),
+  };
 
   if (!toolsetName) {
     return result({
       exitCode: 0,
-      output: renderToolsHelp(runtime.configDir, runtime.toolsets, ctx),
+      output: renderToolsHelp(configDir, toolsets, ctx),
       outcome: { kind: 'help' },
     });
   }
 
-  const toolset = runtime.toolsets.find((candidate) => candidate.id === toolsetName);
+  const toolset = toolsets.find((candidate) => candidate.id === toolsetName);
   if (!toolset) {
     return result({
       exitCode: 1,
-      output: formatUnknownToolset(toolsetName, runtime),
+      output: formatUnknownToolset(toolsetName, configDir, toolsets),
       outcome: { kind: 'intercept', reason: 'unknown-toolset' },
     });
   }
@@ -226,17 +277,16 @@ export async function runToolsCommand(
     origin = discovery.currentRecord.url;
   }
 
-  const validation = await method.input['~standard'].validate(parsed.args);
-  if (validation.issues) {
-    return result({
-      exitCode: 1,
-      output: formatValidationIssues(commandPath, validation.issues),
-      outcome: { kind: 'intercept', reason: 'invalid-arguments' },
-    });
-  }
-
   try {
     if (proxyTarget) {
+      const validation = await method.input['~standard'].validate(parsed.args);
+      if (validation.issues) {
+        return result({
+          exitCode: 1,
+          output: formatValidationIssues(commandPath, validation.issues),
+          outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+        });
+      }
       // The dev server runs the handler, so its telemetry and side effects stay in the process
       // that owns them; this side only unwraps the reply the same way the MCP adapter wrapped it.
       const reply = await (deps.mcpToolCall ?? callMcpTool)(proxyTarget, {
@@ -262,7 +312,10 @@ export async function runToolsCommand(
       });
     }
 
-    const outcome = await method.handler(validation.value, buildContext(runtime, deps, origin));
+    const outcome = await tools.call(resolvedRef, parsed.args, {
+      ...(origin ? { origin } : {}),
+      ...(deps.methodTelemetry ? { telemetry: deps.methodTelemetry } : {}),
+    });
     const output = parsed.json
       ? JSON.stringify(outcome.data, null, 2)
       : joinMarkdown(outcome.markdown);
@@ -272,6 +325,13 @@ export async function runToolsCommand(
       outcome: { kind: outcome.ok ? 'success' : 'failure' },
     });
   } catch (error) {
+    if (isInvalidInputError(error)) {
+      return result({
+        exitCode: 1,
+        output: formatValidationIssues(commandPath, error.data.issues ?? []),
+        outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+      });
+    }
     // An agent-facing error is a tool speaking to the agent and naming its own recovery — surface
     // it verbatim as a result, not as a crash.
     if (isAgentFacingError(error)) {
@@ -285,27 +345,17 @@ export async function runToolsCommand(
   }
 }
 
-function buildContext(
-  runtime: ToolsRuntime,
-  deps: ToolsRunDeps,
-  origin: string | undefined
-): ToolsetCtx {
-  const { methodTelemetry } = deps;
-  return {
-    transport: 'cli',
-    ...(origin ? { origin } : {}),
-    getService: runtime.getService,
-    ...(methodTelemetry ? { telemetry: methodTelemetry } : {}),
-  };
-}
-
 function joinMarkdown(markdown: string | string[]): string {
   return Array.isArray(markdown) ? markdown.join('\n\n') : markdown;
 }
 
-function formatUnknownToolset(toolsetName: string, runtime: ToolsRuntime): string {
-  const available = runtime.toolsets.map((toolset) => `- \`${toolset.id}\``).join('\n');
-  return `Unknown toolset \`${toolsetName}\`. The Storybook configuration at ${runtime.configDir} provides:
+function formatUnknownToolset(
+  toolsetName: string,
+  configDir: string,
+  toolsets: AnyToolsetDefinition[]
+): string {
+  const available = toolsets.map((toolset) => `- \`${toolset.id}\``).join('\n');
+  return `Unknown toolset \`${toolsetName}\`. The Storybook configuration at ${configDir} provides:
 
 ${available}
 

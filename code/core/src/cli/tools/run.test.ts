@@ -124,7 +124,11 @@ function makeLocalTools(runtimeOverrides: Partial<ToolsRuntime> = {}): LocalTool
       }
       const validation = await method.input['~standard'].validate(input ?? {});
       if (validation.issues) {
-        throw new Error(`Invalid input for \`${ref}\``);
+        throw new ToolsRuntimeError({
+          reason: 'invalid-input',
+          message: `Invalid input for \`${ref}\``,
+          issues: validation.issues,
+        });
       }
       return method.handler(validation.value, {
         ...ctx,
@@ -180,7 +184,11 @@ function makeAttachedTools(runtimeOverrides: Partial<ToolsRuntime> = {}): Attach
       }
       const validation = await method.input['~standard'].validate(input ?? {});
       if (validation.issues) {
-        throw new Error(`Invalid input for \`${ref}\``);
+        throw new ToolsRuntimeError({
+          reason: 'invalid-input',
+          message: `Invalid input for \`${ref}\``,
+          issues: validation.issues,
+        });
       }
       return method.handler(validation.value, {
         ...ctx,

@@ -1,0 +1,42 @@
+{
+  "argTypes": {
+    "count": {
+      "control": {
+        "disable": true
+      },
+      "description": "a count number",
+      "name": "count",
+      "table": {
+        "category": "exposed",
+        "type": {
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "number"
+      }
+    },
+    "label": {
+      "control": {
+        "disable": true
+      },
+      "description": "a label string",
+      "name": "label",
+      "table": {
+        "category": "exposed",
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "string"
+      }
+    }
+  },
+  "id": "stories-renderers-vue3-vue3-vite-default-ts-component-meta-referencetypeexposed",
+  "jsDocTags": {},
+  "name": "Component",
+  "path": "./src/stories/renderers/vue3_vue3-vite-default-ts/component-meta/ReferenceTypeExposed.stories.ts"
+}

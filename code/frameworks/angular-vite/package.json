@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular-vite",
-  "version": "10.6.0-alpha.6",
+  "version": "10.6.0-alpha.8",
   "description": "Storybook for Angular: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -108,7 +108,7 @@
     "storybook": "workspace:^",
     "typescript": ">= 5.9.x",
     "vite": ">=8.0.0",
-    "zone.js": ">=0.16.0"
+    "zone.js": ">=0.14.0"
   },
   "peerDependenciesMeta": {
     "@angular/cli": {

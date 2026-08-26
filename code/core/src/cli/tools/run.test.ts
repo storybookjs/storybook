@@ -152,8 +152,7 @@ describe('local tools', () => {
 
     expect(bootstrap).toHaveBeenCalledWith({});
     expect(result.exitCode).toBe(0);
-    expect(result.output).toContain('# Changed stories');
-    expect(result.output).toContain('New: 0, modified: 0, affected: 0');
+    expect(result.output).toContain('No new, modified, or related stories detected.');
   });
 
   it('fails graph tools with the typed unavailable error when the builder has no adapter', async () => {

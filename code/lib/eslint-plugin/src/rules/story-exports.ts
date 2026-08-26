@@ -2,7 +2,7 @@
  * @file A story file must contain at least one story export
  * @author Yann Braga
  */
-import type { IncludeExcludeOptions } from 'storybook/internal/csf';
+import type { IncludeExcludeOptions } from '../utils/csf-helpers.ts';
 
 import type { TSESTree } from '@typescript-eslint/types';
 

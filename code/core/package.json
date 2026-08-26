@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.6.0-alpha.6",
+  "version": "10.6.0-alpha.8",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -123,6 +123,11 @@
       "types": "./dist/csf-tools/index.d.ts",
       "code": "./src/csf-tools/index.ts",
       "default": "./dist/csf-tools/index.js"
+    },
+    "./internal/csf/csf-utils": {
+      "types": "./dist/csf/csf-utils.d.ts",
+      "code": "./src/csf/csf-utils.ts",
+      "default": "./dist/csf/csf-utils.js"
     },
     "./internal/docgen-worker": "./dist/shared/open-service/services/docgen/worker/docgen-worker.js",
     "./internal/docs-tools": {
@@ -360,6 +365,7 @@
     "flush-promises": "^1.0.2",
     "fuse.js": "^3.6.1",
     "get-npm-tarball-url": "^2.1.0",
+    "github-slugger": "^2.0.0",
     "glob": "^10.5.0",
     "globby": "^14.1.0",
     "hast-util-to-estree": "^3.0.0",

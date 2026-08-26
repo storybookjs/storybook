@@ -1,5 +1,5 @@
 import { existsSync } from 'node:fs';
-import { expect, test } from 'vitest';
+import { describe, expect, test } from 'vitest';
 import {
   expectDisplayReviewForVisualChange,
   expectPreviewBrowserStarted,
@@ -14,54 +14,62 @@ import {
   isReviewEnabled,
 } from '#test-utils';
 
-// The workflow assertions below were test.todo while agents ran `storybook ai`
-// from the monorepo root and hit the degraded help of
-// storybookjs/storybook#35359 (still open). Re-enabled now that the stories
-// skills direct the dev server and every `storybook ai` command to the
-// package where Storybook is installed, which avoids the degraded-help path.
+describe('creating a Callout in a monorepo UI package', () => {
+  // Workflow asserts are enabled. Stories skills require cwd = the package where
+  // Storybook is installed (avoids degraded `storybook ai --help` at monorepo
+  // root; historical context: storybookjs/storybook#35359).
 
-const review = isReviewEnabled();
+  const review = isReviewEnabled();
 
-test('creates the component inside the leaf package', () => {
-  expect(
-    existsSync('packages/ui/src/components/Callout.tsx'),
-    'Expected packages/ui/src/components/Callout.tsx to be created'
-  ).toBe(true);
-});
+  test('creates the component inside the leaf package', () => {
+    expect(
+      existsSync('packages/ui/src/components/Callout.tsx'),
+      'Expected packages/ui/src/components/Callout.tsx to be created'
+    ).toBe(true);
+  });
 
-test.runIf(review)('uses Storybook story instructions and publishes a display review', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
-  expectDisplayReviewForVisualChange();
-});
+  test('runs story tests after the change and finishes with them passing', () => {
+    expectStoryTestsRanAndPassed({ covering: ['callout'] });
+  });
 
-test.runIf(review)('the review covers the new Callout stories', () => {
-  expectStoryIdsInDisplayReview(['callout']);
-});
+  describe.runIf(review)('when review is enabled', () => {
+    test('uses Storybook story instructions and publishes a display review', () => {
+      expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
+      expectDisplayReviewForVisualChange();
+    });
 
-test.runIf(!review)('uses Storybook story instructions and previews the new stories', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions']);
-  expectPreviewStoriesWithFinalLinks({ covering: ['callout'] });
-});
+    test('the review covers the new Callout stories', () => {
+      expectStoryIdsInDisplayReview(['callout']);
+    });
 
-test.runIf(review)(
-  'discovers stories through the workflow tools before publishing the review',
-  () => {
-    expectStoryDiscoveryBeforeReview();
-  }
-);
+    test('discovers stories through the workflow tools before publishing the review', () => {
+      expectStoryDiscoveryBeforeReview();
+    });
+  });
 
-test('runs story tests after the change and finishes with them passing', () => {
-  expectStoryTestsRanAndPassed({ covering: ['callout'] });
-});
+  describe.runIf(!review)('when review is disabled', () => {
+    test('uses Storybook story instructions and previews the new stories', () => {
+      expectWorkflowCalls(['get-storybook-story-instructions']);
+      expectPreviewStoriesWithFinalLinks({ covering: ['callout'] });
+    });
+  });
 
-test.skipIf(getEvalContext().integration === 'mcp')('invokes the stories skill', () => {
-  expectSkillInvoked('stories');
-});
+  describe('depending on the current agent and integration', () => {
+    const { agent, integration } = getEvalContext();
 
-test('keeps the pre-existing Storybook launch config valid', () => {
-  expectValidStorybookLaunchConfig();
-});
+    test.skipIf(integration === 'mcp')('invokes the stories skill', () => {
+      expectSkillInvoked('stories');
+    });
 
-test('opens the preview browser when using the plugin', () => {
-  expectPreviewBrowserStarted();
+    test.skipIf(agent !== 'claude-code' || integration !== 'plugin')(
+      'keeps the pre-existing Storybook launch config valid',
+      () => {
+        expectValidStorybookLaunchConfig();
+      }
+    );
+
+    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () => {
+      expectPreviewBrowserStarted();
+    });
+  });
 });

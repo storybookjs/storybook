@@ -8,8 +8,8 @@ import { ShapeButtonComponent } from './shape-button.component.ts';
     <sb-shape-button
         [label]="'it\\'s &quot;quoted&quot; & Tom &amp;amp; Jerry'"
         [count]="9"
-        (clicked)="clicked($event)">
-    </sb-shape-button>`,
+        (clicked)="clicked($event)"
+    />`,
 })
 export class DemoComponent {
   clicked(event: unknown) {}

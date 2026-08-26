@@ -99,6 +99,11 @@ export type Template = {
     resolutions?: Record<string, string>;
     editAddons?: (addons: string[]) => string[];
     useCsfFactory?: boolean;
+    /**
+     * Name of a `template/stories_<variant>` fixture folder to link instead of the one derived
+     * from this template's key, so a derived template can share its base template's stories.
+     */
+    storiesVariant?: string;
   };
   /** Additional CI steps in case this template has special needs during CI. */
   extraCiSteps?: {
@@ -405,8 +410,7 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDevDependencies: ['prop-types', '@types/prop-types', '@storybook/addon-mcp'],
-      editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
+      extraDevDependencies: ['prop-types', '@types/prop-types'],
       mainConfig: {
         features: {
           developmentModeForBuild: true,
@@ -633,6 +637,29 @@ export const baseTemplates = {
       useCsfFactory: true,
     },
     skipTasks: ['bench'],
+  },
+  'vue3-vite/docgen-server-ts': {
+    name: 'Vue Server Docgen v3 (Vite | TypeScript)',
+    script: 'npm create vite --yes {{beforeDir}} -- --template vue-ts',
+    minAgeGateExemptions: ['vue-component-meta', '@vue/language-core'],
+    expected: {
+      framework: '@storybook/vue3-vite',
+      renderer: '@storybook/vue3',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      extraDevDependencies: ['@storybook/addon-mcp'],
+      editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
+      useCsfFactory: true,
+      storiesVariant: 'vue3-vite-default-ts',
+      mainConfig: {
+        features: {
+          experimentalDocgenServer: true,
+          componentsManifest: true,
+        },
+      },
+    },
+    skipTasks: ['bench', 'chromatic', 'test-runner'],
   },
   'vue3-rsbuild/default-ts': {
     name: 'Vue Latest (RsBuild | TypeScript)',
@@ -990,11 +1017,13 @@ export const baseTemplates = {
     // create-expo-app pins the current SDK, whose packages are released
     // together and are routinely younger than the gate window.
     // `babel-preset-expo` is part of that set despite not matching `expo-*`.
+    // `multitars` is pulled in transitively by the Expo CLI toolchain.
     minAgeGateExemptions: [
       'expo',
       'expo-*',
       '@expo/*',
       'babel-preset-expo',
+      'multitars',
       'react-native',
       '@react-native/*',
     ],
@@ -1021,17 +1050,12 @@ export const baseTemplates = {
     },
   },
   'react-native-web-vite/rn-cli-ts': {
-    // NOTE: create-expo-app installs React 18.2.0. But yarn portal
-    // expects 18.3.1 (dunno why). Therefore to run this in dev you
-    // must either:
-    //  - edit the sandbox package.json to depend on react 18.3.1, OR
-    //  - build/run the sandbox in --no-link mode, which is fine
-    //
-    // Users & CI won't see this limitation because they are not using
-    // yarn portals.
     name: 'React Native CLI Latest (Vite | TypeScript)',
     script:
       'npx @react-native-community/cli@latest init --skip-install --install-pods=false --directory={{beforeDir}} rnapp',
+    // The CLI downloads `@react-native-community/template` during init even with
+    // --skip-install; those packages ship in lockstep with each RN release.
+    minAgeGateExemptions: ['@react-native-community/*', 'react-native', '@react-native/*'],
     expected: {
       framework: '@storybook/react-native-web-vite',
       renderer: '@storybook/react',
@@ -1246,13 +1270,14 @@ export const normal: TemplateKey[] = [
   'react-rsbuild/default-ts',
   'tanstack-react-router/default-ts',
   'tanstack-react-start/default-ts',
-  // The only sandbox that records docgen baselines. Running it daily meant a change to the
+  // The sandboxes that record docgen baselines. Running them daily meant a change to the
   // extraction could merge without ever touching them, which is how the props-table visibility
   // rules landed on a stale recording.
-  // TODO(11.0): remove this template. The standard sandboxes ship the new docgen approach by
-  // default from then on, so `angular-vite/default-ts` carries the baselines and this one is
+  // TODO(11.0): remove these templates. The standard sandboxes ship the new docgen approach by
+  // default from then on, so the `default-ts` templates carry the baselines and these are
   // redundant.
   'angular-vite/docgen-server-ts',
+  'vue3-vite/docgen-server-ts',
 ];
 
 export const merged: TemplateKey[] = [

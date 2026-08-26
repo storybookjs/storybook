@@ -26,8 +26,8 @@ import { getChromaticVersionSpecifier } from './get-chromatic-version.ts';
 import { getFrameworkInfo } from './get-framework-info.ts';
 import { getHasModuleFederation } from './get-has-module-federation.ts';
 import { getHasRouterPackage } from './get-has-router-package.ts';
+import { getHasNextCustomWebpack } from './get-has-next-custom-webpack.ts';
 import { getHasTurbopack } from './get-has-turbopack.ts';
-import { getRendererRuntimePackage } from './get-renderer-runtime-package.ts';
 import { analyzeEcosystemPackages } from './get-known-packages.ts';
 import { getMonorepoType } from '../shared/utils/get-monorepo-type.ts';
 import { getPackageManagerInfo } from './get-package-manager-info.ts';
@@ -125,6 +125,7 @@ export const computeStorybookMetadata = async ({
     userSince: settings?.value.userSince,
     hasCustomBabel: false,
     hasCustomWebpack: false,
+    hasCustomVite: false,
     hasStaticDirs: false,
     hasStorybookEslint: false,
     refCount: 0,
@@ -168,7 +169,10 @@ export const computeStorybookMetadata = async ({
     };
   }
   metadata.hasCustomBabel = !!mainConfig.babel;
-  metadata.hasCustomWebpack = !!mainConfig.webpackFinal;
+  metadata.hasCustomWebpack =
+    !!mainConfig.webpackFinal ||
+    (!!allDependencies.next && getHasNextCustomWebpack(dirname(packageJsonPath)));
+  metadata.hasCustomVite = !!mainConfig.viteFinal;
   metadata.hasStaticDirs = !!mainConfig.staticDirs;
 
   if (typeof mainConfig.typescript === 'object') {
@@ -176,13 +180,6 @@ export const computeStorybookMetadata = async ({
   }
 
   const frameworkInfo = await getFrameworkInfo(mainConfig, configDir);
-
-  const rendererRuntimePackage = getRendererRuntimePackage(frameworkInfo.renderer);
-  if (rendererRuntimePackage) {
-    const { version: rendererRuntimeVersion } =
-      await getActualPackageVersion(rendererRuntimePackage);
-    metadata.rendererVersion = rendererRuntimeVersion || 'unknown';
-  }
 
   if (typeof mainConfig.refs === 'object') {
     metadata.refCount = Object.keys(mainConfig.refs).length;

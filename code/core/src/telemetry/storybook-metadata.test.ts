@@ -26,6 +26,7 @@ import {
   getActualPackageVersion,
   getActualPackageVersions,
 } from './package-json.ts';
+import { getHasNextCustomWebpack } from './get-has-next-custom-webpack.ts';
 import {
   computeStorybookMetadata,
   metaFrameworks,
@@ -37,6 +38,7 @@ vi.mock('./detect-agent.ts', () => ({
   detectAgent: vi.fn().mockReturnValue(undefined),
 }));
 vi.mock(import('./package-json.ts'), { spy: true });
+vi.mock(import('./get-has-next-custom-webpack.ts'), { spy: true });
 vi.mock(import('../shared/utils/get-monorepo-type.ts'), { spy: true });
 vi.mock(import('./get-framework-info.ts'), { spy: true });
 vi.mock(import('./get-package-manager-info.ts'), { spy: true });
@@ -503,7 +505,10 @@ describe('storybook-metadata', () => {
         mainConfig: {
           ...mainJsMock,
           addons: [
-            { name: '@storybook/addon-essentials', options: { controls: false } },
+            {
+              name: '@storybook/addon-essentials',
+              options: { controls: false },
+            },
             { name: 'addon-foo', options: { foo: 'bar' } },
           ],
         },
@@ -644,66 +649,54 @@ describe('storybook-metadata', () => {
       });
     });
 
-    describe('rendererVersion', () => {
-      it("should resolve react's installed version for a react project", async () => {
+    describe('custom bundler config', () => {
+      it('should detect viteFinal as hasCustomVite', async () => {
         const res = await computeStorybookMetadata({
           configDir: '.storybook',
           packageJson: packageJsonMock,
           packageJsonPath,
-          mainConfig: mainJsMock,
+          mainConfig: {
+            ...mainJsMock,
+            viteFinal: (config: any) => config,
+          } as any,
         });
-        expect(res.rendererVersion).toBe('x.x.x');
+        expect(res.hasCustomVite).toBe(true);
       });
 
-      it("should resolve @angular/core's installed version for an angular project", async () => {
-        vi.mocked(getStorybookInfo).mockImplementation(async () => ({
-          ...defaultInfo,
-          renderer: SupportedRenderer.ANGULAR,
-          rendererPackage: '@storybook/angular',
-        }));
-        vi.mocked(getActualPackageVersion).mockImplementation(async (name) => ({
-          name,
-          version: name === '@angular/core' ? '17.3.0' : 'x.x.x',
-        }));
-
+      it('should not report hasCustomVite without viteFinal', async () => {
         const res = await computeStorybookMetadata({
           configDir: '.storybook',
           packageJson: packageJsonMock,
           packageJsonPath,
           mainConfig: mainJsMock,
         });
-        expect(res.rendererVersion).toBe('17.3.0');
+        expect(res.hasCustomVite).toBe(false);
       });
 
-      it('should be undefined when the renderer has no runtime package to resolve', async () => {
-        vi.mocked(getStorybookInfo).mockImplementation(async () => ({
-          ...defaultInfo,
-          renderer: SupportedRenderer.HTML,
-          rendererPackage: '@storybook/html',
-        }));
-
+      it('should report hasCustomWebpack for a next project customizing webpack in next.config', async () => {
+        vi.mocked(getHasNextCustomWebpack).mockReturnValue(true);
         const res = await computeStorybookMetadata({
           configDir: '.storybook',
-          packageJson: packageJsonMock,
+          packageJson: {
+            ...packageJsonMock,
+            dependencies: { next: 'x.x.x' },
+          } as PackageJson,
           packageJsonPath,
           mainConfig: mainJsMock,
         });
-        expect(res.rendererVersion).toBeUndefined();
+        expect(res.hasCustomWebpack).toBe(true);
       });
 
-      it("should be 'unknown' when the runtime package can't be resolved", async () => {
-        vi.mocked(getActualPackageVersion).mockImplementation(async (name) => ({
-          name,
-          version: null,
-        }));
-
+      it('should not consult next.config for projects without next', async () => {
+        vi.mocked(getHasNextCustomWebpack).mockReturnValue(true);
         const res = await computeStorybookMetadata({
           configDir: '.storybook',
           packageJson: packageJsonMock,
           packageJsonPath,
           mainConfig: mainJsMock,
         });
-        expect(res.rendererVersion).toBe('unknown');
+        expect(res.hasCustomWebpack).toBe(false);
+        expect(getHasNextCustomWebpack).not.toHaveBeenCalled();
       });
     });
 

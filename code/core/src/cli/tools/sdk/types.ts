@@ -3,6 +3,7 @@ import type {
   ToolsetTelemetry,
 } from '../../../shared/open-service/toolset-definition.ts';
 import type { ToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
+import type { ToolsAttachGateReason } from './errors.ts';
 import type { ToolsetJsonSchema } from './json-schema.ts';
 import type { ToolsRuntime } from './local-runtime.ts';
 
@@ -13,6 +14,8 @@ import type { ToolsRuntime } from './local-runtime.ts';
  * this process, and `auto` prefers the former and falls back to the latter.
  */
 export type ToolsMode = 'auto' | 'attached' | 'local';
+
+export type ToolsHostKind = 'in-process' | 'child';
 
 /** Identifies the surface calling the SDK, for the attach handshake and for telemetry. */
 export type ToolsClientInfo = {
@@ -83,8 +86,14 @@ export type ToolsCallOptions = {
 type ToolsBase = {
   clientInfo: Required<ToolsClientInfo>;
   storybook: ToolsStorybookInfo;
+  /** The `mode` passed to `createTools`; `auto` when omitted. */
+  requestedMode: ToolsMode;
+  /** `in-process` unless this host is a project-local child. */
+  host: ToolsHostKind;
   /** Set when `auto` mode could not attach and loaded the project configuration instead. */
   fallbackNotice?: string;
+  /** Why `auto` loaded locally instead of attaching. */
+  fallbackReason?: ToolsAttachGateReason;
   /** Toolset registry and service accessor the CLI uses for help and dispatch. */
   runtime: ToolsRuntime;
   describe(options?: ToolsDescribeOptions): Promise<ToolsetCatalog>;

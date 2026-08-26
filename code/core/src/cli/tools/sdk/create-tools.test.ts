@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { telemetry } from 'storybook/internal/telemetry';
 
 import * as v from 'valibot';
 
@@ -12,6 +13,7 @@ import { AttachUnavailableError, SpawnFailedError } from './errors.ts';
 import { bootstrapToolsRuntime, type ToolsRuntime } from './local-runtime.ts';
 
 vi.mock('./local-runtime.ts', { spy: true });
+vi.mock('storybook/internal/telemetry', { spy: true });
 
 const CONFIG_DIR = '/repo/.storybook';
 
@@ -72,6 +74,8 @@ function makeRuntime(overrides: Partial<ToolsRuntime> = {}): ToolsRuntime {
 beforeEach(() => {
   vi.mocked(bootstrapToolsRuntime).mockReset();
   vi.mocked(bootstrapToolsRuntime).mockResolvedValue(makeRuntime());
+  vi.mocked(telemetry).mockReset();
+  vi.mocked(telemetry).mockResolvedValue(undefined);
   attach.mockReset();
   spawnChild.mockReset();
 });
@@ -89,6 +93,8 @@ describe('createTools', () => {
 
     expect(bootstrapToolsRuntime).toHaveBeenCalledWith({ cwd: '/repo', configDir: '.storybook' });
     expect(tools.mode).toBe('local');
+    expect(tools.requestedMode).toBe('local');
+    expect(tools.host).toBe('in-process');
     expect(tools.storybook.configDir).toBe(CONFIG_DIR);
     expect(tools.storybook.version).toEqual(expect.any(String));
   });
@@ -169,6 +175,8 @@ describe('createTools', () => {
     };
     const spawned = {
       mode: 'attached' as const,
+      requestedMode: 'attached' as const,
+      host: 'child' as const,
       clientInfo: { name: 'storybook-tools-sdk', version: '0.0.0', kind: 'sdk' as const },
       storybook: { version: '10.2.0', configDir: CONFIG_DIR, url: record.url, pid: record.pid },
       runtime: makeRuntime(),
@@ -192,6 +200,7 @@ describe('createTools', () => {
         autoSpawn: false,
       }),
       clientInfo: expect.objectContaining({ kind: 'sdk' }),
+      requestedMode: 'attached',
     });
     expect(bootstrapToolsRuntime).not.toHaveBeenCalled();
     await expect(tools.call('echo.ok')).resolves.toEqual({
@@ -228,6 +237,9 @@ describe('createTools', () => {
 
     expect(bootstrapToolsRuntime).toHaveBeenCalledWith({ cwd: '/repo', configDir: undefined });
     expect(fallback.mode).toBe('local');
+    expect(fallback.requestedMode).toBe('auto');
+    expect(fallback.host).toBe('in-process');
+    expect(fallback.fallbackReason).toBe('no-instance');
     expect(fallback.fallbackNotice).toContain('No running Storybook was found');
     expect(fallback.fallbackNotice).toContain('Falling back');
   });
@@ -277,7 +289,7 @@ describe('createTools', () => {
   });
 
   it('applies per-call origin and telemetry to the method context', async () => {
-    const telemetry = vi.fn(async () => {});
+    const sink = vi.fn(async () => {});
     vi.mocked(bootstrapToolsRuntime).mockResolvedValue(
       makeRuntime({
         toolsets: [
@@ -305,10 +317,24 @@ describe('createTools', () => {
     );
     const tools = await createTools({ mode: 'local' });
 
-    const outcome = await tools.call('probe.ping', {}, { origin: 'http://localhost:9', telemetry });
+    const outcome = await tools.call(
+      'probe.ping',
+      {},
+      { origin: 'http://localhost:9', telemetry: sink }
+    );
 
     expect(outcome).toMatchObject({ data: { origin: 'http://localhost:9' } });
-    expect(telemetry).toHaveBeenCalledWith('tool:ping', { toolset: 'probe' });
+    expect(sink).toHaveBeenCalledWith(
+      'tool:ping',
+      expect.objectContaining({
+        toolset: 'probe',
+        client: 'sdk',
+        requestedMode: 'local',
+        resolvedMode: 'local',
+        attachMode: 'local',
+        host: 'in-process',
+      })
+    );
   });
 
   it('wraps a configuration that cannot be loaded', async () => {
@@ -549,5 +575,157 @@ describe('call', () => {
     await tools.close();
 
     expect(close).toHaveBeenCalledOnce();
+  });
+});
+
+function invocationPayloads(): unknown[] {
+  return vi
+    .mocked(telemetry)
+    .mock.calls.filter(
+      ([eventType, payload]) =>
+        eventType === 'tools-command' && payload !== undefined && !('event' in payload)
+    )
+    .map(([, payload]) => payload);
+}
+
+describe('tools-command telemetry', () => {
+  it('emits an SDK invocation event for a successful local call', async () => {
+    const tools = await createTools({ mode: 'local' });
+
+    await tools.call('echo.ok', { value: 'hello' });
+
+    expect(invocationPayloads()).toEqual([
+      expect.objectContaining({
+        command: 'echo ok',
+        success: true,
+        outcome: 'success',
+        client: 'sdk',
+        requestedMode: 'local',
+        resolvedMode: 'local',
+        attachMode: 'local',
+        host: 'in-process',
+        duration: expect.any(Number),
+      }),
+    ]);
+  });
+
+  it('emits failure when the tool reports bad news', async () => {
+    const tools = await createTools({ mode: 'local' });
+
+    await tools.call('echo.bad');
+
+    expect(invocationPayloads()).toEqual([
+      expect.objectContaining({
+        command: 'echo bad',
+        success: false,
+        outcome: 'failure',
+        client: 'sdk',
+      }),
+    ]);
+  });
+
+  it('does not emit an SDK invocation when the client is the CLI', async () => {
+    const tools = await createTools({
+      mode: 'local',
+      clientInfo: { name: 'storybook-cli', version: '1.2.3', kind: 'cli' },
+    });
+
+    await tools.call('echo.ok', { value: 'hello' });
+
+    expect(invocationPayloads()).toEqual([]);
+  });
+
+  it('does not emit an SDK invocation from a child host process', async () => {
+    vi.stubEnv('STORYBOOK_TOOLS_CHILD_HOST', 'true');
+    const tools = await createTools({ mode: 'local' });
+
+    await tools.call('echo.ok', { value: 'hello' });
+
+    expect(invocationPayloads()).toEqual([]);
+  });
+
+  it('carries the auto fallback gate on a later SDK call', async () => {
+    const attach = vi.fn(async () => {
+      throw new AttachUnavailableError({
+        reason: 'no-instance',
+        instances: [],
+        remediation: 'No running Storybook was found for this project.',
+      });
+    });
+    const tools = await createTools({ cwd: '/repo' }, { attach });
+
+    await tools.call('echo.ok', { value: 'hello' });
+
+    expect(invocationPayloads()).toEqual([
+      expect.objectContaining({
+        command: 'echo ok',
+        success: true,
+        outcome: 'success',
+        client: 'sdk',
+        requestedMode: 'auto',
+        resolvedMode: 'local',
+        attachMode: 'local',
+        host: 'in-process',
+        attachGate: 'no-instance',
+      }),
+    ]);
+  });
+
+  it('emits attach-gate when attached mode cannot join a running Storybook', async () => {
+    const attach = vi.fn(async () => {
+      throw new AttachUnavailableError({
+        reason: 'connection-failed',
+        instances: [],
+        remediation: 'Could not connect to the Storybook at http://localhost:6006.',
+      });
+    });
+
+    await expect(createTools({ mode: 'attached' }, { attach })).rejects.toThrow(
+      AttachUnavailableError
+    );
+
+    expect(invocationPayloads()).toEqual([
+      expect.objectContaining({
+        command: '(none)',
+        success: false,
+        outcome: 'attach-gate',
+        client: 'sdk',
+        requestedMode: 'attached',
+        attachMode: 'attached',
+        attachGate: 'connection-failed',
+      }),
+    ]);
+  });
+
+  it('does not emit attach-gate from the CLI client when attached mode throws', async () => {
+    const attach = vi.fn(async () => {
+      throw new AttachUnavailableError({
+        reason: 'no-instance',
+        instances: [],
+        remediation: 'No running Storybook.',
+      });
+    });
+
+    await expect(
+      createTools(
+        {
+          mode: 'attached',
+          clientInfo: { name: 'storybook-cli', version: '1.2.3', kind: 'cli' },
+        },
+        { attach }
+      )
+    ).rejects.toThrow(AttachUnavailableError);
+
+    expect(invocationPayloads()).toEqual([]);
+  });
+
+  it('does not emit attach-gate for an unrelated attached-mode failure', async () => {
+    const attach = vi.fn(async () => {
+      throw new Error('disk full');
+    });
+
+    await expect(createTools({ mode: 'attached' }, { attach })).rejects.toThrow('disk full');
+
+    expect(invocationPayloads()).toEqual([]);
   });
 });

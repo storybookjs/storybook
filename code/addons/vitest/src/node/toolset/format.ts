@@ -240,12 +240,12 @@ function formatCompletedRun(
 }
 
 /**
- * Agent-facing rendering shared by the `test-run` MCP tool and other transports.
+ * Per-story rendering shared by every transport — the `test-run` MCP tool and the tools CLI.
  *
- * Failed and cancelled runs read as `Error: …` because that tool surfaced them by throwing; the
+ * Failed and cancelled runs read as `Error: …` because the MCP tool surfaced them by throwing; the
  * `isError` flag that accompanied them belongs to the adapter, not to text.
  */
-function formatTestRunForAgent(data: TestRunData, ctx: ToolsetCtx): string {
+export function formatTestRun(data: TestRunData, ctx: ToolsetCtx): string {
   switch (data.status) {
     case 'no-stories':
       return `No stories found matching the provided input.
@@ -263,42 +263,4 @@ ${data.notFoundMessages.join('\n')}`;
       return _exhaustive;
     }
   }
-}
-
-/** Compact summary for a human reading terminal output. */
-function formatTestRunSummary(data: TestRunData): string {
-  switch (data.status) {
-    case 'no-stories':
-      return '# No stories matched\nNo story tests were run.';
-    case 'error':
-      return `# Test run failed\n${data.error.message}`;
-    case 'cancelled':
-      return '# Test run cancelled\nThe test run was cancelled.';
-    case 'completed': {
-      const { componentTestCount, a11yCount, totalTestCount } = data.result;
-      const total =
-        totalTestCount ??
-        componentTestCount.success +
-          componentTestCount.error +
-          a11yCount.success +
-          a11yCount.warning +
-          a11yCount.error;
-
-      return [
-        '# Test run completed',
-        `- Total tests: ${total}`,
-        `- Component tests: ${componentTestCount.success} passed, ${componentTestCount.error} failed`,
-        `- Accessibility tests: ${a11yCount.success} passed, ${a11yCount.warning} warnings, ${a11yCount.error} failed`,
-      ].join('\n');
-    }
-    default: {
-      // Type-only: a new outcome must get its own summary rather than falling through.
-      const _exhaustive: never = data;
-      return _exhaustive;
-    }
-  }
-}
-
-export function formatTestRun(data: TestRunData, ctx: ToolsetCtx): string {
-  return ctx.transport === 'mcp' ? formatTestRunForAgent(data, ctx) : formatTestRunSummary(data);
 }

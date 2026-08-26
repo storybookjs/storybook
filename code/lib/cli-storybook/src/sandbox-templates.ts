@@ -99,6 +99,11 @@ export type Template = {
     resolutions?: Record<string, string>;
     editAddons?: (addons: string[]) => string[];
     useCsfFactory?: boolean;
+    /**
+     * Name of a `template/stories_<variant>` fixture folder to link instead of the one derived
+     * from this template's key, so a derived template can share its base template's stories.
+     */
+    storiesVariant?: string;
   };
   /** Additional CI steps in case this template has special needs during CI. */
   extraCiSteps?: {
@@ -405,8 +410,7 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDevDependencies: ['prop-types', '@types/prop-types', '@storybook/addon-mcp'],
-      editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
+      extraDevDependencies: ['prop-types', '@types/prop-types'],
       mainConfig: {
         features: {
           developmentModeForBuild: true,
@@ -633,6 +637,29 @@ export const baseTemplates = {
       useCsfFactory: true,
     },
     skipTasks: ['bench'],
+  },
+  'vue3-vite/docgen-server-ts': {
+    name: 'Vue Server Docgen v3 (Vite | TypeScript)',
+    script: 'npm create vite --yes {{beforeDir}} -- --template vue-ts',
+    minAgeGateExemptions: ['vue-component-meta', '@vue/language-core'],
+    expected: {
+      framework: '@storybook/vue3-vite',
+      renderer: '@storybook/vue3',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      extraDevDependencies: ['@storybook/addon-mcp'],
+      editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
+      useCsfFactory: true,
+      storiesVariant: 'vue3-vite-default-ts',
+      mainConfig: {
+        features: {
+          experimentalDocgenServer: true,
+          componentsManifest: true,
+        },
+      },
+    },
+    skipTasks: ['bench', 'chromatic', 'test-runner'],
   },
   'vue3-rsbuild/default-ts': {
     name: 'Vue Latest (RsBuild | TypeScript)',
@@ -1243,13 +1270,14 @@ export const normal: TemplateKey[] = [
   'react-rsbuild/default-ts',
   'tanstack-react-router/default-ts',
   'tanstack-react-start/default-ts',
-  // The only sandbox that records docgen baselines. Running it daily meant a change to the
+  // The sandboxes that record docgen baselines. Running them daily meant a change to the
   // extraction could merge without ever touching them, which is how the props-table visibility
   // rules landed on a stale recording.
-  // TODO(11.0): remove this template. The standard sandboxes ship the new docgen approach by
-  // default from then on, so `angular-vite/default-ts` carries the baselines and this one is
+  // TODO(11.0): remove these templates. The standard sandboxes ship the new docgen approach by
+  // default from then on, so the `default-ts` templates carry the baselines and these are
   // redundant.
   'angular-vite/docgen-server-ts',
+  'vue3-vite/docgen-server-ts',
 ];
 
 export const merged: TemplateKey[] = [

@@ -1,7 +1,14 @@
+import { rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { AngularJSON, ProjectType, copyTemplate } from 'storybook/internal/cli';
+import {
+  ANALOG_VITE_PLUGIN_ANGULAR_VERSION,
+  AngularJSON,
+  ProjectType,
+  copyTemplate,
+  toDevkitVersion,
+} from 'storybook/internal/cli';
 import { MIN_SUPPORTED_NODE_VERSIONS } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
@@ -101,7 +108,11 @@ export default defineGeneratorModule({
     });
     angularJSON.write();
 
-    const angularVersion = packageManager.getDependencyVersion('@angular/core');
+    const asRange = (specifier: string | null | undefined) =>
+      specifier && semver.validRange(specifier) ? specifier : null;
+    const angularVersion =
+      asRange(packageManager.getDependencyVersion('@angular/core')) ??
+      asRange(await packageManager.getDeclaredVersionSpecifier('@angular/core'));
 
     // Handle script addition for single-project workspaces
     if (Object.keys(projects).length === 1) {
@@ -128,22 +139,11 @@ export default defineGeneratorModule({
       copyTemplate(templateDir, root || undefined);
     }
 
-    const toDevkitVersion = (ngRange?: string | null) => {
-      if (!ngRange) {
-        return undefined;
-      }
-      const min = semver.minVersion(ngRange);
-
-      if (!min) {
-        return undefined;
-      }
-      const pre = min.prerelease && min.prerelease.length > 0 ? `-${min.prerelease.join('.')}` : '';
-      // devkit follows 0.<major*100 + minor>.<patch>
-      const devkitMinor = min.major * 100 + min.minor;
-      const versionCore = `0.${devkitMinor}.${min.patch}${pre}`;
-      const hasCaret = ngRange.trim().startsWith('^');
-      return hasCaret ? `^${versionCore}` : versionCore;
-    };
+    // `tsconfig.doc.json` only exists for Compodoc to read; `typings.d.ts` stays either way because
+    // `.storybook/tsconfig.json` lists it under `files`.
+    if (!useCompodoc) {
+      rmSync(join(storybookFolder, 'tsconfig.doc.json'), { force: true });
+    }
 
     const devkitVersion = toDevkitVersion(angularVersion);
 
@@ -178,7 +178,8 @@ export default defineGeneratorModule({
       ...(isVite
         ? [
             angularVersion ? `@angular/animations@${angularVersion}` : '@angular/animations',
-            '@analogjs/vite-plugin-angular',
+            angularVersion ? `@angular/build@${angularVersion}` : '@angular/build',
+            `@analogjs/vite-plugin-angular@${ANALOG_VITE_PLUGIN_ANGULAR_VERSION}`,
             'vite',
           ]
         : []),

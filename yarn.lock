@@ -11989,7 +11989,7 @@ __metadata:
     storybook: "workspace:^"
     typescript: ">= 5.9.x"
     vite: ">=8.0.0"
-    zone.js: ">=0.16.0"
+    zone.js: ">=0.14.0"
   peerDependenciesMeta:
     "@angular/cli":
       optional: true
@@ -13050,7 +13050,7 @@ __metadata:
     type-fest: "npm:^5.6.0"
     typescript: "npm:^6.0.3"
     vue: "npm:^3.2.47"
-    vue-component-meta: "npm:^3.2.7"
+    vue-component-meta: "npm:^3.3.9"
     vue-component-type-helpers: "npm:^3.2.9"
     vue-docgen-api: "npm:^4.75.1"
     vue-tsc: "npm:latest"
@@ -36643,6 +36643,7 @@ __metadata:
     flush-promises: "npm:^1.0.2"
     fuse.js: "npm:^3.6.1"
     get-npm-tarball-url: "npm:^2.1.0"
+    github-slugger: "npm:^2.0.0"
     glob: "npm:^10.5.0"
     globby: "npm:^14.1.0"
     hast-util-to-estree: "npm:^3.0.0"
@@ -39856,7 +39857,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vue-component-meta@npm:^3.2.7, vue-component-meta@npm:^3.3.9":
+"vue-component-meta@npm:^3.3.9":
   version: 3.3.9
   resolution: "vue-component-meta@npm:3.3.9"
   dependencies:

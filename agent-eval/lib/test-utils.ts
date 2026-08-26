@@ -330,9 +330,15 @@ function usesClaudePreviewTooling(): boolean {
   return agent === 'claude-code' && integration === 'plugin';
 }
 
+// Claude-code plugin only: writes/validates `.claude/launch.json`. Callers must
+// gate with `test.skipIf(agent !== 'claude-code' || integration !== 'plugin')`
+// so inapplicable cells show as skipped; calling out of context fails loud.
 export function expectValidStorybookLaunchConfig(): void {
   if (!usesClaudePreviewTooling()) {
-    return;
+    const { agent, integration } = getEvalContext();
+    expect.fail(
+      `expectValidStorybookLaunchConfig is only for claude-code + plugin (got agent=${agent}, integration=${integration}). Gate callers with test.skipIf(...)`
+    );
   }
 
   if (!existsSync(LAUNCH_CONFIG_PATH)) {
@@ -362,8 +368,8 @@ export function expectValidStorybookLaunchConfig(): void {
   ).toBe('string');
 }
 
-// Preview-surface outcome check, per plugin surface — both branches check
-// tool usage in the transcript:
+// Preview-surface outcome check, per plugin surface. Both branches check tool
+// usage in the transcript:
 // - claude-code: the dev server must be started through the Claude preview
 //   tooling (the preview_start tool), which presents the app's preview browser.
 // - codex: the agent must open the Storybook URL in the in-app browser and
@@ -383,11 +389,14 @@ export function expectValidStorybookLaunchConfig(): void {
 //   control-in-app-browser skill being available; the assertion does not,
 //   because the codex plugin experiment always installs that skill and its
 //   browser mock (writeCodexInAppBrowserMock in lib/templates.ts).
-// MCP cells have no preview surface installed, so nothing is asserted there.
+// MCP cells have no preview surface. Callers must gate with
+// `test.skipIf(integration !== 'plugin')`; calling out of context fails loud.
 export function expectPreviewBrowserStarted(): void {
   const { agent, integration } = getEvalContext();
   if (integration !== 'plugin') {
-    return;
+    expect.fail(
+      `expectPreviewBrowserStarted is only for plugin (got integration=${integration}). Gate callers with test.skipIf(getEvalContext().integration !== 'plugin')`
+    );
   }
 
   if (usesClaudePreviewTooling()) {
@@ -458,7 +467,7 @@ export function findDevServerKillCommands(commands: string[], navigatedUrls: str
 // literals in its code argument. This mirrors how plugin workflow calls are
 // parsed out of `storybook ai` shell commands. A dynamically composed URL
 // (`goto(baseUrl + path)`) escapes the literal match and fails the assertion
-// loud rather than passing vacuously.
+// loud rather than as a false-pass.
 export function parseCodexBrowserNavigations(rawTranscript: string): string[] {
   return rawTranscript.split('\n').flatMap((line) => {
     const event = parseJson(line);
@@ -798,7 +807,7 @@ export function workflowCallUsesStoryId(call: StorybookWorkflowCall): boolean {
 // shell command. Gate call sites with
 // `test.skipIf(getEvalContext().integration === 'mcp')` — no skills are
 // installed on the MCP path, so MCP runs should report a skip instead of a
-// vacuous pass.
+// false-pass.
 export function expectSkillInvoked(skillName: string): void {
   const { agent } = getEvalContext();
 
@@ -1121,8 +1130,8 @@ function getRawCodexMcpWorkflowCalls(): StorybookWorkflowCall[] {
       }
 
       // Codex emits each MCP call twice (item.started + item.completed);
-      // counting both would double every call and let "called at least
-      // twice" assertions pass vacuously on a single real invocation.
+      // counting both would double every call and produce a false-pass for
+      // "called at least twice" assertions on a single real invocation.
       if (event.type !== 'item.completed') {
         return [];
       }

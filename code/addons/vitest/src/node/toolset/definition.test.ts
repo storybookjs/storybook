@@ -97,17 +97,47 @@ describe('test API', () => {
     });
   });
 
-  it('summarizes counts for the CLI consumer', async () => {
-    const outcome = await runTests();
-
-    expect(outcome.markdown).toBe(
-      [
-        '# Test run completed',
-        '- Total tests: 3',
-        '- Component tests: 2 passed, 0 failed',
-        '- Accessibility tests: 1 passed, 0 warnings, 0 failed',
-      ].join('\n')
+  it('renders the same per-story report for the CLI consumer as for MCP', async () => {
+    vi.mocked(runStoryTests).mockResolvedValue(
+      completed({
+        componentTestCount: { success: 1, error: 1 },
+        a11yCount: { success: 0, warning: 0, error: 1 },
+        componentTestStatuses: [
+          componentTest('button--primary', 'status-value:success'),
+          componentTest(
+            'button--secondary',
+            'status-value:error',
+            'Expected button text to be "Secondary"'
+          ),
+        ],
+        a11yReports: {
+          'button--primary': [
+            {
+              violations: [
+                {
+                  id: 'color-contrast',
+                  description: 'Color contrast ratio is insufficient',
+                  nodes: [{ html: '<button>Click me</button>', impact: 'critical' }],
+                },
+              ],
+            },
+          ],
+        },
+      })
     );
+
+    const outcome = await runTests();
+    const mcpOutcome = await runForMcp();
+
+    expect(outcome.markdown).toBe(mcpOutcome.markdown);
+    expect(outcome.markdown).toContain('## Passing Stories');
+    expect(outcome.markdown).toContain('- button--primary');
+    expect(outcome.markdown).toContain('## Failing Stories');
+    expect(outcome.markdown).toContain('### button--secondary');
+    expect(outcome.markdown).toContain('Expected button text to be "Secondary"');
+    expect(outcome.markdown).toContain('## Accessibility Violations');
+    expect(outcome.markdown).toContain('### button--primary - color-contrast');
+    expect(outcome.markdown).toContain('Color contrast ratio is insufficient');
   });
 
   it('serializes concurrent test runs for one API registration', async () => {

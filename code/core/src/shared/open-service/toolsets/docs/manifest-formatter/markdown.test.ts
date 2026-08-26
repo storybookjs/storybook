@@ -6,6 +6,7 @@ import {
   formatComponentManifest,
   formatManifestsToLists,
   formatMultiSourceManifestsToLists,
+  formatStoryDocumentation,
 } from './markdown.ts';
 
 describe('MarkdownFormatter - formatComponentManifest', () => {
@@ -68,6 +69,259 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
 				ID: button"
 			`);
+    });
+  });
+
+  describe('JSDoc tags', () => {
+    it('renders top-level deprecation tags after the component ID', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        jsDocTags: {
+          deprecated: ['Use NewButton instead.'],
+        },
+        reactDocgenTypescript: {
+          tags: {
+            deprecated: 'Use LegacyButton instead.',
+          },
+          props: {},
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        > **Deprecated:** Use NewButton instead.
+
+        A button component"
+      `);
+    });
+
+    it('falls back to react-docgen-typescript component tags', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        reactDocgenTypescript: {
+          tags: {
+            deprecated: 'Use NewButton instead.',
+          },
+          props: {},
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        > **Deprecated:** Use NewButton instead.
+
+        A button component"
+      `);
+    });
+
+    it('renders bare deprecation tags without a colon', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        jsDocTags: {
+          deprecated: ['   '],
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        > **Deprecated**
+
+        A button component"
+      `);
+    });
+
+    it('forwards generic tags after the description in object order', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        jsDocTags: {
+          since: ['1.2.3'],
+          see: ['ButtonGroup'],
+          customTag: ['alpha', ''],
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        A button component
+
+        > **Since:** 1.2.3
+        > **See:** ButtonGroup
+        > **CustomTag:** alpha"
+      `);
+    });
+
+    it('does not render ignore or description-family tags', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        jsDocTags: {
+          ignore: ['true'],
+          desc: ['Short text'],
+          description: ['Long text'],
+          describe: ['More text'],
+          since: ['1.2.3'],
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        A button component
+
+        > **Since:** 1.2.3"
+      `);
+    });
+
+    it('does not render tags Storybook consumes as structured fields', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        import: "import { Button } from '@my-org/ui';",
+        summary: 'A customizable button.',
+        jsDocTags: {
+          import: ["import { Button } from '@my-org/ui';"],
+          summary: ['A customizable button.'],
+          since: ['1.2.3'],
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        A button component
+
+        > **Since:** 1.2.3"
+      `);
+    });
+
+    it('renders examples as fenced code blocks after generic tags', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        path: 'src/components/Button.tsx',
+        name: 'Button',
+        description: 'A button component',
+        jsDocTags: {
+          since: ['1.2.3'],
+          example: ['<Button />', '<Button disabled />'],
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# Button
+
+        ID: button
+
+        A button component
+
+        > **Since:** 1.2.3
+
+        **Example:**
+        \`\`\`
+        <Button />
+        \`\`\`
+
+        **Example:**
+        \`\`\`
+        <Button disabled />
+        \`\`\`"
+      `);
+    });
+
+    it('renders subcomponent deprecation tags under the subcomponent heading', () => {
+      const manifest: ComponentManifest = {
+        id: 'combo-box',
+        name: 'ComboBox',
+        path: 'src/components/ComboBox.tsx',
+        subcomponents: {
+          Item: {
+            name: 'ComboBoxItem',
+            path: 'src/components/ComboBoxItem.tsx',
+            summary: 'Use for individual list items.',
+            jsDocTags: {
+              deprecated: ['Use ListBoxItem instead.'],
+            },
+          },
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# ComboBox
+
+        ID: combo-box
+
+        ## Subcomponents
+
+        ### ComboBoxItem
+
+        > **Deprecated:** Use ListBoxItem instead.
+
+        Use for individual list items."
+      `);
+    });
+
+    it('does not change untagged component and subcomponent output', () => {
+      const manifest: ComponentManifest = {
+        id: 'combo-box',
+        name: 'ComboBox',
+        path: 'src/components/ComboBox.tsx',
+        description: 'A combo box component',
+        subcomponents: {
+          Item: {
+            name: 'ComboBoxItem',
+            path: 'src/components/ComboBoxItem.tsx',
+            summary: 'Item summary.',
+            description: 'Item description.',
+          },
+        },
+      };
+
+      expect(formatComponentManifest(manifest)).toMatchInlineSnapshot(`
+        "# ComboBox
+
+        ID: combo-box
+
+        A combo box component
+
+        ## Subcomponents
+
+        ### ComboBoxItem
+
+        Item summary.
+
+        Item description."
+      `);
     });
   });
 
@@ -472,6 +726,68 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
 
 				<Button icon="check">With Icon</Button>
 				\`\`\`"
+			`);
+    });
+
+    it('should list stories that carry no snippet instead of dropping them', () => {
+      const manifest: ComponentManifest = {
+        id: 'abstractions-billboard',
+        name: 'abstractions-billboard',
+        stories: [
+          { id: 'abstractions-billboard--default', name: 'Default' },
+          { id: 'abstractions-billboard--text', name: 'Text' },
+        ],
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toMatchInlineSnapshot(`
+				"# abstractions-billboard
+
+				ID: abstractions-billboard
+
+				## Stories
+
+				- Default (abstractions-billboard--default)
+				- Text (abstractions-billboard--text)"
+			`);
+    });
+
+    it('should list snippet-less stories under the ones it shows in full', () => {
+      const manifest: ComponentManifest = {
+        id: 'button',
+        name: 'Button',
+        import: 'import { Button } from "@/components";',
+        stories: [
+          { id: 'button--default', name: 'Default', snippet: '<Button>Default</Button>' },
+          { id: 'button--primary', name: 'Primary' },
+          { id: 'button--secondary', name: 'Secondary', summary: 'The quiet one' },
+        ],
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toMatchInlineSnapshot(`
+				"# Button
+
+				ID: button
+
+				## Stories
+
+				### Default
+
+				Story ID: button--default
+
+				\`\`\`
+				import { Button } from "@/components";
+
+				<Button>Default</Button>
+				\`\`\`
+
+				### Other Stories
+
+				- Primary (button--primary)
+				- Secondary (button--secondary): The quiet one"
 			`);
     });
   });
@@ -1221,6 +1537,62 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
         \`\`\`"
       `);
     });
+  });
+});
+
+describe('MarkdownFormatter - formatStoryDocumentation', () => {
+  it('renders a story that has a snippet', () => {
+    const manifest: ComponentManifest = {
+      id: 'button',
+      name: 'Button',
+      import: 'import { Button } from "@/components";',
+      stories: [
+        {
+          id: 'button--primary',
+          name: 'Primary',
+          description: 'The primary action',
+          snippet: '<Button variant="primary" />',
+        },
+      ],
+    };
+
+    expect(formatStoryDocumentation(manifest, 'Primary')).toMatchInlineSnapshot(`
+			"# Button - Primary
+
+			The primary action
+
+			\`\`\`
+			import { Button } from "@/components";
+
+			<Button variant="primary" />
+			\`\`\`"
+		`);
+  });
+
+  it('names a story that has no snippet instead of returning nothing', () => {
+    const manifest: ComponentManifest = {
+      id: 'abstractions-billboard',
+      name: 'abstractions-billboard',
+      stories: [{ id: 'abstractions-billboard--default', name: 'Default' }],
+    };
+
+    expect(formatStoryDocumentation(manifest, 'Default')).toMatchInlineSnapshot(`
+			"# abstractions-billboard - Default
+
+			Story ID: abstractions-billboard--default
+
+			No code snippet was extracted for this story."
+		`);
+  });
+
+  it('returns nothing for a story the component does not have', () => {
+    const manifest: ComponentManifest = {
+      id: 'button',
+      name: 'Button',
+      stories: [{ id: 'button--primary', name: 'Primary' }],
+    };
+
+    expect(formatStoryDocumentation(manifest, 'Missing')).toBe('');
   });
 });
 

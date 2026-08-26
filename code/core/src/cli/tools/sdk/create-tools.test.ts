@@ -6,6 +6,7 @@ import {
   defineToolset,
   type AnyToolsetOutcome,
 } from '../../../shared/open-service/toolset-definition.ts';
+import { getToolName } from '../../../shared/open-service/toolset-names.ts';
 import { createTools } from './create-tools.ts';
 import { AttachUnavailableError, SpawnFailedError } from './errors.ts';
 import { bootstrapToolsRuntime, type ToolsRuntime } from './local-runtime.ts';
@@ -38,6 +39,21 @@ const echo = defineToolset({
       requiresDevServer: true,
       handler: async () => ({ ok: true as const, data: {}, markdown: '' }),
     },
+    sibling: {
+      title: 'Point at a sibling',
+      description: (ctx) => `See ${getToolName(ctx)('echo.ok')}.`,
+      input: v.object({}),
+      handler: async () => ({ ok: true as const, data: {}, markdown: '' }),
+    },
+    slow: {
+      title: 'Delay',
+      description: 'Resolves after a tick unless aborted.',
+      input: v.object({}),
+      handler: async () => {
+        await new Promise((resolve) => setTimeout(resolve, 50));
+        return { ok: true as const, data: { ran: true }, markdown: 'ran' };
+      },
+    },
   },
 });
 
@@ -48,6 +64,7 @@ function makeRuntime(overrides: Partial<ToolsRuntime> = {}): ToolsRuntime {
     getService: () => {
       throw new Error('no services registered in this test');
     },
+    close: async () => {},
     ...overrides,
   };
 }
@@ -344,6 +361,8 @@ describe('describe', () => {
       ['echo.ok', false],
       ['echo.bad', false],
       ['echo.live', true],
+      ['echo.sibling', false],
+      ['echo.slow', false],
     ]);
   });
 
@@ -485,5 +504,50 @@ describe('call', () => {
       data: { reason: 'closed' },
     });
     await expect(tools.describe()).rejects.toMatchObject({ data: { reason: 'closed' } });
+  });
+
+  it('describes sibling tools with dotted refs for the SDK and CLI wording for the CLI', async () => {
+    const sdk = await createTools({ mode: 'local' });
+    const cli = await createTools({
+      mode: 'local',
+      clientInfo: { name: 'storybook-cli', version: '1.2.3', kind: 'cli' },
+    });
+
+    const sdkCatalog = await sdk.describe();
+    const cliCatalog = await cli.describe();
+    const siblingOf = (catalog: Awaited<ReturnType<typeof sdk.describe>>) =>
+      catalog.toolsets[0].methods.find((method) => method.ref === 'echo.sibling')?.description;
+
+    expect(siblingOf(sdkCatalog)).toBe('See echo.ok.');
+    expect(siblingOf(cliCatalog)).toBe('See npx storybook tools echo ok.');
+  });
+
+  it('rejects prototype-named refs as unknown methods', async () => {
+    const tools = await createTools({ mode: 'local' });
+
+    await expect(tools.call('echo.constructor')).rejects.toMatchObject({
+      data: { reason: 'unknown-method' },
+    });
+  });
+
+  it('rejects when the signal aborts after the handler has started', async () => {
+    const tools = await createTools({ mode: 'local' });
+    const controller = new AbortController();
+    const pending = tools.call('echo.slow', {}, { signal: controller.signal });
+
+    controller.abort();
+
+    await expect(pending).rejects.toThrow();
+  });
+
+  it('disposes the local runtime once, even if close is called twice', async () => {
+    const close = vi.fn(async () => {});
+    vi.mocked(bootstrapToolsRuntime).mockResolvedValue(makeRuntime({ close }));
+    const tools = await createTools({ mode: 'local' });
+
+    await tools.close();
+    await tools.close();
+
+    expect(close).toHaveBeenCalledOnce();
   });
 });

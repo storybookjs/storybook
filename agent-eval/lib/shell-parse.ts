@@ -5,8 +5,24 @@
 export type StorybookWorkflowCall = {
   name: string;
   input: Record<string, unknown>;
-  source: 'mcp' | 'storybook-ai';
+  source: 'mcp' | 'storybook-ai' | 'cli';
 };
+
+// `storybook skills get write-story` serves the same document the MCP channel
+// exposes as the get-storybook-story-instructions tool. Assertions ask by that
+// historic name; this matcher owns the cross-channel equivalence. Remove the
+// alias once the MCP tool and the skill share one name (or the tool is
+// retired) — until then it keeps the assertions channel-agnostic.
+export function workflowCallMatchesName(call: StorybookWorkflowCall, name: string): boolean {
+  if (call.name === name) {
+    return true;
+  }
+  return (
+    name === 'get-storybook-story-instructions' &&
+    call.name === 'skills-get' &&
+    call.input.id === 'write-story'
+  );
+}
 
 export const STORYBOOK_WORKFLOW_TOOL_NAMES = [
   'docs-list',
@@ -85,6 +101,24 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
     }
 
     const cli = tokens[index + 1];
+    if (cli === 'skills') {
+      // Record the literal invocation; which skill serves which workflow document
+      // is workflowCallMatchesName's concern. A help request prints usage instead
+      // of the skill, so it does not count — same rule as the ai/tools branch below.
+      const segment = segmentUntilSeparator(tokens, index + 2);
+      const [subcommand, skillId, ...rest] = segment;
+      if (
+        subcommand === 'get' &&
+        skillId !== undefined &&
+        !skillId.startsWith('-') &&
+        !rest.includes('--help') &&
+        !rest.includes('-h')
+      ) {
+        calls.push({ name: 'skills-get', input: { id: skillId }, source: 'cli' });
+        index += 1 + segment.length;
+      }
+      continue;
+    }
     if (cli !== 'ai' && cli !== 'tools') {
       continue;
     }
@@ -97,6 +131,13 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
   }
 
   return calls;
+}
+
+function segmentUntilSeparator(tokens: string[], start: number): string[] {
+  const end = tokens.findIndex(
+    (token, index) => index >= start && SHELL_COMMAND_SEPARATORS.has(token)
+  );
+  return tokens.slice(start, end === -1 ? tokens.length : end);
 }
 
 function parseStorybookCliInvocation(

@@ -15,9 +15,10 @@ import {
 } from '#test-utils';
 
 describe('creating a Callout in a monorepo UI package', () => {
-  // Workflow asserts are enabled. Stories skills require cwd = the package where
-  // Storybook is installed (avoids degraded `storybook ai --help` at monorepo
-  // root; historical context: storybookjs/storybook#35359).
+  // Workflow asserts are enabled. The stories skills direct the dev server and
+  // every Storybook CLI command to the package where Storybook is installed,
+  // which avoids the degraded help output at the monorepo root (historical
+  // context: storybookjs/storybook#35359).
 
   const review = isReviewEnabled();
 

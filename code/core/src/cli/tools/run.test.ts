@@ -108,13 +108,21 @@ function makeLocalTools(runtimeOverrides: Partial<ToolsRuntime> = {}): LocalTool
       if (!method) {
         throw new Error(`unknown method ${ref}`);
       }
+      const validation = await method.input['~standard'].validate(input);
+      if (validation.issues) {
+        throw new ToolsRuntimeError({
+          reason: 'invalid-input',
+          message: `Invalid input for \`${ref}\``,
+          issues: validation.issues,
+        });
+      }
       const ctx: ToolsetCtx = {
         transport: 'cli',
         getService: runtime.getService,
         ...(options.origin ? { origin: options.origin } : {}),
         ...(options.telemetry ? { telemetry: options.telemetry } : {}),
       };
-      return method.handler(input, ctx);
+      return method.handler(validation.value, ctx);
     },
     close: async () => {},
   };

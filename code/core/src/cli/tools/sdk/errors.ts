@@ -91,6 +91,11 @@ export class ToolsRuntimeError extends StorybookError {
       reason: ToolsRuntimeErrorReason;
       message: string;
       cause?: unknown;
+      /** Schema issues when `reason` is `invalid-input`. */
+      issues?: ReadonlyArray<{
+        message: string;
+        path?: ReadonlyArray<PropertyKey | { key?: unknown }>;
+      }>;
     }
   ) {
     super({

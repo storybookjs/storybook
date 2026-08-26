@@ -6,7 +6,7 @@ import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
 
-import type { Command } from 'commander';
+import { Option, type Command } from 'commander';
 
 import type { ToolsetTelemetry } from '../../shared/open-service/toolset-definition.ts';
 import { resolveStorybookConfigDir } from './config-dir.ts';
@@ -22,6 +22,7 @@ type ToolsPassthroughOptions = ToolsOutputFlags & {
   cwd?: string;
   configDir?: string;
   attach?: boolean;
+  noAttach?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by `withTelemetry`. */
   disableTelemetry?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by the failure handler. */
@@ -30,9 +31,10 @@ type ToolsPassthroughOptions = ToolsOutputFlags & {
 
 /**
  * Register the `storybook tools` passthrough: a generic `[toolset] [tool] [args...]` argument
- * triple that runs the toolsets registered by the target Storybook configuration, in this process,
- * disconnected from any dev server. `passThroughOptions` hands every token after the tool name to
- * the tool untouched, which requires positional options on the program.
+ * triple that runs the toolsets registered by the target Storybook configuration. Attach is the
+ * default when a matching instance is running; `--no-attach` forces a local host.
+ * `passThroughOptions` hands every token after the tool name to the tool untouched, which requires
+ * positional options on the program.
  *
  * Commander's built-in (synchronous) help is replaced with our own `-h, --help` option so the help
  * output can be derived from the toolsets the target project registers. Target-selection options
@@ -57,6 +59,13 @@ export function registerToolsPassthrough(
     );
 
   for (const { flags, description } of TOOLS_OPTION_SPECS) {
+    if (flags === '--no-attach') {
+      const option = new Option(flags, description);
+      // Commander treats `--no-*` as the negation of `--*`, which would default `--attach` to true.
+      option.negate = false;
+      toolsCommand.addOption(option);
+      continue;
+    }
     toolsCommand.option(flags, description);
   }
 
@@ -75,6 +84,7 @@ export function registerToolsPassthrough(
           json: options.json,
           output: options.output,
           help: options.help,
+          attach: options.noAttach ? false : options.attach,
         };
         // `--json` promises a parseable stdout, but writers this realm does not own print to it:
         // `withTelemetry` evaluates the project's `main.ts` to resolve the telemetry opt-out
@@ -107,17 +117,26 @@ export function registerToolsPassthrough(
               const start = Date.now();
               let result: ToolsRunResult;
               try {
-                result = await runToolsCommand(
-                  {
-                    toolset,
-                    tool,
-                    tokens,
-                    target: { cwd: options.cwd, configDir: options.configDir },
-                    attach: options.attach,
-                    flags,
-                  },
-                  { methodTelemetry: createMethodTelemetrySink(cliOptions) }
-                );
+                if (options.attach && options.noAttach) {
+                  result = {
+                    exitCode: 1,
+                    output: 'Cannot combine `--attach` and `--no-attach`.',
+                    outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+                    attachMode: 'auto',
+                  };
+                } else {
+                  result = await runToolsCommand(
+                    {
+                      toolset,
+                      tool,
+                      tokens,
+                      target: { cwd: options.cwd, configDir: options.configDir },
+                      attach: options.noAttach ? false : options.attach,
+                      flags,
+                    },
+                    { methodTelemetry: createMethodTelemetrySink(cliOptions) }
+                  );
+                }
               } finally {
                 clearInterval(keepAlive);
               }
@@ -133,7 +152,8 @@ export function registerToolsPassthrough(
                   tool,
                   result.outcome,
                   duration,
-                  cliOptions
+                  cliOptions,
+                  result.attachMode
                 );
               }
             }
@@ -204,7 +224,8 @@ async function reportToolsCommandTelemetry(
   tool: string | undefined,
   outcome: ToolsCommandOutcome,
   duration: number,
-  cliOptions: CLIOptions
+  cliOptions: CLIOptions,
+  attachMode: ToolsRunResult['attachMode']
 ): Promise<void> {
   if (outcome.kind === 'help') {
     return;
@@ -219,6 +240,7 @@ async function reportToolsCommandTelemetry(
     {
       command,
       success: outcome.kind === 'success',
+      attachMode,
       ...(outcome.kind === 'intercept' && { interceptReason: outcome.reason }),
       duration,
     },
@@ -232,9 +254,14 @@ async function reportToolsCommandTelemetry(
 
 /** Print to stdout, or to the file given via `-o, --output`. */
 async function printResult(
-  { output, exitCode, outputPath }: ToolsRunResult,
+  { output, exitCode, outputPath, fallbackNotice }: ToolsRunResult,
   stdoutWrite: typeof process.stdout.write
 ): Promise<void> {
+  if (fallbackNotice) {
+    await new Promise<void>((resolveWrite) => {
+      process.stderr.write(`${fallbackNotice}\n`, () => resolveWrite());
+    });
+  }
   if (outputPath) {
     const resolvedPath = resolve(outputPath);
     await writeFile(resolvedPath, `${output}\n`, 'utf-8');

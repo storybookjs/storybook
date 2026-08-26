@@ -73,22 +73,6 @@ const RECORD: StorybookInstanceRecord = {
   mcp: { status: 'not-installed' },
 };
 
-/** The same instance, with `@storybook/addon-mcp` serving an endpoint the CLI can proxy to. */
-const MCP_RECORD: StorybookInstanceRecord = {
-  ...RECORD,
-  mcp: { status: 'ready', endpoint: '/mcp' },
-};
-
-/** A minimal valid `review create` input, passed via `--input`. */
-const REVIEW_INPUT = {
-  title: 'Button pass',
-  description: 'Spot-check the button.',
-  collections: [
-    { title: 'Buttons', rationale: 'The changed stories.', storyIds: ['button--primary'] },
-  ],
-  changedFiles: [],
-};
-
 function makeLocalTools(runtimeOverrides: Partial<ToolsRuntime> = {}): LocalTools {
   const runtime: ToolsRuntime = {
     configDir: CONFIG_DIR,
@@ -176,7 +160,12 @@ function makeAttachedTools(runtimeOverrides: Partial<ToolsRuntime> = {}): Attach
         toolsets: toolsets.map((toolset) => toCatalogEntry(toolset, ctx)),
       };
     },
-    call: async (ref, input, options = {}) => {
+    call: async (ref, input, options) => {
+      const callCtx: ToolsetCtx = {
+        ...ctx,
+        ...(options?.origin !== undefined ? { origin: options.origin } : {}),
+        ...(options?.telemetry ? { telemetry: options.telemetry } : {}),
+      };
       const { toolsetId, methodName } = parseToolsetMethodId(ref);
       const toolset = local.runtime.toolsets.find((candidate) => candidate.id === toolsetId);
       const method = toolset?.methods[methodName];
@@ -191,10 +180,7 @@ function makeAttachedTools(runtimeOverrides: Partial<ToolsRuntime> = {}): Attach
           issues: validation.issues,
         });
       }
-      return method.handler(validation.value, {
-        ...ctx,
-        ...(options.telemetry ? { telemetry: options.telemetry } : {}),
-      });
+      return method.handler(validation.value, callCtx);
     },
   };
 }
@@ -317,7 +303,7 @@ describe('local tools', () => {
     expect(result).toMatchObject({ exitCode: 0, output: 'ready' });
   });
 
-  it('hosts the run on a local SDK instance for the targeted project, identified as the CLI', async () => {
+  it('hosts the run on an SDK instance for the targeted project, identified as the CLI', async () => {
     const { deps, createTools } = makeDeps();
 
     await runToolsCommand(
@@ -333,7 +319,7 @@ describe('local tools', () => {
     expect(createTools).toHaveBeenCalledWith({
       cwd: '/repo',
       configDir: '.storybook',
-      mode: 'local',
+      mode: 'auto',
       clientInfo: { name: 'storybook-cli', version: expect.any(String), kind: 'cli' },
     });
   });
@@ -367,21 +353,24 @@ describe('requires-dev-server contract', () => {
     expect(result.output).toContain('--cwd');
   });
 
-  it('runs stories preview against a discovered instance, regardless of its MCP status', async () => {
+  it('intercepts stories preview in local mode even when an instance is running', async () => {
     const { deps } = makeDeps({
       discoverInstance: vi.fn(async () => ({ currentRecord: RECORD, records: [RECORD] })),
     });
 
     const result = await run(
       ['stories', 'preview', '--stories', '[{"storyId":"button--primary"}]'],
-      deps
+      deps,
+      { attach: false }
     );
 
-    expect(result.exitCode).toBe(0);
+    expect(result.exitCode).toBe(1);
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'requires-dev-server' });
     expect(result.output).toContain('http://localhost:6006');
+    expect(result.output).toContain('--no-attach');
   });
 
-  it('reports state-bound tools as not attachable when an instance is running', async () => {
+  it('reports state-bound tools as requiring an attached host when an instance is running locally', async () => {
     clearToolsetRegistry();
     registerToolset(
       defineToolset({
@@ -402,12 +391,12 @@ describe('requires-dev-server contract', () => {
       discoverInstance: vi.fn(async () => ({ currentRecord: RECORD, records: [RECORD] })),
     });
 
-    const result = await run(['foreign', 'attach'], deps);
+    const result = await run(['foreign', 'attach'], deps, { attach: false });
 
     expect(result.exitCode).toBe(1);
-    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'attach-unavailable' });
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'requires-dev-server' });
     expect(result.output).toContain('http://localhost:6006');
-    expect(result.output).toContain('cannot attach to a running Storybook yet');
+    expect(result.output).toContain('--no-attach');
   });
 
   it('gives state-bound tools the same start-the-dev-server message when nothing is running', async () => {
@@ -418,85 +407,6 @@ describe('requires-dev-server contract', () => {
     expect(result.exitCode).toBe(1);
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'requires-dev-server' });
     expect(result.output).toContain('requires a running Storybook dev server');
-  });
-});
-
-describe('review create over the dev server MCP endpoint', () => {
-  function makeProxyDeps(
-    call: ToolsRunDeps['mcpToolCall'],
-    record: StorybookInstanceRecord = MCP_RECORD
-  ) {
-    const mcpToolCall = vi.fn(call);
-    const { deps } = makeDeps({
-      discoverInstance: vi.fn(async () => ({ currentRecord: record, records: [record] })),
-      mcpToolCall,
-    });
-    return { deps, mcpToolCall };
-  }
-
-  it('sends the validated input to the derived review tool and prints its text', async () => {
-    const { deps, mcpToolCall } = makeProxyDeps(async () => ({
-      content: [{ type: 'text', text: 'Review ready: http://localhost:6006/review/' }],
-    }));
-
-    const result = await run(['review', 'create', '--input', JSON.stringify(REVIEW_INPUT)], deps);
-
-    expect(mcpToolCall).toHaveBeenCalledWith(MCP_RECORD, {
-      name: 'review-create',
-      arguments: REVIEW_INPUT,
-    });
-    expect(result.exitCode).toBe(0);
-    expect(result.outcome).toEqual({ kind: 'success' });
-    expect(result.output).toBe('Review ready: http://localhost:6006/review/');
-  });
-
-  it('prints the proxied structured content with --json', async () => {
-    const { deps } = makeProxyDeps(async () => ({
-      content: [{ type: 'text', text: 'Review ready' }],
-      structuredContent: { reviewUrl: 'http://localhost:6006/review/' },
-    }));
-
-    const result = await run(
-      ['review', 'create', '--json', '--input', JSON.stringify(REVIEW_INPUT)],
-      deps
-    );
-
-    expect(result.exitCode).toBe(0);
-    expect(JSON.parse(result.output)).toEqual({ reviewUrl: 'http://localhost:6006/review/' });
-  });
-
-  it('maps a proxied error reply to a failing exit code', async () => {
-    const { deps } = makeProxyDeps(async () => ({
-      content: [{ type: 'text', text: 'Unknown story IDs: nope--nope' }],
-      isError: true,
-    }));
-
-    const result = await run(['review', 'create', '--input', JSON.stringify(REVIEW_INPUT)], deps);
-
-    expect(result.exitCode).toBe(1);
-    expect(result.outcome).toEqual({ kind: 'failure' });
-    expect(result.output).toContain('Unknown story IDs');
-  });
-
-  it('validates the input locally before sending anything', async () => {
-    const { deps, mcpToolCall } = makeProxyDeps(async () => ({ content: [] }));
-
-    const result = await run(['review', 'create', '--input', '{}'], deps);
-
-    expect(mcpToolCall).not.toHaveBeenCalled();
-    expect(result.exitCode).toBe(1);
-    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
-  });
-
-  it('asks for @storybook/addon-mcp when the running instance serves no endpoint', async () => {
-    const { deps, mcpToolCall } = makeProxyDeps(async () => ({ content: [] }), RECORD);
-
-    const result = await run(['review', 'create', '--input', JSON.stringify(REVIEW_INPUT)], deps);
-
-    expect(mcpToolCall).not.toHaveBeenCalled();
-    expect(result.exitCode).toBe(1);
-    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'attach-unavailable' });
-    expect(result.output).toContain('@storybook/addon-mcp');
   });
 });
 
@@ -771,11 +681,11 @@ describe('telemetry sink', () => {
     );
   });
 
-  it('forwards per-method events through attached tools.call', async () => {
+  it('forwards per-method events on attached dispatch', async () => {
     const methodTelemetry = vi.fn(async () => {});
     const { deps } = makeDeps({
       methodTelemetry,
-      createTools: async () => makeAttachedTools(),
+      createTools: vi.fn(async () => makeAttachedTools()),
     });
 
     await run(['docs', 'list'], deps, { attach: true });
@@ -820,6 +730,14 @@ describe('attached tools', () => {
     expect(createTools).toHaveBeenCalledWith(expect.objectContaining({ mode: 'attached' }));
   });
 
+  it('asks the SDK for local mode with --no-attach', async () => {
+    const { deps, createTools } = makeDeps();
+
+    await run(['docs', 'list'], deps, { attach: false });
+
+    expect(createTools).toHaveBeenCalledWith(expect.objectContaining({ mode: 'local' }));
+  });
+
   it('runs a requiresDevServer tool caller-side with the instance origin, without proxying', async () => {
     clearToolsetRegistry();
     registerToolset(
@@ -841,21 +759,18 @@ describe('attached tools', () => {
         },
       })
     );
-    const mcpToolCall = vi.fn();
     const { deps, discoverInstance } = makeDeps({
       createTools: vi.fn(async () => makeAttachedTools()),
-      mcpToolCall,
     });
 
     const result = await run(['foreign', 'ping'], deps, { attach: true });
 
     expect(result.exitCode).toBe(0);
     expect(result.output).toBe('http://localhost:6006');
-    expect(mcpToolCall).not.toHaveBeenCalled();
     expect(discoverInstance).not.toHaveBeenCalled();
   });
 
-  it('prints attach failures as intercepts', async () => {
+  it('prints attach failures as a result when --attach is required', async () => {
     const { deps } = makeDeps({
       createTools: vi.fn(async () => {
         throw new AttachUnavailableError({
@@ -870,9 +785,27 @@ describe('attached tools', () => {
     const result = await run(['docs', 'list'], deps, { attach: true });
 
     expect(result.exitCode).toBe(1);
-    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'attach-unavailable' });
+    expect(result.outcome).toEqual({ kind: 'failure' });
+    expect(result.attachMode).toBe('attached');
     expect(result.output).toContain('npm run storybook');
     expect(result.output).toContain('--attach');
+  });
+
+  it('prints the SDK fallback notice separately from the local result', async () => {
+    const tools = makeLocalTools();
+    tools.fallbackNotice =
+      "No running Storybook was found for this project.\n\nFalling back to loading this project's Storybook configuration in this process.";
+    const { deps, createTools } = makeDeps({
+      createTools: vi.fn(async () => tools),
+    });
+
+    const result = await run(['docs', 'list'], deps);
+
+    expect(createTools).toHaveBeenCalledWith(expect.objectContaining({ mode: 'auto' }));
+    expect(result.attachMode).toBe('local');
+    expect(result.fallbackNotice).toContain('Falling back to loading this project');
+    expect(result.output).toContain('Button');
+    expect(result.output).not.toContain('Falling back');
   });
 
   it('maps catalog failures onto the command runner error contract', async () => {

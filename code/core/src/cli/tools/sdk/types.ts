@@ -75,7 +75,7 @@ export type ToolsDescribeOptions = {
 
 export type ToolsCallOptions = {
   signal?: AbortSignal;
-  /** Storybook UI base URL for methods that need a live origin. */
+  /** Overrides the host's Storybook origin for this call. */
   origin?: string;
   telemetry?: ToolsetTelemetry;
 };
@@ -83,6 +83,8 @@ export type ToolsCallOptions = {
 type ToolsBase = {
   clientInfo: Required<ToolsClientInfo>;
   storybook: ToolsStorybookInfo;
+  /** Set when `auto` mode could not attach and loaded the project configuration instead. */
+  fallbackNotice?: string;
   /** Toolset registry and service accessor the CLI uses for help and dispatch. */
   runtime: ToolsRuntime;
   describe(options?: ToolsDescribeOptions): Promise<ToolsetCatalog>;

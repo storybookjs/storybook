@@ -12,8 +12,9 @@ import type {
 import { parseToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
 import { toCatalogEntry } from './catalog.ts';
 import type { AttachedBootstrapResult } from './attached-runtime.ts';
+import { formatAttachFallback } from './attach-messages.ts';
 import { spawnChildHost } from './child-client.ts';
-import { AttachUnavailableError, ToolsRuntimeError } from './errors.ts';
+import { AttachUnavailableError, ToolsRuntimeError, isAttachGateError } from './errors.ts';
 import type { ToolsRuntime } from './local-runtime.ts';
 import type {
   AttachedTools,
@@ -56,8 +57,11 @@ export type CreateToolsDeps = {
  * this process is not that instance's twin, attached mode defaults to spawning a child host from
  * the `storybook` package resolved under the instance directory.
  *
- * @throws {ToolsRuntimeError} With reason `mode-unavailable` for `auto`, which is not available
- *   yet; with reason `config-load-failed` when the target configuration cannot be loaded.
+ * `auto` tries `attached` first and, on a gate failure, loads `local` instead. The returned host
+ * then carries `fallbackNotice` with the gate message and that it fell back.
+ *
+ * @throws {ToolsRuntimeError} With reason `config-load-failed` when the target configuration cannot
+ *   be loaded.
  * @throws {AttachUnavailableError} When `attached` cannot find or reach a matching instance.
  * @throws {EnvironmentMismatchError} When this process is not the instance's twin and auto-spawn is
  *   declined, or when spawning cannot reconcile the running instance with the project package.
@@ -77,58 +81,98 @@ export async function createTools(
   deps: CreateToolsDeps = {}
 ): Promise<Tools> {
   const mode: ToolsMode = options.mode ?? 'auto';
-  if (mode === 'auto') {
-    throw new ToolsRuntimeError({
-      reason: 'mode-unavailable',
-      message: `The \`auto\` tools mode attaches to a running Storybook when it can and otherwise loads the project's configuration in this process, which is not available yet. Pass \`mode: 'local'\` or \`mode: 'attached'\`.`,
-    });
-  }
-
   const clientInfo: Required<ToolsClientInfo> = {
     name: options.clientInfo?.name ?? 'storybook-tools-sdk',
     version: options.clientInfo?.version ?? versions.storybook,
     kind: options.clientInfo?.kind ?? 'sdk',
   };
 
-  if (mode === 'attached') {
-    process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
-    // local-runtime pulls core-server at import, which must not run before the attached channel is prepared.
-    const { bootstrapAttachedRuntime } = await import('./attached-runtime.ts');
-    const isChildHost = process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
-    const autoSpawn = isChildHost ? false : (options.autoSpawn ?? true);
-    const attached = await (
-      deps.attach ?? ((target) => bootstrapAttachedRuntime({ ...target, autoSpawn }))
-    )({
-      cwd: options.cwd,
-      configDir: options.configDir,
-    });
-    if ('kind' in attached && attached.kind === 'spawn') {
-      return (deps.spawnChild ?? spawnChildHost)({
-        record: attached.record,
-        options: { ...options, mode: 'attached', autoSpawn: false, cwd: attached.record.cwd },
-        clientInfo,
-      });
+  switch (mode) {
+    case 'attached':
+      return createAttachedTools(options, deps, clientInfo);
+    case 'auto':
+      try {
+        return await createAttachedTools(options, deps, clientInfo);
+      } catch (error) {
+        if (!isAttachGateError(error)) {
+          throw error;
+        }
+        const notice = formatAttachFallback(error.message);
+        try {
+          const local = await createLocalTools(options, deps, clientInfo);
+          return { ...local, fallbackNotice: notice };
+        } catch (localError) {
+          if (
+            localError instanceof ToolsRuntimeError &&
+            localError.data.reason === 'config-load-failed'
+          ) {
+            throw new ToolsRuntimeError({
+              reason: 'config-load-failed',
+              message: `${notice}\n\n${localError.message}`,
+              cause: localError.data.cause,
+            });
+          }
+          throw localError;
+        }
+      }
+    case 'local':
+      return createLocalTools(options, deps, clientInfo);
+    default: {
+      const exhaustive: never = mode;
+      throw exhaustive;
     }
-    const inProcess = attached as {
-      runtime: ToolsRuntime;
-      record: { url: string; pid: number; configDir?: string };
-      connection: { close(): void; disconnected: Promise<never> };
-    };
-    return createToolsHost({
-      mode: 'attached',
-      runtime: inProcess.runtime,
+  }
+}
+
+async function createAttachedTools(
+  options: CreateToolsOptions,
+  deps: CreateToolsDeps,
+  clientInfo: Required<ToolsClientInfo>
+): Promise<AttachedTools> {
+  process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
+  // local-runtime pulls core-server at import, which must not run before the attached channel is prepared.
+  const { bootstrapAttachedRuntime } = await import('./attached-runtime.ts');
+  const isChildHost = process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
+  const autoSpawn = isChildHost ? false : (options.autoSpawn ?? true);
+  const attached = await (
+    deps.attach ?? ((target) => bootstrapAttachedRuntime({ ...target, autoSpawn }))
+  )({
+    cwd: options.cwd,
+    configDir: options.configDir,
+  });
+  if ('kind' in attached && attached.kind === 'spawn') {
+    return (deps.spawnChild ?? spawnChildHost)({
+      record: attached.record,
+      options: { ...options, mode: 'attached', autoSpawn: false, cwd: attached.record.cwd },
       clientInfo,
-      storybook: {
-        version: versions.storybook,
-        configDir: inProcess.runtime.configDir,
-        url: inProcess.record.url,
-        pid: inProcess.record.pid,
-      },
-      close: () => inProcess.connection.close(),
-      disconnected: inProcess.connection.disconnected,
     });
   }
+  const inProcess = attached as {
+    runtime: ToolsRuntime;
+    record: { url: string; pid: number; configDir?: string };
+    connection: { close(): void; disconnected: Promise<never> };
+  };
+  return createToolsHost({
+    mode: 'attached',
+    runtime: inProcess.runtime,
+    clientInfo,
+    storybook: {
+      version: versions.storybook,
+      configDir: inProcess.runtime.configDir,
+      url: inProcess.record.url,
+      pid: inProcess.record.pid,
+    },
+    close: () => inProcess.connection.close(),
+    disconnected: inProcess.connection.disconnected,
+  });
+}
 
+async function createLocalTools(
+  options: CreateToolsOptions,
+  deps: CreateToolsDeps,
+  clientInfo: Required<ToolsClientInfo>
+): Promise<LocalTools> {
+  delete process.env.STORYBOOK_ATTACHED_TOOLS;
   const { bootstrapToolsRuntime } = await import('./local-runtime.ts');
   let runtime: ToolsRuntime;
   try {
@@ -230,7 +274,7 @@ function createToolsHost(args: {
       options.signal,
       method.handler(validation.value, {
         ...baseCtx,
-        ...(options.origin ? { origin: options.origin } : {}),
+        ...(options.origin !== undefined ? { origin: options.origin } : {}),
         ...(options.telemetry ? { telemetry: options.telemetry } : {}),
       })
     );

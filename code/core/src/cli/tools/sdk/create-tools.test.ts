@@ -8,7 +8,7 @@ import {
 } from '../../../shared/open-service/toolset-definition.ts';
 import { getToolName } from '../../../shared/open-service/toolset-names.ts';
 import { createTools } from './create-tools.ts';
-import { AttachUnavailableError } from './errors.ts';
+import { AttachUnavailableError, SpawnFailedError } from './errors.ts';
 import { bootstrapToolsRuntime, type ToolsRuntime } from './local-runtime.ts';
 
 vi.mock('./local-runtime.ts', { spy: true });
@@ -201,9 +201,114 @@ describe('createTools', () => {
     });
   });
 
-  it('rejects auto mode, the default, as not available yet', async () => {
-    await expect(createTools()).rejects.toMatchObject({ data: { reason: 'mode-unavailable' } });
-    await expect(createTools()).rejects.toThrow('`auto` tools mode');
+  it('prefers attached mode by default and falls back to local on a gate failure', async () => {
+    const attach = vi.fn(async () => ({
+      runtime: makeRuntime(),
+      record: { url: 'http://localhost:6006', pid: 123, configDir: CONFIG_DIR },
+      connection: { close: vi.fn(), disconnected: new Promise<never>(() => {}) },
+    }));
+
+    const attached = await createTools({ cwd: '/repo' }, { attach });
+
+    expect(attach).toHaveBeenCalledWith({ cwd: '/repo', configDir: undefined });
+    expect(bootstrapToolsRuntime).not.toHaveBeenCalled();
+    expect(attached.mode).toBe('attached');
+    expect(attached.fallbackNotice).toBeUndefined();
+
+    attach.mockRejectedValueOnce(
+      new AttachUnavailableError({
+        reason: 'no-instance',
+        instances: [],
+        remediation:
+          'No running Storybook was found for this project. Start it first (for example `npm run storybook`), then retry with `--attach`.',
+      })
+    );
+
+    const fallback = await createTools({ cwd: '/repo' }, { attach });
+
+    expect(bootstrapToolsRuntime).toHaveBeenCalledWith({ cwd: '/repo', configDir: undefined });
+    expect(fallback.mode).toBe('local');
+    expect(fallback.fallbackNotice).toContain('No running Storybook was found');
+    expect(fallback.fallbackNotice).toContain('Falling back');
+  });
+
+  it('does not fall back from attached mode, or from a config-load failure', async () => {
+    const attach = vi.fn(async () => {
+      throw new AttachUnavailableError({
+        reason: 'connection-failed',
+        instances: [],
+        remediation: 'Could not connect to the Storybook at http://localhost:6006.',
+      });
+    });
+
+    await expect(createTools({ mode: 'attached' }, { attach })).rejects.toThrow(
+      AttachUnavailableError
+    );
+    expect(bootstrapToolsRuntime).not.toHaveBeenCalled();
+
+    attach.mockRejectedValueOnce(
+      new SpawnFailedError({
+        reason: 'Could not resolve the `storybook` package from /repo.',
+      })
+    );
+    const spawnedFallback = await createTools({ mode: 'auto' }, { attach });
+    expect(spawnedFallback.mode).toBe('local');
+    expect(spawnedFallback.fallbackNotice).toContain('Could not resolve');
+
+    vi.mocked(bootstrapToolsRuntime).mockRejectedValueOnce(
+      new Error('No configuration files found')
+    );
+    const localLoadFailure = createTools(
+      { mode: 'auto' },
+      {
+        attach: async () => {
+          throw new AttachUnavailableError({
+            reason: 'no-instance',
+            instances: [],
+            remediation: 'No running Storybook.',
+          });
+        },
+      }
+    );
+    await expect(localLoadFailure).rejects.toMatchObject({
+      data: { reason: 'config-load-failed' },
+    });
+    await expect(localLoadFailure).rejects.toThrow('Falling back');
+  });
+
+  it('applies per-call origin and telemetry to the method context', async () => {
+    const telemetry = vi.fn(async () => {});
+    vi.mocked(bootstrapToolsRuntime).mockResolvedValue(
+      makeRuntime({
+        toolsets: [
+          defineToolset({
+            id: 'probe',
+            description: 'Records call context.',
+            methods: {
+              ping: {
+                title: 'Ping',
+                description: 'ping',
+                input: v.object({}),
+                handler: async (_input, ctx) => {
+                  await ctx.telemetry?.('tool:ping', { toolset: 'probe' });
+                  return {
+                    ok: true as const,
+                    data: { origin: ctx.origin },
+                    markdown: ctx.origin ?? '',
+                  };
+                },
+              },
+            },
+          }),
+        ],
+      })
+    );
+    const tools = await createTools({ mode: 'local' });
+
+    const outcome = await tools.call('probe.ping', {}, { origin: 'http://localhost:9', telemetry });
+
+    expect(outcome).toMatchObject({ data: { origin: 'http://localhost:9' } });
+    expect(telemetry).toHaveBeenCalledWith('tool:ping', { toolset: 'probe' });
   });
 
   it('wraps a configuration that cannot be loaded', async () => {

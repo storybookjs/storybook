@@ -11,7 +11,7 @@ describe('parseToolsTokens', () => {
       help: false,
       json: false,
       output: undefined,
-      attach: false,
+      attach: undefined,
       args: { maxDistance: 2, name: 'button' },
     });
   });
@@ -44,10 +44,15 @@ describe('parseToolsTokens', () => {
     expect(result).toMatchObject({ ok: true, json: true, output: 'later.md', args: { a: 1 } });
   });
 
-  it('treats --json, --help, and --attach as bare CLI flags, never tool arguments', () => {
+  it('treats --json, --help, --attach, and --no-attach as bare CLI flags, never tool arguments', () => {
     const result = parseToolsTokens(['--json', '--help', '--attach']);
 
     expect(result).toMatchObject({ ok: true, json: true, help: true, attach: true, args: {} });
+    expect(parseToolsTokens(['--no-attach'])).toMatchObject({
+      ok: true,
+      attach: false,
+      args: {},
+    });
   });
 
   it('consumes -o and --output with a path', () => {
@@ -74,5 +79,7 @@ describe('parseToolsTokens', () => {
     expect(parseToolsTokens(['--json=data'])).toMatchObject({ ok: false });
     expect(parseToolsTokens(['--help=me'])).toMatchObject({ ok: false });
     expect(parseToolsTokens(['--attach=yes'])).toMatchObject({ ok: false });
+    expect(parseToolsTokens(['--no-attach=yes'])).toMatchObject({ ok: false });
+    expect(parseToolsTokens(['--attach', '--no-attach'])).toMatchObject({ ok: false });
   });
 });

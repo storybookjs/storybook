@@ -5,7 +5,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { serializeError } from '../../../shared/open-service/service-error-serialization.ts';
 import { spawnChildHost } from './child-client.ts';
 import { CHILD_HOST_PROTOCOL_VERSION } from './child-protocol.ts';
-import { SpawnFailedError, ToolsRuntimeError } from './errors.ts';
+import { SpawnFailedError, ToolsRuntimeError, AttachUnavailableError } from './errors.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import type { CreateToolsOptions, ToolsClientInfo } from './types.ts';
 
@@ -322,6 +322,33 @@ describe('spawnChildHost', () => {
 
     await expect(tools.call('nope.list')).rejects.toBeInstanceOf(ToolsRuntimeError);
     await expect(tools.call('nope.list')).rejects.toThrow('Unknown toolset `nope`.');
+  });
+
+  it('rehydrates a serialized AttachUnavailableError from child init so instanceof matches', async () => {
+    child.send.mockImplementation((message: { type: string }) => {
+      if (message.type === 'init') {
+        queueMicrotask(() =>
+          child.emit('message', {
+            type: 'error',
+            id: 'init',
+            error: serializeError(
+              new AttachUnavailableError({
+                reason: 'no-instance',
+                instances: [],
+                remediation: 'No running Storybook was found for this project.',
+              })
+            ),
+          })
+        );
+      }
+      return true;
+    });
+
+    const failure = spawn();
+
+    await expect(failure).rejects.toBeInstanceOf(AttachUnavailableError);
+    await expect(failure).rejects.toThrow('No running Storybook was found');
+    expect(child.kill).toHaveBeenCalled();
   });
 
   it('throws SpawnFailedError when the child never says hello', async () => {

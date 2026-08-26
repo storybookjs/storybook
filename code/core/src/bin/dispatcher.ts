@@ -39,7 +39,7 @@ async function run() {
 
   const args = process.argv.slice(2);
 
-  if (args[0] === 'tools' && args.includes('--attach')) {
+  if (args[0] === 'ai' || (args[0] === 'tools' && !args.includes('--no-attach'))) {
     process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
   }
 

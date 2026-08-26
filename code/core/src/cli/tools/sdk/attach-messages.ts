@@ -67,3 +67,7 @@ export function formatRestartRequired(
 ): string {
   return `The Storybook package in this project is ${resolvedProjectVersion}, but the running instance is ${instanceVersion}. Restart your Storybook so both sides match.`;
 }
+
+export function formatAttachFallback(remediation: string): string {
+  return `${remediation}\n\nFalling back to loading this project's Storybook configuration in this process.`;
+}

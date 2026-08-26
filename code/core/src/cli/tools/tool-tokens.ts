@@ -8,6 +8,7 @@ export type ToolsOutputFlags = {
   json?: boolean;
   output?: string;
   help?: boolean;
+  /** `true` from `--attach`, `false` from `--no-attach`. */
   attach?: boolean;
 };
 
@@ -19,6 +20,7 @@ export type ParsedToolsTokens =
       json: boolean;
       /** Write the output to this file instead of stdout. */
       output?: string;
+      /** `true` from `--attach`, `false` from `--no-attach`. */
       attach?: boolean;
       args: Record<string, unknown>;
     }
@@ -48,7 +50,7 @@ export function parseToolsTokens(
   let help = defaults.help ?? false;
   let json = defaults.json ?? false;
   let output = defaults.output;
-  let attach = defaults.attach ?? false;
+  let attach = defaults.attach;
   const flagArgs: Record<string, unknown> = {};
 
   let i = 0;
@@ -67,7 +69,18 @@ export function parseToolsTokens(
     }
 
     if (token === '--attach') {
+      if (attach === false) {
+        return { ok: false, error: 'Cannot combine `--attach` and `--no-attach`.' };
+      }
       attach = true;
+      continue;
+    }
+
+    if (token === '--no-attach') {
+      if (attach === true) {
+        return { ok: false, error: 'Cannot combine `--attach` and `--no-attach`.' };
+      }
+      attach = false;
       continue;
     }
 
@@ -104,7 +117,7 @@ export function parseToolsTokens(
 
     // Only reachable via `--help=x` / `--json=x` (or a stray positional after them, which the
     // generic branch consumed as a value): these flags never take one.
-    if (key === 'help' || key === 'json' || key === 'attach') {
+    if (key === 'help' || key === 'json' || key === 'attach' || key === 'no-attach') {
       return { ok: false, error: `\`--${key}\` does not take a value.` };
     }
 
@@ -182,7 +195,12 @@ export const TOOLS_OPTION_SPECS: ReadonlyArray<{ flags: string; description: str
   },
   {
     flags: '--attach',
-    description: 'Attach to a running Storybook instead of loading configuration in this process',
+    description:
+      'Require attaching to a running Storybook; gate failures are errors instead of a local fallback',
+  },
+  {
+    flags: '--no-attach',
+    description: 'Load the project configuration in this process; never attach',
   },
   {
     flags: '--input <object>',

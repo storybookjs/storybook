@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import {
+  formatAttachFallback,
   formatConnectionFailed,
   formatCwdMismatch,
   formatMultipleMatches,
@@ -98,6 +99,16 @@ describe('attach failure messages', () => {
   it('names the on-disk package and the running instance when spawning cannot reconcile them', () => {
     expect(formatRestartRequired('10.4.0', '10.2.0')).toMatchInlineSnapshot(
       `"The Storybook package in this project is 10.4.0, but the running instance is 10.2.0. Restart your Storybook so both sides match."`
+    );
+  });
+
+  it('names the local fallback after the gate message', () => {
+    expect(
+      formatAttachFallback('Restart Storybook (v10.2.0+) to enable attach.')
+    ).toMatchInlineSnapshot(
+      `"Restart Storybook (v10.2.0+) to enable attach.
+
+Falling back to loading this project's Storybook configuration in this process."`
     );
   });
 });

@@ -84,8 +84,11 @@ export function registerToolsPassthrough(
         // the saved writer.
         const originalStdoutWrite = process.stdout.write;
         if (isJsonToolsRun(tokens, flags)) {
-          process.stdout.write = ((...args: Parameters<typeof process.stderr.write>) =>
-            process.stderr.write(...args)) as typeof process.stdout.write;
+          // Bound, not assigned: both streams share the inherited `Writable.prototype.write`,
+          // which dispatches on `this` — unbound it would keep writing to stdout.
+          process.stdout.write = process.stderr.write.bind(
+            process.stderr
+          ) as typeof process.stdout.write;
         }
         try {
           // Like `init`, the fallback keeps telemetry on when no main config is loadable: running

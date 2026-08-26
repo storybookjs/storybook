@@ -74,27 +74,6 @@ describe('get-known-packages', () => {
       });
     });
 
-    it('should analyze renderer packages with actual versions', async () => {
-      const packageJson: PackageJson = {
-        dependencies: {
-          react: '^18.0.0',
-          'react-dom': '^18.0.0',
-          '@angular/core': '17.0.0',
-        },
-        devDependencies: {
-          typescript: '5.0.0',
-        },
-      };
-
-      const result = await analyzeEcosystemPackages(packageJson);
-
-      expect(result.rendererPackages).toEqual({
-        react: '1.0.0',
-        'react-dom': '1.0.0',
-        '@angular/core': '1.0.0',
-      });
-    });
-
     it('should analyze ecosystem packages in a single packageJson with multiple groups', async () => {
       const packageJson: PackageJson = {
         dependencies: {

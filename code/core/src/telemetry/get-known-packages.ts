@@ -6,7 +6,6 @@ import {
   BUNDLER_PACKAGES,
   DATA_FETCHING_PACKAGES,
   I18N_PACKAGES,
-  RENDERER_PACKAGES,
   ROUTER_PACKAGES,
   STATE_MANAGEMENT_PACKAGES,
   STYLING_PACKAGES,
@@ -21,6 +20,11 @@ type PackageGroupResult = Record<string, string | null | undefined>;
 export type KnownPackagesList = {
   testPackages?: PackageGroupResult;
   bundlerPackages?: PackageGroupResult;
+  /**
+   * Installed versions of the active renderer's UI framework runtime packages. Unlike the other
+   * groups, this is keyed off the detected Storybook renderer rather than the project's declared
+   * dependencies, so monorepos don't report sibling frameworks.
+   */
   rendererPackages?: PackageGroupResult;
   stylingPackages?: PackageGroupResult;
   stateManagementPackages?: PackageGroupResult;
@@ -116,7 +120,6 @@ export async function analyzeEcosystemPackages(
 
   const testPackages = await pickResolvedDepsObject(TEST_PACKAGES);
   const bundlerPackages = await pickResolvedDepsObject(BUNDLER_PACKAGES);
-  const rendererPackages = await pickResolvedDepsObject(RENDERER_PACKAGES);
 
   const stylingPackages = pickDepsObject(STYLING_PACKAGES);
   const stateManagementPackages = pickDepsObject(STATE_MANAGEMENT_PACKAGES);
@@ -128,7 +131,6 @@ export async function analyzeEcosystemPackages(
   return {
     ...(testPackages && { testPackages: testPackages }),
     ...(bundlerPackages && { bundlerPackages: bundlerPackages }),
-    ...(rendererPackages && { rendererPackages: rendererPackages }),
     ...(stylingPackages && { stylingPackages: stylingPackages }),
     ...(stateManagementPackages && {
       stateManagementPackages: stateManagementPackages,

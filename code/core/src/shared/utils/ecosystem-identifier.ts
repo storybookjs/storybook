@@ -125,22 +125,6 @@ export const BUNDLER_PACKAGES = [
   '@rsbuild/*',
 ] as const;
 
-// UI framework runtime packages underlying Storybook's renderers, plus their runtime companions
-// (e.g. react-dom, whose version can drift from react's).
-export const RENDERER_PACKAGES = [
-  'react',
-  'react-dom',
-  'react-native',
-  'vue',
-  'svelte',
-  'preact',
-  'lit',
-  'ember-source',
-  '@angular/core',
-  'solid-js',
-  '@builder.io/qwik',
-] as const;
-
 export function globToRegex(pattern: string): RegExp {
   // Escape special regex characters except *
   const escaped = pattern.replace(/[.+?^${}()|[\]\\]/g, '\\$&');

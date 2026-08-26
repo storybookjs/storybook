@@ -649,6 +649,94 @@ describe('storybook-metadata', () => {
       });
     });
 
+    describe('rendererPackages', () => {
+      it('resolves the runtime packages mapped to the detected renderer', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: packageJsonMock,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.knownPackages?.rendererPackages).toEqual({
+          react: 'x.x.x',
+          'react-dom': 'x.x.x',
+        });
+      });
+
+      it('ignores declared dependencies of other frameworks', async () => {
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: {
+            ...packageJsonMock,
+            dependencies: { vue: 'x.x.x', svelte: 'x.x.x' },
+          } as PackageJson,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.knownPackages?.rendererPackages).toEqual({
+          react: 'x.x.x',
+          'react-dom': 'x.x.x',
+        });
+      });
+
+      it('resolves angular runtime and build packages for the angular renderer', async () => {
+        vi.mocked(getStorybookInfo).mockImplementation(async () => ({
+          ...defaultInfo,
+          renderer: SupportedRenderer.ANGULAR,
+          rendererPackage: '@storybook/angular',
+        }));
+        vi.mocked(getActualPackageVersion).mockImplementation(async (name) => ({
+          name,
+          version: name === '@angular/core' ? '17.3.0' : 'x.x.x',
+        }));
+
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: packageJsonMock,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.knownPackages?.rendererPackages).toEqual({
+          '@angular/core': '17.3.0',
+          '@angular-devkit/build-angular': 'x.x.x',
+        });
+      });
+
+      it('reports no rendererPackages for renderers without runtime packages', async () => {
+        vi.mocked(getStorybookInfo).mockImplementation(async () => ({
+          ...defaultInfo,
+          renderer: SupportedRenderer.HTML,
+          rendererPackage: '@storybook/html',
+        }));
+
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: packageJsonMock,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.knownPackages?.rendererPackages).toBeUndefined();
+      });
+
+      it("reports 'unknown' for a runtime package that can't be resolved", async () => {
+        vi.mocked(getActualPackageVersion).mockImplementation(async (name) => ({
+          name,
+          version: null,
+        }));
+
+        const res = await computeStorybookMetadata({
+          configDir: '.storybook',
+          packageJson: packageJsonMock,
+          packageJsonPath,
+          mainConfig: mainJsMock,
+        });
+        expect(res.knownPackages?.rendererPackages).toEqual({
+          react: 'unknown',
+          'react-dom': 'unknown',
+        });
+      });
+    });
+
     describe('custom bundler config', () => {
       it('should detect viteFinal as hasCustomVite', async () => {
         const res = await computeStorybookMetadata({
@@ -781,6 +869,10 @@ describe('storybook-metadata', () => {
           },
           "i18nPackages": {
             "i18next": "22.0.0",
+          },
+          "rendererPackages": {
+            "react": "x.x.x",
+            "react-dom": "x.x.x",
           },
           "routerPackages": {
             "react-router-dom": "^6.0.0",

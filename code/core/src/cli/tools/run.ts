@@ -1,11 +1,6 @@
 import { versions } from 'storybook/internal/common';
 
-import type {
-  AnyToolsetDefinition,
-  AnyToolsetMethod,
-  ToolsetCtx,
-  ToolsetTelemetry,
-} from '../../shared/open-service/toolset-definition.ts';
+import type { ToolsetTelemetry } from '../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId, toCliMethodName } from '../../shared/open-service/toolset-names.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import {
@@ -17,7 +12,6 @@ import {
   type Tools,
   type ToolsClientInfo,
   type ToolsMode,
-  type ToolsRuntime,
 } from './sdk/index.ts';
 import {
   discoverRunningInstance,
@@ -25,11 +19,8 @@ import {
   type ToolsTarget,
 } from './discover-instance.ts';
 import {
-  renderMethodHelp,
   renderMethodHelpFromCatalog,
-  renderToolsHelp,
   renderToolsHelpFromCatalog,
-  renderToolsetHelp,
   renderToolsetHelpFromCatalog,
 } from './help.ts';
 import { parseToolsTokens, type ParsedToolsTokens, type ToolsOutputFlags } from './tool-tokens.ts';
@@ -194,22 +185,20 @@ export async function runToolsCommand(
   }
 
   try {
-    const dispatched =
-      tools.mode === 'attached' || tools.host === 'child'
-        ? await dispatchAttachedTools(tools, normalized, parsed, result, deps)
-        : await dispatchLocalTools(tools, normalized, parsed, deps, requestedMode, result);
+    const dispatched = await dispatchTools(tools, normalized, parsed, deps, requestedMode, result);
     return { ...dispatched, attachMode: tools.mode, fallbackNotice: tools.fallbackNotice };
   } finally {
     await tools.close();
   }
 }
 
-async function dispatchAttachedTools(
+async function dispatchTools(
   tools: Tools,
   invocation: ToolsInvocation,
   parsed: Extract<ParsedToolsTokens, { ok: true }>,
-  result: (partial: Omit<ToolsRunResult, 'outputPath' | 'attachMode'>) => ToolsRunResult,
-  deps: ToolsRunDeps
+  deps: ToolsRunDeps,
+  requestedMode: ToolsMode,
+  result: (partial: Omit<ToolsRunResult, 'outputPath' | 'attachMode'>) => ToolsRunResult
 ): Promise<ToolsRunResult> {
   const { toolset: toolsetName, tool: toolName } = invocation;
   let catalog;
@@ -271,102 +260,11 @@ async function dispatchAttachedTools(
     });
   }
 
-  try {
-    const outcome = await tools.call(method.ref, parsed.args, {
-      ...(tools.storybook.url ? { origin: tools.storybook.url } : {}),
-      ...(deps.methodTelemetry ? { telemetry: deps.methodTelemetry } : {}),
-    });
-    const output = parsed.json
-      ? JSON.stringify(outcome.data, null, 2)
-      : joinMarkdown(outcome.markdown);
-    return result({
-      exitCode: outcome.ok ? 0 : 1,
-      output,
-      outcome: { kind: outcome.ok ? 'success' : 'failure' },
-    });
-  } catch (error) {
-    if (isInvalidInputError(error)) {
-      const { methodName } = parseToolsetMethodId(method.ref);
-      return result({
-        exitCode: 1,
-        output: formatValidationIssues(
-          `npx storybook tools ${entry.id} ${toCliMethodName(methodName)}`,
-          error.data.issues ?? []
-        ),
-        outcome: { kind: 'intercept', reason: 'invalid-arguments' },
-      });
-    }
-    if (isAgentFacingError(error)) {
-      return result({ exitCode: 1, output: error.message, outcome: { kind: 'failure' } });
-    }
-    return result({
-      exitCode: 1,
-      output: error instanceof Error ? error.message : String(error),
-      outcome: { kind: 'error', error },
-    });
-  }
-}
+  const { methodName } = parseToolsetMethodId(method.ref);
+  const commandPath = `npx storybook tools ${entry.id} ${toCliMethodName(methodName)}`;
 
-async function dispatchLocalTools(
-  tools: Tools,
-  invocation: ToolsInvocation,
-  parsed: Extract<ParsedToolsTokens, { ok: true }>,
-  deps: ToolsRunDeps,
-  requestedMode: ToolsMode,
-  result: (partial: Omit<ToolsRunResult, 'outputPath' | 'attachMode'>) => ToolsRunResult
-): Promise<ToolsRunResult> {
-  const { toolset: toolsetName, tool: toolName, target } = invocation;
-  const runtime = tools.runtime;
-  const ctx = buildContext(runtime, deps, undefined);
-
-  if (!toolsetName) {
-    return result({
-      exitCode: 0,
-      output: renderToolsHelp(runtime.configDir, runtime.toolsets, ctx),
-      outcome: { kind: 'help' },
-    });
-  }
-
-  const toolset = runtime.toolsets.find((candidate) => candidate.id === toolsetName);
-  if (!toolset) {
-    return result({
-      exitCode: 1,
-      output: formatUnknownToolset(toolsetName, runtime),
-      outcome: { kind: 'intercept', reason: 'unknown-toolset' },
-    });
-  }
-
-  if (!toolName) {
-    return result({
-      exitCode: 0,
-      output: renderToolsetHelp(toolset, ctx),
-      outcome: { kind: 'help' },
-    });
-  }
-
-  const methodKey = Object.keys(toolset.methods).find(
-    (key) => key === toMethodKey(toolName) || toCliMethodName(key) === toolName
-  );
-  const method: AnyToolsetMethod | undefined = methodKey ? toolset.methods[methodKey] : undefined;
-  if (!methodKey || !method) {
-    return result({
-      exitCode: 1,
-      output: formatUnknownTool(toolName, toolset),
-      outcome: { kind: 'intercept', reason: 'unknown-tool' },
-    });
-  }
-  const commandPath = `npx storybook tools ${toolset.id} ${toCliMethodName(methodKey)}`;
-
-  if (parsed.help) {
-    return result({
-      exitCode: 0,
-      output: renderMethodHelp(toolset, methodKey, method, ctx),
-      outcome: { kind: 'help' },
-    });
-  }
-
-  if (method.requiresDevServer) {
-    const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(target);
+  if (tools.mode === 'local' && method.requiresDevServer) {
+    const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(invocation.target);
     return result({
       exitCode: 1,
       output: formatRequiresDevServer(commandPath, discovery, requestedMode),
@@ -375,7 +273,8 @@ async function dispatchLocalTools(
   }
 
   try {
-    const outcome = await tools.call(`${toolset.id}.${methodKey}`, parsed.args, {
+    const outcome = await tools.call(method.ref, parsed.args, {
+      ...(tools.storybook.url ? { origin: tools.storybook.url } : {}),
       ...(deps.methodTelemetry ? { telemetry: deps.methodTelemetry } : {}),
     });
     const output = parsed.json
@@ -431,42 +330,8 @@ ${available}
 Run \`npx storybook tools ${entry.id}\` for their descriptions.`;
 }
 
-function buildContext(
-  runtime: ToolsRuntime,
-  deps: ToolsRunDeps,
-  origin: string | undefined
-): ToolsetCtx {
-  const { methodTelemetry } = deps;
-  return {
-    transport: 'cli',
-    ...(origin ? { origin } : {}),
-    getService: runtime.getService,
-    ...(methodTelemetry ? { telemetry: methodTelemetry } : {}),
-  };
-}
-
 function joinMarkdown(markdown: string | string[]): string {
   return Array.isArray(markdown) ? markdown.join('\n\n') : markdown;
-}
-
-function formatUnknownToolset(toolsetName: string, runtime: ToolsRuntime): string {
-  const available = runtime.toolsets.map((toolset) => `- \`${toolset.id}\``).join('\n');
-  return `Unknown toolset \`${toolsetName}\`. The Storybook configuration at ${runtime.configDir} provides:
-
-${available}
-
-Run \`npx storybook tools --help\` for every tool.`;
-}
-
-function formatUnknownTool(toolName: string, toolset: AnyToolsetDefinition): string {
-  const available = Object.keys(toolset.methods)
-    .map((key) => `- \`${toCliMethodName(key)}\``)
-    .join('\n');
-  return `Unknown tool \`${toolName}\`. The \`${toolset.id}\` toolset provides:
-
-${available}
-
-Run \`npx storybook tools ${toolset.id}\` for their descriptions.`;
 }
 
 function formatRequiresDevServer(

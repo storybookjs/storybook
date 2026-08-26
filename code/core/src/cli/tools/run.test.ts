@@ -758,6 +758,34 @@ describe('attached tools', () => {
     expect(result.output).toContain('Button');
   });
 
+  it('intercepts requiresDevServer tools on a local child host with the same guidance as in-process', async () => {
+    const tools = makeLocalTools();
+    const child: LocalTools = {
+      ...tools,
+      host: 'child',
+      runtime: {
+        ...tools.runtime,
+        toolsets: [],
+      },
+    };
+    const { deps, discoverInstance } = makeDeps({
+      createTools: vi.fn(async () => child),
+      discoverInstance: vi.fn(async () => ({ currentRecord: RECORD, records: [RECORD] })),
+    });
+
+    const result = await run(
+      ['stories', 'preview', '--stories', '[{"storyId":"button--primary"}]'],
+      deps,
+      { attach: false }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'requires-dev-server' });
+    expect(result.output).toContain('http://localhost:6006');
+    expect(result.output).toContain('--no-attach');
+    expect(discoverInstance).toHaveBeenCalled();
+  });
+
   it('runs a requiresDevServer tool caller-side with the instance origin, without proxying', async () => {
     clearToolsetRegistry();
     registerToolset(

@@ -90,7 +90,7 @@ type ToolsBase = {
   host: ToolsHostKind;
   /** Set when `auto` mode could not attach and loaded the project configuration instead. */
   fallbackNotice?: string;
-  /** Toolset registry and service accessor the CLI uses for help and dispatch. */
+  /** Toolset registry and service accessor for an in-process host. Empty when this host is a child. */
   runtime: ToolsRuntime;
   describe(options?: ToolsDescribeOptions): Promise<ToolsetCatalog>;
   /**
@@ -113,8 +113,7 @@ type ToolsBase = {
 };
 
 /**
- * A host that loaded the target configuration without a running Storybook. The `storybook tools`
- * CLI renders its help from the in-process registry, or from `describe` when this host is a child.
+ * A host that loaded the target configuration without a running Storybook.
  */
 export type LocalTools = ToolsBase & {
   mode: 'local';

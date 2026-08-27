@@ -382,58 +382,56 @@ const argTypesOf = (classBody: string) => {
       ${classBody}
     }
   `);
-  // `table.type.required` is Angular's own addition to the argType shape, which `InputType` does
-  // not declare, so the section it lives in is read structurally.
-  return extractArgTypesFromData(component, {
-    metadataJson: undefined,
-    propsTable: 'all',
-  }) as Record<string, { type?: unknown; table?: { type?: { required?: boolean } } }>;
+  return extractArgTypesFromData(component, { metadataJson: undefined, propsTable: 'all' });
 };
 
 /**
- * `ArgRow` reads `row.type.required`, so the flag in `table.type.required` alone renders no badge.
- * Both halves are asserted together: they lived apart long enough for the props table to show no
- * required input at all.
+ * Where the required flag lives, which is the whole of this defect.
+ *
+ * Every consumer - the props table badge and its sort order, the generated dummy args, the
+ * `apiDescription` an agent reads - takes it from `type.required`, the field `SBBaseType` declares.
+ * Recording it anywhere else documents nothing, so `table.type` must stay free of it.
  */
-describe('the required badge', () => {
+describe('the required flag', () => {
   it('marks a signal input declared with `input.required`', () => {
-    const arg = argTypesOf(`value = input.required<string>();`).value;
-    expect(arg.type).toEqual({ name: 'string', required: true });
-    expect(arg.table?.type?.required).toBe(true);
+    expect(argTypesOf(`value = input.required<string>();`).value.type).toEqual({
+      name: 'string',
+      required: true,
+    });
   });
 
   it('marks a decorator input with no initializer', () => {
-    const arg = argTypesOf(`@Input() value!: string;`).value;
-    expect(arg.type).toEqual({ name: 'string', required: true });
-    expect(arg.table?.type?.required).toBe(true);
+    expect(argTypesOf(`@Input() value!: string;`).value.type).toEqual({
+      name: 'string',
+      required: true,
+    });
   });
 
-  it('leaves a defaulted signal input unmarked', () => {
-    const arg = argTypesOf(`value = input('');`).value;
-    expect(arg.type).toEqual({ name: 'string' });
-    expect(arg.table?.type?.required).toBe(false);
+  it('says nothing about a defaulted signal input', () => {
+    expect(argTypesOf(`value = input('');`).value.type).toEqual({ name: 'string' });
   });
 
-  it('leaves a defaulted decorator input unmarked', () => {
-    const arg = argTypesOf(`@Input() value = 'primary';`).value;
-    expect(arg.type).toEqual({ name: 'string' });
-    expect(arg.table?.type?.required).toBe(false);
+  it('says nothing about a defaulted decorator input', () => {
+    expect(argTypesOf(`@Input() value = 'primary';`).value.type).toEqual({ name: 'string' });
   });
 
-  it('leaves an optional input unmarked', () => {
-    const arg = argTypesOf(`@Input() value?: string;`).value;
-    expect(arg.type).toEqual({ name: 'string' });
-    expect(arg.table?.type?.required).toBe(false);
+  it('says nothing about an optional input', () => {
+    expect(argTypesOf(`@Input() value?: string;`).value.type).toEqual({ name: 'string' });
   });
 
-  it('badges no output, which a parent is never obliged to bind', () => {
-    const arg = argTypesOf(`toggled = output<boolean>();`).toggled;
-    expect(arg.type).toEqual({ name: 'other', value: 'void' });
+  it('says nothing about an output, which a parent is never obliged to bind', () => {
+    expect(argTypesOf(`toggled = output<boolean>();`).toggled.type).toEqual({
+      name: 'other',
+      value: 'void',
+    });
   });
 
-  it('badges no plain property, which a parent cannot bind at all', () => {
-    const arg = argTypesOf(`value!: string;`).value;
-    expect(arg.type).toEqual({ name: 'string' });
-    expect(arg.table?.type?.required).toBe(true);
+  it('says nothing about a plain property, which a parent cannot bind at all', () => {
+    expect(argTypesOf(`value!: string;`).value.type).toEqual({ name: 'string' });
+  });
+
+  it('leaves `table.type` carrying the summary alone', () => {
+    const table = argTypesOf(`value = input.required<string>();`).value.table;
+    expect(table?.type).toEqual({ summary: 'string' });
   });
 });

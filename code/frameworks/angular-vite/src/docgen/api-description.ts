@@ -9,11 +9,11 @@ interface Member {
   deprecated: string | undefined;
 }
 
-// `table.type.required` is Angular's own addition to the argType shape, which `InputType` does not
+// `table.jsDocTags` is Angular's own addition to the argType shape, which `InputType` does not
 // declare, so the section it lives in is read structurally.
 type AngularTable = {
   category?: string;
-  type?: { summary?: string; required?: boolean };
+  type?: { summary?: string };
   defaultValue?: { summary?: string };
   jsDocTags?: { deprecated?: string };
 };
@@ -24,7 +24,9 @@ const readMember = (name: string, argType: StrictInputType): Member => {
     name,
     description: argType.description,
     type: table?.type?.summary,
-    required: table?.type?.required !== false,
+    // The same declared flag the props table badges from, so what an agent reads and what a
+    // maintainer sees can never disagree again.
+    required: argType.type?.required === true,
     defaultValue: table?.defaultValue?.summary,
     deprecated: table?.jsDocTags?.deprecated,
   };

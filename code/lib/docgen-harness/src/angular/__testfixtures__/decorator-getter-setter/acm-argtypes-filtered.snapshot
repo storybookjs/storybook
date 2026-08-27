@@ -8,7 +8,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": true,
         "summary": "number",
       },
     },

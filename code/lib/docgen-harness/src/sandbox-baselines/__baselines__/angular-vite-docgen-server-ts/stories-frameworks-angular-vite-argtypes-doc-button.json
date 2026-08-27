@@ -8,7 +8,6 @@
           "summary": "Another default value"
         },
         "type": {
-          "required": false,
           "summary": "string"
         }
       },
@@ -25,7 +24,6 @@
           "summary": "ButtonAccent.Normal"
         },
         "type": {
-          "required": false,
           "summary": "ButtonAccent"
         }
       },
@@ -43,7 +41,6 @@
           "summary": "Another default value"
         },
         "type": {
-          "required": true,
           "summary": "string"
         }
       },
@@ -61,7 +58,6 @@
           "summary": null
         },
         "type": {
-          "required": false,
           "summary": "string | null"
         }
       },
@@ -78,7 +74,6 @@
           "summary": 123
         },
         "type": {
-          "required": false,
           "summary": "number"
         }
       },
@@ -93,7 +88,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "undefined"
         }
       },
@@ -112,7 +106,6 @@
           "summary": "secondary"
         },
         "type": {
-          "required": false,
           "summary": "\"primary\" | \"secondary\""
         }
       },
@@ -127,7 +120,6 @@
         "category": "view child",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "ElementRef"
         }
       },
@@ -143,7 +135,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "(x: number, y: string | number) => number"
         }
       },
@@ -160,7 +151,6 @@
           "summary": false
         },
         "type": {
-          "required": false,
           "summary": "boolean"
         }
       },
@@ -175,7 +165,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "string"
         }
       },
@@ -193,7 +182,6 @@
           "summary": "Public hello"
         },
         "type": {
-          "required": false,
           "summary": "string"
         }
       },
@@ -210,7 +198,6 @@
           "summary": false
         },
         "type": {
-          "required": false,
           "summary": "boolean"
         }
       },
@@ -224,7 +211,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "T[]"
         }
       },
@@ -241,7 +227,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "string"
         }
       },
@@ -258,7 +243,6 @@
         "category": "outputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "EventEmitter"
         }
       },
@@ -273,7 +257,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "(event: Event) => void"
         }
       },
@@ -288,7 +271,6 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "T[]"
         }
       },
@@ -304,7 +286,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "(id?: number) => void"
         }
       },
@@ -320,7 +301,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "(things: ISomeInterface) => void"
         }
       },
@@ -335,7 +315,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "keyof T"
         }
       },
@@ -354,7 +333,6 @@
           "summary": "medium"
         },
         "type": {
-          "required": false,
           "summary": "ButtonSize"
         }
       },
@@ -370,7 +348,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "ISomeInterface"
         }
       },
@@ -392,7 +369,6 @@
           "deprecated": ""
         },
         "type": {
-          "required": false,
           "summary": "boolean"
         }
       },
@@ -409,7 +385,6 @@
           "summary": "Default value in component"
         },
         "type": {
-          "required": false,
           "summary": "string"
         }
       },
@@ -424,7 +399,6 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "string | number"
         }
       },

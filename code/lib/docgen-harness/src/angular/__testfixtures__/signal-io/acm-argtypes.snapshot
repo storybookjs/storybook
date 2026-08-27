@@ -8,7 +8,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": true,
         "summary": "number",
       },
     },
@@ -26,7 +25,6 @@
         "summary": false,
       },
       "type": {
-        "required": false,
         "summary": "boolean",
       },
     },
@@ -43,7 +41,6 @@
         "summary": 1,
       },
       "type": {
-        "required": false,
         "summary": "number",
       },
     },
@@ -60,7 +57,6 @@
         "summary": "",
       },
       "type": {
-        "required": false,
         "summary": "string",
       },
     },
@@ -78,7 +74,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": false,
         "summary": "boolean",
       },
     },
@@ -96,7 +91,6 @@
         "summary": "v1",
       },
       "type": {
-        "required": false,
         "summary": "string",
       },
     },

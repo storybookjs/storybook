@@ -9,7 +9,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": false,
         "summary": "EventEmitter",
       },
     },
@@ -27,7 +26,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": false,
         "summary": "number",
       },
     },
@@ -44,7 +42,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": true,
         "summary": "any",
       },
     },
@@ -63,7 +60,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": true,
         "summary": "(value: number) => string",
       },
     },
@@ -81,7 +77,6 @@
         "summary": "Badge",
       },
       "type": {
-        "required": false,
         "summary": "string",
       },
     },

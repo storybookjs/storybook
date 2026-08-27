@@ -97,12 +97,12 @@ describe('@Input and @Output aliases', () => {
     const argTypes = extractArgTypesFromData(componentIn(SOURCE), {
       metadataJson: undefined,
       ...ANALYZER_EXTRACT_OPTIONS,
-    }) as Record<string, { table?: { type?: { required?: boolean } } }>;
+    });
 
     // An initializer is what settles it: `buttonLabel` has one, so binding it is optional.
-    expect(argTypes.buttonLabel?.table?.type?.required).toBe(false);
-    expect(argTypes.tone?.table?.type?.required).toBe(true);
-    expect(argTypes.hint?.table?.type?.required).toBe(false);
+    expect(argTypes.buttonLabel?.type?.required).toBeUndefined();
+    expect(argTypes.tone?.type?.required).toBe(true);
+    expect(argTypes.hint?.type?.required).toBeUndefined();
   });
 
   it('leaves an accessor input’s `@default` tag as its only default carrier', () => {

@@ -6,7 +6,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "any"
         }
       },

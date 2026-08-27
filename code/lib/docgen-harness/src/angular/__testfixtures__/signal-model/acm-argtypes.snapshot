@@ -8,7 +8,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": true,
         "summary": "boolean",
       },
     },
@@ -24,7 +23,6 @@
     "table": {
       "category": "outputs",
       "type": {
-        "required": false,
         "summary": "(e: boolean) => void",
       },
     },
@@ -42,7 +40,6 @@
         "summary": "start",
       },
       "type": {
-        "required": false,
         "summary": "string",
       },
     },
@@ -57,7 +54,6 @@
     "table": {
       "category": "outputs",
       "type": {
-        "required": false,
         "summary": "(e: string) => void",
       },
     },

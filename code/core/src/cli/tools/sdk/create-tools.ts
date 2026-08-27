@@ -135,11 +135,7 @@ export async function createTools(
           });
         } catch (localError) {
           if (shouldWrapAutoLocalFailure(localError)) {
-            throw new ToolsRuntimeError({
-              reason: 'config-load-failed',
-              message: `${notice}\n\n${localError instanceof Error ? localError.message : String(localError)}`,
-              cause: localError instanceof ToolsRuntimeError ? localError.data.cause : localError,
-            });
+            throw wrapAutoLocalFailure(notice, localError);
           }
           throw localError;
         }
@@ -256,7 +252,7 @@ async function createLocalTools(
   });
 }
 
-function shouldWrapAutoLocalFailure(error: unknown): boolean {
+function shouldWrapAutoLocalFailure(error: unknown): error is SpawnFailedError | ToolsRuntimeError {
   if (error instanceof SpawnFailedError) {
     return true;
   }
@@ -264,6 +260,25 @@ function shouldWrapAutoLocalFailure(error: unknown): boolean {
     error instanceof ToolsRuntimeError &&
     (error.data.reason === 'config-load-failed' || error.data.reason === 'mode-unavailable')
   );
+}
+
+function wrapAutoLocalFailure(notice: string, localError: SpawnFailedError | ToolsRuntimeError) {
+  const message = `${notice}\n\n${localError.message}`;
+  if (localError instanceof SpawnFailedError) {
+    return new SpawnFailedError({
+      reason: message,
+      cause: localError.data.cause ?? localError,
+    });
+  }
+  if (localError instanceof ToolsRuntimeError) {
+    return new ToolsRuntimeError({
+      reason: localError.data.reason,
+      message,
+      cause: localError.data.cause,
+    });
+  }
+  const exhaustive: never = localError;
+  throw exhaustive;
 }
 
 function transportFor(kind: Required<ToolsClientInfo>['kind']): ToolsetTransport {

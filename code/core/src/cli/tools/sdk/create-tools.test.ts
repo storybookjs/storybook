@@ -9,7 +9,7 @@ import {
 } from '../../../shared/open-service/toolset-definition.ts';
 import { getToolName } from '../../../shared/open-service/toolset-names.ts';
 import { createTools } from './create-tools.ts';
-import { AttachUnavailableError, SpawnFailedError } from './errors.ts';
+import { AttachUnavailableError, SpawnFailedError, ToolsRuntimeError } from './errors.ts';
 import { bootstrapToolsRuntime, type ToolsRuntime } from './local-runtime.ts';
 
 vi.mock('./local-runtime.ts', { spy: true });
@@ -392,7 +392,38 @@ describe('createTools', () => {
     await expect(localLoadFailure).rejects.toMatchObject({
       data: { reason: 'config-load-failed' },
     });
+    await expect(localLoadFailure).rejects.toThrow(ToolsRuntimeError);
     await expect(localLoadFailure).rejects.toThrow('Falling back');
+  });
+
+  it('keeps spawn and mode-unavailable reasons when auto local fallback also fails', async () => {
+    const attachUnavailable = async () => {
+      throw new AttachUnavailableError({
+        reason: 'no-instance',
+        instances: [],
+        remediation: 'No running Storybook was found for this project.',
+      });
+    };
+
+    const modeUnavailable = createTools(
+      { cwd: '/elsewhere', mode: 'auto', autoSpawn: false },
+      { attach: attachUnavailable, spawnChild }
+    );
+    await expect(modeUnavailable).rejects.toBeInstanceOf(ToolsRuntimeError);
+    await expect(modeUnavailable).rejects.toMatchObject({ data: { reason: 'mode-unavailable' } });
+    await expect(modeUnavailable).rejects.toThrow('Falling back');
+    expect(spawnChild).not.toHaveBeenCalled();
+
+    vi.mocked(spawnChild).mockRejectedValue(
+      new SpawnFailedError({ reason: 'Could not resolve the `storybook` package from /elsewhere.' })
+    );
+    const spawnFailed = createTools(
+      { cwd: '/elsewhere', mode: 'auto' },
+      { attach: attachUnavailable, spawnChild }
+    );
+    await expect(spawnFailed).rejects.toBeInstanceOf(SpawnFailedError);
+    await expect(spawnFailed).rejects.toThrow('Falling back');
+    await expect(spawnFailed).rejects.toThrow('Could not resolve the `storybook` package');
   });
 
   it('applies per-call origin and telemetry to the method context', async () => {

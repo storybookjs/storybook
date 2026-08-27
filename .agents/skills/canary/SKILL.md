@@ -20,16 +20,16 @@ Automatic canary publishes:
 The canary version string is constructed like this:
 
 ```text
-storybook@https://pkg.pr.new/storybookjs/storybook/storybook@<SHA>
+storybook@https://pkg.pr.new/storybook@<SHA>
 ```
 
-Replace `<SHA>` with the short commit SHA (first 7 characters). The pkg.pr.new dashboard is always `https://pkg.pr.new/~/storybookjs/storybook`.
+Replace `<SHA>` with the short commit SHA (first 7 characters). Compact URLs (`https://pkg.pr.new/storybook@<SHA>`) resolve to the same tarball as the owner/repo form. The pkg.pr.new dashboard is always `https://pkg.pr.new/~/storybookjs/storybook`.
 
 ## Check whether a canary already exists
 
 ```bash
-SHA=$(git rev-parse HEAD)
-curl -I "https://pkg.pr.new/storybookjs/storybook/storybook@$SHA"
+SHA=$(git rev-parse --short=7 HEAD)
+curl -I "https://pkg.pr.new/storybook@$SHA"
 ```
 
 An HTTP `200` status code means the canary already exists for that commit.
@@ -93,13 +93,14 @@ When it finishes successfully, pull the SHA from the run and construct the versi
 
 ```bash
 RUN_SHA=$(gh run view "$RUN_ID" --repo storybookjs/storybook --json headSha --jq '.headSha')
-echo "storybook@https://pkg.pr.new/storybookjs/storybook/storybook@$RUN_SHA"
+SHORT_SHA="${RUN_SHA:0:7}"
+echo "storybook@https://pkg.pr.new/storybook@$SHORT_SHA"
 ```
 
 Optionally confirm the package is live:
 
 ```bash
-curl -I "https://pkg.pr.new/storybookjs/storybook/storybook@$RUN_SHA"
+curl -I "https://pkg.pr.new/storybook@$SHORT_SHA"
 ```
 
 ## Use the canary
@@ -107,13 +108,13 @@ curl -I "https://pkg.pr.new/storybookjs/storybook/storybook@$RUN_SHA"
 For a new project:
 
 ```bash
-npx --yes --allow-remote=all https://pkg.pr.new/storybookjs/storybook/create-storybook@<SHA>
+npx --yes --allow-remote=all https://pkg.pr.new/create-storybook@<SHA>
 ```
 
 For an existing project:
 
 ```bash
-npx --yes --allow-remote=all https://pkg.pr.new/storybookjs/storybook/storybook@<SHA> upgrade
+npx --yes --allow-remote=all https://pkg.pr.new/storybook@<SHA> upgrade
 ```
 
 ## Requirements

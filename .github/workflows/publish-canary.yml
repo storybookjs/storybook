@@ -83,6 +83,8 @@ jobs:
       - name: Publish
         id: publish
         working-directory: scripts
+        env:
+          COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           # --yarn uses `yarn pack`, which rewrites leftover workspace: ranges
           # (npm pack leaves them; npm install then fails with EUNSUPPORTEDPROTOCOL).
@@ -91,10 +93,16 @@ jobs:
             | xargs -0 -r yarn pkg-pr-new publish --yarn --no-template --comment=off --json=./pkg-pr-new-output.json
 
           test -s ./pkg-pr-new-output.json
+          jq -er '.packages[] | select(.name == "create-storybook") | .name' ./pkg-pr-new-output.json >/dev/null
+          jq -er '.packages[] | select(.name == "storybook") | .name' ./pkg-pr-new-output.json >/dev/null
+          jq -er '.packages[] | select(.name == "@storybook/react-vite") | .name' ./pkg-pr-new-output.json >/dev/null
 
-          create_storybook_package_url=$(jq -er '.packages[] | select(.name == "create-storybook") | .url' ./pkg-pr-new-output.json)
-          storybook_package_url=$(jq -er '.packages[] | select(.name == "storybook") | .url' ./pkg-pr-new-output.json)
-          react_vite_package_url=$(jq -er '.packages[] | select(.name == "@storybook/react-vite") | .url' ./pkg-pr-new-output.json)
+          # JSON URLs fall back to owner/repo + full SHA when any workspace
+          # package cannot use compact mode. Compact short URLs still resolve.
+          short_sha="${COMMIT_SHA:0:7}"
+          create_storybook_package_url="https://pkg.pr.new/create-storybook@${short_sha}"
+          storybook_package_url="https://pkg.pr.new/storybook@${short_sha}"
+          react_vite_package_url="https://pkg.pr.new/@storybook/react-vite@${short_sha}"
 
           {
             echo "create_storybook_package_url=$create_storybook_package_url"

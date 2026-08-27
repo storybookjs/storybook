@@ -1,24 +1,34 @@
-import type {
-  AnyToolsetDefinition,
-  AnyToolsetMethod,
-  ToolsetCtx,
-  ToolsetTelemetry,
-} from '../../shared/open-service/toolset-definition.ts';
-import {
-  toCliMethodName,
-  toMcpToolName,
-  type ToolsetMethodId,
-} from '../../shared/open-service/toolset-names.ts';
+import { versions } from 'storybook/internal/common';
+
+import type { ToolsetTelemetry } from '../../shared/open-service/toolset-definition.ts';
+import { parseToolsetMethodId, toCliMethodName } from '../../shared/open-service/toolset-names.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
-import { callMcpTool } from './mcp-client.ts';
-import { bootstrapToolsRuntime, type ToolsRuntime } from './bootstrap.ts';
+import {
+  attachGateReasonFromError,
+  createTools,
+  isAttachGateError,
+  toolsCommandDimensions,
+  wrapMethodTelemetry,
+  ToolsRuntimeError,
+  type CreateToolsDeps,
+  type CreateToolsOptions,
+  type Tools,
+  type ToolsAttachGateReason,
+  type ToolsClientInfo,
+  type ToolsHostKind,
+  type ToolsMode,
+} from './sdk/index.ts';
 import {
   discoverRunningInstance,
   type InstanceDiscovery,
   type ToolsTarget,
 } from './discover-instance.ts';
-import { renderMethodHelp, renderToolsHelp, renderToolsetHelp } from './help.ts';
-import { parseToolsTokens, type ToolsOutputFlags } from './tool-tokens.ts';
+import {
+  renderMethodHelpFromCatalog,
+  renderToolsHelpFromCatalog,
+  renderToolsetHelpFromCatalog,
+} from './help.ts';
+import { parseToolsTokens, type ParsedToolsTokens, type ToolsOutputFlags } from './tool-tokens.ts';
 
 /**
  * Why an invocation stopped before its handler executed, for the `tools-command` telemetry event.
@@ -27,20 +37,21 @@ export type ToolsInterceptReason =
   | 'invalid-arguments'
   | 'unknown-toolset'
   | 'unknown-tool'
-  | 'requires-dev-server'
-  | 'attach-unavailable';
+  | 'requires-dev-server';
 
 /**
  * Telemetry-facing classification of a run. `help` marks lookups, excluded from the
  * `tools-command` event so they cannot skew success rates. `failure` is a completed run whose
  * outcome was `ok: false` or an agent-facing error — the tool did its job and reported bad news,
- * so no crash report is sent. `error` carries unexpected failures for the sanitized error path.
+ * so no crash report is sent. `attach-gate` is a hard attach failure (`--attach`, or SDK
+ * `mode: 'attached'`). `error` carries unexpected failures for the sanitized error path.
  */
 export type ToolsCommandOutcome =
   | { kind: 'success' }
   | { kind: 'help' }
   | { kind: 'failure' }
   | { kind: 'intercept'; reason: ToolsInterceptReason }
+  | { kind: 'attach-gate'; reason: ToolsAttachGateReason }
   | { kind: 'error'; error: unknown };
 
 export type ToolsRunResult = {
@@ -49,6 +60,16 @@ export type ToolsRunResult = {
   outcome: ToolsCommandOutcome;
   /** From `-o`/`--output`; the caller writes `output` there instead of stdout. */
   outputPath?: string;
+  /** Requested attach mode, including `auto`. */
+  requestedMode: ToolsMode;
+  /** Resolved host mode for the `tools-command` event; `auto` only when no host was created. */
+  attachMode: ToolsMode;
+  /** Set once a host exists. */
+  host?: ToolsHostKind;
+  /** Set when `auto` could not attach and loaded the project configuration instead. */
+  fallbackNotice?: string;
+  /** Why `auto` loaded locally instead of attaching. */
+  fallbackReason?: ToolsAttachGateReason;
 };
 
 export type ToolsInvocation = {
@@ -59,39 +80,24 @@ export type ToolsInvocation = {
   target: ToolsTarget;
   /** Values of the same flags when given before the toolset name (commander-owned). */
   flags?: ToolsOutputFlags;
+  /** `true` from `--attach`, `false` from `--no-attach`, omitted for the attach-preferred default. */
+  attach?: boolean;
+};
+
+/** Identifies this CLI to the tools SDK that hosts its run. */
+const CLI_CLIENT_INFO: ToolsClientInfo = {
+  name: 'storybook-cli',
+  version: versions.storybook,
+  kind: 'cli',
 };
 
 /** Injectable dependencies for tests. */
 export type ToolsRunDeps = {
-  bootstrap?: typeof bootstrapToolsRuntime;
+  createTools?: (options?: CreateToolsOptions, deps?: CreateToolsDeps) => Promise<Tools>;
   discoverInstance?: typeof discoverRunningInstance;
-  /** Stub for {@link PROXY_VIA_MCP_METHODS}; goes away with the proxy in Milestone 5b. */
-  mcpToolCall?: typeof callMcpTool;
   /** Sink for the per-method toolset telemetry events; absent when telemetry is disabled. */
   methodTelemetry?: ToolsetTelemetry;
 };
-
-/**
- * The `requiresDevServer` methods that only need a live origin, which instance discovery can
- * provide without attaching to the dev server's state. The remaining trait-marked methods are
- * state-bound and cannot run from this CLI until connect mode (Milestone 5b) exists. The
- * distinction is deliberately invisible in the surface — one trait, one contract.
- */
-const ORIGIN_ONLY_METHODS = new Set(['stories.preview']);
-
-/**
- * State-bound methods this CLI forwards to the dev server's `@storybook/addon-mcp` endpoint
- * instead of running locally, so the whole tool surface works before connect mode exists.
- *
- * A stopgap until Milestone 5b: connect mode attaches to the dev server's own open-service state,
- * at which point these methods run through the normal handler path and this set, its dispatch
- * branch and the `mcpToolCall` dependency get deleted. `mcp-client.ts` goes with them once
- * `storybook ai` — its other consumer — is removed. Only methods `@storybook/addon-mcp` exposes
- * through the standard derived MCP name can be listed here.
- */
-const PROXY_VIA_MCP_METHODS: ReadonlySet<string> = new Set([
-  'review.create',
-] satisfies ToolsetMethodId[]);
 
 /** `find-by-component` -> `findByComponent`, accepting an already-camelCase spelling unchanged. */
 function toMethodKey(cliName: string): string {
@@ -102,63 +108,173 @@ function isAgentFacingError(error: unknown): error is Error {
   return error instanceof Error && (error as { agentFacing?: boolean }).agentFacing === true;
 }
 
+function isInvalidInputError(error: unknown): error is ToolsRuntimeError {
+  return error instanceof ToolsRuntimeError && error.data.reason === 'invalid-input';
+}
+
+function normalizeHelpFlag(invocation: ToolsInvocation): ToolsInvocation {
+  if (invocation.tool !== '--help' && invocation.tool !== '-h') {
+    return invocation;
+  }
+  return {
+    ...invocation,
+    tool: undefined,
+    flags: { ...invocation.flags, help: true },
+  };
+}
+
+function resolveToolsMode(
+  invocationAttach: boolean | undefined,
+  parsedAttach: boolean | undefined
+): ToolsMode {
+  const flag = parsedAttach ?? invocationAttach;
+  if (flag === true) {
+    return 'attached';
+  }
+  if (flag === false) {
+    return 'local';
+  }
+  return 'auto';
+}
+
 /**
  * Run one `storybook tools` invocation against the toolsets the target Storybook configuration
  * registers in this process. This is the whole command behind the commander wiring: dispatch,
- * help, argument parsing and validation, the requires-dev-server contract, and the mechanical
+ * help, argument parsing, the requires-dev-server contract, and the mechanical
  * outcome mapping (markdown to stdout, `--json` for data, `ok` drives the exit code).
  */
 export async function runToolsCommand(
   invocation: ToolsInvocation,
   deps: ToolsRunDeps = {}
 ): Promise<ToolsRunResult> {
-  const { toolset: toolsetName, tool: toolName, tokens, target, flags = {} } = invocation;
+  const normalized = normalizeHelpFlag(invocation);
+  const { tokens, target, flags = {}, attach } = normalized;
 
   const parsed = parseToolsTokens(tokens, flags);
+  const requestedMode = parsed.ok
+    ? resolveToolsMode(attach, parsed.attach)
+    : resolveToolsMode(attach, undefined);
   if (!parsed.ok) {
     return {
       exitCode: 1,
       output: parsed.error,
       outcome: { kind: 'intercept', reason: 'invalid-arguments' },
       outputPath: flags.output,
+      requestedMode,
+      attachMode: requestedMode,
     };
   }
 
   // `-o/--output` applies to whatever the run produced — help, intercepts, and tool results
   // alike — matching the ai CLI, where the output file always receives the printed text.
-  const result = (partial: Omit<ToolsRunResult, 'outputPath'>): ToolsRunResult => ({
+  const result = (
+    partial: Omit<ToolsRunResult, 'outputPath' | 'attachMode' | 'requestedMode'>
+  ): ToolsRunResult => ({
     ...partial,
     outputPath: parsed.output,
+    requestedMode,
+    attachMode: requestedMode,
   });
 
-  let runtime: ToolsRuntime;
+  let tools: Tools;
+  const create: (options?: CreateToolsOptions, deps?: CreateToolsDeps) => Promise<Tools> =
+    deps.createTools ?? createTools;
   try {
-    runtime = await (deps.bootstrap ?? bootstrapToolsRuntime)(target);
+    tools = await create({
+      cwd: target.cwd,
+      configDir: target.configDir,
+      mode: requestedMode,
+      clientInfo: CLI_CLIENT_INFO,
+    });
   } catch (error) {
+    if (isAttachGateError(error)) {
+      return result({
+        exitCode: 1,
+        output: error instanceof Error ? error.message : String(error),
+        outcome: { kind: 'attach-gate', reason: attachGateReasonFromError(error) },
+      });
+    }
     return result({
       exitCode: 1,
-      output: `Could not load the Storybook configuration for this project: ${
-        error instanceof Error ? error.message : String(error)
-      }`,
+      output: error instanceof Error ? error.message : String(error),
       outcome: { kind: 'error', error },
     });
   }
 
-  const ctx = buildContext(runtime, deps, undefined);
+  try {
+    const methodTelemetry =
+      tools.mode === 'local' && deps.methodTelemetry
+        ? wrapMethodTelemetry(
+            deps.methodTelemetry,
+            toolsCommandDimensions({
+              clientInfo: tools.clientInfo,
+              requestedMode: tools.requestedMode,
+              resolvedMode: tools.mode,
+              host: tools.host,
+              fallbackReason: tools.fallbackReason,
+            })
+          )
+        : deps.methodTelemetry;
+    const dispatchDeps: ToolsRunDeps = { ...deps, methodTelemetry };
+    const dispatched = await dispatchTools(
+      tools,
+      normalized,
+      parsed,
+      dispatchDeps,
+      requestedMode,
+      result
+    );
+    return {
+      ...dispatched,
+      requestedMode: tools.requestedMode,
+      attachMode: tools.mode,
+      host: tools.host,
+      fallbackNotice: tools.fallbackNotice,
+      fallbackReason: tools.fallbackReason,
+    };
+  } finally {
+    await tools.close();
+  }
+}
+
+async function dispatchTools(
+  tools: Tools,
+  invocation: ToolsInvocation,
+  parsed: Extract<ParsedToolsTokens, { ok: true }>,
+  deps: ToolsRunDeps,
+  requestedMode: ToolsMode,
+  result: (
+    partial: Omit<ToolsRunResult, 'outputPath' | 'attachMode' | 'requestedMode'>
+  ) => ToolsRunResult
+): Promise<ToolsRunResult> {
+  const { toolset: toolsetName, tool: toolName } = invocation;
+  let catalog;
+  try {
+    catalog = await tools.describe();
+  } catch (error) {
+    if (isAgentFacingError(error)) {
+      return result({ exitCode: 1, output: error.message, outcome: { kind: 'failure' } });
+    }
+    return result({
+      exitCode: 1,
+      output: error instanceof Error ? error.message : String(error),
+      outcome: { kind: 'error', error },
+    });
+  }
 
   if (!toolsetName) {
     return result({
       exitCode: 0,
-      output: renderToolsHelp(runtime.configDir, runtime.toolsets, ctx),
+      output: renderToolsHelpFromCatalog(catalog),
       outcome: { kind: 'help' },
     });
   }
 
-  const toolset = runtime.toolsets.find((candidate) => candidate.id === toolsetName);
-  if (!toolset) {
+  const entry = catalog.toolsets.find((candidate) => candidate.id === toolsetName);
+  if (!entry) {
     return result({
       exitCode: 1,
-      output: formatUnknownToolset(toolsetName, runtime),
+      output: formatUnknownToolsetFromCatalog(toolsetName, catalog),
       outcome: { kind: 'intercept', reason: 'unknown-toolset' },
     });
   }
@@ -166,103 +282,48 @@ export async function runToolsCommand(
   if (!toolName) {
     return result({
       exitCode: 0,
-      output: renderToolsetHelp(toolset, ctx),
+      output: renderToolsetHelpFromCatalog(entry),
       outcome: { kind: 'help' },
     });
   }
 
-  const methodKey = Object.keys(toolset.methods).find(
-    (key) => key === toMethodKey(toolName) || toCliMethodName(key) === toolName
-  );
-  const method: AnyToolsetMethod | undefined = methodKey ? toolset.methods[methodKey] : undefined;
-  if (!methodKey || !method) {
+  const method = entry.methods.find((candidate) => {
+    const { methodName } = parseToolsetMethodId(candidate.ref);
+    return methodName === toMethodKey(toolName) || toCliMethodName(methodName) === toolName;
+  });
+  if (!method) {
     return result({
       exitCode: 1,
-      output: formatUnknownTool(toolName, toolset),
+      output: formatUnknownToolFromCatalog(toolName, entry),
       outcome: { kind: 'intercept', reason: 'unknown-tool' },
     });
   }
-  const commandPath = `npx storybook tools ${toolset.id} ${toCliMethodName(methodKey)}`;
-  /** The method the toolset actually resolved, which the dev-server contract dispatches on. */
-  const resolvedRef = `${toolset.id}.${methodKey}`;
 
   if (parsed.help) {
     return result({
       exitCode: 0,
-      output: renderMethodHelp(toolset, methodKey, method, ctx),
+      output: renderMethodHelpFromCatalog(entry, method),
       outcome: { kind: 'help' },
     });
   }
 
-  let origin: string | undefined;
-  let proxyTarget: StorybookInstanceRecord | undefined;
-  if (method.requiresDevServer) {
-    const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(target);
-    if (!discovery.currentRecord) {
-      return result({
-        exitCode: 1,
-        output: formatRequiresDevServer(commandPath, discovery),
-        outcome: { kind: 'intercept', reason: 'requires-dev-server' },
-      });
-    }
-    if (PROXY_VIA_MCP_METHODS.has(resolvedRef)) {
-      if (!discovery.currentRecord.mcp.endpoint) {
-        return result({
-          exitCode: 1,
-          output: formatProxyEndpointMissing(commandPath, discovery.currentRecord),
-          outcome: { kind: 'intercept', reason: 'attach-unavailable' },
-        });
-      }
-      proxyTarget = discovery.currentRecord;
-      // No core method reaches this arm today — it guards trait-marked methods from toolsets
-      // outside core's own set, which have no MCP tool name to proxy to.
-    } else if (!ORIGIN_ONLY_METHODS.has(resolvedRef)) {
-      return result({
-        exitCode: 1,
-        output: formatAttachUnavailable(commandPath, discovery.currentRecord),
-        outcome: { kind: 'intercept', reason: 'attach-unavailable' },
-      });
-    }
-    origin = discovery.currentRecord.url;
-  }
+  const { methodName } = parseToolsetMethodId(method.ref);
+  const commandPath = `npx storybook tools ${entry.id} ${toCliMethodName(methodName)}`;
 
-  const validation = await method.input['~standard'].validate(parsed.args);
-  if (validation.issues) {
+  if (tools.mode === 'local' && method.requiresDevServer) {
+    const discovery = await (deps.discoverInstance ?? discoverRunningInstance)(invocation.target);
     return result({
       exitCode: 1,
-      output: formatValidationIssues(commandPath, validation.issues),
-      outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+      output: formatRequiresDevServer(commandPath, discovery, requestedMode),
+      outcome: { kind: 'intercept', reason: 'requires-dev-server' },
     });
   }
 
   try {
-    if (proxyTarget) {
-      // The dev server runs the handler, so its telemetry and side effects stay in the process
-      // that owns them; this side only unwraps the reply the same way the MCP adapter wrapped it.
-      const reply = await (deps.mcpToolCall ?? callMcpTool)(proxyTarget, {
-        name: toMcpToolName(resolvedRef as ToolsetMethodId),
-        arguments: validation.value as Record<string, unknown>,
-      });
-      const text = (reply.content ?? [])
-        .filter(
-          (item): item is { type: 'text'; text: string } => item.type === 'text' && !!item.text
-        )
-        .map((item) => item.text)
-        .join('\n\n');
-      return result({
-        exitCode: reply.isError ? 1 : 0,
-        // `--json` prints whatever structured data the reply carries; a reply without it (an
-        // error from a method that declares no failure data) falls back to the text rather than
-        // inventing a shape, and the exit code still tells a script the call failed.
-        output:
-          parsed.json && reply.structuredContent !== undefined
-            ? JSON.stringify(reply.structuredContent, null, 2)
-            : text,
-        outcome: { kind: reply.isError ? 'failure' : 'success' },
-      });
-    }
-
-    const outcome = await method.handler(validation.value, buildContext(runtime, deps, origin));
+    const outcome = await tools.call(method.ref, parsed.args, {
+      ...(tools.storybook.url ? { origin: tools.storybook.url } : {}),
+      ...(deps.methodTelemetry ? { telemetry: deps.methodTelemetry } : {}),
+    });
     const output = parsed.json
       ? JSON.stringify(outcome.data, null, 2)
       : joinMarkdown(outcome.markdown);
@@ -272,8 +333,13 @@ export async function runToolsCommand(
       outcome: { kind: outcome.ok ? 'success' : 'failure' },
     });
   } catch (error) {
-    // An agent-facing error is a tool speaking to the agent and naming its own recovery — surface
-    // it verbatim as a result, not as a crash.
+    if (isInvalidInputError(error)) {
+      return result({
+        exitCode: 1,
+        output: formatValidationIssues(commandPath, error.data.issues ?? []),
+        outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+      });
+    }
     if (isAgentFacingError(error)) {
       return result({ exitCode: 1, output: error.message, outcome: { kind: 'failure' } });
     }
@@ -285,51 +351,54 @@ export async function runToolsCommand(
   }
 }
 
-function buildContext(
-  runtime: ToolsRuntime,
-  deps: ToolsRunDeps,
-  origin: string | undefined
-): ToolsetCtx {
-  const { methodTelemetry } = deps;
-  return {
-    transport: 'cli',
-    ...(origin ? { origin } : {}),
-    getService: runtime.getService,
-    ...(methodTelemetry ? { telemetry: methodTelemetry } : {}),
-  };
-}
-
-function joinMarkdown(markdown: string | string[]): string {
-  return Array.isArray(markdown) ? markdown.join('\n\n') : markdown;
-}
-
-function formatUnknownToolset(toolsetName: string, runtime: ToolsRuntime): string {
-  const available = runtime.toolsets.map((toolset) => `- \`${toolset.id}\``).join('\n');
-  return `Unknown toolset \`${toolsetName}\`. The Storybook configuration at ${runtime.configDir} provides:
+function formatUnknownToolsetFromCatalog(
+  toolsetName: string,
+  catalog: { configDir: string; toolsets: { id: string }[] }
+): string {
+  const available = catalog.toolsets.map((toolset) => `- \`${toolset.id}\``).join('\n');
+  return `Unknown toolset \`${toolsetName}\`. The Storybook configuration at ${catalog.configDir} provides:
 
 ${available}
 
 Run \`npx storybook tools --help\` for every tool.`;
 }
 
-function formatUnknownTool(toolName: string, toolset: AnyToolsetDefinition): string {
-  const available = Object.keys(toolset.methods)
-    .map((key) => `- \`${toCliMethodName(key)}\``)
+function formatUnknownToolFromCatalog(
+  toolName: string,
+  entry: { id: string; methods: { ref: string }[] }
+): string {
+  const available = entry.methods
+    .map((method) => `- \`${toCliMethodName(parseToolsetMethodId(method.ref).methodName)}\``)
     .join('\n');
-  return `Unknown tool \`${toolName}\`. The \`${toolset.id}\` toolset provides:
+  return `Unknown tool \`${toolName}\`. The \`${entry.id}\` toolset provides:
 
 ${available}
 
-Run \`npx storybook tools ${toolset.id}\` for their descriptions.`;
+Run \`npx storybook tools ${entry.id}\` for their descriptions.`;
 }
 
-function formatRequiresDevServer(commandPath: string, discovery: InstanceDiscovery): string {
+function joinMarkdown(markdown: string | string[]): string {
+  return Array.isArray(markdown) ? markdown.join('\n\n') : markdown;
+}
+
+function formatRequiresDevServer(
+  commandPath: string,
+  discovery: InstanceDiscovery,
+  requestedMode: ToolsMode
+): string {
+  if (discovery.currentRecord && requestedMode === 'local') {
+    return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` cannot run from a local tools host. Re-run without \`--no-attach\` to attach to that instance.`;
+  }
+  if (discovery.currentRecord) {
+    return `Found your Storybook running at ${discovery.currentRecord.url}, but \`${commandPath}\` could not attach to it. Start or restart that Storybook, then re-run this command.`;
+  }
+
   const lines = [
     `\`${commandPath}\` requires a running Storybook dev server, and none was found for this project. Start it first (for example \`npm run storybook\`), then re-run this command.`,
   ];
   if (discovery.records.length > 0) {
     const candidates = discovery.records
-      .map((record) => `- ${record.url} (cwd \`${record.cwd}\`)`)
+      .map((record: StorybookInstanceRecord) => `- ${record.url} (cwd \`${record.cwd}\`)`)
       .join('\n');
     lines.push(
       '',
@@ -338,14 +407,6 @@ function formatRequiresDevServer(commandPath: string, discovery: InstanceDiscove
     );
   }
   return lines.join('\n');
-}
-
-function formatAttachUnavailable(commandPath: string, record: StorybookInstanceRecord): string {
-  return `Found your Storybook running at ${record.url}, but \`${commandPath}\` cannot attach to a running Storybook yet — it becomes available in an upcoming release.`;
-}
-
-function formatProxyEndpointMissing(commandPath: string, record: StorybookInstanceRecord): string {
-  return `Found your Storybook running at ${record.url}, but \`${commandPath}\` runs inside that Storybook and it is not serving the endpoint this command needs. Add \`@storybook/addon-mcp\` to the \`addons\` array in your Storybook configuration, restart the dev server, then re-run this command.`;
 }
 
 type ValidationIssues = ReadonlyArray<{

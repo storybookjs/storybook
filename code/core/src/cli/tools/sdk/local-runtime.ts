@@ -4,6 +4,8 @@ import {
   ChangeDetectionService,
   experimental_getStatusStore,
   experimental_loadStorybook,
+  experimental_resetChangeDetectionReadiness,
+  experimental_resetServicesPresetOnce,
   experimental_setChangeDetectionHost,
   getService,
   prepareHeadlessUniversalStores,
@@ -11,18 +13,24 @@ import {
 } from 'storybook/internal/core-server';
 import { CHANGE_DETECTION_STATUS_TYPE_ID, type Options } from 'storybook/internal/types';
 
+import { clearRegistry } from '../../../shared/open-service/service-registry.ts';
 import type {
   AnyToolsetDefinition,
   ToolsetGetService,
-} from '../../shared/open-service/toolset-definition.ts';
-import { getRegisteredToolsets } from '../../shared/open-service/toolset-registry.ts';
-import { resolveStorybookConfigDir } from './config-dir.ts';
-import type { ToolsTarget } from './discover-instance.ts';
+} from '../../../shared/open-service/toolset-definition.ts';
+import {
+  clearToolsetRegistry,
+  getRegisteredToolsets,
+} from '../../../shared/open-service/toolset-registry.ts';
+import { resolveStorybookConfigDir } from '../config-dir.ts';
+import type { ToolsTarget } from '../discover-instance.ts';
+import { ToolsRuntimeError } from './errors.ts';
 
 export type ToolsRuntime = {
   configDir: string;
   toolsets: AnyToolsetDefinition[];
   getService: ToolsetGetService;
+  close(): Promise<void>;
 };
 
 /**
@@ -37,21 +45,20 @@ export type ToolsRuntime = {
  * `getChangeDetectionReadiness` call. Help, docs, and test-run never touch either path. A missing
  * adapter settles the graph as unavailable instead of making unrelated tools fail.
  *
- * This changes `process.cwd()` to the targeted Storybook project for the rest of the one-shot CLI
- * process. Callers embedding this runtime must capture their launch directory before bootstrapping
- * if they still need it.
+ * Requires `process.cwd()` to already be the target project. The `services` preset samples it for
+ * file mapping, the same way the dev server does. `createTools` starts a child host when they
+ * differ, instead of changing this process.
  */
 export async function bootstrapToolsRuntime(
   target: ToolsTarget,
   deps: { setChangeDetectionHost?: typeof experimental_setChangeDetectionHost } = {}
 ): Promise<ToolsRuntime> {
   const cwd = resolve(target.cwd ?? process.cwd());
-  // Everything the `services` hooks register keys its file mapping off `process.cwd()` — the
-  // module-graph working dir, the git diff provider, docgen — exactly as in the dev server, whose
-  // process runs from the project. A one-shot CLI adopts the target directory so `--cwd` aligns
-  // every consumer at once, instead of threading a working dir through each of them.
   if (cwd !== process.cwd()) {
-    process.chdir(cwd);
+    throw new ToolsRuntimeError({
+      reason: 'mode-unavailable',
+      message: `Local tools bootstrap requires process.cwd() to be the target project (${cwd}), not ${process.cwd()}.`,
+    });
   }
   const configDir = resolveStorybookConfigDir({ cwd, configDir: target.configDir });
 
@@ -65,14 +72,27 @@ export async function bootstrapToolsRuntime(
 
   const options = await experimental_loadStorybook({ configDir, channel });
 
-  (deps.setChangeDetectionHost ?? experimental_setChangeDetectionHost)(() =>
-    startChangeDetectionInProcess(options)
-  );
+  const setChangeDetectionHost = deps.setChangeDetectionHost ?? experimental_setChangeDetectionHost;
+  setChangeDetectionHost(() => startChangeDetectionInProcess(options));
+
+  let closed = false;
+  const close = async () => {
+    if (closed) {
+      return;
+    }
+    closed = true;
+    clearRegistry();
+    clearToolsetRegistry();
+    experimental_resetServicesPresetOnce();
+    setChangeDetectionHost(undefined);
+    experimental_resetChangeDetectionReadiness();
+  };
 
   return {
     configDir,
     toolsets: getRegisteredToolsets(),
     getService: (serviceId, serviceOptions) => getService(serviceId as never, serviceOptions),
+    close,
   };
 }
 

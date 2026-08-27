@@ -72,7 +72,7 @@ Internal tests and implementation code may import from the individual modules di
 - [errors.ts](./errors.ts): validation metadata formatting helpers
 - [service-runtime.ts](./service-runtime.ts): signal-backed runtime construction (state, commands, static loader) that assembles one service instance
 - [query-runtime.ts](./query-runtime.ts): the query surface (`.get()` / `.loaded()` / `.subscribe()`), the in-flight load registry, the `.loaded()` drain logic, and subscriptions
-- [service-registry.ts](./service-registry.ts): the single `registerService`, the realm-global registry, and the shared registry API passed into runtimes — used identically by server, manager, and preview
+- [service-registry.ts](./service-registry.ts): the single `registerService`, the realm-global registry, the runtime-wide delegated-mode flag, and the shared registry API passed into runtimes — used identically by server, manager, and preview
 - [service-channel.ts](./service-channel.ts): `ServiceChannel` interface, event name constants, and payload types
 - [service-error-serialization.ts](./service-error-serialization.ts): transport-safe (de)serialization of thrown errors and their `cause` chains, used by remote command replies
 - [channel-slot.ts](../../channels/channel-slot.ts): `getChannel` / `setChannel` — the shared channel install surface
@@ -131,11 +131,11 @@ An error whose message speaks to the agent and names its own recovery declares `
 (a `StorybookError` constructor prop); adapters surface such errors verbatim by reading that
 property — never by keeping a class list, which misclassifies across bundle copies.
 
-`ctx` is `{ transport: 'cli' | 'mcp', origin?, getService, telemetry? }`. `origin` is the complete
+`ctx` is `{ transport: 'cli' | 'mcp' | 'sdk', origin?, getService, telemetry? }`. `origin` is the complete
 Storybook UI base URL, including a deployment subpath; the MCP adapter derives it from the request.
 Descriptions that name a sibling tool must render it through `getToolName(ctx)` rather than hardcoding
-either spelling, so the same sentence reads as the derived MCP tool name or the CLI command for the
-active transport. MCP names are derived from the toolset id and method key
+a spelling, so the same sentence reads as the derived MCP tool name, the CLI command, or the SDK
+dotted reference for the active transport. MCP names are derived from the toolset id and method key
 (`stories.findByComponent` → `stories-find-by-component`); they are not maintained in a separate
 compatibility map.
 Facts that are fixed at boot (whether review or a11y is enabled) are factory options on the
@@ -163,16 +163,22 @@ and provider accesses feed the same definition; composition combines accesses ra
 second engine. `storybook/internal/toolsets-docs` is a portable entry consumed by both MCP packages,
 so its bundled declaration must remain flat and import only its declared allowlist.
 
-The `storybook tools` CLI loads the target Storybook configuration in its own process and derives
-dispatch, help, validation, and output from the registered toolsets. Bootstrap always hosts the
-module graph so addon-owned toolsets can query it without appearing in a core allowlist; an
-unsupported builder settles the graph as unavailable without failing unrelated tools. Bootstrap
-also changes `process.cwd()` to the target project for the rest of the one-shot process. Embedders
-that need the launch directory must capture it first.
+The `storybook tools` CLI is a slim shell over `storybook/internal/tools`. Default mode is `auto`:
+attach to a matching running instance as a delegated leaf, and fall back to a local host when
+`createTools` cannot attach. `--attach` requires attachment (gate failures are errors).
+`--no-attach` forces local. Toolset handlers run in the SDK process, and attached service commands
+execute on the instance.
 
-Methods marked `requiresDevServer` use the runtime instance registry. `stories.preview` needs only
-the recorded origin. Until connect mode exists, `review.create` is the one temporary exception
-forwarded through the running Storybook's MCP endpoint; keep that proxy branch self-contained.
+Local bootstrap still hosts the module graph so addon-owned toolsets can query it without appearing
+in a core allowlist; an unsupported builder settles the graph as unavailable without failing
+unrelated tools. When this process is already in the project, local mode loads in-process. When
+`--cwd` points elsewhere, it starts a child host in that directory instead of changing
+`process.cwd()`. Attached mode never `chdir`s the host; a cwd or version mismatch spawns a
+project-local child host instead.
+
+Methods marked `requiresDevServer` intercept only in **local** mode (start-your-Storybook
+guidance). In attached mode they run caller-side. `stories.preview` reads the recorded origin from
+the instance record. See [cli/tools/README.md](../../cli/tools/README.md).
 
 ### Query
 
@@ -213,8 +219,9 @@ Query handlers do **not** receive `commands` or `setState`. Mutations belong in 
 
 The runtime guards re-firing: a superseded run (its dependencies changed again before it finished) cannot overwrite a newer run's state, and changes batched together produce a single re-load.
 
-**Keep `load` bodies as small as possible.** Almost always, `load` should be a one-liner that calls a command — the real work (input resolution, side effects, validation, state mutation) belongs in the command. This pays off for three reasons:
+**A `load` body triggers commands; it never computes.** Almost always, `load` is a one-liner that calls a command — the real work (input resolution, side effects, validation, state mutation) belongs in the command. `core/docgen` is the canonical shape: its `docgen` load is `await ctx.self.commands.extractDocgen(input)` and nothing else. This pays off for four reasons:
 
+- **Delegation.** A command is the unit that can cross the channel; a load body is not. When a runtime runs in [delegated mode](#delegated-mode), a thin load stays correct unchanged — the load runs locally, the command executes on the peer, and the state comes back as a patch. Work done inline in the load would instead run in the wrong runtime, where the server context it needs does not exist. Thin loads are what make delegation transitive: every query that only triggers commands delegates for free.
 - **Reusability.** Anyone can call the command directly (other services, tests, integrations) without going through the query's load path. Logic stuck inside a load is unreachable from outside the drain.
 - **Testability.** Commands have a typed input/output contract you can assert against. Load bodies don't return anything useful.
 - **Clear contract.** A query says "read state". A command says "do work that produces state". A bloated load blurs the line and makes the service harder to reason about.
@@ -709,8 +716,10 @@ Every registered runtime plays **both** roles at once, decided per command:
   validates input, mutates state, and broadcasts the post-mutation snapshot through the normal command
   wrappers so every peer converges — then emits `services:command-result` or `services:command-error`.
 
-A runtime never requests a command it implements (it runs that locally), so a responder never answers
-its own invoke echo: `onInvoke` only acts on commands in its `implementedCommandNames` set.
+Outside [delegated mode](#delegated-mode), a runtime never requests a command it implements (it runs
+that locally), so a responder never answers its own invoke echo: `onInvoke` only acts on commands in
+its `implementedCommandNames` set. A delegated runtime does request commands it implements — that is
+how dispatch reaches the Storybook it attached to.
 
 ### Events
 
@@ -800,6 +809,39 @@ rejects with `OpenServiceRemoteCommandUnhandledError` — the common case in a s
 query's `load` calls a server-only command. Once a peer acknowledges, the requester waits for
 `services:command-result` or `services:command-error` as before. Unregistering the service still
 rejects outstanding calls with `OpenServiceRemoteCommandDisconnectedError`.
+
+### Delegated mode
+
+A runtime that attaches to an already-running Storybook (rather than starting its own) must not
+dispatch commands locally: the Storybook it attached to owns the story index, the module graph, and
+the providers, so it is the implementer for every command. Loads, toolset methods, and query handlers
+still run in this process. `setDelegatedMode(true)` in [service-registry.ts](./service-registry.ts)
+puts command dispatch in that role; `isDelegatedMode()` reads it and the default is `false`. The flag
+lives on the same realm-global inventory as the service map, so every import path in one realm sees
+the same value.
+
+What changes is **dispatch**, not registration:
+
+- Every command call routes over the channel (`services:command-invoke` → ack → result), including
+  commands this runtime implements locally. Local implementations become inert for dispatch.
+- Incoming `services:command-invoke` is ignored. This runtime is the caller, so answering its own
+  request would ack and execute locally — exactly what delegation exists to prevent.
+- Load bodies follow the same route, which is why [thin loads](#load) matter: the load runs locally,
+  the command runs on the peer, and the state returns as a patch.
+- Implementations stay registered and inspectable. Handlers are **not** stripped at registration, and
+  there is no `delegated` field on per-service `ServiceRegistrationOptions` — service authors write
+  one definition that works in both roles.
+
+The flag is runtime-wide and read at registration time, like the installed channel, so set it once at
+the entry boundary before the first `registerService` call. `clearRegistry()` resets it.
+
+When nothing acknowledges within `REMOTE_COMMAND_ACK_TIMEOUT_MS`, the resulting
+`OpenServiceRemoteCommandUnhandledError` carries delegation-specific guidance instead of "not
+implemented in any connected runtime": the attached Storybook was started with a different
+configuration, so it must be restarted for that command's handler to exist.
+
+The `storybook tools` SDK is the attached caller: it sets this flag, then loads the instance
+config. See [cli/tools/architecture.md](../../cli/tools/architecture.md).
 
 ## React Hooks
 
@@ -914,7 +956,7 @@ const ready = await exampleService.queries.value.loaded({ entryId: 'a' });
 - State must be a plain object — no primitives, `null`, or top-level arrays (see [State must be an object](#state-must-be-an-object)). Wrap collections in a field: `{ items: [] }`.
 - Always declare both `input` and `output` schemas on every query and command.
 - Use `load` for read-side warming. The hook is async and must mutate via commands.
-- **Keep `load` bodies minimal — ideally one line that calls a command.** Push input resolution, side effects, and state mutation into the command itself so it stays callable, testable, and reusable on its own.
+- **Keep `load` bodies minimal — a load triggers commands, it never computes.** Push input resolution, side effects, and state mutation into the command itself so it stays callable, testable, reusable, and delegable to another runtime.
 - Query handlers are strict readers: sync, no commands, no `setState`.
 - Use commands for all state mutation.
 - Manager addons import from `storybook/manager-api`; preview code imports from `storybook/preview-api`. Server presets use [server.ts](./server.ts). Import modules in this directory directly only from tests or implementation code.
@@ -928,7 +970,7 @@ const ready = await exampleService.queries.value.loaded({ entryId: 'a' });
 - Validation behavior belongs in [service-validation.test.ts](./service-validation.test.ts)
 - Server registration and static snapshot behavior belong in [server.test.ts](./server.test.ts)
 - Leaf channel sync (`relay: false`, preview path) belongs in [service-transport-leaf.test.ts](./service-transport-leaf.test.ts); hub channel sync (dev server) in [service-registration-sync.test.ts](./service-registration-sync.test.ts)
-- Remote command execution (requester/responder protocol) belongs in [service-command-transport.test.ts](./service-command-transport.test.ts); error (de)serialization in [service-error-serialization.test.ts](./service-error-serialization.test.ts)
+- Remote command execution (requester/responder protocol) belongs in [service-command-transport.test.ts](./service-command-transport.test.ts); delegated dispatch in [service-delegated-mode.test.ts](./service-delegated-mode.test.ts); error (de)serialization in [service-error-serialization.test.ts](./service-error-serialization.test.ts)
 - React hook behavior belongs in [use-service-query.test.tsx](./use-service-query.test.tsx) and [use-service-command.test.tsx](./use-service-command.test.tsx)
 - Reusable scenario definitions belong in [fixtures.ts](./fixtures.ts)
 
@@ -944,7 +986,8 @@ React hook tests must include `// @vitest-environment happy-dom` as the first li
 - If you need to change validation wording, start in [errors.ts](./errors.ts).
 - If you need to change schema handling, start in [service-validation.ts](./service-validation.ts).
 - If you need to change service authoring ergonomics, start in [service-definition.ts](./service-definition.ts) and [types.ts](./types.ts).
-- If you need to change channel transport, relay behavior, or remote command execution, start in [service-transport.ts](./service-transport.ts).
+- If you need to change channel transport, relay behavior, remote command execution, or delegated dispatch, start in [service-transport.ts](./service-transport.ts) — the delegated-mode flag itself lives in [service-registry.ts](./service-registry.ts).
+- If you need to change how the tools CLI or SDK attaches, start in [cli/tools/README.md](../../cli/tools/README.md) and [cli/tools/architecture.md](../../cli/tools/architecture.md).
 - If you need to change how thrown errors cross the channel for remote commands, start in [service-error-serialization.ts](./service-error-serialization.ts).
 - If you need to change last-write-wins ordering or the structural merge, start in [service-sync.ts](./service-sync.ts).
 - If you need to change the channel protocol (event names, payloads, channel reader), start in [service-channel.ts](./service-channel.ts).

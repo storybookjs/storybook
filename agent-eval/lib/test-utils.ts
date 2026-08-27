@@ -14,10 +14,11 @@ import {
   normalizeStorybookWorkflowName,
   parseJson,
   parseStorybookWorkflowShellCommands,
+  workflowCallMatchesName,
 } from './shell-parse.ts';
 import type { StorybookWorkflowCall } from './shell-parse.ts';
 
-export { isRecord, parseJson, parseStorybookWorkflowShellCommands };
+export { isRecord, parseJson, parseStorybookWorkflowShellCommands, workflowCallMatchesName };
 export type { StorybookWorkflowCall };
 
 const AGENT_CONTEXT_PATH = '__agent_eval__/agent.json';
@@ -119,7 +120,7 @@ export function getStorybookWorkflowCalls(): StorybookWorkflowCall[] {
 }
 
 export function getWorkflowCalls(name: string): StorybookWorkflowCall[] {
-  return getStorybookWorkflowCalls().filter((call) => call.name === name);
+  return getStorybookWorkflowCalls().filter((call) => workflowCallMatchesName(call, name));
 }
 
 export function expectWorkflowCalls(expectedNames: string[]): void {
@@ -550,10 +551,10 @@ export type WorkflowToolResult = {
 
 // The validation workflow the instructions demand: run test-run after
 // each component or story change, and fix failing tests before reporting
-// success. The section headers come from the test-run result
-// formatter in packages/addon-mcp (## Passing Stories / ## Failing Stories /
-// ## Unhandled Errors) and appear verbatim in the MCP tool result and in the
-// `storybook ai test-run` CLI output.
+// success. The section headers come from the shared test-run result formatter
+// (## Passing Stories / ## Failing Stories / ## Unhandled Errors) and appear
+// verbatim in the MCP tool result and — since storybookjs/storybook#36029 —
+// byte-identically in the `storybook tools test run` CLI output.
 //
 // `covering` pins the final green run to the change under test: at least one
 // of the given substrings must appear in its story ids. A stricter
@@ -712,7 +713,9 @@ function isWorkflowToolUse(block: Record<string, unknown>, workflowName: string)
     return false;
   }
 
-  return parseStorybookWorkflowShellCommands([command]).some((call) => call.name === workflowName);
+  return parseStorybookWorkflowShellCommands([command]).some((call) =>
+    workflowCallMatchesName(call, workflowName)
+  );
 }
 
 // Codex raw transcripts report completed MCP tool calls and shell commands as
@@ -743,7 +746,9 @@ function collectCodexWorkflowToolResult(
   if (
     item.type === 'command_execution' &&
     typeof item.command === 'string' &&
-    parseStorybookWorkflowShellCommands([item.command]).some((call) => call.name === workflowName)
+    parseStorybookWorkflowShellCommands([item.command]).some((call) =>
+      workflowCallMatchesName(call, workflowName)
+    )
   ) {
     results.push({
       output: typeof item.aggregated_output === 'string' ? item.aggregated_output : '',

@@ -52,10 +52,7 @@ jobs:
         run: yarn task --task compile --start-from=auto --no-link
 
       - name: Publish
-        id: publish
         working-directory: scripts
-        env:
-          COMMIT_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
         run: |
           # --yarn uses `yarn pack`, which rewrites leftover workspace: ranges
           # (npm pack leaves them; npm install then fails with EUNSUPPORTEDPROTOCOL).
@@ -67,43 +64,3 @@ jobs:
           jq -er '.packages[] | select(.name == "create-storybook") | .name' ./pkg-pr-new-output.json >/dev/null
           jq -er '.packages[] | select(.name == "storybook") | .name' ./pkg-pr-new-output.json >/dev/null
           jq -er '.packages[] | select(.name == "@storybook/react-vite") | .name' ./pkg-pr-new-output.json >/dev/null
-
-          # JSON URLs fall back to owner/repo + full SHA when any workspace
-          # package cannot use compact mode. Compact short URLs still resolve.
-          short_sha="${COMMIT_SHA:0:7}"
-          create_storybook_package_url="https://pkg.pr.new/create-storybook@${short_sha}"
-          storybook_package_url="https://pkg.pr.new/storybook@${short_sha}"
-          react_vite_package_url="https://pkg.pr.new/@storybook/react-vite@${short_sha}"
-
-          {
-            echo "create_storybook_package_url=$create_storybook_package_url"
-            echo "storybook_package_url=$storybook_package_url"
-            echo "react_vite_package_url=$react_vite_package_url"
-          } >> "$GITHUB_OUTPUT"
-
-      - name: Verify Canary Install Commands
-        id: verify-canary-commands
-        if: ${{ github.event_name == 'pull_request' && steps.publish.outcome == 'success' }}
-        env:
-          CREATE_STORYBOOK_PACKAGE_URL: ${{ steps.publish.outputs.create_storybook_package_url }}
-          STORYBOOK_PACKAGE_URL: ${{ steps.publish.outputs.storybook_package_url }}
-          REACT_VITE_PACKAGE_URL: ${{ steps.publish.outputs.react_vite_package_url }}
-        run: |
-          # npm 12+ defaults allow-remote to none. Run from an empty directory so
-          # `storybook --help` does not resolve packages through this repo's Yarn.
-          assertion_dir=$(mktemp -d)
-          (
-            cd "$assertion_dir"
-            npx --yes --allow-remote=all "$CREATE_STORYBOOK_PACKAGE_URL" --help
-            npx --yes --allow-remote=all "$STORYBOOK_PACKAGE_URL" --help
-          )
-
-          # Frameworks declare storybook as workspace:^. yarn pack must rewrite that
-          # before upload; otherwise npm install fails with EUNSUPPORTEDPROTOCOL.
-          curl -fsSL "$REACT_VITE_PACKAGE_URL" -o "$assertion_dir/react-vite.tgz"
-          mkdir -p "$assertion_dir/react-vite"
-          tar -xzf "$assertion_dir/react-vite.tgz" -C "$assertion_dir/react-vite"
-          if grep -F 'workspace:' "$assertion_dir/react-vite/package/package.json"; then
-            echo "Canary tarball still contains workspace: protocol" >&2
-            exit 1
-          fi

@@ -31,6 +31,7 @@
     },
     "type": {
       "name": "other",
+      "required": true,
       "value": "empty-enum",
     },
   },
@@ -49,6 +50,7 @@
     },
     "type": {
       "name": "function",
+      "required": true,
     },
   },
   "label": {

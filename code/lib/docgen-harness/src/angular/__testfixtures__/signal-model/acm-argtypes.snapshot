@@ -14,6 +14,7 @@
     },
     "type": {
       "name": "boolean",
+      "required": true,
     },
   },
   "checkedChange": {

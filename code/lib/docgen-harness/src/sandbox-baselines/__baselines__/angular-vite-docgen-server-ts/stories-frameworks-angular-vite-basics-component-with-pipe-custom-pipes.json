@@ -12,6 +12,7 @@
       },
       "type": {
         "name": "other",
+        "required": true,
         "value": "empty-enum"
       }
     }

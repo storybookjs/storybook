@@ -26,7 +26,9 @@ const inputTyped = (type: string) => {
   return extractArgTypesFromData(component, { metadataJson: undefined, propsTable: 'all' }).value;
 };
 
-const FUNCTION_CONTROL = { name: 'function' };
+// `inputTyped` declares an input with no default, so every control it produces is also a required
+// one.
+const FUNCTION_CONTROL = { name: 'function', required: true };
 
 describe('function-typed inputs', () => {
   it('keeps the signature and the function control for a plain arrow type', () => {
@@ -122,13 +124,13 @@ describe('primitive-union inputs', () => {
 
   it('prefers number over string for a declared primitive union', () => {
     const arg = inputTyped('string | number');
-    expect(arg.type).toEqual({ name: 'number' });
+    expect(arg.type).toEqual({ name: 'number', required: true });
     expect(arg.table?.type?.summary).toBe('string | number');
   });
 
   it('leaves a union that mixes a primitive with a named type on the catch-all', () => {
     const arg = inputTyped('string | Thing');
-    expect(arg.type).toEqual({ name: 'other', value: 'empty-enum' });
+    expect(arg.type).toEqual({ name: 'other', value: 'empty-enum', required: true });
   });
 });
 
@@ -368,5 +370,70 @@ describe('authored default tags', () => {
         @Input() value = 'vertical';
       `)
     ).toBe('horizontal');
+  });
+});
+
+const argTypesOf = (classBody: string) => {
+  const component = componentIn(`
+    import { Component, Input, input, output } from '@angular/core';
+
+    @Component({ selector: 'sb-probe', template: '' })
+    export class ProbeComponent {
+      ${classBody}
+    }
+  `);
+  // `table.type.required` is Angular's own addition to the argType shape, which `InputType` does
+  // not declare, so the section it lives in is read structurally.
+  return extractArgTypesFromData(component, {
+    metadataJson: undefined,
+    propsTable: 'all',
+  }) as Record<string, { type?: unknown; table?: { type?: { required?: boolean } } }>;
+};
+
+/**
+ * `ArgRow` reads `row.type.required`, so the flag in `table.type.required` alone renders no badge.
+ * Both halves are asserted together: they lived apart long enough for the props table to show no
+ * required input at all.
+ */
+describe('the required badge', () => {
+  it('marks a signal input declared with `input.required`', () => {
+    const arg = argTypesOf(`value = input.required<string>();`).value;
+    expect(arg.type).toEqual({ name: 'string', required: true });
+    expect(arg.table?.type?.required).toBe(true);
+  });
+
+  it('marks a decorator input with no initializer', () => {
+    const arg = argTypesOf(`@Input() value!: string;`).value;
+    expect(arg.type).toEqual({ name: 'string', required: true });
+    expect(arg.table?.type?.required).toBe(true);
+  });
+
+  it('leaves a defaulted signal input unmarked', () => {
+    const arg = argTypesOf(`value = input('');`).value;
+    expect(arg.type).toEqual({ name: 'string' });
+    expect(arg.table?.type?.required).toBe(false);
+  });
+
+  it('leaves a defaulted decorator input unmarked', () => {
+    const arg = argTypesOf(`@Input() value = 'primary';`).value;
+    expect(arg.type).toEqual({ name: 'string' });
+    expect(arg.table?.type?.required).toBe(false);
+  });
+
+  it('leaves an optional input unmarked', () => {
+    const arg = argTypesOf(`@Input() value?: string;`).value;
+    expect(arg.type).toEqual({ name: 'string' });
+    expect(arg.table?.type?.required).toBe(false);
+  });
+
+  it('badges no output, which a parent is never obliged to bind', () => {
+    const arg = argTypesOf(`toggled = output<boolean>();`).toggled;
+    expect(arg.type).toEqual({ name: 'other', value: 'void' });
+  });
+
+  it('badges no plain property, which a parent cannot bind at all', () => {
+    const arg = argTypesOf(`value!: string;`).value;
+    expect(arg.type).toEqual({ name: 'string' });
+    expect(arg.table?.type?.required).toBe(true);
   });
 });

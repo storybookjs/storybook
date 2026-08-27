@@ -47,7 +47,6 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "@storybook/csf-plugin": "workspace:*",
     "get-port-please": "^3.2.0",
     "http-proxy-middleware": "3.0.5",
     "polka": "^0.5.0",

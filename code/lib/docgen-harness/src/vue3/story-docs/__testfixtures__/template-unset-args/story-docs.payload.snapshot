@@ -11,7 +11,7 @@
 import { ref } from "vue";
 import TemplateUnsetArgs from './TemplateUnsetArgs.vue';
 
-const modelValue = ref(undefined);
+const modelValue = ref();
 </script>
 
 <template>

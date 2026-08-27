@@ -505,7 +505,7 @@ export const Primary = {
       import { ref } from "vue";
       import MyButton from './MyButton.vue';
 
-      const modelValue = ref(undefined);
+      const modelValue = ref();
       </script>
 
       <template>
@@ -1129,6 +1129,29 @@ export const Primary = {
     `);
   });
 
+  it('keeps an earlier attribute when the colliding arg is explicitly undefined', async () => {
+    expect(
+      await primarySnippet(`
+export const Primary = {
+  args: { label: undefined, count: 2 },
+  render: (args) => ({
+    components: { MyButton },
+    setup: () => ({ args }),
+    template: '<MyButton label="static" v-bind="args" />',
+  }),
+};
+`)
+    ).toMatchInlineSnapshot(`
+      "<script lang="ts" setup>
+      import MyButton from './MyButton.vue';
+      </script>
+
+      <template>
+        <MyButton label="static" :count="2" />
+      </template>"
+    `);
+  });
+
   it('removes an earlier attribute an expanded arg overrides', async () => {
     expect(
       await primarySnippet(`
@@ -1582,7 +1605,7 @@ export const Primary = {
       </script>
 
       <template>
-        <MyButton />
+        <MyButton></MyButton>
       </template>"
     `);
   });
@@ -1682,6 +1705,7 @@ import C from './C.vue';
       componentName: 'C',
       importBindings: new Map([['C', { importId: './C.vue', importName: 'default' }]]),
       template: '<C v-bind="args" />',
+      unsetArgs: new Set(),
     });
 
     expect(result?.snippet).toBe(`<script lang="ts" setup>
@@ -1753,6 +1777,7 @@ function render(args: ClassifiedArg[], componentName = 'C'): string {
     componentName,
     importBindings: new Map(),
     template: `<${componentName} v-bind="args" />`,
+    unsetArgs: new Set(),
   })!.snippet.replaceAll('\r\n', '\n');
 }
 

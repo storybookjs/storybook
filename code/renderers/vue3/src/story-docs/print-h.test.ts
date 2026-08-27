@@ -29,6 +29,7 @@ const DEFAULT_DOCGEN: VueDocgenArgInfo = { props: new Set(), events: new Set(), 
 
 interface ParsedRender {
   args: ClassifiedArg[];
+  unsetArgs: ReadonlySet<string>;
   argsParam?: string;
   expression?: t.Node;
   importBindings: ReturnType<typeof collectImportBindings>;
@@ -49,7 +50,6 @@ function renderStory(
 
   const ctx = createRenderContext();
   const printed = printH({
-    args: parsed.args,
     argsParam: parsed.argsParam,
     componentImportStatement,
     componentName: 'MyButton',
@@ -69,6 +69,7 @@ function renderStory(
     ctx,
     importBindings: parsed.importBindings,
     template: printed.template,
+    unsetArgs: parsed.unsetArgs,
   });
 }
 
@@ -83,7 +84,6 @@ function printedTemplate(
   }
 
   return printH({
-    args: parsed.args,
     argsParam: parsed.argsParam,
     componentImportStatement: "import MyButton from './MyButton.vue';",
     componentName: 'MyButton',
@@ -153,6 +153,7 @@ ${storySource}
   if (renderResolution.kind !== 'resolved') {
     return {
       args: classified.args,
+      unsetArgs: classified.unset,
       importBindings: collectImportBindings(csf._file.path),
     };
   }
@@ -160,6 +161,7 @@ ${storySource}
   const [parameter] = renderResolution.path.node.params;
   return {
     args: classified.args,
+    unsetArgs: classified.unset,
     argsParam: t.isIdentifier(parameter) ? parameter.name : undefined,
     expression: returnedExpression(renderResolution.path.node),
     importBindings: collectImportBindings(csf._file.path),

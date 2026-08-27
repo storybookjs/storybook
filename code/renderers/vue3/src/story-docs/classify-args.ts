@@ -51,14 +51,8 @@ export interface ClassifiedSlotArg {
   plan: RenderableValuePlan | FunctionSlotPlan;
 }
 
-export interface ClassifiedUnsetArg {
-  name: string;
-  value: t.Node;
-  role: 'unset';
-}
-
 /** Split by role so `arg.role` checks narrow the plans a renderer has to handle. */
-export type ClassifiedArg = ClassifiedPropLikeArg | ClassifiedSlotArg | ClassifiedUnsetArg;
+export type ClassifiedArg = ClassifiedPropLikeArg | ClassifiedSlotArg;
 
 /**
  * Outcome of classifying one arg, before any story-level decision is taken.
@@ -69,11 +63,17 @@ export type ClassifiedArg = ClassifiedPropLikeArg | ClassifiedSlotArg | Classifi
 export type ArgClassification =
   | { kind: 'classified'; arg: ClassifiedArg }
   | { kind: 'omit' }
+  | { kind: 'unset' }
   | { kind: 'unrepresentable' };
 
 export interface ClassifyArgsResult {
   /** Args that can be rendered into a static Vue snippet. */
   args: ClassifiedArg[];
+  /**
+   * Args explicitly set to undefined, rendered as if never written — bindings and collisions
+   * ignore them even where Vue itself would treat a present-but-undefined value differently.
+   */
+  unset: Set<string>;
   /** Source text of args dropped because their values do not resolve statically. */
   unresolved: string[];
 }
@@ -97,6 +97,7 @@ export function classifyArgs(
   docgen: VueDocgenArgInfo
 ): ClassifyArgsResult {
   const classified: ClassifiedArg[] = [];
+  const unset = new Set<string>();
   const unresolved: string[] = [];
 
   for (const [name, value] of Object.entries(args)) {
@@ -104,12 +105,14 @@ export function classifyArgs(
 
     if (result.kind === 'classified') {
       classified.push(result.arg);
+    } else if (result.kind === 'unset') {
+      unset.add(name);
     } else if (result.kind === 'unrepresentable') {
       unresolved.push(`${name}: ${printValue(value)}`);
     }
   }
 
-  return { args: classified, unresolved };
+  return { args: classified, unset, unresolved };
 }
 
 /**
@@ -176,7 +179,7 @@ export function classifyArg(
   }
 
   if (plan.kind === 'unset') {
-    return { kind: 'classified', arg: { name, value, role: 'unset' } };
+    return { kind: 'unset' };
   }
 
   return {

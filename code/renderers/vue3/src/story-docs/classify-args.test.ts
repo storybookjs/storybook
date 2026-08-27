@@ -13,6 +13,7 @@ interface DocgenFixture {
 
 interface ReadableClassifyArgsResult {
   args: string[];
+  unset?: string[];
   unresolved?: string[];
 }
 
@@ -42,7 +43,8 @@ describe('classifyArgs', () => {
 
   it('tracks an arg explicitly set to undefined without naming it unresolved', () => {
     expect(classify(`{ a: undefined, label: 'ok' }`)).toEqual({
-      args: ['a: undefined -> unset', `label: 'ok' -> prop (inline)`],
+      args: [`label: 'ok' -> prop (inline)`],
+      unset: ['a'],
     });
   });
 
@@ -184,6 +186,7 @@ function classify(
 
   return {
     args: result.args.map(formatArg),
+    ...(result.unset.size > 0 ? { unset: Array.from(result.unset) } : {}),
     ...(result.unresolved.length > 0 ? { unresolved: result.unresolved } : {}),
   };
 }
@@ -214,9 +217,6 @@ function parseArgs(code: string): Record<string, t.Node> {
 }
 
 function formatArg(arg: ClassifiedArg): string {
-  if (arg.role === 'unset') {
-    return `${arg.name}: ${printValue(arg.value)} -> unset`;
-  }
   const destination =
     arg.role === 'event' && arg.eventName ? `${arg.role}:${arg.eventName}` : arg.role;
   return `${arg.name}: ${printValue(arg.value)} -> ${destination} (${arg.plan.kind})`;

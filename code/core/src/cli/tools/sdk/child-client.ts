@@ -31,13 +31,14 @@ import { resolveChildHostScript } from './resolve-project-storybook.ts';
 import type {
   AttachedTools,
   CreateToolsOptions,
+  LocalTools,
+  Tools,
   ToolsCallOptions,
   ToolsClientInfo,
   ToolsDescribeOptions,
   ToolsMode,
   ToolsetCatalog,
 } from './types.ts';
-import type { StorybookInstanceRecord } from '../instances/types.ts';
 import type { ToolsRuntime } from './local-runtime.ts';
 
 export type SpawnChildHostDeps = {
@@ -48,40 +49,75 @@ export type SpawnChildHostDeps = {
 
 export async function spawnChildHost(
   args: {
-    record: StorybookInstanceRecord;
+    cwd: string;
+    options: CreateToolsOptions & { mode: 'local' };
+    clientInfo: Required<ToolsClientInfo>;
+    requestedMode: ToolsMode;
+  },
+  deps?: SpawnChildHostDeps
+): Promise<LocalTools>;
+export async function spawnChildHost(
+  args: {
+    cwd: string;
+    options: CreateToolsOptions & { mode: 'attached' };
+    clientInfo: Required<ToolsClientInfo>;
+    requestedMode: ToolsMode;
+  },
+  deps?: SpawnChildHostDeps
+): Promise<AttachedTools>;
+export async function spawnChildHost(
+  args: {
+    cwd: string;
+    options: CreateToolsOptions;
+    clientInfo: Required<ToolsClientInfo>;
+    requestedMode: ToolsMode;
+  },
+  deps?: SpawnChildHostDeps
+): Promise<Tools>;
+export async function spawnChildHost(
+  args: {
+    cwd: string;
     options: CreateToolsOptions;
     clientInfo: Required<ToolsClientInfo>;
     requestedMode: ToolsMode;
   },
   deps: SpawnChildHostDeps = {}
-): Promise<AttachedTools> {
+): Promise<Tools> {
   const log = deps.logger ?? logger;
   const forkChild = deps.fork ?? fork;
+  const cwd = args.cwd;
+  const resolvedMode: 'local' | 'attached' = args.options.mode === 'local' ? 'local' : 'attached';
 
   let scriptPath: string;
   try {
-    scriptPath = (deps.resolveScript ?? resolveChildHostScript)(args.record.cwd);
+    scriptPath = (deps.resolveScript ?? resolveChildHostScript)(cwd);
   } catch (cause) {
     throw new SpawnFailedError({
-      reason: `Could not resolve \`storybook/internal/tools/child-host\` from ${args.record.cwd}. Install Storybook in that project, then retry.`,
+      reason: `Could not resolve \`storybook/internal/tools/child-host\` from ${cwd}. Install Storybook in that project, then retry.`,
       cause,
     });
+  }
+
+  const env: NodeJS.ProcessEnv = {
+    ...process.env,
+    STORYBOOK_TOOLS_CHILD_HOST: 'true',
+  };
+  if (resolvedMode === 'attached') {
+    env.STORYBOOK_ATTACHED_TOOLS = 'true';
+  } else {
+    delete env.STORYBOOK_ATTACHED_TOOLS;
   }
 
   let child: ChildProcess;
   try {
     child = forkChild(scriptPath, [], {
-      cwd: args.record.cwd,
+      cwd,
       stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-      env: {
-        ...process.env,
-        STORYBOOK_TOOLS_CHILD_HOST: 'true',
-        STORYBOOK_ATTACHED_TOOLS: 'true',
-      },
+      env,
     } satisfies ForkOptions);
   } catch (cause) {
     throw new SpawnFailedError({
-      reason: `Could not start a tools child host for ${args.record.cwd}.`,
+      reason: `Could not start a tools child host for ${cwd}.`,
       cause,
     });
   }
@@ -115,7 +151,7 @@ export async function spawnChildHost(
       }
       const error = new ToolsRuntimeError({
         reason: 'connection-lost',
-        message: `The tools child host for ${args.record.cwd} exited${
+        message: `The tools child host for ${cwd} exited${
           signal ? ` (${signal})` : code != null ? ` (code ${code})` : ''
         }.`,
       });
@@ -127,7 +163,7 @@ export async function spawnChildHost(
         return;
       }
       const error = new SpawnFailedError({
-        reason: `The tools child host for ${args.record.cwd} failed.`,
+        reason: `The tools child host for ${cwd} failed.`,
         cause,
       });
       failPending(error);
@@ -163,7 +199,7 @@ export async function spawnChildHost(
   const send = (message: ParentMessage) => {
     if (!child.send) {
       throw new SpawnFailedError({
-        reason: `The tools child host for ${args.record.cwd} has no IPC channel.`,
+        reason: `The tools child host for ${cwd} has no IPC channel.`,
       });
     }
     child.send(message);
@@ -190,9 +226,10 @@ export async function spawnChildHost(
   let hello: ChildHelloMessage;
   try {
     hello = await waitForHello(child, send, {
-      cwd: args.record.cwd,
+      cwd: cwd,
       options: args.options,
       clientInfo: args.clientInfo,
+      resolvedMode,
     });
   } catch (error) {
     closed = true;
@@ -204,7 +241,7 @@ export async function spawnChildHost(
     closed = true;
     child.kill();
     throw new SpawnFailedError({
-      reason: `The tools child host at ${args.record.cwd} speaks protocol ${hello.version}, but this process expects ${CHILD_HOST_PROTOCOL_VERSION}. Restart your Storybook so both sides match.`,
+      reason: `The tools child host at ${cwd} speaks protocol ${hello.version}, but this process expects ${CHILD_HOST_PROTOCOL_VERSION}. Restart your Storybook so both sides match.`,
     });
   }
 
@@ -232,12 +269,12 @@ export async function spawnChildHost(
   const dimensions = toolsCommandDimensions({
     clientInfo: args.clientInfo,
     requestedMode: args.requestedMode,
-    resolvedMode: 'attached',
+    resolvedMode,
     host: 'child',
   });
 
   return {
-    mode: 'attached',
+    mode: resolvedMode,
     host: 'child',
     requestedMode: args.requestedMode,
     clientInfo: hello.clientInfo,
@@ -286,7 +323,7 @@ export async function spawnChildHost(
           ref,
           clientInfo: args.clientInfo,
           requestedMode: args.requestedMode,
-          resolvedMode: 'attached',
+          resolvedMode,
           host: 'child',
           result: outcome,
           duration: Date.now() - start,
@@ -298,7 +335,7 @@ export async function spawnChildHost(
           ref,
           clientInfo: args.clientInfo,
           requestedMode: args.requestedMode,
-          resolvedMode: 'attached',
+          resolvedMode,
           host: 'child',
           result: { error },
           duration: Date.now() - start,
@@ -342,9 +379,10 @@ async function waitForHello(
     cwd: string;
     options: CreateToolsOptions;
     clientInfo: Required<ToolsClientInfo>;
+    resolvedMode: 'local' | 'attached';
   }
 ): Promise<ChildHelloMessage> {
-  const { cwd, options, clientInfo } = args;
+  const { cwd, options, clientInfo, resolvedMode } = args;
   return new Promise<ChildHelloMessage>((resolve, reject) => {
     const onMessage = (raw: unknown) => {
       if (isChildMessage(raw) && raw.type === 'hello') {
@@ -399,7 +437,7 @@ async function waitForHello(
         options: {
           ...options,
           cwd,
-          mode: 'attached',
+          mode: resolvedMode,
           autoSpawn: false,
           clientInfo,
         },

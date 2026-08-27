@@ -200,7 +200,7 @@ export const TOOLS_OPTION_SPECS: ReadonlyArray<{ flags: string; description: str
   },
   {
     flags: '--no-attach',
-    description: 'Load the project configuration in this process; never attach',
+    description: 'Load the project configuration without attaching',
   },
   {
     flags: '--input <object>',

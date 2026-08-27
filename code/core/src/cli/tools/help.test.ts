@@ -51,7 +51,7 @@ describe('tools help rendering', () => {
         --cwd <path>                 Project directory of the target Storybook
         -c, --config-dir <dir-name>  Storybook config directory of the target Storybook
         --attach                     Require attaching to a running Storybook; gate failures are errors instead of a local fallback
-        --no-attach                  Load the project configuration in this process; never attach
+        --no-attach                  Load the project configuration without attaching
         --input <object>             Raw JSON object with the tool arguments (escape hatch for complex values)
         --json                       Print the tool's structured result data as JSON instead of markdown
         -o, --output <path>          Write the result to a file instead of stdout
@@ -61,7 +61,7 @@ describe('tools help rendering', () => {
         example get-http-frame  Inspect an HTTP frame  [local]
         example preview         Preview an example  [requires running Storybook]
 
-      [local] tools run in this process, without a running Storybook.
+      [local] tools run without a running Storybook.
       [requires running Storybook] tools need a running Storybook dev server; start it first.
       Individual \`--key value\` flags override entries of \`--input\`.
 

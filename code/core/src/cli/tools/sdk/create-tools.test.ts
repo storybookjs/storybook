@@ -9,7 +9,7 @@ import {
 } from '../../../shared/open-service/toolset-definition.ts';
 import { getToolName } from '../../../shared/open-service/toolset-names.ts';
 import { createTools } from './create-tools.ts';
-import { AttachUnavailableError, SpawnFailedError } from './errors.ts';
+import { AttachUnavailableError, SpawnFailedError, ToolsRuntimeError } from './errors.ts';
 import { bootstrapToolsRuntime, type ToolsRuntime } from './local-runtime.ts';
 
 vi.mock('./local-runtime.ts', { spy: true });
@@ -88,15 +88,81 @@ const attach = vi.fn();
 const spawnChild = vi.fn();
 
 describe('createTools', () => {
-  it('loads the target configuration in this process in local mode', async () => {
-    const tools = await createTools({ cwd: '/repo', configDir: '.storybook', mode: 'local' });
+  it('loads the target configuration in this process when cwd already matches', async () => {
+    const tools = await createTools({
+      cwd: process.cwd(),
+      configDir: '.storybook',
+      mode: 'local',
+    });
 
-    expect(bootstrapToolsRuntime).toHaveBeenCalledWith({ cwd: '/repo', configDir: '.storybook' });
+    expect(bootstrapToolsRuntime).toHaveBeenCalledWith({
+      cwd: process.cwd(),
+      configDir: '.storybook',
+    });
+    expect(spawnChild).not.toHaveBeenCalled();
     expect(tools.mode).toBe('local');
     expect(tools.requestedMode).toBe('local');
     expect(tools.host).toBe('in-process');
     expect(tools.storybook.configDir).toBe(CONFIG_DIR);
     expect(tools.storybook.version).toEqual(expect.any(String));
+  });
+
+  it('spawns a child host in local mode when cwd is another directory', async () => {
+    const spawned = {
+      mode: 'local' as const,
+      requestedMode: 'local' as const,
+      host: 'child' as const,
+      clientInfo: { name: 'storybook-tools-sdk', version: '0.0.0', kind: 'sdk' as const },
+      storybook: { version: '0.0.0', configDir: CONFIG_DIR },
+      runtime: makeRuntime(),
+      describe: async () => ({ configDir: CONFIG_DIR, toolsets: [] }),
+      call: async () => ({ ok: true as const, data: {}, markdown: 'spawned' }),
+      close: async () => {},
+    };
+    vi.mocked(spawnChild).mockResolvedValue(spawned);
+
+    const cwdBefore = process.cwd();
+    const tools = await createTools(
+      { cwd: '/elsewhere', configDir: '.storybook', mode: 'local' },
+      { spawnChild }
+    );
+
+    expect(process.cwd()).toBe(cwdBefore);
+    expect(bootstrapToolsRuntime).not.toHaveBeenCalled();
+    expect(spawnChild).toHaveBeenCalledWith({
+      cwd: '/elsewhere',
+      options: expect.objectContaining({
+        cwd: '/elsewhere',
+        mode: 'local',
+        autoSpawn: false,
+      }),
+      clientInfo: expect.objectContaining({ kind: 'sdk' }),
+      requestedMode: 'local',
+    });
+    expect(tools.mode).toBe('local');
+    expect(tools.host).toBe('child');
+    await expect(tools.call('echo.ok')).resolves.toEqual({
+      ok: true,
+      data: {},
+      markdown: 'spawned',
+    });
+  });
+
+  it('refuses a foreign cwd in local mode when auto-spawn is declined', async () => {
+    await expect(
+      createTools({ cwd: '/elsewhere', mode: 'local', autoSpawn: false }, { spawnChild })
+    ).rejects.toMatchObject({ data: { reason: 'mode-unavailable' } });
+    expect(spawnChild).not.toHaveBeenCalled();
+    expect(bootstrapToolsRuntime).not.toHaveBeenCalled();
+  });
+
+  it('does not spawn a nested child host when already running as one', async () => {
+    vi.stubEnv('STORYBOOK_TOOLS_CHILD_HOST', 'true');
+
+    await expect(
+      createTools({ cwd: '/elsewhere', mode: 'local' }, { spawnChild })
+    ).rejects.toMatchObject({ data: { reason: 'mode-unavailable' } });
+    expect(spawnChild).not.toHaveBeenCalled();
   });
 
   it('stamps the client as the SDK unless the caller says otherwise', async () => {
@@ -193,7 +259,7 @@ describe('createTools', () => {
     );
 
     expect(spawnChild).toHaveBeenCalledWith({
-      record,
+      cwd: '/repo',
       options: expect.objectContaining({
         cwd: '/repo',
         mode: 'attached',
@@ -222,6 +288,7 @@ describe('createTools', () => {
     expect(attach).toHaveBeenCalledWith({ cwd: '/repo', configDir: undefined });
     expect(bootstrapToolsRuntime).not.toHaveBeenCalled();
     expect(attached.mode).toBe('attached');
+    expect(attached.host).toBe('in-process');
     expect(attached.fallbackNotice).toBeUndefined();
 
     attach.mockRejectedValueOnce(
@@ -233,14 +300,54 @@ describe('createTools', () => {
       })
     );
 
-    const fallback = await createTools({ cwd: '/repo' }, { attach });
+    const fallback = await createTools({ mode: 'auto' }, { attach });
 
-    expect(bootstrapToolsRuntime).toHaveBeenCalledWith({ cwd: '/repo', configDir: undefined });
+    expect(bootstrapToolsRuntime).toHaveBeenCalledWith({
+      cwd: process.cwd(),
+      configDir: undefined,
+    });
+    expect(spawnChild).not.toHaveBeenCalled();
     expect(fallback.mode).toBe('local');
     expect(fallback.requestedMode).toBe('auto');
     expect(fallback.host).toBe('in-process');
     expect(fallback.fallbackReason).toBe('no-instance');
     expect(fallback.fallbackNotice).toContain('No running Storybook was found');
+    expect(fallback.fallbackNotice).toContain('Falling back');
+  });
+
+  it('falls back to a local child host when auto cannot attach from another cwd', async () => {
+    const spawned = {
+      mode: 'local' as const,
+      requestedMode: 'auto' as const,
+      host: 'child' as const,
+      clientInfo: { name: 'storybook-tools-sdk', version: '0.0.0', kind: 'sdk' as const },
+      storybook: { version: '0.0.0', configDir: CONFIG_DIR },
+      runtime: makeRuntime(),
+      describe: async () => ({ configDir: CONFIG_DIR, toolsets: [] }),
+      call: async () => ({ ok: true as const, data: {}, markdown: 'spawned' }),
+      close: async () => {},
+    };
+    vi.mocked(attach).mockRejectedValueOnce(
+      new AttachUnavailableError({
+        reason: 'no-instance',
+        instances: [],
+        remediation:
+          'No running Storybook was found for this project. Start it first (for example `npm run storybook`), then retry with `--attach`.',
+      })
+    );
+    vi.mocked(spawnChild).mockResolvedValue(spawned);
+
+    const fallback = await createTools({ cwd: '/elsewhere' }, { attach, spawnChild });
+
+    expect(bootstrapToolsRuntime).not.toHaveBeenCalled();
+    expect(spawnChild).toHaveBeenCalledWith({
+      cwd: '/elsewhere',
+      options: expect.objectContaining({ mode: 'local', autoSpawn: false }),
+      clientInfo: expect.objectContaining({ kind: 'sdk' }),
+      requestedMode: 'auto',
+    });
+    expect(fallback.mode).toBe('local');
+    expect(fallback.host).toBe('child');
     expect(fallback.fallbackNotice).toContain('Falling back');
   });
 
@@ -285,7 +392,38 @@ describe('createTools', () => {
     await expect(localLoadFailure).rejects.toMatchObject({
       data: { reason: 'config-load-failed' },
     });
+    await expect(localLoadFailure).rejects.toThrow(ToolsRuntimeError);
     await expect(localLoadFailure).rejects.toThrow('Falling back');
+  });
+
+  it('keeps spawn and mode-unavailable reasons when auto local fallback also fails', async () => {
+    const attachUnavailable = async () => {
+      throw new AttachUnavailableError({
+        reason: 'no-instance',
+        instances: [],
+        remediation: 'No running Storybook was found for this project.',
+      });
+    };
+
+    const modeUnavailable = createTools(
+      { cwd: '/elsewhere', mode: 'auto', autoSpawn: false },
+      { attach: attachUnavailable, spawnChild }
+    );
+    await expect(modeUnavailable).rejects.toBeInstanceOf(ToolsRuntimeError);
+    await expect(modeUnavailable).rejects.toMatchObject({ data: { reason: 'mode-unavailable' } });
+    await expect(modeUnavailable).rejects.toThrow('Falling back');
+    expect(spawnChild).not.toHaveBeenCalled();
+
+    vi.mocked(spawnChild).mockRejectedValue(
+      new SpawnFailedError({ reason: 'Could not resolve the `storybook` package from /elsewhere.' })
+    );
+    const spawnFailed = createTools(
+      { cwd: '/elsewhere', mode: 'auto' },
+      { attach: attachUnavailable, spawnChild }
+    );
+    await expect(spawnFailed).rejects.toBeInstanceOf(SpawnFailedError);
+    await expect(spawnFailed).rejects.toThrow('Falling back');
+    await expect(spawnFailed).rejects.toThrow('Could not resolve the `storybook` package');
   });
 
   it('applies per-call origin and telemetry to the method context', async () => {
@@ -652,7 +790,7 @@ describe('tools-command telemetry', () => {
         remediation: 'No running Storybook was found for this project.',
       });
     });
-    const tools = await createTools({ cwd: '/repo' }, { attach });
+    const tools = await createTools({}, { attach });
 
     await tools.call('echo.ok', { value: 'hello' });
 

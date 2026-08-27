@@ -27,6 +27,7 @@ const RECORD: StorybookInstanceRecord = {
 };
 
 const OPTIONS: CreateToolsOptions = { mode: 'attached', configDir: '/repo/.storybook' };
+const LOCAL_OPTIONS: CreateToolsOptions = { mode: 'local', configDir: '/repo/.storybook' };
 const CLIENT: Required<ToolsClientInfo> = {
   name: 'storybook-tools-sdk',
   version: '10.3.0',
@@ -107,9 +108,16 @@ describe('spawnChildHost', () => {
     vi.unstubAllGlobals();
   });
 
-  const spawn = (requestedMode: ToolsMode = 'attached') =>
+  const spawn = (
+    options: CreateToolsOptions = OPTIONS,
+    requestedMode: ToolsMode = options.mode === 'auto'
+      ? 'auto'
+      : options.mode === 'local'
+        ? 'local'
+        : 'attached'
+  ) =>
     spawnChildHost(
-      { record: RECORD, options: OPTIONS, clientInfo: CLIENT, requestedMode },
+      { cwd: RECORD.cwd, options, clientInfo: CLIENT, requestedMode },
       {
         fork: fork as never,
         resolveScript: () => '/repo/node_modules/storybook/dist/cli/tools/sdk/child-host.js',
@@ -143,6 +151,34 @@ describe('spawnChildHost', () => {
         }),
       })
     );
+  });
+
+  it('forks a local child host without STORYBOOK_ATTACHED_TOOLS', async () => {
+    const tools = await spawn(LOCAL_OPTIONS);
+
+    expect(fork).toHaveBeenCalledWith(
+      '/repo/node_modules/storybook/dist/cli/tools/sdk/child-host.js',
+      [],
+      expect.objectContaining({
+        cwd: '/repo',
+        env: expect.not.objectContaining({
+          STORYBOOK_ATTACHED_TOOLS: 'true',
+        }),
+      })
+    );
+    expect(child.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'init',
+        options: expect.objectContaining({
+          cwd: '/repo',
+          mode: 'local',
+          autoSpawn: false,
+          clientInfo: CLIENT,
+        }),
+      })
+    );
+    expect(tools.mode).toBe('local');
+    expect(tools.host).toBe('child');
   });
 
   it('proxies describe and call over IPC and returns the child storybook info', async () => {
@@ -196,7 +232,7 @@ describe('spawnChildHost', () => {
       return true;
     });
     const sink = vi.fn(async () => {});
-    const tools = await spawn('auto');
+    const tools = await spawn(OPTIONS, 'auto');
 
     await expect(tools.call('docs.list', {}, { telemetry: sink })).resolves.toEqual({
       ok: true,
@@ -397,7 +433,7 @@ describe('spawnChildHost', () => {
 
   it('throws SpawnFailedError when the child-host script cannot be resolved', async () => {
     const failure = spawnChildHost(
-      { record: RECORD, options: OPTIONS, clientInfo: CLIENT, requestedMode: 'attached' },
+      { cwd: RECORD.cwd, options: OPTIONS, clientInfo: CLIENT, requestedMode: 'attached' },
       {
         fork: fork as never,
         resolveScript: () => {

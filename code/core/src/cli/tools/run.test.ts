@@ -87,9 +87,9 @@ function makeLocalTools(runtimeOverrides: Partial<ToolsRuntime> = {}): LocalTool
   const storybook = { version: '0.0.0', configDir: runtime.configDir };
   return {
     mode: 'local',
-    clientInfo: { name: 'storybook-cli', version: '0.0.0', kind: 'cli' },
     requestedMode: 'local',
     host: 'in-process',
+    clientInfo: { name: 'storybook-cli', version: '0.0.0', kind: 'cli' },
     runtime,
     storybook,
     describe: async (options) => {
@@ -762,6 +762,54 @@ describe('attached tools', () => {
     expect(createTools).toHaveBeenCalledWith(expect.objectContaining({ mode: 'local' }));
   });
 
+  it('dispatches a local child host through describe and call', async () => {
+    const tools = makeLocalTools();
+    const child: LocalTools = {
+      ...tools,
+      host: 'child',
+      runtime: {
+        ...tools.runtime,
+        toolsets: [],
+      },
+    };
+    const { deps } = makeDeps({
+      createTools: vi.fn(async () => child),
+    });
+
+    const result = await run(['docs', 'list'], deps, { attach: false });
+
+    expect(result.exitCode).toBe(0);
+    expect(result.output).toContain('Button');
+  });
+
+  it('intercepts requiresDevServer tools on a local child host with the same guidance as in-process', async () => {
+    const tools = makeLocalTools();
+    const child: LocalTools = {
+      ...tools,
+      host: 'child',
+      runtime: {
+        ...tools.runtime,
+        toolsets: [],
+      },
+    };
+    const { deps, discoverInstance } = makeDeps({
+      createTools: vi.fn(async () => child),
+      discoverInstance: vi.fn(async () => ({ currentRecord: RECORD, records: [RECORD] })),
+    });
+
+    const result = await run(
+      ['stories', 'preview', '--stories', '[{"storyId":"button--primary"}]'],
+      deps,
+      { attach: false }
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'requires-dev-server' });
+    expect(result.output).toContain('http://localhost:6006');
+    expect(result.output).toContain('--no-attach');
+    expect(discoverInstance).toHaveBeenCalled();
+  });
+
   it('runs a requiresDevServer tool caller-side with the instance origin, without proxying', async () => {
     clearToolsetRegistry();
     registerToolset(
@@ -819,7 +867,7 @@ describe('attached tools', () => {
   it('prints the SDK fallback notice separately from the local result', async () => {
     const tools = makeLocalTools();
     tools.fallbackNotice =
-      "No running Storybook was found for this project.\n\nFalling back to loading this project's Storybook configuration in this process.";
+      "No running Storybook was found for this project.\n\nFalling back to loading this project's Storybook configuration.";
     tools.requestedMode = 'auto';
     tools.fallbackReason = 'no-instance';
     const { deps, createTools } = makeDeps({

@@ -164,16 +164,17 @@ second engine. `storybook/internal/toolsets-docs` is a portable entry consumed b
 so its bundled declaration must remain flat and import only its declared allowlist.
 
 The `storybook tools` CLI is a slim shell over `storybook/internal/tools`. Default mode is `auto`:
-attach to a matching running instance as a delegated leaf, and fall back to an in-process local
-host when `createTools` cannot attach. `--attach` requires attachment (gate failures are errors).
+attach to a matching running instance as a delegated leaf, and fall back to a local host when
+`createTools` cannot attach. `--attach` requires attachment (gate failures are errors).
 `--no-attach` forces local. Toolset handlers run in the SDK process, and attached service commands
 execute on the instance.
 
 Local bootstrap still hosts the module graph so addon-owned toolsets can query it without appearing
 in a core allowlist; an unsupported builder settles the graph as unavailable without failing
-unrelated tools. Local mode also changes `process.cwd()` to the target project for the rest of the
-one-shot process — embedders that need the launch directory must capture it first. Attached mode
-never `chdir`s the host; a cwd or version mismatch spawns a project-local child host instead.
+unrelated tools. When this process is already in the project, local mode loads in-process. When
+`--cwd` points elsewhere, it starts a child host in that directory instead of changing
+`process.cwd()`. Attached mode never `chdir`s the host; a cwd or version mismatch spawns a
+project-local child host instead.
 
 Methods marked `requiresDevServer` intercept only in **local** mode (start-your-Storybook
 guidance). In attached mode they run caller-side. `stories.preview` reads the recorded origin from

@@ -66,8 +66,8 @@ package (for example `npx storybook@latest` from the right directory) also trigg
 project-local resolution. When the package resolved under the instance cwd also mismatches the
 record (server started before a dependency upgrade), the error is "restart your Storybook".
 
-Attached mode keeps the host cwd. Local mode does `process.chdir` to the target for the rest of
-the one-shot process.
+Neither attached nor local mode `chdir`s this process. A foreign `cwd` in local mode starts a
+child host instead.
 
 `autoSpawn: false` throws `EnvironmentMismatchError { instanceCwd, resolvedBinPath, reason }`.
 
@@ -119,7 +119,8 @@ consumer amortizes config load across many calls on the live synced runtime.
    state. `.loaded()` warms via delegated commands. Every command goes over the channel.
 6. **Render + close.** `ToolsetOutcome` through markdown / `--json`; `ok` drives the exit code.
 
-Local mode (no instance, or `--no-attach`) loads the target configuration in this process.
+Local mode (no instance, or `--no-attach`) loads in-process when `cwd` already matches, and
+starts a child host when it does not.
 
 ## Failure matrix
 

@@ -10,8 +10,9 @@ import type { ToolsRuntime } from './local-runtime.ts';
 /**
  * How the SDK hosts the target project's tools.
  *
- * `attached` talks to a running Storybook dev server, `local` loads the target configuration in
- * this process, and `auto` prefers the former and falls back to the latter.
+ * `attached` talks to a running Storybook dev server. `local` loads the target configuration
+ * without one: in this process when `cwd` already matches, otherwise in a child host started from
+ * that directory. `auto` prefers attached and falls back to local.
  */
 export type ToolsMode = 'auto' | 'attached' | 'local';
 
@@ -94,7 +95,7 @@ type ToolsBase = {
   fallbackNotice?: string;
   /** Why `auto` loaded locally instead of attaching. */
   fallbackReason?: ToolsAttachGateReason;
-  /** Toolset registry and service accessor the CLI uses for help and dispatch. */
+  /** Toolset registry and service accessor for an in-process host. Empty when this host is a child. */
   runtime: ToolsRuntime;
   describe(options?: ToolsDescribeOptions): Promise<ToolsetCatalog>;
   /**
@@ -117,8 +118,7 @@ type ToolsBase = {
 };
 
 /**
- * A host that loaded the target configuration in this process. The `storybook tools` CLI renders
- * its help from the toolset registry.
+ * A host that loaded the target configuration without a running Storybook.
  */
 export type LocalTools = ToolsBase & {
   mode: 'local';

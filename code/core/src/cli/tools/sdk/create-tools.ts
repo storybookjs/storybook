@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import { versions } from 'storybook/internal/common';
 
 import { StorybookDevServerDisconnectedError } from '../../../server-errors.ts';
@@ -22,6 +24,7 @@ import {
 } from './command-telemetry.ts';
 import {
   AttachUnavailableError,
+  SpawnFailedError,
   ToolsRuntimeError,
   attachGateReasonFromError,
   isAttachGateError,
@@ -62,9 +65,9 @@ export type CreateToolsDeps = {
 /**
  * Resolve a host for the tools the target Storybook configuration registers.
  *
- * `local` loads that configuration in this process, which adopts the target directory as
- * `process.cwd()` for the rest of the process — everything the `services` preset hooks register
- * keys its file mapping off it. Capture your launch directory first if you still need it.
+ * `local` loads that configuration without a running Storybook. When this process is already in
+ * the target directory, it loads in-process. Otherwise it spawns a child host from the `storybook`
+ * package resolved under that directory. It never changes `process.cwd()`.
  *
  * `attached` joins a running Storybook over its channel and never changes `process.cwd()`. When
  * this process is not that instance's twin, attached mode defaults to spawning a child host from
@@ -74,7 +77,8 @@ export type CreateToolsDeps = {
  * then carries `fallbackNotice` with the gate message and that it fell back.
  *
  * @throws {ToolsRuntimeError} With reason `config-load-failed` when the target configuration cannot
- *   be loaded.
+ *   be loaded, or `mode-unavailable` when a foreign `cwd` needs a child host and `autoSpawn` is
+ *   declined.
  * @throws {AttachUnavailableError} When `attached` cannot find or reach a matching instance.
  * @throws {EnvironmentMismatchError} When this process is not the instance's twin and auto-spawn is
  *   declined, or when spawning cannot reconcile the running instance with the project package.
@@ -130,15 +134,8 @@ export async function createTools(
             fallbackReason,
           });
         } catch (localError) {
-          if (
-            localError instanceof ToolsRuntimeError &&
-            localError.data.reason === 'config-load-failed'
-          ) {
-            throw new ToolsRuntimeError({
-              reason: 'config-load-failed',
-              message: `${notice}\n\n${localError.message}`,
-              cause: localError.data.cause,
-            });
+          if (shouldWrapAutoLocalFailure(localError)) {
+            throw wrapAutoLocalFailure(notice, localError);
           }
           throw localError;
         }
@@ -171,7 +168,7 @@ async function createAttachedTools(
   });
   if ('kind' in attached && attached.kind === 'spawn') {
     return (deps.spawnChild ?? spawnChildHost)({
-      record: attached.record,
+      cwd: attached.record.cwd,
       options: { ...options, mode: 'attached', autoSpawn: false, cwd: attached.record.cwd },
       clientInfo,
       requestedMode,
@@ -207,11 +204,31 @@ async function createLocalTools(
   fallback?: { fallbackNotice: string; fallbackReason?: ToolsAttachGateReason }
 ): Promise<LocalTools> {
   delete process.env.STORYBOOK_ATTACHED_TOOLS;
+  const cwd = resolve(options.cwd ?? process.cwd());
+  const isChildHost = process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
+  const autoSpawn = isChildHost ? false : (options.autoSpawn ?? true);
+
+  if (cwd !== process.cwd()) {
+    if (!autoSpawn) {
+      throw new ToolsRuntimeError({
+        reason: 'mode-unavailable',
+        message: `This process is running from ${process.cwd()}, but the target Storybook is at ${cwd}. Re-run from that directory, or omit \`autoSpawn: false\` so a child host can load the project.`,
+      });
+    }
+    const child = await (deps.spawnChild ?? spawnChildHost)({
+      cwd,
+      options: { ...options, mode: 'local', autoSpawn: false, cwd },
+      clientInfo,
+      requestedMode,
+    });
+    return fallback ? { ...child, ...fallback } : child;
+  }
+
   const { bootstrapToolsRuntime } = await import('./local-runtime.ts');
   let runtime: ToolsRuntime;
   try {
     runtime = await (deps.bootstrap ?? bootstrapToolsRuntime)({
-      cwd: options.cwd,
+      cwd,
       configDir: options.configDir,
     });
   } catch (error) {
@@ -233,6 +250,35 @@ async function createLocalTools(
     clientInfo,
     storybook: { version: versions.storybook, configDir: runtime.configDir },
   });
+}
+
+function shouldWrapAutoLocalFailure(error: unknown): error is SpawnFailedError | ToolsRuntimeError {
+  if (error instanceof SpawnFailedError) {
+    return true;
+  }
+  return (
+    error instanceof ToolsRuntimeError &&
+    (error.data.reason === 'config-load-failed' || error.data.reason === 'mode-unavailable')
+  );
+}
+
+function wrapAutoLocalFailure(notice: string, localError: SpawnFailedError | ToolsRuntimeError) {
+  const message = `${notice}\n\n${localError.message}`;
+  if (localError instanceof SpawnFailedError) {
+    return new SpawnFailedError({
+      reason: message,
+      cause: localError.data.cause ?? localError,
+    });
+  }
+  if (localError instanceof ToolsRuntimeError) {
+    return new ToolsRuntimeError({
+      reason: localError.data.reason,
+      message,
+      cause: localError.data.cause,
+    });
+  }
+  const exhaustive: never = localError;
+  throw exhaustive;
 }
 
 function transportFor(kind: Required<ToolsClientInfo>['kind']): ToolsetTransport {

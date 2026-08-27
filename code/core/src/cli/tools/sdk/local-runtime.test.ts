@@ -52,6 +52,26 @@ describe('bootstrapToolsRuntime', () => {
     expect(setChangeDetectionHost).toHaveBeenCalledWith(expect.any(Function));
   });
 
+  it('does not change process.cwd()', async () => {
+    const cwdBefore = process.cwd();
+    vi.mocked(prepareHeadlessUniversalStores).mockReturnValue({} as Channel);
+    vi.mocked(experimental_loadStorybook).mockResolvedValue({} as never);
+
+    await bootstrapToolsRuntime({ cwd: process.cwd(), configDir: '.storybook' });
+
+    expect(process.cwd()).toBe(cwdBefore);
+  });
+
+  it('refuses a target directory other than process.cwd()', async () => {
+    const cwdBefore = process.cwd();
+
+    await expect(
+      bootstrapToolsRuntime({ cwd: '/elsewhere', configDir: '.storybook' })
+    ).rejects.toThrow('requires process.cwd()');
+    expect(process.cwd()).toBe(cwdBefore);
+    expect(experimental_loadStorybook).not.toHaveBeenCalled();
+  });
+
   it('clears process-global registries when closed so a later host can target another project', async () => {
     const channel = {} as Channel;
     vi.mocked(prepareHeadlessUniversalStores).mockReturnValue(channel);

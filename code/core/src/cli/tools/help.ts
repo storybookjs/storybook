@@ -121,7 +121,7 @@ export function renderToolsHelpFromCatalog(catalog: ToolsetCatalog): string {
     commandBlock,
   ].join('\n');
   const notes = [
-    `${LOCAL_BADGE} tools run in this process, without a running Storybook.`,
+    `${LOCAL_BADGE} tools run without a running Storybook.`,
     `${DEV_SERVER_BADGE} tools need a running Storybook dev server; start it first.`,
     'Individual `--key value` flags override entries of `--input`.',
   ].join('\n');

@@ -99,6 +99,7 @@ export {
 export {
   getChangeDetectionReadiness as experimental_getChangeDetectionReadiness,
   setChangeDetectionHost as experimental_setChangeDetectionHost,
+  resetChangeDetectionReadiness as experimental_resetChangeDetectionReadiness,
   type ChangeDetectionReadiness as Experimental_ChangeDetectionReadiness,
 } from './change-detection/readiness.ts';
 export type {
@@ -120,6 +121,7 @@ export { ChangeDetectionService } from './change-detection/change-detection-serv
 export { resolveChangeDetectionAdapter } from '../shared/open-service/services/module-graph/server.ts';
 export { getBuilders } from './utils/get-builders.ts';
 export { prepareHeadlessUniversalStores } from './utils/get-server-channel.ts';
+export { resetServicesPresetOnce as experimental_resetServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 export {
   getTestProviderStoreById as experimental_getTestProviderStore,
   fullTestProviderStore as internal_fullTestProviderStore,

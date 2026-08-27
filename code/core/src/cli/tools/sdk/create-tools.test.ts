@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { telemetry } from 'storybook/internal/telemetry';
 
@@ -16,6 +18,7 @@ vi.mock('./local-runtime.ts', { spy: true });
 vi.mock('storybook/internal/telemetry', { spy: true });
 
 const CONFIG_DIR = '/repo/.storybook';
+const ELSEWHERE = resolve('/elsewhere');
 
 const echo = defineToolset({
   id: 'echo',
@@ -130,9 +133,9 @@ describe('createTools', () => {
     expect(process.cwd()).toBe(cwdBefore);
     expect(bootstrapToolsRuntime).not.toHaveBeenCalled();
     expect(spawnChild).toHaveBeenCalledWith({
-      cwd: '/elsewhere',
+      cwd: ELSEWHERE,
       options: expect.objectContaining({
-        cwd: '/elsewhere',
+        cwd: ELSEWHERE,
         mode: 'local',
         autoSpawn: false,
       }),
@@ -341,7 +344,7 @@ describe('createTools', () => {
 
     expect(bootstrapToolsRuntime).not.toHaveBeenCalled();
     expect(spawnChild).toHaveBeenCalledWith({
-      cwd: '/elsewhere',
+      cwd: ELSEWHERE,
       options: expect.objectContaining({ mode: 'local', autoSpawn: false }),
       clientInfo: expect.objectContaining({ kind: 'sdk' }),
       requestedMode: 'auto',

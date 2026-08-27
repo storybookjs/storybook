@@ -1,9 +1,9 @@
 import { spawn, spawnSync } from 'node:child_process';
 import * as fs from 'node:fs';
-import { createRequire } from 'node:module';
 import * as path from 'node:path';
 
 import { outputTail } from '../../docgen-shared/child-output.ts';
+import { resolvePin } from '../../docgen-shared/pin.ts';
 import { type OneShotRepetition, oneShotMetrics } from '../aggregate.ts';
 import { type DocumentationCounts, countDocumentation } from './compodoc-doc.ts';
 import {
@@ -16,25 +16,25 @@ import { BenchEngine, type MeasureContext, type ScenarioSpec } from '../engine.t
 import { angularComponentSource, generateAngularProject } from '../generators/angular.ts';
 import type { EngineId, EngineMetrics, MemberCounts } from '../types.ts';
 
-const require = createRequire(import.meta.url);
-
 interface ResolvedCompodoc {
   /** The CLI entry point, run as `node <cli>` so no shell shim or exec bit is involved. */
   cli: string;
   version: string;
 }
 
-function resolveCompodoc(): ResolvedCompodoc | undefined {
-  try {
-    const packagePath = require.resolve('@compodoc/compodoc/package.json');
-    const pkg = JSON.parse(fs.readFileSync(packagePath, 'utf8'));
-    return {
-      cli: path.join(path.dirname(packagePath), pkg.bin.compodoc),
-      version: pkg.version,
-    };
-  } catch {
+/** The canonical install. A pin names an alias of it - see docgen-shared/pin.ts. */
+const COMPODOC_PACKAGE = '@compodoc/compodoc';
+
+/**
+ * An alias keeps the aliased package's own name, so the name check is what stops a pin naming some
+ * other package from being measured as compodoc.
+ */
+function resolveCompodoc(specifier: string): ResolvedCompodoc | undefined {
+  const found = resolvePin(specifier);
+  if (found?.name !== COMPODOC_PACKAGE || !found.bin?.compodoc) {
     return undefined;
   }
+  return { cli: path.join(found.dir, found.bin.compodoc), version: found.version };
 }
 
 interface CompodocRun extends DocumentationCounts {
@@ -169,10 +169,29 @@ export async function runCompodocRepetition(
   };
 }
 
+/**
+ * Compodoc is a spawned CLI rather than an imported module, so its pin selects which CLI to run.
+ * A version pair is two entries differing only in `pin`, as it is for the series engines.
+ */
+export interface CompodocConfig {
+  id: EngineId;
+  pin: string;
+  inDefaultRun?: boolean;
+}
+
 export class CompodocEngine extends BenchEngine<OneShotRepetition> {
-  readonly id: EngineId = 'compodoc';
+  readonly id: EngineId;
+
+  readonly #pin: string;
 
   #resolved: ResolvedCompodoc | undefined;
+
+  constructor(config: CompodocConfig = { id: 'compodoc', pin: COMPODOC_PACKAGE }) {
+    super();
+    this.id = config.id;
+    this.inDefaultRun = config.inDefaultRun ?? true;
+    this.#pin = config.pin;
+  }
 
   scenarios(profile: SuiteProfile): ScenarioSpec[] {
     // The poll interval rides in params because it qualifies the peak this engine reports: the
@@ -184,10 +203,10 @@ export class CompodocEngine extends BenchEngine<OneShotRepetition> {
   }
 
   preflight(): string | undefined {
-    this.#resolved = resolveCompodoc();
+    this.#resolved = resolveCompodoc(this.#pin);
     return this.#resolved
       ? undefined
-      : '@compodoc/compodoc did not resolve; it is pinned in code/lib/docgen-harness/package.json, so run yarn install';
+      : `${this.#pin} did not resolve; it is pinned in code/lib/docgen-harness/package.json, so run yarn install`;
   }
 
   version(): string | undefined {

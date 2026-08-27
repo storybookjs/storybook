@@ -12,9 +12,7 @@
  * mirror them here; keep them in sync with `core/module-graph` if it changes.
  */
 
-import { importModule } from 'storybook/internal/common';
 import type { Query } from 'storybook/internal/core-server';
-import type { Builder, CoreConfig, Options } from 'storybook/internal/types';
 
 const MODULE_GRAPH_SERVICE_ID = 'core/module-graph';
 
@@ -69,34 +67,6 @@ async function probe(): Promise<GetServiceFn | null> {
 }
 
 /**
- * True iff the `core/module-graph` service is actually resolvable — i.e. Storybook ships the
- * open-service runtime AND the service is registered in this process. Reflects registration rather
- * than mere runtime presence so tool gating/badging can't drift from {@link getModuleGraphService}
- * (a builder may ship the runtime but not register the service, e.g. without change detection).
- */
-export async function isModuleGraphSupported(): Promise<boolean> {
-  return (await getModuleGraphService()) !== undefined;
-}
-
-export async function isModuleGraphSupportedByBuilder(
-  options: Pick<Options, 'presets'>
-): Promise<boolean> {
-  const core = (await options.presets.apply('core', {})) as CoreConfig | undefined;
-  const builder = core?.builder;
-  const builderName = typeof builder === 'string' ? builder : builder?.name;
-  if (!builderName) {
-    return false;
-  }
-
-  try {
-    const previewBuilder = (await importModule(builderName)) as Partial<Builder<unknown>>;
-    return typeof previewBuilder.changeDetectionAdapter === 'function';
-  } catch {
-    return false;
-  }
-}
-
-/**
  * Resolves the `core/module-graph` runtime service, or `undefined` when Storybook doesn't ship the
  * open-service API or the service isn't registered (e.g. a builder without change detection, or the
  * dev server isn't running). A non-undefined result doesn't mean the graph is built — await
@@ -106,7 +76,8 @@ export async function getModuleGraphService(): Promise<ModuleGraphService | unde
   const getService = await probe();
   if (!getService) return undefined;
   try {
-    // Deliberate internal-OSA dependency until the toolset registry replaces it in Milestone 4.
+    // Deliberate internal-OSA dependency: this probes whether the *service* is available in this
+    // process, an availability question the toolset registry does not answer.
     return getService(MODULE_GRAPH_SERVICE_ID, { internal: true }) as
       | ModuleGraphService
       | undefined;

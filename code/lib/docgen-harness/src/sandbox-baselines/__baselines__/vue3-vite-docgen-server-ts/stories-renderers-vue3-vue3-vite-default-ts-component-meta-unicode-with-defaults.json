@@ -1,0 +1,68 @@
+{
+  "argTypes": {
+    "icon": {
+      "defaultValue": {
+        "summary": "\"🚀\""
+      },
+      "description": "Decorative icon.",
+      "name": "icon",
+      "table": {
+        "category": "props",
+        "defaultValue": {
+          "summary": "\"🚀\""
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "label": {
+      "defaultValue": {
+        "summary": "\"こんにちは\""
+      },
+      "description": "Greeting label.",
+      "name": "label",
+      "table": {
+        "category": "props",
+        "defaultValue": {
+          "summary": "\"こんにちは\""
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    },
+    "size": {
+      "defaultValue": {
+        "summary": "\"大きい\""
+      },
+      "description": "Size label.",
+      "name": "size",
+      "table": {
+        "category": "props",
+        "defaultValue": {
+          "summary": "\"大きい\""
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": false
+      }
+    }
+  },
+  "id": "stories-renderers-vue3-vue3-vite-default-ts-component-meta-unicode-with-defaults",
+  "jsDocTags": {},
+  "name": "Component",
+  "path": "./src/stories/renderers/vue3_vue3-vite-default-ts/component-meta/UnicodeWithDefaults.stories.ts"
+}

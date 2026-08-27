@@ -1,61 +1,71 @@
-import { test } from 'vitest';
 import {
   expectDisplayReviewForVisualChange,
   expectPreviewBrowserStarted,
   expectPreviewStoriesWithFinalLinks,
   expectSkillInvoked,
-  getEvalContext,
   expectStoryDiscoveryBeforeReview,
   expectStoryIdsInDisplayReview,
   expectStoryTestsRanAndPassed,
   expectValidStorybookLaunchConfig,
   expectWorkflowCalls,
+  getEvalContext,
   isReviewEnabled,
 } from '#test-utils';
+import { describe, test } from 'vitest';
 
-const review = isReviewEnabled();
+describe('editing ReviewCard to add date and optional onReport', () => {
+  const review = isReviewEnabled();
 
-// The edit pulls in a new Reshaped component (Button), which requires the
-// docs tools; codex is an accepted known failure here (skipped the docs
-// tools under both instruction shapes, CI run 28660377980, 2026-07-03).
-// Re-enable this assertion for Codex after the documentation tool call passes on three consecutive scheduled CI runs.
-test.skipIf(getEvalContext().agent === 'codex')('uses the documentation tooling', () => {
-  expectWorkflowCalls(['get-documentation']);
-});
+  test('runs story tests after the change and finishes with them passing', () => {
+    expectStoryTestsRanAndPassed({ covering: ['reviewcard'] });
+  });
 
-test.runIf(review)('uses Storybook story instructions and publishes a display review', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions', 'display-review']);
-  expectDisplayReviewForVisualChange();
-});
+  describe.runIf(review)('when review is enabled', () => {
+    test('uses Storybook story instructions and publishes a display review', () => {
+      expectWorkflowCalls(['get-storybook-story-instructions', 'review-create']);
+      expectDisplayReviewForVisualChange();
+    });
 
-test.runIf(review)('the review covers the edited ReviewCard component', () => {
-  expectStoryIdsInDisplayReview(['reviewcard']);
-});
+    test('the review covers the edited ReviewCard component', () => {
+      expectStoryIdsInDisplayReview(['reviewcard']);
+    });
 
-test.runIf(!review)('uses Storybook story instructions and previews the edited component', () => {
-  expectWorkflowCalls(['get-storybook-story-instructions']);
-  expectPreviewStoriesWithFinalLinks({ covering: ['reviewcard'] });
-});
+    test('discovers stories through the workflow tools before publishing the review', () => {
+      expectStoryDiscoveryBeforeReview();
+    });
+  });
 
-test.runIf(review)(
-  'discovers stories through the workflow tools before publishing the review',
-  () => {
-    expectStoryDiscoveryBeforeReview();
-  }
-);
+  describe.runIf(!review)('when review is disabled', () => {
+    test('uses Storybook story instructions and previews the edited component', () => {
+      expectWorkflowCalls(['get-storybook-story-instructions']);
+      expectPreviewStoriesWithFinalLinks({ covering: ['reviewcard'] });
+    });
+  });
 
-test('runs story tests after the change and finishes with them passing', () => {
-  expectStoryTestsRanAndPassed({ covering: ['reviewcard'] });
-});
+  describe('depending on the current agent and integration', () => {
+    const { agent, integration } = getEvalContext();
 
-test.skipIf(getEvalContext().integration === 'mcp')('invokes the stories skill', () => {
-  expectSkillInvoked('stories');
-});
+    // The edit pulls in a new Reshaped component (Button), which requires the
+    // docs tools. Skipped for Codex: it omits docs-show under both
+    // instruction shapes (CI 28660377980, 2026-07-03). Re-enable after the
+    // documentation tool call passes on three consecutive scheduled CI runs.
+    test.skipIf(agent === 'codex')('uses the documentation tooling', () => {
+      expectWorkflowCalls(['docs-show']);
+    });
 
-test('keeps the pre-existing Storybook launch config valid', () => {
-  expectValidStorybookLaunchConfig();
-});
+    test.skipIf(integration === 'mcp')('invokes the stories skill', () => {
+      expectSkillInvoked('stories');
+    });
 
-test('opens the preview browser when using the plugin', () => {
-  expectPreviewBrowserStarted();
+    test.skipIf(agent !== 'claude-code' || integration !== 'plugin')(
+      'keeps the pre-existing Storybook launch config valid',
+      () => {
+        expectValidStorybookLaunchConfig();
+      }
+    );
+
+    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () => {
+      expectPreviewBrowserStarted();
+    });
+  });
 });

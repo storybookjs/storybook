@@ -1,35 +1,16 @@
 /** Renders the suite's terminal output. Pure string building, so it is testable without a runner. */
-import type {
-  Comparability,
-  EngineId,
-  EngineMetrics,
-  EngineResult,
-  RatioEntry,
-  Ratios,
-} from './types.ts';
+import type { Comparability, EngineId, EngineResult, Metric, RatioEntry, Ratios } from './types.ts';
 
 const HEADER = ['engine/scenario', 'cold', 'warm', 'scan', 'peak', 'ret-growth', 'ret-slope'];
 
 /**
- * Decimals for a single-valued metric, per unit. A slope needs two to say anything at all, while a
- * sub-millisecond difference between two aggregates is noise.
+ * Decimals per unit. A slope needs two to say anything at all, while a sub-millisecond difference
+ * between two aggregates is noise.
  */
 const VALUE_PRECISION = { ms: 0, MB: 1, 'MB/save': 2 } as const;
 
-export function formatCell(
-  metric: EngineMetrics[keyof EngineMetrics],
-  unit: keyof typeof VALUE_PRECISION
-): string {
-  if (metric.status === 'n/a') {
-    return 'n/a';
-  }
-  if ('median' in metric) {
-    return `${metric.median.toFixed(0)}${unit}`;
-  }
-  if ('mean' in metric) {
-    return `${metric.mean.toFixed(0)}${unit}`;
-  }
-  return `${metric.value.toFixed(VALUE_PRECISION[unit])}${unit}`;
+export function formatCell(metric: Metric, unit: keyof typeof VALUE_PRECISION): string {
+  return metric.status === 'n/a' ? 'n/a' : `${metric.value.toFixed(VALUE_PRECISION[unit])}${unit}`;
 }
 
 export interface RenderedResults {
@@ -90,21 +71,22 @@ export function renderResults(
 export function renderRatios(ratios: Ratios): string[] {
   const lines: string[] = [];
 
-  for (const [pairName, scenarios] of Object.entries(ratios)) {
+  for (const scenarios of Object.values(ratios)) {
     for (const [scenarioName, entry] of Object.entries(scenarios)) {
-      const label = `${pairName}/${scenarioName}`;
+      // Naming both engines: "legacy/new" only helps a reader who already knows the pair.
+      const label = `${entry.legacyEngine} over ${entry.nextEngine}, ${scenarioName}`;
       const versions = versionNote(entry);
 
       if (entry.cold !== undefined) {
         lines.push(
-          `  ratio cold legacy/new (${label}): ${entry.cold.toFixed(2)}` +
+          `  ratio cold (${label}): ${entry.cold.toFixed(2)}` +
             memberNote(entry.legacyColdMembers, entry.nextColdMembers, entry.coldComparability) +
             versions
         );
       }
       if (entry.warm !== undefined) {
         lines.push(
-          `  ratio warm legacy/new (${label}): ${entry.warm.toFixed(2)}` +
+          `  ratio warm (${label}): ${entry.warm.toFixed(2)}` +
             memberNote(entry.legacyWarmMembers, entry.nextWarmMembers, entry.warmComparability) +
             versions
         );
@@ -113,9 +95,13 @@ export function renderRatios(ratios: Ratios): string[] {
   }
 
   if (lines.length === 0) {
-    lines.push('  no calibration ratio: it needs both sides of a control pair measured in one run');
+    return ['  no calibration ratio: it needs both sides of a control pair measured in one run'];
   }
-  return lines;
+  // Which way the number points is not guessable from a bare decimal.
+  return [
+    "  each ratio divides the first engine's median by the second's, so above 1.00 means the second is faster",
+    ...lines,
+  ];
 }
 
 /**

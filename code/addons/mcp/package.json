@@ -1,6 +1,6 @@
 {
   "name": "@storybook/addon-mcp",
-  "version": "10.6.0-alpha.4",
+  "version": "10.6.0-alpha.9",
   "description": "Help agents automatically write and test stories for your UI components",
   "keywords": [
     "ai",
@@ -36,10 +36,8 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "@storybook/mcp": "workspace:*",
     "@tmcp/adapter-valibot": "^0.1.5",
     "@tmcp/transport-http": "^0.8.5",
-    "picoquery": "^2.5.0",
     "tmcp": "^1.19.4",
     "valibot": "^1.4.0"
   },

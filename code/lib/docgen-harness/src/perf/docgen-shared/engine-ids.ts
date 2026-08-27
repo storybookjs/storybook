@@ -8,4 +8,6 @@ export type EngineId =
   | 'vue-docgen-api'
   | 'vue-component-meta'
   | 'vue-component-meta-next'
-  | 'compodoc';
+  | 'compodoc'
+  // Not an engine: a deliberately failing entry the perf gate uses as its negative control.
+  | 'crash-control';

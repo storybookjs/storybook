@@ -1,0 +1,18 @@
+import { Component } from '@angular/core';
+import { SignalModelComponent } from './signal-model.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [SignalModelComponent],
+  template: `
+    <sb-signal-model
+        [value]="'hello'"
+        [checked]="true"
+        (checkedChange)="checkedChange($event)"
+        (valueChange)="valueChange($event)"
+    />`,
+})
+export class DemoComponent {
+  checkedChange(event: unknown) {}
+  valueChange(event: unknown) {}
+}

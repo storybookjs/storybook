@@ -1,4 +1,4 @@
-import type { InterceptReason, StorybookInstanceRecord } from './types.ts';
+import type { InterceptReason, StorybookInstanceRecord } from '../../tools/instances/types.ts';
 
 /**
  * Repair-instruction markdown returned when `storybook ai` cannot reach a usable MCP endpoint

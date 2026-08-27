@@ -1,6 +1,6 @@
 {
   "name": "@storybook/builder-vite",
-  "version": "10.6.0-alpha.4",
+  "version": "10.6.0-alpha.9",
   "description": "A Storybook builder to dev and build with Vite",
   "keywords": [
     "storybook",
@@ -47,7 +47,6 @@
     "!src/**/*"
   ],
   "dependencies": {
-    "@storybook/csf-plugin": "workspace:*",
     "ts-dedent": "^2.0.0"
   },
   "devDependencies": {

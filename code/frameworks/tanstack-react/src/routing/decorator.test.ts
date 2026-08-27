@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { createRootRoute, createRoute } from '@tanstack/react-router';
 
+import { createFileRoute } from '../export-mocks/react-router.ts';
 import { createStoryRouter } from './decorator.tsx';
 
 // Regression coverage for mounting a story directly on a pathless layout
@@ -96,6 +97,20 @@ describe('createStoryRouter with a pathless layout that already has an index chi
     const ids = router.state.matches.map((m: any) => m.routeId).join(',');
     expect(ids).toContain('authed');
     expect(router.state.location.pathname).toBe('/products');
+  });
+});
+
+describe('createStoryRouter with a standalone index file route', () => {
+  it('mounts without colliding with the synthesized index child', async () => {
+    const router = createStoryRouter({
+      Story: () => null,
+      context: fakeContext(createFileRoute('/_app/')({}) as any),
+    });
+    await router.load();
+
+    const ids = router.state.matches.map((m: any) => m.routeId).join(',');
+    expect(ids).toContain('/_app');
+    expect(router.state.location.pathname).toBe('/');
   });
 });
 

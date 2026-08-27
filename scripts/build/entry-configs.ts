@@ -25,15 +25,17 @@ import sveltekitFrameworkConfig from '../../code/frameworks/sveltekit/build-conf
 import vue3ViteFrameworkConfig from '../../code/frameworks/vue3-vite/build-config.ts';
 import webComponentsViteFrameworkConfig from '../../code/frameworks/web-components-vite/build-config.ts';
 import tanstackReactFrameworkConfig from '../../code/frameworks/tanstack-react/build-config.ts';
+import angularCmConfig from '../../code/lib/angular-cm/build-config.ts';
+import angularCompodocConfig from '../../code/lib/angular-compodoc/build-config.ts';
 import cliConfig from '../../code/lib/cli-storybook/build-config.ts';
 import codemodConfig from '../../code/lib/codemod/build-config.ts';
 import coreWebpackConfig from '../../code/lib/core-webpack/build-config.ts';
 import createStorybookConfig from '../../code/lib/create-storybook/build-config.ts';
-import csfPluginConfig from '../../code/lib/csf-plugin/build-config.ts';
 import docgenHarnessConfig from '../../code/lib/docgen-harness/build-config.ts';
 import eslintPluginConfig from '../../code/lib/eslint-plugin/build-config.ts';
 import mcpConfig from '../../code/lib/mcp/build-config.ts';
 import reactDomShimConfig from '../../code/lib/react-dom-shim/build-config.ts';
+import vitePluginStorybookNextjsConfig from '../../code/lib/vite-plugin-storybook-nextjs/build-config.ts';
 import presetCraConfig from '../../code/presets/create-react-app/build-config.ts';
 import presetReactWebpackConfig from '../../code/presets/react-webpack/build-config.ts';
 import presetServerWebpackConfig from '../../code/presets/server-webpack/build-config.ts';
@@ -82,15 +84,17 @@ export const buildEntries = {
   '@storybook/tanstack-react': tanstackReactFrameworkConfig,
 
   // lib
+  '@storybook/angular-cm': angularCmConfig,
+  '@storybook/angular-compodoc': angularCompodocConfig,
   '@storybook/cli': cliConfig,
   '@storybook/codemod': codemodConfig,
   '@storybook/core-webpack': coreWebpackConfig,
-  '@storybook/csf-plugin': csfPluginConfig,
   '@storybook/docgen-harness': docgenHarnessConfig,
   '@storybook/mcp': mcpConfig,
   '@storybook/react-dom-shim': reactDomShimConfig,
   'create-storybook': createStorybookConfig,
   'eslint-plugin-storybook': eslintPluginConfig,
+  'vite-plugin-storybook-nextjs': vitePluginStorybookNextjsConfig,
 
   // presets
   '@storybook/preset-create-react-app': presetCraConfig,

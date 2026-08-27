@@ -1,6 +1,6 @@
 {
   "name": "@storybook/claude-code-plugin",
-  "version": "10.6.0-alpha.4",
+  "version": "10.6.0-alpha.9",
   "private": true,
   "description": "Build, preview, and test UI components",
   "keywords": [

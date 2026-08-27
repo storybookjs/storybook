@@ -3,7 +3,6 @@ import { randomUUID } from 'node:crypto';
 import { existsSync, rmSync } from 'node:fs';
 import { chmod, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { homedir, userInfo } from 'node:os';
-import { promisify } from 'node:util';
 
 import { normalizeAddonName } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
@@ -20,7 +19,19 @@ const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * ONE_DAY_MS;
 const REGISTRY_DIR_MODE = 0o700;
 const RECORD_FILE_MODE = 0o600;
-const execFileAsync = promisify(execFile);
+
+// Node's promisify(execFile) closes over the original execFile via promisify.custom, so spies never see icacls.
+function execFileAsync(file: string, args: readonly string[]) {
+  return new Promise<void>((resolveExec, rejectExec) => {
+    execFile(file, [...args], (error) => {
+      if (error) {
+        rejectExec(error);
+        return;
+      }
+      resolveExec();
+    });
+  });
+}
 
 async function restrictOwnerAccess(targetPath: string, mode: number) {
   await chmod(targetPath, mode);

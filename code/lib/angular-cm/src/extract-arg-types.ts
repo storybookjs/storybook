@@ -480,8 +480,6 @@ export const extractArgTypesFromData = (
           ? { name: 'other', value: 'void' }
           : extractType(item, defaultValue, metadataJson, componentData.file);
 
-      // Only an input can be obliged to bind, and every consumer reads the flag for truth, so an
-      // optional one records nothing rather than a `false` none of them can tell from an absent key.
       const type: SBType =
         section === 'inputs' && !isMethod(item) && isRequired(item)
           ? { ...declaredType, required: true }

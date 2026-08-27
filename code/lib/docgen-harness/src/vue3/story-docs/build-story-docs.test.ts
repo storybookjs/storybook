@@ -107,6 +107,14 @@ function docgenForFixture(
     'template-escaped-interpolation': {
       label: argType('label', 'props'),
     },
+    'template-unset-args': {
+      clear: argType('clear', 'events'),
+      hint: argType('hint', 'props'),
+      id: argType('id', 'props'),
+      label: argType('label', 'props'),
+      modelValue: argType('modelValue', 'props'),
+      'update:modelValue': argType('update:modelValue', 'events'),
+    },
     'template-v-model-expansion': {
       label: argType('label', 'props'),
       'update:modelValue': argType('update:modelValue', 'events'),

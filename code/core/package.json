@@ -208,6 +208,16 @@
       "code": "./src/telemetry/index.ts",
       "default": "./dist/telemetry/index.js"
     },
+    "./internal/tools": {
+      "types": "./dist/cli/tools/sdk/index.d.ts",
+      "code": "./src/cli/tools/sdk/index.ts",
+      "default": "./dist/cli/tools/sdk/index.js"
+    },
+    "./internal/tools/child-host": {
+      "types": "./dist/cli/tools/sdk/child-host.d.ts",
+      "code": "./src/cli/tools/sdk/child-host.ts",
+      "default": "./dist/cli/tools/sdk/child-host.js"
+    },
     "./internal/toolsets-docs": {
       "types": "./dist/shared/open-service/toolsets/docs/public.d.ts",
       "code": "./src/shared/open-service/toolsets/docs/public.ts",

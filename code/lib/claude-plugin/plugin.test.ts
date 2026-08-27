@@ -82,9 +82,9 @@ describe('stories skill prerequisites', () => {
   ])('uses Storybook documentation and treats setup as upgrade approval: %s', (skillPath) => {
     const skill = readFileSync(skillPath, 'utf8');
 
-    expect(skill).toContain('docs-list');
-    expect(skill).toContain('docs-show');
-    expect(skill.indexOf('docs-list')).toBeLessThan(skill.indexOf('docs-show'));
+    expect(skill).toContain('docs list');
+    expect(skill).toContain('docs show');
+    expect(skill.indexOf('docs list')).toBeLessThan(skill.indexOf('docs show'));
     expect(skill).toContain('set up or install Storybook');
   });
 });

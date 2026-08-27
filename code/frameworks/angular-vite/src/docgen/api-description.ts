@@ -24,8 +24,6 @@ const readMember = (name: string, argType: StrictInputType): Member => {
     name,
     description: argType.description,
     type: table?.type?.summary,
-    // The same declared flag the props table badges from, so what an agent reads and what a
-    // maintainer sees can never disagree again.
     required: argType.type?.required === true,
     defaultValue: table?.defaultValue?.summary,
     deprecated: table?.jsDocTags?.deprecated,

@@ -53,6 +53,27 @@ describe('get-known-packages', () => {
       });
     });
 
+    it('should analyze bundler packages with actual versions', async () => {
+      const packageJson: PackageJson = {
+        devDependencies: {
+          webpack: '5.90.0',
+          vite: '^5.0.0',
+          '@rsbuild/core': '1.0.0',
+          '@parcel/core': '2.0.0',
+          eslint: '9.0.0',
+        },
+      };
+
+      const result = await analyzeEcosystemPackages(packageJson);
+
+      expect(result.bundlerPackages).toEqual({
+        webpack: '1.0.0',
+        vite: '1.0.0',
+        '@rsbuild/core': '1.0.0',
+        '@parcel/core': '1.0.0',
+      });
+    });
+
     it('should analyze ecosystem packages in a single packageJson with multiple groups', async () => {
       const packageJson: PackageJson = {
         dependencies: {

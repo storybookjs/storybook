@@ -20,7 +20,7 @@
   <a href="https://codecov.io/gh/storybookjs/storybook">
     <img src="https://codecov.io/gh/storybookjs/storybook/branch/main/graph/badge.svg" alt="codecov" />
   </a>
-  <a href="https://github.com/storybookjs/storybook/blob/main/LICENSE">
+  <a href="LICENSE">
     <img src="https://img.shields.io/github/license/storybookjs/storybook.svg" alt="License" />
   </a>
   <br/>

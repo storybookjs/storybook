@@ -36,16 +36,10 @@ export async function runChildHost({
     const message = raw as ParentMessage;
     switch (message.type) {
       case 'init': {
-        const mode = message.options.mode === 'local' ? 'local' : 'attached';
-        if (mode === 'attached') {
-          process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
-        } else {
-          delete process.env.STORYBOOK_ATTACHED_TOOLS;
-        }
         tools = await createTools({
           ...message.options,
           cwd: cwd(),
-          mode,
+          mode: message.options.mode ?? 'attached',
           autoSpawn: false,
         });
         send({

@@ -229,6 +229,7 @@ export async function spawnChildHost(
       cwd: cwd,
       options: args.options,
       clientInfo: args.clientInfo,
+      resolvedMode,
     });
   } catch (error) {
     closed = true;
@@ -378,9 +379,10 @@ async function waitForHello(
     cwd: string;
     options: CreateToolsOptions;
     clientInfo: Required<ToolsClientInfo>;
+    resolvedMode: 'local' | 'attached';
   }
 ): Promise<ChildHelloMessage> {
-  const { cwd, options, clientInfo } = args;
+  const { cwd, options, clientInfo, resolvedMode } = args;
   return new Promise<ChildHelloMessage>((resolve, reject) => {
     const onMessage = (raw: unknown) => {
       if (isChildMessage(raw) && raw.type === 'hello') {
@@ -435,7 +437,7 @@ async function waitForHello(
         options: {
           ...options,
           cwd,
-          mode: options.mode === 'local' ? 'local' : 'attached',
+          mode: resolvedMode,
           autoSpawn: false,
           clientInfo,
         },

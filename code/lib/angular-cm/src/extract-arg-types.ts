@@ -482,9 +482,6 @@ export const extractArgTypesFromData = (
           ? { name: 'other', value: 'void' }
           : extractType(item, defaultValue, metadataJson, componentData.file);
 
-      // The props table renders its required badge off the sbType, not off `table.type`, so an
-      // input that must be bound has to carry the flag in both. Only an input is bindable, so no
-      // other section earns a badge.
       const type: SBType =
         required && section === 'inputs' ? { ...declaredType, required: true } : declaredType;
 

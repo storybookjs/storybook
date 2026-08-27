@@ -64,3 +64,6 @@ jobs:
           jq -er '.packages[] | select(.name == "create-storybook") | .name' ./pkg-pr-new-output.json >/dev/null
           jq -er '.packages[] | select(.name == "storybook") | .name' ./pkg-pr-new-output.json >/dev/null
           jq -er '.packages[] | select(.name == "@storybook/react-vite") | .name' ./pkg-pr-new-output.json >/dev/null
+
+      # Continues in publish-canary-pr-body.yml: after this job completes, a
+      # trusted workflow_run updates the PR body with canary install commands.

@@ -374,11 +374,11 @@ export function hoistArgValue(name: string, value: t.Node, ctx: RenderContext): 
   return bindingName;
 }
 
-/** Hoist an arg value as a `ref` for a `v-model` binding. */
-export function hoistModelRef(name: string, value: t.Node, ctx: RenderContext): string {
+/** Hoist an arg value as a `ref` for a `v-model` binding; an absent value starts the ref empty. */
+export function hoistModelRef(name: string, value: t.Node | undefined, ctx: RenderContext): string {
   (ctx.imports[VUE_PACKAGE] ??= new Set()).add('ref');
   const bindingName = allocateBindingName(name, ctx);
-  ctx.variables.set(bindingName, `ref(${printValue(unwrapExpression(value))})`);
+  ctx.variables.set(bindingName, value ? `ref(${printValue(unwrapExpression(value))})` : 'ref()');
   return bindingName;
 }
 

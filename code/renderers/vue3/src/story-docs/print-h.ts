@@ -347,7 +347,7 @@ function printProps(
     ) {
       return undefined;
     }
-    if (classification.kind === 'omit') {
+    if (classification.kind === 'omit' || classification.kind === 'unset') {
       continue;
     }
 

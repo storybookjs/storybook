@@ -57,11 +57,11 @@ gh pr list \
 gh pr view <NUMBER> --repo storybookjs/storybook --json body --jq .body
 ```
 
-Use the heading and the `CANARY_RELEASE_SECTION` commands as-is:
+Use the heading and the `CANARY_RELEASE_SECTION` commands as-is. A follow-up workflow (`publish-canary-pr-body.yml`) writes those sections after publish finishes, including on fork PRs.
 
 - **Released** — use the install commands from the body
-- **Pending** — wait; the heading links to the in-progress workflow run
 - **Failed** — the heading links to pkg.pr.new; the failure comment links to the workflow run
+- **Not run** — publish is still in progress, unlabeled, or the follow-up has not run yet
 
 ### B. If the branch does not have a PR with the `ci:canary` label
 

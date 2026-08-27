@@ -430,7 +430,7 @@ Before you start you should make sure that your working tree is clean and the re
 
 ## Canary Releases
 
-Canary packages publish to `pkg.pr.new`. The [canary publish workflow](../.github/workflows/publish-canary.yml) runs on every push to `next`. For pull requests it is opt-in: a human adds the `ci:canary` label, and while the label remains every subsequent push republishes and updates the PR body with commands for creating a new project or upgrading an existing one. The PR heading links to https://pkg.pr.new/~/storybookjs/storybook. Install commands use compact pkg.pr.new URLs with the short commit SHA, for example `https://pkg.pr.new/storybook@a1b2c3d`.
+Canary packages publish to `pkg.pr.new`. The [canary publish workflow](../.github/workflows/publish-canary.yml) runs on every push to `next`. For pull requests it is opt-in: a human adds the `ci:canary` label, and while the label remains every subsequent push republishes. A separate [trusted workflow](../.github/workflows/publish-canary-pr-body.yml) then updates the PR body (including fork PRs) with commands for creating a new project or upgrading an existing one. The PR heading links to https://pkg.pr.new/~/storybookjs/storybook. Install commands use compact pkg.pr.new URLs with the short commit SHA, for example `https://pkg.pr.new/storybook@a1b2c3d`.
 
 ### Manual Canary Release
 

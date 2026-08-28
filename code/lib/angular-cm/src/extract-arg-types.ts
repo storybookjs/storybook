@@ -6,7 +6,7 @@
  * committed baselines pin; this one is the successor and carries only the corrected rules, so the
  * two are not kept in sync and fixes belong here.
  */
-import type { ArgTypes, InputType, SBEnumType, SBType } from 'storybook/internal/types';
+import type { SBEnumType, SBType, StrictArgTypes, StrictInputType } from 'storybook/internal/types';
 
 import type {
   Argument,
@@ -443,7 +443,7 @@ export const extractArgTypesFromData = (
   componentData: Entry,
   { metadataJson, propsTable, logger = NOOP_LOGGER }: ExtractArgTypesOptions
 ) => {
-  const sectionToItems: Record<string, InputType[]> = {};
+  const sectionToItems: Record<string, StrictInputType[]> = {};
   const componentClasses: MemberKey[] =
     propsTable === 'inputs'
       ? ['inputsClass']
@@ -475,10 +475,16 @@ export const extractArgTypesFromData = (
 
       const defaultValue = isMethod(item) ? undefined : extractDefaultValue(item, logger);
 
-      const type: SBType =
+      const declaredType: SBType =
         isMethod(item) || (section !== 'inputs' && section !== 'properties')
           ? { name: 'other', value: 'void' }
           : extractType(item, defaultValue, metadataJson, componentData.file);
+
+      const type: SBType =
+        section === 'inputs' && !isMethod(item) && isRequired(item)
+          ? { ...declaredType, required: true }
+          : declaredType;
+
       const action = section === 'outputs' ? { action: item.name } : {};
 
       const jsDocTags = extractMemberJsDocTags(item);
@@ -493,7 +499,6 @@ export const extractArgTypesFromData = (
           ...(jsDocTags !== undefined ? { jsDocTags } : {}),
           type: {
             summary: isMethod(item) ? displaySignature(item) : item.type,
-            required: isMethod(item) ? false : isRequired(item),
           },
           defaultValue: { summary: defaultValue },
         },
@@ -514,8 +519,8 @@ export const extractArgTypesFromData = (
     .forEach((item) => {
       const changeName = `${item.name}Change`;
 
-      // An output rather than the model input it derives from: no `defaultValue`, never required to
-      // bind, and typed as the emitted-payload handler signature.
+      // An output rather than the model input it derives from: no `defaultValue`, no `required`,
+      // and typed as the emitted-payload handler signature.
       const argType = {
         name: changeName,
         description: item.rawdescription || item.description,
@@ -525,7 +530,6 @@ export const extractArgTypesFromData = (
           category: 'outputs',
           type: {
             summary: `(e: ${item.type}) => void`,
-            required: false,
           },
         },
       };
@@ -536,12 +540,12 @@ export const extractArgTypesFromData = (
       sectionToItems.outputs.push(argType);
     });
 
-  const argTypes: ArgTypes = {};
+  const argTypes: StrictArgTypes = {};
   SECTION_ORDER.forEach((section) => {
     const items = sectionToItems[section];
     if (items) {
       items.forEach((argType) => {
-        argTypes[argType.name as string] = argType;
+        argTypes[argType.name] = argType;
       });
     }
   });

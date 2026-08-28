@@ -16,6 +16,7 @@ import {
   resolveConfig,
   type InlineConfig,
   type PluginOption,
+  type UserConfig,
   type ViteBuilder,
 } from 'vite';
 
@@ -74,7 +75,7 @@ function main(options?: UserOptions): PluginOption {
     | undefined;
 
   // load and cache config
-  const loadStorybook = (command: 'serve' | 'build' = 'serve') =>
+  const loadStorybook = (command: 'serve' | 'build' = 'serve', appConfig?: UserConfig) =>
     (storybookPromise ??= ViteAsyncLocalStorage.run(true, async () => {
       const sb = await experimental_loadStorybook({
         configDir: finalOptions.configDir,
@@ -84,7 +85,7 @@ function main(options?: UserOptions): PluginOption {
       sb.configType = command === 'build' ? 'PRODUCTION' : 'DEVELOPMENT';
 
       const configType: PluginConfigType = command === 'build' ? 'build' : 'development';
-      const mergedConfig = await commonConfig(sb, configType);
+      const mergedConfig = await commonConfig(sb, configType, appConfig);
       const finalConfig = (await sb.presets.apply('viteFinal', mergedConfig)) as InlineConfig;
 
       finalConfig.plugins = await withoutInternalPlugins(finalConfig.plugins ?? []);
@@ -115,7 +116,7 @@ function main(options?: UserOptions): PluginOption {
     apply: applyToStorybookOnly,
 
     async config(config, { command, mode }) {
-      const { sb } = await loadStorybook(command).catch(async (error) => {
+      const { sb } = await loadStorybook(command, config).catch(async (error) => {
         await reportTelemetryError(error, command === 'build' ? 'build' : 'dev');
         throw error;
       });

@@ -7,7 +7,7 @@ import {
   isSelfContainedFunction,
   printValue,
   type ValuePlan,
-} from './classify-value.ts';
+} from '../shared/values.ts';
 
 /** Docgen-derived names that decide whether args become props, slots, listeners, or v-models. */
 export interface VueDocgenArgInfo {

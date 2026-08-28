@@ -1,5 +1,4 @@
-import { indent } from '../story-docs/render-primitives.ts';
-import type { MetaSource } from './component-meta.ts';
+import type { MetaSource } from '../component-meta/index.ts';
 
 /** The slice of a component's normalized `vue-component-meta` output the api description reads. */
 export type ApiDescriptionSource = Pick<
@@ -160,6 +159,13 @@ function propLine(prop: PropMeta, marker = ''): string[] {
     ...docComment(prop, prop.default),
     `${memberKey(prop.name)}${optional}: ${type};${marker}`,
   ];
+}
+
+function indent(source: string): string {
+  return source
+    .split('\n')
+    .map((line) => `  ${line}`)
+    .join('\n');
 }
 
 function section(

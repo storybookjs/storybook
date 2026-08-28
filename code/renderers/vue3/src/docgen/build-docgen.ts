@@ -15,9 +15,9 @@ import { extractArgTypes } from '../extractArgTypes.ts';
 
 import type { ComponentMetaChecker } from 'vue-component-meta';
 
-import { buildApiDescription } from './api-description.ts';
-import { type MetaSource, collectComponentMetaSources } from './component-meta.ts';
-import { followReExport } from './follow-re-export.ts';
+import { buildApiDescription } from './manifest/api-description.ts';
+import { type MetaSource, collectComponentMetaSources } from './component-meta/index.ts';
+import { followReExport } from './component-meta/follow-re-export.ts';
 import { type UnresolvedComponentReason, resolveMetaComponent } from './resolve-component.ts';
 
 type VueDocgenPayload = DocgenPayload & { vueComponentMeta?: MetaSource };

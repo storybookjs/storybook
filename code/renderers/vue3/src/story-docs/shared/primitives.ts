@@ -10,8 +10,8 @@ import type {
   ClassifiedPropLikeArg,
   ClassifiedSlotArg,
   RenderableValuePlan,
-} from './classify-args.ts';
-import { printValue } from './classify-value.ts';
+} from '../classify/args.ts';
+import { printValue } from './values.ts';
 
 export interface RenderSfcMarkupInput {
   /** Rendered Vue template markup without the wrapping `<template>` block. */

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { babelParse, types as t } from 'storybook/internal/babel';
 
-import { classifyValue, isSelfContainedFunction, type ValuePlan } from './classify-value.ts';
+import { classifyValue, isSelfContainedFunction, type ValuePlan } from './values.ts';
 
 describe('classifyValue', () => {
   it.each<[input: string, output: ValuePlan['kind']]>([

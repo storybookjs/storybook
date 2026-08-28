@@ -16,38 +16,25 @@ import {
   createStoryReferenceResolver,
   extractStoryJSDocInfo,
   jsDocTagsForPath,
-  keyOf,
   loadCsf,
   metaObjectPath,
   noSnippetWarning,
   normalizeStoryDeclaration,
   propertyValue,
   resolveComponentImport,
-  resolveRenderFunction,
-  resolveReturnedObjectExpression,
-  returnedExpression,
-  returnedExpressionPath,
   unresolvedWarning,
-  unwrapExpression,
   type ImportBinding,
-  type ReferenceContext,
-  type RenderFunctionPath,
-  type RenderResolution,
   type StoryArgsResolver,
   type StoryReferenceResolver,
 } from 'storybook/internal/csf-tools';
 import type { StoryDoc, StoryDocsPayload, StoryDocsProviderInput } from 'storybook/internal/types';
 import type { DocgenPayload, DocgenService } from 'storybook/open-service';
 
-import { classifyArgs, type ClassifyArgsResult, type VueDocgenArgInfo } from './classify-args.ts';
-import type { ForwardableSetup } from './forward-setup.ts';
-import { printH } from './print-h.ts';
-import { createRenderContext } from './render-primitives.ts';
-import {
-  readTemplateRenderConfig,
-  transformTemplate,
-  type TemplateRenderConfig,
-} from './transform-template.ts';
+import { classifyArgs, type ClassifyArgsResult, type VueDocgenArgInfo } from './classify/args.ts';
+import { createRenderContext } from './shared/primitives.ts';
+import { printH } from './print/print-h.ts';
+import { resolveStaticRenderer, type StaticStoryRenderer } from './read/renderer.ts';
+import { transformTemplate } from './transform/template.ts';
 
 export interface BuildStoryDocsContext {
   /** Resolve a CSF import path to an absolute file path. Defaults to `process.cwd()` join. */
@@ -96,16 +83,6 @@ const UNRENDERED_WARNINGS: Record<Exclude<StaticStoryRenderer, { kind: 'bail' }>
 
 type ParsedCsf = ReturnType<ReturnType<typeof loadCsf>['parse']>;
 type ExtractStoriesResult = { stories: Record<string, StoryDoc> };
-type StaticStoryRenderer =
-  | { kind: 'bail'; warning: string }
-  | { kind: 'h'; argsParam?: string; expression: t.Expression }
-  | { kind: 'sfc' }
-  | {
-      kind: 'template';
-      componentImports: TemplateRenderConfig['componentImports'];
-      template: string;
-      setup?: ForwardableSetup;
-    };
 type StorySnippetResult = { snippet: string };
 type StaticStoryArgs = {
   classified: ClassifyArgsResult;
@@ -319,19 +296,16 @@ function enrichStoryDoc(
     return plain;
   }
 
-  const storyConfigPath = normalized.type === 'config' ? normalized.path : undefined;
-  const effectiveRender = resolveEffectiveRender(
-    storyConfigPath,
-    options.metaPath,
-    csf._storyDeclarationPath[storyExport],
-    options.resolver.ctx
-  );
-  const renderer =
-    effectiveRender.kind === 'resolved'
-      ? staticRendererForRenderFunction(effectiveRender.path, options)
-      : effectiveRender.kind === 'missing'
-        ? { kind: 'sfc' as const }
-        : undefined;
+  const renderer = resolveStaticRenderer({
+    componentImportStatement,
+    componentName,
+    importBindings: options.importBindings,
+    metaPath: options.metaPath,
+    references: options.resolver.ctx,
+    source: options.source,
+    storyConfigPath: normalized.type === 'config' ? normalized.path : undefined,
+    storyDeclaration: csf._storyDeclarationPath[storyExport],
+  });
   if (!renderer) {
     return withWarning(RENDER_UNRESOLVED_WARNING);
   }
@@ -372,45 +346,6 @@ function enrichStoryDoc(
     snippet: rendered.snippet,
     ...(unresolved.length > 0 ? { warning: unresolvedWarning(unresolved) } : {}),
   };
-}
-
-function staticRendererForRenderFunction(
-  renderFunction: RenderFunctionPath,
-  options: StoryDocsContext
-): StaticStoryRenderer | undefined {
-  const renderObject = resolveReturnedObjectExpression(renderFunction);
-  if (renderObject) {
-    const resolution = readTemplateRenderConfig(renderObject, options.importBindings, {
-      argsParam: argsParameterName(renderFunction.node),
-      componentImportStatement: options.snippet?.componentImportStatement,
-      componentName: options.snippet?.componentName,
-      source: options.source,
-    });
-    if (resolution.kind === 'bail') {
-      return { kind: 'bail', warning: resolution.warning };
-    }
-    if (resolution.kind === 'config') {
-      return { kind: 'template', ...resolution.config };
-    }
-
-    const setupExpression = setupReturnedRenderExpression(renderObject);
-    if (setupExpression) {
-      return {
-        argsParam: argsParameterName(renderFunction.node),
-        expression: setupExpression,
-        kind: 'h',
-      };
-    }
-  }
-
-  const hExpression = returnedExpressionPath(renderFunction)?.node;
-  return hExpression
-    ? {
-        argsParam: argsParameterName(renderFunction.node),
-        expression: hExpression,
-        kind: 'h',
-      }
-    : undefined;
 }
 
 function resolveStaticStoryArgs(
@@ -485,73 +420,4 @@ function renderStaticStorySnippet(
     template: printed.template,
     unsetArgs: classified.unset,
   });
-}
-
-/**
- * The `h()` tree a render object's `setup` returns through its render closure, when nothing else
- * on the object can change what the story renders.
- *
- * @example `render: (args) => ({ setup: () => () => h(C, { label: args.label }) })` -> the `h(...)` call
- */
-function setupReturnedRenderExpression(renderObject: t.ObjectExpression): t.Expression | undefined {
-  const supported = renderObject.properties.every((property) => {
-    if (t.isSpreadElement(property)) {
-      return false;
-    }
-    const key = keyOf(property);
-    return key === 'setup' || key === 'components' || key === 'inheritAttrs';
-  });
-  if (!supported) {
-    return undefined;
-  }
-
-  const setup = renderObject.properties.find(
-    (property) => !t.isSpreadElement(property) && keyOf(property) === 'setup'
-  );
-  const setupFn = t.isObjectMethod(setup)
-    ? setup
-    : t.isObjectProperty(setup)
-      ? unwrapExpression(setup.value)
-      : undefined;
-  if (!setupFn || !t.isFunction(setupFn)) {
-    return undefined;
-  }
-
-  const renderClosure = returnedExpression(setupFn);
-  const closure = renderClosure && unwrapExpression(renderClosure);
-  // A render closure with parameters would receive values the snippet cannot reproduce.
-  if (!closure || !t.isFunction(closure) || closure.params.length > 0) {
-    return undefined;
-  }
-
-  return returnedExpression(closure);
-}
-
-function argsParameterName(renderFunction: RenderFunctionPath['node']): string | undefined {
-  const [parameter] = renderFunction.params;
-  return t.isIdentifier(parameter) ? parameter.name : undefined;
-}
-
-function resolveEffectiveRender(
-  storyConfigPath: NodePath<t.ObjectExpression> | undefined,
-  metaPath: NodePath<t.ObjectExpression> | undefined,
-  storyDeclaration: NodePath<t.Node>,
-  references: ReferenceContext
-): RenderResolution {
-  const storyRender = resolveRenderFromObjectPath(storyConfigPath, storyDeclaration, references);
-  return storyRender.kind !== 'missing'
-    ? storyRender
-    : resolveRenderFromObjectPath(metaPath, storyDeclaration, references);
-}
-
-function resolveRenderFromObjectPath(
-  path: NodePath<t.ObjectExpression> | undefined,
-  storyDeclaration: NodePath<t.Node>,
-  references: ReferenceContext
-): RenderResolution {
-  try {
-    return resolveRenderFunction(path, storyDeclaration, references);
-  } catch {
-    return { kind: 'unresolved' };
-  }
 }

@@ -14,7 +14,7 @@ import { logger } from 'storybook/internal/node-logger';
 import type { DocgenMiddleware } from 'storybook/internal/types';
 
 import { buildDocgenPayload } from './build-docgen.ts';
-import { VueComponentMetaManager } from './vue-project-manager.ts';
+import { VueComponentMetaManager } from './component-meta/project-manager.ts';
 
 /**
  * Builds the Vue docgen middleware. Owns one {@link VueComponentMetaManager} for the worker's

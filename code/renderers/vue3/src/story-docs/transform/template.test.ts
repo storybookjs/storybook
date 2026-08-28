@@ -8,9 +8,9 @@ import { babelParse, types as t } from 'storybook/internal/babel';
 import type { IndexEntry } from 'storybook/internal/types';
 import type { DocgenPayload } from 'storybook/open-service';
 
-import { buildStoryDocsPayload } from './build-story-docs.ts';
-import type { ClassifiedArg } from './classify-args.ts';
-import { transformTemplate } from './transform-template.ts';
+import { buildStoryDocsPayload } from '../build-story-docs.ts';
+import type { ClassifiedArg } from '../classify/args.ts';
+import { transformTemplate } from './template.ts';
 
 vi.mock('node:fs/promises', { spy: true });
 

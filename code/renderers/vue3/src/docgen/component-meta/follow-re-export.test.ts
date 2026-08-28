@@ -7,10 +7,10 @@ import type { IndexEntry } from 'storybook/internal/types';
 
 import ts from 'typescript';
 
-import { buildDocgenPayload } from './build-docgen.ts';
-import { VueComponentMetaManager } from './vue-project-manager.ts';
+import { buildDocgenPayload } from '../build-docgen.ts';
+import { VueComponentMetaManager } from './project-manager.ts';
 
-const barrelDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__/barrel');
+const barrelDir = join(dirname(fileURLToPath(import.meta.url)), '../__testfixtures__/barrel');
 
 const manager = new VueComponentMetaManager(ts);
 afterAll(() => manager.dispose());

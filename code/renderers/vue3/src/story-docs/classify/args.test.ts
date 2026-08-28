@@ -2,8 +2,8 @@ import { describe, expect, it } from 'vitest';
 
 import { babelParse, types as t } from 'storybook/internal/babel';
 
-import { classifyArgs, type ClassifiedArg } from './classify-args.ts';
-import { printValue } from './classify-value.ts';
+import { classifyArgs, type ClassifiedArg } from './args.ts';
+import { printValue } from '../shared/values.ts';
 
 interface DocgenFixture {
   props?: string[];

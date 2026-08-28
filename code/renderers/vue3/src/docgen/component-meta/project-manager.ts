@@ -6,7 +6,7 @@
  * recycling. Each matched tsconfig becomes its own checker, so a `create-vue` root config that only
  * holds `references` resolves to the sub-config that actually includes the component — instead of
  * the whole-project `include: ['**\/*']` fallback checker that `createVueComponentMetaChecker` in
- * `./component-meta.ts` still uses for the legacy Vite path.
+ * `./checker.ts` still uses for the legacy Vite path.
  *
  * The checker keeps its own snapshot cache internally (unlike React's project, which shares the
  * manager-side mtime cache), so this adapter's job on file events is to push content into the
@@ -30,7 +30,7 @@ import { createParsedCommandLine, getAllExtensions } from '@vue/language-core';
 import type ts from 'typescript';
 import { type ComponentMetaChecker, createChecker, createCheckerByJson } from 'vue-component-meta';
 
-import { CHECKER_OPTIONS } from './component-meta.ts';
+import { CHECKER_OPTIONS } from './checker.ts';
 
 /**
  * Raw-JSON compiler options for files no discovered tsconfig covers (`createCheckerByJson` parses

@@ -8,10 +8,10 @@ import type { IndexEntry } from 'storybook/internal/types';
 import ts from 'typescript';
 import type { ComponentMetaChecker } from 'vue-component-meta';
 
-import { buildDocgenPayload } from './build-docgen.ts';
-import { VueComponentMetaManager, VueComponentMetaProject } from './vue-project-manager.ts';
+import { buildDocgenPayload } from '../build-docgen.ts';
+import { VueComponentMetaManager, VueComponentMetaProject } from './project-manager.ts';
 
-const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
+const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '../__testfixtures__');
 const referencesDir = join(fixturesDir, 'references');
 
 // One manager across the suite — checker construction is the expensive part, and sharing it is

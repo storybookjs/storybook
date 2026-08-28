@@ -31,6 +31,6 @@ export const experimental_importParsers = async (
 
 /** Docgen extraction engines, keyed by plugin. Each loads lazily so a project only pays for the one it uses. */
 export const experimental_vueDocgenEngine = async () => ({
-  componentMeta: () => import('./docgen/component-meta.ts'),
+  componentMeta: () => import('./docgen/component-meta/index.ts'),
   vueDocgenApi: () => import('./docgen/vue-docgen-api.ts'),
 });

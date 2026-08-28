@@ -647,9 +647,15 @@ describe('selectInstances', () => {
   });
 
   it('selects across projects by port alone, most recently started first', () => {
-    const foo = record('/Users/x/projects/foo', 'ready', { port: 6006 });
-    const bar = record('/Users/x/projects/bar', 'ready', { port: 6006 });
+    const foo = record('/Users/x/projects/foo', 'ready', {
+      port: 6006,
+      startedAt: '2026-08-27T10:00:00.000Z',
+    });
+    const bar = record('/Users/x/projects/bar', 'ready', {
+      port: 6006,
+      startedAt: '2026-08-27T11:00:00.000Z',
+    });
     const result = selectInstances([foo, bar], { cwd: '/Users/x/projects/other', port: 6006 });
-    expect(result).toEqual({ kind: 'match', matches: [foo, bar] });
+    expect(result).toEqual({ kind: 'match', matches: [bar, foo] });
   });
 });

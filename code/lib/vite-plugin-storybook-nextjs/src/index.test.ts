@@ -17,7 +17,7 @@ vi.mock('node:module', () => ({
 }));
 
 vi.mock('next/dist/build/load-jsconfig.js', () => ({
-  default: loadJsConfigMock,
+  default: { default: loadJsConfigMock },
 }));
 
 vi.mock('next/dist/server/config.js', () => ({
@@ -97,6 +97,7 @@ describe('VitePlugin', () => {
     const tsconfigPlugin = await plugins[0];
     const configPlugin = plugins[1];
 
+    expect(loadJsConfigMock).toHaveBeenCalledWith('/root', nextConfig);
     expect(tsconfigPathsMock).toHaveBeenCalledWith({
       projects: ['/root/tsconfig.json'],
       root: '/root',

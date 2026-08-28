@@ -188,7 +188,10 @@ export async function runToolsCommand(
       attachMode: requestedMode,
     };
   }
-  const target: ToolsTarget = { ...normalized.target, port: parsedPort.port };
+  const target: ToolsTarget = {
+    ...normalized.target,
+    ...(parsedPort.port !== undefined ? { port: parsedPort.port } : {}),
+  };
 
   // `-o/--output` applies to whatever the run produced — help, intercepts, and tool results
   // alike — matching the ai CLI, where the output file always receives the printed text.

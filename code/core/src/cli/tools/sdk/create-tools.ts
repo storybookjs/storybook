@@ -175,9 +175,17 @@ async function createAttachedTools(
     port: options.port,
   });
   if ('kind' in attached && attached.kind === 'spawn') {
+    // Pin the chosen instance's port so the child host re-resolves to that exact instance even
+    // when the registry changes between the parent's resolution and the child's.
     return (deps.spawnChild ?? spawnChildHost)({
       cwd: attached.record.cwd,
-      options: { ...options, mode: 'attached', autoSpawn: false, cwd: attached.record.cwd },
+      options: {
+        ...options,
+        mode: 'attached',
+        autoSpawn: false,
+        cwd: attached.record.cwd,
+        port: attached.record.port,
+      },
       clientInfo,
       requestedMode,
     });

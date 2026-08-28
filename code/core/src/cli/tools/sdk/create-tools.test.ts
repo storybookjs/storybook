@@ -396,6 +396,8 @@ describe('createTools', () => {
         cwd: '/repo',
         mode: 'attached',
         autoSpawn: false,
+        // Pinned from the chosen record, so the child re-resolves to the same instance.
+        port: 6006,
       }),
       clientInfo: expect.objectContaining({ kind: 'sdk' }),
       requestedMode: 'attached',

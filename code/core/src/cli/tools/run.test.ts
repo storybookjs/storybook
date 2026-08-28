@@ -359,6 +359,17 @@ describe('local tools', () => {
     expect(createTools).toHaveBeenCalledWith(expect.objectContaining({ port: 6006 }));
   });
 
+  it('preserves a port given directly on the target when no raw --port value exists', async () => {
+    const { deps, createTools } = makeDeps();
+
+    await runToolsCommand(
+      { toolset: 'docs', tool: 'list', tokens: [], target: { cwd: '/repo', port: 6006 } },
+      deps
+    );
+
+    expect(createTools).toHaveBeenCalledWith(expect.objectContaining({ port: 6006 }));
+  });
+
   it('rejects an invalid --port before creating any host', async () => {
     const { deps, createTools } = makeDeps();
 

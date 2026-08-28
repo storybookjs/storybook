@@ -24,7 +24,7 @@ const tools = await createTools({
 });
 
 tools.mode; // 'attached' | 'local'
-tools.storybook; // { version, configDir, url?, pid?, siblings? }
+tools.storybook; // { version, configDir, url?, pid?, port?, cwd?, siblings? }
 await tools.describe();
 await tools.describe({ toolset: 'docs' });
 await tools.call('docs.show', { id: 'button' });
@@ -60,7 +60,7 @@ set). `--json` keeps only the tool result.
 | `--attach`    | `attached` | Hard error (no fallback)         |
 | `--no-attach` | `local`    | Never attaches                   |
 
-`--cwd` and `--config-dir` belong **before** the toolset name. `--attach` / `--no-attach` cannot
+`--cwd`, `--config-dir`, and `--port` belong **before** the toolset name (after it, they are tool arguments). `--attach` / `--no-attach` cannot
 be combined. `requiresDevServer` is a **local-mode intercept** only: when attached, those methods
 run caller-side (`stories.preview` reads `origin` from the instance record).
 
@@ -69,6 +69,7 @@ npx storybook tools docs list
 npx storybook tools --attach docs list
 npx storybook tools --no-attach docs list
 npx storybook tools --cwd /apps/web --config-dir /apps/web/.storybook docs list
+npx storybook tools --port 6007 stories preview --stories '[{"storyId":"example-button--primary"}]'
 ```
 
 ## Modes

@@ -52,7 +52,7 @@ describe('attach failure messages', () => {
 
   it('names the running ports and the --port that selects one on a port mismatch', () => {
     expect(formatPortMismatch(9999, [other, sibling])).toMatchInlineSnapshot(`
-      "No Storybook instance for this project is running on port 9999. Matching instances — target one with \`--port <port>\`:
+      "No Storybook instance for this project is running on port 9999. Retry with one of the running ports below, or omit \`--port\` to use the most recently started instance:
       - http://localhost:6006 (port \`6006\`, cwd \`/apps/web\`)
       - http://localhost:6007 (port \`6007\`, cwd \`/apps/ui\`)"
     `);
@@ -78,7 +78,9 @@ describe('attach failure messages', () => {
       "Warning: Multiple Storybook instances match this project. This command used http://localhost:6007 (pid 123, config dir \`/apps/web/.storybook\`).
 
       Other matching instances — target one with \`--port <port>\`:
-      - http://localhost:6006 (port \`6006\`, pid \`456\`, cwd \`/apps/web\`, config dir \`/apps/web/.storybook\`)"
+      - http://localhost:6006 (port \`6006\`, pid \`456\`, cwd \`/apps/web\`, config dir \`/apps/web/.storybook\`)
+
+      If results look unexpected, ask the user whether they want to stop the other instance(s)."
     `);
   });
 

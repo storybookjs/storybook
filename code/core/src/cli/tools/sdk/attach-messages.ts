@@ -37,7 +37,7 @@ export function formatPortMismatch(
   projectMatches: StorybookInstanceRecord[]
 ): string {
   const lines = [
-    `No Storybook instance for this project is running on port ${port}. Matching instances — target one with \`--port <port>\`:`,
+    `No Storybook instance for this project is running on port ${port}. Retry with one of the running ports below, or omit \`--port\` to use the most recently started instance:`,
   ];
   for (const record of projectMatches) {
     lines.push(`- ${record.url} (port \`${record.port}\`, cwd \`${record.cwd}\`)`);
@@ -94,5 +94,9 @@ export function formatMultiInstanceNotice(storybook: {
       `- ${sibling.url} (port \`${sibling.port}\`, pid \`${sibling.pid}\`, cwd \`${sibling.cwd}\`${configDir})`
     );
   }
+  lines.push(
+    '',
+    'If results look unexpected, ask the user whether they want to stop the other instance(s).'
+  );
   return lines.join('\n');
 }

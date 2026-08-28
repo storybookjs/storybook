@@ -8,7 +8,6 @@ import { CloseIcon, SearchIcon } from '@storybook/icons';
 
 import type { DownshiftState, StateChangeOptions } from 'downshift';
 import Downshift from 'downshift';
-import type { FuseOptions } from 'fuse.js';
 import Fuse from 'fuse.js';
 import { shortcutToHumanString, useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
@@ -17,6 +16,7 @@ import { useLandmark } from '../../hooks/useLandmark.ts';
 import { getGroupStatus, getMostCriticalStatusValue } from '../../utils/status.tsx';
 import { scrollIntoView, searchItem } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
+import { docsAnchorItem, expandDocsAnchors, fuseOptions } from './Search.utils.ts';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import type {
   CombinedDataset,
@@ -31,24 +31,6 @@ import { isExpandType, isSearchResult } from './types.ts';
 const { document } = global;
 
 const DEFAULT_MAX_SEARCH_RESULTS = 50;
-
-const options = {
-  shouldSort: true,
-  tokenize: true,
-  findAllMatches: true,
-  includeScore: true,
-  includeMatches: true,
-  threshold: 0.2,
-  location: 0,
-  distance: 100,
-  maxPatternLength: 32,
-  minMatchCharLength: 1,
-  keys: [
-    { name: 'name', weight: 0.6 },
-    { name: 'path', weight: 0.3 },
-    { name: 'anchors.title', weight: 0.1 },
-  ],
-} as FuseOptions<SearchItem>;
 
 const SearchBar = styled.div({
   display: 'flex',
@@ -214,29 +196,13 @@ export const Search = React.memo<SearchProps>(function Search({
           continue;
         }
 
-        const { anchors, ...baseSearchItem } = searchItem(datasetValue, dataset.hash[refId]);
-
-        list.push({
-          ...baseSearchItem,
-          status,
-        });
-
-        anchors?.forEach((anchor) => {
-          const namePostfix = baseSearchItem.path?.[0] === anchor.title ? '' : ` / ${anchor.title}`;
-
-          list.push({
-            ...baseSearchItem,
-            anchors: [anchor],
-            // Fuse requires unique ids, so suffix the entry id with the anchor's DOM id
-            id: `${datasetValue.id}#${anchor.id}`,
-            name: `${datasetValue.name}${namePostfix}`,
-            status,
-          });
-        });
+        list.push(
+          ...expandDocsAnchors({ ...searchItem(datasetValue, dataset.hash[refId]), status })
+        );
       }
     }
 
-    return new Fuse(list, options);
+    return new Fuse(list, fuseOptions);
   }, [dataset]);
 
   const getResults = useCallback(
@@ -440,19 +406,11 @@ export const Search = React.memo<SearchProps>(function Search({
               // @ts-expect-error (non strict)
               if (!acc.some((res) => res.item.refId === refId && res.item.id === entryId)) {
                 const baseItem = searchItem(item, dataset.hash[refId]);
-                let resultItem = baseItem;
-                if (anchor && item.type === 'docs') {
-                  const matchingAnchor = item.anchors?.find((a) => a.id === anchor);
+                let resultItem: SearchItem = baseItem;
+                if (anchor && baseItem.type === 'docs') {
+                  const matchingAnchor = baseItem.anchors?.find((a) => a.id === anchor);
                   if (matchingAnchor) {
-                    const namePostfix =
-                      baseItem.path?.[0] === matchingAnchor.title
-                        ? ''
-                        : ` / ${matchingAnchor.title}`;
-                    resultItem = {
-                      ...baseItem,
-                      id: entryId,
-                      name: `${item.name}${namePostfix}`,
-                    };
+                    resultItem = docsAnchorItem(baseItem, matchingAnchor);
                   }
                 }
                 // @ts-expect-error (non strict)

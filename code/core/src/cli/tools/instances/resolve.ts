@@ -142,14 +142,9 @@ export type InstanceSelection =
   | { kind: 'port-mismatch'; port: number; projectMatches: StorybookInstanceRecord[] };
 
 /**
- * The selection half of {@link resolveInstance}: match records against the target project, restrict
- * to `target.port` when supplied, then order the competing bucket best-first (the invoking agent's
- * bucket wins over recency across buckets; within the bucket, most recently started first with a
- * lowest-pid tie-break). MCP status plays no role — the attach path consumes this directly because
- * attaching over the channel works without `@storybook/addon-mcp`.
- *
- * A supplied port that matches the project but no instance yields `port-mismatch` with the
- * project's instances, so callers can surface the running ports.
+ * The selection half of {@link resolveInstance}: project matching, port restriction, and best-first
+ * ordering of the competing bucket. MCP status plays no role — the attach path consumes this
+ * directly because attaching over the channel works without `@storybook/addon-mcp`.
  */
 export function selectInstances(
   records: StorybookInstanceRecord[],

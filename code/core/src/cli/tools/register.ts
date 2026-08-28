@@ -244,6 +244,7 @@ async function reportToolsCommandTelemetry(
         ? { resolvedMode: result.attachMode }
         : {}),
       ...(result.host ? { host: result.host } : {}),
+      ...(result.multiInstanceNotice ? { multipleMatches: true } : {}),
       ...(result.fallbackReason ? { attachGate: result.fallbackReason } : {}),
       ...(outcome.kind === 'attach-gate' ? { attachGate: outcome.reason } : {}),
       ...(outcome.kind === 'intercept' ? { interceptReason: outcome.reason } : {}),

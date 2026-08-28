@@ -1,4 +1,5 @@
 import type { StorybookInstanceRecord } from '../instances/types.ts';
+import type { ToolsSiblingInstance } from './types.ts';
 
 function quoteShellArg(value: string): string {
   if (!/[\s'"$`\\]/.test(value)) {
@@ -78,10 +79,12 @@ export function formatAttachFallback(remediation: string): string {
 export function formatMultiInstanceNotice(storybook: {
   url?: string;
   pid?: number;
-  siblings?: Array<{ url: string; port: number; pid: number; cwd: string; configDir?: string }>;
+  configDir?: string;
+  siblings?: ToolsSiblingInstance[];
 }): string {
+  const chosenConfigDir = storybook.configDir ? `, config dir \`${storybook.configDir}\`` : '';
   const lines = [
-    `Warning: Multiple Storybook instances match this project. This command used ${storybook.url ?? 'the selected instance'}${storybook.pid != null ? ` (pid ${storybook.pid})` : ''}.`,
+    `Warning: Multiple Storybook instances match this project. This command used ${storybook.url ?? 'the selected instance'}${storybook.pid != null ? ` (pid ${storybook.pid}${chosenConfigDir})` : ''}.`,
     '',
     'Other matching instances — target one with `--port <port>`:',
   ];

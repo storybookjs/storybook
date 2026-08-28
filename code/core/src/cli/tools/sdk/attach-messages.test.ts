@@ -63,6 +63,7 @@ describe('attach failure messages', () => {
       formatMultiInstanceNotice({
         url: 'http://localhost:6007',
         pid: 123,
+        configDir: '/apps/web/.storybook',
         siblings: [
           {
             url: 'http://localhost:6006',
@@ -74,7 +75,7 @@ describe('attach failure messages', () => {
         ],
       })
     ).toMatchInlineSnapshot(`
-      "Warning: Multiple Storybook instances match this project. This command used http://localhost:6007 (pid 123).
+      "Warning: Multiple Storybook instances match this project. This command used http://localhost:6007 (pid 123, config dir \`/apps/web/.storybook\`).
 
       Other matching instances — target one with \`--port <port>\`:
       - http://localhost:6006 (port \`6006\`, pid \`456\`, cwd \`/apps/web\`, config dir \`/apps/web/.storybook\`)"

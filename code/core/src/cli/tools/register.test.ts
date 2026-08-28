@@ -324,6 +324,17 @@ describe('tools-command telemetry', () => {
     expect(stdoutText).not.toContain('Multiple Storybook instances');
   });
 
+  it('records that the attach resolved among multiple matches', async () => {
+    const { program } = buildProgram();
+    vi.mocked(runToolsCommand).mockResolvedValue(
+      successResult({ multiInstanceNotice: 'Warning: Multiple Storybook instances' })
+    );
+
+    await parse(program, ['tools', 'docs', 'list']);
+
+    expect(toolsCommandPayloads()).toEqual([expect.objectContaining({ multipleMatches: true })]);
+  });
+
   it('passes --disable-telemetry through to withTelemetry', async () => {
     const { program } = buildProgram();
     await parse(program, ['tools', '--disable-telemetry', 'docs', 'list']);
@@ -375,6 +386,28 @@ describe('the --json stream contract', () => {
     expect(stderrText).toContain('noise during the run');
     expect(stderrText).toContain('noise after the result');
     expect(process.stdout.write).toBe(originalWrite);
+  });
+
+  it('keeps the multi-instance notice off the --json stdout', async () => {
+    // The notice write awaits its flush callback, unlike the fire-and-forget noise writes above.
+    stderrSpy.mockImplementation((_chunk, ...args) => {
+      const callback = args.find((arg) => typeof arg === 'function');
+      callback?.();
+      return true;
+    });
+    vi.mocked(runToolsCommand).mockResolvedValue(
+      successResult({
+        output: '{"ok":true}',
+        multiInstanceNotice: 'Warning: Multiple Storybook instances',
+      })
+    );
+
+    await makeProgram().parseAsync(['tools', 'docs', 'list', '--json'], { from: 'user' });
+
+    expect(stdoutSpy).toHaveBeenCalledTimes(1);
+    expect(stdoutSpy.mock.calls[0][0]).toBe('{"ok":true}\n');
+    const stderrText = stderrSpy.mock.calls.map(([chunk]) => chunk).join('');
+    expect(stderrText).toContain('Multiple Storybook instances');
   });
 
   it('restores stdout when the command fails', async () => {

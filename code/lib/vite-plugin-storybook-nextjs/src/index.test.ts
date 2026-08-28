@@ -5,6 +5,9 @@ import type { NextConfigComplete } from 'next/dist/server/config-shared.js';
 const requireResolveMock = vi.hoisted(() => vi.fn((id: string) => `/resolved/${id}`));
 const loadConfigMock = vi.hoisted(() => vi.fn());
 const loadJsConfigMock = vi.hoisted(() => vi.fn());
+const loadJsConfigModule = vi.hoisted(() => ({
+  defaultExport: { default: loadJsConfigMock } as unknown,
+}));
 const tsconfigPathsMock = vi.hoisted(() => vi.fn());
 const getExecutionEnvironmentMock = vi.hoisted(() => vi.fn());
 const getNextjsMajorVersionMock = vi.hoisted(() => vi.fn());
@@ -17,7 +20,9 @@ vi.mock('node:module', () => ({
 }));
 
 vi.mock('next/dist/build/load-jsconfig.js', () => ({
-  default: { default: loadJsConfigMock },
+  get default() {
+    return loadJsConfigModule.defaultExport;
+  },
 }));
 
 vi.mock('next/dist/server/config.js', () => ({
@@ -77,6 +82,7 @@ describe('VitePlugin', () => {
 
     process.env.VITEST = 'false';
 
+    loadJsConfigModule.defaultExport = { default: loadJsConfigMock };
     loadConfigMock.mockResolvedValue(nextConfig);
     loadJsConfigMock.mockResolvedValue({
       jsConfigPath: '/root/tsconfig.json',
@@ -90,7 +96,7 @@ describe('VitePlugin', () => {
     getViteMajorVersionMock.mockReturnValue(7);
   });
 
-  it('injects vite-tsconfig-paths on Vite 7 and older', async () => {
+  it('injects vite-tsconfig-paths on Vite 7 when load-jsconfig is a nested default export', async () => {
     const { default: VitePlugin } = await import('./index.ts');
 
     const plugins = VitePlugin({ dir: '/root' });
@@ -109,6 +115,21 @@ describe('VitePlugin', () => {
       },
     });
     expect((await configPlugin?.config?.({}))?.resolve).not.toHaveProperty('tsconfigPaths');
+  });
+
+  it('injects vite-tsconfig-paths when load-jsconfig is a function export', async () => {
+    loadJsConfigModule.defaultExport = loadJsConfigMock;
+
+    const { default: VitePlugin } = await import('./index.ts');
+
+    const plugins = VitePlugin({ dir: '/root' });
+    await plugins[0];
+
+    expect(loadJsConfigMock).toHaveBeenCalledWith('/root', nextConfig);
+    expect(tsconfigPathsMock).toHaveBeenCalledWith({
+      projects: ['/root/tsconfig.json'],
+      root: '/root',
+    });
   });
 
   it('uses native tsconfig paths support on Vite 8 and newer', async () => {

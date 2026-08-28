@@ -1,6 +1,6 @@
 {
   "name": "storybook",
-  "version": "10.6.0-alpha.7",
+  "version": "10.6.0-beta.0",
   "description": "Storybook: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -124,6 +124,11 @@
       "code": "./src/csf-tools/index.ts",
       "default": "./dist/csf-tools/index.js"
     },
+    "./internal/csf/csf-utils": {
+      "types": "./dist/csf/csf-utils.d.ts",
+      "code": "./src/csf/csf-utils.ts",
+      "default": "./dist/csf/csf-utils.js"
+    },
     "./internal/docgen-worker": "./dist/shared/open-service/services/docgen/worker/docgen-worker.js",
     "./internal/docs-tools": {
       "types": "./dist/docs-tools/index.d.ts",
@@ -202,6 +207,16 @@
       "types": "./dist/telemetry/index.d.ts",
       "code": "./src/telemetry/index.ts",
       "default": "./dist/telemetry/index.js"
+    },
+    "./internal/tools": {
+      "types": "./dist/cli/tools/sdk/index.d.ts",
+      "code": "./src/cli/tools/sdk/index.ts",
+      "default": "./dist/cli/tools/sdk/index.js"
+    },
+    "./internal/tools/child-host": {
+      "types": "./dist/cli/tools/sdk/child-host.d.ts",
+      "code": "./src/cli/tools/sdk/child-host.ts",
+      "default": "./dist/cli/tools/sdk/child-host.js"
     },
     "./internal/toolsets-docs": {
       "types": "./dist/shared/open-service/toolsets/docs/public.d.ts",
@@ -360,6 +375,7 @@
     "flush-promises": "^1.0.2",
     "fuse.js": "^3.6.1",
     "get-npm-tarball-url": "^2.1.0",
+    "github-slugger": "^2.0.0",
     "glob": "^10.5.0",
     "globby": "^14.1.0",
     "hast-util-to-estree": "^3.0.0",

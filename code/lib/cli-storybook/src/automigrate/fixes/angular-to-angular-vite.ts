@@ -8,6 +8,7 @@ import {
   isStorybookTarget,
   type JSONEditPath,
   type StorybookBuilderTarget,
+  toDevkitVersion,
 } from 'storybook/internal/cli';
 import { formatFileContent, getProjectRoot, transformImportFiles } from 'storybook/internal/common';
 import { formatConfig, readConfig } from 'storybook/internal/csf-tools';
@@ -33,18 +34,21 @@ export const ANALOG_PACKAGE = '@analogjs/storybook-angular';
 export const ANGULAR_VITE_PACKAGE = '@storybook/angular-vite';
 const ANALOG_VITE_PLUGIN_PACKAGE = '@analogjs/vite-plugin-angular';
 
+const ANGULAR_BUILD_PACKAGE = '@angular/build';
+const ANGULAR_ANIMATIONS_PACKAGE = '@angular/animations';
+const ANGULAR_DEVKIT_ARCHITECT_PACKAGE = '@angular-devkit/architect';
+
 const MIGRATABLE_FRAMEWORKS = [ANGULAR_PACKAGE, ANALOG_PACKAGE] as const;
 type MigratableFramework = (typeof MIGRATABLE_FRAMEWORKS)[number];
 
 const FRAMEWORK_DOC_URL = 'https://storybook.js.org/docs/get-started/frameworks/angular-vite';
 const VITE_CONFIG_DOC_URL = 'https://storybook.js.org/docs/builders/vite#configure';
 
+const ANGULAR_MIN_MAJOR = 21;
+
 interface AngularToAngularViteOptions {
   /** The framework the project renders with today, and the one every rewrite below keys off. */
   framework: MigratableFramework;
-  /** True when @angular/core is not found or is outside the 21.x range. */
-  angularUnsupportedVersion: boolean;
-  /** The detected @angular/core version string, or null if not found. */
   angularVersion: string | null;
   /** True when the main config contains a webpackFinal hook. */
   hasWebpackFinal: boolean;
@@ -180,7 +184,8 @@ const transformMainConfig = async (
 interface JsonTargetTransformResult {
   changed: boolean;
   hasStorybookTarget: boolean;
-  allStorybookTargetsZonelessTrue: boolean;
+  /** True when at least one storybook target explicitly declares `zoneless: false`. */
+  anyZoneBasedTarget: boolean;
 }
 
 /** Map a migratable builder/executor ref to its angular-vite equivalent, or `null` if unrelated. */
@@ -244,18 +249,17 @@ class TextJsonEditor implements TargetEditor {
 }
 
 /**
- * Rewrite builder/executor references, detect Compodoc/zone.js signals, and rename any leftover
- * `experimentalZoneless` key to `zoneless`, across every storybook target in `targetGroups`.
+ * Rewrite builder/executor references and rename any leftover `experimentalZoneless` key to
+ * `zoneless`, across every storybook target in `targetGroups`, reporting whether any of them
+ * explicitly opts out of zoneless change detection.
  */
 const processStorybookTargets = (
   editor: TargetEditor,
   targetGroups: AngularTargetGroup[]
-): Omit<JsonTargetTransformResult, 'allStorybookTargetsZonelessTrue'> & {
-  allZonelessTrue: boolean;
-} => {
+): JsonTargetTransformResult => {
   let changed = false;
   let hasStorybookTarget = false;
-  let allZonelessTrue = true;
+  let anyZoneBasedTarget = false;
 
   for (const { pathPrefix, targets } of targetGroups) {
     for (const [targetName, target] of Object.entries(targets)) {
@@ -273,11 +277,11 @@ const processStorybookTargets = (
       // Snapshot before editing: `AngularJSON.edit()` reparses `json`, invalidating `target`.
       const currentRef = target.builder ?? target.executor ?? null;
       const hasOldZonelessKey = !!target.options && 'experimentalZoneless' in target.options;
-      // An earlier run may already have renamed the key, so both spellings count as zoneless.
+      // An earlier run may already have renamed the key, so both spellings count.
       const zonelessValue = target.options?.zoneless ?? target.options?.experimentalZoneless;
 
-      if (zonelessValue !== true) {
-        allZonelessTrue = false;
+      if (zonelessValue === false) {
+        anyZoneBasedTarget = true;
       }
 
       if (!isMigratableStorybookTarget(target)) {
@@ -299,7 +303,7 @@ const processStorybookTargets = (
     }
   }
 
-  return { changed, hasStorybookTarget, allZonelessTrue };
+  return { changed, hasStorybookTarget, anyZoneBasedTarget };
 };
 
 const transformAngularJson = (
@@ -313,24 +317,17 @@ const transformAngularJson = (
     return {
       changed: false,
       hasStorybookTarget: false,
-      allStorybookTargetsZonelessTrue: true,
+      anyZoneBasedTarget: false,
     };
   }
 
-  const { changed, hasStorybookTarget, allZonelessTrue } = processStorybookTargets(
-    angularJSON,
-    getTargetGroups(angularJSON.json)
-  );
+  const result = processStorybookTargets(angularJSON, getTargetGroups(angularJSON.json));
 
-  if (changed && !dryRun) {
+  if (result.changed && !dryRun) {
     angularJSON.write();
   }
 
-  return {
-    changed,
-    hasStorybookTarget,
-    allStorybookTargetsZonelessTrue: allZonelessTrue,
-  };
+  return result;
 };
 
 /**
@@ -345,25 +342,18 @@ const transformProjectJson = async (
     const original = await readFile(projectJsonPath, 'utf-8');
     const json = JSON.parse(original);
     const editor = new TextJsonEditor(original);
-    const { changed, hasStorybookTarget, allZonelessTrue } = processStorybookTargets(
-      editor,
-      getTargetGroups(json)
-    );
+    const result = processStorybookTargets(editor, getTargetGroups(json));
 
-    if (changed && !dryRun) {
+    if (result.changed && !dryRun) {
       await writeFile(projectJsonPath, editor.content);
     }
 
-    return {
-      changed,
-      hasStorybookTarget,
-      allStorybookTargetsZonelessTrue: allZonelessTrue,
-    };
+    return result;
   } catch {
     return {
       changed: false,
       hasStorybookTarget: false,
-      allStorybookTargetsZonelessTrue: true,
+      anyZoneBasedTarget: false,
     };
   }
 };
@@ -398,6 +388,12 @@ const addZoneJsPreviewImport = async (
   }
 };
 
+const getGuaranteedAngularMajor = (specifier: string | null): number | null => {
+  const range = specifier ? semver.validRange(specifier) : null;
+  const major = range ? (semver.minVersion(range)?.major ?? null) : null;
+  return major === 0 ? null : major;
+};
+
 export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
   id: 'angular-to-angular-vite',
   link: FRAMEWORK_DOC_URL,
@@ -411,8 +407,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       return null;
     }
 
-    // Detect @angular/core version for the Angular 21 prerequisite check.
-    const angularVersionRaw = packageManager.getDependencyVersion('@angular/core');
+    const angularSpecifier = await packageManager.getDeclaredVersionSpecifier('@angular/core');
 
     // `@analogjs/storybook-angular` declares `@storybook/angular` as its peer, so the dependency
     // alone does not say which framework the project renders with, and a framework this migration
@@ -420,7 +415,7 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     const frameworkPackageName = getFrameworkPackageName(mainConfig);
     const framework = matchMigratableFramework(frameworkPackageName);
     if (!framework) {
-      if (angularVersionRaw) {
+      if (angularSpecifier) {
         logger.warn(
           `Skipped ${ANGULAR_VITE_PACKAGE} migration: this project's Storybook framework is ` +
             `\`${frameworkPackageName ?? 'not set'}\`, and only ` +
@@ -431,11 +426,22 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       return null;
     }
 
-    const angularVersion = angularVersionRaw
-      ? (semver.coerce(angularVersionRaw)?.version ?? null)
-      : null;
-    const angularUnsupportedVersion =
-      !angularVersion || !semver.satisfies(angularVersion, '>=21.0.0');
+    const angularMajor = getGuaranteedAngularMajor(angularSpecifier);
+    if (angularMajor !== null && angularMajor < ANGULAR_MIN_MAJOR) {
+      logger.warn(
+        `Skipped ${ANGULAR_VITE_PACKAGE} migration: it needs Angular ${ANGULAR_MIN_MAJOR}, and ` +
+          `this project is on Angular ${angularMajor}. Run \`ng update @angular/core @angular/cli\` ` +
+          `to upgrade, then run this migration again.`
+      );
+      return null;
+    }
+    if (angularMajor === null) {
+      logger.warn(
+        `Could not determine the \`@angular/core\` version, so the ${ANGULAR_VITE_PACKAGE} ` +
+          `migration cannot confirm this project is on Angular ${ANGULAR_MIN_MAJOR} or newer. ` +
+          `Continuing anyway. If the migrated project fails to build, upgrade Angular first.`
+      );
+    }
 
     // Detect webpackFinal in main config by scanning package.json paths for the
     // config dir, then reading main config content.
@@ -481,10 +487,9 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
 
     return {
       framework,
-      angularUnsupportedVersion,
-      angularVersion,
       hasWebpackFinal,
       packageJsonFiles,
+      angularVersion: angularMajor === null ? null : angularSpecifier,
     };
   },
 
@@ -506,17 +511,6 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     addonsToPostinstall,
   }) {
     if (!result) {
-      return;
-    }
-
-    // Hard bail if Angular version is unsupported — the prompt already told the user what to do.
-    if (result.angularUnsupportedVersion) {
-      logger.log(
-        dedent`
-          Migration skipped: Angular 21 is required.
-          Run \`ng update @angular/core @angular/cli\` to upgrade, then try again.
-        `
-      );
       return;
     }
 
@@ -576,30 +570,62 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       );
 
       const allDeps = packageManager.getAllDependencies();
+      const { angularVersion } = result;
+      // `@angular-devkit/architect` numbers itself `0.<major * 100 + minor>.<patch>`, so it cannot
+      // take the Angular range unchanged.
+      const architectVersion = toDevkitVersion(angularVersion);
+
+      const unpinnableAngularPeers = angularVersion
+        ? []
+        : [
+            ANGULAR_BUILD_PACKAGE,
+            ANGULAR_ANIMATIONS_PACKAGE,
+            ANGULAR_DEVKIT_ARCHITECT_PACKAGE,
+          ].filter((pkg) => !allDeps[pkg]);
+
+      if (unpinnableAngularPeers.length > 0) {
+        logger.warn(
+          `Could not determine the \`@angular/core\` version, so ` +
+            `${unpinnableAngularPeers.map((pkg) => `\`${pkg}\``).join(', ')} were not added. ` +
+            `${ANGULAR_VITE_PACKAGE} needs them at your Angular version, and adding them ` +
+            `unpinned would install the next Angular major. Add them by hand before starting ` +
+            `Storybook.`
+        );
+      }
+
       await packageManager.addDependencies({ type: 'devDependencies', skipInstall: true }, [
         `${ANGULAR_VITE_PACKAGE}@${storybookVersion}`,
         ...(allDeps[ANALOG_VITE_PLUGIN_PACKAGE]
           ? []
           : [`${ANALOG_VITE_PLUGIN_PACKAGE}@${ANALOG_VITE_PLUGIN_ANGULAR_VERSION}`]),
+        ...(allDeps[ANGULAR_BUILD_PACKAGE] || !angularVersion
+          ? []
+          : [`${ANGULAR_BUILD_PACKAGE}@${angularVersion}`]),
+        ...(allDeps[ANGULAR_ANIMATIONS_PACKAGE] || !angularVersion
+          ? []
+          : [`${ANGULAR_ANIMATIONS_PACKAGE}@${angularVersion}`]),
+        ...(allDeps[ANGULAR_DEVKIT_ARCHITECT_PACKAGE] || !architectVersion
+          ? []
+          : [`${ANGULAR_DEVKIT_ARCHITECT_PACKAGE}@${architectVersion}`]),
       ]);
     }
 
-    // Injection fires unless EVERY storybook target is declared zoneless.
     let anyStorybookTarget = false;
-    let allZonelessTrue = true;
+    let anyZoneBasedTarget = false;
 
     // 3. Rewrite Angular CLI builder references in angular.json.
     // Search for angular.json beside every package.json we know about.
     for (const pkgJsonPath of packageManager.packageJsonPaths) {
       const dir = pkgJsonPath.replace(/[/\\]package\.json$/, '');
       const angularJsonPath = `${dir}/angular.json`;
-      const { changed, hasStorybookTarget, allStorybookTargetsZonelessTrue } = transformAngularJson(
-        angularJsonPath,
-        dryRun
-      );
+      const {
+        changed,
+        hasStorybookTarget,
+        anyZoneBasedTarget: zoneBased,
+      } = transformAngularJson(angularJsonPath, dryRun);
       if (hasStorybookTarget) {
         anyStorybookTarget = true;
-        allZonelessTrue = allZonelessTrue && allStorybookTargetsZonelessTrue;
+        anyZoneBasedTarget = anyZoneBasedTarget || zoneBased;
       }
       if (changed) {
         logger.debug(`Updated Angular CLI builder references in ${angularJsonPath}`);
@@ -614,11 +640,14 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
     // with package.json the way angular.json is.
     const projectJsonFiles = await findWorkspaceFiles('project.json');
     for (const projectJsonPath of projectJsonFiles) {
-      const { changed, hasStorybookTarget, allStorybookTargetsZonelessTrue } =
-        await transformProjectJson(projectJsonPath, dryRun);
+      const {
+        changed,
+        hasStorybookTarget,
+        anyZoneBasedTarget: zoneBased,
+      } = await transformProjectJson(projectJsonPath, dryRun);
       if (hasStorybookTarget) {
         anyStorybookTarget = true;
-        allZonelessTrue = allZonelessTrue && allStorybookTargetsZonelessTrue;
+        anyZoneBasedTarget = anyZoneBasedTarget || zoneBased;
       }
       if (changed) {
         logger.debug(`Updated Nx builder references in ${projectJsonPath}`);
@@ -670,7 +699,18 @@ export const angularToAngularVite: Fix<AngularToAngularViteOptions> = {
       }
     }
 
-    const needsZoneJs = anyStorybookTarget && !allZonelessTrue;
+    const hasZoneJsDependency = packageManager.isDependencyInstalled('zone.js');
+
+    if (anyStorybookTarget && anyZoneBasedTarget && !hasZoneJsDependency) {
+      logger.warn(
+        'A Storybook builder target sets `zoneless: false`, but this project does not depend on ' +
+          "`zone.js`, so no `import 'zone.js';` was added to your preview - it could not resolve, " +
+          'and every story would fail to load. Install `zone.js`, or set `zoneless: true` on that ' +
+          'target if your app uses zoneless change detection.'
+      );
+    }
+
+    const needsZoneJs = anyStorybookTarget && hasZoneJsDependency;
     if (needsZoneJs && previewConfigPath) {
       await addZoneJsPreviewImport(previewConfigPath, dryRun);
     } else if (needsZoneJs && !previewConfigPath) {

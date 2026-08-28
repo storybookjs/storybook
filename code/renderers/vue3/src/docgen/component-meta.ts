@@ -11,13 +11,20 @@ import { readFile, stat } from 'node:fs/promises';
 import { join, parse } from 'node:path';
 
 import { getProjectRoot } from 'storybook/internal/common';
+import {
+  extractComponentJsDocInfo,
+  resolveExportedSymbol,
+  type ComponentJsDocInfo,
+} from 'storybook/internal/component-meta';
 
+import type ts from 'typescript';
 import {
   TypeMeta,
   createChecker,
   createCheckerByJson,
   type ComponentMeta,
   type ComponentMetaChecker,
+  type EventMeta,
   type MetaCheckerOptions,
   type PropertyMetaSchema,
   type SlotMeta,
@@ -36,11 +43,20 @@ type Serializable<T> = T extends AnyFunction
       ? { [K in keyof T as T[K] extends AnyFunction ? never : K]: Serializable<T[K]> }
       : T;
 
+type MetaSourceEntry = {
+  name: string;
+  meta: ComponentMeta;
+  jsDocInfo: ComponentJsDocInfo | undefined;
+};
+
 /** One component's normalized `vue-component-meta` output, tagged with the export it came from. */
 export type MetaSource = {
   exportName: string;
   displayName: string;
+  /** Component-level TypeScript type parameters declared by the SFC. */
+  typeParams?: string;
   sourceFiles: string;
+  jsDocTags?: Record<string, string[]>;
 } & Serializable<ComponentMeta> &
   MetaCheckerOptions['schema'];
 
@@ -93,28 +109,45 @@ export async function createVueComponentMetaChecker(
  */
 export async function collectComponentMetaSources(
   checker: ComponentMetaChecker,
-  id: string
+  id: string,
+  typescript?: typeof ts
 ): Promise<MetaSource[]> {
-  const exportNames: string[] = [];
-  let componentsMeta: ComponentMeta[] = [];
+  let entries: MetaSourceEntry[] = [];
 
   for (const name of checker.getExportNames(id)) {
+    let meta: ComponentMeta | undefined;
     try {
-      const meta = checker.getComponentMeta(id, name);
-      exportNames.push(name);
-      componentsMeta.push(meta);
+      meta = checker.getComponentMeta(id, name);
     } catch {}
+
+    if (!meta) {
+      continue;
+    }
+
+    entries.push({
+      name,
+      meta,
+      jsDocInfo: typescript
+        ? extractVueComponentJsDocInfo(typescript, checker, id, name)
+        : undefined,
+    });
   }
 
-  if (componentsMeta.length === 0) {
+  if (entries.length === 0) {
     return [];
   }
 
-  componentsMeta = await applyVueDocgenApiTempFixes(id, componentsMeta);
+  const typeParams = await extractVueSfcTypeParams(id);
+  const fixedComponentsMeta = await applyVueDocgenApiTempFixes(
+    id,
+    entries.map((entry) => entry.meta),
+    entries.map((entry) => entry.name)
+  );
+  entries = entries.map((entry, index) => ({ ...entry, meta: fixedComponentsMeta[index]! }));
 
   const metaSources: MetaSource[] = [];
 
-  componentsMeta.forEach((meta, index) => {
+  entries.forEach(({ name, meta, jsDocInfo }) => {
     // filter out empty meta
     const isEmpty =
       !meta.props.length && !meta.events.length && !meta.slots.length && !meta.exposed.length;
@@ -122,8 +155,6 @@ export async function collectComponentMetaSources(
     if (isEmpty || meta.type === TypeMeta.Unknown) {
       return;
     }
-
-    const exportName = exportNames[index];
 
     // we remove nested object schemas here since they are not used inside Storybook (we don't generate controls for object properties)
     // and they can cause "out of memory" issues for large/complex schemas (e.g. HTMLElement)
@@ -161,9 +192,12 @@ export async function collectComponentMetaSources(
 
     metaSources.push(
       toSerializableMeta({
-        exportName,
-        displayName: exportName === 'default' ? getFilenameWithoutExtension(id) : exportName,
+        exportName: name,
+        displayName: name === 'default' ? getFilenameWithoutExtension(id) : name,
+        typeParams,
         ...meta,
+        description: jsDocInfo?.description,
+        jsDocTags: jsDocInfo?.jsDocTags,
         exposed,
         sourceFiles: id,
       })
@@ -171,6 +205,49 @@ export async function collectComponentMetaSources(
   });
 
   return metaSources;
+}
+
+async function extractVueSfcTypeParams(id: string): Promise<string | undefined> {
+  if (!id.endsWith('.vue')) {
+    return undefined;
+  }
+
+  try {
+    const source = await readFile(id, 'utf-8');
+    // Scan open tags one by one: only the `<script setup>` block may declare `generic`, and the
+    // attribute value may be unquoted.
+    for (const [openTag] of source.matchAll(/<script\b(?:"[^"]*"|'[^']*'|[^'">])*>/gi)) {
+      if (!/\bsetup\b/.test(openTag)) {
+        continue;
+      }
+      const generic = openTag.match(/\bgeneric\s*=\s*(?:(["'])(.*?)\1|([^\s'">]+))/);
+      return generic?.[2] ?? generic?.[3];
+    }
+    return undefined;
+  } catch {
+    return undefined;
+  }
+}
+
+function extractVueComponentJsDocInfo(
+  typescript: typeof ts,
+  checker: ComponentMetaChecker,
+  id: string,
+  exportName: string
+): ComponentJsDocInfo | undefined {
+  const program = checker.getProgram();
+  const sourceFile = program?.getSourceFile(id.replace(/\\/g, '/'));
+  if (!program || !sourceFile) {
+    return undefined;
+  }
+
+  const typeChecker = program.getTypeChecker();
+  const symbol = resolveExportedSymbol(typescript, typeChecker, sourceFile, exportName);
+  if (!symbol) {
+    return undefined;
+  }
+
+  return extractComponentJsDocInfo(typescript, typeChecker, symbol);
 }
 
 /** Gets the filename without file extension. */
@@ -197,6 +274,7 @@ async function fileExists(fullPath: string) {
  * Fills the gaps Volar cannot extract yet from a `vue-docgen-api` parse of the same file:
  *
  * - Event descriptions: https://github.com/vuejs/language-tools/issues/3893
+ * - Runtime-declared emits that Volar drops or leaks as handler props
  * - Template-declared slots: Volar only infers slots for `<script setup>` components, so an
  *   Options API component loses every template slot, and `@slot` comment descriptions are never
  *   read for anyone
@@ -207,25 +285,35 @@ async function fileExists(fullPath: string) {
  */
 export async function applyVueDocgenApiTempFixes(
   filename: string,
-  componentsMeta: ComponentMeta[]
+  componentsMeta: ComponentMeta[],
+  exportNames: string[]
 ): Promise<ComponentMeta[]> {
+  const source = await readVueDocgenApiFallbackSource(filename);
   const hasEvents = componentsMeta.some((meta) => meta.events.length > 0);
-  const needsSlots = await hasTemplateSlotGap(filename, componentsMeta);
+  const needsEventRestore = hasRuntimeEmitsDeclaration(source);
+  const needsSlots = hasTemplateSlotGap(filename, componentsMeta, source);
 
-  if (!hasEvents && !needsSlots) {
+  if (!hasEvents && !needsEventRestore && !needsSlots) {
     return componentsMeta;
   }
 
   try {
     const parsedComponentDocs = await parseMulti(filename);
 
+    // vue-docgen-api reorders its docs (default export first), so positional pairing would attach
+    // another export's events to this meta in multi-export files.
+    const parsedByExportName = new Map(parsedComponentDocs.map((doc) => [doc.exportName, doc]));
+
     componentsMeta.forEach((meta, index) => {
-      const parsed = parsedComponentDocs[index];
+      const parsed = parsedByExportName.get(exportNames[index]!);
       if (!parsed) {
         return;
       }
-      if (hasEvents) {
+      if (hasEvents || needsEventRestore) {
         mergeEventDescriptions(meta, parsed.events);
+      }
+      if (needsEventRestore) {
+        restoreMissingRuntimeEvents(meta, parsed.events);
       }
       if (needsSlots) {
         mergeTemplateSlots(meta, parsed.slots);
@@ -238,28 +326,82 @@ export async function applyVueDocgenApiTempFixes(
   return componentsMeta;
 }
 
+async function readVueDocgenApiFallbackSource(filename: string): Promise<string | undefined> {
+  if (!/\.(?:vue|tsx?|jsx?)$/.test(filename)) {
+    return undefined;
+  }
+
+  try {
+    return await readFile(filename, 'utf-8');
+  } catch {
+    return undefined;
+  }
+}
+
+function hasRuntimeEmitsDeclaration(source: string | undefined): boolean {
+  if (!source) {
+    return false;
+  }
+
+  return /defineEmits\s*\(\s*[\[{]/.test(source) || /\bemits\s*:/.test(source);
+}
+
 function mergeEventDescriptions(meta: ComponentMeta, events: ComponentDoc['events']): void {
   if (!meta.events.length || !events?.length) {
     return;
   }
 
-  meta.events = meta.events.map((event) => {
+  for (const event of meta.events) {
     const description = events.find((i) => i.name === event.name)?.description;
     if (description) {
       (event as typeof event & { description: string }).description = description;
     }
-    return event;
-  });
+  }
+}
+
+function restoreMissingRuntimeEvents(meta: ComponentMeta, events: ComponentDoc['events']): void {
+  for (const event of events ?? []) {
+    if (meta.events.some((candidate) => candidate.name === event.name)) {
+      continue;
+    }
+
+    meta.events.push({
+      name: event.name,
+      description: event.description ?? '',
+      tags: [],
+      type: 'any[]',
+      signature: `(event: "${event.name}", ...args: any[]): void`,
+      schema: ['any'],
+      declarations: [],
+    } as unknown as EventMeta);
+    removeLeakedEventHandlerProp(meta, event.name);
+  }
+}
+
+/**
+ * A declared emit and its `onX` handler prop are one contract in Vue, so once the event is
+ * restored the handler prop is a duplicate — whether Volar synthesized it or the author spelled
+ * it out.
+ */
+function removeLeakedEventHandlerProp(meta: ComponentMeta, eventName: string): void {
+  const propName = `on${eventName.charAt(0).toUpperCase()}${eventName.slice(1)}`;
+
+  for (let index = meta.props.length - 1; index >= 0; index -= 1) {
+    if (meta.props[index]?.name === propName) {
+      meta.props.splice(index, 1);
+    }
+  }
 }
 
 /**
  * Whether the SFC template declares slots that the extracted meta misses, entirely or by
  * description. Reading the source keeps `parseMulti` away from the common slot-less component.
  */
-async function hasTemplateSlotGap(
+function hasTemplateSlotGap(
   filename: string,
-  componentsMeta: ComponentMeta[]
-): Promise<boolean> {
+  componentsMeta: ComponentMeta[],
+  source: string | undefined
+): boolean {
   if (!filename.endsWith('.vue')) {
     return false;
   }
@@ -271,12 +413,7 @@ async function hasTemplateSlotGap(
     return false;
   }
 
-  try {
-    const source = await readFile(filename, 'utf-8');
-    return /<slot[\s/>]/.test(source);
-  } catch {
-    return false;
-  }
+  return /<slot[\s/>]/.test(source ?? '');
 }
 
 /** Merges template-derived slots into the meta: descriptions onto known slots, missing slots whole. */

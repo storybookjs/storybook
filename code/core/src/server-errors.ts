@@ -287,12 +287,14 @@ export class OpenServiceRemoteCommandDisconnectedError extends StorybookError {
 }
 
 export class OpenServiceRemoteCommandUnhandledError extends StorybookError {
-  constructor(public data: { serviceId: ServiceId; commandName: string }) {
+  constructor(public data: { serviceId: ServiceId; commandName: string; delegated?: boolean }) {
     super({
       name: 'OpenServiceRemoteCommandUnhandledError',
       category: Category.CORE_COMMON,
       code: 15,
-      message: `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
+      message: data.delegated
+        ? `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; this runtime delegates every command to the Storybook it is attached to, and that Storybook was started with a different configuration. Restart it so the command's handler is available.`
+        : `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
     });
   }
 }
@@ -573,6 +575,23 @@ export class AngularLegacyBuildOptionsError extends StorybookError {
   }
 }
 
+export class AngularUnresolvedStyleError extends StorybookError {
+  constructor(public data: { stylePath: string; workspaceRoot: string; extensions: string[] }) {
+    super({
+      name: 'AngularUnresolvedStyleError',
+      category: Category.FRAMEWORK_ANGULAR,
+      code: 2,
+      documentation: 'https://storybook.js.org/docs/get-started/frameworks/angular-vite',
+      message: dedent`
+        Cannot resolve the stylesheet '${data.stylePath}' from the Angular workspace root '${data.workspaceRoot}'.
+
+        No file matches it there, with or without a ${data.extensions.join(', ')} extension.
+
+        Angular resolves a 'styles' entry from the workspace root, so a relative entry has to point at a file below it. Check the 'styles' array on your Storybook builder target in angular.json.`,
+    });
+  }
+}
+
 export class CriticalPresetLoadError extends StorybookError {
   constructor(
     public data: {
@@ -765,6 +784,20 @@ export class NoFreePortError extends StorybookError {
         Unable to find a free port for Storybook's dev server${data.requestedPort ? ` (requested port: ${data.requestedPort})` : ''}.
         Your environment appears to block Storybook from listening on network ports.
         If you are running Storybook in a sandboxed or restricted shell, allow binding to localhost ports and try again.`,
+    });
+  }
+}
+
+export class StorybookDevServerDisconnectedError extends StorybookError {
+  constructor(public data: { code?: number; reason?: string } = {}) {
+    super({
+      name: 'StorybookDevServerDisconnectedError',
+      category: Category.CORE_SERVER,
+      code: 19,
+      message: dedent`
+        Storybook dev server disconnected${data.code ? ` (close code ${data.code}${data.reason ? `: ${data.reason}` : ''})` : ''}.
+        Any request that was still in flight has been abandoned.
+        Make sure the dev server is still running, then try again.`,
     });
   }
 }

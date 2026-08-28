@@ -410,8 +410,7 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDevDependencies: ['prop-types', '@types/prop-types', '@storybook/addon-mcp'],
-      editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
+      extraDevDependencies: ['prop-types', '@types/prop-types'],
       mainConfig: {
         features: {
           developmentModeForBuild: true,

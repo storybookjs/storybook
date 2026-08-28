@@ -1,0 +1,59 @@
+{
+  "step": {
+    "description": undefined,
+    "name": "step",
+    "table": {
+      "category": "props",
+      "defaultValue": {
+        "detail": undefined,
+        "summary": "1",
+      },
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "number",
+      },
+    },
+    "type": {
+      "name": "number",
+      "required": false,
+    },
+  },
+  "stepped": {
+    "control": {
+      "disable": true,
+    },
+    "description": undefined,
+    "name": "stepped",
+    "table": {
+      "category": "events",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "",
+    },
+  },
+  "update:by-step": {
+    "control": {
+      "disable": true,
+    },
+    "description": undefined,
+    "name": "update:by-step",
+    "table": {
+      "category": "events",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "undefined",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "undefined",
+    },
+  },
+}

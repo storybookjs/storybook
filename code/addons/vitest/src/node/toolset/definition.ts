@@ -96,15 +96,20 @@ export type TestRunOutput = v.InferOutput<typeof testRunOutputSchema>;
 export type TestRunData = TestRunOutput & { a11y: boolean };
 
 /**
- * The outcome split for `test.run`: a crashed or cancelled run is a failure that still carries its
- * full report, so clients keying on the tag cannot count it as a pass while agents keep the
- * diagnostic detail.
+ * The outcome split for `test.run`, following the Vitest convention: a run only succeeds when it
+ * completes without failing tests. Crashes, cancellations, and completed runs with failing tests,
+ * error-level accessibility results, or unhandled errors are failures that still carry their full
+ * report, so clients keying on `ok` cannot count them as a pass while agents keep the diagnostic
+ * detail.
  */
 export type TestRunSuccessData = Extract<TestRunOutput, { status: 'completed' | 'no-stories' }> & {
   a11y: boolean;
 };
 
-export type TestRunFailureData = Extract<TestRunOutput, { status: 'error' | 'cancelled' }> & {
+export type TestRunFailureData = Extract<
+  TestRunOutput,
+  { status: 'completed' | 'error' | 'cancelled' }
+> & {
   a11y: boolean;
 };
 
@@ -189,6 +194,22 @@ async function reportRunTelemetry(data: TestRunData, input: RunInput, ctx: Tools
   });
 }
 
+function isFailedRun(data: TestRunData): data is TestRunFailureData {
+  switch (data.status) {
+    case 'error':
+    case 'cancelled':
+      return true;
+    case 'completed':
+      return (
+        data.result.componentTestCount.error > 0 ||
+        (data.a11y && data.result.a11yCount.error > 0) ||
+        data.result.unhandledErrors.length > 0
+      );
+    default:
+      return false;
+  }
+}
+
 export type CreateTestToolsetOptions = {
   channel: TestChannel;
   storyIndex: StoryIndexAccess;
@@ -228,9 +249,7 @@ export function createTestToolset({ channel, storyIndex, a11yEnabled }: CreateTe
             await reportRunTelemetry(data, input, ctx);
 
             const markdown = formatTestRun(data, ctx);
-            return data.status === 'error' || data.status === 'cancelled'
-              ? { ok: false, data, markdown }
-              : { ok: true, data, markdown };
+            return isFailedRun(data) ? { ok: false, data, markdown } : { ok: true, data, markdown };
           } finally {
             done();
           }

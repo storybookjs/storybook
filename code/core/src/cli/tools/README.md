@@ -82,9 +82,9 @@ record, `createTools` spawns a child from the `storybook` package under `record.
 `describe` / `call` / `close` over IPC. `autoSpawn: false` throws `EnvironmentMismatchError`
 instead. A child never spawns another child (`STORYBOOK_TOOLS_CHILD_HOST`).
 
-**Local.** Load the target configuration in this process. This path **does** `chdir` to the
-target for the rest of the one-shot process. Capture the launch directory first if an embedder
-still needs it. Do not set `STORYBOOK_ATTACHED_TOOLS` on this path: that env is how the dispatcher
+**Local.** Load the target configuration in this process when `cwd` already matches. This path
+never `chdir`s. A foreign `--cwd` starts a child host from the `storybook` package under that
+directory. Do not set `STORYBOOK_ATTACHED_TOOLS` on this path: that env is how the dispatcher
 makes UniversalStore a follower before core loads, and local bootstrap must be a leader.
 
 ## Tests

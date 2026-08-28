@@ -42,7 +42,7 @@ export type ChildMessage =
 
 export type ParentInitMessage = {
   type: 'init';
-  options: CreateToolsOptions;
+  options: CreateToolsOptions & { mode: 'local' | 'attached'; autoSpawn: false };
 };
 
 export type ParentDescribeMessage = {

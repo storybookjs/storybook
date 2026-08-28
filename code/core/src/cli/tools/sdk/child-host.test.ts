@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { AnyToolsetOutcome } from '../../../shared/open-service/toolset-definition.ts';
 import { runChildHost } from './child-host.ts';
@@ -35,6 +35,8 @@ describe('runChildHost', () => {
     describe.mockReset();
     call.mockReset();
     handlers.length = 0;
+    vi.stubEnv('STORYBOOK_ATTACHED_TOOLS', undefined);
+    vi.stubEnv('STORYBOOK_TOOLS_CHILD_HOST', undefined);
     vi.mocked(createTools).mockReset();
     vi.mocked(createTools).mockResolvedValue({
       mode: 'attached',
@@ -63,6 +65,53 @@ describe('runChildHost', () => {
       }
       return { ok: true, data: { ran: true }, markdown: 'ok' };
     });
+  });
+
+  afterEach(() => {
+    vi.unstubAllEnvs();
+  });
+
+  it('boots local tools when init asks for local mode', async () => {
+    vi.mocked(createTools).mockResolvedValue({
+      mode: 'local',
+      host: 'in-process',
+      clientInfo: { name: 'storybook-tools-sdk', version: '10.2.0', kind: 'sdk' },
+      storybook: { version: '10.2.0', configDir: '/repo/.storybook' },
+      runtime: {
+        configDir: '/repo/.storybook',
+        toolsets: [],
+        getService: () => {
+          throw new Error('unused');
+        },
+      },
+      describe,
+      call,
+      close,
+    } as unknown as Tools);
+
+    await runChildHost({
+      send,
+      subscribe: (handler) => {
+        handlers.push(handler);
+      },
+      cwd: () => '/repo',
+    });
+
+    handlers[0]({
+      type: 'init',
+      options: {
+        mode: 'local',
+        clientInfo: { name: 'storybook-cli', version: '1.0.0', kind: 'cli' },
+      },
+    });
+    await vi.waitFor(() => expect(createTools).toHaveBeenCalled());
+    expect(createTools).toHaveBeenCalledWith({
+      clientInfo: { name: 'storybook-cli', version: '1.0.0', kind: 'cli' },
+      cwd: '/repo',
+      mode: 'local',
+      autoSpawn: false,
+    });
+    expect(process.env.STORYBOOK_ATTACHED_TOOLS).toBeUndefined();
   });
 
   it('boots attached tools with autoSpawn declined and answers describe/call/close', async () => {

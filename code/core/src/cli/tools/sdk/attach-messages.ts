@@ -69,5 +69,5 @@ export function formatRestartRequired(
 }
 
 export function formatAttachFallback(remediation: string): string {
-  return `${remediation}\n\nFalling back to loading this project's Storybook configuration in this process.`;
+  return `${remediation}\n\nFalling back to loading this project's Storybook configuration.`;
 }

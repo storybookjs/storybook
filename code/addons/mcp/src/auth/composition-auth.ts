@@ -41,6 +41,8 @@ interface AuthRequirement {
   serverMetadata: OAuthServerMetadata;
 }
 
+type NoManifestReason = 'manifest-not-found' | 'manifest-invalid';
+
 export type ManifestProvider = (
   request: Request | undefined,
   path: string,
@@ -284,9 +286,7 @@ export class CompositionAuth {
    * 'manifest-not-found' for a non-OK or non-JSON response (SPA fallback pages land here),
    * 'manifest-invalid' for real JSON that fails the manifest schema.
    */
-  async #checkRef(
-    refUrl: string
-  ): Promise<'public' | 'manifest-not-found' | 'manifest-invalid' | AuthRequirement> {
+  async #checkRef(refUrl: string): Promise<'public' | NoManifestReason | AuthRequirement> {
     const response = await fetch(`${refUrl}/manifests/components.json`, {
       headers: { Accept: 'application/json' },
     });
@@ -295,7 +295,7 @@ export class CompositionAuth {
     const authReq = await this.#parseAuthFromResponse(response);
     if (authReq) return authReq;
 
-    let noManifestReason: 'manifest-not-found' | 'manifest-invalid' = 'manifest-not-found';
+    let noManifestReason: NoManifestReason = 'manifest-not-found';
 
     // 200 with valid manifest = public, has manifest
     if (response.ok) {

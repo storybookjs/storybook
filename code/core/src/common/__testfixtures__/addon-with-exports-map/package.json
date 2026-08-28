@@ -1,0 +1,12 @@
+{
+  "name": "addon-with-exports-map",
+  "version": "1.0.0",
+  "type": "module",
+  "exports": {
+    ".": "./lib/index.js",
+    "./manager": "./lib/manager.js",
+    "./package.json": "./package.json",
+    "./preset": "./lib/preset.js",
+    "./preview": "./lib/preview.js"
+  }
+}

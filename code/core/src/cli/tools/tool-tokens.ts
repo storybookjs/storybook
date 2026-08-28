@@ -181,6 +181,22 @@ function coerceValue(raw: string): unknown {
   }
 }
 
+export function parsePort(
+  rawPort: string | undefined
+): { ok: true; port: number | undefined } | { ok: false; error: string } {
+  if (rawPort === undefined) {
+    return { ok: true, port: undefined };
+  }
+  const port = Number(rawPort);
+  if (!Number.isInteger(port) || port < 1 || port > 65535) {
+    return {
+      ok: false,
+      error: `\`--port\` must be a port number (1-65535), got \`${rawPort}\`.`,
+    };
+  }
+  return { ok: true, port };
+}
+
 /**
  * The generic flags of `storybook tools`, in display order. One list serves both the commander
  * registration and the help renderer: commander's own help is disabled (the command surface is
@@ -192,6 +208,10 @@ export const TOOLS_OPTION_SPECS: ReadonlyArray<{ flags: string; description: str
   {
     flags: '-c, --config-dir <dir-name>',
     description: 'Storybook config directory of the target Storybook',
+  },
+  {
+    flags: '-p, --port <number>',
+    description: 'Port of the target Storybook, to address one specific running instance',
   },
   {
     flags: '--attach',

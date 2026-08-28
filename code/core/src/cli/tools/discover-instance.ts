@@ -11,6 +11,8 @@ export type ToolsTarget = {
   cwd?: string;
   /** Directory where to load Storybook configuration from; relative paths resolve from `cwd`. */
   configDir?: string;
+  /** Port of the target Storybook, to address one specific instance among several matches. */
+  port?: number;
 };
 
 export type InstanceDiscovery = {
@@ -40,6 +42,7 @@ export async function discoverRunningInstance(
     cwd,
     configDir,
     configDirExplicit: target.configDir != null,
+    port: target.port,
     agent: detectAgent()?.name,
   });
 

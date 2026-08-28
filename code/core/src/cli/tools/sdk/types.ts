@@ -31,11 +31,22 @@ export type CreateToolsOptions = {
   cwd?: string;
   /** Directory to load the Storybook configuration from; relative paths resolve from `cwd`. */
   configDir?: string;
+  /** Port of the target Storybook, to address one specific instance among several matches. */
+  port?: number;
   /** Defaults to `auto`. */
   mode?: ToolsMode;
   /** Whether the SDK may start a child host in the target project's own environment. */
   autoSpawn?: boolean;
   clientInfo?: ToolsClientInfo;
+};
+
+/** A running instance that also matched the target project but was not attached to. */
+export type ToolsSiblingInstance = {
+  url: string;
+  port: number;
+  pid: number;
+  cwd: string;
+  configDir?: string;
 };
 
 /** What the resolved host knows about the Storybook it serves. */
@@ -46,6 +57,11 @@ export type ToolsStorybookInfo = {
   url?: string;
   /** Process id of the running Storybook. */
   pid?: number;
+  /**
+   * Set when attach chose among several matching instances: the competing instances, best first,
+   * so callers can warn and name `port` as the way to target another one.
+   */
+  siblings?: ToolsSiblingInstance[];
 };
 
 /** One callable tool, described for an agent that has only this catalog to go on. */

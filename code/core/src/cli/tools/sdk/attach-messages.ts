@@ -31,16 +31,15 @@ export function formatNoInstance(records: StorybookInstanceRecord[]): string {
   return lines.join('\n');
 }
 
-export function formatMultipleMatches(matches: StorybookInstanceRecord[]): string {
+export function formatPortMismatch(
+  port: number,
+  projectMatches: StorybookInstanceRecord[]
+): string {
   const lines = [
-    'Multiple Storybook instances match this project. Disambiguate with `--config-dir <dir>`:',
+    `No Storybook instance for this project is running on port ${port}. Matching instances — target one with \`--port <port>\`:`,
   ];
-  for (const record of matches) {
-    const configDir = record.configDir ?? '(none)';
-    lines.push(`- ${record.url} (configDir \`${configDir}\`)`);
-    if (record.configDir) {
-      lines.push(`  ${attachCommand(record)}`);
-    }
+  for (const record of projectMatches) {
+    lines.push(`- ${record.url} (port \`${record.port}\`, cwd \`${record.cwd}\`)`);
   }
   return lines.join('\n');
 }
@@ -70,4 +69,27 @@ export function formatRestartRequired(
 
 export function formatAttachFallback(remediation: string): string {
   return `${remediation}\n\nFalling back to loading this project's Storybook configuration.`;
+}
+
+/**
+ * Out-of-band warning for a run that attached while sibling instances also matched the project.
+ * Rendered to stderr, never into the result, so `--json` and `-o` output stay clean.
+ */
+export function formatMultiInstanceNotice(storybook: {
+  url?: string;
+  pid?: number;
+  siblings?: Array<{ url: string; port: number; pid: number; cwd: string; configDir?: string }>;
+}): string {
+  const lines = [
+    `Warning: Multiple Storybook instances match this project. This command used ${storybook.url ?? 'the selected instance'}${storybook.pid != null ? ` (pid ${storybook.pid})` : ''}.`,
+    '',
+    'Other matching instances — target one with `--port <port>`:',
+  ];
+  for (const sibling of storybook.siblings ?? []) {
+    const configDir = sibling.configDir ? `, config dir \`${sibling.configDir}\`` : '';
+    lines.push(
+      `- ${sibling.url} (port \`${sibling.port}\`, pid \`${sibling.pid}\`, cwd \`${sibling.cwd}\`${configDir})`
+    );
+  }
+  return lines.join('\n');
 }

@@ -75,31 +75,25 @@ export function resolveInstance(
   records: StorybookInstanceRecord[],
   target: ResolveTarget
 ): ResolveResult {
-  const { port: targetPort, agent: currentAgent } = target;
-  const projectMatches = listProjectMatches(records, target);
-  const matches =
-    targetPort == null ? projectMatches : projectMatches.filter((r) => r.port === targetPort);
-
-  if (matches.length === 0) {
-    // The project matched, but no instance there is on the requested port: a distinct,
-    // more actionable failure than "nothing is running here".
-    if (targetPort != null && projectMatches.length > 0) {
-      return {
-        kind: 'intercept',
-        reason: 'port-mismatch',
-        records: projectMatches,
-        matches: [],
-      };
-    }
+  const selection = selectInstances(records, target);
+  if (selection.kind === 'port-mismatch') {
+    return {
+      kind: 'intercept',
+      reason: 'port-mismatch',
+      records: selection.projectMatches,
+      matches: [],
+    };
+  }
+  if (selection.kind === 'no-instance') {
     return {
       kind: 'intercept',
       reason: 'no-instance',
-      records,
+      records: selection.records,
       matches: [],
     };
   }
 
-  const sortedMatches = selectCompetingBucket(matches, targetPort, currentAgent);
+  const sortedMatches = selection.matches;
   const selected = sortedMatches.find((r) => r.mcp.status === 'ready') ?? sortedMatches[0];
 
   switch (selected.mcp.status) {
@@ -136,6 +130,46 @@ export function resolveInstance(
       throw new Error(`Unhandled MCP status: ${unhandled as string}`);
     }
   }
+}
+
+export type InstanceSelection =
+  | {
+      kind: 'match';
+      /** The competing bucket, best first: the selected agent bucket, most recently started first. */
+      matches: StorybookInstanceRecord[];
+    }
+  | { kind: 'no-instance'; records: StorybookInstanceRecord[] }
+  | { kind: 'port-mismatch'; port: number; projectMatches: StorybookInstanceRecord[] };
+
+/**
+ * The selection half of {@link resolveInstance}: match records against the target project, restrict
+ * to `target.port` when supplied, then order the competing bucket best-first (the invoking agent's
+ * bucket wins over recency across buckets; within the bucket, most recently started first with a
+ * lowest-pid tie-break). MCP status plays no role — the attach path consumes this directly because
+ * attaching over the channel works without `@storybook/addon-mcp`.
+ *
+ * A supplied port that matches the project but no instance yields `port-mismatch` with the
+ * project's instances, so callers can surface the running ports.
+ */
+export function selectInstances(
+  records: StorybookInstanceRecord[],
+  target: ResolveTarget
+): InstanceSelection {
+  const { port: targetPort, agent: currentAgent } = target;
+  const projectMatches = listProjectMatches(records, target);
+  const matches =
+    targetPort == null ? projectMatches : projectMatches.filter((r) => r.port === targetPort);
+
+  if (matches.length === 0) {
+    // The project matched, but no instance there is on the requested port: a distinct,
+    // more actionable failure than "nothing is running here".
+    if (targetPort != null && projectMatches.length > 0) {
+      return { kind: 'port-mismatch', port: targetPort, projectMatches };
+    }
+    return { kind: 'no-instance', records };
+  }
+
+  return { kind: 'match', matches: selectCompetingBucket(matches, targetPort, currentAgent) };
 }
 
 /** Records whose cwd or configDir matches the target project, ignoring MCP status. */

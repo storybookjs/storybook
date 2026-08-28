@@ -347,6 +347,55 @@ describe('local tools', () => {
       clientInfo: { name: 'storybook-cli', version: expect.any(String), kind: 'cli' },
     });
   });
+
+  it('threads a valid --port to the SDK host', async () => {
+    const { deps, createTools } = makeDeps();
+
+    await runToolsCommand(
+      { toolset: 'docs', tool: 'list', tokens: [], target: { cwd: '/repo' }, port: '6006' },
+      deps
+    );
+
+    expect(createTools).toHaveBeenCalledWith(expect.objectContaining({ port: 6006 }));
+  });
+
+  it('rejects an invalid --port before creating any host', async () => {
+    const { deps, createTools } = makeDeps();
+
+    const result = await runToolsCommand(
+      { toolset: 'docs', tool: 'list', tokens: [], target: {}, port: 'abc' },
+      deps
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
+    expect(result.output).toContain('`--port` must be a port number');
+    expect(createTools).not.toHaveBeenCalled();
+  });
+
+  it('carries a multi-instance notice out of band when the attached host reports siblings', async () => {
+    const attached = makeAttachedTools();
+    attached.storybook.siblings = [
+      { url: 'http://localhost:6008', port: 6008, pid: 456, cwd: '/repo' },
+    ];
+    const { deps } = makeDeps({ createTools: vi.fn(async () => attached) });
+
+    const result = await run(['docs', 'list'], deps);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.multiInstanceNotice).toContain('http://localhost:6006');
+    expect(result.multiInstanceNotice).toContain('http://localhost:6008');
+    expect(result.multiInstanceNotice).toContain('--port');
+    expect(result.output).not.toContain('http://localhost:6008');
+  });
+
+  it('reports no multi-instance notice when the attached host has no siblings', async () => {
+    const { deps } = makeDeps({ createTools: vi.fn(async () => makeAttachedTools()) });
+
+    const result = await run(['docs', 'list'], deps);
+
+    expect(result.multiInstanceNotice).toBeUndefined();
+  });
 });
 
 describe('requires-dev-server contract', () => {
@@ -361,6 +410,24 @@ describe('requires-dev-server contract', () => {
     expect(result.exitCode).toBe(1);
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'requires-dev-server' });
     expect(result.output).toContain('requires a running Storybook dev server');
+  });
+
+  it('hands the parsed --port to instance discovery so the message names the right instance', async () => {
+    const { deps, discoverInstance } = makeDeps();
+
+    await runToolsCommand(
+      {
+        toolset: 'stories',
+        tool: 'preview',
+        tokens: ['--stories', '[{"storyId":"button--primary"}]'],
+        target: { cwd: '/repo' },
+        port: '6006',
+        attach: false,
+      },
+      deps
+    );
+
+    expect(discoverInstance).toHaveBeenCalledWith({ cwd: '/repo', port: 6006 });
   });
 
   it('lists running instances of other projects in the no-instance guidance', async () => {

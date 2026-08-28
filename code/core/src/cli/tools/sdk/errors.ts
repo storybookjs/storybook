@@ -4,7 +4,7 @@ import type { StorybookInstanceRecord } from '../instances/types.ts';
 /** Why attaching to a running Storybook was not possible. */
 export type AttachUnavailableReason =
   | 'no-instance'
-  | 'multiple-matches'
+  | 'port-mismatch'
   | 'old-server'
   | 'connection-failed';
 
@@ -13,8 +13,8 @@ export type AttachUnavailableReason =
  *
  * `remediation` is the whole message: it is written for the agent or developer that triggered the
  * call and names the next step, which is what `agentFacing` declares. `instances` carries every
- * live record the SDK knows about so a caller can point at another project or disambiguate a
- * `multiple-matches` failure itself. Channel tokens are omitted so logging the error cannot leak
+ * live record the SDK knows about so a caller can point at another project or resolve a
+ * `port-mismatch` failure itself. Channel tokens are omitted so logging the error cannot leak
  * them.
  */
 export class AttachUnavailableError extends StorybookError {

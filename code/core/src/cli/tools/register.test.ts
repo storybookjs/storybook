@@ -294,6 +294,36 @@ describe('tools-command telemetry', () => {
     ]);
   });
 
+  it('hands a --port before the toolset name to the command as the raw port', async () => {
+    const { program } = buildProgram();
+    await parse(program, ['tools', '--port', '6006', 'docs', 'list']);
+
+    expect(runToolsCommand).toHaveBeenCalledWith(
+      expect.objectContaining({ toolset: 'docs', tool: 'list', port: '6006' }),
+      expect.anything()
+    );
+  });
+
+  it('prints the multi-instance notice on stderr, never into the result output', async () => {
+    const { program } = buildProgram();
+    vi.mocked(runToolsCommand).mockResolvedValue(
+      successResult({
+        output: 'result markdown',
+        multiInstanceNotice: 'Warning: Multiple Storybook instances match this project.',
+      })
+    );
+    const stdoutSpy = vi.mocked(process.stdout.write);
+    const stderrSpy = vi.mocked(process.stderr.write);
+
+    await parse(program, ['tools', 'docs', 'list']);
+
+    const stdoutText = stdoutSpy.mock.calls.map(([chunk]) => chunk).join('');
+    const stderrText = stderrSpy.mock.calls.map(([chunk]) => chunk).join('');
+    expect(stderrText).toContain('Multiple Storybook instances');
+    expect(stdoutText).toContain('result markdown');
+    expect(stdoutText).not.toContain('Multiple Storybook instances');
+  });
+
   it('passes --disable-telemetry through to withTelemetry', async () => {
     const { program } = buildProgram();
     await parse(program, ['tools', '--disable-telemetry', 'docs', 'list']);

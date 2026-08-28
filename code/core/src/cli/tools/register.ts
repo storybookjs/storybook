@@ -21,6 +21,7 @@ export type CommandFailureHandler = (
 type ToolsPassthroughOptions = ToolsOutputFlags & {
   cwd?: string;
   configDir?: string;
+  port?: string;
   attach?: boolean;
   noAttach?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by `withTelemetry`. */
@@ -132,6 +133,7 @@ export function registerToolsPassthrough(
                       tool,
                       tokens,
                       target: { cwd: options.cwd, configDir: options.configDir },
+                      port: options.port,
                       attach: options.noAttach ? false : options.attach,
                       flags,
                     },
@@ -255,15 +257,17 @@ async function reportToolsCommandTelemetry(
   }
 }
 
-/** Print to stdout, or to the file given via `-o, --output`. */
+/** Print to stdout, or to the file given via `-o, --output`. Notices go to stderr. */
 async function printResult(
-  { output, exitCode, outputPath, fallbackNotice }: ToolsRunResult,
+  { output, exitCode, outputPath, fallbackNotice, multiInstanceNotice }: ToolsRunResult,
   stdoutWrite: typeof process.stdout.write
 ): Promise<void> {
-  if (fallbackNotice) {
-    await new Promise<void>((resolveWrite) => {
-      process.stderr.write(`${fallbackNotice}\n`, () => resolveWrite());
-    });
+  for (const notice of [fallbackNotice, multiInstanceNotice]) {
+    if (notice) {
+      await new Promise<void>((resolveWrite) => {
+        process.stderr.write(`${notice}\n`, () => resolveWrite());
+      });
+    }
   }
   if (outputPath) {
     const resolvedPath = resolve(outputPath);

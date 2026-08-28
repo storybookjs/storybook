@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { resolveInstance } from './resolve.ts';
+import { resolveInstance, selectInstances } from './resolve.ts';
 import type { McpStatus, StorybookInstanceRecord } from './types.ts';
 
 let nextInstance = 0;
@@ -554,5 +554,64 @@ describe('resolveInstance', () => {
     if (result.kind === 'intercept') {
       expect(result.reason).toBe('no-instance');
     }
+  });
+});
+
+describe('selectInstances', () => {
+  it('returns no-instance with all records as candidates when nothing matches the project', () => {
+    const a = record('/Users/x/projects/foo');
+    const result = selectInstances([a], { cwd: '/Users/x/projects/bar' });
+    expect(result).toEqual({ kind: 'no-instance', records: [a] });
+  });
+
+  it('orders matches most recently started first, regardless of MCP status', () => {
+    const olderReady = record('/Users/x/projects/foo', 'ready', {
+      pid: 100,
+      startedAt: '2026-06-09T10:00:00.000Z',
+    });
+    const newerNotInstalled = record('/Users/x/projects/foo', 'not-installed', {
+      pid: 200,
+      startedAt: '2026-06-09T11:00:00.000Z',
+    });
+    const result = selectInstances([olderReady, newerNotInstalled], {
+      cwd: '/Users/x/projects/foo',
+    });
+    expect(result).toEqual({ kind: 'match', matches: [newerNotInstalled, olderReady] });
+  });
+
+  it('prefers the invoking agent bucket over recency across buckets', () => {
+    const olderPreview = record('/Users/x/projects/foo', 'ready', {
+      agent: 'claude-preview',
+      startedAt: '2026-06-09T10:00:00.000Z',
+    });
+    const newerCodex = record('/Users/x/projects/foo', 'ready', {
+      agent: 'codex',
+      startedAt: '2026-06-09T11:00:00.000Z',
+    });
+    const result = selectInstances([olderPreview, newerCodex], {
+      cwd: '/Users/x/projects/foo',
+      agent: 'claude',
+    });
+    expect(result).toEqual({ kind: 'match', matches: [olderPreview] });
+  });
+
+  it('restricts the matches to the supplied port', () => {
+    const a = record('/Users/x/projects/foo', 'ready', { pid: 100, port: 6006 });
+    const b = record('/Users/x/projects/foo', 'ready', { pid: 200, port: 6007 });
+    const result = selectInstances([a, b], { cwd: '/Users/x/projects/foo', port: 6006 });
+    expect(result).toEqual({ kind: 'match', matches: [a] });
+  });
+
+  it('returns port-mismatch with the project matches when no instance is on the port', () => {
+    const a = record('/Users/x/projects/foo', 'ready', { pid: 100, port: 6006 });
+    const b = record('/Users/x/projects/foo', 'ready', { pid: 200, port: 6007 });
+    const result = selectInstances([a, b], { cwd: '/Users/x/projects/foo', port: 9999 });
+    expect(result).toEqual({ kind: 'port-mismatch', port: 9999, projectMatches: [a, b] });
+  });
+
+  it('returns no-instance (not port-mismatch) when the project itself does not match', () => {
+    const a = record('/Users/x/projects/foo', 'ready', { port: 6006 });
+    const result = selectInstances([a], { cwd: '/Users/x/projects/bar', port: 6006 });
+    expect(result).toEqual({ kind: 'no-instance', records: [a] });
   });
 });

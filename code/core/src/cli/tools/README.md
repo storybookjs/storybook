@@ -17,13 +17,14 @@ import { createTools } from 'storybook/internal/tools';
 const tools = await createTools({
   cwd, // which project; defaults to process.cwd()
   configDir, // --config-dir equivalent; disambiguates monorepos
+  port, // --port equivalent; addresses one instance when several match
   mode: 'auto', // 'auto' | 'attached' | 'local'
   autoSpawn: true, // false → EnvironmentMismatchError instead of a child host
   clientInfo: { name, version, kind: 'sdk' },
 });
 
 tools.mode; // 'attached' | 'local'
-tools.storybook; // { version, configDir, url?, pid? }
+tools.storybook; // { version, configDir, url?, pid?, siblings? }
 await tools.describe();
 await tools.describe({ toolset: 'docs' });
 await tools.call('docs.show', { id: 'button' });

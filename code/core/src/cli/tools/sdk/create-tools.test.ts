@@ -214,6 +214,112 @@ describe('createTools', () => {
     expect(attach).toHaveBeenCalledOnce();
   });
 
+  it('threads the port option through to attach discovery', async () => {
+    const attach = vi.fn(async () => ({
+      runtime: makeRuntime(),
+      record: { url: 'http://localhost:6006', pid: 123, configDir: CONFIG_DIR },
+      connection: { close: vi.fn(), disconnected: new Promise<never>(() => {}) },
+    }));
+
+    await createTools({ cwd: '/repo', port: 6006, mode: 'attached' }, { attach });
+
+    expect(attach).toHaveBeenCalledWith({ cwd: '/repo', configDir: undefined, port: 6006 });
+  });
+
+  it('surfaces competing sibling instances on the storybook info, without tokens', async () => {
+    const attach = vi.fn(async () => ({
+      runtime: makeRuntime(),
+      record: { url: 'http://localhost:6007', pid: 123, configDir: CONFIG_DIR },
+      siblings: [
+        {
+          schemaVersion: 1 as const,
+          instanceId: 'older',
+          pid: 456,
+          cwd: '/repo',
+          configDir: CONFIG_DIR,
+          url: 'http://localhost:6006',
+          port: 6006,
+          token: 'secret',
+          storybookVersion: '10.2.0',
+          mcp: { status: 'ready' as const },
+        },
+      ],
+      connection: { close: vi.fn(), disconnected: new Promise<never>(() => {}) },
+    }));
+
+    const tools = await createTools({ cwd: '/repo', mode: 'attached' }, { attach });
+
+    expect(tools.storybook.siblings).toEqual([
+      { url: 'http://localhost:6006', port: 6006, pid: 456, cwd: '/repo', configDir: CONFIG_DIR },
+    ]);
+  });
+
+  it('reports no siblings when attach matched exactly one instance', async () => {
+    const attach = vi.fn(async () => ({
+      runtime: makeRuntime(),
+      record: { url: 'http://localhost:6006', pid: 123, configDir: CONFIG_DIR },
+      siblings: [],
+      connection: { close: vi.fn(), disconnected: new Promise<never>(() => {}) },
+    }));
+
+    const tools = await createTools({ cwd: '/repo', mode: 'attached' }, { attach });
+
+    expect(tools.storybook.siblings).toBeUndefined();
+  });
+
+  it('falls back to local with a port-mismatch gate reason in auto mode', async () => {
+    vi.mocked(attach).mockRejectedValueOnce(
+      new AttachUnavailableError({
+        reason: 'port-mismatch',
+        instances: [],
+        remediation: 'No Storybook instance for this project is running on port 9999.',
+      })
+    );
+
+    const fallback = await createTools({ port: 9999 }, { attach });
+
+    expect(fallback.mode).toBe('local');
+    expect(fallback.fallbackReason).toBe('port-mismatch');
+    expect(fallback.fallbackNotice).toContain('port 9999');
+  });
+
+  it('hands the port to the child host it spawns on a fidelity mismatch, so both resolve the same instance', async () => {
+    const record = {
+      schemaVersion: 1 as const,
+      instanceId: 'abc',
+      pid: 123,
+      cwd: '/repo',
+      configDir: CONFIG_DIR,
+      url: 'http://localhost:6006',
+      port: 6006,
+      token: 'secret',
+      storybookVersion: '10.2.0',
+      mcp: { status: 'ready' as const },
+    };
+    const spawned = {
+      mode: 'attached' as const,
+      requestedMode: 'attached' as const,
+      host: 'child' as const,
+      clientInfo: { name: 'storybook-tools-sdk', version: '0.0.0', kind: 'sdk' as const },
+      storybook: { version: '10.2.0', configDir: CONFIG_DIR, url: record.url, pid: record.pid },
+      runtime: makeRuntime(),
+      describe: async () => ({ configDir: CONFIG_DIR, toolsets: [] }),
+      call: async () => ({ ok: true as const, data: {}, markdown: 'spawned' }),
+      close: async () => {},
+    };
+    vi.mocked(attach).mockResolvedValue({ kind: 'spawn' as const, record, siblings: [] });
+    vi.mocked(spawnChild).mockResolvedValue(spawned);
+
+    await createTools({ cwd: '/elsewhere', port: 6006, mode: 'attached' }, { attach, spawnChild });
+
+    expect(spawnChild).toHaveBeenCalledWith(
+      expect.objectContaining({
+        cwd: '/repo',
+        options: expect.objectContaining({ cwd: '/repo', port: 6006, mode: 'attached' }),
+      })
+    );
+  });
+
   it('runs a requiresDevServer method when attached', async () => {
     const attach = vi.fn(async () => ({
       runtime: makeRuntime(),

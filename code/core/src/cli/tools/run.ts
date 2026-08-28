@@ -6,6 +6,7 @@ import type { StorybookInstanceRecord } from './instances/types.ts';
 import {
   attachGateReasonFromError,
   createTools,
+  formatMultiInstanceNotice,
   isAttachGateError,
   toolsCommandDimensions,
   wrapMethodTelemetry,
@@ -28,7 +29,12 @@ import {
   renderToolsHelpFromCatalog,
   renderToolsetHelpFromCatalog,
 } from './help.ts';
-import { parseToolsTokens, type ParsedToolsTokens, type ToolsOutputFlags } from './tool-tokens.ts';
+import {
+  parsePort,
+  parseToolsTokens,
+  type ParsedToolsTokens,
+  type ToolsOutputFlags,
+} from './tool-tokens.ts';
 
 /**
  * Why an invocation stopped before its handler executed, for the `tools-command` telemetry event.
@@ -70,6 +76,8 @@ export type ToolsRunResult = {
   fallbackNotice?: string;
   /** Why `auto` loaded locally instead of attaching. */
   fallbackReason?: ToolsAttachGateReason;
+  /** Set when the attached host chose among several matching instances; printed to stderr. */
+  multiInstanceNotice?: string;
 };
 
 export type ToolsInvocation = {
@@ -78,6 +86,8 @@ export type ToolsInvocation = {
   /** Pass-through tokens after the tool name. */
   tokens: string[];
   target: ToolsTarget;
+  /** Raw `--port` value (commander-owned, given before the toolset name). */
+  port?: string;
   /** Values of the same flags when given before the toolset name (commander-owned). */
   flags?: ToolsOutputFlags;
   /** `true` from `--attach`, `false` from `--no-attach`, omitted for the attach-preferred default. */
@@ -148,7 +158,7 @@ export async function runToolsCommand(
   deps: ToolsRunDeps = {}
 ): Promise<ToolsRunResult> {
   const normalized = normalizeHelpFlag(invocation);
-  const { tokens, target, flags = {}, attach } = normalized;
+  const { tokens, flags = {}, attach } = normalized;
 
   const parsed = parseToolsTokens(tokens, flags);
   const requestedMode = parsed.ok
@@ -164,6 +174,19 @@ export async function runToolsCommand(
       attachMode: requestedMode,
     };
   }
+
+  const parsedPort = parsePort(normalized.port);
+  if (!parsedPort.ok) {
+    return {
+      exitCode: 1,
+      output: parsedPort.error,
+      outcome: { kind: 'intercept', reason: 'invalid-arguments' },
+      outputPath: parsed.output,
+      requestedMode,
+      attachMode: requestedMode,
+    };
+  }
+  const target: ToolsTarget = { ...normalized.target, port: parsedPort.port };
 
   // `-o/--output` applies to whatever the run produced — help, intercepts, and tool results
   // alike — matching the ai CLI, where the output file always receives the printed text.
@@ -183,6 +206,7 @@ export async function runToolsCommand(
     tools = await create({
       cwd: target.cwd,
       configDir: target.configDir,
+      ...(target.port != null ? { port: target.port } : {}),
       mode: requestedMode,
       clientInfo: CLI_CLIENT_INFO,
     });
@@ -218,7 +242,7 @@ export async function runToolsCommand(
     const dispatchDeps: ToolsRunDeps = { ...deps, methodTelemetry };
     const dispatched = await dispatchTools(
       tools,
-      normalized,
+      { ...normalized, target },
       parsed,
       dispatchDeps,
       requestedMode,
@@ -231,6 +255,9 @@ export async function runToolsCommand(
       host: tools.host,
       fallbackNotice: tools.fallbackNotice,
       fallbackReason: tools.fallbackReason,
+      ...(tools.storybook.siblings?.length
+        ? { multiInstanceNotice: formatMultiInstanceNotice(tools.storybook) }
+        : {}),
     };
   } finally {
     await tools.close();

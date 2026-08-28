@@ -13,6 +13,7 @@ import type {
 } from '../../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
 import { toCatalogEntry } from './catalog.ts';
+import type { StorybookInstanceRecord } from '../instances/types.ts';
 import type { AttachedBootstrapResult } from './attached-runtime.ts';
 import { formatAttachFallback } from './attach-messages.ts';
 import { spawnChildHost } from './child-client.ts';
@@ -41,6 +42,7 @@ import type {
   ToolsDescribeOptions,
   ToolsHostKind,
   ToolsMode,
+  ToolsSiblingInstance,
   ToolsStorybookInfo,
   ToolsetCatalog,
 } from './types.ts';
@@ -49,13 +51,14 @@ import type {
 export type CreateToolsDeps = {
   bootstrap?: (target: { cwd?: string; configDir?: string }) => Promise<ToolsRuntime>;
   attach?: (
-    target: { cwd?: string; configDir?: string },
+    target: { cwd?: string; configDir?: string; port?: number },
     deps?: unknown
   ) => Promise<
     | AttachedBootstrapResult
     | {
         runtime: ToolsRuntime;
         record: { url: string; pid: number; configDir?: string; cwd?: string };
+        siblings?: StorybookInstanceRecord[];
         connection: { close(): void; disconnected: Promise<never> };
       }
   >;
@@ -165,6 +168,7 @@ async function createAttachedTools(
   )({
     cwd: options.cwd,
     configDir: options.configDir,
+    port: options.port,
   });
   if ('kind' in attached && attached.kind === 'spawn') {
     return (deps.spawnChild ?? spawnChildHost)({
@@ -177,8 +181,12 @@ async function createAttachedTools(
   const inProcess = attached as {
     runtime: ToolsRuntime;
     record: { url: string; pid: number; configDir?: string };
+    siblings?: StorybookInstanceRecord[];
     connection: { close(): void; disconnected: Promise<never> };
   };
+  const siblings = inProcess.siblings?.length
+    ? inProcess.siblings.map(toSiblingInstance)
+    : undefined;
   return createToolsHost({
     mode: 'attached',
     host: 'in-process',
@@ -190,10 +198,22 @@ async function createAttachedTools(
       configDir: inProcess.runtime.configDir,
       url: inProcess.record.url,
       pid: inProcess.record.pid,
+      ...(siblings ? { siblings } : {}),
     },
     close: () => inProcess.connection.close(),
     disconnected: inProcess.connection.disconnected,
   });
+}
+
+/** Identifying info only: the record's channel token must never leave the SDK. */
+function toSiblingInstance(record: StorybookInstanceRecord): ToolsSiblingInstance {
+  return {
+    url: record.url,
+    port: record.port,
+    pid: record.pid,
+    cwd: record.cwd,
+    ...(record.configDir ? { configDir: record.configDir } : {}),
+  };
 }
 
 async function createLocalTools(

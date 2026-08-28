@@ -28,7 +28,7 @@ describe('classifyValue', () => {
     ['`plain template`', 'hoist'],
     ['2 + 3', 'hoist'],
 
-    ['undefined', 'omit'],
+    ['undefined', 'unset'],
     [`''`, 'omit'],
     ['() => 1', 'omit'],
     ['function () { return 1 }', 'omit'],

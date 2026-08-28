@@ -28,6 +28,12 @@ export type ModuleGraphServiceState = {
   status: ModuleGraphStatus;
   graphRevision: number;
   /**
+   * Monotonic counter advanced on every processed file-change event, including out-of-graph
+   * paths that do not advance {@link graphRevision}. Change detection watches this to rescan
+   * git; review staleness keeps watching {@link graphRevision} (in-graph only).
+   */
+  fileActivityRevision: number;
+  /**
    * Per-story revision stamps keyed by story-index-style relative path. Each entry holds the
    * {@link graphRevision} at which that story's subgraph last changed. Seeded to `0` for every
    * story at snapshot time so scoped `graphRevision` reads observe existing keys.

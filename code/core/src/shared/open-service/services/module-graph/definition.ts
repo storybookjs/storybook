@@ -58,6 +58,7 @@ export const moduleGraphServiceDef = defineService({
     workingDir: process.cwd(),
     status: { value: 'booting' },
     graphRevision: 0,
+    fileActivityRevision: 0,
     storyChangeRevisions: {},
     latestChangedStoryFiles: [],
   } as ModuleGraphServiceState,
@@ -107,6 +108,13 @@ export const moduleGraphServiceDef = defineService({
         }
         return max;
       },
+    },
+    fileActivityRevision: {
+      description:
+        'Monotonic counter advanced on every processed file-change event, including out-of-graph paths that do not advance `graphRevision`. Change detection watches this to rescan git after working-tree edits.',
+      input: noInputSchema,
+      output: v.number(),
+      handler: (_input, ctx) => ctx.self.state.fileActivityRevision,
     },
     latestStoryChanges: {
       description:
@@ -199,7 +207,7 @@ export const moduleGraphServiceDef = defineService({
     _applyGraphUpdate: {
       internal: true,
       description:
-        'Bumps versions for story files affected by an incremental patch. Called by the graph engine after any index apply for the same patch; does not write the reverse index.',
+        'Advances file activity for every processed file event. When `bumpedStoryFiles` is non-empty, also bumps graph revision and records those stories. Called by the graph engine after any index apply for the same patch; does not write the reverse index.',
       input: v.object({
         bumpedStoryFiles: v.pipe(
           v.array(storyIndexPathSchema),
@@ -210,12 +218,15 @@ export const moduleGraphServiceDef = defineService({
       }),
       output: v.void(),
       handler: async (input, ctx) => {
-        // A change that bumps no stories must not advance the revision, so watch-all and scoped
-        // subscribers stay put.
-        if (input.bumpedStoryFiles.length === 0) {
-          return;
-        }
         ctx.self.setState((state) => {
+          // Every processed file event advances file activity so change detection can rescan git,
+          // even when the path is out of graph (empty bumpedStoryFiles) and graphRevision stays put.
+          state.fileActivityRevision += 1;
+          // An out-of-graph file change bumps no stories; it must not advance graphRevision, so
+          // review / scoped subscribers stay put.
+          if (input.bumpedStoryFiles.length === 0) {
+            return;
+          }
           state.graphRevision += 1;
           state.latestChangedStoryFiles = input.bumpedStoryFiles;
           for (const storyFile of input.bumpedStoryFiles) {

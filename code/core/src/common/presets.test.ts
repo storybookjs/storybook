@@ -476,67 +476,43 @@ describe('resolveAddonName', () => {
     });
   });
 
-  it('should resolve absolute addon directories through the package exports map', () => {
-    // An exports-map-only package: no root-level preset/manager/preview shims,
-    // so joining subpaths onto the directory misses every entry (#36010).
-    const addonDir = join(
-      dirname(fileURLToPath(import.meta.url)),
-      '__node_modules__',
-      'addon-exports'
-    );
-    const resolveMock = vi
-      .spyOn(resolveUtils, 'safeResolveModule')
-      .mockImplementation(({ specifier }: { specifier: string }) => {
-        if (specifier === 'addon-exports/preset') return '/resolved/addon-exports/preset.js';
-        if (specifier === 'addon-exports/manager') return '/resolved/addon-exports/manager.js';
-        if (specifier === 'addon-exports/preview') return '/resolved/addon-exports/preview.js';
-        return undefined;
-      });
+  describe('given an addon referenced by absolute directory, as getAbsolutePath() produces', () => {
+    const fixtureDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 
-    try {
+    beforeEach(async () => {
+      // These cases assert on real resolution, so the file-wide stub of safeResolveModule
+      // would defeat them.
+      const actual = await vi.importActual<typeof resolveUtils>('../shared/utils/module.ts');
+      mockedResolveUtils.safeResolveModule.mockImplementation(actual.safeResolveModule);
+    });
+
+    it('resolves entry points declared only in the exports map', () => {
+      const addonDir = join(fixtureDir, 'addon-with-exports-map');
+
       expect(resolveAddonName({} as any, addonDir, {})).toEqual({
         type: 'virtual',
         name: addonDir,
-        presets: [{ name: '/resolved/addon-exports/preset.js', options: {} }],
-        managerEntries: ['/resolved/addon-exports/manager.js'],
-        previewAnnotations: ['/resolved/addon-exports/preview.js'],
+        presets: [{ name: join(addonDir, 'lib', 'preset.js'), options: {} }],
+        managerEntries: [join(addonDir, 'lib', 'manager.js')],
+        previewAnnotations: [join(addonDir, 'lib', 'preview.js')],
       });
-      // every entry must have gone through the bare specifier, not the directory
-      const specifiers = resolveMock.mock.calls.map((c: any[]) => c[0]?.specifier);
-      expect(specifiers).toContain('addon-exports/preset');
-      expect(specifiers).not.toContain(join(addonDir, 'preset'));
-    } finally {
-      resolveMock.mockRestore();
-    }
-  });
+    });
 
-  it('should fall back to path joins for absolute addon directories without a package name', () => {
-    const addonDir = join(
-      dirname(fileURLToPath(import.meta.url)),
-      '__node_modules__',
-      'addon-no-pkg-json'
-    );
-    const resolveMock = vi
-      .spyOn(resolveUtils, 'safeResolveModule')
-      .mockImplementation(({ specifier }: { specifier: string }) => {
-        // presets.ts joins with pathe, which normalizes separators; compare on
-        // a suffix so the mock is separator-agnostic
-        if (specifier.split('\\').join('/').endsWith('/addon-no-pkg-json/manager'))
-          return join(addonDir, 'manager');
-        return undefined;
-      });
+    it('resolves root-level entry points when the package has no exports map', () => {
+      const addonDir = join(fixtureDir, 'addon-without-exports-map');
 
-    try {
       expect(resolveAddonName({} as any, addonDir, {})).toEqual({
         type: 'virtual',
         name: addonDir,
-        presets: [],
-        managerEntries: [join(addonDir, 'manager')],
-        previewAnnotations: [],
+        presets: [{ name: join(addonDir, 'preset.js'), options: {} }],
+        managerEntries: [join(addonDir, 'manager.js')],
+        previewAnnotations: [join(addonDir, 'preview.js')],
       });
-    } finally {
-      resolveMock.mockRestore();
-    }
+    });
+
+    it('returns undefined for a directory that holds no addon', () => {
+      expect(resolveAddonName({} as any, fixtureDir, {})).toBeUndefined();
+    });
   });
 });
 

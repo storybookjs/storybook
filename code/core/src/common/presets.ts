@@ -12,8 +12,9 @@ import type {
   StorybookConfigRaw,
 } from 'storybook/internal/types';
 
-import { join, parse, resolve, isAbsolute } from 'pathe';
 import { readFileSync } from 'node:fs';
+
+import { isAbsolute, join, parse, resolve } from 'pathe';
 import { dedent } from 'ts-dedent';
 
 import type { ChannelLike } from '../channels/index.ts';
@@ -55,6 +56,15 @@ function resolvePresetFunction<T = any>(
   return [];
 }
 
+function readAddonManifest(dir: string): { name?: string; exports?: unknown } | undefined {
+  try {
+    const { name, exports } = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
+    return { name: typeof name === 'string' && name !== '' ? name : undefined, exports };
+  } catch {
+    return undefined;
+  }
+}
+
 /**
  * Parse an addon into either a managerEntries or a preset. Throw on invalid input.
  *
@@ -65,25 +75,6 @@ function resolvePresetFunction<T = any>(
  * - `{ name: '@storybook/addon-docs(/preset)?', options: { } } => { type: 'presets', item: { name:
  *   '@storybook/addon-docs/preset', options } }`
  */
-
-/**
- * When an addon is referenced as an absolute directory path (e.g. wrapped by
- * `getAbsolutePath`), joining entry subpaths onto the directory resolves them
- * as filesystem paths, bypassing the package's `exports` map. Modern packages
- * that only expose entries through `exports` (without root-level shim files)
- * therefore fail all three lookups and get dropped. Recovering the bare
- * package specifier from the directory's package.json lets the entries
- * resolve through the exports map again.
- */
-function getPackageSpecifierFromDir(dir: string): string | undefined {
-  try {
-    const pkgJson = JSON.parse(readFileSync(join(dir, 'package.json'), 'utf8'));
-    return typeof pkgJson?.name === 'string' && pkgJson.name !== '' ? pkgJson.name : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
 export const resolveAddonName = (
   configDir: string,
   name: string,
@@ -98,15 +89,17 @@ export const resolveAddonName = (
     };
   }
 
-  // For absolute addon directories, try the package's exports map first (via
-  // its bare specifier) and fall back to the direct path join for directories
-  // without a readable package name.
-  const packageSpecifier = isAbsolute(name) ? getPackageSpecifierFromDir(name) : undefined;
+  // An absolute `name` is a directory, so joining entry subpaths onto it bypasses the
+  // package's `exports` map. Resolving the bare specifier from the package's own directory
+  // consults `exports` instead, and restricting that to packages which declare `exports`
+  // keeps the lookup from walking node_modules into a different copy of the addon.
+  const manifest = isAbsolute(name) ? readAddonManifest(name) : undefined;
+  const exportsSpecifier = manifest?.exports ? manifest.name : undefined;
+
   const resolveEntryFile = (entry: string) =>
-    (packageSpecifier
-      ? safeResolveModule({ specifier: `${packageSpecifier}/${entry}`, parent: configDir })
-      : undefined) ??
-    safeResolveModule({ specifier: join(name, entry), parent: configDir });
+    (exportsSpecifier
+      ? safeResolveModule({ specifier: `${exportsSpecifier}/${entry}`, parent: name })
+      : undefined) ?? safeResolveModule({ specifier: join(name, entry), parent: configDir });
 
   const presetFile = resolveEntryFile('preset');
   const managerFile = resolveEntryFile('manager');
@@ -162,7 +155,16 @@ const map =
     }
 
     if (!resolved) {
-      logger.warn(`Could not resolve addon "${name}", skipping. Is it installed?`);
+      const packageName = isAbsolute(name) ? readAddonManifest(name)?.name : undefined;
+      logger.warn(
+        packageName
+          ? dedent`
+              Could not resolve addon "${packageName}", skipping.
+              It is installed at ${name}, but none of its preset, manager or preview entry points could be resolved.
+              If your main config wraps it in getAbsolutePath(), try referencing "${packageName}" directly instead.
+            `
+          : `Could not resolve addon "${name}", skipping. Is it installed?`
+      );
       return undefined;
     }
 

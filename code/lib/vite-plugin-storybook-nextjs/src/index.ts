@@ -10,7 +10,7 @@ import { vitePluginNextFont } from './plugins/next-font/plugin.ts';
 import { vitePluginNextSwc } from './plugins/next-swc/plugin.ts';
 
 import './polyfills/promise-with-resolvers.ts';
-import loadJsConfig from 'next/dist/build/load-jsconfig.js';
+import nextLoadJsConfig from 'next/dist/build/load-jsconfig.js';
 import {
   PHASE_DEVELOPMENT_SERVER,
   PHASE_PRODUCTION_BUILD,
@@ -30,6 +30,10 @@ import { loadNextConfig } from './utils/next-config.ts';
 const require = createRequire(import.meta.url);
 const compiledReactDir = dirname(require.resolve('next/dist/compiled/react'));
 const compiledReactDomDir = dirname(require.resolve('next/dist/compiled/react-dom'));
+
+const loadJsConfig: typeof nextLoadJsConfig =
+  // biome-ignore lint/suspicious/noExplicitAny: CJS support
+  (nextLoadJsConfig as any).default || nextLoadJsConfig;
 
 export type PluginOptions = {
   /**

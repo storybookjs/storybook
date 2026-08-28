@@ -6,7 +6,6 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "boolean"
         }
       },
@@ -20,7 +19,6 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "any"
         }
       },
@@ -35,7 +33,6 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "(value: any) => void"
         }
       },
@@ -49,7 +46,6 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "() => void"
         }
       },
@@ -63,7 +59,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "(fn: any) => void"
         }
       },
@@ -78,7 +73,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "(fn: any) => void"
         }
       },
@@ -93,7 +87,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "(isDisabled: boolean) => void"
         }
       },
@@ -108,7 +101,6 @@
         "category": "properties",
         "defaultValue": {},
         "type": {
-          "required": true,
           "summary": "any"
         }
       },
@@ -123,7 +115,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "(value: any) => void"
         }
       },

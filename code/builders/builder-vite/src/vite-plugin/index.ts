@@ -1,10 +1,13 @@
+import type { Channel } from 'storybook/internal/channels';
 import { optionalEnvToBoolean } from 'storybook/internal/common';
 import {
   experimental_loadStorybook,
+  internal_universalStatusStore,
+  internal_universalTestProviderStore,
   type StoryIndexGenerator,
 } from 'storybook/internal/core-server';
 import { setTelemetryVitePlugin } from 'storybook/internal/telemetry';
-import type { CoreConfig } from 'storybook/internal/types';
+import type { CoreConfig, Presets } from 'storybook/internal/types';
 
 import { getPort } from 'get-port-please';
 import { createProxyMiddleware } from 'http-proxy-middleware';
@@ -21,6 +24,7 @@ import {
 } from 'vite';
 
 import { AsyncLocalStorage } from 'node:async_hooks';
+import { randomUUID } from 'node:crypto';
 import EventEmitter from 'node:events';
 import { commonConfig, type PluginConfigType } from '../vite-config.ts';
 import { buildStaticStorybook } from './build.ts';
@@ -77,12 +81,19 @@ function main(options?: UserOptions): PluginOption {
   // load and cache config
   const loadStorybook = (command: 'serve' | 'build' = 'serve', appConfig?: UserConfig) =>
     (storybookPromise ??= ViteAsyncLocalStorage.run(true, async () => {
+      const channel =
+        command === 'serve' ? getOrCreateServerChannel(finalOptions.configDir) : undefined;
       const sb = await experimental_loadStorybook({
         configDir: finalOptions.configDir,
         packageJson: {},
+        channel,
       });
 
       sb.configType = command === 'build' ? 'PRODUCTION' : 'DEVELOPMENT';
+
+      if (channel) {
+        await initializeServerChannelOnce(channel, sb.presets);
+      }
 
       const configType: PluginConfigType = command === 'build' ? 'build' : 'development';
       const mergedConfig = await commonConfig(sb, configType, appConfig);
@@ -235,8 +246,6 @@ function main(options?: UserOptions): PluginOption {
 
       const coreOptions = await sb.presets.apply<CoreConfig>('core', {});
 
-      const wsToken = coreOptions.channelOptions?.wsToken ?? server.config.webSocketToken;
-
       const staticHandlers = await createStaticMiddlewares(sb, '/');
 
       const port = await getPort({ random: true, host: '127.0.0.1' });
@@ -246,6 +255,7 @@ function main(options?: UserOptions): PluginOption {
       server.httpServer?.once('close', () => closePolkaServer(polkaServer));
       sb.port = server.config.server.port;
       await sb.presets.apply('experimental_devServer', polkaServer, sb);
+      const sharedUpgrades = getSharedUpgradeEmitter();
 
       if (server.httpServer) {
         server.httpServer?.prependListener('upgrade', (req) => {
@@ -259,22 +269,13 @@ function main(options?: UserOptions): PluginOption {
           }
         });
 
-        const channel = createServerChannel(
-          server.httpServer as Parameters<typeof createServerChannel>[0],
-          SERVER_CHANNEL_PATH,
-          wsToken
-        );
-        sb.channel = channel;
-
-        await sb.presets.apply('experimental_serverChannel', channel);
+        server.httpServer.on('upgrade', (req, socket, head) => {
+          if (req.url?.startsWith(SERVER_CHANNEL_PATH)) {
+            sharedUpgrades.emit('upgrade', req, socket, head);
+          }
+        });
       } else {
         // vite is in middleware mode
-        const globalWithChannel = globalThis as typeof globalThis & {
-          __SB_CHANNEL_UPGRADE__?: EventEmitter;
-          __SB_CHANNEL__?: ReturnType<typeof createServerChannel>;
-        };
-        const sharedUpgrades = (globalWithChannel.__SB_CHANNEL_UPGRADE__ ??= new EventEmitter());
-
         const hmrOpts = server.config.server.hmr;
         const hostServer = typeof hmrOpts == 'object' && hmrOpts && hmrOpts.server;
         if (hostServer) {
@@ -297,16 +298,6 @@ function main(options?: UserOptions): PluginOption {
             for (const fn of originals) fn.call(hostServer, req, socket, head);
           });
         }
-
-        if (!globalWithChannel.__SB_CHANNEL__) {
-          globalWithChannel.__SB_CHANNEL__ = createServerChannel(
-            sharedUpgrades,
-            SERVER_CHANNEL_PATH,
-            wsToken
-          );
-          await sb.presets.apply('experimental_serverChannel', globalWithChannel.__SB_CHANNEL__);
-        }
-        sb.channel = globalWithChannel.__SB_CHANNEL__;
       }
 
       const addonsDir = join(
@@ -369,4 +360,40 @@ async function withoutInternalPlugins(plugins: PluginOption[]): Promise<PluginOp
     }
   }
   return result;
+}
+
+const globalWithChannel = globalThis as typeof globalThis & {
+  __SB_CHANNEL_UPGRADE__?: EventEmitter;
+  __SB_CHANNEL__?: Channel;
+  __SB_CHANNEL_INITIALIZED__?: Promise<void>;
+  __SB_CHANNEL_OWNER__?: string;
+  STORYBOOK_WEBSOCKET_TOKEN?: string;
+};
+
+function getSharedUpgradeEmitter(): EventEmitter {
+  return (globalWithChannel.__SB_CHANNEL_UPGRADE__ ??= new EventEmitter());
+}
+
+function getOrCreateServerChannel(configDir: string): Channel {
+  globalWithChannel.__SB_CHANNEL_OWNER__ ??= configDir;
+  if (globalWithChannel.__SB_CHANNEL_OWNER__ !== configDir) {
+    throw new Error(
+      `The Storybook Vite plugin is already running for '${globalWithChannel.__SB_CHANNEL_OWNER__}' in this process, ` +
+        `so it cannot also serve '${configDir}'. Run each Storybook in its own dev-server process.`
+    );
+  }
+  return (globalWithChannel.__SB_CHANNEL__ ??= createServerChannel(
+    getSharedUpgradeEmitter(),
+    SERVER_CHANNEL_PATH,
+    (globalWithChannel.STORYBOOK_WEBSOCKET_TOKEN ??= randomUUID())
+  ));
+}
+
+function initializeServerChannelOnce(channel: Channel, presets: Presets): Promise<void> {
+  return (globalWithChannel.__SB_CHANNEL_INITIALIZED__ ??= (async () => {
+    // void touch to creates the server-side leaders.
+    void internal_universalStatusStore.actor;
+    void internal_universalTestProviderStore.actor;
+    await presets.apply('experimental_serverChannel', channel);
+  })());
 }

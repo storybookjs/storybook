@@ -31,7 +31,7 @@ import {
 } from 'storybook/internal/telemetry';
 import type { Presets } from 'storybook/internal/types';
 
-import { match } from 'micromatch';
+import { match, scan } from 'micromatch';
 import { join, normalize, relative, resolve, sep } from 'pathe';
 import path from 'pathe';
 import picocolors from 'picocolors';
@@ -51,6 +51,8 @@ import { requiresProjectAnnotations } from './utils.ts';
 import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
 
 const WORKING_DIR = process.cwd();
+
+const escapeGlobPath = (filePath: string) => filePath.replace(/[()[\]{}!*?|+@]/g, '\\$&');
 
 const defaultOptions = {
   storybookScript: undefined,
@@ -302,21 +304,18 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       finalOptions.vitestRoot =
         testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
 
-      const includeStories = stories
-        .map((story) => {
-          let storyPath;
+      const includeStories = stories.map((story) => {
+        if (typeof story !== 'string') {
+          const directory = escapeGlobPath(join(finalOptions.configDir, story.directory));
+          return `${directory}/${story.files ?? DEFAULT_FILES_PATTERN}`;
+        }
 
-          if (typeof story === 'string') {
-            storyPath = story;
-          } else {
-            storyPath = `${story.directory}/${story.files ?? DEFAULT_FILES_PATTERN}`;
-          }
+        const { base, glob, negated } = scan(story);
+        const literalPath = escapeGlobPath(join(finalOptions.configDir, base));
+        const pattern = glob ? `${literalPath}/${glob}` : literalPath;
 
-          return join(finalOptions.configDir, storyPath);
-        })
-        .map((story) => {
-          return relative(finalOptions.vitestRoot, story);
-        });
+        return negated ? `!${pattern}` : pattern;
+      });
 
       finalOptions.includeStories = includeStories;
       const projectId = oneWayHash(finalOptions.configDir);
@@ -537,9 +536,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       }
     },
     async transform(code, id) {
-      const relativeId = relative(finalOptions.vitestRoot, id);
+      const normalizedId = normalize(id);
 
-      if (match([relativeId], finalOptions.includeStories).length > 0) {
+      if (match([normalizedId], finalOptions.includeStories).length > 0) {
         return vitestTransform({
           code,
           fileName: id,

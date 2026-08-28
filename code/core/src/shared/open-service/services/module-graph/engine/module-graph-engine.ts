@@ -34,7 +34,10 @@ export interface ModuleGraphEngineOptions {
   onSnapshot?: (storiesByFile: ReturnType<typeof reverseIndexToStoriesByFile>) => void;
   /** Replaces `core/module-graph-index` when a patch moved the reverse index. */
   onIndex?: (storiesByFile: ReturnType<typeof reverseIndexToStoriesByFile>) => void | Promise<void>;
-  /** Bumps `core/module-graph` revisions for story files affected by a settled patch. */
+  /**
+   * Fired after every settled file-change patch. Empty `bumpedStoryFiles` means the path was
+   * out of graph: `fileActivityRevision` still advances so change detection can rescan git.
+   */
   onBump?: (bumpedStoryFiles: string[]) => void | Promise<void>;
 }
 
@@ -133,11 +136,9 @@ export class ModuleGraphEngine {
         reverseIndexToStoriesByFile(this.reverseIndex.asMap(), this.workingDir)
       );
     }
-    if (bumpedStoryFiles.size > 0) {
-      await this.options.onBump?.(
-        Array.from(bumpedStoryFiles, (storyFile) => toStoryIndexPath(storyFile, this.workingDir))
-      );
-    }
+    await this.options.onBump?.(
+      Array.from(bumpedStoryFiles, (storyFile) => toStoryIndexPath(storyFile, this.workingDir))
+    );
   }
 
   /**

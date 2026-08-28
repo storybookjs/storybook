@@ -5,7 +5,12 @@ import { getService } from '../../shared/open-service/server.ts';
 import type { ModuleGraphService } from '../../shared/open-service/services/module-graph/definition.ts';
 import { ModuleGraphEngine } from '../../shared/open-service/services/module-graph/engine/module-graph-engine.ts';
 import type { ModuleGraphStatus } from '../../shared/open-service/services/module-graph/types.ts';
+import {
+  errorToErrorLike,
+  toStoryIndexPath,
+} from '../../shared/open-service/services/module-graph/types.ts';
 import type { QueryState } from '../../shared/open-service/types.ts';
+import { ChangeDetectionService } from './change-detection-service.ts';
 
 /** Wraps a value as a settled `success`/`idle` {@link QueryState}, mirroring a real subscription emission. */
 function toSuccessState<TData>(data: TData): QueryState<TData> {
@@ -22,17 +27,12 @@ function toSuccessState<TData>(data: TData): QueryState<TData> {
     isRefreshing: false,
   };
 }
-import {
-  errorToErrorLike,
-  toStoryIndexPath,
-} from '../../shared/open-service/services/module-graph/types.ts';
-import { ChangeDetectionService } from './change-detection-service.ts';
 
 export {
+  buildReverseIndex,
   createDeferred,
   createMockAdapter,
   createStoryIndex,
-  buildReverseIndex,
   installDependencyGraphMocks,
   type MockAdapterHandle,
 } from '../../shared/open-service/services/module-graph/module-graph.test-helpers.ts';
@@ -46,14 +46,21 @@ type ChangeDetectionServiceOptions = ConstructorParameters<typeof ChangeDetectio
 export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
   let status: ModuleGraphStatus = engine.hasGraph() ? { value: 'ready' } : { value: 'booting' };
   let graphRevision = 0;
+  let fileActivityRevision = 0;
   let latestChangedStoryFiles: string[] = [];
   const statusSubscribers = new Set<(next: QueryState<ModuleGraphStatus>) => void>();
   const revisionSubscribers = new Set<(next: QueryState<number>) => void>();
+  const fileActivitySubscribers = new Set<(next: QueryState<number>) => void>();
   const emitStatus = () => {
     statusSubscribers.forEach((subscriber) => subscriber(toSuccessState(status)));
   };
   const emitRevision = () => {
     revisionSubscribers.forEach((subscriber) => subscriber(toSuccessState(graphRevision)));
+  };
+  const emitFileActivity = () => {
+    fileActivitySubscribers.forEach((subscriber) =>
+      subscriber(toSuccessState(fileActivityRevision))
+    );
   };
   const storiesForFiles = ({ files }: { files: string[] }) =>
     files.map((file) => {
@@ -81,11 +88,19 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
         ),
       },
       graphRevision: {
-        get: () => 0,
+        get: () => graphRevision,
         subscribe: vi.fn((_input: undefined, callback: (next: QueryState<number>) => void) => {
           revisionSubscribers.add(callback);
           callback(toSuccessState(graphRevision));
           return () => revisionSubscribers.delete(callback);
+        }),
+      },
+      fileActivityRevision: {
+        get: () => fileActivityRevision,
+        subscribe: vi.fn((_input: undefined, callback: (next: QueryState<number>) => void) => {
+          fileActivitySubscribers.add(callback);
+          callback(toSuccessState(fileActivityRevision));
+          return () => fileActivitySubscribers.delete(callback);
         }),
       },
       latestStoryChanges: {
@@ -126,7 +141,10 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
       emitStatus();
     },
     applyUpdate: (bumpedStoryFiles: string[] = []) => {
-      // Out-of-graph changes bump no stories, so they must not advance the revision.
+      // Every processed file event advances file activity so change detection rescans git.
+      fileActivityRevision += 1;
+      emitFileActivity();
+      // Out-of-graph changes bump no stories, so they must not advance graphRevision.
       if (bumpedStoryFiles.length === 0) {
         return;
       }
@@ -137,6 +155,8 @@ export function installModuleGraphQueryMock(engine: ModuleGraphEngine) {
     bumpGraphRevision: () => {
       graphRevision += 1;
       emitRevision();
+      fileActivityRevision += 1;
+      emitFileActivity();
     },
     applyError: (error: Error) => {
       status = { value: 'error', error: errorToErrorLike(error) };

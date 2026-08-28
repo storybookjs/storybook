@@ -7,7 +7,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "TypeAlias"
         }
       },
@@ -23,7 +22,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "EnumAlias"
         }
       },
@@ -39,7 +37,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "EnumNumeric"
         }
       },
@@ -55,7 +52,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "EnumNumericInitial"
         }
       },
@@ -71,7 +67,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "EnumStringValues"
         }
       },
@@ -87,7 +82,6 @@
         "category": "inputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "\"Union A\" | \"Union B\" | \"Union C\""
         }
       },

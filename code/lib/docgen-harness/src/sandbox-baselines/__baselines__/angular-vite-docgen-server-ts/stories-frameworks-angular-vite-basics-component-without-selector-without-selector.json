@@ -8,7 +8,6 @@
           "summary": "#1e88e5"
         },
         "type": {
-          "required": false,
           "summary": "string"
         }
       },
@@ -24,7 +23,6 @@
           "summary": "Joe Bar"
         },
         "type": {
-          "required": false,
           "summary": "string"
         }
       },

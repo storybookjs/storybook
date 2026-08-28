@@ -549,6 +549,7 @@ function createAvailability(overrides: Partial<ToolAvailability> = {}): ToolAvai
     reviewEnabled: true,
     reviewEnabledForCli: true,
     docsEnabled: true,
+    docsEnabledForCli: true,
     docsHasManifests: true,
     docsFeatureEnabled: true,
     testSupported: true,

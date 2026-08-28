@@ -24,16 +24,22 @@ export const fuseOptions = {
   ],
 } as FuseOptions<SearchItem>;
 
-/** A search item for a single heading of a docs page. */
+/**
+ * A search item for a single heading of a docs page.
+ *
+ * The label is built from the page's own label rather than its entry name, because autodocs pages
+ * are all named "Docs": scoring "Docs / Installation" gives Fuse nothing to tell one page's heading
+ * from another's, so every page with that heading ranks alike.
+ */
 export const docsAnchorItem = (page: DocsSearchItem, anchor: DocsAnchor): SearchItem => {
-  const namePostfix = page.path?.[0] === anchor.title ? '' : ` / ${anchor.title}`;
+  const label = page.path.at(-1) ?? page.name;
 
   return {
     ...page,
     anchors: [anchor],
     // Fuse requires unique ids, so suffix the entry id with the anchor's DOM id
     id: `${page.id}#${anchor.id}`,
-    name: `${page.name}${namePostfix}`,
+    name: label === anchor.title ? label : `${label} / ${anchor.title}`,
   };
 };
 

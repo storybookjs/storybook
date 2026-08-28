@@ -52,7 +52,7 @@ describe('attach failure messages', () => {
 
   it('names the running ports and the --port that selects one on a port mismatch', () => {
     expect(formatPortMismatch(9999, [other, sibling])).toMatchInlineSnapshot(`
-      "No Storybook instance for this project is running on port 9999. Retry with one of the running ports below, or omit \`--port\` to use the most recently started instance:
+      "No running Storybook instance is on port 9999. Retry with one of the running instances below, or omit \`--port\` to match on the project's cwd/config dir instead:
       - http://localhost:6006 (port \`6006\`, cwd \`/apps/web\`)
       - http://localhost:6007 (port \`6007\`, cwd \`/apps/ui\`)"
     `);

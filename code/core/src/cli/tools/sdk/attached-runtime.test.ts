@@ -219,6 +219,15 @@ describe('bootstrapAttachedRuntime', () => {
     expect(result.siblings).toEqual([]);
   });
 
+  it('attaches by port alone from an unrelated cwd, inferring the project from the record', async () => {
+    const { deps } = makeRuntimeDeps([RECORD]);
+
+    const result = await bootstrapAttachedRuntime({ cwd: '/somewhere/else', port: 6006 }, deps);
+
+    expect(result.record).toEqual(RECORD);
+    expect(result.siblings).toEqual([]);
+  });
+
   it('rejects with port-mismatch listing the running ports when no matching instance is on the port', async () => {
     const sibling: StorybookInstanceRecord = {
       ...RECORD,

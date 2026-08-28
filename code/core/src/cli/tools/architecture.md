@@ -131,7 +131,7 @@ Messages name the exact corrective command.
 | Failure                           | Detection                             | Message must include                                                                             |
 | --------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | No instance for this project      | No cwd/configDir match                | How to start Storybook; other running instances with `cwd` + `url`; exact `cd` or `--config-dir` |
-| Port mismatch                     | Project matches, `--port` does not    | Matching instances with their `port` + `url`; `--port <port>`                                    |
+| Port mismatch                     | No running instance on `--port`       | Running instances with their `port` + `url`; `--port <port>`                                     |
 | Old server                        | Token absent                          | Restart Storybook (vX.Y+) to enable attach                                                       |
 | Stale record / connection refused | WS connect fails                      | Registry cleanup; fallback note                                                                  |
 | Server started before upgrade     | Instance-cwd package ≠ record version | Both version strings; restart Storybook                                                          |

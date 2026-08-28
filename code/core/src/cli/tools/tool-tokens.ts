@@ -211,7 +211,8 @@ export const TOOLS_OPTION_SPECS: ReadonlyArray<{ flags: string; description: str
   },
   {
     flags: '-p, --port <number>',
-    description: 'Port of the target Storybook, to address one specific running instance',
+    description:
+      'Port of a running Storybook; targets that instance directly, no --cwd or --config-dir needed',
   },
   {
     flags: '--attach',

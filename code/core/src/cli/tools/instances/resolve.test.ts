@@ -547,12 +547,49 @@ describe('resolveInstance', () => {
     }
   });
 
-  it('returns no-instance (not port-mismatch) when the cwd itself does not match', () => {
+  it('selects an instance by port alone, inferring the project from the record', () => {
     const a = record('/Users/x/projects/foo', 'ready', { port: 6006 });
     const result = resolveInstance([a], { cwd: '/Users/x/projects/bar', port: 6006 });
+    expect(result.kind).toBe('instance');
+    if (result.kind === 'instance') {
+      expect(result.record).toBe(a);
+    }
+  });
+
+  it('returns port-mismatch listing all running instances when nothing is on the port', () => {
+    const a = record('/Users/x/projects/foo', 'ready', { port: 6006 });
+    const result = resolveInstance([a], { cwd: '/Users/x/projects/bar', port: 9999 });
+    expect(result.kind).toBe('intercept');
+    if (result.kind === 'intercept') {
+      expect(result.reason).toBe('port-mismatch');
+      expect(result.records).toEqual([a]);
+    }
+  });
+
+  it('returns no-instance when a port is supplied but nothing is running at all', () => {
+    const result = resolveInstance([], { cwd: '/Users/x/projects/bar', port: 6006 });
     expect(result.kind).toBe('intercept');
     if (result.kind === 'intercept') {
       expect(result.reason).toBe('no-instance');
+    }
+  });
+
+  it('restricts port matching to the explicit --config-dir when both are supplied', () => {
+    const ui = record('/repo', 'ready', { configDir: '/repo/packages/ui/.storybook', port: 6006 });
+    const docs = record('/repo', 'ready', {
+      configDir: '/repo/packages/docs/.storybook',
+      port: 6007,
+    });
+    const result = resolveInstance([ui, docs], {
+      cwd: '/repo',
+      configDir: '/repo/packages/ui/.storybook',
+      configDirExplicit: true,
+      port: 6007,
+    });
+    expect(result.kind).toBe('intercept');
+    if (result.kind === 'intercept') {
+      expect(result.reason).toBe('port-mismatch');
+      expect(result.records).toEqual([ui]);
     }
   });
 });
@@ -602,16 +639,17 @@ describe('selectInstances', () => {
     expect(result).toEqual({ kind: 'match', matches: [a] });
   });
 
-  it('returns port-mismatch with the project matches when no instance is on the port', () => {
+  it('returns port-mismatch with the running instances when no instance is on the port', () => {
     const a = record('/Users/x/projects/foo', 'ready', { pid: 100, port: 6006 });
     const b = record('/Users/x/projects/foo', 'ready', { pid: 200, port: 6007 });
     const result = selectInstances([a, b], { cwd: '/Users/x/projects/foo', port: 9999 });
-    expect(result).toEqual({ kind: 'port-mismatch', port: 9999, projectMatches: [a, b] });
+    expect(result).toEqual({ kind: 'port-mismatch', port: 9999, candidates: [a, b] });
   });
 
-  it('returns no-instance (not port-mismatch) when the project itself does not match', () => {
-    const a = record('/Users/x/projects/foo', 'ready', { port: 6006 });
-    const result = selectInstances([a], { cwd: '/Users/x/projects/bar', port: 6006 });
-    expect(result).toEqual({ kind: 'no-instance', records: [a] });
+  it('selects across projects by port alone, most recently started first', () => {
+    const foo = record('/Users/x/projects/foo', 'ready', { port: 6006 });
+    const bar = record('/Users/x/projects/bar', 'ready', { port: 6006 });
+    const result = selectInstances([foo, bar], { cwd: '/Users/x/projects/other', port: 6006 });
+    expect(result).toEqual({ kind: 'match', matches: [foo, bar] });
   });
 });

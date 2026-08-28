@@ -100,8 +100,8 @@ export async function bootstrapAttachedRuntime(
   if (selection.kind === 'port-mismatch') {
     throw new AttachUnavailableError({
       reason: 'port-mismatch',
-      instances: selection.projectMatches,
-      remediation: formatPortMismatch(selection.port, selection.projectMatches),
+      instances: selection.candidates,
+      remediation: formatPortMismatch(selection.port, selection.candidates),
     });
   }
 

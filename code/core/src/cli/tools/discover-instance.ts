@@ -11,7 +11,7 @@ export type ToolsTarget = {
   cwd?: string;
   /** Directory where to load Storybook configuration from; relative paths resolve from `cwd`. */
   configDir?: string;
-  /** Port of the target Storybook, to address one specific instance among several matches. */
+  /** Port of a running Storybook; a known port targets that instance without cwd or config dir. */
   port?: number;
 };
 

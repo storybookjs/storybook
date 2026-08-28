@@ -32,14 +32,11 @@ export function formatNoInstance(records: StorybookInstanceRecord[]): string {
   return lines.join('\n');
 }
 
-export function formatPortMismatch(
-  port: number,
-  projectMatches: StorybookInstanceRecord[]
-): string {
+export function formatPortMismatch(port: number, candidates: StorybookInstanceRecord[]): string {
   const lines = [
-    `No Storybook instance for this project is running on port ${port}. Retry with one of the running ports below, or omit \`--port\` to use the most recently started instance:`,
+    `No running Storybook instance is on port ${port}. Retry with one of the running instances below, or omit \`--port\` to match on the project's cwd/config dir instead:`,
   ];
-  for (const record of projectMatches) {
+  for (const record of candidates) {
     lines.push(`- ${record.url} (port \`${record.port}\`, cwd \`${record.cwd}\`)`);
   }
   return lines.join('\n');

@@ -17,7 +17,7 @@ import { createTools } from 'storybook/internal/tools';
 const tools = await createTools({
   cwd, // which project; defaults to process.cwd()
   configDir, // --config-dir equivalent; disambiguates monorepos
-  port, // --port equivalent; addresses one instance when several match
+  port, // --port equivalent; a known port targets that running instance on its own
   mode: 'auto', // 'auto' | 'attached' | 'local'
   autoSpawn: true, // false → EnvironmentMismatchError instead of a child host
   clientInfo: { name, version, kind: 'sdk' },

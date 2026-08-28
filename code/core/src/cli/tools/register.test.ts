@@ -327,7 +327,10 @@ describe('tools-command telemetry', () => {
   it('records that the attach resolved among multiple matches', async () => {
     const { program } = buildProgram();
     vi.mocked(runToolsCommand).mockResolvedValue(
-      successResult({ multiInstanceNotice: 'Warning: Multiple Storybook instances' })
+      successResult({
+        multiInstanceNotice: 'Warning: Multiple Storybook instances',
+        multipleMatches: true,
+      })
     );
 
     await parse(program, ['tools', 'docs', 'list']);

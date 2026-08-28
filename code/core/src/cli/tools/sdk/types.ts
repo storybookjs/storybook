@@ -57,6 +57,10 @@ export type ToolsStorybookInfo = {
   url?: string;
   /** Process id of the running Storybook. */
   pid?: number;
+  /** Port of the running Storybook, as recorded by `storybook dev`. */
+  port?: number;
+  /** Directory the running Storybook was started from. */
+  cwd?: string;
   /**
    * Set when attach chose among several matching instances: the competing instances, best first,
    * so callers can warn and name `port` as the way to target another one.

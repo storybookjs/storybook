@@ -47,21 +47,25 @@ import type {
   ToolsetCatalog,
 } from './types.ts';
 
+/**
+ * The in-process attach shape `createTools` consumes: the fields of
+ * {@link AttachedInProcessResult} it reads, with the record narrowed to identifying info so tests
+ * can hand a minimal instance.
+ */
+type AttachedInProcess = {
+  runtime: ToolsRuntime;
+  record: { url: string; pid: number; configDir?: string; cwd?: string; port?: number };
+  siblings?: StorybookInstanceRecord[];
+  connection: { close(): void; disconnected: Promise<never> };
+};
+
 /** Injectable dependencies for tests. Not part of the public SDK. */
 export type CreateToolsDeps = {
   bootstrap?: (target: { cwd?: string; configDir?: string }) => Promise<ToolsRuntime>;
   attach?: (
     target: { cwd?: string; configDir?: string; port?: number },
     deps?: unknown
-  ) => Promise<
-    | AttachedBootstrapResult
-    | {
-        runtime: ToolsRuntime;
-        record: { url: string; pid: number; configDir?: string; cwd?: string };
-        siblings?: StorybookInstanceRecord[];
-        connection: { close(): void; disconnected: Promise<never> };
-      }
-  >;
+  ) => Promise<AttachedBootstrapResult | AttachedInProcess>;
   spawnChild?: typeof spawnChildHost;
 };
 
@@ -178,12 +182,7 @@ async function createAttachedTools(
       requestedMode,
     });
   }
-  const inProcess = attached as {
-    runtime: ToolsRuntime;
-    record: { url: string; pid: number; configDir?: string };
-    siblings?: StorybookInstanceRecord[];
-    connection: { close(): void; disconnected: Promise<never> };
-  };
+  const inProcess = attached as AttachedInProcess;
   const siblings = inProcess.siblings?.length
     ? inProcess.siblings.map(toSiblingInstance)
     : undefined;
@@ -198,6 +197,8 @@ async function createAttachedTools(
       configDir: inProcess.runtime.configDir,
       url: inProcess.record.url,
       pid: inProcess.record.pid,
+      ...(inProcess.record.port != null ? { port: inProcess.record.port } : {}),
+      ...(inProcess.record.cwd ? { cwd: inProcess.record.cwd } : {}),
       ...(siblings ? { siblings } : {}),
     },
     close: () => inProcess.connection.close(),

@@ -78,6 +78,8 @@ export type ToolsRunResult = {
   fallbackReason?: ToolsAttachGateReason;
   /** Set when the attached host chose among several matching instances; printed to stderr. */
   multiInstanceNotice?: string;
+  /** True when the attached host chose among several matching instances; drives telemetry. */
+  multipleMatches?: boolean;
 };
 
 export type ToolsInvocation = {
@@ -256,7 +258,7 @@ export async function runToolsCommand(
       fallbackNotice: tools.fallbackNotice,
       fallbackReason: tools.fallbackReason,
       ...(tools.storybook.siblings?.length
-        ? { multiInstanceNotice: formatMultiInstanceNotice(tools.storybook) }
+        ? { multiInstanceNotice: formatMultiInstanceNotice(tools.storybook), multipleMatches: true }
         : {}),
     };
   } finally {

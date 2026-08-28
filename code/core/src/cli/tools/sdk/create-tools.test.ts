@@ -182,7 +182,13 @@ describe('createTools', () => {
   it('joins a running Storybook in attached mode without loading the local runtime', async () => {
     const attach = vi.fn(async () => ({
       runtime: makeRuntime(),
-      record: { url: 'http://localhost:6006', pid: 123, configDir: CONFIG_DIR },
+      record: {
+        url: 'http://localhost:6006',
+        pid: 123,
+        configDir: CONFIG_DIR,
+        cwd: '/repo',
+        port: 6006,
+      },
       connection: { close: vi.fn(), disconnected: new Promise<never>(() => {}) },
     }));
 
@@ -195,6 +201,8 @@ describe('createTools', () => {
       configDir: CONFIG_DIR,
       url: 'http://localhost:6006',
       pid: 123,
+      port: 6006,
+      cwd: '/repo',
     });
   });
 
@@ -265,6 +273,21 @@ describe('createTools', () => {
     const tools = await createTools({ cwd: '/repo', mode: 'attached' }, { attach });
 
     expect(tools.storybook.siblings).toBeUndefined();
+  });
+
+  it('hard-errors on a port mismatch in attached mode instead of falling back', async () => {
+    vi.mocked(attach).mockRejectedValueOnce(
+      new AttachUnavailableError({
+        reason: 'port-mismatch',
+        instances: [],
+        remediation: 'No Storybook instance for this project is running on port 9999.',
+      })
+    );
+
+    await expect(createTools({ mode: 'attached', port: 9999 }, { attach })).rejects.toThrow(
+      'port 9999'
+    );
+    expect(bootstrapToolsRuntime).not.toHaveBeenCalled();
   });
 
   it('falls back to local with a port-mismatch gate reason in auto mode', async () => {

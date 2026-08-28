@@ -1,7 +1,8 @@
-import { existsSync, rmSync } from 'node:fs';
-import { mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
-import { homedir } from 'node:os';
+import { existsSync, rmSync } from 'node:fs';
+import { chmod, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { homedir, userInfo } from 'node:os';
 
 import { normalizeAddonName } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
@@ -16,6 +17,39 @@ const STORYBOOK_MCP_ADDON = '@storybook/addon-mcp';
 const DEFAULT_MCP_ENDPOINT = '/mcp';
 const ONE_DAY_MS = 24 * 60 * 60 * 1000;
 const SEVEN_DAYS_MS = 7 * ONE_DAY_MS;
+const REGISTRY_DIR_MODE = 0o700;
+const RECORD_FILE_MODE = 0o600;
+
+// Node's promisify(execFile) closes over the original execFile via promisify.custom, so spies never see icacls.
+function execFileAsync(file: string, args: readonly string[]) {
+  return new Promise<void>((resolveExec, rejectExec) => {
+    execFile(file, [...args], (error) => {
+      if (error) {
+        rejectExec(error);
+        return;
+      }
+      resolveExec();
+    });
+  });
+}
+
+async function restrictOwnerAccess(targetPath: string, mode: number) {
+  await chmod(targetPath, mode);
+  if (process.platform !== 'win32') {
+    return;
+  }
+
+  // chmod on Windows only toggles the writable bit; it does not create an owner-only ACL.
+  const { username } = userInfo();
+  try {
+    await execFileAsync('icacls', [targetPath, '/inheritance:r', '/grant:r', `${username}:(F)`]);
+  } catch (error) {
+    throw new Error(
+      `Could not restrict ${targetPath} to the current Windows user. The instance record would be readable by other accounts.`,
+      { cause: error }
+    );
+  }
+}
 
 export type RuntimeInstanceRecord = {
   schemaVersion: 1;
@@ -30,6 +64,8 @@ export type RuntimeInstanceRecord = {
   configDir?: string;
   url: string;
   port: number;
+  /** Token authenticating clients against this instance's WebSocket channel. */
+  token?: string;
   agent?: string;
   storybookVersion: string;
   startedAt: string;
@@ -102,6 +138,7 @@ export function createRuntimeInstanceRecord({
   pid = process.pid,
   port,
   storybookVersion,
+  token,
 }: {
   address: string;
   agent?: string;
@@ -113,6 +150,7 @@ export function createRuntimeInstanceRecord({
   pid?: number;
   port: number;
   storybookVersion: string;
+  token?: string;
 }): RuntimeInstanceRecord {
   const storybookBaseUrl = getStorybookBaseUrl(address);
   const timestamp = now.toISOString();
@@ -125,6 +163,7 @@ export function createRuntimeInstanceRecord({
     ...(configDir ? { configDir: resolve(cwd, configDir) } : {}),
     url: storybookBaseUrl,
     port,
+    ...(token ? { token } : {}),
     ...(agent ? { agent } : {}),
     storybookVersion,
     startedAt: timestamp,
@@ -137,7 +176,9 @@ export async function writeRuntimeInstanceRecord(
   record: RuntimeInstanceRecord,
   registryDir = getDefaultRuntimeInstanceRegistryDir()
 ) {
-  await mkdir(registryDir, { recursive: true });
+  await mkdir(registryDir, { recursive: true, mode: REGISTRY_DIR_MODE });
+  // `mkdir` ignores `mode` for an existing dir and umask can clear bits, so modes are enforced.
+  await restrictOwnerAccess(registryDir, REGISTRY_DIR_MODE);
   await cleanupRuntimeInstanceRegistry(registryDir);
 
   const recordPath = join(registryDir, `${record.instanceId}.json`);
@@ -147,7 +188,11 @@ export async function writeRuntimeInstanceRecord(
   );
 
   try {
-    await writeFile(tempPath, `${JSON.stringify(record, null, 2)}\n`, 'utf-8');
+    await writeFile(tempPath, `${JSON.stringify(record, null, 2)}\n`, {
+      encoding: 'utf-8',
+      mode: RECORD_FILE_MODE,
+    });
+    await restrictOwnerAccess(tempPath, RECORD_FILE_MODE);
     await rename(tempPath, recordPath);
   } catch (error) {
     await rm(tempPath, { force: true }).catch(() => undefined);
@@ -337,6 +382,7 @@ export async function writeStorybookRuntimeInstanceRecord({
   registryDir,
   registerCleanup = true,
   storybookVersion,
+  token,
 }: {
   address: string;
   agent?: string;
@@ -348,6 +394,7 @@ export async function writeStorybookRuntimeInstanceRecord({
   registryDir?: string;
   registerCleanup?: boolean;
   storybookVersion: string;
+  token: string;
 }): Promise<RuntimeInstanceRegistration> {
   const record = createRuntimeInstanceRecord({
     address,
@@ -358,6 +405,7 @@ export async function writeStorybookRuntimeInstanceRecord({
     pid,
     port,
     storybookVersion,
+    token,
   });
   const recordPath = await writeRuntimeInstanceRecord(record, registryDir);
   const unregisterProcessCleanup = registerCleanup ? registerProcessCleanup(recordPath) : () => {};

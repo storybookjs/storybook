@@ -48,6 +48,8 @@ const unescapeTemplateLiteral = (template: string): string =>
 // Mirrors `formatPropInTemplate`, which reaches a non-identifier output through `this['name']`.
 const memberName = (name: string): string => (isValidIdentifier(name) ? name : `['${name}']`);
 
+const memberValue = (value: string): string => value.split('\n').join('\n  ');
+
 // Tells the reader what the snippet could not resolve on its own: a known non-standalone
 // component, an unresolvable standalone status, or a story-file-local component that has no
 // import to derive (which the snippet names without bringing into scope).
@@ -133,7 +135,7 @@ export const buildHostComponentSnippet = ({
     : [...(standalone ? [componentName] : []), ...moduleNames].join(', ');
   const members = [
     ...(viaComponentOutlet ? [`  protected readonly ${componentName} = ${componentName};`] : []),
-    ...fields.map(({ name, value }) => `  ${memberName(name)} = ${value};`),
+    ...fields.map(({ name, value }) => `  ${memberName(name)} = ${memberValue(value)};`),
     ...outputs.map((name) => `  ${memberName(name)}(event: unknown) {}`),
   ];
   const body = members.length > 0 ? `{\n${members.join('\n')}\n}` : '{}';

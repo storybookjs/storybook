@@ -282,7 +282,7 @@ describe('module-graph open service', () => {
       expect(runtime.queries.graphRevision.get(undefined)).toBe(2);
     });
 
-    it('does not advance the revision for an out-of-graph change (no bumped stories)', async () => {
+    it('advances file activity but not graph revision for an out-of-graph change', async () => {
       const runtime = registerBareModuleGraph();
       await runtime.commands._applyGraphSnapshot({
         storiesByFile: { './src/Button.tsx': { './src/Button.stories.tsx': 1 } },
@@ -294,6 +294,7 @@ describe('module-graph open service', () => {
       });
 
       expect(runtime.queries.graphRevision.get(undefined)).toBe(0);
+      expect(runtime.queries.fileActivityRevision.get(undefined)).toBe(1);
       expect(runtime.queries.latestStoryChanges.get(undefined)).toEqual({
         revision: 0,
         storyFiles: [],

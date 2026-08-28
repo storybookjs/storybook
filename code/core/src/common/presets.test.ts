@@ -25,36 +25,40 @@ vi.mock('storybook/internal/node-logger', () => ({
 
 vi.mock('../shared/utils/module', () => ({
   importModule: vi.fn(),
-  safeResolveModule: vi.fn(({ specifier }) => {
-    const KNOWN_FILES = [
-      '@storybook/react',
-      'storybook/actions/manager',
-      './local/preset',
-      './local/addons',
-      '/absolute/preset',
-      '/absolute/addons',
-      '@storybook/addon-docs',
-      '@storybook/addon-cool',
-      '@storybook/addon-docs/preset',
-      '@storybook/addon-essentials',
-      '@storybook/addon-knobs/manager',
-      '@storybook/addon-knobs/register',
-      '@storybook/addon-notes/register-panel',
-      '@storybook/preset-create-react-app',
-      '@storybook/preset-typescript',
-      'addon-bar/preset.js',
-      'addon-bar',
-      'addon-baz/register.js',
-      'addon-foo/register.js',
-    ];
-    if (KNOWN_FILES.includes(specifier)) {
-      return specifier;
-    }
-    return undefined;
-  }),
+  safeResolveModule: vi.fn(),
 }));
 
 const mockedResolveUtils = vi.mocked(resolveUtils);
+
+const KNOWN_FILES = [
+  '@storybook/react',
+  'storybook/actions/manager',
+  './local/preset',
+  './local/addons',
+  '/absolute/preset',
+  '/absolute/addons',
+  '@storybook/addon-docs',
+  '@storybook/addon-cool',
+  '@storybook/addon-docs/preset',
+  '@storybook/addon-essentials',
+  '@storybook/addon-knobs/manager',
+  '@storybook/addon-knobs/register',
+  '@storybook/addon-notes/register-panel',
+  '@storybook/preset-create-react-app',
+  '@storybook/preset-typescript',
+  'addon-bar/preset.js',
+  'addon-bar',
+  'addon-baz/register.js',
+  'addon-foo/register.js',
+];
+
+// Re-applied per test so that cases which swap in a different resolver cannot leak into the rest
+// of the file.
+beforeEach(() => {
+  mockedResolveUtils.safeResolveModule.mockImplementation(({ specifier }) =>
+    KNOWN_FILES.includes(specifier) ? specifier : undefined
+  );
+});
 
 describe('presets', () => {
   it('does not throw when there is no preset file', async () => {

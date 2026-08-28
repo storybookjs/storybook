@@ -1,9 +1,10 @@
 import { readFile } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import type { Options } from 'storybook/internal/types';
-import type { ViteDevServer } from 'vite';
+import type { DevEnvironment, ViteDevServer } from 'vite';
 import { transformIframeHtml } from '../../transform-iframe-html.ts';
 import { SB_VIRTUAL_FILES } from '../../virtual-file-names.ts';
+import { applyStorybookEnvironmentHtmlTransforms } from '../html-transforms.ts';
 
 export async function renderIframeHtml(
   server: ViteDevServer,
@@ -35,7 +36,18 @@ export async function renderIframeHtml(
   }
 
   const transformedByVite = await server.transformIndexHtml(iframePath, transformed);
-  let finalHtml = transformedByVite.replace(APP_SCRIPT_PLACEHOLDER, appScriptTag);
+
+  const storybookEnv = server.environments.storybook as DevEnvironment | undefined;
+  const transformedByEnv = storybookEnv
+    ? await applyStorybookEnvironmentHtmlTransforms(
+        storybookEnv,
+        server,
+        iframePath,
+        transformedByVite
+      )
+    : transformedByVite;
+
+  let finalHtml = transformedByEnv.replace(APP_SCRIPT_PLACEHOLDER, appScriptTag);
 
   finalHtml = finalHtml.replace(
     /src="\/vite-inject-mocker-entry\.js"/,

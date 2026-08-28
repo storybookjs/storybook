@@ -76,15 +76,7 @@ export function resolveInstance(
   target: ResolveTarget
 ): ResolveResult {
   const { port: targetPort, agent: currentAgent } = target;
-  const normalisedCwd = resolve(target.cwd);
-  const normalisedConfigDir = target.configDir && resolve(target.configDir);
-  const matchesConfigDir = (r: StorybookInstanceRecord) =>
-    normalisedConfigDir != null &&
-    r.configDir != null &&
-    resolve(r.configDir) === normalisedConfigDir;
-  const projectMatches = target.configDirExplicit
-    ? records.filter(matchesConfigDir)
-    : records.filter((r) => resolve(r.cwd) === normalisedCwd || matchesConfigDir(r));
+  const projectMatches = listProjectMatches(records, target);
   const matches =
     targetPort == null ? projectMatches : projectMatches.filter((r) => r.port === targetPort);
 
@@ -144,6 +136,22 @@ export function resolveInstance(
       throw new Error(`Unhandled MCP status: ${unhandled as string}`);
     }
   }
+}
+
+/** Records whose cwd or configDir matches the target project, ignoring MCP status. */
+export function listProjectMatches(
+  records: StorybookInstanceRecord[],
+  target: Pick<ResolveTarget, 'cwd' | 'configDir' | 'configDirExplicit'>
+): StorybookInstanceRecord[] {
+  const normalisedCwd = resolve(target.cwd);
+  const normalisedConfigDir = target.configDir && resolve(target.configDir);
+  const matchesConfigDir = (record: StorybookInstanceRecord) =>
+    normalisedConfigDir != null &&
+    record.configDir != null &&
+    resolve(record.configDir) === normalisedConfigDir;
+  return target.configDirExplicit
+    ? records.filter(matchesConfigDir)
+    : records.filter((record) => resolve(record.cwd) === normalisedCwd || matchesConfigDir(record));
 }
 
 function selectCompetingBucket(

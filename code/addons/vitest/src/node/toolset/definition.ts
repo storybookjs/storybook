@@ -96,11 +96,9 @@ export type TestRunOutput = v.InferOutput<typeof testRunOutputSchema>;
 export type TestRunData = TestRunOutput & { a11y: boolean };
 
 /**
- * The outcome split for `test.run`, following the Vitest convention: a run only succeeds when it
- * completes without failing tests. Crashes, cancellations, and completed runs with failing tests,
- * error-level accessibility results, or unhandled errors are failures that still carry their full
- * report, so clients keying on `ok` cannot count them as a pass while agents keep the diagnostic
- * detail.
+ * The outcome split for `test.run`, following the Vitest convention: only a run that completes
+ * without failures succeeds. A failed outcome still carries its full report, so clients keying on
+ * `ok` cannot count it as a pass while agents keep the diagnostic detail.
  */
 export type TestRunSuccessData = Extract<TestRunOutput, { status: 'completed' | 'no-stories' }> & {
   a11y: boolean;
@@ -205,8 +203,13 @@ function isFailedRun(data: TestRunData): data is TestRunFailureData {
         (data.a11y && data.result.a11yCount.error > 0) ||
         data.result.unhandledErrors.length > 0
       );
-    default:
+    case 'no-stories':
       return false;
+    default: {
+      // Type-only: a new status must decide its own pass/fail rather than falling through.
+      const _exhaustive: never = data;
+      return _exhaustive;
+    }
   }
 }
 

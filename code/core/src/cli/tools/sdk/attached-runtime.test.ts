@@ -140,25 +140,136 @@ describe('bootstrapAttachedRuntime', () => {
     expect(inspect(error)).not.toContain('secret');
   });
 
-  it('rejects when several instances match and names each --config-dir', async () => {
+  it('attaches to the most recently started instance when several match, reporting the siblings', async () => {
+    const older: StorybookInstanceRecord = {
+      ...RECORD,
+      instanceId: 'older',
+      pid: 789,
+      url: 'http://localhost:6008',
+      port: 6008,
+      startedAt: '2026-08-27T10:00:00.000Z',
+    };
+    const newest: StorybookInstanceRecord = {
+      ...RECORD,
+      startedAt: '2026-08-27T11:00:00.000Z',
+    };
+    const { deps } = makeRuntimeDeps([older, newest]);
+
+    const result = await bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+
+    expect(result.record).toEqual(newest);
+    expect(result.siblings).toEqual([older]);
+    expect(deps.createNodeChannel).toHaveBeenCalledWith({
+      url: newest.url,
+      token: newest.token,
+    });
+  });
+
+  it('reports no siblings when exactly one instance matches', async () => {
+    const { deps } = makeRuntimeDeps([RECORD, OTHER]);
+
+    const result = await bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+
+    expect(result.siblings).toEqual([]);
+  });
+
+  it('prefers the invoking agent bucket over recency when several match', async () => {
+    const mine: StorybookInstanceRecord = {
+      ...RECORD,
+      agent: 'codex',
+      startedAt: '2026-08-27T10:00:00.000Z',
+    };
+    const newerForeign: StorybookInstanceRecord = {
+      ...RECORD,
+      instanceId: 'foreign',
+      pid: 789,
+      url: 'http://localhost:6008',
+      port: 6008,
+      agent: 'cursor',
+      startedAt: '2026-08-27T11:00:00.000Z',
+    };
+    const { deps } = makeRuntimeDeps([mine, newerForeign], {
+      detectAgentName: () => 'codex',
+    });
+
+    const result = await bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+
+    expect(result.record).toEqual(mine);
+    expect(result.siblings).toEqual([]);
+  });
+
+  it('attaches to the instance on the requested port even when a sibling is newer', async () => {
+    const onPort: StorybookInstanceRecord = {
+      ...RECORD,
+      startedAt: '2026-08-27T10:00:00.000Z',
+    };
+    const newer: StorybookInstanceRecord = {
+      ...RECORD,
+      instanceId: 'newer',
+      pid: 789,
+      url: 'http://localhost:6008',
+      port: 6008,
+      startedAt: '2026-08-27T11:00:00.000Z',
+    };
+    const { deps } = makeRuntimeDeps([onPort, newer]);
+
+    const result = await bootstrapAttachedRuntime({ cwd: '/repo', port: 6006 }, deps);
+
+    expect(result.record).toEqual(onPort);
+    expect(result.siblings).toEqual([]);
+  });
+
+  it('attaches by port alone from an unrelated cwd, inferring the project from the record', async () => {
+    const { deps } = makeRuntimeDeps([RECORD]);
+
+    const result = await bootstrapAttachedRuntime({ cwd: '/somewhere/else', port: 6006 }, deps);
+
+    expect(result.record).toEqual(RECORD);
+    expect(result.siblings).toEqual([]);
+  });
+
+  it('rejects with port-mismatch listing the running ports when no matching instance is on the port', async () => {
     const sibling: StorybookInstanceRecord = {
       ...RECORD,
       instanceId: 'sibling',
       pid: 789,
-      configDir: '/repo/.storybook-alt',
       url: 'http://localhost:6008',
       port: 6008,
     };
     const { deps } = makeRuntimeDeps([RECORD, sibling]);
 
-    const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', port: 9999 }, deps);
 
-    await expect(failure).rejects.toMatchObject({ data: { reason: 'multiple-matches' } });
-    await expect(failure).rejects.toThrow('--config-dir /repo/.storybook');
-    await expect(failure).rejects.toThrow('--config-dir /repo/.storybook-alt');
+    await expect(failure).rejects.toThrow(AttachUnavailableError);
+    await expect(failure).rejects.toMatchObject({ data: { reason: 'port-mismatch' } });
+    await expect(failure).rejects.toThrow('9999');
+    await expect(failure).rejects.toThrow('http://localhost:6006');
+    await expect(failure).rejects.toThrow('http://localhost:6008');
+    await expect(failure).rejects.toThrow('--port');
     const error = await rejectedAttachUnavailable(failure);
     expect(error.data.instances.every((instance) => !('token' in instance))).toBe(true);
     expect(inspect(error)).not.toContain('secret');
+  });
+
+  it('picks the most recent instance even when only an older sibling could attach (not token-aware)', async () => {
+    const olderWithToken: StorybookInstanceRecord = {
+      ...RECORD,
+      instanceId: 'older',
+      pid: 789,
+      url: 'http://localhost:6008',
+      port: 6008,
+      startedAt: '2026-08-27T10:00:00.000Z',
+    };
+    const newestTokenless: StorybookInstanceRecord = {
+      ...RECORD,
+      token: undefined,
+      startedAt: '2026-08-27T11:00:00.000Z',
+    };
+    const { deps } = makeRuntimeDeps([olderWithToken, newestTokenless]);
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+
+    await expect(failure).rejects.toMatchObject({ data: { reason: 'old-server' } });
   });
 
   it('rejects a tokenless record as an old server', async () => {
@@ -200,7 +311,7 @@ describe('bootstrapAttachedRuntime', () => {
 
     const result = await bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
 
-    expect(result).toEqual({ kind: 'spawn', record: RECORD });
+    expect(result).toEqual({ kind: 'spawn', record: RECORD, siblings: [] });
     expect(deps.createNodeChannel).not.toHaveBeenCalled();
   });
 

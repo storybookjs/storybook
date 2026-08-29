@@ -48,17 +48,32 @@ export function extractJSDocInfo(jsdocComment: string) {
   // component comments still render as Markdown (matching react-docgen's legacy `__docgenInfo`).
   // `compact` collapses each tag value onto a single line, which is the shape tag consumers and
   // snapshots already expect — using `preserve` for both would change multi-line tag values too.
-  const description = parse(jsDoc, { spacing: 'preserve' })[0].description;
+  const preserved = parse(jsDoc, { spacing: 'preserve' })[0];
   const parsed = parse(jsDoc, { spacing: 'compact' });
 
+  const stringifyTag = (spec: Spec) =>
+    (spec.type ? `{${spec.type}} ` : '') + `${spec.name} ${spec.description}`;
+
+  // Tag values containing fenced code blocks (e.g. `@example`) must keep their line breaks:
+  // collapsing puts the fences on one line, so the Markdown never renders a code block and a
+  // fence's language tag (```tsx) leaks into the text. Both parses see the same tags in the
+  // same order, so the preserved counterpart is looked up by index.
+  const valueBySpec = new Map(
+    parsed[0].tags.map((spec, index) => [
+      spec,
+      (stringifyTag(spec).includes('```')
+        ? stringifyTag(preserved.tags[index])
+        : stringifyTag(spec)
+      ).trim(),
+    ])
+  );
+
   return {
-    description,
+    description: preserved.description,
     tags: Object.fromEntries(
       Array.from(groupByTag(parsed[0].tags), ([tag, specs]) => [
         tag,
-        specs.map((spec) =>
-          ((spec.type ? `{${spec.type}} ` : '') + `${spec.name} ${spec.description}`).trim()
-        ),
+        specs.map((spec) => valueBySpec.get(spec)!),
       ])
     ) as JsDocTagMap,
   };

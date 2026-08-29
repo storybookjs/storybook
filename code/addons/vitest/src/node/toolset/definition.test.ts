@@ -162,6 +162,66 @@ describe('test API', () => {
     expect(runStoryTests).toHaveBeenCalledTimes(2);
   });
 
+  describe('run outcome', () => {
+    it('flags a completed run with failing tests as a failure', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          componentTestCount: { success: 1, error: 1 },
+          componentTestStatuses: [
+            componentTest('button--primary', 'status-value:success'),
+            componentTest('button--secondary', 'status-value:error', 'Assertion failed'),
+          ],
+        })
+      );
+
+      expect((await runTests()).ok).toBe(false);
+    });
+
+    it('flags a completed run with unhandled errors as a failure', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          componentTestCount: { success: 1, error: 0 },
+          unhandledErrors: [{ name: 'ReferenceError', message: 'foo is not defined' }],
+        })
+      );
+
+      expect((await runTests()).ok).toBe(false);
+    });
+
+    it('flags error-level accessibility results as a failure', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          componentTestCount: { success: 1, error: 0 },
+          a11yCount: { success: 0, warning: 0, error: 1 },
+        })
+      );
+
+      expect((await runTests()).ok).toBe(false);
+    });
+
+    it('passes a run whose accessibility results only carry warnings', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          componentTestCount: { success: 1, error: 0 },
+          a11yCount: { success: 0, warning: 2, error: 0 },
+        })
+      );
+
+      expect((await runTests()).ok).toBe(true);
+    });
+
+    it('ignores error-level accessibility results when the run disabled a11y', async () => {
+      vi.mocked(runStoryTests).mockResolvedValue(
+        completed({
+          componentTestCount: { success: 1, error: 0 },
+          a11yCount: { success: 0, warning: 0, error: 1 },
+        })
+      );
+
+      expect((await runTests({ a11y: false })).ok).toBe(true);
+    });
+  });
+
   describe('description', () => {
     it('promises accessibility reports when a11y is enabled', () => {
       expect(toolset.methods.run.description).toContain(

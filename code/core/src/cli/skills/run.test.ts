@@ -13,6 +13,7 @@ const deps = () => ({
     reviewEnabled: false,
     reviewEnabledForCli: true,
     docsEnabled: false,
+    docsEnabledForCli: false,
     docsHasManifests: false,
     docsFeatureEnabled: false,
     testSupported: true,
@@ -42,6 +43,30 @@ describe('runSkillsCommand', () => {
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('npx storybook tools');
     expect(result.output).not.toContain('stories-preview** ');
+  });
+
+  it('serves the docs workflow on the CLI gate even when the MCP docs gate is off', async () => {
+    const d = deps();
+    d.resolveSkillInputs.mockResolvedValue({
+      ...(await d.resolveSkillInputs()),
+      docsEnabled: false,
+      docsEnabledForCli: true,
+    });
+
+    const stories = await runSkillsCommand({ subcommand: 'get', id: 'stories', target: {} }, d);
+    expect(stories.output).toContain('Documentation Workflow');
+
+    const writeStory = await runSkillsCommand(
+      { subcommand: 'get', id: 'write-story', target: {} },
+      d
+    );
+    expect(writeStory.output).toContain('npx storybook tools docs list');
+  });
+
+  it('omits the docs workflow when the CLI docs gate is off', async () => {
+    const d = deps();
+    const stories = await runSkillsCommand({ subcommand: 'get', id: 'stories', target: {} }, d);
+    expect(stories.output).not.toContain('Documentation Workflow');
   });
 
   it('get write-story assembles CLI-transport story instructions', async () => {

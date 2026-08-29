@@ -108,7 +108,10 @@ consumer amortizes config load across many calls on the live synced runtime.
 ## End-to-end flow (attached)
 
 1. **Discover.** Read `~/.storybook/instances/*.json` (pid-liveness-checked). Match by cwd /
-   configDir. No record → local fallback, or a hard error under `--attach`.
+   configDir — or, with `--port`, by port alone across all projects (the record supplies the
+   project; an explicit `--config-dir` still restricts). Several matches → the invoking agent's
+   bucket, then the most recently started; the siblings surface as a stderr warning naming
+   `--port`. No record → local fallback, or a hard error under `--attach`.
 2. **Gate + fidelity.** Token present (else "restart Storybook" + fallback). Same cwd and
    version, else auto-spawn (or `EnvironmentMismatchError` when `autoSpawn: false`).
 3. **Connect.** Node WebSocket to `record.url` + `/storybook-server-channel?token=…`, no
@@ -129,7 +132,7 @@ Messages name the exact corrective command.
 | Failure                           | Detection                             | Message must include                                                                             |
 | --------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------ |
 | No instance for this project      | No cwd/configDir match                | How to start Storybook; other running instances with `cwd` + `url`; exact `cd` or `--config-dir` |
-| Multiple matches                  | 2+ records match                      | Matched instances with `configDir`; `--config-dir <dir>`                                         |
+| Port mismatch                     | No running instance on `--port`       | Running instances with their `port` + `url`; `--port <port>`                                     |
 | Old server                        | Token absent                          | Restart Storybook (vX.Y+) to enable attach                                                       |
 | Stale record / connection refused | WS connect fails                      | Registry cleanup; fallback note                                                                  |
 | Server started before upgrade     | Instance-cwd package ≠ record version | Both version strings; restart Storybook                                                          |

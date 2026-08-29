@@ -311,7 +311,7 @@ describe('buildDocgenPayload', () => {
       const payload = buildDocgenPayload({ entry }, context(managerReturning(metaFor(classMeta))));
 
       expect(payload?.argTypes?.count?.table?.defaultValue).toEqual({ summary: undefined });
-      expect(payload?.argTypes?.formatter?.type).toEqual({ name: 'function' });
+      expect(payload?.argTypes?.formatter?.type).toEqual({ name: 'function', required: true });
       expect(payload?.argTypes?.legend?.table?.jsDocTags).toEqual({
         deprecated: 'Use `label` instead.',
       });

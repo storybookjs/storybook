@@ -81,6 +81,32 @@ For reference, here is a Webpack configuration to handle loading graphql queries
 
 <CodeSnippets path="webpack-final-to-vite-final.md" />
 
+#### Importing Markdown files as strings
+
+Storybook's Webpack builder registers a rule that turns every `.md` import into a string, so `import readme from './readme.md'` needs no configuration.
+Vite has no equivalent rule and instead tries to parse the file as JavaScript, which fails:
+
+```text
+error during build:
+src/readme.md (3:26): Expected ident (Note that you need plugins to import files that are not JavaScript)
+file: /my-project/src/readme.md:3:26
+
+1: # Hello
+2:
+3: Some **markdown** content.
+                             ^
+```
+
+Append Vite's [`?raw` suffix](https://vite.dev/guide/assets#importing-asset-as-string) to those imports to get the file contents as a string:
+
+```diff title="src/components/Button.stories.ts"
+- import readme from './readme.md';
++ import readme from './readme.md?raw';
+```
+
+Storybook's Webpack builder understands `?raw` too, so you can make this change before you migrate.
+The same applies to any other file type Vite does not handle on its own.
+
 ### Working directory not being detected
 
 By default, the Vite builder enables Vite's [`server.fs.strict`](https://vitejs.dev/config/#server-fs-strict) option for increased security, defining the project's `root` to Storybook's configuration directory.

@@ -13,6 +13,7 @@ import type {
 } from '../../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
 import { toCatalogEntry } from './catalog.ts';
+import type { StorybookInstanceRecord } from '../instances/types.ts';
 import type { AttachedBootstrapResult } from './attached-runtime.ts';
 import { formatAttachFallback } from './attach-messages.ts';
 import { spawnChildHost } from './child-client.ts';
@@ -41,24 +42,30 @@ import type {
   ToolsDescribeOptions,
   ToolsHostKind,
   ToolsMode,
+  ToolsSiblingInstance,
   ToolsStorybookInfo,
   ToolsetCatalog,
 } from './types.ts';
+
+/**
+ * The in-process attach shape `createTools` consumes: the fields of
+ * {@link AttachedInProcessResult} it reads, with the record narrowed to identifying info so tests
+ * can hand a minimal instance.
+ */
+type AttachedInProcess = {
+  runtime: ToolsRuntime;
+  record: { url: string; pid: number; configDir?: string; cwd?: string; port?: number };
+  siblings?: StorybookInstanceRecord[];
+  connection: { close(): void; disconnected: Promise<never> };
+};
 
 /** Injectable dependencies for tests. Not part of the public SDK. */
 export type CreateToolsDeps = {
   bootstrap?: (target: { cwd?: string; configDir?: string }) => Promise<ToolsRuntime>;
   attach?: (
-    target: { cwd?: string; configDir?: string },
+    target: { cwd?: string; configDir?: string; port?: number },
     deps?: unknown
-  ) => Promise<
-    | AttachedBootstrapResult
-    | {
-        runtime: ToolsRuntime;
-        record: { url: string; pid: number; configDir?: string; cwd?: string };
-        connection: { close(): void; disconnected: Promise<never> };
-      }
-  >;
+  ) => Promise<AttachedBootstrapResult | AttachedInProcess>;
   spawnChild?: typeof spawnChildHost;
 };
 
@@ -165,20 +172,28 @@ async function createAttachedTools(
   )({
     cwd: options.cwd,
     configDir: options.configDir,
+    port: options.port,
   });
   if ('kind' in attached && attached.kind === 'spawn') {
+    // Pin the chosen instance's port so the child host re-resolves to that exact instance even
+    // when the registry changes between the parent's resolution and the child's.
     return (deps.spawnChild ?? spawnChildHost)({
       cwd: attached.record.cwd,
-      options: { ...options, mode: 'attached', autoSpawn: false, cwd: attached.record.cwd },
+      options: {
+        ...options,
+        mode: 'attached',
+        autoSpawn: false,
+        cwd: attached.record.cwd,
+        port: attached.record.port,
+      },
       clientInfo,
       requestedMode,
     });
   }
-  const inProcess = attached as {
-    runtime: ToolsRuntime;
-    record: { url: string; pid: number; configDir?: string };
-    connection: { close(): void; disconnected: Promise<never> };
-  };
+  const inProcess = attached as AttachedInProcess;
+  const siblings = inProcess.siblings?.length
+    ? inProcess.siblings.map(toSiblingInstance)
+    : undefined;
   return createToolsHost({
     mode: 'attached',
     host: 'in-process',
@@ -190,10 +205,24 @@ async function createAttachedTools(
       configDir: inProcess.runtime.configDir,
       url: inProcess.record.url,
       pid: inProcess.record.pid,
+      ...(inProcess.record.port != null ? { port: inProcess.record.port } : {}),
+      ...(inProcess.record.cwd ? { cwd: inProcess.record.cwd } : {}),
+      ...(siblings ? { siblings } : {}),
     },
     close: () => inProcess.connection.close(),
     disconnected: inProcess.connection.disconnected,
   });
+}
+
+/** Identifying info only: the record's channel token must never leave the SDK. */
+function toSiblingInstance(record: StorybookInstanceRecord): ToolsSiblingInstance {
+  return {
+    url: record.url,
+    port: record.port,
+    pid: record.pid,
+    cwd: record.cwd,
+    ...(record.configDir ? { configDir: record.configDir } : {}),
+  };
 }
 
 async function createLocalTools(

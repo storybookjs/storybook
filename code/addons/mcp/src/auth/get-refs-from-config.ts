@@ -18,8 +18,12 @@ export async function getRefsFromConfig(options: Options): Promise<ComposedRef[]
         return [];
       }
 
-      const { title, url } = value as { title?: unknown; url?: unknown };
-      if (typeof url !== 'string' || url.length === 0) {
+      const { title, url, disable } = value as {
+        title?: unknown;
+        url?: unknown;
+        disable?: unknown;
+      };
+      if (disable || typeof url !== 'string' || url.length === 0) {
         return [];
       }
 
@@ -27,7 +31,7 @@ export async function getRefsFromConfig(options: Options): Promise<ComposedRef[]
         {
           id: key,
           title: typeof title === 'string' && title.length > 0 ? title : key,
-          url,
+          url: url.replace(/\/$/, ''),
         },
       ];
     });

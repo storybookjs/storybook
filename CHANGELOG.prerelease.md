@@ -1,3 +1,16 @@
+## 10.6.0-beta.1
+
+- Addon MCP: Stop silently dropping composed refs from MCP composition - [#36077](https://github.com/storybookjs/storybook/pull/36077), thanks @kasperpeulen!
+- Addon Vitest: Report test runs with failures as failed tool outcomes - [#36080](https://github.com/storybookjs/storybook/pull/36080), thanks @kasperpeulen!
+- Angular: Render the required badge for required inputs in the props table - [#36065](https://github.com/storybookjs/storybook/pull/36065), thanks @valentinpalkovic!
+- CLI: Attach to the most recent matching Storybook instance and add --port target selection - [#36076](https://github.com/storybookjs/storybook/pull/36076), thanks @kasperpeulen!
+- CLI: Detect Turbopack, Module Federation, and renderer versions - [#35949](https://github.com/storybookjs/storybook/pull/35949), thanks @yannbf!
+- CLI: Serve the skills docs workflow whenever manifests are producible - [#36081](https://github.com/storybookjs/storybook/pull/36081), thanks @kasperpeulen!
+- Core: Fix resolve wrapped addon entries via package exports map - [#36011](https://github.com/storybookjs/storybook/pull/36011), thanks @yzxcj797!
+- Core: Skip builder preset in headless loading if non-existing - [#36078](https://github.com/storybookjs/storybook/pull/36078), thanks @ndelangen!
+- Nextjs-Vite: Unwrap CJS loadJsConfig on Vite 7 - [#36075](https://github.com/storybookjs/storybook/pull/36075), thanks @ndelangen!
+- Vue: Format correctly story snippets - [#36074](https://github.com/storybookjs/storybook/pull/36074), thanks @huang-julien!
+
 ## 10.6.0-beta.0
 
 - CLI plugins: Delegate to `storybook skills` / `storybook tools` and align the evals - [#35957](https://github.com/storybookjs/storybook/pull/35957), thanks @kasperpeulen!

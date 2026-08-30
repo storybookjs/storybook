@@ -521,6 +521,31 @@ export default {
             }
           `);
         });
+        it('inline storysort in default export with .type<T>() chaining', () => {
+          expect(
+            getStorySortParameter(dedent`
+              export default definePreview({
+                parameters: {
+                  options: {
+                    storySort: {
+                      order: ['General']
+                    }
+                  },
+                },
+              }).type<{
+                parameters: {
+                  customParam?: string;
+                };
+              }>();
+          `)
+          ).toMatchInlineSnapshot(`
+            {
+              "order": [
+                "General",
+              ],
+            }
+          `);
+        });
       });
     });
     describe('unsupported', () => {

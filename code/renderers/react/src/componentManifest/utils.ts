@@ -1,5 +1,5 @@
 // Object.groupBy polyfill
-import { existsSync, readFileSync, statSync } from 'node:fs';
+import { readFileSync, statSync } from 'node:fs';
 import { resolve } from 'node:path';
 
 import {
@@ -222,12 +222,20 @@ export const resolveConfiguredTsconfigPath = (tsconfigPath: string | undefined) 
   const configuredPath = resolve(process.cwd(), tsconfigPath);
   // Prop extraction is best effort, so an unusable path warns and lets the caller keep looking
   // instead of failing the build.
-  if (!existsSync(configuredPath)) {
+  if (!isExistingFile(configuredPath)) {
     logger.warn(
-      `The tsconfig configured in typescript.reactDocgenTypescriptOptions.tsconfigPath does not exist at ${configuredPath}. Falling back to the tsconfig found from the working directory.`
+      `The tsconfig configured in typescript.reactDocgenTypescriptOptions.tsconfigPath does not point to a file at ${configuredPath}. Falling back to the tsconfig found from the working directory.`
     );
     return undefined;
   }
 
   return configuredPath;
+};
+
+const isExistingFile = (filePath: string) => {
+  try {
+    return statSync(filePath).isFile();
+  } catch {
+    return false;
+  }
 };

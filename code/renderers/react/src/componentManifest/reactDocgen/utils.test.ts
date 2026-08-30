@@ -60,6 +60,46 @@ describe('getTsConfig', () => {
     expect(options.jsx).toBe(ts.JsxEmit.Preserve);
     expect(warn).toHaveBeenCalledWith(expect.stringContaining('tsconfig.missing.json'));
   });
+
+  it('follows project references when tsconfigPath names a solution-style tsconfig', async () => {
+    const dir = createTempProject({
+      'tsconfig.json': JSON.stringify({ files: [], include: [] }),
+      'packages/ui/tsconfig.json': JSON.stringify({
+        files: [],
+        references: [{ path: './tsconfig.app.json' }],
+      }),
+      'packages/ui/tsconfig.app.json': JSON.stringify({
+        compilerOptions: { jsx: 'react-jsx', target: 'ES2022' },
+        include: ['src'],
+      }),
+      'packages/ui/src/Button.tsx': 'export const Button = () => null;',
+    });
+
+    const options = await getTsConfig(
+      path.join(dir, 'packages/ui/src/Button.tsx'),
+      './packages/ui/tsconfig.json'
+    );
+
+    expect(options.jsx).toBe(ts.JsxEmit.ReactJSX);
+    expect(options.target).toBe(ts.ScriptTarget.ES2022);
+  });
+
+  it('warns and falls back to the owning tsconfig when tsconfigPath is not a file', async () => {
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    const dir = createTempProject({
+      'tsconfig.json': JSON.stringify({
+        compilerOptions: { jsx: 'preserve', target: 'ES5' },
+        include: ['src'],
+      }),
+      'config/.keep': '',
+      'src/Button.tsx': 'export const Button = () => null;',
+    });
+
+    const options = await getTsConfig(path.join(dir, 'src/Button.tsx'), './config');
+
+    expect(options.jsx).toBe(ts.JsxEmit.Preserve);
+    expect(warn).toHaveBeenCalledWith(expect.stringContaining(path.join(dir, 'config')));
+  });
 });
 
 function createTempProject(files: Record<string, string>) {

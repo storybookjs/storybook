@@ -191,12 +191,13 @@ async function getParser(filePath: string, userOptions?: ReactDocgenTypescriptOp
   const optionsKey = JSON.stringify(userOptions ?? {});
 
   // Mirror the Volar-inspired project selection we already use in react-component-meta:
-  // if the nearest root tsconfig is only a project-references shell, follow references and pick
-  // the config that actually includes this file. This is the manifest-side extension of #34353.
-  const configPath =
-    resolveConfiguredTsconfigPath(tsconfigPath) ??
-    findOwningTsconfigPath(typescript, process.cwd(), filePath) ??
-    findTsconfigPath(process.cwd());
+  // if the root tsconfig is only a project-references shell, follow references and pick the config
+  // that actually includes this file. This is the manifest-side extension of #34353.
+  const rootConfigPath =
+    resolveConfiguredTsconfigPath(tsconfigPath) ?? findTsconfigPath(process.cwd());
+  const configPath = rootConfigPath
+    ? findOwningTsconfigPath(typescript, rootConfigPath, filePath)
+    : undefined;
   const configKey = configPath ?? '<no-tsconfig>';
   const parserKey = `${configKey}::${optionsKey}`;
   const cachedParser = parserCache.get(parserKey);
@@ -354,17 +355,12 @@ export const parseWithReactDocgenTypescript = asyncCache(
 );
 
 const findOwningTsconfigPath = cached(
-  (typescript: TypeScriptRuntime, cwd: string, filePath: string): string | undefined => {
-    const configPath = findTsconfigPath(cwd);
-    if (!configPath) {
-      return undefined;
-    }
-
-    return findTsconfigPathIncludingFile(typescript, configPath, filePath, new Set()) ?? configPath;
-  },
+  (typescript: TypeScriptRuntime, rootConfigPath: string, filePath: string): string =>
+    findTsconfigPathIncludingFile(typescript, rootConfigPath, filePath, new Set()) ??
+    rootConfigPath,
   {
-    key: (typescript, cwd, filePath) =>
-      `${normalizeFileName(typescript, resolve(cwd))}::${normalizeFileName(
+    key: (typescript, rootConfigPath, filePath) =>
+      `${normalizeFileName(typescript, rootConfigPath)}::${normalizeFileName(
         typescript,
         resolve(filePath)
       )}`,

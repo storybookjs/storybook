@@ -58,8 +58,7 @@ export const findTsconfigPath = (cwd: string): string | undefined => {
  * nearest root config is just a references shell (for example Vite's `files: []` root tsconfig).
  *
  * Prefer the config that really owns the file instead of stopping at the first config filename we
- * discover. Ownership also resolves `extends` so inherited `include` / `exclude` / `files` participate
- * (patterns from a base config stay relative to that base, matching `tsc`).
+ * discover.
  */
 export const findTsconfigPathForFile = (cwd: string, filePath: string): string | undefined => {
   const rootTsconfigPath = findTsconfigPath(cwd);
@@ -67,6 +66,17 @@ export const findTsconfigPathForFile = (cwd: string, filePath: string): string |
     return undefined;
   }
 
+  return findTsconfigPathOwningFile(rootTsconfigPath, filePath);
+};
+
+/**
+ * Pick the tsconfig that owns a file, starting from a root config the caller already knows.
+ *
+ * Ownership resolves `extends` so inherited `include` / `exclude` / `files` participate (patterns
+ * from a base config stay relative to that base, matching `tsc`). Falls back to the root config when
+ * no referenced project owns the file.
+ */
+export const findTsconfigPathOwningFile = (rootTsconfigPath: string, filePath: string): string => {
   const absoluteFilePath = resolve(filePath);
   const matchingConfigs = collectTsconfigEntries(rootTsconfigPath, new Set()).filter((entry) =>
     tsconfigIncludesFile(entry, absoluteFilePath)

@@ -130,10 +130,23 @@ export const getStorySortParameter = (previewCode: string) => {
           defaultObj = findVarInitialization(defaultObj.name, ast.program);
         }
         defaultObj = stripTSModifiers(defaultObj);
-        // parse the call arg when using definePreview({ ... })
-        if (t.isCallExpression(defaultObj) && t.isObjectExpression(defaultObj.arguments?.[0])) {
-          storySort = parseDefault(defaultObj.arguments[0], ast.program);
-        } else if (t.isObjectExpression(defaultObj)) {
+
+        // csf factory - unwrap call expressions like definePreview({...}) or definePreview({...}).type<T>()
+        while (t.isCallExpression(defaultObj)) {
+          if (t.isObjectExpression(defaultObj.arguments[0])) {
+            defaultObj = defaultObj.arguments[0];
+            break;
+          } else if (
+            t.isMemberExpression(defaultObj.callee) &&
+            t.isCallExpression(defaultObj.callee.object)
+          ) {
+            defaultObj = defaultObj.callee.object;
+          } else {
+            break;
+          }
+        }
+
+        if (t.isObjectExpression(defaultObj)) {
           storySort = parseDefault(defaultObj, ast.program);
         } else {
           unsupported('default', false);

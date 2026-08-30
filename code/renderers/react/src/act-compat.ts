@@ -1,4 +1,4 @@
-// Copied from
+// Adapted from
 // https://github.com/testing-library/react-testing-library/blob/3dcd8a9649e25054c0e650d95fca2317b7008576/src/act-compat.js
 import * as React from 'react';
 
@@ -19,10 +19,32 @@ export function getReactActEnvironment() {
   return globalThis.IS_REACT_ACT_ENVIRONMENT;
 }
 
+// Storybook interleaves act calls across stories, so a per-call save/restore
+// (as react-testing-library does) is wrong: the first call to settle would
+// clear the flag while others are still in flight. Ref-count instead, and only
+// restore the captured baseline once the last concurrent act settles.
+// See https://github.com/storybookjs/storybook/issues/34708.
+const actEnvironment = {
+  depth: 0,
+  baseline: false,
+  enter() {
+    if (this.depth === 0) {
+      this.baseline = getReactActEnvironment();
+    }
+    this.depth = this.depth + 1;
+    setReactActEnvironment(true);
+  },
+  exit() {
+    this.depth = this.depth - 1;
+    if (this.depth === 0) {
+      setReactActEnvironment(this.baseline);
+    }
+  },
+};
+
 function withGlobalActEnvironment(actImplementation: (callback: () => void) => Promise<any>) {
   return (callback: () => any) => {
-    const previousActEnvironment = getReactActEnvironment();
-    setReactActEnvironment(true);
+    actEnvironment.enter();
     try {
       // The return value of `act` is always a thenable.
       let callbackNeedsToBeAwaited = false;
@@ -35,28 +57,32 @@ function withGlobalActEnvironment(actImplementation: (callback: () => void) => P
       });
       if (callbackNeedsToBeAwaited) {
         const thenable = actResult;
-        return {
-          then: (resolve: (param: any) => void, reject: (param: any) => void) => {
-            thenable.then(
-              (returnValue: any) => {
-                setReactActEnvironment(previousActEnvironment);
-                resolve(returnValue);
-              },
-              (error: any) => {
-                setReactActEnvironment(previousActEnvironment);
-                reject(error);
-              }
-            );
-          },
-        };
+        // Attach to React's act thenable eagerly (the executor runs
+        // synchronously): some pipeline callers (e.g. the testing-library
+        // `eventWrapper`) discard the result without awaiting, yet the
+        // environment reset must still be tied to the act work settling. We wrap
+        // it in a real Promise because React's act thenable is non-conformant —
+        // its `.then` returns `undefined` rather than a chainable promise.
+        return new Promise((resolve, reject) => {
+          thenable.then(
+            (returnValue: any) => {
+              actEnvironment.exit();
+              resolve(returnValue);
+            },
+            (error: any) => {
+              actEnvironment.exit();
+              reject(error);
+            }
+          );
+        });
       } else {
-        setReactActEnvironment(previousActEnvironment);
+        actEnvironment.exit();
         return actResult;
       }
     } catch (error) {
-      // Can't be a `finally {}` block since we don't know if we have to immediately restore IS_REACT_ACT_ENVIRONMENT
-      // or if we have to await the callback first.
-      setReactActEnvironment(previousActEnvironment);
+      // Not a `finally`: the async branch defers exit() until the act thenable
+      // settles, so finally would call exit() twice. This only covers sync throws.
+      actEnvironment.exit();
       throw error;
     }
   };

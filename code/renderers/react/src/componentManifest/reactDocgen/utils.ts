@@ -9,7 +9,9 @@ import type {
   TSFunctionSignatureType,
   TypeDescriptor,
 } from 'react-docgen';
-import type { ParserOptions as ReactDocgenTypescriptOptions } from 'react-docgen-typescript';
+
+import type { ReactDocgenTypescriptOptions } from '../types.ts';
+import { resolveConfiguredTsconfigPath } from '../utils.ts';
 
 export type ReactDocgenConfig = 'react-docgen' | 'react-docgen-typescript' | false;
 
@@ -127,12 +129,14 @@ export function mapCommonTypes(typeName: string): SBType | null {
   return null;
 }
 
-export const getTsConfig = async (componentFilePath?: string) => {
+export const getTsConfig = async (componentFilePath?: string, configuredTsconfigPath?: string) => {
   try {
     const ts = await import('typescript');
-    const tsconfigPath = componentFilePath
-      ? findTsconfigPathForFile(dirname(componentFilePath), componentFilePath)
-      : ts.findConfigFile(process.cwd(), ts.sys.fileExists);
+    const tsconfigPath =
+      resolveConfiguredTsconfigPath(configuredTsconfigPath) ??
+      (componentFilePath
+        ? findTsconfigPathForFile(dirname(componentFilePath), componentFilePath)
+        : ts.findConfigFile(process.cwd(), ts.sys.fileExists));
     if (tsconfigPath === undefined) {
       return {};
     }

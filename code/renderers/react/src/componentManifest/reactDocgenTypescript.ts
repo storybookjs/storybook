@@ -10,7 +10,8 @@ import type ts from 'typescript';
 
 import { logger } from 'storybook/internal/node-logger';
 
-import { asyncCache, cached, findTsconfigPath } from './utils.ts';
+import type { ReactDocgenTypescriptOptions } from './types.ts';
+import { asyncCache, cached, findTsconfigPath, resolveConfiguredTsconfigPath } from './utils.ts';
 
 export type ComponentDocWithExportName = ComponentDoc & { exportName: string };
 
@@ -181,18 +182,21 @@ export function invalidateParser() {
   previousProgramsByConfigKey.clear();
 }
 
-async function getParser(filePath: string, userOptions?: ParserOptions) {
+async function getParser(filePath: string, userOptions?: ReactDocgenTypescriptOptions) {
   const [typescript, reactDocgenTypescript] = await Promise.all([
     loadTypeScript(),
     loadReactDocgenTypescript(),
   ]);
+  const { tsconfigPath, ...parserUserOptions } = userOptions ?? {};
   const optionsKey = JSON.stringify(userOptions ?? {});
 
   // Mirror the Volar-inspired project selection we already use in react-component-meta:
   // if the nearest root tsconfig is only a project-references shell, follow references and pick
   // the config that actually includes this file. This is the manifest-side extension of #34353.
   const configPath =
-    findOwningTsconfigPath(typescript, process.cwd(), filePath) ?? findTsconfigPath(process.cwd());
+    resolveConfiguredTsconfigPath(tsconfigPath) ??
+    findOwningTsconfigPath(typescript, process.cwd(), filePath) ??
+    findTsconfigPath(process.cwd());
   const configKey = configPath ?? '<no-tsconfig>';
   const parserKey = `${configKey}::${optionsKey}`;
   const cachedParser = parserCache.get(parserKey);
@@ -232,7 +236,7 @@ async function getParser(filePath: string, userOptions?: ParserOptions) {
     const parserOptions: ParserOptions = {
       shouldExtractLiteralValuesFromEnum: true,
       shouldRemoveUndefinedFromOptional: true,
-      ...userOptions,
+      ...parserUserOptions,
       // Always force savePropValueAsString so default values are in a consistent format
       savePropValueAsString: true,
     };
@@ -314,7 +318,10 @@ export function getReactDocgenTypescriptError(
  * `invalidateCache()`. The underlying TS program is a long-lived singleton.
  */
 export const parseWithReactDocgenTypescript = asyncCache(
-  async (filePath: string, userOptions?: ParserOptions): Promise<ComponentDocWithExportName[]> => {
+  async (
+    filePath: string,
+    userOptions?: ReactDocgenTypescriptOptions
+  ): Promise<ComponentDocWithExportName[]> => {
     const { program, fileParser, typescript } = await getParser(filePath, userOptions);
     const checker = program.getTypeChecker();
     const sourceFile = program.getSourceFile(filePath);

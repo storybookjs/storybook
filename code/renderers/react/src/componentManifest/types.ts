@@ -1,6 +1,13 @@
 import type { ComponentImportRef } from 'storybook/internal/csf-tools';
 
+import type { ParserOptions } from 'react-docgen-typescript';
 import type ts from 'typescript';
+
+// `tsconfigPath` is absent from react-docgen-typescript's own `ParserOptions`, but the Vite and
+// Webpack docgen plugins Storybook documents both accept it, so users already write it in `main.ts`.
+export type ReactDocgenTypescriptOptions = ParserOptions & {
+  tsconfigPath?: string;
+};
 
 export type ComponentRef = ComponentImportRef & {
   componentJsDocTags?: Record<string, string[]>;

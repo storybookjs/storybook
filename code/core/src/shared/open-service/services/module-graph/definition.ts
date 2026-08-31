@@ -47,6 +47,25 @@ const moduleGraphStatusSchema = v.variant('value', [
 
 const noInputSchema = v.undefined();
 
+const changeDetectionReadinessSchema = v.variant('status', [
+  v.object({
+    status: v.literal('ready'),
+  }),
+  v.object({
+    status: v.literal('unavailable'),
+    reason: v.pipe(
+      v.string(),
+      v.description('Why change detection cannot publish statuses, such as disabled or no git.')
+    ),
+  }),
+  v.object({
+    status: v.literal('error'),
+    error: v.object({
+      message: v.pipe(v.string(), v.description('Human-readable scan failure message.')),
+    }),
+  }),
+]);
+
 export type { ModuleGraphServiceState } from './types.ts';
 
 export const moduleGraphServiceDef = defineService({
@@ -253,6 +272,13 @@ export const moduleGraphServiceDef = defineService({
         'Starts the engine if needed and waits until its current build or patch cycle has finished. Handler is supplied at server registration.',
       input: noInputSchema,
       output: v.void(),
+    },
+    _getChangeDetectionReadiness: {
+      internal: true,
+      description:
+        'Returns change-detection scan readiness from the process that owns the scanner.',
+      input: noInputSchema,
+      output: changeDetectionReadinessSchema,
     },
   },
 });

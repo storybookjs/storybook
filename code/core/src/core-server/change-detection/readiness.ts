@@ -1,3 +1,6 @@
+import { getService, isDelegatedMode } from '../../shared/open-service/service-registry.ts';
+import type { ModuleGraphService } from '../../shared/open-service/services/module-graph/definition.ts';
+
 export type ChangeDetectionReadiness =
   | { status: 'ready' }
   | { status: 'unavailable'; reason: string; error?: Error }
@@ -37,6 +40,9 @@ export function setChangeDetectionHost(next?: ChangeDetectionHost): void {
 }
 
 export function getChangeDetectionReadiness(): Promise<ChangeDetectionReadiness> {
+  if (isDelegatedMode() && !readinessState && !host) {
+    return fetchDelegatedReadiness();
+  }
   if (host && !hostStarted) {
     hostStarted = Promise.resolve()
       .then(() => host?.())
@@ -51,6 +57,15 @@ export function getChangeDetectionReadiness(): Promise<ChangeDetectionReadiness>
   return started.then(() =>
     readinessState ? Promise.resolve(readinessState) : readinessDeferred.promise
   );
+}
+
+async function fetchDelegatedReadiness(): Promise<ChangeDetectionReadiness> {
+  const moduleGraph = getService<ModuleGraphService>('core/module-graph', { internal: true });
+  const readiness = await moduleGraph.commands._getChangeDetectionReadiness(undefined);
+  if (readiness.status === 'error') {
+    return { status: 'error', error: new Error(readiness.error.message) };
+  }
+  return readiness;
 }
 
 export function setChangeDetectionReadiness(readiness: ChangeDetectionReadiness): void {

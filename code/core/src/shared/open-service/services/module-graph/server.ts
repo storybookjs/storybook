@@ -9,12 +9,18 @@ import type { ChangeDetectionAdapter } from './engine/adapters/types.ts';
 import { ModuleGraphEngine, type ModuleGraphEngineOptions } from './engine/module-graph-engine.ts';
 import { errorToErrorLike } from './types.ts';
 
+export type ChangeDetectionReadinessResult =
+  | { status: 'ready' }
+  | { status: 'unavailable'; reason: string; error?: { message: string } }
+  | { status: 'error'; error: { message: string } };
+
 export type RegisterModuleGraphServiceOptions = {
   channel: ChannelLike;
   getIndex: ModuleGraphEngineOptions['getIndex'];
   workingDir?: string;
   presets?: Presets;
   getAdapter?: () => Promise<ChangeDetectionAdapter | null | undefined>;
+  getChangeDetectionReadiness?: () => Promise<ChangeDetectionReadinessResult>;
 };
 
 type AdapterDeferred = {
@@ -92,6 +98,28 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
             await ensureAdapter();
             applyAdapter(await adapterPromise);
             await engine!.whenSettled();
+          },
+        },
+        _getChangeDetectionReadiness: {
+          handler: async () => {
+            const readiness = options.getChangeDetectionReadiness
+              ? await options.getChangeDetectionReadiness()
+              : { status: 'ready' as const };
+            switch (readiness.status) {
+              case 'ready':
+                return { status: 'ready' as const };
+              case 'unavailable':
+                return { status: 'unavailable' as const, reason: readiness.reason };
+              case 'error':
+                return {
+                  status: 'error' as const,
+                  error: { message: readiness.error.message },
+                };
+              default: {
+                const exhaustive: never = readiness;
+                throw exhaustive;
+              }
+            }
           },
         },
       },

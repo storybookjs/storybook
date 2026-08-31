@@ -144,6 +144,9 @@ export function registerTestModuleGraphService(workingDir = process.cwd()) {
         _waitForSettledEngine: {
           handler: async () => undefined,
         },
+        _getChangeDetectionReadiness: {
+          handler: async () => ({ status: 'ready' as const }),
+        },
       },
     }
   );

@@ -615,6 +615,43 @@ describe('module-graph open service', () => {
       expect(runtime.queries.status.get(undefined)).toEqual({ value: 'ready' });
     });
 
+    it('returns serialized change-detection readiness from the injected getter', async () => {
+      const getChangeDetectionReadiness = vi.fn(async () => ({
+        status: 'unavailable' as const,
+        reason: 'disabled',
+      }));
+
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getChangeDetectionReadiness,
+      });
+
+      await expect(runtime.commands._getChangeDetectionReadiness(undefined)).resolves.toEqual({
+        status: 'unavailable',
+        reason: 'disabled',
+      });
+      expect(getChangeDetectionReadiness).toHaveBeenCalledOnce();
+    });
+
+    it('serializes a change-detection error readiness result', async () => {
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getChangeDetectionReadiness: async () => ({
+          status: 'error',
+          error: { message: 'scan blew up' },
+        }),
+      });
+
+      await expect(runtime.commands._getChangeDetectionReadiness(undefined)).resolves.toEqual({
+        status: 'error',
+        error: { message: 'scan blew up' },
+      });
+    });
+
     it('settles the graph as unavailable when getAdapter rejects', async () => {
       const getAdapter = vi.fn(async () => {
         throw new Error('preview builder missing');

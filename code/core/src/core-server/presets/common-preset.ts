@@ -383,6 +383,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     workingDir: process.cwd(),
     presets: options.presets,
     getAdapter: () => getHeadlessChangeDetectionAdapter(options),
+    getChangeDetectionReadiness,
   });
 
   const features = await options.presets.apply('features');

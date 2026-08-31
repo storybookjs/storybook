@@ -1,4 +1,8 @@
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+
+vi.mock('../../shared/open-service/service-registry.ts', { spy: true });
+
+import { getService, isDelegatedMode } from '../../shared/open-service/service-registry.ts';
 
 import {
   getChangeDetectionReadiness,
@@ -52,5 +56,54 @@ describe('change-detection readiness host', () => {
     expect(first).toEqual({ status: 'ready' });
     expect(second).toEqual({ status: 'ready' });
     expect(host).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('delegated change-detection readiness', () => {
+  const getReadiness = vi.fn();
+
+  beforeEach(() => {
+    getReadiness.mockReset();
+    getReadiness.mockResolvedValue({ status: 'ready' });
+    vi.mocked(isDelegatedMode).mockReturnValue(true);
+    vi.mocked(getService).mockReturnValue({
+      commands: {
+        _getChangeDetectionReadiness: getReadiness,
+      },
+    } as never);
+  });
+
+  afterEach(() => {
+    setChangeDetectionHost(undefined);
+    resetChangeDetectionReadiness();
+    vi.mocked(isDelegatedMode).mockReset();
+    vi.mocked(getService).mockReset();
+  });
+
+  it('asks the instance instead of waiting on the local deferred', async () => {
+    await expect(getChangeDetectionReadiness()).resolves.toEqual({ status: 'ready' });
+    expect(getReadiness).toHaveBeenCalledWith(undefined);
+  });
+
+  it('reconstructs an error result from the instance', async () => {
+    getReadiness.mockResolvedValue({
+      status: 'error',
+      error: { message: 'scan blew up' },
+    });
+
+    await expect(getChangeDetectionReadiness()).resolves.toEqual({
+      status: 'error',
+      error: expect.objectContaining({ message: 'scan blew up' }),
+    });
+  });
+
+  it('returns already-published local readiness without calling the instance', async () => {
+    setChangeDetectionReadiness({ status: 'unavailable', reason: 'disabled' });
+
+    await expect(getChangeDetectionReadiness()).resolves.toEqual({
+      status: 'unavailable',
+      reason: 'disabled',
+    });
+    expect(getReadiness).not.toHaveBeenCalled();
   });
 });

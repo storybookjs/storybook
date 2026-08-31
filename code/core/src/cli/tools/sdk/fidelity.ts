@@ -1,5 +1,6 @@
-import { resolve } from 'node:path';
+import * as nodePath from 'node:path';
 
+import { projectPathsEqual, type ProjectPathImpl } from '../instances/project-path.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 
 export type FidelityMatch = { ok: true };
@@ -17,12 +18,16 @@ export type FidelityResult = FidelityMatch | FidelityMismatch;
 
 export function checkFidelity(
   record: Pick<StorybookInstanceRecord, 'cwd' | 'storybookVersion'>,
-  { cwd, version }: { cwd: string; version: string }
+  { cwd, version }: { cwd: string; version: string },
+  pathImpl: ProjectPathImpl = nodePath
 ): FidelityResult {
-  const processCwd = resolve(cwd);
-  const instanceCwd = resolve(record.cwd);
-  if (processCwd !== instanceCwd) {
-    return { ok: false, kind: 'cwd', processCwd, instanceCwd };
+  if (!projectPathsEqual(cwd, record.cwd, pathImpl)) {
+    return {
+      ok: false,
+      kind: 'cwd',
+      processCwd: pathImpl.resolve(cwd),
+      instanceCwd: pathImpl.resolve(record.cwd),
+    };
   }
 
   const instanceVersion = record.storybookVersion;

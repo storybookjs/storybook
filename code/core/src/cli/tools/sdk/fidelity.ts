@@ -1,5 +1,6 @@
 import { resolve } from 'node:path';
 
+import { inspectCwdOrBin, resolveStorybookPackageJson } from '../../../common/utils/cwd-or-bin.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 
 export type FidelityMatch = { ok: true };
@@ -15,13 +16,25 @@ export type FidelityMismatch =
 
 export type FidelityResult = FidelityMatch | FidelityMismatch;
 
+function cwdMatchesInstance(processCwd: string, instanceCwd: string): boolean {
+  if (processCwd === instanceCwd) {
+    return true;
+  }
+  if (inspectCwdOrBin(instanceCwd).kind !== 'file') {
+    return false;
+  }
+  const processPackage = resolveStorybookPackageJson(processCwd);
+  const instancePackage = resolveStorybookPackageJson(instanceCwd);
+  return processPackage !== undefined && processPackage === instancePackage;
+}
+
 export function checkFidelity(
   record: Pick<StorybookInstanceRecord, 'cwd' | 'storybookVersion'>,
   { cwd, version }: { cwd: string; version: string }
 ): FidelityResult {
   const processCwd = resolve(cwd);
   const instanceCwd = resolve(record.cwd);
-  if (processCwd !== instanceCwd) {
+  if (!cwdMatchesInstance(processCwd, instanceCwd)) {
     return { ok: false, kind: 'cwd', processCwd, instanceCwd };
   }
 

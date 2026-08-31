@@ -7,7 +7,7 @@ import { selectInstances } from './instances/resolve.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 
 export type ToolsTarget = {
-  /** Project directory of the target Storybook; defaults to `process.cwd()`. */
+  /** Project directory of the target Storybook, or a path to its `storybook` binary; defaults to `process.cwd()`. */
   cwd?: string;
   /** Directory where to load Storybook configuration from; relative paths resolve from `cwd`. */
   configDir?: string;

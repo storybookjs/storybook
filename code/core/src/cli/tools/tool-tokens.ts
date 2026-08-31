@@ -204,7 +204,10 @@ export function parsePort(
  * these flags itself and would otherwise drift from the registration.
  */
 export const TOOLS_OPTION_SPECS: ReadonlyArray<{ flags: string; description: string }> = [
-  { flags: '--cwd <path>', description: 'Project directory of the target Storybook' },
+  {
+    flags: '--cwd <path>',
+    description: 'Project directory of the target Storybook, or a path to its storybook binary',
+  },
   {
     flags: '-c, --config-dir <dir-name>',
     description: 'Storybook config directory of the target Storybook',

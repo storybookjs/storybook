@@ -11,6 +11,8 @@ import { tmpdir, userInfo } from 'node:os';
 import { execFile } from 'node:child_process';
 import { promisify } from 'node:util';
 
+import { fileURLToPath } from 'node:url';
+
 import { join, resolve } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
@@ -227,6 +229,18 @@ describe('createRuntimeInstanceRecord', () => {
     });
 
     expect(record.configDir).toBe(resolve('/repo/packages/ui/.storybook'));
+  });
+
+  it('resolves a relative configDir from process.cwd() when cwd is a storybook binary', () => {
+    const bin = fileURLToPath(import.meta.url);
+    const record = createRuntimeInstanceRecord({
+      ...baseOptions,
+      cwd: bin,
+      configDir: '.storybook',
+    });
+
+    expect(record.cwd).toBe(resolve(bin));
+    expect(record.configDir).toBe(resolve(process.cwd(), '.storybook'));
   });
 
   it('keeps an absolute configDir as-is', () => {

@@ -1,14 +1,16 @@
 import { readFileSync } from 'node:fs';
-import { createRequire } from 'node:module';
-import { join } from 'node:path';
+
+import { createRequireFromCwdOrBin, requireSearchPath } from '../../../common/utils/cwd-or-bin.ts';
 
 const STORYBOOK_MANIFEST = 'storybook/package.json';
 const CHILD_HOST_ENTRY = 'storybook/internal/tools/child-host';
 
-export function resolveProjectStorybookVersion(projectDir: string): string | undefined {
+export function resolveProjectStorybookVersion(cwdOrBin: string): string | undefined {
   try {
-    const projectRequire = createRequire(join(projectDir, 'package.json'));
-    const manifestPath = projectRequire.resolve(STORYBOOK_MANIFEST, { paths: [projectDir] });
+    const projectRequire = createRequireFromCwdOrBin(cwdOrBin);
+    const manifestPath = projectRequire.resolve(STORYBOOK_MANIFEST, {
+      paths: [requireSearchPath(cwdOrBin)],
+    });
     const manifest = JSON.parse(readFileSync(manifestPath, 'utf8')) as { version?: unknown };
     return typeof manifest.version === 'string' ? manifest.version : undefined;
   } catch {
@@ -16,7 +18,7 @@ export function resolveProjectStorybookVersion(projectDir: string): string | und
   }
 }
 
-export function resolveChildHostScript(projectDir: string): string {
-  const projectRequire = createRequire(join(projectDir, 'package.json'));
-  return projectRequire.resolve(CHILD_HOST_ENTRY, { paths: [projectDir] });
+export function resolveChildHostScript(cwdOrBin: string): string {
+  const projectRequire = createRequireFromCwdOrBin(cwdOrBin);
+  return projectRequire.resolve(CHILD_HOST_ENTRY, { paths: [requireSearchPath(cwdOrBin)] });
 }

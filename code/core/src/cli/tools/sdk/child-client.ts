@@ -27,6 +27,7 @@ import {
   SpawnFailedError,
   ToolsRuntimeError,
 } from './errors.ts';
+import { workingDirectoryForCwdOrBin } from '../../../common/utils/cwd-or-bin.ts';
 import { resolveChildHostScript } from './resolve-project-storybook.ts';
 import type {
   AttachedTools,
@@ -86,6 +87,7 @@ export async function spawnChildHost(
   const log = deps.logger ?? logger;
   const forkChild = deps.fork ?? fork;
   const cwd = args.cwd;
+  const forkCwd = workingDirectoryForCwdOrBin(cwd, args.options.configDir);
   const resolvedMode: 'local' | 'attached' = args.options.mode === 'local' ? 'local' : 'attached';
 
   let scriptPath: string;
@@ -111,7 +113,7 @@ export async function spawnChildHost(
   let child: ChildProcess;
   try {
     child = forkChild(scriptPath, [], {
-      cwd,
+      cwd: forkCwd,
       stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
       env,
     } satisfies ForkOptions);

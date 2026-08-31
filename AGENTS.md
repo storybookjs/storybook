@@ -101,7 +101,8 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
   failure. `--attach` requires attachment; `--no-attach` forces local. When several running
   instances match the project, attach picks the invoking agent's most recently started one and
   warns on stderr; `-p, --port` targets a specific instance. Local `createTools` never
-  `chdir`s: a foreign `cwd` starts a project-local child host.
+  `chdir`s: a foreign `cwd` (project directory or `storybook` binary) starts a project-local child
+  host.
 - Read `code/core/src/shared/open-service/README.md` before changing the contract, adapters,
   registration, docs access, or transport rendering. Read `code/core/src/cli/tools/README.md` and
   `code/core/src/cli/tools/architecture.md` before changing attachment, the SDK, or the tools CLI.

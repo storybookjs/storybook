@@ -1,4 +1,6 @@
 import { EventEmitter } from 'node:events';
+import { resolve } from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { telemetry } from 'storybook/internal/telemetry';
@@ -124,6 +126,31 @@ describe('spawnChildHost', () => {
         logger: { log, warn },
       }
     );
+
+  it('forks from a storybook binary using dirname(configDir) as the child cwd', async () => {
+    const bin = fileURLToPath(import.meta.url);
+    await spawnChildHost(
+      {
+        cwd: bin,
+        options: { ...OPTIONS, configDir: '/repo/.storybook' },
+        clientInfo: CLIENT,
+        requestedMode: 'attached',
+      },
+      {
+        fork: fork as never,
+        resolveScript: () => '/repo/node_modules/storybook/dist/cli/tools/sdk/child-host.js',
+        logger: { log, warn },
+      }
+    );
+
+    expect(fork).toHaveBeenCalledWith(
+      '/repo/node_modules/storybook/dist/cli/tools/sdk/child-host.js',
+      [],
+      expect.objectContaining({
+        cwd: resolve('/repo'),
+      })
+    );
+  });
 
   it('forks the project-local child host with cwd, piped stdio, ipc, and loop-guard env', async () => {
     await spawn();

@@ -330,6 +330,22 @@ describe('bootstrapAttachedRuntime', () => {
     expect(deps.createNodeChannel).not.toHaveBeenCalled();
   });
 
+  it('returns spawn when record.cwd is a storybook binary that resolves the instance version', async () => {
+    const binRecord = {
+      ...RECORD,
+      cwd: '/repo/node_modules/.bin/storybook',
+    };
+    const { deps } = makeRuntimeDeps([binRecord], {
+      cwd: () => '/elsewhere',
+      resolveProjectVersion: (path: string) => (path === binRecord.cwd ? '10.2.0' : undefined),
+    });
+
+    const result = await bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    expect(result).toEqual({ kind: 'spawn', record: binRecord, siblings: [] });
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
+
   it('throws SpawnFailedError when autoSpawn is on but storybook cannot be resolved under the instance', async () => {
     const { deps } = makeRuntimeDeps([RECORD], {
       cwd: () => '/elsewhere',

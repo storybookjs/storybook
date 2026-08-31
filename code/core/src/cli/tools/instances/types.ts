@@ -22,6 +22,7 @@ export const StorybookInstanceRecordSchema = v.object({
   schemaVersion: v.literal(1),
   instanceId: v.string(),
   pid: v.pipe(v.number(), v.minValue(1), v.integer()),
+  /** Project directory of the running Storybook, or the `storybook` binary that started it. */
   cwd: v.string(),
   /**
    * Resolved config directory of the running Storybook, used as a second matching key so

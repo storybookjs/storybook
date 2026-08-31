@@ -55,27 +55,31 @@ fallback deletes that env before loading the local runtime, which must be a lead
 
 ## Environment match
 
-Attached mode needs the same version, config, and cwd as the instance. When this process cannot be
-that environment, `createTools` spawns a child from the `storybook` package under `record.cwd` and
-proxies `describe` / `call` / `close` over Node parent-child IPC. The parent `Tools` object is the
-proxy.
+Attached mode needs the same version, config, and Storybook install as the instance. When this
+process cannot be that environment, `createTools` spawns a child from the `storybook` package
+under `record.cwd` (or from that path when it is a `storybook` binary) and proxies `describe` /
+`call` / `close` over Node parent-child IPC. The parent `Tools` object is the proxy.
 
 The child is used whenever `process.cwd() !== record.cwd`, even when versions match, so module
-resolution, `.env`, and relative paths match the instance. A version mismatch with the invoked
-package (for example `npx storybook@latest` from the right directory) also triggers the child via
-project-local resolution. When the package resolved under the instance cwd also mismatches the
-record (server started before a dependency upgrade), the error is "restart your Storybook".
+resolution, `.env`, and relative paths match the instance. If `record.cwd` is a file, fidelity
+treats this process as matching when it resolves the same `storybook` package as that binary. A
+version mismatch with the invoked package (for example `npx storybook@latest` from the right
+directory) also triggers the child via project-local resolution. When the package resolved from
+the instance cwd or binary also mismatches the record (server started before a dependency
+upgrade), the error is "restart your Storybook".
 
 Neither attached nor local mode `chdir`s this process. A foreign `cwd` in local mode starts a
 child host instead.
 
 `autoSpawn: false` throws `EnvironmentMismatchError { instanceCwd, resolvedBinPath, reason }`.
 
-The child is the instance-cwd-resolved `storybook` package's host entry, `cwd = record.cwd`,
-resolved with `createRequire(join(record.cwd, 'package.json'))`. A child does not spawn another
-child; residual mismatch is a prescriptive error. Resolution failure is `SpawnFailedError`. The
-fidelity check runs before config load. `close()` kills the child. The child exits when the parent
-IPC channel closes. Child logs are piped and re-emitted by the parent.
+The child is the instance-resolved `storybook` package's host entry. When `record.cwd` is a
+directory it is resolved with `createRequire(join(record.cwd, 'package.json'))` and the child
+runs with `cwd = record.cwd`. When `record.cwd` is a `storybook` binary it is resolved from that
+file and the child runs with `cwd = dirname(configDir)` (or this process's cwd). A child does not
+spawn another child; residual mismatch is a prescriptive error. Resolution failure is
+`SpawnFailedError`. The fidelity check runs before config load. `close()` kills the child. The
+child exits when the parent IPC channel closes. Child logs are piped and re-emitted by the parent.
 
 IPC is the serialized SDK API plus a version field in the child's hello. Cancellation is a
 message keyed by call id.
@@ -136,7 +140,7 @@ Messages name the exact corrective command.
 | Old server                        | Token absent                          | Restart Storybook (vX.Y+) to enable attach                                                       |
 | Stale record / connection refused | WS connect fails                      | Registry cleanup; fallback note                                                                  |
 | Server started before upgrade     | Instance-cwd package ≠ record version | Both version strings; restart Storybook                                                          |
-| Spawn resolution failure          | No `storybook` under `record.cwd`     | `SpawnFailedError` remediation; local fallback                                                   |
+| Spawn resolution failure          | No `storybook` under `record.cwd` or its binary | `SpawnFailedError` remediation; local fallback                                                   |
 | Config drift                      | Remote command ack timeout            | Running Storybook was started with a different configuration — restart it                        |
 
 Rows other than config drift are factory-time attach gates. In `auto`, those return a local host

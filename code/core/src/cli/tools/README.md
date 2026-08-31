@@ -15,7 +15,7 @@ instance.
 import { createTools } from 'storybook/internal/tools';
 
 const tools = await createTools({
-  cwd, // which project; defaults to process.cwd()
+  cwd, // project directory or storybook binary; defaults to process.cwd()
   configDir, // --config-dir equivalent; disambiguates monorepos
   port, // --port equivalent; a known port targets that running instance on its own
   mode: 'auto', // 'auto' | 'attached' | 'local'
@@ -69,6 +69,7 @@ npx storybook tools docs list
 npx storybook tools --attach docs list
 npx storybook tools --no-attach docs list
 npx storybook tools --cwd /apps/web --config-dir /apps/web/.storybook docs list
+npx storybook tools --cwd /apps/web/node_modules/.bin/storybook docs list
 npx storybook tools --port 6007 stories preview --stories '[{"storyId":"example-button--primary"}]'
 ```
 
@@ -80,14 +81,16 @@ npx storybook tools --port 6007 stories preview --stories '[{"storyId":"example-
 `chdir`s the host process.
 
 **Child host.** When `process.cwd()` or the resolved `storybook` version does not match the
-record, `createTools` spawns a child from the `storybook` package under `record.cwd` and proxies
-`describe` / `call` / `close` over IPC. `autoSpawn: false` throws `EnvironmentMismatchError`
-instead. A child never spawns another child (`STORYBOOK_TOOLS_CHILD_HOST`).
+record, `createTools` spawns a child from the `storybook` package under `record.cwd` (or from that
+path when it is a `storybook` binary) and proxies `describe` / `call` / `close` over IPC.
+`autoSpawn: false` throws `EnvironmentMismatchError` instead. A child never spawns another child
+(`STORYBOOK_TOOLS_CHILD_HOST`).
 
 **Local.** Load the target configuration in this process when `cwd` already matches. This path
 never `chdir`s. A foreign `--cwd` starts a child host from the `storybook` package under that
-directory. Do not set `STORYBOOK_ATTACHED_TOOLS` on this path: that env is how the dispatcher
-makes UniversalStore a follower before core loads, and local bootstrap must be a leader.
+directory, or from that path when it is a `storybook` binary. Do not set
+`STORYBOOK_ATTACHED_TOOLS` on this path: that env is how the dispatcher makes UniversalStore a
+follower before core loads, and local bootstrap must be a leader.
 
 ## Tests
 

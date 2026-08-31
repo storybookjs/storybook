@@ -9,6 +9,8 @@ import type { StorybookConfig } from 'storybook/internal/types';
 
 import { join, resolve } from 'pathe';
 
+import { inspectCwdOrBin, resolveRecordedCwd } from '../../common/utils/cwd-or-bin.ts';
+
 import { CLAUDE_PREVIEW_AGENT_NAME } from '../../shared/constants/agent-provenance.ts';
 import { isClaudePreviewLaunch } from '../../shared/utils/agent-environment.ts';
 import { detectAgent } from '../../telemetry/detect-agent.ts';
@@ -55,6 +57,7 @@ export type RuntimeInstanceRecord = {
   schemaVersion: 1;
   instanceId: string;
   pid: number;
+  /** Project directory of the running Storybook, or the `storybook` binary that started it. */
   cwd: string;
   /**
    * Resolved config directory of the running Storybook. Lets `storybook ai` find this instance
@@ -131,7 +134,7 @@ export function createRuntimeInstanceRecord({
   address,
   agent,
   configDir,
-  cwd = process.cwd(),
+  cwd = resolveRecordedCwd(),
   instanceId = randomUUID(),
   mcp = { status: 'not-installed' },
   now = new Date(),
@@ -160,7 +163,11 @@ export function createRuntimeInstanceRecord({
     instanceId,
     pid,
     cwd: resolve(cwd),
-    ...(configDir ? { configDir: resolve(cwd, configDir) } : {}),
+    ...(configDir
+      ? {
+          configDir: resolve(inspectCwdOrBin(cwd).kind === 'file' ? process.cwd() : cwd, configDir),
+        }
+      : {}),
     url: storybookBaseUrl,
     port,
     ...(token ? { token } : {}),

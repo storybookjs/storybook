@@ -1,3 +1,4 @@
+import { inspectCwdOrBin } from '../../../common/utils/cwd-or-bin.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import type { ToolsStorybookInfo } from './types.ts';
 
@@ -26,7 +27,11 @@ export function formatNoInstance(records: StorybookInstanceRecord[]): string {
     for (const record of records) {
       const configDir = record.configDir ? `; configDir \`${record.configDir}\`` : '';
       lines.push(`- ${record.url} (cwd \`${record.cwd}\`${configDir})`);
-      lines.push(`  cd ${quoteShellArg(record.cwd)} && ${attachCommand(record)}`);
+      lines.push(
+        inspectCwdOrBin(record.cwd).kind === 'file'
+          ? `  ${attachCommand(record)}`
+          : `  cd ${quoteShellArg(record.cwd)} && ${attachCommand(record)}`
+      );
     }
   }
   return lines.join('\n');
@@ -51,6 +56,9 @@ export function formatConnectionFailed(record: StorybookInstanceRecord): string 
 }
 
 export function formatCwdMismatch(processCwd: string, instanceCwd: string): string {
+  if (inspectCwdOrBin(instanceCwd).kind === 'file') {
+    return `This process is running from ${processCwd}, but the Storybook instance was started with the \`storybook\` binary at ${instanceCwd}. Pass \`--cwd ${quoteShellArg(instanceCwd)}\` and retry.`;
+  }
   return `This process is running from ${processCwd}, but the Storybook instance is running from ${instanceCwd}. \`cd ${quoteShellArg(instanceCwd)}\` and retry, or pass \`--cwd ${quoteShellArg(instanceCwd)}\`.`;
 }
 

@@ -48,7 +48,7 @@ describe('tools help rendering', () => {
       Storybook tools from the Storybook configuration at /repo/.storybook.
 
       Options:
-        --cwd <path>                 Project directory of the target Storybook
+        --cwd <path>                 Project directory of the target Storybook, or a path to its storybook binary
         -c, --config-dir <dir-name>  Storybook config directory of the target Storybook
         -p, --port <number>          Port of a running Storybook; targets that instance directly, no --cwd or --config-dir needed
         --attach                     Require attaching to a running Storybook; gate failures are errors instead of a local fallback

@@ -1,4 +1,8 @@
+import { fileURLToPath } from 'node:url';
+
 import { describe, expect, it } from 'vitest';
+
+const storybookFile = fileURLToPath(import.meta.url);
 
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import {
@@ -114,6 +118,17 @@ describe('attach failure messages', () => {
   it('tells the caller to move into the instance directory', () => {
     expect(formatCwdMismatch('/tmp/agent', '/apps/web')).toMatchInlineSnapshot(
       `"This process is running from /tmp/agent, but the Storybook instance is running from /apps/web. \`cd /apps/web\` and retry, or pass \`--cwd /apps/web\`."`
+    );
+  });
+
+  it('points at --cwd when the instance recorded a storybook binary', () => {
+    expect(formatCwdMismatch('/tmp/agent', storybookFile)).toContain(`--cwd ${storybookFile}`);
+    expect(formatCwdMismatch('/tmp/agent', storybookFile)).not.toContain(`cd ${storybookFile}`);
+    expect(formatNoInstance([{ ...other, cwd: storybookFile }])).toContain(
+      `npx storybook tools --attach --cwd ${storybookFile}`
+    );
+    expect(formatNoInstance([{ ...other, cwd: storybookFile }])).not.toContain(
+      `cd ${storybookFile} &&`
     );
   });
 

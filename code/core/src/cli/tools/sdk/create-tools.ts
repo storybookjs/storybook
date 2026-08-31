@@ -74,11 +74,13 @@ export type CreateToolsDeps = {
  *
  * `local` loads that configuration without a running Storybook. When this process is already in
  * the target directory, it loads in-process. Otherwise it spawns a child host from the `storybook`
- * package resolved under that directory. It never changes `process.cwd()`.
+ * package resolved under that directory or from a `storybook` binary passed as `cwd`. It never
+ * changes `process.cwd()`.
  *
  * `attached` joins a running Storybook over its channel and never changes `process.cwd()`. When
  * this process is not that instance's twin, attached mode defaults to spawning a child host from
- * the `storybook` package resolved under the instance directory.
+ * the `storybook` package resolved under the instance directory or from the instance `storybook`
+ * binary.
  *
  * `auto` tries `attached` first and, on a gate failure, loads `local` instead. The returned host
  * then carries `fallbackNotice` with the gate message and that it fell back.
@@ -185,6 +187,7 @@ async function createAttachedTools(
         autoSpawn: false,
         cwd: attached.record.cwd,
         port: attached.record.port,
+        configDir: attached.record.configDir ?? options.configDir,
       },
       clientInfo,
       requestedMode,

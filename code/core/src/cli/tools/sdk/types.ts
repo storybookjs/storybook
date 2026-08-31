@@ -27,7 +27,7 @@ export type ToolsClientInfo = {
 };
 
 export type CreateToolsOptions = {
-  /** Project directory of the target Storybook; defaults to `process.cwd()`. */
+  /** Project directory of the target Storybook, or a path to its `storybook` binary; defaults to `process.cwd()`. */
   cwd?: string;
   /** Directory to load the Storybook configuration from; relative paths resolve from `cwd`. */
   configDir?: string;
@@ -59,7 +59,7 @@ export type ToolsStorybookInfo = {
   pid?: number;
   /** Port of the running Storybook, as recorded by `storybook dev`. */
   port?: number;
-  /** Directory the running Storybook was started from. */
+  /** Directory the running Storybook was started from, or the `storybook` binary that started it. */
   cwd?: string;
   /**
    * Set when attach chose among several matching instances: the competing instances, best first,

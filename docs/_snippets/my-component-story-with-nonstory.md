@@ -562,3 +562,62 @@ export const ComplexStory = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+import someData from './data.json';
+
+const meta = preview.meta({
+  component: MyComponent,
+  includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
+  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
+});
+
+export const simpleData = { foo: 1, bar: 'baz' };
+export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
+
+export const SimpleStory = meta.story({
+  args: {
+    data: simpleData,
+  },
+});
+
+export const ComplexStory = meta.story({
+  args: {
+    data: complexData,
+  },
+});
+```
+
+```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+import someData from './data.json';
+
+const meta = preview.meta({
+  component: MyComponent,
+  includeStories: ['SimpleStory', 'ComplexStory'], // 👈 Storybook loads these stories
+  excludeStories: /.*Data$/, // 👈 Storybook ignores anything that contains Data
+});
+
+export const simpleData = { foo: 1, bar: 'baz' };
+export const complexData = { foo: 1, foobar: { bar: 'baz', baz: someData } };
+
+export const SimpleStory = meta.story({
+  args: {
+    data: simpleData,
+  },
+});
+
+export const ComplexStory = meta.story({
+  args: {
+    data: complexData,
+  },
+});
+```

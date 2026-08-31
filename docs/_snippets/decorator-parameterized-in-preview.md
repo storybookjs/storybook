@@ -534,3 +534,68 @@ export default definePreview({
   ],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+export default definePreview({
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    (Story, { parameters }) => {
+      // 👇 Make it configurable by reading from parameters
+      const { pageLayout } = parameters;
+      switch (pageLayout) {
+        case 'page':
+          return (
+            // Your page layout is probably a little more complex than this
+            <div className="page-layout">
+              <Story />
+            </div>
+          );
+        case 'page-mobile':
+          return (
+            <div className="page-mobile-layout">
+              <Story />
+            </div>
+          );
+        default:
+          // In the default case, don't apply a layout
+          return <Story />;
+      }
+    },
+  ],
+});
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+export default definePreview({
+  decorators: [
+    // 👇 Defining the decorator in the preview file applies it to all stories
+    (Story, { parameters }) => {
+      // 👇 Make it configurable by reading from parameters
+      const { pageLayout } = parameters;
+      switch (pageLayout) {
+        case 'page':
+          return (
+            // Your page layout is probably a little more complex than this
+            <div className="page-layout">
+              <Story />
+            </div>
+          );
+        case 'page-mobile':
+          return (
+            <div className="page-mobile-layout">
+              <Story />
+            </div>
+          );
+        default:
+          // In the default case, don't apply a layout
+          return <Story />;
+      }
+    },
+  ],
+});
+```

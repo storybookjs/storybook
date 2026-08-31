@@ -225,3 +225,34 @@ const meta = preview.meta({
   component: Checkbox,
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Checkbox.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Checkbox } from './Checkbox';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Design System/Atoms/Checkbox',
+  component: Checkbox,
+});
+```
+
+```js filename="Checkbox.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Checkbox } from './Checkbox';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Design System/Atoms/Checkbox',
+  component: Checkbox,
+});
+```

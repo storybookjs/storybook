@@ -101,3 +101,52 @@ export default defineMain({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF 3"
+export default {
+    framework: 'storybook-solidjs-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    experimentalDocgenServer: true,
+  },
+};
+```
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF 3"
+import type { StorybookConfig } from 'storybook-solidjs-vite';
+
+const config: StorybookConfig = {
+  framework: 'storybook-solidjs-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    experimentalDocgenServer: true,
+  },
+};
+
+export default config;
+```
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  framework: { name: 'storybook-solidjs-vite' },
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    experimentalDocgenServer: true,
+  },
+});
+```
+
+```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  framework: { name: 'storybook-solidjs-vite' },
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  features: {
+    experimentalDocgenServer: true,
+  },
+});
+```

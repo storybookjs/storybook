@@ -276,3 +276,40 @@ const meta = preview.meta({
   ],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```tsx filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { YourComponent } from './YourComponent';
+
+const meta = preview.meta({
+  component: YourComponent,
+  decorators: [
+    (Story) => (
+      <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </div>
+    ),
+  ],
+});
+```
+
+```jsx filename="YourComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { YourComponent } from './YourComponent';
+
+const meta = preview.meta({
+  component: YourComponent,
+  decorators: [
+    (Story) => (
+      <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </div>
+    ),
+  ],
+});
+```

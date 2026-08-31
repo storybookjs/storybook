@@ -189,3 +189,36 @@ export const Basic = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Basic = meta.story({
+  args: {
+    exampleProp: process.env.EXAMPLE_VAR,
+  },
+});
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Basic = meta.story({
+  args: {
+    exampleProp: process.env.EXAMPLE_VAR,
+  },
+});
+```

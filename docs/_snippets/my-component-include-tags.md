@@ -201,3 +201,38 @@ export const IncludeStory = meta.story({
   tags: ['test-only'],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+  //👇 Provides the `test-only` tag to all stories in this file
+  tags: ['test-only'],
+});
+
+export const IncludeStory = meta.story({
+  //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
+  tags: ['test-only'],
+});
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+  //👇 Provides the `test-only` tag to all stories in this file
+  tags: ['test-only'],
+});
+
+export const IncludeStory = meta.story({
+  //👇 Adds the `test-only` tag to this story to be included in the tests when enabled in the test-runner configuration
+  tags: ['test-only'],
+});
+```

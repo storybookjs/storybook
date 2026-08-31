@@ -84,3 +84,32 @@ const preview = definePreview({
 
 export default preview;
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+import { initialize } from '../lib/your-library';
+
+initialize();
+
+const preview = definePreview({
+  // ...
+});
+
+export default preview;
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+import { initialize } from '../lib/your-library';
+
+initialize();
+
+const preview = definePreview({
+  // ...
+});
+
+export default preview;
+```

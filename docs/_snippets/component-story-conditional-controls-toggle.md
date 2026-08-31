@@ -289,3 +289,40 @@ const meta = preview.meta({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    label: { control: 'text' }, // Always shows the control
+    advanced: { control: 'boolean' },
+    // Only enabled if advanced is true
+    margin: { control: 'number', if: { arg: 'advanced' } },
+    padding: { control: 'number', if: { arg: 'advanced' } },
+    cornerRadius: { control: 'number', if: { arg: 'advanced' } },
+  },
+});
+```
+
+```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    label: { control: 'text' }, // Always shows the control
+    advanced: { control: 'boolean' },
+    // Only enabled if advanced is true
+    margin: { control: 'number', if: { arg: 'advanced' } },
+    padding: { control: 'number', if: { arg: 'advanced' } },
+    cornerRadius: { control: 'number', if: { arg: 'advanced' } },
+  },
+});
+```

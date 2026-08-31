@@ -360,3 +360,76 @@ const meta = preview.meta({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+import { INITIAL_VIEWPORTS } from 'storybook/viewport';
+
+import { MyComponent } from './MyComponent';
+
+export default {
+  component: MyComponent,
+  parameters: {
+    viewport: {
+      //👇 Set available viewports for every story in the file
+      options: INITIAL_VIEWPORTS,
+    },
+  },
+};
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+import type { Meta } from 'storybook-solidjs-vite';
+
+import { INITIAL_VIEWPORTS } from 'storybook/viewport';
+
+import { MyComponent } from './MyComponent';
+
+const meta = {
+  component: MyComponent,
+  parameters: {
+    viewport: {
+      //👇 Set available viewports for every story in the file
+      options: INITIAL_VIEWPORTS,
+    },
+  },
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { INITIAL_VIEWPORTS } from 'storybook/viewport';
+
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+  parameters: {
+    viewport: {
+      //👇 Set available viewports for every story in the file
+      options: INITIAL_VIEWPORTS,
+    },
+  },
+});
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { INITIAL_VIEWPORTS } from 'storybook/viewport';
+
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+  parameters: {
+    viewport: {
+      //👇 Set available viewports for every story in the file
+      options: INITIAL_VIEWPORTS,
+    },
+  },
+});
+```

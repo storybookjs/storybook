@@ -447,3 +447,42 @@ export const LoggedIn = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Page.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+//👇 Imports all Header stories
+import * as HeaderStories from './Header.stories';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const LoggedIn = meta.story({
+  args: {
+    ...HeaderStories.LoggedIn.input.args,
+  },
+});
+```
+
+```js filename="Page.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+//👇 Imports all Header stories
+import * as HeaderStories from './Header.stories';
+
+const meta = preview.meta({
+  component: Page,
+});
+
+export const LoggedIn = meta.story({
+  args: {
+    ...HeaderStories.LoggedIn.input.args,
+  },
+});
+```

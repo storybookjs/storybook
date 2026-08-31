@@ -287,3 +287,40 @@ const meta = preview.meta({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      toc: {
+        disable: true, // 👈 Disables the table of contents
+      },
+    },
+  },
+});
+```
+
+```js filename="MyComponent.stories.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+  tags: ['autodocs'],
+  parameters: {
+    docs: {
+      toc: {
+        disable: true, // 👈 Disables the table of contents
+      },
+    },
+  },
+});
+```

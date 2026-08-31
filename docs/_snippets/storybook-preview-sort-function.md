@@ -128,3 +128,31 @@ export default definePreview({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+export default definePreview({
+  parameters: {
+    options: {
+      // The `a` and `b` arguments in this function have a type of `import('storybook/internal/types').IndexEntry`. Remember that the function is executed in a JavaScript environment, so use JSDoc for IntelliSense to introspect it.
+      storySort: (a, b) =>
+        a.id === b.id ? 0 : a.id.localeCompare(b.id, undefined, { numeric: true }),
+    },
+  },
+});
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+export default definePreview({
+  parameters: {
+    options: {
+      storySort: (a, b) =>
+        a.id === b.id ? 0 : a.id.localeCompare(b.id, undefined, { numeric: true }),
+    },
+  },
+});
+```

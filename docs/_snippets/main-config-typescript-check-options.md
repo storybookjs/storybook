@@ -46,3 +46,34 @@ export default defineMain({
   },
 });
 ```
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF 3"
+import type { StorybookConfig } from 'storybook-solidjs-vite';
+
+const config: StorybookConfig = {
+  framework: 'storybook-solidjs-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  typescript: {
+    check: true,
+    checkOptions: {
+      eslint: true,
+    },
+  },
+};
+
+export default config;
+```
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  framework: { name: 'storybook-solidjs-vite' },
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  typescript: {
+    check: true,
+    checkOptions: {
+      eslint: true,
+    },
+  },
+});
+```

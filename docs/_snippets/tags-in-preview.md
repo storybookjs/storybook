@@ -146,3 +146,36 @@ export default definePreview({
   tags: ['autodocs'],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+import addonDocs from '@storybook/addon-docs';
+
+export default definePreview({
+  addons: [addonDocs()],
+  /*
+   * All stories in your project will have these tags applied:
+   * - autodocs
+   * - dev (implicit default)
+   * - test (implicit default)
+   */
+  tags: ['autodocs'],
+});
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+import addonDocs from '@storybook/addon-docs';
+
+export default definePreview({
+  addons: [addonDocs()],
+  /*
+   * All stories in your project will have these tags applied:
+   * - autodocs
+   * - dev (implicit default)
+   * - test (implicit default)
+   */
+  tags: ['autodocs'],
+});
+```

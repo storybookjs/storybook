@@ -567,3 +567,70 @@ export const Primary = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+/**
+ * Button stories
+ * These stories showcase the button
+ */
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      description: {
+        component: 'Another description, overriding the comments',
+      },
+    },
+  },
+});
+
+/**
+ * Primary Button
+ * This is the primary button
+ */
+export const Primary = meta.story({
+  parameters: {
+    docs: {
+      description: {
+        story: 'Another description on the story, overriding the comments',
+      },
+    },
+  },
+});
+```
+
+```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  parameters: {
+    docs: {
+      description: {
+        component: 'Another description, overriding the comments',
+      },
+    },
+  },
+});
+
+/**
+ * Primary Button
+ * This is the primary button
+ */
+export const Primary = meta.story({
+  parameters: {
+    docs: {
+      description: {
+        story: 'Another description on the story, overriding the comments',
+      },
+    },
+  },
+});
+```

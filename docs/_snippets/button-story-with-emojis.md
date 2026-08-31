@@ -684,3 +684,83 @@ export const Tertiary = meta.story({
   render: () => <Button backgroundColor="#ff0" label="📚📕📈🤓" />,
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+import { Button } from './Button';
+
+export default {
+  component: Button,
+};
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Primary = {
+  render: () => <Button backgroundColor="#ff0" label="Button" />,
+};
+
+export const Secondary = {
+  render: () => <Button backgroundColor="#ff0" label="😄👍😍💯" />,
+};
+
+export const Tertiary = {
+  render: () => <Button backgroundColor="#ff0" label="📚📕📈🤓" />,
+};
+```
+
+```tsx filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Primary = meta.story({
+  render: () => <Button backgroundColor="#ff0" label="Button" />,
+});
+
+export const Secondary = meta.story({
+  render: () => <Button backgroundColor="#ff0" label="😄👍😍💯" />,
+});
+
+export const Tertiary = meta.story({
+  render: () => <Button backgroundColor="#ff0" label="📚📕📈🤓" />,
+});
+```
+
+```jsx filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+/*
+ *👇 Render functions are a framework specific feature to allow you control on how the component renders.
+ * See https://storybook.js.org/docs/api/csf
+ * to learn how to use render functions.
+ */
+export const Primary = meta.story({
+  render: () => <Button backgroundColor="#ff0" label="Button" />,
+});
+
+export const Secondary = meta.story({
+  render: () => <Button backgroundColor="#ff0" label="😄👍😍💯" />,
+});
+
+export const Tertiary = meta.story({
+  render: () => <Button backgroundColor="#ff0" label="📚📕📈🤓" />,
+});
+```

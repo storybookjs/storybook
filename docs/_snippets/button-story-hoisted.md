@@ -199,3 +199,40 @@ const meta = preview.meta({
 // This is the only named export in the file, and it matches the component name
 export const Button = meta.story();
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button as ButtonComponent } from './Button';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Design System/Atoms/Button',
+  component: ButtonComponent,
+});
+
+// This is the only named export in the file, and it matches the component name
+export const Button = meta.story();
+```
+
+```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button as ButtonComponent } from './Button';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'Design System/Atoms/Button',
+  component: ButtonComponent,
+});
+
+// This is the only named export in the file, and it matches the component name
+export const Button = meta.story();
+```

@@ -363,3 +363,36 @@ export const WithAnImage = meta.story({
   ),
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const WithAnImage = meta.story({
+  render: () => (
+    <img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder" />
+  ),
+});
+```
+
+```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const WithAnImage = meta.story({
+  render: () => (
+    <img src="https://storybook.js.org/images/placeholders/350x150.png" alt="My CDN placeholder" />
+  ),
+});
+```

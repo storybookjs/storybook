@@ -33,3 +33,36 @@ export default defineMain({
   },
 });
 ```
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF 3"
+import type { StorybookConfig } from 'storybook-solidjs-vite';
+
+const config: StorybookConfig = {
+  framework: 'storybook-solidjs-vite',
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  typescript: {
+    reactDocgen: 'react-docgen-typescript',
+    reactDocgenTypescriptOptions: {
+      // 👇 Add your workspace package source files so they're included in the TS program
+      include: ['**/*.tsx', '../../packages/ui/src/**/*.tsx'],
+    },
+  },
+};
+
+export default config;
+```
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  framework: { name: 'storybook-solidjs-vite' },
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  typescript: {
+    reactDocgen: 'react-docgen-typescript',
+    reactDocgenTypescriptOptions: {
+      // 👇 Add your workspace package source files so they're included in the TS program
+      include: ['**/*.tsx', '../../packages/ui/src/**/*.tsx'],
+    },
+  },
+});
+```

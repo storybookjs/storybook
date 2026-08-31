@@ -168,3 +168,40 @@ export default defineMain({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  viteFinal: async (config, options) => {
+    // Update config here
+    return config;
+  },
+  webpackFinal: async (config, options) => {
+    // Change webpack config
+    return config;
+  },
+  babel: async (config, options) => {
+    return config;
+  },
+});
+```
+
+```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  viteFinal: async (config, options) => {
+    // Update config here
+    return config;
+  },
+  webpackFinal: async (config, options) => {
+    // Change webpack config
+    return config;
+  },
+  babel: async (config, options) => {
+    return config;
+  },
+});
+```

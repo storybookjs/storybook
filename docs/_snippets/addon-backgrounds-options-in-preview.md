@@ -204,3 +204,48 @@ export default definePreview({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+export default definePreview({
+  parameters: {
+    backgrounds: {
+      options: {
+        // 👇 Default options
+        dark: { name: 'Dark', value: '#333' },
+        light: { name: 'Light', value: '#F7F9F2' },
+        // 👇 Add your own
+        maroon: { name: 'Maroon', value: '#400' },
+      },
+    },
+  },
+  initialGlobals: {
+    // 👇 Set the initial background color
+    backgrounds: { value: 'light' },
+  },
+});
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+export default definePreview({
+  parameters: {
+    backgrounds: {
+      options: {
+        // 👇 Default options
+        dark: { name: 'Dark', value: '#333' },
+        light: { name: 'Light', value: '#F7F9F2' },
+        // 👇 Add your own
+        maroon: { name: 'Maroon', value: '#400' },
+      },
+    },
+  },
+  initialGlobals: {
+    // 👇 Set the initial background color
+    backgrounds: { value: 'light' },
+  },
+});
+```

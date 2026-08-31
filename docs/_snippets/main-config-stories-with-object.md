@@ -167,3 +167,40 @@ export default defineMain({
   ],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  framework: { name: 'storybook-solidjs-vite' },
+  stories: [
+    {
+      // 👇 Sets the directory containing your stories
+      directory: '../packages/components',
+      // 👇 Storybook will load all files that match this glob
+      files: '*.stories.*',
+      // 👇 Used when generating automatic titles for your stories
+      titlePrefix: 'MyComponents',
+    },
+  ],
+});
+```
+
+```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  framework: { name: 'storybook-solidjs-vite' },
+  stories: [
+    {
+      // 👇 Sets the directory containing your stories
+      directory: '../packages/components',
+      // 👇 Storybook will load all files that match this glob
+      files: '*.stories.*',
+      // 👇 Used when generating automatic titles for your stories
+      titlePrefix: 'MyComponents',
+    },
+  ],
+});
+```

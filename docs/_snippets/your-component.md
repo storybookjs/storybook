@@ -475,3 +475,37 @@ export const Basic = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="YourComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { YourComponent } from './YourComponent';
+
+//👇 This default export determines where your story goes in the story list
+const meta = preview.meta({
+  component: YourComponent,
+});
+
+export const Basic = meta.story({
+  args: {
+    //👇 The args you need here will depend on your component
+  },
+});
+```
+
+```js filename="YourComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { YourComponent } from './YourComponent';
+
+const meta = preview.meta({
+  component: YourComponent,
+});
+
+export const Basic = meta.story({
+  args: {
+    //👇 The args you need here will depend on your component
+  },
+});
+```

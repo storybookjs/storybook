@@ -431,3 +431,58 @@ export const FilledForm = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="LoginForm.stories.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { fn, expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
+
+import { LoginForm } from './LoginForm';
+
+const meta = preview.meta({
+  component: LoginForm,
+  args: {
+    // 👇 Use `fn` to spy on the onSubmit arg
+    onSubmit: fn(),
+  },
+});
+
+export const FilledForm = meta.story({
+  play: async ({ args, canvas, userEvent }) => {
+    await userEvent.type(canvas.getByLabelText('Email'), 'email@provider.com');
+    await userEvent.type(canvas.getByLabelText('Password'), 'a-random-password');
+    await userEvent.click(canvas.getByRole('button', { name: 'Log in' }));
+
+    // 👇 Now we can assert that the onSubmit arg was called
+    await expect(args.onSubmit).toHaveBeenCalled();
+  },
+});
+```
+
+```js filename="LoginForm.stories.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { fn, expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
+
+import { LoginForm } from './LoginForm';
+
+const meta = preview.meta({
+  component: LoginForm,
+  args: {
+    // 👇 Use `fn` to spy on the onSubmit arg
+    onSubmit: fn(),
+  },
+});
+
+export const FilledForm = meta.story({
+  play: async ({ args, canvas, userEvent }) => {
+    await userEvent.type(canvas.getByLabelText('Email'), 'email@provider.com');
+    await userEvent.type(canvas.getByLabelText('Password'), 'a-random-password');
+    await userEvent.click(canvas.getByRole('button', { name: 'Log in' }));
+
+    // 👇 Now we can assert that the onSubmit arg was called
+    await expect(args.onSubmit).toHaveBeenCalled();
+  },
+});
+```

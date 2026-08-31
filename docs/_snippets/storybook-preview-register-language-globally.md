@@ -195,3 +195,46 @@ export default definePreview({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
+import scss from 'react-syntax-highlighter/dist/esm/languages/prism/scss';
+
+// Registers and enables scss language support
+SyntaxHighlighter.registerLanguage('scss', scss);
+
+export default definePreview({
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+  },
+});
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+import { PrismLight as SyntaxHighlighter } from 'react-syntax-highlighter';
+import scss from 'react-syntax-highlighter/dist/esm/languages/prism/scss';
+
+// Registers and enables scss language support
+SyntaxHighlighter.registerLanguage('scss', scss);
+
+export default definePreview({
+  parameters: {
+    controls: {
+      matchers: {
+        color: /(background|color)$/i,
+        date: /Date$/,
+      },
+    },
+  },
+});
+```

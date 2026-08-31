@@ -477,3 +477,46 @@ export const WithAnImage = meta.story({
   render: () => <img src={image.src} alt={image.alt} />,
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import imageFile from './static/image.png';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+const image = {
+  src: imageFile,
+  alt: 'my image',
+};
+
+export const WithAnImage = meta.story({
+  render: () => <img src={image.src} alt={image.alt} />,
+});
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+import imageFile from './static/image.png';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+const image = {
+  src: imageFile,
+  alt: 'my image',
+};
+
+export const WithAnImage = meta.story({
+  render: () => <img src={image.src} alt={image.alt} />,
+});
+```

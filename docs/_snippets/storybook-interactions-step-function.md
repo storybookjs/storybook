@@ -192,3 +192,50 @@ export const Submitted = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="MyComponent.stories.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Submitted = meta.story({
+  play: async ({ args, canvas, step }) => {
+    await step('Enter email and password', async () => {
+      await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
+      await userEvent.type(canvas.getByTestId('password'), 'supersecret');
+    });
+
+    await step('Submit form', async () => {
+      await userEvent.click(canvas.getByRole('button'));
+    });
+  },
+});
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import MyComponent from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Submitted = meta.story({
+  play: async ({ args, canvas, step }) => {
+    await step('Enter email and password', async () => {
+      await userEvent.type(canvas.getByTestId('email'), 'hi@example.com');
+      await userEvent.type(canvas.getByTestId('password'), 'supersecret');
+    });
+
+    await step('Submit form', async () => {
+      await userEvent.click(canvas.getByRole('button'));
+    });
+  },
+});
+```

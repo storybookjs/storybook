@@ -86,3 +86,46 @@ export default definePreview({
   ],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { Renderer, definePreview } from 'storybook-solidjs-vite';
+
+import addonThemes from '@storybook/addon-themes';
+
+import '../src/index.css'; // Your application's global CSS file
+
+export default definePreview({
+  addons: [addonThemes()],
+  decorators: [
+    addonThemes.withThemeByClassName<Renderer>({
+      themes: {
+        light: '',
+        dark: 'dark',
+      },
+      defaultTheme: 'light',
+    }),
+  ],
+});
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+import addonThemes from '@storybook/addon-themes';
+
+import '../src/index.css'; // Your application's global CSS file
+
+export default definePreview({
+  addons: [addonThemes()],
+  decorators: [
+    addonThemes.withThemeByClassName({
+      themes: {
+        light: '',
+        dark: 'dark',
+      },
+      defaultTheme: 'light',
+    }),
+  ],
+});
+```

@@ -201,3 +201,38 @@ export const SkipStory = meta.story({
   tags: ['skip-test'],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+  //👇 Provides the `skip-test` tag to all stories in this file
+  tags: ['skip-test'],
+});
+
+export const SkipStory = meta.story({
+  //👇 Adds the `skip-test` tag to this story to allow it to be skipped in the tests when enabled in the test-runner configuration
+  tags: ['skip-test'],
+});
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+  //👇 Provides the `skip-test` tag to all stories in this file
+  tags: ['skip-test'],
+});
+
+export const SkipStory = meta.story({
+  //👇 Adds the `skip-test` tag to this story to allow it to be skipped in the tests when enabled in the test-runner configuration
+  tags: ['skip-test'],
+});
+```

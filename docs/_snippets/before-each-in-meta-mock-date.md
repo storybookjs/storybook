@@ -435,3 +435,58 @@ export const Basic = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Page.stories.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Set the value of Date for every story in the file
+  async beforeEach() {
+    MockDate.set('2024-02-14');
+
+    // 👇 Reset the Date after each story
+    return () => {
+      MockDate.reset();
+    };
+  },
+});
+
+export const Basic = meta.story({
+  async play({ canvas }) {
+    // ... This will run with the mocked Date
+  },
+});
+```
+
+```js filename="Page.stories.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import MockDate from 'mockdate';
+
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Set the value of Date for every story in the file
+  async beforeEach() {
+    MockDate.set('2024-02-14');
+
+    // 👇 Reset the Date after each story
+    return () => {
+      MockDate.reset();
+    };
+  },
+});
+
+export const Basic = meta.story({
+  async play({ canvas }) {
+    // ... This will run with the mocked Date
+  },
+});
+```

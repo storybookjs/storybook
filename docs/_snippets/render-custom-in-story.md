@@ -349,3 +349,101 @@ export const PrimaryInAlert = meta.story({
   ),
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="Button.stories.jsx" renderer="solid" language="js" tabTitle="CSF 3"
+import { Alert } from './Alert';
+import { Button } from './Button';
+
+export default {
+  component: Button,
+};
+
+export const PrimaryInAlert = {
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+  render: (args) => (
+    <Alert>
+      Alert text
+      <Button {...args} />
+    </Alert>
+  ),
+};
+```
+
+```tsx filename="Button.stories.tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+import { Meta, StoryObj } from 'storybook-solidjs-vite';
+
+import { Alert } from './Alert';
+import { Button } from './Button';
+
+const meta = {
+  component: Button,
+} satisfies Meta<typeof Button>;
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const PrimaryInAlert: Story = {
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+  render: (args) => (
+    <Alert>
+      Alert text
+      <Button {...args} />
+    </Alert>
+  ),
+};
+```
+
+```tsx filename="Button.stories.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Alert } from './Alert';
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const PrimaryInAlert = meta.story({
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+  render: (args) => (
+    <Alert>
+      Alert text
+      <Button {...args} />
+    </Alert>
+  ),
+});
+```
+
+```jsx filename="Button.stories.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Alert } from './Alert';
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const PrimaryInAlert = meta.story({
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+  render: (args) => (
+    <Alert>
+      Alert text
+      <Button {...args} />
+    </Alert>
+  ),
+});
+```

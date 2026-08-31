@@ -114,3 +114,28 @@ export default definePreview({
   ],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+export default definePreview({
+  loaders: [
+    async () => ({
+      currentUser: await (await fetch('https://jsonplaceholder.typicode.com/users/1')).json(),
+    }),
+  ],
+});
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+export default definePreview({
+  loaders: [
+    async () => ({
+      currentUser: await (await fetch('https://jsonplaceholder.typicode.com/users/1')).json(),
+    }),
+  ],
+});
+```

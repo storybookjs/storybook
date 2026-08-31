@@ -727,3 +727,74 @@ export const OneItem = Empty.extend({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```tsx filename="List.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+//👇 Imports a specific story from ListItem stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const Empty = meta.story({
+  render: ({ items, ...args }) => {
+    return (
+      <List>
+        {items.map((item) => (
+          <ListItem {...item} />
+        ))}
+      </List>
+    );
+  },
+  args: {
+    items: [],
+  },
+});
+
+export const OneItem = Empty.extend({
+  args: {
+    items: [{ ...Unchecked.input.args }],
+  },
+});
+```
+
+```jsx filename="List.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { List } from './List';
+import { ListItem } from './ListItem';
+
+//👇 Imports a specific story from ListItem stories
+import { Unchecked } from './ListItem.stories';
+
+const meta = preview.meta({
+  component: List,
+});
+
+export const Empty = meta.story({
+  render: ({ items, ...args }) => {
+    return (
+      <List>
+        {items.map((item) => (
+          <ListItem {...item} />
+        ))}
+      </List>
+    );
+  },
+  args: {
+    items: [],
+  },
+});
+
+export const OneItem = Empty.extend({
+  args: {
+    items: [{ ...Unchecked.input.args }],
+  },
+});
+```

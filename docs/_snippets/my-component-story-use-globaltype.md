@@ -688,3 +688,68 @@ export const StoryWithLocale = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+const getCaptionForLocale = (locale) => {
+  switch (locale) {
+    case 'es':
+      return 'Hola!';
+    case 'fr':
+      return 'Bonjour!';
+    case 'kr':
+      return '안녕하세요!';
+    case 'zh':
+      return '你好!';
+    default:
+      return 'Hello!';
+  }
+};
+
+export const StoryWithLocale = meta.story({
+  render: (args, { globals: { locale } }) => {
+    const caption = getCaptionForLocale(locale);
+    return <p>{caption}</p>;
+  },
+});
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+const getCaptionForLocale = (locale) => {
+  switch (locale) {
+    case 'es':
+      return 'Hola!';
+    case 'fr':
+      return 'Bonjour!';
+    case 'kr':
+      return '안녕하세요!';
+    case 'zh':
+      return '你好!';
+    default:
+      return 'Hello!';
+  }
+};
+
+export const StoryWithLocale = meta.story({
+  render: (args, { globals: { locale } }) => {
+    const caption = getCaptionForLocale(locale);
+    return <p>{caption}</p>;
+  },
+});
+```

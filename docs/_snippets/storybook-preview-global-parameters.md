@@ -141,3 +141,34 @@ export default definePreview({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+export default definePreview({
+  parameters: {
+    backgrounds: {
+      values: [
+        { name: 'red', value: '#f00' },
+        { name: 'green', value: '#0f0' },
+      ],
+    },
+  },
+});
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+export default definePreview({
+  parameters: {
+    backgrounds: {
+      values: [
+        { name: 'red', value: '#f00' },
+        { name: 'green', value: '#0f0' },
+      ],
+    },
+  },
+});
+```

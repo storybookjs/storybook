@@ -225,3 +225,32 @@ const meta = preview.meta({
   args: { onClick: fn() },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { fn } from 'storybook/test';
+
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  // 👇 Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked
+  args: { onClick: fn() },
+});
+```
+
+```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { fn } from 'storybook/test';
+
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  // 👇 Use `fn` to spy on the onClick arg, which will appear in the actions panel once invoked
+  args: { onClick: fn() },
+});
+```

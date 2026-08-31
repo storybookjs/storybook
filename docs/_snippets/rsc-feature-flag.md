@@ -46,3 +46,48 @@ export default defineMain({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF 3"
+export default {
+  // ...
+  features: {
+    experimentalRSC: true,
+  },
+};
+```
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF 3"
+import type { StorybookConfig } from 'storybook-solidjs-vite';
+
+const config: StorybookConfig = {
+  // ...
+  features: {
+    experimentalRSC: true,
+  },
+};
+
+export default config;
+```
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  // ...
+  features: {
+    experimentalRSC: true,
+  },
+});
+```
+
+```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  // ...
+  features: {
+    experimentalRSC: true,
+  },
+});
+```

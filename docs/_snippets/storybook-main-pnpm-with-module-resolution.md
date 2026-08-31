@@ -207,3 +207,48 @@ export default defineMain({
   ],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { defineMain } from 'storybook-solidjs-vite';
+
+const getAbsolutePath = (packageName: string) =>
+  dirname(fileURLToPath(import.meta.resolve(join(packageName, 'package.json'))));
+
+export default defineMain({
+  framework: {
+        name: getAbsolutePath('storybook-solidjs-vite'),
+    options: {},
+  },
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  addons: [
+    //👇 Use getAbsolutePath when referencing Storybook's addons and frameworks
+    getAbsolutePath('@storybook/addon-docs'),
+  ],
+});
+```
+
+```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import { defineMain } from 'storybook-solidjs-vite';
+
+const getAbsolutePath = (packageName) =>
+  dirname(fileURLToPath(import.meta.resolve(join(packageName, 'package.json'))));
+
+export default defineMain({
+  framework: {
+    name: getAbsolutePath('storybook-solidjs-vite'),
+    options: {},
+  },
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  addons: [
+    //👇 Use getAbsolutePath when referencing Storybook's addons and frameworks
+    getAbsolutePath('@storybook/addon-docs'),
+  ],
+});
+```

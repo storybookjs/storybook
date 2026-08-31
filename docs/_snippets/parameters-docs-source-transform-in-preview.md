@@ -227,3 +227,54 @@ const preview = definePreview({
 
 export default preview;
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+const preview = definePreview({
+  parameters: {
+    docs: {
+      source: {
+        transform: async (source) => {
+          const prettier = await import('prettier/standalone');
+          const prettierPluginBabel = await import('prettier/plugins/babel');
+          const prettierPluginEstree = await import('prettier/plugins/estree');
+
+          return prettier.format(source, {
+            parser: 'babel',
+            plugins: [prettierPluginBabel, prettierPluginEstree],
+          });
+        },
+      },
+    },
+  },
+});
+
+export default preview;
+```
+
+```js filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+const preview = definePreview({
+  parameters: {
+    docs: {
+      source: {
+        transform: async (source) => {
+          const prettier = await import('prettier/standalone');
+          const prettierPluginBabel = await import('prettier/plugins/babel');
+          const prettierPluginEstree = await import('prettier/plugins/estree');
+
+          return prettier.format(source, {
+            parser: 'babel',
+            plugins: [prettierPluginBabel, prettierPluginEstree],
+          });
+        },
+      },
+    },
+  },
+});
+
+export default preview;
+```

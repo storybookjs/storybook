@@ -435,3 +435,125 @@ export const PrimaryInAlert = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename="Button.stories.jsx" renderer="solid" language="js" tabTitle="CSF 3"
+import { Alert } from './Alert';
+import { Button } from './Button';
+
+export default {
+  component: Button,
+  render: (args) => (
+    <Alert>
+      Alert text
+      <Button {...args} />
+    </Alert>
+  ),
+};
+
+export const DefaultInAlert = {
+  args: {
+    label: 'Button',
+  },
+};
+
+export const PrimaryInAlert = {
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+};
+```
+
+```tsx filename="Button.stories.tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+import { Meta, StoryObj } from 'storybook-solidjs-vite';
+
+import { Alert } from './Alert';
+import { Button } from './Button';
+
+const meta = {
+  component: Button,
+  render: (args) => (
+    <Alert>
+      Alert text
+      <Button {...args} />
+    </Alert>
+  ),
+} satisfies Meta<typeof Button>;
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+export const DefaultInAlert: Story = {
+  args: {
+    label: 'Button',
+  },
+};
+
+export const PrimaryInAlert: Story = {
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+};
+```
+
+```tsx filename="Button.stories.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Alert } from './Alert';
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  render: (args) => (
+    <Alert>
+      Alert text
+      <Button {...args} />
+    </Alert>
+  ),
+});
+
+export const DefaultInAlert = meta.story({
+  args: {
+    label: 'Button',
+  },
+});
+
+export const PrimaryInAlert = meta.story({
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+});
+```
+
+```jsx filename="Button.stories.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Alert } from './Alert';
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  render: (args) => (
+    <Alert>
+      Alert text
+      <Button {...args} />
+    </Alert>
+  ),
+});
+
+export const DefaultInAlert = meta.story({
+  args: {
+    label: 'Button',
+  },
+});
+
+export const PrimaryInAlert = meta.story({
+  args: {
+    primary: true,
+    label: 'Button',
+  },
+});
+```

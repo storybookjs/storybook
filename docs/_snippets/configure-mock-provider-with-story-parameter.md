@@ -81,3 +81,85 @@ export const Dark = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="Button.stories.js" renderer="solid" language="js" tabTitle="CSF 3"
+import { Button } from './Button';
+
+export default {
+  component: Button,
+};
+
+// Wrapped in light theme
+export const Basic = {};
+
+// Wrapped in dark theme
+export const Dark = {
+  parameters: {
+    theme: 'dark',
+  },
+};
+```
+
+```ts filename="Button.stories.ts" renderer="solid" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+
+import { Button } from './Button';
+
+const meta = {
+  component: Button,
+} satisfies Meta<typeof Button>;
+export default meta;
+
+type Story = StoryObj<typeof meta>;
+
+// Wrapped in light theme
+export const Basic: Story = {};
+
+// Wrapped in dark theme
+export const Dark: Story = {
+  parameters: {
+    theme: 'dark',
+  },
+};
+```
+
+```ts filename="Button.stories.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+// Wrapped in light theme
+export const Basic = meta.story();
+
+// Wrapped in dark theme
+export const Dark = meta.story({
+  parameters: {
+    theme: 'dark',
+  },
+});
+```
+
+```js filename="Button.stories.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+// Wrapped in light theme
+export const Basic = meta.story();
+
+// Wrapped in dark theme
+export const Dark = meta.story({
+  parameters: {
+    theme: 'dark',
+  },
+});
+```

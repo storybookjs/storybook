@@ -342,3 +342,34 @@ export const WithAnImage = meta.story({
   render: () => <img src="/image.png" alt="my image" />,
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```tsx filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// Assume image.png is located in the "public" directory.
+export const WithAnImage = meta.story({
+  render: () => <img src="/image.png" alt="my image" />,
+});
+```
+
+```jsx filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+// Assume image.png is located in the "public" directory.
+export const WithAnImage = meta.story({
+  render: () => <img src="/image.png" alt="my image" />,
+});
+```

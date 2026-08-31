@@ -498,3 +498,88 @@ const meta = preview.meta({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    // Assigns the argTypes to the Colors category
+    backgroundColor: {
+      control: 'color',
+      table: {
+        category: 'Colors',
+      },
+    },
+    primary: {
+      table: {
+        category: 'Colors',
+      },
+    },
+    // Assigns the argType to the Text category
+    label: {
+      table: {
+        category: 'Text',
+      },
+    },
+    // Assigns the argType to the Events category
+    onClick: {
+      table: {
+        category: 'Events',
+      },
+    },
+    // Assigns the argType to the Sizes category
+    size: {
+      table: {
+        category: 'Sizes',
+      },
+    },
+  },
+});
+```
+
+```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    // Assigns the argTypes to the Colors category
+    backgroundColor: {
+      control: 'color',
+      table: {
+        category: 'Colors',
+      },
+    },
+    primary: {
+      table: {
+        category: 'Colors',
+      },
+    },
+    // Assigns the argType to the Text category
+    label: {
+      table: {
+        category: 'Text',
+      },
+    },
+    // Assigns the argType to the Events category
+    onClick: {
+      table: {
+        category: 'Events',
+      },
+    },
+    // Assigns the argType to the Sizes category
+    size: {
+      table: {
+        category: 'Sizes',
+      },
+    },
+  },
+});
+```

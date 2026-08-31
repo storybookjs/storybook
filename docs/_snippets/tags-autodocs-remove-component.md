@@ -191,3 +191,28 @@ const meta = preview.meta({
   tags: ['!autodocs'],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Page.stories.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Disable auto-generated documentation for this component
+  tags: ['!autodocs'],
+});
+```
+
+```js filename="Page.stories.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Disable auto-generated documentation for this component
+  tags: ['!autodocs'],
+});
+```

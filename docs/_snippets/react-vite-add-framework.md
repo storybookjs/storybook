@@ -41,3 +41,44 @@ export default defineMain({
   framework: '@storybook/react-vite', // 👈 Add this
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF 3"
+export default {
+  // ...
+  // framework: 'storybook-solidjs-vite', 👈 Remove this
+  framework: 'storybook-solidjs-vite', // 👈 Add this
+};
+```
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF 3"
+import type { StorybookConfig } from 'storybook-solidjs-vite';
+
+const config: StorybookConfig = {
+  // ...
+  // framework: 'storybook-solidjs-vite', 👈 Remove this
+  framework: 'storybook-solidjs-vite', // 👈 Add this
+};
+
+export default config;
+```
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  // ...
+  // framework: { name: 'storybook-solidjs-vite' }, 👈 Remove this
+  framework: 'storybook-solidjs-vite', // 👈 Add this
+});
+```
+
+```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  // ...
+  // framework: { name: 'storybook-solidjs-vite' }, 👈 Remove this
+  framework: 'storybook-solidjs-vite', // 👈 Add this
+});
+```

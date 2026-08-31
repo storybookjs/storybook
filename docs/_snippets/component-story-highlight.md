@@ -468,3 +468,105 @@ export const Highlighted = meta.story({
   ],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF 3"
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import { MyComponent } from './MyComponent';
+
+export default {
+  component: MyComponent,
+};
+
+export const Highlighted = {
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+      });
+      return storyFn();
+    },
+  ],
+};
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF 3"
+import type { Meta, StoryObj } from 'storybook-solidjs-vite';
+
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import { MyComponent } from './MyComponent';
+
+const meta = {
+  component: MyComponent,
+} satisfies Meta<typeof MyComponent>;
+
+export default meta;
+type Story = StoryObj<typeof meta>;
+
+export const Highlighted: Story = {
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+      });
+      return storyFn();
+    },
+  ],
+};
+```
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Highlighted = meta.story({
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+      });
+      return storyFn();
+    },
+  ],
+});
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { useChannel } from 'storybook/preview-api';
+import { HIGHLIGHT } from 'storybook/highlight';
+
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+export const Highlighted = meta.story({
+  decorators: [
+    (storyFn) => {
+      const emit = useChannel({});
+      emit(HIGHLIGHT, {
+        selectors: ['h2', 'a', '.storybook-button'],
+      });
+      return storyFn();
+    },
+  ],
+});
+```

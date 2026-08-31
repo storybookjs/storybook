@@ -275,3 +275,38 @@ export const UndocumentedStory = meta.story({
   tags: ['!autodocs'],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Button.stories.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  //👇 Enables auto-generated documentation for this component and includes all stories in this file
+  tags: ['autodocs'],
+});
+
+export const UndocumentedStory = meta.story({
+  // 👇 Removes this story from auto-generated documentation
+  tags: ['!autodocs'],
+});
+```
+
+```js filename="Button.stories.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  //👇 Enables auto-generated documentation for this component and includes all stories in this file
+  tags: ['autodocs'],
+});
+
+export const UndocumentedStory = meta.story({
+  // 👇 Removes this story from auto-generated documentation
+  tags: ['!autodocs'],
+});
+```

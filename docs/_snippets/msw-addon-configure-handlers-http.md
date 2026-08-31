@@ -967,3 +967,124 @@ export const MockedError = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="YourPage.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { http, HttpResponse, delay } from 'msw';
+
+import preview from '../.storybook/preview';
+
+import { DocumentScreen } from './YourPage';
+
+const meta = preview.meta({
+  component: DocumentScreen,
+});
+
+// 👇 The mocked data that will be used in the story
+const TestData = {
+  user: {
+    userID: 1,
+    name: 'Someone',
+  },
+  document: {
+    id: 1,
+    userID: 1,
+    title: 'Something',
+    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    status: 'approved',
+  },
+  subdocuments: [
+    {
+      id: 1,
+      userID: 1,
+      title: 'Something',
+      content:
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      status: 'approved',
+    },
+  ],
+};
+
+export const MockedSuccess = meta.story({
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
+  },
+});
+
+export const MockedError = meta.story({
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
+  },
+});
+```
+
+```js filename="YourPage.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { http, HttpResponse, delay } from 'msw';
+
+import preview from '../.storybook/preview';
+
+import { DocumentScreen } from './YourPage';
+
+// 👇 The mocked data that will be used in the story
+const TestData = {
+  user: {
+    userID: 1,
+    name: 'Someone',
+  },
+  document: {
+    id: 1,
+    userID: 1,
+    title: 'Something',
+    brief: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit.',
+    status: 'approved',
+  },
+  subdocuments: [
+    {
+      id: 1,
+      userID: 1,
+      title: 'Something',
+      content:
+        'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+      status: 'approved',
+    },
+  ],
+};
+
+const meta = preview.meta({
+  component: DocumentScreen,
+});
+
+export const MockedSuccess = meta.story({
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint/', () => {
+        return HttpResponse.json(TestData);
+      }),
+    );
+  },
+});
+
+export const MockedError = meta.story({
+  beforeEach({ msw }) {
+    msw.use(
+      http.get('https://your-restful-endpoint', async () => {
+        await delay(800);
+        return new HttpResponse(null, {
+          status: 403,
+        });
+      }),
+    );
+  },
+});
+```

@@ -497,3 +497,66 @@ export const LogIn = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="AuthButton.stories.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { expect, mocked } from 'storybook/test';
+
+import preview from '../.storybook/preview';
+
+import { AuthButton } from './AuthButton';
+
+import { v4 as uuidv4 } from 'uuid';
+import { getUserFromSession } from '../lib/session';
+
+const meta = preview.meta({
+  component: AuthButton,
+  // 👇 This will run before each story is rendered
+  beforeEach: async () => {
+    // 👇 Force known, consistent behavior for mocked modules
+    mocked(uuidv4).mockReturnValue('1234-5678-90ab-cdef');
+    mocked(getUserFromSession).mockReturnValue({ name: 'John Doe' });
+  },
+});
+
+export const LogIn = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Sign in' });
+    userEvent.click(button);
+
+    // Assert that the getUserFromSession function was called
+    expect(getUserFromSession).toHaveBeenCalled();
+  },
+});
+```
+
+```js filename="AuthButton.stories.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
+
+import { AuthButton } from './AuthButton';
+
+import { v4 as uuidv4 } from 'uuid';
+import { getUserFromSession } from '../lib/session';
+
+const meta = preview.meta({
+  component: AuthButton,
+  // 👇 This will run before each story is rendered
+  beforeEach: async () => {
+    // 👇 Force known, consistent behavior for mocked modules
+    uuidv4.mockReturnValue('1234-5678-90ab-cdef');
+    getUserFromSession.mockReturnValue({ name: 'John Doe' });
+  },
+});
+
+export const LogIn = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    const button = canvas.getByRole('button', { name: 'Sign in' });
+    userEvent.click(button);
+
+    // Assert that the getUserFromSession function was called
+    expect(getUserFromSession).toHaveBeenCalled();
+  },
+});
+```

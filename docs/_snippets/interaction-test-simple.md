@@ -335,3 +335,46 @@ export const Opens = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Dialog.stories.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { fn, expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
+
+import { Dialog } from './Dialog';
+
+const meta = preview.meta({
+  component: Dialog,
+});
+
+export const Opens = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    // Click on a button and assert that a dialog appears
+    const button = canvas.getByRole('button', { name: 'Open Modal' });
+    await userEvent.click(button);
+    await expect(canvas.getByRole('dialog')).toBeInTheDocument();
+  },
+});
+```
+
+```js filename="Dialog.stories.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { fn, expect } from 'storybook/test';
+
+import preview from '../.storybook/preview';
+
+import { Dialog } from './Dialog';
+
+const meta = preview.meta({
+  component: Dialog,
+});
+
+export const Opens = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    // Click on a button and assert that a dialog appears
+    const button = canvas.getByRole('button', { name: 'Open Modal' });
+    await userEvent.click(button);
+    await expect(canvas.getByRole('dialog')).toBeInTheDocument();
+  },
+});
+```

@@ -418,3 +418,74 @@ export const CombinedStories = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="MyComponent.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvas to query the DOM
+ */
+export const FirstStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByTestId('an-element'), 'example-value');
+  },
+});
+
+export const SecondStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByTestId('other-element'), 'another value');
+  },
+});
+
+export const CombinedStories = meta.story({
+  play: async ({ context, canvas, userEvent }) => {
+    // Runs the FirstStory and Second story play function before running this story's play function
+    await FirstStory.play(context);
+    await SecondStory.play(context);
+    await userEvent.type(canvas.getByTestId('another-element'), 'random value');
+  },
+});
+```
+
+```js filename="MyComponent.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { MyComponent } from './MyComponent';
+
+const meta = preview.meta({
+  component: MyComponent,
+});
+
+/*
+ * See https://storybook.js.org/docs/writing-stories/play-function#working-with-the-canvas
+ * to learn more about using the canvas to query the DOM
+ */
+export const FirstStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByTestId('an-element'), 'example-value');
+  },
+});
+
+export const SecondStory = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.type(canvas.getByTestId('other-element'), 'another value');
+  },
+});
+
+export const CombinedStories = meta.story({
+  play: async ({ context, canvas, userEvent }) => {
+    // Runs the FirstStory and Second story play function before running this story's play function
+    await FirstStory.play(context);
+    await SecondStory.play(context);
+    await userEvent.type(canvas.getByTestId('another-element'), 'random value');
+  },
+});
+```

@@ -230,3 +230,47 @@ export default definePreview({
   decorators: [(story) => html`<div style="margin: 3em">${story()}</div>`],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```jsx filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF 3"
+export default {
+  decorators: [
+    (Story) => (
+      <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </div>
+    ),
+  ],
+};
+```
+
+```tsx filename=".storybook/preview.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+export default definePreview({
+  decorators: [
+    (Story) => (
+      <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </div>
+    ),
+  ],
+});
+```
+
+```jsx filename=".storybook/preview.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { definePreview } from 'storybook-solidjs-vite';
+
+export default definePreview({
+  decorators: [
+    (Story) => (
+      <div style={{ margin: '3em' }}>
+        {/* 👇 Decorators in Storybook also accept a function. Replace <Story/> with Story() to enable it  */}
+        <Story />
+      </div>
+    ),
+  ],
+});
+```

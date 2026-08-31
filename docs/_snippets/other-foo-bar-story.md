@@ -225,3 +225,45 @@ export const Baz = meta.story({
   name: 'Insert name here',
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="FooBar.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Foo } from './Foo';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'OtherFoo/Bar',
+  component: Foo,
+  id: 'Foo/Bar', // Or 'foo-bar' if you prefer
+});
+
+export const Baz = meta.story({
+  name: 'Insert name here',
+});
+```
+
+```js filename="FooBar.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Foo } from './Foo';
+
+const meta = preview.meta({
+  /* 👇 The title prop is optional.
+   * See https://storybook.js.org/docs/configure/#configure-story-loading
+   * to learn how to generate automatic titles
+   */
+  title: 'OtherFoo/Bar',
+  component: Foo,
+  // Or 'foo-bar' if you prefer
+  id: 'Foo/Bar',
+});
+
+export const Baz = meta.story({
+  name: 'Insert name here',
+});
+```

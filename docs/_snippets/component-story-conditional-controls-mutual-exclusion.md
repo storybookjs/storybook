@@ -337,3 +337,46 @@ const meta = preview.meta({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Button.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    // Button can be passed a label or an image, not both
+    label: {
+      control: 'text',
+      if: { arg: 'image', truthy: false },
+    },
+    image: {
+      control: { type: 'select', options: ['foo.jpg', 'bar.jpg'] },
+      if: { arg: 'label', truthy: false },
+    },
+  },
+});
+```
+
+```js filename="Button.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+  argTypes: {
+    // Button can be passed a label or an image, not both
+    label: {
+      control: 'text',
+      if: { arg: 'image', truthy: false },
+    },
+    image: {
+      control: { type: 'select', options: ['foo.jpg', 'bar.jpg'] },
+      if: { arg: 'label', truthy: false },
+    },
+  },
+});
+```

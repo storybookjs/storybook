@@ -298,3 +298,69 @@ export default defineMain({
   experimental_indexers: async (existingIndexers) => [...existingIndexers, jsonStoriesIndexer],
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import type { Indexer } from 'storybook/internal/types';
+import { defineMain } from 'storybook-solidjs-vite';
+
+import fs from 'fs/promises';
+
+const jsonStoriesIndexer: Indexer = {
+  test: /stories\.json$/,
+  createIndex: async (fileName) => {
+    const content = JSON.parse(fs.readFileSync(fileName));
+
+    const stories = generateStoryIndexesFromJson(content);
+
+    return stories.map((story) => ({
+      type: 'story',
+      importPath: `virtual:jsonstories--${fileName}--${story.componentName}`,
+      exportName: story.name,
+    }));
+  },
+};
+
+export default defineMain({
+  framework: { name: 'storybook-solidjs-vite' },
+  stories: [
+    '../src/**/*.mdx',
+    '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+    // 👇 Make sure files to index are included in `stories`
+    '../src/**/*.stories.json',
+  ],
+  experimental_indexers: async (existingIndexers) => [...existingIndexers, jsonStoriesIndexer],
+});
+```
+
+```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from 'storybook-solidjs-vite';
+
+import fs from 'fs/promises';
+
+const jsonStoriesIndexer = {
+  test: /stories\.json$/,
+  createIndex: async (fileName) => {
+    const content = JSON.parse(fs.readFileSync(fileName));
+
+    const stories = generateStoryIndexesFromJson(content);
+
+    return stories.map((story) => ({
+      type: 'story',
+      importPath: `virtual:jsonstories--${fileName}--${story.componentName}`,
+      exportName: story.name,
+    }));
+  },
+};
+
+export default defineMain({
+  framework: { name: 'storybook-solidjs-vite' },
+  stories: [
+    '../src/**/*.mdx',
+    '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)',
+    // 👇 Make sure files to index are included in `stories`
+    '../src/**/*.stories.json',
+  ],
+  experimental_indexers: async (existingIndexers) => [...existingIndexers, jsonStoriesIndexer],
+});
+```

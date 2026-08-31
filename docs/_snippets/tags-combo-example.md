@@ -621,3 +621,70 @@ export const Combo = meta.story({
   ),
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```tsx filename="Button.stories.tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Variant1 = meta.story({
+  // 👇 This story will not appear in Storybook's sidebar or docs page
+  tags: ['!dev', '!autodocs'],
+  args: { variant: 1 },
+});
+
+export const Variant2 = meta.story({
+  // 👇 This story will not appear in Storybook's sidebar or docs page
+  tags: ['!dev', '!autodocs'],
+  args: { variant: 2 },
+});
+
+export const Combo = meta.story({
+  // 👇 This story should not be tested, but will appear in the sidebar and docs page
+  tags: ['!test'],
+  render: () => (
+    <>
+      <Button variant={1} />
+      <Button variant={2} />
+    </>
+  ),
+});
+```
+
+```jsx filename="Button.stories.jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Button } from './Button';
+
+const meta = preview.meta({
+  component: Button,
+});
+
+export const Variant1 = meta.story({
+  // 👇 This story will not appear in Storybook's sidebar or docs page
+  tags: ['!dev', '!autodocs'],
+  args: { variant: 1 },
+});
+
+export const Variant2 = meta.story({
+  // 👇 This story will not appear in Storybook's sidebar or docs page
+  tags: ['!dev', '!autodocs'],
+  args: { variant: 2 },
+});
+
+export const Combo = meta.story({
+  // 👇 This story should not be tested, but will appear in the sidebar and docs page
+  tags: ['!test'],
+  render: () => (
+    <>
+      <Button variant={1} />
+      <Button variant={2} />
+    </>
+  ),
+});
+```

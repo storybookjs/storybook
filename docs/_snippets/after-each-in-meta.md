@@ -323,3 +323,44 @@ export const Basic = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Page.stories.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Runs after each story in this file
+  async afterEach(context) {
+    console.log(`✅ Tested ${context.name} story`);
+  },
+});
+
+export const Basic = meta.story({
+  async play({ canvas }) {
+    // ...
+  },
+});
+```
+
+```js filename="Page.stories.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { Page } from './Page';
+
+const meta = preview.meta({
+  component: Page,
+  // 👇 Runs after each story in this file
+  async afterEach(context) {
+    console.log(`✅ Tested ${context.name} story`);
+  },
+});
+
+export const Basic = meta.story({
+  async play({ canvas }) {
+    // ...
+  },
+});
+```

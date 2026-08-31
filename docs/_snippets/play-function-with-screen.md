@@ -349,3 +349,48 @@ export const Open = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="Dialog.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { screen } from 'storybook/test';
+
+import preview from '../.storybook/preview';
+
+import { Dialog } from './Dialog';
+
+const meta = preview.meta({
+  component: Dialog,
+});
+
+export const Open = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Open dialog' }));
+
+    // Starts querying from the document
+    const dialog = screen.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+  },
+});
+```
+
+```js filename="Dialog.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { screen } from 'storybook/test';
+
+import preview from '../.storybook/preview';
+
+import { Dialog } from './Dialog';
+
+const meta = preview.meta({
+  component: Dialog,
+});
+
+export const Open = meta.story({
+  play: async ({ canvas, userEvent }) => {
+    await userEvent.click(canvas.getByRole('button', { name: 'Open dialog' }));
+
+    // Starts querying from the document
+    const dialog = screen.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+  },
+});
+```

@@ -311,3 +311,72 @@ export default defineMain({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename=".storybook/main.ts" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  framework: { name: 'storybook-solidjs-vite' },
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  // 👇 Retrieve the current environment from the configType argument
+  refs: (config, { configType }) => {
+    if (configType === 'DEVELOPMENT') {
+      return {
+        react: {
+          title: 'Composed React Storybook running in development mode',
+          url: 'http://localhost:7007',
+        },
+        angular: {
+          title: 'Composed Angular Storybook running in development mode',
+          url: 'http://localhost:7008',
+        },
+      };
+    }
+    return {
+      react: {
+        title: 'Composed React Storybook running in production',
+        url: 'https://your-production-react-storybook-url',
+      },
+      angular: {
+        title: 'Composed Angular Storybook running in production',
+        url: 'https://your-production-angular-storybook-url',
+      },
+    };
+  },
+});
+```
+
+```js filename=".storybook/main.js" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import { defineMain } from 'storybook-solidjs-vite';
+
+export default defineMain({
+  framework: { name: 'storybook-solidjs-vite' },
+  stories: ['../src/**/*.mdx', '../src/**/*.stories.@(js|jsx|mjs|ts|tsx)'],
+  // 👇 Retrieve the current environment from the configType argument
+  refs: (config, { configType }) => {
+    if (configType === 'DEVELOPMENT') {
+      return {
+        react: {
+          title: 'Composed React Storybook running in development mode',
+          url: 'http://localhost:7007',
+        },
+        angular: {
+          title: 'Composed Angular Storybook running in development mode',
+          url: 'http://localhost:7008',
+        },
+      };
+    }
+    return {
+      react: {
+        title: 'Composed React Storybook running in production',
+        url: 'https://your-production-react-storybook-url',
+      },
+      angular: {
+        title: 'Composed Angular Storybook running in production',
+        url: 'https://your-production-angular-storybook-url',
+      },
+    };
+  },
+});
+```

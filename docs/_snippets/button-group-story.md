@@ -462,3 +462,44 @@ export const Pair = meta.story({
   },
 });
 ```
+<!-- JS snippets still needed while providing both CSF 3 & Next -->
+
+```ts filename="ButtonGroup.stories.ts|tsx" renderer="solid" language="ts" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { ButtonGroup } from '../ButtonGroup';
+
+//👇 Imports the Button stories
+import * as ButtonStories from './Button.stories';
+
+const meta = preview.meta({
+  component: ButtonGroup,
+});
+
+export const Pair = meta.story({
+  args: {
+    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
+    orientation: 'horizontal',
+  },
+});
+```
+
+```js filename="ButtonGroup.stories.js|jsx" renderer="solid" language="js" tabTitle="CSF Next 🧪"
+import preview from '../.storybook/preview';
+
+import { ButtonGroup } from '../ButtonGroup';
+
+//👇 Imports the Button stories
+import * as ButtonStories from './Button.stories';
+
+const meta = preview.meta({
+  component: ButtonGroup,
+});
+
+export const Pair = meta.story({
+  args: {
+    buttons: [{ ...ButtonStories.Primary.input.args }, { ...ButtonStories.Secondary.input.args }],
+    orientation: 'horizontal',
+  },
+});
+```

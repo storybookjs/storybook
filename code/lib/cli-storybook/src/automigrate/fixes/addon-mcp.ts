@@ -26,7 +26,7 @@ export interface AddonMcpOptions {
  */
 export const addonMcp: Fix<AddonMcpOptions> = {
   id: 'addon-mcp',
-  link: 'https://github.com/storybookjs/mcp',
+  link: 'https://github.com/storybookjs/storybook/tree/next/code/addons/mcp',
 
   async check({ mainConfig }) {
     const agent = detectAgent();
@@ -54,8 +54,9 @@ export const addonMcp: Fix<AddonMcpOptions> = {
     logger.log(
       `${result.isInstalled ? 'Updating' : 'Installing'} ${picocolors.magenta(ADDON_MCP)} to the latest version...`
     );
-    // `add` resolves the latest published version for satellite addons and, when the addon is
-    // already present, refreshes the dependency without duplicating it in the main config.
+    // `add` pins core packages (including @storybook/addon-mcp) to the matching Storybook
+    // version from the versions map and, when the addon is already present, refreshes the
+    // dependency without duplicating it in the main config.
     // skipInstall: the upgrade command runs a single dependency install after all automigrations.
     await add(ADDON_MCP, {
       configDir,

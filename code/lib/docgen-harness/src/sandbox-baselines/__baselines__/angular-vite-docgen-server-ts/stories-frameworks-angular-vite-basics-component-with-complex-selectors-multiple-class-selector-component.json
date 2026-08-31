@@ -1,0 +1,51 @@
+{
+  "argTypes": {
+    "el": {
+      "name": "el",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "ElementRef"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "generatedTemplate": {
+      "name": "generatedTemplate",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "selectors": {
+      "name": "selectors",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "required": true,
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-basics-component-with-complex-selectors-multiple-class-selector-component",
+  "jsDocTags": {},
+  "name": "MultipleClassSelectorComponent",
+  "path": "./src/stories/frameworks/angular-vite/basics/component-with-complex-selectors/multiple-class-selector.component.stories.ts"
+}

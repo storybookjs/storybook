@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 
-import { getEnvConfig, getProjectRoot, versions } from 'storybook/internal/common';
+import { getEnvConfig, versions } from 'storybook/internal/common';
 import { buildStaticStandalone, withTelemetry } from 'storybook/internal/core-server';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
@@ -24,12 +24,12 @@ import type {
   StyleElement,
 } from '@angular-devkit/build-angular/src/builders/browser/schema';
 import type { JsonObject } from '@angular-devkit/core';
-import * as find from 'empathic/find';
 import * as pkg from 'empathic/package';
 
 import { errorSummary, printErrorDetails } from '../utils/error-handler.ts';
 import type { StandaloneOptions } from '../utils/standalone-options.ts';
 import { Channel } from 'storybook/internal/channels';
+import { resolveTsconfig } from '../../find-tsconfig.ts';
 
 addToGlobalContext('cliVersion', versions.storybook);
 
@@ -38,8 +38,6 @@ export type StorybookBuilderOptions = JsonObject & {
   tsConfig?: string;
   test: boolean;
   docs: boolean;
-  compodoc: boolean;
-  compodocArgs: string[];
   enableProdMode?: boolean;
   styles?: StyleElement[];
   stylePreprocessorOptions?: StylePreprocessorOptions;
@@ -172,10 +170,12 @@ async function setup(options: StorybookBuilderOptions, context: BuilderContext) 
   }
 
   return {
-    tsConfig:
-      options.tsConfig ??
-      find.up('tsconfig.json', { cwd: options.configDir, last: getProjectRoot() }) ??
-      browserOptions.tsConfig,
+    tsConfig: resolveTsconfig({
+      workspaceRoot: context.workspaceRoot,
+      configDir: options.configDir,
+      tsConfig: options.tsConfig,
+      browserTsConfig: browserOptions?.tsConfig,
+    }),
   };
 }
 

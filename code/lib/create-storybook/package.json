@@ -1,6 +1,6 @@
 {
   "name": "create-storybook",
-  "version": "10.6.0-alpha.1",
+  "version": "10.6.0-alpha.9",
   "description": "Storybook installer: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -15,7 +15,7 @@
   "repository": {
     "type": "git",
     "url": "https://github.com/storybookjs/storybook.git",
-    "directory": "code/lib/cli"
+    "directory": "code/lib/create-storybook"
   },
   "funding": {
     "type": "opencollective",

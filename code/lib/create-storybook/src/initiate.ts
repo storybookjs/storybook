@@ -190,11 +190,11 @@ export async function doInitiate(options: CommandOptions): Promise<
     showAiInstructions: hasAiFeature,
     logfile: options.logfile,
     storybookCommand,
-    aiSetupCommand: packageManager.getPackageCommand(['storybook', 'ai', 'setup']),
+    setupSkillCommand: packageManager.getPackageCommand(['storybook', 'skills', 'get', 'setup']),
   });
 
-  // Step 9: Track telemetry
-  await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser);
+  // Step 9: Track telemetry (pass configDir so RN `.rnstorybook` metadata is resolved)
+  await telemetryService.trackInitWithContext(projectType, selectedFeatures, newUser, configDir);
 
   // Signal dev to redirect to onboarding on first run
   if (selectedFeatures.has(Feature.ONBOARDING)) {

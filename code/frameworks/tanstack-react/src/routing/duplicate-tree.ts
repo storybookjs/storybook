@@ -3,6 +3,7 @@ import {
   createRoute,
   RootRoute,
   createRootRouteWithContext,
+  interpolatePath,
   joinPaths,
 } from '@tanstack/react-router';
 
@@ -60,6 +61,13 @@ function initSourceTree(route: AnyRoute, counter: { i: number }): void {
   }
 }
 
+/**
+ * if it routeId ends with a trailing slash, strip the slash to get the enclosing layout's id (/_app).
+ */
+function layoutIdFor(id: string): string {
+  return id.length > 1 && id.endsWith('/') ? id.slice(0, -1) : id;
+}
+
 function cloneChild(
   oldRoute: AnyRoute,
   parent: AnyRoute,
@@ -73,7 +81,9 @@ function cloneChild(
   // two routes with the same generated id (e.g. `__root__/about`).
   const { id: originalId, getParentRoute: _g, ...rest } = options;
   const override = getOverrideFor(overrides, oldRoute.id);
-  const merged = { ...rest, ...override };
+  const { id: overrideId, ...overrideRest } = override as { id?: string } & Record<string, unknown>;
+  const merged = { ...rest, ...overrideRest };
+  const explicitId = 'id' in override ? overrideId : originalId;
 
   // Use `createRoute` (not `createFileRoute`) for nested clones: `createFileRoute`
   // registers the route in TanStack's global file-route registry by path, so
@@ -85,10 +95,19 @@ function cloneChild(
   // identity from; its explicit id IS its identity, so preserve it. The falsy
   // check also treats `path: ''` as pathless.
   const cloned = createRoute({
-    ...(!merged.path && originalId != null ? { id: originalId } : {}),
+    ...(!merged.path && explicitId != null ? { id: layoutIdFor(explicitId) } : {}),
     ...merged,
     getParentRoute: () => parent as any,
   } as any);
+
+  if (merged.path && explicitId != null) {
+    (cloned as any).update({ id: explicitId });
+  }
+
+  const lazyFn = (oldRoute as any).lazyFn;
+  if (lazyFn) {
+    (cloned as any).lazy(lazyFn);
+  }
 
   byId.set(oldRoute.id, cloned as unknown as AnyRoute);
 
@@ -144,6 +163,10 @@ export function duplicateRouteTree(
     ...restRoot,
     ...rootOverride,
   } as any);
+  const rootLazyFn = (rootRoute as any).lazyFn;
+  if (rootLazyFn) {
+    (newRoot as any).lazy(rootLazyFn);
+  }
   byId.set('__root__', newRoot as unknown as AnyRoute);
 
   const children = (rootRoute as any).children as AnyRoute[] | undefined;
@@ -182,29 +205,76 @@ export function mountPathFor(route: AnyRoute): string {
 }
 
 /**
+ * The original (pre-clone) id of a cloned route — the key users address it by
+ * in `routeOverrides`. The clone's own `id` getter is init-backed and
+ * undefined at resolution time.
+ */
+export function originalRouteId(tree: DuplicatedTree, route: AnyRoute): string | undefined {
+  for (const [id, cloned] of tree.byId) {
+    if (cloned === route) {
+      return id;
+    }
+  }
+  return undefined;
+}
+
+/**
  * Picks the route in the cloned tree that should host the `<Story />`.
  *
  * Resolution order:
  *
- * 1. The route whose `fullPath` exactly matches the explicit `path` parameter.
+ * 1. The route whose mount path matches the explicit `path` parameter,
+ *    literally or after interpolating `params`.
  * 2. The route bound to the story (`boundRouteId`), if it is present in the cloned tree.
  * 3. The first top-level child of the root.
  * 4. The root itself.
  */
 export function resolveStoryLeaf(
   tree: DuplicatedTree,
-  { path, boundRouteId }: { path?: string | undefined; boundRouteId?: string | undefined }
+  {
+    path,
+    boundRouteId,
+    params,
+  }: {
+    path?: string | undefined;
+    boundRouteId?: string | undefined;
+    params?: Record<string, unknown> | undefined;
+  }
 ): AnyRoute {
   const { root, byId } = tree;
 
   if (path) {
+    const bound = boundRouteId ? byId.get(boundRouteId) : undefined;
+    if (bound) {
+      const boundCandidate = mountPathFor(bound);
+      const boundInterpolated = params
+        ? interpolatePath({ path: boundCandidate, params }).interpolatedPath
+        : boundCandidate;
+      if (boundCandidate === path || boundInterpolated === path) {
+        return bound;
+      }
+    }
+
     let bestMatch: AnyRoute | undefined;
+    let bestLiteral = false;
     let bestMatchLength = -1;
     for (const route of byId.values()) {
-      const fullPath = (route as any).fullPath as string | undefined;
-      if (fullPath && fullPath === path && fullPath.length > bestMatchLength) {
+      if (route === (root as unknown as AnyRoute)) {
+        continue;
+      }
+      const candidate = mountPathFor(route);
+      const isLiteral = candidate === path;
+      const interpolated = params
+        ? interpolatePath({ path: candidate, params }).interpolatedPath
+        : candidate;
+      if (!isLiteral && interpolated !== path) {
+        continue;
+      }
+      const better = isLiteral === bestLiteral ? candidate.length > bestMatchLength : isLiteral;
+      if (better) {
         bestMatch = route;
-        bestMatchLength = fullPath.length;
+        bestLiteral = isLiteral;
+        bestMatchLength = candidate.length;
       }
     }
     if (bestMatch) {

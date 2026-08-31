@@ -127,6 +127,39 @@ describe('spawnChildHost', () => {
       }
     );
 
+  it('resolves a nested relative configDir before forking a binary child host', async () => {
+    const bin = fileURLToPath(import.meta.url);
+    await spawnChildHost(
+      {
+        cwd: bin,
+        options: { ...OPTIONS, configDir: 'config/storybook' },
+        clientInfo: CLIENT,
+        requestedMode: 'attached',
+      },
+      {
+        fork: fork as never,
+        resolveScript: () => '/repo/node_modules/storybook/dist/cli/tools/sdk/child-host.js',
+        logger: { log, warn },
+      }
+    );
+
+    expect(fork).toHaveBeenCalledWith(
+      '/repo/node_modules/storybook/dist/cli/tools/sdk/child-host.js',
+      [],
+      expect.objectContaining({
+        cwd: resolve(process.cwd(), 'config'),
+      })
+    );
+    expect(child.send).toHaveBeenCalledWith(
+      expect.objectContaining({
+        type: 'init',
+        options: expect.objectContaining({
+          configDir: resolve(process.cwd(), 'config/storybook'),
+        }),
+      })
+    );
+  });
+
   it('forks from a storybook binary using dirname(configDir) as the child cwd', async () => {
     const bin = fileURLToPath(import.meta.url);
     await spawnChildHost(

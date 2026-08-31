@@ -28,6 +28,7 @@ import {
   ToolsRuntimeError,
 } from './errors.ts';
 import { workingDirectoryForCwdOrBin } from '../../../common/utils/cwd-or-bin.ts';
+import { resolveStorybookConfigDir } from '../config-dir.ts';
 import { resolveChildHostScript } from './resolve-project-storybook.ts';
 import type {
   AttachedTools,
@@ -87,8 +88,10 @@ export async function spawnChildHost(
   const log = deps.logger ?? logger;
   const forkChild = deps.fork ?? fork;
   const cwd = args.cwd;
-  const forkCwd = workingDirectoryForCwdOrBin(cwd, args.options.configDir);
-  const resolvedMode: 'local' | 'attached' = args.options.mode === 'local' ? 'local' : 'attached';
+  const configDir = resolveStorybookConfigDir({ cwd, configDir: args.options.configDir });
+  const options = { ...args.options, configDir };
+  const forkCwd = workingDirectoryForCwdOrBin(cwd, configDir);
+  const resolvedMode: 'local' | 'attached' = options.mode === 'local' ? 'local' : 'attached';
 
   let scriptPath: string;
   try {
@@ -229,7 +232,7 @@ export async function spawnChildHost(
   try {
     hello = await waitForHello(child, send, {
       cwd: cwd,
-      options: args.options,
+      options,
       clientInfo: args.clientInfo,
       resolvedMode,
     });

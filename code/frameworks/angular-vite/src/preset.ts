@@ -70,7 +70,7 @@ export const core: PresetProperty<'core'> = async (config, options) => {
   };
 };
 
-function resolveZoneless(angularBuilderOptions: StandaloneOptions['angularBuilderOptions']) {
+export function resolveZoneless(angularBuilderOptions: StandaloneOptions['angularBuilderOptions']) {
   return angularBuilderOptions?.zoneless ?? true;
 }
 

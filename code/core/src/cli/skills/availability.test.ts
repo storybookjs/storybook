@@ -82,12 +82,40 @@ describe('getToolAvailability', () => {
       reviewEnabled: true,
       reviewEnabledForCli: true,
       docsEnabled: true,
+      docsEnabledForCli: true,
       docsHasManifests: true,
       docsFeatureEnabled: true,
       testSupported: true,
       a11yEnabled: true,
       docgenServer: true,
     });
+  });
+
+  it('enables the CLI docs gate on manifests alone, without the component-manifest flag', async () => {
+    vi.mocked(getManifestStatus).mockResolvedValue({
+      available: false,
+      hasManifests: true,
+      hasFeatureFlag: false,
+      docgenServer: false,
+    });
+
+    const result = await getToolAvailability(createOptions());
+
+    expect(result.docsEnabled).toBe(false);
+    expect(result.docsEnabledForCli).toBe(true);
+  });
+
+  it('disables the CLI docs gate when no manifests can be produced', async () => {
+    vi.mocked(getManifestStatus).mockResolvedValue({
+      available: false,
+      hasManifests: false,
+      hasFeatureFlag: false,
+      docgenServer: false,
+    });
+
+    const result = await getToolAvailability(createOptions());
+
+    expect(result.docsEnabledForCli).toBe(false);
   });
 
   it('probes the module-graph service directly when no override is given', async () => {
@@ -115,6 +143,7 @@ describe('getEffectiveToolAvailability', () => {
     reviewEnabled: false,
     reviewEnabledForCli: false,
     docsEnabled: false,
+    docsEnabledForCli: false,
     docsHasManifests: false,
     docsFeatureEnabled: false,
     testSupported: false,
@@ -129,6 +158,7 @@ describe('getEffectiveToolAvailability', () => {
   it('forces docs availability on for multi-source composition', () => {
     expect(getEffectiveToolAvailability(base, { multiSource: true })).toMatchObject({
       docsEnabled: true,
+      docsEnabledForCli: true,
       docsHasManifests: true,
       docsFeatureEnabled: true,
     });

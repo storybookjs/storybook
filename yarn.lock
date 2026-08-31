@@ -13050,7 +13050,7 @@ __metadata:
     type-fest: "npm:^5.6.0"
     typescript: "npm:^6.0.3"
     vue: "npm:^3.2.47"
-    vue-component-meta: "npm:^3.2.7"
+    vue-component-meta: "npm:^3.3.9"
     vue-component-type-helpers: "npm:^3.2.9"
     vue-docgen-api: "npm:^4.75.1"
     vue-tsc: "npm:latest"
@@ -39833,7 +39833,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vue-component-meta@npm:^3.2.7, vue-component-meta@npm:^3.3.9":
+"vue-component-meta@npm:^3.3.9":
   version: 3.3.9
   resolution: "vue-component-meta@npm:3.3.9"
   dependencies:

@@ -372,14 +372,14 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   }
   globalThis.STORYBOOK_SERVICES_LOADED = true;
 
-  // `presets.apply` flattens the generator preset's returned promise, so this is the resolved
-  // generator, not a promise.
-  const storyIndexGenerator =
-    await options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+  const getIndex = () =>
+    options.presets
+      .apply<StoryIndexGenerator>('storyIndexGenerator')
+      .then((generator) => generator.getIndex());
 
   registerModuleGraphService({
     channel: options.channel,
-    getIndex: () => storyIndexGenerator.getIndex(),
+    getIndex,
     workingDir: process.cwd(),
     presets: options.presets,
     getAdapter: () => getHeadlessChangeDetectionAdapter(options),
@@ -389,7 +389,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
 
   // Toolsets register imperatively alongside their services: addons contribute both from their own
   // `services` hook. The test toolset registers from addon-vitest, which owns the channel it needs.
-  const storyIndex = { getIndex: () => storyIndexGenerator.getIndex() };
+  const storyIndex = { getIndex };
   const gitDiffProvider = new GitDiffProvider(process.cwd());
 
   registerToolset(
@@ -413,7 +413,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
 
   if (isReviewFeatureEnabled(features)) {
     registerReviewService({
-      getIndex: () => storyIndexGenerator.getIndex(),
+      getIndex,
     });
     registerToolset(reviewToolset);
   }
@@ -441,7 +441,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
 
     if (docgenWorker) {
       registerDocgenService({
-        getIndex: () => storyIndexGenerator.getIndex(),
+        getIndex,
         docgenProvider: (input) => docgenWorker.extract(input.entry),
         workingDir: process.cwd(),
       });
@@ -452,7 +452,7 @@ export const services = async (_value: void, options: Options): Promise<void> =>
     // reading from the services and degrades to the manifests otherwise, so reordering or gating
     // these registrations cannot make the docs toolset throw — only fall back.
     registerStoryDocsService({
-      getIndex: () => storyIndexGenerator.getIndex(),
+      getIndex,
       storyDocsProvider,
       workingDir: process.cwd(),
     });

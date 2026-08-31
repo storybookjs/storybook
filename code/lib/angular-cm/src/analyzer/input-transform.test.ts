@@ -33,7 +33,11 @@ describe('input transforms', () => {
       metadataJson: meta,
       ...ANALYZER_EXTRACT_OPTIONS,
     });
-    expect(argTypes.level.type).toEqual({ name: 'enum', value: ['primary', 'secondary'] });
+    expect(argTypes.level.type).toEqual({
+      name: 'enum',
+      value: ['primary', 'secondary'],
+      required: true,
+    });
   });
 
   it('documents the second type argument of input.required as the write type', () => {

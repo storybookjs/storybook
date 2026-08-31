@@ -64,6 +64,21 @@ describe('vue3 api description from real vue-component-meta output', () => {
     `);
   });
 
+  it('props-generic', async () => {
+    expect(await apiDescriptionFor('props-generic')).toMatchInlineSnapshot(`
+      "## Props
+
+      \`\`\`
+      export type PropsGenericProps<T> = {
+        /** Items rendered in order. */
+        items: T[];
+        /** Currently selected item. */
+        selected?: T;
+      }
+      \`\`\`"
+    `);
+  });
+
   it('v-model', async () => {
     expect(await apiDescriptionFor('v-model')).toMatchInlineSnapshot(`
       "## Models

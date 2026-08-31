@@ -1,6 +1,7 @@
 import path, { dirname, join, normalize, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL, resolve } from 'node:url';
 
+import { join as patheJoin } from 'pathe';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -496,9 +497,9 @@ describe('resolveAddonName', () => {
       expect(resolveAddonName({} as any, addonDir, {})).toEqual({
         type: 'virtual',
         name: addonDir,
-        presets: [{ name: join(addonDir, 'lib', 'preset.js'), options: {} }],
-        managerEntries: [join(addonDir, 'lib', 'manager.js')],
-        previewAnnotations: [join(addonDir, 'lib', 'preview.js')],
+        presets: [{ name: patheJoin(addonDir, 'lib', 'preset.js'), options: {} }],
+        managerEntries: [patheJoin(addonDir, 'lib', 'manager.js')],
+        previewAnnotations: [patheJoin(addonDir, 'lib', 'preview.js')],
       });
     });
 
@@ -508,9 +509,9 @@ describe('resolveAddonName', () => {
       expect(resolveAddonName({} as any, addonDir, {})).toEqual({
         type: 'virtual',
         name: addonDir,
-        presets: [{ name: join(addonDir, 'preset.js'), options: {} }],
-        managerEntries: [join(addonDir, 'manager.js')],
-        previewAnnotations: [join(addonDir, 'preview.js')],
+        presets: [{ name: patheJoin(addonDir, 'preset.js'), options: {} }],
+        managerEntries: [patheJoin(addonDir, 'manager.js')],
+        previewAnnotations: [patheJoin(addonDir, 'preview.js')],
       });
     });
 

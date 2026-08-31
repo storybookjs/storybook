@@ -607,7 +607,7 @@ export class AngularMissingStylePreprocessorError extends StorybookError {
 
             npm install --save-dev ${data.install}
 
-          Angular's builders get '${data.install}' as a dependency of '@angular/build', so a package manager is free to leave it under 'node_modules/@angular/build/node_modules', where Vite never looks. Vite resolves a CSS preprocessor from your project directory upwards, which is why a project that compiles with 'ng build' can still fail here.`,
+          Vite resolves a CSS preprocessor from your project directory upwards, so a copy installed deeper in the tree - such as the one Angular's builders bring in for themselves - is invisible to it. That is why a project which compiles with 'ng build' can still fail here.`,
         data.alternative && `'${data.alternative}' works as well, if you would rather use that.`,
       ]
         .filter(Boolean)

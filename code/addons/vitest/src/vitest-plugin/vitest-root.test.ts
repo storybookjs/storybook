@@ -1,79 +1,83 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import type { Plugin } from 'vitest/config';
+import { validateConfigurationFiles } from 'storybook/internal/common';
+import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
+import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
+
+import { storybookTest } from './index.ts';
 
 const REPO_ROOT = '/repo';
 const PACKAGE_ROOT = '/repo/apps/storybook';
 const CONFIG_DIR = '/repo/apps/storybook/.storybook';
 
-const presetApply = vi.fn(async (key: string, fallback?: unknown) => {
-  switch (key) {
-    case 'stories':
-      return ['../stories/**/*.stories.tsx'];
-    case 'framework':
-      return { name: '@storybook/react-vite' };
-    // Mirrors a project without its own `viteFinal`: the common config is returned untouched,
-    // so the root the plugin proposes is the root it ends up returning.
-    case 'viteFinal':
-      return fallback;
-    case 'core':
-      return { disableTelemetry: true };
-    default:
-      return fallback;
-  }
+vi.mock('storybook/internal/common', { spy: true });
+vi.mock('storybook/internal/core-server', { spy: true });
+vi.mock('storybook/internal/telemetry', { spy: true });
+
+const presetApply = vi.fn();
+
+beforeEach(() => {
+  vi.stubEnv('VITEST', 'true');
+
+  presetApply.mockImplementation(async (key: string, fallback?: unknown) => {
+    switch (key) {
+      case 'stories':
+        return ['../stories/**/*.stories.tsx'];
+      case 'framework':
+        return { name: '@storybook/react-vite' };
+      // Mirrors a project without its own `viteFinal`: the common config is returned untouched,
+      // so the root the plugin proposes is the root it ends up returning.
+      case 'viteFinal':
+        return fallback;
+      case 'core':
+        return { disableTelemetry: true };
+      default:
+        return fallback;
+    }
+  });
+
+  vi.mocked(experimental_loadStorybook).mockResolvedValue({
+    presets: { apply: presetApply },
+  } as unknown as Awaited<ReturnType<typeof experimental_loadStorybook>>);
+  vi.mocked(StoryIndexGenerator.findMatchingFilesForSpecifiers).mockResolvedValue([]);
+  vi.mocked(validateConfigurationFiles).mockResolvedValue(undefined as never);
+  vi.mocked(isTelemetryModuleEnabled).mockReturnValue(false);
 });
 
-vi.mock('storybook/internal/core-server', () => ({
-  experimental_loadStorybook: vi.fn(async () => ({ presets: { apply: presetApply } })),
-  StoryIndexGenerator: {
-    findMatchingFilesForSpecifiers: vi.fn(async () => []),
-    storyFileNames: vi.fn(() => []),
-  },
-  Tag: { TEST: 'test' },
-  mapStaticDir: vi.fn(),
-}));
-
-vi.mock('storybook/internal/common', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('storybook/internal/common')>()),
-  validateConfigurationFiles: vi.fn(async () => {}),
-  getInterpretedFile: vi.fn(() => undefined),
-}));
-
-vi.mock('storybook/internal/telemetry', () => ({
-  detectAgent: vi.fn(() => undefined),
-  isTelemetryModuleEnabled: vi.fn(() => false),
-  isWithinInitialSession: vi.fn(async () => false),
-  oneWayHash: vi.fn(() => 'project-hash'),
-  telemetry: vi.fn(),
-  setTelemetryEnabled: vi.fn(),
-}));
-
-vi.mock('storybook/internal/csf-tools', () => ({
-  componentTransform: vi.fn(),
-  readConfig: vi.fn(),
-  vitestTransform: vi.fn(),
-}));
-
-const { storybookTest } = await import('./index.ts');
+afterEach(() => {
+  vi.unstubAllEnvs();
+});
 
 /** Runs the plugin's `config` hook the way Vitest does, and returns the config it contributes. */
 async function getPluginConfig(invokingRoot: string) {
   const plugins = await storybookTest({ configDir: CONFIG_DIR });
-  const plugin = plugins.find(
-    (p) => (p as Plugin)?.name === 'vite-plugin-storybook-test'
-  ) as Plugin;
+  const plugin = plugins.find((p) => p.name === 'vite-plugin-storybook-test')!;
 
   const configHook = plugin.config!;
   const handler = typeof configHook === 'function' ? configHook : configHook.handler;
 
-  return handler.call({}, { root: invokingRoot }, { command: 'serve', mode: 'development' });
+  const config = await handler.call(
+    {
+      meta: { rollupVersion: '4.0.0', viteVersion: '7.0.0' },
+      debug: () => {},
+      info: () => {},
+      warn: () => {},
+      error: (message: unknown): never => {
+        throw new Error(String(message));
+      },
+    },
+    { root: invokingRoot },
+    { command: 'serve', mode: 'development' }
+  );
+
+  if (!config || !config.test) {
+    throw new Error('The plugin config hook returned no test config');
+  }
+
+  return { root: config.root, test: config.test };
 }
 
 describe('story test patterns', () => {
-  beforeEach(() => {
-    vi.stubEnv('VITEST', 'true');
-  });
-
   // The plugin sets the project root itself, so story globs have to be written relative to that
   // root rather than to whichever root Vitest happened to be invoked with. When a Vitest config
   // lives above the package — a monorepo root — the two differ, and globs built against the

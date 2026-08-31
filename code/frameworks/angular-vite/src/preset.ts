@@ -335,12 +335,6 @@ function resolveBuilderStyle(stylePath: string, workspaceRoot: string) {
   return stylePath;
 }
 
-// Vite loads a CSS preprocessor through `loadPreprocessorPath`, which resolves the package from the
-// Vite root upwards and then from Vite's own directory upwards, and nowhere else. Angular gets
-// `sass` as a *dependency* of `@angular/build`, so whether Storybook can compile `.scss` at all
-// comes down to whether the package manager hoisted that copy to the top level. When it did not,
-// Vite's own diagnostic names `sass-embedded`, because `loadSassPackage` tries that one first and
-// rethrows *its* failure, and the user installs the package they do not need.
 const STYLE_PREPROCESSORS: Record<string, { install: string; alternative?: string }> = {
   scss: { install: 'sass', alternative: 'sass-embedded' },
   sass: { install: 'sass', alternative: 'sass-embedded' },

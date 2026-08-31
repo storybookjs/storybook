@@ -17,13 +17,14 @@ import { createTools } from 'storybook/internal/tools';
 const tools = await createTools({
   cwd, // which project; defaults to process.cwd()
   configDir, // --config-dir equivalent; disambiguates monorepos
+  port, // --port equivalent; a known port targets that running instance on its own
   mode: 'auto', // 'auto' | 'attached' | 'local'
   autoSpawn: true, // false → EnvironmentMismatchError instead of a child host
   clientInfo: { name, version, kind: 'sdk' },
 });
 
 tools.mode; // 'attached' | 'local'
-tools.storybook; // { version, configDir, url?, pid? }
+tools.storybook; // { version, configDir, url?, pid?, port?, cwd?, siblings? }
 await tools.describe();
 await tools.describe({ toolset: 'docs' });
 await tools.call('docs.show', { id: 'button' });
@@ -59,7 +60,7 @@ set). `--json` keeps only the tool result.
 | `--attach`    | `attached` | Hard error (no fallback)         |
 | `--no-attach` | `local`    | Never attaches                   |
 
-`--cwd` and `--config-dir` belong **before** the toolset name. `--attach` / `--no-attach` cannot
+`--cwd`, `--config-dir`, and `--port` belong **before** the toolset name (after it, they are tool arguments). `--attach` / `--no-attach` cannot
 be combined. `requiresDevServer` is a **local-mode intercept** only: when attached, those methods
 run caller-side (`stories.preview` reads `origin` from the instance record).
 
@@ -68,6 +69,7 @@ npx storybook tools docs list
 npx storybook tools --attach docs list
 npx storybook tools --no-attach docs list
 npx storybook tools --cwd /apps/web --config-dir /apps/web/.storybook docs list
+npx storybook tools --port 6007 stories preview --stories '[{"storyId":"example-button--primary"}]'
 ```
 
 ## Modes
@@ -82,9 +84,9 @@ record, `createTools` spawns a child from the `storybook` package under `record.
 `describe` / `call` / `close` over IPC. `autoSpawn: false` throws `EnvironmentMismatchError`
 instead. A child never spawns another child (`STORYBOOK_TOOLS_CHILD_HOST`).
 
-**Local.** Load the target configuration in this process. This path **does** `chdir` to the
-target for the rest of the one-shot process. Capture the launch directory first if an embedder
-still needs it. Do not set `STORYBOOK_ATTACHED_TOOLS` on this path: that env is how the dispatcher
+**Local.** Load the target configuration in this process when `cwd` already matches. This path
+never `chdir`s. A foreign `--cwd` starts a child host from the `storybook` package under that
+directory. Do not set `STORYBOOK_ATTACHED_TOOLS` on this path: that env is how the dispatcher
 makes UniversalStore a follower before core loads, and local bootstrap must be a leader.
 
 ## Tests

@@ -8,7 +8,7 @@
       "id": "forms-template-unsupported--primary",
       "name": "Primary",
       "summary": undefined,
-      "warning": "No static snippet: the `render` function could not be resolved statically.",
+      "warning": "No static snippet: the story template could not be resolved statically.",
     },
   },
 }

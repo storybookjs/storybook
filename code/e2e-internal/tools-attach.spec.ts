@@ -134,6 +134,15 @@ test.describe('storybook tools attach', () => {
     expect(result.output).toContain('npm run storybook');
   });
 
+  test('--no-attach from a different cwd loads via a project-local child host', async () => {
+    const list = await runTools(
+      ['--no-attach', '--cwd', process.cwd(), 'docs', 'list'],
+      join(process.cwd(), '..')
+    );
+    expect(list.exitCode, list.output).toBe(0);
+    expect(list.output).toContain('example-button');
+  });
+
   test('attaches from a different cwd via a project-local child host', async () => {
     test.skip(
       !runsAgainstDevServer,

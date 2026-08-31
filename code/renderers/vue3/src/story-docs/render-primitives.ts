@@ -99,7 +99,7 @@ export function createRenderContext(): RenderContext {
 
 /** Wrap prepared template markup with the shared SFC block assembly. */
 export function renderPreparedSfcSnippet(input: RenderSfcMarkupInput): string {
-  const template = `<template>\n${indent(input.templateCode)}\n</template>`;
+  const template = `<template>\n${indent(normalizeTemplateBlock(input.templateCode))}\n</template>`;
   const script = renderScript(input.ctx);
 
   return script ? `${script}\n\n${template}` : template;
@@ -374,11 +374,11 @@ export function hoistArgValue(name: string, value: t.Node, ctx: RenderContext): 
   return bindingName;
 }
 
-/** Hoist an arg value as a `ref` for a `v-model` binding. */
-export function hoistModelRef(name: string, value: t.Node, ctx: RenderContext): string {
+/** Hoist an arg value as a `ref` for a `v-model` binding; an absent value starts the ref empty. */
+export function hoistModelRef(name: string, value: t.Node | undefined, ctx: RenderContext): string {
   (ctx.imports[VUE_PACKAGE] ??= new Set()).add('ref');
   const bindingName = allocateBindingName(name, ctx);
-  ctx.variables.set(bindingName, `ref(${printValue(unwrapExpression(value))})`);
+  ctx.variables.set(bindingName, value ? `ref(${printValue(unwrapExpression(value))})` : 'ref()');
   return bindingName;
 }
 
@@ -414,8 +414,55 @@ export function wrapSlotContent(name: string, content: string): string {
 export function indent(source: string): string {
   return source
     .split('\n')
-    .map((line) => `  ${line}`)
+    .map((line) => (line ? `  ${line}` : line))
     .join('\n');
+}
+
+// Normalize author template literals so story-file indentation does not leak into snippets.
+function normalizeTemplateBlock(source: string): string {
+  const lines = source.split('\n');
+  let start: number | undefined;
+  let end = 0;
+  let commonPrefix: string | undefined;
+
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+    const line = lines[lineIndex];
+    const contentIndex = line.search(/\S/);
+    if (contentIndex === -1) {
+      lines[lineIndex] = '';
+      continue;
+    }
+
+    start ??= lineIndex;
+    end = lineIndex + 1;
+
+    if (commonPrefix === undefined) {
+      commonPrefix = line.slice(0, contentIndex);
+      continue;
+    }
+
+    let index = 0;
+    while (
+      index < commonPrefix.length &&
+      index < contentIndex &&
+      commonPrefix[index] === line[index]
+    ) {
+      index += 1;
+    }
+    commonPrefix = commonPrefix.slice(0, index);
+  }
+
+  if (start === undefined) {
+    return '';
+  }
+
+  if (commonPrefix) {
+    for (let lineIndex = start; lineIndex < end; lineIndex += 1) {
+      lines[lineIndex] = lines[lineIndex].slice(commonPrefix.length);
+    }
+  }
+
+  return lines.slice(start, end).join('\n');
 }
 
 function slotSortKey(name: string): string {

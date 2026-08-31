@@ -1,3 +1,5 @@
+import { resolve } from 'node:path';
+
 import { versions } from 'storybook/internal/common';
 
 import { StorybookDevServerDisconnectedError } from '../../../server-errors.ts';
@@ -11,6 +13,7 @@ import type {
 } from '../../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
 import { toCatalogEntry } from './catalog.ts';
+import type { StorybookInstanceRecord } from '../instances/types.ts';
 import type { AttachedBootstrapResult } from './attached-runtime.ts';
 import { formatAttachFallback } from './attach-messages.ts';
 import { spawnChildHost } from './child-client.ts';
@@ -22,6 +25,7 @@ import {
 } from './command-telemetry.ts';
 import {
   AttachUnavailableError,
+  SpawnFailedError,
   ToolsRuntimeError,
   attachGateReasonFromError,
   isAttachGateError,
@@ -38,33 +42,39 @@ import type {
   ToolsDescribeOptions,
   ToolsHostKind,
   ToolsMode,
+  ToolsSiblingInstance,
   ToolsStorybookInfo,
   ToolsetCatalog,
 } from './types.ts';
+
+/**
+ * The in-process attach shape `createTools` consumes: the fields of
+ * {@link AttachedInProcessResult} it reads, with the record narrowed to identifying info so tests
+ * can hand a minimal instance.
+ */
+type AttachedInProcess = {
+  runtime: ToolsRuntime;
+  record: { url: string; pid: number; configDir?: string; cwd?: string; port?: number };
+  siblings?: StorybookInstanceRecord[];
+  connection: { close(): void; disconnected: Promise<never> };
+};
 
 /** Injectable dependencies for tests. Not part of the public SDK. */
 export type CreateToolsDeps = {
   bootstrap?: (target: { cwd?: string; configDir?: string }) => Promise<ToolsRuntime>;
   attach?: (
-    target: { cwd?: string; configDir?: string },
+    target: { cwd?: string; configDir?: string; port?: number },
     deps?: unknown
-  ) => Promise<
-    | AttachedBootstrapResult
-    | {
-        runtime: ToolsRuntime;
-        record: { url: string; pid: number; configDir?: string; cwd?: string };
-        connection: { close(): void; disconnected: Promise<never> };
-      }
-  >;
+  ) => Promise<AttachedBootstrapResult | AttachedInProcess>;
   spawnChild?: typeof spawnChildHost;
 };
 
 /**
  * Resolve a host for the tools the target Storybook configuration registers.
  *
- * `local` loads that configuration in this process, which adopts the target directory as
- * `process.cwd()` for the rest of the process — everything the `services` preset hooks register
- * keys its file mapping off it. Capture your launch directory first if you still need it.
+ * `local` loads that configuration without a running Storybook. When this process is already in
+ * the target directory, it loads in-process. Otherwise it spawns a child host from the `storybook`
+ * package resolved under that directory. It never changes `process.cwd()`.
  *
  * `attached` joins a running Storybook over its channel and never changes `process.cwd()`. When
  * this process is not that instance's twin, attached mode defaults to spawning a child host from
@@ -74,7 +84,8 @@ export type CreateToolsDeps = {
  * then carries `fallbackNotice` with the gate message and that it fell back.
  *
  * @throws {ToolsRuntimeError} With reason `config-load-failed` when the target configuration cannot
- *   be loaded.
+ *   be loaded, or `mode-unavailable` when a foreign `cwd` needs a child host and `autoSpawn` is
+ *   declined.
  * @throws {AttachUnavailableError} When `attached` cannot find or reach a matching instance.
  * @throws {EnvironmentMismatchError} When this process is not the instance's twin and auto-spawn is
  *   declined, or when spawning cannot reconcile the running instance with the project package.
@@ -130,15 +141,8 @@ export async function createTools(
             fallbackReason,
           });
         } catch (localError) {
-          if (
-            localError instanceof ToolsRuntimeError &&
-            localError.data.reason === 'config-load-failed'
-          ) {
-            throw new ToolsRuntimeError({
-              reason: 'config-load-failed',
-              message: `${notice}\n\n${localError.message}`,
-              cause: localError.data.cause,
-            });
+          if (shouldWrapAutoLocalFailure(localError)) {
+            throw wrapAutoLocalFailure(notice, localError);
           }
           throw localError;
         }
@@ -168,20 +172,28 @@ async function createAttachedTools(
   )({
     cwd: options.cwd,
     configDir: options.configDir,
+    port: options.port,
   });
   if ('kind' in attached && attached.kind === 'spawn') {
+    // Pin the chosen instance's port so the child host re-resolves to that exact instance even
+    // when the registry changes between the parent's resolution and the child's.
     return (deps.spawnChild ?? spawnChildHost)({
-      record: attached.record,
-      options: { ...options, mode: 'attached', autoSpawn: false, cwd: attached.record.cwd },
+      cwd: attached.record.cwd,
+      options: {
+        ...options,
+        mode: 'attached',
+        autoSpawn: false,
+        cwd: attached.record.cwd,
+        port: attached.record.port,
+      },
       clientInfo,
       requestedMode,
     });
   }
-  const inProcess = attached as {
-    runtime: ToolsRuntime;
-    record: { url: string; pid: number; configDir?: string };
-    connection: { close(): void; disconnected: Promise<never> };
-  };
+  const inProcess = attached as AttachedInProcess;
+  const siblings = inProcess.siblings?.length
+    ? inProcess.siblings.map(toSiblingInstance)
+    : undefined;
   return createToolsHost({
     mode: 'attached',
     host: 'in-process',
@@ -193,10 +205,24 @@ async function createAttachedTools(
       configDir: inProcess.runtime.configDir,
       url: inProcess.record.url,
       pid: inProcess.record.pid,
+      ...(inProcess.record.port != null ? { port: inProcess.record.port } : {}),
+      ...(inProcess.record.cwd ? { cwd: inProcess.record.cwd } : {}),
+      ...(siblings ? { siblings } : {}),
     },
     close: () => inProcess.connection.close(),
     disconnected: inProcess.connection.disconnected,
   });
+}
+
+/** Identifying info only: the record's channel token must never leave the SDK. */
+function toSiblingInstance(record: StorybookInstanceRecord): ToolsSiblingInstance {
+  return {
+    url: record.url,
+    port: record.port,
+    pid: record.pid,
+    cwd: record.cwd,
+    ...(record.configDir ? { configDir: record.configDir } : {}),
+  };
 }
 
 async function createLocalTools(
@@ -207,11 +233,31 @@ async function createLocalTools(
   fallback?: { fallbackNotice: string; fallbackReason?: ToolsAttachGateReason }
 ): Promise<LocalTools> {
   delete process.env.STORYBOOK_ATTACHED_TOOLS;
+  const cwd = resolve(options.cwd ?? process.cwd());
+  const isChildHost = process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
+  const autoSpawn = isChildHost ? false : (options.autoSpawn ?? true);
+
+  if (cwd !== process.cwd()) {
+    if (!autoSpawn) {
+      throw new ToolsRuntimeError({
+        reason: 'mode-unavailable',
+        message: `This process is running from ${process.cwd()}, but the target Storybook is at ${cwd}. Re-run from that directory, or omit \`autoSpawn: false\` so a child host can load the project.`,
+      });
+    }
+    const child = await (deps.spawnChild ?? spawnChildHost)({
+      cwd,
+      options: { ...options, mode: 'local', autoSpawn: false, cwd },
+      clientInfo,
+      requestedMode,
+    });
+    return fallback ? { ...child, ...fallback } : child;
+  }
+
   const { bootstrapToolsRuntime } = await import('./local-runtime.ts');
   let runtime: ToolsRuntime;
   try {
     runtime = await (deps.bootstrap ?? bootstrapToolsRuntime)({
-      cwd: options.cwd,
+      cwd,
       configDir: options.configDir,
     });
   } catch (error) {
@@ -233,6 +279,35 @@ async function createLocalTools(
     clientInfo,
     storybook: { version: versions.storybook, configDir: runtime.configDir },
   });
+}
+
+function shouldWrapAutoLocalFailure(error: unknown): error is SpawnFailedError | ToolsRuntimeError {
+  if (error instanceof SpawnFailedError) {
+    return true;
+  }
+  return (
+    error instanceof ToolsRuntimeError &&
+    (error.data.reason === 'config-load-failed' || error.data.reason === 'mode-unavailable')
+  );
+}
+
+function wrapAutoLocalFailure(notice: string, localError: SpawnFailedError | ToolsRuntimeError) {
+  const message = `${notice}\n\n${localError.message}`;
+  if (localError instanceof SpawnFailedError) {
+    return new SpawnFailedError({
+      reason: message,
+      cause: localError.data.cause ?? localError,
+    });
+  }
+  if (localError instanceof ToolsRuntimeError) {
+    return new ToolsRuntimeError({
+      reason: localError.data.reason,
+      message,
+      cause: localError.data.cause,
+    });
+  }
+  const exhaustive: never = localError;
+  throw exhaustive;
 }
 
 function transportFor(kind: Required<ToolsClientInfo>['kind']): ToolsetTransport {

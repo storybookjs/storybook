@@ -1,5 +1,6 @@
 import { execFile } from 'node:child_process';
 import { chmod, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
+import { userInfo } from 'node:os';
 
 import { vol } from 'memfs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -158,5 +159,69 @@ describe('writeStorybookRuntimeInstanceRecord', () => {
     expect(readRecordFile(recordPath).token).toBe('ws-token');
     expect(modeOf(recordPath)).toBe(0o600);
     expect(modeOf(REGISTRY_DIR)).toBe(0o700);
+  });
+});
+
+describe('writeRuntimeInstanceRecord on Windows', () => {
+  beforeEach(() => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('win32');
+  });
+
+  it('restricts the registry dir and record temp file with icacls', async () => {
+    const record = createRuntimeInstanceRecord({
+      address: 'http://localhost:6006/',
+      instanceId: 'win-acl',
+      port: 6006,
+      storybookVersion: '10.5.0-alpha.0',
+      token: 'secret-token',
+    });
+
+    const recordPath = await writeRuntimeInstanceRecord(record, REGISTRY_DIR);
+    const grant = `${userInfo().username}:(F)`;
+
+    expect(execFile).toHaveBeenCalledWith(
+      'icacls',
+      [REGISTRY_DIR, '/inheritance:r', '/grant:r', grant],
+      expect.any(Function)
+    );
+    expect(execFile).toHaveBeenCalledWith(
+      'icacls',
+      expect.arrayContaining([
+        expect.stringMatching(/win-acl\..+\.tmp$/),
+        '/inheritance:r',
+        '/grant:r',
+        grant,
+      ]),
+      expect.any(Function)
+    );
+    expect(readRecordFile(recordPath).token).toBe('secret-token');
+  });
+});
+
+describe('writeRuntimeInstanceRecord on Windows when icacls fails', () => {
+  beforeEach(() => {
+    vi.spyOn(process, 'platform', 'get').mockReturnValue('win32');
+    vi.mocked(execFile).mockImplementation((...args: unknown[]) => {
+      const callback = args.find((arg) => typeof arg === 'function') as
+        | ((error: Error | null, stdout: string, stderr: string) => void)
+        | undefined;
+      callback?.(Object.assign(new Error('icacls failed'), { code: 87 }), '', '');
+      return { pid: 0 } as ReturnType<typeof execFile>;
+    });
+  });
+
+  it('does not write a record that other accounts could read', async () => {
+    const record = createRuntimeInstanceRecord({
+      address: 'http://localhost:6006/',
+      instanceId: 'win-acl-fail',
+      port: 6006,
+      storybookVersion: '10.5.0-alpha.0',
+      token: 'secret-token',
+    });
+
+    await expect(writeRuntimeInstanceRecord(record, REGISTRY_DIR)).rejects.toThrow(
+      `Could not restrict ${REGISTRY_DIR} to the current Windows user. The instance record would be readable by other accounts.`
+    );
+    expect(Object.keys(vol.toJSON())).toEqual([REGISTRY_DIR]);
   });
 });

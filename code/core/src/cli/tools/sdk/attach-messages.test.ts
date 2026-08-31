@@ -5,9 +5,10 @@ import {
   formatAttachFallback,
   formatConnectionFailed,
   formatCwdMismatch,
-  formatMultipleMatches,
+  formatMultiInstanceNotice,
   formatNoInstance,
   formatOldServer,
+  formatPortMismatch,
   formatRestartRequired,
   formatVersionMismatch,
 } from './attach-messages.ts';
@@ -49,13 +50,39 @@ describe('attach failure messages', () => {
     `);
   });
 
-  it('names each match and the --config-dir that selects it', () => {
-    expect(formatMultipleMatches([other, sibling])).toMatchInlineSnapshot(`
-      "Multiple Storybook instances match this project. Disambiguate with \`--config-dir <dir>\`:
-      - http://localhost:6006 (configDir \`/apps/web/.storybook\`)
-        npx storybook tools --attach --cwd /apps/web --config-dir /apps/web/.storybook
-      - http://localhost:6007 (configDir \`/apps/ui/.storybook\`)
-        npx storybook tools --attach --cwd /apps/ui --config-dir /apps/ui/.storybook"
+  it('names the running ports and the --port that selects one on a port mismatch', () => {
+    expect(formatPortMismatch(9999, [other, sibling])).toMatchInlineSnapshot(`
+      "No running Storybook instance is on port 9999. Retry with one of the running instances below, or omit \`--port\` to match on the project's cwd/config dir instead:
+      - http://localhost:6006 (port \`6006\`, cwd \`/apps/web\`)
+      - http://localhost:6007 (port \`6007\`, cwd \`/apps/ui\`)"
+    `);
+  });
+
+  it('names the used instance and each competing sibling with the --port that selects it', () => {
+    expect(
+      formatMultiInstanceNotice({
+        url: 'http://localhost:6007',
+        port: 6007,
+        pid: 123,
+        cwd: '/apps/web',
+        configDir: '/apps/web/.storybook',
+        siblings: [
+          {
+            url: 'http://localhost:6006',
+            port: 6006,
+            pid: 456,
+            cwd: '/apps/web',
+            configDir: '/apps/web/.storybook',
+          },
+        ],
+      })
+    ).toMatchInlineSnapshot(`
+      "Warning: Multiple Storybook instances match this project. This command used http://localhost:6007 (port \`6007\`, pid \`123\`, cwd \`/apps/web\`, config dir \`/apps/web/.storybook\`).
+
+      Other matching instances — target one with \`--port <port>\`:
+      - http://localhost:6006 (port \`6006\`, pid \`456\`, cwd \`/apps/web\`, config dir \`/apps/web/.storybook\`)
+
+      If results look unexpected, ask the user whether they want to stop the other instance(s)."
     `);
   });
 
@@ -108,7 +135,7 @@ describe('attach failure messages', () => {
     ).toMatchInlineSnapshot(
       `"Restart Storybook (v10.2.0+) to enable attach.
 
-Falling back to loading this project's Storybook configuration in this process."`
+Falling back to loading this project's Storybook configuration."`
     );
   });
 });

@@ -1,4 +1,5 @@
 import type { StorybookInstanceRecord } from '../instances/types.ts';
+import type { ToolsStorybookInfo } from './types.ts';
 
 function quoteShellArg(value: string): string {
   if (!/[\s'"$`\\]/.test(value)) {
@@ -31,16 +32,12 @@ export function formatNoInstance(records: StorybookInstanceRecord[]): string {
   return lines.join('\n');
 }
 
-export function formatMultipleMatches(matches: StorybookInstanceRecord[]): string {
+export function formatPortMismatch(port: number, candidates: StorybookInstanceRecord[]): string {
   const lines = [
-    'Multiple Storybook instances match this project. Disambiguate with `--config-dir <dir>`:',
+    `No running Storybook instance is on port ${port}. Retry with one of the running instances below, or omit \`--port\` to match on the project's cwd/config dir instead:`,
   ];
-  for (const record of matches) {
-    const configDir = record.configDir ?? '(none)';
-    lines.push(`- ${record.url} (configDir \`${configDir}\`)`);
-    if (record.configDir) {
-      lines.push(`  ${attachCommand(record)}`);
-    }
+  for (const record of candidates) {
+    lines.push(`- ${record.url} (port \`${record.port}\`, cwd \`${record.cwd}\`)`);
   }
   return lines.join('\n');
 }
@@ -69,5 +66,42 @@ export function formatRestartRequired(
 }
 
 export function formatAttachFallback(remediation: string): string {
-  return `${remediation}\n\nFalling back to loading this project's Storybook configuration in this process.`;
+  return `${remediation}\n\nFalling back to loading this project's Storybook configuration.`;
+}
+
+/**
+ * Out-of-band warning for a run that attached while sibling instances also matched the project.
+ * Rendered to stderr, never into the result, so `--json` and `-o` output stay clean.
+ */
+export function formatMultiInstanceNotice(
+  storybook: Pick<ToolsStorybookInfo, 'url' | 'port' | 'pid' | 'cwd' | 'configDir' | 'siblings'>
+): string {
+  const lines = [
+    `Warning: Multiple Storybook instances match this project. This command used ${storybook.url ?? 'the selected instance'}${instanceDetails(storybook)}.`,
+    '',
+    'Other matching instances — target one with `--port <port>`:',
+  ];
+  for (const sibling of storybook.siblings ?? []) {
+    lines.push(`- ${sibling.url}${instanceDetails(sibling)}`);
+  }
+  lines.push(
+    '',
+    'If results look unexpected, ask the user whether they want to stop the other instance(s).'
+  );
+  return lines.join('\n');
+}
+
+function instanceDetails(instance: {
+  port?: number;
+  pid?: number;
+  cwd?: string;
+  configDir?: string;
+}): string {
+  const details = [
+    instance.port != null ? `port \`${instance.port}\`` : null,
+    instance.pid != null ? `pid \`${instance.pid}\`` : null,
+    instance.cwd ? `cwd \`${instance.cwd}\`` : null,
+    instance.configDir ? `config dir \`${instance.configDir}\`` : null,
+  ].filter((detail) => detail != null);
+  return details.length > 0 ? ` (${details.join(', ')})` : '';
 }

@@ -1,3 +1,5 @@
+import { fileURLToPath, pathToFileURL } from 'node:url';
+
 import { Channel } from 'storybook/internal/channels';
 import {
   getProjectRoot,
@@ -8,6 +10,7 @@ import {
 } from 'storybook/internal/common';
 import { oneWayHash } from 'storybook/internal/telemetry';
 
+import { dirname, join } from 'pathe';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { resolvePackageDir, safeResolveModule } from '../shared/utils/module.ts';
@@ -20,6 +23,10 @@ vi.mock('../shared/utils/module.ts', { spy: true });
 vi.mock('./utils/apply-services-preset-once.ts', { spy: true });
 
 const secondPassPresets = () => vi.mocked(loadAllPresets).mock.calls[1][0].corePresets;
+
+const builderIndexPath = '/builder/dist/index.js';
+const builderFileUrl = pathToFileURL(builderIndexPath).href;
+const builderPresetPath = join(dirname(fileURLToPath(builderFileUrl)), 'preset.js');
 
 beforeEach(() => {
   vi.resetAllMocks();
@@ -36,24 +43,24 @@ beforeEach(() => {
 
   vi.mocked(loadAllPresets)
     .mockResolvedValueOnce({
-      apply: vi.fn().mockResolvedValue({ builder: 'file:///builder/dist/index.js' }),
+      apply: vi.fn().mockResolvedValue({ builder: builderFileUrl }),
     })
     .mockResolvedValueOnce({ apply: vi.fn().mockResolvedValue({}) });
 });
 
 describe('loadStorybook', () => {
   it('loads the builder preset when the builder ships one', async () => {
-    vi.mocked(safeResolveModule).mockReturnValue('/builder/dist/preset.js');
+    vi.mocked(safeResolveModule).mockReturnValue(builderPresetPath);
 
     await loadStorybook({ configDir: '/config', channel: new Channel({}) });
 
     expect(vi.mocked(safeResolveModule)).toHaveBeenCalledWith({
-      specifier: '/builder/dist/preset.js',
+      specifier: builderPresetPath,
     });
     expect(secondPassPresets()).toEqual([
       '/storybook/dist/core-server/presets/common-preset.js',
       '/framework/preset',
-      '/builder/dist/preset.js',
+      builderPresetPath,
     ]);
   });
 

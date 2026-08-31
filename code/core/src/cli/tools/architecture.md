@@ -23,9 +23,10 @@ token into `~/.storybook/instances/<id>.json` (file `0600`, dir `0700`). The end
 valid.
 
 CLI default is `auto`: attach when a matching instance is running, otherwise load locally.
-`--attach` requires attachment. `--no-attach` forces local. Factory-time gate failures print the
-exact corrective command; in `auto` they then fall back to local. A later `tools.call` failure
-(disconnect, remote ack timeout) stays on the attached host.
+`--attach` requires attachment. `--no-attach` forces local. A missing instance falls back to
+local with no notice. Unexpected factory-time gate failures print the exact corrective command
+and then fall back. A later `tools.call` failure (disconnect, remote ack timeout) stays on the
+attached host.
 
 Attach coverage lives in `code/e2e-internal/`. Filesystem unit tests use memfs.
 

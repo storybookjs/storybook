@@ -445,8 +445,7 @@ describe('createTools', () => {
     expect(fallback.requestedMode).toBe('auto');
     expect(fallback.host).toBe('in-process');
     expect(fallback.fallbackReason).toBe('no-instance');
-    expect(fallback.fallbackNotice).toContain('No running Storybook was found');
-    expect(fallback.fallbackNotice).toContain('Falling back');
+    expect(fallback.fallbackNotice).toBeUndefined();
   });
 
   it('falls back to a local child host when auto cannot attach from another cwd', async () => {
@@ -482,7 +481,8 @@ describe('createTools', () => {
     });
     expect(fallback.mode).toBe('local');
     expect(fallback.host).toBe('child');
-    expect(fallback.fallbackNotice).toContain('Falling back');
+    expect(fallback.fallbackReason).toBe('no-instance');
+    expect(fallback.fallbackNotice).toBeUndefined();
   });
 
   it('does not fall back from attached mode, or from a config-load failure', async () => {

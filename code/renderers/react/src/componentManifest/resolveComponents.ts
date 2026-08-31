@@ -1,4 +1,3 @@
-import { recast } from 'storybook/internal/babel';
 import { storyNameFromExport } from 'storybook/internal/csf/csf-utils';
 import type { ImportRef, StoryReferences } from 'storybook/internal/csf-tools';
 import {
@@ -8,7 +7,7 @@ import {
   unresolvedWarning,
 } from 'storybook/internal/csf-tools';
 
-import { getCodeSnippet } from './generateCodeSnippet.ts';
+import { getCodeSnippet, printSnippet } from './generateCodeSnippet.ts';
 import {
   type ComponentRef,
   type DocgenEngine,
@@ -145,7 +144,7 @@ export interface ResolvedStory {
   error?: { name: string; message: string };
 }
 
-/** Every story's snippet, plus the imports they need beyond the components in the file. */
+/** Every story's snippet, plus the imports the snippets need for names other modules own. */
 export interface ExtractedStorySnippets {
   stories: ResolvedStory[];
   imports: ImportRef[];
@@ -180,7 +179,7 @@ export function extractStorySnippets(
         return {
           id: story.id,
           name,
-          snippet: recast.print(snippet.node).code,
+          snippet: printSnippet(snippet),
           description,
           summary,
           ...(warning ? { warning } : {}),

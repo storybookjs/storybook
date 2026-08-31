@@ -7,11 +7,15 @@ import {
   getRealPath,
 } from 'storybook/internal/mocking-utils';
 import { logger } from 'storybook/internal/node-logger';
-import { AngularUnresolvedStyleError } from 'storybook/internal/server-errors';
+import {
+  AngularMissingStylePreprocessorError,
+  AngularUnresolvedStyleError,
+} from 'storybook/internal/server-errors';
 import type { PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
 
 import { readFileSync, statSync } from 'node:fs';
-import { basename, isAbsolute, relative, resolve } from 'node:path';
+import { createRequire } from 'node:module';
+import { basename, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { DOCUMENTATION_JSON, resolveCompodocConfig } from './compodoc-config.ts';
@@ -227,6 +231,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
       ...pluginsToInject,
       angularViteRedirectReapplyPlugin(options),
       angularOptionsPlugin(options, { normalizePath, zoneless }),
+      stylePreprocessorCheckPlugin(),
       storybookOxcPlugin(),
       ...(docgenServer && options?.configDir ? [compodocJsonStubPlugin(options.configDir)] : []),
     ],
@@ -328,6 +333,74 @@ function resolveBuilderStyle(stylePath: string, workspaceRoot: string) {
   }
 
   return stylePath;
+}
+
+// Vite loads a CSS preprocessor through `loadPreprocessorPath`, which resolves the package from the
+// Vite root upwards and then from Vite's own directory upwards, and nowhere else. Angular gets
+// `sass` as a *dependency* of `@angular/build`, so whether Storybook can compile `.scss` at all
+// comes down to whether the package manager hoisted that copy to the top level. When it did not,
+// Vite's own diagnostic names `sass-embedded`, because `loadSassPackage` tries that one first and
+// rethrows *its* failure, and the user installs the package they do not need.
+const STYLE_PREPROCESSORS: Record<string, { install: string; alternative?: string }> = {
+  scss: { install: 'sass', alternative: 'sass-embedded' },
+  sass: { install: 'sass', alternative: 'sass-embedded' },
+  less: { install: 'less' },
+};
+
+const STYLE_PREPROCESSOR_ID = /\.(scss|sass|less)(?:$|\?)/;
+
+const isInstalledNear = (pkg: string, dir: string) => {
+  try {
+    createRequire(join(dir, 'noop.js')).resolve(pkg);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+export function stylePreprocessorCheckPlugin(): Plugin {
+  // `loadPreprocessorPath` resolves from the Vite root first, so this asks the same question from
+  // the same place: a preprocessor reported missing here is one Vite is about to fail on too.
+  let root = process.cwd();
+  const installed = new Map<string, boolean>();
+
+  return {
+    name: 'storybook-angular-vite-style-preprocessor-check',
+    // Ahead of the core `vite:css` transform, so the actionable error replaces Vite's instead of
+    // arriving after it.
+    enforce: 'pre',
+    configResolved(config) {
+      root = config.root;
+      installed.clear();
+    },
+    transform(_code, id) {
+      const lang = STYLE_PREPROCESSOR_ID.exec(id)?.[1];
+      const preprocessor = lang ? STYLE_PREPROCESSORS[lang] : undefined;
+      if (!lang || !preprocessor) {
+        return;
+      }
+
+      if (!installed.has(lang)) {
+        const candidates = [preprocessor.install, preprocessor.alternative].filter(
+          (pkg): pkg is string => !!pkg
+        );
+        installed.set(
+          lang,
+          candidates.some((pkg) => isInstalledNear(pkg, root))
+        );
+      }
+
+      if (!installed.get(lang)) {
+        throw new AngularMissingStylePreprocessorError({
+          stylePath: id.split('?')[0],
+          install: preprocessor.install,
+          alternative: preprocessor.alternative,
+        });
+      }
+
+      return;
+    },
+  };
 }
 
 export function angularOptionsPlugin(

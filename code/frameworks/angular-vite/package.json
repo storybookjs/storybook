@@ -104,7 +104,9 @@
     "@angular/compiler-cli": ">=21.0.0 < 23.0.0",
     "@angular/core": ">=21.0.0 < 23.0.0",
     "@angular/platform-browser": ">=21.0.0 < 23.0.0",
+    "less": "^4.0.0",
     "rxjs": "^7.4.0",
+    "sass": "^1.0.0",
     "storybook": "workspace:^",
     "typescript": ">= 5.9.x",
     "vite": ">=8.0.0",
@@ -112,6 +114,12 @@
   },
   "peerDependenciesMeta": {
     "@angular/cli": {
+      "optional": true
+    },
+    "less": {
+      "optional": true
+    },
+    "sass": {
       "optional": true
     },
     "zone.js": {

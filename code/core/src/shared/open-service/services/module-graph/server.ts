@@ -15,7 +15,9 @@ export type RegisterModuleGraphServiceOptions = {
   workingDir?: string;
   presets?: Presets;
   getAdapter?: () => Promise<ChangeDetectionAdapter | null | undefined>;
-  getChangeDetectionReadiness?: () => Promise<ChangeDetectionReadinessResult>;
+  getChangeDetectionReadiness?: () => Promise<
+    Exclude<ChangeDetectionReadinessResult, { status: 'pending' }>
+  >;
 };
 
 type AdapterDeferred = {
@@ -96,25 +98,33 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
           },
         },
         _waitForChangeDetectionReadiness: {
-          handler: async () => {
+          handler: async (_input, ctx) => {
             const readiness = options.getChangeDetectionReadiness
               ? await options.getChangeDetectionReadiness()
               : { status: 'ready' as const };
+            let serialized: Exclude<ChangeDetectionReadinessResult, { status: 'pending' }>;
             switch (readiness.status) {
               case 'ready':
-                return { status: 'ready' as const };
+                serialized = { status: 'ready' };
+                break;
               case 'unavailable':
-                return { status: 'unavailable' as const, reason: readiness.reason };
+                serialized = { status: 'unavailable', reason: readiness.reason };
+                break;
               case 'error':
-                return {
-                  status: 'error' as const,
+                serialized = {
+                  status: 'error',
                   error: { message: readiness.error.message },
                 };
+                break;
               default: {
                 const exhaustive: never = readiness;
                 throw exhaustive;
               }
             }
+            ctx.self.setState((state) => {
+              state.changeDetectionReadiness = serialized;
+            });
+            return serialized;
           },
         },
       },

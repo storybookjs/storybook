@@ -49,6 +49,9 @@ const noInputSchema = v.undefined();
 
 const changeDetectionReadinessSchema = v.variant('status', [
   v.object({
+    status: v.literal('pending'),
+  }),
+  v.object({
     status: v.literal('ready'),
   }),
   v.object({
@@ -82,6 +85,7 @@ export const moduleGraphServiceDef = defineService({
     fileActivityRevision: 0,
     storyChangeRevisions: {},
     latestChangedStoryFiles: [],
+    changeDetectionReadiness: { status: 'pending' },
   } as ModuleGraphServiceState,
   queries: {
     status: {
@@ -93,6 +97,16 @@ export const moduleGraphServiceDef = defineService({
         await ctx.self.commands._waitForSettledEngine(undefined);
       },
       handler: (_input, ctx) => ctx.self.state.status,
+    },
+    changeDetectionReadiness: {
+      description:
+        'Change-detection scan readiness. Distinct from `status`: the graph can be ready while change detection is disabled or its initial scan has failed.',
+      input: noInputSchema,
+      output: changeDetectionReadinessSchema,
+      load: async (_input, ctx) => {
+        await ctx.self.commands._waitForChangeDetectionReadiness(undefined);
+      },
+      handler: (_input, ctx) => ctx.self.state.changeDetectionReadiness,
     },
     graphRevision: {
       description:

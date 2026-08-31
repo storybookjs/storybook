@@ -145,7 +145,12 @@ export function registerTestModuleGraphService(workingDir = process.cwd()) {
           handler: async () => undefined,
         },
         _waitForChangeDetectionReadiness: {
-          handler: async () => ({ status: 'ready' as const }),
+          handler: async (_input, ctx) => {
+            ctx.self.setState((state) => {
+              state.changeDetectionReadiness = { status: 'ready' };
+            });
+            return { status: 'ready' as const };
+          },
         },
       },
     }

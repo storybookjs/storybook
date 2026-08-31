@@ -632,7 +632,27 @@ describe('module-graph open service', () => {
         status: 'unavailable',
         reason: 'disabled',
       });
+      expect(runtime.queries.changeDetectionReadiness.get(undefined)).toEqual({
+        status: 'unavailable',
+        reason: 'disabled',
+      });
       expect(getChangeDetectionReadiness).toHaveBeenCalledOnce();
+    });
+
+    it('loads change-detection readiness through the query load hook', async () => {
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getChangeDetectionReadiness: async () => ({ status: 'ready' as const }),
+      });
+
+      expect(runtime.queries.changeDetectionReadiness.get(undefined)).toEqual({
+        status: 'pending',
+      });
+      await expect(runtime.queries.changeDetectionReadiness.loaded(undefined)).resolves.toEqual({
+        status: 'ready',
+      });
     });
 
     it('serializes a change-detection error readiness result', async () => {

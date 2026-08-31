@@ -105,7 +105,7 @@ function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
       transport: 'cli',
       devEnabled: true,
       testSupported: inputs.testSupported,
-      docsEnabled: inputs.docsEnabled,
+      docsEnabled: inputs.docsEnabledForCli,
       changeDetectionEnabled: inputs.changeDetectionEnabled,
       moduleGraphSupported: inputs.moduleGraphSupported,
       reviewEnabled,
@@ -119,6 +119,6 @@ function assemble(id: Exclude<SkillId, 'setup'>, inputs: SkillInputs): string {
     reviewEnabled,
     testSupported: inputs.testSupported,
     a11yEnabled: inputs.a11yEnabled,
-    docsEnabled: inputs.docsEnabled,
+    docsEnabled: inputs.docsEnabledForCli,
   });
 }

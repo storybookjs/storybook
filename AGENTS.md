@@ -98,7 +98,9 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
   gate. Missing or duplicate registrations fail loudly.
 - The tools CLI consumes `storybook/internal/tools` (`createTools`). Default mode is
   attach-preferred (`auto`): join a running instance as a delegated leaf, or load locally on gate
-  failure. `--attach` requires attachment; `--no-attach` forces local. Local `createTools` never
+  failure. `--attach` requires attachment; `--no-attach` forces local. When several running
+  instances match the project, attach picks the invoking agent's most recently started one and
+  warns on stderr; `-p, --port` targets a specific instance. Local `createTools` never
   `chdir`s: a foreign `cwd` starts a project-local child host.
 - Read `code/core/src/shared/open-service/README.md` before changing the contract, adapters,
   registration, docs access, or transport rendering. Read `code/core/src/cli/tools/README.md` and

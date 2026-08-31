@@ -11,16 +11,17 @@ import {
 import { setDelegatedMode } from '../../../shared/open-service/service-registry.ts';
 import type { ToolsetGetService } from '../../../shared/open-service/toolset-definition.ts';
 import { getRegisteredToolsets } from '../../../shared/open-service/toolset-registry.ts';
+import { detectAgent } from '../../../telemetry/detect-agent.ts';
 import { readRegistry } from '../instances/registry.ts';
-import { listProjectMatches } from '../instances/resolve.ts';
+import { selectInstances } from '../instances/resolve.ts';
 import { resolveStorybookConfigDir } from '../config-dir.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import {
   formatConnectionFailed,
   formatCwdMismatch,
-  formatMultipleMatches,
   formatNoInstance,
   formatOldServer,
+  formatPortMismatch,
   formatRestartRequired,
   formatVersionMismatch,
 } from './attach-messages.ts';
@@ -38,12 +39,16 @@ export type AttachedInProcessResult = {
   kind: 'in-process';
   runtime: ToolsRuntime;
   record: StorybookInstanceRecord;
+  /** Instances that also matched the target project but were not selected, best first. */
+  siblings: StorybookInstanceRecord[];
   connection: Pick<NodeChannelConnection, 'close' | 'disconnected'>;
 };
 
 export type AttachedSpawnResult = {
   kind: 'spawn';
   record: StorybookInstanceRecord;
+  /** Instances that also matched the target project but were not selected, best first. */
+  siblings: StorybookInstanceRecord[];
 };
 
 export type AttachedBootstrapResult = AttachedInProcessResult | AttachedSpawnResult;
@@ -63,10 +68,11 @@ export type AttachRuntimeDeps = {
   resolveBinPath?: () => string;
   isChildHost?: boolean;
   resolveProjectVersion?: (cwd: string) => string | undefined;
+  detectAgentName?: () => string | undefined;
 };
 
 export async function bootstrapAttachedRuntime(
-  options: { cwd?: string; configDir?: string; autoSpawn?: boolean } = {},
+  options: { cwd?: string; configDir?: string; port?: number; autoSpawn?: boolean } = {},
   deps: AttachRuntimeDeps = {}
 ): Promise<AttachedBootstrapResult> {
   const discoveryCwd = resolve(options.cwd ?? process.cwd());
@@ -75,13 +81,15 @@ export async function bootstrapAttachedRuntime(
     configDir: options.configDir,
   });
   const records = await (deps.readRegistry ?? readRegistry)();
-  const matches = listProjectMatches(records, {
+  const selection = selectInstances(records, {
     cwd: discoveryCwd,
     configDir: resolvedConfigDir,
     configDirExplicit: options.configDir != null,
+    port: options.port,
+    agent: (deps.detectAgentName ?? (() => detectAgent()?.name))(),
   });
 
-  if (matches.length === 0) {
+  if (selection.kind === 'no-instance') {
     throw new AttachUnavailableError({
       reason: 'no-instance',
       instances: records,
@@ -89,15 +97,15 @@ export async function bootstrapAttachedRuntime(
     });
   }
 
-  if (matches.length > 1) {
+  if (selection.kind === 'port-mismatch') {
     throw new AttachUnavailableError({
-      reason: 'multiple-matches',
-      instances: matches,
-      remediation: formatMultipleMatches(matches),
+      reason: 'port-mismatch',
+      instances: selection.candidates,
+      remediation: formatPortMismatch(selection.port, selection.candidates),
     });
   }
 
-  const record = matches[0];
+  const [record, ...siblings] = selection.matches;
   const callerVersion = deps.version ?? versions.storybook;
 
   if (!record.token) {
@@ -128,7 +136,7 @@ export async function bootstrapAttachedRuntime(
     case 'in-process':
       break;
     case 'spawn':
-      return { kind: 'spawn', record };
+      return { kind: 'spawn', record, siblings };
     case 'throw-mismatch': {
       const { fidelity } = plan;
       throw new EnvironmentMismatchError({
@@ -200,6 +208,7 @@ export async function bootstrapAttachedRuntime(
       close: async () => {},
     },
     record,
+    siblings,
     connection,
   };
 }

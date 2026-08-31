@@ -61,7 +61,7 @@ export function getChangeDetectionReadiness(): Promise<ChangeDetectionReadiness>
 
 async function fetchDelegatedReadiness(): Promise<ChangeDetectionReadiness> {
   const moduleGraph = getService<ModuleGraphService>('core/module-graph', { internal: true });
-  const readiness = await moduleGraph.commands._getChangeDetectionReadiness(undefined);
+  const readiness = await moduleGraph.commands._waitForChangeDetectionReadiness(undefined);
   if (readiness.status === 'error') {
     return { status: 'error', error: new Error(readiness.error.message) };
   }

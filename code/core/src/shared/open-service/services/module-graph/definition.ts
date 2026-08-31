@@ -273,10 +273,10 @@ export const moduleGraphServiceDef = defineService({
       input: noInputSchema,
       output: v.void(),
     },
-    _getChangeDetectionReadiness: {
+    _waitForChangeDetectionReadiness: {
       internal: true,
       description:
-        'Returns change-detection scan readiness from the process that owns the scanner.',
+        'Waits until change-detection scan readiness is published on the process that owns the scanner.',
       input: noInputSchema,
       output: changeDetectionReadinessSchema,
     },

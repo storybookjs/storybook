@@ -68,7 +68,7 @@ describe('delegated change-detection readiness', () => {
     vi.mocked(isDelegatedMode).mockReturnValue(true);
     vi.mocked(getService).mockReturnValue({
       commands: {
-        _getChangeDetectionReadiness: getReadiness,
+        _waitForChangeDetectionReadiness: getReadiness,
       },
     } as never);
   });

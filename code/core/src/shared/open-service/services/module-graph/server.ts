@@ -100,7 +100,7 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
             await engine!.whenSettled();
           },
         },
-        _getChangeDetectionReadiness: {
+        _waitForChangeDetectionReadiness: {
           handler: async () => {
             const readiness = options.getChangeDetectionReadiness
               ? await options.getChangeDetectionReadiness()

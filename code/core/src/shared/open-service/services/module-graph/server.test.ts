@@ -628,7 +628,7 @@ describe('module-graph open service', () => {
         getChangeDetectionReadiness,
       });
 
-      await expect(runtime.commands._getChangeDetectionReadiness(undefined)).resolves.toEqual({
+      await expect(runtime.commands._waitForChangeDetectionReadiness(undefined)).resolves.toEqual({
         status: 'unavailable',
         reason: 'disabled',
       });
@@ -646,7 +646,7 @@ describe('module-graph open service', () => {
         }),
       });
 
-      await expect(runtime.commands._getChangeDetectionReadiness(undefined)).resolves.toEqual({
+      await expect(runtime.commands._waitForChangeDetectionReadiness(undefined)).resolves.toEqual({
         status: 'error',
         error: { message: 'scan blew up' },
       });

@@ -103,7 +103,7 @@ export async function buildDocgenPayload(
     return undefined;
   }
 
-  const { csf, componentName, component, subcomponents, storyFile } = resolved;
+  const { csf, componentName, component, subcomponents } = resolved;
 
   const usableSubcomponents = subcomponents.filter(
     (sub): sub is { name: string; component: ComponentRef } => sub.component !== undefined
@@ -119,9 +119,7 @@ export async function buildDocgenPayload(
 
   const componentDocgen = buildComponentDocgenFromResolved({
     entry: input.entry,
-    storyPath,
     storyFilePath,
-    storyFile,
     csf,
     componentName,
     component,

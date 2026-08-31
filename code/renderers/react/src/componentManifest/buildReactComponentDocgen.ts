@@ -52,10 +52,19 @@ export interface ReactComponentManifest extends ComponentManifest {
   [key: string]: unknown;
 }
 
-function getPackageInfo(componentPath: string | undefined, fallbackPath: string) {
-  const nearestPkg = cachedFindUp('package.json', {
-    cwd: path.dirname(componentPath ?? fallbackPath),
-  });
+/**
+ * Name of the package the component file belongs to, used to rewrite a story's local import into
+ * the one a consumer would write.
+ *
+ * Returns undefined when the component file is unknown: there is then no package to rewrite to, and
+ * guessing one from the story file names whichever package the stories happen to live in.
+ */
+function getPackageInfo(componentPath: string | undefined) {
+  if (!componentPath) {
+    return undefined;
+  }
+
+  const nearestPkg = cachedFindUp('package.json', { cwd: path.dirname(componentPath) });
 
   try {
     if (!nearestPkg) {
@@ -224,7 +233,7 @@ export function buildStoryDocsFromResolved({
   const id = getComponentIdFromEntry(entry);
   const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
 
-  const packageName = getPackageInfo(component?.path, storyPath);
+  const packageName = getPackageInfo(component?.path);
   const fallbackImport = getFallbackImport(packageName, componentName);
   const storyEntries = extractStorySnippets(csf, component?.componentName, filterStoryIds, {
     filePath: storyPath,
@@ -272,9 +281,7 @@ export type ComponentDocgenFromResolved = Omit<
  */
 export function buildComponentDocgenFromResolved({
   entry,
-  storyPath,
   storyFilePath,
-  storyFile,
   csf,
   componentName,
   component,
@@ -282,9 +289,7 @@ export function buildComponentDocgenFromResolved({
   docgenEngine,
 }: {
   entry: IndexEntry;
-  storyPath: string;
   storyFilePath: string;
-  storyFile: string;
   csf: ParsedCsf;
   componentName: string | undefined;
   component: ComponentRef | undefined;
@@ -293,7 +298,7 @@ export function buildComponentDocgenFromResolved({
 }): ComponentDocgenFromResolved {
   const id = getComponentIdFromEntry(entry);
   const title = entry.title.split('/').at(-1)!.replace(/\s+/g, '');
-  const packageName = getPackageInfo(component?.path, storyPath);
+  const packageName = getPackageInfo(component?.path);
 
   const base = {
     id,
@@ -320,7 +325,9 @@ export function buildComponentDocgenFromResolved({
         }
       : {
           name: 'No component import found',
-          message: `No component file found for the "${csf.meta.component}" component.`,
+          message: component?.importId
+            ? `No component file found for the "${csf.meta.component}" component: "${component.importId}" could not be resolved from ${entry.importPath}. Build the package it points at, or map it to its source with a tsconfig path alias.`
+            : `No component file found for the "${csf.meta.component}" component.`,
         };
 
     return {
@@ -329,8 +336,7 @@ export function buildComponentDocgenFromResolved({
       error: docgenError ?? {
         name: error.name,
         message:
-          (csf._metaStatementPath?.buildCodeFrameError(error.message).message ?? error.message) +
-          `\n\n${entry.importPath}:\n${storyFile}`,
+          csf._metaStatementPath?.buildCodeFrameError(error.message).message ?? error.message,
       },
     };
   }
@@ -375,7 +381,6 @@ export function buildReactComponentDocgenFromResolved({
   entry,
   storyPath,
   storyFilePath,
-  storyFile,
   csf,
   componentName,
   component,
@@ -387,7 +392,6 @@ export function buildReactComponentDocgenFromResolved({
   entry: IndexEntry;
   storyPath: string;
   storyFilePath: string;
-  storyFile: string;
   csf: ParsedCsf;
   componentName: string | undefined;
   component: ComponentRef | undefined;
@@ -409,9 +413,7 @@ export function buildReactComponentDocgenFromResolved({
   });
   const componentDocgen = buildComponentDocgenFromResolved({
     entry,
-    storyPath,
     storyFilePath,
-    storyFile,
     csf,
     componentName,
     component,

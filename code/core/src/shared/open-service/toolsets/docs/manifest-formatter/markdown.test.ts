@@ -396,6 +396,29 @@ describe('MarkdownFormatter - formatComponentManifest', () => {
       expect(result).toContain('Error: No component import found');
       expect(result).toContain('No component file found for ComboBoxItem.');
     });
+
+    it('should state why a component carries no docgen instead of omitting it silently', () => {
+      const manifest: ComponentManifest = {
+        id: 'vega-vegachart',
+        name: 'VegaChart',
+        path: 'stories/VegaChart.stories.tsx',
+        error: {
+          name: 'No component import found',
+          message: '"@astryx/vega" could not be resolved from ./stories/VegaChart.stories.tsx.',
+        },
+        stories: [{ name: 'Default', snippet: '<VegaChart />' }],
+      };
+
+      const result = formatComponentManifest(manifest);
+
+      expect(result).toContain('Error: No component import found');
+      expect(result).toContain(
+        '"@astryx/vega" could not be resolved from ./stories/VegaChart.stories.tsx.'
+      );
+      expect(result.indexOf('Error: No component import found')).toBeLessThan(
+        result.indexOf('## Stories')
+      );
+    });
   });
 
   describe('stories section', () => {

@@ -14,11 +14,19 @@ function createTemporaryDirectory() {
   return directory;
 }
 
-function writeFixture(directory: string, relativePath: string) {
+function writeFixture(directory: string, relativePath: string, contents = 'export {};') {
   const filePath = join(directory, relativePath);
   mkdirSync(dirname(filePath), { recursive: true });
-  writeFileSync(filePath, 'export {};');
+  writeFileSync(filePath, contents);
   return realpathSync(filePath);
+}
+
+function writePackage(directory: string, name: string, exportsField: Record<string, string>) {
+  writeFixture(
+    directory,
+    `node_modules/${name}/package.json`,
+    JSON.stringify({ name, exports: { '.': exportsField } })
+  );
 }
 
 describe('resolveImport', () => {
@@ -49,5 +57,41 @@ describe('resolveImport', () => {
     const expected = writeFixture(directory, 'Component.tsx');
 
     expect(resolveImport('./Component.jsx', { basedir: directory })).toBe(expected);
+  });
+
+  it('resolves a package whose exports map declares no default condition', () => {
+    const directory = createTemporaryDirectory();
+    writePackage(directory, 'dual-package', {
+      types: './dist/index.d.ts',
+      import: './dist/index.mjs',
+      require: './dist/index.cjs',
+    });
+    const expected = writeFixture(directory, 'node_modules/dual-package/dist/index.mjs');
+    writeFixture(directory, 'node_modules/dual-package/dist/index.cjs');
+
+    expect(resolveImport('dual-package', { basedir: directory })).toBe(expected);
+  });
+
+  it('prefers the sources a package points at over its bundled output', () => {
+    const directory = createTemporaryDirectory();
+    writePackage(directory, 'source-package', {
+      source: './src/index.ts',
+      import: './dist/index.mjs',
+    });
+    const expected = writeFixture(directory, 'node_modules/source-package/src/index.ts');
+    writeFixture(directory, 'node_modules/source-package/dist/index.mjs');
+
+    expect(resolveImport('source-package', { basedir: directory })).toBe(expected);
+  });
+
+  it('falls back to the bundled output when a declared source is not shipped', () => {
+    const directory = createTemporaryDirectory();
+    writePackage(directory, 'unshipped-source-package', {
+      source: './src/index.ts',
+      default: './dist/index.js',
+    });
+    const expected = writeFixture(directory, 'node_modules/unshipped-source-package/dist/index.js');
+
+    expect(resolveImport('unshipped-source-package', { basedir: directory })).toBe(expected);
   });
 });

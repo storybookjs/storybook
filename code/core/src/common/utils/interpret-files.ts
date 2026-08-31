@@ -19,9 +19,24 @@ export function getInterpretedFile(pathToFile: string) {
     .find((candidate) => existsSync(candidate));
 }
 
+// Without condition names nothing matches an `exports` map that has no `default` entry, so the
+// very common `{ import, require }` shape resolves to nothing at all.
+const runtimeConditions = ['node', 'import', 'require', 'default'];
+
+// Every caller of `resolveImport` analyzes component sources, and a bundled `dist` file carries
+// neither the prop types nor the JSDoc that analysis needs, so a package pointing at its own
+// sources is followed there instead. Declaring `source` without shipping it is legal, hence the
+// fallback to the runtime conditions.
+const sourceImportResolver = createModuleResolver({
+  extensions: [...supportedExtensions],
+  mainFields: ['module', 'main'],
+  conditionNames: ['source', ...runtimeConditions],
+});
+
 const importResolver = createModuleResolver({
   extensions: [...supportedExtensions],
   mainFields: ['module', 'main'],
+  conditionNames: runtimeConditions,
 });
 
 export interface ResolveImportOptions {
@@ -60,5 +75,9 @@ export function resolveImport(id: string, options: ResolveImportOptions): string
 }
 
 function resolveSync(id: string, basedir: string): string {
-  return importResolver.resolveSync(basedir, id);
+  try {
+    return sourceImportResolver.resolveSync(basedir, id);
+  } catch {
+    return importResolver.resolveSync(basedir, id);
+  }
 }

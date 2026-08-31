@@ -281,6 +281,19 @@ function demoteHeadings(markdown: string): string {
     .join('\n');
 }
 
+/**
+ * Renders why a component carries no docgen.
+ *
+ * Without this the props and description are simply absent, which reads as "this component takes no
+ * props" rather than "Storybook could not find its source".
+ */
+function formatComponentError(error: { name: string; message: string } | undefined): string[] {
+  if (!error) {
+    return [];
+  }
+  return [`Error: ${error.name}`, '', '```', error.message, '```', ''];
+}
+
 function formatSubcomponentsSection(
   subcomponents: Record<string, SubcomponentManifest> | undefined
 ): string[] {
@@ -366,6 +379,8 @@ export function formatComponentManifest(componentManifest: ComponentManifest): s
 
   parts.push(...formatJsDocTags(jsDocTags, isGenericJsDocTag));
   parts.push(...formatExampleJsDocTags(jsDocTags));
+
+  parts.push(...formatComponentError(componentManifest.error));
 
   parts.push(...formatSubcomponentsSection(componentManifest.subcomponents));
 

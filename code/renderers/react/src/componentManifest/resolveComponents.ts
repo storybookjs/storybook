@@ -36,8 +36,6 @@ export interface ResolvedSubcomponent {
  */
 export interface ResolvedStoryFile {
   storyPath: string;
-  /** Raw source text of the story file (used by the manifest generator for error frames). */
-  storyFile: string;
   csf: ParsedCsf;
   /** `meta.component`'s local name, if the story file declares one. */
   componentName: string | undefined;
@@ -130,7 +128,7 @@ export async function resolveStoryFileComponents(options: {
     component: findExactComponentMatch(allComponents, declared.componentName),
   }));
 
-  return { storyPath, storyFile, csf, componentName, allComponents, component, subcomponents };
+  return { storyPath, csf, componentName, allComponents, component, subcomponents };
 }
 
 /** Snippet + metadata for one story, before output-specific shaping. */

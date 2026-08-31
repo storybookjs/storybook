@@ -830,6 +830,48 @@ test('keeps the parent manifest when a declared subcomponent cannot be resolved'
   });
 });
 
+test('reports the unresolved specifier and keeps it in the import when a package cannot be resolved', async () => {
+  vol.fromJSON(
+    {
+      ['./package.json']: JSON.stringify({ name: 'some-package' }),
+      ['./src/stories/VegaChart.stories.tsx']: dedent`
+        import type { Meta } from '@storybook/react';
+        import { VegaChart } from '@astryx/vega';
+
+        const meta = {
+          title: 'Vega/VegaChart',
+          component: VegaChart,
+        } satisfies Meta<typeof VegaChart>;
+        export default meta;
+
+        export const Default = () => <VegaChart spec={{}} />;
+      `,
+    },
+    '/app'
+  );
+
+  const manifestEntries: ManifestEntries = [
+    {
+      type: 'story',
+      subtype: 'story',
+      id: 'vega-vegachart--default',
+      name: 'Default',
+      title: 'Vega/VegaChart',
+      importPath: './src/stories/VegaChart.stories.tsx',
+      tags: [Tag.DEV, Tag.TEST, Tag.MANIFEST],
+      exportName: 'Default',
+    },
+  ];
+
+  const result = await runManifests(manifestEntries);
+  const vegaChart = result?.components?.components?.['vega-vegachart'] as any;
+
+  expect(vegaChart?.error?.name).toBe('No component import found');
+  expect(vegaChart?.error?.message).toContain('"@astryx/vega" could not be resolved');
+  expect(vegaChart?.import).toContain("from '@astryx/vega'");
+  expect(vegaChart?.import).not.toContain('some-package');
+});
+
 test('generator uses reactComponentMeta displayName from batch extraction', async () => {
   const batchExtract = vi
     .spyOn(ComponentMetaManager.prototype, 'batchExtract')

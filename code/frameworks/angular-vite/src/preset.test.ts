@@ -156,6 +156,18 @@ describe('stylePreprocessorCheckPlugin', () => {
   // only Vite's own tree can reach is one Vite still loads.
   const VITE_DIR = dirname(fileURLToPath(import.meta.resolve('vite')));
 
+  type StyleCheckHook = {
+    filter: { id: RegExp };
+    handler: (code: string, id: string) => unknown;
+  };
+
+  // Vite runs the handler only for the ids the declared `filter` matches, so the tests go through
+  // that gate too rather than calling the handler directly. Reading the filter unconditionally is
+  // deliberate: dropping it would put this hook back in front of every module in the graph, and
+  // every assertion below would still pass if these tests skipped past it.
+  const runTransform = (hook: StyleCheckHook, id: string) =>
+    hook.filter.id.test(id) ? hook.handler('', id) : undefined;
+
   // Stands in for a `node_modules` tree without installing anything: `packages` are the directories
   // present under `installedIn`, and `entryPointResolves` are the ones whose entry point Node's CJS
   // resolver will also hand back. They differ for a package whose `exports` map has no `require`
@@ -209,7 +221,7 @@ describe('stylePreprocessorCheckPlugin', () => {
 
     const plugin = stylePreprocessorCheckPlugin();
     (plugin.configResolved as (config: unknown) => void)({ root: WORKSPACE_ROOT });
-    return () => (plugin.transform as (code: string, id: string) => unknown)('', id);
+    return () => runTransform(plugin.transform as StyleCheckHook, id);
   }
 
   afterEach(() => {
@@ -322,6 +334,28 @@ describe('stylePreprocessorCheckPlugin', () => {
         notExported: ['sass'],
       })
     ).not.toThrow();
+  });
+
+  // `pre` puts this hook ahead of the whole module graph, so an unfiltered handler would be called
+  // once per module - overwhelmingly for files that can never need a preprocessor - to answer a
+  // question about stylesheets. The filter is what keeps it off that path, and it earns its place
+  // only if it covers every stylesheet and nothing else.
+  it('is asked about stylesheets and nothing else', () => {
+    const { filter } = stylePreprocessorCheckPlugin().transform as StyleCheckHook;
+    const matching = (ids: string[]) => ids.filter((id) => filter.id.test(id));
+
+    expect(
+      matching([
+        'src/button.scss',
+        'src/button.sass',
+        'src/button.less',
+        // Vite appends `?used`, `?inline` and friends before a stylesheet reaches `transform`.
+        'src/button.scss?used',
+      ])
+    ).toHaveLength(4);
+    expect(
+      matching(['src/app.ts', 'src/app.html', 'src/button.css', 'src/scss-helpers.ts'])
+    ).toEqual([]);
   });
 
   // Without `pre`, `vite:css` transforms first and fails with its own `sass-embedded` message, so

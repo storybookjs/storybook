@@ -399,30 +399,38 @@ export function stylePreprocessorCheckPlugin(): Plugin {
       root = config.root;
       installed.clear();
     },
-    transform(_code, id) {
-      const lang = STYLE_PREPROCESSOR_ID.exec(id)?.[1];
-      const preprocessor = lang ? STYLE_PREPROCESSORS[lang] : undefined;
-      if (!lang || !preprocessor) {
-        return;
-      }
+    transform: {
+      // Only a stylesheet can be missing a preprocessor, and this hook sits in `pre`, ahead of
+      // every module in the graph. Declaring the filter keeps the handler out of that path: Vite
+      // evaluates it before it calls into JS, and under Rolldown it never crosses the boundary at
+      // all. The handler still asks the same question, because a filter is an optimization Vite is
+      // free to skip, never the guard the error depends on.
+      filter: { id: STYLE_PREPROCESSOR_ID },
+      handler(_code, id) {
+        const lang = STYLE_PREPROCESSOR_ID.exec(id)?.[1];
+        const preprocessor = lang ? STYLE_PREPROCESSORS[lang] : undefined;
+        if (!lang || !preprocessor) {
+          return;
+        }
 
-      if (!installed.has(lang)) {
-        const candidates = [preprocessor.install, preprocessor.alternative].filter(
-          (pkg): pkg is string => !!pkg
-        );
-        installed.set(
-          lang,
-          candidates.some((pkg) => isInstalledNear(pkg, root))
-        );
-      }
+        if (!installed.has(lang)) {
+          const candidates = [preprocessor.install, preprocessor.alternative].filter(
+            (pkg): pkg is string => !!pkg
+          );
+          installed.set(
+            lang,
+            candidates.some((pkg) => isInstalledNear(pkg, root))
+          );
+        }
 
-      if (!installed.get(lang)) {
-        throw new AngularMissingStylePreprocessorError({
-          stylePath: id.split('?')[0],
-          install: preprocessor.install,
-          alternative: preprocessor.alternative,
-        });
-      }
+        if (!installed.get(lang)) {
+          throw new AngularMissingStylePreprocessorError({
+            stylePath: id.split('?')[0],
+            install: preprocessor.install,
+            alternative: preprocessor.alternative,
+          });
+        }
+      },
     },
   };
 }

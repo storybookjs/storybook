@@ -585,7 +585,7 @@ describe('help', () => {
     // Input schemas come from the valibot definitions.
     expect(result.output).toContain('`--componentPaths`');
     // Declared output schemas are part of the dump.
-    expect(result.output).toContain('Output:');
+    expect(result.output).toContain('Output (`--json`):');
   });
 
   it('renders one toolset’s section with a usage line on a bare toolset name', async () => {

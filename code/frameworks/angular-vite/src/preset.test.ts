@@ -161,21 +161,9 @@ describe('stylePreprocessorCheckPlugin', () => {
     handler: (code: string, id: string) => unknown;
   };
 
-  // Vite runs the handler only for the ids the declared `filter` matches, so the tests go through
-  // that gate too rather than calling the handler directly. Reading the filter unconditionally is
-  // deliberate: dropping it would put this hook back in front of every module in the graph, and
-  // every assertion below would still pass if these tests skipped past it.
   const runTransform = (hook: StyleCheckHook, id: string) =>
     hook.filter.id.test(id) ? hook.handler('', id) : undefined;
 
-  // Stands in for a `node_modules` tree without installing anything: `packages` are the directories
-  // present under `installedIn`, and `entryPointResolves` are the ones whose entry point Node's CJS
-  // resolver will also hand back. They differ for a package whose `exports` map has no `require`
-  // condition, which Vite loads and `createRequire` refuses.
-  //
-  // `notExported` is that third outcome, which the resolver reports as its own error code: the
-  // package is installed and only its entry point was refused. Collapsing it into "not found" is
-  // what makes a PnP project with such a preprocessor look uninstalled.
   function transformStyle(
     id: string,
     {

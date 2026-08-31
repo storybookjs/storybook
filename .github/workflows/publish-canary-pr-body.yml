@@ -30,8 +30,10 @@
 #   This job checks out `github.sha` (the default-branch copy of this workflow).                  #
 # - Never download, unpack, or execute artifacts / scripts from the triggering run.               #
 # - Never write to the GitHub Actions cache.                                                      #
-# - Reconstruct canary URLs from the triggering run's head SHA (GitHub metadata), not from        #
-#   PR-supplied files. Resolve the PR with `/commits/{sha}/pulls` and require head.sha to match.  #
+# - Reconstruct canary URLs from GitHub metadata, not from PR-supplied files. For                #
+#   pull_request, use workflow_run.head_sha and `/commits/{sha}/pulls` (head must match).         #
+#   For workflow_dispatch, head_sha is the dropdown branch — use the canary-ref step name         #
+#   written by this repo's workflow from the maintainer inputs. Do not download artifacts.        #
 # - Always set explicit permissions so GITHUB_TOKEN cannot do more than patch the matching PR.    #
 #                                                                                                 #
 ###################################################################################################
@@ -48,8 +50,9 @@ name: Update Canary PR Body
 # - The publish job stays on `pull_request` with contents:read only. It has no secrets and does
 #   not write to the PR.
 # - This job never checks out the PR, never uses its artifacts, and never runs yarn/npm from it.
-# - Install snippets are built from `workflow_run.head_sha`. A fork cannot aim this token at a
-#   different PR: we look up PRs for that SHA and require the open PR's head to equal it.
+# - Install snippets for pull_request runs are built from `workflow_run.head_sha`. A fork
+#   cannot aim this token at a different PR: we look up PRs for that SHA and require the
+#   open PR's head to equal it. Manual dispatches use the canary-ref step, not head_sha.
 #
 on:
   # zizmor: ignore[dangerous-triggers]  # default-branch checkout only; see security warning above
@@ -60,7 +63,7 @@ on:
 permissions: {}
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.workflow_run.head_repository.full_name }}-${{ github.event.workflow_run.head_branch }}
+  group: ${{ github.workflow }}-${{ github.event.workflow_run.id }}
   cancel-in-progress: true
 
 jobs:
@@ -68,7 +71,7 @@ jobs:
     name: Update Canary PR Body
     if: |
       github.repository_owner == 'storybookjs' &&
-      github.event.workflow_run.event == 'pull_request' &&
+      contains(fromJSON('["pull_request", "workflow_dispatch"]'), github.event.workflow_run.event) &&
       contains(fromJSON('["success", "failure"]'), github.event.workflow_run.conclusion)
     runs-on: ubuntu-latest
     permissions:

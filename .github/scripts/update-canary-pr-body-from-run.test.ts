@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 
+import { formatCanaryRefStepName } from './resolve-canary-ref.ts';
 import {
   applyCanaryPrBodyUpdate,
   buildFailedHeading,
@@ -8,6 +9,7 @@ import {
   buildReleasedHeading,
   buildReleasedSection,
   decideCanaryPrBodyAction,
+  findCanaryRefFromJobs,
   findPullRequestNumber,
   PUBLISH_JOB_NAME,
   shortSha,
@@ -34,7 +36,7 @@ test('decideCanaryPrBodyAction skips non-pull_request events', () => {
       runConclusion: 'success',
       jobs: [{ name: PUBLISH_JOB_NAME, conclusion: 'success' }],
     }),
-    { action: 'skip', reason: 'event is push, not pull_request' }
+    { action: 'skip', reason: 'event is push, not pull_request or workflow_dispatch' }
   );
 });
 
@@ -79,6 +81,41 @@ test('decideCanaryPrBodyAction skips when the publish job did not run but the wo
       ],
     }),
     { action: 'skip', reason: 'publish job conclusion is skipped' }
+  );
+});
+
+test('decideCanaryPrBodyAction maps workflow_dispatch publish success', () => {
+  assert.deepEqual(
+    decideCanaryPrBodyAction({
+      event: 'workflow_dispatch',
+      runConclusion: 'success',
+      jobs: [{ name: PUBLISH_JOB_NAME, conclusion: 'success' }],
+    }),
+    { action: 'released' }
+  );
+});
+
+test('findCanaryRefFromJobs reads the canary-ref step', () => {
+  assert.equal(findCanaryRefFromJobs([{ name: PUBLISH_JOB_NAME, conclusion: 'success' }]), null);
+  assert.deepEqual(
+    findCanaryRefFromJobs([
+      {
+        name: PUBLISH_JOB_NAME,
+        conclusion: 'success',
+        steps: [
+          {
+            name: formatCanaryRefStepName({
+              sha: SHA,
+              repository: 'alice/storybook',
+              branch: '',
+              prNumber: 34799,
+            }),
+            conclusion: 'success',
+          },
+        ],
+      },
+    ]),
+    { sha: SHA, repository: 'alice/storybook', branch: '', prNumber: 34799 }
   );
 });
 
@@ -193,6 +230,81 @@ test('updateCanaryPrBodyFromRun patches the matching PR and comments on failure'
   assert.equal(
     comment?.args.at(-1),
     buildFailureComment({ actor: 'jeppe', repo: 'storybookjs/storybook', runId: '99' })
+  );
+});
+
+test('updateCanaryPrBodyFromRun uses the canary-ref SHA on workflow_dispatch, not the dropdown head', () => {
+  const dropdownSha = 'aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa';
+  const calls: { args: string[]; input?: string }[] = [];
+  const gh: GhClient = (args, input) => {
+    calls.push({ args, input });
+    if (args[0] === 'run' && args[1] === 'view') {
+      return JSON.stringify({
+        event: 'workflow_dispatch',
+        conclusion: 'success',
+        headSha: dropdownSha,
+        jobs: [
+          {
+            name: PUBLISH_JOB_NAME,
+            conclusion: 'success',
+            steps: [
+              {
+                name: formatCanaryRefStepName({
+                  sha: SHA,
+                  repository: 'alice/storybook',
+                  branch: '',
+                  prNumber: 34799,
+                }),
+                conclusion: 'success',
+              },
+            ],
+          },
+        ],
+      });
+    }
+    if (
+      args[0] === 'api' &&
+      args[1] === 'repos/storybookjs/storybook/pulls/34799' &&
+      args.includes('--jq')
+    ) {
+      return TEMPLATE;
+    }
+    if (args[0] === 'api' && args[1] === 'repos/storybookjs/storybook/pulls/34799') {
+      return JSON.stringify({ state: 'open' });
+    }
+    return '';
+  };
+
+  const result = updateCanaryPrBodyFromRun(
+    { repo: 'storybookjs/storybook', runId: '88', actor: 'jeppe' },
+    gh
+  );
+
+  assert.deepEqual(result, { action: 'released', pr: 34799 });
+  const patch = calls.find((call) => call.args.includes('PATCH'));
+  assert.ok(patch?.input?.includes(buildReleasedHeading(SHA)));
+  assert.equal(
+    calls.some((call) => call.args[1]?.includes(dropdownSha)),
+    false
+  );
+});
+
+test('updateCanaryPrBodyFromRun skips workflow_dispatch without a canary-ref step', () => {
+  const gh: GhClient = (args) => {
+    if (args[0] === 'run') {
+      return JSON.stringify({
+        event: 'workflow_dispatch',
+        conclusion: 'success',
+        headSha: SHA,
+        jobs: [{ name: PUBLISH_JOB_NAME, conclusion: 'success', steps: [] }],
+      });
+    }
+    throw new Error(`unexpected gh call: ${args.join(' ')}`);
+  };
+
+  assert.deepEqual(
+    updateCanaryPrBodyFromRun({ repo: 'storybookjs/storybook', runId: '2', actor: 'bot' }, gh),
+    { action: 'skip', reason: 'workflow_dispatch run has no canary-ref step' }
   );
 });
 

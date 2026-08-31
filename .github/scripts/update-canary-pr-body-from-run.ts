@@ -2,6 +2,7 @@ import { execFileSync } from 'node:child_process';
 import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { parseCanaryRefStepName, type ResolvedCanaryRef } from './resolve-canary-ref.ts';
 import { replaceMarker } from './replace-pr-body-markers.ts';
 
 export const PUBLISH_JOB_NAME = 'Publish Canary Packages';
@@ -12,6 +13,7 @@ export const SECTION_MARKER = 'CANARY_RELEASE_SECTION';
 export type JobConclusion = {
   name: string;
   conclusion: string | null;
+  steps?: { name: string; conclusion: string | null }[];
 };
 
 export type AssociatedPull = {
@@ -43,8 +45,11 @@ export function decideCanaryPrBodyAction(input: {
   runConclusion: string | null;
   jobs: JobConclusion[];
 }): CanaryPrBodyAction {
-  if (input.event !== 'pull_request') {
-    return { action: 'skip', reason: `event is ${input.event}, not pull_request` };
+  if (input.event !== 'pull_request' && input.event !== 'workflow_dispatch') {
+    return {
+      action: 'skip',
+      reason: `event is ${input.event}, not pull_request or workflow_dispatch`,
+    };
   }
 
   if (input.runConclusion !== 'success' && input.runConclusion !== 'failure') {
@@ -70,6 +75,15 @@ export function decideCanaryPrBodyAction(input: {
     action: 'skip',
     reason: `publish job conclusion is ${job.conclusion ?? 'null'}`,
   };
+}
+
+export function findCanaryRefFromJobs(jobs: JobConclusion[]): ResolvedCanaryRef | null {
+  const job = jobs.find((entry) => entry.name === PUBLISH_JOB_NAME);
+  const step = job?.steps?.find((entry) => entry.name.startsWith('canary-ref '));
+  if (!step) {
+    return null;
+  }
+  return parseCanaryRefStepName(step.name);
 }
 
 export function findPullRequestNumber(pulls: AssociatedPull[], headSha: string): number | null {
@@ -152,12 +166,31 @@ export function updateCanaryPrBodyFromRun(
     return decision;
   }
 
-  const pulls = JSON.parse(
-    gh(['api', `repos/${input.repo}/commits/${run.headSha}/pulls`])
-  ) as AssociatedPull[];
-  const pr = findPullRequestNumber(pulls, run.headSha);
+  let sha = run.headSha;
+  let pr: number | null = null;
+
+  if (run.event === 'workflow_dispatch') {
+    const ref = findCanaryRefFromJobs(run.jobs);
+    if (!ref) {
+      return { action: 'skip', reason: 'workflow_dispatch run has no canary-ref step' };
+    }
+    sha = ref.sha;
+    pr = ref.prNumber;
+  }
+
   if (pr === null) {
-    return { action: 'skip', reason: `no open PR with head ${run.headSha}` };
+    const pulls = JSON.parse(
+      gh(['api', `repos/${input.repo}/commits/${sha}/pulls`])
+    ) as AssociatedPull[];
+    pr = findPullRequestNumber(pulls, sha);
+    if (pr === null) {
+      return { action: 'skip', reason: `no open PR with head ${sha}` };
+    }
+  } else {
+    const pull = JSON.parse(gh(['api', `repos/${input.repo}/pulls/${pr}`])) as { state: string };
+    if (pull.state !== 'open') {
+      return { action: 'skip', reason: `PR #${pr} is ${pull.state}` };
+    }
   }
 
   let body = gh(['api', `repos/${input.repo}/pulls/${pr}`, '--jq', '.body']);
@@ -165,7 +198,7 @@ export function updateCanaryPrBodyFromRun(
     body = body.slice(0, -1);
   }
 
-  const nextBody = applyCanaryPrBodyUpdate(body, { action: decision.action, sha: run.headSha });
+  const nextBody = applyCanaryPrBodyUpdate(body, { action: decision.action, sha });
   gh(
     ['api', '--method', 'PATCH', `repos/${input.repo}/pulls/${pr}`, '--input', '-'],
     JSON.stringify({ body: nextBody })

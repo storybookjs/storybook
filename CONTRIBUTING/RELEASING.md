@@ -432,22 +432,30 @@ Before you start you should make sure that your working tree is clean and the re
 
 Canary packages publish to `pkg.pr.new`. The [canary publish workflow](../.github/workflows/publish-canary.yml) runs on every push to `next`. For in-repo pull requests it is opt-in: a human adds the `ci:canary` label, and while the label remains every subsequent push republishes. A separate [trusted workflow](../.github/workflows/publish-canary-pr-body.yml) then updates the PR body with commands for creating a new project or upgrading an existing one. The PR heading links to https://pkg.pr.new/~/storybookjs/storybook. Install commands use compact pkg.pr.new URLs with the short commit SHA, for example `https://pkg.pr.new/storybook@a1b2c3d`.
 
-Fork PRs are not published under `storybookjs/storybook`. To get a canary for fork code, run `publish-canary.yml` on the fork after installing the [pkg-pr-new GitHub App](https://github.com/apps/pkg-pr-new). Those tarballs use owner/repo URLs such as `https://pkg.pr.new/<fork-owner>/<fork-repo>/storybook@<sha>`. Compact `https://pkg.pr.new/storybook@<sha>` URLs will 404 because they resolve to this repository.
+Fork PRs do not publish from the `ci:canary` label. A later push on a labeled fork would republish without a new review. A maintainer publishes fork code from this repository with a manual run (see below) and the `pr` input. The fork author does not need to install the pkg-pr-new app or run a workflow. Those canaries still use compact `https://pkg.pr.new/storybook@<sha>` URLs.
 
 ### Manual Canary Release
 
-If you want to publish a canary without triggering the whole CI or on a branch that doesn't have a PR yet, you can trigger the canary publish workflow yourself on the branch you want to publish. Manual canary publishes only publish the packages; they do not edit any PR body or post comments, so you have to check the workflow to see the published version number.
+Use a manual run to publish a canary without `ci:canary`, to publish an in-repo branch that has no PR, or to publish a **fork PR**. The "Use workflow from" branch is the workflow file source. Optional inputs `pr`, `branch`, and `sha` select what to publish. If you set more than one, they must identify the same commit (`sha` may be 7-40 hex characters). Leave all three empty to publish the branch selected in "Use workflow from".
+
+A successful or failed manual run that resolves to an open PR updates that PR's canary heading and install commands.
 
 #### With GitHub UI
 
 1. Open the workflow UI at https://github.com/storybookjs/storybook/actions/workflows/publish-canary.yml
 2. On the top right corner, click "Run workflow"
-3. For "branch", select the branch you want to publish canary packages from
+3. For "Use workflow from", select an in-repo branch that has this workflow (usually `next`)
+4. Optionally set `pr` (required for a fork PR), `branch`, and/or `sha`
 
 #### With the CLI
 
 ```bash
+# Publish the selected in-repo branch
 gh workflow run --repo storybookjs/storybook publish-canary.yml --ref <BRANCH>
+
+# Publish a PR (including a fork PR). branch and sha are optional; if set they must match the PR head.
+gh workflow run --repo storybookjs/storybook publish-canary.yml --ref next -f pr=<PR_NUMBER>
+gh workflow run --repo storybookjs/storybook publish-canary.yml --ref next -f pr=<PR_NUMBER> -f sha=<SHA>
 ```
 
 ## Versioning Scenarios

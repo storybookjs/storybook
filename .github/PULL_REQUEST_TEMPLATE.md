@@ -74,7 +74,11 @@ Do not describe how YOU tested the PR code, but how a separate maintainer should
 
 <!-- CANARY_RELEASE_SECTION -->
 
-This PR does not have a canary release associated. On an in-repo branch, add the `ci:canary` label to publish canary packages. Subsequent pushes republish while the label remains. Fork PRs are not published under `storybookjs/storybook`; run the [canary workflow](https://github.com/storybookjs/storybook/actions/workflows/publish-canary.yml) on the fork instead.
+This PR does not have a canary release associated.
+
+In-repo PRs: add the `ci:canary` label. Later pushes republish while the label remains.
+
+Fork PRs: the label does nothing (a later push must not auto-publish). A maintainer publishes from this repository with [Run workflow](https://github.com/storybookjs/storybook/actions/workflows/publish-canary.yml) and the `pr` input. `branch` and `sha` are optional; if more than one is set, they must be the same commit. The fork author does not need to do anything.
 
 <!-- CANARY_RELEASE_SECTION -->
 

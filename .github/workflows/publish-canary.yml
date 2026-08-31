@@ -62,8 +62,9 @@ jobs:
           ref: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
           persist-credentials: false
 
+      # After checkout of PR head, ./ would run that tree's action.yml.
       - name: Setup Node.js and Install Dependencies
-        uses: ./.github/actions/setup-node-and-install
+        uses: $/.github/actions/setup-node-and-install
         with:
           install-code-deps: true
 

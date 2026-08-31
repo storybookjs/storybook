@@ -1,9 +1,23 @@
 import { describe, expect, it } from 'vitest';
 
 import {
+  OpenServiceRemoteCommandConfigDriftError,
   OpenServiceRemoteCommandUnhandledError,
   WebpackCompilationError,
 } from '../server-errors.ts';
+
+describe('OpenServiceRemoteCommandConfigDriftError', () => {
+  it('reports the missing handler and scopes the restart guidance to the attached instance', () => {
+    const error = new OpenServiceRemoteCommandConfigDriftError({
+      serviceId: 'core/docgen',
+      commandName: 'extractAllDocgen',
+    });
+
+    expect(error.message).toBe(
+      'The Storybook this runtime is attached to reported it has no handler for remote command "core/docgen.extractAllDocgen". The two processes are running different configurations (for example a feature flag enabled in one but not the other). Restart the attached Storybook with a configuration matching this process.'
+    );
+  });
+});
 
 describe('OpenServiceRemoteCommandUnhandledError', () => {
   it('describes an unacknowledged delegated command without blaming configuration', () => {

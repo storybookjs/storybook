@@ -3,12 +3,16 @@ import * as v from 'valibot';
 import { afterEach, describe, expect, it, onTestFinished, vi } from 'vitest';
 
 import { createTestChannel, installTestChannel } from '../../channels/test-channel.ts';
-import { OpenServiceRemoteCommandUnhandledError } from '../../server-errors.ts';
+import {
+  OpenServiceRemoteCommandConfigDriftError,
+  OpenServiceRemoteCommandUnhandledError,
+} from '../../server-errors.ts';
 import { mutableRecordLookupServiceDef } from './fixtures.ts';
 import {
   SERVICE_COMMAND_ACK,
   SERVICE_COMMAND_INVOKE,
   SERVICE_COMMAND_RESULT,
+  SERVICE_COMMAND_UNHANDLED,
   SERVICE_PATCHES,
   type CommandInvokePayload,
 } from './service-channel.ts';
@@ -185,7 +189,31 @@ describe('delegated command dispatch', () => {
 
     expect(emittedCalls(channel, SERVICE_COMMAND_ACK)).toHaveLength(0);
     expect(emittedCalls(channel, SERVICE_COMMAND_RESULT)).toHaveLength(0);
+    expect(emittedCalls(channel, SERVICE_COMMAND_UNHANDLED)).toHaveLength(0);
     expect(handlerSpy).not.toHaveBeenCalled();
+  });
+
+  it('rejects with config-drift guidance when the peer reports the command unhandled', async () => {
+    const channel = createTestChannel();
+    installTestChannel(channel);
+
+    setDelegatedMode(true);
+    const service = registerService(locallyImplementedServiceDef);
+
+    const promise = service.commands.doThing({ value: 'hi' });
+
+    const { callId } = emittedCalls(channel, SERVICE_COMMAND_INVOKE)[0][1] as CommandInvokePayload;
+    channel.emitExternal(SERVICE_COMMAND_UNHANDLED, {
+      serviceId: locallyImplementedServiceDef.id,
+      callId,
+      clientId: 'instance',
+    });
+
+    const error = await promise.catch((caught: unknown) => caught);
+    expect(error).toBeInstanceOf(OpenServiceRemoteCommandConfigDriftError);
+    expect((error as Error).message).toBe(
+      'The Storybook this runtime is attached to reported it has no handler for remote command "internal-fixture/delegated-local-implementation.doThing". The two processes are running different configurations (for example a feature flag enabled in one but not the other). Restart the attached Storybook with a configuration matching this process.'
+    );
   });
 
   it('rejects with an unacknowledged-command error when no peer acknowledges the invoke', async () => {

@@ -113,6 +113,9 @@ test.describe('storybook tools attach', () => {
       !docgenServerEnabled,
       'Requires the internal Storybook started with STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true, as CI does.'
     );
+    // Every per-component extraction broadcasts the full accumulated docgen state to each channel
+    // client, so leave the manager page before fanning out to spare the CI dev server that load.
+    await page.goto('about:blank');
 
     // The env var makes the CLI's own config evaluation register the docgen services, so listing
     // delegates the all-components extraction to the instance instead of reading local manifests.

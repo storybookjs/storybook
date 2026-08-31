@@ -299,6 +299,17 @@ export class OpenServiceRemoteCommandUnhandledError extends StorybookError {
   }
 }
 
+export class OpenServiceRemoteCommandConfigDriftError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; commandName: string }) {
+    super({
+      name: 'OpenServiceRemoteCommandConfigDriftError',
+      category: Category.CORE_COMMON,
+      code: 30,
+      message: `The Storybook this runtime is attached to reported it has no handler for remote command "${data.serviceId}.${data.commandName}". The two processes are running different configurations (for example a feature flag enabled in one but not the other). Restart the attached Storybook with a configuration matching this process.`,
+    });
+  }
+}
+
 export class OpenServiceOperationNameCollisionError extends StorybookError {
   constructor(public data: { serviceId: ServiceId; operationName: string }) {
     super({

@@ -59,7 +59,17 @@ const DOCS_ACCESS: DocsAccess = {
       },
     },
   }),
-  resolve: async () => undefined,
+  resolve: async (id) =>
+    id === 'button'
+      ? {
+          kind: 'component',
+          component: {
+            id: 'button',
+            name: 'Button',
+            stories: [{ id: 'button--primary', name: 'Primary', snippet: '<Button />' }],
+          },
+        }
+      : undefined,
 };
 
 const RECORD: StorybookInstanceRecord = {
@@ -234,6 +244,17 @@ describe('local tools', () => {
         host: 'in-process',
       })
     );
+  });
+
+  it('round-trips the show-story --storyId flag through token parsing to the handler', async () => {
+    const { deps } = makeDeps();
+
+    const result = await run(['docs', 'show-story', '--storyId', 'button--primary'], deps);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.outcome).toEqual({ kind: 'success' });
+    expect(result.output).toContain('# Button - Primary');
+    expect(result.output).toContain('<Button />');
   });
 
   it('prints the structured result data with --json', async () => {

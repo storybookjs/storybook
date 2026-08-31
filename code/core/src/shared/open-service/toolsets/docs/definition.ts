@@ -128,7 +128,7 @@ function isShowStorySelector({ storyId, componentId, storyName }: DocsShowStoryO
 /**
  * The component id a story id starts with (`button--primary` → `button`). Only a routing hint for
  * which manifest entry to resolve — a match is reported solely when a story's `id` equals the
- * input, so the lookup stays correct even if this derivation misreads an unusual id.
+ * input.
  */
 function componentIdOfStoryId(storyId: string): string {
   const separator = storyId.indexOf('--');
@@ -423,16 +423,19 @@ export function createDocsToolset(options: CreateDocsToolsetOptions) {
           };
           const request: DocsShowStoryOutput = { storyId, componentId, storyName, storybookId };
 
-          const selected = isShowStorySelector(request) ? access(storybookId, ctx) : {};
-          const data: DocsShowStoryOutput = selected.access
-            ? {
-                ...request,
-                // The id shape wins when both are passed, mirroring its listed preference.
-                entry: await selected.access.resolve(
-                  storyId !== undefined ? componentIdOfStoryId(storyId) : componentId!
-                ),
-              }
-            : { ...request, sourceError: selected.sourceError };
+          // The id shape wins when both are passed, mirroring its listed preference.
+          const resolveId =
+            storyId !== undefined
+              ? componentIdOfStoryId(storyId)
+              : componentId !== undefined && storyName !== undefined
+                ? componentId
+                : undefined;
+
+          const selected = resolveId !== undefined ? access(storybookId, ctx) : {};
+          const data: DocsShowStoryOutput =
+            selected.access && resolveId !== undefined
+              ? { ...request, entry: await selected.access.resolve(resolveId) }
+              : { ...request, sourceError: selected.sourceError };
 
           const markdown = renderShowStory(data, ctx);
 

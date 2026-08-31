@@ -220,6 +220,20 @@ describe('stylePreprocessorCheckPlugin', () => {
 
     expect(createRequire).toHaveBeenCalledWith(resolve(WORKSPACE_ROOT, 'noop.js'));
   });
+
+  // Without `pre`, `vite:css` transforms first and fails with its own `sass-embedded` message, so
+  // every assertion above still passes while the user sees none of it.
+  it('runs ahead of `vite:css`, whose message it exists to replace', () => {
+    expect(stylePreprocessorCheckPlugin().enforce).toBe('pre');
+  });
+
+  it('is registered by viteFinal, which is the only thing that runs it', async () => {
+    const result = await viteFinal({ root: WORKSPACE_ROOT }, optionsWith({}));
+
+    expect(result.plugins).toContainEqual(
+      expect.objectContaining({ name: 'storybook-angular-vite-style-preprocessor-check' })
+    );
+  });
 });
 
 describe('angularOptionsPlugin global styles', () => {

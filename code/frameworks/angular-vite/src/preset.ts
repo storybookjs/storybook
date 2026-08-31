@@ -397,8 +397,6 @@ export function stylePreprocessorCheckPlugin(): Plugin {
           alternative: preprocessor.alternative,
         });
       }
-
-      return;
     },
   };
 }

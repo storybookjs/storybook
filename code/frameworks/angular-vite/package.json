@@ -107,6 +107,7 @@
     "less": "^4.0.0",
     "rxjs": "^7.4.0",
     "sass": "^1.0.0",
+    "sass-embedded": "^1.0.0",
     "storybook": "workspace:^",
     "typescript": ">= 5.9.x",
     "vite": ">=8.0.0",
@@ -120,6 +121,9 @@
       "optional": true
     },
     "sass": {
+      "optional": true
+    },
+    "sass-embedded": {
       "optional": true
     },
     "zone.js": {

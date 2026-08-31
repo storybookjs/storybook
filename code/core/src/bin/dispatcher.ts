@@ -1,11 +1,7 @@
 #!/usr/bin/env node
+import Module from 'node:module';
 import { pathToFileURL } from 'node:url';
 
-import {
-  JsPackageManagerFactory,
-  executeNodeCommand,
-  getRemotePackageRunnerArgs,
-} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { join } from 'pathe';
@@ -36,13 +32,27 @@ if (!isNodeVersionSupported(major, minor, patch)) {
 }
 
 async function run() {
+  // TODO: remove try/catch in SB 11 where Node 22 is the minimum supported version
+  try {
+    Module.enableCompileCache?.();
+  } catch {}
+
   const args = process.argv.slice(2);
+
+  if (args[0] === 'ai' || (args[0] === 'tools' && !args.includes('--no-attach'))) {
+    process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
+  }
 
   if (['dev', 'build', 'index', 'ai', 'tools', 'skills'].includes(args[0])) {
     const coreBin = pathToFileURL(join(resolvePackageDir('storybook'), 'dist/bin/core.js')).href;
     await import(coreBin);
     return;
   }
+
+  // Only the external-CLI routes below need the package-manager machinery; importing it lazily
+  // keeps the (hot) core route above from evaluating that dependency-heavy part of `common`.
+  const { JsPackageManagerFactory, executeNodeCommand, getRemotePackageRunnerArgs } =
+    await import('storybook/internal/common');
 
   const targetCli =
     args[0] === 'init'

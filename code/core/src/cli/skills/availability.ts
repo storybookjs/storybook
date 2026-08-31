@@ -23,6 +23,11 @@ export interface ToolAvailability {
   reviewEnabledForCli: boolean;
   /** Component-manifest feature is on AND manifests were found. Gates the `docs` toolset. */
   docsEnabled: boolean;
+  /**
+   * Docs gate for the `storybook tools` CLI channel, which reads manifests in-process and so only
+   * needs manifests to be producible — not the `componentsManifest` opt-in that gates MCP.
+   */
+  docsEnabledForCli: boolean;
   /** Any component manifests were found (drives the docs "why disabled" copy). */
   docsHasManifests: boolean;
   /** The component-manifest feature flag is enabled (drives the docs "why disabled" copy). */
@@ -71,6 +76,7 @@ export function getEffectiveToolAvailability(
   return {
     ...availability,
     docsEnabled: true,
+    docsEnabledForCli: true,
     docsHasManifests: true,
     docsFeatureEnabled: true,
   };
@@ -144,6 +150,7 @@ export async function getToolAvailability(
     reviewEnabled: reviewStatus.available,
     reviewEnabledForCli: reviewStatus.availableForCli,
     docsEnabled: manifestStatus.available,
+    docsEnabledForCli: manifestStatus.hasManifests,
     docsHasManifests: manifestStatus.hasManifests,
     docsFeatureEnabled: manifestStatus.hasFeatureFlag,
     testSupported: addonVitestEnabled,

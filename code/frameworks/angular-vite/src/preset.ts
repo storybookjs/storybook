@@ -343,11 +343,11 @@ const STYLE_PREPROCESSORS: Record<string, { install: string; alternative?: strin
 
 const STYLE_PREPROCESSOR_ID = /\.(scss|sass|less)(?:$|\?)/;
 
-// This check aborts the build, so it has to be at least as permissive as Vite. It deliberately
-// asks whether the package is *present* rather than whether its entry point resolves: Vite loads
-// preprocessors with its own resolver and conditions, so an `exports` map without a `require`
-// condition resolves for Vite and throws for `createRequire`. Walking `node_modules` covers that;
-// the `createRequire` arm covers Yarn PnP, where there are no `node_modules` directories to walk.
+// Asks whether the package is present, not whether its entry point resolves: this check aborts the
+// build, and Vite loads preprocessors with its own conditions, so an `exports` map without a
+// `require` condition resolves for Vite and throws here. The `createRequire` arm is only for Yarn
+// PnP, which has no `node_modules` to walk; `import.meta.resolve` cannot replace it, because its
+// `parent` argument is silently ignored without `--experimental-import-meta-resolve`.
 const isPackagePresentFrom = (pkg: string, fromDir: string) => {
   let dir = resolve(fromDir);
   while (true) {
@@ -364,8 +364,10 @@ const isPackagePresentFrom = (pkg: string, fromDir: string) => {
   try {
     createRequire(join(fromDir, 'noop.js')).resolve(pkg);
     return true;
-  } catch {
-    return false;
+  } catch (error) {
+    // Node found the package and refused only its entry point, because the `exports` map has no
+    // `require` condition. Vite resolves with its own conditions, so that is present, not missing.
+    return (error as NodeJS.ErrnoException)?.code === 'ERR_PACKAGE_PATH_NOT_EXPORTED';
   }
 };
 

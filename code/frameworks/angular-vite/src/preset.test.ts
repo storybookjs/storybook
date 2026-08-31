@@ -160,13 +160,23 @@ describe('stylePreprocessorCheckPlugin', () => {
   // present under `installedIn`, and `entryPointResolves` are the ones whose entry point Node's CJS
   // resolver will also hand back. They differ for a package whose `exports` map has no `require`
   // condition, which Vite loads and `createRequire` refuses.
+  //
+  // `notExported` is that third outcome, which the resolver reports as its own error code: the
+  // package is installed and only its entry point was refused. Collapsing it into "not found" is
+  // what makes a PnP project with such a preprocessor look uninstalled.
   function transformStyle(
     id: string,
     {
       packages = [],
       installedIn = WORKSPACE_ROOT,
       entryPointResolves = packages,
-    }: { packages?: string[]; installedIn?: string; entryPointResolves?: string[] } = {}
+      notExported = [],
+    }: {
+      packages?: string[];
+      installedIn?: string;
+      entryPointResolves?: string[];
+      notExported?: string[];
+    } = {}
   ) {
     const present = new Set(
       packages.map((pkg) => resolve(installedIn, 'node_modules', pkg, 'package.json'))
@@ -181,10 +191,18 @@ describe('stylePreprocessorCheckPlugin', () => {
       const canSee = askedFrom === installedIn || askedFrom.startsWith(prefix);
       return {
         resolve: (request: string) => {
-          if (!canSee || !entryPointResolves.includes(request)) {
-            throw new Error(`Cannot find module '${request}'`);
+          if (canSee && entryPointResolves.includes(request)) {
+            return request;
           }
-          return request;
+          const refusedEntryPoint = canSee && notExported.includes(request);
+          throw Object.assign(
+            new Error(
+              refusedEntryPoint
+                ? `No "exports" main defined in '${request}'`
+                : `Cannot find module '${request}'`
+            ),
+            { code: refusedEntryPoint ? 'ERR_PACKAGE_PATH_NOT_EXPORTED' : 'MODULE_NOT_FOUND' }
+          );
         },
       } as unknown as NodeJS.Require;
     });
@@ -289,6 +307,19 @@ describe('stylePreprocessorCheckPlugin', () => {
       transformStyle(resolve(WORKSPACE_ROOT, 'src/button.scss'), {
         packages: [],
         entryPointResolves: ['sass'],
+      })
+    ).not.toThrow();
+  });
+
+  // The two cases above combined, and the one layout no `node_modules` walk can rescue: under PnP
+  // the resolver is the only witness, so it has to tell "no such package" apart from "the package is
+  // here and its entry point is not exported to `require`". Only the first is a missing install.
+  it('accepts a Yarn PnP install whose `exports` map has no `require` condition', () => {
+    expect(
+      transformStyle(resolve(WORKSPACE_ROOT, 'src/button.scss'), {
+        packages: [],
+        entryPointResolves: [],
+        notExported: ['sass'],
       })
     ).not.toThrow();
   });

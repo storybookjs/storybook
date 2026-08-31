@@ -336,8 +336,15 @@ export interface Builder<Config, BuilderStats extends Stats = Stats> {
   /**
    * Returns a change-detection adapter the core change-detection service uses to (a) read
    * builder resolve config (alias, root, conditions), and (b) subscribe to file-system events.
+   *
+   * The dev server calls it with no arguments after `start()`, binding the adapter to the running
+   * builder. A consumer without a dev server (the `storybook tools` CLI) passes `options` so the
+   * builder can assemble its resolve config headlessly; builders that cannot work headlessly may
+   * throw, which the caller treats as "no adapter".
    */
-  changeDetectionAdapter?(): import('../../shared/open-service/services/module-graph/engine/adapters/types.ts').ChangeDetectionAdapter;
+  changeDetectionAdapter?(
+    options?: Options
+  ): import('../../shared/open-service/services/module-graph/engine/adapters/types.ts').ChangeDetectionAdapter;
 }
 
 /** Options for TypeScript usage within Storybook. */
@@ -418,7 +425,15 @@ export type TagsOptions = Record<Tag, Partial<TagOptions>>;
 
 export type ComponentSubcomponentManifest = Pick<
   ComponentManifest,
-  'name' | 'path' | 'description' | 'import' | 'summary' | 'jsDocTags' | 'error'
+  | 'name'
+  | 'path'
+  | 'description'
+  | 'import'
+  | 'summary'
+  | 'jsDocTags'
+  | 'error'
+  | 'apiDescription'
+  | 'renderer'
 >;
 
 export interface ComponentManifest {
@@ -428,12 +443,20 @@ export interface ComponentManifest {
   description?: string | undefined;
   import?: string | undefined;
   summary?: string | undefined;
+  /**
+   * API documentation in Markdown format.
+   * Prefer ## level headings for sections (Props, Events, Slots, etc.) and TS types for structured data.
+   */
+  apiDescription?: string | undefined;
+  renderer?: string | undefined;
   stories: {
     id: string;
     name: string;
     snippet?: string | undefined;
     description?: string | undefined;
     summary?: string | undefined;
+    /** Why the snippet is an incomplete example; see `StoryDoc.warning`. */
+    warning?: string | undefined;
     error?: { name: string; message: string };
   }[];
   jsDocTags: Record<string, string[]>;
@@ -445,7 +468,13 @@ export interface ComponentsManifest {
   v: number;
   components: Record<string, ComponentManifest>;
   meta?: {
-    docgen: 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
+    docgen:
+      | 'react-docgen'
+      | 'react-docgen-typescript'
+      | 'react-component-meta'
+      | 'vue-component-meta'
+      | 'angular-component-meta'
+      | 'compodoc';
     durationMs: number;
   };
 }
@@ -455,6 +484,203 @@ type ManifestName = string;
 export type Manifests = { components?: ComponentsManifest } & Record<ManifestName, unknown>;
 
 export type CsfEnricher = (csf: CsfFile, csfSource: CsfFile) => Promise<void>;
+
+/**
+ * The feature flags configured under the `features` key in `.storybook/main.ts`.
+ *
+ * Addons can declare their own feature flags through TypeScript module augmentation:
+ *
+ * ```ts
+ * declare module 'storybook/internal/types' {
+ *   interface StorybookFeatures {
+ *     myAddonFeature?: boolean;
+ *   }
+ * }
+ * ```
+ */
+export interface StorybookFeatures {
+  /**
+   * Enable the integrated viewport addon
+   *
+   * @default true
+   */
+  viewport?: boolean;
+
+  /**
+   * Enable the integrated highlight addon
+   *
+   * @default true
+   */
+  highlight?: boolean;
+
+  /**
+   * Enable the integrated backgrounds addon
+   *
+   * @default true
+   */
+  backgrounds?: boolean;
+
+  /**
+   * Enable the integrated measure addon
+   *
+   * @default true
+   */
+  measure?: boolean;
+
+  /**
+   * Enable the integrated outline addon
+   *
+   * @default true
+   */
+  outline?: boolean;
+
+  /**
+   * Enable the integrated controls addon
+   *
+   * @default true
+   */
+  controls?: boolean;
+
+  /**
+   * Enable the integrated interactions addon
+   *
+   * @default true
+   */
+  interactions?: boolean;
+
+  /**
+   * Enable the integrated actions addon
+   *
+   * @default true
+   */
+  actions?: boolean;
+
+  /**
+   * Enable the onboarding checklist sidebar widget
+   *
+   * @default true
+   */
+  sidebarOnboardingChecklist?: boolean;
+
+  /**
+   * Enable the onboarding guide page in the menu
+   *
+   * @default true
+   */
+  menuOnboardingChecklist?: boolean;
+
+  /**
+   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+   *
+   * Filter args with a "target" on the type from the render function (EXPERIMENTAL)
+   */
+  argTypeTargetsV7?: boolean;
+
+  /**
+   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+   *
+   * Apply decorators from preview.js before decorators from addons or frameworks
+   */
+  legacyDecoratorFileOrder?: boolean;
+
+  /**
+   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+   *
+   * Disallow implicit actions during rendering. This will be the default in Storybook 8.
+   *
+   * This will make sure that your story renders the same no matter if docgen is enabled or not.
+   */
+  disallowImplicitActionsInRenderV8?: boolean;
+
+  /**
+   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+   *
+   * Enable asynchronous component rendering in React renderer
+   */
+  experimentalRSC?: boolean;
+
+  /**
+   * Adds docs story subheadings to the search index.
+   *
+   * @experimental This feature is in early development and may change significantly in future releases.
+   */
+  experimentalSearchDocsHeadings?: boolean;
+
+  /**
+   * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
+   *
+   * Set NODE_ENV to development in built Storybooks for better testability and debuggability
+   */
+  developmentModeForBuild?: boolean;
+  /**
+   * Only show input controls in Angular.
+   *
+   * @deprecated On `@storybook/angular-vite`, use the `propsTable` framework option instead:
+   *   `'inputs'` for this flag on, `'all'` for it off. Still read by `@storybook/angular`.
+   */
+  angularFilterNonInputControls?: boolean;
+
+  /**
+   * Enable component manifest generation for MCP and other tooling integrations.
+   *
+   * @default false
+   */
+  componentsManifest?: boolean;
+
+  /**
+   * Use TypeScript LanguageService (react-component-meta) for extracting React component props
+   * instead of react-docgen / react-docgen-typescript.
+   *
+   * @default false
+   * @experimental
+   */
+  experimentalReactComponentMeta?: boolean;
+
+  /**
+   * Enables the new code example generation for React components. You can see those examples when
+   * clicking on the "Show code" button in the Storybook UI.
+   *
+   * We refactored the code examples by reading the actual source file. This should make the code
+   * examples a lot faster, more readable and more accurate. They are not dynamic though, it won't
+   * change if you change when using the control panel.
+   *
+   * @default false
+   * @experimental This feature is in early development and may change significantly in future releases.
+   */
+  experimentalCodeExamples?: boolean;
+
+  /**
+   * Enable the experimental docgen open service.
+   *
+   * When true, Storybook registers the `core/docgen` service in the open-service registry and
+   * generates per-component docgen JSON snapshots during static builds. Renderer and addon
+   * providers contribute through the `experimental_docgenProvider` preset.
+   *
+   * `@storybook/angular-vite` is the one framework that defaults this to `true`: it is experimental
+   * itself and ships server-side extraction as its only docgen path. Set it to `false` there to go
+   * back to Compodoc.
+   *
+   * @default false // `true` when the framework is `@storybook/angular-vite`
+   * @experimental This feature is in early development and may change significantly in future releases.
+   */
+  experimentalDocgenServer?: boolean;
+
+  /**
+   * Enable change detection
+   * @default true
+   */
+  changeDetection?: boolean;
+
+  /**
+   * Enable the agentic review workflow: the review UI in the manager and the server-side review
+   * channel that MCP tooling (e.g. `@storybook/addon-mcp`) uses to push curated reviews of code
+   * changes. Builds on change detection, so `changeDetection` must also be enabled.
+   *
+   * @default false
+   * @experimental This feature is in early development and may change significantly in future releases.
+   */
+  experimentalReview?: boolean;
+}
 
 export interface StorybookConfigRaw {
   /**
@@ -475,163 +701,7 @@ export interface StorybookConfigRaw {
   experimental_storyDocsProvider?: StoryDocsProvider;
   staticDirs?: (DirectoryMapping | string)[];
   logLevel?: string;
-  features?: {
-    /**
-     * Enable the integrated viewport addon
-     *
-     * @default true
-     */
-    viewport?: boolean;
-
-    /**
-     * Enable the integrated highlight addon
-     *
-     * @default true
-     */
-    highlight?: boolean;
-
-    /**
-     * Enable the integrated backgrounds addon
-     *
-     * @default true
-     */
-    backgrounds?: boolean;
-
-    /**
-     * Enable the integrated measure addon
-     *
-     * @default true
-     */
-    measure?: boolean;
-
-    /**
-     * Enable the integrated outline addon
-     *
-     * @default true
-     */
-    outline?: boolean;
-
-    /**
-     * Enable the integrated controls addon
-     *
-     * @default true
-     */
-    controls?: boolean;
-
-    /**
-     * Enable the integrated interactions addon
-     *
-     * @default true
-     */
-    interactions?: boolean;
-
-    /**
-     * Enable the integrated actions addon
-     *
-     * @default true
-     */
-    actions?: boolean;
-
-    /**
-     * Enable the onboarding checklist sidebar widget
-     *
-     * @default true
-     */
-    sidebarOnboardingChecklist?: boolean;
-
-    /**
-     * Enable the onboarding guide page in the menu
-     *
-     * @default true
-     */
-    menuOnboardingChecklist?: boolean;
-
-    /**
-     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-     *
-     * Filter args with a "target" on the type from the render function (EXPERIMENTAL)
-     */
-    argTypeTargetsV7?: boolean;
-
-    /**
-     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-     *
-     * Apply decorators from preview.js before decorators from addons or frameworks
-     */
-    legacyDecoratorFileOrder?: boolean;
-
-    /**
-     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-     *
-     * Disallow implicit actions during rendering. This will be the default in Storybook 8.
-     *
-     * This will make sure that your story renders the same no matter if docgen is enabled or not.
-     */
-    disallowImplicitActionsInRenderV8?: boolean;
-
-    /**
-     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-     *
-     * Enable asynchronous component rendering in React renderer
-     */
-    experimentalRSC?: boolean;
-
-    /**
-     * @temporary This feature flag is a migration assistant, and is scheduled to be removed.
-     *
-     * Set NODE_ENV to development in built Storybooks for better testability and debuggability
-     */
-    developmentModeForBuild?: boolean;
-    /** Only show input controls in Angular */
-    angularFilterNonInputControls?: boolean;
-
-    /**
-     * Enable component manifest generation for MCP and other tooling integrations.
-     *
-     * @default false
-     */
-    componentsManifest?: boolean;
-
-    /**
-     * Use TypeScript LanguageService (react-component-meta) for extracting React component props
-     * instead of react-docgen / react-docgen-typescript.
-     *
-     * @default false
-     * @experimental
-     */
-    experimentalReactComponentMeta?: boolean;
-
-    /**
-     * Enables the new code example generation for React components. You can see those examples when
-     * clicking on the "Show code" button in the Storybook UI.
-     *
-     * We refactored the code examples by reading the actual source file. This should make the code
-     * examples a lot faster, more readable and more accurate. They are not dynamic though, it won't
-     * change if you change when using the control panel.
-     *
-     * @default false
-     * @experimental This feature is in early development and may change significantly in future releases.
-     */
-    experimentalCodeExamples?: boolean;
-
-    /**
-     * Enable the experimental docgen open service.
-     *
-     * When true, Storybook registers the `core/docgen` service in the open-service registry and
-     * generates per-component docgen JSON snapshots during static builds. Renderer and addon
-     * providers contribute through the `experimental_docgenProvider` preset.
-     *
-     * @default false
-     * @experimental This feature is in early development and may change significantly in future releases.
-     */
-    experimentalDocgenServer?: boolean;
-
-    /**
-     * Enable change detection
-     * @default true
-     */
-    changeDetection?: boolean;
-  };
+  features?: StorybookFeatures;
 
   build?: TestBuildConfig;
 

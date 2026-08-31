@@ -127,6 +127,7 @@ export type UpgradeOptions = {
   packageManager?: PackageManagerName;
   dryRun: boolean;
   yes: boolean;
+  features?: string;
   force: boolean;
   disableTelemetry: boolean;
   configDir?: string[];
@@ -327,6 +328,13 @@ async function sendMultiUpgradeTelemetry(options: MultiUpgradeTelemetryOptions) 
 }
 
 export async function upgrade(options: UpgradeOptions): Promise<void> {
+  if (options.features && options.skipAutomigrations) {
+    logger.error(
+      'The --features flag enables feature flags through automigrations, so it cannot be combined with --skip-automigrations.'
+    );
+    throw new HandledError('--features cannot be combined with --skip-automigrations');
+  }
+
   const projectsResult = await getProjects(options);
 
   if (projectsResult === undefined || projectsResult.selectedProjects.length === 0) {
@@ -500,13 +508,23 @@ export async function upgrade(options: UpgradeOptions): Promise<void> {
       for (const project of storybookProjects) {
         const addonsToPostinstall = automigrationResults[project.configDir]?.addonsToPostinstall;
         if (addonsToPostinstall?.length) {
-          await configureDeferredAddons(addonsToPostinstall, {
-            packageManager: project.packageManager.type,
-            configDir: project.configDir,
-            yes: options.yes,
-            logger,
-            prompt,
-          });
+          logger.step(`Configuring addons: ${addonsToPostinstall.join(', ')}..`);
+          try {
+            await configureDeferredAddons(addonsToPostinstall, {
+              packageManager: project.packageManager.type,
+              configDir: project.configDir,
+              yes: options.yes,
+              logger,
+              prompt,
+            });
+          } catch (error) {
+            logger.warn(
+              `Configuring ${addonsToPostinstall.join(', ')} failed: ${String(
+                error
+              )}. Run "npx storybook add <addon>" manually for each addon to finish the setup.`
+            );
+            logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));
+          }
         }
       }
     }

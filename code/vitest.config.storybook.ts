@@ -25,6 +25,9 @@ export default defineProject({
       tags: {
         include: ['vitest'],
       },
+      // Pinned for the InitialGlobals story, which asserts this reaches the run (see
+      // addons/vitest/src/components/InitialGlobals.stories.tsx).
+      initialGlobals: { initialGlobalsWork: true },
     }),
     ...extraPlugins,
   ],

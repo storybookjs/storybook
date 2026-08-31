@@ -475,6 +475,62 @@ Whether to disable addon docs MDX parsing while running tests.
 When either the preview config or stories import mdx files, they are mocked as normally they are not needed for tests.
 You might set `disableAddonDocs` to `false` only in case your stories actually need to read and parse MDX files as part of rendering your components.
 
+#### `initialGlobals`
+
+Type: `Record<string, unknown>`
+
+Default: `{}`
+
+Configures a set of initial global values that will be applied to every story this project runs. Useful for running tests with different options, such as testing every story in a specific theme. It can be further configured with multiple Vitest projects, each pinning a different global value.
+
+```ts title="vitest.config.js|ts"
+import { defineConfig, mergeConfig } from 'vitest/config';
+import { storybookTest } from '@storybook/addon-vitest/vitest-plugin';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+import viteConfig from './vite.config';
+
+const dirname = path.dirname(fileURLToPath(import.meta.url));
+
+const storybookProject = (theme: string) => ({
+  extends: true,
+  plugins: [
+    storybookTest({
+      configDir: path.join(dirname, '.storybook'),
+      // Pin the `theme` global for every story in this project
+      initialGlobals: { theme },
+    }),
+  ],
+  test: {
+    name: `storybook-${theme}`,
+    browser: {
+      enabled: true,
+      provider: 'playwright',
+      headless: true,
+      instances: [{ browser: 'chromium' }],
+    },
+    setupFiles: ['./.storybook/vitest.setup.ts'],
+  },
+});
+
+export default mergeConfig(
+  viteConfig,
+  defineConfig({
+    test: {
+      // One project per theme, so every story is tested in both
+      projects: [storybookProject('light'), storybookProject('dark')],
+    },
+  }),
+);
+```
+
+<Callout variant="info">
+
+This option mirrors the [`initialGlobals`](../../../essentials/toolbars-and-globals.mdx#globals) configuration in `.storybook/preview.*`, applied per-project instead of globally, however the plugin's own values always take precedence over Storybook's own values.
+
+</Callout>
+
 </If>
 {/* End supported renderers */}
 

@@ -12,8 +12,8 @@ import {
   FILE_COMPONENT_SEARCH_REQUEST,
   FILE_COMPONENT_SEARCH_RESPONSE,
 } from 'storybook/internal/core-events';
+import { SupportedRenderer } from 'storybook/internal/types';
 
-import { SupportedRenderer } from '../../types/index.ts';
 import { searchFiles } from '../utils/search-files.ts';
 import { initFileSearchChannel } from './file-search-channel.ts';
 

@@ -1,6 +1,8 @@
-import React, { type FC, type ReactNode, useEffect, useRef } from 'react';
+import React, { type FC, type ReactNode, useRef } from 'react';
 
+import { useId } from '@react-aria/utils';
 import { styled } from 'storybook/theming';
+import { useLandmark } from '../../../hooks/useLandmark.ts';
 
 const Root = styled.header<{ $variant: 'page' | 'toolbar' }>(({ theme, $variant }) => ({
   containerType: 'inline-size',
@@ -56,11 +58,6 @@ const Title = styled.h1(({ theme }) => ({
   fontSize: theme.typography.size.m1,
   fontWeight: theme.typography.weight.bold,
   lineHeight: '24px',
-  // The heading is only focused programmatically on route change (see
-  // autoFocusTitle); it is not an interactive control, so suppress the ring.
-  '&:focus': {
-    outline: 'none',
-  },
 }));
 
 const Subtitle = styled.div(({ theme }) => ({
@@ -100,12 +97,6 @@ export interface ReviewHeaderProps {
   actions?: ReactNode;
   /** Optional full-width second row (e.g. search or comparison controls). */
   secondRow?: ReactNode;
-  /**
-   * Move keyboard focus to the title heading on mount. Used on route changes
-   * (e.g. opening the detail screen) so assistive tech lands on the new view's
-   * heading instead of being left on the now-unmounted trigger.
-   */
-  autoFocusTitle?: boolean;
   /** Compact layout for the preview toolbar header row. */
   variant?: 'page' | 'toolbar';
 }
@@ -116,25 +107,20 @@ export const ReviewHeader: FC<ReviewHeaderProps> = ({
   subtitle,
   actions,
   secondRow,
-  autoFocusTitle = false,
   variant = 'page',
 }) => {
-  const titleRef = useRef<HTMLHeadingElement>(null);
-  useEffect(() => {
-    if (autoFocusTitle) {
-      titleRef.current?.focus();
-    }
-  }, [autoFocusTitle]);
+  const titleId = useId();
+  const regionRef = useRef<HTMLElement>(null);
+
+  const { landmarkProps } = useLandmark({ 'aria-labelledby': titleId, role: 'banner' }, regionRef);
 
   return (
-    <Root $variant={variant}>
+    <Root $variant={variant} ref={regionRef} {...landmarkProps}>
       <TopRow $variant={variant}>
         <Main>
           {leading ? <Leading>{leading}</Leading> : null}
           <TextBlock>
-            <Title ref={titleRef} tabIndex={autoFocusTitle ? -1 : undefined}>
-              {title}
-            </Title>
+            <Title id={titleId}>{title}</Title>
             {subtitle ? <Subtitle>{subtitle}</Subtitle> : null}
           </TextBlock>
         </Main>

@@ -1,68 +1,73 @@
+// Caps concurrent preview iframe boots across the review grid: booting many
+// embed iframes at once can fail with `net::ERR_INSUFFICIENT_RESOURCES`.
+const MAX_CONCURRENT_PREVIEWS = 3;
+
 /**
- * Caps concurrent preview iframe boots across the review grid. See CollectionGrid
- * header comment for why this exists (`net::ERR_INSUFFICIENT_RESOURCES`).
+ * How long a started preview may hold its concurrency slot. The iframe's load/error events release
+ * the slot earlier; this deadline keeps the queue draining when neither fires.
  */
 export const PREVIEW_SETTLE_TIMEOUT_MS = 1500;
 
-const MAX_CONCURRENT_PREVIEWS = 3;
+/** Handle for a scheduled preview boot, returned by `enqueuePreview`. */
+export interface PreviewHandle {
+  /** Hover/focus: start a still-queued preview right away, bypassing the cap. */
+  forceStart: () => void;
+  /** Release the concurrency slot (iframe loaded/errored/unmounted). Idempotent. */
+  release: () => void;
+}
 
-export interface PreviewTask {
-  /** Assigns the iframe src, kicking off the actual load. */
+interface Task {
   start: () => void;
-  started: boolean;
-  finished: boolean;
+  state: 'queued' | 'started' | 'released';
+  deadline?: ReturnType<typeof setTimeout>;
 }
 
 let activePreviewLoads = 0;
-const previewQueue: PreviewTask[] = [];
+const previewQueue: Task[] = [];
+
+function startTask(task: Task): void {
+  task.state = 'started';
+  activePreviewLoads += 1;
+  task.deadline = setTimeout(() => releaseTask(task), PREVIEW_SETTLE_TIMEOUT_MS);
+  task.start();
+}
 
 function startQueuedPreviews(): void {
-  while (activePreviewLoads < MAX_CONCURRENT_PREVIEWS) {
-    const task = previewQueue.shift();
-    if (!task) {
-      return;
-    }
-    if (task.started || task.finished) {
-      continue;
-    }
-    task.started = true;
-    activePreviewLoads += 1;
-    task.start();
+  while (activePreviewLoads < MAX_CONCURRENT_PREVIEWS && previewQueue.length > 0) {
+    startTask(previewQueue.shift()!);
   }
 }
 
-export function enqueuePreview(task: PreviewTask): void {
+function releaseTask(task: Task): void {
+  if (task.state === 'released') {
+    return;
+  }
+  if (task.state === 'started') {
+    clearTimeout(task.deadline);
+    activePreviewLoads -= 1;
+  } else {
+    previewQueue.splice(previewQueue.indexOf(task), 1);
+  }
+  task.state = 'released';
+  startQueuedPreviews();
+}
+
+/**
+ * Queue a preview boot. `start` runs (synchronously or later) once a concurrency slot frees up. The
+ * slot is held until `release()` or the settle deadline, whichever comes first.
+ */
+export function enqueuePreview(start: () => void): PreviewHandle {
+  const task: Task = { start, state: 'queued' };
   previewQueue.push(task);
   startQueuedPreviews();
-}
-
-/** Mark a task done (load/error/settle/unmount) and let the next one start. */
-export function finishPreview(task: PreviewTask): void {
-  if (task.finished) {
-    return;
-  }
-  task.finished = true;
-  if (task.started) {
-    activePreviewLoads = Math.max(0, activePreviewLoads - 1);
-  } else {
-    const index = previewQueue.indexOf(task);
-    if (index !== -1) {
-      previewQueue.splice(index, 1);
-    }
-  }
-  startQueuedPreviews();
-}
-
-/** Hover/focus: start a still-queued preview right away, bypassing the cap. */
-export function forceStartPreview(task: PreviewTask): void {
-  if (task.started || task.finished) {
-    return;
-  }
-  const index = previewQueue.indexOf(task);
-  if (index !== -1) {
-    previewQueue.splice(index, 1);
-  }
-  task.started = true;
-  activePreviewLoads += 1;
-  task.start();
+  return {
+    forceStart: () => {
+      if (task.state !== 'queued') {
+        return;
+      }
+      previewQueue.splice(previewQueue.indexOf(task), 1);
+      startTask(task);
+    },
+    release: () => releaseTask(task),
+  };
 }

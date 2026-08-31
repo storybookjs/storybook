@@ -1,5 +1,3 @@
-import type { ReactNode } from 'react';
-
 import { expect, fn, within } from 'storybook/test';
 
 import { MemoryRouter } from 'storybook/internal/router';
@@ -11,10 +9,9 @@ import {
 } from 'storybook/manager-api';
 
 import preview from '../../../../../../.storybook/preview.tsx';
-import { ADDON_ID, EVENTS } from '../constants.ts';
 import { buildReviewChangesSummaryHref, buildReviewStoryHref } from '../review-navigation.ts';
+import { reviewServiceForStories as reviewService } from '../review-service-story-helpers.ts';
 import type { ReviewState } from '../review-state.ts';
-import { useReviewShortcuts } from '../useReviewShortcuts.ts';
 import { ReviewProvider } from './ReviewProvider.tsx';
 import { ReviewToolbarHeader } from './ReviewToolbarHeader.tsx';
 
@@ -40,7 +37,6 @@ const emitMock = fn((eventName: string, payload?: unknown) => {
   });
 });
 const toggleNavMock = fn();
-const setAddonShortcutMock = fn();
 
 const reviewState: ReviewState = {
   title: 'Manager settings polish',
@@ -59,10 +55,7 @@ const reviewState: ReviewState = {
   ],
 };
 
-const applyReviewState = () => {
-  expect(onMock).toHaveBeenCalledWith(EVENTS.DISPLAY_REVIEW, expect.any(Function));
-  emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
-};
+const applyReviewState = () => reviewService.commands.setReview(reviewState);
 
 const managerStateBase: State = {
   index: {
@@ -95,7 +88,6 @@ const managerApi: API = {
   getIsPanelShown: () => true,
   toggleNav: toggleNavMock,
   togglePanel: fn().mockName('api::togglePanel'),
-  setAddonShortcut: setAddonShortcutMock,
   setQueryParams: fn(),
   setAllTagFilters: fn().mockName('api::setAllTagFilters'),
   setAllStatusFilters: fn().mockName('api::setAllStatusFilters'),
@@ -124,30 +116,23 @@ const meta = preview.meta({
       >
         <MemoryRouter initialEntries={parameters?.routerInitialEntries ?? ['/']}>
           <ReviewProvider>
-            <ReviewShortcutsHarness>
-              <Story />
-            </ReviewShortcutsHarness>
+            <Story />
           </ReviewProvider>
         </MemoryRouter>
       </ManagerContext.Provider>
     ),
   ],
-  beforeEach: () => {
+  beforeEach: async () => {
+    await reviewService.commands.dismissReview(undefined);
     eventListeners.clear();
     onMock.mockReset();
     offMock.mockReset();
     emitMock.mockReset();
     toggleNavMock.mockReset();
-    setAddonShortcutMock.mockReset();
     sessionStorage.clear();
     internal_fullStatusStore.unset();
   },
 });
-
-const ReviewShortcutsHarness = ({ children }: { children: ReactNode }) => {
-  useReviewShortcuts();
-  return children;
-};
 
 export const OnReviewedStory = meta.story({
   parameters: {
@@ -160,23 +145,20 @@ export const OnReviewedStory = meta.story({
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    applyReviewState();
+    await applyReviewState();
 
-    const counter = await canvas.findByRole('button', { name: 'Open story list' });
+    const counter = await canvas.findByRole('button', { name: /Select story/ });
     await expect(counter).toHaveTextContent('2/3');
-    await expect(setAddonShortcutMock).toHaveBeenCalledWith(
-      ADDON_ID,
-      expect.objectContaining({
-        actionName: 'reviewNextStory',
-        defaultShortcut: ['ArrowRight'],
-      })
-    );
     await expect(await canvas.findByRole('heading', { name: 'Settings' })).toBeInTheDocument();
     await expect(await canvas.findByRole('link', { name: 'Back to review' })).toHaveAttribute(
       'href',
       buildReviewChangesSummaryHref()
     );
     await expect(canvas.queryByText('New')).not.toBeInTheDocument();
+
+    // In the middle of the sequence both prev and next navigate (rendered as links).
+    await expect(await canvas.findByRole('link', { name: 'Previous story' })).toBeInTheDocument();
+    await expect(await canvas.findByRole('link', { name: 'Next story' })).toBeInTheDocument();
   },
 });
 
@@ -191,12 +173,19 @@ export const Progress = meta.story({
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    applyReviewState();
+    await applyReviewState();
 
-    const counter = await canvas.findByRole('button', { name: 'Open story list' });
+    const counter = await canvas.findByRole('button', { name: /Select story/ });
     await expect(counter).toHaveTextContent('3/3');
     const fill = await canvas.findByTestId<HTMLElement>('review-progress-fill');
     await expect(Math.round(parseFloat(fill.style.width))).toBe(100);
+
+    // On the last story the Next control is disabled and no longer a link.
+    const next = await canvas.findByRole('button', { name: 'Next story' });
+    await expect(next).toHaveAttribute('aria-disabled', 'true');
+    await expect(canvas.queryByRole('link', { name: 'Next story' })).not.toBeInTheDocument();
+    // Previous still navigates.
+    await expect(await canvas.findByRole('link', { name: 'Previous story' })).toBeInTheDocument();
   },
 });
 
@@ -223,7 +212,7 @@ export const NewStory = meta.story({
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    applyReviewState();
+    await applyReviewState();
 
     await expect(await canvas.findByText('New')).toBeInTheDocument();
     await expect(await canvas.findByRole('link', { name: 'Next story' })).toHaveAttribute(
@@ -233,5 +222,10 @@ export const NewStory = meta.story({
         storyId: 'manager-settings-guidepage--default',
       })
     );
+
+    // On the first story the Previous control is disabled and no longer a link.
+    const previous = await canvas.findByRole('button', { name: 'Previous story' });
+    await expect(previous).toHaveAttribute('aria-disabled', 'true');
+    await expect(canvas.queryByRole('link', { name: 'Previous story' })).not.toBeInTheDocument();
   },
 });

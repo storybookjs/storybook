@@ -44,8 +44,9 @@ const options = {
   maxPatternLength: 32,
   minMatchCharLength: 1,
   keys: [
-    { name: 'name', weight: 0.7 },
+    { name: 'name', weight: 0.6 },
     { name: 'path', weight: 0.3 },
+    { name: 'anchors.title', weight: 0.1 },
   ],
 } as FuseOptions<SearchItem>;
 
@@ -165,7 +166,6 @@ export type SearchProps = {
   initialQuery?: string;
   searchBarContent?: ReactNode;
   searchFieldContent?: ReactNode;
-  belowSearchContent?: ReactNode;
 };
 
 export const Search = React.memo<SearchProps>(function Search({
@@ -176,7 +176,6 @@ export const Search = React.memo<SearchProps>(function Search({
   initialQuery = '',
   searchBarContent,
   searchFieldContent,
-  belowSearchContent,
 }) {
   const api = useStorybookApi();
   const inputRef = useRef<HTMLInputElement>(null);
@@ -185,29 +184,58 @@ export const Search = React.memo<SearchProps>(function Search({
   const searchShortcut = api ? shortcutToHumanString(api.getShortcutKeys().search) : '/';
 
   const makeFuse = useCallback(() => {
-    const list = dataset.entries.reduce<SearchItem[]>((acc, [refId, { index, allStatuses }]) => {
-      const groupStatus = getGroupStatus(index || {}, allStatuses ?? {});
+    const list: SearchItem[] = [];
 
-      if (index) {
-        acc.push(
-          ...Object.values(index).map((item) => {
-            const storyStatuses = allStatuses?.[item.id];
-            const mostCriticalStatusValue = storyStatuses
-              ? getMostCriticalStatusValue(
-                  Object.values(storyStatuses)
-                    .filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID)
-                    .map((status) => status.value)
-                )
-              : null;
-            return {
-              ...searchItem(item, dataset.hash[refId]),
-              status: mostCriticalStatusValue ?? groupStatus[item.id] ?? null,
-            };
-          })
-        );
+    for (const [refId, { index, allStatuses }] of dataset.entries) {
+      if (!index) {
+        continue;
       }
-      return acc;
-    }, []);
+
+      const groupStatus = getGroupStatus(index || {}, allStatuses ?? {});
+      const datasetValues = Object.values(index);
+
+      for (const datasetValue of datasetValues) {
+        const storyStatuses = allStatuses?.[datasetValue.id];
+        const mostCriticalStatusValue = storyStatuses
+          ? getMostCriticalStatusValue(
+              Object.values(storyStatuses)
+                .filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID)
+                .map((status) => status.value)
+            )
+          : null;
+
+        const status = mostCriticalStatusValue ?? groupStatus[datasetValue.id] ?? null;
+
+        if (datasetValue.type !== 'docs' || !globalThis?.FEATURES?.experimentalSearchDocsHeadings) {
+          list.push({
+            ...searchItem(datasetValue, dataset.hash[refId]),
+            status,
+          });
+          continue;
+        }
+
+        const { anchors, ...baseSearchItem } = searchItem(datasetValue, dataset.hash[refId]);
+
+        list.push({
+          ...baseSearchItem,
+          status,
+        });
+
+        anchors?.forEach((anchor) => {
+          const namePostfix = baseSearchItem.path?.[0] === anchor.title ? '' : ` / ${anchor.title}`;
+
+          list.push({
+            ...baseSearchItem,
+            anchors: [anchor],
+            // Fuse requires unique ids, so suffix the entry id with the anchor's DOM id
+            id: `${datasetValue.id}#${anchor.id}`,
+            name: `${datasetValue.name}${namePostfix}`,
+            status,
+          });
+        });
+      }
+    }
+
     return new Fuse(list, options);
   }, [dataset]);
 
@@ -221,15 +249,56 @@ export const Search = React.memo<SearchProps>(function Search({
 
       let results: DownshiftItem[] = [];
       const resultIds: Set<string> = new Set();
-      const distinctResults = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
-        if (
-          !(item.type === 'component' || item.type === 'docs' || item.type === 'story') ||
-          // @ts-expect-error (non strict)
-          resultIds.has(item.parent)
-        ) {
+
+      const allMatches = (fuse.search(input) as SearchResult[]).filter(({ item }) => {
+        return item.type === 'component' || item.type === 'docs' || item.type === 'story';
+      });
+
+      // When the index is being created, we have a legacy piece of logic that
+      // wraps every docs page inside a component entry. This originates from
+      // Storybook 6 and has never been removed. Because of it, we must dedupe
+      // docs entries that are hidden under a fake component entry.
+      // See https://github.com/storybookjs/storybook/issues/35513 for details.
+      const docsParentIds = new Set<string>();
+      allMatches.forEach(({ item }) => {
+        if (item.type === 'docs' && item.parent) {
+          docsParentIds.add(item.parent);
+        }
+      });
+
+      // Components suppressed in favor of a matching docs child that hasn't been rendered yet.
+      // The suppressed component still occupies its slot in `resultIds` so that sibling stories
+      // ranked between the component and its docs entry are deduplicated, as they were before.
+      const pendingDocsReplacements = new Set<string>();
+
+      const distinctResults = allMatches.filter(({ item }) => {
+        // This always gets called before the corresponding docs item
+        // because of the sorting performed by the search index. So it's
+        // safe to use `pendingDocsReplacements` in a single-pass lookup.
+        if (item.type === 'component' && docsParentIds.has(item.id)) {
+          if (!resultIds.has(item.id)) {
+            resultIds.add(item.id);
+            pendingDocsReplacements.add(item.id);
+          }
+          return false;
+        }
+
+        // When we reach this, we know we found an unattached MDX page with
+        // a synthetic docs wrapper. Like in Tree.tsx, remove the wrapper
+        // and present the docs item to end users.
+        if (item.type === 'docs' && item.parent && pendingDocsReplacements.has(item.parent)) {
+          pendingDocsReplacements.delete(item.parent);
+          resultIds.add(item.id);
+          return true;
+        }
+        // @ts-expect-error (non strict)
+        if (resultIds.has(item.parent)) {
           return false;
         }
         resultIds.add(item.id);
+        if (item.type === 'docs' && item.parent) {
+          resultIds.add(item.parent);
+        }
         return true;
       });
 
@@ -250,11 +319,20 @@ export const Search = React.memo<SearchProps>(function Search({
   );
 
   const onSelect = useCallback(
-    (selectedItem: DownshiftItem) => {
+    (selectedItem: DownshiftItem | null) => {
+      if (!selectedItem) {
+        return;
+      }
       if (isSearchResult(selectedItem)) {
-        const { id, refId } = selectedItem.item;
-        // @ts-expect-error (non strict)
-        api?.selectStory(id, undefined, { ref: refId !== DEFAULT_REF_ID && refId });
+        const { id: rawId, refId } = selectedItem.item;
+        const [storyId, anchor] = rawId.split('#');
+
+        api?.selectStory(storyId, undefined, {
+          // @ts-expect-error (non strict)
+          ref: refId !== DEFAULT_REF_ID && refId,
+          scrollTo: anchor,
+        });
+
         // @ts-expect-error (non strict)
         inputRef.current.blur();
         showAllComponents(false);
@@ -280,7 +358,7 @@ export const Search = React.memo<SearchProps>(function Search({
             // Prevent clearing the input on blur
             inputValue: state.inputValue,
             // Return to the tree view after selecting an item
-            isOpen: state.inputValue && !state.selectedItem,
+            isOpen: !!state.inputValue && !state.selectedItem,
           };
         }
 
@@ -324,7 +402,6 @@ export const Search = React.memo<SearchProps>(function Search({
   const { landmarkProps } = useLandmark({ role: 'search' }, searchLandmarkRef);
 
   return (
-    // @ts-expect-error (non strict)
     <Downshift<DownshiftItem>
       initialInputValue={initialQuery}
       stateReducer={stateReducer}
@@ -353,16 +430,33 @@ export const Search = React.memo<SearchProps>(function Search({
         const lastViewed = !input && getLastViewed();
         if (lastViewed && lastViewed.length) {
           // @ts-expect-error (non strict)
-          results = lastViewed.reduce((acc, { storyId, refId }) => {
+          results = lastViewed.reduce((acc, { storyId, refId, anchor }) => {
             const data = dataset.hash[refId];
             if (data && data.index && data.index[storyId]) {
               const story = data.index[storyId];
               const item = story.type === 'story' ? data.index[story.parent] : story;
+              const entryId = anchor ? `${item.id}#${anchor}` : item.id;
               // prevent duplicates
               // @ts-expect-error (non strict)
-              if (!acc.some((res) => res.item.refId === refId && res.item.id === item.id)) {
+              if (!acc.some((res) => res.item.refId === refId && res.item.id === entryId)) {
+                const baseItem = searchItem(item, dataset.hash[refId]);
+                let resultItem = baseItem;
+                if (anchor && item.type === 'docs') {
+                  const matchingAnchor = item.anchors?.find((a) => a.id === anchor);
+                  if (matchingAnchor) {
+                    const namePostfix =
+                      baseItem.path?.[0] === matchingAnchor.title
+                        ? ''
+                        : ` / ${matchingAnchor.title}`;
+                    resultItem = {
+                      ...baseItem,
+                      id: entryId,
+                      name: `${item.name}${namePostfix}`,
+                    };
+                  }
+                }
                 // @ts-expect-error (non strict)
-                acc.push({ item: searchItem(item, dataset.hash[refId]), matches: [], score: 0 });
+                acc.push({ item: resultItem, matches: [], score: 0 });
               }
             }
             return acc;
@@ -440,7 +534,6 @@ export const Search = React.memo<SearchProps>(function Search({
               </SearchField>
               {searchBarContent}
             </SearchBar>
-            {!isOpen && belowSearchContent}
             <FocusContainer tabIndex={0} id="storybook-explorer-menu">
               {children({
                 query: input,

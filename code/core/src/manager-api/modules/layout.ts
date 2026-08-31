@@ -4,6 +4,7 @@ import type {
   API_LayoutCustomisations,
   API_PanelPositions,
   API_UI,
+  API_ViewMode,
 } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -14,6 +15,7 @@ import type { ThemeVars } from 'storybook/theming';
 import { deprecate } from 'storybook/internal/client-logger';
 import { create } from 'storybook/theming/create';
 
+import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 import merge from '../lib/merge.ts';
 import type { ModuleFn } from '../lib/types.tsx';
 import type { State } from '../root.tsx';
@@ -35,6 +37,16 @@ export interface SubState {
   selectedPanel: string | undefined;
   theme: ThemeVars;
 }
+
+/**
+ * Availability of the sidebar/nav: 'unavailable' means the current route suppresses the nav
+ * entirely (review routes), otherwise it is 'shown' or 'hidden' based on the layout state.
+ */
+export type NavAvailability = 'shown' | 'hidden' | 'unavailable';
+
+/** True when the route renders a full-screen page (e.g. settings) instead of the preview canvas. */
+export const isPagesViewMode = (viewMode: API_ViewMode): boolean =>
+  viewMode !== undefined && viewMode !== 'story' && viewMode !== 'docs' && viewMode !== 'review';
 
 export interface SubAPI {
   /**
@@ -66,6 +78,15 @@ export interface SubAPI {
    */
   toggleNav: (toggled?: boolean) => void;
   /**
+   * Sets the open/closed state of the mobile navigation drawer directly, without going through the
+   * `toggleNav` desktop/mobile branching. Use this to imperatively open or close the drawer (e.g.
+   * resetting it to closed when leaving the mobile layout). `toggleNav` remains the toggle
+   * entry-point.
+   *
+   * @param show - Whether the mobile navigation drawer should be open.
+   */
+  setMobileNavigation: (show: boolean) => void;
+  /**
    * Toggles the visibility of the toolbar in the Storybook UI.
    *
    * @param toggled - Optional boolean value to set the toolbar visibility to. If not provided, it
@@ -88,6 +109,11 @@ export interface SubAPI {
   getIsPanelShown: () => boolean;
   /** GetIsNavShown - Returns the current visibility of the navigation bar in the Storybook UI. */
   getIsNavShown: () => boolean;
+  /**
+   * GetNavAvailability - Returns whether the sidebar/nav is shown, hidden (but can be shown by the
+   * user), or unavailable because the current route suppresses it entirely (review routes).
+   */
+  getNavAvailability: () => NavAvailability;
   /**
    * GetShowToolbarWithCustomisations - Returns the current visibility of the toolbar, taking into
    * account customisations requested by the end user via a layoutCustomisations function.
@@ -146,6 +172,7 @@ export const getDefaultLayoutState: () => SubState = () => {
       showPanel: true,
       showTabs: true,
       showToolbar: true,
+      showMobileNavigation: false,
     },
     layoutCustomisations: {
       showPanel: undefined,
@@ -271,6 +298,12 @@ const applyUiOptions = (uiState: API_UI, options: { ui?: Partial<API_UI>; [key: 
   return toMerged(uiState, pick(toMerged(uiAtTopLevel, options.ui || {}), typedUiKeys));
 };
 
+/**
+ * Whether the viewport is at or above the manager's desktop breakpoint (600px). Below it the
+ * sidebar is rendered as a drawer owned by the manager UI rather than the desktop nav.
+ */
+export const isDesktopViewport = () => global.matchMedia?.('(min-width: 600px)')?.matches ?? true;
+
 export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory }) => {
   const api = {
     toggleFullscreen(nextState?: boolean) {
@@ -358,6 +391,19 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
     },
 
     toggleNav(nextState?: boolean) {
+      // On mobile the sidebar is a drawer owned by the manager UI, not the desktop nav size, so
+      // toggle the drawer's dedicated state instead of resizing the hidden desktop nav. No
+      // persistence option: the drawer is ephemeral UI and must not be written to storage.
+      if (!isDesktopViewport()) {
+        return store.setState((state: State) => ({
+          layout: {
+            ...state.layout,
+            showMobileNavigation:
+              typeof nextState === 'boolean' ? nextState : !state.layout.showMobileNavigation,
+          },
+        }));
+      }
+
       return store.setState(
         (state: State) => {
           if (state.singleStory) {
@@ -389,6 +435,12 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
         },
         { persistence: 'session' }
       );
+    },
+
+    setMobileNavigation(show: boolean) {
+      return store.setState((state: State) => ({
+        layout: { ...state.layout, showMobileNavigation: show },
+      }));
     },
 
     toggleToolbar(toggled?: boolean) {
@@ -545,6 +597,13 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
     getIsNavShown() {
       return getIsNavShown(store.getState());
     },
+    getNavAvailability(): NavAvailability {
+      const state = store.getState();
+      if (isReviewManagerRoute(state.path, state.customQueryParams)) {
+        return 'unavailable';
+      }
+      return getIsNavShown(state) ? 'shown' : 'hidden';
+    },
 
     getShowToolbarWithCustomisations(showToolbar: boolean) {
       const state = store.getState();
@@ -619,6 +678,11 @@ export const init: ModuleFn<SubAPI, SubState> = ({ store, provider, singleStory 
   };
 
   const persisted = pick(store.getState(), ['layout', 'selectedPanel']);
+
+  // The mobile drawer is ephemeral UI: a session that persisted it open must not restore it open.
+  if (persisted.layout) {
+    persisted.layout = { ...persisted.layout, showMobileNavigation: false };
+  }
 
   provider.channel?.on(SET_CONFIG, () => {
     api.setOptions(merge(api.getInitialOptions(), persisted));

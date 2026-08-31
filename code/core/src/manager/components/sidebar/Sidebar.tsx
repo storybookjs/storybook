@@ -1,31 +1,33 @@
 import React, { useMemo, useRef, useState } from 'react';
 
 import { Button, ScrollArea } from 'storybook/internal/components';
-import type { API_LoadedRefData, StoryIndex } from 'storybook/internal/types';
-import type { StatusesByStoryIdAndTypeId } from 'storybook/internal/types';
+import type {
+  API_LoadedRefData,
+  StatusesByStoryIdAndTypeId,
+  StoryIndex,
+} from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
 import { PlusIcon } from '@storybook/icons';
 
-import { type State, useStorybookApi } from 'storybook/manager-api';
+import { useStorybookApi, type State } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { focusableUIElements } from '../../../manager-api/modules/layout.ts';
+import { focusableUIElements, isPagesViewMode } from '../../../manager-api/modules/layout.ts';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import { ChecklistWidget } from './ChecklistWidget.tsx';
 import { CreateNewStoryFileModal } from './CreateNewStoryFileModal.tsx';
 import { Explorer } from './Explorer.tsx';
+import { Filter } from './Filter.tsx';
 import type { HeadingProps } from './Heading.tsx';
 import { Heading } from './Heading.tsx';
 import { IconSymbols } from './IconSymbols.tsx';
+import ReviewWidget, { useActiveReviewStoryCount } from './ReviewWidget.tsx';
 import { Search } from './Search.tsx';
 import { SearchResults } from './SearchResults.tsx';
 import { SidebarBottom } from './SidebarBottom.tsx';
-import { Filter } from './Filter.tsx';
-import ReviewWidget, { useReviewingStoryCount } from './ReviewWidget.tsx';
-import ReviewSidebarFilters from './ReviewSidebarFilters.tsx';
 import type { CombinedDataset, Selection } from './types.ts';
 import { useLastViewed } from './useLastViewed.ts';
 
@@ -98,6 +100,7 @@ export interface SidebarProps extends API_LoadedRefData {
   menu: any[];
   storyId?: string;
   refId?: string;
+  anchor?: string;
   menuHighlighted?: boolean;
   enableShortcuts?: boolean;
   onMenuClick?: HeadingProps['onMenuClick'];
@@ -109,6 +112,7 @@ export const Sidebar = React.memo(function Sidebar({
   // @ts-expect-error (non strict)
   storyId = null,
   refId = DEFAULT_REF_ID,
+  anchor,
   index,
   indexJson,
   indexError,
@@ -123,8 +127,10 @@ export const Sidebar = React.memo(function Sidebar({
   showCreateStoryButton = isDevelopment && isRendererReact,
 }: SidebarProps) {
   const [isFileSearchModalOpen, setIsFileSearchModalOpen] = useState(false);
-  // @ts-expect-error (non strict)
-  const selected: Selection = useMemo(() => storyId && { storyId, refId }, [storyId, refId]);
+  const selected: Selection = useMemo(
+    () => (storyId ? { storyId, refId, anchor } : null),
+    [storyId, refId, anchor]
+  );
   const dataset = useCombination(index, indexError, previewInitialized, allStatuses, refs);
   const isLoading = !index && !indexError;
   const hasEntries = Object.keys(indexJson?.entries ?? {}).length > 0;
@@ -139,10 +145,10 @@ export const Sidebar = React.memo(function Sidebar({
     headerRef
   );
 
-  const isPagesShown = viewMode !== undefined && viewMode !== 'story' && viewMode !== 'docs';
+  const isPagesShown = isPagesViewMode(viewMode);
   const skipLinkHref = isPagesShown ? '#main-content-wrapper' : '#storybook-preview-wrapper';
-  const reviewingStoryCount = useReviewingStoryCount();
-  const showReviewWidget = reviewingStoryCount > 0;
+  const activeReviewStoryCount = useActiveReviewStoryCount();
+  const showReviewWidget = activeReviewStoryCount > 0;
   const showOnboardingChecklist =
     !isLoading &&
     global.CONFIG_TYPE === 'DEVELOPMENT' &&
@@ -199,7 +205,6 @@ export const Sidebar = React.memo(function Sidebar({
               )
             }
             searchFieldContent={<Filter />}
-            belowSearchContent={<ReviewSidebarFilters />}
             {...lastViewedProps}
           >
             {({

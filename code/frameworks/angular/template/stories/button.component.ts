@@ -3,7 +3,9 @@ import { Component, Input, Output, EventEmitter } from '@angular/core';
 @Component({
   standalone: false,
   selector: 'storybook-button-component',
-  template: ` <button (click)="onClick.emit($event)">{{ text }}</button> `,
+  template: `
+    <button (click)="onClick.emit($event)">{{ text }}</button>
+  `,
   styles: [
     `
       button {

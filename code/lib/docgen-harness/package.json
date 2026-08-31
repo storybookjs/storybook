@@ -1,0 +1,66 @@
+{
+  "name": "@storybook/docgen-harness",
+  "version": "10.6.0-beta.0",
+  "private": true,
+  "description": "Test harness for docgen/snippet baselines across frameworks (internal, not published)",
+  "keywords": [
+    "storybook"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/docgen-harness",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/lib/docgen-harness"
+  },
+  "license": "MIT",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "baselines:sandbox": "node --import jiti/register ./src/sandbox-baselines/run.ts",
+    "bench:docgen-memory": "node --import jiti/register ./src/perf/docgen-memory/gate.ts",
+    "bench:docgen-perf": "node ./src/perf/docgen-perf/run.ts",
+    "bench:docgen-perf-gate": "node ./src/perf/docgen-perf/gate.ts"
+  },
+  "devDependencies": {
+    "@angular/common": "^21.2.14",
+    "@angular/compiler": "^21.2.14",
+    "@angular/core": "^21.2.14",
+    "@angular/platform-browser": "^21.2.14",
+    "@angular/platform-browser-dynamic": "^21.2.14",
+    "@compodoc/compodoc": "2.0.0",
+    "@storybook/angular-cm": "workspace:*",
+    "@storybook/angular-compodoc": "workspace:*",
+    "@storybook/angular-vite": "workspace:*",
+    "@storybook/react": "workspace:*",
+    "@storybook/vue3": "workspace:*",
+    "@testing-library/vue": "^8.0.0",
+    "@types/react": "^18.0.37",
+    "@vitejs/plugin-vue": "^4.6.2",
+    "jiti": "^2.6.1",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "rxjs": "^7.4.0",
+    "storybook": "workspace:*",
+    "typescript": "^6.0.3",
+    "vue": "^3.2.47",
+    "vue-component-meta": "^3.3.9",
+    "vue-component-meta-next": "npm:vue-component-meta@3.3.8",
+    "vue-docgen-api": "^4.75.1",
+    "vue-tsc": "latest",
+    "zod": "^3.25.76",
+    "zone.js": "^0.16.2"
+  },
+  "nx": {
+    "includedScripts": []
+  }
+}

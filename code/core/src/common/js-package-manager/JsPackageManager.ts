@@ -10,7 +10,7 @@ import { type ResultPromise } from 'execa';
 // eslint-disable-next-line depend/ban-dependencies
 import { globSync } from 'glob';
 import picocolors from 'picocolors';
-import { coerce, gt, satisfies } from 'semver';
+import { coerce, gt, satisfies, validRange } from 'semver';
 import invariant from 'tiny-invariant';
 
 import { HandledError } from '../utils/HandledError.ts';
@@ -297,6 +297,34 @@ export abstract class JsPackageManager {
   }
 
   /**
+   * Resolve the effective version/range of a declared dependency: the installed version if present,
+   * otherwise the declared semver range. Returns null when the package is not declared or only a
+   * non-semver specifier is declared. PNPMProxy additionally resolves pnpm `catalog:` references.
+   */
+  public async getDeclaredVersionSpecifier(packageName: string): Promise<string | null> {
+    const installed = await this.getInstalledVersion(packageName);
+    if (installed) {
+      return installed;
+    }
+    const declared = this.getAllDependencies()[packageName];
+    return declared && validRange(declared) ? declared : null;
+  }
+
+  /**
+   * Pin `packages` to `version`, mirroring how `anchorPackage` is declared. The base implementation
+   * pins each directly (`pkg@version`). PNPMProxy overrides this to honor pnpm catalogs: when
+   * `anchorPackage` is declared through a catalog, the packages are registered in that catalog and
+   * referenced as `catalog:` instead. Returns the install specifiers to write to package.json.
+   */
+  public applyVersionToRelatedPackages(
+    packages: string[],
+    version: string,
+    _anchorPackage: string
+  ): string[] {
+    return packages.map((pkg) => `${pkg}@${version}`);
+  }
+
+  /**
    * Add dependencies to a project using `yarn add` or `npm install`.
    *
    * @example
@@ -340,8 +368,7 @@ export abstract class JsPackageManager {
 
       for (const dep of dependencies) {
         const [packageName, packageVersion] = getPackageDetails(dep);
-        const latestVersion = await this.getVersion(packageName);
-        dependenciesMap[packageName] = packageVersion ?? latestVersion;
+        dependenciesMap[packageName] = packageVersion ?? 'latest';
       }
 
       const targetDeps = packageJson[options.type] as Record<string, string>;
@@ -363,6 +390,9 @@ export abstract class JsPackageManager {
       } catch (e: any) {
         logger.error('\nAn error occurred while adding dependencies to your package.json:');
         logger.log(String(e));
+        if (e?.fromStorybook) {
+          throw e;
+        }
         throw new HandledError(e);
       }
     }
@@ -410,13 +440,16 @@ export abstract class JsPackageManager {
   }
 
   /**
-   * Return an array of strings matching following format: `<package_name>@<package_latest_version>`
+   * Return an array of strings matching following format: `<storybook_package_name>@<package_latest_version>`
    *
    * For packages in the storybook monorepo, when the latest version is equal to the version of the
    * current CLI the version is not added to the string.
    *
    * When a package is in the monorepo, and the version is not equal to the CLI version, the version
    * is taken from the versions.ts file and added to the string.
+   *
+   * When a package is not in the monorepo, we don't change the package version and return the package name as is.
+   * The package manager will resolve the latest version of the package upon installing it.
    *
    * @param packages
    */
@@ -427,7 +460,7 @@ export abstract class JsPackageManager {
 
         // If the packageVersion is specified and we are not dealing with a storybook package,
         // just return the requested version.
-        if (packageVersion && !(packageName in storybookPackagesVersions)) {
+        if (!(packageName in storybookPackagesVersions)) {
           return pkg;
         }
 

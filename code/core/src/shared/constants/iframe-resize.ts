@@ -23,6 +23,67 @@ export type IframeResizePayload = {
 
 export type IframeResizeDimensions = Pick<IframeResizePayload, 'width' | 'height' | 'viewport'>;
 
+const isPositiveFinite = (value: unknown): value is number =>
+  typeof value === 'number' && Number.isFinite(value) && value > 0;
+
+const parseViewport = (value: unknown): IframeResizeViewport | undefined => {
+  if (!value || typeof value !== 'object') {
+    return undefined;
+  }
+
+  const viewport = value as Partial<IframeResizeViewport>;
+  if (typeof viewport.name !== 'string' || typeof viewport.value !== 'string') {
+    return undefined;
+  }
+
+  const parsed: IframeResizeViewport = {
+    name: viewport.name,
+    value: viewport.value,
+  };
+
+  if (viewport.width !== undefined) {
+    if (!isPositiveFinite(viewport.width)) {
+      return undefined;
+    }
+    parsed.width = viewport.width;
+  }
+
+  if (viewport.height !== undefined) {
+    if (!isPositiveFinite(viewport.height)) {
+      return undefined;
+    }
+    parsed.height = viewport.height;
+  }
+
+  return parsed;
+};
+
+/** Validates an `iframe.resize` postMessage payload from an embed preview. */
+export const parseIframeResizeMessage = (data: unknown): IframeResizeDimensions | null => {
+  try {
+    const parsed = typeof data === 'string' ? JSON.parse(data) : data;
+    if (parsed?.context !== IFRAME_RESIZE_CONTEXT) {
+      return null;
+    }
+    if (!isPositiveFinite(parsed.width) || !isPositiveFinite(parsed.height)) {
+      return null;
+    }
+
+    const viewport = parseViewport(parsed.viewport);
+    if (parsed.viewport !== undefined && viewport === undefined) {
+      return null;
+    }
+
+    return {
+      width: parsed.width,
+      height: parsed.height,
+      ...(viewport ? { viewport } : {}),
+    };
+  } catch {
+    return null;
+  }
+};
+
 export const hasFixedViewportDimensions = (
   viewport: IframeResizeViewport | undefined
 ): viewport is IframeResizeViewport & {

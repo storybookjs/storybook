@@ -23,9 +23,16 @@ export function getWorkingDir(configDir: string): string {
 export const getStorybookData = async ({
   configDir: userDefinedConfigDir,
   packageManagerName,
+  skipCache,
 }: {
   configDir?: string;
   packageManagerName?: PackageManagerName;
+  /**
+   * Skip the module cache when reading the main config. Pass `true` when a prior step in the same
+   * process (e.g. an automigration) may have rewritten the main config on disk, otherwise this
+   * would read back the module system's cached evaluation from before that rewrite.
+   */
+  skipCache?: boolean;
 }) => {
   logger.debug('Getting Storybook info...');
   const {
@@ -41,7 +48,8 @@ export const getStorybookData = async ({
     addons,
   } = await getStorybookInfo(
     userDefinedConfigDir,
-    userDefinedConfigDir ? dirname(userDefinedConfigDir) : undefined
+    userDefinedConfigDir ? dirname(userDefinedConfigDir) : undefined,
+    { skipCache }
   );
 
   const configDir = userDefinedConfigDir || configDirFromScript || '.storybook';

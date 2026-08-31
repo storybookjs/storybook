@@ -1,0 +1,22 @@
+{
+  "id": "non-standalone-module",
+  "name": "LegacyButtonComponent",
+  "path": "__PATH__",
+  "stories": {
+    "storydocs-non-standalone-module--primary": {
+      "id": "storydocs-non-standalone-module--primary",
+      "name": "Primary",
+      "snippet": "import { Component } from '@angular/core';
+import { LegacyButtonModule } from './non-standalone-module.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [LegacyButtonModule],
+  template: `<sb-legacy-button [label]="'Legacy'" (pressed)="pressed($event)" />`,
+})
+export class DemoComponent {
+  pressed(event: unknown) {}
+}",
+    },
+  },
+}

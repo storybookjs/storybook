@@ -7,8 +7,10 @@ const NOOP = () => {};
 @Component({
   standalone: false,
   selector: 'storybook-custom-cva-component',
-  template: ` <div>{{ value }}</div>
-<input type="text" [(ngModel)]="value" /> `,
+  template: `
+    <div>{{ value }}</div>
+    <input type="text" [(ngModel)]="value" />
+  `,
   providers: [
     {
       provide: NG_VALUE_ACCESSOR,

@@ -314,9 +314,11 @@ export async function buildDevStandalone(
 
   await writeStorybookRuntimeInstanceRecord({
     address: localAddress,
+    configDir: options.configDir,
     mcp,
     port,
     storybookVersion,
+    token: getWsToken(),
   }).catch((error: unknown) => {
     logger.warn('Storybook failed to write its runtime instance registry record.');
     logger.debug(error instanceof Error ? (error.stack ?? error.message) : String(error));

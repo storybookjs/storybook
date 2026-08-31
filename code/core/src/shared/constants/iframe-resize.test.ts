@@ -1,7 +1,71 @@
 import { describe, expect, it } from 'vitest';
 
 import { RESPONSIVE_VIEWPORT_VALUE } from '../../viewport/constants.ts';
-import { hasFixedViewportDimensions, iframeResizeDimensionsEqual } from './iframe-resize.ts';
+import {
+  hasFixedViewportDimensions,
+  IFRAME_RESIZE_CONTEXT,
+  iframeResizeDimensionsEqual,
+  parseIframeResizeMessage,
+} from './iframe-resize.ts';
+
+describe('parseIframeResizeMessage', () => {
+  it('accepts valid resize payloads', () => {
+    expect(
+      parseIframeResizeMessage(
+        JSON.stringify({ context: IFRAME_RESIZE_CONTEXT, width: 320, height: 240 })
+      )
+    ).toEqual({ width: 320, height: 240 });
+    expect(
+      parseIframeResizeMessage({ context: IFRAME_RESIZE_CONTEXT, width: 320, height: 240 })
+    ).toEqual({ width: 320, height: 240 });
+    expect(
+      parseIframeResizeMessage({
+        context: IFRAME_RESIZE_CONTEXT,
+        width: 320,
+        height: 240,
+        viewport: { name: 'Small mobile', value: 'mobile1', width: 320, height: 568 },
+      })
+    ).toEqual({
+      width: 320,
+      height: 240,
+      viewport: { name: 'Small mobile', value: 'mobile1', width: 320, height: 568 },
+    });
+  });
+
+  it('rejects malformed payloads', () => {
+    expect(parseIframeResizeMessage('{')).toBeNull();
+    expect(parseIframeResizeMessage({ context: 'other', width: 320, height: 240 })).toBeNull();
+    expect(
+      parseIframeResizeMessage({ context: IFRAME_RESIZE_CONTEXT, width: -1, height: 240 })
+    ).toBeNull();
+    expect(
+      parseIframeResizeMessage({ context: IFRAME_RESIZE_CONTEXT, width: 0, height: 240 })
+    ).toBeNull();
+    expect(
+      parseIframeResizeMessage({ context: IFRAME_RESIZE_CONTEXT, width: NaN, height: 240 })
+    ).toBeNull();
+    expect(
+      parseIframeResizeMessage({
+        context: IFRAME_RESIZE_CONTEXT,
+        width: 320,
+        height: 240,
+        viewport: { name: 'Small mobile', value: 'mobile1' },
+      })
+    ).toEqual({
+      width: 320,
+      height: 240,
+      viewport: { name: 'Small mobile', value: 'mobile1' },
+    });
+    expect(
+      parseIframeResizeMessage({
+        context: IFRAME_RESIZE_CONTEXT,
+        width: 320,
+        height: 240,
+        viewport: { value: 'mobile1', width: 320, height: 568 },
+      })
+    ).toBeNull();
+  });
+});
 
 describe('hasFixedViewportDimensions', () => {
   it('accepts named viewports with pixel dimensions', () => {

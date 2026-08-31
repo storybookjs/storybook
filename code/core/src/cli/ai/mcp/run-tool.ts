@@ -2,24 +2,29 @@ import { resolve } from 'node:path';
 
 import * as v from 'valibot';
 
-import { McpJsonRpcError, callMcpTool, listMcpTools } from './client.ts';
-import { getInterceptMarkdown } from './intercepts.ts';
-import {
-  loadStorybookAiMetadata,
-  resolveStorybookConfigDir,
-  type StorybookAiMetadata,
-} from './local-metadata.ts';
 import { detectAgent } from '../../../telemetry/detect-agent.ts';
-import { readRegistry } from './registry.ts';
-import { resolveInstance } from './resolve-instance.ts';
-import { parsePort, parseToolArgs } from './tool-args.ts';
-import { ToolCallResultSchema } from './types.ts';
-import type {
-  InterceptReason,
-  McpToolDescriptor,
-  StorybookInstanceRecord,
-  ToolCallResult,
-} from './types.ts';
+import { resolveStorybookConfigDir } from '../../tools/config-dir.ts';
+import { readRegistry } from '../../tools/instances/registry.ts';
+import { resolveInstance } from '../../tools/instances/resolve.ts';
+import type { InterceptReason, StorybookInstanceRecord } from '../../tools/instances/types.ts';
+import {
+  McpJsonRpcError,
+  ToolCallResultSchema,
+  callMcpTool,
+  listMcpTools,
+  type McpToolDescriptor,
+  type ToolCallResult,
+} from '../../tools/mcp-client.ts';
+import {
+  JsonSchemaNodeSchema,
+  MAX_SCHEMA_DEPTH,
+  schemaLines,
+  type JsonSchemaNode,
+} from '../../tools/schema-lines.ts';
+import { parsePort } from '../../tools/tool-tokens.ts';
+import { getInterceptMarkdown } from './intercepts.ts';
+import { loadStorybookAiMetadata, type StorybookAiMetadata } from './local-metadata.ts';
+import { parseToolArgs } from './tool-args.ts';
 
 /**
  * Why an invocation failed before any command executed, for the `ai-command` telemetry event
@@ -83,7 +88,7 @@ export type AiToolOptions = {
 /**
  * Run a Storybook AI command and return its result as markdown. Commands exposed as local metadata
  * run without a dev server; runtime-bound commands still go through the running Storybook MCP
- * server and use the same repair-instruction markdown as `@storybook/mcp-proxy`.
+ * server and use {@link getInterceptMarkdown} when routing fails.
  */
 export async function runAiTool(
   toolName: string,
@@ -128,7 +133,10 @@ export async function runAiTool(
     };
   }
 
-  const resolution = await resolveReadyInstance(options.cwd, parsedPort.port, deps);
+  const resolution = await resolveReadyInstance(
+    { cwd: options.cwd, configDir: options.configDir, port: parsedPort.port },
+    deps
+  );
   if (resolution.kind === 'error') {
     return {
       exitCode: 1,
@@ -447,24 +455,36 @@ type InstanceResolution =
     };
 
 /**
- * Resolve the running Storybook instance for `cwdInput` via the registry. No version or
- * installed checks: the CLI is invoked as `npx storybook`, so the fact that it is executing
- * already proves the project has a compatible Storybook.
+ * Resolve the running Storybook instance for the targeted project via the registry. With an
+ * explicit `--config-dir` an instance must match that config dir; otherwise it matches on its
+ * recorded cwd OR its recorded config dir (defaulted to `.storybook` under the cwd), so monorepo
+ * instances are found from a different cwd (storybookjs/storybook#35359). No version or installed
+ * checks: the CLI is invoked as `npx storybook`, so the fact that it is executing already proves
+ * the project has a compatible Storybook.
  */
 async function resolveReadyInstance(
-  cwdInput: string | undefined,
-  port: number | undefined,
+  target: { cwd?: string; configDir?: string; port?: number },
   deps: AiToolRunDeps
 ): Promise<InstanceResolution> {
-  const cwd = resolve(cwdInput ?? process.cwd());
+  const cwd = resolve(target.cwd ?? process.cwd());
+  const configDir = resolveStorybookConfigDir({ cwd, configDir: target.configDir });
 
   const records = await readRegistry(deps.registryDir);
-  const resolution = resolveInstance(records, cwd, port, detectAgent()?.name);
+  const resolution = resolveInstance(records, {
+    cwd,
+    configDir,
+    configDirExplicit: target.configDir != null,
+    port: target.port,
+    agent: detectAgent()?.name,
+  });
 
   if (resolution.kind === 'intercept') {
     return {
       kind: 'error',
-      output: getInterceptMarkdown(resolution.reason, { records: resolution.records, port }),
+      output: getInterceptMarkdown(resolution.reason, {
+        records: resolution.records,
+        port: target.port,
+      }),
       reason: resolution.reason,
     };
   }
@@ -542,17 +562,17 @@ function formatToolHelp(tool: McpToolDescriptor, { local }: { local: boolean }):
   const properties = Object.entries(tool.inputSchema?.properties ?? {});
   if (properties.length > 0) {
     const required = new Set(tool.inputSchema?.required ?? []);
-    lines.push(
-      '',
-      'Arguments:',
-      ...properties.map(([name, schema]) => {
-        const meta = [schema.type, required.has(name) ? 'required' : undefined]
-          .filter(Boolean)
-          .join(', ');
-        const description = schema.description ? `: ${schema.description}` : '';
-        return `- \`--${name}\`${meta ? ` (${meta})` : ''}${description}`;
-      })
-    );
+    lines.push('', 'Arguments:');
+    for (const [name, schema] of properties) {
+      // Validate at this boundary rather than tightening the lenient tools/list
+      // parse: an unmodeled schema shape falls back to its top-level type and
+      // description instead of dropping the argument or failing the command.
+      const parsed = v.safeParse(JsonSchemaNodeSchema, schema);
+      const node: JsonSchemaNode = parsed.success
+        ? parsed.output
+        : { type: schema.type, description: schema.description };
+      lines.push(...schemaLines(`\`--${name}\``, node, required.has(name), '', MAX_SCHEMA_DEPTH));
+    }
   }
   return lines.join('\n');
 }
@@ -562,13 +582,16 @@ function formatMultiInstanceWarning(
   siblings: StorybookInstanceRecord[]
 ): string {
   const all = [chosen, ...siblings];
+  // Matches can span cwds (a record can match by config dir), so each line carries the
+  // instance's own cwd/config dir to tell the competing projects apart.
   const lines = all.map((r) => {
     const marker = r === chosen ? ' (used)' : '';
-    return `> - pid \`${r.pid}\` at ${r.url} (status: \`${r.mcp.status}\`)${marker}`;
+    const configDir = r.configDir ? `, config dir \`${r.configDir}\`` : '';
+    return `> - pid \`${r.pid}\` at ${r.url} (cwd \`${r.cwd}\`${configDir}, status: \`${r.mcp.status}\`)${marker}`;
   });
-  return `> Warning: Multiple matching Storybook instances are running at this cwd. This call was sent to pid \`${chosen.pid}\`.
+  return `> Warning: Multiple Storybook instances match this project. This call was sent to pid \`${chosen.pid}\`.
 >
-> Matching instances at \`${chosen.cwd}\`:
+> Matching instances:
 ${lines.join('\n')}
 >
 > If results look unexpected, ask the user whether they want to stop the other instance(s).`;

@@ -18,7 +18,6 @@ import {
 } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
-import { isReviewManagerRoute } from '../../../shared/review/routes.ts';
 import { useLandmark } from '../../hooks/useLandmark.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
 import type { PreviewProps } from './utils/types.tsx';
@@ -33,7 +32,7 @@ const fullScreenMapper = ({ api, state }: Combo) => {
     shortcut: api.getShortcutKeys().fullScreen,
     hasPanel: Object.keys(api.getElements(Addon_TypesEnum.PANEL)).length > 0,
     singleStory: state.singleStory,
-    isReviewRoute: isReviewManagerRoute(state.path, state.customQueryParams),
+    isNavUnavailable: api.getNavAvailability() === 'unavailable',
   };
 };
 
@@ -52,8 +51,8 @@ export const fullScreenTool: Addon_BaseType = {
 
     return (
       <Consumer filter={fullScreenMapper}>
-        {({ toggle, isFullscreen, shortcut, hasPanel, singleStory, isReviewRoute }) =>
-          !isReviewRoute &&
+        {({ toggle, isFullscreen, shortcut, hasPanel, singleStory, isNavUnavailable }) =>
+          !isNavUnavailable &&
           (!singleStory || (singleStory && hasPanel)) && (
             <Button
               key="full"

@@ -24,21 +24,15 @@ const createReviewStatus = (storyId: string): Status => ({
   sidebarContextMenu: false,
 });
 
-export const syncReviewStatuses = (
+/** Replace all review statuses with the active review's story ids. */
+export const applyReviewStatuses = (
   statusStore: StatusStoreByTypeId,
-  storyIds: Set<string>,
-  previousStoryIds: Set<string>
-): Set<string> => {
-  const removedStoryIds = [...previousStoryIds].filter((storyId) => !storyIds.has(storyId));
-  if (removedStoryIds.length > 0) {
-    statusStore.unset(removedStoryIds);
-  }
-
+  storyIds: Set<string>
+): void => {
+  statusStore.unset();
   if (storyIds.size > 0) {
     statusStore.set([...storyIds].map(createReviewStatus));
   }
-
-  return new Set(storyIds);
 };
 
 export const clearReviewStatuses = (statusStore: StatusStoreByTypeId): void => {

@@ -1,4 +1,4 @@
-/* eslint-disable react/destructuring-assignment */
+/* oxlint-disable react-classic/destructuring-assignment */
 import React, { useCallback, useContext } from 'react';
 import type { FC } from 'react';
 

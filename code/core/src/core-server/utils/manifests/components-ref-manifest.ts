@@ -136,17 +136,17 @@ export function toComponentManifestIndexEntries(
   for (const id of componentIds) {
     const payload = docgenPayloads[id];
     const storyDocs = storyDocsPayloads[id];
-    entries[id] = payload
-      ? {
-          id: payload.id ?? id,
-          name: payload.name ?? id,
-          ...(payload.description !== undefined ? { description: payload.description } : {}),
-          ...(payload.summary !== undefined ? { summary: payload.summary } : {}),
-          docgen: { $ref: docgenManifestRef(id) },
-          ...(storyDocs ? { stories: { $ref: storyDocsManifestRef(id) } } : {}),
-          ...(docsByComponentId[id] ? { docs: docsByComponentId[id] } : {}),
-        }
-      : { id, name: id, ...(docsByComponentId[id] ? { docs: docsByComponentId[id] } : {}) };
+    entries[id] = {
+      id: payload?.id ?? id,
+      name: payload?.name ?? id,
+      ...(payload?.description !== undefined ? { description: payload.description } : {}),
+      ...(payload?.summary !== undefined ? { summary: payload.summary } : {}),
+      ...(payload ? { docgen: { $ref: docgenManifestRef(id) } } : {}),
+      // Stories are indexed whether or not a component was extracted, so the ref does not hang off
+      // the docgen payload: dropping it hid every story of a componentless component.
+      ...(storyDocs ? { stories: { $ref: storyDocsManifestRef(id) } } : {}),
+      ...(docsByComponentId[id] ? { docs: docsByComponentId[id] } : {}),
+    };
   }
 
   return entries;

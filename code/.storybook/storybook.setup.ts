@@ -6,6 +6,9 @@ import { userEvent as storybookEvent, expect as storybookExpect } from 'storyboo
 
 import '../core/src/shared/utils/toHaveLiveRegion.ts';
 
+// Must be imported before `./preview.tsx` so a channel exists when preview open-services register.
+import './ensure-channel.ts';
+
 import preview from './preview.tsx';
 
 vi.spyOn(console, 'warn').mockImplementation((...args) => console.log(...args));

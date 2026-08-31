@@ -2,14 +2,14 @@ import { expect, test } from 'vitest';
 
 import { h } from 'vue';
 
-import type { SourceCodeGeneratorContext } from './sourceDecorator';
+import type { SourceCodeGeneratorContext } from './sourceDecorator.ts';
 import {
   generatePropsSourceCode,
   generateSlotSourceCode,
   generateSourceCode,
   getFunctionParamNames,
   parseDocgenInfo,
-} from './sourceDecorator';
+} from './sourceDecorator.ts';
 
 test('should generate source code for props', () => {
   const ctx: SourceCodeGeneratorContext = {
@@ -97,34 +97,22 @@ test('should generate source code for slots', () => {
   };
 
   const expectedCode = `default content
-
 <template #a>a content</template>
-
 <template #b>42</template>
-
 <template #c>true</template>
-
 <template #d><div>d content</div></template>
-
 <template #e><div style="color:red">e content</div></template>
-
 <template #f><div style="color:red">f content</div></template>
-
 <template #g><div style="color:red">child 1
 <span style="color:green">child 2</span></div></template>
-
 <template #h><div style="color:red">child 1
 <span style="color:green">child 2</span></div></template>
-
 <template #i><div style="color:red">child 1
 <span style="color:green">nested child 1
 <p>nested child 2</p></span></div></template>
-
 <template #j>child 1
 child 2</template>
-
 <template #l>{"foo":"bar"}</template>
-
 <template #m>{{ BigInt(9007199254740991) }}</template>`;
 
   let actualCode = generateSlotSourceCode(slots, Object.keys(slots), {
@@ -164,7 +152,6 @@ test('should generate source code for slots with bindings', () => {
   };
 
   const expectedCode = `<template #a="{ foo, bar, boo }">Slot with bindings {{ foo }}, {{ bar }} and {{ boo.mimeType }}</template>
-
 <template #b="{ foo, boo }"><a :href="foo" :target="foo" :type="boo.mimeType" v-bind="boo">Test link: {{ foo }}</a></template>`;
 
   const actualCode = generateSlotSourceCode(slots, Object.keys(slots), {
@@ -205,7 +192,9 @@ const test = [1,2];
 </script>
 
 <template>
-  <MyComponent :a="42" b="foo" v-model:c="c" :d="d"> <template #mySlot><div :d="d1" :test="test" /></template> </MyComponent>
+  <MyComponent :a="42" b="foo" v-model:c="c" :d="d">
+    <template #mySlot><div :d="d1" :test="test" /></template>
+  </MyComponent>
 </template>`);
 });
 

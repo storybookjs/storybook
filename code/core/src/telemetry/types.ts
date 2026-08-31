@@ -47,6 +47,8 @@ export type EventType =
   | 'share'
   | 'ghost-stories'
   | 'sidebar-filter'
+  | 'tools-command'
+  | 'skills-get'
   | 'ai-command'
   | 'ai-init-opt-in'
   | 'ai-prompt-nudge'
@@ -96,8 +98,26 @@ export type StorybookMetadata = {
   hasRouterPackage?: boolean;
   hasStorybookEslint?: boolean;
   hasStaticDirs?: boolean;
+  /**
+   * Whether the project customizes webpack — through `webpackFinal` in the Storybook config, or
+   * (for Next.js projects) through the `webpack` option of `next.config.*`.
+   */
   hasCustomWebpack?: boolean;
+  /** Whether the Storybook config defines `viteFinal`. */
+  hasCustomVite?: boolean;
   hasCustomBabel?: boolean;
+  /**
+   * Whether a Next.js project's scripts opt into Turbopack via an explicit `--turbopack` /
+   * `--webpack` flag. `undefined` when no such flag is present (ambiguous from Next.js 16
+   * onwards, where Turbopack is the default) or when the project isn't using Next.js.
+   */
+  hasTurbopack?: boolean;
+  /**
+   * Whether the project has a Module Federation package installed (e.g. `@module-federation/*`
+   * or `@originjs/vite-plugin-federation`). This can't detect projects that configure webpack's
+   * built-in `ModuleFederationPlugin` directly without one of these packages.
+   */
+  hasModuleFederation?: boolean;
   features?: StorybookConfig['features'];
   refCount?: number;
   preview?: {
@@ -146,7 +166,13 @@ export interface TelemetryEvent extends TelemetryData {
 
 export interface InitPayload {
   projectType: string;
-  features: { dev: boolean; docs: boolean; test: boolean; onboarding: boolean; ai: boolean };
+  features: {
+    dev: boolean;
+    docs: boolean;
+    test: boolean;
+    onboarding: boolean;
+    ai: boolean;
+  };
   newUser: boolean;
   versionSpecifier: string | undefined;
   cliIntegration: string | undefined;

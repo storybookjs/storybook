@@ -8,7 +8,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": false,
         "summary": "number",
       },
     },
@@ -25,12 +24,12 @@
         "summary": undefined,
       },
       "type": {
-        "required": true,
         "summary": "any",
       },
     },
     "type": {
       "name": "other",
+      "required": true,
       "value": "empty-enum",
     },
   },
@@ -43,12 +42,12 @@
         "summary": undefined,
       },
       "type": {
-        "required": true,
         "summary": "(value: number) => string",
       },
     },
     "type": {
       "name": "function",
+      "required": true,
     },
   },
   "label": {
@@ -60,7 +59,6 @@
         "summary": "Badge",
       },
       "type": {
-        "required": false,
         "summary": "string",
       },
     },

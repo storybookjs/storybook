@@ -50,6 +50,7 @@ describe('tools help rendering', () => {
       Options:
         --cwd <path>                 Project directory of the target Storybook
         -c, --config-dir <dir-name>  Storybook config directory of the target Storybook
+        -p, --port <number>          Port of a running Storybook; targets that instance directly, no --cwd or --config-dir needed
         --attach                     Require attaching to a running Storybook; gate failures are errors instead of a local fallback
         --no-attach                  Load the project configuration without attaching
         --input <object>             Raw JSON object with the tool arguments (escape hatch for complex values)
@@ -63,6 +64,7 @@ describe('tools help rendering', () => {
 
       [local] tools run without a running Storybook.
       [requires running Storybook] tools need a running Storybook dev server; start it first.
+      Tool results print as markdown; the Output blocks below describe the \`--json\` data.
       Individual \`--key value\` flags override entries of \`--input\`.
 
       Tool reference — every command in full (\`npx storybook tools <toolset> <tool> --help\` shows one alone):
@@ -83,7 +85,7 @@ describe('tools help rendering', () => {
           Arguments:
           - \`--id\` (string, required): Example identifier
 
-          Output:
+          Output (\`--json\`):
           - \`url\` (string, required): Preview URL"
     `);
   });
@@ -108,7 +110,7 @@ describe('tools help rendering', () => {
           Arguments:
           - \`--id\` (string, required): Example identifier
 
-          Output:
+          Output (\`--json\`):
           - \`url\` (string, required): Preview URL"
     `);
   });
@@ -125,7 +127,7 @@ describe('tools help rendering', () => {
       Arguments:
       - \`--id\` (string, required): Example identifier
 
-      Output:
+      Output (\`--json\`):
       - \`url\` (string, required): Preview URL"
     `);
   });

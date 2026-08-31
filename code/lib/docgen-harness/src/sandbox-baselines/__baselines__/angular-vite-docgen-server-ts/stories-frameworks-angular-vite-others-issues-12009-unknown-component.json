@@ -7,7 +7,6 @@
         "category": "outputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "EventEmitter"
         }
       },
@@ -24,7 +23,6 @@
           "summary": ""
         },
         "type": {
-          "required": false,
           "summary": "string"
         }
       },

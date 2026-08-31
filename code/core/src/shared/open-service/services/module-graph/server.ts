@@ -4,15 +4,10 @@ import type { Presets } from 'storybook/internal/types';
 
 import { registerService } from '../../server.ts';
 import { registerModuleGraphIndexService } from '../module-graph-index/server.ts';
-import { moduleGraphServiceDef } from './definition.ts';
+import { moduleGraphServiceDef, type ChangeDetectionReadinessResult } from './definition.ts';
 import type { ChangeDetectionAdapter } from './engine/adapters/types.ts';
 import { ModuleGraphEngine, type ModuleGraphEngineOptions } from './engine/module-graph-engine.ts';
 import { errorToErrorLike } from './types.ts';
-
-export type ChangeDetectionReadinessResult =
-  | { status: 'ready' }
-  | { status: 'unavailable'; reason: string; error?: { message: string } }
-  | { status: 'error'; error: { message: string } };
 
 export type RegisterModuleGraphServiceOptions = {
   channel: ChannelLike;

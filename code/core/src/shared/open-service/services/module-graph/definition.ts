@@ -66,6 +66,8 @@ const changeDetectionReadinessSchema = v.variant('status', [
   }),
 ]);
 
+export type ChangeDetectionReadinessResult = v.InferOutput<typeof changeDetectionReadinessSchema>;
+
 export type { ModuleGraphServiceState } from './types.ts';
 
 export const moduleGraphServiceDef = defineService({

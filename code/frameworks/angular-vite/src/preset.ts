@@ -13,9 +13,9 @@ import {
 } from 'storybook/internal/server-errors';
 import type { PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
 
-import { readFileSync, statSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { createRequire } from 'node:module';
-import { basename, isAbsolute, join, relative, resolve } from 'node:path';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { DOCUMENTATION_JSON, resolveCompodocConfig } from './compodoc-config.ts';
@@ -343,18 +343,48 @@ const STYLE_PREPROCESSORS: Record<string, { install: string; alternative?: strin
 
 const STYLE_PREPROCESSOR_ID = /\.(scss|sass|less)(?:$|\?)/;
 
-const isInstalledNear = (pkg: string, dir: string) => {
+// This check aborts the build, so it has to be at least as permissive as Vite. It deliberately
+// asks whether the package is *present* rather than whether its entry point resolves: Vite loads
+// preprocessors with its own resolver and conditions, so an `exports` map without a `require`
+// condition resolves for Vite and throws for `createRequire`. Walking `node_modules` covers that;
+// the `createRequire` arm covers Yarn PnP, where there are no `node_modules` directories to walk.
+const isPackagePresentFrom = (pkg: string, fromDir: string) => {
+  let dir = resolve(fromDir);
+  while (true) {
+    if (existsSync(join(dir, 'node_modules', pkg, 'package.json'))) {
+      return true;
+    }
+    const parent = dirname(dir);
+    if (parent === dir) {
+      break;
+    }
+    dir = parent;
+  }
+
   try {
-    createRequire(join(dir, 'noop.js')).resolve(pkg);
+    createRequire(join(fromDir, 'noop.js')).resolve(pkg);
     return true;
   } catch {
     return false;
   }
 };
 
+const viteInstallDir = () => {
+  try {
+    return dirname(fileURLToPath(import.meta.resolve('vite')));
+  } catch {
+    return undefined;
+  }
+};
+
+const isInstalledNear = (pkg: string, root: string) =>
+  [root, viteInstallDir()]
+    .filter((dir): dir is string => !!dir)
+    .some((dir) => isPackagePresentFrom(pkg, dir));
+
 export function stylePreprocessorCheckPlugin(): Plugin {
-  // `loadPreprocessorPath` resolves from the Vite root first, so this asks the same question from
-  // the same place: a preprocessor reported missing here is one Vite is about to fail on too.
+  // Same two directories and same order as `loadPreprocessorPath`, so a preprocessor reported
+  // missing here is one Vite is about to fail on too.
   let root = process.cwd();
   const installed = new Map<string, boolean>();
 

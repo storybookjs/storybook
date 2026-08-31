@@ -68,6 +68,20 @@ test('decideCanaryPrBodyAction skips unlabeled PRs whose publish job did not run
   );
 });
 
+test('decideCanaryPrBodyAction skips when the publish job did not run but the workflow succeeded', () => {
+  assert.deepEqual(
+    decideCanaryPrBodyAction({
+      event: 'pull_request',
+      runConclusion: 'success',
+      jobs: [
+        { name: 'Skip fork pull request', conclusion: 'success' },
+        { name: PUBLISH_JOB_NAME, conclusion: 'skipped' },
+      ],
+    }),
+    { action: 'skip', reason: 'publish job conclusion is skipped' }
+  );
+});
+
 test('decideCanaryPrBodyAction maps publish success and failure', () => {
   assert.deepEqual(
     decideCanaryPrBodyAction({

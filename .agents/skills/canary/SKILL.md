@@ -13,7 +13,7 @@ Canary publishes are driven by the `publish-canary.yml` workflow.
 Automatic canary publishes:
 
 - Every push to `next`
-- PRs labeled `ci:canary` (a human must apply that label). While it remains, every push to the PR republishes.
+- In-repo PRs labeled `ci:canary` (a human must apply that label). While it remains, every push to the PR republishes. Fork PRs are not published from this repository.
 
 ## Version string
 
@@ -57,7 +57,7 @@ gh pr list \
 gh pr view <NUMBER> --repo storybookjs/storybook --json body --jq .body
 ```
 
-Use the heading and the `CANARY_RELEASE_SECTION` commands as-is. A follow-up workflow (`publish-canary-pr-body.yml`) writes those sections after publish finishes, including on fork PRs.
+Use the heading and the `CANARY_RELEASE_SECTION` commands as-is. A follow-up workflow (`publish-canary-pr-body.yml`) writes those sections after publish finishes. Fork PRs do not get an upstream canary; see the releasing docs.
 
 - **Released** — use the install commands from the body
 - **Failed** — the heading links to pkg.pr.new; the failure comment links to the workflow run

@@ -23,6 +23,25 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  # pkg.pr.new stores under GITHUB_REPOSITORY. A fork PR on this repo would
+  # still publish as storybookjs/storybook. Skip those; publish from the fork
+  # instead so URLs are pkg.pr.new/<fork>/...
+  skip-fork-pr:
+    name: Skip fork pull request
+    if: |
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name != github.repository &&
+      github.event.pull_request.state == 'open' &&
+      contains(github.event.pull_request.labels.*.name, 'ci:canary') &&
+      (github.event.action != 'labeled' || github.event.label.name == 'ci:canary')
+    runs-on: ubuntu-latest
+    permissions: {}
+    steps:
+      - env:
+          HEAD_REPO: ${{ github.event.pull_request.head.repo.full_name }}
+        run: |
+          echo "::notice::Fork PRs are not published to pkg.pr.new/storybookjs/storybook. On the fork, install https://github.com/apps/pkg-pr-new and run publish-canary.yml. Install URLs will be https://pkg.pr.new/${HEAD_REPO}/storybook@<sha> (compact https://pkg.pr.new/storybook@<sha> URLs will 404)."
+
   publish-canary:
     name: Publish Canary Packages
     if: |
@@ -30,6 +49,7 @@ jobs:
       github.event_name == 'push' ||
       (
         github.event.pull_request.state == 'open' &&
+        github.event.pull_request.head.repo.full_name == github.repository &&
         contains(github.event.pull_request.labels.*.name, 'ci:canary') &&
         (github.event.action != 'labeled' || github.event.label.name == 'ci:canary')
       )
@@ -53,12 +73,22 @@ jobs:
 
       - name: Publish
         working-directory: scripts
+        env:
+          # Compact URLs resolve via the npm repository field (storybookjs/storybook).
+          # A publish from any other GITHUB_REPOSITORY must use owner/repo URLs.
+          PKG_PR_NEW_NO_COMPACT: ${{ github.repository != 'storybookjs/storybook' }}
         run: |
+          extra=()
+          if [ "$PKG_PR_NEW_NO_COMPACT" = true ]; then
+            extra+=(--no-compact)
+          fi
+
           # --yarn uses `yarn pack`, which rewrites leftover workspace: ranges
           # (npm pack leaves them; npm install then fails with EUNSUPPORTEDPROTOCOL).
           yarn workspaces list --json --no-private \
             | jq -j '"../" + .location + "\u0000"' \
-            | xargs -0 -r yarn pkg-pr-new publish --yarn --no-template --comment=off --json=./pkg-pr-new-output.json
+            | xargs -0 -r yarn pkg-pr-new publish --yarn --no-template --comment=off \
+              "${extra[@]}" --json=./pkg-pr-new-output.json
 
           test -s ./pkg-pr-new-output.json
           jq -er '.packages[] | select(.name == "create-storybook") | .name' ./pkg-pr-new-output.json >/dev/null

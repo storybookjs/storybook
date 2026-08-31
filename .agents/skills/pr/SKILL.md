@@ -43,7 +43,7 @@ Add these labels to the PR:
 
 **Canary (optional):**
 
-- `ci:canary` - publish pkg.pr.new canary packages for this PR; later pushes republish while the label remains. Do not add this unless the user asks for a canary.
+- `ci:canary` - publish pkg.pr.new canary packages for an in-repo PR; later pushes republish while the label remains. Does nothing on fork PRs. Do not add this unless the user asks for a canary.
 
 **QA (required, pick one):**
 

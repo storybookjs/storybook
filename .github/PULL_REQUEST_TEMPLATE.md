@@ -74,7 +74,7 @@ Do not describe how YOU tested the PR code, but how a separate maintainer should
 
 <!-- CANARY_RELEASE_SECTION -->
 
-This PR does not have a canary release associated. Add the `ci:canary` label to publish canary packages. Subsequent pushes republish while the label remains. You can also trigger a canary for any branch from the [canary workflow](https://github.com/storybookjs/storybook/actions/workflows/publish-canary.yml).
+This PR does not have a canary release associated. On an in-repo branch, add the `ci:canary` label to publish canary packages. Subsequent pushes republish while the label remains. Fork PRs are not published under `storybookjs/storybook`; run the [canary workflow](https://github.com/storybookjs/storybook/actions/workflows/publish-canary.yml) on the fork instead.
 
 <!-- CANARY_RELEASE_SECTION -->
 

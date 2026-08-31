@@ -7,6 +7,9 @@ import type { Options } from 'storybook/internal/types';
 import { vueComponentMeta } from './plugins/vue-component-meta.ts';
 import { vueDocgen } from './plugins/vue-docgen.ts';
 import { templateCompilation } from './plugins/vue-template.ts';
+// Statically, so the cost of this module graph is paid while the file is imported rather than
+// charged to whichever test happens to reach for it first.
+import { viteFinal } from './preset.ts';
 import type { FrameworkOptions } from './types.ts';
 
 // The real plugin factories build a vue-component-meta checker / vue-docgen-api parser, which is
@@ -40,7 +43,6 @@ const pluginNames = async (
   docgen: FrameworkOptions['docgen'],
   features?: Record<string, boolean>
 ) => {
-  const { viteFinal } = await import('./preset.ts');
   const config = await viteFinal!({}, optionsWith(docgen, features));
   return (config.plugins ?? []).map((plugin) => (plugin as { name: string }).name);
 };

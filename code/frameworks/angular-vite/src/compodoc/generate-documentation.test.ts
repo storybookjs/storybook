@@ -2,9 +2,11 @@
 // the atomicity of the publish, neither of which memfs models: it has no processes, and a rename it
 // performed would prove nothing about the rename Node performs on disk.
 import {
+  closeSync,
   existsSync,
   mkdirSync,
   mkdtempSync,
+  openSync,
   readFileSync,
   readdirSync,
   realpathSync,
@@ -121,30 +123,32 @@ describe('generateDocumentation', () => {
     expect(args).toContain('tsconfig.doc.json');
   });
 
-  it('never exposes a half-written file to readers while the run is in flight', async () => {
-    // Excluding concurrent writers does not cover this: Compodoc truncates the file and grows it, so
-    // a reader parsing it mid-write gets a syntax error unless the publish is a rename.
-    mkdirSync(outputDir, { recursive: true });
-    writeFileSync(documentationJson(), JSON.stringify({ generation: 'previous' }));
+  // Windows refuses to rename over a path a reader still holds open, so the handle this asserts
+  // through cannot exist there.
+  it.skipIf(process.platform === 'win32')(
+    'never exposes a half-written file to readers while the run is in flight',
+    async () => {
+      // Excluding concurrent writers does not cover this: Compodoc truncates the file and grows it,
+      // so a reader parsing it mid-write gets a syntax error unless the publish is a rename.
+      mkdirSync(outputDir, { recursive: true });
+      writeFileSync(documentationJson(), JSON.stringify({ generation: 'previous' }));
 
-    const observations: Array<{ generation?: string } | string> = [];
-    const poll = setInterval(() => {
+      // A reader that opened the file before the run. Renaming over the path swaps the directory
+      // entry and leaves this descriptor on the old inode, so it keeps reading the whole previous
+      // document; truncating and growing the published path in place would corrupt it instead.
+      const reader = openSync(documentationJson(), 'r');
+
       try {
-        observations.push(readPublished());
-      } catch (error) {
-        observations.push(`unreadable: ${String(error)}`);
+        await generateDocumentation(options());
+
+        expect(JSON.parse(readFileSync(reader, 'utf8')).generation).toBe('previous');
+      } finally {
+        closeSync(reader);
       }
-    }, 1);
 
-    await generateDocumentation(options());
-    clearInterval(poll);
-
-    expect(observations.length).toBeGreaterThan(5);
-    expect(
-      observations.every((entry) => (entry as { generation?: string })?.generation === 'previous')
-    ).toBe(true);
-    expect(readPublished().generation).toBeUndefined();
-  });
+      expect(readPublished().generation).toBeUndefined();
+    }
+  );
 
   it('reports a failing run with the tail of its output', async () => {
     vi.stubEnv('STUB_EXIT_CODE', '2');

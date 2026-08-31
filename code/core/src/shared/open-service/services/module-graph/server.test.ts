@@ -639,6 +639,30 @@ describe('module-graph open service', () => {
       expect(getChangeDetectionReadiness).toHaveBeenCalledOnce();
     });
 
+    it('forwards an optional error on unavailable change-detection readiness', async () => {
+      const runtime = registerModuleGraphService({
+        channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,
+        getIndex: vi.fn().mockResolvedValue({ v: 5, entries: {} }),
+        workingDir: '/repo',
+        getChangeDetectionReadiness: async () => ({
+          status: 'unavailable' as const,
+          reason: 'vite warmup failed',
+          error: new Error('warmup failed'),
+        }),
+      });
+
+      await expect(runtime.commands._waitForChangeDetectionReadiness(undefined)).resolves.toEqual({
+        status: 'unavailable',
+        reason: 'vite warmup failed',
+        error: { message: 'warmup failed' },
+      });
+      expect(runtime.queries.changeDetectionReadiness.get(undefined)).toEqual({
+        status: 'unavailable',
+        reason: 'vite warmup failed',
+        error: { message: 'warmup failed' },
+      });
+    });
+
     it('loads change-detection readiness through the query load hook', async () => {
       const runtime = registerModuleGraphService({
         channel: { on: vi.fn(() => () => undefined), emit: vi.fn() } as never,

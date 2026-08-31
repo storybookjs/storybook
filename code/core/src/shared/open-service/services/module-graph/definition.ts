@@ -60,6 +60,14 @@ const changeDetectionReadinessSchema = v.variant('status', [
       v.string(),
       v.description('Why change detection cannot publish statuses, such as disabled or no git.')
     ),
+    error: v.optional(
+      v.object({
+        message: v.pipe(
+          v.string(),
+          v.description('Optional diagnostic from the provider that marked scanning unavailable.')
+        ),
+      })
+    ),
   }),
   v.object({
     status: v.literal('error'),

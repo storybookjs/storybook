@@ -50,7 +50,7 @@ export type ModuleGraphServiceState = {
 export type ChangeDetectionReadinessState =
   | { status: 'pending' }
   | { status: 'ready' }
-  | { status: 'unavailable'; reason: string }
+  | { status: 'unavailable'; reason: string; error?: { message: string } }
   | { status: 'error'; error: { message: string } };
 
 export function errorToErrorLike(error: unknown): ErrorLike {

@@ -108,7 +108,11 @@ export function registerModuleGraphService(options: RegisterModuleGraphServiceOp
                 serialized = { status: 'ready' };
                 break;
               case 'unavailable':
-                serialized = { status: 'unavailable', reason: readiness.reason };
+                serialized = {
+                  status: 'unavailable',
+                  reason: readiness.reason,
+                  ...(readiness.error ? { error: { message: readiness.error.message } } : {}),
+                };
                 break;
               case 'error':
                 serialized = {

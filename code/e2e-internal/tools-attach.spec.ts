@@ -59,6 +59,10 @@ const REVIEW_INPUT = JSON.stringify({
 });
 
 test.describe('storybook tools attach', () => {
+  // Declaration order matters (the full-extraction test must stay last — see its comment), which
+  // the config's fullyParallel would not preserve outside CI's single worker. Not 'serial': these
+  // tests are independent, so one failure must not skip the rest.
+  test.describe.configure({ mode: 'default' });
   test.setTimeout(90_000);
 
   test('fails with start-Storybook guidance when --attach finds no instance', async () => {

@@ -389,6 +389,9 @@ export function connectCommandTransport(context: {
     // On an async channel the emitted ack still needs an event-loop turn to reach the wire, so the
     // handler starts on a macrotask: a microtask start would starve that turn for as long as the
     // handler's synchronous prefix runs (a fan-out over hundreds of components outlives the window).
+    // A timer, not `setImmediate`: an immediate would glue the handler to the same check phase as
+    // the deferred ack sends, starving the acks of sibling invokes read in the same poll batch (a
+    // docs listing issues the docgen and mdx fan-outs together); the timer waits one full turn.
     setTimeout(() => {
       void Promise.resolve()
         .then(() => localCommands[invoke.commandName](invoke.input))

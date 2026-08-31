@@ -726,7 +726,7 @@ how dispatch reaches the Storybook it attached to.
 
 ### Events
 
-All four events are namespaced under `services:` and carry the `serviceId` so a runtime that hosts
+All command events are namespaced under `services:` and carry the `serviceId` so a runtime that hosts
 several services routes them correctly.
 
 | Event | Direction | Payload |

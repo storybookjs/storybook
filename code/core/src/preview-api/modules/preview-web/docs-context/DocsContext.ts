@@ -317,6 +317,8 @@ export class DocsContext<TRenderer extends Renderer> implements DocsContextProps
     return this.store.storyFromCSFFile({ storyId, csfFile });
   };
 
+  getGlobals = () => this.store.userGlobals.get();
+
   getStoryContext = (story: PreparedStory<TRenderer>) => {
     return {
       ...this.store.getStoryContext(story),

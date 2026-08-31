@@ -1,0 +1,14 @@
+{
+  "id": "setup-local-helper-bail",
+  "name": "SetupLocalHelperBail",
+  "path": "__PATH__",
+  "stories": {
+    "forms-setup-local-helper-bail--primary": {
+      "description": undefined,
+      "id": "forms-setup-local-helper-bail--primary",
+      "name": "Primary",
+      "summary": undefined,
+      "warning": "No static snippet: `setup` references `formatBadge`, which the snippet cannot declare.",
+    },
+  },
+}

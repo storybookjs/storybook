@@ -46,6 +46,8 @@ export const babelPrint = (ast: ASTNode): string => {
     tabWidth: 2,
     wrapColumn: 80,
     arrowParensAlways: true,
+    // Recast defaults this to `os.EOL`, which would carriage-return printed snippets on Windows.
+    lineTerminator: '\n',
   }).code;
 };
 

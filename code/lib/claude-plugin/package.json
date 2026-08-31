@@ -1,0 +1,42 @@
+{
+  "name": "@storybook/claude-code-plugin",
+  "version": "10.6.0-beta.0",
+  "private": true,
+  "description": "Build, preview, and test UI components",
+  "keywords": [
+    "components",
+    "mcp",
+    "stories",
+    "storybook"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/claude-plugin",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/lib/claude-plugin"
+  },
+  "license": "MIT",
+  "author": "Storybook",
+  "type": "module",
+  "files": [
+    ".claude-plugin",
+    ".mcp.json",
+    "assets",
+    "skills",
+    "README.md"
+  ],
+  "scripts": {
+    "marketplace:add": "claude plugin marketplace add ./ --scope user",
+    "marketplace:remove": "claude plugin marketplace remove storybook",
+    "marketplace:update": "claude plugin marketplace update storybook",
+    "plugin:install": "yarn run validate && yarn run marketplace:add && claude plugin install storybook@storybook --scope user",
+    "plugin:list": "claude plugin list --json",
+    "plugin:remove": "claude plugin uninstall storybook@storybook --scope user",
+    "plugin:update": "claude plugin update storybook@storybook",
+    "remove": "node ./scripts/remove-plugin.ts",
+    "validate": "claude plugin validate . && claude plugin validate .claude-plugin/plugin.json"
+  },
+  "devDependencies": {
+    "tinyexec": "^1.0.2"
+  }
+}

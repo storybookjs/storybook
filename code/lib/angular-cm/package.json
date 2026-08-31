@@ -1,0 +1,48 @@
+{
+  "name": "@storybook/angular-cm",
+  "version": "10.6.0-beta.0",
+  "private": true,
+  "description": "In-process Angular component metadata analyzer for Storybook docgen",
+  "keywords": [
+    "storybook",
+    "angular",
+    "docgen"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/angular-cm",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/lib/angular-cm"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "devDependencies": {
+    "typescript": "^6.0.3"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
+  }
+}

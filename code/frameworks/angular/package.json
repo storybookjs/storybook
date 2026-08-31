@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular",
-  "version": "10.6.0-alpha.3",
+  "version": "10.6.0-beta.0",
   "description": "Storybook for Angular: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -79,6 +79,7 @@
     "@angular/forms": "^19.1.1",
     "@angular/platform-browser": "^19.1.1",
     "@angular/platform-browser-dynamic": "^19.1.1",
+    "@storybook/angular-compodoc": "workspace:*",
     "@storybook/core-webpack": "workspace:*",
     "@types/node": "^22.19.1",
     "empathic": "^2.0.0",

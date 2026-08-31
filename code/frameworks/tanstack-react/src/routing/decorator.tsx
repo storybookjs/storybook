@@ -1,18 +1,17 @@
-import React, { type ComponentType } from 'react';
 import type { Decorator } from '@storybook/react-vite';
+import type { AnyRootRoute, AnyRoute, Router } from '@tanstack/react-router';
 import {
   createMemoryHistory,
   createRootRoute,
   createRoute,
   createRouter,
-  type Route,
+  defaultStringifySearch,
+  interpolatePath,
   RouterProvider,
   type RootRoute,
-  interpolatePath,
-  defaultStringifySearch,
+  type Route,
 } from '@tanstack/react-router';
-import type { Router, AnyRootRoute, AnyRoute } from '@tanstack/react-router';
-import type { RouterParameters } from './types.ts';
+import React, { type ComponentType } from 'react';
 import {
   duplicateRouteTree,
   findRootRoute,
@@ -21,8 +20,9 @@ import {
   resolveStoryLeaf,
   type DuplicatedTree,
 } from './duplicate-tree.ts';
-import { isRoute } from './utils.ts';
 import { normalizeFileRoutePath } from './path-utils.ts';
+import type { RouterParameters } from './types.ts';
+import { isRoute } from './utils.ts';
 
 interface TanStackRouterStoryProps {
   Story: ComponentType;
@@ -42,7 +42,7 @@ interface ResolvedTree {
 
 const StoryContext = React.createContext<{ Story: ComponentType }>({ Story: () => null });
 
-const StoryFromContext: ComponentType = () => {
+export const StoryFromContext: ComponentType = () => {
   const { Story } = React.useContext(StoryContext);
   return <Story />;
 };
@@ -52,21 +52,20 @@ export const tanstackRouteDecorator: Decorator = (Story, context) => {
 };
 
 function TanStackRouterStory({ Story, context }: TanStackRouterStoryProps) {
+  const router = context.tanstackRouter as Router<AnyRootRoute> | undefined;
+
   const routerContext = context.parameters.tanstack?.router?.useRouterContext?.({
     storyContext: context,
   });
 
-  const router = React.useMemo(
-    () => createStoryRouter({ Story: StoryFromContext, context, routerContext }),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [context.id]
-  );
+  if (!router) {
+    throw new Error(
+      'No story router found on the story context: the `routerBeforeEach` hook of @storybook/tanstack-react did not run before rendering. Note that portable stories are not supported by this framework.'
+    );
+  }
 
   const providerContext = React.useMemo(
-    () => ({
-      ...context.parameters.tanstack?.router?.context,
-      ...routerContext,
-    }),
+    () => routerContext,
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [context.id, routerContext]
   );
@@ -212,6 +211,7 @@ function resolveTree(Story: ComponentType, context: Parameters<Decorator>[1]): R
     const leaf = resolveStoryLeaf(tree, {
       path: routerParameters.path as string | undefined,
       boundRouteId: resolvedRoute && resolvedRoute !== rootRoute ? resolvedRoute.id : undefined,
+      params: routerParameters.params as Record<string, unknown> | undefined,
     });
 
     injectStoryComponent(leaf, Story, routeOverrides, originalRouteId(tree, leaf) ?? leaf.id);

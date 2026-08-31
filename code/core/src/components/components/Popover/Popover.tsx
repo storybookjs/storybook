@@ -48,6 +48,7 @@ const Wrapper = styled.div<{
             drop-shadow(0 1px 3px rgba(0,0,0,0.1))
           `,
           borderRadius: theme.appBorderRadius + 2,
+          fontFamily: theme.typography.fonts.base,
           fontSize: theme.typography.size.s1,
         }
       : {},

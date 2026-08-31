@@ -7,7 +7,9 @@ import {
   utimesSync,
   writeFileSync,
 } from 'node:fs';
-import { tmpdir } from 'node:os';
+import { tmpdir, userInfo } from 'node:os';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
 
 import { join, resolve } from 'pathe';
 import { afterEach, describe, expect, it, vi } from 'vitest';
@@ -206,6 +208,15 @@ describe('createRuntimeInstanceRecord', () => {
       updatedAt: '2026-05-18T12:00:00.000Z',
       mcp: { status: 'not-installed' },
     });
+  });
+
+  it('preserves a Storybook deployment subpath but drops UI query parameters', () => {
+    const record = createRuntimeInstanceRecord({
+      ...baseOptions,
+      address: 'http://localhost:6006/nested/?path=/docs/button--primary',
+    });
+
+    expect(record.url).toBe('http://localhost:6006/nested');
   });
 
   it('stores the configDir resolved against the cwd when provided', () => {
@@ -587,6 +598,7 @@ describe('writeStorybookRuntimeInstanceRecord', () => {
       registerCleanup: false,
       registryDir: makeTempDir(),
       storybookVersion: '10.5.0-alpha.0',
+      token: 'ws-token',
     });
 
     expect(registration.record.agent).toBe('claude-preview');
@@ -602,6 +614,7 @@ describe('writeStorybookRuntimeInstanceRecord', () => {
       registerCleanup: false,
       registryDir: makeTempDir(),
       storybookVersion: '10.5.0-alpha.0',
+      token: 'ws-token',
     });
 
     expect(registration.record.agent).toBe('codex');
@@ -617,6 +630,7 @@ describe('writeStorybookRuntimeInstanceRecord', () => {
       registerCleanup: false,
       registryDir: makeTempDir(),
       storybookVersion: '10.5.0-alpha.0',
+      token: 'ws-token',
     });
 
     expect(registration.record.agent).toBe('claude');
@@ -630,6 +644,7 @@ describe('writeStorybookRuntimeInstanceRecord', () => {
       registerCleanup: false,
       registryDir,
       storybookVersion: '10.5.0-alpha.0',
+      token: 'ws-token',
     });
 
     expect(existsSync(registration.recordPath)).toBe(true);
@@ -638,4 +653,23 @@ describe('writeStorybookRuntimeInstanceRecord', () => {
 
     expect(existsSync(registration.recordPath)).toBe(false);
   });
+
+  it.runIf(process.platform === 'win32')(
+    'restricts the record ACL to the current Windows user',
+    async () => {
+      const registryDir = makeTempDir();
+      const registration = await writeStorybookRuntimeInstanceRecord({
+        address: 'http://localhost:6006/',
+        port: 6006,
+        registerCleanup: false,
+        registryDir,
+        storybookVersion: '10.5.0-alpha.0',
+        token: 'ws-token',
+      });
+
+      const { stdout } = await promisify(execFile)('icacls', [registration.recordPath]);
+      expect(stdout).toContain(userInfo().username);
+      expect(stdout).not.toMatch(/Everyone|(BUILTIN\\Users)/i);
+    }
+  );
 });

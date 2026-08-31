@@ -1,0 +1,54 @@
+{
+  "name": "@storybook/angular-compodoc",
+  "version": "10.6.0-beta.0",
+  "private": true,
+  "description": "Shared Compodoc metadata parsing for Storybook's Angular frameworks",
+  "keywords": [
+    "storybook",
+    "angular",
+    "compodoc"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/angular-compodoc",
+  "bugs": {
+    "url": "https://github.com/storybookjs/storybook/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/lib/angular-compodoc"
+  },
+  "funding": {
+    "type": "opencollective",
+    "url": "https://opencollective.com/storybook"
+  },
+  "license": "MIT",
+  "sideEffects": false,
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "code": "./src/index.ts",
+      "default": "./dist/index.js"
+    },
+    "./browser": {
+      "types": "./dist/browser.d.ts",
+      "code": "./src/browser.ts",
+      "default": "./dist/browser.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/**/*",
+    "README.md",
+    "*.js",
+    "*.d.ts",
+    "!src/**/*"
+  ],
+  "dependencies": {
+    "@storybook/global": "^5.0.0",
+    "entities": "^4.5.0"
+  },
+  "peerDependencies": {
+    "storybook": "workspace:^"
+  }
+}

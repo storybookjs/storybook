@@ -1,0 +1,3 @@
+<template>
+  <JsdocTags label="Old label" title="New title" />
+</template>

@@ -76,6 +76,7 @@ Internal exports include:
 - `storybook/internal/csf-tools`
 - `storybook/internal/common`
 - `storybook/internal/channels`
+- `storybook/internal/tools` — Node SDK for `storybook tools` (`createTools`)
 
 ### Key flow
 
@@ -86,6 +87,32 @@ Internal exports include:
 - Story selection loads the module, prepares the story, and renders it
 
 AST indexing keeps the sidebar fast and prevents one broken story file from breaking the whole UI.
+
+### Open services and toolsets
+
+- Open services own internal state, synchronization, queries, commands, and loading. Toolsets expose
+  capabilities to agents through MCP and the `storybook tools` CLI.
+- Definitions live under `code/core/src/shared/open-service/`; addons may own and register their own
+  toolsets, as addon-vitest does for `test`.
+- Register services and toolsets from the same `services` preset hook and behind the same feature
+  gate. Missing or duplicate registrations fail loudly.
+- The tools CLI consumes `storybook/internal/tools` (`createTools`). Default mode is
+  attach-preferred (`auto`): join a running instance as a delegated leaf, or load locally on gate
+  failure. `--attach` requires attachment; `--no-attach` forces local. When several running
+  instances match the project, attach picks the invoking agent's most recently started one and
+  warns on stderr; `-p, --port` targets a specific instance. Local `createTools` never
+  `chdir`s: a foreign `cwd` starts a project-local child host.
+- Read `code/core/src/shared/open-service/README.md` before changing the contract, adapters,
+  registration, docs access, or transport rendering. Read `code/core/src/cli/tools/README.md` and
+  `code/core/src/cli/tools/architecture.md` before changing attachment, the SDK, or the tools CLI.
+
+### Agent-facing skills
+
+- `storybook skills` serves the `stories`, `write-story`, and `setup` documents as Markdown.
+- Pure content lives in `code/core/src/cli/skills/content/` and is exported through
+  `storybook/internal/skills`; addon-mcp consumes the same builders.
+- Keep `cli/skills/**` independent of `cli/ai/**`, and keep `cli/skills/content/**` independent of
+  `core-server`. Lint rules enforce both boundaries.
 
 ## Common Commands
 
@@ -135,6 +162,11 @@ yarn storybook:vitest
 | Generate a sandbox              | `yarn task sandbox --template react-vite/default-ts --start-from auto`         |
 | Run sandbox E2E tests           | `yarn task e2e-tests-dev --template react-vite/default-ts --start-from auto`   |
 | Run sandbox test-runner tests   | `yarn task test-runner-dev --template react-vite/default-ts --start-from auto` |
+| Run the docgen perf bench       | `yarn workspace @storybook/docgen-harness bench:docgen-perf`                   |
+| Run the docgen memory gate      | `yarn workspace @storybook/docgen-harness bench:docgen-memory`                 |
+| Verify sandbox docgen baselines | `yarn workspace @storybook/docgen-harness baselines:sandbox`                   |
+| List docs via tools CLI         | `cd code && node core/dist/bin/dispatcher.js tools docs list`                  |
+| Require attach / force local    | add `--attach` or `--no-attach` before the toolset name                        |
 
 ## NX and `yarn task`
 
@@ -166,6 +198,7 @@ Key points:
 - NX handles task dependencies via `nx.json`
 - NX target commands use Nx project names (from `project.json` / Nx graph), not `package.json` names
 - Example: `yarn nx compile core` (project `core` is published as package `storybook`)
+- NX Cloud remote-cache auth failures (e.g. HTTP 401 "insufficient access") degrade to the local cache, so they are expected on local runs where `NX_CLOUD_ACCESS_TOKEN` is unset. CI always sets that token, so a 401 there means an invalid or expired token and should be investigated rather than ignored. A read-only token enables cache reads but cannot store artifacts, so the "wasn't able to store" warning is still expected with one
 
 ## Sandbox Notes
 
@@ -221,10 +254,12 @@ Common templates:
 
 - Use `yarn storybook:vitest` to run Storybook story tests (the primary test path for components)
 - Use `yarn test` for unit tests of utilities, hooks, and non-React modules
+- Prefer focused unit-test runs during iteration — the full suite is large: `yarn test <pattern>` (e.g. `yarn test csf-tools`)
 - Use Storybook UI or Chromatic for visual validation
 - Use `yarn task e2e-tests --start-from auto` or `yarn task e2e-tests-dev --start-from auto` for E2E coverage
 - Use `yarn task test-runner --start-from auto` or `yarn task test-runner-dev --start-from auto` for test-runner scenarios
 - Use `yarn task smoke-test --start-from auto` for smoke checks
+- Use `cd code && yarn playwright test -c e2e-internal/playwright.config.ts e2e-internal/tools-attach.spec.ts` for tools attach coverage (same checkout as the running internal UI)
 
 Watch-mode commands:
 
@@ -309,6 +344,7 @@ Avoid `console.log`, `console.warn`, and `console.error` unless the file is isol
 | `STORYBOOK_TELEMETRY_DEBUG`   | Log telemetry events                            |
 | `DEBUG`                       | Enable debug logging                            |
 | `FIX_ON_COMMIT`               | Force autofix for fmt & lint in pre-commit hook |
+| `NX_CLOUD_ACCESS_TOKEN`       | Authenticate the NX Cloud remote cache          |
 
 ## Commands To Avoid
 
@@ -321,7 +357,7 @@ These usually start long-running development servers and are the wrong default f
 
 These are recurring failure modes in agent-authored changes to this repo. Apply them when writing or reviewing code, not just when asked.
 
-- **Comments are maintenance docs, not an investigation transcript.** Explain *why* for the next maintainer. Do not commit internal ticket / acceptance-criteria codes (`AC-X2`, `Probe B`, `R6`), the narrative of how you figured something out, "verified byte-identical" provenance prose, or cross-file line references (`L125→L131`) — they are noise and they rot. One or two sentences of rationale beats a paragraph of evidence.
+- **Write comments only for the two reasons in [Comments and JSDoc](#comments-and-jsdoc).** That section is the rule; this list does not restate it.
 - **Verify environment assumptions empirically before encoding them.** If a design rests on "the bundler strips X" or "this metadata is empty here", prove it with a throwaway probe before building on it (and before writing it into a comment as fact). A 10-line experiment is cheaper than a wrong architecture.
 - **Encode assumptions with static checks first.** If an assumption is expected to always hold, prefer making it impossible via TypeScript types and existing lint rules. When static checks are not practical, add a cheap runtime assertion close to the boundary so violations fail loudly at the source.
 - **Avoid redundant tests already covered elsewhere.** Do not add tests for code patterns already guaranteed by TypeScript or linting, and do not duplicate coverage that already exists in Storybook `play` functions or Playwright tests.
@@ -330,9 +366,23 @@ These are recurring failure modes in agent-authored changes to this repo. Apply 
 - **Prefer deletion and simplicity over speculative generality.** No abstraction, fallback, or "flexibility" for a consumer or scenario that does not exist in this codebase today. If a change adds many lines, check whether the right change removes them.
 - **Don't commit accidental overrides to generated code.** Files like `code/core/src/manager/globals/exports.ts` are auto-generated, as stated in their JSDoc header. Only commit changes if they match changes you made on your PR, otherwise leave them untouched and flag flaky generated files in the PR description.
 
+## Comments and JSDoc
+
+Code should be self-explanatory. A comment is only justified when the code cannot explain itself (a non-obvious *why*) or when a public API needs explanation. Never comment to record that you did x, y, z.
+
+Before writing or editing any code file, read [`.agents/guidelines/comments-and-jsdoc.md`](.agents/guidelines/comments-and-jsdoc.md) and follow it. Read it once per session, not once per file.
+
 ## Maintenance Rules For Agents
 
 - Use this file as the canonical instruction source
 - Update `AGENTS.md` when architecture, commands, versions, release flows, or contributor guidance changes
 - Keep `CLAUDE.md` and other agent entrypoints as thin references to `AGENTS.md`
 - Do not reintroduce duplicated instruction files when a reference will do
+
+## Learned User Preferences
+
+- Prefer git worktrees for parallel or experimental work; keep the primary workspace clean and base feature branches on `origin/next`, not a dirty local `next`.
+- Prefer simplicity: avoid premature helpers and one-off abstractions; implement small logic inline when a shared helper is not clearly reused.
+- Keep e2e and long interaction tests as a readable continuous flow; do not force DRY with loops or heavy helpers when repetition is clearer.
+- For Storybook stories, put human-facing description in JSDoc above the `meta` const rather than a `description` parameter.
+- When renaming tools or APIs that emit telemetry, keep historical telemetry string names stable across Storybook versions unless the field is brand-new and has no existing data.

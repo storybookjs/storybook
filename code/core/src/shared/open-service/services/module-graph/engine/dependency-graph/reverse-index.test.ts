@@ -95,4 +95,31 @@ describe('ReverseIndexImpl', () => {
     expect(index.lookup('/repo/src/B.ts').get('/repo/src/A.stories.tsx')).toBe(1);
     expect(index.lookup('/repo/src/C.ts').get('/repo/src/A.stories.tsx')).toBe(2);
   });
+
+  it('bumps revision only when a mutator changes index contents', () => {
+    const index = new ReverseIndexImpl();
+    expect(index.revision).toBe(0);
+
+    index.record('/repo/src/x.ts', '/repo/src/A.stories.tsx', 1);
+    expect(index.revision).toBe(1);
+
+    index.record('/repo/src/x.ts', '/repo/src/A.stories.tsx', 2);
+    expect(index.revision).toBe(1);
+
+    index.record('/repo/src/x.ts', '/repo/src/A.stories.tsx', 0);
+    expect(index.revision).toBe(2);
+
+    index.removeEdge('/repo/src/x.ts', '/repo/src/A.stories.tsx');
+    expect(index.revision).toBe(3);
+
+    index.removeEdge('/repo/src/x.ts', '/repo/src/A.stories.tsx');
+    expect(index.revision).toBe(3);
+
+    index.record('/repo/src/x.ts', '/repo/src/A.stories.tsx', 1);
+    index.removeStory('/repo/src/A.stories.tsx');
+    expect(index.revision).toBe(5);
+
+    index.removeStory('/repo/src/A.stories.tsx');
+    expect(index.revision).toBe(5);
+  });
 });

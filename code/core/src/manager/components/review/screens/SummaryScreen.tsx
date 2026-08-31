@@ -40,8 +40,8 @@ import {
   buildReviewStoryHref,
   buildSummaryBackHref,
 } from '../review-navigation.ts';
+import type { ReviewBanner } from '../review-context.ts';
 import type { ReviewState } from '../review-state.ts';
-import type { ReviewBanner } from '../review-store.ts';
 import type { StoryInfo } from '../review-types.ts';
 
 const MarkdownWrapper = styled(DocumentWrapper)(({ theme }) => ({
@@ -246,7 +246,7 @@ const CollectionLandmark: FC<{ titleId: string; children: ReactNode }> = ({
 const FooterLandmark: FC<{ children: ReactNode }> = ({ children }) => {
   const regionRef = useRef<HTMLDivElement>(null);
   const { landmarkProps } = useLandmark(
-    { role: 'region', 'aria-label': 'About this review' },
+    { role: 'contentinfo', 'aria-label': 'About this review' },
     regionRef
   );
   return (
@@ -352,7 +352,7 @@ export const SummaryScreen: FC<SummaryScreenProps> = ({
             padding="small"
             ariaLabel="Copy prompt to refresh this review"
             ariaLabelOnCopy="Prompt copied to clipboard"
-            content="Generate a Storybook review including my latest changes using the display-review tool."
+            content="Generate a Storybook review including my latest changes using the review-create tool."
             childrenOnCopy={
               <>
                 <CheckIcon /> Copy prompt

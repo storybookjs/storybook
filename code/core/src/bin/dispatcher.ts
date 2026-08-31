@@ -1,11 +1,7 @@
 #!/usr/bin/env node
+import Module from 'node:module';
 import { pathToFileURL } from 'node:url';
 
-import {
-  JsPackageManagerFactory,
-  executeNodeCommand,
-  getRemotePackageRunnerArgs,
-} from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import { join } from 'pathe';
@@ -20,9 +16,9 @@ import { resolvePackageDir } from '../shared/utils/module.ts';
  *
  * This function serves as the main entry point for Storybook CLI operations.
  *
- * - Core Storybook commands (dev, build, index, ai) are routed to the core binary at
- *   storybook/dist/bin/core.js — `ai` is bundled because agent skills invoke it repeatedly and
- *   must never wait on an npx download
+ * - Core Storybook commands (dev, build, index, ai, tools, skills) are routed to the core binary at
+ *   storybook/dist/bin/core.js — `ai`, `tools`, and `skills` are bundled because agent workflows
+ *   invoke them repeatedly and must never wait on an npx download
  * - Init is routed to the create-storybook package via the detected package manager
  * - External CLI tools (upgrade, doctor, etc.) are routed to @storybook/cli the same way
  */
@@ -36,13 +32,27 @@ if (!isNodeVersionSupported(major, minor, patch)) {
 }
 
 async function run() {
+  // TODO: remove try/catch in SB 11 where Node 22 is the minimum supported version
+  try {
+    Module.enableCompileCache?.();
+  } catch {}
+
   const args = process.argv.slice(2);
 
-  if (['dev', 'build', 'index', 'ai'].includes(args[0])) {
+  if (args[0] === 'ai' || (args[0] === 'tools' && !args.includes('--no-attach'))) {
+    process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
+  }
+
+  if (['dev', 'build', 'index', 'ai', 'tools', 'skills'].includes(args[0])) {
     const coreBin = pathToFileURL(join(resolvePackageDir('storybook'), 'dist/bin/core.js')).href;
     await import(coreBin);
     return;
   }
+
+  // Only the external-CLI routes below need the package-manager machinery; importing it lazily
+  // keeps the (hot) core route above from evaluating that dependency-heavy part of `common`.
+  const { JsPackageManagerFactory, executeNodeCommand, getRemotePackageRunnerArgs } =
+    await import('storybook/internal/common');
 
   const targetCli =
     args[0] === 'init'

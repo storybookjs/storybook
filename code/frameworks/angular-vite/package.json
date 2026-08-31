@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular-vite",
-  "version": "10.6.0-alpha.3",
+  "version": "10.6.0-beta.0",
   "description": "Storybook for Angular: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -36,6 +36,7 @@
     "./client/config": "./dist/client/config.js",
     "./client/docs/config": "./dist/client/docs/config.js",
     "./client/preview-prod": "./dist/client/preview-prod.js",
+    "./internal/docgen-worker": "./dist/docgen/docgen-worker.js",
     "./node": {
       "types": "./dist/node/index.d.ts",
       "code": "./src/node/index.ts",
@@ -81,8 +82,12 @@
     "@angular/forms": "^21.2.14",
     "@angular/platform-browser": "^21.2.14",
     "@angular/platform-browser-dynamic": "^21.2.14",
+    "@babel/types": "^7.28.5",
+    "@storybook/angular-cm": "workspace:*",
+    "@storybook/angular-compodoc": "workspace:*",
     "@types/node": "^22.19.1",
     "empathic": "^2.0.0",
+    "memfs": "^4.11.1",
     "rimraf": "^6.0.1",
     "typescript": "^6.0.3",
     "zone.js": "^0.16.2"
@@ -103,7 +108,7 @@
     "storybook": "workspace:^",
     "typescript": ">= 5.9.x",
     "vite": ">=8.0.0",
-    "zone.js": ">=0.16.0"
+    "zone.js": ">=0.14.0"
   },
   "peerDependenciesMeta": {
     "@angular/cli": {

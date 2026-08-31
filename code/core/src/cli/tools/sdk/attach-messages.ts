@@ -2,7 +2,7 @@ import { inspectCwdOrBin } from '../../../common/utils/cwd-or-bin.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import type { ToolsStorybookInfo } from './types.ts';
 
-function quoteShellArg(value: string): string {
+export function quoteShellArg(value: string): string {
   if (!/[\s'"$`\\]/.test(value)) {
     return value;
   }

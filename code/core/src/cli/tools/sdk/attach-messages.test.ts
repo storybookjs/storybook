@@ -2,8 +2,6 @@ import { fileURLToPath } from 'node:url';
 
 import { describe, expect, it } from 'vitest';
 
-const storybookFile = fileURLToPath(import.meta.url);
-
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import {
   formatAttachFallback,
@@ -15,7 +13,10 @@ import {
   formatPortMismatch,
   formatRestartRequired,
   formatVersionMismatch,
+  quoteShellArg,
 } from './attach-messages.ts';
+
+const storybookFile = fileURLToPath(import.meta.url);
 
 const other: StorybookInstanceRecord = {
   schemaVersion: 1,
@@ -122,10 +123,11 @@ describe('attach failure messages', () => {
   });
 
   it('points at --cwd when the instance recorded a storybook binary', () => {
-    expect(formatCwdMismatch('/tmp/agent', storybookFile)).toContain(`--cwd ${storybookFile}`);
+    const cwdFlag = `--cwd ${quoteShellArg(storybookFile)}`;
+    expect(formatCwdMismatch('/tmp/agent', storybookFile)).toContain(cwdFlag);
     expect(formatCwdMismatch('/tmp/agent', storybookFile)).not.toContain(`cd ${storybookFile}`);
     expect(formatNoInstance([{ ...other, cwd: storybookFile }])).toContain(
-      `npx storybook tools --attach --cwd ${storybookFile}`
+      `npx storybook tools --attach ${cwdFlag}`
     );
     expect(formatNoInstance([{ ...other, cwd: storybookFile }])).not.toContain(
       `cd ${storybookFile} &&`

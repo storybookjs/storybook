@@ -400,11 +400,6 @@ export function stylePreprocessorCheckPlugin(): Plugin {
       installed.clear();
     },
     transform: {
-      // Only a stylesheet can be missing a preprocessor, and this hook sits in `pre`, ahead of
-      // every module in the graph. Declaring the filter keeps the handler out of that path: Vite
-      // evaluates it before it calls into JS, and under Rolldown it never crosses the boundary at
-      // all. The handler still asks the same question, because a filter is an optimization Vite is
-      // free to skip, never the guard the error depends on.
       filter: { id: STYLE_PREPROCESSOR_ID },
       handler(_code, id) {
         const lang = STYLE_PREPROCESSOR_ID.exec(id)?.[1];

@@ -712,9 +712,12 @@ Every registered runtime plays **both** roles at once, decided per command:
   first `services:command-result` for that `callId`, or rejects with the reconstructed error from the
   first `services:command-error`.
 - **Responder** (has a local handler): on a matching `services:command-invoke` it emits
-  `services:command-ack` **immediately** (before running), executes the command locally — which
+  `services:command-ack` **immediately** (before running), then executes the command locally on a
+  deferred macrotask — so an async channel flushes the ack before any handler work starts, keeping
+  acks within the window regardless of how long a handler's synchronous fan-out runs. Execution
   validates input, mutates state, and broadcasts the post-mutation snapshot through the normal command
-  wrappers so every peer converges — then emits `services:command-result` or `services:command-error`.
+  wrappers so every peer converges — then it emits `services:command-result` or
+  `services:command-error`.
 
 Outside [delegated mode](#delegated-mode), a runtime never requests a command it implements (it runs
 that locally), so a responder never answers its own invoke echo: `onInvoke` only acts on commands in
@@ -837,8 +840,9 @@ the entry boundary before the first `registerService` call. `clearRegistry()` re
 
 When nothing acknowledges within `REMOTE_COMMAND_ACK_TIMEOUT_MS`, the resulting
 `OpenServiceRemoteCommandUnhandledError` carries delegation-specific guidance instead of "not
-implemented in any connected runtime": the attached Storybook was started with a different
-configuration, so it must be restarted for that command's handler to exist.
+implemented in any connected runtime": the attached Storybook did not acknowledge the command in
+time (it may be busy or unreachable), and — delivery being at-least-once — the command may still
+have executed there, which a retry should take into account.
 
 The `storybook tools` SDK is the attached caller: it sets this flag, then loads the instance
 config. See [cli/tools/architecture.md](../../cli/tools/architecture.md).

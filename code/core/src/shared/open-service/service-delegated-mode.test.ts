@@ -188,7 +188,7 @@ describe('delegated command dispatch', () => {
     expect(handlerSpy).not.toHaveBeenCalled();
   });
 
-  it('rejects with restart guidance when no peer acknowledges the invoke', async () => {
+  it('rejects with an unacknowledged-command error when no peer acknowledges the invoke', async () => {
     vi.useFakeTimers();
 
     const channel = createTestChannel();
@@ -203,7 +203,7 @@ describe('delegated command dispatch', () => {
     const error = await failure;
     expect(error).toBeInstanceOf(OpenServiceRemoteCommandUnhandledError);
     expect((error as Error).message).toBe(
-      'No runtime acknowledged remote command "internal-fixture/delegated-local-implementation.doThing"; this runtime delegates every command to the Storybook it is attached to, and that Storybook was started with a different configuration. Restart it so the command\'s handler is available.'
+      'The Storybook this runtime is attached to did not acknowledge remote command "internal-fixture/delegated-local-implementation.doThing" in time — it may be busy or unreachable. Retry; note the command may still have executed on that instance.'
     );
   });
 

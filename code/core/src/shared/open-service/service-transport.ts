@@ -76,6 +76,11 @@ type RuntimeCommand = (input: unknown) => Promise<unknown>;
  * case the requester rejects with `OpenServiceRemoteCommandUnhandledError` even though the command
  * still ran and broadcast its mutation. Remote command execution is therefore best-effort /
  * at-least-once, not exactly-once: callers must not assume a rejection means nothing happened.
+ *
+ * The window assumes an ack reaches the wire promptly, which ack-then-execute alone does not
+ * guarantee: on an async channel the emitted ack needs an event-loop turn, which the responder's
+ * own handler can starve for the length of its synchronous prefix. Deferring handler execution to
+ * a macrotask (see `onInvoke`) is what keeps acks inside the window regardless of the handler.
  */
 export const REMOTE_COMMAND_ACK_TIMEOUT_MS = 300;
 
@@ -267,8 +272,9 @@ export function connectRuntimeToChannel(
  *   `services:command-result` for that `callId`, or rejects with the (deserialized) error from the
  *   first `services:command-error`.
  * - **Responder** (has a local handler): on a matching `services:command-invoke` it emits
- *   `services:command-ack` immediately, runs the command locally (which also broadcasts the
- *   post-mutation state via the broadcast wrappers, so peers converge as usual), then emits
+ *   `services:command-ack` immediately, runs the command locally on a deferred macrotask — so an
+ *   async channel flushes the ack before any handler work starts (which also broadcasts the
+ *   post-mutation state via the broadcast wrappers, so peers converge as usual) — then emits
  *   `services:command-result` or `services:command-error`.
  *
  * Both roles coexist on one runtime: it responds for the commands it implements and requests the
@@ -361,26 +367,31 @@ export function connectCommandTransport(context: {
       clientId: ownClientId,
     } satisfies CommandAckPayload);
 
-    void Promise.resolve()
-      .then(() => localCommands[invoke.commandName](invoke.input))
-      .then(
-        (result) => {
-          channel.emit(SERVICE_COMMAND_RESULT, {
-            serviceId,
-            callId: invoke.callId,
-            result,
-            clientId: ownClientId,
-          } satisfies CommandResultPayload);
-        },
-        (error: unknown) => {
-          channel.emit(SERVICE_COMMAND_ERROR, {
-            serviceId,
-            callId: invoke.callId,
-            error: serializeError(error),
-            clientId: ownClientId,
-          } satisfies CommandErrorPayload);
-        }
-      );
+    // On an async channel the emitted ack still needs an event-loop turn to reach the wire, so the
+    // handler starts on a macrotask: a microtask start would starve that turn for as long as the
+    // handler's synchronous prefix runs (a fan-out over hundreds of components outlives the window).
+    setTimeout(() => {
+      void Promise.resolve()
+        .then(() => localCommands[invoke.commandName](invoke.input))
+        .then(
+          (result) => {
+            channel.emit(SERVICE_COMMAND_RESULT, {
+              serviceId,
+              callId: invoke.callId,
+              result,
+              clientId: ownClientId,
+            } satisfies CommandResultPayload);
+          },
+          (error: unknown) => {
+            channel.emit(SERVICE_COMMAND_ERROR, {
+              serviceId,
+              callId: invoke.callId,
+              error: serializeError(error),
+              clientId: ownClientId,
+            } satisfies CommandErrorPayload);
+          }
+        );
+    }, 0);
   };
 
   // Requester: resolve/reject the pending promise for a reply addressed to one of our calls.

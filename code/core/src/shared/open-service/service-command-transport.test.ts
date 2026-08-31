@@ -24,10 +24,11 @@ import {
   SERVICE_PATCHES,
   type CommandErrorPayload,
   type CommandInvokePayload,
+  type ServiceChannel,
 } from './service-channel.ts';
 import { deserializeError } from './service-error-serialization.ts';
 import { clearRegistry, registerService, unregisterService } from './service-registry.ts';
-import { REMOTE_COMMAND_ACK_TIMEOUT_MS } from './service-transport.ts';
+import { REMOTE_COMMAND_ACK_TIMEOUT_MS, connectCommandTransport } from './service-transport.ts';
 import { createTestChannel, installTestChannel } from '../../channels/test-channel.ts';
 
 const remoteOnlyServiceDef = defineService({
@@ -354,6 +355,73 @@ describe('remote command responder (has local handler)', () => {
     expect(emittedCalls(channel, SERVICE_COMMAND_ACK)).toHaveLength(0);
     expect(emittedCalls(channel, SERVICE_COMMAND_RESULT)).toHaveLength(0);
   });
+});
+
+describe('ack delivery with a busy responder', () => {
+  // Models the dev server's channel (`async: true`): every emitted event needs an event-loop turn
+  // before it reaches the wire, like a websocket write behind `setImmediate`.
+  function createMacrotaskDeliveryChannel(): ServiceChannel {
+    const listeners = new Map<string, Set<(...args: unknown[]) => void>>();
+    return {
+      on: (eventName, listener) => {
+        const existing = listeners.get(eventName) ?? new Set();
+        existing.add(listener);
+        listeners.set(eventName, existing);
+      },
+      off: (eventName, listener) => {
+        listeners.get(eventName)?.delete(listener);
+      },
+      emit: (eventName, ...args) => {
+        setImmediate(() => {
+          listeners.get(eventName)?.forEach((listener) => listener(...args));
+        });
+      },
+    };
+  }
+
+  // retry: real timers are required here (the starvation is wall-clock), so an extreme scheduler
+  // stall could fire the ack window early; the regression itself fails deterministically.
+  it(
+    'resolves the requester when the responder handler occupies the microtask queue past the ack window',
+    { retry: 3 },
+    async () => {
+      const channel = createMacrotaskDeliveryChannel();
+      const serviceId = 'internal-fixture/busy-responder';
+
+      const requester = connectCommandTransport({
+        serviceId,
+        ownClientId: 'requester',
+        channel,
+        localCommands: {},
+        implementedCommandNames: new Set(),
+        commandNames: ['fanOut'],
+        delegated: false,
+      });
+      const responder = connectCommandTransport({
+        serviceId,
+        ownClientId: 'responder',
+        channel,
+        localCommands: {
+          fanOut: async (input) => {
+            const end = Date.now() + REMOTE_COMMAND_ACK_TIMEOUT_MS + 100;
+            while (Date.now() < end) {
+              await Promise.resolve();
+            }
+            return `fanned-out:${(input as { value: string }).value}`;
+          },
+        },
+        implementedCommandNames: new Set(['fanOut']),
+        commandNames: ['fanOut'],
+        delegated: false,
+      });
+      onTestFinished(() => {
+        requester.disconnect();
+        responder.disconnect();
+      });
+
+      await expect(requester.commands.fanOut({ value: 'all' })).resolves.toBe('fanned-out:all');
+    }
+  );
 });
 
 describe('load bodies and command routing', () => {

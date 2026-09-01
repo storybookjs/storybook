@@ -252,6 +252,7 @@ describe('stories.changed', () => {
       unreachableFiles: [changedThemeFile],
     });
     expect(getStatuses).toHaveBeenCalledOnce();
+    expect(cliCtx.getService).toHaveBeenCalledTimes(2);
     expect(cliCtx.getService).toHaveBeenCalledWith('core/module-graph', { internal: true });
     expect(cliCtx.getService).toHaveBeenCalledWith('core/module-graph-index', { internal: true });
   });

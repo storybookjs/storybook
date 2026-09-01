@@ -4,7 +4,10 @@ import type { StoryIndex } from 'storybook/internal/types';
 
 import { basename, dirname, extname, join, normalize, resolve } from 'pathe';
 
-import type { ModuleGraphServiceState } from '../../services/module-graph/definition.ts';
+import type {
+  ChangeDetectionReadinessResult,
+  ModuleGraphServiceState,
+} from '../../services/module-graph/definition.ts';
 
 /** Lifecycle status reported by the `core/module-graph` service. */
 export type ModuleGraphStatus = ModuleGraphServiceState['status'];
@@ -18,12 +21,15 @@ export type ModuleGraphStoryHit = {
 };
 
 /**
- * The slice of the `core/module-graph` service this resolver needs. Structural so the caller can
- * inject the real service (or a stub) without this module doing service lookup itself.
+ * The slice of `core/module-graph` / `core/module-graph-index` the stories tools need. Structural
+ * so the caller can inject the real services (or a stub) without this module doing lookup itself.
  */
 export type ModuleGraphAccess = {
   queries: {
     status: { loaded: (input?: undefined) => Promise<ModuleGraphStatus> };
+    changeDetectionReadiness: {
+      loaded: (input?: undefined) => Promise<ChangeDetectionReadinessResult>;
+    };
     /** Positional: result `i` corresponds to input `files[i]`. */
     storiesForFiles: {
       loaded: (input: { files: string[] }) => Promise<Array<ModuleGraphStoryHit[] | undefined>>;

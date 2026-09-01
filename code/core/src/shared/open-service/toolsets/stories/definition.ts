@@ -230,7 +230,7 @@ Never invent IDs from file names, feature names, or memory; title strings can be
 Backed by Storybook's live reverse dependency graph, available only when the dev server runs a builder that supports change detection (e.g. Vite) — otherwise returns a typed error.`;
 }
 
-// Hot status + cold reverse-index queries, composed for ModuleGraphAccess consumers.
+// Status, change-detection readiness, and reverse-index queries for ModuleGraphAccess consumers.
 function moduleGraphAccessFromCtx(ctx: ToolsetCtx): ModuleGraphAccess {
   const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', { internal: true });
   const moduleGraphIndex = ctx.getService<ModuleGraphIndexService>('core/module-graph-index', {
@@ -240,6 +240,9 @@ function moduleGraphAccessFromCtx(ctx: ToolsetCtx): ModuleGraphAccess {
     queries: {
       status: {
         loaded: () => moduleGraph.queries.status.loaded(undefined) as Promise<ModuleGraphStatus>,
+      },
+      changeDetectionReadiness: {
+        loaded: () => moduleGraph.queries.changeDetectionReadiness.loaded(undefined),
       },
       storiesForFiles: {
         loaded: (files) => moduleGraphIndex.queries.storiesForFiles.loaded(files),
@@ -313,9 +316,8 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             });
           }
 
-          const changeDetection = await ctx
-            .getService<ModuleGraphService>('core/module-graph', { internal: true })
-            .queries.changeDetectionReadiness.loaded(undefined);
+          const changeDetection =
+            await moduleGraph.queries.changeDetectionReadiness.loaded(undefined);
           if (changeDetection.status !== 'ready') {
             if (isGitUnusableReadiness(changeDetection)) {
               const data = emptyChangedStories();

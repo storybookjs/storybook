@@ -2,8 +2,8 @@ import { setOutput } from '@actions/core';
 import { program } from 'commander';
 import picocolors from 'picocolors';
 
-import { esMain } from '../utils/esmain.ts';
-import { getCodeWorkspaces } from '../utils/workspace.ts';
+import { esMain } from '@storybook/scripts-utils/esmain.ts';
+import { getCodeWorkspaces } from '@storybook/scripts-utils/workspace.ts';
 import { getCurrentVersion } from './get-current-version.ts';
 import { listUnpublishedPackages } from './npm-registry.ts';
 

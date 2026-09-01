@@ -48,9 +48,9 @@ import type {
   PostAnalysisContext,
   SummarizeOptions,
 } from '../post-analysis/types.ts';
-import { finiteNumbers, mean, round, sum } from '../utils/math.ts';
-import { bold, dim, green, red, yellow } from '../utils/colors.ts';
-import { printTable } from '../utils/table.ts';
+import { finiteNumbers, mean, round, sum } from '@storybook/scripts-utils/math.ts';
+import { bold, dim, green, red, yellow } from '@storybook/scripts-utils/colors.ts';
+import { printTable } from '@storybook/scripts-utils/table.ts';
 import { isRecord } from '../utils/type.ts';
 
 /** Transcript events, or null when the transcript has no usable `events` array. */

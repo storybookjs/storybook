@@ -3,8 +3,8 @@ import { access } from 'node:fs/promises';
 import { join } from 'path';
 
 import type { Task } from '../task.ts';
-import { checkDependencies } from '../utils/cli-utils.ts';
-import { ROOT_DIRECTORY } from '../utils/constants.ts';
+import { checkDependencies } from '@storybook/scripts-utils/cli-utils.ts';
+import { ROOT_DIRECTORY } from '@storybook/scripts-utils/constants.ts';
 
 const pathExists = async (path: string) => {
   try {

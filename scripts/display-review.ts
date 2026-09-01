@@ -3,7 +3,7 @@ import process from 'node:process';
 
 import { program } from 'commander';
 
-import { esMain } from './utils/esmain.ts';
+import { esMain } from '@storybook/scripts-utils/esmain.ts';
 
 const DEFAULT_STORYBOOK_URL = process.env.STORYBOOK_URL ?? 'http://localhost:6006';
 const MCP_PATH = '/mcp';

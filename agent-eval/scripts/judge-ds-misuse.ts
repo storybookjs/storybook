@@ -49,7 +49,7 @@ import { readNodeCensus } from '#lib/post-analysis/baseline';
 import { findRuns, selectRuns, type Run, type RunSelection } from '#lib/post-analysis/discovery';
 import { selectionFlags } from '#lib/agentic-reference/selection';
 import { formatCompactCount, shortExperiment } from '#lib/agentic-reference/utils';
-import { bold, dim, red, yellow } from '#lib/utils/colors';
+import { bold, dim, red, yellow } from '@storybook/scripts-utils/colors.ts';
 import { readJson } from '#lib/utils/files';
 import { isRecord } from '#lib/utils/type';
 

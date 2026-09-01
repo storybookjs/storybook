@@ -5,7 +5,7 @@ import { join } from 'path';
 
 import type { BenchResults } from './bench/types.ts';
 import { loadBench } from './bench/utils.ts';
-import { SANDBOX_DIRECTORY } from './utils/constants.ts';
+import { SANDBOX_DIRECTORY } from '@storybook/scripts-utils/constants.ts';
 
 const templateKey = process.argv[2];
 const prNumber = process.argv[3];

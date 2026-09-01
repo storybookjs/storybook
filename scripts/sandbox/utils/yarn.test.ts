@@ -6,7 +6,7 @@ import * as memfs from 'memfs';
 import { vol } from 'memfs';
 import yml from 'yaml';
 
-import { ROOT_DIRECTORY } from '../../utils/constants.ts';
+import { ROOT_DIRECTORY } from '@storybook/scripts-utils/constants.ts';
 import { runCommand } from '../generate.ts';
 import {
   BEFORE_SANDBOX_NPM_MIN_VERSION,

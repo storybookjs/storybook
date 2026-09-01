@@ -5,9 +5,9 @@ import { execaCommand } from 'execa';
 import pLimit from 'p-limit';
 
 import type { Task } from '../task.ts';
-import { CODE_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants.ts';
-import { maxConcurrentTasks } from '../utils/maxConcurrentTasks.ts';
-import { getCodeWorkspaces } from '../utils/workspace.ts';
+import { CODE_DIRECTORY, ROOT_DIRECTORY } from '@storybook/scripts-utils/constants.ts';
+import { maxConcurrentTasks } from '@storybook/scripts-utils/maxConcurrentTasks.ts';
+import { getCodeWorkspaces } from '@storybook/scripts-utils/workspace.ts';
 
 // The typescript-validation job runs on an xlarge (8 vCPU) executor. The
 // native TS 7 compiler run by check-package.ts is itself multi-threaded

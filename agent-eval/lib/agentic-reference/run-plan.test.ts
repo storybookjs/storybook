@@ -18,7 +18,7 @@ import {
   scanResourceSignals,
   topUpCommand,
 } from './run-plan.ts';
-import { stripAnsi } from '../utils/colors.ts';
+import { stripAnsi } from '@storybook/scripts-utils/colors.ts';
 
 const EXPERIMENTS = [
   'agentic-ref-cc-control-none-opus-high',

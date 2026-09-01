@@ -55,7 +55,7 @@ import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { describeStoredRun, groupComparableRuns } from '#lib/agentic-reference/comparability';
-import { bold, cyan, dim, red, yellow } from '#lib/utils/colors';
+import { bold, cyan, dim, red, yellow } from '@storybook/scripts-utils/colors.ts';
 import {
   currentMeasurement,
   describeDifferences,

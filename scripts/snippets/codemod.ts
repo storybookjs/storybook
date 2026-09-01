@@ -19,7 +19,7 @@ import slash from 'slash';
 
 import { configToCsfFactory } from '../../code/lib/cli-storybook/src/codemod/helpers/config-to-csf-factory.ts';
 import { storyToCsfFactory } from '../../code/lib/cli-storybook/src/codemod/helpers/story-to-csf-factory.ts';
-import { SNIPPETS_DIRECTORY } from '../utils/constants.ts';
+import { SNIPPETS_DIRECTORY } from '@storybook/scripts-utils/constants.ts';
 
 const logger = console;
 

@@ -12973,6 +12973,38 @@ __metadata:
   languageName: unknown
   linkType: soft
 
+"@storybook/scripts-utils@workspace:*, @storybook/scripts-utils@workspace:scripts/utils":
+  version: 0.0.0-use.local
+  resolution: "@storybook/scripts-utils@workspace:scripts/utils"
+  dependencies:
+    "@fal-works/esbuild-plugin-global-externals": "npm:^2.1.2"
+    "@octokit/graphql": "npm:^5.0.6"
+    "@octokit/request": "npm:^8.4.1"
+    commander: "npm:^14.0.2"
+    cross-spawn: "npm:^7.0.6"
+    detect-port: "npm:^1.6.1"
+    diff-match-patch-es: "npm:^0.1.0"
+    es-toolkit: "npm:^1.43.0"
+    esbuild: "npm:^0.28.0"
+    execa: "npm:^9.6.1"
+    glob: "npm:^10.5.0"
+    kill-port: "npm:^2.0.1"
+    memfs: "npm:^4.11.1"
+    memoizerific: "npm:^1.11.3"
+    p-limit: "npm:^7.2.0"
+    picocolors: "npm:^1.1.0"
+    pretty-hrtime: "npm:^1.0.3"
+    prompts: "npm:^2.4.2"
+    slash: "npm:^3.0.0"
+    sort-package-json: "npm:^3.5.0"
+    ts-dedent: "npm:^2.2.0"
+    type-fest: "npm:^5.6.0"
+    typescript: "npm:^6.0.3"
+    vitest: "npm:^4.1.6"
+    yaml: "npm:^2.8.1"
+  languageName: unknown
+  linkType: soft
+
 "@storybook/scripts@workspace:scripts":
   version: 0.0.0-use.local
   resolution: "@storybook/scripts@workspace:scripts"
@@ -12985,6 +13017,7 @@ __metadata:
     "@octokit/request": "npm:^8.4.1"
     "@openai/codex-sdk": "npm:^0.117.0"
     "@polka/parse": "npm:^1.0.0-next.28"
+    "@storybook/scripts-utils": "workspace:*"
     "@testing-library/dom": "npm:^10.4.0"
     "@testing-library/jest-dom": "npm:6.9.1"
     "@testing-library/react": "npm:^16.0.0"
@@ -17210,6 +17243,7 @@ __metadata:
   dependencies:
     "@anthropic-ai/sdk": "npm:^0.117.1"
     "@storybook/agent-eval-utils": "workspace:*"
+    "@storybook/scripts-utils": "workspace:*"
     "@tailwindcss/postcss": "npm:^4.3.2"
     "@types/node": "npm:^22.19.1"
     "@types/picomatch": "npm:^4.0.3"

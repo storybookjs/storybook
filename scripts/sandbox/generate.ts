@@ -25,10 +25,10 @@ import {
   LOCAL_REGISTRY_URL,
   REPROS_DIRECTORY,
   SCRIPT_TIMEOUT,
-} from '../utils/constants.ts';
-import { esMain } from '../utils/esmain.ts';
-import type { OptionValues } from '../utils/options.ts';
-import { createOptions } from '../utils/options.ts';
+} from '@storybook/scripts-utils/constants.ts';
+import { esMain } from '@storybook/scripts-utils/esmain.ts';
+import type { OptionValues } from '@storybook/scripts-utils/options.ts';
+import { createOptions } from '@storybook/scripts-utils/options.ts';
 import { getStackblitzUrl, renderTemplate } from './utils/template.ts';
 import {
   BEFORE_SANDBOX_MIN_AGE_GATE,

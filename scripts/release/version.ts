@@ -9,9 +9,9 @@ import picocolors from 'picocolors';
 import semver from 'semver';
 import { z } from 'zod';
 
-import { esMain } from '../utils/esmain.ts';
-import type { Workspace } from '../utils/workspace.ts';
-import { getCodeWorkspaces } from '../utils/workspace.ts';
+import { esMain } from '@storybook/scripts-utils/esmain.ts';
+import type { Workspace } from '@storybook/scripts-utils/workspace.ts';
+import { getCodeWorkspaces } from '@storybook/scripts-utils/workspace.ts';
 
 program
   .name('version')

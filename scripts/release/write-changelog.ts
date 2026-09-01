@@ -6,7 +6,7 @@ import picocolors from 'picocolors';
 import semver from 'semver';
 import { z } from 'zod';
 
-import { esMain } from '../utils/esmain.ts';
+import { esMain } from '@storybook/scripts-utils/esmain.ts';
 import { getChanges } from './utils/get-changes.ts';
 
 program

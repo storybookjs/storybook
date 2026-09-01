@@ -1,12 +1,12 @@
 import { setOutput } from '@actions/core';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { getCodeWorkspaces } from '../../utils/workspace.ts';
+import { getCodeWorkspaces } from '@storybook/scripts-utils/workspace.ts';
 import { run as isVersionPublished } from '../is-version-published.ts';
 import { listUnpublishedPackages } from '../npm-registry.ts';
 
 vi.mock('@actions/core', { spy: true });
-vi.mock('../../utils/workspace.ts', { spy: true });
+vi.mock('@storybook/scripts-utils/workspace.ts', { spy: true });
 vi.mock('../npm-registry.ts', { spy: true });
 
 beforeEach(() => {

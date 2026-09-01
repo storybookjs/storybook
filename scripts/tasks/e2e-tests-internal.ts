@@ -1,7 +1,7 @@
 import waitOn from 'wait-on';
 
 import type { Task } from '../task.ts';
-import { exec } from '../utils/exec.ts';
+import { exec } from '@storybook/scripts-utils/exec.ts';
 
 const STORYBOOK_PORT = 6006;
 const READY_TIMEOUT_MS = 25_000;

@@ -3,7 +3,7 @@ import { access, rm } from 'node:fs/promises';
 import { join } from 'path';
 
 import type { Task } from '../task.ts';
-import { REPROS_DIRECTORY } from '../utils/constants.ts';
+import { REPROS_DIRECTORY } from '@storybook/scripts-utils/constants.ts';
 
 const logger = console;
 

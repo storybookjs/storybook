@@ -35,10 +35,14 @@ import { syncDocs } from './tasks/sync-docs.ts';
 import { testRunnerBuild } from './tasks/test-runner-build.ts';
 import { testRunnerDev } from './tasks/test-runner-dev.ts';
 import { vitestTests } from './tasks/vitest-test.ts';
-import { CODE_DIRECTORY, JUNIT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants.ts';
-import { findMostMatchText } from './utils/diff.ts';
-import type { OptionValues } from './utils/options.ts';
-import { createOptions, getCommand, getOptionsOrPrompt } from './utils/options.ts';
+import {
+  CODE_DIRECTORY,
+  JUNIT_DIRECTORY,
+  SANDBOX_DIRECTORY,
+} from '@storybook/scripts-utils/constants.ts';
+import { findMostMatchText } from '@storybook/scripts-utils/diff.ts';
+import type { OptionValues } from '@storybook/scripts-utils/options.ts';
+import { createOptions, getCommand, getOptionsOrPrompt } from '@storybook/scripts-utils/options.ts';
 
 export const extraAddons = ['@storybook/addon-a11y'];
 

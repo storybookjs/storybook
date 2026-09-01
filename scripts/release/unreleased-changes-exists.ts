@@ -4,7 +4,7 @@ import { intersection } from 'es-toolkit/array';
 import picocolors from 'picocolors';
 import { z } from 'zod';
 
-import { esMain } from '../utils/esmain.ts';
+import { esMain } from '@storybook/scripts-utils/esmain.ts';
 import { getCurrentVersion } from './get-current-version.ts';
 import type { Change } from './utils/get-changes.ts';
 import { RELEASED_LABELS, getChanges } from './utils/get-changes.ts';

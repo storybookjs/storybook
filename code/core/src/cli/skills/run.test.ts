@@ -51,6 +51,17 @@ describe('resolveSkillsIntent', () => {
   it('does not treat `help` as a subcommand', () => {
     expect(resolveSkillsIntent(['help', 'stories'])).toEqual({ kind: 'unknown', id: 'help' });
   });
+
+  it('rejects surplus positional arguments', () => {
+    expect(resolveSkillsIntent(['stories', 'typo'])).toEqual({
+      kind: 'invalid',
+      tokens: ['stories', 'typo'],
+    });
+    expect(resolveSkillsIntent(['get', 'stories', 'typo'])).toEqual({
+      kind: 'invalid',
+      tokens: ['get', 'stories', 'typo'],
+    });
+  });
 });
 
 describe('runSkillsCommand', () => {

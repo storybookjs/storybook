@@ -53,12 +53,22 @@ export type SkillsIntent =
   | { kind: 'catalog' }
   | { kind: 'skill-help'; id: SkillId }
   | { kind: 'get'; id: SkillId }
+  | { kind: 'invalid'; tokens: string[] }
   | { kind: 'unknown'; id?: string };
 
 export function resolveSkillsIntent(tokens: string[], help = false): SkillsIntent {
   const [first, second] = tokens;
-  if (first === undefined || first === 'list') {
+  if (first === undefined) {
     return { kind: 'catalog' };
+  }
+  if (first === 'list') {
+    return tokens.length === 1 ? { kind: 'catalog' } : { kind: 'invalid', tokens };
+  }
+  if (first !== 'get' && !isSkillId(first)) {
+    return { kind: 'unknown', id: first };
+  }
+  if (tokens.length > (first === 'get' ? 2 : 1)) {
+    return { kind: 'invalid', tokens };
   }
   const id = first === 'get' ? second : first;
   if (id === undefined || !isSkillId(id)) {
@@ -77,6 +87,14 @@ export async function runSkillsCommand(
   }
   if (intent.kind === 'skill-help') {
     return { output: renderSkillHelp(intent.id), exitCode: 0, kind: 'help', skill: intent.id };
+  }
+  if (intent.kind === 'invalid') {
+    return {
+      output: '',
+      errorOutput: `Unexpected arguments: ${intent.tokens.map((token) => `"${token}"`).join(' ')}.`,
+      exitCode: 1,
+      kind: 'get',
+    };
   }
   if (intent.kind === 'unknown') {
     return {

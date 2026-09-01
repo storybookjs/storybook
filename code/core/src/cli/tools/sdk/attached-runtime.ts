@@ -36,6 +36,15 @@ export type AttachedInProcessResult = {
   connection: Pick<NodeChannelConnection, 'close' | 'disconnected'>;
 };
 
+export type AttachedSpawnResult = {
+  kind: 'spawn';
+  record: StorybookInstanceRecord;
+  /** Instances that also matched the target project but were not selected, best first. */
+  siblings: StorybookInstanceRecord[];
+};
+
+export type AttachedBootstrapResult = AttachedInProcessResult | AttachedSpawnResult;
+
 export type AttachRuntimeDeps = {
   readRegistry?: typeof readRegistry;
   createNodeChannel?: (options: {
@@ -48,13 +57,14 @@ export type AttachRuntimeDeps = {
   getRegisteredToolsets?: typeof getRegisteredToolsets;
   version?: string;
   storybookPath?: () => string | undefined;
+  isChildHost?: boolean;
   detectAgentName?: () => string | undefined;
 };
 
 export async function bootstrapAttachedRuntime(
-  options: { cwd?: string; configDir?: string; port?: number } = {},
+  options: { cwd?: string; configDir?: string; port?: number; autoSpawn?: boolean } = {},
   deps: AttachRuntimeDeps = {}
-): Promise<AttachedInProcessResult> {
+): Promise<AttachedBootstrapResult> {
   const discoveryCwd = resolve(options.cwd ?? process.cwd());
   const resolvedConfigDir = resolveStorybookConfigDir({
     cwd: discoveryCwd,
@@ -99,6 +109,11 @@ export async function bootstrapAttachedRuntime(
   const callerStorybookPath = (deps.storybookPath ?? findStorybookPackageRoot)();
   const installation = checkInstallation(record, callerStorybookPath);
   if (!installation.ok) {
+    const autoSpawn = options.autoSpawn ?? false;
+    const isChildHost = deps.isChildHost ?? process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
+    if (installation.reason === 'different-installation' && autoSpawn && !isChildHost) {
+      return { kind: 'spawn', record, siblings };
+    }
     throw new EnvironmentMismatchError({
       reason:
         installation.reason === 'different-installation'

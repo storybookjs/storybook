@@ -326,18 +326,55 @@ describe('createTools', () => {
     });
   });
 
-  it('hard-errors on an installation mismatch in attached mode instead of spawning a child host', async () => {
-    vi.mocked(attach).mockRejectedValueOnce(
-      new EnvironmentMismatchError({
-        reason: 'The running Storybook and this CLI are different `storybook` installations:',
-      })
-    );
+  it('spawns a child host from the recorded installation when attach reports a foreign one', async () => {
+    const record = {
+      schemaVersion: 1 as const,
+      instanceId: 'abc',
+      pid: 123,
+      cwd: '/scratch/empty',
+      configDir: CONFIG_DIR,
+      url: 'http://localhost:6006',
+      port: 6006,
+      token: 'secret',
+      storybookVersion: '10.2.0',
+      storybookPath: '/npx-cache/node_modules/storybook',
+      mcp: { status: 'ready' as const },
+    };
+    const spawned = {
+      mode: 'attached' as const,
+      requestedMode: 'attached' as const,
+      host: 'child' as const,
+      clientInfo: { name: 'storybook-tools-sdk', version: '0.0.0', kind: 'sdk' as const },
+      storybook: { version: '10.2.0', configDir: CONFIG_DIR, url: record.url, pid: record.pid },
+      runtime: makeRuntime(),
+      describe: async () => ({ configDir: CONFIG_DIR, toolsets: [] }),
+      call: async () => ({ ok: true as const, data: {}, markdown: 'spawned' }),
+      close: async () => {},
+    };
+    vi.mocked(attach).mockResolvedValue({ kind: 'spawn' as const, record, siblings: [] });
+    vi.mocked(spawnChild).mockResolvedValue(spawned);
 
-    await expect(createTools({ mode: 'attached' }, { attach, spawnChild })).rejects.toThrow(
-      EnvironmentMismatchError
-    );
-    expect(spawnChild).not.toHaveBeenCalled();
+    const tools = await createTools({ mode: 'attached' }, { attach, spawnChild });
+
+    expect(spawnChild).toHaveBeenCalledWith({
+      cwd: '/scratch/empty',
+      installationPath: '/npx-cache/node_modules/storybook',
+      options: expect.objectContaining({
+        cwd: '/scratch/empty',
+        mode: 'attached',
+        autoSpawn: false,
+        // Pinned from the chosen record, so the child re-resolves to the same instance.
+        port: 6006,
+      }),
+      clientInfo: expect.objectContaining({ kind: 'sdk' }),
+      requestedMode: 'attached',
+    });
     expect(bootstrapToolsRuntime).not.toHaveBeenCalled();
+    await expect(tools.call('echo.ok')).resolves.toEqual({
+      ok: true,
+      data: {},
+      markdown: 'spawned',
+    });
   });
 
   it('falls back to local with an environment-mismatch gate reason in auto mode', async () => {

@@ -49,9 +49,10 @@ export class AttachUnavailableError extends StorybookError {
 }
 
 /**
- * The running Storybook instance and this process are not the same `storybook` installation, or
- * the instance record cannot prove that they are. Cross-installation attach is unsupported, so the
- * SDK refuses to attach; `reason` is the whole message and names the recovery.
+ * The instance record cannot prove which `storybook` installation the running Storybook is, or
+ * the installations differ and spawning a child host from the recorded one is not allowed
+ * (`autoSpawn: false`, or this process is already a child host). `reason` is the whole message
+ * and names the recovery.
  */
 export class EnvironmentMismatchError extends StorybookError {
   constructor(public data: { reason: string }) {

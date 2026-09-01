@@ -302,11 +302,21 @@ describe('bootstrapAttachedRuntime', () => {
     expect(result.record).toEqual(startedElsewhere);
   });
 
-  it('refuses an instance that runs a different storybook installation before connecting', async () => {
+  it('returns spawn when autoSpawn is on and the instance runs a different installation', async () => {
     const foreign: StorybookInstanceRecord = { ...RECORD, storybookPath: FOREIGN_STORYBOOK_PATH };
     const { deps } = makeRuntimeDeps([foreign]);
 
-    const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+    const result = await bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    expect(result).toEqual({ kind: 'spawn', record: foreign, siblings: [] });
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
+
+  it('refuses a different installation when auto-spawn is declined, naming both installations', async () => {
+    const foreign: StorybookInstanceRecord = { ...RECORD, storybookPath: FOREIGN_STORYBOOK_PATH };
+    const { deps } = makeRuntimeDeps([foreign]);
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: false }, deps);
 
     await expect(failure).rejects.toThrow(EnvironmentMismatchError);
     await expect(failure).rejects.toThrow('different `storybook` installations');
@@ -317,10 +327,20 @@ describe('bootstrapAttachedRuntime', () => {
     expect(deps.createNodeChannel).not.toHaveBeenCalled();
   });
 
-  it('refuses a record that does not name its installation before connecting', async () => {
+  it('refuses rather than spawning when this process is already a child host', async () => {
+    const foreign: StorybookInstanceRecord = { ...RECORD, storybookPath: FOREIGN_STORYBOOK_PATH };
+    const { deps } = makeRuntimeDeps([foreign], { isChildHost: true });
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    await expect(failure).rejects.toThrow(EnvironmentMismatchError);
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
+
+  it('refuses a record that does not name its installation, even when auto-spawn is on', async () => {
     const { deps } = makeRuntimeDeps([{ ...RECORD, storybookPath: undefined }]);
 
-    const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
 
     await expect(failure).rejects.toThrow(EnvironmentMismatchError);
     await expect(failure).rejects.toThrow('Could not verify');
@@ -328,12 +348,12 @@ describe('bootstrapAttachedRuntime', () => {
     expect(deps.createNodeChannel).not.toHaveBeenCalled();
   });
 
-  it('refuses a recorded installation that no longer exists on disk before connecting', async () => {
+  it('refuses a recorded installation that no longer exists on disk, even when auto-spawn is on', async () => {
     const { deps } = makeRuntimeDeps([
       { ...RECORD, storybookPath: '/gone/node_modules/storybook' },
     ]);
 
-    const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
 
     await expect(failure).rejects.toThrow(EnvironmentMismatchError);
     await expect(failure).rejects.toThrow('Could not verify');

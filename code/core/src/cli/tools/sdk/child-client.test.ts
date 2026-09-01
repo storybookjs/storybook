@@ -125,6 +125,30 @@ describe('spawnChildHost', () => {
       }
     );
 
+  it('resolves the child host from the installation path when one is given, keeping the cwd', async () => {
+    const resolveScript = vi.fn(
+      () => '/npx-cache/node_modules/storybook/dist/cli/tools/sdk/child-host.js'
+    );
+
+    await spawnChildHost(
+      {
+        cwd: RECORD.cwd,
+        installationPath: '/npx-cache/node_modules/storybook',
+        options: OPTIONS,
+        clientInfo: CLIENT,
+        requestedMode: 'attached',
+      },
+      { fork: fork as never, resolveScript, logger: { log, warn } }
+    );
+
+    expect(resolveScript).toHaveBeenCalledWith('/npx-cache/node_modules/storybook');
+    expect(fork).toHaveBeenCalledWith(
+      '/npx-cache/node_modules/storybook/dist/cli/tools/sdk/child-host.js',
+      [],
+      expect.objectContaining({ cwd: RECORD.cwd })
+    );
+  });
+
   it('forks the project-local child host with cwd, piped stdio, ipc, and loop-guard env', async () => {
     await spawn();
 

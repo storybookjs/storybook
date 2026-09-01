@@ -308,7 +308,12 @@ describe('bootstrapAttachedRuntime', () => {
 
     const result = await bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
 
-    expect(result).toEqual({ kind: 'spawn', record: foreign, siblings: [] });
+    expect(result).toEqual({
+      kind: 'spawn',
+      record: foreign,
+      storybookPath: FOREIGN_STORYBOOK_PATH,
+      siblings: [],
+    });
     expect(deps.createNodeChannel).not.toHaveBeenCalled();
   });
 

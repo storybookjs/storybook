@@ -98,7 +98,9 @@ export async function spawnChildHost(
     scriptPath = (deps.resolveScript ?? resolveChildHostScript)(resolutionRoot);
   } catch (cause) {
     throw new SpawnFailedError({
-      reason: `Could not resolve \`storybook/internal/tools/child-host\` from ${resolutionRoot}. Install Storybook in that project, then retry.`,
+      reason: args.installationPath
+        ? `The running Storybook's installation at ${resolutionRoot} can no longer resolve \`storybook/internal/tools/child-host\`. From your project directory, restart Storybook (for example \`npx storybook dev\`) and re-run this command from there.`
+        : `Could not resolve \`storybook/internal/tools/child-host\` from ${resolutionRoot}. Install Storybook in that project, then retry.`,
       cause,
     });
   }

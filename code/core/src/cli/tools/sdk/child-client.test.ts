@@ -125,6 +125,30 @@ describe('spawnChildHost', () => {
       }
     );
 
+  it('names the recorded installation and restart guidance when it cannot resolve the child host', async () => {
+    const failure = spawnChildHost(
+      {
+        cwd: RECORD.cwd,
+        installationPath: '/npx-cache/node_modules/storybook',
+        options: OPTIONS,
+        clientInfo: CLIENT,
+        requestedMode: 'attached',
+      },
+      {
+        fork: fork as never,
+        resolveScript: () => {
+          throw Object.assign(new Error('MODULE_NOT_FOUND'), { code: 'MODULE_NOT_FOUND' });
+        },
+        logger: { log, warn },
+      }
+    );
+
+    await expect(failure).rejects.toThrow(SpawnFailedError);
+    await expect(failure).rejects.toThrow('/npx-cache/node_modules/storybook');
+    await expect(failure).rejects.toThrow('restart Storybook');
+    expect(fork).not.toHaveBeenCalled();
+  });
+
   it('resolves the child host from the installation path when one is given, keeping the cwd', async () => {
     const resolveScript = vi.fn(
       () => '/npx-cache/node_modules/storybook/dist/cli/tools/sdk/child-host.js'

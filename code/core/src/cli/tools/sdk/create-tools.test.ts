@@ -351,7 +351,12 @@ describe('createTools', () => {
       call: async () => ({ ok: true as const, data: {}, markdown: 'spawned' }),
       close: async () => {},
     };
-    vi.mocked(attach).mockResolvedValue({ kind: 'spawn' as const, record, siblings: [] });
+    vi.mocked(attach).mockResolvedValue({
+      kind: 'spawn' as const,
+      record,
+      storybookPath: '/npx-cache/node_modules/storybook',
+      siblings: [],
+    });
     vi.mocked(spawnChild).mockResolvedValue(spawned);
 
     const tools = await createTools({ mode: 'attached' }, { attach, spawnChild });

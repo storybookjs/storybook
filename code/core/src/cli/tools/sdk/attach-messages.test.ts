@@ -146,9 +146,10 @@ Falling back to loading this project's Storybook configuration."`
   });
 
   it('never places a path in executable-command position anywhere in the message catalog', () => {
-    // Matches a real path (absolute POSIX or Windows) directly after `cd ` or a `--flag`, i.e. a
-    // copy-pasteable command an agent could run with a constructed or node_modules-deep path.
-    const pathInCommandPosition = /(?:\bcd\s+|--[\w-]+[= ])[`'"]?(?:\/|[A-Za-z]:[\\/])/;
+    // Matches a real path (absolute, home-relative, dot-relative, or Windows) directly after `cd `
+    // or a `--flag`, i.e. a copy-pasteable command an agent could run with a constructed or
+    // node_modules-deep path.
+    const pathInCommandPosition = /(?:\bcd\s+|--[\w-]+[= ])[`'"]?(?:~?\/|\.\.?\/|[A-Za-z]:[\\/])/;
 
     const renderedMessages = [
       formatNoInstance([other, sibling]),

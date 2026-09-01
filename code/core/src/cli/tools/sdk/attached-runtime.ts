@@ -39,6 +39,8 @@ export type AttachedInProcessResult = {
 export type AttachedSpawnResult = {
   kind: 'spawn';
   record: StorybookInstanceRecord;
+  /** The instance's verified installation root the child host must be resolved from. */
+  storybookPath: string;
   /** Instances that also matched the target project but were not selected, best first. */
   siblings: StorybookInstanceRecord[];
 };
@@ -112,7 +114,7 @@ export async function bootstrapAttachedRuntime(
     const autoSpawn = options.autoSpawn ?? false;
     const isChildHost = deps.isChildHost ?? process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
     if (installation.reason === 'different-installation' && autoSpawn && !isChildHost) {
-      return { kind: 'spawn', record, siblings };
+      return { kind: 'spawn', record, storybookPath: installation.instancePath, siblings };
     }
     throw new EnvironmentMismatchError({
       reason:

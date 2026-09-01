@@ -185,7 +185,7 @@ async function createAttachedTools(
     // the registry changes between the parent's resolution and the child's.
     return (deps.spawnChild ?? spawnChildHost)({
       cwd: attached.record.cwd,
-      installationPath: attached.record.storybookPath,
+      installationPath: attached.storybookPath,
       options: {
         ...options,
         mode: 'attached',

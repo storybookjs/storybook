@@ -193,23 +193,15 @@ export function mswStep(
     ? `import addonMsw from 'msw-storybook-addon';
     import { mswHandlers } from './msw-handlers';
 
-    export default definePreview({
-      // ...keep the existing config
-      addons: [addonMsw()],
-      async beforeEach({ msw }) {
-        msw.use(...mswHandlers);
-      },
-    });`
+    // Merge into the existing preview. Do not replace the file or the default export.
+    // - append addonMsw() to the existing addons array
+    // - call msw.use(...mswHandlers) inside the existing beforeEach (add { msw } to its parameter list)`
     : `import { mswLoader } from 'msw-storybook-addon/csf3';
     import { mswHandlers } from './msw-handlers';
 
-    const preview = {
-      // ...keep the existing config
-      loaders: [mswLoader()],
-      async beforeEach({ msw }) {
-        msw.use(...mswHandlers);
-      },
-    };`;
+    // Merge into the existing preview. Do not replace the file or the default export.
+    // - append mswLoader() to the existing loaders array
+    // - call msw.use(...mswHandlers) inside the existing beforeEach (add { msw } to its parameter list)`;
   const csfNextNote = projectInfo.hasCsfFactoryPreview
     ? `
 

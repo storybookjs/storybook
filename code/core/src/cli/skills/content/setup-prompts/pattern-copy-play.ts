@@ -136,41 +136,28 @@ function getMockDateExample(projectInfo: ProjectInfo): string {
 
 function getMswPreviewExample(projectInfo: ProjectInfo): string {
   const configDir = projectInfo.configDir;
-  const typeImport = getTypeImportSource(projectInfo);
 
   if (projectInfo.hasCsfFactoryPreview) {
     return dedent`
       \`\`\`tsx
-      // ${configDir}/preview.tsx
-      import { definePreview } from 'storybook/preview';
+      // ${configDir}/preview.tsx: merge into the existing file, do not replace it
       import addonMsw from 'msw-storybook-addon';
       import { mswHandlers } from './msw-handlers';
 
-      export default definePreview({
-        addons: [addonMsw()],
-        async beforeEach({ msw }) {
-          msw.use(...mswHandlers);
-        },
-      });
+      // append addonMsw() to the existing addons array
+      // call msw.use(...mswHandlers) inside the existing beforeEach (add { msw } to its parameter list)
       \`\`\`
     `;
   }
 
   return dedent`
     \`\`\`tsx
-    // ${configDir}/preview.tsx
-    import type { Preview } from '${typeImport}';
+    // ${configDir}/preview.tsx: merge into the existing file, do not replace it
     import { mswLoader } from 'msw-storybook-addon/csf3';
     import { mswHandlers } from './msw-handlers';
 
-    const preview: Preview = {
-      loaders: [mswLoader()],
-      async beforeEach({ msw }) {
-        msw.use(...mswHandlers);
-      },
-    };
-
-    export default preview;
+    // append mswLoader() to the existing loaders array
+    // call msw.use(...mswHandlers) inside the existing beforeEach (add { msw } to its parameter list)
     \`\`\`
   `;
 }

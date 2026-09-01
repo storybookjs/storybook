@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { SupportedRenderer } from 'storybook/internal/types';
 
 import { NPMProxy } from '../../../../common/js-package-manager/NPMProxy.ts';
 import type { ProjectInfo } from '../../project-info.ts';
@@ -11,7 +12,7 @@ const projectInfo = {
   majorVersion: 10,
   framework: '@storybook/react-vite',
   rendererPackage: '@storybook/react',
-  renderer: 'react',
+  renderer: SupportedRenderer.REACT,
   builderPackage: '@storybook/builder-vite',
   addons: [],
   configDir: '.storybook',
@@ -41,5 +42,15 @@ describe('optional MSW setup', () => {
     expect(prompt).toContain('create an empty handlers file');
     expect(prompt).toContain("import * as mswStorybookAddon from 'msw-storybook-addon/preview'");
     expect(prompt).toContain('addonMsw()');
+    expect(prompt).toMatch(/[Mm]erge into the existing/);
+    expect(prompt).toMatch(/do not replace/i);
+  });
+
+  it('tells CSF3 previews to append mswLoader instead of replacing the file', () => {
+    const prompt = optimizedInstructions({ ...projectInfo, hasCsfFactoryPreview: false });
+
+    expect(prompt).toContain('mswLoader()');
+    expect(prompt).toMatch(/[Mm]erge into the existing/);
+    expect(prompt).toContain('append mswLoader() to the existing loaders array');
   });
 });

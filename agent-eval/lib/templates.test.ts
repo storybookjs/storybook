@@ -74,7 +74,7 @@ describe('enableExperimentalReview', () => {
 describe('rewritePackageSpecsForNpm', () => {
   it('rewrites the real addon manifest for npm sandboxes', () => {
     const packageJson = JSON.parse(
-      readFileSync(join(AGENT_EVAL_ROOT, '..', '..', 'addons', 'mcp', 'package.json'), 'utf8')
+      readFileSync(join(AGENT_EVAL_ROOT, '..', 'code', 'addons', 'mcp', 'package.json'), 'utf8')
     ) as Record<string, unknown>;
     const rewritten = rewritePackageSpecsForNpm(packageJson);
     const version = packageJson.version;

@@ -196,7 +196,7 @@ export function collectMisusePanel(
   const refs = new Set<string>();
   const fixtures = new Set<string>();
   const toPosix = (value: string) => value.split(sep).join('/');
-  const refsRoot = join(options.repoRoot, 'code', 'lib', 'agent-eval', '.eval-cache', 'refs');
+  const refsRoot = join(options.repoRoot, 'agent-eval', '.eval-cache', 'refs');
   const baselineDirOf = (fixtureRef: string) => {
     const at = fixtureRef.lastIndexOf('@');
     if (at === -1) return null;

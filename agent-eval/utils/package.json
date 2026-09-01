@@ -8,11 +8,11 @@
     "facets",
     "storybook"
   ],
-  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/agent-eval/utils",
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/agent-eval/utils",
   "repository": {
     "type": "git",
     "url": "https://github.com/storybookjs/storybook.git",
-    "directory": "code/lib/agent-eval/utils"
+    "directory": "agent-eval/utils"
   },
   "license": "MIT",
   "author": "Storybook Core Team",

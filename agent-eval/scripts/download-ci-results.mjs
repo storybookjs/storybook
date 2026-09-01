@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Downloads the most recent agent-eval-results artifacts from GitHub Actions
-// and extracts them into code/lib/agent-eval/results, so CI runs are inspectable in the
+// and extracts them into agent-eval/results, so CI runs are inspectable in the
 // local playground (yarn workspace agent-eval run playground) and by local analysis tooling.
 //
 // Usage: node scripts/download-ci-results.mjs [count]
@@ -101,7 +101,7 @@ for (const artifact of artifacts) {
     });
     // Extract inside the temp directory and only the results/ subtree, so
     // an artifact tarball can never write outside it; then merge that
-    // subtree into code/lib/agent-eval/results. A tarball with no results/ member
+    // subtree into agent-eval/results. A tarball with no results/ member
     // holds no snapshots and tar exits non-zero on it.
     execFileSync(
       'tar',

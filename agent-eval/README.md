@@ -450,7 +450,7 @@ Open [http://localhost:3000](http://localhost:3000) to browse results.
 ### Download CI Results
 
 Pull the eval results produced by recent CI runs into the local
-`code/lib/agent-eval/results` directory, so they can be browsed in the local playground
+`agent-eval/results` directory, so they can be browsed in the local playground
 and inspected by analysis tooling:
 
 ```bash
@@ -461,7 +461,7 @@ yarn workspace agent-eval run results:download 5      # or any count between 1 a
 Requires an authenticated GitHub CLI (`gh auth login`) and a `tar` binary
 (preinstalled on macOS and Linux). Result snapshots are
 keyed by experiment name and run timestamp, so artifacts from multiple CI runs
-merge into `code/lib/agent-eval/results` without colliding, and re-running the command
+merge into `agent-eval/results` without colliding, and re-running the command
 is idempotent. Each artifact is roughly 20–40 MB extracted.
 
 ### Clear Out Interrupted Runs
@@ -489,14 +489,14 @@ hiding.
 
 The `Agent eval` GitHub Actions workflow deploys the playground to Vercel
 project `storybook-evals` after eval results have been written to
-`code/lib/agent-eval/results`.
+`agent-eval/results`.
 
 - Pull requests from the main repository with the `ci:eval` label create
   preview deployments.
 - Manual runs on non-`main` branches create preview deployments.
 - Manual runs on `main` create production deployments.
 
-The workflow deploys from the same runner that produced `code/lib/agent-eval/results`,
+The workflow deploys from the same runner that produced `agent-eval/results`,
 so failed evals can still publish a playground with partial results. The final
 workflow status still fails when the eval, build, or deploy step fails.
 

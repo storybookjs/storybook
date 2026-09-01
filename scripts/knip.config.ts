@@ -76,29 +76,6 @@ const baseConfig = {
       ],
       project,
     },
-    // The eval harness's roots are CLI scripts, eval definitions and the
-    // vendored playground app shims rather than a package entry point.
-    'lib/agent-eval': {
-      entry: [
-        'scripts/*.{mjs,ts}',
-        'app/**/*.{ts,tsx}',
-        'plans/*.ts',
-        'lib/test-utils.ts',
-        'lib/mcp/*.mjs',
-        'next.config.ts',
-        'postcss.config.mjs',
-        'vitest.config.ts',
-      ],
-      // evals/, experiments/ and templates/ are sandbox fixtures, not harness code
-      project: ['{app,lib,plans,scripts}/**/*.{mjs,ts,tsx}'],
-      paths: { '@/*': ['node_modules/@vercel/agent-eval-playground/*'] },
-      // vercel and the build plugins run via workflow/next config; playwright
-      // exists only inside eval sandboxes
-      ignoreDependencies: ['vercel', '@vitejs/plugin-react-swc', 'tailwindcss', 'playwright'],
-    },
-    'lib/agent-eval/utils': {
-      project,
-    },
     'lib/*': {
       project,
     },

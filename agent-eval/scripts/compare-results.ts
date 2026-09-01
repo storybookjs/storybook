@@ -173,9 +173,7 @@ async function main() {
   }
   writeFileSync(join(stagingDir, 'dataset.csv'), datasetCsv(cells, COMPARISON_METRICS, spec));
   // Cached judge artifacts only — free, and simply sparse when judging hasn't run.
-  const misusePanel = collectMisusePanel(cells, spec, {
-    repoRoot: resolve(ROOT, '..', '..', '..'),
-  });
+  const misusePanel = collectMisusePanel(cells, spec, { repoRoot: resolve(ROOT, '..') });
   writeFileSync(join(stagingDir, 'misuse.json'), JSON.stringify(misusePanel, null, 2) + '\n');
   if (misusePanel.judgedRuns === misusePanel.usableRuns) {
     console.log(`DS misuse: all ${misusePanel.usableRuns} usable runs judged.`);

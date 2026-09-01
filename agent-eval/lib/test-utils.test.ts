@@ -14,15 +14,15 @@ import {
   parseStorybookWorkflowShellCommands,
   parseWorkflowToolResults,
   selectFinalRunStoryTestsReport,
-  workflowCallMatchesName,
   workflowCallIncludesStory,
+  workflowCallMatchesName,
   workflowCallUsesStoryId,
 } from './test-utils.ts';
 
 describe('parseStorybookWorkflowShellCommands', () => {
-  test('records `skills get <id>` invocations literally, with their skill id', () => {
+  test('records `skills <id>` invocations literally, with their skill id', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook skills get write-story 2>&1 | grep -v "npm warn"',
+      'npx storybook skills write-story 2>&1 | grep -v "npm warn"',
       'npx storybook skills get stories',
       'npx storybook skills list',
     ]);
@@ -46,9 +46,9 @@ describe('parseStorybookWorkflowShellCommands', () => {
 
   test('does not record skills help requests or quoted mentions as instruction fetches', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook skills get write-story --help',
-      'npx storybook skills get write-story -h && npx storybook skills list',
-      "echo 'storybook skills get write-story'",
+      'npx storybook skills write-story --help',
+      'npx storybook skills write-story -h && npx storybook skills list',
+      "echo 'storybook skills write-story'",
     ]);
 
     expect(calls).toHaveLength(0);

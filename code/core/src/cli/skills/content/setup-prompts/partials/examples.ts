@@ -95,6 +95,7 @@ export function getMswPreviewExample(projectInfo: ProjectInfo): string {
   if (hasCsfFactoryPreview) {
     return dedent`
       \`\`\`${tsx}
+      import { definePreview } from '${typeImport}';
       import addonMsw from 'msw-storybook-addon';
       import { mswHandlers } from './msw-handlers';
 

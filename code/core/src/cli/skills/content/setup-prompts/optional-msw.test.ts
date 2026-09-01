@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { NPMProxy } from '../../../../common/js-package-manager/NPMProxy.ts';
 import type { ProjectInfo } from '../../project-info.ts';
-import { getPreviewExample } from './partials/examples.ts';
+import { getMswPreviewExample, getPreviewExample } from './partials/examples.ts';
 import { instructions as optimizedInstructions } from './optimized-tests.ts';
 import { instructions as patternCopyPlayInstructions } from './pattern-copy-play.ts';
 
@@ -27,6 +27,11 @@ const projectInfo = {
 describe('optional MSW setup', () => {
   it('keeps MSW out of the base preview example', () => {
     expect(getPreviewExample(projectInfo)).not.toContain('msw');
+  });
+
+  it('shows a complete CSF factory MSW preview snippet when needed', () => {
+    expect(getMswPreviewExample(projectInfo)).toContain('import { definePreview } from');
+    expect(getMswPreviewExample(projectInfo)).toContain('addonMsw()');
   });
 
   it.each([

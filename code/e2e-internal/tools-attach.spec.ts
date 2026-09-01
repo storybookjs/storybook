@@ -1,9 +1,10 @@
 import { execFile } from 'child_process';
-import { mkdir } from 'fs/promises';
-import { tmpdir } from 'os';
+import { mkdir, mkdtemp, readFile, readdir, rm, writeFile } from 'fs/promises';
+import { homedir, tmpdir } from 'os';
 import { join } from 'path';
 import { promisify } from 'util';
 import process from 'process';
+import { pathToFileURL } from 'url';
 
 import { expect, test } from '@playwright/test';
 
@@ -43,6 +44,22 @@ async function runTools(args: string[], cwd = process.cwd(), extraEnv: NodeJS.Pr
       output: `${failure.stdout ?? ''}${failure.stderr ?? ''}`,
     };
   }
+}
+
+async function findInstanceRecord(port: number) {
+  const registryDir = join(homedir(), '.storybook', 'instances');
+  for (const filename of await readdir(registryDir)) {
+    if (!filename.endsWith('.json')) {
+      continue;
+    }
+    const path = join(registryDir, filename);
+    const contents = await readFile(path, 'utf8');
+    const record = JSON.parse(contents) as { port: number; storybookPath?: string };
+    if (record.port === port) {
+      return { path, contents, record };
+    }
+  }
+  throw new Error(`No running Storybook instance record found on port ${port}.`);
 }
 
 const REVIEW_INPUT = JSON.stringify({
@@ -115,6 +132,78 @@ test.describe('storybook tools attach', () => {
     expect(list.output).toContain('example-button');
   });
 
+  test('respawns through the running instance installation when it differs from the caller', async () => {
+    test.skip(
+      !runsAgainstDevServer,
+      'Live attach requires the running Storybook channel, which the static E2E job does not serve.'
+    );
+    const port = Number(new URL(process.env.STORYBOOK_URL || 'http://localhost:6006').port);
+    const instance = await findInstanceRecord(port);
+
+    const cacheDir = join(process.cwd(), 'node_modules', '.cache');
+    await mkdir(cacheDir, { recursive: true });
+    const temporaryDir = await mkdtemp(join(cacheDir, 'storybook-tools-installation-'));
+    const recordedStorybookPath = join(temporaryDir, 'storybook');
+    try {
+      await mkdir(recordedStorybookPath);
+      await writeFile(
+        join(recordedStorybookPath, 'package.json'),
+        JSON.stringify({
+          name: 'storybook',
+          type: 'module',
+          exports: { './internal/tools/child-host': './child-host.mjs' },
+        }),
+        'utf8'
+      );
+      const childHostUrl = pathToFileURL(
+        join(process.cwd(), 'core', 'dist', 'cli', 'tools', 'sdk', 'child-host.js')
+      ).href;
+      await writeFile(
+        join(recordedStorybookPath, 'child-host.mjs'),
+        `import { writeFile } from 'node:fs/promises';
+await writeFile(${JSON.stringify(instance.path)}, ${JSON.stringify(instance.contents)}, 'utf8');
+const { runChildHost } = await import(${JSON.stringify(childHostUrl)});
+await runChildHost();
+`,
+        'utf8'
+      );
+      await writeFile(
+        instance.path,
+        `${JSON.stringify({ ...instance.record, storybookPath: recordedStorybookPath }, null, 2)}\n`,
+        'utf8'
+      );
+
+      const scriptPath = join(temporaryDir, 'run-tools.mjs');
+      const sdkUrl = pathToFileURL(
+        join(process.cwd(), 'core', 'dist', 'cli', 'tools', 'sdk', 'index.js')
+      ).href;
+      await writeFile(
+        scriptPath,
+        `import { createTools } from ${JSON.stringify(sdkUrl)};
+const tools = await createTools({ cwd: process.cwd(), mode: 'attached', port: Number(process.argv[2]) });
+try {
+  const catalog = await tools.describe({ toolset: 'stories' });
+  process.stdout.write(\`TOOLS_RESULT=\${JSON.stringify({ host: tools.host, toolset: catalog.toolsets[0]?.id })}\\n\`);
+} finally {
+  await tools.close();
+}
+`,
+        'utf8'
+      );
+      const { stdout, stderr } = await execFileAsync(process.execPath, [scriptPath, String(port)], {
+        cwd: process.cwd(),
+        env: { ...process.env, STORYBOOK_DISABLE_TELEMETRY: '1' },
+        timeout: 60_000,
+        maxBuffer: 16 * 1024 * 1024,
+      });
+
+      expect(`${stdout}${stderr}`).toContain('TOOLS_RESULT={"host":"child","toolset":"stories"}');
+    } finally {
+      await writeFile(instance.path, instance.contents, 'utf8');
+      await rm(temporaryDir, { recursive: true, force: true });
+    }
+  });
+
   test('--no-attach forces local and intercepts requiresDevServer tools', async () => {
     const list = await runTools(['--no-attach', 'docs', 'list']);
     expect(list.exitCode, list.output).toBe(0);
@@ -134,7 +223,10 @@ test.describe('storybook tools attach', () => {
   test('auto mode falls back to local silently when no instance matches', async () => {
     const emptyHome = join(tmpdir(), `storybook-tools-attach-empty-home-${process.pid}`);
     await mkdir(emptyHome, { recursive: true });
-    const result = await runTools(['docs', 'list'], process.cwd(), { HOME: emptyHome });
+    const result = await runTools(['docs', 'list'], process.cwd(), {
+      HOME: emptyHome,
+      USERPROFILE: emptyHome,
+    });
 
     expect(result.exitCode, result.output).toBe(0);
     expect(result.output).toContain('example-button');

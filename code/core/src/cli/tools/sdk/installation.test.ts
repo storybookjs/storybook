@@ -3,9 +3,11 @@ import { realpathSync } from 'node:fs';
 import { vol } from 'memfs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { mockNodePath } from '../test-support/mock-node-path.ts';
 import { checkInstallation } from './installation.ts';
 
 vi.mock('node:fs', { spy: true });
+vi.mock('node:path', { spy: true });
 
 beforeEach(async () => {
   vol.reset();
@@ -56,6 +58,18 @@ describe('checkInstallation', () => {
 
     expect(
       checkInstallation({ storybookPath: '/project/node_modules/storybook' }, '/store/storybook')
+    ).toEqual({ ok: true });
+  });
+
+  it('attaches Windows paths that differ only by letter case', () => {
+    mockNodePath('win32');
+    vol.fromNestedJSON({ '/project/node_modules/storybook/package.json': '{"name":"storybook"}' });
+
+    expect(
+      checkInstallation(
+        { storybookPath: '/project/node_modules/storybook' },
+        '/PROJECT/NODE_MODULES/STORYBOOK'
+      )
     ).toEqual({ ok: true });
   });
 

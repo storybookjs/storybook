@@ -7,7 +7,6 @@ import type { SetupInstructionsContext as InstructionsContext } from '../types.t
 import {
   getInteractionPlayExample,
   getMainConfigExample,
-  getMswPreviewExample,
   getPortalDecoratorExample,
   getPreviewExample,
   getStoryExample,
@@ -182,7 +181,7 @@ export function buildPortalStep(
 
 export function mswStep(
   projectInfo: ProjectInfo,
-  { configDir, mswInstall, packageManager, ts }: InstructionsContext
+  { configDir, mswInstall, packageManager, ts, tsx }: InstructionsContext
 ): { title: string; body: string } {
   const mswInit = getMswInitCommand(packageManager);
   const mswAddonAdd = packageManager.getPackageCommand([
@@ -190,6 +189,27 @@ export function mswStep(
     'add',
     'msw-storybook-addon@3',
   ]);
+  const previewWiring = projectInfo.hasCsfFactoryPreview
+    ? `import addonMsw from 'msw-storybook-addon';
+    import { mswHandlers } from './msw-handlers';
+
+    export default definePreview({
+      // ...keep the existing config
+      addons: [addonMsw()],
+      async beforeEach({ msw }) {
+        msw.use(...mswHandlers);
+      },
+    });`
+    : `import { mswLoader } from 'msw-storybook-addon/csf3';
+    import { mswHandlers } from './msw-handlers';
+
+    const preview = {
+      // ...keep the existing config
+      loaders: [mswLoader()],
+      async beforeEach({ msw }) {
+        msw.use(...mswHandlers);
+      },
+    };`;
   const csfNextNote = projectInfo.hasCsfFactoryPreview
     ? `
 
@@ -228,7 +248,10 @@ ${csfNextNote}
 
     Wire the handlers into the existing preview config:
 
-    ${getMswPreviewExample(projectInfo)}
+    \`\`\`${tsx}
+    // ${configDir}/preview.${tsx}
+    ${previewWiring}
+    \`\`\`
 `,
   };
 }

@@ -87,64 +87,6 @@ export function getPreviewExample(projectInfo: ProjectInfo): string {
   `;
 }
 
-export function getMswPreviewExample(projectInfo: ProjectInfo): string {
-  const { language, framework, rendererPackage, hasCsfFactoryPreview } = projectInfo;
-  const tsx = ext(language, true);
-  const typeImport = framework || rendererPackage || '@storybook/react-vite';
-
-  if (hasCsfFactoryPreview) {
-    return dedent`
-      \`\`\`${tsx}
-      import { definePreview } from '${typeImport}';
-      import addonMsw from 'msw-storybook-addon';
-      import { mswHandlers } from './msw-handlers';
-
-      export default definePreview({
-        addons: [addonMsw()],
-        async beforeEach({ msw }) {
-          msw.use(...mswHandlers);
-        },
-      });
-      \`\`\`
-    `;
-  }
-
-  if (language === 'js') {
-    return dedent`
-      \`\`\`${tsx}
-      import { mswLoader } from 'msw-storybook-addon/csf3';
-      import { mswHandlers } from './msw-handlers';
-
-      const preview = {
-        loaders: [mswLoader()],
-        async beforeEach({ msw }) {
-          msw.use(...mswHandlers);
-        },
-      };
-
-      export default preview;
-      \`\`\`
-    `;
-  }
-
-  return dedent`
-    \`\`\`${tsx}
-    import type { Preview } from '${typeImport}';
-    import { mswLoader } from 'msw-storybook-addon/csf3';
-    import { mswHandlers } from './msw-handlers';
-
-    const preview: Preview = {
-      loaders: [mswLoader()],
-      async beforeEach({ msw }) {
-        msw.use(...mswHandlers);
-      },
-    };
-
-    export default preview;
-    \`\`\`
-  `;
-}
-
 export function getPortalDecoratorExample(projectInfo: ProjectInfo): string {
   const { language } = projectInfo;
   const tsx = ext(language, true);

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import { NPMProxy } from '../../../../common/js-package-manager/NPMProxy.ts';
 import type { ProjectInfo } from '../../project-info.ts';
-import { getMswPreviewExample, getPreviewExample } from './partials/examples.ts';
+import { getPreviewExample } from './partials/examples.ts';
 import { instructions as optimizedInstructions } from './optimized-tests.ts';
 import { instructions as patternCopyPlayInstructions } from './pattern-copy-play.ts';
 
@@ -29,11 +29,6 @@ describe('optional MSW setup', () => {
     expect(getPreviewExample(projectInfo)).not.toContain('msw');
   });
 
-  it('shows a complete CSF factory MSW preview snippet when needed', () => {
-    expect(getMswPreviewExample(projectInfo)).toContain('import { definePreview } from');
-    expect(getMswPreviewExample(projectInfo)).toContain('addonMsw()');
-  });
-
   it.each([
     ['optimized', optimizedInstructions],
     ['pattern-copy-play', patternCopyPlayInstructions],
@@ -45,5 +40,6 @@ describe('optional MSW setup', () => {
     );
     expect(prompt).toContain('create an empty handlers file');
     expect(prompt).toContain("import * as mswStorybookAddon from 'msw-storybook-addon/preview'");
+    expect(prompt).toContain('addonMsw()');
   });
 });

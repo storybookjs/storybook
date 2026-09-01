@@ -59,6 +59,10 @@ const REVIEW_INPUT = JSON.stringify({
 });
 
 test.describe('storybook tools attach', () => {
+  // Declaration order matters (the full-extraction test must stay last — see its comment), which
+  // the config's fullyParallel would not preserve outside CI's single worker. Not 'serial': these
+  // tests are independent, so one failure must not skip the rest.
+  test.describe.configure({ mode: 'default' });
   test.setTimeout(90_000);
 
   test('fails with start-Storybook guidance when --attach finds no instance', async () => {
@@ -152,6 +156,38 @@ test.describe('storybook tools attach', () => {
       ['--cwd', process.cwd(), 'docs', 'list'],
       join(process.cwd(), '..')
     );
+    expect(list.exitCode, list.output).toBe(0);
+    expect(list.output).toContain('example-button');
+  });
+
+  // Deliberately last: the first-ever full extraction leaves the instance holding (and syncing to
+  // later clients) an all-components state large enough to grind a small CI box, which failed the
+  // unrelated attach test that used to follow it. Tracked in #36105.
+  test('attached docs list succeeds through the instance docgen services', async ({ page }) => {
+    test.skip(
+      !runsAgainstDevServer,
+      'Live attach requires the running Storybook channel, which the static E2E job does not serve.'
+    );
+    await page.goto(process.env.STORYBOOK_URL || 'http://localhost:6006');
+    const docgenServerEnabled = await page.evaluate(() =>
+      Boolean(
+        (globalThis as { FEATURES?: { experimentalDocgenServer?: boolean } }).FEATURES
+          ?.experimentalDocgenServer
+      )
+    );
+    test.skip(
+      !docgenServerEnabled,
+      'Requires the internal Storybook started with STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true, as CI does.'
+    );
+    // Every per-component extraction broadcasts the full accumulated docgen state to each channel
+    // client, so leave the manager page before fanning out to spare the CI dev server that load.
+    await page.goto('about:blank');
+
+    // The env var makes the CLI's own config evaluation register the docgen services, so listing
+    // delegates the all-components extraction to the instance instead of reading local manifests.
+    const list = await runTools(['--attach', 'docs', 'list'], process.cwd(), {
+      STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER: 'true',
+    });
     expect(list.exitCode, list.output).toBe(0);
     expect(list.output).toContain('example-button');
   });

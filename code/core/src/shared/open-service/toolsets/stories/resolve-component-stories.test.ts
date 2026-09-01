@@ -39,7 +39,6 @@ function moduleGraphStub(opts: {
   return {
     queries: {
       status: { loaded: async () => status },
-      changeDetectionReadiness: { loaded: async () => ({ status: 'ready' }) },
       storiesForFiles: {
         loaded: async ({ files }) => files.map((file) => storiesByFile[file] ?? []),
       },

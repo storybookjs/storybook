@@ -66,7 +66,6 @@ function readyGraph(hits: ModuleGraphStoryHit[]): ModuleGraphAccess {
   return {
     queries: {
       status: { loaded: async () => ({ value: 'ready' }) },
-      changeDetectionReadiness: { loaded: async () => ({ status: 'ready' }) },
       storiesForFiles: { loaded: storiesForFiles },
     },
   };

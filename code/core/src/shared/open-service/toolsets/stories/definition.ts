@@ -230,9 +230,13 @@ Never invent IDs from file names, feature names, or memory; title strings can be
 Backed by Storybook's live reverse dependency graph, available only when the dev server runs a builder that supports change detection (e.g. Vite) — otherwise returns a typed error.`;
 }
 
-// Status, change-detection readiness, and reverse-index queries for ModuleGraphAccess consumers.
-function moduleGraphAccessFromCtx(ctx: ToolsetCtx): ModuleGraphAccess {
-  const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', { internal: true });
+// Hot status + cold reverse-index queries, composed for ModuleGraphAccess consumers.
+function moduleGraphAccessFromCtx(
+  ctx: ToolsetCtx,
+  moduleGraph: ModuleGraphService = ctx.getService<ModuleGraphService>('core/module-graph', {
+    internal: true,
+  })
+): ModuleGraphAccess {
   const moduleGraphIndex = ctx.getService<ModuleGraphIndexService>('core/module-graph-index', {
     internal: true,
   });
@@ -240,9 +244,6 @@ function moduleGraphAccessFromCtx(ctx: ToolsetCtx): ModuleGraphAccess {
     queries: {
       status: {
         loaded: () => moduleGraph.queries.status.loaded(undefined) as Promise<ModuleGraphStatus>,
-      },
-      changeDetectionReadiness: {
-        loaded: () => moduleGraph.queries.changeDetectionReadiness.loaded(undefined),
       },
       storiesForFiles: {
         loaded: (files) => moduleGraphIndex.queries.storiesForFiles.loaded(files),
@@ -306,7 +307,10 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
         title: 'Get changed stories metadata',
         description: describeChanged,
         handler: async (_input, ctx): Promise<ToolsetOutcome<ChangedStoriesOutput, never>> => {
-          const moduleGraph = moduleGraphAccessFromCtx(ctx);
+          const graphService = ctx.getService<ModuleGraphService>('core/module-graph', {
+            internal: true,
+          });
+          const moduleGraph = moduleGraphAccessFromCtx(ctx, graphService);
           // Same readiness gate as findByComponent: an empty status store is not "no changes", so
           // fail before reading statuses when the graph has not settled.
           const graphStatus = await moduleGraph.queries.status.loaded(undefined);
@@ -317,7 +321,7 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
           }
 
           const changeDetection =
-            await moduleGraph.queries.changeDetectionReadiness.loaded(undefined);
+            await graphService.queries.changeDetectionReadiness.loaded(undefined);
           if (changeDetection.status !== 'ready') {
             if (isGitUnusableReadiness(changeDetection)) {
               const data = emptyChangedStories();

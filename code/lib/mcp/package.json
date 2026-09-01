@@ -1,6 +1,6 @@
 {
   "name": "@storybook/mcp",
-  "version": "10.6.0-beta.0",
+  "version": "10.6.0-beta.1",
   "description": "MCP server that serves knowledge about your components based on your Storybook stories and documentation",
   "keywords": [
     "mcp",

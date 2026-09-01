@@ -157,12 +157,14 @@ describe('stylePreprocessorCheckPlugin', () => {
   const VITE_DIR = dirname(fileURLToPath(import.meta.resolve('vite')));
 
   type StyleCheckHook = {
-    filter: { id: RegExp };
+    filter: { id: { include: RegExp; exclude: RegExp } };
     handler: (code: string, id: string) => unknown;
   };
 
   const runTransform = (hook: StyleCheckHook, id: string) =>
-    hook.filter.id.test(id) ? hook.handler('', id) : undefined;
+    hook.filter.id.include.test(id) && !hook.filter.id.exclude.test(id)
+      ? hook.handler('', id)
+      : undefined;
 
   function transformStyle(
     id: string,
@@ -171,11 +173,13 @@ describe('stylePreprocessorCheckPlugin', () => {
       installedIn = WORKSPACE_ROOT,
       entryPointResolves = packages,
       notExported = [],
+      bypassFilter = false,
     }: {
       packages?: string[];
       installedIn?: string;
       entryPointResolves?: string[];
       notExported?: string[];
+      bypassFilter?: boolean;
     } = {}
   ) {
     const present = new Set(
@@ -209,7 +213,8 @@ describe('stylePreprocessorCheckPlugin', () => {
 
     const plugin = stylePreprocessorCheckPlugin();
     (plugin.configResolved as (config: unknown) => void)({ root: WORKSPACE_ROOT });
-    return () => runTransform(plugin.transform as StyleCheckHook, id);
+    const hook = plugin.transform as StyleCheckHook;
+    return () => (bypassFilter ? hook.handler('', id) : runTransform(hook, id));
   }
 
   afterEach(() => {
@@ -257,6 +262,24 @@ describe('stylePreprocessorCheckPlugin', () => {
     expect(compile).toThrow(AngularMissingStylePreprocessorError);
     expect(compile).toThrow(/button\.scss'/);
     expect(compile).not.toThrow(/\?used/);
+  });
+
+  // Vite's css plugins exclude these queries from their transform, so the file is read as an asset
+  // and no preprocessor runs. Throwing here would refuse a project that compiles.
+  it.each(['raw', 'url', 'worker', 'sharedworker'])(
+    'leaves a stylesheet requested as `?%s` alone',
+    (query) => {
+      expect(
+        transformStyle(`${resolve(WORKSPACE_ROOT, 'src/button.scss')}?${query}`)
+      ).not.toThrow();
+    }
+  );
+
+  // A filter is an optimization Vite is free to skip, so the handler asks the same question itself.
+  it('leaves a `?raw` stylesheet alone even when the filter is skipped', () => {
+    expect(
+      transformStyle(`${resolve(WORKSPACE_ROOT, 'src/button.scss')}?raw`, { bypassFilter: true })
+    ).not.toThrow();
   });
 
   it('leaves files that need no preprocessor alone', () => {
@@ -330,7 +353,8 @@ describe('stylePreprocessorCheckPlugin', () => {
   // only if it covers every stylesheet and nothing else.
   it('is asked about stylesheets and nothing else', () => {
     const { filter } = stylePreprocessorCheckPlugin().transform as StyleCheckHook;
-    const matching = (ids: string[]) => ids.filter((id) => filter.id.test(id));
+    const matching = (ids: string[]) =>
+      ids.filter((id) => filter.id.include.test(id) && !filter.id.exclude.test(id));
 
     expect(
       matching([
@@ -342,7 +366,14 @@ describe('stylePreprocessorCheckPlugin', () => {
       ])
     ).toHaveLength(4);
     expect(
-      matching(['src/app.ts', 'src/app.html', 'src/button.css', 'src/scss-helpers.ts'])
+      matching([
+        'src/app.ts',
+        'src/app.html',
+        'src/button.css',
+        'src/scss-helpers.ts',
+        // Read as an asset, never handed to a preprocessor.
+        'src/button.scss?raw',
+      ])
     ).toEqual([]);
   });
 

@@ -343,6 +343,11 @@ const STYLE_PREPROCESSORS: Record<string, { install: string; alternative?: strin
 
 const STYLE_PREPROCESSOR_ID = /\.(scss|sass|less)(?:$|\?)/;
 
+// Vite's own css plugins exclude these queries from their transform, so a `.scss?raw` import is
+// read as an asset and never reaches a preprocessor. Aborting the build for one would refuse a
+// project that compiles.
+const SPECIAL_QUERY_ID = /[?&](?:worker|sharedworker|raw|url)\b/;
+
 // Asks whether the package is present, not whether its entry point resolves: this check aborts the
 // build, and Vite loads preprocessors with its own conditions, so an `exports` map without a
 // `require` condition resolves for Vite and throws here. The `createRequire` arm is only for Yarn
@@ -400,9 +405,9 @@ export function stylePreprocessorCheckPlugin(): Plugin {
       installed.clear();
     },
     transform: {
-      filter: { id: STYLE_PREPROCESSOR_ID },
+      filter: { id: { include: STYLE_PREPROCESSOR_ID, exclude: SPECIAL_QUERY_ID } },
       handler(_code, id) {
-        const lang = STYLE_PREPROCESSOR_ID.exec(id)?.[1];
+        const lang = SPECIAL_QUERY_ID.test(id) ? undefined : STYLE_PREPROCESSOR_ID.exec(id)?.[1];
         const preprocessor = lang ? STYLE_PREPROCESSORS[lang] : undefined;
         if (!lang || !preprocessor) {
           return;

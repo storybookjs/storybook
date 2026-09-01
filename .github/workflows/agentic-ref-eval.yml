@@ -1,0 +1,157 @@
+name: Agentic-reference eval
+
+# Runs the agentic-reference (70x) case matrix. Dispatch-only: running these
+# evals is a spend decision, so there is no PR/label trigger — a human picks
+# the selection and repetition count each time.
+#
+# Dispatch this against a ref that carries the agentic-reference eval line —
+# the agent-eval eval:agentic-ref and results:analyze scripts and the case
+# registry they read. workflow_dispatch registers a workflow from the default
+# branch but runs the file from the selected ref, so this workflow lives here
+# while that line is still on a feature branch.
+
+on:
+  workflow_dispatch:
+    inputs:
+      experiments:
+        description: 'Comma-separated experiment (case) names or globs, e.g. agentic-ref-cc-control-none-opus-high,agentic-ref-cc-* — empty runs every experiment'
+        type: string
+        default: ''
+      evals:
+        description: "Comma-separated evals (flows); a full name, a number (703), or a glob (70*) all work — empty runs each experiment's full eval set"
+        type: string
+        default: ''
+      runs:
+        description: 'Repetitions per (experiment, eval) cell. Default 10, the batch size the comparison tooling expects'
+        type: string
+        default: '10'
+      force:
+        description: 'Run every selected cell again, even ones that already have saved results'
+        type: boolean
+        default: false
+      dry:
+        description: 'Dry run: resolve the selection and print the plan without spending'
+        type: boolean
+        default: false
+      expect:
+        description: 'Spend guard: fail before running unless the resolved plan is exactly this many evals (leave empty to skip the check)'
+        type: string
+        default: ''
+
+# Dispatches queue rather than cancel: each one is paid work, and a cancelled
+# run loses the cells it had already completed.
+concurrency:
+  group: agentic-ref-eval
+  cancel-in-progress: false
+
+jobs:
+  eval:
+    name: Run agentic-reference cases
+    runs-on: ubuntu-latest
+    # Near the 360-minute ceiling for hosted runners, while a single eval run is
+    # allowed up to 3 hours, so a large matrix can outlast the job. Completed
+    # cells are fingerprint-cached, so re-dispatching the same selection resumes.
+    timeout-minutes: 300
+    permissions:
+      contents: read
+    steps:
+      - name: Checkout
+        uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6.0.2
+        with:
+          persist-credentials: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version-file: '.nvmrc'
+          cache: 'yarn'
+
+      - name: Install dependencies
+        run: yarn install --immutable
+
+      - name: Build local MCP packages
+        env:
+          NX_CLOUD_ACCESS_TOKEN: ${{ secrets.NX_CLOUD_ACCESS_TOKEN }}
+        run: yarn nx run-many -t compile --projects mcp,addon-mcp
+
+      - name: Type check agent eval config
+        run: yarn workspace agent-eval run typecheck
+
+      - name: Validate credentials
+        shell: bash
+        env:
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+        run: |
+          missing=0
+
+          # AI_GATEWAY_API_KEY must be validated here: the runner reacts to a
+          # missing gateway key by skipping the experiment with exit 0, which
+          # this job would report as success.
+          for name in AI_GATEWAY_API_KEY VERCEL_PROJECT_ID VERCEL_TOKEN VERCEL_TEAM_ID; do
+            if [[ -z "${!name}" ]]; then
+              echo "::error title=Missing secret::$name is required to run sandboxed evals."
+              missing=1
+            fi
+          done
+
+          exit "$missing"
+
+      - name: Run agentic-reference evals
+        env:
+          # All options live in the runner (agent-eval/scripts/run-agentic-ref.ts).
+          # Passing them as env keeps a glob like agentic-ref-cc-* clear of shell
+          # pathname expansion.
+          AGENTIC_REF_EXPERIMENTS: ${{ inputs.experiments }}
+          AGENTIC_REF_EVALS: ${{ inputs.evals }}
+          AGENTIC_REF_RUNS: ${{ inputs.runs }}
+          AGENTIC_REF_FORCE: ${{ inputs.force }}
+          AGENTIC_REF_DRY: ${{ inputs.dry }}
+          AGENTIC_REF_EXPECT: ${{ inputs.expect }}
+          # The runner drives coding agents through Vercel AI Gateway and skips
+          # an experiment with exit 0 when this is unset — the job goes green
+          # having run nothing.
+          AI_GATEWAY_API_KEY: ${{ secrets.AI_GATEWAY_API_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          VERCEL_PROJECT_ID: ${{ secrets.VERCEL_PROJECT_ID }}
+          VERCEL_TEAM_ID: ${{ secrets.VERCEL_TEAM_ID }}
+          VERCEL_TOKEN: ${{ secrets.VERCEL_TOKEN }}
+        run: yarn workspace agent-eval run eval:agentic-ref
+
+      - name: Compute metrics and archive results
+        if: ${{ always() && inputs.dry == false }}
+        # Metrics are best-effort; an analysis failure must still leave the raw
+        # results archivable. Missing results surface at upload instead.
+        continue-on-error: true
+        working-directory: agent-eval
+        run: |
+          # Writes analysis.json next to each run's result.json so the metrics
+          # ride along in the uploaded artifact.
+          yarn results:analyze || echo "::warning title=Analysis failed::Archiving raw results without offline metrics."
+
+          # Tar before upload: result files may contain characters that
+          # actions/upload-artifact rejects.
+          tar -czf ../agent-eval-results.tgz results
+
+      - name: Upload eval results
+        if: ${{ always() && inputs.dry == false }}
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        with:
+          # One artifact per dispatch, so every triggered run keeps its own
+          # downloadable snapshot. scripts/download-ci-results.mjs matches on
+          # the shared agent-eval-results prefix and merges them by experiment
+          # name and timestamp.
+          name: agent-eval-results-${{ github.run_id }}
+          path: agent-eval-results.tgz
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Write run summary
+        if: ${{ always() && inputs.dry == false }}
+        continue-on-error: true
+        env:
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: node agent-eval/scripts/render-results-summary.mjs >> "$GITHUB_STEP_SUMMARY"

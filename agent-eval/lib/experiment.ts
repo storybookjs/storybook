@@ -165,7 +165,7 @@ export const DEFAULT_EXPERIMENT_CONFIG = {
   // credentials are set, local Docker otherwise. CI carries the credentials,
   // so pinning 'docker' here would run the whole matrix on the runner's four
   // cores and 14 GB of disk.
-  sandbox: 'docker',
+  sandbox: 'auto',
   copyFiles: 'all',
   // Post-run script checks stay disabled: they fail on sandbox environment
   // flakiness (installs, ports) more often than on agent mistakes, and the

@@ -35,8 +35,11 @@ The caller registers services through the same `services` preset the server runs
 stay registered. `setDelegatedMode(true)` runs once at the attached entry, before the first
 `registerService`. Command dispatch then skips local handlers and routes every command over the
 channel (`services:command-invoke` → `command-ack` → `command-result` / `command-error`). Errors
-rebuild through `service-error-serialization.ts`. If no implementer acknowledges within the ack
-timeout, the caller throws `OpenServiceRemoteCommandUnhandledError` with attach-specific guidance.
+rebuild through `service-error-serialization.ts`. If the instance reports the command unhandled
+(`services:command-unhandled` — it does not register the service or the command's handler), the
+caller throws `OpenServiceRemoteCommandConfigDriftError` immediately with restart guidance. If no
+implementer acknowledges within the ack timeout, the caller throws
+`OpenServiceRemoteCommandUnhandledError` with attach-specific guidance.
 
 See [Delegated mode](../../shared/open-service/README.md#delegated-mode).
 
@@ -137,11 +140,13 @@ Messages name the exact corrective command.
 | Stale record / connection refused | WS connect fails                      | Registry cleanup; fallback note                                                                  |
 | Server started before upgrade     | Instance-cwd package ≠ record version | Both version strings; restart Storybook                                                          |
 | Spawn resolution failure          | No `storybook` under `record.cwd`     | `SpawnFailedError` remediation; local fallback                                                   |
-| Config drift                      | Remote command ack timeout            | Running Storybook was started with a different configuration — restart it                        |
+| Config drift                      | Instance reports command unhandled    | Attached Storybook has no handler for the command — restart it with a matching configuration     |
+| Unacknowledged command            | Remote command ack timeout            | Attached Storybook did not acknowledge in time; the command may still have executed — retry      |
 
-Rows other than config drift are factory-time attach gates. In `auto`, those return a local host
+Rows other than the last two are factory-time attach gates. In `auto`, those return a local host
 and a fallback notice (omitted from `--json` output). Under `--attach`, they are hard errors with
-the same text. Config drift is a post-attach `tools.call` failure: `auto` does not fall back then.
+the same text. Config drift and an unacknowledged command are post-attach `tools.call` failures:
+`auto` does not fall back then.
 
 ## Limits
 

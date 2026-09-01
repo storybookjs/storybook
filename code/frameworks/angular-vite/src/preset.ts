@@ -7,11 +7,15 @@ import {
   getRealPath,
 } from 'storybook/internal/mocking-utils';
 import { logger } from 'storybook/internal/node-logger';
-import { AngularUnresolvedStyleError } from 'storybook/internal/server-errors';
+import {
+  AngularMissingStylePreprocessorError,
+  AngularUnresolvedStyleError,
+} from 'storybook/internal/server-errors';
 import type { PresetProperty, StorybookConfigRaw } from 'storybook/internal/types';
 
-import { readFileSync, statSync } from 'node:fs';
-import { basename, isAbsolute, relative, resolve } from 'node:path';
+import { existsSync, readFileSync, statSync } from 'node:fs';
+import { createRequire } from 'node:module';
+import { basename, dirname, isAbsolute, join, relative, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { DOCUMENTATION_JSON, resolveCompodocConfig } from './compodoc-config.ts';
@@ -227,6 +231,7 @@ export const viteFinal = async (config: UserConfig, options?: StandaloneOptions)
       ...pluginsToInject,
       angularViteRedirectReapplyPlugin(options),
       angularOptionsPlugin(options, { normalizePath, zoneless }),
+      stylePreprocessorCheckPlugin(),
       storybookOxcPlugin(),
       ...(docgenServer && options?.configDir ? [compodocJsonStubPlugin(options.configDir)] : []),
     ],
@@ -328,6 +333,106 @@ function resolveBuilderStyle(stylePath: string, workspaceRoot: string) {
   }
 
   return stylePath;
+}
+
+const STYLE_PREPROCESSORS: Record<string, { install: string; alternative?: string }> = {
+  scss: { install: 'sass', alternative: 'sass-embedded' },
+  sass: { install: 'sass', alternative: 'sass-embedded' },
+  less: { install: 'less' },
+};
+
+const STYLE_PREPROCESSOR_ID = /\.(scss|sass|less)(?:$|\?)/;
+
+// Vite's own css plugins exclude these queries from their transform, so a `.scss?raw` import is
+// read as an asset and never reaches a preprocessor. Aborting the build for one would refuse a
+// project that compiles.
+const SPECIAL_QUERY_ID = /[?&](?:worker|sharedworker|raw|url)\b/;
+
+// Asks whether the package is present, not whether its entry point resolves: this check aborts the
+// build, and Vite loads preprocessors with its own conditions, so an `exports` map without a
+// `require` condition resolves for Vite and throws here. The `createRequire` arm is only for Yarn
+// PnP, which has no `node_modules` to walk; `import.meta.resolve` cannot replace it, because its
+// `parent` argument is silently ignored without `--experimental-import-meta-resolve`.
+const isPackagePresentFrom = (pkg: string, fromDir: string) => {
+  let dir = resolve(fromDir);
+  while (true) {
+    if (existsSync(join(dir, 'node_modules', pkg, 'package.json'))) {
+      return true;
+    }
+    const parent = dirname(dir);
+    if (parent === dir) {
+      break;
+    }
+    dir = parent;
+  }
+
+  try {
+    createRequire(join(fromDir, 'noop.js')).resolve(pkg);
+    return true;
+  } catch (error) {
+    // Node found the package and refused only its entry point, because the `exports` map has no
+    // `require` condition. Vite resolves with its own conditions, so that is present, not missing.
+    return (error as NodeJS.ErrnoException)?.code === 'ERR_PACKAGE_PATH_NOT_EXPORTED';
+  }
+};
+
+const viteInstallDir = () => {
+  try {
+    return dirname(fileURLToPath(import.meta.resolve('vite')));
+  } catch {
+    return undefined;
+  }
+};
+
+const isInstalledNear = (pkg: string, root: string) =>
+  [root, viteInstallDir()]
+    .filter((dir): dir is string => !!dir)
+    .some((dir) => isPackagePresentFrom(pkg, dir));
+
+export function stylePreprocessorCheckPlugin(): Plugin {
+  // Same two directories and same order as `loadPreprocessorPath`, so a preprocessor reported
+  // missing here is one Vite is about to fail on too.
+  let root = process.cwd();
+  const installed = new Map<string, boolean>();
+
+  return {
+    name: 'storybook-angular-vite-style-preprocessor-check',
+    // Ahead of the core `vite:css` transform, so the actionable error replaces Vite's instead of
+    // arriving after it.
+    enforce: 'pre',
+    configResolved(config) {
+      root = config.root;
+      installed.clear();
+    },
+    transform: {
+      filter: { id: { include: STYLE_PREPROCESSOR_ID, exclude: SPECIAL_QUERY_ID } },
+      handler(_code, id) {
+        const lang = SPECIAL_QUERY_ID.test(id) ? undefined : STYLE_PREPROCESSOR_ID.exec(id)?.[1];
+        const preprocessor = lang ? STYLE_PREPROCESSORS[lang] : undefined;
+        if (!lang || !preprocessor) {
+          return;
+        }
+
+        if (!installed.has(lang)) {
+          const candidates = [preprocessor.install, preprocessor.alternative].filter(
+            (pkg): pkg is string => !!pkg
+          );
+          installed.set(
+            lang,
+            candidates.some((pkg) => isInstalledNear(pkg, root))
+          );
+        }
+
+        if (!installed.get(lang)) {
+          throw new AngularMissingStylePreprocessorError({
+            stylePath: id.split('?')[0],
+            install: preprocessor.install,
+            alternative: preprocessor.alternative,
+          });
+        }
+      },
+    },
+  };
 }
 
 export function angularOptionsPlugin(

@@ -88,7 +88,8 @@ message keyed by call id.
 Query `load` hooks are thin command triggers (the docgen pattern: `load` only awaits
 `extractDocgen`). Delegation then lands warm-up work on the instance. State readiness is
 `query.loaded()`. A bare `.get()` before snapshots arrive reads initial state, the same as the
-manager.
+manager. Change-detection scan readiness is the same pattern: `changeDetectionReadiness.load`
+awaits `_waitForChangeDetectionReadiness`.
 
 See [Load](../../shared/open-service/README.md#load).
 

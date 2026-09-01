@@ -74,7 +74,7 @@ test.describe('storybook tools attach', () => {
     expect(result.output).not.toContain('Falling back');
   });
 
-  test('auto mode attaches for docs, preview, and review against the running internal UI', async () => {
+  test('auto mode attaches for docs, preview, review, and stories changed against the running internal UI', async () => {
     test.skip(
       !runsAgainstDevServer,
       'Live attach requires the running Storybook channel, which the static E2E job does not serve.'
@@ -99,6 +99,10 @@ test.describe('storybook tools attach', () => {
 
     const review = await runTools(['review', 'create', '--input', REVIEW_INPUT]);
     expect(review.exitCode, review.output).toBe(0);
+
+    const changed = await runTools(['stories', 'changed']);
+    expect(changed.exitCode, changed.output).toBe(0);
+    expect(changed.output).not.toContain('Falling back');
   });
 
   test('--attach still joins the running internal UI', async () => {

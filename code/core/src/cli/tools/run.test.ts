@@ -250,6 +250,7 @@ describe('local tools', () => {
     const moduleGraph = {
       queries: {
         status: { loaded: async () => ({ value: 'ready' }) },
+        changeDetectionReadiness: { loaded: async () => ({ status: 'ready' }) },
         storiesForFiles: { loaded: async () => [] },
       },
     };

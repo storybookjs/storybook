@@ -37,7 +37,7 @@ Factory vs `call`:
 | Mode       | Operation                         | Result                                                                                                                                                                                                 |
 | ---------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | `attached` | Factory cannot attach             | Throws `AttachUnavailableError` or `EnvironmentMismatchError`                                                                                                                                          |
-| `auto`     | Factory cannot attach             | Returns a local host with `fallbackNotice`. Gate errors are not thrown unless local load also fails (which can add `SpawnFailedError` from the local child host)                                        |
+| `auto`     | Factory cannot attach             | Returns a local host. A missing instance is silent. Unexpected gate failures set `fallbackNotice`. Gate errors are not thrown unless local load also fails (which can add `SpawnFailedError` from the local child host) |
 | `local`    | Config cannot load                | Throws `ToolsRuntimeError` (`config-load-failed`)                                                                                                                                                      |
 | any        | `call` after a successful factory | `ToolsRuntimeError` on SDK faults (`unknown-method`, `invalid-input`, `closed`, `connection-lost`). Local `requiresDevServer` methods throw `AttachUnavailableError`. A tool that ran returns a `ToolsetOutcome` (`ok: false` is not a throw). Open-service dispatch can still throw its own typed errors. |
 
@@ -56,7 +56,7 @@ set). `--json` keeps only the tool result.
 
 | Flag          | SDK `mode` | On gate failure                  |
 | ------------- | ---------- | -------------------------------- |
-| (none)        | `auto`     | Fall back to local with a notice |
+| (none)        | `auto`     | Fall back to local. Notice only on unexpected attach failure |
 | `--attach`    | `attached` | Hard error (no fallback)         |
 | `--no-attach` | `local`    | Never attaches                   |
 

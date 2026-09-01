@@ -81,8 +81,8 @@ export type CreateToolsDeps = {
  * by the package root each side derives from its own module location; cross-installation attach is
  * unsupported and refuses.
  *
- * `auto` tries `attached` first and, on a gate failure, loads `local` instead. The returned host
- * then carries `fallbackNotice` with the gate message and that it fell back.
+ * `auto` tries `attached` first and, on a gate failure, loads `local` instead. A missing instance
+ * is the expected auto path and stays silent. Unexpected gate failures carry `fallbackNotice`.
  *
  * @throws {ToolsRuntimeError} With reason `config-load-failed` when the target configuration cannot
  *   be loaded, or `mode-unavailable` when a foreign `cwd` needs a child host and `autoSpawn` is
@@ -134,16 +134,17 @@ export async function createTools(
         if (!isAttachGateError(error)) {
           throw error;
         }
-        const notice = formatAttachFallback(error.message);
         const fallbackReason = attachGateReasonFromError(error);
+        const notice =
+          fallbackReason === 'no-instance' ? undefined : formatAttachFallback(error.message);
         try {
           return await createLocalTools(options, deps, clientInfo, mode, {
-            fallbackNotice: notice,
+            ...(notice ? { fallbackNotice: notice } : {}),
             fallbackReason,
           });
         } catch (localError) {
           if (shouldWrapAutoLocalFailure(localError)) {
-            throw wrapAutoLocalFailure(notice, localError);
+            throw wrapAutoLocalFailure(notice ?? formatAttachFallback(error.message), localError);
           }
           throw localError;
         }
@@ -211,7 +212,7 @@ async function createLocalTools(
   deps: CreateToolsDeps,
   clientInfo: Required<ToolsClientInfo>,
   requestedMode: ToolsMode,
-  fallback?: { fallbackNotice: string; fallbackReason?: ToolsAttachGateReason }
+  fallback?: { fallbackNotice?: string; fallbackReason?: ToolsAttachGateReason }
 ): Promise<LocalTools> {
   delete process.env.STORYBOOK_ATTACHED_TOOLS;
   const cwd = resolve(options.cwd ?? process.cwd());

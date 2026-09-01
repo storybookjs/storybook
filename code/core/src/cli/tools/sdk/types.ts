@@ -111,7 +111,7 @@ type ToolsBase = {
   requestedMode: ToolsMode;
   /** `in-process` unless this host is a project-local child. */
   host: ToolsHostKind;
-  /** Set when `auto` mode could not attach and loaded the project configuration instead. */
+  /** Set when `auto` mode could not attach for an unexpected reason and loaded locally instead. */
   fallbackNotice?: string;
   /** Why `auto` loaded locally instead of attaching. */
   fallbackReason?: ToolsAttachGateReason;

@@ -299,8 +299,16 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       // )
 
       const testConfig = nonMutableInputConfig.test;
+      // Vitest resolves the story globs below against the root this plugin returns (via
+      // `viteFinal`), not the root it was invoked with. When those differ — a Vitest config
+      // above `configDir/..`, as in a monorepo — relativizing against the invoking root points
+      // every glob outside the project and silently matches no files.
       finalOptions.vitestRoot =
-        testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
+        testConfig?.dir ||
+        testConfig?.root ||
+        viteConfigFromStorybook.root ||
+        nonMutableInputConfig.root ||
+        process.cwd();
 
       const includeStories = stories
         .map((story) => {
@@ -319,6 +327,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         });
 
       finalOptions.includeStories = includeStories;
+
       const projectId = oneWayHash(finalOptions.configDir);
 
       const areProjectAnnotationRequired = await requiresProjectAnnotations(

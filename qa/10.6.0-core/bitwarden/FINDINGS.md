@@ -28,13 +28,13 @@
 - **logs:** `logs/00-baseline-env.txt`, `logs/03-upgrade.txt`, `logs/04-resolved-versions.txt`, `logs/05-doctor-after.txt`, `logs/06-version-mismatch-warning.txt`
 - **class:** Storybook upgrade + satellite peer-range gap (also blocks other `npm install -D` later)
 - **likely source:** CLI package bump map for `@storybook/addon-designs`; addon-designs peer range vs 10.6 beta
-- **existing report search:** **Related, but not exact.**
-  - [#36010](https://github.com/storybookjs/storybook/issues/36010) (closed) reports the exact
-    `getAbsolutePath`/exports-map reason that `addon-designs` is skipped, but not the upgrader
-    selecting `11.0.0-next.0`.
-  - [#21287](https://github.com/storybookjs/storybook/issues/21287) (closed) tracks older
-    third-party-addon upgrade selection and mentions `addon-designs`, but not this 10.6 downgrade.
-  - No existing `storybookjs/storybook` issue was found for the full version rewrite.
+- **existing report search:** **Related, but not exact.** No open exact duplicate.
+  - [#31314](https://github.com/storybookjs/storybook/issues/31314) (closed) and
+    [#31356](https://github.com/storybookjs/storybook/pull/31356) (merged) cover upgrade pinning
+    satellite packages (incl. designs) to `@next` and then rejecting them as incompatible. Closest
+    historical match; not this stable `11.1.3` → `11.0.0-next.0` downgrade under 10.6 beta.
+  - [#36010](https://github.com/storybookjs/storybook/issues/36010) (closed) explains why designs is
+    skipped (`getAbsolutePath` / exports map), not the version rewrite.
 
 ---
 
@@ -46,13 +46,10 @@
 - **repro:** After F1 upgrade: `npx storybook@next add @storybook/addon-vitest --yes`
 - **logs:** `logs/20-addon-vitest-add.txt`, `logs/20-addon-vitest-summary.txt`
 - **class:** Storybook CLI gap (wrong failure mode) aggravated by F1
-- **existing report search:** **Related, but not exact.**
-  - [#32803](https://github.com/storybookjs/storybook/issues/32803) (closed) covers an
-    `addon-vitest` install-time peer conflict, but its conflict is Vitest 4 rather than
-    `addon-designs`.
-  - [#34457](https://github.com/storybookjs/storybook/issues/34457) (closed) covers npm
-    dependency resolution on Angular, but not unsupported-builder validation.
-  - No issue was found for this exact failure ordering and missing guidance.
+- **existing report search:** **No existing report found** for this failure mode.
+  - Closest peer-conflict noise:
+    [#32803](https://github.com/storybookjs/storybook/issues/32803) (closed) — Vitest 4 peers, not
+    designs, and not missing Angular/webpack unsupported guidance.
 
 ---
 
@@ -63,12 +60,16 @@
 - **actual:** UI lists three detections. “Running all detected automigrations” only executes `addon-mcp`. Framework remains `@storybook/angular` + webpack (`logs/04-main-diff.txt`).
 - **repro:** `npx storybook@next upgrade -y --package-manager npm` on this repo.
 - **logs:** `logs/03-upgrade.txt`, `logs/04-automigration-notes.txt`, `logs/22-upgrade-restore.log`
-- **class:** Storybook automigration UX / `-y` selection gap (may be intentional skip of builder migration; still opaque)
-- **existing report search:** **No exact report found.**
-  - [#36009](https://github.com/storybookjs/storybook/issues/36009) (open) reports configuration
-    loss after `angular-to-angular-vite` runs. It does not cover a detected migration being omitted.
-  - [#31793](https://github.com/storybookjs/storybook/issues/31793) (closed) is a broad monorepo
-    upgrade/automigration report, not this `-y` behavior.
+- **class:** Storybook automigration UX / `-y` selection gap. May be **intentional** (see related PRs);
+  still opaque to users who see three detections and only one run.
+- **existing report search:** **Related; may be by design, not a bug.** No exact open report of this
+  opacity.
+  - [#35417](https://github.com/storybookjs/storybook/pull/35417) (merged): `--yes` skips
+    experimental automigrations (covers `enable-experimental-review`).
+  - [#35215](https://github.com/storybookjs/storybook/pull/35215) (merged): `addon-mcp` is the
+    agent-oriented migration expected to run in `-y` flows.
+  - [#36009](https://github.com/storybookjs/storybook/issues/36009) (open): config loss *after*
+    `angular-to-angular-vite` runs — different symptom.
 
 ---
 
@@ -101,10 +102,10 @@
 - **actual:** Semver went backwards from a stable 11.1.3 to an older next tag.
 - **logs:** `logs/00-baseline-env.txt` vs `logs/04-resolved-versions.txt`
 - **class:** Storybook upgrade version-selection bug for satellite packages
-- **existing report search:** **Related, but not exact.**
-  - This is the version-direction facet of F1. [#21287](https://github.com/storybookjs/storybook/issues/21287)
-    (closed) is the closest historical report.
-  - No existing issue was found for the stable `11.1.3` → prerelease `11.0.0-next.0` downgrade.
+- **existing report search:** Same as F1 — related via
+  [#31314](https://github.com/storybookjs/storybook/issues/31314) /
+  [#31356](https://github.com/storybookjs/storybook/pull/31356); no exact open report of this
+  stable → older `@next` downgrade.
 
 ---
 

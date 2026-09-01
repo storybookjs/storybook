@@ -29,12 +29,11 @@ Classifications below separate **Storybook regressions / CLI gaps**, **project/d
 - **hypotheses / dead ends:** Upgrade scoped to detected project package.json; does not understand pnpm `catalog:` workspace protocol. Root `--config-dir ui/vue/.storybook` earlier failed on missing preset build / odd `/ui/vue/...` resolution.
 - **likely Storybook source:** `@storybook/cli` upgrade package-version rewriter / workspace catalog support
 - **class:** Storybook CLI gap (monorepo + pnpm catalog)
-- **existing report search:** **No exact report found.**
-  - [#31793](https://github.com/storybookjs/storybook/issues/31793) (closed) covers Storybook
-    upgrader problems in monorepos.
-  - [#32459](https://github.com/storybookjs/storybook/issues/32459) (closed) covers mixed Storybook
-    versions after a pnpm monorepo migration.
-  - Neither report covers pnpm's `catalog:` protocol or the upgrader leaving catalog keys untouched.
+- **existing report search:** **Related, but not exact.** No open exact duplicate.
+  - [#35415](https://github.com/storybookjs/storybook/pull/35415) (merged): init/addon-vitest honor
+    pnpm catalogs — not `upgrade` rewriting `catalog:` Storybook keys.
+  - [#31557](https://github.com/storybookjs/storybook/pull/31557) / [#31517](https://github.com/storybookjs/storybook/issues/31517):
+    broader monorepo upgrade work; not catalog protocol.
 
 ---
 
@@ -48,12 +47,12 @@ Classifications below separate **Storybook regressions / CLI gaps**, **project/d
 - **logs:** `logs/02-doctor-before.log`, `logs/02-doctor-before-retry.log`
 - **hypotheses:** Version discovery fails with pnpm catalog / nested workspace layout when invoked via `dlx` before upgrade path succeeds.
 - **class:** Storybook CLI / doctor gap
-- **existing report search:** **Related, but not exact.**
-  - [#31891](https://github.com/storybookjs/storybook/issues/31891) (closed) reports doctor finding
-    no dependencies when Storybook is not declared in the package it inspects. The Inkline case has
-    local dependencies, but doctor still cannot determine their version.
-  - [#21806](https://github.com/storybookjs/storybook/issues/21806) (closed) is an older CLI
-    version-detection failure for `workspace:*`, not pnpm `catalog:`.
+- **existing report search:** **Related, but not exact.** No open exact duplicate for **doctor** +
+  nested pnpm workspace.
+  - Historical **upgrade** (not doctor) version mis-detect under `pnpm dlx` / `pnpx`:
+    [#25734](https://github.com/storybookjs/storybook/issues/25734),
+    [#32211](https://github.com/storybookjs/storybook/issues/32211),
+    [#33141](https://github.com/storybookjs/storybook/pull/33141).
 
 ---
 
@@ -68,9 +67,8 @@ Classifications below separate **Storybook regressions / CLI gaps**, **project/d
 - **hypotheses:** Version collector reads catalog specifier or another workspace package’s resolution instead of the consuming package’s resolved graph.
 - **class:** Storybook metadata/telemetry bug (aggravated by F1 mixed versions)
 - **existing report search:** **No existing report found.**
-  - Searches for telemetry addon versions, `project.json` addon versions, pnpm catalog metadata, and
-    mixed workspace versions found no issue describing installed `10.6` addons being reported as
-    `10.4.4`.
+  - Weak adjacent only: [#35345](https://github.com/storybookjs/storybook/pull/35345) (merged) —
+    pnpm path hygiene in `framework.name`, not wrong addon version fields.
 
 ---
 
@@ -86,12 +84,9 @@ Classifications below separate **Storybook regressions / CLI gaps**, **project/d
 - **hypotheses:** Watch ignores gitignored paths for *new* files while initial scan still finds existing ones; Vite HMR tracks already-imported modules. May be project+SB interaction rather than pure regression — still user-visible for generated-story workflows.
 - **likely Storybook source:** CSF indexer / watcher ignore (gitignore) behavior
 - **class:** Storybook ↔ project interaction (gitignored generated stories)
-- **existing report search:** **Related, but not exact.**
-  - [#33461](https://github.com/storybookjs/storybook/issues/33461) (open) reports that new stories
-    are not indexed when their target directory is created after startup. Inkline's `.inkline/`
-    directory already existed, but its new gitignored file was still missed.
-  - [#22883](https://github.com/storybookjs/storybook/issues/22883) (closed) covers create/edit/delete
-    indexing failures caused by a different stories-glob configuration.
+- **existing report search:** **No existing report found** for gitignored (or generated) story dirs
+  that match the stories glob: cold start indexes existing files, add/delete does not until restart,
+  HMR of already-known files works.
 
 ---
 
@@ -104,11 +99,11 @@ Classifications below separate **Storybook regressions / CLI gaps**, **project/d
 - **repro:** `cd ui/vue && pnpm dlx storybook@next add @storybook/addon-vitest --yes`
 - **logs:** `logs/13-addon-vitest-add.log`; diff in `logs/99-final-git-diff.patch`
 - **class:** Storybook CLI addon-add gap
-- **existing report search:** **No exact report found.**
-  - [#34317](https://github.com/storybookjs/storybook/issues/34317) (open) and
-    [#32372](https://github.com/storybookjs/storybook/issues/32372) (closed) concern runtime
-    inheritance/order of preview parameters. They do not report the installer replacing existing
-    `preview.ts` parameters.
+- **existing report search:** **Related, but not exact.**
+  - [#32647](https://github.com/storybookjs/storybook/issues/32647) /
+    [#32728](https://github.com/storybookjs/storybook/pull/32728): `storybook add` mutating
+    `preview.ts` for CSF-factory addon sync — different symptom than overwriting
+    `parameters` / `sharedParameters`.
 
 ---
 
@@ -119,10 +114,12 @@ Classifications below separate **Storybook regressions / CLI gaps**, **project/d
 - **actual:** `ui/vue/.storybook/main.ts` gained unused `createRequire` / `const require = createRequire(import.meta.url)` while config still uses ESM imports only.
 - **logs:** `logs/04-vue-main-after.txt`
 - **class:** Storybook automigration noise
-- **existing report search:** **Related, but not exact.**
-  - [#32598](https://github.com/storybookjs/storybook/issues/32598) (closed) reports
-    `fix-faux-esm-require` adding redundant helpers when `createRequire` already exists. This case
-    starts without a `require` call and receives an entirely unused helper.
+- **existing report search:** **Related, but not exact** (residual gap in same automigration).
+  - [#32598](https://github.com/storybookjs/storybook/issues/32598) / [#32606](https://github.com/storybookjs/storybook/pull/32606):
+    duplicate banners when `createRequire` already exists.
+  - [#32694](https://github.com/storybookjs/storybook/pull/32694): conditional banner from
+    `require` / `__dirname` usage — does not cover inserting dead helpers when no `require` call
+    exists.
 
 ---
 

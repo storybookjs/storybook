@@ -57,6 +57,24 @@ attempts showed the wrong app or no interaction, so they are not included.
 | Storybook Test | Not supported; add fails poorly | Works after add |
 | Static build | Pass | Pass after project dist build |
 
+## Existing issue search (storybookjs/storybook)
+
+Read-only search of open + closed issues/PRs. **No exact open duplicates** for the remaining findings.
+
+| Finding | Verdict | Best related |
+| --- | --- | --- |
+| BW F1/F5 designs → `11.0.0-next.0` | related | [#31314](https://github.com/storybookjs/storybook/issues/31314), [#31356](https://github.com/storybookjs/storybook/pull/31356) |
+| BW F2 vitest add ERESOLVE | not found | [#32803](https://github.com/storybookjs/storybook/issues/32803) (different peers) |
+| BW F3 `-y` skips detected migrations | related / likely by design | [#35417](https://github.com/storybookjs/storybook/pull/35417), [#35215](https://github.com/storybookjs/storybook/pull/35215) |
+| IN F1 catalog not upgraded | related | [#35415](https://github.com/storybookjs/storybook/pull/35415) (init, not upgrade) |
+| IN F2 doctor version (pnpm) | related | [#25734](https://github.com/storybookjs/storybook/issues/25734), [#32211](https://github.com/storybookjs/storybook/issues/32211) |
+| IN F3 telemetry addon versions | not found | — |
+| IN F4 gitignored stories watch | not found | — |
+| IN F5 preview parameters overwrite | related | [#32647](https://github.com/storybookjs/storybook/issues/32647) |
+| IN F6 unused `createRequire` | related | [#32598](https://github.com/storybookjs/storybook/issues/32598), [#32694](https://github.com/storybookjs/storybook/pull/32694) |
+
+Per-finding detail lives in each lane’s `FINDINGS.md`.
+
 ## Skips (intentional)
 
 - Yarn PnP, Bun, empty-dir create, VS Code Vitest, VTA onboarding, Slack/GitHub filing

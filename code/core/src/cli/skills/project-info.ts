@@ -3,9 +3,9 @@ import { cache, getPrettyPackageManagerName } from 'storybook/internal/common';
 import type { SupportedRenderer } from 'storybook/internal/types';
 import { SupportedLanguage } from 'storybook/internal/types';
 
-import { getMonorepoType, type MonorepoType } from '../../shared/utils/get-monorepo-type.ts';
 import { detectLanguage } from '../detectLanguage.ts';
 import { getStorybookData } from '../getStorybookData.ts';
+import { getMonorepoType, type MonorepoType } from '../../shared/utils/get-monorepo-type.ts';
 
 export interface ProjectInfo {
   storybookVersion: string | undefined;
@@ -45,7 +45,7 @@ function parseMajorVersion(version: string): number | undefined {
 /**
  * Probes the target Storybook configuration and assembles the `ProjectInfo` the setup prompts
  * render from. Returns a discriminated result instead of throwing so callers (the `ai setup` CLI
- * today, `skills setup` next) render their own failure message instead of duplicating logging.
+ * today, `skills get setup` next) render their own failure message instead of duplicating logging.
  */
 export async function getProjectInfo(opts: {
   configDir?: string;

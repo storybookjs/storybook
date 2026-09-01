@@ -9,72 +9,70 @@ import type { CommandFailureHandler } from '../tools/register.ts';
 import { getSetupMarkdownOutput } from './content/setup-prompts/index.ts';
 import { resolveSkillInputs } from './inputs.ts';
 import { getProjectInfo } from './project-info.ts';
-import {
-  SKILLS_OPTION_SPECS,
-  resolveSkillsIntent,
-  runSkillsCommand,
-  type SkillsRunDeps,
-  type SkillsRunResult,
-} from './run.ts';
+import { runSkillsCommand, type SkillsRunDeps, type SkillsRunResult } from './run.ts';
 
-type SkillsCommandOptions = {
+type SkillsGetOptions = {
   cwd?: string;
   configDir?: string;
-  help?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by `withTelemetry`. */
   disableTelemetry?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by the failure handler. */
   logfile?: string | boolean;
 };
 
-// Lists by default. `get <id>` prints a skill; `<id>` and `<id> --help` are also accepted.
+/**
+ * Register `storybook skills [list]` and `storybook skills get <id>`: agent-facing instruction
+ * documents served by the target Storybook configuration (storybookjs/storybook#35526). Unlike
+ * `storybook tools`, there is no passthrough — just a static list and a single-id lookup — so this
+ * mirrors `cli/tools/register.ts` without its positional-argument plumbing.
+ */
 export function registerSkillsCommand(
   program: Command,
   skillsCommand: Command,
   handleCommandFailure: CommandFailureHandler
 ): void {
-  program.enablePositionalOptions();
+  skillsCommand.helpCommand(false);
 
   skillsCommand
-    .helpOption(false)
-    .helpCommand(false)
-    .usage('[options] [list|get <id>]')
-    .argument('[tokens...]', 'A skill id from `storybook skills list`');
-
-  for (const { flags, description } of SKILLS_OPTION_SPECS) {
-    skillsCommand.option(flags, description);
-  }
-
-  skillsCommand.action(async (tokens: string[], options: SkillsCommandOptions) => {
-    const cliOptions: CLIOptions = {
-      disableTelemetry: options.disableTelemetry,
-      logfile: options.logfile,
-      configDir: resolveStorybookConfigDir({ cwd: options.cwd, configDir: options.configDir }),
-    };
-    const invocation = {
-      tokens: tokens ?? [],
-      help: options.help,
-      target: { cwd: options.cwd, configDir: options.configDir },
-    };
-    const intent = resolveSkillsIntent(invocation.tokens, options.help);
-    const run = async () => {
-      const result = await runSkillsCommand(invocation, defaultDeps());
+    .command('list', { isDefault: true })
+    .description('List the skills served by this Storybook')
+    .action(async () => {
+      const result = await runSkillsCommand({ subcommand: 'list', target: {} }, defaultDeps());
       await printResult(result);
-      if (result.kind === 'get' && result.skill && result.exitCode === 0) {
-        await telemetry('skills-get', { skill: result.skill }, { configDir: cliOptions.configDir });
-      }
-    };
-    if (intent.kind === 'catalog' || intent.kind === 'skill-help') {
-      await run();
-    } else {
-      await withTelemetry('skills-get', { cliOptions, fallbackTelemetryState: true }, run).catch(
-        handleCommandFailure(options.logfile)
-      );
-    }
-    // Exit explicitly: loading the target Storybook configuration may leave live handles
-    // behind that natural drain cannot clear (mirrors `cli/tools/register.ts`).
-    process.exit();
-  });
+    });
+
+  skillsCommand
+    .command('get')
+    .description("Print a skill's full instructions as markdown")
+    .argument('[id]', 'One of the skills from `storybook skills list`')
+    .option('--cwd <dir>', 'Project directory of the target Storybook')
+    .option('-c, --config-dir <dir-name>', 'Storybook config directory of the target Storybook')
+    .action(async (id: string | undefined, options: SkillsGetOptions, cmd: Command) => {
+      const parentOptions = (cmd.parent?.opts() ?? {}) as SkillsGetOptions;
+      const merged = { ...parentOptions, ...options };
+      const cliOptions: CLIOptions = {
+        disableTelemetry: merged.disableTelemetry,
+        logfile: merged.logfile,
+        configDir: resolveStorybookConfigDir({ cwd: merged.cwd, configDir: merged.configDir }),
+      };
+      await withTelemetry('skills-get', { cliOptions, fallbackTelemetryState: true }, async () => {
+        const result = await runSkillsCommand(
+          { subcommand: 'get', id, target: { cwd: merged.cwd, configDir: merged.configDir } },
+          defaultDeps()
+        );
+        await printResult(result);
+        if (result.skill && result.exitCode === 0) {
+          await telemetry(
+            'skills-get',
+            { skill: result.skill },
+            { configDir: cliOptions.configDir }
+          );
+        }
+      }).catch(handleCommandFailure(merged.logfile));
+      // Exit explicitly: loading the target Storybook configuration may leave live handles
+      // behind that natural drain cannot clear (mirrors `cli/tools/register.ts`'s `get` action).
+      process.exit();
+    });
 }
 
 function defaultDeps(): SkillsRunDeps {
@@ -86,6 +84,7 @@ function defaultDeps(): SkillsRunDeps {
   };
 }
 
+/** Print to stdout/stderr, awaiting the flush before the caller exits. */
 async function printResult(result: SkillsRunResult): Promise<void> {
   if (result.errorOutput) {
     await new Promise<void>((done) =>

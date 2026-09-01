@@ -5,9 +5,9 @@ import {
   optionalEnvToBoolean,
   parseList,
 } from 'storybook/internal/common';
+import { withTelemetry } from '../core-server/withTelemetry.ts';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
-import { withTelemetry } from '../core-server/withTelemetry.ts';
 
 import { Option, program } from 'commander';
 import leven from 'leven';
@@ -16,12 +16,12 @@ import picocolors from 'picocolors';
 import { version } from '../../package.json';
 import { aiSetup } from '../cli/ai/index.ts';
 import { isAiCliFeatureEnabled, registerAiMcpPassthrough } from '../cli/ai/mcp/register.ts';
+import { registerSkillsCommand } from '../cli/skills/register.ts';
+import { registerToolsPassthrough } from '../cli/tools/register.ts';
 import { build } from '../cli/build.ts';
 import { buildIndex as index } from '../cli/buildIndex.ts';
 import { dev } from '../cli/dev.ts';
 import { globalSettings } from '../cli/globalSettings.ts';
-import { registerSkillsCommand } from '../cli/skills/register.ts';
-import { registerToolsPassthrough } from '../cli/tools/register.ts';
 import { resolveDevCommandOptions } from './dev-options.ts';
 
 addToGlobalContext('cliVersion', version);

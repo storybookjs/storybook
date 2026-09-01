@@ -109,7 +109,7 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
       if (segment.includes('--help') || segment.includes('-h')) {
         continue;
       }
-      const skillId = parseSkillsSkillId(segment);
+      const skillId = parseSkillId(segment);
       if (skillId !== undefined) {
         calls.push({ name: 'skills-get', input: { id: skillId }, source: 'cli' });
         index += 1 + segment.length;
@@ -130,7 +130,7 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
   return calls;
 }
 
-function parseSkillsSkillId(segment: string[]): string | undefined {
+function parseSkillId(segment: string[]): string | undefined {
   const [first, second] = segment;
   if (first === undefined || first === 'list' || first === 'help' || first.startsWith('-')) {
     return undefined;

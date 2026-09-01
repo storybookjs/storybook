@@ -3,6 +3,8 @@ import { resolve } from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { normalizePath } from 'vite';
 
+import { match } from 'micromatch';
+
 import {
   getInterpretedFile,
   normalizeStories,
@@ -72,22 +74,32 @@ describe('storybookTest', () => {
   });
 
   it('discovers stories when the config directory is nested below the Vitest root', async () => {
-    const configDir = normalizePath(resolve('web/[project]/.storybook'));
-    const storyGlob = normalizePath(resolve('web/[project]/storybook/**/*.stories.ts'))
+    const configDir = normalizePath(resolve('web/[project]/(marketing)/.storybook'));
+    const storyGlob = normalizePath(resolve('web/[project]/(marketing)/storybook/**/*.stories.ts'))
       .replaceAll('[', '\\[')
-      .replaceAll(']', '\\]');
+      .replaceAll(']', '\\]')
+      .replaceAll('(', '\\(')
+      .replaceAll(')', '\\)');
     const excludedStoryGlob = `!${normalizePath(
-      resolve('web/[project]/storybook/excluded/**/*.stories.ts')
+      resolve('web/[project]/(marketing)/storybook/excluded/**/*.stories.ts')
     )}`
       .replaceAll('[', '\\[')
-      .replaceAll(']', '\\]');
-    const objectStoryGlob = normalizePath(resolve('web/[project]/[stories]/**/*.stories.ts'))
+      .replaceAll(']', '\\]')
+      .replaceAll('(', '\\(')
+      .replaceAll(')', '\\)');
+    const objectStoryGlob = normalizePath(
+      resolve('web/[project]/(marketing)/[stories]/**/*.stories.ts')
+    )
       .replaceAll('[', '\\[')
-      .replaceAll(']', '\\]');
-    const story = normalizePath(resolve('web/[project]/storybook/Button.stories.ts'));
-    const objectStory = normalizePath(resolve('web/[project]/[stories]/Button.stories.ts'));
+      .replaceAll(']', '\\]')
+      .replaceAll('(', '\\(')
+      .replaceAll(')', '\\)');
+    const story = normalizePath(resolve('web/[project]/(marketing)/storybook/Button.stories.ts'));
+    const objectStory = normalizePath(
+      resolve('web/[project]/(marketing)/[stories]/Button.stories.ts')
+    );
     const excludedStory = normalizePath(
-      resolve('web/[project]/storybook/excluded/Button.stories.ts')
+      resolve('web/[project]/(marketing)/storybook/excluded/Button.stories.ts')
     );
 
     const plugins = await storybookTest({ configDir });
@@ -99,9 +111,13 @@ describe('storybookTest', () => {
     const config = await configHook?.call({} as never, {}, { mode: 'test' } as never);
 
     expect(config).toMatchObject({
-      root: normalizePath(resolve('web/[project]')),
+      root: normalizePath(resolve('web/[project]/(marketing)')),
       test: { include: [storyGlob, excludedStoryGlob, objectStoryGlob] },
     });
+    expect(match([story, objectStory, excludedStory], config?.test?.include ?? [])).toEqual([
+      story,
+      objectStory,
+    ]);
 
     await transformHook?.call({} as never, 'export default {}', story);
     await transformHook?.call({} as never, 'export default {}', objectStory);

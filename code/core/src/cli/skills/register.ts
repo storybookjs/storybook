@@ -27,8 +27,7 @@ type SkillsCommandOptions = {
   logfile?: string | boolean;
 };
 
-// `storybook skills [id]`: no id lists every skill, `<id>` prints it, `<id> --help` describes
-// it. `list` and `get <id>` remain accepted spellings.
+// Lists by default. `get <id>` prints a skill; `<id>` and `<id> --help` are also accepted.
 export function registerSkillsCommand(
   program: Command,
   skillsCommand: Command,
@@ -39,8 +38,8 @@ export function registerSkillsCommand(
   skillsCommand
     .helpOption(false)
     .helpCommand(false)
-    .usage('[options] [id]')
-    .argument('[tokens...]', 'A skill id from `storybook skills --help`');
+    .usage('[options] [list|get <id>]')
+    .argument('[tokens...]', 'A skill id from `storybook skills list`');
 
   for (const { flags, description } of SKILLS_OPTION_SPECS) {
     skillsCommand.option(flags, description);

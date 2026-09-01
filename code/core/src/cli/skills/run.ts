@@ -138,7 +138,7 @@ function skillLines(): string[] {
 
 function renderCatalogHelp(): string {
   return [
-    'Usage: npx storybook skills [options] [id]',
+    'Usage: npx storybook skills [options] [list|get <id>]',
     '',
     'Agent skills served by this Storybook.',
     '',
@@ -148,13 +148,13 @@ function renderCatalogHelp(): string {
     'Skills:',
     ...skillLines(),
     '',
-    'Print a skill with `npx storybook skills <id>`. `npx storybook skills <id> --help` shows one description.',
+    'Read one with `npx storybook skills get <id>`.',
   ].join('\n');
 }
 
 function renderSkillHelp(id: SkillId): string {
   return [
-    `Usage: npx storybook skills ${id} [options]`,
+    `Usage: npx storybook skills get ${id} [options]`,
     '',
     SKILLS[id].blurb,
     '',

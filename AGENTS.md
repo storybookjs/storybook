@@ -108,7 +108,7 @@ AST indexing keeps the sidebar fast and prevents one broken story file from brea
 
 ### Agent-facing skills
 
-- `storybook skills` / `storybook skills --help` lists the `stories`, `write-story`, and `setup` documents; `storybook skills <id>` prints one as Markdown.
+- `storybook skills` serves the `stories`, `write-story`, and `setup` documents as Markdown.
 - Pure content lives in `code/core/src/cli/skills/content/` and is exported through
   `storybook/internal/skills`; addon-mcp consumes the same builders.
 - Keep `cli/skills/**` independent of `cli/ai/**`, and keep `cli/skills/content/**` independent of

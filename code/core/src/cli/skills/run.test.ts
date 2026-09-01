@@ -59,7 +59,7 @@ describe('runSkillsCommand', () => {
     const result = await runSkillsCommand({ tokens: [], target: {} }, d);
     expect(result.exitCode).toBe(0);
     expect(result.kind).toBe('help');
-    expect(result.output).toContain('Usage: npx storybook skills [options] [id]');
+    expect(result.output).toContain('Usage: npx storybook skills [options] [list|get <id>]');
     expect(result.output).toContain('stories');
     expect(result.output).toContain('write-story');
     expect(result.output).toContain('setup');
@@ -71,7 +71,7 @@ describe('runSkillsCommand', () => {
     const result = await runSkillsCommand({ tokens: ['write-story'], help: true, target: {} }, d);
     expect(result.exitCode).toBe(0);
     expect(result.kind).toBe('help');
-    expect(result.output).toContain('Usage: npx storybook skills write-story [options]');
+    expect(result.output).toContain('Usage: npx storybook skills get write-story [options]');
     expect(result.output).toContain('Prints the full instructions as markdown.');
     expect(d.loadStorybook).not.toHaveBeenCalled();
   });

@@ -14,7 +14,7 @@ import type {
 import { parseToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
 import { toCatalogEntry } from './catalog.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
-import type { AttachedBootstrapResult } from './attached-runtime.ts';
+import type { AttachedInProcessResult } from './attached-runtime.ts';
 import { formatAttachFallback } from './attach-messages.ts';
 import { spawnChildHost } from './child-client.ts';
 import {
@@ -65,7 +65,7 @@ export type CreateToolsDeps = {
   attach?: (
     target: { cwd?: string; configDir?: string; port?: number },
     deps?: unknown
-  ) => Promise<AttachedBootstrapResult | AttachedInProcess>;
+  ) => Promise<AttachedInProcessResult | AttachedInProcess>;
   spawnChild?: typeof spawnChildHost;
 };
 
@@ -76,9 +76,10 @@ export type CreateToolsDeps = {
  * the target directory, it loads in-process. Otherwise it spawns a child host from the `storybook`
  * package resolved under that directory. It never changes `process.cwd()`.
  *
- * `attached` joins a running Storybook over its channel and never changes `process.cwd()`. When
- * this process is not that instance's twin, attached mode defaults to spawning a child host from
- * the `storybook` package resolved under the instance directory.
+ * `attached` joins a running Storybook over its channel and never changes `process.cwd()`. It
+ * requires this process and the instance to run the exact same `storybook` installation, compared
+ * by the package root each side derives from its own module location; cross-installation attach is
+ * unsupported and refuses.
  *
  * `auto` tries `attached` first and, on a gate failure, loads `local` instead. The returned host
  * then carries `fallbackNotice` with the gate message and that it fell back.
@@ -87,9 +88,9 @@ export type CreateToolsDeps = {
  *   be loaded, or `mode-unavailable` when a foreign `cwd` needs a child host and `autoSpawn` is
  *   declined.
  * @throws {AttachUnavailableError} When `attached` cannot find or reach a matching instance.
- * @throws {EnvironmentMismatchError} When this process is not the instance's twin and auto-spawn is
- *   declined, or when spawning cannot reconcile the running instance with the project package.
- * @throws {SpawnFailedError} When a child host cannot be resolved or started.
+ * @throws {EnvironmentMismatchError} When the instance runs a different `storybook` installation
+ *   than this process, or its record cannot prove they are the same.
+ * @throws {SpawnFailedError} When a local child host cannot be resolved or started.
  */
 export function createTools(
   options: CreateToolsOptions & { mode: 'local' },
@@ -165,31 +166,11 @@ async function createAttachedTools(
   process.env.STORYBOOK_ATTACHED_TOOLS = 'true';
   // local-runtime pulls core-server at import, which must not run before the attached channel is prepared.
   const { bootstrapAttachedRuntime } = await import('./attached-runtime.ts');
-  const isChildHost = process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
-  const autoSpawn = isChildHost ? false : (options.autoSpawn ?? true);
-  const attached = await (
-    deps.attach ?? ((target) => bootstrapAttachedRuntime({ ...target, autoSpawn }))
-  )({
+  const attached = await (deps.attach ?? ((target) => bootstrapAttachedRuntime(target)))({
     cwd: options.cwd,
     configDir: options.configDir,
     port: options.port,
   });
-  if ('kind' in attached && attached.kind === 'spawn') {
-    // Pin the chosen instance's port so the child host re-resolves to that exact instance even
-    // when the registry changes between the parent's resolution and the child's.
-    return (deps.spawnChild ?? spawnChildHost)({
-      cwd: attached.record.cwd,
-      options: {
-        ...options,
-        mode: 'attached',
-        autoSpawn: false,
-        cwd: attached.record.cwd,
-        port: attached.record.port,
-      },
-      clientInfo,
-      requestedMode,
-    });
-  }
   const inProcess = attached as AttachedInProcess;
   const siblings = inProcess.siblings?.length
     ? inProcess.siblings.map(toSiblingInstance)

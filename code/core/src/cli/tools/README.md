@@ -19,7 +19,7 @@ const tools = await createTools({
   configDir, // --config-dir equivalent; disambiguates monorepos
   port, // --port equivalent; a known port targets that running instance on its own
   mode: 'auto', // 'auto' | 'attached' | 'local'
-  autoSpawn: true, // false → EnvironmentMismatchError instead of a child host
+  autoSpawn: true, // local mode only: false → error instead of a child host for a foreign cwd
   clientInfo: { name, version, kind: 'sdk' },
 });
 
@@ -36,8 +36,8 @@ Factory vs `call`:
 
 | Mode       | Operation                         | Result                                                                                                                                                                                                 |
 | ---------- | --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `attached` | Factory cannot attach or spawn    | Throws `AttachUnavailableError`, `EnvironmentMismatchError`, or `SpawnFailedError`                                                                                                                     |
-| `auto`     | Factory cannot attach or spawn    | Returns a local host with `fallbackNotice`. Those three errors are not thrown unless local load also fails                                                                                             |
+| `attached` | Factory cannot attach             | Throws `AttachUnavailableError` or `EnvironmentMismatchError`                                                                                                                                          |
+| `auto`     | Factory cannot attach             | Returns a local host with `fallbackNotice`. Gate errors are not thrown unless local load also fails (which can add `SpawnFailedError` from the local child host)                                        |
 | `local`    | Config cannot load                | Throws `ToolsRuntimeError` (`config-load-failed`)                                                                                                                                                      |
 | any        | `call` after a successful factory | `ToolsRuntimeError` on SDK faults (`unknown-method`, `invalid-input`, `closed`, `connection-lost`). Local `requiresDevServer` methods throw `AttachUnavailableError`. A tool that ran returns a `ToolsetOutcome` (`ok: false` is not a throw). Open-service dispatch can still throw its own typed errors. |
 
@@ -77,11 +77,12 @@ npx storybook tools --port 6007 stories preview --stories '[{"storyId":"example-
 **Attached.** Discover `~/.storybook/instances/*.json`, connect a Node WebSocket to
 `/storybook-server-channel?token=…` (no Origin), load the instance config as a **leaf** and
 **follower**, set `setDelegatedMode(true)` before the first `registerService`. This path never
-`chdir`s the host process.
+`chdir`s the host process. Attach requires the caller and the instance to run the exact same
+`storybook` installation (the record's `storybookPath` versus the caller's own package root);
+anything else throws `EnvironmentMismatchError` — cross-installation attach is unsupported.
 
-**Child host.** When `process.cwd()` or the resolved `storybook` version does not match the
-record, `createTools` spawns a child from the `storybook` package under `record.cwd` and proxies
-`describe` / `call` / `close` over IPC. `autoSpawn: false` throws `EnvironmentMismatchError`
+**Child host.** Local mode only: a foreign `--cwd` spawns a child from the `storybook` package
+under that directory and proxies `describe` / `call` / `close` over IPC. `autoSpawn: false` throws
 instead. A child never spawns another child (`STORYBOOK_TOOLS_CHILD_HOST`).
 
 **Local.** Load the target configuration in this process when `cwd` already matches. This path

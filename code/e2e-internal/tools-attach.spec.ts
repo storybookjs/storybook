@@ -143,10 +143,10 @@ test.describe('storybook tools attach', () => {
     expect(list.output).toContain('example-button');
   });
 
-  test('attaches from a different cwd via a project-local child host', async () => {
+  test('attaches from a different cwd because the CLI is the same storybook installation', async () => {
     test.skip(
       !runsAgainstDevServer,
-      'Child-host attach requires the running Storybook channel, which the static E2E job does not serve.'
+      'Live attach requires the running Storybook channel, which the static E2E job does not serve.'
     );
     const list = await runTools(
       ['--cwd', process.cwd(), 'docs', 'list'],

@@ -4,7 +4,7 @@ import { existsSync, rmSync } from 'node:fs';
 import { chmod, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { homedir, userInfo } from 'node:os';
 
-import { normalizeAddonName } from 'storybook/internal/common';
+import { findStorybookPackageRoot, normalizeAddonName } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import { join, resolve } from 'pathe';
@@ -68,6 +68,12 @@ export type RuntimeInstanceRecord = {
   token?: string;
   agent?: string;
   storybookVersion: string;
+  /**
+   * Realpathed root of the `storybook` package this dev server actually runs, derived from the
+   * server's own module location. `storybook tools` only attaches when its own root is the same
+   * installation. Omitted when the root cannot be derived, which makes attach refuse.
+   */
+  storybookPath?: string;
   startedAt: string;
   updatedAt: string;
   mcp: { status: 'not-installed' } | { status: 'ready'; endpoint: string };
@@ -137,6 +143,7 @@ export function createRuntimeInstanceRecord({
   now = new Date(),
   pid = process.pid,
   port,
+  storybookPath = findStorybookPackageRoot(),
   storybookVersion,
   token,
 }: {
@@ -149,6 +156,7 @@ export function createRuntimeInstanceRecord({
   now?: Date;
   pid?: number;
   port: number;
+  storybookPath?: string;
   storybookVersion: string;
   token?: string;
 }): RuntimeInstanceRecord {
@@ -166,6 +174,7 @@ export function createRuntimeInstanceRecord({
     ...(token ? { token } : {}),
     ...(agent ? { agent } : {}),
     storybookVersion,
+    ...(storybookPath ? { storybookPath } : {}),
     startedAt: timestamp,
     updatedAt: timestamp,
     mcp,

@@ -1,11 +1,17 @@
 import { describe, expect, it } from 'vitest';
+import type { JsPackageManager } from 'storybook/internal/common';
 import { SupportedRenderer } from 'storybook/internal/types';
 
-import { NPMProxy } from '../../../../common/js-package-manager/NPMProxy.ts';
 import type { ProjectInfo } from '../../project-info.ts';
 import { getPreviewExample } from './partials/examples.ts';
 import { instructions as optimizedInstructions } from './optimized-tests.ts';
 import { instructions as patternCopyPlayInstructions } from './pattern-copy-play.ts';
+
+const packageManager = {
+  getInstallCommand: (deps: string[]) => `npm install --save-dev ${deps.join(' ')}`,
+  getPackageCommand: (args: string[]) => `npx ${args.join(' ')}`,
+  getRunCommand: (command: string) => `npm run ${command}`,
+} as JsPackageManager;
 
 const projectInfo = {
   storybookVersion: '10.6.0',
@@ -18,7 +24,7 @@ const projectInfo = {
   configDir: '.storybook',
   storiesPaths: ['../src/**/*.stories.@(js|jsx|ts|tsx)'],
   language: 'ts',
-  packageManager: new NPMProxy(),
+  packageManager,
   packageManagerName: 'npm',
   hasCsfFactoryPreview: true,
   needsUserOnboarding: false,

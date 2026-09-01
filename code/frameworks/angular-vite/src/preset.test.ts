@@ -142,6 +142,51 @@ describe('angularOptionsPlugin style preprocessor paths', () => {
   });
 });
 
+// The hook is declared in Vite's object form, so the callable half lives under `handler`.
+const transformHandler = (plugin: { transform?: unknown }) =>
+  (plugin.transform as { handler: (code: string, id: string) => unknown }).handler;
+
+const transformFilter = (plugin: { transform?: unknown }) =>
+  (plugin.transform as { filter: { id: RegExp } }).filter.id;
+
+describe('angularOptionsPlugin transform filter', () => {
+  const previewPath = resolve(WORKSPACE_ROOT, '.storybook', 'preview.ts');
+
+  const pluginFor = (previewFile: string | undefined) => {
+    vi.mocked(findConfigFile).mockReturnValue(previewFile);
+    return angularOptionsPlugin(
+      {
+        configDir: resolve(WORKSPACE_ROOT, '.storybook'),
+        angularBuilderContext: { workspaceRoot: WORKSPACE_ROOT },
+        angularBuilderOptions: {},
+      } as unknown as StandaloneOptions,
+      { normalizePath, zoneless: true }
+    );
+  };
+
+  // Without a filter Vite calls the hook once per module in the graph, and every one of those calls
+  // does a string comparison to conclude there is nothing to do.
+  it('keeps Vite from calling the hook for anything but the preview file', () => {
+    const filter = transformFilter(pluginFor(previewPath));
+
+    expect(filter.test(previewPath)).toBe(true);
+    expect(filter.test(resolve(WORKSPACE_ROOT, 'src/app.component.ts'))).toBe(false);
+    expect(filter.test(resolve(WORKSPACE_ROOT, '.storybook/preview-head.html'))).toBe(false);
+  });
+
+  // Vite matches the filter against the id as the resolver produced it, before the handler's own
+  // `normalizePath` gets a say, so a Windows id has to pass on its native separator.
+  it('matches a Windows id that still carries backslashes', () => {
+    const filter = transformFilter(pluginFor(previewPath));
+
+    expect(filter.test(previewPath.replace(/\//g, '\\'))).toBe(true);
+  });
+
+  it('registers no transform hook at all when the project has no preview file', () => {
+    expect(pluginFor(undefined).transform).toBeUndefined();
+  });
+});
+
 describe('angularOptionsPlugin global styles', () => {
   const previewPath = resolve(WORKSPACE_ROOT, '.storybook', 'preview.ts');
 
@@ -174,7 +219,7 @@ describe('angularOptionsPlugin global styles', () => {
 
     const plugin = angularOptionsPlugin(options, { normalizePath, zoneless: true });
     (plugin.config as (userConfig: unknown) => unknown)({ root: WORKSPACE_ROOT });
-    return (plugin.transform as any).call({}, '// preview', previewPath) as Promise<{
+    return transformHandler(plugin).call({}, '// preview', previewPath) as Promise<{
       code: string;
     }>;
   };
@@ -206,7 +251,7 @@ describe('angularOptionsPlugin global styles', () => {
     (plugin.config as (userConfig: unknown) => unknown)({
       root: resolve(WORKSPACE_ROOT, 'apps/ui-storybook'),
     });
-    const { code } = (await (plugin.transform as any).call({}, '// preview', projectPreview)) as {
+    const { code } = (await transformHandler(plugin).call({}, '// preview', projectPreview)) as {
       code: string;
     };
 
@@ -227,7 +272,7 @@ describe('angularOptionsPlugin global styles', () => {
 
     const plugin = angularOptionsPlugin(options, { normalizePath, zoneless: false });
     (plugin.config as (userConfig: unknown) => unknown)({ root: WORKSPACE_ROOT });
-    const { code } = (await (plugin.transform as any).call({}, '// preview', previewPath)) as {
+    const { code } = (await transformHandler(plugin).call({}, '// preview', previewPath)) as {
       code: string;
     };
 

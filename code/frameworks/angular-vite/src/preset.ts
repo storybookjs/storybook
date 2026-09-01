@@ -330,18 +330,29 @@ function resolveBuilderStyle(stylePath: string, workspaceRoot: string) {
   return stylePath;
 }
 
+// Vite matches `transform.filter` against the id the resolver produced, which on Windows can still
+// carry backslashes, so either separator is accepted here.
+const previewIdPattern = (previewPath: string) =>
+  new RegExp(
+    `${previewPath
+      .split(/[\\/]/)
+      .map((segment) => segment.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'))
+      .join('[\\\\/]')}$`
+  );
+
 export function angularOptionsPlugin(
   options: StandaloneOptions,
   { normalizePath, zoneless }: any
 ): Plugin {
-  let resolvedPreviewPath: string | undefined;
+  // Resolved when the plugin is built, not in `config`: Vite reads `transform.filter` once, when
+  // the plugin is registered, and never consults it again.
+  const resolvedPreviewPath = findConfigFile('preview', options.configDir) ?? undefined;
   // Angular resolves builder paths against the workspace root, which in a monorepo is a level (or
   // several) above the Vite root. Both `stylePreprocessorOptions` and `styles` need it.
   let workspaceRoot = process.cwd();
-  return {
+  const plugin: Plugin = {
     name: 'storybook-angular-vite-options-plugin',
     config(userConfig: UserConfig) {
-      resolvedPreviewPath = findConfigFile('preview', options.configDir) ?? undefined;
       workspaceRoot =
         options.angularBuilderContext?.workspaceRoot ?? userConfig?.root ?? process.cwd();
       const stylePreprocessorOptions =
@@ -371,43 +382,55 @@ export function angularOptionsPlugin(
         },
       };
     },
-    async transform(code, id) {
-      if (resolvedPreviewPath && normalizePath(id).endsWith(normalizePath(resolvedPreviewPath))) {
-        const imports: string[] = [];
-        const styles = options?.angularBuilderOptions?.styles;
+  };
 
-        if (Array.isArray(styles)) {
-          styles.forEach((style) => {
-            const stylePath =
-              typeof style === 'string'
-                ? style
-                : style !== null &&
-                    typeof style === 'object' &&
-                    'input' in style &&
-                    typeof style.input === 'string'
-                  ? style.input
-                  : undefined;
-            if (stylePath !== undefined) {
-              imports.push(normalizePath(resolveBuilderStyle(stylePath, workspaceRoot)));
-            }
-          });
-        }
+  // The transform below decorates the preview file and nothing else, so without one there is no
+  // work to do - and no path to build a filter from either.
+  if (!resolvedPreviewPath) {
+    return plugin;
+  }
 
-        if (!zoneless) {
-          imports.push('zone.js');
-        }
+  plugin.transform = {
+    filter: { id: previewIdPattern(resolvedPreviewPath) },
+    async handler(code, id) {
+      if (!normalizePath(id).endsWith(normalizePath(resolvedPreviewPath))) {
+        return;
+      }
 
-        return {
-          code: `
+      const imports: string[] = [];
+      const styles = options?.angularBuilderOptions?.styles;
+
+      if (Array.isArray(styles)) {
+        styles.forEach((style) => {
+          const stylePath =
+            typeof style === 'string'
+              ? style
+              : style !== null &&
+                  typeof style === 'object' &&
+                  'input' in style &&
+                  typeof style.input === 'string'
+                ? style.input
+                : undefined;
+          if (stylePath !== undefined) {
+            imports.push(normalizePath(resolveBuilderStyle(stylePath, workspaceRoot)));
+          }
+        });
+      }
+
+      if (!zoneless) {
+        imports.push('zone.js');
+      }
+
+      return {
+        code: `
             ${imports.map((extraImport) => `import '${extraImport}';`).join('\n')}
             ${code}
           `,
-        };
-      }
-
-      return;
+      };
     },
   };
+
+  return plugin;
 }
 
 // Re-apply Storybook's mock contracts AFTER analogjs has compiled the file.

@@ -11985,13 +11985,22 @@ __metadata:
     "@angular/compiler-cli": ">=21.0.0 < 23.0.0"
     "@angular/core": ">=21.0.0 < 23.0.0"
     "@angular/platform-browser": ">=21.0.0 < 23.0.0"
+    less: ^4.0.0
     rxjs: ^7.4.0
+    sass: ^1.0.0
+    sass-embedded: ^1.0.0
     storybook: "workspace:^"
     typescript: ">= 5.9.x"
     vite: ">=8.0.0"
     zone.js: ">=0.14.0"
   peerDependenciesMeta:
     "@angular/cli":
+      optional: true
+    less:
+      optional: true
+    sass:
+      optional: true
+    sass-embedded:
       optional: true
     zone.js:
       optional: true

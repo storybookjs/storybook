@@ -1,0 +1,19 @@
+$ vp build
+vite v8.0.16 building client environment for production...
+
+ℹ [styleframe] Initializing...
+✔ [styleframe] Generated type declarations.
+✔ [styleframe] Initialized with 8 styleframe file(s) (tracking 9 dependencies).
+
+[2Ktransforming...✔ [styleframe] Built global CSS successfully.
+✓ 150 modules transformed.
+rendering chunks...
+computing gzip size...
+dist/index.css                     85.33 kB │ gzip: 15.81 kB
+dist/index.js                       0.24 kB │ gzip:  0.17 kB
+dist/headless.js                    0.56 kB │ gzip:  0.29 kB
+dist/ISwitchLabelBase-KcK8ie4M.js   8.02 kB │ gzip:  2.01 kB
+dist/stories.js                    31.98 kB │ gzip:  5.17 kB
+dist/ISwitch-DtFQ_vDC.js           82.94 kB │ gzip: 12.78 kB
+
+✓ built in 566ms

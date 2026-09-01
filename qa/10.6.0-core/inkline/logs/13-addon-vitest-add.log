@@ -1,0 +1,129 @@
+=== ADD ADDON-VITEST ===
+
+┌  Setting up your project for @storybook/addon-vitest
+│
+│  Verifying @storybook/addon-vitest
+│
+│  Installing @storybook/addon-vitest@10.6.0-beta.0
+│
+│  Adding '@storybook/addon-vitest' to the "addons" field in
+│  .storybook/main.ts
+│
+◇  Adding dependencies to your package.json
+│
+│  vitest@4.1.8, @vitest/browser-playwright@4.1.8, playwright
+│
+│  Installing dependencies...
+│
+│  Installing dependencies...: Scope: all 21 workspace p
+│
+│  Installing dependencies...: ✓ Lockfile passes supply-
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../../core/compiler
+│
+│  Installing dependencies...: ../angular
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: [WARN] 5 deprecated subde
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: [WARN] Failed to create b
+│
+│  Installing dependencies...: ../.. prepare$ vp config
+│
+│  Installing dependencies...: ../../apps/website postin
+│
+│  Installing dependencies...: ../.. prepare: Done
+│
+│  Installing dependencies...: ../../apps/website postin
+│
+│  Installing dependencies...: ../../apps/website postin
+│
+│  Installing dependencies...: ../../apps/website postin
+│
+│  Installing dependencies...: ../../apps/website postin
+│
+│  Installing dependencies...: ../../apps/website postin
+│
+│  Installing dependencies...: dependencies:
+│  + vitest <-
+│
+│  Installing dependencies...: Done in 24.5s using pnpm
+│
+│  Dependencies installed
+│
+│  Installing Playwright browser binaries (press "c" to abort)
+│
+│  Playwright browser binaries installed successfully
+│
+▲  Playwright was installed without system dependencies. Depending on
+│  your operating system, you may need to install additional libraries
+│  for Playwright to work correctly.
+│  To check for missing dependencies, run Storybook Test from the
+│  Storybook UI — it will report any libraries that need to be installed.
+│  On MacOS, Windows, Debian and Ubuntu, you can install system
+│  dependencies manually by running:
+│  pnpm exec playwright install chromium --with-deps
+│
+◇  Updating your Vite config file:
+│
+│  /tmp/qa-10.6/inkline/ui/vue/vite.config.ts
+│
+│  Setting up a11y addon for @storybook/addon-vitest
+│
+│  a11y addon setup successfully
+│
+◇  @storybook/addon-vitest setup completed successfully
+│
+│  @storybook/addon-vitest is now configured and you're ready to run your
+│  tests!
+│  Here are a couple of tips to get you started:
+
+│  • You can run tests with "npx vitest --project=storybook"
+│  • Vitest IDE extension shows all stories as tests in your editor!
+
+│  Check the documentation for more information about its features and
+│  options at:
+│  ]8;;https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addonhttps://storybook.js.org/docs/next/writing-tests/integrations...]8;;
+│
+└  Done!
+
+EXIT=0

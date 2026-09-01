@@ -1,0 +1,19 @@
+Usage: index upgrade [options]
+
+Upgrade your Storybook packages to v10.6.0-beta.0
+
+Options:
+  --disable-telemetry                                        Disable sending telemetry data
+  --debug                                                    Get more logs in debug mode (default: false)
+  --enable-crash-reports                                     Enable sending crash reports to telemetry data
+  --logfile [path]                                           Write all debug logs to the specified file at the end of the run. Defaults to debug-storybook.log when [path] is not provided
+  --loglevel <trace | debug | info | warn | error | silent>  Define log level (default: "info")
+  --package-manager <type>                                   Force package manager for installing deps (choices: "npm", "yarn1", "yarn2", "pnpm", "bun")
+  -y --yes                                                   Skip prompting the user
+  --features <list>                                          Comma-separated list of experimental feature flags to enable during the upgrade
+  -f --force                                                 force the upgrade, skipping autoblockers
+  -n --dry-run                                               Only check for upgrades, do not install
+  -s --skip-check                                            Skip postinstall version and automigration checks
+  --skip-automigrations                                      Skip running automigrations entirely (only update package versions and install)
+  -c, --config-dir <dir-name...>                             Directory(ies) where to load Storybook configurations from
+  -h, --help                                                 display help for command

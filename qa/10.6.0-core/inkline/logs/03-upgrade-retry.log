@@ -1,0 +1,191 @@
+=== UPGRADE RETRY from ui/vue ===
+
+┌  Storybook upgrade - v10.6.0-beta.0
+│
+│  Detecting projects...
+│
+│  Detecting projects: 1 projects
+│
+│  1 project detected
+│
+●  Upgrading from 10.4.4 to 10.6.0-beta.0
+│
+│  /ui/vue/package.json
+│  /package.json
+│
+│  Updated package versions in package.json files
+│
+│  Checking automigrations for .storybook...
+│
+
+│  Automigrations detected:
+│
+│  ✔ addon-mcp
+│
+│  ✔ fix-faux-esm-require
+│
+│  ✔ enable-experimental-review
+│
+│  ✔ enable-experimental-docgen-server
+│
+│  4 automigration(s) detected
+│
+│  Running all detected automigrations:
+│
+│  - addon-mcp (.storybook)
+│
+│  - fix-faux-esm-require (.storybook)
+│
+│  Installing @storybook/addon-mcp to the latest version...
+│
+│  Verifying @storybook/addon-mcp
+│
+│  Installing @storybook/addon-mcp@10.6.0-beta.0
+│
+│  Adding '@storybook/addon-mcp' to the "addons" field in
+│  .storybook/main.ts
+│
+│  ✔ addon-mcp
+│
+│  ✔ fix-faux-esm-require
+│
+│  Completed automigrations for .storybook
+│
+│  Installing dependencies...
+│
+│  Installing dependencies...: Scope: all 21 workspace p
+│
+│  Installing dependencies...: ✓ Lockfile passes supply-
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../../core/compiler
+│
+│  Installing dependencies...: ../angular
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: [WARN] 5 deprecated subde
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: ../..
+│
+│  Installing dependencies...: [WARN] Failed to create b
+│
+│  Installing dependencies...: ../.. prepare$ vp config
+│
+│  Installing dependencies...: ../../apps/website postin
+│
+│  Installing dependencies...: ../.. prepare: Done
+│
+│  Installing dependencies...: ../../apps/website postin
+│
+│  Installing dependencies...: ../../apps/website postin
+│
+│  Installing dependencies...: ../../apps/website postin
+│
+│  Installing dependencies...: ../../apps/website postin
+│
+│  Installing dependencies...: devDependencies:
+│  - @story
+│
+│  Installing dependencies...: Done in 25.9s using pnpm
+│
+│  Dependencies installed
+│
+◇  Checking the health of your project(s)..
+│
+▲  .storybook: 1 issue found
+│ ┌─Mismatching Versions───────────────────────────────────────────────────────┐
+│ │  Attention: There seems to be a mismatch between your Storybook package    │
+│ │  versions. This can result in a broken Storybook installation.             │
+│ │                                                                            │
+│ │  The version of your storybook core packages should align with             │
+│ │  10.6.0-beta.0 (from the storybook package) or higher.                     │
+│ │                                                                            │
+│ │  Based on your lockfile, these dependencies should be aligned:             │
+│ │                                                                            │
+│ │  @storybook/react-vite: 10.4.4                                             │
+│ │  @storybook/angular: 10.4.4                                                │
+│ │  @storybook/builder-webpack5: 10.4.4                                       │
+│ │  @storybook/core-webpack: 10.4.4                                           │
+│ │  @storybook/svelte-vite: 10.4.4                                            │
+│ │  @storybook/builder-vite: 10.4.4                                           │
+│ │  @storybook/svelte: 10.4.4                                                 │
+│ │                                                                            │
+│ │  You can run npx storybook@latest upgrade to upgrade all of your           │
+│ │  Storybook packages to the latest version.                                 │
+│ │                                                                            │
+│ │  Alternatively you can try manually changing the versions to match in      │
+│ │  your package.json. We also recommend regenerating your lockfile, or       │
+│ │  running the following command to possibly deduplicate your Storybook      │
+│ │  package versions: pnpm dedupe                                             │
+│ └────────────────────────────────────────────────────────────────────────────┘
+│
+◇  Storybook doctor is complete!
+│
+│  You can always recheck the health of your project(s) by running:
+│  npx storybook doctor
+│
+◇  Your project(s) have been upgraded successfully, but some issues were
+│  found which need your attention, please check Storybook doctor logs
+│  above.
+│
+│  If you want to learn more about the automigrations that executed in
+│  your project(s), please check the following links:
+│  • ]8;;https://github.com/storybookjs/storybook/tree/next/code/addons/mcpaddon-mcp]8;;
+│  • ]8;;https://storybook.js.org/docs/faq#how-do-i-fix-module-resolution-in-special-environmentsfix-faux-esm-require]8;;
+│
+│  For a full list of changes, please check our migration guide:
+│  ]8;;https://storybook.js.org/docs/releases/migration-guide?ref=upgradehttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade]8;;
+│
+●  Storybook collects completely anonymous usage telemetry. We use it to
+│  shape Storybook's roadmap and prioritize features. You can learn more,
+│  including how to opt out, at ]8;;https://storybook.js.org/telemetryhttps://storybook.js.org/telemetry]8;;
+│
+└  Storybook upgrade completed!
+
+│
+│  Debug logs are written to:
+│  /opt/cursor/artifacts/qa-10.6.0/inkline/logs/03-upgrade-retry-debug.log
+│
+└  Done!
+
+EXIT=0

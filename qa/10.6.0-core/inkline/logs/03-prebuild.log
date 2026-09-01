@@ -1,0 +1,17 @@
+=== BUILD tooling/storybook + components ===
+$ vp pack
+ℹ entry: src/index.ts, src/preset/main.ts, src/preset/parameters.ts, src/generator/index.ts
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ dist/generator/index.mjs      13.38 kB │ gzip: 3.88 kB
+ℹ dist/preset/main.mjs           1.45 kB │ gzip: 0.68 kB
+ℹ dist/preset/parameters.mjs     1.27 kB │ gzip: 0.68 kB
+ℹ dist/index.mjs                 0.11 kB │ gzip: 0.10 kB
+ℹ dist/generator/index.d.mts     2.49 kB │ gzip: 0.86 kB
+ℹ dist/preset/main.d.mts         2.15 kB │ gzip: 0.90 kB
+ℹ dist/preset/parameters.d.mts   1.27 kB │ gzip: 0.65 kB
+ℹ dist/index.d.mts               0.18 kB │ gzip: 0.13 kB
+ℹ dist/define-gBwePlel.d.mts     0.83 kB │ gzip: 0.38 kB
+ℹ 9 files, total: 23.13 kB
+✔ Build complete in 879ms
+BUILD_SB_EXIT=0

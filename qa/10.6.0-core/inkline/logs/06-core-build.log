@@ -1,0 +1,124 @@
+Scope: 5 of 21 workspace projects
+core/config-loader build$ vp pack
+core/core build$ vp pack
+core/config-loader build: ℹ entry: src/index.ts
+core/config-loader build: ℹ tsconfig: tsconfig.json
+core/config-loader build: ℹ Build start
+core/config-loader build: ℹ Cleaning 2 files
+core/core build: ℹ entry: src/index.ts, src/jsx-runtime.ts
+core/core build: ℹ tsconfig: tsconfig.json
+core/core build: ℹ Build start
+core/config-loader build: ℹ dist/index.mjs    0.55 kB │ gzip: 0.31 kB
+core/config-loader build: ℹ dist/index.d.mts  0.74 kB │ gzip: 0.38 kB
+core/config-loader build: ℹ 2 files, total: 1.29 kB
+core/config-loader build: ✔ Build complete in 67ms
+core/config-loader build: Done
+core/core build: ℹ dist/index.mjs            2.43 kB │ gzip:  1.06 kB
+core/core build: ℹ dist/jsx-runtime.mjs      0.26 kB │ gzip:  0.17 kB
+core/core build: ℹ dist/jsx-runtime.d.mts  163.30 kB │ gzip: 21.51 kB
+core/core build: ℹ dist/index.d.mts          7.61 kB │ gzip:  2.73 kB
+core/core build: ℹ 4 files, total: 173.60 kB
+core/core build: ✔ Build complete in 209ms
+core/core build: Done
+core/compiler build$ vp pack
+core/compiler build: ℹ entry: src/index.ts, src/ir/index.ts, src/codegen/index.ts, src/testing/index.ts
+core/compiler build: ℹ tsconfig: tsconfig.json
+core/compiler build: ℹ Build start
+core/compiler build: ℹ Cleaning 15 files
+core/compiler build: ℹ dist/testing.mjs               26.93 kB │ gzip:  8.01 kB
+core/compiler build: ℹ dist/ir.mjs                     6.69 kB │ gzip:  2.11 kB
+core/compiler build: ℹ dist/index.mjs                  3.60 kB │ gzip:  1.42 kB
+core/compiler build: ℹ dist/codegen.mjs                0.87 kB │ gzip:  0.40 kB
+core/compiler build: ℹ dist/printer-DqgD5wCq.mjs     166.62 kB │ gzip: 35.93 kB
+core/compiler build: ℹ dist/compile-nTqw_kqK.mjs     114.34 kB │ gzip: 30.11 kB
+core/compiler build: ℹ dist/transform-DUIemsoV.mjs     5.08 kB │ gzip:  1.40 kB
+core/compiler build: ℹ dist/types-iiPZih_T.mjs         1.60 kB │ gzip:  0.57 kB
+core/compiler build: ℹ dist/ir.d.mts                   5.62 kB │ gzip:  1.60 kB
+core/compiler build: ℹ dist/testing.d.mts              5.39 kB │ gzip:  1.35 kB
+core/compiler build: ℹ dist/codegen.d.mts              4.88 kB │ gzip:  1.31 kB
+core/compiler build: ℹ dist/index.d.mts                4.58 kB │ gzip:  1.76 kB
+core/compiler build: ℹ dist/context-Dt3lf1Ee.d.mts    53.98 kB │ gzip: 14.56 kB
+core/compiler build: ℹ dist/compile-dAZTtAmy.d.mts     0.79 kB │ gzip:  0.40 kB
+core/compiler build: ℹ dist/registry-k3ade_c0.d.mts    0.45 kB │ gzip:  0.24 kB
+core/compiler build: ℹ 15 files, total: 401.41 kB
+core/compiler build: ✔ Build complete in 254ms
+core/compiler build: Done
+core/inkline build$ vp pack
+core/inkline build: ℹ entry: src/index.ts, src/cli.ts, src/compiler.ts, src/config-loader.ts, src/react.ts, src/vue.ts, src/svelte.ts, src/solid.ts, src/angular.ts, src/qwik.ts, src/astro.ts, src/plugin/vite.ts, src/plugin/webpack.ts, src/plugin/rollup.ts, src/plugin/esbuild.ts, src/plugin/rspack.ts, src/plugin/farm.ts
+core/inkline build: ℹ tsconfig: tsconfig.json
+core/inkline build: ℹ Build start
+core/inkline build: ℹ [CJS] dist/plugin/esbuild.cjs  0.33 kB │ gzip: 0.19 kB
+core/inkline build: ℹ [CJS] dist/plugin/webpack.cjs  0.33 kB │ gzip: 0.19 kB
+core/inkline build: ℹ [CJS] dist/plugin/rollup.cjs   0.33 kB │ gzip: 0.19 kB
+core/inkline build: ℹ [CJS] dist/plugin/rspack.cjs   0.33 kB │ gzip: 0.19 kB
+core/inkline build: ℹ [CJS] dist/config-loader.cjs   0.32 kB │ gzip: 0.23 kB
+core/inkline build: ℹ [CJS] dist/plugin/farm.cjs     0.31 kB │ gzip: 0.19 kB
+core/inkline build: ℹ [CJS] dist/plugin/vite.cjs     0.31 kB │ gzip: 0.19 kB
+core/inkline build: ℹ [CJS] dist/compiler.cjs        0.30 kB │ gzip: 0.22 kB
+core/inkline build: ℹ [CJS] dist/angular.cjs         0.30 kB │ gzip: 0.22 kB
+core/inkline build: ℹ [CJS] dist/svelte.cjs          0.29 kB │ gzip: 0.21 kB
+core/inkline build: ℹ [CJS] dist/astro.cjs           0.29 kB │ gzip: 0.21 kB
+core/inkline build: ℹ [CJS] dist/react.cjs           0.29 kB │ gzip: 0.21 kB
+core/inkline build: ℹ [CJS] dist/solid.cjs           0.29 kB │ gzip: 0.21 kB
+core/inkline build: ℹ [CJS] dist/index.cjs           0.29 kB │ gzip: 0.21 kB
+core/inkline build: ℹ [CJS] dist/qwik.cjs            0.29 kB │ gzip: 0.21 kB
+core/inkline build: ℹ [CJS] dist/vue.cjs             0.28 kB │ gzip: 0.21 kB
+core/inkline build: ℹ [CJS] dist/cli.cjs             0.23 kB │ gzip: 0.18 kB
+core/inkline build: ℹ [CJS] dist/chunk-D6vf50IK.cjs  1.09 kB │ gzip: 0.53 kB
+core/inkline build: ℹ [CJS] 18 files, total: 6.20 kB
+core/inkline build: ℹ [CJS] dist/plugin/esbuild.d.cts  0.06 kB │ gzip: 0.07 kB
+core/inkline build: ℹ [CJS] dist/plugin/webpack.d.cts  0.06 kB │ gzip: 0.07 kB
+core/inkline build: ℹ [CJS] dist/plugin/rollup.d.cts   0.06 kB │ gzip: 0.07 kB
+core/inkline build: ℹ [CJS] dist/plugin/rspack.d.cts   0.06 kB │ gzip: 0.07 kB
+core/inkline build: ℹ [CJS] dist/plugin/farm.d.cts     0.06 kB │ gzip: 0.07 kB
+core/inkline build: ℹ [CJS] dist/plugin/vite.d.cts     0.06 kB │ gzip: 0.07 kB
+core/inkline build: ℹ [CJS] dist/cli.d.cts             0.05 kB │ gzip: 0.06 kB
+core/inkline build: ℹ [CJS] dist/config-loader.d.cts   0.04 kB │ gzip: 0.06 kB
+core/inkline build: ℹ [CJS] dist/compiler.d.cts        0.03 kB │ gzip: 0.05 kB
+core/inkline build: ℹ [CJS] dist/angular.d.cts         0.03 kB │ gzip: 0.05 kB
+core/inkline build: ℹ [CJS] dist/svelte.d.cts          0.03 kB │ gzip: 0.05 kB
+core/inkline build: ℹ [CJS] dist/astro.d.cts           0.03 kB │ gzip: 0.05 kB
+core/inkline build: ℹ [CJS] dist/react.d.cts           0.03 kB │ gzip: 0.05 kB
+core/inkline build: ℹ [CJS] dist/solid.d.cts           0.03 kB │ gzip: 0.05 kB
+core/inkline build: ℹ [CJS] dist/index.d.cts           0.03 kB │ gzip: 0.05 kB
+core/inkline build: ℹ [CJS] dist/qwik.d.cts            0.03 kB │ gzip: 0.05 kB
+core/inkline build: ℹ [CJS] dist/vue.d.cts             0.03 kB │ gzip: 0.05 kB
+core/inkline build: ℹ [CJS] 17 files, total: 0.74 kB
+core/inkline build: ✔ Build complete in 103ms
+core/inkline build: ℹ [ESM] dist/plugin/esbuild.mjs    0.16 kB │ gzip: 0.12 kB
+core/inkline build: ℹ [ESM] dist/plugin/webpack.mjs    0.16 kB │ gzip: 0.12 kB
+core/inkline build: ℹ [ESM] dist/plugin/rollup.mjs     0.16 kB │ gzip: 0.12 kB
+core/inkline build: ℹ [ESM] dist/plugin/rspack.mjs     0.16 kB │ gzip: 0.12 kB
+core/inkline build: ℹ [ESM] dist/plugin/farm.mjs       0.15 kB │ gzip: 0.12 kB
+core/inkline build: ℹ [ESM] dist/plugin/vite.mjs       0.15 kB │ gzip: 0.12 kB
+core/inkline build: ℹ [ESM] dist/cli.mjs               0.05 kB │ gzip: 0.06 kB
+core/inkline build: ℹ [ESM] dist/config-loader.mjs     0.05 kB │ gzip: 0.07 kB
+core/inkline build: ℹ [ESM] dist/compiler.mjs          0.05 kB │ gzip: 0.06 kB
+core/inkline build: ℹ [ESM] dist/angular.mjs           0.04 kB │ gzip: 0.06 kB
+core/inkline build: ℹ [ESM] dist/svelte.mjs            0.04 kB │ gzip: 0.06 kB
+core/inkline build: ℹ [ESM] dist/astro.mjs             0.04 kB │ gzip: 0.06 kB
+core/inkline build: ℹ [ESM] dist/react.mjs             0.04 kB │ gzip: 0.06 kB
+core/inkline build: ℹ [ESM] dist/solid.mjs             0.04 kB │ gzip: 0.06 kB
+core/inkline build: ℹ [ESM] dist/index.mjs             0.04 kB │ gzip: 0.06 kB
+core/inkline build: ℹ [ESM] dist/qwik.mjs              0.04 kB │ gzip: 0.06 kB
+core/inkline build: ℹ [ESM] dist/vue.mjs               0.04 kB │ gzip: 0.06 kB
+core/inkline build: ℹ [ESM] dist/plugin/esbuild.d.mts  0.07 kB │ gzip: 0.08 kB
+core/inkline build: ℹ [ESM] dist/plugin/webpack.d.mts  0.07 kB │ gzip: 0.08 kB
+core/inkline build: ℹ [ESM] dist/plugin/rollup.d.mts   0.07 kB │ gzip: 0.08 kB
+core/inkline build: ℹ [ESM] dist/plugin/rspack.d.mts   0.07 kB │ gzip: 0.08 kB
+core/inkline build: ℹ [ESM] dist/plugin/farm.d.mts     0.07 kB │ gzip: 0.08 kB
+core/inkline build: ℹ [ESM] dist/plugin/vite.d.mts     0.07 kB │ gzip: 0.08 kB
+core/inkline build: ℹ [ESM] dist/cli.d.mts             0.05 kB │ gzip: 0.06 kB
+core/inkline build: ℹ [ESM] dist/config-loader.d.mts   0.04 kB │ gzip: 0.06 kB
+core/inkline build: ℹ [ESM] dist/compiler.d.mts        0.03 kB │ gzip: 0.05 kB
+core/inkline build: ℹ [ESM] dist/angular.d.mts         0.03 kB │ gzip: 0.05 kB
+core/inkline build: ℹ [ESM] dist/svelte.d.mts          0.03 kB │ gzip: 0.05 kB
+core/inkline build: ℹ [ESM] dist/astro.d.mts           0.03 kB │ gzip: 0.05 kB
+core/inkline build: ℹ [ESM] dist/react.d.mts           0.03 kB │ gzip: 0.05 kB
+core/inkline build: ℹ [ESM] dist/solid.d.mts           0.03 kB │ gzip: 0.05 kB
+core/inkline build: ℹ [ESM] dist/index.d.mts           0.03 kB │ gzip: 0.05 kB
+core/inkline build: ℹ [ESM] dist/qwik.d.mts            0.03 kB │ gzip: 0.05 kB
+core/inkline build: ℹ [ESM] dist/vue.d.mts             0.03 kB │ gzip: 0.05 kB
+core/inkline build: ℹ [ESM] 34 files, total: 2.24 kB
+core/inkline build: ✔ Build complete in 106ms
+core/inkline build: Done

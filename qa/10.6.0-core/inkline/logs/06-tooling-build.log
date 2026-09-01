@@ -1,0 +1,52 @@
+Scope: 4 of 21 workspace projects
+tooling/storybook build$ vp pack
+tooling/test-utils build$ vp pack
+tooling/test-utils build: ℹ entry: src/index.ts
+tooling/test-utils build: ℹ tsconfig: tsconfig.json
+tooling/test-utils build: ℹ Build start
+tooling/storybook build: ℹ entry: src/index.ts, src/preset/main.ts, src/preset/parameters.ts, src/generator/index.ts
+tooling/storybook build: ℹ tsconfig: tsconfig.json
+tooling/storybook build: ℹ Build start
+tooling/storybook build: ℹ Cleaning 12 files
+tooling/test-utils build: ℹ Hint: consider adding deps.onlyBundle option to avoid unintended bundling of dependencies, or set deps.onlyBundle: false to disable this hint.
+tooling/test-utils build: See more at https://tsdown.dev/options/dependencies#deps-onlybundle
+tooling/test-utils build: Detected dependencies in bundle:
+tooling/test-utils build: - @jridgewell/sourcemap-codec
+tooling/test-utils build: - @jridgewell/resolve-uri
+tooling/test-utils build: - @jridgewell/trace-mapping
+tooling/test-utils build: - @jridgewell/gen-mapping
+tooling/test-utils build: - @ampproject/remapping
+tooling/test-utils build: ℹ dist/index.mjs    50.58 kB │ gzip: 15.82 kB
+tooling/test-utils build: ℹ dist/index.d.mts   4.88 kB │ gzip:  1.41 kB
+tooling/test-utils build: ℹ 2 files, total: 55.46 kB
+tooling/test-utils build: ✔ Build complete in 106ms
+tooling/test-utils build: Done
+tooling/storybook build: ℹ dist/generator/index.mjs      13.38 kB │ gzip: 3.88 kB
+tooling/storybook build: ℹ dist/preset/main.mjs           1.45 kB │ gzip: 0.68 kB
+tooling/storybook build: ℹ dist/preset/parameters.mjs     1.27 kB │ gzip: 0.68 kB
+tooling/storybook build: ℹ dist/index.mjs                 0.11 kB │ gzip: 0.10 kB
+tooling/storybook build: ℹ dist/generator/index.d.mts     2.49 kB │ gzip: 0.86 kB
+tooling/storybook build: ℹ dist/preset/main.d.mts         2.15 kB │ gzip: 0.90 kB
+tooling/storybook build: ℹ dist/preset/parameters.d.mts   1.27 kB │ gzip: 0.65 kB
+tooling/storybook build: ℹ dist/index.d.mts               0.18 kB │ gzip: 0.13 kB
+tooling/storybook build: ℹ dist/define-gBwePlel.d.mts     0.83 kB │ gzip: 0.38 kB
+tooling/storybook build: ℹ 9 files, total: 23.13 kB
+tooling/storybook build: ✔ Build complete in 919ms
+tooling/storybook build: Done
+tooling/cli build$ vp pack
+tooling/cli build: ℹ entry: src/index.ts, src/bin/inkline.ts
+tooling/cli build: ℹ tsconfig: tsconfig.json
+tooling/cli build: ℹ Build start
+tooling/cli build: ℹ Cleaning 9 files
+tooling/cli build: ℹ Granting execute permission to dist/bin/inkline.mjs
+tooling/cli build: ℹ dist/index.mjs              0.47 kB │ gzip: 0.29 kB
+tooling/cli build: ℹ dist/bin/inkline.mjs        0.12 kB │ gzip: 0.12 kB
+tooling/cli build: ℹ dist/errors-D3HR3XC3.mjs   19.51 kB │ gzip: 7.58 kB
+tooling/cli build: ℹ dist/compile-CxCm5gQo.mjs  17.27 kB │ gzip: 5.47 kB
+tooling/cli build: ℹ dist/init-Cs9H077F.mjs      8.68 kB │ gzip: 2.83 kB
+tooling/cli build: ℹ dist/check-B_vlM4Wx.mjs     2.95 kB │ gzip: 1.22 kB
+tooling/cli build: ℹ dist/index.d.mts            0.09 kB │ gzip: 0.10 kB
+tooling/cli build: ℹ dist/bin/inkline.d.mts      0.01 kB │ gzip: 0.03 kB
+tooling/cli build: ℹ 8 files, total: 49.11 kB
+tooling/cli build: ✔ Build complete in 67ms
+tooling/cli build: Done

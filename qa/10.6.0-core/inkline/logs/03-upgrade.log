@@ -1,0 +1,90 @@
+=== UPGRADE START Tue Sep  1 07:39:22 AM UTC 2026 ===
+
+┌  Storybook upgrade - v10.6.0-beta.0
+│
+│  Detecting projects...
+│
+│  Detecting projects: 1 projects
+│
+│  1 project detected
+│
+■  Failed to get projects
+│
+■  [38;2;241;97;97mError: ❌ Storybook found errors while collecting data for the
+│  following projects:
+│  ui/vue/.storybook:
+│  SB_CORE-SERVER_0007 (MainFileEvaluationError): Storybook couldn't
+│  evaluate your ui/vue/.storybook/main.ts file.
+
+│  Original error:
+│  Error [ERR_MODULE_NOT_FOUND]: Cannot find module
+│  '/ui/vue/node_modules/@inkline/storybook/dist/preset/main.mjs'
+│  imported from /ui/vue/.storybook/main.ts
+│  at finalizeResolution (node:internal/modules/esm/resolve:275:11)
+│  at moduleResolve (node:internal/modules/esm/resolve:861:10)
+│  at defaultResolve (node:internal/modules/esm/resolve:985:11)
+│  at nextResolve (node:internal/modules/esm/hooks:748:28)
+│  at Hooks.resolve (node:internal/modules/esm/hooks:240:30)
+│  at handleMessage (node:internal/modules/esm/worker:199:24)
+│  at Immediate.checkForMessages
+│  (node:internal/modules/esm/worker:141:28)
+│  at process.processImmediate (node:internal/timers:484:21)
+│  at loadMainConfig
+│  (file:///home/ubuntu/.local/share/pnpm/store/v11/links/@/storybook/10.6.0-beta.0/f14102643fa702c945549968dad45635ba3a34ce0c944e35cd2f453f736139e2/node_modules/storybook/dist/_node-chunks/chunk-T4A4D6UK.js:14259:11)
+│  at async getStorybookInfo
+│  (file:///home/ubuntu/.local/share/pnpm/store/v11/links/@/storybook/10.6.0-beta.0/f14102643fa702c945549968dad45635ba3a34ce0c944e35cd2f453f736139e2/node_modules/storybook/dist/_node-chunks/chunk-T4A4D6UK.js:14350:59)
+│  at async getStorybookData
+│  (file:///home/ubuntu/.local/share/pnpm/store/v11/links/@/storybook/10.6.0-beta.0/f14102643fa702c945549968dad45635ba3a34ce0c944e35cd2f453f736139e2/node_modules/storybook/dist/_node-chunks/chunk-UM4JWRDG.js:71:7)
+│  at async processProject
+│  (file:///home/ubuntu/.local/share/pnpm/store/v11/links/@storybook/cli/10.6.0-beta.0/f78a53d8240760a83e331a4640e1fc8afab3dec272ec20b079c242be3a2d0d12/node_modules/@storybook/cli/dist/_node-chunks/chunk-ELVZM54F.js:262:9)
+│  Please fix the errors and run the upgrade command again.[39m
+│  at getProjects
+│  (file:///home/ubuntu/.local/share/pnpm/store/v11/links/@storybook/cli/10.6.0-beta.0/f78a53d8240760a83e331a4640e1fc8afab3dec272ec20b079c242be3a2d0d12/node_modules/@storybook/cli/dist/_node-chunks/chunk-ELVZM54F.js:439:13)
+│  at async upgrade
+│  (file:///home/ubuntu/.local/share/pnpm/store/v11/links/@storybook/cli/10.6.0-beta.0/f78a53d8240760a83e331a4640e1fc8afab3dec272ec20b079c242be3a2d0d12/node_modules/@storybook/cli/dist/_node-chunks/run-TA52UT2V.js:11208:24)
+│  at async
+│  file:///home/ubuntu/.local/share/pnpm/store/v11/links/@storybook/cli/10.6.0-beta.0/f78a53d8240760a83e331a4640e1fc8afab3dec272ec20b079c242be3a2d0d12/node_modules/@storybook/cli/dist/_node-chunks/run-TA52UT2V.js:11453:70
+│  at async withTelemetry
+│  (file:///home/ubuntu/.local/share/pnpm/store/v11/links/@/storybook/10.6.0-beta.0/f14102643fa702c945549968dad45635ba3a34ce0c944e35cd2f453f736139e2/node_modules/storybook/dist/_node-chunks/chunk-WGM2GNB7.js:142:12)
+│  at async Command.<anonymous>
+│  (file:///home/ubuntu/.local/share/pnpm/store/v11/links/@storybook/cli/10.6.0-beta.0/f78a53d8240760a83e331a4640e1fc8afab3dec272ec20b079c242be3a2d0d12/node_modules/@storybook/cli/dist/_node-chunks/run-TA52UT2V.js:11449:3)
+│
+●  Storybook collects completely anonymous usage telemetry. We use it to
+│  shape Storybook's roadmap and prioritize features. You can learn more,
+│  including how to opt out, at ]8;;https://storybook.js.org/telemetryhttps://storybook.js.org/telemetry]8;;
+│
+■  Error: ❌ Storybook found errors while collecting data for the
+│  following projects:
+│  ui/vue/.storybook:
+│  SB_CORE-SERVER_0007 (MainFileEvaluationError): Storybook couldn't
+│  evaluate your ui/vue/.storybook/main.ts file.
+
+│  Original error:
+│  Error [ERR_MODULE_NOT_FOUND]: Cannot find module
+│  '/ui/vue/node_modules/@inkline/storybook/dist/preset/main.mjs'
+│  imported from /ui/vue/.storybook/main.ts
+│  at finalizeResolution (node:internal/modules/esm/resolve:275:11)
+│  at moduleResolve (node:internal/modules/esm/resolve:861:10)
+│  at defaultResolve (node:internal/modules/esm/resolve:985:11)
+│  at nextResolve (node:internal/modules/esm/hooks:748:28)
+│  at Hooks.resolve (node:internal/modules/esm/hooks:240:30)
+│  at handleMessage (node:internal/modules/esm/worker:199:24)
+│  at Immediate.checkForMessages
+│  (node:internal/modules/esm/worker:141:28)
+│  at process.processImmediate (node:internal/timers:484:21)
+│  at loadMainConfig
+│  (file:///home/ubuntu/.local/share/pnpm/store/v11/links/@/storybook/10.6.0-beta.0/f14102643fa702c945549968dad45635ba3a34ce0c944e35cd2f453f736139e2/node_modules/storybook/dist/_node-chunks/chunk-T4A4D6UK.js:14259:11)
+│  at async getStorybookInfo
+│  (file:///home/ubuntu/.local/share/pnpm/store/v11/links/@/storybook/10.6.0-beta.0/f14102643fa702c945549968dad45635ba3a34ce0c944e35cd2f453f736139e2/node_modules/storybook/dist/_node-chunks/chunk-T4A4D6UK.js:14350:59)
+│  at async getStorybookData
+│  (file:///home/ubuntu/.local/share/pnpm/store/v11/links/@/storybook/10.6.0-beta.0/f14102643fa702c945549968dad45635ba3a34ce0c944e35cd2f453f736139e2/node_modules/storybook/dist/_node-chunks/chunk-UM4JWRDG.js:71:7)
+│  at async processProject
+│  (file:///home/ubuntu/.local/share/pnpm/store/v11/links/@storybook/cli/10.6.0-beta.0/f78a53d8240760a83e331a4640e1fc8afab3dec272ec20b079c242be3a2d0d12/node_modules/@storybook/cli/dist/_node-chunks/chunk-ELVZM54F.js:262:9)
+│  Please fix the errors and run the upgrade command again.
+│
+│  Debug logs are written to:
+│  /opt/cursor/artifacts/qa-10.6.0/inkline/logs/03-upgrade-debug.log
+│
+└  
+
+EXIT=0

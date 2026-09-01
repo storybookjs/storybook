@@ -1,0 +1,48 @@
+=== DOCTOR AFTER ===
+
+┌  Doctoring Storybook
+│
+◇  Checking the health of your Storybook..
+│
+▲  .storybook: 1 issue found
+│ ┌─Mismatching Versions───────────────────────────────────────────────────────┐
+│ │  Attention: There seems to be a mismatch between your Storybook package    │
+│ │  versions. This can result in a broken Storybook installation.             │
+│ │                                                                            │
+│ │  The version of your storybook core packages should align with             │
+│ │  10.6.0-beta.0 (from the storybook package) or higher.                     │
+│ │                                                                            │
+│ │  Based on your lockfile, these dependencies should be aligned:             │
+│ │                                                                            │
+│ │  @storybook/react-vite: 10.4.4                                             │
+│ │  @storybook/angular: 10.4.4                                                │
+│ │  @storybook/builder-webpack5: 10.4.4                                       │
+│ │  @storybook/core-webpack: 10.4.4                                           │
+│ │  @storybook/svelte-vite: 10.4.4                                            │
+│ │  @storybook/builder-vite: 10.4.4                                           │
+│ │  @storybook/svelte: 10.4.4                                                 │
+│ │                                                                            │
+│ │  You can run npx storybook@latest upgrade to upgrade all of your           │
+│ │  Storybook packages to the latest version.                                 │
+│ │                                                                            │
+│ │  Alternatively you can try manually changing the versions to match in      │
+│ │  your package.json. We also recommend regenerating your lockfile, or       │
+│ │  running the following command to possibly deduplicate your Storybook      │
+│ │  package versions: pnpm dedupe                                             │
+│ └────────────────────────────────────────────────────────────────────────────┘
+│
+◇  Storybook doctor is complete!
+│
+│  You can always recheck the health of your project(s) by running:
+│  npx storybook doctor
+│
+└  Done
+
+EXIT=0
+
+=== local versions ===
+storybook=10.6.0-beta.0
+vue3-vite=10.6.0-beta.0
+docs=10.6.0-beta.0
+a11y=10.6.0-beta.0
+mcp=10.6.0-beta.0

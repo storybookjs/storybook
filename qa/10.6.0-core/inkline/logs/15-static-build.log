@@ -1,0 +1,147 @@
+=== STATIC BUILD ===
+
+┌  Building storybook v10.6.0-beta.0
+│
+◇  Cleaning outputDir: storybook-static
+│
+◇  Loading presets
+│
+◇  Building manager..
+│
+●  Building open services..
+│
+●  Building preview..
+│  Vite vite v8.0.10 building client environment for production...
+
+ℹ [styleframe] Initializing...
+✔ [styleframe] Generated type declarations.
+✔ [styleframe] Initialized with 8 styleframe file(s) (tracking 9 dependencies).
+
+[2Ktransforming...✔ [styleframe] Built global CSS successfully.
+✓ 311 modules transformed.
+rendering chunks...
+computing gzip size...
+│  Vite storybook-static/iframe.html
+│  18.97 kB │ gzip:   5.33 kB
+│  storybook-static/assets/iframe-uS_R7BRy.css
+│  85.36 kB │ gzip:  15.81 kB
+│  storybook-static/assets/formatter-L2YTDE3Q-CqmLcfDh.js
+│  0.26 kB │ gzip:   0.21 kB
+│  storybook-static/assets/chunk-QQBDHPVZ-BFTqFBDn.js
+│  0.29 kB │ gzip:   0.17 kB
+│  storybook-static/assets/react-D3WrCHbz.js
+│  0.52 kB │ gzip:   0.32 kB
+│  storybook-static/assets/chunk-DnJy8xQt.js
+│  1.12 kB │ gzip:   0.63 kB
+│  storybook-static/assets/preload-helper-DVWkohm0.js
+│  1.27 kB │ gzip:   0.74 kB
+│  storybook-static/assets/chunk-DRQKCCAG-B-QEMA5O.js
+│  3.35 kB │ gzip:   1.39 kB
+│  storybook-static/assets/chunk-242VQQM5-CMiE93jm.js
+│  3.74 kB │ gzip:   1.45 kB
+│  storybook-static/assets/react-BdF9t19l.js
+│  7.52 kB │ gzip:   2.87 kB
+│  storybook-static/assets/IButton-Dd5XNID8.js
+│  12.05 kB │ gzip:   1.64 kB
+│  storybook-static/assets/IFieldGroup.stories-DI7z4H_L.js
+│  19.00 kB │ gzip:   1.95 kB
+│  storybook-static/assets/IBadge.stories-BGhpVtKS.js
+│  19.89 kB │ gzip:   2.11 kB
+│  storybook-static/assets/IButton.stories-BV0QhQ_-.js
+│  20.41 kB │ gzip:   2.28 kB
+│  storybook-static/assets/chunk-W22LQPXL-DRRGgbs-.js
+│  23.00 kB │ gzip:   7.73 kB
+│  storybook-static/vite-inject-mocker-entry.js
+│  27.85 kB │ gzip:   9.64 kB
+│  storybook-static/assets/matchers-JIUQ3HVY-CBVgkZn4.js
+│  28.81 kB │ gzip:   9.67 kB
+│  storybook-static/assets/Color-6AOWCN3U-BjHrIOx1.js
+│  31.01 kB │ gzip:  11.66 kB
+│  storybook-static/assets/IInput.stories-4cTbdCnR.js
+│  31.50 kB │ gzip:   2.43 kB
+│  storybook-static/assets/IHamburgerMenu.stories-DuRwySdg.js
+│  31.93 kB │ gzip:   3.11 kB
+│  storybook-static/assets/IInput-CysPTzWF.js
+│  33.09 kB │ gzip:   2.49 kB
+│  storybook-static/assets/WithTooltip-CDUNV5IS-CslbzxcK.js
+│  33.27 kB │ gzip:  11.67 kB
+│  storybook-static/assets/ICheckbox.stories-4kNS7dsN.js
+│  50.95 kB │ gzip:   3.87 kB
+│  storybook-static/assets/theming-GA2_0fun.js
+│  55.68 kB │ gzip:  21.49 kB
+│  storybook-static/assets/_virtual_styleframe_consumer-BDpu6PYq.js
+│  56.41 kB │ gzip:  10.16 kB
+│  storybook-static/assets/ISwitch.stories-BJyVyXlF.js
+│  58.20 kB │ gzip:   3.98 kB
+│  storybook-static/assets/IRadioGroup.stories-DDSCmmq5.js
+│  61.52 kB │ gzip:   4.53 kB
+│  storybook-static/assets/syntaxhighlighter-4REYKNEV-BLDcT8LY.js
+│  75.94 kB │ gzip:  27.26 kB
+│  storybook-static/assets/DocsRenderer-JROSPFPF-CjiSerEe.js
+│  371.87 kB │ gzip: 117.63 kB
+│  storybook-static/assets/components-LbTmWvyL.js
+│  563.96 kB │ gzip: 179.78 kB
+│  storybook-static/assets/axe-B-ZjafC7.js
+│  579.53 kB │ gzip: 158.45 kB
+│  storybook-static/assets/iframe-zuT0rNrc.js
+│  1,069.25 kB │ gzip: 317.04 kB
+
+│
+▲  Vite [plugin builtin:vite-reporter]
+│  (!) Some chunks are larger than 500 kB after minification. Consider:
+│  - Using dynamic import() to code-split the application
+│  - Use build.rolldownOptions.output.codeSplitting to improve chunking:
+│  ]8;;https://rolldown.rs/reference/OutputOptions.codeSplittinghttps://rolldown.rs/reference/OutputOptions.codeSplitting]8;;
+│  - Adjust chunk size limit for this warning via
+│  build.chunkSizeWarningLimit.
+│
+■  Vite ✗ Build failed in 3.52s
+│
+■  Failed to build the preview
+│
+■  Build failed with 1 error:
+
+│  Error: [vite]: Rolldown failed to resolve import "@inkline/vue" from
+│  "./.inkline/components/field-group/stories/IFieldGroup.stories.ts".
+│  This is most likely unintended because it can break your application
+│  at runtime.
+│  If you do want to externalize this module explicitly add it to
+│  `build.rollupOptions.external`
+│  at viteLog
+│  (file:///tmp/qa-10.6/inkline/node_modules/.pnpm/vite@8.0.10_@types+node@26.1.1_esbuild@0.28.1_jiti@2.7.0_less@4.4.2_sass@1.99.0_terser@5.48.0_tsx@4.22.4_yaml@2.9.0/node_modules/vite/dist/node/chunks/node.js:33111:57)
+│  at onRollupLog
+│  (file:///tmp/qa-10.6/inkline/node_modules/.pnpm/vite@8.0.10_@types+node@26.1.1_esbuild@0.28.1_jiti@2.7.0_less@4.4.2_sass@1.99.0_terser@5.48.0_tsx@4.22.4_yaml@2.9.0/node_modules/vite/dist/node/chunks/node.js:33143:7)
+│  at onLog
+│  (file:///tmp/qa-10.6/inkline/node_modules/.pnpm/vite@8.0.10_@types+node@26.1.1_esbuild@0.28.1_jiti@2.7.0_less@4.4.2_sass@1.99.0_terser@5.48.0_tsx@4.22.4_yaml@2.9.0/node_modules/vite/dist/node/chunks/node.js:32911:4)
+│  at
+│  file:///tmp/qa-10.6/inkline/node_modules/.pnpm/rolldown@1.0.0-rc.17/node_modules/rolldown/dist/shared/rolldown-build-DSxL8qiP.mjs:50:26
+│  at logger
+│  (file:///tmp/qa-10.6/inkline/node_modules/.pnpm/rolldown@1.0.0-rc.17/node_modules/rolldown/dist/shared/rolldown-build-DSxL8qiP.mjs:41:3)
+│  at onLog
+│  (file:///tmp/qa-10.6/inkline/node_modules/.pnpm/rolldown@1.0.0-rc.17/node_modules/rolldown/dist/shared/bindingify-input-options-DbbBhzky.mjs:1991:32)
+│  at aggregateBindingErrorsIntoJsError
+│  (file:///tmp/qa-10.6/inkline/node_modules/.pnpm/rolldown@1.0.0-rc.17/node_modules/rolldown/dist/shared/error-DL-e8-oE.mjs:48:18)
+│  at unwrapBindingResult
+│  (file:///tmp/qa-10.6/inkline/node_modules/.pnpm/rolldown@1.0.0-rc.17/node_modules/rolldown/dist/shared/error-DL-e8-oE.mjs:18:128)
+│  at #build
+│  (file:///tmp/qa-10.6/inkline/node_modules/.pnpm/rolldown@1.0.0-rc.17/node_modules/rolldown/dist/shared/rolldown-build-DSxL8qiP.mjs:3317:34)
+│  at async buildEnvironment
+│  (file:///tmp/qa-10.6/inkline/node_modules/.pnpm/vite@8.0.10_@types+node@26.1.1_esbuild@0.28.1_jiti@2.7.0_less@4.4.2_sass@1.99.0_terser@5.48.0_tsx@4.22.4_yaml@2.9.0/node_modules/vite/dist/node/chunks/node.js:33018:64)
+│  at async Object.build
+│  (file:///tmp/qa-10.6/inkline/node_modules/.pnpm/vite@8.0.10_@types+node@26.1.1_esbuild@0.28.1_jiti@2.7.0_less@4.4.2_sass@1.99.0_terser@5.48.0_tsx@4.22.4_yaml@2.9.0/node_modules/vite/dist/node/chunks/node.js:33440:19)
+│  at async build
+│  (file:///tmp/qa-10.6/inkline/node_modules/.pnpm/@storybook+builder-vite@10.6.0-beta.0_storybook@10.6.0-beta.0_@types+react@19.2.17_pret_abc147b7c070d4aa28d8bbffa2b9dc21/node_modules/@storybook/builder-vite/dist/index.js:1690:290)
+│  at async Promise.all (index 0)
+│  at async buildStaticStandalone
+│  (file:///tmp/qa-10.6/inkline/node_modules/.pnpm/storybook@10.6.0-beta.0_@types+react@19.2.17_prettier@2.8.8_react-dom@19.2.7_react@19.2_0b829921c621cc374a108e39858daab7/node_modules/storybook/dist/core-server/index.js:7602:7)
+│  at async withTelemetry
+│  (file:///tmp/qa-10.6/inkline/node_modules/.pnpm/storybook@10.6.0-beta.0_@types+react@19.2.17_prettier@2.8.8_react-dom@19.2.7_react@19.2_0b829921c621cc374a108e39858daab7/node_modules/storybook/dist/_node-chunks/chunk-WGM2GNB7.js:142:12)
+│  at async build
+│  (file:///tmp/qa-10.6/inkline/node_modules/.pnpm/storybook@10.6.0-beta.0_@types+react@19.2.17_prettier@2.8.8_react-dom@19.2.7_react@19.2_0b829921c621cc374a108e39858daab7/node_modules/storybook/dist/bin/core.js:4770:3)
+│
+└  Storybook exited with an error
+
+undefined
+/tmp/qa-10.6/inkline/ui/vue:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: storybook build -o storybook-static --stats-json
+EXIT=0

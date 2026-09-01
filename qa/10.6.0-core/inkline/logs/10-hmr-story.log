@@ -1,0 +1,30 @@
+│  }
+│  },
+│  "builder": "@storybook/builder-vite",
+│  "renderer": "@storybook/vue3",
+│  "portableStoriesFileCount": 0,
+│  "applicationFileCount": 0,
+│  "storybookVersion": "10.6.0-beta.0",
+│  "storybookVersionSpecifier": "10.6.0-beta.0",
+│  "language": "typescript",
+│  "storybookPackages": {
+│  "@inkline/storybook": {
+│  "version": "0.0.0"
+│  },
+│  "@storybook/vue3-vite": {
+│  "version": "10.6.0-beta.0"
+│  },
+│  "storybook": {}
+│  },
+│  "addons": {
+│  "@storybook/addon-a11y": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-docs": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-mcp": {}
+│  },
+│  "packageJsonType": "module"
+│  }
+│  }

@@ -1,0 +1,15 @@
+$ vp pack
+ℹ entry: src/index.ts, src/bin/inkline.ts
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ Granting execute permission to dist/bin/inkline.mjs
+ℹ dist/index.mjs              0.47 kB │ gzip: 0.29 kB
+ℹ dist/bin/inkline.mjs        0.12 kB │ gzip: 0.12 kB
+ℹ dist/errors-D3HR3XC3.mjs   19.51 kB │ gzip: 7.58 kB
+ℹ dist/compile-CxCm5gQo.mjs  17.27 kB │ gzip: 5.47 kB
+ℹ dist/init-Cs9H077F.mjs      8.68 kB │ gzip: 2.83 kB
+ℹ dist/check-B_vlM4Wx.mjs     2.95 kB │ gzip: 1.22 kB
+ℹ dist/index.d.mts            0.09 kB │ gzip: 0.10 kB
+ℹ dist/bin/inkline.d.mts      0.01 kB │ gzip: 0.03 kB
+ℹ 8 files, total: 49.11 kB
+✔ Build complete in 80ms

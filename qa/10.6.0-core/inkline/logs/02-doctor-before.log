@@ -1,0 +1,34 @@
+=== DOCTOR BEFORE (vue) ===
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +71
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 141, reused 59, downloaded 20, added 71, done
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Progress: resolved 169, reused 91, downloaded 13, added 0
+[WARN] 3 deprecated subdependencies found: glob@7.2.3, inflight@1.0.6, rimraf@2.6.3
+Packages: +201
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 271, reused 164, downloaded 45, added 132, done
+.../node_modules/esbuild postinstall$ node install.js
+.../node_modules/esbuild postinstall: Done
+
+┌  Doctoring Storybook
+│
+◇  Checking the health of your Storybook..
+│
+■  undefined: 1 problem found
+│ ┌─Configuration Error────────────────────────────────────────────────────────┐
+│ │  ❌ Unable to determine Storybook version so the command will not          │
+│ │  proceed.                                                                  │
+│ │  🤔 Are you running storybook doctor from your project directory? Please   │
+│ │  specify your Storybook config directory with the --config-dir flag.       │
+│ └────────────────────────────────────────────────────────────────────────────┘
+│
+◇  Storybook doctor is complete!
+│
+│  You can always recheck the health of your project(s) by running:
+│  npx storybook doctor
+│
+└  Done
+
+EXIT=0

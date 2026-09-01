@@ -1,0 +1,5 @@
+$ storybook build -o storybook-static -- --stats-json
+error: too many arguments for 'build'. Expected 0 arguments but got 1.
+/tmp/qa-10.6/inkline/ui/vue:
+[ERR_PNPM_RECURSIVE_RUN_FIRST_FAIL] @inkline/vue@0.0.0 storybook:build: `storybook build -o storybook-static -- --stats-json`
+Exit status 1

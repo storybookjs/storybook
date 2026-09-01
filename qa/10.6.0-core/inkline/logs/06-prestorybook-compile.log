@@ -1,0 +1,46 @@
+=== Build compiler + components compile for vue ===
+$ vp pack
+ℹ entry: src/index.ts, src/ir/index.ts, src/codegen/index.ts, src/testing/index.ts
+ℹ tsconfig: tsconfig.json
+ℹ Build start
+ℹ dist/testing.mjs               26.93 kB │ gzip:  8.01 kB
+ℹ dist/ir.mjs                     6.69 kB │ gzip:  2.11 kB
+ℹ dist/index.mjs                  3.60 kB │ gzip:  1.42 kB
+ℹ dist/codegen.mjs                0.87 kB │ gzip:  0.40 kB
+ℹ dist/printer-DqgD5wCq.mjs     166.62 kB │ gzip: 35.93 kB
+ℹ dist/compile-nTqw_kqK.mjs     114.34 kB │ gzip: 30.11 kB
+ℹ dist/transform-DUIemsoV.mjs     5.08 kB │ gzip:  1.40 kB
+ℹ dist/types-iiPZih_T.mjs         1.60 kB │ gzip:  0.57 kB
+ℹ dist/ir.d.mts                   5.62 kB │ gzip:  1.60 kB
+ℹ dist/testing.d.mts              5.39 kB │ gzip:  1.35 kB
+ℹ dist/codegen.d.mts              4.88 kB │ gzip:  1.31 kB
+ℹ dist/index.d.mts                4.58 kB │ gzip:  1.76 kB
+ℹ dist/context-Dt3lf1Ee.d.mts    53.98 kB │ gzip: 14.56 kB
+ℹ dist/compile-dAZTtAmy.d.mts     0.79 kB │ gzip:  0.40 kB
+ℹ dist/registry-k3ade_c0.d.mts    0.45 kB │ gzip:  0.24 kB
+ℹ 15 files, total: 401.41 kB
+✔ Build complete in 251ms
+node:internal/modules/esm/resolve:275
+    throw new ERR_MODULE_NOT_FOUND(
+          ^
+
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/tmp/qa-10.6/inkline/tooling/cli/dist/bin/inkline.mjs' imported from /tmp/qa-10.6/inkline/tooling/cli/bin/inkline.mjs
+    at finalizeResolution (node:internal/modules/esm/resolve:275:11)
+    at moduleResolve (node:internal/modules/esm/resolve:861:10)
+    at defaultResolve (node:internal/modules/esm/resolve:985:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:747:20)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:724:38)
+    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:320:38)
+    at onImport.tracePromise.__proto__ (node:internal/modules/esm/loader:680:36)
+    at TracingChannel.tracePromise (node:diagnostics_channel:350:14)
+    at ModuleLoader.import (node:internal/modules/esm/loader:679:21)
+    at defaultImportModuleDynamicallyForModule (node:internal/modules/esm/utils:222:31) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///tmp/qa-10.6/inkline/tooling/cli/dist/bin/inkline.mjs'
+}
+
+Node.js v22.22.3
+undefined
+/tmp/qa-10.6/inkline/ui/components:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: inkline compile 'src/**/*.ink.tsx' --config inkline.config.ts --target vue
+COMPILE_EXIT=0

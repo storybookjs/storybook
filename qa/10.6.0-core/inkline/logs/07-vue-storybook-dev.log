@@ -1,0 +1,920 @@
+$ pnpm --filter @inkline/components exec inkline compile 'src/**/*.ink.tsx' --config inkline.config.ts --target vue
+Generated 8 story file(s) for 8 component(s).
+Compiled 67 files in 0.35s — 0 errors, 0 warnings, 0 notes
+$ storybook dev -p 6007
+
+┌  storybook v10.6.0-beta.0
+│
+●  [telemetry]
+│
+●  {
+│  "eventType": "boot",
+│  "payload": {
+│  "eventType": "dev"
+│  }
+│  }
+│
+●  Starting...
+│
+●  [telemetry]
+│
+●  {
+│  "eventType": "version-update",
+│  "payload": {},
+│  "metadata": {
+│  "generatedAt": 1788248553957,
+│  "userSince": 1785753827176,
+│  "hasCustomBabel": false,
+│  "hasCustomWebpack": false,
+│  "hasStaticDirs": false,
+│  "hasStorybookEslint": false,
+│  "refCount": 0,
+│  "knownPackages": {},
+│  "hasRouterPackage": false,
+│  "packageManager": {
+│  "type": "pnpm",
+│  "version": "11.6.0",
+│  "agent": "pnpm",
+│  "nodeLinker": "undefined"
+│  },
+│  "preview": {
+│  "usesGlobals": false
+│  },
+│  "framework": {
+│  "name": "@storybook/vue3-vite",
+│  "options": {
+│  "docgen": {
+│  "plugin": "vue-component-meta",
+│  "tsconfig": "ui/vue/tsconfig.json"
+│  }
+│  }
+│  },
+│  "builder": "@storybook/builder-vite",
+│  "renderer": "@storybook/vue3",
+│  "portableStoriesFileCount": 0,
+│  "applicationFileCount": 0,
+│  "storybookVersion": "10.6.0-beta.0",
+│  "storybookVersionSpecifier": "10.6.0-beta.0",
+│  "language": "typescript",
+│  "storybookPackages": {
+│  "@inkline/storybook": {
+│  "version": "0.0.0"
+│  },
+│  "@storybook/vue3-vite": {
+│  "version": "10.6.0-beta.0"
+│  },
+│  "storybook": {}
+│  },
+│  "addons": {
+│  "@storybook/addon-a11y": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-docs": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-mcp": {}
+│  },
+│  "packageJsonType": "module"
+│  }
+│  }
+
+ℹ [styleframe] Initializing...
+✔ [styleframe] Generated type declarations.
+✔ [styleframe] Initialized with 8 styleframe file(s) (tracking 9 dependencies).
+
+│ [38;2;255;71;133m╭[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╮[39m
+│ [38;2;255;71;133m│[39m   Storybook ready!                                   [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                      [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - Local:                http://localhost:6007/     [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - On your network:      http://172.30.0.2:6007/    [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                      [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m╰[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╯[39m
+│
+●  203 ms for manager and 797 ms for preview
+│
+●  [telemetry]
+│
+●  {
+│  "eventType": "dev",
+│  "payload": {
+│  "precedingUpgrade": {
+│  "timestamp": 1788248459417,
+│  "eventType": "upgrade",
+│  "eventId": "9-llsLmsOcwJqrLUeTeWF",
+│  "sessionId": "OZSxV7SGr7NxVP9fe0CDR"
+│  },
+│  "versionStatus": "success",
+│  "storyIndex": {
+│  "storyCount": 53,
+│  "componentCount": 8,
+│  "pageStoryCount": 0,
+│  "playStoryCount": 0,
+│  "testStoryCount": 0,
+│  "maxTestsPerStory": 0,
+│  "singleTestStoryCount": 0,
+│  "autodocsCount": 0,
+│  "mdxCount": 0,
+│  "exampleStoryCount": 0,
+│  "exampleDocsCount": 0,
+│  "onboardingStoryCount": 0,
+│  "onboardingDocsCount": 0,
+│  "svelteCsfV4Count": 0,
+│  "svelteCsfV5Count": 0,
+│  "version": 5
+│  },
+│  "storyStats": {
+│  "factory": 0,
+│  "play": 0,
+│  "render": 44,
+│  "loaders": 0,
+│  "beforeEach": 0,
+│  "globals": 0,
+│  "tags": 0,
+│  "storyFn": 0,
+│  "mount": 0,
+│  "moduleMock": 0
+│  }
+│  },
+│  "metadata": {
+│  "generatedAt": 1788248555122,
+│  "userSince": 1785753827176,
+│  "hasCustomBabel": false,
+│  "hasCustomWebpack": false,
+│  "hasStaticDirs": false,
+│  "hasStorybookEslint": false,
+│  "refCount": 0,
+│  "knownPackages": {},
+│  "hasRouterPackage": false,
+│  "packageManager": {
+│  "type": "pnpm",
+│  "version": "11.6.0",
+│  "agent": "pnpm",
+│  "nodeLinker": "undefined"
+│  },
+│  "preview": {
+│  "usesGlobals": false
+│  },
+│  "framework": {
+│  "name": "@storybook/vue3-vite",
+│  "options": {
+│  "docgen": {
+│  "plugin": "vue-component-meta",
+│  "tsconfig": "ui/vue/tsconfig.json"
+│  }
+│  }
+│  },
+│  "builder": "@storybook/builder-vite",
+│  "renderer": "@storybook/vue3",
+│  "portableStoriesFileCount": 0,
+│  "applicationFileCount": 0,
+│  "storybookVersion": "10.6.0-beta.0",
+│  "storybookVersionSpecifier": "10.6.0-beta.0",
+│  "language": "typescript",
+│  "storybookPackages": {
+│  "@inkline/storybook": {
+│  "version": "0.0.0"
+│  },
+│  "@storybook/vue3-vite": {
+│  "version": "10.6.0-beta.0"
+│  },
+│  "storybook": {}
+│  },
+│  "addons": {
+│  "@storybook/addon-a11y": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-docs": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-mcp": {}
+│  },
+│  "packageJsonType": "module"
+│  }
+│  }
+│
+●  [telemetry]
+│
+●  {
+│  "eventType": "onboarding-checklist-status",
+│  "payload": {
+│  "item": "installDocs",
+│  "status": "done"
+│  },
+│  "metadata": {
+│  "generatedAt": 1788248553957,
+│  "userSince": 1785753827176,
+│  "hasCustomBabel": false,
+│  "hasCustomWebpack": false,
+│  "hasStaticDirs": false,
+│  "hasStorybookEslint": false,
+│  "refCount": 0,
+│  "knownPackages": {},
+│  "hasRouterPackage": false,
+│  "packageManager": {
+│  "type": "pnpm",
+│  "version": "11.6.0",
+│  "agent": "pnpm",
+│  "nodeLinker": "undefined"
+│  },
+│  "preview": {
+│  "usesGlobals": false
+│  },
+│  "framework": {
+│  "name": "@storybook/vue3-vite",
+│  "options": {
+│  "docgen": {
+│  "plugin": "vue-component-meta",
+│  "tsconfig": "ui/vue/tsconfig.json"
+│  }
+│  }
+│  },
+│  "builder": "@storybook/builder-vite",
+│  "renderer": "@storybook/vue3",
+│  "portableStoriesFileCount": 0,
+│  "applicationFileCount": 0,
+│  "storybookVersion": "10.6.0-beta.0",
+│  "storybookVersionSpecifier": "10.6.0-beta.0",
+│  "language": "typescript",
+│  "storybookPackages": {
+│  "@inkline/storybook": {
+│  "version": "0.0.0"
+│  },
+│  "@storybook/vue3-vite": {
+│  "version": "10.6.0-beta.0"
+│  },
+│  "storybook": {}
+│  },
+│  "addons": {
+│  "@storybook/addon-a11y": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-docs": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-mcp": {}
+│  },
+│  "packageJsonType": "module"
+│  }
+│  }
+│
+●  [telemetry]
+│
+●  {
+│  "eventType": "onboarding-checklist-status",
+│  "payload": {
+│  "item": "installA11y",
+│  "status": "done"
+│  },
+│  "metadata": {
+│  "generatedAt": 1788248553957,
+│  "userSince": 1785753827176,
+│  "hasCustomBabel": false,
+│  "hasCustomWebpack": false,
+│  "hasStaticDirs": false,
+│  "hasStorybookEslint": false,
+│  "refCount": 0,
+│  "knownPackages": {},
+│  "hasRouterPackage": false,
+│  "packageManager": {
+│  "type": "pnpm",
+│  "version": "11.6.0",
+│  "agent": "pnpm",
+│  "nodeLinker": "undefined"
+│  },
+│  "preview": {
+│  "usesGlobals": false
+│  },
+│  "framework": {
+│  "name": "@storybook/vue3-vite",
+│  "options": {
+│  "docgen": {
+│  "plugin": "vue-component-meta",
+│  "tsconfig": "ui/vue/tsconfig.json"
+│  }
+│  }
+│  },
+│  "builder": "@storybook/builder-vite",
+│  "renderer": "@storybook/vue3",
+│  "portableStoriesFileCount": 0,
+│  "applicationFileCount": 0,
+│  "storybookVersion": "10.6.0-beta.0",
+│  "storybookVersionSpecifier": "10.6.0-beta.0",
+│  "language": "typescript",
+│  "storybookPackages": {
+│  "@inkline/storybook": {
+│  "version": "0.0.0"
+│  },
+│  "@storybook/vue3-vite": {
+│  "version": "10.6.0-beta.0"
+│  },
+│  "storybook": {}
+│  },
+│  "addons": {
+│  "@storybook/addon-a11y": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-docs": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-mcp": {}
+│  },
+│  "packageJsonType": "module"
+│  }
+│  }
+✔ [styleframe] Built global CSS successfully.
+│
+●  [telemetry]
+│
+●  {
+│  "eventType": "preview-first-load",
+│  "payload": {
+│  "userAgent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36
+│  (KHTML, like Gecko) HeadlessChrome/148.0.0.0 Safari/537.36",
+│  "isNewUser": false
+│  },
+│  "metadata": {
+│  "generatedAt": 1788248553957,
+│  "userSince": 1785753827176,
+│  "hasCustomBabel": false,
+│  "hasCustomWebpack": false,
+│  "hasStaticDirs": false,
+│  "hasStorybookEslint": false,
+│  "refCount": 0,
+│  "knownPackages": {},
+│  "hasRouterPackage": false,
+│  "packageManager": {
+│  "type": "pnpm",
+│  "version": "11.6.0",
+│  "agent": "pnpm",
+│  "nodeLinker": "undefined"
+│  },
+│  "preview": {
+│  "usesGlobals": false
+│  },
+│  "framework": {
+│  "name": "@storybook/vue3-vite",
+│  "options": {
+│  "docgen": {
+│  "plugin": "vue-component-meta",
+│  "tsconfig": "ui/vue/tsconfig.json"
+│  }
+│  }
+│  },
+│  "builder": "@storybook/builder-vite",
+│  "renderer": "@storybook/vue3",
+│  "portableStoriesFileCount": 0,
+│  "applicationFileCount": 0,
+│  "storybookVersion": "10.6.0-beta.0",
+│  "storybookVersionSpecifier": "10.6.0-beta.0",
+│  "language": "typescript",
+│  "storybookPackages": {
+│  "@inkline/storybook": {
+│  "version": "0.0.0"
+│  },
+│  "@storybook/vue3-vite": {
+│  "version": "10.6.0-beta.0"
+│  },
+│  "storybook": {}
+│  },
+│  "addons": {
+│  "@storybook/addon-a11y": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-docs": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-mcp": {}
+│  },
+│  "packageJsonType": "module"
+│  }
+│  }
+│
+●  [telemetry]
+│
+●  {
+│  "eventType": "onboarding-checklist-status",
+│  "payload": {
+│  "item": "moreComponents",
+│  "status": "done"
+│  },
+│  "metadata": {
+│  "generatedAt": 1788248553957,
+│  "userSince": 1785753827176,
+│  "hasCustomBabel": false,
+│  "hasCustomWebpack": false,
+│  "hasStaticDirs": false,
+│  "hasStorybookEslint": false,
+│  "refCount": 0,
+│  "knownPackages": {},
+│  "hasRouterPackage": false,
+│  "packageManager": {
+│  "type": "pnpm",
+│  "version": "11.6.0",
+│  "agent": "pnpm",
+│  "nodeLinker": "undefined"
+│  },
+│  "preview": {
+│  "usesGlobals": false
+│  },
+│  "framework": {
+│  "name": "@storybook/vue3-vite",
+│  "options": {
+│  "docgen": {
+│  "plugin": "vue-component-meta",
+│  "tsconfig": "ui/vue/tsconfig.json"
+│  }
+│  }
+│  },
+│  "builder": "@storybook/builder-vite",
+│  "renderer": "@storybook/vue3",
+│  "portableStoriesFileCount": 0,
+│  "applicationFileCount": 0,
+│  "storybookVersion": "10.6.0-beta.0",
+│  "storybookVersionSpecifier": "10.6.0-beta.0",
+│  "language": "typescript",
+│  "storybookPackages": {
+│  "@inkline/storybook": {
+│  "version": "0.0.0"
+│  },
+│  "@storybook/vue3-vite": {
+│  "version": "10.6.0-beta.0"
+│  },
+│  "storybook": {}
+│  },
+│  "addons": {
+│  "@storybook/addon-a11y": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-docs": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-mcp": {}
+│  },
+│  "packageJsonType": "module"
+│  }
+│  }
+│
+●  [telemetry]
+│
+●  {
+│  "eventType": "onboarding-checklist-status",
+│  "payload": {
+│  "item": "moreStories",
+│  "status": "done"
+│  },
+│  "metadata": {
+│  "generatedAt": 1788248553957,
+│  "userSince": 1785753827176,
+│  "hasCustomBabel": false,
+│  "hasCustomWebpack": false,
+│  "hasStaticDirs": false,
+│  "hasStorybookEslint": false,
+│  "refCount": 0,
+│  "knownPackages": {},
+│  "hasRouterPackage": false,
+│  "packageManager": {
+│  "type": "pnpm",
+│  "version": "11.6.0",
+│  "agent": "pnpm",
+│  "nodeLinker": "undefined"
+│  },
+│  "preview": {
+│  "usesGlobals": false
+│  },
+│  "framework": {
+│  "name": "@storybook/vue3-vite",
+│  "options": {
+│  "docgen": {
+│  "plugin": "vue-component-meta",
+│  "tsconfig": "ui/vue/tsconfig.json"
+│  }
+│  }
+│  },
+│  "builder": "@storybook/builder-vite",
+│  "renderer": "@storybook/vue3",
+│  "portableStoriesFileCount": 0,
+│  "applicationFileCount": 0,
+│  "storybookVersion": "10.6.0-beta.0",
+│  "storybookVersionSpecifier": "10.6.0-beta.0",
+│  "language": "typescript",
+│  "storybookPackages": {
+│  "@inkline/storybook": {
+│  "version": "0.0.0"
+│  },
+│  "@storybook/vue3-vite": {
+│  "version": "10.6.0-beta.0"
+│  },
+│  "storybook": {}
+│  },
+│  "addons": {
+│  "@storybook/addon-a11y": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-docs": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-mcp": {}
+│  },
+│  "packageJsonType": "module"
+│  }
+│  }
+│
+●  [telemetry]
+│
+●  {
+│  "eventType": "onboarding-checklist-status",
+│  "payload": {
+│  "item": "organizeStories",
+│  "status": "done"
+│  },
+│  "metadata": {
+│  "generatedAt": 1788248553957,
+│  "userSince": 1785753827176,
+│  "hasCustomBabel": false,
+│  "hasCustomWebpack": false,
+│  "hasStaticDirs": false,
+│  "hasStorybookEslint": false,
+│  "refCount": 0,
+│  "knownPackages": {},
+│  "hasRouterPackage": false,
+│  "packageManager": {
+│  "type": "pnpm",
+│  "version": "11.6.0",
+│  "agent": "pnpm",
+│  "nodeLinker": "undefined"
+│  },
+│  "preview": {
+│  "usesGlobals": false
+│  },
+│  "framework": {
+│  "name": "@storybook/vue3-vite",
+│  "options": {
+│  "docgen": {
+│  "plugin": "vue-component-meta",
+│  "tsconfig": "ui/vue/tsconfig.json"
+│  }
+│  }
+│  },
+│  "builder": "@storybook/builder-vite",
+│  "renderer": "@storybook/vue3",
+│  "portableStoriesFileCount": 0,
+│  "applicationFileCount": 0,
+│  "storybookVersion": "10.6.0-beta.0",
+│  "storybookVersionSpecifier": "10.6.0-beta.0",
+│  "language": "typescript",
+│  "storybookPackages": {
+│  "@inkline/storybook": {
+│  "version": "0.0.0"
+│  },
+│  "@storybook/vue3-vite": {
+│  "version": "10.6.0-beta.0"
+│  },
+│  "storybook": {}
+│  },
+│  "addons": {
+│  "@storybook/addon-a11y": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-docs": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-mcp": {}
+│  },
+│  "packageJsonType": "module"
+│  }
+│  }
+│
+●  [telemetry]
+│
+●  {
+│  "eventType": "onboarding-checklist-status",
+│  "payload": {
+│  "item": "renderComponent",
+│  "status": "done"
+│  },
+│  "metadata": {
+│  "generatedAt": 1788248553957,
+│  "userSince": 1785753827176,
+│  "hasCustomBabel": false,
+│  "hasCustomWebpack": false,
+│  "hasStaticDirs": false,
+│  "hasStorybookEslint": false,
+│  "refCount": 0,
+│  "knownPackages": {},
+│  "hasRouterPackage": false,
+│  "packageManager": {
+│  "type": "pnpm",
+│  "version": "11.6.0",
+│  "agent": "pnpm",
+│  "nodeLinker": "undefined"
+│  },
+│  "preview": {
+│  "usesGlobals": false
+│  },
+│  "framework": {
+│  "name": "@storybook/vue3-vite",
+│  "options": {
+│  "docgen": {
+│  "plugin": "vue-component-meta",
+│  "tsconfig": "ui/vue/tsconfig.json"
+│  }
+│  }
+│  },
+│  "builder": "@storybook/builder-vite",
+│  "renderer": "@storybook/vue3",
+│  "portableStoriesFileCount": 0,
+│  "applicationFileCount": 0,
+│  "storybookVersion": "10.6.0-beta.0",
+│  "storybookVersionSpecifier": "10.6.0-beta.0",
+│  "language": "typescript",
+│  "storybookPackages": {
+│  "@inkline/storybook": {
+│  "version": "0.0.0"
+│  },
+│  "@storybook/vue3-vite": {
+│  "version": "10.6.0-beta.0"
+│  },
+│  "storybook": {}
+│  },
+│  "addons": {
+│  "@storybook/addon-a11y": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-docs": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-mcp": {}
+│  },
+│  "packageJsonType": "module"
+│  }
+│  }
+│
+■  Vite [console.error] SB_PREVIEW_API_0009 (NoStoryMatchError): Couldn't
+│  find story matching 'components-actions-button--docs'.
+
+│  - Are you sure a story with that id exists?
+│  - Please check your stories field of your main.js config.
+│  - Also check the browser console and terminal for error messages.
+│  at PreviewWeb.selectSpecifiedStory (]8;;http://127.0.0.1:6007/node_modules/.cache/storybook/10.6.0-beta.0/ce629b5d157c2f21612a42e0774759e1884fabd3655b41abec0e021611690b3a/sb-vite/deps/storybook_internal_preview_runtime.js?v=c2401380:34235:152)http://127.0.0.1:6007/node_...]8;;
+│  at PreviewWeb.initializeWithStoryIndex (]8;;http://127.0.0.1:6007/node_modules/.cache/storybook/10.6.0-beta.0/ce629b5d157c2f21612a42e0774759e1884fabd3655b41abec0e021611690b3a/sb-vite/deps/storybook_internal_preview_runtime.js?v=c2401380:34221:65)http://127.0.0.1:6007/n...]8;;
+│
+●  [telemetry]
+│
+●  {
+│  "eventType": "onboarding-checklist-status",
+│  "payload": {
+│  "item": "controls",
+│  "status": "done"
+│  },
+│  "metadata": {
+│  "generatedAt": 1788248553957,
+│  "userSince": 1785753827176,
+│  "hasCustomBabel": false,
+│  "hasCustomWebpack": false,
+│  "hasStaticDirs": false,
+│  "hasStorybookEslint": false,
+│  "refCount": 0,
+│  "knownPackages": {},
+│  "hasRouterPackage": false,
+│  "packageManager": {
+│  "type": "pnpm",
+│  "version": "11.6.0",
+│  "agent": "pnpm",
+│  "nodeLinker": "undefined"
+│  },
+│  "preview": {
+│  "usesGlobals": false
+│  },
+│  "framework": {
+│  "name": "@storybook/vue3-vite",
+│  "options": {
+│  "docgen": {
+│  "plugin": "vue-component-meta",
+│  "tsconfig": "ui/vue/tsconfig.json"
+│  }
+│  }
+│  },
+│  "builder": "@storybook/builder-vite",
+│  "renderer": "@storybook/vue3",
+│  "portableStoriesFileCount": 0,
+│  "applicationFileCount": 0,
+│  "storybookVersion": "10.6.0-beta.0",
+│  "storybookVersionSpecifier": "10.6.0-beta.0",
+│  "language": "typescript",
+│  "storybookPackages": {
+│  "@inkline/storybook": {
+│  "version": "0.0.0"
+│  },
+│  "@storybook/vue3-vite": {
+│  "version": "10.6.0-beta.0"
+│  },
+│  "storybook": {}
+│  },
+│  "addons": {
+│  "@storybook/addon-a11y": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-docs": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-mcp": {}
+│  },
+│  "packageJsonType": "module"
+│  }
+│  }
+│
+●  [telemetry]
+│
+●  {
+│  "eventType": "onboarding-checklist-status",
+│  "payload": {
+│  "item": "viewports",
+│  "status": "done"
+│  },
+│  "metadata": {
+│  "generatedAt": 1788248553957,
+│  "userSince": 1785753827176,
+│  "hasCustomBabel": false,
+│  "hasCustomWebpack": false,
+│  "hasStaticDirs": false,
+│  "hasStorybookEslint": false,
+│  "refCount": 0,
+│  "knownPackages": {},
+│  "hasRouterPackage": false,
+│  "packageManager": {
+│  "type": "pnpm",
+│  "version": "11.6.0",
+│  "agent": "pnpm",
+│  "nodeLinker": "undefined"
+│  },
+│  "preview": {
+│  "usesGlobals": false
+│  },
+│  "framework": {
+│  "name": "@storybook/vue3-vite",
+│  "options": {
+│  "docgen": {
+│  "plugin": "vue-component-meta",
+│  "tsconfig": "ui/vue/tsconfig.json"
+│  }
+│  }
+│  },
+│  "builder": "@storybook/builder-vite",
+│  "renderer": "@storybook/vue3",
+│  "portableStoriesFileCount": 0,
+│  "applicationFileCount": 0,
+│  "storybookVersion": "10.6.0-beta.0",
+│  "storybookVersionSpecifier": "10.6.0-beta.0",
+│  "language": "typescript",
+│  "storybookPackages": {
+│  "@inkline/storybook": {
+│  "version": "0.0.0"
+│  },
+│  "@storybook/vue3-vite": {
+│  "version": "10.6.0-beta.0"
+│  },
+│  "storybook": {}
+│  },
+│  "addons": {
+│  "@storybook/addon-a11y": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-docs": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-mcp": {}
+│  },
+│  "packageJsonType": "module"
+│  }
+│  }
+│
+●  [telemetry]
+│
+●  {
+│  "eventType": "onboarding-checklist-status",
+│  "payload": {
+│  "item": "autodocs",
+│  "status": "done"
+│  },
+│  "metadata": {
+│  "generatedAt": 1788248553957,
+│  "userSince": 1785753827176,
+│  "hasCustomBabel": false,
+│  "hasCustomWebpack": false,
+│  "hasStaticDirs": false,
+│  "hasStorybookEslint": false,
+│  "refCount": 0,
+│  "knownPackages": {},
+│  "hasRouterPackage": false,
+│  "packageManager": {
+│  "type": "pnpm",
+│  "version": "11.6.0",
+│  "agent": "pnpm",
+│  "nodeLinker": "undefined"
+│  },
+│  "preview": {
+│  "usesGlobals": false
+│  },
+│  "framework": {
+│  "name": "@storybook/vue3-vite",
+│  "options": {
+│  "docgen": {
+│  "plugin": "vue-component-meta",
+│  "tsconfig": "ui/vue/tsconfig.json"
+│  }
+│  }
+│  },
+│  "builder": "@storybook/builder-vite",
+│  "renderer": "@storybook/vue3",
+│  "portableStoriesFileCount": 0,
+│  "applicationFileCount": 0,
+│  "storybookVersion": "10.6.0-beta.0",
+│  "storybookVersionSpecifier": "10.6.0-beta.0",
+│  "language": "typescript",
+│  "storybookPackages": {
+│  "@inkline/storybook": {
+│  "version": "0.0.0"
+│  },
+│  "@storybook/vue3-vite": {
+│  "version": "10.6.0-beta.0"
+│  },
+│  "storybook": {}
+│  },
+│  "addons": {
+│  "@storybook/addon-a11y": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-docs": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-mcp": {}
+│  },
+│  "packageJsonType": "module"
+│  }
+│  }
+│
+●  [telemetry]
+│
+●  {
+│  "eventType": "onboarding-checklist-status",
+│  "payload": {
+│  "item": "mdxDocs",
+│  "status": "done"
+│  },
+│  "metadata": {
+│  "generatedAt": 1788248553957,
+│  "userSince": 1785753827176,
+│  "hasCustomBabel": false,
+│  "hasCustomWebpack": false,
+│  "hasStaticDirs": false,
+│  "hasStorybookEslint": false,
+│  "refCount": 0,
+│  "knownPackages": {},
+│  "hasRouterPackage": false,
+│  "packageManager": {
+│  "type": "pnpm",
+│  "version": "11.6.0",
+│  "agent": "pnpm",
+│  "nodeLinker": "undefined"
+│  },
+│  "preview": {
+│  "usesGlobals": false
+│  },
+│  "framework": {
+│  "name": "@storybook/vue3-vite",
+│  "options": {
+│  "docgen": {
+│  "plugin": "vue-component-meta",
+│  "tsconfig": "ui/vue/tsconfig.json"
+│  }
+│  }
+│  },
+│  "builder": "@storybook/builder-vite",
+│  "renderer": "@storybook/vue3",
+│  "portableStoriesFileCount": 0,
+│  "applicationFileCount": 0,
+│  "storybookVersion": "10.6.0-beta.0",
+│  "storybookVersionSpecifier": "10.6.0-beta.0",
+│  "language": "typescript",
+│  "storybookPackages": {
+│  "@inkline/storybook": {
+│  "version": "0.0.0"
+│  },
+│  "@storybook/vue3-vite": {
+│  "version": "10.6.0-beta.0"
+│  },
+│  "storybook": {}
+│  },
+│  "addons": {
+│  "@storybook/addon-a11y": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-docs": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-mcp": {}
+│  },
+│  "packageJsonType": "module"
+│  }
+│  }
+│  Vite page reload .inkline/components/button/stories/QaTemp.stories.ts

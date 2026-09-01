@@ -1,0 +1,15 @@
+Error [ERR_MODULE_NOT_FOUND]: Cannot find module '/tmp/qa-10.6/inkline/tooling/cli/node_modules/@inkline/config-loader/dist/index.mjs' imported from /tmp/qa-10.6/inkline/tooling/cli/dist/errors-D3HR3XC3.mjs
+    at finalizeResolution (node:internal/modules/esm/resolve:275:11)
+    at moduleResolve (node:internal/modules/esm/resolve:861:10)
+    at defaultResolve (node:internal/modules/esm/resolve:985:11)
+    at #cachedDefaultResolve (node:internal/modules/esm/loader:747:20)
+    at ModuleLoader.resolve (node:internal/modules/esm/loader:724:38)
+    at ModuleLoader.getModuleJobForImport (node:internal/modules/esm/loader:320:38)
+    at ModuleJob._link (node:internal/modules/esm/module_job:182:49) {
+  code: 'ERR_MODULE_NOT_FOUND',
+  url: 'file:///tmp/qa-10.6/inkline/tooling/cli/node_modules/@inkline/config-loader/dist/index.mjs'
+} 
+
+undefined
+/tmp/qa-10.6/inkline/ui/components:
+[ERR_PNPM_RECURSIVE_EXEC_FIRST_FAIL] Command failed with exit code 1: inkline compile 'src/**/*.ink.tsx' --config inkline.config.ts --target vue

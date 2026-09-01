@@ -1,0 +1,92 @@
+=== doctor from root ===
+
+┌  Doctoring Storybook
+│
+◇  Checking the health of your Storybook..
+│
+■  undefined: 1 problem found
+│ ┌─Configuration Error────────────────────────────────────────────────────────┐
+│ │  ❌ Unable to determine Storybook version so the command will not          │
+│ │  proceed.                                                                  │
+│ │  🤔 Are you running storybook doctor from your project directory? Please   │
+│ │  specify your Storybook config directory with the --config-dir flag.       │
+│ └────────────────────────────────────────────────────────────────────────────┘
+│
+◇  Storybook doctor is complete!
+│
+│  You can always recheck the health of your project(s) by running:
+│  npx storybook doctor
+│
+└  Done
+
+EXIT=0
+
+=== doctor from ui/vue with --config-dir ===
+
+┌  Doctoring Storybook
+│
+◇  Checking the health of your Storybook..
+│
+■  undefined: 1 problem found
+│ ┌─Configuration Error────────────────────────────────────────────────────────┐
+│ │  ❌ Unable to determine Storybook version so the command will not          │
+│ │  proceed.                                                                  │
+│ │  🤔 Are you running storybook doctor from your project directory? Please   │
+│ │  specify your Storybook config directory with the --config-dir flag.       │
+│ └────────────────────────────────────────────────────────────────────────────┘
+│
+◇  Storybook doctor is complete!
+│
+│  You can always recheck the health of your project(s) by running:
+│  npx storybook doctor
+│
+└  Done
+
+EXIT=0
+
+=== which storybook resolved locally ===
+node_modules/storybook/package.json
+10.4.4
+../../node_modules/.pnpm/storybook@10.4.4_@testing-library+dom@10.4.1_@types+react@19.2.17_prettier@2.8.8_react-_39442be9c8153c9536b21707044af614/node_modules/storybook/package.json
+../../node_modules/.pnpm/storybook@10.4.4_@testing-library+dom@10.4.1_@types+react@19.2.17_prettier@2.8.8_react-_42602a54291d88d010329e7b8bb1f136/node_modules/storybook/package.json
+../../node_modules/.pnpm/storybook@10.4.4_@testing-library+dom@10.4.1_@types+react@19.2.17_prettier@2.8.8_react-_819be424f4aee30bc982ee836d12561a/node_modules/storybook/package.json
+storybook@10.4.4 peer#3177 (5 variations)
+├── @inkline/react@0.0.0 (devDependencies)
+├── @inkline/storybook-app@0.0.0 (devDependencies)
+├─┬ @storybook/addon-a11y@10.4.4 peer#7839 (5 variations)
+│ ├── @inkline/react@0.0.0 (devDependencies)
+│ └── @inkline/storybook-app@0.0.0 (devDependencies)
+├─┬ @storybook/addon-docs@10.4.4 peer#4be5 (5 variations)
+│ ├── @inkline/react@0.0.0 (devDependencies)
+│ └── @inkline/storybook-app@0.0.0 (devDependencies)
+├─┬ @storybook/builder-vite@10.4.4 peer#9fba (4 variations)
+│ └─┬ @storybook/react-vite@10.4.4
+│   ├── @inkline/react@0.0.0 (devDependencies)
+│   └── @inkline/storybook-app@0.0.0 (devDependencies)
+├─┬ @storybook/csf-plugin@10.4.4 peer#9fba (5 variations)
+│ ├── @storybook/addon-docs@10.4.4 peer#4be5 (5 variations) [deduped]
+│ └── @storybook/builder-vite@10.4.4 peer#9fba (4 variations) [deduped]
+├─┬ @storybook/react@10.4.4 peer#4b95 (2 variations)
+│ └── @storybook/react-vite@10.4.4 [deduped]
+├─┬ @storybook/react-dom-shim@10.4.4 peer#cf61 (5 variations)
+│ ├── @storybook/addon-docs@10.4.4 peer#4be5 (5 variations) [deduped]
+│ └── @storybook/react@10.4.4 peer#4b95 (2 variations) [deduped]
+└── @storybook/react-vite@10.4.4 [deduped]
+
+storybook@10.4.4 peer#4292 (5 variations)
+├── @inkline/svelte@0.0.0 (devDependencies)
+├─┬ @storybook/addon-a11y@10.4.4 peer#f777 (5 variations)
+│ └── @inkline/svelte@0.0.0 (devDependencies)
+├─┬ @storybook/addon-docs@10.4.4 peer#384e (5 variations)
+│ └── @inkline/svelte@0.0.0 (devDependencies)
+├─┬ @storybook/builder-vite@10.4.4 peer#11e2 (4 variations)
+│ └─┬ @storybook/svelte-vite@10.4.4
+│   └── @inkline/svelte@0.0.0 (devDependencies)
+├─┬ @storybook/csf-plugin@10.4.4 peer#11e2 (5 variations)
+│ ├── @storybook/addon-docs@10.4.4 peer#384e (5 variations) [deduped]
+│ └── @storybook/builder-vite@10.4.4 peer#11e2 (4 variations) [deduped]
+├─┬ @storybook/react-dom-shim@10.4.4 peer#8970 (5 variations)
+│ └── @storybook/addon-docs@10.4.4 peer#384e (5 variations) [deduped]
+├─┬ @storybook/svelte@10.4.4 peer#9862 (2 variations)
+│ └── @storybook/svelte-vite@10.4.4 [deduped]
+└── @storybook/svelte-vite@10.4.4 [deduped]

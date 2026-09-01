@@ -1,0 +1,71 @@
+Scope: all 21 workspace projects
+? Verifying lockfile against supply-chain policies (2904 entries)...
+
+   ╭───────────────────────────────────────────────╮
+   │                                               │
+   │      Update available! 11.6.0 → 11.25.0.      │
+   │     Changelog: https://pnpm.io/v/11.25.0      │
+   │   To update, run: corepack use pnpm@11.25.0   │
+   │                                               │
+   ╰───────────────────────────────────────────────╯
+
+✓ Lockfile passes supply-chain policies (2904 entries in 4.6s)
+Lockfile is up to date, resolution step is skipped
+Progress: resolved 1, reused 0, downloaded 0, added 0
+Packages: +2504
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+Progress: resolved 2504, reused 0, downloaded 285, added 16
+Progress: resolved 2504, reused 0, downloaded 909, added 73
+Progress: resolved 2504, reused 0, downloaded 1549, added 128
+Progress: resolved 2504, reused 0, downloaded 2082, added 173
+Progress: resolved 2504, reused 0, downloaded 2399, added 1403
+Progress: resolved 2504, reused 0, downloaded 2399, added 2504, done
+.../node_modules/@parcel/watcher install$ node scripts/build-from-source.js
+.../core-js@3.49.0/node_modules/core-js postinstall$ node -e "try{require('./postinstall')}catch(e){}"
+.../node_modules/better-sqlite3 install$ prebuild-install || node-gyp rebuild --release
+.../esbuild@0.28.1/node_modules/esbuild postinstall$ node install.js
+.../node_modules/@parcel/watcher install: Done
+.../esbuild@0.27.7/node_modules/esbuild postinstall$ node install.js
+.../core-js@3.49.0/node_modules/core-js postinstall: Thank you for using core-js ( https://github.com/zloirock/core-js ) for polyfilling JavaScript standard library!
+.../core-js@3.49.0/node_modules/core-js postinstall: The project needs your help! Please consider supporting core-js:
+.../core-js@3.49.0/node_modules/core-js postinstall: > https://opencollective.com/core-js 
+.../core-js@3.49.0/node_modules/core-js postinstall: > https://patreon.com/zloirock 
+.../core-js@3.49.0/node_modules/core-js postinstall: > https://boosty.to/zloirock 
+.../core-js@3.49.0/node_modules/core-js postinstall: > bitcoin: bc1qlea7544qtsmj2rayg0lthvza9fau63ux0fstcz 
+.../core-js@3.49.0/node_modules/core-js postinstall: I highly recommend reading this: https://github.com/zloirock/core-js/blob/master/docs/2023-02-14-so-whats-next.md 
+.../core-js@3.49.0/node_modules/core-js postinstall: Done
+.../sharp@0.32.6/node_modules/sharp install$ (node install/libvips && node install/dll-copy && prebuild-install) || (node install/can-compile && node-gyp rebuild && node install/dll-copy)
+.../esbuild@0.28.1/node_modules/esbuild postinstall: Done
+.../esbuild@0.27.7/node_modules/esbuild postinstall: Done
+.../node_modules/vue-demi postinstall$ node -e "try{require('./scripts/postinstall.js')}catch(e){}"
+.../esbuild@0.25.12/node_modules/esbuild postinstall$ node install.js
+.../sharp@0.32.6/node_modules/sharp install: sharp: Downloading https://github.com/lovell/sharp-libvips/releases/download/v8.14.5/libvips-8.14.5-linux-x64.tar.br
+.../node_modules/better-sqlite3 install: Done
+.../esbuild@0.27.3/node_modules/esbuild postinstall$ node install.js
+.../esbuild@0.25.12/node_modules/esbuild postinstall: Done
+.../node_modules/vue-demi postinstall: Done
+.../sharp@0.34.5/node_modules/sharp install$ node install/check.js || npm run build
+.../node_modules/msgpackr-extract install$ node-gyp-build-optional-packages
+.../esbuild@0.27.3/node_modules/esbuild postinstall: Done
+.../sharp@0.34.5/node_modules/sharp install: Done
+.../node_modules/msgpackr-extract install: Done
+.../sharp@0.32.6/node_modules/sharp install: sharp: Integrity check passed for linux-x64
+.../sharp@0.32.6/node_modules/sharp install: Done
+.../.pnpm/lmdb@3.5.1/node_modules/lmdb install$ node-gyp-build-optional-packages
+.../.pnpm/lmdb@3.5.1/node_modules/lmdb install: Done
+
+devDependencies:
++ @changesets/cli 2.31.0
++ concurrently 10.0.3
++ vite-plus 0.1.24
++ wait-on 9.0.10
+
+. prepare$ vp config
+apps/website postinstall$ nuxt prepare
+. prepare: Done
+apps/website postinstall: [nuxt:icon] ✔ Nuxt Icon discovered local-installed 3 collections: lucide, mdi, simple-icons
+apps/website postinstall: ℹ Nuxt Icon client bundle consist of 43 icons with 10.40KB(uncompressed) in size
+apps/website postinstall: │
+apps/website postinstall: ◆  Types generated in .nuxt.
+apps/website postinstall: Done
+Done in 15.4s using pnpm v11.6.0

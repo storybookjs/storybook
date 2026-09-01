@@ -49,6 +49,7 @@ import {
 import type { InternalOptions, UserOptions } from './types.ts';
 import { requiresProjectAnnotations } from './utils.ts';
 import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
+import { isStorybookInternalFrame } from './stack-frames.ts';
 
 const WORKING_DIR = process.cwd();
 
@@ -345,6 +346,14 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
         test: {
           expect: { requireAssertions: false },
+
+          onStackTrace: (error, frame) => {
+            if (isStorybookInternalFrame(frame.file)) {
+              return false;
+            }
+            return nonMutableInputConfig.test?.onStackTrace?.(error, frame) ?? true;
+          },
+
           setupFiles: [
             ...internalSetupFiles,
             // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it

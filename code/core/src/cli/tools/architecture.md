@@ -132,7 +132,7 @@ Messages name the exact corrective command.
 
 | Failure                           | Detection                             | Message must include                                                                             |
 | --------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| No instance for this project      | No cwd/configDir match                | How to start Storybook; other running instances with `cwd` + `url`; exact `cd` or `--config-dir` |
+| No instance for this project      | No cwd/configDir match                | `--attach` only: how to start Storybook; other running instances with `cwd` + `url`; exact `cd` or `--config-dir`. `auto` falls back with no notice |
 | Port mismatch                     | No running instance on `--port`       | Running instances with their `port` + `url`; `--port <port>`                                     |
 | Old server                        | Token absent                          | Restart Storybook (vX.Y+) to enable attach                                                       |
 | Stale record / connection refused | WS connect fails                      | Registry cleanup; fallback note                                                                  |
@@ -140,9 +140,11 @@ Messages name the exact corrective command.
 | Spawn resolution failure          | No `storybook` under `record.cwd`     | `SpawnFailedError` remediation; local fallback                                                   |
 | Config drift                      | Remote command ack timeout            | Running Storybook was started with a different configuration — restart it                        |
 
-Rows other than config drift are factory-time attach gates. In `auto`, those return a local host
-and a fallback notice (omitted from `--json` output). Under `--attach`, they are hard errors with
-the same text. Config drift is a post-attach `tools.call` failure: `auto` does not fall back then.
+Rows other than config drift are factory-time attach gates. In `auto`, a missing instance falls
+back to local with no notice. Other factory-time gates return a local host and a fallback notice
+(omitted from `--json` output). Under `--attach`, they are hard errors with the same text; that is
+the only mode that still prints the no-instance start-Storybook guidance. Config drift is a
+post-attach `tools.call` failure: `auto` does not fall back then.
 
 ## Limits
 

@@ -16,9 +16,9 @@ import {
   resolveExperimentSelection,
   resolveRunPlan,
   scanResourceSignals,
-  stripAnsi,
   topUpCommand,
 } from './run-plan.ts';
+import { stripAnsi } from '../utils/colors.ts';
 
 const EXPERIMENTS = [
   'agentic-ref-cc-control-none-opus-high',

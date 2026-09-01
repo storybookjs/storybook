@@ -8,6 +8,7 @@
 // saveResults and discards every completed sibling run in the same
 // experiment. Slicing the matrix into batches of at most `parallelMax`
 // sandboxes each, with their own saveResults, caps that loss to one batch.
+import { stripAnsi } from '../utils/colors.ts';
 import { matchesAnySelector, resolveEvalSelection } from './selection.ts';
 import { PLAIN_STYLE, type OutputStyle } from './style.ts';
 
@@ -331,14 +332,6 @@ export function planBatches(
 
 // --- reading the runner's output -------------------------------------------
 
-// chalk disables colour on a pipe, but FORCE_COLOR in the environment overrides
-// that, and these patterns all have to match mid-line.
-const ANSI = /\x1B\[[0-9;]*m/g;
-
-export function stripAnsi(text: string): string {
-  return text.replace(ANSI, '');
-}
-
 export type ResourceSignalKind = 'memory' | 'disk' | 'billing';
 
 export interface ResourceSignal {
@@ -362,6 +355,8 @@ const SIGNAL_PATTERNS: { kind: ResourceSignalKind; pattern: RegExp }[] = [
 /** Resource-exhaustion evidence in a batch's output, deduplicated by kind. */
 export function scanResourceSignals(output: string): ResourceSignal[] {
   const found = new Map<ResourceSignalKind, ResourceSignal>();
+  // The runner's chalk keeps colouring a pipe when FORCE_COLOR is set, and the
+  // patterns have to match mid-line.
   for (const line of stripAnsi(output).split('\n')) {
     for (const { kind, pattern } of SIGNAL_PATTERNS) {
       if (!found.has(kind) && pattern.test(line)) {

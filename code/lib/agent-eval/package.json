@@ -51,6 +51,7 @@
     "diff": "^8.0.4",
     "memfs": "^4.68.0",
     "next": "16.1.6",
+    "picocolors": "^1.1.0",
     "picomatch": "^4.0.5",
     "postcss": "^8.5.16",
     "tailwindcss": "^4.3.2",

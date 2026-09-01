@@ -2,7 +2,7 @@ import {
   CLAUDE_AGENT_NAME,
   CLAUDE_PREVIEW_AGENT_NAME,
 } from '../../../shared/constants/agent-provenance.ts';
-import { projectPathsEqual, type ProjectPathImpl } from './project-path.ts';
+import { projectPathsEqual } from './project-path.ts';
 import type { InterceptReason, StorybookInstanceRecord } from './types.ts';
 
 export type ResolveResult =
@@ -74,10 +74,9 @@ export type ResolveTarget = {
  */
 export function resolveInstance(
   records: StorybookInstanceRecord[],
-  target: ResolveTarget,
-  pathImpl?: ProjectPathImpl
+  target: ResolveTarget
 ): ResolveResult {
-  const selection = selectInstances(records, target, pathImpl);
+  const selection = selectInstances(records, target);
   if (selection.kind === 'port-mismatch') {
     return {
       kind: 'intercept',
@@ -162,14 +161,13 @@ export type InstanceSelection =
  */
 export function selectInstances(
   records: StorybookInstanceRecord[],
-  target: ResolveTarget,
-  pathImpl?: ProjectPathImpl
+  target: ResolveTarget
 ): InstanceSelection {
   const { port: targetPort, agent: currentAgent } = target;
 
   if (targetPort != null) {
     const candidates = target.configDirExplicit
-      ? records.filter((record) => matchesTargetConfigDir(record, target, pathImpl))
+      ? records.filter((record) => matchesTargetConfigDir(record, target))
       : records;
     const matches = candidates.filter((record) => record.port === targetPort);
     if (matches.length === 0) {
@@ -180,7 +178,7 @@ export function selectInstances(
     return { kind: 'match', matches: [...matches].sort(byMostRecentlyStarted) };
   }
 
-  const projectMatches = listProjectMatches(records, target, pathImpl);
+  const projectMatches = listProjectMatches(records, target);
   if (projectMatches.length === 0) {
     return { kind: 'no-instance', records };
   }
@@ -190,27 +188,24 @@ export function selectInstances(
 /** Records whose cwd or configDir matches the target project, ignoring MCP status. */
 export function listProjectMatches(
   records: StorybookInstanceRecord[],
-  target: Pick<ResolveTarget, 'cwd' | 'configDir' | 'configDirExplicit'>,
-  pathImpl?: ProjectPathImpl
+  target: Pick<ResolveTarget, 'cwd' | 'configDir' | 'configDirExplicit'>
 ): StorybookInstanceRecord[] {
   return target.configDirExplicit
-    ? records.filter((record) => matchesTargetConfigDir(record, target, pathImpl))
+    ? records.filter((record) => matchesTargetConfigDir(record, target))
     : records.filter(
         (record) =>
-          projectPathsEqual(record.cwd, target.cwd, pathImpl) ||
-          matchesTargetConfigDir(record, target, pathImpl)
+          projectPathsEqual(record.cwd, target.cwd) || matchesTargetConfigDir(record, target)
       );
 }
 
 function matchesTargetConfigDir(
   record: StorybookInstanceRecord,
-  target: Pick<ResolveTarget, 'configDir'>,
-  pathImpl?: ProjectPathImpl
+  target: Pick<ResolveTarget, 'configDir'>
 ): boolean {
   return (
     target.configDir != null &&
     record.configDir != null &&
-    projectPathsEqual(record.configDir, target.configDir, pathImpl)
+    projectPathsEqual(record.configDir, target.configDir)
   );
 }
 

@@ -1,27 +1,44 @@
-import { posix, win32 } from 'node:path';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { describe, expect, it } from 'vitest';
-
+import { mockNodePath } from '../test-support/mock-node-path.ts';
 import { projectPathsEqual } from './project-path.ts';
 
+vi.mock('node:path', { spy: true });
+
 describe('projectPathsEqual', () => {
-  it('treats Windows drive-letter case and separators as the same path', () => {
-    expect(projectPathsEqual('C:/proj', 'c:\\proj', win32)).toBe(true);
-    expect(projectPathsEqual('C:/proj', 'C:\\proj', win32)).toBe(true);
-    expect(projectPathsEqual('C:/proj', 'c:/proj', win32)).toBe(true);
+  afterEach(() => {
+    vi.restoreAllMocks();
   });
 
-  it('treats Windows paths that differ only in letter case as the same path', () => {
-    expect(projectPathsEqual('C:/Users/Jeppe/Proj', 'c:/users/jeppe/proj', win32)).toBe(true);
+  describe('on Windows', () => {
+    beforeEach(() => {
+      mockNodePath('win32');
+    });
+
+    it('treats Windows drive-letter case and separators as the same path', () => {
+      expect(projectPathsEqual('C:/proj', 'c:\\proj')).toBe(true);
+      expect(projectPathsEqual('C:/proj', 'C:\\proj')).toBe(true);
+      expect(projectPathsEqual('C:/proj', 'c:/proj')).toBe(true);
+    });
+
+    it('treats Windows paths that differ only in letter case as the same path', () => {
+      expect(projectPathsEqual('C:/Users/Jeppe/Proj', 'c:/users/jeppe/proj')).toBe(true);
+    });
+
+    it('does not match different Windows paths', () => {
+      expect(projectPathsEqual('C:/proj', 'C:/other')).toBe(false);
+      expect(projectPathsEqual('C:/proj', 'D:/proj')).toBe(false);
+    });
   });
 
-  it('does not match different Windows paths', () => {
-    expect(projectPathsEqual('C:/proj', 'C:/other', win32)).toBe(false);
-    expect(projectPathsEqual('C:/proj', 'D:/proj', win32)).toBe(false);
-  });
+  describe('on POSIX', () => {
+    beforeEach(() => {
+      mockNodePath('posix');
+    });
 
-  it('keeps POSIX path compares byte-exact', () => {
-    expect(projectPathsEqual('/Users/x/foo', '/Users/x/foo', posix)).toBe(true);
-    expect(projectPathsEqual('/Users/x/foo', '/Users/x/Foo', posix)).toBe(false);
+    it('keeps POSIX path compares byte-exact', () => {
+      expect(projectPathsEqual('/Users/x/foo', '/Users/x/foo')).toBe(true);
+      expect(projectPathsEqual('/Users/x/foo', '/Users/x/Foo')).toBe(false);
+    });
   });
 });

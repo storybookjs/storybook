@@ -12118,9 +12118,9 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/agent-eval-utils@workspace:*, @storybook/agent-eval-utils@workspace:code/lib/agent-eval-utils":
+"@storybook/agent-eval-utils@workspace:*, @storybook/agent-eval-utils@workspace:code/lib/agent-eval/utils":
   version: 0.0.0-use.local
-  resolution: "@storybook/agent-eval-utils@workspace:code/lib/agent-eval-utils"
+  resolution: "@storybook/agent-eval-utils@workspace:code/lib/agent-eval/utils"
   languageName: unknown
   linkType: soft
 
@@ -17325,9 +17325,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"agent-eval@workspace:agent-eval":
+"agent-eval@workspace:code/lib/agent-eval":
   version: 0.0.0-use.local
-  resolution: "agent-eval@workspace:agent-eval"
+  resolution: "agent-eval@workspace:code/lib/agent-eval"
   dependencies:
     "@anthropic-ai/sdk": "npm:^0.117.1"
     "@storybook/agent-eval-utils": "workspace:*"

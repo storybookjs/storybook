@@ -101,7 +101,7 @@ jobs:
 
       - name: Run agentic-reference evals
         env:
-          # All options live in the runner (agent-eval/scripts/run-agentic-ref.ts).
+          # All options live in the runner (code/lib/agent-eval/scripts/run-agentic-ref.ts).
           # Passing them as env keeps a glob like agentic-ref-cc-* clear of shell
           # pathname expansion.
           AGENTIC_REF_EXPERIMENTS: ${{ inputs.experiments }}
@@ -126,7 +126,7 @@ jobs:
         # Metrics are best-effort; an analysis failure must still leave the raw
         # results archivable. Missing results surface at upload instead.
         continue-on-error: true
-        working-directory: agent-eval
+        working-directory: code/lib/agent-eval
         run: |
           # Writes analysis.json next to each run's result.json so the metrics
           # ride along in the uploaded artifact.
@@ -134,7 +134,7 @@ jobs:
 
           # Tar before upload: result files may contain characters that
           # actions/upload-artifact rejects.
-          tar -czf ../agent-eval-results.tgz results
+          tar -czf "$GITHUB_WORKSPACE/agent-eval-results.tgz" results
 
       - name: Upload eval results
         if: ${{ always() && inputs.dry == false }}
@@ -154,4 +154,4 @@ jobs:
         continue-on-error: true
         env:
           RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        run: node agent-eval/scripts/render-results-summary.mjs >> "$GITHUB_STEP_SUMMARY"
+        run: node code/lib/agent-eval/scripts/render-results-summary.mjs >> "$GITHUB_STEP_SUMMARY"

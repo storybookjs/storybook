@@ -4,13 +4,13 @@
   "type": "module",
   "workspaces": {
     "packages": [
-      "agent-eval",
       "code",
       "code/addons/*",
       "code/builders/*",
       "code/core",
       "code/frameworks/*",
       "code/lib/*",
+      "code/lib/agent-eval/utils",
       "code/presets/*",
       "code/renderers/*",
       "scripts"

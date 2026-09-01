@@ -5,6 +5,7 @@
     // @ alias and currently do not satisfy the stricter workspace setting.
     "noUncheckedIndexedAccess": false,
     "paths": {
+      "#lib/*": ["./lib/*.ts"],
       "#test-utils": ["./lib/test-utils.ts"],
       "@/*": ["./node_modules/@vercel/agent-eval-playground/*"],
       "@storybook/mcp": ["../code/lib/mcp/src/index.ts"]

@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url';
 
 import type { Sandbox } from '@vercel/agent-eval';
 
-import { isRecord } from './shell-parse.ts';
+import { isRecord } from './utils/type.ts';
 
 type FixturePackageJson = {
   evals?: {
@@ -13,8 +13,11 @@ type FixturePackageJson = {
   };
 };
 
-type EvalAgent = 'claude-code' | 'codex';
-type EvalIntegration = 'mcp' | 'plugin';
+export type EvalAgent = 'claude-code' | 'codex';
+// 'none' = bare sandbox: no Storybook tooling flavor recorded in the agent
+// context, review off unless forced by EVAL_REVIEW. Used by control cases that
+// must provide zero agent support.
+export type EvalIntegration = 'mcp' | 'plugin' | 'none';
 type TemplateMetadata = {
   amazonLinuxPackages?: unknown;
 };
@@ -80,9 +83,15 @@ const START_STORYBOOK_SCRIPT_SOURCE_PATH = path.join(
 const START_STORYBOOK_SCRIPT_SANDBOX_PATH = path.posix.join('scripts', 'start-storybook-mcp.mjs');
 const TRANSCRIPT_HELPER_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'test-utils.ts');
 const TRANSCRIPT_HELPER_SANDBOX_PATH = path.posix.join('__agent_eval__', 'test-utils.ts');
-// test-utils.ts imports ./shell-parse.ts, so the sandbox copy needs both files.
+// The sandbox copy has to carry test-utils.ts's whole import graph, since these
+// files are written verbatim and resolve relatively once there: test-utils.ts
+// imports ./shell-parse.ts and ./utils/type.ts, and shell-parse.ts imports
+// ./utils/type.ts too. Missing one fails every eval at import time, and only in
+// the sandbox — so add the file here whenever that graph grows.
 const SHELL_PARSE_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'shell-parse.ts');
 const SHELL_PARSE_SANDBOX_PATH = path.posix.join('__agent_eval__', 'shell-parse.ts');
+const TYPE_UTIL_SOURCE_PATH = path.join(AGENT_EVAL_ROOT, 'lib', 'utils', 'type.ts');
+const TYPE_UTIL_SANDBOX_PATH = path.posix.join('__agent_eval__', 'utils', 'type.ts');
 const AGENT_CONTEXT_SANDBOX_PATH = path.posix.join('__agent_eval__', 'agent.json');
 const TEMPLATE_NAME_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 // EVAL_REVIEW=1 enables the `experimentalReview` feature flag in every
@@ -190,6 +199,7 @@ async function writeEvalSupportFiles(
   await sandbox.writeFiles({
     [TRANSCRIPT_HELPER_SANDBOX_PATH]: await fs.readFile(TRANSCRIPT_HELPER_SOURCE_PATH, 'utf8'),
     [SHELL_PARSE_SANDBOX_PATH]: await fs.readFile(SHELL_PARSE_SOURCE_PATH, 'utf8'),
+    [TYPE_UTIL_SANDBOX_PATH]: await fs.readFile(TYPE_UTIL_SOURCE_PATH, 'utf8'),
     [AGENT_CONTEXT_SANDBOX_PATH]: JSON.stringify(
       {
         agent: options.agent,
@@ -692,22 +702,25 @@ async function collectFiles(options: {
   }
 }
 
+/**
+ * Register the Storybook MCP in whichever config format the agent reads. `url`
+ * defaults to the sandbox-local Storybook; pass an absolute URL to point the
+ * agent at an externally hosted build instead.
+ */
+export async function writeStorybookMcpConfig(
+  sandbox: Sandbox,
+  agent: EvalAgent,
+  url: string = STORYBOOK_MCP_URL
+): Promise<void> {
+  await registerMcpServer(sandbox, agent, STORYBOOK_MCP_SERVER_NAME, { url });
+}
+
 export async function writeClaudeMcpConfig(sandbox: Sandbox): Promise<void> {
-  await writeClaudeMcpServer(sandbox, STORYBOOK_MCP_SERVER_NAME, {
-    type: 'http',
-    url: STORYBOOK_MCP_URL,
-  });
+  await writeStorybookMcpConfig(sandbox, 'claude-code');
 }
 
 export async function writeCodexMcpConfig(sandbox: Sandbox): Promise<void> {
-  const config = `[mcp_servers.${STORYBOOK_MCP_SERVER_NAME}]
-url = "${STORYBOOK_MCP_URL}"
-default_tools_approval_mode = "auto"
-startup_timeout_sec = 30
-tool_timeout_sec = 120
-`;
-
-  await appendCodexConfig(sandbox, config);
+  await writeStorybookMcpConfig(sandbox, 'codex');
 }
 
 /**
@@ -759,6 +772,69 @@ export async function writeClaudePluginSkills(sandbox: Sandbox): Promise<void> {
 
 export async function writeCodexPluginSkills(sandbox: Sandbox): Promise<void> {
   await writePluginSkills(sandbox, CODEX_PLUGIN_SKILLS_DIR, path.posix.join('.agents', 'skills'));
+}
+
+/** A remote (`url`) or local stdio (`command`/`args`) MCP server. */
+export type McpServerSpec = { url: string } | { command: string; args?: string[] };
+
+const MCP_SERVER_NAME_PATTERN = /^[A-Za-z0-9_-]+$/;
+
+/**
+ * Register an arbitrary MCP server in whichever config format the agent
+ * reads. Unlike writeStorybookMcpConfig this makes no assumption about what
+ * the server is — callers pick the name the agent will see.
+ */
+export async function registerMcpServer(
+  sandbox: Sandbox,
+  agent: EvalAgent,
+  serverName: string,
+  spec: McpServerSpec
+): Promise<void> {
+  // The name lands unquoted in a TOML section header for Codex.
+  if (!MCP_SERVER_NAME_PATTERN.test(serverName)) {
+    throw new Error(`registerMcpServer: server name must match ${String(MCP_SERVER_NAME_PATTERN)}`);
+  }
+
+  if (agent === 'claude-code') {
+    await writeClaudeMcpServer(
+      sandbox,
+      serverName,
+      'url' in spec
+        ? { type: 'http', url: spec.url }
+        : { command: spec.command, args: spec.args ?? [] }
+    );
+    return;
+  }
+
+  const body =
+    'url' in spec
+      ? `url = ${JSON.stringify(spec.url)}\ndefault_tools_approval_mode = "auto"\nstartup_timeout_sec = 30\ntool_timeout_sec = 120`
+      : `command = ${JSON.stringify(spec.command)}\nargs = [${(spec.args ?? [])
+          .map((arg) => JSON.stringify(arg))
+          .join(', ')}]\ndefault_tools_approval_mode = "auto"`;
+  await appendCodexConfig(sandbox, `[mcp_servers.${serverName}]\n${body}\n`);
+}
+
+/**
+ * Copy one skill directory into the agent's skills root, keeping the
+ * directory's own name as the skill name. Relative paths resolve against
+ * agent-eval/.
+ */
+export async function installSkillDir(
+  sandbox: Sandbox,
+  agent: EvalAgent,
+  sourceDir: string
+): Promise<void> {
+  const skillsRoot =
+    agent === 'claude-code'
+      ? path.posix.join('.claude', 'skills')
+      : path.posix.join('.agents', 'skills');
+  const resolvedDir = path.resolve(AGENT_EVAL_ROOT, sourceDir);
+  await writePluginSkills(
+    sandbox,
+    resolvedDir,
+    path.posix.join(skillsRoot, path.basename(resolvedDir))
+  );
 }
 
 export async function writeClaudePreviewBrowserMock(sandbox: Sandbox): Promise<void> {

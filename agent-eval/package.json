@@ -4,33 +4,59 @@
   "private": true,
   "type": "module",
   "imports": {
+    "#lib/*": "./lib/*.ts",
     "#test-utils": "./lib/test-utils.ts"
   },
   "scripts": {
     "eval": "agent-eval",
+    "eval:agentic-ref": "node scripts/run-agentic-ref.ts",
+    "eval:agentic-ref:dry": "node scripts/run-agentic-ref.ts --dry",
     "eval:dry": "agent-eval --dry",
-    "playground": "agent-eval playground",
+    "eval:plan": "node scripts/run-plan.ts",
+    "eval:plan:dry": "node scripts/run-plan.ts --dry",
+    "gen:agentic-ref": "node scripts/generate-agentic-ref-experiments.ts",
+    "judge:ds-misuse": "node --env-file-if-exists=.env.local ./scripts/judge-ds-misuse.ts",
+    "judge:ds-misuse:dry": "node --env-file-if-exists=.env.local ./scripts/judge-ds-misuse.ts --dry",
+    "playground": "agent-eval-playground --results-dir ./results --evals-dir ./evals",
     "playground:build": "next build --webpack",
     "playground:check-routes": "node ./scripts/check-playground-routes.mjs",
+    "results:analyze": "yarn gen:agentic-ref && node ./scripts/analyze-results.ts",
+    "results:compare": "yarn gen:agentic-ref && node ./scripts/compare-results.ts",
+    "results:compare:setup": "node ./scripts/setup-compare-stats.ts",
     "results:download": "node ./scripts/download-ci-results.mjs",
+    "results:export": "node ./scripts/export-results.ts",
+    "results:list": "node ./scripts/list-results.ts",
+    "results:prune": "node ./scripts/prune-incomplete-runs.ts",
+    "test": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "test:run": "vitest run",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@storybook/agent-eval-utils": "workspace:*",
     "vercel": "^54.18.5"
   },
   "devDependencies": {
+    "@anthropic-ai/sdk": "^0.117.1",
     "@tailwindcss/postcss": "^4.3.2",
     "@types/node": "^22.19.1",
+    "@types/picomatch": "^4.0.3",
     "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
+    "@types/yargs": "^17.0.35",
     "@vercel/agent-eval": "1.2.0",
     "@vercel/agent-eval-playground": "0.1.3",
     "@vitejs/plugin-react-swc": "4.2.2",
+    "@vitest/coverage-v8": "4.0.6",
+    "diff": "^8.0.4",
+    "memfs": "^4.68.0",
     "next": "16.1.6",
+    "picomatch": "^4.0.5",
     "postcss": "^8.5.16",
     "tailwindcss": "^4.3.2",
     "typescript": "5.9.3",
-    "vitest": "4.0.6"
+    "vitest": "4.0.6",
+    "yargs": "^17.7.3"
   },
   "installConfig": {
     "hoistingLimits": "workspaces"

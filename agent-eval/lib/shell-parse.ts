@@ -2,6 +2,8 @@
 // filesystem access. This file is copied into eval sandboxes next to
 // test-utils.ts, so it must stay dependency-free.
 
+import { isRecord } from './utils/type.ts';
+
 export type StorybookWorkflowCall = {
   name: string;
   input: Record<string, unknown>;
@@ -377,7 +379,7 @@ function unwrapWorkflowInput(value: Record<string, unknown>): Record<string, unk
 // Known limitation: a `storybook ai` invocation nested inside `$(...)` is not
 // recognized. `$(cat path)` is resolved when that path was written by a
 // `cat > path <<TAG` heredoc in the same command.
-function tokenizeShellCommand(command: string): string[] {
+export function tokenizeShellCommand(command: string): string[] {
   const tokens: string[] = [];
   let token = '';
   let quote: '"' | "'" | undefined;
@@ -471,8 +473,4 @@ export function parseJson(value: string): unknown {
   } catch {
     return undefined;
   }
-}
-
-export function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

@@ -1,0 +1,11 @@
+{
+  "name": "705-migrate-to-ds-flow",
+  "description": "Agentic reference, migration workflow, Droppy migration scenario.",
+  "type": "module",
+  "evals": {
+    "externalRepo": {
+      "repo": "yannbf/mealdrop",
+      "ref": "refs/tags/agentic-reference/before-migrating-ds-v1"
+    }
+  }
+}

@@ -1,10 +1,14 @@
 node_modules/
+.eval-cache/
+coverage/
 dist/
 .next/
 next-env.d.ts
 .env
 .env.local
 results/
+# results:compare output; regenerable from results/ + the committed pipeline.
+comparisons/
 *.log
 .DS_Store
 .vercel
@@ -12,3 +16,6 @@ results/
 .env*.local
 .env*
 !.env.example
+# Generated agentic-reference work directory; cases.ts is the source of truth.
+.agentic-ref/
+results-export-*.zip

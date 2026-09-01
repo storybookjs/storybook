@@ -10,8 +10,8 @@ import { x } from 'tinyexec';
 import { dedent } from 'ts-dedent';
 
 import versions from '../../code/core/src/common/versions.ts';
-import { maxConcurrentTasks } from '../utils/concurrency.ts';
-import { esMain } from '../utils/esmain.ts';
+import { maxConcurrentTasks } from '@storybook/scripts-utils/concurrency.ts';
+import { esMain } from '@storybook/scripts-utils/esmain.ts';
 import { safeMetafileArg } from './safe-args.ts';
 
 const METAFILES_DIR = path.join(__dirname, '..', '..', 'code', 'bench', 'esbuild-metafiles');

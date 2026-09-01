@@ -133,25 +133,6 @@ export function formatReadableUtcTimestamp(timestamp: string) {
   return `${month} ${day} ${year} ${hour}:${minute}:${second} UTC`;
 }
 
-/** Format data as an aligned table with automatic column widths. */
-export function formatTable(headers: string[], rows: string[][]): string {
-  const widths = headers.map((h, i) =>
-    Math.max(h.length, ...rows.map((r) => stripAnsi(r[i] ?? '').length))
-  );
-
-  const pad = (str: string, width: number) => {
-    const visible = stripAnsi(str).length;
-    return str + ' '.repeat(Math.max(0, width - visible));
-  };
-
-  const sep = ' | ';
-  return [
-    headers.map((h, i) => pad(h, widths[i])).join(sep),
-    widths.map((w) => '-'.repeat(w)).join('-+-'),
-    ...rows.map((row) => row.map((cell, i) => pad(cell, widths[i])).join(sep)),
-  ].join('\n');
-}
-
 /**
  * Resolves the absolute path to the local Storybook dispatcher CLI entrypoint
  * (`code/core/dist/bin/dispatcher.js`) and asserts it has been built. The eval
@@ -248,11 +229,6 @@ export function formatHelp(
     'Options:',
     ...formatted.map((f) => `  ${f.short}${f.long.padEnd(maxLong)}  ${f.desc}`),
   ].join('\n');
-}
-
-/** Strip ANSI escape codes for accurate width calculation. */
-function stripAnsi(str: string) {
-  return str.replace(/\x1b\[[0-9;]*m/g, '');
 }
 
 export function toPosixPath(value: string) {

@@ -7,7 +7,7 @@
 // * react/census.ts: how many component instances are DS names (react implementation)
 import fs from 'node:fs';
 
-import { share } from '#lib/utils/math';
+import { share } from '@storybook/scripts-utils/math.ts';
 
 import { createResolver } from './identify.ts';
 import { buildModuleGraph } from './module-graph.ts';

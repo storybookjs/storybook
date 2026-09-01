@@ -21,9 +21,9 @@ import prompts from 'prompts';
 import windowSize from 'window-size';
 
 import { isBuildEntries } from './build/entry-configs.ts';
-import { ROOT_DIRECTORY } from './utils/constants.ts';
-import { findMostMatchText } from './utils/diff.ts';
-import { getCodeWorkspaces } from './utils/workspace.ts';
+import { ROOT_DIRECTORY } from '@storybook/scripts-utils/constants.ts';
+import { findMostMatchText } from '@storybook/scripts-utils/diff.ts';
+import { getCodeWorkspaces } from '@storybook/scripts-utils/workspace.ts';
 
 async function run() {
   const packages = (await getCodeWorkspaces())

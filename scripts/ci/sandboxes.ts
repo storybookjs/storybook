@@ -2,7 +2,7 @@ import { join } from 'path';
 
 import * as sandboxTemplates from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { type TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
-import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '../utils/constants.ts';
+import { BEFORE_SANDBOX_NPM_MIN_VERSION } from '@storybook/scripts-utils/constants.ts';
 import { build_linux } from './common-jobs.ts';
 import { LINUX_ROOT_DIR, SANDBOX_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {

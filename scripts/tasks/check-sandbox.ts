@@ -1,5 +1,5 @@
 import type { Task } from '../task.ts';
-import { exec } from '../utils/exec.ts';
+import { exec } from '@storybook/scripts-utils/exec.ts';
 import { prepareSandbox } from '../prepare-sandbox.ts';
 
 export const checkSandbox: Task = {

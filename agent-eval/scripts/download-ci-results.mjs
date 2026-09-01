@@ -12,6 +12,8 @@
 // colliding, and re-downloading the same artifact is idempotent.
 
 import { execFileSync } from 'node:child_process';
+
+import { gh as ghExec } from '@storybook/scripts-utils/gh.ts';
 import { cpSync, mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -36,19 +38,9 @@ if (!Number.isInteger(count) || count < 1 || count > 100) {
   process.exit(1);
 }
 
-function gh(args, options = {}) {
-  try {
-    // cwd pins gh's repo resolution to this checkout, so the script also
-    // works when invoked from outside the repository.
-    return execFileSync('gh', args, { cwd: agentEvalDir, ...options });
-  } catch (error) {
-    if (error.code === 'ENOENT') {
-      console.error('The GitHub CLI (gh) is required. Install it and run: gh auth login');
-      process.exit(1);
-    }
-    throw error;
-  }
-}
+// cwd pins gh's repo resolution to this checkout, so the script also
+// works when invoked from outside the repository.
+const gh = (args, options = {}) => ghExec(args, { cwd: agentEvalDir, ...options });
 
 // Artifact names now vary per dispatch, so the API's exact-match `name=` filter
 // no longer selects them; page through everything and match the prefix here.

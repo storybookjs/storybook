@@ -105,3 +105,22 @@ export function printTable(rows: ReadonlyArray<Record<string, unknown>>): void {
     console.log(rendered);
   }
 }
+
+/**
+ * Renders `headers` and pre-stringified `rows` as a plain aligned table with
+ * ` | ` separators — for output that lands in logs or PR bodies, where the
+ * box-drawing frame of {@link formatTable} is noise.
+ */
+export function formatPlainTable(headers: string[], rows: string[][]): string {
+  const widths = headers.map((header, index) =>
+    Math.max(header.length, ...rows.map((row) => visibleLength(row[index] ?? '')))
+  );
+  const pad = (text: string, width: number) =>
+    text + ' '.repeat(Math.max(0, width - visibleLength(text)));
+  const sep = ' | ';
+  return [
+    headers.map((header, index) => pad(header, widths[index]!)).join(sep),
+    widths.map((width) => '-'.repeat(width)).join('-+-'),
+    ...rows.map((row) => row.map((cell, index) => pad(cell, widths[index]!)).join(sep)),
+  ].join('\n');
+}

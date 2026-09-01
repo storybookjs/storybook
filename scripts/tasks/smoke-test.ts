@@ -1,5 +1,5 @@
 import type { Task } from '../task.ts';
-import { exec } from '../utils/exec.ts';
+import { exec } from '@storybook/scripts-utils/exec.ts';
 
 export const smokeTest: Task = {
   description: 'Run the smoke tests of a sandbox',

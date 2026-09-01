@@ -1,7 +1,7 @@
 import path from 'path';
 import fs from 'node:fs/promises';
 import { getMdxFiles, readFileLines, getHeadingSlugs, getLineContexts } from './utils';
-import { esMain } from '../utils/esmain';
+import { esMain } from '@storybook/scripts-utils/esmain.ts';
 
 export interface RelativeLinkError {
   file: string;

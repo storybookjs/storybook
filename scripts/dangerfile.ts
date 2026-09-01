@@ -7,8 +7,8 @@
 import { danger, fail, schedule, warn } from 'danger';
 
 import pkg from '../code/package.json';
-import { getLatestOpinionatedReviews } from './utils/github/reviews.ts';
-import { isMemberOfAnyTeam } from './utils/github/teams.ts';
+import { getLatestOpinionatedReviews } from '@storybook/scripts-utils/github/reviews.ts';
+import { isMemberOfAnyTeam } from '@storybook/scripts-utils/github/teams.ts';
 
 function intersection<T>(a: ReadonlyArray<T>, b: ReadonlyArray<T>): T[] {
   return a.filter((v) => b.includes(v));

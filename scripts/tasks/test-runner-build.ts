@@ -2,8 +2,8 @@ import waitOn from 'wait-on';
 
 import { getPort } from '../sandbox/utils/getPort.ts';
 import type { Task } from '../task.ts';
-import { exec } from '../utils/exec.ts';
-import { isNxTaskExecution } from '../utils/nx.ts';
+import { exec } from '@storybook/scripts-utils/exec.ts';
+import { isNxTaskExecution } from '@storybook/scripts-utils/nx.ts';
 import { PORT } from './serve.ts';
 
 export const testRunnerBuild: Task & { port: number } = {

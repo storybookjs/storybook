@@ -6,9 +6,9 @@ import dirSize from 'fast-folder-size';
 
 import { now, saveBench } from '../bench/utils.ts';
 import type { Task, TaskKey } from '../task.ts';
-import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '../utils/constants.ts';
-import { exec } from '../utils/exec.ts';
-import { isNxTaskExecution } from '../utils/nx.ts';
+import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '@storybook/scripts-utils/constants.ts';
+import { exec } from '@storybook/scripts-utils/exec.ts';
+import { isNxTaskExecution } from '@storybook/scripts-utils/nx.ts';
 
 const logger = console;
 

@@ -1,3 +1,4 @@
+import { stripAnsi } from '@storybook/scripts-utils/colors.ts';
 import picocolors from 'picocolors';
 
 const NPM_REGISTRY = 'https://registry.npmjs.org';
@@ -117,8 +118,6 @@ export const waitForPackagesToBePublished = async ({
 
   return missing;
 };
-
-const stripAnsi = (value: string) => value.replace(/\u001b\[[0-9;]*m/g, '');
 
 export const packagesAcceptedByRegistry = (output: string) => {
   const accepted = new Set<string>();

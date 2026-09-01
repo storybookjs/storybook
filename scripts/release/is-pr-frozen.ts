@@ -5,7 +5,7 @@ import { setOutput } from '@actions/core';
 import { program } from 'commander';
 import picocolors from 'picocolors';
 
-import { esMain } from '../utils/esmain.ts';
+import { esMain } from '@storybook/scripts-utils/esmain.ts';
 import { getPullInfoFromCommit } from './utils/get-github-info.ts';
 import { git } from './utils/git-client.ts';
 

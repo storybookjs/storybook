@@ -4,7 +4,10 @@ import { join } from 'path';
 
 import semver from 'semver';
 
-import { BEFORE_SANDBOX_NPM_MIN_VERSION, ROOT_DIRECTORY } from '../../utils/constants.ts';
+import {
+  BEFORE_SANDBOX_NPM_MIN_VERSION,
+  ROOT_DIRECTORY,
+} from '@storybook/scripts-utils/constants.ts';
 
 export { BEFORE_SANDBOX_NPM_MIN_VERSION };
 import { runCommand } from '../generate.ts';
@@ -12,7 +15,7 @@ import { runCommand } from '../generate.ts';
 export {
   LOCALLY_PUBLISHED_PACKAGE_PATTERNS,
   preapproveLocallyPublishedPackages,
-} from '../../utils/preapprove-local-packages.ts';
+} from '@storybook/scripts-utils/preapprove-local-packages.ts';
 
 interface SetupYarnOptions {
   cwd: string;

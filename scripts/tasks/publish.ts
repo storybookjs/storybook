@@ -3,7 +3,7 @@ import { access } from 'node:fs/promises';
 import { resolve } from 'path';
 
 import type { Task } from '../task.ts';
-import { exec } from '../utils/exec.ts';
+import { exec } from '@storybook/scripts-utils/exec.ts';
 
 const verdaccioCacheDir = resolve(__dirname, '../../.verdaccio-cache');
 

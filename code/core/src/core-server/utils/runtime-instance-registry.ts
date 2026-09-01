@@ -70,8 +70,9 @@ export type RuntimeInstanceRecord = {
   storybookVersion: string;
   /**
    * Realpathed root of the `storybook` package this dev server actually runs, derived from the
-   * server's own module location. `storybook tools` only attaches when its own root is the same
-   * installation. Omitted when the root cannot be derived, which makes attach refuse.
+   * server's own module location. `storybook tools` attaches in-process when its own root is the
+   * same installation, and spawns its child host from this root otherwise. Omitted when the root
+   * cannot be derived, which makes attach refuse.
    */
   storybookPath?: string;
   startedAt: string;

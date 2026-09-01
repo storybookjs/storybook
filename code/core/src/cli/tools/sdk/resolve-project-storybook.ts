@@ -3,7 +3,7 @@ import { join } from 'node:path';
 
 const CHILD_HOST_ENTRY = 'storybook/internal/tools/child-host';
 
-export function resolveChildHostScript(projectDir: string): string {
-  const projectRequire = createRequire(join(projectDir, 'package.json'));
-  return projectRequire.resolve(CHILD_HOST_ENTRY, { paths: [projectDir] });
+export function resolveChildHostScript(resolutionRoot: string): string {
+  const rootRequire = createRequire(join(resolutionRoot, 'package.json'));
+  return rootRequire.resolve(CHILD_HOST_ENTRY, { paths: [resolutionRoot] });
 }

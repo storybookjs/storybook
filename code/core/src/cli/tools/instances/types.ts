@@ -40,8 +40,9 @@ export const StorybookInstanceRecordSchema = v.object({
   storybookVersion: v.optional(v.string()),
   /**
    * Realpathed root of the `storybook` package the dev server actually runs, recorded by the
-   * server from its own module location. Attach requires it to equal the caller's own root.
-   * Optional: records written by older Storybooks lack it, which makes attach refuse.
+   * server from its own module location. The caller attaches in-process when this equals its own
+   * root, and spawns its child host from this root otherwise. Optional: records written by older
+   * Storybooks lack it, which makes attach refuse.
    */
   storybookPath: v.optional(v.string()),
   startedAt: v.optional(v.string()),

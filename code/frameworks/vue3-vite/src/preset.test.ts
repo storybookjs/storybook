@@ -7,8 +7,6 @@ import type { Options } from 'storybook/internal/types';
 import { vueComponentMeta } from './plugins/vue-component-meta.ts';
 import { vueDocgen } from './plugins/vue-docgen.ts';
 import { templateCompilation } from './plugins/vue-template.ts';
-// Statically, so the cost of this module graph is paid while the file is imported rather than
-// charged to whichever test happens to reach for it first.
 import { viteFinal } from './preset.ts';
 import type { FrameworkOptions } from './types.ts';
 

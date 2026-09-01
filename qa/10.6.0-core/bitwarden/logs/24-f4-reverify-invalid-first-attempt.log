@@ -1,0 +1,8 @@
+[09:16:25] healthy index: OK_1116
+[09:16:25] BREAK: append dangling `Default` reference (same shape as original QA probe)
+[09:20:25]   {"ok":false,"ms":240113,"state":"OK_1117","label":"index breaks"}
+[09:20:35]   canvas="Button" sidebar=sidebar_ok
+[09:20:35] FIX: restore original stories file, then wait for recovery
+[09:20:35]   {"ok":true,"ms":10,"state":"OK_1117","label":"index recovers"}
+[09:20:55]   canvas after fix: {"ok":true,"ms":19917,"text":"Button"}
+[09:20:55] done

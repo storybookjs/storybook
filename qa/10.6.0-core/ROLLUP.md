@@ -10,6 +10,13 @@ Yarn PnP: not tested (out of scope).
 
 No S1.
 
+> [!NOTE]
+> **Revised after a spot-check of the Bitwarden HMR screenshots.** Those screenshots showed a
+> spinner, so the HMR results were re-audited. The original PASS marks for add/rename/new-file HMR
+> were based on `document.title` and `/index.json` only, not on a rendered canvas. They were re-run
+> properly and pass. Finding F4 was withdrawn as a QA probe defect. Reporting `PASS` from an index or
+> title signal alone is the process gap to avoid in the next round.
+
 ## Lane results
 
 ### Bitwarden (`bitwarden/clients` @ `e8bc60e`) — Angular webpack / npm / Node 24
@@ -17,9 +24,14 @@ No S1.
 - Reports: [`bitwarden/SUCCESS.md`](./bitwarden/SUCCESS.md), [`bitwarden/FINDINGS.md`](./bitwarden/FINDINGS.md)
 - Demo: [`bitwarden_static_core_qa_success.mp4`](./bitwarden/bitwarden_static_core_qa_success.mp4) (static :6008)
 - Core UI: **PASS** (dev + static)
-- Findings: S2×1, S3×3, S4×1
+- HMR: **PASS**, re-verified with rendered canvas (~8s per case)
+- Findings: S2×1, S3×2, S4×1, **1 withdrawn (F4)**
 
-Highest: upgrade rewrites `@storybook/addon-designs` from **11.1.3 → 11.0.0-next.0**, doctor flags incompatibility, addon is skipped at boot. Same peer hole makes `storybook add @storybook/addon-vitest` fail with npm ERESOLVE instead of Angular/webpack “unsupported” guidance. `-y` upgrade detects `angular-to-angular-vite` but only applies `addon-mcp`. Transient `index.json` 500 during MDX `of={}` HMR.
+Highest: upgrade rewrites `@storybook/addon-designs` from **11.1.3 → 11.0.0-next.0**, doctor flags incompatibility, addon is skipped at boot. Same peer hole makes `storybook add @storybook/addon-vitest` fail with npm ERESOLVE instead of Angular/webpack “unsupported” guidance. `-y` upgrade detects `angular-to-angular-vite` but only applies `addon-mcp`.
+
+The originally filed `index.json` 500 during MDX `of={}` HMR is **withdrawn**: it came from a
+defective QA probe (a rename that left a dangling `...Default` spread), and a controlled re-test
+showed correct Storybook behavior with a clear canvas error and 20s recovery.
 
 ### Inkline (`inkline/inkline` @ `b5ce93e7`) — Vue 3 Vite + vite-plus/rolldown / pnpm catalog
 

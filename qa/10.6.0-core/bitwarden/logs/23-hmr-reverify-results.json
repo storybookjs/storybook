@@ -1,0 +1,49 @@
+{
+  "results": {
+    "baseline": {
+      "ok": true,
+      "ms": 7034,
+      "text": "Button"
+    },
+    "case1_index": {
+      "ok": true,
+      "ms": 7025
+    },
+    "case1_canvas": {
+      "ok": true,
+      "ms": 7818,
+      "text": "HMR VERIFY MARKER"
+    },
+    "case2_index": {
+      "ok": true,
+      "ms": 3659
+    },
+    "case2_canvas": {
+      "ok": true,
+      "ms": 8166,
+      "text": "HMR NEWFILE MARKER"
+    },
+    "cleanup_index_gone": {
+      "ok": true,
+      "ms": 3641
+    },
+    "after_cleanup": {
+      "ok": true,
+      "ms": 8004,
+      "text": "Button"
+    }
+  },
+  "log": [
+    "[09:14:36] BASELINE: button--default",
+    "[09:14:43]   {\"ok\":true,\"ms\":7034,\"text\":\"Button\"}",
+    "[09:14:43] CASE1: add new export HmrVerify to existing stories file",
+    "[09:14:50]   index: {\"ok\":true,\"ms\":7025}",
+    "[09:14:59]   canvas: {\"ok\":true,\"ms\":7818,\"text\":\"HMR VERIFY MARKER\"}",
+    "[09:14:59] CASE2: create brand-new stories file",
+    "[09:15:03]   index: {\"ok\":true,\"ms\":3659}",
+    "[09:15:16]   canvas: {\"ok\":true,\"ms\":8166,\"text\":\"HMR NEWFILE MARKER\"}",
+    "[09:15:16] CLEANUP: restore stories file and delete temp file",
+    "[09:15:19]   deindex: {\"ok\":true,\"ms\":3641}",
+    "[09:15:32]   canvas after cleanup: {\"ok\":true,\"ms\":8004,\"text\":\"Button\"}"
+  ]
+}

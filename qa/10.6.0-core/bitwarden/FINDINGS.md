@@ -6,8 +6,15 @@
 | --- | --- |
 | S1 | 0 |
 | S2 | 1 |
-| S3 | 3 |
+| S3 | 2 |
 | S4 | 1 |
+| Withdrawn | 1 (F4) |
+
+> [!IMPORTANT]
+> **Revision after spot-check.** F4 is withdrawn: it was caused by a defective QA probe, not by
+> Storybook. In the same review, the HMR add/rename/new-file checks were found to have been marked
+> PASS on `document.title` and `/index.json` alone. They have been re-run with canvas assertions and
+> genuinely pass. See the correction note in [`SUCCESS.md`](./SUCCESS.md).
 
 ---
 
@@ -65,15 +72,20 @@
 
 ---
 
-## F4 — Transient `index.json` 500 during HMR when MDX `of={}` cannot load sibling CSF
+## F4 — WITHDRAWN — `index.json` 500 during HMR did not reproduce
 
-- **sev:** S3
-- **expected:** Editing/reverting a stories file should not 500 the whole index; MDX `of={}` should wait or isolate the docs error.
-- **actual:** After story-file HMR, `GET /index.json` returned 500: `Unable to index ./libs/components/src/button/button.mdx` / `Could not find or load CSF file at path "./button.stories"`. Manager showed fetch error until files restored. After revert, index recovered.
-- **repro:** Dev on :6006; edit `libs/components/src/button/button.stories.ts` (add/rename exports); poll `/index.json` while webpack recompiles; observe 500 tied to `button.mdx`.
-- **ports/story/files:** :6006; `libs/components/src/button/button.mdx` + `button.stories.ts`
-- **logs:** `logs/16-index-500-body.txt`, `logs/16-sb-tail-after-hmr.txt`
-- **class:** Storybook indexer / Angular webpack HMR race (user-visible; recovered)
+- **sev:** ~~S3~~ → **withdrawn, not reproducible**
+- **originally reported:** `GET /index.json` returned 500 (`Unable to index ./libs/components/src/button/button.mdx` / `Could not find or load CSF file at path "./button.stories"`) after story-file HMR, leaving a spinner and an "Oh no! Something went wrong" sidebar.
+- **why it was withdrawn:** The trigger was a defective QA probe, not a Storybook defect. The rename probe renamed `export const Default` (line 95 of `button.stories.ts`) while line 270 still spread `...Default`, so the file stopped compiling (`error TS2304: Cannot find name 'Default'`). `button.mdx` references that CSF file through `of={stories}`, so the docs entry legitimately could not be indexed.
+- **controlled re-test:** Same clone, same dev server, renaming only the line 95 declaration to leave `...Default` dangling:
+  - `/index.json` stayed healthy at `OK_1116` for the full **300s** budget. It never returned 500.
+  - The canvas showed a clear, correct error: **`Default is not defined`** with a `ReferenceError` stack pointing at `button.stories.ts`.
+  - The sidebar kept its story tree (no "Something went wrong").
+  - Restoring the file recovered the canvas in **20s with no restart**.
+- **repro of the corrected behavior:** Dev on :6006 (bind is IPv6 `localhost`, not `127.0.0.1`); rename `export const Default: Story` → `DefaultRenamed` in `libs/components/src/button/button.stories.ts`; observe canvas error and healthy index; restore and observe recovery.
+- **logs:** `logs/24-f4-reverify.log`, `logs/24-f4-reverify-results.json`; screenshots `27-broken-csf-shows-clear-error.png`, `28-recovered-after-fix.png`. Original observation retained in `logs/16-index-500-body.txt`.
+- **residual suspicion (not filed):** The first run issued overlapping add/rename/create/delete edits while webpack was still rebuilding, and `logs/16-after-restore.txt` shows repeated `Change detection failed: Unable to index`. A rapid-overlapping-edit race may exist, but it did not reproduce with a single edit and is not filed without a reliable repro.
+- **class:** QA probe defect, not a Storybook regression
 - **existing report search:** **Related, but not exact.**
   - [#24155](https://github.com/storybookjs/storybook/issues/24155) (closed) has the same MDX
     `of={}` → missing CSF failure after a story-file error during development. That report does not
@@ -99,6 +111,9 @@
 ## Non-findings
 
 - Core canvas/sidebar/search/controls/measure/outline/grid/docs/show-code: pass on 10.6.0-beta.0 Angular webpack.
+- **HMR (all cases): pass, re-verified with rendered canvas.** Adding a story export ~7.8s, new story file ~8.2s, delete de-index ~3.6s. No hang.
+- A broken CSF file surfaces a clear `Default is not defined` canvas error and recovers ~20s after the source is fixed, without a restart.
 - Save-from-controls skipped (not enabled).
 - Telemetry disabled as configured.
 - First worker environment died during static build; not a Storybook regression by itself.
+- The dev server binds IPv6 `localhost`; `127.0.0.1` is refused. This cost 400s of false "not ready" polling in this environment and is worth knowing for future harnesses, but it is standard Node listen behavior, not a defect.

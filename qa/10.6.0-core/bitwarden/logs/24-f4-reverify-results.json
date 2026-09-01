@@ -1,0 +1,30 @@
+{
+  "log": [
+    "[09:21:48] healthy index: OK_1116",
+    "[09:21:48] BREAK: rename `export const Default` and leave the `...Default` spread dangling",
+    "[09:26:49]   {\"ok\":false,\"ms\":300544,\"state\":\"OK_1116\",\"label\":\"index breaks\"}",
+    "[09:26:59]   canvas=\"Default is not defined\\n\\nThe component failed to render properly, likely due to a\" sidebar=sidebar_ok",
+    "[09:26:59] FIX: restore file, wait for index and canvas recovery (no restart)",
+    "[09:26:59]   {\"ok\":true,\"ms\":14,\"state\":\"OK_1116\",\"label\":\"index recovers\"}",
+    "[09:27:20]   canvas after fix: {\"ok\":true,\"ms\":20226,\"text\":\"Button\"}"
+  ],
+  "broke": {
+    "ok": false,
+    "ms": 300544,
+    "state": "OK_1116",
+    "label": "index breaks"
+  },
+  "broken_canvas": "Default is not defined\n\nThe component failed to render properly, likely due to a",
+  "broken_sidebar": "sidebar_ok",
+  "recovered_index": {
+    "ok": true,
+    "ms": 14,
+    "state": "OK_1116",
+    "label": "index recovers"
+  },
+  "recovered_canvas": {
+    "ok": true,
+    "ms": 20226,
+    "text": "Button"
+  }
+}

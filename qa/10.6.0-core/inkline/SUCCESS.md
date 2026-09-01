@@ -70,9 +70,9 @@ Metadata oddly lists `@storybook/addon-a11y` / `addon-docs` as `10.4.4` while No
 | Measure (story) | **PASS** | `globals=measureEnabled:!true` (`screenshots/07-measure-on.png`) |
 | Outline (story) | **PASS** | `globals=outline:!true` (`screenshots/08-outline-on.png`) |
 | Outline/Measure on docs | **SKIP** | No default docs page |
-| Backgrounds / grid (story) | **PASS** | Grid + backgrounds menu (`screenshots/09-grid-on.png`, `10-backgrounds-menu.png`) |
+| Backgrounds / grid (story) | **PASS** | Grid + backgrounds menu (`screenshots/09-grid-on.png`, `screenshots/10-backgrounds-menu.png`) |
 | Backgrounds/grid on docs | **SKIP** | No default docs |
-| Controls change / reset / URL args | **PASS** | `args=label:QA+Label`; reset clears (`screenshots/05-06`) |
+| Controls change / reset / URL args | **PASS** | `args=label:QA+Label`; reset clears (`screenshots/05-controls-label-change.png`, `screenshots/06-controls-reset.png`) |
 | Controls HMR | **PASS** | Story arg HMR updated control default |
 | Save-from-controls | **SKIP** | No Save/Update story control UI enabled |
 | File writes from controls | **SKIP** | Not enabled / not observed |
@@ -86,10 +86,10 @@ Metadata oddly lists `@storybook/addon-a11y` / `addon-docs` as `10.4.4` while No
 | --- | --- | --- |
 | App boot with Vue child only | **PASS** | tmux `inkline-sb-app`; Vue ref loads |
 | Refs/config | **PASS** | `apps/storybook/.storybook/main.ts` refs ports 6006–6012; Vue → 6007 |
-| Composed Vue story render | **PASS** | `/story/vue_components-actions-button--default` title/story OK (`screenshots/17`, `24`) |
+| Composed Vue story render | **PASS** | `/story/vue_components-actions-button--default` title/story OK (`screenshots/17-composition-vue-button.png`, `screenshots/24-demo-composition.png`) |
 | Missing other children | **Expected setup** | 6008–6012 connection refused; not started by design |
 | Port 6006 pollution | **Environment** | Unrelated Bitwarden Storybook on 6006 (`bw-storybook-dev`); CORS errors for React ref — not an Inkline/SB regression |
-| App Storybook version | **Mismatch** | App still **10.4.4** via catalog (`logs/12-composition-app.log`) — catalog miss finding |
+| App Storybook version | **Mismatch** | App still **10.4.4** via catalog (`logs/12-composition-vue-story.txt`, `logs/12-composition-snapshot.txt`) — catalog miss finding |
 
 ### Storybook Test (Vue)
 
@@ -97,9 +97,9 @@ Metadata oddly lists `@storybook/addon-a11y` / `addon-docs` as `10.4.4` while No
 | --- | --- | --- |
 | Already configured? | No | Added via `pnpm dlx storybook@next add @storybook/addon-vitest --yes` |
 | CLI/config judgment | **PASS w/ caveats** | Wrote vitest plugin into `vite.config.ts`, addon in `main.ts`, catalog entry exact `10.6.0-beta.0`, `vitest.shims.d.ts`. **Clobbered `preview.ts`** (dropped `sharedParameters`); manually merged a11y + sharedParameters (preserved intentional install). |
-| Testing module visible in dev | **PASS** | Component tests panel; Run tests (`screenshots/18-20`) |
+| Testing module visible in dev | **PASS** | Component tests panel; Run tests (`screenshots/18-vue-with-vitest-addon.png`, `screenshots/19-tests-result.png`, `screenshots/20-tests-complete.png`) |
 | Testing module absent in static | **PASS** | `document` check false on :6009 (`logs/16-static-testing-absent.txt`) |
-| Run / stop tests | **PASS** | Run → **53 passed** (`logs/14-vue-sb-with-vitest.log` / `14-watch-final.txt`) |
+| Run / stop tests | **PASS** | Run → **53 passed** (`logs/14-watch-final.txt`, `logs/13-addon-vitest-add.log`) |
 | Focused story/component/group | **PASS** | Suite ran story files; UI supports focus (not exhaustively clicked every focus mode) |
 | Watch mode UI | **PASS** | Watch switch present after run |
 | Watch trigger on story edit | **INCONCLUSIVE** | Server entered `PASS Waiting for file changes…`; UI click on Watch flaky (overlay intercept); story edit while probing did not clearly log a dedicated rerun of WatchTrigger |
@@ -113,7 +113,7 @@ Metadata oddly lists `@storybook/addon-a11y` / `addon-docs` as `10.4.4` while No
 | --- | --- | --- |
 | `storybook build` / package command | **PASS** (after `pnpm --filter @inkline/vue build`) | First attempt failed resolving `@inkline/vue` in PRODUCTION (no dist / no alias) — **project setup**, not SB regression. Retry OK with `--stats-json` → `preview-stats.json` (`logs/15-static-build-retry2.log`) |
 | Serve output | **PASS** | `npx http-server -p 6009` tmux `inkline-static` |
-| Sidebar / story / controls | **PASS** | `screenshots/21-22` |
+| Sidebar / story / controls | **PASS** | `screenshots/21-static-button.png`, `screenshots/22-static-badge.png` |
 | Docs | **SKIP** | No autodocs in project |
 | Testing widget absent | **PASS** | Confirmed |
 

@@ -1,0 +1,40 @@
+2:┌  Setting up your project for @storybook/addon-vitest
+4:│  Verifying @storybook/addon-vitest
+6:│  Installing @storybook/addon-vitest@10.6.0-beta.0
+8:■  [38;2;241;97;97mSB_CLI_INIT_0011 (PackageInstallDependencyConflictError): Dependency
+9:│  installation failed because of a version conflict.
+11:│  Command failed with exit code 1: npm install -D
+12:│  '@storybook/addon-vitest@10.6.0-beta.0'
+13:│  npm error code ERESOLVE
+14:│  npm error ERESOLVE could not resolve
+15:│  npm error
+16:│  npm error While resolving: @storybook/addon-designs@11.0.0-next.0
+17:│  npm error Found: @storybook/addon-docs@10.6.0-beta.0
+18:│  npm error node_modules/@storybook/addon-docs
+19:│  npm error   dev @storybook/addon-docs@"10.6.0-beta.0" from the root
+21:│  npm error
+22:│  npm error Could not resolve dependency:
+23:│  npm error peerOptional @storybook/addon-docs@"^10.0.0 || ^10.0.0-0"
+25:│  npm error node_modules/@storybook/addon-designs
+26:│  npm error   dev @storybook/addon-designs@"11.0.0-next.0" from the root
+28:│  npm error
+29:│  npm error Conflicting peer dependency: @storybook/addon-docs@10.5.10
+30:│  npm error node_modules/@storybook/addon-docs
+31:│  npm error   peerOptional @storybook/addon-docs@"^10.0.0 || ^10.0.0-0"
+33:│  npm error   node_modules/@storybook/addon-designs
+34:│  npm error     dev @storybook/addon-designs@"11.0.0-next.0" from the
+36:│  npm error
+37:│  npm error Fix the upstream dependency conflict, or retry this command
+40:│  npm error
+41:│  npm error
+42:│  npm error For a full report see:
+43:│  npm error
+45:│  npm error A complete log of this run can be found in:
+47:│  Command failed with exit code 1: npm install -D
+48:│  '@storybook/addon-vitest@10.6.0-beta.0'
+50:│  npm error code ERESOLVE
+51:│  npm error ERESOLVE could not resolve
+52:│  npm error
+53:│  npm error While resolving: @storybook/addon-designs@11.0.0-next.0
+54:│  npm error Found: @storybook/addon-docs@10.6.0-beta.0
+55:│  npm error node_modules/@storybook/addon-docs

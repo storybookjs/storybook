@@ -1,0 +1,219 @@
+- generic [ref=f10e3]:
+  - generic [ref=f10e4]:
+    - banner [ref=f10e6]:
+      - heading "Storybook" [level=1] [ref=f10e7]
+      - generic [ref=f10e11]:
+        - generic [ref=f10e12]:
+          - generic [ref=f10e13]:
+            - link "Skip to content" [ref=f10e14] [cursor=pointer]:
+              - /url: "#storybook-preview-wrapper"
+            - link [ref=f10e16] [cursor=pointer]:
+              - /url: /
+              - img "Bitwarden Component Library" [ref=f10e978]
+            - switch "Settings" [ref=f10e17] [cursor=pointer]
+          - generic [ref=f10e23]:
+            - generic [ref=f10e25] [cursor=pointer]:
+              - button "Open onboarding guide" [ref=f10e29]:
+                - strong [ref=f10e33]: Level up
+              - generic [ref=f10e34]:
+                - button "Collapse onboarding guide" [expanded] [ref=f10e35]
+                - button "53% completed" [ref=f10e38]:
+                  - generic [ref=f10e44]: 53%
+            - list [ref=f10e47]:
+              - listitem [ref=f10e979]:
+                - button "Open onboarding guide for See what's new" [ref=f10e980] [cursor=pointer]:
+                  - generic [ref=f10e984]: See what's new
+                - button "Go"
+              - listitem [ref=f10e986]:
+                - button "Open onboarding guide for Check responsiveness with Viewports" [ref=f10e987] [cursor=pointer]:
+                  - generic [ref=f10e991]: Check responsiveness with Viewports
+              - listitem [ref=f10e993]:
+                - button "Open onboarding guide for Publish your Storybook for feedback" [ref=f10e994] [cursor=pointer]:
+                  - generic [ref=f10e998]: Publish your Storybook for feedback
+        - generic [ref=f10e48]: Search for components
+        - search [ref=f10e49]:
+          - combobox [ref=f10e50]:
+            - searchbox "Search for components" [ref=f10e51]
+            - code: ⌃ K
+            - button "Tag filters" [ref=f10e53] [cursor=pointer]
+        - navigation [ref=f10e57]:
+          - heading "Stories" [level=2] [ref=f10e58]
+          - generic [ref=f10e60]:
+            - generic [ref=f10e61]:
+              - button "Collapse" [expanded] [ref=f10e62] [cursor=pointer]: Documentation
+              - button "Expand all" [ref=f10e66] [cursor=pointer]
+            - link [ref=f10e70] [cursor=pointer]:
+              - /url: /?path=/docs/documentation-introduction--docs
+            - link [ref=f10e75] [cursor=pointer]:
+              - /url: /?path=/docs/documentation-colors--docs
+            - button [ref=f10e80] [cursor=pointer]
+            - link [ref=f10e88] [cursor=pointer]:
+              - /url: /?path=/docs/documentation-compact-mode--docs
+            - link [ref=f10e93] [cursor=pointer]:
+              - /url: /?path=/docs/documentation-feature-flags--docs
+            - button [ref=f10e98] [cursor=pointer]
+            - link [ref=f10e106] [cursor=pointer]:
+              - /url: /?path=/docs/documentation-migration--docs
+            - link [ref=f10e111] [cursor=pointer]:
+              - /url: /?path=/docs/documentation-responsive-design--docs
+            - link [ref=f10e116] [cursor=pointer]:
+              - /url: /?path=/docs/documentation-router-focus-management--docs
+            - link [ref=f10e121] [cursor=pointer]:
+              - /url: /?path=/docs/documentation-virtual-scrolling--docs
+            - generic [ref=f10e125]:
+              - button "Collapse" [expanded] [ref=f10e126] [cursor=pointer]: Component Library
+              - button "Expand all" [ref=f10e130] [cursor=pointer]
+            - button [ref=f10e134] [cursor=pointer]
+            - button [ref=f10e142] [cursor=pointer]
+            - button [ref=f10e150] [cursor=pointer]
+            - button [ref=f10e158] [cursor=pointer]
+            - button [ref=f10e166] [cursor=pointer]
+            - button [ref=f10e174] [cursor=pointer]
+            - button [ref=f10e182] [cursor=pointer]
+            - button [ref=f10e190] [cursor=pointer]
+            - button [ref=f10e198] [cursor=pointer]
+            - button [ref=f10e206] [cursor=pointer]
+            - button [ref=f10e214] [cursor=pointer]
+            - button [expanded] [ref=f10e222] [cursor=pointer]
+            - generic [ref=f10e229]:
+              - link [ref=f10e230] [cursor=pointer]:
+                - /url: /?path=/docs/component-library-button--docs
+              - link "Skip to content" [ref=f10e234] [cursor=pointer]:
+                - /url: "#storybook-preview-wrapper"
+            - link [ref=f10e236] [cursor=pointer]:
+              - /url: /?path=/story/component-library-button--default
+            - link [ref=f10e241] [cursor=pointer]:
+              - /url: /?path=/story/component-library-button--all-variants
+            - link [ref=f10e246] [cursor=pointer]:
+              - /url: /?path=/story/component-library-button--small
+            - link [ref=f10e251] [cursor=pointer]:
+              - /url: /?path=/story/component-library-button--large
+            - link [ref=f10e256] [cursor=pointer]:
+              - /url: /?path=/story/component-library-button--loading
+            - link [ref=f10e261] [cursor=pointer]:
+              - /url: /?path=/story/component-library-button--inactive
+            - link [ref=f10e266] [cursor=pointer]:
+              - /url: /?path=/story/component-library-button--inactive-with-attribute
+            - link [ref=f10e271] [cursor=pointer]:
+              - /url: /?path=/story/component-library-button--block
+            - link [ref=f10e276] [cursor=pointer]:
+              - /url: /?path=/story/component-library-button--with-icon
+            - link [ref=f10e281] [cursor=pointer]:
+              - /url: /?path=/story/component-library-button--interaction-states
+            - button [ref=f10e286] [cursor=pointer]
+            - button [ref=f10e294] [cursor=pointer]
+            - button [ref=f10e302] [cursor=pointer]
+            - button [ref=f10e310] [cursor=pointer]
+            - button [ref=f10e318] [cursor=pointer]
+            - button [ref=f10e326] [cursor=pointer]
+            - button [ref=f10e334] [cursor=pointer]
+            - button [ref=f10e342] [cursor=pointer]
+            - button [ref=f10e350] [cursor=pointer]
+            - button [ref=f10e358] [cursor=pointer]
+            - button [ref=f10e366] [cursor=pointer]
+            - button [ref=f10e374] [cursor=pointer]
+            - button [ref=f10e382] [cursor=pointer]
+            - button [ref=f10e390] [cursor=pointer]
+            - button [ref=f10e398] [cursor=pointer]
+            - button [ref=f10e406] [cursor=pointer]
+            - button [ref=f10e414] [cursor=pointer]
+            - button [ref=f10e422] [cursor=pointer]
+            - button [ref=f10e430] [cursor=pointer]
+            - button [ref=f10e438] [cursor=pointer]
+            - button [ref=f10e446] [cursor=pointer]
+            - button [ref=f10e454] [cursor=pointer]
+            - button [ref=f10e462] [cursor=pointer]
+            - button [ref=f10e470] [cursor=pointer]
+            - button [ref=f10e478] [cursor=pointer]
+            - button [ref=f10e486] [cursor=pointer]
+            - button [ref=f10e494] [cursor=pointer]
+            - button [ref=f10e502] [cursor=pointer]
+            - button [ref=f10e510] [cursor=pointer]
+            - button [ref=f10e518] [cursor=pointer]
+            - button [ref=f10e526] [cursor=pointer]
+            - button [ref=f10e534] [cursor=pointer]
+            - button [ref=f10e542] [cursor=pointer]
+            - button [ref=f10e550] [cursor=pointer]
+            - button [ref=f10e558] [cursor=pointer]
+            - button [ref=f10e566] [cursor=pointer]
+            - generic [ref=f10e573]:
+              - button "Collapse" [expanded] [ref=f10e574] [cursor=pointer]: Admin Console
+              - button "Expand all" [ref=f10e578] [cursor=pointer]
+            - button [ref=f10e582] [cursor=pointer]
+            - button [ref=f10e590] [cursor=pointer]
+            - generic [ref=f10e597]:
+              - button "Collapse" [expanded] [ref=f10e598] [cursor=pointer]: Auth
+              - button "Expand all" [ref=f10e602] [cursor=pointer]
+            - button [ref=f10e606] [cursor=pointer]
+            - button [ref=f10e614] [cursor=pointer]
+            - button [ref=f10e622] [cursor=pointer]
+            - generic [ref=f10e629]:
+              - button "Collapse" [expanded] [ref=f10e630] [cursor=pointer]: Billing
+              - button "Expand all" [ref=f10e634] [cursor=pointer]
+            - button [ref=f10e638] [cursor=pointer]
+            - button [ref=f10e646] [cursor=pointer]
+            - button [ref=f10e654] [cursor=pointer]
+            - button [ref=f10e662] [cursor=pointer]
+            - button [ref=f10e670] [cursor=pointer]
+            - button [ref=f10e678] [cursor=pointer]
+            - button [ref=f10e686] [cursor=pointer]
+            - button [ref=f10e694] [cursor=pointer]
+            - button [ref=f10e702] [cursor=pointer]
+            - button [ref=f10e710] [cursor=pointer]
+            - button [ref=f10e718] [cursor=pointer]
+            - button [ref=f10e726] [cursor=pointer]
+            - button [ref=f10e734] [cursor=pointer]
+            - button [ref=f10e742] [cursor=pointer]
+            - generic [ref=f10e749]:
+              - button "Collapse" [expanded] [ref=f10e750] [cursor=pointer]: Browser
+              - button "Expand all" [ref=f10e754] [cursor=pointer]
+            - button [ref=f10e758] [cursor=pointer]
+            - button [ref=f10e766] [cursor=pointer]
+            - button [ref=f10e774] [cursor=pointer]
+            - button [ref=f10e782] [cursor=pointer]
+            - generic [ref=f10e789]:
+              - button "Collapse" [expanded] [ref=f10e790] [cursor=pointer]: DIRT
+              - button "Expand all" [ref=f10e794] [cursor=pointer]
+            - button [ref=f10e798] [cursor=pointer]
+            - button [ref=f10e806] [cursor=pointer]
+            - button [ref=f10e814] [cursor=pointer]
+            - generic [ref=f10e821]:
+              - button "Collapse" [expanded] [ref=f10e822] [cursor=pointer]: Tools
+              - button "Expand all" [ref=f10e826] [cursor=pointer]
+            - button [ref=f10e830] [cursor=pointer]
+            - generic [ref=f10e837]:
+              - button "Collapse" [expanded] [ref=f10e838] [cursor=pointer]: Vault
+              - button "Expand all" [ref=f10e842] [cursor=pointer]
+            - button [ref=f10e846] [cursor=pointer]
+            - button [ref=f10e854] [cursor=pointer]
+            - button [ref=f10e862] [cursor=pointer]
+            - button [ref=f10e870] [cursor=pointer]
+            - button [ref=f10e878] [cursor=pointer]
+            - button [ref=f10e886] [cursor=pointer]
+            - generic [ref=f10e893]:
+              - button "Collapse" [expanded] [ref=f10e894] [cursor=pointer]: Web
+              - button "Expand all" [ref=f10e898] [cursor=pointer]
+            - button [ref=f10e902] [cursor=pointer]
+            - button [ref=f10e910] [cursor=pointer]
+            - button [ref=f10e918] [cursor=pointer]
+            - button [ref=f10e926] [cursor=pointer]
+            - button [ref=f10e934] [cursor=pointer]
+            - button [ref=f10e942] [cursor=pointer]
+    - separator "Sidebar resize handle" [ref=f10e949]
+  - generic [ref=f10e951]:
+    - region [ref=f10e952]:
+      - heading "Toolbar" [level=2] [ref=f10e953]
+      - toolbar [ref=f10e954]:
+        - switch "Outline tool" [ref=f10e956] [cursor=pointer]
+        - generic [ref=f10e959]:
+          - button "Enter full screen" [ref=f10e960] [cursor=pointer]
+          - button "Open in editor" [ref=f10e963] [cursor=pointer]
+    - main [ref=f10e967]:
+      - heading "Main preview area" [level=2] [ref=f10e968]
+      - generic [ref=f10e969]:
+        - progressbar "Content is loading..." [ref=f10e971]
+        - generic [ref=f10e972]:
+          - link "Skip to sidebar" [ref=f10e973] [cursor=pointer]:
+            - /url: "#component-library-button--docs"
+          - iframe [ref=f10e977]:
+            

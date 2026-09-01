@@ -1,0 +1,13 @@
+### Browser `default` opened with pid 28448.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:6007/?path=/story/components-feedback-badge--default');
+```
+### Page
+- Page URL: http://127.0.0.1:6007/?path=/story/components-feedback-badge--default
+- Page Title: Components / Feedback / Badge - Default ⋅ Storybook
+- Console: 0 errors, 1 warnings
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-09-01T07-48-47-444Z.yml)
+### Events
+- New console entries: .playwright-cli/console-2026-09-01T07-48-46-883Z.log#L1

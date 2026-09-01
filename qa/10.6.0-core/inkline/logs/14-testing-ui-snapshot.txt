@@ -1,0 +1,258 @@
+### Page
+- Page URL: http://127.0.0.1:6007/?path=/story/components-actions-button--default
+- Page Title: Components / Actions / Button - Default ⋅ Storybook
+- Console: 0 errors, 1 warnings
+### Snapshot
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - log
+    - log [ref=e135]:
+      - generic [ref=e136]: Component test is rendering.
+      - generic [ref=e137]: Component test completed successfully.
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - banner [ref=e7]:
+        - heading "Storybook" [level=1] [ref=e8]
+        - generic [ref=e11]:
+          - generic [ref=e12]:
+            - generic [ref=e13]:
+              - generic [ref=e14]:
+                - link "Skip to content" [ref=e15] [cursor=pointer]:
+                  - /url: "#storybook-preview-wrapper"
+                - link "Storybook" [ref=e17] [cursor=pointer]:
+                  - /url: ./
+                  - img "Storybook" [ref=e18]
+                - switch "Settings" [ref=e23] [cursor=pointer]
+              - generic [ref=e140]:
+                - generic [ref=e142] [cursor=pointer]:
+                  - button "Open onboarding guide" [ref=e146]:
+                    - strong [ref=e150]: Get started
+                  - generic [ref=e151]:
+                    - button "Collapse onboarding guide" [expanded] [ref=e152]
+                    - button "47% completed" [ref=e155]:
+                      - generic [ref=e161]: 47%
+                - list [ref=e164]:
+                  - listitem [ref=e165]:
+                    - button "Open onboarding guide for See what's new" [ref=e166] [cursor=pointer]:
+                      - generic [ref=e170]: See what's new
+                    - button "Go"
+                  - listitem [ref=e172]:
+                    - button "Open onboarding guide for Publish your Storybook for feedback" [ref=e173] [cursor=pointer]:
+                      - generic [ref=e177]: Publish your Storybook for feedback
+                  - listitem [ref=e179]:
+                    - button "Open onboarding guide for Test your components" [ref=e180] [cursor=pointer]:
+                      - generic [ref=e184]: Test your components
+                    - button "Start"
+            - generic [ref=e27]: Search for components
+            - search [ref=e28]:
+              - combobox [ref=e29]:
+                - searchbox "Search for components" [ref=e30]
+                - code: ⌃ K
+                - button "Tag filters" [ref=e187] [cursor=pointer]
+            - navigation [ref=e32]:
+              - heading "Stories" [level=2] [ref=e33]
+              - generic [ref=e190]:
+                - generic [ref=e191]:
+                  - button "Collapse" [expanded] [ref=e192] [cursor=pointer]: Components
+                  - button "Expand all" [ref=e196] [cursor=pointer]
+                - button [ref=e200] [cursor=pointer]
+                - button [expanded] [ref=e208] [cursor=pointer]
+                - button [expanded] [ref=e216] [cursor=pointer]
+                - link [ref=e224] [cursor=pointer]:
+                  - /url: /?path=/story/components-actions-button--block
+                - link [ref=e229] [cursor=pointer]:
+                  - /url: /?path=/story/components-actions-button--colors
+                - generic [ref=e233]:
+                  - link [ref=e234] [cursor=pointer]:
+                    - /url: /?path=/story/components-actions-button--default
+                  - link "Skip to content" [ref=e238] [cursor=pointer]:
+                    - /url: "#storybook-preview-wrapper"
+                - link [ref=e240] [cursor=pointer]:
+                  - /url: /?path=/story/components-actions-button--disabled
+                - link [ref=e245] [cursor=pointer]:
+                  - /url: /?path=/story/components-actions-button--icon
+                - link [ref=e250] [cursor=pointer]:
+                  - /url: /?path=/story/components-actions-button--loading
+                - link [ref=e255] [cursor=pointer]:
+                  - /url: /?path=/story/components-actions-button--sizes
+                - link [ref=e260] [cursor=pointer]:
+                  - /url: /?path=/story/components-actions-button--variants
+                - button [ref=e265] [cursor=pointer]
+                - button [ref=e273] [cursor=pointer]
+          - region [ref=e281]:
+            - generic [ref=e282]:
+              - heading "Component tests" [level=2] [ref=e283]
+              - generic [ref=e284] [cursor=pointer]:
+                - button "Run tests" [ref=e288]
+                - button "Expand testing module" [ref=e294]
+              - generic [ref=e299]:
+                - generic [ref=e300]:
+                  - generic [ref=e301]:
+                    - generic [ref=e302]: Run component tests
+                    - generic [ref=e303]: Not run
+                  - generic [ref=e304]:
+                    - switch "Watch mode" [ref=e305] [cursor=pointer]
+                    - button "Start test run" [ref=e309] [cursor=pointer]
+                - list [ref=e312]:
+                  - listitem [ref=e313]:
+                    - generic [ref=e314]:
+                      - checkbox "Interactions" [checked] [disabled] [ref=e316]
+                      - generic [ref=e317]: Interactions
+                    - button "Run tests to see results" [disabled] [ref=e318]
+                  - listitem [ref=e320]:
+                    - generic [ref=e321] [cursor=pointer]:
+                      - checkbox "Coverage" [ref=e323]
+                      - generic [ref=e324]: Coverage
+                    - button "Coverage unavailable, run tests first" [disabled] [ref=e325]
+                  - listitem [ref=e327]:
+                    - generic [ref=e328] [cursor=pointer]:
+                      - checkbox "Accessibility" [ref=e330]
+                      - generic [ref=e331]: Accessibility
+                    - button "Run tests to see accessibility results" [disabled] [ref=e332]
+      - separator "Sidebar resize handle" [ref=e53]
+    - generic [ref=e55]:
+      - region [ref=e56]:
+        - heading "Toolbar" [level=2] [ref=e57]
+        - toolbar [ref=e58]:
+          - generic [ref=e59]:
+            - button "Reload story" [ref=e60] [cursor=pointer]
+            - switch "Grid visibility" [ref=e334] [cursor=pointer]
+            - button "Preview background" [ref=e337] [cursor=pointer]
+            - switch "Measure tool" [ref=e63] [cursor=pointer]
+            - switch "Outline tool" [ref=e67] [cursor=pointer]
+            - button "Viewport size" [ref=e70] [cursor=pointer]
+            - button "Vision filter" [ref=e75] [cursor=pointer]
+          - generic [ref=e80]:
+            - button "Open in isolation mode" [ref=e81] [cursor=pointer]
+            - switch "Change zoom level" [ref=e87] [cursor=pointer]: 100%
+            - button "Enter full screen" [ref=e88] [cursor=pointer]
+            - button "Open in editor" [ref=e341] [cursor=pointer]
+      - main [ref=e91]:
+        - heading "Main preview area" [level=2] [ref=e92]
+        - generic [ref=e96]:
+          - link "Skip to sidebar" [ref=e97] [cursor=pointer]:
+            - /url: "#components-actions-button--default"
+          - iframe [ref=e101]:
+            - button "Button" [ref=f1e3] [cursor=pointer]
+    - generic [ref=e102]:
+      - separator "Addon panel resize handle" [ref=e103]
+      - region [ref=e105]:
+        - heading "Addon panel" [level=2] [ref=e106]
+        - generic [ref=e107]:
+          - generic [ref=e108]:
+            - generic [ref=e109]:
+              - button "Move addon panel to right" [ref=e110] [cursor=pointer]
+              - button "Hide addon panel" [ref=e114] [cursor=pointer]
+            - tablist "Available addons" [ref=e120]:
+              - tab "Controls 9" [selected] [ref=e345] [cursor=pointer]:
+                - generic [ref=e122]:
+                  - generic [ref=e123]: Controls
+                  - generic [ref=e346]: "9"
+              - tab "Actions" [ref=e124] [cursor=pointer]
+              - tab "Interactions" [ref=e127] [cursor=pointer]
+              - tab "Accessibility" [ref=e130] [cursor=pointer]
+          - tabpanel "Controls 9" [ref=e347]:
+            - generic [ref=e354]:
+              - button "Reset controls" [ref=e356] [cursor=pointer]
+              - table [ref=e359]:
+                - rowgroup [ref=e360]:
+                  - row [ref=e361]:
+                    - columnheader "Name" [ref=e362]
+                    - columnheader "Control" [ref=e363]
+                - rowgroup [ref=e364]:
+                  - row [ref=e365]:
+                    - cell [ref=e366]:
+                      - button "Hide props items" [ref=e367]
+                      - generic [ref=e368]: props
+                    - cell [ref=e371]:
+                      - button "Hide props items" [ref=e372]
+                  - row [ref=e373]:
+                    - cell "block" [ref=e374]
+                    - cell [ref=e375]:
+                      - generic "block" [ref=e376]:
+                        - switch "block" [ref=e377] [cursor=pointer]
+                        - generic [ref=e378] [cursor=pointer]: "False"
+                        - generic [ref=e379] [cursor=pointer]: "True"
+                  - row [ref=e380]:
+                    - cell "label" [ref=e381]
+                    - cell [ref=e382]:
+                      - textbox [ref=e384]:
+                        - /placeholder: Edit string...
+                        - text: Button
+                  - row [ref=e385]:
+                    - cell "type" [ref=e386]
+                    - cell [ref=e387]:
+                      - generic [ref=e388]:
+                        - generic [ref=e389]: type
+                        - combobox "type" [ref=e390]:
+                          - option "Choose option..." [disabled] [selected]
+                          - option "button"
+                          - option "submit"
+                          - option "reset"
+                  - row [ref=e391]:
+                    - cell "disabled" [ref=e392]
+                    - cell [ref=e393]:
+                      - generic "disabled" [ref=e394]:
+                        - switch "disabled" [ref=e395] [cursor=pointer]
+                        - generic [ref=e396] [cursor=pointer]: "False"
+                        - generic [ref=e397] [cursor=pointer]: "True"
+                  - row [ref=e398]:
+                    - cell "loading" [ref=e399]
+                    - cell [ref=e400]:
+                      - generic "loading" [ref=e401]:
+                        - switch "loading" [ref=e402] [cursor=pointer]
+                        - generic [ref=e403] [cursor=pointer]: "False"
+                        - generic [ref=e404] [cursor=pointer]: "True"
+                  - row [ref=e405]:
+                    - cell "color" [ref=e406]
+                    - cell [ref=e407]:
+                      - generic [ref=e408]:
+                        - generic [ref=e409]: color
+                        - combobox "color" [ref=e410]:
+                          - option "Choose option..." [disabled] [selected]
+                          - option "primary"
+                          - option "secondary"
+                          - option "success"
+                          - option "info"
+                          - option "warning"
+                          - option "error"
+                          - option "light"
+                          - option "dark"
+                          - option "neutral"
+                  - row [ref=e411]:
+                    - cell "variant" [ref=e412]
+                    - cell [ref=e413]:
+                      - generic [ref=e414]:
+                        - generic [ref=e415]: variant
+                        - combobox "variant" [ref=e416]:
+                          - option "Choose option..." [disabled] [selected]
+                          - option "solid"
+                          - option "outline"
+                          - option "soft"
+                          - option "subtle"
+                          - option "ghost"
+                          - option "link"
+                  - row [ref=e417]:
+                    - cell "size" [ref=e418]
+                    - cell [ref=e419]:
+                      - generic [ref=e420]:
+                        - generic [ref=e421]: size
+                        - combobox "size" [ref=e422]:
+                          - option "Choose option..." [disabled] [selected]
+                          - option "xs"
+                          - option "sm"
+                          - option "md"
+                          - option "lg"
+                          - option "xl"
+                  - row [ref=e423]:
+                    - cell [ref=e424]:
+                      - button "Hide slots items" [ref=e425]
+                      - generic [ref=e426]: slots
+                    - cell [ref=e429]:
+                      - button "Hide slots items" [ref=e430]
+                  - row [ref=e431]:
+                    - cell "default" [ref=e432]
+                    - cell [ref=e433]:
+                      - button "Set object" [ref=e434] [cursor=pointer]
+```

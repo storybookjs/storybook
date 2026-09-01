@@ -1,0 +1,6 @@
+### Result
+"Component Library / Badge - Default ⋅ Storybook"
+### Ran Playwright code
+```js
+await page.evaluate('() => document.title');
+```

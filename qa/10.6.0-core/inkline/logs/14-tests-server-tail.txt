@@ -1,0 +1,80 @@
+│  "knownPackages": {
+│  "testPackages": {
+│  "@storybook/addon-vitest": "10.6.0",
+│  "vitest": "4.1.8",
+│  "@vitest/browser-playwright": "4.1.8",
+│  "playwright": "1.62.1"
+│  }
+│  },
+│  "hasRouterPackage": false,
+│  "packageManager": {
+│  "type": "pnpm",
+│  "version": "11.6.0",
+│  "agent": "pnpm",
+│  "nodeLinker": "undefined"
+│  },
+│  "preview": {
+│  "usesGlobals": false
+│  },
+│  "framework": {
+│  "name": "@storybook/vue3-vite",
+│  "options": {
+│  "docgen": {
+│  "plugin": "vue-component-meta",
+│  "tsconfig": "ui/vue/tsconfig.json"
+│  }
+│  }
+│  },
+│  "builder": "@storybook/builder-vite",
+│  "renderer": "@storybook/vue3",
+│  "portableStoriesFileCount": 0,
+│  "applicationFileCount": 0,
+│  "storybookVersion": "10.6.0-beta.0",
+│  "storybookVersionSpecifier": "10.6.0-beta.0",
+│  "language": "typescript",
+│  "storybookPackages": {
+│  "@inkline/storybook": {
+│  "version": "0.0.0"
+│  },
+│  "@storybook/vue3-vite": {
+│  "version": "10.6.0-beta.0"
+│  },
+│  "storybook": {}
+│  },
+│  "addons": {
+│  "@storybook/addon-a11y": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-docs": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-mcp": {},
+│  "@storybook/addon-vitest": {
+│  "version": "10.6.0-beta.0"
+│  }
+│  },
+│  "packageJsonType": "module"
+│  }
+│  }
+│
+│  storybook/test: PASS  Waiting for file changes...
+│
+│  storybook/test: press h to show help, press q to quit
+│
+│  storybook/test: ✓ |storybook:/tmp/qa-10.6/inkline/ui/vue/.storybook
+│  (chromium)| .inkline/components/badge/stories/IBadge.stories.ts (4
+│  tests) 111ms
+│
+│  storybook/test: ✓ |storybook:/tmp/qa-10.6/inkline/ui/vue/.storybook
+│  (chromium)| .inkline/components/button/stories/IButton.stories.ts (8
+│  tests) 167ms
+│
+│  storybook/test: ✓ |storybook:/tmp/qa-10.6/inkline/ui/vue/.storybook
+│  (chromium)|
+│  .inkline/components/field-group/stories/IFieldGroup.stories.ts (3
+│  tests) 48ms
+│
+│  storybook/test: ✓ |storybook:/tmp/qa-10.6/inkline/ui/vue/.storybook
+│  (chromium)|
+│  .inkline/components/hamburger-menu/stories/IHamburgerMenu.stories.ts
+│  (7 tests) 144ms

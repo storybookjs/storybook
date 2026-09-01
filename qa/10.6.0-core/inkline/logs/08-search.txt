@@ -1,0 +1,4 @@
+### Ran Playwright code
+```js
+await page.getByRole('searchbox', { name: 'Search for components' }).fill('Button');
+```

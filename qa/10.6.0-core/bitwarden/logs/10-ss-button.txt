@@ -1,0 +1,17 @@
+### Result
+- [Screenshot of viewport](../../../../../opt/cursor/artifacts/qa-10.6.0/bitwarden/screenshots/02-button-default.png)
+### Ran Playwright code
+```js
+// Screenshot viewport and save it as ../../../../../opt/cursor/artifacts/qa-10.6.0/bitwarden/screenshots/02-button-default.png
+await page.screenshot({
+  path: '../../../../../opt/cursor/artifacts/qa-10.6.0/bitwarden/screenshots/02-button-default.png',
+  scale: 'css',
+  type: 'png'
+});
+```
+### Page
+- Page URL: http://localhost:6006/?path=/story/component-library-button--default
+- Page Title: Component Library / Button - Default ⋅ Storybook
+- Console: 0 errors, 3 warnings
+### Events
+- New console entries: .playwright-cli/console-2026-09-01T07-49-27-708Z.log#L2-L8

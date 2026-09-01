@@ -1,0 +1,5 @@
+@bitwarden/clients@0.0.0 /tmp/qa-10.6/bitwarden
+├── @storybook/addon-mcp@10.6.0-beta.0
+├── @storybook/angular@10.6.0-beta.0
+└── storybook@10.6.0-beta.0
+

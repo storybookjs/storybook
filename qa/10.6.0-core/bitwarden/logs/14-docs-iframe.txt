@@ -1,0 +1,31 @@
+### Result
+{
+  "textStart": "import { ButtonModule } from \"@bitwarden/components\";\nCopy\nButton\nDefault / Secondary\nButton\nShow code\nCopy code\nName\tDescription\tDefault\tControl\nbuttonType\t\nThe visual style variant of the button\nButtonType\n\t\nsecondary\n\t\nbuttonType\nChoose option...\nprimary\nprimaryOutline\nprimaryGhost\nsecondary\nsubtle\nsubtleOutline\nsubtleGhost\ndanger\ndangerOutline\ndangerGhost\nwarning\nwarningOutline\nwarningGhost\nsuccess\nsuccessOutline\nsuccessGhost\ncontrast\ncontrastOutline\ncontrastGhost\nside-nav\nunstyled\n\nblock\t\nW",
+  "buttons": [
+    "Set string",
+    "Set string",
+    "Set string",
+    "Copy",
+    "Button",
+    "Show code",
+    "Copy code",
+    "Set boolean",
+    "Hide properties items",
+    "Hide properties items",
+    "Set object",
+    "Set object",
+    "Hide inputs items",
+    "Hide inputs items",
+    "Set object",
+    "Set object",
+    "Hide outputs items",
+    "Hide outputs items",
+    "Button",
+    "Button"
+  ],
+  "hasArgsTable": true
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const iframe = document.querySelector(\'#storybook-preview-iframe\');\n  const doc = iframe?.contentDocument;\n  const text = doc?.body?.innerText?.slice(0, 1500) || \'\';\n  const hasShowCode = !!doc?.querySelector(\'button\');\n  const buttons = [...(doc?.querySelectorAll(\'button\')||[])].map(b=>b.textContent?.trim()).filter(Boolean).slice(0,20);\n  return { textStart: text.slice(0,500), buttons, hasArgsTable: /buttonType|Properties|Args/.test(text) };\n}');
+```

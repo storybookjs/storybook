@@ -1,0 +1,200 @@
+$ pnpm --filter @inkline/components exec inkline compile 'src/**/*.ink.tsx' --config inkline.config.ts --target vue
+Generated 8 story file(s) for 8 component(s).
+Compiled 67 files in 0.35s — 0 errors, 0 warnings, 0 notes
+$ storybook dev -p 6007
+
+┌  storybook v10.6.0-beta.0
+│
+●  [telemetry]
+│
+●  {
+│  "eventType": "boot",
+│  "payload": {
+│  "eventType": "dev"
+│  }
+│  }
+│
+●  Starting...
+│
+●  [telemetry]
+│
+●  {
+│  "eventType": "version-update",
+│  "payload": {},
+│  "metadata": {
+│  "generatedAt": 1788248553957,
+│  "userSince": 1785753827176,
+│  "hasCustomBabel": false,
+│  "hasCustomWebpack": false,
+│  "hasStaticDirs": false,
+│  "hasStorybookEslint": false,
+│  "refCount": 0,
+│  "knownPackages": {},
+│  "hasRouterPackage": false,
+│  "packageManager": {
+│  "type": "pnpm",
+│  "version": "11.6.0",
+│  "agent": "pnpm",
+│  "nodeLinker": "undefined"
+│  },
+│  "preview": {
+│  "usesGlobals": false
+│  },
+│  "framework": {
+│  "name": "@storybook/vue3-vite",
+│  "options": {
+│  "docgen": {
+│  "plugin": "vue-component-meta",
+│  "tsconfig": "ui/vue/tsconfig.json"
+│  }
+│  }
+│  },
+│  "builder": "@storybook/builder-vite",
+│  "renderer": "@storybook/vue3",
+│  "portableStoriesFileCount": 0,
+│  "applicationFileCount": 0,
+│  "storybookVersion": "10.6.0-beta.0",
+│  "storybookVersionSpecifier": "10.6.0-beta.0",
+│  "language": "typescript",
+│  "storybookPackages": {
+│  "@inkline/storybook": {
+│  "version": "0.0.0"
+│  },
+│  "@storybook/vue3-vite": {
+│  "version": "10.6.0-beta.0"
+│  },
+│  "storybook": {}
+│  },
+│  "addons": {
+│  "@storybook/addon-a11y": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-docs": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-mcp": {}
+│  },
+│  "packageJsonType": "module"
+│  }
+│  }
+
+ℹ [styleframe] Initializing...
+✔ [styleframe] Generated type declarations.
+✔ [styleframe] Initialized with 8 styleframe file(s) (tracking 9 dependencies).
+
+│ [38;2;255;71;133m╭[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╮[39m
+│ [38;2;255;71;133m│[39m   Storybook ready!                                   [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                      [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - Local:                http://localhost:6007/     [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m   - On your network:      http://172.30.0.2:6007/    [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m│[39m                                                      [38;2;255;71;133m│[39m
+│ [38;2;255;71;133m╰[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m─[39m[38;2;255;71;133m╯[39m
+│
+●  203 ms for manager and 797 ms for preview
+│
+●  [telemetry]
+│
+●  {
+│  "eventType": "dev",
+│  "payload": {
+│  "precedingUpgrade": {
+│  "timestamp": 1788248459417,
+│  "eventType": "upgrade",
+│  "eventId": "9-llsLmsOcwJqrLUeTeWF",
+│  "sessionId": "OZSxV7SGr7NxVP9fe0CDR"
+│  },
+│  "versionStatus": "success",
+│  "storyIndex": {
+│  "storyCount": 53,
+│  "componentCount": 8,
+│  "pageStoryCount": 0,
+│  "playStoryCount": 0,
+│  "testStoryCount": 0,
+│  "maxTestsPerStory": 0,
+│  "singleTestStoryCount": 0,
+│  "autodocsCount": 0,
+│  "mdxCount": 0,
+│  "exampleStoryCount": 0,
+│  "exampleDocsCount": 0,
+│  "onboardingStoryCount": 0,
+│  "onboardingDocsCount": 0,
+│  "svelteCsfV4Count": 0,
+│  "svelteCsfV5Count": 0,
+│  "version": 5
+│  },
+│  "storyStats": {
+│  "factory": 0,
+│  "play": 0,
+│  "render": 44,
+│  "loaders": 0,
+│  "beforeEach": 0,
+│  "globals": 0,
+│  "tags": 0,
+│  "storyFn": 0,
+│  "mount": 0,
+│  "moduleMock": 0
+│  }
+│  },
+│  "metadata": {
+│  "generatedAt": 1788248555122,
+│  "userSince": 1785753827176,
+│  "hasCustomBabel": false,
+│  "hasCustomWebpack": false,
+│  "hasStaticDirs": false,
+│  "hasStorybookEslint": false,
+│  "refCount": 0,
+│  "knownPackages": {},
+│  "hasRouterPackage": false,
+│  "packageManager": {
+│  "type": "pnpm",
+│  "version": "11.6.0",
+│  "agent": "pnpm",
+│  "nodeLinker": "undefined"
+│  },
+│  "preview": {
+│  "usesGlobals": false
+│  },
+│  "framework": {
+│  "name": "@storybook/vue3-vite",
+│  "options": {
+│  "docgen": {
+│  "plugin": "vue-component-meta",
+│  "tsconfig": "ui/vue/tsconfig.json"
+│  }
+│  }
+│  },
+│  "builder": "@storybook/builder-vite",
+│  "renderer": "@storybook/vue3",
+│  "portableStoriesFileCount": 0,
+│  "applicationFileCount": 0,
+│  "storybookVersion": "10.6.0-beta.0",
+│  "storybookVersionSpecifier": "10.6.0-beta.0",
+│  "language": "typescript",
+│  "storybookPackages": {
+│  "@inkline/storybook": {
+│  "version": "0.0.0"
+│  },
+│  "@storybook/vue3-vite": {
+│  "version": "10.6.0-beta.0"
+│  },
+│  "storybook": {}
+│  },
+│  "addons": {
+│  "@storybook/addon-a11y": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-docs": {
+│  "version": "10.4.4"
+│  },
+│  "@storybook/addon-mcp": {}
+│  },
+│  "packageJsonType": "module"
+│  }
+│  }
+│
+●  [telemetry]
+│
+●  {
+│  "eventType": "onboarding-checklist-status",
+│  "payload": {
+│  "item": "installDocs",

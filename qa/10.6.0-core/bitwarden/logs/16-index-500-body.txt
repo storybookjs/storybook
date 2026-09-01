@@ -1,0 +1,17 @@
+Unable to index ./libs/components/src/button/button.mdx:
+  Error: Invariant failed: Could not find or load CSF file at path "./button.stories" referenced by `of={}` in docs file "libs/components/src/button/button.mdx".
+
+- Does that file exist?
+- If so, is it a CSF file (`.stories.*`)?
+- If so, is it matched by the `stories` glob in `main.js`?
+- If so, has the file successfully loaded in Storybook and are its stories visible?
+    at invariant (file:///tmp/qa-10.6/bitwarden/node_modules/storybook/dist/_node-chunks/chunk-FKBNR62C.js:20:11)
+    at _StoryIndexGenerator.extractDocs (file:///tmp/qa-10.6/bitwarden/node_modules/storybook/dist/core-server/index.js:16718:13)
+    at async file:///tmp/qa-10.6/bitwarden/node_modules/storybook/dist/core-server/index.js:16563:39
+    at async Promise.all (index 13)
+    at async Promise.all (index 14)
+    at async _StoryIndexGenerator.updateExtracted (file:///tmp/qa-10.6/bitwarden/node_modules/storybook/dist/core-server/index.js:16551:5)
+    at async _StoryIndexGenerator.ensureExtracted (file:///tmp/qa-10.6/bitwarden/node_modules/storybook/dist/core-server/index.js:16588:8)
+    at async _StoryIndexGenerator.getIndexAndStats (file:///tmp/qa-10.6/bitwarden/node_modules/storybook/dist/core-server/index.js:16819:134)
+    at async _StoryIndexGenerator.getIndex (file:///tmp/qa-10.6/bitwarden/node_modules/storybook/dist/core-server/index.js:16812:13)
+    at async Array.<anonymous> (file:///tmp/qa-10.6/bitwarden/node_modules/storybook/dist/core-server/index.js:7428:20)

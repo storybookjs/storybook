@@ -1,0 +1,10 @@
+### Result
+{
+  "title": "Component Library / Button - Default ⋅ Storybook",
+  "href": "http://localhost:6006/?path=/story/component-library-button--default",
+  "errors": null
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({ title: document.title, href: location.href, errors: window.__sbErrors || null })');
+```

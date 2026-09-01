@@ -1,0 +1,16 @@
+{
+  "name": "@inkline/storybook-app",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "storybook": "storybook dev -p 6100",
+    "storybook:build": "storybook build -o dist"
+  },
+  "devDependencies": {
+    "@storybook/addon-a11y": "catalog:",
+    "@storybook/addon-docs": "catalog:",
+    "@storybook/react-vite": "catalog:",
+    "storybook": "catalog:"
+  }
+}

@@ -1,0 +1,10 @@
+### Browser `default` opened with pid 19659.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:6007/?path=/docs/components-actions-button--docs');
+```
+### Page
+- Page URL: http://127.0.0.1:6007/?path=/docs/components-actions-button--docs
+- Page Title: Storybook
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-09-01T07-43-37-306Z.yml)

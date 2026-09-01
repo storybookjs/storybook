@@ -1,0 +1,278 @@
+- generic [ref=e1]:
+  - generic [ref=e2]:
+    - log
+    - log
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - banner [ref=e7]:
+        - heading "Storybook" [level=1] [ref=e8]
+        - generic [ref=e12]:
+          - generic [ref=e13]:
+            - generic [ref=e14]:
+              - link "Skip to content" [ref=e15] [cursor=pointer]:
+                - /url: "#storybook-preview-wrapper"
+              - link [ref=e17] [cursor=pointer]:
+                - /url: /
+                - img "Bitwarden Component Library" [ref=e133]
+              - switch "Settings" [ref=e18] [cursor=pointer]
+            - generic [ref=e136]:
+              - generic [ref=e138] [cursor=pointer]:
+                - button "Open onboarding guide" [ref=e142]:
+                  - strong [ref=e146]: Get started
+                - generic [ref=e147]:
+                  - button "Collapse onboarding guide" [expanded] [ref=e148]
+                  - button "47% completed" [ref=e151]:
+                    - generic [ref=e157]: 47%
+              - list [ref=e160]:
+                - listitem [ref=e161]:
+                  - button "Open onboarding guide for See what's new" [ref=e162] [cursor=pointer]:
+                    - generic [ref=e166]: See what's new
+                  - button "Go"
+                - listitem [ref=e168]:
+                  - button "Open onboarding guide for Change a story with Controls" [ref=e169] [cursor=pointer]:
+                    - generic [ref=e173]: Change a story with Controls
+                - listitem [ref=e175]:
+                  - button "Open onboarding guide for Publish your Storybook for feedback" [ref=e176] [cursor=pointer]:
+                    - generic [ref=e180]: Publish your Storybook for feedback
+          - generic [ref=e22]: Search for components
+          - search [ref=e23]:
+            - combobox [expanded] [ref=e24]:
+              - searchbox "Search for components" [active] [ref=e25]: badge
+              - generic [ref=e182]:
+                - button "Clear search" [ref=e1191] [cursor=pointer]
+                - button "Tag filters" [ref=e183] [cursor=pointer]
+              - listbox "Search for components" [ref=e1195]:
+                - option "Docs Component Library / Badge" [ref=e1196] [cursor=pointer]:
+                  - generic [ref=e1200]:
+                    - generic [ref=e1201]: Docs
+                    - generic [ref=e1202]:
+                      - generic [ref=e1203]: Component Library
+                      - generic [ref=e1204]:
+                        - text: /
+                        - mark [ref=e1206]: Badge
+                - option "Docs Component Library / Badge / List" [ref=e1207] [cursor=pointer]:
+                  - generic [ref=e1211]:
+                    - generic [ref=e1212]: Docs
+                    - generic [ref=e1213]:
+                      - generic [ref=e1214]: Component Library
+                      - generic [ref=e1215]:
+                        - text: /
+                        - mark [ref=e1217]: Badge
+                      - generic [ref=e1218]: / List
+                - option "With Critical Badge DIRT / Access Intelligence / Applications Table" [ref=e1219] [cursor=pointer]:
+                  - generic [ref=e1223]:
+                    - generic [ref=e1225]:
+                      - text: With Critic
+                      - mark [ref=e1226]: a
+                      - text: l
+                      - mark [ref=e1227]: Badge
+                    - generic [ref=e1228]:
+                      - generic [ref=e1229]: DIRT
+                      - generic [ref=e1230]: / Access Intelligence
+                      - generic [ref=e1231]: / Applications Table
+                - option "Single Action With Badge Component Library / Item" [ref=e1232] [cursor=pointer]:
+                  - generic [ref=e1236]:
+                    - generic [ref=e1238]:
+                      - text: Sin
+                      - mark [ref=e1239]: g
+                      - text: l
+                      - mark [ref=e1240]: e
+                      - mark [ref=e1241]: A
+                      - text: ction With
+                      - mark [ref=e1242]: Badge
+                    - generic [ref=e1243]:
+                      - generic [ref=e1244]: Component Library
+                      - generic [ref=e1245]: / Item
+                - option "Docs Billing / Premium Badge" [ref=e1246] [cursor=pointer]:
+                  - generic [ref=e1250]:
+                    - generic [ref=e1251]: Docs
+                    - generic [ref=e1252]:
+                      - generic [ref=e1253]: Billing
+                      - generic [ref=e1254]:
+                        - text: /
+                        - generic [ref=e1255]:
+                          - text: Pr
+                          - mark [ref=e1256]: e
+                          - text: mium
+                          - mark [ref=e1257]: Badge
+                - option "Docs Billing / Discount Badge" [ref=e1258] [cursor=pointer]:
+                  - generic [ref=e1262]:
+                    - generic [ref=e1263]: Docs
+                    - generic [ref=e1264]:
+                      - generic [ref=e1265]: Billing
+                      - generic [ref=e1266]:
+                        - text: /
+                        - generic [ref=e1267]:
+                          - mark [ref=e1268]: D
+                          - text: iscount
+                          - mark [ref=e1269]: Badge
+                - option "Docs Web / PAM / Access Rule Collection Badges" [ref=e1270] [cursor=pointer]:
+                  - generic [ref=e1274]:
+                    - generic [ref=e1275]: Docs
+                    - generic [ref=e1276]:
+                      - generic [ref=e1277]: Web
+                      - generic [ref=e1278]: / PAM
+                      - generic [ref=e1279]:
+                        - text: /
+                        - generic [ref=e1280]:
+                          - mark [ref=e1281]: A
+                          - text: cc
+                          - mark [ref=e1282]: e
+                          - text: ss Rul
+                          - mark [ref=e1283]: e
+                          - text: Coll
+                          - mark [ref=e1284]: e
+                          - text: ction
+                          - mark [ref=e1285]: Badge
+                          - text: s
+      - separator "Sidebar resize handle" [ref=e48]
+    - generic [ref=e50]:
+      - region [ref=e51]:
+        - heading "Toolbar" [level=2] [ref=e52]
+        - toolbar [ref=e53]:
+          - generic [ref=e54]:
+            - button "Reload story" [ref=e55] [cursor=pointer]
+            - switch "Grid visibility" [ref=e1075] [cursor=pointer]
+            - button "Preview background" [ref=e1078] [cursor=pointer]
+            - switch "Measure tool" [ref=e58] [cursor=pointer]
+            - switch "Outline tool" [ref=e62] [cursor=pointer]
+            - button "Viewport size" [ref=e65] [cursor=pointer]
+            - button "Vision filter" [ref=e70] [cursor=pointer]
+            - button "Theme" [ref=e1082] [cursor=pointer]: light theme
+          - generic [ref=e75]:
+            - button "Open in isolation mode" [ref=e76] [cursor=pointer]
+            - switch "Change zoom level" [ref=e82] [cursor=pointer]: 100%
+            - button "Enter full screen" [ref=e83] [cursor=pointer]
+            - button "Open in editor" [ref=e1085] [cursor=pointer]
+      - main [ref=e86]:
+        - heading "Main preview area" [level=2] [ref=e87]
+        - generic [ref=e91]:
+          - link "Skip to sidebar" [ref=e92] [cursor=pointer]:
+            - /url: "#component-library-button--default"
+          - iframe [ref=e96]:
+            - button "Button" [ref=f1e5] [cursor=pointer]
+    - generic [ref=e97]:
+      - separator "Addon panel resize handle" [ref=e98]
+      - region [ref=e100]:
+        - heading "Addon panel" [level=2] [ref=e101]
+        - generic [ref=e102]:
+          - generic [ref=e103]:
+            - generic [ref=e104]:
+              - button "Move addon panel to right" [ref=e105] [cursor=pointer]
+              - button "Hide addon panel" [ref=e109] [cursor=pointer]
+            - tablist "Available addons" [ref=e115]:
+              - tab "Controls 10" [selected] [ref=e1089] [cursor=pointer]:
+                - generic [ref=e117]:
+                  - generic [ref=e118]: Controls
+                  - generic [ref=e1090]: "10"
+              - tab "Actions" [ref=e119] [cursor=pointer]
+              - tab "Interactions" [ref=e122] [cursor=pointer]
+              - tab "Accessibility" [ref=e125] [cursor=pointer]
+              - tab "Feature Flags" [ref=e129] [cursor=pointer]
+          - tabpanel "Controls 10" [ref=e1091]:
+            - generic [ref=e1098]:
+              - button "Reset controls" [ref=e1100] [cursor=pointer]
+              - table [ref=e1103]:
+                - rowgroup [ref=e1104]:
+                  - row [ref=e1105]:
+                    - columnheader "Name" [ref=e1106]
+                    - columnheader "Control" [ref=e1107]
+                - rowgroup [ref=e1108]:
+                  - row [ref=e1109]:
+                    - cell "buttonType" [ref=e1110]
+                    - cell [ref=e1111]:
+                      - generic [ref=e1112]:
+                        - generic [ref=e1113]: buttonType
+                        - combobox "buttonType" [ref=e1114]:
+                          - option "Choose option..."
+                          - option "primary"
+                          - option "primaryOutline"
+                          - option "primaryGhost"
+                          - option "secondary" [selected]
+                          - option "subtle"
+                          - option "subtleOutline"
+                          - option "subtleGhost"
+                          - option "danger"
+                          - option "dangerOutline"
+                          - option "dangerGhost"
+                          - option "warning"
+                          - option "warningOutline"
+                          - option "warningGhost"
+                          - option "success"
+                          - option "successOutline"
+                          - option "successGhost"
+                          - option "contrast"
+                          - option "contrastOutline"
+                          - option "contrastGhost"
+                          - option "side-nav"
+                          - option "unstyled"
+                  - row [ref=e1115]:
+                    - cell "block" [ref=e1116]
+                    - cell [ref=e1117]:
+                      - button "Set boolean" [ref=e1118] [cursor=pointer]
+                  - row [ref=e1119]:
+                    - cell [ref=e1120]:
+                      - button "Hide properties items" [ref=e1121]
+                      - generic [ref=e1122]: properties
+                    - cell [ref=e1125]:
+                      - button "Hide properties items" [ref=e1126]
+                  - row [ref=e1127]:
+                    - cell "disabled" [ref=e1128]
+                    - cell [ref=e1129]:
+                      - generic "disabled" [ref=e1130]:
+                        - switch "disabled" [ref=e1131] [cursor=pointer]
+                        - generic [ref=e1132] [cursor=pointer]: "False"
+                        - generic [ref=e1133] [cursor=pointer]: "True"
+                  - row [ref=e1134]:
+                    - cell "endIconClasses" [ref=e1135]
+                    - cell [ref=e1136]:
+                      - button "Set object" [ref=e1137] [cursor=pointer]
+                  - row [ref=e1138]:
+                    - cell "loading" [ref=e1139]
+                    - cell [ref=e1140]:
+                      - generic "loading" [ref=e1141]:
+                        - switch "loading" [ref=e1142] [cursor=pointer]
+                        - generic [ref=e1143] [cursor=pointer]: "False"
+                        - generic [ref=e1144] [cursor=pointer]: "True"
+                  - row [ref=e1145]:
+                    - cell "startIconClasses" [ref=e1146]
+                    - cell [ref=e1147]:
+                      - button "Set object" [ref=e1148] [cursor=pointer]
+                  - row [ref=e1149]:
+                    - cell [ref=e1150]:
+                      - button "Hide inputs items" [ref=e1151]
+                      - generic [ref=e1152]: inputs
+                    - cell [ref=e1155]:
+                      - button "Hide inputs items" [ref=e1156]
+                  - row [ref=e1157]:
+                    - cell "endIcon" [ref=e1158]
+                    - cell [ref=e1159]:
+                      - button "Set object" [ref=e1160] [cursor=pointer]
+                  - row [ref=e1161]:
+                    - cell "size" [ref=e1162]
+                    - cell [ref=e1163]:
+                      - group "size" [ref=e1164]:
+                        - generic [ref=e1166] [cursor=pointer]:
+                          - radio "small" [ref=e1167]
+                          - generic [ref=e1168]: small
+                        - generic [ref=e1169] [cursor=pointer]:
+                          - radio "default" [ref=e1170]
+                          - generic [ref=e1171]: default
+                        - generic [ref=e1172] [cursor=pointer]:
+                          - radio "large" [ref=e1173]
+                          - generic [ref=e1174]: large
+                  - row [ref=e1175]:
+                    - cell "startIcon" [ref=e1176]
+                    - cell [ref=e1177]:
+                      - button "Set object" [ref=e1178] [cursor=pointer]
+                  - row [ref=e1179]:
+                    - cell [ref=e1180]:
+                      - button "Hide outputs items" [ref=e1181]
+                      - generic [ref=e1182]: outputs
+                    - cell [ref=e1185]:
+                      - button "Hide outputs items" [ref=e1186]
+                  - row [ref=e1187]:
+                    - cell "sizeChange" [ref=e1188]
+                    - cell [ref=e1189]:
+                      - button "Set object" [ref=e1190] [cursor=pointer]
+  - status [ref=e1286]

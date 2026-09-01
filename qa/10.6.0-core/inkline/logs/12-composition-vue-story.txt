@@ -1,0 +1,13 @@
+### Browser `default` opened with pid 34957.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:6100/?path=/story/vue_components-actions-button--default');
+```
+### Page
+- Page URL: http://127.0.0.1:6100/?path=/story/vue_components-actions-button--default
+- Page Title: Storybook
+- Console: 5 errors, 8 warnings
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-09-01T07-51-17-013Z.yml)
+### Events
+- New console entries: .playwright-cli/console-2026-09-01T07-51-15-758Z.log#L1-L13

@@ -1,0 +1,9 @@
+157:              "buildTarget": "test-storybook:build:production"
+160:              "buildTarget": "test-storybook:build:development"
+165:        "storybook": {
+166:          "builder": "@storybook/angular:start-storybook",
+168:            "configDir": ".storybook",
+187:        "build-storybook": {
+188:          "builder": "@storybook/angular:build-storybook",
+190:            "configDir": ".storybook",
+206:            "outputDir": "storybook-static"

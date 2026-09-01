@@ -1,0 +1,403 @@
+- generic [ref=f8e1]:
+  - generic [ref=f8e2]:
+    - log
+    - log [ref=f8e1038]:
+      - generic [ref=f8e1198]: Component test is rendering.
+      - generic [ref=f8e1199]: Component test completed successfully.
+      - generic [ref=f8e1200]: Component test is rendering.
+      - generic [ref=f8e1201]: Component test completed successfully.
+  - generic [ref=f8e4]:
+    - generic [ref=f8e5]:
+      - banner [ref=f8e7]:
+        - heading "Storybook" [level=1] [ref=f8e8]
+        - generic [ref=f8e12]:
+          - generic [ref=f8e13]:
+            - generic [ref=f8e14]:
+              - link "Skip to content" [ref=f8e15] [cursor=pointer]:
+                - /url: "#storybook-preview-wrapper"
+              - link [ref=f8e17] [cursor=pointer]:
+                - /url: /
+                - img "Bitwarden Component Library" [ref=f8e18]
+              - switch "Settings" [ref=f8e19] [cursor=pointer]
+            - generic [ref=f8e25]:
+              - generic [ref=f8e27] [cursor=pointer]:
+                - button "Open onboarding guide" [ref=f8e31]:
+                  - strong [ref=f8e35]: Level up
+                - generic [ref=f8e36]:
+                  - button "Collapse onboarding guide" [expanded] [ref=f8e37]
+                  - button "53% completed" [ref=f8e1179]:
+                    - generic [ref=f8e46]: 53%
+              - list [ref=f8e49]:
+                - listitem [ref=f8e1040]:
+                  - button "Open onboarding guide for See what's new" [ref=f8e1041] [cursor=pointer]:
+                    - generic [ref=f8e1045]: See what's new
+                  - button "Go"
+                - listitem [ref=f8e1180]:
+                  - button "Open onboarding guide for Check responsiveness with Viewports" [ref=f8e1181] [cursor=pointer]:
+                    - generic [ref=f8e1185]: Check responsiveness with Viewports
+                - listitem [ref=f8e1054]:
+                  - button "Open onboarding guide for Publish your Storybook for feedback" [ref=f8e1055] [cursor=pointer]:
+                    - generic [ref=f8e1059]: Publish your Storybook for feedback
+          - generic [ref=f8e50]: Search for components
+          - search [ref=f8e51]:
+            - combobox [ref=f8e52]:
+              - searchbox "Search for components" [ref=f8e53]
+              - code: ⌃ K
+              - button "Tag filters" [expanded] [ref=f8e55] [cursor=pointer]
+          - navigation [ref=f8e59]:
+            - heading "Stories" [level=2] [ref=f8e60]
+            - generic [ref=f8e62]:
+              - generic [ref=f8e63]:
+                - button "Collapse" [expanded] [ref=f8e64] [cursor=pointer]: Documentation
+                - button "Expand all" [ref=f8e68] [cursor=pointer]
+              - link [ref=f8e72] [cursor=pointer]:
+                - /url: /?path=/docs/documentation-introduction--docs
+              - link [ref=f8e77] [cursor=pointer]:
+                - /url: /?path=/docs/documentation-colors--docs
+              - button [ref=f8e82] [cursor=pointer]
+              - link [ref=f8e90] [cursor=pointer]:
+                - /url: /?path=/docs/documentation-compact-mode--docs
+              - link [ref=f8e95] [cursor=pointer]:
+                - /url: /?path=/docs/documentation-feature-flags--docs
+              - button [ref=f8e100] [cursor=pointer]
+              - link [ref=f8e108] [cursor=pointer]:
+                - /url: /?path=/docs/documentation-migration--docs
+              - link [ref=f8e113] [cursor=pointer]:
+                - /url: /?path=/docs/documentation-responsive-design--docs
+              - link [ref=f8e118] [cursor=pointer]:
+                - /url: /?path=/docs/documentation-router-focus-management--docs
+              - link [ref=f8e123] [cursor=pointer]:
+                - /url: /?path=/docs/documentation-virtual-scrolling--docs
+              - generic [ref=f8e127]:
+                - button "Collapse" [expanded] [ref=f8e128] [cursor=pointer]: Component Library
+                - button "Expand all" [ref=f8e132] [cursor=pointer]
+              - button [ref=f8e136] [cursor=pointer]
+              - button [ref=f8e144] [cursor=pointer]
+              - button [ref=f8e152] [cursor=pointer]
+              - button [ref=f8e160] [cursor=pointer]
+              - button [ref=f8e168] [cursor=pointer]
+              - button [ref=f8e176] [cursor=pointer]
+              - button [ref=f8e184] [cursor=pointer]
+              - button [ref=f8e192] [cursor=pointer]
+              - button [ref=f8e200] [cursor=pointer]
+              - button [ref=f8e208] [cursor=pointer]
+              - button [ref=f8e216] [cursor=pointer]
+              - button [expanded] [ref=f8e224] [cursor=pointer]
+              - link [ref=f8e232] [cursor=pointer]:
+                - /url: /?path=/docs/component-library-button--docs
+              - generic [ref=f8e236]:
+                - link [ref=f8e237] [cursor=pointer]:
+                  - /url: /?path=/story/component-library-button--default
+                - link "Skip to content" [ref=f8e241] [cursor=pointer]:
+                  - /url: "#storybook-preview-wrapper"
+              - link [ref=f8e243] [cursor=pointer]:
+                - /url: /?path=/story/component-library-button--all-variants
+              - link [ref=f8e248] [cursor=pointer]:
+                - /url: /?path=/story/component-library-button--small
+              - link [ref=f8e253] [cursor=pointer]:
+                - /url: /?path=/story/component-library-button--large
+              - link [ref=f8e258] [cursor=pointer]:
+                - /url: /?path=/story/component-library-button--loading
+              - link [ref=f8e263] [cursor=pointer]:
+                - /url: /?path=/story/component-library-button--inactive
+              - link [ref=f8e268] [cursor=pointer]:
+                - /url: /?path=/story/component-library-button--inactive-with-attribute
+              - link [ref=f8e273] [cursor=pointer]:
+                - /url: /?path=/story/component-library-button--block
+              - link [ref=f8e278] [cursor=pointer]:
+                - /url: /?path=/story/component-library-button--with-icon
+              - link [ref=f8e283] [cursor=pointer]:
+                - /url: /?path=/story/component-library-button--interaction-states
+              - button [ref=f8e288] [cursor=pointer]
+              - button [ref=f8e296] [cursor=pointer]
+              - button [ref=f8e304] [cursor=pointer]
+              - button [ref=f8e312] [cursor=pointer]
+              - button [ref=f8e320] [cursor=pointer]
+              - button [ref=f8e328] [cursor=pointer]
+              - button [ref=f8e336] [cursor=pointer]
+              - button [ref=f8e344] [cursor=pointer]
+              - button [ref=f8e352] [cursor=pointer]
+              - button [ref=f8e360] [cursor=pointer]
+              - button [ref=f8e368] [cursor=pointer]
+              - button [ref=f8e376] [cursor=pointer]
+              - button [ref=f8e384] [cursor=pointer]
+              - button [ref=f8e392] [cursor=pointer]
+              - button [ref=f8e400] [cursor=pointer]
+              - button [ref=f8e408] [cursor=pointer]
+              - button [ref=f8e416] [cursor=pointer]
+              - button [ref=f8e424] [cursor=pointer]
+              - button [ref=f8e432] [cursor=pointer]
+              - button [ref=f8e440] [cursor=pointer]
+              - button [ref=f8e448] [cursor=pointer]
+              - button [ref=f8e456] [cursor=pointer]
+              - button [ref=f8e464] [cursor=pointer]
+              - button [ref=f8e472] [cursor=pointer]
+              - button [ref=f8e480] [cursor=pointer]
+              - button [ref=f8e488] [cursor=pointer]
+              - button [ref=f8e496] [cursor=pointer]
+              - button [ref=f8e504] [cursor=pointer]
+              - button [ref=f8e512] [cursor=pointer]
+              - button [ref=f8e520] [cursor=pointer]
+              - button [ref=f8e528] [cursor=pointer]
+              - button [ref=f8e536] [cursor=pointer]
+              - button [ref=f8e544] [cursor=pointer]
+              - button [ref=f8e552] [cursor=pointer]
+              - button [ref=f8e560] [cursor=pointer]
+              - button [ref=f8e568] [cursor=pointer]
+              - generic [ref=f8e575]:
+                - button "Collapse" [expanded] [ref=f8e576] [cursor=pointer]: Admin Console
+                - button "Expand all" [ref=f8e580] [cursor=pointer]
+              - button [ref=f8e584] [cursor=pointer]
+              - button [ref=f8e592] [cursor=pointer]
+              - generic [ref=f8e599]:
+                - button "Collapse" [expanded] [ref=f8e600] [cursor=pointer]: Auth
+                - button "Expand all" [ref=f8e604] [cursor=pointer]
+              - button [ref=f8e608] [cursor=pointer]
+              - button [ref=f8e616] [cursor=pointer]
+              - button [ref=f8e624] [cursor=pointer]
+              - generic [ref=f8e631]:
+                - button "Collapse" [expanded] [ref=f8e632] [cursor=pointer]: Billing
+                - button "Expand all" [ref=f8e636] [cursor=pointer]
+              - button [ref=f8e640] [cursor=pointer]
+              - button [ref=f8e648] [cursor=pointer]
+              - button [ref=f8e656] [cursor=pointer]
+              - button [ref=f8e664] [cursor=pointer]
+              - button [ref=f8e672] [cursor=pointer]
+              - button [ref=f8e680] [cursor=pointer]
+              - button [ref=f8e688] [cursor=pointer]
+              - button [ref=f8e696] [cursor=pointer]
+              - button [ref=f8e704] [cursor=pointer]
+              - button [ref=f8e712] [cursor=pointer]
+              - button [ref=f8e720] [cursor=pointer]
+              - button [ref=f8e728] [cursor=pointer]
+              - button [ref=f8e736] [cursor=pointer]
+              - button [ref=f8e744] [cursor=pointer]
+              - generic [ref=f8e751]:
+                - button "Collapse" [expanded] [ref=f8e752] [cursor=pointer]: Browser
+                - button "Expand all" [ref=f8e756] [cursor=pointer]
+              - button [ref=f8e760] [cursor=pointer]
+              - button [ref=f8e768] [cursor=pointer]
+              - button [ref=f8e776] [cursor=pointer]
+              - button [ref=f8e784] [cursor=pointer]
+              - generic [ref=f8e791]:
+                - button "Collapse" [expanded] [ref=f8e792] [cursor=pointer]: DIRT
+                - button "Expand all" [ref=f8e796] [cursor=pointer]
+              - button [ref=f8e800] [cursor=pointer]
+              - button [ref=f8e808] [cursor=pointer]
+              - button [ref=f8e816] [cursor=pointer]
+              - generic [ref=f8e823]:
+                - button "Collapse" [expanded] [ref=f8e824] [cursor=pointer]: Tools
+                - button "Expand all" [ref=f8e828] [cursor=pointer]
+              - button [ref=f8e832] [cursor=pointer]
+              - generic [ref=f8e839]:
+                - button "Collapse" [expanded] [ref=f8e840] [cursor=pointer]: Vault
+                - button "Expand all" [ref=f8e844] [cursor=pointer]
+              - button [ref=f8e848] [cursor=pointer]
+              - button [ref=f8e856] [cursor=pointer]
+              - button [ref=f8e864] [cursor=pointer]
+              - button [ref=f8e872] [cursor=pointer]
+              - button [ref=f8e880] [cursor=pointer]
+              - button [ref=f8e888] [cursor=pointer]
+              - generic [ref=f8e895]:
+                - button "Collapse" [expanded] [ref=f8e896] [cursor=pointer]: Web
+                - button "Expand all" [ref=f8e900] [cursor=pointer]
+              - button [ref=f8e904] [cursor=pointer]
+              - button [ref=f8e912] [cursor=pointer]
+              - button [ref=f8e920] [cursor=pointer]
+              - button [ref=f8e928] [cursor=pointer]
+              - button [ref=f8e936] [cursor=pointer]
+              - button [ref=f8e944] [cursor=pointer]
+      - separator "Sidebar resize handle" [ref=f8e951]
+    - generic [ref=f8e953]:
+      - region [ref=f8e954]:
+        - heading "Toolbar" [level=2] [ref=f8e955]
+        - toolbar [ref=f8e956]:
+          - generic [ref=f8e957]:
+            - button "Reload story" [ref=f8e958] [cursor=pointer]
+            - switch "Grid visibility" [ref=f8e1061] [cursor=pointer]
+            - button "Preview background" [ref=f8e1064] [cursor=pointer]
+            - switch "Measure tool" [ref=f8e961] [cursor=pointer]
+            - switch "Outline tool" [ref=f8e965] [cursor=pointer]
+            - button "Viewport size" [ref=f8e968] [cursor=pointer]
+            - button "Vision filter" [ref=f8e973] [cursor=pointer]
+            - button "Theme" [ref=f8e1068] [cursor=pointer]: light theme
+          - generic [ref=f8e978]:
+            - button "Open in isolation mode" [ref=f8e979] [cursor=pointer]
+            - switch "Change zoom level" [ref=f8e985] [cursor=pointer]: 100%
+            - button "Enter full screen" [ref=f8e986] [cursor=pointer]
+            - button "Open in editor" [ref=f8e989] [cursor=pointer]
+      - main [ref=f8e993]:
+        - heading "Main preview area" [level=2] [ref=f8e994]
+        - generic [ref=f8e998]:
+          - link "Skip to sidebar" [ref=f8e999] [cursor=pointer]:
+            - /url: "#component-library-button--default"
+          - iframe [ref=f8e1003]:
+            - button "Button" [ref=f9e17] [cursor=pointer]
+    - generic [ref=f8e1004]:
+      - separator "Addon panel resize handle" [ref=f8e1005]
+      - region [ref=f8e1007]:
+        - heading "Addon panel" [level=2] [ref=f8e1008]
+        - generic [ref=f8e1009]:
+          - generic [ref=f8e1010]:
+            - generic [ref=f8e1011]:
+              - button "Move addon panel to right" [ref=f8e1012] [cursor=pointer]
+              - button "Hide addon panel" [ref=f8e1016] [cursor=pointer]
+            - tablist "Available addons" [ref=f8e1022]:
+              - tab "Controls 10" [selected] [ref=f8e1071] [cursor=pointer]:
+                - generic [ref=f8e1024]:
+                  - generic [ref=f8e1025]: Controls
+                  - generic [ref=f8e1072]: "10"
+              - tab "Actions" [ref=f8e1026] [cursor=pointer]
+              - tab "Interactions" [ref=f8e1029] [cursor=pointer]
+              - tab "Accessibility" [ref=f8e1197] [cursor=pointer]
+              - tab "Feature Flags" [ref=f8e1036] [cursor=pointer]
+          - tabpanel "Controls 10" [ref=f8e1073]:
+            - generic [ref=f8e1080]:
+              - button "Reset controls" [ref=f8e1082] [cursor=pointer]
+              - table [ref=f8e1085]:
+                - rowgroup [ref=f8e1086]:
+                  - row [ref=f8e1087]:
+                    - columnheader "Name" [ref=f8e1088]
+                    - columnheader "Control" [ref=f8e1089]
+                - rowgroup [ref=f8e1090]:
+                  - row [ref=f8e1187]:
+                    - cell "buttonType" [ref=f8e1092]
+                    - cell [ref=f8e1188]:
+                      - generic [ref=f8e1094]:
+                        - generic [ref=f8e1095]: buttonType
+                        - combobox "buttonType" [ref=f8e1096]:
+                          - option "Choose option..."
+                          - option "primary"
+                          - option "primaryOutline"
+                          - option "primaryGhost"
+                          - option "secondary" [selected]
+                          - option "subtle"
+                          - option "subtleOutline"
+                          - option "subtleGhost"
+                          - option "danger"
+                          - option "dangerOutline"
+                          - option "dangerGhost"
+                          - option "warning"
+                          - option "warningOutline"
+                          - option "warningGhost"
+                          - option "success"
+                          - option "successOutline"
+                          - option "successGhost"
+                          - option "contrast"
+                          - option "contrastOutline"
+                          - option "contrastGhost"
+                          - option "side-nav"
+                          - option "unstyled"
+                  - row [ref=f8e1097]:
+                    - cell "block" [ref=f8e1098]
+                    - cell [ref=f8e1099]:
+                      - button "Set boolean" [ref=f8e1100] [cursor=pointer]
+                  - row [ref=f8e1101]:
+                    - cell [ref=f8e1102]:
+                      - button "Hide properties items" [ref=f8e1103]
+                      - generic [ref=f8e1104]: properties
+                    - cell [ref=f8e1107]:
+                      - button "Hide properties items" [ref=f8e1108]
+                  - row [ref=f8e1109]:
+                    - cell "disabled" [ref=f8e1110]
+                    - cell [ref=f8e1111]:
+                      - generic "disabled" [ref=f8e1112]:
+                        - switch "disabled" [ref=f8e1113] [cursor=pointer]
+                        - generic [ref=f8e1114] [cursor=pointer]: "False"
+                        - generic [ref=f8e1115] [cursor=pointer]: "True"
+                  - row [ref=f8e1116]:
+                    - cell "endIconClasses" [ref=f8e1117]
+                    - cell [ref=f8e1118]:
+                      - button "Set object" [ref=f8e1119] [cursor=pointer]
+                  - row [ref=f8e1120]:
+                    - cell "loading" [ref=f8e1121]
+                    - cell [ref=f8e1122]:
+                      - generic "loading" [ref=f8e1123]:
+                        - switch "loading" [ref=f8e1124] [cursor=pointer]
+                        - generic [ref=f8e1125] [cursor=pointer]: "False"
+                        - generic [ref=f8e1126] [cursor=pointer]: "True"
+                  - row [ref=f8e1127]:
+                    - cell "startIconClasses" [ref=f8e1128]
+                    - cell [ref=f8e1129]:
+                      - button "Set object" [ref=f8e1130] [cursor=pointer]
+                  - row [ref=f8e1131]:
+                    - cell [ref=f8e1132]:
+                      - button "Hide inputs items" [ref=f8e1133]
+                      - generic [ref=f8e1134]: inputs
+                    - cell [ref=f8e1137]:
+                      - button "Hide inputs items" [ref=f8e1138]
+                  - row [ref=f8e1139]:
+                    - cell "endIcon" [ref=f8e1140]
+                    - cell [ref=f8e1141]:
+                      - button "Set object" [ref=f8e1142] [cursor=pointer]
+                  - row [ref=f8e1143]:
+                    - cell "size" [ref=f8e1144]
+                    - cell [ref=f8e1145]:
+                      - group "size" [ref=f8e1146]:
+                        - generic [ref=f8e1148] [cursor=pointer]:
+                          - radio "small" [ref=f8e1149]
+                          - generic [ref=f8e1150]: small
+                        - generic [ref=f8e1151] [cursor=pointer]:
+                          - radio "default" [ref=f8e1152]
+                          - generic [ref=f8e1153]: default
+                        - generic [ref=f8e1154] [cursor=pointer]:
+                          - radio "large" [ref=f8e1155]
+                          - generic [ref=f8e1156]: large
+                  - row [ref=f8e1157]:
+                    - cell "startIcon" [ref=f8e1158]
+                    - cell [ref=f8e1159]:
+                      - button "Set object" [ref=f8e1160] [cursor=pointer]
+                  - row [ref=f8e1161]:
+                    - cell [ref=f8e1162]:
+                      - button "Hide outputs items" [ref=f8e1163]
+                      - generic [ref=f8e1164]: outputs
+                    - cell [ref=f8e1167]:
+                      - button "Hide outputs items" [ref=f8e1168]
+                  - row [ref=f8e1169]:
+                    - cell "sizeChange" [ref=f8e1170]
+                    - cell [ref=f8e1171]:
+                      - button "Set object" [ref=f8e1172] [cursor=pointer]
+  - dialog "Tag filters" [active] [ref=f8e1206]:
+    - button "Dismiss" [ref=f8e1208]
+    - generic [ref=f8e1210]:
+      - button "Select all" [ref=f8e1213] [cursor=pointer]
+      - list [ref=f8e1217]:
+        - listitem [ref=f8e1218]:
+          - generic [ref=f8e1219] [cursor=pointer]:
+            - 'checkbox "built-in filter: Documentation" [ref=f8e1224]'
+            - generic [ref=f8e1225]: Documentation
+            - generic [ref=f8e1227]: "193"
+          - 'button "Exclude built-in: Documentation"':
+            - generic [ref=f8e1228] [cursor=pointer]: Exclude
+        - listitem [ref=f8e1229]:
+          - generic [ref=f8e1230] [cursor=pointer]:
+            - 'checkbox "built-in filter: Play" [ref=f8e1234]'
+            - generic [ref=f8e1235]: Play
+            - generic [ref=f8e1237]: "61"
+          - 'button "Exclude built-in: Play"':
+            - generic [ref=f8e1238] [cursor=pointer]: Exclude
+      - list [ref=f8e1239]:
+        - listitem [ref=f8e1240]:
+          - generic [ref=f8e1241] [cursor=pointer]:
+            - 'checkbox "status filter: New" [ref=f8e1246]'
+            - generic [ref=f8e1247]: New
+            - generic [ref=f8e1249]: "0"
+          - 'button "Exclude status: New"':
+            - generic [ref=f8e1250] [cursor=pointer]: Exclude
+        - listitem [ref=f8e1251]:
+          - generic [ref=f8e1252] [cursor=pointer]:
+            - 'checkbox "status filter: Modified" [ref=f8e1257]'
+            - generic [ref=f8e1258]: Modified
+            - generic [ref=f8e1260]: "0"
+          - 'button "Exclude status: Modified"':
+            - generic [ref=f8e1261] [cursor=pointer]: Exclude
+        - listitem [ref=f8e1262]:
+          - generic [ref=f8e1263] [cursor=pointer]:
+            - 'checkbox "status filter: Related" [ref=f8e1265]'
+            - generic [ref=f8e1266]: Related
+            - generic [ref=f8e1268]: "0"
+          - 'button "Exclude status: Related"':
+            - generic [ref=f8e1269] [cursor=pointer]: Exclude
+      - link "Learn how to add tags" [ref=f8e1272] [cursor=pointer]:
+        - /url: https://storybook.js.org/docs/writing-stories/tags/?ref=ui#custom-tags
+    - button "Dismiss" [ref=f8e1284]

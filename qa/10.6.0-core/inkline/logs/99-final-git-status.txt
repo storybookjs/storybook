@@ -1,0 +1,34 @@
+=== git status ===
+On branch main
+Your branch is up to date with 'origin/main'.
+
+Changes not staged for commit:
+  (use "git add <file>..." to update what will be committed)
+  (use "git restore <file>..." to discard changes in working directory)
+	modified:   pnpm-lock.yaml
+	modified:   pnpm-workspace.yaml
+	modified:   ui/vue/.storybook/main.ts
+	modified:   ui/vue/.storybook/preview.ts
+	modified:   ui/vue/package.json
+	modified:   ui/vue/vite.config.ts
+
+Untracked files:
+  (use "git add <file>..." to include in what will be committed)
+	apps/storybook/.playwright-cli/
+	ui/vue/vitest.shims.d.ts
+
+no changes added to commit (use "git add" and/or "git commit -a")
+=== git diff --stat ===
+ pnpm-lock.yaml               | 1311 +++++++++++++++++++++++++++++++-----------
+ pnpm-workspace.yaml          |    1 +
+ ui/vue/.storybook/main.ts    |    7 +
+ ui/vue/.storybook/preview.ts |   12 +-
+ ui/vue/package.json          |   15 +-
+ ui/vue/vite.config.ts        |   50 +-
+ 6 files changed, 1041 insertions(+), 355 deletions(-)
+=== untracked ===
+apps/storybook/.playwright-cli/page-2026-09-01T07-53-13-066Z.yml
+apps/storybook/.playwright-cli/page-2026-09-01T07-54-35-766Z.yml
+apps/storybook/.playwright-cli/page-2026-09-01T07-54-42-540Z.yml
+apps/storybook/.playwright-cli/page-2026-09-01T07-56-14-270Z.yml
+ui/vue/vitest.shims.d.ts

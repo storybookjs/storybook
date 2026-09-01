@@ -1,0 +1,13 @@
+{
+  "extends": "../tsconfig",
+  "compilerOptions": {
+    "allowSyntheticDefaultImports": true,
+    "moduleResolution": "bundler"
+  },
+  "exclude": ["../src/test.setup.ts", "../apps/**/*.spec.ts", "../libs/**/*.spec.ts"],
+  "files": [
+    "./preview.tsx",
+    "../libs/components/src/main.ts",
+    "../libs/components/src/polyfills.ts"
+  ]
+}

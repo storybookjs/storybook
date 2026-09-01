@@ -1,0 +1,52 @@
+{
+  "name": "@inkline/vue",
+  "version": "0.0.0",
+  "files": ["dist"],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./dist/index.js",
+    "./headless": "./dist/headless.js",
+    "./stories": "./dist/stories.js",
+    "./css": "./dist/index.css",
+    "./package.json": "./package.json"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "vp build",
+    "validate": "vp check",
+    "test": "vp test --passWithNoTests",
+    "storybook": "storybook dev -p 6007",
+    "storybook:build": "storybook build -o storybook-static",
+    "prestorybook": "pnpm --filter @inkline/components exec inkline compile 'src/**/*.ink.tsx' --config inkline.config.ts --target vue"
+  },
+  "dependencies": {
+    "@styleframe/runtime": "catalog:"
+  },
+  "devDependencies": {
+    "@inkline/components": "workspace:*",
+    "@inkline/storybook": "workspace:*",
+    "@storybook/addon-a11y": "catalog:",
+    "@storybook/addon-docs": "catalog:",
+    "@storybook/vue3-vite": "catalog:",
+    "@styleframe/cli": "catalog:",
+    "@styleframe/core": "catalog:",
+    "@styleframe/license": "catalog:",
+    "@styleframe/loader": "catalog:",
+    "@styleframe/plugin": "catalog:",
+    "@styleframe/theme": "catalog:",
+    "@styleframe/transpiler": "catalog:",
+    "@vitejs/plugin-vue": "catalog:",
+    "jsdom": "catalog:",
+    "storybook": "catalog:",
+    "styleframe": "catalog:",
+    "typescript": "catalog:ts6",
+    "vue": "catalog:"
+  },
+  "peerDependencies": {
+    "vue": ">=3"
+  },
+  "prepublishOnly": "vp run build"
+}

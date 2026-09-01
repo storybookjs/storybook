@@ -1,0 +1,15 @@
+### Result
+{
+  "title": "Storybook",
+  "text": ""
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({title:document.title, text: document.querySelector(\'#storybook-preview-iframe\')?.contentDocument?.body?.innerText?.slice(0,100)})');
+```
+### Page
+- Page URL: http://localhost:6006/?path=/story/component-library-button--hmr-probe
+- Page Title: Storybook
+- Console: 5 errors, 1 warnings
+### Events
+- New console entries: ../inkline/apps/storybook/.playwright-cli/console-2026-09-01T07-54-35-403Z.log#L3-L99

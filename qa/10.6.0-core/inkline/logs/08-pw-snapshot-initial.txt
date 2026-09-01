@@ -1,0 +1,120 @@
+### Page
+- Page URL: http://127.0.0.1:6007/?path=/story/components-actions-button--default
+- Page Title: Components / Actions / Button - Default ⋅ Storybook
+- Console: 0 errors, 1 warnings
+### Snapshot
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - log
+    - log [ref=e3]:
+      - generic [ref=e4]: Component test is rendering.
+      - generic [ref=e137]: Component test completed successfully.
+  - generic [ref=e6]:
+    - generic [ref=e7]:
+      - banner [ref=e9]:
+        - heading "Storybook" [level=1] [ref=e10]
+        - generic [ref=e13]:
+          - generic [ref=e14]:
+            - generic [ref=e15]:
+              - generic [ref=e16]:
+                - link "Skip to content" [ref=e17] [cursor=pointer]:
+                  - /url: "#storybook-preview-wrapper"
+                - link "Storybook" [ref=e19] [cursor=pointer]:
+                  - /url: ./
+                  - img "Storybook" [ref=e20]
+                - switch "Settings" [ref=e25] [cursor=pointer]
+              - generic [ref=e140]:
+                - generic [ref=e142] [cursor=pointer]:
+                  - button "Open onboarding guide" [ref=e146]:
+                    - strong [ref=e150]: Get started
+                  - generic [ref=e151]:
+                    - button "Collapse onboarding guide" [expanded] [ref=e152]
+                    - button "22% completed" [ref=e155]:
+                      - generic [ref=e161]: 22%
+                - list [ref=e164]:
+                  - listitem [ref=e165]:
+                    - button "Open onboarding guide for Render your first component" [ref=e166] [cursor=pointer]:
+                      - generic [ref=e171]: Render your first component
+                  - listitem [ref=e173]:
+                    - button "Open onboarding guide for Change a story with Controls" [ref=e174] [cursor=pointer]:
+                      - generic [ref=e178]: Change a story with Controls
+                  - listitem [ref=e180]:
+                    - button "Open onboarding guide for Publish your Storybook for feedback" [ref=e181] [cursor=pointer]:
+                      - generic [ref=e185]: Publish your Storybook for feedback
+            - generic [ref=e29]: Search for components
+            - search [ref=e30]:
+              - combobox [ref=e31]:
+                - searchbox "Search for components" [ref=e32]
+                - code: ⌃ K
+                - button "Tag filters" [ref=e188] [cursor=pointer]
+            - navigation [ref=e34]:
+              - heading "Stories" [level=2] [ref=e35]
+              - generic [ref=e191]:
+                - generic [ref=e192]:
+                  - button "Collapse" [expanded] [ref=e193] [cursor=pointer]: Components
+                  - button "Expand all" [ref=e197] [cursor=pointer]
+                - button [ref=e201] [cursor=pointer]
+                - button [expanded] [ref=e209] [cursor=pointer]
+                - button [expanded] [ref=e217] [cursor=pointer]
+                - link [ref=e225] [cursor=pointer]:
+                  - /url: /?path=/story/components-actions-button--block
+                - link [ref=e230] [cursor=pointer]:
+                  - /url: /?path=/story/components-actions-button--colors
+                - generic [ref=e234]:
+                  - link [ref=e235] [cursor=pointer]:
+                    - /url: /?path=/story/components-actions-button--default
+                  - link "Skip to content" [ref=e239] [cursor=pointer]:
+                    - /url: "#storybook-preview-wrapper"
+                - link [ref=e241] [cursor=pointer]:
+                  - /url: /?path=/story/components-actions-button--disabled
+                - link [ref=e246] [cursor=pointer]:
+                  - /url: /?path=/story/components-actions-button--icon
+                - link [ref=e251] [cursor=pointer]:
+                  - /url: /?path=/story/components-actions-button--loading
+                - link [ref=e256] [cursor=pointer]:
+                  - /url: /?path=/story/components-actions-button--sizes
+                - link [ref=e261] [cursor=pointer]:
+                  - /url: /?path=/story/components-actions-button--variants
+                - button [ref=e266] [cursor=pointer]
+                - button [ref=e274] [cursor=pointer]
+          - link "Storybook 10.4 Learn what's new in Storybook Dismiss notification" [ref=e283] [cursor=pointer]:
+            - /url: /?path=/settings/whats-new
+            - generic [ref=e287]:
+              - generic "Storybook 10.4" [ref=e288]
+              - generic [ref=e289]: Learn what's new in Storybook
+            - button "Dismiss notification" [ref=e290]
+      - separator "Sidebar resize handle" [ref=e55]
+    - generic [ref=e57]:
+      - region [ref=e58]:
+        - heading "Toolbar" [level=2] [ref=e59]
+        - toolbar [ref=e60]:
+          - generic [ref=e61]:
+            - button "Reload story" [ref=e62] [cursor=pointer]
+            - switch "Grid visibility" [ref=e293] [cursor=pointer]
+            - button "Preview background" [ref=e296] [cursor=pointer]
+            - switch "Measure tool" [ref=e65] [cursor=pointer]
+            - switch "Outline tool" [ref=e69] [cursor=pointer]
+            - button "Viewport size" [ref=e72] [cursor=pointer]
+            - button "Vision filter" [ref=e77] [cursor=pointer]
+          - generic [ref=e82]:
+            - button "Open in isolation mode" [ref=e83] [cursor=pointer]
+            - switch "Change zoom level" [ref=e89] [cursor=pointer]: 100%
+            - button "Enter full screen" [ref=e90] [cursor=pointer]
+            - button "Open in editor" [ref=e300] [cursor=pointer]
+      - main [ref=e93]:
+        - heading "Main preview area" [level=2] [ref=e94]
+        - generic [ref=e98]:
+          - link "Skip to sidebar" [ref=e99] [cursor=pointer]:
+            - /url: "#components-actions-button--default"
+          - iframe [ref=e103]:
+            - button "Button" [ref=f1e3] [cursor=pointer]
+    - generic [ref=e104]:
+      - separator "Addon panel resize handle" [ref=e105]
+      - region [ref=e107]:
+        - heading "Addon panel" [level=2] [ref=e108]
+        - generic [ref=e109]:
+          - generic [ref=e110]:
+            - generic [ref=e111]:
+              - button "Move addon panel to right" [ref=e112] [cursor=pointer]
+              - button "Hide addon panel" [ref=e116] [cursor=pointer]

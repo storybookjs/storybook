@@ -1,0 +1,172 @@
+packages:
+  - apps/*
+  - core/*
+  - testing/*
+  - tooling/*
+  - ui/*
+  - tools/*
+allowBuilds:
+  "@parcel/watcher": true
+  "@uxfront/layer-docs": false
+  better-sqlite3: true
+  core-js: true
+  esbuild: true
+  lmdb: true
+  msgpackr-extract: true
+  sharp: true
+  vue-demi: true
+
+# pnpm 11 enforces a default minimumReleaseAge (24h) supply-chain guard.
+# Exclude the styleframe first-party ecosystem (intentionally fresh, trusted),
+# the uxfront layer-docs layer the website extends (freshly published,
+# first-party), and pin the exact versions of unrelated transitive deps caught
+# as collateral so the guard still applies to any future releases of those.
+minimumReleaseAgeExclude:
+  - "@styleframe/*"
+  - styleframe
+  - "@uxfront/*"
+  - ansis@4.3.1
+  - js-yaml@4.2.0
+  - launch-editor@2.14.1
+
+catalog:
+  "@ampproject/remapping": ^2.3.0
+  "@analogjs/storybook-angular": ^2.6.1
+  "@analogjs/vite-plugin-angular": ^2.6.1
+  "@angular-eslint/eslint-plugin": ^21.4.0
+  "@angular-eslint/template-parser": ^21.4.0
+  "@angular/build": ^21.2.15
+  "@angular/cli": ^21.2.15
+  "@angular/compiler": ^21.2.17
+  "@angular/compiler-cli": ^21.2.17
+  "@angular/core": ^21.2.17
+  "@angular/platform-browser": ^21.2.17
+  "@angular/platform-browser-dynamic": ^21.2.17
+  "@angular/platform-server": ^21.2.17
+  "@jridgewell/trace-mapping": ^0.3.31
+  "@storybook-astro/framework": ^1.5.0
+  "@storybook/addon-a11y": ^10.4.4
+  "@storybook/addon-docs": ^10.4.4
+  "@storybook/angular": ^10.4.4
+  "@storybook/react-vite": ^10.4.4
+  "@storybook/svelte-vite": ^10.4.4
+  "@storybook/vue3-vite": ^10.4.4
+  "@styleframe/cli": ^4.1.2
+  "@styleframe/core": ^3.6.2
+  "@styleframe/license": ^2.0.2
+  "@styleframe/loader": ^3.0.4
+  "@styleframe/plugin": ^3.4.1
+  "@styleframe/runtime": ^3.2.2
+  "@styleframe/theme": ^3.8.1
+  "@styleframe/transpiler": ^3.4.2
+  "@sveltejs/vite-plugin-svelte": ^7.1.2
+  "@tsdown/css": ^0.22.0
+  "@types/node": ^24.13.2
+  "@types/react": ^19.2.17
+  "@types/react-dom": ^19.2.3
+  "@typescript-eslint/parser": ^8.61.0
+  "@uxfront/layer-docs": ^0.3.0
+  "@vitejs/plugin-react": ^6.0.2
+  "@vitejs/plugin-vue": ^6.0.7
+  "@vitest/coverage-v8": ^4.1.8
+  "@vue/server-renderer": ^3.5.38
+  astro: ^6.4.6
+  concurrently: ^10.0.3
+  csstype: ^3.2.3
+  eslint: ^9.39.4
+  eslint-plugin-astro: ^1.7.0
+  eslint-plugin-qwik: ^1.20.0
+  eslint-plugin-solid: ^0.14.5
+  eslint-plugin-svelte: ^3.19.0
+  eslint-plugin-vue: ^10.9.2
+  jsdom: ^29.1.1
+  oxlint: ^1.69.0
+  react: ^19.2.7
+  react-dom: ^19.2.7
+  rollup-plugin-svelte: ^7.2.3
+  rxjs: ^7.8.2
+  solid-js: ^1.9.13
+  storybook: ^10.4.4
+  storybook-framework-qwik: 0.6.2--canary.95.25602496384.0
+  storybook-solidjs-vite: ^10.1.1
+  styleframe: ^3.9.1
+  svelte: ^5.56.3
+  tslib: ^2.8.1
+  tsx: ^4.22.4
+  typescript: ^7.0.2
+  vite: npm:@voidzero-dev/vite-plus-core@latest
+  vite-plugin-solid: ^2.11.12
+  vite-plus: ^0.1.24
+  vitest: npm:@voidzero-dev/vite-plus-test@^0.1.24
+  vue: ^3.5.38
+  vue-eslint-parser: ^10.4.1
+  zod: ^4.4.3
+  zone.js: ^0.16.2
+
+# TS6 holdout catalog. TypeScript 7's native compiler drops the classic
+# programmatic JS API (`ts.createProgram`/`factory`/`printer` now live under
+# the reshaped `typescript/unstable/*` surface). Packages that consume that
+# API — directly or through a toolchain that does — stay on the aliased TS6
+# release via `catalog:ts6` until their dependency ports to TS7:
+#   - core/compiler       — the compile pipeline calls the programmatic API.
+#   - tooling/test-utils  — the coverage reader uses the value-side TS API.
+#   - core/plugin         — its unbuild/rollup-plugin-dts dts emit reads
+#                           `ts.sys`, undefined on TS7's reshaped entry.
+#   - tooling/storybook   — rolldown-plugin-dts' default (tsc) dts emit needs
+#                           the classic API; storybook's `as const` RegExp
+#                           parameters can't go through the oxc path.
+#   - ui/vue              — @vue/compiler-sfc resolves tsconfig `paths` (the
+#                           `virtual:styleframe` alias behind `defineProps`
+#                           `extends`) through TS's classic config API, which
+#                           TS7 no longer exposes; SFC compile fails on TS7.
+#   - ui/angular          — @analogjs/vite-plugin-angular's js-emitter calls
+#                           `ts.createPrinter`; @storybook/angular's docgen needs
+#                           the classic API. (See packageExtensions below — the
+#                           analog plugin does a bare undeclared `import
+#                           "typescript"`, so it needs a peer to honor this pin.)
+#   - ui/qwik             — @storybook/addon-docs pulls react-docgen-typescript,
+#                           which reads the classic `ts.*` API at module load.
+#   - ui/solid            — @joshwooding/vite-plugin-react-docgen-typescript (via
+#                           storybook-solidjs-vite) pulls react-docgen-typescript,
+#                           which calls `ts.sys.fileExists` at story-transform time,
+#                           undefined on TS7's reshaped entry.
+catalogs:
+  ts6:
+    typescript: npm:@typescript/typescript6@^6.0.2
+
+catalogMode: prefer
+# @analogjs/vite-plugin-angular consumes `typescript` via a bare, undeclared
+# `import "typescript"` (no dep/peer entry of its own), so pnpm can't route
+# ui/angular's `catalog:ts6` pin to it and its js-emitter resolves the default
+# TS7 — where `ts.createPrinter` is gone. Declaring the peer lets the pin flow.
+packageExtensions:
+  "@analogjs/vite-plugin-angular":
+    peerDependencies:
+      typescript: "*"
+# The monorepo-wide `vite: catalog:` override routes every package's vite to the
+# vite-plus (rolldown) alias. The Nuxt website is the one exception: its
+# @nuxt/content client DB ships a @sqlite.org/sqlite-wasm web worker whose
+# `import.meta.url` worker-entry bundling crashes under vite-plus (reproduced on
+# 0.2.4 and 0.2.5 alike — a rolldown worker-bundling gap, not a version
+# regression). Scope the Nuxt vite builder back to upstream vite so the docs
+# site prerenders; the @vitejs/plugin-vue* plugins take vite as a peer and
+# resolve to this same real vite. Everything else keeps vite-plus.
+overrides:
+  vite: "catalog:"
+  vitest: "catalog:"
+  "@nuxt/vite-builder>vite": "^7.3.3"
+peerDependencyRules:
+  allowAny:
+    - vite
+    - vitest
+    - "@angular-devkit/architect"
+    - "@angular-devkit/core"
+    - "@vitejs/plugin-react"
+    - typescript
+  allowedVersions:
+    vite: "*"
+    vitest: "*"
+    "@angular-devkit/architect": "*"
+    "@angular-devkit/core": "*"
+    "@vitejs/plugin-react": "*"
+    typescript: "*"

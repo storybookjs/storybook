@@ -1,0 +1,3 @@
+The browser 'default' is not open, please run open first
+
+  playwright-cli open [params]

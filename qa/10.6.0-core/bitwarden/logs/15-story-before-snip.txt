@@ -1,0 +1,71 @@
+  disabled: boolean;
+};
+
+type Story = StoryObj<ButtonComponentWithHostDirectiveInputs>;
+
+export const Default: Story = {
+  render: (args) => ({
+    props: args,
+    template: /*html*/ `
+      <button type="button" bitButton ${formatArgsForCodeSnippet<ButtonComponent>(args)}>Button</button>
+    `,
+  }),
+  args: {
+    buttonType: "secondary",
+  },
+};
+
+export const AllVariants: Story = {
+  render: (args) => ({
+    props: args,
+    template: /*html*/ `
+      <div class="tw-flex tw-flex-col tw-gap-8">
+        <div class="tw-flex tw-gap-4">
+          <div class="tw-flex tw-flex-col tw-items-center tw-gap-2">
+            <button buttonType="primary" bitButton ${formatArgsForCodeSnippet<ButtonComponent>(args)}>Button</button>
+            <p class="tw-m-0" bitTypography="helper">primary</p>
+          </div>
+          <div class="tw-flex tw-flex-col tw-items-center tw-gap-2">
+            <button buttonType="primaryOutline" bitButton ${formatArgsForCodeSnippet<ButtonComponent>(args)}>Button</button>
+            <p class="tw-m-0" bitTypography="helper">primaryOutline</p>
+          </div>
+          <div class="tw-flex tw-flex-col tw-items-center tw-gap-2">
+            <button buttonType="primaryGhost" bitButton ${formatArgsForCodeSnippet<ButtonComponent>(args)}>Button</button>
+            <p class="tw-m-0" bitTypography="helper">primaryGhost</p>
+          </div>
+        </div>
+        <div class="tw-flex tw-gap-4">
+          <div class="tw-flex tw-flex-col tw-items-center tw-gap-2">
+            <button buttonType="secondary" bitButton ${formatArgsForCodeSnippet<ButtonComponent>(args)}>Button</button>
+            <p class="tw-m-0" bitTypography="helper">secondary</p>
+          </div>
+        </div>
+        <div class="tw-flex tw-gap-4">
+          <div class="tw-flex tw-flex-col tw-items-center tw-gap-2">
+            <button buttonType="subtle" bitButton ${formatArgsForCodeSnippet<ButtonComponent>(args)}>Button</button>
+            <p class="tw-m-0" bitTypography="helper">subtle</p>
+          </div>
+          <div class="tw-flex tw-flex-col tw-items-center tw-gap-2">
+            <button buttonType="subtleOutline" bitButton ${formatArgsForCodeSnippet<ButtonComponent>(args)}>Button</button>
+            <p class="tw-m-0" bitTypography="helper">subtleOutline</p>
+          </div>
+          <div class="tw-flex tw-flex-col tw-items-center tw-gap-2">
+            <button buttonType="subtleGhost" bitButton ${formatArgsForCodeSnippet<ButtonComponent>(args)}>Button</button>
+            <p class="tw-m-0" bitTypography="helper">subtleGhost</p>
+          </div>
+        </div>
+        <div class="tw-flex tw-gap-4">
+          <div class="tw-flex tw-flex-col tw-items-center tw-gap-2">
+            <button buttonType="danger" bitButton ${formatArgsForCodeSnippet<ButtonComponent>(args)}>Button</button>
+            <p class="tw-m-0" bitTypography="helper">danger</p>
+          </div>
+          <div class="tw-flex tw-flex-col tw-items-center tw-gap-2">
+            <button buttonType="dangerOutline" bitButton ${formatArgsForCodeSnippet<ButtonComponent>(args)}>Button</button>
+            <p class="tw-m-0" bitTypography="helper">dangerOutline</p>
+          </div>
+          <div class="tw-flex tw-flex-col tw-items-center tw-gap-2">
+            <button buttonType="dangerGhost" bitButton ${formatArgsForCodeSnippet<ButtonComponent>(args)}>Button</button>
+            <p class="tw-m-0" bitTypography="helper">dangerGhost</p>
+          </div>
+        </div>
+        <div class="tw-flex tw-gap-4">

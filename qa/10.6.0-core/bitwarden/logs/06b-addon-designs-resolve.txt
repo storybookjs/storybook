@@ -1,0 +1,12 @@
+OK @storybook/addon-designs 11.0.0-next.0
+exports keys [
+  '.',
+  './blocks',
+  './register-panel',
+  './register-tab',
+  './preset',
+  './package.json'
+]
+main undefined module undefined
+alt name OK /tmp/qa-10.6/bitwarden/node_modules/@storybook/addon-designs/package.json
+ls designs dir [ 'addon-designs' ]

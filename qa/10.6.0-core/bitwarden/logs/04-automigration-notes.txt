@@ -1,0 +1,23 @@
+3012:[07:40:17.938] [DEBUG] Checking fix angular-to-angular-vite for project /.storybook...
+5673:[07:40:20.848] [DEBUG] Checking fix addon-mcp for project /.storybook...
+5694:[07:40:20.860] [DEBUG] Checking fix enable-experimental-review for project /.storybook...
+5698:[07:40:20.861] [INFO] ✔ angular-to-angular-vite
+5699:[07:40:20.862] [INFO] ✔ addon-mcp
+5700:[07:40:20.862] [INFO] ✔ enable-experimental-review
+5703:[07:40:20.862] [INFO]   - addon-mcp (/.storybook)
+5704:[07:40:20.863] [INFO] Installing @storybook/addon-mcp to the latest version...
+5711:[07:40:20.915] [INFO] Verifying @storybook/addon-mcp
+5725:[07:40:20.915] [INFO] Installing @storybook/addon-mcp@10.6.0-beta.0
+5728:[07:40:20.916] [INFO] Adding '@storybook/addon-mcp' to the "addons" field in /tmp/qa-10.6/bitwarden/.storybook/main.ts
+5729:[07:40:20.964] [INFO] ✔ addon-mcp
+5823:• ]8;;https://github.com/storybookjs/storybook/tree/next/code/addons/mcpaddon-mcp]8;;
+32:│  ✔ angular-to-angular-vite
+34:│  ✔ addon-mcp
+36:│  ✔ enable-experimental-review
+42:│  - addon-mcp (/.storybook)
+44:│  Installing @storybook/addon-mcp to the latest version...
+46:│  Verifying @storybook/addon-mcp
+48:│  Installing @storybook/addon-mcp@10.6.0-beta.0
+50:│  Adding '@storybook/addon-mcp' to the "addons" field in
+53:│  ✔ addon-mcp
+120:│  • ]8;;https://github.com/storybookjs/storybook/tree/next/code/addons/mcpaddon-mcp]8;;

@@ -1,0 +1,15 @@
+### Result
+{
+  "title": "Component Library / Button - Hmr Probe ⋅ Storybook",
+  "text": ""
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({title:document.title, text:document.querySelector(\'#storybook-preview-iframe\')?.contentDocument?.body?.innerText?.slice(0,80)})');
+```
+### Page
+- Page URL: http://localhost:6006/?path=/story/component-library-button--hmr-probe
+- Page Title: Component Library / Button - Hmr Probe ⋅ Storybook
+- Console: 0 errors, 3 warnings
+### Events
+- New console entries: .playwright-cli/console-2026-09-01T08-03-48-556Z.log#L2-L10

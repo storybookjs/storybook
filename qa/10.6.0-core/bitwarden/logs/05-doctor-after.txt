@@ -1,0 +1,29 @@
+
+┌  Doctoring Storybook
+│
+◇  Checking the health of your Storybook..
+│
+▲  .storybook: 1 issue found
+│ ┌─Incompatible Packages──────────────────────────────────────────────────────┐
+│ │  You are currently using Storybook 10.6.0-beta.0 but you have packages     │
+│ │  which are incompatible with it:                                           │
+│ │                                                                            │
+│ │  - @storybook/addon-designs@11.0.0-next.0 which depends on ^10.0.0 ||      │
+│ │  ^10.0.0-0                                                                 │
+│ │   Repo: https://github.com/storybookjs/addon-designs                       │
+│ │                                                                            │
+│ │  Please consider updating your packages or contacting the maintainers for  │
+│ │   compatibility details.                                                   │
+│ │                                                                            │
+│ │  For more details on compatibility guidance, see:                          │
+│ │  https://github.com/storybookjs/storybook/issues/32836                     │
+│ └────────────────────────────────────────────────────────────────────────────┘
+│
+◇  Storybook doctor is complete!
+│
+│  You can always recheck the health of your project(s) by running:
+│  npx storybook doctor
+│
+└  Done
+
+doctor_after_exit=0

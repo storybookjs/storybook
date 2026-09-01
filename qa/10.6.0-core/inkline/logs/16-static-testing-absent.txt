@@ -1,0 +1,6 @@
+### Result
+false
+### Ran Playwright code
+```js
+await page.evaluate('() => (document.body.innerText.includes(\'Component tests\') || document.body.innerText.includes(\'Run tests\'))');
+```

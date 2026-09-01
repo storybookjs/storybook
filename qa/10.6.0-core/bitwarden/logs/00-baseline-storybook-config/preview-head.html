@@ -1,0 +1,21 @@
+<!-- preload the inter font to avoid a flash of fallback font when first loading storybook -->
+<!-- href matches the inter build artifact from webpack -->
+<link
+  rel="preload"
+  href="/inter.0336a89fb4e7fc1d.woff2"
+  as="font"
+  type="font/woff2"
+  crossorigin="anonymous"
+/>
+
+<!-- load inter font from the source cdn so that chromatic snapshots render in the correct font -->
+<link rel="preconnect" href="https://rsms.me/" />
+<link rel="stylesheet" href="https://rsms.me/inter/inter.css" />
+
+<!-- manually specify inter as the font here for chromatic snapshots -->
+<style>
+  :root {
+    font-family: Inter;
+    font-weight: 100 900;
+  }
+</style>

@@ -1,0 +1,191 @@
+=== git status ===
+ M pnpm-lock.yaml
+ M ui/vue/.storybook/main.ts
+ M ui/vue/package.json
+
+=== catalog storybook entries AFTER ===
+34:  "@analogjs/storybook-angular": ^2.6.1
+47:  "@storybook-astro/framework": ^1.5.0
+48:  "@storybook/addon-a11y": ^10.4.4
+49:  "@storybook/addon-docs": ^10.4.4
+50:  "@storybook/angular": ^10.4.4
+51:  "@storybook/react-vite": ^10.4.4
+52:  "@storybook/svelte-vite": ^10.4.4
+53:  "@storybook/vue3-vite": ^10.4.4
+89:  storybook: ^10.4.4
+90:  storybook-framework-qwik: 0.6.2--canary.95.25602496384.0
+91:  storybook-solidjs-vite: ^10.1.1
+115:#   - tooling/storybook   — rolldown-plugin-dts' default (tsc) dts emit needs
+116:#                           the classic API; storybook's `as const` RegExp
+123:#                           `ts.createPrinter`; @storybook/angular's docgen needs
+127:#   - ui/qwik             — @storybook/addon-docs pulls react-docgen-typescript,
+130:#                           storybook-solidjs-vite) pulls react-docgen-typescript,
+
+=== ui/vue/package.json storybook deps ===
+23:    "storybook": "storybook dev -p 6007",
+24:    "storybook:build": "storybook build -o storybook-static",
+25:    "prestorybook": "pnpm --filter @inkline/components exec inkline compile 'src/**/*.ink.tsx' --config inkline.config.ts --target vue"
+32:    "@inkline/storybook": "workspace:*",
+33:    "@storybook/addon-a11y": "10.6.0-beta.0",
+34:    "@storybook/addon-docs": "10.6.0-beta.0",
+35:    "@storybook/vue3-vite": "10.6.0-beta.0",
+45:    "storybook": "10.6.0-beta.0",
+49:    "@storybook/addon-mcp": "10.6.0-beta.0"
+
+=== root package.json storybook ===
+16:    "storybook": "concurrently -n compiler,frameworks,app \"pnpm run storybook:compiler\" \"pnpm run storybook:frameworks\" \"pnpm run storybook:app\"",
+17:    "storybook:compiler": "pnpm --filter @inkline/components dev",
+18:    "storybook:frameworks": "concurrently -n react,vue,svelte,solid,angular,qwik,astro \"BROWSER=none pnpm --filter @inkline/react storybook\" \"BROWSER=none pnpm --filter @inkline/vue storybook\" \"BROWSER=none pnpm --filter @inkline/svelte storybook\" \"BROWSER=none pnpm --filter @inkline/solid storybook\" \"BROWSER=none pnpm --filter @inkline/angular storybook\" \"BROWSER=none pnpm --filter @inkline/qwik storybook\" \"BROWSER=none pnpm --filter @inkline/astro storybook\"",
+19:    "storybook:app": "wait-on tcp:6006 tcp:6007 tcp:6008 tcp:6009 tcp:6010 tcp:6011 tcp:6012 && pnpm --filter @inkline/storybook-app storybook",
+20:    "storybook:test": "concurrently -n frameworks,app \"pnpm run storybook:frameworks\" \"pnpm run storybook:app\"",
+21:    "storybook:react": "concurrently -n compiler,react \"pnpm run storybook:compiler\" \"BROWSER=none pnpm --filter @inkline/react storybook\"",
+22:    "storybook:vue": "concurrently -n compiler,vue \"pnpm run storybook:compiler\" \"BROWSER=none pnpm --filter @inkline/vue storybook\"",
+23:    "storybook:svelte": "concurrently -n compiler,svelte \"pnpm run storybook:compiler\" \"BROWSER=none pnpm --filter @inkline/svelte storybook\"",
+24:    "storybook:solid": "concurrently -n compiler,solid \"pnpm run storybook:compiler\" \"BROWSER=none pnpm --filter @inkline/solid storybook\"",
+25:    "storybook:angular": "concurrently -n compiler,angular \"pnpm run storybook:compiler\" \"BROWSER=none pnpm --filter @inkline/angular storybook\"",
+26:    "storybook:qwik": "concurrently -n compiler,qwik \"pnpm run storybook:compiler\" \"BROWSER=none pnpm --filter @inkline/qwik storybook\"",
+27:    "storybook:astro": "concurrently -n compiler,astro \"pnpm run storybook:compiler\" \"BROWSER=none pnpm --filter @inkline/astro storybook\"",
+
+=== apps/storybook package.json ===
+2:  "name": "@inkline/storybook-app",
+7:    "storybook": "storybook dev -p 6100",
+8:    "storybook:build": "storybook build -o dist"
+11:    "@storybook/addon-a11y": "catalog:",
+12:    "@storybook/addon-docs": "catalog:",
+13:    "@storybook/react-vite": "catalog:",
+14:    "storybook": "catalog:"
+
+=== other framework packages ===
+--- ui/angular/package.json ---
+    "storybook": "storybook dev -p 6010",
+    "storybook:build": "storybook build -o storybook-static",
+    "prestorybook": "pnpm --filter @inkline/components exec inkline compile 'src/**/*.ink.tsx' --config inkline.config.ts --target angular"
+    "@analogjs/storybook-angular": "catalog:",
+    "@inkline/storybook": "workspace:*",
+    "@storybook/addon-a11y": "catalog:",
+    "@storybook/addon-docs": "catalog:",
+    "@storybook/angular": "catalog:",
+    "storybook": "catalog:",
+--- ui/astro/package.json ---
+    "storybook": "storybook dev -p 6012",
+    "storybook:build": "storybook build -o storybook-static",
+    "prestorybook": "pnpm --filter @inkline/components exec inkline compile 'src/**/*.ink.tsx' --config inkline.config.ts --target astro"
+    "@inkline/storybook": "workspace:*",
+    "@storybook-astro/framework": "catalog:",
+    "@storybook/addon-a11y": "catalog:",
+    "@storybook/addon-docs": "catalog:",
+    "storybook": "catalog:",
+--- ui/components/package.json ---
+    "@inkline/storybook": "workspace:*",
+--- ui/qwik/package.json ---
+    "storybook": "storybook dev -p 6011",
+    "storybook:build": "storybook build -o storybook-static",
+    "prestorybook": "pnpm --filter @inkline/components exec inkline compile 'src/**/*.ink.tsx' --config inkline.config.ts --target qwik"
+    "@inkline/storybook": "workspace:*",
+    "@storybook/addon-a11y": "catalog:",
+    "@storybook/addon-docs": "catalog:",
+    "storybook": "catalog:",
+    "storybook-framework-qwik": "catalog:",
+--- ui/react/package.json ---
+    "storybook": "storybook dev -p 6006",
+    "storybook:build": "storybook build -o storybook-static",
+    "prestorybook": "pnpm --filter @inkline/components exec inkline compile 'src/**/*.ink.tsx' --config inkline.config.ts --target react"
+    "@inkline/storybook": "workspace:*",
+    "@storybook/addon-a11y": "catalog:",
+    "@storybook/addon-docs": "catalog:",
+    "@storybook/react-vite": "catalog:",
+    "storybook": "catalog:",
+--- ui/solid/package.json ---
+    "storybook": "storybook dev -p 6009",
+    "storybook:build": "storybook build -o storybook-static",
+    "prestorybook": "pnpm --filter @inkline/components exec inkline compile 'src/**/*.ink.tsx' --config inkline.config.ts --target solid"
+    "@inkline/storybook": "workspace:*",
+    "@storybook/addon-a11y": "catalog:",
+    "@storybook/addon-docs": "catalog:",
+    "storybook": "catalog:",
+    "storybook-solidjs-vite": "catalog:",
+--- ui/svelte/package.json ---
+    "storybook": "storybook dev -p 6008",
+    "storybook:build": "storybook build -o storybook-static",
+    "prestorybook": "pnpm --filter @inkline/components exec inkline compile 'src/**/*.ink.tsx' --config inkline.config.ts --target svelte"
+    "@inkline/storybook": "workspace:*",
+    "@storybook/addon-a11y": "catalog:",
+    "@storybook/addon-docs": "catalog:",
+    "@storybook/svelte-vite": "catalog:",
+    "storybook": "catalog:",
+--- ui/vue/package.json ---
+    "storybook": "storybook dev -p 6007",
+    "storybook:build": "storybook build -o storybook-static",
+    "prestorybook": "pnpm --filter @inkline/components exec inkline compile 'src/**/*.ink.tsx' --config inkline.config.ts --target vue"
+    "@inkline/storybook": "workspace:*",
+    "@storybook/addon-a11y": "10.6.0-beta.0",
+    "@storybook/addon-docs": "10.6.0-beta.0",
+    "@storybook/vue3-vite": "10.6.0-beta.0",
+    "storybook": "10.6.0-beta.0",
+    "@storybook/addon-mcp": "10.6.0-beta.0"
+--- apps/storybook/package.json ---
+  "name": "@inkline/storybook-app",
+    "storybook": "storybook dev -p 6100",
+    "storybook:build": "storybook build -o dist"
+    "@storybook/addon-a11y": "catalog:",
+    "@storybook/addon-docs": "catalog:",
+    "@storybook/react-vite": "catalog:",
+    "storybook": "catalog:"
+
+=== lock resolved storybook versions (unique) ===
+storybook@10.4.4:
+storybook@10.4.4(@testing-library/dom@10.4.1
+storybook@10.6.0-beta.0:
+storybook@10.6.0-beta.0(@types/react@19.2.17
+@storybook/addon-a11y@10.4.4':
+@storybook/addon-a11y@10.4.4(storybook@10.4.4(@testing-library/dom@10.4.1
+@storybook/addon-a11y@10.6.0-beta.0':
+@storybook/addon-a11y@10.6.0-beta.0(storybook@10.6.0-beta.0(@types/react@19.2.17
+@storybook/addon-docs@10.4.4':
+@storybook/addon-docs@10.4.4(@types/react-dom@19.2.3(@types/react@19.2.17
+@storybook/addon-docs@10.6.0-beta.0':
+@storybook/addon-docs@10.6.0-beta.0(@types/react-dom@19.2.3(@types/react@19.2.17
+@storybook/addon-mcp@10.6.0-beta.0':
+@storybook/addon-mcp@10.6.0-beta.0(@typescript/typescript6@6.0.2
+@storybook/angular@10.4.4':
+@storybook/angular@10.4.4(325b2c4d77d2fcadfb3a9652debeda6e
+@storybook/builder-vite@10.4.4':
+@storybook/builder-vite@10.4.4(esbuild@0.27.3
+@storybook/builder-vite@10.4.4(esbuild@0.28.1
+@storybook/builder-vite@10.6.0-beta.0':
+@storybook/builder-vite@10.6.0-beta.0(storybook@10.6.0-beta.0(@types/react@19.2.17
+@storybook/builder-webpack5@10.4.4':
+@storybook/builder-webpack5@10.4.4(@typescript/typescript6@6.0.2
+@storybook/core-webpack@10.4.4':
+@storybook/core-webpack@10.4.4(storybook@10.4.4(@testing-library/dom@10.4.1
+@storybook/csf-plugin@10.4.4':
+@storybook/csf-plugin@10.4.4(esbuild@0.27.3
+@storybook/csf-plugin@10.4.4(esbuild@0.27.7
+@storybook/csf-plugin@10.4.4(esbuild@0.28.1
+@storybook/global@5.0.0':
+@storybook/icons@2.0.2':
+@storybook/icons@2.0.2(react-dom@19.2.7(react@19.2.7
+@storybook/react@10.4.4':
+@storybook/react@10.4.4(@types/react-dom@19.2.3(@types/react@19.2.17
+@storybook/react-dom-shim@10.4.4':
+@storybook/react-dom-shim@10.4.4(@types/react-dom@19.2.3(@types/react@19.2.17
+@storybook/react-dom-shim@10.6.0-beta.0':
+@storybook/react-dom-shim@10.6.0-beta.0(@types/react-dom@19.2.3(@types/react@19.2.17
+@storybook/react-vite@10.4.4':
+@storybook/react-vite@10.4.4(@types/react-dom@19.2.3(@types/react@19.2.17
+@storybook/svelte@10.4.4':
+@storybook/svelte@10.4.4(storybook@10.4.4(@testing-library/dom@10.4.1
+@storybook/svelte-vite@10.4.4':
+@storybook/svelte-vite@10.4.4(@sveltejs/vite-plugin-svelte@7.1.2(svelte@5.56.3(@typescript-eslint/types@8.61.0
+@storybook/vue3@10.4.4':
+@storybook/vue3@10.4.4(storybook@10.4.4(@testing-library/dom@10.4.1
+@storybook/vue3@10.6.0-beta.0':
+@storybook/vue3@10.6.0-beta.0(@typescript/typescript6@6.0.2
+@storybook/vue3-vite@10.6.0-beta.0':
+@storybook/vue3-vite@10.6.0-beta.0(@typescript/typescript6@6.0.2
+
+=== vue resolved version ===
+10.6.0-beta.0
+10.6.0-beta.0
+10.6.0-beta.0
+10.6.0-beta.0

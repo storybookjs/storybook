@@ -1,0 +1,6 @@
+### Result
+"NO_SHOW_CODE"
+### Ran Playwright code
+```js
+await page.evaluate('async () => {\n  const iframe=document.querySelector(\'#storybook-preview-iframe\');\n  const doc=iframe.contentDocument;\n  const btn=[...doc.querySelectorAll(\'button\')].find(b=>/show code/i.test(b.textContent||\'\'));\n  if(!btn) return \'NO_SHOW_CODE\';\n  btn.click();\n  await new Promise(r=>setTimeout(r,500));\n  const pre=doc.querySelector(\'pre, code\');\n  return {clicked:true, codePreview:(pre?.textContent||\'\').slice(0,200)};\n}');
+```

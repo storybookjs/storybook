@@ -1,0 +1,150 @@
+### Page
+- Page URL: http://127.0.0.1:6100/?path=/story/welcome--overview
+- Page Title: Welcome - Overview ⋅ Storybook
+- Console: 16 errors, 1 warnings
+### Snapshot
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e190]:
+    - log
+    - log [ref=e191]:
+      - generic [ref=e192]: Component test is rendering.
+      - generic [ref=e193]: Component test completed successfully.
+  - generic [ref=e3]:
+    - generic [ref=e4]:
+      - banner [ref=e6]:
+        - heading "Storybook" [level=1] [ref=e7]
+        - generic [ref=e10]:
+          - generic [ref=e11]:
+            - generic [ref=e12]:
+              - generic [ref=e13]:
+                - link "Skip to content" [ref=e14] [cursor=pointer]:
+                  - /url: "#storybook-preview-wrapper"
+                - link "Storybook" [ref=e16] [cursor=pointer]:
+                  - /url: ./
+                  - img "Storybook" [ref=e17]
+                - switch "Settings" [ref=e22] [cursor=pointer]
+              - generic [ref=e196]:
+                - generic [ref=e198] [cursor=pointer]:
+                  - button "Open onboarding guide" [ref=e202]:
+                    - strong [ref=e206]: Get started
+                  - generic [ref=e207]:
+                    - button "Collapse onboarding guide" [expanded] [ref=e208]
+                    - button "5% completed" [ref=e211]:
+                      - generic [ref=e217]: 5%
+                - list [ref=e220]:
+                  - listitem [ref=e221]:
+                    - button "Open onboarding guide for Set up with AI" [ref=e222] [cursor=pointer]:
+                      - generic [ref=e227]: Set up with AI
+                    - button "Copy prompt"
+                  - listitem [ref=e229]:
+                    - button "Open onboarding guide for Change a story with Controls" [ref=e230] [cursor=pointer]:
+                      - generic [ref=e234]: Change a story with Controls
+                  - listitem [ref=e236]:
+                    - button "Open onboarding guide for Publish your Storybook for feedback" [ref=e237] [cursor=pointer]:
+                      - generic [ref=e241]: Publish your Storybook for feedback
+            - generic [ref=e26]: Search for components
+            - search [ref=e27]:
+              - combobox [ref=e28]:
+                - searchbox "Search for components" [ref=e29]
+                - code: ⌃ K
+                - button "Tag filters" [ref=e244] [cursor=pointer]
+              - button "Create a new story" [ref=e30] [cursor=pointer]
+            - navigation [ref=e34]:
+              - heading "Stories" [level=2] [ref=e35]
+              - generic [ref=e247]:
+                - button [expanded] [ref=e249] [cursor=pointer]
+                - generic [ref=e256]:
+                  - link [ref=e257] [cursor=pointer]:
+                    - /url: /?path=/story/welcome--overview
+                  - link "Skip to content" [ref=e261] [cursor=pointer]:
+                    - /url: "#storybook-preview-wrapper"
+              - generic "Hide React stories" [ref=e55]:
+                - button "React" [ref=e56] [cursor=pointer]
+                - button "Extra actions" [ref=e62] [cursor=pointer]
+              - generic [ref=e262]:
+                - generic [ref=e263]:
+                  - button "Collapse" [expanded] [ref=e264] [cursor=pointer]: Documentation
+                  - button "Expand all" [ref=e268] [cursor=pointer]
+                - link [ref=e272] [cursor=pointer]:
+                  - /url: /?path=/docs/react_documentation-introduction--docs
+                - link [ref=e277] [cursor=pointer]:
+                  - /url: /?path=/docs/react_documentation-colors--docs
+                - button [ref=e282] [cursor=pointer]
+                - link [ref=e290] [cursor=pointer]:
+                  - /url: /?path=/docs/react_documentation-compact-mode--docs
+                - link [ref=e295] [cursor=pointer]:
+                  - /url: /?path=/docs/react_documentation-feature-flags--docs
+                - button [ref=e300] [cursor=pointer]
+                - link [ref=e308] [cursor=pointer]:
+                  - /url: /?path=/docs/react_documentation-migration--docs
+                - link [ref=e313] [cursor=pointer]:
+                  - /url: /?path=/docs/react_documentation-responsive-design--docs
+                - link [ref=e318] [cursor=pointer]:
+                  - /url: /?path=/docs/react_documentation-router-focus-management--docs
+                - link [ref=e323] [cursor=pointer]:
+                  - /url: /?path=/docs/react_documentation-virtual-scrolling--docs
+                - generic [ref=e327]:
+                  - button "Collapse" [expanded] [ref=e328] [cursor=pointer]: Component Library
+                  - button "Expand all" [ref=e332] [cursor=pointer]
+                - button [ref=e336] [cursor=pointer]
+                - button [ref=e344] [cursor=pointer]
+                - button [ref=e352] [cursor=pointer]
+                - button [ref=e360] [cursor=pointer]
+                - button [ref=e368] [cursor=pointer]
+                - button [ref=e376] [cursor=pointer]
+                - button [ref=e384] [cursor=pointer]
+                - button [ref=e392] [cursor=pointer]
+                - button [ref=e400] [cursor=pointer]
+                - button [ref=e408] [cursor=pointer]
+                - button [ref=e416] [cursor=pointer]
+                - button [ref=e424] [cursor=pointer]
+                - button [ref=e432] [cursor=pointer]
+                - button [ref=e440] [cursor=pointer]
+                - button [ref=e448] [cursor=pointer]
+                - button [ref=e456] [cursor=pointer]
+                - button [ref=e464] [cursor=pointer]
+                - button [ref=e472] [cursor=pointer]
+                - button [ref=e480] [cursor=pointer]
+                - button [ref=e488] [cursor=pointer]
+                - button [ref=e496] [cursor=pointer]
+                - button [ref=e504] [cursor=pointer]
+                - button [ref=e512] [cursor=pointer]
+                - button [ref=e520] [cursor=pointer]
+                - button [ref=e528] [cursor=pointer]
+                - button [ref=e536] [cursor=pointer]
+                - button [ref=e544] [cursor=pointer]
+                - button [ref=e552] [cursor=pointer]
+                - button [ref=e560] [cursor=pointer]
+                - button [ref=e568] [cursor=pointer]
+                - button [ref=e576] [cursor=pointer]
+                - button [ref=e584] [cursor=pointer]
+                - button [ref=e592] [cursor=pointer]
+                - button [ref=e600] [cursor=pointer]
+                - button [ref=e608] [cursor=pointer]
+                - button [ref=e616] [cursor=pointer]
+                - button [ref=e624] [cursor=pointer]
+                - button [ref=e632] [cursor=pointer]
+                - button [ref=e640] [cursor=pointer]
+                - button [ref=e648] [cursor=pointer]
+                - button [ref=e656] [cursor=pointer]
+                - button [ref=e664] [cursor=pointer]
+                - button [ref=e672] [cursor=pointer]
+                - button [ref=e680] [cursor=pointer]
+                - button [ref=e688] [cursor=pointer]
+                - button [ref=e696] [cursor=pointer]
+                - button [ref=e704] [cursor=pointer]
+                - button [ref=e712] [cursor=pointer]
+                - generic [ref=e719]:
+                  - button "Collapse" [expanded] [ref=e720] [cursor=pointer]: Admin Console
+                  - button "Expand all" [ref=e724] [cursor=pointer]
+                - button [ref=e728] [cursor=pointer]
+                - button [ref=e736] [cursor=pointer]
+                - generic [ref=e743]:
+                  - button "Collapse" [expanded] [ref=e744] [cursor=pointer]: Auth
+                  - button "Expand all" [ref=e748] [cursor=pointer]
+                - button [ref=e752] [cursor=pointer]
+                - button [ref=e760] [cursor=pointer]
+                - button [ref=e768] [cursor=pointer]
+                - generic [ref=e775]:
+                  - button "Collapse" [expanded] [ref=e776] [cursor=pointer]: Billing

@@ -1,0 +1,4 @@
+### Result
+Total messages: 1 (Errors: 0, Warnings: 1)
+
+[WARNING] The 'ariaLabel' prop on 'PopoverProvider' will become mandatory in Storybook 11. Provide a concise, accessible label describing the popover's purpose. @ http://127.0.0.1:6009/sb-manager/globals-runtime.js:122

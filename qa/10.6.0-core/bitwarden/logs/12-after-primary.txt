@@ -1,0 +1,15 @@
+### Result
+{
+  "text": "Set string",
+  "classes": "",
+  "url": "http://localhost:6006/?path=/story/component-library-button--default&args=buttonType:primary",
+  "search": "?path=/story/component-library-button--default&args=buttonType:primary"
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => {\n  const iframe = document.querySelector(\'#storybook-preview-iframe\');\n  const doc = iframe?.contentDocument;\n  const btn = doc?.querySelector(\'button\');\n  return {\n    text: btn?.textContent,\n    classes: btn?.className,\n    url: location.href,\n    search: location.search,\n  };\n}');
+```
+### Page
+- Page URL: http://localhost:6006/?path=/story/component-library-button--default&args=buttonType:primary
+- Page Title: Component Library / Button - Default ⋅ Storybook
+- Console: 0 errors, 5 warnings

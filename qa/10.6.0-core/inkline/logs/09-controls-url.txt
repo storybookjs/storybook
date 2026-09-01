@@ -1,0 +1,6 @@
+### Result
+"http://127.0.0.1:6007/?path=/story/components-actions-button--default&args=label:QA+Label"
+### Ran Playwright code
+```js
+await page.evaluate('() => (window.location.href)');
+```

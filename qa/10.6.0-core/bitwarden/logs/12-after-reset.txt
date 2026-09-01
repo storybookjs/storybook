@@ -1,0 +1,6 @@
+### Result
+"http://localhost:6006/?path=/story/component-library-button--default"
+### Ran Playwright code
+```js
+await page.evaluate('() => location.href');
+```

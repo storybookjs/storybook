@@ -1,0 +1,13 @@
+### Browser `default` opened with pid 27741.
+### Ran Playwright code
+```js
+await page.goto('http://localhost:6006/?path=/story/component-library-button--default');
+```
+### Page
+- Page URL: http://localhost:6006/?path=/story/component-library-button--default
+- Page Title: Component Library / Button - Default ⋅ Storybook
+- Console: 0 errors, 1 warnings
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-09-01T07-48-42-099Z.yml)
+### Events
+- New console entries: .playwright-cli/console-2026-09-01T07-48-40-758Z.log#L1

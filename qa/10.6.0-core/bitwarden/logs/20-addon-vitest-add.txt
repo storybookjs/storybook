@@ -1,0 +1,94 @@
+
+┌  Setting up your project for @storybook/addon-vitest
+│
+│  Verifying @storybook/addon-vitest
+│
+│  Installing @storybook/addon-vitest@10.6.0-beta.0
+│
+■  [38;2;241;97;97mSB_CLI_INIT_0011 (PackageInstallDependencyConflictError): Dependency
+│  installation failed because of a version conflict.
+
+│  Command failed with exit code 1: npm install -D
+│  '@storybook/addon-vitest@10.6.0-beta.0'
+│  npm error code ERESOLVE
+│  npm error ERESOLVE could not resolve
+│  npm error
+│  npm error While resolving: @storybook/addon-designs@11.0.0-next.0
+│  npm error Found: @storybook/addon-docs@10.6.0-beta.0
+│  npm error node_modules/@storybook/addon-docs
+│  npm error   dev @storybook/addon-docs@"10.6.0-beta.0" from the root
+│  project
+│  npm error
+│  npm error Could not resolve dependency:
+│  npm error peerOptional @storybook/addon-docs@"^10.0.0 || ^10.0.0-0"
+│  from @storybook/addon-designs@11.0.0-next.0
+│  npm error node_modules/@storybook/addon-designs
+│  npm error   dev @storybook/addon-designs@"11.0.0-next.0" from the root
+│  project
+│  npm error
+│  npm error Conflicting peer dependency: @storybook/addon-docs@10.5.10
+│  npm error node_modules/@storybook/addon-docs
+│  npm error   peerOptional @storybook/addon-docs@"^10.0.0 || ^10.0.0-0"
+│  from @storybook/addon-designs@11.0.0-next.0
+│  npm error   node_modules/@storybook/addon-designs
+│  npm error     dev @storybook/addon-designs@"11.0.0-next.0" from the
+│  root project
+│  npm error
+│  npm error Fix the upstream dependency conflict, or retry this command
+│  with --force or --legacy-peer-deps to accept an incorrect (and
+│  potentially broken) dependency resolution.
+│  npm error
+│  npm error
+│  npm error For a full report see:
+│  npm error
+│  /home/ubuntu/.npm/_logs/2026-09-01T08_10_03_994Z-eresolve-report.txt
+│  npm error A complete log of this run can be found in:
+│  /home/ubuntu/.npm/_logs/2026-09-01T08_10_03_994Z-debug-0.log
+│  Command failed with exit code 1: npm install -D
+│  '@storybook/addon-vitest@10.6.0-beta.0'
+
+│  npm error code ERESOLVE
+│  npm error ERESOLVE could not resolve
+│  npm error
+│  npm error While resolving: @storybook/addon-designs@11.0.0-next.0
+│  npm error Found: @storybook/addon-docs@10.6.0-beta.0
+│  npm error node_modules/@storybook/addon-docs
+│  npm error   dev @storybook/addon-docs@"10.6.0-beta.0" from the root
+│  project
+│  npm error
+│  npm error Could not resolve dependency:
+│  npm error peerOptional @storybook/addon-docs@"^10.0.0 || ^10.0.0-0"
+│  from @storybook/addon-designs@11.0.0-next.0
+│  npm error node_modules/@storybook/addon-designs
+│  npm error   dev @storybook/addon-designs@"11.0.0-next.0" from the root
+│  project
+│  npm error
+│  npm error Conflicting peer dependency: @storybook/addon-docs@10.5.10
+│  npm error node_modules/@storybook/addon-docs
+│  npm error   peerOptional @storybook/addon-docs@"^10.0.0 || ^10.0.0-0"
+│  from @storybook/addon-designs@11.0.0-next.0
+│  npm error   node_modules/@storybook/addon-designs
+│  npm error     dev @storybook/addon-designs@"11.0.0-next.0" from the
+│  root project
+│  npm error
+│  npm error Fix the upstream dependency conflict, or retry this command
+│  with --force or --legacy-peer-deps to accept an incorrect (and
+│  potentially broken) dependency resolution.
+│  npm error
+│  npm error
+│  npm error For a full report see:
+│  npm error
+│  /home/ubuntu/.npm/_logs/2026-09-01T08_10_03_994Z-eresolve-report.txt
+│  npm error A complete log of this run can be found in:
+│  /home/ubuntu/.npm/_logs/2026-09-01T08_10_03_994Z-debug-0.log[39m
+│  at categorizeExecaError
+│  (file:///home/ubuntu/.npm/_npx/97ede131fc7391da/node_modules/storybook/dist/_node-chunks/chunk-T4A4D6UK.js:15493:471)
+│  at categorize
+│  (file:///home/ubuntu/.npm/_npx/97ede131fc7391da/node_modules/storybook/dist/_node-chunks/chunk-T4A4D6UK.js:15503:31)
+│  at
+│  file:///home/ubuntu/.npm/_npx/97ede131fc7391da/node_modules/storybook/dist/_node-chunks/chunk-T4A4D6UK.js:15506:61
+│
+●  Storybook collects completely anonymous usage telemetry. We use it to
+│  shape Storybook's roadmap and prioritize features. You can learn more,
+│  including how to opt out, at ]8;;https://storybook.js.org/telemetryhttps://storybook.js.org/telemetry]8;;
+EXIT:0

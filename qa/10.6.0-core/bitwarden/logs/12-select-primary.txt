@@ -1,0 +1,12 @@
+### Ran Playwright code
+```js
+await page.getByLabel('buttonType').selectOption('primary');
+```
+### Page
+- Page URL: http://localhost:6006/?path=/story/component-library-button--default
+- Page Title: Component Library / Button - Default ⋅ Storybook
+- Console: 0 errors, 5 warnings
+### Snapshot
+- [Snapshot](../inkline/apps/storybook/.playwright-cli/page-2026-09-01T07-50-57-320Z.yml)
+### Events
+- New console entries: ../inkline/apps/storybook/.playwright-cli/console-2026-09-01T07-50-27-156Z.log#L9-L11

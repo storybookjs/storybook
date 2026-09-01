@@ -1,0 +1,34 @@
+=== BUTTON ===
+component-library-button--docs docs Docs ./libs/components/src/button/button.mdx
+component-library-button--default story Default ./libs/components/src/button/button.stories.ts
+component-library-button--all-variants story All Variants ./libs/components/src/button/button.stories.ts
+component-library-button--small story Small ./libs/components/src/button/button.stories.ts
+component-library-button--large story Large ./libs/components/src/button/button.stories.ts
+component-library-button--loading story Loading ./libs/components/src/button/button.stories.ts
+component-library-button--inactive story Inactive ./libs/components/src/button/button.stories.ts
+component-library-button--inactive-with-attribute story Inactive With Attribute ./libs/components/src/button/button.stories.ts
+component-library-button--block story Block ./libs/components/src/button/button.stories.ts
+component-library-button--with-icon story With Icon ./libs/components/src/button/button.stories.ts
+component-library-button--interaction-states story Interaction States ./libs/components/src/button/button.stories.ts
+=== BADGE ===
+component-library-badge--docs docs Docs ./libs/components/src/badge/badge.mdx
+component-library-badge--default story Default ./libs/components/src/badge/badge.stories.ts
+component-library-badge--no-start-icon story No Start Icon ./libs/components/src/badge/badge.stories.ts
+component-library-badge--all-variants story All Variants ./libs/components/src/badge/badge.stories.ts
+component-library-badge--small story Small ./libs/components/src/badge/badge.stories.ts
+component-library-badge--truncated story Truncated ./libs/components/src/badge/badge.stories.ts
+component-library-badge-list--docs docs Docs ./libs/components/src/badge-list/badge-list.stories.ts
+component-library-badge-list--default story Default ./libs/components/src/badge-list/badge-list.stories.ts
+component-library-badge-list--truncated story Truncated ./libs/components/src/badge-list/badge-list.stories.ts
+=== CALL OUT / BANNER ===
+documentation-kitchen-sink--default-no-banner Default No Banner ./libs/components/src/stories/kitchen-sink/kitchen-sink.stories.ts
+documentation-kitchen-sink--default-vfo-1-no-banner Default Vfo 1 No Banner ./libs/components/src/stories/kitchen-sink/kitchen-sink.stories.ts
+component-library-banner--banner-base Banner Base ./libs/components/src/banner/banner.stories.ts
+component-library-banner--banner-base-large-text Banner Base Large Text ./libs/components/src/banner/banner.stories.ts
+component-library-banner--title-banner-base Title Banner Base ./libs/components/src/banner/banner.stories.ts
+component-library-banner--title-banner-no-actions Title Banner No Actions ./libs/components/src/banner/banner.stories.ts
+component-library-banner--title-banner-base-large-text Title Banner Base Large Text ./libs/components/src/banner/banner.stories.ts
+component-library-banner--banner-simple Banner Simple ./libs/components/src/banner/banner.stories.ts
+=== has tags in stories? ===
+custom tags count 0
+[]

@@ -1,0 +1,16 @@
+34:  "@analogjs/storybook-angular": ^2.6.1
+47:  "@storybook-astro/framework": ^1.5.0
+48:  "@storybook/addon-a11y": ^10.4.4
+49:  "@storybook/addon-docs": ^10.4.4
+50:  "@storybook/angular": ^10.4.4
+51:  "@storybook/react-vite": ^10.4.4
+52:  "@storybook/svelte-vite": ^10.4.4
+53:  "@storybook/vue3-vite": ^10.4.4
+89:  storybook: ^10.4.4
+90:  storybook-framework-qwik: 0.6.2--canary.95.25602496384.0
+91:  storybook-solidjs-vite: ^10.1.1
+115:#   - tooling/storybook   — rolldown-plugin-dts' default (tsc) dts emit needs
+116:#                           the classic API; storybook's `as const` RegExp
+123:#                           `ts.createPrinter`; @storybook/angular's docgen needs
+127:#   - ui/qwik             — @storybook/addon-docs pulls react-docgen-typescript,
+130:#                           storybook-solidjs-vite) pulls react-docgen-typescript,

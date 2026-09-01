@@ -1,0 +1,8 @@
+date: 2026-09-01T07:37:14Z
+git_sha: b5ce93e7dbbe97905fe03fec1b941dd8605c188d
+git_describe: b5ce93e Merge pull request #608 from inkline/agent/valve/01a0563b
+node: v22.22.3
+pnpm: 11.6.0
+npm: 10.9.8
+storybook_next_resolved: 10.6.0-beta.0
+uname: Linux cursor 6.12.94+ #1 SMP PREEMPT_DYNAMIC Mon Aug 31 19:26:10 UTC 2026 x86_64 x86_64 x86_64 GNU/Linux

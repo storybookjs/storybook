@@ -1,0 +1,133 @@
+
+┌  Storybook upgrade - v10.6.0-beta.0
+│
+│  Detecting projects...
+│
+│  Detecting projects: 1 projects
+│
+│  1 project detected
+│
+●  Upgrading from 10.3.6 to 10.6.0-beta.0
+│
+│  /package.json
+│  /libs/vault/package.json
+│  /libs/tools/send/send-ui/package.json
+│  /libs/subscription/package.json
+│  /libs/storybook/package.json
+│  /libs/pricing/package.json
+│  /libs/dirt/card/package.json
+│  /libs/components/package.json
+│  /libs/auth/package.json
+│  /libs/angular/package.json
+│  /apps/web/package.json
+│  /apps/browser/package.json
+│
+│  Updated package versions in package.json files
+│
+│  Checking automigrations for /.storybook...
+│
+
+│  Automigrations detected:
+│
+│  ✔ angular-to-angular-vite
+│
+│  ✔ addon-mcp
+│
+│  ✔ enable-experimental-review
+│
+│  3 automigration(s) detected
+│
+│  Running all detected automigrations:
+│
+│  - addon-mcp (/.storybook)
+│
+│  Installing @storybook/addon-mcp to the latest version...
+│
+│  Verifying @storybook/addon-mcp
+│
+│  Installing @storybook/addon-mcp@10.6.0-beta.0
+│
+│  Adding '@storybook/addon-mcp' to the "addons" field in
+│  /tmp/qa-10.6/bitwarden/.storybook/main.ts
+│
+│  ✔ addon-mcp
+│
+│  Completed automigrations for /.storybook
+│
+│  Installing dependencies...
+│
+│  Installing dependencies...: > @bitwarden/clients@0.0.
+│
+│  Installing dependencies...: added 30 packages, remove
+│
+│  Installing dependencies...: 81 vulnerabilities (3 low
+│
+│  Dependencies installed
+│
+▲  Since you are in a monorepo, we advise you to deduplicate your
+│  dependencies. We can do this for you but it might take some time.
+│
+│  Deduplicating dependencies...
+│
+│  added 6 packages, removed 18 packages, changed 172 packages, and
+│  audited 3023 packages in 2m
+
+│  569 packages are looking for funding
+│
+│  run `npm fund` for details
+│
+│  78 vulnerabilities (3 low, 25 moderate, 46 high, 4 critical)
+
+│  To address issues that do not require attention, run:
+│  npm audit fix
+
+│  To address all issues (including breaking changes), run:
+│  npm audit fix --force
+
+│  Run `npm audit` for details.
+│
+│  Dependencies deduplicated
+│
+◇  Checking the health of your project(s)..
+│
+▲  /.storybook: 1 issue found
+│ ┌─Incompatible Packages──────────────────────────────────────────────────────┐
+│ │  You are currently using Storybook 10.6.0-beta.0 but you have packages     │
+│ │  which are incompatible with it:                                           │
+│ │                                                                            │
+│ │  - @storybook/addon-designs@11.0.0-next.0 which depends on ^10.0.0 ||      │
+│ │  ^10.0.0-0                                                                 │
+│ │   Repo: https://github.com/storybookjs/addon-designs                       │
+│ │                                                                            │
+│ │  Please consider updating your packages or contacting the maintainers for  │
+│ │   compatibility details.                                                   │
+│ │                                                                            │
+│ │  For more details on compatibility guidance, see:                          │
+│ │  https://github.com/storybookjs/storybook/issues/32836                     │
+│ └────────────────────────────────────────────────────────────────────────────┘
+│
+◇  Storybook doctor is complete!
+│
+│  You can always recheck the health of your project(s) by running:
+│  npx storybook doctor
+│
+◇  Your project(s) have been upgraded successfully, but some issues were
+│  found which need your attention, please check Storybook doctor logs
+│  above.
+│
+│  If you want to learn more about the automigrations that executed in
+│  your project(s), please check the following links:
+│  • ]8;;https://github.com/storybookjs/storybook/tree/next/code/addons/mcpaddon-mcp]8;;
+│
+│  For a full list of changes, please check our migration guide:
+│  ]8;;https://storybook.js.org/docs/releases/migration-guide?ref=upgradehttps://storybook.js.org/docs/releases/migration-guide?ref=upgrade]8;;
+│
+└  Storybook upgrade completed!
+
+│
+│  Debug logs are written to:
+│  /opt/cursor/artifacts/qa-10.6.0/bitwarden/logs/03-upgrade-debug.log
+│
+└  Done!
+
+upgrade_exit=0

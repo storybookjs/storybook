@@ -1,0 +1,57 @@
+{
+  "name": "@inkline/storybook",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Single-source story definitions and shared Storybook configuration for Inkline's per-framework component packages.",
+  "homepage": "https://github.com/inkline/inkline#readme",
+  "bugs": {
+    "url": "https://github.com/inkline/inkline/issues"
+  },
+  "license": "MIT",
+  "author": "Inkline contributors",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/inkline/inkline.git",
+    "directory": "tooling/storybook"
+  },
+  "files": ["dist"],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.mts",
+      "default": "./dist/index.mjs"
+    },
+    "./preset/main": {
+      "types": "./dist/preset/main.d.mts",
+      "default": "./dist/preset/main.mjs"
+    },
+    "./preset/parameters": {
+      "types": "./dist/preset/parameters.d.mts",
+      "default": "./dist/preset/parameters.mjs"
+    },
+    "./preset/preview.css": "./dist/preset/preview.css",
+    "./generator": {
+      "types": "./dist/generator/index.d.mts",
+      "default": "./dist/generator/index.mjs"
+    },
+    "./package.json": "./package.json"
+  },
+  "scripts": {
+    "build": "vp pack",
+    "dev": "vp pack --watch",
+    "test": "vp test",
+    "check": "vp check"
+  },
+  "dependencies": {
+    "@inkline/compiler": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "@vitest/coverage-v8": "catalog:",
+    "tsx": "catalog:",
+    "typescript": "catalog:ts6",
+    "vite-plus": "catalog:",
+    "vitest": "catalog:"
+  }
+}

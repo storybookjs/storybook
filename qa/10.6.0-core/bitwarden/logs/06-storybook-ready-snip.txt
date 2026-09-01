@@ -1,0 +1,35 @@
+6:┌  Starting Storybook
+4351:│  Generating documentation with Compodoc: [07:43:56] Error during /
+4357:│  Generating documentation with Compodoc: [07:43:56] Error during /
+4359:│  Generating documentation with Compodoc: [07:43:56] Error during /
+4455:│  Generating documentation with Compodoc: [07:43:58] Parse error: J
+4951:│  Generating documentation with Compodoc: [07:43:58] Parse error: J
+5472:│  Generating documentation with Compodoc: [07:43:58] Parse error: J
+5504:│  Generating documentation with Compodoc: [07:43:58] Parse error: J
+5875:│  Generating documentation with Compodoc: [07:43:59] Parse error: J
+9384:│  Generating documentation with Compodoc: [07:43:59] Parse error: J
+10102:│  Generating documentation with Compodoc: [07:44:00] Parse error: J
+12779:│  Generating documentation with Compodoc: Parse error: JSON5: inval
+13523:│  Generating documentation with Compodoc: Parse error: JSON5: inval
+14171:│  Generating documentation with Compodoc: [07:44:01] Parse error: J
+14266:│  Generating documentation with Compodoc: [07:44:01] Parse error: J
+33398:│  Generating documentation with Compodoc: [07:44:06]  ImportErrorDi
+34294:▲  You are currently using Storybook 10.6.0-beta.0 but you have packages
+36149:▲  /tmp/qa-10.6/bitwarden/apps/browser/src/platform/ipc/transports/errors.ts
+37324:▲  /tmp/qa-10.6/bitwarden/apps/desktop/src/autofill/models/autotype-errors.ts
+37654:▲  /tmp/qa-10.6/bitwarden/apps/desktop/src/models/native-messaging/encrypted-message-responses/cannot-decrypt-error-response.ts
+37684:▲  /tmp/qa-10.6/bitwarden/apps/desktop/src/models/native-messaging/encrypted-message-responses/user-status-error-response.ts
+38719:▲  /tmp/qa-10.6/bitwarden/apps/web/src/app/auth/sso/sso-login-failed-error-kind.type.ts
+39939:▲  /tmp/qa-10.6/bitwarden/bitwarden_license/bit-browser/src/popup/dirt/health/health-scan-error.component.spec.ts
+41654:▲  /tmp/qa-10.6/bitwarden/bitwarden_license/bit-web/src/app/secrets-manager/settings/dialog/sm-import-error-dialog.component.ts
+41659:▲  /tmp/qa-10.6/bitwarden/bitwarden_license/bit-web/src/app/secrets-manager/settings/models/error/sm-import-error-line.ts
+41664:▲  /tmp/qa-10.6/bitwarden/bitwarden_license/bit-web/src/app/secrets-manager/settings/models/error/sm-import-error.ts
+42169:▲  /tmp/qa-10.6/bitwarden/libs/angular/src/platform/abstractions/form-validation-errors.service.ts
+42184:▲  /tmp/qa-10.6/bitwarden/libs/angular/src/platform/services/form-validation-errors.service.ts
+42189:▲  /tmp/qa-10.6/bitwarden/libs/angular/src/platform/services/logging-error-handler.ts
+42549:▲  /tmp/qa-10.6/bitwarden/libs/common/src/auth/send-access/types/get-send-access-token-error.type.ts
+42559:▲  /tmp/qa-10.6/bitwarden/libs/common/src/auth/send-access/types/invalid-grant-errors.type.ts
+42564:▲  /tmp/qa-10.6/bitwarden/libs/common/src/auth/send-access/types/invalid-request-errors.type.ts
+42584:▲  /tmp/qa-10.6/bitwarden/libs/common/src/auth/send-access/types/try-get-send-access-token-error.type.ts
+44778:│ [38;2;255;71;133m│[39m   Storybook ready!                                 [38;2;255;71;133m│[39m
+44780:│ [38;2;255;71;133m│[39m   - Local:                http://localhost:6006/   [38;2;255;71;133m│[39m

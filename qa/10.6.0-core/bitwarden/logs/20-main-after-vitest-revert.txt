@@ -1,0 +1,3 @@
+42:    getAbsolutePath("@storybook/addon-designs"),
+56:    getAbsolutePath("@storybook/addon-mcp")
+58:  framework: {

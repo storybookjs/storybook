@@ -1,0 +1,12 @@
+diff --git a/pnpm-workspace.yaml b/pnpm-workspace.yaml
+index 21f1b35..a0b7795 100644
+--- a/pnpm-workspace.yaml
++++ b/pnpm-workspace.yaml
+@@ -47,6 +47,7 @@ catalog:
+   "@storybook-astro/framework": ^1.5.0
+   "@storybook/addon-a11y": ^10.4.4
+   "@storybook/addon-docs": ^10.4.4
++  '@storybook/addon-vitest': 10.6.0-beta.0
+   "@storybook/angular": ^10.4.4
+   "@storybook/react-vite": ^10.4.4
+   "@storybook/svelte-vite": ^10.4.4

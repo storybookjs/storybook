@@ -1,0 +1,57 @@
+total entries 1116
+by type { docs: 193, story: 923 }
+sample tags [
+  'dev',
+  'test',
+  'manifest',
+  'autodocs',
+  'unattached-mdx',
+  'attached-mdx',
+  'play-fn'
+]
+
+Sample angular stories:
+documentation-icons--status-icons | Documentation / Icons | Status Icons | ./libs/components/src/stories/icons/icons.stories.ts
+documentation-icons--bitwarden-objects | Documentation / Icons | Bitwarden Objects | ./libs/components/src/stories/icons/icons.stories.ts
+documentation-icons--actions | Documentation / Icons | Actions | ./libs/components/src/stories/icons/icons.stories.ts
+documentation-icons--directional-menu-indicators | Documentation / Icons | Directional Menu Indicators | ./libs/components/src/stories/icons/icons.stories.ts
+documentation-icons--misc-objects | Documentation / Icons | Misc Objects | ./libs/components/src/stories/icons/icons.stories.ts
+documentation-icons--platforms-and-logos | Documentation / Icons | Platforms And Logos | ./libs/components/src/stories/icons/icons.stories.ts
+documentation-icons--size-variants | Documentation / Icons | Size Variants | ./libs/components/src/stories/icons/icons.stories.ts
+documentation-icons--rotation-variants | Documentation / Icons | Rotation Variants | ./libs/components/src/stories/icons/icons.stories.ts
+documentation-kitchen-sink--default-no-banner | Documentation / Kitchen Sink | Default No Banner | ./libs/components/src/stories/kitchen-sink/kitchen-sink.stories.ts
+documentation-kitchen-sink--default-vfo-1-no-banner | Documentation / Kitchen Sink | Default Vfo 1 No Banner | ./libs/components/src/stories/kitchen-sink/kitchen-sink.stories.ts
+documentation-kitchen-sink--dialog-open | Documentation / Kitchen Sink | Dialog Open | ./libs/components/src/stories/kitchen-sink/kitchen-sink.stories.ts
+documentation-kitchen-sink--simple-dialog-open | Documentation / Kitchen Sink | Simple Dialog Open | ./libs/components/src/stories/kitchen-sink/kitchen-sink.stories.ts
+documentation-kitchen-sink--virtual-scroll-blocking-dialog | Documentation / Kitchen Sink | Virtual Scroll Blocking Dialog | ./libs/components/src/stories/kitchen-sink/kitchen-sink.stories.ts
+documentation-kitchen-sink-tests-autofocus--dialog-header-focus | Documentation / Kitchen Sink / Tests / Autofocus | Dialog Header Focus | ./libs/components/src/stories/kitchen-sink/kitchen-sink-autofocus.stories.ts
+documentation-kitchen-sink-tests-autofocus--dialog-autofocus-field-focus | Documentation / Kitchen Sink / Tests / Autofocus | Dialog Autofocus Field Focus | ./libs/components/src/stories/kitchen-sink/kitchen-sink-autofocus.stories.ts
+
+Sample docs:
+documentation-introduction--docs | Documentation/Introduction | Docs | ./libs/components/src/stories/introduction.mdx
+documentation-colors--docs | Documentation/Colors | Docs | ./libs/components/src/stories/colors.mdx
+documentation-icons--docs | Documentation/Icons | Docs | ./libs/components/src/stories/icons/icons.mdx
+documentation-compact-mode--docs | Documentation/Compact Mode | Docs | ./libs/components/src/stories/compact-mode.mdx
+documentation-feature-flags--docs | Documentation/Feature Flags | Docs | ./libs/storybook/src/addons/feature-flags/feature-flags.mdx
+documentation-kitchen-sink--docs | Documentation / Kitchen Sink | Docs | ./libs/components/src/stories/kitchen-sink/kitchen-sink.mdx
+documentation-kitchen-sink-tests-autofocus--docs | Documentation / Kitchen Sink / Tests / Autofocus | Docs | ./libs/components/src/stories/kitchen-sink/kitchen-sink-autofocus.stories.ts
+documentation-migration--docs | Documentation/Migration | Docs | ./libs/components/src/stories/migration.mdx
+documentation-responsive-design--docs | Documentation/Responsive Design | Docs | ./libs/components/src/stories/responsive-design.mdx
+documentation-router-focus-management--docs | Documentation/Router Focus Management | Docs | ./libs/components/src/a11y/router-focus-manager.mdx
+documentation-virtual-scrolling--docs | Documentation/Virtual Scrolling | Docs | ./libs/components/src/stories/virtual-scrolling.mdx
+component-library-accordion--docs | Component Library/Accordion | Docs | ./libs/components/src/accordion/accordion.mdx
+component-library-anon-layout--docs | Component Library/Anon Layout | Docs | ./libs/components/src/anon-layout/anon-layout.mdx
+component-library-anon-layout-wrapper--docs | Component Library/Anon Layout Wrapper | Docs | ./libs/components/src/anon-layout/anon-layout-wrapper.mdx
+component-library-async-actions-in-forms--docs | Component Library/Async Actions/In Forms | Docs | ./libs/components/src/async-actions/in-forms.stories.ts
+
+MDX:
+documentation-introduction--docs | ./libs/components/src/stories/introduction.mdx
+documentation-colors--docs | ./libs/components/src/stories/colors.mdx
+documentation-icons--docs | ./libs/components/src/stories/icons/icons.mdx
+documentation-compact-mode--docs | ./libs/components/src/stories/compact-mode.mdx
+documentation-feature-flags--docs | ./libs/storybook/src/addons/feature-flags/feature-flags.mdx
+documentation-kitchen-sink--docs | ./libs/components/src/stories/kitchen-sink/kitchen-sink.mdx
+documentation-migration--docs | ./libs/components/src/stories/migration.mdx
+documentation-responsive-design--docs | ./libs/components/src/stories/responsive-design.mdx
+documentation-router-focus-management--docs | ./libs/components/src/a11y/router-focus-manager.mdx
+documentation-virtual-scrolling--docs | ./libs/components/src/stories/virtual-scrolling.mdx

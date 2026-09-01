@@ -1,0 +1,7 @@
+### Result
+Total messages: 8 (Errors: 0, Warnings: 3)
+Returning 3 messages for level "warning"
+
+[WARNING] The 'ariaLabel' prop on 'PopoverProvider' will become mandatory in Storybook 11. Provide a concise, accessible label describing the popover's purpose. @ http://localhost:6006/sb-manager/globals-runtime.js:122
+[WARNING] NG0914: The application is using zoneless change detection, but is still loading Zone.js. Consider removing Zone.js to get the full benefits of zoneless. In applications using the Angular CLI, Zone.js is typically included in the "polyfills" section of the angular.json file. @ http://localhost:6006/vendors-node_modules_angular-devkit_build-angular_node_modules_mini-css-extract-plugin_dist_h-b91196.iframe.bundle.js:53508
+[WARNING] NG0408: Both provideZoneChangeDetection and provideZonelessChangeDetection are provided. This is likely a mistake. Update the application providers to use only one of the two. @ http://localhost:6006/vendors-node_modules_angular-devkit_build-angular_node_modules_mini-css-extract-plugin_dist_h-b91196.iframe.bundle.js:59316

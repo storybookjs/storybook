@@ -1,0 +1,10 @@
+Unknown option: --level
+
+playwright-cli console [min-level]
+
+List console messages
+
+Arguments:
+  [min-level]                 level of the console messages to return. each level includes the messages of more severe levels. defaults to "info".
+Options:
+  --clear                     whether to clear the console list

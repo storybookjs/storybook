@@ -1,0 +1,10 @@
+--- /opt/cursor/artifacts/qa-10.6.0/bitwarden/logs/00-baseline-main.ts	2026-09-01 07:37:49.000000000 +0000
++++ /opt/cursor/artifacts/qa-10.6.0/bitwarden/logs/04-main-after-upgrade.ts	2026-09-01 07:43:04.000000000 +0000
+@@ -53,6 +53,7 @@
+         },
+       },
+     },
++    getAbsolutePath("@storybook/addon-mcp")
+   ],
+   framework: {
+     name: getAbsolutePath("@storybook/angular"),

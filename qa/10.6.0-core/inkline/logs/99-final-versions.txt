@@ -1,0 +1,6 @@
+storybook=10.6.0-beta.0
+vue3-vite=10.6.0-beta.0
+a11y=10.6.0-beta.0
+docs=10.6.0-beta.0
+vitest-addon=10.6.0-beta.0
+mcp=10.6.0-beta.0

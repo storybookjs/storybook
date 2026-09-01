@@ -1,0 +1,4 @@
+HMR1 existing story edit: PASS (label Button -> HMR Button Label)
+HMR2 preview.tsx: PASS (red outline class appeared)
+HMR3 add+rename in same file: PASS (HmrProbe + LoadingRenamed); reverted
+HMR4 new file add/delete: see 17-hmr4-*.txt

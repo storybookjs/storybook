@@ -1,0 +1,120 @@
+### Page
+- Page URL: http://localhost:6006/?path=/story/component-library-button--primary
+- Page Title: Storybook
+- Console: 1 errors, 1 warnings
+### Snapshot
+```yaml
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - log
+    - log
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - banner [ref=e7]:
+        - heading "Storybook" [level=1] [ref=e8]
+        - generic [ref=e12]:
+          - generic [ref=e13]:
+            - generic [ref=e14]:
+              - link "Skip to content" [ref=e15] [cursor=pointer]:
+                - /url: "#storybook-preview-wrapper"
+              - link [ref=e17] [cursor=pointer]:
+                - /url: /
+                - img "Bitwarden Component Library" [ref=e133]
+              - switch "Settings" [ref=e18] [cursor=pointer]
+            - generic [ref=e136]:
+              - generic [ref=e138] [cursor=pointer]:
+                - button "Open onboarding guide" [ref=e142]:
+                  - strong [ref=e146]: Get started
+                - generic [ref=e147]:
+                  - button "Collapse onboarding guide" [expanded] [ref=e148]
+                  - button "40% completed" [ref=e151]:
+                    - generic [ref=e157]: 40%
+              - list [ref=e160]:
+                - listitem [ref=e161]:
+                  - button "Open onboarding guide for Render your first component" [ref=e162] [cursor=pointer]:
+                    - generic [ref=e166]: Render your first component
+                - listitem [ref=e168]:
+                  - button "Open onboarding guide for Change a story with Controls" [ref=e169] [cursor=pointer]:
+                    - generic [ref=e173]: Change a story with Controls
+                - listitem [ref=e175]:
+                  - button "Open onboarding guide for Publish your Storybook for feedback" [ref=e176] [cursor=pointer]:
+                    - generic [ref=e180]: Publish your Storybook for feedback
+          - generic [ref=e22]: Search for components
+          - search [ref=e23]:
+            - combobox [ref=e24]:
+              - searchbox "Search for components" [ref=e25]
+              - code: ⌃ K
+              - button "Tag filters" [ref=e183] [cursor=pointer]
+          - navigation [ref=e27]:
+            - heading "Stories" [level=2] [ref=e28]
+            - generic [ref=e186]:
+              - generic [ref=e187]:
+                - button "Collapse" [expanded] [ref=e188] [cursor=pointer]: Documentation
+                - button "Expand all" [ref=e192] [cursor=pointer]
+              - link [ref=e196] [cursor=pointer]:
+                - /url: /?path=/docs/documentation-introduction--docs
+              - link [ref=e201] [cursor=pointer]:
+                - /url: /?path=/docs/documentation-colors--docs
+              - button [ref=e206] [cursor=pointer]
+              - link [ref=e214] [cursor=pointer]:
+                - /url: /?path=/docs/documentation-compact-mode--docs
+              - link [ref=e219] [cursor=pointer]:
+                - /url: /?path=/docs/documentation-feature-flags--docs
+              - button [ref=e224] [cursor=pointer]
+              - link [ref=e232] [cursor=pointer]:
+                - /url: /?path=/docs/documentation-migration--docs
+              - link [ref=e237] [cursor=pointer]:
+                - /url: /?path=/docs/documentation-responsive-design--docs
+              - link [ref=e242] [cursor=pointer]:
+                - /url: /?path=/docs/documentation-router-focus-management--docs
+              - link [ref=e247] [cursor=pointer]:
+                - /url: /?path=/docs/documentation-virtual-scrolling--docs
+              - generic [ref=e251]:
+                - button "Collapse" [expanded] [ref=e252] [cursor=pointer]: Component Library
+                - button "Expand all" [ref=e256] [cursor=pointer]
+              - button [ref=e260] [cursor=pointer]
+              - button [ref=e268] [cursor=pointer]
+              - button [ref=e276] [cursor=pointer]
+              - button [ref=e284] [cursor=pointer]
+              - button [ref=e292] [cursor=pointer]
+              - button [ref=e300] [cursor=pointer]
+              - button [ref=e308] [cursor=pointer]
+              - button [ref=e316] [cursor=pointer]
+              - button [ref=e324] [cursor=pointer]
+              - button [ref=e332] [cursor=pointer]
+              - button [ref=e340] [cursor=pointer]
+              - button [ref=e348] [cursor=pointer]
+              - button [ref=e356] [cursor=pointer]
+              - button [ref=e364] [cursor=pointer]
+              - button [ref=e372] [cursor=pointer]
+              - button [ref=e380] [cursor=pointer]
+              - button [ref=e388] [cursor=pointer]
+              - button [ref=e396] [cursor=pointer]
+              - button [ref=e404] [cursor=pointer]
+              - button [ref=e412] [cursor=pointer]
+              - button [ref=e420] [cursor=pointer]
+              - button [ref=e428] [cursor=pointer]
+              - button [ref=e436] [cursor=pointer]
+              - button [ref=e444] [cursor=pointer]
+              - button [ref=e452] [cursor=pointer]
+              - button [ref=e460] [cursor=pointer]
+              - button [ref=e468] [cursor=pointer]
+              - button [ref=e476] [cursor=pointer]
+              - button [ref=e484] [cursor=pointer]
+              - button [ref=e492] [cursor=pointer]
+              - button [ref=e500] [cursor=pointer]
+              - button [ref=e508] [cursor=pointer]
+              - button [ref=e516] [cursor=pointer]
+              - button [ref=e524] [cursor=pointer]
+              - button [ref=e532] [cursor=pointer]
+              - button [ref=e540] [cursor=pointer]
+              - button [ref=e548] [cursor=pointer]
+              - button [ref=e556] [cursor=pointer]
+              - button [ref=e564] [cursor=pointer]
+              - button [ref=e572] [cursor=pointer]
+              - button [ref=e580] [cursor=pointer]
+              - button [ref=e588] [cursor=pointer]
+              - button [ref=e596] [cursor=pointer]
+              - button [ref=e604] [cursor=pointer]
+              - button [ref=e612] [cursor=pointer]
+              - button [ref=e620] [cursor=pointer]

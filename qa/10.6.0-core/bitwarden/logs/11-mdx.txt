@@ -1,0 +1,15 @@
+### Result
+{
+  "title": "Documentation / Introduction - Docs ⋅ Storybook",
+  "bodyLen": 1427,
+  "hasIframe": true
+}
+### Ran Playwright code
+```js
+await page.evaluate('() => ({ title: document.title, bodyLen: document.body.innerText.length, hasIframe: !!document.querySelector(\'#storybook-preview-iframe\') })');
+```
+### Page
+- Page URL: http://localhost:6006/?path=/docs/documentation-introduction--docs
+- Page Title: Documentation / Introduction - Docs ⋅ Storybook
+### Events
+- New console entries: ../inkline/apps/storybook/.playwright-cli/console-2026-09-01T07-50-16-113Z.log#L1-L4

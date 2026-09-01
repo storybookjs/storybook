@@ -1,0 +1,10 @@
+### Ran Playwright code
+```js
+await page.getByRole('button', { name: 'Preview background' }).click();
+```
+### Page
+- Page URL: http://127.0.0.1:6007/?path=/story/components-actions-button--default
+- Page Title: Components / Actions / Button - Default ⋅ Storybook
+- Console: 0 errors, 1 warnings
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-09-01T07-44-59-853Z.yml)

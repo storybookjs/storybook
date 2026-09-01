@@ -1,0 +1,5 @@
+18:              - switch "Settings" [ref=e21] [cursor=pointer]
+211:        - toolbar [ref=e56]:
+214:            - switch "Measure tool" [ref=e61] [cursor=pointer]
+215:            - switch "Outline tool" [ref=e65] [cursor=pointer]
+220:            - switch "Change zoom level" [ref=e85] [cursor=pointer]: 100%

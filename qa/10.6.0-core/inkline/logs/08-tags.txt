@@ -1,0 +1,12 @@
+### Ran Playwright code
+```js
+await page.getByRole('button', { name: 'Tag filters' }).click();
+```
+### Page
+- Page URL: http://127.0.0.1:6007/?path=/story/components-actions-button--default
+- Page Title: Components / Actions / Button - Default ⋅ Storybook
+- Console: 0 errors, 1 warnings
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-09-01T07-43-34-902Z.yml)
+### Events
+- New console entries: .playwright-cli/console-2026-09-01T07-43-08-654Z.log#L2-L3

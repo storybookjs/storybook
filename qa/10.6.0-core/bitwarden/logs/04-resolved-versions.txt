@@ -1,0 +1,31 @@
+=== package.json storybook deps after upgrade ===
+@storybook/addon-a11y=10.6.0-beta.0
+@storybook/addon-designs=11.0.0-next.0
+@storybook/addon-docs=10.6.0-beta.0
+@storybook/addon-links=10.6.0-beta.0
+@storybook/addon-mcp=10.6.0-beta.0
+@storybook/addon-themes=10.6.0-beta.0
+@storybook/angular=10.6.0-beta.0
+@storybook/test-runner=0.24.5-next.0
+@storybook/web-components-vite=10.6.0-beta.0
+eslint-plugin-storybook=10.6.0-beta.0
+storybook=10.6.0-beta.0
+
+=== resolved installed versions (node_modules) ===
+storybook => 10.6.0-beta.0
+@storybook/angular => 10.6.0-beta.0
+@storybook/addon-docs => 10.6.0-beta.0
+@storybook/addon-a11y => 10.6.0-beta.0
+@storybook/addon-links => 10.6.0-beta.0
+@storybook/addon-themes => 10.6.0-beta.0
+@storybook/addon-designs => 11.0.0-next.0
+@storybook/addon-mcp => 10.6.0-beta.0
+eslint-plugin-storybook => 10.6.0-beta.0
+@storybook/web-components-vite => 10.6.0-beta.0
+@storybook/test-runner => 0.24.5-next.0
+
+=== npm ls storybook (top) ===
+@bitwarden/clients@0.0.0 /tmp/qa-10.6/bitwarden
+├── @storybook/angular@10.6.0-beta.0
+└── storybook@10.6.0-beta.0
+

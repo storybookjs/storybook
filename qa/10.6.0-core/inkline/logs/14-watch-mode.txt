@@ -1,0 +1,62 @@
+### Error
+TimeoutError: Timeout 5000ms exceeded.
+Call log:
+  - waiting for locator('aria-ref=e506')
+    - locator resolved to <button tabindex="0" role="switch" class="css-9y85c4" aria-checked="false" aria-label="Watch mode">…</button>
+  - attempting click action
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - <div class="css-1yezp8j">…</div> intercepts pointer events
+  - retrying click action
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - <button tabindex="-1" class="css-tmtx6q" id="components-forms" aria-expanded="false" aria-controls="components-forms-checkbox components-forms-fieldgroup components-forms-input components-forms-radio components-forms-switch">…</button> from <div class="css-1s8d7l5">…</div> subtree intercepts pointer events
+  - retrying click action
+    - waiting 20ms
+    - waiting for element to be visible, enabled and stable
+    - element is visible, enabled and stable
+    - scrolling into view if needed
+    - done scrolling
+    - <div class="css-1yezp8j">…</div> intercepts pointer events
+  2 × retrying click action
+      - waiting 100ms
+      - waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <svg width="14" height="14" fill="none" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">…</svg> from <div class="css-1yezp8j">…</div> subtree intercepts pointer events
+  2 × retrying click action
+      - waiting 500ms
+      - waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <button tabindex="-1" class="css-tmtx6q" id="components-forms" aria-expanded="false" aria-controls="components-forms-checkbox components-forms-fieldgroup components-forms-input components-forms-radio components-forms-switch">…</button> from <div class="css-1s8d7l5">…</div> subtree intercepts pointer events
+    - retrying click action
+      - waiting 500ms
+      - waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <div class="css-1yezp8j">…</div> intercepts pointer events
+    - retrying click action
+      - waiting 500ms
+      - waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <svg width="14" height="14" fill="none" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">…</svg> from <div class="css-1yezp8j">…</div> subtree intercepts pointer events
+    - retrying click action
+      - waiting 500ms
+      - waiting for element to be visible, enabled and stable
+      - element is visible, enabled and stable
+      - scrolling into view if needed
+      - done scrolling
+      - <svg width="14" height="14" fill="none" viewBox="0 0 14 14" xmlns="http://www.w3.org/2000/svg">…</svg> from <div class="css-1yezp8j">…</div> subtree intercepts pointer events
+  - retrying click action
+    - waiting 500ms
+

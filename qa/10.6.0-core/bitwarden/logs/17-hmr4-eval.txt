@@ -1,0 +1,12 @@
+### Result
+"Component Library / Button HMR Temp - Temp Story ⋅ Storybook | "
+### Ran Playwright code
+```js
+await page.evaluate('() => document.title + \' | \' + (document.querySelector(\'#storybook-preview-iframe\')?.contentDocument?.body?.innerText||\'\').slice(0,80)');
+```
+### Page
+- Page URL: http://localhost:6006/?path=/story/component-library-button-hmr-temp--temp-story
+- Page Title: Component Library / Button HMR Temp - Temp Story ⋅ Storybook
+- Console: 0 errors, 3 warnings
+### Events
+- New console entries: .playwright-cli/console-2026-09-01T08-07-31-606Z.log#L2-L8

@@ -1,0 +1,8 @@
+resolved paths:
+storybook /tmp/qa-10.6/inkline/node_modules/.pnpm/storybook@10.6.0-beta.0_@types+react@19.2.17_prettier@2.8.8_react-dom@19.2.7_react@19.2_0b829921c621cc374a108e39858daab7/node_modules/storybook/package.json 10.6.0-beta.0
+@storybook/vue3-vite /tmp/qa-10.6/inkline/node_modules/.pnpm/@storybook+vue3-vite@10.6.0-beta.0_@typescript+typescript6@6.0.2_storybook@10.6.0-beta._8ea3215e892a48457853f2950504653f/node_modules/@storybook/vue3-vite/package.json 10.6.0-beta.0
+@storybook/addon-a11y /tmp/qa-10.6/inkline/node_modules/.pnpm/@storybook+addon-a11y@10.6.0-beta.0_storybook@10.6.0-beta.0_@types+react@19.2.17_pretti_28f002d77e55ba1d8bd5e017da773bcc/node_modules/@storybook/addon-a11y/package.json 10.6.0-beta.0
+@storybook/addon-docs /tmp/qa-10.6/inkline/node_modules/.pnpm/@storybook+addon-docs@10.6.0-beta.0_@types+react-dom@19.2.3_@types+react@19.2.17__@type_d2dc97e1e79600c2f8e393d89be2b2d4/node_modules/@storybook/addon-docs/package.json 10.6.0-beta.0
+@storybook/addon-mcp /tmp/qa-10.6/inkline/node_modules/.pnpm/@storybook+addon-mcp@10.6.0-beta.0_@typescript+typescript6@6.0.2_storybook@10.6.0-beta._c1928bd5df2ddf0e632a6b65ed76b873/node_modules/@storybook/addon-mcp/package.json 10.6.0-beta.0
+-rw-r--r-- 2 ubuntu ubuntu 2190 Sep  1 07:40 node_modules/@storybook/addon-a11y/package.json
+-rw-r--r-- 2 ubuntu ubuntu 3696 Sep  1 07:40 node_modules/@storybook/addon-docs/package.json

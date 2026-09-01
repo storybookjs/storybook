@@ -1,0 +1,28 @@
+### Result
+Total messages: 30 (Errors: 16, Warnings: 8)
+Returning 24 messages for level "info"
+
+[WARNING] The 'ariaLabel' prop on 'PopoverProvider' will become mandatory in Storybook 11. Provide a concise, accessible label describing the popover's purpose. @ http://127.0.0.1:6100/sb-manager/globals-runtime.js:5810
+[ERROR] Access to fetch at 'http://localhost:6006/stories.json' from origin 'http://127.0.0.1:6100' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://127.0.0.1:6100/?path=/story/vue_components-actions-button--default:0
+[ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:6006/stories.json:0
+[WARNING] unable to connect to top frame for connecting dev tools @ http://localhost:6007/iframe.html?id=components-actions-button--default&viewMode=story&refId=vue:552
+[WARNING] unable to connect to top frame for connecting dev tools @ http://localhost:6007/iframe.html?id=components-actions-button--default&viewMode=story&refId=vue:552
+[WARNING] unable to connect to top frame for connecting dev tools @ http://localhost:6007/iframe.html?id=components-actions-button--default&viewMode=story&refId=vue:552
+[ERROR] Access to fetch at 'http://localhost:6006/metadata.json' from origin 'http://127.0.0.1:6100' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://127.0.0.1:6100/?path=/story/vue_components-actions-button--default:0
+[ERROR] Failed to load resource: net::ERR_FAILED @ http://localhost:6006/metadata.json:0
+[WARNING] received globals from a non-local ref. This is not currently supported. @ http://127.0.0.1:6100/sb-manager/globals-runtime.js:5810
+[WARNING] received globals from a non-local ref. This is not currently supported. @ http://127.0.0.1:6100/sb-manager/globals-runtime.js:5810
+[WARNING] received a GLOBALS_UPDATED from a non-local ref. This is not currently supported. @ http://127.0.0.1:6100/sb-manager/globals-runtime.js:5810
+[WARNING] received a GLOBALS_UPDATED from a non-local ref. This is not currently supported. @ http://127.0.0.1:6100/sb-manager/globals-runtime.js:5810
+[ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:6007/stories.json:0
+[ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:6007/metadata.json:0
+[ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:6008/index.json:0
+[ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:6008/stories.json:0
+[ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:6009/index.json:0
+[ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:6009/stories.json:0
+[ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:6010/index.json:0
+[ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:6010/stories.json:0
+[ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:6011/index.json:0
+[ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:6011/stories.json:0
+[ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:6012/index.json:0
+[ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:6012/stories.json:0

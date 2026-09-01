@@ -1,0 +1,47 @@
+### Result
+{
+  "textStart": "import { ButtonModule } from \"@bitwarden/components\";\nCopy\nButton\nDefault / Secondary\nButton\nShow code\nCopy code\nName\tDescription\tDefault\tControl\nbuttonType\t\nThe visual style variant of the button\nButtonType\n\t\nsecondary\n\t\nbuttonType\nChoose option...\nprimary\nprimaryOutline\nprimaryGhost\nsecondary\nsubt",
+  "buttons": [
+    "Set string",
+    "Set string",
+    "Set string",
+    "Copy",
+    "Button",
+    "Show code",
+    "Copy code",
+    "Set boolean",
+    "Hide properties items",
+    "Hide properties items",
+    "Set object",
+    "Set object",
+    "Hide inputs items",
+    "Hide inputs items",
+    "Set object",
+    "Set object",
+    "Hide outputs items",
+    "Hide outputs items",
+    "Button",
+    "Button",
+    "Button",
+    "Button",
+    "Button",
+    "Button",
+    "Button"
+  ],
+  "showClicked": true,
+  "after": [
+    "\n[data-radix-scroll-area-viewport] {\n  scrollbar-width: none;\n  -ms-overflow-style: none;\n  -webkit-overflow-scrolling: ",
+    "import { ButtonModule } from \"@bitwarden/components\";",
+    "<button type=\"button\" bitButton [disabled]=\"false\" [loading]=\"false\" buttonType=\"secondary\" (sizeChange)=\"sizeChange($ev"
+  ]
+}
+### Ran Playwright code
+```js
+await page.evaluate('async () => {\n  const sleep=ms=>new Promise(r=>setTimeout(r,ms));\n  let doc;\n  for (let i=0;i<20;i++){\n    const iframe=document.querySelector(\'#storybook-preview-iframe\');\n    doc=iframe && iframe.contentDocument;\n    if(doc && doc.body && doc.body.innerText.length>50) break;\n    await sleep(500);\n  }\n  const text=(doc?.body?.innerText||\'\').slice(0,300);\n  const buttons=[...(doc?.querySelectorAll(\'button\')||[])].map(b=>(b.textContent||\'\').trim()).filter(Boolean);\n  const show=[...(doc?.querySelectorAll(\'button\')||[])].find(b=>/show code/i.test(b.textContent||\'\'));\n  if(show){ show.click(); await sleep(800); }\n  const after=[...(doc?.querySelectorAll(\'pre,code\')||[])].map(e=>e.textContent?.slice(0,120)).filter(Boolean).slice(0,3);\n  return {textStart:text, buttons:buttons.slice(0,25), showClicked:!!show, after};\n}');
+```
+### Page
+- Page URL: http://localhost:6006/?path=/docs/component-library-button--docs
+- Page Title: Component Library / Button - Docs ⋅ Storybook
+- Console: 0 errors, 12 warnings
+### Events
+- New console entries: .playwright-cli/console-2026-09-01T08-09-23-423Z.log#L1-L22

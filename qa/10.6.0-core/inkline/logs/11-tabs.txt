@@ -1,0 +1,14 @@
+### Result
+[
+  "Controls9",
+  "Actions",
+  "Interactions",
+  "Accessibility",
+  "Violations0",
+  "Passes10",
+  "Inconclusive0"
+]
+### Ran Playwright code
+```js
+await page.evaluate('() => (Array.from(document.querySelectorAll(\'[role=tab]\')).map(e=>e.textContent))');
+```

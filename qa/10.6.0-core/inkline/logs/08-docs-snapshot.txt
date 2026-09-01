@@ -1,0 +1,94 @@
+### Page
+- Page URL: http://127.0.0.1:6007/?path=/docs/components-actions-button--docs
+- Page Title: Storybook
+- Console: 1 errors, 0 warnings
+### Snapshot
+```yaml
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - banner [ref=e6]:
+      - heading "Storybook" [level=1] [ref=e7]
+      - generic [ref=e11]:
+        - generic [ref=e12]:
+          - generic [ref=e13]:
+            - link "Skip to content" [ref=e14] [cursor=pointer]:
+              - /url: "#storybook-preview-wrapper"
+            - link "Storybook" [ref=e16] [cursor=pointer]:
+              - /url: ./
+              - img "Storybook" [ref=e17]
+            - switch "Settings" [ref=e22] [cursor=pointer]
+          - generic [ref=e79]:
+            - generic [ref=e81] [cursor=pointer]:
+              - button "Open onboarding guide" [ref=e85]:
+                - strong [ref=e89]: Get started
+              - generic [ref=e90]:
+                - button "Collapse onboarding guide" [expanded] [ref=e91]
+                - button "22% completed" [ref=e94]:
+                  - generic [ref=e100]: 22%
+            - list [ref=e103]:
+              - listitem [ref=e104]:
+                - button "Open onboarding guide for See what's new" [ref=e105] [cursor=pointer]:
+                  - generic [ref=e109]: See what's new
+                - button "Go"
+              - listitem [ref=e111]:
+                - button "Open onboarding guide for Change a story with Controls" [ref=e112] [cursor=pointer]:
+                  - generic [ref=e116]: Change a story with Controls
+              - listitem [ref=e118]:
+                - button "Open onboarding guide for Publish your Storybook for feedback" [ref=e119] [cursor=pointer]:
+                  - generic [ref=e123]: Publish your Storybook for feedback
+        - generic [ref=e26]: Search for components
+        - search [ref=e27]:
+          - combobox [ref=e28]:
+            - searchbox "Search for components" [ref=e29]
+            - code: ⌃ K
+            - button "Tag filters" [ref=e126] [cursor=pointer]
+        - navigation [ref=e31]:
+          - heading "Stories" [level=2] [ref=e32]
+          - generic [ref=e129]:
+            - generic [ref=e130]:
+              - button "Collapse" [expanded] [ref=e131] [cursor=pointer]: Components
+              - button "Expand all" [ref=e135] [cursor=pointer]
+            - button [ref=e139] [cursor=pointer]
+            - button [ref=e147] [cursor=pointer]
+            - button [ref=e155] [cursor=pointer]
+            - button [ref=e163] [cursor=pointer]
+    - separator "Sidebar resize handle" [ref=e52]
+  - generic [ref=e54]:
+    - region [ref=e55]:
+      - heading "Toolbar" [level=2] [ref=e56]
+      - toolbar [ref=e57]:
+        - switch "Outline tool" [ref=e59] [cursor=pointer]
+        - button "Enter full screen" [ref=e63] [cursor=pointer]
+    - main [ref=e66]:
+      - heading "Main preview area" [level=2] [ref=e67]
+      - generic [ref=e71]:
+        - link "Skip to sidebar" [ref=e72] [cursor=pointer]:
+          - /url: "#components-actions-button--docs"
+        - iframe [ref=e76]:
+          - generic [ref=f1e2]:
+            - heading "Couldn't find story matching 'components-actions-button--docs'." [level=1] [ref=f1e3]
+            - paragraph [ref=f1e4]: "The component failed to render properly, likely due to a configuration issue in Storybook. Here are some common causes and how you can address them:"
+            - list [ref=f1e5]:
+              - listitem [ref=f1e6]:
+                - strong [ref=f1e7]: Missing Context/Providers
+                - text: ": You can use decorators to supply specific contexts or providers, which are sometimes necessary for components to render correctly. For detailed instructions on using decorators, please visit the"
+                - link "Decorators documentation" [ref=f1e8] [cursor=pointer]:
+                  - /url: https://storybook.js.org/docs/writing-stories/decorators
+                - text: .
+              - listitem [ref=f1e9]:
+                - strong [ref=f1e10]: Misconfigured Webpack or Vite
+                - text: ": Verify that Storybook picks up all necessary settings for loaders, plugins, and other relevant parameters. You can find step-by-step guides for configuring"
+                - link "Webpack" [ref=f1e11] [cursor=pointer]:
+                  - /url: https://storybook.js.org/docs/builders/webpack
+                - text: or
+                - link "Vite" [ref=f1e12] [cursor=pointer]:
+                  - /url: https://storybook.js.org/docs/builders/vite
+                - text: with Storybook.
+              - listitem [ref=f1e13]:
+                - strong [ref=f1e14]: Missing Environment Variables
+                - text: ": Your Storybook may require specific environment variables to function as intended. You can set up custom environment variables as outlined in the"
+                - link "Environment Variables documentation" [ref=f1e15] [cursor=pointer]:
+                  - /url: https://storybook.js.org/docs/configure/environment-variables
+                - text: .
+            - code [ref=f1e17]: "- Are you sure a story with that id exists? - Please check your stories field of your main.js config. - Also check the browser console and terminal for error messages."
+```

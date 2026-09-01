@@ -1,0 +1,13 @@
+### Browser `default` opened with pid 31844.
+### Ran Playwright code
+```js
+await page.goto('http://127.0.0.1:6100/');
+```
+### Page
+- Page URL: http://127.0.0.1:6100/
+- Page Title: Storybook
+- Console: 6 errors, 0 warnings
+### Snapshot
+- [Snapshot](.playwright-cli/page-2026-09-01T07-49-57-674Z.yml)
+### Events
+- New console entries: .playwright-cli/console-2026-09-01T07-49-56-109Z.log#L1-L5

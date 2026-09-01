@@ -1,0 +1,12 @@
+Unknown option: --i
+
+playwright-cli snapshot [target]
+
+Capture page snapshot to obtain element ref
+
+Arguments:
+  [target]                    element reference from the previous page snapshot, or a unique element selector for the root element to capture a partial snapshot instead of the whole page
+Options:
+  --filename                  save snapshot to markdown file instead of returning it in the response.
+  --depth                     limit snapshot depth, unlimited by default.
+  --boxes                     include each element's bounding box as [box=x,y,width,height] in the snapshot. coordinates are viewport-relative, in css pixels (element.getboundingclientrect).

@@ -1,0 +1,80 @@
+### Page
+- Page URL: http://127.0.0.1:6007/?path=/docs/components-actions-button--docs
+- Page Title: Components / Actions / Button - Docs ⋅ Storybook
+### Snapshot
+```yaml
+- generic [ref=e3]:
+  - generic [ref=e4]:
+    - banner [ref=e6]:
+      - heading "Storybook" [level=1] [ref=e7]
+      - generic [ref=e11]:
+        - generic [ref=e12]:
+          - generic [ref=e13]:
+            - link "Skip to content" [ref=e14] [cursor=pointer]:
+              - /url: "#storybook-preview-wrapper"
+            - link "Storybook" [ref=e16] [cursor=pointer]:
+              - /url: ./
+              - img "Storybook" [ref=e17]
+            - switch "Settings" [ref=e22] [cursor=pointer]
+          - generic [ref=e28]:
+            - generic [ref=e30] [cursor=pointer]:
+              - button "Open onboarding guide" [ref=e34]:
+                - strong [ref=e38]: Get started
+              - generic [ref=e39]:
+                - button "Collapse onboarding guide" [expanded] [ref=e40]
+                - button "44% completed" [ref=e206]:
+                  - generic [ref=e49]: 44%
+            - list [ref=e52]:
+              - listitem [ref=e207]:
+                - button "Open onboarding guide for See what's new" [ref=e208] [cursor=pointer]:
+                  - generic [ref=e212]: See what's new
+                - button "Go"
+              - listitem [ref=e214]:
+                - button "Open onboarding guide for Publish your Storybook for feedback" [ref=e215] [cursor=pointer]:
+                  - generic [ref=e219]: Publish your Storybook for feedback
+              - listitem [ref=e221]:
+                - button "Open onboarding guide for Install Vitest addon" [ref=e222] [cursor=pointer]:
+                  - generic [ref=e226]: Install Vitest addon
+        - generic [ref=e53]: Search for components
+        - search [ref=e54]:
+          - combobox [ref=e55]:
+            - searchbox "Search for components" [ref=e56]
+            - code: ⌃ K
+            - button "Tag filters" [ref=e58] [cursor=pointer]
+        - navigation [ref=e62]:
+          - heading "Stories" [level=2] [ref=e63]
+          - generic [ref=e65]:
+            - generic [ref=e66]:
+              - button "Collapse" [expanded] [ref=e67] [cursor=pointer]: Components
+              - button "Expand all" [ref=e71] [cursor=pointer]
+            - button [ref=e75] [cursor=pointer]
+            - generic [ref=e82]:
+              - button [expanded] [ref=e83] [cursor=pointer]
+              - 'button "Change status: New" [ref=e90] [cursor=pointer]'
+            - generic [ref=e93]:
+              - button [expanded] [ref=e94] [cursor=pointer]
+              - 'button "Change status: New" [ref=e101] [cursor=pointer]'
+            - generic [ref=e104]:
+              - link [ref=e105] [cursor=pointer]:
+                - /url: /?path=/docs/components-actions-button--docs
+              - link "Skip to content" [ref=e109] [cursor=pointer]:
+                - /url: "#storybook-preview-wrapper"
+              - 'button "Change status: New" [ref=e110] [cursor=pointer]'
+            - link [ref=e114] [cursor=pointer]:
+              - /url: /?path=/story/components-actions-button--block
+            - link [ref=e119] [cursor=pointer]:
+              - /url: /?path=/story/components-actions-button--colors
+            - link [ref=e124] [cursor=pointer]:
+              - /url: /?path=/story/components-actions-button--default
+            - link [ref=e129] [cursor=pointer]:
+              - /url: /?path=/story/components-actions-button--disabled
+            - generic [ref=e133]:
+              - link [ref=e134] [cursor=pointer]:
+                - /url: /?path=/story/components-actions-button--qa-probe
+              - 'button "Change status: New" [ref=e138] [cursor=pointer]'
+            - link [ref=e142] [cursor=pointer]:
+              - /url: /?path=/story/components-actions-button--icon
+            - link [ref=e147] [cursor=pointer]:
+              - /url: /?path=/story/components-actions-button--loading
+            - link [ref=e152] [cursor=pointer]:
+              - /url: /?path=/story/components-actions-button--sizes

@@ -1,0 +1,1 @@
+node=v24.20.0 npm=11.19.0 which=/home/ubuntu/.nvm/versions/node/v24.20.0/bin/node

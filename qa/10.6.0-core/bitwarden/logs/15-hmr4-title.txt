@@ -1,0 +1,10 @@
+### Result
+"Storybook"
+### Ran Playwright code
+```js
+await page.evaluate('() => document.title');
+```
+### Page
+- Page URL: http://localhost:6006/?path=/story/component-library-button-hmr-temp--temp-story
+- Page Title: Storybook
+- Console: 5 errors, 1 warnings

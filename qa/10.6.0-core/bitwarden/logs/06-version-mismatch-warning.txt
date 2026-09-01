@@ -1,0 +1,31 @@
+34294:▲  You are currently using Storybook 10.6.0-beta.0 but you have packages
+34295-│  which are incompatible with it:
+34296-
+34297-│  - @storybook/addon-designs@11.0.0-next.0 which depends on ^10.0.0 ||
+34298-│  ^10.0.0-0
+34299-│  Repo: ]8;;https://github.com/storybookjs/addon-designshttps://github.com/storybookjs/addon-designs]8;;
+34300-
+34301-│  Please consider updating your packages or contacting the maintainers
+34302-│  for compatibility details.
+34303-
+34304-│  For more details on compatibility guidance, see:
+34305-│  ]8;;https://github.com/storybookjs/storybook/issues/32836https://github.com/storybookjs/storybook/issues/32836]8;;
+34306-│
+34307-▲  Could not resolve addon
+34308-│  "/tmp/qa-10.6/bitwarden/node_modules/@storybook/addon-designs",
+34309-│  skipping. Is it installed?
+34310-│
+34311-▲  Could not resolve addon
+34312-│  "/tmp/qa-10.6/bitwarden/node_modules/@storybook/addon-designs",
+34313-│  skipping. Is it installed?
+34314-│
+34315-●  Starting...
+34316-│
+34317-▲  No story files found for the specified pattern:
+34318-│  libs/dirt/card/src/**/*.mdx
+34319-│
+34320-▲  No story files found for the specified pattern:
+34321-│  libs/storybook/src/**/*.stories.@(js|jsx|ts|tsx)
+34322-│
+34323-▲  No story files found for the specified pattern:
+34324-│  bitwarden_license/bit-browser/src/**/*.mdx

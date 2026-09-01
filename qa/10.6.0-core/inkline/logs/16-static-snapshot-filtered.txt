@@ -1,0 +1,7 @@
+3:- Page Title: Components / Actions / Button - Default ⋅ Storybook
+84:            - button "Button" [ref=f1e5] [cursor=pointer]
+95:              - tab "Controls 8" [selected] [ref=e240] [cursor=pointer]:
+97:                  - generic [ref=e123]: Controls
+101:              - tab "Accessibility" [ref=e130] [cursor=pointer]
+102:          - tabpanel "Controls 8" [ref=e242]:
+116:                        - text: Button

@@ -1,0 +1,9 @@
+### Result
+{
+  "before": "Button",
+  "href": "http://localhost:6006/?path=/story/component-library-button--default"
+}
+### Ran Playwright code
+```js
+await page.evaluate('async () => {\n  const iframe = document.querySelector(\'#storybook-preview-iframe\');\n  const before = iframe ? iframe.contentDocument?.body?.innerText?.slice(0,200) : null;\n  return { before, href: location.href };\n}');
+```

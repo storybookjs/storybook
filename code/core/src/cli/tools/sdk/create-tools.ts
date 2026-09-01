@@ -12,9 +12,10 @@ import type {
   ToolsetTransport,
 } from '../../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
-import { toCatalogEntry } from './catalog.ts';
+import { projectPathsEqual } from '../instances/project-path.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import type { AttachedBootstrapResult } from './attached-runtime.ts';
+import { toCatalogEntry } from './catalog.ts';
 import { formatAttachFallback } from './attach-messages.ts';
 import { spawnChildHost } from './child-client.ts';
 import {
@@ -238,7 +239,7 @@ async function createLocalTools(
   const isChildHost = process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
   const autoSpawn = isChildHost ? false : (options.autoSpawn ?? true);
 
-  if (cwd !== process.cwd()) {
+  if (!projectPathsEqual(cwd, process.cwd())) {
     if (!autoSpawn) {
       throw new ToolsRuntimeError({
         reason: 'mode-unavailable',

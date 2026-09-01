@@ -62,36 +62,64 @@ if (artifacts.length === 0) {
 
 console.log(`Downloading ${artifacts.length} ${ARTIFACT_NAME} artifact(s) into ${resultsDir}`);
 
+// One artifact carrying no results is a normal outcome: a workflow whose runs
+// all died before writing a snapshot still archives an (empty) tarball. Such an
+// artifact must not cost the run its siblings, so every artifact is downloaded
+// independently and failures are collected rather than thrown.
+const skipped = [];
+let downloaded = 0;
+
 for (const artifact of artifacts) {
   const run = artifact.workflow_run;
   if (!run?.id) {
-    console.warn(`- skipping artifact ${artifact.id}: no workflow run recorded`);
+    skipped.push({ label: `artifact ${artifact.id}`, reason: 'no workflow run recorded' });
     continue;
   }
-  console.log(
-    `- artifact ${artifact.id} (${artifact.created_at}, branch ${run.head_branch ?? 'unknown'}, run ${run.id})`
-  );
+  const label = `artifact ${artifact.id} (${artifact.created_at}, branch ${run.head_branch ?? 'unknown'}, run ${run.id})`;
 
   const workDir = mkdtempSync(path.join(tmpdir(), 'agent-eval-artifact-'));
   try {
     // gh streams the artifact zip to disk and unpacks it, leaving the
     // tarball produced by the "Archive eval results" step in
     // .github/workflows/agent-eval.yml.
-    gh(['run', 'download', String(run.id), '--name', ARTIFACT_NAME, '--dir', workDir]);
+    gh(['run', 'download', String(run.id), '--name', ARTIFACT_NAME, '--dir', workDir], {
+      stdio: ['ignore', 'ignore', 'pipe'],
+    });
     // Extract inside the temp directory and only the results/ subtree, so
     // an artifact tarball can never write outside it; then merge that
-    // subtree into agent-eval/results.
-    execFileSync('tar', [
-      '-xzf',
-      path.join(workDir, `${ARTIFACT_NAME}.tgz`),
-      '-C',
-      workDir,
-      'results',
-    ]);
+    // subtree into agent-eval/results. A tarball with no results/ member
+    // holds no snapshots and tar exits non-zero on it.
+    execFileSync(
+      'tar',
+      ['-xzf', path.join(workDir, `${ARTIFACT_NAME}.tgz`), '-C', workDir, 'results'],
+      { stdio: ['ignore', 'ignore', 'pipe'] }
+    );
     cpSync(path.join(workDir, 'results'), resultsDir, { recursive: true });
+    downloaded += 1;
+    console.log(`- ${label}`);
+  } catch (error) {
+    const detail = String(error.stderr ?? error.message ?? error)
+      .trim()
+      .split('\n')[0];
+    skipped.push({ label, reason: detail || 'download or extraction failed' });
+    console.warn(`- skipped ${label}: ${detail}`);
   } finally {
     rmSync(workDir, { recursive: true, force: true });
   }
 }
 
-console.log('Done. Browse the results with: yarn workspace agent-eval run playground');
+if (skipped.length > 0) {
+  console.warn(`\n${skipped.length} of ${artifacts.length} artifact(s) yielded no results:`);
+  for (const { label, reason } of skipped) {
+    console.warn(`  - ${label}: ${reason}`);
+  }
+}
+
+if (downloaded === 0) {
+  console.error('\nNo results were downloaded.');
+  process.exit(1);
+}
+
+console.log(
+  `\nDownloaded ${downloaded} artifact(s). Browse the results with: yarn workspace agent-eval run playground`
+);

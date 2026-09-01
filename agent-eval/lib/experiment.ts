@@ -1,6 +1,11 @@
 import type { ExperimentConfig, RunCompleteContext } from '@vercel/agent-eval';
 import { collectTranscriptUsage } from './usage.ts';
 
+// The 7xx line: agentic-reference research evals — an agent does a small task in
+// a real external repo (e.g. Mealdrop) with an external design-system MCP. Not
+// registered in this file: they run only via their own experiments/agentic-ref-*.ts,
+// gated behind EVAL_AGENTIC_REFERENCE, never on CI. See lib/agentic-reference/.
+
 // The 8xx line: hand-crafted evals for the current plugin/MCP workflow,
 // one per workflow behavior branch. This is the set that always runs on CI.
 const CORE_STORYBOOK_EVALS = [
@@ -156,7 +161,11 @@ export const DEFAULT_EXPERIMENT_CONFIG = {
   // The runner default of 600s is too tight for opus-high on the plugin
   // path: passing runs have taken up to 458s (2026-07-03 CI runs).
   timeout: 900,
-  sandbox: 'auto',
+  // 'auto' resolves per environment: Vercel Sandbox when the access-token
+  // credentials are set, local Docker otherwise. CI carries the credentials,
+  // so pinning 'docker' here would run the whole matrix on the runner's four
+  // cores and 14 GB of disk.
+  sandbox: 'docker',
   copyFiles: 'all',
   // Post-run script checks stay disabled: they fail on sandbox environment
   // flakiness (installs, ports) more often than on agent mistakes, and the

@@ -1,0 +1,2630 @@
+{
+	"repo": "yannbf/mealdrop",
+	"ref": "refs/tags/agentic-reference/droppy-70pc-v2",
+	"metricsVersion": 9,
+	"nodes": [
+		{
+			"path": "App/Router[0]",
+			"file": "src/App.tsx",
+			"line": 21,
+			"tag": "Router",
+			"category": "external",
+			"module": "react-router-dom",
+			"name": "BrowserRouter",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "App/Router[0]/StoreProvider[0]",
+			"file": "src/App.tsx",
+			"line": 22,
+			"tag": "StoreProvider",
+			"category": "external",
+			"module": "react-redux",
+			"name": "Provider",
+			"weight": 1,
+			"props": [
+				"store"
+			]
+		},
+		{
+			"path": "App/Router[0]/StoreProvider[0]/GlobalStyle[0]",
+			"file": "src/App.tsx",
+			"line": 23,
+			"tag": "GlobalStyle",
+			"category": "external",
+			"module": "styled-components",
+			"name": "createGlobalStyle",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "App/Router[0]/StoreProvider[0]/AppRoutes[1]",
+			"file": "src/App.tsx",
+			"line": 24,
+			"tag": "AppRoutes",
+			"category": "local",
+			"module": "src/Routes.tsx",
+			"name": "AppRoutes",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "AppRoutes/Routes[0]",
+			"file": "src/Routes.tsx",
+			"line": 21,
+			"tag": "Routes",
+			"category": "external",
+			"module": "react-router-dom",
+			"name": "Routes",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "AppRoutes/Routes[0]/Route[0]",
+			"file": "src/Routes.tsx",
+			"line": 22,
+			"tag": "Route",
+			"category": "external",
+			"module": "react-router-dom",
+			"name": "Route",
+			"weight": 1,
+			"props": [
+				"path",
+				"element"
+			]
+		},
+		{
+			"path": "AppRoutes/CategoryListPage[0]",
+			"file": "src/Routes.tsx",
+			"line": 22,
+			"tag": "CategoryListPage",
+			"category": "local",
+			"module": "src/pages/CategoryListPage/CategoryListPage.tsx",
+			"name": "CategoryListPage",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "AppRoutes/Routes[0]/Route[1]",
+			"file": "src/Routes.tsx",
+			"line": 23,
+			"tag": "Route",
+			"category": "external",
+			"module": "react-router-dom",
+			"name": "Route",
+			"weight": 1,
+			"props": [
+				"path",
+				"element"
+			]
+		},
+		{
+			"path": "AppRoutes/CategoryDetailPage[0]",
+			"file": "src/Routes.tsx",
+			"line": 23,
+			"tag": "CategoryDetailPage",
+			"category": "local",
+			"module": "src/pages/CategoryDetailPage/CategoryDetailPage.tsx",
+			"name": "CategoryDetailPage",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "AppRoutes/Routes[0]/Route[2]",
+			"file": "src/Routes.tsx",
+			"line": 24,
+			"tag": "Route",
+			"category": "external",
+			"module": "react-router-dom",
+			"name": "Route",
+			"weight": 1,
+			"props": [
+				"path",
+				"element"
+			]
+		},
+		{
+			"path": "AppRoutes/RestaurantDetailPage[0]",
+			"file": "src/Routes.tsx",
+			"line": 24,
+			"tag": "RestaurantDetailPage",
+			"category": "local",
+			"module": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"name": "RestaurantDetailPage",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "AppRoutes/Routes[0]/Route[3]",
+			"file": "src/Routes.tsx",
+			"line": 25,
+			"tag": "Route",
+			"category": "external",
+			"module": "react-router-dom",
+			"name": "Route",
+			"weight": 1,
+			"props": [
+				"path",
+				"element"
+			]
+		},
+		{
+			"path": "AppRoutes/CheckoutPage[0]",
+			"file": "src/Routes.tsx",
+			"line": 25,
+			"tag": "CheckoutPage",
+			"category": "local",
+			"module": "src/pages/CheckoutPage/CheckoutPage.tsx",
+			"name": "CheckoutPage",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "AppRoutes/Routes[0]/Route[4]",
+			"file": "src/Routes.tsx",
+			"line": 26,
+			"tag": "Route",
+			"category": "external",
+			"module": "react-router-dom",
+			"name": "Route",
+			"weight": 1,
+			"props": [
+				"path",
+				"element"
+			]
+		},
+		{
+			"path": "AppRoutes/SuccessPage[0]",
+			"file": "src/Routes.tsx",
+			"line": 26,
+			"tag": "SuccessPage",
+			"category": "local",
+			"module": "src/pages/SuccessPage/SuccessPage.tsx",
+			"name": "SuccessPage",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "AppRoutes/Routes[0]/Route[5]",
+			"file": "src/Routes.tsx",
+			"line": 27,
+			"tag": "Route",
+			"category": "external",
+			"module": "react-router-dom",
+			"name": "Route",
+			"weight": 1,
+			"props": [
+				"path",
+				"element"
+			]
+		},
+		{
+			"path": "AppRoutes/HomePage[0]",
+			"file": "src/Routes.tsx",
+			"line": 27,
+			"tag": "HomePage",
+			"category": "local",
+			"module": "src/pages/HomePage/HomePage.tsx",
+			"name": "HomePage",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "AnimatedIllustration/span[0]/Lottie[0]",
+			"file": "src/components/AnimatedIllustration/AnimatedIllustration.tsx",
+			"line": 34,
+			"tag": "Lottie",
+			"category": "external",
+			"module": "react-lottie-player",
+			"name": "default",
+			"weight": 1,
+			"props": [
+				"style",
+				"play",
+				"loop",
+				"animationData"
+			]
+		},
+		{
+			"path": "Rounded/RoundCard[0]",
+			"file": "src/components/Category/Category.tsx",
+			"line": 97,
+			"tag": "RoundCard",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Card",
+			"weight": 1,
+			"props": [
+				"data-testid"
+			]
+		},
+		{
+			"path": "Rounded/RoundCard[0]/Title[1]",
+			"file": "src/components/Category/Category.tsx",
+			"line": 99,
+			"tag": "Title",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "Squared/SquaredContainer[0]/FloatingTitle[1]/Body[0]",
+			"file": "src/components/Category/Category.tsx",
+			"line": 107,
+			"tag": "Body",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"type",
+				"fontWeight"
+			]
+		},
+		{
+			"path": "Category/Rounded[0]",
+			"file": "src/components/Category/Category.tsx",
+			"line": 116,
+			"tag": "Rounded",
+			"category": "local",
+			"module": "src/components/Category/Category.tsx",
+			"name": "Rounded",
+			"weight": 0.5,
+			"props": [
+				"photoUrl",
+				"title"
+			]
+		},
+		{
+			"path": "Category/Squared[0]",
+			"file": "src/components/Category/Category.tsx",
+			"line": 118,
+			"tag": "Squared",
+			"category": "local",
+			"module": "src/components/Category/Category.tsx",
+			"name": "Squared",
+			"weight": 0.5,
+			"props": [
+				"photoUrl",
+				"title"
+			]
+		},
+		{
+			"path": "Footer/FooterContainer[0]/Container[0]",
+			"file": "src/components/Footer/Footer.tsx",
+			"line": 74,
+			"tag": "Container",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Container",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "Footer/FooterContainer[0]/Container[0]/FooterTop[0]/Logo[0]",
+			"file": "src/components/Footer/Footer.tsx",
+			"line": 76,
+			"tag": "Logo",
+			"category": "local",
+			"module": "src/components/Logo/Logo.tsx",
+			"name": "Logo",
+			"weight": 1,
+			"props": [
+				"large",
+				"logoOnly"
+			]
+		},
+		{
+			"path": "Footer/FooterContainer[0]/Container[0]/FooterTop[0]/FooterCard[1]",
+			"file": "src/components/Footer/Footer.tsx",
+			"line": 77,
+			"tag": "FooterCard",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "FooterCard",
+			"weight": 1,
+			"props": [
+				"title",
+				"links"
+			]
+		},
+		{
+			"path": "Footer/FooterContainer[0]/Container[0]/FooterTop[0]/FooterCard[2]",
+			"file": "src/components/Footer/Footer.tsx",
+			"line": 78,
+			"tag": "FooterCard",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "FooterCard",
+			"weight": 1,
+			"props": [
+				"title",
+				"links"
+			]
+		},
+		{
+			"path": "Footer/FooterContainer[0]/Container[0]/FooterTop[0]/FooterCard[3]",
+			"file": "src/components/Footer/Footer.tsx",
+			"line": 79,
+			"tag": "FooterCard",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "FooterCard",
+			"weight": 1,
+			"props": [
+				"title"
+			]
+		},
+		{
+			"path": "FooterCard/StyledFooterCard[0]",
+			"file": "src/components/FooterCard/FooterCard.tsx",
+			"line": 24,
+			"tag": "StyledFooterCard",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "FooterCard",
+			"weight": 1,
+			"props": [
+				"title",
+				"links",
+				"..."
+			]
+		},
+		{
+			"path": "render/RouterLink[0]",
+			"file": "src/components/FooterCard/FooterCard.tsx",
+			"line": 30,
+			"tag": "RouterLink",
+			"category": "external",
+			"module": "react-router-dom",
+			"name": "Link",
+			"weight": 1,
+			"props": [
+				"to"
+			]
+		},
+		{
+			"path": "ThemeToggle/Button[0]",
+			"file": "src/components/Header/Header.tsx",
+			"line": 115,
+			"tag": "Button",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Button",
+			"weight": 1,
+			"props": [
+				"round",
+				"clear",
+				"aria-label",
+				"icon",
+				"onClick",
+				"..."
+			]
+		},
+		{
+			"path": "HeaderComponent/HeaderContainer[0]/LogoContainer[0]",
+			"file": "src/components/Header/Header.tsx",
+			"line": 148,
+			"tag": "LogoContainer",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Link",
+			"weight": 1,
+			"props": [
+				"to",
+				"aria-label"
+			]
+		},
+		{
+			"path": "HeaderComponent/HeaderContainer[0]/LogoContainer[0]/Logo[0]",
+			"file": "src/components/Header/Header.tsx",
+			"line": 149,
+			"tag": "Logo",
+			"category": "local",
+			"module": "src/components/Logo/Logo.tsx",
+			"name": "Logo",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "HeaderComponent/OptionsContainer[0]/span[0]/ThemeToggle[0]",
+			"file": "src/components/Header/Header.tsx",
+			"line": 155,
+			"tag": "ThemeToggle",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Button",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "HeaderComponent/OptionsContainer[0]/span[0]/Link[1]",
+			"file": "src/components/Header/Header.tsx",
+			"line": 156,
+			"tag": "Link",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Link",
+			"weight": 1,
+			"props": [
+				"to",
+				"tabIndex"
+			]
+		},
+		{
+			"path": "HeaderComponent/OptionsContainer[0]/span[0]/Link[1]/Button[0]",
+			"file": "src/components/Header/Header.tsx",
+			"line": 157,
+			"tag": "Button",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Button",
+			"weight": 1,
+			"props": [
+				"clear"
+			]
+		},
+		{
+			"path": "HeaderComponent/OptionsContainer[0]/span[0]/Link[2]",
+			"file": "src/components/Header/Header.tsx",
+			"line": 159,
+			"tag": "Link",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Link",
+			"weight": 1,
+			"props": [
+				"to",
+				"tabIndex"
+			]
+		},
+		{
+			"path": "HeaderComponent/OptionsContainer[0]/span[0]/Link[2]/Button[0]",
+			"file": "src/components/Header/Header.tsx",
+			"line": 160,
+			"tag": "Button",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Button",
+			"weight": 1,
+			"props": [
+				"clear"
+			]
+		},
+		{
+			"path": "HeaderComponent/OptionsContainer[0]/Button[1]",
+			"file": "src/components/Header/Header.tsx",
+			"line": 163,
+			"tag": "Button",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Button",
+			"weight": 1,
+			"props": [
+				"aria-label",
+				"icon",
+				"onClick"
+			]
+		},
+		{
+			"path": "HeaderComponent/CartLabel[0]/CartText[0]",
+			"file": "src/components/Header/Header.tsx",
+			"line": 166,
+			"tag": "CartText",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "HeaderComponent/CartLabel[0]/CartTotal[1]",
+			"file": "src/components/Header/Header.tsx",
+			"line": 167,
+			"tag": "CartTotal",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "HeaderComponent/ShoppingCartMenu[0]",
+			"file": "src/components/Header/Header.tsx",
+			"line": 172,
+			"tag": "ShoppingCartMenu",
+			"category": "local",
+			"module": "src/components/ShoppingCartMenu/ShoppingCartMenu.tsx",
+			"name": "ShoppingCartMenu",
+			"weight": 1,
+			"props": [
+				"isOpen",
+				"onClose",
+				"onGoToCheckoutClick",
+				"cartItems",
+				"totalPrice",
+				"onItemChange"
+			]
+		},
+		{
+			"path": "Header/HeaderComponent[0]",
+			"file": "src/components/Header/Header.tsx",
+			"line": 200,
+			"tag": "HeaderComponent",
+			"category": "local",
+			"module": "src/components/Header/Header.tsx",
+			"name": "HeaderComponent",
+			"weight": 1,
+			"props": [
+				"sticky",
+				"goToCheckout",
+				"cartItems",
+				"isCartVisible",
+				"toggleCartVisibility",
+				"totalPrice",
+				"saveItem"
+			]
+		},
+		{
+			"path": "Link/DsLink[0]",
+			"file": "src/components/Link/Link.tsx",
+			"line": 7,
+			"tag": "DsLink",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Link",
+			"weight": 1,
+			"props": [
+				"render",
+				"..."
+			]
+		},
+		{
+			"path": "Link/RouterLink[0]",
+			"file": "src/components/Link/Link.tsx",
+			"line": 7,
+			"tag": "RouterLink",
+			"category": "external",
+			"module": "react-router-dom",
+			"name": "Link",
+			"weight": 1,
+			"props": [
+				"to"
+			]
+		},
+		{
+			"path": "Logo/Heading[0]",
+			"file": "src/components/Logo/Logo.tsx",
+			"line": 167,
+			"tag": "Heading",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Heading",
+			"weight": 1,
+			"props": [
+				"level",
+				"size"
+			]
+		},
+		{
+			"path": "RestaurantCardSkeleton/ConstrainedCard[0]",
+			"file": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"line": 93,
+			"tag": "ConstrainedCard",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Card",
+			"weight": 1,
+			"props": [
+				"data-testid",
+				"role",
+				"aria-label"
+			]
+		},
+		{
+			"path": "RestaurantCardSkeleton/ConstrainedCard[0]/Skeleton[0]",
+			"file": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"line": 94,
+			"tag": "Skeleton",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Skeleton",
+			"weight": 1,
+			"props": [
+				"height",
+				"width"
+			]
+		},
+		{
+			"path": "RestaurantCardSkeleton/ConstrainedCard[0]/StyledContent[1]/StyledHeading[0]",
+			"file": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"line": 96,
+			"tag": "StyledHeading",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Heading",
+			"weight": 1,
+			"props": [
+				"aria-hidden",
+				"level",
+				"size"
+			]
+		},
+		{
+			"path": "RestaurantCardSkeleton/ConstrainedCard[0]/StyledContent[1]/StyledHeading[0]/Skeleton[0]",
+			"file": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"line": 97,
+			"tag": "Skeleton",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Skeleton",
+			"weight": 1,
+			"props": [
+				"width"
+			]
+		},
+		{
+			"path": "RestaurantCardSkeleton/ConstrainedCard[0]/StyledContent[1]/Body[1]",
+			"file": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"line": 99,
+			"tag": "Body",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "RestaurantCardSkeleton/ConstrainedCard[0]/StyledContent[1]/Body[1]/Skeleton[0]",
+			"file": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"line": 100,
+			"tag": "Skeleton",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Skeleton",
+			"weight": 1,
+			"props": [
+				"width"
+			]
+		},
+		{
+			"path": "RestaurantCardSkeleton/ConstrainedCard[0]/StyledContent[1]/Description[2]",
+			"file": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"line": 102,
+			"tag": "Description",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "RestaurantCardSkeleton/ConstrainedCard[0]/StyledContent[1]/Description[2]/Skeleton[0]",
+			"file": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"line": 103,
+			"tag": "Skeleton",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Skeleton",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "RestaurantCardSkeleton/ConstrainedCard[0]/StyledContent[1]/Body[3]",
+			"file": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"line": 105,
+			"tag": "Body",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "RestaurantCardSkeleton/ConstrainedCard[0]/StyledContent[1]/Body[3]/Skeleton[0]",
+			"file": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"line": 106,
+			"tag": "Skeleton",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Skeleton",
+			"weight": 1,
+			"props": [
+				"width",
+				"height",
+				"style"
+			]
+		},
+		{
+			"path": "RestaurantCard/RestaurantCardSkeleton[0]",
+			"file": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"line": 125,
+			"tag": "RestaurantCardSkeleton",
+			"category": "local",
+			"module": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"name": "RestaurantCardSkeleton",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "RestaurantCard/ConstrainedCard[0]",
+			"file": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"line": 129,
+			"tag": "ConstrainedCard",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Card",
+			"weight": 1,
+			"props": [
+				"interactive",
+				"className",
+				"data-testid",
+				"onClick"
+			]
+		},
+		{
+			"path": "RestaurantCard/NewBadge[0]",
+			"file": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"line": 135,
+			"tag": "NewBadge",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Badge",
+			"weight": 1,
+			"props": [
+				"text",
+				"variant"
+			]
+		},
+		{
+			"path": "RestaurantCard/Closed[0]/Body[0]",
+			"file": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"line": 139,
+			"tag": "Body",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "RestaurantCard/ConstrainedCard[0]/StyledContent[1]/StyledHeading[0]",
+			"file": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"line": 145,
+			"tag": "StyledHeading",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Heading",
+			"weight": 1,
+			"props": [
+				"level",
+				"size"
+			]
+		},
+		{
+			"path": "RestaurantCard/ConstrainedCard[0]/StyledContent[1]/Review[1]",
+			"file": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"line": 148,
+			"tag": "Review",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Review",
+			"weight": 1,
+			"props": [
+				"rating"
+			]
+		},
+		{
+			"path": "RestaurantCard/ConstrainedCard[0]/StyledContent[1]/Description[2]",
+			"file": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"line": 149,
+			"tag": "Description",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"fontWeight"
+			]
+		},
+		{
+			"path": "RestaurantCard/StyledBadge[0]",
+			"file": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"line": 151,
+			"tag": "StyledBadge",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Badge",
+			"weight": 1,
+			"props": [
+				"key",
+				"text"
+			]
+		},
+		{
+			"path": "RestaurantCard/Body[0]",
+			"file": "src/components/RestaurantCard/progress/RestaurantCard.unstyled.tsx",
+			"line": 32,
+			"tag": "Body",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "RestaurantCard/div[0]/div[1]/Heading[0]",
+			"file": "src/components/RestaurantCard/progress/RestaurantCard.unstyled.tsx",
+			"line": 36,
+			"tag": "Heading",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Heading",
+			"weight": 1,
+			"props": [
+				"level"
+			]
+		},
+		{
+			"path": "RestaurantCard/div[0]/div[1]/Review[1]",
+			"file": "src/components/RestaurantCard/progress/RestaurantCard.unstyled.tsx",
+			"line": 37,
+			"tag": "Review",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Review",
+			"weight": 1,
+			"props": [
+				"rating"
+			]
+		},
+		{
+			"path": "RestaurantCard/div[0]/div[1]/Body[2]",
+			"file": "src/components/RestaurantCard/progress/RestaurantCard.unstyled.tsx",
+			"line": 38,
+			"tag": "Body",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"fontWeight"
+			]
+		},
+		{
+			"path": "RestaurantCard/Badge[0]",
+			"file": "src/components/RestaurantCard/progress/RestaurantCard.unstyled.tsx",
+			"line": 40,
+			"tag": "Badge",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Badge",
+			"weight": 1,
+			"props": [
+				"key",
+				"text"
+			]
+		},
+		{
+			"path": "OrderSummary/OrderSummaryContainer[0]",
+			"file": "src/components/ShoppingCart/OrderSummary/OrderSummary.tsx",
+			"line": 27,
+			"tag": "OrderSummaryContainer",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Card",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "OrderSummary/OrderSummaryContainer[0]/StyledHeading[0]",
+			"file": "src/components/ShoppingCart/OrderSummary/OrderSummary.tsx",
+			"line": 28,
+			"tag": "StyledHeading",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Heading",
+			"weight": 1,
+			"props": [
+				"level",
+				"size",
+				"$withMargin"
+			]
+		},
+		{
+			"path": "OrderSummary/ShoppingCartItem[0]",
+			"file": "src/components/ShoppingCart/OrderSummary/OrderSummary.tsx",
+			"line": 33,
+			"tag": "ShoppingCartItem",
+			"category": "local",
+			"module": "src/components/ShoppingCart/ShoppingCartItem/ShoppingCartItem.tsx",
+			"name": "ShoppingCartItem",
+			"weight": 0.5,
+			"props": [
+				"key",
+				"item"
+			]
+		},
+		{
+			"path": "OrderSummary/Body[0]",
+			"file": "src/components/ShoppingCart/OrderSummary/OrderSummary.tsx",
+			"line": 35,
+			"tag": "Body",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 0.5,
+			"props": []
+		},
+		{
+			"path": "OrderSummary/OrderSummaryContainer[0]/BottomContainer[2]/Body[0]",
+			"file": "src/components/ShoppingCart/OrderSummary/OrderSummary.tsx",
+			"line": 39,
+			"tag": "Body",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "OrderSummary/OrderSummaryContainer[0]/BottomContainer[2]/TotalHeading[1]",
+			"file": "src/components/ShoppingCart/OrderSummary/OrderSummary.tsx",
+			"line": 40,
+			"tag": "TotalHeading",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Heading",
+			"weight": 1,
+			"props": [
+				"level",
+				"size"
+			]
+		},
+		{
+			"path": "ShoppingCartItem/CartItemContainer[0]/Quantity[0]",
+			"file": "src/components/ShoppingCart/ShoppingCartItem/ShoppingCartItem.tsx",
+			"line": 14,
+			"tag": "Quantity",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "ShoppingCartItem/CartItemContainer[0]/Name[1]",
+			"file": "src/components/ShoppingCart/ShoppingCartItem/ShoppingCartItem.tsx",
+			"line": 15,
+			"tag": "Name",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "ShoppingCartItem/CartItemContainer[0]/Price[2]",
+			"file": "src/components/ShoppingCart/ShoppingCartItem/ShoppingCartItem.tsx",
+			"line": 16,
+			"tag": "Price",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "Footer/FooterContainer[0]/TotalSection[0]/Body[0]",
+			"file": "src/components/ShoppingCartMenu/ShoppingCartMenu.tsx",
+			"line": 23,
+			"tag": "Body",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "Footer/FooterContainer[0]/TotalSection[0]/Body[1]",
+			"file": "src/components/ShoppingCartMenu/ShoppingCartMenu.tsx",
+			"line": 24,
+			"tag": "Body",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "Footer/FooterContainer[0]/Button[1]",
+			"file": "src/components/ShoppingCartMenu/ShoppingCartMenu.tsx",
+			"line": 26,
+			"tag": "Button",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Button",
+			"weight": 1,
+			"props": [
+				"disabled",
+				"large",
+				"onClick"
+			]
+		},
+		{
+			"path": "ShoppingCartMenuItem/MenuItemContainer[0]/div[0]/Body[0]",
+			"file": "src/components/ShoppingCartMenu/ShoppingCartMenu.tsx",
+			"line": 48,
+			"tag": "Body",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"type",
+				"fontWeight"
+			]
+		},
+		{
+			"path": "ShoppingCartMenuItem/MenuItemContainer[0]/div[0]/Body[1]",
+			"file": "src/components/ShoppingCartMenu/ShoppingCartMenu.tsx",
+			"line": 51,
+			"tag": "Body",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "ShoppingCartMenuItem/MenuItemContainer[0]/div[0]/Body[2]",
+			"file": "src/components/ShoppingCartMenu/ShoppingCartMenu.tsx",
+			"line": 52,
+			"tag": "Body",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "ShoppingCartMenuItem/MenuItemContainer[0]/Select[1]",
+			"file": "src/components/ShoppingCartMenu/ShoppingCartMenu.tsx",
+			"line": 54,
+			"tag": "Select",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Select",
+			"weight": 1,
+			"props": [
+				"value",
+				"onChange",
+				"aria-label",
+				"options"
+			]
+		},
+		{
+			"path": "ShoppingCartMenu/Sidebar[0]",
+			"file": "src/components/ShoppingCartMenu/ShoppingCartMenu.tsx",
+			"line": 80,
+			"tag": "Sidebar",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Sidebar",
+			"weight": 1,
+			"props": [
+				"title",
+				"onClose",
+				"isOpen",
+				"container",
+				"footer"
+			]
+		},
+		{
+			"path": "ShoppingCartMenu/Footer[0]",
+			"file": "src/components/ShoppingCartMenu/ShoppingCartMenu.tsx",
+			"line": 85,
+			"tag": "Footer",
+			"category": "local",
+			"module": "src/components/ShoppingCartMenu/ShoppingCartMenu.tsx",
+			"name": "Footer",
+			"weight": 1,
+			"props": [
+				"onClick",
+				"totalPrice"
+			]
+		},
+		{
+			"path": "ShoppingCartMenu/ShoppingCartMenuItem[0]",
+			"file": "src/components/ShoppingCartMenu/ShoppingCartMenu.tsx",
+			"line": 89,
+			"tag": "ShoppingCartMenuItem",
+			"category": "local",
+			"module": "src/components/ShoppingCartMenu/ShoppingCartMenu.tsx",
+			"name": "ShoppingCartMenuItem",
+			"weight": 1,
+			"props": [
+				"key",
+				"item",
+				"onChange"
+			]
+		},
+		{
+			"path": "<module>/StrictMode[0]",
+			"file": "src/index.tsx",
+			"line": 12,
+			"tag": "StrictMode",
+			"category": "external",
+			"module": "react",
+			"name": "StrictMode",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "<module>/StrictMode[0]/App[0]",
+			"file": "src/index.tsx",
+			"line": 13,
+			"tag": "App",
+			"category": "local",
+			"module": "src/App.tsx",
+			"name": "App",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "CategoryDetailPage/PageTemplate[0]",
+			"file": "src/pages/CategoryDetailPage/CategoryDetailPage.tsx",
+			"line": 29,
+			"tag": "PageTemplate",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "PageTemplate",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "CategoryDetailPage/PageTemplate[0]/TopBanner[0]",
+			"file": "src/pages/CategoryDetailPage/CategoryDetailPage.tsx",
+			"line": 30,
+			"tag": "TopBanner",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "TopBanner",
+			"weight": 1,
+			"props": [
+				"title",
+				"photoUrl",
+				"onBackClick"
+			]
+		},
+		{
+			"path": "CategoryDetailPage/PageTemplate[0]/Container[1]",
+			"file": "src/pages/CategoryDetailPage/CategoryDetailPage.tsx",
+			"line": 35,
+			"tag": "Container",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Container",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "CategoryDetailPage/PageTemplate[0]/Container[1]/Breadcrumb[0]",
+			"file": "src/pages/CategoryDetailPage/CategoryDetailPage.tsx",
+			"line": 36,
+			"tag": "Breadcrumb",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Breadcrumb",
+			"weight": 1,
+			"props": [
+				"items"
+			]
+		},
+		{
+			"path": "render/Link[0]",
+			"file": "src/pages/CategoryDetailPage/CategoryDetailPage.tsx",
+			"line": 38,
+			"tag": "Link",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Link",
+			"weight": 1,
+			"props": [
+				"to"
+			]
+		},
+		{
+			"path": "CategoryDetailPage/ErrorBlock[0]",
+			"file": "src/pages/CategoryDetailPage/CategoryDetailPage.tsx",
+			"line": 43,
+			"tag": "ErrorBlock",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "ErrorBlock",
+			"weight": 1,
+			"props": [
+				"body",
+				"title",
+				"illustration",
+				"buttonText",
+				"onButtonClick"
+			]
+		},
+		{
+			"path": "CategoryDetailPage/RestaurantCardSkeleton[0]",
+			"file": "src/pages/CategoryDetailPage/CategoryDetailPage.tsx",
+			"line": 55,
+			"tag": "RestaurantCardSkeleton",
+			"category": "local",
+			"module": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"name": "RestaurantCardSkeleton",
+			"weight": 0.5,
+			"props": [
+				"key"
+			]
+		},
+		{
+			"path": "CategoryDetailPage/RestaurantCard[0]",
+			"file": "src/pages/CategoryDetailPage/CategoryDetailPage.tsx",
+			"line": 57,
+			"tag": "RestaurantCard",
+			"category": "local",
+			"module": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"name": "RestaurantCard",
+			"weight": 0.5,
+			"props": [
+				"key",
+				"...",
+				"onClick"
+			]
+		},
+		{
+			"path": "CategoryListPage/PageTemplate[0]",
+			"file": "src/pages/CategoryListPage/CategoryListPage.tsx",
+			"line": 21,
+			"tag": "PageTemplate",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "PageTemplate",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "CategoryListPage/PageTemplate[0]/TopBanner[0]",
+			"file": "src/pages/CategoryListPage/CategoryListPage.tsx",
+			"line": 22,
+			"tag": "TopBanner",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "TopBanner",
+			"weight": 1,
+			"props": [
+				"title",
+				"onBackClick"
+			]
+		},
+		{
+			"path": "CategoryListPage/PageTemplate[0]/Container[1]",
+			"file": "src/pages/CategoryListPage/CategoryListPage.tsx",
+			"line": 23,
+			"tag": "Container",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Container",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "CategoryListPage/PageTemplate[0]/Container[1]/StyledHeading[0]",
+			"file": "src/pages/CategoryListPage/CategoryListPage.tsx",
+			"line": 24,
+			"tag": "StyledHeading",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Heading",
+			"weight": 1,
+			"props": [
+				"level"
+			]
+		},
+		{
+			"path": "CategoryListPage/PageTemplate[0]/Container[1]/StyledBody[1]",
+			"file": "src/pages/CategoryListPage/CategoryListPage.tsx",
+			"line": 25,
+			"tag": "StyledBody",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "CategoryListPage/PageTemplate[0]/Container[1]/CategoryList[2]",
+			"file": "src/pages/CategoryListPage/CategoryListPage.tsx",
+			"line": 30,
+			"tag": "CategoryList",
+			"category": "local",
+			"module": "src/pages/CategoryListPage/components/CategoryList/CategoryList.tsx",
+			"name": "CategoryList",
+			"weight": 1,
+			"props": [
+				"categories"
+			]
+		},
+		{
+			"path": "CategoryList/Link[0]",
+			"file": "src/pages/CategoryListPage/components/CategoryList/CategoryList.tsx",
+			"line": 36,
+			"tag": "Link",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Link",
+			"weight": 1,
+			"props": [
+				"key",
+				"to"
+			]
+		},
+		{
+			"path": "CategoryList/Link[0]/Category[0]",
+			"file": "src/pages/CategoryListPage/components/CategoryList/CategoryList.tsx",
+			"line": 37,
+			"tag": "Category",
+			"category": "local",
+			"module": "src/components/Category/Category.tsx",
+			"name": "Category",
+			"weight": 1,
+			"props": [
+				"...",
+				"title"
+			]
+		},
+		{
+			"path": "CheckoutPage/PageTemplate[0]",
+			"file": "src/pages/CheckoutPage/CheckoutPage.tsx",
+			"line": 72,
+			"tag": "PageTemplate",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "PageTemplate",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "CheckoutPage/PageTemplate[0]/ContentContainer[0]/TopContainer[0]/StyledHeading[0]",
+			"file": "src/pages/CheckoutPage/CheckoutPage.tsx",
+			"line": 75,
+			"tag": "StyledHeading",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Heading",
+			"weight": 1,
+			"props": [
+				"level",
+				"className"
+			]
+		},
+		{
+			"path": "CheckoutPage/PageTemplate[0]/ContentContainer[0]/BottomContainer[1]",
+			"file": "src/pages/CheckoutPage/CheckoutPage.tsx",
+			"line": 79,
+			"tag": "BottomContainer",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Container",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "CheckoutPage/PageTemplate[0]/ContentContainer[0]/BottomContainer[1]/MultiStepForm[0]",
+			"file": "src/pages/CheckoutPage/CheckoutPage.tsx",
+			"line": 80,
+			"tag": "MultiStepForm",
+			"category": "local",
+			"module": "src/pages/CheckoutPage/components/registration-form/MultiStepForm.tsx",
+			"name": "MultiStepForm",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "CheckoutPage/PageTemplate[0]/ContentContainer[0]/BottomContainer[1]/OrderDetailsContainer[1]/OrderSummary[0]",
+			"file": "src/pages/CheckoutPage/CheckoutPage.tsx",
+			"line": 82,
+			"tag": "OrderSummary",
+			"category": "local",
+			"module": "src/components/ShoppingCart/OrderSummary/OrderSummary.tsx",
+			"name": "OrderSummary",
+			"weight": 1,
+			"props": [
+				"cartItems"
+			]
+		},
+		{
+			"path": "ContactDetails/div[0]/Input[0]",
+			"file": "src/pages/CheckoutPage/components/registration-form/ContactDetails.tsx",
+			"line": 89,
+			"tag": "Input",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Input",
+			"weight": 1,
+			"props": [
+				"label",
+				"placeholder",
+				"name",
+				"value",
+				"onChange",
+				"error"
+			]
+		},
+		{
+			"path": "ContactDetails/div[0]/Input[1]",
+			"file": "src/pages/CheckoutPage/components/registration-form/ContactDetails.tsx",
+			"line": 97,
+			"tag": "Input",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Input",
+			"weight": 1,
+			"props": [
+				"label",
+				"placeholder",
+				"name",
+				"value",
+				"onChange",
+				"error"
+			]
+		},
+		{
+			"path": "ContactDetails/div[0]/Input[2]",
+			"file": "src/pages/CheckoutPage/components/registration-form/ContactDetails.tsx",
+			"line": 105,
+			"tag": "Input",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Input",
+			"weight": 1,
+			"props": [
+				"label",
+				"type",
+				"placeholder",
+				"name",
+				"value",
+				"onChange",
+				"error"
+			]
+		},
+		{
+			"path": "ContactDetails/div[0]/Input[3]",
+			"file": "src/pages/CheckoutPage/components/registration-form/ContactDetails.tsx",
+			"line": 114,
+			"tag": "Input",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Input",
+			"weight": 1,
+			"props": [
+				"label",
+				"placeholder",
+				"type",
+				"name",
+				"value",
+				"onChange",
+				"error"
+			]
+		},
+		{
+			"path": "ContactDetails/div[0]/DisclaimerText[4]",
+			"file": "src/pages/CheckoutPage/components/registration-form/ContactDetails.tsx",
+			"line": 123,
+			"tag": "DisclaimerText",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"size",
+				"type"
+			]
+		},
+		{
+			"path": "ContactDetails/div[0]/div[5]/Button[0]",
+			"file": "src/pages/CheckoutPage/components/registration-form/ContactDetails.tsx",
+			"line": 127,
+			"tag": "Button",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Button",
+			"weight": 1,
+			"props": [
+				"onClick"
+			]
+		},
+		{
+			"path": "DeliveryDetails/div[0]/Input[0]",
+			"file": "src/pages/CheckoutPage/components/registration-form/DeliveryDetails.tsx",
+			"line": 92,
+			"tag": "Input",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Input",
+			"weight": 1,
+			"props": [
+				"label",
+				"placeholder",
+				"name",
+				"value",
+				"onChange",
+				"error"
+			]
+		},
+		{
+			"path": "DeliveryDetails/div[0]/Input[1]",
+			"file": "src/pages/CheckoutPage/components/registration-form/DeliveryDetails.tsx",
+			"line": 100,
+			"tag": "Input",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Input",
+			"weight": 1,
+			"props": [
+				"label",
+				"placeholder",
+				"name",
+				"value",
+				"onChange",
+				"error"
+			]
+		},
+		{
+			"path": "DeliveryDetails/div[0]/Input[2]",
+			"file": "src/pages/CheckoutPage/components/registration-form/DeliveryDetails.tsx",
+			"line": 108,
+			"tag": "Input",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Input",
+			"weight": 1,
+			"props": [
+				"label",
+				"placeholder",
+				"name",
+				"value",
+				"onChange",
+				"error"
+			]
+		},
+		{
+			"path": "DeliveryDetails/div[0]/div[3]/Button[0]",
+			"file": "src/pages/CheckoutPage/components/registration-form/DeliveryDetails.tsx",
+			"line": 122,
+			"tag": "Button",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Button",
+			"weight": 1,
+			"props": [
+				"clear",
+				"onClick"
+			]
+		},
+		{
+			"path": "DeliveryDetails/div[0]/div[3]/Button[1]",
+			"file": "src/pages/CheckoutPage/components/registration-form/DeliveryDetails.tsx",
+			"line": 125,
+			"tag": "Button",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Button",
+			"weight": 1,
+			"props": [
+				"onClick"
+			]
+		},
+		{
+			"path": "renderCurrentStep/ContactDetails[0]",
+			"file": "src/pages/CheckoutPage/components/registration-form/MultiStepForm.tsx",
+			"line": 60,
+			"tag": "ContactDetails",
+			"category": "local",
+			"module": "src/pages/CheckoutPage/components/registration-form/ContactDetails.tsx",
+			"name": "ContactDetails",
+			"weight": 1,
+			"props": [
+				"formData",
+				"setFormData",
+				"onNext"
+			]
+		},
+		{
+			"path": "renderCurrentStep/DeliveryDetails[0]",
+			"file": "src/pages/CheckoutPage/components/registration-form/MultiStepForm.tsx",
+			"line": 65,
+			"tag": "DeliveryDetails",
+			"category": "local",
+			"module": "src/pages/CheckoutPage/components/registration-form/DeliveryDetails.tsx",
+			"name": "DeliveryDetails",
+			"weight": 1,
+			"props": [
+				"formData",
+				"setFormData",
+				"onPrevious"
+			]
+		},
+		{
+			"path": "MultiStepForm/FormContainer[0]/StepIndicator[0]",
+			"file": "src/pages/CheckoutPage/components/registration-form/MultiStepForm.tsx",
+			"line": 80,
+			"tag": "StepIndicator",
+			"category": "local",
+			"module": "src/pages/CheckoutPage/components/registration-form/StepIndicator.tsx",
+			"name": "StepIndicator",
+			"weight": 1,
+			"props": [
+				"title",
+				"currentStep",
+				"amountOfSteps"
+			]
+		},
+		{
+			"path": "StepIndicator/div[0]/TitleSection[0]/Heading[0]",
+			"file": "src/pages/CheckoutPage/components/registration-form/StepIndicator.tsx",
+			"line": 55,
+			"tag": "Heading",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Heading",
+			"weight": 1,
+			"props": [
+				"level",
+				"size"
+			]
+		},
+		{
+			"path": "StepIndicator/div[0]/TitleSection[0]/Body[1]",
+			"file": "src/pages/CheckoutPage/components/registration-form/StepIndicator.tsx",
+			"line": 58,
+			"tag": "Body",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"size",
+				"type"
+			]
+		},
+		{
+			"path": "HomePage/PageTemplate[0]",
+			"file": "src/pages/HomePage/HomePage.tsx",
+			"line": 16,
+			"tag": "PageTemplate",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "PageTemplate",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "HomePage/PageTemplate[0]/Banner[0]",
+			"file": "src/pages/HomePage/HomePage.tsx",
+			"line": 17,
+			"tag": "Banner",
+			"category": "local",
+			"module": "src/pages/HomePage/components/Banner/Banner.tsx",
+			"name": "Banner",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "HomePage/PageTemplate[0]/RestaurantsSection[2]",
+			"file": "src/pages/HomePage/HomePage.tsx",
+			"line": 19,
+			"tag": "RestaurantsSection",
+			"category": "local",
+			"module": "src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.tsx",
+			"name": "RestaurantsSection",
+			"weight": 1,
+			"props": [
+				"title"
+			]
+		},
+		{
+			"path": "HomePage/PageTemplate[0]/AwardWinningSection[4]",
+			"file": "src/pages/HomePage/HomePage.tsx",
+			"line": 21,
+			"tag": "AwardWinningSection",
+			"category": "local",
+			"module": "src/pages/HomePage/components/AwardWinningSection/AwardWinningSection.tsx",
+			"name": "AwardWinningSection",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "HomePage/PageTemplate[0]/CategoriesSection[6]",
+			"file": "src/pages/HomePage/HomePage.tsx",
+			"line": 23,
+			"tag": "CategoriesSection",
+			"category": "local",
+			"module": "src/pages/HomePage/components/CategoriesSection/CategoriesSection.tsx",
+			"name": "CategoriesSection",
+			"weight": 1,
+			"props": [
+				"categories"
+			]
+		},
+		{
+			"path": "AwardWinningSection/Container[0]/ContentContainer[0]",
+			"file": "src/pages/HomePage/components/AwardWinningSection/AwardWinningSection.tsx",
+			"line": 68,
+			"tag": "ContentContainer",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Container",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "AwardWinningSection/Container[0]/ContentContainer[0]/LeftContainer[0]/Heading[0]",
+			"file": "src/pages/HomePage/components/AwardWinningSection/AwardWinningSection.tsx",
+			"line": 70,
+			"tag": "Heading",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Heading",
+			"weight": 1,
+			"props": [
+				"className"
+			]
+		},
+		{
+			"path": "AwardWinningSection/Container[0]/ContentContainer[0]/LeftContainer[0]/Heading[1]",
+			"file": "src/pages/HomePage/components/AwardWinningSection/AwardWinningSection.tsx",
+			"line": 71,
+			"tag": "Heading",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Heading",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "AwardWinningSection/Container[0]/ContentContainer[0]/LeftContainer[0]/Link[2]",
+			"file": "src/pages/HomePage/components/AwardWinningSection/AwardWinningSection.tsx",
+			"line": 72,
+			"tag": "Link",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Link",
+			"weight": 1,
+			"props": [
+				"to"
+			]
+		},
+		{
+			"path": "AwardWinningSection/Container[0]/ContentContainer[0]/LeftContainer[0]/Link[2]/StyledButton[0]",
+			"file": "src/pages/HomePage/components/AwardWinningSection/AwardWinningSection.tsx",
+			"line": 73,
+			"tag": "StyledButton",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Button",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "Banner/Container[0]/ContentContainer[0]/StyledHeading[0]",
+			"file": "src/pages/HomePage/components/Banner/Banner.tsx",
+			"line": 57,
+			"tag": "StyledHeading",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Heading",
+			"weight": 1,
+			"props": [
+				"level"
+			]
+		},
+		{
+			"path": "Banner/Container[0]/ContentContainer[0]/Link[1]",
+			"file": "src/pages/HomePage/components/Banner/Banner.tsx",
+			"line": 60,
+			"tag": "Link",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Link",
+			"weight": 1,
+			"props": [
+				"to"
+			]
+		},
+		{
+			"path": "Banner/Container[0]/ContentContainer[0]/Link[1]/Button[0]",
+			"file": "src/pages/HomePage/components/Banner/Banner.tsx",
+			"line": 61,
+			"tag": "Button",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Button",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "CategoriesSection/PageSection[0]",
+			"file": "src/pages/HomePage/components/CategoriesSection/CategoriesSection.tsx",
+			"line": 21,
+			"tag": "PageSection",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "PageSection",
+			"weight": 1,
+			"props": [
+				"title",
+				"topButtonLabel",
+				"onTopButtonClick"
+			]
+		},
+		{
+			"path": "CategoriesSection/PageSection[0]/Carousel[0]",
+			"file": "src/pages/HomePage/components/CategoriesSection/CategoriesSection.tsx",
+			"line": 26,
+			"tag": "Carousel",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Carousel",
+			"weight": 1,
+			"props": [
+				"itemsPerView",
+				"slidesToScroll"
+			]
+		},
+		{
+			"path": "CategoriesSection/StyledLink[0]",
+			"file": "src/pages/HomePage/components/CategoriesSection/CategoriesSection.tsx",
+			"line": 31,
+			"tag": "StyledLink",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Link",
+			"weight": 1,
+			"props": [
+				"key",
+				"to"
+			]
+		},
+		{
+			"path": "CategoriesSection/StyledLink[0]/Category[0]",
+			"file": "src/pages/HomePage/components/CategoriesSection/CategoriesSection.tsx",
+			"line": 32,
+			"tag": "Category",
+			"category": "local",
+			"module": "src/components/Category/Category.tsx",
+			"name": "Category",
+			"weight": 1,
+			"props": [
+				"round",
+				"..."
+			]
+		},
+		{
+			"path": "RestaurantsSectionComponent/PageSection[0]",
+			"file": "src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.container.tsx",
+			"line": 27,
+			"tag": "PageSection",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "PageSection",
+			"weight": 1,
+			"props": [
+				"title"
+			]
+		},
+		{
+			"path": "RestaurantsSectionComponent/PageSection[0]/Carousel[0]",
+			"file": "src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.container.tsx",
+			"line": 28,
+			"tag": "Carousel",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Carousel",
+			"weight": 1,
+			"props": [
+				"itemsPerView",
+				"slidesToScroll"
+			]
+		},
+		{
+			"path": "RestaurantsSectionComponent/RestaurantCardSkeleton[0]",
+			"file": "src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.container.tsx",
+			"line": 30,
+			"tag": "RestaurantCardSkeleton",
+			"category": "local",
+			"module": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"name": "RestaurantCardSkeleton",
+			"weight": 0.5,
+			"props": [
+				"key"
+			]
+		},
+		{
+			"path": "RestaurantsSectionComponent/RestaurantCard[0]",
+			"file": "src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.container.tsx",
+			"line": 32,
+			"tag": "RestaurantCard",
+			"category": "local",
+			"module": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"name": "RestaurantCard",
+			"weight": 0.5,
+			"props": [
+				"key",
+				"...",
+				"onClick"
+			]
+		},
+		{
+			"path": "RestaurantsSection/RestaurantsSectionComponent[0]",
+			"file": "src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.container.tsx",
+			"line": 50,
+			"tag": "RestaurantsSectionComponent",
+			"category": "local",
+			"module": "src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.container.tsx",
+			"name": "RestaurantsSectionComponent",
+			"weight": 1,
+			"props": [
+				"title",
+				"restaurants",
+				"isLoading",
+				"onRestaurantClick"
+			]
+		},
+		{
+			"path": "RestaurantsSection/PageSection[0]",
+			"file": "src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.tsx",
+			"line": 18,
+			"tag": "PageSection",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "PageSection",
+			"weight": 1,
+			"props": [
+				"title"
+			]
+		},
+		{
+			"path": "RestaurantsSection/PageSection[0]/Carousel[0]",
+			"file": "src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.tsx",
+			"line": 19,
+			"tag": "Carousel",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Carousel",
+			"weight": 1,
+			"props": [
+				"itemsPerView",
+				"slidesToScroll"
+			]
+		},
+		{
+			"path": "RestaurantsSection/RestaurantCardSkeleton[0]",
+			"file": "src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.tsx",
+			"line": 21,
+			"tag": "RestaurantCardSkeleton",
+			"category": "local",
+			"module": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"name": "RestaurantCardSkeleton",
+			"weight": 0.5,
+			"props": [
+				"key"
+			]
+		},
+		{
+			"path": "RestaurantsSection/RestaurantCard[0]",
+			"file": "src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.tsx",
+			"line": 23,
+			"tag": "RestaurantCard",
+			"category": "local",
+			"module": "src/components/RestaurantCard/RestaurantCard.tsx",
+			"name": "RestaurantCard",
+			"weight": 0.5,
+			"props": [
+				"key",
+				"...",
+				"onClick"
+			]
+		},
+		{
+			"path": "RestaurantDetailPage/PageTemplate[0]",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 75,
+			"tag": "PageTemplate",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "PageTemplate",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "RestaurantDetailPage/PageTemplate[0]/ErrorBlock[0]",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 76,
+			"tag": "ErrorBlock",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "ErrorBlock",
+			"weight": 1,
+			"props": [
+				"title",
+				"body",
+				"illustration",
+				"onButtonClick",
+				"buttonText"
+			]
+		},
+		{
+			"path": "RestaurantDetailPage/AnimatedIllustration[0]",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 79,
+			"tag": "AnimatedIllustration",
+			"category": "local",
+			"module": "src/components/AnimatedIllustration/AnimatedIllustration.tsx",
+			"name": "AnimatedIllustration",
+			"weight": 1,
+			"props": [
+				"animation"
+			]
+		},
+		{
+			"path": "RestaurantDetailPage/PageTemplate[0]#2",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 89,
+			"tag": "PageTemplate",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "PageTemplate",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "RestaurantDetailPage/PageTemplate[0]/ErrorBlock[0]#2",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 90,
+			"tag": "ErrorBlock",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "ErrorBlock",
+			"weight": 1,
+			"props": [
+				"title",
+				"body",
+				"illustration",
+				"onButtonClick",
+				"buttonText"
+			]
+		},
+		{
+			"path": "RestaurantDetailPage/AnimatedIllustration[0]#2",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 93,
+			"tag": "AnimatedIllustration",
+			"category": "local",
+			"module": "src/components/AnimatedIllustration/AnimatedIllustration.tsx",
+			"name": "AnimatedIllustration",
+			"weight": 1,
+			"props": [
+				"animation"
+			]
+		},
+		{
+			"path": "RestaurantDetailPage/PageTemplate[0]#3",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 103,
+			"tag": "PageTemplate",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "PageTemplate",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "RestaurantDetailPage/PageTemplate[0]/SpinnerContainer[0]/Spinner[0]",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 105,
+			"tag": "Spinner",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Spinner",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "RestaurantDetailPage/PageTemplate[0]#4",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 118,
+			"tag": "PageTemplate",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "PageTemplate",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "RestaurantDetailPage/PageTemplate[0]/FoodItemModal[0]",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 119,
+			"tag": "FoodItemModal",
+			"category": "local",
+			"module": "src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.tsx",
+			"name": "FoodItemModal",
+			"weight": 1,
+			"props": [
+				"item",
+				"cartItems",
+				"onClose",
+				"onItemSave",
+				"onItemRemove"
+			]
+		},
+		{
+			"path": "RestaurantDetailPage/PageTemplate[0]/TopBanner[1]",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 126,
+			"tag": "TopBanner",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "TopBanner",
+			"weight": 1,
+			"props": [
+				"photoUrl",
+				"onBackClick"
+			]
+		},
+		{
+			"path": "RestaurantDetailPage/PageTemplate[0]/DetailSection[2]/Container[0]",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 128,
+			"tag": "Container",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Container",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "RestaurantDetailPage/PageTemplate[0]/DetailSection[2]/Container[0]/Heading[0]",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 129,
+			"tag": "Heading",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Heading",
+			"weight": 1,
+			"props": [
+				"level"
+			]
+		},
+		{
+			"path": "RestaurantDetailPage/PageTemplate[0]/DetailSection[2]/Container[0]/Body[1]",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 130,
+			"tag": "Body",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "RestaurantDetailPage/PageTemplate[0]/DetailSection[2]/Container[0]/Review[2]",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 131,
+			"tag": "Review",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Review",
+			"weight": 1,
+			"props": [
+				"rating"
+			]
+		},
+		{
+			"path": "RestaurantDetailPage/StyledBadge[0]",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 134,
+			"tag": "StyledBadge",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Badge",
+			"weight": 1,
+			"props": [
+				"key",
+				"text"
+			]
+		},
+		{
+			"path": "RestaurantDetailPage/PageTemplate[0]/MenuSection[3]/Container[0]",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 140,
+			"tag": "Container",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Container",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "RestaurantDetailPage/FoodSection[0]",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 142,
+			"tag": "FoodSection",
+			"category": "local",
+			"module": "src/pages/RestaurantDetailPage/components/FoodSection/FoodSection.tsx",
+			"name": "FoodSection",
+			"weight": 1,
+			"props": [
+				"title",
+				"items",
+				"cartItems",
+				"onItemClick"
+			]
+		},
+		{
+			"path": "RestaurantDetailPage/FoodSection[0]#2",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 150,
+			"tag": "FoodSection",
+			"category": "local",
+			"module": "src/pages/RestaurantDetailPage/components/FoodSection/FoodSection.tsx",
+			"name": "FoodSection",
+			"weight": 1,
+			"props": [
+				"title",
+				"items",
+				"cartItems",
+				"onItemClick"
+			]
+		},
+		{
+			"path": "RestaurantDetailPage/FoodSection[0]#3",
+			"file": "src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx",
+			"line": 158,
+			"tag": "FoodSection",
+			"category": "local",
+			"module": "src/pages/RestaurantDetailPage/components/FoodSection/FoodSection.tsx",
+			"name": "FoodSection",
+			"weight": 1,
+			"props": [
+				"title",
+				"items",
+				"cartItems",
+				"onItemClick"
+			]
+		},
+		{
+			"path": "FoodItem/Container[0]",
+			"file": "src/pages/RestaurantDetailPage/components/FoodItem/FoodItem.tsx",
+			"line": 61,
+			"tag": "Container",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Card",
+			"weight": 1,
+			"props": [
+				"onClick"
+			]
+		},
+		{
+			"path": "FoodItem/Quantity[0]",
+			"file": "src/pages/RestaurantDetailPage/components/FoodItem/FoodItem.tsx",
+			"line": 64,
+			"tag": "Quantity",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"aria-label",
+				"type",
+				"fontWeight"
+			]
+		},
+		{
+			"path": "FoodItem/Container[0]/div[0]/Heading[0]",
+			"file": "src/pages/RestaurantDetailPage/components/FoodItem/FoodItem.tsx",
+			"line": 68,
+			"tag": "Heading",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Heading",
+			"weight": 1,
+			"props": [
+				"level"
+			]
+		},
+		{
+			"path": "FoodItem/Container[0]/div[0]/Description[1]",
+			"file": "src/pages/RestaurantDetailPage/components/FoodItem/FoodItem.tsx",
+			"line": 69,
+			"tag": "Description",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "FoodItem/Container[0]/div[0]/Price[2]",
+			"file": "src/pages/RestaurantDetailPage/components/FoodItem/FoodItem.tsx",
+			"line": 70,
+			"tag": "Price",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "FoodItemModal/Modal[0]",
+			"file": "src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.tsx",
+			"line": 83,
+			"tag": "Modal",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Modal",
+			"weight": 1,
+			"props": [
+				"isOpen",
+				"onClose",
+				"container"
+			]
+		},
+		{
+			"path": "FoodItemModal/div[0]/TopContainer[0]/Heading[0]",
+			"file": "src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.tsx",
+			"line": 87,
+			"tag": "Heading",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Heading",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "FoodItemModal/div[0]/TopContainer[0]/StyledBody[1]",
+			"file": "src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.tsx",
+			"line": 88,
+			"tag": "StyledBody",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "FoodItemModal/div[0]/BottomContainer[1]/ButtonsContainer[0]/QuantityStepper[0]",
+			"file": "src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.tsx",
+			"line": 92,
+			"tag": "QuantityStepper",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "QuantityStepper",
+			"weight": 1,
+			"props": [
+				"value",
+				"onChange",
+				"min",
+				"max"
+			]
+		},
+		{
+			"path": "FoodItemModal/div[0]/BottomContainer[1]/StyledButton[1]",
+			"file": "src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.tsx",
+			"line": 94,
+			"tag": "StyledButton",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Button",
+			"weight": 1,
+			"props": [
+				"aria-label",
+				"onClick"
+			]
+		},
+		{
+			"path": "FoodSection/div[0]/StyledHeading[0]",
+			"file": "src/pages/RestaurantDetailPage/components/FoodSection/FoodSection.tsx",
+			"line": 38,
+			"tag": "StyledHeading",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Heading",
+			"weight": 1,
+			"props": [
+				"level"
+			]
+		},
+		{
+			"path": "FoodSection/FoodItem[0]",
+			"file": "src/pages/RestaurantDetailPage/components/FoodSection/FoodSection.tsx",
+			"line": 44,
+			"tag": "FoodItem",
+			"category": "local",
+			"module": "src/pages/RestaurantDetailPage/components/FoodItem/FoodItem.tsx",
+			"name": "FoodItem",
+			"weight": 1,
+			"props": [
+				"key",
+				"name",
+				"price",
+				"description",
+				"quantity",
+				"onClick"
+			]
+		},
+		{
+			"path": "SuccessPage/PageTemplate[0]",
+			"file": "src/pages/SuccessPage/SuccessPage.tsx",
+			"line": 67,
+			"tag": "PageTemplate",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "PageTemplate",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "SuccessPage/PageTemplate[0]/Container[0]/TopBanner[0]",
+			"file": "src/pages/SuccessPage/SuccessPage.tsx",
+			"line": 69,
+			"tag": "TopBanner",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "TopBanner",
+			"weight": 1,
+			"props": [
+				"title"
+			]
+		},
+		{
+			"path": "SuccessPage/PageTemplate[0]/Container[0]/OrderSummaryContainer[1]/Body[0]",
+			"file": "src/pages/SuccessPage/SuccessPage.tsx",
+			"line": 71,
+			"tag": "Body",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Body",
+			"weight": 1,
+			"props": [
+				"type"
+			]
+		},
+		{
+			"path": "SuccessPage/PageTemplate[0]/Container[0]/OrderSummaryContainer[1]/StyledHeading[1]",
+			"file": "src/pages/SuccessPage/SuccessPage.tsx",
+			"line": 72,
+			"tag": "StyledHeading",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "Heading",
+			"weight": 1,
+			"props": [
+				"level"
+			]
+		},
+		{
+			"path": "SuccessPage/PageTemplate[0]/Container[0]/OrderSummaryContainer[1]/OrderSummary[2]",
+			"file": "src/pages/SuccessPage/SuccessPage.tsx",
+			"line": 73,
+			"tag": "OrderSummary",
+			"category": "local",
+			"module": "src/components/ShoppingCart/OrderSummary/OrderSummary.tsx",
+			"name": "OrderSummary",
+			"weight": 1,
+			"props": [
+				"cartItems"
+			]
+		},
+		{
+			"path": "default/Header[0]",
+			"file": "src/templates/PageTemplate.tsx",
+			"line": 12,
+			"tag": "Header",
+			"category": "local",
+			"module": "src/components/Header/Header.tsx",
+			"name": "Header",
+			"weight": 1,
+			"props": []
+		},
+		{
+			"path": "headers/Header[0]",
+			"file": "src/templates/PageTemplate.tsx",
+			"line": 13,
+			"tag": "Header",
+			"category": "local",
+			"module": "src/components/Header/Header.tsx",
+			"name": "Header",
+			"weight": 1,
+			"props": [
+				"sticky"
+			]
+		},
+		{
+			"path": "basic/HeaderComponent[0]",
+			"file": "src/templates/PageTemplate.tsx",
+			"line": 14,
+			"tag": "HeaderComponent",
+			"category": "local",
+			"module": "src/components/Header/Header.tsx",
+			"name": "HeaderComponent",
+			"weight": 1,
+			"props": [
+				"logoOnly"
+			]
+		},
+		{
+			"path": "PageTemplate/DsPageTemplate[0]",
+			"file": "src/templates/PageTemplate.tsx",
+			"line": 22,
+			"tag": "DsPageTemplate",
+			"category": "ds",
+			"module": "@droppy/design-system",
+			"name": "PageTemplate",
+			"weight": 1,
+			"props": [
+				"header",
+				"footer",
+				"..."
+			]
+		},
+		{
+			"path": "PageTemplate/Footer[0]",
+			"file": "src/templates/PageTemplate.tsx",
+			"line": 24,
+			"tag": "Footer",
+			"category": "local",
+			"module": "src/components/Footer/Footer.tsx",
+			"name": "Footer",
+			"weight": 1,
+			"props": []
+		}
+	]
+}

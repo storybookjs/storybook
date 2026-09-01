@@ -1,0 +1,11 @@
+{
+  "name": "702-rework-ui-flow",
+  "description": "Agentic reference, rework workflow (prescribed variant)",
+  "type": "module",
+  "evals": {
+    "externalRepo": {
+      "repo": "yannbf/mealdrop",
+      "ref": "refs/tags/agentic-reference/droppy-70pc-v4"
+    }
+  }
+}

@@ -231,7 +231,7 @@ function misusePanel(overrides: Partial<MisusePanel> = {}): MisusePanel {
         reasons: [
           { text: 'Badge.mdx rules out Badge for a live status; status text was the fit.' },
         ],
-        projectPath: 'code/lib/agent-eval/results/x/b/701-new-ui-flow/run-1/project',
+        projectPath: 'agent-eval/results/x/b/701-new-ui-flow/run-1/project',
       },
     ],
     facets: [],

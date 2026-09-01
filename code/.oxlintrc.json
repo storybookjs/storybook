@@ -18,7 +18,6 @@
     "core/assets",
     "core/report",
     "core/src/core-server/utils/__search-files-tests__",
-    "lib/agent-eval/templates",
     "lib/cli-storybook/test/default/cli.test.cjs",
     "sandbox"
   ],
@@ -63,18 +62,6 @@
     "typescript/triple-slash-reference": "off"
   },
   "overrides": [
-    {
-      "files": ["**/agent-eval/app/**"],
-      "rules": {
-        "import/extensions": "off"
-      }
-    },
-    {
-      "files": ["**/agent-eval/evals/**"],
-      "rules": {
-        "import/extensions": "off"
-      }
-    },
     {
       "files": ["**/*.ts", "**/*.tsx"],
       "rules": {
@@ -214,11 +201,7 @@
       }
     },
     {
-      "files": [
-        "**/renderers/**/*.stories.*",
-        "**/core/template/**/*.stories.*",
-        "**/agent-eval/evals/**/*.stories.*"
-      ],
+      "files": ["**/renderers/**/*.stories.*", "**/core/template/**/*.stories.*"],
       "rules": {
         "storybook/no-renderer-packages": "off"
       }

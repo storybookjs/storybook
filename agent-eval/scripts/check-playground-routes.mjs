@@ -266,13 +266,13 @@ if (
 }
 
 if (!globalsCss.includes('@vercel/agent-eval-playground/app/globals.css')) {
-  console.error('code/lib/agent-eval/app/globals.css must import the playground globals.css.');
+  console.error('agent-eval/app/globals.css must import the playground globals.css.');
   process.exitCode = 1;
 }
 
 if (!globalsCss.includes('@source "../node_modules/@vercel/agent-eval-playground"')) {
   console.error(
-    'code/lib/agent-eval/app/globals.css must include the playground package as a Tailwind source.'
+    'agent-eval/app/globals.css must include the playground package as a Tailwind source.'
   );
   process.exitCode = 1;
 }

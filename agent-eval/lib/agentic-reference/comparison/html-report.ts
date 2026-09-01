@@ -1976,10 +1976,10 @@ so a degraded arm is scored against the same bar as the rest.</p>`
   const example = belowPerfectDecisions(panel)[0];
   const examplePath = example
     ? `${example.projectPath}/${example.file}`
-    : 'code/lib/agent-eval/results/<experiment>/<batch>/<workflow>/run-N/project/src/File.tsx';
+    : 'agent-eval/results/<experiment>/<batch>/<workflow>/run-N/project/src/File.tsx';
   const exampleProject = example
     ? example.projectPath
-    : 'code/lib/agent-eval/results/<experiment>/<batch>/<workflow>/run-N/project';
+    : 'agent-eval/results/<experiment>/<batch>/<workflow>/run-N/project';
   const help = `<dialog class="misuse-modal" id="misuseHelpModal">
 <div class="modal-head"><b>Digging into a finding</b>
 <button type="button" class="modal-close" data-close="misuseHelpModal">Close</button></div>
@@ -1991,13 +1991,13 @@ relative to the repo root; the <i>open</i> buttons resolve them against
 <h3>Read the code</h3>
 <p class="mono mcmd" data-cmd="code $ROOT/${escapeHtml(examplePath)}"></p>
 <h3>Diff the run against its pinned baseline</h3>
-<p class="mono mcmd" data-cmd="git diff --no-index $ROOT/code/lib/agent-eval/.eval-cache/refs/${escapeHtml(
+<p class="mono mcmd" data-cmd="git diff --no-index $ROOT/agent-eval/.eval-cache/refs/${escapeHtml(
     baselineDir
   )}/src $ROOT/${escapeHtml(exampleProject)}/src"></p>
 <p class="fineprint">Comparing the src trees keeps the harness's __agent_eval__ directory and the
 lockfiles out of the diff. The pin is ${escapeHtml(fixture)}. On a machine that has never analyzed
 or judged, materialize the baseline cache once:</p>
-<p class="mono mcmd" data-cmd="yarn --cwd $ROOT/code/lib/agent-eval results:analyze --recompute"></p>
+<p class="mono mcmd" data-cmd="yarn --cwd $ROOT/agent-eval results:analyze --recompute"></p>
 <h3>Read the agent's reasoning</h3>
 <p class="mono mcmd" data-cmd="less $ROOT/${escapeHtml(exampleProject)}/__agent_eval__/transcript.txt"></p>
 <p class="fineprint">The transcript shows why the agent chose the flagged component — often the real answer.</p>
@@ -2007,7 +2007,7 @@ or judged, materialize the baseline cache once:</p>
 differ. The tree sits inside this repo's yarn workspace, so yarn resolves against the workspace and
 fails; use npm here, or copy the tree outside the repo first.</p>
 <h3>Re-judge after changing the rubric</h3>
-<p class="mono mcmd" data-cmd="yarn --cwd $ROOT/code/lib/agent-eval judge:ds-misuse --dry"></p>
+<p class="mono mcmd" data-cmd="yarn --cwd $ROOT/agent-eval judge:ds-misuse --dry"></p>
 <p class="fineprint">Reading artifacts is always free; only judging spends. Paths above name this
 bundle's first finding — swap in any finding's run directory.</p>
 </div>
@@ -2591,7 +2591,7 @@ document.addEventListener('click', function (e) {
     var project = cmds.getAttribute('data-project');
     var file = cmds.getAttribute('data-file');
     var lineNo = cmds.getAttribute('data-line');
-    var refsBase = root2 + '/code/lib/agent-eval/.eval-cache/refs/' + baseDir;
+    var refsBase = root2 + '/agent-eval/.eval-cache/refs/' + baseDir;
     var entries = [
       ['Open at the flagged line', 'code -g ' + root2 + '/' + project + '/' + file + ':' + lineNo, ''],
       cmds.getAttribute('data-new-file') === '1'
@@ -2628,7 +2628,7 @@ document.addEventListener('click', function (e) {
     body2.appendChild(prime);
     var primeCmd = document.createElement('p');
     primeCmd.className = 'mono mcmd';
-    primeCmd.textContent = 'yarn --cwd ' + root2 + '/code/lib/agent-eval results:analyze --recompute';
+    primeCmd.textContent = 'yarn --cwd ' + root2 + '/agent-eval results:analyze --recompute';
     body2.appendChild(primeCmd);
     byId('misuseCmdModal').showModal();
     return;

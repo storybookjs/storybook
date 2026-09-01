@@ -24,7 +24,7 @@ type TemplateMetadata = {
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const AGENT_EVAL_ROOT = path.resolve(__dirname, '..');
-const REPO_ROOT = path.resolve(AGENT_EVAL_ROOT, '..', '..', '..');
+const REPO_ROOT = path.resolve(AGENT_EVAL_ROOT, '..');
 const TEMPLATES_DIR = path.join(AGENT_EVAL_ROOT, 'templates');
 const TEMPLATE_METADATA_FILE = 'eval-template.json';
 const PREVIEW_BROWSER_MOCK_SOURCE_PATH = path.join(

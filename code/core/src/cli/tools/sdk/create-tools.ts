@@ -12,9 +12,10 @@ import type {
   ToolsetTransport,
 } from '../../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId } from '../../../shared/open-service/toolset-names.ts';
-import { toCatalogEntry } from './catalog.ts';
+import { projectPathsEqual } from '../instances/project-path.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import type { AttachedBootstrapResult } from './attached-runtime.ts';
+import { toCatalogEntry } from './catalog.ts';
 import { formatAttachFallback } from './attach-messages.ts';
 import { spawnChildHost } from './child-client.ts';
 import {
@@ -80,8 +81,8 @@ export type CreateToolsDeps = {
  * this process is not that instance's twin, attached mode defaults to spawning a child host from
  * the `storybook` package resolved under the instance directory.
  *
- * `auto` tries `attached` first and, on a gate failure, loads `local` instead. The returned host
- * then carries `fallbackNotice` with the gate message and that it fell back.
+ * `auto` tries `attached` first and, on a gate failure, loads `local` instead. A missing instance
+ * is the expected auto path and stays silent. Unexpected gate failures carry `fallbackNotice`.
  *
  * @throws {ToolsRuntimeError} With reason `config-load-failed` when the target configuration cannot
  *   be loaded, or `mode-unavailable` when a foreign `cwd` needs a child host and `autoSpawn` is
@@ -133,16 +134,17 @@ export async function createTools(
         if (!isAttachGateError(error)) {
           throw error;
         }
-        const notice = formatAttachFallback(error.message);
         const fallbackReason = attachGateReasonFromError(error);
+        const notice =
+          fallbackReason === 'no-instance' ? undefined : formatAttachFallback(error.message);
         try {
           return await createLocalTools(options, deps, clientInfo, mode, {
-            fallbackNotice: notice,
+            ...(notice ? { fallbackNotice: notice } : {}),
             fallbackReason,
           });
         } catch (localError) {
           if (shouldWrapAutoLocalFailure(localError)) {
-            throw wrapAutoLocalFailure(notice, localError);
+            throw wrapAutoLocalFailure(notice ?? formatAttachFallback(error.message), localError);
           }
           throw localError;
         }
@@ -230,14 +232,14 @@ async function createLocalTools(
   deps: CreateToolsDeps,
   clientInfo: Required<ToolsClientInfo>,
   requestedMode: ToolsMode,
-  fallback?: { fallbackNotice: string; fallbackReason?: ToolsAttachGateReason }
+  fallback?: { fallbackNotice?: string; fallbackReason?: ToolsAttachGateReason }
 ): Promise<LocalTools> {
   delete process.env.STORYBOOK_ATTACHED_TOOLS;
   const cwd = resolve(options.cwd ?? process.cwd());
   const isChildHost = process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
   const autoSpawn = isChildHost ? false : (options.autoSpawn ?? true);
 
-  if (cwd !== process.cwd()) {
+  if (!projectPathsEqual(cwd, process.cwd())) {
     if (!autoSpawn) {
       throw new ToolsRuntimeError({
         reason: 'mode-unavailable',

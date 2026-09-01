@@ -59,6 +59,10 @@ const REVIEW_INPUT = JSON.stringify({
 });
 
 test.describe('storybook tools attach', () => {
+  // Declaration order matters (the full-extraction test must stay last — see its comment), which
+  // the config's fullyParallel would not preserve outside CI's single worker. Not 'serial': these
+  // tests are independent, so one failure must not skip the rest.
+  test.describe.configure({ mode: 'default' });
   test.setTimeout(90_000);
 
   test('fails with start-Storybook guidance when --attach finds no instance', async () => {
@@ -70,7 +74,7 @@ test.describe('storybook tools attach', () => {
     expect(result.output).not.toContain('Falling back');
   });
 
-  test('auto mode attaches for docs, preview, and review against the running internal UI', async () => {
+  test('auto mode attaches for docs, preview, review, and stories changed against the running internal UI', async () => {
     test.skip(
       !runsAgainstDevServer,
       'Live attach requires the running Storybook channel, which the static E2E job does not serve.'
@@ -95,6 +99,10 @@ test.describe('storybook tools attach', () => {
 
     const review = await runTools(['review', 'create', '--input', REVIEW_INPUT]);
     expect(review.exitCode, review.output).toBe(0);
+
+    const changed = await runTools(['stories', 'changed']);
+    expect(changed.exitCode, changed.output).toBe(0);
+    expect(changed.output).not.toContain('Falling back');
   });
 
   test('--attach still joins the running internal UI', async () => {
@@ -123,15 +131,15 @@ test.describe('storybook tools attach', () => {
     expect(preview.output).toMatch(/--no-attach|requires a running Storybook/);
   });
 
-  test('auto mode falls back to local with a notice when no instance matches', async () => {
+  test('auto mode falls back to local silently when no instance matches', async () => {
     const emptyHome = join(tmpdir(), `storybook-tools-attach-empty-home-${process.pid}`);
     await mkdir(emptyHome, { recursive: true });
     const result = await runTools(['docs', 'list'], process.cwd(), { HOME: emptyHome });
 
     expect(result.exitCode, result.output).toBe(0);
     expect(result.output).toContain('example-button');
-    expect(result.output).toContain('Falling back to loading this project');
-    expect(result.output).toContain('npm run storybook');
+    expect(result.output).not.toContain('Falling back');
+    expect(result.output).not.toContain('npm run storybook');
   });
 
   test('--no-attach from a different cwd loads via a project-local child host', async () => {
@@ -152,6 +160,38 @@ test.describe('storybook tools attach', () => {
       ['--cwd', process.cwd(), 'docs', 'list'],
       join(process.cwd(), '..')
     );
+    expect(list.exitCode, list.output).toBe(0);
+    expect(list.output).toContain('example-button');
+  });
+
+  // Deliberately last: the first-ever full extraction leaves the instance holding (and syncing to
+  // later clients) an all-components state large enough to grind a small CI box, which failed the
+  // unrelated attach test that used to follow it. Tracked in #36105.
+  test('attached docs list succeeds through the instance docgen services', async ({ page }) => {
+    test.skip(
+      !runsAgainstDevServer,
+      'Live attach requires the running Storybook channel, which the static E2E job does not serve.'
+    );
+    await page.goto(process.env.STORYBOOK_URL || 'http://localhost:6006');
+    const docgenServerEnabled = await page.evaluate(() =>
+      Boolean(
+        (globalThis as { FEATURES?: { experimentalDocgenServer?: boolean } }).FEATURES
+          ?.experimentalDocgenServer
+      )
+    );
+    test.skip(
+      !docgenServerEnabled,
+      'Requires the internal Storybook started with STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER=true, as CI does.'
+    );
+    // Every per-component extraction broadcasts the full accumulated docgen state to each channel
+    // client, so leave the manager page before fanning out to spare the CI dev server that load.
+    await page.goto('about:blank');
+
+    // The env var makes the CLI's own config evaluation register the docgen services, so listing
+    // delegates the all-components extraction to the instance instead of reading local manifests.
+    const list = await runTools(['--attach', 'docs', 'list'], process.cwd(), {
+      STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER: 'true',
+    });
     expect(list.exitCode, list.output).toBe(0);
     expect(list.output).toContain('example-button');
   });

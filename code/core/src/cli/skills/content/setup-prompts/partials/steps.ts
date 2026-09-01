@@ -7,6 +7,7 @@ import type { SetupInstructionsContext as InstructionsContext } from '../types.t
 import {
   getInteractionPlayExample,
   getMainConfigExample,
+  getMswPreviewExample,
   getPortalDecoratorExample,
   getPreviewExample,
   getStoryExample,
@@ -197,8 +198,10 @@ export function mswStep(
     : '';
 
   return {
-    title: 'MSW handlers (only what stories will hit)',
-    body: `Use \`msw-storybook-addon\`. Register it with \`storybook add\` (which also adds it to the \`addons\` field of \`${configDir}/main.${ts}\`), then install its peer dependencies and generate the worker script:
+    title: 'Add MSW only when stories need it',
+    body: `Use this step only if the selected stories perform network or data fetching that requires deterministic mocks. If they do not, skip this entire step: do not install \`msw-storybook-addon\` or \`msw\`, generate a worker, create an empty handlers file, or add MSW wiring to the preview or main config.
+
+    When MSW is needed, register \`msw-storybook-addon\` with \`storybook add\` (which also adds it to the \`addons\` field of \`${configDir}/main.${ts}\`), then install its peer dependencies and generate the worker script:
 
     \`\`\`bash
     ${mswAddonAdd}
@@ -222,6 +225,10 @@ ${csfNextNote}
       ),
     ];
     \`\`\`
+
+    Wire the handlers into the existing preview config:
+
+    ${getMswPreviewExample(projectInfo)}
 `,
   };
 }

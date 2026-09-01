@@ -14844,13 +14844,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/picomatch@npm:^2.3.0":
-  version: 2.3.4
-  resolution: "@types/picomatch@npm:2.3.4"
-  checksum: 10c0/6eaa55e2867f8dd6c974261ff7f3e463c8f6afa8045225868ff45b25acc08c17c9705f213035700df51e4a6bb45633eb258b91b654eddd3f21acf0bab088d092
-  languageName: node
-  linkType: hard
-
 "@types/picomatch@npm:^4.0.3":
   version: 4.0.3
   resolution: "@types/picomatch@npm:4.0.3"
@@ -32291,7 +32284,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"picomatch@npm:^2.0.4, picomatch@npm:^2.2.1, picomatch@npm:^2.2.3, picomatch@npm:^2.3.0, picomatch@npm:^2.3.1":
+"picomatch@npm:^2.0.4, picomatch@npm:^2.2.1, picomatch@npm:^2.2.3, picomatch@npm:^2.3.1":
   version: 2.3.1
   resolution: "picomatch@npm:2.3.1"
   checksum: 10c0/26c02b8d06f03206fc2ab8d16f19960f2ff9e81a658f831ecb656d8f17d9edc799e8364b1f4a7873e89d9702dff96204be0fa26fe4181f6843f040f819dac4be
@@ -36926,7 +36919,7 @@ __metadata:
     "@types/js-yaml": "npm:^4.0.5"
     "@types/node": "npm:^22.19.1"
     "@types/npmlog": "npm:^7.0.0"
-    "@types/picomatch": "npm:^2.3.0"
+    "@types/picomatch": "npm:^4.0.3"
     "@types/prettier": "npm:^3.0.0"
     "@types/pretty-hrtime": "npm:^1.0.0"
     "@types/prompts": "npm:^2.0.9"
@@ -36999,7 +36992,7 @@ __metadata:
     package-manager-detector: "npm:^1.1.0"
     pathe: "npm:^1.1.2"
     picocolors: "npm:^1.1.0"
-    picomatch: "npm:^2.3.0"
+    picomatch: "npm:^4.0.5"
     picoquery: "npm:^2.5.0"
     polished: "npm:^4.2.2"
     polka: "npm:^1.0.0-next.28"

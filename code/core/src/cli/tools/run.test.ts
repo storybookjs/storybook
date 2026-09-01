@@ -967,9 +967,9 @@ describe('attached tools', () => {
   it('prints the SDK fallback notice separately from the local result', async () => {
     const tools = makeLocalTools();
     tools.fallbackNotice =
-      "No running Storybook was found for this project.\n\nFalling back to loading this project's Storybook configuration.";
+      "No running Storybook instance is on port 9999.\n\nFalling back to loading this project's Storybook configuration.";
     tools.requestedMode = 'auto';
-    tools.fallbackReason = 'no-instance';
+    tools.fallbackReason = 'port-mismatch';
     const { deps, createTools } = makeDeps({
       createTools: vi.fn(async () => tools),
     });
@@ -980,7 +980,7 @@ describe('attached tools', () => {
     expect(result.requestedMode).toBe('auto');
     expect(result.attachMode).toBe('local');
     expect(result.host).toBe('in-process');
-    expect(result.fallbackReason).toBe('no-instance');
+    expect(result.fallbackReason).toBe('port-mismatch');
     expect(result.fallbackNotice).toContain('Falling back to loading this project');
     expect(result.output).toContain('Button');
     expect(result.output).not.toContain('Falling back');

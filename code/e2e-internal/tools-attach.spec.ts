@@ -131,15 +131,15 @@ test.describe('storybook tools attach', () => {
     expect(preview.output).toMatch(/--no-attach|requires a running Storybook/);
   });
 
-  test('auto mode falls back to local with a notice when no instance matches', async () => {
+  test('auto mode falls back to local silently when no instance matches', async () => {
     const emptyHome = join(tmpdir(), `storybook-tools-attach-empty-home-${process.pid}`);
     await mkdir(emptyHome, { recursive: true });
     const result = await runTools(['docs', 'list'], process.cwd(), { HOME: emptyHome });
 
     expect(result.exitCode, result.output).toBe(0);
     expect(result.output).toContain('example-button');
-    expect(result.output).toContain('Falling back to loading this project');
-    expect(result.output).toContain('npm run storybook');
+    expect(result.output).not.toContain('Falling back');
+    expect(result.output).not.toContain('npm run storybook');
   });
 
   test('--no-attach from a different cwd loads via a project-local child host', async () => {

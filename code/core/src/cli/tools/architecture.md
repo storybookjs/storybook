@@ -23,9 +23,10 @@ token into `~/.storybook/instances/<id>.json` (file `0600`, dir `0700`). The end
 valid.
 
 CLI default is `auto`: attach when a matching instance is running, otherwise load locally.
-`--attach` requires attachment. `--no-attach` forces local. Factory-time gate failures print the
-exact corrective command; in `auto` they then fall back to local. A later `tools.call` failure
-(disconnect, remote ack timeout) stays on the attached host.
+`--attach` requires attachment. `--no-attach` forces local. A missing instance falls back to
+local with no notice. Unexpected factory-time gate failures print the exact corrective command
+and then fall back. A later `tools.call` failure (disconnect, remote ack timeout) stays on the
+attached host.
 
 Attach coverage lives in `code/e2e-internal/`. Filesystem unit tests use memfs.
 
@@ -135,7 +136,7 @@ Messages name the exact corrective command.
 
 | Failure                           | Detection                             | Message must include                                                                             |
 | --------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| No instance for this project      | No cwd/configDir match                | How to start Storybook; other running instances with `cwd` + `url`; exact `cd` or `--config-dir` |
+| No instance for this project      | No cwd/configDir match                | `--attach` only: how to start Storybook; other running instances with `cwd` + `url`; exact `cd` or `--config-dir`. `auto` falls back with no notice |
 | Port mismatch                     | No running instance on `--port`       | Running instances with their `port` + `url`; `--port <port>`                                     |
 | Old server                        | Token absent                          | Restart Storybook (vX.Y+) to enable attach                                                       |
 | Stale record / connection refused | WS connect fails                      | Registry cleanup; fallback note                                                                  |
@@ -144,9 +145,8 @@ Messages name the exact corrective command.
 | Config drift                      | Instance reports command unhandled    | Attached Storybook has no handler for the command — restart it with a matching configuration     |
 | Unacknowledged command            | Remote command ack timeout            | Attached Storybook did not acknowledge in time; the command may still have executed — retry      |
 
-Rows other than the last two are factory-time attach gates. In `auto`, those return a local host
-and a fallback notice (omitted from `--json` output). Under `--attach`, they are hard errors with
-the same text. Config drift and an unacknowledged command are post-attach `tools.call` failures:
+Rows other than the last two are factory-time attach gates. In `auto`, those fall back to a local host. Under `--attach`, they are hard errors with
+the same no-instance text. Config drift and an unacknowledged command are post-attach `tools.call` failures:
 `auto` does not fall back then.
 
 ## Limits

@@ -1,0 +1,27 @@
+{
+  "name": "@storybook/agent-eval-utils",
+  "version": "10.6.0-beta.0",
+  "private": true,
+  "description": "Shared utilities for Storybook agent evals: the documentation facet taxonomy",
+  "keywords": [
+    "eval",
+    "facets",
+    "storybook"
+  ],
+  "homepage": "https://github.com/storybookjs/storybook/tree/next/code/lib/agent-eval/utils",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/storybookjs/storybook.git",
+    "directory": "code/lib/agent-eval/utils"
+  },
+  "license": "MIT",
+  "author": "Storybook Core Team",
+  "type": "module",
+  "exports": {
+    ".": {
+      "types": "./src/index.ts",
+      "default": "./src/index.ts"
+    },
+    "./package.json": "./package.json"
+  }
+}

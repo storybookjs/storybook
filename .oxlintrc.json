@@ -27,9 +27,9 @@
     "*.js.map",
     ".yarn",
     ".nx",
-    "agent-eval/.eval-cache/**",
-    "agent-eval/results/**",
-    "agent-eval/.agentic-ref/**",
+    "**/agent-eval/.eval-cache/**",
+    "**/agent-eval/results/**",
+    "**/agent-eval/.agentic-ref/**",
     "docs",
     "test-storybooks",
     "storybook-static",
@@ -187,7 +187,7 @@
     {
       "files": ["**/*.mjs"],
       "rules": {
-        "import/extensions": ["error", "always"]
+        "import/extensions": ["error", "always", { "ignorePackages": true }]
       }
     },
     {

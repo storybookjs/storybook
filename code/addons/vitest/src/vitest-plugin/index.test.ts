@@ -32,6 +32,13 @@ vi.mock('../../../../builders/builder-vite/src/utils/without-vite-plugins.ts', {
 vi.mock('./utils.ts', { spy: true });
 vi.mock('./agent-telemetry-reporter.ts', { spy: true });
 
+const escapeGlobPath = (filePath: string) =>
+  filePath
+    .replaceAll('[', '\\[')
+    .replaceAll(']', '\\]')
+    .replaceAll('(', '\\(')
+    .replaceAll(')', '\\)');
+
 const stories = [
   '../storybook/**/*.stories.ts',
   '!../storybook/excluded/**/*.stories.ts',
@@ -75,25 +82,15 @@ describe('storybookTest', () => {
 
   it('discovers stories when the config directory is nested below the Vitest root', async () => {
     const configDir = normalizePath(resolve('web/[project]/(marketing)/.storybook'));
-    const storyGlob = normalizePath(resolve('web/[project]/(marketing)/storybook/**/*.stories.ts'))
-      .replaceAll('[', '\\[')
-      .replaceAll(']', '\\]')
-      .replaceAll('(', '\\(')
-      .replaceAll(')', '\\)');
-    const excludedStoryGlob = `!${normalizePath(
-      resolve('web/[project]/(marketing)/storybook/excluded/**/*.stories.ts')
-    )}`
-      .replaceAll('[', '\\[')
-      .replaceAll(']', '\\]')
-      .replaceAll('(', '\\(')
-      .replaceAll(')', '\\)');
-    const objectStoryGlob = normalizePath(
-      resolve('web/[project]/(marketing)/[stories]/**/*.stories.ts')
-    )
-      .replaceAll('[', '\\[')
-      .replaceAll(']', '\\]')
-      .replaceAll('(', '\\(')
-      .replaceAll(')', '\\)');
+    const storyGlob = escapeGlobPath(
+      normalizePath(resolve('web/[project]/(marketing)/storybook/**/*.stories.ts'))
+    );
+    const excludedStoryGlob = `!${escapeGlobPath(
+      normalizePath(resolve('web/[project]/(marketing)/storybook/excluded/**/*.stories.ts'))
+    )}`;
+    const objectStoryGlob = escapeGlobPath(
+      normalizePath(resolve('web/[project]/(marketing)/[stories]/**/*.stories.ts'))
+    );
     const story = normalizePath(resolve('web/[project]/(marketing)/storybook/Button.stories.ts'));
     const objectStory = normalizePath(
       resolve('web/[project]/(marketing)/[stories]/Button.stories.ts')

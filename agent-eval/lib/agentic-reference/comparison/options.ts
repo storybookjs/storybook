@@ -15,6 +15,8 @@ export interface CompareOptions {
   /** Unset means: the plan's target sample size, then 10. */
   minRuns: number | undefined;
   out: string | undefined;
+  /** Pool every treatment into one bundled arm against the control. */
+  bundle: boolean;
 }
 
 /**
@@ -45,6 +47,10 @@ export function compareParser(argv: readonly string[], env?: NodeJS.ProcessEnv) 
         "Usable runs required per cell (default: the plan's runs, then 10)"
       ),
       out: flags.text('out', 'Output directory (default comparisons/<slug>)'),
+      bundle: flags.switch(
+        'bundle',
+        'Pool every treatment into one bundled arm against the control'
+      ),
     }
   );
 }
@@ -60,6 +66,7 @@ export function toCompareOptions(parsed: ParsedCompareArgs): CompareOptions {
     plan: parsed.plan,
     minRuns: parsed.minRuns,
     out: parsed.out,
+    bundle: parsed.bundle,
   };
 }
 

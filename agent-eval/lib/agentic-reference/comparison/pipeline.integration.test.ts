@@ -141,6 +141,31 @@ describe.skipIf(uv === null)('results:compare end to end', () => {
     expect(duration.beta).toBeCloseTo(Math.log(2), 6);
   }, 300_000);
 
+  it('pools every treatment into one bundled arm with --bundle', () => {
+    // A second treatment at exactly x8 duration. Equal-sized pools at x2
+    // (do-dont) and x8 make the bundled log effect their average: 2 * log 2.
+    const FULL_EXP = 'agentic-ref-cc-full-opus-high';
+    CONTROL_DURATIONS.forEach((duration, i) => {
+      plantRun(FULL_EXP, i + 1, duration * 8, CACHE_HIT_RATES[i]!);
+    });
+    const outDir = join(root, 'comparisons', 'bundled');
+    runCompare(outDir, ['--cases=do-dont,full', '--workflows=703', '--bundle']);
+    const manifest = JSON.parse(readFileSync(join(outDir, 'manifest.json'), 'utf8'));
+    expect(manifest.spec.treatments.map((t: { shortName: string }) => t.shortName)).toEqual([
+      'bundled',
+    ]);
+    expect(manifest.spec.treatments[0].pooledExperiments).toEqual([TREATMENT_EXP, FULL_EXP]);
+    const dataset = readFileSync(join(outDir, 'dataset.csv'), 'utf8');
+    expect(dataset.split('\n').filter((line) => line.startsWith('bundled,'))).toHaveLength(20);
+    const estimates = JSON.parse(readFileSync(join(outDir, 'estimates.json'), 'utf8'));
+    const duration = estimates.find(
+      (row: { metric: string; context: boolean }) =>
+        row.metric === 'durationSeconds' && !row.context
+    );
+    expect(duration.treatment).toBe('bundled');
+    expect(duration.beta).toBeCloseTo(2 * Math.log(2), 6);
+  }, 300_000);
+
   it('weights every workflow equally in aggregate mode, regardless of run counts', () => {
     // 703 has 10 runs per arm with an exact x2 duration effect (log 2).
     // Plant 15 runs per arm in 701 with an exact x4 effect (log 4). Equal

@@ -2,6 +2,7 @@ import { vol } from 'memfs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
+  bundledCase,
   comparisonSlug,
   knownWorkflows,
   resolveCase,
@@ -117,6 +118,23 @@ describe('resolvePlanScope', () => {
   });
 });
 
+describe('bundledCase', () => {
+  it('pools the treatments into one synthetic arm that names its constituents', () => {
+    const bundle = bundledCase([resolveCase('do-dont'), resolveCase('full')]);
+    expect(bundle.caseName).toBe('bundled');
+    expect(bundle.experiment).toBe('bundled');
+    expect(bundle.shortName).toBe('bundled');
+    expect(bundle.pooledExperiments).toEqual([
+      'agentic-ref-cc-do-dont-opus-high',
+      'agentic-ref-cc-full-opus-high',
+    ]);
+    // The report surfaces treatment descriptions, so the bundle's must say
+    // what it pools.
+    expect(bundle.description).toContain('do-dont');
+    expect(bundle.description).toContain('full');
+  });
+});
+
 describe('comparisonSlug', () => {
   it('builds the deterministic slug', () => {
     const control = resolveCase('control-none');
@@ -124,5 +142,15 @@ describe('comparisonSlug', () => {
     expect(comparisonSlug(control, treatments, ['703-fix-bug-flow', '701-new-ui-flow'])).toBe(
       'control-none_vs_do-dont+full@701+703'
     );
+  });
+
+  it('marks a bundled comparison, so it never collides with the unbundled one', () => {
+    const control = resolveCase('control-none');
+    const treatments = [resolveCase('full'), resolveCase('do-dont')];
+    expect(
+      comparisonSlug(control, treatments, ['703-fix-bug-flow', '701-new-ui-flow'], {
+        bundled: true,
+      })
+    ).toBe('control-none_vs_do-dont+full_bundled@701+703');
   });
 });

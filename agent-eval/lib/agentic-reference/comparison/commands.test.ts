@@ -80,6 +80,27 @@ describe('remediationCommands', () => {
     ]);
   });
 
+  it('expands a bundled gap into runnable per-constituent commands', () => {
+    // 'bundled' is synthetic: the runner would reject it, so the commands
+    // must name the real experiments the bundle pools.
+    const bundle: ResolvedCase = {
+      caseName: 'bundled',
+      experiment: 'bundled',
+      shortName: 'bundled',
+      pooledExperiments: [DO_DONT.experiment, FULL.experiment],
+    };
+    expect(
+      remediationCommands([
+        { case: bundle, workflow: '703-fix-bug-flow', have: 1, need: 10, reason: 'missing-runs' },
+      ])
+    ).toEqual([
+      'AGENTIC_REF_FLOW=703-fix-bug-flow AGENTIC_REF_RUNS=10 yarn workspace agent-eval run eval:agentic-ref agentic-ref-cc-do-dont-opus-high',
+      'AGENTIC_REF_FLOW=703-fix-bug-flow AGENTIC_REF_RUNS=10 yarn workspace agent-eval run eval:agentic-ref agentic-ref-cc-full-opus-high',
+      'yarn workspace agent-eval run results:analyze --experiment=agentic-ref-cc-do-dont-opus-high',
+      'yarn workspace agent-eval run results:analyze --experiment=agentic-ref-cc-full-opus-high',
+    ]);
+  });
+
   it('pins Math.max: two missing-runs gaps with differing need values collect at the larger need', () => {
     expect(
       remediationCommands([

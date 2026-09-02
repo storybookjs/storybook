@@ -158,9 +158,10 @@ export function buildCells(options: BuildOptions): { cells: Cell[]; gaps: CellGa
   const cells: Cell[] = [];
   const gaps: CellGap[] = [];
   for (const resolvedCase of options.cases) {
+    const experiments = resolvedCase.pooledExperiments ?? [resolvedCase.experiment];
     for (const workflow of options.workflows) {
       const candidates = options.runs.filter(
-        (run) => run.experiment === resolvedCase.experiment && run.evalName === workflow
+        (run) => experiments.includes(run.experiment) && run.evalName === workflow
       );
       const cell: Cell = {
         case: resolvedCase,

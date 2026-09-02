@@ -9,6 +9,12 @@ export interface ResolvedCase {
   experiment: string;
   shortName: string;
   description?: string;
+  /**
+   * Set only on the synthetic bundled arm: the real experiments whose runs
+   * pool into this case. Cell building matches runs against these, while
+   * supersession still judges each run against its own experiment.
+   */
+  pooledExperiments?: string[];
 }
 
 function resolvedCases(): ResolvedCase[] {
@@ -98,11 +104,33 @@ export function resolvePlanScope(
   return { treatments, workflows: [...plan.evals].sort() };
 }
 
-/** Deterministic output-directory slug for a comparison. */
+/**
+ * One synthetic arm pooling every treatment's runs, for --bundle comparisons.
+ * The experiment name is deliberately not a real one: cell building reads
+ * `pooledExperiments` instead, and nothing may collect runs under it.
+ */
+export function bundledCase(treatments: ResolvedCase[]): ResolvedCase {
+  return {
+    caseName: 'bundled',
+    experiment: 'bundled',
+    shortName: 'bundled',
+    description: `Every treatment pooled into one arm: ${treatments
+      .map((c) => c.shortName)
+      .join(', ')}`,
+    pooledExperiments: treatments.map((c) => c.experiment),
+  };
+}
+
+/**
+ * Deterministic output-directory slug for a comparison. A bundled comparison
+ * keeps the constituent names but carries a marker, so bundled and unbundled
+ * reports of the same selection never overwrite each other.
+ */
 export function comparisonSlug(
   control: ResolvedCase,
   treatments: ResolvedCase[],
-  workflows: string[]
+  workflows: string[],
+  options: { bundled?: boolean } = {}
 ): string {
   const t = treatments
     .map((c) => c.shortName)
@@ -112,5 +140,5 @@ export function comparisonSlug(
     .map((name) => name.split('-')[0]!)
     .sort()
     .join('+');
-  return `${control.shortName}_vs_${t}@${w}`;
+  return `${control.shortName}_vs_${t}${options.bundled ? '_bundled' : ''}@${w}`;
 }

@@ -496,13 +496,51 @@ describe('renderHtmlReport structure', () => {
     expect(positions?.[1]).toBe(positions?.[2]);
   });
 
-  it('attaches popover data to forest marks: arm and value in the title, CI alone', () => {
+  it('attaches popover data to forest marks: absolute and percent in the title, CI alone', () => {
     const html = render({});
-    expect(html).toContain('data-tip-title="full: −18.0%"');
+    // A log metric's % effect, made concrete at the control's own level:
+    // 1281s × −18% ≈ −3m 51s.
+    expect(html).toContain('data-tip-title="full: −3m 51s (−18.0%)"');
     expect(html).toContain('data-tip-effect="95% CI −25.9% to −9.5%"');
     expect(html).toContain('data-tip-control=');
     expect(html).toContain('data-tip-treatment=');
     expect(html).toContain('id="tip"');
+  });
+
+  it('pairs a raw effect with its relative change in the popover title', () => {
+    const html = render({
+      estimates: [
+        row({
+          metric: 'docsCalls',
+          transform: 'none',
+          beta: -2,
+          ciLow: -3,
+          ciHigh: -1,
+          pctChange: null,
+        }),
+      ],
+    });
+    // −2 calls against the control mean of 4.
+    expect(html).toContain('data-tip-title="full: −2.0 (−50.0%)"');
+  });
+
+  it('keeps a share metric to its single percentage-point label in the popover', () => {
+    const html = render({
+      estimates: [
+        row({
+          metric: 'dsShareOfAllNodes',
+          transform: 'none',
+          beta: -0.05,
+          ciLow: -0.08,
+          ciHigh: -0.02,
+          pctChange: null,
+        }),
+      ],
+    });
+    // The delta is already in percentage points; a relative percent on top
+    // would read as a typo.
+    expect(html).toContain('data-tip-title="full: −5.0%"');
+    expect(html).not.toContain('data-tip-title="full: −5.0% (');
   });
 
   it('renders the filter bar with significance select and reset button', () => {

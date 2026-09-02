@@ -33,6 +33,7 @@ import {
 } from '#lib/agentic-reference/comparison/misuse';
 import { parseCompareArgs } from '#lib/agentic-reference/comparison/options';
 import {
+  bundledCase,
   comparisonSlug,
   knownWorkflows,
   resolveCase,
@@ -104,6 +105,12 @@ async function main() {
       'No treatment cases with recorded data. Collect runs first: yarn workspace agent-eval run eval:agentic-ref'
     );
   }
+  // --bundle pools every treatment's runs into one synthetic arm; the
+  // constituents keep naming the output directory below.
+  const constituents = treatments;
+  if (options.bundle) {
+    treatments = [bundledCase(constituents)];
+  }
   const cases = [control, ...treatments];
 
   let workflows: string[];
@@ -153,13 +160,21 @@ async function main() {
     minRuns,
     ...(plan === null ? {} : { plan: plan.path }),
   };
+  const pooling = options.bundle
+    ? ` (pooling ${constituents.map((t) => t.shortName).join(' + ')})`
+    : '';
   console.log(
     `\nComparing ${outStyle.caseName(control.shortName)} vs ${treatments
       .map((t) => outStyle.caseName(t.shortName))
-      .join(' + ')} — ${workflows.join(', ')} (${spec.mode}, ${minRuns}+ runs/cell)`
+      .join(' + ')}${pooling} — ${workflows.join(', ')} (${spec.mode}, ${minRuns}+ runs/cell)`
   );
   const outDir = resolve(
-    options.out ?? join(ROOT, 'comparisons', comparisonSlug(control, treatments, workflows))
+    options.out ??
+      join(
+        ROOT,
+        'comparisons',
+        comparisonSlug(control, constituents, workflows, { bundled: options.bundle })
+      )
   );
   const stagingDir = `${outDir}.staging`;
   rmSync(stagingDir, { recursive: true, force: true });

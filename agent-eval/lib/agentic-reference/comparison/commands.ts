@@ -80,15 +80,18 @@ export function remediationCommands(gaps: CellGap[]): string[] {
   const collect = new Map<string, { workflows: Set<string>; need: number }>();
   const analyze = new Set<string>();
   for (const gap of gaps) {
-    const experiment = gap.case.experiment;
-    if (gap.reason === 'unanalyzed') {
-      analyze.add(experiment);
-    } else {
-      // missing-runs and superseded-runs both mean data collection is necessary.
-      const entry = collect.get(experiment) ?? { workflows: new Set(), need: 0 };
-      entry.workflows.add(gap.workflow);
-      entry.need = Math.max(entry.need, gap.need);
-      collect.set(experiment, entry);
+    // A bundled arm's gap can only be closed through its real constituent
+    // experiments; the synthetic experiment name is not collectable.
+    for (const experiment of gap.case.pooledExperiments ?? [gap.case.experiment]) {
+      if (gap.reason === 'unanalyzed') {
+        analyze.add(experiment);
+      } else {
+        // missing-runs and superseded-runs both mean data collection is necessary.
+        const entry = collect.get(experiment) ?? { workflows: new Set(), need: 0 };
+        entry.workflows.add(gap.workflow);
+        entry.need = Math.max(entry.need, gap.need);
+        collect.set(experiment, entry);
+      }
     }
   }
   // Freshly collected runs land unanalyzed, so every experiment earning a

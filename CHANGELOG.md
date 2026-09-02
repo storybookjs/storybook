@@ -1,3 +1,6 @@
+## 10.6.0
+
+
 ## 10.5.10
 
 - Core: Fetch static open-service snapshots relative to the document - [#35945](https://github.com/storybookjs/storybook/pull/35945), thanks @valentinpalkovic!

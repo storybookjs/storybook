@@ -36,6 +36,56 @@ const clearCurrentTaskLog = () => {
   }
 };
 
+/**
+ * Detection state for stdout writes during a taskLog session.
+ *
+ * Clack's `taskLog` performs cursor-relative erases on every `.message()` (erase-and-redraw) and
+ * on `.success()/.error()` (clear the title region). The erase math is computed only from clack's
+ * own internal book-keeping, so any direct stdout writes that happen during the session
+ * (`logger.logBox`, prompts, multi-line warnings) advance the cursor invisibly to clack and the
+ * erase clobbers them. We can't reliably predict the right padding (clack's `.message()` itself
+ * does erase-and-redraw, so naive newline counting massively overcounts), so instead we just
+ * detect whether *any* untracked stdout write has happened. Once contaminated, every subsequent
+ * call on this taskLog skips the erase path entirely and emits a plain `clack.log.*` line.
+ */
+let hasExternalStdoutWrite = false;
+let inTrackedTaskLogWrite = false;
+let originalStdoutWrite: typeof process.stdout.write | null = null;
+
+const installStdoutHook = () => {
+  if (originalStdoutWrite) {
+    return;
+  }
+  const original = process.stdout.write.bind(process.stdout);
+  originalStdoutWrite = original;
+  process.stdout.write = ((chunk: any, ...rest: any[]) => {
+    if (!inTrackedTaskLogWrite && !hasExternalStdoutWrite && chunk) {
+      const length = typeof chunk === 'string' ? chunk.length : (chunk?.length ?? 0);
+      if (length > 0) {
+        hasExternalStdoutWrite = true;
+      }
+    }
+    return (original as any)(chunk, ...rest);
+  }) as typeof process.stdout.write;
+};
+
+const uninstallStdoutHook = () => {
+  if (originalStdoutWrite) {
+    process.stdout.write = originalStdoutWrite;
+    originalStdoutWrite = null;
+  }
+};
+
+const runTracked = <T>(fn: () => T): T => {
+  const previous = inTrackedTaskLogWrite;
+  inTrackedTaskLogWrite = true;
+  try {
+    return fn();
+  } finally {
+    inTrackedTaskLogWrite = previous;
+  }
+};
+
 export class ClackPromptProvider extends PromptProvider {
   private async handleCancel(result: unknown | symbol, promptOptions?: PromptOptions) {
     if (clack.isCancel(result)) {
@@ -122,47 +172,117 @@ export class ClackPromptProvider extends PromptProvider {
     const taskId = `${options.id}-task`;
     logTracker.addLog('info', `${taskId}-start: ${options.title}`);
 
-    if (!isCurrentTaskActive) {
-      setCurrentTaskLog(task);
+    // Track whether this wrapper owns the current-task-log entry so that nested taskLog() calls
+    // don't pop the parent's entry or tear down the parent's stdout hook on close.
+    const createdCurrentLog = !isCurrentTaskActive;
+
+    // Only the root taskLog installs the stdout hook (nested calls reuse the parent's task).
+    if (createdCurrentLog) {
+      hasExternalStdoutWrite = false;
+      inTrackedTaskLogWrite = false;
+      installStdoutHook();
     }
 
-    return {
+    const wrapped: TaskLogInstance = {
       message: (message) => {
         logTracker.addLog('info', `${taskId}: ${message}`);
-        task.message(message);
+        if (hasExternalStdoutWrite) {
+          // Bypass task.message's erase-and-redraw once external writes have moved the cursor.
+          clack.log.message(message);
+        } else {
+          runTracked(() => task.message(message));
+        }
       },
       error: (message) => {
         logTracker.addLog('error', `${taskId}-error: ${message}`);
-        task.error(message, { showLog: true });
-        clearCurrentTaskLog();
+        const contaminated = hasExternalStdoutWrite;
+        if (createdCurrentLog) {
+          uninstallStdoutHook();
+          hasExternalStdoutWrite = false;
+        }
+        if (contaminated) {
+          clack.log.error(message);
+        } else {
+          task.error(message, { showLog: true });
+        }
+        if (createdCurrentLog) {
+          clearCurrentTaskLog();
+        }
       },
       success: (message, options) => {
         logTracker.addLog('info', `${taskId}-success: ${message}`);
-        if (!isCurrentTaskActive) {
-          task.success(message, options);
+        const contaminated = hasExternalStdoutWrite;
+        if (createdCurrentLog) {
+          uninstallStdoutHook();
+          hasExternalStdoutWrite = false;
+          if (contaminated) {
+            clack.log.success(message);
+          } else {
+            task.success(message, options);
+          }
+          clearCurrentTaskLog();
         }
-        clearCurrentTaskLog();
       },
       group(title) {
         logTracker.addLog('info', `${taskId}-group: ${title}`);
-        const group = task.group(title);
-
-        setCurrentTaskLog(group);
-
-        return {
-          message: (message) => {
-            group.message(message);
+        // If contamination has already occurred, don't even create a clack subtask: route
+        // every message/success/error through plain clack.log.* which never erases.
+        if (hasExternalStdoutWrite) {
+          const stub = {
+            message: (message: string) => {
+              clack.log.message(message);
+            },
+            success: (message: string) => {
+              clack.log.success(message);
+              clearCurrentTaskLog();
+            },
+            error: (message: string) => {
+              clack.log.error(message);
+              clearCurrentTaskLog();
+            },
+          };
+          setCurrentTaskLog(stub);
+          return stub;
+        }
+        const group = runTracked(() => task.group(title));
+        const wrappedGroup = {
+          message: (message: string) => {
+            if (hasExternalStdoutWrite) {
+              clack.log.message(message);
+            } else {
+              runTracked(() => group.message(message));
+            }
           },
-          success: (message) => {
-            group.success(message);
+          success: (message: string) => {
+            if (hasExternalStdoutWrite) {
+              clack.log.success(message);
+            } else {
+              group.success(message);
+            }
             clearCurrentTaskLog();
           },
-          error: (message) => {
-            group.error(message);
+          error: (message: string) => {
+            if (hasExternalStdoutWrite) {
+              clack.log.error(message);
+            } else {
+              group.error(message);
+            }
             clearCurrentTaskLog();
           },
         };
+        // Push the contamination-aware wrapper (not the raw clack group) so callers reaching
+        // the active task via `getCurrentTaskLog()` (e.g. logger.ts) also get rerouting.
+        setCurrentTaskLog(wrappedGroup);
+        return wrappedGroup;
       },
     };
+
+    // Push the contamination-aware wrapper (not the raw clack task) so that callers reaching
+    // the active task via `getCurrentTaskLog()` (e.g. logger.ts) also get the rerouting.
+    if (createdCurrentLog) {
+      setCurrentTaskLog(wrapped);
+    }
+
+    return wrapped;
   }
 }

@@ -6,7 +6,7 @@
 #   "matplotlib>=3.9",
 # ]
 # ///
-"""Statistics stage of `pnpm results:compare`.
+"""Statistics stage of `yarn workspace agent-eval run results:compare`.
 
 Reads dataset.csv + manifest.json from the staging directory given as argv[1];
 writes estimates.csv/json, report.md, and curves/ back into it. Deterministic:
@@ -140,6 +140,29 @@ def analyze(manifest, data):
                     }
                 )
                 continue
+            if pooled:
+                # In the case x workflow interaction model, leverage is 1/n
+                # within each cell, so a singleton cell puts HC3's 1/(1-h)
+                # at a divide-by-zero and NaNs the whole covariance; an
+                # empty cell drops the interaction term instead. Both doom
+                # the fit, so name the thin cells here rather than letting
+                # statsmodels warn its way to a NaN p-value.
+                counts = pair.groupby(["case", "workflow"]).size()
+                thin = [
+                    f"{case}@{workflow}={int(counts.get((case, workflow), 0))}"
+                    for case in (control, treatment)
+                    for workflow in sorted(pair["workflow"].unique())
+                    if counts.get((case, workflow), 0) < 2
+                ]
+                if thin:
+                    skipped.append(
+                        {
+                            "metric": metric["key"],
+                            "treatment": treatment,
+                            "reason": f"needs >=2 values per case x workflow cell, have {', '.join(thin)}",
+                        }
+                    )
+                    continue
             stats = fit_pair(pair, control, treatment, pooled)
             if not all(math.isfinite(v) for v in (stats["beta"], stats["se"], stats["ciLow"], stats["ciHigh"], stats["p"])):
                 skipped.append(

@@ -2,9 +2,9 @@ import { readFile, rm } from 'node:fs/promises';
 import { join, resolve } from 'node:path';
 
 import type { Task } from '../task.ts';
-import { ROOT_DIRECTORY } from '@storybook/scripts-utils/constants.ts';
-import { exec } from '@storybook/scripts-utils/exec.ts';
-import { maxConcurrentTasks } from '@storybook/scripts-utils/maxConcurrentTasks.ts';
+import { ROOT_DIRECTORY } from '../utils/constants.ts';
+import { exec } from '../utils/exec.ts';
+import { maxConcurrentTasks } from '../utils/maxConcurrentTasks.ts';
 
 // The compile task only actually runs in the build--linux / build--windows
 // jobs, both on xlarge executors (8 vCPUs). os.cpus() reports the Docker

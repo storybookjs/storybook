@@ -11,7 +11,7 @@ import { globSync } from 'glob';
 import { join, resolve } from 'path';
 
 import { temporaryDirectory } from '../code/core/src/common/utils/cli.ts';
-import { esMain } from '@storybook/scripts-utils/esmain.ts';
+import { esMain } from './utils/esmain.ts';
 
 const logger = console;
 

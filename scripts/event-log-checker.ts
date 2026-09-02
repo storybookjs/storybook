@@ -3,7 +3,7 @@ import picocolors from 'picocolors';
 
 // import versions from '../code/core/src/common/versions';
 import { allTemplates } from '../code/lib/cli-storybook/src/sandbox-templates.ts';
-import { esMain } from '@storybook/scripts-utils/esmain.ts';
+import { esMain } from './utils/esmain.ts';
 
 const PORT = process.env.PORT || 6007;
 

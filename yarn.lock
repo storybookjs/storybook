@@ -13017,7 +13017,6 @@ __metadata:
     "@octokit/request": "npm:^8.4.1"
     "@openai/codex-sdk": "npm:^0.117.0"
     "@polka/parse": "npm:^1.0.0-next.28"
-    "@storybook/scripts-utils": "workspace:*"
     "@testing-library/dom": "npm:^10.4.0"
     "@testing-library/jest-dom": "npm:6.9.1"
     "@testing-library/react": "npm:^16.0.0"

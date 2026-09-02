@@ -54,7 +54,6 @@
     "@octokit/request": "^8.4.1",
     "@openai/codex-sdk": "^0.117.0",
     "@polka/parse": "^1.0.0-next.28",
-    "@storybook/scripts-utils": "workspace:*",
     "@testing-library/dom": "^10.4.0",
     "@testing-library/jest-dom": "6.9.1",
     "@testing-library/react": "^16.0.0",

@@ -25,30 +25,26 @@ import { SupportedLanguage } from 'storybook/internal/types';
 import type { TemplateKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { ProjectTypeService } from '../../code/lib/create-storybook/src/services/ProjectTypeService.ts';
 import type { PassedOptionValues, Task, TemplateDetails } from '../task.ts';
-import { executeCLIStep, steps } from '@storybook/scripts-utils/cli-step.ts';
-import {
-  CODE_DIRECTORY,
-  REPROS_DIRECTORY,
-  ROOT_DIRECTORY,
-} from '@storybook/scripts-utils/constants.ts';
-import { exec } from '@storybook/scripts-utils/exec.ts';
-import { filterExistsInCodeDir } from '@storybook/scripts-utils/filterExistsInCodeDir.ts';
-import { addPreviewAnnotations, readConfig } from '@storybook/scripts-utils/main-js.ts';
+import { executeCLIStep, steps } from '../utils/cli-step.ts';
+import { CODE_DIRECTORY, REPROS_DIRECTORY, ROOT_DIRECTORY } from '../utils/constants.ts';
+import { exec } from '../utils/exec.ts';
+import { filterExistsInCodeDir } from '../utils/filterExistsInCodeDir.ts';
+import { addPreviewAnnotations, readConfig } from '../utils/main-js.ts';
 import {
   addPackageDependencies,
   injectResolutions,
   removePackageDependencies,
   updatePackageScripts,
-} from '@storybook/scripts-utils/package-json.ts';
-import { findFirstPath } from '@storybook/scripts-utils/paths.ts';
-import { workspacePath } from '@storybook/scripts-utils/workspace.ts';
+} from '../utils/package-json.ts';
+import { findFirstPath } from '../utils/paths.ts';
+import { workspacePath } from '../utils/workspace.ts';
 import {
   addPackageResolutions,
   addWorkaroundResolutions,
   configureYarn2ForVerdaccio,
   installYarn2,
   isViteSandbox,
-} from '@storybook/scripts-utils/yarn.ts';
+} from '../utils/yarn.ts';
 
 async function ensureSymlink(src: string, dest: string): Promise<void> {
   await mkdir(dirname(dest), { recursive: true });

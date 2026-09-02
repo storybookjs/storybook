@@ -6,7 +6,7 @@ import { program } from 'commander';
 import picocolors from 'picocolors';
 import { dedent } from 'ts-dedent';
 
-import { esMain } from '@storybook/scripts-utils/esmain.ts';
+import { esMain } from '../utils/esmain.ts';
 import { githubRestClient } from './utils/github-client.ts';
 
 program

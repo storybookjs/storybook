@@ -5,7 +5,7 @@ import semver from 'semver';
 import { dedent } from 'ts-dedent';
 import { z } from 'zod';
 
-import { esMain } from '@storybook/scripts-utils/esmain.ts';
+import { esMain } from '../utils/esmain.ts';
 import { getCurrentVersion } from './get-current-version.ts';
 import type { Change } from './utils/get-changes.ts';
 import { LABELS_BY_IMPORTANCE, RELEASED_LABELS, getChanges } from './utils/get-changes.ts';

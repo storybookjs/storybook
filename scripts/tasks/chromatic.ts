@@ -1,6 +1,6 @@
 import { prepareSandbox } from '../prepare-sandbox.ts';
 import type { Task } from '../task.ts';
-import { exec } from '@storybook/scripts-utils/exec.ts';
+import { exec } from '../utils/exec.ts';
 
 export const chromatic: Task = {
   description: 'Run Chromatic against the sandbox',

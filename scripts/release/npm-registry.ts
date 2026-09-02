@@ -1,4 +1,4 @@
-import { stripAnsi } from '@storybook/scripts-utils/colors.ts';
+import { stripAnsi } from '../utils/colors.ts';
 import picocolors from 'picocolors';
 
 const NPM_REGISTRY = 'https://registry.npmjs.org';

@@ -12,7 +12,7 @@ import {
 import { join } from 'node:path';
 
 import type { Task } from '../task.ts';
-import { ask } from '@storybook/scripts-utils/ask.ts';
+import { ask } from '../utils/ask.ts';
 
 const logger = console;
 

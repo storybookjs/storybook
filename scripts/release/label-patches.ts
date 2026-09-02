@@ -3,7 +3,7 @@ import { program } from 'commander';
 import ora from 'ora';
 import { v4 as uuidv4 } from 'uuid';
 
-import { esMain } from '@storybook/scripts-utils/esmain.ts';
+import { esMain } from '../utils/esmain.ts';
 import { getPullInfoFromCommits, getRepo } from './utils/get-changes.ts';
 import { getLatestTag, git } from './utils/git-client.ts';
 import { getLabelIds, getUnpickedPRs, githubGraphQlClient } from './utils/github-client.ts';

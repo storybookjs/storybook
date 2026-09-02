@@ -7,7 +7,7 @@ import * as simpleGitImp from 'simple-git';
 
 import type * as MockedFSPExtra from '../../../code/__mocks__/fs/promises.ts';
 import type * as MockedSimpleGit from '../../__mocks__/simple-git.ts';
-import { CODE_DIRECTORY } from '@storybook/scripts-utils/constants.ts';
+import { CODE_DIRECTORY } from '../../utils/constants.ts';
 import { run as isPrFrozen } from '../is-pr-frozen.ts';
 import type { PullRequestInfo } from '../utils/get-github-info.ts';
 import { getPullInfoFromCommit } from '../utils/get-github-info.ts';

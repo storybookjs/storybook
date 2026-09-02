@@ -1,9 +1,9 @@
-import { formatPlainTable } from '@storybook/scripts-utils/table.ts';
+import { formatPlainTable } from '../utils/table.ts';
 import { join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import pc from 'picocolors';
 import { x } from 'tinyexec';
-import { esMain } from '@storybook/scripts-utils/esmain.ts';
+import { esMain } from '../utils/esmain.ts';
 import { installDeps } from './lib/package-manager.ts';
 import { ensureSourceClone } from './lib/prepare-trial.ts';
 import { PROJECTS, type Project } from './lib/projects.ts';

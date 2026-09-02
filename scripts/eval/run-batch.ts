@@ -11,7 +11,7 @@ import { z } from 'zod';
 
 import { createInterface } from 'node:readline/promises';
 
-import { esMain } from '@storybook/scripts-utils/esmain.ts';
+import { esMain } from '../utils/esmain.ts';
 import { AGENTS, CLAUDE_EFFORTS, CODEX_EFFORTS, type AgentVariant } from './lib/agents/config.ts';
 import { PROJECTS } from './lib/projects.ts';
 import {

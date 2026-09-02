@@ -2,32 +2,18 @@ import React from 'react';
 
 import { Badge } from 'storybook/internal/components';
 
-import { addons, types, useAddonState, useStorybookApi } from 'storybook/manager-api';
+import { addons, types, useStorybookApi } from 'storybook/manager-api';
 
 import { A11YPanel } from './components/A11YPanel.tsx';
 import { A11yContextProvider } from './components/A11yContext.tsx';
 import { VisionSimulator } from './components/VisionSimulator.tsx';
 import { ADDON_ID, PANEL_ID, PARAM_KEY } from './constants.ts';
-import type { EnhancedResults, Status } from './types.ts';
-import { RuleType } from './types.ts';
+import { useA11yState } from './store.ts';
 
 const Title = () => {
   const api = useStorybookApi();
   const selectedPanel = api.getSelectedPanel();
-  const [{ results }] = useAddonState<{
-    ui: { highlighted: boolean; tab: RuleType };
-    results: EnhancedResults | undefined;
-    error: unknown;
-    status: Status;
-  }>(ADDON_ID, {
-    ui: {
-      highlighted: false,
-      tab: RuleType.VIOLATION,
-    },
-    results: undefined,
-    error: undefined,
-    status: 'initial',
-  });
+  const { results } = useA11yState();
   const violationsNb = results?.violations?.length ?? 0;
   const incompleteNb = results?.incomplete?.length ?? 0;
   const count = violationsNb + incompleteNb;

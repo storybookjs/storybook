@@ -14,7 +14,6 @@ import { global } from '@storybook/global';
 
 import {
   experimental_useStatusStore,
-  useAddonState,
   useChannel,
   useParameter,
   useStorybookApi,
@@ -33,9 +32,10 @@ import {
   type LogItem,
   type RenderPhase,
 } from '../../instrumenter/types.ts';
-import { ADDON_ID, INTERNAL_RENDER_CALL_ID } from '../constants.ts';
+import { INTERNAL_RENDER_CALL_ID } from '../constants.ts';
 import { InteractionsPanel, type SerializedError } from './InteractionsPanel.tsx';
 import type { PlayStatus } from './StatusBadge.tsx';
+import { INITIAL_CONTROL_STATES, panelStore, usePanelState } from './store.ts';
 
 export interface PanelState {
   status: PlayStatus;
@@ -47,15 +47,6 @@ export interface PanelState {
   caughtException?: Error;
   unhandledErrors?: SerializedError[];
 }
-
-const INITIAL_CONTROL_STATES = {
-  detached: false,
-  start: false,
-  back: false,
-  goto: false,
-  next: false,
-  end: false,
-};
 
 const playStatusMap: Record<
   Extract<RenderPhase, 'rendering' | 'playing' | 'completed' | 'errored' | 'aborted'>,
@@ -201,16 +192,8 @@ export const Panel = memo<{ refId?: string; storyId: string; storyUrl: string }>
     const importPath = data?.importPath as string | undefined;
     const canOpenInEditor = global.CONFIG_TYPE === 'DEVELOPMENT' && !state.refId;
 
-    const [panelState, set] = useAddonState<PanelState>(ADDON_ID, {
-      status: 'rendering' as PlayStatus,
-      controlStates: INITIAL_CONTROL_STATES,
-      interactions: [] as ReturnType<typeof getInteractions>,
-      interactionsCount: 0,
-      hasException: false,
-      pausedAt: undefined,
-      caughtException: undefined,
-      unhandledErrors: undefined,
-    });
+    const panelState = usePanelState();
+    const set = panelStore.set;
 
     // local state
     const [scrollTarget, setScrollTarget] = useState<HTMLElement | undefined>(undefined);

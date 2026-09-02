@@ -175,14 +175,15 @@ This method allows you to override the default Storybook UI configuration (e.g.,
 
 The following table details how to use the API values:
 
-| Name              | Type   | Description                                        | Example Value                       |
-| ----------------- | ------ | -------------------------------------------------- | ----------------------------------- |
-| **layout**        | Object | Layout options, see below                          | `{ navSize: 300 }`                  |
-| **ui**            | Object | UI options, see below                              | `{ enableShortcuts: true }`         |
-| **theme**         | Object | Storybook Theme, see next section                  | `undefined`                         |
-| **selectedPanel** | String | Id to select an addon panel                        | `storybook/actions/panel`           |
-| **sidebar**       | Object | Sidebar options, see below                         | `{ showRoots: false }`              |
-| **toolbar**       | Object | Modify the tools in the toolbar using the addon id | `{ fullscreen: { hidden: false } }` |
+| Name                     | Type   | Description                                                                                                                           | Example Value                                                                                 |
+| ------------------------ | ------ | ------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| **layout**               | Object | Layout options, see below                                                                                                             | `{ navSize: 300 }`                                                                            |
+| **ui**                   | Object | UI options, see below                                                                                                                 | `{ enableShortcuts: true }`                                                                   |
+| **theme**                | Object | Storybook Theme, see next section                                                                                                     | `undefined`                                                                                   |
+| **selectedPanel**        | String | Id to select an addon panel                                                                                                           | `storybook/actions/panel`                                                                     |
+| **layoutCustomisations** | Object | Functions that show or hide UI elements per story, see [Features and behavior](../configure/user-interface/features-and-behavior.mdx) | `{ showSidebar: ({ viewMode }, defaultValue) => viewMode === 'docs' ? false : defaultValue }` |
+| **sidebar**              | Object | Sidebar options, see below                                                                                                            | `{ showRoots: false }`                                                                        |
+| **toolbar**              | Object | Modify the tools in the toolbar using the addon id                                                                                    | `{ fullscreen: { hidden: false } }`                                                           |
 
 The following options are configurable under the `layout` namespace:
 

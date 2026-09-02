@@ -67,7 +67,25 @@ describe('codexAgent.execute', () => {
     );
   });
 
-  it('starts the thread with the expected working directory and approval policy', async () => {
+  it('forces Codex fast service tier for eval runs', async () => {
+    await codexAgent.execute({
+      prompt: 'prompt',
+      projectPath: '/repo',
+      variant: { agent: 'codex', model: 'gpt-5.4', effort: 'medium' },
+      resultsDir: '/results',
+      logger,
+    });
+
+    expect(codexCtorMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        config: {
+          service_tier: 'fast',
+        },
+      })
+    );
+  });
+
+  it('starts the thread with the expected working directory and sandbox settings', async () => {
     await codexAgent.execute({
       prompt: 'prompt',
       projectPath: '/repo',
@@ -80,6 +98,7 @@ describe('codexAgent.execute', () => {
       expect.objectContaining({
         model: 'gpt-5.4',
         modelReasoningEffort: 'medium',
+        sandboxMode: 'danger-full-access',
         workingDirectory: '/repo',
         approvalPolicy: 'never',
       })

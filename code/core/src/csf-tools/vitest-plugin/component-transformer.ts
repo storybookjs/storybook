@@ -1,7 +1,7 @@
 import path from 'node:path';
 
 import {
-  BabelFileClass,
+  createBabelFile,
   type NodePath,
   babelParse,
   generate,
@@ -295,7 +295,7 @@ export const componentTransform = async ({
   }) => Promise<ArgTypes | null | undefined>;
 }): Promise<ReturnType<typeof generate> | { code: string; map: null }> => {
   const ast = babelParse(code);
-  const file = new BabelFileClass({ filename: fileName, highlightCode: false }, { code, ast });
+  const file = createBabelFile({ filename: fileName, highlightCode: false }, { code, ast });
 
   const components = collectComponentExports(ast.program, fileName);
   if (!components.length) {

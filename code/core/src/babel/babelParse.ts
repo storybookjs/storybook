@@ -1,11 +1,16 @@
 import * as parser from '@babel/parser';
 import type { ParserOptions } from '@babel/parser';
 import type * as t from '@babel/types';
-import type * as Recast from 'recast';
 
-import { lazyModule } from '../shared/utils/lazy-require.ts';
+type Recast = typeof import('recast');
 
-const recast: typeof Recast = lazyModule(() => require('recast'));
+// recast is resolved on first call, like the transform packages in `./index.ts`.
+export const recast = {
+  parse: (...args: Parameters<Recast['parse']>): ReturnType<Recast['parse']> =>
+    (require('recast') as Recast).parse(...args),
+  print: (...args: Parameters<Recast['print']>): ReturnType<Recast['print']> =>
+    (require('recast') as Recast).print(...args),
+};
 
 function parseWithFlowOrTypescript(source: string, parserOptions: parser.ParserOptions) {
   const flowCommentPattern = /^\s*\/\/\s*@flow/;

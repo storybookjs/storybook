@@ -53,14 +53,11 @@ export const resolvePackageDir = (
 
 let isTypescriptLoaderRegistered = false;
 
-/**
- * In-thread hooks hand CommonJS modules a `require` without `.extensions` on Node 22 before
- * 22.22.3, on every 23, and on 24 before 24.12; `tsconfig-paths` reads it and crashes the
- * react-docgen Vite plugin. Verified by probing each release line (24.10 and 24.11 were not
- * available, so 24 gates at the first release known to be fixed).
- */
-function supportsInThreadHooks(): boolean {
-  const [major, minor, patch] = process.versions.node.split('.').map(Number);
+// In-thread hooks hand CommonJS modules a `require` without `.extensions` on Node 22 before
+// 22.22.3, on every 23, and on 24 before 24.12; `tsconfig-paths` reads it and crashes the
+// react-docgen Vite plugin.
+export function supportsInThreadHooks(nodeVersion = process.versions.node): boolean {
+  const [major, minor, patch] = nodeVersion.split('.').map(Number);
   if (major >= 25) {
     return true;
   }
@@ -70,26 +67,13 @@ function supportsInThreadHooks(): boolean {
   return major === 22 && (minor > 22 || (minor === 22 && patch >= 3));
 }
 
-/**
- * Register the TypeScript loader. On Node with in-thread hook support (`module.registerHooks`)
- * the esbuild transform runs synchronously in-process. The `module.register` worker-thread loader
- * is strictly more expensive: every module load in the process — plain JS included — pays a
- * synchronous IPC round-trip to the hook worker, which profiles as 100–200ms per CLI invocation.
- * Older Node falls back to it. Both paths apply the same esbuild transform rather than Node's own
- * `stripTypeScriptTypes`: that one emits an ExperimentalWarning on first use on every release line
- * (verified 22.22 through 26.5), its `strip` mode throws on enums and namespaces, and Node 26
- * removed the `transform` mode that handled them.
- */
+// The `module.register` worker-thread loader charges every module load in the process, plain JS
+// included, a synchronous round-trip to the hook worker, so the in-thread `registerHooks` path is
+// preferred where it works. Both paths apply the same esbuild transform rather than Node's own
+// `stripTypeScriptTypes`: that one emits an ExperimentalWarning on first use on every release
+// line, its `strip` mode throws on enums and namespaces, and Node 26 removed its `transform` mode.
 function registerTypescriptLoader() {
-  const { registerHooks } = NodeModule as unknown as {
-    registerHooks?: (hooks: {
-      load: (
-        url: string,
-        context: unknown,
-        nextLoad: (url: string, context?: unknown) => unknown
-      ) => unknown;
-    }) => void;
-  };
+  const { registerHooks } = NodeModule;
 
   if (typeof registerHooks === 'function' && supportsInThreadHooks()) {
     const transformTypeScript = (source: string): string => {

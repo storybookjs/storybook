@@ -282,11 +282,9 @@ async function loadPresets(
     return [];
   }
 
-  // One preset at a time, in the order they are applied. A CommonJS preset (chromatic's, for one)
-  // `require()`s entries such as `storybook/internal/core-server`, and Node refuses a synchronous
-  // `require()` of an ES module that a concurrent `import()` from another preset is still loading
-  // (ERR_INTERNAL_ASSERTION "Unexpected module status"). Loading in parallel gained nothing
-  // measurable: module evaluation is serialized on the main thread anyway.
+  // One at a time: a CommonJS preset may `require()` an entry such as `storybook/internal/core-server`,
+  // and Node refuses a synchronous `require()` of an ES module that a concurrent `import()` from
+  // another preset is still loading.
   const loaded: LoadedPreset[] = [];
   for (const preset of presets) {
     loaded.push(...(await loadPreset(preset, level, storybookOptions)));

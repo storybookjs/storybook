@@ -1,4 +1,4 @@
-import { loadStorybook as experimental_loadStorybook } from '../../core-server/load.ts';
+import { loadStorybook } from '../../core-server/load.ts';
 import { withTelemetry } from '../../core-server/withTelemetry.ts';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
@@ -81,7 +81,7 @@ export function registerSkillsCommand(
 
 function defaultDeps(): SkillsRunDeps {
   return {
-    loadStorybook: experimental_loadStorybook,
+    loadStorybook,
     resolveSkillInputs,
     getProjectInfo,
     getSetupMarkdown: getSetupMarkdownOutput,

@@ -1,9 +1,5 @@
-/**
- * Pure helpers shared by the two TypeScript loader registration paths: the off-thread worker
- * loader (`bin/loader.ts`, via `module.register`) and the in-thread sync hooks registered by
- * `shared/utils/module.ts` (via `module.registerHooks`). Keep this file dependency-light — it is
- * bundled into both.
- */
+// Shared by the worker-thread loader (`bin/loader.ts`) and the in-thread hooks in
+// `shared/utils/module.ts`. Keep it dependency-light: it is bundled into both.
 import { readdirSync } from 'node:fs';
 import * as path from 'node:path';
 
@@ -11,10 +7,8 @@ import { deprecate } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
-/** File extensions the TypeScript loader hook transforms. */
 export const TS_EXTENSIONS = ['.ts', '.tsx', '.mts', '.cts', '.mtsx', '.ctsx'] as const;
 
-/** Does this URL (query string already stripped) point at a TypeScript source file? */
 export function isTypeScriptUrl(urlWithoutQuery: string): boolean {
   return TS_EXTENSIONS.some((ext) => urlWithoutQuery.endsWith(ext));
 }

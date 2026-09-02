@@ -16,13 +16,6 @@ import { transform } from 'esbuild';
 import { NODE_TARGET } from '../shared/constants/environments-support.ts';
 import { addExtensionsToRelativeImports, isTypeScriptUrl } from './loader-utils.ts';
 
-export {
-  addExtensionsToRelativeImports,
-  clearDirectoryCache,
-  resolveWithExtension,
-  supportedExtensions,
-} from './loader-utils.ts';
-
 export const load: LoadHook = async (url, context, nextLoad) => {
   // Strip any query string (e.g. the cache-busting `?<timestamp>` importModule appends for
   // skipCache) before checking the extension, otherwise a cache-busted URL like

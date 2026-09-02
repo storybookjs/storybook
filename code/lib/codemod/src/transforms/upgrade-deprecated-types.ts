@@ -1,4 +1,9 @@
-import { type BabelFile, type NodePath, core as babel, types as t } from 'storybook/internal/babel';
+import {
+  type BabelFile,
+  type NodePath,
+  createBabelFile,
+  types as t,
+} from 'storybook/internal/babel';
 import { loadCsf, printCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
@@ -24,11 +29,7 @@ export default async function transform(info: FileInfo, api: API, options: { par
   // TODO what do I need to with the title?
   const csf = loadCsf(info.source, { makeTitle: (title) => title });
   const fileNode = csf._ast;
-  // @ts-expect-error File is not yet exposed, see https://github.com/babel/babel/issues/11350#issuecomment-644118606
-  const file: BabelFile = new babel.File(
-    { filename: info.path },
-    { code: info.source, ast: fileNode }
-  );
+  const file = createBabelFile({ filename: info.path }, { code: info.source, ast: fileNode });
 
   upgradeDeprecatedTypes(file);
 

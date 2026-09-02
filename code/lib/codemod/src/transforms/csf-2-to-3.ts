@@ -1,5 +1,5 @@
 import type { BabelFile, NodePath } from 'storybook/internal/babel';
-import { core as babel, types as t } from 'storybook/internal/babel';
+import { createBabelFile, traverse, types as t } from 'storybook/internal/babel';
 import type { CsfFile } from 'storybook/internal/csf-tools';
 import { loadCsf, printCsf } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
@@ -91,7 +91,7 @@ const isSimpleCSFStory = (init: t.Expression, annotations: t.ObjectProperty[]) =
 function removeUnusedTemplates(csf: CsfFile) {
   Object.entries(csf._templates).forEach(([template, templateExpression]) => {
     const references: NodePath[] = [];
-    babel.traverse(csf._ast, {
+    traverse(csf._ast, {
       Identifier: (path) => {
         if (path.node.name === template) {
           references.push(path as NodePath);
@@ -126,12 +126,7 @@ export default async function transform(info: FileInfo, api: API, options: { par
   }
 
   // This allows for showing buildCodeFrameError messages
-  // @ts-expect-error File is not yet exposed, see https://github.com/babel/babel/issues/11350#issuecomment-644118606
-
-  const file: BabelFile = new babel.File(
-    { filename: info.path },
-    { code: info.source, ast: csf._ast }
-  );
+  const file = createBabelFile({ filename: info.path }, { code: info.source, ast: csf._ast });
 
   const importHelper = new StorybookImportHelper(file, info);
 

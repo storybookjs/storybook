@@ -125,19 +125,10 @@ const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: stri
           `the existing ${group} object contains a spread or computed property`
         );
       }
-      const existingNames = new Set(
-        existingGroupValue.properties.map((property) => getStaticPropertyName(property))
+      const movedNames = new Set(movedGroupProperties.map(getStaticPropertyName));
+      existingGroupValue.properties = existingGroupValue.properties.filter(
+        (property) => !movedNames.has(getStaticPropertyName(property))
       );
-      const duplicateProperty = movedGroupProperties.find((property) =>
-        existingNames.has(getStaticPropertyName(property))
-      );
-      if (duplicateProperty) {
-        throw migrationError(
-          managerConfigPath,
-          duplicateProperty,
-          `both the top-level configuration and ${group} define ${getStaticPropertyName(duplicateProperty)}`
-        );
-      }
       existingGroupValue.properties.unshift(...movedGroupProperties);
       config.properties = config.properties.filter(
         (property) => !movedGroupProperties.includes(property)

@@ -54,7 +54,7 @@ describe('transformSetConfigLayout', () => {
     expect(transformed).not.toContain('\n  enableShortcuts:');
   });
 
-  it('reports manual guidance when a nested option overrides a top-level option', () => {
+  it('replaces nested options with their top-level values', () => {
     const source = dedent`
       import { addons as managerAddons } from '@storybook/manager-api';
 
@@ -66,9 +66,14 @@ describe('transformSetConfigLayout', () => {
       });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
-      'both the top-level configuration and layout define showNav'
-    );
+    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+      "import { addons as managerAddons } from '@storybook/manager-api';
+
+      managerAddons.setConfig({
+        layout: { showNav: true, showPanel: false },
+        ui: { enableShortcuts: false }
+      });"
+    `);
   });
 
   it('does not change a spread config without an explicit deprecated option', () => {
@@ -139,7 +144,7 @@ describe('transformSetConfigLayout', () => {
     `);
   });
 
-  it('reports manual guidance for partially overridden recent visible sizes', () => {
+  it('replaces a nested recent visible sizes value with its top-level value', () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({
@@ -148,9 +153,12 @@ describe('transformSetConfigLayout', () => {
       });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
-      'both the top-level configuration and layout define recentVisibleSizes'
-    );
+    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+      "import { addons } from 'storybook/manager-api';
+      addons.setConfig({
+        layout: { recentVisibleSizes: { navSize: 200, bottomPanelHeight: 300 } }
+      });"
+    `);
   });
 
   it('does not change unrelated setConfig calls', () => {

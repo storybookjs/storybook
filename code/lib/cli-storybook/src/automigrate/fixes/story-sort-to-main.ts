@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { types as t } from 'storybook/internal/babel';
+import { traverse, types as t } from 'storybook/internal/babel';
 import type { ConfigFile } from 'storybook/internal/csf-tools';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
@@ -307,24 +307,24 @@ const isWritableObjectExport = (config: ConfigFile, node: t.Expression): boolean
     return false;
   }
 
-  return config._ast.program.body.some((statement) => {
-    const declaration = t.isVariableDeclaration(statement)
-      ? statement
-      : t.isExportNamedDeclaration(statement) && t.isVariableDeclaration(statement.declaration)
-        ? statement.declaration
-        : undefined;
-    return (
-      declaration?.kind === 'const' &&
-      declaration.declarations.some(
-        (declarator) =>
-          t.isIdentifier(declarator.id) &&
-          declarator.id.name === expression.name &&
-          declarator.init &&
-          t.isExpression(declarator.init) &&
-          t.isObjectExpression(unwrapTypeScriptExpression(declarator.init))
-      )
-    );
+  let isWritable = false;
+  traverse(config._ast, {
+    Program(path) {
+      const binding = path.scope.getBinding(expression.name);
+      const declarator = binding?.path.node;
+      isWritable =
+        binding?.kind === 'const' &&
+        binding.constant &&
+        binding.referencePaths.length === 1 &&
+        binding.referencePaths[0].node === expression &&
+        t.isVariableDeclarator(declarator) &&
+        declarator.init !== null &&
+        t.isExpression(declarator.init) &&
+        t.isObjectExpression(unwrapTypeScriptExpression(declarator.init));
+      path.stop();
+    },
   });
+  return isWritable;
 };
 
 const mainHasUnsupportedExportShape = (config: ConfigFile) => {

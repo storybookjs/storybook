@@ -10,15 +10,15 @@ To control the layout of Storybook’s UI you can use `addons.setConfig` in your
 
 The following table details how to use the API values:
 
-| Name                     | Type   | Description                                        | Example Value                                                                                  |
-| ------------------------ | ------ | -------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
-| **layout**               | Object | Layout options, see below                          | `{ navSize: 300 }`                                                                             |
-| **ui**                   | Object | UI options, see below                              | `{ enableShortcuts: true }`                                                                    |
-| **theme**                | Object | Storybook Theme, see next section                  | `undefined`                                                                                    |
-| **selectedPanel**        | String | Id to select an addon panel                        | `'storybook/actions/panel'`                                                                    |
+| Name                     | Type   | Description                                        | Example Value                                                                                 |
+| ------------------------ | ------ | -------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| **layout**               | Object | Layout options, see below                          | `{ navSize: 300 }`                                                                            |
+| **ui**                   | Object | UI options, see below                              | `{ enableShortcuts: true }`                                                                   |
+| **theme**                | Object | Storybook Theme, see next section                  | `undefined`                                                                                   |
+| **selectedPanel**        | String | Id to select an addon panel                        | `'storybook/actions/panel'`                                                                   |
 | **layoutCustomisations** | Object | Layout customisation options, see below            | `{ showSidebar: ({ viewMode }, defaultValue) => viewMode === 'docs' ? false : defaultValue }` |
-| **sidebar**              | Object | Sidebar options, see below                         | `{ showRoots: false }`                                                                         |
-| **toolbar**              | Object | Modify the tools in the toolbar using the addon id | `{ fullscreen: { hidden: false } } `                                                           |
+| **sidebar**              | Object | Sidebar options, see below                         | `{ showRoots: false }`                                                                        |
+| **toolbar**              | Object | Modify the tools in the toolbar using the addon id | `{ fullscreen: { hidden: false } } `                                                          |
 
 The following options are configurable under the `layout` namespace:
 
@@ -150,13 +150,13 @@ Storybook can show status icons in the sidebar to highlight new and modified sto
 
 You can use URL parameters to configure some of the available features:
 
-| Config option       | Query param  | Supported values                                                                             |
-| ------------------- | ------------ | -------------------------------------------------------------------------------------------- |
-| **enableShortcuts** | `shortcuts`  | `false`                                                                                      |
-| --- (fullscreen)    | `full`       | `true`, `false`                                                                              |
-| --- (show sidebar)  | `nav`        | `true`, `false`                                                                              |
-| --- (show panel)    | `panel`      | `false`, `'right'`, `'bottom'`                                                               |
-| **selectedPanel**   | `addonPanel` | Any panel ID                                                                                 |
-| **showTabs**        | `tabs`       | `true`                                                                                       |
-| ---                 | `instrument` | `false`, `true`                                                                              |
-| ---                 | `statuses`   | Semicolon-separated status values: `new`, `modified`, `related` (prefix with `!` to exclude) |
+| Config option          | Query param  | Supported values                                                                             |
+| ---------------------- | ------------ | -------------------------------------------------------------------------------------------- |
+| **ui.enableShortcuts** | `shortcuts`  | `false`                                                                                      |
+| --- (fullscreen)       | `full`       | `true`, `false`                                                                              |
+| --- (show sidebar)     | `nav`        | `true`, `false`                                                                              |
+| --- (show panel)       | `panel`      | `false`, `'right'`, `'bottom'`                                                               |
+| **selectedPanel**      | `addonPanel` | Any panel ID                                                                                 |
+| **layout.showTabs**    | `tabs`       | `true`                                                                                       |
+| ---                    | `instrument` | `false`, `true`                                                                              |
+| ---                    | `statuses`   | Semicolon-separated status values: `new`, `modified`, `related` (prefix with `!` to exclude) |

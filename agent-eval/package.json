@@ -38,7 +38,6 @@
   },
   "devDependencies": {
     "@anthropic-ai/sdk": "^0.117.1",
-    "@storybook/scripts-utils": "workspace:*",
     "@tailwindcss/postcss": "^4.3.2",
     "@types/node": "^22.19.1",
     "@types/picomatch": "^4.0.3",

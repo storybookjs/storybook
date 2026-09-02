@@ -14,8 +14,7 @@
       "code/lib/*",
       "code/presets/*",
       "code/renderers/*",
-      "scripts",
-      "scripts/utils"
+      "scripts"
     ]
   },
   "scripts": {

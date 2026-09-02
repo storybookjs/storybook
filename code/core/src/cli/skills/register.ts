@@ -21,14 +21,13 @@ type SkillsCommandOptions = {
   cwd?: string;
   configDir?: string;
   help?: boolean;
+  all?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by `withTelemetry`. */
   disableTelemetry?: boolean;
   /** From the shared command options in `bin/core.ts`; consumed by the failure handler. */
   logfile?: string | boolean;
 };
 
-// `storybook skills [id]`: no id lists every skill, `<id>` prints it, `<id> --help` describes
-// it. `list` and `get <id>` remain accepted spellings.
 export function registerSkillsCommand(
   program: Command,
   skillsCommand: Command,
@@ -55,17 +54,18 @@ export function registerSkillsCommand(
     const invocation = {
       tokens: tokens ?? [],
       help: options.help,
+      all: options.all,
       target: { cwd: options.cwd, configDir: options.configDir },
     };
-    const intent = resolveSkillsIntent(invocation.tokens, options.help);
+    const intent = resolveSkillsIntent(invocation);
     const run = async () => {
       const result = await runSkillsCommand(invocation, defaultDeps());
       await printResult(result);
-      if (result.kind === 'get' && result.skill && result.exitCode === 0) {
+      if (result.skill) {
         await telemetry('skills-get', { skill: result.skill }, { configDir: cliOptions.configDir });
       }
     };
-    if (intent.kind === 'catalog' || intent.kind === 'skill-help') {
+    if (intent.kind === 'catalog') {
       await run();
     } else {
       await withTelemetry('skills-get', { cliOptions, fallbackTelemetryState: true }, run).catch(

@@ -11,7 +11,12 @@ import {
 } from '../../../shared/open-service/toolset-definition.ts';
 import { getToolName } from '../../../shared/open-service/toolset-names.ts';
 import { createTools } from './create-tools.ts';
-import { AttachUnavailableError, SpawnFailedError, ToolsRuntimeError } from './errors.ts';
+import {
+  AttachUnavailableError,
+  EnvironmentMismatchError,
+  SpawnFailedError,
+  ToolsRuntimeError,
+} from './errors.ts';
 import { bootstrapToolsRuntime, type ToolsRuntime } from './local-runtime.ts';
 
 vi.mock('./local-runtime.ts', { spy: true });
@@ -306,43 +311,6 @@ describe('createTools', () => {
     expect(fallback.fallbackNotice).toContain('port 9999');
   });
 
-  it('hands the port to the child host it spawns on a fidelity mismatch, so both resolve the same instance', async () => {
-    const record = {
-      schemaVersion: 1 as const,
-      instanceId: 'abc',
-      pid: 123,
-      cwd: '/repo',
-      configDir: CONFIG_DIR,
-      url: 'http://localhost:6006',
-      port: 6006,
-      token: 'secret',
-      storybookVersion: '10.2.0',
-      mcp: { status: 'ready' as const },
-    };
-    const spawned = {
-      mode: 'attached' as const,
-      requestedMode: 'attached' as const,
-      host: 'child' as const,
-      clientInfo: { name: 'storybook-tools-sdk', version: '0.0.0', kind: 'sdk' as const },
-      storybook: { version: '10.2.0', configDir: CONFIG_DIR, url: record.url, pid: record.pid },
-      runtime: makeRuntime(),
-      describe: async () => ({ configDir: CONFIG_DIR, toolsets: [] }),
-      call: async () => ({ ok: true as const, data: {}, markdown: 'spawned' }),
-      close: async () => {},
-    };
-    vi.mocked(attach).mockResolvedValue({ kind: 'spawn' as const, record, siblings: [] });
-    vi.mocked(spawnChild).mockResolvedValue(spawned);
-
-    await createTools({ cwd: '/elsewhere', port: 6006, mode: 'attached' }, { attach, spawnChild });
-
-    expect(spawnChild).toHaveBeenCalledWith(
-      expect.objectContaining({
-        cwd: '/repo',
-        options: expect.objectContaining({ cwd: '/repo', port: 6006, mode: 'attached' }),
-      })
-    );
-  });
-
   it('runs a requiresDevServer method when attached', async () => {
     const attach = vi.fn(async () => ({
       runtime: makeRuntime(),
@@ -358,17 +326,18 @@ describe('createTools', () => {
     });
   });
 
-  it('spawns a child host when attach reports a fidelity mismatch that auto-spawn can fix', async () => {
+  it('spawns a child host from the recorded installation when attach reports a foreign one', async () => {
     const record = {
       schemaVersion: 1 as const,
       instanceId: 'abc',
       pid: 123,
-      cwd: '/repo',
+      cwd: '/scratch/empty',
       configDir: CONFIG_DIR,
       url: 'http://localhost:6006',
       port: 6006,
       token: 'secret',
       storybookVersion: '10.2.0',
+      storybookPath: '/npx-cache/node_modules/storybook',
       mcp: { status: 'ready' as const },
     };
     const spawned = {
@@ -382,18 +351,21 @@ describe('createTools', () => {
       call: async () => ({ ok: true as const, data: {}, markdown: 'spawned' }),
       close: async () => {},
     };
-    vi.mocked(attach).mockResolvedValue({ kind: 'spawn' as const, record });
+    vi.mocked(attach).mockResolvedValue({
+      kind: 'spawn' as const,
+      record,
+      storybookPath: '/npx-cache/node_modules/storybook',
+      siblings: [],
+    });
     vi.mocked(spawnChild).mockResolvedValue(spawned);
 
-    const tools = await createTools(
-      { cwd: '/elsewhere', mode: 'attached' },
-      { attach, spawnChild }
-    );
+    const tools = await createTools({ mode: 'attached' }, { attach, spawnChild });
 
     expect(spawnChild).toHaveBeenCalledWith({
-      cwd: '/repo',
+      cwd: '/scratch/empty',
+      installationPath: '/npx-cache/node_modules/storybook',
       options: expect.objectContaining({
-        cwd: '/repo',
+        cwd: '/scratch/empty',
         mode: 'attached',
         autoSpawn: false,
         // Pinned from the chosen record, so the child re-resolves to the same instance.
@@ -408,6 +380,21 @@ describe('createTools', () => {
       data: {},
       markdown: 'spawned',
     });
+  });
+
+  it('falls back to local with an environment-mismatch gate reason in auto mode', async () => {
+    vi.mocked(attach).mockRejectedValueOnce(
+      new EnvironmentMismatchError({
+        reason: 'The running Storybook and this CLI are different `storybook` installations:',
+      })
+    );
+
+    const fallback = await createTools({}, { attach });
+
+    expect(fallback.mode).toBe('local');
+    expect(fallback.fallbackReason).toBe('environment-mismatch');
+    expect(fallback.fallbackNotice).toContain('different `storybook` installations');
+    expect(fallback.fallbackNotice).toContain('Falling back');
   });
 
   it('prefers attached mode by default and falls back to local on a gate failure', async () => {

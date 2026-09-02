@@ -77,9 +77,11 @@ export type CreateToolsDeps = {
  * the target directory, it loads in-process. Otherwise it spawns a child host from the `storybook`
  * package resolved under that directory. It never changes `process.cwd()`.
  *
- * `attached` joins a running Storybook over its channel and never changes `process.cwd()`. When
- * this process is not that instance's twin, attached mode defaults to spawning a child host from
- * the `storybook` package resolved under the instance directory.
+ * `attached` joins a running Storybook over its channel and never changes `process.cwd()`. Two
+ * processes never attach across `storybook` installations: when this process is the instance's
+ * installation (compared by the package root each side derives from its own module location), it
+ * joins in-process; when it is a different installation, it spawns a child host from the
+ * installation the instance recorded and proxies through it.
  *
  * `auto` tries `attached` first and, on a gate failure, loads `local` instead. A missing instance
  * is the expected auto path and stays silent. Unexpected gate failures carry `fallbackNotice`.
@@ -88,8 +90,9 @@ export type CreateToolsDeps = {
  *   be loaded, or `mode-unavailable` when a foreign `cwd` needs a child host and `autoSpawn` is
  *   declined.
  * @throws {AttachUnavailableError} When `attached` cannot find or reach a matching instance.
- * @throws {EnvironmentMismatchError} When this process is not the instance's twin and auto-spawn is
- *   declined, or when spawning cannot reconcile the running instance with the project package.
+ * @throws {EnvironmentMismatchError} When the instance record cannot prove which installation it
+ *   runs, or the installations differ and spawning is not allowed (`autoSpawn: false`, or this
+ *   process is already a child host).
  * @throws {SpawnFailedError} When a child host cannot be resolved or started.
  */
 export function createTools(
@@ -177,10 +180,12 @@ async function createAttachedTools(
     port: options.port,
   });
   if ('kind' in attached && attached.kind === 'spawn') {
-    // Pin the chosen instance's port so the child host re-resolves to that exact instance even
-    // when the registry changes between the parent's resolution and the child's.
+    // The child is the instance's own recorded installation, so it attaches as the twin the caller
+    // is not. Pin the chosen instance's port so it re-resolves to that exact instance even when
+    // the registry changes between the parent's resolution and the child's.
     return (deps.spawnChild ?? spawnChildHost)({
       cwd: attached.record.cwd,
+      installationPath: attached.storybookPath,
       options: {
         ...options,
         mode: 'attached',

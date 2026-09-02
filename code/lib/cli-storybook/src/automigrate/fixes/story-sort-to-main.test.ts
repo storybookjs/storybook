@@ -145,6 +145,22 @@ describe('story-sort-to-main', () => {
 
   it.each([
     [
+      'definePreview',
+      `export default definePreview({ parameters: { options: { storySort: { order: ['Intro'] } } } })`,
+    ],
+    [
+      'Object.assign',
+      `export default Object.assign({ parameters: { options: { storySort: { order: ['First'] } } } }, { parameters: { options: { storySort: { order: ['Second'] } } } })`,
+    ],
+  ])('rejects a direct literal wrapped in %s', async (_name, preview) => {
+    await expect(check(`export default { stories: [] }`, preview)).rejects.toThrow(
+      'cannot safely locate parameters.options.storySort'
+    );
+    expect(fsp.writeFile).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
       'aliased preview factory',
       `const legacy = { parameters: { options: { storySort: { order: ['Intro'] } } } }; export default makePreview({ ...legacy })`,
     ],
@@ -386,6 +402,16 @@ describe('story-sort-to-main', () => {
     expect(writes[1]?.[1]).toContain(`tags = ['test']`);
   });
 
+  it('rejects mixed default and named parameters roots without mutating either one', async () => {
+    await expect(
+      check(
+        `export default { stories: [] }`,
+        `export const parameters = { docs: {} }; export default { parameters: { options: { storySort: { order: ['Intro'] } } } }`
+      )
+    ).rejects.toThrow('exports parameters from more than one configuration root');
+    expect(fsp.writeFile).not.toHaveBeenCalled();
+  });
+
   it('does not write during a dry run', async () => {
     await run(
       `export default { stories: [] }`,
@@ -403,6 +429,29 @@ describe('story-sort-to-main', () => {
         `export default { parameters: { options: { storySort: { order: ['Legacy'] } } } }`
       )
     ).rejects.toThrow('Both main and preview define storySort');
+    expect(fsp.writeFile).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['method', `export default { stories: [], storySort(a, b) { return 0 } }`],
+    ['getter', `export default { stories: [], get storySort() { return existingSort } }`],
+  ])('rejects a main storySort %s conflict before writing', async (_name, main) => {
+    await expect(
+      check(
+        main,
+        `export default { parameters: { options: { storySort: { order: ['Legacy'] } } } }`
+      )
+    ).rejects.toThrow('Both main and preview define storySort');
+    expect(fsp.writeFile).not.toHaveBeenCalled();
+  });
+
+  it('rejects an unsupported bracket CommonJS main export before writing', async () => {
+    await expect(
+      check(
+        `module['exports'] = { stories: [] }`,
+        `export default { parameters: { options: { storySort: { order: ['Legacy'] } } } }`
+      )
+    ).rejects.toThrow('uses an unsupported main configuration export');
     expect(fsp.writeFile).not.toHaveBeenCalled();
   });
 

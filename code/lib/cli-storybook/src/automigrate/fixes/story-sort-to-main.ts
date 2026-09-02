@@ -93,12 +93,13 @@ const findPathValues = (
   config: ConfigFile,
   node: t.Expression,
   path: string[],
-  seen = new Set<string>()
+  seen = new Set<string>(),
+  followCalls = false
 ): t.Node[] => {
   const expression = unwrapTypeScriptExpression(node);
-  const configFactoryArgument = findConfigFactoryArgument(expression);
+  const configFactoryArgument = followCalls ? findConfigFactoryArgument(expression) : undefined;
   if (configFactoryArgument) {
-    return findPathValues(config, configFactoryArgument, path, seen);
+    return findPathValues(config, configFactoryArgument, path, seen, followCalls);
   }
   if (t.isIdentifier(expression)) {
     if (seen.has(expression.name)) {
@@ -106,7 +107,13 @@ const findPathValues = (
     }
     const initialization = findVariableInitialization(config, expression.name);
     return initialization
-      ? findPathValues(config, initialization, path, new Set(seen).add(expression.name))
+      ? findPathValues(
+          config,
+          initialization,
+          path,
+          new Set(seen).add(expression.name),
+          followCalls
+        )
       : [];
   }
   if (path.length === 0) {
@@ -119,15 +126,17 @@ const findPathValues = (
   const [field, ...rest] = path;
   return expression.properties.flatMap((property) => {
     if (t.isSpreadElement(property) && t.isExpression(property.argument)) {
-      return findPathValues(config, property.argument, path, seen);
+      return findPathValues(config, property.argument, path, seen, followCalls);
     }
     if (t.isObjectProperty(property) && t.isExpression(property.value)) {
       const key = staticPropertyKey(property);
       if (key === field) {
-        return findPathValues(config, property.value, rest, seen);
+        return findPathValues(config, property.value, rest, seen, followCalls);
       }
       if (property.computed && key === undefined) {
-        return rest.length === 0 ? [property] : findPathValues(config, property.value, rest, seen);
+        return rest.length === 0
+          ? [property]
+          : findPathValues(config, property.value, rest, seen, followCalls);
       }
     }
     if (
@@ -147,6 +156,25 @@ const isModuleExports = (node: t.Node): node is t.MemberExpression =>
   node.object.name === 'module' &&
   ((!node.computed && t.isIdentifier(node.property) && node.property.name === 'exports') ||
     (node.computed && t.isStringLiteral(node.property) && node.property.value === 'exports'));
+
+const isWritableModuleExports = (node: t.Node): node is t.MemberExpression =>
+  t.isMemberExpression(node) &&
+  !node.computed &&
+  t.isIdentifier(node.object) &&
+  node.object.name === 'module' &&
+  t.isIdentifier(node.property) &&
+  node.property.name === 'exports';
+
+const isCommonJsExportReference = (node: t.Node): boolean => {
+  if (t.isIdentifier(node)) {
+    return node.name === 'exports';
+  }
+  if (!t.isMemberExpression(node)) {
+    return false;
+  }
+  const object = node.object;
+  return isModuleExports(node) || isCommonJsExportReference(object);
+};
 
 const findLegacyStorySort = (config: ConfigFile) =>
   config._ast.program.body.flatMap((statement) => {
@@ -194,6 +222,24 @@ const findLegacyStorySort = (config: ConfigFile) =>
     return [];
   });
 
+const findCallWrappedLegacyStorySort = (config: ConfigFile) =>
+  config._ast.program.body.flatMap((statement) => {
+    if (
+      !t.isExportDefaultDeclaration(statement) ||
+      !t.isExpression(statement.declaration) ||
+      !t.isCallExpression(unwrapTypeScriptExpression(statement.declaration))
+    ) {
+      return [];
+    }
+    return findPathValues(
+      config,
+      statement.declaration,
+      ['parameters', 'options', 'storySort'],
+      new Set<string>(),
+      true
+    );
+  });
+
 const rootContainsSpread = (config: ConfigFile) =>
   config._exportsObject?.properties.some((property) => t.isSpreadElement(property)) ?? false;
 
@@ -216,18 +262,62 @@ const countObjectProperties = (node: t.Node | null | undefined, name: string) =>
       ).length
     : 0;
 
-const pathUsesIndirectValue = (
-  node: t.Expression,
-  path: string[],
-  allowConfigFactory = false
-): boolean => {
-  const expression = unwrapTypeScriptExpression(node);
-  const configFactoryArgument = allowConfigFactory
-    ? findConfigFactoryArgument(expression)
-    : undefined;
-  if (configFactoryArgument) {
-    return pathUsesIndirectValue(configFactoryArgument, path);
+const previewParametersRootCount = (config: ConfigFile) =>
+  config._ast.program.body.reduce((count, statement) => {
+    if (t.isExportDefaultDeclaration(statement) && t.isExpression(statement.declaration)) {
+      const root = unwrapTypeScriptExpression(statement.declaration);
+      return count + countObjectProperties(root, 'parameters');
+    }
+    if (t.isExportNamedDeclaration(statement) && t.isVariableDeclaration(statement.declaration)) {
+      return (
+        count +
+        statement.declaration.declarations.filter(
+          (declarator) => t.isIdentifier(declarator.id) && declarator.id.name === 'parameters'
+        ).length
+      );
+    }
+    if (t.isExportNamedDeclaration(statement)) {
+      return (
+        count +
+        statement.specifiers.filter(
+          (specifier) =>
+            t.isExportSpecifier(specifier) &&
+            t.isIdentifier(specifier.exported) &&
+            specifier.exported.name === 'parameters'
+        ).length
+      );
+    }
+    if (
+      t.isExpressionStatement(statement) &&
+      t.isAssignmentExpression(statement.expression) &&
+      isModuleExports(statement.expression.left) &&
+      t.isExpression(statement.expression.right)
+    ) {
+      return count + countObjectProperties(statement.expression.right, 'parameters');
+    }
+    return count;
+  }, 0);
+
+const mainHasUnsupportedExportShape = (config: ConfigFile) => {
+  if (config.hasDefaultExport && !config._exportsObject) {
+    return true;
   }
+  return config._ast.program.body.some(
+    (statement) =>
+      t.isExpressionStatement(statement) &&
+      t.isAssignmentExpression(statement.expression) &&
+      isCommonJsExportReference(statement.expression.left) &&
+      (!isWritableModuleExports(statement.expression.left) || !config._exportsObject)
+  );
+};
+
+const mainDefinesStorySort = (config: ConfigFile) =>
+  countObjectProperties(config._exportsObject, 'storySort') > 0 ||
+  Object.hasOwn(config._exports, 'storySort') ||
+  Object.hasOwn(config._exportDecls, 'storySort');
+
+const pathUsesIndirectValue = (node: t.Expression, path: string[]): boolean => {
+  const expression = unwrapTypeScriptExpression(node);
   if (t.isIdentifier(expression)) {
     return true;
   }
@@ -251,8 +341,7 @@ const previewStorySortPathUsesIndirectValue = (config: ConfigFile) =>
     if (t.isExportDefaultDeclaration(statement) && t.isExpression(statement.declaration)) {
       return (
         findPathValues(config, statement.declaration, ['parameters', 'options', 'storySort'])
-          .length > 0 &&
-        pathUsesIndirectValue(statement.declaration, ['parameters', 'options'], true)
+          .length > 0 && pathUsesIndirectValue(statement.declaration, ['parameters', 'options'])
       );
     }
     if (t.isExportNamedDeclaration(statement) && t.isVariableDeclaration(statement.declaration)) {
@@ -372,8 +461,9 @@ export const storySortToMain: Fix<StorySortToMainOptions> = {
       | t.Expression
       | undefined;
     const legacyStorySort = findLegacyStorySort(previewConfig);
+    const callWrappedLegacyStorySort = findCallWrappedLegacyStorySort(previewConfig);
 
-    if (!storySortNode && legacyStorySort.length === 0) {
+    if (!storySortNode && legacyStorySort.length === 0 && callWrappedLegacyStorySort.length === 0) {
       return null;
     }
     const duplicatePathKey = duplicatePreviewStorySortPathKey(previewConfig);
@@ -387,8 +477,14 @@ export const storySortToMain: Fix<StorySortToMainOptions> = {
         ${previewConfigPath} defines parameters.options.storySort more than once. Reconcile the values manually, keep the effective storySort as top-level storySort in ${mainConfigPath}, and remove all preview storySort properties.
       `);
     }
+    if (previewParametersRootCount(previewConfig) > 1) {
+      throw new Error(dedent`
+        ${previewConfigPath} exports parameters from more than one configuration root. Consolidate the preview parameters manually, move storySort to top-level storySort in ${mainConfigPath}, and remove all preview storySort properties.
+      `);
+    }
     if (
       !storySortNode ||
+      legacyStorySort.length === 0 ||
       previewStorySortPathContainsIndirectProperty(previewConfig) ||
       previewStorySortPathUsesIndirectValue(previewConfig)
     ) {
@@ -401,7 +497,12 @@ export const storySortToMain: Fix<StorySortToMainOptions> = {
         Storybook cannot safely add storySort because the root of ${mainConfigPath} main config contains a spread. Add top-level storySort manually and remove parameters.options.storySort from ${previewConfigPath}.
       `);
     }
-    if (mainConfig.getFieldNode(['storySort'])) {
+    if (mainHasUnsupportedExportShape(mainConfig)) {
+      throw new Error(dedent`
+        Storybook cannot safely add storySort because ${mainConfigPath} uses an unsupported main configuration export. Convert it to a writable object default export or named ESM exports, then move storySort manually and remove parameters.options.storySort from ${previewConfigPath}.
+      `);
+    }
+    if (mainDefinesStorySort(mainConfig)) {
       throw new Error(dedent`
         Both main and preview define storySort. Reconcile the values manually, keep the final value as top-level storySort in ${mainConfigPath}, and remove parameters.options.storySort from ${previewConfigPath}.
       `);

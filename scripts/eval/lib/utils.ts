@@ -1,3 +1,4 @@
+import { visibleLength } from '../../utils/ansi.ts';
 import { existsSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import pc from 'picocolors';
@@ -131,6 +132,23 @@ export function formatReadableUtcTimestamp(timestamp: string) {
   const minute = `${date.getUTCMinutes()}`.padStart(2, '0');
   const second = `${date.getUTCSeconds()}`.padStart(2, '0');
   return `${month} ${day} ${year} ${hour}:${minute}:${second} UTC`;
+}
+
+/** Format data as an aligned table with automatic column widths. */
+export function formatTable(headers: string[], rows: string[][]): string {
+  const widths = headers.map((h, i) =>
+    Math.max(h.length, ...rows.map((r) => visibleLength(r[i] ?? '')))
+  );
+
+  const pad = (str: string, width: number) =>
+    str + ' '.repeat(Math.max(0, width - visibleLength(str)));
+
+  const sep = ' | ';
+  return [
+    headers.map((h, i) => pad(h, widths[i])).join(sep),
+    widths.map((w) => '-'.repeat(w)).join('-+-'),
+    ...rows.map((row) => row.map((cell, i) => pad(cell, widths[i])).join(sep)),
+  ].join('\n');
 }
 
 /**

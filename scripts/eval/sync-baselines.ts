@@ -1,4 +1,3 @@
-import { formatPlainTable } from '../utils/table.ts';
 import { existsSync } from 'node:fs';
 import { mkdir, rm, writeFile } from 'node:fs/promises';
 import { dirname, join, relative, resolve } from 'node:path';
@@ -10,14 +9,15 @@ import { BASELINE_STORYBOOK_FILES } from './lib/baseline-template-files.ts';
 import { ensureSourceClone } from './lib/prepare-trial.ts';
 import { PROJECTS, type Project } from './lib/projects.ts';
 import {
+  NODE_EVAL_SYNC_BASELINES_SCRIPT,
+  REPOS_DIR,
   createLogger,
   formatHelp,
+  formatTable,
   getEvalResultsDir,
   getEvalSupportDir,
   getProjectPath,
   getStorybookDir,
-  NODE_EVAL_SYNC_BASELINES_SCRIPT,
-  REPOS_DIR,
 } from './lib/utils.ts';
 
 const COMMIT_MESSAGE = 'Eval: sync .storybook baseline';
@@ -122,7 +122,7 @@ export async function syncBaselines(options: SyncBaselinesOptions = {}) {
   }
 
   log(
-    `\n${formatPlainTable(
+    `\n${formatTable(
       ['Project', 'Changed', 'Commit'],
       results.map((result) => [
         result.project,

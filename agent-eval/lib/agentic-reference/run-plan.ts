@@ -8,7 +8,7 @@
 // saveResults and discards every completed sibling run in the same
 // experiment. Slicing the matrix into batches of at most `parallelMax`
 // sandboxes each, with their own saveResults, caps that loss to one batch.
-import { stripAnsi } from '@storybook/scripts-utils/colors.ts';
+import { stripAnsi } from '@storybook/scripts-utils/ansi.ts';
 import { matchesAnySelector, resolveEvalSelection } from './selection.ts';
 import { PLAIN_STYLE, type OutputStyle } from './style.ts';
 

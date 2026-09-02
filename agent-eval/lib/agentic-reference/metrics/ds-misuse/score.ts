@@ -1,5 +1,5 @@
 // Folding a judgement into the numbers that reach a comparison table.
-import { mean, round } from '@storybook/scripts-utils/math.ts';
+import { mean, round } from '../../../utils/math.ts';
 
 import type { DsMisuseSummary, JudgedNode } from './types.ts';
 

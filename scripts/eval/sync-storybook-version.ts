@@ -1,4 +1,3 @@
-import { formatPlainTable } from '../utils/table.ts';
 import { join, relative, resolve } from 'node:path';
 import { parseArgs } from 'node:util';
 import pc from 'picocolors';
@@ -8,12 +7,13 @@ import { installDeps } from './lib/package-manager.ts';
 import { ensureSourceClone } from './lib/prepare-trial.ts';
 import { PROJECTS, type Project } from './lib/projects.ts';
 import {
-  createLogger,
-  formatHelp,
-  getProjectPath,
-  getStorybookDir,
   NODE_EVAL_SYNC_STORYBOOK_VERSION_SCRIPT,
   REPOS_DIR,
+  createLogger,
+  formatHelp,
+  formatTable,
+  getProjectPath,
+  getStorybookDir,
   toPosixPath,
 } from './lib/utils.ts';
 
@@ -198,7 +198,7 @@ export async function syncStorybookVersion(
   }
 
   log(
-    `\n${formatPlainTable(
+    `\n${formatTable(
       ['Project', 'Changed', 'Commit'],
       results.map((r) => [r.project, r.changed ? 'yes' : 'no', r.commitSha?.slice(0, 8) ?? '-'])
     )}`

@@ -1,3 +1,6 @@
+## 11.0.0-alpha.0
+
+
 ## 10.6.0-beta.3
 
 - CLI: Drop `skills get`/`skills list`, add `skills --all` - [#36127](https://github.com/storybookjs/storybook/pull/36127), thanks @kasperpeulen!

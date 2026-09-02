@@ -81,6 +81,28 @@ describe('ConfigFile', () => {
         })
       ).toHaveLength(0);
     });
+
+    it('finds binding-safe method calls on destructured CommonJS imports', () => {
+      const config = loadConfig(dedent`
+        const { addons: managerAddons } = require('storybook/manager-api');
+
+        managerAddons.setConfig({ showNav: false });
+
+        function configure(managerAddons) {
+          managerAddons.setConfig({ showPanel: false });
+        }
+      `).parse();
+
+      const calls = config.findNamedImportMethodCalls({
+        importedName: 'addons',
+        methodName: 'setConfig',
+        moduleNames: ['storybook/manager-api'],
+      });
+
+      expect(calls.map((call) => babelPrint(call))).toEqual([
+        'managerAddons.setConfig({ showNav: false })',
+      ]);
+    });
   });
 
   describe('getField', () => {

@@ -54,7 +54,7 @@ describe('transformSetConfigLayout', () => {
     expect(transformed).not.toContain('\n  enableShortcuts:');
   });
 
-  it('replaces nested options with their top-level values', () => {
+  it('keeps nested options when the same top-level options exist', () => {
     const source = dedent`
       import { addons as managerAddons } from '@storybook/manager-api';
 
@@ -70,8 +70,8 @@ describe('transformSetConfigLayout', () => {
       "import { addons as managerAddons } from '@storybook/manager-api';
 
       managerAddons.setConfig({
-        layout: { showNav: true, showPanel: false },
-        ui: { enableShortcuts: false }
+        layout: { showNav: false, showPanel: false },
+        ui: { enableShortcuts: true }
       });"
     `);
   });
@@ -144,7 +144,7 @@ describe('transformSetConfigLayout', () => {
     `);
   });
 
-  it('replaces a nested recent visible sizes value with its top-level value', () => {
+  it('deep-merges recent visible sizes with nested values taking precedence', () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({
@@ -156,9 +156,64 @@ describe('transformSetConfigLayout', () => {
     expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
       addons.setConfig({
-        layout: { recentVisibleSizes: { navSize: 200, bottomPanelHeight: 300 } }
+        layout: { recentVisibleSizes: {
+          bottomPanelHeight: 300,
+          navSize: 100
+        } }
       });"
     `);
+  });
+
+  it('migrates a destructured CommonJS import', () => {
+    const source = dedent`
+      const { addons } = require('storybook/manager-api');
+      addons.setConfig({ showNav: false });
+    `;
+
+    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+      "const { addons } = require('storybook/manager-api');
+      addons.setConfig({ layout: {
+        showNav: false
+      } });"
+    `);
+  });
+
+  it('reports manual guidance when multiple setConfig calls can interact', () => {
+    const source = dedent`
+      import { addons } from 'storybook/manager-api';
+      addons.setConfig({ layout: { showNav: false } });
+      addons.setConfig({ showPanel: false });
+    `;
+
+    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
+      'the file calls addons.setConfig more than once, so their configuration may interact'
+    );
+  });
+
+  it('reports manual guidance when grouping changes dynamic evaluation order', () => {
+    const source = dedent`
+      import { addons } from 'storybook/manager-api';
+      addons.setConfig({
+        showNav: record('showNav'),
+        theme: record('theme'),
+        panelPosition: record('panelPosition'),
+      });
+    `;
+
+    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
+      'moving the layout options could change their evaluation order'
+    );
+  });
+
+  it('reports manual guidance when moving a dynamic value into an existing group', () => {
+    const source = dedent`
+      import { addons } from 'storybook/manager-api';
+      addons.setConfig({ showNav: readPreference(), theme, layout: {} });
+    `;
+
+    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
+      'moving the layout option could change its evaluation order'
+    );
   });
 
   it('does not change unrelated setConfig calls', () => {

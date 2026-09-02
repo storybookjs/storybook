@@ -1,4 +1,4 @@
-import { MISUSE_FACET_IDS } from '@storybook/agent-eval-utils';
+import { MISUSE_FACET_IDS } from '../../facets.ts';
 import { describe, expect, it } from 'vitest';
 
 import { JUDGE_OUTPUT_SCHEMA } from './types.ts';

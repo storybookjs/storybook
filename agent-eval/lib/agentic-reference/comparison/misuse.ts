@@ -14,7 +14,7 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { join, relative, sep } from 'node:path';
 
-import { MISUSE_FACETS, UNCATEGORISED } from '@storybook/agent-eval-utils';
+import { MISUSE_FACETS, UNCATEGORISED } from '../facets.ts';
 
 import { formatStatusTable } from './commands.ts';
 import { dsDocsRefLabel } from '../metrics/ds-misuse/ds-docs.ts';

@@ -14,7 +14,6 @@ const shouldRunStorybookTests = !(process.env.CI && process.platform === 'win32'
 
 const projects = [
   'agent-eval/vitest.config.ts',
-  'agent-eval/utils/vitest.config.ts',
   'code/addons/*/vitest.config.ts',
   'code/frameworks/*/vitest.config.ts',
   'code/lib/*/vitest.config.ts',

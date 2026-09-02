@@ -3,7 +3,7 @@
 // The schema is handed to the Messages API as output_config.format, so the model
 // cannot return a shape this file does not describe. That is why there is no
 // defensive parsing anywhere downstream.
-import { MISUSE_FACET_IDS, type FacetId } from '@storybook/agent-eval-utils';
+import { MISUSE_FACET_IDS, type FacetId } from '../../facets.ts';
 import type { NodeRecord } from '../ds-coverage/types.ts';
 
 /** 1 right, 0.5 ambiguous or debatable, 0 wrong. */

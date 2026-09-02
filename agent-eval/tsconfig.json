@@ -15,8 +15,7 @@
     "paths": {
       "#lib/*": ["./lib/*.ts"],
       "#test-utils": ["./lib/test-utils.ts"],
-      "@storybook/mcp": ["../code/lib/mcp/src/index.ts"],
-      "@storybook/agent-eval-utils": ["./utils/src/index.ts"]
+      "@storybook/mcp": ["../code/lib/mcp/src/index.ts"]
     },
     "resolveJsonModule": true,
     "skipLibCheck": true,

@@ -8,7 +8,7 @@
 // every request and turn a ~$0.10 read back into a ~$1 write.
 import { readFileSync } from 'node:fs';
 
-import { MISUSE_FACETS } from '@storybook/agent-eval-utils';
+import { MISUSE_FACETS } from '../../facets.ts';
 
 import { JUDGE_OUTPUT_SCHEMA } from './types.ts';
 

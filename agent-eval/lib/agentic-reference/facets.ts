@@ -1,11 +1,8 @@
-// The documentation facet taxonomy shared by the eval pipeline and the design
-// system repos' experiment:freeze tooling.
-//
-// Baseline vocabulary: droppy-ds classification-labels.jsonc at the pinned sha
-// dfe7e43eeb2ff25c95897e55e86a976ef3f7cb7d. Descriptions travel to report
-// tooltips, so keep them one short line each. base-ui's divergent leaves
-// (mdx.testing, story.base, story.infra) are added on its side via
-// extendTaxonomy, not here.
+// The documentation facet taxonomy the eval pipeline judges and reports
+// against. Baseline vocabulary: droppy-ds classification-labels.jsonc at the
+// pinned sha dfe7e43eeb2ff25c95897e55e86a976ef3f7cb7d. Descriptions travel to
+// report tooltips, so keep them one short line each. base-ui's divergent
+// leaves (mdx.testing, story.base, story.infra) live on its side, not here.
 export const FACET_TAXONOMY = {
   // JSDoc in the component sources under src/components
   'source-jsdoc': {
@@ -60,47 +57,11 @@ export type FacetId = {
   [C in FacetCategory]: `${C}.${keyof (typeof FACET_TAXONOMY)[C] & string}`;
 }[FacetCategory];
 
-/** Joins a category and leaf into a qualified id, e.g. `qualify('mdx', 'do-dont')` → `mdx.do-dont`. */
-export function qualify<C extends FacetCategory>(
-  category: C,
-  leaf: keyof (typeof FACET_TAXONOMY)[C] & string
-): FacetId;
-export function qualify(category: string, leaf: string): string;
-export function qualify(category: string, leaf: string): string {
-  return `${category}.${leaf}`;
-}
-
-export function parseFacetId(id: string): { category: string; leaf: string } | null {
-  const dot = id.indexOf('.');
-  if (dot === -1) return null;
-  return { category: id.slice(0, dot), leaf: id.slice(dot + 1) };
-}
-
-export function isFacetId(value: string): value is FacetId {
-  const parsed = parseFacetId(value);
-  if (parsed === null) return false;
-  const leaves = (FACET_TAXONOMY as Record<string, Record<string, string>>)[parsed.category];
-  return leaves !== undefined && parsed.leaf in leaves;
-}
-
 export function describeFacet(id: FacetId): string {
-  const parsed = parseFacetId(id)!;
-  return (FACET_TAXONOMY as Record<string, Record<string, string>>)[parsed.category]![parsed.leaf]!;
-}
-
-/**
- * A taxonomy with per-repo additions layered on. Returns plain records (the
- * literal types cannot survive a merge), never mutates the base.
- */
-export function extendTaxonomy(
-  base: Record<string, Record<string, string>>,
-  extra: Record<string, Record<string, string>>
-): Record<string, Record<string, string>> {
-  const merged: Record<string, Record<string, string>> = {};
-  for (const category of new Set([...Object.keys(base), ...Object.keys(extra)])) {
-    merged[category] = { ...base[category], ...extra[category] };
-  }
-  return merged;
+  const dot = id.indexOf('.');
+  return (FACET_TAXONOMY as Record<string, Record<string, string>>)[id.slice(0, dot)]![
+    id.slice(dot + 1)
+  ]!;
 }
 
 const MISUSE_CATEGORIES: readonly FacetCategory[] = ['mdx', 'general'];

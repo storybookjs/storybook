@@ -14,6 +14,12 @@ import { dedent } from 'ts-dedent';
 
 import type { PrintResultType } from './PrintResultType.ts';
 
+export interface FindNamedImportMethodCallsOptions {
+  importedName: string;
+  methodName: string;
+  moduleNames: Iterable<string>;
+}
+
 const getCsfParsingErrorMessage = ({
   expectedType,
   foundType,
@@ -709,6 +715,64 @@ export class ConfigFile {
 
   getBodyDeclarations(): t.Statement[] {
     return this._ast.program.body;
+  }
+
+  /** Find direct method calls on an ESM named import from one of the specified modules. */
+  findNamedImportMethodCalls({
+    importedName,
+    methodName,
+    moduleNames,
+  }: FindNamedImportMethodCallsOptions): t.CallExpression[] {
+    const modules = new Set(moduleNames);
+    const imports = new Map<string, t.ImportSpecifier>();
+
+    traverse(this._ast, {
+      ImportDeclaration(path) {
+        if (!modules.has(path.node.source.value) || path.node.importKind === 'type') {
+          return;
+        }
+
+        for (const specifier of path.node.specifiers) {
+          if (
+            t.isImportSpecifier(specifier) &&
+            specifier.importKind !== 'type' &&
+            t.isIdentifier(specifier.imported, { name: importedName })
+          ) {
+            imports.set(specifier.local.name, specifier);
+          }
+        }
+      },
+    });
+
+    const calls: t.CallExpression[] = [];
+
+    traverse(this._ast, {
+      CallExpression(path) {
+        const { callee } = path.node;
+        if (
+          !t.isMemberExpression(callee) ||
+          !t.isIdentifier(callee.object) ||
+          !(
+            (t.isIdentifier(callee.property) &&
+              !callee.computed &&
+              callee.property.name === methodName) ||
+            (t.isStringLiteral(callee.property) && callee.property.value === methodName)
+          )
+        ) {
+          return;
+        }
+
+        const importSpecifier = imports.get(callee.object.name);
+        if (
+          importSpecifier &&
+          path.scope.getBinding(callee.object.name)?.path.node === importSpecifier
+        ) {
+          calls.push(path.node);
+        }
+      },
+    });
+
+    return calls;
   }
 
   setBodyDeclaration(declaration: t.Declaration) {

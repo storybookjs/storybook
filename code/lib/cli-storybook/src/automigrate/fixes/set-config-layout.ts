@@ -1,10 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { findConfigFile, formatFileContent, HandledError } from 'storybook/internal/common';
-import { traverse, types as t, unwrapTSExpression } from 'storybook/internal/babel';
+import { types as t, unwrapTSExpression } from 'storybook/internal/babel';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
-
-import type { NodePath } from 'storybook/internal/babel';
 
 import type { Fix } from '../types.ts';
 
@@ -39,16 +37,6 @@ const getStaticPropertyName = (property: t.ObjectMember | t.SpreadElement) => {
   }
   if (t.isStringLiteral(property.key)) {
     return property.key.value;
-  }
-  return null;
-};
-
-const getStaticMemberName = (member: t.MemberExpression) => {
-  if (t.isIdentifier(member.property) && !member.computed) {
-    return member.property.name;
-  }
-  if (t.isStringLiteral(member.property)) {
-    return member.property.value;
   }
   return null;
 };
@@ -225,69 +213,36 @@ export const transformSetConfigLayout = (
   managerConfigPath = '.storybook/manager.*'
 ) => {
   const managerConfig = loadConfig(source).parse();
-  const ast = t.file(t.program(managerConfig.getBodyDeclarations()));
-  const addonsImports = new Map<string, t.ImportSpecifier>();
-
-  traverse(ast, {
-    ImportDeclaration(path) {
-      if (!managerApiPackages.has(path.node.source.value)) {
-        return;
-      }
-      for (const specifier of path.node.specifiers) {
-        if (
-          t.isImportSpecifier(specifier) &&
-          t.isIdentifier(specifier.imported, { name: 'addons' })
-        ) {
-          addonsImports.set(specifier.local.name, specifier);
-        }
-      }
-    },
-  });
-
   let changed = false;
-  traverse(ast, {
-    CallExpression(path: NodePath<t.CallExpression>) {
-      const { callee } = path.node;
-      if (
-        !t.isMemberExpression(callee) ||
-        !t.isIdentifier(callee.object) ||
-        getStaticMemberName(callee) !== 'setConfig'
-      ) {
-        return;
-      }
-
-      const importedSpecifier = addonsImports.get(callee.object.name);
-      if (
-        !importedSpecifier ||
-        path.scope.getBinding(callee.object.name)?.path.node !== importedSpecifier
-      ) {
-        return;
-      }
-
-      const configArgument = path.node.arguments[0];
-      if (!configArgument) {
-        return;
-      }
-      if (!t.isExpression(configArgument)) {
-        throw migrationError(
-          managerConfigPath,
-          configArgument,
-          'the configuration argument is not an object literal'
-        );
-      }
-      const config = unwrapTypeExpression(configArgument);
-      if (!t.isObjectExpression(config)) {
-        throw migrationError(
-          managerConfigPath,
-          config,
-          'the configuration argument is not an object literal'
-        );
-      }
-      if (migrateConfigObject(config, managerConfigPath)) {
-        changed = true;
-      }
-    },
+  const calls = managerConfig.findNamedImportMethodCalls({
+    importedName: 'addons',
+    methodName: 'setConfig',
+    moduleNames: managerApiPackages,
   });
+  for (const call of calls) {
+    const configArgument = call.arguments[0];
+    if (!configArgument) {
+      continue;
+    }
+    if (!t.isExpression(configArgument)) {
+      throw migrationError(
+        managerConfigPath,
+        configArgument,
+        'the configuration argument is not an object literal'
+      );
+    }
+    const config = unwrapTypeExpression(configArgument);
+    if (!t.isObjectExpression(config)) {
+      throw migrationError(
+        managerConfigPath,
+        config,
+        'the configuration argument is not an object literal'
+      );
+    }
+    if (migrateConfigObject(config, managerConfigPath)) {
+      changed = true;
+    }
+  }
 
   return changed ? formatConfig(managerConfig) : source;
 };

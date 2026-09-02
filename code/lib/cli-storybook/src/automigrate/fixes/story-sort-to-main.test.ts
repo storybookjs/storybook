@@ -133,6 +133,239 @@ describe('story-sort-to-main', () => {
     expect(fsp.writeFile).not.toHaveBeenCalled();
   });
 
+  it('rejects a storySort reached through a definePreview spread', async () => {
+    await expect(
+      check(
+        `export default { stories: [] }`,
+        `const legacy = { parameters: { options: { storySort: { order: ['Intro'] } } } }; export default definePreview({ ...legacy })`
+      )
+    ).rejects.toThrow('cannot safely locate parameters.options.storySort');
+    expect(fsp.writeFile).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'aliased preview factory',
+      `const legacy = { parameters: { options: { storySort: { order: ['Intro'] } } } }; export default makePreview({ ...legacy })`,
+    ],
+    [
+      'namespace preview factory',
+      `const legacy = { parameters: { options: { storySort: { order: ['Intro'] } } } }; export default preview.define({ ...legacy })`,
+    ],
+  ])('rejects a storySort reached through an %s spread', async (_name, preview) => {
+    await expect(check(`export default { stories: [] }`, preview)).rejects.toThrow(
+      'cannot safely locate parameters.options.storySort'
+    );
+    expect(fsp.writeFile).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'root export',
+      `const config = { parameters: { options: { storySort: { order: ['Intro'] } } } }; export default config`,
+    ],
+    [
+      'parameters property',
+      `const parameters = { options: { storySort: { order: ['Intro'] } } }; export default { parameters }`,
+    ],
+    [
+      'options property',
+      `const options = { storySort: { order: ['Intro'] } }; export default { parameters: { options } }`,
+    ],
+  ])('rejects an indirect preview %s', async (_name, preview) => {
+    await expect(check(`export default { stories: [] }`, preview)).rejects.toThrow(
+      'cannot safely locate parameters.options.storySort'
+    );
+    expect(fsp.writeFile).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'named export specifier',
+      `const parameters = { options: { storySort: { order: ['Intro'] } } }; export { parameters }`,
+    ],
+    [
+      'CommonJS root',
+      `const config = { parameters: { options: { storySort: { order: ['Intro'] } } } }; module.exports = config`,
+    ],
+    [
+      'CommonJS bracket root',
+      `const config = { parameters: { options: { storySort: { order: ['Intro'] } } } }; module['exports'] = config`,
+    ],
+  ])('rejects an indirect %s', async (_name, preview) => {
+    await expect(check(`export default { stories: [] }`, preview)).rejects.toThrow(
+      'cannot safely locate parameters.options.storySort'
+    );
+    expect(fsp.writeFile).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'root computed property',
+      `export default { [key]: legacy, parameters: { options: { storySort: { order: ['Intro'] } } } }`,
+    ],
+    [
+      'parameters computed property',
+      `export default { parameters: { [key]: legacy, options: { storySort: { order: ['Intro'] } } } }`,
+    ],
+    [
+      'options computed property',
+      `export default { parameters: { options: { [key]: legacy, storySort: { order: ['Intro'] } } } }`,
+    ],
+  ])('rejects a preview %s', async (_name, preview) => {
+    await expect(check(`export default { stories: [] }`, preview)).rejects.toThrow(
+      /computed property|defines parameters\.options\.storySort more than once/
+    );
+    expect(fsp.writeFile).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'computed parameters key',
+      `export default { [key]: { options: { storySort: { order: ['Intro'] } } } }`,
+    ],
+    [
+      'computed options key',
+      `export default { parameters: { [key]: { storySort: { order: ['Intro'] } } } }`,
+    ],
+    [
+      'computed storySort key',
+      `export default { parameters: { options: { [key]: { order: ['Intro'] } } } }`,
+    ],
+  ])('rejects a legacy value behind a %s', async (_name, preview) => {
+    await expect(check(`export default { stories: [] }`, preview)).rejects.toThrow(
+      'cannot safely locate parameters.options.storySort'
+    );
+    expect(fsp.writeFile).not.toHaveBeenCalled();
+  });
+
+  it('rejects storySort declared through both default and named exports', async () => {
+    await expect(
+      check(
+        `export default { stories: [] }`,
+        `export const parameters = { options: { storySort: { order: ['Named'] } } }; export default { parameters: { options: { storySort: { order: ['Default'] } } } }`
+      )
+    ).rejects.toThrow('defines parameters.options.storySort more than once');
+    expect(fsp.writeFile).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'storySort method',
+      `export default { parameters: { options: { storySort(a, b) { return 0 } } } }`,
+    ],
+    [
+      'storySort getter',
+      `export default { parameters: { options: { get storySort() { return legacy } } } }`,
+    ],
+    [
+      'options getter',
+      `export default { parameters: { get options() { return { storySort: { order: ['Intro'] } } } } }`,
+    ],
+    [
+      'parameters getter',
+      `export default { get parameters() { return { options: { storySort: { order: ['Intro'] } } } } }`,
+    ],
+    [
+      'parameters getter with control flow',
+      `export default { get parameters() { if (enabled) return { options: { storySort: { order: ['Intro'] } } }; return {} } }`,
+    ],
+    [
+      'computed getter',
+      `export default { get [key]() { return { options: { storySort: { order: ['Intro'] } } } } }`,
+    ],
+  ])('rejects a preview %s', async (_name, preview) => {
+    await expect(check(`export default { stories: [] }`, preview)).rejects.toThrow(
+      'cannot safely locate parameters.options.storySort'
+    );
+    expect(fsp.writeFile).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'parameters when storySort is in the final declaration',
+      'parameters',
+      `export default { parameters: { docs: {} }, parameters: { options: { storySort: { order: ['Intro'] } } } }`,
+    ],
+    [
+      'parameters when storySort is in the first declaration',
+      'parameters',
+      `export default { parameters: { options: { storySort: { order: ['Intro'] } } }, parameters: { docs: {} } }`,
+    ],
+    [
+      'options when storySort is in the first declaration',
+      'options',
+      `export default { parameters: { options: { storySort: { order: ['Intro'] } }, options: { showPanel: false } } }`,
+    ],
+    [
+      'options when storySort is in the final declaration',
+      'options',
+      `export default { parameters: { options: { showPanel: false }, options: { storySort: { order: ['Intro'] } } } }`,
+    ],
+    [
+      'computed parameters',
+      'parameters',
+      `export default { ['parameters']: { options: { storySort: { order: ['First'] } } }, parameters: { options: { storySort: { order: ['Second'] } } } }`,
+    ],
+    [
+      'parameters accessor',
+      'parameters',
+      `export default { get parameters() { return legacy }, parameters: { options: { storySort: { order: ['Intro'] } } } }`,
+    ],
+    [
+      'computed options',
+      'options',
+      `export default { parameters: { ['options']: { storySort: { order: ['First'] } }, options: { storySort: { order: ['Second'] } } } }`,
+    ],
+    [
+      'options accessor',
+      'options',
+      `export default { parameters: { get options() { return legacy }, options: { storySort: { order: ['Intro'] } } } }`,
+    ],
+    [
+      'computed storySort',
+      'storySort',
+      `export default { parameters: { options: { storySort: { order: ['First'] }, ['storySort']: { order: ['Second'] } } } }`,
+    ],
+  ])('rejects duplicate preview %s', async (_name, property, preview) => {
+    await expect(check(`export default { stories: [] }`, preview)).rejects.toThrow(
+      `defines ${property} more than once`
+    );
+    expect(fsp.writeFile).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    [
+      'root spread before parameters',
+      `export default { ...shared, parameters: { options: { storySort: { order: ['Intro'] } } } }`,
+    ],
+    [
+      'root spread after parameters',
+      `export default { parameters: { options: { storySort: { order: ['Intro'] } } }, ...shared }`,
+    ],
+    [
+      'parameters spread before options',
+      `export default { parameters: { ...shared, options: { storySort: { order: ['Intro'] } } } }`,
+    ],
+    [
+      'parameters spread after options',
+      `export default { parameters: { options: { storySort: { order: ['Intro'] } }, ...shared } }`,
+    ],
+    [
+      'options spread before storySort',
+      `export default { parameters: { options: { ...shared, storySort: { order: ['Intro'] } } } }`,
+    ],
+    [
+      'options spread after storySort',
+      `export default { parameters: { options: { storySort: { order: ['Intro'] }, ...shared } } }`,
+    ],
+  ])('rejects a preview %s', async (_name, preview) => {
+    await expect(check(`export default { stories: [] }`, preview)).rejects.toThrow(
+      'cannot safely locate parameters.options.storySort'
+    );
+    expect(fsp.writeFile).not.toHaveBeenCalled();
+  });
+
   it('rejects an unresolved spread in main before adding storySort', async () => {
     await expect(
       check(

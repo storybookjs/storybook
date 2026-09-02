@@ -94,7 +94,7 @@ interface DirectoryMapping {
 }
 
 export interface Presets {
-  get?<T extends keyof StorybookConfigRaw>(extension: T): StorybookConfigRaw[T];
+  get?<T extends keyof StorybookConfigRaw>(extension: T): StorybookConfigRaw[T] | undefined;
   apply(
     extension: 'typescript',
     config: TypescriptOptions,

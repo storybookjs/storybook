@@ -58,11 +58,6 @@ const propertyKey = (property: t.ObjectProperty): string | undefined => {
   return undefined;
 };
 
-const countProperties = (config: ConfigFile, path: string[], name: string) => {
-  const properties = config.getFieldProperties(path);
-  return properties?.filter((property) => propertyKey(property) === name).length ?? 0;
-};
-
 const findVariableInitialization = (config: ConfigFile, name: string) => {
   for (const statement of config._ast.program.body) {
     const declaration = t.isVariableDeclaration(statement)
@@ -80,13 +75,31 @@ const findVariableInitialization = (config: ConfigFile, name: string) => {
   return undefined;
 };
 
+const findConfigFactoryArgument = (node: t.Expression): t.Expression | undefined => {
+  const expression = unwrapTypeScriptExpression(node);
+  if (!t.isCallExpression(expression)) {
+    return undefined;
+  }
+  if (t.isExpression(expression.arguments[0])) {
+    return expression.arguments[0];
+  }
+  if (t.isMemberExpression(expression.callee) && t.isCallExpression(expression.callee.object)) {
+    return findConfigFactoryArgument(expression.callee.object);
+  }
+  return undefined;
+};
+
 const findPathValues = (
   config: ConfigFile,
   node: t.Expression,
   path: string[],
   seen = new Set<string>()
-): t.Expression[] => {
+): t.Node[] => {
   const expression = unwrapTypeScriptExpression(node);
+  const configFactoryArgument = findConfigFactoryArgument(expression);
+  if (configFactoryArgument) {
+    return findPathValues(config, configFactoryArgument, path, seen);
+  }
   if (t.isIdentifier(expression)) {
     if (seen.has(expression.name)) {
       return [];
@@ -108,16 +121,32 @@ const findPathValues = (
     if (t.isSpreadElement(property) && t.isExpression(property.argument)) {
       return findPathValues(config, property.argument, path, seen);
     }
+    if (t.isObjectProperty(property) && t.isExpression(property.value)) {
+      const key = staticPropertyKey(property);
+      if (key === field) {
+        return findPathValues(config, property.value, rest, seen);
+      }
+      if (property.computed && key === undefined) {
+        return rest.length === 0 ? [property] : findPathValues(config, property.value, rest, seen);
+      }
+    }
     if (
-      t.isObjectProperty(property) &&
-      propertyKey(property) === field &&
-      t.isExpression(property.value)
+      t.isObjectMethod(property) &&
+      (staticPropertyKey(property) === field ||
+        (property.computed && staticPropertyKey(property) === undefined))
     ) {
-      return findPathValues(config, property.value, rest, seen);
+      return [property];
     }
     return [];
   });
 };
+
+const isModuleExports = (node: t.Node): node is t.MemberExpression =>
+  t.isMemberExpression(node) &&
+  t.isIdentifier(node.object) &&
+  node.object.name === 'module' &&
+  ((!node.computed && t.isIdentifier(node.property) && node.property.name === 'exports') ||
+    (node.computed && t.isStringLiteral(node.property) && node.property.value === 'exports'));
 
 const findLegacyStorySort = (config: ConfigFile) =>
   config._ast.program.body.flatMap((statement) => {
@@ -134,11 +163,165 @@ const findLegacyStorySort = (config: ConfigFile) =>
           : []
       );
     }
+    if (t.isExportNamedDeclaration(statement)) {
+      return statement.specifiers.flatMap((specifier) => {
+        if (
+          !t.isExportSpecifier(specifier) ||
+          !t.isIdentifier(specifier.local) ||
+          !t.isIdentifier(specifier.exported) ||
+          specifier.exported.name !== 'parameters'
+        ) {
+          return [];
+        }
+        const initialization = findVariableInitialization(config, specifier.local.name);
+        return initialization
+          ? findPathValues(config, initialization, ['options', 'storySort'])
+          : [];
+      });
+    }
+    if (
+      t.isExpressionStatement(statement) &&
+      t.isAssignmentExpression(statement.expression) &&
+      isModuleExports(statement.expression.left) &&
+      t.isExpression(statement.expression.right)
+    ) {
+      return findPathValues(config, statement.expression.right, [
+        'parameters',
+        'options',
+        'storySort',
+      ]);
+    }
     return [];
   });
 
 const rootContainsSpread = (config: ConfigFile) =>
   config._exportsObject?.properties.some((property) => t.isSpreadElement(property)) ?? false;
+
+const staticPropertyKey = (property: t.ObjectMethod | t.ObjectProperty): string | undefined => {
+  if (t.isIdentifier(property.key) && !property.computed) {
+    return property.key.name;
+  }
+  if (t.isStringLiteral(property.key)) {
+    return property.key.value;
+  }
+  return undefined;
+};
+
+const countObjectProperties = (node: t.Node | null | undefined, name: string) =>
+  t.isObjectExpression(node)
+    ? node.properties.filter(
+        (property) =>
+          (t.isObjectProperty(property) || t.isObjectMethod(property)) &&
+          staticPropertyKey(property) === name
+      ).length
+    : 0;
+
+const pathUsesIndirectValue = (
+  node: t.Expression,
+  path: string[],
+  allowConfigFactory = false
+): boolean => {
+  const expression = unwrapTypeScriptExpression(node);
+  const configFactoryArgument = allowConfigFactory
+    ? findConfigFactoryArgument(expression)
+    : undefined;
+  if (configFactoryArgument) {
+    return pathUsesIndirectValue(configFactoryArgument, path);
+  }
+  if (t.isIdentifier(expression)) {
+    return true;
+  }
+  if (!t.isObjectExpression(expression)) {
+    return true;
+  }
+
+  const [field, ...rest] = path;
+  const values = expression.properties.flatMap((property) =>
+    t.isObjectProperty(property) &&
+    propertyKey(property) === field &&
+    t.isExpression(property.value)
+      ? [property.value]
+      : []
+  );
+  return rest.length > 0 && values.some((value) => pathUsesIndirectValue(value, rest));
+};
+
+const previewStorySortPathUsesIndirectValue = (config: ConfigFile) =>
+  config._ast.program.body.some((statement) => {
+    if (t.isExportDefaultDeclaration(statement) && t.isExpression(statement.declaration)) {
+      return (
+        findPathValues(config, statement.declaration, ['parameters', 'options', 'storySort'])
+          .length > 0 &&
+        pathUsesIndirectValue(statement.declaration, ['parameters', 'options'], true)
+      );
+    }
+    if (t.isExportNamedDeclaration(statement) && t.isVariableDeclaration(statement.declaration)) {
+      return statement.declaration.declarations.some(
+        (declarator) =>
+          t.isIdentifier(declarator.id) &&
+          declarator.id.name === 'parameters' &&
+          declarator.init &&
+          t.isExpression(declarator.init) &&
+          findPathValues(config, declarator.init, ['options', 'storySort']).length > 0 &&
+          pathUsesIndirectValue(declarator.init, ['options'])
+      );
+    }
+    if (t.isExportNamedDeclaration(statement)) {
+      return statement.specifiers.some((specifier) => {
+        if (
+          !t.isExportSpecifier(specifier) ||
+          !t.isIdentifier(specifier.local) ||
+          !t.isIdentifier(specifier.exported) ||
+          specifier.exported.name !== 'parameters'
+        ) {
+          return false;
+        }
+        const initialization = findVariableInitialization(config, specifier.local.name);
+        return (
+          initialization !== undefined &&
+          findPathValues(config, initialization, ['options', 'storySort']).length > 0
+        );
+      });
+    }
+    if (
+      t.isExpressionStatement(statement) &&
+      t.isAssignmentExpression(statement.expression) &&
+      isModuleExports(statement.expression.left) &&
+      t.isExpression(statement.expression.right) &&
+      findPathValues(config, statement.expression.right, ['parameters', 'options', 'storySort'])
+        .length > 0
+    ) {
+      return pathUsesIndirectValue(statement.expression.right, ['parameters', 'options']);
+    }
+    return false;
+  });
+
+const duplicatePreviewStorySortPathKey = (config: ConfigFile) => {
+  if (countObjectProperties(config._exportsObject, 'parameters') > 1) {
+    return 'parameters';
+  }
+  if (countObjectProperties(config.getFieldNode(['parameters']), 'options') > 1) {
+    return 'options';
+  }
+  if (countObjectProperties(config.getFieldNode(['parameters', 'options']), 'storySort') > 1) {
+    return 'storySort';
+  }
+  return undefined;
+};
+
+const objectContainsIndirectProperty = (node: t.Node | null | undefined) =>
+  t.isObjectExpression(node) &&
+  node.properties.some(
+    (property) =>
+      t.isSpreadElement(property) ||
+      ((t.isObjectProperty(property) || t.isObjectMethod(property)) && property.computed)
+  );
+
+const previewStorySortPathContainsIndirectProperty = (config: ConfigFile) =>
+  objectContainsIndirectProperty(config._exportsObject) ||
+  [config.getFieldNode(['parameters']), config.getFieldNode(['parameters', 'options'])].some(
+    objectContainsIndirectProperty
+  );
 
 const removeRootField = (config: ConfigFile, name: string) => {
   if (config._exportsObject) {
@@ -185,23 +368,32 @@ export const storySortToMain: Fix<StorySortToMainOptions> = {
     ]);
     const mainConfig = loadConfig(mainSource).parse();
     const previewConfig = loadConfig(previewSource).parse();
-    const storySortNode = previewConfig.getFieldNode([
-      'parameters',
-      'options',
-      'storySort',
-    ]) as t.Expression;
+    const storySortNode = previewConfig.getFieldNode(['parameters', 'options', 'storySort']) as
+      | t.Expression
+      | undefined;
+    const legacyStorySort = findLegacyStorySort(previewConfig);
 
-    if (!storySortNode) {
-      if (findLegacyStorySort(previewConfig).length > 0) {
-        throw new Error(dedent`
-          Storybook cannot safely locate parameters.options.storySort in ${previewConfigPath} because the preview configuration uses an identifier or spread. Move it manually to top-level storySort in ${mainConfigPath}, then remove it from preview.
-        `);
-      }
+    if (!storySortNode && legacyStorySort.length === 0) {
       return null;
     }
-    if (countProperties(previewConfig, ['parameters', 'options', 'storySort'], 'storySort') > 1) {
+    const duplicatePathKey = duplicatePreviewStorySortPathKey(previewConfig);
+    if (duplicatePathKey) {
       throw new Error(dedent`
-        ${previewConfigPath} defines storySort more than once. Reconcile the values manually, keep the final value as top-level storySort in ${mainConfigPath}, and remove all preview storySort properties.
+        ${previewConfigPath} defines ${duplicatePathKey} more than once along the parameters.options.storySort path. Reconcile the values manually, keep the effective storySort as top-level storySort in ${mainConfigPath}, and remove all preview storySort properties.
+      `);
+    }
+    if (legacyStorySort.length > 1) {
+      throw new Error(dedent`
+        ${previewConfigPath} defines parameters.options.storySort more than once. Reconcile the values manually, keep the effective storySort as top-level storySort in ${mainConfigPath}, and remove all preview storySort properties.
+      `);
+    }
+    if (
+      !storySortNode ||
+      previewStorySortPathContainsIndirectProperty(previewConfig) ||
+      previewStorySortPathUsesIndirectValue(previewConfig)
+    ) {
+      throw new Error(dedent`
+        Storybook cannot safely locate parameters.options.storySort in ${previewConfigPath} because the preview configuration uses an identifier, computed property, or spread. Move it manually to top-level storySort in ${mainConfigPath}, then remove it from preview.
       `);
     }
     if (rootContainsSpread(mainConfig)) {

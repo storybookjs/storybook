@@ -1,6 +1,6 @@
 {
   "name": "@storybook/angular-cm",
-  "version": "10.6.0",
+  "version": "11.0.0-alpha.0",
   "private": true,
   "description": "In-process Angular component metadata analyzer for Storybook docgen",
   "keywords": [

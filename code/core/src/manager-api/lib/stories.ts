@@ -179,9 +179,14 @@ type ToStoriesHashOptions = {
  * punctuation. A part made only of punctuation, such as a folder named `_`, would sanitize to
  * nothing: an empty id for a root, and for a nested group an id equal to its parent's. Fall back to
  * the part's code points so it still gets a stable, non-empty and URL-safe id.
+ *
+ * The `--` prefix keeps that fallback in its own namespace. `sanitize` collapses runs of
+ * punctuation to a single `-` and trims the ends, so it can never emit `--`, which means the
+ * fallback for `_` cannot collide with a title part literally named `5f`. It cannot collide with a
+ * story id either, since those are `<kind>--<name>` with both halves sanitized.
  */
 const sanitizeTitlePart = (part: string) =>
-  sanitize(part) || Array.from(part, (char) => char.codePointAt(0)!.toString(16)).join('-');
+  sanitize(part) || `--${Array.from(part, (char) => char.codePointAt(0)!.toString(16)).join('-')}`;
 
 export const transformStoryIndexToStoriesHash = (
   input: API_PreparedStoryIndex | StoryIndexV2 | StoryIndexV3,

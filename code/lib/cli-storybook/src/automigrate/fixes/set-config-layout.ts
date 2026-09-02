@@ -1,7 +1,13 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { findConfigFile, formatFileContent, HandledError } from 'storybook/internal/common';
-import { babelParse, generate, traverse, types as t } from 'storybook/internal/babel';
+import {
+  babelParse,
+  generate,
+  traverse,
+  types as t,
+  unwrapTSExpression,
+} from 'storybook/internal/babel';
 
 import type { NodePath } from 'storybook/internal/babel';
 
@@ -30,10 +36,10 @@ interface SetConfigLayoutOptions {
 }
 
 const getStaticPropertyName = (property: t.ObjectMember | t.SpreadElement) => {
-  if (t.isSpreadElement(property)) {
+  if (t.isSpreadElement(property) || property.computed) {
     return null;
   }
-  if (t.isIdentifier(property.key) && !property.computed) {
+  if (t.isIdentifier(property.key)) {
     return property.key.name;
   }
   if (t.isStringLiteral(property.key)) {
@@ -52,15 +58,10 @@ const getStaticMemberName = (member: t.MemberExpression) => {
   return null;
 };
 
-const unwrapTypeExpression = (node: t.Expression | t.SpreadElement) => {
-  let expression: t.Expression | t.SpreadElement = node;
-  while (
-    t.isTSAsExpression(expression) ||
-    t.isTSSatisfiesExpression(expression) ||
-    t.isTSTypeAssertion(expression) ||
-    t.isTSNonNullExpression(expression)
-  ) {
-    expression = expression.expression;
+const unwrapTypeExpression = (node: t.Expression) => {
+  let expression = unwrapTSExpression(node);
+  while (t.isTSNonNullExpression(expression)) {
+    expression = unwrapTSExpression(expression.expression);
   }
   return expression;
 };
@@ -72,23 +73,30 @@ const migrationError = (managerConfigPath: string, node: t.Node, reason: string)
   );
 };
 
-const isStaticValue = (node: t.Expression | t.PatternLike) => {
+const isStaticValue = (node: t.Expression | t.PatternLike | t.SpreadElement): boolean => {
+  if (!t.isExpression(node)) {
+    return false;
+  }
+  const expression = unwrapTypeExpression(node);
   if (
-    t.isBooleanLiteral(node) ||
-    t.isNumericLiteral(node) ||
-    t.isStringLiteral(node) ||
-    t.isNullLiteral(node)
+    t.isBooleanLiteral(expression) ||
+    t.isNumericLiteral(expression) ||
+    t.isStringLiteral(expression) ||
+    t.isNullLiteral(expression)
   ) {
     return true;
   }
-  if (t.isUnaryExpression(node, { operator: '-' }) && t.isNumericLiteral(node.argument)) {
+  if (
+    t.isUnaryExpression(expression, { operator: '-' }) &&
+    t.isNumericLiteral(expression.argument)
+  ) {
     return true;
   }
-  if (t.isArrayExpression(node)) {
-    return node.elements.every((element) => element === null || isStaticValue(element));
+  if (t.isArrayExpression(expression)) {
+    return expression.elements.every((element) => element === null || isStaticValue(element));
   }
-  if (t.isObjectExpression(node)) {
-    return node.properties.every(
+  if (t.isObjectExpression(expression)) {
+    return expression.properties.every(
       (property) =>
         t.isObjectProperty(property) &&
         getStaticPropertyName(property) !== null &&
@@ -99,10 +107,17 @@ const isStaticValue = (node: t.Expression | t.PatternLike) => {
 };
 
 const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: string) => {
+  const computedLegacyProperty = config.properties.find(
+    (property) =>
+      !t.isSpreadElement(property) &&
+      property.computed &&
+      t.isStringLiteral(property.key) &&
+      optionGroups.has(property.key.value)
+  );
   const movedProperties = config.properties.filter((property) =>
     optionGroups.has(getStaticPropertyName(property) ?? '')
   );
-  if (movedProperties.length === 0) {
+  if (movedProperties.length === 0 && !computedLegacyProperty) {
     return false;
   }
 
@@ -154,14 +169,18 @@ const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: stri
 
     const existingGroup = groupProperties[0];
     if (existingGroup) {
-      if (!t.isObjectProperty(existingGroup) || !t.isObjectExpression(existingGroup.value)) {
+      const existingGroupValue =
+        t.isObjectProperty(existingGroup) && t.isExpression(existingGroup.value)
+          ? unwrapTypeExpression(existingGroup.value)
+          : null;
+      if (!t.isObjectExpression(existingGroupValue)) {
         throw migrationError(
           managerConfigPath,
           existingGroup,
           `the existing ${group} value is not an object literal`
         );
       }
-      const unknownNestedProperty = existingGroup.value.properties.find(
+      const unknownNestedProperty = existingGroupValue.properties.find(
         (property) => t.isSpreadElement(property) || getStaticPropertyName(property) === null
       );
       if (unknownNestedProperty) {
@@ -172,7 +191,7 @@ const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: stri
         );
       }
       const existingNames = new Set(
-        existingGroup.value.properties.map((property) => getStaticPropertyName(property))
+        existingGroupValue.properties.map((property) => getStaticPropertyName(property))
       );
       const duplicateProperty = movedGroupProperties.find((property) =>
         existingNames.has(getStaticPropertyName(property))
@@ -184,7 +203,7 @@ const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: stri
           `both the top-level configuration and ${group} define ${getStaticPropertyName(duplicateProperty)}`
         );
       }
-      existingGroup.value.properties.unshift(...movedPropertyCopies);
+      existingGroupValue.properties.unshift(...movedPropertyCopies);
       config.properties = config.properties.filter(
         (property) => !movedGroupProperties.includes(property)
       );
@@ -257,6 +276,13 @@ export const transformSetConfigLayout = (
       if (!configArgument) {
         return;
       }
+      if (!t.isExpression(configArgument)) {
+        throw migrationError(
+          managerConfigPath,
+          configArgument,
+          'the configuration argument is not an object literal'
+        );
+      }
       const config = unwrapTypeExpression(configArgument);
       if (!t.isObjectExpression(config)) {
         throw migrationError(
@@ -266,7 +292,6 @@ export const transformSetConfigLayout = (
         );
       }
       if (migrateConfigObject(config, managerConfigPath)) {
-        path.node.arguments[0] = t.cloneNode(config, true, true);
         changed = true;
       }
     },

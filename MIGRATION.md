@@ -559,8 +559,8 @@ Run the automigration to update `.storybook/manager.*`:
 npx storybook automigrate set-config-layout
 ```
 
-The automigration stops with manual instructions when the `setConfig` argument, its `layout` or
-`ui` value, or its properties cannot be resolved statically.
+The automigration stops with manual instructions when a configuration containing an explicit
+legacy option cannot be transformed safely.
 
 ## From version 10.5.x to 10.6.0
 

@@ -90,13 +90,69 @@ describe('transformSetConfigLayout', () => {
     expect(transformSetConfigLayout(source)).toBe(source);
   });
 
-  it('moves options from a TypeScript satisfies expression', () => {
+  it.each([
+    [
+      'satisfies',
+      '{ showNav: false } satisfies Addon_Config',
+      dedent`
+        import { addons } from 'storybook/manager-api';
+        addons.setConfig({
+          layout: {
+            showNav: false
+          }
+        } satisfies Addon_Config);
+      `,
+    ],
+    [
+      'as',
+      '{ showNav: false } as Addon_Config',
+      dedent`
+        import { addons } from 'storybook/manager-api';
+        addons.setConfig({
+          layout: {
+            showNav: false
+          }
+        } as Addon_Config);
+      `,
+    ],
+    [
+      'non-null',
+      '{ showNav: false }!',
+      dedent`
+        import { addons } from 'storybook/manager-api';
+        addons.setConfig({
+          layout: {
+            showNav: false
+          }
+        }!);
+      `,
+    ],
+  ])(
+    'preserves a TypeScript %s wrapper around the config argument',
+    (_label, argument, expected) => {
+      const source = `import { addons } from 'storybook/manager-api';\naddons.setConfig(${argument});`;
+
+      expect(transformSetConfigLayout(source)).toBe(expected);
+    }
+  );
+
+  it('moves a statically wrapped option into a statically wrapped layout object', () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
-      addons.setConfig({ showNav: false } satisfies Addon_Config);
+      addons.setConfig({
+        showNav: false as const,
+        layout: {} satisfies Partial<Addon_Config['layout']>,
+      });
     `;
 
-    expect(transformSetConfigLayout(source)).toContain('layout: {\n    showNav: false\n  }');
+    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+      "import { addons } from 'storybook/manager-api';
+      addons.setConfig({
+        layout: {
+          showNav: false as const
+        } satisfies Partial<Addon_Config['layout']>
+      });"
+    `);
   });
 
   it('reports manual guidance when moving an option could reorder evaluation', () => {
@@ -138,6 +194,11 @@ describe('transformSetConfigLayout', () => {
     [
       'a spread property',
       'addons.setConfig({ ...config, showNav: false });',
+      'contains a spread or computed property',
+    ],
+    [
+      'a computed legacy property',
+      "addons.setConfig({ ['showNav']: false });",
       'contains a spread or computed property',
     ],
     [

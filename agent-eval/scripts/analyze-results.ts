@@ -50,12 +50,12 @@
 // The three table flags select what is printed; everything is measured and
 // written either way. Passing any of them prints exactly that set; passing
 // none falls back to DEFAULT_TABLES below.
+import { styleText } from 'node:util';
 import { existsSync, writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 import { describeStoredRun, groupComparableRuns } from '#lib/agentic-reference/comparability';
-import { bold, cyan, dim, red, yellow } from '../lib/utils/colors.ts';
 import {
   currentMeasurement,
   describeDifferences,
@@ -357,7 +357,8 @@ async function main() {
 
   if (incomplete > 0) {
     console.log(
-      yellow(
+      styleText(
+        'yellow',
         `Skipped ${incomplete} run director${incomplete === 1 ? 'y' : 'ies'} holding no project ` +
           'tree: those runs stopped on billing, a timeout or another infra failure. ' +
           'Run `yarn workspace agent-eval run results:prune` to see and clear them.'
@@ -395,7 +396,7 @@ async function main() {
   ).length;
   if (unjudged > 0) {
     console.error(
-      `\n${bold(red(`No ds-misuse judgement for ${unjudged} of ${successfulAnalyses.length} run(s).`))}\n` +
+      `\n${styleText('bold', styleText('red', `No ds-misuse judgement for ${unjudged} of ${successfulAnalyses.length} run(s).`))}\n` +
         '  Run: yarn workspace agent-eval run judge:ds-misuse' +
         (options.experiments.length ? ` --experiments=${options.experiments.join(',')}` : '') +
         (options.latest ? ' --latest' : '')
@@ -434,7 +435,9 @@ async function main() {
   for (const group of groups) {
     const show = options.superseded || group.current;
     if (show) {
-      console.log(`\n${dim('===')}  ${bold(cyan(heading(group)))}  ${dim('===')}\n`);
+      console.log(
+        `\n${styleText('dim', '===')}  ${styleText('bold', styleText('cyan', heading(group)))}  ${styleText('dim', '===')}\n`
+      );
       if (!group.current) {
         console.log(`  superseded — ${supersessionNote(group)}\n`);
       }

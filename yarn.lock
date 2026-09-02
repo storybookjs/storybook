@@ -17222,7 +17222,6 @@ __metadata:
     diff: "npm:^8.0.4"
     memfs: "npm:^4.68.0"
     next: "npm:16.1.6"
-    picocolors: "npm:^1.1.0"
     picomatch: "npm:^4.0.5"
     postcss: "npm:^8.5.16"
     tailwindcss: "npm:^4.3.2"

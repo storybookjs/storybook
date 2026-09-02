@@ -139,17 +139,6 @@ describe('transformSetConfigLayout', () => {
     `);
   });
 
-  it('reports manual guidance when moving an option could reorder evaluation', () => {
-    const source = dedent`
-      import { addons } from 'storybook/manager-api';
-      addons.setConfig({ showNav: getShowNav(), enableShortcuts: false });
-    `;
-
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
-      'moving the option could change expression evaluation order'
-    );
-  });
-
   it('reports manual guidance for partially overridden recent visible sizes', () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';

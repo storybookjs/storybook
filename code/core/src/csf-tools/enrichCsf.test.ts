@@ -191,6 +191,64 @@ describe('enrichCsf', () => {
         };
       `);
     });
+    it('csf factories with .extend()', async () => {
+      expect(
+        await enrich(
+          dedent`
+          // compiled code
+          import {config} from "/.storybook/preview.ts";
+          const meta = config.meta({
+              args: {
+                label: "Hello world!"
+              }
+          });
+          export const Story = meta.story({});
+          export const Extended = Story.extend({});
+        `,
+          dedent`
+          // original code
+          import {config} from "#.storybook/preview.ts";
+          const meta = config.meta({
+              args: {
+                label: "Hello world!"
+              }
+          });
+          export const Story = meta.story({});
+          export const Extended = Story.extend({});
+        `
+        )
+      ).toMatchInlineSnapshot(`
+        // compiled code
+        import { config } from "/.storybook/preview.ts";
+        const meta = config.meta({
+          args: {
+            label: "Hello world!"
+          }
+        });
+        export const Story = meta.story({});
+        export const Extended = Story.extend({});
+        Story.input.parameters = {
+          ...Story.input.parameters,
+          docs: {
+            ...Story.input.parameters?.docs,
+            source: {
+              originalSource: "meta.story({})",
+              ...Story.input.parameters?.docs?.source
+            }
+          }
+        };
+        Extended.input.parameters = {
+          ...Extended.input.parameters,
+          docs: {
+            ...Extended.input.parameters?.docs,
+            source: {
+              originalSource: "Story.extend({})",
+              ...Extended.input.parameters?.docs?.source
+            }
+          }
+        };
+      `);
+    });
     it('multiple stories', async () => {
       expect(
         await enrich(

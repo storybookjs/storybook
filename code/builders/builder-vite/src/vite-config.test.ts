@@ -37,6 +37,18 @@ const dummyOptions: Options = {
 };
 
 describe('commonConfig', () => {
+  it('should set publicDir to false to prevent conflicts with staticDirs', async () => {
+    loadConfigFromFileMock.mockReturnValueOnce(
+      Promise.resolve({
+        config: {},
+        path: '',
+        dependencies: [],
+      })
+    );
+    const config = await commonConfig(dummyOptions, 'development');
+    expect(config.publicDir).toBe(false);
+  });
+
   it('should set configFile to false and include plugins', async () => {
     loadConfigFromFileMock.mockReturnValueOnce(
       Promise.resolve({

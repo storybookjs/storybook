@@ -64,7 +64,7 @@ describe('transformSetConfigLayout', () => {
     `);
   });
 
-  it('preserves existing nested options as the higher-precedence values', () => {
+  it('reports manual guidance when a nested option overrides a top-level option', () => {
     const source = dedent`
       import { addons as managerAddons } from '@storybook/manager-api';
 
@@ -76,18 +76,52 @@ describe('transformSetConfigLayout', () => {
       });
     `;
 
-    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
-      "import { addons as managerAddons } from '@storybook/manager-api';
-      managerAddons.setConfig({
-        layout: {
-          showNav: false,
-          showPanel: false
-        },
-        ui: {
-          enableShortcuts: true
-        }
-      });"
-    `);
+    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
+      'both the top-level configuration and layout define showNav'
+    );
+  });
+
+  it('does not change a spread config without an explicit deprecated option', () => {
+    const source = dedent`
+      import { addons } from 'storybook/manager-api';
+      addons.setConfig({ ...config, theme });
+    `;
+
+    expect(transformSetConfigLayout(source)).toBe(source);
+  });
+
+  it('moves options from a TypeScript satisfies expression', () => {
+    const source = dedent`
+      import { addons } from 'storybook/manager-api';
+      addons.setConfig({ showNav: false } satisfies Addon_Config);
+    `;
+
+    expect(transformSetConfigLayout(source)).toContain('layout: {\n    showNav: false\n  }');
+  });
+
+  it('reports manual guidance when moving an option could reorder evaluation', () => {
+    const source = dedent`
+      import { addons } from 'storybook/manager-api';
+      addons.setConfig({ showNav: getShowNav(), enableShortcuts: false });
+    `;
+
+    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
+      'moving the option could change expression evaluation order'
+    );
+  });
+
+  it('reports manual guidance for partially overridden recent visible sizes', () => {
+    const source = dedent`
+      import { addons } from 'storybook/manager-api';
+      addons.setConfig({
+        recentVisibleSizes: { navSize: 200, bottomPanelHeight: 300 },
+        layout: { recentVisibleSizes: { navSize: 100 } },
+      });
+    `;
+
+    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
+      'both the top-level configuration and layout define recentVisibleSizes'
+    );
   });
 
   it('does not change unrelated setConfig calls', () => {
@@ -136,6 +170,21 @@ describe('setConfigLayout', () => {
     await expect(fsp.readFile(managerConfigPath, 'utf8')).resolves.toMatch(
       /layout: \{\s+showToolbar: false/
     );
+  });
+
+  it('does not write the manager config during a dry run', async () => {
+    const source = dedent`
+      import { addons } from 'storybook/manager-api';
+      addons.setConfig({ showToolbar: false });
+    `;
+    vol.fromJSON({ [managerConfigPath]: source });
+
+    const result = await check();
+    expect(result).not.toBeNull();
+
+    await setConfigLayout.run!({ result, dryRun: true } as any);
+
+    await expect(fsp.readFile(managerConfigPath, 'utf8')).resolves.toBe(source);
   });
 
   it('returns null when the manager config does not need migration', async () => {

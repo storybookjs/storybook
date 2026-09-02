@@ -4,6 +4,7 @@ import { logger } from 'storybook/internal/node-logger';
 import { dedent } from 'ts-dedent';
 
 import { findVarInitialization } from './findVarInitialization.ts';
+import { unwrapCsfFactoryConfig } from './unwrapCsfFactoryConfig.ts';
 
 const getValue = (obj: t.ObjectExpression, key: string) => {
   let value: t.Expression | undefined;
@@ -131,20 +132,7 @@ export const getStorySortParameter = (previewCode: string) => {
         }
         defaultObj = stripTSModifiers(defaultObj);
 
-        // csf factory - unwrap call expressions like definePreview({...}) or definePreview({...}).type<T>()
-        while (t.isCallExpression(defaultObj)) {
-          if (t.isObjectExpression(defaultObj.arguments[0])) {
-            defaultObj = defaultObj.arguments[0];
-            break;
-          } else if (
-            t.isMemberExpression(defaultObj.callee) &&
-            t.isCallExpression(defaultObj.callee.object)
-          ) {
-            defaultObj = defaultObj.callee.object;
-          } else {
-            break;
-          }
-        }
+        defaultObj = unwrapCsfFactoryConfig(defaultObj) as t.Expression;
 
         if (t.isObjectExpression(defaultObj)) {
           storySort = parseDefault(defaultObj, ast.program);

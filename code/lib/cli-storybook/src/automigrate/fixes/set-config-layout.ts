@@ -1,13 +1,8 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import { findConfigFile, formatFileContent, HandledError } from 'storybook/internal/common';
-import {
-  babelParse,
-  generate,
-  traverse,
-  types as t,
-  unwrapTSExpression,
-} from 'storybook/internal/babel';
+import { traverse, types as t, unwrapTSExpression } from 'storybook/internal/babel';
+import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
 import type { NodePath } from 'storybook/internal/babel';
 
@@ -152,10 +147,6 @@ const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: stri
     if (movedGroupProperties.length === 0) {
       continue;
     }
-    const movedPropertyCopies = movedGroupProperties.map((property) =>
-      t.cloneNode(property, true, true)
-    );
-
     const groupProperties = config.properties.filter(
       (property) => getStaticPropertyName(property) === group
     );
@@ -203,7 +194,7 @@ const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: stri
           `both the top-level configuration and ${group} define ${getStaticPropertyName(duplicateProperty)}`
         );
       }
-      existingGroupValue.properties.unshift(...movedPropertyCopies);
+      existingGroupValue.properties.unshift(...movedGroupProperties);
       config.properties = config.properties.filter(
         (property) => !movedGroupProperties.includes(property)
       );
@@ -220,7 +211,7 @@ const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: stri
       config.properties.splice(
         insertionIndex,
         0,
-        t.objectProperty(t.identifier(group), t.objectExpression(movedPropertyCopies))
+        t.objectProperty(t.identifier(group), t.objectExpression(movedGroupProperties))
       );
     }
     changed = true;
@@ -233,7 +224,8 @@ export const transformSetConfigLayout = (
   source: string,
   managerConfigPath = '.storybook/manager.*'
 ) => {
-  const ast = babelParse(source);
+  const managerConfig = loadConfig(source).parse();
+  const ast = t.file(t.program(managerConfig.getBodyDeclarations()));
   const addonsImports = new Map<string, t.ImportSpecifier>();
 
   traverse(ast, {
@@ -297,7 +289,7 @@ export const transformSetConfigLayout = (
     },
   });
 
-  return changed ? generate(ast).code : source;
+  return changed ? formatConfig(managerConfig) : source;
 };
 
 export const setConfigLayout: Fix<SetConfigLayoutOptions> = {

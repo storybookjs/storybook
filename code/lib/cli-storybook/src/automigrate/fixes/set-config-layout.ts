@@ -56,39 +56,6 @@ const migrationError = (managerConfigPath: string, node: t.Node, reason: string)
   );
 };
 
-const isStaticValue = (node: t.Expression | t.PatternLike | t.SpreadElement): boolean => {
-  if (!t.isExpression(node)) {
-    return false;
-  }
-  const expression = unwrapTypeExpression(node);
-  if (
-    t.isBooleanLiteral(expression) ||
-    t.isNumericLiteral(expression) ||
-    t.isStringLiteral(expression) ||
-    t.isNullLiteral(expression)
-  ) {
-    return true;
-  }
-  if (
-    t.isUnaryExpression(expression, { operator: '-' }) &&
-    t.isNumericLiteral(expression.argument)
-  ) {
-    return true;
-  }
-  if (t.isArrayExpression(expression)) {
-    return expression.elements.every((element) => element === null || isStaticValue(element));
-  }
-  if (t.isObjectExpression(expression)) {
-    return expression.properties.every(
-      (property) =>
-        t.isObjectProperty(property) &&
-        getStaticPropertyName(property) !== null &&
-        isStaticValue(property.value)
-    );
-  }
-  return false;
-};
-
 const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: string) => {
   const computedLegacyProperty = config.properties.find(
     (property) =>
@@ -112,17 +79,6 @@ const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: stri
       managerConfigPath,
       unknownProperty,
       'the configuration contains a spread or computed property'
-    );
-  }
-
-  const dynamicProperty = movedProperties.find(
-    (property) => !t.isObjectProperty(property) || !isStaticValue(property.value)
-  );
-  if (dynamicProperty) {
-    throw migrationError(
-      managerConfigPath,
-      dynamicProperty,
-      'moving the option could change expression evaluation order'
     );
   }
 

@@ -213,8 +213,6 @@ docs variant that arm was served. Content variation between arms is the round's
 independent variable, so judging each arm against what it saw would score a
 degraded arm against a lowered bar.
 
-Design notes: `docs/superpowers/specs/2026-08-14-ds-misuse-metric-design.md`.
-
 ## Shared Templates
 
 Fixtures can opt into a shared starter project with package metadata:

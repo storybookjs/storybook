@@ -298,35 +298,48 @@ const previewParametersRootCount = (config: ConfigFile) =>
     return count;
   }, 0);
 
-const resolvesToCall = (
-  config: ConfigFile,
-  node: t.Expression,
-  seen = new Set<string>()
-): boolean => {
+const isWritableObjectExport = (config: ConfigFile, node: t.Expression): boolean => {
   const expression = unwrapTypeScriptExpression(node);
-  if (t.isCallExpression(expression)) {
+  if (t.isObjectExpression(expression)) {
     return true;
   }
-  if (!t.isIdentifier(expression) || seen.has(expression.name)) {
+  if (!t.isIdentifier(expression)) {
     return false;
   }
-  const initialization = findVariableInitialization(config, expression.name);
-  return initialization
-    ? resolvesToCall(config, initialization, new Set(seen).add(expression.name))
-    : false;
+
+  return config._ast.program.body.some((statement) => {
+    const declaration = t.isVariableDeclaration(statement)
+      ? statement
+      : t.isExportNamedDeclaration(statement) && t.isVariableDeclaration(statement.declaration)
+        ? statement.declaration
+        : undefined;
+    return (
+      declaration?.kind === 'const' &&
+      declaration.declarations.some(
+        (declarator) =>
+          t.isIdentifier(declarator.id) &&
+          declarator.id.name === expression.name &&
+          declarator.init &&
+          t.isExpression(declarator.init) &&
+          t.isObjectExpression(unwrapTypeScriptExpression(declarator.init))
+      )
+    );
+  });
 };
 
-const mainDefaultExportUsesCall = (config: ConfigFile) =>
-  config._ast.program.body.some(
-    (statement) =>
-      t.isExportDefaultDeclaration(statement) &&
-      t.isExpression(statement.declaration) &&
-      resolvesToCall(config, statement.declaration)
-  );
-
 const mainHasUnsupportedExportShape = (config: ConfigFile) => {
-  if (config.hasDefaultExport && (!config._exportsObject || mainDefaultExportUsesCall(config))) {
-    return true;
+  if (config.hasDefaultExport) {
+    const defaultExports = config._ast.program.body.filter(
+      (statement): statement is t.ExportDefaultDeclaration =>
+        t.isExportDefaultDeclaration(statement)
+    );
+    if (
+      defaultExports.length !== 1 ||
+      !t.isExpression(defaultExports[0].declaration) ||
+      !isWritableObjectExport(config, defaultExports[0].declaration)
+    ) {
+      return true;
+    }
   }
   return config._ast.program.body.some(
     (statement) =>
@@ -336,7 +349,7 @@ const mainHasUnsupportedExportShape = (config: ConfigFile) => {
       (!isWritableModuleExports(statement.expression.left) ||
         !config._exportsObject ||
         (t.isExpression(statement.expression.right) &&
-          resolvesToCall(config, statement.expression.right)))
+          !isWritableObjectExport(config, statement.expression.right)))
   );
 };
 

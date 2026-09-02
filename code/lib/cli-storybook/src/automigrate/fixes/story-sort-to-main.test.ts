@@ -489,6 +489,29 @@ describe('story-sort-to-main', () => {
     expect(fsp.writeFile).not.toHaveBeenCalled();
   });
 
+  it('rejects a CommonJS main alias assigned after its declaration before writing', async () => {
+    await expect(
+      check(
+        `let config; config = definePreview({ stories: [] }); module.exports = config`,
+        `export default { parameters: { options: { storySort: { order: ['Legacy'] } } } }`
+      )
+    ).rejects.toThrow('uses an unsupported main configuration export');
+    expect(fsp.writeFile).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['direct object', `module.exports = { stories: [] }`],
+    ['const object alias', `const config = { stories: [] }; module.exports = config`],
+  ])('moves storySort into a writable CommonJS main %s', async (_name, main) => {
+    const writes = await run(
+      main,
+      `export default { parameters: { options: { storySort: { order: ['Legacy'] } } } }`
+    );
+
+    expect(writes[0]?.[1]).toContain('storySort: {');
+    expect(writes[1]?.[1]).not.toContain('storySort');
+  });
+
   it.each([
     ['function', `(a, b) => a.title.localeCompare(b.title)`],
     ['identifier', `storySort`],

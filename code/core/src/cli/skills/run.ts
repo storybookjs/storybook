@@ -15,13 +15,8 @@ export const SKILLS_OPTION_SPECS = [
     description: 'Storybook config directory of the target Storybook',
   },
   { flags: '--all', description: 'Print every skill in full' },
-  {
-    flags: '-h, --help',
-    description: 'Show every skill, or one skill with its description',
-  },
+  { flags: '-h, --help', description: 'Show this usage and every skill' },
 ] as const;
-
-type SkillsOptionSpec = (typeof SKILLS_OPTION_SPECS)[number];
 
 export type SkillsRunInput = {
   tokens: string[];
@@ -57,7 +52,6 @@ export type SkillsRunDeps = {
 
 export type SkillsIntent =
   | { kind: 'catalog' }
-  | { kind: 'skill-help'; id: SkillId }
   | { kind: 'get'; id: SkillId }
   | { kind: 'all' }
   | { kind: 'invalid'; tokens: string[] }
@@ -68,8 +62,11 @@ export function resolveSkillsIntent(
   { help = false, all = false }: { help?: boolean; all?: boolean } = {}
 ): SkillsIntent {
   const [id, ...rest] = tokens;
+  if (help) {
+    return { kind: 'catalog' };
+  }
   if (id === undefined) {
-    return all && !help ? { kind: 'all' } : { kind: 'catalog' };
+    return all ? { kind: 'all' } : { kind: 'catalog' };
   }
   if (!isSkillId(id)) {
     return { kind: 'unknown', id };
@@ -77,7 +74,7 @@ export function resolveSkillsIntent(
   if (rest.length > 0 || all) {
     return { kind: 'invalid', tokens };
   }
-  return help ? { kind: 'skill-help', id } : { kind: 'get', id };
+  return { kind: 'get', id };
 }
 
 export async function runSkillsCommand(
@@ -87,9 +84,6 @@ export async function runSkillsCommand(
   const intent = resolveSkillsIntent(input.tokens, input);
   if (intent.kind === 'catalog') {
     return { output: renderCatalogHelp(), exitCode: 0, kind: 'help' };
-  }
-  if (intent.kind === 'skill-help') {
-    return { output: renderSkillHelp(intent.id), exitCode: 0, kind: 'help', skill: intent.id };
   }
   if (intent.kind === 'invalid') {
     return failure(
@@ -169,9 +163,9 @@ async function loadInputs(
   }
 }
 
-function optionLines(specs: readonly SkillsOptionSpec[] = SKILLS_OPTION_SPECS): string[] {
-  const column = Math.max(...specs.map((spec) => spec.flags.length)) + 2;
-  return specs.map((spec) => `  ${spec.flags.padEnd(column)}${spec.description}`);
+function optionLines(): string[] {
+  const column = Math.max(...SKILLS_OPTION_SPECS.map((spec) => spec.flags.length)) + 2;
+  return SKILLS_OPTION_SPECS.map((spec) => `  ${spec.flags.padEnd(column)}${spec.description}`);
 }
 
 function skillLines(): string[] {
@@ -192,20 +186,6 @@ function renderCatalogHelp(): string {
     ...skillLines(),
     '',
     'Print a skill with `npx storybook skills <id>`, or every skill with `npx storybook skills --all`.',
-    '`npx storybook skills <id> --help` shows one description.',
-  ].join('\n');
-}
-
-function renderSkillHelp(id: SkillId): string {
-  return [
-    `Usage: npx storybook skills ${id} [options]`,
-    '',
-    SKILLS[id].blurb,
-    '',
-    'Prints the full instructions as markdown.',
-    '',
-    'Options:',
-    ...optionLines(SKILLS_OPTION_SPECS.filter((spec) => spec.flags !== '--all')),
   ].join('\n');
 }
 

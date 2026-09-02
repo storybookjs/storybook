@@ -42,11 +42,8 @@ describe('resolveSkillsIntent', () => {
     expect(resolveSkillsIntent([], { all: true, help: true })).toEqual({ kind: 'catalog' });
   });
 
-  it('describes a skill when help is set', () => {
-    expect(resolveSkillsIntent(['write-story'], { help: true })).toEqual({
-      kind: 'skill-help',
-      id: 'write-story',
-    });
+  it('treats help as the catalog even after a skill id', () => {
+    expect(resolveSkillsIntent(['write-story'], { help: true })).toEqual({ kind: 'catalog' });
   });
 
   it('does not treat `help`, `list`, or `get` as subcommands', () => {
@@ -77,16 +74,6 @@ describe('runSkillsCommand', () => {
     expect(result.output).toContain('stories');
     expect(result.output).toContain('write-story');
     expect(result.output).toContain('setup');
-    expect(d.loadStorybook).not.toHaveBeenCalled();
-  });
-
-  it('describes one skill on `--help` without loading config', async () => {
-    const d = deps();
-    const result = await runSkillsCommand({ tokens: ['write-story'], help: true, target: {} }, d);
-    expect(result.exitCode).toBe(0);
-    expect(result.kind).toBe('help');
-    expect(result.output).toContain('Usage: npx storybook skills write-story [options]');
-    expect(result.output).toContain('Prints the full instructions as markdown.');
     expect(d.loadStorybook).not.toHaveBeenCalled();
   });
 

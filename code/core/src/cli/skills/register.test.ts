@@ -110,12 +110,7 @@ describe('registerSkillsCommand', () => {
   });
 
   it('forwards `-h` after a skill id', async () => {
-    vi.mocked(runSkillsCommand).mockResolvedValue({
-      output: 'usage',
-      exitCode: 0,
-      kind: 'help',
-      skill: 'write-story',
-    });
+    vi.mocked(runSkillsCommand).mockResolvedValue({ output: 'usage', exitCode: 0, kind: 'help' });
     const { program } = buildProgram();
     await parse(program, ['skills', 'write-story', '-h']);
 

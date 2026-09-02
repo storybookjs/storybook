@@ -28,8 +28,7 @@ type SkillsCommandOptions = {
   logfile?: string | boolean;
 };
 
-// `storybook skills [id]`: no id lists every skill, `<id>` prints it, `<id> --help` describes
-// it, `--all` prints every skill.
+// `storybook skills [id]`: no id lists every skill, `<id>` prints it, `--all` prints every skill.
 export function registerSkillsCommand(
   program: Command,
   skillsCommand: Command,
@@ -67,7 +66,7 @@ export function registerSkillsCommand(
         await telemetry('skills-get', { skill: result.skill }, { configDir: cliOptions.configDir });
       }
     };
-    if (intent.kind === 'catalog' || intent.kind === 'skill-help') {
+    if (intent.kind === 'catalog') {
       await run();
     } else {
       await withTelemetry('skills-get', { cliOptions, fallbackTelemetryState: true }, run).catch(

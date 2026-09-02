@@ -163,10 +163,9 @@ export const DEFAULT_EXPERIMENT_CONFIG = {
   // The runner default of 600s is too tight for opus-high on the plugin
   // path: passing runs have taken up to 458s (2026-07-03 CI runs).
   timeout: 900,
-  // 'auto' resolves per environment: Vercel Sandbox when the access-token
-  // credentials are set, local Docker otherwise. CI carries the credentials,
-  // so pinning 'docker' here would run the whole matrix on the runner's four
-  // cores and 14 GB of disk.
+  // "auto" is recommended and uploads results to Vercel, making it easier to share
+  // with the team. Switch to "docker" to run evals on your local machine, e.g. for
+  // throwaway experiments, or in case of Vercel outage or payment issue.
   sandbox: "auto",
   copyFiles: "all",
   // Post-run script checks stay disabled: they fail on sandbox environment

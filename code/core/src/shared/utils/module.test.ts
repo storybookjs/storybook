@@ -9,13 +9,9 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 // the real implementation, so undo that here.
 vi.unmock('./module.ts');
 
-vi.mock('node:module', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('node:module')>();
-  return {
-    ...actual,
-    register: vi.fn(),
-  };
-});
+vi.mock('node:module', { spy: true });
+
+const registrationError = new Error('module.register() is not supported in Jest');
 
 const loadImportModule = async () => {
   // `importModule` keeps the "loader registered" flag in module scope, so every test needs a
@@ -32,6 +28,8 @@ describe('importModule', () => {
     dir = mkdtempSync(join(tmpdir(), 'sb-import-module-'));
     fixture = join(dir, 'fixture.mjs');
     writeFileSync(fixture, 'export default { loaded: true };\n');
+    // Never install the loader hook in the process running these tests.
+    vi.mocked(register).mockImplementation(() => undefined);
   });
 
   afterEach(() => {
@@ -47,37 +45,35 @@ describe('importModule', () => {
     expect(register).toHaveBeenCalledTimes(1);
   });
 
-  it('still imports the module when the runtime forbids registering loader hooks', async () => {
-    // Jest >= 30.5 throws from `module.register()` inside its sandbox (jestjs/jest#16391).
-    vi.mocked(register).mockImplementation(() => {
-      throw new Error('module.register() is not supported in Jest');
+  describe('when the runtime forbids registering loader hooks', () => {
+    beforeEach(() => {
+      // Jest >= 30.5 throws from `module.register()` inside its sandbox (jestjs/jest#16391).
+      vi.mocked(register).mockImplementation(() => {
+        throw registrationError;
+      });
     });
-    const importModule = await loadImportModule();
 
-    await expect(importModule(fixture)).resolves.toEqual({ loaded: true });
-  });
+    it('still imports the module', async () => {
+      const importModule = await loadImportModule();
 
-  it('does not retry a registration that already failed', async () => {
-    vi.mocked(register).mockImplementation(() => {
-      throw new Error('module.register() is not supported in Jest');
+      await expect(importModule(fixture)).resolves.toEqual({ loaded: true });
     });
-    const importModule = await loadImportModule();
 
-    await importModule(fixture);
-    await importModule(fixture);
+    it('does not retry the registration on later calls', async () => {
+      const importModule = await loadImportModule();
 
-    expect(register).toHaveBeenCalledTimes(1);
-  });
+      await importModule(fixture);
+      await importModule(fixture);
 
-  it('surfaces the registration error as the cause when the module cannot be loaded at all', async () => {
-    const registrationError = new Error('module.register() is not supported in Jest');
-    vi.mocked(register).mockImplementation(() => {
-      throw registrationError;
+      expect(register).toHaveBeenCalledTimes(1);
     });
-    const importModule = await loadImportModule();
 
-    await expect(importModule(join(dir, 'missing.mjs'))).rejects.toMatchObject({
-      cause: registrationError,
+    it('surfaces the registration error as the cause when the module cannot be loaded at all', async () => {
+      const importModule = await loadImportModule();
+
+      await expect(importModule(join(dir, 'missing.mjs'))).rejects.toMatchObject({
+        cause: registrationError,
+      });
     });
   });
 });

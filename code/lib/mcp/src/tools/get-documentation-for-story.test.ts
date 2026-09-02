@@ -123,6 +123,59 @@ describe('getComponentStoryDocumentationTool', () => {
 		`);
   });
 
+  it('should return the same story documentation for a story id', async () => {
+    const call = async (args: Record<string, string>) => {
+      const response = await server.receive(
+        {
+          jsonrpc: '2.0' as const,
+          id: 1,
+          method: 'tools/call',
+          params: { name: GET_STORY_TOOL_NAME, arguments: args },
+        },
+        { custom: { request: new Request('https://example.com/mcp'), manifestProvider } }
+      );
+      return (response.result as any).content[0].text;
+    };
+
+    expect(await call({ storyId: 'button--primary' })).toBe(
+      await call({ componentId: 'button', storyName: 'Primary' })
+    );
+  });
+
+  it('should return an error listing available story ids when a story id is not found', async () => {
+    const response = await server.receive(
+      {
+        jsonrpc: '2.0' as const,
+        id: 1,
+        method: 'tools/call',
+        params: { name: GET_STORY_TOOL_NAME, arguments: { storyId: 'button--nope' } },
+      },
+      { custom: { request: new Request('https://example.com/mcp'), manifestProvider } }
+    );
+
+    expect((response.result as any).isError).toBe(true);
+    expect((response.result as any).content[0].text).toBe(
+      'Story not found: "button--nope" for component "button". Available stories: Primary (button--primary)'
+    );
+  });
+
+  it('should return guidance when neither a story id nor a name pair is given', async () => {
+    const response = await server.receive(
+      {
+        jsonrpc: '2.0' as const,
+        id: 1,
+        method: 'tools/call',
+        params: { name: GET_STORY_TOOL_NAME, arguments: { componentId: 'button' } },
+      },
+      { custom: { request: new Request('https://example.com/mcp'), manifestProvider } }
+    );
+
+    expect((response.result as any).isError).toBe(true);
+    expect((response.result as any).content[0].text).toBe(
+      'Provide either `storyId`, or both `componentId` and `storyName`. Story ids are listed by the docs-list tool with `withStoryIds: true` and in docs-show output.'
+    );
+  });
+
   it('should return an error when a component is not found', async () => {
     const request = {
       jsonrpc: '2.0' as const,
@@ -175,16 +228,16 @@ describe('getComponentStoryDocumentationTool', () => {
     });
 
     expect(response.result).toMatchInlineSnapshot(`
-			{
-			  "content": [
-			    {
-			      "text": "Story "Nonexistent" not found for component "button". Available stories: Primary",
-			      "type": "text",
-			    },
-			  ],
-			  "isError": true,
-			}
-		`);
+      {
+        "content": [
+          {
+            "text": "Story "Nonexistent" not found for component "button". Available stories: Primary (button--primary)",
+            "type": "text",
+          },
+        ],
+        "isError": true,
+      }
+    `);
   });
 
   it('should handle fetch errors gracefully', async () => {
@@ -379,6 +432,30 @@ describe('getComponentStoryDocumentationTool', () => {
         params: {
           name: GET_STORY_TOOL_NAME,
           arguments: { componentId: 'button', storyName: 'Primary', storybookId: 'local' },
+        },
+      };
+
+      const mockHttpRequest = new Request('https://example.com/mcp');
+      const response = await server.receive(request, {
+        custom: { request: mockHttpRequest, manifestProvider, sources },
+      });
+
+      expect((response.result as any).content[0].text).toContain('# Button - Primary');
+      expect(manifestProvider).toHaveBeenCalledWith(
+        mockHttpRequest,
+        COMPONENT_MANIFEST_PATH,
+        sources[0]
+      );
+    });
+
+    it('should fetch story documentation by story id from a specific source', async () => {
+      const request = {
+        jsonrpc: '2.0' as const,
+        id: 1,
+        method: 'tools/call',
+        params: {
+          name: GET_STORY_TOOL_NAME,
+          arguments: { storyId: 'button--primary', storybookId: 'local' },
         },
       };
 

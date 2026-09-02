@@ -74,7 +74,7 @@ test.describe('storybook tools attach', () => {
     expect(result.output).not.toContain('Falling back');
   });
 
-  test('auto mode attaches for docs, preview, and review against the running internal UI', async () => {
+  test('auto mode attaches for docs, preview, review, and stories changed against the running internal UI', async () => {
     test.skip(
       !runsAgainstDevServer,
       'Live attach requires the running Storybook channel, which the static E2E job does not serve.'
@@ -99,6 +99,10 @@ test.describe('storybook tools attach', () => {
 
     const review = await runTools(['review', 'create', '--input', REVIEW_INPUT]);
     expect(review.exitCode, review.output).toBe(0);
+
+    const changed = await runTools(['stories', 'changed']);
+    expect(changed.exitCode, changed.output).toBe(0);
+    expect(changed.output).not.toContain('Falling back');
   });
 
   test('--attach still joins the running internal UI', async () => {
@@ -127,15 +131,18 @@ test.describe('storybook tools attach', () => {
     expect(preview.output).toMatch(/--no-attach|requires a running Storybook/);
   });
 
-  test('auto mode falls back to local with a notice when no instance matches', async () => {
+  test('auto mode falls back to local silently when no instance matches', async () => {
     const emptyHome = join(tmpdir(), `storybook-tools-attach-empty-home-${process.pid}`);
     await mkdir(emptyHome, { recursive: true });
-    const result = await runTools(['docs', 'list'], process.cwd(), { HOME: emptyHome });
+    const result = await runTools(['docs', 'list'], process.cwd(), {
+      HOME: emptyHome,
+      USERPROFILE: emptyHome,
+    });
 
     expect(result.exitCode, result.output).toBe(0);
     expect(result.output).toContain('example-button');
-    expect(result.output).toContain('Falling back to loading this project');
-    expect(result.output).toContain('npm run storybook');
+    expect(result.output).not.toContain('Falling back');
+    expect(result.output).not.toContain('npm run storybook');
   });
 
   test('--no-attach from a different cwd loads via a project-local child host', async () => {
@@ -147,10 +154,10 @@ test.describe('storybook tools attach', () => {
     expect(list.output).toContain('example-button');
   });
 
-  test('attaches from a different cwd via a project-local child host', async () => {
+  test('attaches from a different cwd because the CLI is the same storybook installation', async () => {
     test.skip(
       !runsAgainstDevServer,
-      'Child-host attach requires the running Storybook channel, which the static E2E job does not serve.'
+      'Live attach requires the running Storybook channel, which the static E2E job does not serve.'
     );
     const list = await runTools(
       ['--cwd', process.cwd(), 'docs', 'list'],

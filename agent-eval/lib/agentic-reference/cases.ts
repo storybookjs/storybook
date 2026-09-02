@@ -113,6 +113,7 @@ const EXPERIMENT_BRANCHES = [
   'experiment/stories-examples',
   'experiment/stories-full',
   'experiment/purge-jsdoc',
+  'experiment/purge-docgen',
 ] as const;
 
 // What each content variant serves, for readers with no project context.
@@ -152,6 +153,8 @@ const VARIANT_DEFINITIONS: Record<string, string> = {
     'Storybook MCP with the basic-docs content plus example stories taken from MealDrop or DropBoard, demonstrating typical usage patterns.',
   'purge-jsdoc':
     'Storybook MCP with full documentation and stories, but stripped JSDoc. Isolates how well Storybook MCP performs without docgen annotations.',
+  'purge-docgen':
+    'Storybook MCP with full documentation and stories, but stripped docgen (JSDoc and TypeScript inferred). Isolates how well Storybook MCP performs without docgen annotations.',
 };
 
 const VARIANT_AGENTS: EvalAgent[] = ['claude-code'];

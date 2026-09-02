@@ -50,6 +50,7 @@ import { readNodeCensus } from '#lib/post-analysis/baseline';
 import { findRuns, selectRuns, type Run, type RunSelection } from '#lib/post-analysis/discovery';
 import { selectionFlags } from '#lib/agentic-reference/selection';
 import { formatCompactCount, shortExperiment } from '#lib/agentic-reference/utils';
+
 import { readJson } from '#lib/utils/files';
 import { isRecord } from '#lib/utils/type';
 
@@ -73,7 +74,7 @@ function duration(ms: number): string {
 }
 
 const ROOT = fileURLToPath(new URL('..', import.meta.url));
-const RESULTS_DIR = join(ROOT, 'results');
+const RESULTS_DIR = process.env.AGENT_EVAL_RESULTS_DIR ?? join(ROOT, 'results');
 const BASELINES_DIR = join(ROOT, 'baselines');
 const REF_CACHE_DIR = join(ROOT, '.eval-cache/refs');
 
@@ -167,6 +168,16 @@ function labelOf(run: Run): string {
   return `${run.experiment}/${run.timestamp}/${run.evalName}/run-${run.run}`;
 }
 
+/**
+ * The reuse test the judging pass applies, shared with the headline count so
+ * "Judging up to N" deducts the judgements that will be reused free.
+ */
+function hasFreshJudgement(run: Run, options: Options): boolean {
+  if (options.recompute) return false;
+  const existing = readMisuseReport(run.runDir);
+  return existing !== null && !isStale(existing, { dsGuidelinesRef: dsDocsRefLabel() });
+}
+
 type Plan =
   | { action: 'reused' | 'skipped' }
   | {
@@ -203,8 +214,7 @@ function planRun(run: Run, options: Options): Plan {
     return { action: 'skipped' };
   }
 
-  const existing = options.recompute ? null : readMisuseReport(run.runDir);
-  if (existing && !isStale(existing, { dsGuidelinesRef: dsDocsRefLabel() })) {
+  if (hasFreshJudgement(run, options)) {
     return { action: 'reused' };
   }
 
@@ -342,8 +352,13 @@ async function main() {
     return;
   }
 
+  // The headline is the spend ceiling, not the selection size: judgements
+  // already cached and fresh will be reused free, so they are deducted here.
+  const cached = runs.filter((run) => hasFreshJudgement(run, options)).length;
   console.log(
-    `Judging up to ${runs.length} run(s) against ${styleText('bold', dsDocsRefLabel())}\n`
+    `Judging up to ${runs.length - cached} run(s)` +
+      (cached > 0 ? ` (${cached} cached judgement(s) reused free)` : '') +
+      ` against ${styleText('bold', dsDocsRefLabel())}\n`
   );
 
   const counts = { judged: 0, reused: 0, skipped: 0, failed: 0 };

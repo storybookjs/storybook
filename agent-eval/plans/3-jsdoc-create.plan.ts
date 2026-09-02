@@ -19,6 +19,7 @@ export default {
   experiments: [
     'agentic-ref-cc-control-none-opus-high',
     'agentic-ref-cc-purge-jsdoc-opus-high',
+    'agentic-ref-cc-purge-docgen-opus-high',
     'agentic-ref-cc-full-opus-high',
   ],
   evals: ['701', '706'],

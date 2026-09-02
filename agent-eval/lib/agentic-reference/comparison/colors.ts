@@ -32,6 +32,9 @@ export const CASE_COLORS: Record<string, CaseColor> = {
   'stories-examples': { light: '#F76707', dark: '#FFA94D' }, // tangerine
   'stories-full': { light: '#862E9C', dark: '#BE4BDB' }, // grape
   'purge-jsdoc': { light: '#8B5E83', dark: '#BD8CB3' }, // mauve
+  'purge-docgen': { light: '#A61E4D', dark: '#F783AC' }, // wine
+  // The synthetic --bundle arm; only ever charted against the control.
+  bundled: { light: '#5F3DC4', dark: '#B197FC' }, // deep violet
 };
 
 /** Cases outside the registry fall back to a neutral gray. */

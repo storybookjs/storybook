@@ -9,6 +9,7 @@ export default {
     'agentic-ref-cc-stories-full-opus-high',
     'agentic-ref-cc-docs-full-opus-high',
     'agentic-ref-cc-purge-jsdoc-opus-high',
+    'agentic-ref-cc-purge-docgen-opus-high',
     'agentic-ref-cc-full-opus-high',
     'agentic-ref-cc-basic-docs-opus-high',
     'agentic-ref-cc-do-dont-opus-high',

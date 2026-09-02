@@ -166,6 +166,23 @@ describe('manifestJson', () => {
     expect(colors['do-dont']).toEqual(CASE_COLORS['do-dont']);
   });
 
+  it('records the bundled arm with its constituent experiments', () => {
+    const bundle: ResolvedCase = {
+      caseName: 'bundled',
+      experiment: 'bundled',
+      shortName: 'bundled',
+      pooledExperiments: [TREATMENT.experiment],
+    };
+    const json = manifestJson({
+      spec: { ...SPEC, treatments: [bundle] },
+      metrics: COMPARISON_METRICS,
+      cells: [cell(CONTROL, [7]), cell(bundle, [5])],
+      agentEvalRoot: '/root',
+      provenance: {},
+    });
+    expect(JSON.parse(json).spec.treatments[0].pooledExperiments).toEqual([TREATMENT.experiment]);
+  });
+
   it('records the plan a scoped comparison came from', () => {
     const json = manifestJson({
       spec: { ...SPEC, plan: 'plans/1-levels-edit.plan.ts' },

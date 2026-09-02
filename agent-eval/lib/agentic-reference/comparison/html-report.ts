@@ -131,13 +131,13 @@ const METRICS: Record<string, MetricCopy> = {
     name: 'Cost per run',
     description: 'What one run costs in API dollars',
     computes: "The run's estimated API bill, priced from its token usage at the model's rates.",
-    relevance: 'The bottom line. Savings in time or tokens only matter if they show up here.',
+    relevance: 'The most direct measure of whether an experiment makes agents cheaper.',
   },
   durationSeconds: {
     name: 'Time to finish',
     description: 'Wall-clock seconds per run',
-    computes: 'Wall-clock time for the whole run, from the agent starting the task to it stopping.',
-    relevance: 'The most direct measure of whether documentation makes the agent faster.',
+    computes: 'Wall-clock time for the whole run.',
+    relevance: 'The most direct measure of whether an experiment makes agents faster.',
   },
   outputTokens: {
     name: 'Output tokens',
@@ -153,14 +153,12 @@ const METRICS: Record<string, MetricCopy> = {
     computes:
       'The share of everything the model read that came from prompt cache instead of being ' +
       'processed at the full price.',
-    relevance:
-      'A high rate means the agent kept a stable context between turns; a low one makes the ' +
-      'same work cost more.',
+    relevance: 'A high rate means the agent kept a stable context between turns.',
   },
   inputTokens: {
     name: 'Uncached input tokens',
     description: 'Context paid at the full rate',
-    computes: 'Input the model read without cache help — tokens billed at the full rate.',
+    computes: 'Input the model read without cache help, billed at the full rate.',
     relevance:
       'The expensive kind of reading. Good docs shrink it by getting the agent to the ' +
       'answer with less context.',
@@ -169,8 +167,8 @@ const METRICS: Record<string, MetricCopy> = {
     name: 'Conversation turns',
     description: 'Agent loop iterations',
     computes:
-      'How many rounds the agent loop ran — each turn is one model response, usually ' +
-      'followed by tool calls.',
+      'How many rounds the agent loop ran (each turn is one model response, usually ' +
+      'followed by tool calls).',
     relevance:
       'Fewer turns means less back-and-forth to reach a result; many turns usually mean ' +
       'searching or retrying.',
@@ -181,9 +179,7 @@ const METRICS: Record<string, MetricCopy> = {
     computes:
       'Every tool invocation across the run: file reads and writes, shell commands, MCP ' +
       'calls, all of it.',
-    relevance:
-      'A rough size of the work performed. Large gaps between arms mean the workflow ' +
-      'changed shape, not just pace.',
+    relevance: 'A rough size of the work performed.',
   },
   docsCalls: {
     name: 'Documentation lookups',
@@ -191,9 +187,7 @@ const METRICS: Record<string, MetricCopy> = {
     computes:
       "Tool calls that read documentation: the design system's docs endpoints, plus web " +
       'fetches and searches.',
-    relevance:
-      'Shows whether the agent actually consulted the docs its arm serves — a treatment ' +
-      'can only work through this door.',
+    relevance: 'Shows whether the agent actually consulted the docs served in an experiment.',
   },
   explorationCalls: {
     name: 'Exploration calls',
@@ -212,34 +206,32 @@ const METRICS: Record<string, MetricCopy> = {
       'Tool calls that write: file edits and creations, plus shell commands that copy, ' +
       'move, or delete.',
     relevance:
-      'Edits beyond what the change needs are rework — write, check, rewrite loops show ' +
-      'up here.',
+      'An increase in edit calls can be evidence of rework from the agent because it did not ' +
+      'understand how to use existing code',
   },
   verificationCalls: {
     name: 'Verification calls',
     description: 'Tests, typechecks, builds',
     computes: 'Tool calls that check the work: test runs, typechecking, linting, builds.',
     relevance:
-      'Some checking is healthy; how much of it an agent needs tracks how confident it is ' +
-      'in its changes.',
+      'An increase in verification calls can mean the agent wrote incorrect code the first time around ' +
+      'and noticed through tools like tsc.',
   },
   environmentCalls: {
     name: 'Environment-setup calls',
     description: 'Sandbox provisioning',
     computes:
       'Tool calls that provision the sandbox rather than work on the task: package ' +
-      'installation (apt-get, npm install, playwright install), library extraction, and ' +
-      'loader probing.',
+      'installation (apt-get, npm install, playwright install), library extraction, etc.',
     relevance:
-      'The browser-bootstrap detour behind most duration outliers lives here; counted ' +
-      'apart so it cannot inflate exploration or verification.',
+      'These tool calls relate to experiment setup, so we isolate them to avoid inflating other measurements.',
   },
   filesEdited: {
     name: 'Files touched',
     description: 'Distinct files the agent edited',
     computes:
       'How many distinct project files the agent wrote at least once during the run. ' +
-      "Renames are followed; scratch files outside the project don't count.",
+      "Renames are followed, and temp files outside the project don't count.",
     relevance:
       'Touching many files for a contained task is a sign of thrashing; a focused agent ' +
       'edits the few files the change needs.',
@@ -258,7 +250,8 @@ const METRICS: Record<string, MetricCopy> = {
     name: 'Max edits per file',
     description: 'Rewrites of the most-edited file',
     computes: 'How many times the most-rewritten file was written over the run.',
-    relevance: 'Catches the one file the agent fought with, which an average smooths away.',
+    relevance:
+      'Helps identify outlier runs where an agent got stuck over a specific part of the codebase, which might pollute experiment results.',
   },
   diffFilesChanged: {
     name: 'Files changed in diff',
@@ -266,12 +259,11 @@ const METRICS: Record<string, MetricCopy> = {
     computes:
       'How many files differ between the finished project and the tree the run started from.',
     relevance:
-      'The footprint a reviewer faces. Files touched counts the work; this counts what is ' +
-      'left at the end.',
+      'The footprint a reviewer faces. Can indicate whether design system reuse was effective, but is affected by things like util factorization.',
   },
   slocAdded: {
     name: 'Lines added',
-    description: 'Source lines the change adds',
+    description: 'How much new code was needed',
     computes:
       'Source lines the final change adds over the starting tree, with blank lines and ' +
       'comments stripped before counting.',
@@ -280,57 +272,59 @@ const METRICS: Record<string, MetricCopy> = {
       'leaning on existing components.',
   },
   slocNet: {
-    name: 'Net lines',
-    description: 'Adds minus removals',
-    computes: 'Lines added minus lines removed, under the same counting rules.',
+    name: 'Lines added minus removed',
+    description: 'How much the codebase grew',
+    computes:
+      'Lines added minus lines removed, with blank lines and ' +
+      'comments stripped before counting.',
     relevance:
-      'How much the codebase grew. A small net with many added lines means the run mostly ' +
+      'The maintenance cost of the change. A small net with many added lines means the run mostly ' +
       'replaced code rather than piling it on.',
   },
   dsShareOfAllInstances: {
-    name: 'DS share of rendered UI',
-    description: 'Instance-weighted DS share of UI',
+    name: 'DS share of JSX',
+    description: 'Instance-weighted DS share among all JSX nodes',
     computes:
-      'Of all UI elements in the finished app — plain HTML tags included — the share that ' +
-      'comes from the design system, with each element counted once per estimated render ' +
-      'of the component it lives in, and conditional branches counted fractionally.',
+      'Of all UI elements in the finished app (including plain HTML tags), the share that ' +
+      'comes from the design system. Element counts are weighted based on how many times the ' +
+      "element's parent component is used in the codebase, to mirror a dynamic analysis.",
     relevance:
-      'The headline adoption number, weighted toward what actually reaches the screen: ' +
-      'markup in a component used everywhere counts for more than a one-off.',
+      'The headline DS adoption number, weighted toward what users are actually exposed to: ' +
+      'markup in a component used everywhere matters more than in a one-off component.',
   },
   dsShareOfComponentInstances: {
-    name: 'DS share of rendered components',
-    description: 'Instance-weighted share among components',
+    name: 'DS share of components',
+    description: 'Instance-weighted share among component declarations',
     computes:
-      'The same instance weighting counting only components, with plain HTML tags like ' +
-      'div and span left out.',
+      'The same instance weighting measurement, but counting only components, ' +
+      'with plain HTML tags like div and span left out.',
     relevance:
-      'When a component reaches the rendered tree, how often is it the design ' +
-      "system's — weighted by how often it gets there.",
+      'Design systems without layout components expect consumers to have many plain HTML tags. ' +
+      'In such cases, this metric is a better measure of DS adoption.',
   },
   dsShareOfAllNodes: {
-    name: 'DS share of UI',
-    description: 'Design-system share of UI elements',
+    name: 'DS share of JSX (unweighted)',
+    description: 'Among all JSX nodes in source code',
     computes:
-      'Of all UI elements in the finished app — plain HTML tags included — the share that ' +
+      'Of all UI elements in the finished app (including plain HTML tags), the share that ' +
       'comes from the design system.',
     relevance:
       'The source-level adoption number: every element counts once, however often it ' +
-      'renders. Compare with the rendered share to see where adoption lives.',
+      'renders. This is a more naive, simpler version of the weighted metric.',
   },
   dsShareOfComponentNodes: {
-    name: 'DS share of components',
-    description: 'DS share among components only',
+    name: 'DS share of components (unweighted)',
+    description: 'Among component declarations in source code',
     computes:
       'The design-system share counting only components, with plain HTML tags like div and ' +
       'span left out.',
     relevance:
-      'A narrower question: when the agent reached for a component, did it pick the design ' +
-      "system's?",
+      'The source-level adoption number: every element counts once, however often it ' +
+      'renders. This is a more naive, simpler version of the weighted metric.',
   },
   dsShareOfAllInstancesDelta: {
-    name: 'DS share of rendered UI Δ',
-    description: 'How the rendered DS share moved',
+    name: 'DS share of JSX Δ',
+    description: 'How the weighted DS share moved',
     computes:
       "The change in the instance-weighted share of all UI elements: the finished app's " +
       "share minus the untouched app's.",
@@ -338,8 +332,8 @@ const METRICS: Record<string, MetricCopy> = {
       'Whether the run moved what users actually see toward or away from the design system.',
   },
   dsShareOfComponentInstancesDelta: {
-    name: 'DS share of rendered components Δ',
-    description: 'How the rendered component share moved',
+    name: 'DS share of components Δ',
+    description: 'How the weighted component share moved',
     computes:
       'The change in the instance-weighted share of components (plain HTML tags left ' +
       "out): the finished app's share minus the untouched app's.",
@@ -348,8 +342,8 @@ const METRICS: Record<string, MetricCopy> = {
       'what it removed?',
   },
   dsShareOfAllNodesDelta: {
-    name: 'DS share of UI Δ',
-    description: 'How the DS share of UI moved',
+    name: 'DS share of JSX Δ (unweighted)',
+    description: 'How the DS share of JSX moved',
     computes:
       "The change in the design system's share of all UI elements: the finished app's " +
       "share minus the untouched app's.",
@@ -358,7 +352,7 @@ const METRICS: Record<string, MetricCopy> = {
       'the absolute share when the app starts with plenty of existing UI.',
   },
   dsShareOfComponentNodesDelta: {
-    name: 'DS share of components Δ',
+    name: 'DS share of components Δ (unweighted)',
     description: 'How the DS component share moved',
     computes:
       "The change in the design system's share of components (plain HTML tags left out): " +
@@ -370,12 +364,12 @@ const METRICS: Record<string, MetricCopy> = {
     name: 'DS misuse score',
     description: 'Judge score over all introduced usages',
     computes:
-      'An LLM judge scores every component usage the run introduced against the design ' +
-      "system's own documentation (1 sound, 0.5 debatable, 0 wrong); this is the mean over " +
-      'every answer, so runs are comparable whatever the size of their diff.',
+      'An LLM judge scores every introduced JSX node against the DS documentation to decide ' +
+      'if DS usages use the right component and use it correctly, and if non-DS usages are legitimate. ' +
+      'Each of the three questions is scored 0 to 1, and scores are then averaged.',
     relevance:
       'Coverage says how much of the UI came from the design system; this says whether it ' +
-      'was used well. The DS misuse tab holds each verdict with its reason.',
+      'was used in the right places, and as intended.',
   },
   dsMisuseDecision: {
     name: 'Right DS component',
@@ -384,14 +378,13 @@ const METRICS: Record<string, MetricCopy> = {
       'Per introduced design-system usage: was this the right component for the job, or did ' +
       'a better DS alternative exist? Mean over judged DS usages.',
     relevance:
-      'Picking a plausible-but-wrong component is the misuse that survives review; docs and ' +
-      'stories exist to prevent exactly this.',
+      "Picking a plausible-but-wrong component is a misuse, but it's invisible to coverage metrics.",
   },
   dsMisuseUsage: {
     name: 'DS usage per docs',
     description: 'DS usages free of documented violations',
     computes:
-      'Per introduced design-system usage: does it violate a documented guideline — ' +
+      'Per introduced design-system usage: does it violate a documented guideline e.g. ' +
       'composition rules, required props, tokens, compound parts? Mean over judged DS usages.',
     relevance:
       'Measures whether the served documentation actually transferred its rules into the code ' +
@@ -404,34 +397,32 @@ const METRICS: Record<string, MetricCopy> = {
       'Per introduced local component: should it be local, or did a design-system component ' +
       'with a relevant API exist? Mean over judged local components.',
     relevance:
-      'Hand-rolling what the system already ships is how design systems erode; a low score ' +
-      'here is reinvention the docs failed to prevent.',
+      'Measures whether the agent found relevant DS components or decided to duplicate existing UI logic.',
   },
   cyclomaticDelta: {
     name: 'Cyclomatic complexity added',
     description: 'Branching complexity the change adds',
-    computes:
-      "How much the project's cyclomatic complexity rose over the run: the classic count " +
-      'of independent paths through the code.',
-    relevance: 'More branches means more cases to test and more ways to be wrong.',
+    computes: "How much the project's cyclomatic complexity rose over the run.",
+    relevance:
+      'More branches means more cases to test and more ways to be wrong. Cyclomatic complexity is a classic metric in QA tools, though it is biased against small reusable functions.',
   },
   cognitiveDelta: {
     name: 'Cognitive complexity added',
     description: 'Readability cost the change adds',
     computes:
-      "How much the project's cognitive complexity rose — a readability score that charges " +
-      'extra for nesting and tangled control flow.',
+      'The SonarQube implementation of complexity, which corrects the biases of cyclomatic complexity. ' +
+      "It's a readability metric that punishes code for nesting and tangled control flow.",
     relevance: "The closest number to 'how much harder did this code just get to read'.",
   },
   jsxCognitiveDelta: {
-    name: 'JSX complexity added',
+    name: 'JSX-aware complexity added',
     description: 'Markup complexity the change adds',
     computes:
-      'Cognitive complexity again, but JSX-aware: render loops and conditional markup ' +
-      'count too, weighted by how deep they nest.',
+      "Storybook's JSX-aware take on cognitive complexity: render loops and conditional markup " +
+      'are counted and weighted by how deep they nest.',
     relevance:
-      'In UI code most of the complexity lives in the markup, which the classic scores ' +
-      'barely see.',
+      'In UI code most, of the complexity lives in the markup, which the classic scores ' +
+      'do not account for as effectively.',
   },
 };
 
@@ -465,14 +456,14 @@ const FAMILIES: Record<string, { name: string; intro: string }> = {
     name: 'DS misuse',
     intro:
       'Whether the design system was used well, judged per introduced usage against its own ' +
-      'documentation and averaged per run — 1 is clean, 0 is misuse. Judged runs only; the ' +
-      'DS misuse tab holds the per-node reasons.',
+      'documentation and averaged per run (1 is clean, 0 is misuse). Judged runs only. ' +
+      'See DS misuse tab for details.',
   },
   dsMisuseFacets: {
     name: 'DS misuse by documentation facet',
     intro:
-      'Exploratory per-facet drill-downs of the misuse composite: mean score of judged answers ' +
-      'citing each facet. Corrected in their own BH group, separate from the confirmatory metrics.',
+      'Exploratory per-facet drill-downs of misuse scores. Helps identify the types of issues ' +
+      "that the experiment's documentation failed to prevent.",
   },
   complexity: {
     name: 'Complexity',
@@ -519,10 +510,11 @@ const COUNT_METRICS = new Set([
 // statistical depends on this set.
 const EXTRA_METRICS = new Set([
   'cyclomaticDelta',
+  'cognitiveDelta',
   'environmentCalls',
-  'inputTokens',
+  'cacheHitRate',
   'slocAdded',
-  'totalToolCalls',
+  'maxEditsPerFile',
   // The static node shares park now that the instance-weighted shares are the
   // headline (metricsVersion 8 made the same move in the analyze tables).
   'dsShareOfAllNodes',
@@ -1232,6 +1224,24 @@ function wfBadge(manifest: ManifestJson): string {
   );
 }
 
+/**
+ * The popover's headline: both spellings of the effect whenever both are
+ * well-defined — a log metric's % change made concrete at the control's own
+ * level, a raw metric's delta with its size relative to the control mean.
+ * Share metrics keep the single label: their delta is already in percentage
+ * points, and a relative percent on top would read as a typo.
+ */
+function dualEffectLabel(row: EstimateRow, effect: Effect, controlMean: number | null): string {
+  if (controlMean === null || controlMean <= 0 || SHARE_METRICS.has(row.metric)) {
+    return effect.label;
+  }
+  if (row.transform === 'log' || row.transform === 'log0') {
+    const absolute = controlMean * effect.value;
+    return `${signed(absolute < 0, formatMetricValue(row.metric, Math.abs(absolute)))} (${effect.label})`;
+  }
+  return `${effect.label} (${fmtPct(effect.value / controlMean)})`;
+}
+
 function tipAttributes(
   row: EstimateRow,
   effect: Effect,
@@ -1240,7 +1250,8 @@ function tipAttributes(
     treatment: string;
     controlMedian: string;
     treatmentMedian: string;
-  }
+  },
+  controlMean: number | null
 ): string {
   const sig = row.verdict === 'significant';
   const call = row.context
@@ -1255,7 +1266,7 @@ function tipAttributes(
   // The metric is visible beside the plot, so the title names the arm and its
   // effect; the CI gets a line of its own.
   return (
-    `data-tip-title="${escapeHtml(`${row.treatment}: ${effect.label}`)}" ` +
+    `data-tip-title="${escapeHtml(`${row.treatment}: ${dualEffectLabel(row, effect, controlMean)}`)}" ` +
     `data-tip-effect="${escapeHtml(`95% CI ${effect.ciLabel}`)}" ` +
     `data-tip-q="${escapeHtml(call)}" ` +
     `data-tip-qn="${escapeHtml(naiveCall)}" ` +
@@ -1370,7 +1381,7 @@ function buildEffects(
             treatment: tMean === null ? '' : formatMetricValue(metric.key, tMean),
             treatmentMedian: tMedian === null ? '' : formatMetricValue(metric.key, tMedian),
           };
-          const tip = tipAttributes(row, effect, stats);
+          const tip = tipAttributes(row, effect, stats, controlMean);
           const lo = x(effect.lo);
           // Significance styling (dot fill, CI/label dimming) lives in CSS keyed
           // on data-sig / data-sig-p so the Test toggle can switch it live.
@@ -2575,7 +2586,7 @@ document.addEventListener('click', function (e) {
   }
   if (e.target && e.target.id === 'misuseHelpBtn') { byId('misuseHelpModal').showModal(); return; }
   if (e.target && e.target.id === 'misuseRootChange') {
-    var next = window.prompt('Absolute path of your storybookjs/storybook checkout:', misuseRoot());
+    var next = window.prompt('Absolute path of your storybookjs/mcp checkout:', misuseRoot());
     if (next !== null) {
       while (next.endsWith('/')) next = next.slice(0, -1);
       localStorage.setItem('agenticRefRepoRoot', next);

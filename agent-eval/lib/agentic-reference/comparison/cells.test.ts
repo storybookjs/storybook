@@ -21,6 +21,17 @@ const TREATMENT: ResolvedCase = {
   experiment: 'agentic-ref-cc-do-dont-opus-high',
   shortName: 'do-dont',
 };
+const TREATMENT2: ResolvedCase = {
+  caseName: 'cc-full-opus-high',
+  experiment: 'agentic-ref-cc-full-opus-high',
+  shortName: 'full',
+};
+const BUNDLE: ResolvedCase = {
+  caseName: 'bundled',
+  experiment: 'bundled',
+  shortName: 'bundled',
+  pooledExperiments: [TREATMENT.experiment, TREATMENT2.experiment],
+};
 const WF = '703-fix-bug-flow';
 const TS1 = '2026-08-01T00-00-00.000Z';
 const TS2 = '2026-08-05T00-00-00.000Z';
@@ -186,6 +197,26 @@ describe('buildCells', () => {
     expect(gaps).toEqual([
       { case: CONTROL, workflow: WF, have: 0, need: 3, reason: 'superseded-runs' },
     ]);
+  });
+
+  it('pools every constituent experiment into a bundled case cell', () => {
+    for (let i = 1; i <= 2; i++) mkRun(CONTROL.experiment, TS2, i, 'usable');
+    for (let i = 1; i <= 2; i++) mkRun(TREATMENT.experiment, TS2, i, 'usable');
+    for (let i = 1; i <= 2; i++) mkRun(TREATMENT2.experiment, TS2, i, 'usable');
+    const { cells, gaps } = build({ cases: [CONTROL, BUNDLE] });
+    expect(gaps).toEqual([]);
+    expect(cells.find((c) => c.case === BUNDLE)!.runs).toHaveLength(4);
+  });
+
+  it('supersedes a bundled run against its own experiment, not the synthetic one', () => {
+    for (let i = 1; i <= 2; i++) mkRun(CONTROL.experiment, TS2, i, 'usable');
+    mkRun(TREATMENT.experiment, TS2, 1, 'usable');
+    mkRun(TREATMENT.experiment, TS2, 2, 'superseded');
+    mkRun(TREATMENT2.experiment, TS2, 1, 'usable');
+    const { cells } = build({ cases: [CONTROL, BUNDLE] });
+    const bundle = cells.find((c) => c.case === BUNDLE)!;
+    expect(bundle.runs).toHaveLength(2);
+    expect(bundle.superseded).toBe(1);
   });
 
   it('treats malformed analysis.json as excluded, not usable', () => {

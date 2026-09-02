@@ -17,6 +17,7 @@ describe('the compare CLI grammar', () => {
       plan: undefined,
       minRuns: undefined,
       out: undefined,
+      bundle: false,
     });
   });
 
@@ -29,6 +30,7 @@ describe('the compare CLI grammar', () => {
         '--plan=plans/1-levels-edit.plan.ts',
         '--min-runs=5',
         '--out=/tmp/x',
+        '--bundle',
       ])
     ).toEqual({
       control: 'control-none',
@@ -37,6 +39,7 @@ describe('the compare CLI grammar', () => {
       plan: 'plans/1-levels-edit.plan.ts',
       minRuns: 5,
       out: '/tmp/x',
+      bundle: true,
     });
   });
 
@@ -51,10 +54,12 @@ describe('the compare CLI grammar', () => {
       AGENTIC_REF_EXPERIMENTS: 'do-dont',
       AGENTIC_REF_EVALS: '703',
       AGENTIC_REF_MIN_RUNS: '7',
+      AGENTIC_REF_BUNDLE: '1',
     });
     expect(options.cases).toEqual(['do-dont']);
     expect(options.workflows).toEqual(['703']);
     expect(options.minRuns).toBe(7);
+    expect(options.bundle).toBe(true);
   });
 
   it('lets a flag beat its environment fallback', () => {

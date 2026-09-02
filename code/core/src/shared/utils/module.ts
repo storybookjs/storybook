@@ -48,18 +48,9 @@ export const resolvePackageDir = (
 
 let typescriptLoaderRegistration: Promise<void> | null = null;
 
-/**
- * Registers the TypeScript loader hook, memoizing the in-flight registration promise (rather than
- * a boolean) so that concurrent callers await the same registration instead of racing past it:
- * with a boolean flag set before the `await`, a second concurrent call would see the flag already
- * set and proceed to `import()` its own file before the hook was actually active.
- */
 function registerTypescriptLoader() {
   if (!typescriptLoaderRegistration) {
     typescriptLoaderRegistration = (async () => {
-      // Use new registerHooks on Node 26+ to avoid DEP0205 deprecation warning,
-      // with a fallback to the old register API if registerHooks fails.
-      // nodejs/node#62786 documents a possible `require.extensions` regression on Node 24.15.0+.
       if (semver.gte(process.versions.node, '26.0.0')) {
         try {
           const { load } = await import('storybook/internal/bin/loader');

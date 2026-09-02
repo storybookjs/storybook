@@ -363,6 +363,78 @@ describe('stories API', () => {
       });
     });
 
+    it('gives a root made only of punctuation a non-empty id', () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store, provider } = moduleArgs;
+      provider.getConfig.mockReturnValue({ sidebar: { showRoots: true } });
+      api.setIndex({
+        v: 5,
+        entries: {
+          'b--1': {
+            type: 'story',
+            subtype: 'story',
+            id: 'b--1',
+            title: '_/b',
+            name: '1',
+            tags: [],
+            importPath: './_/b.ts',
+          },
+        },
+      });
+      const { index } = store.getState();
+      // `_` has no alphanumeric characters, so its id falls back to its code point
+      expect(Object.keys(index!)).toEqual(['5f', '5f-b', 'b--1']);
+      expect(index!['5f']).toMatchObject({
+        type: 'root',
+        id: '5f',
+        name: '_',
+        children: ['5f-b'],
+      });
+      expect(index!['5f-b']).toMatchObject({
+        type: 'component',
+        id: '5f-b',
+        name: 'b',
+        parent: '5f',
+        children: ['b--1'],
+      });
+    });
+    it('does not collapse a group made only of punctuation into its parent', () => {
+      const moduleArgs = createMockModuleArgs({});
+      const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+      const { store, provider } = moduleArgs;
+      provider.getConfig.mockReturnValue({ sidebar: { showRoots: true } });
+      api.setIndex({
+        v: 5,
+        entries: {
+          'a-b--1': {
+            type: 'story',
+            subtype: 'story',
+            id: 'a-b--1',
+            title: 'a/_/b',
+            name: '1',
+            tags: [],
+            importPath: './a/_/b.ts',
+          },
+        },
+      });
+      const { index } = store.getState();
+      expect(Object.keys(index!)).toEqual(['a', 'a-5f', 'a-5f-b', 'a-b--1']);
+      expect(index!['a-5f']).toMatchObject({
+        type: 'group',
+        id: 'a-5f',
+        name: '_',
+        parent: 'a',
+        children: ['a-5f-b'],
+      });
+      expect(index!['a-5f-b']).toMatchObject({
+        type: 'component',
+        id: 'a-5f-b',
+        name: 'b',
+        parent: 'a-5f',
+        children: ['a-b--1'],
+      });
+    });
     it('intersects story/docs tags to compute tags for root and group entries', () => {
       const moduleArgs = createMockModuleArgs({});
       const { api } = initStories(moduleArgs as unknown as ModuleArgs);

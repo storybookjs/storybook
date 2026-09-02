@@ -174,6 +174,15 @@ type ToStoriesHashOptions = {
   statusFilterKey?: string;
 };
 
+/**
+ * Root, group and component ids are derived from the parts of a title with `sanitize`, which strips
+ * punctuation. A part made only of punctuation, such as a folder named `_`, would sanitize to
+ * nothing: an empty id for a root, and for a nested group an id equal to its parent's. Fall back to
+ * the part's code points so it still gets a stable, non-empty and URL-safe id.
+ */
+const sanitizeTitlePart = (part: string) =>
+  sanitize(part) || Array.from(part, (char) => char.codePointAt(0)!.toString(16)).join('-');
+
 export const transformStoryIndexToStoriesHash = (
   input: API_PreparedStoryIndex | StoryIndexV2 | StoryIndexV3,
   { provider, docsOptions, filters, allStatuses, statusFilterKey }: ToStoriesHashOptions
@@ -240,7 +249,7 @@ export const transformStoryIndexToStoriesHash = (
     // Now create a "path" or sub id for each name
     const paths = names.reduce((list, name, idx) => {
       const parent = idx > 0 && list[idx - 1];
-      const id = sanitize(parent ? `${parent}-${name}` : name!);
+      const id = parent ? `${parent}-${sanitizeTitlePart(name!)}` : sanitizeTitlePart(name!);
 
       if (name!.trim() === '') {
         throw new Error(dedent`Invalid title ${title} ending in slash.`);

@@ -546,6 +546,26 @@ export default {
             }
           `);
         });
+        it('does not resolve a config passed to the factory as a variable', () => {
+          expect(
+            getStorySortParameter(dedent`
+              const config = {
+                parameters: {
+                  options: {
+                    storySort: {
+                      order: ['General']
+                    }
+                  },
+                },
+              };
+              export default definePreview(config).type<{
+                parameters: {
+                  customParam?: string;
+                };
+              }>();
+          `)
+          ).toBeUndefined();
+        });
       });
     });
     describe('unsupported', () => {

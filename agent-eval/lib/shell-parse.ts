@@ -20,7 +20,7 @@ export function workflowCallMatchesName(call: StorybookWorkflowCall, name: strin
   return (
     name === 'get-storybook-story-instructions' &&
     call.name === 'skills-get' &&
-    (call.input.id === 'write-story' || call.input.id === 'all')
+    (call.input.id === 'write-story' || call.input.all === true)
   );
 }
 
@@ -107,15 +107,19 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
       // of the skill, so it does not count — same rule as the ai/tools branch below.
       const segment = segmentUntilSeparator(tokens, index + 2);
       const [first, ...rest] = segment;
-      const skillId = first === '--all' ? 'all' : first;
-      if (
-        skillId !== undefined &&
-        !skillId.startsWith('-') &&
+      const all = first === '--all' && rest.length === 0;
+      const single =
+        first !== undefined &&
+        !first.startsWith('-') &&
         !rest.includes('--all') &&
         !rest.includes('--help') &&
-        !rest.includes('-h')
-      ) {
-        calls.push({ name: 'skills-get', input: { id: skillId }, source: 'cli' });
+        !rest.includes('-h');
+      if (all || single) {
+        calls.push({
+          name: 'skills-get',
+          input: all ? { all: true } : { id: first },
+          source: 'cli',
+        });
         index += 1 + segment.length;
       }
       continue;

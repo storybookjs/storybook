@@ -33,17 +33,23 @@ describe('parseStorybookWorkflowShellCommands', () => {
     ]);
   });
 
-  test('matches write-story and --all, but not other skills, to the historic instructions name', () => {
+  test('matches write-story and --all, but not other ids, to the historic instructions name', () => {
     const calls = parseStorybookWorkflowShellCommands([
       'npx storybook skills write-story',
       'npx storybook skills --all',
       'npx storybook skills stories',
+      'npx storybook skills all',
     ]);
 
-    expect(calls.map((call) => call.input.id)).toEqual(['write-story', 'all', 'stories']);
+    expect(calls.map((call) => call.input)).toEqual([
+      { id: 'write-story' },
+      { all: true },
+      { id: 'stories' },
+      { id: 'all' },
+    ]);
     expect(
       calls.map((call) => workflowCallMatchesName(call, 'get-storybook-story-instructions'))
-    ).toEqual([true, true, false]);
+    ).toEqual([true, true, false, false]);
   });
 
   test('does not record skills help requests, rejected --all combinations, or quoted mentions', () => {
@@ -51,6 +57,7 @@ describe('parseStorybookWorkflowShellCommands', () => {
       'npx storybook skills write-story --help',
       'npx storybook skills write-story -h && npx storybook skills --all --help',
       'npx storybook skills stories --all',
+      'npx storybook skills --all stories',
       "echo 'storybook skills write-story'",
     ]);
 

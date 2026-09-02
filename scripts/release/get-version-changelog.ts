@@ -2,7 +2,7 @@ import { setOutput } from '@actions/core';
 import { program } from 'commander';
 import picocolors from 'picocolors';
 
-import { esMain } from '@storybook/scripts-utils/esmain.ts';
+import { esMain } from '../utils/esmain.ts';
 import { getCurrentVersion } from './get-current-version.ts';
 import { getChanges } from './utils/get-changes.ts';
 

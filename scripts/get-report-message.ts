@@ -4,8 +4,8 @@ import { readFile } from 'node:fs/promises';
 import { execaCommand } from 'execa';
 import { join } from 'path';
 
-import { CODE_DIRECTORY } from '@storybook/scripts-utils/constants.ts';
-import { esMain } from '@storybook/scripts-utils/esmain.ts';
+import { CODE_DIRECTORY } from './utils/constants.ts';
+import { esMain } from './utils/esmain.ts';
 
 type Branch = 'main' | 'next' | 'alpha' | 'next-release' | 'latest-release';
 type Workflow = 'merged' | 'daily';

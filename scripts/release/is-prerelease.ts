@@ -3,7 +3,7 @@ import { program } from 'commander';
 import picocolors from 'picocolors';
 import semver from 'semver';
 
-import { esMain } from '@storybook/scripts-utils/esmain.ts';
+import { esMain } from '../utils/esmain.ts';
 import { getCurrentVersion } from './get-current-version.ts';
 
 program

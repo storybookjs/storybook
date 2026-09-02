@@ -9,8 +9,8 @@ import semver from 'semver';
 import { dedent } from 'ts-dedent';
 import { z } from 'zod';
 
-import { esMain } from '@storybook/scripts-utils/esmain.ts';
-import { getCodeWorkspaces } from '@storybook/scripts-utils/workspace.ts';
+import { esMain } from '../utils/esmain.ts';
+import { getCodeWorkspaces } from '../utils/workspace.ts';
 import {
   listUnpublishedPackages,
   packagesAcceptedByRegistry,

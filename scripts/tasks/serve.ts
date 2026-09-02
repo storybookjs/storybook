@@ -3,9 +3,9 @@ import waitOn from 'wait-on';
 import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { getPort } from '../sandbox/utils/getPort.ts';
 import { type Task } from '../task.ts';
-import { ROOT_DIRECTORY } from '@storybook/scripts-utils/constants.ts';
-import { exec } from '@storybook/scripts-utils/exec.ts';
-import { isNxTaskExecution } from '@storybook/scripts-utils/nx.ts';
+import { ROOT_DIRECTORY } from '../utils/constants.ts';
+import { exec } from '../utils/exec.ts';
+import { isNxTaskExecution } from '../utils/nx.ts';
 import { prepareSandbox } from '../prepare-sandbox.ts';
 
 export const PORT = process.env.STORYBOOK_SERVE_PORT

@@ -5,7 +5,7 @@ import ora from 'ora';
 import picocolors from 'picocolors';
 import invariant from 'tiny-invariant';
 
-import { esMain } from '@storybook/scripts-utils/esmain.ts';
+import { esMain } from '../utils/esmain.ts';
 import { git } from './utils/git-client.ts';
 import { getUnpickedPRs } from './utils/github-client.ts';
 

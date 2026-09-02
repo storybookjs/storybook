@@ -9,7 +9,7 @@ import { glob } from 'glob';
 import { dirname, join, relative } from 'path';
 
 import { temporaryDirectory } from '../../code/core/src/common/utils/cli.ts';
-import { REPROS_DIRECTORY } from '@storybook/scripts-utils/constants.ts';
+import { REPROS_DIRECTORY } from '../utils/constants.ts';
 import { commitAllToGit } from './utils/git.ts';
 import {
   ensureLockfilePublishRules,

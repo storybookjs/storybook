@@ -6,7 +6,7 @@
  * (`EvalData` / `schemaVersion`). When agent SDKs or transcript formats change, revisit the
  * parsers and migrations together.
  */
-import { gh, ghJson } from '@storybook/scripts-utils/gh.ts';
+import { gh, ghJson } from '../utils/gh.ts';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';

@@ -9,8 +9,8 @@ import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-t
 import { now, saveBench } from '../bench/utils.ts';
 import { getPort } from '../sandbox/utils/getPort.ts';
 import type { Task } from '../task.ts';
-import { exec } from '@storybook/scripts-utils/exec.ts';
-import { isNxTaskExecution } from '@storybook/scripts-utils/nx.ts';
+import { exec } from '../utils/exec.ts';
+import { isNxTaskExecution } from '../utils/nx.ts';
 import { prepareSandbox } from '../prepare-sandbox.ts';
 
 /**

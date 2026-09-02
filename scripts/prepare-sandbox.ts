@@ -4,9 +4,9 @@ import { cp, rm } from 'node:fs/promises';
 import { join } from 'path';
 import waitOn from 'wait-on';
 
-import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from '@storybook/scripts-utils/constants.ts';
-import { exec } from '@storybook/scripts-utils/exec.ts';
-import { isNxTaskExecution } from '@storybook/scripts-utils/nx.ts';
+import { ROOT_DIRECTORY, SANDBOX_DIRECTORY } from './utils/constants.ts';
+import { exec } from './utils/exec.ts';
+import { isNxTaskExecution } from './utils/nx.ts';
 
 /**
  * Prepares a sandbox for use during NX task execution.

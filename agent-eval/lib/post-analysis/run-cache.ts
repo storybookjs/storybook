@@ -1,7 +1,7 @@
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { dim } from '@storybook/scripts-utils/colors.ts';
+import { dim } from '../utils/colors.ts';
 import { readJson } from '../utils/files.ts';
 
 // One entry per run, stored next to the other artifacts; --recompute ignores it.

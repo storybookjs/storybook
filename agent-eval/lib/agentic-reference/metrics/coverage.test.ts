@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 
 import { coverageDelta, isDsCoverage } from './coverage.ts';
-import { round } from '@storybook/scripts-utils/math.ts';
+import { round } from '../../utils/math.ts';
 
 import type { DsCoverage } from './coverage.ts';
 

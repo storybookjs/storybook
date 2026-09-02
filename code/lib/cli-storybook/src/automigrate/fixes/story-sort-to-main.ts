@@ -298,8 +298,31 @@ const previewParametersRootCount = (config: ConfigFile) =>
     return count;
   }, 0);
 
+const mainDefaultExportUsesCall = (config: ConfigFile) => {
+  const resolvesToCall = (node: t.Expression, seen = new Set<string>()): boolean => {
+    const expression = unwrapTypeScriptExpression(node);
+    if (t.isCallExpression(expression)) {
+      return true;
+    }
+    if (!t.isIdentifier(expression) || seen.has(expression.name)) {
+      return false;
+    }
+    const initialization = findVariableInitialization(config, expression.name);
+    return initialization
+      ? resolvesToCall(initialization, new Set(seen).add(expression.name))
+      : false;
+  };
+
+  return config._ast.program.body.some(
+    (statement) =>
+      t.isExportDefaultDeclaration(statement) &&
+      t.isExpression(statement.declaration) &&
+      resolvesToCall(statement.declaration)
+  );
+};
+
 const mainHasUnsupportedExportShape = (config: ConfigFile) => {
-  if (config.hasDefaultExport && !config._exportsObject) {
+  if (config.hasDefaultExport && (!config._exportsObject || mainDefaultExportUsesCall(config))) {
     return true;
   }
   return config._ast.program.body.some(

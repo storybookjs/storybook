@@ -13040,7 +13040,6 @@ __metadata:
     "@types/window-size": "npm:^1.1.4"
     "@verdaccio/types": "npm:^10.8.0"
     "@vitest/coverage-v8": "npm:^4.1.6"
-    ansi-regex: "npm:^6.0.1"
     chromatic: "npm:^18.0.1"
     citty: "npm:^0.2.1"
     codecov: "npm:^3.8.1"

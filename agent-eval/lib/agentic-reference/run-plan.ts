@@ -8,7 +8,7 @@
 // saveResults and discards every completed sibling run in the same
 // experiment. Slicing the matrix into batches of at most `parallelMax`
 // sandboxes each, with their own saveResults, caps that loss to one batch.
-import { stripAnsi } from '@storybook/scripts-utils/ansi.ts';
+import { stripVTControlCharacters } from 'node:util';
 import { matchesAnySelector, resolveEvalSelection } from './selection.ts';
 import { PLAIN_STYLE, type OutputStyle } from './style.ts';
 
@@ -357,7 +357,7 @@ export function scanResourceSignals(output: string): ResourceSignal[] {
   const found = new Map<ResourceSignalKind, ResourceSignal>();
   // The runner's chalk keeps colouring a pipe when FORCE_COLOR is set, and the
   // patterns have to match mid-line.
-  for (const line of stripAnsi(output).split('\n')) {
+  for (const line of stripVTControlCharacters(output).split('\n')) {
     for (const { kind, pattern } of SIGNAL_PATTERNS) {
       if (!found.has(kind) && pattern.test(line)) {
         found.set(kind, { kind, evidence: line.trim().slice(0, 200) });

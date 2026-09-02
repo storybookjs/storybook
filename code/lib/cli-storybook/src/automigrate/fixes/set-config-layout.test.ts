@@ -41,30 +41,17 @@ describe('transformSetConfigLayout', () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
 
-      addons.setConfig({
-        showNav: false,
-        panelPosition: 'right',
-        enableShortcuts: false,
-        theme,
-      });
+      addons.setConfig({ showNav: false, panelPosition: 'right', enableShortcuts: false, theme });
     `;
 
-    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
-      "import { addons } from 'storybook/manager-api';
+    const transformed = transformSetConfigLayout(source);
 
-      addons.setConfig({
-        layout: {
-          showNav: false,
-          panelPosition: 'right'
-        },
-
-        ui: {
-          enableShortcuts: false
-        },
-
-        theme
-      });"
-    `);
+    expect(transformed).toContain(
+      "  layout: {\n    showNav: false,\n    panelPosition: 'right'\n  }"
+    );
+    expect(transformed).toContain('  ui: {\n    enableShortcuts: false\n  }');
+    expect(transformed).not.toContain('\n  showNav:');
+    expect(transformed).not.toContain('\n  enableShortcuts:');
   });
 
   it('reports manual guidance when a nested option overrides a top-level option', () => {

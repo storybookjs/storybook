@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { babelPrint } from 'storybook/internal/babel';
+import { babelPrint, types as t } from 'storybook/internal/babel';
 
 import { dedent } from 'ts-dedent';
 
@@ -35,6 +35,54 @@ const removeField = (path: string[], source: string) => {
 };
 
 describe('ConfigFile', () => {
+  describe('findNamedImportMethodCalls', () => {
+    it('finds binding-safe method calls on aliased named imports', () => {
+      const config = loadConfig(dedent`
+        import { addons as managerAddons } from 'storybook/manager-api';
+
+        managerAddons.setConfig({ showNav: false });
+        managerAddons['setConfig']({ showPanel: false });
+
+        function configure(managerAddons: { setConfig: (value: unknown) => void }) {
+          managerAddons.setConfig({ showToolbar: false });
+        }
+      `).parse();
+
+      const calls = config.findNamedImportMethodCalls({
+        importedName: 'addons',
+        methodName: 'setConfig',
+        moduleNames: ['storybook/manager-api', '@storybook/manager-api'],
+      });
+
+      expect(calls.map((call) => babelPrint(call))).toEqual([
+        'managerAddons.setConfig({ showNav: false })',
+        "managerAddons['setConfig']({ showPanel: false })",
+      ]);
+
+      calls[0].arguments[0] = t.objectExpression([
+        t.objectProperty(t.identifier('layout'), t.objectExpression([])),
+      ]);
+      expect(printConfig(config).code).toContain('managerAddons.setConfig({\n  layout: {}\n})');
+    });
+
+    it('ignores other modules and type-only imports', () => {
+      const config = loadConfig(dedent`
+        import { addons } from 'other-package';
+        import type { addons as typeAddons } from 'storybook/manager-api';
+        addons.setConfig({ showNav: false });
+        typeAddons.setConfig({ showPanel: false });
+      `).parse();
+
+      expect(
+        config.findNamedImportMethodCalls({
+          importedName: 'addons',
+          methodName: 'setConfig',
+          moduleNames: ['storybook/manager-api'],
+        })
+      ).toHaveLength(0);
+    });
+  });
+
   describe('getField', () => {
     describe('named exports', () => {
       it('missing export', () => {

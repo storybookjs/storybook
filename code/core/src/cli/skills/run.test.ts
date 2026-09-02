@@ -48,26 +48,23 @@ describe('resolveSkillsIntent', () => {
     });
   });
 
-  it('does not treat `help`, `list`, or `get` as subcommands', () => {
-    expect(resolveSkillsIntent({ tokens: ['help', 'stories'] })).toEqual({
-      kind: 'unknown',
-      id: 'help',
-    });
-    expect(resolveSkillsIntent({ tokens: ['list'] })).toEqual({ kind: 'unknown', id: 'list' });
-    expect(resolveSkillsIntent({ tokens: ['get', 'stories'] })).toEqual({
-      kind: 'unknown',
-      id: 'get',
-    });
+  it('rejects `help`, `list`, and `get` as unknown skills, naming the valid ids', () => {
+    for (const first of ['help', 'list', 'get']) {
+      expect(resolveSkillsIntent({ tokens: [first, 'stories'] })).toEqual({
+        kind: 'error',
+        message: `Unknown skill "${first}". Available skills: stories, write-story, setup.`,
+      });
+    }
   });
 
   it('rejects surplus positional arguments and an id combined with --all', () => {
     expect(resolveSkillsIntent({ tokens: ['stories', 'typo'] })).toEqual({
-      kind: 'invalid',
-      tokens: ['stories', 'typo'],
+      kind: 'error',
+      message: expect.stringContaining('Unexpected arguments: "typo"'),
     });
     expect(resolveSkillsIntent({ tokens: ['stories'], all: true })).toEqual({
-      kind: 'invalid',
-      tokens: ['stories'],
+      kind: 'error',
+      message: expect.stringContaining('takes no skill id'),
     });
   });
 });
@@ -77,7 +74,6 @@ describe('runSkillsCommand', () => {
     const d = deps();
     const result = await runSkillsCommand({ tokens: [], target: {} }, d);
     expect(result.exitCode).toBe(0);
-    expect(result.kind).toBe('help');
     expect(result.output).toContain('Usage: npx storybook skills [options] [id]');
     expect(result.output).toContain('stories');
     expect(result.output).toContain('write-story');

@@ -47,7 +47,6 @@ beforeEach(() => {
   vi.mocked(runSkillsCommand).mockResolvedValue({
     output: 'ok',
     exitCode: 0,
-    kind: 'get',
     skill: 'stories',
   });
   vi.mocked(withTelemetry).mockImplementation(async (_eventType, _options, run) => run());
@@ -88,7 +87,6 @@ describe('registerSkillsCommand', () => {
     vi.mocked(runSkillsCommand).mockResolvedValue({
       output: 'everything',
       exitCode: 0,
-      kind: 'get',
       skill: 'all',
     });
     const { program } = buildProgram();
@@ -111,7 +109,7 @@ describe('registerSkillsCommand', () => {
   });
 
   it('forwards `-h` after a skill id', async () => {
-    vi.mocked(runSkillsCommand).mockResolvedValue({ output: 'usage', exitCode: 0, kind: 'help' });
+    vi.mocked(runSkillsCommand).mockResolvedValue({ output: 'usage', exitCode: 0 });
     const { program } = buildProgram();
     await parse(program, ['skills', 'write-story', '-h']);
 

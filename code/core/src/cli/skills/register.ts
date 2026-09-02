@@ -61,7 +61,7 @@ export function registerSkillsCommand(
     const run = async () => {
       const result = await runSkillsCommand(invocation, defaultDeps());
       await printResult(result);
-      if (result.kind === 'get' && result.skill && result.exitCode === 0) {
+      if (result.skill) {
         await telemetry('skills-get', { skill: result.skill }, { configDir: cliOptions.configDir });
       }
     };

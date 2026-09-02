@@ -229,12 +229,6 @@ The messages can be listened to on both the iframe and the manager.
 
 <CodeSnippets path="storybook-addons-api-usechannel.md" />
 
-### useAddonState
-
-The `useAddonState` is a useful hook for addons that require data persistence, either due to Storybook's UI lifecycle or for more complex addons involving multiple types (e.g., toolbars, panels).
-
-<CodeSnippets path="storybook-addons-api-useaddonstate.md" />
-
 ### useParameter
 
 The `useParameter` retrieves the current story's parameters. If the parameter's value is not defined, it will automatically default to the second value defined.
@@ -252,6 +246,22 @@ Extremely useful hook for addons that rely on Storybook [Globals](../essentials/
 Hook that allows you to retrieve or update a story's [`args`](../writing-stories/args.mdx).
 
 <CodeSnippets path="args-usage-with-addons.md" />
+
+---
+
+## Addon state
+
+Storybook does not provide a state API for addons.
+An addon that renders in more than one place, such as a panel plus a toolbar item, holds its own state in module scope and reads it with React's [`useSyncExternalStore`](https://react.dev/reference/react/useSyncExternalStore).
+Module scope gives you the two things a shared-state API would: every surface of your addon reads the same value, and that value survives when any one of those surfaces unmounts.
+
+<CodeSnippets path="storybook-addons-api-addon-state.md" />
+
+Your addon's manager entry is evaluated once, so the module-level `state` variable is the single copy every component sees.
+`react` comes from Storybook's manager runtime, so this adds no dependency to your addon.
+
+If only one component reads the state, use React's `useState` instead.
+Addon state lives in the manager only; to exchange data with the story preview, use [`useChannel`](#usechannel).
 
 **Learn more about the Storybook addon ecosystem**
 

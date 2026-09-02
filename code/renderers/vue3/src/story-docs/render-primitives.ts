@@ -37,9 +37,11 @@ export interface RenderContext {
   hoistedArgs: Map<string, { binding: string; source: string }>;
   /** Import statements for components the rendered markup references. */
   componentImports: Set<string>;
+  /** Setup statements forwarded into `<script setup>`, printed after the hoisted consts. */
+  statements: string[];
 }
 
-export interface RenderPropValueInput {
+interface RenderPropValueInput {
   /** Vue template attribute name. */
   attributeName: string;
   /** JavaScript identifier referenced by hoisted values. */
@@ -64,7 +66,7 @@ const VUE_PACKAGE = 'vue';
  *
  * Sorted before rendering, so hoisted consts are declared in the order their attributes appear.
  */
-export function partitionArgsByRole(args: ClassifiedArg[]): {
+function partitionArgsByRole(args: ClassifiedArg[]): {
   props: ClassifiedPropLikeArg[];
   events: ClassifiedPropLikeArg[];
   slots: ClassifiedSlotArg[];
@@ -91,12 +93,13 @@ export function createRenderContext(): RenderContext {
     variables: new Map(),
     hoistedArgs: new Map(),
     componentImports: new Set(),
+    statements: [],
   };
 }
 
 /** Wrap prepared template markup with the shared SFC block assembly. */
 export function renderPreparedSfcSnippet(input: RenderSfcMarkupInput): string {
-  const template = `<template>\n${indent(input.templateCode)}\n</template>`;
+  const template = `<template>\n${indent(normalizeTemplateBlock(input.templateCode))}\n</template>`;
   const script = renderScript(input.ctx);
 
   return script ? `${script}\n\n${template}` : template;
@@ -115,7 +118,7 @@ function renderPropArg(arg: ClassifiedPropLikeArg, ctx: RenderContext): Rendered
 }
 
 /** Render a classified arg value into a Vue template attribute under a chosen attribute name. */
-export function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): RenderedProp {
+function renderPropValue(input: RenderPropValueInput, ctx: RenderContext): RenderedProp {
   const value = unwrapExpression(input.value);
 
   if (input.plan.kind === 'hoist') {
@@ -138,13 +141,20 @@ export function renderPropValue(input: RenderPropValueInput, ctx: RenderContext)
   return { attrName: `:${input.attributeName}`, value: printValue(value) };
 }
 
+/** Arg-value hoists share one const per arg name, so every reference keeps the same identity. */
 function hoistedProp(
   input: Pick<RenderPropValueInput, 'attributeName' | 'variableName'>,
   ctx: RenderContext,
   source: string
 ): RenderedProp {
+  const existing = ctx.hoistedArgs.get(input.variableName);
+  if (existing?.source === source) {
+    return { attrName: `:${input.attributeName}`, value: existing.binding };
+  }
+
   const bindingName = allocateBindingName(input.variableName, ctx);
   ctx.variables.set(bindingName, source);
+  ctx.hoistedArgs.set(input.variableName, { binding: bindingName, source });
   return { attrName: `:${input.attributeName}`, value: bindingName };
 }
 
@@ -225,18 +235,15 @@ function renderScript(ctx: RenderContext): string | undefined {
   const variablesCode = Array.from(ctx.variables.entries())
     .map(([name, value]) => `const ${name} = ${value};`)
     .join('\n\n');
+  const statementsCode = ctx.statements.join('\n');
 
-  if (!importsCode && !variablesCode) {
+  const sections = [importsCode, variablesCode, statementsCode].filter(Boolean);
+  if (sections.length === 0) {
     return undefined;
   }
 
-  const scriptCode =
-    importsCode && variablesCode
-      ? `${importsCode}\n\n${variablesCode}`
-      : importsCode || variablesCode;
-
   return `<script lang="ts" setup>
-${scriptCode}
+${sections.join('\n\n')}
 </script>`;
 }
 
@@ -284,41 +291,59 @@ export function formatRenderedProp(prop: RenderedProp): string {
   return `${prop.attrName}="${prop.value}"`;
 }
 
-/**
- * Attribute text for a `v-bind="args"` expansion, or `undefined` when no faithful expansion
- * exists.
- *
- * At runtime `v-bind` spreads args one-way as props and listeners only: an arg named after a slot
- * never fills that slot, and a `modelValue` arg carries no update binding. Slot args therefore
- * bail, and model args render as plain prop bindings. A name colliding with an attribute already
- * on the element bails too, since the winner depends on source order and merge behavior.
- */
-export function renderArgsBindingAttributes(
-  args: ClassifiedArg[],
-  existingAttributeNames: Set<string>,
-  ctx: RenderContext
-): string | undefined {
-  const partitioned = partitionArgsByRole(args);
-  if (partitioned.slots.length > 0) {
-    return undefined;
-  }
+export interface ArgsBindingExpansion {
+  /** Formatted attribute text for each expanded prop, model, and event arg. */
+  attributes: string[];
+  /** Wrapped slot children for each expanded slot arg, in stable slot order. */
+  slotChildren: string[];
+}
 
-  const collides = [
-    ...partitioned.props.map((arg) => arg.name),
-    ...partitioned.events.map((arg) => arg.eventName ?? arg.name),
-  ].some((name) => existingAttributeNames.has(name));
-  if (collides) {
+export interface RenderArgsBindingExpansionOptions {
+  /** Upgrade model args to `v-model` bindings and slot args to slot children (story tag only). */
+  roleAware: boolean;
+  /** Renders one slot arg's children; `undefined` content bails the whole expansion. */
+  renderSlotArg?: (arg: ClassifiedSlotArg) => string | undefined;
+}
+
+/**
+ * Expanded `v-bind="args"` attributes and slot children, or `undefined` when no faithful
+ * expansion exists.
+ *
+ * On the story tag the expansion is role-aware, showing what the args mean to the component:
+ * model args become `v-model` bindings and slot args become slot children. Any other tag spreads
+ * one-way props and listeners only, which is all `v-bind` does for it at runtime, so its slot
+ * args bail.
+ */
+export function renderArgsBindingExpansion(
+  args: ClassifiedArg[],
+  ctx: RenderContext,
+  options: RenderArgsBindingExpansionOptions
+): ArgsBindingExpansion | undefined {
+  const partitioned = partitionArgsByRole(args);
+  if (partitioned.slots.length > 0 && !options.roleAware) {
     return undefined;
   }
 
   const props = partitioned.props.map((arg) =>
-    renderPropValue(
-      { attributeName: arg.name, variableName: arg.name, value: arg.value, plan: arg.plan },
-      ctx
-    )
+    options.roleAware
+      ? renderPropLikeArg(arg, ctx)
+      : renderPropValue(
+          { attributeName: arg.name, variableName: arg.name, value: arg.value, plan: arg.plan },
+          ctx
+        )
   );
   const events = partitioned.events.map((arg) => renderEventArg(arg, ctx));
-  return [...props, ...events].map(formatRenderedProp).join(' ');
+
+  const slotChildren: string[] = [];
+  for (const slot of partitioned.slots) {
+    const content = options.renderSlotArg?.(slot);
+    if (content === undefined) {
+      return undefined;
+    }
+    slotChildren.push(wrapSlotContent(slot.name, content));
+  }
+
+  return { attributes: [...props, ...events].map(formatRenderedProp), slotChildren };
 }
 
 /** Attribute text for one `:prop="args.x"` binding rewritten to the arg's static value. */
@@ -349,11 +374,11 @@ export function hoistArgValue(name: string, value: t.Node, ctx: RenderContext): 
   return bindingName;
 }
 
-/** Hoist an arg value as a `ref` for a `v-model` binding. */
-export function hoistModelRef(name: string, value: t.Node, ctx: RenderContext): string {
+/** Hoist an arg value as a `ref` for a `v-model` binding; an absent value starts the ref empty. */
+export function hoistModelRef(name: string, value: t.Node | undefined, ctx: RenderContext): string {
   (ctx.imports[VUE_PACKAGE] ??= new Set()).add('ref');
   const bindingName = allocateBindingName(name, ctx);
-  ctx.variables.set(bindingName, `ref(${printValue(unwrapExpression(value))})`);
+  ctx.variables.set(bindingName, value ? `ref(${printValue(unwrapExpression(value))})` : 'ref()');
   return bindingName;
 }
 
@@ -389,8 +414,55 @@ export function wrapSlotContent(name: string, content: string): string {
 export function indent(source: string): string {
   return source
     .split('\n')
-    .map((line) => `  ${line}`)
+    .map((line) => (line ? `  ${line}` : line))
     .join('\n');
+}
+
+// Normalize author template literals so story-file indentation does not leak into snippets.
+function normalizeTemplateBlock(source: string): string {
+  const lines = source.split('\n');
+  let start: number | undefined;
+  let end = 0;
+  let commonPrefix: string | undefined;
+
+  for (let lineIndex = 0; lineIndex < lines.length; lineIndex += 1) {
+    const line = lines[lineIndex];
+    const contentIndex = line.search(/\S/);
+    if (contentIndex === -1) {
+      lines[lineIndex] = '';
+      continue;
+    }
+
+    start ??= lineIndex;
+    end = lineIndex + 1;
+
+    if (commonPrefix === undefined) {
+      commonPrefix = line.slice(0, contentIndex);
+      continue;
+    }
+
+    let index = 0;
+    while (
+      index < commonPrefix.length &&
+      index < contentIndex &&
+      commonPrefix[index] === line[index]
+    ) {
+      index += 1;
+    }
+    commonPrefix = commonPrefix.slice(0, index);
+  }
+
+  if (start === undefined) {
+    return '';
+  }
+
+  if (commonPrefix) {
+    for (let lineIndex = start; lineIndex < end; lineIndex += 1) {
+      lines[lineIndex] = lines[lineIndex].slice(commonPrefix.length);
+    }
+  }
+
+  return lines.slice(start, end).join('\n');
 }
 
 function slotSortKey(name: string): string {

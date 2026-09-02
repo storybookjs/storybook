@@ -1,15 +1,13 @@
-import { toJsonSchema } from '@valibot/to-json-schema';
 import * as v from 'valibot';
 
-import type { StandardSchemaV1 } from '@standard-schema/spec';
-
 import {
-  resolveToolsetDescription,
   type AnyToolsetDefinition,
   type AnyToolsetMethod,
   type ToolsetCtx,
 } from '../../shared/open-service/toolset-definition.ts';
-import { toCliMethodName } from '../../shared/open-service/toolset-names.ts';
+import { parseToolsetMethodId, toCliMethodName } from '../../shared/open-service/toolset-names.ts';
+import { toCatalogEntry } from './sdk/catalog.ts';
+import type { ToolsetCatalog, ToolsetCatalogEntry, ToolsetCatalogMethod } from './sdk/types.ts';
 import {
   JsonSchemaNodeSchema,
   MAX_SCHEMA_DEPTH,
@@ -26,24 +24,6 @@ function optionLines(): string[] {
   return TOOLS_OPTION_SPECS.map((spec) => `  ${spec.flags.padEnd(column)}${spec.description}`);
 }
 
-/**
- * One line per tool for the `Commands:` listing, in commander's shape: the subcommand padded to a
- * shared column, a one-sentence summary, and the execution badge.
- */
-function commandLines(toolsets: AnyToolsetDefinition[], ctx: ToolsetCtx): string[] {
-  const commands = toolsets.flatMap((toolset) =>
-    Object.entries(toolset.methods).map(([methodKey, method]) => ({
-      path: cliPath(toolset, methodKey),
-      summary: method.title,
-      badge: badge(method),
-    }))
-  );
-  const column = Math.max(...commands.map((command) => command.path.length)) + 2;
-  return commands.map(
-    (command) => `  ${command.path.padEnd(column)}${command.summary}  ${command.badge}`
-  );
-}
-
 function indented(lines: string[], depth: number): string[] {
   const pad = ' '.repeat(depth);
   // Descriptions and schema lines carry embedded newlines; every physical line gets the base
@@ -51,129 +31,37 @@ function indented(lines: string[], depth: number): string[] {
   return lines.flatMap((line) => line.split('\n')).map((line) => (line ? pad + line : line));
 }
 
-function cliPath(toolset: AnyToolsetDefinition, methodKey: string): string {
-  return `${toolset.id} ${toCliMethodName(methodKey)}`;
+function cliPath(method: ToolsetCatalogMethod): string {
+  const { toolsetId, methodName } = parseToolsetMethodId(method.ref);
+  return `${toolsetId} ${toCliMethodName(methodName)}`;
 }
 
-/**
- * The complete agent discovery surface, in commander's conventional shape — Usage, Options, and a
- * `Commands:` listing with one-line summaries — followed by a full reference for every tool
- * (description, input schema, declared output schema) so agents learn the surface from this single
- * invocation instead of paying a project load per lookup. The Options block is the flags' only
- * documentation, since commander's own help is disabled in favor of this runtime-derived one.
- */
-export function renderToolsHelp(
-  configDir: string,
-  toolsets: AnyToolsetDefinition[],
-  ctx: ToolsetCtx
-): string {
-  const header = [
-    'Usage: npx storybook tools [options] [toolset] [tool] [args...]',
-    '',
-    `Storybook tools from the Storybook configuration at ${configDir}.`,
-    '',
-    'Options:',
-    ...optionLines(),
-    '',
-    'Commands:',
-    ...commandLines(toolsets, ctx),
-  ].join('\n');
-  const notes = [
-    `${LOCAL_BADGE} tools run in this process, without a running Storybook.`,
-    `${DEV_SERVER_BADGE} tools need a running Storybook dev server; start it first.`,
-    'Individual `--key value` flags override entries of `--input`.',
-  ].join('\n');
-  const referenceIntro =
-    'Tool reference — every command in full (`npx storybook tools <toolset> <tool> --help` shows one alone):';
-  const sections = [header, notes, referenceIntro];
-  for (const toolset of toolsets) {
-    sections.push(renderToolsetSection(toolset, ctx));
-  }
-  return sections.join('\n\n');
-}
-
-/** The focused view of one toolset (`storybook tools <toolset>`). */
-export function renderToolsetHelp(toolset: AnyToolsetDefinition, ctx: ToolsetCtx): string {
-  return [
-    `Usage: npx storybook tools ${toolset.id} <tool> [--key value ...]`,
-    '',
-    renderToolsetSection(toolset, ctx),
-  ].join('\n');
-}
-
-/** One toolset's section of the reference dump. */
-function renderToolsetSection(toolset: AnyToolsetDefinition, ctx: ToolsetCtx): string {
-  const sections = [`${toolset.id} — ${toolset.description}`];
-  for (const [methodKey, method] of Object.entries(toolset.methods)) {
-    const heading = `  ${cliPath(toolset, methodKey)}  ${badge(method)}`;
-    sections.push([heading, '', ...indented(methodBodyLines(method, ctx), 4)].join('\n'));
-  }
-  return sections.join('\n\n');
-}
-
-/** The focused view of one tool (`storybook tools <toolset> <tool> --help`). */
-export function renderMethodHelp(
-  toolset: AnyToolsetDefinition,
-  methodKey: string,
-  method: AnyToolsetMethod,
-  ctx: ToolsetCtx
-): string {
-  const lines = [
-    `Usage: npx storybook tools ${cliPath(toolset, methodKey)} [--key value ...]`,
-    '',
-    method.requiresDevServer
-      ? 'Execution: requires a running Storybook dev server; start it first.'
-      : 'Execution: local (no running Storybook required).',
-    '',
-    ...methodBodyLines(method, ctx),
-  ];
-  return lines.join('\n');
-}
-
-function badge(method: AnyToolsetMethod): string {
+function badge(method: ToolsetCatalogMethod): string {
   return method.requiresDevServer ? DEV_SERVER_BADGE : LOCAL_BADGE;
 }
 
-function methodBodyLines(method: AnyToolsetMethod, ctx: ToolsetCtx): string[] {
-  const lines = [resolveToolsetDescription(method.description, ctx).trim()];
-
-  const inputSchema = toJsonSchemaObject(method.input);
-  const argumentLines = inputSchema ? propertyLines(inputSchema, { flagPrefix: true }) : undefined;
-  if (argumentLines === undefined) {
-    lines.push('', 'Arguments: (this schema could not be rendered)');
-  } else if (argumentLines.length === 0) {
-    lines.push('', 'Arguments: none.');
-  } else {
-    lines.push('', 'Arguments:', ...argumentLines);
+function argumentLines(schema: Record<string, unknown> | undefined, flagPrefix: boolean) {
+  if (schema === undefined) {
+    return undefined;
   }
-
-  if (method.output) {
-    const outputSchema = toJsonSchemaObject(method.output);
-    const outputLines = outputSchema ? propertyLines(outputSchema, { flagPrefix: false }) : [];
-    if (outputLines.length > 0) {
-      lines.push('', 'Output:', ...outputLines);
-    }
-  }
-
-  return lines;
+  return propertyLines(schema, { flagPrefix });
 }
 
-/**
- * Core toolset schemas are valibot, which converts losslessly; a third-party toolset may register
- * another standard schema, for which there is no converter — its arguments render as unavailable
- * rather than failing the whole help dump. The vendor check is load-bearing: the converter's
- * `ignore` mode turns a foreign schema into an empty object, which would render as the false
- * "Arguments: none." — while `ignore` on a genuine valibot schema only drops exotic pipe actions.
- */
-function toJsonSchemaObject(schema: StandardSchemaV1): Record<string, unknown> | undefined {
-  if (schema['~standard'].vendor !== 'valibot') {
-    return undefined;
+function methodBodyLines(method: ToolsetCatalogMethod): string[] {
+  const lines = [method.description.trim()];
+  const inputLines = argumentLines(method.input, true);
+  if (inputLines === undefined) {
+    lines.push('', 'Arguments: (this schema could not be rendered)');
+  } else if (inputLines.length === 0) {
+    lines.push('', 'Arguments: none.');
+  } else {
+    lines.push('', 'Arguments:', ...inputLines);
   }
-  try {
-    return toJsonSchema(schema as never, { errorMode: 'ignore' }) as Record<string, unknown>;
-  } catch {
-    return undefined;
+  const outputLines = argumentLines(method.output, false);
+  if (outputLines && outputLines.length > 0) {
+    lines.push('', 'Output (`--json`):', ...outputLines);
   }
+  return lines;
 }
 
 function propertyLines(
@@ -194,4 +82,112 @@ function propertyLines(
     lines.push(...schemaLines(label, node, required.has(name), '', MAX_SCHEMA_DEPTH));
   }
   return lines;
+}
+
+function renderToolsetSection(entry: ToolsetCatalogEntry): string {
+  const sections = [`${entry.id} — ${entry.description}`];
+  for (const method of entry.methods) {
+    const heading = `  ${cliPath(method)}  ${badge(method)}`;
+    sections.push([heading, '', ...indented(methodBodyLines(method), 4)].join('\n'));
+  }
+  return sections.join('\n\n');
+}
+
+export function renderToolsHelpFromCatalog(catalog: ToolsetCatalog): string {
+  const commands = catalog.toolsets.flatMap((toolset) =>
+    toolset.methods.map((method) => ({
+      path: cliPath(method),
+      summary: method.title,
+      badge: badge(method),
+    }))
+  );
+  const column =
+    commands.length === 0 ? 0 : Math.max(...commands.map((command) => command.path.length)) + 2;
+  const commandBlock =
+    commands.length === 0
+      ? '  (none)'
+      : commands
+          .map((command) => `  ${command.path.padEnd(column)}${command.summary}  ${command.badge}`)
+          .join('\n');
+  const header = [
+    'Usage: npx storybook tools [options] [toolset] [tool] [args...]',
+    '',
+    `Storybook tools from the Storybook configuration at ${catalog.configDir}.`,
+    '',
+    'Options:',
+    ...optionLines(),
+    '',
+    'Commands:',
+    commandBlock,
+  ].join('\n');
+  const notes = [
+    `${LOCAL_BADGE} tools run without a running Storybook.`,
+    `${DEV_SERVER_BADGE} tools need a running Storybook dev server; start it first.`,
+    'Tool results print as markdown; the Output blocks below describe the `--json` data.',
+    'Individual `--key value` flags override entries of `--input`.',
+  ].join('\n');
+  const referenceIntro =
+    'Tool reference — every command in full (`npx storybook tools <toolset> <tool> --help` shows one alone):';
+  const sections = [header, notes, referenceIntro];
+  for (const toolset of catalog.toolsets) {
+    sections.push(renderToolsetSection(toolset));
+  }
+  return sections.join('\n\n');
+}
+
+export function renderToolsetHelpFromCatalog(entry: ToolsetCatalogEntry): string {
+  return [
+    `Usage: npx storybook tools ${entry.id} <tool> [--key value ...]`,
+    '',
+    renderToolsetSection(entry),
+  ].join('\n');
+}
+
+export function renderMethodHelpFromCatalog(
+  _entry: ToolsetCatalogEntry,
+  method: ToolsetCatalogMethod
+): string {
+  return [
+    `Usage: npx storybook tools ${cliPath(method)} [--key value ...]`,
+    '',
+    method.requiresDevServer
+      ? 'Execution: requires a running Storybook dev server; start it first.'
+      : 'Execution: local (no running Storybook required).',
+    '',
+    ...methodBodyLines(method),
+  ].join('\n');
+}
+
+/**
+ * The complete agent discovery surface, in commander's conventional shape — Usage, Options, and a
+ * `Commands:` listing with one-line summaries — followed by a full reference for every tool
+ * (description, input schema, declared output schema) so agents learn the surface from this single
+ * invocation instead of paying a project load per lookup. The flags are documented here and nowhere
+ * else, since commander's own help is disabled in favor of this runtime-derived one.
+ */
+export function renderToolsHelp(
+  configDir: string,
+  toolsets: AnyToolsetDefinition[],
+  ctx: ToolsetCtx
+): string {
+  return renderToolsHelpFromCatalog({
+    configDir,
+    toolsets: toolsets.map((toolset) => toCatalogEntry(toolset, ctx)),
+  });
+}
+
+/** The focused view of one toolset (`storybook tools <toolset>`). */
+export function renderToolsetHelp(toolset: AnyToolsetDefinition, ctx: ToolsetCtx): string {
+  return renderToolsetHelpFromCatalog(toCatalogEntry(toolset, ctx));
+}
+
+/** The focused view of one tool (`storybook tools <toolset> <tool> --help`). */
+export function renderMethodHelp(
+  toolset: AnyToolsetDefinition,
+  methodKey: string,
+  method: AnyToolsetMethod,
+  ctx: ToolsetCtx
+): string {
+  const entry = toCatalogEntry({ ...toolset, methods: { [methodKey]: method } }, ctx);
+  return renderMethodHelpFromCatalog(entry, entry.methods[0] as ToolsetCatalogMethod);
 }

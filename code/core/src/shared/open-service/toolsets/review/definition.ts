@@ -118,17 +118,13 @@ function formatUnknownStoryIdsError(unknownIds: string[], ctx: ToolsetCtx): stri
   return `${describeUnknownStoryIds(unknownIds)}\n${list}\n\nThis usually means the IDs were inferred from file paths or naming conventions rather than returned by a tool. Resolve real IDs by calling \`${ref('stories.findByComponent')}\` (for components you've edited or want covered) or \`${ref('docs.list')}\` (to browse the index), then retry \`${ref('review.create')}\` with the verified IDs. Do not invent IDs to satisfy this check.`;
 }
 
-/** Pure renderer for a published review, per consumer. */
+/** Pure renderer for a published review. */
 function formatReviewApplied(
   { reviewUrl, collectionCount, storyCount }: ReviewCreateOutput,
   ctx: ToolsetCtx
 ): string {
   const storyNoun = storyCount === 1 ? 'y' : 'ies';
   const summary = `Review applied: ${collectionCount} collection${collectionCount === 1 ? '' : 's'}, ${storyCount} stor${storyNoun}.`;
-
-  if (ctx.transport !== 'mcp') {
-    return `${summary} Open ${reviewUrl} to view it.`;
-  }
 
   // Agents were observed ending visual work at the tool result, so the result itself has to
   // carry both follow-ups: open the page, and surface the link in the final response.

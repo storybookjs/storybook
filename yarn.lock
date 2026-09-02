@@ -11985,13 +11985,22 @@ __metadata:
     "@angular/compiler-cli": ">=21.0.0 < 23.0.0"
     "@angular/core": ">=21.0.0 < 23.0.0"
     "@angular/platform-browser": ">=21.0.0 < 23.0.0"
+    less: ^4.0.0
     rxjs: ^7.4.0
+    sass: ^1.0.0
+    sass-embedded: ^1.0.0
     storybook: "workspace:^"
     typescript: ">= 5.9.x"
     vite: ">=8.0.0"
     zone.js: ">=0.14.0"
   peerDependenciesMeta:
     "@angular/cli":
+      optional: true
+    less:
+      optional: true
+    sass:
+      optional: true
+    sass-embedded:
       optional: true
     zone.js:
       optional: true
@@ -13052,7 +13061,7 @@ __metadata:
     type-fest: "npm:^5.6.0"
     typescript: "npm:^6.0.3"
     vue: "npm:^3.2.47"
-    vue-component-meta: "npm:^3.2.7"
+    vue-component-meta: "npm:^3.3.9"
     vue-component-type-helpers: "npm:^3.2.9"
     vue-docgen-api: "npm:^4.75.1"
     vue-tsc: "npm:latest"
@@ -39869,7 +39878,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vue-component-meta@npm:^3.2.7, vue-component-meta@npm:^3.3.9":
+"vue-component-meta@npm:^3.3.9":
   version: 3.3.9
   resolution: "vue-component-meta@npm:3.3.9"
   dependencies:

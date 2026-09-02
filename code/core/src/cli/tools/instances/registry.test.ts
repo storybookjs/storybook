@@ -140,6 +140,34 @@ describe('readRegistry', () => {
     await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([withConfigDir]);
   });
 
+  it('accepts records with an optional channel token', async () => {
+    const withToken = { ...aliveRecord, token: 'a4d1f0c2-1e2b-4c3d-8e9f-0a1b2c3d4e5f' };
+    vol.fromNestedJSON({ [REGISTRY_DIR]: { 'token.json': JSON.stringify(withToken) } });
+
+    await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([withToken]);
+  });
+
+  it('accepts records without a token (written by Storybooks that predate it)', async () => {
+    vol.fromNestedJSON({ [REGISTRY_DIR]: { 'tokenless.json': JSON.stringify(aliveRecord) } });
+
+    const [record] = await readRegistry(REGISTRY_DIR);
+
+    expect(record).toEqual(aliveRecord);
+    expect(record.token).toBeUndefined();
+  });
+
+  it('accepts records with an optional storybookPath (written by servers that record their installation)', async () => {
+    const withStorybookPath = {
+      ...aliveRecord,
+      storybookPath: '/projects/alive/node_modules/storybook',
+    };
+    vol.fromNestedJSON({
+      [REGISTRY_DIR]: { 'storybook-path.json': JSON.stringify(withStorybookPath) },
+    });
+
+    await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([withStorybookPath]);
+  });
+
   it('accepts records with optional agent provenance', async () => {
     const agentRecord = { ...aliveRecord, agent: 'claude-preview' };
     vol.fromNestedJSON({ [REGISTRY_DIR]: { 'agent.json': JSON.stringify(agentRecord) } });

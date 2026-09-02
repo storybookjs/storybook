@@ -47,6 +47,38 @@ const moduleGraphStatusSchema = v.variant('value', [
 
 const noInputSchema = v.undefined();
 
+const changeDetectionReadinessSchema = v.variant('status', [
+  v.object({
+    status: v.literal('pending'),
+  }),
+  v.object({
+    status: v.literal('ready'),
+  }),
+  v.object({
+    status: v.literal('unavailable'),
+    reason: v.pipe(
+      v.string(),
+      v.description('Why change detection cannot publish statuses, such as disabled or no git.')
+    ),
+    error: v.optional(
+      v.object({
+        message: v.pipe(
+          v.string(),
+          v.description('Optional diagnostic from the provider that marked scanning unavailable.')
+        ),
+      })
+    ),
+  }),
+  v.object({
+    status: v.literal('error'),
+    error: v.object({
+      message: v.pipe(v.string(), v.description('Human-readable scan failure message.')),
+    }),
+  }),
+]);
+
+export type ChangeDetectionReadinessResult = v.InferOutput<typeof changeDetectionReadinessSchema>;
+
 export type { ModuleGraphServiceState } from './types.ts';
 
 export const moduleGraphServiceDef = defineService({
@@ -58,8 +90,10 @@ export const moduleGraphServiceDef = defineService({
     workingDir: process.cwd(),
     status: { value: 'booting' },
     graphRevision: 0,
+    fileActivityRevision: 0,
     storyChangeRevisions: {},
     latestChangedStoryFiles: [],
+    changeDetectionReadiness: { status: 'pending' },
   } as ModuleGraphServiceState,
   queries: {
     status: {
@@ -71,6 +105,16 @@ export const moduleGraphServiceDef = defineService({
         await ctx.self.commands._waitForSettledEngine(undefined);
       },
       handler: (_input, ctx) => ctx.self.state.status,
+    },
+    changeDetectionReadiness: {
+      description:
+        'Change-detection scan readiness. Distinct from `status`: the graph can be ready while change detection is disabled or its initial scan has failed.',
+      input: noInputSchema,
+      output: changeDetectionReadinessSchema,
+      load: async (_input, ctx) => {
+        await ctx.self.commands._waitForChangeDetectionReadiness(undefined);
+      },
+      handler: (_input, ctx) => ctx.self.state.changeDetectionReadiness,
     },
     graphRevision: {
       description:
@@ -107,6 +151,13 @@ export const moduleGraphServiceDef = defineService({
         }
         return max;
       },
+    },
+    fileActivityRevision: {
+      description:
+        'Monotonic counter advanced on every processed file-change event, including out-of-graph paths that do not advance `graphRevision`. Change detection watches this to rescan git after working-tree edits.',
+      input: noInputSchema,
+      output: v.number(),
+      handler: (_input, ctx) => ctx.self.state.fileActivityRevision,
     },
     latestStoryChanges: {
       description:
@@ -199,7 +250,7 @@ export const moduleGraphServiceDef = defineService({
     _applyGraphUpdate: {
       internal: true,
       description:
-        'Bumps versions for story files affected by an incremental patch. Called by the graph engine after any index apply for the same patch; does not write the reverse index.',
+        'Advances file activity for every processed file event. When `bumpedStoryFiles` is non-empty, also bumps graph revision and records those stories. Called by the graph engine after any index apply for the same patch; does not write the reverse index.',
       input: v.object({
         bumpedStoryFiles: v.pipe(
           v.array(storyIndexPathSchema),
@@ -210,12 +261,15 @@ export const moduleGraphServiceDef = defineService({
       }),
       output: v.void(),
       handler: async (input, ctx) => {
-        // A change that bumps no stories must not advance the revision, so watch-all and scoped
-        // subscribers stay put.
-        if (input.bumpedStoryFiles.length === 0) {
-          return;
-        }
         ctx.self.setState((state) => {
+          // Every processed file event advances file activity so change detection can rescan git,
+          // even when the path is out of graph (empty bumpedStoryFiles) and graphRevision stays put.
+          state.fileActivityRevision += 1;
+          // An out-of-graph file change bumps no stories; it must not advance graphRevision, so
+          // review / scoped subscribers stay put.
+          if (input.bumpedStoryFiles.length === 0) {
+            return;
+          }
           state.graphRevision += 1;
           state.latestChangedStoryFiles = input.bumpedStoryFiles;
           for (const storyFile of input.bumpedStoryFiles) {
@@ -242,6 +296,13 @@ export const moduleGraphServiceDef = defineService({
         'Starts the engine if needed and waits until its current build or patch cycle has finished. Handler is supplied at server registration.',
       input: noInputSchema,
       output: v.void(),
+    },
+    _waitForChangeDetectionReadiness: {
+      internal: true,
+      description:
+        'Waits until change-detection scan readiness is published on the process that owns the scanner.',
+      input: noInputSchema,
+      output: changeDetectionReadinessSchema,
     },
   },
 });

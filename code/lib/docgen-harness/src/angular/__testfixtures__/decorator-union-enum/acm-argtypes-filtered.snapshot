@@ -8,7 +8,6 @@
         "summary": "ButtonKind.Primary",
       },
       "type": {
-        "required": false,
         "summary": "ButtonKind",
       },
     },
@@ -29,7 +28,6 @@
         "summary": "small",
       },
       "type": {
-        "required": false,
         "summary": ""small" | "large"",
       },
     },
@@ -50,7 +48,6 @@
         "summary": "info",
       },
       "type": {
-        "required": false,
         "summary": "ToneOption",
       },
     },

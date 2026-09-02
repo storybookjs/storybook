@@ -8,6 +8,7 @@ export * from './utils/cache.ts';
 export * from './utils/cli.ts';
 export * from './utils/check-addon-order.ts';
 export * from './utils/envs.ts';
+export * from './utils/find-storybook-package-root.ts';
 export * from './utils/common-glob-options.ts';
 export * from './utils/framework.ts';
 export * from './utils/get-builder-options.ts';

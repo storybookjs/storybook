@@ -198,6 +198,181 @@ describe('component-subtitle', () => {
     ).toThrow('ambiguous parameters object');
   });
 
+  it('rejects a componentSubtitle declared only through a parameters spread', () => {
+    expect(() =>
+      transformStorySource(`
+        const legacyParameters = { componentSubtitle: 'Legacy' };
+        export default {
+          parameters: { ...legacyParameters }
+        };
+      `)
+    ).toThrow('direct CSF parameters object');
+  });
+
+  it('rejects a componentSubtitle inside a conditional parameters spread', () => {
+    expect(() =>
+      transformStorySource(`
+        export default {
+          parameters: {
+            ...(enabled ? { componentSubtitle: 'Legacy' } : {})
+          }
+        };
+      `)
+    ).toThrow('direct CSF parameters object');
+  });
+
+  it('rejects an unresolvable parameters spread containing a structural candidate', () => {
+    expect(() =>
+      transformStorySource(`
+        export default {
+          parameters: {
+            ...getParameters({ componentSubtitle: 'Legacy' })
+          }
+        };
+      `)
+    ).toThrow('direct CSF parameters object');
+  });
+
+  it('follows parameter spread aliases and terminates cyclic aliases', () => {
+    expect(() =>
+      transformStorySource(`
+        const legacyParameters = { componentSubtitle: 'Legacy' };
+        const parametersAlias = legacyParameters;
+        const secondAlias = parametersAlias;
+        export default { parameters: { ...secondAlias } };
+      `)
+    ).toThrow('direct CSF parameters object');
+
+    expect(
+      transformStorySource(`
+        const firstAlias = secondAlias;
+        const secondAlias = firstAlias;
+        export default { parameters: { ...firstAlias } };
+      `)
+    ).toBeNull();
+  });
+
+  it('rejects componentSubtitle accessors and methods', () => {
+    expect(() =>
+      transformStorySource(`
+        export default {
+          parameters: {
+            get componentSubtitle() { return 'Legacy'; }
+          }
+        };
+      `)
+    ).toThrow('direct CSF parameters object');
+
+    expect(() =>
+      transformStorySource(`
+        export default {
+          parameters: {
+            componentSubtitle() { return 'Legacy'; }
+          }
+        };
+      `)
+    ).toThrow('direct CSF parameters object');
+  });
+
+  it('classifies parameters methods and accessors only when their bodies contain a candidate', () => {
+    expect(
+      transformStorySource(`
+        export default {
+          parameters() { return { backgrounds: {} }; }
+        };
+      `)
+    ).toBeNull();
+
+    expect(() =>
+      transformStorySource(`
+        export default {
+          get parameters() {
+            return { componentSubtitle: 'Legacy' };
+          }
+        };
+      `)
+    ).toThrow('direct CSF parameters object');
+
+    expect(() =>
+      transformStorySource(`
+        export default {
+          parameters: getParameters({ componentSubtitle: 'Legacy' })
+        };
+      `)
+    ).toThrow('direct CSF parameters object');
+
+    expect(
+      transformStorySource(`
+        export default {
+          parameters: getParameters({ backgrounds: {} })
+        };
+      `)
+    ).toBeNull();
+  });
+
+  it('rejects a docs.subtitle accessor', () => {
+    expect(() =>
+      transformStorySource(`
+        export default {
+          parameters: {
+            componentSubtitle: 'Legacy',
+            docs: {
+              get subtitle() { return 'Current'; }
+            }
+          }
+        };
+      `)
+    ).toThrow('parameters.docs.subtitle does not have a supported value');
+  });
+
+  it('rejects a story migration when an inherited docs.subtitle is an accessor', () => {
+    expect(() =>
+      transformStorySource(`
+        export default {
+          parameters: {
+            docs: {
+              get subtitle() { return 'Meta subtitle'; }
+            }
+          }
+        };
+        export const Primary = {
+          parameters: { componentSubtitle: 'Story subtitle' }
+        };
+      `)
+    ).toThrow('inherited parameters.docs.subtitle');
+  });
+
+  it('classifies unresolved computed parameters keys only with structural evidence', () => {
+    expect(() =>
+      transformStorySource(`
+        const parameterName = getParameterName();
+        export default {
+          [parameterName]: { componentSubtitle: 'Legacy' }
+        };
+      `)
+    ).toThrow('direct CSF parameters object');
+
+    expect(
+      transformStorySource(`
+        const parameterName = getParameterName();
+        export default {
+          [parameterName]: { backgrounds: {} }
+        };
+      `)
+    ).toBeNull();
+  });
+
+  it('rejects a componentSubtitle spread inside a wrapped preview export', () => {
+    expect(() =>
+      transformPreviewSource(`
+        const legacyParameters = { componentSubtitle: 'Legacy' };
+        export default definePreview({
+          parameters: { ...legacyParameters }
+        });
+      `)
+    ).toThrow('direct preview parameters object');
+  });
+
   it('rejects componentSubtitle outside a direct CSF parameters object', () => {
     expect(() =>
       transformStorySource(`
@@ -226,6 +401,51 @@ describe('component-subtitle', () => {
         result: { files: ['safe.stories.ts', 'unsafe.stories.ts'] },
       } as never)
     ).rejects.toThrow('- unsafe.stories.ts: parameters.docs.subtitle has dynamic truthiness');
+    expect(writeFile).not.toHaveBeenCalled();
+  });
+
+  it('uses AST candidates in check without matching unrelated source text', async () => {
+    vi.mocked(readFile).mockImplementation(async (file) =>
+      Buffer.from(
+        file === 'unsafe.stories.ts'
+          ? `const legacyParameters = { componentSubtitle: 'Legacy' };
+             export default { parameters: { ...legacyParameters } };`
+          : `export default { parameters: { ...parameters } };
+             export const Primary = { args: { componentSubtitle: 'A component prop' } };`
+      )
+    );
+
+    await expect(
+      componentSubtitle.check!({
+        storiesPaths: ['unsafe.stories.ts', 'unrelated.stories.ts'],
+      } as never)
+    ).resolves.toEqual({
+      files: ['unsafe.stories.ts'],
+      previewConfigPath: undefined,
+    });
+  });
+
+  it('keeps run atomic for an unsafe docs.subtitle accessor', async () => {
+    vi.mocked(readFile).mockImplementation(async (file) =>
+      Buffer.from(
+        file === 'safe.stories.ts'
+          ? `export default { parameters: { componentSubtitle: 'Safe' } }`
+          : `export default {
+              parameters: {
+                componentSubtitle: 'Legacy',
+                docs: { get subtitle() { return 'Current'; } }
+              }
+            }`
+      )
+    );
+
+    await expect(
+      componentSubtitle.run!({
+        result: { files: ['safe.stories.ts', 'unsafe.stories.ts'] },
+      } as never)
+    ).rejects.toThrow(
+      '- unsafe.stories.ts: parameters.docs.subtitle does not have a supported value'
+    );
     expect(writeFile).not.toHaveBeenCalled();
   });
 
@@ -276,6 +496,16 @@ describe('component-subtitle', () => {
         export default { ...base };
         export const Primary = {
           parameters: { componentSubtitle: 'Legacy' }
+        };
+      `)
+    ).toThrow('direct CSF parameters object');
+  });
+
+  it('rejects a conditional root spread containing a structural candidate', () => {
+    expect(() =>
+      transformStorySource(`
+        export default {
+          ...(enabled ? { parameters: { componentSubtitle: 'Legacy' } } : {})
         };
       `)
     ).toThrow('direct CSF parameters object');

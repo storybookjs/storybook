@@ -3,7 +3,7 @@ import { readFile, writeFile } from 'node:fs/promises';
 import { traverse, types as t } from 'storybook/internal/babel';
 import { formatConfig, loadConfig, loadCsf, printCsf } from 'storybook/internal/csf-tools';
 
-import type { Expression, ObjectExpression, ObjectProperty } from '@babel/types';
+import type { Expression, ObjectExpression, ObjectMethod, ObjectProperty } from '@babel/types';
 import type { Scope } from '@babel/traverse';
 import picocolors from 'picocolors';
 
@@ -17,7 +17,10 @@ interface ComponentSubtitleOptions {
 
 class ComponentSubtitleMigrationError extends Error {}
 
-const propertyName = (property: ObjectProperty) => {
+type ObjectMember = ObjectMethod | ObjectProperty;
+type CandidateClassification = 'none' | 'direct' | 'unsafe';
+
+const propertyName = (property: ObjectMember) => {
   if (property.computed) {
     if (t.isStringLiteral(property.key)) {
       return property.key.value;
@@ -36,10 +39,11 @@ const propertyName = (property: ObjectProperty) => {
   return undefined;
 };
 
-const directProperties = (object: ObjectExpression, name: string) =>
+const namedMembers = (object: ObjectExpression, name: string) =>
   object.properties.filter(
-    (property): property is ObjectProperty =>
-      t.isObjectProperty(property) && propertyName(property) === name
+    (property): property is ObjectMember =>
+      (t.isObjectProperty(property) || t.isObjectMethod(property)) &&
+      propertyName(property) === name
   );
 
 const staticTruthiness = (value: Expression): boolean | undefined => {
@@ -65,37 +69,45 @@ const isPureLiteral = (value: Expression) =>
   (t.isTemplateLiteral(value) && value.expressions.length === 0);
 
 const localSubtitleTruthiness = (parameters: ObjectExpression): boolean | undefined => {
-  if (parameters.properties.some((property) => t.isSpreadElement(property))) {
+  if (hasSpreadProperty(parameters) || hasUnresolvedComputedProperty(parameters)) {
     return undefined;
   }
-  const docsProperties = directProperties(parameters, 'docs');
-  if (docsProperties.length === 0) {
-    return false;
-  }
-  if (docsProperties.length !== 1 || !t.isObjectExpression(docsProperties[0].value)) {
-    return undefined;
-  }
-  const docs = docsProperties[0].value;
-  if (docs.properties.some((property) => t.isSpreadElement(property))) {
-    return undefined;
-  }
-  const subtitleProperties = directProperties(docs, 'subtitle');
-  if (subtitleProperties.length === 0) {
-    return false;
-  }
-  if (subtitleProperties.length !== 1 || !t.isExpression(subtitleProperties[0].value)) {
-    return undefined;
-  }
-  return staticTruthiness(subtitleProperties[0].value);
-};
-
-const migrateParameters = (parameters: ObjectExpression, inheritedSubtitleCanWin = false) => {
-  const legacyProperties = directProperties(parameters, 'componentSubtitle');
-  if (legacyProperties.length === 0) {
+  const docsMembers = namedMembers(parameters, 'docs');
+  if (docsMembers.length === 0) {
     return false;
   }
   if (
-    legacyProperties.length !== 1 ||
+    docsMembers.length !== 1 ||
+    !t.isObjectProperty(docsMembers[0]) ||
+    !t.isObjectExpression(docsMembers[0].value)
+  ) {
+    return undefined;
+  }
+  const docs = docsMembers[0].value;
+  if (hasSpreadProperty(docs) || hasUnresolvedComputedProperty(docs)) {
+    return undefined;
+  }
+  const subtitleMembers = namedMembers(docs, 'subtitle');
+  if (subtitleMembers.length === 0) {
+    return false;
+  }
+  if (
+    subtitleMembers.length !== 1 ||
+    !t.isObjectProperty(subtitleMembers[0]) ||
+    !t.isExpression(subtitleMembers[0].value)
+  ) {
+    return undefined;
+  }
+  return staticTruthiness(subtitleMembers[0].value);
+};
+
+const migrateParameters = (parameters: ObjectExpression, inheritedSubtitleCanWin = false) => {
+  const legacyMembers = namedMembers(parameters, 'componentSubtitle');
+  if (legacyMembers.length === 0) {
+    return false;
+  }
+  if (
+    legacyMembers.length !== 1 ||
     parameters.properties.some((property) => t.isSpreadElement(property))
   ) {
     throw new ComponentSubtitleMigrationError(
@@ -103,19 +115,25 @@ const migrateParameters = (parameters: ObjectExpression, inheritedSubtitleCanWin
     );
   }
 
-  const docsProperties = directProperties(parameters, 'docs');
-  if (docsProperties.length > 1) {
+  const legacyProperty = legacyMembers[0];
+  if (!t.isObjectProperty(legacyProperty)) {
+    throw new ComponentSubtitleMigrationError(
+      'parameters.componentSubtitle does not have a movable value'
+    );
+  }
+
+  const docsMembers = namedMembers(parameters, 'docs');
+  if (docsMembers.length > 1) {
     throw new ComponentSubtitleMigrationError('parameters.docs is declared more than once');
   }
 
-  const legacyProperty = legacyProperties[0];
   const legacyValue = legacyProperty.value;
   if (!t.isExpression(legacyValue)) {
     throw new ComponentSubtitleMigrationError(
       'parameters.componentSubtitle does not have a movable value'
     );
   }
-  const docsProperty = docsProperties[0];
+  const docsProperty = docsMembers[0];
   if (!docsProperty) {
     if (inheritedSubtitleCanWin) {
       throw new ComponentSubtitleMigrationError(
@@ -129,7 +147,7 @@ const migrateParameters = (parameters: ObjectExpression, inheritedSubtitleCanWin
     ]);
     return true;
   }
-  if (!t.isObjectExpression(docsProperty.value)) {
+  if (!t.isObjectProperty(docsProperty) || !t.isObjectExpression(docsProperty.value)) {
     throw new ComponentSubtitleMigrationError('parameters.docs is not an object literal');
   }
   if (!isPureLiteral(legacyValue)) {
@@ -141,13 +159,19 @@ const migrateParameters = (parameters: ObjectExpression, inheritedSubtitleCanWin
     throw new ComponentSubtitleMigrationError('parameters.docs contains a spread property');
   }
 
-  const subtitleProperties = directProperties(docsProperty.value, 'subtitle');
-  if (subtitleProperties.length > 1) {
+  if (hasUnresolvedComputedProperty(docsProperty.value)) {
+    throw new ComponentSubtitleMigrationError(
+      'parameters.docs contains an unresolved computed property'
+    );
+  }
+
+  const subtitleMembers = namedMembers(docsProperty.value, 'subtitle');
+  if (subtitleMembers.length > 1) {
     throw new ComponentSubtitleMigrationError(
       'parameters.docs.subtitle is declared more than once'
     );
   }
-  const subtitleProperty = subtitleProperties[0];
+  const subtitleProperty = subtitleMembers[0];
   if (!subtitleProperty) {
     if (inheritedSubtitleCanWin) {
       throw new ComponentSubtitleMigrationError(
@@ -156,7 +180,7 @@ const migrateParameters = (parameters: ObjectExpression, inheritedSubtitleCanWin
     }
     docsProperty.value.properties.push(t.objectProperty(t.identifier('subtitle'), legacyValue));
   } else {
-    if (!t.isExpression(subtitleProperty.value)) {
+    if (!t.isObjectProperty(subtitleProperty) || !t.isExpression(subtitleProperty.value)) {
       throw new ComponentSubtitleMigrationError(
         'parameters.docs.subtitle does not have a supported value'
       );
@@ -174,64 +198,249 @@ const migrateParameters = (parameters: ObjectExpression, inheritedSubtitleCanWin
   return true;
 };
 
-const resolveObjectExpression = (value: t.Node, scope: Scope) => {
+const resolveNode = (value: t.Node, scope: Scope, seenBindings = new Set<t.Node>()) => {
   let current: t.Node | null | undefined = value;
-  if (t.isIdentifier(current)) {
-    current = scope.getBinding(current.name)?.path.node;
+  let currentScope = scope;
+
+  while (current) {
+    while (t.isTSAsExpression(current) || t.isTSSatisfiesExpression(current)) {
+      current = current.expression;
+    }
+    if (t.isVariableDeclarator(current)) {
+      current = current.init;
+      continue;
+    }
+    if (!t.isIdentifier(current)) {
+      break;
+    }
+    const binding = currentScope.getBinding(current.name);
+    if (!binding || seenBindings.has(binding.path.node)) {
+      break;
+    }
+    seenBindings.add(binding.path.node);
+    current = binding.path.node;
+    currentScope = binding.path.scope;
   }
-  if (t.isVariableDeclarator(current)) {
-    current = current.init;
-  }
-  while (t.isTSAsExpression(current) || t.isTSSatisfiesExpression(current)) {
-    current = current.expression;
-  }
-  return t.isObjectExpression(current) ? current : undefined;
+
+  return current ?? undefined;
 };
 
-const hasUnresolvedComputedProperty = (object: ObjectExpression) =>
-  object.properties.some(
-    (property) =>
-      t.isObjectProperty(property) && property.computed && propertyName(property) === undefined
+const resolveObjectExpression = (value: t.Node, scope: Scope) => {
+  const resolved = resolveNode(value, scope);
+  return t.isObjectExpression(resolved) ? resolved : undefined;
+};
+
+const unresolvedComputedMembers = (object: ObjectExpression) =>
+  object.properties.filter(
+    (property): property is ObjectMember =>
+      (t.isObjectProperty(property) || t.isObjectMethod(property)) &&
+      property.computed &&
+      propertyName(property) === undefined
   );
+
+const hasUnresolvedComputedProperty = (object: ObjectExpression) =>
+  unresolvedComputedMembers(object).length > 0;
 
 const hasSpreadProperty = (object: ObjectExpression) =>
   object.properties.some((property) => t.isSpreadElement(property));
 
-const defaultExportHasSpread = (ast: t.Node) => {
-  let hasSpread = false;
+const mergeClassification = (
+  current: CandidateClassification,
+  next: CandidateClassification
+): CandidateClassification => {
+  if (current === 'unsafe' || next === 'unsafe') {
+    return 'unsafe';
+  }
+  return current === 'direct' || next === 'direct' ? 'direct' : 'none';
+};
+
+const containsComponentSubtitleCandidate = (
+  value: t.Node,
+  scope: Scope,
+  seenNodes = new Set<t.Node>(),
+  seenBindings = new Set<t.Node>()
+): boolean => {
+  const resolved = resolveNode(value, scope, seenBindings);
+  if (!resolved || seenNodes.has(resolved)) {
+    return false;
+  }
+  seenNodes.add(resolved);
+
+  if (t.isObjectExpression(resolved) && namedMembers(resolved, 'componentSubtitle').length > 0) {
+    return true;
+  }
+
+  for (const key of t.VISITOR_KEYS[resolved.type] ?? []) {
+    const children = resolved[key as keyof typeof resolved];
+    if (Array.isArray(children)) {
+      if (
+        children.some(
+          (child) =>
+            t.isNode(child) &&
+            containsComponentSubtitleCandidate(child, scope, seenNodes, seenBindings)
+        )
+      ) {
+        return true;
+      }
+    } else if (
+      t.isNode(children) &&
+      containsComponentSubtitleCandidate(children, scope, seenNodes, seenBindings)
+    ) {
+      return true;
+    }
+  }
+  return false;
+};
+
+const classifyParameters = (
+  parameters: ObjectExpression,
+  scope: Scope,
+  seen = new Set<t.Node>()
+): CandidateClassification => {
+  if (seen.has(parameters)) {
+    return 'none';
+  }
+  seen.add(parameters);
+
+  const legacyMembers = namedMembers(parameters, 'componentSubtitle');
+  if (legacyMembers.some((member) => t.isObjectMethod(member))) {
+    return 'unsafe';
+  }
+
+  let classification: CandidateClassification = legacyMembers.length > 0 ? 'direct' : 'none';
+  const computedMembers = unresolvedComputedMembers(parameters);
+  if (
+    (classification !== 'none' && computedMembers.length > 0) ||
+    computedMembers.some((member) => containsComponentSubtitleCandidate(member, scope))
+  ) {
+    classification = 'unsafe';
+  }
+  for (const property of parameters.properties) {
+    if (!t.isSpreadElement(property)) {
+      continue;
+    }
+    const spreadObject = resolveObjectExpression(property.argument, scope);
+    if (
+      (spreadObject && classifyParameters(spreadObject, scope, seen) !== 'none') ||
+      (!spreadObject && containsComponentSubtitleCandidate(property.argument, scope))
+    ) {
+      classification = 'unsafe';
+    }
+  }
+  return classification;
+};
+
+const classifyStoryObject = (
+  storyObject: ObjectExpression,
+  scope: Scope,
+  seen = new Set<t.Node>()
+): CandidateClassification => {
+  if (seen.has(storyObject)) {
+    return 'none';
+  }
+  seen.add(storyObject);
+
+  let classification: CandidateClassification = 'none';
+  for (const parametersMember of namedMembers(storyObject, 'parameters')) {
+    if (!t.isObjectProperty(parametersMember)) {
+      if (containsComponentSubtitleCandidate(parametersMember, scope)) {
+        return 'unsafe';
+      }
+      continue;
+    }
+    const parameters = resolveObjectExpression(parametersMember.value, scope);
+    if (!parameters) {
+      if (containsComponentSubtitleCandidate(parametersMember.value, scope)) {
+        return 'unsafe';
+      }
+      continue;
+    }
+    const parametersClassification = classifyParameters(parameters, scope);
+    classification = mergeClassification(
+      classification,
+      t.isObjectExpression(parametersMember.value) || parametersClassification === 'none'
+        ? parametersClassification
+        : 'unsafe'
+    );
+  }
+
+  if (
+    unresolvedComputedMembers(storyObject).some((member) =>
+      containsComponentSubtitleCandidate(member, scope)
+    )
+  ) {
+    classification = 'unsafe';
+  }
+
+  for (const property of storyObject.properties) {
+    if (!t.isSpreadElement(property)) {
+      continue;
+    }
+    const spreadObject = resolveObjectExpression(property.argument, scope);
+    if (
+      (spreadObject && classifyStoryObject(spreadObject, scope, seen) !== 'none') ||
+      (!spreadObject && containsComponentSubtitleCandidate(property.argument, scope))
+    ) {
+      classification = 'unsafe';
+    }
+  }
+  return classification;
+};
+
+const resolvePreviewObjectExpression = (value: t.Node, scope: Scope) => {
+  const resolved = resolveNode(value, scope);
+  if (t.isObjectExpression(resolved)) {
+    return resolved;
+  }
+  if (t.isCallExpression(resolved)) {
+    const firstArgument = resolved.arguments[0];
+    if (firstArgument && t.isExpression(firstArgument)) {
+      return resolveObjectExpression(firstArgument, scope);
+    }
+  }
+  return undefined;
+};
+
+const classifyDefaultExport = (ast: t.Node): CandidateClassification => {
+  let classification: CandidateClassification = 'none';
   traverse(ast, {
     ExportDefaultDeclaration(path) {
-      const object = resolveObjectExpression(path.node.declaration, path.scope);
-      hasSpread = object ? hasSpreadProperty(object) : true;
+      const object = resolvePreviewObjectExpression(path.node.declaration, path.scope);
+      if (object) {
+        classification = mergeClassification(
+          classification,
+          classifyStoryObject(object, path.scope)
+        );
+      }
     },
   });
-  return hasSpread;
+  return classification;
 };
 
 export const transformPreviewSource = (source: string) => {
   const config = loadConfig(source).parse();
-  const parameters = config.getFieldNode(['parameters']);
-  const hasRootSpread = defaultExportHasSpread(config._ast);
-  const hasUnknownComputed =
-    t.isObjectExpression(parameters) && hasUnresolvedComputedProperty(parameters);
-  const changed = t.isObjectExpression(parameters) && migrateParameters(parameters);
-  if (
-    source.includes('componentSubtitle') &&
-    (hasRootSpread ||
-      hasUnknownComputed ||
-      (parameters !== undefined && !t.isObjectExpression(parameters)))
-  ) {
+  const classification = classifyDefaultExport(config._ast);
+  if (classification === 'unsafe') {
     throw new ComponentSubtitleMigrationError(
       'parameters.componentSubtitle is not in a direct preview parameters object'
     );
   }
+  const parameters = config.getFieldNode(['parameters']);
+  const changed = t.isObjectExpression(parameters) && migrateParameters(parameters);
   return changed ? formatConfig(config) : null;
 };
 
 const previewSubtitleCanWin = (source: string) => {
   const config = loadConfig(source).parse();
   const parameters = config.getFieldNode(['parameters']);
-  if (defaultExportHasSpread(config._ast)) {
+  let defaultExportHasSpread = false;
+  traverse(config._ast, {
+    ExportDefaultDeclaration(path) {
+      const object = resolvePreviewObjectExpression(path.node.declaration, path.scope);
+      defaultExportHasSpread = object ? hasSpreadProperty(object) : true;
+    },
+  });
+  if (defaultExportHasSpread) {
     return true;
   }
   if (parameters === undefined) {
@@ -243,23 +452,31 @@ const previewSubtitleCanWin = (source: string) => {
 export const transformStorySource = (source: string, inheritedSubtitleCanWin = false) => {
   const csf = loadCsf(source, { makeTitle: (title?: string) => title || 'default' }).parse();
   let changed = false;
-  let foundDynamicParameters = false;
   const metaObject = csf._metaPath
     ? resolveObjectExpression(csf._metaPath.node.declaration, csf._metaPath.scope)
     : undefined;
+  if (
+    metaObject &&
+    csf._metaPath &&
+    classifyStoryObject(metaObject, csf._metaPath.scope) === 'unsafe'
+  ) {
+    throw new ComponentSubtitleMigrationError(
+      'parameters.componentSubtitle is not in a direct CSF parameters object'
+    );
+  }
   const metaParameters = metaObject && getObjectProperty(metaObject, 'parameters');
-  foundDynamicParameters = Boolean(metaObject && hasSpreadProperty(metaObject));
+  const metaCanHideSubtitle = Boolean(
+    metaObject &&
+    (hasSpreadProperty(metaObject) ||
+      (metaParameters !== undefined && !t.isObjectExpression(metaParameters)))
+  );
   const metaSubtitleTruthiness = t.isObjectExpression(metaParameters)
     ? localSubtitleTruthiness(metaParameters)
     : false;
 
   if (metaParameters) {
     if (t.isObjectExpression(metaParameters)) {
-      foundDynamicParameters =
-        foundDynamicParameters || hasUnresolvedComputedProperty(metaParameters);
       changed = migrateParameters(metaParameters, inheritedSubtitleCanWin) || changed;
-    } else {
-      foundDynamicParameters = true;
     }
   }
 
@@ -270,18 +487,21 @@ export const transformStorySource = (source: string, inheritedSubtitleCanWin = f
       storyObjects.add(storyObject);
     }
   }
+  const storyScopes = new Map<ObjectExpression, Scope>();
   traverse(csf._ast, {
+    ObjectExpression(path) {
+      if (storyObjects.has(path.node)) {
+        storyScopes.set(path.node, path.scope);
+      }
+    },
     ExportNamedDeclaration(path) {
       for (const specifier of path.node.specifiers) {
         if (t.isExportSpecifier(specifier)) {
           const storyObject = resolveObjectExpression(specifier.local, path.scope);
-          if (storyObject) {
-            const parameters = getObjectProperty(storyObject, 'parameters');
-            foundDynamicParameters =
-              foundDynamicParameters ||
-              hasSpreadProperty(storyObject) ||
-              (t.isObjectExpression(parameters) &&
-                directProperties(parameters, 'componentSubtitle').length > 0);
+          if (storyObject && classifyStoryObject(storyObject, path.scope) !== 'none') {
+            throw new ComponentSubtitleMigrationError(
+              'parameters.componentSubtitle is not in a direct CSF parameters object'
+            );
           }
         }
       }
@@ -289,27 +509,25 @@ export const transformStorySource = (source: string, inheritedSubtitleCanWin = f
   });
 
   for (const storyObject of storyObjects) {
+    const storyScope = storyScopes.get(storyObject);
+    if (storyScope) {
+      const classification = classifyStoryObject(storyObject, storyScope);
+      if (classification === 'unsafe' || (classification !== 'none' && metaCanHideSubtitle)) {
+        throw new ComponentSubtitleMigrationError(
+          'parameters.componentSubtitle is not in a direct CSF parameters object'
+        );
+      }
+    }
     const parameters = storyObject && getObjectProperty(storyObject, 'parameters');
-    foundDynamicParameters = foundDynamicParameters || hasSpreadProperty(storyObject);
     if (parameters) {
       if (t.isObjectExpression(parameters)) {
-        foundDynamicParameters =
-          foundDynamicParameters || hasUnresolvedComputedProperty(parameters);
         changed =
           migrateParameters(
             parameters,
             inheritedSubtitleCanWin || metaSubtitleTruthiness !== false
           ) || changed;
-      } else {
-        foundDynamicParameters = true;
       }
     }
-  }
-
-  if (foundDynamicParameters && (changed || source.includes('componentSubtitle'))) {
-    throw new ComponentSubtitleMigrationError(
-      'parameters.componentSubtitle is not in a direct CSF parameters object'
-    );
   }
   return changed ? printCsf(csf).code : null;
 };
@@ -334,10 +552,7 @@ export const componentSubtitle: Fix<ComponentSubtitleOptions> = {
                 : transformStorySource(source);
             return transformed ? file : null;
           } catch (error) {
-            return error instanceof ComponentSubtitleMigrationError ||
-              (await readFile(file, 'utf-8')).includes('componentSubtitle')
-              ? file
-              : null;
+            return error instanceof ComponentSubtitleMigrationError ? file : null;
           }
         })
       )

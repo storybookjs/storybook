@@ -134,7 +134,10 @@ test.describe('storybook tools attach', () => {
   test('auto mode falls back to local silently when no instance matches', async () => {
     const emptyHome = join(tmpdir(), `storybook-tools-attach-empty-home-${process.pid}`);
     await mkdir(emptyHome, { recursive: true });
-    const result = await runTools(['docs', 'list'], process.cwd(), { HOME: emptyHome });
+    const result = await runTools(['docs', 'list'], process.cwd(), {
+      HOME: emptyHome,
+      USERPROFILE: emptyHome,
+    });
 
     expect(result.exitCode, result.output).toBe(0);
     expect(result.output).toContain('example-button');

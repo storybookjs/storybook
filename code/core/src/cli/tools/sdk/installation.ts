@@ -3,6 +3,7 @@ import { realpathSync } from 'node:fs';
 import { normalize } from 'pathe';
 
 import type { StorybookInstanceRecord } from '../instances/types.ts';
+import { projectPathsEqual } from '../instances/project-path.ts';
 
 export type InstallationCheck =
   | { ok: true }
@@ -30,7 +31,7 @@ export function checkInstallation(
     return { ok: false, reason: 'unknown-installation' };
   }
 
-  if (instancePath !== callerPath) {
+  if (!projectPathsEqual(instancePath, callerPath)) {
     return { ok: false, reason: 'different-installation', callerPath, instancePath };
   }
 

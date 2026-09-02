@@ -10,13 +10,7 @@ import {
 import { extractJSDocInfo } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 
-import {
-  type Documentation,
-  builtinHandlers as docgenHandlers,
-  builtinResolvers as docgenResolver,
-  makeFsImporter,
-  parse,
-} from 'react-docgen';
+import type { Documentation, Handler, Resolver } from 'react-docgen';
 import { dedent } from 'ts-dedent';
 import * as TsconfigPaths from 'tsconfig-paths';
 
@@ -24,6 +18,7 @@ import { type ComponentRef } from './getComponentImports.ts';
 import actualNameHandler from './reactDocgen/actualNameHandler.ts';
 import { ReactDocgenResolveError } from './reactDocgen/docgenResolver.ts';
 import exportNameHandler from './reactDocgen/exportNameHandler.ts';
+import { requireReactDocgen } from './reactDocgen/module.ts';
 import { cached, cachedReadFileSync, cachedResolveImport } from './utils.ts';
 
 export type DocObj = Documentation & {
@@ -33,9 +28,17 @@ export type DocObj = Documentation & {
 };
 
 // TODO: None of these are able to be overridden, so `default` is aspirational here.
-const defaultHandlers = Object.values(docgenHandlers).map((handler) => handler);
-const defaultResolver = new docgenResolver.FindExportedDefinitionsResolver();
-const handlers = [...defaultHandlers, actualNameHandler, exportNameHandler];
+let parserConfig: { resolver: Resolver; handlers: Handler[] } | undefined;
+function getParserConfig() {
+  if (!parserConfig) {
+    const { builtinHandlers, builtinResolvers } = requireReactDocgen();
+    parserConfig = {
+      resolver: new builtinResolvers.FindExportedDefinitionsResolver(),
+      handlers: [...Object.values(builtinHandlers), actualNameHandler, exportNameHandler],
+    };
+  }
+  return parserConfig;
+}
 
 export function getMatchingDocgen(docgens: DocObj[], component: ComponentRef) {
   if (docgens.length === 0) {
@@ -91,8 +94,9 @@ export const getTsConfig = cached(
 
 export const parseWithReactDocgen = cached(
   (code: string, path: string) => {
-    return parse(code, {
-      resolver: defaultResolver,
+    const { resolver, handlers } = getParserConfig();
+    return requireReactDocgen().parse(code, {
+      resolver,
       handlers,
       importer: getReactDocgenImporter(),
       filename: path,
@@ -275,7 +279,7 @@ export const getReactDocgen = cached(
 );
 
 export function getReactDocgenImporter() {
-  return makeFsImporter((filename, basedir) => {
+  return requireReactDocgen().makeFsImporter((filename, basedir) => {
     const mappedFilenameByPaths = (() => {
       return matchPath(filename, basedir);
     })();

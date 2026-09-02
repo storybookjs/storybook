@@ -8,14 +8,13 @@ import {
   MinimumReleaseAgeHandledError,
 } from 'storybook/internal/server-errors';
 
-import { PosixFS, VirtualFS, ZipOpenFS } from '@yarnpkg/fslib';
-import { getLibzipSync } from '@yarnpkg/libzip';
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
 import { dedent } from 'ts-dedent';
 
 import { logger } from '../../node-logger/index.ts';
+import { lazyModule } from '../../shared/utils/lazy-require.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
@@ -35,6 +34,9 @@ import {
   parseReleaseTime,
   STORYBOOK_PACKAGE_PATTERNS,
 } from './util.ts';
+
+const fslib = lazyModule<typeof import('@yarnpkg/fslib')>(() => require('@yarnpkg/fslib'));
+const libzip = lazyModule<typeof import('@yarnpkg/libzip')>(() => require('@yarnpkg/libzip'));
 
 // more info at https://yarnpkg.com/advanced/error-codes
 const CRITICAL_YARN2_ERROR_CODES = {
@@ -209,12 +211,12 @@ export class Yarn2Proxy extends JsPackageManager {
         const pkgLocator = pnpApi.findPackageLocator(resolvedPath);
         const pkg = pnpApi.getPackageInformation(pkgLocator);
 
-        const zipOpenFs = new ZipOpenFS({
-          libzip: getLibzipSync(),
+        const zipOpenFs = new fslib.ZipOpenFS({
+          libzip: libzip.getLibzipSync(),
         });
 
-        const virtualFs = new VirtualFS({ baseFs: zipOpenFs });
-        const crossFs = new PosixFS(virtualFs);
+        const virtualFs = new fslib.VirtualFS({ baseFs: zipOpenFs });
+        const crossFs = new fslib.PosixFS(virtualFs);
 
         const virtualPath = join(pkg.packageLocation, 'package.json');
 

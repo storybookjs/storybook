@@ -18,9 +18,6 @@ import { aiSetup } from '../cli/ai/index.ts';
 import { isAiCliFeatureEnabled, registerAiMcpPassthrough } from '../cli/ai/mcp/register.ts';
 import { registerSkillsCommand } from '../cli/skills/register.ts';
 import { registerToolsPassthrough } from '../cli/tools/register.ts';
-import { build } from '../cli/build.ts';
-import { buildIndex as index } from '../cli/buildIndex.ts';
-import { dev } from '../cli/dev.ts';
 import { globalSettings } from '../cli/globalSettings.ts';
 import { resolveDevCommandOptions } from './dev-options.ts';
 
@@ -150,6 +147,9 @@ command('dev')
       return handleCommandFailure(options.logfile);
     }
 
+    // The dev server, static build and indexer bring the whole `core-server` graph; load them in
+    // the command that runs them so the other commands never evaluate it.
+    const { dev } = await import('../cli/dev.ts');
     await dev({ ...resolvedOptions, packageJson }).catch(() => {
       handleCommandFailure(options.logfile);
     });
@@ -191,6 +191,7 @@ command('build')
       configDir: 'SBCONFIG_CONFIG_DIR',
     });
 
+    const { build } = await import('../cli/build.ts');
     await build({
       ...options,
       packageJson,
@@ -224,7 +225,8 @@ command('index')
       outputFile: 'SBCONFIG_OUTPUT_FILE',
     });
 
-    await index({
+    const { buildIndex } = await import('../cli/buildIndex.ts');
+    await buildIndex({
       ...options,
       packageJson,
     }).catch(() => process.exit(1));

@@ -2,7 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { optionalEnvToBoolean } from 'storybook/internal/common';
-import { sendTelemetryError, withTelemetry } from 'storybook/internal/core-server';
+import { sendTelemetryError, withTelemetry } from '../../../core-server/withTelemetry.ts';
 import { telemetry } from 'storybook/internal/telemetry';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -16,7 +16,7 @@ vi.mock('./run-tool.ts', { spy: true });
 
 vi.mock('node:fs/promises', { spy: true });
 
-vi.mock('storybook/internal/core-server', { spy: true });
+vi.mock('../../../core-server/withTelemetry.ts', { spy: true });
 
 vi.mock('storybook/internal/telemetry', { spy: true });
 

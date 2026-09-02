@@ -1,7 +1,7 @@
 import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
-import { sendTelemetryError, withTelemetry } from 'storybook/internal/core-server';
+import { sendTelemetryError, withTelemetry } from '../../core-server/withTelemetry.ts';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';

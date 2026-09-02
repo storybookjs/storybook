@@ -13,7 +13,9 @@ import * as find from 'empathic/find';
 import type { ResultPromise } from 'execa';
 import { coerce, gte } from 'semver';
 import { dedent } from 'ts-dedent';
-import { type Document, parseDocument } from 'yaml';
+import type { Document } from 'yaml';
+
+import { lazyModule } from '../../shared/utils/lazy-require.ts';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
 import { executeCommand, executeCommandSync } from '../utils/command.ts';
@@ -50,6 +52,8 @@ type PnpmListItem = {
   peerDependencies: PnpmDependencies;
   devDependencies: PnpmDependencies;
 };
+
+const yaml = lazyModule<typeof import('yaml')>(() => require('yaml'));
 
 export type PnpmListOutput = PnpmListItem[];
 
@@ -325,7 +329,7 @@ export class PNPMProxy extends JsPackageManager {
       return null;
     }
     try {
-      const doc = parseDocument(readFileSync(path, 'utf8'));
+      const doc = yaml.parseDocument(readFileSync(path, 'utf8'));
       if (doc.errors.length > 0) {
         throw doc.errors[0];
       }

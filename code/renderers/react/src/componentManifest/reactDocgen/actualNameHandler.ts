@@ -10,11 +10,11 @@
  * displayNameHandler, using the same approach as babel-plugin-react-docgen.
  */
 import type { Handler, NodePath, babelTypes as t } from 'react-docgen';
-import { utils } from 'react-docgen';
 
-const { getNameOrValue, isReactForwardRefCall } = utils;
+import { requireReactDocgen } from './module.ts';
 
 const actualNameHandler: Handler = function actualNameHandler(documentation, componentDefinition) {
+  const { getNameOrValue, isReactForwardRefCall } = requireReactDocgen().utils;
   documentation.set('definedInFile', componentDefinition.hub.file.opts.filename);
 
   if (

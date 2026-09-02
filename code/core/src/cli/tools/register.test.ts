@@ -2,7 +2,7 @@ import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import { optionalEnvToBoolean } from 'storybook/internal/common';
-import { sendTelemetryError, withTelemetry } from 'storybook/internal/core-server';
+import { sendTelemetryError, withTelemetry } from '../../core-server/withTelemetry.ts';
 import { telemetry } from 'storybook/internal/telemetry';
 
 import { afterEach, beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
@@ -16,7 +16,7 @@ import type { ToolsRunResult } from './run.ts';
 vi.mock('./run.ts', { spy: true });
 vi.mock('node:fs/promises', { spy: true });
 // Factory mock: a spy of this package loads the real withTelemetry and hangs these CLI tests.
-vi.mock('storybook/internal/core-server', () => ({
+vi.mock('../../core-server/withTelemetry.ts', () => ({
   withTelemetry: vi.fn(async (_event, _options, run: () => Promise<unknown>) => run()),
   sendTelemetryError: vi.fn(),
 }));

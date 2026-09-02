@@ -1,4 +1,5 @@
-import { experimental_loadStorybook, withTelemetry } from 'storybook/internal/core-server';
+import { loadStorybook as experimental_loadStorybook } from '../../core-server/load.ts';
+import { withTelemetry } from '../../core-server/withTelemetry.ts';
 import { telemetry } from 'storybook/internal/telemetry';
 import type { CLIOptions } from 'storybook/internal/types';
 

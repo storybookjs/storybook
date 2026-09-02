@@ -46,6 +46,33 @@ export const resolvePackageDir = (
 };
 
 let isTypescriptLoaderRegistered = false;
+let typescriptLoaderRegistrationError: unknown;
+
+/**
+ * Installs the esbuild-based TypeScript loader as a Node module customization hook, so that the
+ * `import()` in `importModule` can load `.ts` files such as `.storybook/main.ts` directly.
+ *
+ * Some hosts forbid installing hooks. Jest >= 30.5 throws from `module.register()` inside its
+ * sandbox (jestjs/jest#16391), because the hooks would attach to the module loader running Jest
+ * itself rather than to the sandboxed `require`/`import` that test code uses. Such hosts already
+ * transform TypeScript themselves, so a failed registration is not fatal: `importModule` falls
+ * through to its plain import/require path, which is also what happened on older Jest versions
+ * where the call was accepted but had no effect on the sandbox. The error is kept so it can be
+ * surfaced as the cause if the module cannot be loaded without the hook after all.
+ */
+function registerTypescriptLoader() {
+  if (isTypescriptLoaderRegistered) {
+    return;
+  }
+  // Set before attempting, so a host that forbids hooks is asked once rather than on every import.
+  isTypescriptLoaderRegistered = true;
+  try {
+    const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
+    register(typescriptLoaderUrl, import.meta.url);
+  } catch (error) {
+    typescriptLoaderRegistrationError = error;
+  }
+}
 
 /**
  * Dynamically imports a module with TypeScript support, falling back to require if necessary.
@@ -68,11 +95,7 @@ export async function importModule(
   path: string,
   { skipCache = false }: { skipCache?: boolean } = {}
 ) {
-  if (!isTypescriptLoaderRegistered) {
-    const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
-    register(typescriptLoaderUrl, import.meta.url);
-    isTypescriptLoaderRegistered = true;
-  }
+  registerTypescriptLoader();
 
   let mod;
   try {
@@ -95,6 +118,13 @@ export async function importModule(
         in Node 20 requireError will always be "Error [ERR_REQUIRE_CYCLE_MODULE]: Cannot require() ES Module"
         in Node 22 requireError will always be "Error [ERR_INTERNAL_ASSERTION]: Unexpected module status 5. Cannot require() ES Module"
       */
+      if (
+        typescriptLoaderRegistrationError !== undefined &&
+        importError instanceof Error &&
+        importError.cause === undefined
+      ) {
+        importError.cause = typescriptLoaderRegistrationError;
+      }
       throw importError;
     }
   }

@@ -4,12 +4,14 @@ import type * as t from '@babel/types';
 
 type Recast = typeof import('recast');
 
-// recast is resolved on first call, like the transform packages in `./index.ts`.
+const impl = (): typeof import('./impl.ts') => require('storybook/internal/babel-impl');
+
+// recast lives in the `babel-impl` entry with the other transform packages; see `./index.ts`.
 export const recast = {
   parse: (...args: Parameters<Recast['parse']>): ReturnType<Recast['parse']> =>
-    (require('recast') as Recast).parse(...args),
+    impl().recast.parse(...args),
   print: (...args: Parameters<Recast['print']>): ReturnType<Recast['print']> =>
-    (require('recast') as Recast).print(...args),
+    impl().recast.print(...args),
 };
 
 function parseWithFlowOrTypescript(source: string, parserOptions: parser.ParserOptions) {

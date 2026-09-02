@@ -4,15 +4,18 @@
  * bundling babel multiple times in the final bundles.
  *
  * `types` and `parser` are namespace imports because consumers use them in type positions
- * (`t.Node`). The transform packages are only ever called, so they are resolved inside the wrapper
- * on first call: every `storybook` command evaluates this entry through `common` and `core-server`,
- * and most never parse or print anything.
+ * (`t.Node`). The transform packages are only ever called, so they live in the separate
+ * `storybook/internal/babel-impl` entry that the wrappers `require()` on first call: every
+ * `storybook` command evaluates this entry through `common` and `core-server`, and most never parse
+ * or print anything.
  */
 import type { BabelFile, BabelFileResult, TransformOptions } from '@babel/core';
 import type { GeneratorOptions, GeneratorResult } from '@babel/generator';
 import * as parser from '@babel/parser';
 import type { NodePath, Scope, TraverseOptions } from '@babel/traverse';
 import * as types from '@babel/types';
+
+const impl = (): typeof import('./impl.ts') => require('storybook/internal/babel-impl');
 
 export * from './babelParse.ts';
 export { unwrapTSExpression, resolveExpression } from './expression-resolver.ts';
@@ -43,9 +46,7 @@ export function traverse(
   parentPath?: NodePath
 ): void;
 export function traverse(...args: unknown[]): void {
-  // A CJS package that puts its function on `exports.default`.
-  const bt = require('@babel/traverse');
-  return (bt.default || bt)(...args);
+  return (impl().traverse as (...args: unknown[]) => void)(...args);
 }
 
 export function generate(
@@ -53,12 +54,11 @@ export function generate(
   opts?: GeneratorOptions,
   code?: string | { [filename: string]: string }
 ): GeneratorResult {
-  const bg = require('@babel/generator');
-  return (bg.default || bg)(ast, opts, code);
+  return impl().generate(ast, opts, code);
 }
 
 export function transformSync(code: string, opts?: TransformOptions): BabelFileResult | null {
-  return require('@babel/core').transformSync(code, opts);
+  return impl().core.transformSync(code, opts);
 }
 
 /**
@@ -70,8 +70,8 @@ export function createBabelFile(
   options: { filename?: string; highlightCode?: boolean },
   input: { code: string; ast?: types.File }
 ): BabelFile {
-  const { File } = require('@babel/core');
-  return new File(options, input);
+  // @ts-expect-error `File` is not in the published types either
+  return new (impl().core.File)(options, input);
 }
 
 export type { BabelFile, NodePath } from '@babel/core';

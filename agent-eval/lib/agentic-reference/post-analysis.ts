@@ -14,6 +14,7 @@
 // `baseline` mode) the pinned upstream tree the runner materialized for us.
 // Everything comparative lives in deltaToBaseline, which is therefore
 // the only entry point here that needs the external repo on disk.
+import { styleText } from 'node:util';
 import {
   COMPLEXITY_KEYS,
   complexityForTree,
@@ -49,7 +50,6 @@ import type {
   SummarizeOptions,
 } from '../post-analysis/types.ts';
 import { finiteNumbers, mean, round, sum } from '../utils/math.ts';
-import { bold, dim, green, red, yellow } from '../utils/colors.ts';
 import { printTable } from '../utils/table.ts';
 import { isRecord } from '../utils/type.ts';
 
@@ -331,18 +331,23 @@ function printMisuseFindings(rows: Array<Record<string, unknown>>): void {
       for (const question of Object.keys(MISUSE_QUESTION_LABELS) as JudgedQuestion[]) {
         const answer = node[question];
         if (answer === undefined) continue;
-        if (printed === 0) console.log(bold('\nJudged nodes (every verdict, with reason):'));
+        if (printed === 0)
+          console.log(styleText('bold', '\nJudged nodes (every verdict, with reason):'));
         printed += 1;
         const score =
-          answer.score === 1 ? green('1  ') : answer.score === 0 ? red('0  ') : yellow('0.5');
+          answer.score === 1
+            ? styleText('green', '1  ')
+            : answer.score === 0
+              ? styleText('red', '0  ')
+              : styleText('yellow', '0.5');
         const where = `${shortExperiment(row.experiment)}/run-${row.run as number}`;
         console.log(
-          `${score} ${bold(`<${node.tag}>`)} ${MISUSE_QUESTION_LABELS[question]} ` +
-            dim(`${node.file}:${node.line} · ${where}`)
+          `${score} ${styleText('bold', `<${node.tag}>`)} ${MISUSE_QUESTION_LABELS[question]} ` +
+            styleText('dim', `${node.file}:${node.line} · ${where}`)
         );
         for (const reason of answer.reasons) {
           const facetTag = reason.facet === undefined ? '' : `[${reason.facet}] `;
-          console.log(dim(`    ${facetTag}${reason.text}`));
+          console.log(styleText('dim', `    ${facetTag}${reason.text}`));
         }
       }
     }
@@ -350,8 +355,11 @@ function printMisuseFindings(rows: Array<Record<string, unknown>>): void {
   if (printed === 0) {
     console.log(
       anyNodeInspected
-        ? dim('No findings: every judged node scored 1 on every question it received.')
-        : dim('No per-node verdicts: these runs carry summary scores but no judged node detail.')
+        ? styleText('dim', 'No findings: every judged node scored 1 on every question it received.')
+        : styleText(
+            'dim',
+            'No per-node verdicts: these runs carry summary scores but no judged node detail.'
+          )
     );
   }
 }
@@ -361,7 +369,7 @@ function statusLabel(status: unknown): string | null {
   if (typeof status !== 'string') {
     return null;
   }
-  return status === 'passed' ? green(status) : red(status);
+  return status === 'passed' ? styleText('green', status) : styleText('red', status);
 }
 
 /** A stored share (0.0845) as a percentage for display. */
@@ -585,7 +593,8 @@ export function summarize(
   const misuseHintPrinted = judgedRuns < totalRuns;
   if (misuseHintPrinted) {
     console.log(
-      dim(
+      styleText(
+        'dim',
         `DS misuse: ${judgedRuns}/${totalRuns} runs judged — run: yarn workspace agent-eval run judge:ds-misuse`
       )
     );

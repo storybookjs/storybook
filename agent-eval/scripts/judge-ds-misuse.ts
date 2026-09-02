@@ -22,6 +22,7 @@
 // freshness, node census) and prints which runs it would judge, reuse or skip.
 //
 // Usage: yarn workspace agent-eval run judge:ds-misuse [flags]. Run with --help for the flag list.
+import { styleText } from 'node:util';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -49,7 +50,6 @@ import { readNodeCensus } from '#lib/post-analysis/baseline';
 import { findRuns, selectRuns, type Run, type RunSelection } from '#lib/post-analysis/discovery';
 import { selectionFlags } from '#lib/agentic-reference/selection';
 import { formatCompactCount, shortExperiment } from '#lib/agentic-reference/utils';
-import { bold, dim, red, yellow } from '../lib/utils/colors.ts';
 import { readJson } from '#lib/utils/files';
 import { isRecord } from '#lib/utils/type';
 
@@ -58,10 +58,10 @@ import type { NodeRecord } from '#lib/agentic-reference/metrics/ds-coverage/type
 
 /** A mean score at terminal width: bare when clean, colored as it degrades. */
 function score(value: number | null): string {
-  if (value === null) return dim('   —');
+  if (value === null) return styleText('dim', '   —');
   const text = value.toFixed(3);
-  if (value < 0.75) return red(text);
-  if (value < 0.9) return yellow(text);
+  if (value < 0.75) return styleText('red', text);
+  if (value < 0.9) return styleText('yellow', text);
   return text;
 }
 
@@ -254,10 +254,10 @@ async function judgeOne(
   beforeLine();
   const counter = `[${String(progress.done + 1).padStart(String(progress.total).length)}/${progress.total}]`;
   console.log(
-    `  ${dim(counter)} run-${String(run.run).padEnd(2)} ` +
+    `  ${styleText('dim', counter)} run-${String(run.run).padEnd(2)} ` +
       `${String(evaluated.ds).padStart(2)} DS · ${String(evaluated.local).padStart(2)} local   ` +
       `decision ${score(correctDsDecision)}  usage ${score(correctDsUsage)}  local ${score(correctLocalDecision)}` +
-      dim(`   $${usdOf(usage).toFixed(2)} · ${duration(Date.now() - startedAt)}`)
+      styleText('dim', `   $${usdOf(usage).toFixed(2)} · ${duration(Date.now() - startedAt)}`)
   );
   return 'judged';
 }
@@ -281,24 +281,24 @@ function dryRun(runs: Run[], options: Options): void {
     cells.set(key, cell);
   }
 
-  console.log(`Dry run against ${bold(dsDocsRefLabel())} — nothing spent.\n`);
+  console.log(`Dry run against ${styleText('bold', dsDocsRefLabel())} — nothing spent.\n`);
   const width = Math.max(...[...cells.keys()].map((key) => key.length));
   for (const [key, cell] of cells) {
     const notes = [
-      cell.judge > 0 ? `${bold(String(cell.judge))} to judge` : '',
-      cell.reused > 0 ? dim(`${cell.reused} cached`) : '',
-      cell.skipped > 0 ? yellow(`${cell.skipped} skipped`) : '',
+      cell.judge > 0 ? `${styleText('bold', String(cell.judge))} to judge` : '',
+      cell.reused > 0 ? styleText('dim', `${cell.reused} cached`) : '',
+      cell.skipped > 0 ? styleText('yellow', `${cell.skipped} skipped`) : '',
     ].filter(Boolean);
-    console.log(`  ${key.padEnd(width)}   ${notes.join(dim(' · '))}`);
+    console.log(`  ${key.padEnd(width)}   ${notes.join(styleText('dim', ' · '))}`);
   }
 
   console.log(
-    `\nWould judge ${bold(String(counts.judge))} run(s), one model call each` +
+    `\nWould judge ${styleText('bold', String(counts.judge))} run(s), one model call each` +
       (counts.reused > 0 ? `; ${counts.reused} cached judgement(s) reused free` : '') +
       (counts.skipped > 0 ? `; ${counts.skipped} skipped` : '') +
       '.'
   );
-  if (counts.reused > 0) console.log(dim('Pass --recompute to re-judge cached runs.'));
+  if (counts.reused > 0) console.log(styleText('dim', 'Pass --recompute to re-judge cached runs.'));
 }
 
 async function main() {
@@ -342,7 +342,9 @@ async function main() {
     return;
   }
 
-  console.log(`Judging up to ${runs.length} run(s) against ${bold(dsDocsRefLabel())}\n`);
+  console.log(
+    `Judging up to ${runs.length} run(s) against ${styleText('bold', dsDocsRefLabel())}\n`
+  );
 
   const counts = { judged: 0, reused: 0, skipped: 0, failed: 0 };
   const spent: JudgeUsage = {
@@ -360,7 +362,7 @@ async function main() {
     const beforeLine = () => {
       if (heading !== printed) {
         printed = heading;
-        console.log(bold(heading));
+        console.log(styleText('bold', heading));
       }
     };
     try {
@@ -371,16 +373,16 @@ async function main() {
       counts.failed += 1;
       beforeLine();
       const message = messageOf(error);
-      console.error(`  ${red('failed')} run-${run.run}: ${message}`);
+      console.error(`  ${styleText('red', 'failed')} run-${run.run}: ${message}`);
       if (message.includes('ANTHROPIC_API_KEY')) throw error;
     }
     progress.done += 1;
   }
 
-  const parts = [`${bold(String(counts.judged))} judged`];
+  const parts = [`${styleText('bold', String(counts.judged))} judged`];
   if (counts.reused > 0) parts.push(`${counts.reused} reused`);
   if (counts.skipped > 0) parts.push(`${counts.skipped} skipped`);
-  if (counts.failed > 0) parts.push(red(`${counts.failed} failed`));
+  if (counts.failed > 0) parts.push(styleText('red', `${counts.failed} failed`));
   console.log(`\n${parts.join(', ')} in ${duration(Date.now() - startedAt)}.`);
   if (counts.judged > 0) {
     console.log(
@@ -392,7 +394,9 @@ async function main() {
     );
   }
   if (counts.reused > 0) {
-    console.log(dim('Cached judgements were reused free; --recompute re-judges them.'));
+    console.log(
+      styleText('dim', 'Cached judgements were reused free; --recompute re-judges them.')
+    );
   }
 }
 

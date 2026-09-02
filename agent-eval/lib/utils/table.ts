@@ -11,9 +11,8 @@
 // the frame and header carry their own styling only when the output is a
 // terminal (see colors.ts).
 
+import { styleText } from 'node:util';
 import { stripVTControlCharacters } from 'node:util';
-
-import { bold, dim } from './colors.ts';
 
 function visibleLength(text: string): number {
   return stripVTControlCharacters(text).length;
@@ -53,7 +52,7 @@ function columnsOf(rows: ReadonlyArray<Record<string, unknown>>): string[] {
 }
 
 function rule(widths: number[], left: string, middle: string, right: string): string {
-  return dim(left + widths.map((width) => '─'.repeat(width + 2)).join(middle) + right);
+  return styleText('dim', left + widths.map((width) => '─'.repeat(width + 2)).join(middle) + right);
 }
 
 function line(cells: string[], widths: number[], numeric: boolean[]): string {
@@ -62,7 +61,7 @@ function line(cells: string[], widths: number[], numeric: boolean[]): string {
     const pad = ' '.repeat(Math.max(0, widths[index]! - visibleLength(cell)));
     return numeric[index] ? pad + cell : cell + pad;
   });
-  const bar = dim('│');
+  const bar = styleText('dim', '│');
   return `${bar} ${padded.join(` ${bar} `)} ${bar}`;
 }
 
@@ -88,7 +87,7 @@ export function formatTable(rows: ReadonlyArray<Record<string, unknown>>): strin
   return [
     rule(widths, '┌', '┬', '┐'),
     line(
-      columns.map((column) => bold(column)),
+      columns.map((column) => styleText('bold', column)),
       widths,
       columns.map(() => false)
     ),

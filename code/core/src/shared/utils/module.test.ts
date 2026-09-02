@@ -5,6 +5,8 @@ import { join } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
+import { logger } from 'storybook/internal/node-logger';
+
 // The global vitest setup replaces `importModule` with a stub for every test. This suite tests
 // the real implementation, so undo that here.
 vi.unmock('./module.ts');
@@ -66,6 +68,16 @@ describe('importModule', () => {
       await importModule(fixture);
 
       expect(register).toHaveBeenCalledTimes(1);
+    });
+
+    it('logs the failure as a string, since the logger would serialize an Error to `{}`', async () => {
+      const importModule = await loadImportModule();
+
+      await importModule(fixture);
+
+      expect(logger.debug).toHaveBeenCalledWith(
+        expect.stringContaining('module.register() is not supported in Jest')
+      );
     });
 
     it('surfaces the registration error as the cause when the module cannot be loaded at all', async () => {

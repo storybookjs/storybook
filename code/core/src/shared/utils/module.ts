@@ -3,6 +3,8 @@ import { createRequire, register } from 'node:module';
 import { win32 } from 'node:path/win32';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import { resolveModulePath } from 'exsolve';
 import { dirname, join } from 'pathe';
 
@@ -48,18 +50,8 @@ export const resolvePackageDir = (
 let isTypescriptLoaderRegistered = false;
 let typescriptLoaderRegistrationError: unknown;
 
-/**
- * Installs the esbuild-based TypeScript loader as a Node module customization hook, so that the
- * `import()` in `importModule` can load `.ts` files such as `.storybook/main.ts` directly.
- *
- * Some hosts forbid installing hooks. Jest >= 30.5 throws from `module.register()` inside its
- * sandbox (jestjs/jest#16391), because the hooks would attach to the module loader running Jest
- * itself rather than to the sandboxed `require`/`import` that test code uses. Such hosts already
- * transform TypeScript themselves, so a failed registration is not fatal: `importModule` falls
- * through to its plain import/require path, which is also what happened on older Jest versions
- * where the call was accepted but had no effect on the sandbox. The error is kept so it can be
- * surfaced as the cause if the module cannot be loaded without the hook after all.
- */
+// Jest >= 30.5 throws from `module.register()` inside its sandbox (jestjs/jest#16391). Such hosts
+// transform TypeScript themselves, so a failed registration is not fatal.
 function registerTypescriptLoader() {
   if (isTypescriptLoaderRegistered) {
     return;
@@ -71,6 +63,13 @@ function registerTypescriptLoader() {
     register(typescriptLoaderUrl, import.meta.url);
   } catch (error) {
     typescriptLoaderRegistrationError = error;
+    // Interpolated: logger.debug JSON.stringifies a non-string argument, and an Error's own
+    // properties are not enumerable, so passing the error itself would log `{}`.
+    logger.debug(
+      `Could not register the TypeScript loader: ${
+        error instanceof Error ? (error.stack ?? error.message) : String(error)
+      }`
+    );
   }
 }
 

@@ -24,9 +24,10 @@ valid.
 
 CLI default is `auto`: attach when a matching instance is running, otherwise load locally.
 `--attach` requires attachment. `--no-attach` forces local. A missing instance falls back to
-local with no notice. Unexpected factory-time gate failures print the exact corrective command
-and then fall back. A later `tools.call` failure (disconnect, remote ack timeout) stays on the
-attached host.
+local with no notice. Unexpected factory-time gate failures print the facts of the failed check
+plus generic recovery guidance (restart Storybook from the project, re-run from there) — never a
+constructed path, and never a path in executable-command position — and then fall back. A later
+`tools.call` failure (disconnect, remote ack timeout) stays on the attached host.
 
 Attach coverage lives in `code/e2e-internal/`. Filesystem unit tests use memfs.
 
@@ -57,29 +58,38 @@ UniversalStores prepare against the real channel as followers. The dispatcher se
 `STORYBOOK_ATTACHED_TOOLS` before importing core so those stores are born followers. Local
 fallback deletes that env before loading the local runtime, which must be a leader.
 
-## Environment match
+## Installation match
 
-Attached mode needs the same version, config, and cwd as the instance. When this process cannot be
-that environment, `createTools` spawns a child from the `storybook` package under `record.cwd` and
-proxies `describe` / `call` / `close` over Node parent-child IPC. The parent `Tools` object is the
-proxy.
+Attached mode requires the caller and the instance to run the exact same `storybook`
+installation. The dev server records `storybookPath` in its instance record: the realpathed root
+of the `storybook` package it actually runs, derived from its own module location (walk up to the
+`package.json` named `storybook`). The caller derives its own root the same way and attach gates
+on exact equality. The server points at itself, so the value cannot be wrong regardless of how or
+from where the process was started — and every unreliable input (cwd defaults) sits on the
+discovery side, where its worst case is an honest miss, never a false match.
 
-The child is used whenever `process.cwd() !== record.cwd`, even when versions match, so module
-resolution, `.env`, and relative paths match the instance. A version mismatch with the invoked
-package (for example `npx storybook@latest` from the right directory) also triggers the child via
-project-local resolution. When the package resolved under the instance cwd also mismatches the
-record (server started before a dependency upgrade), the error is "restart your Storybook".
+`cwd` plays no part in the gate: the same installation attaches in-process even when the server
+was started from an unrelated directory. A different installation (for example `npx
+storybook@latest tools` against a project-local server, or a project-local CLI against a server
+started via `npx storybook@latest dev`) respawns instead: a child host is started from the
+*recorded* installation — `record.storybookPath` → its own manifest → its host entry, a
+deterministic lookup, never a guessed bin — with the record's `cwd` as working directory and the
+paired record's port pinned so the child re-resolves to that exact instance. The child is the
+server's installation, so it attaches as the twin the caller is not; the parent proxies
+`describe` / `call` / `close`. Two processes never attach across installations.
+
+The gate refuses — `EnvironmentMismatchError { reason }` — when it cannot verify or may not
+respawn: a record without `storybookPath` (older server) or a recorded root gone from disk (wiped
+`node_modules`) gets restart guidance; a mismatch under `autoSpawn: false`, or seen by a process
+that is already a child host, gets the symmetric message with both roots, both versions, and the
+instance's config dir. The gate never guesses.
 
 Neither attached nor local mode `chdir`s this process. A foreign `cwd` in local mode starts a
-child host instead.
-
-`autoSpawn: false` throws `EnvironmentMismatchError { instanceCwd, resolvedBinPath, reason }`.
-
-The child is the instance-cwd-resolved `storybook` package's host entry, `cwd = record.cwd`,
-resolved with `createRequire(join(record.cwd, 'package.json'))`. A child does not spawn another
-child; residual mismatch is a prescriptive error. Resolution failure is `SpawnFailedError`. The
-fidelity check runs before config load. `close()` kills the child. The child exits when the parent
-IPC channel closes. Child logs are piped and re-emitted by the parent.
+child host the same way, resolved from the `storybook` package under that directory with
+`createRequire(join(cwd, 'package.json'))`. `autoSpawn: false` errors instead. A child does not
+spawn another child. Resolution failure is `SpawnFailedError`. `close()` kills the child. The
+child exits when the parent IPC channel closes. Child logs are piped and re-emitted by the
+parent.
 
 IPC is the serialized SDK API plus a version field in the child's hello. Cancellation is a
 message keyed by call id.
@@ -117,8 +127,10 @@ consumer amortizes config load across many calls on the live synced runtime.
    project; an explicit `--config-dir` still restricts). Several matches → the invoking agent's
    bucket, then the most recently started; the siblings surface as a stderr warning naming
    `--port`. No record → local fallback, or a hard error under `--attach`.
-2. **Gate + fidelity.** Token present (else "restart Storybook" + fallback). Same cwd and
-   version, else auto-spawn (or `EnvironmentMismatchError` when `autoSpawn: false`).
+2. **Gate.** Token present (else "restart Storybook" + fallback). Same `storybook` installation
+   (the record's `storybookPath` realpath-equals the caller's own package root) → in-process; a
+   different installation → child host from the recorded installation; unverifiable or may not
+   respawn → `EnvironmentMismatchError`.
 3. **Connect.** Node WebSocket to `record.url` + `/storybook-server-channel?token=…`, no
    Origin. `UniversalStore.__prepare(channel, follower)`.
 4. **Register.** Load config from `record.configDir`. Set delegated mode. `services:sync-start`
@@ -132,18 +144,19 @@ starts a child host when it does not.
 
 ## Failure matrix
 
-Messages name the exact corrective command.
+Messages show only facts from the failed check plus generic recovery guidance. No message
+constructs a path or places one in executable-command position.
 
-| Failure                           | Detection                             | Message must include                                                                             |
-| --------------------------------- | ------------------------------------- | ------------------------------------------------------------------------------------------------ |
-| No instance for this project      | No cwd/configDir match                | `--attach` only: how to start Storybook; other running instances with `cwd` + `url`; exact `cd` or `--config-dir`. `auto` falls back with no notice |
-| Port mismatch                     | No running instance on `--port`       | Running instances with their `port` + `url`; `--port <port>`                                     |
-| Old server                        | Token absent                          | Restart Storybook (vX.Y+) to enable attach                                                       |
-| Stale record / connection refused | WS connect fails                      | Registry cleanup; fallback note                                                                  |
-| Server started before upgrade     | Instance-cwd package ≠ record version | Both version strings; restart Storybook                                                          |
-| Spawn resolution failure          | No `storybook` under `record.cwd`     | `SpawnFailedError` remediation; local fallback                                                   |
-| Config drift                      | Instance reports command unhandled    | Attached Storybook has no handler for the command — restart it with a matching configuration     |
-| Unacknowledged command            | Remote command ack timeout            | Attached Storybook did not acknowledge in time; the command may still have executed — retry      |
+| Failure                           | Detection                                      | Message must include                                                                                          |
+| --------------------------------- | ---------------------------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| No instance for this project      | No cwd/configDir match                         | `--attach` only: how to start Storybook; other running instances with `cwd` + `url`. `auto` falls back with no notice |
+| Port mismatch                     | No running instance on `--port`                | Running instances with their `port` + `url`; `--port <port>`                                                  |
+| Old server                        | Token absent                                   | Restart Storybook (vX.Y+) to enable attach                                                                    |
+| Stale record / connection refused | WS connect fails                               | Registry cleanup; fallback note                                                                               |
+| Different installation, no spawn  | Mismatch with `autoSpawn: false` / in a child  | Both roots, both versions, the instance's config dir; restart guidance (with `autoSpawn`, this respawns instead) |
+| Unverifiable installation         | No `storybookPath`, or its root gone from disk | Restart guidance                                                                                              |
+| Config drift                      | Instance reports command unhandled             | Attached Storybook has no handler for the command — restart it with a matching configuration                  |
+| Unacknowledged command            | Remote command ack timeout                     | Attached Storybook did not acknowledge in time; the command may still have executed — retry                   |
 
 Rows other than the last two are factory-time attach gates. In `auto`, those fall back to a local host. Under `--attach`, they are hard errors with
 the same no-instance text. Config drift and an unacknowledged command are post-attach `tools.call` failures:
@@ -170,10 +183,12 @@ the same no-instance text. Config drift and an unacknowledged command are post-a
 - **Thin-trigger load**: a query `load` hook that only awaits commands, so delegation is
   transitive.
 - **Instance registry**: `~/.storybook/instances/<id>.json`, written by running dev servers,
-  pid-liveness-checked; carries the channel token.
+  pid-liveness-checked; carries the channel token and the server's `storybookPath`.
 - **Tools SDK**: `storybook/internal/tools` — owns both modes. `createTools` → `{ describe, call,
 close, mode, storybook }`.
-- **Fidelity check**: whether this process can be the instance's twin (cwd + version). Failure
-  triggers the child host.
-- **Child host**: the project-local, right-cwd child serving the SDK API over parent-child Node
-  IPC; the parent `Tools` is a proxy.
+- **Installation gate**: whether this process runs the exact same `storybook` installation as the
+  instance (`storybookPath` equality). A match attaches in-process; a mismatch respawns from the
+  recorded installation; unverifiable refuses.
+- **Child host**: the child serving the SDK API over parent-child Node IPC (the parent `Tools` is
+  a proxy) — spawned from the recorded installation on an attached-mode mismatch, or from the
+  target directory's installation for a foreign local-mode `cwd`.

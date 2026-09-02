@@ -1,0 +1,20 @@
+{
+  "id": "define-props-runtime-object",
+  "name": "RuntimeObjectProps",
+  "path": "__PATH__",
+  "stories": {
+    "forms-define-props-runtime-object--props-as-written": {
+      "description": undefined,
+      "id": "forms-define-props-runtime-object--props-as-written",
+      "name": "Props As Written",
+      "snippet": "<script lang="ts" setup>
+import RuntimeObjectProps from './RuntimeObjectProps.vue';
+</script>
+
+<template>
+  <RuntimeObjectProps :count="3" label="Total" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

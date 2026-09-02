@@ -44,11 +44,11 @@
 # /code/lib/cli-storybook/  @yannbf @valentinpalkovic @ndelangen
 # /code/lib/codemod/        @kasperpeulen @ndelangen
 # /code/lib/core-webpack/   @valentinpalkovic @ndelangen
-# /code/lib/csf-plugin/     @ndelangen @valentinpalkovic
 # /code/lib/node-logger/    @yannbf @ndelangen
 # /code/lib/react-dom-shim/ @ndelangen @valentinpalkovic @tmeasday
 # /code/lib/telemetry/      @shilman @yannbf @ndelangen
 # /code/lib/types/          @kasperpeulen @ndelangen
+# /code/lib/vite-plugin-storybook-nextjs/ @valentinpalkovic @yannbf @ndelangen
 
 # Presets
 # /code/presets/create-react-app/ @valentinpalkovic @ndelangen

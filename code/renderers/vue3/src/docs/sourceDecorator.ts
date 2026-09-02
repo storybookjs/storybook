@@ -1,6 +1,6 @@
 import { SourceType } from 'storybook/internal/docs-tools';
 
-import { emitTransformCode, useEffect, useRef } from 'storybook/preview-api';
+import { emitTransformCode, useEffect } from 'storybook/preview-api';
 import type { VNode } from 'vue';
 import { isVNode } from 'vue';
 
@@ -77,10 +77,11 @@ export const generateSourceCode = (
   const slotSourceCode = generateSlotSourceCode(ctx.args, slotNames, sourceCodeContext);
   const componentName = displayName || ctx.title.split('/').at(-1)!;
 
+  const openTag = props ? `<${componentName} ${props}` : `<${componentName}`;
   // prefer self closing tag if no slot content exists
   const templateCode = slotSourceCode
-    ? `<${componentName} ${props}> ${slotSourceCode} </${componentName}>`
-    : `<${componentName} ${props} />`;
+    ? `${openTag}>\n${indentLines(slotSourceCode)}\n</${componentName}>`
+    : `${openTag} />`;
 
   const variablesCode = Object.entries(sourceCodeContext.scriptVariables)
     .map(([name, value]) => `const ${name} = ${value};`)
@@ -92,7 +93,7 @@ export const generateSourceCode = (
     })
     .join('\n');
 
-  const template = `<template>\n  ${templateCode}\n</template>`;
+  const template = `<template>\n${indentLines(templateCode)}\n</template>`;
 
   if (!importsCode && !variablesCode) {
     return template;
@@ -104,6 +105,13 @@ ${importsCode ? `${importsCode}\n\n${variablesCode}` : variablesCode}
 
 ${template}`;
 };
+
+/** Indents every non-empty line by one level, so nested markup reads as a block. */
+const indentLines = (source: string): string =>
+  source
+    .split('\n')
+    .map((line) => (line ? `  ${line}` : line))
+    .join('\n');
 
 /**
  * Checks if the source code generation should be skipped for the given Story context. Will be true
@@ -387,7 +395,7 @@ export const generateSlotSourceCode = (
     }
   });
 
-  return slotSourceCodes.join('\n\n');
+  return slotSourceCodes.join('\n');
 };
 
 /**

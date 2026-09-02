@@ -79,6 +79,11 @@ const setupRuntimeConfig = async (
 
   definePluginConfig['process.env.__NEXT_NEW_LINK_BEHAVIOR'] = newNextLinkBehavior;
 
+  // Consumed by the next/link mock to normalize hrefs the way the real <Link> does.
+  definePluginConfig['process.env.__NEXT_TRAILING_SLASH'] = nextConfig.trailingSlash;
+  definePluginConfig['process.env.__NEXT_MANUAL_TRAILING_SLASH'] =
+    nextConfig.skipTrailingSlashRedirect;
+
   // Load DefinePlugin with a dynamic import to ensure that Next.js can first
   // replace webpack with its own internal instance, and we get that here.
   baseConfig.plugins?.push(new (await import('webpack')).default.DefinePlugin(definePluginConfig));

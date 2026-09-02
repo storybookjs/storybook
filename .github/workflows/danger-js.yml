@@ -43,11 +43,19 @@ on:
       - labeled
       - unlabeled
       - edited
+      - ready_for_review
+      - converted_to_draft
     branches:
       - '**'
+  # Re-run when reviews change so a Core/DX approval can clear the gate without a new push.
+  pull_request_review:
+    types:
+      - submitted
+      - dismissed
+      - edited
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.number }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions: {}
@@ -70,6 +78,7 @@ jobs:
       - name: Danger JS
         uses: docker://ghcr.io/danger/danger-js@sha256:66d5394557aef115c9b8086e9886fc24ee32d82ad222efb83778468538a91ef0 # 13.0.5
         with:
-          args: --dangerfile scripts/dangerfile.js
+          args: --dangerfile scripts/dangerfile.ts
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          STORYBOOKJS_ORG_MEMBERSHIP_TOKEN: ${{ secrets.STORYBOOKJS_ORG_MEMBERSHIP_TOKEN }}

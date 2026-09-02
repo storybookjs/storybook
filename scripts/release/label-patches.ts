@@ -93,6 +93,11 @@ export const run = async (options: unknown) => {
   } catch (e) {
     spinner3.fail(`Something went wrong when labelling the PRs.`);
     console.error(e);
+    // Re-throw so the process exits non-zero. This step also runs unattended in the publish
+    // workflow, where a swallowed error is invisible; the workflow marks the step
+    // continue-on-error and alerts on failure, so this does not abort an already-published
+    // release but is no longer silent.
+    throw e;
   }
 };
 

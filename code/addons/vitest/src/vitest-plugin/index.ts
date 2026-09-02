@@ -49,6 +49,7 @@ import {
 import type { InternalOptions, UserOptions } from './types.ts';
 import { requiresProjectAnnotations } from './utils.ts';
 import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
+import { isStorybookInternalFrame } from './stack-frames.ts';
 
 const WORKING_DIR = process.cwd();
 
@@ -299,8 +300,16 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       // )
 
       const testConfig = nonMutableInputConfig.test;
+      // Vitest resolves the story globs below against the root this plugin returns (via
+      // `viteFinal`), not the root it was invoked with. When those differ — a Vitest config
+      // above `configDir/..`, as in a monorepo — relativizing against the invoking root points
+      // every glob outside the project and silently matches no files.
       finalOptions.vitestRoot =
-        testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
+        testConfig?.dir ||
+        testConfig?.root ||
+        viteConfigFromStorybook.root ||
+        nonMutableInputConfig.root ||
+        process.cwd();
 
       const includeStories = stories
         .map((story) => {
@@ -319,6 +328,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         });
 
       finalOptions.includeStories = includeStories;
+
       const projectId = oneWayHash(finalOptions.configDir);
 
       const areProjectAnnotationRequired = await requiresProjectAnnotations(
@@ -336,6 +346,14 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
         test: {
           expect: { requireAssertions: false },
+
+          onStackTrace: (error, frame) => {
+            if (isStorybookInternalFrame(frame.file)) {
+              return false;
+            }
+            return nonMutableInputConfig.test?.onStackTrace?.(error, frame) ?? true;
+          },
+
           setupFiles: [
             ...internalSetupFiles,
             // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it
@@ -429,6 +447,9 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             '@storybook/addon-vitest/internal/global-setup',
             '@storybook/addon-vitest/internal/test-utils',
             'storybook/preview-api',
+            // imported by the setup files; without pinning, its CJS-only deps (via
+            // @testing-library/dom) reach the browser raw on hoisted node_modules layouts
+            'storybook/test',
             ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
               ? ['react-dom/test-utils']
               : []),

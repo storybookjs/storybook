@@ -1237,6 +1237,86 @@ describe('service runtime', () => {
     });
   });
 
+  /**
+   * A load body writes to the state of the runtime it was started on. The static build stands up a
+   * throwaway runtime per snapshot alongside the live registry's runtime, so the same
+   * `(service, query, input)` can be loading on two runtimes at once.
+   */
+  describe('in-flight loads are scoped to their runtime', () => {
+    const gatedCounterServiceDef = (gate: Promise<void>, loadBodySpy: () => void) =>
+      defineService({
+        id: 'internal-fixture/cross-runtime-in-flight',
+        description: 'Fixture: a load body that parks on a gate before writing state.',
+        initialState: { count: 0 },
+        queries: {
+          value: {
+            input: v.undefined(),
+            output: v.number(),
+            handler: (_input, ctx) => ctx.self.state.count,
+            load: async (_input, ctx) => {
+              loadBodySpy();
+              await gate;
+              await ctx.self.commands.bump(undefined);
+            },
+          },
+        },
+        commands: {
+          bump: {
+            input: v.undefined(),
+            output: v.void(),
+            handler: (_input, ctx) =>
+              ctx.self.setState((state) => {
+                state.count += 1;
+              }),
+          },
+        },
+      });
+
+    it('runs the load body on each runtime rather than joining the other one`s', async () => {
+      let release: () => void = () => {};
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const loadBodySpy = vi.fn();
+      const def = gatedCounterServiceDef(gate, loadBodySpy);
+
+      const first = createServiceRuntime(def, { registryApi: serviceRegistryApi }, { count: 0 });
+      const second = createServiceRuntime(def, { registryApi: serviceRegistryApi }, { count: 0 });
+
+      // `second` asks while `first`'s load is still parked on the gate.
+      const firstLoaded = first.queries.value.loaded(undefined);
+      const secondLoaded = second.queries.value.loaded(undefined);
+      release();
+
+      expect(await firstLoaded).toBe(1);
+      expect(await secondLoaded).toBe(1);
+      expect(second.getStateSnapshot().count).toBe(1);
+      expect(loadBodySpy).toHaveBeenCalledTimes(2);
+    });
+
+    it('still dedupes concurrent callers on the same runtime', async () => {
+      let release: () => void = () => {};
+      const gate = new Promise<void>((resolve) => {
+        release = resolve;
+      });
+      const loadBodySpy = vi.fn();
+      const runtime = createServiceRuntime(
+        gatedCounterServiceDef(gate, loadBodySpy),
+        { registryApi: serviceRegistryApi },
+        { count: 0 }
+      );
+
+      const both = Promise.all([
+        runtime.queries.value.loaded(undefined),
+        runtime.queries.value.loaded(undefined),
+      ]);
+      release();
+
+      expect(await both).toEqual([1, 1]);
+      expect(loadBodySpy).toHaveBeenCalledTimes(1);
+    });
+  });
+
   // The `subscriptions`/`reactive load` suites assert the emitted *data* sequence (via collectData).
   // This suite asserts the orthogonal axis: the per-subscription `QueryState` lifecycle that wraps
   // that data (status / loadStatus / error and the derived booleans).

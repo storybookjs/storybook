@@ -1,0 +1,66 @@
+{
+  "argTypes": {
+    "doCreateAccount": {
+      "name": "doCreateAccount",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "doLogin": {
+      "name": "doLogin",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "doLogout": {
+      "name": "doLogout",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "user": {
+      "name": "user",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": null
+        },
+        "type": {
+          "summary": "User | null"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    }
+  },
+  "id": "example-page",
+  "jsDocTags": {},
+  "name": "PageComponent",
+  "path": "./src/stories/page.stories.ts"
+}

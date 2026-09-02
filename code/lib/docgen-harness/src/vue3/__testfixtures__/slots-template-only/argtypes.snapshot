@@ -1,0 +1,49 @@
+{
+  "default": {
+    "description": undefined,
+    "name": "default",
+    "table": {
+      "category": "slots",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "",
+    },
+  },
+  "header": {
+    "description": "Rendered above the content.",
+    "name": "header",
+    "table": {
+      "category": "slots",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "",
+    },
+  },
+  "item": {
+    "description": "Renders one entry; receives the entry and its position.",
+    "name": "item",
+    "table": {
+      "category": "slots",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "{ entry: unknown; index: unknown }",
+      },
+    },
+    "type": {
+      "name": "other",
+      "required": false,
+      "value": "{ entry: unknown; index: unknown }",
+    },
+  },
+}

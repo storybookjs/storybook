@@ -10,6 +10,7 @@ import { addonMcp } from './addon-mcp.ts';
 import { addonMdxGfmRemove } from './addon-mdx-gfm-remove.ts';
 import { addonStorysourceCodePanel } from './addon-storysource-code-panel.ts';
 import { consolidatedImports } from './consolidated-imports.ts';
+import { componentSubtitle } from './component-subtitle.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
 import {
   enableExperimentalDocgenServer,
@@ -41,6 +42,7 @@ export const allFixes: Fix[] = [
   addonGlobalsApi,
   addonA11yAddonTest,
   consolidatedImports,
+  componentSubtitle,
   addonExperimentalTest,
   rnstorybookConfig,
   rnOndeviceAddonsToDeviceAddons,

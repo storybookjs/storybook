@@ -717,14 +717,14 @@ export class ConfigFile {
     return this._ast.program.body;
   }
 
-  /** Find direct method calls on an ESM named import from one of the specified modules. */
+  /** Find direct method calls on a named import from one of the specified modules. */
   findNamedImportMethodCalls({
     importedName,
     methodName,
     moduleNames,
   }: FindNamedImportMethodCallsOptions): t.CallExpression[] {
     const modules = new Set(moduleNames);
-    const imports = new Map<string, t.ImportSpecifier>();
+    const imports = new Map<string, t.Node>();
 
     traverse(this._ast, {
       ImportDeclaration(path) {
@@ -739,6 +739,32 @@ export class ConfigFile {
             t.isIdentifier(specifier.imported, { name: importedName })
           ) {
             imports.set(specifier.local.name, specifier);
+          }
+        }
+      },
+      VariableDeclarator(path) {
+        const { id, init } = path.node;
+        if (
+          !t.isObjectPattern(id) ||
+          !t.isCallExpression(init) ||
+          !t.isIdentifier(init.callee, { name: 'require' }) ||
+          path.scope.getBinding('require') !== undefined ||
+          init.arguments.length !== 1 ||
+          !t.isStringLiteral(init.arguments[0]) ||
+          !modules.has(init.arguments[0].value)
+        ) {
+          return;
+        }
+
+        for (const property of id.properties) {
+          if (
+            t.isObjectProperty(property) &&
+            !property.computed &&
+            ((t.isIdentifier(property.key) && property.key.name === importedName) ||
+              (t.isStringLiteral(property.key) && property.key.value === importedName)) &&
+            t.isIdentifier(property.value)
+          ) {
+            imports.set(property.value.name, path.node);
           }
         }
       },

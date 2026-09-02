@@ -34,7 +34,7 @@ export type SkillsRunResult = {
   errorOutput?: string;
   exitCode: number;
   kind: SkillsRunKind;
-  /** For telemetry: which skill was served (or `all`), when the run got that far. */
+  // For telemetry: which skill was served (or `all`), when the run got that far.
   skill?: SkillId | 'all';
 };
 
@@ -57,10 +57,11 @@ export type SkillsIntent =
   | { kind: 'invalid'; tokens: string[] }
   | { kind: 'unknown'; id: string };
 
-export function resolveSkillsIntent(
-  tokens: string[],
-  { help = false, all = false }: { help?: boolean; all?: boolean } = {}
-): SkillsIntent {
+export function resolveSkillsIntent({
+  tokens,
+  help,
+  all,
+}: Pick<SkillsRunInput, 'tokens' | 'help' | 'all'>): SkillsIntent {
   const [id, ...rest] = tokens;
   if (help) {
     return { kind: 'catalog' };
@@ -81,7 +82,7 @@ export async function runSkillsCommand(
   input: SkillsRunInput,
   deps: SkillsRunDeps
 ): Promise<SkillsRunResult> {
-  const intent = resolveSkillsIntent(input.tokens, input);
+  const intent = resolveSkillsIntent(input);
   if (intent.kind === 'catalog') {
     return { output: renderCatalogHelp(), exitCode: 0, kind: 'help' };
   }
@@ -96,11 +97,11 @@ export async function runSkillsCommand(
   if (intent.kind === 'all') {
     const setup = await serveSetup(input.target, deps);
     if (!setup.ok) {
-      return failure(setup.message, 'all');
+      return failure(setup.message);
     }
     const loaded = await loadInputs(input.target, deps);
     if (!loaded.ok) {
-      return failure(loaded.message, 'all');
+      return failure(loaded.message);
     }
     const output = SKILL_IDS.map((id) =>
       id === 'setup' ? setup.markdown : assemble(id, loaded.inputs)
@@ -113,16 +114,16 @@ export async function runSkillsCommand(
     const setup = await serveSetup(input.target, deps);
     return setup.ok
       ? { output: setup.markdown, exitCode: 0, kind: 'get', skill: id }
-      : failure(setup.message, id);
+      : failure(setup.message);
   }
   const loaded = await loadInputs(input.target, deps);
   return loaded.ok
     ? { output: assemble(id, loaded.inputs), exitCode: 0, kind: 'get', skill: id }
-    : failure(loaded.message, id);
+    : failure(loaded.message);
 }
 
-function failure(message: string, skill?: SkillId | 'all'): SkillsRunResult {
-  return { output: '', errorOutput: message, exitCode: 1, kind: 'get', skill };
+function failure(message: string): SkillsRunResult {
+  return { output: '', errorOutput: message, exitCode: 1, kind: 'get' };
 }
 
 // The setup skill only needs the lightweight project-info probe, not a full preset load, so it

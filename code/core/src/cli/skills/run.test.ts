@@ -28,36 +28,44 @@ const deps = () => ({
 
 describe('resolveSkillsIntent', () => {
   it('treats no args as the catalog', () => {
-    expect(resolveSkillsIntent([])).toEqual({ kind: 'catalog' });
-    expect(resolveSkillsIntent([], { help: true })).toEqual({ kind: 'catalog' });
+    expect(resolveSkillsIntent({ tokens: [] })).toEqual({ kind: 'catalog' });
+    expect(resolveSkillsIntent({ tokens: [], help: true })).toEqual({ kind: 'catalog' });
   });
 
   it('prints a skill by id', () => {
-    expect(resolveSkillsIntent(['stories'])).toEqual({ kind: 'get', id: 'stories' });
-    expect(resolveSkillsIntent(['setup'])).toEqual({ kind: 'get', id: 'setup' });
+    expect(resolveSkillsIntent({ tokens: ['stories'] })).toEqual({ kind: 'get', id: 'stories' });
+    expect(resolveSkillsIntent({ tokens: ['setup'] })).toEqual({ kind: 'get', id: 'setup' });
   });
 
   it('prints every skill on --all, unless help is also set', () => {
-    expect(resolveSkillsIntent([], { all: true })).toEqual({ kind: 'all' });
-    expect(resolveSkillsIntent([], { all: true, help: true })).toEqual({ kind: 'catalog' });
+    expect(resolveSkillsIntent({ tokens: [], all: true })).toEqual({ kind: 'all' });
+    expect(resolveSkillsIntent({ tokens: [], all: true, help: true })).toEqual({ kind: 'catalog' });
   });
 
   it('treats help as the catalog even after a skill id', () => {
-    expect(resolveSkillsIntent(['write-story'], { help: true })).toEqual({ kind: 'catalog' });
+    expect(resolveSkillsIntent({ tokens: ['write-story'], help: true })).toEqual({
+      kind: 'catalog',
+    });
   });
 
   it('does not treat `help`, `list`, or `get` as subcommands', () => {
-    expect(resolveSkillsIntent(['help', 'stories'])).toEqual({ kind: 'unknown', id: 'help' });
-    expect(resolveSkillsIntent(['list'])).toEqual({ kind: 'unknown', id: 'list' });
-    expect(resolveSkillsIntent(['get', 'stories'])).toEqual({ kind: 'unknown', id: 'get' });
+    expect(resolveSkillsIntent({ tokens: ['help', 'stories'] })).toEqual({
+      kind: 'unknown',
+      id: 'help',
+    });
+    expect(resolveSkillsIntent({ tokens: ['list'] })).toEqual({ kind: 'unknown', id: 'list' });
+    expect(resolveSkillsIntent({ tokens: ['get', 'stories'] })).toEqual({
+      kind: 'unknown',
+      id: 'get',
+    });
   });
 
   it('rejects surplus positional arguments and an id combined with --all', () => {
-    expect(resolveSkillsIntent(['stories', 'typo'])).toEqual({
+    expect(resolveSkillsIntent({ tokens: ['stories', 'typo'] })).toEqual({
       kind: 'invalid',
       tokens: ['stories', 'typo'],
     });
-    expect(resolveSkillsIntent(['stories'], { all: true })).toEqual({
+    expect(resolveSkillsIntent({ tokens: ['stories'], all: true })).toEqual({
       kind: 'invalid',
       tokens: ['stories'],
     });

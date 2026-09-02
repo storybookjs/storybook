@@ -79,6 +79,7 @@ describe('registerSkillsCommand', () => {
     expect(vi.mocked(runSkillsCommand).mock.calls[0]?.[0]).toEqual({
       tokens: ['stories'],
       help: undefined,
+      all: undefined,
       target: { cwd: undefined, configDir: undefined },
     });
   });

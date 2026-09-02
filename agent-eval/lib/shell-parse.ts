@@ -20,7 +20,7 @@ export function workflowCallMatchesName(call: StorybookWorkflowCall, name: strin
   return (
     name === 'get-storybook-story-instructions' &&
     call.name === 'skills-get' &&
-    call.input.id === 'write-story'
+    (call.input.id === 'write-story' || call.input.id === 'all')
   );
 }
 
@@ -106,7 +106,8 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
       // is workflowCallMatchesName's concern. A help request prints usage instead
       // of the skill, so it does not count — same rule as the ai/tools branch below.
       const segment = segmentUntilSeparator(tokens, index + 2);
-      const [skillId, ...rest] = segment;
+      const [first, ...rest] = segment;
+      const skillId = first === '--all' ? 'all' : first;
       if (
         skillId !== undefined &&
         !skillId.startsWith('-') &&

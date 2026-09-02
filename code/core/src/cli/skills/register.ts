@@ -28,7 +28,6 @@ type SkillsCommandOptions = {
   logfile?: string | boolean;
 };
 
-// `storybook skills [id]`: no id lists every skill, `<id>` prints it, `--all` prints every skill.
 export function registerSkillsCommand(
   program: Command,
   skillsCommand: Command,
@@ -58,7 +57,7 @@ export function registerSkillsCommand(
       all: options.all,
       target: { cwd: options.cwd, configDir: options.configDir },
     };
-    const intent = resolveSkillsIntent(invocation.tokens, invocation);
+    const intent = resolveSkillsIntent(invocation);
     const run = async () => {
       const result = await runSkillsCommand(invocation, defaultDeps());
       await printResult(result);

@@ -1,36 +1,31 @@
-import type { ExperimentConfig, RunCompleteContext } from '@vercel/agent-eval';
-import { collectTranscriptUsage } from './usage.ts';
-
-// The 7xx line: agentic-reference research evals — an agent does a small task in
-// a real external repo (e.g. Mealdrop) with an external design-system MCP. Not
-// registered in this file: they run only via their own experiments/agentic-ref-*.ts,
-// gated behind EVAL_AGENTIC_REFERENCE, never on CI. See lib/agentic-reference/.
+import type { ExperimentConfig, RunCompleteContext } from "@vercel/agent-eval";
+import { collectTranscriptUsage } from "./usage.ts";
 
 // The 8xx line: hand-crafted evals for the current plugin/MCP workflow,
 // one per workflow behavior branch. This is the set that always runs on CI.
 const CORE_STORYBOOK_EVALS = [
-  '801-create-component-no-launch-config',
-  '802-create-component',
-  '803-edit-component',
-  '804-write-story-for-existing-component',
-  '805-non-visual-refactor',
-  '806-browse-request',
-  '807-docs-request',
-  '808-shared-infra-fallback',
-  '810-fix-failing-tests',
-  '811-fix-a11y-violations',
-  '812-first-story-empty-project',
-  '813-monorepo-leaf-create-component',
+  "801-create-component-no-launch-config",
+  "802-create-component",
+  "803-edit-component",
+  "804-write-story-for-existing-component",
+  "805-non-visual-refactor",
+  "806-browse-request",
+  "807-docs-request",
+  "808-shared-infra-fallback",
+  "810-fix-failing-tests",
+  "811-fix-a11y-violations",
+  "812-first-story-empty-project",
+  "813-monorepo-leaf-create-component",
 ] as const;
 
 // The 82x block: lifecycle-skill evals (storybook-init / storybook-upgrade).
 // They only run on the plugin experiments — the MCP experiments require a
 // Storybook already running at :6006/mcp, which these fixtures don't have.
 const LIFECYCLE_STORYBOOK_EVALS = [
-  '820-init-no-storybook',
-  '821-upgrade-from-sb9',
-  '822-upgrade-from-stable',
-  '823-setup-outdated-storybook',
+  "820-init-no-storybook",
+  "821-upgrade-from-sb9",
+  "822-upgrade-from-stable",
+  "823-setup-outdated-storybook",
 ] as const;
 
 // The 9xx line: MCP-only ports from the old /eval system that still cover
@@ -39,18 +34,18 @@ const LIFECYCLE_STORYBOOK_EVALS = [
 // scenarios (901/902/905/907/911 MCP) and duplicate prompt shapes were
 // removed. They only run under EVAL_STORYBOOK_LATEST=1 (or via EVAL_ONLY).
 const PORTED_WORKFLOW_STORYBOOK_EVALS = [
-  '903-create-component-async-fetch-reshaped-explicit-stories',
-  '904-create-component-async-module-reshaped-explicit-stories',
-  '906-existing-component-edit-story-reshaped-detailed',
-  '908-run-story-tests',
-  '909-run-tests-after-component-creation',
-  '910-run-tests-without-a11y-explicit',
-  '911-fix-failing-tests-vitest-cli',
-  '912-fix-a11y-violations',
-  '913-run-all-tests-final-verification',
-  '914-preview-story-by-path',
-  '915-preview-story-by-id',
-  '915-preview-story-by-id-docs-first',
+  "903-create-component-async-fetch-reshaped-explicit-stories",
+  "904-create-component-async-module-reshaped-explicit-stories",
+  "906-existing-component-edit-story-reshaped-detailed",
+  "908-run-story-tests",
+  "909-run-tests-after-component-creation",
+  "910-run-tests-without-a11y-explicit",
+  "911-fix-failing-tests-vitest-cli",
+  "912-fix-a11y-violations",
+  "913-run-all-tests-final-verification",
+  "914-preview-story-by-path",
+  "915-preview-story-by-id",
+  "915-preview-story-by-id-docs-first",
 ] as const;
 
 type EvalName =
@@ -62,53 +57,57 @@ type EvalName =
 // instead of `next`. The 8xx line and the plugin skills target the current
 // workflow and are not compatible with the stable release, so latest runs
 // switch to the ported 9xx line and skip the plugin experiments.
-const STORYBOOK_LATEST = process.env.EVAL_STORYBOOK_LATEST === '1';
+const STORYBOOK_LATEST = process.env.EVAL_STORYBOOK_LATEST === "1";
 
 // By default only the first eval of the active line runs, to keep costs low.
 // EVAL_EXTRA_EVALS=1 runs the full line; EVAL_ONLY=<name>[,<name>] narrows
 // the set to specific evals for local debugging.
 function resolveActiveEvals(): { core: EvalName[]; lifecycle: EvalName[] } {
   const only = process.env.EVAL_ONLY;
-  if (only !== undefined && only !== '') {
+  if (only !== undefined && only !== "") {
     const knownEvals = [
       ...CORE_STORYBOOK_EVALS,
       ...LIFECYCLE_STORYBOOK_EVALS,
       ...PORTED_WORKFLOW_STORYBOOK_EVALS,
     ];
-    const selected = only.split(',').map((name) => {
+    const selected = only.split(",").map((name) => {
       const match = knownEvals.find((evalName) => evalName === name.trim());
       if (match === undefined) {
         throw new Error(
-          `Unknown EVAL_ONLY entry "${name.trim()}". Valid evals: ${knownEvals.join(', ')}`
+          `Unknown EVAL_ONLY entry "${name.trim()}". Valid evals: ${knownEvals.join(", ")}`,
         );
       }
       return match;
     });
     const partitioned = {
       core: selected.filter(
-        (name) => !(LIFECYCLE_STORYBOOK_EVALS as readonly string[]).includes(name)
+        (name) =>
+          !(LIFECYCLE_STORYBOOK_EVALS as readonly string[]).includes(name),
       ),
       lifecycle: selected.filter((name) =>
-        (LIFECYCLE_STORYBOOK_EVALS as readonly string[]).includes(name)
+        (LIFECYCLE_STORYBOOK_EVALS as readonly string[]).includes(name),
       ),
     };
     if (partitioned.core.length === 0 && partitioned.lifecycle.length > 0) {
       console.warn(
-        'EVAL_ONLY selected only lifecycle (82x) evals; the MCP experiments will run zero evals.'
+        "EVAL_ONLY selected only lifecycle (82x) evals; the MCP experiments will run zero evals.",
       );
     }
     return partitioned;
   }
 
-  if (process.env.EVAL_EXTRA_EVALS === '1') {
+  if (process.env.EVAL_EXTRA_EVALS === "1") {
     return STORYBOOK_LATEST
       ? { core: [...PORTED_WORKFLOW_STORYBOOK_EVALS], lifecycle: [] }
-      : { core: [...CORE_STORYBOOK_EVALS], lifecycle: [...LIFECYCLE_STORYBOOK_EVALS] };
+      : {
+          core: [...CORE_STORYBOOK_EVALS],
+          lifecycle: [...LIFECYCLE_STORYBOOK_EVALS],
+        };
   }
 
   return STORYBOOK_LATEST
-    ? { core: ['908-run-story-tests'], lifecycle: [] }
-    : { core: ['801-create-component-no-launch-config'], lifecycle: [] };
+    ? { core: ["908-run-story-tests"], lifecycle: [] }
+    : { core: ["801-create-component-no-launch-config"], lifecycle: [] };
 }
 
 const ACTIVE_EVALS = resolveActiveEvals();
@@ -127,17 +126,20 @@ export const PLUGIN_STORYBOOK_EVALS: EvalName[] = STORYBOOK_LATEST
 // Non-default model tiers run zero evals unless EVAL_EXTRA_MODELS=1, so
 // labeled CI runs only pay for the default-model experiments.
 export const EXTRA_MODEL_EVALS: EvalName[] =
-  process.env.EVAL_EXTRA_MODELS === '1' ? [...WORKFLOW_STORYBOOK_EVALS] : [];
+  process.env.EVAL_EXTRA_MODELS === "1" ? [...WORKFLOW_STORYBOOK_EVALS] : [];
 
 export const EXTRA_MODEL_PLUGIN_EVALS: EvalName[] =
-  process.env.EVAL_EXTRA_MODELS === '1' ? [...PLUGIN_STORYBOOK_EVALS] : [];
+  process.env.EVAL_EXTRA_MODELS === "1" ? [...PLUGIN_STORYBOOK_EVALS] : [];
 
 function attachUsageMetadata({ runData }: RunCompleteContext) {
   if (!runData.transcript) {
     return;
   }
 
-  const usage = collectTranscriptUsage(runData.transcript, runData.result.observedModel);
+  const usage = collectTranscriptUsage(
+    runData.transcript,
+    runData.result.observedModel,
+  );
 
   if (!usage) {
     return;
@@ -165,8 +167,8 @@ export const DEFAULT_EXPERIMENT_CONFIG = {
   // credentials are set, local Docker otherwise. CI carries the credentials,
   // so pinning 'docker' here would run the whole matrix on the runner's four
   // cores and 14 GB of disk.
-  sandbox: 'auto',
-  copyFiles: 'all',
+  sandbox: "auto",
+  copyFiles: "all",
   // Post-run script checks stay disabled: they fail on sandbox environment
   // flakiness (installs, ports) more often than on agent mistakes, and the
   // EVAL.ts assertions already cover the outcomes that matter.

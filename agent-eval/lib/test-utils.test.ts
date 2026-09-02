@@ -20,11 +20,11 @@ import {
 } from './test-utils.ts';
 
 describe('parseStorybookWorkflowShellCommands', () => {
-  test('records `skills get <id>` invocations literally, with their skill id', () => {
+  test('records `skills <id>` invocations literally, with their skill id', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook skills get write-story 2>&1 | grep -v "npm warn"',
-      'npx storybook skills get stories',
-      'npx storybook skills list',
+      'npx storybook skills write-story 2>&1 | grep -v "npm warn"',
+      'npx storybook skills stories',
+      'npx storybook skills',
     ]);
 
     expect(calls).toEqual([
@@ -35,8 +35,8 @@ describe('parseStorybookWorkflowShellCommands', () => {
 
   test('matches only the write-story skill to the historic instructions name', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook skills get write-story',
-      'npx storybook skills get stories',
+      'npx storybook skills write-story',
+      'npx storybook skills stories',
     ]);
 
     expect(
@@ -46,9 +46,9 @@ describe('parseStorybookWorkflowShellCommands', () => {
 
   test('does not record skills help requests or quoted mentions as instruction fetches', () => {
     const calls = parseStorybookWorkflowShellCommands([
-      'npx storybook skills get write-story --help',
-      'npx storybook skills get write-story -h && npx storybook skills list',
-      "echo 'storybook skills get write-story'",
+      'npx storybook skills write-story --help',
+      'npx storybook skills write-story -h && npx storybook skills --all',
+      "echo 'storybook skills write-story'",
     ]);
 
     expect(calls).toHaveLength(0);

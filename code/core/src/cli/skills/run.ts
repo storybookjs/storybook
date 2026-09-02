@@ -14,17 +14,23 @@ export const SKILLS_OPTION_SPECS = [
     flags: '-c, --config-dir <dir-name>',
     description: 'Storybook config directory of the target Storybook',
   },
+  { flags: '--all', description: 'Print every skill in full' },
   {
     flags: '-h, --help',
     description: 'Show every skill, or one skill with its description',
   },
 ] as const;
 
+type SkillsOptionSpec = (typeof SKILLS_OPTION_SPECS)[number];
+
 export type SkillsRunInput = {
   tokens: string[];
   help?: boolean;
-  target: { cwd?: string; configDir?: string };
+  all?: boolean;
+  target: SkillsTarget;
 };
+
+type SkillsTarget = { cwd?: string; configDir?: string };
 
 export type SkillsRunKind = 'help' | 'get';
 
@@ -33,8 +39,8 @@ export type SkillsRunResult = {
   errorOutput?: string;
   exitCode: number;
   kind: SkillsRunKind;
-  /** For telemetry: which skill was served, when the run got that far. */
-  skill?: SkillId;
+  /** For telemetry: which skill was served (or `all`), when the run got that far. */
+  skill?: SkillId | 'all';
 };
 
 export type SkillsRunDeps = {
@@ -53,26 +59,23 @@ export type SkillsIntent =
   | { kind: 'catalog' }
   | { kind: 'skill-help'; id: SkillId }
   | { kind: 'get'; id: SkillId }
+  | { kind: 'all' }
   | { kind: 'invalid'; tokens: string[] }
-  | { kind: 'unknown'; id?: string };
+  | { kind: 'unknown'; id: string };
 
-export function resolveSkillsIntent(tokens: string[], help = false): SkillsIntent {
-  const [first, second] = tokens;
-  if (first === undefined) {
-    return { kind: 'catalog' };
+export function resolveSkillsIntent(
+  tokens: string[],
+  { help = false, all = false }: { help?: boolean; all?: boolean } = {}
+): SkillsIntent {
+  const [id, ...rest] = tokens;
+  if (id === undefined) {
+    return all && !help ? { kind: 'all' } : { kind: 'catalog' };
   }
-  if (first === 'list') {
-    return tokens.length === 1 ? { kind: 'catalog' } : { kind: 'invalid', tokens };
-  }
-  if (first !== 'get' && !isSkillId(first)) {
-    return { kind: 'unknown', id: first };
-  }
-  if (tokens.length > (first === 'get' ? 2 : 1)) {
-    return { kind: 'invalid', tokens };
-  }
-  const id = first === 'get' ? second : first;
-  if (id === undefined || !isSkillId(id)) {
+  if (!isSkillId(id)) {
     return { kind: 'unknown', id };
+  }
+  if (rest.length > 0 || all) {
+    return { kind: 'invalid', tokens };
   }
   return help ? { kind: 'skill-help', id } : { kind: 'get', id };
 }
@@ -81,7 +84,7 @@ export async function runSkillsCommand(
   input: SkillsRunInput,
   deps: SkillsRunDeps
 ): Promise<SkillsRunResult> {
-  const intent = resolveSkillsIntent(input.tokens, input.help);
+  const intent = resolveSkillsIntent(input.tokens, input);
   if (intent.kind === 'catalog') {
     return { output: renderCatalogHelp(), exitCode: 0, kind: 'help' };
   }
@@ -89,64 +92,86 @@ export async function runSkillsCommand(
     return { output: renderSkillHelp(intent.id), exitCode: 0, kind: 'help', skill: intent.id };
   }
   if (intent.kind === 'invalid') {
-    return {
-      output: '',
-      errorOutput: `Unexpected arguments: ${intent.tokens.map((token) => `"${token}"`).join(' ')}.`,
-      exitCode: 1,
-      kind: 'get',
-    };
+    return failure(
+      `Unexpected arguments: ${intent.tokens.map((token) => `"${token}"`).join(' ')}. Run \`npx storybook skills --help\` for usage.`
+    );
   }
   if (intent.kind === 'unknown') {
-    return {
-      output: '',
-      errorOutput: `Unknown skill${intent.id ? ` "${intent.id}"` : ''}. Available skills: ${SKILL_IDS.join(', ')}.`,
-      exitCode: 1,
-      kind: 'get',
-    };
+    return failure(`Unknown skill "${intent.id}". Available skills: ${SKILL_IDS.join(', ')}.`);
+  }
+  if (intent.kind === 'all') {
+    const setup = await serveSetup(input.target, deps);
+    if (!setup.ok) {
+      return failure(setup.message, 'all');
+    }
+    const loaded = await loadInputs(input.target, deps);
+    if (!loaded.ok) {
+      return failure(loaded.message, 'all');
+    }
+    const output = SKILL_IDS.map((id) =>
+      id === 'setup' ? setup.markdown : assemble(id, loaded.inputs)
+    ).join('\n\n---\n\n');
+    return { output, exitCode: 0, kind: 'get', skill: 'all' };
   }
 
   const { id } = intent;
-
   if (id === 'setup') {
-    // The setup skill only needs the lightweight project-info probe, not a full preset load, so
-    // it never pays for `loadStorybook`. Resolve against `target.cwd` the same way the
-    // config-loading branch below does — a relative `configDir` must not be probed against this
-    // process's cwd when `--cwd` points the run at a different project.
-    const probed: ProjectInfoResult = await deps.getProjectInfo({
-      configDir: resolveStorybookConfigDir(input.target),
-    });
-    if (!probed.ok) {
-      return { output: '', errorOutput: probed.message, exitCode: 1, kind: 'get', skill: id };
-    }
-    const { markdown } = await deps.getSetupMarkdown(probed.projectInfo);
-    return { output: markdown, exitCode: 0, kind: 'get', skill: id };
+    const setup = await serveSetup(input.target, deps);
+    return setup.ok
+      ? { output: setup.markdown, exitCode: 0, kind: 'get', skill: id }
+      : failure(setup.message, id);
   }
+  const loaded = await loadInputs(input.target, deps);
+  return loaded.ok
+    ? { output: assemble(id, loaded.inputs), exitCode: 0, kind: 'get', skill: id }
+    : failure(loaded.message, id);
+}
 
-  const configDir = resolveStorybookConfigDir(input.target);
-  let inputs: SkillInputs;
+function failure(message: string, skill?: SkillId | 'all'): SkillsRunResult {
+  return { output: '', errorOutput: message, exitCode: 1, kind: 'get', skill };
+}
+
+// The setup skill only needs the lightweight project-info probe, not a full preset load, so it
+// never pays for `loadStorybook`. Resolve against `target.cwd` the same way `loadInputs` does — a
+// relative `configDir` must not be probed against this process's cwd when `--cwd` points the run
+// at a different project.
+async function serveSetup(
+  target: SkillsTarget,
+  deps: SkillsRunDeps
+): Promise<{ ok: true; markdown: string } | { ok: false; message: string }> {
+  const probed: ProjectInfoResult = await deps.getProjectInfo({
+    configDir: resolveStorybookConfigDir(target),
+  });
+  if (!probed.ok) {
+    return { ok: false, message: probed.message };
+  }
+  const { markdown } = await deps.getSetupMarkdown(probed.projectInfo);
+  return { ok: true, markdown };
+}
+
+async function loadInputs(
+  target: SkillsTarget,
+  deps: SkillsRunDeps
+): Promise<{ ok: true; inputs: SkillInputs } | { ok: false; message: string }> {
   try {
-    const storybook = await deps.loadStorybook({ configDir });
-    inputs = await deps.resolveSkillInputs(storybook);
+    const storybook = await deps.loadStorybook({ configDir: resolveStorybookConfigDir(target) });
+    return { ok: true, inputs: await deps.resolveSkillInputs(storybook) };
   } catch (error) {
     // Reduce to one clean line, matching `cli/tools/run.ts`'s equivalent bootstrap failure: an
     // agent piping this output should not see a raw Node stack trace for an everyday "wrong
     // directory" mistake.
     return {
-      output: '',
-      errorOutput: `Could not load the Storybook configuration for this project: ${
+      ok: false,
+      message: `Could not load the Storybook configuration for this project: ${
         error instanceof Error ? error.message : String(error)
       }`,
-      exitCode: 1,
-      kind: 'get',
-      skill: id,
     };
   }
-  return { output: assemble(id, inputs), exitCode: 0, kind: 'get', skill: id };
 }
 
-function optionLines(): string[] {
-  const column = Math.max(...SKILLS_OPTION_SPECS.map((spec) => spec.flags.length)) + 2;
-  return SKILLS_OPTION_SPECS.map((spec) => `  ${spec.flags.padEnd(column)}${spec.description}`);
+function optionLines(specs: readonly SkillsOptionSpec[] = SKILLS_OPTION_SPECS): string[] {
+  const column = Math.max(...specs.map((spec) => spec.flags.length)) + 2;
+  return specs.map((spec) => `  ${spec.flags.padEnd(column)}${spec.description}`);
 }
 
 function skillLines(): string[] {
@@ -166,7 +191,8 @@ function renderCatalogHelp(): string {
     'Skills:',
     ...skillLines(),
     '',
-    'Print a skill with `npx storybook skills <id>`. `npx storybook skills <id> --help` shows one description.',
+    'Print a skill with `npx storybook skills <id>`, or every skill with `npx storybook skills --all`.',
+    '`npx storybook skills <id> --help` shows one description.',
   ].join('\n');
 }
 
@@ -179,7 +205,7 @@ function renderSkillHelp(id: SkillId): string {
     'Prints the full instructions as markdown.',
     '',
     'Options:',
-    ...optionLines(),
+    ...optionLines(SKILLS_OPTION_SPECS.filter((spec) => spec.flags !== '--all')),
   ].join('\n');
 }
 

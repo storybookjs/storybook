@@ -45,7 +45,7 @@ function parseMajorVersion(version: string): number | undefined {
 /**
  * Probes the target Storybook configuration and assembles the `ProjectInfo` the setup prompts
  * render from. Returns a discriminated result instead of throwing so callers (the `ai setup` CLI
- * today, `skills get setup` next) render their own failure message instead of duplicating logging.
+ * and `skills setup`) render their own failure message instead of duplicating logging.
  */
 export async function getProjectInfo(opts: {
   configDir?: string;

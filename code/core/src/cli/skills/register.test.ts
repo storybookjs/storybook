@@ -83,13 +83,21 @@ describe('registerSkillsCommand', () => {
     });
   });
 
-  it('keeps the `get <id>` spelling', async () => {
+  it('forwards `--all` as a flag, not a token', async () => {
+    vi.mocked(runSkillsCommand).mockResolvedValue({
+      output: 'everything',
+      exitCode: 0,
+      kind: 'get',
+      skill: 'all',
+    });
     const { program } = buildProgram();
-    await parse(program, ['skills', 'get', 'setup']);
+    await parse(program, ['skills', '--all']);
 
     expect(vi.mocked(runSkillsCommand).mock.calls[0]?.[0]).toMatchObject({
-      tokens: ['get', 'setup'],
+      tokens: [],
+      all: true,
     });
+    expect(telemetry).toHaveBeenCalledWith('skills-get', { skill: 'all' }, expect.anything());
   });
 
   it('does not intercept `help` as commander help', async () => {

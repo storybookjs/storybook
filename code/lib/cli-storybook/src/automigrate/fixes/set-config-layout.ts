@@ -52,6 +52,19 @@ const getStaticMemberName = (member: t.MemberExpression) => {
   return null;
 };
 
+const unwrapTypeExpression = (node: t.Expression | t.SpreadElement) => {
+  let expression: t.Expression | t.SpreadElement = node;
+  while (
+    t.isTSAsExpression(expression) ||
+    t.isTSSatisfiesExpression(expression) ||
+    t.isTSTypeAssertion(expression) ||
+    t.isTSNonNullExpression(expression)
+  ) {
+    expression = expression.expression;
+  }
+  return expression;
+};
+
 const migrationError = (managerConfigPath: string, node: t.Node, reason: string) => {
   const location = node.loc?.start.line ? ` on line ${node.loc.start.line}` : '';
   return new HandledError(
@@ -59,7 +72,40 @@ const migrationError = (managerConfigPath: string, node: t.Node, reason: string)
   );
 };
 
+const isStaticValue = (node: t.Expression | t.PatternLike) => {
+  if (
+    t.isBooleanLiteral(node) ||
+    t.isNumericLiteral(node) ||
+    t.isStringLiteral(node) ||
+    t.isNullLiteral(node)
+  ) {
+    return true;
+  }
+  if (t.isUnaryExpression(node, { operator: '-' }) && t.isNumericLiteral(node.argument)) {
+    return true;
+  }
+  if (t.isArrayExpression(node)) {
+    return node.elements.every((element) => element === null || isStaticValue(element));
+  }
+  if (t.isObjectExpression(node)) {
+    return node.properties.every(
+      (property) =>
+        t.isObjectProperty(property) &&
+        getStaticPropertyName(property) !== null &&
+        isStaticValue(property.value)
+    );
+  }
+  return false;
+};
+
 const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: string) => {
+  const movedProperties = config.properties.filter((property) =>
+    optionGroups.has(getStaticPropertyName(property) ?? '')
+  );
+  if (movedProperties.length === 0) {
+    return false;
+  }
+
   const unknownProperty = config.properties.find(
     (property) => t.isSpreadElement(property) || getStaticPropertyName(property) === null
   );
@@ -71,16 +117,27 @@ const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: stri
     );
   }
 
+  const dynamicProperty = movedProperties.find(
+    (property) => !t.isObjectProperty(property) || !isStaticValue(property.value)
+  );
+  if (dynamicProperty) {
+    throw migrationError(
+      managerConfigPath,
+      dynamicProperty,
+      'moving the option could change expression evaluation order'
+    );
+  }
+
   let changed = false;
 
   for (const group of ['layout', 'ui'] as const) {
-    const movedProperties = config.properties.filter(
+    const movedGroupProperties = config.properties.filter(
       (property) => optionGroups.get(getStaticPropertyName(property) ?? '') === group
     );
-    if (movedProperties.length === 0) {
+    if (movedGroupProperties.length === 0) {
       continue;
     }
-    const movedPropertyCopies = movedProperties.map((property) =>
+    const movedPropertyCopies = movedGroupProperties.map((property) =>
       t.cloneNode(property, true, true)
     );
 
@@ -117,23 +174,29 @@ const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: stri
       const existingNames = new Set(
         existingGroup.value.properties.map((property) => getStaticPropertyName(property))
       );
-      existingGroup.value.properties.unshift(
-        ...movedPropertyCopies.filter(
-          (property) => !existingNames.has(getStaticPropertyName(property))
-        )
+      const duplicateProperty = movedGroupProperties.find((property) =>
+        existingNames.has(getStaticPropertyName(property))
       );
+      if (duplicateProperty) {
+        throw migrationError(
+          managerConfigPath,
+          duplicateProperty,
+          `both the top-level configuration and ${group} define ${getStaticPropertyName(duplicateProperty)}`
+        );
+      }
+      existingGroup.value.properties.unshift(...movedPropertyCopies);
       config.properties = config.properties.filter(
-        (property) => !movedProperties.includes(property)
+        (property) => !movedGroupProperties.includes(property)
       );
     } else {
       const firstMovedIndex = config.properties.findIndex((property) =>
-        movedProperties.includes(property)
+        movedGroupProperties.includes(property)
       );
       const insertionIndex = config.properties
         .slice(0, firstMovedIndex)
-        .filter((property) => !movedProperties.includes(property)).length;
+        .filter((property) => !movedGroupProperties.includes(property)).length;
       config.properties = config.properties.filter(
-        (property) => !movedProperties.includes(property)
+        (property) => !movedGroupProperties.includes(property)
       );
       config.properties.splice(
         insertionIndex,
@@ -190,10 +253,11 @@ export const transformSetConfigLayout = (
         return;
       }
 
-      const config = path.node.arguments[0];
-      if (!config) {
+      const configArgument = path.node.arguments[0];
+      if (!configArgument) {
         return;
       }
+      const config = unwrapTypeExpression(configArgument);
       if (!t.isObjectExpression(config)) {
         throw migrationError(
           managerConfigPath,

@@ -4,13 +4,12 @@ import type { StorybookInstanceRecord } from '../instances/types.ts';
 import {
   formatAttachFallback,
   formatConnectionFailed,
-  formatCwdMismatch,
+  formatInstallationMismatch,
   formatMultiInstanceNotice,
   formatNoInstance,
   formatOldServer,
   formatPortMismatch,
-  formatRestartRequired,
-  formatVersionMismatch,
+  formatUnknownInstallation,
 } from './attach-messages.ts';
 
 const other: StorybookInstanceRecord = {
@@ -23,6 +22,7 @@ const other: StorybookInstanceRecord = {
   port: 6006,
   token: 't',
   storybookVersion: '10.2.0',
+  storybookPath: '/apps/web/node_modules/storybook',
   mcp: { status: 'ready' },
 };
 
@@ -36,17 +36,24 @@ const sibling: StorybookInstanceRecord = {
   port: 6007,
 };
 
+const mismatch = {
+  callerPath: '/work/my app/node_modules/storybook',
+  callerVersion: '10.5.2',
+  instancePath: '/home/user/.npm/_npx/a1b2c3/node_modules/storybook',
+  instanceVersion: '10.7.0',
+  configDir: '/work/my app/.storybook',
+};
+
 describe('attach failure messages', () => {
-  it('tells the caller how to start Storybook and how to target another running instance', () => {
+  it('tells the caller how to start Storybook and lists the running instances that did not match', () => {
     expect(formatNoInstance([])).toMatchInlineSnapshot(`
       "No running Storybook was found for this project. Start it first (for example \`npm run storybook\`), then retry with \`--attach\`."
     `);
     expect(formatNoInstance([other])).toMatchInlineSnapshot(`
       "No running Storybook was found for this project. Start it first (for example \`npm run storybook\`), then retry with \`--attach\`.
 
-      Running Storybook instances that did not match this project — target one with \`cd <cwd>\` or \`--config-dir <dir>\`:
-      - http://localhost:6006 (cwd \`/apps/web\`; configDir \`/apps/web/.storybook\`)
-        cd /apps/web && npx storybook tools --attach --cwd /apps/web --config-dir /apps/web/.storybook"
+      Running Storybook instances that did not match this project — target one by re-running this command from its project directory, or with \`--config-dir <dir>\`:
+      - http://localhost:6006 (cwd \`/apps/web\`; configDir \`/apps/web/.storybook\`)"
     `);
   });
 
@@ -98,34 +105,33 @@ describe('attach failure messages', () => {
     );
   });
 
-  it('quotes paths that contain whitespace in copy-paste commands', () => {
-    const spaced: StorybookInstanceRecord = {
-      ...other,
-      cwd: '/work/My App',
-      configDir: '/work/My App/.storybook',
-    };
-
-    expect(formatNoInstance([spaced])).toContain(
-      `cd '/work/My App' && npx storybook tools --attach --cwd '/work/My App' --config-dir '/work/My App/.storybook'`
-    );
-    expect(formatCwdMismatch('/tmp/agent', '/work/My App')).toContain("`--cwd '/work/My App'`");
+  it('shows both installations with their versions and the instance config dir on a mismatch', () => {
+    expect(formatInstallationMismatch(mismatch)).toMatchInlineSnapshot(`
+      "The running Storybook and this CLI are different \`storybook\` installations:
+      - running instance: \`/home/user/.npm/_npx/a1b2c3/node_modules/storybook\` (version 10.7.0; config dir \`/work/my app/.storybook\`)
+      - this CLI: \`/work/my app/node_modules/storybook\` (version 10.5.2)
+      They must be the same installation. From your project directory, restart Storybook (for example \`npx storybook dev\`) and re-run this command from there."
+    `);
   });
 
-  it('tells the caller to move into the instance directory', () => {
-    expect(formatCwdMismatch('/tmp/agent', '/apps/web')).toMatchInlineSnapshot(
-      `"This process is running from /tmp/agent, but the Storybook instance is running from /apps/web. \`cd /apps/web\` and retry, or pass \`--cwd /apps/web\`."`
-    );
+  it('renders unknown facts on a mismatch without guessing them', () => {
+    expect(
+      formatInstallationMismatch({
+        callerPath: mismatch.callerPath,
+        callerVersion: mismatch.callerVersion,
+        instancePath: mismatch.instancePath,
+      })
+    ).toMatchInlineSnapshot(`
+      "The running Storybook and this CLI are different \`storybook\` installations:
+      - running instance: \`/home/user/.npm/_npx/a1b2c3/node_modules/storybook\` (version unknown)
+      - this CLI: \`/work/my app/node_modules/storybook\` (version 10.5.2)
+      They must be the same installation. From your project directory, restart Storybook (for example \`npx storybook dev\`) and re-run this command from there."
+    `);
   });
 
-  it('names both Storybook versions and tells the caller to restart', () => {
-    expect(formatVersionMismatch('10.2.0', '10.1.0')).toMatchInlineSnapshot(
-      `"This process is Storybook 10.2.0, but the running instance is 10.1.0. Restart your Storybook so both sides match."`
-    );
-  });
-
-  it('names the on-disk package and the running instance when spawning cannot reconcile them', () => {
-    expect(formatRestartRequired('10.4.0', '10.2.0')).toMatchInlineSnapshot(
-      `"The Storybook package in this project is 10.4.0, but the running instance is 10.2.0. Restart your Storybook so both sides match."`
+  it('tells the caller to restart when the record does not prove the installations match', () => {
+    expect(formatUnknownInstallation()).toMatchInlineSnapshot(
+      `"Could not verify that the running Storybook and this CLI are the same \`storybook\` installation. From your project directory, restart Storybook (for example \`npx storybook dev\`) and re-run this command from there."`
     );
   });
 
@@ -137,5 +143,42 @@ describe('attach failure messages', () => {
 
 Falling back to loading this project's Storybook configuration."`
     );
+  });
+
+  it('never places a path in executable-command position anywhere in the message catalog', () => {
+    // Matches a real path (absolute, home-relative, dot-relative, or Windows) directly after `cd `
+    // or a `--flag`, i.e. a copy-pasteable command an agent could run with a constructed or
+    // node_modules-deep path.
+    const pathInCommandPosition = /(?:\bcd\s+|--[\w-]+[= ])[`'"]?(?:~?\/|\.\.?\/|[A-Za-z]:[\\/])/;
+
+    const renderedMessages = [
+      formatNoInstance([other, sibling]),
+      formatPortMismatch(9999, [other, sibling]),
+      formatOldServer('10.2.0'),
+      formatConnectionFailed(other),
+      formatInstallationMismatch(mismatch),
+      formatUnknownInstallation(),
+      formatAttachFallback(formatInstallationMismatch(mismatch)),
+      formatMultiInstanceNotice({
+        url: other.url,
+        port: other.port,
+        pid: other.pid,
+        cwd: other.cwd,
+        configDir: other.configDir!,
+        siblings: [
+          {
+            url: sibling.url,
+            port: sibling.port,
+            pid: sibling.pid,
+            cwd: sibling.cwd,
+            configDir: sibling.configDir,
+          },
+        ],
+      }),
+    ];
+
+    for (const message of renderedMessages) {
+      expect(message).not.toMatch(pathInCommandPosition);
+    }
   });
 });

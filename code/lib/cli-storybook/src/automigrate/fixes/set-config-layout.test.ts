@@ -51,14 +51,17 @@ describe('transformSetConfigLayout', () => {
 
     expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
+
       addons.setConfig({
         layout: {
           showNav: false,
           panelPosition: 'right'
         },
+
         ui: {
           enableShortcuts: false
         },
+
         theme
       });"
     `);
@@ -96,11 +99,9 @@ describe('transformSetConfigLayout', () => {
       '{ showNav: false } satisfies Addon_Config',
       dedent`
         import { addons } from 'storybook/manager-api';
-        addons.setConfig({
-          layout: {
-            showNav: false
-          }
-        } satisfies Addon_Config);
+        addons.setConfig({ layout: {
+          showNav: false
+        } } satisfies Addon_Config);
       `,
     ],
     [
@@ -108,11 +109,9 @@ describe('transformSetConfigLayout', () => {
       '{ showNav: false } as Addon_Config',
       dedent`
         import { addons } from 'storybook/manager-api';
-        addons.setConfig({
-          layout: {
-            showNav: false
-          }
-        } as Addon_Config);
+        addons.setConfig({ layout: {
+          showNav: false
+        } } as Addon_Config);
       `,
     ],
     [
@@ -120,11 +119,9 @@ describe('transformSetConfigLayout', () => {
       '{ showNav: false }!',
       dedent`
         import { addons } from 'storybook/manager-api';
-        addons.setConfig({
-          layout: {
-            showNav: false
-          }
-        }!);
+        addons.setConfig({ layout: {
+          showNav: false
+        } }!);
       `,
     ],
   ])(

@@ -3,7 +3,7 @@ import { describe, expect, expectTypeOf, it, test } from 'vitest';
 
 import type { Canvas } from 'storybook/internal/types';
 
-import { h } from 'vue';
+import { type PropType, defineComponent, h } from 'vue';
 
 import BaseLayout from './__tests__/BaseLayout.vue';
 import Button from './__tests__/Button.vue';
@@ -99,6 +99,31 @@ describe('StoryObj', () => {
         args: { label: 'good' },
       });
     }
+  });
+
+  const LiteralButton = defineComponent({
+    props: {
+      label: { type: String as PropType<'A' | 'B'>, required: true },
+    },
+    template: '<button>{{ label }}</button>',
+  });
+
+  it('literal prop set in meta can be omitted in the story (#36125)', () => {
+    const meta = preview.meta({
+      component: LiteralButton,
+      args: { label: 'A' },
+    });
+
+    const Basic = meta.story();
+  });
+
+  it('literal prop set in meta can be omitted in the story, with .type() (#36125)', () => {
+    const meta = preview.type<{ args: { extra?: boolean } }>().meta({
+      component: LiteralButton,
+      args: { label: 'A' },
+    });
+
+    const Basic = meta.story();
   });
 });
 

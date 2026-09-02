@@ -1,7 +1,7 @@
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { facetMetricKey, UNCATEGORISED } from '@storybook/agent-eval-utils';
+import { facetMetricKey, UNCATEGORISED } from '../facets.ts';
 
 import { isCurrentRun } from '../comparability.ts';
 import { dsDocsRefLabel } from '../metrics/ds-misuse/ds-docs.ts';

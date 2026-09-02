@@ -4,7 +4,7 @@ import {
   MISUSE_FACET_IDS,
   UNCATEGORISED,
   type FacetId,
-} from '@storybook/agent-eval-utils';
+} from './facets.ts';
 
 // The curated metric registry for results:compare.
 export type MetricTransform = 'log' | 'log0' | 'none';

@@ -33,7 +33,6 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@storybook/agent-eval-utils": "workspace:*",
     "vercel": "^54.18.5"
   },
   "devDependencies": {

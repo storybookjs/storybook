@@ -12118,12 +12118,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/agent-eval-utils@workspace:*, @storybook/agent-eval-utils@workspace:agent-eval/utils":
-  version: 0.0.0-use.local
-  resolution: "@storybook/agent-eval-utils@workspace:agent-eval/utils"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/angular-cm@workspace:*, @storybook/angular-cm@workspace:code/lib/angular-cm":
   version: 0.0.0-use.local
   resolution: "@storybook/angular-cm@workspace:code/lib/angular-cm"
@@ -17208,7 +17202,6 @@ __metadata:
   resolution: "agent-eval@workspace:agent-eval"
   dependencies:
     "@anthropic-ai/sdk": "npm:^0.117.1"
-    "@storybook/agent-eval-utils": "workspace:*"
     "@tailwindcss/postcss": "npm:^4.3.2"
     "@types/node": "npm:^22.19.1"
     "@types/picomatch": "npm:^4.0.3"

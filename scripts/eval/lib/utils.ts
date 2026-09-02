@@ -1,4 +1,4 @@
-import { visibleLength } from '../../utils/ansi.ts';
+import { stripVTControlCharacters } from 'node:util';
 import { existsSync } from 'node:fs';
 import { join, resolve, sep } from 'node:path';
 import pc from 'picocolors';
@@ -137,11 +137,11 @@ export function formatReadableUtcTimestamp(timestamp: string) {
 /** Format data as an aligned table with automatic column widths. */
 export function formatTable(headers: string[], rows: string[][]): string {
   const widths = headers.map((h, i) =>
-    Math.max(h.length, ...rows.map((r) => visibleLength(r[i] ?? '')))
+    Math.max(h.length, ...rows.map((r) => stripVTControlCharacters(r[i] ?? '').length))
   );
 
   const pad = (str: string, width: number) =>
-    str + ' '.repeat(Math.max(0, width - visibleLength(str)));
+    str + ' '.repeat(Math.max(0, width - stripVTControlCharacters(str).length));
 
   const sep = ' | ';
   return [

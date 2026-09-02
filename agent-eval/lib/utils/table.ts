@@ -11,9 +11,13 @@
 // the frame and header carry their own styling only when the output is a
 // terminal (see colors.ts).
 
-import { visibleLength } from '@storybook/scripts-utils/ansi.ts';
+import { stripVTControlCharacters } from 'node:util';
 
 import { bold, dim } from './colors.ts';
+
+function visibleLength(text: string): number {
+  return stripVTControlCharacters(text).length;
+}
 
 /** A value as it should read in a cell, and whether it aligns as a number. */
 function render(value: unknown): { text: string; numeric: boolean } {

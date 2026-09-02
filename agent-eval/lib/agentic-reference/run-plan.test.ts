@@ -18,7 +18,6 @@ import {
   scanResourceSignals,
   topUpCommand,
 } from './run-plan.ts';
-import { stripAnsi } from '@storybook/scripts-utils/ansi.ts';
 
 const EXPERIMENTS = [
   'agentic-ref-cc-control-none-opus-high',
@@ -373,11 +372,5 @@ describe('topUpCommand', () => {
     ).toBe(
       'yarn workspace agent-eval run eval:agentic-ref --experiments agentic-ref-cc-full-opus-high --evals 701-new-ui-flow --runs 4 --force'
     );
-  });
-});
-
-describe('stripAnsi', () => {
-  it('leaves plain text alone', () => {
-    expect(stripAnsi('2 evals to run')).toBe('2 evals to run');
   });
 });

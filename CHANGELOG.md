@@ -1,3 +1,7 @@
+## 10.5.11
+
+- CLI: Detect Turbopack, Module Federation, and renderer versions - [#35949](https://github.com/storybookjs/storybook/pull/35949), thanks @yannbf!
+
 ## 10.5.10
 
 - Core: Fetch static open-service snapshots relative to the document - [#35945](https://github.com/storybookjs/storybook/pull/35945), thanks @valentinpalkovic!

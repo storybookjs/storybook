@@ -111,6 +111,7 @@ function parseStorybookCliWorkflowCalls(command: string): StorybookWorkflowCall[
       if (
         skillId !== undefined &&
         !skillId.startsWith('-') &&
+        !rest.includes('--all') &&
         !rest.includes('--help') &&
         !rest.includes('-h')
       ) {

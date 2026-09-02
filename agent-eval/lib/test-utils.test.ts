@@ -46,10 +46,11 @@ describe('parseStorybookWorkflowShellCommands', () => {
     ).toEqual([true, true, false]);
   });
 
-  test('does not record skills help requests or quoted mentions as instruction fetches', () => {
+  test('does not record skills help requests, rejected --all combinations, or quoted mentions', () => {
     const calls = parseStorybookWorkflowShellCommands([
       'npx storybook skills write-story --help',
       'npx storybook skills write-story -h && npx storybook skills --all --help',
+      'npx storybook skills stories --all',
       "echo 'storybook skills write-story'",
     ]);
 

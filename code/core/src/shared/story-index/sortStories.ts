@@ -1,6 +1,7 @@
 import type {
   Addon_Comparator,
   Addon_StorySortParameter,
+  Addon_StorySortObjectParameter,
   Addon_StorySortParameterV7,
   IndexEntry,
   IndexEntryLegacy,
@@ -23,7 +24,10 @@ const sortStoriesCommon = (
     if (typeof storySortParameter === 'function') {
       sortFn = storySortParameter;
     } else {
-      sortFn = storySort(storySortParameter);
+      const options = Array.isArray(storySortParameter)
+        ? { order: storySortParameter }
+        : (storySortParameter as Addon_StorySortObjectParameter);
+      sortFn = storySort(options);
     }
     stories.sort(sortFn as (a: IndexEntry, b: IndexEntry) => number);
   } else {

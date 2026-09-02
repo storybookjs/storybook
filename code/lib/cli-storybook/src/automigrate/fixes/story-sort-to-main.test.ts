@@ -473,6 +473,23 @@ describe('story-sort-to-main', () => {
   });
 
   it.each([
+    ['direct', `module.exports = definePreview({ stories: [] })`],
+    [
+      'indirect',
+      `const config = definePreview({ stories: [] }); module.exports = config satisfies StorybookConfig`,
+    ],
+    ['chained', `module.exports = definePreview({ stories: [] }).finalize()`],
+  ])('rejects an arbitrary %s CommonJS main call wrapper before writing', async (_name, main) => {
+    await expect(
+      check(
+        main,
+        `export default { parameters: { options: { storySort: { order: ['Legacy'] } } } }`
+      )
+    ).rejects.toThrow('uses an unsupported main configuration export');
+    expect(fsp.writeFile).not.toHaveBeenCalled();
+  });
+
+  it.each([
     ['function', `(a, b) => a.title.localeCompare(b.title)`],
     ['identifier', `storySort`],
     ['call', `createSort()`],

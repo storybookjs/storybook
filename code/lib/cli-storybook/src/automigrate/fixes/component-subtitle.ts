@@ -254,10 +254,16 @@ const mergeClassification = (
   return current === 'direct' || next === 'direct' ? 'direct' : 'none';
 };
 
-const containsComponentSubtitleCandidate = (
+const containsClassifiedObject = (
   value: t.Node,
   scope: Scope,
+  classifyObject: (
+    object: ObjectExpression,
+    scope: Scope,
+    seen: Set<t.Node>
+  ) => CandidateClassification,
   seenNodes = new Set<t.Node>(),
+  seenObjects = new Set<t.Node>(),
   seenBindings = new Set<t.Node>()
 ): boolean => {
   const resolved = resolveNode(value, scope, seenBindings);
@@ -266,31 +272,42 @@ const containsComponentSubtitleCandidate = (
   }
   seenNodes.add(resolved);
 
-  if (t.isObjectExpression(resolved) && namedMembers(resolved, 'componentSubtitle').length > 0) {
-    return true;
+  if (t.isObjectExpression(resolved)) {
+    return classifyObject(resolved, scope, seenObjects) !== 'none';
   }
 
-  for (const key of t.VISITOR_KEYS[resolved.type] ?? []) {
+  const keys =
+    t.isCallExpression(resolved) || t.isNewExpression(resolved)
+      ? ['arguments']
+      : (t.VISITOR_KEYS[resolved.type] ?? []);
+  for (const key of keys) {
     const children = resolved[key as keyof typeof resolved];
-    if (Array.isArray(children)) {
-      if (
-        children.some(
-          (child) =>
-            t.isNode(child) &&
-            containsComponentSubtitleCandidate(child, scope, seenNodes, seenBindings)
-        )
-      ) {
-        return true;
-      }
-    } else if (
-      t.isNode(children) &&
-      containsComponentSubtitleCandidate(children, scope, seenNodes, seenBindings)
+    const nodes = Array.isArray(children) ? children : [children];
+    if (
+      nodes.some(
+        (child) =>
+          t.isNode(child) &&
+          containsClassifiedObject(
+            child,
+            scope,
+            classifyObject,
+            seenNodes,
+            seenObjects,
+            seenBindings
+          )
+      )
     ) {
       return true;
     }
   }
   return false;
 };
+
+const containsParametersCandidate = (value: t.Node, scope: Scope) =>
+  containsClassifiedObject(value, scope, classifyParameters);
+
+const containsStoryObjectCandidate = (value: t.Node, scope: Scope) =>
+  containsClassifiedObject(value, scope, classifyStoryObject);
 
 const classifyParameters = (
   parameters: ObjectExpression,
@@ -311,7 +328,7 @@ const classifyParameters = (
   const computedMembers = unresolvedComputedMembers(parameters);
   if (
     (classification !== 'none' && computedMembers.length > 0) ||
-    computedMembers.some((member) => containsComponentSubtitleCandidate(member, scope))
+    computedMembers.some((member) => containsParametersCandidate(member, scope))
   ) {
     classification = 'unsafe';
   }
@@ -322,7 +339,7 @@ const classifyParameters = (
     const spreadObject = resolveObjectExpression(property.argument, scope);
     if (
       (spreadObject && classifyParameters(spreadObject, scope, seen) !== 'none') ||
-      (!spreadObject && containsComponentSubtitleCandidate(property.argument, scope))
+      (!spreadObject && containsParametersCandidate(property.argument, scope))
     ) {
       classification = 'unsafe';
     }
@@ -343,14 +360,14 @@ const classifyStoryObject = (
   let classification: CandidateClassification = 'none';
   for (const parametersMember of namedMembers(storyObject, 'parameters')) {
     if (!t.isObjectProperty(parametersMember)) {
-      if (containsComponentSubtitleCandidate(parametersMember, scope)) {
+      if (containsParametersCandidate(parametersMember, scope)) {
         return 'unsafe';
       }
       continue;
     }
     const parameters = resolveObjectExpression(parametersMember.value, scope);
     if (!parameters) {
-      if (containsComponentSubtitleCandidate(parametersMember.value, scope)) {
+      if (containsParametersCandidate(parametersMember.value, scope)) {
         return 'unsafe';
       }
       continue;
@@ -366,7 +383,7 @@ const classifyStoryObject = (
 
   if (
     unresolvedComputedMembers(storyObject).some((member) =>
-      containsComponentSubtitleCandidate(member, scope)
+      containsParametersCandidate(member, scope)
     )
   ) {
     classification = 'unsafe';
@@ -379,7 +396,7 @@ const classifyStoryObject = (
     const spreadObject = resolveObjectExpression(property.argument, scope);
     if (
       (spreadObject && classifyStoryObject(spreadObject, scope, seen) !== 'none') ||
-      (!spreadObject && containsComponentSubtitleCandidate(property.argument, scope))
+      (!spreadObject && containsStoryObjectCandidate(property.argument, scope))
     ) {
       classification = 'unsafe';
     }

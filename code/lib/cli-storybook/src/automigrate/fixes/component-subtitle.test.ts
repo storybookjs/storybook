@@ -185,6 +185,16 @@ describe('component-subtitle', () => {
     ).toBeNull();
   });
 
+  it('ignores nested componentSubtitle properties in unresolved parameters expressions', () => {
+    expect(
+      transformStorySource(`
+        export default {
+          parameters: getParameters({ args: { componentSubtitle: 'A component prop' } })
+        };
+      `)
+    ).toBeNull();
+  });
+
   it('rejects spread parameters', () => {
     expect(() =>
       transformStorySource(`

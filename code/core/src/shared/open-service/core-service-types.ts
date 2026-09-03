@@ -3,6 +3,7 @@ import { moduleGraphServiceDef } from './services/module-graph/definition.ts';
 import { moduleGraphIndexServiceDef } from './services/module-graph-index/definition.ts';
 import { reviewServiceDef } from './services/review/definition.ts';
 import { storyDocsServiceDef } from './services/story-docs/definition.ts';
+import { storyIndexServiceDef } from './services/story-index/definition.ts';
 import type {
   AnyServiceDefinition,
   GetServiceOptions,
@@ -35,6 +36,7 @@ export const serverCoreServiceDefs = [
   moduleGraphIndexServiceDef,
   moduleGraphServiceDef,
   reviewServiceDef,
+  storyIndexServiceDef,
 ];
 /** Maps a list of service definitions to `{ [id]: instance }`, keyed by each definition's id. */
 type CoreServices<TDefs extends readonly AnyServiceDefinition[]> = {

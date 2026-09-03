@@ -1,6 +1,8 @@
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
 
+import invariant from 'tiny-invariant';
+
 import type { Channel } from 'storybook/internal/channels';
 import {
   JsPackageManagerFactory,
@@ -37,6 +39,8 @@ import { createDocgenWorkerClient } from '../../shared/open-service/services/doc
 import { registerModuleGraphService } from '../../shared/open-service/services/module-graph/server.ts';
 import { registerReviewService } from '../../shared/open-service/services/review/server.ts';
 import { registerStoryDocsService } from '../../shared/open-service/services/story-docs/server.ts';
+import { registerStoryIndexService } from '../../shared/open-service/services/story-index/server.ts';
+import { isDelegatedMode } from '../../shared/open-service/service-registry.ts';
 import { createLocalDocsAccess } from '../../shared/open-service/toolsets/docs/access-local.ts';
 import { registerToolset } from '../../shared/open-service/toolset-registry.ts';
 import { createDocsToolset } from '../../shared/open-service/toolsets/docs/definition.ts';
@@ -372,10 +376,19 @@ export const services = async (_value: void, options: Options): Promise<void> =>
   }
   globalThis.STORYBOOK_SERVICES_LOADED = true;
 
-  const getIndex = () =>
-    options.presets
-      .apply<StoryIndexGenerator>('storyIndexGenerator')
-      .then((generator) => generator.getIndex());
+  const getGenerator = () => options.presets.apply<StoryIndexGenerator>('storyIndexGenerator');
+  const storyIndexService = registerStoryIndexService({ getSource: getGenerator });
+
+  // An attached caller delegates commands, so its service holds the index the dev server built;
+  // resolving the generator there would index the whole project on every CLI call.
+  const getIndex = async () => {
+    if (!isDelegatedMode()) {
+      return (await getGenerator()).getIndex();
+    }
+    const index = await storyIndexService.queries.index.loaded();
+    invariant(index !== undefined, 'The attached Storybook did not provide a story index');
+    return index;
+  };
 
   registerModuleGraphService({
     channel: options.channel,

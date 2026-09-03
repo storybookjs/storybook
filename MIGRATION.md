@@ -6,6 +6,7 @@
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
   - [`@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
+  - [Create React App support removed](#create-react-app-support-removed)
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
 
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
@@ -610,6 +611,12 @@ Key changes:
 The webpack-based `@storybook/nextjs` framework is deprecated and will be removed in Storybook 12. Storybook 11 keeps supporting it: it still builds and runs, but every run logs a deprecation warning and `storybook upgrade` lists it as deprecated.
 
 Migrate to [`@storybook/nextjs-vite`](https://www.npmjs.com/package/@storybook/nextjs-vite), which builds with Vite instead of webpack. The `nextjs-to-nextjs-vite` automigration does the work for you: run `storybook upgrade` and accept the fix, or run `storybook migrate nextjs-to-nextjs-vite` directly.
+
+### Create React App support removed
+
+Create React App projects are no longer supported. Storybook 11 no longer publishes `@storybook/preset-create-react-app`, `storybook init` stops with an error on projects using `react-scripts`, and `storybook upgrade` blocks upgrading while `react-scripts` is installed.
+
+To keep using Storybook, migrate your project off Create React App first (for example, to [Vite](https://vite.dev/guide/)), remove the `react-scripts` dependency, then run `npx storybook@latest init` again.
 
 ### `@storybook/angular-vite`: legacy animation modules are no longer auto-converted
 

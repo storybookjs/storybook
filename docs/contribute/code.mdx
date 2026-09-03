@@ -227,14 +227,14 @@ The `storybook link` command relies on [Yarn linking](https://yarnpkg.com/cli/li
 The first step is to add an entry to `code/lib/cli-storybook/src/sandbox-templates.ts`, which is the master list of all repro templates:
 
 ```ts
-'cra/default-js': {
-    name: 'Create React App (Javascript)',
-    script: 'npx create-react-app .',
+'react-vite/default-ts': {
+    name: 'React Latest (Vite | TypeScript)',
+    script: 'npm create vite --yes {{beforeDir}} -- --template react-ts',
     inDevelopment: true,
     expected: {
-      framework: '@storybook/cra',
+      framework: '@storybook/react-vite',
       renderer: '@storybook/react',
-      builder: '@storybook/builder-webpack5',
+      builder: '@storybook/builder-vite',
     },
   },
 ```

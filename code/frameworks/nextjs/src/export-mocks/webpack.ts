@@ -1,11 +1,11 @@
-import type { Configuration as WebpackConfig } from "webpack";
+import type { Configuration as WebpackConfig } from 'webpack';
 
 const mapping = {
-  "next/headers": "@storybook/nextjs/headers.mock",
-  "next/navigation": "@storybook/nextjs/navigation.mock",
-  "next/router": "@storybook/nextjs/router.mock",
-  "next/cache": "@storybook/nextjs/cache.mock",
-  "next/link": "@storybook/nextjs/link.mock",
+  'next/headers': '@storybook/nextjs/headers.mock',
+  'next/navigation': '@storybook/nextjs/navigation.mock',
+  'next/router': '@storybook/nextjs/router.mock',
+  'next/cache': '@storybook/nextjs/cache.mock',
+  'next/link': '@storybook/nextjs/link.mock',
 };
 
 // Utility that assists in adding aliases to the Webpack configuration

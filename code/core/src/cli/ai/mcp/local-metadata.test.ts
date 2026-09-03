@@ -2,11 +2,11 @@ import { resolve } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { experimental_loadStorybook as loadStorybook } from 'storybook/internal/core-server';
+import { loadStorybook } from '../../../core-server/load.ts';
 
 import { loadStorybookAiMetadata } from './local-metadata.ts';
 
-vi.mock('storybook/internal/core-server', { spy: true });
+vi.mock('../../../core-server/load.ts', { spy: true });
 
 type LoadedStorybook = Awaited<ReturnType<typeof loadStorybook>>;
 

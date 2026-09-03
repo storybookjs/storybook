@@ -8,9 +8,8 @@
  * - Undefined when not exported / undetermined
  */
 import type { Handler, NodePath, babelTypes as t } from 'react-docgen';
-import { utils } from 'react-docgen';
 
-const { isReactForwardRefCall } = utils;
+import { requireReactDocgen } from './module.ts';
 
 /** Extract a string name from Identifier or StringLiteral NodePath. */
 function nameFromId(path?: NodePath<t.Node> | null): string | undefined {
@@ -57,6 +56,7 @@ function getLocalName(
   componentDefinition: NodePath<t.Node>,
   fallback?: string
 ): string | undefined {
+  const { isReactForwardRefCall } = requireReactDocgen().utils;
   if (fallback) {
     return fallback;
   }

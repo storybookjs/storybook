@@ -1,10 +1,10 @@
-import type { BabelFile } from 'storybook/internal/babel';
-import { core as babel, types as t } from 'storybook/internal/babel';
+import type { BabelFile, NodePath } from 'storybook/internal/babel';
+import { createBabelFile, types as t } from 'storybook/internal/babel';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
 import type { FileInfo } from 'jscodeshift';
 
-function findImplicitSpies(path: babel.NodePath, file: string, keys: string[]) {
+function findImplicitSpies(path: NodePath, file: string, keys: string[]) {
   path.traverse({
     Identifier: (identifier) => {
       if (!keys.includes(identifier.node.name) && /^on[A-Z].*/.test(identifier.node.name)) {
@@ -81,7 +81,7 @@ function getAnnotationKeys(file: BabelFile, storyName: string, annotationName: s
   return argKeys;
 }
 
-const getObjectExpressionKeys = (node: babel.Node | undefined) => {
+const getObjectExpressionKeys = (node: t.Node | undefined) => {
   return t.isObjectExpression(node)
     ? node.properties.flatMap((value) =>
         t.isObjectProperty(value) && t.isIdentifier(value.key) ? [value.key.name] : []
@@ -92,11 +92,7 @@ const getObjectExpressionKeys = (node: babel.Node | undefined) => {
 export default async function transform(info: FileInfo) {
   const csf = loadCsf(info.source, { makeTitle: (title) => title });
   const fileNode = csf._ast;
-  // @ts-expect-error File is not yet exposed, see https://github.com/babel/babel/issues/11350#issuecomment-644118606
-  const file: BabelFile = new babel.File(
-    { filename: info.path },
-    { code: info.source, ast: fileNode }
-  );
+  const file = createBabelFile({ filename: info.path }, { code: info.source, ast: fileNode });
 
   csf.parse();
 

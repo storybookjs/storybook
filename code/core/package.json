@@ -71,6 +71,7 @@
       "code": "./src/babel/index.ts",
       "default": "./dist/babel/index.js"
     },
+    "./internal/babel-impl": "./dist/babel/impl.js",
     "./internal/bin/dispatcher": "./dist/bin/dispatcher.js",
     "./internal/bin/loader": "./dist/bin/loader.js",
     "./internal/channels": {

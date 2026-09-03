@@ -1,11 +1,17 @@
-import { statSync } from 'node:fs';
-import { createRequire, register } from 'node:module';
+import { readFileSync, statSync } from 'node:fs';
+import NodeModule, { createRequire, register } from 'node:module';
 import { win32 } from 'node:path/win32';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { resolveModulePath } from 'exsolve';
 import { dirname, join } from 'pathe';
 
+import {
+  addExtensionsToRelativeImports,
+  clearDirectoryCache,
+  isTypeScriptUrl,
+} from '../../bin/loader-utils.ts';
+import { NODE_TARGET } from '../constants/environments-support.ts';
 import { jsModuleExtensions } from '../constants/extensions.ts';
 
 /**
@@ -47,6 +53,66 @@ export const resolvePackageDir = (
 
 let isTypescriptLoaderRegistered = false;
 
+// In-thread hooks hand CommonJS modules a `require` without `.extensions` on Node 22 before
+// 22.22.3, on every 23, and on 24 before 24.12; `tsconfig-paths` reads it and crashes the
+// react-docgen Vite plugin.
+export function supportsInThreadHooks(nodeVersion = process.versions.node): boolean {
+  const [major, minor, patch] = nodeVersion.split('.').map(Number);
+  if (major >= 25) {
+    return true;
+  }
+  if (major === 24) {
+    return minor >= 12;
+  }
+  return major === 22 && (minor > 22 || (minor === 22 && patch >= 3));
+}
+
+// The `module.register` worker-thread loader charges every module load in the process, plain JS
+// included, a synchronous round-trip to the hook worker, so the in-thread `registerHooks` path is
+// preferred where it works. Both paths apply the same esbuild transform rather than Node's own
+// `stripTypeScriptTypes`: that one emits an ExperimentalWarning on first use on every release
+// line, its `strip` mode throws on enums and namespaces, and Node 26 removed its `transform` mode.
+function registerTypescriptLoader() {
+  const { registerHooks } = NodeModule;
+
+  if (typeof registerHooks === 'function' && supportsInThreadHooks()) {
+    const transformTypeScript = (source: string): string => {
+      const { transformSync } = createRequire(import.meta.url)(
+        'esbuild'
+      ) as typeof import('esbuild');
+      return transformSync(source, {
+        loader: 'ts',
+        target: NODE_TARGET,
+        format: 'esm',
+        platform: 'neutral',
+      }).code;
+    };
+
+    registerHooks({
+      load(url, context, nextLoad) {
+        // Strip any query string (e.g. the cache-busting `?<timestamp>` importModule appends for
+        // skipCache) before checking the extension.
+        const urlWithoutQuery = url.split('?')[0];
+        if (!isTypeScriptUrl(urlWithoutQuery)) {
+          return nextLoad(url, context);
+        }
+        const filePath = fileURLToPath(urlWithoutQuery);
+        const rawSource = readFileSync(filePath, 'utf-8');
+        return {
+          format: 'module',
+          shortCircuit: true,
+          // Add extensions to relative imports so Node.js ESM can resolve them
+          source: addExtensionsToRelativeImports(transformTypeScript(rawSource), filePath),
+        };
+      },
+    });
+    return;
+  }
+
+  const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
+  register(typescriptLoaderUrl, import.meta.url);
+}
+
 /**
  * Dynamically imports a module with TypeScript support, falling back to require if necessary.
  *
@@ -69,9 +135,14 @@ export async function importModule(
   { skipCache = false }: { skipCache?: boolean } = {}
 ) {
   if (!isTypescriptLoaderRegistered) {
-    const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
-    register(typescriptLoaderUrl, import.meta.url);
+    registerTypescriptLoader();
     isTypescriptLoaderRegistered = true;
+  }
+
+  if (skipCache) {
+    // A cache-busted re-import must also see current directory contents, or the loader's
+    // extension resolution can miss files created since the previous import.
+    clearDirectoryCache();
   }
 
   let mod;

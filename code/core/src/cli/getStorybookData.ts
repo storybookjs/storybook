@@ -2,7 +2,7 @@ import { dirname, isAbsolute, resolve } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
 import { JsPackageManagerFactory, getStorybookInfo } from 'storybook/internal/common';
-import { getStoriesPathsFromConfig } from 'storybook/internal/core-server';
+import { getStoriesPathsFromConfig } from '../core-server/utils/get-stories-paths-from-config.ts';
 import { isCsfFactoryPreview, readConfig } from 'storybook/internal/csf-tools';
 import { logger } from 'storybook/internal/node-logger';
 

@@ -1,7 +1,18 @@
 import * as parser from '@babel/parser';
 import type { ParserOptions } from '@babel/parser';
 import type * as t from '@babel/types';
-import * as recast from 'recast';
+
+type Recast = typeof import('recast');
+
+const impl = (): typeof import('./impl.ts') => require('storybook/internal/babel-impl');
+
+// recast lives in the `babel-impl` entry with the other transform packages; see `./index.ts`.
+export const recast = {
+  parse: (...args: Parameters<Recast['parse']>): ReturnType<Recast['parse']> =>
+    impl().recast.parse(...args),
+  print: (...args: Parameters<Recast['print']>): ReturnType<Recast['print']> =>
+    impl().recast.print(...args),
+};
 
 function parseWithFlowOrTypescript(source: string, parserOptions: parser.ParserOptions) {
   const flowCommentPattern = /^\s*\/\/\s*@flow/;

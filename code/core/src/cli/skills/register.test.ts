@@ -1,5 +1,5 @@
 import { optionalEnvToBoolean } from 'storybook/internal/common';
-import { withTelemetry } from 'storybook/internal/core-server';
+import { withTelemetry } from '../../core-server/withTelemetry.ts';
 import { telemetry } from 'storybook/internal/telemetry';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -10,10 +10,10 @@ import { registerSkillsCommand } from './register.ts';
 import { runSkillsCommand } from './run.ts';
 
 vi.mock('./run.ts', { spy: true });
-vi.mock('storybook/internal/core-server', () => ({
+vi.mock('../../core-server/withTelemetry.ts', () => ({
   withTelemetry: vi.fn(async (_event, _options, run: () => Promise<unknown>) => run()),
-  experimental_loadStorybook: vi.fn(),
 }));
+vi.mock('../../core-server/load.ts', () => ({ loadStorybook: vi.fn() }));
 vi.mock('storybook/internal/telemetry', { spy: true });
 
 function buildProgram() {

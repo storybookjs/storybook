@@ -1,4 +1,4 @@
-import { experimental_loadStorybook as loadStorybook } from 'storybook/internal/core-server';
+import { loadStorybook } from '../../../core-server/load.ts';
 
 import * as v from 'valibot';
 

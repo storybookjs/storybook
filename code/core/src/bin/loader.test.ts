@@ -11,9 +11,9 @@ import { transform } from 'esbuild';
 import {
   addExtensionsToRelativeImports,
   clearDirectoryCache,
-  load,
   resolveWithExtension,
-} from './loader.ts';
+} from './loader-utils.ts';
+import { load } from './loader.ts';
 
 // Mock dependencies
 vi.mock('node:fs');

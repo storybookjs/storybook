@@ -282,15 +282,14 @@ async function loadPresets(
     return [];
   }
 
-  return (
-    await Promise.all(
-      presets.map(async (preset) => {
-        return loadPreset(preset, level, storybookOptions);
-      })
-    )
-  ).reduce((acc, loaded) => {
-    return acc.concat(loaded);
-  }, []);
+  // One at a time: a CommonJS preset may `require()` an entry such as `storybook/internal/core-server`,
+  // and Node refuses a synchronous `require()` of an ES module that a concurrent `import()` from
+  // another preset is still loading.
+  const loaded: LoadedPreset[] = [];
+  for (const preset of presets) {
+    loaded.push(...(await loadPreset(preset, level, storybookOptions)));
+  }
+  return loaded;
 }
 
 function applyPresets(

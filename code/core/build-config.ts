@@ -71,6 +71,12 @@ const config: BuildEntries = {
         entryPoint: './src/babel/index.ts',
       },
       {
+        // The transform packages behind `storybook/internal/babel`, loaded on first use.
+        exportEntries: ['./internal/babel-impl'],
+        entryPoint: './src/babel/impl.ts',
+        dts: false,
+      },
+      {
         exportEntries: ['./internal/bin/dispatcher'],
         entryPoint: './src/bin/dispatcher.ts',
         dts: false,

@@ -99,6 +99,10 @@
               {
                 "group": ["**/cli/ai/**", "../ai/**"],
                 "message": "The `storybook ai` CLI is slated for removal, so it depends on `cli/tools`, never the other way around. Move what you need into `cli/tools/` instead."
+              },
+              {
+                "group": ["storybook/internal/core-server", "**/core-server/index.ts"],
+                "message": "The `storybook/internal/core-server` barrel evaluates the dev server, the static build and the story indexer. The CLI entry must stay off it so every command starts fast: import the module you need (`core-server/load.ts`, `core-server/withTelemetry.ts`) or `import()` it inside the command action."
               }
             ]
           }
@@ -115,6 +119,45 @@
               {
                 "group": ["**/cli/ai/**", "../ai/**"],
                 "message": "The `storybook ai` CLI is slated for removal, so it depends on `cli/skills`, never the other way around. Move what you need into `cli/skills/` instead."
+              },
+              {
+                "group": ["storybook/internal/core-server", "**/core-server/index.ts"],
+                "message": "The `storybook/internal/core-server` barrel evaluates the dev server, the static build and the story indexer. The CLI entry must stay off it so every command starts fast: import the module you need (`core-server/load.ts`, `core-server/withTelemetry.ts`) or `import()` it inside the command action."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": ["core/src/bin/**", "core/src/cli/ai/**"],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["storybook/internal/core-server", "**/core-server/index.ts"],
+                "message": "The `storybook/internal/core-server` barrel evaluates the dev server, the static build and the story indexer. The CLI entry must stay off it so every command starts fast: import the module you need (`core-server/load.ts`, `core-server/withTelemetry.ts`) or `import()` it inside the command action."
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "files": [
+        "core/src/cli/tools/sdk/local-runtime.ts",
+        "core/src/cli/tools/sdk/local-runtime.test.ts"
+      ],
+      "rules": {
+        "no-restricted-imports": [
+          "error",
+          {
+            "patterns": [
+              {
+                "group": ["**/cli/ai/**", "../ai/**"],
+                "message": "The `storybook ai` CLI is slated for removal, so it depends on `cli/tools`, never the other way around. Move what you need into `cli/tools/` instead."
               }
             ]
           }

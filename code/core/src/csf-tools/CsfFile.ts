@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
 import {
-  BabelFileClass,
+  createBabelFile,
   type GeneratorOptions,
   type NodePath,
   type RecastOptions,
@@ -1047,7 +1047,7 @@ export const babelParseFile = ({
   filename?: string;
   ast?: t.File;
 }): BabelFile => {
-  return new BabelFileClass(
+  return createBabelFile(
     { filename, highlightCode: false },
     { code, ast: ast ?? babelParse(code) }
   );

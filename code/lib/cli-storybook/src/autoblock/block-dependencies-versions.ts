@@ -8,6 +8,8 @@ const minimalVersionsMap = {
   'react-scripts': '5.0.0',
   next: '15.0.0',
   preact: '10.0.0',
+  react: '18.0.0',
+  'react-dom': '18.0.0',
   svelte: '5.0.0',
   vue: '3.0.0',
   vite: '5.0.0',
@@ -39,6 +41,16 @@ export const blocker = createBlocker({
             Please see the migration guide for more information:
           `,
           link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-require-v15-and-up',
+        };
+      case 'react':
+      case 'react-dom':
+        return {
+          title: 'React 18 support removed',
+          message: dedent`
+            Support for React < 18 has been removed.
+            Please see the migration guide for more information:
+          `,
+          link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#react-require-v18-and-up',
         };
       default:
         return {

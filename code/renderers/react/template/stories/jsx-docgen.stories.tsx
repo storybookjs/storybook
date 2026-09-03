@@ -1,11 +1,7 @@
-import React, { type FC } from 'react';
-
-const Component: FC<{ children: React.ReactNode }> = ({ children }) => {
-  return <div>{children}</div>;
-};
+import { component as NodeComponent } from './docgen-components/ts-react-node/input';
 
 export default {
-  component: Component,
+  component: NodeComponent,
   tags: ['autodocs'],
 };
 

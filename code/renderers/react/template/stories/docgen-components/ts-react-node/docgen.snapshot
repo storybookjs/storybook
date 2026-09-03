@@ -1,0 +1,40 @@
+import React from 'react';
+const ReactNodeComponent = ({
+  children
+}) => /*#__PURE__*/React.createElement("div", null, children);
+export const component = ReactNodeComponent;
+ReactNodeComponent.__docgenInfo = {
+  "description": "",
+  "methods": [],
+  "displayName": "ReactNodeComponent",
+  "props": {
+    "children": {
+      "required": true,
+      "tsType": {
+        "name": "ReactReactNode",
+        "raw": "React.ReactNode"
+      },
+      "description": ""
+    },
+    "icon": {
+      "required": true,
+      "tsType": {
+        "name": "ReactReactElement",
+        "raw": "React.ReactElement"
+      },
+      "description": ""
+    },
+    "nodes": {
+      "required": true,
+      "tsType": {
+        "name": "Array",
+        "elements": [{
+          "name": "ReactReactNode",
+          "raw": "React.ReactNode"
+        }],
+        "raw": "React.ReactNode[]"
+      },
+      "description": ""
+    }
+  }
+};

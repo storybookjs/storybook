@@ -27,7 +27,6 @@
       "default": "./dist/index.js"
     },
     "./package.json": "./package.json",
-    "./preset-cra": "./dist/framework-preset-cra.js",
     "./preset-react-docs": "./dist/framework-preset-react-docs.js",
     "./react-docgen-loader": "./dist/loaders/react-docgen-loader.js"
   },

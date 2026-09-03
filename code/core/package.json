@@ -208,6 +208,7 @@
       "code": "./src/telemetry/index.ts",
       "default": "./dist/telemetry/index.js"
     },
+    "./internal/telemetry/detached-flush": "./dist/telemetry/detached-flush.js",
     "./internal/tools": {
       "types": "./dist/cli/tools/sdk/index.d.ts",
       "code": "./src/cli/tools/sdk/index.ts",
@@ -287,7 +288,6 @@
     "open": "^10.2.0",
     "oxc-parser": "^0.127.0",
     "oxc-resolver": "11.21.2",
-    "process-ancestry": "^0.0.2",
     "recast": "^0.23.5",
     "semver": "^7.7.3",
     "use-sync-external-store": "^1.5.0",
@@ -372,7 +372,6 @@
     "execa": "^9.6.1",
     "exsolve": "^1.0.7",
     "extend-to-be-announced": "^2.0.0",
-    "fetch-retry": "^6.0.0",
     "flush-promises": "^1.0.2",
     "fuse.js": "^3.6.1",
     "get-npm-tarball-url": "^2.1.0",

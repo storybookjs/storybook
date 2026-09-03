@@ -11,6 +11,7 @@
   - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
 
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
+  - [React: Require v18 and up](#react-require-v18-and-up)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
   - [`@storybook/csf-plugin` removed](#storybookcsf-plugin-removed)
@@ -655,6 +656,14 @@ Migrating off Create React App is not a hard requirement. To keep using Storyboo
 `@storybook/angular-vite` no longer depends on `@angular/animations` and no longer auto-converts `BrowserAnimationsModule`/`NoopAnimationsModule` found in a story's `moduleMetadata.imports` into `provideAnimations()`/`provideNoopAnimations()`. If a story still references one of these modules, Storybook now logs a deprecation warning instead. Migrate to native CSS transitions or the `animate.enter`/`animate.leave` bindings (Angular 20.2+), or continue using the legacy animations API yourself by adding `provideAnimations()`/`provideNoopAnimations()` to the `providers` array of the `applicationConfig` decorator; that path is unaffected by this change.
 
 ## From version 10.5.x to 10.6.0
+
+### React: Require v18 and up
+
+Storybook now requires React 18 or newer. The `react` and `react-dom` peer dependency ranges of all React-based framework packages are now `^18.0.0 || ^19.0.0`, so projects on React 16 or 17 must upgrade React before upgrading Storybook.
+
+Storybook renders through React's new root API (`react-dom/client`), which React 18 introduced and React 19 requires. The `legacyRootApi` framework option of `@storybook/react-vite` and `@storybook/react-webpack5` has been removed along with the `@storybook/react-dom-shim/react-16` compatibility export, so there is no longer a way to opt out. If you had set `legacyRootApi: true` to ease a React 18 migration, follow [React's upgrade guide](https://react.dev/blog/2022/03/08/react-18-upgrade-guide) for your application code instead.
+
+`storybook upgrade` blocks the upgrade when it detects an unsupported `react` or `react-dom` version and links to this section. Upgrade React to 18 or 19 and run the upgrade again.
 
 ### Vue 3: `vue-docgen-api` is deprecated
 

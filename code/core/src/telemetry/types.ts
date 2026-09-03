@@ -83,7 +83,7 @@ export type StorybookMetadata = {
     type: DetectResult['name'];
     version: DetectResult['version'];
     agent: DetectResult['agent'];
-    nodeLinker: 'node_modules' | 'pnp' | 'pnpm' | 'isolated' | 'hoisted';
+    nodeLinker: NodeLinker;
   };
   typescriptOptions?: Partial<TypescriptOptions>;
   addons?: Record<string, StorybookAddon>;
@@ -138,6 +138,8 @@ export type PayloadInput = Payload | PayloadFactory;
 export interface Context {
   [key: string]: any;
 }
+
+export type NodeLinker = 'node_modules' | 'node-modules' | 'pnp' | 'pnpm' | 'isolated' | 'hoisted';
 
 export interface Options {
   retryDelay: number;

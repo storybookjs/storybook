@@ -7306,7 +7306,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pmmmwh/react-refresh-webpack-plugin@npm:^0.5.1, @pmmmwh/react-refresh-webpack-plugin@npm:^0.5.11":
+"@pmmmwh/react-refresh-webpack-plugin@npm:^0.5.11":
   version: 0.5.17
   resolution: "@pmmmwh/react-refresh-webpack-plugin@npm:0.5.17"
   dependencies:
@@ -12187,7 +12187,6 @@ __metadata:
     "@storybook/nextjs": "workspace:*"
     "@storybook/preact": "workspace:*"
     "@storybook/preact-vite": "workspace:*"
-    "@storybook/preset-create-react-app": "workspace:*"
     "@storybook/preset-react-webpack": "workspace:*"
     "@storybook/preset-server-webpack": "workspace:*"
     "@storybook/react": "workspace:*"
@@ -12546,23 +12545,6 @@ __metadata:
     typescript: "npm:^6.0.3"
   peerDependencies:
     preact: ^8.0.0||^10.0.0
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
-"@storybook/preset-create-react-app@workspace:*, @storybook/preset-create-react-app@workspace:code/presets/create-react-app":
-  version: 0.0.0-use.local
-  resolution: "@storybook/preset-create-react-app@workspace:code/presets/create-react-app"
-  dependencies:
-    "@pmmmwh/react-refresh-webpack-plugin": "npm:^0.5.1"
-    "@storybook/react-docgen-typescript-plugin": "npm:1.0.6--canary.9.0c3f3b7.0"
-    "@types/node": "npm:^22.19.1"
-    "@types/semver": "npm:^7.7.1"
-    pnp-webpack-plugin: "npm:^1.7.0"
-    semver: "npm:^7.7.3"
-    typescript: "npm:^6.0.3"
-  peerDependencies:
-    react-scripts: ">=5.0.0"
     storybook: "workspace:^"
   languageName: unknown
   linkType: soft
@@ -32270,15 +32252,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pnp-webpack-plugin@npm:^1.7.0":
-  version: 1.7.0
-  resolution: "pnp-webpack-plugin@npm:1.7.0"
-  dependencies:
-    ts-pnp: "npm:^1.1.6"
-  checksum: 10c0/79d1973ec0b04be6d44f15d5625991701a010dae28f2798d974d3aa164e8c60dc7fa22fd01a47fb6af369c4ba6585c3030d4deb775ccfecd7156594bc223d086
-  languageName: node
-  linkType: hard
-
 "polished@npm:^4.2.2":
   version: 4.3.1
   resolution: "polished@npm:4.3.1"
@@ -38078,16 +38051,6 @@ __metadata:
     "@ts-morph/common": "npm:~0.29.0"
     code-block-writer: "npm:^13.0.3"
   checksum: 10c0/969570a5e983b4193735fff43878ce7b78787b4860bf3d23f330c86d7de707286969e5a82d486dce333eea27bf9d373a46f9de58a80c0bf86d2a462620563a55
-  languageName: node
-  linkType: hard
-
-"ts-pnp@npm:^1.1.6":
-  version: 1.2.0
-  resolution: "ts-pnp@npm:1.2.0"
-  peerDependenciesMeta:
-    typescript:
-      optional: true
-  checksum: 10c0/ff32b4f810f9d99f676d70fe2c0e327cb6c812214bd4fc7135870b039f9e85a85b2c20f8fe030d9bd36e9598a12faa391f10aecb95df624b92f1af6bd47dc397
   languageName: node
   linkType: hard
 

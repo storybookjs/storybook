@@ -182,19 +182,9 @@ export class ProjectTypeService {
     try {
       const detectedType = await this.detectProjectType(options);
 
-      // prompting handled by command layer
-
+      // messaging and prompting for undetected projects is handled by the command layer
       if (detectedType === ProjectType.UNDETECTED || detectedType === null) {
-        logger.error(dedent`
-          Unable to initialize Storybook in this directory.
-
-          Storybook couldn't detect a supported framework or configuration for your project. Make sure you're inside a framework project (e.g., React, Vue, Svelte, Angular, Next.js) and that its dependencies are installed.
-
-          Tips:
-          - Run init in an empty directory or create a new framework app first.
-          - If this directory contains unrelated files, try a new directory for Storybook.
-        `);
-        throw new HandledError('Storybook failed to detect your project type');
+        return ProjectType.UNDETECTED;
       }
 
       if (detectedType === ProjectType.NX) {

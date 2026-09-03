@@ -1,4 +1,5 @@
 import { ProjectType } from 'storybook/internal/cli';
+import { HandledError } from 'storybook/internal/common';
 import type { JsPackageManager } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
@@ -42,7 +43,10 @@ export class ProjectDetectionCommand {
     } else {
       const detected = await this.projectTypeService.autoDetectProjectType(this.options);
       projectType = detected;
-      if (detected === ProjectType.REACT_NATIVE && !this.options.yes) {
+      if (detected === ProjectType.UNDETECTED) {
+        projectType = await this.promptUndetectedProjectType();
+      }
+      if (projectType === ProjectType.REACT_NATIVE && !this.options.yes) {
         projectType = await this.promptReactNativeVariant();
       }
       logger.debug(`Project type detected: ${projectType}`);
@@ -70,6 +74,56 @@ export class ProjectDetectionCommand {
     }
 
     return language;
+  }
+
+  /**
+   * Handle the case where no supported framework could be detected: educate about the `--type`
+   * flag and, when interactive, offer to install the HTML framework, pick another framework, or
+   * cancel. Non-interactive runs keep the previous fail-with-error behavior.
+   */
+  private async promptUndetectedProjectType(): Promise<ProjectType> {
+    logger.error(dedent`
+      Storybook couldn't detect a supported framework in this directory. Make sure you're inside your project's root folder and that its dependencies are installed. Vanilla Web Components projects cannot be automatically detected.
+
+      To tell Storybook which framework to use, pass the ${picocolors.bold('--type')} flag, e.g. ${picocolors.bold('--type html')} for Web Components and vanilla HTML projects.
+    `);
+
+    if (!this.options.yes) {
+      const choice = await prompt.select(
+        {
+          message: 'How would you like to proceed?',
+          options: [
+            {
+              label: `Install the ${picocolors.bold('HTML')} framework (for Web Components and HTML projects)`,
+              value: 'html',
+            },
+            { label: 'Choose a framework to install', value: 'select' },
+            { label: 'Abort', value: 'cancel' },
+          ],
+        },
+        createPromptCancelOptions(this.telemetryService, 'undetected-project-type')
+      );
+
+      if (choice === 'html') {
+        return ProjectType.HTML;
+      }
+
+      if (choice === 'select') {
+        const installable = Object.values(ProjectType).filter(
+          (t) => !['undetected', 'unsupported', 'nx'].includes(String(t))
+        );
+        const manualType = await prompt.select(
+          {
+            message: 'Which framework would you like to install?',
+            options: installable.map((t) => ({ label: String(t), value: t })),
+          },
+          createPromptCancelOptions(this.telemetryService, 'undetected-project-type-framework')
+        );
+        return manualType as ProjectType;
+      }
+    }
+
+    throw new HandledError('Storybook failed to detect your project type');
   }
 
   /** Prompt user to select React Native variant */

@@ -10,6 +10,7 @@ import {
   FORCE_REMOUNT,
   FORCE_RE_RENDER,
   GLOBALS_UPDATED,
+  NAVIGATE_URL,
   PLAY_FUNCTION_THREW_EXCEPTION,
   PREVIEW_KEYDOWN,
   RESET_STORY_ARGS,
@@ -3714,6 +3715,35 @@ describe('PreviewWeb', () => {
         }),
         'story-element'
       );
+    });
+  });
+
+  describe('onNavigateUrl', () => {
+    it('scrolls the view to the anchor when NAVIGATE_URL is emitted on the channel', async () => {
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+
+      emitter.emit(NAVIGATE_URL, '#a-heading');
+
+      expect(preview.view.scrollToAnchor).toHaveBeenCalledWith('#a-heading');
+    });
+
+    it('does not scroll for a url that is not an in-page anchor', async () => {
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+
+      emitter.emit(NAVIGATE_URL, '/?path=/story/component-one--a');
+
+      expect(preview.view.scrollToAnchor).not.toHaveBeenCalled();
+    });
+
+    it('does not throw when the view does not implement scrollToAnchor', async () => {
+      document.location.search = '?id=component-one--docs&viewMode=docs';
+      const preview = await createAndRenderPreview();
+      // @ts-expect-error scrollToAnchor is optional on the View interface
+      preview.view.scrollToAnchor = undefined;
+
+      expect(() => preview.onNavigateUrl('#a-heading')).not.toThrow();
     });
   });
 

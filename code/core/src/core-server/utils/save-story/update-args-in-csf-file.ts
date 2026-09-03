@@ -3,6 +3,11 @@ import { types as t, traverse } from 'storybook/internal/babel';
 import { SaveStoryError } from './utils.ts';
 import { valueToAST } from './valueToAST.ts';
 
+// Insert after the last spread element (e.g. `...PrimaryStory`), otherwise the
+// spread's own `args` would always override the newly saved args.
+const getArgsInsertionIndex = (properties: t.ObjectExpression['properties']) =>
+  properties.reduce((acc, property, index) => (t.isSpreadElement(property) ? index + 1 : acc), 0);
+
 export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, any>) => {
   let found = false;
   const args = Object.fromEntries(
@@ -55,7 +60,9 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
         }
       }
     } else {
-      properties.unshift(
+      properties.splice(
+        getArgsInsertionIndex(properties),
+        0,
         t.objectProperty(
           t.identifier('args'),
           t.objectExpression(
@@ -107,8 +114,9 @@ export const updateArgsInCsfFile = async (node: t.Node, input: Record<string, an
           }
         }
       } else {
-        path.unshiftContainer(
-          'properties',
+        path.node.properties.splice(
+          getArgsInsertionIndex(path.node.properties),
+          0,
           t.objectProperty(
             t.identifier('args'),
             t.objectExpression(

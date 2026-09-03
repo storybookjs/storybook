@@ -143,7 +143,7 @@ describe('storybook-metadata', () => {
   describe('sanitizeAddonName', () => {
     it('special addon names', () => {
       const addonNames = [
-        '@storybook/preset-create-react-app',
+        '@storybook/preset-react-webpack',
         'storybook-addon-deprecated/register',
         'storybook-addon-ends-with-js/register.js',
         '@storybook/addon-knobs/preset',
@@ -154,7 +154,7 @@ describe('storybook-metadata', () => {
       ].map(sanitizeAddonName);
 
       expect(addonNames).toEqual([
-        '@storybook/preset-create-react-app',
+        '@storybook/preset-react-webpack',
         'storybook-addon-deprecated',
         'storybook-addon-ends-with-js',
         '@storybook/addon-knobs',

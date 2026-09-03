@@ -48,12 +48,12 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
 describe.each([
   ['│ │ │ ├── @babel/code-frame@7.10.3 deduped', null],
   [
-    '├─┬ @storybook/preset-create-react-app@3.1.2',
-    { package: '@storybook/preset-create-react-app', version: '3.1.2' },
+    '├─┬ @storybook/preset-react-webpack@3.1.2',
+    { package: '@storybook/preset-react-webpack', version: '3.1.2' },
   ],
   ['│ ├─┬ @storybook/node-logger@5.3.19', { package: '@storybook/node-logger', version: '5.3.19' }],
   [
-    'npm ERR! peer dep missing: @storybook/react@>=5.2, required by @storybook/preset-create-react-app@3.1.2',
+    'npm ERR! peer dep missing: @storybook/react@>=5.2, required by @storybook/preset-react-webpack@3.1.2',
     null,
   ],
 ])('getStorybookVersion', (input, output) => {

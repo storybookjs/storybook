@@ -55,6 +55,23 @@ export const hrefTo = (title: ComponentTitle, name: StoryName): Promise<string> 
   });
 };
 
+export const hrefToSync = (title: ComponentTitle, name: StoryName): string => {
+  const { location } = document;
+  const query = parseQuery(location.search);
+  const existingId = query.id;
+  const titleToLink = title || existingId.split('--', 2)[0];
+  const id = toId(titleToLink, name);
+  const path = `/story/${id}`;
+
+  // Drop the `iframe.html` from the preview path
+  const sbPath = location.pathname.replace(/iframe\.html$/, '');
+  const url = `${location.origin + sbPath}?${Object.entries({ path })
+    .map((item) => `${item[0]}=${item[1]}`)
+    .join('&')}`;
+
+  return url;
+};
+
 const valueOrCall = (args: string[]) => (value: string | ((...args: string[]) => string)) =>
   typeof value === 'function' ? value(...args) : value;
 

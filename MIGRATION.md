@@ -590,9 +590,9 @@ For help upgrading your Next.js application, see the [Next.js upgrade guide](htt
 
 ### Create React App support removed
 
-Create React App projects are no longer supported. Storybook 11 no longer publishes `@storybook/preset-create-react-app`, `storybook init` stops with an error on projects using `react-scripts`, and `storybook upgrade` blocks upgrading while `react-scripts` is installed.
+Storybook 11 no longer publishes `@storybook/preset-create-react-app`, so Storybook setups that render Create React App projects through the CRA preset stop working. `storybook init` stops with an error on projects using `react-scripts`, and `storybook upgrade` blocks upgrading while `@storybook/preset-create-react-app` is installed.
 
-To keep using Storybook, migrate your project off Create React App first (for example, to [Vite](https://vite.dev/guide/)), remove the `react-scripts` dependency, then run `npx storybook@latest init` again.
+Migrating off Create React App is not a hard requirement. To keep using Storybook with a Create React App project, run it with the Vite-based `@storybook/react-vite` framework instead of the CRA preset. Because Create React App does not use Vite itself, additional Vite configuration may be necessary to make your application work in Storybook — for example, mirroring the loaders, aliases, and environment variables your components rely on. If you prefer to migrate your app off Create React App entirely, [Vite's guide](https://vite.dev/guide/) covers the steps.
 
 ## From version 10.5.x to 10.6.0
 

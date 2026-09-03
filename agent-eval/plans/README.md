@@ -5,12 +5,12 @@ comparison group and one workflow family, at 10 runs per cell and at most 20
 sandboxes at once.
 
 ```bash
-yarn workspace agent-eval run eval:plan --plan 1-levels-create --dry   # what it would collect
-yarn workspace agent-eval run eval:plan --plan 1-levels-create         # collect
+yarn eval:plan --plan 1-levels-create --dry   # what it would collect
+yarn eval:plan --plan 1-levels-create         # collect
 ```
 
 `--plan` (alias `--config`) takes a bare plan name or a path; the same
-spelling scopes `yarn workspace agent-eval run results:compare --plan` to the plan's cases and
+spelling scopes `yarn results:compare --plan` to the plan's cases and
 workflows.
 
 Always run `--dry` first. It costs nothing, resolves every batch against the

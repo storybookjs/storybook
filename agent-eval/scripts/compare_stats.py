@@ -6,7 +6,7 @@
 #   "matplotlib>=3.9",
 # ]
 # ///
-"""Statistics stage of `yarn workspace agent-eval run results:compare`.
+"""Statistics stage of `yarn results:compare`.
 
 Reads dataset.csv + manifest.json from the staging directory given as argv[1];
 writes estimates.csv/json, report.md, and curves/ back into it. Deterministic:

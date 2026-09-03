@@ -25,15 +25,14 @@ tests through the MCP server or the plugin skills.
 
 ## Running Evals
 
-Run the commands below from the repository root with
-`yarn workspace agent-eval run <script>`.
+Run the commands below from inside `agent-eval/`.
 
 ### Preview (no cost)
 
 See what will run without making API calls:
 
 ```bash
-yarn workspace agent-eval run eval:dry
+yarn eval:dry
 ```
 
 ### Run Experiments
@@ -41,13 +40,13 @@ yarn workspace agent-eval run eval:dry
 Run all configured experiments:
 
 ```bash
-yarn workspace agent-eval run eval
+yarn eval
 ```
 
 Run a single experiment:
 
 ```bash
-yarn workspace agent-eval exec agent-eval cc-mcp-opus-high
+yarn exec agent-eval cc-mcp-opus-high
 ```
 
 Pull requests with the `ci:eval` label run all experiments in CI. The
@@ -65,8 +64,8 @@ workflow evals on every experiment plus the lifecycle 82x evals
 or `EVAL_ONLY=<name>[,<name>]` to debug specific evals one at a time:
 
 ```bash
-EVAL_EXTRA_EVALS=1 yarn workspace agent-eval run eval
-EVAL_ONLY=803-edit-component yarn workspace agent-eval run eval
+EVAL_EXTRA_EVALS=1 yarn eval
+EVAL_ONLY=803-edit-component yarn eval
 ```
 
 Before a local run, rebuild the local `@storybook/addon-mcp`/`@storybook/mcp`
@@ -94,7 +93,7 @@ run zero evals unless `EVAL_EXTRA_MODELS=1` is set, so labeled CI runs only pay
 for the default-model experiments:
 
 ```bash
-EVAL_EXTRA_MODELS=1 yarn workspace agent-eval exec agent-eval cc-plugin-sonnet-medium
+EVAL_EXTRA_MODELS=1 yarn exec agent-eval cc-plugin-sonnet-medium
 ```
 
 Sandbox setup resolves the Storybook npm dist-tag at run time and pins the
@@ -107,7 +106,7 @@ builds — to check whether a behavior change (e.g. in the documentation tooling
 regressed since the last stable release:
 
 ```bash
-EVAL_STORYBOOK_LATEST=1 yarn workspace agent-eval run eval
+EVAL_STORYBOOK_LATEST=1 yarn eval
 ```
 
 Review mode follows the integration. The plugin experiments always run — and
@@ -120,7 +119,7 @@ the flag in every sandbox Storybook and flip the MCP assertions to the review
 workflow too:
 
 ```bash
-EVAL_REVIEW=1 yarn workspace agent-eval run eval
+EVAL_REVIEW=1 yarn eval
 ```
 
 In CI, the `ci:extra-evals`, `ci:extra-models`, `ci:storybook-latest`, and
@@ -182,7 +181,7 @@ run introduced against the Droppy design system's own documentation:
 
 Each is scored 1 / 0.5 / 0 per node and summarised as a mean in `[0, 1]`.
 
-`yarn workspace agent-eval exec node scripts/ds-coverage.ts <dir> --ds <pattern> --nodes` lists the
+`node scripts/ds-coverage.ts <dir> --ds <pattern> --nodes` lists the
 census records a tree produces. Note its `Nodes (N)` count is much smaller than
 the `JSX nodes: N weighted` line above it — the former counts only judgeable
 component elements, since hosts and unresolved tags are deliberately excluded.
@@ -193,16 +192,16 @@ run — so it lives behind its own command rather than running as part of
 `results:analyze`:
 
 ```bash
-yarn workspace agent-eval run results:analyze --recompute   # builds the baselines and node census first
-yarn workspace agent-eval run judge:ds-misuse --latest      # then judges; roughly $0.10-0.15 per run
-yarn workspace agent-eval run results:analyze --misuse      # reads the artifacts and prints the tables
+yarn results:analyze --recompute   # builds the baselines and node census first
+yarn judge:ds-misuse --latest      # then judges; roughly $0.10-0.15 per run
+yarn results:analyze --misuse      # reads the artifacts and prints the tables
 ```
 
 It needs `ANTHROPIC_API_KEY` and aborts naming it if absent. Each run's
 judgement is cached in its run directory as `ds-misuse.json` and reused until
 the guidelines pin or `metricsVersion` moves; `--recompute` re-judges.
 
-`--dry` (or `yarn workspace agent-eval run judge:ds-misuse:dry`) resolves the same selection, runs every
+`--dry` (or `yarn judge:ds-misuse:dry`) resolves the same selection, runs every
 local check the real pass runs, and prints which runs it would judge, reuse from
 cache, or skip.
 
@@ -295,7 +294,7 @@ Much of agentic reference eval is about comparing these different MCP contents
 to see which ones perform a set of workflows best. This is configured in
 `lib/agentic-reference/cases.ts`, where `storybookMcpPackage` or `storybookMcpUrl`
 can be passed to point to a published MCP package or deployed Chromatic MCP.
-Experiments are generated with the `yarn workspace agent-eval run gen:agentic-ref` command, into a git
+Experiments are generated with the `yarn gen:agentic-ref` command, into a git
 ignored folder, to avoid having to hand maintain dozens of experiments.
 
 Control cases to compare against the Storybook MCP can choose to not provide any
@@ -309,15 +308,15 @@ See below for options for this command. Runs can cost up to $25 each for larger
 workflows.
 
 ```bash
-yarn workspace agent-eval run eval:agentic-ref:dry
+yarn eval:agentic-ref:dry
 ```
 
 If you have run capture in the cloud via the GitHub action, you'll need to
-download data locally with `yarn workspace agent-eval run results:download`.
+download data locally with `yarn results:download`.
 
 Once runs have been captured, the agentic reference post-analysis computes
 metrics for a control case and Storybook cases. This happens in
-`scripts/analyze-results.ts`, via `yarn workspace agent-eval run results:analyze`.
+`scripts/analyze-results.ts`, via `yarn results:analyze`.
 
 Its tables cover one comparable set each — every stored run measuring the same
 thing, however many result directories they were collected in, since a plan tops
@@ -345,7 +344,7 @@ it.
 
 Once all metrics have been computed, a separate script compares them for
 statistical significance between experiments. The command for that is
-`yarn workspace agent-eval run results:compare`.
+`yarn results:compare`.
 
 ### Selecting what runs
 
@@ -365,8 +364,8 @@ beats its env var.
 `--experiments` and `--evals` have alternative names to account for how we talk about them in the day to day (`--cases` and `--flows`).
 These options take comma-separated values. Each value can be a full name, or a glob pattern. For evals, a number can also be passed.
 
-The same options drive `yarn workspace agent-eval run eval:agentic-ref:dry`, `yarn workspace agent-eval run results:analyze` and
-`yarn workspace agent-eval run results:compare`. `results:analyze` adds `--since <ISO date>`, `--latest`,
+The same options drive `yarn eval:agentic-ref:dry`, `yarn results:analyze` and
+`yarn results:compare`. `results:analyze` adds `--since <ISO date>`, `--latest`,
 `--recompute`, `--superseded` and the `--general`/`--complexity`/`--coverage`
 table flags, each with the same `AGENTIC_REF_` fallback.
 
@@ -377,28 +376,28 @@ would go on to rebuild every committed baseline in the next analysis pass.
 
 ```bash
 # Preview any invocation below at zero cost
-yarn workspace agent-eval run eval:agentic-ref:dry
+yarn eval:agentic-ref:dry
 
 # Everything: every experiment × its evals
-yarn workspace agent-eval run eval:agentic-ref
+yarn eval:agentic-ref
 
 # One experiment, all of its evals
-yarn workspace agent-eval run eval:agentic-ref --experiments agentic-ref-cc-control-none-opus-high
+yarn eval:agentic-ref --experiments agentic-ref-cc-control-none-opus-high
 
 # A group of experiments, by glob (make sure to quote it)
-yarn workspace agent-eval run eval:agentic-ref --experiments "agentic-ref-cc-*"
+yarn eval:agentic-ref --experiments "agentic-ref-cc-*"
 
 # One eval across every experiment that includes it
-yarn workspace agent-eval run eval:agentic-ref --evals 703
+yarn eval:agentic-ref --evals 703
 
 # One cell: one experiment against one eval
-yarn workspace agent-eval run eval:agentic-ref --experiments agentic-ref-cc-control-none-opus-high --evals 703
+yarn eval:agentic-ref --experiments agentic-ref-cc-control-none-opus-high --evals 703
 
 # Research sample: repeat every selected cell once
-yarn workspace agent-eval run eval:agentic-ref --experiments "agentic-ref-cc-*" --runs 1
+yarn eval:agentic-ref --experiments "agentic-ref-cc-*" --runs 1
 
 # Spend guard: run only if this selection is exactly the size expected
-yarn workspace agent-eval run eval:agentic-ref --experiments "agentic-ref-cc-*" --evals 703 --runs 1 --expect 3
+yarn eval:agentic-ref --experiments "agentic-ref-cc-*" --evals 703 --runs 1 --expect 3
 ```
 
 Completed (experiment, eval) cells are fingerprint-cached: re-running a
@@ -413,12 +412,12 @@ verdicts at 5%, and ECDF curves. Reproducible: everything derives from
 `results/` alone.
 
 ```shell
-yarn workspace agent-eval run results:compare:setup                   # one-time: installs uv + Python deps
-yarn workspace agent-eval run results:compare                        # control-none vs all cases, auto workflows
-yarn workspace agent-eval run results:compare --cases=do-dont --workflows=701          # one pair, one workflow
-yarn workspace agent-eval run results:compare --cases=do-dont,full --workflows=701,703 # aggregation mode
-yarn workspace agent-eval run results:compare --plan=1-levels-create                   # one plan's cases and workflows
-yarn workspace agent-eval run results:compare --min-runs=5                             # quick look at a smaller gate
+yarn results:compare:setup                   # one-time: installs uv + Python deps
+yarn results:compare                        # control-none vs all cases, auto workflows
+yarn results:compare --cases=do-dont --workflows=701          # one pair, one workflow
+yarn results:compare --cases=do-dont,full --workflows=701,703 # aggregation mode
+yarn results:compare --plan=1-levels-create                   # one plan's cases and workflows
+yarn results:compare --min-runs=5                             # quick look at a smaller gate
 ```
 
 `--plan` scopes the comparison to one collection plan (`plans/<name>.plan.ts`,
@@ -435,12 +434,12 @@ Output lands in `comparisons/<slug>/`: `report.md`, `estimates.csv|json`,
 `curves/`, `dataset.csv`, `manifest.json`. When usable data is missing —
 never collected, superseded, or not yet analyzed by the current metrics
 code — the command exits and prints the exact
-`yarn workspace agent-eval run eval:agentic-ref` / `yarn workspace agent-eval run results:analyze` commands to run.
+`yarn eval:agentic-ref` / `yarn results:analyze` commands to run.
 
 ### View Results
 
 ```bash
-yarn workspace agent-eval run playground
+yarn playground
 ```
 
 Open [http://localhost:3000](http://localhost:3000) to browse results.
@@ -452,8 +451,8 @@ Pull the eval results produced by recent CI runs into the local
 and inspected by analysis tooling:
 
 ```bash
-yarn workspace agent-eval run results:download        # latest 20 agent-eval-results artifacts
-yarn workspace agent-eval run results:download 5      # or any count between 1 and 100
+yarn results:download        # latest 20 agent-eval-results artifacts
+yarn results:download 5      # or any count between 1 and 100
 ```
 
 Requires an authenticated GitHub CLI (`gh auth login`) and a `tar` binary
@@ -470,17 +469,17 @@ container — still leaves a `run-N` directory behind, holding a transcript of h
 far it got and no `project` tree. There is nothing in it to measure, so the
 analysis skips it and the plan runner does not count it towards a cell's sample.
 
-`yarn workspace agent-eval run results:prune` is what removes them:
+`yarn results:prune` is what removes them:
 
 ```bash
-yarn workspace agent-eval run results:prune                                  # list them, delete nothing
-yarn workspace agent-eval run results:prune --experiments "agentic-ref-cc-*" # same selection grammar as the runner
-yarn workspace agent-eval run results:prune --delete                         # remove them
+yarn results:prune                                  # list them, delete nothing
+yarn results:prune --experiments "agentic-ref-cc-*" # same selection grammar as the runner
+yarn results:prune --delete                         # remove them
 ```
 
 It reports what stopped each run (billing, timeout, network), and `--delete`
 removes the directories, along with any eval or result directory they leave
-empty. Re-run `yarn workspace agent-eval run eval:plan --dry` afterwards to see the gaps they were
+empty. Re-run `yarn eval:plan --dry` afterwards to see the gaps they were
 hiding.
 
 ### Deploy Results Playground
@@ -501,7 +500,7 @@ workflow status still fails when the eval, build, or deploy step fails.
 The workflow links the Vercel project at runtime instead of committing
 `.vercel/project.json`. It uses the same Vercel access token for the Sandbox
 evals and the Vercel CLI preview deployment, but those are separate steps:
-Sandbox auth happens in `yarn workspace agent-eval run eval`, while the preview playground deployment
+Sandbox auth happens in `yarn eval`, while the preview playground deployment
 runs `vercel link`, `vercel pull`, `vercel build`, and
 `vercel deploy --prebuilt`.
 
@@ -513,4 +512,4 @@ Configure these GitHub secrets before enabling the workflow:
 
 The thin app wrapper in `agent-eval/app` re-exports routes from
 `@vercel/agent-eval-playground` so Next.js can discover them from this package.
-Run `yarn workspace agent-eval run playground:check-routes` after upgrading the playground package.
+Run `yarn playground:check-routes` after upgrading the playground package.

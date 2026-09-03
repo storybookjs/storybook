@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Downloads the most recent agent-eval-results artifacts from GitHub Actions
 // and extracts them into agent-eval/results, so CI runs are inspectable in the
-// local playground (yarn workspace agent-eval run playground) and by local analysis tooling.
+// local playground (yarn playground) and by local analysis tooling.
 //
 // Usage: node scripts/download-ci-results.mjs [count]
 //   count: number of artifacts to download (default 20)
@@ -134,6 +134,4 @@ if (downloaded === 0) {
   process.exit(1);
 }
 
-console.log(
-  `\nDownloaded ${downloaded} artifact(s). Browse the results with: yarn workspace agent-eval run playground`
-);
+console.log(`\nDownloaded ${downloaded} artifact(s). Browse the results with: yarn playground`);

@@ -207,7 +207,7 @@ describe.skipIf(uv === null)('results:compare end to end', () => {
       expect(output).toContain('10/10');
       expect(output).toContain('complete');
       expect(output).toContain(
-        `AGENTIC_REF_FLOW=${WF} AGENTIC_REF_RUNS=10 yarn workspace agent-eval run eval:agentic-ref ${TREATMENT_EXP}`
+        `AGENTIC_REF_FLOW=${WF} AGENTIC_REF_RUNS=10 yarn eval:agentic-ref ${TREATMENT_EXP}`
       );
     } finally {
       // Restore for any later test ordering, even if an assertion above failed.
@@ -217,7 +217,7 @@ describe.skipIf(uv === null)('results:compare end to end', () => {
 });
 
 describe.skipIf(uv !== null)('without uv', () => {
-  it('is skipped on machines lacking uv (run yarn workspace agent-eval run results:compare:setup)', () => {
+  it('is skipped on machines lacking uv (run yarn results:compare:setup)', () => {
     expect(uv).toBeNull();
   });
 });

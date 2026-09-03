@@ -1,5 +1,5 @@
 // Installs uv (the only prerequisite of the Python statistics stage) and
-// prefetches the interpreter + locked dependencies, so `yarn workspace agent-eval run results:compare`
+// prefetches the interpreter + locked dependencies, so `yarn results:compare`
 // works offline afterwards. Users never touch Python tooling directly.
 import { execFileSync, spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
@@ -31,4 +31,4 @@ if (uv === null) {
 
 console.log('Prefetching the Python interpreter and locked dependencies...');
 execFileSync(uv, ['sync', '--script', join(SCRIPTS_DIR, 'compare_stats.py')], { stdio: 'inherit' });
-console.log('Done. `yarn workspace agent-eval run results:compare` is ready.');
+console.log('Done. `yarn results:compare` is ready.');

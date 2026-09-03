@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Finds — and, when asked, deletes — run directories that hold no run.
 //
-//   yarn workspace agent-eval run results:prune [--experiments <list>] [--evals <list>] [--delete]
+//   yarn results:prune [--experiments <list>] [--evals <list>] [--delete]
 //
 //   --experiments <list>  only under results/<name>/, by name or glob
 //   --evals <list>        only these evals, by name, number (706) or glob
@@ -10,7 +10,7 @@
 // Runs without a project tree hold nothing to measure (see
 // lib/agentic-reference/collected-runs.ts). Deleting them removes any eval
 // directory left with no runs, and any result directory left with no evals.
-// The next `yarn workspace agent-eval run eval:plan` will see the gap and collect it.
+// The next `yarn eval:plan` will see the gap and collect it.
 //
 // Selection follows the shared grammar in lib/agentic-reference/selection.ts,
 // AGENTIC_REF_<FLAG> fallbacks included, so the selection that ran an
@@ -131,7 +131,7 @@ function main(): void {
       process.argv.slice(2),
       {
         scriptName: 'results:prune',
-        usage: 'Usage: yarn workspace agent-eval run results:prune [flags]',
+        usage: 'Usage: yarn results:prune [flags]',
       },
       {
         experiments: flags.experiments,
@@ -184,9 +184,7 @@ function main(): void {
             deleted.directories === 1 ? 'y' : 'ies'
           } left empty.`)
   );
-  console.log(
-    'Run `yarn workspace agent-eval run eval:plan --config <plan> --dry` to see what is now missing.'
-  );
+  console.log('Run `yarn eval:plan --config <plan> --dry` to see what is now missing.');
 }
 
 main();

@@ -1933,8 +1933,8 @@ and gives a reason for each verdict.</p>`;
 <p><b>No run in this comparison has been judged yet.</b> Judging is a separate, paid step
 (one model call per run) and its verdicts are cached per run, so a bundle regenerated after
 judging picks them up automatically.</p>
-<p class="mono">yarn workspace agent-eval run judge:ds-misuse --dry &nbsp;# plan first, spend nothing<br>
-yarn workspace agent-eval run judge:ds-misuse ${manifest.spec.plan === null ? '' : `--plan ${escapeHtml(manifest.spec.plan)} `}&nbsp;# then judge, and re-run results:compare</p>
+<p class="mono">yarn judge:ds-misuse --dry &nbsp;# plan first, spend nothing<br>
+yarn judge:ds-misuse ${manifest.spec.plan === null ? '' : `--plan ${escapeHtml(manifest.spec.plan)} `}&nbsp;# then judge, and re-run results:compare</p>
 </div>`;
   }
 
@@ -1942,7 +1942,7 @@ yarn workspace agent-eval run judge:ds-misuse ${manifest.spec.plan === null ? ''
     panel.judgedRuns === panel.usableRuns
       ? `<p class="lede">All ${panel.usableRuns} usable runs are judged.</p>`
       : `<p class="lede"><b class="partial">${panel.judgedRuns} of ${panel.usableRuns}</b> usable runs
-are judged; unjudged runs contribute nothing below. <span class="mono">yarn workspace agent-eval run judge:ds-misuse</span>
+are judged; unjudged runs contribute nothing below. <span class="mono">yarn judge:ds-misuse</span>
 judges the rest and a fresh <span class="mono">results:compare</span> picks them up.</p>`;
 
   const pinWarning =
@@ -1951,7 +1951,7 @@ judges the rest and a fresh <span class="mono">results:compare</span> picks them
 ${panel.guidelinesRefs.length} different guideline versions (${panel.guidelinesRefs
           .map((ref) => `<span class="mono">${escapeHtml(ref)}</span>`)
           .join(', ')}), so their scores are not comparable. Re-judge with
-<span class="mono">yarn workspace agent-eval run judge:ds-misuse --recompute</span>.</div>`
+<span class="mono">yarn judge:ds-misuse --recompute</span>.</div>`
       : '';
 
   const controlShortName = manifest.spec.control.shortName;

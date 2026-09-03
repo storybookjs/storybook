@@ -34,10 +34,10 @@ describe('remediationCommands', () => {
         { case: FULL, workflow: '701-new-ui-flow', have: 2, need: 10, reason: 'superseded-runs' },
       ])
     ).toEqual([
-      'AGENTIC_REF_FLOW=701-new-ui-flow,703-fix-bug-flow AGENTIC_REF_RUNS=10 yarn workspace agent-eval run eval:agentic-ref agentic-ref-cc-do-dont-opus-high',
-      'AGENTIC_REF_FLOW=701-new-ui-flow AGENTIC_REF_RUNS=10 yarn workspace agent-eval run eval:agentic-ref agentic-ref-cc-full-opus-high',
-      'yarn workspace agent-eval run results:analyze --experiment=agentic-ref-cc-do-dont-opus-high',
-      'yarn workspace agent-eval run results:analyze --experiment=agentic-ref-cc-full-opus-high',
+      'AGENTIC_REF_FLOW=701-new-ui-flow,703-fix-bug-flow AGENTIC_REF_RUNS=10 yarn eval:agentic-ref agentic-ref-cc-do-dont-opus-high',
+      'AGENTIC_REF_FLOW=701-new-ui-flow AGENTIC_REF_RUNS=10 yarn eval:agentic-ref agentic-ref-cc-full-opus-high',
+      'yarn results:analyze --experiment=agentic-ref-cc-do-dont-opus-high',
+      'yarn results:analyze --experiment=agentic-ref-cc-full-opus-high',
     ]);
   });
 
@@ -46,9 +46,7 @@ describe('remediationCommands', () => {
       remediationCommands([
         { case: FULL, workflow: '703-fix-bug-flow', have: 4, need: 10, reason: 'unanalyzed' },
       ])
-    ).toEqual([
-      'yarn workspace agent-eval run results:analyze --experiment=agentic-ref-cc-full-opus-high',
-    ]);
+    ).toEqual(['yarn results:analyze --experiment=agentic-ref-cc-full-opus-high']);
   });
 
   it('follows a collection command with an analyze command for the same experiment', () => {
@@ -57,8 +55,8 @@ describe('remediationCommands', () => {
         { case: DO_DONT, workflow: '703-fix-bug-flow', have: 0, need: 10, reason: 'missing-runs' },
       ])
     ).toEqual([
-      'AGENTIC_REF_FLOW=703-fix-bug-flow AGENTIC_REF_RUNS=10 yarn workspace agent-eval run eval:agentic-ref agentic-ref-cc-do-dont-opus-high',
-      'yarn workspace agent-eval run results:analyze --experiment=agentic-ref-cc-do-dont-opus-high',
+      'AGENTIC_REF_FLOW=703-fix-bug-flow AGENTIC_REF_RUNS=10 yarn eval:agentic-ref agentic-ref-cc-do-dont-opus-high',
+      'yarn results:analyze --experiment=agentic-ref-cc-do-dont-opus-high',
     ]);
   });
 
@@ -75,8 +73,8 @@ describe('remediationCommands', () => {
         },
       ])
     ).toEqual([
-      'AGENTIC_REF_FLOW=701-new-ui-flow,703-fix-bug-flow AGENTIC_REF_RUNS=10 yarn workspace agent-eval run eval:agentic-ref agentic-ref-cc-do-dont-opus-high',
-      'yarn workspace agent-eval run results:analyze --experiment=agentic-ref-cc-do-dont-opus-high',
+      'AGENTIC_REF_FLOW=701-new-ui-flow,703-fix-bug-flow AGENTIC_REF_RUNS=10 yarn eval:agentic-ref agentic-ref-cc-do-dont-opus-high',
+      'yarn results:analyze --experiment=agentic-ref-cc-do-dont-opus-high',
     ]);
   });
 
@@ -94,10 +92,10 @@ describe('remediationCommands', () => {
         { case: bundle, workflow: '703-fix-bug-flow', have: 1, need: 10, reason: 'missing-runs' },
       ])
     ).toEqual([
-      'AGENTIC_REF_FLOW=703-fix-bug-flow AGENTIC_REF_RUNS=10 yarn workspace agent-eval run eval:agentic-ref agentic-ref-cc-do-dont-opus-high',
-      'AGENTIC_REF_FLOW=703-fix-bug-flow AGENTIC_REF_RUNS=10 yarn workspace agent-eval run eval:agentic-ref agentic-ref-cc-full-opus-high',
-      'yarn workspace agent-eval run results:analyze --experiment=agentic-ref-cc-do-dont-opus-high',
-      'yarn workspace agent-eval run results:analyze --experiment=agentic-ref-cc-full-opus-high',
+      'AGENTIC_REF_FLOW=703-fix-bug-flow AGENTIC_REF_RUNS=10 yarn eval:agentic-ref agentic-ref-cc-do-dont-opus-high',
+      'AGENTIC_REF_FLOW=703-fix-bug-flow AGENTIC_REF_RUNS=10 yarn eval:agentic-ref agentic-ref-cc-full-opus-high',
+      'yarn results:analyze --experiment=agentic-ref-cc-do-dont-opus-high',
+      'yarn results:analyze --experiment=agentic-ref-cc-full-opus-high',
     ]);
   });
 
@@ -108,8 +106,8 @@ describe('remediationCommands', () => {
         { case: DO_DONT, workflow: '701-new-ui-flow', have: 0, need: 10, reason: 'missing-runs' },
       ])
     ).toEqual([
-      'AGENTIC_REF_FLOW=701-new-ui-flow,703-fix-bug-flow AGENTIC_REF_RUNS=10 yarn workspace agent-eval run eval:agentic-ref agentic-ref-cc-do-dont-opus-high',
-      'yarn workspace agent-eval run results:analyze --experiment=agentic-ref-cc-do-dont-opus-high',
+      'AGENTIC_REF_FLOW=701-new-ui-flow,703-fix-bug-flow AGENTIC_REF_RUNS=10 yarn eval:agentic-ref agentic-ref-cc-do-dont-opus-high',
+      'yarn results:analyze --experiment=agentic-ref-cc-do-dont-opus-high',
     ]);
   });
 });

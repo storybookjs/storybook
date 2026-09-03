@@ -25,7 +25,7 @@
 // `baseline` mode, commits the result under baselines/, and passes both
 // sets of numbers to deltaToBaseline.
 //
-// Usage: yarn workspace agent-eval run results:analyze [--experiments <list>] [--evals <list>] [--since <ISO date>]
+// Usage: yarn results:analyze [--experiments <list>] [--evals <list>] [--since <ISO date>]
 //                             [--latest] [--recompute] [--superseded]
 //                             [--general] [--complexity] [--coverage]
 //
@@ -106,7 +106,7 @@ function parseOptions(argv: string[]): PostAnalysisOptions {
       argv,
       {
         scriptName: 'results:analyze',
-        usage: 'Usage: yarn workspace agent-eval run results:analyze [flags]',
+        usage: 'Usage: yarn results:analyze [flags]',
       },
       {
         experiments: flags.experiments,
@@ -361,7 +361,7 @@ async function main() {
         'yellow',
         `Skipped ${incomplete} run director${incomplete === 1 ? 'y' : 'ies'} holding no project ` +
           'tree: those runs stopped on billing, a timeout or another infra failure. ' +
-          'Run `yarn workspace agent-eval run results:prune` to see and clear them.'
+          'Run `yarn results:prune` to see and clear them.'
       )
     );
   }
@@ -397,7 +397,7 @@ async function main() {
   if (unjudged > 0) {
     console.error(
       `\n${styleText('bold', styleText('red', `No ds-misuse judgement for ${unjudged} of ${successfulAnalyses.length} run(s).`))}\n` +
-        '  Run: yarn workspace agent-eval run judge:ds-misuse' +
+        '  Run: yarn judge:ds-misuse' +
         (options.experiments.length ? ` --experiments=${options.experiments.join(',')}` : '') +
         (options.latest ? ' --latest' : '')
     );

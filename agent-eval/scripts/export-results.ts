@@ -4,9 +4,9 @@
 // drops the runs where results:analyze, results:compare, and run plans already
 // look — nothing to configure on the receiving side.
 //
-//   yarn workspace agent-eval run results:export --since <YYYY-MM-DD>                collected on/after a date
-//   yarn workspace agent-eval run results:export --since <YYYY-MM-DD> --no-projects  tables only, far smaller
-//   yarn workspace agent-eval run results:export --since <YYYY-MM-DD> --out my.zip
+//   yarn results:export --since <YYYY-MM-DD>                collected on/after a date
+//   yarn results:export --since <YYYY-MM-DD> --no-projects  tables only, far smaller
+//   yarn results:export --since <YYYY-MM-DD> --out my.zip
 //
 // --no-projects drops each run's project/ tree (the bulk of the size, tens of
 // MB per run). The cached per-run analysis (post-analysis-meta.json) still

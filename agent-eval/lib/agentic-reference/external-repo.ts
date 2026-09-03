@@ -62,7 +62,7 @@ export function pinSlug({ repo, ref }: ExternalRepoPin): string {
 const refCache = new Map<string, string>();
 
 // Both subprocesses are bounded: a stalled codeload connection would otherwise
-// hang `yarn workspace agent-eval run results:analyze` indefinitely, and on CI hold the job to its own
+// hang `yarn results:analyze` indefinitely, and on CI hold the job to its own
 // limit. curl's own timeouts fire first so the error names the cause; the
 // execFileSync ceilings are the backstop for a process that ignores them.
 const CONNECT_TIMEOUT_SECONDS = 30;

@@ -29,7 +29,7 @@ export function compareParser(argv: readonly string[], env?: NodeJS.ProcessEnv) 
     argv,
     {
       scriptName: 'results:compare',
-      usage: 'Usage: yarn workspace agent-eval run results:compare [flags]',
+      usage: 'Usage: yarn results:compare [flags]',
     },
     {
       control: flags.text('control', 'Control case (default cc-control-none-opus-high)'),

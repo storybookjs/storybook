@@ -181,7 +181,6 @@ export class PropertyExtractor implements NgModuleMetadata {
         )?.standalone;
 
     // Starting in Angular 19 the default (in case it's undefined) value for standalone is true.
-    // With the Angular 21 floor, that is always the case.
     if (isStandalone === undefined) {
       isStandalone = true;
     }

@@ -77,5 +77,33 @@ describe('SearchResults.utils', () => {
 
       expect(resolveHighlightRanges(matches, '')).toEqual(matches);
     });
+
+    it('should resolve all continuous query occurrences', () => {
+      const matches: Match[] = [
+        {
+          key: 'name',
+          value: 'HeaderHeader',
+          indices: [
+            [1, 2],
+            [4, 4],
+            [7, 8],
+            [10, 10],
+          ],
+          arrayIndex: 0,
+        },
+      ];
+
+      expect(resolveHighlightRanges(matches, 'ea')).toEqual([
+        {
+          key: 'name',
+          value: 'HeaderHeader',
+          indices: [
+            [1, 2],
+            [7, 8],
+          ],
+          arrayIndex: 0,
+        },
+      ]);
+    });
   });
 });

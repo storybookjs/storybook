@@ -8,13 +8,21 @@ export const resolveHighlightRanges = (matches: Match[], query: string): Match[]
   const needle = query.toLowerCase();
 
   return matches.map((match) => {
-    const start = match.value.toLowerCase().indexOf(needle);
+    const value = match.value.toLowerCase();
+    const indices: [number, number][] = [];
 
-    return start === -1
-      ? match
-      : {
+    let start = value.indexOf(needle);
+
+    while (start !== -1) {
+      indices.push([start, start + needle.length - 1]);
+      start = value.indexOf(needle, start + needle.length);
+    }
+
+    return indices.length > 0
+      ? {
           ...match,
-          indices: [[start, start + needle.length - 1]],
-        };
+          indices,
+        }
+      : match;
   });
 };

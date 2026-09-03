@@ -3740,7 +3740,6 @@ describe('PreviewWeb', () => {
     it('does not throw when the view does not implement scrollToAnchor', async () => {
       document.location.search = '?id=component-one--docs&viewMode=docs';
       const preview = await createAndRenderPreview();
-      // @ts-expect-error scrollToAnchor is optional on the View interface
       preview.view.scrollToAnchor = undefined;
 
       expect(() => preview.onNavigateUrl('#a-heading')).not.toThrow();

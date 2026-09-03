@@ -22,7 +22,7 @@ export const blocker = createBlocker({
     switch (data.packageName) {
       case '@angular/core':
         return {
-          title: 'Angular < v20 support removed',
+          title: 'Require Angular v21 and up',
           message: dedent`
             Support for Angular < 21 has been removed.
             Please see the migration guide for more information:

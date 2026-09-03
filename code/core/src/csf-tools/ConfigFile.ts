@@ -724,7 +724,7 @@ export class ConfigFile {
     moduleNames,
   }: FindNamedImportMethodCallsOptions): t.CallExpression[] {
     const modules = new Set(moduleNames);
-    const imports = new Map<string, t.Node>();
+    const imports = new Map<string, Set<t.Node>>();
 
     traverse(this._ast, {
       ImportDeclaration(path) {
@@ -738,7 +738,9 @@ export class ConfigFile {
             specifier.importKind !== 'type' &&
             t.isIdentifier(specifier.imported, { name: importedName })
           ) {
-            imports.set(specifier.local.name, specifier);
+            const bindingNodes = imports.get(specifier.local.name) ?? new Set<t.Node>();
+            bindingNodes.add(specifier);
+            imports.set(specifier.local.name, bindingNodes);
           }
         }
       },
@@ -764,7 +766,9 @@ export class ConfigFile {
               (t.isStringLiteral(property.key) && property.key.value === importedName)) &&
             t.isIdentifier(property.value)
           ) {
-            imports.set(property.value.name, path.node);
+            const bindingNodes = imports.get(property.value.name) ?? new Set<t.Node>();
+            bindingNodes.add(path.node);
+            imports.set(property.value.name, bindingNodes);
           }
         }
       },
@@ -788,11 +792,8 @@ export class ConfigFile {
           return;
         }
 
-        const importSpecifier = imports.get(callee.object.name);
-        if (
-          importSpecifier &&
-          path.scope.getBinding(callee.object.name)?.path.node === importSpecifier
-        ) {
+        const bindingNode = path.scope.getBinding(callee.object.name)?.path.node;
+        if (bindingNode && imports.get(callee.object.name)?.has(bindingNode)) {
           calls.push(path.node);
         }
       },

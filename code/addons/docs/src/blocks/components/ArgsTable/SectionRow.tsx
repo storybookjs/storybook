@@ -17,8 +17,8 @@ export interface SectionRowProps {
 }
 
 const ExpanderIconDown = styled(ChevronDownIcon)(({ theme }) => ({
-  marginRight: 8,
-  marginLeft: -10,
+  marginInlineEnd: 8,
+  marginInlineStart: -10,
   marginTop: -2, // optical alignment
   height: 12,
   width: 12,
@@ -31,8 +31,8 @@ const ExpanderIconDown = styled(ChevronDownIcon)(({ theme }) => ({
 }));
 
 const ExpanderIconRight = styled(ChevronRightIcon)(({ theme }) => ({
-  marginRight: 8,
-  marginLeft: -10,
+  marginInlineEnd: 8,
+  marginInlineStart: -10,
   marginTop: -2, // optical alignment
   height: 12,
   width: 12,
@@ -42,6 +42,11 @@ const ExpanderIconRight = styled(ChevronRightIcon)(({ theme }) => ({
       : transparentize(0.3, theme.color.defaultText),
   border: 'none',
   display: 'inline-block',
+  // Unlike the down chevron, this one points along the reading direction and has to mirror.
+  // `:dir()` follows the resolved directionality, not the CSS `direction` property.
+  '&:dir(rtl)': {
+    transform: 'scaleX(-1)',
+  },
 }));
 
 const FlexWrapper = styled.span(({ theme }) => ({

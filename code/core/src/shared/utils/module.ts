@@ -1,11 +1,12 @@
 import { statSync } from 'node:fs';
-import { createRequire, register } from 'node:module';
+import nodeModule, { createRequire } from 'node:module';
 import { win32 } from 'node:path/win32';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { logger } from 'storybook/internal/node-logger';
 
 import { resolveModulePath } from 'exsolve';
+import semver from 'semver';
 import { dirname, join } from 'pathe';
 
 import { jsModuleExtensions } from '../constants/extensions.ts';
@@ -47,30 +48,46 @@ export const resolvePackageDir = (
   }
 };
 
-let isTypescriptLoaderRegistered = false;
+let typescriptLoaderRegistration: Promise<void> | null = null;
 let typescriptLoaderRegistrationError: unknown;
 
-// Jest >= 30.5 throws from `module.register()` inside its sandbox (jestjs/jest#16391). Such hosts
-// transform TypeScript themselves, so a failed registration is not fatal.
+/**
+ * Installs the TypeScript loader, once, and treats a host that refuses to install it as a
+ * non-fatal condition rather than an error.
+ *
+ * Jest >= 30.5 throws from both `module.register()` and `module.registerHooks()` inside its sandbox
+ * (jestjs/jest#16391), so neither branch below can be assumed to succeed. Such hosts transform
+ * TypeScript themselves, so `importModule` falls through to its plain import/require path. The
+ * registration is not retried, because a host that refuses by policy refuses every time.
+ */
 function registerTypescriptLoader() {
-  if (isTypescriptLoaderRegistered) {
-    return;
+  if (!typescriptLoaderRegistration) {
+    typescriptLoaderRegistration = (async () => {
+      if (semver.gte(process.versions.node, '26.0.0')) {
+        try {
+          const { load } = await import('storybook/internal/bin/loader');
+          nodeModule.registerHooks({ load });
+        } catch {
+          // Fallback in case nodejs/node#62786 caused an exception
+          const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
+          nodeModule.register(typescriptLoaderUrl, import.meta.url);
+        }
+      } else {
+        const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
+        nodeModule.register(typescriptLoaderUrl, import.meta.url);
+      }
+    })().catch((error) => {
+      typescriptLoaderRegistrationError = error;
+      // Interpolated: logger.debug JSON.stringifies a non-string argument, and an Error's own
+      // properties are not enumerable, so passing the error itself would log `{}`.
+      logger.debug(
+        `Could not register the TypeScript loader: ${
+          error instanceof Error ? (error.stack ?? error.message) : String(error)
+        }`
+      );
+    });
   }
-  // Set before attempting, so a host that forbids hooks is asked once rather than on every import.
-  isTypescriptLoaderRegistered = true;
-  try {
-    const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
-    register(typescriptLoaderUrl, import.meta.url);
-  } catch (error) {
-    typescriptLoaderRegistrationError = error;
-    // Interpolated: logger.debug JSON.stringifies a non-string argument, and an Error's own
-    // properties are not enumerable, so passing the error itself would log `{}`.
-    logger.debug(
-      `Could not register the TypeScript loader: ${
-        error instanceof Error ? (error.stack ?? error.message) : String(error)
-      }`
-    );
-  }
+  return typescriptLoaderRegistration;
 }
 
 /**
@@ -94,7 +111,7 @@ export async function importModule(
   path: string,
   { skipCache = false }: { skipCache?: boolean } = {}
 ) {
-  registerTypescriptLoader();
+  await registerTypescriptLoader();
 
   let mod;
   try {

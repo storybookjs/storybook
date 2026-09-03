@@ -47,7 +47,6 @@ beforeEach(() => {
   vi.mocked(runSkillsCommand).mockResolvedValue({
     output: 'ok',
     exitCode: 0,
-    kind: 'get',
     skill: 'stories',
   });
   vi.mocked(withTelemetry).mockImplementation(async (_eventType, _options, run) => run());
@@ -79,17 +78,25 @@ describe('registerSkillsCommand', () => {
     expect(vi.mocked(runSkillsCommand).mock.calls[0]?.[0]).toEqual({
       tokens: ['stories'],
       help: undefined,
+      all: undefined,
       target: { cwd: undefined, configDir: undefined },
     });
   });
 
-  it('keeps the `get <id>` spelling', async () => {
+  it('forwards `--all` as a flag, not a token', async () => {
+    vi.mocked(runSkillsCommand).mockResolvedValue({
+      output: 'everything',
+      exitCode: 0,
+      skill: 'all',
+    });
     const { program } = buildProgram();
-    await parse(program, ['skills', 'get', 'setup']);
+    await parse(program, ['skills', '--all']);
 
     expect(vi.mocked(runSkillsCommand).mock.calls[0]?.[0]).toMatchObject({
-      tokens: ['get', 'setup'],
+      tokens: [],
+      all: true,
     });
+    expect(telemetry).toHaveBeenCalledWith('skills-get', { skill: 'all' }, expect.anything());
   });
 
   it('does not intercept `help` as commander help', async () => {
@@ -102,12 +109,7 @@ describe('registerSkillsCommand', () => {
   });
 
   it('forwards `-h` after a skill id', async () => {
-    vi.mocked(runSkillsCommand).mockResolvedValue({
-      output: 'usage',
-      exitCode: 0,
-      kind: 'help',
-      skill: 'write-story',
-    });
+    vi.mocked(runSkillsCommand).mockResolvedValue({ output: 'usage', exitCode: 0 });
     const { program } = buildProgram();
     await parse(program, ['skills', 'write-story', '-h']);
 

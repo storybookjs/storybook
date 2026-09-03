@@ -27,39 +27,44 @@ const deps = () => ({
 });
 
 describe('resolveSkillsIntent', () => {
-  it('treats no args and `list` as the catalog', () => {
-    expect(resolveSkillsIntent([])).toEqual({ kind: 'catalog' });
-    expect(resolveSkillsIntent(['list'])).toEqual({ kind: 'catalog' });
+  it('treats no args as the catalog', () => {
+    expect(resolveSkillsIntent({ tokens: [] })).toEqual({ kind: 'catalog' });
+    expect(resolveSkillsIntent({ tokens: [], help: true })).toEqual({ kind: 'catalog' });
   });
 
-  it('prints a skill by id, including the `get <id>` spelling', () => {
-    expect(resolveSkillsIntent(['stories'])).toEqual({ kind: 'get', id: 'stories' });
-    expect(resolveSkillsIntent(['get', 'setup'])).toEqual({ kind: 'get', id: 'setup' });
+  it('prints a skill by id', () => {
+    expect(resolveSkillsIntent({ tokens: ['stories'] })).toEqual({ kind: 'get', id: 'stories' });
+    expect(resolveSkillsIntent({ tokens: ['setup'] })).toEqual({ kind: 'get', id: 'setup' });
   });
 
-  it('describes a skill when help is set', () => {
-    expect(resolveSkillsIntent(['write-story'], true)).toEqual({
-      kind: 'skill-help',
-      id: 'write-story',
+  it('prints every skill on --all, unless help is also set', () => {
+    expect(resolveSkillsIntent({ tokens: [], all: true })).toEqual({ kind: 'all' });
+    expect(resolveSkillsIntent({ tokens: [], all: true, help: true })).toEqual({ kind: 'catalog' });
+  });
+
+  it('treats help as the catalog even after a skill id', () => {
+    expect(resolveSkillsIntent({ tokens: ['write-story'], help: true })).toEqual({
+      kind: 'catalog',
     });
-    expect(resolveSkillsIntent(['get', 'write-story'], true)).toEqual({
-      kind: 'skill-help',
-      id: 'write-story',
-    });
   });
 
-  it('does not treat `help` as a subcommand', () => {
-    expect(resolveSkillsIntent(['help', 'stories'])).toEqual({ kind: 'unknown', id: 'help' });
+  it('rejects `help`, `list`, and `get` as unknown skills, naming the valid ids', () => {
+    for (const first of ['help', 'list', 'get']) {
+      expect(resolveSkillsIntent({ tokens: [first, 'stories'] })).toEqual({
+        kind: 'error',
+        message: `Unknown skill "${first}". Available skills: stories, write-story, setup.`,
+      });
+    }
   });
 
-  it('rejects surplus positional arguments', () => {
-    expect(resolveSkillsIntent(['stories', 'typo'])).toEqual({
-      kind: 'invalid',
-      tokens: ['stories', 'typo'],
+  it('rejects surplus positional arguments and an id combined with --all', () => {
+    expect(resolveSkillsIntent({ tokens: ['stories', 'typo'] })).toEqual({
+      kind: 'error',
+      message: expect.stringContaining('Unexpected arguments: "typo"'),
     });
-    expect(resolveSkillsIntent(['get', 'stories', 'typo'])).toEqual({
-      kind: 'invalid',
-      tokens: ['get', 'stories', 'typo'],
+    expect(resolveSkillsIntent({ tokens: ['stories'], all: true })).toEqual({
+      kind: 'error',
+      message: expect.stringContaining('takes no skill id'),
     });
   });
 });
@@ -69,7 +74,6 @@ describe('runSkillsCommand', () => {
     const d = deps();
     const result = await runSkillsCommand({ tokens: [], target: {} }, d);
     expect(result.exitCode).toBe(0);
-    expect(result.kind).toBe('help');
     expect(result.output).toContain('Usage: npx storybook skills [options] [id]');
     expect(result.output).toContain('stories');
     expect(result.output).toContain('write-story');
@@ -77,17 +81,7 @@ describe('runSkillsCommand', () => {
     expect(d.loadStorybook).not.toHaveBeenCalled();
   });
 
-  it('describes one skill on `--help` without loading config', async () => {
-    const d = deps();
-    const result = await runSkillsCommand({ tokens: ['write-story'], help: true, target: {} }, d);
-    expect(result.exitCode).toBe(0);
-    expect(result.kind).toBe('help');
-    expect(result.output).toContain('Usage: npx storybook skills write-story [options]');
-    expect(result.output).toContain('Prints the full instructions as markdown.');
-    expect(d.loadStorybook).not.toHaveBeenCalled();
-  });
-
-  it('get stories assembles CLI-transport server instructions using the CLI review gate', async () => {
+  it('stories assembles CLI-transport server instructions using the CLI review gate', async () => {
     const d = deps();
     const result = await runSkillsCommand({ tokens: ['stories'], target: {} }, d);
     expect(result.exitCode).toBe(0);
@@ -116,15 +110,15 @@ describe('runSkillsCommand', () => {
     expect(stories.output).not.toContain('Documentation Workflow');
   });
 
-  it('get write-story assembles CLI-transport story instructions', async () => {
+  it('write-story assembles CLI-transport story instructions', async () => {
     const d = deps();
-    const result = await runSkillsCommand({ tokens: ['get', 'write-story'], target: {} }, d);
+    const result = await runSkillsCommand({ tokens: ['write-story'], target: {} }, d);
     expect(result.exitCode).toBe(0);
     expect(result.output).toContain('@storybook/react');
     expect(result.output).toContain('npx storybook tools stories changed');
   });
 
-  it('get setup emits the setup markdown from the lightweight probe, without loading config', async () => {
+  it('setup emits the setup markdown from the lightweight probe, without loading config', async () => {
     const d = deps();
     const result = await runSkillsCommand({ tokens: ['setup'], target: {} }, d);
     expect(result.exitCode).toBe(0);
@@ -132,7 +126,7 @@ describe('runSkillsCommand', () => {
     expect(d.loadStorybook).not.toHaveBeenCalled();
   });
 
-  it('get setup reports the probe failure message and exits nonzero', async () => {
+  it('setup reports the probe failure message and exits nonzero', async () => {
     const d = deps();
     d.getProjectInfo.mockResolvedValue({ ok: false, message: 'Could not detect framework' });
     const result = await runSkillsCommand({ tokens: ['setup'], target: {} }, d);
@@ -140,7 +134,7 @@ describe('runSkillsCommand', () => {
     expect(result.errorOutput).toContain('Could not detect framework');
   });
 
-  it('get setup resolves configDir against the given cwd before probing, not process.cwd()', async () => {
+  it('setup resolves configDir against the given cwd before probing, not process.cwd()', async () => {
     const d = deps();
     const target = { cwd: '/some/other/project', configDir: 'custom-storybook' };
     await runSkillsCommand({ tokens: ['setup'], target }, d);
@@ -167,8 +161,24 @@ describe('runSkillsCommand', () => {
     expect(result.errorOutput).toContain('setup');
   });
 
-  it('`get` without an id behaves like unknown id', async () => {
-    const result = await runSkillsCommand({ tokens: ['get'], target: {} }, deps());
+  it('--all prints every skill in full, loading the configuration once', async () => {
+    const d = deps();
+    const result = await runSkillsCommand({ tokens: [], all: true, target: {} }, d);
+    expect(result.exitCode).toBe(0);
+    expect(result.skill).toBe('all');
+    expect(result.output).toContain('# Storybook Setup');
+    expect(result.output).toContain('npx storybook tools stories changed');
+    expect(result.output).toContain('@storybook/react');
+    expect(d.loadStorybook).toHaveBeenCalledTimes(1);
+    expect(d.getProjectInfo).toHaveBeenCalledTimes(1);
+  });
+
+  it('--all fails as a whole when the configuration cannot be loaded', async () => {
+    const d = deps();
+    d.loadStorybook.mockRejectedValue(new Error('Cannot find module .storybook/main.ts'));
+    const result = await runSkillsCommand({ tokens: [], all: true, target: {} }, d);
     expect(result.exitCode).toBe(1);
+    expect(result.output).toBe('');
+    expect(result.errorOutput).toContain('Cannot find module .storybook/main.ts');
   });
 });

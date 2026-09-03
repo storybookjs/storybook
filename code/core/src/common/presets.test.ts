@@ -45,7 +45,7 @@ const KNOWN_FILES = [
   '@storybook/addon-knobs/manager',
   '@storybook/addon-knobs/register',
   '@storybook/addon-notes/register-panel',
-  '@storybook/preset-create-react-app',
+  '@storybook/preset-scss',
   '@storybook/preset-typescript',
   'addon-bar/preset.js',
   'addon-bar',
@@ -461,8 +461,8 @@ describe('resolveAddonName', () => {
   });
 
   it('should resolve packages without metadata', () => {
-    expect(resolveAddonName({} as any, '@storybook/preset-create-react-app', {})).toEqual({
-      name: '@storybook/preset-create-react-app',
+    expect(resolveAddonName({} as any, '@storybook/preset-scss', {})).toEqual({
+      name: '@storybook/preset-scss',
       type: 'presets',
     });
   });

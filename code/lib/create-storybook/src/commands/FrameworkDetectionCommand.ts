@@ -1,6 +1,7 @@
-import { type ProjectType } from 'storybook/internal/cli';
+import { ProjectType } from 'storybook/internal/cli';
 import { type JsPackageManager } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
+import { CreateReactAppUnsupportedError } from 'storybook/internal/server-errors';
 import type { SupportedBuilder } from 'storybook/internal/types';
 import { type SupportedRenderer } from 'storybook/internal/types';
 import type { SupportedFramework } from 'storybook/internal/types';
@@ -32,6 +33,12 @@ export class FrameworkDetectionCommand {
     projectType: ProjectType,
     options: CommandOptions
   ): Promise<FrameworkDetectionResult> {
+    // CRA projects are detected but no longer supported — stop with the migration
+    // anchor instead of falling through to a broken generic scaffold
+    if (projectType === ProjectType.REACT_SCRIPTS) {
+      throw new CreateReactAppUnsupportedError();
+    }
+
     // Get generator for the project type
     const generatorModule = generatorRegistry.get(projectType);
 

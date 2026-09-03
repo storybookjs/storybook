@@ -65,4 +65,45 @@ describe('dependenciesVersions blocker', () => {
 
     expect(result).toBe(false);
   });
+
+  test('@angular/core 20 is blocked with message and migration anchor', async () => {
+    const packageManager = createPackageManager({ '@angular/core': '20.0.0' });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toEqual({
+      packageName: '@angular/core',
+      installedVersion: '20.0.0',
+      minimumVersion: '21.0.0',
+    });
+
+    if (!result) {
+      throw new Error('Expected @angular/core 20.0.0 to be blocked');
+    }
+
+    const logged = blocker.log(result);
+
+    expect(logged.title).toBe('Angular 21 support removed');
+    expect(logged.message).toContain('Support for Angular < 21 has been removed.');
+    expect(logged.link).toBe(
+      'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular-require-v21-and-up'
+    );
+  });
+
+  test.each(['21.0.0', '22.1.0'])('@angular/core %s is not blocked', async (version) => {
+    const packageManager = createPackageManager({ '@angular/core': version });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toBe(false);
+  });
+
+  test('missing @angular/core does not block', async () => {
+    const packageManager = createPackageManager({});
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toBe(false);
+  });
 });
+

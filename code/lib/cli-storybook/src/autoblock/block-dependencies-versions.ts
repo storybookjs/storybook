@@ -4,7 +4,7 @@ import { createBlocker } from './types.ts';
 import { findOutdatedPackage } from './utils.ts';
 
 const minimalVersionsMap = {
-  '@angular/core': '18.0.0',
+  '@angular/core': '21.0.0',
   'react-scripts': '5.0.0',
   next: '15.0.0',
   preact: '10.0.0',
@@ -24,12 +24,12 @@ export const blocker = createBlocker({
     switch (data.packageName) {
       case '@angular/core':
         return {
-          title: 'Angular 18 support removed',
+          title: 'Angular 21 support removed',
           message: dedent`
-            Support for Angular < 18 has been removed.
+            Support for Angular < 21 has been removed.
             Please see the migration guide for more information:
           `,
-          link: 'https://angular.dev/update-guide',
+          link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular-require-v21-and-up',
         };
       case 'next':
         return {

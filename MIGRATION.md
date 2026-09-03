@@ -1372,6 +1372,12 @@ import * as previewAnnotations from './.storybook/preview';
 
 The Storybook Test addon now only supports Vitest 3.0 and higher, which is where browser mode was made into a stable state. Please upgrade to Vitest 3.0.
 
+#### Vitest Addon: requires Vitest 4.0 or higher (upcoming in Storybook 11)
+
+> This change applies to the upcoming Storybook 11 release.
+
+The `@storybook/addon-vitest` addon requires **Vitest 4.0 or higher**. Setup now always installs `@vitest/browser-playwright`, generates configuration with the `test.projects` array, and no longer creates or updates `vitest.workspace.*` files. If your Vitest config still uses the deprecated `test.workspace` / `defineWorkspace` style, rename it to `test.projects` and re-run `npx storybook@latest add @storybook/addon-vitest` to merge your existing config.
+
 #### Viewport/Backgrounds Addon synchronized configuration and `globals` usage
 
 The feature flags: `viewportStoryGlobals` and `backgroundsStoryGlobals` have been removed, please remove these from your `.storybook/main.ts` file.

@@ -23,7 +23,7 @@ vi.mock('fs', () => ({
       "devDependencies": {
         "@storybook/addon-essentials": "^6.5.9",
         "@storybook/addon-interactions": "^6.5.9",
-        "@storybook/preset-create-react-app": "^6.5.9",
+        "@storybook/preset-server-webpack": "^6.5.9",
         "@storybook/addon-links": "^6.5.9",
         "storybook-addon-valid-addon": "0.0.1",
         "addon-without-the-prefix": "^0.0.1"
@@ -44,7 +44,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
         "@storybook/addon-links",
         "@storybook/addon-essentials",
         "@storybook/addon-interactions",
-        "@storybook/preset-create-react-app"
+        "@storybook/preset-server-webpack"
       ]
     }
   `,
@@ -54,7 +54,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
         "@storybook/addon-links",
         "@storybook/addon-essentials",
         "@storybook/addon-interactions",
-        "@storybook/preset-create-react-app"
+        "@storybook/preset-server-webpack"
       ]
     } satisfies StorybookConfig
   `,
@@ -64,7 +64,7 @@ ruleTester.run('no-uninstalled-addons', rule, {
         "@storybook/addon-links",
         "@storybook/addon-essentials",
         "@storybook/addon-interactions",
-        "@storybook/preset-create-react-app"
+        "@storybook/preset-server-webpack"
         ]
       }
       export default config

@@ -180,7 +180,7 @@ export class PropertyExtractor implements NgModuleMetadata {
             this.isDecoratorInstanceOf(d, 'Component') || this.isDecoratorInstanceOf(d, 'Directive')
         )?.standalone;
 
-    // Starting in Angular 19 the default (in case it's undefined) value for standalone is true.
+    // Starting in Angular 19 the default (in case it's undefined) value for standalone is true
     if (isStandalone === undefined) {
       isStandalone = true;
     }

@@ -100,32 +100,27 @@ const RecentlyOpenedTitle = styled.div(({ theme }) => ({
   },
 }));
 
-const Highlight: FC<PropsWithChildren<{ match?: Match; query?: string }>> = React.memo(
-  function Highlight({ children, match, query }) {
-    if (!match) {
-      return children;
-    }
-    const { value, indices } = match;
-    const exactIndex = query ? value.toLowerCase().indexOf(query.toLowerCase()) : -1;
-    const highlightIndices: readonly [number, number][] =
-      exactIndex >= 0 ? [[exactIndex, exactIndex + query!.length - 1]] : indices;
-    const { nodes: result } = highlightIndices.reduce<{
-      cursor: number;
-      nodes: ReactNode[];
-    }>(
-      ({ cursor, nodes }, [start, end], index, { length }) => {
-        nodes.push(<span key={`${index}-1`}>{value.slice(cursor, start)}</span>);
-        nodes.push(<Mark key={`${index}-2`}>{value.slice(start, end + 1)}</Mark>);
-        if (index === length - 1) {
-          nodes.push(<span key={`${index}-3`}>{value.slice(end + 1)}</span>);
-        }
-        return { cursor: end + 1, nodes };
-      },
-      { cursor: 0, nodes: [] }
-    );
-    return <span>{result}</span>;
+const Highlight: FC<PropsWithChildren<{ match?: Match }>> = React.memo(function Highlight({
+  children,
+  match,
+}) {
+  if (!match) {
+    return children;
   }
-);
+  const { value, indices } = match;
+  const { nodes: result } = indices.reduce<{ cursor: number; nodes: ReactNode[] }>(
+    ({ cursor, nodes }, [start, end], index, { length }) => {
+      nodes.push(<span key={`${index}-1`}>{value.slice(cursor, start)}</span>);
+      nodes.push(<Mark key={`${index}-2`}>{value.slice(start, end + 1)}</Mark>);
+      if (index === length - 1) {
+        nodes.push(<span key={`${index}-3`}>{value.slice(end + 1)}</span>);
+      }
+      return { cursor: end + 1, nodes };
+    },
+    { cursor: 0, nodes: [] }
+  );
+  return <span>{result}</span>;
+});
 
 const Title = styled.div({
   display: 'grid',
@@ -166,9 +161,8 @@ const Path = styled.div(({ theme }) => ({
 const Result: FC<
   SearchResult & {
     isHighlighted: boolean;
-    query: string;
   } & React.DetailedHTMLProps<React.LiHTMLAttributes<HTMLLIElement>, HTMLLIElement>
-> = React.memo(function Result({ item, matches, query, onClick, ...props }) {
+> = React.memo(function Result({ item, matches, onClick, ...props }) {
   const theme = useTheme();
   const click: MouseEventHandler<HTMLLIElement> = useCallback(
     (event) => {
@@ -211,17 +205,12 @@ const Result: FC<
       </IconWrapper>
       <ResultRowContent className="search-result-item--label">
         <Title>
-          <Highlight match={nameMatch} query={query}>
-            {item.name}
-          </Highlight>
+          <Highlight match={nameMatch}>{item.name}</Highlight>
         </Title>
         <Path>
           {item.path.map((group, index) => (
             <span key={index}>
-              <Highlight
-                match={pathMatches.find((match: Match) => match.arrayIndex === index)}
-                query={query}
-              >
+              <Highlight match={pathMatches.find((match: Match) => match.arrayIndex === index)}>
                 {group}
               </Highlight>
             </span>
@@ -343,7 +332,6 @@ export const SearchResults: FC<{
           <Result
             {...result}
             {...getItemProps({ key, index, item: result })}
-            query={query}
             isHighlighted={highlightedIndex === index}
             key={key}
             data-id={result.item.id}

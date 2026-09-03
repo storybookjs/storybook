@@ -5,9 +5,11 @@ import { createBlocker } from './types.ts';
 export const blocker = createBlocker({
   id: 'createReactApp',
   async check({ packageManager }) {
-    const reactScriptsVersion = await packageManager.getInstalledVersion('react-scripts');
+    const presetCreateReactAppVersion = await packageManager.getInstalledVersion(
+      '@storybook/preset-create-react-app'
+    );
 
-    return reactScriptsVersion !== null;
+    return presetCreateReactAppVersion !== null;
   },
   log() {
     return {

@@ -75,7 +75,7 @@ describe('importModule', () => {
 
       await importModule(fixture);
 
-      expect(logger.debug).toHaveBeenCalledWith(
+      expect(vi.mocked(logger.debug)).toHaveBeenCalledWith(
         expect.stringContaining('module.register() is not supported in Jest')
       );
     });

@@ -12146,6 +12146,7 @@ __metadata:
     memfs: "npm:^4.11.1"
     p-limit: "npm:^7.2.0"
     picocolors: "npm:^1.1.0"
+    process-ancestry: "npm:^0.0.2"
     semver: "npm:^7.7.3"
     slash: "npm:^5.0.0"
     storybook: "workspace:*"
@@ -12860,6 +12861,7 @@ __metadata:
     p-retry: "npm:^7.1.0"
     pathe: "npm:^1.1.2"
     picocolors: "npm:^1.1.0"
+    pkg-pr-new: "npm:^0.0.72"
     playwright: "npm:1.58.2"
     playwright-core: "npm:1.58.2"
     polka: "npm:^1.0.0-next.28"
@@ -32198,6 +32200,15 @@ __metadata:
   languageName: node
   linkType: hard
 
+"pkg-pr-new@npm:^0.0.72":
+  version: 0.0.72
+  resolution: "pkg-pr-new@npm:0.0.72"
+  bin:
+    pkg-pr-new: bin/cli.js
+  checksum: 10c0/020a2dea1f4d23aeb1cb6d405762c6ae00d796edec233780986c5d39e7de4a1975da37efc74aeb3aa1fb9c5876bddc303bd08ca7e3c7992fdcc2778276b1f574
+  languageName: node
+  linkType: hard
+
 "pkg-up@npm:^2.0.0":
   version: 2.0.0
   resolution: "pkg-up@npm:2.0.0"
@@ -36687,6 +36698,7 @@ __metadata:
     polka: "npm:^1.0.0-next.28"
     prettier: "npm:^3.7.1"
     pretty-hrtime: "npm:^1.0.3"
+    process-ancestry: "npm:^0.0.2"
     qrcode.react: "npm:^4.2.0"
     react: "npm:^18.2.0"
     react-aria-components: "patch:react-aria-components@npm%3A1.12.2#~/.yarn/patches/react-aria-components-npm-1.12.2-6c5dcdafab.patch"

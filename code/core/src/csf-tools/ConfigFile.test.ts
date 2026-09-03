@@ -103,6 +103,49 @@ describe('ConfigFile', () => {
         'managerAddons.setConfig({ showNav: false })',
       ]);
     });
+
+    it('finds same-named imported bindings in different scopes', () => {
+      const config = loadConfig(dedent`
+        import { addons } from 'storybook/manager-api';
+
+        addons.setConfig({ showNav: false });
+
+        function configure() {
+          const { addons } = require('storybook/manager-api');
+          addons.setConfig({ showPanel: false });
+        }
+      `).parse();
+
+      const calls = config.findNamedImportMethodCalls({
+        importedName: 'addons',
+        methodName: 'setConfig',
+        moduleNames: ['storybook/manager-api'],
+      });
+
+      expect(calls.map((call) => babelPrint(call))).toEqual([
+        'addons.setConfig({ showNav: false })',
+        'addons.setConfig({ showPanel: false })',
+      ]);
+    });
+
+    it('ignores other bindings from the same CommonJS destructuring', () => {
+      const config = loadConfig(dedent`
+        const { addons, unrelated } = require('storybook/manager-api');
+
+        addons.setConfig({ showNav: false });
+        unrelated.setConfig({ showPanel: false });
+      `).parse();
+
+      const calls = config.findNamedImportMethodCalls({
+        importedName: 'addons',
+        methodName: 'setConfig',
+        moduleNames: ['storybook/manager-api'],
+      });
+
+      expect(calls.map((call) => babelPrint(call))).toEqual([
+        'addons.setConfig({ showNav: false })',
+      ]);
+    });
   });
 
   describe('getField', () => {

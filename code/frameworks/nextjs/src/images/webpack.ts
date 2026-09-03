@@ -1,34 +1,47 @@
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath } from "node:url";
 
-import type { NextConfig } from 'next';
-import type { RuleSetRule, Configuration as WebpackConfig } from 'webpack';
+import type { NextConfig } from "next";
+import type { RuleSetRule, Configuration as WebpackConfig } from "webpack";
 
-export const configureImages = (baseConfig: WebpackConfig, nextConfig: NextConfig): void => {
+export const configureImages = (
+  baseConfig: WebpackConfig,
+  nextConfig: NextConfig,
+): void => {
   configureStaticImageImport(baseConfig, nextConfig);
   configureImageDefaults(baseConfig);
 };
 
-const fallbackFilename = 'static/media/[path][name][ext]';
+const fallbackFilename = "static/media/[path][name][ext]";
 
 const configureImageDefaults = (baseConfig: WebpackConfig): void => {
   const resolve = baseConfig.resolve ?? {};
   resolve.alias = {
     ...resolve.alias,
-    'sb-original/next/image': fileURLToPath(import.meta.resolve('next/image')),
-    'next/image': fileURLToPath(import.meta.resolve('@storybook/nextjs/images/next-image')),
-    'sb-original/next/legacy/image': fileURLToPath(import.meta.resolve('next/legacy/image')),
-    'next/legacy/image': fileURLToPath(
-      import.meta.resolve('@storybook/nextjs/images/next-legacy-image')
+    "sb-original/next/image": fileURLToPath(import.meta.resolve("next/image")),
+    "next/image": fileURLToPath(
+      import.meta.resolve("@storybook/nextjs/images/next-image"),
+    ),
+    "sb-original/next/legacy/image": fileURLToPath(
+      import.meta.resolve("next/legacy/image"),
+    ),
+    "next/legacy/image": fileURLToPath(
+      import.meta.resolve("@storybook/nextjs/images/next-legacy-image"),
     ),
   };
 };
 
-const configureStaticImageImport = (baseConfig: WebpackConfig, nextConfig: NextConfig): void => {
+const configureStaticImageImport = (
+  baseConfig: WebpackConfig,
+  nextConfig: NextConfig,
+): void => {
   const rules = baseConfig.module?.rules;
 
   const assetRule = rules?.find(
     (rule) =>
-      rule && typeof rule !== 'string' && rule.test instanceof RegExp && rule.test.test('test.jpg')
+      rule &&
+      typeof rule !== "string" &&
+      rule.test instanceof RegExp &&
+      rule.test.test("test.jpg"),
   ) as RuleSetRule;
 
   if (!assetRule) {
@@ -42,7 +55,9 @@ const configureStaticImageImport = (baseConfig: WebpackConfig, nextConfig: NextC
     issuer: { not: /\.(css|scss|sass)$/ },
     use: [
       {
-        loader: fileURLToPath(import.meta.resolve('@storybook/nextjs/next-image-loader-stub')),
+        loader: fileURLToPath(
+          import.meta.resolve("@storybook/nextjs/next-image-loader-stub"),
+        ),
         options: {
           filename: assetRule.generator?.filename ?? fallbackFilename,
           nextConfig,
@@ -53,7 +68,7 @@ const configureStaticImageImport = (baseConfig: WebpackConfig, nextConfig: NextC
   rules?.push({
     test: /\.(png|jpg|jpeg|gif|webp|avif|ico|bmp|svg)$/i,
     issuer: /\.(css|scss|sass)$/,
-    type: 'asset/resource',
+    type: "asset/resource",
     generator: {
       filename: assetRule.generator?.filename ?? fallbackFilename,
     },

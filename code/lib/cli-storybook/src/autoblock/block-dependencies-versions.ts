@@ -1,42 +1,44 @@
-import { dedent } from 'ts-dedent';
+import { dedent } from "ts-dedent";
 
-import { createBlocker } from './types.ts';
-import { findOutdatedPackage } from './utils.ts';
+import { createBlocker } from "./types.ts";
+import { findOutdatedPackage } from "./utils.ts";
 
 const minimalVersionsMap = {
-  '@angular/core': '18.0.0',
-  'react-scripts': '5.0.0',
-  next: '15.0.0',
-  preact: '10.0.0',
-  svelte: '5.0.0',
-  vue: '3.0.0',
-  vite: '5.0.0',
+  "@angular/core": "18.0.0",
+  "react-scripts": "5.0.0",
+  next: "15.0.0",
+  preact: "10.0.0",
+  svelte: "5.0.0",
+  vue: "3.0.0",
+  vite: "5.0.0",
 } as const;
 
 export const blocker = createBlocker({
-  id: 'dependenciesVersions',
+  id: "dependenciesVersions",
   async check({ packageManager }) {
-    return findOutdatedPackage<typeof minimalVersionsMap>(minimalVersionsMap, { packageManager });
+    return findOutdatedPackage<typeof minimalVersionsMap>(minimalVersionsMap, {
+      packageManager,
+    });
   },
   log(data) {
     switch (data.packageName) {
-      case '@angular/core':
+      case "@angular/core":
         return {
-          title: 'Angular 18 support removed',
+          title: "Angular 18 support removed",
           message: dedent`
             Support for Angular < 18 has been removed.
             Please see the migration guide for more information:
           `,
-          link: 'https://angular.dev/update-guide',
+          link: "https://angular.dev/update-guide",
         };
-      case 'next':
+      case "next":
         return {
-          title: 'Next.js 15 support removed',
+          title: "Next.js 15 support removed",
           message: dedent`
             Support for Next.js < 15 has been removed.
             Please see the migration guide for more information:
           `,
-          link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-require-v15-and-up',
+          link: "https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-require-v15-and-up",
         };
       default:
         return {

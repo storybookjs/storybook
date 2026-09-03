@@ -10,9 +10,9 @@ import { clearToolsetRegistry, defineToolset, registerToolset } from 'storybook/
 import * as v from 'valibot';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
+import type { ToolAvailability } from 'storybook/internal/core-server';
 import { collectTelemetry } from '../telemetry.ts';
 import { registerCoreToolsetsForTest } from '../test-support/register-core-toolsets.ts';
-import type { ToolAvailability } from 'storybook/internal/core-server';
 import {
   type AddonToolRegistryContext,
   getAddonToolMetadata,
@@ -125,23 +125,47 @@ describe('the preview app resource', () => {
     registerCoreToolsetsForTest();
   });
 
-  // The resource ships with the preview tool: a client that cannot see the tool must not see the
-  // ui:// resource either.
-  it('is registered exactly when the dev toolset is enabled', async () => {
+  it('is registered only when the preview tool can be available at boot', async () => {
     const enabled = makeServer();
     const enabledResource = vi.fn();
     enabled.server.resource = enabledResource;
     await registerAddonMcpTools(enabled.server, { availability: availabilityWith() });
     expect(enabledResource).toHaveBeenCalledTimes(1);
 
-    const disabled = makeServer();
-    const disabledResource = vi.fn();
-    disabled.server.resource = disabledResource;
-    await registerAddonMcpTools(disabled.server, {
+    const reviewEnabled = makeServer();
+    const reviewEnabledResource = vi.fn();
+    reviewEnabled.server.resource = reviewEnabledResource;
+    await registerAddonMcpTools(reviewEnabled.server, {
+      availability: availabilityWith({ reviewEnabled: true }),
+    });
+    expect(reviewEnabledResource).not.toHaveBeenCalled();
+
+    const devDisabled = makeServer();
+    const devDisabledResource = vi.fn();
+    devDisabled.server.resource = devDisabledResource;
+    await registerAddonMcpTools(devDisabled.server, {
       availability: availabilityWith(),
       toolsets: { dev: false, docs: true, test: true },
     });
-    expect(disabledResource).not.toHaveBeenCalled();
+    expect(devDisabledResource).not.toHaveBeenCalled();
+  });
+
+  it('follows the preview tool per-request gates', async () => {
+    const { server } = makeServer();
+    const resource = vi.fn();
+    server.resource = resource;
+
+    await registerAddonMcpTools(server, { availability: availabilityWith() });
+
+    const definition = resource.mock.calls[0]![0];
+    expect(await definition.enabled()).toBe(true);
+
+    server.ctx.custom.reviewEnabled = true;
+    expect(await definition.enabled()).toBe(false);
+
+    server.ctx.custom.reviewEnabled = false;
+    server.ctx.custom.toolsets = { dev: false };
+    expect(await definition.enabled()).toBe(false);
   });
 });
 

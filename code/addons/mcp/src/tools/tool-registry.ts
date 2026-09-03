@@ -168,6 +168,12 @@ const docsToolDefinitions: AddonToolDefinition[] = [
 const addonToolDefinitions: AddonToolDefinition[] = [
   fromToolset({
     toolset: 'dev',
+    available: ({ availability }) => !availability.reviewEnabled,
+    wrapEnabled:
+      (server, { availability }, enabled) =>
+      async () =>
+        ((await enabled?.()) ?? true) &&
+        !(server.ctx.custom?.reviewEnabled ?? availability.reviewEnabled),
     options: {
       method: 'stories.preview',
       extras: { _meta: { ui: { resourceUri: PREVIEW_STORIES_RESOURCE_URI } } },
@@ -292,11 +298,15 @@ export async function registerAddonMcpTools(
   server: McpServer<any, AddonContext>,
   context: AddonToolRegistryContext
 ) {
-  // The preview app resource ships with the preview tool: when the dev toolset is disabled the
-  // tool is absent, and the resource must not appear in resources/list either — the same boot
-  // gate the tool's own registration uses below.
-  if (isToolsetEnabled('dev', context.toolsets)) {
-    await addPreviewStoriesResource(server);
+  // The preview app resource follows the same static and per-request gates as the preview tool,
+  // so resources/list cannot expose UI for a tool that tools/list suppresses.
+  if (isToolsetEnabled('dev', context.toolsets) && !context.availability.reviewEnabled) {
+    await addPreviewStoriesResource(
+      server,
+      () =>
+        isToolsetEnabled('dev', server.ctx.custom?.toolsets) &&
+        !(server.ctx.custom?.reviewEnabled ?? context.availability.reviewEnabled)
+    );
   }
 
   for (const definition of addonToolDefinitions) {

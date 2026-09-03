@@ -1,25 +1,35 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { cpSync, mkdtempSync, rmSync, writeFileSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join, resolve } from 'node:path';
 
-import { vol } from 'memfs';
+import { describe, expect, it } from 'vitest';
 import { dedent } from 'ts-dedent';
 
 import { parseWithReactDocgen } from './componentManifest/reactDocgen.ts';
 import { extractArgTypes } from './extractArgTypes.ts';
 
-vi.mock('node:fs');
-vi.mock('node:fs/promises');
-
-// Fixture path sits under the real repo tree so module resolution can walk up to
-// <repo>/node_modules/prop-types, while file reads are served from memfs.
-const FIXTURE_DIR = '/home/user/work/storybook/code/renderers/react/probe-fixture';
+/** Resolve the real node_modules directory (may be hoisted to the workspace root). */
+const NODE_MODULES_DIR = resolve(require.resolve('react/package.json'), '../..');
 
 describe('extractArgTypes node props (#11429)', () => {
-  beforeEach(() => {
-    vol.reset();
-  });
+  // The docgen importer resolves imports from the fixture's directory with the real fs, so the
+  // fixture lives in a temp project with the packages it imports copied in from the workspace
+  // (same approach as componentMeta/test-helpers.ts).
+  const makeTempProject = (files: Record<string, string>): string => {
+    const projectDir = mkdtempSync(join(tmpdir(), 'argtypes-node-test-'));
+    for (const pkg of ['react', 'prop-types']) {
+      cpSync(join(NODE_MODULES_DIR, pkg), join(projectDir, 'node_modules', pkg), {
+        recursive: true,
+        dereference: true,
+      });
+    }
+    for (const [name, content] of Object.entries(files)) {
+      writeFileSync(join(projectDir, name), content);
+    }
+    return projectDir;
+  };
 
   it('maps PropTypes.node to the renderer-tagged node type', () => {
-    const componentFilePath = `${FIXTURE_DIR}/Badge.jsx`;
     const componentCode = dedent`
       import React from 'react';
       import PropTypes from 'prop-types';
@@ -31,9 +41,9 @@ describe('extractArgTypes node props (#11429)', () => {
       };
       export default Badge;
     `;
-    vol.fromJSON({ [componentFilePath]: componentCode });
+    const projectDir = makeTempProject({ 'Badge.jsx': componentCode });
 
-    const docgen = parseWithReactDocgen(componentCode, componentFilePath);
+    const docgen = parseWithReactDocgen(componentCode, `${projectDir}/Badge.jsx`);
     const argTypes = extractArgTypes({ __docgenInfo: docgen?.[0] });
 
     expect(argTypes?.children.type).toEqual({
@@ -42,6 +52,7 @@ describe('extractArgTypes node props (#11429)', () => {
       required: false,
     });
     expect(argTypes?.label.type).toEqual({ name: 'string', required: false });
+    rmSync(projectDir, { recursive: true, force: true });
   });
 
   it('maps React.ReactNode to the renderer-tagged node type (react-docgen-typescript shape)', () => {

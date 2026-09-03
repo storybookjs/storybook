@@ -94,14 +94,6 @@ It is advisable to add a `.storybook/tsconfig.json` file so that you apply chang
 
 </Callout>
 
-## How do I setup the new React Context Root API with Storybook?
-
-If your installed React Version equals or is higher than 18.0.0, the new React Root API is automatically used and the newest React [concurrent features](https://reactjs.org/docs/concurrent-mode-intro.html) can be used.
-
-You can opt-out from the new React Root API by setting the following property in your `.storybook/main.js|ts` file:
-
-<CodeSnippets path="react-framework-options-legacy-root-api.md" />
-
 ## Why is there no addons channel?
 
 A common error is that an addon tries to access the "channel", but the channel is not set. It can happen in a few different cases:

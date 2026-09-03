@@ -69,6 +69,21 @@ export class NxProjectDetectedError extends StorybookError {
   }
 }
 
+export class CreateReactAppUnsupportedError extends StorybookError {
+  constructor() {
+    super({
+      name: 'CreateReactAppUnsupportedError',
+      category: Category.CLI_INIT,
+      code: 2,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#create-react-app-support-removed',
+      message: dedent`
+        Create React App is not supported by Storybook 11+.
+        Storybook cannot scaffold into a CRA workspace.`,
+    });
+  }
+}
+
 export class MissingFrameworkFieldError extends StorybookError {
   constructor() {
     super({

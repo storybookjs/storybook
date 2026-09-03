@@ -433,26 +433,6 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
-  'react-webpack/17-ts': {
-    name: 'React v17 (Webpack | TypeScript)',
-    script: 'npx create-webpack5-react {{beforeDir}} --version-react="17" --version-react-dom="17"',
-    expected: {
-      framework: '@storybook/react-webpack5',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-webpack5',
-    },
-    modifications: {
-      useCsfFactory: true,
-      extraDevDependencies: ['prop-types'],
-      mainConfig: {
-        swc: { swcrc: false },
-        features: {
-          experimentalTestSyntax: true,
-        },
-      },
-    },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
-  },
   'react-webpack/prerelease-ts': {
     name: 'React Prerelease (Webpack | TypeScript)',
     /**
@@ -1213,7 +1193,6 @@ export const normal: TemplateKey[] = [
 export const merged: TemplateKey[] = [
   ...normal,
   'react-webpack/18-ts',
-  'react-webpack/17-ts',
   'nextjs/15-ts',
   'nextjs-vite/15-ts',
   'preact-vite/default-ts',

@@ -117,8 +117,10 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
   meta<
     TArgs extends Args,
     Decorators extends DecoratorFunction<ReactTypes & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<TArgs & T['args']>,
+    // `const` so TS infers the exact args passed. Without it, inference falls back to
+    // the (all-optional) constraint for literal-typed props, which collapses the
+    // captured meta args to `{}` and makes stories re-require them (#36125).
+    const TMetaArgs extends Partial<TArgs & T['args']>,
   >(
     meta: {
       render?: ArgsStoryFn<ReactTypes & T, TArgs & T['args']>;

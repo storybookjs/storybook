@@ -105,6 +105,46 @@ describe('Args can be provided in multiple ways', () => {
       render: (args) => <div>Hello world</div>,
     });
   });
+
+  describe('Literal-typed args (#36125)', () => {
+    type LiteralButtonProps = { variant: 'primary' | 'secondary'; disabled: boolean };
+    const LiteralButton: (props: LiteralButtonProps) => ReactElement = () => <></>;
+
+    it('✅ A literal arg provided in meta does not have to be repeated in the story', () => {
+      const meta = preview.meta({
+        component: LiteralButton,
+        args: { variant: 'primary', disabled: false },
+      });
+
+      const Basic = meta.story();
+      const WithArgs = meta.story({ args: { variant: 'secondary' } });
+    });
+
+    it('✅ A literal arg provided in meta is still inferred when types are added via .type()', () => {
+      const meta = preview
+        .type<{ args: { extra?: boolean } }>()
+        .meta({ component: LiteralButton, args: { variant: 'primary', disabled: false } });
+
+      const Basic = meta.story();
+    });
+
+    it('❌ A required arg missing from both meta and the story is still required', () => {
+      const meta = preview.meta({
+        component: LiteralButton,
+        args: { variant: 'primary' },
+      });
+      // @ts-expect-error disabled not provided ❌
+      const Basic = meta.story();
+    });
+
+    it('❌ An invalid literal value is still rejected', () => {
+      const meta = preview.meta({
+        component: LiteralButton,
+        // @ts-expect-error 'tertiary' is not part of the union ❌
+        args: { variant: 'tertiary', disabled: false },
+      });
+    });
+  });
 });
 
 it('✅ Void functions are not changed', () => {

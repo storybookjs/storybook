@@ -6,7 +6,7 @@
 // both survive.
 //
 // The harness rewrites this file whenever the eval runs, dropping the added key
-// — so `yarn workspace agent-eval run results:analyze` is what puts it back, and belongs after the eval
+// — so `yarn results:analyze` is what puts it back, and belongs after the eval
 // rather than before it.
 import { writeFileSync } from 'node:fs';
 import { join } from 'node:path';

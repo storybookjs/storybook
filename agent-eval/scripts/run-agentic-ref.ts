@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // The agentic-reference runner: one entrypoint for the 70x case matrix.
 //
-//   yarn workspace agent-eval run eval:agentic-ref [flags]
+//   yarn eval:agentic-ref [flags]
 //
 //   --experiments <list>  cases to run, by name or glob (default: every case)
 //   --evals <list>        evals to run, by name, number (703) or glob (70*)
@@ -45,7 +45,7 @@ function main(): void {
       process.argv.slice(2),
       {
         scriptName: 'eval:agentic-ref',
-        usage: 'Usage: yarn workspace agent-eval run eval:agentic-ref [flags]',
+        usage: 'Usage: yarn eval:agentic-ref [flags]',
       },
       {
         experiments: flags.experiments,

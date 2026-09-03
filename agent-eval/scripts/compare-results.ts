@@ -101,9 +101,7 @@ async function main() {
     treatments = resolveTreatments(options.cases, control, experimentsWithData);
   }
   if (treatments.length === 0) {
-    fail(
-      'No treatment cases with recorded data. Collect runs first: yarn workspace agent-eval run eval:agentic-ref'
-    );
+    fail('No treatment cases with recorded data. Collect runs first: yarn eval:agentic-ref');
   }
   // --bundle pools every treatment's runs into one synthetic arm; the
   // constituents keep naming the output directory below.
@@ -197,7 +195,7 @@ async function main() {
     console.log(formatMisuseStatusTable(collectMisuseStatuses(cells, spec), outStyle));
     if (misusePanel.judgedRuns === 0) console.log('The misuse metrics will be empty.');
     console.log(
-      `Judge the rest: yarn workspace agent-eval run judge:ds-misuse${plan === null ? '' : ` --plan ${plan.path}`}`
+      `Judge the rest: yarn judge:ds-misuse${plan === null ? '' : ` --plan ${plan.path}`}`
     );
   }
   console.log('');
@@ -220,7 +218,7 @@ async function main() {
   if (uv === null) {
     console.error(`Dataset and manifest written to ${stagingDir}.`);
     console.error('uv is missing, so the statistics stage cannot run here.');
-    console.error('Run `yarn workspace agent-eval run results:compare:setup`, or elsewhere:');
+    console.error('Run `yarn results:compare:setup`, or elsewhere:');
     console.error(`  uv run --frozen scripts/compare_stats.py ${stagingDir}`);
     process.exit(1);
   }

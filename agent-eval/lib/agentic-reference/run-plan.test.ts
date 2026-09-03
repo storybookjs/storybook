@@ -370,7 +370,7 @@ describe('topUpCommand', () => {
         collected: 6,
       })
     ).toBe(
-      'yarn workspace agent-eval run eval:agentic-ref --experiments agentic-ref-cc-full-opus-high --evals 701-new-ui-flow --runs 4 --force'
+      'yarn eval:agentic-ref --experiments agentic-ref-cc-full-opus-high --evals 701-new-ui-flow --runs 4 --force'
     );
   });
 });

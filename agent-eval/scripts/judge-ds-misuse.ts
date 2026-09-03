@@ -21,7 +21,7 @@
 // --dry settles everything that can be settled locally (pin, DS packages, cache
 // freshness, node census) and prints which runs it would judge, reuse or skip.
 //
-// Usage: yarn workspace agent-eval run judge:ds-misuse [flags]. Run with --help for the flag list.
+// Usage: yarn judge:ds-misuse [flags]. Run with --help for the flag list.
 import { styleText } from 'node:util';
 import { existsSync } from 'node:fs';
 import { join } from 'node:path';
@@ -96,7 +96,7 @@ function parseOptions(argv: string[]): Options {
       argv,
       {
         scriptName: 'judge:ds-misuse',
-        usage: 'Usage: yarn workspace agent-eval run judge:ds-misuse [flags]',
+        usage: 'Usage: yarn judge:ds-misuse [flags]',
       },
       {
         experiments: flags.experiments,
@@ -222,7 +222,7 @@ function planRun(run: Run, options: Options): Plan {
   if (baselineNodes === null) {
     console.error(
       `${label}: no node census for ${fixtureRef} at metricsVersion ` +
-        `${postAnalysis.metricsVersion ?? 'none'}. Run: yarn workspace agent-eval run results:analyze --recompute`
+        `${postAnalysis.metricsVersion ?? 'none'}. Run: yarn results:analyze --recompute`
     );
     return { action: 'skipped' };
   }

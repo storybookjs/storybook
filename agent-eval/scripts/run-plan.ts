@@ -4,7 +4,7 @@
 // failure can discard every completed run with it; batching caps that loss
 // at one batch.
 //
-//   yarn workspace agent-eval run eval:plan --plan <name-or-path> [--dry]
+//   yarn eval:plan --plan <name-or-path> [--dry]
 //
 //   --plan, --config  the plan config, by bare name (1-levels-create) or path
 //                     (default AGENTIC_REF_CONFIG, then plans/default.plan.ts)
@@ -394,7 +394,7 @@ async function main(): Promise<void> {
       process.argv.slice(2),
       {
         scriptName: 'eval:plan',
-        usage: 'Usage: yarn workspace agent-eval run eval:plan --plan <name-or-path> [--dry]',
+        usage: 'Usage: yarn eval:plan --plan <name-or-path> [--dry]',
       },
       {
         config: {

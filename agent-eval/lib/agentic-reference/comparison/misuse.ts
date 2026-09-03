@@ -333,7 +333,7 @@ function judgeStatusOf(
  * judged. Unlike collectMisusePanel, which pools every report it finds
  * regardless of standard, this checks each report against the current pin,
  * because the status table's job is telling the reader what still needs
- * `yarn workspace agent-eval run judge:ds-misuse`.
+ * `yarn judge:ds-misuse`.
  */
 export function collectMisuseStatuses(cells: Cell[], spec: ComparisonSpec): MisuseCellStatus[] {
   const current = { dsGuidelinesRef: dsDocsRefLabel() };

@@ -104,10 +104,8 @@ export function remediationCommands(gaps: CellGap[]): string[] {
       .sort(([a], [b]) => a.localeCompare(b))
       .map(
         ([experiment, { workflows, need }]) =>
-          `AGENTIC_REF_FLOW=${[...workflows].sort().join(',')} AGENTIC_REF_RUNS=${need} yarn workspace agent-eval run eval:agentic-ref ${experiment}`
+          `AGENTIC_REF_FLOW=${[...workflows].sort().join(',')} AGENTIC_REF_RUNS=${need} yarn eval:agentic-ref ${experiment}`
       ),
-    ...[...analyze]
-      .sort()
-      .map((e) => `yarn workspace agent-eval run results:analyze --experiment=${e}`),
+    ...[...analyze].sort().map((e) => `yarn results:analyze --experiment=${e}`),
   ];
 }

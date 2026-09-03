@@ -404,7 +404,7 @@ export interface CellOutcome {
  */
 export function topUpCommand(cell: CellOutcome): string {
   return (
-    `yarn workspace agent-eval run eval:agentic-ref --experiments ${cell.experiment} --evals ${cell.evalName} ` +
+    `yarn eval:agentic-ref --experiments ${cell.experiment} --evals ${cell.evalName} ` +
     `--runs ${cell.expected - cell.collected} --force`
   );
 }

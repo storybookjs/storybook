@@ -9,8 +9,8 @@
 // 2 arm(s) × 2 eval(s) = 4 cells, 40 runs, 2 batches of at most 2 cells.
 // Cells collected by an earlier group are skipped.
 //
-//   yarn workspace agent-eval run eval:plan --config plans/2-docs-vs-stories-create.plan.ts --dry
-//   yarn workspace agent-eval run eval:plan --config plans/2-docs-vs-stories-create.plan.ts
+//   yarn eval:plan --config plans/2-docs-vs-stories-create.plan.ts --dry
+//   yarn eval:plan --config plans/2-docs-vs-stories-create.plan.ts
 import type { RunPlan } from '../lib/agentic-reference/run-plan.ts';
 
 export default {

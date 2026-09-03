@@ -122,7 +122,7 @@ describe.skipIf(uv === null)('compare_stats.py aggregate mode', () => {
 });
 
 describe.skipIf(uv !== null)('without uv', () => {
-  it('is skipped on machines lacking uv (run yarn workspace agent-eval run results:compare:setup)', () => {
+  it('is skipped on machines lacking uv (run yarn results:compare:setup)', () => {
     expect(uv).toBeNull();
   });
 });

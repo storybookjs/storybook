@@ -595,7 +595,7 @@ export function summarize(
     console.log(
       styleText(
         'dim',
-        `DS misuse: ${judgedRuns}/${totalRuns} runs judged — run: yarn workspace agent-eval run judge:ds-misuse`
+        `DS misuse: ${judgedRuns}/${totalRuns} runs judged — run: yarn judge:ds-misuse`
       )
     );
   }

@@ -8,11 +8,6 @@ const config: BuildEntries = {
         entryPoint: './src/index.ts',
       },
       {
-        exportEntries: ['./preset-cra'],
-        entryPoint: './src/framework-preset-cra.ts',
-        dts: false,
-      },
-      {
         exportEntries: ['./preset-react-docs'],
         entryPoint: './src/framework-preset-react-docs.ts',
         dts: false,

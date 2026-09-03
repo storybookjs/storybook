@@ -41,7 +41,9 @@ describe('craPresetRemoved', () => {
   it('prompts with the removal notice and the migration link', () => {
     const prompt = craPresetRemoved.prompt();
 
-    expect(prompt).toContain('@storybook/preset-create-react-app no longer has any effect');
+    expect(prompt).toContain('Create React App support has been removed');
+    expect(prompt).toContain('@storybook/preset-create-react-app');
+    expect(prompt).toContain('no longer has any effect');
     expect(prompt).toContain('https://storybook.js.org/docs/get-started/frameworks/react-vite');
   });
 });

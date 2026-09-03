@@ -4,6 +4,7 @@
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Dropped support for Vite 5 and Vite 6](#dropped-support-for-vite-5-and-vite-6)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
+  - [Create React App support removed](#create-react-app-support-removed)
 
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
@@ -586,6 +587,12 @@ Storybook has dropped support for Next.js versions below 15. The minimum support
 If you're using an older version of Next.js, you'll need to upgrade to Next.js 15 or newer to use the latest version of Storybook.
 
 For help upgrading your Next.js application, see the [Next.js upgrade guide](https://nextjs.org/docs/app/building-your-application/upgrading).
+
+### Create React App support removed
+
+Create React App projects are no longer supported. Storybook 11 no longer publishes `@storybook/preset-create-react-app`, `storybook init` stops with an error on projects using `react-scripts`, and `storybook upgrade` blocks upgrading while `react-scripts` is installed.
+
+To keep using Storybook, migrate your project off Create React App first (for example, to [Vite](https://vite.dev/guide/)), remove the `react-scripts` dependency, then run `npx storybook@latest init` again.
 
 ## From version 10.5.x to 10.6.0
 

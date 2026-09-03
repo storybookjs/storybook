@@ -25,20 +25,6 @@ In case you postinstall ngcc, you can disable it:
 
 Please report any issues related to Ivy in our [GitHub Issue Tracker](https://github.com/storybookjs/storybook/labels/app%3A%20angular) as the support for View Engine will be dropped in a future release of Angular.
 
-## How can I run coverage tests with Create React App and leave out stories?
-
-Create React App does not allow providing options to Jest in your `package.json`, however you can run `jest` with commandline arguments:
-
-```sh
-npm test -- --coverage --collectCoverageFrom='["src/**/*.{js,jsx}","!src/**/stories/*"]'
-```
-
-<Callout variant="info" icon="💡">
-
-If you're using [`Yarn`](https://yarnpkg.com/) as a package manager, you'll need to adjust the command accordingly.
-
-</Callout>
-
 ## How do I setup Storybook to share Webpack configuration with Next.js?
 
 Storybook's [Next.js framework](./get-started/frameworks/nextjs.mdx) will read from your `next.config.js` file by default. If your configuration file is named or located differently, you can specify the path in your Storybook main configuration file:

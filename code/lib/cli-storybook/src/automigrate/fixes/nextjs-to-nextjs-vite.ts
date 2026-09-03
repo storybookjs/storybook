@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { transformImportFiles } from 'storybook/internal/common';
+import { buildImportRenameRegex, transformImportFiles } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 
 import type { Fix } from '../types.ts';
@@ -43,6 +43,16 @@ export const nextjsToNextjsVite: Fix<NextjsToNextjsViteOptions> = {
   id: 'nextjs-to-nextjs-vite',
   link: 'https://storybook.js.org/docs/get-started/frameworks/nextjs-vite',
   defaultSelected: false,
+
+  detectMissedTransformations() {
+    return [
+      {
+        label: '@storybook/nextjs',
+        regex: buildImportRenameRegex('@storybook/nextjs'),
+        replacement: '@storybook/nextjs-vite',
+      },
+    ];
+  },
 
   async check({ packageManager }): Promise<NextjsToNextjsViteOptions | null> {
     const allDeps = packageManager.getAllDependencies();

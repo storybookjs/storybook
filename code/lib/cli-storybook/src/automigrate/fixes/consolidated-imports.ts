@@ -1,6 +1,6 @@
 import { readFile, writeFile } from 'node:fs/promises';
 
-import { transformImportFiles, versions } from 'storybook/internal/common';
+import { buildImportRenameRegex, transformImportFiles, versions } from 'storybook/internal/common';
 
 import { consolidatedPackages } from '../helpers/consolidated-packages.ts';
 import type { Fix } from '../types.ts';
@@ -8,6 +8,14 @@ import type { Fix } from '../types.ts';
 export interface ConsolidatedOptions {
   consolidatedDeps: Set<keyof typeof consolidatedPackages>;
 }
+
+export const internalPackageRenames: Record<string, string> = {
+  'storybook/internal/manager-api': 'storybook/manager-api',
+  'storybook/internal/preview-api': 'storybook/preview-api',
+  'storybook/internal/theming': 'storybook/theming',
+  'storybook/internal/theming/create': 'storybook/theming/create',
+  'storybook/internal/test': 'storybook/test',
+};
 
 function transformPackageJson(content: string): string | null {
   const packageJson = JSON.parse(content);
@@ -149,11 +157,7 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
       [...storiesPaths, ...configFiles].filter(Boolean) as string[],
       {
         ...consolidatedPackages,
-        'storybook/internal/manager-api': 'storybook/manager-api',
-        'storybook/internal/preview-api': 'storybook/preview-api',
-        'storybook/internal/theming': 'storybook/theming',
-        'storybook/internal/theming/create': 'storybook/theming/create',
-        'storybook/internal/test': 'storybook/test',
+        ...internalPackageRenames,
         'storybook/internal/actions': 'storybook/internal/actions',
         'storybook/internal/actions/decorator': 'storybook/internal/actions/decorator',
         'storybook/internal/highlight': 'storybook/internal/highlight',
@@ -172,5 +176,19 @@ export const consolidatedImports: Fix<ConsolidatedOptions> = {
           .join('\n')}`
       );
     }
+  },
+  detectMissedTransformations() {
+    return [
+      ...Object.entries(consolidatedPackages).map(([dep, replacement]) => ({
+        label: dep,
+        regex: buildImportRenameRegex(dep),
+        replacement,
+      })),
+      ...Object.entries(internalPackageRenames).map(([dep, replacement]) => ({
+        label: dep,
+        regex: buildImportRenameRegex(dep),
+        replacement,
+      })),
+    ];
   },
 };

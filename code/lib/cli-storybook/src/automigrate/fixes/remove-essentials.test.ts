@@ -8,7 +8,7 @@ import { dedent } from 'ts-dedent';
 
 import { add } from '../../add.ts';
 import type { CheckOptions, RunOptions } from '../types.ts';
-import { removeEssentials } from './remove-essentials.ts';
+import { consolidatedAddons, removeEssentials } from './remove-essentials.ts';
 import { moveEssentialOptions } from './remove-essentials.utils.ts';
 
 // Mock modules before any other imports or declarations
@@ -461,6 +461,27 @@ describe('remove-essentials migration', () => {
       });
 
       expect(mockPackageManager.runPackageCommand).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('detectMissedTransformations', () => {
+    it('derives labels from the full static consolidatedAddons map, not from additionalAddonsToRemove', () => {
+      // additionalAddonsToRemove is intentionally empty here: the label set must still
+      // cover all consolidatedAddons keys, since transformImportFiles scans for all of
+      // them unconditionally regardless of what additionalAddonsToRemove contains.
+      const anyResult = {
+        hasEssentials: false,
+        hasDocsDisabled: false,
+        hasDocsAddon: false,
+        additionalAddonsToRemove: [],
+      };
+
+      const labels = removeEssentials.detectMissedTransformations!(anyResult as any).map(
+        (pattern) => pattern.label
+      );
+
+      expect(new Set(labels)).toEqual(new Set(Object.keys(consolidatedAddons)));
+      expect(labels).toHaveLength(8);
     });
   });
 });

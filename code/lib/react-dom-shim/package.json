@@ -28,8 +28,7 @@
       "default": "./dist/react-18.js"
     },
     "./package.json": "./package.json",
-    "./preset": "./dist/preset.js",
-    "./react-16": "./dist/react-16.js"
+    "./preset": "./dist/preset.js"
   },
   "files": [
     "dist/**/*",

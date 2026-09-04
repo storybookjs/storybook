@@ -595,16 +595,46 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         return;
       }
 
-      const hash = story.refId ? refs[story.refId].filteredIndex : filteredIndex;
+      const currentRefId = story.refId ?? refId;
+      const hash = currentRefId ? refs[currentRefId].filteredIndex : filteredIndex;
+      let targetStoryId = hash
+        ? api.findSiblingStoryId(storyId, hash, direction, false)
+        : undefined;
+      let targetRefId = currentRefId;
 
-      if (!hash) {
-        return;
+      if (!targetStoryId) {
+        const orderedRefs = [
+          { refId: undefined, index: filteredIndex },
+          ...Object.entries(refs).map(([id, ref]) => ({
+            refId: id,
+            index: ref.filteredIndex,
+          })),
+        ];
+        const currentRefPosition = orderedRefs.findIndex(
+          ({ refId: candidateRefId }) => candidateRefId === currentRefId
+        );
+
+        for (
+          let refPosition = currentRefPosition + direction;
+          currentRefPosition >= 0 && refPosition >= 0 && refPosition < orderedRefs.length;
+          refPosition += direction
+        ) {
+          const candidate = orderedRefs[refPosition];
+          if (!candidate.index) {
+            continue;
+          }
+          const stories = getStoriesLookupList(candidate.index);
+          targetStoryId = direction > 0 ? stories[0] : stories[stories.length - 1];
+
+          if (targetStoryId) {
+            targetRefId = candidate.refId;
+            break;
+          }
+        }
       }
 
-      const result = api.findSiblingStoryId(storyId, hash, direction, false);
-
-      if (result) {
-        api.selectStory(result, undefined, { ref: refId });
+      if (targetStoryId) {
+        api.selectStory(targetStoryId, undefined, { ref: targetRefId });
       }
     },
     selectFirstStory: () => {

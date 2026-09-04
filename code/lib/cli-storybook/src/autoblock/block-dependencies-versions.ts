@@ -6,7 +6,7 @@ import { findOutdatedPackage } from './utils.ts';
 const minimalVersionsMap = {
   '@angular/core': '18.0.0',
   'react-scripts': '5.0.0',
-  next: '15.0.0',
+  next: '14.1.0',
   preact: '10.0.0',
   react: '18.0.0',
   'react-dom': '18.0.0',
@@ -18,9 +18,19 @@ const minimalVersionsMap = {
 export const blocker = createBlocker({
   id: 'dependenciesVersions',
   async check({ packageManager }) {
-    return findOutdatedPackage<typeof minimalVersionsMap>(minimalVersionsMap, {
+    const outdated = await findOutdatedPackage<typeof minimalVersionsMap>(minimalVersionsMap, {
       packageManager,
     });
+    // React experimental/canary builds (0.0.0*) ship react-dom/client and are treated as
+    // React 18+ by the react-dom-shim, so their version string must not block the upgrade.
+    if (
+      outdated &&
+      (outdated.packageName === 'react' || outdated.packageName === 'react-dom') &&
+      outdated.installedVersion?.startsWith('0.0.0')
+    ) {
+      return false;
+    }
+    return outdated;
   },
   log(data) {
     switch (data.packageName) {
@@ -35,12 +45,12 @@ export const blocker = createBlocker({
         };
       case 'next':
         return {
-          title: 'Next.js 15 support removed',
+          title: 'Next.js 14.1 support removed',
           message: dedent`
-            Support for Next.js < 15 has been removed.
+            Support for Next.js < 14.1 has been removed.
             Please see the migration guide for more information:
           `,
-          link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-require-v15-and-up',
+          link: 'https://nextjs.org/docs/pages/building-your-application/upgrading/version-13',
         };
       case 'react':
       case 'react-dom':

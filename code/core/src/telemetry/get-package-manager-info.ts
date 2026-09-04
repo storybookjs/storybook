@@ -48,9 +48,8 @@ function readNodeLinker(packageManager: DetectResult, projectRoot: string): Node
     );
   }
   if (packageManager.name === 'pnpm') {
-    // pnpm 11 stopped reading settings from `.npmrc` and `npm_config_*`, and reads `pnpm_config_*`
-    // instead. The version is only known when package.json has a `packageManager` field, so an
-    // `.npmrc` value that pnpm 11 ignores can still be reported when the version is unknown.
+    // pnpm 11 reads settings from pnpm_config_* and pnpm-workspace.yaml only, but the version is
+    // known only when package.json has a packageManager field.
     const major = Number(packageManager.version?.split('.')[0]);
     return (
       allowed(process.env.pnpm_config_node_linker, PNPM_LINKERS) ??

@@ -96,7 +96,7 @@ export const log = () => {
 
 ## hrefToSync function
 
-If you want to render native links to other stories so users can middle-click or command-click to open them in a new tab, you can use the `hrefToSync` function. This returns a string containing the relative URL immediately:
+If you want to render native links to other stories so you can middle-click or command-click to open them in a new tab, you can use the `hrefToSync` function. This returns a string containing the relative URL immediately:
 ```js
 import { hrefToSync } from '@storybook/addon-links';
 

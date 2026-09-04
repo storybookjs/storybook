@@ -42,45 +42,32 @@ function readNodeLinker(packageManager: DetectResult, projectRoot: string): Node
   const directories = [process.cwd(), projectRoot];
   if (packageManager.name === 'yarn' && packageManager.agent === 'yarn@berry') {
     return (
-      allowed(process.env.YARN_NODE_LINKER, YARN_LINKERS) ??
-      readConfigValue(directories, '.yarnrc.yml', readYamlNodeLinker, YARN_LINKERS) ??
+      [
+        process.env.YARN_NODE_LINKER,
+        ...directories.map((dir) => readSetting(join(dir, '.yarnrc.yml'), readYamlNodeLinker)),
+      ].find((value): value is YarnNodeLinker => YARN_LINKERS.some((linker) => linker === value)) ??
       'pnp'
     );
   }
   if (packageManager.name === 'pnpm') {
     // pnpm 11 reads settings from pnpm_config_* and pnpm-workspace.yaml only, but the version is
     // known only when package.json has a packageManager field.
-    const major = Number(packageManager.version?.split('.')[0]);
+    const legacy = !(Number(packageManager.version?.split('.')[0]) >= 11);
     return (
-      allowed(process.env.pnpm_config_node_linker, PNPM_LINKERS) ??
-      allowed(process.env.npm_config_node_linker, PNPM_LINKERS) ??
-      readConfigValue(directories, 'pnpm-workspace.yaml', readYamlNodeLinker, PNPM_LINKERS) ??
-      (major >= 11
-        ? undefined
-        : readConfigValue(directories, '.npmrc', readNpmrcNodeLinker, PNPM_LINKERS)) ??
+      [
+        process.env.pnpm_config_node_linker,
+        legacy ? process.env.npm_config_node_linker : undefined,
+        ...directories.map((dir) =>
+          readSetting(join(dir, 'pnpm-workspace.yaml'), readYamlNodeLinker)
+        ),
+        ...(legacy
+          ? directories.map((dir) => readSetting(join(dir, '.npmrc'), readNpmrcNodeLinker))
+          : []),
+      ].find((value): value is PnpmNodeLinker => PNPM_LINKERS.some((linker) => linker === value)) ??
       'isolated'
     );
   }
   return 'node_modules';
-}
-
-function allowed<T extends string>(value: unknown, values: readonly T[]): T | undefined {
-  return values.includes(value as T) ? (value as T) : undefined;
-}
-
-function readConfigValue<T extends string>(
-  directories: string[],
-  fileName: string,
-  read: (content: string) => unknown,
-  values: readonly T[]
-): T | undefined {
-  for (const directory of directories) {
-    const value = allowed(readSetting(join(directory, fileName), read), values);
-    if (value) {
-      return value;
-    }
-  }
-  return undefined;
 }
 
 // A missing, unreadable or unparsable file is the same as a file without the setting.

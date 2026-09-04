@@ -192,8 +192,9 @@ describe('getPackageManagerInfo', () => {
       vi.mocked(detect).mockResolvedValue({ name: 'pnpm', version: '11.0.8', agent: 'pnpm' });
     });
 
-    it('ignores .npmrc, which pnpm 11 no longer reads settings from', async () => {
+    it('ignores .npmrc and npm_config_node_linker, which pnpm 11 no longer reads', async () => {
       vol.fromJSON({ '/mock/project/root/.npmrc': 'node-linker=hoisted\n' });
+      vi.stubEnv('npm_config_node_linker', 'hoisted');
 
       expect(await getPackageManagerInfo()).toMatchObject({ nodeLinker: 'isolated' });
     });

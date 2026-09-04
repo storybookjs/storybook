@@ -67,7 +67,7 @@
     "webpack": "5"
   },
   "devDependencies": {
-    "@analogjs/vite-plugin-angular": "^1.12.1",
+    "@analogjs/vite-plugin-angular": "^2.5.2",
     "@angular-devkit/architect": "^0.2100.0",
     "@angular-devkit/build-angular": "^21.0.0",
     "@angular-devkit/core": "^21.0.0",

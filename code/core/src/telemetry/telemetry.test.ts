@@ -11,8 +11,8 @@ import { postEvent } from './post-event.ts';
 import { handOffPendingEvents, sendTelemetry } from './telemetry.ts';
 
 vi.mock('./post-event.ts', () => ({ postEvent: vi.fn(async () => {}) }));
-vi.mock('./event-cache', () => ({ set: vi.fn() }));
-vi.mock('./session-id', () => ({ getSessionId: vi.fn(() => 'session-id') }));
+vi.mock('./event-cache.ts', () => ({ set: vi.fn() }));
+vi.mock('./session-id.ts', () => ({ getSessionId: vi.fn(() => 'session-id') }));
 vi.mock('node:fs', { spy: true });
 vi.mock('node:child_process', async (importOriginal) => ({
   ...(await importOriginal<typeof import('node:child_process')>()),
@@ -75,6 +75,32 @@ it('waits for the response and holds the process when immediate', async () => {
 
   expect(responded).toBe(true);
   expect(postMock.mock.calls[0][1]).toMatchObject({ keepProcessAlive: true });
+});
+
+it('waits for the responses of earlier events too when immediate', async () => {
+  let earlierResponded = false;
+  postMock.mockImplementationOnce(async () => {
+    await new Promise((resolve) => setTimeout(resolve, 10));
+    earlierResponded = true;
+  });
+  await sendTelemetry({ eventType: 'dev', payload: {} });
+  expect(earlierResponded).toBe(false);
+
+  await sendTelemetry({ eventType: 'error', payload: {} }, { immediate: true });
+
+  expect(earlierResponded).toBe(true);
+});
+
+it('registers the exit hook once, with the first event', async () => {
+  vi.resetModules();
+  const once = vi.spyOn(process, 'once');
+  const { sendTelemetry: send } = await import('./telemetry.ts');
+
+  await send({ eventType: 'dev', payload: {} });
+  await send({ eventType: 'build', payload: {} });
+
+  expect(once.mock.calls.filter(([name]) => name === 'exit')).toHaveLength(1);
+  once.mockRestore();
 });
 
 it('hands events without a response to a detached process on exit, once', async () => {

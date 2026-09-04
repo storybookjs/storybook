@@ -7,7 +7,7 @@ import { flushEventsFile } from './flush-events-file.ts';
 import { postEvent } from './post-event.ts';
 
 vi.mock('node:fs/promises', { spy: true });
-vi.mock('./post-event.ts', () => ({ postEvent: vi.fn(async () => ({ status: 200 })) }));
+vi.mock('./post-event.ts', () => ({ postEvent: vi.fn(async () => {}) }));
 
 beforeEach(async () => {
   vol.reset();
@@ -40,4 +40,13 @@ it('keeps delivering the others when one post fails', async () => {
   await expect(flushEventsFile('/project/events.json')).resolves.toBeUndefined();
 
   expect(postEvent).toHaveBeenCalledTimes(2);
+});
+
+it('removes a file it cannot parse', async () => {
+  vol.fromJSON({ '/project/events.json': '[{"body":' });
+
+  await expect(flushEventsFile('/project/events.json')).rejects.toThrow();
+
+  expect(vol.toJSON()).toEqual({ '/project': null });
+  expect(postEvent).not.toHaveBeenCalled();
 });

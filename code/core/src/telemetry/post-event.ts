@@ -9,42 +9,41 @@ export type PendingEvent = {
 };
 
 export type PostOptions = {
-  signal: AbortSignal;
-  /**
-   * Whether the request may keep the process alive until its response arrives. A process that
-   * exits with unfinished requests hands them to a detached child, so only that child, and an
-   * `immediate` send, hold on to it.
-   */
+  // Whether the request and its retry back-off may keep the process alive until the response
+  // arrives. The detached child and `immediate` sends do; everything else is handed to the
+  // child on exit instead.
   keepProcessAlive: boolean;
+  signal?: AbortSignal;
 };
 
 const TELEMETRY_URL = process.env.STORYBOOK_TELEMETRY_URL || 'https://storybook.js.org/event-log';
 
+const TIMEOUT = 30_000;
 const MAX_ATTEMPTS = 4;
 const RETRYABLE_STATUSES = new Set([503, 504]);
 
 export async function postEvent(
   { body, retryDelay = 1000 }: PendingEvent,
-  options: PostOptions
+  { keepProcessAlive, signal = AbortSignal.timeout(TIMEOUT) }: PostOptions
 ): Promise<void> {
   const payload = JSON.stringify(body);
   for (let attempt = 0; ; attempt += 1) {
     const lastAttempt = attempt === MAX_ATTEMPTS - 1;
     try {
-      const status = await post(payload, options);
+      const status = await post(payload, signal, keepProcessAlive);
       if (!RETRYABLE_STATUSES.has(status) || lastAttempt) {
         return;
       }
     } catch (error) {
-      if (options.signal.aborted || lastAttempt) {
+      if (signal.aborted || lastAttempt) {
         throw error;
       }
     }
-    await sleep(2 ** attempt * retryDelay, options.signal);
+    await sleep(2 ** attempt * retryDelay, signal, keepProcessAlive);
   }
 }
 
-function post(payload: string, { signal, keepProcessAlive }: PostOptions): Promise<number> {
+function post(payload: string, signal: AbortSignal, keepProcessAlive: boolean): Promise<number> {
   const request = TELEMETRY_URL.startsWith('https:') ? httpsRequest : httpRequest;
   return new Promise((resolve, reject) => {
     const outgoing = request(
@@ -71,17 +70,19 @@ function post(payload: string, { signal, keepProcessAlive }: PostOptions): Promi
   });
 }
 
-function sleep(ms: number, signal: AbortSignal): Promise<void> {
+function sleep(ms: number, signal: AbortSignal, keepProcessAlive: boolean): Promise<void> {
   return new Promise((resolve, reject) => {
-    const timer = setTimeout(resolve, ms);
-    timer.unref();
-    signal.addEventListener(
-      'abort',
-      () => {
-        clearTimeout(timer);
-        reject(signal.reason);
-      },
-      { once: true }
-    );
+    const onAbort = () => {
+      clearTimeout(timer);
+      reject(signal.reason);
+    };
+    const timer = setTimeout(() => {
+      signal.removeEventListener('abort', onAbort);
+      resolve();
+    }, ms);
+    if (!keepProcessAlive) {
+      timer.unref();
+    }
+    signal.addEventListener('abort', onAbort, { once: true });
   });
 }

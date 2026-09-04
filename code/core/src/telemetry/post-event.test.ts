@@ -1,7 +1,9 @@
 import { afterAll, afterEach, beforeAll, expect, it, vi } from 'vitest';
 
+import { spawn } from 'node:child_process';
 import { type Server, createServer } from 'node:http';
 import { Socket } from 'node:net';
+import { fileURLToPath } from 'node:url';
 
 import type { postEvent as PostEvent } from './post-event.ts';
 
@@ -91,4 +93,35 @@ it('unrefs the socket while the request is in flight, unless it may keep the pro
 
   expect(await inFlight(false)).toBeGreaterThan(0);
   expect(await inFlight(true)).toBe(0);
+});
+
+const postFromChildProcess = (keepProcessAlive: boolean, retryDelay: number) => {
+  const script = fileURLToPath(new URL('./post-event.ts', import.meta.url));
+  const child = spawn(
+    process.execPath,
+    [
+      '--input-type=module',
+      '-e',
+      `import { postEvent } from ${JSON.stringify(script)};
+       postEvent(${JSON.stringify({ ...event, retryDelay })}, { keepProcessAlive: ${keepProcessAlive} });`,
+    ],
+    { env: process.env, stdio: 'ignore' }
+  );
+  return new Promise<number | null>((resolve) => child.on('exit', resolve));
+};
+
+it('keeps the process alive through the retry back-off when asked to', async () => {
+  responses = [503, 200];
+
+  expect(await postFromChildProcess(true, 50)).toBe(0);
+
+  expect(received).toBe(2);
+});
+
+it('lets the process exit during the retry back-off otherwise', async () => {
+  responses = [503, 200];
+
+  expect(await postFromChildProcess(false, 5000)).toBe(0);
+
+  expect(received).toBe(1);
 });

@@ -94,17 +94,17 @@ export async function sendTelemetry(data: TelemetryData, options: Partial<Option
       context,
     };
     const event: PendingEvent = { body, retryDelay: options.retryDelay };
-    const request = postEvent(event, {
-      signal: AbortSignal.timeout(30_000),
-      keepProcessAlive: options.immediate === true,
-    })
+    const request = postEvent(event, { keepProcessAlive: options.immediate === true })
       .catch(() => {})
       .finally(() => inFlight.delete(body.eventId));
 
     inFlight.set(body.eventId, { event, request });
     registerExitHook();
 
-    await Promise.all([options.immediate ? request : undefined, saveToCache(eventType, body)]);
+    // An immediate send usually precedes a process.exit(), so it also waits for the responses
+    // that earlier sends are still expecting.
+    const responses = options.immediate ? [...inFlight.values()].map((i) => i.request) : [];
+    await Promise.all([...responses, saveToCache(eventType, body)]);
   } catch (err) {
     //
   }

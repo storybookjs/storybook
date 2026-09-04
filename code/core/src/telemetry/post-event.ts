@@ -1,5 +1,6 @@
 import { request as httpRequest } from 'node:http';
 import { request as httpsRequest } from 'node:https';
+import { setTimeout as sleep } from 'node:timers/promises';
 
 import type { TelemetryEvent } from './types.ts';
 
@@ -39,7 +40,7 @@ export async function postEvent(
         throw error;
       }
     }
-    await sleep(2 ** attempt * retryDelay, signal, keepProcessAlive);
+    await sleep(2 ** attempt * retryDelay, undefined, { signal, ref: keepProcessAlive });
   }
 }
 
@@ -67,22 +68,5 @@ function post(payload: string, signal: AbortSignal, keepProcessAlive: boolean): 
     }
     outgoing.on('error', reject);
     outgoing.end(payload);
-  });
-}
-
-function sleep(ms: number, signal: AbortSignal, keepProcessAlive: boolean): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const onAbort = () => {
-      clearTimeout(timer);
-      reject(signal.reason);
-    };
-    const timer = setTimeout(() => {
-      signal.removeEventListener('abort', onAbort);
-      resolve();
-    }, ms);
-    if (!keepProcessAlive) {
-      timer.unref();
-    }
-    signal.addEventListener('abort', onAbort, { once: true });
   });
 }

@@ -18,9 +18,7 @@ import { type PendingEvent, postEvent } from './post-event.ts';
 import { getSessionId } from './session-id.ts';
 import type { Options, TelemetryData, TelemetryEvent } from './types.ts';
 
-type InFlight = { event: PendingEvent; request: Promise<void> };
-
-const inFlight = new Map<string, InFlight>();
+const inFlight = new Map<string, PendingEvent>();
 let exitHookRegistered = false;
 
 export const addToGlobalContext = (key: string, value: any) => {
@@ -98,13 +96,10 @@ export async function sendTelemetry(data: TelemetryData, options: Partial<Option
       .catch(() => {})
       .finally(() => inFlight.delete(body.eventId));
 
-    inFlight.set(body.eventId, { event, request });
+    inFlight.set(body.eventId, event);
     registerExitHook();
 
-    // An immediate send usually precedes a process.exit(), so it also waits for the responses
-    // that earlier sends are still expecting.
-    const responses = options.immediate ? [...inFlight.values()].map((i) => i.request) : [];
-    await Promise.all([...responses, saveToCache(eventType, body)]);
+    await Promise.all([options.immediate ? request : undefined, saveToCache(eventType, body)]);
   } catch (err) {
     //
   }
@@ -123,7 +118,7 @@ export function handOffPendingEvents() {
   if (inFlight.size === 0) {
     return;
   }
-  const events = [...inFlight.values()].map(({ event }) => event);
+  const events = [...inFlight.values()];
   inFlight.clear();
   const file = join(os.tmpdir(), `storybook-telemetry-${nanoid()}.json`);
   try {

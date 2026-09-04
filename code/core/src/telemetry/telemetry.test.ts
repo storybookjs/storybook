@@ -77,20 +77,6 @@ it('waits for the response and holds the process when immediate', async () => {
   expect(postMock.mock.calls[0][1]).toMatchObject({ keepProcessAlive: true });
 });
 
-it('waits for the responses of earlier events too when immediate', async () => {
-  let earlierResponded = false;
-  postMock.mockImplementationOnce(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    earlierResponded = true;
-  });
-  await sendTelemetry({ eventType: 'dev', payload: {} });
-  expect(earlierResponded).toBe(false);
-
-  await sendTelemetry({ eventType: 'error', payload: {} }, { immediate: true });
-
-  expect(earlierResponded).toBe(true);
-});
-
 it('registers the exit hook once, with the first event', async () => {
   vi.resetModules();
   const once = vi.spyOn(process, 'once');

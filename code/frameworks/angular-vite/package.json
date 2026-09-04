@@ -86,6 +86,7 @@
     "@storybook/angular-cm": "workspace:*",
     "@storybook/angular-compodoc": "workspace:*",
     "@types/node": "^22.19.1",
+    "comment-parser": "^1.4.7",
     "empathic": "^2.0.0",
     "memfs": "^4.11.1",
     "rimraf": "^6.0.1",

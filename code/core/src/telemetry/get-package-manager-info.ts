@@ -36,6 +36,8 @@ export const getPackageManagerInfo = async () => {
 
 // The linker setting lives in config files next to the lockfile, so reading them costs a file read
 // instead of spawning the package manager, which takes hundreds of milliseconds for pnpm and yarn.
+// Both package managers also walk every parent directory for their config file; the working
+// directory and the project root are enough for telemetry.
 function readNodeLinker(packageManager: DetectResult, projectRoot: string): NodeLinker {
   const directories = [process.cwd(), projectRoot];
   if (packageManager.name === 'yarn' && packageManager.agent === 'yarn@berry') {
@@ -46,10 +48,17 @@ function readNodeLinker(packageManager: DetectResult, projectRoot: string): Node
     );
   }
   if (packageManager.name === 'pnpm') {
+    // pnpm 11 stopped reading settings from `.npmrc` and `npm_config_*`, and reads `pnpm_config_*`
+    // instead. The version is only known when package.json has a `packageManager` field, so an
+    // `.npmrc` value that pnpm 11 ignores can still be reported when the version is unknown.
+    const major = Number(packageManager.version?.split('.')[0]);
     return (
+      allowed(process.env.pnpm_config_node_linker, PNPM_LINKERS) ??
       allowed(process.env.npm_config_node_linker, PNPM_LINKERS) ??
-      readConfigValue(directories, '.npmrc', readNpmrcNodeLinker, PNPM_LINKERS) ??
       readConfigValue(directories, 'pnpm-workspace.yaml', readYamlNodeLinker, PNPM_LINKERS) ??
+      (major >= 11
+        ? undefined
+        : readConfigValue(directories, '.npmrc', readNpmrcNodeLinker, PNPM_LINKERS)) ??
       'isolated'
     );
   }

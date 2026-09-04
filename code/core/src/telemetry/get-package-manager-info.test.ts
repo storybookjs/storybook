@@ -161,11 +161,46 @@ describe('getPackageManagerInfo', () => {
       expect(await getPackageManagerInfo()).toMatchObject({ nodeLinker: 'isolated' });
     });
 
-    it('skips a config file it cannot read and keeps looking', async () => {
+    it('prefers pnpm-workspace.yaml over .npmrc, like pnpm does', async () => {
       vol.fromJSON({
-        '/mock/project/root/.npmrc/placeholder': '',
+        '/mock/project/root/.npmrc': 'node-linker=isolated\n',
         '/mock/project/root/pnpm-workspace.yaml': 'nodeLinker: hoisted\n',
       });
+
+      expect(await getPackageManagerInfo()).toMatchObject({ nodeLinker: 'hoisted' });
+    });
+
+    it('skips a config file it cannot read and keeps looking', async () => {
+      vol.fromJSON({
+        '/mock/project/root/pnpm-workspace.yaml/placeholder': '',
+        '/mock/project/root/.npmrc': 'node-linker=hoisted\n',
+      });
+
+      expect(await getPackageManagerInfo()).toMatchObject({ nodeLinker: 'hoisted' });
+    });
+
+    it('reads .npmrc when the pnpm version is unknown', async () => {
+      vi.mocked(detect).mockResolvedValue({ name: 'pnpm', agent: 'pnpm' });
+      vol.fromJSON({ '/mock/project/root/.npmrc': 'node-linker=hoisted\n' });
+
+      expect(await getPackageManagerInfo()).toMatchObject({ nodeLinker: 'hoisted' });
+    });
+  });
+
+  describe('when pnpm 11 is detected', () => {
+    beforeEach(() => {
+      vi.mocked(detect).mockResolvedValue({ name: 'pnpm', version: '11.0.8', agent: 'pnpm' });
+    });
+
+    it('ignores .npmrc, which pnpm 11 no longer reads settings from', async () => {
+      vol.fromJSON({ '/mock/project/root/.npmrc': 'node-linker=hoisted\n' });
+
+      expect(await getPackageManagerInfo()).toMatchObject({ nodeLinker: 'isolated' });
+    });
+
+    it('lets pnpm_config_node_linker override pnpm-workspace.yaml, like pnpm 11 does', async () => {
+      vol.fromJSON({ '/mock/project/root/pnpm-workspace.yaml': 'nodeLinker: isolated\n' });
+      vi.stubEnv('pnpm_config_node_linker', 'hoisted');
 
       expect(await getPackageManagerInfo()).toMatchObject({ nodeLinker: 'hoisted' });
     });

@@ -132,7 +132,7 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
   >(
     meta: {
       render?: ArgsStoryFn<WebComponentsTypes & T, TArgs>;
-      args?: MetaArgsInput<TMetaArgs, TArgs>;
+      args?: MetaArgsInput<TMetaArgs, TArgs & T['args']>;
       decorators?: Decorators | Decorators[];
     } & Omit<
       ComponentAnnotations<WebComponentsTypes & T, TArgs & T['args']>,

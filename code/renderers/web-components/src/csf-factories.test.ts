@@ -153,6 +153,14 @@ describe('Args can be provided in multiple ways', () => {
       });
       const Basic = meta.story();
     }
+    {
+      const meta = preview.type<{ args: { theme: 'light' | 'dark' } }>().meta({
+        render: (args: LiteralProps) => html`<div>${args.variant}</div>`,
+        args: { variant: 'primary', items: [], theme: 'light' },
+      });
+      const Basic = meta.story();
+      const Dark = meta.story({ args: { theme: 'dark' } });
+    }
   });
 
   it('❌ Literal args provided in meta are still validated', () => {

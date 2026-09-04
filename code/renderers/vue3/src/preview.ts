@@ -118,7 +118,7 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
   >(
     meta: {
       render?: ArgsStoryFn<VueTypes & T, TArgs>;
-      args?: MetaArgsInput<TMetaArgs, TArgs>;
+      args?: MetaArgsInput<TMetaArgs, TArgs & T['args']>;
       decorators?: Decorators | Decorators[];
     } & Omit<
       ComponentAnnotations<VueTypes & T, TArgs & T['args']>,

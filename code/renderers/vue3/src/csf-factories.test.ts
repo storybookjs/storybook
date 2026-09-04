@@ -128,6 +128,14 @@ describe('StoryObj', () => {
       });
       const Basic = meta.story();
     }
+    {
+      const meta = preview.type<{ args: { theme: 'light' | 'dark' } }>().meta({
+        render: (args: { label: 'A' | 'B' }) => h('button', args.label),
+        args: { label: 'A', theme: 'light' },
+      });
+      const Basic = meta.story();
+      const Dark = meta.story({ args: { theme: 'dark' } });
+    }
   });
 
   it('❌ Literal args provided in meta are still validated', () => {

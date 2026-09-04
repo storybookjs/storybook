@@ -377,7 +377,6 @@ describe('AddonVitestService', () => {
     });
 
     it('should skip config file validation when no configDir provided', async () => {
-
       const result = await service.validateCompatibility({
         framework: SupportedFramework.REACT_VITE,
         builder: SupportedBuilder.VITE,
@@ -625,8 +624,7 @@ describe('AddonVitestService', () => {
 
     it('should reject CommonJS config files (.cts)', async () => {
       vi.mocked(find.any).mockReset();
-      vi.mocked(find.any)
-        .mockReturnValueOnce('vitest.config.cts'); // config
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.cts'); // config
 
       const result = await service.validateConfigFiles('.storybook');
 
@@ -637,8 +635,7 @@ describe('AddonVitestService', () => {
     });
 
     it('should reject CommonJS config files (.cjs)', async () => {
-      vi.mocked(find.any)
-        .mockReturnValueOnce('vitest.config.cjs'); // config
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.cjs'); // config
 
       const result = await service.validateConfigFiles('.storybook');
 
@@ -647,8 +644,7 @@ describe('AddonVitestService', () => {
     });
 
     it('should validate non-CommonJS config files', async () => {
-      vi.mocked(find.any)
-        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue('export default defineConfig({ test: {} })');
 
       const result = await service.validateConfigFiles('.storybook');
@@ -657,8 +653,7 @@ describe('AddonVitestService', () => {
     });
 
     it('should accept plain export default {}', async () => {
-      vi.mocked(find.any)
-        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue('export default {}');
 
       const result = await service.validateConfigFiles('.storybook');
@@ -667,8 +662,7 @@ describe('AddonVitestService', () => {
     });
 
     it('should reject arrow function vitest config with dynamic control flow (unsupported)', async () => {
-      vi.mocked(find.any)
-        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
       // A callback config that returns object literals directly is supported; one with branching
       // control flow in a block body is not, and must be rejected.
       vi.mocked(fs.readFile).mockResolvedValue(
@@ -688,8 +682,7 @@ export default defineConfig(({ mode }) => {
     });
 
     it('should validate config with projects array in test', async () => {
-      vi.mocked(find.any)
-        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         'export default defineConfig({ test: { projects: [] } })'
       );
@@ -700,8 +693,7 @@ export default defineConfig(({ mode }) => {
     });
 
     it('should validate mergeConfig with plain object literal', async () => {
-      vi.mocked(find.any)
-        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         'export default mergeConfig(viteConfig, { test: { name: "node" } })'
       );
@@ -710,8 +702,7 @@ export default defineConfig(({ mode }) => {
     });
 
     it('should validate mergeConfig with defineConfig call', async () => {
-      vi.mocked(find.any)
-        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         'export default mergeConfig(viteConfig, defineConfig({ test: { name: "node" } }))'
       );
@@ -720,8 +711,7 @@ export default defineConfig(({ mode }) => {
     });
 
     it('should validate mergeConfig with multiple plain objects', async () => {
-      vi.mocked(find.any)
-        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         'export default mergeConfig({ test: {} }, { plugins: [] })'
       );
@@ -730,8 +720,7 @@ export default defineConfig(({ mode }) => {
     });
 
     it('should accept defineConfig(mergeConfig(...)) pattern', async () => {
-      vi.mocked(find.any)
-        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         `
         import { defineConfig, mergeConfig } from 'vitest/config';
@@ -747,8 +736,7 @@ export default defineConfig(({ mode }) => {
     });
 
     it('should accept defineConfig(mergeConfig(...) satisfies ViteUserConfig) pattern', async () => {
-      vi.mocked(find.any)
-        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         `
         import { defineConfig, mergeConfig } from 'vitest/config';
@@ -765,8 +753,7 @@ export default defineConfig(({ mode }) => {
     });
 
     it('should accept mergeConfig(...) as ViteUserConfig pattern', async () => {
-      vi.mocked(find.any)
-        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         `
         import { mergeConfig } from 'vitest/config';
@@ -781,8 +768,7 @@ export default defineConfig(({ mode }) => {
     });
 
     it('should accept mergeConfig with shorthand test variable', async () => {
-      vi.mocked(find.any)
-        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         `
         import { mergeConfig } from 'vitest/config';
@@ -795,8 +781,7 @@ export default defineConfig(({ mode }) => {
     });
 
     it('should accept mergeConfig with external vitestConfig variable', async () => {
-      vi.mocked(find.any)
-        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         `
         import { mergeConfig } from 'vitest/config';
@@ -809,8 +794,7 @@ export default defineConfig(({ mode }) => {
     });
 
     it('should accept const config = mergeConfig(...); export default config pattern', async () => {
-      vi.mocked(find.any)
-        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         `
         import { defineConfig, mergeConfig } from 'vitest/config';
@@ -826,8 +810,7 @@ export default defineConfig(({ mode }) => {
     });
 
     it('should accept defineProject({}) pattern', async () => {
-      vi.mocked(find.any)
-        .mockReturnValueOnce('vitest.config.ts'); // config
+      vi.mocked(find.any).mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         `
         import { defineProject } from 'vitest/config';

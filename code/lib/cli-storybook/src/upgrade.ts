@@ -77,6 +77,11 @@ const deprecatedPackages = [
       '@storybook/addon-centered',
     ],
   },
+  {
+    minVersion: '11.0.0',
+    url: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-storybooknextjs-is-deprecated',
+    deprecations: ['@storybook/nextjs'],
+  },
 ];
 
 const formatPackage = (pkg: Package) => `${pkg.package}@${pkg.version}`;

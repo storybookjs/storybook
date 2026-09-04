@@ -3,6 +3,7 @@
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Dropped support for Vite 5 and Vite 6](#dropped-support-for-vite-5-and-vite-6)
+  - [`@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
 
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
@@ -577,6 +578,12 @@ If you're using framework-specific Vite plugins, ensure they are compatible with
 - etc.
 
 For more information on upgrading to Vite 7, see the [Vite Migration Guide](https://vite.dev/guide/migration).
+
+### Next.js: `@storybook/nextjs` is deprecated
+
+The webpack-based `@storybook/nextjs` framework is deprecated and will be removed in Storybook 12. Storybook 11 keeps supporting it: it still builds and runs, but every run logs a deprecation warning and `storybook upgrade` lists it as deprecated.
+
+Migrate to [`@storybook/nextjs-vite`](https://www.npmjs.com/package/@storybook/nextjs-vite), which builds with Vite instead of webpack. The `nextjs-to-nextjs-vite` automigration does the work for you: run `storybook upgrade` and accept the fix, or run `storybook migrate nextjs-to-nextjs-vite` directly.
 
 ## From version 10.5.x to 10.6.0
 

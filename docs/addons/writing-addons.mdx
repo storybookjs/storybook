@@ -1,4 +1,144 @@
----
+THT_GiantTrees_v5.3/
+├── behavior_pack/
+│   ├── manifest.json
+│   └── scripts/
+│       └── bone_meal.js
+└── resource_pack/
+    └── manifest.json
+{
+  "format_version": 2,
+  "header": {
+    "name": "THT Giant Trees V5.3",
+    "description": "72 Arboles Gigantes que crecen con Bone Meal - 100% Vanilla",
+    "uuid": "a1b2c3d4-e5f6-7890-abcd-ef1234567890",
+    "version": [5, 3, 0],
+    "min_engine_version": [1, 21, 50]
+  },
+  "modules": [
+    {
+      "type": "script",
+      "uuid": "b2c3d4e5-f6a7-8901-bcde-f12345678901",
+      "version": [1, 0, 0]
+    }
+  ],
+  "dependencies": [
+    {
+      "uuid": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+      "version": [5, 3, 0]
+    }
+  ]
+}
+{
+  "format_version": 2,
+  "header": {
+    "name": "THT Giant Trees V5.3 Resources",
+    "description": "Texturas para THT Giant Trees",
+    "uuid": "c3d4e5f6-a7b8-9012-cdef-123456789012",
+    "version": [5, 3, 0],
+    "min_engine_version": [1, 21, 50]
+  }
+}
+import { world } from "@minecraft/server";
+
+const ARBOLES = {
+  // ===== OVERWORLD 36 =====
+  "minecraft:grass_block": "roble_titan",
+  "minecraft:dirt": "roble_gigante", 
+  "minecraft:coarse_dirt": "roble_enano",
+  "minecraft:podzol": "abeto_coloso",
+  "minecraft:spruce_leaves": "abeto_gigante",
+  "minecraft:spruce_log": "abeto_mediano",
+  "minecraft:birch_log": "abedul_titan",
+  "minecraft:birch_leaves": "abedul_gigante",
+  "minecraft:jungle_log": "jungla_coloso",
+  "minecraft:jungle_leaves": "jungla_gigante",
+  "minecraft:acacia_log": "acacia_gigante",
+  "minecraft:acacia_leaves": "acacia_titan",
+  "minecraft:dark_oak_log": "roble_oscuro_titan",
+  "minecraft:dark_oak_leaves": "roble_oscuro_gigante",
+  "minecraft:mangrove_roots": "mangle_coloso",
+  "minecraft:mud": "mangle_gigante",
+  "minecraft:mangrove_leaves": "mangle_mediano",
+  "minecraft:cherry_leaves": "cerezo_gigante",
+  "minecraft:cherry_log": "cerezo_titan",
+  "minecraft:pale_dirt": "pale_primordial",
+  "minecraft:pale_log": "pale_gigante",
+  "minecraft:moss_block": "azalea_gigante",
+  "minecraft:azalea_leaves": "azalea_titan",
+  "minecraft:sand": "acacia_desierto",
+  "minecraft:red_sand": "arbol_desierto",
+  "minecraft:gravel": "arbol_pedregoso",
+  "minecraft:mycelium": "hongo_gigante",
+  "minecraft:oak_sapling": "roble_mediano",
+  "minecraft:birch_sapling": "abedul_mediano",
+  "minecraft:spruce_sapling": "abeto_mediano_2",
+  "minecraft:jungle_sapling": "jungla_mediano",
+  "minecraft:acacia_sapling": "acacia_mediano",
+  "minecraft:dark_oak_sapling": "roble_oscuro_mediano",
+  "minecraft:cherry_sapling": "cerezo_mediano",
+  "minecraft:mangrove_propagule": "mangle_pequeño",
+  "minecraft:pale_sapling": "pale_mediano",
+
+  // ===== NETHER 18 =====
+  "minecraft:crimson_nylium": "crimson_gigante",
+  "minecraft:crimson_stem": "crimson_titan",
+  "minecraft:warped_nylium": "warped_gigante",
+  "minecraft:warped_stem": "warped_titan",
+  "minecraft:soul_sand": "arbol_alma",
+  "minecraft:soul_soil": "arbol_alma_gigante",
+  "minecraft:netherrack": "nether_arbol",
+  "minecraft:basalt": "basalto_arbol",
+  "minecraft:blackstone": "blackstone_arbol",
+  "minecraft:crimson_roots": "raiz_crimson",
+  "minecraft:warped_roots": "raiz_warped",
+  "minecraft:weeping_vines": "enredadera_llorona",
+  "minecraft:twisting_vines": "enredadera_giratoria",
+  "minecraft:nether_wart_block": "verruga_gigante",
+  "minecraft:warped_wart_block": "verruga_warped",
+  "minecraft:shroomlight": "hongo_luz",
+  "minecraft:crimson_fungus": "hongo_crimson_gigante",
+  "minecraft:warped_fungus": "hongo_warped_gigante",
+
+  // ===== END 18 =====
+  "minecraft:end_stone": "chorus_titan",
+  "minecraft:end_stone_bricks": "chorus_gigante",
+  "minecraft:pur_block": "pur_gigante",
+  "minecraft:purpur_pillar": "pur_titan",
+  "minecraft:end_rod": "vara_end_gigante",
+  "minecraft:chorus_plant": "chorus_coloso",
+  "minecraft:chorus_flower": "flor_chorus",
+  "minecraft:obsidian": "obsidiana_arbol",
+  "minecraft:dragon_egg": "dragon_arbol",
+  "minecraft:end_crystal": "cristal_arbol",
+  "minecraft:shulker_box": "shulker_arbol",
+  "minecraft:beacon": "beacon_arbol",
+  "minecraft:conduit": "conduit_arbol",
+  "minecraft:sea_lantern": "linterna_arbol",
+  "minecraft:prismarine": "prisma_arbol",
+  "minecraft:dark_prismarine": "prisma_oscuro_arbol",
+  "minecraft:sea_pickle": "pepino_arbol",
+  "minecraft:turtle_egg": "tortuga_arbol"
+};
+
+world.afterEvents.itemUseOn.subscribe((e) => {
+  const player = e.player;
+  const item = e.itemStack;
+  const block = e.block;
+  
+  if(!item || item.typeId !== "minecraft:bone_meal") return;
+  
+  const structureName = ARBOLES[block.typeId];
+  if(!structureName) return;
+  
+  try {
+    const dimension = block.dimension;
+    dimension.structureManager.place(structureName, block.location);
+    item.amount -= 1;
+    player.sendMessage(`§a§lTHT §fCreciendo: §6${structureName}`);
+  } catch(error) {
+    player.sendMessage(`§c§lError: §fNo se encontro la estructura ${structureName}`);
+  }
+});---
 title: Write an addon
 sidebar:
   order: 2

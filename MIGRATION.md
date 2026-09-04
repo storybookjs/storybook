@@ -1,5 +1,9 @@
 <h1>Migration</h1>
 
+- [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
+  - [Dropped support for Vite 5 and Vite 6](#dropped-support-for-vite-5-and-vite-6)
+
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -529,6 +533,50 @@
   - [Webpack upgrade](#webpack-upgrade)
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
+
+## From version 10.x to 11.0.0
+
+### Vitest Addon: requires Vitest 4.0 or higher
+
+The `@storybook/addon-vitest` addon requires **Vitest 4.0 or higher**. Setup now always installs `@vitest/browser-playwright`, generates configuration with the `test.projects` array, and no longer creates or updates `vitest.workspace.*` files. If your Vitest config still uses the deprecated `test.workspace` / `defineWorkspace` style, rename it to `test.projects` and re-run `npx storybook@latest add @storybook/addon-vitest` to merge your existing config.
+
+### Dropped support for Vite 5 and Vite 6
+
+Storybook 11.0 drops support for Vite 5 and Vite 6. The minimum supported version is now Vite 7.0.0. This change affects all Vite-based frameworks and builders:
+
+- `@storybook/builder-vite`
+- `@storybook/react-vite`
+- `@storybook/vue3-vite`
+- `@storybook/svelte-vite`
+- `@storybook/sveltekit`
+- `@storybook/web-components-vite`
+- `@storybook/preact-vite`
+- `@storybook/html-vite`
+- `@storybook/nextjs-vite`
+- `@storybook/react-native-web-vite`
+- `@storybook/tanstack-react`
+- `vite-plugin-storybook-nextjs`
+
+To upgrade:
+
+1. Update your project's Vite version to 7.0.0 or higher
+2. Update your Storybook configuration to use Vite 7:
+   ```js
+   // vite.config.js or vite.config.ts
+   export default {
+     // ... your other config
+     // Make sure you're using Vite 7 compatible plugins
+   };
+   ```
+
+If you're using framework-specific Vite plugins, ensure they are compatible with Vite 7:
+
+- `@vitejs/plugin-react`
+- `@vitejs/plugin-vue`
+- `@sveltejs/vite-plugin-svelte`
+- etc.
+
+For more information on upgrading to Vite 7, see the [Vite Migration Guide](https://vite.dev/guide/migration).
 
 ## From version 10.5.x to 10.6.0
 
@@ -1217,44 +1265,6 @@ Additionally, we have deprecated the usage of `withActions` from `@storybook/add
 
 #### Dropped support
 
-##### Vite 5 and Vite 6
-
-Storybook 11.0 drops support for Vite 5 and Vite 6. The minimum supported version is now Vite 7.0.0. This change affects all Vite-based frameworks and builders:
-
-- `@storybook/builder-vite`
-- `@storybook/react-vite`
-- `@storybook/vue3-vite`
-- `@storybook/svelte-vite`
-- `@storybook/sveltekit`
-- `@storybook/web-components-vite`
-- `@storybook/preact-vite`
-- `@storybook/html-vite`
-- `@storybook/nextjs-vite`
-- `@storybook/react-native-web-vite`
-- `@storybook/tanstack-react`
-- `vite-plugin-storybook-nextjs`
-
-To upgrade:
-
-1. Update your project's Vite version to 7.0.0 or higher
-2. Update your Storybook configuration to use Vite 7:
-   ```js
-   // vite.config.js or vite.config.ts
-   export default {
-     // ... your other config
-     // Make sure you're using Vite 7 compatible plugins
-   };
-   ```
-
-If you're using framework-specific Vite plugins, ensure they are compatible with Vite 7:
-
-- `@vitejs/plugin-react`
-- `@vitejs/plugin-vue`
-- `@sveltejs/vite-plugin-svelte`
-- etc.
-
-For more information on upgrading to Vite 7, see the [Vite Migration Guide](https://vite.dev/guide/migration).
-
 ##### Vite 4
 
 Storybook 9.0 drops support for Vite 4. The minimum supported version is now Vite 5.0.0. This change affects all Vite-based frameworks and builders:
@@ -1410,6 +1420,7 @@ import * as previewAnnotations from './.storybook/preview';
 #### Vitest Addon (former @storybook/experimental-addon-test): Vitest 2.0 support is dropped
 
 The Storybook Test addon now only supports Vitest 3.0 and higher, which is where browser mode was made into a stable state. Please upgrade to Vitest 3.0.
+
 
 #### Viewport/Backgrounds Addon synchronized configuration and `globals` usage
 

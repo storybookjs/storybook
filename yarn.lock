@@ -119,24 +119,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@analogjs/vite-plugin-angular@npm:^1.12.1":
-  version: 1.22.5
-  resolution: "@analogjs/vite-plugin-angular@npm:1.22.5"
-  dependencies:
-    ts-morph: "npm:^21.0.0"
-    vfile: "npm:^6.0.3"
-  peerDependencies:
-    "@angular-devkit/build-angular": ^15.0.0 || ^16.0.0 || ^17.0.0 || ^18.0.0 || ^19.0.0 || ^20.0.0
-    "@angular/build": ^18.0.0 || ^19.0.0 || ^20.0.0
-  peerDependenciesMeta:
-    "@angular-devkit/build-angular":
-      optional: true
-    "@angular/build":
-      optional: true
-  checksum: 10c0/0c4cfd6fbe5eb1db90281c99805e7995ae0eaa81d3b296ba491cec00900d58139255ec7881cbc0bf317102fe8fce94aaa3cde5da2fe2ab77825b47f3018fbb28
-  languageName: node
-  linkType: hard
-
 "@analogjs/vite-plugin-angular@npm:^2.5.2":
   version: 2.6.1
   resolution: "@analogjs/vite-plugin-angular@npm:2.6.1"
@@ -11693,7 +11675,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "@storybook/angular@workspace:code/frameworks/angular"
   dependencies:
-    "@analogjs/vite-plugin-angular": "npm:^1.12.1"
+    "@analogjs/vite-plugin-angular": "npm:^2.5.2"
     "@angular-devkit/architect": "npm:^0.2100.0"
     "@angular-devkit/build-angular": "npm:^21.0.0"
     "@angular-devkit/core": "npm:^21.0.0"
@@ -38503,7 +38485,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vfile@npm:^6.0.0, vfile@npm:^6.0.3":
+"vfile@npm:^6.0.0":
   version: 6.0.3
   resolution: "vfile@npm:6.0.3"
   dependencies:

@@ -137,7 +137,31 @@ describe('getPackageManagerInfo', () => {
 
     it('accepts a quoted node-linker value the way pnpm does', async () => {
       vol.fromJSON({ '/mock/project/root/.npmrc': 'node-linker="hoisted"\n' });
+      expect(await getPackageManagerInfo()).toMatchObject({ nodeLinker: 'hoisted' });
 
+      vol.fromJSON({ '/mock/project/root/.npmrc': "node-linker='pnp'\n" });
+      expect(await getPackageManagerInfo()).toMatchObject({ nodeLinker: 'pnp' });
+    });
+
+    it('prefers pnpm_config_node_linker over npm_config_node_linker', async () => {
+      vi.stubEnv('pnpm_config_node_linker', 'hoisted');
+      vi.stubEnv('npm_config_node_linker', 'pnp');
+
+      expect(await getPackageManagerInfo()).toMatchObject({ nodeLinker: 'hoisted' });
+    });
+
+    it('prefers the config files in the working directory', async () => {
+      vol.fromJSON({
+        '/mock/project/root/pnpm-workspace.yaml': 'nodeLinker: isolated\n',
+        '/mock/project/root/apps/web/pnpm-workspace.yaml': 'nodeLinker: hoisted\n',
+      });
+      expect(await getPackageManagerInfo()).toMatchObject({ nodeLinker: 'hoisted' });
+
+      vol.reset();
+      vol.fromJSON({
+        '/mock/project/root/.npmrc': 'node-linker=isolated\n',
+        '/mock/project/root/apps/web/.npmrc': 'node-linker=hoisted\n',
+      });
       expect(await getPackageManagerInfo()).toMatchObject({ nodeLinker: 'hoisted' });
     });
 

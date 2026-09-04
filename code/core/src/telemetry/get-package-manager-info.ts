@@ -5,10 +5,10 @@ import { type DetectResult, detect } from 'package-manager-detector';
 import { parse as parseYaml } from 'yaml';
 
 import { getProjectRoot } from '../common/index.ts';
-import type { NodeLinker } from './types.ts';
+import type { NodeLinker, PnpmNodeLinker, YarnNodeLinker } from './types.ts';
 
-const YARN_LINKERS = ['node-modules', 'pnp', 'pnpm'] as const satisfies readonly NodeLinker[];
-const PNPM_LINKERS = ['isolated', 'hoisted', 'pnp'] as const satisfies readonly NodeLinker[];
+const YARN_LINKERS = ['node-modules', 'pnp', 'pnpm'] as const satisfies readonly YarnNodeLinker[];
+const PNPM_LINKERS = ['isolated', 'hoisted', 'pnp'] as const satisfies readonly PnpmNodeLinker[];
 
 const readYamlNodeLinker = (content: string) => parseYaml(content)?.nodeLinker;
 // pnpm reads .npmrc as INI, where a value may be wrapped in matching quotes.

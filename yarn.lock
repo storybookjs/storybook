@@ -143,19 +143,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular-devkit/architect@npm:0.2102.15, @angular-devkit/architect@npm:^0.2102.12":
-  version: 0.2102.15
-  resolution: "@angular-devkit/architect@npm:0.2102.15"
-  dependencies:
-    "@angular-devkit/core": "npm:21.2.15"
-    rxjs: "npm:7.8.2"
-  bin:
-    architect: bin/cli.js
-  checksum: 10c0/4a905f256bcbcb46ddae2d113decf4fe130d2c0309b798ae4d0317883da1049552d78cf4ba8aa35a1e2183f35ad118c851c493c7d24e8362c76b64506d10c77f
-  languageName: node
-  linkType: hard
-
-"@angular-devkit/architect@npm:0.2102.22":
+"@angular-devkit/architect@npm:0.2102.22, @angular-devkit/architect@npm:^0.2102.12":
   version: 0.2102.22
   resolution: "@angular-devkit/architect@npm:0.2102.22"
   dependencies:
@@ -177,7 +165,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular-devkit/build-angular@npm:^21.0.0":
+"@angular-devkit/build-angular@npm:^21.0.0, @angular-devkit/build-angular@npm:^21.2.12":
   version: 21.2.22
   resolution: "@angular-devkit/build-angular@npm:21.2.22"
   dependencies:
@@ -289,131 +277,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular-devkit/build-angular@npm:^21.2.12":
-  version: 21.2.15
-  resolution: "@angular-devkit/build-angular@npm:21.2.15"
-  dependencies:
-    "@ampproject/remapping": "npm:2.3.0"
-    "@angular-devkit/architect": "npm:0.2102.15"
-    "@angular-devkit/build-webpack": "npm:0.2102.15"
-    "@angular-devkit/core": "npm:21.2.15"
-    "@angular/build": "npm:21.2.15"
-    "@babel/core": "npm:7.29.0"
-    "@babel/generator": "npm:7.29.1"
-    "@babel/helper-annotate-as-pure": "npm:7.27.3"
-    "@babel/helper-split-export-declaration": "npm:7.24.7"
-    "@babel/plugin-transform-async-generator-functions": "npm:7.29.0"
-    "@babel/plugin-transform-async-to-generator": "npm:7.28.6"
-    "@babel/plugin-transform-runtime": "npm:7.29.0"
-    "@babel/preset-env": "npm:7.29.2"
-    "@babel/runtime": "npm:7.29.2"
-    "@discoveryjs/json-ext": "npm:0.6.3"
-    "@ngtools/webpack": "npm:21.2.15"
-    ansi-colors: "npm:4.1.3"
-    autoprefixer: "npm:10.4.27"
-    babel-loader: "npm:10.0.0"
-    browserslist: "npm:^4.26.0"
-    copy-webpack-plugin: "npm:14.0.0"
-    css-loader: "npm:7.1.3"
-    esbuild: "npm:0.27.3"
-    esbuild-wasm: "npm:0.27.3"
-    http-proxy-middleware: "npm:3.0.5"
-    istanbul-lib-instrument: "npm:6.0.3"
-    jsonc-parser: "npm:3.3.1"
-    karma-source-map-support: "npm:1.4.0"
-    less: "npm:4.4.2"
-    less-loader: "npm:12.3.1"
-    license-webpack-plugin: "npm:4.0.2"
-    loader-utils: "npm:3.3.1"
-    mini-css-extract-plugin: "npm:2.10.0"
-    open: "npm:11.0.0"
-    ora: "npm:9.3.0"
-    picomatch: "npm:4.0.4"
-    piscina: "npm:5.1.4"
-    postcss: "npm:8.5.12"
-    postcss-loader: "npm:8.2.0"
-    resolve-url-loader: "npm:5.0.0"
-    rxjs: "npm:7.8.2"
-    sass: "npm:1.97.3"
-    sass-loader: "npm:16.0.7"
-    semver: "npm:7.7.4"
-    source-map-loader: "npm:5.0.0"
-    source-map-support: "npm:0.5.21"
-    terser: "npm:5.46.0"
-    tinyglobby: "npm:0.2.15"
-    tree-kill: "npm:1.2.2"
-    tslib: "npm:2.8.1"
-    webpack: "npm:5.105.2"
-    webpack-dev-middleware: "npm:7.4.5"
-    webpack-dev-server: "npm:5.2.3"
-    webpack-merge: "npm:6.0.1"
-    webpack-subresource-integrity: "npm:5.1.0"
-  peerDependencies:
-    "@angular/compiler-cli": ^21.0.0
-    "@angular/core": ^21.0.0
-    "@angular/localize": ^21.0.0
-    "@angular/platform-browser": ^21.0.0
-    "@angular/platform-server": ^21.0.0
-    "@angular/service-worker": ^21.0.0
-    "@angular/ssr": ^21.2.15
-    "@web/test-runner": ^0.20.0
-    browser-sync: ^3.0.2
-    jest: ^30.2.0
-    jest-environment-jsdom: ^30.2.0
-    karma: ^6.3.0
-    ng-packagr: ^21.0.0
-    protractor: ^7.0.0
-    tailwindcss: ^2.0.0 || ^3.0.0 || ^4.0.0
-    typescript: ">=5.9 <6.0"
-  dependenciesMeta:
-    esbuild:
-      optional: true
-  peerDependenciesMeta:
-    "@angular/core":
-      optional: true
-    "@angular/localize":
-      optional: true
-    "@angular/platform-browser":
-      optional: true
-    "@angular/platform-server":
-      optional: true
-    "@angular/service-worker":
-      optional: true
-    "@angular/ssr":
-      optional: true
-    "@web/test-runner":
-      optional: true
-    browser-sync:
-      optional: true
-    jest:
-      optional: true
-    jest-environment-jsdom:
-      optional: true
-    karma:
-      optional: true
-    ng-packagr:
-      optional: true
-    protractor:
-      optional: true
-    tailwindcss:
-      optional: true
-  checksum: 10c0/087c4723cfe11dd268f0dbc1708639f3193e7d1eafd2d9f49a614074861c2c81d804fdb39cdd2d66ad87811f889e29dd11116a536aa82f05cf6e937ad8f4fced
-  languageName: node
-  linkType: hard
-
-"@angular-devkit/build-webpack@npm:0.2102.15":
-  version: 0.2102.15
-  resolution: "@angular-devkit/build-webpack@npm:0.2102.15"
-  dependencies:
-    "@angular-devkit/architect": "npm:0.2102.15"
-    rxjs: "npm:7.8.2"
-  peerDependencies:
-    webpack: ^5.30.0
-    webpack-dev-server: ^5.0.2
-  checksum: 10c0/81a24d57a8963b82e01b9fcfcf17ef04e5084c56983762b839fd0d02d788839310b05869b395e062b57b2697bda1f1a42aa63accc56965bf2c5723feae75be02
-  languageName: node
-  linkType: hard
-
 "@angular-devkit/build-webpack@npm:0.2102.22":
   version: 0.2102.22
   resolution: "@angular-devkit/build-webpack@npm:0.2102.22"
@@ -446,26 +309,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular-devkit/core@npm:21.2.15, @angular-devkit/core@npm:^21.2.12":
-  version: 21.2.15
-  resolution: "@angular-devkit/core@npm:21.2.15"
-  dependencies:
-    ajv: "npm:8.18.0"
-    ajv-formats: "npm:3.0.1"
-    jsonc-parser: "npm:3.3.1"
-    picomatch: "npm:4.0.4"
-    rxjs: "npm:7.8.2"
-    source-map: "npm:0.7.6"
-  peerDependencies:
-    chokidar: ^5.0.0
-  peerDependenciesMeta:
-    chokidar:
-      optional: true
-  checksum: 10c0/0ee6c9515d05acb0f6872608030630b0e2d9291f9bcbce9a6101630a9a5ed2888da0ea29f12c476b5a05426935922bbe5c367ae2b1b8d9e04c8bcc74d87d828a
-  languageName: node
-  linkType: hard
-
-"@angular-devkit/core@npm:21.2.22, @angular-devkit/core@npm:^21.0.0":
+"@angular-devkit/core@npm:21.2.22, @angular-devkit/core@npm:^21.0.0, @angular-devkit/core@npm:^21.2.12":
   version: 21.2.22
   resolution: "@angular-devkit/core@npm:21.2.22"
   dependencies:
@@ -516,7 +360,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/animations@npm:^21.0.0":
+"@angular/animations@npm:^21.0.0, @angular/animations@npm:^21.2.14":
   version: 21.2.22
   resolution: "@angular/animations@npm:21.2.22"
   dependencies:
@@ -524,98 +368,6 @@ __metadata:
   peerDependencies:
     "@angular/core": 21.2.22
   checksum: 10c0/9ee55a8bde8a3cd7adc714b9302092f49a82c92914ed4a29b38f872d6e8118a0c662505fe8b0167af04d36302426f28cadca987dc3cf3b964e846d6bbe75f336
-  languageName: node
-  linkType: hard
-
-"@angular/animations@npm:^21.2.14":
-  version: 21.2.17
-  resolution: "@angular/animations@npm:21.2.17"
-  dependencies:
-    tslib: "npm:^2.3.0"
-  peerDependencies:
-    "@angular/core": 21.2.17
-  checksum: 10c0/e846d1572c6c03374cdd4115140b8630bd660e8e94f5c29f8d8a405bd79436b739105ad143738d16330f4ae3782cc28814fdd0eafa0c91fe6fbe05941d3b4195
-  languageName: node
-  linkType: hard
-
-"@angular/build@npm:21.2.15":
-  version: 21.2.15
-  resolution: "@angular/build@npm:21.2.15"
-  dependencies:
-    "@ampproject/remapping": "npm:2.3.0"
-    "@angular-devkit/architect": "npm:0.2102.15"
-    "@babel/core": "npm:7.29.0"
-    "@babel/helper-annotate-as-pure": "npm:7.27.3"
-    "@babel/helper-split-export-declaration": "npm:7.24.7"
-    "@inquirer/confirm": "npm:5.1.21"
-    "@vitejs/plugin-basic-ssl": "npm:2.1.4"
-    beasties: "npm:0.4.1"
-    browserslist: "npm:^4.26.0"
-    esbuild: "npm:0.27.3"
-    https-proxy-agent: "npm:7.0.6"
-    istanbul-lib-instrument: "npm:6.0.3"
-    jsonc-parser: "npm:3.3.1"
-    listr2: "npm:9.0.5"
-    lmdb: "npm:3.5.1"
-    magic-string: "npm:0.30.21"
-    mrmime: "npm:2.0.1"
-    parse5-html-rewriting-stream: "npm:8.0.0"
-    picomatch: "npm:4.0.4"
-    piscina: "npm:5.1.4"
-    rolldown: "npm:1.0.0-rc.4"
-    sass: "npm:1.97.3"
-    semver: "npm:7.7.4"
-    source-map-support: "npm:0.5.21"
-    tinyglobby: "npm:0.2.15"
-    undici: "npm:7.24.4"
-    vite: "npm:7.3.2"
-    watchpack: "npm:2.5.1"
-  peerDependencies:
-    "@angular/compiler": ^21.0.0
-    "@angular/compiler-cli": ^21.0.0
-    "@angular/core": ^21.0.0
-    "@angular/localize": ^21.0.0
-    "@angular/platform-browser": ^21.0.0
-    "@angular/platform-server": ^21.0.0
-    "@angular/service-worker": ^21.0.0
-    "@angular/ssr": ^21.2.15
-    karma: ^6.4.0
-    less: ^4.2.0
-    ng-packagr: ^21.0.0
-    postcss: ^8.4.0
-    tailwindcss: ^2.0.0 || ^3.0.0 || ^4.0.0
-    tslib: ^2.3.0
-    typescript: ">=5.9 <6.0"
-    vitest: ^4.0.8
-  dependenciesMeta:
-    lmdb:
-      optional: true
-  peerDependenciesMeta:
-    "@angular/core":
-      optional: true
-    "@angular/localize":
-      optional: true
-    "@angular/platform-browser":
-      optional: true
-    "@angular/platform-server":
-      optional: true
-    "@angular/service-worker":
-      optional: true
-    "@angular/ssr":
-      optional: true
-    karma:
-      optional: true
-    less:
-      optional: true
-    ng-packagr:
-      optional: true
-    postcss:
-      optional: true
-    tailwindcss:
-      optional: true
-    vitest:
-      optional: true
-  checksum: 10c0/db46f7d6388bf63307b39cb29205164cb365a46842af207a1445fec719f694f5f99c45214e645c116effa3635ba0b173a41caef019dd63eccf80ad69be8c83e8
   languageName: node
   linkType: hard
 
@@ -700,7 +452,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/common@npm:^21.0.0":
+"@angular/common@npm:^21.0.0, @angular/common@npm:^21.2.14":
   version: 21.2.22
   resolution: "@angular/common@npm:21.2.22"
   dependencies:
@@ -712,19 +464,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/common@npm:^21.2.14":
-  version: 21.2.17
-  resolution: "@angular/common@npm:21.2.17"
-  dependencies:
-    tslib: "npm:^2.3.0"
-  peerDependencies:
-    "@angular/core": 21.2.17
-    rxjs: ^6.5.3 || ^7.4.0
-  checksum: 10c0/889c1a3d64a5b61e77dc6cf7d0cb5da1575cd13bed6b11262a340076949b2968e3a80d9ca4a7ea4cddda1901c0df36ae412d0fd0fcc9bd45ecad58f40ab7a6d0
-  languageName: node
-  linkType: hard
-
-"@angular/compiler-cli@npm:^21.0.0":
+"@angular/compiler-cli@npm:^21.0.0, @angular/compiler-cli@npm:^21.2.14":
   version: 21.2.22
   resolution: "@angular/compiler-cli@npm:21.2.22"
   dependencies:
@@ -749,32 +489,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/compiler-cli@npm:^21.2.14":
-  version: 21.2.17
-  resolution: "@angular/compiler-cli@npm:21.2.17"
-  dependencies:
-    "@babel/core": "npm:7.29.0"
-    "@jridgewell/sourcemap-codec": "npm:^1.4.14"
-    chokidar: "npm:^5.0.0"
-    convert-source-map: "npm:^1.5.1"
-    reflect-metadata: "npm:^0.2.0"
-    semver: "npm:^7.0.0"
-    tslib: "npm:^2.3.0"
-    yargs: "npm:^18.0.0"
-  peerDependencies:
-    "@angular/compiler": 21.2.17
-    typescript: ">=5.9 <6.1"
-  peerDependenciesMeta:
-    typescript:
-      optional: true
-  bin:
-    ng-xi18n: bundles/src/bin/ng_xi18n.js
-    ngc: bundles/src/bin/ngc.js
-  checksum: 10c0/2fb02b8a8ac7560f5d4588cae5e07c564b4997e941181fb577d1bc3bbc7f6fb22dc68deea2e4c36a699c1384bb1f67cd455039c30dcb27a31d70392ad06b64a4
-  languageName: node
-  linkType: hard
-
-"@angular/compiler@npm:^21.0.0":
+"@angular/compiler@npm:^21.0.0, @angular/compiler@npm:^21.2.14":
   version: 21.2.22
   resolution: "@angular/compiler@npm:21.2.22"
   dependencies:
@@ -783,16 +498,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/compiler@npm:^21.2.14":
-  version: 21.2.17
-  resolution: "@angular/compiler@npm:21.2.17"
-  dependencies:
-    tslib: "npm:^2.3.0"
-  checksum: 10c0/e5f45c1b9fe189ac9e1a2fd68ec1aa051b50ecfa63e1b62ff23076ab00a2bbd27a489dfc892377835716c96de36676a060110c8e8c5b479191ffa18b8cb10cf4
-  languageName: node
-  linkType: hard
-
-"@angular/core@npm:^21.0.0":
+"@angular/core@npm:^21.0.0, @angular/core@npm:^21.2.14":
   version: 21.2.22
   resolution: "@angular/core@npm:21.2.22"
   dependencies:
@@ -810,25 +516,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/core@npm:^21.2.14":
-  version: 21.2.17
-  resolution: "@angular/core@npm:21.2.17"
-  dependencies:
-    tslib: "npm:^2.3.0"
-  peerDependencies:
-    "@angular/compiler": 21.2.17
-    rxjs: ^6.5.3 || ^7.4.0
-    zone.js: ~0.15.0 || ~0.16.0
-  peerDependenciesMeta:
-    "@angular/compiler":
-      optional: true
-    zone.js:
-      optional: true
-  checksum: 10c0/70aa13cfec6d221c23c427f794409d541b80cd4feb65ef668810e1e927efde645c02c450404a4eb9691d6da17a04732abe5a9d4550b934dfeb459f8ca0f274d8
-  languageName: node
-  linkType: hard
-
-"@angular/forms@npm:^21.0.0":
+"@angular/forms@npm:^21.0.0, @angular/forms@npm:^21.2.14":
   version: 21.2.22
   resolution: "@angular/forms@npm:21.2.22"
   dependencies:
@@ -843,22 +531,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/forms@npm:^21.2.14":
-  version: 21.2.17
-  resolution: "@angular/forms@npm:21.2.17"
-  dependencies:
-    "@standard-schema/spec": "npm:^1.0.0"
-    tslib: "npm:^2.3.0"
-  peerDependencies:
-    "@angular/common": 21.2.17
-    "@angular/core": 21.2.17
-    "@angular/platform-browser": 21.2.17
-    rxjs: ^6.5.3 || ^7.4.0
-  checksum: 10c0/e46bf07c340c40b02d0a742af2c07eea544408161b02a47738933eb3e44ba28d7a9abe3de67fada90786de0414641a75da3e8cb04e42980b7958df49c424c844
-  languageName: node
-  linkType: hard
-
-"@angular/platform-browser-dynamic@npm:^21.0.0":
+"@angular/platform-browser-dynamic@npm:^21.0.0, @angular/platform-browser-dynamic@npm:^21.2.14":
   version: 21.2.22
   resolution: "@angular/platform-browser-dynamic@npm:21.2.22"
   dependencies:
@@ -872,21 +545,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@angular/platform-browser-dynamic@npm:^21.2.14":
-  version: 21.2.17
-  resolution: "@angular/platform-browser-dynamic@npm:21.2.17"
-  dependencies:
-    tslib: "npm:^2.3.0"
-  peerDependencies:
-    "@angular/common": 21.2.17
-    "@angular/compiler": 21.2.17
-    "@angular/core": 21.2.17
-    "@angular/platform-browser": 21.2.17
-  checksum: 10c0/1253b4bb2675af6f294704aa7d04fac6d1bf854d9eef02260245d4bd6b0b546557684fe890a9a89c31fc9bb7d1fe7a49a05580d721cc4e386808f9603688ca12
-  languageName: node
-  linkType: hard
-
-"@angular/platform-browser@npm:^21.0.0":
+"@angular/platform-browser@npm:^21.0.0, @angular/platform-browser@npm:^21.2.14":
   version: 21.2.22
   resolution: "@angular/platform-browser@npm:21.2.22"
   dependencies:
@@ -899,22 +558,6 @@ __metadata:
     "@angular/animations":
       optional: true
   checksum: 10c0/fb05a534ef96bea276868714571168c1ad368b22037f003f0839d8620c53ac65a6515f8f2546fce666a5eb3f523ea3d00efdfcf3109fdbf90ba312979bcf5e2d
-  languageName: node
-  linkType: hard
-
-"@angular/platform-browser@npm:^21.2.14":
-  version: 21.2.17
-  resolution: "@angular/platform-browser@npm:21.2.17"
-  dependencies:
-    tslib: "npm:^2.3.0"
-  peerDependencies:
-    "@angular/animations": 21.2.17
-    "@angular/common": 21.2.17
-    "@angular/core": 21.2.17
-  peerDependenciesMeta:
-    "@angular/animations":
-      optional: true
-  checksum: 10c0/ca5fcb74613fa41898135e5ff1440d7250896acef51be76ca941da4c8ce3b4e0651ed460e3e47b6294417a8973fa5485d3dc624e4059e6e6a401aacfd72a32fe
   languageName: node
   linkType: hard
 
@@ -985,7 +628,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/code-frame@npm:^7.0.0, @babel/code-frame@npm:^7.10.4, @babel/code-frame@npm:^7.12.13, @babel/code-frame@npm:^7.16.7, @babel/code-frame@npm:^7.24.2, @babel/code-frame@npm:^7.27.1, @babel/code-frame@npm:^7.29.0, @babel/code-frame@npm:^7.29.7":
+"@babel/code-frame@npm:^7.0.0, @babel/code-frame@npm:^7.10.4, @babel/code-frame@npm:^7.12.13, @babel/code-frame@npm:^7.16.7, @babel/code-frame@npm:^7.24.2, @babel/code-frame@npm:^7.27.1, @babel/code-frame@npm:^7.29.7":
   version: 7.29.7
   resolution: "@babel/code-frame@npm:7.29.7"
   dependencies:
@@ -1003,30 +646,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/core@npm:7.29.0, @babel/core@npm:^7.12.0, @babel/core@npm:^7.23.0, @babel/core@npm:^7.23.7, @babel/core@npm:^7.23.9, @babel/core@npm:^7.28.0, @babel/core@npm:^7.28.5, @babel/core@npm:^7.29.0, @babel/core@npm:^7.3.4, @babel/core@npm:^7.7.5":
-  version: 7.29.0
-  resolution: "@babel/core@npm:7.29.0"
-  dependencies:
-    "@babel/code-frame": "npm:^7.29.0"
-    "@babel/generator": "npm:^7.29.0"
-    "@babel/helper-compilation-targets": "npm:^7.28.6"
-    "@babel/helper-module-transforms": "npm:^7.28.6"
-    "@babel/helpers": "npm:^7.28.6"
-    "@babel/parser": "npm:^7.29.0"
-    "@babel/template": "npm:^7.28.6"
-    "@babel/traverse": "npm:^7.29.0"
-    "@babel/types": "npm:^7.29.0"
-    "@jridgewell/remapping": "npm:^2.3.5"
-    convert-source-map: "npm:^2.0.0"
-    debug: "npm:^4.1.0"
-    gensync: "npm:^1.0.0-beta.2"
-    json5: "npm:^2.2.3"
-    semver: "npm:^6.3.1"
-  checksum: 10c0/5127d2e8e842ae409e11bcbb5c2dff9874abf5415e8026925af7308e903f4f43397341467a130490d1a39884f461bc2b67f3063bce0be44340db89687fd852aa
-  languageName: node
-  linkType: hard
-
-"@babel/core@npm:7.29.7":
+"@babel/core@npm:7.29.7, @babel/core@npm:^7.12.0, @babel/core@npm:^7.23.0, @babel/core@npm:^7.23.7, @babel/core@npm:^7.23.9, @babel/core@npm:^7.28.0, @babel/core@npm:^7.28.5, @babel/core@npm:^7.29.0, @babel/core@npm:^7.3.4, @babel/core@npm:^7.7.5":
   version: 7.29.7
   resolution: "@babel/core@npm:7.29.7"
   dependencies:
@@ -1049,7 +669,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/generator@npm:7.29.1, @babel/generator@npm:^7.12.11, @babel/generator@npm:^7.28.5, @babel/generator@npm:^7.29.0":
+"@babel/generator@npm:7.29.1":
   version: 7.29.1
   resolution: "@babel/generator@npm:7.29.1"
   dependencies:
@@ -1062,7 +682,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/generator@npm:^7.29.7":
+"@babel/generator@npm:^7.12.11, @babel/generator@npm:^7.28.5, @babel/generator@npm:^7.29.7":
   version: 7.29.8
   resolution: "@babel/generator@npm:7.29.8"
   dependencies:
@@ -1192,7 +812,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/helper-module-transforms@npm:^7.27.1, @babel/helper-module-transforms@npm:^7.28.6, @babel/helper-module-transforms@npm:^7.29.7":
+"@babel/helper-module-transforms@npm:^7.27.1, @babel/helper-module-transforms@npm:^7.29.7":
   version: 7.29.7
   resolution: "@babel/helper-module-transforms@npm:7.29.7"
   dependencies:
@@ -1302,16 +922,6 @@ __metadata:
     "@babel/traverse": "npm:^7.29.7"
     "@babel/types": "npm:^7.29.7"
   checksum: 10c0/d765b341863ede049eb6923b9c20fc79fb6c64995a906b60a70c22fbffb21eef5d5a5cf15948c843047d31e8c902a85fa94ccfe5d30d0631a7b1e40e4d667c70
-  languageName: node
-  linkType: hard
-
-"@babel/helpers@npm:^7.28.6":
-  version: 7.29.2
-  resolution: "@babel/helpers@npm:7.29.2"
-  dependencies:
-    "@babel/template": "npm:^7.28.6"
-    "@babel/types": "npm:^7.29.0"
-  checksum: 10c0/dab0e65b9318b2502a62c58bc0913572318595eec0482c31f0ad416b72636e6698a1d7c57cd2791d4528eb8c548bca88d338dc4d2a55a108dc1f6702f9bc5512
   languageName: node
   linkType: hard
 
@@ -2498,7 +2108,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@babel/template@npm:^7.27.2, @babel/template@npm:^7.28.6, @babel/template@npm:^7.29.7":
+"@babel/template@npm:^7.27.2, @babel/template@npm:^7.29.7":
   version: 7.29.7
   resolution: "@babel/template@npm:7.29.7"
   dependencies:
@@ -5118,17 +4728,6 @@ __metadata:
   version: 1.1.0
   resolution: "@ngard/tiny-isequal@npm:1.1.0"
   checksum: 10c0/c980ee5e3315a9bbabf4bf973940a68fe817aa490f35a2f93a45442e5606a8cc6a29fa6b767f07755b1a67f3eeea8a7da70d701e130545620b2e6e08b57fd27e
-  languageName: node
-  linkType: hard
-
-"@ngtools/webpack@npm:21.2.15":
-  version: 21.2.15
-  resolution: "@ngtools/webpack@npm:21.2.15"
-  peerDependencies:
-    "@angular/compiler-cli": ^21.0.0
-    typescript: ">=5.9 <6.0"
-    webpack: ^5.54.0
-  checksum: 10c0/1b249a3daa0c134bc7929537f62d80564b0282b53ae014c0f66fc260cb09add076dcab667425ced392fa3b467ca850b134b963738fb878053e71654b38eded37
   languageName: node
   linkType: hard
 
@@ -21815,15 +21414,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"esbuild-wasm@npm:0.27.3":
-  version: 0.27.3
-  resolution: "esbuild-wasm@npm:0.27.3"
-  bin:
-    esbuild: bin/esbuild
-  checksum: 10c0/463971cc572c3863919b73e764d44e1691feb9099d6eb5b9f619ad68553e4f4936d907b708052ba6edc53ce4fe5464ea3d359f27535234ce03df4cdc35da56e8
-  languageName: node
-  linkType: hard
-
 "esbuild-wasm@npm:0.28.1":
   version: 0.28.1
   resolution: "esbuild-wasm@npm:0.28.1"
@@ -25002,20 +24592,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"http-proxy-middleware@npm:3.0.5":
-  version: 3.0.5
-  resolution: "http-proxy-middleware@npm:3.0.5"
-  dependencies:
-    "@types/http-proxy": "npm:^1.17.15"
-    debug: "npm:^4.3.6"
-    http-proxy: "npm:^1.18.1"
-    is-glob: "npm:^4.0.3"
-    is-plain-object: "npm:^5.0.0"
-    micromatch: "npm:^4.0.8"
-  checksum: 10c0/89ff3c8fe65b22b8042a6173ae1b8f77c5171f7eecf3c8b5d6dcffe3c9d688acae7bcf498cc08d1525f566dc0781efaec4e2ddc49224b1f16f020de7987a446b
-  languageName: node
-  linkType: hard
-
 "http-proxy-middleware@npm:3.0.7":
   version: 3.0.7
   resolution: "http-proxy-middleware@npm:3.0.7"
@@ -26970,17 +26546,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"launch-editor@npm:^2.13.2, launch-editor@npm:^2.6.1":
-  version: 2.13.2
-  resolution: "launch-editor@npm:2.13.2"
-  dependencies:
-    picocolors: "npm:^1.1.1"
-    shell-quote: "npm:^1.8.3"
-  checksum: 10c0/5057fc8d3d0b0a92055b09b99192ffb5860b3e8a3f8ba56ef9b7f252fd78650d6b4182b725f4a1dcb8b04e350fa053874d819bb84362f2cfd6c3e84f556066dd
-  languageName: node
-  linkType: hard
-
-"launch-editor@npm:^2.14.1":
+"launch-editor@npm:^2.13.2, launch-editor@npm:^2.14.1":
   version: 2.14.1
   resolution: "launch-editor@npm:2.14.1"
   dependencies:
@@ -29090,7 +28656,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"nanoid@npm:^3.3.11, nanoid@npm:^3.3.16, nanoid@npm:^3.3.6":
+"nanoid@npm:^3.3.16, nanoid@npm:^3.3.6":
   version: 3.3.16
   resolution: "nanoid@npm:3.3.16"
   bin:
@@ -31533,18 +31099,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"piscina@npm:5.1.4":
-  version: 5.1.4
-  resolution: "piscina@npm:5.1.4"
-  dependencies:
-    "@napi-rs/nice": "npm:^1.0.4"
-  dependenciesMeta:
-    "@napi-rs/nice":
-      optional: true
-  checksum: 10c0/5de5673bfea6ed045e4fe5b63c1bfab0f287862d689a3ebfb15848ff20b78ecff0735fe673edb209a921b113bb0b3b3455f8bb710cb3b78f66178f8785686e8f
-  languageName: node
-  linkType: hard
-
 "piscina@npm:5.2.0":
   version: 5.2.0
   resolution: "piscina@npm:5.2.0"
@@ -31852,17 +31406,6 @@ __metadata:
     picocolors: "npm:^1.0.0"
     source-map-js: "npm:^1.0.2"
   checksum: 10c0/748b82e6e5fc34034dcf2ae88ea3d11fd09f69b6c50ecdd3b4a875cfc7cdca435c958b211e2cb52355422ab6fccb7d8f2f2923161d7a1b281029e4a913d59acf
-  languageName: node
-  linkType: hard
-
-"postcss@npm:8.5.12":
-  version: 8.5.12
-  resolution: "postcss@npm:8.5.12"
-  dependencies:
-    nanoid: "npm:^3.3.11"
-    picocolors: "npm:^1.1.1"
-    source-map-js: "npm:^1.2.1"
-  checksum: 10c0/5baebaf574c567bc1b3d61197f38af4ce5920b8f611c887fb6bc3dcc14af00253c169dbf19897bc889cce0b0d9818ab5eb4ea0caedf02b0bab10da8a43ce8c12
   languageName: node
   linkType: hard
 
@@ -35118,13 +34661,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"shell-quote@npm:^1.8.3":
-  version: 1.8.3
-  resolution: "shell-quote@npm:1.8.3"
-  checksum: 10c0/bee87c34e1e986cfb4c30846b8e6327d18874f10b535699866f368ade11ea4ee45433d97bf5eada22c4320c27df79c3a6a7eb1bf3ecfc47f2c997d9e5e2672fd
-  languageName: node
-  linkType: hard
-
 "shell-quote@npm:^1.8.4":
   version: 1.10.0
   resolution: "shell-quote@npm:1.10.0"
@@ -37748,13 +37284,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"undici@npm:7.24.4":
-  version: 7.24.4
-  resolution: "undici@npm:7.24.4"
-  checksum: 10c0/cb302e81fadb7f0b7946ab77595715c0961b46a025ccecae79ba599432d0bc8d1e3da4dfe7ff66bc74f115c1b8ff0f099bc4e9bf313db4562da23995872c6d17
-  languageName: node
-  linkType: hard
-
 "undici@npm:7.29.0, undici@npm:^7.16.0, undici@npm:^7.19.0, undici@npm:^7.27.1":
   version: 7.29.0
   resolution: "undici@npm:7.29.0"
@@ -38650,61 +38179,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"vite@npm:7.3.2":
-  version: 7.3.2
-  resolution: "vite@npm:7.3.2"
-  dependencies:
-    esbuild: "npm:^0.27.0"
-    fdir: "npm:^6.5.0"
-    fsevents: "npm:~2.3.3"
-    picomatch: "npm:^4.0.3"
-    postcss: "npm:^8.5.6"
-    rollup: "npm:^4.43.0"
-    tinyglobby: "npm:^0.2.15"
-  peerDependencies:
-    "@types/node": ^20.19.0 || >=22.12.0
-    jiti: ">=1.21.0"
-    less: ^4.0.0
-    lightningcss: ^1.21.0
-    sass: ^1.70.0
-    sass-embedded: ^1.70.0
-    stylus: ">=0.54.8"
-    sugarss: ^5.0.0
-    terser: ^5.16.0
-    tsx: ^4.8.1
-    yaml: ^2.4.2
-  dependenciesMeta:
-    fsevents:
-      optional: true
-  peerDependenciesMeta:
-    "@types/node":
-      optional: true
-    jiti:
-      optional: true
-    less:
-      optional: true
-    lightningcss:
-      optional: true
-    sass:
-      optional: true
-    sass-embedded:
-      optional: true
-    stylus:
-      optional: true
-    sugarss:
-      optional: true
-    terser:
-      optional: true
-    tsx:
-      optional: true
-    yaml:
-      optional: true
-  bin:
-    vite: bin/vite.js
-  checksum: 10c0/74be36907e208916f18bfec81c8eba18b869f0a170f1ece0a4dcb14874d0f0e7c022fb6c2ad896e3ee6c973fe88f53ac23b4078879ada340d8b263260868b8d4
-  languageName: node
-  linkType: hard
-
 "vite@npm:7.3.6, vite@npm:^6.0.0 || ^7.0.0, vite@npm:^7.0.4":
   version: 7.3.6
   resolution: "vite@npm:7.3.6"
@@ -39287,51 +38761,6 @@ __metadata:
     webpack:
       optional: true
   checksum: 10c0/0f31670835f3c0f588392235a6183facf314c0dca312467254a56458142be6fee746f7f6b304f281c740364fd36f256c597ab37d87e5971633cee2f70a8cd5e7
-  languageName: node
-  linkType: hard
-
-"webpack-dev-server@npm:5.2.3":
-  version: 5.2.3
-  resolution: "webpack-dev-server@npm:5.2.3"
-  dependencies:
-    "@types/bonjour": "npm:^3.5.13"
-    "@types/connect-history-api-fallback": "npm:^1.5.4"
-    "@types/express": "npm:^4.17.25"
-    "@types/express-serve-static-core": "npm:^4.17.21"
-    "@types/serve-index": "npm:^1.9.4"
-    "@types/serve-static": "npm:^1.15.5"
-    "@types/sockjs": "npm:^0.3.36"
-    "@types/ws": "npm:^8.5.10"
-    ansi-html-community: "npm:^0.0.8"
-    bonjour-service: "npm:^1.2.1"
-    chokidar: "npm:^3.6.0"
-    colorette: "npm:^2.0.10"
-    compression: "npm:^1.8.1"
-    connect-history-api-fallback: "npm:^2.0.0"
-    express: "npm:^4.22.1"
-    graceful-fs: "npm:^4.2.6"
-    http-proxy-middleware: "npm:^2.0.9"
-    ipaddr.js: "npm:^2.1.0"
-    launch-editor: "npm:^2.6.1"
-    open: "npm:^10.0.3"
-    p-retry: "npm:^6.2.0"
-    schema-utils: "npm:^4.2.0"
-    selfsigned: "npm:^5.5.0"
-    serve-index: "npm:^1.9.1"
-    sockjs: "npm:^0.3.24"
-    spdy: "npm:^4.0.2"
-    webpack-dev-middleware: "npm:^7.4.2"
-    ws: "npm:^8.18.0"
-  peerDependencies:
-    webpack: ^5.0.0
-  peerDependenciesMeta:
-    webpack:
-      optional: true
-    webpack-cli:
-      optional: true
-  bin:
-    webpack-dev-server: bin/webpack-dev-server.js
-  checksum: 10c0/a716f1d509635ad9f2779baf242657740e6ad516ce210fe094cbf3b16f25f114e477c45a751ad2bbf1c601cbbe67b6ba9b8b43159b7c01fc3342c95b985fe963
   languageName: node
   linkType: hard
 

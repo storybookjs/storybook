@@ -5,7 +5,6 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 import { lt } from 'semver';
 
 import { blocker } from './block-addon-vitest-vitest4.ts';
-import type { AutoblockOptions } from './types.ts';
 
 vi.mock('semver');
 
@@ -17,20 +16,29 @@ vi.mock('storybook/internal/common', async (importOriginal) => {
   };
 });
 
-const packageManager = {
-  getInstalledVersion: vi.fn<JsPackageManager['getInstalledVersion']>(),
-  getModulePackageJSON: vi.fn<JsPackageManager['getModulePackageJSON']>(),
+const getInstalledVersion = vi.fn<JsPackageManager['getInstalledVersion']>();
+const getModulePackageJSON = vi.fn<JsPackageManager['getModulePackageJSON']>();
+
+const packageManager: Pick<JsPackageManager, 'getInstalledVersion' | 'getModulePackageJSON'> = {
+  getInstalledVersion,
+  getModulePackageJSON,
 };
 
-const runCheck = () => blocker.check({ packageManager } as AutoblockOptions);
+const runCheck = () =>
+  blocker.check({
+    packageManager: packageManager as JsPackageManager,
+    mainConfig: { stories: [] },
+    mainConfigPath: '.storybook/main.ts',
+    configDir: '.storybook',
+  });
 
 describe('addonVitestVitest4 blocker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(lt).mockReturnValue(false);
     vi.mocked(getVitePlusVersions).mockResolvedValue(null);
-    packageManager.getInstalledVersion.mockResolvedValue(null);
-    packageManager.getModulePackageJSON.mockResolvedValue(null);
+    getInstalledVersion.mockResolvedValue(null);
+    getModulePackageJSON.mockResolvedValue(null);
   });
 
   test('has a stable id', () => {
@@ -39,20 +47,20 @@ describe('addonVitestVitest4 blocker', () => {
 
   test('returns false when @storybook/addon-vitest is not installed', async () => {
     vi.mocked(lt).mockReturnValue(true);
-    packageManager.getInstalledVersion.mockImplementation(async (packageName) =>
+    getInstalledVersion.mockImplementation(async (packageName) =>
       packageName === 'vitest' ? '3.2.4' : null
     );
 
     const result = await runCheck();
 
     expect(result).toBe(false);
-    expect(packageManager.getInstalledVersion).toHaveBeenCalledWith('@storybook/addon-vitest');
+    expect(getInstalledVersion).toHaveBeenCalledWith('@storybook/addon-vitest');
   });
 
   test('blocks when the effective Vitest version is below 4.0.0', async () => {
     vi.mocked(lt).mockReturnValue(true);
-    packageManager.getInstalledVersion.mockResolvedValue('11.0.0');
-    packageManager.getModulePackageJSON.mockImplementation(async (packageName) =>
+    getInstalledVersion.mockResolvedValue('11.0.0');
+    getModulePackageJSON.mockImplementation(async (packageName) =>
       packageName === 'vitest' ? { version: '3.2.4' } : null
     );
 
@@ -64,8 +72,8 @@ describe('addonVitestVitest4 blocker', () => {
 
   test('blocks at the Vitest 3.0.0 boundary', async () => {
     vi.mocked(lt).mockReturnValue(true);
-    packageManager.getInstalledVersion.mockResolvedValue('11.0.0');
-    packageManager.getModulePackageJSON.mockImplementation(async (packageName) =>
+    getInstalledVersion.mockResolvedValue('11.0.0');
+    getModulePackageJSON.mockImplementation(async (packageName) =>
       packageName === 'vitest' ? { version: '3.0.0' } : null
     );
 
@@ -75,8 +83,8 @@ describe('addonVitestVitest4 blocker', () => {
   });
 
   test('returns false at the Vitest 4.0.0 boundary', async () => {
-    packageManager.getInstalledVersion.mockResolvedValue('11.0.0');
-    packageManager.getModulePackageJSON.mockImplementation(async (packageName) =>
+    getInstalledVersion.mockResolvedValue('11.0.0');
+    getModulePackageJSON.mockImplementation(async (packageName) =>
       packageName === 'vitest' ? { version: '4.0.0' } : null
     );
 
@@ -87,8 +95,8 @@ describe('addonVitestVitest4 blocker', () => {
   });
 
   test('returns false for Vitest 5', async () => {
-    packageManager.getInstalledVersion.mockResolvedValue('11.0.0');
-    packageManager.getModulePackageJSON.mockImplementation(async (packageName) =>
+    getInstalledVersion.mockResolvedValue('11.0.0');
+    getModulePackageJSON.mockImplementation(async (packageName) =>
       packageName === 'vitest' ? { version: '5.0.0' } : null
     );
 
@@ -98,30 +106,30 @@ describe('addonVitestVitest4 blocker', () => {
   });
 
   test('returns false when vitest is not installed (unmet peer dependency)', async () => {
-    packageManager.getInstalledVersion.mockResolvedValue('11.0.0');
+    getInstalledVersion.mockResolvedValue('11.0.0');
 
     const result = await runCheck();
 
     expect(result).toBe(false);
-    expect(packageManager.getModulePackageJSON).toHaveBeenCalledWith('vitest');
+    expect(getModulePackageJSON).toHaveBeenCalledWith('vitest');
     expect(lt).not.toHaveBeenCalled();
   });
 
   test('uses the vite-plus vendored version when available', async () => {
     vi.mocked(lt).mockReturnValue(true);
     vi.mocked(getVitePlusVersions).mockResolvedValue({ vite: '7.1.2', vitest: '3.2.4' });
-    packageManager.getInstalledVersion.mockResolvedValue('11.0.0');
+    getInstalledVersion.mockResolvedValue('11.0.0');
 
     const result = await runCheck();
 
     expect(result).toEqual({ vitestVersion: '3.2.4' });
-    expect(packageManager.getModulePackageJSON).not.toHaveBeenCalled();
+    expect(getModulePackageJSON).not.toHaveBeenCalled();
   });
 
   test('falls back to the installed package when vite-plus lacks a /versions export', async () => {
     vi.mocked(lt).mockReturnValue(true);
-    packageManager.getInstalledVersion.mockResolvedValue('11.0.0');
-    packageManager.getModulePackageJSON.mockImplementation(async (packageName) =>
+    getInstalledVersion.mockResolvedValue('11.0.0');
+    getModulePackageJSON.mockImplementation(async (packageName) =>
       packageName === 'vitest' ? { version: '3.2.4' } : null
     );
 
@@ -131,7 +139,7 @@ describe('addonVitestVitest4 blocker', () => {
   });
 
   test('does not block when version detection throws', async () => {
-    packageManager.getInstalledVersion.mockRejectedValue(new Error('version detection failed'));
+    getInstalledVersion.mockRejectedValue(new Error('version detection failed'));
 
     const result = await runCheck();
 

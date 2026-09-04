@@ -16,7 +16,7 @@ export const blocker = createBlocker<AddonVitestVitest4Data>({
         packageManager.getInstalledVersion('@storybook/addon-vitest'),
       ]);
 
-      if (!addonVersion || !outdated?.installedVersion) {
+      if (outdated === false || !addonVersion || !outdated.installedVersion) {
         return false;
       }
 

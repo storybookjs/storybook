@@ -246,18 +246,23 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     }
   }
 
-  async onSetCurrentStory(selection: { storyId: StoryId; viewMode?: ViewMode }) {
+  async onSetCurrentStory(selection: {
+    storyId: StoryId;
+    viewMode?: ViewMode;
+    renderContext?: unknown;
+  }) {
+    const { renderContext, ...storySelection } = selection;
     /**
      * At the end of the initialization promise we will read the current story from the selection
      * store, so make sure we've updated it with the new selection or we'll lose track of it at the
      * end of init.
      */
-    this.selectionStore.setSelection({ viewMode: 'story', ...selection });
+    this.selectionStore.setSelection({ viewMode: 'story', ...storySelection });
 
     await this.storeInitializationPromise;
 
     this.channel.emit(CURRENT_STORY_WAS_SET, this.selectionStore.selection);
-    this.renderSelection();
+    this.renderSelection({ renderContext });
   }
 
   onUpdateQueryParams(queryParams: any) {
@@ -301,7 +306,10 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
   //     in which case we render it to the root element, OR
   // - a story selected in "docs" viewMode,
   //     in which case we render the docsPage for that story
-  protected async renderSelection({ persistedArgs }: { persistedArgs?: Args } = {}) {
+  protected async renderSelection({
+    persistedArgs,
+    renderContext,
+  }: { persistedArgs?: Args; renderContext?: unknown } = {}) {
     const { renderToCanvas } = this;
 
     if (!this.storyStoreValue || !renderToCanvas) {
@@ -355,7 +363,10 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
         this.mainStoryCallbacks(storyId),
         storyId,
         'story',
-        { autoplay: shouldAutoplay({ search: globalWindow.location?.search ?? '' }) }
+        {
+          autoplay: shouldAutoplay({ search: globalWindow.location?.search ?? '' }),
+          renderContext,
+        }
       );
     } else if (isMdxEntry(entry)) {
       render = new MdxDocsRender<TRenderer>(
@@ -411,6 +422,15 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     ) {
       this.currentRender = lastRender;
       this.channel.emit(STORY_UNCHANGED, storyId);
+      if (renderContext !== undefined) {
+        this.channel.emit(STORY_RENDER_PHASE_CHANGED, {
+          storyId,
+          renderId: render.renderId,
+          newPhase: 'aborted',
+          reason: 'unchanged',
+          renderContext,
+        });
+      }
       this.view.showMain();
       return;
     }

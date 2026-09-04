@@ -19,6 +19,7 @@ export type RenderContextCallbacks<TRenderer extends Renderer> = Pick<
 export type StoryRenderOptions = {
   autoplay?: boolean;
   forceInitialArgs?: boolean;
+  renderContext?: unknown;
 };
 
 export type ResolvedModuleExportType = 'component' | 'meta' | 'story';

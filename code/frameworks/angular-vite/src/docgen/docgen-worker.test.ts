@@ -1,51 +1,54 @@
-import { getComponentIdFromEntry } from 'storybook/internal/common';
+import { logger } from 'storybook/internal/node-logger';
 import type { DocgenPayload, DocgenProvider, IndexEntry } from 'storybook/internal/types';
-
-import { existsSync, readFileSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { vol } from 'memfs';
-
-import { ensureCompodocDocumentation } from '../compodoc/ensure-documentation.ts';
 import { buildDocgenPayload } from './build-docgen.ts';
 import { createDocgenProvider } from './docgen-worker.ts';
 
-vi.mock('node:fs', { spy: true });
-// Spy-only: the real builder runs unless a test overrides it to exercise the provider's own wiring.
-vi.mock('./build-docgen.ts', { spy: true });
-// Generation is covered next to the lock; here it only has to happen before anything is served.
-vi.mock('../compodoc/ensure-documentation.ts', { spy: true });
+// A structural fake keeps these tests runnable without a real TypeScript-backed analyzer.
+const { analyzer } = vi.hoisted(() => {
+  class FakeAngularComponentMetaManager {
+    startWatching = vi.fn();
+    recycleIfHeapPressured = vi.fn();
+    extractComponentMeta = vi.fn();
+    typescript: unknown;
 
-/** Whether the mocked generation should publish a documentation.json, set per test. */
-let generationWrites = false;
-
-beforeEach(async () => {
-  const memfs = await vi.importActual<typeof import('memfs')>('memfs');
-  vi.mocked(existsSync).mockImplementation(memfs.fs.existsSync as typeof existsSync);
-  vi.mocked(statSync).mockImplementation(memfs.fs.statSync as typeof statSync);
-  vi.mocked(readFileSync).mockImplementation(memfs.fs.readFileSync as typeof readFileSync);
-  generationWrites = false;
-  vi.mocked(ensureCompodocDocumentation).mockImplementation(async () => {
-    if (generationWrites) {
-      vol.writeFileSync(DOCUMENTATION_JSON, documentationJson('label'));
+    constructor(typescript: unknown) {
+      state.constructions += 1;
+      if (state.failConstruction) {
+        throw new Error('the analyzer refused to start');
+      }
+      this.typescript = typescript;
+      state.instances.push(this);
     }
-  });
+  }
+
+  const state = {
+    FakeAngularComponentMetaManager,
+    instances: [] as InstanceType<typeof FakeAngularComponentMetaManager>[],
+    constructions: 0,
+    failConstruction: false,
+  };
+  return { analyzer: state };
+});
+
+vi.mock('@storybook/angular-cm', () => ({
+  AngularComponentMetaManager: analyzer.FakeAngularComponentMetaManager,
+}));
+// These tests cover the middleware chain, not payload building.
+vi.mock('./build-docgen.ts', () => ({ buildDocgenPayload: vi.fn() }));
+vi.mock(import('storybook/internal/node-logger'), { spy: true });
+
+beforeEach(() => {
+  analyzer.instances = [];
+  analyzer.constructions = 0;
+  analyzer.failConstruction = false;
 });
 
 afterEach(() => {
-  vol.reset();
-  // `restoreAllMocks` does not put back the implementation behind a `spy: true` module mock, so a
-  // per-test override would leak into every later test in the file.
-  vi.mocked(buildDocgenPayload).mockReset();
-  vi.mocked(ensureCompodocDocumentation).mockReset();
   vi.restoreAllMocks();
 });
-
-const OUTPUT_DIR = '/workspace/docs';
-const DOCUMENTATION_JSON = join(OUTPUT_DIR, 'documentation.json');
-const STORY_PATH = resolve(process.cwd(), 'button.stories.ts');
 
 const entry: IndexEntry = {
   id: 'button--default',
@@ -56,49 +59,13 @@ const entry: IndexEntry = {
   importPath: './button.stories.ts',
 };
 
-const documentationJson = (input: string) =>
-  JSON.stringify({
-    components: [
-      {
-        name: 'ButtonComponent',
-        type: 'component',
-        description: '<p>Renders a button.</p>\n',
-        inputsClass: [{ name: input, type: 'string', optional: false }],
-        outputsClass: [],
-        propertiesClass: [],
-        methodsClass: [],
-      },
-    ],
-  });
-
-const STORY_FILE = `
-  import { ButtonComponent } from './button.component';
-  export default { title: 'Button', component: ButtonComponent };
-  export const Default = {};
-`;
-
-const givenWorkspace = ({ withDocumentationJson = true } = {}) => {
-  vol.fromNestedJSON({ [STORY_PATH]: STORY_FILE });
-  vol.mkdirSync(OUTPUT_DIR, { recursive: true });
-  if (withDocumentationJson) {
-    vol.writeFileSync(DOCUMENTATION_JSON, documentationJson('label'));
-  }
+const ours: DocgenPayload = {
+  id: 'button',
+  name: 'ButtonComponent',
+  path: './button.stories.ts',
+  jsDocTags: {},
+  argTypes: { label: { name: 'label' } },
 };
-
-const passthrough: DocgenProvider = async () => undefined;
-
-const providerOptions = {
-  outputDir: OUTPUT_DIR,
-  compodocArgs: ['-e', 'json', '-d', OUTPUT_DIR],
-  workspaceRoot: process.cwd(),
-  tsconfig: 'tsconfig.json',
-};
-
-const createProvider = async (next: DocgenProvider = passthrough) =>
-  (await createDocgenProvider(providerOptions))(next);
-
-const run = async (next: DocgenProvider = passthrough, input = { entry }) =>
-  (await createProvider(next))(input);
 
 const downstream: DocgenPayload = {
   id: 'button',
@@ -108,53 +75,38 @@ const downstream: DocgenPayload = {
   argTypes: { caption: { name: 'caption' } },
 };
 
+const errored: DocgenPayload = {
+  id: 'button',
+  name: 'ButtonComponent',
+  path: './button.stories.ts',
+  jsDocTags: {},
+  error: { name: 'AngularComponentMetaNotFound', message: 'no metadata' },
+};
+
+const passthrough: DocgenProvider = async () => undefined;
+
 describe('createDocgenProvider', () => {
-  it('runs cold as a pure Node function: no dev server, no Vite, no Angular class loading', async () => {
-    givenWorkspace();
-
-    // The only input is a structured-cloneable options bag, exactly as it crosses the worker
-    // boundary - no Storybook `Options`, no Vite config, no builder context.
-    const middleware = await createDocgenProvider(structuredClone(providerOptions));
-    const payload = await middleware(passthrough)({ entry });
-
-    expect(payload).toMatchObject({ name: 'ButtonComponent', description: 'Renders a button.' });
-    expect(payload?.argTypes?.label).toBeDefined();
-  });
-
-  it('triggers Compodoc once per worker and awaits it before serving anything', async () => {
-    givenWorkspace({ withDocumentationJson: false });
-    // Whatever the trigger produces has to be on disk by the time the first request is answered,
-    // which is only true because the run is awaited during construction rather than per request.
-    generationWrites = true;
-    const provider = await createProvider();
-
-    const payload = await provider({ entry });
-    await provider({ entry });
-
-    expect(ensureCompodocDocumentation).toHaveBeenCalledOnce();
-    expect(ensureCompodocDocumentation).toHaveBeenCalledWith(
-      expect.objectContaining({
-        outputDir: OUTPUT_DIR,
-        compodocArgs: ['-e', 'json', '-d', OUTPUT_DIR],
-      })
-    );
-    expect(payload?.argTypes?.label).toBeDefined();
-  });
-
-  it('falls through for a file that is not a story', async () => {
+  it('falls through for a file that is not a story, without creating the analyzer', async () => {
     const next = vi.fn(passthrough);
 
     await expect(
-      run(next, { entry: { ...entry, importPath: './button.component.ts' } })
+      createDocgenProvider({ propsTable: 'api' })(next)({
+        entry: { ...entry, importPath: './button.component.ts' },
+      })
     ).resolves.toBeUndefined();
+
     expect(next).toHaveBeenCalledOnce();
     expect(buildDocgenPayload).not.toHaveBeenCalled();
+    expect(analyzer.constructions).toBe(0);
   });
 
   it('merges over downstream output on success', async () => {
-    givenWorkspace();
+    vi.mocked(buildDocgenPayload).mockReturnValue(ours);
 
-    const payload = await run(async () => ({ ...downstream, somethingElse: 'kept' }));
+    const payload = await createDocgenProvider({ propsTable: 'api' })(async () => ({
+      ...downstream,
+      somethingElse: 'kept',
+    }))({ entry });
 
     expect(payload).toMatchObject({ name: 'ButtonComponent', somethingElse: 'kept' });
     expect(payload?.argTypes?.label).toBeDefined();
@@ -162,62 +114,96 @@ describe('createDocgenProvider', () => {
   });
 
   it('keeps another provider`s payload when our own extraction fails', async () => {
-    // No documentation.json: extraction fails while another provider has real data.
-    givenWorkspace({ withDocumentationJson: false });
+    vi.mocked(buildDocgenPayload).mockReturnValue(errored);
     const next = vi.fn<DocgenProvider>(async () => downstream);
 
-    expect(await run(next)).toEqual(downstream);
+    await expect(createDocgenProvider({ propsTable: 'api' })(next)({ entry })).resolves.toEqual(
+      downstream
+    );
     expect(next).toHaveBeenCalledOnce();
   });
 
   it('reports its own error only when no other provider described the component', async () => {
-    givenWorkspace({ withDocumentationJson: false });
+    vi.mocked(buildDocgenPayload).mockReturnValue(errored);
 
-    const payload = await run();
+    await expect(
+      createDocgenProvider({ propsTable: 'api' })(passthrough)({ entry })
+    ).resolves.toEqual(errored);
+  });
 
-    expect(payload?.error?.name).toBe('NoCompodocDocumentation');
-    expect(payload?.id).toBe(getComponentIdFromEntry(entry));
+  it('delegates downstream when it has no payload for the component', async () => {
+    vi.mocked(buildDocgenPayload).mockReturnValue(undefined);
+    const next = vi.fn<DocgenProvider>(async () => downstream);
+
+    await expect(createDocgenProvider({ propsTable: 'api' })(next)({ entry })).resolves.toEqual(
+      downstream
+    );
+    expect(next).toHaveBeenCalledOnce();
   });
 
   it('lets an unexpected failure propagate, since core records it against this component', async () => {
-    givenWorkspace();
+    const failure = new TypeError('unexpected');
     vi.mocked(buildDocgenPayload).mockImplementation(() => {
-      throw new TypeError('compodoc entry is not iterable');
+      throw failure;
     });
 
-    await expect(run()).rejects.toThrow('compodoc entry is not iterable');
+    await expect(createDocgenProvider({ propsTable: 'api' })(passthrough)({ entry })).rejects.toBe(
+      failure
+    );
   });
 
-  it('re-reads documentation.json when Compodoc is re-run mid-session', async () => {
-    givenWorkspace();
-    const provider = await createProvider();
+  it('owns one watching analyzer for its lifetime and recycles after each extraction', async () => {
+    vi.mocked(buildDocgenPayload).mockReturnValue(ours);
+    const provider = createDocgenProvider({ propsTable: 'api' })(passthrough);
 
-    expect((await provider({ entry }))?.argTypes?.label).toBeDefined();
-    expect(
-      vi.mocked(readFileSync).mock.calls.filter(([p]) => p === DOCUMENTATION_JSON)
-    ).toHaveLength(1);
-    // A second request for an unchanged file is served from the memo.
     await provider({ entry });
-    expect(
-      vi.mocked(readFileSync).mock.calls.filter(([p]) => p === DOCUMENTATION_JSON)
-    ).toHaveLength(1);
+    await provider({ entry });
 
-    vol.writeFileSync(DOCUMENTATION_JSON, documentationJson('caption'));
-    vol.utimesSync(DOCUMENTATION_JSON, new Date(), new Date(Date.now() + 5000));
-
-    const updated = await provider({ entry });
-    expect(updated?.argTypes?.caption).toBeDefined();
-    expect(updated?.argTypes?.label).toBeUndefined();
+    expect(analyzer.constructions).toBe(1);
+    const [manager] = analyzer.instances;
+    expect(manager.startWatching).toHaveBeenCalledOnce();
+    expect(manager.recycleIfHeapPressured).toHaveBeenCalledTimes(2);
+    expect((manager.typescript as { version?: unknown }).version).toBeTypeOf('string');
   });
 
-  it('reports a documentation.json created after the first miss', async () => {
-    givenWorkspace({ withDocumentationJson: false });
-    const provider = await createProvider();
+  it('threads a structured-cloneable options bag and the manager into the payload builder', async () => {
+    vi.mocked(buildDocgenPayload).mockReturnValue(ours);
 
-    expect((await provider({ entry }))?.error?.name).toBe('NoCompodocDocumentation');
+    await createDocgenProvider(structuredClone({ propsTable: 'inputs' } as const))(passthrough)({
+      entry,
+    });
 
-    vol.writeFileSync(DOCUMENTATION_JSON, documentationJson('label'));
+    expect(buildDocgenPayload).toHaveBeenCalledExactlyOnceWith(
+      { entry },
+      {
+        manager: analyzer.instances[0],
+        options: { propsTable: 'inputs' },
+        logger: expect.objectContaining({
+          warn: expect.any(Function),
+          debug: expect.any(Function),
+        }),
+      }
+    );
+  });
 
-    expect((await provider({ entry }))?.argTypes?.label).toBeDefined();
+  it('passes through permanently when the analyzer cannot be created', async () => {
+    analyzer.failConstruction = true;
+    vi.mocked(logger.warn).mockImplementation(() => {});
+    const next = vi.fn<DocgenProvider>(async () => downstream);
+    const provider = createDocgenProvider({ propsTable: 'api' })(next);
+
+    await expect(provider({ entry })).resolves.toEqual(downstream);
+    await expect(provider({ entry })).resolves.toEqual(downstream);
+
+    expect(analyzer.constructions).toBe(1);
+    expect(next).toHaveBeenCalledTimes(2);
+    expect(buildDocgenPayload).not.toHaveBeenCalled();
+    expect(vi.mocked(logger.warn).mock.calls).toMatchInlineSnapshot(`
+      [
+        [
+          "Angular docgen is unavailable: the component meta analyzer could not be created. the analyzer refused to start",
+        ],
+      ]
+    `);
   });
 });

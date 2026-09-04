@@ -1,38 +1,40 @@
 import type { IndexEntry } from 'storybook/internal/types';
 
-import { existsSync, readFileSync } from 'node:fs';
-import { dirname, join, relative, resolve } from 'node:path';
+import { readFileSync } from 'node:fs';
+import { dirname, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { vol } from 'memfs';
 
-import type { CompodocJson } from '@storybook/angular-compodoc';
-import type { BuildDocgenContext } from './build-docgen.ts';
-import { buildDocgenPayload, findCompodocEntry } from './build-docgen.ts';
+import type { AngularClassMeta, AngularComponentMetaResult } from '@storybook/angular-cm';
+import type { AngularComponentMetaSource, BuildDocgenContext } from './build-docgen.ts';
+import { buildDocgenPayload } from './build-docgen.ts';
 
 vi.mock('node:fs', { spy: true });
 
 beforeEach(async () => {
   vol.reset();
   const memfs = await vi.importActual<typeof import('memfs')>('memfs');
-  vi.mocked(existsSync).mockImplementation(memfs.fs.existsSync as typeof existsSync);
-  vi.mocked(readFileSync).mockImplementation(memfs.fs.readFileSync as typeof readFileSync);
-  logger.warn.mockClear();
-  logger.debug.mockClear();
+  const realFs = await vi.importActual<typeof import('node:fs')>('node:fs');
+  // memfs supplies the story files the tests write; every other module the resolver reaches is a
+  // fixture on disk.
+  vi.mocked(readFileSync).mockImplementation(((path: Parameters<typeof readFileSync>[0], ...rest) =>
+    vol.existsSync(path as string)
+      ? (memfs.fs.readFileSync as typeof readFileSync)(path, ...rest)
+      : realFs.readFileSync(path, ...rest)) as typeof readFileSync);
 });
 
 afterEach(() => {
   vi.restoreAllMocks();
 });
 
-// Built with `resolve`/`join` so the seeded paths match what the production code derives on
-// Windows, where `join` yields backslashes.
-const OUTPUT_DIR = resolve('/workspace/docs');
-const DOCUMENTATION_JSON = join(OUTPUT_DIR, 'documentation.json');
-// The story index writes `importPath` relative to the worker's cwd.
-const STORY_PATH = resolve(process.cwd(), 'src/button.stories.ts');
+// The story files sit in the fixtures directory next to the component modules they import, because
+// module resolution reads the real filesystem; only the story files' contents come from memfs.
+const FIXTURES = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
+const STORY_PATH = join(FIXTURES, 'button.stories.ts');
+const COMPONENT_PATH = join(FIXTURES, 'button.component.ts');
 
 const entry: IndexEntry = {
   id: 'button--default',
@@ -40,299 +42,562 @@ const entry: IndexEntry = {
   title: 'Button',
   type: 'story',
   subtype: 'story',
-  importPath: './src/button.stories.ts',
+  // The story index writes `importPath` relative to the worker's cwd.
+  importPath: relative(process.cwd(), STORY_PATH),
 };
 
-/** Package root, which the fixtures stand in for a Compodoc workspace root. */
-const PACKAGE_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const FIXTURES = join(PACKAGE_ROOT, 'src/docgen/__testfixtures__');
-const FIXTURE_STORY_PATH = join(FIXTURES, 'button.stories.ts');
-const fixtureEntry: IndexEntry = {
-  ...entry,
-  importPath: relative(process.cwd(), FIXTURE_STORY_PATH),
-};
-
-/** A logger, because the shared parsing module warns and `vitest-setup.ts` fails on console.warn. */
+// The shared parsing module warns, and `vitest-setup.ts` fails the run on console.warn.
 const logger = { warn: vi.fn(), debug: vi.fn() };
 
-const buttonComponent: Record<string, unknown> = {
-  name: 'ButtonComponent',
-  file: 'src/button.component.ts',
-  type: 'component',
-  description: '<p>Renders a button.</p>\n',
-  propertiesClass: [],
-  methodsClass: [],
-  outputsClass: [],
-  inputsClass: [{ name: 'label', type: 'string', optional: false, defaultValue: "'Click me'" }],
+const givenStoryFile = (
+  source = `
+    import { ButtonComponent } from './button.component';
+    export default { title: 'Button', component: ButtonComponent };
+    export const Default = {};
+  `
+) => {
+  vol.fromNestedJSON({ [STORY_PATH]: source });
 };
 
-/** The `ButtonComponent` the fixture story imports: two inputs, in its own file. */
-const fixtureButton: Record<string, unknown> = {
-  ...buttonComponent,
-  file: 'src/docgen/__testfixtures__/button.component.ts',
-  inputsClass: [
-    { name: 'label', type: 'string', optional: false },
-    { name: 'primary', type: 'boolean', optional: false },
-  ],
-};
-
-/** A different `ButtonComponent`, in a different file, with a single different input. */
-const unrelatedButton: Record<string, unknown> = {
-  ...buttonComponent,
-  file: 'src/stories/frameworks/angular-vite/button.component.ts',
-  inputsClass: [{ name: 'text', type: 'string', optional: false }],
-};
-
-const emptyJson: CompodocJson = {
-  components: [],
-  directives: [],
-  pipes: [],
-  injectables: [],
-  classes: [],
-};
-
-/** Writes the story file, and `documentation.json` unless the test is about it being absent. */
-const givenWorkspace = ({ withDocumentationJson = true } = {}) => {
-  vol.fromNestedJSON({
-    [STORY_PATH]: `
-      import { ButtonComponent } from './button.component';
-      export default { title: 'Button', component: ButtonComponent };
-      export const Default = {};
-    `,
-    ...(withDocumentationJson ? { [DOCUMENTATION_JSON]: '{}' } : {}),
-  });
-};
-
-const context = (
-  compodocJson: CompodocJson | (() => CompodocJson),
-  overrides: Partial<BuildDocgenContext['options']> = {}
-): BuildDocgenContext => ({
-  options: {
-    outputDir: OUTPUT_DIR,
-    compodocArgs: ['-e', 'json'],
-    workspaceRoot: process.cwd(),
-    tsconfig: 'tsconfig.json',
+const componentEntry = (overrides: Record<string, unknown> = {}): AngularClassMeta =>
+  ({
+    name: 'ButtonComponent',
+    type: 'component',
+    file: COMPONENT_PATH,
+    description: 'Renders a button.',
+    rawdescription: 'Renders a button.',
+    propertiesClass: [],
+    methodsClass: [],
+    outputsClass: [],
+    inputsClass: [
+      {
+        name: 'label',
+        type: 'string',
+        optional: false,
+        initializer: { kind: 'literal', literalKind: 'string', text: "'Click me'" },
+      },
+    ],
     ...overrides,
-  },
-  readDocumentationJson: typeof compodocJson === 'function' ? compodocJson : () => compodocJson,
-  logger,
+  }) as unknown as AngularClassMeta;
+
+const metaFor = (
+  classMeta: AngularClassMeta,
+  jsDocInfo?: AngularComponentMetaResult['jsDocInfo']
+): AngularComponentMetaResult =>
+  ({
+    entry: classMeta,
+    json: { components: [classMeta] },
+    ...(jsDocInfo ? { jsDocInfo } : {}),
+  }) as AngularComponentMetaResult;
+
+const managerReturning = (meta: AngularComponentMetaResult | undefined) => ({
+  extractComponentMeta: vi.fn<AngularComponentMetaSource['extractComponentMeta']>(() => meta),
 });
 
-const jsonWith = (component: Record<string, unknown>) =>
-  ({ ...emptyJson, components: [component] }) as unknown as CompodocJson;
+const context = (
+  manager: AngularComponentMetaSource,
+  options: BuildDocgenContext['options'] = { propsTable: 'all' }
+): BuildDocgenContext => ({ manager, options, logger });
 
 describe('buildDocgenPayload', () => {
-  it('extracts argTypes and attaches the raw Compodoc entry unfiltered', () => {
-    givenWorkspace();
-    const json = jsonWith(buttonComponent);
+  it('extracts argTypes from the analyzer and derives the snippet meta', () => {
+    givenStoryFile();
+    const classMeta = componentEntry();
+    const manager = managerReturning(metaFor(classMeta));
 
-    const payload = buildDocgenPayload({ entry }, context(json));
+    const payload = buildDocgenPayload({ entry }, context(manager));
 
+    expect(manager.extractComponentMeta).toHaveBeenCalledExactlyOnceWith(COMPONENT_PATH, {
+      exportName: 'ButtonComponent',
+      localName: 'ButtonComponent',
+    });
     expect(payload).toMatchObject({
       id: 'button',
       name: 'ButtonComponent',
-      path: './src/button.stories.ts',
+      path: entry.importPath,
       description: 'Renders a button.',
       jsDocTags: {},
+      renderer: 'angular',
+      apiDescription: expect.stringContaining('export type ButtonComponentInputs = {'),
     });
     expect(payload?.argTypes?.label).toMatchObject({
       name: 'label',
       table: { category: 'inputs', defaultValue: { summary: 'Click me' } },
     });
-    // Unfiltered: the same object Compodoc emitted, not a curated subset.
-    expect(payload?.compodoc).toBe(json.components?.[0]);
+    expect(payload?.angularComponentMeta).toEqual({
+      name: 'ButtonComponent',
+      selector: undefined,
+      standalone: true,
+      inputs: ['label'],
+      outputs: [],
+      enums: [],
+    });
+    expect(payload?.compodoc).toBeUndefined();
     expect(payload?.subcomponents).toBeUndefined();
     expect(payload?.error).toBeUndefined();
   });
 
+  it('marks the snippet meta non-standalone only for an explicit `standalone: false`', () => {
+    givenStoryFile();
+    const manager = managerReturning(metaFor(componentEntry({ standalone: false })));
+
+    const payload = buildDocgenPayload({ entry }, context(manager));
+
+    expect(payload?.angularComponentMeta?.standalone).toBe(false);
+  });
+
   describe('description and JSDoc tags', () => {
-    const tag = (name: string, comment?: string) => ({ tagName: { escapedText: name }, comment });
-
-    const tagCases: [jsdoctags: unknown[], expected: Record<string, string[]>][] = [
-      // `summary` is sourced from a @summary tag, as React does.
-      [[tag('summary', '<p>A clickable button</p>\n')], { summary: ['A clickable button'] }],
-      // Repeats accumulate under one name.
+    it.each([
       [
-        [tag('see', '<p>a</p>\n'), tag('see', '<p>b</p>\n'), tag('deprecated', '<p>Gone.</p>\n')],
-        { see: ['a', 'b'], deprecated: ['Gone.'] },
+        'falls back to the trimmed rawdescription when TypeScript JSDoc is unavailable',
+        '\n\nRenders a button.\n',
+        'ignored',
+        'Renders a button.',
       ],
-      // A tag may carry no comment, and a malformed one is skipped rather than published.
-      [[tag('internal'), { comment: '<p>orphan</p>\n' }, {}], { internal: [''] }],
-    ];
+      [
+        'falls back to the description when rawdescription is empty',
+        '',
+        'Renders a button.',
+        'Renders a button.',
+      ],
+      ['reports no description when both are empty', '', '', undefined],
+    ])('%s', (_name, rawdescription, description, expected) => {
+      givenStoryFile();
+      const manager = managerReturning(metaFor(componentEntry({ rawdescription, description })));
 
-    it.each(tagCases)('publishes Compodoc`s own tags (%#)', (jsdoctags, expected) => {
-      givenWorkspace();
+      expect(buildDocgenPayload({ entry }, context(manager))?.description).toBe(expected);
+    });
 
-      const payload = buildDocgenPayload(
-        { entry },
-        context(jsonWith({ ...buttonComponent, jsdoctags }))
+    it('publishes TypeScript-rendered tags and sources `summary` from a @summary tag', () => {
+      givenStoryFile();
+      const manager = managerReturning(
+        metaFor(componentEntry(), {
+          description: 'Renders a TypeScript-documented button.',
+          jsDocTags: {
+            summary: ['A clickable button'],
+            see: ['a', 'b'],
+            internal: [''],
+          },
+        })
       );
 
-      expect(payload?.jsDocTags).toEqual(expected);
-      expect(payload?.summary).toBe(expected.summary?.[0]);
-      expect(payload?.description).toBe('Renders a button.');
-    });
+      const payload = buildDocgenPayload({ entry }, context(manager));
 
-    it('keeps prose around a documented @Input() code block and invents no tag from it', () => {
-      givenWorkspace();
-      const description =
-        '<p>A button.</p>\n<pre><code class="language-ts">@Input() label: string;\n</code></pre>\n<p>Use it.</p>\n';
-
-      const payload = buildDocgenPayload(
-        { entry },
-        context(jsonWith({ ...buttonComponent, description }))
-      );
-
-      expect(payload?.description).toBe('A button.\n@Input() label: string;\n\nUse it.');
-      expect(payload?.jsDocTags).toEqual({});
-    });
-  });
-
-  it('honours `angularFilterNonInputControls`', () => {
-    givenWorkspace();
-    const json = jsonWith({
-      ...buttonComponent,
-      propertiesClass: [{ name: 'internal', type: 'string', optional: false }],
-    });
-
-    expect(Object.keys(buildDocgenPayload({ entry }, context(json))?.argTypes ?? {})).toEqual([
-      'internal',
-      'label',
-    ]);
-    expect(
-      Object.keys(
-        buildDocgenPayload({ entry }, context(json, { angularFilterNonInputControls: true }))
-          ?.argTypes ?? {}
-      )
-    ).toEqual(['label']);
-  });
-
-  describe('lookup', () => {
-    it('reads argTypes from the component the story actually imports', () => {
-      // Module resolution reads the real filesystem, so the story file sits in the fixtures
-      // directory next to the component modules it imports; only its contents come from memfs.
-      vol.fromNestedJSON({
-        [FIXTURE_STORY_PATH]: `
-          import { ButtonComponent } from './button.component';
-          export default { title: 'Button', component: ButtonComponent };
-        `,
-        [DOCUMENTATION_JSON]: '{}',
+      expect(payload?.description).toBe('Renders a TypeScript-documented button.');
+      expect(payload?.jsDocTags).toEqual({
+        summary: ['A clickable button'],
+        see: ['a', 'b'],
+        internal: [''],
       });
+      expect(payload?.summary).toBe('A clickable button');
+    });
 
-      const payload = buildDocgenPayload(
-        { entry: fixtureEntry },
-        // The unrelated one is listed first, which is what a name-only lookup would return.
-        context(
-          { ...emptyJson, components: [unrelatedButton, fixtureButton] } as unknown as CompodocJson,
-          { workspaceRoot: PACKAGE_ROOT }
+    // TypeScript reports an empty description for a docblock that is nothing but tags, and for a
+    // class with no docblock at all. Neither means "the analyzer's description is wrong", so an
+    // empty one falls through rather than overwriting it.
+    it('falls back to analyzer prose when TypeScript reports an empty description', () => {
+      givenStoryFile();
+      const manager = managerReturning(
+        metaFor(componentEntry({ rawdescription: 'Legacy analyzer prose.' }), {
+          description: '',
+          jsDocTags: { deprecated: ['Use NewButton.'] },
+        })
+      );
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.description).toBe('Legacy analyzer prose.');
+      expect(payload?.jsDocTags).toEqual({ deprecated: ['Use NewButton.'] });
+    });
+
+    it('leaves the description undefined for an undocumented component', () => {
+      givenStoryFile();
+      const manager = managerReturning(
+        metaFor(componentEntry({ rawdescription: undefined, description: undefined }), {
+          description: '',
+          jsDocTags: {},
+        })
+      );
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.description).toBeUndefined();
+    });
+
+    it('falls back to analyzer tags when TypeScript JSDoc is unavailable', () => {
+      givenStoryFile();
+      const manager = managerReturning(
+        metaFor(
+          componentEntry({
+            jsdoctags: [
+              { tagName: { escapedText: 'summary' }, comment: 'A clickable button' },
+              { tagName: { escapedText: 'see' }, comment: 'a' },
+              { tagName: { escapedText: 'see' }, comment: 'b' },
+              { tagName: { escapedText: 'internal' } },
+              { comment: 'orphan' },
+              {},
+            ],
+          })
         )
       );
 
-      expect(Object.keys(payload?.argTypes ?? {})).toEqual(['label', 'primary']);
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect({ summary: payload?.summary, jsDocTags: payload?.jsDocTags }).toMatchInlineSnapshot(`
+          {
+            "jsDocTags": {
+              "internal": [
+                "",
+              ],
+              "see": [
+                "a",
+                "b",
+              ],
+              "summary": [
+                "A clickable button",
+              ],
+            },
+            "summary": "A clickable button",
+          }
+        `);
+    });
+  });
+
+  describe('extraction rules on the analyzer path', () => {
+    it('keeps plain-text comments intact where an HTML unwrapper would mangle them', () => {
+      // `Array<string>` run through htmlToText loses `<string>`: a letter-opened angle bracket
+      // reads as an HTML tag.
+      givenStoryFile();
+      const classMeta = componentEntry({
+        inputsClass: [
+          {
+            name: 'items',
+            type: 'string',
+            optional: true,
+            jsdoctags: [{ tagName: { escapedText: 'default' }, comment: '[] as Array<string>' }],
+          },
+        ],
+      });
+
+      const payload = buildDocgenPayload({ entry }, context(managerReturning(metaFor(classMeta))));
+
+      expect(payload?.jsDocTags).toEqual({});
+      expect(payload?.argTypes?.items?.table?.defaultValue).toEqual({
+        summary: '[] as Array<string>',
+      });
+    });
+
+    it('invents no defaults, types functions structurally, and surfaces prop JSDoc tags', () => {
+      givenStoryFile();
+      const classMeta = componentEntry({
+        inputsClass: [
+          { name: 'count', type: 'number', optional: true },
+          { name: 'formatter', type: 'function', optional: false },
+          {
+            name: 'legend',
+            type: 'string',
+            optional: true,
+            jsdoctags: [
+              { tagName: { escapedText: 'deprecated' }, comment: 'Use `label` instead.' },
+            ],
+          },
+        ],
+      });
+
+      const payload = buildDocgenPayload({ entry }, context(managerReturning(metaFor(classMeta))));
+
+      expect(payload?.argTypes?.count?.table?.defaultValue).toEqual({ summary: undefined });
+      expect(payload?.argTypes?.formatter?.type).toEqual({ name: 'function', required: true });
+      expect(payload?.argTypes?.legend?.table?.jsDocTags).toEqual({
+        deprecated: 'Use `label` instead.',
+      });
+    });
+  });
+
+  it('hands `propsTable` to the conversion', () => {
+    givenStoryFile();
+    const classMeta = componentEntry({
+      propertiesClass: [
+        { name: 'note', type: 'string', optional: false },
+        { name: 'cdr', type: 'ChangeDetectorRef', optional: false, visibility: 'private' },
+      ],
+    });
+    const argNames = (options: BuildDocgenContext['options']) =>
+      Object.keys(
+        buildDocgenPayload({ entry }, context(managerReturning(metaFor(classMeta)), options))
+          ?.argTypes ?? {}
+      );
+
+    expect(argNames({ propsTable: 'all' })).toEqual(['note', 'cdr', 'label']);
+    expect(argNames({ propsTable: 'api' })).toEqual(['note', 'label']);
+    expect(argNames({ propsTable: 'inputs' })).toEqual(['label']);
+  });
+
+  describe('apiDescription', () => {
+    // `line` is what marks the input/output pair as one `model()`, not two aliased members.
+    const colorPicker = componentEntry({
+      name: 'ColorPickerComponent',
+      inputsClass: [
+        {
+          name: 'color',
+          type: 'string',
+          optional: true,
+          line: 12,
+          initializer: { kind: 'literal', literalKind: 'string', text: "'#345F92'" },
+          rawdescription: 'The currently selected colour',
+        },
+      ],
+      outputsClass: [{ name: 'color', type: 'string', line: 12 }],
+      propertiesClass: [
+        { name: 'cdr', type: 'ChangeDetectorRef', optional: false, visibility: 'private' },
+      ],
+    });
+
+    it('documents the two-way binding and tags the payload with its renderer', () => {
+      givenStoryFile();
+      const manager = managerReturning(metaFor(colorPicker));
+
+      const payload = buildDocgenPayload({ entry }, context(manager, { propsTable: 'api' }));
+
+      expect(payload?.renderer).toBe('angular');
+      expect(payload?.apiDescription?.split('\n')).toEqual([
+        '## Inputs',
+        '',
+        '```',
+        'export type ColorPickerComponentInputs = {',
+        '  /**',
+        '   * The currently selected colour',
+        '   *',
+        // The analyzer unquotes string defaults for the props table, and this reads that value.
+        '   * @default #345F92',
+        '   */',
+        '  color?: string; // two-way: [(color)]',
+        '}',
+        '```',
+        '',
+        '## Outputs',
+        '',
+        '```',
+        'export type ColorPickerComponentOutputs = {',
+        '  colorChange: (e: string) => void;',
+        '}',
+        '```',
+      ]);
+    });
+
+    it.each(['all', 'inputs'] as const)(
+      'documents the same api surface when the props table is `%s`',
+      (propsTable) => {
+        givenStoryFile();
+        const manager = managerReturning(metaFor(colorPicker));
+        const apiPayload = buildDocgenPayload(
+          { entry },
+          context(managerReturning(metaFor(colorPicker)), { propsTable: 'api' })
+        );
+
+        const payload = buildDocgenPayload({ entry }, context(manager, { propsTable }));
+
+        expect(payload?.apiDescription).toBe(apiPayload?.apiDescription);
+        expect(payload?.apiDescription).toContain('## Outputs');
+        expect(payload?.apiDescription).not.toContain('cdr');
+      }
+    );
+
+    it('is omitted for a component that binds nothing', () => {
+      givenStoryFile();
+      const manager = managerReturning(
+        metaFor(componentEntry({ inputsClass: [], outputsClass: [] }))
+      );
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.apiDescription).toBeUndefined();
+      expect(payload?.renderer).toBe('angular');
+    });
+  });
+
+  describe('component resolution', () => {
+    it('asks the analyzer for the default export and reports its class name', () => {
+      givenStoryFile(`
+        import Button from './default-button.component';
+        export default { title: 'Button', component: Button };
+      `);
+      const manager = managerReturning(
+        metaFor(componentEntry({ name: 'DefaultExportedButtonComponent' }))
+      );
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(manager.extractComponentMeta).toHaveBeenCalledExactlyOnceWith(
+        join(FIXTURES, 'default-button.component.ts'),
+        { exportName: 'default', localName: 'Button' }
+      );
+      expect(payload?.name).toBe('DefaultExportedButtonComponent');
+    });
+
+    it('analyzes the story file itself for a component declared inside it', () => {
+      givenStoryFile(`
+        class ButtonComponent {}
+        export default { title: 'Button', component: ButtonComponent };
+      `);
+      const manager = managerReturning(metaFor(componentEntry({ file: STORY_PATH })));
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(manager.extractComponentMeta).toHaveBeenCalledExactlyOnceWith(STORY_PATH, {
+        exportName: 'ButtonComponent',
+        localName: 'ButtonComponent',
+      });
       expect(payload?.error).toBeUndefined();
     });
+  });
 
-    it('ignores a same-named pipe, injectable and plain class', () => {
-      givenWorkspace();
-      const collision: Record<string, unknown> = {
-        name: 'ButtonComponent',
-        properties: [],
-        methods: [],
-      };
-      const json = {
-        ...emptyJson,
-        pipes: [{ ...collision, type: 'class' }],
-        injectables: [{ ...collision, type: 'injectable' }],
-        classes: [{ ...collision, type: 'class' }],
-        components: [buttonComponent],
-      } as unknown as CompodocJson;
+  describe('component reached through another module', () => {
+    it('follows a property access on a namespace import to the component it names', () => {
+      givenStoryFile(`
+        import * as internal from './button.internal';
+        export default { title: 'Button', component: internal.config.component };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
 
-      expect(buildDocgenPayload({ entry }, context(json))?.compodoc).toBe(json.components?.[0]);
-      expect(logger.warn).not.toHaveBeenCalled();
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(manager.extractComponentMeta).toHaveBeenCalledExactlyOnceWith(COMPONENT_PATH, {
+        exportName: 'ButtonComponent',
+        localName: 'ButtonComponent',
+      });
+      expect(payload?.error).toBeUndefined();
+      expect(payload?.argTypes?.label).toMatchObject({ name: 'label' });
     });
 
-    it('finds a directive as well as a component', () => {
-      givenWorkspace();
-      const json = {
-        ...emptyJson,
-        directives: [{ ...buttonComponent, type: 'directive' }],
-      } as unknown as CompodocJson;
+    it('names an unreadable expression by the expression itself, not the story title', () => {
+      // The docgen-harness sandbox recorder treats a payload named `globalThis...` as an artifact
+      // of the shared template stories rather than a real component, and filters it out on that
+      // name alone (`isGloballyReferenced` in sandbox-baselines/read-static-docgen.ts). Naming this
+      // payload by the story title instead of the unreadable expression breaks that filter silently.
+      givenStoryFile(`
+        export default { title: 'Button', component: globalThis.__TEMPLATE_COMPONENTS__.Button };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
 
-      expect(buildDocgenPayload({ entry }, context(json))?.argTypes?.label).toBeDefined();
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+      expect(payload?.name).toBe('globalThis.__TEMPLATE_COMPONENTS__.Button');
     });
 
-    it('does not throw on a partial documentation.json missing whole arrays', () => {
-      givenWorkspace();
+    it('does not blame the story file for an unresolved import that lives in the module the chain names', () => {
+      givenStoryFile(`
+        import * as internal from './button.internal-broken-import';
+        export default { title: 'Button', component: internal.config.component };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
 
-      expect(
-        buildDocgenPayload({ entry }, context({ components: [buttonComponent] } as never))?.error
-      ).toBeUndefined();
-      expect(buildDocgenPayload({ entry }, context({} as CompodocJson))?.error?.name).toBe(
-        'ComponentNotDocumented'
-      );
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+      expect(payload?.error?.message).toContain('./does-not-exist.component');
+      // The story file only names `internal.config.component`; the import statement that fails to
+      // resolve is written in button.internal-broken-import.ts, not here.
+      expect(payload?.error?.message).not.toContain('The story file imports');
+      expect(manager.extractComponentMeta).not.toHaveBeenCalled();
+    });
+
+    it('does not send the user to the story file to fix a type-only import that lives elsewhere', () => {
+      givenStoryFile(`
+        import * as internal from './button.internal-type-only';
+        export default { title: 'Button', component: internal.config.component };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+      // The type-only import is in button.internal-type-only.ts; the story file binds nothing here.
+      expect(payload?.error?.message).not.toContain(`in ${STORY_PATH}`);
+      expect(manager.extractComponentMeta).not.toHaveBeenCalled();
     });
   });
 
   describe('error payloads', () => {
-    it('names the file it looked for and tells the user to enable Compodoc', () => {
-      givenWorkspace({ withDocumentationJson: false });
+    it('names the file and export, and points at tsconfig coverage, when extraction misses', () => {
+      givenStoryFile();
+      const manager = managerReturning(undefined);
 
-      const payload = buildDocgenPayload({ entry }, context(emptyJson));
+      const payload = buildDocgenPayload({ entry }, context(manager));
 
-      expect(payload?.error?.name).toBe('NoCompodocDocumentation');
-      expect(payload?.error?.message).toContain(DOCUMENTATION_JSON);
-      expect(payload?.error?.message).toContain('Enable Compodoc');
+      expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+      expect(payload?.error?.message).toContain(COMPONENT_PATH);
+      expect(payload?.error?.message).toContain('"ButtonComponent"');
+      expect(payload?.error?.message).toContain('tsconfig.json');
+      expect(payload).toMatchObject({ id: 'button', name: 'ButtonComponent', jsDocTags: {} });
       expect(payload?.argTypes).toBeUndefined();
-      expect(payload?.jsDocTags).toEqual({});
+      expect(payload?.angularComponentMeta).toBeUndefined();
     });
 
-    it('reports a documentation.json that exists but cannot be parsed the same way', () => {
-      givenWorkspace();
+    it('converts an analyzer throw into an error payload instead of letting it escape', () => {
+      givenStoryFile();
+      const manager = {
+        extractComponentMeta: vi.fn<AngularComponentMetaSource['extractComponentMeta']>(() => {
+          throw new TypeError('Debug Failure. False expression.');
+        }),
+      };
 
-      const payload = buildDocgenPayload(
-        { entry },
-        context(() => {
-          throw new SyntaxError('Unexpected end of JSON input');
-        })
-      );
+      const payload = buildDocgenPayload({ entry }, context(manager));
 
-      expect(payload?.error?.name).toBe('NoCompodocDocumentation');
-      expect(payload?.error?.message).toContain('Unexpected end of JSON input');
+      expect(payload?.error?.name).toBe('AngularComponentMetaExtractionFailed');
+      expect(payload?.error?.message).toContain('Debug Failure. False expression.');
+      expect(payload?.error?.message).toContain(COMPONENT_PATH);
+      expect(payload).toMatchObject({ id: 'button', name: 'ButtonComponent', jsDocTags: {} });
+      expect(payload?.argTypes).toBeUndefined();
     });
 
-    it('explains that Compodoc does not scan components declared inside story files', () => {
-      vol.fromNestedJSON({
-        [STORY_PATH]: `
-          class ButtonComponent {}
-          export default { title: 'Button', component: ButtonComponent };
-        `,
-        [DOCUMENTATION_JSON]: '{}',
-      });
+    it('reports a component expression it cannot follow instead of staying silent', () => {
+      givenStoryFile(`
+        import * as internal from './nowhere';
+        export default { title: 'Button', component: internal.config.component };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
 
-      const payload = buildDocgenPayload({ entry }, context(emptyJson));
+      const payload = buildDocgenPayload({ entry }, context(manager));
 
-      expect(payload?.error?.name).toBe('ComponentNotDocumented');
-      expect(payload?.error?.message).toContain('declared inside story files');
-      expect(payload?.error?.message).not.toContain('tsconfig');
+      expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+      expect(payload?.error?.message).toContain('internal.config.component');
+      expect(payload).toMatchObject({ id: 'button', jsDocTags: {} });
+      expect(manager.extractComponentMeta).not.toHaveBeenCalled();
     });
 
-    it('points at tsconfig coverage when the scan exists but omits the component', () => {
-      givenWorkspace();
+    it('reports a type-only component import instead of staying silent', () => {
+      givenStoryFile(`
+        import type { ButtonComponent } from './button.component';
+        export default { title: 'Button', component: ButtonComponent };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
 
-      const payload = buildDocgenPayload(
-        { entry },
-        context(emptyJson, { tsconfig: '/workspace/tsconfig.doc.json' })
-      );
+      const payload = buildDocgenPayload({ entry }, context(manager));
 
-      expect(payload?.error?.name).toBe('ComponentNotDocumented');
-      expect(payload?.error?.message).toContain('/workspace/tsconfig.doc.json');
-      expect(payload?.error?.message).toContain('ButtonComponent');
+      expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+      expect(manager.extractComponentMeta).not.toHaveBeenCalled();
+    });
+
+    it('reports an import that resolves to no file without asking the analyzer', () => {
+      givenStoryFile(`
+        import { ButtonComponent } from './nope.component';
+        export default { title: 'Button', component: ButtonComponent };
+      `);
+      const manager = managerReturning(metaFor(componentEntry()));
+
+      const payload = buildDocgenPayload({ entry }, context(manager));
+
+      expect(payload?.error?.name).toBe('AngularComponentMetaNotFound');
+      expect(payload?.error?.message).toContain('./nope.component');
+      expect(manager.extractComponentMeta).not.toHaveBeenCalled();
     });
   });
 
   describe('"not mine" is not an error', () => {
     it('returns undefined for an entry with no story import path', () => {
-      givenWorkspace();
+      givenStoryFile();
       const docsEntry = {
         id: 'button--docs',
         name: 'Docs',
@@ -342,146 +607,22 @@ describe('buildDocgenPayload', () => {
         storiesImports: [],
         tags: [],
       } as unknown as IndexEntry;
+      const manager = managerReturning(metaFor(componentEntry()));
 
-      expect(buildDocgenPayload({ entry: docsEntry }, context(emptyJson))).toBeUndefined();
+      expect(buildDocgenPayload({ entry: docsEntry }, context(manager))).toBeUndefined();
+      expect(manager.extractComponentMeta).not.toHaveBeenCalled();
     });
 
     it('returns undefined when the story file declares no component, and says why', () => {
-      vol.fromNestedJSON({ [STORY_PATH]: `export default { title: 'Button' };` });
+      givenStoryFile(`export default { title: 'Button' };`);
+      const manager = managerReturning(metaFor(componentEntry()));
 
-      expect(buildDocgenPayload({ entry }, context(emptyJson))).toBeUndefined();
+      expect(buildDocgenPayload({ entry }, context(manager))).toBeUndefined();
+      expect(manager.extractComponentMeta).not.toHaveBeenCalled();
       expect(logger.debug).toHaveBeenCalledWith(
         expect.stringContaining('No Angular component resolved from')
       );
       expect(logger.debug).toHaveBeenCalledWith(expect.stringContaining('button.stories.ts'));
     });
-  });
-});
-
-describe('findCompodocEntry', () => {
-  const WORKSPACE = '/workspace';
-  const named = (name: string, file: string, input: string) => ({
-    name,
-    file,
-    type: 'component',
-    inputsClass: [{ name: input, type: 'string', optional: false }],
-  });
-
-  // A stock Angular sandbox declares `ButtonComponent` three times in three files.
-  const collidingJson = {
-    ...emptyJson,
-    components: [
-      named('ButtonComponent', 'src/stories/button.component.ts', 'label'),
-      named('ButtonComponent', 'src/stories/frameworks/button.component.ts', 'text'),
-    ],
-    directives: [named('HighlightDirective', 'src/stories/highlight.directive.ts', 'colour')],
-  } as unknown as CompodocJson;
-
-  const cases: [name: string, component: { exportName: string; path?: string }, input?: string][] =
-    [
-      [
-        'picks the entry whose file matches, not the first entry with the name',
-        {
-          exportName: 'ButtonComponent',
-          path: `${WORKSPACE}/src/stories/frameworks/button.component.ts`,
-        },
-        'text',
-      ],
-      [
-        'matches directives as well as components',
-        {
-          exportName: 'HighlightDirective',
-          path: `${WORKSPACE}/src/stories/highlight.directive.ts`,
-        },
-        'colour',
-      ],
-      [
-        'falls back to a name only one entry carries',
-        { exportName: 'HighlightDirective', path: `${WORKSPACE}/src/somewhere/else.ts` },
-        'colour',
-      ],
-      [
-        'reports nothing rather than guessing when a name is ambiguous and no file matched',
-        { exportName: 'ButtonComponent', path: `${WORKSPACE}/src/somewhere/else.ts` },
-        undefined,
-      ],
-      [
-        'reports nothing when the component could not be located at all and its name is ambiguous',
-        { exportName: 'ButtonComponent' },
-        undefined,
-      ],
-      [
-        // The class name behind a default export never appears in the story file.
-        'matches a default export on its file alone',
-        { exportName: 'default', path: `${WORKSPACE}/src/stories/button.component.ts` },
-        'label',
-      ],
-      [
-        'reports nothing for a default export with no resolved file, since its name is unknown',
-        { exportName: 'default' },
-        undefined,
-      ],
-    ];
-
-  it.each(cases)('%s', (_name, component, input) => {
-    const found = findCompodocEntry(collidingJson, component, WORKSPACE) as
-      | { inputsClass: { name: string }[] }
-      | undefined;
-
-    expect(found?.inputsClass?.[0]?.name).toBe(input);
-  });
-
-  // Compodoc lists one physical file twice when a story directory is symlinked: once relative to
-  // where it ran, once absolute. Both spellings normalize to the same path, so treating them as two
-  // candidates would report an ambiguity that does not exist.
-  const duplicatedJson = {
-    ...emptyJson,
-    components: [
-      named('ButtonComponent', 'src/stories/button.component.ts', 'text'),
-      named('ButtonComponent', `${WORKSPACE}/src/stories/button.component.ts`, 'text'),
-    ],
-  } as unknown as CompodocJson;
-
-  it.each([['default'], ['ButtonComponent']])(
-    'treats one file listed under two spellings as one component (%s export)',
-    (exportName) => {
-      const found = findCompodocEntry(
-        duplicatedJson,
-        { exportName, path: `${WORKSPACE}/src/stories/button.component.ts` },
-        WORKSPACE
-      ) as { inputsClass: { name: string }[] } | undefined;
-
-      expect(found?.inputsClass?.[0]?.name).toBe('text');
-    }
-  );
-
-  it('still reports nothing when same-named entries are genuinely different files', () => {
-    expect(
-      findCompodocEntry(collidingJson, { exportName: 'ButtonComponent' }, WORKSPACE)
-    ).toBeUndefined();
-  });
-
-  it('still reports nothing when same-named entries carry no file at all', () => {
-    const fileless = {
-      ...emptyJson,
-      components: [
-        { ...named('ButtonComponent', '', 'label'), file: undefined },
-        { ...named('ButtonComponent', '', 'text'), file: undefined },
-      ],
-    } as unknown as CompodocJson;
-
-    expect(
-      findCompodocEntry(fileless, { exportName: 'ButtonComponent' }, WORKSPACE)
-    ).toBeUndefined();
-  });
-
-  it('ignores entries that are neither components nor directives', () => {
-    const json = {
-      ...emptyJson,
-      pipes: [named('ButtonComponent', 'src/stories/button.pipe.ts', 'label')],
-      classes: [named('ButtonComponent', 'src/stories/button.base.ts', 'label')],
-    } as unknown as CompodocJson;
-
-    expect(findCompodocEntry(json, { exportName: 'ButtonComponent' }, WORKSPACE)).toBeUndefined();
   });
 });

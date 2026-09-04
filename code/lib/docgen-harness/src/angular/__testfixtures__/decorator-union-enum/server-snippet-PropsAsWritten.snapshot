@@ -1,0 +1,14 @@
+import { Component } from '@angular/core';
+import { DecoratorUnionEnumComponent } from './decorator-union-enum.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [DecoratorUnionEnumComponent],
+  template: `
+    <sb-decorator-union-enum
+        [size]="'large'"
+        [tone]="'warn'"
+        [kind]="'secondary'"
+    />`,
+})
+export class DemoComponent {}

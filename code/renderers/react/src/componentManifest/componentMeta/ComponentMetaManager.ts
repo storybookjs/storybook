@@ -11,6 +11,7 @@
 import {
   ComponentMetaManager as BaseComponentMetaManager,
   type ComponentMetaProjectFactory,
+  type FileSnapshotCache,
   parseTsconfigCommandLine,
 } from 'storybook/internal/component-meta';
 import { logger } from 'storybook/internal/node-logger';
@@ -31,7 +32,7 @@ const DEFAULT_INFERRED_OPTIONS: ts.CompilerOptions = {
   skipLibCheck: true,
 };
 
-type FsFileSnapshots = Map<string, [number | undefined, ts.IScriptSnapshot | undefined]>;
+type FsFileSnapshots = FileSnapshotCache<ts.IScriptSnapshot>;
 
 /**
  * Builds the React project factory plus the snapshot cache it closes over. The cache is shared

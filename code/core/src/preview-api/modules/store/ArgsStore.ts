@@ -1,12 +1,31 @@
-import type { PreparedStory } from 'storybook/internal/types';
+import type { ArgTypes, PreparedStory } from 'storybook/internal/types';
 import type { Args, StoryId } from 'storybook/internal/types';
 
+import { global } from '@storybook/global';
+
 import { DEEPLY_EQUAL, combineArgs, deepDiff, mapArgsToTypes, validateOptions } from './args.ts';
+import { inferArgTypes } from './inferArgTypes.ts';
 
 function deleteUndefined(obj: Record<string, any>) {
   Object.keys(obj).forEach((key) => obj[key] === undefined && delete obj[key]);
   return obj;
 }
+
+/**
+ * Both validation passes below drop args they have no `argType` for, so every arg needs one.
+ *
+ * `prepareStory` skips the inference pass under server docgen to keep `argTypes` annotation-only
+ * for `mergeServiceArgTypes`, which leaves plain `args` without a type. Inferring here restores the
+ * types those passes need without putting them back on the story.
+ */
+const argTypesForValidation = (story: PreparedStory<any>): ArgTypes =>
+  global.FEATURES?.experimentalDocgenServer
+    ? inferArgTypes({
+        id: story.id,
+        argTypes: story.argTypes,
+        initialArgs: story.initialArgs,
+      })
+    : story.argTypes;
 
 export class ArgsStore {
   initialArgsByStoryId: Record<StoryId, Args> = {};
@@ -39,7 +58,7 @@ export class ArgsStore {
 
   updateFromDelta(story: PreparedStory<any>, delta: Args) {
     // Use the argType to ensure we setting a type with defined options to something outside of that
-    const validatedDelta = validateOptions(delta, story.argTypes);
+    const validatedDelta = validateOptions(delta, argTypesForValidation(story));
 
     // NOTE: we use `combineArgs` here rather than `combineParameters` because changes to arg
     // array values are persisted in the URL as sparse arrays, and we have to take that into
@@ -50,7 +69,7 @@ export class ArgsStore {
   updateFromPersisted(story: PreparedStory<any>, persisted: Args) {
     // Use the argType to ensure we aren't persisting the wrong type of value to the type.
     // For instance you could try and set a string-valued arg to a number by changing the URL
-    const mappedPersisted = mapArgsToTypes(persisted, story.argTypes);
+    const mappedPersisted = mapArgsToTypes(persisted, argTypesForValidation(story));
 
     return this.updateFromDelta(story, mappedPersisted);
   }

@@ -2,68 +2,39 @@ import { writeFile } from 'node:fs/promises';
 import { resolve } from 'node:path';
 
 import type { PackageManagerName } from 'storybook/internal/common';
-import { cache, getPrettyPackageManagerName } from 'storybook/internal/common';
+import { cache } from 'storybook/internal/common';
 import { logger } from 'storybook/internal/node-logger';
 import { telemetry } from 'storybook/internal/telemetry';
-import { SupportedLanguage } from 'storybook/internal/types';
 
-import { detectLanguage } from '../detectLanguage.ts';
-import { getStorybookData } from '../getStorybookData.ts';
-import { getAiSetupMarkdownOutput } from './setup-prompts/index.ts';
-import type { ProjectInfo, AiSetupOptions } from './types.ts';
+import { getSetupMarkdownOutput } from '../skills/content/setup-prompts/index.ts';
+import { getProjectInfo } from '../skills/project-info.ts';
+import type { AiSetupOptions } from './types.ts';
 
 export async function aiSetup(options: AiSetupOptions): Promise<void> {
   const { configDir: userConfigDir, packageManager, output } = options;
 
-  let projectInfo: ProjectInfo;
+  // logger.warn renders through clack by default, which writes to stdout — that would
+  // contaminate the markdown output this command prints to stdout. Write directly to
+  // stderr instead so piping `storybook ai setup` still yields clean markdown.
+  process.stderr.write(
+    '`storybook ai setup` is deprecated and will be removed in a future release. Use `npx storybook skills setup` instead.\n'
+  );
 
-  try {
-    const data = await getStorybookData({
-      configDir: userConfigDir,
-      packageManagerName: packageManager as PackageManagerName | undefined,
-    });
+  const result = await getProjectInfo({
+    configDir: userConfigDir,
+    packageManager: packageManager as PackageManagerName | undefined,
+  });
 
-    if (!data.frameworkPackage || !data.rendererPackage || !data.builderPackage) {
-      logger.error(
-        'Could not detect framework, renderer, or builder from your Storybook config. Make sure you are running this command from your project root, or specify --config-dir.'
-      );
-      return;
+  if (!result.ok) {
+    const [firstLine, ...rest] = result.message.split('\n');
+    logger.error(firstLine);
+    if (rest.length > 0) {
+      logger.log(rest.join('\n'));
     }
-
-    const majorVersion = data.versionInstalled
-      ? parseMajorVersion(data.versionInstalled)
-      : undefined;
-
-    const detectedLanguage = await detectLanguage(data.packageManager, data.workingDir);
-    const language = detectedLanguage === SupportedLanguage.TYPESCRIPT ? 'ts' : 'js';
-
-    const needsUserOnboarding = await cache.get<boolean>('onboarding-pending', false);
-
-    projectInfo = {
-      storybookVersion: data.versionInstalled,
-      majorVersion,
-      framework: data.frameworkPackage,
-      rendererPackage: data.rendererPackage,
-      renderer: data.renderer,
-      builderPackage: data.builderPackage,
-      addons: data.addons ?? [],
-      configDir: data.configDir,
-      storiesPaths: data.storiesPaths,
-      packageManager: data.packageManager,
-      packageManagerName: getPrettyPackageManagerName(data.packageManager.type),
-      language,
-      hasCsfFactoryPreview: data.hasCsfFactoryPreview,
-      needsUserOnboarding,
-    };
-  } catch (err) {
-    logger.error(
-      `Failed to read Storybook configuration: ${err instanceof Error ? err.message : String(err)}`
-    );
-    logger.log(
-      'Make sure you are running this command from your project root, or specify --config-dir.'
-    );
     return;
   }
+
+  const { projectInfo } = result;
 
   if (
     projectInfo.rendererPackage !== '@storybook/react' ||
@@ -78,8 +49,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
     return;
   }
 
-  const result = await getAiSetupMarkdownOutput(projectInfo);
-  const markdownOutput = result.markdown;
+  const { markdown: markdownOutput, prompt } = await getSetupMarkdownOutput(projectInfo);
 
   // Persist the fact that `storybook ai setup` ran in this project, scoped to
   // the resolved configDir. The dev server reads this together with the story
@@ -99,7 +69,7 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
       output: output ? 'file' : undefined,
       configDir: projectInfo.configDir,
       packageManager: projectInfo.packageManager.type,
-      prompt: result.prompt,
+      prompt,
     },
     project: {
       framework: projectInfo.framework,
@@ -117,9 +87,4 @@ export async function aiSetup(options: AiSetupOptions): Promise<void> {
   } else {
     process.stdout.write(`${markdownOutput}\n`);
   }
-}
-
-function parseMajorVersion(version: string): number | undefined {
-  const match = version.match(/^(\d+)/);
-  return match ? parseInt(match[1], 10) : undefined;
 }

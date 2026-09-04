@@ -9,9 +9,12 @@ import yml from 'yaml';
 import { ROOT_DIRECTORY } from '../../utils/constants.ts';
 import { runCommand } from '../generate.ts';
 import {
+  BEFORE_SANDBOX_NPM_MIN_VERSION,
   LOCALLY_PUBLISHED_PACKAGE_PATTERNS,
+  ensureNpmSupportsMinReleaseAge,
   preapproveLocallyPublishedPackages,
   refreshBeforeStorybookLockfile,
+  writeScaffoldNpmrc,
 } from './yarn.ts';
 
 vi.mock('node:fs/promises', { spy: true });
@@ -81,7 +84,12 @@ describe('preapproveLocallyPublishedPackages', () => {
   it('covers the packages the local registry serves', async () => {
     // run-registry publishes these; they are seconds old at install time.
     expect(LOCALLY_PUBLISHED_PACKAGE_PATTERNS).toEqual(
-      expect.arrayContaining(['storybook', '@storybook/*', 'create-storybook'])
+      expect.arrayContaining([
+        'storybook',
+        '@storybook/*',
+        'create-storybook',
+        'vite-plugin-storybook-nextjs',
+      ])
     );
   });
 });
@@ -224,5 +232,44 @@ describe('refreshBeforeStorybookLockfile', () => {
     );
 
     await expect(refreshBeforeStorybookLockfile({ cwd: SANDBOX })).rejects.toThrow();
+  });
+});
+
+describe('ensureNpmSupportsMinReleaseAge', () => {
+  beforeEach(() => {
+    vi.mocked(runCommand).mockReset();
+  });
+
+  it(`accepts npm ${BEFORE_SANDBOX_NPM_MIN_VERSION} and newer`, async () => {
+    vi.mocked(runCommand).mockResolvedValue({ stdout: '11.17.0\n' } as never);
+
+    await expect(ensureNpmSupportsMinReleaseAge()).resolves.toBeUndefined();
+
+    vi.mocked(runCommand).mockResolvedValue({ stdout: '12.0.2\n' } as never);
+    await expect(ensureNpmSupportsMinReleaseAge()).resolves.toBeUndefined();
+  });
+
+  it('fails when npm is older than the min-release-age floor', async () => {
+    vi.mocked(runCommand).mockResolvedValue({ stdout: '11.10.0\n' } as never);
+
+    await expect(ensureNpmSupportsMinReleaseAge()).rejects.toThrow(
+      new RegExp(`npm >= ${BEFORE_SANDBOX_NPM_MIN_VERSION}.*found 11\\.10\\.0`)
+    );
+  });
+});
+
+describe('writeScaffoldNpmrc', () => {
+  it('writes min-release-age and exclude patterns for npm scaffolds', async () => {
+    await writeScaffoldNpmrc(SANDBOX, ['@react-native-community/*', 'multitars']);
+
+    expect(vol.readFileSync(`${SANDBOX}/.npmrc`, 'utf-8')).toBe(
+      'min-release-age=7\nmin-release-age-exclude[]=@react-native-community/*\nmin-release-age-exclude[]=multitars\n'
+    );
+  });
+
+  it('does nothing when the allowlist is empty', async () => {
+    await writeScaffoldNpmrc(SANDBOX, []);
+
+    expect(vol.existsSync(`${SANDBOX}/.npmrc`)).toBe(false);
   });
 });

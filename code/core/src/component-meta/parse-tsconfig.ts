@@ -1,5 +1,6 @@
 import { dirname } from 'node:path';
 
+import { slash } from '../shared/utils/paths.ts';
 import type { ProjectCommandLine } from './types.ts';
 
 /**
@@ -63,7 +64,7 @@ export function parseTsconfigCommandLine<CL extends ProjectCommandLine = Project
   // fix https://github.com/johnsoncodehk/volar/issues/1786
   // https://github.com/microsoft/TypeScript/issues/30457
   content.options.outDir = undefined;
-  content.fileNames = content.fileNames.map((fileName) => fileName.replace(/\\/g, '/'));
+  content.fileNames = content.fileNames.map(slash);
   // The runtime value is whatever the caller's own module produced; core only typed the subset.
   return content as unknown as CL;
 }

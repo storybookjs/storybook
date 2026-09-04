@@ -1,4 +1,4 @@
-import { ComponentManifestMap, type Source } from '@storybook/mcp';
+import { ComponentManifestMap, type Source } from 'storybook/internal/toolsets-docs';
 import type { Options } from 'storybook/internal/types';
 import * as v from 'valibot';
 import { CompositionAuth, type ComposedRef } from './composition-auth.ts';

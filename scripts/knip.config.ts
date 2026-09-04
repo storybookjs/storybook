@@ -72,6 +72,7 @@ const baseConfig = {
         'src/perf/docgen-perf/engines/{react-legacy,vue-component-meta,vue-docgen-api}.ts',
         'src/perf/docgen-perf/generators/{angular,vue}.ts',
         'src/perf/docgen-memory/{gate,memory-harness,generate-project}.ts',
+        'src/sandbox-baselines/run.ts',
       ],
       project,
     },

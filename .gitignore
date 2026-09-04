@@ -1,3 +1,6 @@
+# Local wayfinder artifacts (canonical tracker is GitHub issues)
+.wayfinder/
+
 node_modules
 *.log
 .idea

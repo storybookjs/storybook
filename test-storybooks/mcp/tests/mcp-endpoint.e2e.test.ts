@@ -107,11 +107,11 @@ describe('MCP Endpoint E2E Tests', () => {
 				  {
 				    "_meta": {
 				      "ui": {
-				        "resourceUri": "ui://preview-stories/preview.html",
+				        "resourceUri": "ui://stories-preview/preview.html",
 				      },
 				    },
 				    "description": "Use this tool to get Storybook preview URLs while iterating on a specific story, or when the user asks for a direct link to one.
-				Do not end visual work or browse requests with these links — publish a curated review with display-review instead (passing changedFiles: [] when no code changed) and link that.",
+				Do not end visual work or browse requests with these links — publish a curated review with review-create instead (passing changedFiles: [] when no code changed) and link that.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
@@ -189,7 +189,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                  "storyId": {
 				                    "description": "The full Storybook story ID (for example "button--primary").
 				Prefer this shape whenever you are not already working in a specific story file.
-				Use IDs discovered from list-all-documentation (withStoryIds=true) or get-documentation.",
+				Use IDs discovered from docs-list (withStoryIds=true) or docs-show.",
 				                    "type": "string",
 				                  },
 				                },
@@ -208,7 +208,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				      ],
 				      "type": "object",
 				    },
-				    "name": "preview-stories",
+				    "name": "stories-preview",
 				    "outputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
@@ -221,7 +221,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                    "type": "string",
 				                  },
 				                  "previewUrl": {
-				                    "description": "Direct URL to open the story preview. Include this URL in the final user-facing response so users can open it directly — unless a curated review page is being published via display-review, in which case link the review page instead of listing individual URLs.",
+				                    "description": "Direct URL to open the story preview. Include this URL in the final user-facing response so users can open it directly.",
 				                    "type": "string",
 				                  },
 				                  "title": {
@@ -309,7 +309,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                          "storyId": {
 				                            "description": "The full Storybook story ID (for example "button--primary").
 				Prefer this shape whenever you are not already working in a specific story file.
-				Use IDs discovered from list-all-documentation (withStoryIds=true) or get-documentation.",
+				Use IDs discovered from docs-list (withStoryIds=true) or docs-show.",
 				                            "type": "string",
 				                          },
 				                        },
@@ -373,20 +373,20 @@ describe('MCP Endpoint E2E Tests', () => {
 				  {
 				    "description": "Get Storybook stories marked as new, modified, or related. Returns story metadata only (no URLs).
 
-				The result reflects the cumulative working-tree diff, not just your latest edit — after multiple edits in one session, a non-empty result may cover an earlier sub-change and miss your most recent one. Check that every file you touched is represented; for any that isn't, find its consumer components and pass their paths to get-stories-by-component instead. The response surfaces this gap with a "coverage sanity check" hint when it detects unreachable working-tree files.",
+				The result reflects the cumulative working-tree diff, not just your latest edit — after multiple edits in one session, a non-empty result may cover an earlier sub-change and miss your most recent one. Check that every file you touched is represented; for any that isn't, find its consumer components and pass their paths to stories-find-by-component instead. The response surfaces this gap with a "coverage sanity check" hint when it detects unreachable working-tree files.",
 				    "inputSchema": {
 				      "properties": {},
 				      "type": "object",
 				    },
-				    "name": "get-changed-stories",
+				    "name": "stories-changed",
 				    "title": "Get changed stories metadata",
 				  },
 				  {
-				    "description": "Map component source files to the stories that render them, returning grounded \`storyId\` values from the live Storybook index — hand these to preview-stories or display-review instead of guessing.
+				    "description": "Map component source files to the stories that render them, returning grounded \`storyId\` values from the live Storybook index — hand these to stories-preview or review-create instead of guessing.
 
-				Reach for this whenever you need story IDs, whatever shape the input has: files you just edited, a feature/domain/topic the user named, a query like "all consumers of X", or an autonomous review after a UI change. First resolve the input to a list of absolute component file paths using filesystem search (grep / Glob / find) and code reading — that bridge is yours to build; this tool starts where it ends. One common trap: when the changed file is _shared_ infrastructure (theme token, design token, util, hook, CSS module) it isn't itself a component — grep for its consumers and pass _their_ paths, not the shared file's. If the symbol you grepped looks like one member of a related group (sibling tokens, neighboring exports), widen to the rest of the group too — a too-narrow grep silently drops stories. Try \`get-changed-stories\` first for "I just edited X" when it's available; if a file you touched is missing from its response, treat that file as the shared-infrastructure case and route its consumers through this tool.
+				Reach for this whenever you need story IDs, whatever shape the input has: files you just edited, a feature/domain/topic the user named, a query like "all consumers of X", or an autonomous review after a UI change. First resolve the input to a list of absolute component file paths using filesystem search (grep / Glob / find) and code reading — that bridge is yours to build; this tool starts where it ends. One common trap: when the changed file is _shared_ infrastructure (theme token, design token, util, hook, CSS module) it isn't itself a component — grep for its consumers and pass _their_ paths, not the shared file's. If the symbol you grepped looks like one member of a related group (sibling tokens, neighboring exports), widen to the rest of the group too — a too-narrow grep silently drops stories. Try \`stories-changed\` first for "I just edited X" when it's available; if a file you touched is missing from its response, treat that file as the shared-infrastructure case and route its consumers through this tool.
 
-				Results are sorted by \`distance\` (0 = the path you passed is itself a story file, 1 = direct importer, 2+ = transitive; lower = stronger). Shared primitives are usually consumed through wrapper components, so the distance-1 bucket is often empty — the default \`maxDistance: 3\` keeps that cascade visible while capping noise from wide decorators; raise it to widen recall, lower it to tighten precision. For display-review, the distance buckets map onto the visual cascade (the component itself → direct importers → page-level context) — one collection per layer; when several stories of a component share a distance, prefer the variant whose name signals it renders the changed surface.
+				Results are sorted by \`distance\` (0 = the path you passed is itself a story file, 1 = direct importer, 2+ = transitive; lower = stronger). Shared primitives are usually consumed through wrapper components, so the distance-1 bucket is often empty — the default \`maxDistance: 3\` keeps that cascade visible while capping noise from wide decorators; raise it to widen recall, lower it to tighten precision. For review-create, the distance buckets map onto the visual cascade (the component itself → direct importers → page-level context) — one collection per layer; when several stories of a component share a distance, prefer the variant whose name signals it renders the changed surface.
 
 				Never invent IDs from file names, feature names, or memory; title strings can be overridden by story authors, so only IDs returned by discovery tools resolve. If a component has no matches here, it has no stories yet (say so, don't fabricate).
 
@@ -419,7 +419,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				      ],
 				      "type": "object",
 				    },
-				    "name": "get-stories-by-component",
+				    "name": "stories-find-by-component",
 				    "outputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
@@ -504,11 +504,11 @@ describe('MCP Endpoint E2E Tests', () => {
 				    "description": "Publish a curated review to Storybook's review page for spot-checking **visual impact**. Each call replaces the single active review — call it again whenever the user iterates on the changes.
 
 				## When to call
-				- **Trigger 1 — visual change** (components, stories, CSS, themes, colors, design tokens, i18n — anything that changes how the UI looks): when the user should spot-check rendering. A shared file (token, style, util) has no stories of its own — review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from \`get-changed-stories\`; fall back to \`get-stories-by-component\` if change detection is unavailable. Include \`changedFiles\`.
-				- **Trigger 2 — browse request** ("show me the Badge component"): resolve via \`get-stories-by-component\` / \`list-all-documentation\`; you may consult other sources to interpret the ask, but IDs must still come from those tools. Pass \`changedFiles: []\` — no code changed.
+				- **Trigger 1 — visual change** (components, stories, CSS, themes, colors, design tokens, i18n — anything that changes how the UI looks): when the user should spot-check rendering. A shared file (token, style, util) has no stories of its own — review its consumers' stories. Skip non-visual refactors unless side-effects are plausible. Start from \`stories-changed\`; fall back to \`stories-find-by-component\` if change detection is unavailable. Include \`changedFiles\`.
+				- **Trigger 2 — browse request** ("show me the Badge component"): resolve via \`stories-find-by-component\` / \`docs-list\`; you may consult other sources to interpret the ask, but IDs must still come from those tools. Pass \`changedFiles: []\` — no code changed.
 
 				## Hard rules
-				1. Every \`storyId\` MUST come from those tools. Reject IDs derived from file paths, story names, or memory. Unknown IDs cause a runtime error; obtain real IDs via \`get-stories-by-component\` or \`list-all-documentation\`, then retry.
+				1. Every \`storyId\` MUST come from those tools. Reject IDs derived from file paths, story names, or memory. Unknown IDs cause a runtime error; obtain real IDs via \`stories-find-by-component\` or \`docs-list\`, then retry.
 				2. Every story you CREATED in this change MUST appear in the review — including interaction/play-function stories. Showing the stories you modified is encouraged too. Curate by grouping, never by omission.
 				3. Prefer 2-5 collections; avoid one-story collections unless truly isolated.
 				4. Follow-up reviews: stabilize collection/story order to avoid disorientation from reshuffling.
@@ -577,7 +577,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				      ],
 				      "type": "object",
 				    },
-				    "name": "display-review",
+				    "name": "review-create",
 				    "outputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
@@ -591,7 +591,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				      ],
 				      "type": "object",
 				    },
-				    "title": "Display Storybook review",
+				    "title": "Create Storybook review",
 				  },
 				  {
 				    "description": "Run story tests.
@@ -685,7 +685,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				                  "storyId": {
 				                    "description": "The full Storybook story ID (for example "button--primary").
 				Prefer this shape whenever you are not already working in a specific story file.
-				Use IDs discovered from list-all-documentation (withStoryIds=true) or get-documentation.",
+				Use IDs discovered from docs-list (withStoryIds=true) or docs-show.",
 				                    "type": "string",
 				                  },
 				                },
@@ -702,11 +702,11 @@ describe('MCP Endpoint E2E Tests', () => {
 				      "required": [],
 				      "type": "object",
 				    },
-				    "name": "run-story-tests",
-				    "title": "Storybook Tests",
+				    "name": "test-run",
+				    "title": "Run Storybook tests",
 				  },
 				  {
-				    "description": "List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with get-documentation, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their \`storybookId\` input. Pass \`withStoryIds: true\` when you need story IDs for other tools.",
+				    "description": "List all available UI components and documentation entries from the Storybook, returning the IDs the other documentation tools take as input. Call this first for any UI task — before writing a new component, check what the design system already provides and build on it instead of hand-rolling a duplicate; before answering any question about props, API, or usage, discover the relevant IDs here rather than reading component source. Then fetch the entries with docs-show, referencing only IDs returned here — never guess IDs. When multiple Storybook sources are configured, entries from every source are included; scope follow-up calls to one source via their \`storybookId\` input. Pass \`withStoryIds: true\` when you need story IDs for other tools.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
@@ -719,13 +719,13 @@ describe('MCP Endpoint E2E Tests', () => {
 				      "required": [],
 				      "type": "object",
 				    },
-				    "name": "list-all-documentation",
+				    "name": "docs-list",
 				    "title": "List All Documentation",
 				  },
 				  {
 				    "description": "Get documentation for a UI component or docs entry.
 
-				Returns the first 3 stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations, and to answer any question about a component's props, API, or usage — reading or grepping the component source is not a substitute. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the get-documentation-for-story tool to fetch the story documentation for the specific story variant you need.
+				Returns the first 3 stories (including story IDs) with code snippets showing how props are used, plus TypeScript prop definitions. Call this before using a component to avoid hallucinating prop names, types, or valid combinations, and to answer any question about a component's props, API, or usage — reading or grepping the component source is not a substitute. Stories reveal real prop usage patterns, interactions, and edge cases that type definitions alone don't show. If the example stories don't show the prop you need, use the docs-show-story tool to fetch the story documentation for the specific story variant you need — its story ID can be passed directly as \`storyId\`.
 
 				Example: id="button" returns Primary, Secondary, Large stories with code like <Button variant="primary" size="large"> showing actual prop combinations.",
 				    "inputSchema": {
@@ -741,28 +741,31 @@ describe('MCP Endpoint E2E Tests', () => {
 				      ],
 				      "type": "object",
 				    },
-				    "name": "get-documentation",
+				    "name": "docs-show",
 				    "title": "Get Documentation",
 				  },
 				  {
-				    "description": "Get detailed documentation for a specific story variant of a UI component. Use this when you need to see more usage examples of a component, via the stories written for it.",
+				    "description": "Get detailed documentation for a specific story variant of a UI component. Use this when you need to see more usage examples of a component, via the stories written for it. Identify the story by its story ID (preferred), or by componentId plus storyName.",
 				    "inputSchema": {
 				      "$schema": "http://json-schema.org/draft-07/schema#",
 				      "properties": {
 				        "componentId": {
+				          "description": "The component ID (e.g., "button"). Use together with storyName, and only when you have no story ID.",
+				          "type": "string",
+				        },
+				        "storyId": {
+				          "description": "The story ID, as listed by the docs list tool with withStoryIds: true and shown next to each story in the component documentation (e.g., "button--primary"). Prefer this over componentId + storyName whenever you have a story ID.",
 				          "type": "string",
 				        },
 				        "storyName": {
+				          "description": "The human-readable story name (e.g., "Primary"). Use together with componentId.",
 				          "type": "string",
 				        },
 				      },
-				      "required": [
-				        "componentId",
-				        "storyName",
-				      ],
+				      "required": [],
 				      "type": "object",
 				    },
-				    "name": "get-documentation-for-story",
+				    "name": "docs-show-story",
 				    "title": "Get Documentation for Story",
 				  },
 				]
@@ -770,7 +773,7 @@ describe('MCP Endpoint E2E Tests', () => {
 		});
 	});
 
-	describe('Tool: preview-stories', () => {
+	describe('Tool: stories-preview', () => {
 		it('should return story URLs for valid stories', async () => {
 			const cwd = process.cwd().replaceAll('\\', '/');
 			const storyPath = cwd.endsWith('/test-storybooks/mcp')
@@ -778,7 +781,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				: `${cwd}/test-storybooks/mcp/stories/components/Button.stories.ts`;
 
 			const response = await mcpRequest('tools/call', {
-				name: 'preview-stories',
+				name: 'stories-preview',
 				arguments: {
 					stories: [
 						{
@@ -797,7 +800,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				      "type": "text",
 				    },
 				    {
-				      "text": "These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The display-review tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **display-review** and link that instead.",
+				      "text": "These preview links are for iterating or sharing a specific story — they are not how visual work or a browse request ends. The review-create tool is available in this session: if you are finishing visually observable work or showing a set of stories, publish the review with **review-create** and link that instead.",
 				      "type": "text",
 				    },
 				  ],
@@ -816,7 +819,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 		it('should return error message for non-existent story', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'preview-stories',
+				name: 'stories-preview',
 				arguments: {
 					stories: [
 						{
@@ -827,7 +830,8 @@ describe('MCP Endpoint E2E Tests', () => {
 				},
 			});
 
-			// The tool returns error messages as regular content, not isError
+			// All-error preview results are one text block each; the review nudge is omitted
+			// when no URL resolved.
 			expect(response.result).toHaveProperty('content');
 			expect(response.result.content).toHaveLength(1);
 			expect(response.result.content[0].text).toContain('No story found');
@@ -850,10 +854,10 @@ describe('MCP Endpoint E2E Tests', () => {
 		});
 	});
 
-	describe('Tool: list-all-documentation', () => {
+	describe('Tool: docs-list', () => {
 		it('should list all documentation from manifest', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'list-all-documentation',
+				name: 'docs-list',
 				arguments: {},
 			});
 
@@ -879,11 +883,11 @@ describe('MCP Endpoint E2E Tests', () => {
 		});
 	});
 
-	describe('Tool: get-documentation', () => {
+	describe('Tool: docs-show', () => {
 		it('should return documentation for a specific component', async () => {
 			// First, get the list to find a valid component ID
 			const listResponse = await mcpRequest('tools/call', {
-				name: 'list-all-documentation',
+				name: 'docs-list',
 				arguments: {},
 			});
 
@@ -895,7 +899,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			// Now get documentation for that component
 			const response = await mcpRequest('tools/call', {
-				name: 'get-documentation',
+				name: 'docs-show',
 				arguments: {
 					id: componentId,
 				},
@@ -921,7 +925,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 		it('should return error for non-existent component', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'get-documentation',
+				name: 'docs-show',
 				arguments: {
 					id: 'non-existent-component-id',
 				},
@@ -931,7 +935,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				{
 				  "content": [
 				    {
-				      "text": "Component or Docs Entry not found: "non-existent-component-id". Use the list-all-documentation tool to see available components and documentation entries.",
+				      "text": "Component or Docs Entry not found: "non-existent-component-id". Use the docs-list tool to see available components and documentation entries.",
 				      "type": "text",
 				    },
 				  ],
@@ -941,10 +945,10 @@ describe('MCP Endpoint E2E Tests', () => {
 		});
 	});
 
-	describe('Tool: run-story-tests', () => {
+	describe('Tool: test-run', () => {
 		it('should run all tests when stories are omitted', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'run-story-tests',
+				name: 'test-run',
 				arguments: {},
 			});
 
@@ -961,7 +965,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				: `${cwd}/test-storybooks/mcp/stories/components/Button.stories.ts`;
 
 			const response = await mcpRequest('tools/call', {
-				name: 'run-story-tests',
+				name: 'test-run',
 				arguments: {
 					stories: [
 						{
@@ -987,7 +991,7 @@ describe('MCP Endpoint E2E Tests', () => {
 				: `${cwd}/test-storybooks/mcp/stories/components/Button.stories.ts`;
 
 			const response = await mcpRequest('tools/call', {
-				name: 'run-story-tests',
+				name: 'test-run',
 				arguments: {
 					stories: [
 						{
@@ -1012,7 +1016,7 @@ describe('MCP Endpoint E2E Tests', () => {
 
 		it('should return error for non-existent story', async () => {
 			const response = await mcpRequest('tools/call', {
-				name: 'run-story-tests',
+				name: 'test-run',
 				arguments: {
 					stories: [
 						{
@@ -1028,7 +1032,7 @@ describe('MCP Endpoint E2E Tests', () => {
 			expect(text).toContain('No story found for export name "NonExistent"');
 		});
 
-		it('should sequentialize 4 concurrent calls to run-story-tests', async () => {
+		it('should sequentialize 4 concurrent calls to test-run', async () => {
 			const cwd = process.cwd().replaceAll('\\', '/');
 			const storyPath = cwd.endsWith('/test-storybooks/mcp')
 				? `${cwd}/stories/components/Button.stories.ts`
@@ -1036,28 +1040,28 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			// Make 4 concurrent calls with different story exports
 			const promise1 = mcpRequest('tools/call', {
-				name: 'run-story-tests',
+				name: 'test-run',
 				arguments: {
 					stories: [{ exportName: 'Primary', absoluteStoryPath: storyPath }],
 				},
 			});
 
 			const promise2 = mcpRequest('tools/call', {
-				name: 'run-story-tests',
+				name: 'test-run',
 				arguments: {
 					stories: [{ exportName: 'Secondary', absoluteStoryPath: storyPath }],
 				},
 			});
 
 			const promise3 = mcpRequest('tools/call', {
-				name: 'run-story-tests',
+				name: 'test-run',
 				arguments: {
 					stories: [{ exportName: 'Large', absoluteStoryPath: storyPath }],
 				},
 			});
 
 			const promise4 = mcpRequest('tools/call', {
-				name: 'run-story-tests',
+				name: 'test-run',
 				arguments: {
 					stories: [{ exportName: 'Small', absoluteStoryPath: storyPath }],
 				},
@@ -1118,11 +1122,11 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			expect(toolNames).toMatchInlineSnapshot(`
 				[
-				  "preview-stories",
+				  "stories-preview",
 				  "get-storybook-story-instructions",
-				  "get-changed-stories",
-				  "get-stories-by-component",
-				  "display-review",
+				  "stories-changed",
+				  "stories-find-by-component",
+				  "review-create",
 				]
 			`);
 		});
@@ -1142,9 +1146,9 @@ describe('MCP Endpoint E2E Tests', () => {
 
 			expect(toolNames).toMatchInlineSnapshot(`
 				[
-				  "list-all-documentation",
-				  "get-documentation",
-				  "get-documentation-for-story",
+				  "docs-list",
+				  "docs-show",
+				  "docs-show-story",
 				]
 			`);
 		});

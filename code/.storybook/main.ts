@@ -162,6 +162,7 @@ const config = defineMain({
     experimentalDocgenServer: process.env.STORYBOOK_EXPERIMENTAL_DOCGEN_SERVER === 'true',
     experimentalReactComponentMeta: true,
     changeDetection: true,
+    experimentalSearchDocsHeadings: true,
     experimentalReview: true,
   },
   staticDirs: [{ from: './bench/bundle-analyzer', to: '/bundle-analyzer' }],

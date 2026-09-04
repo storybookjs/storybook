@@ -5,7 +5,7 @@ import {
   optionalEnvToBoolean,
   parseList,
 } from 'storybook/internal/common';
-import { withTelemetry } from 'storybook/internal/core-server';
+import { withTelemetry } from '../core-server/withTelemetry.ts';
 import { logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext } from 'storybook/internal/telemetry';
 
@@ -16,6 +16,8 @@ import picocolors from 'picocolors';
 import { version } from '../../package.json';
 import { aiSetup } from '../cli/ai/index.ts';
 import { isAiCliFeatureEnabled, registerAiMcpPassthrough } from '../cli/ai/mcp/register.ts';
+import { registerSkillsCommand } from '../cli/skills/register.ts';
+import { registerToolsPassthrough } from '../cli/tools/register.ts';
 import { build } from '../cli/build.ts';
 import { buildIndex as index } from '../cli/buildIndex.ts';
 import { dev } from '../cli/dev.ts';
@@ -34,6 +36,7 @@ process.env.STORYBOOK = 'true';
  * - `build`: Build the Storybook static files
  * - `index`: Generate the Storybook index file
  * - `ai`: AI agent helpers (always bundled so agent invocations never download an extra package)
+ * - `tools`: Agent tools derived from the target Storybook configuration's registered toolsets
  *
  * The dispatch CLI at ./dispatcher.ts routes commands to this core CLI.
  */
@@ -228,8 +231,8 @@ command('index')
   });
 
 // Like `handleCommandFailure`, but curried and surfacing the error, matching the signature the
-// `ai` command handlers expect.
-const handleAiCommandFailure =
+// `ai` and `tools` command handlers expect.
+const handleCliCommandFailure =
   (logFilePath: string | boolean | undefined) =>
   async (error: unknown): Promise<never> => {
     if (!(error instanceof HandledError)) {
@@ -239,7 +242,7 @@ const handleAiCommandFailure =
   };
 
 const aiCommand = command('ai')
-  .description('AI agent helpers for Storybook')
+  .description('AI agent helpers for Storybook (deprecated — see `storybook skills`)')
   .option(
     '-o, --output <path>',
     'Write the prompt output to a file instead of printing it to stdout'
@@ -247,7 +250,9 @@ const aiCommand = command('ai')
 
 aiCommand
   .command('setup')
-  .description('Generate setup instructions to write stories for real components')
+  .description(
+    'Generate setup instructions to write stories for real components (deprecated: use `storybook skills setup`)'
+  )
   .addOption(
     new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
       Object.values(PackageManagerName)
@@ -260,7 +265,7 @@ aiCommand
     const mergedOptions = { ...parentOptions, ...options, runId };
     await withTelemetry('ai-setup', { cliOptions: mergedOptions }, async () => {
       await aiSetup(mergedOptions);
-    }).catch(handleAiCommandFailure(mergedOptions.logfile));
+    }).catch(handleCliCommandFailure(mergedOptions.logfile));
   });
 
 // Show available subcommands when `storybook ai` is run without arguments
@@ -271,8 +276,22 @@ aiCommand.action(() => {
 // Experimental `storybook ai <tool>` passthrough to the local Storybook MCP server
 // (storybookjs/storybook#35124). Overrides the help-only action above when enabled.
 if (isAiCliFeatureEnabled()) {
-  registerAiMcpPassthrough(program, aiCommand, handleAiCommandFailure);
+  registerAiMcpPassthrough(program, aiCommand, handleCliCommandFailure);
 }
+
+// `storybook tools <toolset> <tool>`: runs the toolsets registered by the target Storybook
+// configuration in this process, disconnected from any dev server (storybookjs/storybook#35716).
+const toolsCommand = command('tools').description(
+  'Run the agent tools provided by the target Storybook configuration'
+);
+registerToolsPassthrough(program, toolsCommand, handleCliCommandFailure);
+
+// `storybook skills`: agent-facing instruction documents served by the target Storybook
+// configuration (storybookjs/storybook#35526, Milestone 6).
+const skillsCommand = command('skills').description(
+  'Agent skills served by the target Storybook configuration'
+);
+registerSkillsCommand(program, skillsCommand, handleCliCommandFailure);
 
 program.on('command:*', ([invalidCmd]) => {
   let errorMessage = ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`;

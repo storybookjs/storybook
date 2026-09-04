@@ -32,10 +32,13 @@ import { createOptions } from '../utils/options.ts';
 import { getStackblitzUrl, renderTemplate } from './utils/template.ts';
 import {
   BEFORE_SANDBOX_MIN_AGE_GATE,
+  BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS,
+  ensureNpmSupportsMinReleaseAge,
   localizeYarnConfigFiles,
   preapproveLocallyPublishedPackages,
   refreshBeforeStorybookLockfile,
   setupYarn,
+  writeScaffoldNpmrc,
 } from './utils/yarn.ts';
 
 const isCI = process.env.GITHUB_ACTIONS === 'true' || process.env.CI === 'true';
@@ -236,6 +239,8 @@ const runGenerators = async (
   localRegistry = true,
   debug = false
 ) => {
+  await ensureNpmSupportsMinReleaseAge();
+
   if (debug) {
     console.log('Debug mode enabled. Verbose logs will be printed to the console.');
   }
@@ -284,17 +289,22 @@ const runGenerators = async (
 
           const createBeforeDir = join(createBaseDir, BEFORE_DIR_NAME);
 
-          // Age-gate the scaffold itself when the framework CLI resolves/installs
-          // via Yarn (create-*, yarn create, etc.). Many templates also pass
-          // --skip-install / --no-install so the CLI never installs; the env is
-          // still set so any Yarn-backed resolve during bootstrap is covered.
-          // npm/npx-only scaffolders ignore this variable — their installs are
-          // skipped where possible, then replaced by the Yarn 4 refresh below.
+          // Age-gate scaffold installs (Yarn + npm). Most templates skip-install;
+          // CRA and similar still install under npm and need the npm knob.
           const scaffoldEnv = {
             ...env,
             CI: 'true',
             YARN_NPM_MINIMAL_AGE_GATE: BEFORE_SANDBOX_MIN_AGE_GATE,
+            NPM_CONFIG_MIN_RELEASE_AGE: String(BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS),
           };
+
+          const scaffoldCwd = script.includes('{{beforeDir}}') ? createBaseDir : createBeforeDir;
+          if (minAgeGateExemptions?.length) {
+            if (scaffoldCwd === createBeforeDir) {
+              await mkdir(createBeforeDir, { recursive: true });
+            }
+            await writeScaffoldNpmrc(scaffoldCwd, minAgeGateExemptions);
+          }
 
           // Some tools refuse to run inside an existing directory and replace the contents,
           // where as others are very picky about what directories can be called. So we need to

@@ -4,8 +4,9 @@ import { join } from 'path/posix';
 
 import { LINUX_ROOT_DIR, WINDOWS_ROOT_DIR, WORKING_DIR } from './utils/constants.ts';
 import {
-  CACHE_KEYS,
-  CACHE_PATHS,
+  type CachePlatform,
+  NODE_MODULES_CACHE_KEY,
+  NODE_MODULES_CACHE_PATHS,
   PACKED_NODE_MODULES_ARCHIVE,
   artifact,
   cache,
@@ -28,6 +29,19 @@ const packageDirs = glob.sync(['*/src', '*/*/src'], {
   onlyDirectories: true,
 });
 
+/**
+ * Every job that installs goes through here, so none is left on the orb's own cache: one job saving
+ * a mismatched tree there would hand it to all the others. Saving stays gated on a trusted author so
+ * a fork PR cannot put a tree where the next run will find it.
+ */
+const installWithCache = (platform: CachePlatform = 'linux') => [
+  cache.attach([NODE_MODULES_CACHE_KEY(platform)]),
+  npm.install('.'),
+  ...(isTrustedAuthor()
+    ? [cache.persist(NODE_MODULES_CACHE_PATHS, NODE_MODULES_CACHE_KEY(platform))]
+    : []),
+];
+
 export const build_linux = defineJob('Build (linux)', (workflowName) => ({
   executor: {
     name: 'sb_node_22_classic',
@@ -35,9 +49,7 @@ export const build_linux = defineJob('Build (linux)', (workflowName) => ({
   },
   steps: [
     git.checkout(),
-    cache.attach(CACHE_KEYS()),
-    npm.install('.'),
-    ...(isTrustedAuthor() ? [cache.persist(CACHE_PATHS, CACHE_KEYS()[0])] : []),
+    ...installWithCache(),
     npm.check(),
     workspace.pack(
       [
@@ -92,7 +104,7 @@ export const fmt = defineJob('Format check', () => ({
   },
   steps: [
     git.checkout(),
-    npm.install('.'),
+    ...installWithCache(),
     {
       run: {
         name: 'Format check',
@@ -111,7 +123,7 @@ export const build_windows = defineJob('Build (windows)', () => ({
   steps: [
     git.checkout({ forceHttps: true }),
     node.installOnWindows(),
-    npm.install('.'),
+    ...installWithCache('windows'),
     {
       run: {
         name: 'Compile',

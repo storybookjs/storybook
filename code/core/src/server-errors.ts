@@ -287,12 +287,25 @@ export class OpenServiceRemoteCommandDisconnectedError extends StorybookError {
 }
 
 export class OpenServiceRemoteCommandUnhandledError extends StorybookError {
-  constructor(public data: { serviceId: ServiceId; commandName: string }) {
+  constructor(public data: { serviceId: ServiceId; commandName: string; delegated?: boolean }) {
     super({
       name: 'OpenServiceRemoteCommandUnhandledError',
       category: Category.CORE_COMMON,
       code: 15,
-      message: `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
+      message: data.delegated
+        ? `The Storybook this runtime is attached to did not acknowledge remote command "${data.serviceId}.${data.commandName}" in time — it may be busy or unreachable. Retry; note the command may still have executed on that instance.`
+        : `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
+    });
+  }
+}
+
+export class OpenServiceRemoteCommandConfigDriftError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; commandName: string }) {
+    super({
+      name: 'OpenServiceRemoteCommandConfigDriftError',
+      category: Category.CORE_COMMON,
+      code: 30,
+      message: `The Storybook this runtime is attached to reported it has no handler for remote command "${data.serviceId}.${data.commandName}". The two processes are running different configurations (for example a feature flag enabled in one but not the other). Restart the attached Storybook with a configuration matching this process.`,
     });
   }
 }
@@ -319,15 +332,23 @@ export class OpenServiceMissingOriginError extends StorybookError {
   }
 }
 
+/**
+ * Why a review was refused. The toolset renders this as the opening of a longer, coaching message,
+ * so it lives here rather than in both places — the two copies had already drifted apart once.
+ */
+export function describeUnknownStoryIds(unknownIds: string[]): string {
+  const plural = unknownIds.length === 1 ? 'ID is' : 'IDs are';
+  return `Refusing to publish review: ${unknownIds.length} story ${plural} not backed by a story entry in the live Storybook index (docs entries cannot be review slots):`;
+}
+
 export class OpenServiceUnknownStoryIdsError extends StorybookError {
   constructor(public data: { unknownIds: string[] }) {
     const list = data.unknownIds.map((id) => `- ${id}`).join('\n');
-    const plural = data.unknownIds.length === 1 ? 'ID is' : 'IDs are';
     super({
       name: 'OpenServiceUnknownStoryIdsError',
       category: Category.CORE_COMMON,
       code: 18,
-      message: `Refusing to publish review: ${data.unknownIds.length} story ${plural} not backed by a story entry in the live Storybook index (docs entries cannot be review slots):\n${list}`,
+      message: `${describeUnknownStoryIds(data.unknownIds)}\n${list}`,
     });
   }
 }
@@ -352,6 +373,110 @@ export class OpenServiceServicesAppliedTwiceError extends StorybookError {
       code: 22,
       message: dedent`The "services" preset property was applied twice, but should only be applied once.
         Multiple code paths applying it will cause service and toolset registration to fail.`,
+    });
+  }
+}
+
+export class OpenServiceMissingToolsetError extends StorybookError {
+  constructor(public data: { toolsetId: string }) {
+    super({
+      name: 'OpenServiceMissingToolsetError',
+      category: Category.CORE_COMMON,
+      code: 23,
+      message: `No registered toolset with id "${data.toolsetId}" exists in this environment.`,
+    });
+  }
+}
+
+export class OpenServiceDuplicateToolsetError extends StorybookError {
+  constructor(public data: { toolsetId: string }) {
+    super({
+      name: 'OpenServiceDuplicateToolsetError',
+      category: Category.CORE_COMMON,
+      code: 24,
+      message: `A toolset with id "${data.toolsetId}" is already registered. Each public toolset must be registered exactly once.`,
+    });
+  }
+}
+
+/**
+ * The story module graph cannot answer a query right now (still building, unsupported builder, or
+ * a build failure).
+ *
+ * Its `message` is written for the agent that triggered the lookup and names the recovery, which
+ * is what `agentFacing` declares: adapters surface it verbatim rather than wrapping it as an
+ * unexpected failure.
+ */
+export class OpenServiceModuleGraphUnavailableError extends StorybookError {
+  constructor(public data: { reason: string }) {
+    super({
+      name: 'OpenServiceModuleGraphUnavailableError',
+      category: Category.CORE_COMMON,
+      code: 25,
+      message: data.reason,
+      agentFacing: true,
+    });
+  }
+}
+
+/**
+ * A toolset method returned data its own published `outputSchema` rejects.
+ *
+ * Always a bug in the method: the schema is the contract adapters publish to their clients, so the
+ * mismatch is raised instead of quietly shipping unvalidated data.
+ */
+export class OpenServiceToolsetOutputMismatchError extends StorybookError {
+  constructor(public data: { issues: readonly unknown[] }) {
+    // Validation issues embed the rejected input, which can be large or circular — the diagnostic
+    // must never throw or balloon while reporting the real bug.
+    let serialized: string;
+    try {
+      serialized = JSON.stringify(data.issues)?.slice(0, 2000) ?? String(data.issues);
+    } catch {
+      serialized = `${data.issues.length} issue(s) that could not be serialized`;
+    }
+    super({
+      name: 'OpenServiceToolsetOutputMismatchError',
+      category: Category.CORE_COMMON,
+      code: 26,
+      message: `Toolset output did not match its published output schema: ${serialized}`,
+    });
+  }
+}
+
+/** A toolset method id is not exactly `toolsetId.methodName` with non-empty parts. */
+export class OpenServiceInvalidToolsetMethodIdError extends StorybookError {
+  constructor(public data: { methodId: string }) {
+    super({
+      name: 'OpenServiceInvalidToolsetMethodIdError',
+      category: Category.CORE_COMMON,
+      code: 28,
+      message: `Invalid toolset method id "${data.methodId}". Expected exactly one separator: toolsetId.methodName.`,
+    });
+  }
+}
+
+/**
+ * Two toolset methods derive the same MCP tool name (or two methods in one toolset derive the same
+ * CLI method name).
+ */
+export class OpenServiceDuplicateToolNameError extends StorybookError {
+  constructor(
+    public data: {
+      derivedName: string;
+      first: string;
+      second: string;
+      transport: 'mcp' | 'cli';
+    }
+  ) {
+    super({
+      name: 'OpenServiceDuplicateToolNameError',
+      category: Category.CORE_COMMON,
+      code: 29,
+      message:
+        data.transport === 'mcp'
+          ? `Derived MCP tool name "${data.derivedName}" collides between "${data.first}" and "${data.second}". Rename one toolset id or method key.`
+          : `Derived CLI method name "${data.derivedName}" collides between "${data.first}" and "${data.second}" in the same toolset. Rename one method key.`,
     });
   }
 }
@@ -457,6 +582,47 @@ export class AngularLegacyBuildOptionsError extends StorybookError {
         You must use Angular builder to have an explicit configuration on the project used in angular.json.
         
         Please run 'npx storybook automigrate' to automatically fix your config.`,
+    });
+  }
+}
+
+export class AngularUnresolvedStyleError extends StorybookError {
+  constructor(public data: { stylePath: string; workspaceRoot: string; extensions: string[] }) {
+    super({
+      name: 'AngularUnresolvedStyleError',
+      category: Category.FRAMEWORK_ANGULAR,
+      code: 2,
+      documentation: 'https://storybook.js.org/docs/get-started/frameworks/angular-vite',
+      message: dedent`
+        Cannot resolve the stylesheet '${data.stylePath}' from the Angular workspace root '${data.workspaceRoot}'.
+
+        No file matches it there, with or without a ${data.extensions.join(', ')} extension.
+
+        Angular resolves a 'styles' entry from the workspace root, so a relative entry has to point at a file below it. Check the 'styles' array on your Storybook builder target in angular.json.`,
+    });
+  }
+}
+
+export class AngularMissingStylePreprocessorError extends StorybookError {
+  constructor(public data: { stylePath: string; install: string; alternative?: string }) {
+    super({
+      name: 'AngularMissingStylePreprocessorError',
+      category: Category.FRAMEWORK_ANGULAR,
+      code: 3,
+      documentation: 'https://storybook.js.org/docs/get-started/frameworks/angular-vite',
+      message: [
+        dedent`
+          Cannot compile '${data.stylePath}': the '${data.install}' package is not installed where Vite can load it.
+
+          Add it to your project:
+
+            npm install --save-dev ${data.install}
+
+          Vite resolves a CSS preprocessor from your project directory upwards, so a copy installed deeper in the tree - such as the one Angular's builders bring in for themselves - is invisible to it. That is why a project which compiles with 'ng build' can still fail here.`,
+        data.alternative && `'${data.alternative}' works as well, if you would rather use that.`,
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
     });
   }
 }
@@ -653,6 +819,20 @@ export class NoFreePortError extends StorybookError {
         Unable to find a free port for Storybook's dev server${data.requestedPort ? ` (requested port: ${data.requestedPort})` : ''}.
         Your environment appears to block Storybook from listening on network ports.
         If you are running Storybook in a sandboxed or restricted shell, allow binding to localhost ports and try again.`,
+    });
+  }
+}
+
+export class StorybookDevServerDisconnectedError extends StorybookError {
+  constructor(public data: { code?: number; reason?: string } = {}) {
+    super({
+      name: 'StorybookDevServerDisconnectedError',
+      category: Category.CORE_SERVER,
+      code: 19,
+      message: dedent`
+        Storybook dev server disconnected${data.code ? ` (close code ${data.code}${data.reason ? `: ${data.reason}` : ''})` : ''}.
+        Any request that was still in flight has been abandoned.
+        Make sure the dev server is still running, then try again.`,
     });
   }
 }

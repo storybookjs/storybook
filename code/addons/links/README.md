@@ -94,6 +94,22 @@ export const log = () => {
 };
 ```
 
+## hrefToSync function
+
+If you want to render native links to other stories so users can middle-click or command-click to open them in a new tab, you can use the `hrefToSync` function. This returns a string containing the relative URL immediately:
+```js
+import { hrefToSync } from '@storybook/addon-links';
+
+export default {
+    title: 'HrefSync',
+};
+
+export const log = () => {
+    const url = hrefToSync('HrefSync', 'log');
+    return <a href={url}>Link to this story</a>;
+};
+```
+
 ## withLinks decorator
 
 `withLinks` decorator enables a declarative way of defining story links, using data attributes.

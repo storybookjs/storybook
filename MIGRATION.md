@@ -3,9 +3,9 @@
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Dropped support for Vite 5 and Vite 6](#dropped-support-for-vite-5-and-vite-6)
+  - [Create React App support removed](#create-react-app-support-removed)
 
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
-  - [Create React App support removed](#create-react-app-support-removed)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
   - [`@storybook/csf-plugin` removed](#storybookcsf-plugin-removed)
@@ -579,13 +579,13 @@ If you're using framework-specific Vite plugins, ensure they are compatible with
 
 For more information on upgrading to Vite 7, see the [Vite Migration Guide](https://vite.dev/guide/migration).
 
-## From version 10.5.x to 10.6.0
-
 ### Create React App support removed
 
 Storybook no longer supports Create React App (CRA). The project is unmaintained and pins React 17, below Storybook's React 18 minimum. The `@storybook/preset-create-react-app` preset has been removed along with the CRA project type in `storybook init`: initializing in a CRA project now prints an unsupported-project message with a migration pointer instead of scaffolding a configuration.
 
 If you are still on CRA, migrate your project to Vite and use the [`@storybook/react-vite`](https://storybook.js.org/docs/get-started/frameworks/react-vite) framework. If you still list `@storybook/preset-create-react-app` in your `addons`, `storybook automigrate` will warn you that the preset no longer has any effect and can be removed.
+
+## From version 10.5.x to 10.6.0
 
 ### Vue 3: `vue-docgen-api` is deprecated
 

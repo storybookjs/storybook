@@ -6,7 +6,7 @@ import { findOutdatedPackage } from './utils.ts';
 const minimalVersionsMap = {
   '@angular/core': '18.0.0',
   'react-scripts': '5.0.0',
-  next: '14.1.0',
+  next: '15.0.0',
   preact: '10.0.0',
   react: '18.0.0',
   'react-dom': '18.0.0',
@@ -45,12 +45,12 @@ export const blocker = createBlocker({
         };
       case 'next':
         return {
-          title: 'Next.js 14.1 support removed',
+          title: 'Next.js 15 support removed',
           message: dedent`
-            Support for Next.js < 14.1 has been removed.
+            Support for Next.js < 15 has been removed.
             Please see the migration guide for more information:
           `,
-          link: 'https://nextjs.org/docs/pages/building-your-application/upgrading/version-13',
+          link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#nextjs-require-v15-and-up',
         };
       case 'react':
       case 'react-dom':

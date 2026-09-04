@@ -117,4 +117,15 @@ describe('dependenciesVersions blocker', () => {
 
     expect(result).toBe(false);
   });
+
+  test('passes on react 0.0.0 experimental builds, matching the shim treatment', async () => {
+    const packageManager = createPackageManager({
+      react: '0.0.0-experimental-4cb07d14-20250411',
+      'react-dom': '0.0.0-experimental-4cb07d14-20250411',
+    });
+
+    const result = await blocker.check(createCheckOptions(packageManager));
+
+    expect(result).toBe(false);
+  });
 });

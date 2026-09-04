@@ -10,13 +10,6 @@ import { resolvePackageDir } from '../../../core/src/shared/utils/module.ts';
  * dependency or the react-dom dependency shipped with addon-docs
  */
 const getIsReactVersion18or19 = async (options: Options) => {
-  const { legacyRootApi } =
-    (await options.presets.apply<{ legacyRootApi?: boolean } | null>('frameworkOptions')) || {};
-
-  if (legacyRootApi) {
-    return false;
-  }
-
   const resolvedReact = await options.presets.apply<{ reactDom?: string }>('resolvedReact', {});
   const reactDom = resolvedReact.reactDom || resolvePackageDir('react-dom');
 
@@ -30,58 +23,18 @@ const getIsReactVersion18or19 = async (options: Options) => {
   return version.startsWith('18') || version.startsWith('19') || version.startsWith('0.0.0');
 };
 
-export const webpackFinal = async (config: any, options: Options) => {
+export const viteFinal = async (config: any, options: Options) => {
   const isReactVersion18 = await getIsReactVersion18or19(options);
-  if (isReactVersion18) {
+
+  if (!isReactVersion18) {
     return config;
   }
 
   return {
     ...config,
-    resolve: {
-      ...config.resolve,
-      alias: {
-        ...config.resolve?.alias,
-        '@storybook/react-dom-shim': '@storybook/react-dom-shim/react-16',
-      },
-    },
-  };
-};
-
-export const viteFinal = async (config: any, options: Options) => {
-  const isReactVersion18 = await getIsReactVersion18or19(options);
-
-  const optimizeDeps = {
-    ...(config?.optimizeDeps ?? {}),
-    include: [
-      ...(config.optimizeDeps?.include || []),
-      ...(isReactVersion18 ? ['react-dom/client'] : []),
-    ],
-  };
-
-  if (isReactVersion18) {
-    return {
-      ...config,
-      optimizeDeps,
-    };
-  }
-
-  const alias = Array.isArray(config.resolve?.alias)
-    ? config.resolve.alias.concat({
-        find: /^@storybook\/react-dom-shim$/,
-        replacement: '@storybook/react-dom-shim/react-16',
-      })
-    : {
-        ...config.resolve?.alias,
-        '@storybook/react-dom-shim': '@storybook/react-dom-shim/react-16',
-      };
-
-  return {
-    ...config,
-    optimizeDeps,
-    resolve: {
-      ...config.resolve,
-      alias,
+    optimizeDeps: {
+      ...(config?.optimizeDeps ?? {}),
+      include: [...(config.optimizeDeps?.include || []), 'react-dom/client'],
     },
   };
 };

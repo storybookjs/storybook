@@ -4,6 +4,7 @@
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Dropped support for Vite 5 and Vite 6](#dropped-support-for-vite-5-and-vite-6)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
+  - [React: Require v18 and up](#react-require-v18-and-up)
 
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
@@ -586,6 +587,14 @@ Storybook has dropped support for Next.js versions below 15. The minimum support
 If you're using an older version of Next.js, you'll need to upgrade to Next.js 15 or newer to use the latest version of Storybook.
 
 For help upgrading your Next.js application, see the [Next.js upgrade guide](https://nextjs.org/docs/app/building-your-application/upgrading).
+
+### React: Require v18 and up
+
+Storybook now requires React 18 or newer. The `react` and `react-dom` peer dependency ranges of all React-based framework packages are now `^18.0.0 || ^19.0.0`, so projects on React 16 or 17 must upgrade React before upgrading Storybook.
+
+Storybook renders through React's new root API (`react-dom/client`), which React 18 introduced and React 19 requires. The `legacyRootApi` framework option of `@storybook/react-vite` and `@storybook/react-webpack5` has been removed along with the `@storybook/react-dom-shim/react-16` compatibility export, so there is no longer a way to opt out. If you had set `legacyRootApi: true` to ease a React 18 migration, follow [React's upgrade guide](https://react.dev/blog/2022/03/08/react-18-upgrade-guide) for your application code instead.
+
+`storybook upgrade` blocks the upgrade when it detects an unsupported `react` or `react-dom` version and links to this section. Upgrade React to 18 or 19 and run the upgrade again.
 
 ## From version 10.5.x to 10.6.0
 

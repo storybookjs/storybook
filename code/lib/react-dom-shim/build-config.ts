@@ -7,11 +7,6 @@ const config: BuildEntries = {
         exportEntries: ['.'],
         entryPoint: './src/react-18.tsx',
       },
-      {
-        exportEntries: ['./react-16'],
-        entryPoint: './src/react-16.tsx',
-        dts: false,
-      },
     ],
     node: [
       {

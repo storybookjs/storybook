@@ -1,5 +1,7 @@
 <h1>Migration</h1>
 
+- [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -529,6 +531,37 @@
   - [Webpack upgrade](#webpack-upgrade)
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
+
+## From version 10.x to 11.0.0
+
+### Top-level `setConfig` layout and UI options removed
+
+The deprecated top-level layout and UI options passed to `addons.setConfig` are no longer applied.
+Move layout options into `layout` and `enableShortcuts` into `ui`:
+
+```diff
+ addons.setConfig({
+-  showNav: false,
+-  panelPosition: 'right',
+-  enableShortcuts: false,
++  layout: {
++    showNav: false,
++    panelPosition: 'right',
++  },
++  ui: {
++    enableShortcuts: false,
++  },
+ });
+```
+
+Run the automigration to update `.storybook/manager.*`:
+
+```sh
+npx storybook automigrate set-config-layout
+```
+
+The automigration stops with manual instructions when a configuration containing an explicit
+legacy option cannot be transformed safely.
 
 ## From version 10.5.x to 10.6.0
 

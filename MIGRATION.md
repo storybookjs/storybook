@@ -1,5 +1,9 @@
 <h1>Migration</h1>
 
+- [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Addon state APIs removed](#addon-state-apis-removed)
+  - [`api.getAddonState` and `api.setAddonState` removed](#apigetaddonstate-and-apisetaddonstate-removed)
+  - [`SHARED_STATE_CHANGED` and `SHARED_STATE_SET` removed](#shared_state_changed-and-shared_state_set-removed)
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -529,6 +533,83 @@
   - [Webpack upgrade](#webpack-upgrade)
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
+
+## From version 10.x to 11.0.0
+
+### Addon state APIs removed
+
+`useAddonState` and `useSharedState` are removed from `storybook/manager-api`.
+Storybook ships no replacement API.
+An addon that shares state between its own UI surfaces, such as a panel and the tab title that counts what the panel found, now keeps that state in module scope and reads it with React's [`useSyncExternalStore`](https://react.dev/reference/react/useSyncExternalStore).
+
+An addon's manager entry is evaluated once, so a module-level variable is a single copy that every component of the addon sees and that survives the unmount of any one of them.
+`react` reaches your addon through Storybook's manager runtime, so this needs no new dependency.
+
+This is the store Storybook's own actions panel runs on after the same migration, ready to copy into your addon:
+
+```ts
+// my-addon/src/store.ts
+import type { SetStateAction } from 'react';
+import { useSyncExternalStore } from 'react';
+
+interface ActionsState {
+  count: number;
+}
+
+export const initialActionsState: ActionsState = { count: 0 };
+
+let state = initialActionsState;
+const listeners = new Set<() => void>();
+
+export const actionsStore = {
+  get: () => state,
+  set: (next: SetStateAction<ActionsState>) => {
+    state = typeof next === 'function' ? next(state) : next;
+    listeners.forEach((listener) => listener());
+  },
+  subscribe: (listener: () => void) => {
+    listeners.add(listener);
+    return () => listeners.delete(listener);
+  },
+};
+
+export const useActionsState = () => useSyncExternalStore(actionsStore.subscribe, actionsStore.get);
+```
+
+And this is the consumer that used to call `useAddonState`:
+
+```diff
+-import { useAddonState, useChannel, useStorybookApi } from 'storybook/manager-api';
++import { useChannel, useStorybookApi } from 'storybook/manager-api';
+
+-import { ADDON_ID, CLEAR_ID, EVENT_ID, PANEL_ID } from '../constants';
++import { CLEAR_ID, EVENT_ID, PANEL_ID } from '../constants';
++import { actionsStore, useActionsState } from './store';
+
+ export function Title() {
+   const api = useStorybookApi();
+   const selectedPanel = api.getSelectedPanel();
+-  const [{ count }, setCount] = useAddonState(ADDON_ID, { count: 0 });
++  const { count } = useActionsState();
++  const setCount = actionsStore.set;
+```
+
+If only one component of your addon reads the state, use React's `useState` instead.
+Addon state has been manager-only since Storybook 8.0, when `useAddonState` and `useSharedState` were [removed from `@storybook/preview-api`](#methods-and-properties-from-previewapi), so use [`useChannel`](https://storybook.js.org/docs/addons/addons-api#usechannel) to exchange data with the story preview.
+
+### `api.getAddonState` and `api.setAddonState` removed
+
+The `getAddonState` and `setAddonState` methods on the manager API object are removed, together with the `addons` slice of manager state they read and wrote.
+They were the imperative half of `useAddonState` and were already marked deprecated.
+Replace them with your own module-scoped store, as above.
+
+`setAddonState` defaulted to no persistence, so unless you passed a `persistence` option, nothing was stored across reloads for your store to reproduce.
+
+### `SHARED_STATE_CHANGED` and `SHARED_STATE_SET` removed
+
+The `SHARED_STATE_CHANGED` and `SHARED_STATE_SET` events are removed from `storybook/internal/core-events`, along with their `sharedStateChanged` and `sharedStateSet` values.
+They existed only to synchronize `useSharedState` between the manager and the preview, and the preview half of that pair was removed in Storybook 8.0.
+An addon that emits or listens for either event should move to its own event name over [`useChannel`](https://storybook.js.org/docs/addons/addons-api#usechannel).
 
 ## From version 10.5.x to 10.6.0
 

@@ -127,7 +127,7 @@ describe('withTelemetry', () => {
       2,
       'canceled',
       { eventType: 'init' },
-      { stripMetadata: true, immediate: true }
+      { stripMetadata: true }
     );
     expect(exitSpy).toHaveBeenCalledWith(0);
 
@@ -154,7 +154,7 @@ describe('withTelemetry', () => {
       2,
       'canceled',
       { eventType: 'init' },
-      { stripMetadata: true, immediate: true }
+      { stripMetadata: true }
     );
     expect(exitSpy).toHaveBeenCalledWith(0);
 
@@ -175,7 +175,7 @@ describe('withTelemetry', () => {
       2,
       'canceled',
       { eventType: 'ai-command' },
-      { stripMetadata: true, immediate: true }
+      { stripMetadata: true }
     );
     expect(exitSpy).toHaveBeenCalledWith(0);
 
@@ -219,7 +219,7 @@ describe('withTelemetry', () => {
       2,
       'canceled',
       { eventType: 'init' },
-      { stripMetadata: true, immediate: true }
+      { stripMetadata: true }
     );
     expect(exitSpy).toHaveBeenCalledWith(0);
 
@@ -589,7 +589,6 @@ describe('sendTelemetryError', () => {
       }),
       expect.objectContaining({
         enableCrashReports: false,
-        immediate: true,
       })
     );
   });
@@ -614,7 +613,6 @@ describe('sendTelemetryError', () => {
       }),
       expect.objectContaining({
         enableCrashReports: false,
-        immediate: true,
       })
     );
   });
@@ -640,7 +638,6 @@ describe('sendTelemetryError', () => {
       }),
       expect.objectContaining({
         enableCrashReports: false,
-        immediate: true,
       })
     );
   });
@@ -674,7 +671,6 @@ describe('sendTelemetryError', () => {
       }),
       expect.objectContaining({
         enableCrashReports: false,
-        immediate: true,
       })
     );
   });
@@ -701,7 +697,6 @@ describe('sendTelemetryError', () => {
       }),
       expect.objectContaining({
         enableCrashReports: true,
-        immediate: true,
       })
     );
   });

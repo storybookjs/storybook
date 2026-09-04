@@ -92,13 +92,13 @@ export async function sendTelemetry(data: TelemetryData, options: Partial<Option
       context,
     };
     const event: PendingEvent = { body, retryDelay: options.retryDelay };
-    const request = postEvent(event, { keepProcessAlive: options.immediate === true })
+    const request = postEvent(event, { keepProcessAlive: false })
       .catch(() => {})
       .finally(() => inFlight.delete(body.eventId));
 
     inFlight.set(body.eventId, event);
 
-    await Promise.all([options.immediate ? request : undefined, saveToCache(eventType, body)]);
+    await saveToCache(eventType, body);
   } catch (err) {
     //
   }

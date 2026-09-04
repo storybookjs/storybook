@@ -10,9 +10,8 @@ export type PendingEvent = {
 };
 
 export type PostOptions = {
-  // Whether the request and its retry back-off may keep the process alive until the response
-  // arrives. The detached child and `immediate` sends do; everything else is handed to the
-  // child on exit instead.
+  // Only the detached child holds the process open for a response; the parent hands its
+  // unfinished requests to that child on exit.
   keepProcessAlive: boolean;
   signal?: AbortSignal;
 };

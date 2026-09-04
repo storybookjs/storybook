@@ -64,19 +64,6 @@ it('returns as soon as the request is started, without waiting for the response'
   expect(postMock).toHaveBeenCalledTimes(1);
 });
 
-it('waits for the response and holds the process when immediate', async () => {
-  let responded = false;
-  postMock.mockImplementation(async () => {
-    await new Promise((resolve) => setTimeout(resolve, 10));
-    responded = true;
-  });
-
-  await sendTelemetry({ eventType: 'error', payload: {} }, { immediate: true });
-
-  expect(responded).toBe(true);
-  expect(postMock.mock.calls[0][1]).toMatchObject({ keepProcessAlive: true });
-});
-
 it('registers the exit hook when loaded', async () => {
   vi.resetModules();
   const once = vi.spyOn(process, 'once');

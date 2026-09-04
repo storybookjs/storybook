@@ -96,6 +96,34 @@ const meta = preview.meta({
 });
 ```
 
+<Callout variant="warning">
+
+<a name="literal-args" />
+
+**In TypeScript, args with literal types need `as const`.** When a prop is typed as a union of literals (`'primary' | 'secondary'`), an enum, or a template literal, and you provide it in the `args` of `preview.meta`, TypeScript widens the value (`'primary'` becomes `string`) before it can compare it to the prop type. The meta then loses track of every arg it provided, and each story reports:
+
+```text
+Expected 1 arguments, but got 0
+```
+
+Add `as const` to each such value. Do not add it to the whole `args` object: that also turns array values into readonly tuples, which fail array-typed props in the same way.
+
+```ts title="Button.stories.ts"
+const meta = preview.meta({
+  component: Button, // variant: 'primary' | 'secondary'
+  args: {
+    variant: 'primary' as const, // ✅ keeps the literal type
+    items: ['a', 'b'], // arrays stay as they are
+  },
+});
+
+export const Primary = meta.story(); // ✅ variant is already provided
+```
+
+This is a limitation of how TypeScript infers types within a single object literal. We plan to remove the need for `as const` in Storybook 11, when the minimum supported TypeScript version becomes 5.0. Progress is tracked in [#36125](https://github.com/storybookjs/storybook/issues/36125).
+
+</Callout>
+
 <Callout variant="info" icon="💡">
 
 <a name="subpath-imports" />
@@ -562,6 +590,10 @@ While using CSF Next, you can still use the older formats, as long as they are n
 ### How do I use custom arg types with this format?
 
 The [`preview.type`](#previewtypemeta) function allows you to specify custom types for your story's args, which can be used to provide type safety for custom arg types.
+
+### Why does `meta.story()` report "Expected 1 arguments, but got 0"?
+
+The component has a required prop with a literal type, an enum, or a template literal type, and you provided it in the `args` of `preview.meta`. Add `as const` to that value. See [args with literal types](#literal-args).
 
 ### Will this format work with MDX docs pages?
 

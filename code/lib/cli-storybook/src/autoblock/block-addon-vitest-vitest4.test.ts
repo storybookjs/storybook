@@ -1,4 +1,5 @@
 import type { JsPackageManager } from 'storybook/internal/common';
+import { getVitePlusVersions } from 'storybook/internal/common';
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { lt } from 'semver';
@@ -8,50 +9,54 @@ import type { AutoblockOptions } from './types.ts';
 
 vi.mock('semver');
 
-type GetInstalledVersion = JsPackageManager['getInstalledVersion'];
+vi.mock('storybook/internal/common', async (importOriginal) => {
+  const actual = await importOriginal<typeof import('storybook/internal/common')>();
+  return {
+    ...actual,
+    getVitePlusVersions: vi.fn(),
+  };
+});
 
-const runCheck = (getInstalledVersion: GetInstalledVersion) =>
-  blocker.check({
-    packageManager: { getInstalledVersion } as JsPackageManager,
-  } as AutoblockOptions);
-
-const installed = (versions: Record<string, string | null>): GetInstalledVersion => {
-  const getInstalledVersion: GetInstalledVersion = async (packageName) =>
-    versions[packageName] ?? null;
-
-  return vi.fn(getInstalledVersion);
+const packageManager = {
+  getInstalledVersion: vi.fn<JsPackageManager['getInstalledVersion']>(),
+  getModulePackageJSON: vi.fn<JsPackageManager['getModulePackageJSON']>(),
 };
+
+const runCheck = () => blocker.check({ packageManager } as AutoblockOptions);
 
 describe('addonVitestVitest4 blocker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(lt).mockReturnValue(false);
-  });
-
-  test('returns false when @storybook/addon-vitest is not installed', async () => {
-    const getInstalledVersion = vi.fn<GetInstalledVersion>(async (packageName) => {
-      return packageName === 'vitest' ? '3.2.4' : null;
-    });
-
-    const result = await runCheck(getInstalledVersion);
-
-    expect(result).toBe(false);
-    expect(getInstalledVersion).toHaveBeenCalledWith('@storybook/addon-vitest');
-    expect(lt).not.toHaveBeenCalled();
+    vi.mocked(getVitePlusVersions).mockResolvedValue(null);
+    packageManager.getInstalledVersion.mockResolvedValue(null);
+    packageManager.getModulePackageJSON.mockResolvedValue(null);
   });
 
   test('has a stable id', () => {
     expect(blocker.id).toBe('addonVitestVitest4');
   });
 
+  test('returns false when @storybook/addon-vitest is not installed', async () => {
+    vi.mocked(lt).mockReturnValue(true);
+    packageManager.getInstalledVersion.mockImplementation(async (packageName) =>
+      packageName === 'vitest' ? '3.2.4' : null
+    );
+
+    const result = await runCheck();
+
+    expect(result).toBe(false);
+    expect(packageManager.getInstalledVersion).toHaveBeenCalledWith('@storybook/addon-vitest');
+  });
+
   test('blocks when the effective Vitest version is below 4.0.0', async () => {
     vi.mocked(lt).mockReturnValue(true);
-
-    // getInstalledVersion is vite-plus-aware, so '3.2.4' is what it reports for a
-    // vendored install as well as a direct one.
-    const result = await runCheck(
-      installed({ '@storybook/addon-vitest': '11.0.0', vitest: '3.2.4' })
+    packageManager.getInstalledVersion.mockResolvedValue('11.0.0');
+    packageManager.getModulePackageJSON.mockImplementation(async (packageName) =>
+      packageName === 'vitest' ? { version: '3.2.4' } : null
     );
+
+    const result = await runCheck();
 
     expect(result).toEqual({ vitestVersion: '3.2.4' });
     expect(lt).toHaveBeenCalledWith('3.2.4', '4.0.0');
@@ -59,64 +64,76 @@ describe('addonVitestVitest4 blocker', () => {
 
   test('blocks at the Vitest 3.0.0 boundary', async () => {
     vi.mocked(lt).mockReturnValue(true);
-
-    const result = await runCheck(
-      installed({ '@storybook/addon-vitest': '11.0.0', vitest: '3.0.0' })
+    packageManager.getInstalledVersion.mockResolvedValue('11.0.0');
+    packageManager.getModulePackageJSON.mockImplementation(async (packageName) =>
+      packageName === 'vitest' ? { version: '3.0.0' } : null
     );
+
+    const result = await runCheck();
 
     expect(result).toEqual({ vitestVersion: '3.0.0' });
   });
 
   test('returns false at the Vitest 4.0.0 boundary', async () => {
-    const result = await runCheck(
-      installed({ '@storybook/addon-vitest': '11.0.0', vitest: '4.0.0' })
+    packageManager.getInstalledVersion.mockResolvedValue('11.0.0');
+    packageManager.getModulePackageJSON.mockImplementation(async (packageName) =>
+      packageName === 'vitest' ? { version: '4.0.0' } : null
     );
+
+    const result = await runCheck();
 
     expect(result).toBe(false);
     expect(lt).toHaveBeenCalledWith('4.0.0', '4.0.0');
   });
 
   test('returns false for Vitest 5', async () => {
-    const result = await runCheck(
-      installed({ '@storybook/addon-vitest': '11.0.0', vitest: '5.0.0' })
+    packageManager.getInstalledVersion.mockResolvedValue('11.0.0');
+    packageManager.getModulePackageJSON.mockImplementation(async (packageName) =>
+      packageName === 'vitest' ? { version: '5.0.0' } : null
     );
+
+    const result = await runCheck();
 
     expect(result).toBe(false);
   });
 
   test('returns false when vitest is not installed (unmet peer dependency)', async () => {
-    const getInstalledVersion = installed({ '@storybook/addon-vitest': '11.0.0', vitest: null });
+    packageManager.getInstalledVersion.mockResolvedValue('11.0.0');
 
-    const result = await runCheck(getInstalledVersion);
+    const result = await runCheck();
 
     expect(result).toBe(false);
-    expect(getInstalledVersion).toHaveBeenCalledWith('vitest');
+    expect(packageManager.getModulePackageJSON).toHaveBeenCalledWith('vitest');
     expect(lt).not.toHaveBeenCalled();
   });
 
-  test('does not block a vite-plus wrapper version leaking as 0.x', async () => {
+  test('uses the vite-plus vendored version when available', async () => {
     vi.mocked(lt).mockReturnValue(true);
+    vi.mocked(getVitePlusVersions).mockResolvedValue({ vite: '7.1.2', vitest: '3.2.4' });
+    packageManager.getInstalledVersion.mockResolvedValue('11.0.0');
 
-    const result = await runCheck(
-      installed({ '@storybook/addon-vitest': '11.0.0', vitest: '0.1.16' })
-    );
+    const result = await runCheck();
 
-    expect(result).toBe(false);
-    expect(lt).not.toHaveBeenCalled();
+    expect(result).toEqual({ vitestVersion: '3.2.4' });
+    expect(packageManager.getModulePackageJSON).not.toHaveBeenCalled();
   });
 
-  test('returns false for a Vitest prerelease (getInstalledVersion coerces with includePrerelease)', async () => {
-    const result = await runCheck(
-      installed({ '@storybook/addon-vitest': '11.0.0', vitest: '4.0.0-beta.1' })
+  test('falls back to the installed package when vite-plus lacks a /versions export', async () => {
+    vi.mocked(lt).mockReturnValue(true);
+    packageManager.getInstalledVersion.mockResolvedValue('11.0.0');
+    packageManager.getModulePackageJSON.mockImplementation(async (packageName) =>
+      packageName === 'vitest' ? { version: '3.2.4' } : null
     );
 
-    expect(result).toBe(false);
+    const result = await runCheck();
+
+    expect(result).toEqual({ vitestVersion: '3.2.4' });
   });
 
   test('does not block when version detection throws', async () => {
-    const result = await runCheck(async () => {
-      throw new Error('version detection failed');
-    });
+    packageManager.getInstalledVersion.mockRejectedValue(new Error('version detection failed'));
+
+    const result = await runCheck();
 
     expect(result).toBe(false);
   });

@@ -1,7 +1,7 @@
-import { lt } from 'semver';
 import { dedent } from 'ts-dedent';
 
 import { createBlocker } from './types.ts';
+import { findOutdatedPackage } from './utils.ts';
 
 interface AddonVitestVitest4Data {
   vitestVersion: string;
@@ -11,24 +11,16 @@ export const blocker = createBlocker<AddonVitestVitest4Data>({
   id: 'addonVitestVitest4',
   async check({ packageManager }) {
     try {
-      const addonVersion = await packageManager.getInstalledVersion('@storybook/addon-vitest');
-      if (!addonVersion) {
+      const [outdated, addonVersion] = await Promise.all([
+        findOutdatedPackage({ vitest: '4.0.0' }, { packageManager }),
+        packageManager.getInstalledVersion('@storybook/addon-vitest'),
+      ]);
+
+      if (!addonVersion || !outdated?.installedVersion) {
         return false;
       }
 
-      const vitestVersion = await packageManager.getInstalledVersion('vitest');
-      if (!vitestVersion) {
-        return false;
-      }
-
-      // Without a vite-plus /versions export, getInstalledVersion falls back to the
-      // vite-plus wrapper version (e.g. 0.1.16) instead of the vendored Vitest version.
-      // Skip those, and 0.0.0 canaries, rather than falsely blocking.
-      if (vitestVersion.startsWith('0.')) {
-        return false;
-      }
-
-      return lt(vitestVersion, '4.0.0') ? { vitestVersion } : false;
+      return { vitestVersion: outdated.installedVersion };
     } catch {
       // If we can't determine the version, don't block (blockers run in parallel).
       return false;

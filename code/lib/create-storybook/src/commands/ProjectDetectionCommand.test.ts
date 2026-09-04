@@ -127,7 +127,13 @@ describe('ProjectDetectionCommand', () => {
         "CRA is unmaintained and pins React 17, below Storybook's React 18 minimum."
       );
       expect(logger.info).toHaveBeenCalledWith(
-        'Migrate to Vite, then re-run Storybook: https://storybook.js.org/docs/get-started/frameworks/react-vite'
+        'Migrate your project to Vite, then re-run the init command with project and builder flags to force Storybook to use the @storybook/react-vite framework:'
+      );
+      expect(logger.info).toHaveBeenCalledWith(
+        '  npx storybook@latest init --type react --builder vite'
+      );
+      expect(logger.info).toHaveBeenCalledWith(
+        'https://storybook.js.org/docs/get-started/frameworks/react-vite'
       );
     });
 

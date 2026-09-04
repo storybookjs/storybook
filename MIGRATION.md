@@ -1,5 +1,7 @@
 <h1>Migration</h1>
 
+- [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [`parameters.componentSubtitle` removed](#parameterscomponentsubtitle-removed)
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -529,6 +531,26 @@
   - [Webpack upgrade](#webpack-upgrade)
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
+
+## From version 10.x to 11.0.0
+
+### `parameters.componentSubtitle` removed
+
+The deprecated `parameters.componentSubtitle` fallback was removed. Use
+`parameters.docs.subtitle` instead. Storybook's upgrade command automatically moves statically
+declared values in preview configuration and CSF files. The migration reports the file and asks you
+to migrate it manually when it cannot preserve precedence or evaluation behavior. This includes
+spreads, dynamic `docs.subtitle` truthiness, inherited subtitles that can take precedence, and
+side-effectful `componentSubtitle` expressions.
+
+```diff
+export default {
+  parameters: {
+-   componentSubtitle: 'Button variants',
++   docs: { subtitle: 'Button variants' },
+  },
+};
+```
 
 ## From version 10.5.x to 10.6.0
 

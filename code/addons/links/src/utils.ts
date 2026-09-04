@@ -36,26 +36,7 @@ function parseQuery(queryString: string) {
 export const navigate = (params: ParamsId | ParamsCombo) =>
   addons.getChannel().emit(SELECT_STORY, params);
 
-export const hrefTo = (title: ComponentTitle, name: StoryName): Promise<string> => {
-  return new Promise((resolve) => {
-    const { location } = document;
-    const query = parseQuery(location.search);
-    const existingId = query.id;
-    const titleToLink = title || existingId.split('--', 2)[0];
-    const id = toId(titleToLink, name);
-    const path = `/story/${id}`;
-
-    // Drop the `iframe.html` from the preview path
-    const sbPath = location.pathname.replace(/iframe\.html$/, '');
-    const url = `${location.origin + sbPath}?${Object.entries({ path })
-      .map((item) => `${item[0]}=${item[1]}`)
-      .join('&')}`;
-
-    resolve(url);
-  });
-};
-
-export const hrefToSync = (title: ComponentTitle, name: StoryName): string => {
+const generateStoryUrl = (title: ComponentTitle, name: StoryName): string => {
   const { location } = document;
   const query = parseQuery(location.search);
   const existingId = query.id;
@@ -65,11 +46,19 @@ export const hrefToSync = (title: ComponentTitle, name: StoryName): string => {
 
   // Drop the `iframe.html` from the preview path
   const sbPath = location.pathname.replace(/iframe\.html$/, '');
-  const url = `${location.origin + sbPath}?${Object.entries({ path })
+  return `${location.origin + sbPath}?${Object.entries({ path })
     .map((item) => `${item[0]}=${item[1]}`)
     .join('&')}`;
+};
 
-  return url;
+export const hrefTo = (title: ComponentTitle, name: StoryName): Promise<string> => {
+  return new Promise((resolve) => {
+    resolve(generateStoryUrl(title, name));
+  });
+};
+
+export const hrefToSync = (title: ComponentTitle, name: StoryName): string => {
+  return generateStoryUrl(title, name);
 };
 
 const valueOrCall = (args: string[]) => (value: string | ((...args: string[]) => string)) =>

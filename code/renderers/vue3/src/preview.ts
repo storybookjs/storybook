@@ -2,6 +2,7 @@ import type {
   AddonTypes,
   InferTypes,
   Meta,
+  MetaArgsInput,
   Preview,
   PreviewAddon,
   Story,
@@ -92,12 +93,12 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
   meta<
     C,
     Decorators extends DecoratorFunction<VueTypes & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<ComponentPropsAndSlots<C> & T['args']>,
+    // A constraint here makes TS fall back to it for literal args, so story() re-requires them.
+    TMetaArgs extends Args,
   >(
     meta: {
       component?: C;
-      args?: TMetaArgs;
+      args?: MetaArgsInput<TMetaArgs, ComponentPropsAndSlots<C> & T['args']>;
       decorators?: Decorators | Decorators[];
     } & Omit<
       ComponentAnnotations<VueTypes & T, ComponentPropsAndSlots<C> & T['args']>,
@@ -113,12 +114,11 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
   meta<
     TArgs extends Args,
     Decorators extends DecoratorFunction<VueTypes & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<TArgs>,
+    TMetaArgs extends Args,
   >(
     meta: {
       render?: ArgsStoryFn<VueTypes & T, TArgs>;
-      args?: TMetaArgs;
+      args?: MetaArgsInput<TMetaArgs, TArgs>;
       decorators?: Decorators | Decorators[];
     } & Omit<
       ComponentAnnotations<VueTypes & T, TArgs & T['args']>,

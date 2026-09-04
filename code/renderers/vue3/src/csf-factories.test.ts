@@ -3,7 +3,7 @@ import { describe, expect, expectTypeOf, it, test } from 'vitest';
 
 import type { Canvas } from 'storybook/internal/types';
 
-import { h } from 'vue';
+import { type PropType, defineComponent, h } from 'vue';
 
 import BaseLayout from './__tests__/BaseLayout.vue';
 import Button from './__tests__/Button.vue';
@@ -98,6 +98,52 @@ describe('StoryObj', () => {
       const Basic = meta.story({
         args: { label: 'good' },
       });
+    }
+  });
+
+  const LiteralButton = defineComponent({
+    props: {
+      label: { type: String as PropType<'A' | 'B'>, required: true },
+      items: { type: Array as PropType<string[]>, required: true },
+    },
+    render: () => h('button'),
+  });
+
+  it('✅ Literal args provided in meta do not need to be repeated in the story', () => {
+    {
+      const meta = preview.meta({ component: LiteralButton, args: { label: 'A', items: [] } });
+      const Basic = meta.story();
+      const B = meta.story({ args: { label: 'B' } });
+    }
+    {
+      const meta = preview
+        .type<{ args: { extra?: boolean } }>()
+        .meta({ component: LiteralButton, args: { label: 'A', items: [] } });
+      const Basic = meta.story();
+    }
+    {
+      const meta = preview.meta({
+        render: (args: { label: 'A' | 'B' }) => h('button', args.label),
+        args: { label: 'A' },
+      });
+      const Basic = meta.story();
+    }
+  });
+
+  it('❌ Literal args provided in meta are still validated', () => {
+    {
+      const meta = preview.meta({ component: LiteralButton, args: { label: 'A' } });
+      // @ts-expect-error items not provided ❌
+      const Basic = meta.story();
+    }
+    {
+      // @ts-expect-error C is not a valid label ❌
+      const meta = preview.meta({ component: LiteralButton, args: { label: 'C', items: [] } });
+    }
+    {
+      const meta = preview.meta({ component: LiteralButton, args: { label: 'A', items: [] } });
+      // @ts-expect-error C is not a valid label ❌
+      const Basic = meta.story({ args: { label: 'C' } });
     }
   });
 });

@@ -120,6 +120,46 @@ describe('Args can be provided in multiple ways', () => {
       render: (args) => ({ template: '<div>Hello world</div>' }),
     });
   });
+
+  it('✅ Literal args provided in meta do not need to be repeated in the story', () => {
+    type LiteralProps = { variant: 'primary' | 'secondary'; items: string[] };
+
+    {
+      const meta = preview.type<{ args: LiteralProps }>().meta({
+        component: ButtonComponent,
+        args: { variant: 'primary', items: [] },
+      });
+      const Basic = meta.story();
+      const Secondary = meta.story({ args: { variant: 'secondary' } });
+    }
+    {
+      const meta = preview.meta({
+        render: (args: LiteralProps) => ({ template: '<div></div>', props: args }),
+        args: { variant: 'primary', items: [] },
+      });
+      const Basic = meta.story();
+    }
+  });
+
+  it('❌ Literal args provided in meta are still validated', () => {
+    type LiteralProps = { variant: 'primary' | 'secondary'; items: string[] };
+
+    {
+      const meta = preview.type<{ args: LiteralProps }>().meta({
+        component: ButtonComponent,
+        args: { variant: 'primary' },
+      });
+      // @ts-expect-error items not provided ❌
+      const Basic = meta.story();
+    }
+    {
+      const meta = preview.type<{ args: LiteralProps }>().meta({
+        component: ButtonComponent,
+        // @ts-expect-error tertiary is not a valid variant ❌
+        args: { variant: 'tertiary', items: [] },
+      });
+    }
+  });
 });
 
 type ThemeData = 'light' | 'dark';

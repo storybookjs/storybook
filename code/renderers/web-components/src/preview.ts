@@ -2,12 +2,14 @@ import type {
   AddonTypes,
   InferTypes,
   Meta,
+  MetaArgsInput,
   Preview,
   PreviewAddon,
   Story,
 } from 'storybook/internal/csf';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
 import type {
+  Args,
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
@@ -102,12 +104,12 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
   meta<
     C extends keyof HTMLElementTagNameMap,
     Decorators extends DecoratorFunction<WebComponentsTypes & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends InferArgsFromComponent<C> & Partial<T['args']>,
+    // A constraint here makes TS fall back to it for literal args, so story() re-requires them.
+    TMetaArgs extends Args,
   >(
     meta: {
       component?: C;
-      args?: TMetaArgs;
+      args?: MetaArgsInput<TMetaArgs, InferArgsFromComponent<C> & T['args']>;
       decorators?: Decorators | Decorators[];
     } & Omit<
       ComponentAnnotations<WebComponentsTypes & T, InferArgsFromComponent<C> & T['args']>,
@@ -126,12 +128,11 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
   meta<
     TArgs,
     Decorators extends DecoratorFunction<WebComponentsTypes & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<TArgs>,
+    TMetaArgs extends Args,
   >(
     meta: {
       render?: ArgsStoryFn<WebComponentsTypes & T, TArgs>;
-      args?: TMetaArgs;
+      args?: MetaArgsInput<TMetaArgs, TArgs>;
       decorators?: Decorators | Decorators[];
     } & Omit<
       ComponentAnnotations<WebComponentsTypes & T, TArgs & T['args']>,

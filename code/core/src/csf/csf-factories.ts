@@ -89,6 +89,19 @@ export function isPreview(input: unknown): input is Preview<Renderer> {
   return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Preview';
 }
 
+// Polyfill of the TS 5.4 builtin so the published types keep validating on older TypeScript.
+type NoInfer<T> = [T][T extends any ? 0 : never];
+
+/**
+ * The `args` a `meta()` call accepts: the args as passed when they fit the component args,
+ * otherwise the component args so that TypeScript points at the offending property.
+ *
+ * The component args never take part in inference, so a literal value in `args` cannot widen them.
+ */
+export type MetaArgsInput<TInput, TArgs> = [TInput] extends [NoInfer<Partial<TArgs>>]
+  ? TInput & NoInfer<Partial<TArgs>>
+  : NoInfer<Partial<TArgs>>;
+
 export interface Meta<
   TRenderer extends Renderer,
   TMetaInput extends ComponentAnnotations<TRenderer, TRenderer['args']> = ComponentAnnotations<

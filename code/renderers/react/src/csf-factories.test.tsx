@@ -105,6 +105,71 @@ describe('Args can be provided in multiple ways', () => {
       render: (args) => <div>Hello world</div>,
     });
   });
+
+  it('✅ Literal args provided in meta do not need to be repeated in the story', () => {
+    type LiteralProps = { variant: 'primary' | 'secondary'; disabled: boolean; items: string[] };
+    const Literal: (props: LiteralProps) => ReactElement = () => <></>;
+
+    {
+      const meta = preview.meta({
+        component: Literal,
+        args: { variant: 'primary', disabled: false, items: [] },
+      });
+      const Basic = meta.story();
+      const Secondary = meta.story({ args: { variant: 'secondary' } });
+    }
+    {
+      const meta = preview
+        .type<{ args: { extra?: boolean } }>()
+        .meta({ component: Literal, args: { variant: 'primary', disabled: false, items: [] } });
+      const Basic = meta.story();
+    }
+    {
+      const meta = preview.meta({
+        render: (args: LiteralProps) => <div>{args.variant}</div>,
+        args: { variant: 'primary', disabled: false, items: [] },
+      });
+      const Basic = meta.story();
+    }
+  });
+
+  it('✅ Enum and template literal args provided in meta do not need to be repeated in the story', () => {
+    enum Size {
+      Small = 'small',
+      Large = 'large',
+    }
+    type EnumProps = { size: Size; id: `id-${string}` };
+    const Enum: (props: EnumProps) => ReactElement = () => <></>;
+
+    const meta = preview.meta({ component: Enum, args: { size: Size.Small, id: 'id-1' } });
+    const Basic = meta.story();
+  });
+
+  it('❌ Literal args provided in meta are still validated', () => {
+    type LiteralProps = { variant: 'primary' | 'secondary'; disabled: boolean };
+    const Literal: (props: LiteralProps) => ReactElement = () => <></>;
+
+    {
+      const meta = preview.meta({ component: Literal, args: { variant: 'primary' } });
+      // @ts-expect-error disabled not provided ❌
+      const Basic = meta.story();
+    }
+    {
+      const meta = preview.meta({
+        component: Literal,
+        // @ts-expect-error tertiary is not a valid variant ❌
+        args: { variant: 'tertiary', disabled: false },
+      });
+    }
+    {
+      const meta = preview.meta({
+        component: Literal,
+        args: { variant: 'primary', disabled: false },
+      });
+      // @ts-expect-error tertiary is not a valid variant ❌
+      const Basic = meta.story({ args: { variant: 'tertiary' } });
+    }
+  });
 });
 
 it('✅ Void functions are not changed', () => {

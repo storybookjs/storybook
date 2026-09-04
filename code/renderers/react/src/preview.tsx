@@ -1,7 +1,14 @@
 import type { ComponentType } from 'react';
 
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
-import type { AddonTypes, InferTypes, Meta, Preview, Story } from 'storybook/internal/csf';
+import type {
+  AddonTypes,
+  InferTypes,
+  Meta,
+  MetaArgsInput,
+  Preview,
+  Story,
+} from 'storybook/internal/csf';
 import type { PreviewAddon } from 'storybook/internal/csf';
 import type {
   Args,
@@ -117,14 +124,14 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
   meta<
     TArgs extends Args,
     Decorators extends DecoratorFunction<ReactTypes & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<TArgs & T['args']>,
+    // A constraint here makes TS fall back to it for literal args, so story() re-requires them.
+    TMetaArgs extends Args,
   >(
     meta: {
       render?: ArgsStoryFn<ReactTypes & T, TArgs & T['args']>;
       component?: ComponentType<TArgs>;
       decorators?: Decorators | Decorators[];
-      args?: TMetaArgs;
+      args?: MetaArgsInput<TMetaArgs, TArgs & T['args']>;
     } & Omit<
       ComponentAnnotations<ReactTypes & T, TArgs>,
       'decorators' | 'component' | 'args' | 'render'

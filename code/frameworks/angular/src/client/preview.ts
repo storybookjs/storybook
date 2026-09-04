@@ -2,12 +2,14 @@ import type {
   AddonTypes,
   InferTypes,
   Meta,
+  MetaArgsInput,
   Preview,
   PreviewAddon,
   Story,
 } from 'storybook/internal/csf';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
 import type {
+  Args,
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
@@ -96,12 +98,12 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
   meta<
     C extends abstract new (...args: any) => any,
     Decorators extends DecoratorFunction<AngularRenderer & T, any>,
-    // Try to make Exact<Partial<TArgs>, TMetaArgs> work
-    TMetaArgs extends Partial<InferComponentArgs<C> & T['args']>,
+    // A constraint here makes TS fall back to it for literal args, so story() re-requires them.
+    TMetaArgs extends Args,
   >(
     meta: {
       component?: C;
-      args?: TMetaArgs;
+      args?: MetaArgsInput<TMetaArgs, InferComponentArgs<C> & T['args']>;
       decorators?: Decorators | Decorators[];
     } & Omit<
       ComponentAnnotations<AngularRenderer & T, InferComponentArgs<C> & T['args']>,
@@ -117,11 +119,11 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
   meta<
     TArgs,
     Decorators extends DecoratorFunction<AngularRenderer & T, any>,
-    TMetaArgs extends Partial<TArgs & T['args']>,
+    TMetaArgs extends Args,
   >(
     meta: {
       render?: ArgsStoryFn<AngularRenderer & T, TArgs & T['args']>;
-      args?: TMetaArgs;
+      args?: MetaArgsInput<TMetaArgs, TArgs & T['args']>;
       decorators?: Decorators | Decorators[];
     } & Omit<
       ComponentAnnotations<AngularRenderer & T, TArgs & T['args']>,

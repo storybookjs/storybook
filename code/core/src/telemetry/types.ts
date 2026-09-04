@@ -139,18 +139,13 @@ export interface Context {
   [key: string]: any;
 }
 
-/** The values Yarn Berry accepts for `nodeLinker` in `.yarnrc.yml`. */
 export type YarnNodeLinker = 'node-modules' | 'pnp' | 'pnpm';
 
-/** The values pnpm accepts for `node-linker` in `.npmrc` and `pnpm-workspace.yaml`. */
 export type PnpmNodeLinker = 'isolated' | 'hoisted' | 'pnp';
 
 /**
- * How the package manager lays out installed dependencies.
- *
- * `node_modules` (underscore) is Storybook's own label for package managers without a linker
- * setting: npm, bun and Yarn 1. `node-modules` (hyphen) is Yarn Berry's spelling of its linker
- * option. Both are kept as-is so the telemetry data stays comparable over time.
+ * `node_modules` is Storybook's label for package managers without a linker setting, distinct from
+ * Yarn Berry's `node-modules` so the telemetry data stays comparable over time.
  */
 export type NodeLinker = 'node_modules' | YarnNodeLinker | PnpmNodeLinker;
 

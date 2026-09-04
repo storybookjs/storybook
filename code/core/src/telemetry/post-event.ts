@@ -18,6 +18,7 @@ export type PostOptions = {
 };
 
 const TELEMETRY_URL = process.env.STORYBOOK_TELEMETRY_URL || 'https://storybook.js.org/event-log';
+const request = TELEMETRY_URL.startsWith('https:') ? httpsRequest : httpRequest;
 
 const TIMEOUT = 30_000;
 const MAX_ATTEMPTS = 4;
@@ -45,7 +46,6 @@ export async function postEvent(
 }
 
 function post(payload: string, signal: AbortSignal, keepProcessAlive: boolean): Promise<number> {
-  const request = TELEMETRY_URL.startsWith('https:') ? httpsRequest : httpRequest;
   return new Promise((resolve, reject) => {
     const outgoing = request(
       TELEMETRY_URL,

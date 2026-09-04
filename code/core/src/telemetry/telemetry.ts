@@ -19,7 +19,7 @@ import { getSessionId } from './session-id.ts';
 import type { Options, TelemetryData, TelemetryEvent } from './types.ts';
 
 const inFlight = new Map<string, PendingEvent>();
-let exitHookRegistered = false;
+process.once('exit', handOffPendingEvents);
 
 export const addToGlobalContext = (key: string, value: any) => {
   globalContext[key] = value;
@@ -97,18 +97,10 @@ export async function sendTelemetry(data: TelemetryData, options: Partial<Option
       .finally(() => inFlight.delete(body.eventId));
 
     inFlight.set(body.eventId, event);
-    registerExitHook();
 
     await Promise.all([options.immediate ? request : undefined, saveToCache(eventType, body)]);
   } catch (err) {
     //
-  }
-}
-
-function registerExitHook() {
-  if (!exitHookRegistered) {
-    exitHookRegistered = true;
-    process.once('exit', handOffPendingEvents);
   }
 }
 

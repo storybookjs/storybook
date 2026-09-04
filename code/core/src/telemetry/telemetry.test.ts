@@ -77,15 +77,13 @@ it('waits for the response and holds the process when immediate', async () => {
   expect(postMock.mock.calls[0][1]).toMatchObject({ keepProcessAlive: true });
 });
 
-it('registers the exit hook once, with the first event', async () => {
+it('registers the exit hook when loaded', async () => {
   vi.resetModules();
   const once = vi.spyOn(process, 'once');
-  const { sendTelemetry: send } = await import('./telemetry.ts');
 
-  await send({ eventType: 'dev', payload: {} });
-  await send({ eventType: 'build', payload: {} });
+  await import('./telemetry.ts');
 
-  expect(once.mock.calls.filter(([name]) => name === 'exit')).toHaveLength(1);
+  expect(once).toHaveBeenCalledWith('exit', expect.any(Function));
   once.mockRestore();
 });
 

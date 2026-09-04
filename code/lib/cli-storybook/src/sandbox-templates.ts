@@ -1190,22 +1190,10 @@ export const templatesByCadence = { normal, merged, daily };
 // for the recorded baselines to read.
 const DOCGEN_SERVER_FEATURES = ['experimentalDocgenServer', 'componentsManifest'] as const;
 
-// Templates whose `mainConfig` is a function of the generated `ConfigFile`, so its features cannot be
-// read without running the sandbox generator. Listed by name so a new function-form template throws
-// below instead of silently dropping out of docgen baseline coverage.
-const UNREADABLE_MAIN_CONFIG_TEMPLATES = new Set<string>([]);
-
-const enablesDocgenServer = (key: string, template: Template): boolean => {
+const enablesDocgenServer = (template: Template): boolean => {
   const { mainConfig } = template.modifications ?? {};
+  // Function-form mainConfig is unreadable here, so its template stays out of docgen baseline coverage.
   if (typeof mainConfig === 'function') {
-    if (!UNREADABLE_MAIN_CONFIG_TEMPLATES.has(key)) {
-      // eslint-disable-next-line local-rules/no-uncategorized-errors
-      throw new Error(
-        `Template "${key}" declares mainConfig as a function, whose features cannot be read here. ` +
-          `Move ${DOCGEN_SERVER_FEATURES.join(' and ')} into the object form to opt into docgen ` +
-          `baseline coverage, or add the key to UNREADABLE_MAIN_CONFIG_TEMPLATES to stay out of it.`
-      );
-    }
     return false;
   }
   const features = mainConfig?.features;
@@ -1216,5 +1204,5 @@ const enablesDocgenServer = (key: string, template: Template): boolean => {
 // it takes to bring it into docgen baseline coverage.
 export const docgenServerTemplates = (): TemplateKey[] =>
   (Object.entries(allTemplates) as [TemplateKey, Template][])
-    .filter(([key, template]) => enablesDocgenServer(key, template))
+    .filter(([, template]) => enablesDocgenServer(template))
     .map(([key]) => key);

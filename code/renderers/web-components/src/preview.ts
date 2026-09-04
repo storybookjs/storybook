@@ -2,6 +2,7 @@ import type {
   AddonTypes,
   InferTypes,
   Meta,
+  MetaArgsConstraint,
   MetaArgsInput,
   Preview,
   PreviewAddon,
@@ -9,7 +10,6 @@ import type {
 } from 'storybook/internal/csf';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
 import type {
-  Args,
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
@@ -104,8 +104,7 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
   meta<
     C extends keyof HTMLElementTagNameMap,
     Decorators extends DecoratorFunction<WebComponentsTypes & T, any>,
-    // A constraint here makes TS fall back to it for literal args, so story() re-requires them.
-    TMetaArgs extends Args,
+    TMetaArgs extends MetaArgsConstraint<InferArgsFromComponent<C> & T['args']>,
   >(
     meta: {
       component?: C;
@@ -128,7 +127,7 @@ export interface WebComponentsPreview<T extends AddonTypes> extends Preview<
   meta<
     TArgs,
     Decorators extends DecoratorFunction<WebComponentsTypes & T, any>,
-    TMetaArgs extends Args,
+    TMetaArgs extends MetaArgsConstraint<TArgs & T['args']>,
   >(
     meta: {
       render?: ArgsStoryFn<WebComponentsTypes & T, TArgs>;

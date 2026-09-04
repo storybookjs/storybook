@@ -89,18 +89,44 @@ export function isPreview(input: unknown): input is Preview<Renderer> {
   return input != null && typeof input === 'object' && '_tag' in input && input?._tag === 'Preview';
 }
 
-// Polyfill of the TS 5.4 builtin so the published types keep validating on older TypeScript.
-type NoInfer<T> = [T][T extends any ? 0 : never];
+type AnyFunction = (...args: any) => any;
+
+type Widen<T> = T extends AnyFunction
+  ? T
+  : T extends string
+    ? string
+    : T extends number
+      ? number
+      : T extends boolean
+        ? boolean
+        : T extends bigint
+          ? bigint
+          : T extends symbol
+            ? symbol
+            : T extends readonly (infer E)[]
+              ? readonly Widen<E>[]
+              : T extends object
+                ? { [K in keyof T]: Widen<T[K]> }
+                : T;
 
 /**
- * The `args` a `meta()` call accepts: the args as passed when they fit the component args,
- * otherwise the component args so that TypeScript points at the offending property.
- *
- * The component args never take part in inference, so a literal value in `args` cannot widen them.
+ * The constraint for the args a `meta()` call captures: the component args with every literal
+ * widened to its primitive. TypeScript widens the literals in an args object literal before it
+ * checks the constraint, and an inferred type that fails its constraint is replaced by that
+ * constraint, which would drop the captured keys.
  */
-export type MetaArgsInput<TInput, TArgs> = [TInput] extends [NoInfer<Partial<TArgs>>]
-  ? TInput & NoInfer<Partial<TArgs>>
-  : NoInfer<Partial<TArgs>>;
+export type MetaArgsConstraint<TArgs> = { [K in keyof TArgs]?: Widen<TArgs[K]> };
+
+/**
+ * The `args` a `meta()` call accepts: the captured args, validated against the component args.
+ *
+ * Function-typed args are validated through the constraint only. A contextual signature that
+ * still refers to the component args type parameter makes TypeScript report a circular return
+ * type for a `() => {}` arg.
+ */
+export type MetaArgsInput<TInput, TArgs> = TInput & {
+  [K in keyof TArgs as NonNullable<TArgs[K]> extends AnyFunction ? never : K]?: TArgs[K];
+};
 
 export interface Meta<
   TRenderer extends Renderer,

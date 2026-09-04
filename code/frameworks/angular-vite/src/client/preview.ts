@@ -2,6 +2,7 @@ import type {
   AddonTypes,
   InferTypes,
   Meta,
+  MetaArgsConstraint,
   MetaArgsInput,
   Preview,
   PreviewAddon,
@@ -9,7 +10,6 @@ import type {
 } from 'storybook/internal/csf';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
 import type {
-  Args,
   ArgsStoryFn,
   ComponentAnnotations,
   DecoratorFunction,
@@ -98,8 +98,7 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
   meta<
     C extends abstract new (...args: any) => any,
     Decorators extends DecoratorFunction<AngularRenderer & T, any>,
-    // A constraint here makes TS fall back to it for literal args, so story() re-requires them.
-    TMetaArgs extends Args,
+    TMetaArgs extends MetaArgsConstraint<InferComponentArgs<C> & T['args']>,
   >(
     meta: {
       component?: C;
@@ -119,7 +118,7 @@ export interface AngularPreview<T extends AddonTypes> extends Preview<AngularRen
   meta<
     TArgs,
     Decorators extends DecoratorFunction<AngularRenderer & T, any>,
-    TMetaArgs extends Args,
+    TMetaArgs extends MetaArgsConstraint<TArgs & T['args']>,
   >(
     meta: {
       render?: ArgsStoryFn<AngularRenderer & T, TArgs & T['args']>;

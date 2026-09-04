@@ -5,6 +5,7 @@ import type {
   AddonTypes,
   InferTypes,
   Meta,
+  MetaArgsConstraint,
   MetaArgsInput,
   Preview,
   Story,
@@ -124,8 +125,7 @@ export interface ReactPreview<T extends AddonTypes> extends Preview<ReactTypes &
   meta<
     TArgs extends Args,
     Decorators extends DecoratorFunction<ReactTypes & T, any>,
-    // A constraint here makes TS fall back to it for literal args, so story() re-requires them.
-    TMetaArgs extends Args,
+    TMetaArgs extends MetaArgsConstraint<TArgs & T['args']>,
   >(
     meta: {
       render?: ArgsStoryFn<ReactTypes & T, TArgs & T['args']>;

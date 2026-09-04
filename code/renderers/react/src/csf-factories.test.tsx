@@ -107,13 +107,18 @@ describe('Args can be provided in multiple ways', () => {
   });
 
   it('✅ Literal args provided in meta do not need to be repeated in the story', () => {
-    type LiteralProps = { variant: 'primary' | 'secondary'; disabled: boolean; items: string[] };
+    type LiteralProps = {
+      variant: 'primary' | 'secondary';
+      disabled: boolean;
+      items: string[];
+      onDismiss?: () => void;
+    };
     const Literal: (props: LiteralProps) => ReactElement = () => <></>;
 
     {
       const meta = preview.meta({
         component: Literal,
-        args: { variant: 'primary', disabled: false, items: [] },
+        args: { variant: 'primary', disabled: false, items: [], onDismiss: () => {} },
       });
       const Basic = meta.story();
       const Secondary = meta.story({ args: { variant: 'secondary' } });

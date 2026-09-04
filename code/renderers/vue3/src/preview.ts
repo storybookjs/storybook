@@ -2,6 +2,7 @@ import type {
   AddonTypes,
   InferTypes,
   Meta,
+  MetaArgsConstraint,
   MetaArgsInput,
   Preview,
   PreviewAddon,
@@ -93,8 +94,7 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
   meta<
     C,
     Decorators extends DecoratorFunction<VueTypes & T, any>,
-    // A constraint here makes TS fall back to it for literal args, so story() re-requires them.
-    TMetaArgs extends Args,
+    TMetaArgs extends MetaArgsConstraint<ComponentPropsAndSlots<C> & T['args']>,
   >(
     meta: {
       component?: C;
@@ -114,7 +114,7 @@ export interface VuePreview<T extends AddonTypes> extends Preview<VueTypes & T> 
   meta<
     TArgs extends Args,
     Decorators extends DecoratorFunction<VueTypes & T, any>,
-    TMetaArgs extends Args,
+    TMetaArgs extends MetaArgsConstraint<TArgs & T['args']>,
   >(
     meta: {
       render?: ArgsStoryFn<VueTypes & T, TArgs>;

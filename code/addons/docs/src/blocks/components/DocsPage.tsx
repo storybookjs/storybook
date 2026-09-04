@@ -436,8 +436,7 @@ export const DocsContent = styled.div(({ theme }) => {
   };
 });
 
-export const DocsWrapper = styled.div(({ theme }) => ({
-  background: theme.background.content,
+export const DocsWrapper = styled.div({
   display: 'flex',
   flexDirection: 'row-reverse',
   justifyContent: 'center',
@@ -445,9 +444,8 @@ export const DocsWrapper = styled.div(({ theme }) => ({
   minHeight: '100vh',
   boxSizing: 'border-box',
   gap: '3rem',
-
   [`@media (min-width: ${breakpoint}px)`]: {},
-}));
+});
 
 interface DocsPageWrapperProps {
   children?: React.ReactNode;

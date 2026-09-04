@@ -426,7 +426,8 @@ describe('PreviewWeb', () => {
         expect(preview.view.prepareForStory).toHaveBeenCalledWith(
           expect.objectContaining({
             id: 'component-one--a',
-          })
+          }),
+          { scrollReset: true }
         );
       });
 
@@ -2694,7 +2695,8 @@ describe('PreviewWeb', () => {
         expect(preview.view.prepareForStory).toHaveBeenCalledWith(
           expect.objectContaining({
             id: 'component-one--a',
-          })
+          }),
+          { scrollReset: true }
         );
       });
 
@@ -3219,6 +3221,22 @@ describe('PreviewWeb', () => {
         await waitForRender();
 
         expect(mockChannel.emit).toHaveBeenCalledWith(STORY_RENDERED, 'component-one--a');
+      });
+
+      // Regression test for https://github.com/storybookjs/storybook/issues/22057. The HMR
+      // re-render must pass scrollReset: false so the user's scroll position is preserved.
+      it('calls view.prepareForStory with scrollReset: false to preserve scroll on HMR', async () => {
+        document.location.search = '?id=component-one--a';
+        const preview = await createAndRenderPreview();
+
+        mockChannel.emit.mockClear();
+        preview.onStoriesChanged({ importFn: newImportFn });
+        await waitForRender();
+
+        expect(preview.view.prepareForStory).toHaveBeenLastCalledWith(
+          expect.objectContaining({ id: 'component-one--a' }),
+          { scrollReset: false }
+        );
       });
     });
 

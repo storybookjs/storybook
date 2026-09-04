@@ -43,3 +43,10 @@ export const SomeAutodocs: Story = {
     relativeCsfPaths: ['../examples/ButtonSomeAutodocs.stories'],
   },
 };
+
+export const WithInteractiveArgs: Story = {
+  args: { forceInitialArgs: false },
+  parameters: {
+    relativeCsfPaths: ['../examples/Button.stories'],
+  },
+};

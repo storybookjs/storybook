@@ -59,7 +59,17 @@ const DOCS_ACCESS: DocsAccess = {
       },
     },
   }),
-  resolve: async () => undefined,
+  resolve: async (id) =>
+    id === 'button'
+      ? {
+          kind: 'component',
+          component: {
+            id: 'button',
+            name: 'Button',
+            stories: [{ id: 'button--primary', name: 'Primary', snippet: '<Button />' }],
+          },
+        }
+      : undefined,
 };
 
 const RECORD: StorybookInstanceRecord = {
@@ -236,6 +246,17 @@ describe('local tools', () => {
     );
   });
 
+  it('round-trips the show-story --storyId flag through token parsing to the handler', async () => {
+    const { deps } = makeDeps();
+
+    const result = await run(['docs', 'show-story', '--storyId', 'button--primary'], deps);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.outcome).toEqual({ kind: 'success' });
+    expect(result.output).toContain('# Button - Primary');
+    expect(result.output).toContain('<Button />');
+  });
+
   it('prints the structured result data with --json', async () => {
     const { deps } = makeDeps();
 
@@ -250,6 +271,7 @@ describe('local tools', () => {
     const moduleGraph = {
       queries: {
         status: { loaded: async () => ({ value: 'ready' }) },
+        changeDetectionReadiness: { loaded: async () => ({ status: 'ready' }) },
         storiesForFiles: { loaded: async () => [] },
       },
     };
@@ -945,9 +967,9 @@ describe('attached tools', () => {
   it('prints the SDK fallback notice separately from the local result', async () => {
     const tools = makeLocalTools();
     tools.fallbackNotice =
-      "No running Storybook was found for this project.\n\nFalling back to loading this project's Storybook configuration.";
+      "No running Storybook instance is on port 9999.\n\nFalling back to loading this project's Storybook configuration.";
     tools.requestedMode = 'auto';
-    tools.fallbackReason = 'no-instance';
+    tools.fallbackReason = 'port-mismatch';
     const { deps, createTools } = makeDeps({
       createTools: vi.fn(async () => tools),
     });
@@ -958,7 +980,7 @@ describe('attached tools', () => {
     expect(result.requestedMode).toBe('auto');
     expect(result.attachMode).toBe('local');
     expect(result.host).toBe('in-process');
-    expect(result.fallbackReason).toBe('no-instance');
+    expect(result.fallbackReason).toBe('port-mismatch');
     expect(result.fallbackNotice).toContain('Falling back to loading this project');
     expect(result.output).toContain('Button');
     expect(result.output).not.toContain('Falling back');

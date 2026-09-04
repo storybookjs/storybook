@@ -171,9 +171,6 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   const hasBabelConfig = existsSync(babelRCPath) || existsSync(babelConfigPath);
   const isDevelopment = options.configType !== 'PRODUCTION';
 
-  // The supported floor is Next.js 15, so the previous `isNext14orNewer` term was
-  // always true and is dropped. Projects shipping a babel config still compile
-  // through Babel unless they force SWC transforms.
   const useSWC = nextConfig.experimental?.forceSwcTransforms || !hasBabelConfig;
 
   configureNextFont(baseConfig, useSWC);

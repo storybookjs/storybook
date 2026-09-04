@@ -503,6 +503,7 @@ export const storyIndexGenerator: PresetPropertyFn<
       indexers,
       docs,
       features,
+      storySort: options.presets.get?.('storySort'),
     });
     await generator.initialize();
     return generator;

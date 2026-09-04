@@ -9,7 +9,7 @@ import {
   normalizeStoryPath,
 } from 'storybook/internal/common';
 import { combineTags, storyNameFromExport, toId } from 'storybook/internal/csf/csf-utils';
-import { getStorySortParameter, loadConfig } from 'storybook/internal/csf-tools';
+import { loadConfig } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
 import { isExampleStoryId } from 'storybook/internal/telemetry';
 import type {
@@ -71,6 +71,7 @@ export type StoryIndexGeneratorOptions = {
   docs: DocsOptions;
   build?: StorybookConfigRaw['build'];
   features?: StorybookConfigRaw['features'];
+  storySort?: StorybookConfigRaw['storySort'];
 };
 
 const makeAbsolute = (otherImport: Path, normalizedPath: Path, workingDir: Path) =>
@@ -785,10 +786,7 @@ export class StoryIndexGenerator {
         throw new MultipleIndexingError(duplicateErrors);
       }
 
-      const sorted = await this.sortStories(
-        indexEntries,
-        previewCode && getStorySortParameter(previewCode)
-      );
+      const sorted = await this.sortStories(indexEntries, this.options.storySort);
 
       this.lastStats = stats;
       this.lastIndex = {

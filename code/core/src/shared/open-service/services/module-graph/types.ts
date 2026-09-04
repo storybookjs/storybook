@@ -40,7 +40,18 @@ export type ModuleGraphServiceState = {
    */
   storyChangeRevisions: Record<string, number>;
   latestChangedStoryFiles: string[];
+  /**
+   * Change-detection scan readiness. Distinct from {@link status}: the graph can be ready while
+   * scanning is disabled or has failed. `pending` is the value before the first scan settles.
+   */
+  changeDetectionReadiness: ChangeDetectionReadinessState;
 };
+
+export type ChangeDetectionReadinessState =
+  | { status: 'pending' }
+  | { status: 'ready' }
+  | { status: 'unavailable'; reason: string; error?: { message: string } }
+  | { status: 'error'; error: { message: string } };
 
 export function errorToErrorLike(error: unknown): ErrorLike {
   if (!(error instanceof Error)) {

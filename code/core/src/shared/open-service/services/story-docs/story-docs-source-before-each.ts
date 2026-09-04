@@ -49,9 +49,13 @@ export function storyDocsSourceBeforeEach(context: StoryContext): CleanupCallbac
       if (source === undefined) {
         return;
       }
-      // The warning describes the service snippet, so it must not survive the fall back to raw CSF.
-      const warning = snippet === undefined ? undefined : selectWarningForStory(payload, storyId);
-      return emitTransformCode(source, context, warning);
+      const warning = selectWarningForStory(payload, storyId);
+
+      return emitTransformCode(
+        source,
+        context,
+        snippet === undefined && warning ? `${warning} Showing the story source instead.` : warning
+      );
     });
 
   return () => {

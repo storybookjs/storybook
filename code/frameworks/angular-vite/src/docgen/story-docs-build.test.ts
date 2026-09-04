@@ -61,6 +61,21 @@ const buttonDocgen =
     },
   });
 
+const compiledButtonDocgen = async (): Promise<AngularDocgenPayload> => ({
+  id: 'example-button',
+  name: 'ButtonComponent',
+  path: STORY_PATH,
+  jsDocTags: {},
+  angularComponentMeta: {
+    name: 'ButtonComponent',
+    selector: undefined,
+    standalone: undefined,
+    inputs: ['label'],
+    outputs: ['pressed'],
+    enums: [],
+  },
+});
+
 /** The docgen stub the story-shape file below is written against. */
 const shapesDocgen = async (): Promise<AngularDocgenPayload> => ({
   id: 'example-button',
@@ -328,44 +343,36 @@ describe('buildStoryDocsPayload', () => {
     expect(story.warning).toContain('NgModule');
   });
 
-  it('never places a component with unreadable standalone metadata directly in `imports`, even with a literal template', async () => {
+  it('uses a literal render template when compiled metadata has no selector or standalone value', async () => {
     givenStoryFile(`
+      import { CommonModule } from '@angular/common';
       import { moduleMetadata } from '@storybook/angular-vite';
       import { ButtonComponent } from './button.component';
-      import { ButtonModule } from './button.module';
       export default {
         title: 'Example/Button',
         component: ButtonComponent,
-        decorators: [moduleMetadata({ imports: [ButtonModule] })],
+        decorators: [moduleMetadata({ declarations: [ButtonComponent], imports: [CommonModule] })],
       };
-      export const Default = { template: '<sb-button></sb-button>', args: { label: 'Save' } };
+      const Template = (args) => ({
+        component: ButtonComponent,
+        template: '<sb-button></sb-button>',
+        props: args,
+      });
+      export const Default = { render: Template, args: { label: 'Save' } };
     `);
-
-    const unknownStandaloneDocgen = async (): Promise<AngularDocgenPayload> => ({
-      id: 'example-button',
-      name: 'ButtonComponent',
-      path: STORY_PATH,
-      jsDocTags: {},
-      angularComponentMeta: {
-        name: 'ButtonComponent',
-        selector: 'sb-button',
-        standalone: undefined,
-        inputs: ['label'],
-        outputs: ['pressed'],
-        enums: [],
-      },
-    });
 
     const payload = await buildStoryDocsPayload(
       { entry },
-      { getDocgenPayload: unknownStandaloneDocgen }
+      { getDocgenPayload: compiledButtonDocgen }
     );
 
     const story = Object.values(payload!.stories)[0];
-    // Matches `ButtonComponent` anywhere in the array, not just as its sole entry.
+    expect(story.snippet).toContain('<sb-button></sb-button>');
+    expect(story.snippet).not.toContain('NgComponentOutlet');
     expect(story.snippet).not.toMatch(/imports: \[[^\]]*ButtonComponent/);
     expect(story.snippet).not.toContain("import { ButtonComponent } from './button.component';");
-    expect(story.snippet).toContain('imports: [ButtonModule],');
+    expect(story.snippet).toContain('imports: [],');
+    expect(story.snippet).not.toContain("import { CommonModule } from '@angular/common';");
     expect(story.warning).toContain('could not be determined');
   });
 

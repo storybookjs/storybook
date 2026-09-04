@@ -122,12 +122,16 @@ describe('Args can be provided in multiple ways', () => {
   });
 
   it('✅ Literal args provided in meta do not need to be repeated in the story', () => {
-    type LiteralProps = { variant: 'primary' | 'secondary'; items: string[] };
+    type LiteralProps = {
+      variant: 'primary' | 'secondary';
+      items: string[];
+      slots: { header: () => void };
+    };
 
     {
       const meta = preview.type<{ args: LiteralProps }>().meta({
         component: ButtonComponent,
-        args: { variant: 'primary', items: [] },
+        args: { variant: 'primary', items: [], slots: { header: () => {} } },
       });
       const Basic = meta.story();
       const Secondary = meta.story({ args: { variant: 'secondary' } });
@@ -135,7 +139,7 @@ describe('Args can be provided in multiple ways', () => {
     {
       const meta = preview.meta({
         render: (args: LiteralProps) => ({ template: '<div></div>', props: args }),
-        args: { variant: 'primary', items: [] },
+        args: { variant: 'primary', items: [], slots: { header: () => {} } },
       });
       const Basic = meta.story();
     }

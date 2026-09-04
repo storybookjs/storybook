@@ -10,7 +10,7 @@ import type {
   TestFunction,
 } from 'storybook/internal/types';
 
-import type { SetOptional } from 'type-fest';
+import type { LiteralToPrimitive, Primitive, SetOptional } from 'type-fest';
 
 import {
   combineParameters,
@@ -91,42 +91,34 @@ export function isPreview(input: unknown): input is Preview<Renderer> {
 
 type AnyFunction = (...args: any) => any;
 
+type PrimitiveKeys<T> = { [K in keyof T]-?: T[K] extends Primitive ? K : never }[keyof T];
+
 type Widen<T> = T extends AnyFunction
   ? T
-  : T extends string
-    ? string
-    : T extends number
-      ? number
-      : T extends boolean
-        ? boolean
-        : T extends bigint
-          ? bigint
-          : T extends symbol
-            ? symbol
-            : T extends readonly (infer E)[]
-              ? readonly Widen<E>[]
-              : T extends object
-                ? { [K in keyof T]: Widen<T[K]> }
-                : T;
+  : T extends Primitive
+    ? LiteralToPrimitive<T>
+    : T extends readonly (infer E)[]
+      ? readonly Widen<E>[]
+      : T extends object
+        ? { [K in keyof T]: Widen<T[K]> }
+        : T;
 
 /**
  * The constraint for the args a `meta()` call captures: the component args with every literal
- * widened to its primitive. TypeScript widens the literals in an args object literal before it
- * checks the constraint, and an inferred type that fails its constraint is replaced by that
- * constraint, which would drop the captured keys.
+ * widened to its primitive. TypeScript infers the component args from the same object literal, so
+ * it widens the literals in `args` before it checks this constraint. A constraint that demands the
+ * exact literals would reject the inferred args and replace them with the constraint itself, which
+ * drops the captured keys. See ./csf-factories-meta-args.md.
  */
 export type MetaArgsConstraint<TArgs> = { [K in keyof TArgs]?: Widen<TArgs[K]> };
 
 /**
- * The `args` a `meta()` call accepts: the captured args, validated against the component args.
- *
- * Function-typed args are validated through the constraint only. A contextual signature that
- * still refers to the component args type parameter makes TypeScript report a circular return
- * type for a `() => {}` arg.
+ * The `args` a `meta()` call accepts: the captured args, plus an exact check of the primitive args
+ * whose literal types the widened constraint gave up. It covers primitives only on purpose: a
+ * function or object type here would hand a contextual signature to the callbacks in `args` while
+ * the component args are still being inferred, which TypeScript reports as a circular return type.
  */
-export type MetaArgsInput<TInput, TArgs> = TInput & {
-  [K in keyof TArgs as NonNullable<TArgs[K]> extends AnyFunction ? never : K]?: TArgs[K];
-};
+export type MetaArgsInput<TInput, TArgs> = TInput & Partial<Pick<TArgs, PrimitiveKeys<TArgs>>>;
 
 export interface Meta<
   TRenderer extends Renderer,

@@ -105,20 +105,25 @@ describe('StoryObj', () => {
     props: {
       label: { type: String as PropType<'A' | 'B'>, required: true },
       items: { type: Array as PropType<string[]>, required: true },
+      slots: { type: Object as PropType<{ header: () => void }>, required: true },
     },
     render: () => h('button'),
   });
 
   it('✅ Literal args provided in meta do not need to be repeated in the story', () => {
     {
-      const meta = preview.meta({ component: LiteralButton, args: { label: 'A', items: [] } });
+      const meta = preview.meta({
+        component: LiteralButton,
+        args: { label: 'A', items: [], slots: { header: () => {} } },
+      });
       const Basic = meta.story();
       const B = meta.story({ args: { label: 'B' } });
     }
     {
-      const meta = preview
-        .type<{ args: { extra?: boolean } }>()
-        .meta({ component: LiteralButton, args: { label: 'A', items: [] } });
+      const meta = preview.type<{ args: { extra?: boolean } }>().meta({
+        component: LiteralButton,
+        args: { label: 'A', items: [], slots: { header: () => {} } },
+      });
       const Basic = meta.story();
     }
     {
@@ -146,10 +151,16 @@ describe('StoryObj', () => {
     }
     {
       // @ts-expect-error C is not a valid label ❌
-      const meta = preview.meta({ component: LiteralButton, args: { label: 'C', items: [] } });
+      const meta = preview.meta({
+        component: LiteralButton,
+        args: { label: 'C', items: [], slots: { header: () => {} } },
+      });
     }
     {
-      const meta = preview.meta({ component: LiteralButton, args: { label: 'A', items: [] } });
+      const meta = preview.meta({
+        component: LiteralButton,
+        args: { label: 'A', items: [], slots: { header: () => {} } },
+      });
       // @ts-expect-error C is not a valid label ❌
       const Basic = meta.story({ args: { label: 'C' } });
     }

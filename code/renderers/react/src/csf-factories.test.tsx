@@ -112,27 +112,35 @@ describe('Args can be provided in multiple ways', () => {
       disabled: boolean;
       items: string[];
       onDismiss?: () => void;
+      slots: { header: () => void };
     };
     const Literal: (props: LiteralProps) => ReactElement = () => <></>;
 
     {
       const meta = preview.meta({
         component: Literal,
-        args: { variant: 'primary', disabled: false, items: [], onDismiss: () => {} },
+        args: {
+          variant: 'primary',
+          disabled: false,
+          items: [],
+          onDismiss: () => {},
+          slots: { header: () => {} },
+        },
       });
       const Basic = meta.story();
       const Secondary = meta.story({ args: { variant: 'secondary' } });
     }
     {
-      const meta = preview
-        .type<{ args: { extra?: boolean } }>()
-        .meta({ component: Literal, args: { variant: 'primary', disabled: false, items: [] } });
+      const meta = preview.type<{ args: { extra?: boolean } }>().meta({
+        component: Literal,
+        args: { variant: 'primary', disabled: false, items: [], slots: { header: () => {} } },
+      });
       const Basic = meta.story();
     }
     {
       const meta = preview.meta({
         render: (args: LiteralProps) => <div>{args.variant}</div>,
-        args: { variant: 'primary', disabled: false, items: [] },
+        args: { variant: 'primary', disabled: false, items: [], slots: { header: () => {} } },
       });
       const Basic = meta.story();
     }

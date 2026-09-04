@@ -141,43 +141,45 @@ const decoratorSelector = (
   return value && ctx.ts.isStringLiteralLike(value) ? value.text : undefined;
 };
 
-// `objectProperty` only matches a plain `key: value` assignment; a spread, a shorthand property,
-// or a quoted key can still supply `standalone` without it noticing.
-const standalonePropertyIsProvablyAbsent = (
-  ctx: AnalyzerContext,
-  metadata: tsModule.ObjectLiteralExpression
-): boolean =>
-  metadata.properties.every((property) => {
-    if (ctx.ts.isSpreadAssignment(property)) {
-      return false;
-    }
-    if (ctx.ts.isPropertyAssignment(property) && ctx.ts.isComputedPropertyName(property.name)) {
-      return false;
-    }
-    const name = ctx.ts.isShorthandPropertyAssignment(property)
-      ? property.name
-      : ctx.ts.isPropertyAssignment(property) && ctx.ts.isStringLiteralLike(property.name)
-        ? property.name
-        : undefined;
-    return name === undefined || name.text !== 'standalone';
-  });
-
 const decoratorStandalone = (
   ctx: AnalyzerContext,
   metadata: tsModule.ObjectLiteralExpression
 ): boolean | undefined => {
-  const standalone = objectProperty(ctx, metadata, 'standalone');
-  if (!standalone) {
-    return standalonePropertyIsProvablyAbsent(ctx, metadata) ? true : undefined;
+  let standalone: boolean | undefined = true;
+
+  for (const property of metadata.properties) {
+    if (ctx.ts.isSpreadAssignment(property)) {
+      standalone = undefined;
+      continue;
+    }
+    if (ctx.ts.isComputedPropertyName(property.name)) {
+      standalone = undefined;
+      continue;
+    }
+    if (ctx.ts.isShorthandPropertyAssignment(property)) {
+      if (property.name.text === 'standalone') {
+        standalone = undefined;
+      }
+      continue;
+    }
+    if (
+      !ctx.ts.isPropertyAssignment(property) ||
+      (!ctx.ts.isIdentifier(property.name) && !ctx.ts.isStringLiteralLike(property.name)) ||
+      property.name.text !== 'standalone'
+    ) {
+      continue;
+    }
+
+    const value = resolveInitializer(ctx, property.initializer);
+    standalone =
+      value?.kind === ctx.ts.SyntaxKind.TrueKeyword
+        ? true
+        : value?.kind === ctx.ts.SyntaxKind.FalseKeyword
+          ? false
+          : undefined;
   }
-  const value = resolveInitializer(ctx, standalone);
-  if (value?.kind === ctx.ts.SyntaxKind.TrueKeyword) {
-    return true;
-  }
-  if (value?.kind === ctx.ts.SyntaxKind.FalseKeyword) {
-    return false;
-  }
-  return undefined;
+
+  return standalone;
 };
 
 // A reference to a variable resolves to its initializer, a slice of what ngtsc's own partial

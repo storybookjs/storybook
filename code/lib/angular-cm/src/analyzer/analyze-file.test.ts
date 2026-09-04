@@ -133,6 +133,17 @@ describe('the selector', () => {
     expect(component.selector).toBe('button[sb-harness-action], a[sb-harness-action]');
   });
 
+  it('reads a quoted decorator property name', () => {
+    const component = componentIn(`
+      import { Component } from '@angular/core';
+
+      @Component({ 'selector': 'sb-quoted', template: '' })
+      export class QuotedComponent {}
+    `);
+
+    expect(component.selector).toBe('sb-quoted');
+  });
+
   it('is absent on a class with no Angular decorator', () => {
     const meta = analyze(`
       export class BaseAlertComponent {}
@@ -190,7 +201,7 @@ describe('standalone', () => {
     expect(component.standalone).toBeUndefined();
   });
 
-  it('reports an unspecified value rather than the Angular 21 default when the property might exist under a form the lookup does not read', () => {
+  it('reads quoted keys and stays unspecified for forms it cannot evaluate', () => {
     const shorthand = componentIn(`
       import { Component } from '@angular/core';
 
@@ -222,8 +233,48 @@ describe('standalone', () => {
 
     expect(shorthand.standalone).toBeUndefined();
     expect(spread.standalone).toBeUndefined();
-    expect(quoted.standalone).toBeUndefined();
+    expect(quoted.standalone).toBe(false);
     expect(computed.standalone).toBeUndefined();
+  });
+
+  it('follows object property order when an unknown member might set standalone', () => {
+    const unknownAfterExplicit = componentIn(`
+      import { Component } from '@angular/core';
+
+      declare const options: object;
+
+      @Component({ selector: 'sb-unknown', standalone: true, ...options, template: '' })
+      export class UnknownComponent {}
+    `);
+    const explicitAfterUnknown = componentIn(`
+      import { Component } from '@angular/core';
+
+      declare const options: object;
+
+      @Component({ selector: 'sb-explicit', ...options, standalone: false, template: '' })
+      export class ExplicitComponent {}
+    `);
+    const computedAfterExplicit = componentIn(`
+      import { Component } from '@angular/core';
+
+      declare const key: string;
+
+      @Component({ selector: 'sb-computed-after', standalone: true, [key]: false, template: '' })
+      export class ComputedAfterComponent {}
+    `);
+    const explicitAfterComputed = componentIn(`
+      import { Component } from '@angular/core';
+
+      declare const key: string;
+
+      @Component({ selector: 'sb-explicit-after', [key]: true, standalone: false, template: '' })
+      export class ExplicitAfterComponent {}
+    `);
+
+    expect(unknownAfterExplicit.standalone).toBeUndefined();
+    expect(explicitAfterUnknown.standalone).toBe(false);
+    expect(computedAfterExplicit.standalone).toBeUndefined();
+    expect(explicitAfterComputed.standalone).toBe(false);
   });
 });
 

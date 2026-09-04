@@ -30,11 +30,6 @@ const ALLOWED_CONSOLE_PREDICATES: ((...args: any[]) => boolean)[] = [
   (message) => message.includes('<Pressable> child must forward its ref to a DOM element.'),
   (message) => message.includes('<Focusable> child must forward its ref to a DOM element.'),
   (message) => message.includes('Please ensure the tabIndex prop is passed through.'),
-  // Vitest only warns about this if the import comes from a file outside of `node_modules`.
-  // This only occurs locally for us and is safe to ignore.
-  // It will stop once we start importing from `vitest/browser` instead (not a Vitest 3 compatible change).
-  // TODO: can be removed in SB11 (when/if we remove Vitest 3 support)
-  (message) => message.includes('tries to load a deprecated "@vitest/browser/context" module.'),
 ];
 
 (['warn', 'error'] as const).forEach((type) => {

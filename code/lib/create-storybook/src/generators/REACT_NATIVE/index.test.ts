@@ -69,7 +69,8 @@ describe('REACT_NATIVE generator module', () => {
       language: SupportedLanguage.JAVASCRIPT,
     });
     expect(packageManager.getVersionedPackages).toHaveBeenCalledWith(
-      expect.arrayContaining(['cross-env'])
+      expect.arrayContaining(['cross-env']),
+      { storybookVersionSpecifier: undefined }
     );
     expect(packageManager.addScripts).toHaveBeenCalledWith({
       'storybook:ios': 'cross-env STORYBOOK_ENABLED=true react-native run-ios',
@@ -148,7 +149,8 @@ describe('REACT_NATIVE generator module', () => {
 
     expect(packageManager.addScripts).toHaveBeenCalledWith({});
     expect(packageManager.getVersionedPackages).toHaveBeenCalledWith(
-      expect.not.arrayContaining(['cross-env'])
+      expect.not.arrayContaining(['cross-env']),
+      { storybookVersionSpecifier: undefined }
     );
 
     const logged = String(vi.mocked(logger.log).mock.calls.at(-1)?.[0] ?? '');
@@ -177,7 +179,8 @@ describe('REACT_NATIVE generator module', () => {
     });
 
     expect(packageManager.getVersionedPackages).toHaveBeenCalledWith(
-      expect.not.arrayContaining(['cross-env'])
+      expect.not.arrayContaining(['cross-env']),
+      { storybookVersionSpecifier: undefined }
     );
   });
 });

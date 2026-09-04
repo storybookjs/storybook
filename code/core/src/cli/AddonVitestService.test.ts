@@ -62,7 +62,7 @@ describe('AddonVitestService', () => {
       const deps = await service.collectDependencies();
 
       expect(deps).toContain('vitest');
-      // When vitest version is null, defaults to vitest 4+ behavior
+      // The addon always installs the Vitest 4 browser provider
       expect(deps).toContain('@vitest/browser-playwright');
       expect(deps).toContain('playwright');
       expect(deps).toContain('@vitest/coverage-v8');
@@ -70,13 +70,13 @@ describe('AddonVitestService', () => {
 
     it('should not include base packages if already installed', async () => {
       vi.mocked(mockPackageManager.getAllDependencies).mockReturnValue({
-        vitest: '3.0.0',
-        '@vitest/browser': '3.0.0',
+        vitest: '4.0.0',
+        '@vitest/browser-playwright': '4.0.0',
         playwright: '1.0.0',
       });
-      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue('3.0.0');
+      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue('4.0.0');
       vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce('3.0.0') // @vitest/coverage-v8
+        .mockResolvedValueOnce('4.0.0') // @vitest/coverage-v8
         .mockResolvedValueOnce(null); // @vitest/coverage-istanbul
 
       const deps = await service.collectDependencies();
@@ -93,7 +93,7 @@ describe('AddonVitestService', () => {
 
       // Should only contain base packages, not framework-specific ones
       expect(deps).toContain('vitest');
-      // When vitest version is null, defaults to vitest 4+ behavior
+      // The addon always installs the Vitest 4 browser provider
       expect(deps).toContain('@vitest/browser-playwright');
       expect(deps).toContain('playwright');
       expect(deps).toContain('@vitest/coverage-v8');
@@ -127,19 +127,18 @@ describe('AddonVitestService', () => {
     });
 
     it('pins vitest-related packages to the resolved version via the package manager', async () => {
-      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue('3.2.0');
+      vi.mocked(mockPackageManager.getDeclaredVersionSpecifier).mockResolvedValue('4.0.0');
 
       const deps = await service.collectDependencies();
 
-      // Version 3.2.0 < 4.0.0, so uses @vitest/browser
-      expect(deps).toContain('vitest@3.2.0');
-      expect(deps).toContain('@vitest/browser@3.2.0');
-      expect(deps).toContain('@vitest/coverage-v8@3.2.0');
+      expect(deps).toContain('vitest@4.0.0');
+      expect(deps).toContain('@vitest/browser-playwright@4.0.0');
+      expect(deps).toContain('@vitest/coverage-v8@4.0.0');
       expect(deps).toContain('playwright'); // playwright is versioned independently
       // Only the vitest-related packages are handed to the package manager for version pinning.
       expect(mockPackageManager.applyVersionToRelatedPackages).toHaveBeenCalledWith(
-        ['vitest', '@vitest/browser', '@vitest/coverage-v8'],
-        '3.2.0',
+        ['vitest', '@vitest/browser-playwright', '@vitest/coverage-v8'],
+        '4.0.0',
         'vitest'
       );
     });
@@ -178,20 +177,20 @@ describe('AddonVitestService', () => {
   });
 
   describe('validatePackageVersions', () => {
-    it('should return compatible when vitest >=3.0.0', async () => {
+    it('should return incompatible when vitest 3.x is used', async () => {
       vi.mocked(mockPackageManager.getInstalledVersion)
         .mockResolvedValueOnce('3.0.0') // vitest
         .mockResolvedValueOnce(null); // msw
 
       const result = await service.validatePackageVersions();
 
-      expect(result.compatible).toBe(true);
-      expect(result.reasons).toBeUndefined();
+      expect(result.compatible).toBe(false);
+      expect(result.reasons!.some((r) => r.includes('Vitest 4.0.0 or higher'))).toBe(true);
     });
 
-    it('should return compatible when vitest prerelease >= 3.0.0', async () => {
+    it('should return compatible when vitest prerelease >= 4.0.0', async () => {
       vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce('3.0.0-beta.1') // vitest
+        .mockResolvedValueOnce('4.0.0-beta.1') // vitest
         .mockResolvedValueOnce(null); // msw
 
       const result = await service.validatePackageVersions();
@@ -222,7 +221,7 @@ describe('AddonVitestService', () => {
       expect(result.reasons).toBeUndefined();
     });
 
-    it('should return incompatible when vitest <3.0.0', async () => {
+    it('should return incompatible when vitest <4.0.0', async () => {
       vi.mocked(mockPackageManager.getInstalledVersion)
         .mockResolvedValueOnce('2.5.0') // vitest
         .mockResolvedValueOnce(null); // msw
@@ -231,12 +230,12 @@ describe('AddonVitestService', () => {
 
       expect(result.compatible).toBe(false);
       expect(result.reasons).toBeDefined();
-      expect(result.reasons!.some((r) => r.includes('Vitest 3.0.0 or higher'))).toBe(true);
+      expect(result.reasons!.some((r) => r.includes('Vitest 4.0.0 or higher'))).toBe(true);
     });
 
     it('should return compatible when msw >=2.0.0', async () => {
       vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce('3.0.0') // vitest
+        .mockResolvedValueOnce('4.0.0') // vitest
         .mockResolvedValueOnce('2.0.0'); // msw
 
       const result = await service.validatePackageVersions();
@@ -246,7 +245,7 @@ describe('AddonVitestService', () => {
 
     it('should return incompatible when msw <2.0.0', async () => {
       vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce('3.0.0') // vitest
+        .mockResolvedValueOnce('4.0.0') // vitest
         .mockResolvedValueOnce('1.9.0'); // msw
 
       const result = await service.validatePackageVersions();
@@ -258,7 +257,7 @@ describe('AddonVitestService', () => {
 
     it('should return compatible when msw not installed', async () => {
       vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce('3.0.0') // vitest
+        .mockResolvedValueOnce('4.0.0') // vitest
         .mockResolvedValueOnce(null); // msw
 
       const result = await service.validatePackageVersions();
@@ -278,7 +277,7 @@ describe('AddonVitestService', () => {
 
     it('should handle multiple validation failures', async () => {
       vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce('2.0.0') // vitest <3.0.0
+        .mockResolvedValueOnce('2.0.0') // vitest <4.0.0
         .mockResolvedValueOnce('1.0.0'); // msw <2.0.0
 
       const result = await service.validatePackageVersions();
@@ -291,7 +290,7 @@ describe('AddonVitestService', () => {
 
   describe('validateCompatibility', () => {
     beforeEach(() => {
-      vi.mocked(mockPackageManager.getInstalledVersion).mockResolvedValue('3.0.0');
+      vi.mocked(mockPackageManager.getInstalledVersion).mockResolvedValue('4.0.0');
       vi.mocked(find.any).mockReturnValue(undefined);
     });
 
@@ -325,7 +324,7 @@ describe('AddonVitestService', () => {
 
     it('should return incompatible for Next.js with webpack builder', async () => {
       vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce('3.0.0') // vitest
+        .mockResolvedValueOnce('4.0.0') // vitest
         .mockResolvedValueOnce(null); // msw
 
       const result = await service.validateCompatibility({
@@ -352,7 +351,7 @@ describe('AddonVitestService', () => {
     // It only validates builder, framework support, package versions, and config files
     it('should return compatible for Next.js framework with valid setup', async () => {
       vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce('3.0.0') // vitest
+        .mockResolvedValueOnce('4.0.0') // vitest
         .mockResolvedValueOnce(null); // msw
 
       const result = await service.validateCompatibility({
@@ -365,7 +364,7 @@ describe('AddonVitestService', () => {
     });
 
     it('should validate config files when configDir provided', async () => {
-      vi.mocked(find.any).mockReturnValueOnce('vitest.workspace.json');
+      vi.mocked(find.any).mockReturnValueOnce('vitest.projects.json');
 
       const result = await service.validateCompatibility({
         framework: SupportedFramework.REACT_VITE,
@@ -374,11 +373,11 @@ describe('AddonVitestService', () => {
       });
 
       expect(result.compatible).toBe(false);
-      expect(result.reasons!.some((r) => r.includes('JSON workspace'))).toBe(true);
+      expect(result.reasons!.some((r) => r.includes('JSON projects'))).toBe(true);
     });
 
     it('should skip config file validation when no configDir provided', async () => {
-      vi.mocked(find.any).mockReturnValueOnce('vitest.workspace.json');
+      vi.mocked(find.any).mockReturnValueOnce('vitest.projects.json');
 
       const result = await service.validateCompatibility({
         framework: SupportedFramework.REACT_VITE,
@@ -391,7 +390,7 @@ describe('AddonVitestService', () => {
 
     it('should accumulate multiple validation failures', async () => {
       vi.mocked(mockPackageManager.getInstalledVersion)
-        .mockResolvedValueOnce('2.0.0') // vitest <3.0.0
+        .mockResolvedValueOnce('2.0.0') // vitest <4.0.0
         .mockResolvedValueOnce('1.0.0'); // msw <2.0.0
 
       const result = await service.validateCompatibility({
@@ -625,40 +624,40 @@ describe('AddonVitestService', () => {
       expect(result.compatible).toBe(true);
     });
 
-    it('should reject JSON workspace files', async () => {
-      vi.mocked(find.any).mockReturnValueOnce('vitest.workspace.json');
+    it('should reject JSON projects files', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.projects.json');
 
       const result = await service.validateConfigFiles('.storybook');
 
       expect(result.compatible).toBe(false);
       expect(result.reasons).toBeDefined();
-      expect(result.reasons!.some((r) => r.includes('JSON workspace'))).toBe(true);
+      expect(result.reasons!.some((r) => r.includes('JSON projects'))).toBe(true);
     });
 
-    it('should validate non-JSON workspace files', async () => {
-      vi.mocked(find.any).mockReturnValueOnce('vitest.workspace.ts');
+    it('should validate non-JSON projects files', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.projects.ts');
       vi.mocked(fs.readFile).mockResolvedValue('export default ["project1", "project2"]');
 
       const result = await service.validateConfigFiles('.storybook');
 
       expect(result.compatible).toBe(true);
-      expect(fs.readFile).toHaveBeenCalledWith('vitest.workspace.ts', 'utf8');
+      expect(fs.readFile).toHaveBeenCalledWith('vitest.projects.ts', 'utf8');
     });
 
-    it('should reject invalid workspace config', async () => {
-      vi.mocked(find.any).mockReturnValueOnce('vitest.workspace.ts');
+    it('should reject invalid projects config', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.projects.ts');
       vi.mocked(fs.readFile).mockResolvedValue('export default "invalid"');
 
       const result = await service.validateConfigFiles('.storybook');
 
       expect(result.compatible).toBe(false);
-      expect(result.reasons!.some((r) => r.includes('invalid workspace'))).toBe(true);
+      expect(result.reasons!.some((r) => r.includes('invalid projects'))).toBe(true);
     });
 
     it('should reject CommonJS config files (.cts)', async () => {
       vi.mocked(find.any).mockReset();
       vi.mocked(find.any)
-        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce(undefined) // projects
         .mockReturnValueOnce('vitest.config.cts'); // config
 
       const result = await service.validateConfigFiles('.storybook');
@@ -671,7 +670,7 @@ describe('AddonVitestService', () => {
 
     it('should reject CommonJS config files (.cjs)', async () => {
       vi.mocked(find.any)
-        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce(undefined) // projects
         .mockReturnValueOnce('vitest.config.cjs'); // config
 
       const result = await service.validateConfigFiles('.storybook');
@@ -682,7 +681,7 @@ describe('AddonVitestService', () => {
 
     it('should validate non-CommonJS config files', async () => {
       vi.mocked(find.any)
-        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce(undefined) // projects
         .mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue('export default defineConfig({ test: {} })');
 
@@ -693,7 +692,7 @@ describe('AddonVitestService', () => {
 
     it('should accept plain export default {}', async () => {
       vi.mocked(find.any)
-        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce(undefined) // projects
         .mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue('export default {}');
 
@@ -704,7 +703,7 @@ describe('AddonVitestService', () => {
 
     it('should reject arrow function vitest config with dynamic control flow (unsupported)', async () => {
       vi.mocked(find.any)
-        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce(undefined) // projects
         .mockReturnValueOnce('vitest.config.ts'); // config
       // A callback config that returns object literals directly is supported; one with branching
       // control flow in a block body is not, and must be rejected.
@@ -724,8 +723,8 @@ export default defineConfig(({ mode }) => {
       expect(result.reasons!.some((r) => r.includes('invalid Vitest config'))).toBe(true);
     });
 
-    it('should validate defineWorkspace expression', async () => {
-      vi.mocked(find.any).mockReturnValueOnce('vitest.workspace.ts');
+    it('should validate projects file with defineWorkspace expression', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.projects.ts');
       vi.mocked(fs.readFile).mockResolvedValue('export default defineWorkspace(["project1"])');
 
       const result = await service.validateConfigFiles('.storybook');
@@ -733,8 +732,8 @@ export default defineConfig(({ mode }) => {
       expect(result.compatible).toBe(true);
     });
 
-    it('should validate workspace config with object expressions', async () => {
-      vi.mocked(find.any).mockReturnValueOnce('vitest.workspace.ts');
+    it('should validate projects file with object expressions', async () => {
+      vi.mocked(find.any).mockReturnValueOnce('vitest.projects.ts');
       vi.mocked(fs.readFile).mockResolvedValue('export default [{ test: {} }, "project"]');
 
       const result = await service.validateConfigFiles('.storybook');
@@ -742,12 +741,12 @@ export default defineConfig(({ mode }) => {
       expect(result.compatible).toBe(true);
     });
 
-    it('should validate config with workspace array in test', async () => {
+    it('should validate config with projects array in test', async () => {
       vi.mocked(find.any)
-        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce(undefined) // projects
         .mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
-        'export default defineConfig({ test: { workspace: [] } })'
+        'export default defineConfig({ test: { projects: [] } })'
       );
 
       const result = await service.validateConfigFiles('.storybook');
@@ -758,7 +757,7 @@ export default defineConfig(({ mode }) => {
     it('should accumulate multiple config validation errors', async () => {
       vi.mocked(find.any).mockReset();
       vi.mocked(find.any)
-        .mockReturnValueOnce('vitest.workspace.json') // workspace JSON
+        .mockReturnValueOnce('vitest.projects.json') // projects JSON
         .mockReturnValueOnce('vitest.config.cjs'); // config CJS
 
       const result = await service.validateConfigFiles('.storybook');
@@ -770,7 +769,7 @@ export default defineConfig(({ mode }) => {
 
     it('should validate mergeConfig with plain object literal', async () => {
       vi.mocked(find.any)
-        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce(undefined) // projects
         .mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         'export default mergeConfig(viteConfig, { test: { name: "node" } })'
@@ -781,7 +780,7 @@ export default defineConfig(({ mode }) => {
 
     it('should validate mergeConfig with defineConfig call', async () => {
       vi.mocked(find.any)
-        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce(undefined) // projects
         .mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         'export default mergeConfig(viteConfig, defineConfig({ test: { name: "node" } }))'
@@ -792,7 +791,7 @@ export default defineConfig(({ mode }) => {
 
     it('should validate mergeConfig with multiple plain objects', async () => {
       vi.mocked(find.any)
-        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce(undefined) // projects
         .mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         'export default mergeConfig({ test: {} }, { plugins: [] })'
@@ -803,7 +802,7 @@ export default defineConfig(({ mode }) => {
 
     it('should accept defineConfig(mergeConfig(...)) pattern', async () => {
       vi.mocked(find.any)
-        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce(undefined) // projects
         .mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         `
@@ -821,7 +820,7 @@ export default defineConfig(({ mode }) => {
 
     it('should accept defineConfig(mergeConfig(...) satisfies ViteUserConfig) pattern', async () => {
       vi.mocked(find.any)
-        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce(undefined) // projects
         .mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         `
@@ -840,7 +839,7 @@ export default defineConfig(({ mode }) => {
 
     it('should accept mergeConfig(...) as ViteUserConfig pattern', async () => {
       vi.mocked(find.any)
-        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce(undefined) // projects
         .mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         `
@@ -857,7 +856,7 @@ export default defineConfig(({ mode }) => {
 
     it('should accept mergeConfig with shorthand test variable', async () => {
       vi.mocked(find.any)
-        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce(undefined) // projects
         .mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         `
@@ -872,7 +871,7 @@ export default defineConfig(({ mode }) => {
 
     it('should accept mergeConfig with external vitestConfig variable', async () => {
       vi.mocked(find.any)
-        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce(undefined) // projects
         .mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         `
@@ -887,7 +886,7 @@ export default defineConfig(({ mode }) => {
 
     it('should accept const config = mergeConfig(...); export default config pattern', async () => {
       vi.mocked(find.any)
-        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce(undefined) // projects
         .mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         `
@@ -905,7 +904,7 @@ export default defineConfig(({ mode }) => {
 
     it('should accept defineProject({}) pattern', async () => {
       vi.mocked(find.any)
-        .mockReturnValueOnce(undefined) // workspace
+        .mockReturnValueOnce(undefined) // projects
         .mockReturnValueOnce('vitest.config.ts'); // config
       vi.mocked(fs.readFile).mockResolvedValue(
         `

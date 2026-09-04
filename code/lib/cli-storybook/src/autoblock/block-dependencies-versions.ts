@@ -25,6 +25,16 @@ export const blocker = createBlocker({
       packageManager,
     });
 
+    // React experimental/canary builds (0.0.0*) ship react-dom/client and are treated as
+    // React 18+ by the react-dom-shim, so their version string must not block the upgrade.
+    if (
+      outdated &&
+      (outdated.packageName === 'react' || outdated.packageName === 'react-dom') &&
+      outdated.installedVersion?.startsWith('0.0.0')
+    ) {
+      return false;
+    }
+
     if (outdated !== false) {
       return outdated;
     }

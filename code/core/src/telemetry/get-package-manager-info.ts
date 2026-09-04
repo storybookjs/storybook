@@ -71,9 +71,9 @@ function readNodeLinker(packageManager: DetectResult, projectRoot: string): Node
 }
 
 // A missing, unreadable or unparsable file is the same as a file without the setting.
-function readSetting(filePath: string, read: (content: string) => unknown): unknown {
+function readSetting(filePath: string, extract: (content: string) => unknown): unknown {
   try {
-    return read(readFileSync(filePath, 'utf8'));
+    return extract(readFileSync(filePath, 'utf8'));
   } catch {
     return undefined;
   }

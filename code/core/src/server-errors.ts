@@ -74,7 +74,7 @@ export class CreateReactAppUnsupportedError extends StorybookError {
     super({
       name: 'CreateReactAppUnsupportedError',
       category: Category.CLI_INIT,
-      code: 2,
+      code: 18,
       documentation:
         'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#create-react-app-support-removed',
       message: dedent`

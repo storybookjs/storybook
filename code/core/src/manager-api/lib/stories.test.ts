@@ -228,57 +228,75 @@ describe('transformStoryIndexV4toV5', () => {
 });
 
 describe('transformStoryIndexToStoriesHash', () => {
-  it('does not apply filters to failing stories', () => {
-    // Arrange - set up an index with two stories, one of which has a failing status
-    const indexV5: API_PreparedStoryIndex = {
-      v: 5,
-      entries: {
-        '1': {
-          id: '1',
-          type: 'story',
-          subtype: 'story',
-          title: 'Story 1',
-          name: 'Story 1',
-          importPath: './path/to/story-1.ts',
-          parameters: {},
-          tags: [],
-        },
-        '2': {
-          id: '2',
-          type: 'story',
-          subtype: 'story',
-          title: 'Story 2',
-          name: 'Story 2',
-          importPath: './path/to/story-2.ts',
-          parameters: {},
-          tags: [],
-        },
-      },
-    };
-
-    const filters: State['filters'] = {
-      someFilter: () => false,
-    };
-
-    const allStatuses: StatusesByStoryIdAndTypeId = {
+  const indexV5: API_PreparedStoryIndex = {
+    v: 5,
+    entries: {
       '1': {
-        someStatus: {
-          typeId: 'someStatus',
-          storyId: '1',
-          value: 'status-value:error',
-          title: 'broken',
-          description: 'very bad',
-        },
+        id: '1',
+        type: 'story',
+        subtype: 'story',
+        title: 'Story 1',
+        name: 'Story 1',
+        importPath: './path/to/story-1.ts',
+        parameters: {},
+        tags: [],
       },
       '2': {
-        someStatus: {
-          typeId: 'someStatus',
-          storyId: '2',
-          value: 'status-value:success',
-          title: 'perfect',
-          description: 'nice',
-        },
+        id: '2',
+        type: 'story',
+        subtype: 'story',
+        title: 'Story 2',
+        name: 'Story 2',
+        importPath: './path/to/story-2.ts',
+        parameters: {},
+        tags: [],
       },
+      '3': {
+        id: '3',
+        type: 'story',
+        subtype: 'story',
+        title: 'Story 3',
+        name: 'Story 3',
+        importPath: './path/to/story-3.ts',
+        parameters: {},
+        tags: [],
+      },
+    },
+  };
+
+  const allStatuses: StatusesByStoryIdAndTypeId = {
+    '1': {
+      someStatus: {
+        typeId: 'someStatus',
+        storyId: '1',
+        value: 'status-value:error',
+        title: 'broken',
+        description: 'very bad',
+      },
+    },
+    '2': {
+      someStatus: {
+        typeId: 'someStatus',
+        storyId: '2',
+        value: 'status-value:success',
+        title: 'perfect',
+        description: 'nice',
+      },
+    },
+    '3': {
+      someStatus: {
+        typeId: 'someStatus',
+        storyId: '3',
+        value: 'status-value:warning',
+        title: 'warning',
+        description: 'not ideal',
+      },
+    },
+  };
+
+  it('does not apply non-status filters to stories with errors or warnings', () => {
+    const filters: State['filters'] = {
+      someFilter: () => false,
     };
 
     const options = {
@@ -290,14 +308,37 @@ describe('transformStoryIndexToStoriesHash', () => {
       allStatuses,
     };
 
-    // Act - transform the index to hashes
     const result = transformStoryIndexToStoriesHash(indexV5, options);
 
-    // Assert - the failing story is still present in the result, even though the filters remove all stories
-    expect(Object.keys(result)).toHaveLength(2);
+    expect(Object.keys(result)).toHaveLength(4);
     expect(result['story-1']).toBeTruthy();
     expect(result['1']).toBeTruthy();
     expect(result['story-2']).toBeUndefined();
     expect(result['2']).toBeUndefined();
+    expect(result['story-3']).toBeTruthy();
+    expect(result['3']).toBeTruthy();
+  });
+
+  it('applies the status filter to stories with errors or warnings', () => {
+    const filters: State['filters'] = {
+      statusFilter: ({ statuses }) =>
+        Object.values(statuses).every(({ value }) => value !== 'status-value:warning'),
+    };
+
+    const options = {
+      provider: {
+        getConfig: () => ({ sidebar: {} }),
+      } as any,
+      docsOptions: { docsMode: false },
+      filters,
+      allStatuses,
+      statusFilterKey: 'statusFilter',
+    };
+
+    const result = transformStoryIndexToStoriesHash(indexV5, options);
+
+    expect(result['1']).toBeTruthy();
+    expect(result['2']).toBeTruthy();
+    expect(result['3']).toBeUndefined();
   });
 });

@@ -1,5 +1,7 @@
 import { beforeEach, describe, expect, test, vi } from 'vitest';
 
+import type { JsPackageManager } from 'storybook/internal/common';
+
 import { blocker } from './block-create-react-app.ts';
 import type { AutoblockOptions } from './types.ts';
 
@@ -8,13 +10,15 @@ describe('createReactApp blocker', () => {
     getInstalledVersion: vi.fn(),
   };
 
-  const createOptions = (): AutoblockOptions =>
-    ({
-      packageManager: mockPackageManager,
-      mainConfig: {},
-      mainConfigPath: '',
-      configDir: '',
-    }) as AutoblockOptions;
+  // The check only calls getInstalledVersion, so the stub is widened to the
+  // real manager type at the boundary; TS requires the unknown hop because the
+  // stub intentionally omits the rest of the class surface.
+  const createOptions = (): AutoblockOptions => ({
+    packageManager: mockPackageManager as unknown as JsPackageManager,
+    mainConfig: { stories: [] },
+    mainConfigPath: '',
+    configDir: '',
+  });
 
   beforeEach(() => {
     vi.clearAllMocks();

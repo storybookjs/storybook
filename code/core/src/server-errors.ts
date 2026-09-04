@@ -69,6 +69,24 @@ export class NxProjectDetectedError extends StorybookError {
   }
 }
 
+export class CreateReactAppUnsupportedError extends StorybookError {
+  constructor() {
+    super({
+      name: 'CreateReactAppUnsupportedError',
+      category: Category.CLI_INIT,
+      code: 18,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#create-react-app-support-removed',
+      message: dedent`
+        Create React App is not supported by Storybook 11+.
+        Storybook cannot scaffold into a CRA workspace.
+
+        To set Storybook up with a different builder (webpack5 or vite), rerun init with explicit
+        project type and builder flags: npx storybook@latest init --type react --builder vite`,
+    });
+  }
+}
+
 export class MissingFrameworkFieldError extends StorybookError {
   constructor() {
     super({

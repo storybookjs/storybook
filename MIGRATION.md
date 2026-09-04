@@ -4,6 +4,7 @@
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Dropped support for Vite 5 and Vite 6](#dropped-support-for-vite-5-and-vite-6)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
+  - [Create React App support removed](#create-react-app-support-removed)
 
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
@@ -586,6 +587,12 @@ Storybook has dropped support for Next.js versions below 15. The minimum support
 If you're using an older version of Next.js, you'll need to upgrade to Next.js 15 or newer to use the latest version of Storybook.
 
 For help upgrading your Next.js application, see the [Next.js upgrade guide](https://nextjs.org/docs/app/building-your-application/upgrading).
+
+### Create React App support removed
+
+Storybook 11 no longer publishes `@storybook/preset-create-react-app`, so Storybook setups that render Create React App projects through the CRA preset stop working. `storybook init` stops with an error on projects using `react-scripts`, and `storybook upgrade` blocks upgrading while `@storybook/preset-create-react-app` is installed.
+
+Migrating off Create React App is not a hard requirement. To keep using Storybook with a Create React App project, run it with the Vite-based `@storybook/react-vite` framework instead of the CRA preset. Because Create React App does not use Vite itself, additional Vite configuration may be necessary to make your application work in Storybook. For example, mirroring the loaders, aliases, and environment variables your components rely on. If you prefer to migrate your app off Create React App entirely, [Vite's guide](https://vite.dev/guide/) covers the steps.
 
 ## From version 10.5.x to 10.6.0
 

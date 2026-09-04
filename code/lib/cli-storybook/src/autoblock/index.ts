@@ -9,6 +9,7 @@ import type {
 const blockers: () => BlockerModule<any>[] = () => [
   // add/remove blockers here
   import('./block-dependencies-versions.ts'),
+  import('./block-create-react-app.ts'),
   import('./block-node-version.ts'),
   import('./block-webpack5-frameworks.ts'),
   import('./block-major-version.ts'),

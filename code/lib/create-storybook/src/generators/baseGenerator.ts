@@ -16,7 +16,11 @@ import {
   optionalEnvToBoolean,
 } from 'storybook/internal/common';
 import { prompt } from 'storybook/internal/node-logger';
-import { SupportedFramework, SupportedLanguage } from 'storybook/internal/types';
+import {
+  SupportedBuilder,
+  SupportedFramework,
+  SupportedLanguage,
+} from 'storybook/internal/types';
 
 import invariant from 'tiny-invariant';
 import { dedent } from 'ts-dedent';
@@ -203,6 +207,11 @@ export async function baseGenerator(
     ...(installFrameworkPackages ? [frameworkPackage] : []),
     ...addonPackages,
     ...(extraPackagesToInstall || []),
+    // npm may hoist ESLint's ajv@6 to the project root while webpack's
+    // schema-utils → ajv-keywords needs ajv@8 (`ajv/dist/compile/codegen`).
+    // Installing ajv@8 as a direct dependency keeps resolution compatible.
+    // See: https://github.com/storybookjs/storybook/issues/36176
+    ...(builder === SupportedBuilder.WEBPACK5 ? ['ajv@^8.17.1'] : []),
   ].filter(Boolean);
 
   const packagesToInstall = [...new Set(allPackages)].filter(

@@ -135,7 +135,8 @@ export default createStorybookRule({
     const isUserEventFromStorybookImported = (node: TSESTree.ImportDeclaration) => {
       return (
         (node.source.value === '@storybook/testing-library' ||
-          node.source.value === '@storybook/test') &&
+          node.source.value === '@storybook/test' ||
+          node.source.value === 'storybook/test') &&
         node.specifiers.find(
           (spec) =>
             isImportSpecifier(spec) &&
@@ -148,7 +149,9 @@ export default createStorybookRule({
 
     const isExpectFromStorybookImported = (node: TSESTree.ImportDeclaration) => {
       return (
-        (node.source.value === '@storybook/jest' || node.source.value === '@storybook/test') &&
+        (node.source.value === '@storybook/jest' ||
+          node.source.value === '@storybook/test' ||
+          node.source.value === 'storybook/test') &&
         node.specifiers.find(
           (spec) =>
             isImportSpecifier(spec) && 'name' in spec.imported && spec.imported.name === 'expect'

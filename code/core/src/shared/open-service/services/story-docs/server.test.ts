@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 
 import type { IndexEntry, StoryIndex } from '../../../../types/modules/indexer.ts';
 import { clearRegistry, getService } from '../../server.ts';
@@ -64,6 +64,12 @@ describe('story-docs open service', () => {
   });
 
   describe('shared component ids across CSF files', () => {
+    let provider: Mock<StoryDocsProvider>;
+
+    beforeEach(() => {
+      provider = vi.fn();
+    });
+
     function makeSiblingEntries() {
       // Same componentId ('vega'), different files. Insertion order makes the
       // second file the selected winner, mirroring selectComponentEntriesByComponentId.
@@ -80,7 +86,7 @@ describe('story-docs open service', () => {
 
     it('merges stories from every file sharing the component id', async () => {
       const { fileA, fileB } = makeSiblingEntries();
-      const provider = vi.fn<StoryDocsProvider>(async ({ entry }) =>
+      vi.mocked(provider).mockImplementation(async ({ entry }) =>
         makeStoryDocsPayload({
           id: 'vega',
           name: 'Vega',
@@ -102,7 +108,7 @@ describe('story-docs open service', () => {
 
     it('prefers the winning file on story-id collisions', async () => {
       const { fileA, fileB } = makeSiblingEntries();
-      const provider = vi.fn<StoryDocsProvider>(async ({ entry }) =>
+      vi.mocked(provider).mockImplementation(async ({ entry }) =>
         makeStoryDocsPayload({
           id: 'vega',
           name: 'Vega',
@@ -122,7 +128,7 @@ describe('story-docs open service', () => {
 
     it('keeps the winning file stories when a sibling extraction fails', async () => {
       const { fileA, fileB } = makeSiblingEntries();
-      const provider = vi.fn<StoryDocsProvider>(async ({ entry }) => {
+      vi.mocked(provider).mockImplementation(async ({ entry }) => {
         if (entry.id === 'vega--a') {
           throw new Error('sibling boom');
         }

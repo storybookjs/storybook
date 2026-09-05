@@ -11,12 +11,6 @@ import {
   ɵReflectionCapabilities as ReflectionCapabilities,
 } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
-import {
-  BrowserAnimationsModule,
-  NoopAnimationsModule,
-  provideAnimations,
-  provideNoopAnimations,
-} from '@angular/platform-browser/animations';
 import { dedent } from 'ts-dedent';
 
 import type { NgModuleMetadata } from '../../types.ts';
@@ -124,26 +118,22 @@ export class PropertyExtractor implements NgModuleMetadata {
       return [true];
     }
 
-    if (ngModule === BrowserAnimationsModule) {
-      console.warn(
-        dedent`
-          Storybook Warning:
-          "BrowserAnimationsModule" was added to moduleMetadata.imports.
-          Use the 'applicationConfig' decorator from '@storybook/angular-vite' and add 'provideAnimations()' to its providers instead.
-        `
-      );
-      return [true, provideAnimations()];
-    }
+    const ngModuleName = (ngModule as unknown as { name?: string } | undefined)?.name;
 
-    if (ngModule === NoopAnimationsModule) {
+    if (ngModuleName === 'BrowserAnimationsModule' || ngModuleName === 'NoopAnimationsModule') {
+      const provideFn =
+        ngModuleName === 'BrowserAnimationsModule' ? 'provideAnimations' : 'provideNoopAnimations';
       console.warn(
         dedent`
           Storybook Warning:
-          "NoopAnimationsModule" was added to moduleMetadata.imports.
-          Use the 'applicationConfig' decorator from '@storybook/angular-vite' and add 'provideNoopAnimations()' to its providers instead.
+          "${ngModuleName}" was found and removed from moduleMetadata.imports, but @storybook/angular-vite no longer registers its providers automatically.
+          This module is part of Angular's legacy animations API, which is deprecated since Angular 20.2 and intended for removal in v23.
+          To migrate:
+            - Preferred: Use native CSS transitions or the 'animate.enter'/'animate.leave' bindings (Angular 20.2+).
+            - Or: Keep using the legacy animations API yourself by adding '${provideFn}()' to the 'providers' array of the 'applicationConfig' decorator from '@storybook/angular-vite'.
         `
       );
-      return [true, provideNoopAnimations()];
+      return [true];
     }
 
     return [false];

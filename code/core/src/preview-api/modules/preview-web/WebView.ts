@@ -9,7 +9,7 @@ import { dedent } from 'ts-dedent';
 
 import type { View } from './View.ts';
 
-const { document } = global;
+const { document, window: globalWindow } = global;
 
 const PREPARING_DELAY = 100;
 
@@ -38,6 +38,9 @@ type Layout = keyof typeof layoutClassMap | 'none';
 const ansiConverter = new AnsiToHtml({
   escapeXML: true,
 });
+
+const prefersReducedMotion = () =>
+  !!globalWindow?.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 
 export class WebView implements View<HTMLElement> {
   private currentLayoutClass?: (typeof layoutClassMap)[keyof typeof layoutClassMap] | null;
@@ -109,7 +112,7 @@ export class WebView implements View<HTMLElement> {
     // getElementById instead of querySelector: anchor ids (e.g. story ids) may contain
     // characters that are invalid in CSS selectors.
     const element = document.getElementById(decodeURIComponent(hash.substring(1)));
-    element?.scrollIntoView({ behavior: 'smooth' });
+    element?.scrollIntoView({ behavior: prefersReducedMotion() ? 'instant' : 'smooth' });
   }
 
   applyLayout(layout: Layout = 'padded') {

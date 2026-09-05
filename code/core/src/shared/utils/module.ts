@@ -3,6 +3,8 @@ import nodeModule, { createRequire } from 'node:module';
 import { win32 } from 'node:path/win32';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import { resolveModulePath } from 'exsolve';
 import semver from 'semver';
 import { dirname, join } from 'pathe';
@@ -47,7 +49,17 @@ export const resolvePackageDir = (
 };
 
 let typescriptLoaderRegistration: Promise<void> | null = null;
+let typescriptLoaderRegistrationError: unknown;
 
+/**
+ * Installs the TypeScript loader, once, and treats a host that refuses to install it as a
+ * non-fatal condition rather than an error.
+ *
+ * Jest >= 30.5 throws from both `module.register()` and `module.registerHooks()` inside its sandbox
+ * (jestjs/jest#16391), so neither branch below can be assumed to succeed. Such hosts transform
+ * TypeScript themselves, so `importModule` falls through to its plain import/require path. The
+ * registration is not retried, because a host that refuses by policy refuses every time.
+ */
 function registerTypescriptLoader() {
   if (!typescriptLoaderRegistration) {
     typescriptLoaderRegistration = (async () => {
@@ -64,9 +76,15 @@ function registerTypescriptLoader() {
         const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
         nodeModule.register(typescriptLoaderUrl, import.meta.url);
       }
-    })().catch((e) => {
-      typescriptLoaderRegistration = null;
-      throw e;
+    })().catch((error) => {
+      typescriptLoaderRegistrationError = error;
+      // Interpolated: logger.debug JSON.stringifies a non-string argument, and an Error's own
+      // properties are not enumerable, so passing the error itself would log `{}`.
+      logger.debug(
+        `Could not register the TypeScript loader: ${
+          error instanceof Error ? (error.stack ?? error.message) : String(error)
+        }`
+      );
     });
   }
   return typescriptLoaderRegistration;
@@ -116,6 +134,13 @@ export async function importModule(
         in Node 20 requireError will always be "Error [ERR_REQUIRE_CYCLE_MODULE]: Cannot require() ES Module"
         in Node 22 requireError will always be "Error [ERR_INTERNAL_ASSERTION]: Unexpected module status 5. Cannot require() ES Module"
       */
+      if (
+        typescriptLoaderRegistrationError !== undefined &&
+        importError instanceof Error &&
+        importError.cause === undefined
+      ) {
+        importError.cause = typescriptLoaderRegistrationError;
+      }
       throw importError;
     }
   }

@@ -2,8 +2,8 @@
   "name": "821-upgrade-from-sb9",
   "type": "module",
   "scripts": {
-    "storybook": "storybook dev",
-    "build-storybook": "storybook build"
+    "build-storybook": "storybook build",
+    "storybook": "storybook dev"
   },
   "devDependencies": {
     "@storybook/react": "9.1.20",

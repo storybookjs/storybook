@@ -62,7 +62,7 @@ We recommend that all export names to start with a capital letter.
 
 Story objects can be annotated with a few different fields to define story-level [decorators](../../writing-stories/decorators.mdx) and [parameters](../../writing-stories/parameters.mdx), and also to define the `name` of the story.
 
-Storybook's `name` configuration element is helpful in specific circumstances. Common use cases are names with special characters or Javascript restricted words. If not specified, Storybook defaults to the named export.
+Storybook's `name` configuration element is helpful in specific circumstances. Common use cases are names with special characters or Javascript restricted words. If not specified, Storybook defaults to the named export. For non-Svelte renderers, the value must be a plain string literal to appear in the sidebar. See [Rename stories](../../writing-stories/index.mdx#rename-stories).
 
 <CodeSnippets path="my-component-story-with-storyname.md" />
 

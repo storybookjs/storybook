@@ -227,6 +227,11 @@ export interface LoadOptions {
   cacheKey?: string;
   ignorePreview?: boolean;
   extendServer?: (server: HttpServer) => void;
+  /**
+   * The basePath from which storybook is served.
+   * @default '/' or undefined
+   */
+  basePath?: string;
 }
 
 export interface CLIBaseOptions {

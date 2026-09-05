@@ -425,6 +425,28 @@ describe('presets', () => {
     expect(input).toBe(output);
   });
 
+  it('exposes storybook options such as basePath to presets that receive no apply args', async () => {
+    const received: any[] = [];
+    const mockPresetBar = vi.fn((config: any, options: any) => {
+      received.push(options);
+      return config;
+    });
+
+    mockedResolveUtils.importModule.mockImplementation(async (path: string) => {
+      if (path === 'preset-foo') {
+        return { bar: mockPresetBar };
+      }
+      throw new Error(`Could not resolve ${path}`);
+    });
+
+    const presets = await getPresets(['preset-foo'], { basePath: '/__storybook/' } as any);
+
+    // most call sites omit the third argument, e.g. presets.apply('experimental_devServer', app)
+    await presets.apply('bar', {});
+
+    expect(received[0].basePath).toBe('/__storybook/');
+  });
+
   afterEach(() => {
     vi.resetModules();
   });

@@ -68,11 +68,6 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
               });
             }),
             new Promise<void>(() => {
-              // This promise never resolves: the exit/error/close listeners above
-              // settle the race once the child has actually terminated, so a retry
-              // can never overlap a timed-out process that is still writing .d.ts
-              // files. 'SIGTERM' (not a number): an invalid signal makes kill()
-              // throw ERR_UNKNOWN_SIGNAL, crashing the build instead of retrying.
               timer = setTimeout(() => {
                 console.log('⌛ Timed out generating d.ts files for', entryPoint);
                 dtsProcess.kill('SIGTERM');

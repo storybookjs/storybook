@@ -16,10 +16,6 @@ const meta: Meta<ChipsModule> = {
         // Register application-wide providers with provide-style functions, e.g.
         provideHttpClient(),
         // You can also pull providers in from an NgModule with importProvidersFrom(SomeModule)
-        // Note: Angular's legacy animations API (provideAnimations, provideNoopAnimations) is
-        // deprecated since Angular 20.2. Prefer native CSS transitions or the
-        // animate.enter/animate.leave bindings, which need no provider. If you still rely on the legacy API,
-        // you can register its providers here yourself.
       ],
     }),
   ],
@@ -61,10 +57,6 @@ const meta = preview.type<{ args: ChipsModule }>().meta({
         // Register application-wide providers with provide-style functions, e.g.
         provideHttpClient(),
         // You can also pull providers in from an NgModule with importProvidersFrom(SomeModule)
-        // Note: Angular's legacy animations API (provideAnimations, provideNoopAnimations) is
-        // deprecated since Angular 20.2. Prefer native CSS transitions or the
-        // animate.enter/animate.leave bindings, which need no provider. If you still rely on the legacy API,
-        // you can register its providers here yourself.
       ],
     }),
   ],

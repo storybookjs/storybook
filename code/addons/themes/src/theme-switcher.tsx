@@ -1,10 +1,10 @@
-import React from 'react';
+import React, { useState } from 'react';
 
 import { Button, Select } from 'storybook/internal/components';
 
 import { PaintBrushIcon } from '@storybook/icons';
 
-import { addons, useAddonState, useChannel, useGlobals, useParameter } from 'storybook/manager-api';
+import { addons, useChannel, useGlobals, useParameter } from 'storybook/manager-api';
 
 import {
   DEFAULT_ADDON_STATE,
@@ -29,16 +29,14 @@ export const ThemeSwitcher = React.memo(function ThemeSwitcher() {
   const [{ theme: selected }, updateGlobals, storyGlobals] = useGlobals();
 
   const channel = addons.getChannel();
-  const fromLast = channel.last(THEMING_EVENTS.REGISTER_THEMES);
-  const initializeThemeState = Object.assign({}, DEFAULT_ADDON_STATE, {
-    themesList: fromLast?.[0]?.themes || [],
-    themeDefault: fromLast?.[0]?.defaultTheme || '',
+  const [{ themesList, themeDefault }, updateState] = useState<ThemeAddonState>(() => {
+    const fromLast = channel.last(THEMING_EVENTS.REGISTER_THEMES);
+    return {
+      ...DEFAULT_ADDON_STATE,
+      themesList: fromLast?.[0]?.themes || [],
+      themeDefault: fromLast?.[0]?.defaultTheme || '',
+    };
   });
-
-  const [{ themesList, themeDefault }, updateState] = useAddonState<ThemeAddonState>(
-    THEME_SWITCHER_ID,
-    initializeThemeState
-  );
 
   const isLocked = KEY in storyGlobals || !!themeOverride;
 

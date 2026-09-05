@@ -22,7 +22,6 @@ import { HIGHLIGHT, REMOVE_HIGHLIGHT, SCROLL_INTO_VIEW } from 'storybook/highlig
 import {
   experimental_getStatusStore,
   experimental_useStatusStore,
-  useAddonState,
   useChannel,
   useGlobals,
   useParameter,
@@ -40,6 +39,7 @@ import {
   STATUS_TYPE_ID_COMPONENT_TEST,
 } from '../constants.ts';
 import type { A11yParameters } from '../params.ts';
+import { a11yStore, useA11yState } from '../store.ts';
 import type { A11yReport, EnhancedResult, EnhancedResults, Status } from '../types.ts';
 import { RuleType } from '../types.ts';
 import type { TestDiscrepancy } from './TestDiscrepancyMessage.tsx';
@@ -117,20 +117,8 @@ export const A11yContextProvider: FC<PropsWithChildren> = (props) => {
     return value;
   }, [api]);
 
-  const [state, setState] = useAddonState<{
-    ui: { highlighted: boolean; tab: RuleType };
-    results: EnhancedResults | undefined;
-    error: unknown;
-    status: Status;
-  }>(ADDON_ID, {
-    ui: {
-      highlighted: false,
-      tab: RuleType.VIOLATION,
-    },
-    results: undefined,
-    error: undefined,
-    status: getInitialStatus(manual),
-  });
+  const state = useA11yState();
+  const setState = a11yStore.set;
 
   const { ui, results, error, status } = state;
 

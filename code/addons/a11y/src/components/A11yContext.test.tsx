@@ -14,11 +14,15 @@ import type { AxeResults } from 'axe-core';
 import * as api from 'storybook/manager-api';
 
 import { EVENTS, UI_STATE_ID } from '../constants.ts';
+import * as store from '../store.ts';
 import { RuleType } from '../types.ts';
 import { A11yContextProvider, useA11yContext } from './A11yContext.tsx';
 
 vi.mock('storybook/manager-api');
+vi.mock('../store.ts');
 const mockedApi = vi.mocked(api);
+const mockedStore = vi.mocked(store);
+const mockedSetA11yState = vi.mocked(mockedStore.a11yStore.set);
 
 const storyId = 'button--primary';
 const axeResult: Partial<AxeResults> = {
@@ -82,7 +86,11 @@ describe('A11yContext', () => {
       onSelect,
       unset,
     } as any);
-    mockedApi.useAddonState.mockImplementation((_, defaultState) => React.useState(defaultState));
+    mockedStore.useA11yState.mockImplementation(() => {
+      const [state, setState] = React.useState(store.initialA11yState);
+      mockedSetA11yState.mockImplementation(setState);
+      return state;
+    });
     mockedApi.useChannel.mockReturnValue(vi.fn());
     getCurrentStoryData.mockReturnValue({ id: storyId, type: 'story' });
     getParameters.mockReturnValue({});
@@ -97,7 +105,8 @@ describe('A11yContext', () => {
 
     mockedApi.useChannel.mockClear();
     mockedApi.useStorybookApi.mockClear();
-    mockedApi.useAddonState.mockClear();
+    mockedStore.useA11yState.mockClear();
+    mockedSetA11yState.mockClear();
     mockedApi.useParameter.mockClear();
     mockedApi.useStorybookState.mockClear();
     mockedApi.useGlobals.mockClear();

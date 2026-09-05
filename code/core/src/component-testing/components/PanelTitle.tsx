@@ -2,18 +2,17 @@ import React from 'react';
 
 import { Badge } from 'storybook/internal/components';
 
-import { useAddonState, useStorybookApi } from 'storybook/manager-api';
+import { useStorybookApi } from 'storybook/manager-api';
 
 import { CallStates } from '../../instrumenter/types.ts';
-import { ADDON_ID, PANEL_ID } from '../constants.ts';
-import type { PanelState } from './Panel.tsx';
+import { PANEL_ID } from '../constants.ts';
 import { StatusIcon } from './StatusIcon.tsx';
+import { usePanelState } from './store.ts';
 
 export function PanelTitle() {
   const api = useStorybookApi();
   const selectedPanel = api.getSelectedPanel();
-  const [addonState = {}] = useAddonState<PanelState>(ADDON_ID);
-  const { status, hasException, interactionsCount } = addonState as PanelState;
+  const { status, hasException, interactionsCount } = usePanelState();
 
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>

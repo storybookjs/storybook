@@ -6,12 +6,14 @@ import type { Addon_BaseType } from 'storybook/internal/types';
 import * as api from 'storybook/manager-api';
 
 import { PANEL_ID } from './constants.ts';
+import * as store from './store.ts';
 import './manager.tsx';
 
 vi.mock('storybook/manager-api');
+vi.mock('./store.ts');
 const mockedApi = vi.mocked<api.API>(api as any);
 mockedApi.useStorybookApi = vi.fn(() => ({ getSelectedPanel: vi.fn() }));
-mockedApi.useAddonState = vi.fn();
+const mockedStore = vi.mocked(store);
 const mockedAddons = vi.mocked(api.addons);
 const registrationImpl = mockedAddons.register.mock.calls[0][1];
 
@@ -38,7 +40,7 @@ describe('A11yManager', () => {
 
   it('should compute title with no issues', () => {
     // given
-    mockedApi.useAddonState.mockImplementation(() => [{ results: undefined }]);
+    mockedStore.useA11yState.mockReturnValue({ results: undefined } as store.A11yState);
     registrationImpl(api as unknown as api.API);
     const title = mockedAddons.add.mock.calls.map(([_, def]) => def).find(isPanel)
       ?.title as () => void;
@@ -63,14 +65,12 @@ describe('A11yManager', () => {
 
   it('should compute title with issues', () => {
     // given
-    mockedApi.useAddonState.mockImplementation(() => [
-      {
-        results: {
-          violations: [{}],
-          incomplete: [{}, {}],
-        },
+    mockedStore.useA11yState.mockReturnValue({
+      results: {
+        violations: [{}],
+        incomplete: [{}, {}],
       },
-    ]);
+    } as store.A11yState);
     registrationImpl(mockedApi);
     const title = mockedAddons.add.mock.calls.map(([_, def]) => def).find(isPanel)
       ?.title as () => void;

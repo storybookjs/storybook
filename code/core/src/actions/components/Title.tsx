@@ -3,14 +3,16 @@ import React from 'react';
 import { Badge } from 'storybook/internal/components';
 import { STORY_CHANGED } from 'storybook/internal/core-events';
 
-import { useAddonState, useChannel, useStorybookApi } from 'storybook/manager-api';
+import { useChannel, useStorybookApi } from 'storybook/manager-api';
 
-import { ADDON_ID, CLEAR_ID, EVENT_ID, PANEL_ID } from '../constants.ts';
+import { CLEAR_ID, EVENT_ID, PANEL_ID } from '../constants.ts';
+import { actionsStore, useActionsState } from './store.ts';
 
 export function Title() {
   const api = useStorybookApi();
   const selectedPanel = api.getSelectedPanel();
-  const [{ count }, setCount] = useAddonState(ADDON_ID, { count: 0 });
+  const { count } = useActionsState();
+  const setCount = actionsStore.set;
 
   useChannel({
     [EVENT_ID]: () => {

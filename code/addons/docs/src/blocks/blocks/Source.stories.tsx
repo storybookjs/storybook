@@ -348,6 +348,50 @@ export const OfTransformParameter: Story = {
   },
 };
 
+const codeTransform = (src: string) =>
+  `// this comment has been added via the transform prop!\n${src}`;
+
+export const CodeTransformProp: Story = {
+  args: {
+    code,
+    transform: codeTransform,
+  },
+};
+
+export const CodeTransformCodeProp: Story = {
+  args: {
+    code,
+    transform: codeTransform,
+    transformCode: true,
+  },
+};
+
+export const CodeTransformParameter: Story = {
+  args: {
+    of: ParametersStories.CodeTransform,
+  },
+};
+
+export const CodeTransformCodeParameter: Story = {
+  args: {
+    of: ParametersStories.CodeTransformCode,
+  },
+};
+
+export const PropDisablesParameterTransformCode: Story = {
+  args: {
+    of: ParametersStories.CodeTransformCode,
+    transformCode: false,
+  },
+};
+
+export const PropEnablesParameterTransformCode: Story = {
+  args: {
+    of: ParametersStories.CodeTransformCodeDisabled,
+    transformCode: true,
+  },
+};
+
 export const OfUnattached: Story = {
   args: {
     of: ParametersStories.NoParameters,

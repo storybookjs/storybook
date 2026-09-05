@@ -608,6 +608,35 @@ describe('prepareStory', () => {
         args: { one: ['mapped-1', 'mapped-1'] },
       });
     });
+
+    it.each([
+      [{ none: undefined, star: 'mapped-star' }, { arg: 'icon', eq: 'star' }, 'mapped-star'],
+      [{ none: undefined, star: 'mapped-star' }, { arg: 'icon', neq: 'none' }, 'mapped-star'],
+      [{ star: '', none: undefined }, { arg: 'icon' }, ''],
+      [{ star: undefined, none: undefined }, { arg: 'icon', exists: true }, undefined],
+    ] as const)(
+      'evaluates conditional args against the unmapped value of a mapped arg',
+      (mapping, condition, mappedIcon) => {
+        const story = prepareStory(
+          {
+            id,
+            name,
+            args: { icon: 'star', iconPosition: 'left' },
+            argTypes: {
+              icon: { name: 'icon', mapping },
+              iconPosition: { name: 'iconPosition', if: condition },
+            },
+            moduleExport,
+          },
+          { id, title },
+          { render: vi.fn() as any }
+        );
+
+        const context = prepareContext({ args: story.initialArgs, globals: {}, ...story });
+
+        expect(context.args).toEqual({ icon: mappedIcon, iconPosition: 'left' });
+      }
+    );
   });
 
   describe('with `FEATURES.argTypeTargetsV7`', () => {
@@ -649,6 +678,31 @@ describe('prepareStory', () => {
           name,
           args: { a: 1, b: 2 },
           argTypes: { b: { name: 'b', if: { arg: 'a', truthy: false } } },
+          moduleExport,
+        },
+        { id, title },
+        { render: renderMock }
+      );
+
+      const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
+      firstStory.unboundStoryFn(addExtraContext(context));
+      expect(renderMock).toHaveBeenCalledWith(
+        { a: 1 },
+        expect.objectContaining({ args: { a: 1 }, allArgs: { a: 1, b: 2 } })
+      );
+    });
+
+    it('evaluates conditional args against targeted args', () => {
+      const renderMock = vi.fn();
+      const firstStory = prepareStory(
+        {
+          id,
+          name,
+          args: { a: 1, b: 2 },
+          argTypes: {
+            a: { name: 'a', if: { arg: 'b', eq: 2 } },
+            b: { name: 'b', target: 'foo' },
+          },
           moduleExport,
         },
         { id, title },

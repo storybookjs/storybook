@@ -8,16 +8,19 @@ import { getNextjsVersion } from '../utils.ts';
 
 export const configureImages = (baseConfig: WebpackConfig, nextConfig: NextConfig): void => {
   configureStaticImageImport(baseConfig, nextConfig);
-  configureImageDefaults(baseConfig);
+  configureImageDefaults(baseConfig, nextConfig);
 };
 
 const fallbackFilename = 'static/media/[path][name][ext]';
 
-const configureImageDefaults = (baseConfig: WebpackConfig): void => {
+const configureImageDefaults = (baseConfig: WebpackConfig, nextConfig: NextConfig): void => {
   const version = getNextjsVersion();
   const resolve = baseConfig.resolve ?? {};
   resolve.alias = {
     ...resolve.alias,
+    '@storybook/nextjs/image-loader':
+      nextConfig.images?.loaderFile ||
+      fileURLToPath(import.meta.resolve('@storybook/nextjs/image-loader')),
     'sb-original/next/image': fileURLToPath(import.meta.resolve('next/image')),
     'next/image': fileURLToPath(import.meta.resolve('@storybook/nextjs/images/next-image')),
   };

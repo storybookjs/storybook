@@ -45,6 +45,7 @@
       "default": "./dist/export-mocks/headers/index.js"
     },
     "./image-context": "./dist/image-context.js",
+    "./image-loader": "./dist/images/next-image-default-loader.js",
     "./images/next-image": "./dist/images/next-image.js",
     "./images/next-legacy-image": "./dist/images/next-legacy-image.js",
     "./link.mock": {
@@ -131,6 +132,7 @@
     "@types/node": "^22.19.1",
     "@types/probe-image-size": "^7.2.5",
     "@types/react-refresh": "^0",
+    "memfs": "^4.11.1",
     "next": "^15.2.3",
     "typescript": "^6.0.3",
     "webpack": "^5.65.0"

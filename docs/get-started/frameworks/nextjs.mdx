@@ -120,6 +120,12 @@ export default function Home() {
 }
 ```
 
+#### Custom image loaders
+
+If your Next.js configuration defines [`images.loaderFile`](https://nextjs.org/docs/pages/api-reference/config/next-config-js/images#loaderfile), Storybook uses that custom loader for `next/image`, `next/legacy/image`, and `getImageProps`.
+
+The loader file is compiled by Webpack, so it can be written in TypeScript and import other modules. A `loader` prop passed directly to an image still takes precedence over the configured loader.
+
 ### Next.js font optimization
 
 [next/font](https://nextjs.org/docs/pages/building-your-application/optimizing/fonts) is partially supported in Storybook. The packages `next/font/google` and `next/font/local` are supported.

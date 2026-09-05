@@ -34,6 +34,8 @@ export const configureCss = (baseConfig: WebpackConfig, nextConfig: NextConfig):
               modules: {
                 auto: true,
                 getLocalIdent: getCssModuleLocalIdent,
+                namedExport: false,
+                exportLocalsConvention: 'as-is',
               },
             },
           },
@@ -54,7 +56,12 @@ export const configureCss = (baseConfig: WebpackConfig, nextConfig: NextConfig):
         options: {
           importLoaders: 3,
           ...getImportAndUrlCssLoaderOptions(nextConfig),
-          modules: { auto: true, getLocalIdent: getCssModuleLocalIdent },
+          modules: {
+            auto: true,
+            getLocalIdent: getCssModuleLocalIdent,
+            namedExport: false,
+            exportLocalsConvention: 'as-is',
+          },
         },
       },
       fileURLToPath(import.meta.resolve('postcss-loader')),

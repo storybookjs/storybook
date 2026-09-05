@@ -5,6 +5,8 @@ import {
   experimental_UniversalStore,
   experimental_getStatusStore,
   experimental_getTestProviderStore,
+  internal_universalStatusStore,
+  internal_universalTestProviderStore,
 } from 'storybook/internal/core-server';
 
 import type { BuilderOptions } from '@storybook/builder-vite';
@@ -38,20 +40,6 @@ const channel: Channel = new Channel({
 (UniversalStore as any).__prepare(channel, UniversalStore.Environment.SERVER);
 
 const store = UniversalStore.create<StoreState, StoreEvent>(storeOptions);
-
-new TestManager({
-  store,
-  componentTestStatusStore: getStatusStore(STATUS_TYPE_ID_COMPONENT_TEST),
-  a11yStatusStore: getStatusStore(STATUS_TYPE_ID_A11Y),
-  testProviderStore: getTestProviderStore(ADDON_ID),
-  onReady: () => {
-    process.send?.({ type: 'ready' });
-  },
-  storybookOptions: {
-    configDir: process.env.STORYBOOK_CONFIG_DIR || '',
-  } as any,
-  configLoader: process.env.STORYBOOK_CONFIG_LOADER as BuilderOptions['configLoader'],
-});
 
 const exit = (code = 0) => {
   channel?.removeAllListeners();
@@ -93,3 +81,34 @@ process.on(
 process.on('exit', exit);
 process.on('SIGINT', () => exit(0));
 process.on('SIGTERM', () => exit(0));
+
+const startTestManager = async () => {
+  try {
+    await Promise.all([
+      store.untilReady(),
+      internal_universalStatusStore.untilReady(),
+      internal_universalTestProviderStore.untilReady(),
+    ]);
+  } catch (error) {
+    await createUnhandledErrorHandler('Failed to synchronize stores in the test runner process')(
+      error as ErrorLike
+    );
+    return;
+  }
+
+  new TestManager({
+    store,
+    componentTestStatusStore: getStatusStore(STATUS_TYPE_ID_COMPONENT_TEST),
+    a11yStatusStore: getStatusStore(STATUS_TYPE_ID_A11Y),
+    testProviderStore: getTestProviderStore(ADDON_ID),
+    onReady: () => {
+      process.send?.({ type: 'ready' });
+    },
+    storybookOptions: {
+      configDir: process.env.STORYBOOK_CONFIG_DIR || '',
+    } as any,
+    configLoader: process.env.STORYBOOK_CONFIG_LOADER as BuilderOptions['configLoader'],
+  });
+};
+
+startTestManager();

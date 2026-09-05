@@ -6,7 +6,10 @@ import {
   OpenServiceMissingOriginError,
   OpenServiceModuleGraphUnavailableError,
 } from '../../../../server-errors.ts';
-import type { ModuleGraphService } from '../../services/module-graph/definition.ts';
+import type {
+  ChangeDetectionReadinessResult,
+  ModuleGraphService,
+} from '../../services/module-graph/definition.ts';
 import type { ModuleGraphIndexService } from '../../services/module-graph-index/definition.ts';
 import {
   defineToolset,
@@ -138,22 +141,11 @@ export type StoriesChangeStatusesAccess = {
   getAll: () => StatusesByStoryIdAndTypeId | Promise<StatusesByStoryIdAndTypeId>;
 };
 
-/**
- * Change-detection status-store readiness, distinct from module-graph readiness. The graph can be
- * `ready` while change detection is disabled or its initial scan has failed.
- */
-export type ChangeDetectionReadinessAccess = () => Promise<
-  | { status: 'ready' }
-  | { status: 'unavailable'; reason: string }
-  | { status: 'error'; error: { message: string } }
->;
-
 export type CreateStoriesToolsetOptions = {
   storyIndex: StoryIndexAccess;
   git: StoriesGitAccess;
   /** Change-detection status snapshot; wired by the server host, not imported from core-server. */
   changeStatuses: StoriesChangeStatusesAccess;
-  getChangeDetectionReadiness: ChangeDetectionReadinessAccess;
   /**
    * Whether curated reviews are available in this Storybook. Reviews are the intended end of visual
    * work, so when they exist several methods steer the agent there instead of at raw preview links.
@@ -172,19 +164,25 @@ function emptyChangedStories(): ChangedStoriesOutput {
 }
 
 function reasonForChangeDetectionReadiness(
-  readiness: Exclude<Awaited<ReturnType<ChangeDetectionReadinessAccess>>, { status: 'ready' }>
+  readiness: Exclude<ChangeDetectionReadinessResult, { status: 'ready' }>
 ): string {
-  if (readiness.status === 'unavailable') {
-    return readiness.reason === 'disabled'
-      ? 'Storybook change detection is disabled, so changed-story statuses are unavailable. Enable the changeDetection feature and retry.'
-      : `Storybook change detection is unavailable: ${readiness.reason}.`;
+  switch (readiness.status) {
+    case 'unavailable':
+      return readiness.reason === 'disabled'
+        ? 'Storybook change detection is disabled, so changed-story statuses are unavailable. Enable the changeDetection feature and retry.'
+        : `Storybook change detection is unavailable: ${readiness.reason}.`;
+    case 'error':
+      return `Storybook change detection failed: ${readiness.error.message}`;
+    case 'pending':
+      return 'Storybook change detection has not finished its initial scan.';
+    default: {
+      const exhaustive: never = readiness;
+      throw exhaustive;
+    }
   }
-  return `Storybook change detection failed: ${readiness.error.message}`;
 }
 
-function isGitUnusableReadiness(
-  readiness: Awaited<ReturnType<ChangeDetectionReadinessAccess>>
-): boolean {
+function isGitUnusableReadiness(readiness: ChangeDetectionReadinessResult): boolean {
   return readiness.status === 'unavailable' && GIT_UNUSABLE_REASONS.has(readiness.reason);
 }
 
@@ -233,8 +231,12 @@ Backed by Storybook's live reverse dependency graph, available only when the dev
 }
 
 // Hot status + cold reverse-index queries, composed for ModuleGraphAccess consumers.
-function moduleGraphAccessFromCtx(ctx: ToolsetCtx): ModuleGraphAccess {
-  const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', { internal: true });
+function moduleGraphAccessFromCtx(
+  ctx: ToolsetCtx,
+  moduleGraph: ModuleGraphService = ctx.getService<ModuleGraphService>('core/module-graph', {
+    internal: true,
+  })
+): ModuleGraphAccess {
   const moduleGraphIndex = ctx.getService<ModuleGraphIndexService>('core/module-graph-index', {
     internal: true,
   });
@@ -255,7 +257,6 @@ export function createStoriesToolset({
   storyIndex,
   git,
   changeStatuses,
-  getChangeDetectionReadiness,
   reviewEnabled = false,
 }: CreateStoriesToolsetOptions) {
   return defineToolset({
@@ -306,7 +307,10 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
         title: 'Get changed stories metadata',
         description: describeChanged,
         handler: async (_input, ctx): Promise<ToolsetOutcome<ChangedStoriesOutput, never>> => {
-          const moduleGraph = moduleGraphAccessFromCtx(ctx);
+          const graphService = ctx.getService<ModuleGraphService>('core/module-graph', {
+            internal: true,
+          });
+          const moduleGraph = moduleGraphAccessFromCtx(ctx, graphService);
           // Same readiness gate as findByComponent: an empty status store is not "no changes", so
           // fail before reading statuses when the graph has not settled.
           const graphStatus = await moduleGraph.queries.status.loaded(undefined);
@@ -316,7 +320,8 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             });
           }
 
-          const changeDetection = await getChangeDetectionReadiness();
+          const changeDetection =
+            await graphService.queries.changeDetectionReadiness.loaded(undefined);
           if (changeDetection.status !== 'ready') {
             if (isGitUnusableReadiness(changeDetection)) {
               const data = emptyChangedStories();

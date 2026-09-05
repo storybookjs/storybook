@@ -1,9 +1,8 @@
-import { resolve } from 'node:path';
-
 import {
   CLAUDE_AGENT_NAME,
   CLAUDE_PREVIEW_AGENT_NAME,
 } from '../../../shared/constants/agent-provenance.ts';
+import { projectPathsEqual } from './project-path.ts';
 import type { InterceptReason, StorybookInstanceRecord } from './types.ts';
 
 export type ResolveResult =
@@ -44,8 +43,9 @@ export type ResolveTarget = {
  * Pick the Storybook instance that matches the target project. With an explicit `--config-dir`
  * (`configDirExplicit`), only records whose recorded `configDir` equals `target.configDir` match.
  * Otherwise a record matches when its recorded `cwd` equals `target.cwd` OR its recorded
- * `configDir` equals the defaulted `target.configDir`. All comparisons are exact-normalized with
- * no longest-prefix or fallback behaviour (milestone 2 of storybookjs/storybook#34826). The
+ * `configDir` equals the defaulted `target.configDir`. All comparisons use resolved paths
+ * (case-insensitive on Windows, byte-exact on POSIX) with no longest-prefix or fallback
+ * behaviour (milestone 2 of storybookjs/storybook#34826). The
  * configDir key exists for monorepos (storybookjs/storybook#35359): a dev server started at the
  * repo root with `-c packages/ui/.storybook` must be found by a CLI run from `packages/ui`, and
  * vice versa. Records from older Storybooks carry no `configDir` and can only match by cwd — so
@@ -190,11 +190,11 @@ export function listProjectMatches(
   records: StorybookInstanceRecord[],
   target: Pick<ResolveTarget, 'cwd' | 'configDir' | 'configDirExplicit'>
 ): StorybookInstanceRecord[] {
-  const normalisedCwd = resolve(target.cwd);
   return target.configDirExplicit
     ? records.filter((record) => matchesTargetConfigDir(record, target))
     : records.filter(
-        (record) => resolve(record.cwd) === normalisedCwd || matchesTargetConfigDir(record, target)
+        (record) =>
+          projectPathsEqual(record.cwd, target.cwd) || matchesTargetConfigDir(record, target)
       );
 }
 
@@ -205,7 +205,7 @@ function matchesTargetConfigDir(
   return (
     target.configDir != null &&
     record.configDir != null &&
-    resolve(record.configDir) === resolve(target.configDir)
+    projectPathsEqual(record.configDir, target.configDir)
   );
 }
 

@@ -107,36 +107,6 @@ describe('ProjectDetectionCommand', () => {
       expect(logger.debug).toHaveBeenCalledWith('Project type detected: vue3');
     });
 
-    it('exits with guidance for Create React App projects without scaffolding', async () => {
-      options.type = undefined;
-      vi.mocked(mockProjectTypeService.autoDetectProjectType).mockResolvedValue(
-        ProjectType.REACT_SCRIPTS
-      );
-      const exitSpy = vi.spyOn(process, 'exit').mockImplementation(((code: number) => {
-        throw new Error(`process.exit(${code})`);
-      }) as never);
-
-      try {
-        await expect(command.execute()).rejects.toThrow('process.exit(1)');
-      } finally {
-        exitSpy.mockRestore();
-      }
-
-      expect(logger.error).toHaveBeenCalledWith('Storybook no longer supports Create React App.');
-      expect(logger.info).toHaveBeenCalledWith(
-        "CRA is unmaintained and pins React 17, below Storybook's React 18 minimum."
-      );
-      expect(logger.info).toHaveBeenCalledWith(
-        'Migrate your project to Vite, then re-run the init command with project and builder flags to force Storybook to use the @storybook/react-vite framework:'
-      );
-      expect(logger.info).toHaveBeenCalledWith(
-        '  npx storybook@latest init --type react --builder vite'
-      );
-      expect(logger.info).toHaveBeenCalledWith(
-        'https://storybook.js.org/docs/get-started/frameworks/react-vite'
-      );
-    });
-
     it('should throw error for invalid provided type', async () => {
       options.type = ProjectType.UNSUPPORTED;
       const error = new HandledError('Unknown project type supplied: unsupported');

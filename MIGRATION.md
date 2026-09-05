@@ -581,7 +581,7 @@ For more information on upgrading to Vite 7, see the [Vite Migration Guide](http
 
 ### Create React App support removed
 
-Storybook no longer supports Create React App (CRA). The project is unmaintained and pins React 17, below Storybook's React 18 minimum. The `@storybook/preset-create-react-app` preset has been removed along with the CRA project type in `storybook init`: initializing in a CRA project now prints an unsupported-project message with a migration pointer instead of scaffolding a configuration.
+Storybook no longer supports Create React App (CRA). The project is unmaintained and pins React 17, below Storybook's React 18 minimum. The `@storybook/preset-create-react-app` preset has been removed along with the CRA project type in `storybook init`: initializing in a CRA project now falls back to the standard React setup — when neither Vite, Webpack, nor Rsbuild can be detected in the project, Storybook prompts you to select a builder (Vite recommended).
 
 If you are still on CRA, migrate your project to Vite and use the [`@storybook/react-vite`](https://storybook.js.org/docs/get-started/frameworks/react-vite) framework. If you still list `@storybook/preset-create-react-app` in your `addons`, `storybook automigrate` will warn you that the preset no longer has any effect and can be removed.
 

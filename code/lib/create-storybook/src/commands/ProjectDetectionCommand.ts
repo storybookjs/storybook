@@ -48,19 +48,6 @@ export class ProjectDetectionCommand {
       logger.debug(`Project type detected: ${projectType}`);
     }
 
-    // CRA support was removed: detection stays so the guidance can be precise, but nothing is
-    // scaffolded and there is no silent fallthrough to the generic React path.
-    if (projectType === ProjectType.REACT_SCRIPTS) {
-      logger.error('Storybook no longer supports Create React App.');
-      logger.info("CRA is unmaintained and pins React 17, below Storybook's React 18 minimum.");
-      logger.info(
-        'Migrate your project to Vite, then re-run the init command with project and builder flags to force Storybook to use the @storybook/react-vite framework:'
-      );
-      logger.info('  npx storybook@latest init --type react --builder vite');
-      logger.info('https://storybook.js.org/docs/get-started/frameworks/react-vite');
-      process.exit(1);
-    }
-
     // Check for existing installation
     await this.checkExistingInstallation(projectType);
 

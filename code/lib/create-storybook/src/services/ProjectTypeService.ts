@@ -95,16 +95,6 @@ export class ProjectTypeService {
         },
       },
       {
-        preset: ProjectType.REACT_SCRIPTS,
-        // For projects using a custom/forked `react-scripts` package.
-        files: ['/node_modules/.bin/react-scripts'],
-        // For standard CRA projects
-        dependencies: ['react-scripts'],
-        matcherFunction: ({ dependencies, files }) => {
-          return (dependencies?.every(Boolean) || files?.every(Boolean)) ?? false;
-        },
-      },
-      {
         preset: ProjectType.ANGULAR,
         dependencies: ['@angular/core'],
         matcherFunction: ({ dependencies }) => {

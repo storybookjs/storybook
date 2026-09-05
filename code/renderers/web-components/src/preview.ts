@@ -3,7 +3,7 @@ import type {
   InferTypes,
   Meta,
   Preview,
-  PreviewAddon,
+  PreviewAddonEntry,
   Story,
 } from 'storybook/internal/csf';
 import { definePreview as definePreviewBase } from 'storybook/internal/csf';
@@ -41,8 +41,8 @@ import { type WebComponentsTypes } from './types.ts';
  * });
  * ```
  */
-export function __definePreview<Addons extends PreviewAddon<never>[]>(
-  input: { addons: Addons } & ProjectAnnotations<WebComponentsTypes & InferTypes<Addons>>
+export function __definePreview<Addons extends PreviewAddonEntry[] = []>(
+  input: { addons?: Addons } & ProjectAnnotations<WebComponentsTypes & InferTypes<Addons>>
 ): WebComponentsPreview<WebComponentsTypes & InferTypes<Addons>> {
   const preview = definePreviewBase({
     ...input,

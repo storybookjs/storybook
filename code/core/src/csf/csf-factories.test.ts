@@ -19,6 +19,13 @@ interface Addon2Types {
 const addon2 = definePreviewAddon<Addon2Types>({});
 
 const preview = definePreview({ addons: [addon, addon2], renderToCanvas: () => {} });
+const legacyAnnotations = {
+  default: {
+    parameters: {
+      legacyAddon: true,
+    },
+  },
+};
 
 const meta = preview.type<{ args: { label: string } }>().meta({
   args: { label: 'foo' },
@@ -47,6 +54,33 @@ test('addon parameters are inferred', () => {
         value: 1,
       },
     },
+  });
+});
+
+test('legacy annotation namespaces are composed without collapsing factory addon types', () => {
+  const previewWithLegacyAnnotations = definePreview({
+    addons: [legacyAnnotations, addon],
+    renderToCanvas: () => {},
+  });
+  const meta = previewWithLegacyAnnotations.meta({
+    parameters: {
+      foo: {
+        value: 'typed',
+      },
+    },
+  });
+
+  meta.story({
+    parameters: {
+      foo: {
+        // @ts-expect-error factory addon parameter types remain enforced
+        value: 1,
+      },
+    },
+  });
+
+  expect(previewWithLegacyAnnotations.composed.parameters).toMatchObject({
+    legacyAddon: true,
   });
 });
 

@@ -3,7 +3,7 @@ import { resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 import { parseCanaryRefStepName, type ResolvedCanaryRef } from './resolve-canary-ref.ts';
-import { replaceMarker } from './replace-pr-body-markers.ts';
+import { countMarkerPairs, replaceMarker } from './replace-pr-body-markers.ts';
 
 export const PUBLISH_JOB_NAME = 'Publish Canary Packages';
 export const PKG_PR_NEW_DASHBOARD = 'https://pkg.pr.new/~/storybookjs/storybook';
@@ -122,18 +122,26 @@ export function buildReleasedSection(sha: string): string {
   ].join('\n');
 }
 
+export function missingCanaryMarkers(body: string, action: 'released' | 'failed'): string[] {
+  const markers = action === 'released' ? [HEADING_MARKER, SECTION_MARKER] : [HEADING_MARKER];
+  return markers.filter((marker) => countMarkerPairs(body, marker) !== 1);
+}
+
 export function applyCanaryPrBodyUpdate(
   body: string,
   update: { action: 'released' | 'failed'; sha: string }
 ): string {
+  const replaceIfPresent = (current: string, marker: string, replacement: string) =>
+    countMarkerPairs(current, marker) === 1 ? replaceMarker(current, marker, replacement) : current;
+
   if (update.action === 'released') {
-    return replaceMarker(
-      replaceMarker(body, HEADING_MARKER, buildReleasedHeading(update.sha)),
+    return replaceIfPresent(
+      replaceIfPresent(body, HEADING_MARKER, buildReleasedHeading(update.sha)),
       SECTION_MARKER,
       buildReleasedSection(update.sha)
     );
   }
-  return replaceMarker(body, HEADING_MARKER, buildFailedHeading(update.sha));
+  return replaceIfPresent(body, HEADING_MARKER, buildFailedHeading(update.sha));
 }
 
 export function buildFailureComment(input: { actor: string; repo: string; runId: string }): string {
@@ -193,17 +201,8 @@ export function updateCanaryPrBodyFromRun(
     }
   }
 
-  let body = gh(['api', `repos/${input.repo}/pulls/${pr}`, '--jq', '.body']);
-  if (body.endsWith('\n')) {
-    body = body.slice(0, -1);
-  }
-
-  const nextBody = applyCanaryPrBodyUpdate(body, { action: decision.action, sha });
-  gh(
-    ['api', '--method', 'PATCH', `repos/${input.repo}/pulls/${pr}`, '--input', '-'],
-    JSON.stringify({ body: nextBody })
-  );
-
+  // The failure notice goes out before the body edit, so a description we cannot patch
+  // cannot swallow it.
   if (decision.action === 'failed') {
     gh([
       'pr',
@@ -214,6 +213,24 @@ export function updateCanaryPrBodyFromRun(
       '--body',
       buildFailureComment({ actor: input.actor, repo: input.repo, runId: input.runId }),
     ]);
+  }
+
+  let body = gh(['api', `repos/${input.repo}/pulls/${pr}`, '--jq', '.body']);
+  if (body.endsWith('\n')) {
+    body = body.slice(0, -1);
+  }
+
+  const missing = missingCanaryMarkers(body, decision.action);
+  if (missing.length > 0) {
+    console.log(`PR #${pr} has no ${missing.join(' or ')} pair, leaving that part of the body`);
+  }
+
+  const nextBody = applyCanaryPrBodyUpdate(body, { action: decision.action, sha });
+  if (nextBody !== body) {
+    gh(
+      ['api', '--method', 'PATCH', `repos/${input.repo}/pulls/${pr}`, '--input', '-'],
+      JSON.stringify({ body: nextBody })
+    );
   }
 
   return { action: decision.action, pr };

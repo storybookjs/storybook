@@ -11,6 +11,7 @@ import {
   decideCanaryPrBodyAction,
   findCanaryRefFromJobs,
   findPullRequestNumber,
+  missingCanaryMarkers,
   PUBLISH_JOB_NAME,
   shortSha,
   updateCanaryPrBodyFromRun,
@@ -330,4 +331,143 @@ test('updateCanaryPrBodyFromRun ignores a PR number that does not match the run 
     updateCanaryPrBodyFromRun({ repo: 'storybookjs/storybook', runId: '1', actor: 'bot' }, gh),
     { action: 'skip', reason: `no open PR with head ${SHA}` }
   );
+});
+
+const NO_MARKERS = `A description that replaced the template.
+
+## What I did
+
+Nothing that keeps the canary markers.
+`;
+
+test('missingCanaryMarkers names the pairs a description does not have', () => {
+  assert.deepEqual(missingCanaryMarkers(TEMPLATE, 'released'), []);
+  assert.deepEqual(missingCanaryMarkers(TEMPLATE, 'failed'), []);
+  assert.deepEqual(missingCanaryMarkers(NO_MARKERS, 'released'), [
+    'CANARY_RELEASE_HEADING',
+    'CANARY_RELEASE_SECTION',
+  ]);
+  assert.deepEqual(missingCanaryMarkers(NO_MARKERS, 'failed'), ['CANARY_RELEASE_HEADING']);
+});
+
+test('applyCanaryPrBodyUpdate leaves a description without markers untouched', () => {
+  assert.equal(applyCanaryPrBodyUpdate(NO_MARKERS, { action: 'released', sha: SHA }), NO_MARKERS);
+  assert.equal(applyCanaryPrBodyUpdate(NO_MARKERS, { action: 'failed', sha: SHA }), NO_MARKERS);
+});
+
+test('updateCanaryPrBodyFromRun still comments on failure when the description has no markers', () => {
+  const calls: { args: string[]; input?: string }[] = [];
+  const gh: GhClient = (args, input) => {
+    calls.push({ args, input });
+    if (args[0] === 'run' && args[1] === 'view') {
+      return JSON.stringify({
+        event: 'pull_request',
+        conclusion: 'failure',
+        headSha: SHA,
+        jobs: [{ name: PUBLISH_JOB_NAME, conclusion: 'failure' }],
+      });
+    }
+    if (args[0] === 'api' && args[1]?.includes('/commits/')) {
+      return JSON.stringify([{ number: 36155, state: 'open', head: { sha: SHA } }]);
+    }
+    if (
+      args[0] === 'api' &&
+      args[1] === 'repos/storybookjs/storybook/pulls/36155' &&
+      !args.includes('PATCH')
+    ) {
+      return NO_MARKERS;
+    }
+    return '';
+  };
+
+  const result = updateCanaryPrBodyFromRun(
+    { repo: 'storybookjs/storybook', runId: '99', actor: 'jeppe' },
+    gh
+  );
+
+  assert.deepEqual(result, { action: 'failed', pr: 36155 });
+  const comment = calls.find((call) => call.args[0] === 'pr' && call.args[1] === 'comment');
+  assert.equal(
+    comment?.args.at(-1),
+    buildFailureComment({ actor: 'jeppe', repo: 'storybookjs/storybook', runId: '99' })
+  );
+  assert.equal(
+    calls.findIndex((call) => call.args.includes('PATCH')),
+    -1
+  );
+});
+
+test('updateCanaryPrBodyFromRun skips the patch on a release when the description has no markers', () => {
+  const calls: { args: string[]; input?: string }[] = [];
+  const gh: GhClient = (args, input) => {
+    calls.push({ args, input });
+    if (args[0] === 'run' && args[1] === 'view') {
+      return JSON.stringify({
+        event: 'pull_request',
+        conclusion: 'success',
+        headSha: SHA,
+        jobs: [{ name: PUBLISH_JOB_NAME, conclusion: 'success' }],
+      });
+    }
+    if (args[0] === 'api' && args[1]?.includes('/commits/')) {
+      return JSON.stringify([{ number: 36155, state: 'open', head: { sha: SHA } }]);
+    }
+    if (
+      args[0] === 'api' &&
+      args[1] === 'repos/storybookjs/storybook/pulls/36155' &&
+      !args.includes('PATCH')
+    ) {
+      return NO_MARKERS;
+    }
+    return '';
+  };
+
+  const result = updateCanaryPrBodyFromRun(
+    { repo: 'storybookjs/storybook', runId: '99', actor: 'jeppe' },
+    gh
+  );
+
+  assert.deepEqual(result, { action: 'released', pr: 36155 });
+  assert.equal(
+    calls.findIndex((call) => call.args.includes('PATCH')),
+    -1
+  );
+  assert.equal(
+    calls.findIndex((call) => call.args[0] === 'pr' && call.args[1] === 'comment'),
+    -1
+  );
+});
+
+test('updateCanaryPrBodyFromRun comments before it patches the body on failure', () => {
+  const calls: { args: string[]; input?: string }[] = [];
+  const gh: GhClient = (args, input) => {
+    calls.push({ args, input });
+    if (args[0] === 'run' && args[1] === 'view') {
+      return JSON.stringify({
+        event: 'pull_request',
+        conclusion: 'failure',
+        headSha: SHA,
+        jobs: [{ name: PUBLISH_JOB_NAME, conclusion: 'failure' }],
+      });
+    }
+    if (args[0] === 'api' && args[1]?.includes('/commits/')) {
+      return JSON.stringify([{ number: 34799, state: 'open', head: { sha: SHA } }]);
+    }
+    if (
+      args[0] === 'api' &&
+      args[1] === 'repos/storybookjs/storybook/pulls/34799' &&
+      !args.includes('PATCH')
+    ) {
+      return TEMPLATE;
+    }
+    return '';
+  };
+
+  updateCanaryPrBodyFromRun({ repo: 'storybookjs/storybook', runId: '99', actor: 'jeppe' }, gh);
+
+  const commentAt = calls.findIndex((call) => call.args[0] === 'pr' && call.args[1] === 'comment');
+  const patchAt = calls.findIndex((call) => call.args.includes('PATCH'));
+  assert.notEqual(commentAt, -1);
+  assert.notEqual(patchAt, -1);
+  assert.ok(commentAt < patchAt);
 });

@@ -122,6 +122,30 @@ describe('inferControls', () => {
     expect(Object.keys(includeRegex)).toEqual(['label', 'labelName']);
   });
 
+  it('should infer a text control for node types', () => {
+    const controls = inferControls(
+      getStoryContext({
+        argTypes: {
+          children: { name: 'children', type: { name: 'node', renderer: 'react' } },
+        },
+      })
+    );
+
+    expect(controls.children.control).toEqual({ type: 'text' });
+  });
+
+  it('should keep inferring the object control for unknown other types', () => {
+    const controls = inferControls(
+      getStoryContext({
+        argTypes: {
+          icon: { name: 'icon', type: { name: 'other', value: 'ReactElement' } },
+        },
+      })
+    );
+
+    expect(controls.icon.control).toEqual({ type: 'object' });
+  });
+
   it('should return filtered argTypes when exclude is passed', () => {
     const [excludeString, excludeArray, excludeRegex] = [
       inferControls(getStoryContext({ parameters: { controls: { exclude: 'label' } } })),

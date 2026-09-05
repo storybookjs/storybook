@@ -9,7 +9,6 @@ import {
   Output,
   Pipe,
   ɵReflectionCapabilities as ReflectionCapabilities,
-  VERSION,
 } from '@angular/core';
 import { BrowserModule } from '@angular/platform-browser';
 import { dedent } from 'ts-dedent';
@@ -181,9 +180,9 @@ export class PropertyExtractor implements NgModuleMetadata {
             this.isDecoratorInstanceOf(d, 'Component') || this.isDecoratorInstanceOf(d, 'Directive')
         )?.standalone;
 
-    //Starting in Angular 19 the default (in case it's undefined) value for standalone is true
+    // Starting in Angular 19 the default (in case it's undefined) value for standalone is true
     if (isStandalone === undefined) {
-      isStandalone = !!(VERSION.major && Number(VERSION.major) >= 19);
+      isStandalone = true;
     }
 
     return { isDeclarable, isStandalone };

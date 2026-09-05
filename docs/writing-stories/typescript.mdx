@@ -6,6 +6,16 @@ Writing your stories in [TypeScript](https://www.typescriptlang.org/) makes you 
 
 Storybook has built-in TypeScript support, so you can get started with zero configuration required.
 
+<If renderer="react">
+
+<Callout variant="info">
+
+For React projects, prefer the `.stories.tsx` extension (the CLI scaffolds TypeScript examples this way). Using `.tsx` avoids confusing Vite errors if you later add JSX—for example in a custom `render`, decorator, or inline template—inside the story file.
+
+</Callout>
+
+</If>
+
 <If renderer={['react', 'vue', 'angular', 'web-components']}>
 
 <Callout variant="info" icon="💡">

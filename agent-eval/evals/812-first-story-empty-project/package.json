@@ -2,10 +2,10 @@
   "name": "812-first-story-empty-project",
   "type": "module",
   "scripts": {
-    "test:stories": "vitest run --config ./vitest.storybook.config.ts --project storybook",
+    "build-storybook": "storybook build",
     "postinstall": "playwright install chromium && node ./scripts/start-storybook-mcp.mjs",
     "storybook": "storybook dev",
-    "build-storybook": "storybook build"
+    "test:stories": "vitest run --config ./vitest.storybook.config.ts --project storybook"
   },
   "devDependencies": {
     "@storybook/addon-a11y": "next",

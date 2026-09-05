@@ -1,0 +1,725 @@
+{
+	"repo": "yannbf/mealdrop",
+	"ref": "ce507b345666ea8678101fccac580186b2b69b1f",
+	"analysis": {
+		"files": {
+			".prettierrc.js": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			".storybook/demo-mode.tsx": {
+				"cyclomatic": 31,
+				"cognitive": 17
+			},
+			".storybook/main.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			".storybook/manager.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			".storybook/preview.tsx": {
+				"cyclomatic": 33,
+				"cognitive": 16
+			},
+			".storybook/withDeeplink.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0
+			},
+			"eslint.config.js": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"functions/restaurants.ts": {
+				"cyclomatic": 12,
+				"cognitive": 6
+			},
+			"src/App.tsx": {
+				"cyclomatic": 4,
+				"cognitive": 2
+			},
+			"src/Routes.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 0
+			},
+			"src/api/conditional-logic.ts": {
+				"cyclomatic": 17,
+				"cognitive": 6
+			},
+			"src/api/hooks.ts": {
+				"cyclomatic": 22,
+				"cognitive": 4
+			},
+			"src/api/index.ts": {
+				"cyclomatic": 8,
+				"cognitive": 4
+			},
+			"src/app-state/cart/cart.ts": {
+				"cyclomatic": 12,
+				"cognitive": 5
+			},
+			"src/app-state/cart/index.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/app-state/cart/selectors.ts": {
+				"cyclomatic": 7,
+				"cognitive": 0
+			},
+			"src/app-state/hooks.ts": {
+				"cyclomatic": 1,
+				"cognitive": 0
+			},
+			"src/app-state/index.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/app-state/order/index.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/app-state/order/order.ts": {
+				"cyclomatic": 2,
+				"cognitive": 0
+			},
+			"src/app-state/order/selectors.ts": {
+				"cyclomatic": 4,
+				"cognitive": 0
+			},
+			"src/app-state/store.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/AnimatedIllustration/AnimatedIllustration.stories.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0
+			},
+			"src/components/AnimatedIllustration/AnimatedIllustration.tsx": {
+				"cyclomatic": 5,
+				"cognitive": 1
+			},
+			"src/components/AnimatedIllustration/index.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Badge/Badge.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Badge/Badge.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 0
+			},
+			"src/components/Badge/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Breadcrumb/Breadcrumb.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Breadcrumb/Breadcrumb.tsx": {
+				"cyclomatic": 5,
+				"cognitive": 2
+			},
+			"src/components/Breadcrumb/index.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Button/Button.stories.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0
+			},
+			"src/components/Button/Button.tsx": {
+				"cyclomatic": 13,
+				"cognitive": 12
+			},
+			"src/components/Button/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Button/utils.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 0
+			},
+			"src/components/Carousel/Carousel.stories.tsx": {
+				"cyclomatic": 4,
+				"cognitive": 0
+			},
+			"src/components/Carousel/Carousel.tsx": {
+				"cyclomatic": 23,
+				"cognitive": 14
+			},
+			"src/components/Carousel/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Category/Category.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Category/Category.tsx": {
+				"cyclomatic": 15,
+				"cognitive": 8
+			},
+			"src/components/Category/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/ErrorBlock/ErrorBlock.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/ErrorBlock/ErrorBlock.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 0
+			},
+			"src/components/ErrorBlock/index.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Footer/Footer.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Footer/Footer.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 0
+			},
+			"src/components/Footer/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/FooterCard/FooterCard.tsx": {
+				"cyclomatic": 5,
+				"cognitive": 2
+			},
+			"src/components/FooterCard/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Header/Header.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Header/Header.tsx": {
+				"cyclomatic": 17,
+				"cognitive": 5
+			},
+			"src/components/Header/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Icon/Icon.stories.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 0
+			},
+			"src/components/Icon/Icon.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 1
+			},
+			"src/components/Icon/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/IconButton/IconButton.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/IconButton/IconButton.tsx": {
+				"cyclomatic": 5,
+				"cognitive": 3
+			},
+			"src/components/IconButton/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Logo/Logo.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Logo/Logo.tsx": {
+				"cyclomatic": 10,
+				"cognitive": 5
+			},
+			"src/components/Logo/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Modal/Modal.stories.tsx": {
+				"cyclomatic": 6,
+				"cognitive": 0
+			},
+			"src/components/Modal/Modal.styles.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Modal/Modal.tsx": {
+				"cyclomatic": 4,
+				"cognitive": 1
+			},
+			"src/components/Modal/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/PageSection/PageSection.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/PageSection/PageSection.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 1
+			},
+			"src/components/PageSection/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Portal.tsx": {
+				"cyclomatic": 4,
+				"cognitive": 2
+			},
+			"src/components/RestaurantCard/RestaurantCard.stories.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0
+			},
+			"src/components/RestaurantCard/RestaurantCard.tsx": {
+				"cyclomatic": 14,
+				"cognitive": 5
+			},
+			"src/components/RestaurantCard/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/RestaurantCard/progress/RestaurantCard.basic.tsx": {
+				"cyclomatic": 4,
+				"cognitive": 3
+			},
+			"src/components/RestaurantCard/progress/RestaurantCard.unstyled.tsx": {
+				"cyclomatic": 5,
+				"cognitive": 3
+			},
+			"src/components/Review/Review.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Review/Review.tsx": {
+				"cyclomatic": 9,
+				"cognitive": 6
+			},
+			"src/components/Review/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/ShoppingCart/OrderSummary/OrderSummary.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/ShoppingCart/OrderSummary/OrderSummary.styles.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 1
+			},
+			"src/components/ShoppingCart/OrderSummary/OrderSummary.tsx": {
+				"cyclomatic": 6,
+				"cognitive": 1
+			},
+			"src/components/ShoppingCart/ShoppingCartItem/ShoppingCartItem.styles.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/ShoppingCart/ShoppingCartItem/ShoppingCartItem.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0
+			},
+			"src/components/ShoppingCart/index.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/ShoppingCartMenu/ShoppingCartMenu.stories.tsx": {
+				"cyclomatic": 6,
+				"cognitive": 0
+			},
+			"src/components/ShoppingCartMenu/ShoppingCartMenu.tsx": {
+				"cyclomatic": 5,
+				"cognitive": 0
+			},
+			"src/components/ShoppingCartMenu/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Sidebar/Sidebar.stories.tsx": {
+				"cyclomatic": 5,
+				"cognitive": 0
+			},
+			"src/components/Sidebar/Sidebar.styles.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 0
+			},
+			"src/components/Sidebar/Sidebar.tsx": {
+				"cyclomatic": 4,
+				"cognitive": 2
+			},
+			"src/components/Sidebar/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/Spinner/Spinner.stories.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0
+			},
+			"src/components/Spinner/Spinner.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0
+			},
+			"src/components/Spinner/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/TopBanner/TopBanner.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/TopBanner/TopBanner.tsx": {
+				"cyclomatic": 6,
+				"cognitive": 3
+			},
+			"src/components/TopBanner/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/forms/Input.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/forms/Input.tsx": {
+				"cyclomatic": 4,
+				"cognitive": 3
+			},
+			"src/components/forms/Select.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/components/forms/Select.tsx": {
+				"cyclomatic": 7,
+				"cognitive": 2
+			},
+			"src/components/typography/Body.stories.tsx": {
+				"cyclomatic": 5,
+				"cognitive": 4
+			},
+			"src/components/typography/Body.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 1
+			},
+			"src/components/typography/Heading.stories.tsx": {
+				"cyclomatic": 5,
+				"cognitive": 4
+			},
+			"src/components/typography/Heading.tsx": {
+				"cyclomatic": 4,
+				"cognitive": 2
+			},
+			"src/components/typography/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/docs/utils.ts": {
+				"cyclomatic": 4,
+				"cognitive": 0
+			},
+			"src/helpers/getCurrency.ts": {
+				"cyclomatic": 1,
+				"cognitive": 0
+			},
+			"src/helpers/index.ts": {
+				"cyclomatic": 2,
+				"cognitive": 0
+			},
+			"src/hooks/index.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/hooks/useBodyScrollLock.test.ts": {
+				"cyclomatic": 11,
+				"cognitive": 2
+			},
+			"src/hooks/useBodyScrollLock.ts": {
+				"cyclomatic": 7,
+				"cognitive": 5
+			},
+			"src/hooks/useKeyboard.test.ts": {
+				"cyclomatic": 16,
+				"cognitive": 0
+			},
+			"src/hooks/useKeyboard.ts": {
+				"cyclomatic": 10,
+				"cognitive": 2
+			},
+			"src/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/CategoryDetailPage/CategoryDetailPage.stories.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 0
+			},
+			"src/pages/CategoryDetailPage/CategoryDetailPage.tsx": {
+				"cyclomatic": 13,
+				"cognitive": 5
+			},
+			"src/pages/CategoryDetailPage/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/CategoryListPage/CategoryListPage.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/CategoryListPage/CategoryListPage.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 0
+			},
+			"src/pages/CategoryListPage/components/CategoryList/CategoryList.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/CategoryListPage/components/CategoryList/CategoryList.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 0
+			},
+			"src/pages/CategoryListPage/components/CategoryList/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/CategoryListPage/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/CheckoutPage/CheckoutPage.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/CheckoutPage/CheckoutPage.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 0
+			},
+			"src/pages/CheckoutPage/components/registration-form/ContactDetails.tsx": {
+				"cyclomatic": 23,
+				"cognitive": 17
+			},
+			"src/pages/CheckoutPage/components/registration-form/DeliveryDetails.tsx": {
+				"cyclomatic": 20,
+				"cognitive": 16
+			},
+			"src/pages/CheckoutPage/components/registration-form/MultiStepForm.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/CheckoutPage/components/registration-form/MultiStepForm.tsx": {
+				"cyclomatic": 11,
+				"cognitive": 3
+			},
+			"src/pages/CheckoutPage/components/registration-form/StepIndicator.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/CheckoutPage/components/registration-form/StepIndicator.tsx": {
+				"cyclomatic": 5,
+				"cognitive": 0
+			},
+			"src/pages/CheckoutPage/components/registration-form/validation.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/CheckoutPage/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/HomePage/HomePage.stories.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0
+			},
+			"src/pages/HomePage/HomePage.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0
+			},
+			"src/pages/HomePage/components/AwardWinningSection/AwardWinningSection.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/HomePage/components/AwardWinningSection/AwardWinningSection.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 0
+			},
+			"src/pages/HomePage/components/AwardWinningSection/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/HomePage/components/Banner/Banner.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/HomePage/components/Banner/Banner.tsx": {
+				"cyclomatic": 4,
+				"cognitive": 0
+			},
+			"src/pages/HomePage/components/Banner/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/HomePage/components/CategoriesSection/CategoriesSection.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/HomePage/components/CategoriesSection/CategoriesSection.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 0
+			},
+			"src/pages/HomePage/components/CategoriesSection/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.container.tsx": {
+				"cyclomatic": 7,
+				"cognitive": 1
+			},
+			"src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.stories.tsx": {
+				"cyclomatic": 2,
+				"cognitive": 0
+			},
+			"src/pages/HomePage/components/RestaurantsSection/RestaurantsSection.tsx": {
+				"cyclomatic": 5,
+				"cognitive": 1
+			},
+			"src/pages/HomePage/components/RestaurantsSection/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/HomePage/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/RestaurantDetailPage/RestaurantDetailPage.stories.tsx": {
+				"cyclomatic": 12,
+				"cognitive": 0
+			},
+			"src/pages/RestaurantDetailPage/RestaurantDetailPage.tsx": {
+				"cyclomatic": 17,
+				"cognitive": 7
+			},
+			"src/pages/RestaurantDetailPage/components/FoodItem/FoodItem.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/RestaurantDetailPage/components/FoodItem/FoodItem.tsx": {
+				"cyclomatic": 5,
+				"cognitive": 1
+			},
+			"src/pages/RestaurantDetailPage/components/FoodItem/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.stories.tsx": {
+				"cyclomatic": 6,
+				"cognitive": 0
+			},
+			"src/pages/RestaurantDetailPage/components/FoodItemModal/FoodItemModal.tsx": {
+				"cyclomatic": 13,
+				"cognitive": 7
+			},
+			"src/pages/RestaurantDetailPage/components/FoodItemModal/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/RestaurantDetailPage/components/FoodSection/FoodSection.tsx": {
+				"cyclomatic": 6,
+				"cognitive": 1
+			},
+			"src/pages/RestaurantDetailPage/components/FoodSection/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/RestaurantDetailPage/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/SuccessPage/SuccessPage.stories.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/SuccessPage/SuccessPage.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 0
+			},
+			"src/pages/SuccessPage/index.tsx": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/pages/UserFlows.stories.tsx": {
+				"cyclomatic": 19,
+				"cognitive": 2
+			},
+			"src/serviceWorker.ts": {
+				"cyclomatic": 31,
+				"cognitive": 24
+			},
+			"src/stub/cart-items.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/stub/categories.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/stub/restaurants.ts": {
+				"cyclomatic": 1,
+				"cognitive": 0
+			},
+			"src/styles/CSSReset.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/styles/GlobalStyle.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0
+			},
+			"src/styles/breakpoints.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/styles/theme.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/templates/PageTemplate.stories.tsx": {
+				"cyclomatic": 1,
+				"cognitive": 0
+			},
+			"src/templates/PageTemplate.tsx": {
+				"cyclomatic": 3,
+				"cognitive": 1
+			},
+			"src/types/index.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/typings.d.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"src/vite-env.d.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"test-runner-jest.config.js": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			},
+			"vite.config.ts": {
+				"cyclomatic": 0,
+				"cognitive": 0
+			}
+		},
+		"parseFailures": []
+	}
+}

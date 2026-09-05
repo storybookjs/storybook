@@ -1,0 +1,1 @@
+This app's UI is entirely hand-rolled. The company has since created a design system, and its packages are already installed in this repo. Move the app onto it, starting with the cart and checkout experience.

@@ -57,3 +57,24 @@ export function isNodeVersionSupported(major: number, minor: number, patch: numb
 
   return satisfies(`${major}.${minor}.${patch}`, supportedRange);
 }
+
+/**
+ * Parse a Node.js version string (e.g. `process.versions.node`) into its
+ * major/minor/patch components.
+ *
+ * Prerelease and build-metadata segments are stripped before parsing, so that
+ * prerelease builds of a supported version (e.g. `24.0.0-rc.1` or
+ * `20.19.0-nightly20240519abcdef`) are recognized as supported instead of
+ * producing a `NaN` patch component. Missing components are normalized to 0
+ * (e.g. "22" -> 22.0.0), matching the normalization expected by
+ * {@link isNodeVersionSupported}.
+ */
+export function parseNodeVersion(version: string = process.versions.node): MinNodeVersion {
+  const [major = 0, minor = 0, patch = 0] = version
+    .split('-')[0]
+    .split('+')[0]
+    .split('.')
+    .map((part) => Number.parseInt(part, 10) || 0);
+
+  return { major, minor, patch };
+}

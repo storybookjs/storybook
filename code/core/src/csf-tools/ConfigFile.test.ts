@@ -1,10 +1,15 @@
-import { describe, expect, it } from 'vitest';
+import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { babelPrint } from 'storybook/internal/babel';
+import { logger, once } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
 import { loadConfig, printConfig } from './ConfigFile.ts';
+
+vi.mock('storybook/internal/node-logger', { spy: true });
+
+const mockedLogger = vi.mocked(logger);
 
 expect.addSnapshotSerializer({
   serialize: (val: any) => (typeof val === 'string' ? val : val.toString()),
@@ -1922,6 +1927,124 @@ describe('ConfigFile', () => {
         expect(config._exportsObject?.type).toBe('ObjectExpression');
         expect(config._exportsObject?.properties).toHaveLength(1);
       }
+    });
+  });
+
+  describe('default export analysis warnings', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+      // several tests emit an identical message, which `once` would otherwise dedupe across tests
+      once.clear();
+    });
+
+    it('warns with an actionable message when the default export is a named import', () => {
+      const config = loadConfig(
+        dedent`
+          import { previewConfig } from './pre';
+          export default previewConfig;
+        `,
+        'preview.ts'
+      ).parse();
+      expect(config.hasDefaultExport).toBe(true);
+      expect(config.getFieldValue(['tags'])).toBeUndefined();
+      expect(mockedLogger.warn).toHaveBeenCalledWith(
+        expect.stringContaining("it is imported from './pre'")
+      );
+      expect(mockedLogger.warn).toHaveBeenCalledWith(
+        expect.stringContaining("default export of 'preview.ts'")
+      );
+    });
+
+    it('warns with an actionable message when the default export is a default import', () => {
+      loadConfig(
+        dedent`
+          import previewConfig from './pre';
+          export default previewConfig;
+        `
+      ).parse();
+      expect(mockedLogger.warn).toHaveBeenCalledWith(
+        expect.stringContaining("default export of this config file: it is imported from './pre'")
+      );
+    });
+
+    it('warns with an actionable message when an imported config is passed to a csf factory', () => {
+      loadConfig(
+        dedent`
+          import { definePreview } from '@storybook/react-vite';
+          import { previewConfig } from './pre';
+          export default definePreview(previewConfig);
+        `
+      ).parse();
+      expect(mockedLogger.warn).toHaveBeenCalledWith(
+        expect.stringContaining("it is imported from './pre'")
+      );
+    });
+
+    it('resolves a local variable passed to a csf factory', () => {
+      const config = loadConfig(
+        dedent`
+          import { definePreview } from '@storybook/react-vite';
+          const previewConfig = { tags: ['autodocs'] };
+          export default definePreview(previewConfig);
+        `
+      ).parse();
+      expect(config.getFieldValue(['tags'])).toEqual(['autodocs']);
+      expect(mockedLogger.warn).not.toHaveBeenCalled();
+    });
+
+    it('warns with an actionable message for a re-exported default', () => {
+      const config = loadConfig(
+        dedent`
+          export { previewConfig as default } from './pre';
+        `
+      ).parse();
+      expect(config.hasDefaultExport).toBe(true);
+      expect(mockedLogger.warn).toHaveBeenCalledWith(
+        expect.stringContaining("it is imported from './pre'")
+      );
+    });
+
+    it('resolves a local variable exported as default via an export specifier', () => {
+      const config = loadConfig(
+        dedent`
+          const previewConfig = { tags: ['autodocs'] };
+          export { previewConfig as default };
+        `
+      ).parse();
+      expect(config.hasDefaultExport).toBe(true);
+      expect(config.getFieldValue(['tags'])).toEqual(['autodocs']);
+      expect(mockedLogger.warn).not.toHaveBeenCalled();
+    });
+
+    it('warns only once when the same config is parsed repeatedly', () => {
+      const source = dedent`
+        import { previewConfig } from './pre';
+        export default previewConfig;
+      `;
+      loadConfig(source, 'preview.ts').parse();
+      loadConfig(source, 'preview.ts').parse();
+      expect(mockedLogger.warn).toHaveBeenCalledTimes(1);
+    });
+
+    it('throws when setting a field on a re-exported default', () => {
+      const config = loadConfig(
+        dedent`
+          export { previewConfig as default } from './pre';
+        `
+      ).parse();
+      expect(() => config.setFieldValue(['tags'], ['test'])).toThrow(/default export/);
+    });
+
+    it('falls back to the generic parsing warning for other unresolvable default exports', () => {
+      loadConfig(
+        dedent`
+          export default foo;
+        `
+      ).parse();
+      expect(mockedLogger.warn).toHaveBeenCalledWith(expect.stringContaining('CSF Parsing error'));
+      expect(mockedLogger.warn).not.toHaveBeenCalledWith(
+        expect.stringContaining('it is imported from')
+      );
     });
   });
 });

@@ -76,7 +76,7 @@ describe('updateConfigFile', () => {
       -     projects: ['packages/*']
       - 
       +     projects: ['packages/*', {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -157,7 +157,7 @@ describe('updateConfigFile', () => {
       -     projects: ['packages/*']
       - 
       +     projects: ['packages/*', {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -270,7 +270,7 @@ describe('updateConfigFile', () => {
       +           hideSkippedTests: true
       +         }
       +       }, {
-      +         extends: true,
+      +         extends: false,
       +         plugins: [
       +         // The plugin will run tests for the stories defined in your Storybook config
       +         // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -398,7 +398,7 @@ describe('updateConfigFile', () => {
       +         globals: true
       +       }
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -482,7 +482,7 @@ describe('updateConfigFile', () => {
       +   plugins: [viteReact()],
       +   test: {
       +     projects: [{
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -563,7 +563,7 @@ describe('updateConfigFile', () => {
               some: 'config'
         
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -646,7 +646,7 @@ describe('updateConfigFile', () => {
       +         globals: true
       +       }
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -721,7 +721,7 @@ describe('updateConfigFile', () => {
       +   plugins: [react()],
       +   test: {
       +     projects: [{
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -808,7 +808,7 @@ describe('updateConfigFile', () => {
       +         environment: 'jsdom'
       +       }
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -890,7 +890,7 @@ describe('updateConfigFile', () => {
       +         environment: 'jsdom'
       +       }
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -966,7 +966,7 @@ describe('updateConfigFile', () => {
       +   plugins: [react()],
       +   test: {
       +     projects: [{
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -1050,7 +1050,7 @@ describe('updateConfigFile', () => {
       +         globals: true
       +       }
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -1139,7 +1139,7 @@ describe('updateConfigFile', () => {
               }
         
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -1238,7 +1238,7 @@ describe('updateConfigFile', () => {
       +         include: ['**/*.test.ts']
       +       }
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -1337,7 +1337,7 @@ describe('updateConfigFile', () => {
       +         include: ['**/*.test.ts']
       +       }
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -1416,7 +1416,7 @@ describe('updateConfigFile', () => {
       +         include: ['**/*.test.ts']
       +       }
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -1499,7 +1499,7 @@ describe('updateConfigFile', () => {
       +         include: ['**/*.test.ts']
       +       }
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -1581,7 +1581,7 @@ describe('updateConfigFile', () => {
       +         include: ['**/*.test.ts']
       +       }
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -1664,7 +1664,7 @@ describe('updateConfigFile', () => {
       +         include: ['**/*.test.ts']
       +       }
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -1748,7 +1748,7 @@ describe('updateConfigFile', () => {
       +         include: ['**/*.test.ts']
       +       }
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -1827,7 +1827,7 @@ describe('updateConfigFile', () => {
       +         include: ['**/*.test.ts']
       +       }
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -1911,7 +1911,7 @@ describe('updateConfigFile', () => {
       +         include: ['**/*.test.ts']
       +       }
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -1994,7 +1994,7 @@ describe('updateConfigFile', () => {
       +         include: ['**/*.test.ts']
       +       }
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -2077,7 +2077,7 @@ describe('updateConfigFile', () => {
       +         include: ['**/*.test.ts']
       +       }
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -2207,7 +2207,7 @@ describe('updateConfigFile', () => {
       +         testTimeout: 120000
       +       }
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest
@@ -2315,7 +2315,7 @@ describe('updateConfigFile', () => {
       +         maxWorkers: 4
       +       }
       +     }, {
-      +       extends: true,
+      +       extends: false,
       +       plugins: [
       +       // The plugin will run tests for the stories defined in your Storybook config
       +       // See options at: https://storybook.js.org/docs/next/writing-tests/integrations/vitest-addon#storybooktest

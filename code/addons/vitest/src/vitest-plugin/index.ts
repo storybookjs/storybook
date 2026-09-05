@@ -562,6 +562,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
           tagsFilter: finalOptions.tags,
           stories: storiesGlobs,
           previewLevelTags,
+          registerStorybookAfterEach: true,
         });
       }
     },

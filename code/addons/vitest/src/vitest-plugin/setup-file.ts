@@ -1,4 +1,4 @@
-import { afterEach, beforeAll, vi } from 'vitest';
+import { beforeAll, vi } from 'vitest';
 import type { RunnerTask } from 'vitest';
 
 import { Channel } from 'storybook/internal/channels';
@@ -66,7 +66,7 @@ beforeAll(() => {
   }
 });
 
-afterEach((ctx) => {
+export const afterEachStory = (ctx: { task: Task }) => {
   restoreDefaultChannel();
   modifyErrorMessage({ task: ctx.task });
-});
+};

@@ -61,6 +61,21 @@ const buttonDocgen =
     },
   });
 
+const compiledButtonDocgen = async (): Promise<AngularDocgenPayload> => ({
+  id: 'example-button',
+  name: 'ButtonComponent',
+  path: STORY_PATH,
+  jsDocTags: {},
+  angularComponentMeta: {
+    name: 'ButtonComponent',
+    selector: undefined,
+    standalone: undefined,
+    inputs: ['label'],
+    outputs: ['pressed'],
+    enums: [],
+  },
+});
+
 /** The docgen stub the story-shape file below is written against. */
 const shapesDocgen = async (): Promise<AngularDocgenPayload> => ({
   id: 'example-button',
@@ -326,6 +341,39 @@ describe('buildStoryDocsPayload', () => {
     expect(story.snippet).not.toContain('./button.component');
     expect(story.warning).toContain('standalone: false');
     expect(story.warning).toContain('NgModule');
+  });
+
+  it('uses a literal render template when compiled metadata has no selector or standalone value', async () => {
+    givenStoryFile(`
+      import { CommonModule } from '@angular/common';
+      import { moduleMetadata } from '@storybook/angular-vite';
+      import { ButtonComponent } from './button.component';
+      export default {
+        title: 'Example/Button',
+        component: ButtonComponent,
+        decorators: [moduleMetadata({ declarations: [ButtonComponent], imports: [CommonModule] })],
+      };
+      const Template = (args) => ({
+        component: ButtonComponent,
+        template: '<sb-button></sb-button>',
+        props: args,
+      });
+      export const Default = { render: Template, args: { label: 'Save' } };
+    `);
+
+    const payload = await buildStoryDocsPayload(
+      { entry },
+      { getDocgenPayload: compiledButtonDocgen }
+    );
+
+    const story = Object.values(payload!.stories)[0];
+    expect(story.snippet).toContain('<sb-button></sb-button>');
+    expect(story.snippet).not.toContain('NgComponentOutlet');
+    expect(story.snippet).not.toMatch(/imports: \[[^\]]*ButtonComponent/);
+    expect(story.snippet).not.toContain("import { ButtonComponent } from './button.component';");
+    expect(story.snippet).toContain('imports: [],');
+    expect(story.snippet).not.toContain("import { CommonModule } from '@angular/common';");
+    expect(story.warning).toContain('could not be determined');
   });
 
   it("mirrors the story's moduleMetadata modules for a non-standalone component", async () => {

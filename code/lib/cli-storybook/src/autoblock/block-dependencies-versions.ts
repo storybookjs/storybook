@@ -27,7 +27,7 @@ export const blocker = createBlocker({
             Support for Angular < 21 has been removed.
             Please see the migration guide for more information:
           `,
-          link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular-require-v21-and-up',
+          link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular-requires-angular-21-or-higher',
         };
       case 'next':
         return {

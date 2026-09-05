@@ -54,7 +54,7 @@ describe('dependenciesVersions blocker', () => {
     expect(logged.title).toBe('Require Angular v21 and up');
     expect(logged.message).toContain('Support for Angular < 21 has been removed.');
     expect(logged.link).toBe(
-      'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular-require-v21-and-up'
+      'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#angular-requires-angular-21-or-higher'
     );
   });
 

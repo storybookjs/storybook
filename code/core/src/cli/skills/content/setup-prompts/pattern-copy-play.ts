@@ -136,41 +136,28 @@ function getMockDateExample(projectInfo: ProjectInfo): string {
 
 function getMswPreviewExample(projectInfo: ProjectInfo): string {
   const configDir = projectInfo.configDir;
-  const typeImport = getTypeImportSource(projectInfo);
 
   if (projectInfo.hasCsfFactoryPreview) {
     return dedent`
       \`\`\`tsx
-      // ${configDir}/preview.tsx
-      import { definePreview } from 'storybook/preview';
+      // ${configDir}/preview.tsx: merge into the existing file, do not replace it
       import addonMsw from 'msw-storybook-addon';
       import { mswHandlers } from './msw-handlers';
 
-      export default definePreview({
-        addons: [addonMsw()],
-        async beforeEach({ msw }) {
-          msw.use(...mswHandlers);
-        },
-      });
+      // append addonMsw() to the existing addons array
+      // call msw.use(...mswHandlers) inside the existing beforeEach (add { msw } to its parameter list)
       \`\`\`
     `;
   }
 
   return dedent`
     \`\`\`tsx
-    // ${configDir}/preview.tsx
-    import type { Preview } from '${typeImport}';
+    // ${configDir}/preview.tsx: merge into the existing file, do not replace it
     import { mswLoader } from 'msw-storybook-addon/csf3';
     import { mswHandlers } from './msw-handlers';
 
-    const preview: Preview = {
-      loaders: [mswLoader()],
-      async beforeEach({ msw }) {
-        msw.use(...mswHandlers);
-      },
-    };
-
-    export default preview;
+    // append mswLoader() to the existing loaders array
+    // call msw.use(...mswHandlers) inside the existing beforeEach (add { msw } to its parameter list)
     \`\`\`
   `;
 }
@@ -446,6 +433,7 @@ export function instructions(projectInfo: ProjectInfo): string {
     'add',
     'msw-storybook-addon@3',
   ]);
+  const mswInstall = projectInfo.packageManager.getInstallCommand(['msw'], true);
   const vitestRunFile = getVitestStorybookRunCommand(
     projectInfo.packageManager,
     '<path-to-story-file>'
@@ -457,7 +445,7 @@ export function instructions(projectInfo: ProjectInfo): string {
     Your goal is to make Storybook fully functional in this project by analyzing the codebase,
     configuring the preview with the right decorators, and writing stories for some components.
 
-    The end state should be a Storybook where any component — from a small button to a full page — can be added without story-specific workarounds. All necessary providers, CSS, browser state, and network mocks should live in the shared preview so that just rendering the component in the story is enough.
+    The end state should be a Storybook where any component — from a small button to a full page — can be added without story-specific workarounds. All necessary providers, CSS, browser state, and any network mocks required by the selected stories should live in the shared preview so that just rendering the component in the story is enough.
 
     After each created story, run Vitest to verify it renders.
     If the test fails, read the error, fix the issue, and re-run until it passes before moving on.
@@ -528,7 +516,7 @@ export function instructions(projectInfo: ProjectInfo): string {
     That means the default Storybook setup should discover and prepare:
 
     - provider state
-    - MSW handlers for queries
+    - MSW handlers only if the selected stories exercise those queries
     - browser-state values that are actually read during render
 
     ### Step 2: Build one default app environment in preview
@@ -540,7 +528,7 @@ export function instructions(projectInfo: ProjectInfo): string {
     - the real provider tree
     - the real root CSS
     - seeded browser state if the app reads it during render
-    - MSW for network/data queries
+    - MSW only if the selected stories perform network or data fetching that requires deterministic mocks
 
     It is fine to seed browser state such as \`localStorage\`, \`sessionStorage\`, and cookies when the app reads them during render.
     Seed only the specific app-owned keys and values you need.
@@ -597,12 +585,14 @@ export function instructions(projectInfo: ProjectInfo): string {
     If a library portals directly to \`document.body\`, do not add extra roots for it.
     Make sure the copied page shell, CSS, and layout still allow overlays, fixed positioning, and z-index stacking to render correctly.
 
-    ### Step 4: Mock side effects globally
+    ### Step 4: Mock required network requests globally
 
-    All network/data queries should be handled by the default Storybook environment.
+    Use this step only if the selected stories perform network or data fetching that requires deterministic mocks. If they do not, skip this entire step: do not install \`msw-storybook-addon\` or \`msw\`, generate a worker, create an empty handlers file, or add MSW wiring to the preview or main config.
 
-    - Always use \`msw-storybook-addon\` for query mocking.
-    - If you introduce MSW, register the addon with \`${mswAddonAdd}\` (which also adds it to the main config) and run \`${mswInit}\` to create the worker file.${
+    When MSW is needed:
+
+    - Use \`msw-storybook-addon\` for query mocking.
+    - Register the addon with \`${mswAddonAdd}\` (which also adds it to the main config), install its peer dependency with \`${mswInstall}\`, and run \`${mswInit}\` to create the worker file.${
       projectInfo.hasCsfFactoryPreview
         ? " If `storybook add` injects `import * as mswStorybookAddon from 'msw-storybook-addon/preview'` and a `mswStorybookAddon` entry into `definePreview` `addons`, remove both — that form breaks TypeScript inference for the entire preview; use `addonMsw()` instead."
         : ''
@@ -726,7 +716,7 @@ export function instructions(projectInfo: ProjectInfo): string {
     - the story renders something real and non-empty
     - the decorators provide the needed context
     - the CSS is applied well enough for the intended state to be visible
-    - the MSW mocks or seeded browser state are actually being used
+    - required network mocks or seeded browser state are actually being used
     - important interactions, async loading states, and portals behave correctly
 
     Use \`play\` functions to verify behavior, not just to click around.
@@ -843,7 +833,7 @@ export function instructions(projectInfo: ProjectInfo): string {
     - every story you wrote has a meaningful passing \`play\` function
     - the changed stories and preview setup pass the project's real TypeScript check
     - the rendered output looks sensible
-    - the default global mocked environment is strong enough that stories do not need manual fetch overrides
+    - the shared preview environment is strong enough that stories do not need manual fetch overrides
     - stories no longer fail because the shared preview setup and story JSX are fixed
     - all passing stories have \`tags: ['ai-generated']\` in their meta
     - any stories that still need work have \`tags: ['ai-generated', 'needs-work']\` in their meta

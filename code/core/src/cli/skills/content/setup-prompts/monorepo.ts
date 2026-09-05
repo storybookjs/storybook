@@ -55,7 +55,7 @@ export function instructions(projectInfo: ProjectInfo): string {
   };
 
   return dedent`
-    Your goal is to make Storybook fully functional in this project: configure \`${configDir}/preview.${tsx}\` with the right decorators, add MSW for data, and write up to 10 colocated \`*.stories.${tsx}\` files. Add \`play\` functions only where they prove something non-trivial.
+    Your goal is to make Storybook fully functional in this project: configure \`${configDir}/preview.${tsx}\` with the runtime setup the selected stories need, and write up to 10 colocated \`*.stories.${tsx}\` files. Add \`play\` functions only where they prove something non-trivial.
 
     ## Rules of engagement (follow strictly — these are time budgets, not suggestions)
 

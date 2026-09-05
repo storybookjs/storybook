@@ -12067,15 +12067,22 @@ __metadata:
   resolution: "@storybook/builder-vite@workspace:code/builders/builder-vite"
   dependencies:
     "@types/node": "npm:^22.19.1"
+    "@types/ws": "npm:^8.18.0"
     empathic: "npm:^2.0.0"
     es-module-lexer: "npm:^1.5.0"
+    get-port-please: "npm:^3.2.0"
     glob: "npm:^10.5.0"
+    http-proxy-middleware: "npm:3.0.5"
     knitwork: "npm:^1.1.0"
     magic-string: "npm:^1.1.0"
     pathe: "npm:^1.1.2"
+    polka: "npm:^0.5.0"
+    sirv: "npm:^3.0.0"
     slash: "npm:^5.0.0"
+    telejson: "npm:8.0.0"
     ts-dedent: "npm:^2.0.0"
     vite: "npm:^7.0.4"
+    ws: "npm:^8.18.0"
   peerDependencies:
     storybook: "workspace:^"
     vite: ^7.0.0 || ^8.0.0
@@ -14967,7 +14974,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@types/ws@npm:^8, @types/ws@npm:^8.5.10":
+"@types/ws@npm:^8, @types/ws@npm:^8.18.0, @types/ws@npm:^8.5.10":
   version: 8.18.1
   resolution: "@types/ws@npm:8.18.1"
   dependencies:
@@ -24388,6 +24395,13 @@ __metadata:
   languageName: node
   linkType: hard
 
+"get-port-please@npm:^3.2.0":
+  version: 3.2.0
+  resolution: "get-port-please@npm:3.2.0"
+  checksum: 10c0/7e48443110b463e76ef47efc381c9f16d78798f9ea9f6d928dad2b5cee53a199cf64e6e2f22603e5f8a1f742e3d4a144cd367f6ef82ac48759bfd2beb48ee9e5
+  languageName: node
+  linkType: hard
+
 "get-port@npm:5.1.1":
   version: 5.1.1
   resolution: "get-port@npm:5.1.1"
@@ -32288,7 +32302,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"polka@npm:^0.5.2":
+"polka@npm:^0.5.0, polka@npm:^0.5.2":
   version: 0.5.2
   resolution: "polka@npm:0.5.2"
   dependencies:
@@ -36015,7 +36029,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"sirv@npm:^3.0.1, sirv@npm:^3.0.2":
+"sirv@npm:^3.0.0, sirv@npm:^3.0.1, sirv@npm:^3.0.2":
   version: 3.0.2
   resolution: "sirv@npm:3.0.2"
   dependencies:

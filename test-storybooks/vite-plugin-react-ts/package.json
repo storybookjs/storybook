@@ -1,0 +1,36 @@
+{
+  "name": "vite-plugin-react-ts",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "tsc -b && vite build",
+    "dev": "vite",
+    "playwright-e2e": "playwright test -c playwright.config.ts",
+    "storybook": "vite --mode storybook",
+    "storybook:build": "vite build --mode storybook"
+  },
+  "resolutions": {
+    "@storybook/builder-vite": "file:../../code/builders/builder-vite",
+    "@storybook/csf-plugin": "file:../../code/lib/csf-plugin",
+    "@storybook/react": "file:../../code/renderers/react",
+    "@storybook/react-dom-shim": "file:../../code/lib/react-dom-shim",
+    "@storybook/react-vite": "file:../../code/frameworks/react-vite",
+    "storybook": "file:../../code/core"
+  },
+  "dependencies": {
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.58.2",
+    "@storybook/builder-vite": "*",
+    "@storybook/react-vite": "*",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.4",
+    "storybook": "*",
+    "typescript": "^5.7.2",
+    "vite": "^7.0.4"
+  }
+}

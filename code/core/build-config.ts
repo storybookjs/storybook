@@ -34,6 +34,10 @@ const config: BuildEntries = {
         entryPoint: './src/core-server/index.ts',
       },
       {
+        exportEntries: ['./internal/builder-manager'],
+        entryPoint: './src/builder-manager/index.ts',
+      },
+      {
         entryPoint: './src/core-server/presets/common-preset.ts',
         dts: false,
       },

@@ -1,5 +1,4 @@
-import { cp, mkdir } from 'node:fs/promises';
-import { rm } from 'node:fs/promises';
+import { cp, mkdir, rm } from 'node:fs/promises';
 
 import { Channel } from 'storybook/internal/channels';
 import {
@@ -21,9 +20,9 @@ import {
   getRegisteredServices,
   writeOpenServiceStaticFiles,
 } from '../shared/open-service/server.ts';
-import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 import { resolvePackageDir } from '../shared/utils/module.ts';
 import type { StoryIndexGenerator } from './utils/StoryIndexGenerator.ts';
+import { applyServicesPresetOnce } from './utils/apply-services-preset-once.ts';
 import { buildOrThrow } from './utils/build-or-throw.ts';
 import { copyAllStaticFilesRelativeToMain } from './utils/copy-all-static-files.ts';
 import { getBuilders } from './utils/get-builders.ts';
@@ -38,6 +37,8 @@ export type BuildStaticStandaloneOptions = CLIOptions &
   BuilderOptions & { outputDir: string };
 
 export async function buildStaticStandalone(options: BuildStaticStandaloneOptions) {
+  process.env.STORYBOOK_CLI = 'true';
+
   options.configType = 'PRODUCTION';
 
   if (options.outputDir === '') {

@@ -56,40 +56,58 @@ export async function storybookExternalGlobalsPlugin(options: Options): Promise<
   await init;
   const { mergeAlias } = await import('vite');
 
+  let cachedAliases: Array<{ find: RegExp; replacement: string }> | undefined;
+
+  const getAliases = async () => {
+    if (cachedAliases) {
+      return cachedAliases;
+    }
+    const cachePath =
+      pkg.cache('sb-vite-plugin-externals', { create: true }) ??
+      join(process.cwd(), 'node_modules', '.cache', 'sb-vite-plugin-externals');
+
+    const aliases: Array<{ find: RegExp; replacement: string }> = [];
+    await Promise.all(
+      (Object.keys(externals) as Array<keyof typeof externals>).map(async (externalKey) => {
+        const externalCachePath = join(cachePath, `${externalKey}.js`);
+        aliases.push({ find: new RegExp(`^${externalKey}$`), replacement: externalCachePath });
+        if (!existsSync(externalCachePath)) {
+          const directory = dirname(externalCachePath);
+          await mkdir(directory, { recursive: true });
+        }
+        await writeFile(externalCachePath, `module.exports = ${externals[externalKey]};`);
+      })
+    );
+    cachedAliases = aliases;
+    return aliases;
+  };
+
   const globalsList = Object.keys(externals);
   const globalsCodeFilter = new RegExp(globalsList.map(escapeKeys).join('|'));
 
   return {
     name: 'storybook:external-globals-plugin',
     enforce: 'post',
-    // In dev (serve), we set up aliases to files that we write into node_modules/.cache.
     async config(config, { command }) {
       if (command !== 'serve') {
         return undefined;
       }
+      const aliases = await getAliases();
       const newAlias = mergeAlias([], config.resolve?.alias) as Alias[];
-
-      const cachePath =
-        pkg.cache('sb-vite-plugin-externals', { create: true }) ??
-        join(process.cwd(), 'node_modules', '.cache', 'sb-vite-plugin-externals');
-
-      await Promise.all(
-        (Object.keys(externals) as Array<keyof typeof externals>).map(async (externalKey) => {
-          const externalCachePath = join(cachePath, `${externalKey}.js`);
-          newAlias.push({ find: new RegExp(`^${externalKey}$`), replacement: externalCachePath });
-          if (!existsSync(externalCachePath)) {
-            const directory = dirname(externalCachePath);
-            await mkdir(directory, { recursive: true });
-          }
-          await writeFile(externalCachePath, `module.exports = ${externals[externalKey]};`);
-        })
-      );
-
+      newAlias.push(...aliases);
       return {
         resolve: {
           alias: newAlias,
         },
       };
+    },
+    async resolveId(source) {
+      const aliases = await getAliases();
+      for (const alias of aliases) {
+        if (alias.find.test(source)) {
+          return alias.replacement;
+        }
+      }
     },
     // Replace imports with variables destructured from global scope
     transform: {

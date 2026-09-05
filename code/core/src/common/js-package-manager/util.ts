@@ -132,7 +132,16 @@ export function getRemotePackageRunnerArgs(
   const usesNpx =
     packageManagerType === PackageManagerName.NPM ||
     packageManagerType === PackageManagerName.YARN1;
-  return usesNpx ? ['--yes', pkgWithVersion, ...args] : [pkgWithVersion, ...args];
+  if (!usesNpx) {
+    return [pkgWithVersion, ...args];
+  }
+
+  // npm 12 defaults allow-remote to none. pkg.pr.new specifiers are remote URLs.
+  if (/^https?:\/\//.test(version)) {
+    return ['--yes', '--allow-remote=all', pkgWithVersion, ...args];
+  }
+
+  return ['--yes', pkgWithVersion, ...args];
 }
 
 export function getVitestStorybookRunCommand(packageManager: JsPackageManager, file?: string) {

@@ -442,7 +442,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         optimizeDeps: {
           include: [
             '@storybook/addon-vitest/internal/setup-file',
-            '@storybook/addon-vitest/internal/setup-file.browser.3',
             '@storybook/addon-vitest/internal/setup-file.browser.4',
             '@storybook/addon-vitest/internal/global-setup',
             '@storybook/addon-vitest/internal/test-utils',
@@ -491,9 +490,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       const isBrowserModeEnabled = context.vitest.config.browser?.enabled === true;
 
       if (isBrowserModeEnabled) {
-        const setupFilePath = context.vitest.version.startsWith('3')
-          ? '@storybook/addon-vitest/internal/setup-file.browser.3'
-          : '@storybook/addon-vitest/internal/setup-file.browser.4';
+        const setupFilePath = '@storybook/addon-vitest/internal/setup-file.browser.4';
 
         context.vitest.config.setupFiles = [
           setupFilePath,

@@ -788,6 +788,49 @@ export class MainFileEvaluationError extends StorybookError {
   }
 }
 
+export class CommonJsGlobalInEsmError extends StorybookError {
+  constructor(
+    public data: {
+      location: string;
+      global: string;
+      error: Error;
+      hook?: string;
+    }
+  ) {
+    const errorText = picocolors.white(
+      (data.error.stack || data.error.message).replaceAll(process.cwd(), '')
+    );
+    const location = picocolors.yellow(data.location);
+    const subject = data.hook
+      ? `Storybook couldn't run the ${picocolors.yellow(data.hook)} hook of ${location}`
+      : `Storybook couldn't load ${location}`;
+
+    super({
+      name: 'CommonJsGlobalInEsmError',
+      category: Category.CORE_SERVER,
+      code: 19,
+      documentation:
+        'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#the-storybookmain-file-and-other-presets-must-be-valid-esm',
+      message: dedent`
+        ${subject}: ${picocolors.yellow(data.global)} is not defined in ES modules.
+
+        Storybook loads main config and preset files as ESM, so the CommonJS globals ${picocolors.yellow('require')}, ${picocolors.yellow('__dirname')} and ${picocolors.yellow('__filename')} are not available in them.
+        You can define the ones you need from ${picocolors.yellow('import.meta.url')}:
+
+          import { createRequire } from 'node:module';
+          import { dirname } from 'node:path';
+          import { fileURLToPath } from 'node:url';
+
+          const __filename = fileURLToPath(import.meta.url);
+          const __dirname = dirname(__filename);
+          const require = createRequire(import.meta.url);
+
+        Original error:
+        ${errorText}`,
+    });
+  }
+}
+
 export class StatusTypeIdMismatchError extends StorybookError {
   constructor(
     public data: {

@@ -77,38 +77,7 @@ If you only need to override the documentation page for a single component, we r
 
 </Callout>
 
-### Generate a table of contents
-
-Storybook's auto-generated documentation pages can be quite long and difficult to navigate. To help with this, you can enable the table of contents feature to provide a quick overview of the documentation page and allow users to jump to a specific section. To enable it, extend your Storybook UI configuration file (i.e., `.storybook/preview.jsx|tsx`) and provide a `docs` [parameter](../writing-stories/parameters.mdx#global-parameters) with a `toc` property.
-
-<CodeSnippets path="storybook-preview-enable-toc.md" />
-
-### Configure the table of contents
-
-By default, the table of contents on the documentation page will only show the `h3` headings that are automatically generated. However, if you want to customize the table of contents, you can add more parameters to the `toc` property. The following options and examples of how to use them are available.
-
-| Option                | Description                                                                                                                                                                                                      |
-| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `contentsSelector`    | Defines the container's CSS selector for search for the headings <br /> `toc: { contentsSelector: '.sbdocs-content' }`                                                                                           |
-| `disable`             | Hides the table of contents for the documentation pages <br /> `toc: { disable: true }`                                                                                                                          |
-| `headingSelector`     | Defines the list of headings to feature in the table of contents <br /> `toc: { headingSelector: 'h1, h2, h3' }`                                                                                                 |
-| `ignoreSelector`      | Configures the table of contents to ignore specific headings or stories. By default, the table of contents will ignore all content placed within Story blocks <br /> `toc: { ignoreSelector: '.docs-story h2' }` |
-| `title`               | Defines a title caption for the table of contents. <br />Accepts one of: `string`, `null`, React element <br /> `toc: { title: 'Table of Contents' }`                                                            |
-| `unsafeTocbotOptions` | Provides additional [`TocBot`](https://tscanlin.github.io/tocbot/) configuration options <br /> `toc: { unsafeTocbotOptions: { orderedList: true } }`                                                            |
-
-<Callout variant="info">
-
-The `contentsSelector`, `headingSelector`, and `ignoreSelector` properties allow additional customization. For more information on using them, see the [`Tocbot` documentation](https://tscanlin.github.io/tocbot/).
-
-</Callout>
-
-<CodeSnippets path="storybook-preview-custom-toc.md" />
-
-#### Component-level configuration
-
-If you want to customize the table of contents for a specific story, you can include a `toc` property in the story's meta (or default export) and provide the required [configuration](#configure-the-table-of-contents). For example, if you need to hide the table of contents for a specific story, adjust your story as follows:
-
-<CodeSnippets path="my-component-disable-toc.md" />
+To add page navigation to your generated documentation, see the [table of contents](./table-of-contents.mdx) guide.
 
 ### Customize component documentation
 
@@ -171,22 +140,6 @@ This example demonstrates how to apply these options.
 
 ## Troubleshooting
 
-### The table of contents doesn't render as expected
-
-When using Autodocs's table of contents, you may encounter situations where it appears differently than expected. To help you resolve these problems, we have compiled a list of possible scenarios that may cause issues.
-
-#### With simple documentation pages
-
-If you have a documentation page with only one matching heading and create a table of contents for it, the table of contents will not be hidden by default. A potential solution for this issue would be to add a second heading or turn it off entirely.
-
-#### With small screens
-
-If the screen width is less than 1200px, the table of contents will be hidden by default. Currently, there's no built-in solution for this issue that doesn't impact the documentation page's style compatibility.
-
-#### With MDX
-
-If you're writing [unattached documentation](./mdx.mdx#writing-unattached-documentation) using MDX, you cannot customize the table of contents primarily due to the lack of support for defining parameters based on the current implementation. As a result, the table of contents will always revert to the default [configuration](#configure-the-table-of-contents) provided globally.
-
 ### The auto-generated documentation is not showing up in a monorepo setup
 
 Out of the box, Storybook's Autodocs feature is built to generate documentation for your stories automatically. Nevertheless, if you're working with a monorepo setup (e.g., [`Yarn Workspaces`](https://yarnpkg.com/features/workspaces), [`pnpm Workspaces`](https://pnpm.io/workspaces)), you may run into issues where part of the documentation may not be generated for you. To help you troubleshoot those issues, we've prepared some recommendations that might help you.
@@ -208,6 +161,7 @@ If you turned off inline rendering for your stories via the [`inline`](../api/do
 **Learn more about Storybook documentation**
 
 - Autodocs for creating documentation for your stories
+- [Table of contents](./table-of-contents.mdx) for navigating documentation pages
 - [MDX](./mdx.mdx) for customizing your documentation
 - [Doc Blocks](./doc-blocks.mdx) for authoring your documentation
 - [Publishing docs](./build-documentation.mdx) to automate the process of publishing your documentation

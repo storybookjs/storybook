@@ -2,8 +2,8 @@
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
-  - [Dropped support for Vite 5 and Vite 6](#dropped-support-for-vite-5-and-vite-6)
-  - [Angular: Require v21 and up](#angular-require-v21-and-up)
+  - [Vite: requires Vite 7.0 or higher](#vite-requires-vite-70-or-higher)
+  - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
 
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
@@ -541,7 +541,7 @@
 
 The `@storybook/addon-vitest` addon requires **Vitest 4.0 or higher**. Setup now always installs `@vitest/browser-playwright`, generates configuration with the `test.projects` array, and no longer creates or updates `vitest.workspace.*` files. If your Vitest config still uses the deprecated `test.workspace` / `defineWorkspace` style, rename it to `test.projects` and re-run `npx storybook@latest add @storybook/addon-vitest` to merge your existing config.
 
-### Dropped support for Vite 5 and Vite 6
+### Vite: requires Vite 7.0 or higher
 
 Storybook 11.0 drops support for Vite 5 and Vite 6. The minimum supported version is now Vite 7.0.0. This change affects all Vite-based frameworks and builders:
 
@@ -579,7 +579,7 @@ If you're using framework-specific Vite plugins, ensure they are compatible with
 
 For more information on upgrading to Vite 7, see the [Vite Migration Guide](https://vite.dev/guide/migration).
 
-### Angular: Require v21 and up
+### Angular: requires Angular 21 or higher
 
 Storybook has dropped support for Angular versions 18-20. The minimum supported version is now Angular 21.
 

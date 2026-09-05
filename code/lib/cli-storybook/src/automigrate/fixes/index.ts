@@ -10,6 +10,7 @@ import { addonMcp } from './addon-mcp.ts';
 import { addonMdxGfmRemove } from './addon-mdx-gfm-remove.ts';
 import { addonStorysourceCodePanel } from './addon-storysource-code-panel.ts';
 import { consolidatedImports } from './consolidated-imports.ts';
+import { craPresetRemoved } from './cra-preset-removed.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
 import {
   enableExperimentalDocgenServer,
@@ -35,6 +36,7 @@ export * from '../types.ts';
 export const allFixes: Fix[] = [
   eslintPlugin,
   addonMdxGfmRemove,
+  craPresetRemoved,
   addonStorysourceCodePanel,
   upgradeStorybookRelatedDependencies,
   initialGlobals,

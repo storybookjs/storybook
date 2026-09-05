@@ -57,9 +57,7 @@ You will find the output in the configured `outputDir` (default is `storybook-st
 
 ### Create React App (CRA)
 
-Support for [Create React App](https://create-react-app.dev/) is handled by [`@storybook/preset-create-react-app`](https://github.com/storybookjs/presets/tree/master/packages/preset-create-react-app).
-
-This preset enables support for all CRA features, including Sass/SCSS and TypeScript.
+Create React App support was removed in Storybook 11.0, including the `@storybook/preset-create-react-app` preset. To keep using Storybook, [migrate your project to Vite](./react-vite.mdx) with the `@storybook/react-vite` framework.
 
 ### Manually initialized apps
 
@@ -74,12 +72,6 @@ First, install the framework:
 <CodeSnippets path="react-webpack5-install.md" />
 
 Next, install and register your appropriate compiler addon, depending on whether you're using SWC (recommended) or Babel:
-
-<Callout variant="info">
-
-If your project is using [Create React App](#create-react-app-cra), you can skip this step.
-
-</Callout>
 
 <CodeSnippets path="storybook-addon-compiler-swc-auto-install.md" />
 

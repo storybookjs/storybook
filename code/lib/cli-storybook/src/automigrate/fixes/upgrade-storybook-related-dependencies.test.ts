@@ -56,7 +56,7 @@ describe('upgrade-storybook-related-dependencies fix', () => {
         hasIncompatibleDependencies: false,
       },
       {
-        packageName: '@storybook/preset-create-react-app',
+        packageName: '@storybook/preset-server-webpack',
         packageVersion: '3.2.0',
         availableUpgrade: '8.0.0',
         hasIncompatibleDependencies: true,
@@ -74,7 +74,7 @@ describe('upgrade-storybook-related-dependencies fix', () => {
     const mockPackageJson = {
       dependencies: {
         '@storybook/jest': '0.2.3',
-        '@storybook/preset-create-react-app': '3.2.0',
+        '@storybook/preset-server-webpack': '3.2.0',
       },
       devDependencies: {
         '@chromatic-com/storybook': '1.2.9',
@@ -115,7 +115,7 @@ describe('upgrade-storybook-related-dependencies fix', () => {
           {
             "afterVersion": "8.0.0",
             "beforeVersion": "3.2.0",
-            "packageName": "@storybook/preset-create-react-app",
+            "packageName": "@storybook/preset-server-webpack",
           },
         ],
       }

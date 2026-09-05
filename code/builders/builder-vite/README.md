@@ -44,7 +44,7 @@ npx storybook@latest init --builder vite && npm run storybook
 ### Migration from webpack / CRA
 
 1. Install `vite` and `@storybook/builder-vite`
-2. Remove any explicit project dependencies on `webpack`, `react-scripts`, and any other Webpack plugins or loaders.
+2. Remove any explicit project dependencies on `webpack`, and any other Webpack plugins or loaders.
 3. If you were previously using `@storybook/manager-webpack5`, you can remove it. Also remove `@storybook/builder-webpack5` or `@storybook/builder-webpack4` if they are installed.
 4. Choose a Vite-based Storybook "framework" to set in the `framework` option of your `.storybook/main.js` file.
 5. Remove Storybook Webpack cache (`rm -rf node_modules/.cache`)

@@ -350,6 +350,15 @@ test('missingCanaryMarkers names the pairs a description does not have', () => {
   assert.deepEqual(missingCanaryMarkers(NO_MARKERS, 'failed'), ['CANARY_RELEASE_HEADING']);
 });
 
+test('missingCanaryMarkers reports a marker that appears more than once', () => {
+  const duplicated = TEMPLATE + TEMPLATE;
+  assert.deepEqual(missingCanaryMarkers(duplicated, 'released'), [
+    'CANARY_RELEASE_HEADING',
+    'CANARY_RELEASE_SECTION',
+  ]);
+  assert.equal(applyCanaryPrBodyUpdate(duplicated, { action: 'released', sha: SHA }), duplicated);
+});
+
 test('applyCanaryPrBodyUpdate leaves a description without markers untouched', () => {
   assert.equal(applyCanaryPrBodyUpdate(NO_MARKERS, { action: 'released', sha: SHA }), NO_MARKERS);
   assert.equal(applyCanaryPrBodyUpdate(NO_MARKERS, { action: 'failed', sha: SHA }), NO_MARKERS);

@@ -222,7 +222,9 @@ export function updateCanaryPrBodyFromRun(
 
   const missing = missingCanaryMarkers(body, decision.action);
   if (missing.length > 0) {
-    console.log(`PR #${pr} has no ${missing.join(' or ')} pair, leaving that part of the body`);
+    console.log(
+      `PR #${pr} does not have exactly one ${missing.join(' or ')} pair, leaving that part of the body`
+    );
   }
 
   const nextBody = applyCanaryPrBodyUpdate(body, { action: decision.action, sha });

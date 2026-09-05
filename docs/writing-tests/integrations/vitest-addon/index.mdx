@@ -335,15 +335,18 @@ export default defineConfig({
 
 ### How do I fix the `Error: Vitest failed to find the current suite` error?
 
-If you encounter this error, it's often not a Vitest issue but rather related to how your stories are being transformed. Here are steps to troubleshoot:
+If you encounter this error, it's often not a Vitest issue but rather related to how your stories are being transformed. The addon's setup file registers an `afterEach` hook, which cannot attach to a test suite when a story file fails to produce one. This error is therefore frequently a symptom of an earlier failure rather than the root cause.
 
-1. Check the complete error logs for additional context, particularly around story transformation
-2. Pay attention to Vite dependency optimization warnings (e.g., "new dependencies optimized: lodash")
-3. If you see dependency optimization warnings, these can cause test-breaking reloads during execution
+Here are steps to troubleshoot:
 
-The most common fix is to pre-optimize your dependencies. You can do this by adding the dependencies to your Vite config's [`optimizeDeps.include`](https://vitejs.dev/config/dep-optimization-options.html#optimizedeps-include) array.
+1. Check the complete error logs for additional context, particularly around story transformation. The actual cause is usually reported before this error.
+2. Verify that your story files are valid and can be parsed. A story file that fails to transform (for example, a `.svelte` file with invalid syntax) produces no test suite, which surfaces as this error.
+3. Pay attention to Vite dependency optimization warnings (e.g., "new dependencies optimized: lodash")
+4. If you see dependency optimization warnings, these can cause test-breaking reloads during execution
 
-This prevents mid-test dependency optimization, which can interfere with Vitest's test suite management.
+If the cause is a story file that can't be transformed, fix the syntax or setup error reported in the preceding logs.
+
+If the cause is dependency optimization, pre-optimize your dependencies by adding them to your Vite config's [`optimizeDeps.include`](https://vitejs.dev/config/dep-optimization-options.html#optimizedeps-include) array. This prevents mid-test dependency optimization, which can interfere with Vitest's test suite management.
 
 ### Why do my tests fail in CI with "Failed to fetch dynamically imported module" or "Cannot connect to the iframe"?
 

@@ -1,21 +1,21 @@
-import { mcpServerHandler } from './mcp-handler.ts';
-import type { PresetPropertyFn, StorybookConfigRaw } from 'storybook/internal/types';
-import { AddonOptions, type AddonOptionsInput } from './types.ts';
-import * as v from 'valibot';
+import type { IncomingMessage, ServerResponse } from 'node:http';
+import path from 'node:path';
 import {
   createLocalDocsAccess,
   getEffectiveToolAvailability,
   getToolAvailability,
   loadManifests,
 } from 'storybook/internal/core-server';
-import htmlTemplate from './template.html';
-import path from 'node:path';
+import { logger } from 'storybook/internal/node-logger';
+import type { PresetPropertyFn, StorybookConfigRaw } from 'storybook/internal/types';
+import * as v from 'valibot';
 import { extractBearerToken, type ManifestProvider } from './auth/index.ts';
 import { resolveCompositionSources } from './auth/resolve-composition-sources.ts';
-import { logger } from 'storybook/internal/node-logger';
-import type { IncomingMessage, ServerResponse } from 'node:http';
 import { DEFAULT_MCP_ENDPOINT } from './constants.ts';
+import { mcpServerHandler } from './mcp-handler.ts';
 import { buildStorybookAiMetadata, type StorybookAiMetadata } from './storybook-ai-metadata.ts';
+import htmlTemplate from './template.html';
+import { AddonOptions, type AddonOptionsInput } from './types.ts';
 import { getStoryIndex } from './utils/get-story-index.ts';
 
 export const previewAnnotations: PresetPropertyFn<'previewAnnotations'> = async (
@@ -187,11 +187,11 @@ export const experimental_devServer: PresetPropertyFn<
       ? ' <span class="toolset-status enabled">+ accessibility</span>'
       : '';
 
-    // `stories-find-by-component`, `stories-changed`, and `review-create` are gated
-    // independently of the `dev` toolset — `stories-find-by-component` needs the dependency
-    // graph, `stories-changed` needs the `changeDetection` feature flag, and
-    // `review-create` additionally needs the opt-in `experimentalReview` feature flag —
-    // so each shows its own badge.
+    // `stories-preview`, `stories-find-by-component`, `stories-changed`, and `review-create`
+    // are gated independently of the `dev` toolset. `stories-preview` is suppressed whenever
+    // `review-create` is available, `stories-find-by-component` needs the dependency graph,
+    // `stories-changed` needs the `changeDetection` feature flag, and `review-create`
+    // additionally needs the opt-in `experimentalReview` feature flag.
     // When the whole `dev` toolset is turned off via addon options every dev tool is
     // disabled regardless of its own gate, so explain that instead of the per-tool reasons.
     const devNoticeLines = !isDevEnabled
@@ -205,6 +205,8 @@ export const experimental_devServer: PresetPropertyFn<
             (reviewEnabledForCli
               ? `<code>review-create</code> is enabled for <code>storybook ai</code> CLI clients (the Claude/Codex plugins); direct MCP clients need the <code>experimentalReview</code> feature flag.`
               : `<code>review-create</code> requires the <code>changeDetection</code> feature flag and is off when <code>experimentalReview</code> is set to <code>false</code>.`),
+          reviewEnabledForCli &&
+            `<code>stories-preview</code> is suppressed while <code>review-create</code> is available.`,
         ].filter(Boolean);
     const devNotice = devNoticeLines.length
       ? `<div class="toolset-notice">${devNoticeLines.join('<br>')}</div>`
@@ -214,6 +216,7 @@ export const experimental_devServer: PresetPropertyFn<
 
     const html = htmlTemplate
       .replaceAll('{{DEV_STATUS}}', isDevEnabled ? 'enabled' : 'disabled')
+      .replaceAll('{{PREVIEW_STATUS}}', statusWord(isDevEnabled && !reviewEnabledForCli))
       .replaceAll(
         '{{STORIES_BY_COMPONENT_STATUS}}',
         statusWord(isDevEnabled && moduleGraphSupported)

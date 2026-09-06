@@ -93,7 +93,6 @@ const startTestManager = async () => {
     await createUnhandledErrorHandler('Failed to synchronize stores in the test runner process')(
       error as ErrorLike
     );
-    return;
   }
 
   new TestManager({

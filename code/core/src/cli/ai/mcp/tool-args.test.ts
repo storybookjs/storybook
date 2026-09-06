@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { parsePort, parseToolArgs } from './tool-args.ts';
+import { parseToolArgs } from './tool-args.ts';
 
 function args(tokens: string[], defaults?: { json?: string }) {
   const result = parseToolArgs(tokens, defaults);
@@ -138,22 +138,5 @@ describe('parseToolArgs', () => {
 
   it('errors on `--=value`', () => {
     expect(error(['--=x'])).toContain('Invalid flag');
-  });
-});
-
-describe('parsePort', () => {
-  it('returns undefined when no port is provided', () => {
-    expect(parsePort(undefined)).toEqual({ ok: true, port: undefined });
-  });
-
-  it('parses valid port values', () => {
-    expect(parsePort('6006')).toEqual({ ok: true, port: 6006 });
-  });
-
-  it('rejects non-numeric or out-of-range ports', () => {
-    expect(parsePort('abc')).toMatchObject({ ok: false });
-    expect(parsePort('0')).toMatchObject({ ok: false });
-    expect(parsePort('65536')).toMatchObject({ ok: false });
-    expect(parsePort('6006.5')).toMatchObject({ ok: false });
   });
 });

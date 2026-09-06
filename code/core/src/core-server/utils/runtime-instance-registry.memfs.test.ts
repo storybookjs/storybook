@@ -1,4 +1,5 @@
 import { execFile } from 'node:child_process';
+import { readFileSync } from 'node:fs';
 import { chmod, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
 import { userInfo } from 'node:os';
 
@@ -13,6 +14,7 @@ import {
 
 // Spy-only mock: keep the real `node:fs/promises` shape and redirect the calls the writer makes to
 // `memfs`, so file modes can be asserted without touching the developer's home directory.
+vi.mock('node:fs', { spy: true });
 vi.mock('node:fs/promises', { spy: true });
 vi.mock('node:child_process', { spy: true });
 
@@ -83,6 +85,26 @@ describe('writeRuntimeInstanceRecord', () => {
       instanceId: 'with-token',
       token: 'a4d1f0c2-1e2b-4c3d-8e9f-0a1b2c3d4e5f',
     });
+  });
+
+  it('omits storybookPath when no storybook package root can be derived', async () => {
+    // The derivation walks the real filesystem for a package.json named `storybook`; failing every
+    // manifest read makes that walk come up empty.
+    vi.mocked(readFileSync).mockImplementation(() => {
+      throw new Error('ENOENT');
+    });
+
+    const record = createRuntimeInstanceRecord({
+      address: 'http://localhost:6006/',
+      instanceId: 'rootless',
+      port: 6006,
+      storybookVersion: '10.5.0-alpha.0',
+    });
+
+    const recordPath = await writeRuntimeInstanceRecord(record, REGISTRY_DIR);
+
+    expect(record).not.toHaveProperty('storybookPath');
+    expect(readRecordFile(recordPath)).not.toHaveProperty('storybookPath');
   });
 
   it('omits the token key when no token is provided', async () => {

@@ -8,7 +8,6 @@
           "summary": "#345F92"
         },
         "type": {
-          "required": false,
           "summary": "string"
         }
       },
@@ -22,7 +21,6 @@
       "table": {
         "category": "outputs",
         "type": {
-          "required": false,
           "summary": "(e: string) => void"
         }
       },

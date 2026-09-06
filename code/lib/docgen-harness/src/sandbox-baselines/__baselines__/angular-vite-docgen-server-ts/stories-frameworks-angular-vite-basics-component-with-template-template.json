@@ -7,7 +7,6 @@
         "category": "outputs",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "EventEmitter"
         }
       },
@@ -22,7 +21,6 @@
         "category": "methods",
         "defaultValue": {},
         "type": {
-          "required": false,
           "summary": "() => void"
         }
       },
@@ -39,7 +37,6 @@
           "summary": "default label"
         },
         "type": {
-          "required": false,
           "summary": "string"
         }
       },
@@ -55,7 +52,6 @@
           "summary": "default label2"
         },
         "type": {
-          "required": false,
           "summary": "string"
         }
       },

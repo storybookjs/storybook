@@ -52,14 +52,15 @@ const getIndex = vi.fn();
 const getChangedFiles = vi.fn();
 const getRepoRoot = vi.fn();
 const getStatuses = vi.fn();
-const getChangeDetectionReadiness = vi.fn();
 const graphStatus = vi.fn();
+const changeDetectionReadiness = vi.fn();
 const storiesForFiles = vi.fn();
 const telemetry = vi.fn();
 const cwd = vi.spyOn(process, 'cwd');
 const moduleGraph = {
   queries: {
     status: { loaded: graphStatus },
+    changeDetectionReadiness: { loaded: changeDetectionReadiness },
     storiesForFiles: { loaded: storiesForFiles },
   },
 };
@@ -80,7 +81,6 @@ function createToolset({ reviewEnabled = false } = {}): StoriesToolset {
     git,
     changeStatuses,
     reviewEnabled,
-    getChangeDetectionReadiness,
   });
 }
 
@@ -143,7 +143,7 @@ beforeEach(() => {
   });
   getRepoRoot.mockResolvedValue(repoRoot);
   getStatuses.mockImplementation(() => statusesFixture);
-  getChangeDetectionReadiness.mockResolvedValue({ status: 'ready' });
+  changeDetectionReadiness.mockResolvedValue({ status: 'ready' });
   graphStatus.mockResolvedValue({ value: 'ready' });
   storiesForFiles.mockImplementation(async ({ files }: { files: string[] }) =>
     files.map((file) => graphMatchesByFile.get(file) ?? [])
@@ -252,6 +252,7 @@ describe('stories.changed', () => {
       unreachableFiles: [changedThemeFile],
     });
     expect(getStatuses).toHaveBeenCalledOnce();
+    expect(cliCtx.getService).toHaveBeenCalledTimes(2);
     expect(cliCtx.getService).toHaveBeenCalledWith('core/module-graph', { internal: true });
     expect(cliCtx.getService).toHaveBeenCalledWith('core/module-graph-index', { internal: true });
   });
@@ -272,7 +273,7 @@ describe('stories.changed', () => {
   });
 
   it('rejects when change detection is not ready even if the graph is', async () => {
-    getChangeDetectionReadiness.mockResolvedValue({ status: 'unavailable', reason: 'disabled' });
+    changeDetectionReadiness.mockResolvedValue({ status: 'unavailable', reason: 'disabled' });
 
     const error = await runChanged().catch((reason: unknown) => reason);
 
@@ -295,7 +296,7 @@ describe('stories.changed', () => {
   it.each(['not a git repository', 'git is not available'] as const)(
     'degrades to "no changes detected" when change detection is unavailable because %s',
     async (reason) => {
-      getChangeDetectionReadiness.mockResolvedValue({ status: 'unavailable', reason });
+      changeDetectionReadiness.mockResolvedValue({ status: 'unavailable', reason });
 
       const outcome = await runChanged(mcpCtx);
 

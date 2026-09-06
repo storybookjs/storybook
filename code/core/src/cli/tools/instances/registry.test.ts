@@ -156,6 +156,18 @@ describe('readRegistry', () => {
     expect(record.token).toBeUndefined();
   });
 
+  it('accepts records with an optional storybookPath (written by servers that record their installation)', async () => {
+    const withStorybookPath = {
+      ...aliveRecord,
+      storybookPath: '/projects/alive/node_modules/storybook',
+    };
+    vol.fromNestedJSON({
+      [REGISTRY_DIR]: { 'storybook-path.json': JSON.stringify(withStorybookPath) },
+    });
+
+    await expect(readRegistry(REGISTRY_DIR)).resolves.toEqual([withStorybookPath]);
+  });
+
   it('accepts records with optional agent provenance', async () => {
     const agentRecord = { ...aliveRecord, agent: 'claude-preview' };
     vol.fromNestedJSON({ [REGISTRY_DIR]: { 'agent.json': JSON.stringify(agentRecord) } });

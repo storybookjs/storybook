@@ -59,7 +59,17 @@ const DOCS_ACCESS: DocsAccess = {
       },
     },
   }),
-  resolve: async () => undefined,
+  resolve: async (id) =>
+    id === 'button'
+      ? {
+          kind: 'component',
+          component: {
+            id: 'button',
+            name: 'Button',
+            stories: [{ id: 'button--primary', name: 'Primary', snippet: '<Button />' }],
+          },
+        }
+      : undefined,
 };
 
 const RECORD: StorybookInstanceRecord = {
@@ -236,6 +246,17 @@ describe('local tools', () => {
     );
   });
 
+  it('round-trips the show-story --storyId flag through token parsing to the handler', async () => {
+    const { deps } = makeDeps();
+
+    const result = await run(['docs', 'show-story', '--storyId', 'button--primary'], deps);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.outcome).toEqual({ kind: 'success' });
+    expect(result.output).toContain('# Button - Primary');
+    expect(result.output).toContain('<Button />');
+  });
+
   it('prints the structured result data with --json', async () => {
     const { deps } = makeDeps();
 
@@ -250,6 +271,7 @@ describe('local tools', () => {
     const moduleGraph = {
       queries: {
         status: { loaded: async () => ({ value: 'ready' }) },
+        changeDetectionReadiness: { loaded: async () => ({ status: 'ready' }) },
         storiesForFiles: { loaded: async () => [] },
       },
     };
@@ -347,6 +369,66 @@ describe('local tools', () => {
       clientInfo: { name: 'storybook-cli', version: expect.any(String), kind: 'cli' },
     });
   });
+
+  it('threads a valid --port to the SDK host', async () => {
+    const { deps, createTools } = makeDeps();
+
+    await runToolsCommand(
+      { toolset: 'docs', tool: 'list', tokens: [], target: { cwd: '/repo' }, port: '6006' },
+      deps
+    );
+
+    expect(createTools).toHaveBeenCalledWith(expect.objectContaining({ port: 6006 }));
+  });
+
+  it('preserves a port given directly on the target when no raw --port value exists', async () => {
+    const { deps, createTools } = makeDeps();
+
+    await runToolsCommand(
+      { toolset: 'docs', tool: 'list', tokens: [], target: { cwd: '/repo', port: 6006 } },
+      deps
+    );
+
+    expect(createTools).toHaveBeenCalledWith(expect.objectContaining({ port: 6006 }));
+  });
+
+  it('rejects an invalid --port before creating any host', async () => {
+    const { deps, createTools } = makeDeps();
+
+    const result = await runToolsCommand(
+      { toolset: 'docs', tool: 'list', tokens: [], target: {}, port: 'abc' },
+      deps
+    );
+
+    expect(result.exitCode).toBe(1);
+    expect(result.outcome).toEqual({ kind: 'intercept', reason: 'invalid-arguments' });
+    expect(result.output).toContain('`--port` must be a port number');
+    expect(createTools).not.toHaveBeenCalled();
+  });
+
+  it('carries a multi-instance notice out of band when the attached host reports siblings', async () => {
+    const attached = makeAttachedTools();
+    attached.storybook.siblings = [
+      { url: 'http://localhost:6008', port: 6008, pid: 456, cwd: '/repo' },
+    ];
+    const { deps } = makeDeps({ createTools: vi.fn(async () => attached) });
+
+    const result = await run(['docs', 'list'], deps);
+
+    expect(result.exitCode).toBe(0);
+    expect(result.multiInstanceNotice).toContain('http://localhost:6006');
+    expect(result.multiInstanceNotice).toContain('http://localhost:6008');
+    expect(result.multiInstanceNotice).toContain('--port');
+    expect(result.output).not.toContain('http://localhost:6008');
+  });
+
+  it('reports no multi-instance notice when the attached host has no siblings', async () => {
+    const { deps } = makeDeps({ createTools: vi.fn(async () => makeAttachedTools()) });
+
+    const result = await run(['docs', 'list'], deps);
+
+    expect(result.multiInstanceNotice).toBeUndefined();
+  });
 });
 
 describe('requires-dev-server contract', () => {
@@ -361,6 +443,24 @@ describe('requires-dev-server contract', () => {
     expect(result.exitCode).toBe(1);
     expect(result.outcome).toEqual({ kind: 'intercept', reason: 'requires-dev-server' });
     expect(result.output).toContain('requires a running Storybook dev server');
+  });
+
+  it('hands the parsed --port to instance discovery so the message names the right instance', async () => {
+    const { deps, discoverInstance } = makeDeps();
+
+    await runToolsCommand(
+      {
+        toolset: 'stories',
+        tool: 'preview',
+        tokens: ['--stories', '[{"storyId":"button--primary"}]'],
+        target: { cwd: '/repo' },
+        port: '6006',
+        attach: false,
+      },
+      deps
+    );
+
+    expect(discoverInstance).toHaveBeenCalledWith({ cwd: '/repo', port: 6006 });
   });
 
   it('lists running instances of other projects in the no-instance guidance', async () => {
@@ -507,7 +607,7 @@ describe('help', () => {
     // Input schemas come from the valibot definitions.
     expect(result.output).toContain('`--componentPaths`');
     // Declared output schemas are part of the dump.
-    expect(result.output).toContain('Output:');
+    expect(result.output).toContain('Output (`--json`):');
   });
 
   it('renders one toolset’s section with a usage line on a bare toolset name', async () => {
@@ -867,9 +967,9 @@ describe('attached tools', () => {
   it('prints the SDK fallback notice separately from the local result', async () => {
     const tools = makeLocalTools();
     tools.fallbackNotice =
-      "No running Storybook was found for this project.\n\nFalling back to loading this project's Storybook configuration.";
+      "No running Storybook instance is on port 9999.\n\nFalling back to loading this project's Storybook configuration.";
     tools.requestedMode = 'auto';
-    tools.fallbackReason = 'no-instance';
+    tools.fallbackReason = 'port-mismatch';
     const { deps, createTools } = makeDeps({
       createTools: vi.fn(async () => tools),
     });
@@ -880,7 +980,7 @@ describe('attached tools', () => {
     expect(result.requestedMode).toBe('auto');
     expect(result.attachMode).toBe('local');
     expect(result.host).toBe('in-process');
-    expect(result.fallbackReason).toBe('no-instance');
+    expect(result.fallbackReason).toBe('port-mismatch');
     expect(result.fallbackNotice).toContain('Falling back to loading this project');
     expect(result.output).toContain('Button');
     expect(result.output).not.toContain('Falling back');

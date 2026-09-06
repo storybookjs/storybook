@@ -712,9 +712,12 @@ Every registered runtime plays **both** roles at once, decided per command:
   first `services:command-result` for that `callId`, or rejects with the reconstructed error from the
   first `services:command-error`.
 - **Responder** (has a local handler): on a matching `services:command-invoke` it emits
-  `services:command-ack` **immediately** (before running), executes the command locally — which
+  `services:command-ack` **immediately** (before running), then executes the command locally on a
+  deferred macrotask — so an async channel flushes the ack before any handler work starts, keeping
+  acks within the window regardless of how long a handler's synchronous fan-out runs. Execution
   validates input, mutates state, and broadcasts the post-mutation snapshot through the normal command
-  wrappers so every peer converges — then emits `services:command-result` or `services:command-error`.
+  wrappers so every peer converges — then it emits `services:command-result` or
+  `services:command-error`.
 
 Outside [delegated mode](#delegated-mode), a runtime never requests a command it implements (it runs
 that locally), so a responder never answers its own invoke echo: `onInvoke` only acts on commands in
@@ -723,15 +726,16 @@ how dispatch reaches the Storybook it attached to.
 
 ### Events
 
-All four events are namespaced under `services:` and carry the `serviceId` so a runtime that hosts
+All command events are namespaced under `services:` and carry the `serviceId` so a runtime that hosts
 several services routes them correctly.
 
 | Event | Direction | Payload |
-| ------------------------- | ------------------------ | ----------------------------------------------------- |
-| `services:command-invoke` | requester → implementers | `{ serviceId, commandName, input, callId, clientId }` |
-| `services:command-ack`    | implementer → requester  | `{ serviceId, callId, clientId }`                     |
-| `services:command-result` | implementer → requester  | `{ serviceId, callId, result, clientId }`             |
-| `services:command-error`  | implementer → requester  | `{ serviceId, callId, error, clientId }`              |
+| ---------------------------- | -------------------------- | ----------------------------------------------------- |
+| `services:command-invoke`    | requester → implementers   | `{ serviceId, commandName, input, callId, clientId }` |
+| `services:command-ack`       | implementer → requester    | `{ serviceId, callId, clientId }`                     |
+| `services:command-result`    | implementer → requester    | `{ serviceId, callId, result, clientId }`             |
+| `services:command-error`     | implementer → requester    | `{ serviceId, callId, error, clientId }`              |
+| `services:command-unhandled` | non-implementer → requester | `{ serviceId, callId, clientId }`                     |
 
 - `callId` is the per-invocation correlation id (see [Correlation and parallel calls](#correlation-and-parallel-calls)).
 - `clientId` is the id of the runtime that emitted the envelope — the requester on an invoke, the
@@ -810,6 +814,14 @@ query's `load` calls a server-only command. Once a peer acknowledges, the reques
 `services:command-result` or `services:command-error` as before. Unregistering the service still
 rejects outstanding calls with `OpenServiceRemoteCommandDisconnectedError`.
 
+A peer that receives an invoke it cannot dispatch does not stay silent: a non-delegated runtime
+replies `services:command-unhandled` — per-service when it hosts the service but lacks that
+command's handler, and realm-globally (one reporter installed by the registry) when the service id
+is not registered at all. Non-delegated requesters ignore the reply: with no peer registry, one
+peer's report cannot speak for the others (a preview legitimately cannot dispatch a server-only
+command that the server will answer), so absence-of-ack stays their only signal. Only a
+[delegated](#delegated-mode) requester acts on it — see below.
+
 ### Delegated mode
 
 A runtime that attaches to an already-running Storybook (rather than starting its own) must not
@@ -835,10 +847,21 @@ What changes is **dispatch**, not registration:
 The flag is runtime-wide and read at registration time, like the installed channel, so set it once at
 the entry boundary before the first `registerService` call. `clearRegistry()` resets it.
 
-When nothing acknowledges within `REMOTE_COMMAND_ACK_TIMEOUT_MS`, the resulting
-`OpenServiceRemoteCommandUnhandledError` carries delegation-specific guidance instead of "not
-implemented in any connected runtime": the attached Storybook was started with a different
-configuration, so it must be restarted for that command's handler to exist.
+Genuine configuration drift — the attached Storybook does not register the service or the command
+this runtime's configuration does — is reported positively rather than inferred: command events are
+not relayed across a hub's transports, so the attached instance is the only runtime that ever sees
+a delegated caller's invoke, and its `services:command-unhandled` reply is authoritative. The
+delegated requester rejects immediately with `OpenServiceRemoteCommandConfigDriftError`, whose
+message names the command and gives the restart guidance that is now known to be correct. An older
+instance never sends the reply — as does one that registered no services at all (the reporter
+installs with the first registration) or one asked about an id it registered earlier (mid-HMR
+re-registration) — and each of those degrades to the timeout below.
+
+When nothing acknowledges within `REMOTE_COMMAND_ACK_TIMEOUT_MS` (and no unhandled reply arrived),
+the resulting `OpenServiceRemoteCommandUnhandledError` carries delegation-specific guidance instead
+of "not implemented in any connected runtime": the attached Storybook did not acknowledge the
+command in time (it may be busy or unreachable), and — delivery being at-least-once — the command
+may still have executed there, which a retry should take into account.
 
 The `storybook tools` SDK is the attached caller: it sets this flag, then loads the instance
 config. See [cli/tools/architecture.md](../../cli/tools/architecture.md).

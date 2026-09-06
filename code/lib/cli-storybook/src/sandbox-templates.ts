@@ -200,31 +200,6 @@ export const baseTemplates = {
       },
     },
   },
-  'nextjs/14-ts': {
-    name: 'Next.js v14.2 (Webpack | TypeScript)',
-    script:
-      'npx create-next-app {{beforeDir}} --skip-install -e https://github.com/vercel/next.js/tree/v14.2.17/examples/hello-world && cd {{beforeDir}} && npm pkg set "dependencies.next"="^14.2.17" && yarn && git add . && git commit --amend --no-edit && cd ..',
-    expected: {
-      framework: '@storybook/nextjs',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-webpack5',
-    },
-    modifications: {
-      useCsfFactory: true,
-      mainConfig: {
-        features: {
-          experimentalRSC: true,
-          developmentModeForBuild: true,
-          experimentalTestSyntax: true,
-        },
-      },
-      extraDevDependencies: ['server-only', 'prop-types'],
-    },
-    initOptions: {
-      builder: SupportedBuilder.WEBPACK5,
-    },
-    skipTasks: ['e2e-tests-dev', 'e2e-tests', 'bench', 'vitest-integration'],
-  },
   'nextjs/15-ts': {
     name: 'Next.js v15 (Webpack | TypeScript)',
     script:
@@ -309,29 +284,6 @@ export const baseTemplates = {
       builder: SupportedBuilder.WEBPACK5,
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
-  },
-  'nextjs-vite/14-ts': {
-    name: 'Next.js v14 (Vite | TypeScript)',
-    script:
-      'npx create-next-app@^14 {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
-    expected: {
-      framework: '@storybook/nextjs-vite',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-vite',
-    },
-    modifications: {
-      useCsfFactory: true,
-      mainConfig: {
-        framework: '@storybook/nextjs-vite',
-        features: {
-          experimentalRSC: true,
-          developmentModeForBuild: true,
-          experimentalTestSyntax: true,
-        },
-      },
-      extraDevDependencies: ['server-only', 'vite', 'prop-types'],
-    },
-    skipTasks: ['e2e-tests', 'bench'],
   },
   'nextjs-vite/15-ts': {
     name: 'Next.js v15 (Vite | TypeScript)',
@@ -1112,28 +1064,6 @@ const internalTemplates = {
     isInternal: true,
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
-  'internal/react16-webpack': {
-    name: 'React 16 (Webpack | TypeScript)',
-    script:
-      'npx create-webpack5-react {{beforeDir}} --version-react=16 --version-react-dom=16 --version-@types/react=16 --version-@types/react-dom=16',
-    expected: {
-      framework: '@storybook/react-webpack5',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-webpack5',
-    },
-    modifications: {
-      useCsfFactory: true,
-      extraDevDependencies: ['prop-types'],
-      mainConfig: {
-        swc: { swcrc: false },
-        features: {
-          experimentalTestSyntax: true,
-        },
-      },
-    },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
-    isInternal: true,
-  },
   'internal/server-webpack5': {
     name: 'Server Webpack5',
     script: 'yarn init -y && echo "module.exports = {}" > webpack.config.js',
@@ -1300,8 +1230,6 @@ export const daily: TemplateKey[] = [
   'react-vite/default-js',
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',
-  'nextjs-vite/14-ts',
-  'nextjs/14-ts',
   'vue3-vite/default-js',
   'lit-vite/default-js',
   'svelte-vite/default-js',
@@ -1309,7 +1237,6 @@ export const daily: TemplateKey[] = [
   // 'qwik-vite/default-ts',
   'preact-vite/default-js',
   'html-vite/default-js',
-  'internal/react16-webpack',
   'internal/react18-webpack-babel',
   'react-native-web-vite/expo-ts',
   'lit-rsbuild/default-ts',

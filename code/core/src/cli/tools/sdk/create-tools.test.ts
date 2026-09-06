@@ -11,7 +11,12 @@ import {
 } from '../../../shared/open-service/toolset-definition.ts';
 import { getToolName } from '../../../shared/open-service/toolset-names.ts';
 import { createTools } from './create-tools.ts';
-import { AttachUnavailableError, SpawnFailedError, ToolsRuntimeError } from './errors.ts';
+import {
+  AttachUnavailableError,
+  EnvironmentMismatchError,
+  SpawnFailedError,
+  ToolsRuntimeError,
+} from './errors.ts';
 import { bootstrapToolsRuntime, type ToolsRuntime } from './local-runtime.ts';
 
 vi.mock('./local-runtime.ts', { spy: true });
@@ -182,7 +187,13 @@ describe('createTools', () => {
   it('joins a running Storybook in attached mode without loading the local runtime', async () => {
     const attach = vi.fn(async () => ({
       runtime: makeRuntime(),
-      record: { url: 'http://localhost:6006', pid: 123, configDir: CONFIG_DIR },
+      record: {
+        url: 'http://localhost:6006',
+        pid: 123,
+        configDir: CONFIG_DIR,
+        cwd: '/repo',
+        port: 6006,
+      },
       connection: { close: vi.fn(), disconnected: new Promise<never>(() => {}) },
     }));
 
@@ -195,6 +206,8 @@ describe('createTools', () => {
       configDir: CONFIG_DIR,
       url: 'http://localhost:6006',
       pid: 123,
+      port: 6006,
+      cwd: '/repo',
     });
   });
 
@@ -214,6 +227,90 @@ describe('createTools', () => {
     expect(attach).toHaveBeenCalledOnce();
   });
 
+  it('threads the port option through to attach discovery', async () => {
+    const attach = vi.fn(async () => ({
+      runtime: makeRuntime(),
+      record: { url: 'http://localhost:6006', pid: 123, configDir: CONFIG_DIR },
+      connection: { close: vi.fn(), disconnected: new Promise<never>(() => {}) },
+    }));
+
+    await createTools({ cwd: '/repo', port: 6006, mode: 'attached' }, { attach });
+
+    expect(attach).toHaveBeenCalledWith({ cwd: '/repo', configDir: undefined, port: 6006 });
+  });
+
+  it('surfaces competing sibling instances on the storybook info, without tokens', async () => {
+    const attach = vi.fn(async () => ({
+      runtime: makeRuntime(),
+      record: { url: 'http://localhost:6007', pid: 123, configDir: CONFIG_DIR },
+      siblings: [
+        {
+          schemaVersion: 1 as const,
+          instanceId: 'older',
+          pid: 456,
+          cwd: '/repo',
+          configDir: CONFIG_DIR,
+          url: 'http://localhost:6006',
+          port: 6006,
+          token: 'secret',
+          storybookVersion: '10.2.0',
+          mcp: { status: 'ready' as const },
+        },
+      ],
+      connection: { close: vi.fn(), disconnected: new Promise<never>(() => {}) },
+    }));
+
+    const tools = await createTools({ cwd: '/repo', mode: 'attached' }, { attach });
+
+    expect(tools.storybook.siblings).toEqual([
+      { url: 'http://localhost:6006', port: 6006, pid: 456, cwd: '/repo', configDir: CONFIG_DIR },
+    ]);
+  });
+
+  it('reports no siblings when attach matched exactly one instance', async () => {
+    const attach = vi.fn(async () => ({
+      runtime: makeRuntime(),
+      record: { url: 'http://localhost:6006', pid: 123, configDir: CONFIG_DIR },
+      siblings: [],
+      connection: { close: vi.fn(), disconnected: new Promise<never>(() => {}) },
+    }));
+
+    const tools = await createTools({ cwd: '/repo', mode: 'attached' }, { attach });
+
+    expect(tools.storybook.siblings).toBeUndefined();
+  });
+
+  it('hard-errors on a port mismatch in attached mode instead of falling back', async () => {
+    vi.mocked(attach).mockRejectedValueOnce(
+      new AttachUnavailableError({
+        reason: 'port-mismatch',
+        instances: [],
+        remediation: 'No Storybook instance for this project is running on port 9999.',
+      })
+    );
+
+    await expect(createTools({ mode: 'attached', port: 9999 }, { attach })).rejects.toThrow(
+      'port 9999'
+    );
+    expect(bootstrapToolsRuntime).not.toHaveBeenCalled();
+  });
+
+  it('falls back to local with a port-mismatch gate reason in auto mode', async () => {
+    vi.mocked(attach).mockRejectedValueOnce(
+      new AttachUnavailableError({
+        reason: 'port-mismatch',
+        instances: [],
+        remediation: 'No Storybook instance for this project is running on port 9999.',
+      })
+    );
+
+    const fallback = await createTools({ port: 9999 }, { attach });
+
+    expect(fallback.mode).toBe('local');
+    expect(fallback.fallbackReason).toBe('port-mismatch');
+    expect(fallback.fallbackNotice).toContain('port 9999');
+  });
+
   it('runs a requiresDevServer method when attached', async () => {
     const attach = vi.fn(async () => ({
       runtime: makeRuntime(),
@@ -229,17 +326,18 @@ describe('createTools', () => {
     });
   });
 
-  it('spawns a child host when attach reports a fidelity mismatch that auto-spawn can fix', async () => {
+  it('spawns a child host from the recorded installation when attach reports a foreign one', async () => {
     const record = {
       schemaVersion: 1 as const,
       instanceId: 'abc',
       pid: 123,
-      cwd: '/repo',
+      cwd: '/scratch/empty',
       configDir: CONFIG_DIR,
       url: 'http://localhost:6006',
       port: 6006,
       token: 'secret',
       storybookVersion: '10.2.0',
+      storybookPath: '/npx-cache/node_modules/storybook',
       mcp: { status: 'ready' as const },
     };
     const spawned = {
@@ -253,20 +351,25 @@ describe('createTools', () => {
       call: async () => ({ ok: true as const, data: {}, markdown: 'spawned' }),
       close: async () => {},
     };
-    vi.mocked(attach).mockResolvedValue({ kind: 'spawn' as const, record });
+    vi.mocked(attach).mockResolvedValue({
+      kind: 'spawn' as const,
+      record,
+      storybookPath: '/npx-cache/node_modules/storybook',
+      siblings: [],
+    });
     vi.mocked(spawnChild).mockResolvedValue(spawned);
 
-    const tools = await createTools(
-      { cwd: '/elsewhere', mode: 'attached' },
-      { attach, spawnChild }
-    );
+    const tools = await createTools({ mode: 'attached' }, { attach, spawnChild });
 
     expect(spawnChild).toHaveBeenCalledWith({
-      cwd: '/repo',
+      cwd: '/scratch/empty',
+      installationPath: '/npx-cache/node_modules/storybook',
       options: expect.objectContaining({
-        cwd: '/repo',
+        cwd: '/scratch/empty',
         mode: 'attached',
         autoSpawn: false,
+        // Pinned from the chosen record, so the child re-resolves to the same instance.
+        port: 6006,
       }),
       clientInfo: expect.objectContaining({ kind: 'sdk' }),
       requestedMode: 'attached',
@@ -277,6 +380,21 @@ describe('createTools', () => {
       data: {},
       markdown: 'spawned',
     });
+  });
+
+  it('falls back to local with an environment-mismatch gate reason in auto mode', async () => {
+    vi.mocked(attach).mockRejectedValueOnce(
+      new EnvironmentMismatchError({
+        reason: 'The running Storybook and this CLI are different `storybook` installations:',
+      })
+    );
+
+    const fallback = await createTools({}, { attach });
+
+    expect(fallback.mode).toBe('local');
+    expect(fallback.fallbackReason).toBe('environment-mismatch');
+    expect(fallback.fallbackNotice).toContain('different `storybook` installations');
+    expect(fallback.fallbackNotice).toContain('Falling back');
   });
 
   it('prefers attached mode by default and falls back to local on a gate failure', async () => {
@@ -314,8 +432,7 @@ describe('createTools', () => {
     expect(fallback.requestedMode).toBe('auto');
     expect(fallback.host).toBe('in-process');
     expect(fallback.fallbackReason).toBe('no-instance');
-    expect(fallback.fallbackNotice).toContain('No running Storybook was found');
-    expect(fallback.fallbackNotice).toContain('Falling back');
+    expect(fallback.fallbackNotice).toBeUndefined();
   });
 
   it('falls back to a local child host when auto cannot attach from another cwd', async () => {
@@ -351,7 +468,8 @@ describe('createTools', () => {
     });
     expect(fallback.mode).toBe('local');
     expect(fallback.host).toBe('child');
-    expect(fallback.fallbackNotice).toContain('Falling back');
+    expect(fallback.fallbackReason).toBe('no-instance');
+    expect(fallback.fallbackNotice).toBeUndefined();
   });
 
   it('does not fall back from attached mode, or from a config-load failure', async () => {

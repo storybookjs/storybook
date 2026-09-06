@@ -285,7 +285,7 @@ describe('buildServerInstructions', () => {
       expect(instructions).not.toContain('stories-changed');
     });
 
-    it('renders the write-story skill cross-reference as a `storybook skills get` command', () => {
+    it('renders the write-story skill cross-reference as a `storybook skills` command', () => {
       const instructions = buildServerInstructions({
         transport: 'cli',
         devEnabled: true,
@@ -293,7 +293,7 @@ describe('buildServerInstructions', () => {
         docsEnabled: false,
       });
 
-      expect(instructions).toContain('npx storybook skills get write-story');
+      expect(instructions).toContain('npx storybook skills write-story');
       expect(instructions).not.toContain('get-storybook-story-instructions');
     });
 

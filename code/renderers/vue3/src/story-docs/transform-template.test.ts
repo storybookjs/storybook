@@ -269,6 +269,78 @@ export const Primary = {
     `);
   });
 
+  it('normalizes leading and trailing whitespace from author template literals', () => {
+    expect(
+      transformTemplate({
+        args: [prop('label', `'...'`)],
+        componentImports: new Map(),
+        componentName: 'C',
+        importBindings: new Map(),
+        template: '\n  <C :label="args.label" />\n',
+        unsetArgs: new Set(),
+      })?.snippet
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <C label="..." />
+      </template>"
+    `);
+  });
+
+  it('dedents multi-line author template literals while preserving relative indentation', () => {
+    expect(
+      transformTemplate({
+        args: [prop('label', `'Nested'`)],
+        componentImports: new Map(),
+        componentName: 'C',
+        importBindings: new Map(),
+        template: '\n    <div>\n      <C :label="args.label" />\n    </div>\n  ',
+        unsetArgs: new Set(),
+      })?.snippet
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <div>
+          <C label="Nested" />
+        </div>
+      </template>"
+    `);
+  });
+
+  it('keeps internal blank lines empty when normalizing author template literals', () => {
+    expect(
+      transformTemplate({
+        args: [prop('label', `'Blank'`)],
+        componentImports: new Map(),
+        componentName: 'C',
+        importBindings: new Map(),
+        template: '\n  <C :label="args.label" />\n    \n  <C :label="args.label" />\n',
+        unsetArgs: new Set(),
+      })?.snippet
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <C label="Blank" />
+
+        <C label="Blank" />
+      </template>"
+    `);
+  });
+
+  it('dedents tab-indented author template literals', () => {
+    expect(
+      transformTemplate({
+        args: [prop('label', `'Tabbed'`)],
+        componentImports: new Map(),
+        componentName: 'C',
+        importBindings: new Map(),
+        template: '\n\t<C :label="args.label" />\n',
+        unsetArgs: new Set(),
+      })?.snippet
+    ).toMatchInlineSnapshot(`
+      "<template>
+        <C label="Tabbed" />
+      </template>"
+    `);
+  });
+
   it('inlines primitive args in text interpolations', async () => {
     expect(
       await primarySnippet(`

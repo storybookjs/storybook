@@ -1,16 +1,18 @@
+import { realpathSync } from 'node:fs';
 import { inspect } from 'node:util';
 
+import { vol } from 'memfs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { NodeChannelConnection } from './node-channel.ts';
 import type { StorybookInstanceRecord } from '../instances/types.ts';
 import { bootstrapAttachedRuntime } from './attached-runtime.ts';
-import {
-  AttachUnavailableError,
-  EnvironmentMismatchError,
-  SpawnFailedError,
-  ToolsRuntimeError,
-} from './errors.ts';
+import { AttachUnavailableError, EnvironmentMismatchError, ToolsRuntimeError } from './errors.ts';
+
+vi.mock('node:fs', { spy: true });
+
+const STORYBOOK_PATH = '/repo/node_modules/storybook';
+const FOREIGN_STORYBOOK_PATH = '/npx-cache/node_modules/storybook';
 
 const RECORD: StorybookInstanceRecord = {
   schemaVersion: 1,
@@ -22,6 +24,7 @@ const RECORD: StorybookInstanceRecord = {
   port: 6006,
   token: 'secret',
   storybookVersion: '10.2.0',
+  storybookPath: STORYBOOK_PATH,
   mcp: { status: 'ready' },
 };
 
@@ -61,9 +64,8 @@ function makeRuntimeDeps(records: StorybookInstanceRecord[], extras: Record<stri
       getService,
       setDelegatedMode,
       getRegisteredToolsets,
-      cwd: () => '/repo',
       version: '10.2.0',
-      resolveBinPath: () => '/repo/node_modules/storybook/package.json',
+      storybookPath: () => STORYBOOK_PATH,
       ...extras,
     },
   };
@@ -83,12 +85,22 @@ async function rejectedAttachUnavailable(
   throw new Error('expected AttachUnavailableError');
 }
 
-beforeEach(() => {
+beforeEach(async () => {
   vi.unstubAllGlobals();
+  vol.reset();
+  vol.fromNestedJSON({
+    [`${STORYBOOK_PATH}/package.json`]: '{"name":"storybook"}',
+    [`${FOREIGN_STORYBOOK_PATH}/package.json`]: '{"name":"storybook"}',
+  });
+  const memfs = await vi.importActual<typeof import('memfs')>('memfs');
+  vi.mocked(realpathSync).mockImplementation(
+    memfs.fs.realpathSync as unknown as typeof import('node:fs').realpathSync
+  );
 });
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.restoreAllMocks();
 });
 
 describe('bootstrapAttachedRuntime', () => {
@@ -133,32 +145,142 @@ describe('bootstrapAttachedRuntime', () => {
     await expect(failure).rejects.toThrow(AttachUnavailableError);
     await expect(failure).rejects.toMatchObject({ data: { reason: 'no-instance' } });
     await expect(failure).rejects.toThrow('npm run storybook');
-    await expect(failure).rejects.toThrow('cd /apps/web');
-    await expect(failure).rejects.toThrow('--config-dir /apps/web/.storybook');
+    await expect(failure).rejects.toThrow('configDir `/apps/web/.storybook`');
     const error = await rejectedAttachUnavailable(failure);
     expect(error.data.instances.every((instance) => !('token' in instance))).toBe(true);
     expect(inspect(error)).not.toContain('secret');
   });
 
-  it('rejects when several instances match and names each --config-dir', async () => {
+  it('attaches to the most recently started instance when several match, reporting the siblings', async () => {
+    const older: StorybookInstanceRecord = {
+      ...RECORD,
+      instanceId: 'older',
+      pid: 789,
+      url: 'http://localhost:6008',
+      port: 6008,
+      startedAt: '2026-08-27T10:00:00.000Z',
+    };
+    const newest: StorybookInstanceRecord = {
+      ...RECORD,
+      startedAt: '2026-08-27T11:00:00.000Z',
+    };
+    const { deps } = makeRuntimeDeps([older, newest]);
+
+    const result = await bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+
+    expect(result.record).toEqual(newest);
+    expect(result.siblings).toEqual([older]);
+    expect(deps.createNodeChannel).toHaveBeenCalledWith({
+      url: newest.url,
+      token: newest.token,
+    });
+  });
+
+  it('reports no siblings when exactly one instance matches', async () => {
+    const { deps } = makeRuntimeDeps([RECORD, OTHER]);
+
+    const result = await bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+
+    expect(result.siblings).toEqual([]);
+  });
+
+  it('prefers the invoking agent bucket over recency when several match', async () => {
+    const mine: StorybookInstanceRecord = {
+      ...RECORD,
+      agent: 'codex',
+      startedAt: '2026-08-27T10:00:00.000Z',
+    };
+    const newerForeign: StorybookInstanceRecord = {
+      ...RECORD,
+      instanceId: 'foreign',
+      pid: 789,
+      url: 'http://localhost:6008',
+      port: 6008,
+      agent: 'cursor',
+      startedAt: '2026-08-27T11:00:00.000Z',
+    };
+    const { deps } = makeRuntimeDeps([mine, newerForeign], {
+      detectAgentName: () => 'codex',
+    });
+
+    const result = await bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+
+    expect(result.record).toEqual(mine);
+    expect(result.siblings).toEqual([]);
+  });
+
+  it('attaches to the instance on the requested port even when a sibling is newer', async () => {
+    const onPort: StorybookInstanceRecord = {
+      ...RECORD,
+      startedAt: '2026-08-27T10:00:00.000Z',
+    };
+    const newer: StorybookInstanceRecord = {
+      ...RECORD,
+      instanceId: 'newer',
+      pid: 789,
+      url: 'http://localhost:6008',
+      port: 6008,
+      startedAt: '2026-08-27T11:00:00.000Z',
+    };
+    const { deps } = makeRuntimeDeps([onPort, newer]);
+
+    const result = await bootstrapAttachedRuntime({ cwd: '/repo', port: 6006 }, deps);
+
+    expect(result.record).toEqual(onPort);
+    expect(result.siblings).toEqual([]);
+  });
+
+  it('attaches by port alone from an unrelated cwd, inferring the project from the record', async () => {
+    const { deps } = makeRuntimeDeps([RECORD]);
+
+    const result = await bootstrapAttachedRuntime({ cwd: '/somewhere/else', port: 6006 }, deps);
+
+    expect(result.record).toEqual(RECORD);
+    expect(result.siblings).toEqual([]);
+  });
+
+  it('rejects with port-mismatch listing the running ports when no matching instance is on the port', async () => {
     const sibling: StorybookInstanceRecord = {
       ...RECORD,
       instanceId: 'sibling',
       pid: 789,
-      configDir: '/repo/.storybook-alt',
       url: 'http://localhost:6008',
       port: 6008,
     };
     const { deps } = makeRuntimeDeps([RECORD, sibling]);
 
-    const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', port: 9999 }, deps);
 
-    await expect(failure).rejects.toMatchObject({ data: { reason: 'multiple-matches' } });
-    await expect(failure).rejects.toThrow('--config-dir /repo/.storybook');
-    await expect(failure).rejects.toThrow('--config-dir /repo/.storybook-alt');
+    await expect(failure).rejects.toThrow(AttachUnavailableError);
+    await expect(failure).rejects.toMatchObject({ data: { reason: 'port-mismatch' } });
+    await expect(failure).rejects.toThrow('9999');
+    await expect(failure).rejects.toThrow('http://localhost:6006');
+    await expect(failure).rejects.toThrow('http://localhost:6008');
+    await expect(failure).rejects.toThrow('--port');
     const error = await rejectedAttachUnavailable(failure);
     expect(error.data.instances.every((instance) => !('token' in instance))).toBe(true);
     expect(inspect(error)).not.toContain('secret');
+  });
+
+  it('picks the most recent instance even when only an older sibling could attach (not token-aware)', async () => {
+    const olderWithToken: StorybookInstanceRecord = {
+      ...RECORD,
+      instanceId: 'older',
+      pid: 789,
+      url: 'http://localhost:6008',
+      port: 6008,
+      startedAt: '2026-08-27T10:00:00.000Z',
+    };
+    const newestTokenless: StorybookInstanceRecord = {
+      ...RECORD,
+      token: undefined,
+      startedAt: '2026-08-27T11:00:00.000Z',
+    };
+    const { deps } = makeRuntimeDeps([olderWithToken, newestTokenless]);
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+
+    await expect(failure).rejects.toMatchObject({ data: { reason: 'old-server' } });
   });
 
   it('rejects a tokenless record as an old server', async () => {
@@ -170,78 +292,76 @@ describe('bootstrapAttachedRuntime', () => {
     await expect(failure).rejects.toThrow('Restart Storybook (v10.2.0+)');
   });
 
-  it('rejects a cwd mismatch before connecting', async () => {
-    const { deps } = makeRuntimeDeps([RECORD], { cwd: () => '/elsewhere' });
+  it('attaches from the project when the instance was started from an unrelated directory', async () => {
+    const startedElsewhere: StorybookInstanceRecord = { ...RECORD, cwd: '/scratch/empty' };
+    const { deps } = makeRuntimeDeps([startedElsewhere]);
 
-    const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
+    const result = await bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
 
-    await expect(failure).rejects.toThrow(EnvironmentMismatchError);
-    await expect(failure).rejects.toThrow('cd ');
-    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+    expect(result.kind).toBe('in-process');
+    expect(result.record).toEqual(startedElsewhere);
   });
 
-  it('rejects a version mismatch before connecting', async () => {
-    const { deps } = makeRuntimeDeps([RECORD], { version: '10.1.0' });
-
-    const failure = bootstrapAttachedRuntime({ cwd: '/repo' }, deps);
-
-    await expect(failure).rejects.toThrow(EnvironmentMismatchError);
-    await expect(failure).rejects.toThrow('10.1.0');
-    await expect(failure).rejects.toThrow('10.2.0');
-    await expect(failure).rejects.toThrow('Restart your Storybook');
-    expect(deps.createNodeChannel).not.toHaveBeenCalled();
-  });
-
-  it('returns spawn when autoSpawn is on and the project package matches the instance', async () => {
-    const { deps } = makeRuntimeDeps([RECORD], {
-      cwd: () => '/elsewhere',
-      resolveProjectVersion: () => '10.2.0',
-    });
+  it('returns spawn when autoSpawn is on and the instance runs a different installation', async () => {
+    const foreign: StorybookInstanceRecord = { ...RECORD, storybookPath: FOREIGN_STORYBOOK_PATH };
+    const { deps } = makeRuntimeDeps([foreign]);
 
     const result = await bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
 
-    expect(result).toEqual({ kind: 'spawn', record: RECORD });
+    expect(result).toEqual({
+      kind: 'spawn',
+      record: foreign,
+      storybookPath: FOREIGN_STORYBOOK_PATH,
+      siblings: [],
+    });
     expect(deps.createNodeChannel).not.toHaveBeenCalled();
   });
 
-  it('throws restart guidance when autoSpawn cannot help because the project package also differs', async () => {
-    const { deps } = makeRuntimeDeps([RECORD], {
-      version: '10.3.0',
-      resolveProjectVersion: () => '10.4.0',
-    });
+  it('refuses a different installation when auto-spawn is declined, naming both installations', async () => {
+    const foreign: StorybookInstanceRecord = { ...RECORD, storybookPath: FOREIGN_STORYBOOK_PATH };
+    const { deps } = makeRuntimeDeps([foreign]);
 
-    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: false }, deps);
 
     await expect(failure).rejects.toThrow(EnvironmentMismatchError);
-    await expect(failure).rejects.toThrow('10.4.0');
+    await expect(failure).rejects.toThrow('different `storybook` installations');
+    await expect(failure).rejects.toThrow(FOREIGN_STORYBOOK_PATH);
+    await expect(failure).rejects.toThrow(STORYBOOK_PATH);
     await expect(failure).rejects.toThrow('10.2.0');
-    await expect(failure).rejects.toThrow('Restart your Storybook');
+    await expect(failure).rejects.toThrow(RECORD.configDir!);
     expect(deps.createNodeChannel).not.toHaveBeenCalled();
   });
 
-  it('throws SpawnFailedError when autoSpawn is on but storybook cannot be resolved under the instance', async () => {
-    const { deps } = makeRuntimeDeps([RECORD], {
-      cwd: () => '/elsewhere',
-      resolveProjectVersion: () => undefined,
-    });
-
-    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
-
-    await expect(failure).rejects.toThrow(SpawnFailedError);
-    await expect(failure).rejects.toThrow(RECORD.cwd);
-    expect(deps.createNodeChannel).not.toHaveBeenCalled();
-  });
-
-  it('throws a mismatch rather than spawning when this process is already a child host', async () => {
-    const { deps } = makeRuntimeDeps([RECORD], {
-      cwd: () => '/elsewhere',
-      isChildHost: true,
-      resolveProjectVersion: () => '10.2.0',
-    });
+  it('refuses rather than spawning when this process is already a child host', async () => {
+    const foreign: StorybookInstanceRecord = { ...RECORD, storybookPath: FOREIGN_STORYBOOK_PATH };
+    const { deps } = makeRuntimeDeps([foreign], { isChildHost: true });
 
     const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
 
     await expect(failure).rejects.toThrow(EnvironmentMismatchError);
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
+
+  it('refuses a record that does not name its installation, even when auto-spawn is on', async () => {
+    const { deps } = makeRuntimeDeps([{ ...RECORD, storybookPath: undefined }]);
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    await expect(failure).rejects.toThrow(EnvironmentMismatchError);
+    await expect(failure).rejects.toThrow('Could not verify');
+    await expect(failure).rejects.toThrow('restart Storybook');
+    expect(deps.createNodeChannel).not.toHaveBeenCalled();
+  });
+
+  it('refuses a recorded installation that no longer exists on disk, even when auto-spawn is on', async () => {
+    const { deps } = makeRuntimeDeps([
+      { ...RECORD, storybookPath: '/gone/node_modules/storybook' },
+    ]);
+
+    const failure = bootstrapAttachedRuntime({ cwd: '/repo', autoSpawn: true }, deps);
+
+    await expect(failure).rejects.toThrow(EnvironmentMismatchError);
+    await expect(failure).rejects.toThrow('Could not verify');
     expect(deps.createNodeChannel).not.toHaveBeenCalled();
   });
 

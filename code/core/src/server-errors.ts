@@ -293,8 +293,19 @@ export class OpenServiceRemoteCommandUnhandledError extends StorybookError {
       category: Category.CORE_COMMON,
       code: 15,
       message: data.delegated
-        ? `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; this runtime delegates every command to the Storybook it is attached to, and that Storybook was started with a different configuration. Restart it so the command's handler is available.`
+        ? `The Storybook this runtime is attached to did not acknowledge remote command "${data.serviceId}.${data.commandName}" in time — it may be busy or unreachable. Retry; note the command may still have executed on that instance.`
         : `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
+    });
+  }
+}
+
+export class OpenServiceRemoteCommandConfigDriftError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; commandName: string }) {
+    super({
+      name: 'OpenServiceRemoteCommandConfigDriftError',
+      category: Category.CORE_COMMON,
+      code: 30,
+      message: `The Storybook this runtime is attached to reported it has no handler for remote command "${data.serviceId}.${data.commandName}". The two processes are running different configurations (for example a feature flag enabled in one but not the other). Restart the attached Storybook with a configuration matching this process.`,
     });
   }
 }
@@ -588,6 +599,30 @@ export class AngularUnresolvedStyleError extends StorybookError {
         No file matches it there, with or without a ${data.extensions.join(', ')} extension.
 
         Angular resolves a 'styles' entry from the workspace root, so a relative entry has to point at a file below it. Check the 'styles' array on your Storybook builder target in angular.json.`,
+    });
+  }
+}
+
+export class AngularMissingStylePreprocessorError extends StorybookError {
+  constructor(public data: { stylePath: string; install: string; alternative?: string }) {
+    super({
+      name: 'AngularMissingStylePreprocessorError',
+      category: Category.FRAMEWORK_ANGULAR,
+      code: 3,
+      documentation: 'https://storybook.js.org/docs/get-started/frameworks/angular-vite',
+      message: [
+        dedent`
+          Cannot compile '${data.stylePath}': the '${data.install}' package is not installed where Vite can load it.
+
+          Add it to your project:
+
+            npm install --save-dev ${data.install}
+
+          Vite resolves a CSS preprocessor from your project directory upwards, so a copy installed deeper in the tree - such as the one Angular's builders bring in for themselves - is invisible to it. That is why a project which compiles with 'ng build' can still fail here.`,
+        data.alternative && `'${data.alternative}' works as well, if you would rather use that.`,
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
     });
   }
 }

@@ -28,10 +28,10 @@ export const getStaticPropertyName = (property: ObjectMember): string | undefine
  * callers can point at its source location in the error they raise.
  */
 export const findIndirectProperty = (object: t.ObjectExpression): ObjectMember | undefined =>
-  object.properties.find(
-    (property) => t.isSpreadElement(property) || getStaticPropertyName(property) === undefined
-  );
+  object.properties.find((property) => getStaticPropertyName(property) === undefined);
 
 /** Every member of `object` whose static key is exactly `name`. */
-export const getStaticProperties = (object: t.ObjectExpression, name: string): ObjectMember[] =>
-  object.properties.filter((property) => getStaticPropertyName(property) === name);
+export const getStaticProperties = (object: t.ObjectExpression, name: string): t.ObjectMember[] =>
+  object.properties.filter(
+    (property): property is t.ObjectMember => getStaticPropertyName(property) === name
+  );

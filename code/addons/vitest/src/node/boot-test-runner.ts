@@ -59,6 +59,7 @@ const bootTestRunner = async ({
   configLoader?: BuilderOptions['configLoader'];
 }) => {
   let stderr: string[] = [];
+  let childErrorReported = false;
   const killChild = () => {
     unsubscribeStore?.();
     unsubscribeStatusStore?.();
@@ -123,11 +124,12 @@ const bootTestRunner = async ({
           }
           resolve();
         } else if (event.type === 'uncaught-error') {
+          childErrorReported = true;
           store.send({
             type: 'FATAL_ERROR',
             payload: event.payload,
           });
-          reject();
+          reject(event.payload.error);
         } else {
           channel.emit(event.type, ...event.args);
         }
@@ -146,13 +148,15 @@ const bootTestRunner = async ({
   );
 
   await Promise.race([startChildProcess(), timeout]).catch((error) => {
-    store.send({
-      type: 'FATAL_ERROR',
-      payload: {
-        message: 'Failed to start test runner process',
-        error: error instanceof Error ? errorToErrorLike(error) : { message: String(error) },
-      },
-    });
+    if (!childErrorReported) {
+      store.send({
+        type: 'FATAL_ERROR',
+        payload: {
+          message: 'Failed to start test runner process',
+          error: error instanceof Error ? errorToErrorLike(error) : { message: String(error) },
+        },
+      });
+    }
     eventQueue.length = 0;
     throw error;
   });

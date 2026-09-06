@@ -4,6 +4,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { Channel, type ChannelTransport } from 'storybook/internal/channels';
 import { executeNodeCommand } from 'storybook/internal/common';
+import { UniversalStoreFollowerTimeoutError } from 'storybook/internal/manager-errors';
 import type { Options } from 'storybook/internal/types';
 
 import { storeOptions } from '../constants.ts';
@@ -153,6 +154,8 @@ describe('bootTestRunner', () => {
   });
 
   it('should abort if vitest doesn’t become ready in time', async () => {
+    const onFatalError = vi.fn();
+    mockStore.subscribe('FATAL_ERROR', onFatalError);
     const promise = runTestRunner({
       channel: mockChannel,
       store: mockStore,
@@ -160,6 +163,89 @@ describe('bootTestRunner', () => {
     });
     vi.advanceTimersByTime(30001);
     await expect(promise).rejects.toThrow();
+    expect(onFatalError).toHaveBeenCalledExactlyOnceWith(
+      {
+        type: 'FATAL_ERROR',
+        payload: {
+          message: 'Failed to start test runner process',
+          error: expect.objectContaining({
+            message:
+              'Aborting test runner process because it took longer than 30 seconds to start.',
+          }),
+        },
+      },
+      expect.anything()
+    );
+  });
+
+  it('should report a follower readiness rejection once and preserve the original error', async () => {
+    const error = new UniversalStoreFollowerTimeoutError('storybook/test-provider');
+    const originalError = {
+      name: error.name,
+      message: error.message,
+      stack: error.stack,
+      cause: undefined,
+    };
+    const onFatalError = vi.fn();
+    mockStore.subscribe('FATAL_ERROR', onFatalError);
+    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    const rejection = expect(promise).rejects.toEqual(originalError);
+    const exit = vi.fn();
+
+    vi.doMock('node:process', () => ({
+      default: { env: {}, on: vi.fn(), send: vi.fn(message), exit },
+    }));
+    vi.doMock('storybook/internal/core-server', () => ({
+      experimental_UniversalStore: {
+        __prepare: vi.fn(),
+        Environment: { SERVER: 'SERVER' },
+        create: () => ({ untilReady: vi.fn().mockResolvedValue(undefined) }),
+      },
+      experimental_getStatusStore: vi.fn(),
+      experimental_getTestProviderStore: vi.fn(),
+      internal_universalStatusStore: { untilReady: vi.fn().mockResolvedValue(undefined) },
+      internal_universalTestProviderStore: { untilReady: vi.fn().mockRejectedValue(error) },
+    }));
+    vi.doMock('./test-manager.ts', () => ({ TestManager: vi.fn() }));
+
+    try {
+      await import('./vitest.ts');
+      await rejection;
+      expect(onFatalError).toHaveBeenCalledExactlyOnceWith(
+        {
+          type: 'FATAL_ERROR',
+          payload: {
+            message: 'Failed to synchronize stores in the test runner process',
+            error: originalError,
+          },
+        },
+        expect.anything()
+      );
+      expect(exit).toHaveBeenCalledExactlyOnceWith(1);
+    } finally {
+      vi.doUnmock('node:process');
+      vi.doUnmock('storybook/internal/core-server');
+      vi.doUnmock('./test-manager.ts');
+    }
+  });
+
+  it('should report an uncaught error after the child is ready', async () => {
+    const onFatalError = vi.fn();
+    mockStore.subscribe('FATAL_ERROR', onFatalError);
+    const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
+    message({ type: 'ready' });
+    await promise;
+
+    const payload = {
+      message: 'Uncaught exception in the test runner process',
+      error: { name: 'Error', message: 'Test runner failed', stack: 'Test runner stack' },
+    };
+    message({ type: 'uncaught-error', payload });
+
+    expect(onFatalError).toHaveBeenCalledExactlyOnceWith(
+      { type: 'FATAL_ERROR', payload },
+      expect.anything()
+    );
   });
 
   it('should forward universal store events', async () => {

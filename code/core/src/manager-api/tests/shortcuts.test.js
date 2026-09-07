@@ -289,3 +289,95 @@ describe('shortcuts api', () => {
     ).toEqual(['G']);
   });
 });
+
+describe('addon shortcut activity gating', () => {
+  const initWithUi = () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'shown' };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: true }, storyId: 'a', refId: undefined });
+    return api;
+  };
+
+  it('inactive addon shortcuts do not match key events', async () => {
+    const api = initWithUi();
+    const action = vi.fn();
+    await api.setAddonShortcut('review', {
+      label: 'Next collection',
+      defaultShortcut: ['ArrowDown'],
+      actionName: 'nextCollection',
+      isActive: () => false,
+      action,
+    });
+
+    const matched = api.handleKeydownEvent({ key: 'ArrowDown' });
+    expect(matched).toBeUndefined();
+    expect(action).not.toHaveBeenCalled();
+  });
+
+  it('active addon shortcuts match and fire', async () => {
+    const api = initWithUi();
+    const action = vi.fn();
+    await api.setAddonShortcut('review', {
+      label: 'Next collection',
+      defaultShortcut: ['ArrowDown'],
+      actionName: 'nextCollection',
+      isActive: () => true,
+      action,
+    });
+
+    const matched = api.handleKeydownEvent({ key: 'ArrowDown' });
+    expect(matched).toBe('review-nextCollection');
+    expect(action).toHaveBeenCalled();
+  });
+
+  it('addon shortcuts without isActive still match (default behavior)', async () => {
+    const api = initWithUi();
+    const action = vi.fn();
+    await api.setAddonShortcut('my-addon', {
+      label: 'Do it',
+      defaultShortcut: ['O'],
+      actionName: 'doIt',
+      action,
+    });
+
+    expect(api.handleKeydownEvent({ key: 'O', code: 'KeyO' })).toBe('my-addon-doIt');
+    expect(action).toHaveBeenCalled();
+  });
+
+  it('persisted addon bindings whose addon did not re-register are ignored', () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'shown' };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({
+      ...state,
+      ui: { enableShortcuts: true },
+      shortcuts: { ...state.shortcuts, 'stale-addon-gone': ['ArrowUp'] },
+    });
+
+    expect(() => api.handleKeydownEvent({ key: 'ArrowUp' })).not.toThrow();
+    expect(api.handleKeydownEvent({ key: 'ArrowUp' })).toBeUndefined();
+  });
+});
+
+describe('keydown match gating', () => {
+  it('reports no match when shortcuts are disabled, so the key is not swallowed', () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'shown', toggleFullscreen: vi.fn() };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: false }, storyId: 'a' });
+
+    expect(api.handleKeydownEvent({ key: 'F', altKey: true })).toBeUndefined();
+    expect(fullAPI.toggleFullscreen).not.toHaveBeenCalled();
+  });
+
+  it('reports no match for sidebar shortcuts while the nav is unavailable', () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'unavailable', toggleFullscreen: vi.fn() };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: true }, storyId: 'a' });
+
+    expect(api.handleKeydownEvent({ key: 'S', code: 'KeyS', altKey: true })).toBeUndefined();
+    expect(api.handleKeydownEvent({ key: 'F', altKey: true })).toBe('fullScreen');
+  });
+});

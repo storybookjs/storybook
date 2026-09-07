@@ -5,6 +5,7 @@
   - [Yarn PnP support removed](#yarn-pnp-support-removed)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Sidebar label rendering: renderAriaLabel and a context argument](#sidebar-label-rendering-renderarialabel-and-a-context-argument)
+  - [Escape is no longer a configurable shortcut](#escape-is-no-longer-a-configurable-shortcut)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vite: `publicDir` is handled by Storybook's `staticDirs`](#vite-publicdir-is-handled-by-storybooks-staticdirs)
   - [Vite: requires Vite 6.3 or higher](#vite-requires-vite-63-or-higher)
@@ -603,6 +604,10 @@ option exists in both places, keep the nested value because it was authoritative
 `sidebar.renderLabel` now receives a third `context` argument, `{ isMobile: boolean; location: 'sidebar' | 'bottom-bar' }`, so labels can adapt to where they render (the sidebar tree vs. the mobile bottom bar). Existing two-argument functions keep working - the parameter is optional.
 
 `sidebar.renderAriaLabel` was added alongside it and must return a plain string; it feeds accessible names for tree entries and the mobile bottom bar's current-page announcement. When `renderLabel` returns a React element, the bottom bar now falls back to the entry name for its concatenated announcement instead of stringifying the element.
+
+### Escape is no longer a configurable shortcut
+
+The `escape` entry was removed from the manager's configurable shortcuts: `api.getShortcutKeys()` no longer includes it, and the types no longer accept `api.setShortcut('escape', ...)`. Escape still exits fullscreen, but as fixed behavior layered under overlay dismissal (a popover, menu, or modal that consumes Escape closes without also exiting fullscreen), so it cannot be rebound or shadowed from the shortcuts settings page.
 
 ### Vitest Addon: requires Vitest 4.0 or higher
 

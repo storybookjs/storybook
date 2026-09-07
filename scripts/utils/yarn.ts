@@ -3,8 +3,8 @@ import { join } from 'node:path';
 
 // TODO -- should we generate this file a second time outside of CLI?
 import storybookVersions from '../../code/core/src/common/versions.ts';
-import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
+import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { exec } from './exec.ts';
 import { preapproveLocallyPublishedPackages } from './preapprove-local-packages.ts';
 

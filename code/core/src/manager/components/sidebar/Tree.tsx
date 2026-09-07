@@ -21,9 +21,7 @@ import {
   type StatusesByStoryIdAndTypeId,
 } from 'storybook/internal/types';
 
-import { useStorybookApi } from 'storybook/manager-api';
-import { shortcutToHumanString } from 'storybook/manager-api';
-import type { IndexHash } from 'storybook/manager-api';
+import { shortcutToHumanString, useStorybookApi, type IndexHash } from 'storybook/manager-api';
 import { transparentize } from 'polished';
 import { styled } from 'storybook/theming';
 
@@ -166,6 +164,12 @@ const PinnedLabel = styled.span({
   whiteSpace: 'nowrap',
 });
 
+// Without CSS anchor positioning (Firefox), the note cannot follow the focused row and
+// `position-visibility` cannot hide it either — it would sit as a stray pill over the
+// sidebar, so it only renders where anchors work.
+const supportsAnchorPositioning =
+  typeof CSS !== 'undefined' && !!CSS.supports?.('anchor-name: --sb-probe');
+
 const FocusTooltipNote = styled(TooltipNote)({
   marginBlockStart: 8,
   marginInlineEnd: -4,
@@ -177,8 +181,6 @@ const FocusTooltipNote = styled(TooltipNote)({
 });
 
 interface TreeProps {
-  isBrowsing: boolean;
-  isMain: boolean;
   allStatuses?: StatusesByStoryIdAndTypeId;
   /** Active inclusive status filters; passed as a prop so Tree doesn't subscribe to all state. */
   includedStatusFilters?: StatusValue[];
@@ -389,7 +391,12 @@ export const Tree = React.memo<TreeProps>(function Tree({
       return;
     }
     const handler = () => {
-      const itemId = focusedItemIdRef.current ?? selectedStoryIdRef.current;
+      // The event is broadcast to every tree (one per composed ref). Fall back to this
+      // tree's selected story only when no tree row has DOM focus anywhere, or the tree
+      // owning the focused row and the tree owning the selection would both open a menu.
+      const focusInAnyTree = !!document.activeElement?.closest('[data-item-id]');
+      const itemId =
+        focusedItemIdRef.current ?? (focusInAnyTree ? null : selectedStoryIdRef.current);
       if (itemId) {
         openContextMenu(itemId, 'keyboard');
       }
@@ -457,8 +464,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
       for (const mutation of pendingMutations) {
         if (
           mutation.type === 'attributes' &&
-          (mutation.attributeName === 'data-focused' ||
-            mutation.attributeName === 'data-focus-visible') &&
+          mutation.attributeName === 'data-focused' &&
           mutation.target instanceof HTMLElement
         ) {
           const el = mutation.target;
@@ -648,11 +654,21 @@ export const Tree = React.memo<TreeProps>(function Tree({
     }
   }, [selectedStoryId, expanded, scrollRowIntoView]);
 
-  // Scroll to selected item on the first mount, exactly one time.
+  // Center the selected story once when the tree mounts with a selection (deep links).
+  // A selection made after a selection-less mount is a user click on a visible row, where
+  // a center-scroll would yank the row out from under the cursor.
+  const hadInitialSelectionRef = useRef(selectedStoryId != null);
   const [mountCounter, setMountCounter] = useState(0);
   useEffect(() => setMountCounter(1), []);
   useEffect(() => {
-    if (mountCounter === 1 && selectedStoryId && scrollRowIntoView(selectedStoryId, 'center')) {
+    if (mountCounter !== 1) {
+      return;
+    }
+    if (!hadInitialSelectionRef.current) {
+      setMountCounter(2);
+      return;
+    }
+    if (selectedStoryId && scrollRowIntoView(selectedStoryId, 'center')) {
       lastScrolledIdRef.current = selectedStoryId;
       setMountCounter(2);
     }
@@ -662,8 +678,12 @@ export const Tree = React.memo<TreeProps>(function Tree({
   // invalidated consistently — a drifted copy at one level renders stale rows. Deliberately
   // minimal: invalidating the collection re-renders every row in the tree, which takes seconds
   // on fully-expanded trees. Selection and context-menu state reach rows through RowUiContext
-  // (subscription store) instead, and statuses through StatusContext.
-  const collectionDependencies = useMemo(() => [expanded], [expanded]);
+  // (subscription store) instead, and statuses through StatusContext. hasTestProviders is
+  // baked into cached row elements, so it must invalidate them when a provider registers.
+  const collectionDependencies = useMemo(
+    () => [expanded, hasTestProviders],
+    [expanded, hasTestProviders]
+  );
 
   // Feed interaction state to rows without re-rendering the tree: only rows whose derived
   // value changes re-render (see RowUiContext).
@@ -722,6 +742,9 @@ export const Tree = React.memo<TreeProps>(function Tree({
               ref={containerRef}
               aria-label="Stories"
               selectionMode="single"
+              // With the default 'toggle' behavior react-aria treats Enter as a no-op while a
+              // selection exists; 'replace' keeps Enter firing onAction on every row.
+              selectionBehavior="replace"
               expandedKeys={expanded}
               onExpandedChange={handleExpandedChange}
               selectedKeys={selectedKeys}
@@ -763,7 +786,7 @@ export const Tree = React.memo<TreeProps>(function Tree({
             </PinnedOverlay>
           )}
         </TreeWrapper>
-        {focusedItemShortcutLabel && (
+        {supportsAnchorPositioning && focusedItemShortcutLabel && (
           <FocusTooltipNote note={focusedItemShortcutLabel} shortcut={contextMenuShortcut} />
         )}
       </RowUiContext.Provider>

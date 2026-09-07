@@ -147,8 +147,6 @@ const meta = {
     ),
   ],
   args: {
-    isBrowsing: true,
-    isMain: true,
     refId: DEFAULT_REF_ID,
     data: index,
     selectedStoryId: null,

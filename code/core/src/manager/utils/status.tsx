@@ -45,15 +45,13 @@ export const getStatus = memoizerific(10)((theme: Theme, status: StatusValue): S
       ? transparentize(0.3, theme.color.defaultText)
       : transparentize(0.6, theme.color.defaultText);
 
-  // FIXME/TODO: check if size 12 or 14.
-
   const statusMapping: Record<StatusValue, StatusMapping> = {
     'status-value:unknown': {
       icon: null,
       textColor: null,
     },
     'status-value:pending': {
-      icon: <SyncIcon size={12} color={defaultIconColor} />,
+      icon: <SyncIcon size={14} color={defaultIconColor} />,
       textColor: 'currentColor',
     },
     'status-value:success': {

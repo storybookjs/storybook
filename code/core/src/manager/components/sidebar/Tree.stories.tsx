@@ -100,8 +100,6 @@ type Story = StoryObj<typeof meta>;
 
 export const Full: Story = {
   args: {
-    isBrowsing: true,
-    isMain: true,
     refId: DEFAULT_REF_ID,
   },
   render: (args) => {
@@ -118,8 +116,6 @@ export const Dark: Story = {
 
 export const SingleStoryComponents: Story = {
   args: {
-    isBrowsing: true,
-    isMain: true,
     refId: DEFAULT_REF_ID,
   },
   play: async ({ canvasElement }) => {
@@ -198,8 +194,6 @@ export const DocsOnlySingleStoryComponents = {
     const [selectedId, setSelectedId] = useState('tooltip-tooltipbuildlist--default');
     return (
       <Tree
-        isBrowsing
-        isMain
         refId={DEFAULT_REF_ID}
         // @ts-expect-error (non strict)
         data={{
@@ -321,8 +315,6 @@ function makeDualSlotStory(
 ): Story {
   return {
     args: {
-      isBrowsing: true,
-      isMain: true,
       refId: DEFAULT_REF_ID,
       allStatuses,
       includedStatusFilters,
@@ -573,8 +565,6 @@ const stickyChainIds = [
 
 export const StickyAncestors: Story = {
   args: {
-    isBrowsing: true,
-    isMain: true,
     refId: DEFAULT_REF_ID,
   },
   render: (args) => {
@@ -644,8 +634,6 @@ export const StickyAncestorsDark: Story = {
 /** Plain arrow keys must move focus between rows (react-aria keyboard navigation). */
 export const KeyboardNavigation: Story = {
   args: {
-    isBrowsing: true,
-    isMain: true,
     refId: DEFAULT_REF_ID,
   },
   render: (args) => {

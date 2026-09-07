@@ -192,6 +192,19 @@ export const collapseSingleStoryComponents = (data: IndexHash): IndexHash => {
           parent: parent as StoryEntry['parent'],
           depth: data[childId].depth - 1,
         };
+        // The hoisted story's own subtree (e.g. test subentries) moves up with it, or its
+        // rows would indent (and report aria levels) one level deeper than their parent.
+        const hoistDescendants = (ids?: string[]) => {
+          for (const id of ids ?? []) {
+            const descendant = acc[id];
+            if (!descendant) {
+              continue;
+            }
+            acc[id] = { ...descendant, depth: descendant.depth - 1 };
+            hoistDescendants((descendant as { children?: string[] }).children);
+          }
+        };
+        hoistDescendants((data[childId] as { children?: string[] }).children);
         // Remove the replaced component: indexToTree resolves rows from parent pointers, so a
         // surviving entry would render as a phantom row next to the hoisted story.
         delete acc[entry.id];
@@ -211,16 +224,19 @@ export type IndexTree = TreeEntry[];
 
 export const indexToTree = (index: IndexHash): IndexTree => {
   const tree: IndexTree = [];
-  const children: Record<string, HashEntry[]> = {};
+  const children: Record<string, TreeEntry[]> = {};
   const processingQueue: IndexTree = [];
 
-  // First pass over index to identify every node's children, and add root nodes to tree
+  // First pass over index to identify every node's children, and add root nodes to tree.
+  // Every node is copied: entries are shared with the manager-api state hash, and growing
+  // them in place would leak resolvedChildren subtrees into every other consumer.
   for (const item of Object.values(index)) {
+    const entry: TreeEntry = { ...item, resolvedChildren: [] };
     if (item.type === 'root' || !item.parent) {
-      tree.push({ ...item, resolvedChildren: [] });
+      tree.push(entry);
     } else {
       children[item.parent] = children[item.parent] || [];
-      children[item.parent].push(item);
+      children[item.parent].push(entry);
     }
   }
 

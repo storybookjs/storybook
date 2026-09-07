@@ -3,15 +3,21 @@ import React, { useCallback, useContext, useMemo, useSyncExternalStore } from 'r
 import { Addon_TypesEnum, type StatusValue } from 'storybook/internal/types';
 
 import { darken, transparentize } from 'polished';
+import { Button as AriaButton } from 'react-aria-components/Button';
 import { TreeItem, TreeItemContent } from 'react-aria-components/Tree';
 import type { API } from 'storybook/manager-api';
 import { shortcutToHumanString } from 'storybook/manager-api';
 import { styled, useTheme } from 'storybook/theming';
 
 import { getStatus, shouldShowChangeStatus } from '../../utils/status.tsx';
-import { type TreeEntry, createId } from '../../utils/tree.ts';
+import { type TreeEntry } from '../../utils/tree.ts';
 import { useLayout } from '../layout/LayoutProvider.tsx';
-import { ContextMenu, generateTestProviderLinks, hasContextMenu } from './ContextMenu.tsx';
+import {
+  ContextMenu,
+  generateTestProviderLinks,
+  hasContextMenu,
+  type ContextMenuEntryMethod,
+} from './ContextMenu.tsx';
 
 import { CollapseIcon } from './CollapseIcon.tsx';
 import { RowUiContext } from './RowUiContext.tsx';
@@ -20,7 +26,6 @@ import { TypeIconWithSymbol } from './TypeIcon.tsx';
 import type { Item } from './types.ts';
 
 // FIXME/TODO: ensure there is no weird behaviour with top-level stories / orphans
-// FIXME/TODO: fix ref stories not loading at all
 
 /** Height of a tree row in px. Rows are single-line (labels ellipsize), so this is constant. */
 export const TREE_ROW_HEIGHT = 28;
@@ -212,6 +217,16 @@ const MenuTriggerContainer = styled.span({
   margin: -2,
 });
 
+// react-aria requires expandable rows to carry a `slot="chevron"` Button so assistive
+// technology gets a dedicated expand/collapse target; row-level visuals stay in charge, so
+// the button itself is chromeless and the row paints focus.
+const ChevronButton = styled(AriaButton)({
+  all: 'unset',
+  display: 'flex',
+  alignItems: 'center',
+  cursor: 'pointer',
+});
+
 const StatusIconContainer = styled.span({
   transition: 'none',
   display: 'inline-flex',
@@ -223,8 +238,6 @@ const StatusIconContainer = styled.span({
   padding: 5,
   zIndex: 1,
 });
-
-export type ContextMenuEntryMethod = 'pointer' | 'keyboard';
 
 // FIXME/TODO: find what to do with orphans. Try trees with orphan items. Likely special treatment with lines.
 export interface TreeNodeProps {
@@ -277,7 +290,6 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   children,
 }) {
   const theme = useTheme();
-  const id = useMemo(() => createId(item.id, refId), [item.id, refId]);
   const { groupDualStatus, isModifiedFilterActive = false } = useContext(StatusContext);
 
   // Selection accents and context-menu state come from a subscription store rather than props:
@@ -294,7 +306,11 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
   });
   const isContextMenuOpen = contextMenuEntryMethod !== undefined;
   const { isMobile } = useLayout();
-  const location = isMobile ? 'bottom-bar' : 'sidebar';
+  // The tree is 'sidebar' even in the mobile drawer — 'bottom-bar' is reserved for the
+  // mobile bottom bar, whose labels users are advised to strip down.
+  const labelContext = useMemo(() => ({ isMobile, location: 'sidebar' as const }), [isMobile]);
+
+  const stopRowPress = useCallback((event: React.SyntheticEvent) => event.stopPropagation(), []);
 
   // Per-item handler for toggling the context menu open/close, suitable as the `setIsOpen`
   // parameter for `useContextMenu`. Uses pointer mode by default when toggled via the ⋯ button.
@@ -369,7 +385,7 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
 
   // Compute final aria-label including test status and keyboard shortcut discovery.
   const ariaLabel = useMemo(() => {
-    let label = item.renderAriaLabel?.(item, api, { location }) || item.name;
+    let label = item.renderAriaLabel?.(item, api, labelContext) || item.name;
 
     if (testStatus !== 'status-value:unknown') {
       label += `. ${StatusLabelsInAriaLabel[testStatus]}`;
@@ -385,21 +401,25 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       label += `. Press ${shortcut} for more actions`;
     }
     return label;
-  }, [item, api, location, renderContextMenu, changeStatus, testStatus, shortcutKeys]);
+  }, [item, api, labelContext, renderContextMenu, changeStatus, testStatus, shortcutKeys]);
 
   const prefixAction = useMemo(() => {
     if (item.type === 'root') {
-      return <CollapseIcon isExpanded={isExpanded} />;
+      return (
+        <ChevronButton slot="chevron" aria-label={isExpanded ? 'Collapse' : 'Expand'}>
+          <CollapseIcon isExpanded={isExpanded} />
+        </ChevronButton>
+      );
     }
 
     if (isBranch) {
       return (
-        <>
+        <ChevronButton slot="chevron" aria-label={isExpanded ? 'Collapse' : 'Expand'}>
           <span className="hover-only">{<CollapseIcon isExpanded={isExpanded} />}</span>
           <span className="static-only">
             <TypeIconWithSymbol item={item} />
           </span>
-        </>
+        </ChevronButton>
       );
     }
 
@@ -413,8 +433,11 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
       $hasSectionGap={hasSectionGap}
       textValue={item.name}
       aria-label={ariaLabel}
-      id={id}
-      key={id}
+      // The collection key must be the raw entry id: selection, expansion, and the delegated
+      // DOM handlers all resolve keys against the index hash. Each ref renders its own tree
+      // (its own collection), so ids need no cross-ref disambiguation.
+      id={item.id}
+      key={item.id}
       data-item-id={item.id}
       data-ref-id={refId}
     >
@@ -422,9 +445,15 @@ export const TreeNode = React.memo<TreeNodeProps>(function TreeNode({
         <StyledContent>
           <Traces level={item.depth} isAlongsideSelected={isAlongsideSelected} />
           {prefixAction}
-          <StyledLabel>{item.renderLabel?.(item, api, { location }) || item.name}</StyledLabel>
+          <StyledLabel>{item.renderLabel?.(item, api, labelContext) || item.name}</StyledLabel>
           {renderContextMenu && (
-            <MenuTriggerContainer>
+            // react-aria selects rows on pointerdown; the press that opens the menu must not
+            // also activate the row underneath (navigate, or fold the branch under the menu).
+            <MenuTriggerContainer
+              onPointerDown={stopRowPress}
+              onMouseDown={stopRowPress}
+              onTouchStart={stopRowPress}
+            >
               {
                 <ContextMenu
                   context={item}

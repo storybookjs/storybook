@@ -13,8 +13,6 @@ interface SidebarProps {
   onMenuClick?: SidebarComponentProps['onMenuClick'];
 }
 
-// FIXME: clicking the sidebar menu does nothing now.
-
 const Sidebar = React.memo(function Sideber({ onMenuClick }: SidebarProps) {
   const mapper = ({ state, api }: Combo) => {
     const {

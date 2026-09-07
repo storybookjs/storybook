@@ -55,7 +55,6 @@ export const Explorer: FC<ExplorerProps> = React.memo(function Explorer({
           key={refId}
           api={api}
           isLoading={isLoading}
-          isBrowsing={isBrowsing}
           hasEntries={hasEntries}
           selectedStoryId={selected?.refId === ref.id ? selected.storyId : null}
         />

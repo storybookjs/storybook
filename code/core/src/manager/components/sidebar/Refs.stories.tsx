@@ -192,7 +192,6 @@ export const Optimized = () => (
     {...refs.optimized}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
     api={managerContext.api}
     selectedStoryId=""
   />
@@ -202,7 +201,6 @@ export const NoEntries = () => (
     {...refs.empty}
     hasEntries={false}
     isLoading={false}
-    isBrowsing
     api={managerContext.api}
     selectedStoryId=""
   />
@@ -212,7 +210,6 @@ export const IsEmpty = () => (
     {...refs.empty}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
     api={managerContext.api}
     selectedStoryId=""
   />
@@ -222,7 +219,6 @@ export const StartInjectedUnknown = () => (
     {...refs.startInjected_unknown}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
     api={managerContext.api}
     selectedStoryId=""
   />
@@ -232,7 +228,6 @@ export const StartInjectedLoading = () => (
     {...refs.startInjected_loading}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
     api={managerContext.api}
     selectedStoryId=""
   />
@@ -242,7 +237,6 @@ export const StartInjectedReady = () => (
     {...refs.startInjected_ready}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
     api={managerContext.api}
     selectedStoryId=""
   />
@@ -252,7 +246,6 @@ export const Versions = () => (
     {...refs.versions}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
     api={managerContext.api}
     selectedStoryId=""
   />
@@ -262,7 +255,6 @@ export const VersionsMissingCurrent = () => (
     {...refs.versionsMissingCurrent}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
     api={managerContext.api}
     selectedStoryId=""
   />
@@ -272,7 +264,6 @@ export const Errored = () => (
     {...refs.error}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
     api={managerContext.api}
     selectedStoryId=""
   />
@@ -282,7 +273,6 @@ export const ErroredMobile = () => (
     {...refs.error}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
     api={managerContext.api}
     selectedStoryId=""
   />
@@ -327,7 +317,6 @@ export const Auth = () => (
     {...refs.auth}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
     api={managerContext.api}
     selectedStoryId=""
   />
@@ -337,7 +326,6 @@ export const Long = () => (
     {...refs.long}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
     api={managerContext.api}
     selectedStoryId=""
   />
@@ -348,7 +336,6 @@ export const WithSourceCode = () => (
     {...refs.withSourceCode}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
     api={managerContext.api}
     selectedStoryId=""
   />

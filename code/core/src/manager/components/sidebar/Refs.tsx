@@ -18,14 +18,18 @@ import type { RefType } from './types.ts';
 export interface RefProps {
   api: API;
   isLoading: boolean;
-  isBrowsing: boolean;
   hasEntries: boolean;
   selectedStoryId: string | null;
 }
 
 const Wrapper = styled.div<{ isMain: boolean }>(({ isMain }) => ({
-  // The main tree fills the remaining sidebar height and scrolls itself (virtualized).
-  ...(isMain && { flex: '1 1 auto', minHeight: 0, display: 'flex', flexDirection: 'column' }),
+  // Every tree is a bounded flex child so its virtualizer can scroll itself: the main tree
+  // additionally grows into free space, while ref trees keep their natural height and only
+  // shrink (sharing the viewport proportionally) when the column runs out of room.
+  flex: isMain ? '1 1 auto' : '0 1 auto',
+  minHeight: 0,
+  display: 'flex',
+  flexDirection: 'column',
   position: 'relative',
   marginTop: isMain ? undefined : 0,
 }));
@@ -106,7 +110,6 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
     id: refId,
     title = refId,
     isLoading: isLoadingMain,
-    isBrowsing,
     hasEntries,
     selectedStoryId,
     loginUrl,
@@ -139,11 +142,6 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
   }, [index, selectedStoryId]);
 
   const handleClick = useCallback(() => setExpanded((value) => !value), []);
-
-  // const setHighlightedItemId = useCallback(
-  //   (itemId: string) => setHighlighted({ itemId, refId }),
-  //   [setHighlighted, refId]
-  // );
 
   const onSelectStoryId = useCallback(
     (storyId: string) => api?.selectStory(storyId, undefined, { ref: isMain ? undefined : refId }),
@@ -189,14 +187,10 @@ export const Ref: FC<RefType & RefProps> = React.memo(function Ref(props) {
             <Tree
               allStatuses={allStatuses}
               includedStatusFilters={storybookState.includedStatusFilters}
-              isBrowsing={isBrowsing}
-              isMain={isMain}
               refId={refId}
               data={index}
               selectedStoryId={selectedStoryId}
               onSelectStoryId={onSelectStoryId}
-              // highlightedRef={highlightedRef}
-              // setHighlightedItemId={setHighlightedItemId}
             />
           )}
         </Wrapper>

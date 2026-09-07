@@ -107,9 +107,11 @@ export const useExpanded = ({
   }, [data, selectedStoryId]);
 
   // Add event handlers for collapse all / expand all global keyboard shortcuts.
+  // Collapse-all keeps the default root sections open (as on first load); collapsing roots
+  // too would reduce the sidebar to bare section headers.
   const collapseAll = useCallback(() => {
-    setExpanded({ ids: [] });
-  }, []);
+    setExpanded({ ids: [...initialExpanded] });
+  }, [initialExpanded]);
 
   const expandAll = useCallback(() => {
     setExpanded({

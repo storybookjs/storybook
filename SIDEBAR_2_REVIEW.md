@@ -173,15 +173,16 @@ and the dual-instance hazard.*
   `MobileNavigation.tsx`, `manager-api/root.tsx`, `.storybook/manager.tsx`, docs pages/snippet,
   the MIGRATION section
 
-### PR D (optional) — status utilities and icon primitives
-*No hard dependency, but touches files the old sidebar still uses on `next`, so it costs some
-throwaway adaptation (old `StatusButton`/`TreeNode` consumers). Fold into PR E if that's not
-worth it.*
-- `utils/status.tsx` `getGroupStatus` O(n) rewrite + icon overhaul + `status.test.ts`,
-  `IconSymbols` renames, `TypeIcon` extraction, `CollapseIcon` move,
-  `StatusButton → ContextMenuButton` rename, `FilterPanel`/`SearchResults` icon consumers
-- `getGroupDualStatus` (the dual change/test shape) stays with PR E — its only consumer is the
-  new tree
+### PR D — shared UI primitive polish
+*No dependencies. (This replaces the originally sketched "status utilities" extraction: the new
+`getStatus`/icon shapes are consumed by five old-sidebar files that PR E deletes or rewrites, so
+pre-landing them would have produced throwaway adaptations that conflict with E instead of
+shrinking it. The status utilities therefore stay in PR E; the component polish extracts cleanly
+instead.)*
+- `Button` (`tooltipPlacement`, press-timer arming) + stories, `InteractiveTooltipWrapper`
+  (shortcut chip, shortcut-only tooltips) + stories, `TooltipNote` (`shortcut` prop, layout)
+  + stories, `ActionList` overflow/focus rework, `ListItem` inset focus ring, `Card` gradient
+  seam fix
 
 ### PR E — the sidebar tree rewrite (the remainder)
 *Depends on A (RAC Tree/Virtualizer), benefits from B (escape/keys layering), C (label context),

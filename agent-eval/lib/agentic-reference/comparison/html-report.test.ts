@@ -9,8 +9,9 @@ import {
   type DatasetRow,
   type EstimateRow,
   type ManifestJson,
+  type SkipRow,
 } from './html-report.ts';
-import type { MisusePanel } from './misuse.ts';
+import type { MisusePanel, ScoreDistribution } from './misuse.ts';
 
 const CONTROL = {
   caseName: 'cc-control',
@@ -169,6 +170,7 @@ function render(overrides: {
   curves?: CurveInput[];
   dataset?: DatasetRow[];
   misuse?: MisusePanel;
+  skips?: SkipRow[];
 }): string {
   return renderHtmlReport({
     estimates: overrides.estimates ?? [row({})],
@@ -176,7 +178,26 @@ function render(overrides: {
     curves: overrides.curves ?? [],
     dataset: overrides.dataset ?? [datasetRow()],
     misuse: overrides.misuse,
+    skips: overrides.skips,
   });
+}
+
+function skipRow(overrides: Partial<SkipRow> = {}): SkipRow {
+  return {
+    metric: 'dsShareOfAllNodes',
+    treatment: 'full',
+    scope: '701-new-ui-flow',
+    context: true,
+    code: 'no-control-data',
+    reason: 'no control data to compare to',
+    nControl: 0,
+    nTreatment: 20,
+    controlMean: null,
+    controlMedian: null,
+    treatmentMean: 0.94,
+    treatmentMedian: 0.95,
+    ...overrides,
+  };
 }
 
 function misusePanel(overrides: Partial<MisusePanel> = {}): MisusePanel {
@@ -1058,5 +1079,239 @@ describe('DS misuse panel', () => {
   it('flags partial judging coverage instead of passing it off as complete', () => {
     const html = render({ misuse: misusePanel({ judgedRuns: 1, usableRuns: 2 }) });
     expect(html).toContain('1 of 2');
+  });
+});
+
+describe('DS misuse facet pies', () => {
+  const dist = (ones: number, halves: number, zeros: number): ScoreDistribution => ({
+    ones,
+    halves,
+    zeros,
+  });
+
+  /** The stock two-cell panel with facet tallies swapped in. */
+  function piePanel(
+    controlTallies: Record<string, ScoreDistribution>,
+    treatmentTallies: Record<string, ScoreDistribution>
+  ): MisusePanel {
+    const panel = misusePanel();
+    panel.cells[0]!.facetTallies = controlTallies;
+    panel.cells[1]!.facetTallies = treatmentTallies;
+    panel.facets = [
+      { id: 'mdx.when-to-use', description: 'When to use and not to use, alternatives' },
+      { id: 'mdx.props', description: 'API reference / props section (MDX)' },
+    ];
+    return panel;
+  }
+
+  it('renders a pie per judged cell with slots ranked by pooled citations', () => {
+    const html = render({
+      misuse: piePanel(
+        // props dominates this cell, but when-to-use wins pooled: slots are global.
+        { 'mdx.props': dist(0, 3, 0), 'mdx.when-to-use': dist(2, 1, 0) },
+        { 'mdx.when-to-use': dist(1, 2, 2) }
+      ),
+    });
+    expect(html).toContain('Misuse causes by facet');
+    // Slot 1 belongs to mdx.when-to-use (5 pooled flagged citations) in every pie…
+    expect(html).toMatch(/<path class="pie-c1"[^>]*><title>mdx\.when-to-use — 1 of 4/);
+    expect(html).toMatch(/<path class="pie-c2"[^>]*><title>mdx\.props — 3 of 4/);
+    // …including the treatment's single-slice pie, drawn as a full circle.
+    expect(html).toMatch(/<circle class="pie-c1"[^>]*><title>mdx\.when-to-use — 4 of 4/);
+  });
+
+  it('legends facets in slot order with their catalogue descriptions', () => {
+    const html = render({
+      misuse: piePanel(
+        { 'mdx.when-to-use': dist(0, 0, 3), uncategorised: dist(0, 1, 0) },
+        { 'mdx.props': dist(0, 2, 0) }
+      ),
+    });
+    const legend = html.slice(html.indexOf('class="pie-legend"'), html.indexOf('class="pie-row"'));
+    expect(legend.indexOf('mdx.when-to-use')).toBeLessThan(legend.indexOf('mdx.props'));
+    expect(legend).toContain('title="When to use and not to use, alternatives"');
+    // The judge-bug bucket legends like any facet, with its own explanation.
+    expect(legend).toContain('uncategorised');
+  });
+
+  it('folds facets past the eight palette slots into a gray other slice', () => {
+    const tallies: Record<string, ScoreDistribution> = {};
+    for (let i = 0; i < 10; i += 1) {
+      tallies[`mdx.f${String(i).padStart(2, '0')}`] = dist(0, 0, 10 - i);
+    }
+    const html = render({ misuse: piePanel(tallies, {}) });
+    expect(html).toMatch(/<path class="pie-cother"[^>]*><title>other \(2 facets\) — 3 of 55/);
+    // The legend closes with the fold — never a ninth hue.
+    expect(html).toContain('pie-c8');
+    expect(html).not.toContain('pie-c9');
+  });
+
+  it('shows clean and unjudged cells as placeholders, not missing pies', () => {
+    const panel = piePanel({ 'mdx.props': dist(0, 1, 0) }, {});
+    panel.cells.push({
+      case: 'empty',
+      workflow: '701-new-ui-flow',
+      usable: 1,
+      judged: 0,
+      stale: 0,
+      questions: { correctDsDecision: null, correctDsUsage: null, correctLocalDecision: null },
+      evaluated: { ds: 0, local: 0 },
+      facetTallies: {},
+    });
+    const html = render({ misuse: panel });
+    expect(html).toContain('nothing flagged');
+    expect(html).toContain('unjudged');
+    expect(html).toMatch(/<svg class="pie-none"/);
+  });
+
+  it('omits the section when no judged answer scored below 1', () => {
+    const html = render({ misuse: piePanel({ 'mdx.props': dist(4, 0, 0) }, {}) });
+    expect(html).not.toContain('Misuse causes by facet');
+  });
+
+  it('ships the pie data as a table for exact counts', () => {
+    const html = render({
+      misuse: piePanel({ 'mdx.props': dist(0, 3, 1) }, { 'mdx.when-to-use': dist(0, 0, 2) }),
+    });
+    expect(html).toContain('The same data as a table');
+    expect(html).toMatch(
+      /<tr class="m-case"><th scope="row">control-none<\/th><td class="mono">mdx\.props<\/td><td class="num">3<\/td><td class="num">1<\/td><td class="num">100%<\/td>/
+    );
+  });
+
+  it('groups pies per workflow so the scope filter and case chips apply', () => {
+    const panel = piePanel({ 'mdx.props': dist(0, 1, 0) }, { 'mdx.props': dist(0, 0, 1) });
+    panel.cells[1]!.workflow = '702-rework-ui-flow';
+    const html = render({ misuse: panel });
+    expect(html).toContain(
+      '<div class="m-wf" data-workflow="702-rework-ui-flow"><h3>702-rework-ui-flow</h3><div class="pie-row">'
+    );
+    expect(html).toContain('<figure class="m-pie m-case" data-t="full">');
+    expect(html).toMatch(
+      /<figure class="m-pie m-case"><svg [^>]*aria-label="Misuse causes for control-none/
+    );
+  });
+});
+
+describe('no-comparison slices', () => {
+  it('renders an unfittable slice as a self-anchored lane, never a delta', () => {
+    const html = render({
+      manifest: aggregateManifest(),
+      skips: [skipRow({ context: true, scope: '701-new-ui-flow' })],
+    });
+    // The metric renders a row even though it has no estimate rows at all;
+    // the series mean sits dead center (no control to anchor a delta to)…
+    expect(html).toMatch(/<span class="fncdot tipsrc"[^>]*style="left:50%;top:/);
+    expect(html).toContain('data-tip-effect="no control data to compare to"');
+    // …with the mean printed beside the dot, swapping with the stat toggle.
+    expect(html).toMatch(
+      /<span class="fncmean" data-mean="94\.0%" data-median="95\.0%"[^>]*>94\.0%</
+    );
+    // The value column prints ∅ instead of an arbitrary number.
+    expect(html).toMatch(/class="flab fmark-lab ncval tipsrc"[^>]*[^<]*>∅</);
+    // The legend explains the denotation.
+    expect(html).toContain('not comparable');
+  });
+
+  it('draws the series CI around the centered mean and marks the missing control', () => {
+    const html = render({
+      manifest: aggregateManifest(),
+      dataset: [
+        // The control never carries this metric; the treatment has a spread.
+        datasetRow({ values: { durationSeconds: 100 } }),
+        datasetRow({ case: 'full', values: { dsShareOfAllNodes: 0.9 } }),
+        datasetRow({ case: 'full', values: { dsShareOfAllNodes: 0.94 } }),
+        datasetRow({ case: 'full', values: { dsShareOfAllNodes: 0.98 } }),
+      ],
+      skips: [skipRow({ context: true, scope: '701-new-ui-flow' })],
+    });
+    // Absence takes the control value's slot and the center line goes dashed.
+    expect(html).toContain('<span class="fctrl ncctrl">∅ no control</span>');
+    expect(html).toContain('<span class="fzero absent">');
+    // The lane carries the series' own 95% CI band around the centered dot.
+    expect(html).toMatch(/<span class="fmark fnc"[^>]*><span class="fci" style="left:/);
+    // The dataset's mean wins over the staged skip record's.
+    expect(html).toMatch(/<span class="fncmean" data-mean="94\.0%"/);
+  });
+
+  it('renders headline skips at the default scope in single-workflow mode', () => {
+    const html = render({
+      skips: [skipRow({ context: false, metric: 'slocAdded', treatment: 'empty' })],
+    });
+    expect(html).toMatch(/<span class="fmark fnc" data-t="empty" data-sig="0" data-sig-p="0"/);
+  });
+
+  it('omits slices with no data in either arm from the effects lanes', () => {
+    const html = render({
+      manifest: aggregateManifest(),
+      skips: [
+        skipRow({
+          code: 'no-data',
+          reason: 'no data in either arm',
+          nControl: 0,
+          nTreatment: 0,
+          treatmentMean: null,
+          treatmentMedian: null,
+        }),
+      ],
+    });
+    expect(html).not.toContain('<span class="fncdot tipsrc"');
+  });
+
+  it('renders identical arms as a zero delta with the not-significant style, not ∅', () => {
+    const html = render({
+      manifest: aggregateManifest(),
+      skips: [
+        skipRow({
+          context: true,
+          scope: '701-new-ui-flow',
+          code: 'identical',
+          reason: 'identical: every run in both arms scored 1.0',
+          nControl: 9,
+          controlMean: 1,
+          controlMedian: 1,
+          treatmentMean: 1,
+          treatmentMedian: 1,
+        }),
+      ],
+    });
+    // A regular hollow dot dead on the control line, not a dashed ∅ dot…
+    expect(html).toMatch(
+      /<span class="fdot tipsrc"[^>]*data-tip-title="full: identical to control"[^>]*style="left:50\.0%/
+    );
+    expect(html).not.toContain('<span class="fncdot tipsrc"');
+    // …a zero delta with an = marker in the value column instead of ∅…
+    expect(html).toMatch(/>\+0\.0%<sup class="nnote tipsrc"/);
+    expect(html).not.toMatch(/class="flab fmark-lab ncval/);
+    // …and the full report names the equality rather than "not comparable".
+    expect(html).toContain('= identical: every run in both arms scored 1.0 —');
+  });
+
+  it('lists not-comparable pairs in the full report with their reason and data', () => {
+    const html = render({
+      skips: [skipRow({ context: false, metric: 'dsShareOfAllNodes', scope: '701-new-ui-flow' })],
+    });
+    expect(html).toMatch(/<tr class="t-full nc" data-t="full"[^>]*>/);
+    expect(html).toContain(
+      '∅ no control data to compare to — control n=0; treatment n=20 (mean 94.0%)'
+    );
+    // The pair has an explained row now, so the Not tested list drops it.
+    expect(html).not.toContain('<li><span class="mono">dsShareOfAllNodes</span> × full</li>');
+  });
+
+  it('marks pooled estimates that fit on partial support', () => {
+    const html = render({
+      manifest: aggregateManifest(),
+      estimates: [row({ scope: 'pooled', support: '701-new-ui-flow' })],
+    });
+    expect(html).toContain(
+      'pooled over 701-new-ui-flow — the other workflows lack ≥2 values in both arms'
+    );
+    // The full-support case carries no marker.
+    const full = render({
+      manifest: aggregateManifest(),
+      estimates: [row({ scope: 'pooled', support: '701-new-ui-flow+703-fix-bug-flow' })],
+    });
+    expect(full).not.toContain('pooled over 701-new-ui-flow —');
   });
 });

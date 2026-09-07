@@ -284,7 +284,7 @@ describe('misuse graft', () => {
     return (usable.analysis as { dsMisuse?: Record<string, unknown> }).dsMisuse;
   }
 
-  it('grafts the per-answer aggregate and the three sub-scores onto the analysis', () => {
+  it('grafts the per-node aggregate and the three sub-scores onto the analysis', () => {
     mkRun(CONTROL.experiment, TS1, 1, 'usable');
     writeMisuse(
       CONTROL.experiment,
@@ -305,31 +305,36 @@ describe('misuse graft', () => {
           line: 2,
           tag: 'B',
           kind: 'local',
-          correctLocalDecision: { score: 0.5, reasons: [{ text: 'r' }] },
+          correctLocalDecision: { score: 1, reasons: [{ text: 'r' }] },
         },
       ],
       {
         summary: {
           correctDsDecision: 0.5,
           correctDsUsage: 0,
-          correctLocalDecision: 0.5,
+          correctLocalDecision: 1,
           evaluated: { ds: 1, local: 1 },
         },
       }
     );
     const { cells } = build({ minRuns: 1, cases: [CONTROL], workflows: [WF] });
-    // Aggregate is normalised over the three answers (1 + 0 + 0.5) / 3, so a
-    // run with a big diff and a run with a small one land on the same scale.
+    // The aggregate counts each node once: the DS node's two answers average
+    // into (1 + 0) / 2 = 0.5, the local node's single answer stands at 1, and
+    // the run scores (0.5 + 1) / 2 — NOT the per-answer (1 + 0 + 1) / 3, which
+    // would weight a DS node double and reward avoiding the twice-questioned
+    // node kind.
     expect(dsMisuseOf(cells)).toEqual({
-      score: 0.5,
+      score: 0.75,
       correctDsDecision: 0.5,
       correctDsUsage: 0,
-      correctLocalDecision: 0.5,
+      correctLocalDecision: 1,
       evaluated: { ds: 1, local: 1 },
       answers: 3,
-      // None of the three reasons cites a facet, so they all pool into
-      // 'uncategorised': (1 + 0 + 0.5) / 3.
-      facets: { uncategorised: 0.5 },
+      // Facet means stay per-answer — a facet drill-down asks "how do
+      // answers citing this facet score", not "how do nodes score". None of
+      // the three reasons cites a facet, so all pool into 'uncategorised':
+      // (1 + 0 + 1) / 3.
+      facets: { uncategorised: 2 / 3 },
     });
   });
 

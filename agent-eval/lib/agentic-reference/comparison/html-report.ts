@@ -5,6 +5,8 @@
 import { existsSync, readdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 
+import { UNCATEGORISED } from '../facets.ts';
+
 import { MISUSE_QUESTIONS } from './misuse.ts';
 import { isBetter, tallyVerdicts } from './verdict-tally.ts';
 import { COMPARISON_METRICS } from '../comparison-metrics.ts';
@@ -40,6 +42,31 @@ export interface EstimateRow {
   direction: EstimateDirection;
   transform: EstimateTransform;
   anomalies: number | null;
+  /**
+   * Aggregate-mode headline rows: the `+`-joined workflows the pooled fit ran
+   * on — its common support. Absent in bundles staged before it existed.
+   */
+  support?: string | null;
+}
+
+/**
+ * One slice the statistics stage could not fit, with the reason and each arm's
+ * descriptive stats. The reports render these as "no comparison" entries so a
+ * treatment's data stays visible even when nothing can be tested against it.
+ */
+export interface SkipRow {
+  metric: string;
+  treatment: string;
+  scope: string;
+  context: boolean;
+  code: string;
+  reason: string;
+  nControl: number;
+  nTreatment: number;
+  controlMean: number | null;
+  controlMedian: number | null;
+  treatmentMean: number | null;
+  treatmentMedian: number | null;
 }
 
 interface ManifestCase {
@@ -112,6 +139,8 @@ export interface HtmlReportInput {
   dataset: DatasetRow[];
   /** Absent in bundles staged before the misuse panel existed. */
   misuse?: MisusePanel;
+  /** Unfittable slices from skips.json; absent in bundles staged before it existed. */
+  skips?: SkipRow[];
 }
 
 // Plain-English copy per metric. `description` is the one-liner under the
@@ -366,7 +395,9 @@ const METRICS: Record<string, MetricCopy> = {
     computes:
       'An LLM judge scores every introduced JSX node against the DS documentation to decide ' +
       'if DS usages use the right component and use it correctly, and if non-DS usages are legitimate. ' +
-      'Each of the three questions is scored 0 to 1, and scores are then averaged.',
+      'Each question is scored 0 to 1; a node&#39;s answers average into one node score, and the ' +
+      'run averages its nodes — a DS node (asked two questions) counts once, like a local node ' +
+      '(asked one), so the score does not reward avoiding the twice-questioned kind.',
     relevance:
       'Coverage says how much of the UI came from the design system; this says whether it ' +
       'was used in the right places, and as intended.',
@@ -456,8 +487,8 @@ const FAMILIES: Record<string, { name: string; intro: string }> = {
     name: 'DS misuse',
     intro:
       'Whether the design system was used well, judged per introduced usage against its own ' +
-      'documentation and averaged per run (1 is clean, 0 is misuse). Judged runs only. ' +
-      'See DS misuse tab for details.',
+      'documentation and averaged per node, then per run (1 is clean, 0 is misuse). Judged ' +
+      'runs only. See DS misuse tab for details.',
   },
   dsMisuseFacets: {
     name: 'DS misuse by documentation facet',
@@ -1281,24 +1312,53 @@ function buildEffects(
   estimates: EstimateRow[],
   manifest: ManifestJson,
   styles: TreatmentStyle[],
-  dataset: DatasetRow[]
+  dataset: DatasetRow[],
+  skips: SkipRow[]
 ): string {
   const byShortName = new Map(styles.map((t) => [t.shortName, t]));
   const controlName = manifest.spec.control.shortName;
   const workflows = manifest.spec.workflows;
   const defaultScope = defaultScopeOf(manifest);
   const metricByKey = new Map(manifest.metrics.map((m) => [m.key, m]));
+  const fullSupport = workflows.join('+');
 
   const familySections: string[] = [];
   const familyOrder = [...new Set(manifest.metrics.map((m) => m.family))];
   for (const family of familyOrder) {
     const metricRows: string[] = [];
     for (const metric of manifest.metrics.filter((m) => m.family === family)) {
-      const scopes = scopesFor(metric.key, estimates, manifest);
-      if (scopes.length === 0 || scopes.every((s) => s.rows.length === 0)) continue;
+      // Unfittable slices with data in at least one arm still get a lane, so
+      // a treatment's scores stay visible when the control has nothing to
+      // compare them to. Slices with no data in either arm stay absent.
+      const skipsByScope = new Map<string, SkipRow[]>();
+      for (const skip of skips) {
+        if (skip.metric !== metric.key || !byShortName.has(skip.treatment)) continue;
+        if (skip.nControl === 0 && skip.nTreatment === 0) continue;
+        const scope = skip.context ? skip.scope : defaultScope;
+        const list = skipsByScope.get(scope) ?? [];
+        list.push(skip);
+        skipsByScope.set(scope, list);
+      }
+      const fitted = scopesFor(metric.key, estimates, manifest);
+      const bySavedScope = new Map(fitted.map((s) => [s.scope, s]));
+      const scopes: Scoped[] = [];
+      const claim = (scope: string, context: boolean) => {
+        const existing = bySavedScope.get(scope);
+        if (existing !== undefined) scopes.push(existing);
+        else if (skipsByScope.has(scope)) scopes.push({ scope, context, rows: [] });
+      };
+      claim(defaultScope, false);
+      if (manifest.spec.mode === 'aggregate') {
+        for (const workflow of workflows) claim(workflow, true);
+      }
+      for (const scoped of fitted) {
+        if (!scopes.includes(scoped)) scopes.push(scoped);
+      }
+      if (scopes.length === 0) continue;
       const groups: string[] = [];
       const valueGroups: string[] = [];
       for (const { scope, context, rows } of scopes) {
+        const scopeSkips = skipsByScope.get(scope) ?? [];
         const controlMean = caseStat(dataset, controlName, metric, scope, workflows, 'mean');
         const controlMedian = caseStat(dataset, controlName, metric, scope, workflows, 'median');
         const controlCiHw = caseMeanCiHalfWidth(dataset, controlName, metric, scope, workflows);
@@ -1318,7 +1378,25 @@ function buildEffects(
               medianEff: descriptiveEffect(metric.transform, controlMedian, tMedian),
             };
           });
-        if (marks.length === 0) continue;
+        if (marks.length === 0 && scopeSkips.length === 0) continue;
+        // Unfittable slices still show their own series: the mean sits dead
+        // center — with no control there is no delta to anchor it to — and its
+        // 95% CI spreads around it on the group's effect scale.
+        const ncLanes = scopeSkips.map((skip) => {
+          const tMean =
+            caseStat(dataset, skip.treatment, metric, scope, workflows, 'mean') ??
+            skip.treatmentMean;
+          const tMedian =
+            caseStat(dataset, skip.treatment, metric, scope, workflows, 'median') ??
+            skip.treatmentMedian;
+          const ciHw = caseMeanCiHalfWidth(dataset, skip.treatment, metric, scope, workflows);
+          return {
+            skip,
+            tMean,
+            tMedian,
+            extents: ciHw === null ? null : spreadExtents(ciHw, metric.transform),
+          };
+        });
         // The scale fits the effects; SD/CI bands are context and get clamped
         // to the plot edges rather than allowed to squash the dots.
         const span = Math.max(
@@ -1329,13 +1407,20 @@ function buildEffects(
             Math.abs(meanEff ?? 0),
             Math.abs(medianEff ?? 0),
           ]),
+          ...ncLanes.flatMap(({ extents }) =>
+            extents === null ? [] : [Math.abs(extents.lo), Math.abs(extents.hi)]
+          ),
           1e-9
         );
         const x = (v: number) => 50 + (v / span) * 44;
         const bx = (v: number) => Math.min(94, Math.max(6, x(v)));
+        // A group whose control has no data marks the absence where the
+        // control value and line would sit, instead of implying an anchor.
         const controlLabel =
           controlMean === null
-            ? ''
+            ? ncLanes.length > 0
+              ? '<span class="fctrl ncctrl">∅ no control</span>'
+              : ''
             : `<span class="fctrl" data-mean="${escapeHtml(
                 formatMetricValue(metric.key, controlMean)
               )}" ` +
@@ -1345,7 +1430,10 @@ function buildEffects(
               `${escapeHtml(formatMetricValue(metric.key, controlMean))}</span>`;
         // Marks are percent-positioned HTML, not SVG: an SVG stretched to the
         // column width (preserveAspectRatio="none") scales circles into ovals.
-        const plotParts = ['<span class="fzero"></span>', controlLabel];
+        const plotParts = [
+          `<span class="fzero${controlMean === null ? ' absent' : ''}"></span>`,
+          controlLabel,
+        ];
         const labelParts: string[] = [];
         // The control's own uncertainty leads the group as a grey band: a 95%
         // CI of its mean, the same kind of interval as the treatments' bars.
@@ -1402,13 +1490,94 @@ function buildEffects(
               `style="left:${xMean}%;top:${lane}px"></span>` +
               '</span>'
           );
+          // A pooled fit that lost workflows to missing arms says so on its label.
+          const supportNote =
+            !row.context && row.support != null && row.support !== fullSupport
+              ? `<sup class="nnote tipsrc" tabindex="0" data-tip-title="${escapeHtml(
+                  `pooled over ${row.support.split('+').join(', ')} — the other workflows lack ≥2 values in both arms`
+                )}">°</sup>`
+              : '';
           labelParts.push(
             `<span class="flab fmark-lab tipsrc" tabindex="0" data-t="${t.slug}"` +
               `${sigAttrs} ${tip} style="color:var(--c-${t.slug})">` +
-              `${escapeHtml(effect.label)}</span>`
+              `${escapeHtml(effect.label)}${supportNote}</span>`
           );
         });
-        const height = 18 + (marks.length + laneOffset) * 16 + 6;
+        // Unfittable slices render as "no comparison" lanes: the series' own
+        // mean as a dashed hollow dot dead center with its 95% CI around it,
+        // and ∅ in the value column — a delta would be arbitrary without a
+        // control to anchor it. The exception is identical arms: that delta
+        // is exactly zero and known, so it renders as a regular zero-effect
+        // mark in the not-significant style, an "=" marking that no test ran.
+        ncLanes.forEach(({ skip, tMean, tMedian, extents }, j) => {
+          const t = byShortName.get(skip.treatment)!;
+          const lane = 18 + (marks.length + j + laneOffset + 0.5) * 16;
+          const sigAttrs = `${context ? '' : ' data-sig="0"'} data-sig-p="0"`;
+          const identical = skip.code === 'identical';
+          const vMean = tMean === null ? '—' : formatMetricValue(metric.key, tMean);
+          const vMedian = tMedian === null ? '—' : formatMetricValue(metric.key, tMedian);
+          const tip = [
+            `data-tip-title="${escapeHtml(
+              `${skip.treatment}: ${identical ? 'identical to control' : 'not comparable'}`
+            )}"`,
+            `data-tip-effect="${escapeHtml(skip.reason)}"`,
+            `data-tip-q="${escapeHtml(
+              `control n=${skip.nControl} · treatment n=${skip.nTreatment} — ${
+                identical
+                  ? 'zero difference, no variance to test'
+                  : 'own mean ± 95% CI, nothing tested'
+              }`
+            )}"`,
+            skip.controlMean === null
+              ? ''
+              : `data-tip-control="${escapeHtml(formatMetricValue(metric.key, skip.controlMean))}"`,
+            skip.controlMedian === null
+              ? ''
+              : `data-tip-control-median="${escapeHtml(
+                  formatMetricValue(metric.key, skip.controlMedian)
+                )}"`,
+            tMean === null ? '' : `data-tip-treatment="${escapeHtml(vMean)}"`,
+            tMedian === null ? '' : `data-tip-treatment-median="${escapeHtml(vMedian)}"`,
+          ]
+            .filter(Boolean)
+            .join(' ');
+          if (identical) {
+            const zero = metric.transform === 'none' ? formatDelta(metric.key, 0) : fmtPct(0);
+            plotParts.push(
+              `<span class="fmark" data-t="${t.slug}"${sigAttrs} style="--tc:var(--c-${t.slug})">` +
+                `<span class="fdot tipsrc" tabindex="0" ${tip} data-left-mean="50.0%" ` +
+                `data-left-median="50.0%" style="left:50.0%;top:${lane}px"></span></span>`
+            );
+            labelParts.push(
+              `<span class="flab fmark-lab tipsrc" tabindex="0" data-t="${t.slug}"${sigAttrs} ` +
+                `${tip} style="color:var(--c-${t.slug})">${escapeHtml(zero)}<sup class="nnote tipsrc" ` +
+                `tabindex="0" data-tip-title="identical values in both arms — no significance test ran">=</sup></span>`
+            );
+            return;
+          }
+          const ciBand =
+            extents === null
+              ? ''
+              : `<span class="fci" style="left:${bx(extents.lo).toFixed(1)}%;width:${(
+                  bx(extents.hi) - bx(extents.lo)
+                ).toFixed(1)}%;top:${lane}px"></span>`;
+          const dot =
+            tMean === null
+              ? ''
+              : `<span class="fncdot tipsrc" tabindex="0" ${tip} style="left:50%;top:${lane}px"></span>` +
+                `<span class="fncmean" data-mean="${escapeHtml(vMean)}" data-median="${escapeHtml(
+                  vMedian
+                )}" style="top:${lane}px">${escapeHtml(vMean)}</span>`;
+          plotParts.push(
+            `<span class="fmark fnc" data-t="${t.slug}"${sigAttrs} style="--tc:var(--c-${t.slug})">` +
+              `${ciBand}${dot}</span>`
+          );
+          labelParts.push(
+            `<span class="flab fmark-lab ncval tipsrc" tabindex="0" data-t="${t.slug}"` +
+              `${sigAttrs} ${tip}>∅</span>`
+          );
+        });
+        const height = 18 + (marks.length + ncLanes.length + laneOffset) * 16 + 6;
         const hidden = scope === defaultScope ? '' : ' hidden';
         // The tag names the workflow (or workflow subset) behind a context view.
         const groupTag =
@@ -1459,6 +1628,8 @@ function buildEffects(
 <div class="glyphs">
 <span class="glyph"><span class="g-dot solid"></span>significant (<span class="m-fdr">q &le; 0.05</span><span class="m-naive">p &lt; 0.05, raw</span>)</span>
 <span class="glyph"><span class="g-dot hollow"></span>not significant</span>
+<span class="glyph"><span class="g-nc"></span>not comparable (no/thin control data) — own mean ± 95% CI, centered; no delta</span>
+<span class="glyph">= identical arms — zero delta, nothing to test</span>
 <span class="glyph"><span class="g-ci"></span>95% CI</span>
 <span class="glyph"><span class="g-line"></span>center line = control value</span>
 <span class="glyph">dot = shift of the selected statistic; CI from the model</span>
@@ -1521,7 +1692,8 @@ function verdictIcons(row: EstimateRow, effect: Effect): string {
 function buildFullReport(
   estimates: EstimateRow[],
   manifest: ManifestJson,
-  styles: TreatmentStyle[]
+  styles: TreatmentStyle[],
+  skips: SkipRow[]
 ): string {
   const byShortName = new Map(styles.map((t) => [t.shortName, t]));
   const orderedMetrics = manifest.metrics.map((m) => m.key);
@@ -1546,9 +1718,70 @@ function buildFullReport(
     entry.t = Math.max(entry.t, row.nTreatment);
     maxN.set(key, entry);
   }
+  // Unfittable slices sit in the same table as muted rows, so a treatment's
+  // data reads as "not comparable — here is why" instead of silently missing.
+  const shownSkips = skips.filter(
+    (skip) =>
+      byShortName.has(skip.treatment) && (skip.context ? manifest.spec.mode === 'aggregate' : true)
+  );
+  const skipArmSummary = (skip: SkipRow): string => {
+    const arm = (label: string, n: number, mean: number | null) =>
+      `${label} n=${n}${mean === null ? '' : ` (mean ${formatMetricValue(skip.metric, mean)})`}`;
+    return `${arm('control', skip.nControl, skip.controlMean)}; ${arm(
+      'treatment',
+      skip.nTreatment,
+      skip.treatmentMean
+    )}`;
+  };
+  type TableEntry = { kind: 'row'; row: EstimateRow } | { kind: 'skip'; skip: SkipRow };
+  const entryKey = (entry: TableEntry) => {
+    const source = entry.kind === 'row' ? entry.row : entry.skip;
+    return {
+      context: source.context ? 1 : 0,
+      metric: orderedMetrics.indexOf(source.metric),
+      treatment: source.treatment,
+      scope: source.context ? manifest.spec.workflows.indexOf(source.scope) : -1,
+    };
+  };
+  const entries: TableEntry[] = [
+    ...[...headline, ...contexts].map((row) => ({ kind: 'row', row }) as const),
+    ...shownSkips.map((skip) => ({ kind: 'skip', skip }) as const),
+  ].sort((a, b) => {
+    const ka = entryKey(a);
+    const kb = entryKey(b);
+    return (
+      ka.context - kb.context ||
+      ka.metric - kb.metric ||
+      ka.treatment.localeCompare(kb.treatment) ||
+      ka.scope - kb.scope
+    );
+  });
   let anomalyTotal = 0;
-  const trs = [...headline, ...contexts]
-    .map((row) => {
+  const trs = entries
+    .map((entry) => {
+      if (entry.kind === 'skip') {
+        const skip = entry.skip;
+        const t = byShortName.get(skip.treatment)!;
+        const scope = skip.context ? skip.scope : defaultScope;
+        const hidden = scope === defaultScope ? '' : ' hidden';
+        const sigAttr =
+          (skip.context ? '' : ' data-sig="0"') +
+          ' data-sig-p="0"' +
+          (EXTRA_METRICS.has(skip.metric) ? ' data-extra="1"' : '');
+        return (
+          `<tr class="t-${t.slug} nc" data-t="${t.slug}" data-scope="${escapeHtml(
+            scope
+          )}"${sigAttr}${hidden}>` +
+          `<td>${metricNameHtml(skip.metric, '')}</td>` +
+          `<td><span class="dot" style="background:var(--c-${t.slug})"></span>${escapeHtml(
+            skip.treatment
+          )}${skip.context ? ` <span class="rowwf">· ${escapeHtml(skip.scope)}</span>` : ''}</td>` +
+          `<td class="nc-note" colspan="5">${skip.code === 'identical' ? '=' : '∅'} ${escapeHtml(
+            skip.reason
+          )} — ${escapeHtml(skipArmSummary(skip))}</td></tr>`
+        );
+      }
+      const row = entry.row;
       const t = byShortName.get(row.treatment);
       if (!t) return '';
       const effect = effectOf(row);
@@ -1585,7 +1818,12 @@ function buildFullReport(
     })
     .join('\n');
 
+  // Pairs with a skip record already sit in the table with their reason; the
+  // list is only for pairs older bundles (no skips.json) cannot explain.
   const tested = new Set(headline.map((row) => `${row.metric} ${row.treatment}`));
+  for (const skip of skips) {
+    if (!skip.context) tested.add(`${skip.metric} ${skip.treatment}`);
+  }
   const untested: string[] = [];
   for (const metric of manifest.metrics) {
     for (const t of manifest.spec.treatments) {
@@ -1784,6 +2022,252 @@ ${MISUSE_QUESTIONS.map(
 </tr></thead>
 <tbody>${rows}</tbody>
 </table></div></div>`;
+}
+
+// ---- Misuse-cause pies ----------------------------------------------------
+// One pie per judged cell: its flagged citations (every below-perfect answer,
+// once per facet its reasons cite) split across the documentation facets the
+// judge blamed. Slots are assigned to facets once, by citations pooled across
+// the whole panel, so a facet wears the same color in every pie; facets past
+// the palette's eight slots fold into a gray "other". The palette is the
+// dataviz reference categorical order, validated CVD-safe against this
+// report's light and dark surfaces.
+
+const PIE_SLOT_COUNT = 8;
+const PIE_SIZE = 120;
+const PIE_R = 56;
+
+interface PieFacetCount {
+  facet: string;
+  halves: number;
+  zeros: number;
+}
+
+/** A cell's facets with at least one below-perfect citation. */
+function flaggedFacetCounts(cell: MisuseCellSummary): PieFacetCount[] {
+  return Object.entries(cell.facetTallies ?? {})
+    .filter(([, tally]) => tally.halves + tally.zeros > 0)
+    .map(([facet, tally]) => ({ facet, halves: tally.halves, zeros: tally.zeros }));
+}
+
+/** Facets ranked by flagged citations pooled across every cell, worst first. */
+function rankFlaggedFacets(cells: MisuseCellSummary[]): string[] {
+  const pooled = new Map<string, number>();
+  for (const cell of cells) {
+    for (const { facet, halves, zeros } of flaggedFacetCounts(cell)) {
+      pooled.set(facet, (pooled.get(facet) ?? 0) + halves + zeros);
+    }
+  }
+  return [...pooled.entries()]
+    .sort(([facetA, countA], [facetB, countB]) => countB - countA || facetA.localeCompare(facetB))
+    .map(([facet]) => facet);
+}
+
+interface PieSlice {
+  label: string;
+  cssClass: string;
+  halves: number;
+  zeros: number;
+  /** Only on the "other" slice: the folded facets and their counts. */
+  detail?: string;
+}
+
+/** A cell's slices in global slot order, the beyond-slot tail folded into "other". */
+function pieSlicesOf(cell: MisuseCellSummary, ranked: string[]): PieSlice[] {
+  const counts = new Map(flaggedFacetCounts(cell).map((count) => [count.facet, count]));
+  const slices: PieSlice[] = [];
+  const folded: PieFacetCount[] = [];
+  ranked.forEach((facet, rank) => {
+    const count = counts.get(facet);
+    if (count === undefined) return;
+    if (rank < PIE_SLOT_COUNT) {
+      slices.push({
+        label: facet,
+        cssClass: `pie-c${rank + 1}`,
+        halves: count.halves,
+        zeros: count.zeros,
+      });
+    } else {
+      folded.push(count);
+    }
+  });
+  if (folded.length > 0) {
+    slices.push({
+      label: `other (${folded.length} facet${folded.length === 1 ? '' : 's'})`,
+      cssClass: 'pie-cother',
+      halves: folded.reduce((sum, count) => sum + count.halves, 0),
+      zeros: folded.reduce((sum, count) => sum + count.zeros, 0),
+      detail: folded.map((count) => `${count.facet} ${count.halves + count.zeros}`).join(', '),
+    });
+  }
+  return slices;
+}
+
+function pieShare(count: number, total: number): string {
+  const pct = (count / total) * 100;
+  return `${pct < 10 ? pct.toFixed(1) : pct.toFixed(0)}%`;
+}
+
+function pieSliceTitle(slice: PieSlice, total: number): string {
+  const count = slice.halves + slice.zeros;
+  return (
+    `${slice.label} — ${count} of ${total} flagged citations (${pieShare(count, total)}): ` +
+    `${slice.halves} scored 0.5, ${slice.zeros} scored 0` +
+    (slice.detail === undefined ? '' : `. Folds ${slice.detail}`)
+  );
+}
+
+function pieSvg(slices: PieSlice[], ariaLabel: string): string {
+  const total = slices.reduce((sum, slice) => sum + slice.halves + slice.zeros, 0);
+  const c = PIE_SIZE / 2;
+  const open = `<svg viewBox="0 0 ${PIE_SIZE} ${PIE_SIZE}" role="img" aria-label="${escapeHtml(
+    ariaLabel
+  )}">`;
+  if (slices.length === 1) {
+    const slice = slices[0]!;
+    return (
+      `${open}<circle class="${slice.cssClass}" cx="${c}" cy="${c}" r="${PIE_R}">` +
+      `<title>${escapeHtml(pieSliceTitle(slice, total))}</title></circle></svg>`
+    );
+  }
+  // Slices run clockwise from 12 o'clock, in slot order, so a facet keeps its
+  // angular position as well as its color from pie to pie.
+  const point = (turn: number) => {
+    const angle = (turn - 0.25) * 2 * Math.PI;
+    return `${(c + PIE_R * Math.cos(angle)).toFixed(2)} ${(c + PIE_R * Math.sin(angle)).toFixed(2)}`;
+  };
+  let at = 0;
+  const paths = slices.map((slice) => {
+    const fraction = (slice.halves + slice.zeros) / total;
+    const from = point(at);
+    at += fraction;
+    const to = point(at);
+    return (
+      `<path class="${slice.cssClass}" d="M${c} ${c} L${from} ` +
+      `A${PIE_R} ${PIE_R} 0 ${fraction > 0.5 ? 1 : 0} 1 ${to} Z">` +
+      `<title>${escapeHtml(pieSliceTitle(slice, total))}</title></path>`
+    );
+  });
+  return `${open}${paths.join('')}</svg>`;
+}
+
+const PIE_PLACEHOLDER = `<svg class="pie-none" viewBox="0 0 ${PIE_SIZE} ${PIE_SIZE}" aria-hidden="true"><circle cx="${
+  PIE_SIZE / 2
+}" cy="${PIE_SIZE / 2}" r="${PIE_R - 1}"/></svg>`;
+
+function misusePieFigure(
+  cell: MisuseCellSummary,
+  ranked: string[],
+  controlShortName: string
+): string {
+  const caseAttr = cell.case === controlShortName ? '' : ` data-t="${slug(cell.case)}"`;
+  const slices = pieSlicesOf(cell, ranked);
+  const total = slices.reduce((sum, slice) => sum + slice.halves + slice.zeros, 0);
+  let body: string;
+  let note: string;
+  if (cell.judged === 0) {
+    body = PIE_PLACEHOLDER;
+    note = 'unjudged';
+  } else if (total === 0) {
+    body = PIE_PLACEHOLDER;
+    note = 'nothing flagged';
+  } else {
+    body = pieSvg(slices, `Misuse causes for ${cell.case} (${cell.workflow})`);
+    note = `${total} flagged citation${total === 1 ? '' : 's'}`;
+  }
+  return (
+    `<figure class="m-pie m-case"${caseAttr}>${body}` +
+    `<figcaption><b>${escapeHtml(cell.case)}</b>` +
+    `<span class="pie-note">${escapeHtml(note)}</span></figcaption></figure>`
+  );
+}
+
+function misusePieLegend(ranked: string[], facets: MisusePanel['facets']): string {
+  const descriptions = new Map((facets ?? []).map((facet) => [facet.id, facet.description]));
+  descriptions.set(UNCATEGORISED, 'Below-perfect answers whose reasons cite no facet');
+  const items = ranked
+    .slice(0, PIE_SLOT_COUNT)
+    .map(
+      (facet, slot) =>
+        `<span class="pl" title="${escapeHtml(descriptions.get(facet) ?? '')}">` +
+        `<i class="swatch pie-c${slot + 1}"></i><span class="mono">${escapeHtml(facet)}</span></span>`
+    );
+  if (ranked.length > PIE_SLOT_COUNT) {
+    const folded = ranked.slice(PIE_SLOT_COUNT);
+    items.push(
+      `<span class="pl" title="${escapeHtml(folded.join(', '))}">` +
+        `<i class="swatch pie-cother"></i><span class="mono">other</span></span>`
+    );
+  }
+  return `<div class="pie-legend">${items.join('')}</div>`;
+}
+
+/** The pies' numbers as an exact table — the relief for color-limited readers. */
+function misusePieTable(
+  cells: MisuseCellSummary[],
+  workflows: string[],
+  controlShortName: string
+): string {
+  const multi = workflows.length > 1;
+  const bodies = workflows
+    .map((workflow) => {
+      const rows = cells
+        .filter((cell) => cell.workflow === workflow)
+        .flatMap((cell) => {
+          const counts = flaggedFacetCounts(cell).sort(
+            (a, b) => b.halves + b.zeros - (a.halves + a.zeros) || a.facet.localeCompare(b.facet)
+          );
+          const total = counts.reduce((sum, count) => sum + count.halves + count.zeros, 0);
+          const caseAttr = cell.case === controlShortName ? '' : ` data-t="${slug(cell.case)}"`;
+          return counts.map(
+            (count) =>
+              `<tr class="m-case"${caseAttr}><th scope="row">${escapeHtml(cell.case)}</th>` +
+              (multi ? `<td>${escapeHtml(workflow)}</td>` : '') +
+              `<td class="mono">${escapeHtml(count.facet)}</td>` +
+              `<td class="num">${count.halves}</td><td class="num">${count.zeros}</td>` +
+              `<td class="num">${pieShare(count.halves + count.zeros, total)}</td></tr>`
+          );
+        });
+      const wfAttr = multi ? ` class="m-wf" data-workflow="${escapeHtml(workflow)}"` : '';
+      return `<tbody${wfAttr}>${rows.join('\n')}</tbody>`;
+    })
+    .join('\n');
+  return `<details class="pie-data"><summary>The same data as a table</summary>
+<div class="tablewrap"><table>
+<thead><tr><th scope="col">Case</th>${multi ? '<th scope="col">Workflow</th>' : ''}<th scope="col">Facet</th>
+<th scope="col" class="num">0.5</th><th scope="col" class="num">0</th>
+<th scope="col" class="num" title="Share of the case&#39;s flagged citations">Share</th></tr></thead>
+${bodies}
+</table></div></details>`;
+}
+
+function misuseCausePies(panel: MisusePanel, controlShortName: string): string {
+  const cells = panel.cells ?? [];
+  const ranked = rankFlaggedFacets(cells);
+  if (ranked.length === 0) return '';
+  const workflows = [...new Set(cells.map((cell) => cell.workflow))];
+  const groups = workflows
+    .map((workflow) => {
+      const heading = workflows.length === 1 ? '' : `<h3>${escapeHtml(workflow)}</h3>`;
+      const wfAttr = workflows.length === 1 ? '' : ` data-workflow="${escapeHtml(workflow)}"`;
+      const figures = cells
+        .filter((cell) => cell.workflow === workflow)
+        .map((cell) => misusePieFigure(cell, ranked, controlShortName))
+        .join('\n');
+      return `<div class="m-wf"${wfAttr}>${heading}<div class="pie-row">${figures}</div></div>`;
+    })
+    .join('\n');
+  return `<h2>Misuse causes by facet</h2>
+<p class="lede">Each pie splits one arm's flagged citations — every answer scoring below 1, counted
+once per facet its reasons cite — across the documentation facets the judge blamed. Color follows
+the facet and is identical in every pie; facets past the palette's eight slots fold into the gray
+<i>other</i>. Hover a slice or a legend entry for details, or open the table for exact counts.</p>
+${misusePieLegend(ranked, panel.facets)}
+${groups}
+${misusePieTable(cells, workflows, controlShortName)}
+<p class="fineprint">Slices are raw pooled counts, not run-weighted rates, so an arm with more
+judged runs casts a bigger total (the caption under each pie). An answer citing two facets counts
+once under each, so a pie's citations can exceed its flagged answers.</p>`;
 }
 
 function misuseFinding(
@@ -2039,6 +2523,7 @@ ${tables}
 <b class="s1">1</b><span class="sep">·</span><b class="s05">0.5</b><span class="sep">·</span><b class="s0">0</b>.
 An em dash means no node received that question — absence of evidence, not a zero.</p>
 ${judgedAgainst}
+${misuseCausePies(panel, controlShortName)}
 ${misuseFindings(panel, controlShortName)}
 <dialog class="misuse-modal" id="misuseModal">
 <div class="modal-head"><b id="misuseModalTitle"></b><span class="mono" id="misuseModalMeta"></span>
@@ -2082,18 +2567,27 @@ function buildStyle(styles: TreatmentStyle[]): string {
   --surface:#FAF9F7; --ink:#1B1E22; --ink-2:#4A5058; --ink-3:#8A9098;
   --line:#E4E1DB; --card:#FFFFFF; --wash:#F1EFEA;
   --good:#0B7A45; --bad:#B4232A; --half:#B7791F;
+  --facet-1:#2A78D6; --facet-2:#EB6834; --facet-3:#1BAF7A; --facet-4:#EDA100;
+  --facet-5:#E87BA4; --facet-6:#008300; --facet-7:#4A3AA7; --facet-8:#E34948;
+  --facet-other:#8A9098;
   ${lightVars}
 }
 @media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
   --surface:#16181C; --ink:#E8E6E1; --ink-2:#AFB4BB; --ink-3:#767C85;
   --line:#2C2F35; --card:#1D2025; --wash:#22252B;
   --good:#3AA46F; --bad:#D96B70; --half:#D9A441;
+  --facet-1:#3987E5; --facet-2:#D95926; --facet-3:#199E70; --facet-4:#C98500;
+  --facet-5:#D55181; --facet-6:#008300; --facet-7:#9085E9; --facet-8:#E66767;
+  --facet-other:#767C85;
   ${darkVars}
 } }
 :root[data-theme="dark"] {
   --surface:#16181C; --ink:#E8E6E1; --ink-2:#AFB4BB; --ink-3:#767C85;
   --line:#2C2F35; --card:#1D2025; --wash:#22252B;
   --good:#3AA46F; --bad:#D96B70; --half:#D9A441;
+  --facet-1:#3987E5; --facet-2:#D95926; --facet-3:#199E70; --facet-4:#C98500;
+  --facet-5:#D55181; --facet-6:#008300; --facet-7:#9085E9; --facet-8:#E66767;
+  --facet-other:#767C85;
   ${darkVars}
 }
 * { box-sizing:border-box; }
@@ -2170,6 +2664,7 @@ td.wfcell { vertical-align:top; color:var(--ink-2); }
 .g-dot { width:9px; height:9px; border-radius:50%; border:1.5px solid var(--ink-2); }
 .g-dot.solid { background:var(--ink-2); }
 .g-dot.hollow { background:var(--card); }
+.g-nc { width:9px; height:9px; border-radius:50%; border:1.5px dashed var(--ink-3); }
 .g-ci { width:16px; height:3px; border-radius:2px; background:var(--ink-2); }
 .g-line { width:1px; height:12px; background:var(--line); outline:1px solid var(--line); }
 .effects-tools { display:flex; align-items:center; gap:14px; margin-top:10px; font-size:.8rem; color:var(--ink-2); }
@@ -2219,6 +2714,17 @@ body[data-sigmode="naive"] .flab:not([data-sig-p="1"]) { opacity:.55; }
 .fsd { position:absolute; height:3px; border-radius:2px; background:var(--ink-3); opacity:.55;
   transform:translateY(-50%); cursor:default; }
 .fsdlab { color:var(--ink-3); font-size:.72rem; }
+.fzero.absent { background:none; border-left:1px dashed var(--ink-3); opacity:.5; }
+.fctrl.ncctrl { color:var(--ink-3); font-style:italic; }
+.fncdot { position:absolute; width:9px; height:9px; box-sizing:border-box;
+  border-radius:50%; border:1.5px dashed var(--ink-3); background:var(--card);
+  transform:translate(-50%,-50%); cursor:default; }
+.fncmean { position:absolute; margin-left:10px; left:50%; transform:translateY(-50%);
+  font:500 .68rem/1.3 "IBM Plex Mono",monospace; color:var(--ink-3);
+  background:var(--surface); padding:0 4px; white-space:nowrap; }
+.ncval { color:var(--ink-3); font-style:italic; }
+tr.nc td { color:var(--ink-3); }
+tr.nc .nc-note { font-style:italic; font-size:.8rem; }
 #tip { position:fixed; z-index:50; max-width:320px; background:var(--ink); color:var(--surface);
   padding:9px 12px; border-radius:8px; font-size:.78rem; line-height:1.5; pointer-events:none; }
 #tip .tip-title { font-weight:600; }
@@ -2256,6 +2762,31 @@ thead th.tipsrc { cursor:help; text-decoration:underline dotted; text-underline-
 .dist .seg.good { background:var(--good); }
 .dist .seg.half { background:var(--half); }
 .dist .seg.zero { background:var(--bad); }
+.pie-c1 { fill:var(--facet-1); background:var(--facet-1); }
+.pie-c2 { fill:var(--facet-2); background:var(--facet-2); }
+.pie-c3 { fill:var(--facet-3); background:var(--facet-3); }
+.pie-c4 { fill:var(--facet-4); background:var(--facet-4); }
+.pie-c5 { fill:var(--facet-5); background:var(--facet-5); }
+.pie-c6 { fill:var(--facet-6); background:var(--facet-6); }
+.pie-c7 { fill:var(--facet-7); background:var(--facet-7); }
+.pie-c8 { fill:var(--facet-8); background:var(--facet-8); }
+.pie-cother { fill:var(--facet-other); background:var(--facet-other); }
+.pie-legend { display:flex; flex-wrap:wrap; gap:6px 16px; margin:12px 0 2px; }
+.pie-legend .pl { display:inline-flex; align-items:center; gap:6px; font-size:.78rem;
+  color:var(--ink-2); cursor:help; }
+.pie-legend .swatch { width:11px; height:11px; border-radius:3px; }
+.pie-row { display:flex; flex-wrap:wrap; gap:16px 26px; margin:14px 0 8px; }
+.m-pie { margin:0; width:116px; }
+.m-pie svg { display:block; width:100%; height:auto; }
+.m-pie svg path, .m-pie svg circle { stroke:var(--surface); stroke-width:2;
+  stroke-linejoin:round; }
+.m-pie svg.pie-none circle { fill:var(--wash); stroke:var(--line); stroke-width:1.5; }
+.m-pie figcaption { margin-top:6px; text-align:center; font-size:.78rem; color:var(--ink-2); }
+.m-pie figcaption b { display:block; font-size:.8rem; overflow-wrap:anywhere; }
+.m-pie .pie-note { color:var(--ink-3); font-size:.72rem; }
+.pie-data { margin:8px 0 14px; }
+.pie-data summary { cursor:pointer; font-size:.85rem; color:var(--ink-2); padding:4px 0; }
+.pie-data table { font-size:.82rem; }
 .empty-state, .warn { background:var(--wash); border:1px solid var(--line); border-radius:12px;
   padding:16px 18px; margin:18px 0; font-size:.92rem; }
 .warn { border-color:var(--half); }
@@ -2722,7 +3253,9 @@ function setStat(kind) {
   statButtons.forEach(function (b) {
     b.setAttribute('aria-pressed', String(b.getAttribute('data-stat') === kind));
   });
-  $('.fctrl').forEach(function (el) {
+  // ncctrl is a static absence marker riding on the fctrl slot — it carries
+  // no per-stat values, so the toggle must leave its text alone.
+  $('.fctrl:not(.ncctrl), .fncmean').forEach(function (el) {
     el.textContent = el.getAttribute('data-' + kind) || '';
   });
   $('.fdot').forEach(function (el) {
@@ -2843,6 +3376,7 @@ refresh();`;
 
 export function renderHtmlReport(input: HtmlReportInput): string {
   const { estimates, manifest, curves, dataset } = input;
+  const skips = input.skips ?? [];
   const styles = treatmentStyles(manifest.spec.treatments, manifest.colors);
   const title = `${manifest.spec.control.shortName} vs ${manifest.spec.treatments
     .map((t) => t.shortName)
@@ -2851,7 +3385,7 @@ export function renderHtmlReport(input: HtmlReportInput): string {
     {
       id: 'effects',
       label: 'Findings',
-      body: buildEffects(estimates, manifest, styles, dataset),
+      body: buildEffects(estimates, manifest, styles, dataset, skips),
     },
     {
       id: 'summary',
@@ -2864,7 +3398,7 @@ export function renderHtmlReport(input: HtmlReportInput): string {
     {
       id: 'full',
       label: 'Full report',
-      body: buildFullReport(estimates, manifest, styles),
+      body: buildFullReport(estimates, manifest, styles, skips),
     },
     {
       id: 'misuse',
@@ -2937,8 +3471,12 @@ export function writeHtmlReport(stagingDir: string): void {
   const misuse: MisusePanel | undefined = existsSync(misusePath)
     ? JSON.parse(readFileSync(misusePath, 'utf8'))
     : undefined;
+  const skipsPath = join(stagingDir, 'skips.json');
+  const skips: SkipRow[] | undefined = existsSync(skipsPath)
+    ? JSON.parse(readFileSync(skipsPath, 'utf8'))
+    : undefined;
   writeFileSync(
     join(stagingDir, 'report.html'),
-    renderHtmlReport({ estimates, manifest, curves, dataset, misuse })
+    renderHtmlReport({ estimates, manifest, curves, dataset, misuse, skips })
   );
 }

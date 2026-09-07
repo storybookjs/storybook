@@ -93,21 +93,29 @@ function classify(run: Run, metricsVersion: number | undefined, cell: Cell) {
 
 /**
  * Per-node score means pooled over one run's judgement, plus the aggregate:
- * every answered question's score over the number of answers, so a run is
- * normalised by how much it was judged on rather than rewarded or punished
- * for the size of its diff. Also keys a mean per cited documentation facet
- * (see the returned `facets` field), pooling an answer into every distinct
- * facet its reasons cite — and into 'uncategorised' too, when one of its
- * reasons cites none.
+ * each node's answered questions average into one node score, and the run
+ * score averages the nodes — so a DS node (asked two questions) counts once,
+ * exactly like a local node (asked one), and the aggregate is normalised by
+ * how many decisions the run made rather than by how much scrutiny each kind
+ * of decision attracts. A per-answer mean would weight DS nodes double and
+ * make the score sensitive to the agent's own DS-vs-local mix. Also keys a
+ * mean per cited documentation facet (see the returned `facets` field) —
+ * those stay per-answer, since a facet drill-down asks how answers citing
+ * the facet score — pooling an answer into every distinct facet its reasons
+ * cite, and into 'uncategorised' too, when one of its reasons cites none.
  */
 function misuseValues(report: DsMisuseReport) {
-  let sum = 0;
+  let nodeScoreSum = 0;
+  let scoredNodes = 0;
   let answers = 0;
   const facetAcc = new Map<string, { sum: number; n: number }>();
   for (const node of report.nodes) {
+    let nodeSum = 0;
+    let nodeAnswers = 0;
     for (const answer of [node.correctDsDecision, node.correctDsUsage, node.correctLocalDecision]) {
       if (answer === undefined) continue;
-      sum += answer.score;
+      nodeSum += answer.score;
+      nodeAnswers += 1;
       answers += 1;
       const cited = new Set<string>();
       for (const reason of answer.reasons) cited.add(reason.facet ?? UNCATEGORISED);
@@ -118,9 +126,13 @@ function misuseValues(report: DsMisuseReport) {
         facetAcc.set(facet, acc);
       }
     }
+    if (nodeAnswers > 0) {
+      nodeScoreSum += nodeSum / nodeAnswers;
+      scoredNodes += 1;
+    }
   }
   return {
-    score: answers === 0 ? null : sum / answers,
+    score: scoredNodes === 0 ? null : nodeScoreSum / scoredNodes,
     correctDsDecision: report.summary.correctDsDecision,
     correctDsUsage: report.summary.correctDsUsage,
     correctLocalDecision: report.summary.correctLocalDecision,

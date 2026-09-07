@@ -105,12 +105,52 @@ def fit_pair(frame, control, treatment, pooled):
     }
 
 
+def arm_counts(sub, control, treatment):
+    return int((sub["case"] == control).sum()), int((sub["case"] == treatment).sum())
+
+
+def slice_skip(sub, control, treatment):
+    """(code, reason) when this slice cannot support a fit, else None.
+
+    The order matters for the reason a reader sees: absent arms are named
+    before thin ones, and only a fittable sample is checked for variance —
+    a constant response would otherwise let OLS solver noise (beta ~1e-15,
+    se ~1e-16) masquerade as a significant effect. Since both arms have
+    data by the time the variance check runs, a constant response always
+    means the arms are identical: a known zero difference with nothing to
+    test, coded 'identical' so reports can show it as "=" rather than
+    "not comparable".
+    """
+    n_control, n_treatment = arm_counts(sub, control, treatment)
+    if n_control == 0 and n_treatment == 0:
+        return "no-data", "no data in either arm"
+    if n_control == 0:
+        return "no-control-data", "no control data to compare to"
+    if n_treatment == 0:
+        return "no-treatment-data", "no treatment data to compare to"
+    if n_control < 2 or n_treatment < 2:
+        return (
+            "insufficient-data",
+            f"needs >=2 values per arm, have control={n_control}, treatment={n_treatment}",
+        )
+    values = sub["y"].to_numpy(dtype=float)
+    if float(np.max(values) - np.min(values)) <= 1e-12 * max(1.0, abs(float(np.mean(values)))):
+        return "identical", f"identical: every run in both arms scored {fmt(float(values[0]))}"
+    return None
+
+
+def finite_fit(stats):
+    return all(
+        math.isfinite(stats[key]) for key in ("beta", "se", "ciLow", "ciHigh", "p")
+    )
+
+
 def analyze(manifest, data):
     control = manifest["spec"]["control"]["shortName"]
     treatments = [t["shortName"] for t in manifest["spec"]["treatments"]]
     workflows = manifest["spec"]["workflows"]
     pooled = manifest["spec"]["mode"] == "aggregate"
-    rows, skipped, anomaly_lines = [], [], []
+    rows, skips, anomaly_lines = [], [], []
 
     for metric in manifest["metrics"]:
         series, anomalies = transform_series(data[metric["key"]], metric["transform"])
@@ -127,116 +167,137 @@ def analyze(manifest, data):
         frame = pd.DataFrame(
             {"y": series, "case": data["case"], "workflow": data["workflow"]}
         ).dropna(subset=["y"])
+        raw = pd.DataFrame(
+            {"y": data[metric["key"]], "case": data["case"], "workflow": data["workflow"]}
+        ).dropna(subset=["y"])
         for treatment in treatments:
             pair = frame[frame["case"].isin([control, treatment])]
-            n_control = int((pair["case"] == control).sum())
-            n_treatment = int((pair["case"] == treatment).sum())
-            if n_control < 2 or n_treatment < 2:
-                skipped.append(
+
+            def arm_stat(case, workflow=None, kind="mean"):
+                """Descriptive stat on the raw (untransformed) values, for reports."""
+                scoped = raw[raw["case"] == case]
+                if workflow is not None:
+                    scoped = scoped[scoped["workflow"] == workflow]
+                if scoped.empty:
+                    return None
+                return float(scoped["y"].mean() if kind == "mean" else scoped["y"].median())
+
+            def record_skip(scope, context, code, reason, sub):
+                n_control, n_treatment = arm_counts(sub, control, treatment)
+                workflow = scope if context else None
+                skips.append(
                     {
                         "metric": metric["key"],
                         "treatment": treatment,
-                        "reason": f"needs >=2 values per arm, have control={n_control}, treatment={n_treatment}",
+                        "scope": scope,
+                        "context": context,
+                        "code": code,
+                        "reason": reason,
+                        "nControl": n_control,
+                        "nTreatment": n_treatment,
+                        "controlMean": arm_stat(control, workflow),
+                        "controlMedian": arm_stat(control, workflow, "median"),
+                        "treatmentMean": arm_stat(treatment, workflow),
+                        "treatmentMedian": arm_stat(treatment, workflow, "median"),
                     }
                 )
-                continue
-            if pooled:
-                # In the case x workflow interaction model, leverage is 1/n
-                # within each cell, so a singleton cell puts HC3's 1/(1-h)
-                # at a divide-by-zero and NaNs the whole covariance; an
-                # empty cell drops the interaction term instead. Both doom
-                # the fit, so name the thin cells here rather than letting
-                # statsmodels warn its way to a NaN p-value.
-                counts = pair.groupby(["case", "workflow"]).size()
-                thin = [
-                    f"{case}@{workflow}={int(counts.get((case, workflow), 0))}"
-                    for case in (control, treatment)
-                    for workflow in sorted(pair["workflow"].unique())
-                    if counts.get((case, workflow), 0) < 2
-                ]
-                if thin:
-                    skipped.append(
-                        {
-                            "metric": metric["key"],
-                            "treatment": treatment,
-                            "reason": f"needs >=2 values per case x workflow cell, have {', '.join(thin)}",
-                        }
+
+            def emit_row(stats, sub, scope, context, support=None):
+                n_control, n_treatment = arm_counts(sub, control, treatment)
+                rows.append(
+                    {
+                        "metric": metric["key"],
+                        "treatment": treatment,
+                        "scope": scope,
+                        "context": context,
+                        "nControl": n_control,
+                        "nTreatment": n_treatment,
+                        **stats,
+                        "pctChange": (
+                            math.exp(stats["beta"]) - 1
+                            if metric["transform"] in ("log", "log0")
+                            else None
+                        ),
+                        "q": None,
+                        "verdict": None,
+                        "correctionGroup": None,
+                        "direction": metric["direction"],
+                        "transform": metric["transform"],
+                        "anomalies": (
+                            int(anomalies[data["case"].isin([control, treatment])].sum())
+                            if not context
+                            else None
+                        ),
+                        "support": support,
+                    }
+                )
+
+            if not pooled:
+                skip = slice_skip(pair, control, treatment)
+                if skip is not None:
+                    record_skip(workflows[0], False, *skip, pair)
+                    continue
+                stats = fit_pair(pair, control, treatment, pooled=False)
+                if not finite_fit(stats):
+                    record_skip(
+                        workflows[0], False, "degenerate", "degenerate fit: p-value is not finite", pair
                     )
                     continue
-            stats = fit_pair(pair, control, treatment, pooled)
-            if not all(math.isfinite(v) for v in (stats["beta"], stats["se"], stats["ciLow"], stats["ciHigh"], stats["p"])):
-                skipped.append(
-                    {
-                        "metric": metric["key"],
-                        "treatment": treatment,
-                        "reason": "degenerate fit (zero variance): p-value is not finite",
-                    }
-                )
+                emit_row(stats, pair, workflows[0], False)
                 continue
-            rows.append(
-                {
-                    "metric": metric["key"],
-                    "treatment": treatment,
-                    "scope": "pooled" if pooled else workflows[0],
-                    "context": False,
-                    "nControl": n_control,
-                    "nTreatment": n_treatment,
-                    **stats,
-                    "pctChange": (
-                        math.exp(stats["beta"]) - 1
-                        if metric["transform"] in ("log", "log0")
-                        else None
-                    ),
-                    "q": None,
-                    "verdict": None,
-                    "correctionGroup": None,
-                    "direction": metric["direction"],
-                    "transform": metric["transform"],
-                    "anomalies": int(anomalies[data["case"].isin([control, treatment])].sum()),
-                }
-            )
-            if pooled:
-                for workflow in workflows:
-                    sub = pair[pair["workflow"] == workflow]
-                    if (sub["case"] == control).sum() < 2 or (sub["case"] == treatment).sum() < 2:
-                        continue
-                    context_stats = fit_pair(sub, control, treatment, pooled=False)
-                    if not all(
-                        math.isfinite(v)
-                        for v in (
-                            context_stats["beta"],
-                            context_stats["se"],
-                            context_stats["ciLow"],
-                            context_stats["ciHigh"],
-                            context_stats["p"],
+
+            # Aggregate mode. The headline pools over the common support: the
+            # workflows where BOTH arms have >=2 values. Elsewhere the case x
+            # workflow interaction model is unidentified — an empty arm makes
+            # the workflow dummy collinear with its interaction term
+            # (SingularMatrixWarning, arbitrary pinv coefficients), and a
+            # singleton cell puts HC3's 1/(1-h) at a divide-by-zero. Restricting
+            # the frame keeps the estimable comparison instead of deleting the
+            # metric with it.
+            qualifying = []
+            for workflow in workflows:
+                sub = pair[pair["workflow"] == workflow]
+                n_control, n_treatment = arm_counts(sub, control, treatment)
+                if n_control >= 2 and n_treatment >= 2:
+                    qualifying.append(workflow)
+            if not qualifying:
+                record_skip(
+                    "pooled", False, "no-common-support",
+                    "no workflow has >=2 values in both arms", pair,
+                )
+            else:
+                support = pair[pair["workflow"].isin(qualifying)]
+                skip = slice_skip(support, control, treatment)
+                if skip is not None:
+                    record_skip("pooled", False, *skip, support)
+                else:
+                    # A single qualifying workflow leaves nothing to interact:
+                    # the plain model on that slice is the same estimate.
+                    stats = fit_pair(support, control, treatment, pooled=len(qualifying) > 1)
+                    if not finite_fit(stats):
+                        record_skip(
+                            "pooled", False, "degenerate",
+                            "degenerate fit: p-value is not finite", support,
                         )
-                    ):
-                        # Degenerate per-workflow fit (e.g. zero variance within this
-                        # workflow slice); drop silently, context rows aren't part of
-                        # the BH family or the "Skipped metrics" report section.
-                        continue
-                    rows.append(
-                        {
-                            "metric": metric["key"],
-                            "treatment": treatment,
-                            "scope": workflow,
-                            "context": True,
-                            "nControl": int((sub["case"] == control).sum()),
-                            "nTreatment": int((sub["case"] == treatment).sum()),
-                            **context_stats,
-                            "pctChange": (
-                                math.exp(context_stats["beta"]) - 1
-                                if metric["transform"] in ("log", "log0")
-                                else None
-                            ),
-                            "q": None,
-                            "verdict": None,
-                            "correctionGroup": None,
-                            "direction": metric["direction"],
-                            "transform": metric["transform"],
-                            "anomalies": None,
-                        }
+                    else:
+                        emit_row(stats, support, "pooled", False, support="+".join(qualifying))
+
+            # Per-workflow context rows stand on their own slice, never on the
+            # pooled fit's fate: a workflow with a sound 2x2 comparison keeps
+            # its row even when another workflow starves the pooled support.
+            for workflow in workflows:
+                sub = pair[pair["workflow"] == workflow]
+                skip = slice_skip(sub, control, treatment)
+                if skip is not None:
+                    record_skip(workflow, True, *skip, sub)
+                    continue
+                context_stats = fit_pair(sub, control, treatment, pooled=False)
+                if not finite_fit(context_stats):
+                    record_skip(
+                        workflow, True, "degenerate", "degenerate fit: p-value is not finite", sub
                     )
+                    continue
+                emit_row(context_stats, sub, workflow, True)
 
     headline = [row for row in rows if not row["context"]]
     # BH within each correction group: the confirmatory group is the pre-facet
@@ -257,13 +318,13 @@ def analyze(manifest, data):
         for row, q in zip(group_rows, q_values):
             row["q"] = float(q)
             row["verdict"] = "significant" if q <= ALPHA else "not-significant"
-    return rows, skipped, anomaly_lines
+    return rows, skips, anomaly_lines
 
 
 ESTIMATE_FIELDS = [
     "metric", "treatment", "scope", "context", "nControl", "nTreatment",
     "beta", "se", "ciLow", "ciHigh", "pctChange", "p", "q", "verdict",
-    "direction", "transform", "anomalies", "correctionGroup",
+    "direction", "transform", "anomalies", "correctionGroup", "support",
 ]
 
 
@@ -330,7 +391,21 @@ def draw_curves(out_dir, manifest, data, rows):
             plt.close(fig)
 
 
-def write_report(out_dir, manifest, rows, skipped, anomaly_lines):
+def arm_note(skip):
+    """One line of descriptive stats per arm, so a skip still shows the data."""
+    parts = []
+    for arm, n_key, mean_key in (
+        ("control", "nControl", "controlMean"),
+        ("treatment", "nTreatment", "treatmentMean"),
+    ):
+        note = f"{arm} n={skip[n_key]}"
+        if skip[mean_key] is not None:
+            note += f", mean {fmt(skip[mean_key])}"
+        parts.append(note)
+    return "; ".join(parts)
+
+
+def write_report(out_dir, manifest, rows, skips, anomaly_lines):
     spec = manifest["spec"]
     lines = [
         f'# Comparison: {spec["control"]["shortName"]} vs {"+".join(t["shortName"] for t in spec["treatments"])}',
@@ -358,17 +433,52 @@ def write_report(out_dir, manifest, rows, skipped, anomaly_lines):
         )
     if any(row["transform"] == "log0" and not row["context"] for row in rows):
         lines += ["", "% change is approximate for log0 metrics (log(0) is mapped to 0)."]
+    all_support = "+".join(spec["workflows"])
+    partial = [
+        row for row in rows
+        if not row["context"] and row.get("support") and row["support"] != all_support
+    ]
+    if partial:
+        lines += [""] + [
+            f'- {row["metric"]} × {row["treatment"]}: pooled over '
+            f'{row["support"].replace("+", ", ")} only — the other workflows lack '
+            "≥ 2 values in both arms."
+            for row in partial
+        ]
+    # One table carries fitted and unfittable slices alike: a workflow with no
+    # control data still shows its descriptive stats, denoted as incomparable
+    # rather than silently absent.
+    metric_order = {m["key"]: i for i, m in enumerate(manifest["metrics"])}
+    workflow_order = {wf: i for i, wf in enumerate(spec["workflows"])}
     context_rows = [row for row in rows if row["context"]]
-    if context_rows:
+    context_skips = [s for s in skips if s["context"]]
+    if context_rows or context_skips:
         lines += ["", "## Per-workflow context (not FDR-tested)", "",
-                  "| Metric | Treatment | Workflow | β | p |", "|---|---|---|---|---|"]
-        for row in context_rows:
-            lines.append(
-                f'| {row["metric"]} | {row["treatment"]} | {row["scope"]} | {fmt(row["beta"])} | {fmt(row["p"])} |'
-            )
-    if skipped:
+                  "| Metric | Treatment | Workflow | β | p | Note |", "|---|---|---|---|---|---|"]
+        entries = [("row", row) for row in context_rows] + [("skip", s) for s in context_skips]
+        entries.sort(key=lambda e: (
+            metric_order.get(e[1]["metric"], len(metric_order)),
+            e[1]["treatment"],
+            workflow_order.get(e[1]["scope"], len(workflow_order)),
+        ))
+        for kind, entry in entries:
+            if kind == "row":
+                lines.append(
+                    f'| {entry["metric"]} | {entry["treatment"]} | {entry["scope"]} '
+                    f'| {fmt(entry["beta"])} | {fmt(entry["p"])} | |'
+                )
+            else:
+                lines.append(
+                    f'| {entry["metric"]} | {entry["treatment"]} | {entry["scope"]} '
+                    f'| — | — | {entry["reason"]} ({arm_note(entry)}) |'
+                )
+    headline_skips = [s for s in skips if not s["context"]]
+    if headline_skips:
         lines += ["", "## Skipped metrics", ""]
-        lines += [f'- {s["metric"]} × {s["treatment"]}: {s["reason"]}' for s in skipped]
+        lines += [
+            f'- {s["metric"]} × {s["treatment"]}: {s["reason"]} ({arm_note(s)})'
+            for s in headline_skips
+        ]
     if anomaly_lines:
         lines += ["", "## Anomalous values", ""]
         lines += anomaly_lines
@@ -389,10 +499,13 @@ def main():
     out_dir = Path(sys.argv[1])
     manifest = json.loads((out_dir / "manifest.json").read_text(encoding="utf-8"))
     data = pd.read_csv(out_dir / "dataset.csv", dtype={"case": str, "workflow": str, "batch": str})
-    rows, skipped, anomaly_lines = analyze(manifest, data)
+    rows, skips, anomaly_lines = analyze(manifest, data)
     write_estimates(out_dir, rows)
+    # Skips are data for the reports, not just prose: the HTML report renders
+    # a "no comparison" lane from each record that still carries arm stats.
+    (out_dir / "skips.json").write_text(json.dumps(skips, indent=2) + "\n", encoding="utf-8")
     draw_curves(out_dir, manifest, data, rows)
-    write_report(out_dir, manifest, rows, skipped, anomaly_lines)
+    write_report(out_dir, manifest, rows, skips, anomaly_lines)
     # Replace the declared metrics×treatments grid with the family actually
     # corrected against: pairs skipped (too few values, degenerate fit) never
     # entered the BH correction, so the manifest must not claim they did.

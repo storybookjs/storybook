@@ -8,7 +8,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { afterAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 
 import { findUv } from './uv.ts';
 
@@ -37,14 +37,44 @@ function metricEntry(key: string) {
   };
 }
 
+interface StagedRow {
+  metric: string;
+  treatment: string;
+  scope: string;
+  context: boolean;
+  beta: number;
+  p: number;
+  support: string | null;
+  verdict: string | null;
+}
+
+interface StagedSkip {
+  metric: string;
+  treatment: string;
+  scope: string;
+  context: boolean;
+  code: string;
+  reason: string;
+  nControl: number;
+  nTreatment: number;
+  treatmentMean: number | null;
+}
+
 /**
- * Two workflows, five runs per cell. `healthy` has a value in every run;
- * `sparse` is missing from all but one treatment run in WF_B, leaving that
- * case x workflow cell with a single value.
+ * Two workflows, five runs per cell, four metrics probing the degenerate
+ * shapes real judge data produces:
+ * - `healthy` has a value in every run;
+ * - `sparse` is missing from all but one treatment run in WF_B, leaving that
+ *   case x workflow cell with a single value;
+ * - `local` mirrors dsMisuseLocalDecision: the control arm has values only in
+ *   WF_A, while the treatment has them everywhere;
+ * - `constant` is exactly 1.0 in every run of both arms — zero variance.
  */
-function stageSingletonCellDataset(): string {
+function stageDataset(): string {
   const dir = mkdtempSync(join(root, 'stage-'));
-  const rows = [['case', 'workflow', 'batch', 'run', 'healthy', 'sparse'].join(',')];
+  const rows = [
+    ['case', 'workflow', 'batch', 'run', 'healthy', 'sparse', 'local', 'constant'].join(','),
+  ];
   const cells: object[] = [];
   for (const [caseName, workflow, offset] of [
     [CONTROL, WF_A, 0],
@@ -65,7 +95,12 @@ function stageSingletonCellDataset(): string {
       const healthy = 10 + offset + run;
       const sparse =
         caseName === TREATMENT && workflow === WF_B && run > 1 ? '' : String(20 + offset + run);
-      rows.push([caseName, workflow, 'batch-1', String(run), String(healthy), sparse].join(','));
+      const local = caseName === CONTROL && workflow === WF_B ? '' : String(30 + offset + run);
+      rows.push(
+        [caseName, workflow, 'batch-1', String(run), String(healthy), sparse, local, '1.0'].join(
+          ','
+        )
+      );
     }
   }
   writeFileSync(join(dir, 'dataset.csv'), rows.join('\n') + '\n');
@@ -80,7 +115,12 @@ function stageSingletonCellDataset(): string {
           mode: 'aggregate',
           minRuns: 5,
         },
-        metrics: [metricEntry('healthy'), metricEntry('sparse')],
+        metrics: [
+          metricEntry('healthy'),
+          metricEntry('sparse'),
+          metricEntry('local'),
+          metricEntry('constant'),
+        ],
         cells,
       },
       null,
@@ -91,34 +131,91 @@ function stageSingletonCellDataset(): string {
 }
 
 describe.skipIf(uv === null)('compare_stats.py aggregate mode', () => {
-  it('skips a singleton case x workflow cell cleanly instead of blowing up HC3', () => {
-    const dir = stageSingletonCellDataset();
+  let dir: string;
+  let stderr: string;
+  let estimates: StagedRow[];
+  let skips: StagedSkip[];
+  let report: string;
+
+  beforeAll(() => {
+    dir = stageDataset();
     const result = spawnSync(uv!, ['run', '--frozen', STATS_SCRIPT, dir], {
       cwd: AGENT_EVAL_ROOT,
       encoding: 'utf8',
     });
     expect(result.status).toBe(0);
-    // HC3 leverage is 1 on a singleton cell, so an unguarded fit floods
-    // stderr with divide-by-zero RuntimeWarnings before NaN-ing out.
-    expect(result.stderr).not.toContain('RuntimeWarning');
+    stderr = result.stderr;
+    estimates = JSON.parse(readFileSync(join(dir, 'estimates.json'), 'utf8'));
+    skips = JSON.parse(readFileSync(join(dir, 'skips.json'), 'utf8'));
+    report = readFileSync(join(dir, 'report.md'), 'utf8');
+  }, 240_000);
 
-    const estimates = JSON.parse(readFileSync(join(dir, 'estimates.json'), 'utf8'));
-    const sparseRows = estimates.filter((row: { metric: string }) => row.metric === 'sparse');
-    expect(sparseRows).toEqual([]);
-    const report = readFileSync(join(dir, 'report.md'), 'utf8');
-    // The skip names the thin cell; "zero variance" would misdiagnose it.
-    expect(report).toContain(
-      `- sparse × ${TREATMENT}: needs >=2 values per case x workflow cell, have ${TREATMENT}@${WF_B}=1`
-    );
-    expect(report).not.toContain('zero variance');
+  it('emits no regression warnings on degenerate shapes', () => {
+    // HC3 leverage is 1 on a singleton cell and rank-deficiency splits
+    // coefficients arbitrarily; both flooded stderr before the fits were
+    // restricted to their common support.
+    expect(stderr).not.toContain('RuntimeWarning');
+    expect(stderr).not.toContain('SingularMatrixWarning');
+  });
 
-    // The dense metric still gets a finite pooled estimate.
-    const healthy = estimates.find(
-      (row: { metric: string; context: boolean }) => row.metric === 'healthy' && !row.context
+  it('fits the dense metric across the full grid', () => {
+    const healthy = estimates.find((row) => row.metric === 'healthy' && !row.context);
+    expect(healthy?.verdict).toBeDefined();
+    expect(Number.isFinite(healthy!.beta)).toBe(true);
+    expect(healthy!.support).toBe(`${WF_A}+${WF_B}`);
+  });
+
+  it('pools a sparse metric over its common support instead of deleting it', () => {
+    // sparse has a singleton treatment cell in WF_B: that workflow leaves
+    // the pooled support, but WF_A still carries a full 5v5 comparison.
+    const pooled = sparseRow(false, 'pooled');
+    expect(pooled).toBeDefined();
+    expect(pooled!.support).toBe(WF_A);
+    expect(Number.isFinite(pooled!.beta)).toBe(true);
+    const context = sparseRow(true, WF_A);
+    expect(context).toBeDefined();
+    const skip = skips.find((s) => s.metric === 'sparse' && s.scope === WF_B);
+    expect(skip?.context).toBe(true);
+    expect(skip?.code).toBe('insufficient-data');
+    function sparseRow(context: boolean, scope: string) {
+      return estimates.find(
+        (row) => row.metric === 'sparse' && row.context === context && row.scope === scope
+      );
+    }
+  });
+
+  it('keeps per-workflow rows independent of the pooled fit and names missing arms', () => {
+    // local has no control data in WF_B: the pooled fit shrinks to WF_A,
+    // WF_A gets its context row, and WF_B gets a skip naming why — with the
+    // treatment's own descriptive stats preserved for the reports.
+    const pooled = estimates.find(
+      (row) => row.metric === 'local' && !row.context && row.scope === 'pooled'
     );
-    expect(healthy.verdict).toBeDefined();
-    expect(Number.isFinite(healthy.beta)).toBe(true);
-  }, 120_000);
+    expect(pooled?.support).toBe(WF_A);
+    expect(
+      estimates.find((row) => row.metric === 'local' && row.context && row.scope === WF_A)
+    ).toBeDefined();
+    const skip = skips.find((s) => s.metric === 'local' && s.scope === WF_B);
+    expect(skip?.code).toBe('no-control-data');
+    expect(skip?.reason).toContain('no control data');
+    expect(skip?.nControl).toBe(0);
+    expect(skip?.nTreatment).toBe(5);
+    // mean of 34..38
+    expect(skip?.treatmentMean).toBeCloseTo(36, 5);
+    expect(report).toContain('no control data');
+  });
+
+  it('records a constant response as identical arms instead of minting p-values', () => {
+    // Before the variance guard, OLS solver noise on an all-1.0 response
+    // produced beta ~1e-15 with se ~1e-16 — and p < 0.05 out of nothing.
+    // Both arms carry data whenever the guard fires, so the honest verdict
+    // is "identical: zero difference, nothing to test", never a fake p.
+    expect(estimates.filter((row) => row.metric === 'constant')).toEqual([]);
+    const headline = skips.find((s) => s.metric === 'constant' && !s.context);
+    expect(headline?.code).toBe('identical');
+    expect(headline?.reason).toContain('every run in both arms scored');
+    expect(report).toContain('identical');
+  });
 });
 
 describe.skipIf(uv !== null)('without uv', () => {

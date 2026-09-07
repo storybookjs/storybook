@@ -18,19 +18,14 @@ for f in sorted(glob.glob(os.path.join(RESULTS, 'trace-*.json'))):
     unmounts = [e for e in trace if e['type'] == 'dom' and 'storybook-root +0/-1' in e['d']]
     remounts = [e for e in trace if e['type'] == 'dom' and 'storybook-root +1/-0' in e['d']]
 
-    # first frame where y collapsed from high to low
+    # first event (any type) where the sampled y dropped from high to low
     clamp = None
     prev_y = None
     for e in trace:
-        if e['type'] == 'frame' and '->' in e['d']:
-            try:
-                part = e['d'].split(',')[0].replace('y ', '')
-                y_from, y_to = (int(x) for x in part.split('->'))
-            except ValueError:
-                continue
-            if y_from >= 1000 and y_to < 200:
-                clamp = e
-                break
+        if prev_y is not None and prev_y >= 1000 and e['y'] < 200:
+            clamp = e
+            break
+        prev_y = e['y']
 
     clamp_cause = '-'
     if clamp is not None:
@@ -42,7 +37,7 @@ for f in sorted(glob.glob(os.path.join(RESULTS, 'trace-*.json'))):
         elif collapsed:
             clamp_cause = 'unmount-collapse'
         else:
-            clamp_cause = 'explicit-or-other'
+            clamp_cause = f"other({clamp['type']}:{clamp['d'][:40]})"
 
     rows.append(
         {

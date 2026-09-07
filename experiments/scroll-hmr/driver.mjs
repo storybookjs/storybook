@@ -24,7 +24,8 @@ const CONFIGS = {
 };
 const STORIES = { fast: 'scrolllab--fast', slow: 'scrolllab--slow' };
 
-const only = process.env.ONLY ? process.env.ONLY.split(':') : null; // e.g. ONLY=baseline:fast
+// e.g. ONLY=baseline:fast,B2_keepDomRoot (story part optional, comma-separated pairs)
+const only = process.env.ONLY ? process.env.ONLY.split(',').map((s) => s.split(':')) : null;
 
 let tokenCounter = 0;
 function writeStory(token) {
@@ -93,7 +94,7 @@ async function main() {
 
   for (const [config, flags] of Object.entries(CONFIGS)) {
     for (const [storyName, storyId] of Object.entries(STORIES)) {
-      if (only && (only[0] !== config || (only[1] && only[1] !== storyName))) {
+      if (only && !only.some(([c, st]) => c === config && (!st || st === storyName))) {
         continue;
       }
       const context = await browser.newContext({ viewport: { width: 1280, height: 800 } });

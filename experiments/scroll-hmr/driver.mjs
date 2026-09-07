@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-import { chromium } from 'file:///home/user/storybook/code/node_modules/playwright/index.mjs';
+import { chromium } from 'playwright';
 
 const SCRATCH = '/tmp/claude-0/-home-user-storybook/10a8e711-1b08-5701-8d8b-52ba7c733784/scratchpad';
 const SANDBOX = '/home/user/storybook-sandboxes/react-vite-default-ts';
@@ -88,7 +88,7 @@ async function runTrial(page, trialId) {
 
 async function main() {
   writeStory(newToken());
-  const browser = await chromium.launch();
+  const browser = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium' });
   const summary = [];
 
   for (const [config, flags] of Object.entries(CONFIGS)) {

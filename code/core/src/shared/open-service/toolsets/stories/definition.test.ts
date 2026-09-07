@@ -191,7 +191,6 @@ describe('stories.preview', () => {
     await runPreview([{ storyId: 'button--primary' }, { storyId: 'gone--story' }]);
 
     expect(telemetry).toHaveBeenCalledWith('tool:previewStories', {
-      toolset: 'dev',
       inputStoryCount: 2,
       outputStoryCount: 2,
     });
@@ -322,7 +321,6 @@ describe('stories.changed', () => {
     await runChanged();
 
     expect(telemetry).toHaveBeenCalledWith('tool:getChangedStories', {
-      toolset: 'dev',
       storyCount: 1,
       newStoryCount: 1,
       modifiedStoryCount: 0,
@@ -463,7 +461,6 @@ describe('stories.findByComponent', () => {
     await runFindByComponent({ componentPaths: [componentPath, orphanPath] });
 
     expect(telemetry).toHaveBeenCalledWith('tool:getStoriesByComponent', {
-      toolset: 'dev',
       componentCount: 2,
       matchedComponentCount: 1,
       totalMatchCount: 1,

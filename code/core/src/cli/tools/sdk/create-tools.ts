@@ -445,13 +445,10 @@ function createToolsHost(args: {
       options: ToolsCallOptions = {}
     ): Promise<AnyToolsetOutcome> {
       assertOpen();
-      const telemetry = resolveCallTelemetry(options, dimensions, {
-        clientInfo,
-        configDir: runtime.configDir,
-      });
+      const telemetry = resolveCallTelemetry(options, dimensions);
       const callOptions: ToolsCallOptions = {
         ...options,
-        ...(telemetry ? { telemetry } : {}),
+        ...(telemetry.sink ? { telemetry: telemetry.sink } : {}),
       };
       const start = Date.now();
       try {
@@ -466,6 +463,7 @@ function createToolsHost(args: {
           host,
           fallbackReason: args.fallbackReason,
           result: outcome,
+          report: telemetry.report(),
           duration: Date.now() - start,
           configDir: runtime.configDir,
         });
@@ -487,6 +485,7 @@ function createToolsHost(args: {
           host,
           fallbackReason: args.fallbackReason,
           result: { error: mapped },
+          report: telemetry.report(),
           duration: Date.now() - start,
           configDir: runtime.configDir,
         });

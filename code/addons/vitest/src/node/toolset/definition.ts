@@ -166,7 +166,6 @@ async function reportRunTelemetry(data: TestRunData, input: RunInput, ctx: Tools
 
   if (data.status === 'no-stories') {
     await reportToolsetTelemetry(ctx, 'tool:runStoryTests', {
-      toolset: 'test',
       runA11y: data.a11y,
       inputStoryCount,
       matchedStoryCount: 0,
@@ -183,7 +182,6 @@ async function reportRunTelemetry(data: TestRunData, input: RunInput, ctx: Tools
   }
 
   await reportToolsetTelemetry(ctx, 'tool:runStoryTests', {
-    toolset: 'test',
     runA11y: data.a11y,
     inputStoryCount,
     // A partially resolved selector list never reaches a run, so every input matched by this point.

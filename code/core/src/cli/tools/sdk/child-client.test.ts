@@ -268,7 +268,7 @@ describe('spawnChildHost', () => {
             type: 'telemetry',
             id: message.id,
             event: 'tool:listAllDocumentation',
-            payload: { toolset: 'docs' },
+            payload: { componentCount: 3 },
           });
           child.emit('message', {
             type: 'result',
@@ -288,29 +288,34 @@ describe('spawnChildHost', () => {
       markdown: 'ok',
     });
     expect(tools.requestedMode).toBe('auto');
-    expect(sink).toHaveBeenCalledWith(
-      'tool:listAllDocumentation',
-      expect.objectContaining({
-        toolset: 'docs',
-        client: 'sdk',
-        requestedMode: 'auto',
-        resolvedMode: 'attached',
-        attachMode: 'attached',
-        host: 'child',
-      })
-    );
-    expect(telemetry).toHaveBeenCalledWith(
-      'tools-command',
-      expect.objectContaining({
-        command: 'docs list',
-        success: true,
-        outcome: 'success',
-        client: 'sdk',
-        requestedMode: 'auto',
-        host: 'child',
-      }),
-      expect.anything()
-    );
+    expect(sink).toHaveBeenCalledWith('tool:listAllDocumentation', {
+      componentCount: 3,
+      client: 'sdk',
+      requestedMode: 'auto',
+      resolvedMode: 'attached',
+      attachMode: 'attached',
+      host: 'child',
+    });
+    expect(vi.mocked(telemetry).mock.calls).toEqual([
+      [
+        'tools-command',
+        {
+          toolset: 'docs',
+          tool: 'list',
+          event: 'tool:listAllDocumentation',
+          componentCount: 3,
+          success: true,
+          outcome: 'success',
+          client: 'sdk',
+          requestedMode: 'auto',
+          resolvedMode: 'attached',
+          attachMode: 'attached',
+          host: 'child',
+          duration: expect.any(Number),
+        },
+        expect.anything(),
+      ],
+    ]);
   });
 
   it('does not reject the call when a forwarded telemetry sink fails', async () => {
@@ -324,7 +329,7 @@ describe('spawnChildHost', () => {
             type: 'telemetry',
             id: message.id,
             event: 'tool:listAllDocumentation',
-            payload: { toolset: 'docs' },
+            payload: { componentCount: 3 },
           });
           child.emit('message', {
             type: 'result',
@@ -358,7 +363,7 @@ describe('spawnChildHost', () => {
             type: 'telemetry',
             id: message.id,
             event: 'tool:listAllDocumentation',
-            payload: { toolset: 'docs' },
+            payload: { componentCount: 3 },
           });
           child.emit('message', {
             type: 'result',
@@ -382,7 +387,7 @@ describe('spawnChildHost', () => {
     expect(sink).toHaveBeenCalledWith(
       'tool:listAllDocumentation',
       expect.objectContaining({
-        toolset: 'docs',
+        componentCount: 3,
         client: 'sdk',
         requestedMode: 'attached',
         resolvedMode: 'attached',

@@ -23,6 +23,7 @@ import { GET_UI_BUILDING_INSTRUCTIONS_TOOL_NAME } from './tool-names.ts';
 import {
   getToolsetToolMetadata,
   registerToolsetTool,
+  type McpToolsetGroup,
   type ToolsetToolOptions,
 } from './toolset-tools.ts';
 
@@ -52,12 +53,11 @@ export type AddonToolRegistryContext = {
   options?: Options;
 };
 
-type AddonToolset = keyof NonNullable<AddonContext['toolsets']>;
 type ToolEnabled = Parameters<McpServer<any, AddonContext>['tool']>[0]['enabled'];
 
 type AddonToolDefinition = {
   name: string;
-  toolset: AddonToolset;
+  toolset: McpToolsetGroup;
   available?: (context: AddonToolRegistryContext) => boolean;
   getMetadata: (context: AddonToolRegistryContext) => ToolMetadata;
   register: (
@@ -68,8 +68,10 @@ type AddonToolDefinition = {
   getLocalTool?: (context: AddonToolRegistryContext & { options: Options }) => StorybookAiLocalTool;
 };
 
-const isToolsetEnabled = (toolset: AddonToolset, toolsets: AddonContext['toolsets'] | undefined) =>
-  toolsets?.[toolset] ?? true;
+const isToolsetEnabled = (
+  toolset: McpToolsetGroup,
+  toolsets: AddonContext['toolsets'] | undefined
+) => toolsets?.[toolset] ?? true;
 
 const isToolAvailable = (definition: AddonToolDefinition, context: AddonToolRegistryContext) =>
   definition.available?.(context) ?? true;
@@ -80,7 +82,7 @@ const isMetadataToolEnabled = (
 ) => isToolsetEnabled(definition.toolset, context.toolsets) && isToolAvailable(definition, context);
 
 const createToolsetEnabled =
-  (server: McpServer<any, AddonContext>, toolset: AddonToolset): ToolEnabled =>
+  (server: McpServer<any, AddonContext>, toolset: McpToolsetGroup): ToolEnabled =>
   () =>
     server.ctx.custom?.toolsets?.[toolset] ?? true;
 
@@ -93,7 +95,7 @@ const createToolsetEnabled =
  */
 function fromToolset(
   definition: Omit<AddonToolDefinition, 'name' | 'getMetadata' | 'register'> & {
-    options: ToolsetToolOptions;
+    options: Omit<ToolsetToolOptions, 'toolset'>;
     available?: (context: AddonToolRegistryContext) => boolean;
     /** Narrows the tool further per request, on top of the toolset gate. */
     wrapEnabled?: (
@@ -103,7 +105,8 @@ function fromToolset(
     ) => ToolEnabled;
   }
 ): AddonToolDefinition {
-  const { options, available, wrapEnabled, ...rest } = definition;
+  const { available, wrapEnabled, ...rest } = definition;
+  const options: ToolsetToolOptions = { ...definition.options, toolset: definition.toolset };
   return {
     ...rest,
     // Read from the constant, not the registry: this array is built at import time, while toolsets
@@ -145,8 +148,8 @@ function docsToolDefinition(
 ): AddonToolDefinition {
   const forContext = (context: AddonToolRegistryContext): ToolsetToolOptions =>
     context.multiSource
-      ? { method, resolveToolset: (server) => compositionDocsToolset(server) }
-      : { method };
+      ? { method, toolset: 'docs', resolveToolset: (server) => compositionDocsToolset(server) }
+      : { method, toolset: 'docs' };
 
   return {
     name: toMcpToolName(method),

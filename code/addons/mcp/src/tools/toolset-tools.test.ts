@@ -34,10 +34,7 @@ function registerStubStoriesToolset(
           handler:
             overrides.handler ??
             (async (input: { id: string }, ctx) => {
-              await ctx.telemetry?.('tool:previewStories', {
-                toolset: 'dev',
-                inputStoryCount: 1,
-              });
+              await ctx.telemetry?.('tool:previewStories', { inputStoryCount: 1 });
               const stories = [{ previewUrl: `${ctx.origin}/?path=/story/${input.id}` }];
               return {
                 ok: true,
@@ -57,7 +54,7 @@ function makeServer(custom: Record<string, unknown> = {}) {
   } as any;
 }
 
-const previewOptions = { method: 'stories.preview' } as const;
+const previewOptions = { method: 'stories.preview', toolset: 'dev' } as const;
 
 describe('toolset-backed MCP tools', () => {
   beforeEach(() => {
@@ -146,7 +143,11 @@ describe('toolset-backed MCP tools', () => {
       }) as any
     );
 
-    const result = await callToolsetMethod(makeServer(), { method: 'stories.changed' }, {});
+    const result = await callToolsetMethod(
+      makeServer(),
+      { method: 'stories.changed', toolset: 'dev' },
+      {}
+    );
 
     expect(result.content).toEqual([{ type: 'text', text: 'no changes' }]);
     expect(result.structuredContent).toBeUndefined();
@@ -219,19 +220,25 @@ describe('toolset-backed MCP tools', () => {
     expect(vi.mocked(logger.error).mock.calls[0][0]).toContain('boom');
   });
 
-  it('forwards method telemetry with the surface fields the adapter owns', async () => {
-    registerStubStoriesToolset();
+  it.each(['dev', 'docs', 'test'] as const)(
+    'forwards method telemetry with the MCP grouping %s the adapter owns',
+    async (toolset) => {
+      registerStubStoriesToolset();
 
-    await callToolsetMethod(makeServer(), previewOptions, { id: 'button--primary' });
+      await callToolsetMethod(
+        makeServer(),
+        { ...previewOptions, toolset },
+        { id: 'button--primary' }
+      );
 
-    expect(collectTelemetry).toHaveBeenCalledWith(
-      expect.objectContaining({
+      expect(collectTelemetry).toHaveBeenCalledWith({
         event: 'tool:previewStories',
-        toolset: 'dev',
+        server: expect.anything(),
+        toolset,
         inputStoryCount: 1,
-      })
-    );
-  });
+      });
+    }
+  );
 
   it('emits no telemetry when the session disabled it', async () => {
     registerStubStoriesToolset();

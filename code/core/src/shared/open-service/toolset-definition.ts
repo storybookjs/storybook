@@ -17,9 +17,10 @@ export type ToolsetGetService = {
 /**
  * Emits one telemetry event for a toolset method.
  *
- * Adapters supply the sink so surface-specific fields (MCP session id, client info) stay with the
- * adapter while the event name and payload — the part that describes the capability — stay in the
- * method. Absent when the transport has telemetry disabled.
+ * Adapters supply the sink so surface-specific fields (the MCP toolset grouping and session id,
+ * the CLI's toolset and tool names) stay with the adapter while the event name and counters — the
+ * part that describes the capability — stay in the method. Absent when the transport has telemetry
+ * disabled.
  */
 export type ToolsetTelemetry = (event: string, payload: Record<string, unknown>) => Promise<void>;
 
@@ -189,10 +190,10 @@ export function resolveToolsetDescription(
 /**
  * Reports best-effort telemetry without allowing analytics failures to fail the tool call.
  *
- * Analytics event names (`tool:previewStories`, …) and payload classifiers (`toolset: 'dev' |
- * 'docs' | 'test'`) are a frozen cross-version contract. Keep them aligned with older Storybook
- * releases even when MCP wire tool names or toolset ids change. The channel field is `transport`
- * (`'cli' | 'mcp' | 'sdk'`), matching the toolset API.
+ * Analytics event names (`tool:previewStories`, …) are a frozen cross-version contract: keep them
+ * aligned with older Storybook releases even when MCP wire tool names or toolset ids change. A
+ * handler reports the event name and its counters only; each surface adds its own grouping
+ * (`toolset`) when it forwards the report.
  */
 export async function reportToolsetTelemetry(
   context: ToolsetCtx,

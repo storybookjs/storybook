@@ -8,8 +8,6 @@ import {
   createTools,
   formatMultiInstanceNotice,
   isAttachGateError,
-  toolsCommandDimensions,
-  wrapMethodTelemetry,
   ToolsRuntimeError,
   type CreateToolsDeps,
   type CreateToolsOptions,
@@ -107,7 +105,7 @@ const CLI_CLIENT_INFO: ToolsClientInfo = {
 export type ToolsRunDeps = {
   createTools?: (options?: CreateToolsOptions, deps?: CreateToolsDeps) => Promise<Tools>;
   discoverInstance?: typeof discoverRunningInstance;
-  /** Sink for the per-method toolset telemetry events; absent when telemetry is disabled. */
+  /** Receives the handler's usage report for the run; absent when telemetry is disabled. */
   methodTelemetry?: ToolsetTelemetry;
 };
 
@@ -231,25 +229,11 @@ export async function runToolsCommand(
   }
 
   try {
-    const methodTelemetry =
-      tools.mode === 'local' && deps.methodTelemetry
-        ? wrapMethodTelemetry(
-            deps.methodTelemetry,
-            toolsCommandDimensions({
-              clientInfo: tools.clientInfo,
-              requestedMode: tools.requestedMode,
-              resolvedMode: tools.mode,
-              host: tools.host,
-              fallbackReason: tools.fallbackReason,
-            })
-          )
-        : deps.methodTelemetry;
-    const dispatchDeps: ToolsRunDeps = { ...deps, methodTelemetry };
     const dispatched = await dispatchTools(
       tools,
       { ...normalized, target },
       parsed,
-      dispatchDeps,
+      deps,
       requestedMode,
       result
     );

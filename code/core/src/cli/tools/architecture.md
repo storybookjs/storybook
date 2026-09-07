@@ -109,9 +109,12 @@ See [Load](../../shared/open-service/README.md#load).
 In local mode, `requiresDevServer` intercepts with start-your-Storybook guidance. In attached mode
 those methods run in the caller. `stories.preview` reads origin from the instance record.
 
-The CLI fires a `tools-command` invocation event after a run. The payload includes `attachMode`.
-Per-method toolset telemetry (`ctx.telemetry`) fires in the caller when the CLI passes a sink into
-`tools.call`. Command-level side effects and their telemetry run on the instance.
+The CLI and the SDK fire one `tools-command` record per invocation after a run. It carries the
+CLI spelling of the invoked `toolset` and `tool`, `success`, `outcome`, `duration`, the attach
+fields (`attachMode` among them), and the handler's own report — its legacy `event` name and its
+counters — merged in. The handler reports through `ctx.telemetry`, which the caller collects (over
+IPC from a child host) rather than sending separately. Command-level side effects run on the
+instance.
 
 ## SDK
 

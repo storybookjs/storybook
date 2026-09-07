@@ -299,12 +299,9 @@ export async function spawnChildHost(
       assertOpen();
       options.signal?.throwIfAborted();
       const id = String(++nextId);
-      const telemetry = resolveCallTelemetry(options, dimensions, {
-        clientInfo: args.clientInfo,
-        configDir: hello.storybook.configDir,
-      });
-      if (telemetry) {
-        pendingTelemetry.set(id, telemetry);
+      const telemetry = resolveCallTelemetry(options, dimensions);
+      if (telemetry.sink) {
+        pendingTelemetry.set(id, telemetry.sink);
       }
       let onAbort: (() => void) | undefined;
       const aborted = options.signal
@@ -333,6 +330,7 @@ export async function spawnChildHost(
           resolvedMode,
           host: 'child',
           result: outcome,
+          report: telemetry.report(),
           duration: Date.now() - start,
           configDir: hello.storybook.configDir,
         });
@@ -345,6 +343,7 @@ export async function spawnChildHost(
           resolvedMode,
           host: 'child',
           result: { error },
+          report: telemetry.report(),
           duration: Date.now() - start,
           configDir: hello.storybook.configDir,
         });

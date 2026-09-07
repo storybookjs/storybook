@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
-  commandNameFromRef,
+  commandPartsFromRef,
   shouldReportSdkInvocation,
   toolsCommandDimensions,
   wrapMethodTelemetry,
@@ -41,14 +41,24 @@ describe('toolsCommandDimensions', () => {
   });
 });
 
-describe('commandNameFromRef', () => {
-  it('turns a dotted method id into the CLI spelling', () => {
-    expect(commandNameFromRef('docs.list')).toBe('docs list');
-    expect(commandNameFromRef('stories.findByComponent')).toBe('stories find-by-component');
+describe('commandPartsFromRef', () => {
+  it('splits a dotted method id into the CLI spelling of both parts', () => {
+    expect(commandPartsFromRef('docs.list')).toEqual({ toolset: 'docs', tool: 'list' });
+    expect(commandPartsFromRef('stories.findByComponent')).toEqual({
+      toolset: 'stories',
+      tool: 'find-by-component',
+    });
   });
 
   it('collapses a malformed reference', () => {
-    expect(commandNameFromRef('not-a-ref')).toBe('(invalid)');
+    expect(commandPartsFromRef('not-a-ref')).toEqual({ toolset: '(invalid)', tool: '(invalid)' });
+  });
+
+  it('collapses a part that is not a name-shaped token', () => {
+    expect(commandPartsFromRef('my project.list')).toEqual({
+      toolset: '(invalid)',
+      tool: 'list',
+    });
   });
 });
 
@@ -63,7 +73,7 @@ describe('wrapMethodTelemetry', () => {
       host: 'child',
     });
 
-    await wrapped('tool:listAllDocumentation', { toolset: 'docs' });
+    await wrapped('tool:listAllDocumentation', { componentCount: 3 });
 
     expect(sink).toHaveBeenCalledWith('tool:listAllDocumentation', {
       client: 'sdk',
@@ -71,7 +81,7 @@ describe('wrapMethodTelemetry', () => {
       resolvedMode: 'attached',
       attachMode: 'attached',
       host: 'child',
-      toolset: 'docs',
+      componentCount: 3,
     });
   });
 });

@@ -177,7 +177,6 @@ export const reviewToolset = defineToolset({
         );
 
         await reportToolsetTelemetry(ctx, 'tool:displayReview', {
-          toolset: 'dev',
           collectionCount,
           storyCount,
           changedFileCount: review.changedFiles.length,

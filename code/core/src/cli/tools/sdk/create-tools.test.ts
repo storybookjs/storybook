@@ -55,6 +55,24 @@ const echo = defineToolset({
       input: v.object({}),
       handler: async () => ({ ok: true as const, data: {}, markdown: '' }),
     },
+    counted: {
+      title: 'Report a count',
+      description: 'Reports usage, then succeeds.',
+      input: v.object({}),
+      handler: async (_input, ctx) => {
+        await ctx.telemetry?.('tool:count', { itemCount: 2 });
+        return { ok: true as const, data: {}, markdown: '' };
+      },
+    },
+    explode: {
+      title: 'Report, then throw',
+      description: 'Reports usage, then fails unexpectedly.',
+      input: v.object({}),
+      handler: async (_input, ctx) => {
+        await ctx.telemetry?.('tool:explode', { itemCount: 1 });
+        throw new Error('boom');
+      },
+    },
     slow: {
       title: 'Delay',
       description: 'Resolves after a tick unless aborted.',
@@ -561,7 +579,7 @@ describe('createTools', () => {
                 description: 'ping',
                 input: v.object({}),
                 handler: async (_input, ctx) => {
-                  await ctx.telemetry?.('tool:ping', { toolset: 'probe' });
+                  await ctx.telemetry?.('tool:ping', { pingCount: 1 });
                   return {
                     ok: true as const,
                     data: { origin: ctx.origin },
@@ -583,17 +601,17 @@ describe('createTools', () => {
     );
 
     expect(outcome).toMatchObject({ data: { origin: 'http://localhost:9' } });
-    expect(sink).toHaveBeenCalledWith(
-      'tool:ping',
-      expect.objectContaining({
-        toolset: 'probe',
-        client: 'sdk',
-        requestedMode: 'local',
-        resolvedMode: 'local',
-        attachMode: 'local',
-        host: 'in-process',
-      })
-    );
+    expect(sink).toHaveBeenCalledWith('tool:ping', {
+      pingCount: 1,
+      client: 'sdk',
+      requestedMode: 'local',
+      resolvedMode: 'local',
+      attachMode: 'local',
+      host: 'in-process',
+    });
+    expect(invocationPayloads()).toEqual([
+      expect.objectContaining({ toolset: 'probe', tool: 'ping', event: 'tool:ping', pingCount: 1 }),
+    ]);
   });
 
   it('wraps a configuration that cannot be loaded', async () => {
@@ -647,6 +665,8 @@ describe('describe', () => {
       ['echo.bad', false],
       ['echo.live', true],
       ['echo.sibling', false],
+      ['echo.counted', false],
+      ['echo.explode', false],
       ['echo.slow', false],
     ]);
   });
@@ -840,10 +860,7 @@ describe('call', () => {
 function invocationPayloads(): unknown[] {
   return vi
     .mocked(telemetry)
-    .mock.calls.filter(
-      ([eventType, payload]) =>
-        eventType === 'tools-command' && payload !== undefined && !('event' in payload)
-    )
+    .mock.calls.filter(([eventType]) => eventType === 'tools-command')
     .map(([, payload]) => payload);
 }
 
@@ -854,8 +871,9 @@ describe('tools-command telemetry', () => {
     await tools.call('echo.ok', { value: 'hello' });
 
     expect(invocationPayloads()).toEqual([
-      expect.objectContaining({
-        command: 'echo ok',
+      {
+        toolset: 'echo',
+        tool: 'ok',
         success: true,
         outcome: 'success',
         client: 'sdk',
@@ -864,7 +882,57 @@ describe('tools-command telemetry', () => {
         attachMode: 'local',
         host: 'in-process',
         duration: expect.any(Number),
+      },
+    ]);
+  });
+
+  it('merges the handler report into the one invocation record', async () => {
+    const tools = await createTools({ mode: 'local' });
+
+    await tools.call('echo.counted');
+
+    expect(invocationPayloads()).toEqual([
+      {
+        toolset: 'echo',
+        tool: 'counted',
+        event: 'tool:count',
+        itemCount: 2,
+        success: true,
+        outcome: 'success',
+        client: 'sdk',
+        requestedMode: 'local',
+        resolvedMode: 'local',
+        attachMode: 'local',
+        host: 'in-process',
+        duration: expect.any(Number),
+      },
+    ]);
+  });
+
+  it('keeps the handler report on the record when the handler throws', async () => {
+    const tools = await createTools({ mode: 'local' });
+
+    await expect(tools.call('echo.explode')).rejects.toThrow('boom');
+
+    expect(invocationPayloads()).toEqual([
+      expect.objectContaining({
+        toolset: 'echo',
+        tool: 'explode',
+        event: 'tool:explode',
+        itemCount: 1,
+        success: false,
+        outcome: 'error',
       }),
+    ]);
+  });
+
+  it('spells the tool the way the CLI does', async () => {
+    const tools = await createTools({ mode: 'local' });
+
+    await tools.call('echo.findByComponent').catch(() => {});
+
+    expect(invocationPayloads()).toEqual([
+      expect.objectContaining({ toolset: 'echo', tool: 'find-by-component', outcome: 'error' }),
     ]);
   });
 
@@ -875,7 +943,8 @@ describe('tools-command telemetry', () => {
 
     expect(invocationPayloads()).toEqual([
       expect.objectContaining({
-        command: 'echo bad',
+        toolset: 'echo',
+        tool: 'bad',
         success: false,
         outcome: 'failure',
         client: 'sdk',
@@ -917,7 +986,8 @@ describe('tools-command telemetry', () => {
 
     expect(invocationPayloads()).toEqual([
       expect.objectContaining({
-        command: 'echo ok',
+        toolset: 'echo',
+        tool: 'ok',
         success: true,
         outcome: 'success',
         client: 'sdk',
@@ -944,15 +1014,14 @@ describe('tools-command telemetry', () => {
     );
 
     expect(invocationPayloads()).toEqual([
-      expect.objectContaining({
-        command: '(none)',
+      {
         success: false,
         outcome: 'attach-gate',
         client: 'sdk',
         requestedMode: 'attached',
         attachMode: 'attached',
         attachGate: 'connection-failed',
-      }),
+      },
     ]);
   });
 

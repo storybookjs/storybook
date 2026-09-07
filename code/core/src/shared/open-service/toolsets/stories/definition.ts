@@ -294,7 +294,6 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
           });
 
           await reportToolsetTelemetry(ctx, 'tool:previewStories', {
-            toolset: 'dev',
             inputStoryCount: input.stories.length,
             outputStoryCount: data.stories.length,
           });
@@ -326,7 +325,6 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             if (isGitUnusableReadiness(changeDetection)) {
               const data = emptyChangedStories();
               await reportToolsetTelemetry(ctx, 'tool:getChangedStories', {
-                toolset: 'dev',
                 storyCount: 0,
                 newStoryCount: 0,
                 modifiedStoryCount: 0,
@@ -356,7 +354,6 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
           };
 
           await reportToolsetTelemetry(ctx, 'tool:getChangedStories', {
-            toolset: 'dev',
             storyCount: data.stories.length,
             newStoryCount: data.counts.new,
             modifiedStoryCount: data.counts.modified,
@@ -408,7 +405,6 @@ Defaults to ${DEFAULT_MAX_DISTANCE}; raise it to widen recall, lower it to tight
             (result) => !result.pathNotFound && result.matches.length === 0
           ).length;
           await reportToolsetTelemetry(ctx, 'tool:getStoriesByComponent', {
-            toolset: 'dev',
             componentCount: input.componentPaths.length,
             matchedComponentCount: input.componentPaths.length - unmatchedCount,
             totalMatchCount: lookup.results.reduce(

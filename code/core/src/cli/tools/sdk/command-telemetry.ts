@@ -19,13 +19,30 @@ export type ToolsCommandDimensions = {
   attachGate?: ToolsAttachGateReason;
 };
 
+// One record per CLI or SDK invocation; `toolset` and `tool` are absent when no part was parsed.
 export type ToolsCommandTelemetryPayload = ToolsCommandDimensions & {
-  command: string;
+  toolset?: string;
+  tool?: string;
   success: boolean;
   outcome: ToolsCommandOutcomeKind;
   interceptReason?: string;
+  multipleMatches?: boolean;
   duration?: number;
 };
+
+export type MethodReport = { event: string; payload: Record<string, unknown> };
+
+// `sink` is absent only in a child host process, where the report travels over IPC to the parent.
+export type CallTelemetry = {
+  sink?: ToolsetTelemetry;
+  report(): MethodReport | undefined;
+};
+
+// Names are a fixed vocabulary of short identifiers; anything else is arbitrary agent input (a
+// typo'd path, a stray flag value) that must not be sent verbatim.
+export function sanitizeNamePart(part: string): string {
+  return /^[\w-]{1,64}$/.test(part) ? part : '(invalid)';
+}
 
 export function toolsCommandDimensions(args: {
   clientInfo: Pick<Required<ToolsClientInfo>, 'kind'>;
@@ -44,12 +61,15 @@ export function toolsCommandDimensions(args: {
   };
 }
 
-export function commandNameFromRef(ref: string): string {
+export function commandPartsFromRef(ref: string): { toolset: string; tool: string } {
   try {
     const { toolsetId, methodName } = parseToolsetMethodId(ref);
-    return `${toolsetId} ${toCliMethodName(methodName)}`;
+    return {
+      toolset: sanitizeNamePart(toolsetId),
+      tool: sanitizeNamePart(toCliMethodName(methodName)),
+    };
   } catch {
-    return '(invalid)';
+    return { toolset: '(invalid)', tool: '(invalid)' };
   }
 }
 
@@ -62,35 +82,40 @@ export function wrapMethodTelemetry(
   };
 }
 
-export function defaultMethodTelemetrySink(configDir?: string): ToolsetTelemetry {
-  return async (event, payload) => {
-    await telemetry('tools-command', { event, ...payload }, { configDir });
+// The caller's own sink, when given, still receives the report with the host dimensions.
+export function resolveCallTelemetry(
+  options: ToolsCallOptions,
+  dimensions: ToolsCommandDimensions
+): CallTelemetry {
+  if (process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true') {
+    return { sink: options.telemetry, report: () => undefined };
+  }
+  let report: MethodReport | undefined;
+  const forward = options.telemetry
+    ? wrapMethodTelemetry(options.telemetry, dimensions)
+    : undefined;
+  return {
+    sink: async (event, payload) => {
+      report = { event, payload };
+      await forward?.(event, payload);
+    },
+    report: () => report,
   };
 }
 
-export function resolveCallTelemetry(
-  options: ToolsCallOptions,
-  dimensions: ToolsCommandDimensions,
-  args: { clientInfo: Pick<Required<ToolsClientInfo>, 'kind'>; configDir?: string }
-): ToolsetTelemetry | undefined {
-  const isChildHost = process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true';
-  const sink =
-    options.telemetry ??
-    (!isChildHost && shouldReportSdkInvocation(args.clientInfo.kind)
-      ? defaultMethodTelemetrySink(args.configDir)
-      : undefined);
-  if (!sink) {
-    return undefined;
-  }
-  return isChildHost ? sink : wrapMethodTelemetry(sink, dimensions);
-}
-
+// The handler's report is merged under the record: its `event` name and its counters, with the
+// record's own fields winning.
 export async function reportToolsCommandEvent(
-  payload: ToolsCommandTelemetryPayload,
-  options?: { configDir?: string }
+  record: ToolsCommandTelemetryPayload,
+  options: { report?: MethodReport; configDir?: string } = {}
 ): Promise<void> {
+  const { report, configDir } = options;
   try {
-    await telemetry('tools-command', payload, options);
+    await telemetry(
+      'tools-command',
+      { ...report?.payload, ...(report ? { event: report.event } : {}), ...record },
+      { configDir }
+    );
   } catch {
     // Telemetry is never part of the tool's result contract.
   }
@@ -112,7 +137,6 @@ export async function reportSdkAttachGate(args: {
   const attachGate = attachGateReasonFromError(args.error);
   await reportToolsCommandEvent(
     {
-      command: '(none)',
       success: false,
       outcome: 'attach-gate',
       ...toolsCommandDimensions({
@@ -133,6 +157,7 @@ export async function reportSdkInvocation(args: {
   host: ToolsHostKind;
   fallbackReason?: ToolsAttachGateReason;
   result: { ok: boolean } | { error: unknown };
+  report?: MethodReport;
   duration: number;
   configDir?: string;
 }): Promise<void> {
@@ -140,30 +165,32 @@ export async function reportSdkInvocation(args: {
     return;
   }
   const dimensions = toolsCommandDimensions(args);
+  const invoked = commandPartsFromRef(args.ref);
+  const options = { report: args.report, configDir: args.configDir };
   if (!('ok' in args.result)) {
     const attachGate = attachGateReasonFromError(args.result.error);
     await reportToolsCommandEvent(
       {
-        command: commandNameFromRef(args.ref),
+        ...invoked,
         success: false,
         outcome: attachGate ? 'attach-gate' : 'error',
         duration: args.duration,
         ...dimensions,
         ...(attachGate ? { attachGate } : {}),
       },
-      { configDir: args.configDir }
+      options
     );
     return;
   }
   const success = args.result.ok;
   await reportToolsCommandEvent(
     {
-      command: commandNameFromRef(args.ref),
+      ...invoked,
       success,
       outcome: success ? 'success' : 'failure',
       duration: args.duration,
       ...dimensions,
     },
-    { configDir: args.configDir }
+    options
   );
 }

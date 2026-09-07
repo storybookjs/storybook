@@ -226,26 +226,6 @@ describe('local tools', () => {
     expect(result.output).toBe(mcpOutcome.markdown);
   });
 
-  it('stamps tools-command dimensions onto per-method telemetry for a local host', async () => {
-    const methodTelemetry = vi.fn(async () => {});
-    const { deps } = makeDeps({ methodTelemetry });
-
-    const result = await run(['docs', 'list'], deps);
-
-    expect(result.outcome).toEqual({ kind: 'success' });
-    expect(methodTelemetry).toHaveBeenCalledWith(
-      'tool:listAllDocumentation',
-      expect.objectContaining({
-        toolset: 'docs',
-        client: 'cli',
-        requestedMode: 'local',
-        resolvedMode: 'local',
-        attachMode: 'local',
-        host: 'in-process',
-      })
-    );
-  });
-
   it('round-trips the show-story --storyId flag through token parsing to the handler', async () => {
     const { deps } = makeDeps();
 
@@ -793,7 +773,7 @@ describe('outcome mapping', () => {
 });
 
 describe('telemetry sink', () => {
-  it('forwards per-method events with the toolset’s telemetry group', async () => {
+  it('forwards per-method events with the handler’s counters', async () => {
     const methodTelemetry = vi.fn(async () => {});
     const { deps } = makeDeps({ methodTelemetry });
 
@@ -801,7 +781,7 @@ describe('telemetry sink', () => {
 
     expect(methodTelemetry).toHaveBeenCalledWith(
       'tool:listAllDocumentation',
-      expect.objectContaining({ toolset: 'docs' })
+      expect.objectContaining({ componentCount: expect.any(Number) })
     );
   });
 
@@ -816,7 +796,7 @@ describe('telemetry sink', () => {
 
     expect(methodTelemetry).toHaveBeenCalledWith(
       'tool:listAllDocumentation',
-      expect.objectContaining({ toolset: 'docs' })
+      expect.objectContaining({ componentCount: expect.any(Number) })
     );
   });
 });

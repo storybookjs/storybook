@@ -448,7 +448,6 @@ No story found for story ID "gone--story"`);
       await runTests({ stories: [{ storyId: 'button--primary' }] });
 
       expect(telemetry).toHaveBeenCalledWith('tool:runStoryTests', {
-        toolset: 'test',
         runA11y: true,
         inputStoryCount: 1,
         matchedStoryCount: 1,
@@ -468,7 +467,6 @@ No story found for story ID "gone--story"`);
       await runTests({ stories: [{ storyId: 'missing--story' }], a11y: false });
 
       expect(telemetry).toHaveBeenCalledWith('tool:runStoryTests', {
-        toolset: 'test',
         runA11y: false,
         inputStoryCount: 1,
         matchedStoryCount: 0,

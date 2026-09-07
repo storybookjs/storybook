@@ -31,9 +31,13 @@ import type { StorybookAiToolCallResult } from './tool-registry.ts';
 type Server = McpServer<any, AddonContext>;
 type ToolEnabled = Parameters<Server['tool']>[0]['enabled'];
 
+// The `addon-mcp` event's frozen `toolset` classifier.
+export type McpToolsetGroup = keyof NonNullable<AddonContext['toolsets']>;
+
 export type ToolsetToolOptions = {
   /** Which toolset method backs this MCP tool. */
   method: ToolsetMethodId;
+  toolset: McpToolsetGroup;
   /** Extra MCP-only tool metadata, e.g. the preview app resource. */
   extras?: Record<string, unknown>;
   /** Wraps the input schema before publishing it (used for friendlier validation errors). */
@@ -94,7 +98,7 @@ async function toStructuredContent(
   return result.value as Record<string, unknown>;
 }
 
-function buildContext(server: Server): ToolsetCtx {
+function buildContext(server: Server, toolset: McpToolsetGroup): ToolsetCtx {
   const custom = server.ctx.custom;
   return {
     transport: 'mcp',
@@ -104,11 +108,7 @@ function buildContext(server: Server): ToolsetCtx {
     telemetry: custom?.disableTelemetry
       ? undefined
       : async (event, payload) => {
-          await collectTelemetry({
-            event,
-            server,
-            ...payload,
-          });
+          await collectTelemetry({ event, server, toolset, ...payload });
         },
   };
 }
@@ -121,7 +121,7 @@ export async function callToolsetMethod(
 ): Promise<StorybookAiToolCallResult> {
   const toolset = resolveToolset(options, server);
   const method = resolveMethod(toolset, options);
-  const ctx = buildContext(server);
+  const ctx = buildContext(server, options.toolset);
 
   try {
     const outcome = await method.handler(input as never, ctx);

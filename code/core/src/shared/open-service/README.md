@@ -151,8 +151,9 @@ Adapters resolve one toolset with `getToolset(id)` or take the whole set via
 consume them today.
 
 Telemetry classification belongs in Storybook-owned telemetry calls, not on the generic toolset
-definition. Use `reportToolsetTelemetry` so a rejected analytics sink cannot fail a tool call.
-Third-party toolsets do not need to participate in Storybook's telemetry taxonomy.
+definition. Use `reportToolsetTelemetry` so a rejected analytics sink cannot fail a tool call; a
+handler reports once per call with an event name and counters, and the surface adapter adds its
+own grouping. Third-party toolsets do not need to participate in Storybook's telemetry taxonomy.
 
 Core owns `docs`, `stories`, and `review`. Addon-vitest owns the complete `test` toolset—its schemas,
 channel protocol, formatting, telemetry, and tests—and registers it beside its responder from the

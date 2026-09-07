@@ -614,9 +614,9 @@ Migrate to [`@storybook/nextjs-vite`](https://www.npmjs.com/package/@storybook/n
 
 ### Create React App support removed
 
-Storybook 11 no longer publishes `@storybook/preset-create-react-app`, so Storybook setups that render Create React App projects through the CRA preset stop working. `storybook init` stops with an error on projects using `react-scripts`, and `storybook upgrade` blocks upgrading while `@storybook/preset-create-react-app` is installed.
+Storybook 11 no longer publishes `@storybook/preset-create-react-app`, so Storybook setups that render Create React App projects through the CRA preset stop working, and `storybook upgrade` blocks upgrading while `@storybook/preset-create-react-app` is installed.
 
-Migrating off Create React App is not a hard requirement. To keep using Storybook with a Create React App project, run it with the Vite-based `@storybook/react-vite` framework instead of the CRA preset. Because Create React App does not use Vite itself, additional Vite configuration may be necessary to make your application work in Storybook. For example, mirroring the loaders, aliases, and environment variables your components rely on. If you prefer to migrate your app off Create React App entirely, [Vite's guide](https://vite.dev/guide/) covers the steps.
+Migrating off Create React App is not a hard requirement. To keep using Storybook with a Create React App project, run it with the Vite-based `@storybook/react-vite` framework instead of the CRA preset. `storybook init` scaffolds that setup for you: if it cannot detect a builder, it asks you to choose one (Vite, Webpack 5, or Rsbuild). Because Create React App does not use Vite itself, additional Vite configuration may be necessary to make your application work in Storybook. For example, mirroring the loaders, aliases, and environment variables your components rely on. If you prefer to migrate your app off Create React App entirely, [Vite's guide](https://vite.dev/guide/) covers the steps.
 
 ### `@storybook/angular-vite`: legacy animation modules are no longer auto-converted
 

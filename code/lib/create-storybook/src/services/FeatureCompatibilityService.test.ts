@@ -40,7 +40,6 @@ describe('FeatureCompatibilityService', () => {
       expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.SVELTE)).toBe(false);
       expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.EMBER)).toBe(false);
       expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.HTML)).toBe(false);
-      expect(FeatureCompatibilityService.supportsOnboarding(ProjectType.REACT_SCRIPTS)).toBe(false);
     });
   });
 

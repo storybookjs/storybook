@@ -9,7 +9,5 @@ addons.setConfig({
       return type === 'story' || location === 'bottom-bar' ? name : startCase(name);
     },
   },
-
-  // FIXME/TODO: add arialabel
 });
 ```

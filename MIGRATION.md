@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Sidebar rewrite: manager API changes](#sidebar-rewrite-manager-api-changes)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vite: requires Vite 7.0 or higher](#vite-requires-vite-70-or-higher)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
@@ -538,6 +539,16 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 10.x to 11.0.0
+
+### Sidebar rewrite: manager API changes
+
+The sidebar tree was rebuilt on react-aria-components. Most changes are internal, but a few public manager API surfaces moved:
+
+- `sidebar.renderLabel` now receives a third `context` argument, `{ isMobile: boolean; location: 'sidebar' | 'bottom-bar' }`, so labels can adapt to where they render (the sidebar tree vs. the mobile bottom bar). Existing two-argument functions keep working — the parameter is optional.
+- `sidebar.renderAriaLabel` was added alongside it and must return a plain string; it feeds `aria-label` on tree rows and the mobile bottom bar's current-page announcement.
+- The `escape` entry was removed from the configurable shortcuts (`api.getShortcutKeys()` no longer includes it, and `api.setShortcut('escape', …)` is no longer accepted by the types). Escape still exits fullscreen, but as fixed behavior that no longer competes with overlay dismissal, so it cannot be rebound.
+- A `contextMenu` shortcut was added (default <kbd>ctrl/⌘+shift+U</kbd>) that opens the sidebar row actions menu for the focused or selected story.
+- The `StatusButton` and `StatusLabel` exports from the internal sidebar components were renamed/absorbed (`ContextMenuButton`); these were internal but are mentioned here in case addons imported them from unexported paths.
 
 ### Vitest Addon: requires Vitest 4.0 or higher
 

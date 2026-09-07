@@ -53,18 +53,23 @@ const useFullStoryName = () => {
   if (!currentStory) {
     return { fullStoryAriaLabel: '', fullStoryName: '' };
   }
-  let fullStoryName =
-    currentStory.renderLabel?.(currentStory, api, { location: 'bottom-bar' }) || currentStory.name;
-  let fullStoryAriaLabel =
-    currentStory.renderAriaLabel?.(currentStory, api, { location: 'bottom-bar' }) || fullStoryName;
+  // renderLabel may return any ReactNode; the bottom bar concatenates names into plain
+  // strings (visible label and aria-label alike), so anything else falls back to the entry
+  // name rather than stringifying to "[object Object]".
+  const labelContext = { isMobile: true, location: 'bottom-bar' } as const;
+  const storyLabel = currentStory.renderLabel?.(currentStory, api, labelContext);
+  let fullStoryName = typeof storyLabel === 'string' ? storyLabel : currentStory.name;
+  const storyAriaLabel = currentStory.renderAriaLabel?.(currentStory, api, labelContext);
+  let fullStoryAriaLabel = typeof storyAriaLabel === 'string' ? storyAriaLabel : fullStoryName;
 
   let node = combinedIndex[currentStory.id];
 
   while (node && 'parent' in node && node.parent && combinedIndex[node.parent]) {
     node = combinedIndex[node.parent];
-    const parentName = node.renderLabel?.(node, api, { location: 'bottom-bar' }) || node.name;
-    const parentAriaLabel =
-      node.renderAriaLabel?.(node, api, { location: 'bottom-bar' }) || parentName;
+    const parentLabel = node.renderLabel?.(node, api, labelContext);
+    const parentName = typeof parentLabel === 'string' ? parentLabel : node.name;
+    const parentAriaOutput = node.renderAriaLabel?.(node, api, labelContext);
+    const parentAriaLabel = typeof parentAriaOutput === 'string' ? parentAriaOutput : parentName;
 
     // Limit length of name shown in UI due to layout constraints.
     if (fullStoryName.length < 24) {

@@ -116,14 +116,18 @@ export interface API_SidebarOptions<API = any> {
   renderAriaLabel?: (
     item: API_HashEntry,
     api: API,
-    context: {
+    // Optional so pre-existing consumers that invoke these callbacks with two arguments
+    // keep compiling; Storybook itself always passes the context.
+    context?: {
+      isMobile: boolean;
       location: 'sidebar' | 'bottom-bar';
     }
-  ) => any;
+  ) => string;
   renderLabel?: (
     item: API_HashEntry,
     api: API,
-    context: {
+    context?: {
+      isMobile: boolean;
       location: 'sidebar' | 'bottom-bar';
     }
   ) => any;

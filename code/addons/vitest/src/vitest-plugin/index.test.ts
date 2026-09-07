@@ -1,9 +1,11 @@
 import { fileURLToPath } from 'node:url';
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, assert, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { validateConfigurationFiles } from 'storybook/internal/common';
 import { StoryIndexGenerator, experimental_loadStorybook } from 'storybook/internal/core-server';
 import { isTelemetryModuleEnabled } from 'storybook/internal/telemetry';
+
+import { build } from 'esbuild';
 
 import { storybookTest } from './index.ts';
 
@@ -75,7 +77,7 @@ async function getPluginConfig(invokingRoot: string) {
     throw new Error('The plugin config hook returned no test config');
   }
 
-  return { root: config.root, test: config.test, plugin };
+  return { root: config.root, test: config.test, optimizeDeps: config.optimizeDeps, plugin };
 }
 
 describe('story test patterns', () => {
@@ -117,5 +119,42 @@ describe('internal setup files', () => {
       '@storybook/addon-vitest/internal/setup-file',
       '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
     ]);
+  });
+});
+
+describe('dependency optimization', () => {
+  it('prebundles the automatically injected setup files', async () => {
+    const config = await getPluginConfig(PACKAGE_ROOT);
+
+    assert(Array.isArray(config.test.setupFiles));
+    expect(config.test.setupFiles).toContain(
+      '@storybook/addon-vitest/internal/setup-file-with-project-annotations'
+    );
+    expect(config.optimizeDeps?.include).toEqual(expect.arrayContaining(config.test.setupFiles));
+  });
+
+  it('preserves the virtual project annotations import when prebundling the setup file', async () => {
+    const config = await getPluginConfig(PACKAGE_ROOT);
+
+    const result = await build({
+      entryPoints: [
+        fileURLToPath(new URL('./setup-file-with-project-annotations.ts', import.meta.url)),
+      ],
+      bundle: true,
+      write: false,
+      format: 'esm',
+      platform: 'browser',
+      external: config.optimizeDeps?.exclude,
+      metafile: true,
+      logLevel: 'silent',
+    });
+
+    expect(
+      Object.values(result.metafile.outputs).flatMap((output) => output.imports)
+    ).toContainEqual({
+      path: 'virtual:/@storybook/builder-vite/project-annotations.js',
+      kind: 'import-statement',
+      external: true,
+    });
   });
 });

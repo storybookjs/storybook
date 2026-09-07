@@ -16,7 +16,27 @@ const minimalVersionsMap = {
 export const blocker = createBlocker({
   id: 'dependenciesVersions',
   async check({ packageManager }) {
-    return findOutdatedPackage<typeof minimalVersionsMap>(minimalVersionsMap, { packageManager });
+    const outdated = await findOutdatedPackage<typeof minimalVersionsMap>(minimalVersionsMap, {
+      packageManager,
+    });
+
+    if (outdated === false) {
+      // @storybook/addon-vitest requires Vitest 4, but Storybook core does not,
+      // so the floor is gated on the addon being installed instead of being an
+      // entry in minimalVersionsMap, which would block every Vitest < 4 project.
+      try {
+        const addonVersion = await packageManager.getInstalledVersion('@storybook/addon-vitest');
+
+        if (addonVersion) {
+          return await findOutdatedPackage({ vitest: '4.0.0' }, { packageManager });
+        }
+      } catch {
+        // If we can't determine the version, don't block (blockers run in parallel).
+        return false;
+      }
+    }
+
+    return outdated;
   },
   log(data) {
     switch (data.packageName) {
@@ -37,6 +57,18 @@ export const blocker = createBlocker({
             Please see the migration guide for more information:
           `,
           link: 'https://nextjs.org/docs/pages/building-your-application/upgrading/version-13',
+        };
+      case 'vitest':
+        return {
+          title: 'Vitest 4 required by @storybook/addon-vitest',
+          message: dedent`
+            The addon requires Vitest 4.0.0 or higher. You are currently using Vitest ${data.installedVersion}.
+
+            Please upgrade Vitest to 4.0.0 or higher before upgrading Storybook:
+            1. Update vitest (and any @vitest/* packages) in your project to version 4
+            2. Run your test suite to verify the migration
+          `,
+          link: 'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-requires-vitest-40-or-higher',
         };
       default:
         return {

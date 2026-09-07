@@ -4,7 +4,7 @@ import { beforeEach, describe, expect, test, vi } from 'vitest';
 
 import { lt } from 'semver';
 
-import { blocker } from './block-addon-vitest-vitest4.ts';
+import { blocker } from './block-dependencies-versions.ts';
 
 vi.mock('semver');
 
@@ -32,7 +32,7 @@ const runCheck = () =>
     configDir: '.storybook',
   });
 
-describe('addonVitestVitest4 blocker', () => {
+describe('dependenciesVersions blocker', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.mocked(lt).mockReturnValue(false);
@@ -42,22 +42,32 @@ describe('addonVitestVitest4 blocker', () => {
   });
 
   test('has a stable id', () => {
-    expect(blocker.id).toBe('addonVitestVitest4');
+    expect(blocker.id).toBe('dependenciesVersions');
   });
 
-  test('returns false when @storybook/addon-vitest is not installed', async () => {
+  test('blocks when a shared dependency is below its floor without checking the addon', async () => {
     vi.mocked(lt).mockReturnValue(true);
-    getInstalledVersion.mockImplementation(async (packageName) =>
-      packageName === 'vitest' ? '3.2.4' : null
+    getModulePackageJSON.mockImplementation(async (packageName) =>
+      packageName === 'next' ? { version: '14.0.0' } : null
     );
 
     const result = await runCheck();
 
-    expect(result).toBe(false);
-    expect(getInstalledVersion).toHaveBeenCalledWith('@storybook/addon-vitest');
+    expect(result).toEqual({
+      installedVersion: '14.0.0',
+      packageName: 'next',
+      minimumVersion: '14.1.0',
+    });
+    expect(getInstalledVersion).not.toHaveBeenCalled();
   });
 
-  test('blocks when the effective Vitest version is below 4.0.0', async () => {
+  test('does not block when nothing is installed and the addon is absent', async () => {
+    const result = await runCheck();
+
+    expect(result).toBe(false);
+  });
+
+  test('blocks on Vitest 3 when @storybook/addon-vitest is installed', async () => {
     vi.mocked(lt).mockReturnValue(true);
     getInstalledVersion.mockResolvedValue('11.0.0');
     getModulePackageJSON.mockImplementation(async (packageName) =>
@@ -66,23 +76,28 @@ describe('addonVitestVitest4 blocker', () => {
 
     const result = await runCheck();
 
-    expect(result).toEqual({ vitestVersion: '3.2.4' });
+    expect(result).toEqual({
+      installedVersion: '3.2.4',
+      packageName: 'vitest',
+      minimumVersion: '4.0.0',
+    });
     expect(lt).toHaveBeenCalledWith('3.2.4', '4.0.0');
   });
 
-  test('blocks at the Vitest 3.0.0 boundary', async () => {
+  test('does not block on Vitest 3 without the addon', async () => {
     vi.mocked(lt).mockReturnValue(true);
-    getInstalledVersion.mockResolvedValue('11.0.0');
     getModulePackageJSON.mockImplementation(async (packageName) =>
-      packageName === 'vitest' ? { version: '3.0.0' } : null
+      packageName === 'vitest' ? { version: '3.2.4' } : null
     );
 
     const result = await runCheck();
 
-    expect(result).toEqual({ vitestVersion: '3.0.0' });
+    expect(result).toBe(false);
+    expect(getInstalledVersion).toHaveBeenCalledWith('@storybook/addon-vitest');
+    expect(getModulePackageJSON).not.toHaveBeenCalledWith('vitest');
   });
 
-  test('returns false at the Vitest 4.0.0 boundary', async () => {
+  test('passes at the Vitest 4.0.0 boundary with the addon installed', async () => {
     getInstalledVersion.mockResolvedValue('11.0.0');
     getModulePackageJSON.mockImplementation(async (packageName) =>
       packageName === 'vitest' ? { version: '4.0.0' } : null
@@ -94,18 +109,7 @@ describe('addonVitestVitest4 blocker', () => {
     expect(lt).toHaveBeenCalledWith('4.0.0', '4.0.0');
   });
 
-  test('returns false for Vitest 5', async () => {
-    getInstalledVersion.mockResolvedValue('11.0.0');
-    getModulePackageJSON.mockImplementation(async (packageName) =>
-      packageName === 'vitest' ? { version: '5.0.0' } : null
-    );
-
-    const result = await runCheck();
-
-    expect(result).toBe(false);
-  });
-
-  test('returns false when vitest is not installed (unmet peer dependency)', async () => {
+  test('does not block when vitest is not installed while the addon is present', async () => {
     getInstalledVersion.mockResolvedValue('11.0.0');
 
     const result = await runCheck();
@@ -115,30 +119,22 @@ describe('addonVitestVitest4 blocker', () => {
     expect(lt).not.toHaveBeenCalled();
   });
 
-  test('uses the vite-plus vendored version when available', async () => {
-    vi.mocked(lt).mockReturnValue(true);
+  test('uses the vite-plus vendored Vitest version when available', async () => {
+    vi.mocked(lt).mockImplementation((_installed, minimum) => minimum === '4.0.0');
     vi.mocked(getVitePlusVersions).mockResolvedValue({ vite: '7.1.2', vitest: '3.2.4' });
     getInstalledVersion.mockResolvedValue('11.0.0');
 
     const result = await runCheck();
 
-    expect(result).toEqual({ vitestVersion: '3.2.4' });
-    expect(getModulePackageJSON).not.toHaveBeenCalled();
+    expect(result).toEqual({
+      installedVersion: '3.2.4',
+      packageName: 'vitest',
+      minimumVersion: '4.0.0',
+    });
+    expect(getModulePackageJSON).not.toHaveBeenCalledWith('vitest');
   });
 
-  test('falls back to the installed package when vite-plus lacks a /versions export', async () => {
-    vi.mocked(lt).mockReturnValue(true);
-    getInstalledVersion.mockResolvedValue('11.0.0');
-    getModulePackageJSON.mockImplementation(async (packageName) =>
-      packageName === 'vitest' ? { version: '3.2.4' } : null
-    );
-
-    const result = await runCheck();
-
-    expect(result).toEqual({ vitestVersion: '3.2.4' });
-  });
-
-  test('does not block when version detection throws', async () => {
+  test('does not block when the addon lookup throws', async () => {
     getInstalledVersion.mockRejectedValue(new Error('version detection failed'));
 
     const result = await runCheck();
@@ -146,8 +142,12 @@ describe('addonVitestVitest4 blocker', () => {
     expect(result).toBe(false);
   });
 
-  test('renders the title, message, and migration link', () => {
-    const { title, message, link } = blocker.log({ vitestVersion: '3.2.4' });
+  test('logs the Vitest 4 requirement for addon-vitest projects', () => {
+    const { title, message, link } = blocker.log({
+      installedVersion: '3.2.4',
+      packageName: 'vitest',
+      minimumVersion: '4.0.0',
+    });
 
     expect(title).toBe('Vitest 4 required by @storybook/addon-vitest');
     expect(message).toMatchInlineSnapshot(`
@@ -160,5 +160,15 @@ describe('addonVitestVitest4 blocker', () => {
     expect(link).toBe(
       'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#vitest-addon-requires-vitest-40-or-higher'
     );
+  });
+
+  test('logs shared dependencies through the default case', () => {
+    const { title } = blocker.log({
+      installedVersion: '4.0.0',
+      packageName: 'react-scripts',
+      minimumVersion: '5.0.0',
+    });
+
+    expect(title).toBe('react-scripts version < 5.0.0 support removed');
   });
 });

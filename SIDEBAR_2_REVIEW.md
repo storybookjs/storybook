@@ -145,8 +145,20 @@ These need either a product decision or work that would have widened this pass b
 ## 4. Cutting the PR into smaller PRs
 
 The diff is ~87 files / +3.2k −2.5k (excluding lockfile). Four PRs stand alone cleanly; the tree
-rewrite then shrinks to roughly half its current review surface. Extraction is mechanical:
-`git checkout -b <part> origin/next && git checkout issue-31267-sidebar-2 -- <files>`, then trim.
+rewrite then shrinks to roughly half its current review surface. **All four are now open as
+drafts** — each validated standalone against `next` (per-package typecheck plus the story/unit
+suites for its touched files):
+
+- PR A = [#36216](https://github.com/storybookjs/storybook/pull/36216) (`chore/upgrade-react-aria-3-52`)
+- PR B = [#36217](https://github.com/storybookjs/storybook/pull/36217) (`refactor/manager-shortcuts-escape`)
+- PR C = [#36218](https://github.com/storybookjs/storybook/pull/36218) (`feat/sidebar-render-label-context`)
+- PR D = [#36219](https://github.com/storybookjs/storybook/pull/36219) (`chore/ui-primitives-sidebar-prep`)
+
+Split notes: B excludes the `contextMenu` shortcut + `SIDEBAR_OPEN_CONTEXT_MENU` event (their only
+listener is this branch's tree, so they stay here); C keeps the old scoped `useId` import in
+`MobileNavigation` so it doesn't depend on A (the two hunks merge cleanly whichever lands first);
+`Select`'s Escape `stopPropagation` rides with B, its import swaps with A. Expect one-line MIGRATION
+and `shortcut.test.ts` merge conflicts here as B/C land — both resolve toward `next`.
 
 ### PR A — react-aria 3.52 / react-aria-components 1.21 upgrade + import migration
 *No dependencies. Highest leverage: kills two yarn patches (including `next`'s 171-line RAC patch)
@@ -194,10 +206,7 @@ D (primitives).*
   `InteractiveTooltipWrapper`/`TooltipNote`, `ActionList`/`ListItem` polish, `Card` animation,
   mobile drawer integration
 
-**Recommended path:** A first (it is also the riskiest to *delay* — every day it waits, `next`'s
-RAC patch and the branch drift further apart), B and C in parallel right after, then rebase the
-feature branch and decide D vs folding it in. A/B/C are each reviewable in one sitting and
-independently green; they also de-risk E's review down to the genuinely novel code (virtualized
-tree, sticky overlay, expansion model). One caveat when extracting A: it must include the
-component import swaps in the same PR, since RAC 1.21's dist layout no longer matches the old
-patched imports on `next`.
+**Recommended merge order:** #36216 first (it is also the riskiest to *delay* — every day it
+waits, `next`'s RAC patch and this branch drift further apart), then #36217/#36218/#36219 in any
+order or in parallel (none depend on each other or on #36216). After each merge, merge `next`
+into this branch; once all four are in, this PR's diff is the tree rewrite alone.

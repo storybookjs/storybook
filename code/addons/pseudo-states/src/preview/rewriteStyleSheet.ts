@@ -81,6 +81,38 @@ const replacePseudoStateMatches = (
 // valid even after pseudo-state selectors are expanded.
 const maximumSelectorsPerRule = 4000;
 
+const findWhereRanges = (selector: string): [number, number][] => {
+  const ranges: [number, number][] = [];
+  let start = selector.indexOf(':where(');
+
+  while (start !== -1) {
+    let depth = 1;
+    let quote: string | undefined;
+
+    for (let index = start + ':where('.length; index < selector.length; index++) {
+      const character = selector[index];
+      if (character === '\\') {
+        index++;
+      } else if (quote) {
+        if (character === quote) {
+          quote = undefined;
+        }
+      } else if (character === '"' || character === "'") {
+        quote = character;
+      } else if (character === '(') {
+        depth++;
+      } else if (character === ')' && --depth === 0) {
+        ranges.push([start, index + 1]);
+        break;
+      }
+    }
+
+    start = selector.indexOf(':where(', start + ':where('.length);
+  }
+
+  return ranges;
+};
+
 const warnings = new Set();
 const warnOnce = (message: string) => {
   if (warnings.has(message)) {
@@ -119,7 +151,13 @@ const replacePseudoStatesWithAncestorSelector = (
     return selector;
   }
 
-  const selectors = `${additionalHostSelectors ?? ''}${extracted.states.map((s) => `.pseudo-${s}-all`).join('')}`;
+  const zeroSpecificitySelectors = extracted.zeroSpecificityStates
+    .map((state) => `.pseudo-${state}-all`)
+    .join('');
+  const selectors = `${additionalHostSelectors ?? ''}${zeroSpecificitySelectors ? `:where(${zeroSpecificitySelectors})` : ''}${extracted.states
+    .filter((state) => !extracted.zeroSpecificityStates.includes(state))
+    .map((state) => `.pseudo-${state}-all`)
+    .join('')}`;
 
   // If there was a :host-context() containing only pseudo-states, we will later add a :host selector that replaces it.
   let { withoutPseudoStates } = extracted;
@@ -136,7 +174,10 @@ const replacePseudoStatesWithAncestorSelector = (
 
 const extractPseudoStates = (selector: string) => {
   const states = new Set<string>();
+  const zeroSpecificityStates = new Set<string>();
+  const nonZeroSpecificityStates = new Set<string>();
   const matches = findPseudoStates(selector);
+  const whereRanges = findWhereRanges(selector);
   let withoutPseudoStates = '';
   let cursor = 0;
 
@@ -146,15 +187,29 @@ const extractPseudoStates = (selector: string) => {
       withoutPseudoStates += '*';
     }
     states.add(match.state);
+    const target = whereRanges.some(([start, end]) => match.index >= start && match.index < end)
+      ? zeroSpecificityStates
+      : nonZeroSpecificityStates;
+    target.add(match.state);
     cursor = match.index + match.text.length;
   });
   withoutPseudoStates += selector.slice(cursor);
 
   // If a selector list was left with blank items (e.g. ", foo, , bar, "), remove the extra commas/spaces.
-  withoutPseudoStates = withoutPseudoStates.replaceAll(/([\s(]),\s+|(,\s+)+(?=\))/g, '$1') || '*';
+  withoutPseudoStates = withoutPseudoStates.replaceAll(/([\s(]),\s+|(,\s+)+(?=\))/g, '$1');
+  // Remove a vacuous `:where(*)` when another selector already provides the subject.
+  withoutPseudoStates = withoutPseudoStates.replaceAll(':where(*)', (match, offset, input) =>
+    offset > 0 && !selectorStartPattern.test(input[offset - 1]) ? '' : match
+  );
+  withoutPseudoStates ||= '*';
+
+  for (const state of nonZeroSpecificityStates) {
+    zeroSpecificityStates.delete(state);
+  }
 
   return {
     states: Array.from(states),
+    zeroSpecificityStates: Array.from(zeroSpecificityStates),
     withoutPseudoStates,
   };
 };

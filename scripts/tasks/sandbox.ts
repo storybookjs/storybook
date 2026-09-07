@@ -1,4 +1,5 @@
-import { access, cp, rm } from 'node:fs/promises';
+import { accessSync } from 'node:fs';
+import { cp, rm } from 'node:fs/promises';
 import path, { join } from 'node:path';
 import { promisify } from 'node:util';
 
@@ -12,9 +13,9 @@ import { isNxTaskExecution } from '../utils/nx.ts';
 
 const logger = console;
 
-const pathExists = async (path: string) => {
+const pathExists = (path: string) => {
   try {
-    await access(path);
+    accessSync(path);
     return true;
   } catch {
     return false;

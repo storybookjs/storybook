@@ -257,19 +257,24 @@ export const jsxDecorator = (
 
   const skip = skipJsxRender(context);
 
-  const options = {
-    ...defaultOpts,
-    ...(context?.parameters.jsx || {}),
-    parentComponent: context?.component,
-  } as Required<JSXOptions>;
-
-  const storyJsx = context.originalStoryFn(context.args, context);
-
   useEffect(() => {
     if (skip) {
       return;
     }
 
+    // Capturing the JSX source re-invokes the story function and walks the
+    // rendered tree to serialize it. That work is only needed when a snippet
+    // is actually consumed, so it's deferred into the effect behind the `skip`
+    // guard — otherwise every commit (state changes, scrolling, animation
+    // frames) pays for a second story invocation and a full tree walk even
+    // when no source is rendered.
+    const options = {
+      ...defaultOpts,
+      ...(context?.parameters.jsx || {}),
+      parentComponent: context?.component,
+    } as Required<JSXOptions>;
+
+    const storyJsx = context.originalStoryFn(context.args, context);
     const sourceJsx = mdxToJsx(storyJsx);
 
     const rendered = renderJsx(sourceJsx, options);

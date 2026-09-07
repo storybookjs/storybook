@@ -31,7 +31,9 @@ export const InteractiveTooltipWrapper: React.FC<{
     return shortcutToHumanString(shortcut);
   }, [shortcut]);
 
-  return tooltip ? (
+  // A shortcut alone still warrants a tooltip: buttons with visible text pass no `tooltip`
+  // but their shortcut is only discoverable here.
+  return tooltip || shortcutLabel ? (
     <TooltipProvider
       placement={tooltipPlacement}
       tooltip={<TooltipNote note={tooltip} shortcut={shortcutLabel} />}

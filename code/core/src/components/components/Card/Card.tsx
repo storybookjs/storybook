@@ -106,7 +106,9 @@ const CardOutline = styled.div<{
     ...(animation === 'rainbow' && {
       width: '1000%',
       animation: `${slide} 10s infinite linear, ${fadeInOut} 60s infinite linear`,
-      backgroundImage: `linear-gradient(45deg,rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181), rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181))`,
+      // 13 stops: 6 hues twice plus the first hue again, so the second cycle starts at
+      // exactly 50% and the translateX(-50%) loop wraps without a seam.
+      backgroundImage: `linear-gradient(45deg,rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181), rgb(234, 0, 0),rgb(255, 157, 0),rgb(255, 208, 0),rgb(0, 172, 0),rgb(0, 166, 255),rgb(181, 0, 181), rgb(234, 0, 0))`,
       willChange: 'transform, opacity',
       '@media (prefers-reduced-motion: reduce)': {
         animation: 'none',

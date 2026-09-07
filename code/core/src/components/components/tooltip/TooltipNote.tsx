@@ -31,8 +31,8 @@ const Note = styled.div<{ maxWidth: number }>(
 );
 
 export interface TooltipNoteProps {
-  /* The note to display. */
-  note: string;
+  /* The note to display. A note may also present a shortcut alone. */
+  note?: string;
   /* The optional keyboard shortcut for the action being presented. */
   shortcut?: string;
   /* The maximum width of the note. */
@@ -47,7 +47,7 @@ export const TooltipNote = ({
 }: TooltipNoteProps) => {
   return (
     <Note maxWidth={maxWidth} {...props}>
-      <span>{note}</span>
+      {note && <span>{note}</span>}
       {shortcut && <code>{shortcut}</code>}
     </Note>
   );

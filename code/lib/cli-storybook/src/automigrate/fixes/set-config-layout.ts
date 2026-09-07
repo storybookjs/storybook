@@ -5,6 +5,12 @@ import { types as t, unwrapTSExpression } from 'storybook/internal/babel';
 import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 
 import type { Fix } from '../types.ts';
+import {
+  findIndirectProperty,
+  getDirectProperties,
+  getDirectPropertyName,
+  getObjectPropertyValue,
+} from '../helpers/config-object.ts';
 
 const managerApiPackages = new Set(['storybook/manager-api', '@storybook/manager-api']);
 
@@ -28,19 +34,6 @@ interface SetConfigLayoutOptions {
   transformedSource: string;
 }
 
-const getStaticPropertyName = (property: t.ObjectMember | t.SpreadElement) => {
-  if (t.isSpreadElement(property) || property.computed) {
-    return null;
-  }
-  if (t.isIdentifier(property.key)) {
-    return property.key.name;
-  }
-  if (t.isStringLiteral(property.key)) {
-    return property.key.value;
-  }
-  return null;
-};
-
 const unwrapTypeExpression = (node: t.Expression) => {
   let expression = unwrapTSExpression(node);
   while (t.isTSNonNullExpression(expression)) {
@@ -56,10 +49,10 @@ const migrationError = (managerConfigPath: string, node: t.Node, reason: string)
   );
 };
 
-const getPropertyValue = (property: t.ObjectMember | t.SpreadElement) =>
-  t.isObjectProperty(property) && t.isExpression(property.value)
-    ? unwrapTypeExpression(property.value)
-    : null;
+const getPropertyValue = (property: t.ObjectMember | t.SpreadElement) => {
+  const value = getObjectPropertyValue(property);
+  return value ? unwrapTypeExpression(value) : null;
+};
 
 const isStaticValue = (node: t.Expression): boolean => {
   if (t.isLiteral(node) || t.isFunctionExpression(node) || t.isArrowFunctionExpression(node)) {
@@ -76,7 +69,9 @@ const isStaticValue = (node: t.Expression): boolean => {
   if (t.isObjectExpression(node)) {
     return node.properties.every((property) => {
       const value = getPropertyValue(property);
-      return getStaticPropertyName(property) !== null && value !== null && isStaticValue(value);
+      return (
+        getDirectPropertyName(property) !== undefined && value !== null && isStaticValue(value)
+      );
     });
   }
   return false;
@@ -96,9 +91,7 @@ const mergeRecentVisibleSizes = (
       'the duplicated recentVisibleSizes values are not object literals'
     );
   }
-  const unknownProperty = [...topLevelValue.properties, ...nestedValue.properties].find(
-    (property) => t.isSpreadElement(property) || getStaticPropertyName(property) === null
-  );
+  const unknownProperty = findIndirectProperty(topLevelValue) ?? findIndirectProperty(nestedValue);
   if (unknownProperty) {
     throw migrationError(
       managerConfigPath,
@@ -106,10 +99,10 @@ const mergeRecentVisibleSizes = (
       'a recentVisibleSizes object contains a spread or computed property'
     );
   }
-  const nestedNames = new Set(nestedValue.properties.map(getStaticPropertyName));
+  const nestedNames = new Set(nestedValue.properties.map(getDirectPropertyName));
   nestedValue.properties.unshift(
     ...topLevelValue.properties.filter(
-      (property) => !nestedNames.has(getStaticPropertyName(property))
+      (property) => !nestedNames.has(getDirectPropertyName(property))
     )
   );
 };
@@ -123,15 +116,13 @@ const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: stri
       optionGroups.has(property.key.value)
   );
   const movedProperties = config.properties.filter((property) =>
-    optionGroups.has(getStaticPropertyName(property) ?? '')
+    optionGroups.has(getDirectPropertyName(property) ?? '')
   );
   if (movedProperties.length === 0 && !computedLegacyProperty) {
     return false;
   }
 
-  const unknownProperty = config.properties.find(
-    (property) => t.isSpreadElement(property) || getStaticPropertyName(property) === null
-  );
+  const unknownProperty = findIndirectProperty(config);
   if (unknownProperty) {
     throw migrationError(
       managerConfigPath,
@@ -144,14 +135,12 @@ const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: stri
 
   for (const group of ['layout', 'ui'] as const) {
     const movedGroupProperties = config.properties.filter(
-      (property) => optionGroups.get(getStaticPropertyName(property) ?? '') === group
+      (property) => optionGroups.get(getDirectPropertyName(property) ?? '') === group
     );
     if (movedGroupProperties.length === 0) {
       continue;
     }
-    const groupProperties = config.properties.filter(
-      (property) => getStaticPropertyName(property) === group
-    );
+    const groupProperties = getDirectProperties(config, group);
     if (groupProperties.length > 1) {
       throw migrationError(
         managerConfigPath,
@@ -173,9 +162,7 @@ const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: stri
           `the existing ${group} value is not an object literal`
         );
       }
-      const unknownNestedProperty = existingGroupValue.properties.find(
-        (property) => t.isSpreadElement(property) || getStaticPropertyName(property) === null
-      );
+      const unknownNestedProperty = findIndirectProperty(existingGroupValue);
       if (unknownNestedProperty) {
         throw migrationError(
           managerConfigPath,
@@ -195,10 +182,10 @@ const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: stri
         );
       }
       const nestedProperties = new Map(
-        existingGroupValue.properties.map((property) => [getStaticPropertyName(property), property])
+        existingGroupValue.properties.map((property) => [getDirectPropertyName(property), property])
       );
       const propertiesToAdd = movedGroupProperties.filter((property) => {
-        const name = getStaticPropertyName(property);
+        const name = getDirectPropertyName(property);
         const nestedProperty = nestedProperties.get(name);
         if (name === 'recentVisibleSizes' && nestedProperty) {
           mergeRecentVisibleSizes(property, nestedProperty, managerConfigPath);
@@ -256,7 +243,7 @@ export const transformSetConfigLayout = (
       return (
         t.isObjectExpression(config) &&
         config.properties.some((property) =>
-          optionGroups.has(getStaticPropertyName(property) ?? '')
+          optionGroups.has(getDirectPropertyName(property) ?? '')
         )
       );
     });

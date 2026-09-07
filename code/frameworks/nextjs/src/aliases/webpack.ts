@@ -1,10 +1,12 @@
 import type { Configuration as WebpackConfig } from 'webpack';
 
 import { resolvePackageDir } from '../../../../core/src/shared/utils/module.ts';
+import { configureCompatibilityAliases } from '../compatibility/compatibility-map.ts';
 import { configureNextExportMocks } from '../export-mocks/webpack.ts';
 
 export const configureAliases = (baseConfig: WebpackConfig): void => {
   configureNextExportMocks(baseConfig);
+  configureCompatibilityAliases(baseConfig);
 
   baseConfig.resolve = {
     ...(baseConfig.resolve ?? {}),
@@ -18,4 +20,12 @@ export const configureAliases = (baseConfig: WebpackConfig): void => {
         'next/dist/shared/lib/app-router-context.shared-runtime',
     },
   };
+
+  // remove warnings regarding compatibility paths
+  baseConfig.ignoreWarnings = [
+    ...(baseConfig.ignoreWarnings ?? []),
+    (warning) =>
+      warning.message.includes("export 'draftMode'") &&
+      warning.message.includes('next/dist/server/request/headers'),
+  ];
 };

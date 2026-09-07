@@ -37,6 +37,11 @@ const config: BuildEntries = {
         entryPoint: './src/export-mocks/router/index.ts',
       },
       {
+        exportEntries: ['./compatibility/draft-mode.compat'],
+        entryPoint: './src/compatibility/draft-mode.compat.ts',
+        dts: false,
+      },
+      {
         exportEntries: ['./next-image-loader-stub'],
         entryPoint: './src/next-image-loader-stub.ts',
         dts: false,

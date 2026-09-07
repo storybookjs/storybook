@@ -1,4 +1,4 @@
-import { type NodePath, types as t } from 'storybook/internal/babel';
+import { type NodePath, recast, types as t } from 'storybook/internal/babel';
 import {
   createStoryArgsResolver,
   type CsfFile,
@@ -11,6 +11,7 @@ import {
   type StoryArgsResolver,
 } from 'storybook/internal/csf-tools';
 
+import { collectSnippetDependencies } from './collectSnippetDependencies.ts';
 import { invariant } from './utils.ts';
 
 function renderFunctionOf(resolution: RenderResolution) {
@@ -23,7 +24,9 @@ function renderFunctionOf(resolution: RenderResolution) {
 /** A story's snippet, and what showing it as a complete example still depends on. */
 export interface CodeSnippet {
   node: t.VariableDeclaration | t.FunctionDeclaration;
-  /** Imports the snippet needs beyond the component, from arg values that kept a name. */
+  /** Story-file declarations the snippet names, to print above it in source order. */
+  declarations: t.Statement[];
+  /** Imports the snippet needs for the names it prints but the story file does not declare. */
   imports: ImportRef[];
   /** What a static pass could not read, in the source text it was written as. */
   unresolved: string[];
@@ -36,11 +39,25 @@ export function getCodeSnippet(
   resolver: StoryArgsResolver = createStoryArgsResolver(csf)
 ): CodeSnippet {
   const { args, imports, unresolved } = resolver.resolve(storyName);
+  const node = buildSnippetNode(csf, storyName, componentName, args, resolver.ctx);
+  const dependencies = collectSnippetDependencies(node, csf, storyName);
+  const covered = new Set(imports.map((ref) => ref.localImportName));
   return {
-    node: buildSnippetNode(csf, storyName, componentName, args, resolver.ctx),
-    imports,
-    unresolved,
+    node,
+    declarations: dependencies.declarations,
+    imports: [
+      ...imports,
+      ...dependencies.imports.filter((ref) => !covered.has(ref.localImportName)),
+    ],
+    // A name reported as unreadable while resolving args is readable after all once the snippet
+    // carries its declaration or its import, and warning about it would contradict the output.
+    unresolved: unresolved.filter((source) => !dependencies.resolved.has(source)),
   };
+}
+
+/** Prints a snippet with the declarations it depends on, which is the only complete form of it. */
+export function printSnippet(snippet: CodeSnippet): string {
+  return recast.print(t.program([...snippet.declarations, snippet.node])).code;
 }
 
 function buildSnippetNode(

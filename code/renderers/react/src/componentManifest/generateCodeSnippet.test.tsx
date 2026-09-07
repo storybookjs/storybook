@@ -1,20 +1,19 @@
 import { expect, test } from 'vitest';
 
-import { recast, types as t } from 'storybook/internal/babel';
 import { loadCsf } from 'storybook/internal/csf-tools';
 
 import { dedent } from 'ts-dedent';
 
-import { getCodeSnippet } from './generateCodeSnippet.ts';
+import { getCodeSnippet, printSnippet } from './generateCodeSnippet.ts';
 
 function generateExample(code: string) {
   const csf = loadCsf(code, { makeTitle: (userTitle?: string) => userTitle ?? 'title' }).parse();
 
-  const snippets = Object.keys(csf._storyExports).map(
-    (name) => getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle').node
-  );
-
-  return recast.print(t.program(snippets)).code;
+  return Object.keys(csf._storyExports)
+    .map((name) =>
+      printSnippet(getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle'))
+    )
+    .join('\n');
 }
 
 /** Snippet plus what it still depends on, for the cases that resolve names rather than values. */
@@ -24,7 +23,7 @@ function generateResolved(code: string) {
   return Object.keys(csf._storyExports).map((name) => {
     const snippet = getCodeSnippet(csf, name, csf._meta?.component ?? 'ComponentTitle');
     return {
-      snippet: recast.print(snippet.node).code,
+      snippet: printSnippet(snippet),
       imports: snippet.imports.map((ref) => `${ref.importName} from ${ref.importId}`),
       unresolved: snippet.unresolved,
     };
@@ -787,6 +786,27 @@ test("a spread of a CSF4 story's args contributes the args it does not override"
   `);
 });
 
+test('a render naming a local wrapper carries the wrapper and what it reads', () => {
+  const input = withCSF3(dedent`
+    const label = 'foo';
+    const ButtonWrapper = ({ label }) => <Button>{label}</Button>;
+    export const Test: Story = { render: () => <ButtonWrapper label={label} /> };
+  `);
+  expect(generateResolved(input)).toMatchInlineSnapshot(`
+    [
+      {
+        "imports": [
+          "Button from @design-system/button",
+        ],
+        "snippet": "const label = 'foo';
+    const ButtonWrapper = ({ label }) => <Button>{label}</Button>;
+    const Test = () => <ButtonWrapper label={label} />;",
+        "unresolved": [],
+      },
+    ]
+  `);
+});
+
 test('an arg naming a local const carries the value, not the name', () => {
   const input = withCSF3(dedent`
     const LOCAL_LABEL = 'local';
@@ -795,7 +815,9 @@ test('an arg naming a local const carries the value, not the name', () => {
   expect(generateResolved(input)).toMatchInlineSnapshot(`
     [
       {
-        "imports": [],
+        "imports": [
+          "Button from @design-system/button",
+        ],
         "snippet": "const Default = () => <Button label="local">Click me</Button>;",
         "unresolved": [],
       },
@@ -813,6 +835,7 @@ test('an arg naming an imported value keeps the name and reports the import it n
       {
         "imports": [
           "IMPORTED_LABEL from ./constants",
+          "Button from @design-system/button",
         ],
         "snippet": "const Default = () => <Button label={IMPORTED_LABEL}>Click me</Button>;",
         "unresolved": [],
@@ -828,7 +851,9 @@ test('args assembled at runtime are reported rather than dropped', () => {
   expect(generateResolved(input)).toMatchInlineSnapshot(`
     [
       {
-        "imports": [],
+        "imports": [
+          "Button from @design-system/button",
+        ],
         "snippet": "const Default = () => <Button label="runtime">Click me</Button>;",
         "unresolved": [
           "...buildArgs()",
@@ -862,7 +887,9 @@ test('a meta-level spread that may carry args is reported', () => {
   expect(generateResolved(input)).toMatchInlineSnapshot(`
     [
       {
-        "imports": [],
+        "imports": [
+          "Button from @design-system/button",
+        ],
         "snippet": "const Default = () => <Button label="x" />;",
         "unresolved": [
           "...sharedMeta()",

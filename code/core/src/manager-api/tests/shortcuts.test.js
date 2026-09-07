@@ -359,3 +359,25 @@ describe('addon shortcut activity gating', () => {
     expect(api.handleKeydownEvent({ key: 'ArrowUp' })).toBeUndefined();
   });
 });
+
+describe('keydown match gating', () => {
+  it('reports no match when shortcuts are disabled, so the key is not swallowed', () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'shown', toggleFullscreen: vi.fn() };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: false }, storyId: 'a' });
+
+    expect(api.handleKeydownEvent({ key: 'F', altKey: true })).toBeUndefined();
+    expect(fullAPI.toggleFullscreen).not.toHaveBeenCalled();
+  });
+
+  it('reports no match for sidebar shortcuts while the nav is unavailable', () => {
+    const store = createMockStore();
+    const fullAPI = { getNavAvailability: () => 'unavailable', toggleFullscreen: vi.fn() };
+    const { api, state } = initShortcuts({ store, provider: {}, fullAPI });
+    store.setState({ ...state, ui: { enableShortcuts: true }, storyId: 'a' });
+
+    expect(api.handleKeydownEvent({ key: 'S', code: 'KeyS', altKey: true })).toBeUndefined();
+    expect(api.handleKeydownEvent({ key: 'F', altKey: true })).toBe('fullScreen');
+  });
+});

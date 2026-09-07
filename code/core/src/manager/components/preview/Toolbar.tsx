@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, type FC } from 'react';
+import React, { useRef } from 'react';
 
 import { AbstractToolbar, Button, Separator, TabList } from 'storybook/internal/components';
 import { Addon_TypesEnum, type Addon_BaseType } from 'storybook/internal/types';
@@ -29,53 +29,11 @@ const fullScreenMapper = ({ api, state }: Combo) => {
   return {
     toggle: api.toggleFullscreen,
     isFullscreen: api.getIsFullscreen(),
+    shortcut: api.getShortcutKeys().fullScreen,
     hasPanel: Object.keys(api.getElements(Addon_TypesEnum.PANEL)).length > 0,
     singleStory: state.singleStory,
     isNavUnavailable: api.getNavAvailability() === 'unavailable',
   };
-};
-
-const FullscreenTool: FC<{
-  toggle: () => void;
-  isFullscreen: boolean;
-  hasPanel: boolean;
-  singleStory?: boolean;
-}> = ({ toggle, isFullscreen, hasPanel, singleStory }) => {
-  useEffect(() => {
-    // The tool is hidden in single-story mode without panels; don't hijack Escape there.
-    if (singleStory && !hasPanel) {
-      return;
-    }
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && isFullscreen) {
-        toggle();
-        e.stopPropagation();
-        e.preventDefault();
-      }
-    };
-
-    window.addEventListener('keydown', handleKeyDown);
-    return () => {
-      window.removeEventListener('keydown', handleKeyDown);
-    };
-  }, [isFullscreen, toggle, singleStory, hasPanel]);
-
-  if (singleStory && !hasPanel) {
-    return null;
-  }
-
-  return (
-    <Button
-      key="full"
-      padding="small"
-      variant="ghost"
-      onClick={() => toggle()}
-      ariaLabel={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
-      shortcut={isFullscreen ? ['Escape'] : undefined}
-    >
-      {isFullscreen ? <CloseIcon /> : <ExpandIcon />}
-    </Button>
-  );
 };
 
 export const fullScreenTool: Addon_BaseType = {
@@ -93,14 +51,19 @@ export const fullScreenTool: Addon_BaseType = {
 
     return (
       <Consumer filter={fullScreenMapper}>
-        {({ toggle, isFullscreen, hasPanel, singleStory, isNavUnavailable }) =>
-          !isNavUnavailable && (
-            <FullscreenTool
-              toggle={toggle}
-              isFullscreen={isFullscreen}
-              hasPanel={hasPanel}
-              singleStory={singleStory}
-            />
+        {({ toggle, isFullscreen, shortcut, hasPanel, singleStory, isNavUnavailable }) =>
+          !isNavUnavailable &&
+          (!singleStory || (singleStory && hasPanel)) && (
+            <Button
+              key="full"
+              padding="small"
+              variant="ghost"
+              onClick={() => toggle()}
+              ariaLabel={isFullscreen ? 'Exit full screen' : 'Enter full screen'}
+              shortcut={shortcut}
+            >
+              {isFullscreen ? <CloseIcon /> : <ExpandIcon />}
+            </Button>
           )
         }
       </Consumer>

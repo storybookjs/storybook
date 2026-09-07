@@ -179,12 +179,6 @@ export const defaultShortcuts: API_Shortcuts = Object.freeze({
 
 const addonsShortcuts: API_AddonShortcuts = {};
 
-/**
- * Storage for recently removed features that still exist in users' browser cache.
- * Prevents runtime errors in console for those users.
- */
-const removedFeatures: string[] = ['escape'];
-
 function shouldSkipShortcut(event: KeyboardEvent) {
   const target = event.target as Element;
   if (/input|textarea/i.test(target.tagName) || target.getAttribute('contenteditable') !== null) {
@@ -258,11 +252,21 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
 
     // Listening to shortcut events
     handleKeydownEvent(event) {
+      // A feature that would not run must report "no match": the capture listener stops
+      // propagation for matched shortcuts, so reporting a match here would swallow the key
+      // for the rest of the UI without performing any action.
+      if (!store.getState().ui.enableShortcuts) {
+        return undefined;
+      }
       const shortcut = eventToShortcut(event);
       const shortcuts = api.getShortcutKeys();
       const actions = keys(shortcuts);
+      const isSidebarShortcutBlocked = fullAPI.getNavAvailability() === 'unavailable';
       const matchedFeature = actions.find((feature: API_Action) => {
         if (!shortcutMatchesShortcut(shortcut!, shortcuts[feature])) {
+          return false;
+        }
+        if (isSidebarShortcutBlocked && ['focusNav', 'search', 'toggleNav'].includes(feature)) {
           return false;
         }
         // Addon shortcuts can be scoped to a mode (e.g. review navigation on bare arrow
@@ -275,9 +279,6 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         return true;
       });
       if (matchedFeature) {
-        if (removedFeatures.includes(matchedFeature)) {
-          return;
-        }
         api.handleShortcutFeature(matchedFeature, event);
       }
       return matchedFeature;
@@ -561,9 +562,36 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
       { capture: true }
     );
 
+    // Escape is deliberately not part of the shortcut map: react-aria overlays (menus,
+    // popovers, modals) handle it at the element level and stop propagation when they consume
+    // it, so this bubble-phase listener only sees presses nothing else claimed. Those exit
+    // fullscreen. Running at the capture phase instead would close overlays and exit
+    // fullscreen with a single press.
+    window.addEventListener('keydown', (event: KeyboardEvent) => {
+      if (
+        event.key === 'Escape' &&
+        !event.defaultPrevented &&
+        !shouldSkipShortcut(event) &&
+        store.getState().ui.enableShortcuts &&
+        fullAPI.getIsFullscreen()
+      ) {
+        event.preventDefault();
+        fullAPI.toggleFullscreen(false);
+      }
+    });
+
     // Also listen to keydown events sent over the channel
     provider.channel?.on(PREVIEW_KEYDOWN, (data: { event: KeyboardEventLike }) => {
       api.handleKeydownEvent(data.event);
+      // The preview only forwards keydowns when focus is outside inputs, so Escape pressed
+      // while interacting with the story exits fullscreen just like it does in the manager.
+      if (
+        data.event.key === 'Escape' &&
+        store.getState().ui.enableShortcuts &&
+        fullAPI.getIsFullscreen()
+      ) {
+        fullAPI.toggleFullscreen(false);
+      }
     });
   };
 

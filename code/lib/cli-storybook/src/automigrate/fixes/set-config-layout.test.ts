@@ -62,7 +62,7 @@ describe('transformSetConfigLayout', () => {
     `);
   });
 
-  it('keeps nested options when the same top-level options exist', () => {
+  it('replaces nested options with their top-level values', () => {
     const source = dedent`
       import { addons as managerAddons } from '@storybook/manager-api';
 
@@ -78,8 +78,8 @@ describe('transformSetConfigLayout', () => {
       "import { addons as managerAddons } from '@storybook/manager-api';
 
       managerAddons.setConfig({
-        layout: { showNav: false, showPanel: false },
-        ui: { enableShortcuts: true }
+        layout: { showPanel: false, showNav: true },
+        ui: { enableShortcuts: false }
       });"
     `);
   });
@@ -157,7 +157,7 @@ describe('transformSetConfigLayout', () => {
     `);
   });
 
-  it('deep-merges recent visible sizes with nested values taking precedence', () => {
+  it('replaces nested recent visible sizes with the top-level value', () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({
@@ -169,10 +169,25 @@ describe('transformSetConfigLayout', () => {
     expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
       "import { addons } from 'storybook/manager-api';
       addons.setConfig({
-        layout: { recentVisibleSizes: {
-          bottomPanelHeight: 300,
-          navSize: 100
-        } }
+        layout: { recentVisibleSizes: { navSize: 200, bottomPanelHeight: 300 } }
+      });"
+    `);
+  });
+
+  it('moves an option into a nested object with a spread', () => {
+    const source = dedent`
+      import { addons } from 'storybook/manager-api';
+      addons.setConfig({ showNav: true, layout: { ...layout, showPanel: false } });
+    `;
+
+    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+      "import { addons } from 'storybook/manager-api';
+      addons.setConfig({
+        layout: {
+          ...layout,
+          showPanel: false,
+          showNav: true
+        }
       });"
     `);
   });
@@ -191,21 +206,23 @@ describe('transformSetConfigLayout', () => {
     `);
   });
 
-  it('reports manual guidance when multiple setConfig calls can interact', () => {
+  it('migrates multiple setConfig calls independently', () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ layout: { showNav: false } });
       addons.setConfig({ showPanel: false });
     `;
 
-    expect(() =>
-      transformSetConfigLayout(source, managerConfigPath)
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: Cannot automigrate addons.setConfig in /project/.storybook/manager.ts on line 3: the file calls addons.setConfig more than once, so their configuration may interact. Move top-level layout options into \`layout\` and \`enableShortcuts\` into \`ui\` manually.]`
-    );
+    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+      "import { addons } from 'storybook/manager-api';
+      addons.setConfig({ layout: { showNav: false } });
+      addons.setConfig({ layout: {
+        showPanel: false
+      } });"
+    `);
   });
 
-  it('reports manual guidance when grouping changes dynamic evaluation order', () => {
+  it('moves separated dynamic values into layout', () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({
@@ -215,24 +232,35 @@ describe('transformSetConfigLayout', () => {
       });
     `;
 
-    expect(() =>
-      transformSetConfigLayout(source, managerConfigPath)
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: Cannot automigrate addons.setConfig in /project/.storybook/manager.ts on line 5: moving the layout options could change their evaluation order. Move top-level layout options into \`layout\` and \`enableShortcuts\` into \`ui\` manually.]`
-    );
+    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+      "import { addons } from 'storybook/manager-api';
+      addons.setConfig({
+        layout: {
+          showNav: record('showNav'),
+          panelPosition: record('panelPosition')
+        },
+
+        theme: record('theme')
+      });"
+    `);
   });
 
-  it('reports manual guidance when moving a dynamic value into an existing group', () => {
+  it('moves a dynamic value into an existing group', () => {
     const source = dedent`
       import { addons } from 'storybook/manager-api';
       addons.setConfig({ showNav: readPreference(), theme, layout: {} });
     `;
 
-    expect(() =>
-      transformSetConfigLayout(source, managerConfigPath)
-    ).toThrowErrorMatchingInlineSnapshot(
-      `[Error: Cannot automigrate addons.setConfig in /project/.storybook/manager.ts on line 2: moving the layout option could change its evaluation order. Move top-level layout options into \`layout\` and \`enableShortcuts\` into \`ui\` manually.]`
-    );
+    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+      "import { addons } from 'storybook/manager-api';
+      addons.setConfig({
+        theme,
+
+        layout: {
+          showNav: readPreference()
+        }
+      });"
+    `);
   });
 
   it('does not change unrelated setConfig calls', () => {

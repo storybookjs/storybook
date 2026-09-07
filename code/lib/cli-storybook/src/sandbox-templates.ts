@@ -1241,8 +1241,6 @@ export const normal: TemplateKey[] = [
   // redundant.
   'angular-vite/docgen-server-ts',
   'vue3-vite/docgen-server-ts',
-  // TODO/FIXME/TEMP/DEBUG: never merge this to next.
-  'preact-vite/prerelease-ts',
 ];
 
 export const merged: TemplateKey[] = [
@@ -1271,6 +1269,7 @@ export const daily: TemplateKey[] = [
   'nextjs/prerelease',
   // 'qwik-vite/default-ts',
   'preact-vite/default-js',
+  'preact-vite/prerelease-ts',
   'html-vite/default-js',
   'internal/react18-webpack-babel',
   'react-native-web-vite/expo-ts',

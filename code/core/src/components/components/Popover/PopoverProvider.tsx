@@ -3,9 +3,12 @@ import React, { cloneElement, useCallback, useState } from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
 
-import { Pressable } from '@react-aria/interactions';
-import { DialogTrigger } from 'react-aria-components/patched-dist/Dialog';
-import { Popover as PopoverUpstream } from 'react-aria-components/patched-dist/Popover';
+// Imported from react-aria-components (not react-aria) so the Pressable shares the RAC
+// instance that renders DialogTrigger's PressResponder: with two react-aria copies in the
+// bundle the press context never connects and triggers go dead.
+import { Pressable } from 'react-aria-components/Pressable';
+import { DialogTrigger } from 'react-aria-components/Dialog';
+import { Popover as PopoverUpstream } from 'react-aria-components/Popover';
 
 import { type PopperPlacement, convertToReactAriaPlacement } from '../shared/overlayHelpers.tsx';
 import { Popover } from './Popover.tsx';

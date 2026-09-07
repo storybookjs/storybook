@@ -930,7 +930,7 @@ export const baseTemplates = {
   },
   'preact-vite/prerelease-ts': {
     name: 'Preact Prerelease (Vite | TypeScript)',
-    script: `npm create vite --yes {{beforeDir}} -- --template preact-ts && yarn add preact@beta`,
+    script: `npm create vite --yes {{beforeDir}} -- --template preact-ts`,
     preferNoLink: true,
     expected: {
       framework: '@storybook/preact-vite',

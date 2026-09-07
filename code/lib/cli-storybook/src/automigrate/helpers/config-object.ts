@@ -2,15 +2,17 @@ import { types as t } from 'storybook/internal/babel';
 
 type ObjectMember = t.ObjectMember | t.SpreadElement;
 
-/**
- * The key of a non-computed identifier or string-literal property.
- *
- * Returns `undefined` for spread elements, computed keys, and every other shape a configuration
- * migration cannot statically reason about. Config migrations must treat `undefined` as "bail out
- * with an actionable error", never as "skip this property".
- */
 export const getStaticPropertyName = (property: ObjectMember): string | undefined => {
-  if (t.isSpreadElement(property) || property.computed) {
+  if (t.isSpreadElement(property)) {
+    return undefined;
+  }
+  if (property.computed) {
+    if (t.isStringLiteral(property.key)) {
+      return property.key.value;
+    }
+    if (t.isTemplateLiteral(property.key) && property.key.expressions.length === 0) {
+      return property.key.quasis[0]?.value.cooked;
+    }
     return undefined;
   }
   if (t.isIdentifier(property.key)) {
@@ -22,16 +24,34 @@ export const getStaticPropertyName = (property: ObjectMember): string | undefine
   return undefined;
 };
 
-/**
- * The first member of `object` that defeats static analysis: a spread element, or a property whose
- * key {@link getStaticPropertyName} cannot read. The node is returned rather than a boolean so
- * callers can point at its source location in the error they raise.
- */
-export const findIndirectProperty = (object: t.ObjectExpression): ObjectMember | undefined =>
-  object.properties.find((property) => getStaticPropertyName(property) === undefined);
+export const getDirectPropertyName = (property: ObjectMember): string | undefined =>
+  !t.isSpreadElement(property) && !property.computed ? getStaticPropertyName(property) : undefined;
 
-/** Every member of `object` whose static key is exactly `name`. */
+export const getObjectPropertyValue = (property: ObjectMember): t.Expression | undefined =>
+  t.isObjectProperty(property) && t.isExpression(property.value) ? property.value : undefined;
+
+export const findSpreadProperty = (object: t.ObjectExpression): t.SpreadElement | undefined =>
+  object.properties.find((property): property is t.SpreadElement => t.isSpreadElement(property));
+
+export const findUnresolvedComputedProperty = (
+  object: t.ObjectExpression
+): t.ObjectMember | undefined =>
+  object.properties.find(
+    (property): property is t.ObjectMember =>
+      !t.isSpreadElement(property) &&
+      property.computed &&
+      getStaticPropertyName(property) === undefined
+  );
+
+export const findIndirectProperty = (object: t.ObjectExpression): ObjectMember | undefined =>
+  object.properties.find((property) => getDirectPropertyName(property) === undefined);
+
 export const getStaticProperties = (object: t.ObjectExpression, name: string): t.ObjectMember[] =>
   object.properties.filter(
     (property): property is t.ObjectMember => getStaticPropertyName(property) === name
+  );
+
+export const getDirectProperties = (object: t.ObjectExpression, name: string): t.ObjectMember[] =>
+  object.properties.filter(
+    (property): property is t.ObjectMember => getDirectPropertyName(property) === name
   );

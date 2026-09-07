@@ -44,14 +44,22 @@ describe('transformSetConfigLayout', () => {
       addons.setConfig({ showNav: false, panelPosition: 'right', enableShortcuts: false, theme });
     `;
 
-    const transformed = transformSetConfigLayout(source);
+    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+      "import { addons } from 'storybook/manager-api';
 
-    expect(transformed).toContain(
-      "  layout: {\n    showNav: false,\n    panelPosition: 'right'\n  }"
-    );
-    expect(transformed).toContain('  ui: {\n    enableShortcuts: false\n  }');
-    expect(transformed).not.toContain('\n  showNav:');
-    expect(transformed).not.toContain('\n  enableShortcuts:');
+      addons.setConfig({
+        layout: {
+          showNav: false,
+          panelPosition: 'right'
+        },
+
+        ui: {
+          enableShortcuts: false
+        },
+
+        theme
+      });"
+    `);
   });
 
   it('keeps nested options when the same top-level options exist', () => {
@@ -82,48 +90,53 @@ describe('transformSetConfigLayout', () => {
       addons.setConfig({ ...config, theme });
     `;
 
-    expect(transformSetConfigLayout(source)).toBe(source);
+    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+      "import { addons } from 'storybook/manager-api';
+      addons.setConfig({ ...config, theme });"
+    `);
   });
 
-  it.each([
-    [
-      'satisfies',
-      '{ showNav: false } satisfies Addon_Config',
-      dedent`
-        import { addons } from 'storybook/manager-api';
-        addons.setConfig({ layout: {
-          showNav: false
-        } } satisfies Addon_Config);
-      `,
-    ],
-    [
-      'as',
-      '{ showNav: false } as Addon_Config',
-      dedent`
-        import { addons } from 'storybook/manager-api';
-        addons.setConfig({ layout: {
-          showNav: false
-        } } as Addon_Config);
-      `,
-    ],
-    [
-      'non-null',
-      '{ showNav: false }!',
-      dedent`
-        import { addons } from 'storybook/manager-api';
-        addons.setConfig({ layout: {
-          showNav: false
-        } }!);
-      `,
-    ],
-  ])(
-    'preserves a TypeScript %s wrapper around the config argument',
-    (_label, argument, expected) => {
-      const source = `import { addons } from 'storybook/manager-api';\naddons.setConfig(${argument});`;
+  it('preserves a TypeScript satisfies wrapper around the config argument', () => {
+    const source = dedent`
+      import { addons } from 'storybook/manager-api';
+      addons.setConfig({ showNav: false } satisfies Addon_Config);
+    `;
 
-      expect(transformSetConfigLayout(source)).toBe(expected);
-    }
-  );
+    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+      "import { addons } from 'storybook/manager-api';
+      addons.setConfig({ layout: {
+        showNav: false
+      } } satisfies Addon_Config);"
+    `);
+  });
+
+  it('preserves a TypeScript as wrapper around the config argument', () => {
+    const source = dedent`
+      import { addons } from 'storybook/manager-api';
+      addons.setConfig({ showNav: false } as Addon_Config);
+    `;
+
+    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+      "import { addons } from 'storybook/manager-api';
+      addons.setConfig({ layout: {
+        showNav: false
+      } } as Addon_Config);"
+    `);
+  });
+
+  it('preserves a TypeScript non-null wrapper around the config argument', () => {
+    const source = dedent`
+      import { addons } from 'storybook/manager-api';
+      addons.setConfig({ showNav: false }!);
+    `;
+
+    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+      "import { addons } from 'storybook/manager-api';
+      addons.setConfig({ layout: {
+        showNav: false
+      } }!);"
+    `);
+  });
 
   it('moves a statically wrapped option into a statically wrapped layout object', () => {
     const source = dedent`
@@ -185,8 +198,10 @@ describe('transformSetConfigLayout', () => {
       addons.setConfig({ showPanel: false });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
-      'the file calls addons.setConfig more than once, so their configuration may interact'
+    expect(() =>
+      transformSetConfigLayout(source, managerConfigPath)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Cannot automigrate addons.setConfig in /project/.storybook/manager.ts on line 3: the file calls addons.setConfig more than once, so their configuration may interact. Move top-level layout options into \`layout\` and \`enableShortcuts\` into \`ui\` manually.]`
     );
   });
 
@@ -200,8 +215,10 @@ describe('transformSetConfigLayout', () => {
       });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
-      'moving the layout options could change their evaluation order'
+    expect(() =>
+      transformSetConfigLayout(source, managerConfigPath)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Cannot automigrate addons.setConfig in /project/.storybook/manager.ts on line 5: moving the layout options could change their evaluation order. Move top-level layout options into \`layout\` and \`enableShortcuts\` into \`ui\` manually.]`
     );
   });
 
@@ -211,8 +228,10 @@ describe('transformSetConfigLayout', () => {
       addons.setConfig({ showNav: readPreference(), theme, layout: {} });
     `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
-      'moving the layout option could change its evaluation order'
+    expect(() =>
+      transformSetConfigLayout(source, managerConfigPath)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Cannot automigrate addons.setConfig in /project/.storybook/manager.ts on line 2: moving the layout option could change its evaluation order. Move top-level layout options into \`layout\` and \`enableShortcuts\` into \`ui\` manually.]`
     );
   });
 
@@ -222,31 +241,61 @@ describe('transformSetConfigLayout', () => {
       addons.setConfig({ showNav: false });
     `;
 
-    expect(transformSetConfigLayout(source)).toBe(source);
+    expect(transformSetConfigLayout(source)).toMatchInlineSnapshot(`
+      "const addons = getAddons();
+      addons.setConfig({ showNav: false });"
+    `);
   });
 
-  it.each([
-    ['a dynamic argument', 'addons.setConfig(config);', 'argument is not an object literal'],
-    [
-      'a spread property',
-      'addons.setConfig({ ...config, showNav: false });',
-      'contains a spread or computed property',
-    ],
-    [
-      'a computed legacy property',
-      "addons.setConfig({ ['showNav']: false });",
-      'contains a spread or computed property',
-    ],
-    [
-      'a dynamic nested layout',
-      'addons.setConfig({ showNav: false, layout: getLayout() });',
-      'existing layout value is not an object literal',
-    ],
-  ])('reports manual guidance for %s', (_label, call, reason) => {
-    const source = `import { addons } from 'storybook/manager-api';\n${call}`;
+  it('reports manual guidance for a dynamic argument', () => {
+    const source = dedent`
+      import { addons } from 'storybook/manager-api';
+      addons.setConfig(config);
+    `;
 
-    expect(() => transformSetConfigLayout(source, managerConfigPath)).toThrow(
-      `${reason}. Move top-level layout options into \`layout\` and \`enableShortcuts\` into \`ui\` manually.`
+    expect(() =>
+      transformSetConfigLayout(source, managerConfigPath)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Cannot automigrate addons.setConfig in /project/.storybook/manager.ts on line 2: the configuration argument is not an object literal. Move top-level layout options into \`layout\` and \`enableShortcuts\` into \`ui\` manually.]`
+    );
+  });
+
+  it('reports manual guidance for a spread property', () => {
+    const source = dedent`
+      import { addons } from 'storybook/manager-api';
+      addons.setConfig({ ...config, showNav: false });
+    `;
+
+    expect(() =>
+      transformSetConfigLayout(source, managerConfigPath)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Cannot automigrate addons.setConfig in /project/.storybook/manager.ts on line 2: the configuration contains a spread or computed property. Move top-level layout options into \`layout\` and \`enableShortcuts\` into \`ui\` manually.]`
+    );
+  });
+
+  it('reports manual guidance for a computed legacy property', () => {
+    const source = dedent`
+      import { addons } from 'storybook/manager-api';
+      addons.setConfig({ ['showNav']: false });
+    `;
+
+    expect(() =>
+      transformSetConfigLayout(source, managerConfigPath)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Cannot automigrate addons.setConfig in /project/.storybook/manager.ts on line 2: the configuration contains a spread or computed property. Move top-level layout options into \`layout\` and \`enableShortcuts\` into \`ui\` manually.]`
+    );
+  });
+
+  it('reports manual guidance for a dynamic nested layout', () => {
+    const source = dedent`
+      import { addons } from 'storybook/manager-api';
+      addons.setConfig({ showNav: false, layout: getLayout() });
+    `;
+
+    expect(() =>
+      transformSetConfigLayout(source, managerConfigPath)
+    ).toThrowErrorMatchingInlineSnapshot(
+      `[Error: Cannot automigrate addons.setConfig in /project/.storybook/manager.ts on line 2: the existing layout value is not an object literal. Move top-level layout options into \`layout\` and \`enableShortcuts\` into \`ui\` manually.]`
     );
   });
 });
@@ -264,9 +313,12 @@ describe('setConfigLayout', () => {
 
     await setConfigLayout.run!({ result, dryRun: false } as any);
 
-    await expect(fsp.readFile(managerConfigPath, 'utf8')).resolves.toMatch(
-      /layout: \{\s+showToolbar: false/
-    );
+    await expect(fsp.readFile(managerConfigPath, 'utf8')).resolves.toMatchInlineSnapshot(`
+      "import { addons } from 'storybook/manager-api';
+      addons.setConfig({ layout: {
+        showToolbar: false
+      } });"
+    `);
   });
 
   it('does not write the manager config during a dry run', async () => {
@@ -281,7 +333,10 @@ describe('setConfigLayout', () => {
 
     await setConfigLayout.run!({ result, dryRun: true } as any);
 
-    await expect(fsp.readFile(managerConfigPath, 'utf8')).resolves.toBe(source);
+    await expect(fsp.readFile(managerConfigPath, 'utf8')).resolves.toMatchInlineSnapshot(`
+      "import { addons } from 'storybook/manager-api';
+      addons.setConfig({ showToolbar: false });"
+    `);
   });
 
   it('returns null when the manager config does not need migration', async () => {
@@ -292,12 +347,12 @@ describe('setConfigLayout', () => {
       `,
     });
 
-    await expect(check()).resolves.toBeNull();
+    await expect(check()).resolves.toMatchInlineSnapshot(`null`);
   });
 
   it('returns null when there is no manager config', async () => {
     vi.mocked(findConfigFile).mockReturnValue(null);
 
-    await expect(check()).resolves.toBeNull();
+    await expect(check()).resolves.toMatchInlineSnapshot(`null`);
   });
 });

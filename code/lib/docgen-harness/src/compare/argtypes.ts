@@ -287,13 +287,9 @@ function normalizeRecordedType(type: SBType): SBType {
     return typeof value === 'string' ? type : UNRESOLVED_TYPE;
   }
   if (
-    (name === 'array' ||
-      name === 'object' ||
-      name === 'enum' ||
-      name === 'union' ||
-      name === 'intersection' ||
-      name === 'tuple') &&
-    (typeof value !== 'object' || value === null)
+    ((name === 'enum' || name === 'union' || name === 'intersection' || name === 'tuple') &&
+      !Array.isArray(value)) ||
+    ((name === 'array' || name === 'object') && (typeof value !== 'object' || value === null))
   ) {
     return UNRESOLVED_TYPE;
   }

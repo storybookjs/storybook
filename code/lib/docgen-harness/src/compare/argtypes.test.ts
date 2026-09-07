@@ -478,6 +478,13 @@ describe('compareArgTypes', () => {
       expectedViolations: [],
     },
     {
+      input: '{ name: "enum", value: {} } -> { name: "enum", value: ["small"] }',
+      output: 'passes',
+      baselineType: { name: 'enum', value: {} } as never,
+      candidateType: { name: 'enum', value: ['small'] } as never,
+      expectedViolations: [],
+    },
+    {
       input: '{ name: "union" } -> { name: "union", value: [{ name: "string" }] }',
       output: 'passes',
       baselineType: { name: 'union' } as never,

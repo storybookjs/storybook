@@ -13,6 +13,14 @@ const minimalVersionsMap = {
   vite: '5.0.0',
 } as const;
 
+// Floors that only apply when another package is installed. The Vitest 4
+// floor is gated on @storybook/addon-vitest instead of living in
+// minimalVersionsMap, which would hard-block every Vitest < 4 project —
+// Storybook core itself does not require Vitest.
+const conditionalVersionsMap = {
+  vitest: { gatedBy: '@storybook/addon-vitest', minimumVersion: '4.0.0' },
+} as const;
+
 export const blocker = createBlocker({
   id: 'dependenciesVersions',
   async check({ packageManager }) {
@@ -20,23 +28,32 @@ export const blocker = createBlocker({
       packageManager,
     });
 
-    if (outdated === false) {
-      // @storybook/addon-vitest requires Vitest 4, but Storybook core does not,
-      // so the floor is gated on the addon being installed instead of being an
-      // entry in minimalVersionsMap, which would block every Vitest < 4 project.
-      try {
-        const addonVersion = await packageManager.getInstalledVersion('@storybook/addon-vitest');
-
-        if (addonVersion) {
-          return await findOutdatedPackage({ vitest: '4.0.0' }, { packageManager });
-        }
-      } catch {
-        // If we can't determine the version, don't block (blockers run in parallel).
-        return false;
-      }
+    if (outdated !== false) {
+      return outdated;
     }
 
-    return outdated;
+    // Conditional floors apply only when their gating package is installed.
+    try {
+      const installedGates = await Promise.all(
+        Object.entries(conditionalVersionsMap).map(
+          async ([packageName, { gatedBy, minimumVersion }]) => {
+            const gateVersion = await packageManager.getInstalledVersion(gatedBy);
+            return gateVersion ? ([packageName, minimumVersion] as const) : null;
+          }
+        )
+      );
+
+      const gatedVersions = Object.fromEntries(installedGates.filter((gate) => gate !== null));
+
+      if (Object.keys(gatedVersions).length === 0) {
+        return false;
+      }
+
+      return await findOutdatedPackage(gatedVersions, { packageManager });
+    } catch {
+      // If we can't determine the versions, don't block (blockers run in parallel).
+      return false;
+    }
   },
   log(data) {
     switch (data.packageName) {

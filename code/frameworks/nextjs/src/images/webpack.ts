@@ -1,10 +1,7 @@
 import { fileURLToPath } from 'node:url';
 
 import type { NextConfig } from 'next';
-import semver from 'semver';
 import type { RuleSetRule, Configuration as WebpackConfig } from 'webpack';
-
-import { getNextjsVersion } from '../utils.ts';
 
 export const configureImages = (baseConfig: WebpackConfig, nextConfig: NextConfig): void => {
   configureStaticImageImport(baseConfig, nextConfig);
@@ -14,23 +11,16 @@ export const configureImages = (baseConfig: WebpackConfig, nextConfig: NextConfi
 const fallbackFilename = 'static/media/[path][name][ext]';
 
 const configureImageDefaults = (baseConfig: WebpackConfig): void => {
-  const version = getNextjsVersion();
   const resolve = baseConfig.resolve ?? {};
   resolve.alias = {
     ...resolve.alias,
     'sb-original/next/image': fileURLToPath(import.meta.resolve('next/image')),
     'next/image': fileURLToPath(import.meta.resolve('@storybook/nextjs/images/next-image')),
+    'sb-original/next/legacy/image': fileURLToPath(import.meta.resolve('next/legacy/image')),
+    'next/legacy/image': fileURLToPath(
+      import.meta.resolve('@storybook/nextjs/images/next-legacy-image')
+    ),
   };
-
-  if (semver.satisfies(version, '>=13.0.0')) {
-    resolve.alias = {
-      ...resolve.alias,
-      'sb-original/next/legacy/image': fileURLToPath(import.meta.resolve('next/legacy/image')),
-      'next/legacy/image': fileURLToPath(
-        import.meta.resolve('@storybook/nextjs/images/next-legacy-image')
-      ),
-    };
-  }
 };
 
 const configureStaticImageImport = (baseConfig: WebpackConfig, nextConfig: NextConfig): void => {

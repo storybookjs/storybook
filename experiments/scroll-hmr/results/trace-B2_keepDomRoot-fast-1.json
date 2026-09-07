@@ -1,330 +1,325 @@
 {
- "config": "B2_keepDomRoot",
- "storyName": "fast",
- "token": "TKmtr3v4wwX8",
- "startY": 1500,
- "tokenApplied": true,
- "ySeries": [
-  1500,
-  0,
-  0,
-  0
- ],
- "finalY": 0,
- "docH": 6912,
- "reloaded": false,
- "trace": [
-  {
-   "t": 4141,
-   "type": "editMark",
-   "d": "B2_keepDomRoot-fast-1",
-   "y": 1500,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4158.2,
-   "type": "channel:storyRenderPhaseChanged",
-   "d": "preparing",
-   "y": 1500,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4178.8,
-   "type": "dom",
-   "d": "BODY +0/-1",
-   "y": 1500,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4179,
-   "type": "channel:storyPrepared",
-   "d": "",
-   "y": 1500,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4180.7,
-   "type": "channel:storyRenderPhaseChanged",
-   "d": "loading",
-   "y": 1500,
-   "h": 6912,
-   "cls": "sb-show-main sb-main-padded"
-  },
-  {
-   "t": 4181,
-   "type": "attr",
-   "d": "BODY class=\"sb-show-main sb-main-padded\"",
-   "y": 1500,
-   "h": 6912,
-   "cls": "sb-show-main sb-main-padded"
-  },
-  {
-   "t": 4181,
-   "type": "attr",
-   "d": "BODY class=\"sb-show-main sb-main-padded\"",
-   "y": 1500,
-   "h": 6912,
-   "cls": "sb-show-main sb-main-padded"
-  },
-  {
-   "t": 4181,
-   "type": "channel:storyRenderPhaseChanged",
-   "d": "rendering",
-   "y": 1500,
-   "h": 6912,
-   "cls": "sb-show-main sb-main-padded"
-  },
-  {
-   "t": 4181.1,
-   "type": "attr",
-   "d": "BODY class=\"sb-show-main sb-main-padded\"",
-   "y": 1500,
-   "h": 6912,
-   "cls": "sb-show-main sb-main-padded"
-  },
-  {
-   "t": 4192.3,
-   "type": "dom",
-   "d": "storybook-root +0/-1",
-   "y": 1500,
-   "h": 6912,
-   "cls": "sb-show-main sb-main-padded"
-  },
-  {
-   "t": 4195.2,
-   "type": "dom",
-   "d": "storybook-root +1/-0",
-   "y": 1500,
-   "h": 6912,
-   "cls": "sb-show-main sb-main-padded"
-  },
-  {
-   "t": 4198.9,
-   "type": "channel:storyRenderPhaseChanged",
-   "d": "completing",
-   "y": 1500,
-   "h": 6912,
-   "cls": "sb-show-main sb-main-padded"
-  },
-  {
-   "t": 4246.5,
-   "type": "channel:storyIndexInvalidated",
-   "d": "",
-   "y": 1500,
-   "h": 6912,
-   "cls": "sb-show-main sb-main-padded"
-  },
-  {
-   "t": 4258.2,
-   "type": "attr",
-   "d": "BODY class=\"sb-main-padded sb-show-preparing-story\"",
-   "y": 0,
-   "h": 800,
-   "cls": "sb-main-padded sb-show-preparing-story"
-  },
-  {
-   "t": 4259.2,
-   "type": "attr",
-   "d": "BODY class=\"sb-main-padded sb-show-preparing-story\"",
-   "y": 0,
-   "h": 800,
-   "cls": "sb-main-padded sb-show-preparing-story"
-  },
-  {
-   "t": 4259.2,
-   "type": "attr",
-   "d": "BODY class=\"sb-main-padded sb-show-preparing-story\"",
-   "y": 0,
-   "h": 800,
-   "cls": "sb-main-padded sb-show-preparing-story"
-  },
-  {
-   "t": 4259.2,
-   "type": "attr",
-   "d": "BODY class=\"sb-main-padded sb-show-preparing-story\"",
-   "y": 0,
-   "h": 800,
-   "cls": "sb-main-padded sb-show-preparing-story"
-  },
-  {
-   "t": 4259.2,
-   "type": "attr",
-   "d": "BODY class=\"sb-main-padded sb-show-preparing-story\"",
-   "y": 0,
-   "h": 800,
-   "cls": "sb-main-padded sb-show-preparing-story"
-  },
-  {
-   "t": 4270.8,
-   "type": "channel:storyRenderPhaseChanged",
-   "d": "preparing",
-   "y": 0,
-   "h": 800,
-   "cls": "sb-main-padded sb-show-preparing-story"
-  },
-  {
-   "t": 4271.2,
-   "type": "channel:storyUnchanged",
-   "d": "scrolllab--fast",
-   "y": 0,
-   "h": 800,
-   "cls": "sb-main-padded sb-show-preparing-story"
-  },
-  {
-   "t": 4271.2,
-   "type": "attr",
-   "d": "BODY class=\"sb-main-padded sb-show-main\"",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4275.5,
-   "type": "attr",
-   "d": "BODY class=\"sb-main-padded sb-show-main\"",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4275.5,
-   "type": "attr",
-   "d": "BODY class=\"sb-main-padded sb-show-main\"",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4275.6,
-   "type": "attr",
-   "d": "BODY class=\"sb-main-padded sb-show-main\"",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4275.6,
-   "type": "attr",
-   "d": "BODY class=\"sb-main-padded sb-show-main\"",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4275.7,
-   "type": "frame",
-   "d": "y 1500->0, h 6912->6912",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4285.1,
-   "type": "channel:storyRenderPhaseChanged",
-   "d": "preparing",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4285.7,
-   "type": "channel:storyUnchanged",
-   "d": "scrolllab--fast",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4285.7,
-   "type": "attr",
-   "d": "BODY class=\"sb-main-padded sb-show-main\"",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4285.8,
-   "type": "attr",
-   "d": "BODY class=\"sb-main-padded sb-show-main\"",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4285.8,
-   "type": "attr",
-   "d": "BODY class=\"sb-main-padded sb-show-main\"",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4285.8,
-   "type": "attr",
-   "d": "BODY class=\"sb-main-padded sb-show-main\"",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4285.8,
-   "type": "attr",
-   "d": "BODY class=\"sb-main-padded sb-show-main\"",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4290.4,
-   "type": "scrollEvent",
-   "d": "",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4299.5,
-   "type": "channel:storyRenderPhaseChanged",
-   "d": "completed",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4299.5,
-   "type": "channel:storyRendered",
-   "d": "scrolllab--fast",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4300,
-   "type": "dom",
-   "d": "BODY +1/-0",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4300.3,
-   "type": "channel:storyRenderPhaseChanged",
-   "d": "afterEach",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  },
-  {
-   "t": 4508.4,
-   "type": "channel:storyRenderPhaseChanged",
-   "d": "finished",
-   "y": 0,
-   "h": 6912,
-   "cls": "sb-main-padded sb-show-main"
-  }
- ]
+  "config": "B2_keepDomRoot",
+  "storyName": "fast",
+  "token": "TKmtr3v4wwX8",
+  "startY": 1500,
+  "tokenApplied": true,
+  "ySeries": [1500, 0, 0, 0],
+  "finalY": 0,
+  "docH": 6912,
+  "reloaded": false,
+  "trace": [
+    {
+      "t": 4141,
+      "type": "editMark",
+      "d": "B2_keepDomRoot-fast-1",
+      "y": 1500,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4158.2,
+      "type": "channel:storyRenderPhaseChanged",
+      "d": "preparing",
+      "y": 1500,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4178.8,
+      "type": "dom",
+      "d": "BODY +0/-1",
+      "y": 1500,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4179,
+      "type": "channel:storyPrepared",
+      "d": "",
+      "y": 1500,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4180.7,
+      "type": "channel:storyRenderPhaseChanged",
+      "d": "loading",
+      "y": 1500,
+      "h": 6912,
+      "cls": "sb-show-main sb-main-padded"
+    },
+    {
+      "t": 4181,
+      "type": "attr",
+      "d": "BODY class=\"sb-show-main sb-main-padded\"",
+      "y": 1500,
+      "h": 6912,
+      "cls": "sb-show-main sb-main-padded"
+    },
+    {
+      "t": 4181,
+      "type": "attr",
+      "d": "BODY class=\"sb-show-main sb-main-padded\"",
+      "y": 1500,
+      "h": 6912,
+      "cls": "sb-show-main sb-main-padded"
+    },
+    {
+      "t": 4181,
+      "type": "channel:storyRenderPhaseChanged",
+      "d": "rendering",
+      "y": 1500,
+      "h": 6912,
+      "cls": "sb-show-main sb-main-padded"
+    },
+    {
+      "t": 4181.1,
+      "type": "attr",
+      "d": "BODY class=\"sb-show-main sb-main-padded\"",
+      "y": 1500,
+      "h": 6912,
+      "cls": "sb-show-main sb-main-padded"
+    },
+    {
+      "t": 4192.3,
+      "type": "dom",
+      "d": "storybook-root +0/-1",
+      "y": 1500,
+      "h": 6912,
+      "cls": "sb-show-main sb-main-padded"
+    },
+    {
+      "t": 4195.2,
+      "type": "dom",
+      "d": "storybook-root +1/-0",
+      "y": 1500,
+      "h": 6912,
+      "cls": "sb-show-main sb-main-padded"
+    },
+    {
+      "t": 4198.9,
+      "type": "channel:storyRenderPhaseChanged",
+      "d": "completing",
+      "y": 1500,
+      "h": 6912,
+      "cls": "sb-show-main sb-main-padded"
+    },
+    {
+      "t": 4246.5,
+      "type": "channel:storyIndexInvalidated",
+      "d": "",
+      "y": 1500,
+      "h": 6912,
+      "cls": "sb-show-main sb-main-padded"
+    },
+    {
+      "t": 4258.2,
+      "type": "attr",
+      "d": "BODY class=\"sb-main-padded sb-show-preparing-story\"",
+      "y": 0,
+      "h": 800,
+      "cls": "sb-main-padded sb-show-preparing-story"
+    },
+    {
+      "t": 4259.2,
+      "type": "attr",
+      "d": "BODY class=\"sb-main-padded sb-show-preparing-story\"",
+      "y": 0,
+      "h": 800,
+      "cls": "sb-main-padded sb-show-preparing-story"
+    },
+    {
+      "t": 4259.2,
+      "type": "attr",
+      "d": "BODY class=\"sb-main-padded sb-show-preparing-story\"",
+      "y": 0,
+      "h": 800,
+      "cls": "sb-main-padded sb-show-preparing-story"
+    },
+    {
+      "t": 4259.2,
+      "type": "attr",
+      "d": "BODY class=\"sb-main-padded sb-show-preparing-story\"",
+      "y": 0,
+      "h": 800,
+      "cls": "sb-main-padded sb-show-preparing-story"
+    },
+    {
+      "t": 4259.2,
+      "type": "attr",
+      "d": "BODY class=\"sb-main-padded sb-show-preparing-story\"",
+      "y": 0,
+      "h": 800,
+      "cls": "sb-main-padded sb-show-preparing-story"
+    },
+    {
+      "t": 4270.8,
+      "type": "channel:storyRenderPhaseChanged",
+      "d": "preparing",
+      "y": 0,
+      "h": 800,
+      "cls": "sb-main-padded sb-show-preparing-story"
+    },
+    {
+      "t": 4271.2,
+      "type": "channel:storyUnchanged",
+      "d": "scrolllab--fast",
+      "y": 0,
+      "h": 800,
+      "cls": "sb-main-padded sb-show-preparing-story"
+    },
+    {
+      "t": 4271.2,
+      "type": "attr",
+      "d": "BODY class=\"sb-main-padded sb-show-main\"",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4275.5,
+      "type": "attr",
+      "d": "BODY class=\"sb-main-padded sb-show-main\"",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4275.5,
+      "type": "attr",
+      "d": "BODY class=\"sb-main-padded sb-show-main\"",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4275.6,
+      "type": "attr",
+      "d": "BODY class=\"sb-main-padded sb-show-main\"",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4275.6,
+      "type": "attr",
+      "d": "BODY class=\"sb-main-padded sb-show-main\"",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4275.7,
+      "type": "frame",
+      "d": "y 1500->0, h 6912->6912",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4285.1,
+      "type": "channel:storyRenderPhaseChanged",
+      "d": "preparing",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4285.7,
+      "type": "channel:storyUnchanged",
+      "d": "scrolllab--fast",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4285.7,
+      "type": "attr",
+      "d": "BODY class=\"sb-main-padded sb-show-main\"",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4285.8,
+      "type": "attr",
+      "d": "BODY class=\"sb-main-padded sb-show-main\"",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4285.8,
+      "type": "attr",
+      "d": "BODY class=\"sb-main-padded sb-show-main\"",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4285.8,
+      "type": "attr",
+      "d": "BODY class=\"sb-main-padded sb-show-main\"",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4285.8,
+      "type": "attr",
+      "d": "BODY class=\"sb-main-padded sb-show-main\"",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4290.4,
+      "type": "scrollEvent",
+      "d": "",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4299.5,
+      "type": "channel:storyRenderPhaseChanged",
+      "d": "completed",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4299.5,
+      "type": "channel:storyRendered",
+      "d": "scrolllab--fast",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4300,
+      "type": "dom",
+      "d": "BODY +1/-0",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4300.3,
+      "type": "channel:storyRenderPhaseChanged",
+      "d": "afterEach",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    },
+    {
+      "t": 4508.4,
+      "type": "channel:storyRenderPhaseChanged",
+      "d": "finished",
+      "y": 0,
+      "h": 6912,
+      "cls": "sb-main-padded sb-show-main"
+    }
+  ]
 }

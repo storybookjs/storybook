@@ -3,7 +3,8 @@ import path from 'node:path';
 
 import { chromium } from 'playwright';
 
-const SCRATCH = '/tmp/claude-0/-home-user-storybook/10a8e711-1b08-5701-8d8b-52ba7c733784/scratchpad';
+const SCRATCH =
+  '/tmp/claude-0/-home-user-storybook/10a8e711-1b08-5701-8d8b-52ba7c733784/scratchpad';
 const SANDBOX = '/home/user/storybook-sandboxes/react-vite-default-ts';
 const STORY_FILE = path.join(SANDBOX, 'src/stories/ScrollLab.stories.tsx');
 const TEMPLATE = fs.readFileSync(path.join(SCRATCH, 'ScrollLab.template.tsx'), 'utf8');

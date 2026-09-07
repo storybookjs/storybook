@@ -5,13 +5,7 @@
     "kept": 0,
     "total": 5,
     "reloads": 0,
-    "finalYs": [
-      0,
-      0,
-      0,
-      0,
-      0
-    ]
+    "finalYs": [0, 0, 0, 0, 0]
   },
   {
     "config": "AB_revert",
@@ -19,12 +13,6 @@
     "kept": 0,
     "total": 5,
     "reloads": 0,
-    "finalYs": [
-      0,
-      0,
-      0,
-      0,
-      0
-    ]
+    "finalYs": [0, 0, 0, 0, 0]
   }
 ]

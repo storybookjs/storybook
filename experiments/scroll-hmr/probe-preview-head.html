@@ -27,7 +27,10 @@
       });
     }
     window.__probeLog = log;
-    log('boot', (performance.getEntriesByType('navigation')[0] || {}).type + ' exp=' + JSON.stringify(exp));
+    log(
+      'boot',
+      (performance.getEntriesByType('navigation')[0] || {}).type + ' exp=' + JSON.stringify(exp)
+    );
 
     window.addEventListener(
       'scroll',
@@ -67,7 +70,14 @@
                 '"'
             );
           } else {
-            log('dom', (m.target.id || m.target.nodeName) + ' +' + m.addedNodes.length + '/-' + m.removedNodes.length);
+            log(
+              'dom',
+              (m.target.id || m.target.nodeName) +
+                ' +' +
+                m.addedNodes.length +
+                '/-' +
+                m.removedNodes.length
+            );
           }
         });
       });

@@ -33,6 +33,14 @@ Conclusions:
 Caveat: the probe's scroll reads force layout inside the unmount gap, making the fast-path
 timing lottery near-deterministic in-harness; this biases all configs identically.
 
+## Validation of the real fix
+
+After replacing the levers with the production change (keepRenderedDom teardown option +
+key-based remount in the react renderer + spinner gating), the same harness with **no**
+`__exp` flags measures **10/10 kept** (fast 5/5, slow 5/5), where the pre-fix build
+measured 0/10. Story-to-story navigation still resets scroll and shows the preparing
+spinner, and FORCE_REMOUNT still fully unmounts (fresh component instances).
+
 ## Reproduce
 
 ```bash

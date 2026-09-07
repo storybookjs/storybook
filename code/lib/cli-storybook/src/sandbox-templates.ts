@@ -1261,7 +1261,9 @@ export const daily: TemplateKey[] = [
   'nextjs/prerelease',
   // 'qwik-vite/default-ts',
   'preact-vite/default-js',
-  'preact-vite/prerelease-ts',
+  // Disabled for cost-saving reasons, enable when we see signs that Preact 11 is about to release.
+  // After release, replace the default-js config with this one and delete this one.
+  // 'preact-vite/prerelease-ts',
   'html-vite/default-js',
   'internal/react18-webpack-babel',
   'react-native-web-vite/expo-ts',

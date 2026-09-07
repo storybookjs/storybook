@@ -930,18 +930,7 @@ export const baseTemplates = {
   },
   'preact-vite/prerelease-ts': {
     name: 'Preact Prerelease (Vite | TypeScript)',
-    /**
-     * 1. Create a Vite project with the Preact template
-     * 2. Add Preact beta versions
-     * 3. Add resolutions for preact
-     * 4. Install preact beta version
-     */
-    script: `
-      npm create vite --yes {{beforeDir}} -- --template preact-ts && \
-      cd {{beforeDir}} && \
-      jq '.resolutions += {"preact": "npm:preact@beta",}' package.json > tmp.json && mv tmp.json package.json && \
-      yarn add preact@beta
-      `,
+    script: `npm create vite --yes {{beforeDir}} -- --template preact-ts && yarn add preact@beta`,
     preferNoLink: true,
     expected: {
       framework: '@storybook/preact-vite',
@@ -949,7 +938,10 @@ export const baseTemplates = {
       builder: '@storybook/builder-vite',
     },
     modifications: {
-      extraDependencies: ['preact-render-to-string'],
+      extraDependencies: ['preact-render-to-string', 'preact@beta'],
+      resolutions: {
+        preact: 'npm:preact@beta',
+      },
     },
     skipTasks: ['e2e-tests', 'bench'],
   },

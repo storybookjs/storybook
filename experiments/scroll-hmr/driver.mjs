@@ -21,6 +21,9 @@ const CONFIGS = {
   B1_keepDom: 'keepDom',
   B2_keepDomRoot: 'keepDom,keepRoot',
   AB_all: 'noSpinner,keepDom,keepRoot',
+  // mechanism fixes applied but the PR's scrollReset guard reverted: does the
+  // explicit scrollTop=0 in prepareForStory become the remaining scroll killer?
+  AB_revert: 'noSpinner,keepDom,keepRoot,forceScrollReset',
 };
 const STORIES = { fast: 'scrolllab--fast', slow: 'scrolllab--slow' };
 

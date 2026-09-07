@@ -480,7 +480,9 @@ export class StoryRender<TRenderer extends Renderer> implements Render<TRenderer
     // Note that there's a max of 5 nested timeouts before they're no longer "instant".
     for (let i = 0; i < 3; i += 1) {
       if (!this.isPending()) {
-        await this.teardownRender();
+        if (!(globalThis as any).__SB_EXP__?.keepDom) {
+          await this.teardownRender();
+        }
         return;
       }
 

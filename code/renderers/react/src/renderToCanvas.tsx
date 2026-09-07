@@ -93,7 +93,7 @@ export async function renderToCanvas(
   // This could leads to issues like below:
   // https://github.com/storybookjs/react-storybook/issues/81
   // (This is not the case when we change args or globals to the story however)
-  if (forceRemount) {
+  if (forceRemount && !(global as any).__SB_EXP__?.keepRoot) {
     unmountElement(canvasElement);
   }
 

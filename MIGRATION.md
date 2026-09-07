@@ -594,6 +594,8 @@ Storybook has dropped support for Angular versions 18-20. The minimum supported 
 
 If you're using an older version of Angular, you'll need to upgrade to Angular 21 or newer to use the latest version of Storybook.
 
+For help upgrading your Angular application, see the [Angular update guide](https://angular.dev/update-guide).
+
 Key changes:
 
 - All Angular packages in peerDependencies now require `>=21.0.0 < 23.0.0`

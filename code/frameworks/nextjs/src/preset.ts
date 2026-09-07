@@ -9,7 +9,6 @@ import type { PresetProperty } from 'storybook/internal/types';
 
 import type { ConfigItem, PluginItem, TransformOptions } from '@babel/core';
 import { loadPartialConfig } from '@babel/core';
-import semver from 'semver';
 
 import nextBabelPreset from './babel/preset.ts';
 import { configureConfig } from './config/webpack.ts';
@@ -155,7 +154,7 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   // Next.js has been configured (above), and has replaced webpack with its precompiled
   // version.
   const { configureNextFont } = await import('./font/webpack/configureNextFont.ts');
-  const { configureRuntimeNextjsVersionResolution, getNextjsVersion } = await import('./utils.ts');
+  const { configureRuntimeNextjsVersionResolution } = await import('./utils.ts');
   const { configureImports } = await import('./imports/webpack.ts');
   const { configureCss } = await import('./css/webpack.ts');
   const { configureImages } = await import('./images/webpack.ts');
@@ -170,12 +169,9 @@ export const webpackFinal: StorybookConfig['webpackFinal'] = async (baseConfig, 
   const babelRCPath = join(getProjectRoot(), '.babelrc');
   const babelConfigPath = join(getProjectRoot(), 'babel.config.js');
   const hasBabelConfig = existsSync(babelRCPath) || existsSync(babelConfigPath);
-  const nextjsVersion = getNextjsVersion();
   const isDevelopment = options.configType !== 'PRODUCTION';
 
-  const isNext14orNewer = semver.gte(nextjsVersion, '14.0.0');
-  const useSWC =
-    isNext14orNewer && (nextConfig.experimental?.forceSwcTransforms || !hasBabelConfig);
+  const useSWC = nextConfig.experimental?.forceSwcTransforms || !hasBabelConfig;
 
   configureNextFont(baseConfig, useSWC);
   configureRuntimeNextjsVersionResolution(baseConfig);

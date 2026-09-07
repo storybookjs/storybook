@@ -346,6 +346,10 @@ Avoid `console.log`, `console.warn`, and `console.error` unless the file is isol
 | `FIX_ON_COMMIT`               | Force autofix for fmt & lint in pre-commit hook |
 | `NX_CLOUD_ACCESS_TOKEN`       | Authenticate the NX Cloud remote cache          |
 
+## Canary Releases
+
+When you need a pkg.pr.new canary, follow [`.agents/skills/canary/SKILL.md`](.agents/skills/canary/SKILL.md) and [`CONTRIBUTING/RELEASING.md`](CONTRIBUTING/RELEASING.md).
+
 ## Commands To Avoid
 
 - **DO NOT RUN** `yarn task dev` without an explicit sandbox template
@@ -368,7 +372,7 @@ These are recurring failure modes in agent-authored changes to this repo. Apply 
 
 ## Comments and JSDoc
 
-Code should be self-explanatory. A comment is only justified when the code cannot explain itself (a non-obvious *why*) or when a public API needs explanation. Never comment to record that you did x, y, z.
+Code should be self-explanatory. A comment is only justified when the code cannot explain itself (a non-obvious _why_) or when a public API needs explanation. Never comment to record that you did x, y, z.
 
 Before writing or editing any code file, read [`.agents/guidelines/comments-and-jsdoc.md`](.agents/guidelines/comments-and-jsdoc.md) and follow it. Read it once per session, not once per file.
 

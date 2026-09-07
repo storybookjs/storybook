@@ -287,6 +287,7 @@
     "open": "^10.2.0",
     "oxc-parser": "^0.127.0",
     "oxc-resolver": "11.21.2",
+    "process-ancestry": "^0.0.2",
     "recast": "^0.23.5",
     "semver": "^7.7.3",
     "use-sync-external-store": "^1.5.0",

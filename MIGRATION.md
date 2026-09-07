@@ -2,6 +2,10 @@
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
   - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
+  - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
+  - [Vite: requires Vite 7.0 or higher](#vite-requires-vite-70-or-higher)
+  - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
+  - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -58,6 +62,7 @@
   - [Core Changes and Removals](#core-changes-and-removals)
     - [Dropped support for legacy packages](#dropped-support-for-legacy-packages)
     - [Dropped support](#dropped-support)
+      - [Vite 5 and Vite 6](#vite-5-and-vite-6)
       - [Vite 4](#vite-4)
       - [TypeScript \< 4.9](#typescript--49)
       - [Node.js \< 20](#nodejs--20)
@@ -561,6 +566,71 @@ npx storybook automigrate set-config-layout
 
 The automigration stops with manual instructions when a configuration containing an explicit
 legacy option cannot be transformed safely.
+
+### Vitest Addon: requires Vitest 4.0 or higher
+
+The `@storybook/addon-vitest` addon requires **Vitest 4.0 or higher**. Setup now always installs `@vitest/browser-playwright`, generates configuration with the `test.projects` array, and no longer creates or updates `vitest.workspace.*` files. If your Vitest config still uses the deprecated `test.workspace` / `defineWorkspace` style, rename it to `test.projects` and re-run `npx storybook@latest add @storybook/addon-vitest` to merge your existing config.
+
+### Vite: requires Vite 7.0 or higher
+
+Storybook 11.0 drops support for Vite 5 and Vite 6. The minimum supported version is now Vite 7.0.0. This change affects all Vite-based frameworks and builders:
+
+- `@storybook/builder-vite`
+- `@storybook/react-vite`
+- `@storybook/vue3-vite`
+- `@storybook/svelte-vite`
+- `@storybook/sveltekit`
+- `@storybook/web-components-vite`
+- `@storybook/preact-vite`
+- `@storybook/html-vite`
+- `@storybook/nextjs-vite`
+- `@storybook/react-native-web-vite`
+- `@storybook/tanstack-react`
+- `vite-plugin-storybook-nextjs`
+
+To upgrade:
+
+1. Update your project's Vite version to 7.0.0 or higher
+2. Update your Storybook configuration to use Vite 7:
+   ```js
+   // vite.config.js or vite.config.ts
+   export default {
+     // ... your other config
+     // Make sure you're using Vite 7 compatible plugins
+   };
+   ```
+
+If you're using framework-specific Vite plugins, ensure they are compatible with Vite 7:
+
+- `@vitejs/plugin-react`
+- `@vitejs/plugin-vue`
+- `@sveltejs/vite-plugin-svelte`
+- etc.
+
+For more information on upgrading to Vite 7, see the [Vite Migration Guide](https://vite.dev/guide/migration).
+
+### Next.js: Require v15 and up
+
+Storybook has dropped support for Next.js versions below 15. The minimum supported version is now Next.js 15.
+
+If you're using an older version of Next.js, you'll need to upgrade to Next.js 15 or newer to use the latest version of Storybook.
+
+For help upgrading your Next.js application, see the [Next.js upgrade guide](https://nextjs.org/docs/app/building-your-application/upgrading).
+
+### Angular: requires Angular 21 or higher
+
+Storybook has dropped support for Angular versions 18-20. The minimum supported version is now Angular 21.
+
+If you're using an older version of Angular, you'll need to upgrade to Angular 21 or newer to use the latest version of Storybook.
+
+For help upgrading your Angular application, see the [Angular update guide](https://angular.dev/update-guide).
+
+Key changes:
+
+- All Angular packages in peerDependencies now require `>=21.0.0 < 23.0.0`
+- `@angular-devkit/architect` now requires `>=0.2100.0 < 0.2300.0`
+- The RxJS peer requirement accepts `^6.5.3 || ^7.4.0`, matching Angular 21's own range
+- Standalone components are always treated as the default in `@storybook/angular`
 
 ## From version 10.5.x to 10.6.0
 
@@ -1404,6 +1474,7 @@ import * as previewAnnotations from './.storybook/preview';
 #### Vitest Addon (former @storybook/experimental-addon-test): Vitest 2.0 support is dropped
 
 The Storybook Test addon now only supports Vitest 3.0 and higher, which is where browser mode was made into a stable state. Please upgrade to Vitest 3.0.
+
 
 #### Viewport/Backgrounds Addon synchronized configuration and `globals` usage
 

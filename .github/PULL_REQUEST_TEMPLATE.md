@@ -68,13 +68,17 @@ Do not describe how YOU tested the PR code, but how a separate maintainer should
 
    </details>
 
-### 🦋 Canary release
+<!-- CANARY_RELEASE_HEADING -->
+## 🦋 Canary Release - 🚫 Not run
+<!-- CANARY_RELEASE_HEADING -->
 
 <!-- CANARY_RELEASE_SECTION -->
 
-This PR does not have a canary release associated. You can request a canary release of this pull request by mentioning the `@storybookjs/core` team here.
+This PR does not have a canary release associated.
 
-_core team members can create a canary release [here](https://github.com/storybookjs/storybook/actions/workflows/publish.yml) or locally with `gh workflow run --repo storybookjs/storybook publish.yml --field pr=<PR_NUMBER>`_
+In-repo PRs: add the `ci:canary` label. Later pushes republish while the label remains.
+
+Fork PRs: the label does nothing (a later push must not auto-publish). A maintainer publishes from this repository with [Run workflow](https://github.com/storybookjs/storybook/actions/workflows/publish-canary.yml) and the `pr` input. `branch` and `sha` are optional; if more than one is set, they must be the same commit. The fork author does not need to do anything.
 
 <!-- CANARY_RELEASE_SECTION -->
 

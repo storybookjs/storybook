@@ -1,6 +1,5 @@
 {
   "id": "jsdoc-tags",
-  "import": "import JsdocTags from './JsdocTags.vue';",
   "name": "JsdocTags",
   "path": "__PATH__",
   "stories": {
@@ -8,7 +7,11 @@
       "description": undefined,
       "id": "forms-jsdoc-tags--props-as-written",
       "name": "Props As Written",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import JsdocTags from './JsdocTags.vue';
+</script>
+
+<template>
   <JsdocTags label="Old label" title="New title" />
 </template>",
       "summary": undefined,

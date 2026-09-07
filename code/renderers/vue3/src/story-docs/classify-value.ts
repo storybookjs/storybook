@@ -12,6 +12,7 @@ export type ValuePlan =
   | { kind: 'inline' }
   /** Hoisted into `<script setup>`, where the full JavaScript global scope applies. */
   | { kind: 'hoist' }
+  | { kind: 'unset' }
   /** Intentionally absent from the snippet, matching what the runtime source decorator drops. */
   | { kind: 'omit' }
   /** References something the snippet cannot declare, so rendering it would not compile. */
@@ -23,7 +24,7 @@ export type ValuePlan =
  * Everything that is not an `inline` {@link ValuePlan} is hoisted into `<script setup>`, so this is
  * the JavaScript global scope rather than Vue's narrower template-expression allowlist.
  */
-const RESOLVABLE_GLOBALS = new Set([
+export const RESOLVABLE_GLOBALS = new Set([
   'Array',
   'BigInt',
   'Boolean',
@@ -66,8 +67,12 @@ const NO_LOCALS: ReadonlySet<string> = new Set();
 export function classifyValue(node: t.Node): ValuePlan {
   const value = unwrapExpression(node);
 
+  if (isUndefinedIdentifier(value)) {
+    return { kind: 'unset' };
+  }
+
   // An empty string renders nothing, which is also what the runtime source decorator does with it.
-  if (isFunctionExpression(value) || isUndefinedIdentifier(value) || isEmptyString(value)) {
+  if (isFunctionExpression(value) || isEmptyString(value)) {
     return { kind: 'omit' };
   }
 
@@ -78,8 +83,10 @@ export function classifyValue(node: t.Node): ValuePlan {
   return isResolvable(value) ? { kind: 'hoist' } : { kind: 'unrepresentable' };
 }
 
+// A node parsed from the story file reprints as its own source; one this pass built is formatted
+// from the tree instead, so the indentation has to match the snippet it lands in.
 export function printValue(node: t.Node): string {
-  return recast.print(node).code;
+  return recast.print(node, { tabWidth: 2 }).code;
 }
 
 export function isFunctionExpression<T extends t.Node>(
@@ -90,7 +97,7 @@ export function isFunctionExpression<T extends t.Node>(
 }
 
 /** `args: { a: undefined }` unsets an inherited meta arg, so it renders nothing. */
-export function isUndefinedIdentifier(node: t.Node): boolean {
+function isUndefinedIdentifier(node: t.Node): boolean {
   const unwrapped = unwrapExpression(node);
   return unwrapped.type === 'Identifier' && unwrapped.name === UNDEFINED_IDENTIFIER;
 }
@@ -144,7 +151,7 @@ function statementIsResolvable(statement: t.Statement, locals: Set<string>): boo
  *
  * @example `({ a, b = 1 }, ...rest)` → adds `a`, `b`, `rest`
  */
-function collectPatternNames(pattern: t.Node, into: Set<string>): boolean {
+export function collectPatternNames(pattern: t.Node, into: Set<string>): boolean {
   switch (pattern.type) {
     case 'Identifier':
       into.add(pattern.name);

@@ -15,7 +15,9 @@ import { MetaRenderComponent } from './meta-render.component.ts';
   imports: [MetaRenderComponent],
   template: `<sb-meta-render [label]="label"></sb-meta-render>`,
 })
-export class DemoComponent {}",
+export class DemoComponent {
+  label = 'Meta';
+}",
     },
   },
 }

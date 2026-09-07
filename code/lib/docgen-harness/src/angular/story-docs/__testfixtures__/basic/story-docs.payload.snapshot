@@ -13,7 +13,7 @@ import { BasicComponent } from './basic.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [BasicComponent],
-  template: `<sb-basic [label]="'Base'" [count]="3" (pressed)="pressed($event)"></sb-basic>`,
+  template: `<sb-basic [label]="'Base'" [count]="3" (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}
@@ -30,7 +30,7 @@ import { BasicComponent } from './basic.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [BasicComponent],
-  template: `<sb-basic [label]="'Override'" (pressed)="pressed($event)"></sb-basic>`,
+  template: `<sb-basic [label]="'Override'" (pressed)="pressed($event)" />`,
 })
 export class DemoComponent {
   pressed(event: unknown) {}

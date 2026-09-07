@@ -1,6 +1,5 @@
 {
   "id": "args-formatting",
-  "import": "import ArgsFormattingButton from './ArgsFormattingButton.vue';",
   "name": "ArgsFormattingButton",
   "path": "__PATH__",
   "stories": {
@@ -9,6 +8,8 @@
       "id": "forms-args-formatting--primary",
       "name": "Primary",
       "snippet": "<script lang="ts" setup>
+import ArgsFormattingButton from './ArgsFormattingButton.vue';
+
 const items = ['one', 'two'];
 
 const options = { tone: 'neutral', compact: true };
@@ -25,7 +26,11 @@ const quotationLabel = 'She said "hi" and it\'s fine';
       "description": undefined,
       "id": "forms-args-formatting--unset-arg",
       "name": "Unset Arg",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import ArgsFormattingButton from './ArgsFormattingButton.vue';
+</script>
+
+<template>
   <ArgsFormattingButton :count="3" />
 </template>",
       "summary": undefined,

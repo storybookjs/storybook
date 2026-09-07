@@ -5,6 +5,7 @@ import Button from './Button.vue';
 /**
  * A button.
  *
+ * @deprecated Use OptionsButton.
  * @summary Clickable
  */
 export default {

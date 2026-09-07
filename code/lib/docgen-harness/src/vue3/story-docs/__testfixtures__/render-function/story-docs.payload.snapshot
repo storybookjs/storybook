@@ -1,6 +1,5 @@
 {
   "id": "render-function",
-  "import": "import RenderFunctionButton from './RenderFunctionButton.vue';",
   "name": "RenderFunctionButton",
   "path": "__PATH__",
   "stories": {
@@ -8,7 +7,11 @@
       "description": undefined,
       "id": "forms-render-function--args-member",
       "name": "Args Member",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
   <div>
     <RenderFunctionButton label="From args" />
   </div>
@@ -19,7 +22,11 @@
       "description": undefined,
       "id": "forms-render-function--args-on-wrapper-and-component",
       "name": "Args On Wrapper And Component",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
   <section class="toolbar" label="Confirm">
     <RenderFunctionButton label="Confirm" />
   </section>
@@ -30,7 +37,11 @@
       "description": undefined,
       "id": "forms-render-function--nested",
       "name": "Nested",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
   <section class="toolbar">
     <h2>Actions</h2>
     <RenderFunctionButton label="Confirm" />
@@ -43,7 +54,11 @@
       "description": undefined,
       "id": "forms-render-function--primary",
       "name": "Primary",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
   <RenderFunctionButton label="Render" />
 </template>",
       "summary": undefined,
@@ -52,7 +67,11 @@
       "description": undefined,
       "id": "forms-render-function--slot-children",
       "name": "Slot Children",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
   <RenderFunctionButton label="Confirm">
     <span>Extra</span>
     <template #footer>
@@ -66,7 +85,11 @@
       "description": undefined,
       "id": "forms-render-function--spread-override",
       "name": "Spread Override",
-      "snippet": "<template>
+      "snippet": "<script lang="ts" setup>
+import RenderFunctionButton from './RenderFunctionButton.vue';
+</script>
+
+<template>
   <RenderFunctionButton label="Overridden" />
 </template>",
       "summary": undefined,

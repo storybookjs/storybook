@@ -6,7 +6,7 @@
  * committed baselines pin; this one is the successor and carries only the corrected rules, so the
  * two are not kept in sync and fixes belong here.
  */
-import type { ArgTypes, InputType, SBEnumType, SBType } from 'storybook/internal/types';
+import type { SBEnumType, SBType, StrictArgTypes, StrictInputType } from 'storybook/internal/types';
 
 import type {
   Argument,
@@ -16,10 +16,10 @@ import type {
   Directive,
   EnumTypeChild,
   Injectable,
-  JsDocTag,
   Method,
   Pipe,
   Property,
+  PropertyInitializer,
 } from './types.ts';
 
 export interface ParsingLogger {
@@ -82,8 +82,10 @@ const SECTION_ORDER = [
 const isMethod = (methodOrProp: Method | Property): methodOrProp is Method =>
   (methodOrProp as Method).args !== undefined;
 
-// Compodoc's `required` tracks the `@Input({...})` key's presence, so `optional` must agree.
-const isRequired = (item: Property): boolean => (item.required ?? true) && !item.optional;
+// Compodoc's `required` tracks the `@Input({...})` key's presence, so `optional` must agree. With
+// the key absent an initializer settles it: a defaulted input is never mandatory to bind.
+const isRequired = (item: Property): boolean =>
+  (item.required ?? item.initializer === undefined) && !item.optional;
 
 const hasDecorator = (item: Property, decoratorName: string) =>
   item.decorators && item.decorators.find((x: Decorator) => x.name === decoratorName);
@@ -164,6 +166,19 @@ const selectableUnionMembers = (type: string): string[] =>
     .map((member) => member.trim())
     .filter((member) => member !== 'undefined' && member !== 'null');
 
+// A union sbType falls to the JSON object control downstream, so a union of primitives - a coercion
+// transform's `boolean | string` write union, or an optional `string | undefined` - picks its
+// control from the narrowest member instead, while the summary keeps the full union.
+const CONTROL_PRIMITIVES = ['boolean', 'number', 'string'] as const;
+
+const primitiveUnionControl = (members: string[]): SBType | undefined => {
+  const narrowest = CONTROL_PRIMITIVES.find((name) => members.includes(name));
+  const allPrimitive = members.every((member) =>
+    (CONTROL_PRIMITIVES as readonly string[]).includes(member)
+  );
+  return narrowest !== undefined && allPrimitive ? { name: narrowest } : undefined;
+};
+
 const hasEnumValue = (child: EnumTypeChild): child is EnumTypeChild & { value: string | number } =>
   Boolean(child.value);
 
@@ -221,8 +236,10 @@ const resolveTypealias = (
   return resolveTypealias(typeAlias.rawtype, metadataJson, componentFile, seen);
 };
 
+// `TypeIndex.render` leads a constructor type with `new ` and a generic signature with its type
+// parameters, so accepting only a leading `(` dropped both onto the `empty-enum` catch-all.
 const isFunctionTypeString = (type: string): boolean =>
-  type === 'function' || /^\(.*\)\s*=>/.test(type);
+  type === 'function' || /^(new\s+)?(<.*>\s*)?\(.*\)\s*=>/.test(type);
 
 const extractType = (
   property: Property,
@@ -243,12 +260,10 @@ const extractType = (
         return { name: 'function' };
       }
       const resolvedType = resolveTypealias(type, metadataJson, componentFile);
-      // An optional primitive like `string | undefined` is a primitive control; treating it as an
-      // enum candidate loses the control entirely.
       if (typeof resolvedType === 'string' && resolvedType.indexOf('|') !== -1) {
-        const members = [...new Set(selectableUnionMembers(resolvedType))];
-        if (members.length === 1 && ['string', 'boolean', 'number'].includes(members[0])) {
-          return { name: members[0] as 'string' | 'boolean' | 'number' };
+        const control = primitiveUnionControl([...new Set(selectableUnionMembers(resolvedType))]);
+        if (control) {
+          return control;
         }
       }
       const enumValues = extractEnumValues(resolvedType, metadataJson, componentFile);
@@ -276,8 +291,7 @@ const castUntypedDefault = (defaultValue: any) => {
   }
 };
 
-// Never invents a value: a missing default stays missing rather than becoming `NaN`/`false`, and an
-// expression default keeps its raw source text.
+// Never invents a value: a missing default stays missing rather than becoming `NaN`/`false`.
 const castDefaultValue = (property: Property, defaultValue: any) => {
   if (defaultValue === undefined) {
     return undefined;
@@ -301,36 +315,61 @@ const castDefaultValue = (property: Property, defaultValue: any) => {
   }
 };
 
-const unquote = (value: string): string =>
-  value.replace(/^'(.*)'$/, '$1').replace(/^"(.*)"$/, '$1');
+const unquote = (value: string): string => value.replace(/^(['"`])([\s\S]*)\1$/, '$2');
 
-const extractDefaultValueFromComments = (property: Property, value: any) => {
-  let commentValue = value;
-  // `jsdoctags` is only read after the caller has established it is non-empty.
-  (property.jsdoctags as JsDocTag[]).forEach((tag: JsDocTag) => {
-    // `tagName` is optional in this shape and read unguarded on purpose: a tag without one throws
-    // into `extractDefaultValue`'s catch, which drops the property's default entirely.
-    const tagName = (tag.tagName as { escapedText?: string }).escapedText;
+const authoredDefault = (property: Property): string | undefined => {
+  let value: string | undefined;
+  for (const tag of property.jsdoctags ?? []) {
+    const tagName = tag.tagName?.escapedText?.toLowerCase();
     // A bare `@default` is not a usable default. Last tag wins when there are several.
     if ((tagName === 'default' || tagName === 'defaultvalue') && tag.comment !== undefined) {
-      commentValue = unquote(commentText(tag.comment).trim());
+      value = unquote(commentText(tag.comment).trim());
     }
-  });
-  return commentValue;
+  }
+  return value;
+};
+
+const analyzerDefault = (
+  initializer: Extract<PropertyInitializer, { kind: 'literal' }>
+): unknown => {
+  switch (initializer.literalKind) {
+    case 'string':
+      return unquote(initializer.text);
+    case 'number': {
+      const parsed = Number(initializer.text);
+      return Number.isNaN(parsed) ? initializer.text : parsed;
+    }
+    case 'boolean':
+      return initializer.text === 'true';
+    case 'null':
+      return null;
+    case 'undefined':
+      return undefined;
+    case 'bigint':
+    case 'enum':
+    case 'composite':
+      return initializer.text;
+  }
 };
 
 const extractDefaultValue = (property: Property, logger: ParsingLogger) => {
   try {
-    let value: any = property.defaultValue?.replace(/^'(.*)'$/, '$1');
-    value = castDefaultValue(property, value);
-
-    if (value == null && (property.jsdoctags?.length ?? 0) > 0) {
-      value = extractDefaultValueFromComments(property, value);
+    const authored = authoredDefault(property);
+    if (authored !== undefined) {
+      return castDefaultValue(property, authored);
     }
-
-    return value;
+    if (property.initializer === undefined) {
+      return undefined;
+    }
+    if (property.initializer.kind === 'expression') {
+      logger.debug(
+        `${property.name}: non-literal default '${property.initializer.text}' not shown`
+      );
+      return undefined;
+    }
+    return analyzerDefault(property.initializer);
   } catch {
-    logger.debug(`Error extracting ${property.name}: ${property.defaultValue}`);
+    logger.debug(`Error extracting ${property.name}: ${property.initializer?.text}`);
     return undefined;
   }
 };
@@ -404,7 +443,7 @@ export const extractArgTypesFromData = (
   componentData: Entry,
   { metadataJson, propsTable, logger = NOOP_LOGGER }: ExtractArgTypesOptions
 ) => {
-  const sectionToItems: Record<string, InputType[]> = {};
+  const sectionToItems: Record<string, StrictInputType[]> = {};
   const componentClasses: MemberKey[] =
     propsTable === 'inputs'
       ? ['inputsClass']
@@ -436,10 +475,16 @@ export const extractArgTypesFromData = (
 
       const defaultValue = isMethod(item) ? undefined : extractDefaultValue(item, logger);
 
-      const type: SBType =
+      const declaredType: SBType =
         isMethod(item) || (section !== 'inputs' && section !== 'properties')
           ? { name: 'other', value: 'void' }
           : extractType(item, defaultValue, metadataJson, componentData.file);
+
+      const type: SBType =
+        section === 'inputs' && !isMethod(item) && isRequired(item)
+          ? { ...declaredType, required: true }
+          : declaredType;
+
       const action = section === 'outputs' ? { action: item.name } : {};
 
       const jsDocTags = extractMemberJsDocTags(item);
@@ -454,7 +499,6 @@ export const extractArgTypesFromData = (
           ...(jsDocTags !== undefined ? { jsDocTags } : {}),
           type: {
             summary: isMethod(item) ? displaySignature(item) : item.type,
-            required: isMethod(item) ? false : isRequired(item),
           },
           defaultValue: { summary: defaultValue },
         },
@@ -475,8 +519,8 @@ export const extractArgTypesFromData = (
     .forEach((item) => {
       const changeName = `${item.name}Change`;
 
-      // An output rather than the model input it derives from: no `defaultValue`, never required to
-      // bind, and typed as the emitted-payload handler signature.
+      // An output rather than the model input it derives from: no `defaultValue`, no `required`,
+      // and typed as the emitted-payload handler signature.
       const argType = {
         name: changeName,
         description: item.rawdescription || item.description,
@@ -486,7 +530,6 @@ export const extractArgTypesFromData = (
           category: 'outputs',
           type: {
             summary: `(e: ${item.type}) => void`,
-            required: false,
           },
         },
       };
@@ -497,12 +540,12 @@ export const extractArgTypesFromData = (
       sectionToItems.outputs.push(argType);
     });
 
-  const argTypes: ArgTypes = {};
+  const argTypes: StrictArgTypes = {};
   SECTION_ORDER.forEach((section) => {
     const items = sectionToItems[section];
     if (items) {
       items.forEach((argType) => {
-        argTypes[argType.name as string] = argType;
+        argTypes[argType.name] = argType;
       });
     }
   });

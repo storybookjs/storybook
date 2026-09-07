@@ -7,8 +7,8 @@ import type { ComponentManifest, Doc, Story } from './manifest-types.ts';
  * Adapts the `experimentalDocgenServer` open-service payloads into the manifest formatter's
  * {@link ComponentManifest}/{@link Doc} shapes.
  *
- * Only `argTypes` is dropped: prop types still come from `reactComponentMeta` and
- * the `react*` docgen-engine fields, which are passed through unchanged.
+ * Only `argTypes` is dropped: the props section comes from `apiDescription` when the framework
+ * authored one, else from the `react*` docgen-engine fields. All of those pass through unchanged.
  */
 
 /**

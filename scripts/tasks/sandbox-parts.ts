@@ -598,9 +598,8 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   const opts = { cwd: sandboxDir };
   const viteConfigFile = await findFirstPath(['vite.config.ts', 'vite.config.js'], opts);
   const vitestConfigFile = await findFirstPath(['vitest.config.ts', 'vitest.config.js'], opts);
-  const workspaceFile = await findFirstPath(['vitest.workspace.ts', 'vitest.workspace.js'], opts);
 
-  const configFile = workspaceFile || vitestConfigFile || viteConfigFile;
+  const configFile = vitestConfigFile || viteConfigFile;
   if (!configFile) {
     throw new Error(`No Vitest or Vite config file found in sandbox: ${sandboxDir}`);
   }
@@ -608,10 +607,10 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   let fileContent = await readFile(join(sandboxDir, configFile), 'utf-8');
 
   // Insert resolve: { preserveSymlinks: true } and optionally server.fs.allow as siblings to
-  // plugins. Handles both defineConfig({ ... }) and defineWorkspace([ ... , { ... }]). Anchored
-  // on the `plugins:` key (injecting before it) instead of matching the whole array: plugin code
-  // may contain `]` (e.g. the regex literal in the sveltekit template), which a bracket-counting
-  // regex like `\[[^\]]*\]` would cut short, splicing the injection into the middle of it.
+  // plugins. Anchored on the `plugins:` key (injecting before it) instead of matching the whole
+  // array: plugin code may contain `]` (e.g. the regex literal in the sveltekit template), which a
+  // bracket-counting regex like `\[[^\]]*\]` would cut short, splicing the injection into the
+  // middle of it.
   fileContent = fileContent.replace(/^([ \t]*)plugins\s*:/m, (match, indent) => {
     let injected = `${indent}resolve: {\n${indent}  preserveSymlinks: true\n${indent}},\n`;
 
@@ -742,7 +741,8 @@ export const addStories: Task['run'] = async (
     template.expected.renderer.startsWith('@storybook/') &&
     template.expected.renderer !== '@storybook/server';
 
-  const sandboxSpecificStoriesFolder = key.replaceAll('/', '-');
+  const sandboxSpecificStoriesFolder =
+    template.modifications?.storiesVariant ?? key.replaceAll('/', '-');
   const storiesVariantFolder = getStoriesFolderWithVariant(sandboxSpecificStoriesFolder);
 
   if (isCoreRenderer) {
@@ -967,6 +967,23 @@ export const extendMain: Task['run'] = async ({ template, sandboxDir, key }, { d
 export const extendPreview: Task['run'] = async ({ template, sandboxDir }) => {
   logger.log('📝 Extending preview.js');
   const previewConfig = await readConfig({ cwd: sandboxDir, fileName: 'preview' });
+
+  // `storybook init` writes the Compodoc wiring for the Webpack builder only, since
+  // `@storybook/angular-vite` extracts the metadata itself. A sandbox that opts back out of the
+  // docgen server exists to cover the browser docgen path, and nothing feeds that path without the
+  // wiring an opting-out user adds by hand.
+  if (template.expected.framework === '@storybook/angular-vite') {
+    const mainConfig = await readConfig({ cwd: sandboxDir, fileName: 'main' });
+    if (mainConfig.getFieldValue(['features', 'experimentalDocgenServer']) === false) {
+      previewConfig.setImport(['setCompodocJson'], '@storybook/addon-docs/angular');
+      previewConfig.setImport('docJson', '../documentation.json');
+      previewConfig._ast.program.body.push(
+        t.expressionStatement(
+          t.callExpression(t.identifier('setCompodocJson'), [t.identifier('docJson')])
+        )
+      );
+    }
+  }
 
   if (template.modifications?.useCsfFactory) {
     const storiesDir = (await pathExists(join(sandboxDir, 'src/stories')))

@@ -350,6 +350,46 @@ describe('TestManager', () => {
     ]);
   });
 
+  it('should describe failures with the source-mapped frames rather than the raw browser stack', async () => {
+    const testManager = await TestManager.start(options);
+    const failedResult = {
+      state: 'failed',
+      errors: [
+        {
+          message:
+            '\n\x1B[34mClick to debug the error directly in Storybook: http://localhost:6006/?path=/story/story--one\x1B[39m\n\nexpect(element).toBeInTheDocument()',
+          stack:
+            'Error: expect(element).toBeInTheDocument()\n    at Proxy.expectWrapper (http://localhost:6006/deps/storybook_test.js?v=8c5dc1d5:13691:16)',
+          stacks: [
+            {
+              method: 'toBeInTheDocument',
+              file: '/project/src/stories/Page.stories.ts',
+              line: 30,
+              column: 60,
+            },
+          ],
+        },
+      ],
+    } as unknown as TestResult;
+
+    await testManager.runTestsWithState({
+      storyIds: ['story--one'],
+      triggeredBy: 'global',
+      callback: async () => {
+        testManager.onTestCaseResult({ storyId: 'story--one', testResult: failedResult });
+        testManager.onTestRunEnd({ totalTestCount: 1, unhandledErrors: [] });
+      },
+    });
+
+    expect(mockComponentTestStatusStore.set).toHaveBeenCalledWith([
+      expect.objectContaining({
+        storyId: 'story--one',
+        description:
+          'expect(element).toBeInTheDocument()\n    at toBeInTheDocument (/project/src/stories/Page.stories.ts:30:60)',
+      }),
+    ]);
+  });
+
   it('should filter tests', async () => {
     vitest.globTestSpecifications.mockImplementation(() => tests);
     const testManager = await TestManager.start(options);

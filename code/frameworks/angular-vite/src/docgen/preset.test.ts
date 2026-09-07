@@ -31,15 +31,15 @@ describe('experimental_docgenProvider', () => {
     expect(await experimental_docgenProvider([], optionsWith({}))).toEqual([]);
   });
 
-  it('contributes no descriptor when the user opted out with `compodoc: false`', async () => {
+  it('contributes the descriptor even when the user opted out with `compodoc: false`', async () => {
     // `storybook init` and the angular-to-angular-vite automigration write this option on the
-    // user's behalf, so it has to keep meaning "no Angular docgen" under the new provider too.
+    // user's behalf. It switches the Compodoc run, which does not happen under the flag at all.
     const result = await experimental_docgenProvider(
       [],
       optionsWith({ experimentalDocgenServer: true }, { compodoc: false })
     );
 
-    expect(result).toEqual([]);
+    expect(result).toHaveLength(1);
   });
 
   it('contributes the worker descriptor when the flag is on and Compodoc is not opted out', async () => {

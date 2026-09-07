@@ -198,8 +198,12 @@ describe('createDocgenProvider', () => {
     expect(analyzer.constructions).toBe(1);
     expect(next).toHaveBeenCalledTimes(2);
     expect(buildDocgenPayload).not.toHaveBeenCalled();
-    expect(logger.warn).toHaveBeenCalledWith(
-      expect.stringContaining('Angular docgen is unavailable')
-    );
+    expect(vi.mocked(logger.warn).mock.calls).toMatchInlineSnapshot(`
+      [
+        [
+          "Angular docgen is unavailable: the component meta analyzer could not be created. the analyzer refused to start",
+        ],
+      ]
+    `);
   });
 });

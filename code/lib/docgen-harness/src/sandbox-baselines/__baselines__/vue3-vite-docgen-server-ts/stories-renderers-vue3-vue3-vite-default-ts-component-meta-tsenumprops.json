@@ -1,0 +1,68 @@
+{
+  "argTypes": {
+    "level": {
+      "control": {
+        "labels": {
+          "0": "Level.Low",
+          "1": "Level.High"
+        }
+      },
+      "description": "Priority, a locally declared numeric enum.",
+      "name": "level",
+      "options": [0, 1],
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "Level"
+        }
+      },
+      "type": {
+        "name": "enum",
+        "required": false,
+        "value": [0, 1]
+      }
+    },
+    "severity": {
+      "control": {
+        "labels": {
+          "error": "Severity.Error",
+          "info": "Severity.Info",
+          "warning": "Severity.Warning"
+        }
+      },
+      "description": "Alert severity, an imported string enum.",
+      "name": "severity",
+      "options": ["info", "warning", "error"],
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "Severity"
+        }
+      },
+      "type": {
+        "name": "enum",
+        "required": true,
+        "value": ["info", "warning", "error"]
+      }
+    },
+    "size": {
+      "description": "A plain literal union, for comparison with the enum-backed props above.",
+      "name": "size",
+      "table": {
+        "category": "props",
+        "type": {
+          "summary": "\"small\" | \"medium\" | \"large\""
+        }
+      },
+      "type": {
+        "name": "enum",
+        "required": false,
+        "value": ["small", "medium", "large"]
+      }
+    }
+  },
+  "id": "stories-renderers-vue3-vue3-vite-default-ts-component-meta-tsenumprops",
+  "jsDocTags": {},
+  "name": "Component",
+  "path": "./src/stories/renderers/vue3_vue3-vite-default-ts/component-meta/TsEnumProps.stories.ts"
+}

@@ -2,6 +2,7 @@ import { csfFactories } from '../../codemod/csf-factories.ts';
 import type { CommandFix, Fix } from '../types.ts';
 import { addonA11yAddonTest } from './addon-a11y-addon-test.ts';
 import { angularToAngularVite } from './angular-to-angular-vite.ts';
+import { angularViteRemoveCompodoc } from './angular-vite-remove-compodoc.ts';
 import { addonA11yParameters } from './addon-a11y-parameters.ts';
 import { addonExperimentalTest } from './addon-experimental-test.ts';
 import { addonGlobalsApi } from './addon-globals-api.ts';
@@ -10,6 +11,10 @@ import { addonMdxGfmRemove } from './addon-mdx-gfm-remove.ts';
 import { addonStorysourceCodePanel } from './addon-storysource-code-panel.ts';
 import { consolidatedImports } from './consolidated-imports.ts';
 import { eslintPlugin } from './eslint-plugin.ts';
+import {
+  enableExperimentalDocgenServer,
+  enableExperimentalReview,
+} from './experimental-features.ts';
 import { fixFauxEsmRequire } from './fix-faux-esm-require.ts';
 import { initialGlobals } from './initial-globals.ts';
 import { migrateAddonConsole } from './migrate-addon-console.ts';
@@ -42,6 +47,7 @@ export const allFixes: Fix[] = [
   migrateAddonConsole,
   nextjsToNextjsVite,
   angularToAngularVite,
+  angularViteRemoveCompodoc,
   reactViteToTanstackReact,
   removeAddonInteractions,
   addonMcp,
@@ -52,6 +58,8 @@ export const allFixes: Fix[] = [
   wrapGetAbsolutePath,
   fixFauxEsmRequire,
   storybookPackageNameConflict,
+  enableExperimentalReview,
+  enableExperimentalDocgenServer,
 ];
 
 export const initFixes: Fix[] = [eslintPlugin];

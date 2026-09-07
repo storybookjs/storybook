@@ -1,6 +1,7 @@
-import path, { join, normalize, relative } from 'node:path';
+import path, { dirname, join, normalize, relative } from 'node:path';
 import { fileURLToPath, pathToFileURL, resolve } from 'node:url';
 
+import { join as patheJoin } from 'pathe';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { logger } from 'storybook/internal/node-logger';
@@ -25,36 +26,40 @@ vi.mock('storybook/internal/node-logger', () => ({
 
 vi.mock('../shared/utils/module', () => ({
   importModule: vi.fn(),
-  safeResolveModule: vi.fn(({ specifier }) => {
-    const KNOWN_FILES = [
-      '@storybook/react',
-      'storybook/actions/manager',
-      './local/preset',
-      './local/addons',
-      '/absolute/preset',
-      '/absolute/addons',
-      '@storybook/addon-docs',
-      '@storybook/addon-cool',
-      '@storybook/addon-docs/preset',
-      '@storybook/addon-essentials',
-      '@storybook/addon-knobs/manager',
-      '@storybook/addon-knobs/register',
-      '@storybook/addon-notes/register-panel',
-      '@storybook/preset-create-react-app',
-      '@storybook/preset-typescript',
-      'addon-bar/preset.js',
-      'addon-bar',
-      'addon-baz/register.js',
-      'addon-foo/register.js',
-    ];
-    if (KNOWN_FILES.includes(specifier)) {
-      return specifier;
-    }
-    return undefined;
-  }),
+  safeResolveModule: vi.fn(),
 }));
 
 const mockedResolveUtils = vi.mocked(resolveUtils);
+
+const KNOWN_FILES = [
+  '@storybook/react',
+  'storybook/actions/manager',
+  './local/preset',
+  './local/addons',
+  '/absolute/preset',
+  '/absolute/addons',
+  '@storybook/addon-docs',
+  '@storybook/addon-cool',
+  '@storybook/addon-docs/preset',
+  '@storybook/addon-essentials',
+  '@storybook/addon-knobs/manager',
+  '@storybook/addon-knobs/register',
+  '@storybook/addon-notes/register-panel',
+  '@storybook/preset-create-react-app',
+  '@storybook/preset-typescript',
+  'addon-bar/preset.js',
+  'addon-bar',
+  'addon-baz/register.js',
+  'addon-foo/register.js',
+];
+
+// Re-applied per test so that cases which swap in a different resolver cannot leak into the rest
+// of the file.
+beforeEach(() => {
+  mockedResolveUtils.safeResolveModule.mockImplementation(({ specifier }) =>
+    KNOWN_FILES.includes(specifier) ? specifier : undefined
+  );
+});
 
 describe('presets', () => {
   it('does not throw when there is no preset file', async () => {
@@ -473,6 +478,45 @@ describe('resolveAddonName', () => {
     expect(resolveAddonName({} as any, '@storybook/addon-essentials', {})).toEqual({
       name: '@storybook/addon-essentials',
       type: 'presets',
+    });
+  });
+
+  describe('given an addon referenced by absolute directory, as getAbsolutePath() produces', () => {
+    const fixtureDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
+
+    beforeEach(async () => {
+      // These cases assert on real resolution, so the file-wide stub of safeResolveModule
+      // would defeat them.
+      const actual = await vi.importActual<typeof resolveUtils>('../shared/utils/module.ts');
+      mockedResolveUtils.safeResolveModule.mockImplementation(actual.safeResolveModule);
+    });
+
+    it('resolves entry points declared only in the exports map', () => {
+      const addonDir = join(fixtureDir, 'addon-with-exports-map');
+
+      expect(resolveAddonName({} as any, addonDir, {})).toEqual({
+        type: 'virtual',
+        name: addonDir,
+        presets: [{ name: patheJoin(addonDir, 'lib', 'preset.js'), options: {} }],
+        managerEntries: [patheJoin(addonDir, 'lib', 'manager.js')],
+        previewAnnotations: [patheJoin(addonDir, 'lib', 'preview.js')],
+      });
+    });
+
+    it('resolves root-level entry points when the package has no exports map', () => {
+      const addonDir = join(fixtureDir, 'addon-without-exports-map');
+
+      expect(resolveAddonName({} as any, addonDir, {})).toEqual({
+        type: 'virtual',
+        name: addonDir,
+        presets: [{ name: patheJoin(addonDir, 'preset.js'), options: {} }],
+        managerEntries: [patheJoin(addonDir, 'manager.js')],
+        previewAnnotations: [patheJoin(addonDir, 'preview.js')],
+      });
+    });
+
+    it('returns undefined for a directory that holds no addon', () => {
+      expect(resolveAddonName({} as any, fixtureDir, {})).toBeUndefined();
     });
   });
 });

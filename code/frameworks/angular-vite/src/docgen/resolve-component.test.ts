@@ -98,47 +98,74 @@ describe('resolveMetaComponent', () => {
         path: undefined,
       },
     ],
+    [
+      // A namespace import's export is the same import written another way.
+      'an export read off a namespace import',
+      `import * as Buttons from './button.component';
+       export default { component: Buttons.ButtonComponent };`,
+      {
+        localName: 'ButtonComponent',
+        importId: './button.component',
+        exportName: 'ButtonComponent',
+        path: join(fixtures, 'button.component.ts'),
+      },
+    ],
+    [
+      // The shape vmware-clarity/ng-clarity writes: the meta is composed from a config object a
+      // sibling module owns.
+      'a component named by a config object another module owns',
+      `import * as internal from './button.internal';
+       export default { component: internal.config.component };`,
+      {
+        localName: 'ButtonComponent',
+        importId: './button.component',
+        exportName: 'ButtonComponent',
+        path: join(fixtures, 'button.component.ts'),
+      },
+    ],
   ];
 
   it.each(resolvedCases)('resolves %s', (_name, source, expected) => {
     expect(resolveMetaComponent(parse(source), storyPath)).toEqual({ component: expected });
   });
 
-  const unresolvedCases: [name: string, source: string, reason: string][] = [
+  const unresolvedCases: [name: string, source: string, expected: object][] = [
     [
       'a file that declares no meta.component',
       `export default { title: 'Button' };`,
-      'no-meta-component',
+      { reason: 'no-meta-component' },
     ],
     [
       'a type-only import, which binds no class Compodoc could document',
       `import type { ButtonComponent } from './button.component';
        export default { component: ButtonComponent };`,
-      'no-component-import',
+      { reason: 'no-component-import' },
     ],
     [
-      'a namespace import',
+      'a namespace import, whose module object is not a class',
       `import * as ButtonComponent from './button.component';
        export default { component: ButtonComponent };`,
-      'no-component-import',
+      { reason: 'no-component-import' },
     ],
     [
-      // Matching the printed source text instead would resolve to a story-local `ButtonComponent`.
-      'a member expression, which names no binding to follow',
-      `import * as Buttons from './button.component';
-       export default { component: Buttons.ButtonComponent };`,
-      'no-meta-component',
-    ],
-    [
-      'a call expression, which static analysis cannot follow to a class',
+      'a call expression, which only running the story could evaluate',
       `import { makeButton } from './button.component';
        export default { component: makeButton() };`,
-      'no-meta-component',
+      { reason: 'unreadable-component-expression', expression: 'makeButton()' },
+    ],
+    [
+      'a property access whose module does not resolve',
+      `import * as internal from './nope.internal';
+       export default { component: internal.config.component };`,
+      {
+        reason: 'unreadable-component-expression',
+        expression: 'internal.config.component',
+      },
     ],
   ];
 
-  it.each(unresolvedCases)('reports %s', (_name, source, reason) => {
-    expect(resolveMetaComponent(parse(source), storyPath)).toEqual({ reason });
+  it.each(unresolvedCases)('reports %s', (_name, source, expected) => {
+    expect(resolveMetaComponent(parse(source), storyPath)).toEqual(expected);
   });
 });
 

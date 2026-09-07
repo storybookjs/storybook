@@ -1,0 +1,20 @@
+{
+  "id": "options-api-emits",
+  "name": "OptionsApiEmits",
+  "path": "__PATH__",
+  "stories": {
+    "forms-options-api-emits--stepper": {
+      "description": undefined,
+      "id": "forms-options-api-emits--stepper",
+      "name": "Stepper",
+      "snippet": "<script lang="ts" setup>
+import OptionsApiEmits from './OptionsApiEmits.vue';
+</script>
+
+<template>
+  <OptionsApiEmits :step="2" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

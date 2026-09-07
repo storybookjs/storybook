@@ -256,8 +256,10 @@ const resolveTypealias = (
   return resolveTypealias(typeAlias.rawtype, compodocJson, componentFile, seen);
 };
 
+// A signature can lead with `new ` for a constructor type or with its type parameters when generic,
+// so accepting only a leading `(` dropped both onto the `empty-enum` catch-all.
 const isFunctionTypeString = (compodocType: string): boolean =>
-  compodocType === 'function' || /^\(.*\)\s*=>/.test(compodocType);
+  compodocType === 'function' || /^(new\s+)?(<.*>\s*)?\(.*\)\s*=>/.test(compodocType);
 
 export const extractType = (
   property: Property,

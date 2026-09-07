@@ -4,17 +4,18 @@ import { expect } from 'vitest';
 
 import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
 import type { CompareArgTypesOptions } from './argtypes.ts';
+import type { ArgTypesComparisonOptions } from './expect-current-or-better.ts';
 import { expectCurrentOrBetter } from './expect-current-or-better.ts';
 import { isSnapshotUpdateRun } from './is-snapshot-update-run.ts';
 import { parseArgTypesSnapshot } from './parse-snapshot.ts';
 import { pendingRawSnapshotContent } from './pending-raw-snapshot.ts';
 
 /** An extra committed recording the candidate must also hold, gated before the snapshot call. */
-interface ArgTypesGate extends CompareArgTypesOptions {
+type ArgTypesGate = ArgTypesComparisonOptions & {
   /** Committed snapshot text of the other recording. */
   committed: string;
   label: string;
-}
+};
 
 interface RecordArgTypesSnapshotInput extends CompareArgTypesOptions {
   /** Snapshot file the candidate is recorded into and ratcheted against. */
@@ -46,13 +47,12 @@ export async function recordArgTypesSnapshot({
   if (parsed !== undefined) {
     expectCurrentOrBetter({ kind: 'argTypes', baseline: parsed, candidate, ...ratchet });
   }
-  for (const gate of extraGates) {
+  for (const { committed: gateCommitted, label: gateLabel, ...gateOptions } of extraGates) {
     expectCurrentOrBetter({
       kind: 'argTypes',
-      baseline: parseArgTypesSnapshot(gate.committed, gate.label),
+      baseline: parseArgTypesSnapshot(gateCommitted, gateLabel),
       candidate,
-      legacyBaseline: gate.legacyBaseline,
-      strictTable: gate.strictTable,
+      ...gateOptions,
     });
   }
 

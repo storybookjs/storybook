@@ -20,10 +20,12 @@ import { ArgsFormattingComponent } from './args-formatting.component.ts';
         [data]="{id: 7, nested: {deep: true}}"
         [tags]="['a', 'b']"
         [greeting]="'hello'"
-        [formatter]="(value) => value.replace('&quot;', '\\'')">
-    </sb-args-formatting>`,
+        [formatter]="formatter"
+    />`,
 })
-export class DemoComponent {}",
+export class DemoComponent {
+  formatter = (value) => value.replace('"', '\'');
+}",
     },
   },
 }

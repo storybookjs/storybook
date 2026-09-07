@@ -1,16 +1,11 @@
 /**
- * This is a way to start the @storybook/mcp server as a stdio MCP server, which is sometimes easier for testing.
- * You can run it like this:
- *   node bin.ts --manifestsDir ./path/to/manifests/dir/
+ * Development harness: the docs tools of this package over a stdio transport, which is easier to
+ * drive by hand than the HTTP handler. Run it from this directory:
+ *   node bin.ts --manifestsDir ./fixtures/default
  *
- * Or when configuring it as an MCP server:
- * {
- *   "storybook-mcp": {
- *     "type": "stdio",
- *     "command": "node",
- *     "args": ["bin.ts", "--manifestsDir", "./path/to/manifests/dir/"]
- *   }
- * }
+ * `@storybook/mcp` is a library and ships no executable, so this file is not published and there is
+ * no `node_modules` path to invoke. Consumers wanting a stdio server build one from the exported
+ * tool registrations — see the recipe in README.md.
  */
 import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';

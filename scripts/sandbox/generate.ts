@@ -38,6 +38,7 @@ import {
   preapproveLocallyPublishedPackages,
   refreshBeforeStorybookLockfile,
   setupYarn,
+  writeScaffoldNpmrc,
 } from './utils/yarn.ts';
 
 const isCI = process.env.GITHUB_ACTIONS === 'true' || process.env.CI === 'true';
@@ -296,6 +297,14 @@ const runGenerators = async (
             YARN_NPM_MINIMAL_AGE_GATE: BEFORE_SANDBOX_MIN_AGE_GATE,
             NPM_CONFIG_MIN_RELEASE_AGE: String(BEFORE_SANDBOX_NPM_MIN_RELEASE_AGE_DAYS),
           };
+
+          const scaffoldCwd = script.includes('{{beforeDir}}') ? createBaseDir : createBeforeDir;
+          if (minAgeGateExemptions?.length) {
+            if (scaffoldCwd === createBeforeDir) {
+              await mkdir(createBeforeDir, { recursive: true });
+            }
+            await writeScaffoldNpmrc(scaffoldCwd, minAgeGateExemptions);
+          }
 
           // Some tools refuse to run inside an existing directory and replace the contents,
           // where as others are very picky about what directories can be called. So we need to

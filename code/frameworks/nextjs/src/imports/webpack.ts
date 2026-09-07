@@ -1,3 +1,4 @@
+import { getTsconfigPathsBaseDir } from 'storybook/internal/common';
 import { loadConfig } from 'tsconfig-paths';
 import TsconfigPathsPlugin from 'tsconfig-paths-webpack-plugin';
 import type { Configuration as WebpackConfig } from 'webpack';
@@ -22,6 +23,7 @@ export const configureImports = ({
   baseConfig.resolve.plugins.push(
     new TsconfigPathsPlugin({
       configFile: configLoadResult.configFileAbsolutePath,
+      baseUrl: getTsconfigPathsBaseDir(configLoadResult.configFileAbsolutePath),
       extensions: ['.js', '.jsx', '.ts', '.tsx'],
     }) as any
   );

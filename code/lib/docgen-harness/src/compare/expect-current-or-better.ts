@@ -5,12 +5,29 @@ import type { CompareSnippetInput } from './snippets.ts';
 import { compareSnippet } from './snippets.ts';
 import type { Violation } from './types.ts';
 
+export interface DeclaredDefaultOmission {
+  arg: string;
+  expectedSummary: string;
+}
+
+export type ArgTypesComparisonOptions =
+  | (CompareArgTypesOptions & { declaredDefaultOmissions?: undefined })
+  | {
+      legacyBaseline: true;
+      strictTable?: boolean;
+      /**
+       * Args whose legacy default recordings are known initializer source rather than displayable
+       * values. Each declaration must match a `lost-default` violation and is checked for staleness.
+       */
+      declaredDefaultOmissions: readonly DeclaredDefaultOmission[];
+    };
+
 export type ExpectCurrentOrBetterInput =
   | ({
       kind: 'argTypes';
       baseline: StrictArgTypes;
       candidate: StrictArgTypes;
-    } & CompareArgTypesOptions)
+    } & ArgTypesComparisonOptions)
   | ({ kind: 'snippet' } & CompareSnippetInput & {
         /**
          * Args the candidate is expected to leave out even though the baseline represents them,
@@ -27,12 +44,44 @@ export type ExpectCurrentOrBetterInput =
 /** Throws a single error listing every violation, so a failure shows the whole gap at once. */
 export function expectCurrentOrBetter(input: ExpectCurrentOrBetterInput): void {
   if (input.kind === 'argTypes') {
-    throwOnViolations(
-      compareArgTypes(input.baseline, input.candidate, {
-        legacyBaseline: input.legacyBaseline,
-        strictTable: input.strictTable,
-      })
+    const violations = compareArgTypes(input.baseline, input.candidate, {
+      legacyBaseline: input.legacyBaseline,
+      strictTable: input.strictTable,
+    });
+    const declaredDefaultOmissions = input.declaredDefaultOmissions ?? [];
+    if (input.declaredDefaultOmissions !== undefined && input.legacyBaseline !== true) {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
+      throw new Error('declaredDefaultOmissions may only waive legacy Angular baselines');
+    }
+    const mismatched = declaredDefaultOmissions.filter(
+      ({ arg, expectedSummary }) =>
+        input.baseline[arg]?.table?.defaultValue?.summary !== expectedSummary
     );
+    if (mismatched.length > 0) {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
+      throw new Error(
+        `Legacy default summaries changed for ${mismatched.map(({ arg }) => arg).join(', ')} — update or remove their declaredDefaultOmissions`
+      );
+    }
+    const declaredArgs = new Set(declaredDefaultOmissions.map(({ arg }) => arg));
+    throwOnViolations(
+      violations.filter(
+        (violation) => violation.kind !== 'lost-default' || !declaredArgs.has(violation.arg)
+      )
+    );
+
+    const omittedDefaults = new Set(
+      violations
+        .filter((violation) => violation.kind === 'lost-default')
+        .map((violation) => violation.arg)
+    );
+    const stale = declaredDefaultOmissions.filter(({ arg }) => !omittedDefaults.has(arg));
+    if (stale.length > 0) {
+      // eslint-disable-next-line local-rules/no-uncategorized-errors
+      throw new Error(
+        `The candidate argTypes now record defaults for ${stale.map(({ arg }) => arg).join(', ')} — remove them from declaredDefaultOmissions`
+      );
+    }
     return;
   }
 

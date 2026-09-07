@@ -6,7 +6,11 @@ import {
   OpenServiceMissingOriginError,
   OpenServiceModuleGraphUnavailableError,
 } from '../../../../server-errors.ts';
-import type { ModuleGraphService } from '../../services/module-graph/definition.ts';
+import type {
+  ChangeDetectionReadinessResult,
+  ModuleGraphService,
+} from '../../services/module-graph/definition.ts';
+import type { ModuleGraphIndexService } from '../../services/module-graph-index/definition.ts';
 import {
   defineToolset,
   reportToolsetTelemetry,
@@ -17,7 +21,7 @@ import { getToolName } from '../../toolset-names.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
 import { getChangedStories } from './changed.ts';
 import { DEFAULT_MAX_DISTANCE, findStoriesByComponent } from './find-by-component.ts';
-import type { ModuleGraphStatus } from './resolve-component-stories.ts';
+import type { ModuleGraphAccess, ModuleGraphStatus } from './resolve-component-stories.ts';
 import { reasonForStatus } from './resolve-component-stories.ts';
 import { formatChangedStories, formatFindByComponent, formatPreviewStories } from './format.ts';
 import { previewStories } from './preview-stories.ts';
@@ -137,22 +141,11 @@ export type StoriesChangeStatusesAccess = {
   getAll: () => StatusesByStoryIdAndTypeId | Promise<StatusesByStoryIdAndTypeId>;
 };
 
-/**
- * Change-detection status-store readiness, distinct from module-graph readiness. The graph can be
- * `ready` while change detection is disabled or its initial scan has failed.
- */
-export type ChangeDetectionReadinessAccess = () => Promise<
-  | { status: 'ready' }
-  | { status: 'unavailable'; reason: string }
-  | { status: 'error'; error: { message: string } }
->;
-
 export type CreateStoriesToolsetOptions = {
   storyIndex: StoryIndexAccess;
   git: StoriesGitAccess;
   /** Change-detection status snapshot; wired by the server host, not imported from core-server. */
   changeStatuses: StoriesChangeStatusesAccess;
-  getChangeDetectionReadiness: ChangeDetectionReadinessAccess;
   /**
    * Whether curated reviews are available in this Storybook. Reviews are the intended end of visual
    * work, so when they exist several methods steer the agent there instead of at raw preview links.
@@ -171,19 +164,25 @@ function emptyChangedStories(): ChangedStoriesOutput {
 }
 
 function reasonForChangeDetectionReadiness(
-  readiness: Exclude<Awaited<ReturnType<ChangeDetectionReadinessAccess>>, { status: 'ready' }>
+  readiness: Exclude<ChangeDetectionReadinessResult, { status: 'ready' }>
 ): string {
-  if (readiness.status === 'unavailable') {
-    return readiness.reason === 'disabled'
-      ? 'Storybook change detection is disabled, so changed-story statuses are unavailable. Enable the changeDetection feature and retry.'
-      : `Storybook change detection is unavailable: ${readiness.reason}.`;
+  switch (readiness.status) {
+    case 'unavailable':
+      return readiness.reason === 'disabled'
+        ? 'Storybook change detection is disabled, so changed-story statuses are unavailable. Enable the changeDetection feature and retry.'
+        : `Storybook change detection is unavailable: ${readiness.reason}.`;
+    case 'error':
+      return `Storybook change detection failed: ${readiness.error.message}`;
+    case 'pending':
+      return 'Storybook change detection has not finished its initial scan.';
+    default: {
+      const exhaustive: never = readiness;
+      throw exhaustive;
+    }
   }
-  return `Storybook change detection failed: ${readiness.error.message}`;
 }
 
-function isGitUnusableReadiness(
-  readiness: Awaited<ReturnType<ChangeDetectionReadinessAccess>>
-): boolean {
+function isGitUnusableReadiness(readiness: ChangeDetectionReadinessResult): boolean {
   return readiness.status === 'unavailable' && GIT_UNUSABLE_REASONS.has(readiness.reason);
 }
 
@@ -231,12 +230,33 @@ Never invent IDs from file names, feature names, or memory; title strings can be
 Backed by Storybook's live reverse dependency graph, available only when the dev server runs a builder that supports change detection (e.g. Vite) — otherwise returns a typed error.`;
 }
 
+// Hot status + cold reverse-index queries, composed for ModuleGraphAccess consumers.
+function moduleGraphAccessFromCtx(
+  ctx: ToolsetCtx,
+  moduleGraph: ModuleGraphService = ctx.getService<ModuleGraphService>('core/module-graph', {
+    internal: true,
+  })
+): ModuleGraphAccess {
+  const moduleGraphIndex = ctx.getService<ModuleGraphIndexService>('core/module-graph-index', {
+    internal: true,
+  });
+  return {
+    queries: {
+      status: {
+        loaded: () => moduleGraph.queries.status.loaded(undefined) as Promise<ModuleGraphStatus>,
+      },
+      storiesForFiles: {
+        loaded: (files) => moduleGraphIndex.queries.storiesForFiles.loaded(files),
+      },
+    },
+  };
+}
+
 /** Creates the public stories API with request-local access to Storybook runtime dependencies. */
 export function createStoriesToolset({
   storyIndex,
   git,
   changeStatuses,
-  getChangeDetectionReadiness,
   reviewEnabled = false,
 }: CreateStoriesToolsetOptions) {
   return defineToolset({
@@ -287,21 +307,21 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
         title: 'Get changed stories metadata',
         description: describeChanged,
         handler: async (_input, ctx): Promise<ToolsetOutcome<ChangedStoriesOutput, never>> => {
-          const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', {
+          const graphService = ctx.getService<ModuleGraphService>('core/module-graph', {
             internal: true,
           });
+          const moduleGraph = moduleGraphAccessFromCtx(ctx, graphService);
           // Same readiness gate as findByComponent: an empty status store is not "no changes", so
           // fail before reading statuses when the graph has not settled.
-          const graphStatus = (await moduleGraph.queries.status.loaded(
-            undefined
-          )) as ModuleGraphStatus;
+          const graphStatus = await moduleGraph.queries.status.loaded(undefined);
           if (graphStatus.value !== 'ready') {
             throw new OpenServiceModuleGraphUnavailableError({
               reason: reasonForStatus(graphStatus),
             });
           }
 
-          const changeDetection = await getChangeDetectionReadiness();
+          const changeDetection =
+            await graphService.queries.changeDetectionReadiness.loaded(undefined);
           if (changeDetection.status !== 'ready') {
             if (isGitUnusableReadiness(changeDetection)) {
               const data = emptyChangedStories();
@@ -372,28 +392,12 @@ Defaults to ${DEFAULT_MAX_DISTANCE}; raise it to widen recall, lower it to tight
         title: 'Get stories for component files',
         description: (ctx) => describeFindByComponent(ctx, reviewEnabled),
         handler: async (input, ctx): Promise<ToolsetOutcome<FindByComponentOutput, never>> => {
-          const moduleGraph = ctx.getService<ModuleGraphService>('core/module-graph', {
-            internal: true,
-          });
           const maxDistance = input.maxDistance ?? DEFAULT_MAX_DISTANCE;
           const lookup = await findStoriesByComponent({
             componentPaths: input.componentPaths,
             maxDistance,
             index: await storyIndex.getIndex(),
-            // The service handle carries commands and a looser status payload than the lookup
-            // needs; this narrows it to the two queries the reverse-index walk actually calls.
-            moduleGraph: {
-              queries: {
-                status: {
-                  loaded: () =>
-                    moduleGraph.queries.status.loaded(undefined) as Promise<ModuleGraphStatus>,
-                },
-                storiesForFiles: {
-                  loaded: (files: { files: string[] }) =>
-                    moduleGraph.queries.storiesForFiles.loaded(files),
-                },
-              },
-            },
+            moduleGraph: moduleGraphAccessFromCtx(ctx),
           });
 
           if (!lookup.available) {
@@ -415,7 +419,7 @@ Defaults to ${DEFAULT_MAX_DISTANCE}; raise it to widen recall, lower it to tight
           });
 
           const data: FindByComponentOutput = { results: lookup.results, maxDistance };
-          return { ok: true, data, markdown: formatFindByComponent(data, ctx) };
+          return { ok: true, data, markdown: formatFindByComponent(data) };
         },
       },
     },

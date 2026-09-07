@@ -4,10 +4,10 @@ import { ShapeButtonComponent } from './shape-button.component.ts';
 @Component({
   selector: 'app-demo',
   imports: [ShapeButtonComponent],
-  template: `<sb-shape-button [label]="'Save'" (clicked)="clicked($event)"></sb-shape-button>`,
+  template: `<sb-shape-button [label]="'Save'" (clicked)="clicked($event)" />`,
 })
 export class DemoComponent {
   clicked(event: unknown) {}
 }
 
-warning: Incomplete snippet: `render: get render() { return () => ({ template: '<sb-shape-button from-getter></sb-shape-button>' }); }` could not be resolved statically.
+warning: Incomplete snippet: `get render() { return () => ({ template: '<sb-shape-button from-getter></sb-shape-button>' }); }` could not be resolved statically.

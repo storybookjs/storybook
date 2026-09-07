@@ -14,7 +14,10 @@ export interface ResolvedVueComponent {
 }
 
 /** Reason a story file yielded no component to extract docgen from. */
-export type UnresolvedComponentReason = 'no-meta-component' | 'no-component-import';
+export type UnresolvedComponentReason =
+  | 'no-meta-component'
+  | 'no-component-import'
+  | 'unreadable-component-expression';
 
 const resolveComponent = createMetaComponentResolver({ extensions: ['.vue'] });
 

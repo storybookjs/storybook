@@ -11,10 +11,11 @@ import {
   parseInputDecoratorConfig,
   readMetadataInputsOutputs,
 } from './decorators.ts';
+import { defaultInitializer } from './default-initializer.ts';
+import { analyzeInputTransform, type InputTransformSource } from './input-transform.ts';
 import { getJsDocDescription, getJsDocTagsField, hasJsDocTag } from './jsdoc.ts';
-import { initializerText, memberName } from './node-text.ts';
+import { memberName } from './node-text.ts';
 import { buildSignalEntry, parseSignalCall } from './signals.ts';
-import { stripImportQualifiers } from './type-index.ts';
 
 /**
  * A collected member, paired with the identity Angular itself merges on.
@@ -26,6 +27,9 @@ import { stripImportQualifiers } from './type-index.ts';
 export interface MemberEntry<T> {
   declName: string;
   isStatic: boolean;
+  declaration: ts.NamedDeclaration;
+  /** A metadata type the class property's checker type does not represent. */
+  typeSource?: { kind: 'signal'; signalKind: 'input' | 'output' | 'model' } | InputTransformSource;
   value: T;
 }
 
@@ -36,8 +40,10 @@ export interface ClassMembers {
   methods: MemberEntry<Method>[];
 }
 
-export const memberKey = (entry: MemberEntry<unknown>): string =>
-  entry.isStatic ? `static:${entry.declName}` : entry.declName;
+export const sameMemberIdentity = (
+  left: MemberEntry<unknown>,
+  right: MemberEntry<unknown>
+): boolean => left.declName === right.declName && left.isStatic === right.isStatic;
 
 const owningClassName = (node: ts.Node): string => {
   let candidate: ts.Node | undefined = node.parent;
@@ -57,20 +63,37 @@ const dropped = (node: ts.Node, name: string, reason: string): void => {
   logger.debug(`[angular-cm] ${owningClassName(node)}.${name} left out of docgen: ${reason}`);
 };
 
-// Private, protected, static and `#` members and lifecycle hooks all stay in; filtering them is
-// the extractor's decision, not this visitor's.
+/** What a class is to Angular, which decides whether its statics can document anything. */
+export type DocumentedClassKind = 'component' | 'directive' | 'pipe' | 'injectable' | 'class';
+
+const ANGULAR_GENERATED_STATIC = /^(ngAcceptInputType_|ɵ)/;
+
+// Private, protected and `#` members and lifecycle hooks all stay in; filtering them is the
+// extractor's decision, not this visitor's. Statics are the exception, and only for a component or
+// directive: Angular binds and coerces instance members alone, so a static there is either an
+// `ngAcceptInputType_*`/`ɵ*` internal or a field no template can reach. A service or plain class
+// documents its own statics, and only the generated ones are noise.
 export function visitClassMembers(
   ctx: AnalyzerContext,
-  classNode: ts.ClassLikeDeclaration
+  classNode: ts.ClassLikeDeclaration,
+  kind: DocumentedClassKind
 ): ClassMembers {
   const { ts } = ctx;
   const members: ClassMembers = { inputs: [], outputs: [], properties: [], methods: [] };
-  const visitedAccessors = new Set<string>();
+  const visitedAccessors = new Set<ts.AccessorDeclaration>();
 
   for (const member of classNode.members) {
     if (hasJsDocTag(ts, member, 'ignore')) {
       dropped(member, member.name ? memberName(ts, member.name) : '<unnamed>', 'tagged @ignore');
       continue;
+    }
+    if (isStatic(ctx, member)) {
+      const staticName = member.name ? memberName(ts, member.name) : '<unnamed>';
+      const bindsTemplateMembers = kind === 'component' || kind === 'directive';
+      if (bindsTemplateMembers || ANGULAR_GENERATED_STATIC.test(staticName)) {
+        dropped(member, staticName, 'a static member');
+        continue;
+      }
     }
     if (ts.isConstructorDeclaration(member)) {
       visitConstructorProperties(ctx, member, members);
@@ -131,10 +154,13 @@ export function applyMetadataInputsOutputs(
 const entryFor = <T>(
   ctx: AnalyzerContext,
   member: ts.ClassElement & { name: ts.PropertyName },
-  value: T
+  value: T,
+  typeSource?: MemberEntry<T>['typeSource']
 ): MemberEntry<T> => ({
   declName: memberName(ctx.ts, member.name),
   isStatic: isStatic(ctx, member),
+  declaration: member,
+  ...(typeSource ? { typeSource } : {}),
   value,
 });
 
@@ -146,7 +172,8 @@ const visitProperty = (
   const decorators = getDecorators(ctx, member);
   const inputDecorator = decorators.find((decorator) => decorator.name === 'Input');
   if (inputDecorator) {
-    members.inputs.push(entryFor(ctx, member, buildDecoratorInput(ctx, member, inputDecorator)));
+    const input = buildDecoratorInput(ctx, member, inputDecorator);
+    members.inputs.push(entryFor(ctx, member, input.value, input.typeSource));
     return;
   }
   const outputDecorator = decorators.find((decorator) => decorator.name === 'Output');
@@ -156,10 +183,15 @@ const visitProperty = (
   }
   const signal = parseSignalCall(ctx, member);
   if (signal) {
-    const entry = entryFor(ctx, member, {
-      ...buildSignalEntry(ctx, member, signal),
-      ...memberApiFields(ctx, member),
-    });
+    const entry = entryFor(
+      ctx,
+      member,
+      {
+        ...buildSignalEntry(ctx, member, signal),
+        ...memberApiFields(ctx, member),
+      },
+      { kind: 'signal', signalKind: signal.kind }
+    );
     if (signal.kind !== 'output') {
       members.inputs.push(entry);
     }
@@ -172,24 +204,26 @@ const visitProperty = (
   members.properties.push(entryFor(ctx, member, buildPlainProperty(ctx, member, decorators)));
 };
 
-// An arrow default collapses to `() => {...}` for plain properties only, so decorator IO keeps the
-// raw initializer source instead of going through `initializerText`.
 const buildDecoratorInput = (
   ctx: AnalyzerContext,
   member: ts.PropertyDeclaration,
   decorator: DecoratorInfo
-): Property => {
+): { value: Property; typeSource?: MemberEntry<Property>['typeSource'] } => {
   const config = parseInputDecoratorConfig(ctx, decorator);
-  const type = typeOfPropertyish(ctx, member);
+  const transform = config.transform ? analyzeInputTransform(ctx, config.transform) : undefined;
+  const type = transform?.type ?? typeOfPropertyish(ctx, member);
   return {
-    name: config.alias ?? memberName(ctx.ts, member.name),
-    ...(type === undefined ? {} : { type }),
-    optional: config.required !== undefined ? !config.required : !!member.questionToken,
-    ...(config.required === undefined ? {} : { required: config.required }),
-    ...(member.initializer ? { defaultValue: member.initializer.getText() } : {}),
-    ...memberApiFields(ctx, member),
-    ...getJsDocDescription(ctx.ts, member),
-    ...getJsDocTagsField(ctx.ts, member),
+    value: {
+      name: config.alias ?? memberName(ctx.ts, member.name),
+      ...(type === undefined ? {} : { type }),
+      optional: config.required !== undefined ? !config.required : !!member.questionToken,
+      ...(config.required === undefined ? {} : { required: config.required }),
+      ...(member.initializer ? { initializer: defaultInitializer(ctx, member.initializer) } : {}),
+      ...memberApiFields(ctx, member),
+      ...getJsDocDescription(ctx.ts, member),
+      ...getJsDocTagsField(ctx.ts, member),
+    },
+    ...(transform ? { typeSource: transform.source } : {}),
   };
 };
 
@@ -202,7 +236,7 @@ const buildDecoratorOutput = (
   return {
     name: decoratorStringArg(ctx, decorator) ?? memberName(ctx.ts, member.name),
     ...(type === undefined ? {} : { type }),
-    ...(member.initializer ? { defaultValue: member.initializer.getText() } : {}),
+    ...(member.initializer ? { initializer: defaultInitializer(ctx, member.initializer) } : {}),
     ...memberApiFields(ctx, member),
     ...getJsDocDescription(ctx.ts, member),
     ...getJsDocTagsField(ctx.ts, member),
@@ -220,7 +254,7 @@ const buildPlainProperty = (
     name: memberName(ctx.ts, member.name),
     ...(type === undefined ? {} : { type }),
     optional: !!member.questionToken,
-    ...(member.initializer ? { defaultValue: initializerText(ctx.ts, member.initializer) } : {}),
+    ...(member.initializer ? { initializer: defaultInitializer(ctx, member.initializer) } : {}),
     ...memberApiFields(ctx, member),
     ...getJsDocDescription(ctx.ts, member),
     ...getJsDocTagsField(ctx.ts, member),
@@ -316,9 +350,7 @@ const inferReturnType = (
   if (!signature) {
     return undefined;
   }
-  return stripImportQualifiers(
-    ctx.checker.typeToString(signature.getReturnType(), member, ctx.ts.TypeFormatFlags.NoTruncation)
-  );
+  return ctx.types.renderCheckerType(signature.getReturnType(), member);
 };
 
 const visitConstructorProperties = (
@@ -343,12 +375,13 @@ const visitConstructorProperties = (
     members.properties.push({
       declName: parameter.name.getText(),
       isStatic: false,
+      declaration: parameter,
       value: {
         name: parameter.name.getText(),
         ...(type === undefined ? {} : { type }),
         optional: !!parameter.questionToken,
         ...(parameter.initializer
-          ? { defaultValue: initializerText(ctx.ts, parameter.initializer) }
+          ? { initializer: defaultInitializer(ctx, parameter.initializer) }
           : {}),
         ...memberApiFields(ctx, parameter),
         ...getJsDocDescription(ts, parameter),
@@ -363,15 +396,13 @@ const visitAccessorPair = (
   classNode: ts.ClassLikeDeclaration,
   member: ts.GetAccessorDeclaration | ts.SetAccessorDeclaration,
   members: ClassMembers,
-  visited: Set<string>
+  visited: Set<ts.AccessorDeclaration>
 ): void => {
   const { ts } = ctx;
   const name = memberName(ctx.ts, member.name);
-  const visitKey = isStatic(ctx, member) ? `static:${name}` : name;
-  if (visited.has(visitKey)) {
+  if (visited.has(member)) {
     return;
   }
-  visited.add(visitKey);
   const getter = classNode.members.find(
     (candidate): candidate is ts.GetAccessorDeclaration =>
       ts.isGetAccessor(candidate) && isSameMember(ctx, candidate, member)
@@ -380,6 +411,12 @@ const visitAccessorPair = (
     (candidate): candidate is ts.SetAccessorDeclaration =>
       ts.isSetAccessor(candidate) && isSameMember(ctx, candidate, member)
   );
+  if (getter) {
+    visited.add(getter);
+  }
+  if (setter) {
+    visited.add(setter);
+  }
   const typeNode = getter?.type ?? setter?.parameters[0]?.type;
   const type = typeNode ? ctx.types.render(typeNode) : ctx.types.infer((getter ?? setter)!);
   // The doc comment (and its tags, e.g. `@default`) may sit on either accessor; the getter wins
@@ -393,24 +430,35 @@ const visitAccessorPair = (
     ...(setter ? getDecorators(ctx, setter) : []),
   ];
   const apiFields = memberApiFields(ctx, getter, setter);
-  const accessorEntry = <T>(value: T): MemberEntry<T> => ({
+  const declaration = (getter ?? setter)!;
+  const accessorEntry = <T>(
+    value: T,
+    typeSource?: MemberEntry<T>['typeSource']
+  ): MemberEntry<T> => ({
     declName: name,
-    isStatic: isStatic(ctx, member),
+    isStatic: isStatic(ctx, declaration),
+    declaration,
+    ...(typeSource ? { typeSource } : {}),
     value,
   });
   const inputDecorator = decorators.find((decorator) => decorator.name === 'Input');
   if (inputDecorator) {
     const config = parseInputDecoratorConfig(ctx, inputDecorator);
+    const transform = config.transform ? analyzeInputTransform(ctx, config.transform) : undefined;
+    const inputType = transform?.type ?? type;
     members.inputs.push(
-      accessorEntry({
-        name: config.alias ?? name,
-        ...(type === undefined ? {} : { type }),
-        optional: config.required !== undefined ? !config.required : false,
-        ...(config.required === undefined ? {} : { required: config.required }),
-        ...apiFields,
-        ...description,
-        ...tags,
-      })
+      accessorEntry(
+        {
+          name: config.alias ?? name,
+          ...(inputType === undefined ? {} : { type: inputType }),
+          optional: config.required !== undefined ? !config.required : false,
+          ...(config.required === undefined ? {} : { required: config.required }),
+          ...apiFields,
+          ...description,
+          ...tags,
+        },
+        transform?.source
+      )
     );
     return;
   }

@@ -5,10 +5,9 @@
     "table": {
       "category": "inputs",
       "defaultValue": {
-        "summary": "Math.max(1, 3)",
+        "summary": undefined,
       },
       "type": {
-        "required": true,
         "summary": "number",
       },
     },
@@ -26,7 +25,6 @@
         "summary": undefined,
       },
       "type": {
-        "required": true,
         "summary": "EventEmitter",
       },
     },
@@ -41,10 +39,9 @@
     "table": {
       "category": "inputs",
       "defaultValue": {
-        "summary": "5 * 60 * 1000",
+        "summary": undefined,
       },
       "type": {
-        "required": true,
         "summary": "number",
       },
     },

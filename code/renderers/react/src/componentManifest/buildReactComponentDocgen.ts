@@ -1,6 +1,7 @@
 import { getComponentIdFromEntry } from 'storybook/internal/common';
 import {
   buildImportStatements,
+  createStoryReferenceResolver,
   extractComponentDescription,
   extractDescription,
 } from 'storybook/internal/csf-tools';
@@ -25,6 +26,9 @@ import {
 import { cachedFindUp, cachedReadTextFileSync } from './utils.ts';
 
 export type DocgenEngine = 'react-docgen' | 'react-docgen-typescript' | 'react-component-meta';
+
+// One instance per process, so the module-resolution cache is shared; each build opens its own.
+const openStoryReferences = createStoryReferenceResolver();
 
 /** React subcomponent manifest with engine-specific docgen fields attached. */
 export interface ReactSubcomponentManifest extends ComponentSubcomponentManifest {
@@ -222,16 +226,24 @@ export function buildStoryDocsFromResolved({
 
   const packageName = getPackageInfo(component?.path, storyPath);
   const fallbackImport = getFallbackImport(packageName, componentName);
+  const storyEntries = extractStorySnippets(csf, component?.componentName, filterStoryIds, {
+    filePath: storyPath,
+    ...openStoryReferences(),
+  });
+  // An arg value that kept the name another module gave it only compiles once the import block
+  // names that module too. `packageName` rewriting is for the component, so those refs opt out of it.
+  const argRefs = storyEntries.imports.map((ref) => ({ ...ref, isPackage: true }));
   const imports =
-    buildImportStatements({ refs: allComponents, packageName }).join('\n').trim() || fallbackImport;
-  const storyEntries = extractStorySnippets(csf, component?.componentName, filterStoryIds);
+    buildImportStatements({ refs: [...allComponents, ...argRefs], packageName })
+      .join('\n')
+      .trim() || fallbackImport;
 
   return {
     id,
     name: componentName ?? title,
     path: storyFilePath,
     ...(imports ? { import: imports } : {}),
-    stories: Object.fromEntries(storyEntries.map((story) => [story.id, story])),
+    stories: Object.fromEntries(storyEntries.stories.map((story) => [story.id, story])),
   };
 }
 

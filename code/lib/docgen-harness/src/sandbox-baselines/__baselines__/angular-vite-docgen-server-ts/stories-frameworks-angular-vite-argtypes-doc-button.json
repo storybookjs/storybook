@@ -1,0 +1,420 @@
+{
+  "argTypes": {
+    "_anotherDefaultValue": {
+      "name": "_anotherDefaultValue",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "Another default value"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "accent": {
+      "description": "Specify the accent-type of the button",
+      "name": "accent",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": "ButtonAccent.Normal"
+        },
+        "type": {
+          "summary": "ButtonAccent"
+        }
+      },
+      "type": {
+        "name": "enum",
+        "value": ["Normal", "High"]
+      }
+    },
+    "anotherDefaultValue": {
+      "description": "Setting default value here because compodoc won't get the default value for accessors",
+      "name": "anotherDefaultValue",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": "Another default value"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": true
+      }
+    },
+    "aNullValue": {
+      "description": "Test null default value.",
+      "name": "aNullValue",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": null
+        },
+        "type": {
+          "summary": "string | null"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "aNumericValue": {
+      "description": "Test numeric default value.",
+      "name": "aNumericValue",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": 123
+        },
+        "type": {
+          "summary": "number"
+        }
+      },
+      "type": {
+        "name": "number"
+      }
+    },
+    "anUndefinedValue": {
+      "description": "Test null default value.",
+      "name": "anUndefinedValue",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "undefined"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "empty-enum"
+      }
+    },
+    "appearance": {
+      "description": "Appearance style of the button.",
+      "name": "appearance",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": "secondary"
+        },
+        "type": {
+          "summary": "\"primary\" | \"secondary\""
+        }
+      },
+      "type": {
+        "name": "enum",
+        "value": ["primary", "secondary"]
+      }
+    },
+    "buttonRef": {
+      "name": "buttonRef",
+      "table": {
+        "category": "view child",
+        "defaultValue": {},
+        "type": {
+          "summary": "ElementRef"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "calc": {
+      "description": "An internal calculation method which adds `x` and `y` together.",
+      "name": "calc",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "(x: number, y: string | number) => number"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "focus": {
+      "name": "focus",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": false
+        },
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean"
+      }
+    },
+    "inputValue": {
+      "description": "Getter for `inputValue`.",
+      "name": "inputValue",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": true
+      }
+    },
+    "internalProperty": {
+      "description": "Public value.",
+      "name": "internalProperty",
+      "table": {
+        "category": "properties",
+        "defaultValue": {
+          "summary": "Public hello"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "isDisabled": {
+      "description": "Sets the button to a disabled state.",
+      "name": "isDisabled",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": false
+        },
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean"
+      }
+    },
+    "item": {
+      "name": "item",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "T[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "empty-enum"
+      }
+    },
+    "label": {
+      "description": "The inner text of the button.",
+      "name": "label",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string",
+        "required": true
+      }
+    },
+    "onClick": {
+      "action": "onClick",
+      "description": "Handler to be called when the button is clicked by a user.\n\nWill also block the emission of the event if `isDisabled` is true.",
+      "name": "onClick",
+      "table": {
+        "category": "outputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "EventEmitter"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "onClickListener": {
+      "name": "onClickListener",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "(event: Event) => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "processedItem": {
+      "name": "processedItem",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "T[]"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "protectedMethod": {
+      "description": "A protected method.",
+      "name": "protectedMethod",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "(id?: number) => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "publicMethod": {
+      "description": "A public method using an interface.",
+      "name": "publicMethod",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "(things: ISomeInterface) => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "showKeyAlias": {
+      "name": "showKeyAlias",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "keyof T"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "empty-enum"
+      }
+    },
+    "size": {
+      "description": "Size of the button.",
+      "name": "size",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": "medium"
+        },
+        "type": {
+          "summary": "ButtonSize"
+        }
+      },
+      "type": {
+        "name": "enum",
+        "value": ["small", "medium", "large", "xlarge"]
+      }
+    },
+    "someDataObject": {
+      "description": "Specifies some arbitrary object. This comment is to test certain chars like apostrophes - it's\nworking",
+      "name": "someDataObject",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "ISomeInterface"
+        }
+      },
+      "type": {
+        "name": "other",
+        "required": true,
+        "value": "empty-enum"
+      }
+    },
+    "somethingYouShouldNotUse": {
+      "description": "Some input you shouldn't use.",
+      "name": "somethingYouShouldNotUse",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": false
+        },
+        "jsDocTags": {
+          "deprecated": ""
+        },
+        "type": {
+          "summary": "boolean"
+        }
+      },
+      "type": {
+        "name": "boolean"
+      }
+    },
+    "theDefaultValue": {
+      "description": "Test default value.",
+      "name": "theDefaultValue",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": "Default value in component"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "value": {
+      "description": "Get the private value.",
+      "name": "value",
+      "table": {
+        "category": "properties",
+        "defaultValue": {},
+        "type": {
+          "summary": "string | number"
+        }
+      },
+      "type": {
+        "name": "number"
+      }
+    }
+  },
+  "description": "This is a simple button that demonstrates various JSDoc handling in Storybook Docs for Angular.\n\nIt supports [markdown](https://en.wikipedia.org/wiki/Markdown), so you can embed formatted text,\nlike **bold**, _italic_, and `inline code`.> How you like dem apples?! It's never been easier to\ndocument all your components.",
+  "id": "stories-frameworks-angular-vite-argtypes-doc-button",
+  "jsDocTags": {
+    "code": ["`ThingThing`"],
+    "html": ["<span class=\"badge\">aaa</span>"],
+    "link": ["[Example](http://example.com)"],
+    "string": ["Hello world"]
+  },
+  "name": "DocButtonComponent",
+  "path": "./src/stories/frameworks/angular-vite/argTypes/doc-button/doc-button.stories.ts"
+}

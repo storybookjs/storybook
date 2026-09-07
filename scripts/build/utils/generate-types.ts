@@ -3,10 +3,13 @@ import limit from 'p-limit';
 import { join, relative } from 'pathe';
 import picocolors from 'picocolors';
 
-import { ROOT_DIRECTORY } from '../../utils/constants';
-import type { BuildEntries } from './entry-utils';
+import type { BuildEntries } from './entry-utils.ts';
 
-const DIR_CODE = join(import.meta.dirname, '..', '..', '..', 'code');
+// Computed locally instead of importing scripts/utils/constants.ts: that
+// module must stay CJS-compatible for Playwright consumers, while this one
+// runs as native ESM.
+const ROOT_DIRECTORY = join(import.meta.dirname, '..', '..', '..');
+const DIR_CODE = join(ROOT_DIRECTORY, 'code');
 
 const MAX_DTS_ATTEMPTS = 2;
 const RETRY_DELAY_MS = 500;
@@ -67,7 +70,10 @@ export async function generateTypesFiles(cwd: string, data: BuildEntries) {
               timer = setTimeout(() => {
                 console.log('⌛ Timed out generating d.ts files for', entryPoint);
 
-                dtsProcess.kill(408); // timed out
+                // ChildProcess.kill takes a signal, not an exit code; an invalid value like 408
+                // throws ERR_UNKNOWN_SIGNAL and crashes the whole build instead of reaching the
+                // retry logic below.
+                dtsProcess.kill('SIGTERM');
                 resolve(void 0);
               }, 120000);
             }),

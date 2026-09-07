@@ -1,0 +1,20 @@
+{
+  "id": "import-alias",
+  "name": "ImportAliasComponent",
+  "path": "__PATH__",
+  "stories": {
+    "storydocs-import-alias--primary": {
+      "id": "storydocs-import-alias--primary",
+      "name": "Primary",
+      "snippet": "import { Component } from '@angular/core';
+import { ImportAliasComponent as Alias } from './aliased.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [Alias],
+  template: `<sb-import-alias [heading]="'Aliased'" />`,
+})
+export class DemoComponent {}",
+    },
+  },
+}

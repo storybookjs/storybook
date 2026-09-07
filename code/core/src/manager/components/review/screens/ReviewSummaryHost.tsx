@@ -4,8 +4,7 @@ import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { PRE_REVIEW_RETURN_KEY } from '../constants.ts';
-import { dismissReview } from '../review-actions.ts';
-import { useReview } from '../review-store.ts';
+import { useReviewContext } from '../review-context.ts';
 import { sessionStore } from '../session-store.ts';
 import { SummaryScreen } from './SummaryScreen.tsx';
 
@@ -24,12 +23,12 @@ const SummaryHost = styled.div<{ $visible: boolean }>(({ $visible }) => ({
 
 export const ReviewSummaryHost: FC = () => {
   const api = useStorybookApi();
-  const { state, storyInfo, banner, isInReviewMode, isSummaryVisible } = useReview();
+  const { review, storyInfo, banner, isInReviewMode, isSummaryVisible, dismiss } =
+    useReviewContext();
   const getStoryPreviewHref = useCallback(
     (storyId: string) => api.getStoryHrefs(storyId, { embed: true, freeze: true }).previewHref,
     [api]
   );
-  const onDismiss = useCallback(() => dismissReview(api), [api]);
 
   // Mount on the summary route (so the page renders) and throughout review mode
   // (so hidden thumbnail iframes survive round-trips to individual stories).
@@ -53,12 +52,12 @@ export const ReviewSummaryHost: FC = () => {
       data-review-summary={isSummaryVisible ? 'visible' : 'hidden'}
     >
       <SummaryScreen
-        state={state}
+        state={review}
         storyInfo={storyInfo}
         getStoryPreviewHref={getStoryPreviewHref}
         banner={banner}
         summaryHidden={!isSummaryVisible}
-        onDismiss={onDismiss}
+        onDismiss={dismiss}
         returnSearch={sessionStore.read(PRE_REVIEW_RETURN_KEY)}
       />
     </SummaryHost>

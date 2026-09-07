@@ -1,0 +1,67 @@
+{
+  "argTypes": {
+    "changed": {
+      "action": "changed",
+      "name": "changed",
+      "table": {
+        "category": "outputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "EventEmitter"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "inc": {
+      "name": "inc",
+      "table": {
+        "category": "methods",
+        "defaultValue": {},
+        "type": {
+          "summary": "() => void"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "void"
+      }
+    },
+    "label": {
+      "name": "label",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": "default label"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    },
+    "label2": {
+      "name": "label2",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {
+          "summary": "default label2"
+        },
+        "type": {
+          "summary": "string"
+        }
+      },
+      "type": {
+        "name": "string"
+      }
+    }
+  },
+  "id": "stories-frameworks-angular-vite-basics-component-with-template-template",
+  "jsDocTags": {},
+  "name": "Template",
+  "path": "./src/stories/frameworks/angular-vite/basics/component-with-template/template.stories.ts"
+}

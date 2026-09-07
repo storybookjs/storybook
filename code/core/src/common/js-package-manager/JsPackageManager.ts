@@ -15,6 +15,7 @@ import invariant from 'tiny-invariant';
 
 import { HandledError } from '../utils/HandledError.ts';
 import type { ExecuteCommandOptions } from '../utils/command.ts';
+import { getPkgPrNewPackageSpecifier } from '../utils/get-pkg-pr-new-package-specifier.ts';
 import { findFilesUp, getProjectRoot } from '../utils/paths.ts';
 import storybookPackagesVersions from '../versions.ts';
 import type { PackageJson, PackageJsonWithDepsAndDevDeps } from './PackageJson.ts';
@@ -71,14 +72,20 @@ export function getPrettyPackageManagerName(packageManager: string | undefined):
  * @returns A tuple of 2 elements: [packageName, packageVersion]
  */
 export function getPackageDetails(pkg: string): [string, string?] {
-  const idx = pkg.lastIndexOf('@');
-  // If the only `@` is the first character, it is a scoped package
-  // If it isn't in the string, it will be -1
-  if (idx <= 0) {
+  const isScopedPackage = pkg.startsWith('@');
+  const scopeSeparatorIndex = isScopedPackage ? pkg.indexOf('/') : -1;
+  const versionSeparatorIndex = isScopedPackage
+    ? scopeSeparatorIndex === -1
+      ? -1
+      : pkg.indexOf('@', scopeSeparatorIndex + 1)
+    : pkg.indexOf('@');
+
+  if (versionSeparatorIndex <= 0) {
     return [pkg, undefined];
   }
-  const packageName = pkg.slice(0, idx);
-  const packageVersion = pkg.slice(idx + 1);
+
+  const packageName = pkg.slice(0, versionSeparatorIndex);
+  const packageVersion = pkg.slice(versionSeparatorIndex + 1);
   return [packageName, packageVersion];
 }
 
@@ -368,8 +375,7 @@ export abstract class JsPackageManager {
 
       for (const dep of dependencies) {
         const [packageName, packageVersion] = getPackageDetails(dep);
-        const latestVersion = await this.getVersion(packageName);
-        dependenciesMap[packageName] = packageVersion ?? latestVersion;
+        dependenciesMap[packageName] = packageVersion ?? 'latest';
       }
 
       const targetDeps = packageJson[options.type] as Record<string, string>;
@@ -391,6 +397,9 @@ export abstract class JsPackageManager {
       } catch (e: any) {
         logger.error('\nAn error occurred while adding dependencies to your package.json:');
         logger.log(String(e));
+        if (e?.fromStorybook) {
+          throw e;
+        }
         throw new HandledError(e);
       }
     }
@@ -438,7 +447,7 @@ export abstract class JsPackageManager {
   }
 
   /**
-   * Return an array of strings matching following format: `<package_name>@<package_latest_version>`
+   * Return an array of strings matching following format: `<storybook_package_name>@<package_latest_version>`
    *
    * For packages in the storybook monorepo, when the latest version is equal to the version of the
    * current CLI the version is not added to the string.
@@ -446,17 +455,34 @@ export abstract class JsPackageManager {
    * When a package is in the monorepo, and the version is not equal to the CLI version, the version
    * is taken from the versions.ts file and added to the string.
    *
+   * When a package is not in the monorepo, we don't change the package version and return the package name as is.
+   * The package manager will resolve the latest version of the package upon installing it.
+   *
    * @param packages
    */
-  public getVersionedPackages(packages: string[]): Promise<string[]> {
+  public getVersionedPackages(
+    packages: string[],
+    options?: { storybookVersionSpecifier?: string }
+  ): Promise<string[]> {
     return Promise.all(
       packages.map(async (pkg) => {
         const [packageName, packageVersion] = getPackageDetails(pkg);
 
         // If the packageVersion is specified and we are not dealing with a storybook package,
         // just return the requested version.
-        if (packageVersion && !(packageName in storybookPackagesVersions)) {
+        if (!(packageName in storybookPackagesVersions)) {
           return pkg;
+        }
+
+        if (packageName in storybookPackagesVersions) {
+          const pkgPrNewSpecifier = getPkgPrNewPackageSpecifier(
+            packageName,
+            options?.storybookVersionSpecifier
+          );
+
+          if (pkgPrNewSpecifier) {
+            return `${packageName}@${pkgPrNewSpecifier}`;
+          }
         }
 
         const latestInRange = await this.latestVersion(packageName, packageVersion);

@@ -260,7 +260,7 @@ export function buildBadgeReview(index: StoryIndex): ReviewPayload {
 
 export async function pushReview(storybookUrl: string, review: ReviewPayload) {
   const result = await mcpCall(storybookUrl, 'tools/call', {
-    name: 'display-review',
+    name: 'review-create',
     arguments: review,
   });
 
@@ -311,7 +311,7 @@ if (esMain(import.meta.url)) {
   program
     .name('display-review')
     .description(
-      'Push a Storybook review via the display-review MCP tool (no agent required). ' +
+      'Push a Storybook review via the review-create MCP tool (no agent required). ' +
         'Without a payload, publishes a built-in Badge review resolved from the live index.'
     )
     .argument('[payload]', 'Optional review payload as inline JSON or a path to a .json file')

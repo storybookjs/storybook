@@ -4,15 +4,12 @@ import { ActionList, Card } from 'storybook/internal/components';
 
 import { CloseAltIcon, WandIcon } from '@storybook/icons';
 
-import { useNavigate } from 'storybook/internal/router';
-import { useChannel, useStorybookApi, useStorybookState } from 'storybook/manager-api';
+import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
 import { useLandmark } from '../../hooks/useLandmark.ts';
-import { EVENTS } from '../review/constants.ts';
-import { navigateToReviewSummary } from '../review/review-actions.ts';
+import { useReviewContext } from '../review/review-context.ts';
 import { collectReviewStoryIds } from '../review/review-status.ts';
-import { useReview } from '../review/review-store.ts';
 
 const HEADING_ID = 'storybook-review-widget-heading';
 
@@ -59,29 +56,21 @@ const DismissIcon = styled(CloseAltIcon)({
 
 /** Story count for the displayed review payload, not the sidebar status store. */
 export const useActiveReviewStoryCount = () => {
-  const { state } = useReview();
+  const { review } = useReviewContext();
 
-  return useMemo(() => (state ? collectReviewStoryIds(state).size : 0), [state]);
+  return useMemo(() => (review ? collectReviewStoryIds(review).size : 0), [review]);
 };
 
 const useActiveReviewTitle = () => {
-  const { state } = useReview();
-  return state?.title ?? null;
+  const { review } = useReviewContext();
+  return review?.title ?? null;
 };
 
 export const ReviewWidget = () => {
   const api = useStorybookApi();
-  const navigate = useNavigate();
+  const { openSummary, dismiss } = useReviewContext();
   const storyCount = useActiveReviewStoryCount();
   const reviewTitle = useActiveReviewTitle();
-  const {
-    includedStatusFilters = [],
-    excludedStatusFilters = [],
-    includedTagFilters = [],
-    excludedTagFilters = [],
-  } = useStorybookState();
-
-  const emit = useChannel({});
 
   const regionRef = useRef<HTMLElement>(null);
   const { landmarkProps } = useLandmark(
@@ -98,17 +87,12 @@ export const ReviewWidget = () => {
   }
 
   const onOpen = () => {
-    navigateToReviewSummary(api, navigate, {
-      includedStatusFilters,
-      excludedStatusFilters,
-      includedTagFilters,
-      excludedTagFilters,
-    });
+    openSummary();
   };
 
   const onDismiss = (event: SyntheticEvent) => {
     event.stopPropagation();
-    emit(EVENTS.DISMISS_REVIEW);
+    dismiss();
   };
 
   const storyLabel = storyCount === 1 ? 'story' : 'stories';

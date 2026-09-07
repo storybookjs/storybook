@@ -14,7 +14,8 @@ import { ManagerErrorBoundary } from './components/error-boundary/ManagerErrorBo
 import { Layout } from './components/layout/Layout.tsx';
 import { useLayout } from './components/layout/LayoutProvider.tsx';
 import { ReviewPersistentLayer } from './components/review/components/ReviewPersistentLayer.tsx';
-import { useReview } from './components/review/review-store.ts';
+import { ReviewProvider } from './components/review/components/ReviewProvider.tsx';
+import { useReviewContext } from './components/review/review-context.ts';
 import Panel from './container/Panel.tsx';
 import Preview from './container/Preview.tsx';
 import Sidebar from './container/Sidebar.tsx';
@@ -25,7 +26,7 @@ import Sidebar from './container/Sidebar.tsx';
  * when navigating to a curated story. Unmounting makes each such navigation boot a fresh preview.
  */
 const MainPreview = () => {
-  const { isSummaryVisible } = useReview();
+  const { isSummaryVisible } = useReviewContext();
   return isSummaryVisible ? null : <Preview id="main" withLoader />;
 };
 
@@ -75,24 +76,31 @@ export const App = ({ managerLayoutState, setManagerLayoutState, pages, hasTab }
     return () => observer.disconnect();
   }, []);
 
+  const isReviewEnabled = isReviewFeatureEnabled(global.FEATURES);
+
+  const layout = (
+    <Layout
+      hasTab={hasTab}
+      managerLayoutState={managerLayoutState}
+      setManagerLayoutState={setManagerLayoutState}
+      slotOverlay={isReviewEnabled ? <ReviewPersistentLayer /> : undefined}
+      slotMain={<MainPreview />}
+      slotSidebar={<Sidebar onMenuClick={() => setMobileAboutOpen((state) => !state)} />}
+      slotPanel={<Panel />}
+      slotPages={pages.map(({ id, render: Content }) => (
+        <Content key={id} />
+      ))}
+    />
+  );
+
   return (
     <>
       <Global styles={createGlobal} />
       <ManagerErrorBoundary>
-        <Layout
-          hasTab={hasTab}
-          managerLayoutState={managerLayoutState}
-          setManagerLayoutState={setManagerLayoutState}
-          slotOverlay={
-            isReviewFeatureEnabled(global.FEATURES) ? <ReviewPersistentLayer /> : undefined
-          }
-          slotMain={<MainPreview />}
-          slotSidebar={<Sidebar onMenuClick={() => setMobileAboutOpen((state) => !state)} />}
-          slotPanel={<Panel />}
-          slotPages={pages.map(({ id, render: Content }) => (
-            <Content key={id} />
-          ))}
-        />
+        {/* The provider wraps the whole layout so the sidebar, toolbar, and content
+            overlay share one review context. Feature-off mounts no provider: consumers
+            fall back to the context default and never touch the review service. */}
+        {isReviewEnabled ? <ReviewProvider>{layout}</ReviewProvider> : layout}
       </ManagerErrorBoundary>
     </>
   );

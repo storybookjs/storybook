@@ -27,7 +27,8 @@ function makeComponentMeta() {
 
 async function getTransformHandler() {
   const { vueComponentMeta } = await import('./vue-component-meta.ts');
-  const plugin = await vueComponentMeta();
+  const { experimental_vueDocgenEngine } = await import('@storybook/vue3/preset');
+  const plugin = await vueComponentMeta(await experimental_vueDocgenEngine());
 
   const handler =
     typeof plugin.transform === 'function'
@@ -39,9 +40,11 @@ async function getTransformHandler() {
 
 describe('vue-component-meta plugin', () => {
   let transform: Awaited<ReturnType<typeof getTransformHandler>>;
+  let rejectedExportName: string | undefined;
 
   beforeEach(async () => {
     vi.clearAllMocks();
+    rejectedExportName = undefined;
 
     // Only mock what's actually called: createCheckerByJson, getProjectRoot, stat
     // createChecker, readFile, parseMulti are never reached in these tests
@@ -52,7 +55,12 @@ describe('vue-component-meta plugin', () => {
     vi.mocked(stat).mockRejectedValue(new Error('ENOENT'));
 
     mockChecker.getExportNames.mockReturnValue(['Tab']);
-    mockChecker.getComponentMeta.mockReturnValue(makeComponentMeta());
+    mockChecker.getComponentMeta.mockImplementation((_id: string, name: string) => {
+      if (name === rejectedExportName) {
+        throw new Error(`Could not find export ${name}`);
+      }
+      return makeComponentMeta();
+    });
 
     transform = await getTransformHandler();
   });
@@ -130,6 +138,80 @@ describe('vue-component-meta plugin', () => {
       expect(result!.code).toContain('_sfc_main.__docgenInfo');
     });
 
+    it('should inject __docgenInfo when a production SFC imports its default export', async () => {
+      const src = [
+        `import _sfc_main from './Tab.vue?vue&type=script&setup=true&lang.ts';`,
+        `export default _sfc_main;`,
+      ].join('\n');
+      const id = '/project/src/components/Tab.vue';
+
+      mockChecker.getExportNames.mockReturnValue(['default']);
+
+      const result = await transform(src, id);
+
+      expect(result).toBeDefined();
+      expect(result!.code).toContain('_sfc_main.__docgenInfo');
+    });
+
+    it('should inject __docgenInfo when another plugin emits ahead of the _sfc_main import', async () => {
+      // This hook runs in "post", so anything earlier in the chain can prepend to the module.
+      // unplugin-vue-components puts its marker on the same line as the import, which a
+      // line-anchored pattern match would miss.
+      const src = [
+        `/* unplugin-vue-components disabled */import _sfc_main from './Tab.vue?vue&type=script&setup=true&lang.ts';`,
+        `export default _sfc_main;`,
+      ].join('\n');
+      const id = '/project/src/components/Tab.vue';
+
+      mockChecker.getExportNames.mockReturnValue(['default']);
+
+      const result = await transform(src, id);
+
+      expect(result).toBeDefined();
+      expect(result!.code).toContain('_sfc_main.__docgenInfo');
+    });
+
+    it('should inject __docgenInfo regardless of the virtual script module query order', async () => {
+      const src = [
+        `import _sfc_main from './Tab.vue?vue&setup=true&type=script&lang.ts';`,
+        `export default _sfc_main;`,
+      ].join('\n');
+      const id = '/project/src/components/Tab.vue';
+
+      mockChecker.getExportNames.mockReturnValue(['default']);
+
+      const result = await transform(src, id);
+
+      expect(result).toBeDefined();
+      expect(result!.code).toContain('_sfc_main.__docgenInfo');
+    });
+
+    it('should not inject __docgenInfo when an SFC default export has no _sfc_main import', async () => {
+      const src = `export default { name: 'Tab' };\n`;
+      const id = '/project/src/components/Tab.vue';
+
+      mockChecker.getExportNames.mockReturnValue(['default']);
+
+      const result = await transform(src, id);
+
+      expect(result).toBeDefined();
+      expect(result?.code ?? '').not.toContain('__docgenInfo');
+    });
+
+    it('should not inject __docgenInfo when _sfc_main is imported from a non-virtual module', async () => {
+      const src = [`import _sfc_main from './shared-component';`, `export default _sfc_main;`].join(
+        '\n'
+      );
+      const id = '/project/src/components/Tab.vue';
+
+      mockChecker.getExportNames.mockReturnValue(['default']);
+
+      const result = await transform(src, id);
+
+      expect(result).toBeDefined();
+      expect(result?.code ?? '').not.toContain('__docgenInfo');
+    });
+
     it('should NOT inject __docgenInfo when the default export is an inline expression with no local binding', async () => {
       const src = `import { defineComponent } from 'vue';\nexport default defineComponent({});\n`;
       const id = '/project/src/components/Tab.ts';
@@ -139,6 +221,53 @@ describe('vue-component-meta plugin', () => {
       const result = await transform(src, id);
 
       expect(result?.code ?? '').not.toContain('__docgenInfo');
+    });
+  });
+
+  describe('non-component exports', () => {
+    it('should keep docgen for the other exports when getComponentMeta throws for one', async () => {
+      const src = [
+        `import { defineComponent } from 'vue';`,
+        `export type TabVariant = 'primary' | 'secondary';`,
+        `export const Tab = defineComponent({});`,
+      ].join('\n');
+      const id = '/project/src/components/Tab.ts';
+
+      mockChecker.getExportNames.mockReturnValue(['TabVariant', 'Tab']);
+      rejectedExportName = 'TabVariant';
+
+      const result = await transform(src, id);
+
+      expect(result).toBeDefined();
+      expect(result!.code).toContain('Tab.__docgenInfo');
+    });
+
+    it('should return undefined when every export throws', async () => {
+      const src = `export type Variant = 'a' | 'b';\n`;
+      const id = '/project/src/components/types.ts';
+
+      mockChecker.getExportNames.mockReturnValue(['Variant']);
+      rejectedExportName = 'Variant';
+
+      const result = await transform(src, id);
+
+      expect(result).toBeUndefined();
+    });
+
+    it('should keep meta aligned with its export name when an earlier export throws', async () => {
+      const src = [
+        `export type TabsVariant = 'horizontal' | 'vertical';`,
+        `export const Tabs = {};`,
+      ].join('\n');
+      const id = '/project/src/components/Tabs.ts';
+
+      mockChecker.getExportNames.mockReturnValue(['TabsVariant', 'Tabs']);
+      rejectedExportName = 'TabsVariant';
+
+      const result = await transform(src, id);
+
+      expect(result!.code).toContain('Tabs.__docgenInfo');
+      expect(result!.code).toContain('"displayName":"Tabs"');
     });
   });
 
@@ -159,6 +288,43 @@ describe('vue-component-meta plugin', () => {
       );
 
       expect(result?.code ?? '').not.toContain('__docgenInfo');
+    });
+  });
+
+  describe('ids carrying a query', () => {
+    it('should skip plugin-vue script sub-requests, whose id ends in ".ts" but is not a file', async () => {
+      const result = await transform(
+        `const _sfc_main = {};\nexport default _sfc_main;\n`,
+        '/project/src/components/Tab.vue?vue&type=script&setup=true&lang.ts'
+      );
+
+      expect(result).toBeUndefined();
+      expect(mockChecker.getExportNames).not.toHaveBeenCalled();
+    });
+
+    it('should skip plugin-vue script sub-requests ending in ".js"', async () => {
+      const result = await transform(
+        `const _sfc_main = {};\nexport default _sfc_main;\n`,
+        '/project/src/components/Tab.vue?vue&type=script&lang.js'
+      );
+
+      expect(result).toBeUndefined();
+      expect(mockChecker.getExportNames).not.toHaveBeenCalled();
+    });
+
+    it('should still process the bare .vue id that the sub-request derives from', async () => {
+      const src = [
+        `import _export_sfc from 'plugin-vue:export-helper';`,
+        `const _sfc_main = { name: 'Tab' };`,
+        `export default /*@__PURE__*/_export_sfc(_sfc_main, []);`,
+      ].join('\n');
+
+      mockChecker.getExportNames.mockReturnValue(['default']);
+
+      const result = await transform(src, '/project/src/components/Tab.vue');
+
+      expect(result!.code).toContain('_sfc_main.__docgenInfo');
+      expect(mockChecker.getExportNames).toHaveBeenCalledWith('/project/src/components/Tab.vue');
     });
   });
 });

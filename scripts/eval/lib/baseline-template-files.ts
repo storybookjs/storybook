@@ -72,7 +72,7 @@ const EVAL_SUPPORT_SUMMARY_MDX = `import data from '../eval-results/data.json';
 </ul>
 `;
 
-const EVAL_SUPPORT_TRANSCRIPT_MDX = `{/* Transcript renderer copied directly from https://github.com/storybookjs/mcp/tree/main/eval/templates/result-docs/transcript.tsx and transcript.types.ts */}
+const EVAL_SUPPORT_TRANSCRIPT_MDX = `{/* Transcript renderer for published eval result docs (see scripts/eval/lib/baseline-template-files.ts). */}
 import data from '../eval-results/data.json';
 import { Transcript } from './transcript';
 
@@ -82,8 +82,8 @@ import { Transcript } from './transcript';
 `;
 
 const EVAL_SUPPORT_TRANSCRIPT_TSX = `/*
- * Keep the baseline copies exact to https://github.com/storybookjs/mcp/blob/main/eval/templates/result-docs/transcript.tsx.
- * This repo-local template keeps only the minimum lint shims required by Storybook's monorepo.
+ * In-repo baseline transcript UI for published eval result docs.
+ * Keep lint shims minimal; this file is the source of truth.
  */
 import { useEffect, useRef, useState } from 'react';
 import type {

@@ -1,0 +1,36 @@
+{
+  "id": "render-function",
+  "name": "RenderFunctionComponent",
+  "path": "__PATH__",
+  "stories": {
+    "storydocs-render-function--custom-render": {
+      "description": "Renders a hand-written template.",
+      "id": "storydocs-render-function--custom-render",
+      "name": "Custom Render",
+      "snippet": "import { Component } from '@angular/core';
+import { RenderFunctionComponent } from './render-function.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [RenderFunctionComponent],
+  template: `<sb-render-function [label]="label"></sb-render-function>`,
+})
+export class DemoComponent {
+  label = 'Render';
+}",
+    },
+    "storydocs-render-function--no-render": {
+      "id": "storydocs-render-function--no-render",
+      "name": "No Render",
+      "snippet": "import { Component } from '@angular/core';
+import { RenderFunctionComponent } from './render-function.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [RenderFunctionComponent],
+  template: `<sb-render-function [label]="'Plain'" />`,
+})
+export class DemoComponent {}",
+    },
+  },
+}

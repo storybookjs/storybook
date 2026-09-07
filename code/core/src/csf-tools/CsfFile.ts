@@ -11,7 +11,12 @@ import {
   types as t,
   traverse,
 } from 'storybook/internal/babel';
-import { isExportStory, storyNameFromExport, toId, toTestId } from 'storybook/internal/csf';
+import {
+  isExportStory,
+  storyNameFromExport,
+  toId,
+  toTestId,
+} from 'storybook/internal/csf/csf-utils';
 import { logger } from 'storybook/internal/node-logger';
 import type {
   ComponentAnnotations,
@@ -26,6 +31,7 @@ import { dedent } from 'ts-dedent';
 import { Tag } from '../shared/constants/tags.ts';
 import type { PrintResultType } from './PrintResultType.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
+import { isCanonicalCsf2BindCall, isCsfFactoryCall } from './story-shape/utils.ts';
 
 // We add this BabelFile as a temporary workaround to deal with a BabelFileClass "ImportEquals should have a literal source" issue in no link mode with tsup
 interface BabelFile {
@@ -118,25 +124,12 @@ export const isModuleMock = (importPath: string) => MODULE_MOCK_REGEX.test(impor
 const isArgsStory = (init: t.Node, parent: t.Node, csf: CsfFile) => {
   let storyFn: t.Node = init;
   // export const Foo = Bar.bind({})
-  if (t.isCallExpression(init)) {
-    const { callee, arguments: bindArguments } = init;
-    if (
-      t.isProgram(parent) &&
-      t.isMemberExpression(callee) &&
-      t.isIdentifier(callee.object) &&
-      t.isIdentifier(callee.property) &&
-      callee.property.name === 'bind' &&
-      (bindArguments.length === 0 ||
-        (bindArguments.length === 1 &&
-          t.isObjectExpression(bindArguments[0]) &&
-          bindArguments[0].properties.length === 0))
-    ) {
-      const boundIdentifier = callee.object.name;
-      const template = findVarInitialization(boundIdentifier, parent);
-      if (template) {
-        csf._templates[boundIdentifier] = template;
-        storyFn = template;
-      }
+  if (t.isProgram(parent) && isCanonicalCsf2BindCall(init)) {
+    const boundIdentifier = init.callee.object.name;
+    const template = findVarInitialization(boundIdentifier, parent);
+    if (template) {
+      csf._templates[boundIdentifier] = template;
+      storyFn = template;
     }
   }
   if (t.isArrowFunctionExpression(storyFn)) {
@@ -413,21 +406,8 @@ export class CsfFile {
   getStoryExport(key: string) {
     let node = this._storyExports[key] as t.Node;
     node = t.isVariableDeclarator(node) ? (node.init as t.Node) : node;
-    if (t.isCallExpression(node)) {
-      const { callee, arguments: bindArguments } = node;
-      if (
-        t.isMemberExpression(callee) &&
-        t.isIdentifier(callee.object) &&
-        t.isIdentifier(callee.property) &&
-        callee.property.name === 'bind' &&
-        (bindArguments.length === 0 ||
-          (bindArguments.length === 1 &&
-            t.isObjectExpression(bindArguments[0]) &&
-            bindArguments[0].properties.length === 0))
-      ) {
-        const { name } = callee.object;
-        node = this._templates[name];
-      }
+    if (isCanonicalCsf2BindCall(node)) {
+      node = this._templates[node.callee.object.name];
     }
     return node;
   }
@@ -583,13 +563,7 @@ export class CsfFile {
 
                 // Check if this is a factory story (meta.story() or meta.extend())
                 let storyIsFactory = false;
-                if (
-                  t.isCallExpression(storyNode) &&
-                  t.isMemberExpression(storyNode.callee) &&
-                  t.isIdentifier(storyNode.callee.property) &&
-                  (storyNode.callee.property.name === 'story' ||
-                    storyNode.callee.property.name === 'extend')
-                ) {
+                if (storyNode && isCsfFactoryCall(storyNode)) {
                   storyIsFactory = true;
                   storyNode = storyNode.arguments[0];
                 }

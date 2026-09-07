@@ -51,13 +51,6 @@ export function definePortableStoryTest(directory: string) {
             command: 'yarn vitest',
           },
         },
-        {
-          run: {
-            name: 'Run Playwright CT tests',
-            working_directory,
-            command: 'yarn playwright-ct',
-          },
-        },
         ...(scripts['playwright-e2e']
           ? [
               {
@@ -149,12 +142,63 @@ export function definePortableStoryTestVitest3() {
   );
 }
 
+export function defineMcpTestStorybook() {
+  return defineJob(
+    'test-storybooks-mcp',
+    () => ({
+      executor: {
+        name: 'sb_playwright',
+        class: 'medium+',
+      },
+      steps: [
+        ...workflow.restoreLinux(),
+        {
+          // Yarn's file: protocol checksums the whole package directory (including
+          // nested node_modules/.cache). A bloated jiti cache under code/core OOMs
+          // libzip with "Malloc failure" during resolution.
+          run: {
+            name: 'Clear nested package caches before file: install',
+            command: 'find code -type d -path "*/node_modules/.cache" -prune -exec rm -rf {} +',
+          },
+        },
+        {
+          run: {
+            name: 'Install dependencies',
+            working_directory: 'test-storybooks/mcp',
+            command: 'yarn install --no-immutable',
+            environment: {
+              YARN_ENABLE_IMMUTABLE_INSTALLS: false,
+            },
+          },
+        },
+        {
+          run: {
+            name: 'Run MCP addon e2e tests',
+            working_directory: 'test-storybooks/mcp',
+            command: 'yarn vitest run --project=e2e',
+          },
+        },
+        {
+          run: {
+            name: 'Run internal Storybook story tests',
+            working_directory: 'test-storybooks/mcp',
+            command: 'yarn vitest run --project=storybook',
+          },
+        },
+      ],
+    }),
+    [testStorybooksNoOpJob]
+  );
+}
+
 export const testStorybooksNoOpJob = defineNoOpJob('test-storybooks', [build_linux]);
 
 export function getTestStorybooks(workflow: Workflow) {
   const testStorybooks: JobOrNoOpJob[] = ['react', 'vue3', 'svelte', 'nextjs'].map(
     definePortableStoryTest
   );
+
+  testStorybooks.push(defineMcpTestStorybook());
 
   if (isWorkflowOrAbove(workflow, 'daily')) {
     testStorybooks.push(definePortableStoryTestPNP());

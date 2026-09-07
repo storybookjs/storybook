@@ -191,6 +191,7 @@ export const automigrate = async ({
 
   const { fixResults, fixSummary, preCheckFailure, addonsToPostinstall } = await runFixes({
     fixes,
+    fixId,
     packageManager,
     rendererPackage,
     skipInstall,
@@ -223,6 +224,8 @@ export const automigrate = async ({
 
 type RunFixesOptions = {
   fixes: Fix[];
+  /** Set when the user named a single migration on the command line. */
+  fixId?: FixId;
   yes?: boolean;
   storiesPaths: string[];
   dryRun?: boolean;
@@ -240,6 +243,7 @@ type RunFixesOptions = {
 
 export async function runFixes({
   fixes,
+  fixId,
   dryRun,
   yes,
   rendererPackage,
@@ -279,6 +283,7 @@ export async function runFixes({
         mainConfigPath,
         storiesPaths,
         hasCsfFactoryPreview,
+        requested: fixId === f.id,
       });
       logger.debug(`End of ${picocolors.cyan(f.id)} migration checks`);
     } catch (error) {

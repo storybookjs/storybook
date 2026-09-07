@@ -88,7 +88,7 @@ const nameSpiesAndWrapActionsInSpies: LoaderFunction = ({ initialArgs }) => {
 
 let patchedFocus = false;
 
-const enhanceContext: LoaderFunction = async (context) => {
+export const enhanceContext: LoaderFunction = async (context) => {
   if (globalThis.HTMLElement && context.canvasElement instanceof globalThis.HTMLElement) {
     context.canvas = within(context.canvasElement);
   }
@@ -113,12 +113,9 @@ const enhanceContext: LoaderFunction = async (context) => {
       });
 
       if (!patchedFocus) {
-        // Must save a real, original `focus` method outside of the patch beforehand
         const originalFocus = HTMLElement.prototype.focus;
         let currentFocus = HTMLElement.prototype.focus;
         const noopFocus = () => {};
-
-        // Use a Set to track elements that are currently undergoing a focus operation
         const focusingElements = new Set<HTMLElement>();
 
         Object.defineProperties(HTMLElement.prototype, {
@@ -128,28 +125,39 @@ const enhanceContext: LoaderFunction = async (context) => {
               currentFocus = newFocus;
             },
             get() {
-              // A node inside a removed iframe has no live browsing context as `ownerDocument.defaultView`
-              // is null. The instrumented focus dispatches events through user-event, whose getWindow()
-              // then throws "Could not determine window of node"; thrown in React's commit phase that
-              // freezes the whole UI. Focus is meaningless on such a node, so hand back a no-op instead.
-              if (!this.ownerDocument?.defaultView) {
+              /*
+               * Focus libraries (react-aria, Zag) read `HTMLElement.prototype.focus` to capture
+               * and wrap it. That invokes this getter with the prototype as `this`, so DOM
+               * brand-checked properties must not be read until the receiver is validated.
+               *
+               * Nodes in a removed iframe have no browsing context; the instrumented focus would
+               * throw during React commit, so those get a no-op instead.
+               *
+               * During reentrancy, return the native method to break loops from wrappers that
+               * call back into focus on the same element synchronously. The marker is cleared on
+               * the next task so it covers the full synchronous call chain.
+               */
+              if (this === HTMLElement.prototype) {
+                return currentFocus;
+              }
+
+              let browsingContext;
+              try {
+                browsingContext = this.ownerDocument?.defaultView;
+              } catch {
+                return currentFocus;
+              }
+              if (!browsingContext) {
                 return noopFocus;
               }
 
-              // 'this' here refers to the DOM element being operated on.
               if (focusingElements.has(this)) {
-                // Recursive call detected; to break the loop, return the original focus method.
                 return originalFocus;
               }
 
-              // Add protection marker
               focusingElements.add(this);
-
-              // Use setTimeout(..., 0) to defer the "remove marker" operation to the next event loop.
-              // This ensures the marker persists for the entire synchronous call chain (including all recursive calls).
               setTimeout(() => focusingElements.delete(this), 0);
 
-              // Return the focus method that should currently be used
               return currentFocus;
             },
           },

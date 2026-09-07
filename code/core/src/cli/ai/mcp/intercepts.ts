@@ -1,8 +1,8 @@
-import type { InterceptReason, StorybookInstanceRecord } from './types.ts';
+import type { InterceptReason, StorybookInstanceRecord } from '../../tools/instances/types.ts';
 
 /**
- * Repair-instruction markdown for agents, mirroring `@storybook/mcp-proxy` (storybookjs/mcp) so
- * the CLI and the proxy give the same guidance — keep the two in sync when updating either.
+ * Repair-instruction markdown returned when `storybook ai` cannot reach a usable MCP endpoint
+ * (no matching instance, port mismatch, missing addon, or MCP not ready).
  */
 const NO_INSTANCE_EMPTY = `Storybook is not running at this cwd. Start \`storybook dev\` from the project's cwd and retry the command.`;
 
@@ -36,9 +36,9 @@ ${examples.join('\n')}`;
 };
 
 const buildPortMismatch = (port: number | undefined, records: StorybookInstanceRecord[]) =>
-  `Storybook is running for this project, but not on port \`${port ?? 'unknown'}\`. Retry with one of the running ports below, or omit \`--port\` to route by project alone.
+  `No running Storybook is on port \`${port ?? 'unknown'}\`. Retry with one of the running ports below, or omit \`--port\` to route by project (cwd/config dir).
 
-Running Storybooks for this project:
+Running Storybooks:
 ${records.map((r) => `- port \`${r.port}\` (${r.url}, status: \`${r.mcp.status}\`)`).join('\n')}`;
 
 const ADDON_MISSING = `Storybook is running but does not provide these commands. The \`@storybook/addon-mcp\` addon is missing.

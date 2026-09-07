@@ -77,9 +77,8 @@ describe('story-docs open service', () => {
       await service.queries.storyDocs.loaded({ id: 'button' });
       expect(provider).toHaveBeenCalledTimes(1);
 
-      const moduleGraph = getService('core/module-graph');
+      const moduleGraph = getService('core/module-graph', { internal: true });
       await moduleGraph.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./button.stories.tsx'],
       });
 
@@ -93,9 +92,8 @@ describe('story-docs open service', () => {
         storyDocsProvider: provider,
       });
 
-      const moduleGraph = getService('core/module-graph');
+      const moduleGraph = getService('core/module-graph', { internal: true });
       await moduleGraph.commands._applyGraphUpdate({
-        storiesByFile: {},
         bumpedStoryFiles: ['./button.stories.tsx'],
       });
 

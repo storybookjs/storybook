@@ -2,7 +2,13 @@ import React, { useContext, useMemo, useState, type ReactNode } from 'react';
 
 import { expect, fn, userEvent, waitFor, within } from 'storybook/test';
 
-import { Location, MemoryRouter, parsePath, queryFromLocation } from 'storybook/internal/router';
+import {
+  Location,
+  MemoryRouter,
+  parsePath,
+  queryFromLocation,
+  useNavigate,
+} from 'storybook/internal/router';
 import type { API_Notification } from 'storybook/internal/types';
 import {
   ManagerContext,
@@ -15,17 +21,21 @@ import preview from '../../../../../.storybook/preview.tsx';
 import { LayoutProvider } from '../layout/LayoutProvider.tsx';
 import { NotificationList } from '../notifications/NotificationList.tsx';
 import { ReviewNotification } from './components/ReviewNotification.tsx';
+import { ReviewPersistentLayer } from './components/ReviewPersistentLayer.tsx';
 import { ReviewProvider } from './components/ReviewProvider.tsx';
 import { ReviewToolbarHeader } from './components/ReviewToolbarHeader.tsx';
 import {
-  EVENTS,
+  AUTO_ENTERED_SESSION_KEY,
   NOTIFIED_REVIEW_CREATED_AT_KEY,
+  PRE_REVIEW_RETURN_KEY,
+  REVIEW_MODE_SESSION_KEY,
   VISITED_REVIEW_CREATED_AT_KEY,
+  autoEnteredLatchValue,
   reviewAvailableNotificationId,
 } from './constants.ts';
 import { REVIEW_COLLECTION_QUERY_PARAM, buildReviewStoryHref } from './review-navigation.ts';
 import type { ReviewState } from './review-state.ts';
-import { reviewStore } from './review-store.ts';
+import { reviewServiceForStories as reviewService } from './review-service-story-helpers.ts';
 import { ReviewSummaryHost } from './screens/ReviewSummaryHost.tsx';
 
 type EventListener = (payload?: unknown) => void;
@@ -54,6 +64,7 @@ const navigateMock = fn().mockName('api::navigate');
 const setQueryParamsMock = fn().mockName('api::setQueryParams');
 const addNotificationMock = fn().mockName('api::addNotification');
 const clearNotificationMock = fn().mockName('api::clearNotification');
+const selectFirstStoryMock = fn().mockName('api::selectFirstStory');
 let mockUrlState = { path: '/review/', queryParams: {} as Record<string, string> };
 const managerState: State = {
   index: {
@@ -102,13 +113,15 @@ const managerApi: API = {
   setQueryParams: setQueryParamsMock,
   addNotification: addNotificationMock,
   clearNotification: clearNotificationMock,
+  selectFirstStory: selectFirstStoryMock,
   getUrlState: () => mockUrlState,
 } as unknown as API;
 
 const reviewState: ReviewState = {
   title: 'Manager settings polish',
   description: 'Updated settings views and spacing.',
-  createdAt: new Date().getTime(),
+  // A minute in the past so the service's staleness grace window has already passed.
+  createdAt: new Date().getTime() - 60_000,
   collections: [
     {
       title: 'Settings',
@@ -129,10 +142,7 @@ const updatedReviewState: ReviewState = {
   createdAt: reviewState.createdAt! + 60_000,
 };
 
-const applyReviewState = () => {
-  expect(onMock).toHaveBeenCalledWith(EVENTS.DISPLAY_REVIEW, expect.any(Function));
-  emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
-};
+const applyReviewState = () => reviewService.commands.setReview(reviewState);
 
 const ReviewHarness = () => (
   <ReviewProvider>
@@ -249,7 +259,10 @@ const meta = preview.meta({
   parameters: {
     layout: 'fullscreen',
     chromatic: {
-      ignoreSelectors: ['[data-testid="review-collection-grid-cell"] iframe'],
+      // Ignore the entire thumbnail cell, not just the iframe: the loading overlay and the
+      // self-measuring iframe render nondeterministically (especially in Edge), and pixels
+      // outside the iframe but inside the cell kept flagging spurious changes on every build.
+      ignoreSelectors: ['[data-testid="review-collection-grid-cell"]'],
     },
   },
   decorators: [
@@ -272,8 +285,8 @@ const meta = preview.meta({
       </MemoryRouter>
     ),
   ],
-  beforeEach: () => {
-    reviewStore.reset();
+  beforeEach: async () => {
+    await reviewService.commands.dismissReview(undefined);
     eventListeners.clear();
     onMock.mockReset();
     offMock.mockReset();
@@ -283,6 +296,7 @@ const meta = preview.meta({
     setQueryParamsMock.mockReset();
     addNotificationMock.mockReset();
     clearNotificationMock.mockReset();
+    selectFirstStoryMock.mockReset();
     sessionStorage.clear();
     internal_fullStatusStore.unset();
     // Mark one reviewed story as newly added (via change detection) so the
@@ -306,19 +320,31 @@ export const Collections = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
     await expect(await canvas.findByText(/Waiting for the agent/i)).toBeInTheDocument();
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
-    applyReviewState();
+    await reviewService.commands.setReview(reviewState);
 
     await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
     await expect(await canvas.findByText('Settings')).toBeInTheDocument();
   },
 });
 
+export const AuthoritativeNullClearsReview = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await reviewService.commands.setReview(reviewState);
+    await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
+
+    await reviewService.commands.dismissReview(undefined);
+
+    await expect(await canvas.findByText(/Waiting for the agent/i)).toBeInTheDocument();
+    expect(canvas.queryByText('Manager settings polish')).not.toBeInTheDocument();
+  },
+});
+
 export const StoryLinksUseCollectionParam = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    applyReviewState();
+    await applyReviewState();
 
     const link = await canvas.findByRole('link', {
       name: 'Review story Guide Page – Default',
@@ -336,12 +362,11 @@ export const StoryLinksUseCollectionParam = meta.story({
 export const PendingUpdateDeferred = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
-    applyReviewState();
+    await applyReviewState();
     await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
 
-    emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
+    await reviewService.commands.setReview(updatedReviewState);
 
     await expect(await canvas.findByRole('status')).toBeInTheDocument();
     await expect(await canvas.findByRole('button', { name: 'Update' })).toBeInTheDocument();
@@ -354,12 +379,11 @@ export const PendingUpdateAccept = meta.story({
   render: () => <ReviewOutsideHarness />,
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
-    applyReviewState();
+    await applyReviewState();
     await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
 
-    emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
+    await reviewService.commands.setReview(updatedReviewState);
     clearNotificationMock.mockClear();
     addNotificationMock.mockClear();
     await expect(await canvas.findByRole('status')).toBeInTheDocument();
@@ -376,6 +400,11 @@ export const PendingUpdateAccept = meta.story({
 
 export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
   parameters: {
+    // Clicking "Update" at the end of the play function swaps in a fresh review whose
+    // preview-thumbnail iframes are still loading and self-measuring at capture time, so the
+    // snapshot (in Edge especially) differs on nearly every build and had to be re-accepted
+    // over and over. The flow itself is still covered as an interaction test.
+    chromatic: { disableSnapshot: true },
     routerInitialEntries: ['/?path=/story/manager-settings-guidepage--default&collection=0'],
     managerState: {
       path: '/story/manager-settings-guidepage--default',
@@ -385,14 +414,13 @@ export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
-    applyReviewState();
+    await applyReviewState();
     await expect(await canvas.findByRole('button', { name: /Select story/ })).toHaveTextContent(
       '2/3'
     );
 
-    emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
+    await reviewService.commands.setReview(updatedReviewState);
 
     await expect(await canvas.findByRole('status')).toBeInTheDocument();
     await userEvent.click(await canvas.findByRole('button', { name: 'Update' }));
@@ -405,13 +433,12 @@ export const PendingUpdateFromStoryNavigatesToSummary = meta.story({
 export const PendingUpdateSupersedesStale = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
 
-    applyReviewState();
-    emitMock(EVENTS.REVIEW_STALE);
+    await applyReviewState();
+    await reviewService.commands.markStale(undefined);
     await expect(await canvas.findByText(/Code changes detected/)).toBeInTheDocument();
 
-    emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
+    await reviewService.commands.setReview(updatedReviewState);
 
     await expect(await canvas.findByRole('status')).toBeInTheDocument();
     await expect(await canvas.findByRole('button', { name: 'Update' })).toBeInTheDocument();
@@ -429,8 +456,7 @@ export const ShowsNotificationForEachNewReview = meta.story({
     },
   },
   play: async () => {
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
-    emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
+    await reviewService.commands.setReview(reviewState);
     await waitFor(() =>
       expect(addNotificationMock).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -443,7 +469,7 @@ export const ShowsNotificationForEachNewReview = meta.story({
     clearNotificationMock.mockClear();
     sessionStorage.setItem(VISITED_REVIEW_CREATED_AT_KEY, String(reviewState.createdAt));
 
-    emitMock(EVENTS.DISPLAY_REVIEW, updatedReviewState);
+    await reviewService.commands.setReview(updatedReviewState);
     await waitFor(() =>
       expect(clearNotificationMock).toHaveBeenCalledWith(
         reviewAvailableNotificationId(reviewState.createdAt!)
@@ -471,8 +497,7 @@ export const ShowsNotificationForUnseenReview = meta.story({
   },
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
-    emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
+    await reviewService.commands.setReview(reviewState);
     expect(navigateMock).not.toHaveBeenCalled();
     await waitFor(() =>
       expect(addNotificationMock).toHaveBeenCalledWith(
@@ -504,7 +529,7 @@ export const DismissesNotificationOnReviewVisit = meta.story({
     const canvas = within(canvasElement);
     try {
       sessionStorage.setItem(NOTIFIED_REVIEW_CREATED_AT_KEY, String(reviewState.createdAt));
-      emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
+      await reviewService.commands.setReview(reviewState);
       await waitFor(() =>
         expect(clearNotificationMock).toHaveBeenCalledWith(
           reviewAvailableNotificationId(reviewState.createdAt!)
@@ -535,8 +560,7 @@ export const HidesNotificationAfterReviewVisited = meta.story({
     sessionStorage.setItem(VISITED_REVIEW_CREATED_AT_KEY, String(reviewState.createdAt));
   },
   play: async () => {
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
-    emitMock(EVENTS.DISPLAY_REVIEW, reviewState);
+    await reviewService.commands.setReview(reviewState);
     expect(addNotificationMock).not.toHaveBeenCalled();
     expect(navigateMock).not.toHaveBeenCalled();
   },
@@ -557,8 +581,7 @@ export const NotificationClickFromStoryNavigatesAndDismisses = meta.story({
       ...reviewState,
       createdAt: reviewState.createdAt! + 120_000,
     };
-    await expect(emitMock).toHaveBeenCalledWith(EVENTS.REQUEST_REVIEW);
-    emitMock(EVENTS.DISPLAY_REVIEW, freshReviewState);
+    await reviewService.commands.setReview(freshReviewState);
     await waitFor(() =>
       expect(addNotificationMock).toHaveBeenCalledWith(
         expect.objectContaining({
@@ -578,15 +601,198 @@ export const NotificationClickFromStoryNavigatesAndDismisses = meta.story({
       reviewAvailableNotificationId(freshReviewState.createdAt!)
     );
     expect(addNotificationMock).not.toHaveBeenCalled();
-    emitMock(EVENTS.DISPLAY_REVIEW, freshReviewState);
+    await reviewService.commands.setReview(freshReviewState);
     expect(addNotificationMock).not.toHaveBeenCalled();
+  },
+});
+
+export const AutoEntersReviewModeOnFirstSummaryVisit = meta.story({
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await applyReviewState();
+    await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
+
+    // Landing on the summary with a fresh review enters review mode once and
+    // arms the one-time latch that keeps reloads from re-entering.
+    await waitFor(() => expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBe('1'));
+    expect(sessionStorage.getItem(AUTO_ENTERED_SESSION_KEY)).toBe(
+      autoEnteredLatchValue(reviewState.createdAt)
+    );
+  },
+});
+
+const HistoryBackProbe = () => {
+  const navigate = useNavigate();
+  return (
+    <button data-testid="history-back" hidden onClick={() => navigate(-1)} type="button">
+      back
+    </button>
+  );
+};
+
+export const DoesNotReenterReviewModeAfterExit = meta.story({
+  render: () => (
+    <>
+      <ReviewProvider>
+        <ReviewPersistentLayer />
+      </ReviewProvider>
+      <RouterPathProbe />
+      <HistoryBackProbe />
+    </>
+  ),
+  parameters: {
+    chromatic: { disableSnapshot: true },
+  },
+  // This tab browsed a story before the review arrived.
+  beforeEach: () => {
+    sessionStorage.setItem(
+      PRE_REVIEW_RETURN_KEY,
+      '?path=/story/manager-settings-guidepage--default'
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await applyReviewState();
+
+    // Landing on the summary auto-enters review mode once.
+    await waitFor(() => expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBe('1'));
+
+    // Exit back to the pre-review canvas via the summary back link.
+    await userEvent.click(await canvas.findByRole('link', { name: 'Exit review' }));
+    await waitFor(() =>
+      expect(canvas.getByTestId('router-path')).toHaveTextContent(
+        '/story/manager-settings-guidepage--default'
+      )
+    );
+    expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBeNull();
+
+    // Returning to the summary (browser back) must not drag the reviewer back in.
+    await userEvent.click(canvas.getByTestId('history-back'));
+    await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
+    expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBeNull();
+  },
+});
+
+/** Remounts the provider subtree, reproducing a page reload: refs reset, sessionStorage survives. */
+const RemountableReviewSurface = () => {
+  const [generation, setGeneration] = useState(0);
+  return (
+    <>
+      <ReviewProvider key={generation}>
+        <ReviewPersistentLayer />
+      </ReviewProvider>
+      <RouterPathProbe />
+      <HistoryBackProbe />
+      <button
+        data-testid="remount"
+        hidden
+        onClick={() => setGeneration((value) => value + 1)}
+        type="button"
+      >
+        remount
+      </button>
+    </>
+  );
+};
+
+export const DoesNotReenterReviewModeAfterReload = meta.story({
+  render: () => <RemountableReviewSurface />,
+  parameters: {
+    chromatic: { disableSnapshot: true },
+  },
+  beforeEach: () => {
+    sessionStorage.setItem(
+      PRE_REVIEW_RETURN_KEY,
+      '?path=/story/manager-settings-guidepage--default'
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await applyReviewState();
+
+    await waitFor(() => expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBe('1'));
+
+    await userEvent.click(await canvas.findByRole('link', { name: 'Exit review' }));
+    await waitFor(() =>
+      expect(canvas.getByTestId('router-path')).toHaveTextContent(
+        '/story/manager-settings-guidepage--default'
+      )
+    );
+
+    // A reload re-projects the unchanged review. The latch is keyed to the review
+    // it was armed for, so re-projection must not re-arm it.
+    await userEvent.click(canvas.getByTestId('remount'));
+    await waitFor(() =>
+      expect(sessionStorage.getItem(AUTO_ENTERED_SESSION_KEY)).toBe(
+        autoEnteredLatchValue(reviewState.createdAt)
+      )
+    );
+
+    // Returning to the summary after that reload must not drag the reviewer back in.
+    await userEvent.click(canvas.getByTestId('history-back'));
+    await expect(await canvas.findByText('Manager settings polish')).toBeInTheDocument();
+    expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBeNull();
+  },
+});
+
+const RouterPathProbe = () => (
+  <Location>
+    {({ path }) => (
+      <span data-testid="router-path" hidden>
+        {path}
+      </span>
+    )}
+  </Location>
+);
+
+export const DismissalReturnsEachTabToItsOwnStory = meta.story({
+  render: () => (
+    <>
+      <ReviewHarness />
+      <RouterPathProbe />
+    </>
+  ),
+  parameters: {
+    chromatic: { disableSnapshot: true },
+    routerInitialEntries: ['/?path=/story/manager-settings-guidepage--default&collection=0'],
+    managerState: {
+      path: '/story/manager-settings-guidepage--default',
+      viewMode: 'story',
+      customQueryParams: { collection: '0' },
+    },
+  },
+  // This tab entered the review from its own story; both facts are tab-local
+  // sessionStorage, seeded before the provider mounts.
+  beforeEach: () => {
+    sessionStorage.setItem(
+      PRE_REVIEW_RETURN_KEY,
+      '?path=/story/manager-settings-aboutscreen--default'
+    );
+    sessionStorage.setItem(REVIEW_MODE_SESSION_KEY, '1');
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await applyReviewState();
+    await expect(await canvas.findByTestId('review-toolbar-header')).toBeInTheDocument();
+
+    // Dismissal arrives through the service (as from another tab): this tab must
+    // return to the story it browsed before the review, not anyone else's.
+    await reviewService.commands.dismissReview(undefined);
+
+    await waitFor(() =>
+      expect(canvas.getByTestId('router-path')).toHaveTextContent(
+        '/story/manager-settings-aboutscreen--default'
+      )
+    );
+    expect(sessionStorage.getItem(REVIEW_MODE_SESSION_KEY)).toBeNull();
+    expect(canvas.queryByTestId('review-toolbar-header')).not.toBeInTheDocument();
   },
 });
 
 export const SummaryStateSurvivesReviewReplay = meta.story({
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    applyReviewState();
+    await applyReviewState();
 
     const collapseButton = await canvas.findByRole('button', {
       name: 'Collapse collection Settings',
@@ -596,8 +802,8 @@ export const SummaryStateSurvivesReviewReplay = meta.story({
       await canvas.findByRole('button', { name: 'Expand collection Settings' })
     ).toHaveAttribute('aria-expanded', 'false');
 
-    // Another tab's REQUEST_REVIEW replays the cached review to every open tab.
-    emitMock(EVENTS.DISPLAY_REVIEW, { ...reviewState });
+    // An equivalent review-service state emission must not reset local summary UI state.
+    await reviewService.commands.setReview({ ...reviewState });
 
     await expect(
       canvas.getByRole('button', { name: 'Expand collection Settings' })

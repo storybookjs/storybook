@@ -161,6 +161,7 @@ const Path = styled.div(({ theme }) => ({
   '& > span + span': {
     '&:before': {
       content: "' / '",
+      whiteSpace: 'pre',
     },
   },
 }));

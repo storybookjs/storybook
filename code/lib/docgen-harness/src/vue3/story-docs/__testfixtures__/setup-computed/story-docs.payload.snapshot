@@ -1,0 +1,23 @@
+{
+  "id": "setup-computed",
+  "name": "SetupComputed",
+  "path": "__PATH__",
+  "stories": {
+    "forms-setup-computed--primary": {
+      "description": undefined,
+      "id": "forms-setup-computed--primary",
+      "name": "Primary",
+      "snippet": "<script lang="ts" setup>
+import { computed } from "vue";
+import SetupComputed from './SetupComputed.vue';
+
+const upper = computed(() => 'Ready'.toUpperCase());
+</script>
+
+<template>
+  <SetupComputed label="Ready" :hint="upper" />
+</template>",
+      "summary": undefined,
+    },
+  },
+}

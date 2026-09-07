@@ -1,7 +1,7 @@
 /* eslint-disable local-rules/no-uncategorized-errors */
 import { types as t } from 'storybook/internal/babel';
 import { getStoryTitle } from 'storybook/internal/common';
-import { combineTags } from 'storybook/internal/csf';
+import { combineTags } from 'storybook/internal/csf/csf-utils';
 import { logger } from 'storybook/internal/node-logger';
 import type { StoriesEntry, Tag } from 'storybook/internal/types';
 

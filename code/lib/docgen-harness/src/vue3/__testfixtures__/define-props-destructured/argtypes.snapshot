@@ -1,0 +1,48 @@
+{
+  "label": {
+    "description": "Visible label.",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "size": {
+    "description": "The visual size of the control.",
+    "name": "size",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": ""small" | "medium" | "large"",
+      },
+    },
+    "type": {
+      "name": "union",
+      "required": false,
+      "value": [
+        {
+          "name": "other",
+          "value": ""small"",
+        },
+        {
+          "name": "other",
+          "value": ""medium"",
+        },
+        {
+          "name": "other",
+          "value": ""large"",
+        },
+      ],
+    },
+  },
+}

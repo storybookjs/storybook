@@ -108,7 +108,7 @@ function buildContext(server: Server, toolset: McpToolsetGroup): ToolsetCtx {
     telemetry: custom?.disableTelemetry
       ? undefined
       : async (event, payload) => {
-          await collectTelemetry({ event, server, toolset, ...payload });
+          await collectTelemetry({ event, server, ...payload, toolset });
         },
   };
 }

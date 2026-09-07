@@ -240,6 +240,21 @@ describe('toolset-backed MCP tools', () => {
     }
   );
 
+  it('keeps the adapter-owned toolset when a handler payload carries one', async () => {
+    registerStubStoriesToolset({
+      handler: async (_input: unknown, ctx: any) => {
+        await ctx.telemetry?.('tool:previewStories', { toolset: 'test', inputStoryCount: 1 });
+        return { ok: true, data: { stories: [] }, markdown: '' };
+      },
+    });
+
+    await callToolsetMethod(makeServer(), previewOptions, { id: 'button--primary' });
+
+    expect(collectTelemetry).toHaveBeenCalledWith(
+      expect.objectContaining({ event: 'tool:previewStories', toolset: 'dev' })
+    );
+  });
+
   it('emits no telemetry when the session disabled it', async () => {
     registerStubStoriesToolset();
 

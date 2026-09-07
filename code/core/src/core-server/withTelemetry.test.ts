@@ -161,6 +161,41 @@ describe('withTelemetry', () => {
     exitSpy.mockRestore();
   });
 
+  it('treats ai-command interruption errors as canceled telemetry', async () => {
+    const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
+    const run = vi.fn(async () => {
+      const error = new Error('The operation was aborted');
+      Object.assign(error, { name: 'AbortError', code: 'ABORT_ERR' });
+      throw error;
+    });
+
+    await expect(withTelemetry('ai-command', { cliOptions }, run)).resolves.toBeUndefined();
+
+    expect(telemetry).toHaveBeenNthCalledWith(
+      2,
+      'canceled',
+      { eventType: 'ai-command' },
+      { stripMetadata: true, immediate: true }
+    );
+    expect(exitSpy).toHaveBeenCalledWith(0);
+
+    exitSpy.mockRestore();
+  });
+
+  it('does not treat dev interruption errors as canceled telemetry', async () => {
+    const run = vi.fn(async () => {
+      const error = new Error('The operation was aborted');
+      Object.assign(error, { name: 'AbortError', code: 'ABORT_ERR' });
+      throw error;
+    });
+
+    await expect(withTelemetry('dev', { cliOptions, printError: vi.fn() }, run)).rejects.toThrow(
+      'The operation was aborted'
+    );
+
+    expect(telemetry).not.toHaveBeenCalledWith('canceled', expect.anything(), expect.anything());
+  });
+
   it('treats wrapped init interruption failures as canceled telemetry', async () => {
     const exitSpy = vi.spyOn(process, 'exit').mockImplementation(() => undefined as never);
     const run = vi.fn(async () => {

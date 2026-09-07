@@ -26,7 +26,7 @@ const { document } = global;
 
 const StatusLabel = styled.div<{ status: StatusValue }>(
   ({ theme, status }: { theme: Theme; status: StatusValue }) => ({
-    color: getStatus(theme, status).iconColor ?? undefined,
+    color: getStatus(theme, status).textColor ?? undefined,
     margin: 3,
   })
 );
@@ -161,6 +161,7 @@ const Path = styled.div(({ theme }) => ({
   '& > span + span': {
     '&:before': {
       content: "' / '",
+      whiteSpace: 'pre',
     },
   },
 }));

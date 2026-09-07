@@ -4,7 +4,7 @@ sidebar:
   order: 1
 ---
 
-Storybook Vite builder bundles your components and stories with [Vite](https://vitejs.dev/), a fast ESM bundler.
+Storybook Vite builder bundles your components and stories with [Vite](https://vitejs.dev/), a fast ESM bundler. It is the default builder for Storybook and is recommended in most cases.
 
 - For applications built with Vite: it allows reusing the existing configuration in Storybook.
 - For applications built with Webpack: it provides faster startup and refresh times, with the disadvantage that your component's execution environment differs from your application.
@@ -49,6 +49,18 @@ If you do not want Storybook to load the Vite configuration file automatically, 
 
 </Callout>
 
+### Set configLoader for vite config
+
+You can pass the `configLoader` argument to `vite` by setting it in builder options. This is equivalent to the `--configLoader` command line argument.
+
+{/* prettier-ignore-start */}
+
+<CodeSnippets path="main-config-builder-configLoader.md" />
+
+{/* prettier-ignore-end */}
+
+Check `vite`'s [documentation](https://vite.dev/config/) for valid `configLoader` options.
+
 ### TypeScript
 
 If you need, you can also configure Storybook's Vite builder using TypeScript. Rename your `.storybook/main.js` to `.storybook/main.ts` and adjust it as follows:
@@ -68,6 +80,32 @@ We recommend starting with no Storybook-specific Vite configuration and only add
 For reference, here is a Webpack configuration to handle loading graphql queries and its equivalent, using a plugin, in Vite:
 
 <CodeSnippets path="webpack-final-to-vite-final.md" />
+
+#### Importing Markdown files as strings
+
+Storybook's Webpack builder registers a rule that turns every `.md` import into a string, so `import readme from './readme.md'` needs no configuration.
+Vite has no equivalent rule and instead tries to parse the file as JavaScript, which fails:
+
+```text
+error during build:
+src/readme.md (3:26): Expected ident (Note that you need plugins to import files that are not JavaScript)
+file: /my-project/src/readme.md:3:26
+
+1: # Hello
+2:
+3: Some **markdown** content.
+                             ^
+```
+
+Append Vite's [`?raw` suffix](https://vite.dev/guide/assets#importing-asset-as-string) to those imports to get the file contents as a string:
+
+```diff title="src/components/Button.stories.ts"
+- import readme from './readme.md';
++ import readme from './readme.md?raw';
+```
+
+Storybook's Webpack builder understands `?raw` too, so you can make this change before you migrate.
+The same applies to any other file type Vite does not handle on its own.
 
 ### Working directory not being detected
 

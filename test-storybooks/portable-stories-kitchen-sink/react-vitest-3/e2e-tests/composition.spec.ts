@@ -1,6 +1,6 @@
 import { expect, test } from '@playwright/test';
 
-import { SbPage } from '../../../../code/e2e-tests/util';
+import { SbPage } from '../../../../code/e2e-sandbox/util';
 
 const STORYBOOK_URL = 'http://localhost:6006';
 

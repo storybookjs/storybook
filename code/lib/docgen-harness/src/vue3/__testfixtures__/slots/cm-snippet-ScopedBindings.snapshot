@@ -1,0 +1,5 @@
+<template>
+  <SlotsShowcase heading="Scoped">
+    <template #item="{ entry, index }"><em>{{ index }}: {{ entry.label }}</em></template>
+  </SlotsShowcase>
+</template>

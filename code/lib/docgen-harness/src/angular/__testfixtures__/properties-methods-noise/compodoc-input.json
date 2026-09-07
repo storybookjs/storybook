@@ -1,0 +1,396 @@
+{
+  "pipes": [],
+  "interfaces": [],
+  "injectables": [],
+  "guards": [],
+  "interceptors": [],
+  "classes": [],
+  "directives": [],
+  "components": [
+    {
+      "name": "PropertiesMethodsNoiseComponent",
+      "id": "component-PropertiesMethodsNoiseComponent-4f53b3960fa17b257b6e802cf3a85a7cfef453bb3012bcf1ba568c49c03b4a6ce481e8a56deeb65e394ff31c97db229d67ca290fe623b338508526ff5683abc6",
+      "file": "properties-methods-noise.component.ts",
+      "encapsulation": [],
+      "entryComponents": [],
+      "inputs": [],
+      "outputs": [],
+      "providers": [],
+      "selector": "sb-properties-methods-noise",
+      "styleUrls": [],
+      "styles": [],
+      "template": "<div #panel>{{ title }} {{ currentPage }} {{ helperLabel }} {{ pageLabel }}</div>",
+      "templateUrl": [],
+      "templateVariables": [],
+      "viewProviders": [],
+      "hostDirectives": [],
+      "inputsClass": [
+        {
+          "coverageIgnore": false,
+          "name": "density",
+          "defaultValue": "'compact'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 30,
+          "type": "string",
+          "decorators": []
+        },
+        {
+          "coverageIgnore": false,
+          "name": "title",
+          "defaultValue": "''",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 26,
+          "type": "string",
+          "decorators": []
+        }
+      ],
+      "outputsClass": [
+        {
+          "name": "densityChange",
+          "coverageIgnore": false,
+          "defaultValue": "new EventEmitter<string>()",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "line": 32,
+          "type": "EventEmitter"
+        }
+      ],
+      "propertiesClass": [
+        {
+          "name": "#secret",
+          "coverageIgnore": false,
+          "defaultValue": "'hidden'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "string",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 36,
+          "rawdescription": "\n",
+          "modifierKind": [123]
+        },
+        {
+          "name": "buildId",
+          "coverageIgnore": false,
+          "defaultValue": "'noise-1'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "string",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 51,
+          "rawdescription": "",
+          "jsdoctags": [
+            {
+              "pos": 1250,
+              "end": 1260,
+              "kind": 328,
+              "id": 0,
+              "flags": 16842752,
+              "modifierFlagsCache": 0,
+              "transformFlags": 0,
+              "tagName": {
+                "pos": 1251,
+                "end": 1259,
+                "kind": 80,
+                "id": 0,
+                "flags": 16842752,
+                "transformFlags": 0,
+                "escapedText": "internal"
+              },
+              "comment": ""
+            }
+          ]
+        },
+        {
+          "name": "currentPage",
+          "coverageIgnore": false,
+          "defaultValue": "1",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "number",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 34,
+          "rawdescription": "\n"
+        },
+        {
+          "name": "helperLabel",
+          "coverageIgnore": false,
+          "defaultValue": "'Next page'",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "string",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 40,
+          "rawdescription": "\n",
+          "modifierKind": [124]
+        },
+        {
+          "name": "isActive",
+          "coverageIgnore": false,
+          "defaultValue": "false",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "unknown",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 57,
+          "rawdescription": "\n",
+          "decorators": [
+            {
+              "name": "HostBinding",
+              "stringifiedArguments": "'class.active'"
+            }
+          ],
+          "modifierKind": [171]
+        },
+        {
+          "name": "loading",
+          "coverageIgnore": false,
+          "defaultValue": "signal(false)",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "unknown",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 53,
+          "rawdescription": "\n",
+          "modifierKind": [148]
+        },
+        {
+          "name": "pageCount",
+          "coverageIgnore": false,
+          "defaultValue": "10",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "number",
+          "indexKey": "",
+          "optional": false,
+          "description": "",
+          "line": 38,
+          "rawdescription": "\n",
+          "modifierKind": [123]
+        },
+        {
+          "name": "panel",
+          "coverageIgnore": false,
+          "deprecated": false,
+          "deprecationMessage": "",
+          "type": "ElementRef<HTMLDivElement>",
+          "indexKey": "",
+          "optional": true,
+          "description": "",
+          "line": 55,
+          "rawdescription": "\n",
+          "decorators": [
+            {
+              "name": "ViewChild",
+              "stringifiedArguments": "'panel'"
+            }
+          ],
+          "modifierKind": [171]
+        }
+      ],
+      "methodsClass": [
+        {
+          "name": "clampPage",
+          "coverageIgnore": false,
+          "args": [],
+          "optional": false,
+          "returnType": "void",
+          "typeParameters": [],
+          "line": 63,
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "modifierKind": [124]
+        },
+        {
+          "name": "markDirty",
+          "coverageIgnore": false,
+          "args": [],
+          "optional": false,
+          "returnType": "void",
+          "typeParameters": [],
+          "line": 67,
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "modifierKind": [123]
+        },
+        {
+          "name": "nextPage",
+          "coverageIgnore": false,
+          "args": [],
+          "optional": false,
+          "returnType": "void",
+          "typeParameters": [],
+          "line": 59,
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": ""
+        },
+        {
+          "name": "resetPage",
+          "coverageIgnore": false,
+          "args": [],
+          "optional": false,
+          "returnType": "void",
+          "typeParameters": [],
+          "line": 72,
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "",
+          "description": "",
+          "jsdoctags": []
+        }
+      ],
+      "coverageIgnore": false,
+      "deprecated": false,
+      "deprecationMessage": "",
+      "hostBindings": [
+        {
+          "coverageIgnore": false,
+          "name": "class.active",
+          "actualName": "isActive",
+          "defaultValue": "false",
+          "deprecated": false,
+          "deprecationMessage": "",
+          "rawdescription": "\n",
+          "description": "",
+          "line": 57,
+          "type": "boolean",
+          "decorators": []
+        }
+      ],
+      "hostListeners": [],
+      "standalone": false,
+      "imports": [],
+      "description": "",
+      "rawdescription": "\n",
+      "type": "component",
+      "sourceCode": "import {\n  ChangeDetectorRef,\n  Component,\n  ElementRef,\n  EventEmitter,\n  HostBinding,\n  Inject,\n  Input,\n  Output,\n  ViewChild,\n  signal,\n} from '@angular/core';\n\n@Component({\n  selector: 'sb-properties-methods-noise',\n  template: '<div #panel>{{ title }} {{ currentPage }} {{ helperLabel }} {{ pageLabel }}</div>',\n})\nexport class PropertiesMethodsNoiseComponent {\n  // The shape the ui5-webcomponents-ngx measurement is about: 149 components, one of these each.\n  // Explicit `@Inject` tokens because the JIT render smoke test has no param-type metadata.\n  constructor(\n    @Inject(ChangeDetectorRef) private readonly cdr: ChangeDetectorRef,\n    @Inject(ElementRef) protected readonly host: ElementRef\n  ) {}\n\n  @Input() title = '';\n\n  // Bindable from a parent template: `strictInputAccessModifiers` is off by default, and output\n  // access modifiers are never checked at all.\n  @Input() private density = 'compact';\n\n  @Output() private densityChange = new EventEmitter<string>();\n\n  currentPage = 1;\n\n  #secret = 'hidden';\n\n  private pageCount = 10;\n\n  protected helperLabel = 'Next page';\n\n  protected get pageLabel(): string {\n    return `${this.currentPage}`;\n  }\n\n  private get secretLabel(): string {\n    return this.#secret;\n  }\n\n  /** @internal */\n  buildId = 'noise-1';\n\n  readonly loading = signal(false);\n\n  @ViewChild('panel') panel?: ElementRef<HTMLDivElement>;\n\n  @HostBinding('class.active') isActive = false;\n\n  nextPage(): void {\n    this.currentPage += 1;\n  }\n\n  protected clampPage(): void {\n    this.currentPage = Math.min(this.currentPage, this.pageCount);\n  }\n\n  private markDirty(): void {\n    this.cdr.markForCheck();\n  }\n\n  /** @internal */\n  resetPage(): void {\n    this.currentPage = 1;\n  }\n}\n",
+      "assetsDirs": [],
+      "styleUrlsData": "",
+      "stylesData": "",
+      "constructorObj": {
+        "name": "constructor",
+        "description": "",
+        "deprecated": false,
+        "deprecationMessage": "",
+        "args": [
+          {
+            "name": "cdr",
+            "type": "ChangeDetectorRef",
+            "optional": false,
+            "dotDotDotToken": false,
+            "deprecated": false,
+            "deprecationMessage": ""
+          },
+          {
+            "name": "host",
+            "type": "ElementRef",
+            "optional": false,
+            "dotDotDotToken": false,
+            "deprecated": false,
+            "deprecationMessage": ""
+          }
+        ],
+        "line": 18,
+        "rawdescription": "\n",
+        "jsdoctags": [
+          {
+            "name": "cdr",
+            "type": "ChangeDetectorRef",
+            "optional": false,
+            "dotDotDotToken": false,
+            "deprecated": false,
+            "deprecationMessage": "",
+            "tagName": {
+              "text": "param"
+            }
+          },
+          {
+            "name": "host",
+            "type": "ElementRef",
+            "optional": false,
+            "dotDotDotToken": false,
+            "deprecated": false,
+            "deprecationMessage": "",
+            "tagName": {
+              "text": "param"
+            }
+          }
+        ]
+      },
+      "extends": [],
+      "accessors": {
+        "pageLabel": {
+          "name": "pageLabel",
+          "getSignature": {
+            "name": "pageLabel",
+            "type": "string",
+            "returnType": "string",
+            "line": 42,
+            "rawdescription": "\n",
+            "description": ""
+          }
+        },
+        "secretLabel": {
+          "name": "secretLabel",
+          "getSignature": {
+            "name": "secretLabel",
+            "type": "string",
+            "returnType": "string",
+            "line": 46,
+            "rawdescription": "\n",
+            "description": ""
+          }
+        }
+      },
+      "relationships": {
+        "incoming": [],
+        "outgoing": []
+      }
+    }
+  ],
+  "modules": [],
+  "miscellaneous": [],
+  "routes": {
+    "name": "<root>",
+    "kind": "module",
+    "children": []
+  },
+  "coverage": {
+    "count": 0,
+    "status": "low",
+    "files": [
+      {
+        "filePath": "properties-methods-noise.component.ts",
+        "type": "component",
+        "linktype": "component",
+        "name": "PropertiesMethodsNoiseComponent",
+        "coveragePercent": 0,
+        "coverageCount": "0/18",
+        "status": "low"
+      }
+    ]
+  }
+}

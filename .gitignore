@@ -1,3 +1,6 @@
+# Local wayfinder artifacts (canonical tracker is GitHub issues)
+.wayfinder/
+
 node_modules
 *.log
 .idea
@@ -17,6 +20,8 @@ test-results
 .next
 /.npmrc
 tsconfig.vitest-temp.json
+tsconfig.dts-tmp-*.json
+.dts-emit/
 
 .env.local
 
@@ -75,7 +80,9 @@ code/core/report
 
 .junie
 CLAUDE.local.md
-.claude
+.claude/*
+!.claude/skills/
+!.claude/skills/**
 .cursor/mcp.json
 .vscode/mcp.json
 .mcp.json
@@ -90,3 +97,10 @@ scripts/eval/results
 
 # Unknown
 .omc
+/tools-api.md
+
+# Vercel CLI link/pull output for the agent-eval playground (CI runs from the repo root)
+.vercel
+
+# Perf suite results written by the docgen perf jobs
+code/lib/docgen-harness/perf-results

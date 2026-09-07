@@ -1,0 +1,23 @@
+{
+  "id": "meta-render",
+  "name": "MetaRenderComponent",
+  "path": "__PATH__",
+  "stories": {
+    "storydocs-meta-render--inherits-meta-render": {
+      "description": "Inherits the meta-level render, so no snippet can be derived.",
+      "id": "storydocs-meta-render--inherits-meta-render",
+      "name": "Inherits Meta Render",
+      "snippet": "import { Component } from '@angular/core';
+import { MetaRenderComponent } from './meta-render.component.ts';
+
+@Component({
+  selector: 'app-demo',
+  imports: [MetaRenderComponent],
+  template: `<sb-meta-render [label]="label"></sb-meta-render>`,
+})
+export class DemoComponent {
+  label = 'Meta';
+}",
+    },
+  },
+}

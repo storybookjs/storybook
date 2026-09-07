@@ -17,6 +17,7 @@ function findAndDrawElement(x: number, y: number) {
 
 export const withMeasure: DecoratorFunction = (StoryFn, context) => {
   const { measureEnabled } = context.globals || {};
+  const measureActive = measureEnabled && !context.parameters?.measure?.disable;
 
   useEffect(() => {
     if (typeof globalThis.document === 'undefined') {
@@ -52,7 +53,7 @@ export const withMeasure: DecoratorFunction = (StoryFn, context) => {
       });
     };
 
-    if (context.viewMode === 'story' && measureEnabled) {
+    if (context.viewMode === 'story' && measureActive) {
       globalThis.document.addEventListener('pointerover', onPointerOver);
       init();
       globalThis.window.addEventListener('resize', onResize);
@@ -64,7 +65,7 @@ export const withMeasure: DecoratorFunction = (StoryFn, context) => {
       globalThis.window.removeEventListener('resize', onResize);
       destroy();
     };
-  }, [measureEnabled, context.viewMode]);
+  }, [measureActive, context.viewMode]);
 
   return StoryFn();
 };

@@ -56,10 +56,10 @@ Internally, Storybook uses a similar implementation to generate the default temp
 
 Going over the code snippet in more detail. When Storybook starts up, it will override the default template with the custom one composed of the following:
 
-1. A header with the component's metadata retrieved by the `Title`, `Subtitle`, and `Description` Doc Blocks.
-2. The first story defined in the file via the `Primary` Doc Block with a handy set of UI controls to zoom in and out of the component.
-3. An interactive table with all the relevant [`args`](../writing-stories/args.mdx) and [`argTypes`](../api/arg-types.mdx) defined in the story via the `Controls` Doc Block.
-4. A overview of the remaining stories via the `Stories` Doc Block.
+1. A header with the component's metadata retrieved by the [`Title`](../api/doc-blocks/doc-block-title.mdx), [`Subtitle`](../api/doc-blocks/doc-block-subtitle.mdx), and [`Description`](../api/doc-blocks/doc-block-description.mdx) Doc Blocks.
+2. The first story defined in the file via the [`Primary`](../api/doc-blocks/doc-block-primary.mdx) Doc Block with a handy set of UI controls to zoom in and out of the component.
+3. An interactive table with all the relevant [`args`](../writing-stories/args.mdx) and [`argTypes`](../api/arg-types.mdx) defined in the story via the [`Controls`](../api/doc-blocks/doc-block-controls.mdx) Doc Block.
+4. An overview of the remaining stories via the [`Stories`](../api/doc-blocks/doc-block-stories.mdx) Doc Block.
 
 #### With MDX
 

@@ -3,6 +3,7 @@ import { fileURLToPath } from 'node:url';
 import type { Plugin } from 'vitest/config';
 import { mergeConfig } from 'vitest/config';
 import type { ViteUserConfig } from 'vitest/config';
+import type {} from '@vitest/browser-playwright';
 
 import {
   DEFAULT_FILES_PATTERN,
@@ -43,10 +44,12 @@ import { withoutVitePlugins } from '../../../../builders/builder-vite/src/utils/
 import {
   STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY,
   STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY,
+  STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY,
 } from '../constants.ts';
 import type { InternalOptions, UserOptions } from './types.ts';
 import { requiresProjectAnnotations } from './utils.ts';
 import { AgentTelemetryReporter } from './agent-telemetry-reporter.ts';
+import { isStorybookInternalFrame } from './stack-frames.ts';
 
 const WORKING_DIR = process.cwd();
 
@@ -55,6 +58,7 @@ const defaultOptions = {
   configDir: resolve(join(WORKING_DIR, '.storybook')),
   storybookUrl: 'http://localhost:6006',
   disableAddonDocs: true,
+  initialGlobals: {},
 } satisfies UserOptions;
 
 const extractTagsFromPreview = async (configDir: string) => {
@@ -296,8 +300,16 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       // )
 
       const testConfig = nonMutableInputConfig.test;
+      // Vitest resolves the story globs below against the root this plugin returns (via
+      // `viteFinal`), not the root it was invoked with. When those differ — a Vitest config
+      // above `configDir/..`, as in a monorepo — relativizing against the invoking root points
+      // every glob outside the project and silently matches no files.
       finalOptions.vitestRoot =
-        testConfig?.dir || testConfig?.root || nonMutableInputConfig.root || process.cwd();
+        testConfig?.dir ||
+        testConfig?.root ||
+        viteConfigFromStorybook.root ||
+        nonMutableInputConfig.root ||
+        process.cwd();
 
       const includeStories = stories
         .map((story) => {
@@ -316,6 +328,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         });
 
       finalOptions.includeStories = includeStories;
+
       const projectId = oneWayHash(finalOptions.configDir);
 
       const areProjectAnnotationRequired = await requiresProjectAnnotations(
@@ -323,18 +336,24 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         finalOptions
       );
 
-      const internalSetupFiles = (
-        [
-          '@storybook/addon-vitest/internal/setup-file',
-          areProjectAnnotationRequired &&
-            '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
-        ].filter(Boolean) as string[]
-      ).map((filePath) => fileURLToPath(import.meta.resolve(filePath)));
+      const internalSetupFiles = [
+        '@storybook/addon-vitest/internal/setup-file',
+        areProjectAnnotationRequired &&
+          '@storybook/addon-vitest/internal/setup-file-with-project-annotations',
+      ].filter(Boolean) as string[];
 
       const baseConfig: Omit<ViteUserConfig, 'plugins'> = {
         cacheDir: resolvePathInStorybookCache('sb-vitest', projectId),
         test: {
           expect: { requireAssertions: false },
+
+          onStackTrace: (error, frame) => {
+            if (isStorybookInternalFrame(frame.file)) {
+              return false;
+            }
+            return nonMutableInputConfig.test?.onStackTrace?.(error, frame) ?? true;
+          },
+
           setupFiles: [
             ...internalSetupFiles,
             // if the existing setupFiles is a string, we have to include it otherwise we're overwriting it
@@ -375,6 +394,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             [STORYBOOK_CORE_GHOST_STORIES_PROVIDE_KEY]: !!process.env.STORYBOOK_COMPONENT_PATHS,
             [STORYBOOK_CORE_RENDER_ANALYSIS_PROVIDE_KEY]:
               !!process.env.STORYBOOK_COMPONENT_PATHS || withinAgenticSetupSession,
+            [STORYBOOK_TEST_INITIAL_GLOBALS_PROVIDE_KEY]: finalOptions.initialGlobals,
           },
 
           include: [...includeStories, ...getComponentTestPaths()],
@@ -403,15 +423,32 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
                   screenshotFailures: false,
                 }
               : {}),
+
+            // Inject the cursor reset command we use to prevent accidental hover states when running
+            // Storybook tests in Chromium on Linux. There is a known race condition / special code path
+            // in Chromium causing it to sometimes apply :hover to the element under the mouse cursor even
+            // when there was no mouse movement.
+            commands: {
+              async resetMousePosition(ctx) {
+                if (ctx.provider.name === 'playwright') {
+                  const frame = await ctx.frame();
+                  await frame.page().mouse.move(-1000, -1000);
+                }
+              },
+            },
           },
         },
 
         optimizeDeps: {
           include: [
             '@storybook/addon-vitest/internal/setup-file',
+            '@storybook/addon-vitest/internal/setup-file.browser.4',
             '@storybook/addon-vitest/internal/global-setup',
             '@storybook/addon-vitest/internal/test-utils',
             'storybook/preview-api',
+            // imported by the setup files; without pinning, its CJS-only deps (via
+            // @testing-library/dom) reach the browser raw on hoisted node_modules layouts
+            'storybook/test',
             ...(frameworkName?.includes('react') || frameworkName?.includes('nextjs')
               ? ['react-dom/test-utils']
               : []),
@@ -449,6 +486,19 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
     },
     async configureVitest(context) {
       context.vitest.config.coverage.exclude.push('storybook-static');
+
+      const isBrowserModeEnabled = context.vitest.config.browser?.enabled === true;
+
+      if (isBrowserModeEnabled) {
+        const setupFilePath = '@storybook/addon-vitest/internal/setup-file.browser.4';
+
+        context.vitest.config.setupFiles = [
+          setupFilePath,
+          ...(context.vitest.config.setupFiles ?? []).filter(
+            (configuredSetupFile) => configuredSetupFile !== setupFilePath
+          ),
+        ];
+      }
 
       // NOTE: we start telemetry immediately but do not wait on it. Typically it should complete
       // before the tests do. If not we may miss the event, we are OK with that.

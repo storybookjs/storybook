@@ -498,7 +498,7 @@ const run = async () => {
     await uploadToBigQuery({ results, branch: headBranch, commit, benchmarkedAt });
   }
 
-  if (options.baseBranch) {
+  if (typeof options.baseBranch === 'string') {
     const comparisonResults = await compareResults({ results, baseBranch: options.baseBranch });
     const resultsAboveThreshold = filterResultsByThresholds(comparisonResults);
     if (typeof options.pullRequest === 'number') {

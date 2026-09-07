@@ -9,26 +9,45 @@ import {
   ADDON_ID,
   PANEL_ID,
   PARAM_KEY,
+  type StoryDocsCodePanelParameters,
+  shouldWaitForServiceSnippet,
   SNIPPET_RENDERED,
-} from '../../../core/src/docs-tools/shared';
+} from 'storybook/internal/docs-tools';
+import type { StoryId } from 'storybook/internal/types';
 import type { SourceParameters } from './blocks/blocks';
+import { SnippetWarning } from './blocks/components/SnippetWarning';
 import { Source } from './blocks/components/Source';
+
+/** Payload emitted on the `SNIPPET_RENDERED` channel event (see `emitTransformCode`). */
+type SnippetRenderedEvent = {
+  id?: StoryId;
+  source?: string;
+  format?: SyntaxHighlighterFormatTypes;
+  warning?: string;
+};
 
 const CodePanel = ({
   active,
   lastEvent,
   currentStoryId,
+  storyParameters,
+  storyPrepared,
 }: {
   active: boolean | undefined;
-  lastEvent: any | undefined;
+  lastEvent: SnippetRenderedEvent | undefined;
   currentStoryId: string | undefined;
+  storyParameters: StoryDocsCodePanelParameters | undefined;
+  storyPrepared: boolean | undefined;
 }) => {
+  const lastEventMatchesCurrentStory = lastEvent?.id === currentStoryId;
   const [codeSnippet, setSourceCode] = useState<{
     source: string | undefined;
     format: SyntaxHighlighterFormatTypes | undefined;
+    warning: string | undefined;
   }>({
-    source: lastEvent?.source,
-    format: lastEvent?.format ?? undefined,
+    source: lastEventMatchesCurrentStory ? lastEvent?.source : undefined,
+    format: lastEventMatchesCurrentStory ? (lastEvent?.format ?? undefined) : undefined,
+    warning: lastEventMatchesCurrentStory ? lastEvent?.warning : undefined,
   });
 
   const parameter = useParameter(PARAM_KEY, {
@@ -40,27 +59,42 @@ const CodePanel = ({
     setSourceCode({
       source: undefined,
       format: undefined,
+      warning: undefined,
     });
   }, [currentStoryId]);
 
-  useChannel({
-    [SNIPPET_RENDERED]: ({ source, format }) => {
-      setSourceCode({ source, format });
+  useChannel(
+    {
+      [SNIPPET_RENDERED]: ({ id, source, format, warning }) => {
+        // Ignore snippets emitted for other stories: a slow extraction for the previously selected
+        // story can resolve after navigation and would otherwise overwrite the current panel.
+        // `useChannel` captures this handler per `deps`, so it must list `currentStoryId` to compare
+        // against the currently selected story rather than the one selected on mount.
+        if (id !== undefined && id !== currentStoryId) {
+          return;
+        }
+        setSourceCode({ source, format, warning });
+      },
     },
-  });
+    [currentStoryId]
+  );
 
   const theme = useTheme();
   const isDark = theme.base !== 'light';
 
+  const awaitingServiceSnippet = shouldWaitForServiceSnippet(storyParameters, storyPrepared);
+  const code =
+    parameter.source?.code ||
+    codeSnippet.source ||
+    (awaitingServiceSnippet ? '' : parameter.source?.originalSource);
+  // The warning describes the emitted snippet, so a `docs.source.code` override retires it.
+  const warning = parameter.source?.code ? undefined : codeSnippet.warning;
+
   return (
     <AddonPanel active={!!active}>
       <SourceStyles>
-        <Source
-          {...parameter.source}
-          code={parameter.source?.code || codeSnippet.source || parameter.source?.originalSource}
-          format={codeSnippet.format}
-          dark={isDark}
-        />
+        <Source {...parameter.source} code={code} format={codeSnippet.format} dark={isDark} />
+        <PositionedSnippetWarning warning={warning} />
       </SourceStyles>
     </AddonPanel>
   );
@@ -92,16 +126,31 @@ addons.register(ADDON_ID, (api) => {
 
       const lastEvent = channel?.last(SNIPPET_RENDERED)?.[0];
 
-      return <CodePanel currentStoryId={currentStory?.id} lastEvent={lastEvent} active={active} />;
+      return (
+        <CodePanel
+          currentStoryId={currentStory?.id}
+          storyParameters={currentStory?.parameters}
+          storyPrepared={currentStory?.prepared}
+          lastEvent={lastEvent}
+          active={active}
+        />
+      );
     },
   });
 });
 
-const SourceStyles = styled.div(() => ({
+const SourceStyles = styled.div({
   height: '100%',
+  position: 'relative',
   [`> :first-child${ignoreSsrWarning}`]: {
     margin: 0,
     height: '100%',
     boxShadow: 'none',
   },
-}));
+});
+
+const PositionedSnippetWarning = styled(SnippetWarning)({
+  position: 'absolute',
+  top: 8,
+  right: 10,
+});

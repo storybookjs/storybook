@@ -16,5 +16,3 @@ sb.mock(import('../src/db/client.ts'));
 
 export default definePreview({});
 ```
-
-<!-- JS snippets still needed while providing both CSF 3 & Next -->

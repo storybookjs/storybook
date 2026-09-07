@@ -5,6 +5,7 @@ import memoize from 'memoizerific';
 import type { Options as QueryOptions } from 'picoquery';
 import { parse, stringify } from 'picoquery';
 import { dedent } from 'ts-dedent';
+import { isReviewSummaryPath } from '../shared/review/routes.ts';
 
 export interface StoryData {
   viewMode?: string;
@@ -31,6 +32,8 @@ export const parsePath: (path: string | undefined) => StoryData = memoize(1000)(
         storyId,
         refId,
       });
+    } else if (isReviewSummaryPath(path)) {
+      result.viewMode = 'review';
     }
   }
   return result;

@@ -16,7 +16,7 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
+import type { OmitIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
 import * as angularAnnotations from './config.ts';
 import * as angularDocsAnnotations from './docs/config.ts';
@@ -54,7 +54,7 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
 }
 
 type InferArgs<TArgs, T, Decorators> = Simplify<
-  TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<AngularRenderer & T, Decorators>>>
+  TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<AngularRenderer & T, Decorators>>>
 >;
 
 type InferComponentArgs<C extends abstract new (...args: any) => any> = Partial<

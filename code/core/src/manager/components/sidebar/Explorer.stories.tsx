@@ -1,5 +1,9 @@
 import React from 'react';
 
+import type { API } from 'storybook/manager-api';
+
+import { fn } from 'storybook/test';
+
 import { Explorer } from './Explorer.tsx';
 import { IconSymbols } from './IconSymbols.tsx';
 import * as RefStories from './Refs.stories.tsx';
@@ -73,6 +77,14 @@ const withRefs: Record<string, RefType> = {
   },
 };
 
+const mockApi = {
+  on: fn().mockName('api::on'),
+  off: fn().mockName('api::off'),
+  emit: fn().mockName('api::emit'),
+  getElements: fn(() => ({})).mockName('api::getElements'),
+  getShortcutKeys: fn(() => ({})).mockName('api::getShortcutKeys'),
+} as unknown as API;
+
 export const Simple = () => (
   <Explorer
     dataset={{ hash: simple, entries: Object.entries(simple) }}
@@ -81,7 +93,7 @@ export const Simple = () => (
       storyId: 'root-1-child-a2--grandchild-a1-1:test1',
     }}
     isLoading={false}
-    isDevelopment={true}
+    api={mockApi}
     isBrowsing
     hasEntries={true}
     isHidden={false}
@@ -96,7 +108,7 @@ export const WithRefs = () => (
       storyId: 'root-1-child-a2--grandchild-a1-1',
     }}
     isLoading={false}
-    isDevelopment={true}
+    api={mockApi}
     isBrowsing
     hasEntries={true}
     isHidden={false}

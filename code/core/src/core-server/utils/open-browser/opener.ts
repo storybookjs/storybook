@@ -10,7 +10,7 @@ import { join } from 'node:path';
 import { logger } from 'storybook/internal/node-logger';
 
 import spawn from 'cross-spawn';
-import open, { type App } from 'open';
+import open from 'open';
 import picocolors from 'picocolors';
 
 import { resolvePackageDir } from '../../../common/index.ts';
@@ -119,11 +119,7 @@ function executeShellScript(scriptPath: string, url: string) {
   return true;
 }
 
-function startBrowserProcess(
-  browser: App | readonly App[] | undefined,
-  url: string,
-  args: string[]
-) {
+function startBrowserProcess(browser: string | undefined, url: string, args: string[]) {
   // If we're on OS X, the user hasn't specifically
   // requested a different browser, we can try opening
   // Chrome with AppleScript. This lets us reuse an
@@ -181,21 +177,18 @@ function startBrowserProcess(
   // In this case, instead of passing `open` to `opn` (which won't work),
   // just ignore it (thus ensuring the intended behavior, i.e. opening the system browser):
   // https://github.com/facebook/create-react-app/pull/1690#issuecomment-283518768
-  // @ts-expect-error - browser is a string
   if (process.platform === 'darwin' && browser === 'open') {
     browser = undefined;
-  }
-
-  // If there are arguments, they must be passed as array with the browser
-  if (typeof browser === 'string' && args.length > 0) {
-    // @ts-expect-error - browser is a string
-    browser = [browser].concat(args);
   }
 
   // Fallback to open
   // (It will always open new tab)
   try {
-    const options = { app: browser, wait: false, url: true };
+    const options = {
+      app: browser ? { name: browser, arguments: args } : undefined,
+      wait: false,
+      url: true,
+    };
     open(url, options).catch(() => {}); // Prevent `unhandledRejection` error.
     return true;
   } catch {
@@ -211,7 +204,6 @@ export function openBrowser(url: string) {
   const { action, value, args } = getBrowserEnv();
   // Returns win32 on PowerShell and Linux on WSL. Matches conditions when `sh` can be invoked.
   const canRunShell = process.platform !== 'win32';
-  const browserTarget = value as unknown as App | readonly App[] | undefined;
 
   switch (action) {
     case Actions.NONE: {
@@ -230,7 +222,7 @@ export function openBrowser(url: string) {
       );
     }
     case Actions.BROWSER: {
-      return startBrowserProcess(browserTarget, url, args);
+      return startBrowserProcess(value, url, args);
     }
     default: {
       throw new BrowserEnvError('Not implemented.');

@@ -265,11 +265,20 @@ function preparePartialAnnotations<TRenderer extends Renderer>(
     storyGlobals,
   };
 
-  contextForEnhancers.argTypes = argTypesEnhancers.reduce(
-    (accumulatedArgTypes, enhancer) =>
-      enhancer({ ...contextForEnhancers, argTypes: accumulatedArgTypes }),
-    contextForEnhancers.argTypes
-  );
+  contextForEnhancers.argTypes = argTypesEnhancers
+    .filter((enhancer) => {
+      // Server docgen merges component prop metadata at UI read time (`mergeServiceArgTypes`).
+      // Second-pass enhancers run there instead so `customArgTypes` stays annotation-only.
+      if (global.FEATURES?.experimentalDocgenServer && enhancer.secondPass) {
+        return false;
+      }
+      return true;
+    })
+    .reduce(
+      (accumulatedArgTypes, enhancer) =>
+        enhancer({ ...contextForEnhancers, argTypes: accumulatedArgTypes }),
+      contextForEnhancers.argTypes
+    );
 
   const initialArgsBeforeEnhancers = { ...passedArgs };
 

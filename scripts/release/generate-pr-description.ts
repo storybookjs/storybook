@@ -89,7 +89,7 @@ export const mapToChangelist = ({
             Object.keys(LABELS_BY_IMPORTANCE).indexOf(b)
         )[0] || 'unknown') as keyof typeof LABELS_BY_IMPORTANCE;
 
-      return `- [ ] **${LABELS_BY_IMPORTANCE[label]}**: ${change.title} ${change.links.pull}${
+      return `- **${LABELS_BY_IMPORTANCE[label]}**: ${change.title} ${change.links.pull}${
         !unpickedPatches && change.labels?.includes('patch:yes') ? ' (will also be patched)' : ''
       }`;
     })

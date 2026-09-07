@@ -82,6 +82,11 @@ describe('parsePath', () => {
       refId: 'refid',
     });
   });
+
+  it('should parse review summary paths as viewMode review', () => {
+    expect(parsePath('/review/')).toMatchObject({ viewMode: 'review' });
+    expect(parsePath('/review')).toMatchObject({ viewMode: 'review' });
+  });
 });
 
 describe('deepDiff', () => {

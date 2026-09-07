@@ -30,7 +30,6 @@ export function registerIndexJsonRoute({
   configDir,
   channel,
   normalizedStories,
-  onStoryIndexInvalidated,
 }: {
   app: Polka;
   storyIndexGeneratorPromise: Promise<StoryIndexGenerator>;
@@ -38,12 +37,10 @@ export function registerIndexJsonRoute({
   workingDir?: string;
   configDir?: string;
   normalizedStories: NormalizedStoriesSpecifier[];
-  onStoryIndexInvalidated?: () => void;
 }) {
   const maybeInvalidate = debounce(
     () => {
       channel.emit(STORY_INDEX_INVALIDATED);
-      onStoryIndexInvalidated?.();
     },
     DEBOUNCE,
     { edges: ['leading', 'trailing'] }

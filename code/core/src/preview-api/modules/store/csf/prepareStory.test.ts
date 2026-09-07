@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type {
   ArgsEnhancer,
@@ -11,8 +11,6 @@ import type {
   StoryContext,
 } from 'storybook/internal/types';
 
-import { global } from '@storybook/global';
-
 import type { UserEventObject } from 'storybook/test';
 
 import { Tag } from '../../../../shared/constants/tags.ts';
@@ -22,11 +20,7 @@ import { composeConfigs } from './composeConfigs.ts';
 import { normalizeProjectAnnotations } from './normalizeProjectAnnotations.ts';
 import { prepareContext, prepareMeta, prepareStory as realPrepareStory } from './prepareStory.ts';
 
-vi.mock('@storybook/global', async (importOriginal) => ({
-  global: {
-    ...(await importOriginal<typeof import('@storybook/global')>()),
-  },
-}));
+vi.mock('@storybook/global', { spy: true });
 
 const id = 'id';
 const name = 'name';
@@ -618,8 +612,13 @@ describe('prepareStory', () => {
 
   describe('with `FEATURES.argTypeTargetsV7`', () => {
     beforeEach(() => {
-      global.FEATURES = { argTypeTargetsV7: true };
+      vi.stubGlobal('FEATURES', { argTypeTargetsV7: true });
     });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
     it('filters out targeted args', () => {
       const renderMock = vi.fn();
       const firstStory = prepareStory(
@@ -723,6 +722,57 @@ describe('prepareStory', () => {
       const context = prepareContext({ args: firstStory.initialArgs, globals: {}, ...firstStory });
       firstStory.unboundStoryFn(addExtraContext(context));
       expect(renderMock).toHaveBeenCalledWith({}, expect.objectContaining({ argsByTarget: {} }));
+    });
+  });
+
+  describe('with `FEATURES.experimentalDocgenServer`', () => {
+    beforeEach(() => {
+      vi.stubGlobal('FEATURES', { experimentalDocgenServer: true });
+    });
+
+    afterEach(() => {
+      vi.unstubAllGlobals();
+    });
+
+    it('skips second-pass argTypes enhancers so args are not inferred in prepareStory', () => {
+      const { argTypes } = prepareStory(
+        {
+          id,
+          name,
+          args: { size: 'large', label: 'Button' },
+          moduleExport,
+        },
+        {
+          id,
+          title,
+          argTypes: { backgroundColor: { name: 'backgroundColor', control: 'color' } },
+        },
+        { render }
+      );
+
+      expect(argTypes.backgroundColor).toEqual({ name: 'backgroundColor', control: 'color' });
+      expect(argTypes.size).toBeUndefined();
+      expect(argTypes.label).toBeUndefined();
+    });
+
+    it('keeps user-authored control overrides without inferring types from args', () => {
+      const { argTypes } = prepareStory(
+        {
+          id,
+          name,
+          args: { size: 'large' },
+          moduleExport,
+        },
+        {
+          id,
+          title,
+          argTypes: { size: { name: 'size', control: 'select' } },
+        },
+        { render }
+      );
+
+      expect(argTypes.size).toEqual({ name: 'size', control: 'select' });
+      expect(argTypes.size?.type).toBeUndefined();
     });
   });
 });

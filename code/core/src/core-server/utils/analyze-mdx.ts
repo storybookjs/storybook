@@ -1,6 +1,9 @@
+import type { DocsAnchor } from 'storybook/internal/types';
+
 import { Parser } from 'acorn';
 import acornJsx from 'acorn-jsx';
 import type { Expression, Program, SpreadElement } from 'estree';
+import GithubSlugger from 'github-slugger';
 import { fromMarkdown } from 'mdast-util-from-markdown';
 import { mdxFromMarkdown } from 'mdast-util-mdx';
 import type {
@@ -15,10 +18,12 @@ export type MdxAnalysisResult = {
   title: string | undefined;
   of: string | undefined;
   name: string | undefined;
+  id: string | undefined;
   summary: string | undefined;
   isTemplate: boolean;
   metaTags?: string[];
   imports: string[];
+  anchors?: DocsAnchor[];
 };
 
 type ImportMap = Record<string, string>;
@@ -37,12 +42,13 @@ const parseMdx = (code: string) =>
   });
 
 type ParsedMdxRoot = ReturnType<typeof parseMdx>;
-type MdxMetadata = Omit<MdxAnalysisResult, 'imports'>;
+type MdxMetadata = Omit<MdxAnalysisResult, 'imports' | 'anchors'>;
 
 const createEmptyMdxMetadata = (): MdxMetadata => ({
   title: undefined,
   of: undefined,
   name: undefined,
+  id: undefined,
   summary: undefined,
   isTemplate: false,
   metaTags: undefined,
@@ -182,10 +188,58 @@ const extractMeta = (metaElement: MdxJsxFlowElement, importMap: ImportMap): MdxM
   title: getStringAttribute(metaElement, 'title'),
   of: getOfImportPath(metaElement, importMap),
   name: getStringAttribute(metaElement, 'name'),
+  id: getStringAttribute(metaElement, 'id'),
   summary: getStringAttribute(metaElement, 'summary'),
   isTemplate: getIsTemplate(metaElement),
   metaTags: getMetaTags(metaElement),
 });
+
+const getHeadingText = (node: { children?: unknown[] }): string => {
+  if (!node.children) {
+    return '';
+  }
+  return node.children
+    .map((child) => {
+      const c = child as { type: string; value?: string; children?: unknown[] };
+      if (c.type === 'text') {
+        return c.value ?? '';
+      }
+      if (c.children) {
+        return getHeadingText(c as { children: unknown[] });
+      }
+      return '';
+    })
+    .join('');
+};
+
+const getAnchors = (root: ParsedMdxRoot): DocsAnchor[] => {
+  const anchors: DocsAnchor[] = [];
+  // The docs renderer assigns heading ids with rehype-slug, which uses github-slugger. Using the
+  // same (stateful) slugger in document order reproduces the exact DOM ids, including the `-1`,
+  // `-2` suffixes it appends to duplicate headings.
+  const slugger = new GithubSlugger();
+
+  const walk = (nodes: unknown[]) => {
+    for (const node of nodes) {
+      const n = node as { type: string; depth?: number; children?: unknown[] };
+      if (n.type === 'heading' && typeof n.depth === 'number') {
+        const title = getHeadingText(n as { children?: unknown[] });
+        if (title) {
+          const id = slugger.slug(title);
+          if (n.depth <= 4) {
+            anchors.push({ id, title });
+          }
+        }
+      }
+      if (n.children) {
+        walk(n.children);
+      }
+    }
+  };
+
+  walk(root.children as unknown[]);
+  return anchors;
+};
 
 export const extractImports = (root: Program): ImportMap => {
   const importMap: ImportMap = {};
@@ -231,6 +285,7 @@ const analyzeParsedMdx = (root: ParsedMdxRoot): MdxAnalysisResult => {
   return {
     ...metadata,
     imports: Array.from(new Set(Object.values(importMap))),
+    anchors: getAnchors(root),
   };
 };
 

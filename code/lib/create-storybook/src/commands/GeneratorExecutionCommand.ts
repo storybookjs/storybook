@@ -45,7 +45,7 @@ export class GeneratorExecutionCommand {
     language,
   }: ExecuteProjectGeneratorOptions) {
     // Get and execute generator (supports both old and new style)
-    const generatorResult = await this.executeProjectGenerator({
+    const { postInstall, ...generatorResult } = await this.executeProjectGenerator({
       projectType,
       frameworkInfo,
       options,
@@ -62,6 +62,11 @@ export class GeneratorExecutionCommand {
         generatorResult.storybookCommand !== undefined
           ? generatorResult.storybookCommand
           : this.jsPackageManager.getRunCommand('storybook'),
+      /**
+       * Hook to run after dependencies are installed. Optional — only the generators that need to do
+       * something after `installDependencies` will set this.
+       */
+      postInstall,
     };
   }
 
@@ -93,6 +98,7 @@ export class GeneratorExecutionCommand {
       renderer: frameworkInfo.renderer,
       builder: frameworkInfo.builder,
       language,
+      storybookVersionSpecifier: options.storybookVersionSpecifier,
       telemetryService: this.telemetryService,
       linkable: !!options.linkable,
       features: selectedFeatures,
@@ -105,6 +111,7 @@ export class GeneratorExecutionCommand {
       builder: frameworkInfo.builder,
       framework: frameworkInfo.framework,
       renderer: frameworkInfo.renderer,
+      storybookVersionSpecifier: options.storybookVersionSpecifier,
       linkable: !!options.linkable,
       pnp: !!options.usePnp,
       yes: !!options.yes,
@@ -112,6 +119,12 @@ export class GeneratorExecutionCommand {
       features: selectedFeatures,
       dependencyCollector: this.dependencyCollector,
     } as GeneratorOptions;
+
+    const postInstall = generatorModule.postInstall
+      ? async () => {
+          await generatorModule.postInstall?.({ packageManager: this.jsPackageManager });
+        }
+      : undefined;
 
     if (frameworkOptions.skipGenerator) {
       if (generatorModule.postConfigure) {
@@ -122,6 +135,7 @@ export class GeneratorExecutionCommand {
         shouldRunDev: frameworkOptions.shouldRunDev,
         storybookCommand: frameworkOptions.storybookCommand,
         extraAddons: [],
+        postInstall,
       };
     }
 
@@ -145,6 +159,7 @@ export class GeneratorExecutionCommand {
     return {
       ...generatorResult,
       extraAddons,
+      postInstall,
     };
   };
 }

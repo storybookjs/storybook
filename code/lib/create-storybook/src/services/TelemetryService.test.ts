@@ -59,7 +59,7 @@ describe('TelemetryService', () => {
 
       await telemetryService.trackInit(data);
 
-      expect(telemetry).toHaveBeenCalledWith('init', data);
+      expect(telemetry).toHaveBeenCalledWith('init', data, { configDir: undefined });
     });
 
     it('should track scaffolded event', async () => {
@@ -113,22 +113,31 @@ describe('TelemetryService', () => {
         { command: 'npx storybook@8.0.5 init' },
       ] as any);
 
-      await telemetryService.trackInitWithContext(ProjectType.REACT, selectedFeatures, true);
+      await telemetryService.trackInitWithContext(
+        ProjectType.REACT,
+        selectedFeatures,
+        true,
+        '.rnstorybook'
+      );
 
       expect(getProcessAncestry).toHaveBeenCalled();
-      expect(telemetry).toHaveBeenCalledWith('init', {
-        projectType: ProjectType.REACT,
-        features: {
-          dev: true,
-          docs: true,
-          test: true,
-          onboarding: false,
-          ai: false,
+      expect(telemetry).toHaveBeenCalledWith(
+        'init',
+        {
+          projectType: ProjectType.REACT,
+          features: {
+            dev: true,
+            docs: true,
+            test: true,
+            onboarding: false,
+            ai: false,
+          },
+          newUser: true,
+          versionSpecifier: '8.0.5',
+          cliIntegration: undefined,
         },
-        newUser: true,
-        versionSpecifier: '8.0.5',
-        cliIntegration: undefined,
-      });
+        { configDir: '.rnstorybook' }
+      );
     });
 
     it('should handle ancestry errors gracefully', async () => {
@@ -141,19 +150,23 @@ describe('TelemetryService', () => {
 
       await telemetryService.trackInitWithContext(ProjectType.VUE3, selectedFeatures, false);
 
-      expect(telemetry).toHaveBeenCalledWith('init', {
-        projectType: ProjectType.VUE3,
-        features: {
-          dev: true,
-          docs: false,
-          test: false,
-          onboarding: false,
-          ai: false,
+      expect(telemetry).toHaveBeenCalledWith(
+        'init',
+        {
+          projectType: ProjectType.VUE3,
+          features: {
+            dev: true,
+            docs: false,
+            test: false,
+            onboarding: false,
+            ai: false,
+          },
+          newUser: false,
+          versionSpecifier: undefined,
+          cliIntegration: undefined,
         },
-        newUser: false,
-        versionSpecifier: undefined,
-        cliIntegration: undefined,
-      });
+        { configDir: undefined }
+      );
     });
 
     it('should detect CLI integration from ancestry', async () => {
@@ -168,7 +181,8 @@ describe('TelemetryService', () => {
         'init',
         expect.objectContaining({
           cliIntegration: 'sv create',
-        })
+        }),
+        { configDir: undefined }
       );
     });
 
@@ -187,7 +201,8 @@ describe('TelemetryService', () => {
           'init',
           expect.objectContaining({
             features: expect.objectContaining({ ai: true }),
-          })
+          }),
+          { configDir: undefined }
         );
       });
     });

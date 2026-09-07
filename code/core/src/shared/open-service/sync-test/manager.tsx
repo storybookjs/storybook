@@ -1,0 +1,1 @@
+import './addon/manager.tsx';

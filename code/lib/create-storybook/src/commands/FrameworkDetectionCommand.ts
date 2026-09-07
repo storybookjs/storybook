@@ -48,7 +48,10 @@ export class FrameworkDetectionCommand {
       builder = options.builder as SupportedBuilder;
     } else if (metadata.builderOverride) {
       if (typeof metadata.builderOverride === 'function') {
-        builder = await metadata.builderOverride({ telemetryService: this.telemetryService });
+        builder = await metadata.builderOverride({
+          options,
+          telemetryService: this.telemetryService,
+        });
       } else {
         builder = metadata.builderOverride;
       }

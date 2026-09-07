@@ -84,12 +84,20 @@ export const FilterPanel = ({
 
   const toStatusFilterItem = useCallback(
     (entry: StatusFilterEntry): FilterItem => {
-      const shortName = entry.shortName === 'affected' ? 'related' : entry.shortName;
+      const isRelated = entry.statusValue === 'status-value:affected';
+      const shortName = isRelated ? 'related' : entry.shortName;
       const isIncluded = includedStatusFilters.includes(entry.statusValue);
       const isExcluded = excludedStatusFilters.includes(entry.statusValue);
       const isChecked = isIncluded || isExcluded;
-      const { icon: statusIconEl, iconColor } = getStatus(theme, entry.statusValue);
-      const showIcon = statusIconEl && entry.statusValue !== 'status-value:affected';
+      const { icon: statusIconEl } = getStatus(theme, entry.statusValue);
+      // Related has no status icon, but ActionList only hides the checkbox until hover when a
+      // non-input sibling precedes it — an empty placeholder preserves that behavior.
+      // Status icons carry their own color, so no $iconColor override is needed.
+      const icon = isRelated ? (
+        <span aria-hidden="true" />
+      ) : statusIconEl ? (
+        <StatusIcon>{statusIconEl}</StatusIcon>
+      ) : null;
 
       return {
         id: shortName,
@@ -97,7 +105,7 @@ export const FilterPanel = ({
         title: shortName.charAt(0).toUpperCase() + shortName.slice(1),
         tooltip: entry.description,
         count: entry.count,
-        icon: showIcon ? <StatusIcon $iconColor={iconColor}>{statusIconEl}</StatusIcon> : null,
+        icon,
         isIncluded,
         isExcluded,
         onCheckboxChange: () => {
@@ -134,6 +142,16 @@ export const FilterPanel = ({
   const statusItems = useMemo(
     () => statusEntries.map(toStatusFilterItem),
     [statusEntries, toStatusFilterItem]
+  );
+
+  const changeDetectionStatusItems = useMemo(
+    () => statusItems.filter((item) => item.id !== 'reviewing'),
+    [statusItems]
+  );
+
+  const reviewingStatusItems = useMemo(
+    () => statusItems.filter((item) => item.id === 'reviewing'),
+    [statusItems]
   );
 
   const filterIds = useMemo(
@@ -205,6 +223,14 @@ export const FilterPanel = ({
           </ActionList.Item>
         </ActionList>
       )}
+      {reviewingStatusItems.length > 0 && (
+        <ActionList>
+          {reviewingStatusItems.map((item) => {
+            const link = createFilterLink(item);
+            return <Fragment key={link.id}>{link.content}</Fragment>;
+          })}
+        </ActionList>
+      )}
       {builtInItems.length > 0 && (
         <ActionList>
           {builtInItems.map((item) => {
@@ -213,9 +239,9 @@ export const FilterPanel = ({
           })}
         </ActionList>
       )}
-      {statusItems.length > 0 && (
+      {changeDetectionStatusItems.length > 0 && (
         <ActionList>
-          {statusItems.map((item) => {
+          {changeDetectionStatusItems.map((item) => {
             const link = createFilterLink(item);
             return <Fragment key={link.id}>{link.content}</Fragment>;
           })}

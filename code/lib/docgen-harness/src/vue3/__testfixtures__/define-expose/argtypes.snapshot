@@ -1,0 +1,52 @@
+{
+  "count": {
+    "control": {
+      "disable": true,
+    },
+    "description": "How many times the button has been pressed.",
+    "name": "count",
+    "table": {
+      "category": "expose",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "value": "",
+    },
+  },
+  "label": {
+    "description": "Visible label of the counter button.",
+    "name": "label",
+    "table": {
+      "category": "props",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+      "required": true,
+    },
+  },
+  "reset": {
+    "control": {
+      "disable": true,
+    },
+    "description": undefined,
+    "name": "reset",
+    "table": {
+      "category": "expose",
+      "defaultValue": undefined,
+      "jsDocTags": undefined,
+      "type": undefined,
+    },
+    "type": {
+      "name": "other",
+      "value": "",
+    },
+  },
+}

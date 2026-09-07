@@ -1,0 +1,9 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": "./",
+    "module": "es2015",
+    "types": ["node"]
+  },
+  "exclude": ["karma.ts", "**/*.spec.ts"]
+}

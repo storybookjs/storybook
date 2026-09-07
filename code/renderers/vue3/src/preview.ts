@@ -16,7 +16,7 @@ import type {
   StoryAnnotations,
 } from 'storybook/internal/types';
 
-import type { RemoveIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
+import type { OmitIndexSignature, SetOptional, Simplify, UnionToIntersection } from 'type-fest';
 
 import * as vueAnnotations from './entry-preview.ts';
 import * as vueDocsAnnotations from './entry-preview-docs.ts';
@@ -54,7 +54,7 @@ export function __definePreview<Addons extends PreviewAddon<never>[]>(
 }
 
 type InferArgs<TArgs, T, Decorators> = Simplify<
-  TArgs & Simplify<RemoveIndexSignature<DecoratorsArgs<VueTypes & T, Decorators>>>
+  TArgs & Simplify<OmitIndexSignature<DecoratorsArgs<VueTypes & T, Decorators>>>
 >;
 
 type InferVueTypes<T, TArgs, Decorators> = VueTypes &
@@ -145,7 +145,7 @@ type DecoratorsArgs<TRenderer extends Renderer, Decorators> = UnionToIntersectio
  * story level.
  */
 export interface VueMeta<T extends VueTypes, MetaInput extends ComponentAnnotations<T>>
-  // @ts-expect-error VueMeta requires two type parameters, but Meta's constraints differ
+  /** @ts-expect-error VueMeta requires two type parameters, but Meta's constraints differ */
   extends Meta<T, MetaInput> {
   /**
    * Creates a story with a custom render function that takes no args.

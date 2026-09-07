@@ -189,7 +189,10 @@ function BaseModal({
       } else {
         if (dismissOnEscape) {
           onEscapeKeyDown?.(e.nativeEvent);
-          close();
+          // The deprecated handler can veto the close by preventing default (Radix contract).
+          if (!e.nativeEvent.defaultPrevented) {
+            close();
+          }
         }
       }
     },

@@ -12,7 +12,6 @@ import type {
 } from 'vite';
 
 import {
-  csfPlugin,
   pluginWebpackStats,
   storybookEntryPlugin,
   storybookExternalGlobalsPlugin,
@@ -42,7 +41,7 @@ export async function commonConfig(
   const configEnv = _type === 'development' ? configEnvServe : configEnvBuild;
   const { loadConfigFromFile, mergeConfig } = await import('vite');
 
-  const { viteConfigPath } = await getBuilderOptions<BuilderOptions>(options);
+  const { viteConfigPath, configLoader } = await getBuilderOptions<BuilderOptions>(options);
 
   const projectRoot = resolve(options.configDir, '..');
 
@@ -50,7 +49,14 @@ export async function commonConfig(
   // I do this because I can contain config that breaks storybook, such as we had in a lit project.
   // If the user needs to configure the `build` they need to do so in the viteFinal function in main.js.
   const { config: { build: buildProperty = undefined, ...userConfig } = {} } =
-    (await loadConfigFromFile(configEnv, viteConfigPath, projectRoot)) ?? {};
+    (await loadConfigFromFile(
+      configEnv,
+      viteConfigPath,
+      projectRoot,
+      undefined,
+      undefined,
+      configLoader
+    )) ?? {};
 
   // Storybook's Vite config is assembled from self-contained plugins.
   // The config plugin handles base settings (root, cacheDir, resolve conditions, etc.),
@@ -82,7 +88,6 @@ export async function pluginConfig(options: Options) {
     // Shared core plugins (resolve conditions, envPrefix, fs.allow, externals, env vars, etc.)
     ...(await corePlugins([], options)),
     await storybookExternalGlobalsPlugin(options),
-    await csfPlugin(options),
     // Entry plugin: virtual modules for stories, addon setup, and main app entry
     ...(await storybookEntryPlugin(options)),
     // Builder-specific: webpack-compatible stats for turbosnap/chromatic

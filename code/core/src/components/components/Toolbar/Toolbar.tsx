@@ -10,6 +10,7 @@ export interface AbstractToolbarProps {
   children?: React.ReactNode;
   'aria-label'?: string;
   'aria-labelledby'?: string;
+  lang?: string;
 }
 
 export const AbstractToolbar: FC<AbstractToolbarProps> = ({

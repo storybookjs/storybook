@@ -14,6 +14,7 @@ export * from './modules/channelApi.ts';
 export * from './modules/frameworks.ts';
 export * from './modules/renderers.ts';
 export * from './modules/status.ts';
+export * from './modules/review.ts';
 export * from './modules/test-provider.ts';
 export * from './modules/universal-store.ts';
 export * from './modules/webpack.ts';

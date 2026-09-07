@@ -2,6 +2,7 @@ import type { Mock } from 'vitest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 import type { API_Provider } from 'storybook/internal/types';
+import * as clientLogger from 'storybook/internal/client-logger';
 
 import EventEmitter from 'events';
 import { themes } from 'storybook/theming';
@@ -450,7 +451,7 @@ describe('layout API', () => {
     });
 
     it('should not change selectedPanel if it is undefined in the options, but something else has changed', () => {
-      layoutApi.setOptions({ panelPosition: 'right' });
+      layoutApi.setOptions({ layout: { panelPosition: 'right' } });
 
       expect(getLastSetStateArgs()[0].selectedPanel).toBeUndefined();
     });
@@ -467,7 +468,10 @@ describe('layout API', () => {
     it('should not change selectedPanel if it is currently the same, but something else has changed', () => {
       layoutApi.setOptions({});
       // second call is needed to overwrite initial layout
-      layoutApi.setOptions({ panelPosition: 'right', selectedPanel: currentState.selectedPanel });
+      layoutApi.setOptions({
+        layout: { panelPosition: 'right' },
+        selectedPanel: currentState.selectedPanel,
+      });
 
       expect(getLastSetStateArgs()[0].selectedPanel).toBeUndefined();
     });
@@ -486,6 +490,197 @@ describe('layout API', () => {
 
       expect(getLastSetStateArgs()[0].selectedPanel).toEqual(panelName);
     });
+
+    it('should hide the panel when layout.showPanel is false', () => {
+      layoutApi.setSizes({
+        bottomPanelHeight: 200,
+        rightPanelWidth: 250,
+      });
+
+      layoutApi.setOptions({ layout: { showPanel: false } });
+
+      expect(currentState.layout.bottomPanelHeight).toBe(0);
+      expect(currentState.layout.rightPanelWidth).toBe(0);
+      expect(currentState.layout.recentVisibleSizes.bottomPanelHeight).toBe(200);
+      expect(currentState.layout.recentVisibleSizes.rightPanelWidth).toBe(250);
+
+      layoutApi.togglePanel(true);
+
+      expect(currentState.layout.bottomPanelHeight).toBe(200);
+      expect(currentState.layout.rightPanelWidth).toBe(250);
+    });
+
+    it('should hide nav and preserve provided navSize when layout.showNav is false', () => {
+      layoutApi.setOptions({ layout: { navSize: 180, showNav: false } });
+
+      expect(currentState.layout.navSize).toBe(0);
+      expect(currentState.layout.recentVisibleSizes.navSize).toBe(180);
+
+      layoutApi.toggleNav(true);
+
+      expect(currentState.layout.navSize).toBe(180);
+    });
+
+    it('should hide panel and preserve provided sizes when layout.showPanel is false', () => {
+      layoutApi.setOptions({
+        layout: { bottomPanelHeight: 210, rightPanelWidth: 260, showPanel: false },
+      });
+
+      expect(currentState.layout.bottomPanelHeight).toBe(0);
+      expect(currentState.layout.rightPanelWidth).toBe(0);
+      expect(currentState.layout.recentVisibleSizes.bottomPanelHeight).toBe(210);
+      expect(currentState.layout.recentVisibleSizes.rightPanelWidth).toBe(260);
+
+      layoutApi.togglePanel(true);
+
+      expect(currentState.layout.bottomPanelHeight).toBe(210);
+      expect(currentState.layout.rightPanelWidth).toBe(260);
+    });
+
+    it('should prioritize options.layout over top-level layout keys', () => {
+      const deprecateSpy = vi.spyOn(clientLogger, 'deprecate').mockImplementation(() => {});
+
+      layoutApi.setOptions({
+        showNav: true,
+        showPanel: true,
+        layout: { showNav: false, showPanel: false },
+      });
+
+      expect(currentState.layout.navSize).toBe(0);
+      expect(currentState.layout.bottomPanelHeight).toBe(0);
+      expect(currentState.layout.rightPanelWidth).toBe(0);
+      expect(deprecateSpy).toHaveBeenCalled();
+    });
+
+    it('should deprecate top-level layout keys in setOptions', () => {
+      const deprecateSpy = vi.spyOn(clientLogger, 'deprecate').mockImplementation(() => {});
+
+      layoutApi.setOptions({ showNav: false, panelPosition: 'right' });
+
+      expect(deprecateSpy).toHaveBeenCalledWith(
+        'Calling `setConfig({ showNav: ... })` is deprecated. Please call `setConfig({ layout: { showNav: ... } })` instead.'
+      );
+      expect(deprecateSpy).toHaveBeenCalledWith(
+        'Calling `setConfig({ panelPosition: ... })` is deprecated. Please call `setConfig({ layout: { panelPosition: ... } })` instead.'
+      );
+    });
+
+    it('should prioritize options.ui over top-level ui keys', () => {
+      layoutApi.setOptions({
+        enableShortcuts: false,
+        ui: { enableShortcuts: true },
+      });
+
+      expect(currentState.ui.enableShortcuts).toBe(true);
+    });
+
+    it('should deprecate top-level ui keys in setOptions', () => {
+      const deprecateSpy = vi.spyOn(clientLogger, 'deprecate').mockImplementation(() => {});
+
+      layoutApi.setOptions({ enableShortcuts: false });
+
+      expect(deprecateSpy).toHaveBeenCalledWith(
+        'Calling `setConfig({ enableShortcuts: ... })` is deprecated. Please call `setConfig({ ui: { enableShortcuts: ... } })` instead.'
+      );
+    });
+  });
+
+  describe('getInitialOptions', () => {
+    it('should apply layout.showPanel from the initial config', () => {
+      (provider.getConfig as Mock).mockReturnValue({
+        layout: { showPanel: false },
+      });
+
+      const storeWithoutPersistedLayout = {
+        ...store,
+        getState: () => ({ selectedPanel: currentState.selectedPanel }) as unknown as State,
+      } as unknown as Store;
+
+      const { state } = initLayout({
+        store: storeWithoutPersistedLayout,
+        provider,
+        singleStory: false,
+      } as unknown as ModuleArgs);
+
+      expect(state.layout.bottomPanelHeight).toBe(0);
+      expect(state.layout.rightPanelWidth).toBe(0);
+      expect(state.layout.recentVisibleSizes.bottomPanelHeight).toBe(300);
+      expect(state.layout.recentVisibleSizes.rightPanelWidth).toBe(400);
+    });
+
+    it('should apply layout.showNav from the initial config', () => {
+      (provider.getConfig as Mock).mockReturnValue({
+        layout: { showNav: false },
+      });
+
+      const storeWithoutPersistedLayout = {
+        ...store,
+        getState: () => ({ selectedPanel: currentState.selectedPanel }) as unknown as State,
+      } as unknown as Store;
+
+      const { state } = initLayout({
+        store: storeWithoutPersistedLayout,
+        provider,
+        singleStory: false,
+      } as unknown as ModuleArgs);
+
+      expect(state.layout.navSize).toBe(0);
+      expect(state.layout.recentVisibleSizes.navSize).toBe(300);
+    });
+
+    it('should prioritize layout over top-level config keys', () => {
+      const deprecateSpy = vi.spyOn(clientLogger, 'deprecate').mockImplementation(() => {});
+      (provider.getConfig as Mock).mockReturnValue({
+        showPanel: true,
+        showNav: true,
+        layout: { showPanel: false, showNav: false },
+      });
+
+      const storeWithoutPersistedLayout = {
+        ...store,
+        getState: () => ({ selectedPanel: currentState.selectedPanel }) as unknown as State,
+      } as unknown as Store;
+
+      const { state } = initLayout({
+        store: storeWithoutPersistedLayout,
+        provider,
+        singleStory: false,
+      } as unknown as ModuleArgs);
+
+      expect(state.layout.navSize).toBe(0);
+      expect(state.layout.bottomPanelHeight).toBe(0);
+      expect(state.layout.rightPanelWidth).toBe(0);
+      expect(deprecateSpy).toHaveBeenCalledWith(
+        'Calling `setConfig({ showPanel: ... })` is deprecated. Please call `setConfig({ layout: { showPanel: ... } })` instead.'
+      );
+      expect(deprecateSpy).toHaveBeenCalledWith(
+        'Calling `setConfig({ showNav: ... })` is deprecated. Please call `setConfig({ layout: { showNav: ... } })` instead.'
+      );
+    });
+
+    it('should prioritize ui over top-level config keys', () => {
+      const deprecateSpy = vi.spyOn(clientLogger, 'deprecate').mockImplementation(() => {});
+      (provider.getConfig as Mock).mockReturnValue({
+        enableShortcuts: false,
+        ui: { enableShortcuts: true },
+      });
+
+      const storeWithoutPersistedLayout = {
+        ...store,
+        getState: () => ({ selectedPanel: currentState.selectedPanel }) as unknown as State,
+      } as unknown as Store;
+
+      const { state } = initLayout({
+        store: storeWithoutPersistedLayout,
+        provider,
+        singleStory: false,
+      } as unknown as ModuleArgs);
+
+      expect(state.ui.enableShortcuts).toBe(true);
+      expect(deprecateSpy).toHaveBeenCalledWith(
+        'Calling `setConfig({ enableShortcuts: ... })` is deprecated. Please call `setConfig({ ui: { enableShortcuts: ... } })` instead.'
+      );
+    });
   });
 
   describe('state getters', () => {
@@ -503,6 +698,31 @@ describe('layout API', () => {
       layoutApi.toggleFullscreen();
 
       expect(layoutApi.getIsNavShown()).toBe(true);
+    });
+
+    it('should get nav availability with getNavAvailability', () => {
+      expect(layoutApi.getNavAvailability()).toBe('shown');
+
+      layoutApi.toggleNav();
+
+      expect(layoutApi.getNavAvailability()).toBe('hidden');
+
+      layoutApi.toggleNav();
+
+      Object.assign(currentState, { path: '/review/', customQueryParams: {} });
+
+      expect(layoutApi.getNavAvailability()).toBe('unavailable');
+
+      Object.assign(currentState, {
+        path: '/story/foo--bar',
+        customQueryParams: { collection: '0' },
+      });
+
+      expect(layoutApi.getNavAvailability()).toBe('unavailable');
+
+      Object.assign(currentState, { path: '/story/foo--bar', customQueryParams: {} });
+
+      expect(layoutApi.getNavAvailability()).toBe('shown');
     });
 
     it('should get panelShwon with getIsPanelShown', () => {

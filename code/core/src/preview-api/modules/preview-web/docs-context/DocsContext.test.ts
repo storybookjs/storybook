@@ -112,6 +112,50 @@ describe('referenceMeta', () => {
       '<Meta of={} /> must reference a CSF file module export or meta export. Did you mistakenly reference your component instead of your CSF file?'
     );
   });
+
+  it('works with different module namespace objects when there is no default export', () => {
+    // Simulates CSF4 modules (no `export default meta`) split into a chunk:
+    // the MDX-imported namespace differs by identity from the one Storybook registered.
+    // Resolution should fall back to looking up the CSF file via any story export.
+    const { story, csfFile, storyExport } = csfFileParts('meta--story', 'meta', {
+      includeDefaultExport: false,
+    });
+    const store = {
+      componentStoriesFromCSFFile: () => [story],
+    } as unknown as StoryStore<Renderer>;
+    const context = new DocsContext(channel, store, renderStoryToElement, [csfFile]);
+
+    const differentModuleExports = { story: storyExport };
+
+    expect(() => context.referenceMeta(differentModuleExports, true)).not.toThrow();
+    expect(context.storyById()).toEqual(story);
+  });
+
+  it('throws for module objects whose story exports span multiple CSF files', () => {
+    const firstParts = csfFileParts('first-meta--first-story', 'first-meta', {
+      includeDefaultExport: false,
+    });
+    const secondParts = csfFileParts('second-meta--second-story', 'second-meta', {
+      includeDefaultExport: false,
+    });
+    const store = {
+      componentStoriesFromCSFFile: ({ csfFile }: { csfFile: CSFFile }) =>
+        csfFile === firstParts.csfFile ? [firstParts.story] : [secondParts.story],
+    } as unknown as StoryStore<Renderer>;
+    const context = new DocsContext(channel, store, renderStoryToElement, [
+      firstParts.csfFile,
+      secondParts.csfFile,
+    ]);
+
+    const mixedModuleExports = {
+      first: firstParts.storyExport,
+      second: secondParts.storyExport,
+    };
+
+    expect(() => context.referenceMeta(mixedModuleExports, true)).toThrow(
+      '<Meta of={} /> must reference a CSF file module export or meta export. Did you mistakenly reference your component instead of your CSF file?'
+    );
+  });
 });
 
 describe('resolveOf', () => {
@@ -155,6 +199,38 @@ describe('resolveOf', () => {
         csfFile,
         preparedMeta: expect.any(Object),
       });
+    });
+
+    it('works for CSF4 module exports with different object identity and no default export', () => {
+      // CSF4 modules (no `export default meta`) may be split into a separate chunk,
+      // producing a namespace object whose identity differs from Storybook's record.
+      // Resolution falls back to identifying the CSF file via the story exports.
+      const noDefaultParts = csfFileParts('meta--no-default-story', 'meta-no-default', {
+        includeDefaultExport: false,
+      });
+      const noDefaultStore = {
+        componentStoriesFromCSFFile: () => [noDefaultParts.story],
+        preparedMetaFromCSFFile: () => ({ prepareMeta: 'preparedMeta' }),
+        projectAnnotations,
+      } as unknown as StoryStore<Renderer>;
+      const noDefaultContext = new DocsContext(channel, noDefaultStore, renderStoryToElement, [
+        noDefaultParts.csfFile,
+      ]);
+      noDefaultContext.attachCSFFile(noDefaultParts.csfFile);
+
+      expect(noDefaultContext.resolveOf({ story: noDefaultParts.storyExport })).toEqual({
+        type: 'meta',
+        csfFile: noDefaultParts.csfFile,
+        preparedMeta: expect.any(Object),
+      });
+    });
+
+    it('resolves a CSF4 Story object to its story, not its containing CSF file', () => {
+      // A CSF4 Story (detected via `_tag === 'Story'`) is an individual export,
+      // not a namespace. The namespace fallback must skip it so that
+      // <Canvas of={Stories.Primary} /> still resolves to the Primary story.
+      const csf4Story = { _tag: 'Story', input: storyExport };
+      expect(context.resolveOf(csf4Story, ['story'])).toEqual({ type: 'story', story });
     });
 
     it('works for components', () => {

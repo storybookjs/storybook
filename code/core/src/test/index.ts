@@ -1,4 +1,3 @@
-import type { BoundFunctions } from '@testing-library/dom';
 import type { userEvent } from '@testing-library/user-event';
 
 import { instrument } from 'storybook/internal/instrumenter';
@@ -6,21 +5,11 @@ import { instrument } from 'storybook/internal/instrumenter';
 import { Assertion } from 'chai';
 
 import { expect as rawExpect } from './expect.ts';
-import { type queries } from './testing-library.ts';
 
 export * from './spy.ts';
 export type { Assertion, Expect } from './expect.ts';
 
-type Queries = BoundFunctions<typeof queries>;
-
 export type UserEventObject = ReturnType<typeof userEvent.setup>;
-
-declare module 'storybook/internal/csf' {
-  interface Canvas extends Queries {}
-  interface StoryContext {
-    userEvent: UserEventObject;
-  }
-}
 
 export const { expect } = instrument(
   { expect: rawExpect },

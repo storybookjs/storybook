@@ -33,6 +33,7 @@ const defaultOptions = {
   addComponents: true,
   webpackCompiler: () => undefined,
   extraMain: undefined,
+  frameworkOptions: undefined,
   extensions: undefined,
   componentsDestinationPath: undefined,
   storybookConfigFolder: '.storybook',
@@ -107,6 +108,7 @@ const hasFrameworkTemplates = (framework?: string) => {
 
   const frameworksWithTemplates: SupportedFramework[] = [
     SupportedFramework.ANGULAR,
+    SupportedFramework.ANGULAR_VITE,
     SupportedFramework.EMBER,
     SupportedFramework.HTML_VITE,
     SupportedFramework.NEXTJS,
@@ -130,7 +132,16 @@ const hasFrameworkTemplates = (framework?: string) => {
 export async function baseGenerator(
   packageManager: JsPackageManager,
   npmOptions: NpmOptions,
-  { language, builder, framework, renderer, pnp, features, dependencyCollector }: GeneratorOptions,
+  {
+    language,
+    builder,
+    framework,
+    renderer,
+    pnp,
+    features,
+    dependencyCollector,
+    storybookVersionSpecifier,
+  }: GeneratorOptions,
   _options: FrameworkOptions
 ) {
   const options = { ...defaultOptions, ..._options };
@@ -154,6 +165,7 @@ export async function baseGenerator(
     addScripts,
     addComponents,
     extraMain,
+    frameworkOptions,
     extensions,
     storybookConfigFolder,
     componentsDestinationPath,
@@ -222,7 +234,8 @@ export async function baseGenerator(
   }
 
   const versionedPackages = await packageManager.getVersionedPackages(
-    packagesToInstall as string[]
+    packagesToInstall as string[],
+    { storybookVersionSpecifier }
   );
 
   if (versionedPackages.length > 0) {
@@ -264,6 +277,7 @@ export async function baseGenerator(
   taskLog.message(`- Configuring main.${configurationFileExtension}`);
   await configureMain({
     framework: frameworkPackagePath,
+    frameworkOptions,
     features,
     frameworkPackage,
     prefixes,

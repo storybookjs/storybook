@@ -1,0 +1,13 @@
+{
+  "id": "docgen-unavailable",
+  "name": "DocgenUnavailableButton",
+  "path": "__PATH__",
+  "stories": {
+    "forms-docgen-unavailable--primary": {
+      "description": undefined,
+      "id": "forms-docgen-unavailable--primary",
+      "name": "Primary",
+      "summary": undefined,
+    },
+  },
+}

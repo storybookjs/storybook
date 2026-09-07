@@ -23,6 +23,7 @@ export interface ItemRef {
 export interface StoryRef {
   storyId: string;
   refId: string;
+  anchor?: string;
 }
 
 export type Highlight = ItemRef | null;

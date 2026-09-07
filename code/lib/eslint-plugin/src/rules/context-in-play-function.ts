@@ -2,7 +2,7 @@
  * @file Pass a context object when invoking a play function
  * @author Yann Braga
  */
-import type { TSESTree } from '@typescript-eslint/utils';
+import type { TSESTree } from '@typescript-eslint/types';
 
 import {
   isArrowFunctionExpression,

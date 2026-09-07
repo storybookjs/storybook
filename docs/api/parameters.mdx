@@ -52,6 +52,28 @@ Specifies how the canvas should [lay out the story](../configure/story-layout.md
 - **padded**: (default) Add padding to the story
 - **fullscreen**: Show the story as-is, without padding
 
+### `htmlLang`
+
+Type: `string`
+
+Default: `'en'`
+
+A [BCP-47 language tag](https://en.wikipedia.org/wiki/IETF_language_tag) (e.g. `'ja'`, `'de'`, `'fr-CH'`) describing the language of the **rendered story UI**. In story view it sets the `lang` attribute on the preview's `<html>` element; in docs view it sets `lang` on each embedded story canvas. Inherited project → meta → story.
+
+Use this to language the components you render — for example, a German story added for copy-length validation inside an otherwise English design system.
+
+Storybook's own interface (the manager UI and docs chrome such as toolbars and ArgTypes headers) always reports as English and is unaffected by this parameter.
+
+### `docs.lang`
+
+Type: `string`
+
+Default: `'en'`
+
+A BCP-47 language tag describing the language of the **docs prose** that Storybook renders — component and story descriptions, ArgTypes description cells, and free-form MDX prose. Resolved project → meta for page-level content and project → meta → story for per-story content.
+
+This is independent of [`htmlLang`](#htmllang): the language you _document_ in can differ from the language your stories _render_ in. Storybook chrome (toolbars, ArgTypes column headers, anchor links) stays English regardless.
+
 ### `options`
 
 Type:

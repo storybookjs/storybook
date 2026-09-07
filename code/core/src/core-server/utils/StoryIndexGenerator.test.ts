@@ -1,12 +1,17 @@
+import { existsSync } from 'node:fs';
 import { join } from 'node:path';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { normalizeStoriesEntry } from 'storybook/internal/common';
-import { toId } from 'storybook/internal/csf';
+import { toId } from 'storybook/internal/csf/csf-utils';
 import { getStorySortParameter, loadCsf } from 'storybook/internal/csf-tools';
 import { logger, once } from 'storybook/internal/node-logger';
-import type { NormalizedStoriesSpecifier, StoryIndexEntry } from 'storybook/internal/types';
+import type {
+  DocsIndexEntry,
+  NormalizedStoriesSpecifier,
+  StoryIndexEntry,
+} from 'storybook/internal/types';
 
 import { Tag } from '../../shared/constants/tags.ts';
 import { csfIndexer } from '../presets/common-preset.ts';
@@ -20,13 +25,7 @@ vi.mock('../utils/constants', () => {
   };
 });
 
-vi.mock('storybook/internal/csf', async (importOriginal) => {
-  const csf = await importOriginal<typeof import('storybook/internal/csf')>();
-  return {
-    ...csf,
-    toId: vi.fn(csf.toId),
-  };
-});
+vi.mock('storybook/internal/csf/csf-utils', { spy: true });
 
 vi.mock('storybook/internal/node-logger');
 
@@ -1531,6 +1530,56 @@ describe('StoryIndexGenerator', () => {
       });
     });
 
+    describe('anchors (experimentalSearchDocsHeadings)', () => {
+      const anchorsOptions = {
+        ...options,
+        docs: { ...options.docs, autodocs: 'tag' as const },
+        features: { experimentalSearchDocsHeadings: true },
+      };
+
+      it('adds story anchors to autodocs entries when the feature is enabled', async () => {
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/B.stories.ts',
+          options
+        );
+
+        const generator = new StoryIndexGenerator([specifier], anchorsOptions);
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect((storyIndex.entries['b--docs'] as DocsIndexEntry).anchors).toEqual([
+          { id: 'anchor--b--story-one', title: 'Story One' },
+        ]);
+      });
+
+      it('adds slugged heading anchors to MDX docs entries when the feature is enabled', async () => {
+        const generator = new StoryIndexGenerator(
+          [storiesSpecifier, docsSpecifier],
+          anchorsOptions
+        );
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(
+          (storyIndex.entries['docs2-yabbadabbadooo--docs'] as DocsIndexEntry).anchors
+        ).toEqual([{ id: 'docs-with-title', title: 'Docs with title' }]);
+      });
+
+      it('omits anchors entirely when the feature is disabled', async () => {
+        const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        const docsEntries = Object.values(storyIndex.entries).filter(
+          (entry) => entry.type === 'docs'
+        );
+        expect(docsEntries.length).toBeGreaterThan(0);
+        docsEntries.forEach((entry) => {
+          expect(entry).not.toHaveProperty('anchors');
+        });
+      });
+    });
+
     describe('docs specifier', () => {
       it('creates correct docs entries', async () => {
         const generator = new StoryIndexGenerator([storiesSpecifier, docsSpecifier], options);
@@ -1957,6 +2006,39 @@ describe('StoryIndexGenerator', () => {
         `);
       });
 
+      it('uses the explicit id prop on <Meta> for standalone mdx docs', async () => {
+        const docsSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './docs-id-generation/Standalone.docs.mdx',
+          options
+        );
+
+        const generator = new StoryIndexGenerator([docsSpecifier], options);
+        await generator.initialize();
+
+        const { storyIndex } = await generator.getIndexAndStats();
+        expect(storyIndex).toMatchInlineSnapshot(`
+          {
+            "entries": {
+              "custom-standalone-id--docs": {
+                "id": "custom-standalone-id--docs",
+                "importPath": "./docs-id-generation/Standalone.docs.mdx",
+                "name": "docs",
+                "storiesImports": [],
+                "tags": [
+                  "dev",
+                  "test",
+                  "manifest",
+                  "unattached-mdx",
+                ],
+                "title": "Standalone Page Title",
+                "type": "docs",
+              },
+            },
+            "v": 5,
+          }
+        `);
+      });
+
       it('puts the Meta of stories file first in storiesImports even when it is not the last import', async () => {
         const csfSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
           './src/*.stories.(js|ts)',
@@ -1997,6 +2079,28 @@ describe('StoryIndexGenerator', () => {
     });
 
     describe('warnings', () => {
+      it('does not match directories that have story-like names', async () => {
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './src/**/*.stories.tsx',
+          options
+        );
+
+        const files = await StoryIndexGenerator.findMatchingFiles(
+          specifier,
+          options.workingDir,
+          true
+        );
+        const storyLikeDirectory = join(
+          options.workingDir,
+          './src/__screenshots__/Button.stories.tsx'
+        );
+        const storyLikeDirectoryFile = join(storyLikeDirectory, 'Primary.png');
+
+        expect(existsSync(storyLikeDirectoryFile)).toBe(true);
+        expect(Object.keys(files)).not.toContain(storyLikeDirectory);
+        expect(Object.keys(files)).not.toContain(storyLikeDirectoryFile);
+      });
+
       it('when entries do not match any files', async () => {
         const generator = new StoryIndexGenerator(
           [normalizeStoriesEntry('./src/docs2/wrong.js', options)],

@@ -26,7 +26,7 @@ export async function stripStoryHMRBoundary() {
 
         return {
           code: s.toString(),
-          map: s.generateMap({ hires: true, source: id }),
+          map: s.generateMap({ hires: true, source: id }).toString(),
         };
       },
     },

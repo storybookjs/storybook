@@ -1,7 +1,15 @@
+import { rmSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { AngularJSON, ProjectType, copyTemplate } from 'storybook/internal/cli';
+import {
+  ANALOG_VITE_PLUGIN_ANGULAR_VERSION,
+  AngularJSON,
+  ProjectType,
+  copyTemplate,
+  toDevkitVersion,
+} from 'storybook/internal/cli';
+import { MIN_SUPPORTED_NODE_VERSIONS } from 'storybook/internal/common';
 import { logger, prompt } from 'storybook/internal/node-logger';
 import { SupportedBuilder, SupportedFramework, SupportedRenderer } from 'storybook/internal/types';
 
@@ -15,8 +23,39 @@ export default defineGeneratorModule({
   metadata: {
     projectType: ProjectType.ANGULAR,
     renderer: SupportedRenderer.ANGULAR,
-    framework: SupportedFramework.ANGULAR,
-    builderOverride: SupportedBuilder.WEBPACK5,
+    framework: (builder: SupportedBuilder) => {
+      return builder === SupportedBuilder.VITE
+        ? SupportedFramework.ANGULAR_VITE
+        : SupportedFramework.ANGULAR;
+    },
+    builderOverride: async ({ options }) => {
+      // In non-interactive contexts (--yes, CI, or no TTY) default to Vite without prompting.
+      const isInteractive =
+        !options.yes && !process.env.CI && !!process.stdout.isTTY && !!process.stdin.isTTY;
+
+      if (!isInteractive) {
+        return SupportedBuilder.VITE;
+      }
+
+      logger.info(dedent`
+        Storybook has two Angular builder options: Vite and Webpack 5.
+
+        We recommend angular-vite (in preview), which is much faster and more modern.
+        The webpack-based @storybook/angular remains available for projects that need it.
+      `);
+
+      return prompt.select({
+        message: 'Which builder would you like to use?',
+        options: [
+          {
+            label: '@storybook/angular-vite (Vite)',
+            value: SupportedBuilder.VITE,
+            hint: 'in preview',
+          },
+          { label: '@storybook/angular (Webpack)', value: SupportedBuilder.WEBPACK5 },
+        ],
+      });
+    },
   },
   configure: async (packageManager, context) => {
     const angularJSON = new AngularJSON();
@@ -47,9 +86,17 @@ export default defineGeneratorModule({
       );
     }
 
+    const isVite = context.builder === SupportedBuilder.VITE;
     const { root, projectType } = angularProject;
     const { projects } = angularJSON;
-    const useCompodoc = context.yes ? true : await promptForCompoDocs(context.telemetryService);
+    // `@storybook/angular-vite` turns `experimentalDocgenServer` on by default, and that path
+    // extracts Angular metadata in process. Compodoc has no role there, so init neither asks about
+    // it nor installs it. Turning the feature off is what brings the documented Compodoc setup back.
+    const useCompodoc = isVite
+      ? false
+      : context.yes
+        ? true
+        : await promptForCompoDocs(context.telemetryService);
     const storybookFolder = root ? `${root}/.storybook` : '.storybook';
 
     angularJSON.addStorybookEntries({
@@ -57,10 +104,15 @@ export default defineGeneratorModule({
       storybookFolder,
       useCompodoc,
       root,
+      useVite: isVite,
     });
     angularJSON.write();
 
-    const angularVersion = packageManager.getDependencyVersion('@angular/core');
+    const asRange = (specifier: string | null | undefined) =>
+      specifier && semver.validRange(specifier) ? specifier : null;
+    const angularVersion =
+      asRange(packageManager.getDependencyVersion('@angular/core')) ??
+      asRange(await packageManager.getDeclaredVersionSpecifier('@angular/core'));
 
     // Handle script addition for single-project workspaces
     if (Object.keys(projects).length === 1) {
@@ -87,22 +139,11 @@ export default defineGeneratorModule({
       copyTemplate(templateDir, root || undefined);
     }
 
-    const toDevkitVersion = (ngRange?: string | null) => {
-      if (!ngRange) {
-        return undefined;
-      }
-      const min = semver.minVersion(ngRange);
-
-      if (!min) {
-        return undefined;
-      }
-      const pre = min.prerelease && min.prerelease.length > 0 ? `-${min.prerelease.join('.')}` : '';
-      // devkit follows 0.<major*100 + minor>.<patch>
-      const devkitMinor = min.major * 100 + min.minor;
-      const versionCore = `0.${devkitMinor}.${min.patch}${pre}`;
-      const hasCaret = ngRange.trim().startsWith('^');
-      return hasCaret ? `^${versionCore}` : versionCore;
-    };
+    // `tsconfig.doc.json` only exists for Compodoc to read; `typings.d.ts` stays either way because
+    // `.storybook/tsconfig.json` lists it under `files`.
+    if (!useCompodoc) {
+      rmSync(join(storybookFolder, 'tsconfig.doc.json'), { force: true });
+    }
 
     const devkitVersion = toDevkitVersion(angularVersion);
 
@@ -112,16 +153,41 @@ export default defineGeneratorModule({
         : '@angular-devkit/build-angular',
       devkitVersion ? `@angular-devkit/architect@${devkitVersion}` : '@angular-devkit/architect',
       angularVersion ? `@angular-devkit/core@${angularVersion}` : '@angular-devkit/core',
-      angularVersion
-        ? `@angular/platform-browser-dynamic@${angularVersion}`
-        : '@angular/platform-browser-dynamic',
+      // @storybook/angular-vite renders via bootstrapApplication from @angular/platform-browser,
+      // so platform-browser-dynamic is only a peer requirement of the webpack framework.
+      ...(isVite
+        ? []
+        : [
+            angularVersion
+              ? `@angular/platform-browser-dynamic@${angularVersion}`
+              : '@angular/platform-browser-dynamic',
+          ]),
+    ];
+
+    // pnpm's strict isolation hides transitively-installed `@types/node`, so a fresh Angular
+    // project fails to resolve the `node` type definitions its tsconfig references. We pin to the
+    // lowest Node major Storybook supports rather than the version that happens to run `init`:
+    // the floor is deterministic across machines and guarantees the types never claim APIs newer
+    // than what Storybook itself relies on. If the project already declares `@types/node`,
+    // baseGenerator skips this entry, so users on newer runtimes keep their own version.
+    const minNodeMajor = Math.min(...MIN_SUPPORTED_NODE_VERSIONS.map((v) => v.major));
+
+    const extraPackages = [
+      `@types/node@^${minNodeMajor}`,
+      ...extraAngularDeps,
+      ...(isVite
+        ? [
+            angularVersion ? `@angular/animations@${angularVersion}` : '@angular/animations',
+            angularVersion ? `@angular/build@${angularVersion}` : '@angular/build',
+            `@analogjs/vite-plugin-angular@${ANALOG_VITE_PLUGIN_ANGULAR_VERSION}`,
+            'vite',
+          ]
+        : []),
+      ...(useCompodoc ? ['@compodoc/compodoc', '@storybook/addon-docs'] : []),
     ];
 
     return {
-      extraPackages: [
-        ...extraAngularDeps,
-        ...(useCompodoc ? ['@compodoc/compodoc', '@storybook/addon-docs'] : []),
-      ],
+      extraPackages,
       addScripts: false, // Handled above based on project count
       componentsDestinationPath: root ? `${root}/src/stories` : undefined,
       storybookConfigFolder: storybookFolder,

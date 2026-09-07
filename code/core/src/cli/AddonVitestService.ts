@@ -40,11 +40,25 @@ export class AddonVitestService {
   constructor(private readonly packageManager: JsPackageManager) {}
 
   /**
+   * Reduce a Vitest version specifier (exact or range) to a single concrete version for
+   * `semver.satisfies` comparisons, so dependency collection and postinstall template selection make
+   * the same major/minor decision. Uses the lower bound of a valid range, then coerces so a
+   * prerelease like `4.0.0-beta.1` is treated as `4.0.0` rather than failing `>=4.0.0`.
+   */
+  static getComparableVersion(specifier: string | null | undefined): string | undefined {
+    if (!specifier) {
+      return undefined;
+    }
+    const range = validRange(specifier);
+    return coerce(range ? minVersion(range)?.version : specifier)?.version;
+  }
+
+  /**
    * Collect all dependencies needed for @storybook/addon-vitest
    *
    * Returns versioned package strings ready for installation:
    *
-   * - Base packages: vitest, @vitest/browser, playwright
+   * - Base packages: vitest, @vitest/browser-playwright, playwright
    * - Next.js specific: @storybook/nextjs-vite
    * - Coverage reporter: @vitest/coverage-v8
    */
@@ -52,28 +66,12 @@ export class AddonVitestService {
     const allDeps = this.packageManager.getAllDependencies();
     const dependencies: string[] = [];
 
-    // Determine Vitest version/range from installed or declared dependency to avoid pulling
-    // incompatible majors by default.
-    let vitestVersionSpecifier = await this.packageManager.getInstalledVersion('vitest');
-    if (!vitestVersionSpecifier && allDeps['vitest']) {
-      vitestVersionSpecifier = allDeps['vitest'];
-    }
-
-    let isVitest4OrNewer = true;
-    if (vitestVersionSpecifier) {
-      const range = validRange(vitestVersionSpecifier);
-      const versionToCheck = range
-        ? minVersion(range)?.version
-        : coerce(vitestVersionSpecifier)?.version;
-      isVitest4OrNewer = versionToCheck ? satisfies(versionToCheck, '>=4.0.0') : true;
-    }
+    // Resolve the Vitest version/range to keep the derived `@vitest/*` packages on a compatible
+    // major. The package manager owns the resolution (e.g. reading a pnpm `catalog:` reference).
+    const vitestVersionSpecifier = await this.packageManager.getDeclaredVersionSpecifier('vitest');
 
     // only install these dependencies if they are not already installed
-    const basePackages = [
-      'vitest',
-      'playwright',
-      isVitest4OrNewer ? '@vitest/browser-playwright' : '@vitest/browser',
-    ];
+    const basePackages = ['vitest', 'playwright', '@vitest/browser-playwright'];
 
     // Only install these dependencies if they are not already installed
     for (const pkg of basePackages) {
@@ -92,15 +90,23 @@ export class AddonVitestService {
       dependencies.push('@vitest/coverage-v8');
     }
 
-    // Apply version specifiers to vitest-related packages
-    const versionedDependencies = dependencies.map((pkg) => {
-      if (pkg.includes('vitest') && vitestVersionSpecifier) {
-        return `${pkg}@${vitestVersionSpecifier}`;
-      }
-      return pkg;
-    });
+    if (!vitestVersionSpecifier) {
+      return dependencies;
+    }
 
-    return versionedDependencies;
+    // Pin the vitest-related packages to the resolved vitest version, letting the package manager
+    // apply its own convention (e.g. registering pnpm catalog entries). Playwright is versioned
+    // independently, so it is left untouched.
+    const related = dependencies.filter((pkg) => pkg.includes('vitest'));
+    const rest = dependencies.filter((pkg) => !pkg.includes('vitest'));
+    return [
+      ...this.packageManager.applyVersionToRelatedPackages(
+        related,
+        vitestVersionSpecifier,
+        'vitest'
+      ),
+      ...rest,
+    ];
   }
 
   /**
@@ -209,7 +215,7 @@ export class AddonVitestService {
    * - Webpack configuration compatibility
    * - Builder compatibility (Vite or Next.js)
    * - Renderer/framework support
-   * - Vitest version (>=3.0.0)
+   * - Vitest version (>=4.0.0)
    * - MSW version (>=2.0.0 if installed)
    * - Next.js installation (if using @storybook/nextjs)
    * - Vitest config files (if configDir provided)
@@ -255,14 +261,14 @@ export class AddonVitestService {
   async validatePackageVersions(): Promise<Result> {
     const reasons: string[] = [];
 
-    // Check Vitest version (>=3.0.0 - stricter requirement from postinstall)
+    // Check Vitest version (>=4.0.0)
     const vitestVersionSpecifier = await this.packageManager.getInstalledVersion('vitest');
     const coercedVitestVersion = vitestVersionSpecifier ? coerce(vitestVersionSpecifier) : null;
     const isCanary = coercedVitestVersion?.version.startsWith('0.0.0') ?? false;
 
-    if (coercedVitestVersion && !satisfies(coercedVitestVersion, '>=3.0.0') && !isCanary) {
+    if (coercedVitestVersion && !satisfies(coercedVitestVersion, '>=4.0.0') && !isCanary) {
       reasons.push(
-        `The addon requires Vitest 3.0.0 or higher. You are currently using ${vitestVersionSpecifier}.`
+        `The addon requires Vitest 4.0.0 or higher. You are currently using ${vitestVersionSpecifier}.`
       );
     }
 
@@ -288,18 +294,18 @@ export class AddonVitestService {
     const reasons: string[] = [];
     const projectRoot = getProjectRoot();
 
-    // Check workspace files
-    const vitestWorkspaceFile = find.any(
-      ['ts', 'js', 'json'].flatMap((ex) => [`vitest.workspace.${ex}`, `vitest.projects.${ex}`]),
+    // Check projects files
+    const vitestProjectsFile = find.any(
+      ['ts', 'js', 'json'].map((ex) => `vitest.projects.${ex}`),
       { cwd: directory, last: projectRoot }
     );
 
-    if (vitestWorkspaceFile?.endsWith('.json')) {
-      reasons.push(`Cannot auto-update JSON workspace file: ${vitestWorkspaceFile}`);
-    } else if (vitestWorkspaceFile) {
-      const fileContents = await fs.readFile(vitestWorkspaceFile, 'utf8');
+    if (vitestProjectsFile?.endsWith('.json')) {
+      reasons.push(`Cannot auto-update JSON projects file: ${vitestProjectsFile}`);
+    } else if (vitestProjectsFile) {
+      const fileContents = await fs.readFile(vitestProjectsFile, 'utf8');
       if (!canUpdateVitestWorkspaceFile(fileContents)) {
-        reasons.push(`Found an invalid workspace config file: ${vitestWorkspaceFile}`);
+        reasons.push(`Found an invalid projects config file: ${vitestProjectsFile}`);
       }
     }
 

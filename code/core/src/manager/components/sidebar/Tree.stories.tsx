@@ -4,21 +4,23 @@ import {
   type Addon_Collection,
   type Addon_TestProviderType,
   Addon_TypesEnum,
+  type StatusValue,
   type StatusesByStoryIdAndTypeId,
 } from 'storybook/internal/types';
 
 import type { Meta, StoryObj } from '@storybook/react-vite';
 
-import { action } from 'storybook/actions';
 import { type ComponentEntry, type IndexHash, ManagerContext } from 'storybook/manager-api';
-import { expect, fn, screen, userEvent, within } from 'storybook/test';
+import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 
+import { SIDEBAR_OPEN_CONTEXT_MENU } from 'storybook/internal/core-events';
+
+import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import { IconSymbols } from './IconSymbols.tsx';
 import { DEFAULT_REF_ID } from './Sidebar.tsx';
 import { Tree } from './Tree.tsx';
+import { TREE_ROW_HEIGHT } from './TreeNode.tsx';
 import { index } from './mockdata.large.ts';
-
-// TODO: add stories showcasing the Ctrl+Shift+U shortcut
 
 const managerContext: any = {
   state: {
@@ -33,7 +35,7 @@ const managerContext: any = {
     off: fn().mockName('api::off'),
     once: fn().mockName('api::once'),
     emit: fn().mockName('api::emit'),
-    getShortcutKeys: fn().mockName('api::getShortcutKeys'),
+    getShortcutKeys: fn(() => defaultShortcuts).mockName('api::getShortcutKeys'),
     getCurrentStoryData: fn().mockName('api::getCurrentStoryData'),
     getElements: fn(
       () =>
@@ -98,22 +100,14 @@ type Story = StoryObj<typeof meta>;
 
 export const Full: Story = {
   args: {
-    docsMode: false,
     isBrowsing: true,
     isMain: true,
     refId: DEFAULT_REF_ID,
-    setHighlightedItemId: action('setHighlightedItemId'),
   },
   render: (args) => {
     const [selectedId, setSelectedId] = useState(storyId);
     return (
-      <Tree
-        {...args}
-        data={index}
-        selectedStoryId={selectedId}
-        onSelectStoryId={setSelectedId}
-        highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
-      />
+      <Tree {...args} data={index} selectedStoryId={selectedId} onSelectStoryId={setSelectedId} />
     );
   },
 };
@@ -124,11 +118,17 @@ export const Dark: Story = {
 
 export const SingleStoryComponents: Story = {
   args: {
-    docsMode: false,
     isBrowsing: true,
     isMain: true,
     refId: DEFAULT_REF_ID,
-    setHighlightedItemId: action('setHighlightedItemId'),
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    // The hoisted single-story component renders exactly one row — the story replaces the
+    // component instead of appearing alongside a phantom component row.
+    await canvas.findAllByText('🔥 Single');
+    await expect(canvasElement.querySelectorAll('[data-item-id="single"]').length).toBe(0);
+    await expect(canvasElement.querySelectorAll('[data-item-id="single--single"]').length).toBe(1);
   },
   render: (args) => {
     const [selectedId, setSelectedId] = useState('tooltip-tooltipbuildlist--default');
@@ -186,7 +186,6 @@ export const SingleStoryComponents: Story = {
             return acc;
           }, {} as IndexHash),
         }}
-        highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
         selectedStoryId={selectedId}
         onSelectStoryId={setSelectedId}
       />
@@ -199,7 +198,6 @@ export const DocsOnlySingleStoryComponents = {
     const [selectedId, setSelectedId] = useState('tooltip-tooltipbuildlist--default');
     return (
       <Tree
-        docsMode={false}
         isBrowsing
         isMain
         refId={DEFAULT_REF_ID}
@@ -248,8 +246,6 @@ export const DocsOnlySingleStoryComponents = {
             return acc;
           }, {} as IndexHash),
         }}
-        highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
-        setHighlightedItemId={action('setHighlightedItemId')}
         selectedStoryId={selectedId}
         onSelectStoryId={setSelectedId}
       />
@@ -257,37 +253,6 @@ export const DocsOnlySingleStoryComponents = {
   },
 };
 
-// SkipToCanvas Link only shows on desktop widths
-export const SkipToCanvasLinkFocused: Story = {
-  ...DocsOnlySingleStoryComponents,
-  parameters: {
-    chromatic: { viewports: [1280] },
-    viewport: {
-      options: {
-        desktop: {
-          name: 'Desktop',
-          styles: {
-            width: '100%',
-            height: '100%',
-          },
-        },
-      },
-    },
-  },
-  globals: {
-    viewport: { value: 'desktop' },
-  },
-  play: async ({ canvasElement }) => {
-    const screen = await within(canvasElement);
-    const link = await screen.findByText('Skip to content');
-
-    await link.focus();
-
-    await expect(link).toBeVisible();
-  },
-};
-
-// SkipToCanvas Link only shows on desktop widths
 export const WithContextContent: Story = {
   ...DocsOnlySingleStoryComponents,
   parameters: {
@@ -319,6 +284,12 @@ export const WithContextContent: Story = {
     const popover = screen.getByRole('dialog');
     await expect(popover).toBeVisible();
     expect(popover).toHaveTextContent('TEST_PROVIDER_CONTEXT_CONTENT');
+
+    // Focus stays on the popover container on open — autofocusing the first item makes
+    // screen readers announce it twice. The first Tab reaches the first actionable item.
+    await waitFor(() => expect(popover).toHaveFocus());
+    await userEvent.tab();
+    await expect(within(popover).getByText('Open in editor').closest('button')).toHaveFocus();
   },
 };
 
@@ -346,32 +317,16 @@ const dualSlotData: IndexHash = {
 
 function makeDualSlotStory(
   allStatuses: StatusesByStoryIdAndTypeId,
-  contextOverride?: { state?: Record<string, unknown> }
+  includedStatusFilters?: StatusValue[]
 ): Story {
   return {
     args: {
-      docsMode: false,
       isBrowsing: true,
       isMain: true,
       refId: DEFAULT_REF_ID,
-      setHighlightedItemId: action('setHighlightedItemId'),
       allStatuses,
+      includedStatusFilters,
     },
-    decorators: contextOverride
-      ? [
-          (storyFn) => (
-            <ManagerContext.Provider
-              value={{
-                ...managerContext,
-                state: { ...managerContext.state, ...contextOverride.state },
-              }}
-            >
-              <IconSymbols />
-              {storyFn()}
-            </ManagerContext.Provider>
-          ),
-        ]
-      : undefined,
     render: (args) => {
       const [selectedId, setSelectedId] = useState(dualSlotStoryId);
       return (
@@ -380,7 +335,6 @@ function makeDualSlotStory(
           data={dualSlotData}
           selectedStoryId={selectedId}
           onSelectStoryId={setSelectedId}
-          highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
         />
       );
     },
@@ -422,8 +376,61 @@ export const WithChangeDetectionAndTestStatus: Story = makeDualSlotStory(
   },
   // Modified branch icon only renders when the modified status filter is
   // active; activate it so the dual-slot design (change + test) is visible.
-  { state: { includedStatusFilters: ['status-value:modified'] } }
+  ['status-value:modified']
 );
+
+/**
+ * Ctrl+Shift+U flow: the tree opens the menu for the selected story when the shortcut's channel
+ * event fires and prepends a "Go to story" navigation item, one Tab away from the focused popover
+ * container. Statuses stay on the rows; the menu carries navigation and provider entries.
+ */
+export const ContextMenuKeyboardEntry: Story = {
+  ...makeDualSlotStory({
+    [dualSlotStoryId]: {
+      'storybook/change-detection': {
+        storyId: dualSlotStoryId,
+        typeId: 'storybook/change-detection',
+        value: 'status-value:modified',
+        title: 'Change Detection',
+        description: 'Story is modified',
+        sidebarContextMenu: false,
+      },
+      'storybook/vitest': {
+        storyId: dualSlotStoryId,
+        typeId: 'storybook/vitest',
+        value: 'status-value:error',
+        title: 'Vitest',
+        description: 'Test failed',
+      },
+    },
+  }),
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    await canvas.findByText('marketing hero');
+
+    // Simulate the global shortcut by invoking the handler the tree registered for the
+    // shortcut's channel event. Registrations accumulate across stories in the mocked
+    // api, so take the latest — earlier ones belong to unmounted trees.
+    const registrations = managerContext.api.on.mock.calls.filter(
+      ([event]: [string]) => event === SIDEBAR_OPEN_CONTEXT_MENU
+    );
+    const handler = registrations.at(-1)?.[1];
+    await expect(handler).toBeDefined();
+    handler();
+
+    const popover = await screen.findByRole('dialog');
+
+    // Focus stays on the popover container on open — autofocusing the first item makes
+    // screen readers announce it twice. The first Tab reaches the "Go to story" item.
+    await waitFor(() => expect(popover).toHaveFocus());
+    await userEvent.tab();
+    await expect(within(popover).getByText('Go to story').closest('button')).toHaveFocus();
+
+    // Status links were removed from the context menu; statuses stay on the row itself.
+    expect(within(popover).queryByText('Vitest')).not.toBeInTheDocument();
+    expect(within(popover).queryByText('Change Detection')).not.toBeInTheDocument();
+  },
+};
 
 export const WithTestStatusOnly: Story = makeDualSlotStory({
   [dualSlotStoryId]: {
@@ -485,7 +492,6 @@ BranchWithChangeDetectionPriority.render = (args) => {
       data={dualSlotData}
       selectedStoryId={selectedId}
       onSelectStoryId={setSelectedId}
-      highlightedRef={{ current: { itemId: selectedId, refId: DEFAULT_REF_ID } }}
     />
   );
 };
@@ -508,13 +514,18 @@ export const WithModified: Story = {
         },
       },
     },
-    { state: { includedStatusFilters: ['status-value:modified'] } }
+    ['status-value:modified']
   ),
   play: async ({ canvasElement }) => {
     const canvas = within(canvasElement);
-    // modified filter is active — icon should be visible at story leaf and parent branch
+    // modified filter is active — icon must be visible on the story's own leaf row AND the
+    // parent branch roll-up
     const buttons = await canvas.findAllByTestId('tree-change-status-button');
-    await expect(buttons.length).toBeGreaterThanOrEqual(1);
+    await expect(buttons.length).toBeGreaterThanOrEqual(2);
+    const leafRow = canvasElement.querySelector(`[data-item-id="${dualSlotStoryId}"]`);
+    await expect(
+      leafRow?.querySelector('[data-testid="tree-change-status-button"]')
+    ).not.toBeNull();
   },
 };
 
@@ -539,6 +550,124 @@ export const WithNew: Story = {
     const canvas = within(canvasElement);
     // new status is always shown at both leaf and branch levels
     const buttons = await canvas.findAllByTestId('tree-change-status-button');
-    await expect(buttons.length).toBeGreaterThanOrEqual(1);
+    await expect(buttons.length).toBeGreaterThanOrEqual(2);
+    const leafRow = canvasElement.querySelector(`[data-item-id="${dualSlotStoryId}"]`);
+    await expect(
+      leafRow?.querySelector('[data-testid="tree-change-status-button"]')
+    ).not.toBeNull();
+  },
+};
+
+// ─── Sticky ancestors of the topmost visible row (VSCode-style sticky scroll) ────────────────────
+
+const stickyStoryId =
+  'webapp-screens-marketing-featuresscreens-documentscreen-componentexample--base';
+/** Ancestor chain of `stickyStoryId`, root-most first — the rows expected to pin when it is the topmost visible row. */
+const stickyChainIds = [
+  'webapp-screens',
+  'webapp-screens-marketing',
+  'webapp-screens-marketing-featuresscreens',
+  'webapp-screens-marketing-featuresscreens-documentscreen',
+  'webapp-screens-marketing-featuresscreens-documentscreen-componentexample',
+];
+
+export const StickyAncestors: Story = {
+  args: {
+    isBrowsing: true,
+    isMain: true,
+    refId: DEFAULT_REF_ID,
+  },
+  render: (args) => {
+    const [selectedId, setSelectedId] = useState(stickyStoryId);
+    return (
+      <div data-testid="sticky-harness" style={{ height: 320 }}>
+        <Tree {...args} data={index} selectedStoryId={selectedId} onSelectStoryId={setSelectedId} />
+      </div>
+    );
+  },
+  play: async ({ canvasElement }) => {
+    // The virtualized tree is its own scroll container; pinned ancestors render in an overlay.
+    const scroller = canvasElement.querySelector<HTMLElement>('[role="treegrid"]')!;
+    const overlayIds = () =>
+      [
+        ...canvasElement.querySelectorAll('[data-testid="sticky-overlay"] [data-pinned-item-id]'),
+      ].map((el) => el.getAttribute('data-pinned-item-id'));
+    const frame = () =>
+      new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+
+    // The selected deep story is centered on mount; the overlay shows (a suffix of) its
+    // ancestor chain, in order, and never the leaf itself.
+    await waitFor(() => {
+      const ids = overlayIds();
+      expect(ids.length).toBeGreaterThan(0);
+      expect(stickyChainIds.join(',')).toContain(ids.join(','));
+      expect(ids).not.toContain(stickyStoryId);
+    });
+
+    // Jitter regression: overlay membership must be stable across single-pixel scrolls
+    // (membership derives from row offsets only, never from the engaged stack).
+    const stable = overlayIds().join();
+    for (const delta of [-1, 1, -1]) {
+      scroller.scrollTop += delta;
+      await frame();
+      expect(overlayIds().join()).toBe(stable);
+    }
+
+    // Back at the very top nothing is pinned.
+    scroller.scrollTop = 0;
+    await waitFor(() => {
+      expect(overlayIds()).toEqual([]);
+    });
+
+    // A branch pins as soon as it is partially hidden: expand the first top-level branch,
+    // nudge it 10px past the viewport top, and it is already pinned. Collapsed branches
+    // never pin (their next row is not a descendant).
+    const firstRow = canvasElement.querySelector<HTMLElement>('[data-item-id]')!;
+    const firstRowId = firstRow.getAttribute('data-item-id');
+    // The virtualizer disables pointer events on rows briefly while scrolling.
+    await waitFor(() => {
+      expect(getComputedStyle(firstRow).pointerEvents).not.toBe('none');
+    });
+    await userEvent.click(firstRow);
+    scroller.scrollTop = 10;
+    await waitFor(() => {
+      expect(overlayIds()).toEqual([firstRowId]);
+    });
+  },
+};
+
+export const StickyAncestorsDark: Story = {
+  ...StickyAncestors,
+  globals: { sb_theme: 'dark' },
+};
+
+/** Plain arrow keys must move focus between rows (react-aria keyboard navigation). */
+export const KeyboardNavigation: Story = {
+  args: {
+    isBrowsing: true,
+    isMain: true,
+    refId: DEFAULT_REF_ID,
+  },
+  render: (args) => {
+    const [selectedId, setSelectedId] = useState(storyId);
+    return (
+      <Tree {...args} data={index} selectedStoryId={selectedId} onSelectStoryId={setSelectedId} />
+    );
+  },
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+    const first = await canvas.findByText('marketing hero');
+    await userEvent.click(first);
+    const focusedId = () =>
+      canvasElement
+        .querySelector('[data-item-id][data-focused="true"]')
+        ?.getAttribute('data-item-id');
+    await waitFor(() => expect(focusedId()).toBe('images--marketing-hero'));
+
+    await userEvent.keyboard('{ArrowDown}');
+    await waitFor(() => expect(focusedId()).toBe('images--brand'));
+
+    await userEvent.keyboard('{ArrowUp}');
+    await waitFor(() => expect(focusedId()).toBe('images--marketing-hero'));
   },
 };

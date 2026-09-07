@@ -1,6 +1,6 @@
 {
   "name": "@storybook/nextjs",
-  "version": "10.4.0-alpha.19",
+  "version": "11.0.0-alpha.0",
   "description": "Storybook for Next.js: Develop, document, and test UI components in isolation",
   "keywords": [
     "storybook",
@@ -36,7 +36,6 @@
       "code": "./src/export-mocks/cache/index.ts",
       "default": "./dist/export-mocks/cache/index.js"
     },
-    "./compatibility/draft-mode.compat": "./dist/compatibility/draft-mode.compat.js",
     "./config/preview": "./dist/config/preview.js",
     "./export-mocks": "./dist/export-mocks/index.js",
     "./headers.mock": {
@@ -108,11 +107,11 @@
     "@types/semver": "^7.7.1",
     "babel-loader": "^9.1.3",
     "css-loader": "^6.7.3",
-    "image-size": "^2.0.2",
     "loader-utils": "^3.2.1",
     "node-polyfill-webpack-plugin": "^2.0.1",
     "postcss": "^8.4.38",
     "postcss-loader": "^8.1.1",
+    "probe-image-size": "^7.3.0",
     "react-refresh": "^0.14.0",
     "resolve-url-loader": "^5.0.0",
     "sass-loader": "^16.0.5",
@@ -129,15 +128,16 @@
     "@types/babel__preset-env": "^7",
     "@types/loader-utils": "^2.0.5",
     "@types/node": "^22.19.1",
+    "@types/probe-image-size": "^7.2.5",
     "@types/react-refresh": "^0",
     "next": "^15.2.3",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "webpack": "^5.65.0"
   },
   "peerDependencies": {
     "@types/react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "@types/react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
-    "next": "^14.1.0 || ^15.0.0 || ^16.0.0",
+    "next": "^15.0.0 || ^16.0.0",
     "react": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "react-dom": "^16.8.0 || ^17.0.0 || ^18.0.0 || ^19.0.0",
     "storybook": "workspace:^",

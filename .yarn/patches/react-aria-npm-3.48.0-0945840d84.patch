@@ -1,0 +1,78 @@
+diff --git a/dist/private/overlays/calculatePosition.cjs b/dist/private/overlays/calculatePosition.cjs
+index 379d9a4c18e222ca6320b70af39cd22c0caf48f3..633da26c8799a89b528918c7f10c0bca7167e119 100644
+--- a/dist/private/overlays/calculatePosition.cjs
++++ b/dist/private/overlays/calculatePosition.cjs
+@@ -356,7 +356,7 @@ function $43b053bcc899501d$export$4b834cebd9e5cebe(node, ignoreScale) {
+     let { top: top, left: left, width: width, height: height } = node.getBoundingClientRect();
+     // Use offsetWidth and offsetHeight if this is an HTML element, so that
+     // the size is not affected by scale transforms.
+-    if (ignoreScale && node instanceof node.ownerDocument.defaultView.HTMLElement) {
++    if (ignoreScale && node.ownerDocument.defaultView && node instanceof node.ownerDocument.defaultView.HTMLElement) {
+         width = node.offsetWidth;
+         height = node.offsetHeight;
+     }
+diff --git a/dist/private/overlays/calculatePosition.js b/dist/private/overlays/calculatePosition.js
+index aa585640a389c7a82312fa2a42e0f9cccd488c5f..074cac3333c8e8f8df81cc0db0218ef197dc8828 100644
+--- a/dist/private/overlays/calculatePosition.js
++++ b/dist/private/overlays/calculatePosition.js
+@@ -365,7 +365,7 @@ function $ba2991ee81d3897a$export$4b834cebd9e5cebe(node, ignoreScale) {
+     let { top: top, left: left, width: width, height: height } = node.getBoundingClientRect();
+     // Use offsetWidth and offsetHeight if this is an HTML element, so that
+     // the size is not affected by scale transforms.
+-    if (ignoreScale && node instanceof node.ownerDocument.defaultView.HTMLElement) {
++    if (ignoreScale && node.ownerDocument.defaultView && node instanceof node.ownerDocument.defaultView.HTMLElement) {
+         width = node.offsetWidth;
+         height = node.offsetHeight;
+     }
+diff --git a/dist/private/overlays/calculatePosition.mjs b/dist/private/overlays/calculatePosition.mjs
+index ff3d7c3d7ba24eeed43ab6a9b1b98533ea7e381c..d0acfa9672a11df4ad135d68bb3c726be57eefed 100644
+--- a/dist/private/overlays/calculatePosition.mjs
++++ b/dist/private/overlays/calculatePosition.mjs
+@@ -349,7 +349,7 @@ function $954926fb6168ae2a$export$4b834cebd9e5cebe(node, ignoreScale) {
+     let { top: top, left: left, width: width, height: height } = node.getBoundingClientRect();
+     // Use offsetWidth and offsetHeight if this is an HTML element, so that
+     // the size is not affected by scale transforms.
+-    if (ignoreScale && node instanceof node.ownerDocument.defaultView.HTMLElement) {
++    if (ignoreScale && node.ownerDocument.defaultView && node instanceof node.ownerDocument.defaultView.HTMLElement) {
+         width = node.offsetWidth;
+         height = node.offsetHeight;
+     }
+diff --git a/dist/private/utils/isFocusable.cjs b/dist/private/utils/isFocusable.cjs
+index 429761d9841dfebe7b7e49267ff7fa34a1b009b9..cb6d7448e3c725c858d7ad63d257276ffb3c0633 100644
+--- a/dist/private/utils/isFocusable.cjs
++++ b/dist/private/utils/isFocusable.cjs
+@@ -46,7 +46,7 @@ function $48f566b6becd50da$export$bebd5a1431fec25d(element) {
+ function $48f566b6becd50da$var$isInert(element) {
+     let node = element;
+     while(node != null){
+-        if (node instanceof node.ownerDocument.defaultView.HTMLElement && node.inert) return true;
++        if (node.ownerDocument.defaultView && node instanceof node.ownerDocument.defaultView.HTMLElement && node.inert) return true;
+         node = node.parentElement;
+     }
+     return false;
+diff --git a/dist/private/utils/isFocusable.js b/dist/private/utils/isFocusable.js
+index de779817e244ab97ec267d297089555d10a85511..0de6cb0af8254988cecf66a0871047f23100ba14 100644
+--- a/dist/private/utils/isFocusable.js
++++ b/dist/private/utils/isFocusable.js
+@@ -39,7 +39,7 @@ function $ee5e22534121197a$export$bebd5a1431fec25d(element) {
+ function $ee5e22534121197a$var$isInert(element) {
+     let node = element;
+     while(node != null){
+-        if (node instanceof node.ownerDocument.defaultView.HTMLElement && node.inert) return true;
++        if (node.ownerDocument.defaultView && node instanceof node.ownerDocument.defaultView.HTMLElement && node.inert) return true;
+         node = node.parentElement;
+     }
+     return false;
+diff --git a/dist/private/utils/isFocusable.mjs b/dist/private/utils/isFocusable.mjs
+index d29c257f391589e5c06d8279f54b483864cb2dbc..f36a7ee287be99705b28d2f79073b97e78e28acc 100644
+--- a/dist/private/utils/isFocusable.mjs
++++ b/dist/private/utils/isFocusable.mjs
+@@ -39,7 +39,7 @@ function $3b8b240c1bf84ab9$export$bebd5a1431fec25d(element) {
+ function $3b8b240c1bf84ab9$var$isInert(element) {
+     let node = element;
+     while(node != null){
+-        if (node instanceof node.ownerDocument.defaultView.HTMLElement && node.inert) return true;
++        if (node.ownerDocument.defaultView && node instanceof node.ownerDocument.defaultView.HTMLElement && node.inert) return true;
+         node = node.parentElement;
+     }
+     return false;

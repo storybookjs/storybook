@@ -48,6 +48,13 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "anchors": [
+            {
+              "id": "hello",
+              "title": "hello",
+            },
+          ],
+          "id": undefined,
           "imports": [],
           "isTemplate": false,
           "metaTags": undefined,
@@ -79,6 +86,13 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "anchors": [
+            {
+              "id": "hello",
+              "title": "hello",
+            },
+          ],
+          "id": undefined,
           "imports": [],
           "isTemplate": false,
           "metaTags": undefined,
@@ -101,6 +115,44 @@ describe('analyzeMdx', () => {
     });
   });
 
+  describe('id', () => {
+    it('string literal id', async () => {
+      const input = dedent`
+        # hello
+
+        <Meta title="foobar" id="custom-id" />
+      `;
+      await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
+        {
+          "anchors": [
+            {
+              "id": "hello",
+              "title": "hello",
+            },
+          ],
+          "id": "custom-id",
+          "imports": [],
+          "isTemplate": false,
+          "metaTags": undefined,
+          "name": undefined,
+          "of": undefined,
+          "summary": undefined,
+          "title": "foobar",
+        }
+      `);
+    });
+    it('template literal id', async () => {
+      const input = dedent`
+        # hello
+
+        <Meta id={\`foobar\`} />
+      `;
+      await expect(analyzeMdx(input)).rejects.toThrowErrorMatchingInlineSnapshot(
+        `[Error: Expected string literal id, received JSXExpressionContainer]`
+      );
+    });
+  });
+
   describe('of', () => {
     it('basic', async () => {
       const input = dedent`
@@ -111,6 +163,8 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "anchors": [],
+          "id": undefined,
           "imports": [
             "@storybook/blocks",
             "./Button.stories",
@@ -152,6 +206,8 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "anchors": [],
+          "id": undefined,
           "imports": [
             "@storybook/blocks",
             "./Button.stories",
@@ -182,6 +238,13 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "anchors": [
+            {
+              "id": "docs-with-of",
+              "title": "Docs with of",
+            },
+          ],
+          "id": undefined,
           "imports": [
             "../src/A.stories",
           ],
@@ -214,6 +277,8 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "anchors": [],
+          "id": undefined,
           "imports": [],
           "isTemplate": false,
           "metaTags": undefined,
@@ -241,6 +306,8 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "anchors": [],
+          "id": undefined,
           "imports": [],
           "isTemplate": true,
           "metaTags": undefined,
@@ -257,6 +324,8 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "anchors": [],
+          "id": undefined,
           "imports": [],
           "isTemplate": true,
           "metaTags": undefined,
@@ -273,6 +342,8 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "anchors": [],
+          "id": undefined,
           "imports": [],
           "isTemplate": false,
           "metaTags": undefined,
@@ -312,6 +383,8 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "anchors": [],
+          "id": undefined,
           "imports": [
             "./Button.stories",
           ],
@@ -361,6 +434,13 @@ describe('analyzeMdx', () => {
     `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "anchors": [
+            {
+              "id": "hello",
+              "title": "hello",
+            },
+          ],
+          "id": undefined,
           "imports": [],
           "isTemplate": false,
           "metaTags": undefined,
@@ -379,6 +459,8 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "anchors": [],
+          "id": undefined,
           "imports": [
             "./Button.stories",
           ],
@@ -423,6 +505,8 @@ describe('analyzeMdx', () => {
       `;
       await expect(analyzeMdx(input)).resolves.toMatchInlineSnapshot(`
         {
+          "anchors": [],
+          "id": undefined,
           "imports": [
             "./Button.stories",
           ],
@@ -434,6 +518,59 @@ describe('analyzeMdx', () => {
           "title": undefined,
         }
       `);
+    });
+  });
+
+  describe('anchors', () => {
+    it('markdown', async () => {
+      const input = dedent`
+        # hello **world**
+        ## Goodbye
+        ### Hi again
+
+        <Meta title="foobar" />
+      `;
+      const { anchors } = await analyzeMdx(input);
+      expect(anchors).toEqual([
+        { id: 'hello-world', title: 'hello world' },
+        { id: 'goodbye', title: 'Goodbye' },
+        { id: 'hi-again', title: 'Hi again' },
+      ]);
+    });
+
+    it('slugs punctuation the same way as the docs renderer', async () => {
+      const input = dedent`
+        # Do more!
+        ## What's next?
+      `;
+      const { anchors } = await analyzeMdx(input);
+      expect(anchors).toEqual([
+        { id: 'do-more', title: 'Do more!' },
+        { id: 'whats-next', title: "What's next?" },
+      ]);
+    });
+
+    it('deduplicates repeated headings with numeric suffixes', async () => {
+      const input = dedent`
+        # Usage
+        ## Usage
+        ### Usage
+      `;
+      const { anchors } = await analyzeMdx(input);
+      expect(anchors).toEqual([
+        { id: 'usage', title: 'Usage' },
+        { id: 'usage-1', title: 'Usage' },
+        { id: 'usage-2', title: 'Usage' },
+      ]);
+    });
+
+    it('slugs H5/H6 headings so later duplicate ids match the docs renderer', async () => {
+      const input = dedent`
+        ##### Usage
+        ## Usage
+      `;
+      const { anchors } = await analyzeMdx(input);
+      expect(anchors).toEqual([{ id: 'usage-1', title: 'Usage' }]);
     });
   });
 });

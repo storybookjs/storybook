@@ -90,7 +90,8 @@ Here's a highlight of notable directories and files:
 │   ├── builders
 │   ├── chromatic.config.json
 │   ├── core                     # Core package for UI and API of Storybook
-│   ├── e2e-tests
+│   ├── e2e-internal             # Playwright e2e tests for the internal Storybook UI
+│   ├── e2e-sandbox              # Playwright e2e tests for generated sandboxes
 │   ├── frameworks               # Different framework-bundler versions of Storybook
 │   ├── lib                      # CLI and plugins
 │   ├── node_modules

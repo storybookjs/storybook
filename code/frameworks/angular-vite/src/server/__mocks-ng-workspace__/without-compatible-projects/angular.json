@@ -1,0 +1,7 @@
+{
+  "version": 1,
+  "projects": {
+    "noop-project": {}
+  },
+  "defaultProject": "missing-project"
+}

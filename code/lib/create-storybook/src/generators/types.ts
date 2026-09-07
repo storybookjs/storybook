@@ -19,6 +19,7 @@ export type GeneratorOptions = {
   builder: SupportedBuilder;
   framework: SupportedFramework;
   renderer: SupportedRenderer;
+  storybookVersionSpecifier?: string;
   linkable: boolean;
   // TODO: Remove in SB11
   pnp: boolean;
@@ -37,6 +38,12 @@ export interface FrameworkOptions {
   addComponents?: boolean;
   webpackCompiler?: ({ builder }: { builder: SupportedBuilder }) => 'babel' | 'swc' | undefined;
   extraMain?: any;
+  /**
+   * Options to attach to the framework field in main.ts, producing `framework: { name, options }`.
+   * Use this for framework-specific config (e.g. Angular's `compodoc`) that belongs in the
+   * framework options rather than as a top-level main field.
+   */
+  frameworkOptions?: Record<string, any>;
   extensions?: string[];
   storybookConfigFolder?: string;
   componentsDestinationPath?: string;
@@ -78,11 +85,14 @@ export interface GeneratorMetadata {
   /**
    * If the builder is a function, it will be called to determine the builder. This is useful for
    * generators that need to determine the builder based on the project type in cases where the
-   * builder cannot be detected (Webpack and Vite are both non-existent dependencies).
+   * builder cannot be detected (Webpack and Vite are both non-existent dependencies). The function
+   * receives the original CLI options so it can short-circuit prompts in non-interactive (`--yes`)
+   * mode.
    */
   builderOverride?:
     | SupportedBuilder
     | ((context: {
+        options: CommandOptions;
         telemetryService: TelemetryService;
       }) => SupportedBuilder | Promise<SupportedBuilder>);
 }
@@ -92,6 +102,7 @@ export interface GeneratorContext {
   renderer: SupportedRenderer;
   builder: SupportedBuilder;
   language: SupportedLanguage;
+  storybookVersionSpecifier?: string;
   telemetryService: TelemetryService;
   features: Set<Feature>;
   dependencyCollector: DependencyCollector;
@@ -119,10 +130,18 @@ export interface GeneratorModule {
   }: {
     packageManager: JsPackageManager;
   }) => Promise<void> | void;
+  /**
+   * The function that runs after dependencies have been installed. Use this for tasks that require
+   * the project's dependencies (e.g. CLI tools shipped by a dependency) to be available on disk.
+   *
+   * Examples: re-aligning native package versions in an Expo project with `npx expo install --fix`.
+   */
+  postInstall?: ({ packageManager }: { packageManager: JsPackageManager }) => Promise<void> | void;
 }
 
 export type CommandOptions = {
   packageManager: PackageManagerName;
+  storybookVersionSpecifier?: string;
   usePnp?: boolean;
   features?: Array<Feature>;
   type?: ProjectType;

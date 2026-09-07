@@ -28,4 +28,7 @@ export default defineGeneratorModule({
     await reactNativeWebGeneratorModule.postConfigure();
     reactNativeGeneratorModule.postConfigure({ packageManager });
   },
+  postInstall: async ({ packageManager }) => {
+    await reactNativeGeneratorModule.postInstall?.({ packageManager });
+  },
 });

@@ -6,3 +6,4 @@ export * from './types.ts';
 export * from './utils.ts';
 
 export * from './enhanceArgTypes.ts';
+export * from './docgenServiceArgTypes.ts';

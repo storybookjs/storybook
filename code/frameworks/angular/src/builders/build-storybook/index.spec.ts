@@ -1,36 +1,45 @@
 import { Architect, createBuilder } from '@angular-devkit/architect';
 import { TestingArchitectHost } from '@angular-devkit/architect/testing';
 import { schema } from '@angular-devkit/core';
-import * as path from 'node:path';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { buildStaticStandalone } from 'storybook/internal/core-server';
+import { JsPackageManagerFactory } from 'storybook/internal/common';
 
-const buildDevStandaloneMock = vi.fn();
-const buildStaticStandaloneMock = vi.fn();
+import handler from './index.ts';
+import buildSchema from '../../../build-schema.json';
 
-const buildMock = {
-  buildDevStandalone: buildDevStandaloneMock,
-  buildStaticStandalone: buildStaticStandaloneMock,
+vi.mock('storybook/internal/core-server', () => ({
+  buildDevStandalone: vi.fn(),
+  buildStaticStandalone: vi.fn(),
   withTelemetry: (name: string, options: any, fn: any) => fn(),
-};
+}));
 
-vi.doMock('storybook/internal/core-server', () => buildMock);
-vi.doMock('storybook/internal/common', () => ({
+vi.mock('storybook/internal/node-logger', async (importOriginal) => {
+  const original = await importOriginal<typeof import('storybook/internal/node-logger')>();
+  return {
+    ...original,
+    prompt: {
+      executeTaskWithSpinner: (fn: any) => fn(),
+    },
+  };
+});
+
+vi.mock('storybook/internal/common', async (importOriginal) => ({
+  ...(await importOriginal()),
   JsPackageManagerFactory: {
-    getPackageManager: () => ({
-      runPackageCommand: mockRunScript,
-    }),
+    getPackageManager: vi.fn(),
   },
   getEnvConfig: (options: any) => options,
   versions: {
     storybook: 'x.x.x',
   },
 }));
-vi.doMock('empathic/find', () => ({ up: () => './storybook/tsconfig.ts' }));
+
+vi.mock('empathic/find', () => ({ up: () => './storybook/tsconfig.ts' }));
 
 const mockRunScript = vi.fn();
 
-// Randomly fails on CI. TODO: investigate why
-describe.skip('Build Storybook Builder', () => {
+describe('Build Storybook Builder', () => {
   let architect: Architect;
   let architectHost: TestingArchitectHost;
 
@@ -62,13 +71,16 @@ describe.skip('Build Storybook Builder', () => {
       }
     );
 
-    // This will either take a Node package name, or a path to the directory
-    // for the package.json file.
-    await architectHost.addBuilderFromPackage(path.join(__dirname, '../../..'));
+    // Manually add the builder, as angular uses `require` calls in addBuilderFromPackage which bypass mocking
+    architectHost.addBuilder('@storybook/angular:build-storybook', handler, '', buildSchema);
   });
 
   beforeEach(() => {
-    buildStaticStandaloneMock.mockImplementation((_options: unknown) => Promise.resolve(_options));
+    vi.mocked(buildStaticStandalone).mockImplementation(() => Promise.resolve());
+    // @ts-expect-error mocked module
+    vi.mocked(JsPackageManagerFactory.getPackageManager).mockImplementation(() => ({
+      runPackageCommand: mockRunScript,
+    }));
   });
 
   afterEach(() => {
@@ -86,8 +98,8 @@ describe.skip('Build Storybook Builder', () => {
     await run.stop();
 
     expect(output.success).toBeTruthy();
-    expect(mockRunScript).not.toHaveBeenCalledWith();
-    expect(buildStaticStandaloneMock).toHaveBeenCalledWith(
+    expect(mockRunScript).not.toHaveBeenCalled();
+    expect(buildStaticStandalone).toHaveBeenCalledWith(
       expect.objectContaining({
         angularBrowserTarget: 'angular-cli:build-2',
         angularBuilderContext: expect.any(Object),
@@ -115,8 +127,8 @@ describe.skip('Build Storybook Builder', () => {
     await run.stop();
 
     expect(output.success).toBeTruthy();
-    expect(mockRunScript).not.toHaveBeenCalledWith();
-    expect(buildStaticStandaloneMock).toHaveBeenCalledWith(
+    expect(mockRunScript).not.toHaveBeenCalled();
+    expect(buildStaticStandalone).toHaveBeenCalledWith(
       expect.objectContaining({
         angularBrowserTarget: null,
         angularBuilderContext: expect.any(Object),
@@ -133,7 +145,7 @@ describe.skip('Build Storybook Builder', () => {
     );
   });
 
-  it('should build storybook with webpack stats.json', async () => {
+  it('should build storybook with stats.json', async () => {
     const run = await architect.scheduleBuilder('@storybook/angular:build-storybook', {
       tsConfig: 'path/to/tsConfig.json',
       compodoc: false,
@@ -145,8 +157,8 @@ describe.skip('Build Storybook Builder', () => {
     await run.stop();
 
     expect(output.success).toBeTruthy();
-    expect(mockRunScript).not.toHaveBeenCalledWith();
-    expect(buildStaticStandaloneMock).toHaveBeenCalledWith(
+    expect(mockRunScript).not.toHaveBeenCalled();
+    expect(buildStaticStandalone).toHaveBeenCalledWith(
       expect.objectContaining({
         angularBrowserTarget: null,
         angularBuilderContext: expect.any(Object),
@@ -162,23 +174,46 @@ describe.skip('Build Storybook Builder', () => {
     );
   });
 
+  it('should build storybook with custom stats.json path', async () => {
+    const run = await architect.scheduleBuilder('@storybook/angular:build-storybook', {
+      tsConfig: 'path/to/tsConfig.json',
+      compodoc: false,
+      statsJson: './custom-stats.json',
+    });
+
+    const output = await run.result;
+
+    await run.stop();
+
+    expect(output.success).toBeTruthy();
+    expect(mockRunScript).not.toHaveBeenCalled();
+    expect(buildStaticStandalone).toHaveBeenCalledWith(
+      expect.objectContaining({
+        angularBrowserTarget: null,
+        angularBuilderContext: expect.any(Object),
+        configDir: '.storybook',
+        loglevel: undefined,
+        quiet: false,
+        outputDir: 'storybook-static',
+        packageJson: expect.any(Object),
+        mode: 'static',
+        tsConfig: 'path/to/tsConfig.json',
+        statsJson: './custom-stats.json',
+      })
+    );
+  });
+
   it('should throw error', async () => {
-    buildStaticStandaloneMock.mockRejectedValue(true);
+    vi.mocked(buildStaticStandalone).mockRejectedValue(true);
 
     const run = await architect.scheduleBuilder('@storybook/angular:build-storybook', {
       browserTarget: 'angular-cli:build-2',
       compodoc: false,
     });
 
-    try {
-      await run.result;
-
-      expect(false).toEqual('Throw expected');
-    } catch (error) {
-      expect(error).toEqual(
-        'Broken build, fix the error above.\nYou may need to refresh the browser.'
-      );
-    }
+    await expect(run.result).rejects.toThrow(
+      'Broken build, fix the error above.\nYou may need to refresh the browser.'
+    );
   });
 
   it('should run compodoc', async () => {
@@ -191,12 +226,11 @@ describe.skip('Build Storybook Builder', () => {
     await run.stop();
 
     expect(output.success).toBeTruthy();
-    expect(mockRunScript).toHaveBeenCalledWith(
-      'compodoc',
-      ['-p', './storybook/tsconfig.ts', '-d', '.', '-e', 'json'],
-      ''
-    );
-    expect(buildStaticStandaloneMock).toHaveBeenCalledWith(
+    expect(mockRunScript).toHaveBeenCalledWith({
+      args: ['compodoc', '-p', './storybook/tsconfig.ts', '-d', '.', '-e', 'json'],
+      cwd: '',
+    });
+    expect(buildStaticStandalone).toHaveBeenCalledWith(
       expect.objectContaining({
         angularBrowserTarget: 'angular-cli:build-2',
         angularBuilderContext: expect.any(Object),
@@ -224,12 +258,12 @@ describe.skip('Build Storybook Builder', () => {
     await run.stop();
 
     expect(output.success).toBeTruthy();
-    expect(mockRunScript).not.toHaveBeenCalledWith();
-    expect(buildStaticStandaloneMock).toHaveBeenCalledWith(
+    expect(mockRunScript).not.toHaveBeenCalled();
+    expect(buildStaticStandalone).toHaveBeenCalledWith(
       expect.objectContaining({
         angularBrowserTarget: null,
         angularBuilderContext: expect.any(Object),
-        angularBuilderOptions: { assets: [], styles: ['style.scss'] },
+        angularBuilderOptions: expect.objectContaining({ assets: [], styles: ['style.scss'] }),
         configDir: '.storybook',
         loglevel: undefined,
         quiet: false,

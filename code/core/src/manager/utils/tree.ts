@@ -12,7 +12,7 @@ import type {
 } from 'storybook/manager-api';
 
 import { DEFAULT_REF_ID } from '../components/sidebar/Sidebar.tsx';
-import type { Dataset, Item, RefType, SearchItem } from '../components/sidebar/types.ts';
+import type { Dataset, Item, RefType } from '../components/sidebar/types.ts';
 
 const { document, window: globalWindow } = global;
 
@@ -70,7 +70,10 @@ export function getPath(item: Item, ref: Pick<RefType, 'id' | 'title' | 'index'>
   return ref.id === DEFAULT_REF_ID ? [] : [ref.title || ref.id];
 }
 
-export const searchItem = (item: Item, ref: Parameters<typeof getPath>[1]): SearchItem => {
+export const searchItem = <T extends Item>(
+  item: T,
+  ref: Parameters<typeof getPath>[1]
+): T & { refId: string; path: string[] } => {
   return { ...item, refId: ref.id, path: getPath(item, ref) };
 };
 
@@ -174,7 +177,9 @@ export const collapseSingleStoryComponents = (data: IndexHash): IndexHash => {
         const { children, parent, name } = entry;
         const [childId] = children;
         if (parent) {
-          const parentEntry = data[parent] as GroupEntry;
+          // Read from the accumulator, not the source data: a sibling hoist may already have
+          // rewritten this parent's children, and starting from the stale copy would undo it.
+          const parentEntry = acc[parent] as GroupEntry;
           const siblings = [...parentEntry.children];
           siblings[siblings.indexOf(entry.id)] = childId;
           acc[parent] = { ...parentEntry, children: siblings };
@@ -182,9 +187,14 @@ export const collapseSingleStoryComponents = (data: IndexHash): IndexHash => {
         acc[childId] = {
           ...(data[childId] as StoryEntry),
           name,
-          parent,
+          // A hoisted story replacing a top-level component legitimately has no parent, even
+          // though the API type declares `parent` as required for stories.
+          parent: parent as StoryEntry['parent'],
           depth: data[childId].depth - 1,
         };
+        // Remove the replaced component: indexToTree resolves rows from parent pointers, so a
+        // surviving entry would render as a phantom row next to the hoisted story.
+        delete acc[entry.id];
         return acc;
       },
       { ...data }

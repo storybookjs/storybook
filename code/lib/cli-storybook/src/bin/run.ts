@@ -11,7 +11,7 @@ import { withTelemetry } from 'storybook/internal/core-server';
 import { CLI_COLORS, logTracker, logger } from 'storybook/internal/node-logger';
 import { addToGlobalContext, telemetry } from 'storybook/internal/telemetry';
 
-import { Option, program } from 'commander';
+import { InvalidArgumentError, Option, program } from 'commander';
 import envinfo from 'envinfo';
 import leven from 'leven';
 import picocolors from 'picocolors';
@@ -19,11 +19,11 @@ import picocolors from 'picocolors';
 import { version } from '../../package.json';
 import { add } from '../add.ts';
 import { doAutomigrate } from '../automigrate/index.ts';
+import { resolveRequestedFeatures } from '../automigrate/fixes/experimental-features.ts';
 import { doctor } from '../doctor/index.ts';
 import { link } from '../link.ts';
 import { migrate } from '../migrate.ts';
 import { sandbox } from '../sandbox.ts';
-import { aiSetup } from '../ai/index.ts';
 import { type UpgradeOptions, upgrade } from '../upgrade.ts';
 
 addToGlobalContext('cliVersion', versions.storybook);
@@ -168,6 +168,19 @@ command('upgrade')
     )
   )
   .option('-y --yes', 'Skip prompting the user')
+  .addOption(
+    new Option(
+      '--features <list>',
+      'Comma-separated list of experimental feature flags to enable during the upgrade'
+    ).argParser((value) => {
+      try {
+        resolveRequestedFeatures(value);
+      } catch (error) {
+        throw new InvalidArgumentError(error instanceof Error ? error.message : String(error));
+      }
+      return value;
+    })
+  )
   .option('-f --force', 'force the upgrade, skipping autoblockers')
   .option('-n --dry-run', 'Only check for upgrades, do not install')
   .option('-s --skip-check', 'Skip postinstall version and automigration checks')
@@ -298,36 +311,6 @@ command('doctor')
       logger.outro('Done');
     }).catch(handleCommandFailure(options.logfile));
   });
-
-const aiCommand = command('ai')
-  .description('AI agent helpers for Storybook')
-  .option(
-    '-o, --output <path>',
-    'Write the prompt output to a file instead of printing it to stdout'
-  );
-
-aiCommand
-  .command('setup')
-  .description('Generate setup instructions to write stories for real components')
-  .addOption(
-    new Option('--package-manager <type>', 'Force package manager for installing deps').choices(
-      Object.values(PackageManagerName)
-    )
-  )
-  .option('-c, --config-dir <dir-name>', 'Directory of Storybook configuration')
-  .action(async (options, cmd) => {
-    const parentOptions = cmd.parent?.opts() ?? {};
-    const runId = Math.random().toString(36);
-    const mergedOptions = { ...parentOptions, ...options, runId };
-    await withTelemetry('ai-setup', { cliOptions: mergedOptions }, async () => {
-      await aiSetup(mergedOptions);
-    }).catch(handleCommandFailure(mergedOptions.logfile));
-  });
-
-// Show available subcommands when `storybook ai` is run without arguments
-aiCommand.action(() => {
-  aiCommand.outputHelp();
-});
 
 program.on('command:*', ([invalidCmd]) => {
   let errorMessage = ` Invalid command: ${picocolors.bold(invalidCmd)}.\n See --help for a list of available commands.`;

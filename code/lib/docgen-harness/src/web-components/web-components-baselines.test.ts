@@ -6,7 +6,6 @@ import { fileURLToPath } from 'node:url';
 import { afterEach, describe, expect, it } from 'vitest';
 
 import type { StoryContext } from 'storybook/internal/types';
-import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
 
 import {
   extractArgTypes,
@@ -52,10 +51,14 @@ describe('web-components legacy baselines', () => {
     const tagName = meta.component;
 
     const argTypes = extractArgTypes(tagName);
+    expect(argTypes, `${fixtureCase}: no manifest declaration found for ${tagName}`).not.toBeNull();
+    if (argTypes === null) {
+      throw new Error(`${fixtureCase}: no manifest declaration found for ${tagName}`);
+    }
     await recordArgTypesSnapshot({
       path: join(testDir, 'argtypes.snapshot'),
       label: `${fixtureCase}/argtypes.snapshot`,
-      candidate: (argTypes ?? {}) as StrictArgTypes,
+      candidate: argTypes,
     });
 
     const description = extractComponentDescription(tagName) ?? '';
@@ -65,10 +68,7 @@ describe('web-components legacy baselines', () => {
       const args = { ...meta.args, ...story.args };
       const context = {
         id: `${fixtureCase}--${exportName}`,
-        title: meta.title,
-        name: exportName,
         component: tagName,
-        args,
       } as StoryContext<WebComponentsRenderer>;
       const storyRender = story.render ?? meta.render;
       const storyResult = storyRender ? storyRender(args) : defaultRender(args, context);

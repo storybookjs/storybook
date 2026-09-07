@@ -217,6 +217,7 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - Lit default-render snippets are empty because args are assigned as properties.
 - Property-only Lit bindings are dropped from snippets without a warning.
 - Lit event listener bindings are dropped from snippets without a warning.
+- Reflected Lit attributes can be missing when the snippet is read before asynchronous reflection.
 - Cross-file inheritance is fully resolved: the analyzer resolves superclass and mixin members into the tag's declaration, so `lit-inheritance-mixin/` is a regression baseline with no marker.
 - `vanilla-multi-definition` targets only `multi-beta` correctly at this baseline version, so it is a regression baseline rather than a red marker.
 

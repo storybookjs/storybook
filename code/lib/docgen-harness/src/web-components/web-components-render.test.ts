@@ -18,11 +18,8 @@ const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
   .map((entry) => entry.name)
   .sort();
 
-let canvasElement: HTMLDivElement | undefined;
-
 afterEach(() => {
-  canvasElement?.remove();
-  canvasElement = undefined;
+  document.body.replaceChildren();
 });
 
 describe('web-components fixtures render', () => {
@@ -30,12 +27,10 @@ describe('web-components fixtures render', () => {
     const storiesModule = await import(`./__testfixtures__/${fixtureCase}/input.stories.ts`);
     const composed = composeStories(storiesModule, projectAnnotations);
     for (const [storyName, Story] of Object.entries(composed)) {
-      canvasElement = document.createElement('div');
+      const canvasElement = document.createElement('div');
       document.body.appendChild(canvasElement);
       await Story.run({ canvasElement });
       expect(canvasElement.firstElementChild, `${fixtureCase}/${storyName}`).not.toBeNull();
-      canvasElement.remove();
-      canvasElement = undefined;
     }
   });
 });

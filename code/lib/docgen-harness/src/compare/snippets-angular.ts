@@ -81,7 +81,7 @@ export function assertGatableAngularSnippet(snippet: string): void {
 const compareRootElement = (
   baseline: ParsedAngularSnippet,
   candidate: ParsedAngularSnippet
-): Violation[] => compareRootStructure(baseline, candidate, candidate.attributeNames);
+): Violation[] => compareRootStructure(baseline, candidate);
 
 export const angularSnippetGrammar: SnippetGrammar<ParsedAngularSnippet> = {
   parse: parseAngularSnippet,

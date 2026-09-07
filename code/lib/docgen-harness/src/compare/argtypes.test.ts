@@ -541,6 +541,13 @@ describe('compareArgTypes', () => {
       expectedViolations: [],
     },
     {
+      input: '{ name: "other" } -> { name: "string" }',
+      output: 'passes',
+      baselineType: { name: 'other' } as never,
+      candidateType: { name: 'string' } as never,
+      expectedViolations: [],
+    },
+    {
       input: '{ name: "PanelConfig" } -> { name: "string" }',
       output: 'type-fidelity violation',
       baselineType: { name: 'PanelConfig' } as never,

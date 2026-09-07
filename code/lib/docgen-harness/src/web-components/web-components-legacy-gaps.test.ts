@@ -17,6 +17,7 @@ const BASELINES = {
   argsDefaultSnippet: 'lit-basic-attributes/snippet-ArgsDefaultRender.snapshot',
   propertyOnlySnippet: 'lit-property-only/snippet-LitTemplate.snapshot',
   eventsSnippet: 'lit-events/snippet-LitTemplate.snapshot',
+  backSideSnippet: 'demo-wc-card/snippet-Back.snapshot',
 } as const;
 
 const baseline = (key: keyof typeof BASELINES) =>
@@ -70,5 +71,10 @@ describe('legacy snippet gaps (red until a re-recorded baseline closes them)', (
   gapTest('event listeners are represented or warned about', () => {
     // Legacy: lit event listener bindings do not serialize into HTML.
     expect(baseline('eventsSnippet')).toMatch(/my-change|my-close|warning/i);
+  });
+
+  gapTest('reflected Lit attributes are visible after property binding', () => {
+    // Legacy reads innerHTML before Lit reflects `.backSide=${true}` to `back-side`.
+    expect(baseline('backSideSnippet')).toContain('back-side');
   });
 });

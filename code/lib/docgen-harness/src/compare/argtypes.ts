@@ -252,7 +252,7 @@ function typeCurrentOrBetter(baseline: SBType, candidate: SBType): boolean {
   return false;
 }
 
-const SB_TYPE_NAMES: ReadonlySet<string> = new Set<SBType['name']>([
+const SB_TYPE_NAMES: ReadonlySet<SBType['name']> = new Set<SBType['name']>([
   'array',
   'boolean',
   'date',
@@ -273,53 +273,31 @@ const SB_TYPE_NAMES: ReadonlySet<string> = new Set<SBType['name']>([
 // The canonical "engine extracted nothing" node; `resolvesStub` accepts any candidate for it.
 const UNRESOLVED_TYPE: SBType = { name: 'other', value: 'undefined' };
 
-const isTypeRecord = (value: unknown): value is SBType =>
-  typeof value === 'object' && value !== null;
-
-const isTypeMap = (value: unknown): value is Record<string, SBType> =>
-  typeof value === 'object' &&
-  value !== null &&
-  !Array.isArray(value) &&
-  Object.values(value).every(isTypeRecord);
-
-// Recorded corpora and the legacy Web Components extractor emit malformed sbTypes: manifest type
-// text in `name`, structural nodes without a `value`. Free-text names become `other` stubs so the
-// stub-resolution rule reads them; valueless structures become the unresolved marker.
+// Recorded corpora and the legacy Web Components extractor emit malformed top-level sbTypes.
 function normalizeRecordedType(type: SBType): SBType {
   const name = (type as { name?: unknown }).name;
   if (typeof name !== 'string') {
     return UNRESOLVED_TYPE;
   }
-  if (!SB_TYPE_NAMES.has(name)) {
+  if (!SB_TYPE_NAMES.has(name as SBType['name'])) {
     return { name: 'other', value: name };
   }
-  switch (type.name) {
-    case 'union':
-    case 'intersection':
-    case 'tuple':
-      if (!Array.isArray(type.value) || !type.value.every(isTypeRecord)) {
-        return UNRESOLVED_TYPE;
-      }
-      return { ...type, value: type.value.map(normalizeRecordedType) };
-    case 'object':
-      if (!isTypeMap(type.value)) {
-        return UNRESOLVED_TYPE;
-      }
-      return {
-        ...type,
-        value: Object.fromEntries(
-          Object.entries(type.value).map(([key, member]) => [key, normalizeRecordedType(member)])
-        ),
-      };
-    case 'array':
-      return isTypeRecord(type.value)
-        ? { ...type, value: normalizeRecordedType(type.value) }
-        : UNRESOLVED_TYPE;
-    case 'enum':
-      return Array.isArray(type.value) ? type : UNRESOLVED_TYPE;
-    default:
-      return type;
+  const value = (type as { value?: unknown }).value;
+  if (name === 'other') {
+    return typeof value === 'string' ? type : UNRESOLVED_TYPE;
   }
+  if (
+    (name === 'array' ||
+      name === 'object' ||
+      name === 'enum' ||
+      name === 'union' ||
+      name === 'intersection' ||
+      name === 'tuple') &&
+    (typeof value !== 'object' || value === null)
+  ) {
+    return UNRESOLVED_TYPE;
+  }
+  return type;
 }
 
 // The corpus markers for "the engine extracted nothing"; any candidate improves on them.

@@ -20,7 +20,7 @@
     "src/angular/render-helpers.ts",
     "src/angular/__storyshapes__/button-shapes/input.stories.ts",
     "src/angular/story-docs/__testfixtures__/non-standalone-module/input.stories.ts",
-    // These import web-components renderer browser source, which is not strict-clean in this program; vitest checks them.
+    // These import web-components framework-api.ts/globals.ts, which are not strict-clean here.
     "src/web-components/web-components-baselines.test.ts",
     "src/web-components/web-components-render.test.ts"
   ],

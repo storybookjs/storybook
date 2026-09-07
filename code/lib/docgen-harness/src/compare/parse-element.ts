@@ -49,8 +49,7 @@ export const parseAttributes = (attrText: string): ParsedAttribute[] =>
 // the candidate's names (a candidate may add a value to it).
 export function compareRootStructure(
   baseline: { tag: string; bareAttributes: Set<string> },
-  candidate: { tag: string },
-  candidateNames: Set<string>
+  candidate: { tag: string; attributeNames: Set<string> }
 ): Violation[] {
   const violations: Violation[] = [];
   if (baseline.tag !== candidate.tag) {
@@ -61,7 +60,7 @@ export function compareRootStructure(
     });
   }
   for (const bareAttribute of [...baseline.bareAttributes].sort()) {
-    if (!candidateNames.has(bareAttribute)) {
+    if (!candidate.attributeNames.has(bareAttribute)) {
       violations.push({
         arg: bareAttribute,
         kind: 'lost-attribute',

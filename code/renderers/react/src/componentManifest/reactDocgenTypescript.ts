@@ -1,4 +1,5 @@
 import { dirname, join, resolve } from 'node:path';
+import { statSync } from 'node:fs';
 
 import {
   type ComponentDoc,
@@ -420,13 +421,32 @@ function parseTsconfig(typescript: TypeScriptRuntime, configPath: string) {
   return readTsconfig(typescript, configPath).parsed;
 }
 
-function readTsconfig(typescript: TypeScriptRuntime, configPath: string) {
-  const { config } = typescript.readConfigFile(configPath, typescript.sys.readFile);
-  return {
-    config,
-    parsed: typescript.parseJsonConfigFileContent(config, typescript.sys, dirname(configPath)),
-  };
-}
+const readTsconfig = cached(
+  (typescript: TypeScriptRuntime, configPath: string) => {
+    const { config } = typescript.readConfigFile(
+      configPath,
+      typescript.sys.readFile,
+    );
+    return {
+      config,
+      parsed: typescript.parseJsonConfigFileContent(
+        config,
+        typescript.sys,
+        dirname(configPath),
+      ),
+    };
+  },
+  {
+    key: (typescript, configPath) => {
+      let mtimeMs = 0;
+      try {
+        mtimeMs = statSync(configPath).mtimeMs;
+      } catch {}
+      return `${normalizeFileName(typescript, configPath)}::${mtimeMs}`;
+    },
+    name: "readTsconfig",
+  },
+);
 
 function isSameFileName(typescript: TypeScriptRuntime, left: string, right: string) {
   return normalizeFileName(typescript, left) === normalizeFileName(typescript, right);

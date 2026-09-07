@@ -1,0 +1,53 @@
+{
+  "count": {
+    "description": undefined,
+    "name": "count",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": undefined,
+    },
+  },
+  "disabled": {
+    "description": undefined,
+    "name": "disabled",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": undefined,
+    },
+  },
+  "label": {
+    "description": undefined,
+    "name": "label",
+    "required": false,
+    "table": {
+      "category": "attributes",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": undefined,
+      },
+    },
+    "type": {
+      "name": undefined,
+    },
+  },
+}

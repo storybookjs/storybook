@@ -1,0 +1,88 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "lit-events.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Emits changes from the text field.",
+          "name": "LitEvents",
+          "members": [
+            {
+              "kind": "field",
+              "name": "value",
+              "type": {
+                "text": "string"
+              },
+              "default": "'ready'",
+              "description": "Current text value.",
+              "attribute": "value"
+            },
+            {
+              "kind": "method",
+              "name": "emitChange"
+            },
+            {
+              "kind": "method",
+              "name": "close"
+            }
+          ],
+          "events": [
+            {
+              "name": "my-change",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "Fired when the value changes."
+            },
+            {
+              "name": "my-close",
+              "type": {
+                "text": "CustomEvent"
+              },
+              "description": "Fired when the panel closes."
+            }
+          ],
+          "attributes": [
+            {
+              "name": "value",
+              "type": {
+                "text": "string"
+              },
+              "default": "'ready'",
+              "description": "Current text value.",
+              "fieldName": "value"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "lit-events",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "LitEvents",
+          "declaration": {
+            "name": "LitEvents",
+            "module": "lit-events.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "lit-events",
+          "declaration": {
+            "name": "LitEvents",
+            "module": "lit-events.ts"
+          }
+        }
+      ]
+    }
+  ]
+}

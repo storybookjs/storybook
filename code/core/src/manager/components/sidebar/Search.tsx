@@ -168,6 +168,32 @@ export type SearchProps = {
   searchFieldContent?: ReactNode;
 };
 
+const getComponentStoryResults = (
+  componentResult: SearchResult,
+  dataset: CombinedDataset
+): SearchResult[] => {
+  const { item } = componentResult;
+
+  if (item.type !== 'component') {
+    return [];
+  }
+
+  const ref = dataset.hash[item.refId];
+
+  if (!ref?.index) {
+    return [];
+  }
+
+  return item.children
+    .map((childId) => ref.index?.[childId])
+    .filter((child): child is NonNullable<typeof child> => child?.type === 'story')
+    .map((story) => ({
+      item: searchItem(story, dataset.hash[item.refId]),
+      matches: [],
+      score: componentResult.score,
+    }));
+};
+
 export const Search = React.memo<SearchProps>(function Search({
   children,
   dataset,
@@ -254,6 +280,14 @@ export const Search = React.memo<SearchProps>(function Search({
         return item.type === 'component' || item.type === 'docs' || item.type === 'story';
       });
 
+      const matchesWithComponentStories = allMatches.flatMap((result) => {
+        if (result.item.type !== 'component') {
+          return [result];
+        }
+
+        return [result, ...getComponentStoryResults(result, dataset)];
+      });
+
       // When the index is being created, we have a legacy piece of logic that
       // wraps every docs page inside a component entry. This originates from
       // Storybook 6 and has never been removed. Because of it, we must dedupe
@@ -271,7 +305,7 @@ export const Search = React.memo<SearchProps>(function Search({
       // ranked between the component and its docs entry are deduplicated, as they were before.
       const pendingDocsReplacements = new Set<string>();
 
-      const distinctResults = allMatches.filter(({ item }) => {
+      const distinctResults = matchesWithComponentStories.filter(({ item }) => {
         // This always gets called before the corresponding docs item
         // because of the sorting performed by the search index. So it's
         // safe to use `pendingDocsReplacements` in a single-pass lookup.
@@ -292,7 +326,7 @@ export const Search = React.memo<SearchProps>(function Search({
           return true;
         }
         // @ts-expect-error (non strict)
-        if (resultIds.has(item.parent)) {
+        if (item.type !== 'story' && resultIds.has(item.parent)) {
           return false;
         }
         resultIds.add(item.id);

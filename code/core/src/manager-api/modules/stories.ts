@@ -923,18 +923,8 @@ export const init: ModuleFn<SubAPI, SubState> = ({
 
     experimental_setFilters: async (filters) => {
       await store.setState((state) => ({ filters: { ...state.filters, ...filters } }));
-
-      const { internal_index: index } = store.getState();
-
-      if (!index) {
+      if (!(await applyCurrentFilters())) {
         return;
-      }
-      // apply new filters by setting the index again
-      await api.setIndex(index);
-
-      const refs = await fullAPI.getRefs();
-      for (const [refId, { internal_index, ...ref }] of Object.entries(refs)) {
-        await fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
       }
 
       for (const id of Object.keys(filters)) {
@@ -1049,6 +1039,23 @@ export const init: ModuleFn<SubAPI, SubState> = ({
         });
       }
     },
+  };
+
+  const applyCurrentFilters = async () => {
+    const { internal_index: index } = store.getState();
+
+    if (!index) {
+      return false;
+    }
+
+    await api.setIndex(index);
+
+    const refs = await fullAPI.getRefs();
+    for (const [refId, { internal_index, ...ref }] of Object.entries(refs)) {
+      await fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
+    }
+
+    return true;
   };
 
   const recomputeTagsFilter = () => {
@@ -1304,24 +1311,9 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   });
 
   fullStatusStore.onAllStatusChange(
-    throttle(
-      async () => {
-        const { internal_index: index } = store.getState();
-
-        if (!index) {
-          return;
-        }
-
-        await api.setIndex(index);
-
-        const refs = await fullAPI.getRefs();
-        for (const [refId, { internal_index, ...ref }] of Object.entries(refs)) {
-          await fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
-        }
-      },
-      STATUS_CHANGE_REBUILD_THROTTLE,
-      { edges: ['leading', 'trailing'] }
-    )
+    throttle(applyCurrentFilters, STATUS_CHANGE_REBUILD_THROTTLE, {
+      edges: ['leading', 'trailing'],
+    })
   );
 
   const config = provider.getConfig();

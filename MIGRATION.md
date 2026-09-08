@@ -1,6 +1,7 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vite: requires Vite 7.0 or higher](#vite-requires-vite-70-or-higher)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
@@ -539,6 +540,37 @@
   - [Deprecated embedded addons](#deprecated-embedded-addons)
 
 ## From version 10.x to 11.0.0
+
+### Top-level `setConfig` layout and UI options removed
+
+The deprecated top-level layout and UI options passed to `addons.setConfig` are no longer applied.
+Move layout options into `layout` and `enableShortcuts` into `ui`:
+
+```diff
+ addons.setConfig({
+-  showNav: false,
+-  panelPosition: 'right',
+-  enableShortcuts: false,
++  layout: {
++    showNav: false,
++    panelPosition: 'right',
++  },
++  ui: {
++    enableShortcuts: false,
++  },
+ });
+```
+
+Run the automigration to update `.storybook/manager.*`:
+
+```sh
+npx storybook automigrate set-config-layout
+```
+
+The automigration stops with manual instructions when a configuration containing an explicit
+legacy option cannot be transformed safely. This includes computed properties, spreads, conflicting
+top-level and nested values, and moves that could change expression evaluation order. When the same
+option exists in both places, keep the nested value because it was authoritative in Storybook 10.
 
 ### Vitest Addon: requires Vitest 4.0 or higher
 

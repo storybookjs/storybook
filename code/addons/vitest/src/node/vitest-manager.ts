@@ -162,7 +162,11 @@ export class VitestManager {
     }
 
     try {
-      await this.vitest.standalone();
+      if (typeof this.vitest.standalone === 'function') {
+        await this.vitest.standalone();
+      } else {
+        await this.vitest.init();
+      }
     } catch (e: any) {
       let message = 'Failed to initialize Vitest';
       const isV8 = e.message?.includes('@vitest/coverage-v8');

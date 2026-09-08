@@ -88,7 +88,6 @@
     "@types/node": "^22.19.1",
     "@types/semver": "^7.7.1",
     "@vitest/browser-playwright": "5.0.0",
-    "@vitest/runner": "^4.1.6",
     "empathic": "^2.0.0",
     "es-toolkit": "^1.43.0",
     "istanbul-lib-report": "^3.0.1",
@@ -109,7 +108,6 @@
   "peerDependencies": {
     "@vitest/browser": "^3.0.0 || ^4.0.0 || ^5.0.0",
     "@vitest/browser-playwright": "^4.0.0 || ^5.0.0",
-    "@vitest/runner": "^3.0.0 || ^4.0.0",
     "storybook": "workspace:^",
     "vitest": "^3.0.0 || ^4.0.0 || ^5.0.0"
   },
@@ -118,9 +116,6 @@
       "optional": true
     },
     "@vitest/browser-playwright": {
-      "optional": true
-    },
-    "@vitest/runner": {
       "optional": true
     },
     "vitest": {

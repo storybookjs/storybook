@@ -47,7 +47,7 @@ describe('createReactApp blocker', () => {
     const log = blocker.log(true);
 
     expect(log.title).toBe('Create React App: support removed');
-    expect(log.message).toContain('Migrate your project to Vite');
+    expect(log.message).toContain('Migrate your project to, e.g., Vite');
     expect(log.link).toBe(
       'https://github.com/storybookjs/storybook/blob/next/MIGRATION.md#create-react-app-support-removed'
     );

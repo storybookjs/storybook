@@ -8,7 +8,7 @@ import {
   types as t,
   traverse,
 } from 'storybook/internal/babel';
-import { logger } from 'storybook/internal/node-logger';
+import { logger, once } from 'storybook/internal/node-logger';
 
 import { dedent } from 'ts-dedent';
 
@@ -112,6 +112,22 @@ const _findVarInitialization = (identifier: string, program: t.Program) => {
   return declarator?.init;
 };
 
+const _findImportSource = (identifier: string, program: t.Program): string | undefined => {
+  let source: string | undefined;
+  program.body.find((node: t.Node) => {
+    if (
+      t.isImportDeclaration(node) &&
+      (node.importKind == null || node.importKind === 'value') &&
+      node.specifiers.some((spec) => spec.local.name === identifier)
+    ) {
+      source = node.source.value;
+      return true;
+    }
+    return false;
+  });
+  return source;
+};
+
 const _makeObjectExpression = (path: string[], value: t.Expression): t.Expression => {
   if (path.length === 0) {
     return value;
@@ -195,6 +211,38 @@ export class ConfigFile {
     return decl;
   };
 
+  /**
+   * Warn about a default export that could not be resolved to an object expression. When the
+   * export turns out to be imported from another file, emit an actionable message instead of the
+   * generic parsing error: the module still evaluates correctly at runtime, but static reads
+   * (e.g. project tags) silently degrade.
+   */
+  _warnUnresolvableDefaultExport = (
+    decl: t.Node | undefined,
+    fallbackNode: t.Node | undefined | null,
+    importSourceOverride?: string
+  ) => {
+    const importSource =
+      importSourceOverride ??
+      (t.isIdentifier(decl) ? _findImportSource(decl.name, this._ast.program) : undefined);
+    if (importSource !== undefined) {
+      // `once` because consumers like StoryIndexGenerator re-parse on every invalidation,
+      // which would repeat this warning on each file save in watch mode.
+      once.warn(dedent`
+        Could not statically analyze the default export of ${this.fileName ? `'${this.fileName}'` : 'this config file'}: it is imported from '${importSource}'.
+        Storybook features that read this file statically will not see this config. Define the object inline, e.g. "export default { ... }".
+      `);
+    } else {
+      logger.warn(
+        getCsfParsingErrorMessage({
+          expectedType: 'ObjectExpression',
+          foundType: decl?.type,
+          node: decl || fallbackNode,
+        })
+      );
+    }
+  };
+
   parse() {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
@@ -206,8 +254,12 @@ export class ConfigFile {
 
           // csf factory - unwrap call expressions like definePreview({...}) or definePreview({...}).type<T>()
           while (t.isCallExpression(decl)) {
-            if (t.isObjectExpression(decl.arguments[0])) {
-              decl = decl.arguments[0];
+            const arg = decl.arguments.length
+              ? self._resolveDeclaration(decl.arguments[0] as t.Node, parent)
+              : undefined;
+            if (t.isObjectExpression(arg) || t.isIdentifier(arg)) {
+              // an unresolvable identifier surfaces below, so it can be diagnosed as an import
+              decl = arg;
               break;
             } else if (
               t.isMemberExpression(decl.callee) &&
@@ -222,13 +274,7 @@ export class ConfigFile {
           if (t.isObjectExpression(decl)) {
             self._parseExportsObject(decl);
           } else {
-            logger.warn(
-              getCsfParsingErrorMessage({
-                expectedType: 'ObjectExpression',
-                foundType: decl?.type,
-                node: decl || node.declaration,
-              })
-            );
+            self._warnUnresolvableDefaultExport(decl, node.declaration);
           }
         },
       },
@@ -263,8 +309,21 @@ export class ConfigFile {
                 const { name: exportName } = spec.exported;
 
                 const decl = _findVarDeclarator(localName, parent as t.Program) as any;
-                // decl can be empty in case X from `import { X } from ....` because it is not handled in _findVarDeclarator
-                if (decl) {
+                if (exportName === 'default') {
+                  // export { X as default } (possibly re-exported from another file)
+                  self.hasDefaultExport = true;
+                  const resolved = decl && self._resolveDeclaration(decl.init, parent);
+                  if (t.isObjectExpression(resolved)) {
+                    self._parseExportsObject(resolved);
+                  } else {
+                    self._warnUnresolvableDefaultExport(
+                      resolved || spec.local,
+                      spec.local,
+                      node.source?.value
+                    );
+                  }
+                } else if (decl) {
+                  // decl can be empty in case X from `import { X } from ....` because it is not handled in _findVarDeclarator
                   self._exports[exportName] = self._resolveDeclaration(decl.init, parent);
                   self._exportDecls[exportName] = decl;
                 }

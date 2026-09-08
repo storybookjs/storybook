@@ -10,7 +10,8 @@ Storybook is a large TypeScript monorepo. The git root is the repo root, the mai
 
 - **Base branch**: `next` (all PRs should target `next`, not `main`)
 - **Node.js**: `22.22.3` (see `.nvmrc`) — supports `.ts` natively via type stripping (no loader needed)
-- **Package Manager**: Yarn Berry
+- **Package Manager**: Yarn Berry (use `node .yarn/releases/yarn-4.18.0.cjs` if no global Yarn is configured)
+- **Vitest**: 5.0.0 for local development; addon compatibility tests also cover the Vitest 4 test-name separator. The scoped `.yarnrc.yml` release-age exceptions for Vitest 5.0.0 can be removed once the seven-day cooldown expires.
 - **Task orchestration**: NX plus the custom `yarn task` runner
 - **Linting**: oxlint (root `.oxlintrc.json`, extended by `code/.oxlintrc.json` and `scripts/.oxlintrc.json`; custom rules load via `jsPlugins`). ESLint is no longer used for repo linting — `code/lib/eslint-plugin` remains as the published `eslint-plugin-storybook` package.
 - **Formatting**: oxfmt (root `.oxfmtrc.json`)

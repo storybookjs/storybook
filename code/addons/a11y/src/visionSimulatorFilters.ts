@@ -46,14 +46,14 @@ export const filters: Record<string, { label: string; filter: string; percentage
 } as const;
 
 // Firefox ignores CSS `filter: url(#id)` when the SVG defining `#id` is `display: none`.
-// The color matrices above were fit against gamma-encoded sRGB, not the linearRGB filter default.
-export const filterDefs = `<svg id="storybook-a11y-vision-filters" aria-hidden="true" color-interpolation-filters="sRGB" style="position:absolute;width:0;height:0;overflow:hidden">
+// The dichromacy matrices below use Machado et al. (2009) at severity 1.0: https://www.inf.ufrgs.br/~oliveira/pubs_files/CVD_Simulation/CVD_Simulation.html
+export const filterDefs = `<svg id="storybook-a11y-vision-filters" aria-hidden="true" color-interpolation-filters="linearRGB" style="position:absolute;width:0;height:0;overflow:hidden">
   <defs>
     <filter id="storybook-a11y-vision-protanopia">
       <feColorMatrix
         in="SourceGraphic"
         type="matrix"
-        values="0.567, 0.433, 0, 0, 0 0.558, 0.442, 0, 0, 0 0, 0.242, 0.758, 0, 0 0, 0, 0, 1, 0"
+        values="0.152286, 1.052583, -0.204868, 0, 0 0.114503, 0.786281, 0.099216, 0, 0 -0.003882, -0.048116, 1.051998, 0, 0 0, 0, 0, 1, 0"
       />
     </filter>
     <filter id="storybook-a11y-vision-protanomaly">
@@ -67,7 +67,7 @@ export const filterDefs = `<svg id="storybook-a11y-vision-filters" aria-hidden="
       <feColorMatrix
         in="SourceGraphic"
         type="matrix"
-        values="0.625, 0.375, 0, 0, 0 0.7, 0.3, 0, 0, 0 0, 0.3, 0.7, 0, 0 0, 0, 0, 1, 0"
+        values="0.367322, 0.860646, -0.227968, 0, 0 0.280085, 0.672501, 0.047413, 0, 0 -0.011820, 0.042940, 0.968881, 0, 0 0, 0, 0, 1, 0"
       />
     </filter>
     <filter id="storybook-a11y-vision-deuteranomaly">
@@ -81,7 +81,7 @@ export const filterDefs = `<svg id="storybook-a11y-vision-filters" aria-hidden="
       <feColorMatrix
         in="SourceGraphic"
         type="matrix"
-        values="0.95, 0.05,  0, 0, 0 0,  0.433, 0.567, 0, 0 0,  0.475, 0.525, 0, 0 0,  0, 0, 1, 0"
+        values="1.255528, -0.076749, -0.178779, 0, 0 -0.078411, 0.930809, 0.147602, 0, 0 0.004733, 0.691367, 0.303900, 0, 0 0, 0, 0, 1, 0"
       />
     </filter>
     <filter id="storybook-a11y-vision-tritanomaly">

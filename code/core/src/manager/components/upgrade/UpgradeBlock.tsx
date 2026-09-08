@@ -21,6 +21,7 @@ const UpgradeSnippet: FC<{ command: string }> = ({ command }) => {
     childrenOnCopy: <CheckIcon />,
     content: command,
     ariaLabel: 'Copy command',
+    ariaLabelOnCopy: 'Command copied',
   });
 
   return (

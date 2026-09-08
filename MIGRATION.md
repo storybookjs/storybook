@@ -6,6 +6,9 @@
   - [Vite: requires Vite 7.0 or higher](#vite-requires-vite-70-or-higher)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
+  - [`@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
+  - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
+
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -631,6 +634,16 @@ Key changes:
 - `@angular-devkit/architect` now requires `>=0.2100.0 < 0.2300.0`
 - The RxJS peer requirement accepts `^6.5.3 || ^7.4.0`, matching Angular 21's own range
 - Standalone components are always treated as the default in `@storybook/angular`
+
+### Next.js: `@storybook/nextjs` is deprecated
+
+The webpack-based `@storybook/nextjs` framework is deprecated and will be removed in Storybook 12. Storybook 11 keeps supporting it: it still builds and runs, but every run logs a deprecation warning and `storybook upgrade` lists it as deprecated.
+
+Migrate to [`@storybook/nextjs-vite`](https://www.npmjs.com/package/@storybook/nextjs-vite), which builds with Vite instead of webpack. The `nextjs-to-nextjs-vite` automigration does the work for you: run `storybook upgrade` and accept the fix, or run `storybook migrate nextjs-to-nextjs-vite` directly.
+
+### `@storybook/angular-vite`: legacy animation modules are no longer auto-converted
+
+`@storybook/angular-vite` no longer depends on `@angular/animations` and no longer auto-converts `BrowserAnimationsModule`/`NoopAnimationsModule` found in a story's `moduleMetadata.imports` into `provideAnimations()`/`provideNoopAnimations()`. If a story still references one of these modules, Storybook now logs a deprecation warning instead. Migrate to native CSS transitions or the `animate.enter`/`animate.leave` bindings (Angular 20.2+), or continue using the legacy animations API yourself by adding `provideAnimations()`/`provideNoopAnimations()` to the `providers` array of the `applicationConfig` decorator; that path is unaffected by this change.
 
 ## From version 10.5.x to 10.6.0
 

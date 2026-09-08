@@ -1093,6 +1093,25 @@ describe('StoryIndexGenerator', () => {
         );
       });
 
+      it('does not leak a single story tag into the generated docs entry (#35968)', async () => {
+        // Regression test: a tag that only the file's first story carries must not end up
+        // on the docs entry, otherwise tag filters that hide that story also hide the docs page.
+        const specifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
+          './tag-leak/Button.stories.(ts|js|mjs|jsx)',
+          options
+        );
+
+        const generator = new StoryIndexGenerator([specifier], autodocsOptions);
+        await generator.initialize();
+
+        const index = await generator.getIndex();
+        const docsEntry = Object.values(index.entries).find((entry) => entry.type === 'docs');
+        expect(docsEntry).toBeDefined();
+        expect(docsEntry?.tags).not.toContain('anatomy');
+        expect(docsEntry?.tags).not.toContain('showcase');
+        expect(docsEntry?.tags).toContain('autodocs');
+      });
+
       it('throws an error if you attach a named MetaOf entry which clashes with a tagged autodocs entry', async () => {
         const csfSpecifier: NormalizedStoriesSpecifier = normalizeStoriesEntry(
           './src/B.stories.ts',
@@ -1704,6 +1723,30 @@ describe('StoryIndexGenerator', () => {
             "v": 5,
           }
         `);
+      });
+
+      it('does not leak a single story tag into a docs entry attached via `<Meta of={}>` (#35968)', async () => {
+        // Regression test: a tag that only the CSF file's first story carries must not end up
+        // on the attached docs entry, otherwise tag filters that hide that story also hide the
+        // docs page.
+        const tagLeakStoriesSpecifier = normalizeStoriesEntry(
+          './tag-leak/Widget.stories.(ts|js|mjs|jsx)',
+          options
+        );
+        const tagLeakDocsSpecifier = normalizeStoriesEntry('./tag-leak/Widget.mdx', options);
+
+        const generator = new StoryIndexGenerator(
+          [tagLeakStoriesSpecifier, tagLeakDocsSpecifier],
+          options
+        );
+        await generator.initialize();
+
+        const index = await generator.getIndex();
+        const docsEntry = Object.values(index.entries).find((entry) => entry.type === 'docs');
+        expect(docsEntry).toBeDefined();
+        expect(docsEntry?.tags).not.toContain('anatomy');
+        expect(docsEntry?.tags).not.toContain('showcase');
+        expect(docsEntry?.tags).toContain('attached-mdx');
       });
 
       it('does not append title prefix if meta references a CSF file', async () => {

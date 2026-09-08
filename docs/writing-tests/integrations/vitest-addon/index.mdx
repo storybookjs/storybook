@@ -282,11 +282,11 @@ If your stories use assets in the public directory and you're not using the defa
 
 ### How do I isolate Storybook tests from others?
 
-Some projects might contain a `test` property in their Vite configuration. Because the Vitest configuration used by this plugin extends that Vite config, the `test` properties are merged. This lack of isolation can cause issues with your Storybook tests.
+The addon generates its Storybook test project with `extends: false`. This prevents it from inheriting root-level unit-test setup files, plugins, and other project configuration. Vitest 5 enables inheritance by default for inline projects, so the explicit setting also keeps the behavior consistent across Vitest versions.
 
-To isolate your Storybook tests from other tests, you need to move the `test` property from your Vite configuration to the Vitest configuration. The Vitest config used by the plugin can then safely extend your Vite config without merging the `test` property.
+Existing configurations are not changed automatically. If your Storybook project uses `extends: true`, it inherits the root configuration. To isolate it, set `extends: false` and configure any required shared aliases or plugins explicitly on that project or through Storybook's [`viteFinal`](../../../api/main-config/main-config-vite-final.mdx). Keep unit-test setup files on the unit-test project. Examples that merge and inherit a shared Vite configuration remain an opt-in to sharing those settings.
 
-Additionally, we recommend using a [test project](#example-configuration-files) if you're using Vitest ≥ 4.0, or a workspace for previous versions to define separate configurations for your Storybook tests and other tests. This ensures each can be run either in isolation or together, depending on your needs.
+Use a [test project](#example-configuration-files) if you're using Vitest ≥ 4.0, or a workspace for previous versions, to define separate configurations for Storybook tests and other tests. This allows each suite to run independently or together.
 
 ### Why do we recommend browser mode?
 

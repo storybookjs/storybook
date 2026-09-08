@@ -26,6 +26,7 @@ const setTestNamePattern = vi.hoisted(() => vi.fn());
 const vitest = vi.hoisted(() => ({
   projects: [{}],
   standalone: vi.fn(),
+  init: vi.fn(),
   close: vi.fn(),
   onCancel: vi.fn(),
   logger: {
@@ -207,8 +208,24 @@ describe('TestManager', () => {
   it('initializes Vitest without running tests', async () => {
     await TestManager.start(options);
     expect(vitest.standalone).toHaveBeenCalledOnce();
+    expect(vitest.init).not.toHaveBeenCalled();
     expect(vitest.runTestSpecifications).not.toHaveBeenCalled();
   });
+
+  it.each(['3.2.4', '4.0.0'])(
+    'initializes Vitest %s without standalone or running tests',
+    async (version) => {
+      mockVitestVersion.value = version;
+      const { standalone, ...legacyVitest } = vitest;
+      createVitest.mockResolvedValue(legacyVitest);
+
+      await TestManager.start(options);
+
+      expect(legacyVitest.init).toHaveBeenCalledOnce();
+      expect(standalone).not.toHaveBeenCalled();
+      expect(legacyVitest.runTestSpecifications).not.toHaveBeenCalled();
+    }
+  );
 
   it('should create a vitest instance', async () => {
     new TestManager(options);

@@ -5,13 +5,14 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { startCase } from 'es-toolkit/string';
 import { ManagerContext, useStorybookApi } from 'storybook/manager-api';
-import { expect, fn, screen, userEvent } from 'storybook/test';
+import { expect, fn, screen, userEvent, waitFor } from 'storybook/test';
 
 import { LayoutProvider, useLayout } from '../../layout/LayoutProvider.tsx';
 import { MobileNavigation } from './MobileNavigation.tsx';
 
 const MockMenu = () => {
   const api = useStorybookApi();
+  const { setMobileAboutOpen } = useLayout();
   return (
     <div>
       menu
@@ -21,6 +22,10 @@ const MockMenu = () => {
         onClick={() => api.setMobileNavigation(false)}
       >
         close
+      </button>
+      {/* Mirrors the sidebar's cog button, which opens the about overlay on mobile. */}
+      <button type="button" aria-label="About Storybook" onClick={() => setMobileAboutOpen(true)}>
+        about
       </button>
     </div>
   );
@@ -91,6 +96,8 @@ const MockManagerProvider: FC<
   const value: any = useMemo(() => {
     const api = {
       getCurrentStoryData: fn(() => index.someStoryId),
+      // The about overlay's upgrade block reads the current version.
+      getCurrentVersion: () => ({ version: '0.0.0' }),
       getShortcutKeys: () => ({ toggleNav: ['alt', 'S'] }),
       setMobileNavigation: (show: boolean) => setShowMobileNavigation(show),
       toggleNav: (nextState?: boolean) =>
@@ -250,6 +257,32 @@ export const PanelClosed: Story = {
 export const PanelDisabled: Story = {
   args: {
     showPanel: false,
+  },
+};
+
+// Closing the drawer while the about overlay is open must reset it, so the drawer reopens on the
+// menu rather than on the overlay (regression test).
+export const AboutResetOnReopen: Story = {
+  play: async (context) => {
+    // @ts-expect-error (non strict)
+    await MenuOpen.play(context);
+    await userEvent.click(await screen.findByLabelText('About Storybook'));
+    await screen.findByLabelText('Close about section');
+
+    await userEvent.keyboard('{Escape}');
+    await waitFor(() =>
+      expect(screen.queryByLabelText('Close about section')).not.toBeInTheDocument()
+    );
+    // The reset is delayed until the drawer's exit transition is done.
+    await new Promise((resolve) => setTimeout(resolve, 400));
+
+    // @ts-expect-error (non strict)
+    await MenuOpen.play(context);
+    // waitFor, as the reopened drawer fades in and starts fully transparent
+    await waitFor(async () =>
+      expect(await screen.findByLabelText('Close navigation menu')).toBeVisible()
+    );
+    expect(screen.queryByLabelText('Close about section')).not.toBeInTheDocument();
   },
 };
 

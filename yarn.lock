@@ -30442,7 +30442,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-aria@npm:3.52.1, react-aria@npm:^3.48.0, react-aria@npm:^3.52.1":
+"react-aria@npm:3.52.1":
   version: 3.52.1
   resolution: "react-aria@npm:3.52.1"
   dependencies:
@@ -30812,7 +30812,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-stately@npm:3.50.0, react-stately@npm:^3.46.0, react-stately@npm:^3.50.0":
+"react-stately@npm:3.50.0":
   version: 3.50.0
   resolution: "react-stately@npm:3.50.0"
   dependencies:

@@ -221,6 +221,7 @@ const HeaderWithOcticonAnchor: FC<PropsWithChildren<HeaderWithOcticonAnchorProps
                 const element = document.getElementById(id);
                 if (element) {
                   navigate(context, hash);
+                  element.scrollIntoView({ behavior: 'smooth' });
                 }
               }}
             >

@@ -87,6 +87,13 @@ const A = styled.a<LinkStylesProps>(
       },
     },
 
+    '&:focus-visible': {
+      outline: `2px solid ${theme.color.secondary}`,
+      outlineOffset: 2,
+      // Should ensure focus outline gets drawn above next sibling
+      zIndex: '1',
+    },
+
     svg: {
       display: 'inline-block',
       height: '1em',
@@ -176,13 +183,6 @@ const A = styled.a<LinkStylesProps>(
           padding: 0,
           fontSize: 'inherit',
           lineHeight: 'inherit',
-
-          '&:focus-visible': {
-            outline: `2px solid ${theme.color.secondary}`,
-            outlineOffset: 2,
-            // Should ensure focus outline gets drawn above next sibling
-            zIndex: '1',
-          },
         }
       : {}
 );

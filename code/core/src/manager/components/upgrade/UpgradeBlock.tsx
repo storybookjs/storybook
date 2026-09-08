@@ -1,7 +1,7 @@
 import type { FC } from 'react';
 import React, { useState } from 'react';
 
-import { Link } from 'storybook/internal/components';
+import { Link, ToggleButton } from 'storybook/internal/components';
 
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
@@ -21,15 +21,33 @@ export const UpgradeBlock: FC<UpgradeBlockProps> = ({ onNavigateToWhatsNew }) =>
       <strong>You are on Storybook {api.getCurrentVersion().version}</strong>
       <p>Run the following script to check for updates and upgrade to the latest version.</p>
       <Tabs>
-        <ButtonTab active={activeTab === 'npm'} onClick={() => setActiveTab('npm')}>
+        <ToggleButton
+          ariaLabel={false}
+          variant="ghost"
+          size="small"
+          pressed={activeTab === 'npm'}
+          onClick={() => setActiveTab('npm')}
+        >
           npm
-        </ButtonTab>
-        <ButtonTab active={activeTab === 'yarn'} onClick={() => setActiveTab('yarn')}>
+        </ToggleButton>
+        <ToggleButton
+          ariaLabel={false}
+          variant="ghost"
+          size="small"
+          pressed={activeTab === 'yarn'}
+          onClick={() => setActiveTab('yarn')}
+        >
           yarn
-        </ButtonTab>
-        <ButtonTab active={activeTab === 'pnpm'} onClick={() => setActiveTab('pnpm')}>
+        </ToggleButton>
+        <ToggleButton
+          ariaLabel={false}
+          variant="ghost"
+          size="small"
+          pressed={activeTab === 'pnpm'}
+          onClick={() => setActiveTab('pnpm')}
+        >
           pnpm
-        </ButtonTab>
+        </ToggleButton>
       </Tabs>
       <Code>
         {activeTab === 'npm'
@@ -60,23 +78,11 @@ const Container = styled.div(({ theme }) => ({
 const Tabs = styled.div({
   display: 'flex',
   gap: 2,
+  marginBottom: 5,
 });
 
 const Code = styled.pre(({ theme }) => ({
   background: theme.base === 'light' ? 'rgba(0, 0, 0, 0.05)' : theme.appBorderColor,
   fontSize: theme.typography.size.s2 - 1,
   margin: '4px 0 16px',
-}));
-
-const ButtonTab = styled.button<{ active: boolean }>(({ theme, active }) => ({
-  all: 'unset',
-  alignItems: 'center',
-  gap: 10,
-  color: theme.color.defaultText,
-  fontSize: theme.typography.size.s2 - 1,
-  borderBottom: '2px solid transparent',
-  borderBottomColor: active ? theme.color.secondary : 'none',
-  padding: '0 10px 5px',
-  marginBottom: '5px',
-  cursor: 'pointer',
 }));

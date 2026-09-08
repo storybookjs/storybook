@@ -1,11 +1,9 @@
 import type { FC } from 'react';
 import React, { useEffect, useRef } from 'react';
 
-import { Button, Link, ScrollArea } from 'storybook/internal/components';
+import { ActionList, Button, FocusScope, Link, ScrollArea } from 'storybook/internal/components';
 
 import { ArrowLeftIcon, GithubIcon, ShareAltIcon, StorybookIcon } from '@storybook/icons';
-
-import { FocusScope } from '@react-aria/focus';
 
 import { useTransitionState } from 'react-transition-state';
 import { keyframes, styled } from 'storybook/theming';
@@ -54,30 +52,44 @@ export const MobileAbout: FC = () => {
               <ArrowLeftIcon />
               Back
             </CloseButton>
-            <LinkContainer>
-              <LinkLine
-                href="https://github.com/storybookjs/storybook"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <LinkLeft>
-                  <GithubIcon />
-                  <span>Github</span>
-                </LinkLeft>
-                <ShareAltIcon width={12} />
-              </LinkLine>
-              <LinkLine
-                href="https://storybook.js.org/docs/get-started/install?ref=ui"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                <LinkLeft>
-                  <StorybookIcon />
-                  <span>Documentation</span>
-                </LinkLeft>
-                <ShareAltIcon width={12} />
-              </LinkLine>
-            </LinkContainer>
+            <LinkList>
+              <ActionList.Item>
+                <ActionList.Link
+                  ariaLabel={false}
+                  href="https://github.com/storybookjs/storybook"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ActionList.Icon>
+                    <GithubIcon />
+                  </ActionList.Icon>
+                  <ActionList.Text>
+                    <span>Github</span>
+                  </ActionList.Text>
+                  <ActionList.Icon>
+                    <ShareAltIcon />
+                  </ActionList.Icon>
+                </ActionList.Link>
+              </ActionList.Item>
+              <ActionList.Item>
+                <ActionList.Link
+                  ariaLabel={false}
+                  href="https://storybook.js.org/docs/get-started/install?ref=ui"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  <ActionList.Icon>
+                    <StorybookIcon />
+                  </ActionList.Icon>
+                  <ActionList.Text>
+                    <span>Documentation</span>
+                  </ActionList.Text>
+                  <ActionList.Icon>
+                    <ShareAltIcon />
+                  </ActionList.Icon>
+                </ActionList.Link>
+              </ActionList.Item>
+            </LinkList>
             <UpgradeBlock />
             <BottomText>
               Open source software maintained by{' '}
@@ -147,30 +159,9 @@ const InnerArea = styled.div({
   padding: '25px 12px 20px',
 });
 
-const LinkContainer = styled.div({});
-
-const LinkLine = styled.a(({ theme }) => ({
-  all: 'unset',
-  display: 'flex',
-  alignItems: 'center',
-  justifyContent: 'space-between',
-  fontSize: theme.typography.size.s2 - 1,
-  borderBottom: `1px solid ${theme.appBorderColor}`,
-  cursor: 'pointer',
-  padding: '0 10px',
-
-  '&:last-child': {
-    borderBottom: 'none',
-  },
-}));
-
-const LinkLeft = styled.div(({ theme }) => ({
-  display: 'flex',
-  alignItems: 'center',
-  fontSize: theme.typography.size.s2 - 1,
-  height: 40,
-  gap: 5,
-}));
+const LinkList = styled(ActionList)({
+  padding: 0,
+});
 
 const BottomText = styled.div(({ theme }) => ({
   fontSize: theme.typography.size.s2 - 1,

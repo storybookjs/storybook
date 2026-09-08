@@ -50,8 +50,10 @@ patch wiring restored instead.
 Also of note: `next`'s 171-line `react-aria-components 1.12.2` patch (which rewrote monopackage
 imports to scoped `@react-aria/*` ones) was already dropped by this branch; the upgrade makes that
 permanent. The `.oxlintrc.json` restricted-import messages still recommended the old scoped-package
-convention — updated to point at the `react-aria/<subpath>` form and to warn against reintroducing
-scoped deps (the version-drift hazard above).
+convention — updated to point at the `react-aria/<subpath>` form. The single-instance invariant is
+enforced in #36216: root resolutions pin `react-aria`/`react-stately` to the exact versions
+react-aria-components depends on, and a lockstep test fails when the pins stop matching its
+manifest.
 
 ---
 

@@ -32,12 +32,12 @@
         "paths": [
           {
             "name": "react-aria",
-            "message": "Don't import from the react-aria root, but use the react-aria/HookOrComponent entrypoints which are optimised for tree-shaking. Avoid adding scoped @react-aria/* dependencies: they can drift to a different react-aria copy",
+            "message": "Don't import from the react-aria root, but use the react-aria/HookOrComponent entrypoints which are optimised for tree-shaking",
             "allowTypeImports": false
           },
           {
             "name": "react-stately",
-            "message": "Don't import from the react-stately root, but use the react-stately/HookOrComponent entrypoints which are optimised for tree-shaking. Avoid adding scoped @react-stately/* dependencies: they can drift to a different react-stately copy",
+            "message": "Don't import from the react-stately root, but use the react-stately/HookOrComponent entrypoints which are optimised for tree-shaking",
             "allowTypeImports": false
           },
           {

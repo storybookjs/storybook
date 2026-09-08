@@ -1,10 +1,13 @@
 <h1>Migration</h1>
 
 - [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Top-level `setConfig` layout and UI options removed](#top-level-setconfig-layout-and-ui-options-removed)
   - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
   - [Vite: requires Vite 7.0 or higher](#vite-requires-vite-70-or-higher)
   - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
   - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
+  - [`@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
+  - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
 
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
@@ -538,6 +541,37 @@
 
 ## From version 10.x to 11.0.0
 
+### Top-level `setConfig` layout and UI options removed
+
+The deprecated top-level layout and UI options passed to `addons.setConfig` are no longer applied.
+Move layout options into `layout` and `enableShortcuts` into `ui`:
+
+```diff
+ addons.setConfig({
+-  showNav: false,
+-  panelPosition: 'right',
+-  enableShortcuts: false,
++  layout: {
++    showNav: false,
++    panelPosition: 'right',
++  },
++  ui: {
++    enableShortcuts: false,
++  },
+ });
+```
+
+Run the automigration to update `.storybook/manager.*`:
+
+```sh
+npx storybook automigrate set-config-layout
+```
+
+The automigration stops with manual instructions when a configuration containing an explicit
+legacy option cannot be transformed safely. This includes computed properties, spreads, conflicting
+top-level and nested values, and moves that could change expression evaluation order. When the same
+option exists in both places, keep the nested value because it was authoritative in Storybook 10.
+
 ### Vitest Addon: requires Vitest 4.0 or higher
 
 The `@storybook/addon-vitest` addon requires **Vitest 4.0 or higher**. Setup now always installs `@vitest/browser-playwright`, generates configuration with the `test.projects` array, and no longer creates or updates `vitest.workspace.*` files. If your Vitest config still uses the deprecated `test.workspace` / `defineWorkspace` style, rename it to `test.projects` and re-run `npx storybook@latest add @storybook/addon-vitest` to merge your existing config.
@@ -602,6 +636,16 @@ Key changes:
 - `@angular-devkit/architect` now requires `>=0.2100.0 < 0.2300.0`
 - The RxJS peer requirement accepts `^6.5.3 || ^7.4.0`, matching Angular 21's own range
 - Standalone components are always treated as the default in `@storybook/angular`
+
+### Next.js: `@storybook/nextjs` is deprecated
+
+The webpack-based `@storybook/nextjs` framework is deprecated and will be removed in Storybook 12. Storybook 11 keeps supporting it: it still builds and runs, but every run logs a deprecation warning and `storybook upgrade` lists it as deprecated.
+
+Migrate to [`@storybook/nextjs-vite`](https://www.npmjs.com/package/@storybook/nextjs-vite), which builds with Vite instead of webpack. The `nextjs-to-nextjs-vite` automigration does the work for you: run `storybook upgrade` and accept the fix, or run `storybook migrate nextjs-to-nextjs-vite` directly.
+
+### `@storybook/angular-vite`: legacy animation modules are no longer auto-converted
+
+`@storybook/angular-vite` no longer depends on `@angular/animations` and no longer auto-converts `BrowserAnimationsModule`/`NoopAnimationsModule` found in a story's `moduleMetadata.imports` into `provideAnimations()`/`provideNoopAnimations()`. If a story still references one of these modules, Storybook now logs a deprecation warning instead. Migrate to native CSS transitions or the `animate.enter`/`animate.leave` bindings (Angular 20.2+), or continue using the legacy animations API yourself by adding `provideAnimations()`/`provideNoopAnimations()` to the `providers` array of the `applicationConfig` decorator; that path is unaffected by this change.
 
 ## From version 10.5.x to 10.6.0
 

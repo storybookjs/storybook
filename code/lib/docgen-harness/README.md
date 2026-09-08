@@ -235,15 +235,6 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - Cross-file inheritance is fully resolved: the analyzer resolves superclass and mixin members into the tag's declaration, so `lit-inheritance-mixin/` is a regression baseline with no marker.
 - `vanilla-multi-definition` targets only `multi-beta` correctly at this baseline version, so it is a regression baseline rather than a red marker.
 
-## Issue-linked cases (web-components)
-
-Linear issues covered by this recorder and its markers:
-
-- SB-1887 -> this Web Components recorder.
-- SB-1888 -> Web Components snippet baselines.
-- SB-1895 -> argTypes mapping fixes close the Web Components argTypes markers.
-- SB-1897 -> story-docs provider work closes the Web Components snippet markers.
-
 ## The performance bench
 
 `src/perf/` measures how fast the docgen engines are and how much memory they hold, which is the other half of the "docgen beyond React" question the snapshot comparator above answers for correctness.

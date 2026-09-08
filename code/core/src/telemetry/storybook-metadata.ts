@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
 import { existsSync } from 'node:fs';
 import { readFile } from 'node:fs/promises';
-import { dirname, resolve } from 'node:path';
+import { dirname, join, resolve } from 'node:path';
 
 import {
   getStorybookConfiguration,
@@ -309,9 +309,9 @@ async function getPackageJsonDetails(cwd = process.cwd()) {
     };
   }
 
-  // If we don't find a `package.json`, we assume it "would have" been in the current working directory
+  // If we don't find a `package.json`, we assume it "would have" been in the project directory
   return {
-    packageJsonPath: process.cwd(),
+    packageJsonPath: join(cwd, 'package.json'),
     packageJson: {},
   };
 }

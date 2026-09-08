@@ -1,7 +1,7 @@
 import type { FC } from 'react';
-import React, { useState } from 'react';
+import React from 'react';
 
-import { Link, ToggleButton } from 'storybook/internal/components';
+import { Link, TabList, TabPanel, useTabsState } from 'storybook/internal/components';
 
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
@@ -14,46 +14,21 @@ interface UpgradeBlockProps {
 
 export const UpgradeBlock: FC<UpgradeBlockProps> = ({ onNavigateToWhatsNew }) => {
   const api = useStorybookApi();
-  const [activeTab, setActiveTab] = useState<'npm' | 'yarn' | 'pnpm'>('npm');
+  const tabsState = useTabsState({
+    defaultSelected: 'npm',
+    tabs: [
+      { id: 'npm', title: 'npm', children: <Code>npx storybook@latest upgrade</Code> },
+      { id: 'yarn', title: 'yarn', children: <Code>yarn dlx storybook@latest upgrade</Code> },
+      { id: 'pnpm', title: 'pnpm', children: <Code>pnpm dlx storybook@latest upgrade</Code> },
+    ],
+  });
 
   return (
     <Container>
       <strong>You are on Storybook {api.getCurrentVersion().version}</strong>
       <p>Run the following script to check for updates and upgrade to the latest version.</p>
-      <Tabs>
-        <ToggleButton
-          ariaLabel={false}
-          variant="ghost"
-          size="small"
-          pressed={activeTab === 'npm'}
-          onClick={() => setActiveTab('npm')}
-        >
-          npm
-        </ToggleButton>
-        <ToggleButton
-          ariaLabel={false}
-          variant="ghost"
-          size="small"
-          pressed={activeTab === 'yarn'}
-          onClick={() => setActiveTab('yarn')}
-        >
-          yarn
-        </ToggleButton>
-        <ToggleButton
-          ariaLabel={false}
-          variant="ghost"
-          size="small"
-          pressed={activeTab === 'pnpm'}
-          onClick={() => setActiveTab('pnpm')}
-        >
-          pnpm
-        </ToggleButton>
-      </Tabs>
-      <Code>
-        {activeTab === 'npm'
-          ? 'npx storybook@latest upgrade'
-          : `${activeTab} dlx storybook@latest upgrade`}
-      </Code>
+      <TabList state={tabsState} />
+      <TabPanel state={tabsState} hasScrollbar={false} />
       {onNavigateToWhatsNew && (
         <Link onClick={onNavigateToWhatsNew}>See what's new in Storybook</Link>
       )}
@@ -74,12 +49,6 @@ const Container = styled.div(({ theme }) => ({
     maxWidth: 400,
   },
 }));
-
-const Tabs = styled.div({
-  display: 'flex',
-  gap: 2,
-  marginBottom: 5,
-});
 
 const Code = styled.pre(({ theme }) => ({
   background: theme.base === 'light' ? 'rgba(0, 0, 0, 0.05)' : theme.appBorderColor,

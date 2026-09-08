@@ -301,12 +301,16 @@ export const AboutFocusTrapped: Story = {
     await expect(screen.getByRole('link', { name: 'Github' })).toHaveFocus();
     await userEvent.tab();
     await expect(screen.getByRole('link', { name: 'Documentation' })).toHaveFocus();
+    // The package manager tabs are a single stop with a roving tabindex.
     await userEvent.tab();
-    await expect(screen.getByRole('switch', { name: 'npm' })).toHaveFocus();
+    await expect(screen.getByRole('tab', { name: 'npm' })).toHaveFocus();
+    await userEvent.keyboard('{ArrowRight}');
+    await expect(screen.getByRole('tab', { name: 'yarn' })).toHaveFocus();
+    await userEvent.keyboard('{ArrowLeft}');
+    await expect(screen.getByRole('tab', { name: 'npm' })).toHaveFocus();
+    // The code block has no focusable content, so the panel itself is the next stop.
     await userEvent.tab();
-    await expect(screen.getByRole('switch', { name: 'yarn' })).toHaveFocus();
-    await userEvent.tab();
-    await expect(screen.getByRole('switch', { name: 'pnpm' })).toHaveFocus();
+    await expect(screen.getByRole('tabpanel')).toHaveFocus();
     await userEvent.tab();
     await expect(screen.getByRole('link', { name: 'Chromatic' })).toHaveFocus();
     await userEvent.tab();

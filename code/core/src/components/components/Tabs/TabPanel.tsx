@@ -26,10 +26,17 @@ export interface TabPanelProps extends HTMLAttributes<HTMLDivElement> {
   renderAllChildren?: boolean;
 }
 
-const Panel = styled.div({
+// When a panel has no focusable content, react-aria makes the panel itself the tab stop, so it
+// needs a focus indicator of its own.
+const Panel = styled.div(({ theme }) => ({
   overflowY: 'hidden',
   height: '100%',
-});
+
+  '&:focus-visible': {
+    outline: `2px solid ${theme.color.secondary}`,
+    outlineOffset: -2,
+  },
+}));
 
 export const TabPanel: FC<TabPanelProps> = ({
   hasScrollbar = true,

@@ -1,4 +1,11 @@
-import React, { type HTMLAttributes, createContext, useEffect, useRef, useState } from 'react';
+import React, {
+  type HTMLAttributes,
+  createContext,
+  useEffect,
+  useLayoutEffect,
+  useRef,
+  useState,
+} from 'react';
 
 import { deprecate } from 'storybook/internal/client-logger';
 import type { DecoratorFunction } from 'storybook/internal/csf';
@@ -174,7 +181,10 @@ function BaseModal({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isMounted]);
 
-  useEffect(() => {
+  // Layout effect, so this runs in the same task that inserted the portal: it disconnects an
+  // already-open modal's ariaHideOutside MutationObserver before that observer processes the
+  // insertion and makes this modal inert (unfocusable and unclickable).
+  useLayoutEffect(() => {
     if (isMounted && (open || defaultOpen) && overlayRef.current) {
       return ariaHideOutside([overlayRef.current], { shouldUseInert: true });
     }
@@ -189,6 +199,9 @@ function BaseModal({
       if (e.key !== 'Escape') {
         modalProps.onKeyDown?.(e);
       } else {
+        // Consume the event either way: it must not reach a parent modal in the React tree (which
+        // portals bubble through) or a document-level shortcut handler underneath this modal.
+        e.stopPropagation();
         if (dismissOnEscape) {
           onEscapeKeyDown?.(e.nativeEvent);
           if (!e.nativeEvent.defaultPrevented) {

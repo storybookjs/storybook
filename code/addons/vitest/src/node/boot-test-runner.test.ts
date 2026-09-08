@@ -232,7 +232,7 @@ describe('bootTestRunner', () => {
     await promise;
 
     const { experimental_UniversalStore } = await import('storybook/internal/core-server');
-    experimental_UniversalStore.__prepare(
+    (experimental_UniversalStore as any).__prepare(
       mockChannel,
       experimental_UniversalStore.Environment.SERVER
     );

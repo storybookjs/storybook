@@ -556,16 +556,6 @@ npx storybook@11 automigrate component-subtitle --skip-doctor
 
 Use `--config-dir <path>` if the Storybook configuration is not in the root `.storybook` directory.
 
-The automigration is atomic: if it cannot change every affected file safely, it reports the files
-and does not change any of them. Fix all reported files manually, then run the command again. Unsafe
-patterns include spreads that affect the relevant configuration objects, duplicate or dynamic
-properties, indirect configuration objects, inherited subtitles that can take precedence, and
-expressions whose evaluation would need to move.
-
-When updating a file manually, preserve the previous fallback behavior: a truthy `docs.subtitle`
-wins; otherwise, `componentSubtitle` is used. A subtitle from preview configuration or component
-meta can also take precedence over one at a lower scope.
-
 ```diff
 export default {
   parameters: {

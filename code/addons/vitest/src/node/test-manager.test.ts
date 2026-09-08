@@ -25,7 +25,7 @@ import { DOUBLE_SPACES } from './vitest-manager.ts';
 const setTestNamePattern = vi.hoisted(() => vi.fn());
 const vitest = vi.hoisted(() => ({
   projects: [{}],
-  init: vi.fn(),
+  standalone: vi.fn(),
   close: vi.fn(),
   onCancel: vi.fn(),
   logger: {
@@ -52,10 +52,14 @@ const vitest = vi.hoisted(() => ({
   },
 }));
 
+const mockVitestVersion = vi.hoisted(() => ({ value: '4.1.6' }));
 const mockCreateVitest = vi.fn();
 
 vi.mock('vitest/node', () => ({
   createVitest: mockCreateVitest,
+  get version() {
+    return mockVitestVersion.value;
+  },
 }));
 
 // Use the mock function directly
@@ -63,6 +67,7 @@ const createVitest = mockCreateVitest;
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockVitestVersion.value = '4.1.6';
   mockStore.setState(() => ({
     ...storeOptions.initialState,
     index: mockIndex,
@@ -199,6 +204,12 @@ const options: TestManagerOptions = {
 };
 
 describe('TestManager', () => {
+  it('initializes Vitest without running tests', async () => {
+    await TestManager.start(options);
+    expect(vitest.standalone).toHaveBeenCalledOnce();
+    expect(vitest.runTestSpecifications).not.toHaveBeenCalled();
+  });
+
   it('should create a vitest instance', async () => {
     new TestManager(options);
     await vi.waitFor(() => {
@@ -420,7 +431,11 @@ describe('TestManager', () => {
     expect(setTestNamePattern).toHaveBeenCalledWith(new RegExp(`^One$`));
   });
 
-  it('should trigger a single story test', async () => {
+  it.each([
+    ['4.1.6', ' '],
+    ['5.0.0', ' > '],
+  ])('should trigger a single story test with Vitest %s', async (version, separator) => {
+    mockVitestVersion.value = version;
     vitest.globTestSpecifications.mockImplementation(() => tests);
     const testManager = await TestManager.start(options);
 
@@ -433,7 +448,7 @@ describe('TestManager', () => {
     });
     // regex should be Parent Story Name + Test Name
     expect(setTestNamePattern).toHaveBeenCalledWith(
-      new RegExp(`^Parent story${DOUBLE_SPACES} Test name$`)
+      new RegExp(`^Parent story${DOUBLE_SPACES}${separator}Test name$`)
     );
   });
 

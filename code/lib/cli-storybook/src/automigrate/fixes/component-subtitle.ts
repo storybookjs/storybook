@@ -46,7 +46,7 @@ export const componentSubtitle: Fix<ComponentSubtitleOptions> = {
   },
 
   prompt() {
-    return `Move deprecated ${picocolors.cyan('parameters.componentSubtitle')} values to ${picocolors.cyan('parameters.docs.subtitle')}?`;
+    return `Move deprecated ${picocolors.cyan('parameters.componentSubtitle')} values to ${picocolors.cyan('parameters.docs.subtitle')}`;
   },
 
   async run({ dryRun, result }) {

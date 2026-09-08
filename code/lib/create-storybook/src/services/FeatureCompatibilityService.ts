@@ -33,7 +33,7 @@ export class FeatureCompatibilityService {
     );
   }
 
-  /** Check if AI-assisted setup (storybook ai setup) is supported for this project configuration */
+  /** Check if AI-assisted setup (storybook skills setup) is supported for this project configuration */
   static supportsAISetupFeature(
     renderer: SupportedRenderer,
     builder: SupportedBuilder,

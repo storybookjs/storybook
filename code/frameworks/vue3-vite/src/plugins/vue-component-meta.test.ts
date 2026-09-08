@@ -29,7 +29,8 @@ type TransformHandler = (src: string, id: string) => Promise<{ code: string } | 
 
 async function getPlugin() {
   const { vueComponentMeta } = await import('./vue-component-meta.ts');
-  const plugin = await vueComponentMeta();
+  const { experimental_vueDocgenEngine } = await import('@storybook/vue3/preset');
+  const plugin = await vueComponentMeta(await experimental_vueDocgenEngine());
 
   const handler =
     typeof plugin.transform === 'function'
@@ -47,8 +48,11 @@ async function getTransformHandler() {
 }
 
 /** Minimal Vite HMR context for exercising the handleHotUpdate hook. */
-function makeHotUpdateContext(file: string) {
+function makeHotUpdateContext(file: string, importerIds: string[] = []) {
   const send = vi.fn();
+  const modules = [
+    { id: file, importers: new Set(importerIds.map((id) => ({ id, importers: new Set() }))) },
+  ];
 
   return {
     ctx: {
@@ -56,9 +60,12 @@ function makeHotUpdateContext(file: string) {
       read: async () => 'updated source',
       server: {
         ws: { send },
-        moduleGraph: { invalidateModule: vi.fn() },
+        moduleGraph: {
+          invalidateModule: vi.fn(),
+          getModulesByFile: (requested: string) => (requested === file ? modules : []),
+        },
       },
-      modules: [{ id: file }],
+      modules,
       timestamp: 1,
     },
     send,
@@ -163,6 +170,80 @@ describe('vue-component-meta plugin', () => {
 
       expect(result).toBeDefined();
       expect(result!.code).toContain('_sfc_main.__docgenInfo');
+    });
+
+    it('should inject __docgenInfo when a production SFC imports its default export', async () => {
+      const src = [
+        `import _sfc_main from './Tab.vue?vue&type=script&setup=true&lang.ts';`,
+        `export default _sfc_main;`,
+      ].join('\n');
+      const id = '/project/src/components/Tab.vue';
+
+      mockChecker.getExportNames.mockReturnValue(['default']);
+
+      const result = await transform(src, id);
+
+      expect(result).toBeDefined();
+      expect(result!.code).toContain('_sfc_main.__docgenInfo');
+    });
+
+    it('should inject __docgenInfo when another plugin emits ahead of the _sfc_main import', async () => {
+      // This hook runs in "post", so anything earlier in the chain can prepend to the module.
+      // unplugin-vue-components puts its marker on the same line as the import, which a
+      // line-anchored pattern match would miss.
+      const src = [
+        `/* unplugin-vue-components disabled */import _sfc_main from './Tab.vue?vue&type=script&setup=true&lang.ts';`,
+        `export default _sfc_main;`,
+      ].join('\n');
+      const id = '/project/src/components/Tab.vue';
+
+      mockChecker.getExportNames.mockReturnValue(['default']);
+
+      const result = await transform(src, id);
+
+      expect(result).toBeDefined();
+      expect(result!.code).toContain('_sfc_main.__docgenInfo');
+    });
+
+    it('should inject __docgenInfo regardless of the virtual script module query order', async () => {
+      const src = [
+        `import _sfc_main from './Tab.vue?vue&setup=true&type=script&lang.ts';`,
+        `export default _sfc_main;`,
+      ].join('\n');
+      const id = '/project/src/components/Tab.vue';
+
+      mockChecker.getExportNames.mockReturnValue(['default']);
+
+      const result = await transform(src, id);
+
+      expect(result).toBeDefined();
+      expect(result!.code).toContain('_sfc_main.__docgenInfo');
+    });
+
+    it('should not inject __docgenInfo when an SFC default export has no _sfc_main import', async () => {
+      const src = `export default { name: 'Tab' };\n`;
+      const id = '/project/src/components/Tab.vue';
+
+      mockChecker.getExportNames.mockReturnValue(['default']);
+
+      const result = await transform(src, id);
+
+      expect(result).toBeDefined();
+      expect(result?.code ?? '').not.toContain('__docgenInfo');
+    });
+
+    it('should not inject __docgenInfo when _sfc_main is imported from a non-virtual module', async () => {
+      const src = [`import _sfc_main from './shared-component';`, `export default _sfc_main;`].join(
+        '\n'
+      );
+      const id = '/project/src/components/Tab.vue';
+
+      mockChecker.getExportNames.mockReturnValue(['default']);
+
+      const result = await transform(src, id);
+
+      expect(result).toBeDefined();
+      expect(result?.code ?? '').not.toContain('__docgenInfo');
     });
 
     it('should NOT inject __docgenInfo when the default export is an inline expression with no local binding', async () => {
@@ -270,6 +351,41 @@ describe('vue-component-meta plugin', () => {
 
       expect(send).toHaveBeenCalledWith({ type: 'full-reload' });
     });
+
+    it("should reload the preview when the changed file alters an importer's docgen", async () => {
+      // props declared in their own module: the edited file has no docgen of its own, so judging it
+      // by its own meta would miss the change, but the component importing it is documented
+      const propsModule = '/project/src/components/tab-props.ts';
+      mockChecker.getExportNames.mockImplementation((forId: string) =>
+        forId === propsModule ? [] : ['default']
+      );
+
+      const { transform, handleHotUpdate } = await getPlugin();
+      await transform(src, id);
+      await transform(`export const tabProps = {};\n`, propsModule);
+
+      mockChecker.getComponentMeta.mockImplementation(() => ({
+        ...makeComponentMeta(),
+        props: [{ name: 'newProp', schema: 'number' }],
+      }));
+
+      const { ctx, send } = makeHotUpdateContext(propsModule, [id]);
+      await handleHotUpdate(ctx);
+
+      expect(send).toHaveBeenCalledWith({ type: 'full-reload' });
+    });
+
+    it('should leave files it does not document to their own HMR', async () => {
+      const { handleHotUpdate } = await getPlugin();
+
+      const { ctx, send } = makeHotUpdateContext('/project/src/components/styles.css');
+      const result = await handleHotUpdate(ctx);
+
+      expect(result).toBeUndefined();
+      expect(send).not.toHaveBeenCalled();
+      // vue-component-meta warns and corrupts later lookups when fed a file it cannot parse
+      expect(mockChecker.updateFile).not.toHaveBeenCalled();
+    });
   });
 
   describe('re-export detection', () => {
@@ -289,6 +405,43 @@ describe('vue-component-meta plugin', () => {
       );
 
       expect(result?.code ?? '').not.toContain('__docgenInfo');
+    });
+  });
+
+  describe('ids carrying a query', () => {
+    it('should skip plugin-vue script sub-requests, whose id ends in ".ts" but is not a file', async () => {
+      const result = await transform(
+        `const _sfc_main = {};\nexport default _sfc_main;\n`,
+        '/project/src/components/Tab.vue?vue&type=script&setup=true&lang.ts'
+      );
+
+      expect(result).toBeUndefined();
+      expect(mockChecker.getExportNames).not.toHaveBeenCalled();
+    });
+
+    it('should skip plugin-vue script sub-requests ending in ".js"', async () => {
+      const result = await transform(
+        `const _sfc_main = {};\nexport default _sfc_main;\n`,
+        '/project/src/components/Tab.vue?vue&type=script&lang.js'
+      );
+
+      expect(result).toBeUndefined();
+      expect(mockChecker.getExportNames).not.toHaveBeenCalled();
+    });
+
+    it('should still process the bare .vue id that the sub-request derives from', async () => {
+      const src = [
+        `import _export_sfc from 'plugin-vue:export-helper';`,
+        `const _sfc_main = { name: 'Tab' };`,
+        `export default /*@__PURE__*/_export_sfc(_sfc_main, []);`,
+      ].join('\n');
+
+      mockChecker.getExportNames.mockReturnValue(['default']);
+
+      const result = await transform(src, '/project/src/components/Tab.vue');
+
+      expect(result!.code).toContain('_sfc_main.__docgenInfo');
+      expect(mockChecker.getExportNames).toHaveBeenCalledWith('/project/src/components/Tab.vue');
     });
   });
 });

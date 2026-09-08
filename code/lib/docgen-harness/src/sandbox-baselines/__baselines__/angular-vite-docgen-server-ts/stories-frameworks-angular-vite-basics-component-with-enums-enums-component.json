@@ -1,0 +1,99 @@
+{
+  "argTypes": {
+    "aliasedUnionType": {
+      "description": "Union Type assigned as a Type Alias",
+      "name": "aliasedUnionType",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "TypeAlias"
+        }
+      },
+      "type": {
+        "name": "enum",
+        "value": ["Type Alias 1", "Type Alias 2", "Type Alias 3"]
+      }
+    },
+    "enumAlias": {
+      "description": "Type Aliased Enum Type",
+      "name": "enumAlias",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "EnumAlias"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "enumNumeric": {
+      "description": "Base Enum Type with no assigned values",
+      "name": "enumNumeric",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "EnumNumeric"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "enumNumericInitial": {
+      "description": "Enum with initial numeric value and auto-incrementing subsequent values",
+      "name": "enumNumericInitial",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "EnumNumericInitial"
+        }
+      },
+      "type": {
+        "name": "other",
+        "value": "empty-enum"
+      }
+    },
+    "enumStrings": {
+      "description": "Enum with string values",
+      "name": "enumStrings",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "EnumStringValues"
+        }
+      },
+      "type": {
+        "name": "enum",
+        "value": ["PRIMARY", "SECONDARY", "TERTIARY"]
+      }
+    },
+    "unionType": {
+      "description": "Union Type of string literals",
+      "name": "unionType",
+      "table": {
+        "category": "inputs",
+        "defaultValue": {},
+        "type": {
+          "summary": "\"Union A\" | \"Union B\" | \"Union C\""
+        }
+      },
+      "type": {
+        "name": "enum",
+        "value": ["Union A", "Union B", "Union C"]
+      }
+    }
+  },
+  "description": "This component is used for testing the various forms of enum types",
+  "id": "stories-frameworks-angular-vite-basics-component-with-enums-enums-component",
+  "jsDocTags": {},
+  "name": "EnumsComponent",
+  "path": "./src/stories/frameworks/angular-vite/basics/component-with-enums/enums.component.stories.ts"
+}

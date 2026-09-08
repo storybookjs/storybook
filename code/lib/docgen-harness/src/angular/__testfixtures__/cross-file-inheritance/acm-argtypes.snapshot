@@ -1,0 +1,52 @@
+{
+  "dismissed": {
+    "action": "dismissed",
+    "description": undefined,
+    "name": "dismissed",
+    "table": {
+      "category": "outputs",
+      "defaultValue": {
+        "summary": undefined,
+      },
+      "type": {
+        "summary": "EventEmitter",
+      },
+    },
+    "type": {
+      "name": "other",
+      "value": "void",
+    },
+  },
+  "dismissible": {
+    "description": "Whether the alert shows a close button.",
+    "name": "dismissible",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": false,
+      },
+      "type": {
+        "summary": "boolean",
+      },
+    },
+    "type": {
+      "name": "boolean",
+    },
+  },
+  "heading": {
+    "description": undefined,
+    "name": "heading",
+    "table": {
+      "category": "inputs",
+      "defaultValue": {
+        "summary": "",
+      },
+      "type": {
+        "summary": "string",
+      },
+    },
+    "type": {
+      "name": "string",
+    },
+  },
+}

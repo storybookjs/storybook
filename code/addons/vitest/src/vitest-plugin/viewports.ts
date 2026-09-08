@@ -65,7 +65,7 @@ export const setViewport = async (parameters: Parameters = {}, globals: Globals 
     defaultViewport = viewportsParam.defaultViewport;
   }
 
-  const { page } = await import('@vitest/browser/context').catch(() => ({
+  const { page } = await import('vitest/browser').catch(() => ({
     page: null,
   }));
 

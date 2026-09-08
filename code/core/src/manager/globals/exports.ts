@@ -490,6 +490,7 @@ export default {
     'HEARTBEAT_INTERVAL',
     'HEARTBEAT_MAX_LATENCY',
     'PostMessageTransport',
+    'SERVER_CHANNEL_PATH',
     'WebsocketTransport',
     'clearChannel',
     'createBrowserChannel',

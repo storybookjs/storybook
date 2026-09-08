@@ -14,6 +14,12 @@ describe('compareArgTypes', () => {
     expect(violations).toEqual([expect.objectContaining({ arg: 'size', kind: 'lost-arg' })]);
   });
 
+  it('waives a lost ES-private member, which no modern engine is expected to record', () => {
+    const baseline = argTypes({ '#secret': { name: '#secret', type: { name: 'string' } } });
+
+    expect(compareArgTypes(baseline, argTypes({}))).toEqual([]);
+  });
+
   it('passes when the candidate has keys the baseline lacks', () => {
     const candidate = argTypes({
       size: { name: 'size', type: { name: 'string' } },
@@ -141,19 +147,92 @@ describe('compareArgTypes', () => {
     ]);
   });
 
-  it('treats a NaN baseline default as present, so dropping it fails', () => {
-    // Eight committed Angular files record { summary: NaN }; a truthy presence check would
-    // read them as absent on both sides and let OSA drop the recorded default silently.
+  it('waives invented legacy defaults (NaN, its JSON null round-trip, raw false) only under legacyBaseline', () => {
+    // The no-invented-NaN gap marker (angular-legacy-gaps.test.ts) pins NaN and raw false as
+    // legacy fabrications for members without a default; the sandbox baselines carry the same
+    // NaN JSON-serialized to null. A candidate that stops inventing them loses nothing - but only
+    // when the baseline is a legacy compodoc recording where fabrication and genuine value are
+    // indistinguishable.
+    for (const summary of [Number.NaN, null, false]) {
+      const baseline = argTypes({
+        count: {
+          name: 'count',
+          table: { defaultValue: { summary: summary as unknown as string } },
+        },
+      });
+      const candidate = argTypes({ count: { name: 'count' } });
+      expect(compareArgTypes(baseline, candidate, { legacyBaseline: true })).toEqual([]);
+    }
+  });
+
+  it('does not generically waive numeric initializer source from a legacy baseline', () => {
     const baseline = argTypes({
-      count: {
-        name: 'count',
-        table: { defaultValue: { summary: Number.NaN as unknown as string } },
+      timeoutMs: {
+        name: 'timeoutMs',
+        table: { defaultValue: { summary: '5 * 60 * 1000' } },
       },
     });
-    const candidate = argTypes({ count: { name: 'count' } });
-    expect(compareArgTypes(baseline, candidate)).toEqual([
-      expect.objectContaining({ arg: 'count', kind: 'lost-default' }),
+    const candidate = argTypes({ timeoutMs: { name: 'timeoutMs' } });
+
+    expect(compareArgTypes(baseline, candidate, { legacyBaseline: true })).toEqual([
+      expect.objectContaining({ arg: 'timeoutMs', kind: 'lost-default' }),
     ]);
+  });
+
+  it('flags dropped raw false, null, and NaN defaults outside legacyBaseline', () => {
+    // A non-legacy engine records raw false / null only for a genuine `= false` / `= null`
+    // default, so dropping one is a lost default in the default (strict) mode.
+    for (const summary of [false, null, Number.NaN]) {
+      const baseline = argTypes({
+        count: {
+          name: 'count',
+          table: { defaultValue: { summary: summary as unknown as string } },
+        },
+      });
+      const candidate = argTypes({ count: { name: 'count' } });
+      expect(compareArgTypes(baseline, candidate)).toEqual([
+        expect.objectContaining({ arg: 'count', kind: 'lost-default' }),
+      ]);
+    }
+  });
+
+  it('accepts a modern candidate default of raw false/null against a legacy baseline', () => {
+    // The invented-default waiver describes the legacy side only. A modern candidate that records
+    // `false` (e.g. `input(false, { transform: booleanAttribute })`) HAS a default; waiving it on
+    // the candidate side manufactured lost-default findings for genuinely-defaulted args.
+    for (const candidateSummary of [false, null]) {
+      const baseline = argTypes({
+        count: {
+          name: 'count',
+          table: { defaultValue: { summary: 'false, { transform: booleanAttribute }' } },
+        },
+      });
+      const candidate = argTypes({
+        count: {
+          name: 'count',
+          table: { defaultValue: { summary: candidateSummary as unknown as string } },
+        },
+      });
+      expect(compareArgTypes(baseline, candidate, { legacyBaseline: true })).toEqual([]);
+    }
+  });
+
+  it('protects string and non-false scalar defaults in both modes', () => {
+    // 'false' as a string is another engine's genuine recording, not the Angular raw-value shape.
+    for (const summary of ['false', 'NaN', 0, true]) {
+      const baseline = argTypes({
+        count: {
+          name: 'count',
+          table: { defaultValue: { summary: summary as unknown as string } },
+        },
+      });
+      const candidate = argTypes({ count: { name: 'count' } });
+      for (const options of [undefined, { legacyBaseline: true }]) {
+        expect(compareArgTypes(baseline, candidate, options)).toEqual([
+          expect.objectContaining({ arg: 'count', kind: 'lost-default' }),
+        ]);
+      }
+    }
   });
 
   it('treats explicit undefined summaries as absent on both sides', () => {
@@ -547,6 +626,89 @@ describe('compareArgTypes', () => {
       },
     });
     expect(compareArgTypes(baseline, candidate)).toEqual([]);
+  });
+
+  it('fails when a recorded table.type.summary disappears, in every mode', () => {
+    const baseline = argTypes({
+      count: { name: 'count', table: { type: { summary: 'number' } } },
+    });
+    for (const candidate of [
+      argTypes({ count: { name: 'count', table: { type: {} } } }),
+      argTypes({ count: { name: 'count', table: {} } }),
+      argTypes({ count: { name: 'count', table: { type: { summary: '' } } } }),
+    ]) {
+      for (const options of [undefined, { legacyBaseline: true }, { strictTable: true }]) {
+        expect(compareArgTypes(baseline, candidate, options)).toEqual([
+          expect.objectContaining({ arg: 'count', kind: 'lost-summary' }),
+        ]);
+      }
+    }
+  });
+
+  it('ignores table.type.summary text changes except under strictTable', () => {
+    const baseline = argTypes({
+      count: { name: 'count', table: { type: { summary: 'number' } } },
+    });
+    const candidate = argTypes({
+      count: { name: 'count', table: { type: { summary: 'string' } } },
+    });
+    expect(compareArgTypes(baseline, candidate)).toEqual([]);
+    expect(compareArgTypes(baseline, candidate, { legacyBaseline: true })).toEqual([]);
+    expect(compareArgTypes(baseline, candidate, { strictTable: true })).toEqual([
+      expect.objectContaining({ arg: 'count', kind: 'changed-summary' }),
+    ]);
+  });
+
+  // `canonicalType` ignores `required`, so the type-fidelity comparison cannot see this flip and
+  // this gate is the only thing standing between a lost required flag and a laundered `-u`.
+  it('flags a required true->false flip only under strictTable', () => {
+    const required = (value: boolean) =>
+      argTypes({
+        count: { name: 'count', type: { name: 'number', required: value } },
+      });
+    const missing = argTypes({
+      count: { name: 'count', type: { name: 'number' } },
+    });
+    expect(compareArgTypes(required(true), required(false))).toEqual([]);
+    expect(compareArgTypes(required(true), required(false), { strictTable: true })).toEqual([
+      expect.objectContaining({ arg: 'count', kind: 'lost-required' }),
+    ]);
+    expect(compareArgTypes(required(true), missing, { strictTable: true })).toEqual([
+      expect.objectContaining({ arg: 'count', kind: 'lost-required' }),
+    ]);
+    // The loosening direction only: gaining required is not a violation.
+    expect(compareArgTypes(required(false), required(true), { strictTable: true })).toEqual([]);
+  });
+
+  it('fails when a named other stub collapses to an empty structure', () => {
+    // An empty enum/union/object records nothing; swapping it in for free text that named a real
+    // type would let an extraction regression pass as "structure".
+    const stub = argTypes({ node: { name: 'node', type: { name: 'other', value: 'TreeNode' } } });
+    for (const emptyStructure of [
+      { name: 'enum', value: [] },
+      { name: 'union', value: [] },
+      { name: 'intersection', value: [] },
+      { name: 'tuple', value: [] },
+      { name: 'object', value: {} },
+    ] as const) {
+      const candidate = argTypes({ node: { name: 'node', type: emptyStructure as never } });
+      expect(compareArgTypes(stub, candidate)).toEqual([
+        expect.objectContaining({ arg: 'node', kind: 'type-fidelity' }),
+      ]);
+    }
+  });
+
+  it('accepts a literal for a named other stub only when it matches the stub text', () => {
+    const stub = (value: string) =>
+      argTypes({ node: { name: 'node', type: { name: 'other', value } } });
+    const literal = (value: string) =>
+      argTypes({ node: { name: 'node', type: { name: 'literal', value } } });
+    expect(compareArgTypes(stub('small'), literal('small'))).toEqual([]);
+    expect(compareArgTypes(stub('small'), literal('unrelated'))).toEqual([
+      expect.objectContaining({ arg: 'node', kind: 'type-fidelity' }),
+    ]);
+    // A stub that recorded nothing still accepts any literal.
+    expect(compareArgTypes(stub('empty-enum'), literal('anything'))).toEqual([]);
   });
 
   it('ignores required flips in both notions', () => {

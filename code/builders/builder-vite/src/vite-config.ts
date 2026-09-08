@@ -12,7 +12,6 @@ import type {
 } from 'vite';
 
 import {
-  csfPlugin,
   pluginWebpackStats,
   storybookEntryPlugin,
   storybookExternalGlobalsPlugin,
@@ -89,7 +88,6 @@ export async function pluginConfig(options: Options) {
     // Shared core plugins (resolve conditions, envPrefix, fs.allow, externals, env vars, etc.)
     ...(await corePlugins([], options)),
     await storybookExternalGlobalsPlugin(options),
-    await csfPlugin(options),
     // Entry plugin: virtual modules for stories, addon setup, and main app entry
     ...(await storybookEntryPlugin(options)),
     // Builder-specific: webpack-compatible stats for turbosnap/chromatic

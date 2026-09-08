@@ -49,11 +49,11 @@ export function seriesMetrics(reps: SeriesResult[], expectedN: number): EngineMe
   }
 
   return {
-    coldExtractionMs: { status: 'measured', samples: coldSamples, median: median(coldSamples) },
-    warmExtractionMs: { status: 'measured', samples: warmSamples, median: median(warmSamples) },
+    coldExtractionMs: { status: 'measured', samples: coldSamples, value: median(coldSamples) },
+    warmExtractionMs: { status: 'measured', samples: warmSamples, value: median(warmSamples) },
     // Per-component engines have no batch pass; recording one would be a faked equivalent.
     wholeProjectScanMs: NOT_APPLICABLE,
-    peakTransientMb: { status: 'measured', samples: transients, mean: avgTransient },
+    peakTransientMb: { status: 'measured', samples: transients, value: avgTransient },
     retainedGrowthMb: { status: 'measured', value: designated.retainedGrowth },
     retainedSlopeMbPerSave: { status: 'measured', value: designated.retainedSlope },
   };
@@ -82,12 +82,12 @@ export function oneShotMetrics(reps: OneShotRepetition[], expectedN: number): En
   // recorded. A partially-sampled series is reported as no measurement rather than as a low one.
   const peaks = reps.map((r) => r.peakRssMb).filter((mb) => mb !== undefined);
   return {
-    coldExtractionMs: { status: 'measured', samples: coldSamples, median: median(coldSamples) },
-    warmExtractionMs: { status: 'measured', samples: warmSamples, median: median(warmSamples) },
-    wholeProjectScanMs: { status: 'measured', samples: coldSamples, median: median(coldSamples) },
+    coldExtractionMs: { status: 'measured', samples: coldSamples, value: median(coldSamples) },
+    warmExtractionMs: { status: 'measured', samples: warmSamples, value: median(warmSamples) },
+    wholeProjectScanMs: { status: 'measured', samples: coldSamples, value: median(coldSamples) },
     peakTransientMb:
       peaks.length === reps.length
-        ? { status: 'measured', samples: peaks, mean: mean(peaks) }
+        ? { status: 'measured', samples: peaks, value: mean(peaks) }
         : NOT_APPLICABLE,
     retainedGrowthMb: NOT_APPLICABLE,
     retainedSlopeMbPerSave: NOT_APPLICABLE,

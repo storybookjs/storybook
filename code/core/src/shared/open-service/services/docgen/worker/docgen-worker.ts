@@ -11,6 +11,8 @@
 import { parentPort } from 'node:worker_threads';
 import { pathToFileURL } from 'node:url';
 
+import { logger } from 'storybook/internal/node-logger';
+
 import type { IndexEntry } from '../../../../../types/modules/indexer.ts';
 import { errorToErrorLike } from '../../module-graph/types.ts';
 import type {
@@ -19,7 +21,11 @@ import type {
   DocgenProviderDescriptor,
   DocgenWorkerModule,
 } from '../types.ts';
-import type { DocgenWorkerRequest, DocgenWorkerResponse } from './protocol.ts';
+import type {
+  DocgenWorkerInitRequest,
+  DocgenWorkerRequest,
+  DocgenWorkerResponse,
+} from './protocol.ts';
 
 if (!parentPort) {
   throw new Error('docgen worker must be run as a worker thread');
@@ -45,14 +51,16 @@ async function composeProvider(descriptors: DocgenProviderDescriptor[]): Promise
         `docgen worker module "${descriptor.moduleSpecifier}" does not export createDocgenProvider`
       );
     }
-    const middleware: DocgenMiddleware = await mod.createDocgenProvider();
+    const middleware: DocgenMiddleware = await mod.createDocgenProvider(descriptor.options);
     provider = middleware(provider);
   }
   return provider;
 }
 
-async function handleInit(descriptors: DocgenProviderDescriptor[]): Promise<void> {
+async function handleInit({ descriptors, logLevel }: DocgenWorkerInitRequest): Promise<void> {
   try {
+    // Provider modules share this logger instance, so set the forwarded level before importing them.
+    logger.setLogLevel(logLevel);
     providerPromise = composeProvider(descriptors);
     await providerPromise;
     port.postMessage({ type: 'init' } satisfies DocgenWorkerResponse);
@@ -85,7 +93,7 @@ async function handleExtract(id: number, entry: IndexEntry): Promise<void> {
 port.on('message', (msg: DocgenWorkerRequest) => {
   switch (msg.type) {
     case 'init':
-      void handleInit(msg.descriptors);
+      void handleInit(msg);
       return;
     case 'extract':
       void handleExtract(msg.id, msg.entry);

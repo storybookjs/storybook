@@ -51,13 +51,6 @@ export function definePortableStoryTest(directory: string) {
             command: 'yarn vitest',
           },
         },
-        {
-          run: {
-            name: 'Run Playwright CT tests',
-            working_directory,
-            command: 'yarn playwright-ct',
-          },
-        },
         ...(scripts['playwright-e2e']
           ? [
               {

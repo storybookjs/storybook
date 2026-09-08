@@ -2,44 +2,44 @@ import { McpServer } from 'tmcp';
 import { ValibotJsonSchemaAdapter } from '@tmcp/adapter-valibot';
 import { HttpTransport } from '@tmcp/transport-http';
 import pkgJson from '../package.json' with { type: 'json' };
-import { addListAllDocumentationTool } from './tools/list-all-documentation.ts';
-import { addGetStoryDocumentationTool } from './tools/get-documentation-for-story.ts';
-import { addGetDocumentationTool } from './tools/get-documentation.ts';
+import {
+  addGetDocumentationTool,
+  addGetStoryDocumentationTool,
+  addListAllDocumentationTool,
+} from './tools/register.ts';
 import type { StorybookContext } from './types.ts';
-import serverInstructions from './instructions.md';
+import { DOCS_TOOLSET_INSTRUCTIONS as serverInstructions } from 'storybook/internal/toolsets-docs';
 
 export { serverInstructions as STORYBOOK_MCP_INSTRUCTIONS };
 
-// Export tools for reuse by addon-mcp
-export {
-  addListAllDocumentationTool,
-  getListAllDocumentationToolMetadata,
-  LIST_TOOL_NAME,
-} from './tools/list-all-documentation.ts';
+// The docs tools themselves come from Storybook's shared `docs` toolset; this package supplies the
+// hosted runtime (manifest provider, composed sources) behind it.
 export {
   addGetDocumentationTool,
-  getDocumentationToolMetadata,
-  GET_TOOL_NAME,
-} from './tools/get-documentation.ts';
-export {
   addGetStoryDocumentationTool,
+  addListAllDocumentationTool,
+  getDocumentationToolMetadata,
+  getListAllDocumentationToolMetadata,
   getStoryDocumentationToolMetadata,
   GET_STORY_TOOL_NAME,
-} from './tools/get-documentation-for-story.ts';
+  GET_TOOL_NAME,
+  LIST_TOOL_NAME,
+} from './tools/register.ts';
 
 // Export manifest constants and utilities
 export {
+  adaptCoreComponent,
+  adaptCoreDoc,
+  adaptCoreStories,
   COMPONENT_MANIFEST_PATH,
   DOCS_MANIFEST_PATH,
   RequiresOwnMcpError,
-  getMultiSourceManifests,
   resolveComponentEntry,
   resolveComponentStories,
-  resolveDoc,
-} from './utils/get-manifest.ts';
+  resolveDocEntry as resolveDoc,
+} from 'storybook/internal/toolsets-docs';
 
-// Adapters from Storybook's open-service ("core format") payloads to the internal shape.
-export { adaptCoreComponent, adaptCoreDoc, adaptCoreStories } from './utils/adapt-core-manifest.ts';
+export { getMultiSourceManifests } from './utils/multi-source-manifests.ts';
 
 // Export types for reuse
 export type {

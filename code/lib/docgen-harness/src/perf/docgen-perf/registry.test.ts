@@ -29,6 +29,12 @@ async function specFor(id: EngineId, scenario: ScenarioSpec, rep = 1) {
   return calls[0];
 }
 
+/** Everything that describes the generated project, which is what a flag comparison is about. */
+function withoutPin(args: string[]): string[] {
+  const pin = args.indexOf('--pin');
+  return pin === -1 ? args : [...args.slice(0, pin), ...args.slice(pin + 2)];
+}
+
 const reactScenario = engineById('react-legacy').scenarios(QUICK_PROFILE)[0];
 const vueFlatScenario = engineById('vue-component-meta')
   .scenarios(QUICK_PROFILE)
@@ -117,7 +123,28 @@ describe('what the series engines spawn', () => {
   it('passes the scenario size through to the child', async () => {
     const { spec } = await specFor('react-legacy', reactScenario);
     const components = spec.args[spec.args.indexOf('--components') + 1];
-    expect(components).toBe(String(QUICK_PROFILE.react.components));
+    expect(components).toBe(String(QUICK_PROFILE.react[0].components));
+  });
+
+  it('runs both React shapes, and tells the child which one it is measuring', async () => {
+    const shapes = engineById('react-osa')
+      .scenarios(QUICK_PROFILE)
+      .map((scenario) => scenario.name);
+    expect(shapes).toEqual(['whole-index', 'first-story']);
+
+    for (const scenario of engineById('react-osa').scenarios(QUICK_PROFILE)) {
+      const { spec } = await specFor('react-osa', scenario);
+      expect(spec.args[spec.args.indexOf('--shape') + 1], scenario.name).toBe(scenario.name);
+    }
+  });
+
+  it('gives the React engines identical flags per shape, so a ratio compares engines not shapes', async () => {
+    for (const scenario of engineById('react-osa').scenarios(QUICK_PROFILE)) {
+      const osa = await specFor('react-osa', scenario);
+      const legacy = await specFor('react-legacy', scenario);
+      const shapeOf = (args: string[]) => args[args.indexOf('--shape') + 1];
+      expect(shapeOf(osa.spec.args), scenario.name).toBe(shapeOf(legacy.spec.args));
+    }
   });
 
   it('passes --heavy-lib only for scenarios that ask for it', async () => {
@@ -132,7 +159,7 @@ describe('what the series engines spawn', () => {
     for (const scenario of engineById('vue-docgen-api').scenarios(QUICK_PROFILE)) {
       const legacy = await specFor('vue-docgen-api', scenario);
       const meta = await specFor('vue-component-meta', scenario);
-      expect(meta.spec.args, scenario.name).toEqual(legacy.spec.args);
+      expect(withoutPin(meta.spec.args), scenario.name).toEqual(withoutPin(legacy.spec.args));
       expect(meta.spec.childPath).not.toBe(legacy.spec.childPath);
     }
   });
@@ -142,18 +169,18 @@ describe('what the series engines spawn', () => {
   });
 
   it('sends the two vue-component-meta versions to one child with different pins', async () => {
-    const pinned = await specFor('vue-component-meta', vueFlatScenario);
+    const current = await specFor('vue-component-meta', vueFlatScenario);
     const next = await specFor('vue-component-meta-next', vueFlatScenario);
-    expect(next.spec.childPath).toBe(pinned.spec.childPath);
-    expect(pinned.spec.args).not.toContain('next');
-    expect(next.spec.args.slice(-2)).toEqual(['--pin', 'next']);
+    expect(next.spec.childPath).toBe(current.spec.childPath);
+    expect(current.spec.args.slice(-2)).toEqual(['--pin', 'vue-component-meta']);
+    expect(next.spec.args.slice(-2)).toEqual(['--pin', 'vue-component-meta-next']);
   });
 
   it('gives both vue-component-meta versions identical flags apart from --pin', async () => {
     for (const scenario of engineById('vue-component-meta').scenarios(QUICK_PROFILE)) {
-      const pinned = await specFor('vue-component-meta', scenario);
+      const current = await specFor('vue-component-meta', scenario);
       const next = await specFor('vue-component-meta-next', scenario);
-      expect(next.spec.args.slice(0, -2)).toEqual(pinned.spec.args);
+      expect(withoutPin(next.spec.args)).toEqual(withoutPin(current.spec.args));
     }
   });
 

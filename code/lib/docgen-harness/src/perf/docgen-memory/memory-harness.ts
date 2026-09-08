@@ -72,6 +72,13 @@ const MODES = ['refresh', 'live'] as const;
  * refreshing on an empty change hint), `changed` re-extracts only the component whose file changed.
  */
 const SCOPES = ['all', 'changed'] as const;
+/**
+ * Which shape of docgen work the run reproduces.
+ *
+ *   whole-index - cold documents every component, saves walk round-robin. The manifest generator.
+ *   first-story - cold documents one component and every save re-extracts it. The docgen server.
+ */
+const SHAPES = ['whole-index', 'first-story'] as const;
 const RECYCLE = ['on', 'off'] as const;
 
 const OPTIONS = {
@@ -81,6 +88,7 @@ const OPTIONS = {
   saves: { type: 'string' },
   mode: { type: 'string' },
   scope: { type: 'string' },
+  shape: { type: 'string' },
   recycle: { type: 'string' },
   heavy: { type: 'boolean' },
   'heavy-factor': { type: 'string' },
@@ -98,6 +106,7 @@ const SCHEMA = z.object({
   saves: countOption(25),
   mode: z.enum(MODES).default('refresh'),
   scope: z.enum(SCOPES).default('all'),
+  shape: z.enum(SHAPES).default('whole-index'),
   // `Infinity` disables program recycling; `undefined` leaves the product default in place.
   recycleHeapPressureRatio: z
     .enum(RECYCLE)
@@ -227,11 +236,14 @@ function refreshEngine(
 ): SeriesEngine {
   // Track how many extra props each component currently has, so each save grows the type.
   const extraByComponent = new Array<number>(options.components).fill(options.props);
-  const changedIndex = (save: number) => (save - 1) % options.components;
+  const firstStory = options.shape === 'first-story';
+  // Round-robin would document components the cold pass never touched, so retained heap would climb
+  // for an honest reason that reads exactly like a leak.
+  const changedIndex = (save: number) => (firstStory ? 0 : (save - 1) % options.components);
 
   return {
     async cold() {
-      manager.batchExtract(entries);
+      manager.batchExtract(firstStory ? [entries[0]] : entries);
       return undefined;
     },
     async applySave(save) {
@@ -264,11 +276,16 @@ harnessMain(async () => {
   console.log('docgen-memory harness');
   console.log(
     `  components=${options.components} variants=${options.variants} props=${options.props} ` +
-      `saves=${options.saves} mode=${options.mode} scope=${options.scope} ` +
+      `saves=${options.saves} mode=${options.mode} scope=${options.scope} shape=${options.shape} ` +
       `forceGc=${options.forceGc && gcAvailable()}`
   );
   if (options.forceGc && !gcAvailable()) {
     console.log('  (run with `node --expose-gc` to measure retained heap; continuing without it)');
+  }
+
+  // Re-extracting everything after a save is the other shape wearing this one's name.
+  if (options.shape === 'first-story' && options.scope === 'all') {
+    throw new Error('--shape first-story requires --scope changed');
   }
 
   const project = resolveProject(options);
@@ -283,7 +300,10 @@ harnessMain(async () => {
 
   const series = await runSeries(refreshEngine(manager, entries, project, options), {
     saves: options.saves,
-    coldLabel: `${entries.length} components`,
+    coldLabel:
+      options.shape === 'first-story'
+        ? `1 of ${entries.length} components`
+        : `${entries.length} components`,
     forceGc: options.forceGc,
   });
 

@@ -64,15 +64,18 @@ export const Link = ({
   [key: string]: unknown;
 }) => {
   const location = useLocation();
+  const { onClick: _navigate, ...linkProps } = _useLinkProps({ to, ...props } as any) as Record<
+    string,
+    unknown
+  >;
   return React.createElement(
     'a',
     {
-      href: to,
+      ...linkProps,
       onClick: (e: React.MouseEvent) => {
         e.preventDefault();
         onNavigate({ to, from: location.href });
       },
-      ...props,
     },
     children
   );

@@ -304,9 +304,23 @@ When `route` is supplied as a plain object, it may also include TanStack route o
 
 #### `context`
 
-Type: `Record<string, unknown>`
+Type: `Record<string, unknown> | (({ storyContext }) => Record<string, unknown>)`
 
-Router context values injected into the story router.
+Router context values injected into the story router. Accepts a static object, or a factory function that receives the story context. The factory runs before the router's initial load and outside React rendering, so its values are available to route [`loader`](https://tanstack.com/router/latest/docs/api/router/RouteOptionsType#loader-method) and [`beforeLoad`](https://tanstack.com/router/latest/docs/api/router/RouteOptionsType#beforeload-method):
+
+```ts
+parameters: {
+  tanstack: {
+    router: {
+      context: ({ storyContext }) => ({
+        queryClient: storyContext.loaded.queryClient,
+      }),
+    },
+  },
+}
+```
+
+Because the factory cannot call React hooks, use [`useRouterContext`](#useroutercontext) when the value can only be read from a React provider rendered around the story.
 
 #### `params`
 
@@ -342,18 +356,25 @@ Per-route overrides keyed by route ID, applied to the story's route and root rou
 
 Type: `({ storyContext }) => RouterContext`
 
-Dynamically computes the router context from the story context. Use this when the router context depends on values that are already available in the story (for example, a `QueryClient` that is loaded by a story loader).
+Computes the router context during rendering, as a React hook. Use this when the value can only be read from a React provider rendered around the story (for example, a `QueryClient` obtained from `useQueryClient()`):
 
 ```ts
 parameters: {
   tanstack: {
     router: {
-      useRouterContext: ({ storyContext }) => ({
-        queryClient: storyContext.loaded.queryClient,
+      useRouterContext: () => ({
+        queryClient: useQueryClient(),
       }),
     },
   },
 }
 ```
 
-This is an alternative to [`context`](#context) for cases where the router context needs a React context provider (e.g., TanStack Query's `QueryClientProvider`) that must be rendered in the story before the context value can be accessed.
+<Callout variant="info">
+  Because this is a hook, it runs during rendering — after the router's initial load has already
+  completed. Its values reach rendered components, but not the initial
+  [`loader`](https://tanstack.com/router/latest/docs/api/router/RouteOptionsType#loader-method) or
+  [`beforeLoad`](https://tanstack.com/router/latest/docs/api/router/RouteOptionsType#beforeload-method).
+  When a route loader reads a value from router context, supply it through the [`context`](#context)
+  factory instead, which runs before the initial load.
+</Callout>

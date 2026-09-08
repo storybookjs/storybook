@@ -4,7 +4,7 @@ import { UniversalStore } from '../shared/universal-store/index.ts';
 import { Channel } from './main.ts';
 import { PostMessageTransport } from './postmessage/index.ts';
 import type { ChannelTransport, Config } from './types.ts';
-import { WebsocketTransport } from './websocket/index.ts';
+import { SERVER_CHANNEL_PATH, WebsocketTransport } from './websocket/index.ts';
 
 export * from './main.ts';
 export {
@@ -23,7 +23,9 @@ export {
   WebsocketTransport,
   HEARTBEAT_INTERVAL,
   HEARTBEAT_MAX_LATENCY,
+  SERVER_CHANNEL_PATH,
 } from './websocket/index.ts';
+export type { ChannelWebSocket } from './websocket/index.ts';
 
 type Options = Config & {
   extraTransports?: ChannelTransport[];
@@ -45,7 +47,7 @@ export function createBrowserChannel({ page, extraTransports = [] }: Options): C
     const protocol = window.location.protocol === 'http:' ? 'ws' : 'wss';
     const { hostname, port } = window.location;
     const { wsToken } = globalThis.CHANNEL_OPTIONS || {};
-    const channelUrl = `${protocol}://${hostname}:${port}/storybook-server-channel?token=${wsToken}`;
+    const channelUrl = `${protocol}://${hostname}:${port}${SERVER_CHANNEL_PATH}?token=${wsToken}`;
 
     transports.push(new WebsocketTransport({ url: channelUrl, onError: () => {}, page }));
   }

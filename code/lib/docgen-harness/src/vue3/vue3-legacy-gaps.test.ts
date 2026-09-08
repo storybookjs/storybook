@@ -30,6 +30,7 @@ const BASELINES = {
   wholeIntersectionArgTypes: 'type-intersection-whole/argtypes.snapshot',
   unionAliasArgTypes: 'cross-file-union-alias/argtypes.snapshot',
   tsEnumArgTypes: 'props-ts-enum/argtypes.snapshot',
+  exposeArgTypes: 'define-expose/argtypes.snapshot',
   collisionSnippet: 'prop-slot-name-collision/snippet-IconPropAsWritten.snapshot',
 } as const;
 
@@ -155,6 +156,15 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
     // accepts member refs ("Severity.Warning") as well as literal values ("warning").
     expect(baseline('tsEnumArgTypes')).toContain('"name": "enum"');
     expect(baseline('tsEnumArgTypes')).toMatch(/[Ww]arning/);
+  });
+
+  gapTest('exposed members record the type they were declared with', () => {
+    // Legacy: vue-docgen-api reports expose entries as name plus description only, so both
+    // members record `"type": undefined` and an empty `other` sbType. vue-component-meta
+    // resolves the same two members to `number` and `() => void`, which is what the
+    // cm-argtypes baseline next to this one shows.
+    expect(baseline('exposeArgTypes')).toContain('"summary": "number"');
+    expect(baseline('exposeArgTypes')).toContain('() => void');
   });
 });
 

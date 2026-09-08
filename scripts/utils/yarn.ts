@@ -1,4 +1,4 @@
-import { access, mkdir, readFile, rm, writeFile } from 'node:fs/promises';
+import { access, mkdir, readFile, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 
 // TODO -- should we generate this file a second time outside of CLI?
@@ -6,6 +6,7 @@ import storybookVersions from '../../code/core/src/common/versions.ts';
 import { allTemplates } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import type { AllTemplatesKey } from '../../code/lib/cli-storybook/src/sandbox-templates.ts';
 import { exec } from './exec.ts';
+import { preapproveLocallyPublishedPackages } from './preapprove-local-packages.ts';
 
 export type YarnOptions = {
   cwd: string;
@@ -46,27 +47,25 @@ export const addPackageResolutions = async ({ cwd, dryRun }: YarnOptions) => {
 };
 
 export const installYarn2 = async ({ cwd, dryRun, debug }: YarnOptions) => {
-  await rm(join(cwd, '.yarnrc.yml'), { force: true }).catch(() => {});
-
   // TODO: Remove in SB11
   const pnpApiExists = await pathExists(join(cwd, '.pnp.cjs'));
 
-  await mkdir(cwd, { recursive: true }).then(() =>
-    Promise.all([
-      //
-      writeFile(join(cwd, 'yarn.lock'), ''),
-      writeFile(join(cwd, '.yarnrc.yml'), ''),
-    ])
-  );
+  await mkdir(cwd, { recursive: true });
+
+  // The published sandbox ships a lockfile and a `.yarnrc.yml` carrying the age gate.
+  // Both are deliberately kept: wiping them made every CI run resolve the whole tree
+  // from live npm, which is how a package hours old could reach a runner.
+  //
+  // Our own Storybook packages are published to Verdaccio seconds before this install,
+  // so they can never satisfy the gate. Name them instead of switching it off, exactly
+  // as sandbox generation does for the `after-storybook` install.
+  await preapproveLocallyPublishedPackages(cwd);
 
   const command = [
-    `yarn set version berry`,
+    // No `yarn set version` here: the sandbox pins Yarn through the `packageManager`
+    // field, and writing a `yarnPath` alongside it makes corepack abort on the mismatch.
     `yarn config set enableGlobalCache true`, // Use the global cache so we aren't re-caching dependencies each time we run sandbox
     `yarn config set checksumBehavior ignore`,
-    // Yarn 4.15.0 defaults `npmMinimalAgeGate` to 1d, which quarantines freshly
-    // published Storybook packages from the local Verdaccio registry. Disable
-    // the gate inside sandboxes so installs aren't blocked.
-    `yarn config set npmMinimalAgeGate 0`,
   ];
 
   if (!pnpApiExists) {

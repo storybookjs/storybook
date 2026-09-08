@@ -41,6 +41,10 @@ test.describe('addon-onboarding', () => {
     !hasOnboardingFeature(templateName),
     `Skipping ${templateName}, which does not have addon-onboarding set up.`
   );
+  test.skip(
+    templateName === 'vue3-vite/docgen-server-ts',
+    `Skipping ${templateName}, whose onboarding coverage is carried by vue3-vite/default-ts.`
+  );
   test('the onboarding flow', async ({ page }) => {
     // eslint-disable-next-line playwright/no-conditional-in-test
     if (process.env.CI) {

@@ -28,37 +28,20 @@ const LIFECYCLE_STORYBOOK_EVALS = [
   '823-setup-outdated-storybook',
 ] as const;
 
-// The 9xx line: ports from the old /eval system, written for the MCP-only
-// workflow of the published stable release. They only run under
-// EVAL_STORYBOOK_LATEST=1 (or via EVAL_ONLY).
+// The 9xx line: MCP-only ports from the old /eval system that still cover
+// unique tool shapes or fixtures the 8xx line does not (async mocks, story
+// drift, a11y:false, preview-by-path/id, vitest CLI, etc.). Twins of 8xx
+// scenarios (901/902/905/907/911 MCP) and duplicate prompt shapes were
+// removed. They only run under EVAL_STORYBOOK_LATEST=1 (or via EVAL_ONLY).
 const PORTED_WORKFLOW_STORYBOOK_EVALS = [
-  '901-create-component-atom-reshaped-concise',
-  '901-create-component-atom-reshaped-detailed',
-  '901-create-component-atom-reshaped-explicit-stories',
-  '902-create-component-composite-reshaped-concise',
-  '902-create-component-composite-reshaped-detailed',
-  '902-create-component-composite-reshaped-explicit-stories',
-  '903-create-component-async-fetch-reshaped-concise',
-  '903-create-component-async-fetch-reshaped-detailed',
   '903-create-component-async-fetch-reshaped-explicit-stories',
-  '904-create-component-async-module-reshaped-concise',
-  '904-create-component-async-module-reshaped-detailed',
   '904-create-component-async-module-reshaped-explicit-stories',
-  '905-existing-component-write-story-reshaped-concise',
-  '905-existing-component-write-story-reshaped-detailed',
-  '906-existing-component-edit-story-reshaped-concise',
   '906-existing-component-edit-story-reshaped-detailed',
-  '907-existing-component-change-component-reshaped-concise',
-  '907-existing-component-change-component-reshaped-detailed',
-  '907-existing-component-change-component-reshaped-explicit-stories',
   '908-run-story-tests',
   '909-run-tests-after-component-creation',
-  '910-run-tests-without-a11y-concise',
   '910-run-tests-without-a11y-explicit',
-  '911-fix-failing-tests',
   '911-fix-failing-tests-vitest-cli',
   '912-fix-a11y-violations',
-  '912-fix-a11y-violations-explicit',
   '913-run-all-tests-final-verification',
   '914-preview-story-by-path',
   '915-preview-story-by-id',
@@ -119,7 +102,7 @@ function resolveActiveEvals(): { core: EvalName[]; lifecycle: EvalName[] } {
   }
 
   return STORYBOOK_LATEST
-    ? { core: ['901-create-component-atom-reshaped-concise'], lifecycle: [] }
+    ? { core: ['908-run-story-tests'], lifecycle: [] }
     : { core: ['801-create-component-no-launch-config'], lifecycle: [] };
 }
 

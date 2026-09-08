@@ -180,55 +180,6 @@ describe('CompositionAuth', () => {
       );
     });
 
-    it('delegates the local source to localManifestProvider when provided (docgen-server mode)', async () => {
-      const auth = new CompositionAuth();
-
-      const mockFetch = vi.fn();
-      vi.stubGlobal('fetch', mockFetch);
-
-      const localManifestProvider = vi
-        .fn()
-        .mockResolvedValue('{"v":1,"components":{"button":{"id":"button","name":"Button"}}}');
-
-      const provider = auth.createManifestProvider('http://localhost:6006', localManifestProvider);
-      const request = new Request('http://localhost:6006/mcp');
-      const source = { id: 'local', title: 'Local' };
-
-      const result = await provider(request, './manifests/components.json', source);
-
-      // Read in-process, never over loopback HTTP.
-      expect(localManifestProvider).toHaveBeenCalledWith(
-        request,
-        './manifests/components.json',
-        source
-      );
-      expect(mockFetch).not.toHaveBeenCalled();
-      expect(result).toContain('button');
-    });
-
-    it('still fetches remote sources over HTTP even when localManifestProvider is provided', async () => {
-      const auth = new CompositionAuth();
-
-      const mockFetch = vi.fn().mockResolvedValue({
-        ok: true,
-        text: () => Promise.resolve('{"v":1,"components":{}}'),
-      });
-      vi.stubGlobal('fetch', mockFetch);
-      const localManifestProvider = vi.fn();
-
-      const provider = auth.createManifestProvider('http://localhost:6006', localManifestProvider);
-      const request = new Request('http://localhost:6006/mcp');
-      const source = { id: 'remote', title: 'Remote', url: 'http://remote.example.com' };
-
-      await provider(request, './manifests/components.json', source);
-
-      expect(localManifestProvider).not.toHaveBeenCalled();
-      expect(mockFetch).toHaveBeenCalledWith(
-        'http://remote.example.com/manifests/components.json',
-        expect.any(Object)
-      );
-    });
-
     it('fetches from source URL when source provided', async () => {
       const auth = new CompositionAuth();
 
@@ -246,6 +197,27 @@ describe('CompositionAuth', () => {
 
       expect(mockFetch).toHaveBeenCalledWith(
         'http://remote.example.com/manifests/components.json',
+        expect.any(Object)
+      );
+    });
+
+    it('only rewrites a leading ./ in the manifest path, leaving inner ./ sequences intact', async () => {
+      const auth = new CompositionAuth();
+
+      const mockFetch = vi.fn().mockResolvedValue({
+        ok: true,
+        text: () => Promise.resolve('{"anything":"goes"}'),
+      });
+      vi.stubGlobal('fetch', mockFetch);
+
+      const provider = auth.createManifestProvider('http://localhost:6006');
+      const request = new Request('http://localhost:6006/mcp');
+      const source = { id: 'remote', title: 'Remote', url: 'http://remote.example.com' };
+
+      await provider(request, '/services/a./b.json', source);
+
+      expect(mockFetch).toHaveBeenCalledWith(
+        'http://remote.example.com/services/a./b.json',
         expect.any(Object)
       );
     });
@@ -854,7 +826,7 @@ describe('CompositionAuth', () => {
       expect(auth.requiresAuth).toBe(false);
       expect(auth.authUrls).toHaveLength(0);
       expect(warnSpy).toHaveBeenCalledWith(
-        expect.stringContaining('Failed to check auth for composed ref "Down Service"')
+        expect.stringContaining('Skipping composed ref "Down Service"')
       );
     });
 

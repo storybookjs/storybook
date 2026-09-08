@@ -53,7 +53,8 @@ test('manifests generates correct id, name, description and examples ', async ()
           "description": "Primary UI component for user interaction",
           "error": undefined,
           "id": "example-button",
-          "import": "import { Button } from "@design-system/components/override";",
+          "import": "import { Button } from '@design-system/components/override';
+    import { fn } from 'storybook/test';",
           "jsDocTags": {
             "import": [
               "import { Button } from '@design-system/components/override';",
@@ -176,7 +177,8 @@ test('manifests generates correct id, name, description and examples ', async ()
           "description": "Description from meta and very long.",
           "error": undefined,
           "id": "example-header",
-          "import": "import { Header } from "some-package";",
+          "import": "import { Header } from 'some-package';
+    import { fn } from 'storybook/test';",
           "jsDocTags": {
             "summary": [
               "Component summary",
@@ -366,7 +368,7 @@ test('fall back to index title when no component name', async () => {
       "description": "Primary UI component for user interaction",
       "error": undefined,
       "id": "example-button",
-      "import": "import { Button } from "some-package";",
+      "import": "import { Button } from 'some-package';",
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
@@ -416,7 +418,7 @@ test('component exported from other file', async () => {
       "description": "Primary UI component for user interaction",
       "error": undefined,
       "id": "example-button",
-      "import": "import { Button } from "some-package";",
+      "import": "import { Button } from 'some-package';",
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
@@ -471,7 +473,7 @@ test('unknown expressions', async () => {
       "description": "Primary UI component for user interaction",
       "error": undefined,
       "id": "example-button",
-      "import": "import { Button } from "some-package";",
+      "import": "import { Button } from 'some-package';",
       "jsDocTags": {},
       "name": "Button",
       "path": "./src/stories/Button.stories.ts",
@@ -908,7 +910,10 @@ test('generator preserves @import override when reactComponentMeta is enabled', 
   const result = await runManifestsWithOptions(manifestEntries, { presets });
   const button = result?.components?.components?.['example-button'];
 
-  expect(button?.import).toBe('import { Button } from "@design-system/components/override";');
+  // `fn` joins the block because the story's args call it, so the snippet compiles as pasted.
+  expect(button?.import).toBe(
+    "import { Button } from '@design-system/components/override';\nimport { fn } from 'storybook/test';"
+  );
   expect(button?.jsDocTags.import).toEqual([
     "import { Button } from '@design-system/components/override';",
   ]);
@@ -998,7 +1003,7 @@ test('generator falls back to title-based matching when meta.component aliases a
 
   expect(accordion?.error).toBeUndefined();
   expect(accordion?.name).toBe('Root');
-  expect(accordion?.import).toBe('import { Root } from "some-package";');
+  expect(accordion?.import).toBe("import { Root } from 'some-package';");
   expect(batchExtract).toHaveBeenCalled();
 });
 
@@ -1068,7 +1073,7 @@ test('should create component manifest when only attached-mdx docs have manifest
             "description": "Primary UI component for user interaction",
             "error": undefined,
             "id": "example-button",
-            "import": "import { Button } from "some-package";",
+            "import": "import { Button } from 'some-package';",
             "jsDocTags": {},
             "name": "Button",
             "path": "./src/stories/Button.stories.ts",

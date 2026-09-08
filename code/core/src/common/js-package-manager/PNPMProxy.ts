@@ -11,11 +11,12 @@ import {
 import * as find from 'empathic/find';
 // eslint-disable-next-line depend/ban-dependencies
 import type { ResultPromise } from 'execa';
+import { coerce, gte } from 'semver';
 import { dedent } from 'ts-dedent';
 import { type Document, parseDocument } from 'yaml';
 
 import type { ExecuteCommandOptions } from '../utils/command.ts';
-import { executeCommand } from '../utils/command.ts';
+import { executeCommand, executeCommandSync } from '../utils/command.ts';
 import { getProjectRoot } from '../utils/paths.ts';
 import { JsPackageManager, PackageManagerName } from './JsPackageManager.ts';
 import type { PackageJson } from './PackageJson.ts';
@@ -54,10 +55,16 @@ export type PnpmListOutput = PnpmListItem[];
 
 const PNPM_ERROR_REGEX = /(ELIFECYCLE|ERR_PNPM_[A-Z_]+)\s+(.*)/i;
 
+/** `pnpm dlx --allow-build` support (docs: Added in v10.2.0). */
+const PNPM_ALLOW_BUILD_DLX_MIN = '10.2.0';
+
 export class PNPMProxy extends JsPackageManager {
   readonly type = PackageManagerName.PNPM;
 
   installArgs: string[] | undefined;
+
+  /** Cached `pnpm --version` output; `undefined` until read, `null` if lookup failed. */
+  #pnpmVersion: string | null | undefined;
 
   detectWorkspaceRoot() {
     const CWD = process.cwd();
@@ -79,12 +86,33 @@ export class PNPMProxy extends JsPackageManager {
   }
 
   async getPnpmVersion(): Promise<string> {
-    const result = await executeCommand({
-      cwd: this.cwd,
-      command: 'pnpm',
-      args: ['--version'],
-    });
-    return typeof result.stdout === 'string' ? result.stdout : '';
+    return this.#readPnpmVersion() ?? '';
+  }
+
+  #readPnpmVersion(): string | null {
+    if (this.#pnpmVersion !== undefined) {
+      return this.#pnpmVersion;
+    }
+
+    try {
+      logger.debug('Executing command: pnpm --version');
+      const stdout = executeCommandSync({
+        cwd: this.cwd,
+        command: 'pnpm',
+        args: ['--version'],
+        stdio: 'pipe',
+      });
+      this.#pnpmVersion = stdout.trim();
+    } catch {
+      this.#pnpmVersion = null;
+    }
+
+    return this.#pnpmVersion;
+  }
+
+  #pnpmGte(minimum: string): boolean {
+    const version = coerce(this.#readPnpmVersion());
+    return version != null && gte(version, minimum);
   }
 
   getInstallArgs(): string[] {
@@ -110,9 +138,20 @@ export class PNPMProxy extends JsPackageManager {
     args: string[];
     useRemotePkg?: boolean;
   }): ResultPromise {
+    // On pnpm 11+, Storybook-owned `dlx` can hang on approve-builds for esbuild.
+    // Pass `--allow-build` only here — not on `add`, which persists `allowBuilds`
+    // into the user's project config.
+    const pnpmArgs = useRemotePkg
+      ? [
+          ...(this.#pnpmGte(PNPM_ALLOW_BUILD_DLX_MIN) ? ['--allow-build=esbuild'] : []),
+          'dlx',
+          ...args,
+        ]
+      : ['exec', ...args];
+
     return executeCommand({
       command: 'pnpm',
-      args: [useRemotePkg ? 'dlx' : 'exec', ...args],
+      args: pnpmArgs,
       ...options,
     });
   }

@@ -17,7 +17,7 @@ export const blocker = createBlocker({
       message: dedent`
         Storybook 11+ does not support Create React App projects.
 
-        Migrate your project to Vite (e.g. with @storybook/react-vite) to keep using Storybook.
+        Migrate your project to, e.g., Vite (`@storybook/react-vite`) to keep using Storybook.
 
         Alternatively, rerun init with explicit project type and builder flags to set Storybook
         up with webpack5 or vite instead:

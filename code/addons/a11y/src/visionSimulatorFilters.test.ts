@@ -2,6 +2,15 @@ import { describe, expect, it } from 'vitest';
 
 import { filterDefs, filters } from './visionSimulatorFilters.ts';
 
+describe('anomaly simulations', () => {
+  it('does not offer fixed simulations for conditions with variable severity', () => {
+    for (const anomaly of ['protanomaly', 'deuteranomaly', 'tritanomaly']) {
+      expect(filters).not.toHaveProperty(anomaly);
+      expect(filterDefs).not.toContain(`storybook-a11y-vision-${anomaly}`);
+    }
+  });
+});
+
 describe('filterDefs', () => {
   it('avoids display:none, which makes Firefox ignore CSS url() filters', () => {
     expect(filterDefs).not.toMatch(/display\s*:\s*none/i);

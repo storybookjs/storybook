@@ -32,6 +32,12 @@ const vitestModulePath = fileURLToPath(importMetaResolve('@storybook/addon-vites
 // Events that were triggered before Vitest was ready are queued up and resent once it's ready
 const eventQueue: { type: string; args?: any[] }[] = [];
 
+const UNIVERSAL_STORE_EVENT_NAMES = new Set<string>([
+  STORE_CHANNEL_EVENT_NAME,
+  STATUS_STORE_CHANNEL_EVENT_NAME,
+  TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME,
+]);
+
 let child: null | ChildProcess;
 let ready = false;
 let unsubscribeStore: () => void;
@@ -128,6 +134,8 @@ const bootTestRunner = async ({
             payload: event.payload,
           });
           reject();
+        } else if (UNIVERSAL_STORE_EVENT_NAMES.has(event.type) && channel.receive) {
+          channel.receive(event);
         } else {
           channel.emit(event.type, ...event.args);
         }

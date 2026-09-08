@@ -1,17 +1,26 @@
+// @vitest-environment happy-dom
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-import { describe, expect, test } from 'vitest';
+import { afterEach, describe, expect, it, test, vi } from 'vitest';
 
+import { logger } from 'storybook/internal/client-logger';
+
+import { extractArgTypes } from '../../../../renderers/web-components/src/docs/custom-elements.ts';
+import { setCustomElementsManifest } from '../../../../renderers/web-components/src/framework-api.ts';
 import { BASELINE_PATH } from './baseline-path.ts';
 
 const gapTest = BASELINE_PATH === 'legacy' ? test.fails : test;
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
 
+type ManifestWithSchemaVersion = { schemaVersion?: string };
+
 const BASELINES = {
-  reflectedBooleanArgTypes: 'lit-basic-attributes/argtypes.snapshot',
+  basicArgTypes: 'lit-basic-attributes/argtypes.snapshot',
+  v2ArgTypes: 'lit-basic-attributes/v2-argtypes.snapshot',
+  wcaArgTypes: 'lit-basic-attributes/wca-argtypes.snapshot',
   unionArgTypes: 'lit-union-jsdoc/argtypes.snapshot',
   unionDescription: 'lit-union-jsdoc/description.snapshot',
   eventsArgTypes: 'lit-events/argtypes.snapshot',
@@ -24,6 +33,14 @@ const BASELINES = {
 const baseline = (key: keyof typeof BASELINES) =>
   readFileSync(join(fixturesDir, BASELINES[key]), 'utf-8');
 
+const readManifest = (fileName: string): ManifestWithSchemaVersion =>
+  JSON.parse(readFileSync(join(fixturesDir, 'lit-basic-attributes', fileName), 'utf-8'));
+
+afterEach(() => {
+  vi.restoreAllMocks();
+  setCustomElementsManifest(undefined);
+});
+
 test('every baseline referenced by a red marker exists', () => {
   for (const relativePath of Object.values(BASELINES)) {
     expect(existsSync(join(fixturesDir, relativePath)), relativePath).toBe(true);
@@ -33,7 +50,7 @@ test('every baseline referenced by a red marker exists', () => {
 describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', () => {
   gapTest('reflected booleans record one arg', () => {
     // Legacy: records both `is-open` under attributes and `isOpen` under properties.
-    const text = baseline('reflectedBooleanArgTypes');
+    const text = baseline('basicArgTypes');
     const reflectedKeys = [/^  "is-open": \{$/m.test(text), /^  "isOpen": \{$/m.test(text)].filter(
       Boolean
     );
@@ -63,6 +80,47 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
     const text = baseline('eventsArgTypes');
     expect(text).not.toContain('"name": "void"');
     expect(text).not.toMatch(/^        "summary": "CustomEvent",$/m);
+  });
+
+  gapTest('CEM 2.1.0 CSS states are recorded', () => {
+    // Legacy: cssStates is not mapped at all.
+    expect(baseline('v2ArgTypes')).toContain('  "open": {');
+  });
+
+  gapTest('the WCA experimental shape triggers a deprecation warning', async () => {
+    // Legacy: the shape is accepted silently.
+    const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+    setCustomElementsManifest(readManifest('custom-elements.wca.json'));
+    extractArgTypes('lit-basic-attributes');
+    expect(warn).toHaveBeenCalledWith(expect.stringMatching(/deprecat/i));
+    setCustomElementsManifest(undefined);
+  });
+});
+
+describe('manifest shape regressions', () => {
+  test('the 1.0.0 and 2.1.0 captures record the same argTypes today', () => {
+    expect(baseline('v2ArgTypes')).toBe(baseline('basicArgTypes'));
+  });
+
+  it.each([
+    [
+      'missing schemaVersion',
+      (manifest: ManifestWithSchemaVersion) => delete manifest.schemaVersion,
+    ],
+    [
+      'unknown schemaVersion',
+      (manifest: ManifestWithSchemaVersion) => (manifest.schemaVersion = '99.0.0'),
+    ],
+  ])('schemaVersion is not read by the runtime: %s', async (_label, mutateManifest) => {
+    const manifest = readManifest('custom-elements.json');
+    setCustomElementsManifest(manifest);
+    const expected = extractArgTypes('lit-basic-attributes');
+
+    const variantManifest = readManifest('custom-elements.json');
+    mutateManifest(variantManifest);
+    setCustomElementsManifest(variantManifest);
+
+    expect(extractArgTypes('lit-basic-attributes')).toEqual(expected);
   });
 });
 

@@ -57,7 +57,8 @@ src/
 │   ├── web-components-legacy-gaps.test.ts
 │   ├── web-components-render.test.ts
 │   └── __testfixtures__/<case>/  # component, input.stories.ts, custom-elements.json,
-│                                 # argtypes.snapshot, description.snapshot,
+│                                 # optional custom-elements.v2.json/custom-elements.wca.json,
+│                                 # argtypes.snapshot, description.snapshot, optional v2-/wca- prefixed snapshots,
 │                                 # snippet-<story>.snapshot
 └── perf/                         # the performance bench, see below
     ├── PERF-METHODOLOGY.md       # the measurement contract
@@ -126,6 +127,7 @@ Snapshots must stay deterministic: no timestamps, no absolute paths.
 - web-components: one component source plus `input.stories.ts` and `custom-elements.json`.
   Lit TypeScript fixtures include a per-case `tsconfig.json` with decorator settings; vanilla fixtures are plain `.js` and do not need one.
   Every story file keeps the default export's `component` as the target tag name string.
+  Optional hand-written 2.1.0 and WCA manifests live next to the capture and record under a prefix; snippets are not re-recorded for variants because the runtime snippet path does not read the manifest.
 
 ### Capturing compodoc input (angular)
 
@@ -153,6 +155,12 @@ npx -y @custom-elements-manifest/analyzer@0.11.0 analyze --litelement
 
 Drop `--litelement` for vanilla cases.
 Move the emitted `custom-elements.json` back into the fixture directory and make sure `modules[].path` records relative file names only.
+
+### Manifest shape variants (web-components)
+
+The default capture stays at CEM 1.0.0 because the analyzer still writes that version.
+The 2.1.0 variant is the same capture plus additive fields (`cssStates`, `readonly`), so a diff between `argtypes.snapshot` and `v2-argtypes.snapshot` shows exactly what a newer manifest buys.
+The WCA variant records the deprecated web-component-analyzer shape that the runtime still accepts.
 
 ## Known legacy gaps (vue3)
 
@@ -220,6 +228,8 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - Reflected Lit attributes can be missing when the snippet is read before asynchronous reflection.
 - `@summary` is recorded by the analyzer but never reaches the component description.
 - Class-level `@deprecated` never reaches the component description.
+- CEM 2.1.0 `cssStates` and `readonly` are ignored; the 1.0.0 and 2.1.0 recordings are identical.
+- The web-component-analyzer shape is accepted with no deprecation warning, and `schemaVersion` is never read (missing and unknown versions extract identically).
 - `@internal` members are stripped by the analyzer and never reach the manifest, so `lit-union-jsdoc`'s `renderCount` is a regression baseline, not a marker.
 - An inline `@deprecated` inside an `@attr` description is kept as description text by the analyzer (no `deprecated` field), so `vanilla-basic`'s `legacy-label` records the tag verbatim; an analyzer limitation, not a runtime gap.
 - Cross-file inheritance is fully resolved: the analyzer resolves superclass and mixin members into the tag's declaration, so `lit-inheritance-mixin/` is a regression baseline with no marker.

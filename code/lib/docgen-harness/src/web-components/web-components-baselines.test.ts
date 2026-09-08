@@ -7,6 +7,7 @@ import { afterEach, describe, expect, it } from 'vitest';
 
 import type { StoryContext } from 'storybook/internal/types';
 
+import type { StrictArgTypes } from '../../../../core/src/csf/story.ts';
 import {
   extractArgTypes,
   extractComponentDescription,
@@ -27,6 +28,9 @@ if (BASELINE_PATH !== 'legacy') {
 }
 
 const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixtures__');
+
+// The unprefixed custom-elements.json is the analyzer's 1.0.0 capture; these are hand-written shapes recorded under a prefix.
+const MANIFEST_VARIANTS = ['v2', 'wca'] as const;
 
 const fixtureCases = readdirSync(fixturesDir, { withFileTypes: true })
   .filter((entry) => entry.isDirectory())
@@ -50,19 +54,42 @@ describe('web-components legacy baselines', () => {
     >;
     const tagName = meta.component;
 
-    const argTypes = extractArgTypes(tagName);
-    expect(argTypes, `${fixtureCase}: no manifest declaration found for ${tagName}`).not.toBeNull();
-    if (argTypes === null) {
-      throw new Error(`${fixtureCase}: no manifest declaration found for ${tagName}`);
-    }
-    await recordArgTypesSnapshot({
-      path: join(testDir, 'argtypes.snapshot'),
-      label: `${fixtureCase}/argtypes.snapshot`,
-      candidate: argTypes,
-    });
+    const recordArgTypes = async (filePrefix: string) => {
+      const path = join(testDir, `${filePrefix}argtypes.snapshot`);
+      const label = `${fixtureCase}/${filePrefix}argtypes.snapshot`;
+      const argTypes = extractArgTypes(tagName);
+      expect(argTypes, `${label}: no manifest declaration found for ${tagName}`).not.toBeNull();
+      if (argTypes == null) {
+        throw new Error(`${label}: no manifest declaration found for ${tagName}`);
+      }
+      await recordArgTypesSnapshot({
+        path,
+        label,
+        candidate: argTypes as StrictArgTypes,
+      });
+    };
+
+    await recordArgTypes('');
 
     const description = extractComponentDescription(tagName) ?? '';
     await expect(description).toMatchFileSnapshot(join(testDir, 'description.snapshot'));
+
+    for (const variant of MANIFEST_VARIANTS) {
+      const variantManifestPath = join(testDir, `custom-elements.${variant}.json`);
+      if (!existsSync(variantManifestPath)) {
+        continue;
+      }
+
+      const variantManifest = JSON.parse(readFileSync(variantManifestPath, 'utf8'));
+      setCustomElementsManifest(variantManifest);
+
+      await recordArgTypes(`${variant}-`);
+
+      const variantDescription = extractComponentDescription(tagName) ?? '';
+      await expect(variantDescription).toMatchFileSnapshot(
+        join(testDir, `${variant}-description.snapshot`)
+      );
+    }
 
     for (const [exportName, story] of Object.entries(stories)) {
       const args = { ...meta.args, ...story.args };

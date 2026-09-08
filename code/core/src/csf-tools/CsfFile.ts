@@ -30,6 +30,8 @@ import { dedent } from 'ts-dedent';
 
 import { Tag } from '../shared/constants/tags.ts';
 import type { PrintResultType } from './PrintResultType.ts';
+import { type CsfMutationDiagnostic, type CsfObject, type CsfObjectOptions } from './CsfObject.ts';
+import { discoverCsfObjects } from './CsfObjectDiscovery.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
 import { isCanonicalCsf2BindCall, isCsfFactoryCall } from './story-shape/utils.ts';
 
@@ -318,11 +320,34 @@ export class CsfFile {
 
   _tests: StoryTest[] = [];
 
+  #mutationDiagnostics: CsfMutationDiagnostic[] = [];
+
+  #changed = false;
+
   constructor(ast: t.File, options: CsfOptions, file: BabelFile) {
     this._ast = ast;
     this._file = file;
     this._options = options;
     this.imports = [];
+  }
+
+  get mutationDiagnostics(): readonly CsfMutationDiagnostic[] {
+    return this.#mutationDiagnostics;
+  }
+
+  get changed() {
+    return this.#changed;
+  }
+
+  objects(options: CsfObjectOptions = {}): readonly CsfObject[] {
+    return discoverCsfObjects(
+      this,
+      options,
+      (diagnostic) => this.#mutationDiagnostics.push(diagnostic),
+      () => {
+        this.#changed = true;
+      }
+    );
   }
 
   _parseTitle(value: t.Node) {

@@ -5,6 +5,8 @@ import { Button, Link, ScrollArea } from 'storybook/internal/components';
 
 import { ArrowLeftIcon, GithubIcon, ShareAltIcon, StorybookIcon } from '@storybook/icons';
 
+import { FocusScope } from '@react-aria/focus';
+
 import { useTransitionState } from 'react-transition-state';
 import { keyframes, styled } from 'storybook/theming';
 
@@ -37,57 +39,62 @@ export const MobileAbout: FC = () => {
       $status={state.status}
       $transitionDuration={MOBILE_TRANSITION_DURATION}
     >
-      <ScrollArea vertical offset={3} scrollbarSize={6}>
-        <InnerArea>
-          <CloseButton
-            onClick={() => setMobileAboutOpen(false)}
-            ariaLabel="Close about section"
-            tooltip="Close about section"
-            variant="ghost"
-          >
-            <ArrowLeftIcon />
-            Back
-          </CloseButton>
-          <LinkContainer>
-            <LinkLine
-              href="https://github.com/storybookjs/storybook"
-              target="_blank"
-              rel="noopener noreferrer"
+      {/* The overlay covers the menu drawer's content but stays inside its focus scope, so without
+       a scope of its own, Tab would keep cycling through the obscured menu underneath. */}
+      {/* eslint-disable-next-line jsx-a11y/no-autofocus */}
+      <FocusScope contain restoreFocus autoFocus>
+        <ScrollArea vertical offset={3} scrollbarSize={6}>
+          <InnerArea>
+            <CloseButton
+              onClick={() => setMobileAboutOpen(false)}
+              ariaLabel="Close about section"
+              tooltip="Close about section"
+              variant="ghost"
             >
-              <LinkLeft>
-                <GithubIcon />
-                <span>Github</span>
-              </LinkLeft>
-              <ShareAltIcon width={12} />
-            </LinkLine>
-            <LinkLine
-              href="https://storybook.js.org/docs/get-started/install?ref=ui"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <LinkLeft>
-                <StorybookIcon />
-                <span>Documentation</span>
-              </LinkLeft>
-              <ShareAltIcon width={12} />
-            </LinkLine>
-          </LinkContainer>
-          <UpgradeBlock />
-          <BottomText>
-            Open source software maintained by{' '}
-            <Link href="https://chromatic.com" target="_blank" rel="noopener noreferrer">
-              Chromatic
-            </Link>{' '}
-            and the{' '}
-            <Link
-              href="https://github.com/storybookjs/storybook/graphs/contributors"
-              rel="noopener noreferrer"
-            >
-              Storybook Community
-            </Link>
-          </BottomText>
-        </InnerArea>
-      </ScrollArea>
+              <ArrowLeftIcon />
+              Back
+            </CloseButton>
+            <LinkContainer>
+              <LinkLine
+                href="https://github.com/storybookjs/storybook"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <LinkLeft>
+                  <GithubIcon />
+                  <span>Github</span>
+                </LinkLeft>
+                <ShareAltIcon width={12} />
+              </LinkLine>
+              <LinkLine
+                href="https://storybook.js.org/docs/get-started/install?ref=ui"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                <LinkLeft>
+                  <StorybookIcon />
+                  <span>Documentation</span>
+                </LinkLeft>
+                <ShareAltIcon width={12} />
+              </LinkLine>
+            </LinkContainer>
+            <UpgradeBlock />
+            <BottomText>
+              Open source software maintained by{' '}
+              <Link href="https://chromatic.com" target="_blank" rel="noopener noreferrer">
+                Chromatic
+              </Link>{' '}
+              and the{' '}
+              <Link
+                href="https://github.com/storybookjs/storybook/graphs/contributors"
+                rel="noopener noreferrer"
+              >
+                Storybook Community
+              </Link>
+            </BottomText>
+          </InnerArea>
+        </ScrollArea>
+      </FocusScope>
     </Container>
   );
 };

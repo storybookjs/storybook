@@ -285,6 +285,27 @@ export const AboutResetOnReopen: Story = {
   },
 };
 
+// The about overlay covers the menu inside the drawer, so it must trap focus: without a trap,
+// tabbing keeps cycling through the obscured menu underneath (regression test).
+export const AboutFocusTrapped: Story = {
+  play: async (context) => {
+    // @ts-expect-error (non strict)
+    await MenuOpen.play(context);
+    await userEvent.click(await screen.findByLabelText('About Storybook'));
+
+    const backButton = await screen.findByLabelText('Close about section');
+    await waitFor(() => expect(backButton).toHaveFocus());
+
+    const menuCloseButton = screen.getByLabelText('Close navigation menu');
+    const aboutOpenButton = screen.getByLabelText('About Storybook');
+    for (let i = 0; i < 12; i += 1) {
+      await userEvent.tab();
+      expect(menuCloseButton).not.toHaveFocus();
+      expect(aboutOpenButton).not.toHaveFocus();
+    }
+  },
+};
+
 export const ReactNodeRenderLabel: Story = {
   decorators: [
     (storyFn) => {

@@ -252,16 +252,19 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
       const shortcut = eventToShortcut(event);
       const shortcuts = api.getShortcutKeys();
       const actions = keys(shortcuts);
-      const isSidebarShortcutBlocked = fullAPI.getNavAvailability() === 'unavailable';
       const matchedFeature = actions.find((feature: API_Action) => {
         if (!shortcutMatchesShortcut(shortcut!, shortcuts[feature])) {
           return false;
         }
+
+        // Don't register sidebar shortcuts when it's hidden.
+        const isSidebarShortcutBlocked = fullAPI.getNavAvailability() === 'unavailable';
         if (isSidebarShortcutBlocked && ['focusNav', 'search', 'toggleNav'].includes(feature)) {
           return false;
         }
-        // Bindings persisted by a previous page load whose addon didn't re-register must not
-        // match: acting on them would crash, and matching alone would swallow the key.
+
+        // Orphaned bindings persisted to localStorage by an old addon or SB version must not
+        // match or they would swallow a keyboard shortcut (due to stopPropagation()).
         if (!(feature in defaultShortcuts)) {
           return feature in addonsShortcuts;
         }

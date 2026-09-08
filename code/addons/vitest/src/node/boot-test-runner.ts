@@ -135,6 +135,8 @@ const bootTestRunner = async ({
           });
           reject();
         } else if (UNIVERSAL_STORE_EVENT_NAMES.has(event.type) && channel.receive) {
+          // Give the event to local store listeners only. emit() would also send it to browsers,
+          // and the store leader already forwards that copy once.
           channel.receive(event);
         } else {
           channel.emit(event.type, ...event.args);

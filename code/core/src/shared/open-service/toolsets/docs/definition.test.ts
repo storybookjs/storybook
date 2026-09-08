@@ -132,7 +132,7 @@ describe('docs.showStory', () => {
 
     expect(outcome.ok).toBe(false);
     expect(outcome.markdown).toBe(
-      'Story "Missing" not found for component "button". Available stories: Primary'
+      'Story "Missing" not found for component "button". Available stories: Primary (button--primary)'
     );
   });
 
@@ -157,6 +157,117 @@ describe('docs.showStory', () => {
     expect(cliOutcome.markdown).toContain(
       'Use the npx storybook tools docs list tool to see available components'
     );
+  });
+
+  it('renders the story documentation for a story id, identically to the name lookup', async () => {
+    const outcome = await toolset.methods.showStory.handler({ storyId: 'button--primary' }, mcpCtx);
+
+    expect(outcome.ok).toBe(true);
+    expect(outcome.data.entry?.kind).toBe('component');
+
+    const byName = await toolset.methods.showStory.handler(
+      { componentId: 'button', storyName: 'Primary' },
+      mcpCtx
+    );
+    expect(outcome.markdown).toBe(byName.markdown);
+  });
+
+  it('prefers the story id when both shapes are passed', async () => {
+    const outcome = await toolset.methods.showStory.handler(
+      { storyId: 'button--primary', componentId: 'bogus', storyName: 'Bogus' },
+      mcpCtx
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect(outcome.markdown).toContain('<Button />');
+  });
+
+  it('lists available stories with their ids when the story id misses a known component', async () => {
+    const outcome = await toolset.methods.showStory.handler({ storyId: 'button--nope' }, mcpCtx);
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.markdown).toBe(
+      'Story not found: "button--nope" for component "button". Available stories: Primary (button--primary)'
+    );
+  });
+
+  it('answers a story id with an unknown component prefix per transport', async () => {
+    const outcome = await toolset.methods.showStory.handler({ storyId: 'nope--primary' }, mcpCtx);
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.markdown).toBe(
+      'Story not found: "nope--primary". Use the docs-list tool with `withStoryIds: true` to see available stories and their ids.'
+    );
+
+    const cliOutcome = await toolset.methods.showStory.handler(
+      { storyId: 'nope--primary' },
+      cliCtx
+    );
+    expect(cliOutcome.markdown).toContain(
+      'Use the npx storybook tools docs list tool with `withStoryIds: true`'
+    );
+  });
+
+  it('treats a story id without a separator as a story lookup, not a component lookup', async () => {
+    const outcome = await toolset.methods.showStory.handler({ storyId: 'button' }, mcpCtx);
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.markdown).toBe(
+      'Story not found: "button" for component "button". Available stories: Primary (button--primary)'
+    );
+  });
+
+  it('rejects an input that is neither shape with guidance', async () => {
+    for (const input of [{}, { componentId: 'button' }, { storyName: 'Primary' }]) {
+      const outcome = await toolset.methods.showStory.handler(input, mcpCtx);
+
+      expect(outcome.ok).toBe(false);
+      expect(outcome.markdown).toBe(
+        'Provide either `storyId`, or both `componentId` and `storyName`. Story ids are listed by the docs-list tool with `withStoryIds: true` and in docs-show output.'
+      );
+    }
+  });
+
+  it('accepts both shapes through the input schema', async () => {
+    const schema = toolset.methods.showStory.input;
+
+    for (const input of [
+      { storyId: 'button--primary' },
+      { componentId: 'button', storyName: 'Primary' },
+    ]) {
+      expect((await schema['~standard'].validate(input)).issues).toBeUndefined();
+    }
+  });
+});
+
+describe('docs.showStory in a composition', () => {
+  const sources = [
+    { source: { id: 'local', title: 'Local' }, access: docsAccess },
+    {
+      source: { id: 'remote', title: 'Remote' },
+      access: { list: docsAccess.list, resolve: async () => undefined },
+    },
+  ];
+  const composed = createDocsToolset({ sources });
+
+  it('resolves a story id within the named source', async () => {
+    const outcome = await composed.methods.showStory.handler(
+      { storyId: 'button--primary', storybookId: 'local' },
+      mcpCtx
+    );
+
+    expect(outcome.ok).toBe(true);
+    expect(outcome.markdown).toContain('<Button />');
+  });
+
+  it('reports the source error for a story id naming an unknown source', async () => {
+    const outcome = await composed.methods.showStory.handler(
+      { storyId: 'button--primary', storybookId: 'elsewhere' },
+      mcpCtx
+    );
+
+    expect(outcome.ok).toBe(false);
+    expect(outcome.markdown).toContain('Storybook source not found: "elsewhere"');
   });
 });
 

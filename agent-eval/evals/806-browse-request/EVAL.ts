@@ -1,37 +1,49 @@
-import { test } from 'vitest';
 import {
   expectDisplayReviewForBrowseRequest,
   expectPreviewBrowserStarted,
   expectPreviewStoriesWithFinalLinks,
   expectStoryIdsInDisplayReview,
   expectValidStorybookLaunchConfig,
+  getEvalContext,
   isReviewEnabled,
 } from '#test-utils';
+import { describe, test } from 'vitest';
 
-const review = isReviewEnabled();
+describe('browsing existing ReviewCard Storybook states', () => {
+  const review = isReviewEnabled();
 
-test.runIf(review)('publishes a display review for a browse request without changed files', () => {
-  expectDisplayReviewForBrowseRequest();
-});
+  describe.runIf(review)('when review is enabled', () => {
+    test('publishes a display review for a browse request without changed files', () => {
+      expectDisplayReviewForBrowseRequest();
+    });
 
-// The prompt asks for ALL ReviewCard states; the fixture is untouched by a
-// browse request, so the three story ids are stable and must all be shown.
-test.runIf(review)('the review shows every existing ReviewCard story', () => {
-  expectStoryIdsInDisplayReview([
-    'reviewcard--default',
-    'reviewcard--with-long-comment',
-    'reviewcard--low-rating',
-  ]);
-});
+    // The prompt asks for ALL ReviewCard states; the fixture is untouched by a
+    // browse request, so the three story ids are stable and must all be shown.
+    test('the review shows every existing ReviewCard story', () => {
+      expectStoryIdsInDisplayReview([
+        'reviewcard--default',
+        'reviewcard--with-long-comment',
+        'reviewcard--low-rating',
+      ]);
+    });
+  });
 
-test.runIf(!review)('previews the existing ReviewCard stories for a browse request', () => {
-  expectPreviewStoriesWithFinalLinks({ covering: ['reviewcard'] });
-});
+  describe.runIf(!review)('when review is disabled', () => {
+    test('previews the existing ReviewCard stories for a browse request', () => {
+      expectPreviewStoriesWithFinalLinks({ covering: ['reviewcard'] });
+    });
+  });
 
-test('keeps the pre-existing Storybook launch config valid', () => {
-  expectValidStorybookLaunchConfig();
-});
+  describe('depending on the current agent and integration', () => {
+    const { agent, integration } = getEvalContext();
 
-test('opens the preview browser when using the plugin', () => {
-  expectPreviewBrowserStarted();
+    test.skipIf(agent !== 'claude-code' || integration !== 'plugin')(
+      'keeps the pre-existing Storybook launch config valid',
+      () => expectValidStorybookLaunchConfig()
+    );
+
+    test.skipIf(integration !== 'plugin')('opens the preview browser when using the plugin', () =>
+      expectPreviewBrowserStarted()
+    );
+  });
 });

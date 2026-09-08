@@ -199,16 +199,24 @@ describe('docs tools render the same text in both docgen modes', () => {
     }
   });
 
-  it('showStory', async () => {
-    const render = async (toolset: ReturnType<typeof createDocsToolset>) =>
-      (
-        await toolset.methods.showStory.handler(
-          { componentId: 'button', storyName: 'Primary' },
-          ctx
-        )
-      ).markdown;
+  it.each([{ componentId: 'button', storyName: 'Primary' }, { storyId: 'button--primary' }])(
+    'showStory %o',
+    async (input) => {
+      const render = async (toolset: ReturnType<typeof createDocsToolset>) =>
+        (await toolset.methods.showStory.handler(input, ctx)).markdown;
 
-    expect(await render(serviceToolset())).toBe(await render(manifestToolset()));
+      expect(await render(serviceToolset())).toBe(await render(manifestToolset()));
+    }
+  );
+
+  it('showStory answers a story id and the matching name pair identically', async () => {
+    const toolset = manifestToolset();
+    const render = async (input: Record<string, string>) =>
+      (await toolset.methods.showStory.handler(input, ctx)).markdown;
+
+    expect(await render({ storyId: 'button--primary' })).toBe(
+      await render({ componentId: 'button', storyName: 'Primary' })
+    );
   });
 });
 
@@ -334,16 +342,18 @@ describe('docs tools render the same text in dev and from a built Storybook', ()
     expect(await renderShow(staticToolset(), componentId)).toBe(dev);
   });
 
-  it('showStory answers for a story with no snippet in both', async () => {
-    const render = async (toolset: ReturnType<typeof createDocsToolset>) =>
-      (await toolset.methods.showStory.handler({ componentId, storyName: 'Default' }, ctx))
-        .markdown;
+  it.each([{ componentId, storyName: 'Default' }, { storyId: `${componentId}--default` }])(
+    'showStory answers for a story with no snippet in both (%o)',
+    async (input) => {
+      const render = async (toolset: ReturnType<typeof createDocsToolset>) =>
+        (await toolset.methods.showStory.handler(input, ctx)).markdown;
 
-    const dev = await render(devToolset());
+      const dev = await render(devToolset());
 
-    expect(dev).toContain(`Story ID: ${componentId}--default`);
-    expect(await render(staticToolset())).toBe(dev);
-  });
+      expect(dev).toContain(`Story ID: ${componentId}--default`);
+      expect(await render(staticToolset())).toBe(dev);
+    }
+  );
 
   it('lists the real stories when asked for one that does not exist', async () => {
     const render = async (toolset: ReturnType<typeof createDocsToolset>) =>
@@ -351,7 +361,9 @@ describe('docs tools render the same text in dev and from a built Storybook', ()
 
     const dev = await render(devToolset());
 
-    expect(dev).toContain('Available stories: Default, Text');
+    expect(dev).toContain(
+      `Available stories: Default (${componentId}--default), Text (${componentId}--text)`
+    );
     expect(await render(staticToolset())).toBe(dev);
   });
 });

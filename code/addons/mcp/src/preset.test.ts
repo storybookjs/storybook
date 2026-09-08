@@ -364,6 +364,7 @@ describe('experimental_devServer', () => {
       reviewEnabled: false,
       reviewEnabledForCli: false,
       docsEnabled: false,
+      docsEnabledForCli: false,
       docsHasManifests: false,
       docsFeatureEnabled: false,
       testSupported: false,

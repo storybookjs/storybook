@@ -287,12 +287,25 @@ export class OpenServiceRemoteCommandDisconnectedError extends StorybookError {
 }
 
 export class OpenServiceRemoteCommandUnhandledError extends StorybookError {
-  constructor(public data: { serviceId: ServiceId; commandName: string }) {
+  constructor(public data: { serviceId: ServiceId; commandName: string; delegated?: boolean }) {
     super({
       name: 'OpenServiceRemoteCommandUnhandledError',
       category: Category.CORE_COMMON,
       code: 15,
-      message: `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
+      message: data.delegated
+        ? `The Storybook this runtime is attached to did not acknowledge remote command "${data.serviceId}.${data.commandName}" in time — it may be busy or unreachable. Retry; note the command may still have executed on that instance.`
+        : `No runtime acknowledged remote command "${data.serviceId}.${data.commandName}"; its handler is not implemented in any connected runtime.`,
+    });
+  }
+}
+
+export class OpenServiceRemoteCommandConfigDriftError extends StorybookError {
+  constructor(public data: { serviceId: ServiceId; commandName: string }) {
+    super({
+      name: 'OpenServiceRemoteCommandConfigDriftError',
+      category: Category.CORE_COMMON,
+      code: 30,
+      message: `The Storybook this runtime is attached to reported it has no handler for remote command "${data.serviceId}.${data.commandName}". The two processes are running different configurations (for example a feature flag enabled in one but not the other). Restart the attached Storybook with a configuration matching this process.`,
     });
   }
 }
@@ -590,6 +603,30 @@ export class AngularUnresolvedStyleError extends StorybookError {
   }
 }
 
+export class AngularMissingStylePreprocessorError extends StorybookError {
+  constructor(public data: { stylePath: string; install: string; alternative?: string }) {
+    super({
+      name: 'AngularMissingStylePreprocessorError',
+      category: Category.FRAMEWORK_ANGULAR,
+      code: 3,
+      documentation: 'https://storybook.js.org/docs/get-started/frameworks/angular-vite',
+      message: [
+        dedent`
+          Cannot compile '${data.stylePath}': the '${data.install}' package is not installed where Vite can load it.
+
+          Add it to your project:
+
+            npm install --save-dev ${data.install}
+
+          Vite resolves a CSS preprocessor from your project directory upwards, so a copy installed deeper in the tree - such as the one Angular's builders bring in for themselves - is invisible to it. That is why a project which compiles with 'ng build' can still fail here.`,
+        data.alternative && `'${data.alternative}' works as well, if you would rather use that.`,
+      ]
+        .filter(Boolean)
+        .join('\n\n'),
+    });
+  }
+}
+
 export class CriticalPresetLoadError extends StorybookError {
   constructor(
     public data: {
@@ -782,6 +819,20 @@ export class NoFreePortError extends StorybookError {
         Unable to find a free port for Storybook's dev server${data.requestedPort ? ` (requested port: ${data.requestedPort})` : ''}.
         Your environment appears to block Storybook from listening on network ports.
         If you are running Storybook in a sandboxed or restricted shell, allow binding to localhost ports and try again.`,
+    });
+  }
+}
+
+export class StorybookDevServerDisconnectedError extends StorybookError {
+  constructor(public data: { code?: number; reason?: string } = {}) {
+    super({
+      name: 'StorybookDevServerDisconnectedError',
+      category: Category.CORE_SERVER,
+      code: 19,
+      message: dedent`
+        Storybook dev server disconnected${data.code ? ` (close code ${data.code}${data.reason ? `: ${data.reason}` : ''})` : ''}.
+        Any request that was still in flight has been abandoned.
+        Make sure the dev server is still running, then try again.`,
     });
   }
 }

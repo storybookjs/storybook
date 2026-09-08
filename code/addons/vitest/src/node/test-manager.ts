@@ -1,3 +1,4 @@
+import type { TestError } from 'vitest';
 import type { TestResult, TestState } from 'vitest/node';
 
 import type { experimental_UniversalStore } from 'storybook/internal/core-server';
@@ -36,6 +37,27 @@ export type TestManagerOptions = {
   onError?: (message: string, error: Error) => void;
   onReady?: () => void;
 };
+
+/** Matches the banner that vitest-plugin/setup-file.ts prepends to the message of failed stories. */
+const DEBUG_BANNER_RE =
+  /\n?(?:\x1B\[\d+m)?Click to debug the error directly in Storybook: [^\n]*\n+/g;
+
+/**
+ * `error.stack` holds the raw browser stack, pointing at the Vite URLs of Storybook's pre-bundled
+ * internals. Vitest replaces it with `error.stacks`: source-mapped frames with Storybook's
+ * instrumentation filtered out, matching what its own terminal output shows.
+ */
+function formatError(error: TestError): string {
+  if (!error.stacks?.length) {
+    return error.stack || error.message || '';
+  }
+  const message = (error.message ?? '').replace(DEBUG_BANNER_RE, '');
+  const frames = error.stacks.map(
+    ({ method, file, line, column }) =>
+      `    at ${method || '<anonymous>'} (${file}:${line}:${column})`
+  );
+  return [message, ...frames].join('\n');
+}
 
 const testStateToStatusValueMap: Record<TestState | 'warning', StatusValue> = {
   pending: 'status-value:pending',
@@ -225,7 +247,7 @@ export class TestManager {
       typeId: STATUS_TYPE_ID_COMPONENT_TEST,
       value: testStateToStatusValueMap[testResult.state],
       title: 'Component tests',
-      description: testResult.errors?.map((error) => error.stack || error.message).join('\n') ?? '',
+      description: testResult.errors?.map(formatError).join('\n') ?? '',
       sidebarContextMenu: false,
     }));
 

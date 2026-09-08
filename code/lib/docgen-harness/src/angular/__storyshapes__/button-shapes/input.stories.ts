@@ -127,4 +127,16 @@ export const ReassignedTemplate = { template: MUTABLE_TEMPLATE };
 
 export const SpreadStoryArgs = { args: { ...QuotedArgs.args, count: 9 } };
 
+// Values an Angular template expression cannot carry: `new` is not in the grammar at all, and
+// `Array` is not a name the host component resolves. Both are ordinary TypeScript in a class body.
+export const HoistedArgs = {
+  args: {
+    label: 'Save',
+    // The bare Error is the fixture: this file stands in for a user's story, not for repo code.
+    // eslint-disable-next-line local-rules/no-uncategorized-errors
+    loadingError: new Error('Failed to load cards.'),
+    items: Array.from({ length: 3 }, (_, index) => index),
+  },
+};
+
 export const SpreadCrossFileArgs = { args: { ...BaseStories.Base.args, label: 'overridden' } };

@@ -21,6 +21,7 @@ import { resolve } from 'node:path';
 import type { AngularComponentSnippetMeta, AngularDocgenPayload } from './build-docgen.ts';
 import { parseStoryFile } from './resolve-component.ts';
 import {
+  argFieldValue,
   createArgExternalizer,
   evaluateArgExpression,
   evaluateArgLiteral,
@@ -36,6 +37,7 @@ import type { StoryTemplateAnalysis } from './story-docs-template-analysis.ts';
 import {
   buildComponentOutletTemplate,
   buildTemplate,
+  formatPropInTemplate,
   formatTemplateMarkup,
 } from '../template-grammar.ts';
 
@@ -305,23 +307,24 @@ const renderStorySnippet = async (
   const markupSources = userMarkup?.source === undefined ? [] : [userMarkup.source];
   // The outlet form shows no args at all, so naming the args that could not be read would say
   // nothing about what is missing from it.
-  return snippetMeta.selector
-    ? withWarnings(
-        host(
-          buildTemplate(snippetMeta.selector, {
-            ...componentBindings(snippetMeta, shape),
-            selfClosing: true,
-          }),
-          false,
-          snippetMeta.outputs
-        ),
-        unresolvedWarning([...markupSources, ...shape.unresolvedArgs]),
-        unboundArgsWarning(localName, snippetMeta, shape)
-      )
-    : withWarnings(
-        host(buildComponentOutletTemplate(localName, { selfClosing: true }), true, []),
-        unresolvedWarning(markupSources)
-      );
+  if (!snippetMeta.selector) {
+    return withWarnings(
+      host(buildComponentOutletTemplate(localName, { selfClosing: true }), true, []),
+      unresolvedWarning(markupSources)
+    );
+  }
+
+  const { bindings, fields } = componentBindings(snippetMeta, shape);
+  return withWarnings(
+    host(
+      buildTemplate(snippetMeta.selector, { ...bindings, selfClosing: true }),
+      false,
+      snippetMeta.outputs,
+      fields
+    ),
+    unresolvedWarning([...markupSources, ...shape.unresolvedArgs]),
+    unboundArgsWarning(localName, snippetMeta, shape)
+  );
 };
 
 const referencedArgFields = (
@@ -418,15 +421,22 @@ const unboundArgsWarning = (
 const componentBindings = (
   snippetMeta: AngularComponentSnippetMeta,
   shape: StoryShape
-): Bindings => {
+): { bindings: Bindings; fields: { name: string; value: string }[] } => {
   const inputNames = new Set(snippetMeta.inputs);
-  const inputs = Object.entries(shape.args)
-    .filter(([argName]) => inputNames.has(argName))
-    .map(([argName, node]) => ({
-      name: argName,
-      expression: evaluateArgExpression(node, snippetMeta.enums),
-    }));
-  return { inputs, outputs: snippetMeta.outputs };
+  const inputs: Bindings['inputs'] = [];
+  const fields: { name: string; value: string }[] = [];
+  for (const [name, node] of Object.entries(shape.args)) {
+    if (!inputNames.has(name)) {
+      continue;
+    }
+    if (evaluateArgLiteral(node, snippetMeta.enums) === undefined && isSelfContained(node)) {
+      fields.push({ name, value: argFieldValue(node) });
+      inputs.push({ name, expression: formatPropInTemplate(name) });
+      continue;
+    }
+    inputs.push({ name, expression: evaluateArgExpression(node, snippetMeta.enums) });
+  }
+  return { bindings: { inputs, outputs: snippetMeta.outputs }, fields };
 };
 
 const argsExpansion = (snippetMeta: AngularComponentSnippetMeta, shape: StoryShape): Bindings => {

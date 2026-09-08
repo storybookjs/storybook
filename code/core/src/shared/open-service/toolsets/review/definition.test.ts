@@ -147,15 +147,15 @@ This usually means the IDs were inferred from file paths or naming conventions r
   });
 
   describe('rendering', () => {
-    it('summarizes the review in one line for the CLI', async () => {
+    it('renders the same directive for the CLI as for MCP', async () => {
       const outcome = await createReview();
+      const mcpOutcome = await createReview({}, mcpCtx);
 
-      expect(outcome.markdown).toBe(
-        `Review applied: 1 collection, 1 story. Open ${reviewUrl} to view it.`
-      );
+      expect(outcome.markdown).toContain(`Review applied: 1 collection, 1 story.`);
+      expect(outcome.markdown).toBe(mcpOutcome.markdown);
     });
 
-    it('pluralizes the CLI summary', async () => {
+    it('pluralizes the summary', async () => {
       const outcome = await createReview({
         collections: [
           { title: 'Primary', rationale: 'edited', storyIds: ['button--primary'] },
@@ -163,9 +163,7 @@ This usually means the IDs were inferred from file paths or naming conventions r
         ],
       });
 
-      expect(outcome.markdown).toBe(
-        `Review applied: 2 collections, 2 stories. Open ${reviewUrl} to view it.`
-      );
+      expect(outcome.markdown).toContain(`Review applied: 2 collections, 2 stories.`);
     });
 
     it('tells MCP to reuse the request-derived UI root, not the bare origin', async () => {

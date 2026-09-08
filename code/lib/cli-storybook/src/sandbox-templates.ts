@@ -83,6 +83,11 @@ export type Template = {
    */
   inDevelopment?: boolean;
   /**
+   * Some sandboxes have partial or total incompatibilities when running with linked dependencies.
+   * Set this flag to use --no-link by default (but still support --link for local testing).
+   */
+  preferNoLink?: boolean;
+  /**
    * Some sandboxes might need extra modifications in the initialized Storybook, such as extend
    * main.js, for setting specific feature flags.
    */
@@ -200,31 +205,6 @@ export const baseTemplates = {
       },
     },
   },
-  'nextjs/14-ts': {
-    name: 'Next.js v14.2 (Webpack | TypeScript)',
-    script:
-      'npx create-next-app {{beforeDir}} --skip-install -e https://github.com/vercel/next.js/tree/v14.2.17/examples/hello-world && cd {{beforeDir}} && npm pkg set "dependencies.next"="^14.2.17" && yarn && git add . && git commit --amend --no-edit && cd ..',
-    expected: {
-      framework: '@storybook/nextjs',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-webpack5',
-    },
-    modifications: {
-      useCsfFactory: true,
-      mainConfig: {
-        features: {
-          experimentalRSC: true,
-          developmentModeForBuild: true,
-          experimentalTestSyntax: true,
-        },
-      },
-      extraDevDependencies: ['server-only', 'prop-types'],
-    },
-    initOptions: {
-      builder: SupportedBuilder.WEBPACK5,
-    },
-    skipTasks: ['e2e-tests-dev', 'e2e-tests', 'bench', 'vitest-integration'],
-  },
   'nextjs/15-ts': {
     name: 'Next.js v15 (Webpack | TypeScript)',
     script:
@@ -310,29 +290,6 @@ export const baseTemplates = {
     },
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
   },
-  'nextjs-vite/14-ts': {
-    name: 'Next.js v14 (Vite | TypeScript)',
-    script:
-      'npx create-next-app@^14 {{beforeDir}} --skip-install --eslint --tailwind --app --import-alias="@/*" --src-dir',
-    expected: {
-      framework: '@storybook/nextjs-vite',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-vite',
-    },
-    modifications: {
-      useCsfFactory: true,
-      mainConfig: {
-        framework: '@storybook/nextjs-vite',
-        features: {
-          experimentalRSC: true,
-          developmentModeForBuild: true,
-          experimentalTestSyntax: true,
-        },
-      },
-      extraDevDependencies: ['server-only', 'vite', 'prop-types'],
-    },
-    skipTasks: ['e2e-tests', 'bench'],
-  },
   'nextjs-vite/15-ts': {
     name: 'Next.js v15 (Vite | TypeScript)',
     script:
@@ -410,8 +367,7 @@ export const baseTemplates = {
     },
     modifications: {
       useCsfFactory: true,
-      extraDevDependencies: ['prop-types', '@types/prop-types', '@storybook/addon-mcp'],
-      editAddons: (addons) => [...addons, '@storybook/addon-mcp'],
+      extraDevDependencies: ['prop-types', '@types/prop-types'],
       mainConfig: {
         features: {
           developmentModeForBuild: true,
@@ -771,6 +727,7 @@ export const baseTemplates = {
     name: 'Angular CLI Latest (Webpack | TypeScript)',
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
+    preferNoLink: true,
     modifications: {
       // The latest CLI scaffolds Angular 22 but omits @angular/forms and @angular/animations. Match
       // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
@@ -800,11 +757,7 @@ export const baseTemplates = {
       // Match the `^21.2.0` range `ng new` uses for the other @angular packages so every
       // @angular/* resolves to the same patch. An exact pin would leave forms a patch behind core.
       // See `angular-vite/default-ts` for why Compodoc is listed here.
-      extraDependencies: [
-        '@angular/forms@^21.2.0',
-        '@angular/animations@^21.2.0',
-        '@compodoc/compodoc',
-      ],
+      extraDependencies: ['@angular/forms@^21.2.0', '@compodoc/compodoc'],
       useCsfFactory: true,
     },
     extraCiSteps: {
@@ -823,18 +776,13 @@ export const baseTemplates = {
     script:
       'npx -p @angular/cli ng new angular-latest --directory {{beforeDir}} --routing=true --minimal=true --style=scss --strict --skip-git --skip-install --package-manager=yarn --ssr',
     modifications: {
-      // The latest CLI scaffolds Angular 22 but omits @angular/forms and @angular/animations. Match
-      // the `^22` major `ng new` uses for the other @angular packages so every @angular/* aligns.
+      // The latest CLI scaffolds Angular 22 but omits @angular/forms. Match the `^22` major
+      // `ng new` uses for the other @angular packages so every @angular/* aligns.
       // Also, Angular 22 needs TypeScript 6 or more recent.
       // `@compodoc/compodoc` is no longer installed by `storybook init` for the Vite builder, but
       // the sandbox harness prepends its own `docs:json` Compodoc pass to every Angular sandbox
       // (see `sandbox-parts.ts`), so the sandboxes still have to carry the binary themselves.
-      extraDependencies: [
-        '@angular/forms@^22',
-        '@angular/animations@^22',
-        'typescript@^6',
-        '@compodoc/compodoc',
-      ],
+      extraDependencies: ['@angular/forms@^22', 'typescript@^6', '@compodoc/compodoc'],
       useCsfFactory: true,
       // `@storybook/angular-vite` turns the docgen server on by default, so guarding the browser
       // docgen path is now an explicit opt-out rather than the absence of a flag.
@@ -946,6 +894,7 @@ export const baseTemplates = {
   'preact-vite/default-js': {
     name: 'Preact Latest (Vite | JavaScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template preact',
+    preferNoLink: true,
     expected: {
       framework: '@storybook/preact-vite',
       renderer: '@storybook/preact',
@@ -959,6 +908,7 @@ export const baseTemplates = {
   'preact-vite/default-ts': {
     name: 'Preact Latest (Vite | TypeScript)',
     script: 'npm create vite --yes {{beforeDir}} -- --template preact-ts',
+    preferNoLink: true,
     expected: {
       framework: '@storybook/preact-vite',
       renderer: '@storybook/preact',
@@ -966,6 +916,23 @@ export const baseTemplates = {
     },
     modifications: {
       extraDependencies: ['preact-render-to-string'],
+    },
+    skipTasks: ['e2e-tests', 'bench'],
+  },
+  'preact-vite/prerelease-ts': {
+    name: 'Preact Prerelease (Vite | TypeScript)',
+    script: `npm create vite --yes {{beforeDir}} -- --template preact-ts`,
+    preferNoLink: true,
+    expected: {
+      framework: '@storybook/preact-vite',
+      renderer: '@storybook/preact',
+      builder: '@storybook/builder-vite',
+    },
+    modifications: {
+      extraDependencies: ['preact-render-to-string', 'preact@beta'],
+      resolutions: {
+        preact: 'npm:preact@beta',
+      },
     },
     skipTasks: ['e2e-tests', 'bench'],
   },
@@ -1112,28 +1079,6 @@ const internalTemplates = {
     },
     isInternal: true,
     skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
-  },
-  'internal/react16-webpack': {
-    name: 'React 16 (Webpack | TypeScript)',
-    script:
-      'npx create-webpack5-react {{beforeDir}} --version-react=16 --version-react-dom=16 --version-@types/react=16 --version-@types/react-dom=16',
-    expected: {
-      framework: '@storybook/react-webpack5',
-      renderer: '@storybook/react',
-      builder: '@storybook/builder-webpack5',
-    },
-    modifications: {
-      useCsfFactory: true,
-      extraDevDependencies: ['prop-types'],
-      mainConfig: {
-        swc: { swcrc: false },
-        features: {
-          experimentalTestSyntax: true,
-        },
-      },
-    },
-    skipTasks: ['e2e-tests', 'bench', 'vitest-integration'],
-    isInternal: true,
   },
   'internal/server-webpack5': {
     name: 'Server Webpack5',
@@ -1301,16 +1246,16 @@ export const daily: TemplateKey[] = [
   'react-vite/default-js',
   'react-vite/prerelease-ts',
   'react-webpack/prerelease-ts',
-  'nextjs-vite/14-ts',
-  'nextjs/14-ts',
   'vue3-vite/default-js',
   'lit-vite/default-js',
   'svelte-vite/default-js',
   'nextjs/prerelease',
   // 'qwik-vite/default-ts',
   'preact-vite/default-js',
+  // Disabled for cost-saving reasons, enable when we see signs that Preact 11 is about to release.
+  // After release, replace the default-js config with this one and delete this one.
+  // 'preact-vite/prerelease-ts',
   'html-vite/default-js',
-  'internal/react16-webpack',
   'internal/react18-webpack-babel',
   'react-native-web-vite/expo-ts',
   'lit-rsbuild/default-ts',

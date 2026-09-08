@@ -97,12 +97,12 @@ describe('@Input and @Output aliases', () => {
     const argTypes = extractArgTypesFromData(componentIn(SOURCE), {
       metadataJson: undefined,
       ...ANALYZER_EXTRACT_OPTIONS,
-    }) as Record<string, { table?: { type?: { required?: boolean } } }>;
+    });
 
     // An initializer is what settles it: `buttonLabel` has one, so binding it is optional.
-    expect(argTypes.buttonLabel?.table?.type?.required).toBe(false);
-    expect(argTypes.tone?.table?.type?.required).toBe(true);
-    expect(argTypes.hint?.table?.type?.required).toBe(false);
+    expect(argTypes.buttonLabel?.type?.required).toBeUndefined();
+    expect(argTypes.tone?.type?.required).toBe(true);
+    expect(argTypes.hint?.type?.required).toBeUndefined();
   });
 
   it('leaves an accessor input’s `@default` tag as its only default carrier', () => {
@@ -1141,7 +1141,11 @@ describe('inheritance', () => {
       metadataJson: meta,
       ...ANALYZER_EXTRACT_OPTIONS,
     });
-    expect(argTypes.size.type).toEqual({ name: 'enum', value: ['small', 'large'] });
+    expect(argTypes.size.type).toEqual({
+      name: 'enum',
+      value: ['small', 'large'],
+      required: true,
+    });
   });
 
   it('substitutes through a middle generic base down to the leaf’s concrete argument', () => {
@@ -1412,9 +1416,12 @@ describe('function-typed members', () => {
     const argTypes = extractArgTypesFromData(component, {
       metadataJson: undefined,
       ...ANALYZER_EXTRACT_OPTIONS,
-    }) as Record<string, { type?: { name?: string }; table?: { type?: { summary?: string } } }>;
+    }) as Record<
+      string,
+      { type?: { name?: string; required?: boolean }; table?: { type?: { summary?: string } } }
+    >;
 
-    expect(argTypes.format?.type).toEqual({ name: 'function' });
+    expect(argTypes.format?.type).toEqual({ name: 'function', required: true });
     expect(argTypes.format?.table?.type?.summary).toBe('(value: number, unit?: string) => string');
     expect(argTypes.nullableCallback?.table?.type?.summary).toBe(
       '((value: string) => void) | null'

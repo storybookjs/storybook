@@ -75,6 +75,20 @@ describe('stories skill description', () => {
   });
 });
 
+describe('stories skill prerequisites', () => {
+  it.each([
+    resolve(packageRoot, 'skills/stories/SKILL.md'),
+    resolve(repoRoot, 'code/lib/codex-plugin/plugins/storybook/skills/stories/SKILL.md'),
+  ])('uses Storybook documentation and treats setup as upgrade approval: %s', (skillPath) => {
+    const skill = readFileSync(skillPath, 'utf8');
+
+    expect(skill).toContain('docs list');
+    expect(skill).toContain('docs show');
+    expect(skill.indexOf('docs list')).toBeLessThan(skill.indexOf('docs show'));
+    expect(skill).toContain('set up or install Storybook');
+  });
+});
+
 describe('Claude story skill launch guidance', () => {
   it('keeps Claude launch guidance scoped to preview tooling without shell interpolation', () => {
     const launchSkill = readFileSync(resolve(packageRoot, 'skills/stories/SKILL.md'), 'utf8');

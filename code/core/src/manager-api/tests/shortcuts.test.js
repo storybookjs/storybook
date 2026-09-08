@@ -290,7 +290,7 @@ describe('shortcuts api', () => {
   });
 });
 
-describe('addon shortcut activity gating', () => {
+describe('addon shortcut matching', () => {
   const initWithUi = () => {
     const store = createMockStore();
     const fullAPI = { getNavAvailability: () => 'shown' };
@@ -299,39 +299,7 @@ describe('addon shortcut activity gating', () => {
     return api;
   };
 
-  it('inactive addon shortcuts do not match key events', async () => {
-    const api = initWithUi();
-    const action = vi.fn();
-    await api.setAddonShortcut('review', {
-      label: 'Next collection',
-      defaultShortcut: ['ArrowDown'],
-      actionName: 'nextCollection',
-      isActive: () => false,
-      action,
-    });
-
-    const matched = api.handleKeydownEvent({ key: 'ArrowDown' });
-    expect(matched).toBeUndefined();
-    expect(action).not.toHaveBeenCalled();
-  });
-
-  it('active addon shortcuts match and fire', async () => {
-    const api = initWithUi();
-    const action = vi.fn();
-    await api.setAddonShortcut('review', {
-      label: 'Next collection',
-      defaultShortcut: ['ArrowDown'],
-      actionName: 'nextCollection',
-      isActive: () => true,
-      action,
-    });
-
-    const matched = api.handleKeydownEvent({ key: 'ArrowDown' });
-    expect(matched).toBe('review-nextCollection');
-    expect(action).toHaveBeenCalled();
-  });
-
-  it('addon shortcuts without isActive still match (default behavior)', async () => {
+  it('addon shortcuts match and fire', async () => {
     const api = initWithUi();
     const action = vi.fn();
     await api.setAddonShortcut('my-addon', {

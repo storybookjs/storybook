@@ -21,8 +21,6 @@ export type GeneratorOptions = {
   renderer: SupportedRenderer;
   storybookVersionSpecifier?: string;
   linkable: boolean;
-  // TODO: Remove in SB11
-  pnp: boolean;
   frameworkPreviewParts?: FrameworkPreviewParts;
   // skip prompting the user
   yes: boolean;

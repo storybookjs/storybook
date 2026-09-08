@@ -137,7 +137,6 @@ export async function baseGenerator(
     builder,
     framework,
     renderer,
-    pnp,
     features,
     dependencyCollector,
     storybookVersionSpecifier,
@@ -146,7 +145,7 @@ export async function baseGenerator(
 ) {
   const options = { ...defaultOptions, ..._options };
   const isStorybookInMonorepository = packageManager.isStorybookInMonorepo();
-  const shouldApplyRequireWrapperOnPackageNames = isStorybookInMonorepository || pnp;
+  const shouldApplyRequireWrapperOnPackageNames = isStorybookInMonorepository;
 
   const taskLog = prompt.taskLog({
     id: 'base-generator',

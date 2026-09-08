@@ -51,6 +51,7 @@ import type {
 import { isReviewManagerRoute } from '../../shared/review/routes.ts';
 
 import { global } from '@storybook/global';
+import { throttle } from 'es-toolkit/function';
 
 import { BUILT_IN_FILTERS } from '../../shared/constants/tags.ts';
 import { countStatusesByValue } from '../../shared/status-store/index.ts';
@@ -81,6 +82,7 @@ const STORY_INDEX_PATH = './index.json';
 const TAGS_FILTER = 'tags-filter';
 const STATIC_FILTER = 'static-filter';
 const STATUS_FILTER = 'status-filter';
+const STATUS_CHANGE_REBUILD_THROTTLE = 1000;
 
 const BUILT_IN_TAG_IDS = new Set(Object.keys(BUILT_IN_FILTERS));
 
@@ -1301,11 +1303,26 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     });
   });
 
-  fullStatusStore.onAllStatusChange(async () => {
-    // re-apply the filters when the statuses change; this also re-applies the index
-    // (and the indexes of composed refs), which read statuses at transform time
-    await recomputeStatusFilter();
-  });
+  fullStatusStore.onAllStatusChange(
+    throttle(
+      async () => {
+        const { internal_index: index } = store.getState();
+
+        if (!index) {
+          return;
+        }
+
+        await api.setIndex(index);
+
+        const refs = await fullAPI.getRefs();
+        for (const [refId, { internal_index, ...ref }] of Object.entries(refs)) {
+          await fullAPI.setRef(refId, { ...ref, storyIndex: internal_index }, true);
+        }
+      },
+      STATUS_CHANGE_REBUILD_THROTTLE,
+      { edges: ['leading', 'trailing'] }
+    )
+  );
 
   const config = provider.getConfig();
   const configFilters = config?.sidebar?.filters || {};

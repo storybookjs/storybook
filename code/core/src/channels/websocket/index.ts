@@ -33,7 +33,11 @@ interface WebsocketTransportArgs extends Partial<Config> {
 
 export const HEARTBEAT_INTERVAL = 15000;
 export const HEARTBEAT_MAX_LATENCY = 5000;
+export const HEARTBEAT_TIMEOUT = HEARTBEAT_INTERVAL + HEARTBEAT_MAX_LATENCY;
 export const SERVER_CHANNEL_PATH = '/storybook-server-channel';
+
+// Late timer fires are not evidence of a dead server: queued pings may still be waiting.
+export const HEARTBEAT_STARVATION_SLACK = 1000;
 
 const CHANNEL_OPTIONS = globalThis.CHANNEL_OPTIONS || {};
 
@@ -54,15 +58,26 @@ export class WebsocketTransport implements ChannelTransport {
 
   private enableHeartbeat = true;
 
-  private heartbeat() {
+  private heartbeat(isGraceWindow = false) {
     clearTimeout(this.pingTimeout);
     if (!this.enableHeartbeat || this.heartbeatPaused || this.isClosed) {
       return;
     }
 
+    const armedAt = performance.now();
     this.pingTimeout = setTimeout(() => {
+      if (!this.enableHeartbeat || this.heartbeatPaused || this.isClosed) {
+        return;
+      }
+
+      const firedLate =
+        performance.now() - armedAt > HEARTBEAT_TIMEOUT + HEARTBEAT_STARVATION_SLACK;
+      if (firedLate && !isGraceWindow) {
+        this.heartbeat(true);
+        return;
+      }
       this.socket.close(3008, 'timeout');
-    }, HEARTBEAT_INTERVAL + HEARTBEAT_MAX_LATENCY);
+    }, HEARTBEAT_TIMEOUT);
   }
 
   pauseHeartbeat() {

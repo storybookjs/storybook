@@ -24,6 +24,7 @@ const SelectableMixin = <T extends Constructor<LitElement>>(Base: T) => {
 
 const SelectableBase = SelectableMixin(BaseElement);
 
+/** Element composed from a base class and a mixin. */
 export class LitInheritanceMixin extends SelectableBase {
   declare baseLabel: string;
   declare mixedActive: boolean;

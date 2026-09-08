@@ -8,7 +8,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "",
+          "description": "Panel with string, number and boolean attributes.",
           "name": "LitBasicAttributes",
           "members": [
             {
@@ -95,6 +95,7 @@
             "name": "LitElement",
             "package": "lit"
           },
+          "summary": "Attribute fixture.",
           "tagName": "lit-basic-attributes",
           "customElement": true
         }

@@ -5,6 +5,7 @@ import { property } from 'lit/decorators.js';
  * Button with typed visual variants.
  *
  * @summary Compact variant fixture.
+ * @deprecated Use lit-basic-attributes instead.
  */
 export class LitUnionJsdoc extends LitElement {
   /** Visual variant. */
@@ -26,6 +27,10 @@ export class LitUnionJsdoc extends LitElement {
    */
   @property()
   label = 'Union label';
+
+  /** Internal render counter. @internal */
+  @property({ type: Number })
+  renderCount = 0;
 
   render() {
     return html`<button>${this.variant} ${this.label}</button>`;

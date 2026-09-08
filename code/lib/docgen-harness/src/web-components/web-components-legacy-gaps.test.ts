@@ -13,6 +13,7 @@ const fixturesDir = join(dirname(fileURLToPath(import.meta.url)), '__testfixture
 const BASELINES = {
   reflectedBooleanArgTypes: 'lit-basic-attributes/argtypes.snapshot',
   unionArgTypes: 'lit-union-jsdoc/argtypes.snapshot',
+  unionDescription: 'lit-union-jsdoc/description.snapshot',
   eventsArgTypes: 'lit-events/argtypes.snapshot',
   argsDefaultSnippet: 'lit-basic-attributes/snippet-ArgsDefaultRender.snapshot',
   propertyOnlySnippet: 'lit-property-only/snippet-LitTemplate.snapshot',
@@ -45,6 +46,16 @@ describe('legacy argTypes gaps (red until a re-recorded baseline closes them)', 
     expect(baseline('unionArgTypes')).toMatch(/"jsDocTags": [[{]/);
     expect(baseline('unionArgTypes')).toContain('deprecated');
     expect(baseline('unionArgTypes')).toContain('default');
+  });
+
+  gapTest('@summary reaches the component description', () => {
+    // Legacy: the manifest records @summary separately and the runtime reads only description.
+    expect(baseline('unionDescription')).toContain('Compact variant fixture.');
+  });
+
+  // The manifest records deprecated on the declaration and the runtime reads only description.
+  gapTest('class-level @deprecated reaches the component description', () => {
+    expect(baseline('unionDescription')).toContain('Use lit-basic-attributes instead.');
   });
 
   gapTest('events carry structured type information and descriptions', () => {

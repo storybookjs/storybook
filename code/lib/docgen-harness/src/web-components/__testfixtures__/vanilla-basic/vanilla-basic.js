@@ -1,3 +1,8 @@
+/**
+ * Plain custom element with attribute-backed properties.
+ *
+ * @attr {string} legacy-label - Old name for label. @deprecated Use label instead.
+ */
 export class VanillaBasic extends HTMLElement {
   static get observedAttributes() {
     return ['label', 'count', 'disabled'];

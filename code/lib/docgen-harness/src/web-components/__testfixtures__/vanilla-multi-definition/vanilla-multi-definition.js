@@ -13,6 +13,7 @@ export class MultiAlpha extends HTMLElement {
   }
 }
 
+/** Second element defined by the same module. */
 export class MultiBeta extends HTMLElement {
   static get observedAttributes() {
     return ['beta-label'];

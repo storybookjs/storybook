@@ -30,7 +30,7 @@
         },
         {
           "kind": "class",
-          "description": "",
+          "description": "Second element defined by the same module.",
           "name": "MultiBeta",
           "members": [
             {

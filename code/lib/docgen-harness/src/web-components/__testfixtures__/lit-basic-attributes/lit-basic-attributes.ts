@@ -1,6 +1,10 @@
 import { LitElement, html } from 'lit';
 import { property } from 'lit/decorators.js';
 
+/**
+ * Panel with string, number and boolean attributes.
+ * @summary Attribute fixture.
+ */
 export class LitBasicAttributes extends LitElement {
   /** Text shown in the component. */
   @property()

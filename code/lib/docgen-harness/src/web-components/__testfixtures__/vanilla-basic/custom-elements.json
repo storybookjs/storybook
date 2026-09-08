@@ -8,7 +8,7 @@
       "declarations": [
         {
           "kind": "class",
-          "description": "",
+          "description": "Plain custom element with attribute-backed properties.",
           "name": "VanillaBasic",
           "members": [
             {
@@ -36,6 +36,13 @@
             },
             {
               "name": "disabled"
+            },
+            {
+              "type": {
+                "text": "string"
+              },
+              "description": "Old name for label. @deprecated Use label instead.",
+              "name": "legacy-label"
             }
           ],
           "superclass": {

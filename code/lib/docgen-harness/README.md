@@ -218,6 +218,10 @@ Each has a red marker in `vue3-legacy-gaps.test.ts`.
 - Property-only Lit bindings are dropped from snippets without a warning.
 - Lit event listener bindings are dropped from snippets without a warning.
 - Reflected Lit attributes can be missing when the snippet is read before asynchronous reflection.
+- `@summary` is recorded by the analyzer but never reaches the component description.
+- Class-level `@deprecated` never reaches the component description.
+- `@internal` members are stripped by the analyzer and never reach the manifest, so `lit-union-jsdoc`'s `renderCount` is a regression baseline, not a marker.
+- An inline `@deprecated` inside an `@attr` description is kept as description text by the analyzer (no `deprecated` field), so `vanilla-basic`'s `legacy-label` records the tag verbatim; an analyzer limitation, not a runtime gap.
 - Cross-file inheritance is fully resolved: the analyzer resolves superclass and mixin members into the tag's declaration, so `lit-inheritance-mixin/` is a regression baseline with no marker.
 - `vanilla-multi-definition` targets only `multi-beta` correctly at this baseline version, so it is a regression baseline rather than a red marker.
 

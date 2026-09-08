@@ -41,7 +41,7 @@
         },
         {
           "kind": "class",
-          "description": "",
+          "description": "Element composed from a base class and a mixin.",
           "name": "LitInheritanceMixin",
           "members": [
             {

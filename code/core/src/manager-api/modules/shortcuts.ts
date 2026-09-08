@@ -260,9 +260,9 @@ export const init: ModuleFn = ({ store, fullAPI, provider }) => {
         if (isSidebarShortcutBlocked && ['focusNav', 'search', 'toggleNav'].includes(feature)) {
           return false;
         }
-        // Bindings persisted from a previous session whose addon didn't re-register must not
+        // Bindings persisted by a previous page load whose addon didn't re-register must not
         // match: acting on them would crash, and matching alone would swallow the key.
-        if (feature in addonsShortcuts || !(feature in defaultShortcuts)) {
+        if (!(feature in defaultShortcuts)) {
           return feature in addonsShortcuts;
         }
         return true;

@@ -1,5 +1,5 @@
-import type { ComponentProps, FC, MouseEvent, ReactElement, SyntheticEvent } from 'react';
-import React, { useMemo, useState } from 'react';
+import type { ComponentProps, FC, SyntheticEvent } from 'react';
+import React, { memo, useCallback, useMemo } from 'react';
 
 import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
 import {
@@ -7,161 +7,175 @@ import {
   type Addon_Collection,
   type Addon_TestProviderType,
   Addon_TypesEnum,
-  type StatusValue,
 } from 'storybook/internal/types';
 
 import { CopyIcon, EditorIcon, EllipsisIcon } from '@storybook/icons';
 
-import { useStorybookApi } from 'storybook/manager-api';
 import type { API } from 'storybook/manager-api';
-import { styled } from 'storybook/theming';
+import { useStorybookApi } from 'storybook/manager-api';
 
 import type { Link } from '../../../components/components/tooltip/TooltipLinkList.tsx';
 import { useCopyButton } from '../../../shared/useCopyButton.ts';
+
 import { Shortcut } from '../Shortcut.tsx';
-import { StatusButton } from './StatusButton.tsx';
-import type { ExcludesNull } from './Tree.tsx';
+import { ContextMenuButton } from './ContextMenuButton.tsx';
+import { TypeIconWithSymbol } from './TypeIcon.tsx';
 
-const empty = {
-  onMouseEnter: () => {},
-  node: null,
-};
+export type ContextMenuEntryMethod = 'pointer' | 'keyboard';
 
-const FloatingStatusButton = styled(StatusButton)({
-  background: 'var(--tree-node-background-hover)',
-  boxShadow: '0 0 5px 5px var(--tree-node-background-hover)',
-  position: 'absolute',
-  right: 0,
-  zIndex: 1,
-  '&:focus-visible': {
-    outlineOffset: -2,
-  },
-});
+function getGoToLabel(context: API_HashEntry): string | null {
+  if (context.type === 'docs') {
+    return 'Go to page';
+  }
 
-export const useContextMenu = (
-  context: API_HashEntry,
-  links: Link[],
-  api: API,
-  visibleStatus?: { icon: ReactElement | null; status: StatusValue } | null
-) => {
-  const [hoverCount, setHoverCount] = useState(0);
-  const [isOpen, setIsOpen] = useState(false);
+  if (context.type === 'story') {
+    if (context.subtype === 'test') {
+      return 'Go to test';
+    }
+    return 'Go to story';
+  }
+  return null;
+}
 
-  const exportName = context && 'exportName' in context ? (context.exportName ?? '') : '';
-  const { children: copyText, buttonProps: copyButtonProps } = useCopyButton<string>({
-    children: 'Copy story name',
-    content: exportName,
-  });
+export function hasContextMenu(context: API_HashEntry, hasTestProviders = false): boolean {
+  // Never show the ContextMenu in production.
+  if (globalThis.CONFIG_TYPE !== 'DEVELOPMENT') {
+    return false;
+  }
 
-  const shortcutKeys = api.getShortcutKeys();
-  const openInEditorShortcut = shortcutKeys?.openInEditor;
+  if (context.refId) {
+    return false;
+  }
 
-  const topLinks = useMemo<Link[]>(() => {
-    const defaultLinks = [];
+  return (
+    ('importPath' in context && Boolean(context.importPath)) ||
+    context.type === 'story' ||
+    context.type === 'docs' ||
+    // Test providers contribute entries (e.g. "run tests for this group") to branch rows.
+    (hasTestProviders && (context.type === 'group' || context.type === 'component'))
+  );
+}
 
-    if (context && 'importPath' in context && context.importPath) {
-      defaultLinks.push({
-        id: 'open-in-editor',
-        title: 'Open in editor',
-        icon: <EditorIcon />,
-        right: openInEditorShortcut ? <Shortcut keys={openInEditorShortcut} /> : null,
-        onClick: (e: SyntheticEvent) => {
-          if (context.importPath) {
+export const ContextMenu: FC<{
+  context: API_HashEntry;
+  isOpen: boolean;
+  setIsOpen: (open: boolean) => void;
+  onSelectStoryId: (id: string) => void;
+  api: API;
+  entryMethod?: ContextMenuEntryMethod;
+  /** Whether any test provider addon is registered (they add entries for branch rows). */
+  hasTestProviders?: boolean;
+}> = memo(
+  ({ context, isOpen, setIsOpen, onSelectStoryId, api, entryMethod, hasTestProviders = false }) => {
+    const exportName = context && 'exportName' in context ? (context.exportName ?? '') : '';
+    const { children: copyText, buttonProps: copyButtonProps } = useCopyButton<string>({
+      children: 'Copy story name',
+      content: exportName,
+    });
+
+    const topLinks = useMemo<Link[]>(() => {
+      const defaultLinks: Link[] = [];
+
+      const shortcutKeys = api.getShortcutKeys();
+
+      // When opened via keyboard shortcut, put a navigation link at the top, so users with
+      // motor disability have a way to navigate to stories with child tests.
+      if (entryMethod === 'keyboard') {
+        const goToLabel = getGoToLabel(context);
+        if (goToLabel) {
+          defaultLinks.push({
+            id: 'go-to-item',
+            title: goToLabel,
+            icon: <TypeIconWithSymbol item={context} />,
+            onClick: (e: SyntheticEvent) => {
+              e.preventDefault();
+              onSelectStoryId(context.id);
+              setIsOpen(false);
+            },
+          });
+        }
+      }
+
+      if (context && 'importPath' in context && context.importPath) {
+        defaultLinks.push({
+          id: 'open-in-editor',
+          title: 'Open in editor',
+          icon: <EditorIcon />,
+          right: shortcutKeys?.openInEditor ? <Shortcut keys={shortcutKeys.openInEditor} /> : null,
+          onClick: (e: SyntheticEvent) => {
+            if (context.importPath) {
+              e.preventDefault();
+              api.openInEditor({ file: context.importPath });
+            }
+          },
+        });
+      }
+
+      if (context.type === 'story') {
+        defaultLinks.push({
+          id: 'copy-story-name',
+          title: copyText,
+          icon: <CopyIcon />,
+          // FIXME/TODO: bring this back once we want to add shortcuts for this
+          // right:
+          //   enableShortcuts && shortcutKeys.copyStoryName ? (
+          //     <Shortcut keys={shortcutKeys.copyStoryName} />
+          //   ) : null,
+          onClick: (e: SyntheticEvent) => {
             e.preventDefault();
-            api.openInEditor({ file: context.importPath });
-          }
-        },
-      });
-    }
+            copyButtonProps.onClick(e);
+          },
+        });
+      }
 
-    if (context.type === 'story') {
-      defaultLinks.push({
-        id: 'copy-story-name',
-        title: copyText,
-        icon: <CopyIcon />,
-        // TODO: bring this back once we want to add shortcuts for this
-        // right:
-        //   enableShortcuts && shortcutKeys.copyStoryName ? (
-        //     <Shortcut keys={shortcutKeys.copyStoryName} />
-        //   ) : null,
-        onClick: (e: SyntheticEvent) => {
-          e.preventDefault();
-          copyButtonProps.onClick(e);
-        },
-      });
-    }
+      return defaultLinks;
+    }, [api, onSelectStoryId, context, copyText, copyButtonProps, entryMethod, setIsOpen]);
 
-    return defaultLinks;
-  }, [api, context, copyText, copyButtonProps, openInEditorShortcut]);
-
-  const handlers = useMemo(() => {
-    return {
-      onMouseEnter: () => {
-        setHoverCount((c) => c + 1);
-      },
-      onOpen: (event: SyntheticEvent) => {
+    const handleOpen = useCallback(
+      (event: SyntheticEvent) => {
         event.stopPropagation();
         setIsOpen(true);
       },
-      onClose: () => {
-        setIsOpen(false);
-      },
-    };
-  }, []);
-  /**
-   * Calculate the providerLinks whenever the user mouses over the container. We use an incrementor,
-   * instead of a simple boolean to ensure that the links are recalculated
-   */
-  const providerLinks = useMemo(() => {
-    const registeredTestProviders = api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER);
+      [setIsOpen]
+    );
 
-    if (hoverCount) {
-      return generateTestProviderLinks(registeredTestProviders, context);
-    }
-    return [];
-  }, [api, context, hoverCount]);
-
-  // We just don't want to render the context menu for composed storybook stories
-  const shouldRender =
-    !context.refId && (providerLinks.length > 0 || links.length > 0 || topLinks.length > 0);
-
-  const buttonStatus = visibleStatus?.status ?? 'status-value:unknown';
-  const menuIcon = visibleStatus?.icon ?? <EllipsisIcon />;
-
-  return useMemo(() => {
-    // Never show the SidebarContextMenu in production
+    // Never show the ContextMenu in production
     if (globalThis.CONFIG_TYPE !== 'DEVELOPMENT') {
-      return empty;
+      return null;
     }
 
-    return {
-      onMouseEnter: handlers.onMouseEnter,
-      node: shouldRender ? (
-        <PopoverProvider
-          ariaLabel="Context menu"
-          placement="bottom-end"
-          defaultVisible={false}
-          visible={isOpen}
-          onVisibleChange={setIsOpen}
-          popover={<LiveContextMenu context={context} links={[...topLinks, ...links]} />}
-          hasChrome={true}
-          padding={0}
+    const shouldRender = !context.refId && (topLinks.length > 0 || hasTestProviders);
+    if (!shouldRender) {
+      return null;
+    }
+
+    return (
+      <PopoverProvider
+        ariaLabel="Context menu"
+        placement="bottom-end"
+        defaultVisible={false}
+        visible={isOpen}
+        onVisibleChange={setIsOpen}
+        popover={<LiveContextMenu context={context} links={topLinks} />}
+        hasChrome={true}
+        padding={0}
+      >
+        <ContextMenuButton
+          data-displayed={isOpen ? 'on' : 'off'}
+          data-testid="context-menu"
+          ariaLabel="Open context menu"
+          type="button"
+          onClick={handleOpen}
+          shortcut={api.getShortcutKeys()?.contextMenu}
+          tooltipPlacement="bottom-end"
         >
-          <FloatingStatusButton
-            data-displayed={isOpen ? 'on' : 'off'}
-            data-testid="context-menu"
-            ariaLabel="Open context menu"
-            type="button"
-            status={buttonStatus}
-            onClick={handlers.onOpen}
-          >
-            {menuIcon}
-          </FloatingStatusButton>
-        </PopoverProvider>
-      ) : null,
-    };
-  }, [context, handlers, isOpen, shouldRender, links, topLinks, buttonStatus, menuIcon]);
-};
+          <EllipsisIcon />
+        </ContextMenuButton>
+      </PopoverProvider>
+    );
+  }
+);
+ContextMenu.displayName = 'ContextMenu';
 
 /**
  * This component re-subscribes to storybook's core state, hence the Live prefix. It is used to
@@ -186,11 +200,12 @@ const LiveContextMenu: FC<{ context: API_HashEntry } & ComponentProps<typeof Too
   const groups: Link[][] =
     Array.isArray(links[0]) || links.length === 0 ? (links as Link[][]) : [links as Link[]];
 
-  const all = groups.concat([providerLinks]);
+  const all = groups.concat([providerLinks]).filter((group) => group.length > 0);
 
   return <TooltipLinkList {...rest} links={all} />;
 };
 
+type ExcludesNull = <T>(x: T | null) => x is T;
 export function generateTestProviderLinks(
   registeredTestProviders: Addon_Collection<Addon_TestProviderType>,
   context: API_HashEntry

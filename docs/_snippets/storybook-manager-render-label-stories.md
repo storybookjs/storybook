@@ -5,7 +5,9 @@ import startCase from 'lodash/startCase.js';
 
 addons.setConfig({
   sidebar: {
-    renderLabel: ({ name, type }) => (type === 'story' ? name : startCase(name)),
+    renderLabel: ({ name, type }, api, { location }) => {
+      return type === 'story' || location === 'bottom-bar' ? name : startCase(name);
+    },
   },
 });
 ```

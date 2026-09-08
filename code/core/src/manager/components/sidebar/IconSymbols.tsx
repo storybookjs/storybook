@@ -12,7 +12,7 @@ const Svg = styled.svg`
   vertical-align: middle;
 `;
 
-// We are importing the icons from @storybook/icons as we need to add symbols inside of them.
+// We are hardcoding the icons from @storybook/icons as we need to add symbols inside of them.
 // This will allow to set icons once and use them everywhere.
 
 const GROUP_ID = 'icon--group';
@@ -24,9 +24,9 @@ const SUCCESS_ID = 'icon--success';
 const ERROR_ID = 'icon--error';
 const WARNING_ID = 'icon--warning';
 const DOT_ID = 'icon--dot';
-const NEW_ID = 'icon--new';
-const MODIFIED_ID = 'icon--modified';
-const AFFECTED_ID = 'icon--affected';
+const NEW_ID = 'icon--change-new';
+const MODIFIED_ID = 'icon--change-modified';
+const AFFECTED_ID = 'icon--change-affected';
 const REVIEWING_ID = 'icon--reviewing';
 
 export const IconSymbols: FC = () => {
@@ -132,17 +132,17 @@ export const UseSymbol: FC<{
   type:
     | 'group'
     | 'component'
-    | 'document'
+    | 'docs'
     | 'story'
     | 'test'
     | 'success'
     | 'error'
     | 'warning'
     | 'dot'
-    | 'new'
-    | 'reviewing'
-    | 'modified'
-    | 'affected';
+    | 'change-new'
+    | 'change-modified'
+    | 'change-affected'
+    | 'reviewing';
 }> = ({ type }) => {
   if (type === 'group') {
     return <use xlinkHref={`#${GROUP_ID}`} />;
@@ -152,7 +152,7 @@ export const UseSymbol: FC<{
     return <use xlinkHref={`#${COMPONENT_ID}`} />;
   }
 
-  if (type === 'document') {
+  if (type === 'docs') {
     return <use xlinkHref={`#${DOCUMENT_ID}`} />;
   }
 
@@ -180,7 +180,7 @@ export const UseSymbol: FC<{
     return <use xlinkHref={`#${DOT_ID}`} />;
   }
 
-  if (type === 'new') {
+  if (type === 'change-new') {
     return <use xlinkHref={`#${NEW_ID}`} />;
   }
 
@@ -188,11 +188,11 @@ export const UseSymbol: FC<{
     return <use xlinkHref={`#${REVIEWING_ID}`} />;
   }
 
-  if (type === 'modified') {
+  if (type === 'change-modified') {
     return <use xlinkHref={`#${MODIFIED_ID}`} />;
   }
 
-  if (type === 'affected') {
+  if (type === 'change-affected') {
     return <use xlinkHref={`#${AFFECTED_ID}`} />;
   }
 

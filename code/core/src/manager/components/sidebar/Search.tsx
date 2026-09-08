@@ -156,7 +156,14 @@ const Actions = styled.div({
   gap: 2,
 });
 
-const FocusContainer = styled.div({ outline: 0 });
+// Fills the remaining sidebar height: the virtualized tree inside scrolls itself.
+const FocusContainer = styled.div({
+  outline: 0,
+  flex: '1 1 auto',
+  minHeight: 0,
+  display: 'flex',
+  flexDirection: 'column',
+});
 
 export type SearchProps = {
   children: SearchChildrenFn;
@@ -196,12 +203,13 @@ export const Search = React.memo<SearchProps>(function Search({
 
       for (const datasetValue of datasetValues) {
         const storyStatuses = allStatuses?.[datasetValue.id];
-        const mostCriticalStatusValue = storyStatuses
-          ? getMostCriticalStatusValue(
-              Object.values(storyStatuses)
-                .filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID)
-                .map((status) => status.value)
-            )
+        const ownStatusValues = Object.values(storyStatuses ?? {})
+          .filter((status) => status.typeId !== REVIEW_STATUS_TYPE_ID)
+          .map((status) => status.value);
+        // A story whose only statuses are review-typed has no own status; fall back to the
+        // group aggregate instead of surfacing the 'unknown' placeholder value.
+        const mostCriticalStatusValue = ownStatusValues.length
+          ? getMostCriticalStatusValue(ownStatusValues)
           : null;
 
         const status = mostCriticalStatusValue ?? groupStatus[datasetValue.id] ?? null;
@@ -534,7 +542,7 @@ export const Search = React.memo<SearchProps>(function Search({
               </SearchField>
               {searchBarContent}
             </SearchBar>
-            <FocusContainer tabIndex={0} id="storybook-explorer-menu">
+            <FocusContainer tabIndex={-1} id="storybook-explorer-menu">
               {children({
                 query: input,
                 results,

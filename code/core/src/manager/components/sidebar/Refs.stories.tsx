@@ -192,10 +192,8 @@ export const Optimized = () => (
     {...refs.optimized}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const NoEntries = () => (
@@ -203,10 +201,8 @@ export const NoEntries = () => (
     {...refs.empty}
     hasEntries={false}
     isLoading={false}
-    isBrowsing
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const IsEmpty = () => (
@@ -214,10 +210,8 @@ export const IsEmpty = () => (
     {...refs.empty}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const StartInjectedUnknown = () => (
@@ -225,10 +219,8 @@ export const StartInjectedUnknown = () => (
     {...refs.startInjected_unknown}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const StartInjectedLoading = () => (
@@ -236,10 +228,8 @@ export const StartInjectedLoading = () => (
     {...refs.startInjected_loading}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const StartInjectedReady = () => (
@@ -247,10 +237,8 @@ export const StartInjectedReady = () => (
     {...refs.startInjected_ready}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const Versions = () => (
@@ -258,10 +246,8 @@ export const Versions = () => (
     {...refs.versions}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const VersionsMissingCurrent = () => (
@@ -269,10 +255,8 @@ export const VersionsMissingCurrent = () => (
     {...refs.versionsMissingCurrent}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const Errored = () => (
@@ -280,10 +264,8 @@ export const Errored = () => (
     {...refs.error}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const ErroredMobile = () => (
@@ -291,10 +273,8 @@ export const ErroredMobile = () => (
     {...refs.error}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 ErroredMobile.globals = { sb_theme: 'stacked', viewport: { value: 'mobile1' } };
@@ -337,10 +317,8 @@ export const Auth = () => (
     {...refs.auth}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 export const Long = () => (
@@ -348,10 +326,8 @@ export const Long = () => (
     {...refs.long}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );
 
@@ -360,9 +336,7 @@ export const WithSourceCode = () => (
     {...refs.withSourceCode}
     hasEntries={true}
     isLoading={false}
-    isBrowsing
+    api={managerContext.api}
     selectedStoryId=""
-    highlightedRef={{ current: null }}
-    setHighlighted={() => {}}
   />
 );

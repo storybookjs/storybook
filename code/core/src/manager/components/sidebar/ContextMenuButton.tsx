@@ -2,38 +2,26 @@ import type { ComponentProps } from 'react';
 import React, { forwardRef } from 'react';
 
 import { Button } from 'storybook/internal/components';
-import type { StatusValue } from 'storybook/internal/types';
 
-import type { Theme } from '@emotion/react';
 import { darken, lighten } from 'polished';
 import { styled } from 'storybook/theming';
 
-import { getStatus } from '../../utils/status.tsx';
-
-const withStatusColor = ({ theme, status }: { theme: Theme; status: StatusValue }) => ({
-  color: getStatus(theme, status).iconColor ?? undefined,
-});
-
-export const StatusLabel = styled.div<{ status: StatusValue }>(withStatusColor, {
-  margin: 3,
-});
-
-export type StatusButtonProps = ComponentProps<typeof StyledButton>;
+export type ContextMenuButtonProps = ComponentProps<typeof StyledButton>;
 
 const StyledButton = styled(Button)<{
-  height?: number;
-  width?: number;
-  status: StatusValue;
   selectedItem?: boolean;
 }>(
-  withStatusColor,
-  ({ theme, height, width }) => ({
+  ({ theme }) => ({
     transition: 'none',
     display: 'inline-flex',
     alignItems: 'center',
     justifyContent: 'center',
-    width: width || 28,
-    height: height || 28,
+    width: 28,
+    height: 28,
+
+    // position: 'absolute',
+    // right: 0,
+    // zIndex: 1,
 
     '&:hover': {
       color: theme.color.secondary,
@@ -63,6 +51,10 @@ const StyledButton = styled(Button)<{
         borderColor: 'transparent',
       },
     },
+
+    '&:focus-visible': {
+      outlineOffset: -2,
+    },
   }),
   ({ theme, selectedItem }) =>
     selectedItem && {
@@ -73,7 +65,9 @@ const StyledButton = styled(Button)<{
     }
 );
 
-export const StatusButton = forwardRef<HTMLButtonElement, StatusButtonProps>((props, ref) => {
-  return <StyledButton variant="ghost" padding="small" {...props} ref={ref} />;
-});
-StatusButton.displayName = 'StatusButton';
+export const ContextMenuButton = forwardRef<HTMLButtonElement, ContextMenuButtonProps>(
+  (props, ref) => {
+    return <StyledButton variant="ghost" padding="small" {...props} ref={ref} />;
+  }
+);
+ContextMenuButton.displayName = 'ContextMenuButton';

@@ -16,7 +16,6 @@ const ActionListItem = styled.li<{
     alignItems: 'center',
     justifyContent: 'space-between',
     flex: '0 0 auto',
-    overflow: 'hidden',
     minHeight: 32,
     gap: 4,
 
@@ -115,37 +114,21 @@ const ActionListHoverItem = styled(ActionListItem)<{ targetId: string }>(({ targ
   },
 }));
 
-const StyledButton = styled(Button)(({ size }) => ({
-  gap: size === 'small' ? 6 : 8,
-
-  '&:focus-visible': {
-    // Prevent focus outline from being cut off by overflow: hidden
-    outlineOffset: -2,
-  },
-}));
-
-const StyledToggleButton = styled(ToggleButton)({
-  '&:focus-visible': {
-    // Prevent focus outline from being cut off by overflow: hidden
-    outlineOffset: -2,
-  },
-});
-
-const ActionListButton = forwardRef<HTMLButtonElement, ComponentProps<typeof StyledButton>>(
+const ActionListButton = forwardRef<HTMLButtonElement, ComponentProps<typeof Button>>(
   function ActionListButton(
     { padding = 'small', size = 'medium', variant = 'ghost', ...props },
     ref
   ) {
-    return <StyledButton {...{ ...props, variant, padding, size, ref }} />;
+    return <Button {...{ ...props, variant, padding, size, ref }} />;
   }
 );
 
-const ActionListToggle = forwardRef<HTMLButtonElement, ComponentProps<typeof StyledToggleButton>>(
+const ActionListToggle = forwardRef<HTMLButtonElement, ComponentProps<typeof ToggleButton>>(
   function ActionListToggle(
     { padding = 'small', size = 'medium', variant = 'ghost', ...props },
     ref
   ) {
-    return <StyledToggleButton {...{ ...props, variant, padding, size, ref }} />;
+    return <ToggleButton {...{ ...props, variant, padding, size, ref }} />;
   }
 );
 

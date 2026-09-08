@@ -68,19 +68,15 @@ const userSettingSchema = z.object({
 /**
  * Move an existing `~/.storybook/settings.json` to the XDG location the first time Storybook runs
  * after the switch, so users who set `XDG_CONFIG_HOME` don't silently lose their settings.
+ *
+ * Only runs for the resolved default path. An explicit path passed to `globalSettings()` stays
+ * isolated, and when `XDG_CONFIG_HOME` is unset the default already is the legacy path.
  */
 async function migrateLegacySettings(filePath: string) {
   const legacyPath = join(getLegacyStorybookConfigDir(), SETTINGS_FILE);
 
-  if (filePath === legacyPath) {
+  if (filePath !== getDefaultSettingsPath() || filePath === legacyPath) {
     return;
-  }
-
-  try {
-    await fs.access(filePath);
-    return; // already migrated
-  } catch {
-    // fall through
   }
 
   let legacyContent: string;
@@ -92,11 +88,13 @@ async function migrateLegacySettings(filePath: string) {
 
   try {
     await fs.mkdir(dirname(filePath), { recursive: true });
-    await fs.writeFile(filePath, legacyContent);
+    // `wx` fails if the file already exists, so a target written by another process (or a
+    // previous run) is never truncated. That EEXIST lands in the catch below as a no-op.
+    await fs.writeFile(filePath, legacyContent, { flag: 'wx' });
     console.log(`Moved Storybook settings from ${legacyPath} to ${filePath}`);
   } catch {
-    // Copy failed, for example when the new location is not writable. globalSettings() below then
-    // finds no file at the new path and starts from defaults. The legacy file is left untouched.
+    // Target already exists, or the location is not writable. Either way there is nothing to do
+    // and the legacy file is left untouched.
   }
 }
 

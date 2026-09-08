@@ -7,6 +7,7 @@ import { startCase } from 'es-toolkit/string';
 import { ManagerContext, useStorybookApi } from 'storybook/manager-api';
 import { expect, fn, screen, userEvent, waitFor } from 'storybook/test';
 
+import { MOBILE_TRANSITION_DURATION } from '../../../constants.ts';
 import { LayoutProvider, useLayout } from '../../layout/LayoutProvider.tsx';
 import { MobileNavigation } from './MobileNavigation.tsx';
 
@@ -23,7 +24,6 @@ const MockMenu = () => {
       >
         close
       </button>
-      {/* Mirrors the sidebar's cog button, which opens the about overlay on mobile. */}
       <button type="button" aria-label="About Storybook" onClick={() => setMobileAboutOpen(true)}>
         about
       </button>
@@ -96,7 +96,6 @@ const MockManagerProvider: FC<
   const value: any = useMemo(() => {
     const api = {
       getCurrentStoryData: fn(() => index.someStoryId),
-      // The about overlay's upgrade block reads the current version.
       getCurrentVersion: () => ({ version: '0.0.0' }),
       getShortcutKeys: () => ({ toggleNav: ['alt', 'S'] }),
       setMobileNavigation: (show: boolean) => setShowMobileNavigation(show),
@@ -111,7 +110,7 @@ const MockManagerProvider: FC<
       },
       api,
     };
-  }, [index, showMobileNavigation, exposeApi]);
+  }, [index, showMobileNavigation]);
 
   // Expose the live api for the shortcut story on commit, not during render.
   useEffect(() => {
@@ -274,7 +273,7 @@ export const AboutResetOnReopen: Story = {
       expect(screen.queryByLabelText('Close about section')).not.toBeInTheDocument()
     );
     // The reset is delayed until the drawer's exit transition is done.
-    await new Promise((resolve) => setTimeout(resolve, 400));
+    await new Promise((resolve) => setTimeout(resolve, MOBILE_TRANSITION_DURATION + 50));
 
     // @ts-expect-error (non strict)
     await MenuOpen.play(context);

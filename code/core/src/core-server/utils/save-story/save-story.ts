@@ -22,10 +22,11 @@ import type { Options } from 'storybook/internal/types';
 
 import { duplicateStoryWithNewName } from './duplicate-story-with-new-name.ts';
 import { updateArgsInCsfFile } from './update-args-in-csf-file.ts';
+import { updateStoryTagsInCsfFile } from './update-tags-in-csf-file.ts';
 import { SaveStoryError } from './utils.ts';
 
 const parseArgs = (args: string): Record<string, any> =>
-  JSON.parse(args, (_, value) => {
+  JSON.parse(args, (_key, value) => {
     if (value === '__sb_empty_function_arg__') {
       return () => {};
     }
@@ -51,7 +52,7 @@ const removeExtraNewlines = (code: string, name: string) => {
 
 export function initializeSaveStory(channel: Channel, options: Options) {
   channel.on(SAVE_STORY_REQUEST, async ({ id, payload }: RequestData<SaveStoryRequestPayload>) => {
-    const { csfId, importPath, args, name } = payload;
+    const { csfId, importPath, args, name, tags } = payload;
 
     let newStoryId: string | undefined;
     let newStoryName: string | undefined;
@@ -84,10 +85,23 @@ export function initializeSaveStory(channel: Channel, options: Options) {
 
       sourceStoryName = storyNameFromExport(storyName);
 
-      await updateArgsInCsfFile(
-        name ? duplicateStoryWithNewName(parsed, storyName, name) : csf.getStoryExport(storyName),
-        args ? parseArgs(args) : {}
-      );
+      const storyNode = name
+        ? duplicateStoryWithNewName(parsed, storyName, name)
+        : csf.getStoryExport(storyName);
+
+      if (!storyNode) {
+        throw new SaveStoryError(`Story configuration could not be found.`);
+      }
+
+      const isTagUpdate = tags !== undefined;
+
+      if (args !== undefined || !isTagUpdate) {
+        await updateArgsInCsfFile(storyNode, args ? parseArgs(args) : {});
+      }
+
+      if (tags?.length) {
+        await updateStoryTagsInCsfFile(storyNode, tags);
+      }
 
       const code = await formatFileContent(
         sourceFilePath,

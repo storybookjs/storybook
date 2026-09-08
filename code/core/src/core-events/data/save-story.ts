@@ -3,6 +3,7 @@ export interface SaveStoryRequestPayload {
   csfId: string;
   importPath: string;
   name?: string;
+  tags?: string[];
 }
 
 export interface SaveStoryResponsePayload {

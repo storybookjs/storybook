@@ -2113,7 +2113,7 @@ describe('stories API', () => {
           ]);
         }
 
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(500);
 
         const rebuilds = setIndexSpy.mock.calls.length;
         expect(rebuilds).toBeGreaterThanOrEqual(1);
@@ -2158,7 +2158,7 @@ describe('stories API', () => {
             description: 'desc',
           },
         ]);
-        await vi.advanceTimersByTimeAsync(1000);
+        await vi.advanceTimersByTimeAsync(500);
         expect(Object.keys(store.getState().filteredIndex!)).toContain('a--2');
       } finally {
         vi.useRealTimers();

@@ -82,7 +82,7 @@ const STORY_INDEX_PATH = './index.json';
 const TAGS_FILTER = 'tags-filter';
 const STATIC_FILTER = 'static-filter';
 const STATUS_FILTER = 'status-filter';
-const STATUS_CHANGE_REBUILD_THROTTLE = 1000;
+const STATUS_CHANGE_REBUILD_THROTTLE = 500;
 
 const BUILT_IN_TAG_IDS = new Set(Object.keys(BUILT_IN_FILTERS));
 

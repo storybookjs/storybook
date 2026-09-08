@@ -4,11 +4,6 @@ import { parser, types as t } from 'storybook/internal/babel';
 
 import {
   findIndirectProperty,
-  findSpreadProperty,
-  findUnresolvedComputedProperty,
-  getDirectProperties,
-  getDirectPropertyName,
-  getObjectPropertyValue,
   getStaticProperties,
   getStaticPropertyName,
 } from './config-object.ts';
@@ -32,8 +27,6 @@ describe('getStaticPropertyName', () => {
     ['getter', `{ get storySort() { return 0 } }`, 'storySort'],
     ['reserved word key', `{ default: 1 }`, 'default'],
     ['key needing quotes', `{ 'story-sort': 1 }`, 'story-sort'],
-    ['computed string literal key', `{ ['storySort']: 1 }`, 'storySort'],
-    ['computed template key', `{ [\`storySort\`]: 1 }`, 'storySort'],
   ])('reads a %s', (_name, source, expected) => {
     expect(getStaticPropertyName(firstMember(source))).toBe(expected);
   });
@@ -41,7 +34,8 @@ describe('getStaticPropertyName', () => {
   it.each([
     ['spread element', `{ ...rest }`],
     ['computed identifier key', `{ [key]: 1 }`],
-    ['computed template expression', '{ [`story${kind}`]: 1 }'],
+    ['computed string literal key', `{ ['storySort']: 1 }`],
+    ['computed template key', `{ [\`storySort\`]: 1 }`],
     ['computed method key', `{ [key]() { return 0 } }`],
     ['numeric key', `{ 0: 1 }`],
     ['bigint key', `{ 0n: 1 }`],
@@ -51,69 +45,6 @@ describe('getStaticPropertyName', () => {
 
   it('does not confuse a computed key with the identifier it references', () => {
     expect(getStaticPropertyName(firstMember(`{ [storySort]: 1 }`))).toBeUndefined();
-  });
-});
-
-describe('getDirectPropertyName', () => {
-  it.each([
-    ['identifier key', `{ storySort: 1 }`, 'storySort'],
-    ['string literal key', `{ 'storySort': 1 }`, 'storySort'],
-  ])('reads a %s', (_name, source, expected) => {
-    expect(getDirectPropertyName(firstMember(source))).toBe(expected);
-  });
-
-  it.each([
-    ['spread element', `{ ...rest }`],
-    ['computed identifier key', `{ [key]: 1 }`],
-    ['computed string literal key', `{ ['storySort']: 1 }`],
-    ['computed template key', `{ [\`storySort\`]: 1 }`],
-  ])('returns undefined for a %s', (_name, source) => {
-    expect(getDirectPropertyName(firstMember(source))).toBeUndefined();
-  });
-});
-
-describe('getObjectPropertyValue', () => {
-  it('returns an expression value', () => {
-    const property = firstMember(`{ storySort: { order: ['Intro'] } }`);
-    expect(getObjectPropertyValue(property)).toBe(
-      t.isObjectProperty(property) ? property.value : undefined
-    );
-  });
-
-  it.each([
-    ['spread element', `{ ...rest }`],
-    ['object method', `{ storySort() {} }`],
-  ])('returns undefined for a %s', (_name, source) => {
-    expect(getObjectPropertyValue(firstMember(source))).toBeUndefined();
-  });
-});
-
-describe('findSpreadProperty', () => {
-  it('returns the first spread property', () => {
-    const object = parseObject(`{ a: 1, ...first, ...second }`);
-    expect(findSpreadProperty(object)).toBe(object.properties[1]);
-  });
-
-  it('returns undefined without a spread property', () => {
-    expect(findSpreadProperty(parseObject(`{ a: 1, [key]: 2 }`))).toBeUndefined();
-  });
-});
-
-describe('findUnresolvedComputedProperty', () => {
-  it.each([
-    ['computed identifier key', `{ a: 1, [key]: 2 }`],
-    ['computed template expression', '{ a: 1, [`key${suffix}`]: 2 }'],
-  ])('returns the first %s', (_name, source) => {
-    const object = parseObject(source);
-    expect(findUnresolvedComputedProperty(object)).toBe(object.properties[1]);
-  });
-
-  it.each([
-    ['direct properties', `{ a: 1, b: 2 }`],
-    ['static computed properties', `{ ['a']: 1, [\`b\`]: 2 }`],
-    ['spread properties', `{ ...rest }`],
-  ])('returns undefined for %s', (_name, source) => {
-    expect(findUnresolvedComputedProperty(parseObject(source))).toBeUndefined();
   });
 });
 
@@ -154,8 +85,8 @@ describe('getStaticProperties', () => {
     expect(getStaticProperties(parseObject(`{ a: 1, 'a': 2 }`), 'a')).toHaveLength(2);
   });
 
-  it('matches statically computable keys', () => {
-    expect(getStaticProperties(parseObject(`{ ['a']: 1, [\`a\`]: 2 }`), 'a')).toHaveLength(2);
+  it('does not match a computed key that spells the name', () => {
+    expect(getStaticProperties(parseObject(`{ ['a']: 1 }`), 'a')).toHaveLength(0);
   });
 
   it('does not match a spread that might contribute the name', () => {
@@ -164,16 +95,5 @@ describe('getStaticProperties', () => {
 
   it('returns an empty array when the key is absent', () => {
     expect(getStaticProperties(parseObject(`{ b: 1 }`), 'a')).toEqual([]);
-  });
-});
-
-describe('getDirectProperties', () => {
-  it('returns only non-computed members whose key matches', () => {
-    const object = parseObject(`{ a: 1, 'a': 2, ['a']: 3, [\`a\`]: 4 }`);
-    expect(getDirectProperties(object, 'a')).toEqual([object.properties[0], object.properties[1]]);
-  });
-
-  it('returns an empty array when the key is absent', () => {
-    expect(getDirectProperties(parseObject(`{ b: 1 }`), 'a')).toEqual([]);
   });
 });

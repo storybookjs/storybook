@@ -7,9 +7,8 @@ import { formatConfig, loadConfig } from 'storybook/internal/csf-tools';
 import type { Fix } from '../types.ts';
 import {
   findIndirectProperty,
-  getDirectProperties,
-  getDirectPropertyName,
-  getObjectPropertyValue,
+  getStaticProperties,
+  getStaticPropertyName,
 } from '../helpers/config-object.ts';
 
 const managerApiPackages = new Set(['storybook/manager-api', '@storybook/manager-api']);
@@ -45,82 +44,225 @@ const unwrapTypeExpression = (node: t.Expression) => {
 const migrationError = (managerConfigPath: string, node: t.Node, reason: string) => {
   const location = node.loc?.start.line ? ` on line ${node.loc.start.line}` : '';
   return new HandledError(
-    `Cannot automigrate addons.setConfig in ${managerConfigPath}${location}: ${reason}. Move top-level layout options into \`layout\` and \`enableShortcuts\` into \`ui\` manually.`
+    `Cannot automigrate addons.setConfig in ${managerConfigPath}${location}: ${reason}. Move top-level layout options into \`layout\` and \`enableShortcuts\` into \`ui\` manually. Keep nested values when an option exists in both places and retain expression evaluation order.`
   );
 };
 
-const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: string) => {
-  const computedLegacyProperty = config.properties.find(
-    (property) =>
+const getComputedPropertyName = (property: t.ObjectMember | t.SpreadElement) => {
+  if (t.isSpreadElement(property) || !property.computed) {
+    return undefined;
+  }
+  if (t.isStringLiteral(property.key)) {
+    return property.key.value;
+  }
+  if (t.isTemplateLiteral(property.key) && property.key.expressions.length === 0) {
+    return property.key.quasis[0]?.value.cooked;
+  }
+  return undefined;
+};
+
+const getPropertyValue = (property: t.ObjectMember | t.SpreadElement) => {
+  if (!t.isObjectProperty(property) || !t.isExpression(property.value)) {
+    return undefined;
+  }
+  return unwrapTypeExpression(property.value);
+};
+
+const isEvaluationInert = (node: t.Expression): boolean => {
+  if (t.isLiteral(node) || t.isFunctionExpression(node) || t.isArrowFunctionExpression(node)) {
+    return true;
+  }
+  if (t.isUnaryExpression(node)) {
+    return isEvaluationInert(node.argument);
+  }
+  if (t.isArrayExpression(node)) {
+    return node.elements.every(
+      (element) => element === null || (t.isExpression(element) && isEvaluationInert(element))
+    );
+  }
+  if (t.isObjectExpression(node)) {
+    return node.properties.every((property) => {
+      const value = getPropertyValue(property);
+      return (
+        getStaticPropertyName(property) !== undefined &&
+        value !== undefined &&
+        isEvaluationInert(value)
+      );
+    });
+  }
+  return false;
+};
+
+const describeUnsafeMember = (property: t.ObjectMember | t.SpreadElement) => {
+  if (t.isSpreadElement(property)) {
+    return 'a spread property';
+  }
+  if (property.computed) {
+    return 'a computed property';
+  }
+  return 'an unreadable property';
+};
+
+const assertMovableProperties = (
+  properties: t.ObjectMember[],
+  managerConfigPath: string,
+  group: 'layout' | 'ui'
+) => {
+  const unsafeProperty = properties.find((property) => !getPropertyValue(property));
+  if (unsafeProperty) {
+    const name = getStaticPropertyName(unsafeProperty);
+    throw migrationError(
+      managerConfigPath,
+      unsafeProperty,
+      `the top-level ${name} ${group} option is a method or accessor, not a movable value property`
+    );
+  }
+};
+
+const migrateIntoExistingGroup = (
+  config: t.ObjectExpression,
+  existingGroup: t.ObjectMember,
+  movedProperties: t.ObjectMember[],
+  group: 'layout' | 'ui',
+  managerConfigPath: string
+) => {
+  const groupValue = getPropertyValue(existingGroup);
+  if (!t.isObjectExpression(groupValue)) {
+    throw migrationError(
+      managerConfigPath,
+      existingGroup,
+      `the existing ${group} value is not an object literal`
+    );
+  }
+
+  const indirectProperty = findIndirectProperty(groupValue);
+  if (indirectProperty) {
+    throw migrationError(
+      managerConfigPath,
+      indirectProperty,
+      `the existing ${group} object contains ${describeUnsafeMember(indirectProperty)}`
+    );
+  }
+  const nonValueProperty = groupValue.properties.find((property) => !getPropertyValue(property));
+  if (nonValueProperty) {
+    throw migrationError(
+      managerConfigPath,
+      nonValueProperty,
+      `the existing ${group} object contains a method or accessor`
+    );
+  }
+
+  const nestedNames = new Set(groupValue.properties.map(getStaticPropertyName));
+  const conflictingProperty = movedProperties.find((property) =>
+    nestedNames.has(getStaticPropertyName(property))
+  );
+  if (conflictingProperty) {
+    const name = getStaticPropertyName(conflictingProperty);
+    throw migrationError(
+      managerConfigPath,
+      conflictingProperty,
+      `the ${name} option exists at both top level and inside ${group}, where the nested value is authoritative`
+    );
+  }
+
+  const effectfulProperty = movedProperties.find((property) => {
+    const value = getPropertyValue(property);
+    return !value || !isEvaluationInert(value);
+  });
+  if (effectfulProperty) {
+    const name = getStaticPropertyName(effectfulProperty);
+    const value = getPropertyValue(effectfulProperty);
+    throw migrationError(
+      managerConfigPath,
+      effectfulProperty,
+      `the ${name} option has a ${value?.type ?? 'non-expression'} value whose relocation into the existing ${group} object could change expression evaluation order`
+    );
+  }
+
+  groupValue.properties.unshift(...movedProperties);
+  const movedPropertySet: Set<t.ObjectMember | t.SpreadElement> = new Set(movedProperties);
+  config.properties = config.properties.filter((property) => !movedPropertySet.has(property));
+};
+
+const wrapContiguousProperties = (
+  config: t.ObjectExpression,
+  movedProperties: t.ObjectMember[],
+  group: 'layout' | 'ui',
+  managerConfigPath: string
+) => {
+  const firstMovedIndex = config.properties.indexOf(movedProperties[0]);
+  const lastMovedIndex = config.properties.indexOf(movedProperties.at(-1)!);
+  if (lastMovedIndex - firstMovedIndex + 1 !== movedProperties.length) {
+    throw migrationError(
+      managerConfigPath,
+      movedProperties[1] ?? movedProperties[0],
+      `the top-level ${group} options are not contiguous, so grouping them could change expression evaluation order`
+    );
+  }
+  config.properties.splice(
+    firstMovedIndex,
+    movedProperties.length,
+    t.objectProperty(t.identifier(group), t.objectExpression(movedProperties))
+  );
+};
+
+const migrateGroup = (
+  config: t.ObjectExpression,
+  group: 'layout' | 'ui',
+  managerConfigPath: string
+) => {
+  const movedProperties = config.properties.filter(
+    (property): property is t.ObjectMember =>
       !t.isSpreadElement(property) &&
-      property.computed &&
-      t.isStringLiteral(property.key) &&
-      optionGroups.has(property.key.value)
+      optionGroups.get(getStaticPropertyName(property) ?? '') === group
   );
-  const movedProperties = config.properties.filter((property) =>
-    optionGroups.has(getDirectPropertyName(property) ?? '')
+  if (movedProperties.length === 0) {
+    return false;
+  }
+  assertMovableProperties(movedProperties, managerConfigPath, group);
+
+  const groupProperties = getStaticProperties(config, group);
+  if (groupProperties.length > 1) {
+    throw migrationError(
+      managerConfigPath,
+      groupProperties[1],
+      `the configuration defines ${group} more than once`
+    );
+  }
+  if (groupProperties[0]) {
+    migrateIntoExistingGroup(config, groupProperties[0], movedProperties, group, managerConfigPath);
+  } else {
+    wrapContiguousProperties(config, movedProperties, group, managerConfigPath);
+  }
+  return true;
+};
+
+const migrateConfigObject = (config: t.ObjectExpression, managerConfigPath: string) => {
+  const hasDirectLegacyProperty = config.properties.some((property) =>
+    optionGroups.has(getStaticPropertyName(property) ?? '')
   );
-  if (movedProperties.length === 0 && !computedLegacyProperty) {
+  const computedLegacyProperty = config.properties.find((property) =>
+    optionGroups.has(getComputedPropertyName(property) ?? '')
+  );
+  if (!hasDirectLegacyProperty && !computedLegacyProperty) {
     return false;
   }
 
-  const unknownProperty = findIndirectProperty(config);
-  if (unknownProperty) {
+  const indirectProperty = findIndirectProperty(config);
+  if (indirectProperty) {
     throw migrationError(
       managerConfigPath,
-      unknownProperty,
-      'the configuration contains a spread or computed property'
+      indirectProperty,
+      `the configuration contains ${describeUnsafeMember(indirectProperty)}`
     );
   }
 
   let changed = false;
-
   for (const group of ['layout', 'ui'] as const) {
-    const movedGroupProperties = config.properties.filter(
-      (property) => optionGroups.get(getDirectPropertyName(property) ?? '') === group
-    );
-    if (movedGroupProperties.length === 0) {
-      continue;
+    if (migrateGroup(config, group, managerConfigPath)) {
+      changed = true;
     }
-    const groupProperties = getDirectProperties(config, group);
-    const existingGroup = groupProperties.at(-1);
-    if (existingGroup) {
-      const groupValue = getObjectPropertyValue(existingGroup);
-      const existingGroupValue = groupValue ? unwrapTypeExpression(groupValue) : null;
-      if (!t.isObjectExpression(existingGroupValue)) {
-        throw migrationError(
-          managerConfigPath,
-          existingGroup,
-          `the existing ${group} value is not an object literal`
-        );
-      }
-      const movedNames = new Set(movedGroupProperties.map(getDirectPropertyName));
-      existingGroupValue.properties = existingGroupValue.properties.filter(
-        (property) => !movedNames.has(getDirectPropertyName(property))
-      );
-      existingGroupValue.properties.push(...movedGroupProperties);
-      config.properties = config.properties.filter(
-        (property) => !movedGroupProperties.includes(property)
-      );
-    } else {
-      const firstMovedIndex = config.properties.findIndex((property) =>
-        movedGroupProperties.includes(property)
-      );
-      const insertionIndex = config.properties
-        .slice(0, firstMovedIndex)
-        .filter((property) => !movedGroupProperties.includes(property)).length;
-      config.properties = config.properties.filter(
-        (property) => !movedGroupProperties.includes(property)
-      );
-      config.properties.splice(
-        insertionIndex,
-        0,
-        t.objectProperty(t.identifier(group), t.objectExpression(movedGroupProperties))
-      );
-    }
-    changed = true;
   }
-
   return changed;
 };
 

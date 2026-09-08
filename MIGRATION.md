@@ -568,7 +568,9 @@ npx storybook automigrate set-config-layout
 ```
 
 The automigration stops with manual instructions when a configuration containing an explicit
-legacy option cannot be transformed safely.
+legacy option cannot be transformed safely. This includes computed properties, spreads, conflicting
+top-level and nested values, and moves that could change expression evaluation order. When the same
+option exists in both places, keep the nested value because it was authoritative in Storybook 10.
 
 ### Vitest Addon: requires Vitest 4.0 or higher
 

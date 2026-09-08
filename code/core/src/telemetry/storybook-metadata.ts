@@ -137,10 +137,11 @@ export const computeStorybookMetadata = async ({
     ...packageJson?.devDependencies,
     ...packageJson?.peerDependencies,
   };
+  const projectDir = dirname(resolve(configDir));
 
   const metaFramework = Object.keys(allDependencies).find((dep) => !!metaFrameworks[dep]);
   if (metaFramework) {
-    const { version } = await getActualPackageVersion(metaFramework);
+    const { version } = await getActualPackageVersion(metaFramework, projectDir);
     metadata.metaFramework = {
       name: metaFrameworks[metaFramework],
       packageName: metaFramework,
@@ -148,7 +149,7 @@ export const computeStorybookMetadata = async ({
     };
   }
 
-  metadata.knownPackages = await analyzeEcosystemPackages(packageJson);
+  metadata.knownPackages = await analyzeEcosystemPackages(packageJson, projectDir);
   metadata.hasRouterPackage = getHasRouterPackage(packageJson);
   metadata.hasTurbopack = getHasTurbopack(packageJson);
   metadata.hasModuleFederation = getHasModuleFederation(packageJson);
@@ -185,7 +186,7 @@ export const computeStorybookMetadata = async ({
   const rendererPackages = Object.fromEntries(
     await Promise.all(
       getRendererPackages(frameworkInfo.renderer).map(async (packageName) => {
-        const { version } = await getActualPackageVersion(packageName);
+        const { version } = await getActualPackageVersion(packageName, projectDir);
         return [packageName, version || 'unknown'];
       })
     )
@@ -233,7 +234,7 @@ export const computeStorybookMetadata = async ({
     };
   }
 
-  const addonVersions = await getActualPackageVersions(addons);
+  const addonVersions = await getActualPackageVersions(addons, projectDir);
   addonVersions.forEach(({ name, version }) => {
     addons[name] = addons[name] || {
       name,
@@ -254,7 +255,7 @@ export const computeStorybookMetadata = async ({
       };
     }, {}) as Record<string, Dependency>;
 
-  const storybookPackageVersions = await getActualPackageVersions(storybookPackages);
+  const storybookPackageVersions = await getActualPackageVersions(storybookPackages, projectDir);
   storybookPackageVersions.forEach(({ name, version }) => {
     storybookPackages[name] = storybookPackages[name] || {
       name,
@@ -299,8 +300,8 @@ export const computeStorybookMetadata = async ({
   };
 };
 
-async function getPackageJsonDetails() {
-  const packageJsonPath = pkg.up();
+async function getPackageJsonDetails(cwd = process.cwd()) {
+  const packageJsonPath = pkg.up({ cwd });
   if (packageJsonPath) {
     return {
       packageJsonPath,
@@ -361,7 +362,8 @@ function resolveDefaultConfigDir(packageJson: PackageJson): string {
 }
 
 export const getStorybookMetadata = async (_configDir?: string) => {
-  const { packageJson, packageJsonPath } = await getPackageJsonDetails();
+  const packageJsonDetailsDir = _configDir ? dirname(resolve(_configDir)) : process.cwd();
+  const { packageJson, packageJsonPath } = await getPackageJsonDetails(packageJsonDetailsDir);
   const configDir = _configDir || resolveDefaultConfigDir(packageJson);
   const contentHash = await hashMainConfig(configDir);
   const cacheKey = `${configDir}::${contentHash}`;

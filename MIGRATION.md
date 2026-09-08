@@ -535,18 +535,48 @@
 
 ### `parameters.componentSubtitle` removed
 
-The deprecated `parameters.componentSubtitle` fallback was removed. Use
-`parameters.docs.subtitle` instead. Storybook's upgrade command automatically moves statically
-declared values in preview configuration and CSF files. The migration reports the file and asks you
-to migrate it manually when it cannot preserve precedence or evaluation behavior. This includes
-spreads, dynamic `docs.subtitle` truthiness, inherited subtitles that can take precedence, and
-side-effectful `componentSubtitle` expressions.
+The deprecated `parameters.componentSubtitle` fallback was removed. Move subtitles to
+`parameters.docs.subtitle`.
+
+When you upgrade to Storybook 11, the upgrade command offers to move directly declared properties
+in preview configuration and CSF files when it can preserve their behavior. To run this
+automigration directly from your project root without the post-migration health check, use:
+
+```sh
+npx storybook@11 automigrate component-subtitle --skip-doctor
+```
+
+Use `--config-dir <path>` if the Storybook configuration is not in the root `.storybook` directory.
+
+The automigration is atomic: if it cannot change every affected file safely, it reports the files
+and does not change any of them. Fix all reported files manually, then run the command again. Unsafe
+patterns include spreads that affect the relevant configuration objects, duplicate or dynamic
+properties, indirect configuration objects, inherited subtitles that can take precedence, and
+expressions whose evaluation would need to move.
+
+When updating a file manually, preserve the previous fallback behavior: a truthy `docs.subtitle`
+wins; otherwise, `componentSubtitle` is used. A subtitle from preview configuration or component
+meta can also take precedence over one at a lower scope.
 
 ```diff
 export default {
   parameters: {
 -   componentSubtitle: 'Button variants',
 +   docs: { subtitle: 'Button variants' },
+  },
+};
+```
+
+If `parameters.docs` already exists, add `subtitle` without replacing its other options:
+
+```diff
+export default {
+  parameters: {
+-   componentSubtitle: 'Button variants',
+    docs: {
++     subtitle: 'Button variants',
+      source: { type: 'code' },
+    },
   },
 };
 ```

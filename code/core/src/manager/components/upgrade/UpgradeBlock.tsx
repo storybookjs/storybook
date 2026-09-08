@@ -1,25 +1,58 @@
 import type { FC } from 'react';
 import React from 'react';
 
-import { Link, TabList, TabPanel, useTabsState } from 'storybook/internal/components';
+import { Button, Link, TabList, TabPanel, useTabsState } from 'storybook/internal/components';
+
+import { CheckIcon, CopyIcon } from '@storybook/icons';
 
 import { useStorybookApi } from 'storybook/manager-api';
 import { styled } from 'storybook/theming';
 
+import { useCopyButton } from '../../../shared/useCopyButton.ts';
 import { MEDIA_DESKTOP_BREAKPOINT } from '../../constants.ts';
 
 interface UpgradeBlockProps {
   onNavigateToWhatsNew?: () => void;
 }
 
+const UpgradeSnippet: FC<{ command: string }> = ({ command }) => {
+  const { children, buttonProps } = useCopyButton({
+    children: <CopyIcon />,
+    childrenOnCopy: <CheckIcon />,
+    content: command,
+    ariaLabel: 'Copy command',
+  });
+
+  return (
+    <Code>
+      {command}
+      <Button variant="ghost" padding="small" size="small" {...buttonProps}>
+        {children}
+      </Button>
+    </Code>
+  );
+};
+
 export const UpgradeBlock: FC<UpgradeBlockProps> = ({ onNavigateToWhatsNew }) => {
   const api = useStorybookApi();
   const tabsState = useTabsState({
     defaultSelected: 'npm',
     tabs: [
-      { id: 'npm', title: 'npm', children: <Code>npx storybook@latest upgrade</Code> },
-      { id: 'yarn', title: 'yarn', children: <Code>yarn dlx storybook@latest upgrade</Code> },
-      { id: 'pnpm', title: 'pnpm', children: <Code>pnpm dlx storybook@latest upgrade</Code> },
+      {
+        id: 'npm',
+        title: 'npm',
+        children: <UpgradeSnippet command="npx storybook@latest upgrade" />,
+      },
+      {
+        id: 'yarn',
+        title: 'yarn',
+        children: <UpgradeSnippet command="yarn dlx storybook@latest upgrade" />,
+      },
+      {
+        id: 'pnpm',
+        title: 'pnpm',
+        children: <UpgradeSnippet command="pnpm dlx storybook@latest upgrade" />,
+      },
     ],
   });
 
@@ -51,6 +84,10 @@ const Container = styled.div(({ theme }) => ({
 }));
 
 const Code = styled.pre(({ theme }) => ({
+  display: 'flex',
+  alignItems: 'center',
+  justifyContent: 'space-between',
+  gap: 8,
   background: theme.base === 'light' ? 'rgba(0, 0, 0, 0.05)' : theme.appBorderColor,
   fontSize: theme.typography.size.s2 - 1,
   margin: '4px 0 16px',

@@ -308,9 +308,8 @@ export const AboutFocusTrapped: Story = {
     await expect(screen.getByRole('tab', { name: 'yarn' })).toHaveFocus();
     await userEvent.keyboard('{ArrowLeft}');
     await expect(screen.getByRole('tab', { name: 'npm' })).toHaveFocus();
-    // The code block has no focusable content, so the panel itself is the next stop.
     await userEvent.tab();
-    await expect(screen.getByRole('tabpanel')).toHaveFocus();
+    await expect(screen.getByRole('button', { name: 'Copy command' })).toHaveFocus();
     await userEvent.tab();
     await expect(screen.getByRole('link', { name: 'Chromatic' })).toHaveFocus();
     await userEvent.tab();

@@ -181,7 +181,7 @@ export const setConfigLayout: Fix<SetConfigLayoutOptions> = {
     return transformedSource === source ? null : { managerConfigPath, transformedSource };
   },
 
-  prompt: () => 'Move top-level setConfig layout and UI options into their nested objects?',
+  prompt: () => 'Move top-level setConfig layout and UI options into their nested objects',
 
   async run({ dryRun, result }) {
     if (!dryRun) {

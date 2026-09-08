@@ -193,7 +193,13 @@ export class TestManager {
       await callback();
       this.store.send({
         type: 'TEST_RUN_COMPLETED',
-        payload: this.store.getState().currentRun,
+        payload: {
+          ...this.store.getState().currentRun,
+          componentTestStatuses: this.runComponentTestStatuses,
+          a11yStatuses: this.runA11yStatuses,
+          a11yReports: this.runA11yReports,
+          reports: this.runReports,
+        },
       });
       if (this.store.getState().currentRun.unhandledErrors.length > 0) {
         throw new Error('Tests completed but there are unhandled errors');
@@ -361,11 +367,6 @@ export class TestManager {
           totalTestCount: s.currentRun.storyIds ? focusedRunTotal : endResult.totalTestCount,
           unhandledErrors: endResult.unhandledErrors,
           finishedAt: Date.now(),
-          componentTestStatuses: this.runComponentTestStatuses,
-          a11yStatuses: this.runA11yStatuses,
-          // a11yReports is also in reports; keep it for older addon-mcp until a major can drop it.
-          a11yReports: this.runA11yReports,
-          reports: this.runReports,
         },
       };
     });

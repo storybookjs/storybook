@@ -310,7 +310,7 @@ describe('TestManager', () => {
     expect(vitest.runTestSpecifications).toHaveBeenLastCalledWith(tests.slice(0, 1), false);
   });
 
-  it('should persist all reports in currentRun', async () => {
+  it('should persist all reports on TEST_RUN_COMPLETED without writing them into currentRun', async () => {
     const testManager = await TestManager.start(options);
     const passedResult = {
       state: 'passed',
@@ -344,10 +344,23 @@ describe('TestManager', () => {
       },
     });
 
-    expect(mockStore.getState().currentRun.reports['story--one']).toEqual([
-      { type: 'a11y', status: 'passed', result: { id: 'a11y-report' } },
-      { type: 'custom', status: 'passed', result: { id: 'custom-report' } },
-    ]);
+    const completed = vi
+      .mocked(mockStore.send)
+      .mock.calls.find(([event]) => event.type === 'TEST_RUN_COMPLETED');
+    expect(completed?.[0]).toEqual(
+      expect.objectContaining({
+        type: 'TEST_RUN_COMPLETED',
+        payload: expect.objectContaining({
+          reports: {
+            'story--one': [
+              { type: 'a11y', status: 'passed', result: { id: 'a11y-report' } },
+              { type: 'custom', status: 'passed', result: { id: 'custom-report' } },
+            ],
+          },
+        }),
+      })
+    );
+    expect(mockStore.getState().currentRun.reports).toEqual({});
   });
 
   it('keeps per-flush synced state bounded and materializes full results at run end', async () => {
@@ -388,13 +401,28 @@ describe('TestManager', () => {
     });
 
     const { currentRun } = mockStore.getState();
-    expect(currentRun.componentTestStatuses.map((status) => status.storyId)).toEqual([
-      'story--one',
-      'story--two',
-    ]);
-    expect(currentRun.a11yStatuses).toHaveLength(1);
-    expect(currentRun.reports['story--one']).toHaveLength(1);
-    expect(currentRun.a11yReports['story--one']).toHaveLength(1);
+    expect(currentRun.componentTestStatuses).toHaveLength(0);
+    expect(currentRun.a11yStatuses).toHaveLength(0);
+    expect(currentRun.reports).toEqual({});
+    expect(currentRun.a11yReports).toEqual({});
+
+    const completed = vi
+      .mocked(mockStore.send)
+      .mock.calls.find(([event]) => event.type === 'TEST_RUN_COMPLETED');
+    expect(completed?.[0]).toEqual(
+      expect.objectContaining({
+        type: 'TEST_RUN_COMPLETED',
+        payload: expect.objectContaining({
+          componentTestStatuses: [
+            expect.objectContaining({ storyId: 'story--one' }),
+            expect.objectContaining({ storyId: 'story--two' }),
+          ],
+          a11yStatuses: [expect.objectContaining({ storyId: 'story--one' })],
+          reports: { 'story--one': [expect.objectContaining({ type: 'a11y' })] },
+          a11yReports: { 'story--one': [{ id: 'a11y-1' }] },
+        }),
+      })
+    );
   });
 
   it('should describe failures with the source-mapped frames rather than the raw browser stack', async () => {

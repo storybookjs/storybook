@@ -10,9 +10,6 @@ describe('createReactApp blocker', () => {
     getInstalledVersion: vi.fn(),
   };
 
-  // The check only calls getInstalledVersion, so the stub is widened to the
-  // real manager type at the boundary; TS requires the unknown hop because the
-  // stub intentionally omits the rest of the class surface.
   const createOptions = (): AutoblockOptions => ({
     packageManager: mockPackageManager as unknown as JsPackageManager,
     mainConfig: { stories: [] },

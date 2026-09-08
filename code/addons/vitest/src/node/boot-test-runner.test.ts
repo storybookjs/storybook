@@ -6,7 +6,12 @@ import { Channel, type ChannelTransport } from 'storybook/internal/channels';
 import { executeNodeCommand } from 'storybook/internal/common';
 import type { Options } from 'storybook/internal/types';
 
-import { storeOptions } from '../constants.ts';
+import {
+  STATUS_STORE_CHANNEL_EVENT_NAME,
+  STORE_CHANNEL_EVENT_NAME,
+  TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME,
+  storeOptions,
+} from '../constants.ts';
 import { log } from '../logger.ts';
 import type { StoreEvent } from '../types.ts';
 import type { StoreState } from '../types.ts';
@@ -196,19 +201,23 @@ describe('bootTestRunner', () => {
     const promise = runTestRunner({ channel: mockChannel, store: mockStore, options: mockOptions });
     message({ type: 'ready' });
     await promise;
-    transport.send.mockClear();
-
-    const storeEvent = {
-      type: 'UNIVERSAL_STORE:storybook/test',
-      args: [{ event: { type: '__SET_STATE', payload: {} }, eventInfo: { actor: { id: 'x' } } }],
-    };
-    const listener = vi.fn();
-    mockChannel.on('UNIVERSAL_STORE:storybook/test', listener);
-    message(storeEvent);
-
-    expect(listener).toHaveBeenCalledWith(storeEvent.args[0]);
-    expect(transport.send).not.toHaveBeenCalled();
-    mockChannel.off('UNIVERSAL_STORE:storybook/test', listener);
+    for (const type of [
+      STORE_CHANNEL_EVENT_NAME,
+      STATUS_STORE_CHANNEL_EVENT_NAME,
+      TEST_PROVIDER_STORE_CHANNEL_EVENT_NAME,
+    ]) {
+      transport.send.mockClear();
+      const bridgedListener = vi.fn();
+      mockChannel.on(type, bridgedListener);
+      const bridgedEvent = {
+        type,
+        args: [{ event: { type: '__SET_STATE', payload: {} }, eventInfo: { actor: { id: 'x' } } }],
+      };
+      message(bridgedEvent);
+      expect(bridgedListener).toHaveBeenCalledWith(bridgedEvent.args[0]);
+      expect(transport.send).not.toHaveBeenCalled();
+      mockChannel.off(type, bridgedListener);
+    }
 
     message({ type: 'other-event', args: ['bar'] });
     expect(transport.send).toHaveBeenCalledWith(

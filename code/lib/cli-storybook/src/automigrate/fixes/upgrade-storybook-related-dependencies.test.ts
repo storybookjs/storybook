@@ -56,8 +56,8 @@ describe('upgrade-storybook-related-dependencies fix', () => {
         hasIncompatibleDependencies: false,
       },
       {
-        packageName: '@storybook/addon-jest',
-        packageVersion: '3.2.0',
+        packageName: '@storybook/addon-a11y',
+        packageVersion: '7.0.0',
         availableUpgrade: '8.0.0',
         hasIncompatibleDependencies: true,
       },
@@ -74,7 +74,7 @@ describe('upgrade-storybook-related-dependencies fix', () => {
     const mockPackageJson = {
       dependencies: {
         '@storybook/jest': '0.2.3',
-        '@storybook/addon-jest': '3.2.0',
+        '@storybook/addon-a11y': '7.0.0',
       },
       devDependencies: {
         '@chromatic-com/storybook': '1.2.9',
@@ -114,8 +114,8 @@ describe('upgrade-storybook-related-dependencies fix', () => {
           },
           {
             "afterVersion": "8.0.0",
-            "beforeVersion": "3.2.0",
-            "packageName": "@storybook/addon-jest",
+            "beforeVersion": "7.0.0",
+            "packageName": "@storybook/addon-a11y",
           },
         ],
       }

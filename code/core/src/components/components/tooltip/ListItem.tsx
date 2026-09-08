@@ -138,11 +138,9 @@ const Item = styled.button<ItemProps>(
       paddingLeft: 10,
     },
 
-    // Inset the ring: items sit flush inside rounded `overflow: hidden` lists (TooltipLinkList),
-    // where an outward ring gets clipped at the container corners.
     '&:focus-visible': {
       outline: `2px solid ${theme.color.secondary}`,
-      outlineOffset: -2,
+      outlineOffset: 0,
     },
   }),
   ({ theme, href, onClick }) =>

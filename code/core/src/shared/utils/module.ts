@@ -1,9 +1,10 @@
 import { statSync } from 'node:fs';
-import { createRequire, register } from 'node:module';
+import nodeModule, { createRequire } from 'node:module';
 import { win32 } from 'node:path/win32';
 import { fileURLToPath, pathToFileURL } from 'node:url';
 
 import { resolveModulePath } from 'exsolve';
+import semver from 'semver';
 import { dirname, join } from 'pathe';
 
 import { jsModuleExtensions } from '../constants/extensions.ts';
@@ -45,7 +46,31 @@ export const resolvePackageDir = (
   }
 };
 
-let isTypescriptLoaderRegistered = false;
+let typescriptLoaderRegistration: Promise<void> | null = null;
+
+function registerTypescriptLoader() {
+  if (!typescriptLoaderRegistration) {
+    typescriptLoaderRegistration = (async () => {
+      if (semver.gte(process.versions.node, '26.0.0')) {
+        try {
+          const { load } = await import('storybook/internal/bin/loader');
+          nodeModule.registerHooks({ load });
+        } catch {
+          // Fallback in case nodejs/node#62786 caused an exception
+          const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
+          nodeModule.register(typescriptLoaderUrl, import.meta.url);
+        }
+      } else {
+        const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
+        nodeModule.register(typescriptLoaderUrl, import.meta.url);
+      }
+    })().catch((e) => {
+      typescriptLoaderRegistration = null;
+      throw e;
+    });
+  }
+  return typescriptLoaderRegistration;
+}
 
 /**
  * Dynamically imports a module with TypeScript support, falling back to require if necessary.
@@ -68,11 +93,7 @@ export async function importModule(
   path: string,
   { skipCache = false }: { skipCache?: boolean } = {}
 ) {
-  if (!isTypescriptLoaderRegistered) {
-    const typescriptLoaderUrl = importMetaResolve('storybook/internal/bin/loader');
-    register(typescriptLoaderUrl, import.meta.url);
-    isTypescriptLoaderRegistered = true;
-  }
+  await registerTypescriptLoader();
 
   let mod;
   try {

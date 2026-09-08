@@ -83,7 +83,7 @@ export type StorybookMetadata = {
     type: DetectResult['name'];
     version: DetectResult['version'];
     agent: DetectResult['agent'];
-    nodeLinker: 'node_modules' | 'pnp' | 'pnpm' | 'isolated' | 'hoisted';
+    nodeLinker: NodeLinker;
   };
   typescriptOptions?: Partial<TypescriptOptions>;
   addons?: Record<string, StorybookAddon>;
@@ -138,6 +138,14 @@ export type PayloadInput = Payload | PayloadFactory;
 export interface Context {
   [key: string]: any;
 }
+
+export type YarnNodeLinker = 'node-modules' | 'pnp' | 'pnpm';
+
+export type PnpmNodeLinker = 'isolated' | 'hoisted' | 'pnp';
+
+// node_modules is Storybook's label for package managers without a linker setting, distinct from
+// Yarn Berry's node-modules so the telemetry data stays comparable over time.
+export type NodeLinker = 'node_modules' | YarnNodeLinker | PnpmNodeLinker;
 
 export interface Options {
   retryDelay: number;

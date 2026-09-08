@@ -598,9 +598,8 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   const opts = { cwd: sandboxDir };
   const viteConfigFile = await findFirstPath(['vite.config.ts', 'vite.config.js'], opts);
   const vitestConfigFile = await findFirstPath(['vitest.config.ts', 'vitest.config.js'], opts);
-  const workspaceFile = await findFirstPath(['vitest.workspace.ts', 'vitest.workspace.js'], opts);
 
-  const configFile = workspaceFile || vitestConfigFile || viteConfigFile;
+  const configFile = vitestConfigFile || viteConfigFile;
   if (!configFile) {
     throw new Error(`No Vitest or Vite config file found in sandbox: ${sandboxDir}`);
   }
@@ -608,10 +607,10 @@ export async function setupVitest(details: TemplateDetails, options: PassedOptio
   let fileContent = await readFile(join(sandboxDir, configFile), 'utf-8');
 
   // Insert resolve: { preserveSymlinks: true } and optionally server.fs.allow as siblings to
-  // plugins. Handles both defineConfig({ ... }) and defineWorkspace([ ... , { ... }]). Anchored
-  // on the `plugins:` key (injecting before it) instead of matching the whole array: plugin code
-  // may contain `]` (e.g. the regex literal in the sveltekit template), which a bracket-counting
-  // regex like `\[[^\]]*\]` would cut short, splicing the injection into the middle of it.
+  // plugins. Anchored on the `plugins:` key (injecting before it) instead of matching the whole
+  // array: plugin code may contain `]` (e.g. the regex literal in the sveltekit template), which a
+  // bracket-counting regex like `\[[^\]]*\]` would cut short, splicing the injection into the
+  // middle of it.
   fileContent = fileContent.replace(/^([ \t]*)plugins\s*:/m, (match, indent) => {
     let injected = `${indent}resolve: {\n${indent}  preserveSymlinks: true\n${indent}},\n`;
 

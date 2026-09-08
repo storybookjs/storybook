@@ -14,6 +14,12 @@ import { dedent } from 'ts-dedent';
 
 import type { PrintResultType } from './PrintResultType.ts';
 
+export interface FindNamedImportMethodCallsOptions {
+  importedName: string;
+  methodName: string;
+  moduleNames: Iterable<string>;
+}
+
 const getCsfParsingErrorMessage = ({
   expectedType,
   foundType,
@@ -709,6 +715,91 @@ export class ConfigFile {
 
   getBodyDeclarations(): t.Statement[] {
     return this._ast.program.body;
+  }
+
+  /** Find direct method calls on a named import from one of the specified modules. */
+  findNamedImportMethodCalls({
+    importedName,
+    methodName,
+    moduleNames,
+  }: FindNamedImportMethodCallsOptions): t.CallExpression[] {
+    const modules = new Set(moduleNames);
+    const imports = new Map<string, Set<t.Node>>();
+
+    traverse(this._ast, {
+      ImportDeclaration(path) {
+        if (!modules.has(path.node.source.value) || path.node.importKind === 'type') {
+          return;
+        }
+
+        for (const specifier of path.node.specifiers) {
+          if (
+            t.isImportSpecifier(specifier) &&
+            specifier.importKind !== 'type' &&
+            t.isIdentifier(specifier.imported, { name: importedName })
+          ) {
+            const bindingNodes = imports.get(specifier.local.name) ?? new Set<t.Node>();
+            bindingNodes.add(specifier);
+            imports.set(specifier.local.name, bindingNodes);
+          }
+        }
+      },
+      VariableDeclarator(path) {
+        const { id, init } = path.node;
+        if (
+          !t.isObjectPattern(id) ||
+          !t.isCallExpression(init) ||
+          !t.isIdentifier(init.callee, { name: 'require' }) ||
+          path.scope.getBinding('require') !== undefined ||
+          init.arguments.length !== 1 ||
+          !t.isStringLiteral(init.arguments[0]) ||
+          !modules.has(init.arguments[0].value)
+        ) {
+          return;
+        }
+
+        for (const property of id.properties) {
+          if (
+            t.isObjectProperty(property) &&
+            !property.computed &&
+            ((t.isIdentifier(property.key) && property.key.name === importedName) ||
+              (t.isStringLiteral(property.key) && property.key.value === importedName)) &&
+            t.isIdentifier(property.value)
+          ) {
+            const bindingNodes = imports.get(property.value.name) ?? new Set<t.Node>();
+            bindingNodes.add(path.node);
+            imports.set(property.value.name, bindingNodes);
+          }
+        }
+      },
+    });
+
+    const calls: t.CallExpression[] = [];
+
+    traverse(this._ast, {
+      CallExpression(path) {
+        const { callee } = path.node;
+        if (
+          !t.isMemberExpression(callee) ||
+          !t.isIdentifier(callee.object) ||
+          !(
+            (t.isIdentifier(callee.property) &&
+              !callee.computed &&
+              callee.property.name === methodName) ||
+            (t.isStringLiteral(callee.property) && callee.property.value === methodName)
+          )
+        ) {
+          return;
+        }
+
+        const bindingNode = path.scope.getBinding(callee.object.name)?.path.node;
+        if (bindingNode && imports.get(callee.object.name)?.has(bindingNode)) {
+          calls.push(path.node);
+        }
+      },
+    });
+
+    return calls;
   }
 
   setBodyDeclaration(declaration: t.Declaration) {

@@ -129,9 +129,9 @@ These need either a product decision or work that would have widened this pass b
    controlled `visible={false}` desyncs the mirror so a tooltip can pop open without hover after
    closing a toolbar Select). Predates this branch but now visible on the new toolbar; fix is to
    use `isDisabled` for suppression instead of controlled `visible`.
-7. **`isActive` on addon shortcuts is unused outside tests.** Kept deliberately: the stale-binding
-   skip in the same gating is load-bearing, and review-mode arrow navigation is the intended
-   consumer. If that plan is dead, drop the option.
+7. **`isActive` on addon shortcuts — resolved: removed.** Review mode dropped its arrow-key
+   navigation, so the option had no prospective consumer; removed here and on the shortcuts PR.
+   The stale-binding skip in the same gating stays (it prevents crashes and swallowed keys).
 8. **Remaining FIXMEs are intentional** (design questions, not regressions): story-with-children
    click semantics ("Review with MA"), F6 section animation, ref-tree level offset for `RefHead`,
    orphan handling, `status-value:affected` copy, `copyStoryName` shortcut plumbing (commented

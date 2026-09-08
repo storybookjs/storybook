@@ -403,18 +403,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
             join(relative(finalOptions.vitestRoot, process.cwd()), '**/*.mdx').replaceAll(sep, '/'),
           ],
 
-          // if the existing deps.inline is true, we keep it as-is, because it will inline everything
-          // TODO: Remove the check once we don't support Vitest 3 anymore
-          ...(nonMutableInputConfig.test?.server?.deps?.inline !== true
-            ? {
-                server: {
-                  deps: {
-                    inline: ['@storybook/addon-vitest'],
-                  },
-                },
-              }
-            : {}),
-
           browser: {
             // if there is a test.browser config AND test.browser.screenshotFailures is not explicitly set, we set it to false
             ...(nonMutableInputConfig.test?.browser &&
@@ -442,7 +430,6 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
         optimizeDeps: {
           include: [
             '@storybook/addon-vitest/internal/setup-file',
-            '@storybook/addon-vitest/internal/setup-file.browser.3',
             '@storybook/addon-vitest/internal/setup-file.browser.4',
             '@storybook/addon-vitest/internal/global-setup',
             '@storybook/addon-vitest/internal/test-utils',
@@ -491,9 +478,7 @@ export const storybookTest = async (options?: UserOptions): Promise<Plugin[]> =>
       const isBrowserModeEnabled = context.vitest.config.browser?.enabled === true;
 
       if (isBrowserModeEnabled) {
-        const setupFilePath = context.vitest.version.startsWith('3')
-          ? '@storybook/addon-vitest/internal/setup-file.browser.3'
-          : '@storybook/addon-vitest/internal/setup-file.browser.4';
+        const setupFilePath = '@storybook/addon-vitest/internal/setup-file.browser.4';
 
         context.vitest.config.setupFiles = [
           setupFilePath,

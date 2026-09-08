@@ -1,5 +1,13 @@
 <h1>Migration</h1>
 
+- [From version 10.x to 11.0.0](#from-version-10x-to-1100)
+  - [Vitest Addon: requires Vitest 4.0 or higher](#vitest-addon-requires-vitest-40-or-higher)
+  - [Vite: requires Vite 7.0 or higher](#vite-requires-vite-70-or-higher)
+  - [Next.js: Require v15 and up](#nextjs-require-v15-and-up)
+  - [Angular: requires Angular 21 or higher](#angular-requires-angular-21-or-higher)
+  - [`@storybook/nextjs` is deprecated](#nextjs-storybooknextjs-is-deprecated)
+  - [`@storybook/angular-vite`: legacy animation modules are no longer auto-converted](#storybookangular-vite-legacy-animation-modules-are-no-longer-auto-converted)
+
 - [From version 10.5.x to 10.6.0](#from-version-105x-to-1060)
   - [Vue 3: `vue-docgen-api` is deprecated](#vue-3-vue-docgen-api-is-deprecated)
   - [Experimental Playwright CT integration removed](#experimental-playwright-ct-integration-removed)
@@ -529,6 +537,83 @@
   - [Webpack upgrade](#webpack-upgrade)
   - [Packages renaming](#packages-renaming)
   - [Deprecated embedded addons](#deprecated-embedded-addons)
+
+## From version 10.x to 11.0.0
+
+### Vitest Addon: requires Vitest 4.0 or higher
+
+The `@storybook/addon-vitest` addon requires **Vitest 4.0 or higher**. Setup now always installs `@vitest/browser-playwright`, generates configuration with the `test.projects` array, and no longer creates or updates `vitest.workspace.*` files. If your Vitest config still uses the deprecated `test.workspace` / `defineWorkspace` style, rename it to `test.projects` and re-run `npx storybook@latest add @storybook/addon-vitest` to merge your existing config.
+
+### Vite: requires Vite 7.0 or higher
+
+Storybook 11.0 drops support for Vite 5 and Vite 6. The minimum supported version is now Vite 7.0.0. This change affects all Vite-based frameworks and builders:
+
+- `@storybook/builder-vite`
+- `@storybook/react-vite`
+- `@storybook/vue3-vite`
+- `@storybook/svelte-vite`
+- `@storybook/sveltekit`
+- `@storybook/web-components-vite`
+- `@storybook/preact-vite`
+- `@storybook/html-vite`
+- `@storybook/nextjs-vite`
+- `@storybook/react-native-web-vite`
+- `@storybook/tanstack-react`
+- `vite-plugin-storybook-nextjs`
+
+To upgrade:
+
+1. Update your project's Vite version to 7.0.0 or higher
+2. Update your Storybook configuration to use Vite 7:
+   ```js
+   // vite.config.js or vite.config.ts
+   export default {
+     // ... your other config
+     // Make sure you're using Vite 7 compatible plugins
+   };
+   ```
+
+If you're using framework-specific Vite plugins, ensure they are compatible with Vite 7:
+
+- `@vitejs/plugin-react`
+- `@vitejs/plugin-vue`
+- `@sveltejs/vite-plugin-svelte`
+- etc.
+
+For more information on upgrading to Vite 7, see the [Vite Migration Guide](https://vite.dev/guide/migration).
+
+### Next.js: Require v15 and up
+
+Storybook has dropped support for Next.js versions below 15. The minimum supported version is now Next.js 15.
+
+If you're using an older version of Next.js, you'll need to upgrade to Next.js 15 or newer to use the latest version of Storybook.
+
+For help upgrading your Next.js application, see the [Next.js upgrade guide](https://nextjs.org/docs/app/building-your-application/upgrading).
+
+### Angular: requires Angular 21 or higher
+
+Storybook has dropped support for Angular versions 18-20. The minimum supported version is now Angular 21.
+
+If you're using an older version of Angular, you'll need to upgrade to Angular 21 or newer to use the latest version of Storybook.
+
+For help upgrading your Angular application, see the [Angular update guide](https://angular.dev/update-guide).
+
+Key changes:
+
+- All Angular packages in peerDependencies now require `>=21.0.0 < 23.0.0`
+- `@angular-devkit/architect` now requires `>=0.2100.0 < 0.2300.0`
+- The RxJS peer requirement accepts `^6.5.3 || ^7.4.0`, matching Angular 21's own range
+- Standalone components are always treated as the default in `@storybook/angular`
+
+### Next.js: `@storybook/nextjs` is deprecated
+
+The webpack-based `@storybook/nextjs` framework is deprecated and will be removed in Storybook 12. Storybook 11 keeps supporting it: it still builds and runs, but every run logs a deprecation warning and `storybook upgrade` lists it as deprecated.
+
+Migrate to [`@storybook/nextjs-vite`](https://www.npmjs.com/package/@storybook/nextjs-vite), which builds with Vite instead of webpack. The `nextjs-to-nextjs-vite` automigration does the work for you: run `storybook upgrade` and accept the fix, or run `storybook migrate nextjs-to-nextjs-vite` directly.
+
+### `@storybook/angular-vite`: legacy animation modules are no longer auto-converted
+
+`@storybook/angular-vite` no longer depends on `@angular/animations` and no longer auto-converts `BrowserAnimationsModule`/`NoopAnimationsModule` found in a story's `moduleMetadata.imports` into `provideAnimations()`/`provideNoopAnimations()`. If a story still references one of these modules, Storybook now logs a deprecation warning instead. Migrate to native CSS transitions or the `animate.enter`/`animate.leave` bindings (Angular 20.2+), or continue using the legacy animations API yourself by adding `provideAnimations()`/`provideNoopAnimations()` to the `providers` array of the `applicationConfig` decorator; that path is unaffected by this change.
 
 ## From version 10.5.x to 10.6.0
 
@@ -1217,44 +1302,6 @@ Additionally, we have deprecated the usage of `withActions` from `@storybook/add
 
 #### Dropped support
 
-##### Vite 5 and Vite 6
-
-Storybook 11.0 drops support for Vite 5 and Vite 6. The minimum supported version is now Vite 7.0.0. This change affects all Vite-based frameworks and builders:
-
-- `@storybook/builder-vite`
-- `@storybook/react-vite`
-- `@storybook/vue3-vite`
-- `@storybook/svelte-vite`
-- `@storybook/sveltekit`
-- `@storybook/web-components-vite`
-- `@storybook/preact-vite`
-- `@storybook/html-vite`
-- `@storybook/nextjs-vite`
-- `@storybook/react-native-web-vite`
-- `@storybook/tanstack-react`
-- `vite-plugin-storybook-nextjs`
-
-To upgrade:
-
-1. Update your project's Vite version to 7.0.0 or higher
-2. Update your Storybook configuration to use Vite 7:
-   ```js
-   // vite.config.js or vite.config.ts
-   export default {
-     // ... your other config
-     // Make sure you're using Vite 7 compatible plugins
-   };
-   ```
-
-If you're using framework-specific Vite plugins, ensure they are compatible with Vite 7:
-
-- `@vitejs/plugin-react`
-- `@vitejs/plugin-vue`
-- `@sveltejs/vite-plugin-svelte`
-- etc.
-
-For more information on upgrading to Vite 7, see the [Vite Migration Guide](https://vite.dev/guide/migration).
-
 ##### Vite 4
 
 Storybook 9.0 drops support for Vite 4. The minimum supported version is now Vite 5.0.0. This change affects all Vite-based frameworks and builders:
@@ -1410,6 +1457,7 @@ import * as previewAnnotations from './.storybook/preview';
 #### Vitest Addon (former @storybook/experimental-addon-test): Vitest 2.0 support is dropped
 
 The Storybook Test addon now only supports Vitest 3.0 and higher, which is where browser mode was made into a stable state. Please upgrade to Vitest 3.0.
+
 
 #### Viewport/Backgrounds Addon synchronized configuration and `globals` usage
 

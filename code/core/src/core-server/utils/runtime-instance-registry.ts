@@ -2,12 +2,14 @@ import { execFile } from 'node:child_process';
 import { randomUUID } from 'node:crypto';
 import { existsSync, rmSync } from 'node:fs';
 import { chmod, mkdir, readFile, readdir, rename, rm, stat, writeFile } from 'node:fs/promises';
-import { homedir, userInfo } from 'node:os';
+import { userInfo } from 'node:os';
 
 import { findStorybookPackageRoot, normalizeAddonName } from 'storybook/internal/common';
 import type { StorybookConfig } from 'storybook/internal/types';
 
 import { join, resolve } from 'pathe';
+
+import { getStorybookConfigDir } from '../../common/utils/storybook-config-dir.ts';
 
 import { CLAUDE_PREVIEW_AGENT_NAME } from '../../shared/constants/agent-provenance.ts';
 import { isClaudePreviewLaunch } from '../../shared/utils/agent-environment.ts';
@@ -98,7 +100,7 @@ export type RuntimeInstanceRegistryCleanupDecision =
   | { action: 'check-pid'; pid: number };
 
 export function getDefaultRuntimeInstanceRegistryDir() {
-  return join(homedir(), '.storybook', 'instances');
+  return join(getStorybookConfigDir(), 'instances');
 }
 
 export function getStorybookBaseUrl(address: string) {

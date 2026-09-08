@@ -8,7 +8,7 @@ import {
   utimesSync,
   writeFileSync,
 } from 'node:fs';
-import { tmpdir, userInfo } from 'node:os';
+import { homedir, tmpdir, userInfo } from 'node:os';
 import { execFile } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -18,6 +18,7 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 
 import {
   createRuntimeInstanceRecord,
+  getDefaultRuntimeInstanceRegistryDir,
   getRuntimeInstanceRegistryCleanupDecision,
   getMcpMetadataFromMainConfig,
   writeRuntimeInstanceRecord,
@@ -109,6 +110,22 @@ afterEach(() => {
   while (tempDirs.length > 0) {
     rmSync(tempDirs.pop()!, { force: true, recursive: true });
   }
+});
+
+describe('getDefaultRuntimeInstanceRegistryDir', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('uses ~/.storybook/instances when XDG_CONFIG_HOME is not set', () => {
+    vi.stubEnv('XDG_CONFIG_HOME', undefined);
+    expect(getDefaultRuntimeInstanceRegistryDir()).toBe(join(homedir(), '.storybook', 'instances'));
+  });
+
+  it('uses $XDG_CONFIG_HOME/storybook/instances when it is set', () => {
+    vi.stubEnv('XDG_CONFIG_HOME', '/tmp/xdg-config');
+    expect(getDefaultRuntimeInstanceRegistryDir()).toBe(
+      join('/tmp/xdg-config', 'storybook', 'instances')
+    );
+  });
 });
 
 describe('getMcpMetadataFromMainConfig', () => {

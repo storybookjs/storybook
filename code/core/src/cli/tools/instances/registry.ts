@@ -1,9 +1,9 @@
 import * as fs from 'node:fs/promises';
-import { homedir } from 'node:os';
 import { join } from 'node:path';
 
 import * as v from 'valibot';
 
+import { getStorybookConfigDir } from '../../../common/utils/storybook-config-dir.ts';
 import { type StorybookInstanceRecord, StorybookInstanceRecordSchema } from './types.ts';
 
 /**
@@ -12,7 +12,7 @@ import { type StorybookInstanceRecord, StorybookInstanceRecordSchema } from './t
  * here so this reader does not pull the core-server module graph into the CLI's unit tests; the
  * path is specified in storybookjs/storybook#34826.
  */
-export const DEFAULT_REGISTRY_DIR = join(homedir(), '.storybook', 'instances');
+export const getDefaultRegistryDir = () => join(getStorybookConfigDir(), 'instances');
 
 /**
  * Errno codes for which we degrade to "no instance" rather than throwing. The command is meant to
@@ -29,7 +29,7 @@ const SOFT_REGISTRY_ERRORS = new Set(['ENOENT', 'EACCES', 'EPERM', 'ENOTDIR']);
  * are skipped silently — the command should degrade to "no instance" rather than fail loudly.
  */
 export async function readRegistry(
-  registryDir: string = DEFAULT_REGISTRY_DIR
+  registryDir: string = getDefaultRegistryDir()
 ): Promise<StorybookInstanceRecord[]> {
   let entries: string[];
   try {

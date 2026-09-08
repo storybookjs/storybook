@@ -1,10 +1,13 @@
 import fs from 'node:fs/promises';
-import { dirname } from 'node:path';
+import { homedir } from 'node:os';
+import { dirname, join } from 'node:path';
 import { afterEach } from 'node:test';
 
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { type Settings, _clearGlobalSettings, globalSettings } from './globalSettings.ts';
+
+const legacySettingsPath = join(homedir(), '.storybook', 'settings.json');
 
 vi.mock('node:fs');
 vi.mock('node:fs/promises');
@@ -26,6 +29,7 @@ beforeEach(() => {
 
 afterEach(() => {
   vi.useRealTimers();
+  vi.unstubAllEnvs();
 });
 
 describe('globalSettings', () => {
@@ -63,6 +67,82 @@ describe('globalSettings', () => {
 
     expect(fs.mkdir).toHaveBeenCalledWith(dirname(TEST_SETTINGS_FILE), { recursive: true });
     expect(fs.writeFile).toHaveBeenCalledWith(TEST_SETTINGS_FILE, baseSettingsJson);
+  });
+});
+
+describe('globalSettings default path', () => {
+  const enoent = Object.assign(new Error(), { code: 'ENOENT' });
+
+  it('reads from ~/.storybook/settings.json when XDG_CONFIG_HOME is not set', async () => {
+    vi.stubEnv('XDG_CONFIG_HOME', undefined);
+    vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
+
+    await globalSettings();
+
+    expect(fs.readFile).toHaveBeenCalledWith(legacySettingsPath, 'utf8');
+  });
+
+  it('reads from $XDG_CONFIG_HOME/storybook/settings.json when it is set', async () => {
+    vi.stubEnv('XDG_CONFIG_HOME', '/tmp/xdg-config');
+    vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
+    vi.mocked(fs.access).mockResolvedValue(undefined);
+
+    await globalSettings();
+
+    expect(fs.readFile).toHaveBeenCalledWith(
+      join('/tmp/xdg-config', 'storybook', 'settings.json'),
+      'utf8'
+    );
+  });
+
+  describe('legacy migration', () => {
+    it('moves an existing ~/.storybook/settings.json to the XDG location', async () => {
+      vi.stubEnv('XDG_CONFIG_HOME', '/tmp/xdg-config');
+      const xdgPath = join('/tmp/xdg-config', 'storybook', 'settings.json');
+
+      // XDG file does not exist yet, legacy file does
+      vi.mocked(fs.access).mockRejectedValue(enoent);
+      vi.mocked(fs.readFile).mockImplementation(async (path) =>
+        path === legacySettingsPath || path === xdgPath ? baseSettingsJson : Promise.reject(enoent)
+      );
+
+      const settings = await globalSettings();
+
+      expect(fs.writeFile).toHaveBeenCalledWith(xdgPath, baseSettingsJson);
+      expect(settings.value.userSince).toBe(+userSince);
+    });
+
+    it('does not migrate when the XDG file already exists', async () => {
+      vi.stubEnv('XDG_CONFIG_HOME', '/tmp/xdg-config');
+      vi.mocked(fs.access).mockResolvedValue(undefined);
+      vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
+
+      await globalSettings();
+
+      expect(fs.writeFile).not.toHaveBeenCalled();
+    });
+
+    it('does not migrate when there is no legacy file', async () => {
+      vi.stubEnv('XDG_CONFIG_HOME', '/tmp/xdg-config');
+      vi.mocked(fs.access).mockRejectedValue(enoent);
+      vi.mocked(fs.readFile).mockRejectedValue(enoent);
+
+      await globalSettings();
+
+      const xdgPath = join('/tmp/xdg-config', 'storybook', 'settings.json');
+      // only the fresh-settings save, never a copy of legacy content to a different path
+      expect(fs.writeFile).toHaveBeenCalledTimes(1);
+      expect(fs.writeFile).toHaveBeenCalledWith(xdgPath, baseSettingsJson);
+    });
+
+    it('does not touch the filesystem for migration when XDG_CONFIG_HOME is not set', async () => {
+      vi.stubEnv('XDG_CONFIG_HOME', undefined);
+      vi.mocked(fs.readFile).mockResolvedValue(baseSettingsJson);
+
+      await globalSettings();
+
+      expect(fs.access).not.toHaveBeenCalled();
+    });
   });
 });
 

@@ -1,9 +1,11 @@
 import { readFile, readdir, rm } from 'node:fs/promises';
+import { homedir } from 'node:os';
+import { join } from 'node:path';
 
 import { vol } from 'memfs';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
-import { readRegistry } from './registry.ts';
+import { getDefaultRegistryDir, readRegistry } from './registry.ts';
 
 // Spy-only mock: keep the real `node:fs/promises` module shape, then redirect the calls used by
 // the registry reader to `memfs` so disk state stays scoped to `vol`.
@@ -52,6 +54,20 @@ const aliveRecord = {
   updatedAt: '2026-05-18T12:00:03.000Z',
   mcp: { status: 'ready', endpoint: '/mcp' },
 };
+
+describe('getDefaultRegistryDir', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('uses ~/.storybook/instances when XDG_CONFIG_HOME is not set', () => {
+    vi.stubEnv('XDG_CONFIG_HOME', undefined);
+    expect(getDefaultRegistryDir()).toBe(join(homedir(), '.storybook', 'instances'));
+  });
+
+  it('uses $XDG_CONFIG_HOME/storybook/instances when it is set', () => {
+    vi.stubEnv('XDG_CONFIG_HOME', '/tmp/xdg-config');
+    expect(getDefaultRegistryDir()).toBe(join('/tmp/xdg-config', 'storybook', 'instances'));
+  });
+});
 
 describe('readRegistry', () => {
   it('returns [] when the registry dir does not exist', async () => {

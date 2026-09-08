@@ -1058,6 +1058,32 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     return true;
   };
 
+  let statusFilterRebuildQueued = false;
+  let statusFilterRebuildInFlight = false;
+
+  const flushStatusFilterRebuild = async () => {
+    if (statusFilterRebuildInFlight) {
+      return;
+    }
+    statusFilterRebuildInFlight = true;
+    try {
+      while (statusFilterRebuildQueued) {
+        statusFilterRebuildQueued = false;
+        await applyCurrentFilters();
+      }
+    } finally {
+      statusFilterRebuildInFlight = false;
+      if (statusFilterRebuildQueued) {
+        void flushStatusFilterRebuild();
+      }
+    }
+  };
+
+  const requestStatusFilterRebuild = () => {
+    statusFilterRebuildQueued = true;
+    void flushStatusFilterRebuild();
+  };
+
   const recomputeTagsFilter = () => {
     const { includedTagFilters, excludedTagFilters } = store.getState();
     return api.experimental_setFilters({
@@ -1311,7 +1337,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
   });
 
   fullStatusStore.onAllStatusChange(
-    throttle(applyCurrentFilters, STATUS_CHANGE_REBUILD_THROTTLE, {
+    throttle(requestStatusFilterRebuild, STATUS_CHANGE_REBUILD_THROTTLE, {
       edges: ['leading', 'trailing'],
     })
   );

@@ -2165,6 +2165,66 @@ describe('stories API', () => {
       }
     });
 
+    it('does not overlap status-driven index rebuilds when a rebuild outlasts the throttle', async () => {
+      vi.mock('../stores/status');
+      vi.useFakeTimers();
+      try {
+        fullStatusStore.unset();
+        const moduleArgs = createMockModuleArgs({});
+        const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+
+        await api.setIndex({ v: 5, entries: navigationEntries });
+
+        let releaseFirst: () => void = () => {};
+        let concurrent = 0;
+        let maxConcurrent = 0;
+        let setIndexCalls = 0;
+        vi.spyOn(api, 'setIndex').mockImplementation(async () => {
+          setIndexCalls += 1;
+          concurrent += 1;
+          maxConcurrent = Math.max(maxConcurrent, concurrent);
+          if (setIndexCalls === 1) {
+            await new Promise<void>((resolve) => {
+              releaseFirst = resolve;
+            });
+          }
+          concurrent -= 1;
+        });
+
+        fullStatusStore.set([
+          {
+            typeId: 'addon-id',
+            storyId: 'a--1',
+            value: 'status-value:pending',
+            title: 'title',
+            description: 'first',
+          },
+        ]);
+        await vi.advanceTimersByTimeAsync(0);
+        expect(setIndexCalls).toBe(1);
+
+        fullStatusStore.set([
+          {
+            typeId: 'addon-id',
+            storyId: 'a--2',
+            value: 'status-value:error',
+            title: 'title',
+            description: 'queued',
+          },
+        ]);
+        await vi.advanceTimersByTimeAsync(500);
+        expect(setIndexCalls).toBe(1);
+        expect(maxConcurrent).toBe(1);
+
+        releaseFirst();
+        await vi.advanceTimersByTimeAsync(0);
+        expect(setIndexCalls).toBe(2);
+        expect(maxConcurrent).toBe(1);
+      } finally {
+        vi.useRealTimers();
+      }
+    });
+
     it('applies exclude logic: story with excluded status is hidden', async () => {
       vi.mock('../stores/status');
       const moduleArgs = createMockModuleArgs({});

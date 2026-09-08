@@ -211,16 +211,16 @@ describe('WebsocketTransport heartbeat starvation', () => {
 
   beforeEach(() => {
     fakeNow = 0;
-    // Exclude performance so wall-clock can move past the armed deadline without the timer
-    // advancing in lockstep — the default fake timers make a late fire impossible to simulate.
+    // Exclude Date so wall-clock can move past the armed deadline without the timer advancing
+    // in lockstep — the default fake timers make a late fire impossible to simulate.
     vi.useFakeTimers({ toFake: ['setTimeout', 'clearTimeout'] });
     vi.stubGlobal('WebSocket', MockWebSocket);
-    vi.stubGlobal('performance', { now: () => fakeNow });
+    vi.spyOn(Date, 'now').mockImplementation(() => fakeNow);
   });
 
   afterEach(() => {
     vi.useRealTimers();
-    vi.clearAllMocks();
+    vi.restoreAllMocks();
     vi.unstubAllGlobals();
   });
 

@@ -64,14 +64,13 @@ export class WebsocketTransport implements ChannelTransport {
       return;
     }
 
-    const armedAt = performance.now();
+    const armedAt = Date.now();
     this.pingTimeout = setTimeout(() => {
       if (!this.enableHeartbeat || this.heartbeatPaused || this.isClosed) {
         return;
       }
 
-      const firedLate =
-        performance.now() - armedAt > HEARTBEAT_TIMEOUT + HEARTBEAT_STARVATION_SLACK;
+      const firedLate = Date.now() - armedAt > HEARTBEAT_TIMEOUT + HEARTBEAT_STARVATION_SLACK;
       if (firedLate && !isGraceWindow) {
         this.heartbeat(true);
         return;

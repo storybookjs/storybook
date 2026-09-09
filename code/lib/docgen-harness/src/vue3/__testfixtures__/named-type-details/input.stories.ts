@@ -2,6 +2,7 @@ import type { Meta, StoryObj } from '@storybook/vue3';
 
 import NamedTypeDetails from './NamedTypeDetails.vue';
 import { Color, Level } from './named-types.ts';
+import type { AliasA, BigInterface } from './named-types.ts';
 
 const meta = {
   title: 'VueFixtures/NamedTypeDetails',
@@ -19,8 +20,10 @@ export const PropsAsWritten: Story = {
     level: Level.High,
     scalarAlias: 'abc-123',
     shapes: 'circle',
-    cyclic: { peer: { peer: null } },
-    big: {},
+    // A finite literal can never satisfy the mutual AliasA/AliasB cycle, and
+    // extraction reads the prop's type, not this value — the cast is fixture-only.
+    cyclic: { peer: { peer: null } } as unknown as AliasA,
+    big: {} as BigInterface,
     builtin: new Date(0),
     inlined: { foo: 'foo', bar: 1 },
     namespaced: { key: 'k', count: 2 },

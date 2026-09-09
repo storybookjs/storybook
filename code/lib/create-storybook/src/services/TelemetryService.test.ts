@@ -99,7 +99,7 @@ describe('TelemetryService', () => {
       expect(telemetry).toHaveBeenCalledWith(
         'canceled',
         { eventType: 'init', prompt: 'new-user-check' },
-        { stripMetadata: true, immediate: true }
+        { stripMetadata: true }
       );
     });
   });

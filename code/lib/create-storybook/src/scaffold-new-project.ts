@@ -142,7 +142,7 @@ export const scaffoldNewProject = async (
     await telemetry(
       'exit',
       { eventType: 'init', reason: 'scaffold-other' },
-      { stripMetadata: true, immediate: true }
+      { stripMetadata: true }
     );
     logger.warn(
       'To install Storybook on another framework, first generate a project with that framework and then rerun this command.'

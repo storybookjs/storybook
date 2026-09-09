@@ -1070,7 +1070,11 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     try {
       while (statusFilterRebuildQueued) {
         statusFilterRebuildQueued = false;
-        await applyCurrentFilters();
+        try {
+          await applyCurrentFilters();
+        } catch (error) {
+          logger.warn('Failed to rebuild story index after status change:', error);
+        }
       }
     } finally {
       statusFilterRebuildInFlight = false;

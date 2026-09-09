@@ -17,6 +17,7 @@ import {
   STORY_SPECIFIED,
   UPDATE_STORY_ARGS,
 } from 'storybook/internal/core-events';
+import { logger } from 'storybook/internal/client-logger';
 import { type API_StoryEntry, type StoryIndex } from 'storybook/internal/types';
 
 import { global } from '@storybook/global';
@@ -2221,6 +2222,58 @@ describe('stories API', () => {
         expect(setIndexCalls).toBe(2);
         expect(maxConcurrent).toBe(1);
       } finally {
+        vi.useRealTimers();
+      }
+    });
+
+    it('keeps rebuilding the status-filtered index after a rebuild rejection', async () => {
+      vi.mock('../stores/status');
+      vi.useFakeTimers();
+      const warn = vi.spyOn(logger, 'warn').mockImplementation(() => {});
+      try {
+        fullStatusStore.unset();
+        const moduleArgs = createMockModuleArgs({});
+        const { api } = initStories(moduleArgs as unknown as ModuleArgs);
+
+        await api.setIndex({ v: 5, entries: navigationEntries });
+
+        let setIndexCalls = 0;
+        vi.spyOn(api, 'setIndex').mockImplementation(async () => {
+          setIndexCalls += 1;
+          if (setIndexCalls === 1) {
+            throw new Error('rebuild failed');
+          }
+        });
+
+        fullStatusStore.set([
+          {
+            typeId: 'addon-id',
+            storyId: 'a--1',
+            value: 'status-value:pending',
+            title: 'title',
+            description: 'first',
+          },
+        ]);
+        await vi.advanceTimersByTimeAsync(0);
+        expect(setIndexCalls).toBe(1);
+        expect(warn).toHaveBeenCalledWith(
+          'Failed to rebuild story index after status change:',
+          expect.any(Error)
+        );
+
+        fullStatusStore.set([
+          {
+            typeId: 'addon-id',
+            storyId: 'a--2',
+            value: 'status-value:error',
+            title: 'title',
+            description: 'retry',
+          },
+        ]);
+        await vi.advanceTimersByTimeAsync(500);
+        expect(setIndexCalls).toBe(2);
+      } finally {
+        warn.mockRestore();
         vi.useRealTimers();
       }
     });

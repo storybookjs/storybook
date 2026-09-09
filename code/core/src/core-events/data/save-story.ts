@@ -4,6 +4,7 @@ export interface SaveStoryRequestPayload {
   importPath: string;
   name?: string;
   tags?: string[];
+  tagOperation?: 'add' | 'remove';
 }
 
 export interface SaveStoryResponsePayload {

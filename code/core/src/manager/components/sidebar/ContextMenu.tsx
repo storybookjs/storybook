@@ -95,7 +95,7 @@ export const useContextMenu = (
       if ('importPath' in context && context.importPath) {
         defaultLinks.push({
           id: 'add-story-tag',
-          title: 'Add tag',
+          title: 'Manage tag',
           onClick: (e: SyntheticEvent) => {
             e.preventDefault();
             e.stopPropagation();

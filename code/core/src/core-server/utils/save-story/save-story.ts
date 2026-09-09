@@ -22,7 +22,7 @@ import type { Options } from 'storybook/internal/types';
 
 import { duplicateStoryWithNewName } from './duplicate-story-with-new-name.ts';
 import { updateArgsInCsfFile } from './update-args-in-csf-file.ts';
-import { updateStoryTagsInCsfFile } from './update-tags-in-csf-file.ts';
+import { removeStoryTagsInCsfFile, updateStoryTagsInCsfFile } from './update-tags-in-csf-file.ts';
 import { SaveStoryError } from './utils.ts';
 
 const parseArgs = (args: string): Record<string, any> =>
@@ -52,7 +52,7 @@ const removeExtraNewlines = (code: string, name: string) => {
 
 export function initializeSaveStory(channel: Channel, options: Options) {
   channel.on(SAVE_STORY_REQUEST, async ({ id, payload }: RequestData<SaveStoryRequestPayload>) => {
-    const { csfId, importPath, args, name, tags } = payload;
+    const { csfId, importPath, args, name, tags, tagOperation = 'add' } = payload;
 
     let newStoryId: string | undefined;
     let newStoryName: string | undefined;
@@ -100,7 +100,11 @@ export function initializeSaveStory(channel: Channel, options: Options) {
       }
 
       if (tags?.length) {
-        await updateStoryTagsInCsfFile(storyNode, tags);
+        if (tagOperation === 'remove') {
+          await removeStoryTagsInCsfFile(storyNode, tags);
+        } else {
+          await updateStoryTagsInCsfFile(storyNode, tags);
+        }
       }
 
       const code = await formatFileContent(

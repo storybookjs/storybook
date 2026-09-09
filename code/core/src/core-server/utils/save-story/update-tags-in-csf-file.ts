@@ -178,3 +178,47 @@ export const updateComponentTagsInCsfFile = async (node: t.Node, tags: string[])
 
   addTagsToObjectExpression(objectExpression, tags);
 };
+
+const removeTagsFromObjectExpression = (object: t.ObjectExpression, tags: string[]) => {
+  const normalizedTags = new Set(tags.map((tag) => tag.trim()).filter(Boolean));
+
+  if (normalizedTags.size === 0) {
+    return;
+  }
+
+  const tagsProperty = findTagsProperty(object);
+
+  if (!tagsProperty) {
+    return;
+  }
+
+  if (!t.isObjectProperty(tagsProperty)) {
+    throw new SaveStoryError(`Story tags could not be updated`);
+  }
+
+  if (!t.isArrayExpression(tagsProperty.value)) {
+    throw new SaveStoryError(`Updating non-array tags is not supported`);
+  }
+
+  tagsProperty.value.elements = tagsProperty.value.elements.filter((element) => {
+    if (!t.isStringLiteral(element)) {
+      return true;
+    }
+
+    return !normalizedTags.has(element.value);
+  });
+
+  if (tagsProperty.value.elements.length === 0) {
+    const propertyIndex = object.properties.indexOf(tagsProperty);
+
+    if (propertyIndex !== -1) {
+      object.properties.splice(propertyIndex, 1);
+    }
+  }
+};
+
+export const removeStoryTagsInCsfFile = async (node: t.Node, tags: string[]) => {
+  const objectExpression = getStoryObjectExpression(node);
+
+  removeTagsFromObjectExpression(objectExpression, tags);
+};

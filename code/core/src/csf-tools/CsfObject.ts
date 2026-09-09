@@ -186,6 +186,13 @@ class CsfObjectEditor implements CsfObject {
       return { ok: true, changed: false };
     }
     inspected.parent.properties.splice(inspected.parent.properties.indexOf(inspected.property), 1);
+    for (const ancestor of inspected.ancestors.toReversed()) {
+      const value = unwrapExpression(ancestor.property.value);
+      if (!t.isObjectExpression(value) || value.properties.length > 0) {
+        break;
+      }
+      ancestor.parent.properties.splice(ancestor.parent.properties.indexOf(ancestor.property), 1);
+    }
     return this.success();
   }
 
@@ -272,6 +279,7 @@ class CsfObjectEditor implements CsfObject {
     let object = this.root.node;
     let parent: t.ObjectExpression | undefined;
     let property: t.ObjectProperty | undefined;
+    const ancestors: { parent: t.ObjectExpression; property: t.ObjectProperty }[] = [];
 
     for (const [index, name] of path.entries()) {
       const lookup = lookupProperty(object, name);
@@ -281,16 +289,17 @@ class CsfObjectEditor implements CsfObject {
       parent = object;
       property = lookup.property;
       if (!property || index === path.length - 1) {
-        return { ok: true as const, parent, property };
+        return { ok: true as const, parent, property, ancestors };
       }
       const value = unwrapExpression(property.value);
       if (!t.isObjectExpression(value)) {
         return { ok: false as const, code: 'unsupported-member' as const, node: property.value };
       }
+      ancestors.push({ parent: object, property });
       object = value;
     }
 
-    return { ok: true as const, parent, property };
+    return { ok: true as const, parent, property, ancestors };
   }
 
   private insert(path: readonly string[], property: t.ObjectProperty) {

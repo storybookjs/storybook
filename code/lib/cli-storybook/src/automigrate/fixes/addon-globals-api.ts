@@ -379,15 +379,4 @@ const migrateStoryGlobals = (
       object.rename(['parameters', 'backgrounds', 'disable'], 'disabled');
     }
   }
-
-  removeEmptyObject(object, ['parameters', 'viewport']);
-  removeEmptyObject(object, ['parameters', 'backgrounds']);
-  removeEmptyObject(object, ['parameters']);
-};
-
-const removeEmptyObject = (object: CsfObject, path: readonly string[]) => {
-  const value = object.get(path);
-  if (t.isObjectExpression(value) && value.properties.length === 0) {
-    object.remove(path);
-  }
 };

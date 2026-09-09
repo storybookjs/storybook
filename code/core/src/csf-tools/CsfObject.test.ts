@@ -192,6 +192,24 @@ describe('CsfObject', () => {
     expect(printCsf(csf).code).not.toContain(`1: 'one'`);
   });
 
+  it('removes empty ancestor objects', () => {
+    const csf = parse(
+      `export default { title: 'Example', parameters: { viewport: { disable: true } } };`
+    );
+    const [meta] = csf.objects({ meta: true, stories: false });
+
+    expect(meta.remove(['parameters', 'viewport', 'disable'])).toEqual({
+      ok: true,
+      changed: true,
+    });
+
+    expect(printCsf(csf).code).toMatchInlineSnapshot(`
+      "export default {
+        title: 'Example'
+      };"
+    `);
+  });
+
   it('rejects reassigned direct exports', () => {
     const csf = parse(`
       export default { title: 'Example' };

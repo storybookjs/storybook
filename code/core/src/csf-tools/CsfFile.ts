@@ -313,6 +313,8 @@ export class CsfFile {
 
   _metaNode: t.ObjectExpression | undefined;
 
+  _metaNodeIsSynthetic = false;
+
   _metaPath: NodePath<t.ExportDefaultDeclaration> | undefined;
 
   _metaVariableName: string | undefined;
@@ -867,6 +869,7 @@ export class CsfFile {
 
                   if (!metaDeclarator?.isVariableDeclarator()) {
                     self._metaVariableName = callee.property.name;
+                    self._metaNodeIsSynthetic = true;
                     self._parseMeta(t.objectExpression([]), self._ast.program);
                     return;
                   }
@@ -890,6 +893,7 @@ export class CsfFile {
                   const metaNode = t.isObjectExpression(unwrappedArgument)
                     ? unwrappedArgument
                     : t.objectExpression([]);
+                  self._metaNodeIsSynthetic = !t.isObjectExpression(unwrappedArgument);
                   self._parseMeta(metaNode, self._ast.program);
                 } else if (rootObject.name === 'preview') {
                   // Only throw if the variable is named "preview" - this indicates

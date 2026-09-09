@@ -148,7 +148,13 @@ export async function vitestTransform({
 
   const metaExportName = parsed._metaVariableName!;
 
-  const metaNode = parsed._metaNode as t.ObjectExpression;
+  const metaNode = parsed._metaNode;
+
+  if (!metaNode || parsed._metaNodeIsSynthetic || !parsed._meta) {
+    throw new Error(
+      'The Storybook vitest plugin could not detect the meta (default export) object in the story file. \n\nPlease make sure you have a default export with the meta object. If you are using a different export format that is not supported, please file an issue with details about your use case.'
+    );
+  }
 
   const metaTitleProperty = metaNode.properties.find(
     (prop) => t.isObjectProperty(prop) && t.isIdentifier(prop.key) && prop.key.name === 'title'
@@ -160,12 +166,6 @@ export async function vitestTransform({
   } else if (t.isObjectProperty(metaTitleProperty)) {
     // If the title is present in meta, overwrite it because autotitle can still affect existing titles
     metaTitleProperty.value = metaTitle;
-  }
-
-  if (!metaNode || !parsed._meta) {
-    throw new Error(
-      'The Storybook vitest plugin could not detect the meta (default export) object in the story file. \n\nPlease make sure you have a default export with the meta object. If you are using a different export format that is not supported, please file an issue with details about your use case.'
-    );
   }
 
   // Filter out stories based on the passed tags filter

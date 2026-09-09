@@ -49,6 +49,19 @@ const transform = async ({
 };
 
 describe('transformer', () => {
+  it('rejects an unresolved factory meta configuration', async () => {
+    const code = `
+      import preview from './preview';
+      import config from './config';
+      const meta = preview.meta(config);
+      export const Story = meta.story({});
+    `;
+
+    await expect(transform({ code })).rejects.toThrow(
+      'could not detect the meta (default export) object'
+    );
+  });
+
   describe('CSF v1/v2/v3', () => {
     describe('default exports (meta)', () => {
       it('should add title to inline default export if not present', async () => {

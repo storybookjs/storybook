@@ -112,6 +112,17 @@ describe('CsfObject discovery', () => {
     expect(meta.get(['title'])).toMatchObject({ type: 'StringLiteral', value: 'Example' });
   });
 
+  it('marks unresolved factory meta configuration as synthetic', () => {
+    const csf = parse(`
+      import preview from './preview';
+      import config from './config';
+      const meta = preview.meta(config);
+      export const Basic = meta.story({});
+    `);
+
+    expect(csf._metaNodeIsSynthetic).toBe(true);
+  });
+
   it.each([
     [
       'a reassigned binding',

@@ -62,7 +62,7 @@ describe('addon-globals-api story objects', () => {
       export const Primary = meta.story({
         globals: {
           viewport: {
-            value: "mobile",
+            value: 'mobile',
             isRotated: false
           }
         },
@@ -80,6 +80,31 @@ describe('addon-globals-api story objects', () => {
     `;
 
     expect(transform(source)).toBeNull();
+  });
+
+  it('migrates an explicit in-place field after a spread', () => {
+    const source = dedent`
+      export default { title: 'Button' };
+      export const Primary = {
+        ...base,
+        parameters: { backgrounds: { disable: true } },
+      };
+    `;
+
+    expect(transform(source)).toContain(`backgrounds: { disabled: true }`);
+  });
+
+  it('keeps unrelated empty objects when their migration is disabled', () => {
+    const source = `export default { parameters: { viewport: {} } };`;
+
+    const result = transformStoryFile(source, {
+      needsViewportMigration: false,
+      needsBackgroundsMigration: true,
+      viewportsOptions: undefined,
+      backgroundsOptions: undefined,
+    });
+
+    expect(result).toBeNull();
   });
 
   it('keeps default orientation when it cannot write isRotated', () => {

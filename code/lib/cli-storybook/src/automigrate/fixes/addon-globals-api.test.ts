@@ -923,10 +923,7 @@ describe('addon-globals-api', () => {
           parameters: {
             backgrounds: {
               options: {
-                gray: {
-                  name: 'Gray',
-                  value: '#CCC'
-                }
+                gray: { name: 'Gray', value: '#CCC' }
               }
             },
           },

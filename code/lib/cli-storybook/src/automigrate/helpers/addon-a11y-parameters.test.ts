@@ -202,7 +202,7 @@ describe('a11yParameters', () => {
       `);
     });
 
-    it('should leave unsafe story objects unchanged', () => {
+    it('should transform an explicit property after a spread', () => {
       const code = dedent`
         export default { title: 'Button' };
         export const Primary = {
@@ -211,7 +211,13 @@ describe('a11yParameters', () => {
         };
       `;
 
-      expect(transformStories(code)).toBeNull();
+      expect(transformStories(code)).toMatchInlineSnapshot(`
+        export default { title: 'Button' };
+        export const Primary = {
+          ...base,
+          parameters: { a11y: { context: '#root' } },
+        };
+      `);
     });
   });
 

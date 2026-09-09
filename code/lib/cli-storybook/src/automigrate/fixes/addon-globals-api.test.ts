@@ -104,6 +104,21 @@ describe('addon-globals-api', () => {
       expect(result?.viewportsOptions?.defaultViewport).toBe('mobile');
     });
 
+    it('should detect viewport disable configuration', async () => {
+      const result = await check(`
+        export default {
+          parameters: {
+            viewport: {
+              disable: true
+            }
+          }
+        }
+      `);
+
+      expect(result?.needsViewportMigration).toBe(true);
+      expect(result?.viewportsOptions?.disable).toBe(true);
+    });
+
     it('should detect backgrounds configuration', async () => {
       const result = await check(`
         export default {
@@ -309,6 +324,28 @@ describe('addon-globals-api', () => {
               options: {
                 light: { name: 'Light', value: '#F8F8F8' }
               },
+              disabled: true
+            }
+          }
+        }"
+      `);
+    });
+
+    it('should rename viewport disable property to disabled', async () => {
+      const { previewFileContent } = await runMigrationAndGetTransformFn(dedent`
+        export default {
+          parameters: {
+            viewport: {
+              disable: true
+            }
+          }
+        }
+      `);
+
+      expect(previewFileContent).toMatchInlineSnapshot(`
+        "export default {
+          parameters: {
+            viewport: {
               disabled: true
             }
           }

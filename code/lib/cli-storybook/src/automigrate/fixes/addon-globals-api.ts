@@ -23,6 +23,7 @@ interface AddonGlobalsApiOptions {
     | {
         defaultViewport?: string;
         viewports?: Expression;
+        disable?: boolean;
       }
     | undefined;
   backgroundsOptions:
@@ -73,7 +74,7 @@ export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
       // Define fields to check based on addon type
       const fieldsToCheck =
         addonName === 'viewport'
-          ? ['viewports', 'defaultViewport']
+          ? ['viewports', 'defaultViewport', 'disable']
           : ['values', 'default', 'disable'];
 
       // Check if any old format fields exist
@@ -172,6 +173,15 @@ export const addonGlobalsApi: Fix<AddonGlobalsApiOptions> = {
           viewportsOptions.defaultViewport
         );
         previewConfig.setFieldValue(['initialGlobals', 'viewport', 'isRotated'], false);
+      }
+
+      if (typeof viewportsOptions?.disable === 'boolean') {
+        const viewport = getFieldNode(['parameters', 'viewport']) as ObjectExpression;
+        const disabled = getFieldNode(['parameters', 'viewport', 'disabled']);
+        removeProperty(viewport, 'disable');
+        if (!disabled) {
+          addProperty(viewport, 'disabled', t.booleanLiteral(viewportsOptions.disable));
+        }
       }
     }
 

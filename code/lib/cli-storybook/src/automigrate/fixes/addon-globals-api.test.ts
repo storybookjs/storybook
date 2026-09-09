@@ -92,7 +92,8 @@ describe('addon-globals-api', () => {
                 mobile: { name: 'Mobile', width: '320px', height: '568px' },
                 tablet: { name: 'Tablet', width: '768px', height: '1024px' }
               },
-              defaultViewport: 'mobile'
+              defaultViewport: 'mobile',
+              disable: true
             }
           }
         }
@@ -102,20 +103,6 @@ describe('addon-globals-api', () => {
       expect(result?.needsViewportMigration).toBe(true);
       expect(result?.needsBackgroundsMigration).toBe(false);
       expect(result?.viewportsOptions?.defaultViewport).toBe('mobile');
-    });
-
-    it('should detect viewport disable configuration', async () => {
-      const result = await check(`
-        export default {
-          parameters: {
-            viewport: {
-              disable: true
-            }
-          }
-        }
-      `);
-
-      expect(result?.needsViewportMigration).toBe(true);
       expect(result?.viewportsOptions?.disable).toBe(true);
     });
 
@@ -316,7 +303,6 @@ describe('addon-globals-api', () => {
         }
       `);
 
-      // Verify the transformation results
       expect(previewFileContent).toMatchInlineSnapshot(`
         "export default {
           parameters: {
@@ -324,28 +310,6 @@ describe('addon-globals-api', () => {
               options: {
                 light: { name: 'Light', value: '#F8F8F8' }
               },
-              disabled: true
-            }
-          }
-        }"
-      `);
-    });
-
-    it('should rename viewport disable property to disabled', async () => {
-      const { previewFileContent } = await runMigrationAndGetTransformFn(dedent`
-        export default {
-          parameters: {
-            viewport: {
-              disable: true
-            }
-          }
-        }
-      `);
-
-      expect(previewFileContent).toMatchInlineSnapshot(`
-        "export default {
-          parameters: {
-            viewport: {
               disabled: true
             }
           }
@@ -377,7 +341,8 @@ describe('addon-globals-api', () => {
               viewports: {
                 mobile: { name: 'Mobile', width: '320px', height: '568px' }
               },
-              defaultViewport: 'mobile'
+              defaultViewport: 'mobile',
+              disable: true
             },
             backgrounds: {
               values: [
@@ -396,7 +361,9 @@ describe('addon-globals-api', () => {
       viewport: {
         options: {
           mobile: { name: 'Mobile', width: '320px', height: '568px' }
-        }
+        },
+
+        disabled: true
       },
       backgrounds: {
         options: {
@@ -438,7 +405,6 @@ describe('addon-globals-api', () => {
         }
       `);
 
-      // Verify the transformation results
       expect(previewFileContent).toMatchInlineSnapshot(`
         "export default {
           parameters: {
@@ -581,7 +547,6 @@ describe('addon-globals-api', () => {
           };
         `;
 
-      expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
         "import Button from './Button';
         export default { component: Button };
@@ -606,7 +571,6 @@ describe('addon-globals-api', () => {
             }
           };
         `;
-      expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
         "import Button from './Button';
         export default { component: Button };
@@ -629,7 +593,6 @@ describe('addon-globals-api', () => {
             }
           };
         `;
-      expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
         "import Button from './Button';
         export default { component: Button };
@@ -652,7 +615,6 @@ describe('addon-globals-api', () => {
             }
           };
         `;
-      expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
         "import Button from './Button';
         export default { component: Button };
@@ -679,7 +641,6 @@ describe('addon-globals-api', () => {
             }
           };
         `;
-      expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
         "import Button from './Button';
         export default { component: Button };
@@ -711,7 +672,6 @@ describe('addon-globals-api', () => {
           export const Default = {};
         `;
 
-      expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
         "import Button from './Button';
         export default {
@@ -764,7 +724,6 @@ describe('addon-globals-api', () => {
           } 
         };
       `;
-      expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
         "import Button from './Button';
 
@@ -844,6 +803,8 @@ describe('addon-globals-api', () => {
               }
             }
           };
+
+          export const Unchanged = { parameters: {} };
         `;
       expect(transformFn).toBeDefined();
       expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
@@ -866,21 +827,8 @@ describe('addon-globals-api', () => {
               value: 'dark'
             }
           }
-        };"
-      `);
-    });
+        };
 
-    it('should preserve empty parameters on an unchanged story', async () => {
-      const { transformFn } = await runMigrationAndGetTransformFn(defaultPreview);
-      const storyContent = dedent`
-        export default {};
-        export const Migrated = { parameters: { viewport: { disable: true } } };
-        export const Unchanged = { parameters: {} };
-      `;
-
-      expect(transformFn!('story.js', storyContent)).toMatchInlineSnapshot(`
-        "export default {};
-        export const Migrated = { parameters: { viewport: { disabled: true } } };
         export const Unchanged = { parameters: {} };"
       `);
     });

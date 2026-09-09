@@ -1058,6 +1058,7 @@ export const init: ModuleFn<SubAPI, SubState> = ({
     return true;
   };
 
+  // Simple queue so status-filter rebuilds never overlap.
   let statusFilterRebuildQueued = false;
   let statusFilterRebuildInFlight = false;
 

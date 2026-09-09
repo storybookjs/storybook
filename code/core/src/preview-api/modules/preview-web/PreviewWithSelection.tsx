@@ -432,8 +432,6 @@ export class PreviewWithSelection<TRenderer extends Renderer> extends Preview<TR
     }
 
     // If we are rendering something new (as opposed to re-rendering the same or first story), emit
-
-    // If we are rendering something new (as opposed to re-rendering the same or first story), emit
     if (lastSelection && (storyIdChanged || viewModeChanged)) {
       this.channel.emit(STORY_CHANGED, storyId);
     }

@@ -33,7 +33,11 @@ import type { PrintResultType } from './PrintResultType.ts';
 import { type CsfMutationDiagnostic, type CsfObject, type CsfObjectOptions } from './CsfObject.ts';
 import { discoverCsfObjects } from './CsfObjectDiscovery.ts';
 import { findVarInitialization } from './findVarInitialization.ts';
-import { isCanonicalCsf2BindCall, isCsfFactoryCall } from './story-shape/utils.ts';
+import {
+  isCanonicalCsf2BindCall,
+  isCsfFactoryCall,
+  unwrapExpression,
+} from './story-shape/utils.ts';
 
 // We add this BabelFile as a temporary workaround to deal with a BabelFileClass "ImportEquals should have a literal source" issue in no link mode with tsup
 interface BabelFile {
@@ -308,6 +312,8 @@ export class CsfFile {
 
   _metaIsFactory: boolean | undefined;
 
+  _metaFactoryCall: t.CallExpression | undefined;
+
   _storyStatements: Record<string, t.ExportNamedDeclaration | t.Expression> = {};
 
   _storyAnnotations: Record<string, Record<string, t.Node>> = {};
@@ -332,7 +338,7 @@ export class CsfFile {
   }
 
   get mutationDiagnostics(): readonly CsfMutationDiagnostic[] {
-    return this.#mutationDiagnostics;
+    return [...this.#mutationDiagnostics];
   }
 
   get changed() {
@@ -834,7 +840,7 @@ export class CsfFile {
             t.isMemberExpression(callee) &&
             t.isIdentifier(callee.property) &&
             callee.property.name === 'meta' &&
-            node.arguments.length > 0
+            !callee.computed
           ) {
             // Find the root object for factory pattern:
             // - preview.meta() => preview
@@ -850,6 +856,7 @@ export class CsfFile {
               if (t.isImportDeclaration(configParent)) {
                 if (isValidPreviewPath(configParent.source.value)) {
                   self._metaIsFactory = true;
+                  self._metaFactoryCall = node;
                   const metaDeclarator = path.findParent((p) =>
                     p.isVariableDeclarator()
                   ) as NodePath<t.VariableDeclarator>;
@@ -860,7 +867,11 @@ export class CsfFile {
                   self._metaVariableName = t.isIdentifier(metaDeclarator.node.id)
                     ? metaDeclarator.node.id.name
                     : callee.property.name;
-                  const metaNode = node.arguments[0] as t.ObjectExpression;
+                  const [argument] = node.arguments;
+                  const unwrappedArgument = argument && unwrapExpression(argument);
+                  const metaNode = t.isObjectExpression(unwrappedArgument)
+                    ? unwrappedArgument
+                    : t.objectExpression([]);
                   self._parseMeta(metaNode, self._ast.program);
                 } else if (rootObject.name === 'preview') {
                   // Only throw if the variable is named "preview" - this indicates

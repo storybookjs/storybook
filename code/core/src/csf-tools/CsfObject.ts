@@ -19,7 +19,8 @@ export type CsfMutationDiagnosticCode =
   | 'spread-field'
   | 'dynamic-key'
   | 'unsupported-member'
-  | 'occupied-destination';
+  | 'occupied-destination'
+  | 'cyclic-move';
 
 export interface CsfMutationDiagnostic {
   code: CsfMutationDiagnosticCode;
@@ -60,6 +61,9 @@ const staticKey = (member: t.ObjectMethod | t.ObjectProperty): string | undefine
   if (t.isStringLiteral(member.key)) {
     return member.key.value;
   }
+  if (t.isNumericLiteral(member.key)) {
+    return String(member.key.value);
+  }
   if (t.isIdentifier(member.key) && !member.computed) {
     return member.key.name;
   }
@@ -71,6 +75,8 @@ const staticKey = (member: t.ObjectMethod | t.ObjectProperty): string | undefine
 
 const keyNode = (name: string) =>
   t.isValidIdentifier(name) ? t.identifier(name) : t.stringLiteral(name);
+
+const unsafePath = (path: readonly string[]) => path.includes('__proto__');
 
 const lookupProperty = (object: t.ObjectExpression, name: string): PropertyLookup => {
   const matches: t.ObjectProperty[] = [];
@@ -124,13 +130,13 @@ class CsfObjectEditor implements CsfObject {
       return undefined;
     }
     return found.property && t.isExpression(found.property.value)
-      ? found.property.value
+      ? t.cloneNode(found.property.value, true)
       : undefined;
   }
 
   set(path: readonly string[], value: t.Expression): CsfMutationResult {
     const logicalPath = this.normalizePath(path);
-    if (!logicalPath || logicalPath.length === 0) {
+    if (!logicalPath || logicalPath.length === 0 || unsafePath(logicalPath)) {
       return this.failure('unsupported-member', path, this.root.node);
     }
     const inspected = this.inspect(logicalPath);
@@ -141,16 +147,19 @@ class CsfObjectEditor implements CsfObject {
       if (inspected.property.value === value) {
         return { ok: true, changed: false };
       }
-      inspected.property.value = value;
+      inspected.property.value = t.cloneNode(value, true);
     } else {
-      this.insert(logicalPath, t.objectProperty(keyNode(logicalPath.at(-1)!), value));
+      this.insert(
+        logicalPath,
+        t.objectProperty(keyNode(logicalPath.at(-1)!), t.cloneNode(value, true))
+      );
     }
     return this.success();
   }
 
   remove(path: readonly string[]): CsfMutationResult {
     const logicalPath = this.normalizePath(path);
-    if (!logicalPath || logicalPath.length === 0) {
+    if (!logicalPath || logicalPath.length === 0 || unsafePath(logicalPath)) {
       return this.failure('unsupported-member', path, this.root.node);
     }
     const inspected = this.inspect(logicalPath);
@@ -176,9 +185,23 @@ class CsfObjectEditor implements CsfObject {
       !sourcePath ||
       !destinationPath ||
       sourcePath.length === 0 ||
-      destinationPath.length === 0
+      destinationPath.length === 0 ||
+      unsafePath(sourcePath) ||
+      unsafePath(destinationPath)
     ) {
       return this.failure('unsupported-member', !sourcePath ? from : to, this.root.node);
+    }
+    if (
+      sourcePath.length === destinationPath.length &&
+      sourcePath.every((part, index) => destinationPath[index] === part)
+    ) {
+      return { ok: true, changed: false };
+    }
+    if (
+      destinationPath.length > sourcePath.length &&
+      sourcePath.every((part, index) => destinationPath[index] === part)
+    ) {
+      return this.failure('cyclic-move', to, this.root.node);
     }
 
     const source = this.inspect(sourcePath);

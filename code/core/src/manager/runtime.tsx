@@ -54,13 +54,14 @@ class ReactProvider extends Provider {
   handleAPI(api: API) {
     this.addons.loadAddons(api);
 
-    this.channel.on(CHANNEL_WS_DISCONNECT, () => {
+    this.channel.on(CHANNEL_WS_DISCONNECT, (ev) => {
+      const TIMEOUT_CODE = 3008;
       this.wsDisconnected = true;
 
       api.addNotification({
         id: WS_DISCONNECTED_NOTIFICATION_ID,
         content: {
-          headline: 'Connection lost',
+          headline: ev.code === TIMEOUT_CODE ? 'Server timed out' : 'Connection lost',
           subHeadline: 'Please restart your Storybook server and reload the page',
         },
         icon: <FailedIcon color={color.negative} />,

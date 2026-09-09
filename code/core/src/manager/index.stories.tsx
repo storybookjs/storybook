@@ -80,13 +80,14 @@ class ReactProvider extends Provider {
       api.selectStory('example-button--primary', undefined, { viewMode: 'story' });
     });
 
-    this.channel.on(CHANNEL_WS_DISCONNECT, () => {
+    this.channel.on(CHANNEL_WS_DISCONNECT, (ev) => {
+      const TIMEOUT_CODE = 3008;
       this.wsDisconnected = true;
 
       api.addNotification({
         id: WS_DISCONNECTED_NOTIFICATION_ID,
         content: {
-          headline: 'Connection lost',
+          headline: ev.code === TIMEOUT_CODE ? 'Server timed out' : 'Connection lost',
           subHeadline: 'Please restart your Storybook server and reload the page',
         },
         icon: <FailedIcon color={color.negative} />,
@@ -179,7 +180,13 @@ export const FullScreen = meta.story({
 
 export const ConnectionLost = meta.story({
   play: async () => {
-    channel.emit(CHANNEL_WS_DISCONNECT, { code: 1006 });
+    channel.emit(CHANNEL_WS_DISCONNECT, { code: 3007 });
+  },
+});
+
+export const ServerTimedOut = meta.story({
+  play: async () => {
+    channel.emit(CHANNEL_WS_DISCONNECT, { code: 3008 });
   },
 });
 

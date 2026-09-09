@@ -463,7 +463,6 @@ export const services = async (_value: void, options: Options): Promise<void> =>
       // Registration-based selection between the docgen services and the inline manifests, shared
       // with addon-mcp's composed local source so both read this Storybook the same way.
       docsAccess: createLocalDocsAccess({
-        storyIndex,
         getManifests: () => loadManifests(options.presets),
       }),
     })

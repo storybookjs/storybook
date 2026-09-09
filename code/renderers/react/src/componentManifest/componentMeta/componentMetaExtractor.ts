@@ -736,7 +736,32 @@ function serializeType(
       nonUndefinedTypes.length === 1 &&
       nonUndefinedTypes.length < type.types.length
     ) {
-      return { name: checker.typeToString(nonUndefinedTypes[0]) };
+      return serializeType(typescript, checker, nonUndefinedTypes[0], isRequired, depth + 1);
+    }
+  }
+
+  // `(typeof SCALE)[number]` and similar indexed-access aliases stringify as
+  // `unknown[number]` unless we evaluate them to the apparent type first.
+  if (type.flags & typescript.TypeFlags.IndexedAccess) {
+    const indexedAccess = type as ts.IndexedAccessType;
+    const apparent = checker.getApparentType(type);
+    if (apparent !== type && (apparent.flags & typescript.TypeFlags.IndexedAccess) === 0) {
+      return serializeType(typescript, checker, apparent, isRequired, depth + 1);
+    }
+
+    const objectType = checker.getApparentType(indexedAccess.objectType);
+    const { indexType } = indexedAccess;
+    const indexKind =
+      indexType.flags & typescript.TypeFlags.NumberLike
+        ? typescript.IndexKind.Number
+        : indexType.flags & typescript.TypeFlags.StringLike
+          ? typescript.IndexKind.String
+          : undefined;
+    if (indexKind !== undefined) {
+      const indexed = checker.getIndexTypeOfType(objectType, indexKind);
+      if (indexed) {
+        return serializeType(typescript, checker, indexed, isRequired, depth + 1);
+      }
     }
   }
 

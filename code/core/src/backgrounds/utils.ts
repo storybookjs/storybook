@@ -1,13 +1,5 @@
 const { document } = globalThis;
 
-export const isReduceMotionEnabled = () => {
-  if (!globalThis?.matchMedia) {
-    return false;
-  }
-  const prefersReduceMotion = globalThis.matchMedia('(prefers-reduced-motion: reduce)');
-  return !!prefersReduceMotion?.matches;
-};
-
 export const clearStyles = (selector: string | string[]) => {
   const selectors = Array.isArray(selector) ? selector : [selector];
   selectors.forEach(clearStyle);

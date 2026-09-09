@@ -1,20 +1,151 @@
 import { traverse, types as t } from 'storybook/internal/babel';
+import type { CsfFile, CsfObject } from 'storybook/internal/csf-tools';
 import { formatConfig, loadConfig, loadCsf, printCsf } from 'storybook/internal/csf-tools';
 
 import type { ObjectExpression } from '@babel/types';
 import type { Scope } from '@babel/traverse';
 
-import { getObjectProperty, getStoryObject } from '../helpers/ast-utils.ts';
+import { getObjectProperty } from '../helpers/ast-utils.ts';
 import {
   classifyDefaultExport,
   classifyStoryObject,
   ComponentSubtitleMigrationError,
   hasSpreadProperty,
+  isPureLiteral,
   localSubtitleTruthiness,
   migrateParameters,
   resolveObjectExpression,
   resolvePreviewObjectExpression,
+  staticTruthiness,
 } from './component-subtitle-ast.ts';
+
+const componentSubtitlePath = ['parameters', 'componentSubtitle'] as const;
+const docsSubtitlePath = ['parameters', 'docs', 'subtitle'] as const;
+
+const getDirectStoryObject = (declaration: t.Node) => {
+  const value = t.isVariableDeclarator(declaration)
+    ? declaration.init
+    : t.isExportDefaultDeclaration(declaration)
+      ? declaration.declaration
+      : undefined;
+  const unwrapped =
+    t.isTSAsExpression(value) || t.isTSSatisfiesExpression(value) ? value.expression : value;
+  return t.isObjectExpression(unwrapped) ? unwrapped : undefined;
+};
+
+const mutationError = (message: string) => {
+  throw new ComponentSubtitleMigrationError(message);
+};
+
+const migrateCsfObject = (csf: CsfFile, object: CsfObject, inheritedSubtitleCanWin: boolean) => {
+  const diagnosticsBefore = csf.mutationDiagnostics.length;
+  const legacyValue = object.get(componentSubtitlePath);
+  if (!legacyValue) {
+    return;
+  }
+
+  const subtitle = object.get(docsSubtitlePath);
+  if (csf.mutationDiagnostics.length > diagnosticsBefore) {
+    const diagnostic = csf.mutationDiagnostics.at(-1);
+    if (diagnostic?.code === 'spread-field' || diagnostic?.code === 'dynamic-key') {
+      mutationError('parameters.componentSubtitle is declared in an ambiguous parameters object');
+    }
+    mutationError('parameters.docs.subtitle does not have a supported value');
+  }
+  if (!subtitle) {
+    if (inheritedSubtitleCanWin) {
+      mutationError('an inherited parameters.docs.subtitle value can take precedence');
+    }
+    const result = object.move(componentSubtitlePath, docsSubtitlePath);
+    if (!result.ok) {
+      mutationError(result.diagnostic.message);
+    }
+    return;
+  }
+
+  if (!isPureLiteral(legacyValue)) {
+    mutationError(
+      'parameters.componentSubtitle has an expression whose evaluation cannot be moved safely'
+    );
+  }
+  const truthiness = staticTruthiness(subtitle);
+  if (truthiness === undefined) {
+    mutationError('parameters.docs.subtitle has dynamic truthiness');
+  }
+  if (!truthiness) {
+    let liveLegacyValue: t.Expression | undefined;
+    object.transform(componentSubtitlePath, (value) => {
+      liveLegacyValue = value;
+      return undefined;
+    });
+    const result = object.transform(docsSubtitlePath, () => liveLegacyValue);
+    if (!result.ok) {
+      mutationError(result.diagnostic.message);
+    }
+  }
+  const result = object.remove(componentSubtitlePath);
+  if (!result.ok) {
+    mutationError(result.diagnostic.message);
+  }
+};
+
+const inspectStoryCandidates = (csf: CsfFile) => {
+  const metaObject = csf._metaPath
+    ? resolveObjectExpression(csf._metaPath.node.declaration, csf._metaPath.scope)
+    : undefined;
+  if (
+    metaObject &&
+    csf._metaPath &&
+    classifyStoryObject(metaObject, csf._metaPath.scope) === 'unsafe'
+  ) {
+    mutationError('parameters.componentSubtitle is not in a direct CSF parameters object');
+  }
+  const metaParameters = metaObject && getObjectProperty(metaObject, 'parameters');
+  const metaCanHideSubtitle = Boolean(
+    metaObject &&
+    (hasSpreadProperty(metaObject) ||
+      (metaParameters !== undefined && !t.isObjectExpression(metaParameters)))
+  );
+  const metaSubtitleTruthiness = t.isObjectExpression(metaParameters)
+    ? localSubtitleTruthiness(metaParameters)
+    : false;
+
+  const storyObjects = new Set<ObjectExpression>();
+  for (const declaration of Object.values(csf._storyExports)) {
+    const storyObject = getDirectStoryObject(declaration);
+    if (storyObject) {
+      storyObjects.add(storyObject);
+    }
+  }
+  const storyScopes = new Map<ObjectExpression, Scope>();
+  traverse(csf._ast, {
+    ObjectExpression(path) {
+      if (storyObjects.has(path.node)) {
+        storyScopes.set(path.node, path.scope);
+      }
+    },
+    ExportNamedDeclaration(path) {
+      for (const specifier of path.node.specifiers) {
+        if (t.isExportSpecifier(specifier)) {
+          const storyObject = resolveObjectExpression(specifier.local, path.scope);
+          if (storyObject && classifyStoryObject(storyObject, path.scope) !== 'none') {
+            mutationError('parameters.componentSubtitle is not in a direct CSF parameters object');
+          }
+        }
+      }
+    },
+  });
+
+  for (const storyObject of storyObjects) {
+    const storyScope = storyScopes.get(storyObject);
+    const classification = storyScope ? classifyStoryObject(storyObject, storyScope) : 'none';
+    if (classification === 'unsafe' || (classification !== 'none' && metaCanHideSubtitle)) {
+      mutationError('parameters.componentSubtitle is not in a direct CSF parameters object');
+    }
+  }
+
+  return metaSubtitleTruthiness !== false;
+};
 
 export const transformPreviewSource = (source: string) => {
   const config = loadConfig(source).parse();
@@ -50,79 +181,17 @@ export const previewSubtitleCanWin = (source: string) => {
 
 export const transformStorySource = (source: string, inheritedSubtitleCanWin = false) => {
   const csf = loadCsf(source, { makeTitle: (title?: string) => title || 'default' }).parse();
-  let changed = false;
-  const metaObject = csf._metaPath
-    ? resolveObjectExpression(csf._metaPath.node.declaration, csf._metaPath.scope)
-    : undefined;
-  if (
-    metaObject &&
-    csf._metaPath &&
-    classifyStoryObject(metaObject, csf._metaPath.scope) === 'unsafe'
-  ) {
-    throw new ComponentSubtitleMigrationError(
-      'parameters.componentSubtitle is not in a direct CSF parameters object'
-    );
-  }
-  const metaParameters = metaObject && getObjectProperty(metaObject, 'parameters');
-  const metaCanHideSubtitle = Boolean(
-    metaObject &&
-    (hasSpreadProperty(metaObject) ||
-      (metaParameters !== undefined && !t.isObjectExpression(metaParameters)))
-  );
-  const metaSubtitleTruthiness = t.isObjectExpression(metaParameters)
-    ? localSubtitleTruthiness(metaParameters)
-    : false;
+  const metaSubtitleCanWin = inspectStoryCandidates(csf);
+  const objects = csf.objects({ annotations: ['parameters'] });
+  const meta = objects.find((object) => object.target.kind === 'meta');
 
-  if (t.isObjectExpression(metaParameters)) {
-    changed = migrateParameters(metaParameters, inheritedSubtitleCanWin) || changed;
+  if (meta) {
+    migrateCsfObject(csf, meta, inheritedSubtitleCanWin);
   }
-
-  const storyObjects = new Set<ObjectExpression>();
-  for (const declaration of Object.values(csf._storyExports)) {
-    const storyObject = getStoryObject(declaration);
-    if (storyObject) {
-      storyObjects.add(storyObject);
+  for (const object of objects) {
+    if (object !== meta) {
+      migrateCsfObject(csf, object, inheritedSubtitleCanWin || metaSubtitleCanWin);
     }
   }
-  const storyScopes = new Map<ObjectExpression, Scope>();
-  traverse(csf._ast, {
-    ObjectExpression(path) {
-      if (storyObjects.has(path.node)) {
-        storyScopes.set(path.node, path.scope);
-      }
-    },
-    ExportNamedDeclaration(path) {
-      for (const specifier of path.node.specifiers) {
-        if (t.isExportSpecifier(specifier)) {
-          const storyObject = resolveObjectExpression(specifier.local, path.scope);
-          if (storyObject && classifyStoryObject(storyObject, path.scope) !== 'none') {
-            throw new ComponentSubtitleMigrationError(
-              'parameters.componentSubtitle is not in a direct CSF parameters object'
-            );
-          }
-        }
-      }
-    },
-  });
-
-  for (const storyObject of storyObjects) {
-    const storyScope = storyScopes.get(storyObject);
-    if (storyScope) {
-      const classification = classifyStoryObject(storyObject, storyScope);
-      if (classification === 'unsafe' || (classification !== 'none' && metaCanHideSubtitle)) {
-        throw new ComponentSubtitleMigrationError(
-          'parameters.componentSubtitle is not in a direct CSF parameters object'
-        );
-      }
-    }
-    const parameters = getObjectProperty(storyObject, 'parameters');
-    if (t.isObjectExpression(parameters)) {
-      changed =
-        migrateParameters(
-          parameters,
-          inheritedSubtitleCanWin || metaSubtitleTruthiness !== false
-        ) || changed;
-    }
-  }
-  return changed ? printCsf(csf).code : null;
+  return csf.changed ? printCsf(csf).code : null;
 };

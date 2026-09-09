@@ -15,7 +15,7 @@ export class ComponentSubtitleMigrationError extends Error {}
 
 export type CandidateClassification = 'none' | 'direct' | 'unsafe';
 
-const staticTruthiness = (value: Expression): boolean | undefined => {
+export const staticTruthiness = (value: Expression): boolean | undefined => {
   if (t.isStringLiteral(value) || t.isNumericLiteral(value) || t.isBooleanLiteral(value)) {
     return Boolean(value.value);
   }
@@ -28,7 +28,7 @@ const staticTruthiness = (value: Expression): boolean | undefined => {
   return undefined;
 };
 
-const isPureLiteral = (value: Expression) =>
+export const isPureLiteral = (value: Expression) =>
   t.isStringLiteral(value) ||
   t.isNumericLiteral(value) ||
   t.isBooleanLiteral(value) ||

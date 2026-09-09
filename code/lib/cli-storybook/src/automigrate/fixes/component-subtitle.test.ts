@@ -51,6 +51,32 @@ describe('component-subtitle', () => {
     ).toContain("subtitle: 'Legacy'");
   });
 
+  it('migrates CSF2 story annotations', () => {
+    const transformed = transformStorySource(`
+        export default { component: Button };
+        export const Primary = () => null;
+        Primary.parameters = {
+          componentSubtitle: 'Legacy'
+        };
+      `);
+
+    expect(transformed).toContain("subtitle: 'Legacy'");
+    expect(transformed).not.toContain('componentSubtitle');
+  });
+
+  it('migrates CSF4 story objects', () => {
+    const transformed = transformStorySource(`
+        import preview from './preview';
+        const meta = preview.meta({ component: Button });
+        export const Primary = meta.story({
+          parameters: { componentSubtitle: 'Legacy' }
+        });
+      `);
+
+    expect(transformed).toContain("subtitle: 'Legacy'");
+    expect(transformed).not.toContain('componentSubtitle');
+  });
+
   it('preserves the old static docs.subtitle precedence', () => {
     expect(
       transformStorySource(`

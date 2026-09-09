@@ -59,19 +59,12 @@ const echo = defineToolset({
       title: 'Report a count',
       description: 'Reports usage, then succeeds.',
       input: v.object({}),
-      handler: async (_input, ctx) => {
-        await ctx.telemetry?.('tool:count', { itemCount: 2 });
-        return { ok: true as const, data: {}, markdown: '' };
-      },
-    },
-    explode: {
-      title: 'Report, then throw',
-      description: 'Reports usage, then fails unexpectedly.',
-      input: v.object({}),
-      handler: async (_input, ctx) => {
-        await ctx.telemetry?.('tool:explode', { itemCount: 1 });
-        throw new Error('boom');
-      },
+      handler: async () => ({
+        ok: true as const,
+        data: {},
+        markdown: '',
+        telemetry: { event: 'tool:count', counters: { itemCount: 2 } },
+      }),
     },
     slow: {
       title: 'Delay',
@@ -565,8 +558,7 @@ describe('createTools', () => {
     await expect(spawnFailed).rejects.toThrow('Could not resolve the `storybook` package');
   });
 
-  it('applies per-call origin and telemetry to the method context', async () => {
-    const sink = vi.fn(async () => {});
+  it('applies the per-call origin and returns the named report on the outcome', async () => {
     vi.mocked(bootstrapToolsRuntime).mockResolvedValue(
       makeRuntime({
         toolsets: [
@@ -578,14 +570,12 @@ describe('createTools', () => {
                 title: 'Ping',
                 description: 'ping',
                 input: v.object({}),
-                handler: async (_input, ctx) => {
-                  await ctx.telemetry?.('tool:ping', { pingCount: 1 });
-                  return {
-                    ok: true as const,
-                    data: { origin: ctx.origin },
-                    markdown: ctx.origin ?? '',
-                  };
-                },
+                handler: async (_input, ctx) => ({
+                  ok: true as const,
+                  data: { origin: ctx.origin },
+                  markdown: ctx.origin ?? '',
+                  telemetry: { event: 'tool:ping', counters: { pingCount: 1 } },
+                }),
               },
             },
           }),
@@ -594,20 +584,14 @@ describe('createTools', () => {
     );
     const tools = await createTools({ mode: 'local' });
 
-    const outcome = await tools.call(
-      'probe.ping',
-      {},
-      { origin: 'http://localhost:9', telemetry: sink }
-    );
+    const outcome = await tools.call('probe.ping', {}, { origin: 'http://localhost:9' });
 
     expect(outcome).toMatchObject({ data: { origin: 'http://localhost:9' } });
-    expect(sink).toHaveBeenCalledWith('tool:ping', {
-      pingCount: 1,
-      client: 'sdk',
-      requestedMode: 'local',
-      resolvedMode: 'local',
-      attachMode: 'local',
-      host: 'in-process',
+    expect(outcome.telemetry).toEqual({
+      toolset: 'probe',
+      tool: 'ping',
+      event: 'tool:ping',
+      counters: { pingCount: 1 },
     });
     expect(invocationPayloads()).toEqual([
       expect.objectContaining({ toolset: 'probe', tool: 'ping', event: 'tool:ping', pingCount: 1 }),
@@ -666,7 +650,6 @@ describe('describe', () => {
       ['echo.live', true],
       ['echo.sibling', false],
       ['echo.counted', false],
-      ['echo.explode', false],
       ['echo.slow', false],
     ]);
   });
@@ -906,23 +889,6 @@ describe('tools-command telemetry', () => {
         host: 'in-process',
         duration: expect.any(Number),
       },
-    ]);
-  });
-
-  it('keeps the handler report on the record when the handler throws', async () => {
-    const tools = await createTools({ mode: 'local' });
-
-    await expect(tools.call('echo.explode')).rejects.toThrow('boom');
-
-    expect(invocationPayloads()).toEqual([
-      expect.objectContaining({
-        toolset: 'echo',
-        tool: 'explode',
-        event: 'tool:explode',
-        itemCount: 1,
-        success: false,
-        outcome: 'error',
-      }),
     ]);
   });
 

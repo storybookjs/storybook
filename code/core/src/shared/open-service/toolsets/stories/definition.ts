@@ -11,12 +11,7 @@ import type {
   ModuleGraphService,
 } from '../../services/module-graph/definition.ts';
 import type { ModuleGraphIndexService } from '../../services/module-graph-index/definition.ts';
-import {
-  defineToolset,
-  reportToolsetTelemetry,
-  type ToolsetCtx,
-  type ToolsetOutcome,
-} from '../../toolset-definition.ts';
+import { defineToolset, type ToolsetCtx, type ToolsetOutcome } from '../../toolset-definition.ts';
 import { getToolName } from '../../toolset-names.ts';
 import type { StatusesByStoryIdAndTypeId } from '../../../status-store/index.ts';
 import { getChangedStories } from './changed.ts';
@@ -293,12 +288,18 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             stories: input.stories,
           });
 
-          await reportToolsetTelemetry(ctx, 'tool:previewStories', {
-            inputStoryCount: input.stories.length,
-            outputStoryCount: data.stories.length,
-          });
-
-          return { ok: true, data, markdown: formatPreviewStories(data, ctx, { reviewEnabled }) };
+          return {
+            ok: true,
+            data,
+            markdown: formatPreviewStories(data, ctx, { reviewEnabled }),
+            telemetry: {
+              event: 'tool:previewStories',
+              counters: {
+                inputStoryCount: input.stories.length,
+                outputStoryCount: data.stories.length,
+              },
+            },
+          };
         },
       },
       changed: {
@@ -324,16 +325,19 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
           if (changeDetection.status !== 'ready') {
             if (isGitUnusableReadiness(changeDetection)) {
               const data = emptyChangedStories();
-              await reportToolsetTelemetry(ctx, 'tool:getChangedStories', {
-                storyCount: 0,
-                newStoryCount: 0,
-                modifiedStoryCount: 0,
-                affectedStoryCount: 0,
-              });
               return {
                 ok: true,
                 data,
                 markdown: formatChangedStories(data, ctx, { reviewEnabled }),
+                telemetry: {
+                  event: 'tool:getChangedStories',
+                  counters: {
+                    storyCount: 0,
+                    newStoryCount: 0,
+                    modifiedStoryCount: 0,
+                    affectedStoryCount: 0,
+                  },
+                },
               };
             }
             throw new OpenServiceModuleGraphUnavailableError({
@@ -353,14 +357,20 @@ Use { absoluteStoryPath + exportName } only when you're already working in a spe
             unreachableFiles: await detectUnreachableFiles({ git, moduleGraph }),
           };
 
-          await reportToolsetTelemetry(ctx, 'tool:getChangedStories', {
-            storyCount: data.stories.length,
-            newStoryCount: data.counts.new,
-            modifiedStoryCount: data.counts.modified,
-            affectedStoryCount: data.counts.affected,
-          });
-
-          return { ok: true, data, markdown: formatChangedStories(data, ctx, { reviewEnabled }) };
+          return {
+            ok: true,
+            data,
+            markdown: formatChangedStories(data, ctx, { reviewEnabled }),
+            telemetry: {
+              event: 'tool:getChangedStories',
+              counters: {
+                storyCount: data.stories.length,
+                newStoryCount: data.counts.new,
+                modifiedStoryCount: data.counts.modified,
+                affectedStoryCount: data.counts.affected,
+              },
+            },
+          };
         },
       },
       findByComponent: {
@@ -404,18 +414,24 @@ Defaults to ${DEFAULT_MAX_DISTANCE}; raise it to widen recall, lower it to tight
           const unmatchedCount = lookup.results.filter(
             (result) => !result.pathNotFound && result.matches.length === 0
           ).length;
-          await reportToolsetTelemetry(ctx, 'tool:getStoriesByComponent', {
-            componentCount: input.componentPaths.length,
-            matchedComponentCount: input.componentPaths.length - unmatchedCount,
-            totalMatchCount: lookup.results.reduce(
-              (total, result) => total + result.matches.length,
-              0
-            ),
-            maxDistance,
-          });
-
           const data: FindByComponentOutput = { results: lookup.results, maxDistance };
-          return { ok: true, data, markdown: formatFindByComponent(data) };
+          return {
+            ok: true,
+            data,
+            markdown: formatFindByComponent(data),
+            telemetry: {
+              event: 'tool:getStoriesByComponent',
+              counters: {
+                componentCount: input.componentPaths.length,
+                matchedComponentCount: input.componentPaths.length - unmatchedCount,
+                totalMatchCount: lookup.results.reduce(
+                  (total, result) => total + result.matches.length,
+                  0
+                ),
+                maxDistance,
+              },
+            },
+          };
         },
       },
     },

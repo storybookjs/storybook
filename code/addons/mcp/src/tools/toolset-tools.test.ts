@@ -34,12 +34,12 @@ function registerStubStoriesToolset(
           handler:
             overrides.handler ??
             (async (input: { id: string }, ctx) => {
-              await ctx.telemetry?.('tool:previewStories', { inputStoryCount: 1 });
               const stories = [{ previewUrl: `${ctx.origin}/?path=/story/${input.id}` }];
               return {
                 ok: true,
                 data: { stories, extraNotInContract: 'internal' },
                 markdown: stories.map((story) => story.previewUrl).join('\n'),
+                telemetry: { event: 'tool:previewStories', counters: { inputStoryCount: 1 } },
               };
             }),
         },
@@ -221,7 +221,7 @@ describe('toolset-backed MCP tools', () => {
   });
 
   it.each(['dev', 'docs', 'test'] as const)(
-    'forwards method telemetry with the MCP grouping %s the adapter owns',
+    'reports the outcome with the MCP grouping %s in place of the report toolset and tool',
     async (toolset) => {
       registerStubStoriesToolset();
 
@@ -240,19 +240,14 @@ describe('toolset-backed MCP tools', () => {
     }
   );
 
-  it('keeps the adapter-owned toolset when a handler payload carries one', async () => {
+  it('emits no telemetry for an outcome without a report', async () => {
     registerStubStoriesToolset({
-      handler: async (_input: unknown, ctx: any) => {
-        await ctx.telemetry?.('tool:previewStories', { toolset: 'test', inputStoryCount: 1 });
-        return { ok: true, data: { stories: [] }, markdown: '' };
-      },
+      handler: async () => ({ ok: true, data: { stories: [] }, markdown: '' }),
     });
 
     await callToolsetMethod(makeServer(), previewOptions, { id: 'button--primary' });
 
-    expect(collectTelemetry).toHaveBeenCalledWith(
-      expect.objectContaining({ event: 'tool:previewStories', toolset: 'dev' })
-    );
+    expect(collectTelemetry).not.toHaveBeenCalled();
   });
 
   it('emits no telemetry when the session disabled it', async () => {

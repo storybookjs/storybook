@@ -12,6 +12,8 @@ import { logger } from 'storybook/internal/node-logger';
 import { OpenServiceToolsetOutputMismatchError } from 'storybook/internal/server-errors';
 import {
   getToolset,
+  invokeToolsetMethod,
+  parseToolsetMethodId,
   resolveToolsetDescription,
   toMcpToolName,
   type AnyToolsetDefinition,
@@ -19,6 +21,7 @@ import {
   type ToolsetCtx,
   type ToolsetMethod,
   type ToolsetMethodId,
+  type ToolsetMethodReport,
 } from 'storybook/open-service';
 import type { McpServer } from 'tmcp';
 
@@ -98,19 +101,33 @@ async function toStructuredContent(
   return result.value as Record<string, unknown>;
 }
 
-function buildContext(server: Server, toolset: McpToolsetGroup): ToolsetCtx {
-  const custom = server.ctx.custom;
+function buildContext(server: Server): ToolsetCtx {
   return {
     transport: 'mcp',
     // The toolset origin is the complete UI base URL, including any deployment subpath.
-    origin: resolveToolsetOrigin(custom ?? {}),
+    origin: resolveToolsetOrigin(server.ctx.custom ?? {}),
     getService: (serviceId, serviceOptions) => getService(serviceId as any, serviceOptions) as any,
-    telemetry: custom?.disableTelemetry
-      ? undefined
-      : async (event, payload) => {
-          await collectTelemetry({ event, server, ...payload, toolset });
-        },
   };
+}
+
+/**
+ * Sends the method's usage report as the `addon-mcp` event.
+ *
+ * Backwards compatibility: `toolset` is the MCP grouping this tool is registered under (`dev`,
+ * `docs`, `test`), not the report's own CLI toolset name, because every `addon-mcp` record since
+ * the event exists classifies by that grouping and dashboards key on it. The report's `tool` is
+ * left out for the same reason. Once the `X-MCP-Toolsets` header goes (Storybook 11), this can
+ * forward the report's `toolset` and `tool` the way the CLI does.
+ */
+async function reportToolsetTelemetry(
+  server: Server,
+  toolset: McpToolsetGroup,
+  report: ToolsetMethodReport | undefined
+): Promise<void> {
+  if (!report || server.ctx.custom?.disableTelemetry) {
+    return;
+  }
+  await collectTelemetry({ event: report.event, server, ...report.counters, toolset });
 }
 
 /** Runs one toolset method and unwraps its outcome into an MCP tool result. */
@@ -121,10 +138,11 @@ export async function callToolsetMethod(
 ): Promise<StorybookAiToolCallResult> {
   const toolset = resolveToolset(options, server);
   const method = resolveMethod(toolset, options);
-  const ctx = buildContext(server, options.toolset);
+  const { methodName } = parseToolsetMethodId(options.method);
 
   try {
-    const outcome = await method.handler(input as never, ctx);
+    const outcome = await invokeToolsetMethod(toolset, methodName, input, buildContext(server));
+    await reportToolsetTelemetry(server, options.toolset, outcome.telemetry);
     const structuredContent = await toStructuredContent(method.output, outcome.data);
     const blocks = Array.isArray(outcome.markdown) ? outcome.markdown : [outcome.markdown];
 

@@ -133,20 +133,22 @@ describe('tools-command telemetry', () => {
 
   it('merges the handler report into the one tools-command record', async () => {
     const { program } = buildProgram();
-    vi.mocked(runToolsCommand).mockImplementation(async (_invocation, deps) => {
-      await deps?.methodTelemetry?.('tool:getChangedStories', {
-        client: 'cli',
-        requestedMode: 'auto',
-        resolvedMode: 'local',
+    vi.mocked(runToolsCommand).mockResolvedValue(
+      successResult({
         attachMode: 'local',
-        host: 'in-process',
-        storyCount: 4,
-        newStoryCount: 1,
-        modifiedStoryCount: 3,
-        affectedStoryCount: 0,
-      });
-      return successResult({ attachMode: 'local' });
-    });
+        report: {
+          toolset: 'stories',
+          tool: 'changed',
+          event: 'tool:getChangedStories',
+          counters: {
+            storyCount: 4,
+            newStoryCount: 1,
+            modifiedStoryCount: 3,
+            affectedStoryCount: 0,
+          },
+        },
+      })
+    );
     await parse(program, ['tools', 'stories', 'changed']);
 
     expect(toolsCommandPayloads()).toEqual([
@@ -170,24 +172,22 @@ describe('tools-command telemetry', () => {
     ]);
   });
 
-  it('keeps the handler report on the record when the run fails after it', async () => {
+  it('names the tool by its registered spelling, not by what the agent typed', async () => {
     const { program } = buildProgram();
-    const error = new Error('boom');
-    vi.mocked(runToolsCommand).mockImplementation(async (_invocation, deps) => {
-      await deps?.methodTelemetry?.('tool:getChangedStories', { storyCount: 4 });
-      return successResult({ exitCode: 1, outcome: { kind: 'error', error } });
-    });
-    await parse(program, ['tools', 'stories', 'changed']);
+    vi.mocked(runToolsCommand).mockResolvedValue(
+      successResult({
+        report: {
+          toolset: 'stories',
+          tool: 'find-by-component',
+          event: 'tool:getStoriesByComponent',
+          counters: { componentCount: 1 },
+        },
+      })
+    );
+    await parse(program, ['tools', 'stories', 'findByComponent']);
 
     expect(toolsCommandPayloads()).toEqual([
-      expect.objectContaining({
-        event: 'tool:getChangedStories',
-        toolset: 'stories',
-        tool: 'changed',
-        storyCount: 4,
-        success: false,
-        outcome: 'error',
-      }),
+      expect.objectContaining({ toolset: 'stories', tool: 'find-by-component', componentCount: 1 }),
     ]);
   });
 
@@ -383,8 +383,7 @@ describe('tools-command telemetry', () => {
     await parse(program, ['tools', '--port', '6006', 'docs', 'list']);
 
     expect(runToolsCommand).toHaveBeenCalledWith(
-      expect.objectContaining({ toolset: 'docs', tool: 'list', port: '6006' }),
-      expect.anything()
+      expect.objectContaining({ toolset: 'docs', tool: 'list', port: '6006' })
     );
   });
 

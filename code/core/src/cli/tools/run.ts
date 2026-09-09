@@ -1,6 +1,6 @@
 import { versions } from 'storybook/internal/common';
 
-import type { ToolsetTelemetry } from '../../shared/open-service/toolset-definition.ts';
+import type { ToolsetMethodReport } from '../../shared/open-service/toolset-definition.ts';
 import { parseToolsetMethodId, toCliMethodName } from '../../shared/open-service/toolset-names.ts';
 import type { StorybookInstanceRecord } from './instances/types.ts';
 import {
@@ -78,6 +78,8 @@ export type ToolsRunResult = {
   multiInstanceNotice?: string;
   /** True when the attached host chose among several matching instances; drives telemetry. */
   multipleMatches?: boolean;
+  /** The handler's usage report, from the outcome of a run that reached the handler. */
+  report?: ToolsetMethodReport;
 };
 
 export type ToolsInvocation = {
@@ -105,8 +107,6 @@ const CLI_CLIENT_INFO: ToolsClientInfo = {
 export type ToolsRunDeps = {
   createTools?: (options?: CreateToolsOptions, deps?: CreateToolsDeps) => Promise<Tools>;
   discoverInstance?: typeof discoverRunningInstance;
-  /** Receives the handler's usage report for the run; absent when telemetry is disabled. */
-  methodTelemetry?: ToolsetTelemetry;
 };
 
 /** `find-by-component` -> `findByComponent`, accepting an already-camelCase spelling unchanged. */
@@ -338,7 +338,6 @@ async function dispatchTools(
   try {
     const outcome = await tools.call(method.ref, parsed.args, {
       ...(tools.storybook.url ? { origin: tools.storybook.url } : {}),
-      ...(deps.methodTelemetry ? { telemetry: deps.methodTelemetry } : {}),
     });
     const output = parsed.json
       ? JSON.stringify(outcome.data, null, 2)
@@ -347,6 +346,7 @@ async function dispatchTools(
       exitCode: outcome.ok ? 0 : 1,
       output,
       outcome: { kind: outcome.ok ? 'success' : 'failure' },
+      ...(outcome.telemetry ? { report: outcome.telemetry } : {}),
     });
   } catch (error) {
     if (isInvalidInputError(error)) {

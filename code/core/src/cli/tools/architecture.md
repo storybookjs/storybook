@@ -110,12 +110,11 @@ In local mode, `requiresDevServer` intercepts with start-your-Storybook guidance
 those methods run in the caller. `stories.preview` reads origin from the instance record.
 
 The CLI and the SDK fire one `tools-command` record per invocation after a run; help lookups are
-excluded so they cannot skew success rates. It carries the
-CLI spelling of the invoked `toolset` and `tool`, `success`, `outcome`, `duration`, the attach
-fields (`attachMode` among them), and the handler's own report — its legacy `event` name and its
-counters — merged in. The handler reports through `ctx.telemetry`, which the caller collects (over
-IPC from a child host) rather than sending separately. Command-level side effects run on the
-instance.
+excluded so they cannot skew success rates. The record is the handler's usage report — `toolset`
+and `tool` in CLI spelling, its legacy `event` name, and its counters, all returned on the outcome
+by `invokeToolsetMethod` — plus `success`, `outcome`, `duration`, and the attach fields
+(`attachMode` among them). A child host's report rides inside the outcome that already crosses
+IPC. Command-level side effects run on the instance.
 
 ## SDK
 

@@ -257,45 +257,37 @@ describe('spawnChildHost', () => {
     );
   });
 
-  it('forwards child method telemetry to the call sink without resolving the waiter', async () => {
+  it('reports the invocation from the report the child outcome carries', async () => {
+    const report = {
+      toolset: 'docs',
+      tool: 'list',
+      event: 'tool:listAllDocumentation',
+      counters: { componentCount: 3 },
+    };
     child.send.mockImplementation((message: { type: string; id?: string }) => {
       if (message.type === 'init') {
         queueMicrotask(() => child.emit('message', HELLO));
       }
       if (message.type === 'call') {
-        queueMicrotask(() => {
-          child.emit('message', {
-            type: 'telemetry',
-            id: message.id,
-            event: 'tool:listAllDocumentation',
-            payload: { componentCount: 3 },
-          });
+        queueMicrotask(() =>
           child.emit('message', {
             type: 'result',
             id: message.id,
-            value: { ok: true, data: { ran: true }, markdown: 'ok' },
-          });
-        });
+            value: { ok: true, data: { ran: true }, markdown: 'ok', telemetry: report },
+          })
+        );
       }
       return true;
     });
-    const sink = vi.fn(async () => {});
     const tools = await spawn(OPTIONS, 'auto');
 
-    await expect(tools.call('docs.list', {}, { telemetry: sink })).resolves.toEqual({
+    await expect(tools.call('docs.list', {})).resolves.toEqual({
       ok: true,
       data: { ran: true },
       markdown: 'ok',
+      telemetry: report,
     });
     expect(tools.requestedMode).toBe('auto');
-    expect(sink).toHaveBeenCalledWith('tool:listAllDocumentation', {
-      componentCount: 3,
-      client: 'sdk',
-      requestedMode: 'auto',
-      resolvedMode: 'attached',
-      attachMode: 'attached',
-      host: 'child',
-    });
     expect(vi.mocked(telemetry).mock.calls).toEqual([
       [
         'tools-command',
@@ -316,85 +308,6 @@ describe('spawnChildHost', () => {
         expect.anything(),
       ],
     ]);
-  });
-
-  it('does not reject the call when a forwarded telemetry sink fails', async () => {
-    child.send.mockImplementation((message: { type: string; id?: string }) => {
-      if (message.type === 'init') {
-        queueMicrotask(() => child.emit('message', HELLO));
-      }
-      if (message.type === 'call') {
-        queueMicrotask(() => {
-          child.emit('message', {
-            type: 'telemetry',
-            id: message.id,
-            event: 'tool:listAllDocumentation',
-            payload: { componentCount: 3 },
-          });
-          child.emit('message', {
-            type: 'result',
-            id: message.id,
-            value: { ok: true, data: { ran: true }, markdown: 'ok' },
-          });
-        });
-      }
-      return true;
-    });
-    const sink = vi.fn(async () => {
-      throw new Error('telemetry down');
-    });
-    const tools = await spawn();
-
-    await expect(tools.call('docs.list', {}, { telemetry: sink })).resolves.toEqual({
-      ok: true,
-      data: { ran: true },
-      markdown: 'ok',
-    });
-  });
-
-  it('does not reject the call when a forwarded telemetry sink throws synchronously', async () => {
-    child.send.mockImplementation((message: { type: string; id?: string }) => {
-      if (message.type === 'init') {
-        queueMicrotask(() => child.emit('message', HELLO));
-      }
-      if (message.type === 'call') {
-        queueMicrotask(() => {
-          child.emit('message', {
-            type: 'telemetry',
-            id: message.id,
-            event: 'tool:listAllDocumentation',
-            payload: { componentCount: 3 },
-          });
-          child.emit('message', {
-            type: 'result',
-            id: message.id,
-            value: { ok: true, data: { ran: true }, markdown: 'ok' },
-          });
-        });
-      }
-      return true;
-    });
-    const sink = vi.fn(() => {
-      throw new Error('telemetry down');
-    });
-    const tools = await spawn();
-
-    await expect(tools.call('docs.list', {}, { telemetry: sink })).resolves.toEqual({
-      ok: true,
-      data: { ran: true },
-      markdown: 'ok',
-    });
-    expect(sink).toHaveBeenCalledWith(
-      'tool:listAllDocumentation',
-      expect.objectContaining({
-        componentCount: 3,
-        client: 'sdk',
-        requestedMode: 'attached',
-        resolvedMode: 'attached',
-        attachMode: 'attached',
-        host: 'child',
-      })
-    );
   });
 
   it('sends a cancel envelope keyed by the call id when the signal aborts', async () => {

@@ -1,12 +1,12 @@
 import { telemetry } from 'storybook/internal/telemetry';
 
-import type { ToolsetTelemetry } from '../../../shared/open-service/toolset-definition.ts';
+import type { ToolsetMethodReport } from '../../../shared/open-service/toolset-definition.ts';
 import {
   parseToolsetMethodId,
   toCliMethodName,
 } from '../../../shared/open-service/toolset-names.ts';
 import { attachGateReasonFromError, type ToolsAttachGateReason } from './errors.ts';
-import type { ToolsCallOptions, ToolsClientInfo, ToolsHostKind, ToolsMode } from './types.ts';
+import type { ToolsClientInfo, ToolsHostKind, ToolsMode } from './types.ts';
 
 export type ToolsCommandOutcomeKind = 'success' | 'failure' | 'intercept' | 'error' | 'attach-gate';
 
@@ -28,14 +28,6 @@ export type ToolsCommandTelemetryPayload = ToolsCommandDimensions & {
   interceptReason?: string;
   multipleMatches?: boolean;
   duration?: number;
-};
-
-export type MethodReport = { event: string; payload: Record<string, unknown> };
-
-// `sink` is absent only in a child host process, where the report travels over IPC to the parent.
-export type CallTelemetry = {
-  sink?: ToolsetTelemetry;
-  report(): MethodReport | undefined;
 };
 
 // Names are a fixed vocabulary of short identifiers; anything else is arbitrary agent input (a
@@ -73,49 +65,24 @@ export function commandPartsFromRef(ref: string): { toolset: string; tool: strin
   }
 }
 
-export function wrapMethodTelemetry(
-  sink: ToolsetTelemetry,
-  dimensions: ToolsCommandDimensions
-): ToolsetTelemetry {
-  return async (event, payload) => {
-    await sink(event, { ...dimensions, ...payload });
-  };
-}
-
-// The caller's own sink, when given, still receives the report with the host dimensions.
-export function resolveCallTelemetry(
-  options: ToolsCallOptions,
-  dimensions: ToolsCommandDimensions
-): CallTelemetry {
-  if (process.env.STORYBOOK_TOOLS_CHILD_HOST === 'true') {
-    return { sink: options.telemetry, report: () => undefined };
-  }
-  let report: MethodReport | undefined;
-  const forward = options.telemetry
-    ? wrapMethodTelemetry(options.telemetry, dimensions)
-    : undefined;
-  return {
-    sink: async (event, payload) => {
-      report = { event, payload };
-      await forward?.(event, payload);
-    },
-    report: () => report,
-  };
-}
-
-// The handler's report is merged under the record: its `event` name and its counters, with the
-// record's own fields winning.
+// The record describes the run and wins over the handler's counters; the report names the method
+// and wins over whatever the caller parsed, so a record always carries the registered spelling.
 export async function reportToolsCommandEvent(
   record: ToolsCommandTelemetryPayload,
-  options: { report?: MethodReport; configDir?: string } = {}
+  options: { report?: ToolsetMethodReport; configDir?: string } = {}
 ): Promise<void> {
   const { report, configDir } = options;
+  const payload = report
+    ? {
+        ...report.counters,
+        ...record,
+        event: report.event,
+        toolset: report.toolset,
+        tool: report.tool,
+      }
+    : record;
   try {
-    await telemetry(
-      'tools-command',
-      { ...report?.payload, ...(report ? { event: report.event } : {}), ...record },
-      { configDir }
-    );
+    await telemetry('tools-command', payload, { configDir });
   } catch {
     // Telemetry is never part of the tool's result contract.
   }
@@ -157,7 +124,7 @@ export async function reportSdkInvocation(args: {
   host: ToolsHostKind;
   fallbackReason?: ToolsAttachGateReason;
   result: { ok: boolean } | { error: unknown };
-  report?: MethodReport;
+  report?: ToolsetMethodReport;
   duration: number;
   configDir?: string;
 }): Promise<void> {

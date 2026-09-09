@@ -7,14 +7,9 @@ import type { CLIOptions } from 'storybook/internal/types';
 
 import { Option, type Command } from 'commander';
 
-import type { ToolsetTelemetry } from '../../shared/open-service/toolset-definition.ts';
 import { resolveStorybookConfigDir } from './config-dir.ts';
 import { runToolsCommand, type ToolsRunResult } from './run.ts';
-import {
-  reportToolsCommandEvent,
-  sanitizeNamePart,
-  type MethodReport,
-} from './sdk/command-telemetry.ts';
+import { reportToolsCommandEvent, sanitizeNamePart } from './sdk/command-telemetry.ts';
 import { isJsonToolsRun, TOOLS_OPTION_SPECS, type ToolsOutputFlags } from './tool-tokens.ts';
 
 /** `handleCommandFailure` from `bin/core.ts`, passed in to avoid an import cycle. */
@@ -120,10 +115,6 @@ export function registerToolsPassthrough(
               // keep-alive the loop can drain mid-await and Node exits silently with code 0.
               const keepAlive = setInterval(() => {}, 60_000);
               const start = Date.now();
-              let report: MethodReport | undefined;
-              const methodTelemetry: ToolsetTelemetry = async (event, payload) => {
-                report = { event, payload };
-              };
               let result: ToolsRunResult;
               try {
                 if (options.attach && options.noAttach) {
@@ -135,18 +126,15 @@ export function registerToolsPassthrough(
                     attachMode: 'auto',
                   };
                 } else {
-                  result = await runToolsCommand(
-                    {
-                      toolset,
-                      tool,
-                      tokens,
-                      target: { cwd: options.cwd, configDir: options.configDir },
-                      port: options.port,
-                      attach: options.noAttach ? false : options.attach,
-                      flags,
-                    },
-                    { methodTelemetry }
-                  );
+                  result = await runToolsCommand({
+                    toolset,
+                    tool,
+                    tokens,
+                    target: { cwd: options.cwd, configDir: options.configDir },
+                    port: options.port,
+                    attach: options.noAttach ? false : options.attach,
+                    flags,
+                  });
                 }
               } finally {
                 clearInterval(keepAlive);
@@ -158,10 +146,7 @@ export function registerToolsPassthrough(
                 // The tool has executed either way, so a failed `--output` write must not lose the
                 // event. Reporting after printing keeps a slow telemetry endpoint from ever
                 // delaying the user's result.
-                await reportToolsCommandTelemetry(
-                  { toolset, tool, result, duration, report },
-                  cliOptions
-                );
+                await reportToolsCommandTelemetry({ toolset, tool, result, duration }, cliOptions);
               }
             }
           ).catch(handleCommandFailure(options.logfile));
@@ -196,7 +181,7 @@ function pickCliOptions(options: ToolsPassthroughOptions): CLIOptions {
 
 /**
  * Fire the `tools-command` event, once per executed tool, modeled on the `ai-command` event
- * (storybookjs/storybook#35131). The handler's own report, collected during the run, is merged
+ * (storybookjs/storybook#35131). The handler's own report, returned on its outcome, is merged
  * into the same record. Help lookups are excluded so they cannot skew success rates. Unexpected
  * failures additionally go through the standard sanitized error path; `failure` outcomes (the
  * tool ran and reported bad news) do not.
@@ -207,11 +192,10 @@ async function reportToolsCommandTelemetry(
     tool: string | undefined;
     result: ToolsRunResult;
     duration: number;
-    report: MethodReport | undefined;
   },
   cliOptions: CLIOptions
 ): Promise<void> {
-  const { toolset, tool, result, duration, report } = run;
+  const { toolset, tool, result, duration } = run;
   const { outcome } = result;
   if (outcome.kind === 'help') {
     return;
@@ -236,7 +220,7 @@ async function reportToolsCommandTelemetry(
       duration,
     },
     // Metadata must describe the target project, consistent with the opt-out resolution.
-    { report, configDir: cliOptions.configDir }
+    { report: result.report, configDir: cliOptions.configDir }
   );
   if (outcome.kind === 'error') {
     await sendTelemetryError(outcome.error, 'tools-command', { cliOptions });

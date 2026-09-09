@@ -1,5 +1,6 @@
 import type { StandardSchemaV1 } from '@standard-schema/spec';
 
+import { toCliMethodName } from './toolset-names.ts';
 import type { GetServiceOptions } from './types.ts';
 
 type AnySchema = StandardSchemaV1<unknown, unknown>;
@@ -14,16 +15,6 @@ export type ToolsetGetService = {
   <TInstance = unknown>(serviceId: string, options?: GetServiceOptions): TInstance;
 };
 
-/**
- * Emits one telemetry event for a toolset method.
- *
- * Adapters supply the sink so surface-specific fields (the MCP toolset grouping and session id,
- * the CLI's toolset and tool names) stay with the adapter while the event name and counters — the
- * part that describes the capability — stay in the method. Absent when the transport has telemetry
- * disabled.
- */
-export type ToolsetTelemetry = (event: string, payload: Record<string, unknown>) => Promise<void>;
-
 export type ToolsetCtx = {
   transport: ToolsetTransport;
   /**
@@ -32,8 +23,17 @@ export type ToolsetCtx = {
    */
   origin?: string;
   getService: ToolsetGetService;
-  telemetry?: ToolsetTelemetry;
 };
+
+/**
+ * A handler's usage report: the analytics event name and the counters describing what the call
+ * did. It travels on the outcome, so a handler reports at most once and in the same object as its
+ * data; the surface that ran the method turns it into its own telemetry record.
+ *
+ * Event names (`tool:previewStories`, …) are a frozen cross-version contract: keep them aligned
+ * with older Storybook releases even when wire tool names or toolset ids change.
+ */
+export type ToolsetTelemetryReport = { event: string; counters: Record<string, unknown> };
 
 /**
  * A method description, resolved per transport.
@@ -46,8 +46,8 @@ export type ToolsetCtx = {
 export type ToolsetMethodDescription = string | ((context: ToolsetCtx) => string);
 
 /**
- * The result of one method run: the tag, the structured data, and the rendered Markdown, all from a
- * single execution.
+ * The result of one method run: the tag, the structured data, the rendered Markdown, and the usage
+ * report, all from a single execution.
  *
  * The failure model in one line each: could not do the job → throw; did the job and the answer is
  * bad news → return `{ ok: false, data, markdown }`. Adapters unwrap mechanically — text blocks
@@ -61,16 +61,22 @@ export type ToolsetMethodDescription = string | ((context: ToolsetCtx) => string
  * `markdown` may be multiple strings: MCP renders each as its own text block (`stories-preview`
  * renders one block per URL), the CLI joins them with newlines.
  */
-export type ToolsetOutcome<TSuccess, TFailure = TSuccess> =
+export type ToolsetOutcome<
+  TSuccess,
+  TFailure = TSuccess,
+  TReport extends ToolsetTelemetryReport = ToolsetTelemetryReport,
+> =
   | {
       readonly ok: true;
       readonly data: TSuccess;
       readonly markdown: string | string[];
+      readonly telemetry?: TReport;
     }
   | {
       readonly ok: false;
       readonly data: TFailure;
       readonly markdown: string | string[];
+      readonly telemetry?: TReport;
     };
 
 // `any` permits heterogeneous outcome maps. Each individual method remains typed by `defineToolset`.
@@ -86,11 +92,11 @@ export type ToolsetObjectOutputSchema = StandardSchemaV1<
 /**
  * One public method: description, input schema, optional output schema, and one handler.
  *
- * The handler produces the whole {@link ToolsetOutcome} — data, side effects, telemetry, and the
- * rendered Markdown — because one MCP response carries `content` (text) and `structuredContent`
- * (JSON) at once, and both must come from a single run: re-running a method with side effects
- * would repeat them. Usage telemetry reports inline in the handler, with the rendered text in
- * hand, so no consumer can forget it.
+ * The handler produces the whole {@link ToolsetOutcome} — data, side effects, the usage report,
+ * and the rendered Markdown — because one MCP response carries `content` (text) and
+ * `structuredContent` (JSON) at once, and both must come from a single run: re-running a method
+ * with side effects would repeat them. The usage report is part of the returned object, with the
+ * rendered text in hand, so no consumer can forget it.
  */
 export type ToolsetMethod<
   TSchema extends AnySchema = AnySchema,
@@ -188,21 +194,32 @@ export function resolveToolsetDescription(
 }
 
 /**
- * Reports best-effort telemetry without allowing analytics failures to fail the tool call.
- *
- * Analytics event names (`tool:previewStories`, …) are a frozen cross-version contract: keep them
- * aligned with older Storybook releases even when MCP wire tool names or toolset ids change. A
- * handler reports the event name and its counters only; each surface adds its own grouping
- * (`toolset`) when it forwards the report.
+ * A handler's report completed with the CLI spelling of the invoked names (`stories`,
+ * `find-by-component`), taken from where the method is registered.
  */
-export async function reportToolsetTelemetry(
-  context: ToolsetCtx,
-  event: string,
-  payload: Record<string, unknown>
-): Promise<void> {
-  try {
-    await context.telemetry?.(event, payload);
-  } catch {
-    // Telemetry is never part of the tool's result contract.
+export type ToolsetMethodReport = ToolsetTelemetryReport & { toolset: string; tool: string };
+
+// `any` for the same reason as {@link AnyToolsetOutcome}: surfaces dispatch over every method.
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type InvokedToolsetOutcome = ToolsetOutcome<any, any, ToolsetMethodReport>;
+
+/**
+ * Runs one method the way every surface does. The report is named after the registration, never
+ * by the handler, so a method cannot report a toolset that disagrees with where it lives. The CLI
+ * and SDK forward the report as is; the MCP adapter substitutes its own grouping for `toolset`.
+ */
+export async function invokeToolsetMethod(
+  toolset: AnyToolsetDefinition,
+  methodName: string,
+  input: unknown,
+  context: ToolsetCtx
+): Promise<InvokedToolsetOutcome> {
+  const { telemetry, ...outcome } = await toolset.methods[methodName].handler(input, context);
+  if (!telemetry) {
+    return outcome;
   }
+  return {
+    ...outcome,
+    telemetry: { toolset: toolset.id, tool: toCliMethodName(methodName), ...telemetry },
+  };
 }

@@ -6,6 +6,8 @@
  */
 import type { ComponentJsDocInfo } from 'storybook/internal/component-meta';
 
+import type { AnalyzerContext } from './analyzer/context.ts';
+
 type Html = string;
 
 export interface Decorator {
@@ -207,4 +209,10 @@ export interface AngularComponentMetaResult {
   json: MetadataJson;
   /** Omitted when extraction reaches analyzer metadata without a class symbol. */
   jsDocInfo?: ComponentJsDocInfo;
+  /**
+   * The live analyzer context over `json`'s file, when extraction ran beside its analyzer. ArgTypes
+   * extraction uses it to resolve named types for `table.type.detail`; a result without one keeps
+   * today's flat behavior.
+   */
+  context?: AnalyzerContext;
 }

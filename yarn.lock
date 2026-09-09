@@ -6702,7 +6702,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@pmmmwh/react-refresh-webpack-plugin@npm:^0.5.1, @pmmmwh/react-refresh-webpack-plugin@npm:^0.5.11":
+"@pmmmwh/react-refresh-webpack-plugin@npm:^0.5.11":
   version: 0.5.17
   resolution: "@pmmmwh/react-refresh-webpack-plugin@npm:0.5.17"
   dependencies:
@@ -11448,7 +11448,6 @@ __metadata:
     "@storybook/nextjs": "workspace:*"
     "@storybook/preact": "workspace:*"
     "@storybook/preact-vite": "workspace:*"
-    "@storybook/preset-create-react-app": "workspace:*"
     "@storybook/preset-react-webpack": "workspace:*"
     "@storybook/preset-server-webpack": "workspace:*"
     "@storybook/react": "workspace:*"
@@ -11578,10 +11577,12 @@ __metadata:
     "@storybook/angular-vite": "workspace:*"
     "@storybook/react": "workspace:*"
     "@storybook/vue3": "workspace:*"
+    "@storybook/web-components": "workspace:*"
     "@testing-library/vue": "npm:^8.0.0"
     "@types/react": "npm:^18.0.37"
     "@vitejs/plugin-vue": "npm:^4.6.2"
     jiti: "npm:^2.6.1"
+    lit: "npm:^2.1.3"
     react: "npm:^18.2.0"
     react-dom: "npm:^18.2.0"
     rxjs: "npm:^7.4.0"
@@ -11811,23 +11812,6 @@ __metadata:
   languageName: unknown
   linkType: soft
 
-"@storybook/preset-create-react-app@workspace:*, @storybook/preset-create-react-app@workspace:code/presets/create-react-app":
-  version: 0.0.0-use.local
-  resolution: "@storybook/preset-create-react-app@workspace:code/presets/create-react-app"
-  dependencies:
-    "@pmmmwh/react-refresh-webpack-plugin": "npm:^0.5.1"
-    "@storybook/react-docgen-typescript-plugin": "npm:1.0.6--canary.9.0c3f3b7.0"
-    "@types/node": "npm:^22.19.1"
-    "@types/semver": "npm:^7.7.1"
-    pnp-webpack-plugin: "npm:^1.7.0"
-    semver: "npm:^7.7.3"
-    typescript: "npm:^6.0.3"
-  peerDependencies:
-    react-scripts: ">=5.0.0"
-    storybook: "workspace:^"
-  languageName: unknown
-  linkType: soft
-
 "@storybook/preset-react-webpack@workspace:*, @storybook/preset-react-webpack@workspace:code/presets/react-webpack":
   version: 0.0.0-use.local
   resolution: "@storybook/preset-react-webpack@workspace:code/presets/react-webpack"
@@ -11835,12 +11819,10 @@ __metadata:
     "@storybook/core-webpack": "workspace:*"
     "@storybook/react-docgen-typescript-plugin": "npm:1.0.6--canary.9.0c3f3b7.0"
     "@types/node": "npm:^22.19.1"
-    "@types/semver": "npm:^7.7.1"
     empathic: "npm:^2.0.0"
     magic-string: "npm:^1.1.0"
     react-docgen: "npm:^8.0.2"
     resolve: "npm:^1.22.8"
-    semver: "npm:^7.7.3"
     tsconfig-paths: "npm:^4.2.0"
     typescript: "npm:^6.0.3"
     webpack: "npm:5"
@@ -13521,13 +13503,6 @@ __metadata:
   version: 3.1.5
   resolution: "@types/ejs@npm:3.1.5"
   checksum: 10c0/13d994cf0323d7e0ad33b9384914ccd3b4cd8bf282eced3649b1621b66ee7c784ac2d120a9d7b1f43d6f873518248fb8c3221b06a649b847860b9c2389a0b0ed
-  languageName: node
-  linkType: hard
-
-"@types/emscripten@npm:^1.39.6":
-  version: 1.41.5
-  resolution: "@types/emscripten@npm:1.41.5"
-  checksum: 10c0/ae816da716f896434e59df7a71b67c71ae7e85ca067a32aef1616572fc4757459515d42ade6f5b8fd8d69733a9dbd0cf23010fec5b2f41ce52c09501aa350e45
   languageName: node
   linkType: hard
 
@@ -16120,26 +16095,6 @@ __metadata:
   version: 4.2.2
   resolution: "@xtuc/long@npm:4.2.2"
   checksum: 10c0/8582cbc69c79ad2d31568c412129bf23d2b1210a1dfb60c82d5a1df93334da4ee51f3057051658569e2c196d8dc33bc05ae6b974a711d0d16e801e1d0647ccd1
-  languageName: node
-  linkType: hard
-
-"@yarnpkg/fslib@npm:2.10.3":
-  version: 2.10.3
-  resolution: "@yarnpkg/fslib@npm:2.10.3"
-  dependencies:
-    "@yarnpkg/libzip": "npm:^2.3.0"
-    tslib: "npm:^1.13.0"
-  checksum: 10c0/c4fbbed99e801f17c381204e9699d9ea4fb51b14e99968985f477bdbc7b02b61e026860173f3f46bd60d9f46ae6a06f420a3edb3c02c3a45ae83779095928094
-  languageName: node
-  linkType: hard
-
-"@yarnpkg/libzip@npm:2.3.0, @yarnpkg/libzip@npm:^2.3.0":
-  version: 2.3.0
-  resolution: "@yarnpkg/libzip@npm:2.3.0"
-  dependencies:
-    "@types/emscripten": "npm:^1.39.6"
-    tslib: "npm:^1.13.0"
-  checksum: 10c0/0c2361ccb002e28463ed98541f3bdaab54f52aad6a2080666c2a9ea605ebd9cdfb7b0340b1db6f105820d05bcb803cdfb3ce755a8f6034657298c291bf884f81
   languageName: node
   linkType: hard
 
@@ -31213,15 +31168,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"pnp-webpack-plugin@npm:^1.7.0":
-  version: 1.7.0
-  resolution: "pnp-webpack-plugin@npm:1.7.0"
-  dependencies:
-    ts-pnp: "npm:^1.1.6"
-  checksum: 10c0/79d1973ec0b04be6d44f15d5625991701a010dae28f2798d974d3aa164e8c60dc7fa22fd01a47fb6af369c4ba6585c3030d4deb775ccfecd7156594bc223d086
-  languageName: node
-  linkType: hard
-
 "polished@npm:^4.2.2":
   version: 4.3.1
   resolution: "polished@npm:4.3.1"
@@ -35373,8 +35319,6 @@ __metadata:
     "@vitest/spy": "npm:3.2.4"
     "@vitest/utils": "npm:^3.2.4"
     "@webcontainer/env": "npm:^1.1.1"
-    "@yarnpkg/fslib": "npm:2.10.3"
-    "@yarnpkg/libzip": "npm:2.3.0"
     acorn: "npm:^8.15.0"
     acorn-jsx: "npm:^5.3.2"
     ansi-to-html: "npm:^0.7.2"
@@ -36808,16 +36752,6 @@ __metadata:
   languageName: node
   linkType: hard
 
-"ts-pnp@npm:^1.1.6":
-  version: 1.2.0
-  resolution: "ts-pnp@npm:1.2.0"
-  peerDependenciesMeta:
-    typescript:
-      optional: true
-  checksum: 10c0/ff32b4f810f9d99f676d70fe2c0e327cb6c812214bd4fc7135870b039f9e85a85b2c20f8fe030d9bd36e9598a12faa391f10aecb95df624b92f1af6bd47dc397
-  languageName: node
-  linkType: hard
-
 "ts-simple-type@npm:~1.0.5":
   version: 1.0.7
   resolution: "ts-simple-type@npm:1.0.7"
@@ -36876,7 +36810,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"tslib@npm:^1.13.0, tslib@npm:^1.9.3":
+"tslib@npm:^1.9.3":
   version: 1.14.1
   resolution: "tslib@npm:1.14.1"
   checksum: 10c0/69ae09c49eea644bc5ebe1bca4fa4cc2c82b7b3e02f43b84bd891504edf66dbc6b2ec0eef31a957042de2269139e4acff911e6d186a258fb14069cd7f6febce2

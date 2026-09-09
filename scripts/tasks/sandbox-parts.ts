@@ -329,11 +329,6 @@ export const init: Task['run'] = async (
     '--preserve-symlinks-main',
   ].filter(Boolean);
 
-  const pnp = await pathExists(join(cwd, '.pnp.cjs')).catch(() => {});
-  if (pnp && !nodeOptions.find((s) => s.includes('--require'))) {
-    nodeOptions.push('--require ./.pnp.cjs');
-  }
-
   const nodeOptionsString = nodeOptions.join(' ');
   const prefix = `NODE_OPTIONS='${nodeOptionsString}' STORYBOOK_TELEMETRY_URL="http://localhost:6007/event-log"`;
 

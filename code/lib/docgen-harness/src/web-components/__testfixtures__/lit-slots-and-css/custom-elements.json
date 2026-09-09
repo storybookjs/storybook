@@ -1,0 +1,86 @@
+{
+  "schemaVersion": "1.0.0",
+  "readme": "",
+  "modules": [
+    {
+      "kind": "javascript-module",
+      "path": "lit-slots-and-css.ts",
+      "declarations": [
+        {
+          "kind": "class",
+          "description": "Shows projected content with themed parts.",
+          "name": "LitSlotsAndCss",
+          "cssProperties": [
+            {
+              "description": "Panel text color.",
+              "name": "--slot-panel-color"
+            }
+          ],
+          "cssParts": [
+            {
+              "description": "Outer panel.",
+              "name": "panel"
+            }
+          ],
+          "slots": [
+            {
+              "description": "Default body content.",
+              "name": ""
+            },
+            {
+              "description": "Action controls.",
+              "name": "actions"
+            }
+          ],
+          "members": [
+            {
+              "kind": "field",
+              "name": "heading",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Details'",
+              "description": "Heading above the projected content.",
+              "attribute": "heading"
+            }
+          ],
+          "attributes": [
+            {
+              "name": "heading",
+              "type": {
+                "text": "string"
+              },
+              "default": "'Details'",
+              "description": "Heading above the projected content.",
+              "fieldName": "heading"
+            }
+          ],
+          "superclass": {
+            "name": "LitElement",
+            "package": "lit"
+          },
+          "tagName": "lit-slots-and-css",
+          "customElement": true
+        }
+      ],
+      "exports": [
+        {
+          "kind": "js",
+          "name": "LitSlotsAndCss",
+          "declaration": {
+            "name": "LitSlotsAndCss",
+            "module": "lit-slots-and-css.ts"
+          }
+        },
+        {
+          "kind": "custom-element-definition",
+          "name": "lit-slots-and-css",
+          "declaration": {
+            "name": "LitSlotsAndCss",
+            "module": "lit-slots-and-css.ts"
+          }
+        }
+      ]
+    }
+  ]
+}

@@ -1,15 +1,7 @@
-import type { MockInstance } from 'vitest';
 import { describe, expect, it, vi } from 'vitest';
-
-import * as detect from 'storybook/internal/cli';
 
 import type { CheckOptions, RunOptions } from '../types.ts';
 import { type WrapGetAbsolutePathRunOptions, wrapGetAbsolutePath } from './wrap-getAbsolutePath.ts';
-
-vi.mock('storybook/internal/cli', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('storybook/internal/cli')>()),
-  detectPnp: vi.fn(),
-}));
 
 vi.mock('node:fs/promises', async (importOriginal) => ({
   ...(await importOriginal<typeof import('node:fs/promises')>()),
@@ -18,9 +10,7 @@ vi.mock('node:fs/promises', async (importOriginal) => ({
 
 describe('wrapGetAbsolutePath', () => {
   describe('check', () => {
-    it('should return null if not in a monorepo and pnp is not enabled', async () => {
-      (detect.detectPnp as any as MockInstance).mockResolvedValue(false);
-
+    it('should return null if not in a monorepo', async () => {
       const check = wrapGetAbsolutePath.check({
         packageManager: {
           isStorybookInMonorepo: () => false,
@@ -32,28 +22,7 @@ describe('wrapGetAbsolutePath', () => {
       await expect(check).resolves.toBeNull();
     });
 
-    it('should return the configuration object if in a pnp environment', async () => {
-      (detect.detectPnp as any as MockInstance).mockResolvedValue(true);
-
-      const check = wrapGetAbsolutePath.check({
-        packageManager: {
-          isStorybookInMonorepo: () => false,
-        },
-        storybookVersion: '7.0.0',
-        mainConfigPath: require.resolve('./__test__/main-config-without-wrappers.js'),
-      } as CheckOptions);
-
-      await expect(check).resolves.toEqual({
-        isConfigTypescript: false,
-        isPnp: true,
-        isStorybookInMonorepo: false,
-        storybookVersion: '7.0.0',
-      });
-    });
-
     it('should return the configuration object if in a monorepo environment', async () => {
-      (detect.detectPnp as any as MockInstance).mockResolvedValue(false);
-
       const check = wrapGetAbsolutePath.check({
         packageManager: {
           isStorybookInMonorepo: () => true,
@@ -64,15 +33,12 @@ describe('wrapGetAbsolutePath', () => {
 
       await expect(check).resolves.toEqual({
         isConfigTypescript: false,
-        isPnp: false,
         isStorybookInMonorepo: true,
         storybookVersion: '7.0.0',
       });
     });
 
     it('should return null, if all fields have the require wrapper', async () => {
-      (detect.detectPnp as any as MockInstance).mockResolvedValue(true);
-
       const check = wrapGetAbsolutePath.check({
         packageManager: {
           isStorybookInMonorepo: () => true,

@@ -172,7 +172,10 @@ export async function spawnChildHost(
   void disconnected.catch(() => {});
 
   child.on('message', (raw: unknown) => {
-    if (!isChildMessage(raw) || raw.type === 'hello') {
+    // Only a result or an error settles a call. A child host from an older Storybook still sends a
+    // per-call `telemetry` envelope first; treating it as the reply would reject the call and drop
+    // the result that follows.
+    if (!isChildMessage(raw) || (raw.type !== 'result' && raw.type !== 'error')) {
       return;
     }
     const waiter = pending.get(raw.id);

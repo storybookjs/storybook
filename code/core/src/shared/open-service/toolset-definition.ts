@@ -220,6 +220,6 @@ export async function invokeToolsetMethod(
   }
   return {
     ...outcome,
-    telemetry: { toolset: toolset.id, tool: toCliMethodName(methodName), ...telemetry },
+    telemetry: { ...telemetry, toolset: toolset.id, tool: toCliMethodName(methodName) },
   };
 }

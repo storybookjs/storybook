@@ -310,6 +310,45 @@ describe('spawnChildHost', () => {
     ]);
   });
 
+  it('ignores the telemetry envelope an older child host sends before its result', async () => {
+    child.send.mockImplementation((message: { type: string; id?: string }) => {
+      if (message.type === 'init') {
+        queueMicrotask(() => child.emit('message', HELLO));
+      }
+      if (message.type === 'call') {
+        queueMicrotask(() => {
+          child.emit('message', {
+            type: 'telemetry',
+            id: message.id,
+            event: 'tool:listAllDocumentation',
+            payload: { componentCount: 3 },
+          });
+          child.emit('message', {
+            type: 'result',
+            id: message.id,
+            value: { ok: true, data: { ran: true }, markdown: 'ok' },
+          });
+        });
+      }
+      return true;
+    });
+    const tools = await spawn();
+
+    await expect(tools.call('docs.list', {})).resolves.toEqual({
+      ok: true,
+      data: { ran: true },
+      markdown: 'ok',
+    });
+    expect(vi.mocked(telemetry).mock.calls).toEqual([
+      [
+        'tools-command',
+        expect.objectContaining({ toolset: 'docs', tool: 'list', success: true }),
+        expect.anything(),
+      ],
+    ]);
+    expect(vi.mocked(telemetry).mock.calls[0][1]).not.toHaveProperty('event');
+  });
+
   it('sends a cancel envelope keyed by the call id when the signal aborts', async () => {
     child.send.mockImplementation((message: { type: string; id?: string }) => {
       if (message.type === 'init') {

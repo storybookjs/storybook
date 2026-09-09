@@ -51,6 +51,13 @@ interface BabelFile {
   code: string;
 }
 
+type CsfMutationState = {
+  diagnostics: CsfMutationDiagnostic[];
+  changed: boolean;
+};
+
+const mutationStates = new WeakMap<CsfFile, CsfMutationState>();
+
 const PREVIEW_FILE_REGEX = /\/preview(.(js|jsx|mjs|ts|tsx))?$/;
 export const isValidPreviewPath = (filepath: string) => PREVIEW_FILE_REGEX.test(filepath);
 
@@ -326,32 +333,30 @@ export class CsfFile {
 
   _tests: StoryTest[] = [];
 
-  #mutationDiagnostics: CsfMutationDiagnostic[] = [];
-
-  #changed = false;
-
   constructor(ast: t.File, options: CsfOptions, file: BabelFile) {
     this._ast = ast;
     this._file = file;
     this._options = options;
     this.imports = [];
+    mutationStates.set(this, { diagnostics: [], changed: false });
   }
 
   get mutationDiagnostics(): readonly CsfMutationDiagnostic[] {
-    return [...this.#mutationDiagnostics];
+    return [...mutationStates.get(this)!.diagnostics];
   }
 
   get changed() {
-    return this.#changed;
+    return mutationStates.get(this)!.changed;
   }
 
   objects(options: CsfObjectOptions = {}): readonly CsfObject[] {
+    const state = mutationStates.get(this)!;
     return discoverCsfObjects(
       this,
       options,
-      (diagnostic) => this.#mutationDiagnostics.push(diagnostic),
+      (diagnostic) => state.diagnostics.push(diagnostic),
       () => {
-        this.#changed = true;
+        state.changed = true;
       }
     );
   }

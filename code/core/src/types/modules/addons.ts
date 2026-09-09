@@ -1,4 +1,4 @@
-import type { FC, PropsWithChildren, ReactElement, ReactNode } from 'react';
+import type { FC, PropsWithChildren, ReactElement, ReactNode, RefObject } from 'react';
 
 import type { RenderData as RouterData } from '../../router/types.ts';
 import type { ThemeVars } from '../../theming/types.ts';
@@ -24,7 +24,9 @@ import type { IndexEntry } from './indexer.ts';
 
 export type Addon_Types = Exclude<
   Addon_TypesEnum,
-  Addon_TypesEnum.experimental_PAGE | Addon_TypesEnum.experimental_TEST_PROVIDER
+  | Addon_TypesEnum.experimental_PAGE
+  | Addon_TypesEnum.experimental_TEST_PROVIDER
+  | Addon_TypesEnum.experimental_CONTEXT_MENU
 >;
 
 export interface Addon_ArgType<TArg = unknown> extends InputType {
@@ -324,7 +326,8 @@ export type Addon_Type =
   | Addon_BaseType
   | Addon_PageType
   | Addon_WrapperType
-  | Addon_TestProviderType;
+  | Addon_TestProviderType
+  | Addon_ContextMenuType;
 export interface Addon_BaseType {
   /**
    * The title of the addon. This can be a simple string, but it can also be a
@@ -345,6 +348,7 @@ export interface Addon_BaseType {
     | Addon_TypesEnum.PREVIEW
     | Addon_TypesEnum.experimental_PAGE
     | Addon_TypesEnum.experimental_TEST_PROVIDER
+    | Addon_TypesEnum.experimental_CONTEXT_MENU
   >;
   /**
    * The unique id of the addon.
@@ -450,17 +454,45 @@ export interface Addon_TestProviderType {
   clear?: () => void;
 }
 
+export interface Addon_ContextMenuRenderOptions {
+  /** The index entry (story, docs, component, group or root) the context menu was opened for. */
+  context: API_HashEntry;
+  /**
+   * Ref to the button that opens the context menu. Use it to anchor floating UI to the menu's
+   * origin, e.g. by passing it as `triggerRef` to a React Aria Components Popover.
+   */
+  triggerRef: RefObject<HTMLButtonElement | null>;
+  /** Closes the context menu. */
+  onHide: () => void;
+}
+
+export interface Addon_ContextMenuType {
+  type: Addon_TypesEnum.experimental_CONTEXT_MENU;
+  /** The unique id of the context menu entry. */
+  id: string;
+  /**
+   * Return the content to add to the context menu of the given index entry, or a nullish value to
+   * add nothing.
+   *
+   * Called during React rendering, so it must not use hooks itself; use them in the components it
+   * returns instead.
+   */
+  render: (options: Addon_ContextMenuRenderOptions) => ReactNode;
+}
+
 type Addon_TypeBaseNames = Exclude<
   Addon_TypesEnum,
   | Addon_TypesEnum.PREVIEW
   | Addon_TypesEnum.experimental_PAGE
   | Addon_TypesEnum.experimental_TEST_PROVIDER
+  | Addon_TypesEnum.experimental_CONTEXT_MENU
 >;
 
 export interface Addon_TypesMapping extends Record<Addon_TypeBaseNames, Addon_BaseType> {
   [Addon_TypesEnum.PREVIEW]: Addon_WrapperType;
   [Addon_TypesEnum.experimental_PAGE]: Addon_PageType;
   [Addon_TypesEnum.experimental_TEST_PROVIDER]: Addon_TestProviderType;
+  [Addon_TypesEnum.experimental_CONTEXT_MENU]: Addon_ContextMenuType;
 }
 
 export type Addon_Loader<API> = (api: API) => void;
@@ -517,4 +549,10 @@ export enum Addon_TypesEnum {
   experimental_PAGE = 'page',
   /** This adds items to the Testing Module in the sidebar. */
   experimental_TEST_PROVIDER = 'test-provider',
+  /**
+   * This adds entries to the context menu of index entries in the sidebar.
+   *
+   * @unstable
+   */
+  experimental_CONTEXT_MENU = 'context-menu',
 }

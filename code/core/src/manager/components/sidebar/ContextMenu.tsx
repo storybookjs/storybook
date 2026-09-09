@@ -1,10 +1,12 @@
 import type { ComponentProps, FC, MouseEvent, ReactElement, SyntheticEvent } from 'react';
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 
 import { PopoverProvider, TooltipLinkList } from 'storybook/internal/components';
 import {
   type API_HashEntry,
   type Addon_Collection,
+  type Addon_ContextMenuRenderOptions,
+  type Addon_ContextMenuType,
   type Addon_TestProviderType,
   Addon_TypesEnum,
   type StatusValue,
@@ -46,6 +48,7 @@ export const useContextMenu = (
 ) => {
   const [hoverCount, setHoverCount] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
+  const triggerRef = useRef<HTMLButtonElement | null>(null);
 
   const exportName = context && 'exportName' in context ? (context.exportName ?? '') : '';
   const { children: copyText, buttonProps: copyButtonProps } = useCopyButton<string>({
@@ -101,6 +104,7 @@ export const useContextMenu = (
       },
       onOpen: (event: SyntheticEvent) => {
         event.stopPropagation();
+        triggerRef.current = event.currentTarget as HTMLButtonElement;
         setIsOpen(true);
       },
       onClose: () => {
@@ -109,21 +113,29 @@ export const useContextMenu = (
     };
   }, []);
   /**
-   * Calculate the providerLinks whenever the user mouses over the container. We use an incrementor,
-   * instead of a simple boolean to ensure that the links are recalculated
+   * Calculate the addon-provided links whenever the user mouses over the container. We use an
+   * incrementor, instead of a simple boolean to ensure that the links are recalculated
    */
-  const providerLinks = useMemo(() => {
+  const addonLinks = useMemo(() => {
     const registeredTestProviders = api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER);
+    const registeredContextMenus = api.getElements(Addon_TypesEnum.experimental_CONTEXT_MENU);
 
     if (hoverCount) {
-      return generateTestProviderLinks(registeredTestProviders, context);
+      return [
+        ...generateTestProviderLinks(registeredTestProviders, context),
+        ...generateAddonContextMenuLinks(registeredContextMenus, {
+          context,
+          triggerRef,
+          onHide: handlers.onClose,
+        }),
+      ];
     }
     return [];
-  }, [api, context, hoverCount]);
+  }, [api, context, hoverCount, handlers]);
 
   // We just don't want to render the context menu for composed storybook stories
   const shouldRender =
-    !context.refId && (providerLinks.length > 0 || links.length > 0 || topLinks.length > 0);
+    !context.refId && (addonLinks.length > 0 || links.length > 0 || topLinks.length > 0);
 
   const buttonStatus = visibleStatus?.status ?? 'status-value:unknown';
   const menuIcon = visibleStatus?.icon ?? <EllipsisIcon />;
@@ -143,7 +155,14 @@ export const useContextMenu = (
           defaultVisible={false}
           visible={isOpen}
           onVisibleChange={setIsOpen}
-          popover={<LiveContextMenu context={context} links={[...topLinks, ...links]} />}
+          popover={({ onHide }) => (
+            <LiveContextMenu
+              context={context}
+              links={[...topLinks, ...links]}
+              triggerRef={triggerRef}
+              onHide={onHide}
+            />
+          )}
           hasChrome={true}
           padding={0}
         >
@@ -166,17 +185,20 @@ export const useContextMenu = (
 /**
  * This component re-subscribes to storybook's core state, hence the Live prefix. It is used to
  * render the context menu for the sidebar. it self is a tooltip link list that renders the links
- * provided to it. In addition to the links, it also renders the test providers.
+ * provided to it. In addition to the links, it also renders entries contributed by context menu
+ * addons and test providers.
  */
-const LiveContextMenu: FC<{ context: API_HashEntry } & ComponentProps<typeof TooltipLinkList>> = ({
-  context,
-  links,
-  ...rest
-}) => {
-  const registeredTestProviders = useStorybookApi().getElements(
-    Addon_TypesEnum.experimental_TEST_PROVIDER
-  );
+const LiveContextMenu: FC<
+  { context: API_HashEntry } & Omit<Addon_ContextMenuRenderOptions, 'context'> &
+    ComponentProps<typeof TooltipLinkList>
+> = ({ context, links, triggerRef, onHide, ...rest }) => {
+  const api = useStorybookApi();
+  const registeredTestProviders = api.getElements(Addon_TypesEnum.experimental_TEST_PROVIDER);
   const providerLinks: Link[] = generateTestProviderLinks(registeredTestProviders, context);
+  const addonLinks: Link[] = generateAddonContextMenuLinks(
+    api.getElements(Addon_TypesEnum.experimental_CONTEXT_MENU),
+    { context, triggerRef, onHide }
+  );
 
   /**
    * The context menu can take a list of lists of links, so that the links are grouped and separated
@@ -186,7 +208,7 @@ const LiveContextMenu: FC<{ context: API_HashEntry } & ComponentProps<typeof Too
   const groups: Link[][] =
     Array.isArray(links[0]) || links.length === 0 ? (links as Link[][]) : [links as Link[]];
 
-  const all = groups.concat([providerLinks]);
+  const all = groups.concat([addonLinks], [providerLinks]);
 
   return <TooltipLinkList {...rest} links={all} />;
 };
@@ -208,6 +230,26 @@ export function generateTestProviderLinks(
 
       return {
         id: testProviderId,
+        content,
+      };
+    })
+    .filter(Boolean as unknown as ExcludesNull);
+}
+
+export function generateAddonContextMenuLinks(
+  registeredContextMenus: Addon_Collection<Addon_ContextMenuType>,
+  options: Addon_ContextMenuRenderOptions
+): Link[] {
+  return Object.entries(registeredContextMenus)
+    .map(([contextMenuId, addon]) => {
+      const content = addon?.render(options);
+
+      if (!content) {
+        return null;
+      }
+
+      return {
+        id: contextMenuId,
         content,
       };
     })

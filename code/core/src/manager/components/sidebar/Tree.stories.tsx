@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 
 import {
   type Addon_Collection,
+  type Addon_ContextMenuType,
   type Addon_TestProviderType,
   Addon_TypesEnum,
   type StatusesByStoryIdAndTypeId,
@@ -11,7 +12,7 @@ import type { Meta, StoryObj } from '@storybook/react-vite';
 
 import { action } from 'storybook/actions';
 import { type ComponentEntry, type IndexHash, ManagerContext } from 'storybook/manager-api';
-import { expect, fn, screen, userEvent, within } from 'storybook/test';
+import { expect, fn, screen, userEvent, waitFor, within } from 'storybook/test';
 
 import { defaultShortcuts } from '../../settings/defaultShortcuts.tsx';
 import { IconSymbols } from './IconSymbols.tsx';
@@ -34,9 +35,9 @@ const managerContext: any = {
     emit: fn().mockName('api::emit'),
     getShortcutKeys: fn(() => defaultShortcuts).mockName('api::getShortcutKeys'),
     getCurrentStoryData: fn().mockName('api::getCurrentStoryData'),
-    getElements: fn(
-      () =>
-        ({
+    getElements: fn((type: Addon_TypesEnum) => {
+      if (type === Addon_TypesEnum.experimental_TEST_PROVIDER) {
+        return {
           'component-tests': {
             type: Addon_TypesEnum.experimental_TEST_PROVIDER,
             id: 'component-tests',
@@ -49,8 +50,10 @@ const managerContext: any = {
             render: () => 'Visual tests',
             sidebarContextMenu: () => null,
           },
-        }) satisfies Addon_Collection<Addon_TestProviderType>
-    ),
+        } satisfies Addon_Collection<Addon_TestProviderType>;
+      }
+      return {};
+    }),
     getData: fn().mockName('api::getData'),
   },
 };
@@ -318,6 +321,73 @@ export const WithContextContent: Story = {
     const popover = screen.getByRole('dialog');
     await expect(popover).toBeVisible();
     expect(popover).toHaveTextContent('TEST_PROVIDER_CONTEXT_CONTENT');
+  },
+};
+
+const contextMenuEntryAction = fn().mockName('contextMenuEntry::onClick');
+
+const contextMenuAddonManagerContext: any = {
+  ...managerContext,
+  api: {
+    ...managerContext.api,
+    getElements: fn((type: Addon_TypesEnum) => {
+      if (type === Addon_TypesEnum.experimental_CONTEXT_MENU) {
+        return {
+          'my-addon/context-menu': {
+            type: Addon_TypesEnum.experimental_CONTEXT_MENU,
+            id: 'my-addon/context-menu',
+            render: ({ context, triggerRef, onHide }) => (
+              <button
+                type="button"
+                onClick={() => {
+                  contextMenuEntryAction(context.id, triggerRef.current?.dataset.testid);
+                  onHide();
+                }}
+              >
+                ADDON_CONTEXT_MENU_CONTENT
+              </button>
+            ),
+          },
+        } satisfies Addon_Collection<Addon_ContextMenuType>;
+      }
+      return managerContext.api.getElements(type);
+    }),
+  },
+};
+
+export const WithContextMenuAddon: Story = {
+  ...DocsOnlySingleStoryComponents,
+  parameters: WithContextContent.parameters,
+  globals: WithContextContent.globals,
+  decorators: [
+    (storyFn) => (
+      <ManagerContext.Provider value={contextMenuAddonManagerContext}>
+        {storyFn()}
+      </ManagerContext.Provider>
+    ),
+  ],
+  play: async ({ canvasElement }) => {
+    const canvas = within(canvasElement);
+
+    const link = await canvas.findByText('TooltipBuildList');
+    await userEvent.hover(link);
+
+    const row = link.closest('[data-item-id]') as HTMLElement;
+    const contextButton = await within(row).findByTestId('context-menu');
+    await userEvent.click(contextButton);
+
+    const popover = await screen.findByRole('dialog');
+    await expect(popover).toBeVisible();
+    expect(popover).toHaveTextContent('TEST_PROVIDER_CONTEXT_CONTENT');
+
+    const entry = within(popover).getByRole('button', { name: 'ADDON_CONTEXT_MENU_CONTENT' });
+    await userEvent.click(entry);
+
+    await expect(contextMenuEntryAction).toHaveBeenCalledWith(
+      row.getAttribute('data-item-id'),
+      'context-menu'
+    );
+    await waitFor(() => expect(screen.queryByRole('dialog')).not.toBeInTheDocument());
   },
 };
 
